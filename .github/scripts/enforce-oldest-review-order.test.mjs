@@ -6,18 +6,30 @@ import {
     analyzeDecisiveReviews,
     classifyRepositoryPermission,
     classifyReviewEvent,
-    enforceOldestReviewOrder,
+    evaluatePullRequestOrder,
     hasSubstantiveCommitAfter,
     nextPageUrl,
     paginateRest,
+    parsePolicyDismissalMessage,
+    postOrderStatus,
+    recalculatePullRequests,
     renderDismissalMessage,
+    replayHistoricalApproval,
+    replayMarker,
     reviewDebtStatus,
+    selectLatestActiveDecisiveReviewsByReviewer,
+    selectLatestActiveHumanDecisiveReview,
     selectRequestedOutstandingReview,
     selectOlderPullRequests,
+    STATUS_CONTEXT,
 } from "./enforce-oldest-review-order.mjs";
 
 const REPOSITORY = "afternote/app";
 const silent = { log() {} };
+const REPLAY_REVIEW_ID = 5032388275;
+const REPLAY_PULL_NUMBER = 821;
+const REPLAY_DISMISSAL_EVENT_ID = 30053730355;
+const REPLAY_PREDECESSOR_PULL_NUMBER = 741;
 
 function reviewEvent(overrides = {}) {
     return {
@@ -44,9 +56,14 @@ function pullRequest(overrides = {}) {
         number: 1,
         title: "오래된 PR",
         created_at: "2026-08-01T00:00:00Z",
+        state: "open",
         draft: false,
         requested_reviewers: [],
         user: { login: "author" },
+        head: {
+            sha: "1111111111111111111111111111111111111111",
+            repo: { full_name: REPOSITORY },
+        },
         ...overrides,
     };
 }
@@ -309,264 +326,6 @@ test("REST pagination 순환과 비배열 응답은 실패한다", async () => {
     await assert.rejects(() => paginateRest(malformed, "/first"), /응답이 배열이 아닙니다/);
 });
 
-test("더 오래된 실제 리뷰 빚을 찾아 현재 리뷰를 dismiss한다", async () => {
-    const client = fakeClient(({ apiPath, method }) => {
-        if (apiPath.endsWith("/collaborators/reviewer/permission")) {
-            return response({ permission: "write" });
-        }
-        if (apiPath.includes("/pulls?state=open")) {
-            // 응답 순서가 섞여 있어도 #1부터 검사한다. #1은 승인돼 있고 #2가 첫 빚이다.
-            return response([
-                pullRequest({ number: 2, title: "두 번째 오래된 미처리", created_at: "2026-08-02T00:00:00Z" }),
-                pullRequest({ number: 1, title: "가장 오래됐지만 승인됨", created_at: "2026-08-01T00:00:00Z" }),
-            ]);
-        }
-        if (apiPath.includes("/pulls/1/reviews")) {
-            return response([review({ state: "APPROVED" })]);
-        }
-        if (apiPath.includes("/pulls/2/reviews")) {
-            return response([]);
-        }
-        if (apiPath.endsWith("/pulls/30/reviews/900/dismissals") && method === "PUT") {
-            return response({ state: "DISMISSED" });
-        }
-        throw new Error(`unexpected ${method} ${apiPath}`);
-    });
-
-    const result = await enforceOldestReviewOrder({
-        event: reviewEvent(),
-        repository: REPOSITORY,
-        client,
-        logger: silent,
-    });
-
-    assert.equal(result.status, "dismissed");
-    assert.equal(result.oldestDebt.number, 2);
-    const dismissal = client.calls.at(-1);
-    assert.equal(dismissal.method, "PUT");
-    assert.equal(dismissal.body.event, "DISMISS");
-    assert.match(dismissal.body.message, /#2 \(두 번째 오래된 미처리\)/);
-});
-
-test("CHANGES_REQUESTED 뒤 같은 리뷰어에게 재요청하고 반영했으면 리뷰 빚으로 dismiss한다", async () => {
-    const client = fakeClient(({ apiPath, method }) => {
-        if (apiPath.includes("/permission")) return response({ permission: "maintain" });
-        if (apiPath.includes("/pulls?state=open")) {
-            return response([pullRequest({
-                number: 4,
-                requested_reviewers: [{ login: "alice" }],
-            })]);
-        }
-        if (apiPath.includes("/pulls/4/reviews")) {
-            return response([review({ state: "CHANGES_REQUESTED" })]);
-        }
-        if (apiPath.includes("/pulls/4/commits")) return response([commit()]);
-        if (method === "PUT") return response({ state: "dismissed" });
-        throw new Error(`unexpected ${method} ${apiPath}`);
-    });
-
-    const result = await enforceOldestReviewOrder({
-        event: reviewEvent(), repository: REPOSITORY, client, logger: silent,
-    });
-    assert.equal(result.status, "dismissed");
-    assert.equal(result.oldestDebt.debtReason, "changes-requested-fixed-rerequested");
-});
-
-test("과거 리뷰어 요청이 남아도 더 늦은 다른 변경요청 뒤에는 dismiss하지 않는다", async () => {
-    const client = fakeClient(({ apiPath }) => {
-        if (apiPath.includes("/permission")) return response({ permission: "maintain" });
-        if (apiPath.includes("/pulls?state=open")) {
-            return response([pullRequest({
-                number: 767,
-                requested_reviewers: [{ login: "Sadturtleman" }],
-            })]);
-        }
-        if (apiPath.includes("/pulls/767/reviews")) {
-            return response([
-                review({
-                    state: "CHANGES_REQUESTED",
-                    submitted_at: "2026-08-23T02:12:43Z",
-                    user: { login: "Sadturtleman" },
-                }),
-                review({
-                    state: "CHANGES_REQUESTED",
-                    submitted_at: "2026-08-23T11:45:05Z",
-                    user: { login: "1hyok" },
-                }),
-            ]);
-        }
-        throw new Error(`최신 변경요청이 있는데 불필요한 API를 호출함: ${apiPath}`);
-    });
-
-    const result = await enforceOldestReviewOrder({
-        event: reviewEvent(), repository: REPOSITORY, client, logger: silent,
-    });
-
-    assert.equal(result.status, "allowed");
-    assert.equal(client.calls.some((call) => call.apiPath.includes("/commits")), false);
-    assert.equal(client.calls.some((call) => call.method !== "GET"), false);
-});
-
-test("변경요청 뒤 수정했어도 재리뷰 요청이 없으면 허용한다", async () => {
-    const client = fakeClient(({ apiPath }) => {
-        if (apiPath.includes("/permission")) return response({ permission: "maintain" });
-        if (apiPath.includes("/pulls?state=open")) {
-            return response([pullRequest({
-                number: 966,
-                requested_reviewers: [{ login: "koongmai" }],
-            })]);
-        }
-        if (apiPath.includes("/pulls/966/reviews")) {
-            return response([review({ state: "CHANGES_REQUESTED", user: { login: "1hyok" } })]);
-        }
-        throw new Error(`재요청이 없는데 불필요한 API를 호출함: ${apiPath}`);
-    });
-
-    const result = await enforceOldestReviewOrder({
-        event: reviewEvent(), repository: REPOSITORY, client, logger: silent,
-    });
-    assert.equal(result.status, "allowed");
-    assert.equal(client.calls.some((call) => call.apiPath.includes("/commits")), false);
-    assert.equal(client.calls.some((call) => call.method !== "GET"), false);
-});
-
-test("변경요청 뒤 반영 커밋이 없거나 이미 승인된 PR만 있으면 허용한다", async () => {
-    const client = fakeClient(({ apiPath }) => {
-        if (apiPath.includes("/permission")) return response({ permission: "admin" });
-        if (apiPath.includes("/pulls?state=open")) {
-            return response([
-                pullRequest({ number: 1, requested_reviewers: [{ login: "alice" }] }),
-                pullRequest({ number: 2 }),
-            ]);
-        }
-        if (apiPath.includes("/pulls/1/reviews")) {
-            return response([review({ state: "CHANGES_REQUESTED" })]);
-        }
-        if (apiPath.includes("/pulls/1/commits")) {
-            return response([
-                commit({ commit: { committer: { date: "2026-08-01T00:00:00Z" } } }),
-            ]);
-        }
-        if (apiPath.includes("/pulls/2/reviews")) return response([review()]);
-        throw new Error(`unexpected ${apiPath}`);
-    });
-
-    const result = await enforceOldestReviewOrder({
-        event: reviewEvent(), repository: REPOSITORY, client, logger: silent,
-    });
-    assert.equal(result.status, "allowed");
-    assert.equal(client.calls.some((call) => call.method === "PUT"), false);
-});
-
-test("dry run은 순서 위반을 끝까지 계산하되 리뷰를 dismiss하지 않는다", async () => {
-    const lines = [];
-    const client = fakeClient(({ apiPath }) => {
-        if (apiPath.includes("/permission")) return response({ permission: "write" });
-        if (apiPath.includes("/pulls?state=open")) {
-            return response([pullRequest({ number: 6, title: "먼저 리뷰할 PR" })]);
-        }
-        if (apiPath.includes("/pulls/6/reviews")) return response([]);
-        throw new Error(`dry run에서 쓰기 API를 호출함: ${apiPath}`);
-    });
-
-    const result = await enforceOldestReviewOrder({
-        event: reviewEvent(),
-        repository: REPOSITORY,
-        client,
-        dryRun: true,
-        logger: { log: (line) => lines.push(line) },
-    });
-
-    assert.equal(result.status, "dry-run");
-    assert.equal(result.oldestDebt.number, 6);
-    assert.match(lines[0], /\[dry-run\].*#6/);
-    assert.equal(client.calls.some((call) => call.method !== "GET"), false);
-});
-
-test("dismiss API가 200이어도 상태가 DISMISSED가 아니면 성공으로 보고하지 않는다", async () => {
-    const client = fakeClient(({ apiPath, method }) => {
-        if (apiPath.includes("/permission")) return response({ permission: "write" });
-        if (apiPath.includes("/pulls?state=open")) return response([pullRequest({ number: 6 })]);
-        if (apiPath.includes("/pulls/6/reviews")) return response([]);
-        if (method === "PUT") return response({ state: "APPROVED" });
-        throw new Error(`unexpected ${method} ${apiPath}`);
-    });
-
-    await assert.rejects(
-        () => enforceOldestReviewOrder({
-            event: reviewEvent(), repository: REPOSITORY, client, logger: silent,
-        }),
-        /상태가 DISMISSED가 아닙니다/,
-    );
-});
-
-test("쓰기 권한이 없는 리뷰어는 열린 PR 목록도 조회하지 않는다", async () => {
-    const client = fakeClient(({ apiPath }) => {
-        assert.match(apiPath, /\/permission$/);
-        return response({ permission: "read" });
-    });
-
-    const result = await enforceOldestReviewOrder({
-        event: reviewEvent(), repository: REPOSITORY, client, logger: silent,
-    });
-    assert.equal(result.status, "skipped");
-    assert.equal(client.calls.length, 1);
-});
-
-test("비결정 리뷰와 fork는 GitHub API를 전혀 호출하지 않는다", async () => {
-    const client = fakeClient(() => {
-        throw new Error("API를 호출하면 안 됨");
-    });
-    const commented = reviewEvent({
-        review: { id: 1, state: "commented", user: { login: "reviewer" } },
-    });
-    assert.equal((await enforceOldestReviewOrder({
-        event: commented, repository: REPOSITORY, client, logger: silent,
-    })).status, "skipped");
-
-    const forkPayload = reviewEvent();
-    forkPayload.pull_request.head.repo.full_name = "outside/fork";
-    assert.equal((await enforceOldestReviewOrder({
-        event: forkPayload, repository: REPOSITORY, client, logger: silent,
-    })).status, "skipped");
-    assert.deepEqual(client.calls, []);
-});
-
-test("열린 PR, 리뷰, 커밋 조회 실패 시 dismiss 쓰기가 발생하지 않는다", async (t) => {
-    const stages = ["open", "reviews", "commits"];
-    for (const failingStage of stages) {
-        await t.test(failingStage, async () => {
-            const client = fakeClient(({ apiPath }) => {
-                if (apiPath.includes("/permission")) return response({ permission: "write" });
-                if (apiPath.includes("/pulls?state=open")) {
-                    if (failingStage === "open") throw new Error("open read failed");
-                    return response([pullRequest({
-                        number: 1,
-                        requested_reviewers: [{ login: "alice" }],
-                    })]);
-                }
-                if (apiPath.includes("/pulls/1/reviews")) {
-                    if (failingStage === "reviews") throw new Error("reviews read failed");
-                    return response([review({ state: "CHANGES_REQUESTED" })]);
-                }
-                if (apiPath.includes("/pulls/1/commits")) {
-                    if (failingStage === "commits") throw new Error("commits read failed");
-                    return response([commit()]);
-                }
-                throw new Error(`unexpected ${apiPath}`);
-            });
-
-            await assert.rejects(
-                () => enforceOldestReviewOrder({
-                    event: reviewEvent(), repository: REPOSITORY, client, logger: silent,
-                }),
-                /read failed/,
-            );
-            assert.equal(client.calls.some((call) => call.method === "PUT"), false);
-        });
-    }
-});
-
 test("dismiss 안내는 가장 오래된 PR 번호와 한 줄 제목을 명시한다", () => {
     const message = renderDismissalMessage({
         number: 77,
@@ -574,18 +333,426 @@ test("dismiss 안내는 가장 오래된 PR 번호와 한 줄 제목을 명시�
     });
     assert.match(message, /#77 \(여러 줄 제목\)/);
     assert.match(message, /자동 취소/);
+    assert.deepEqual(parsePolicyDismissalMessage(message), {
+        number: 77,
+        title: "여러 줄 제목",
+    });
 });
 
-test("workflow는 trusted default branch에서만 write-token 스크립트를 실행한다", async () => {
+test("현재 활성 human 결정 리뷰만 최신순으로 고른다", () => {
+    const latest = selectLatestActiveHumanDecisiveReview([
+        review({ id: 10, state: "DISMISSED", submitted_at: "2026-08-10T00:00:00Z" }),
+        review({ id: 11, state: "APPROVED", submitted_at: "2026-08-11T00:00:00Z" }),
+        review({
+            id: 12,
+            state: "APPROVED",
+            submitted_at: "2026-08-12T00:00:00Z",
+            user: { login: "github-actions[bot]", type: "Bot" },
+        }),
+        review({
+            id: 13,
+            state: "CHANGES_REQUESTED",
+            submitted_at: "2026-08-13T00:00:00Z",
+            user: { login: "bob", type: "User" },
+        }),
+    ]);
+    assert.equal(latest.id, 13);
+    assert.equal(latest.reviewer, "bob");
+});
+
+test("검증된 replay bot 승인은 원 DISMISSED human 리뷰어에게 귀속한다", () => {
+    const original = review({
+        id: REPLAY_REVIEW_ID,
+        state: "DISMISSED",
+        submitted_at: "2026-08-01T00:00:00Z",
+        user: { login: "koongmai", type: "User" },
+    });
+    const proxy = review({
+        id: REPLAY_REVIEW_ID + 1,
+        state: "APPROVED",
+        submitted_at: "2026-08-10T00:00:00Z",
+        user: { login: "github-actions[bot]", type: "Bot" },
+        body: `${replayMarker(REPLAY_REVIEW_ID)}\n\n원 리뷰 이관`,
+    });
+    const selected = selectLatestActiveDecisiveReviewsByReviewer([original, proxy]);
+    assert.equal(selected.length, 1);
+    assert.equal(selected[0].reviewer, "koongmai");
+    assert.equal(selected[0].proxyReviewId, REPLAY_REVIEW_ID);
+});
+
+test("allowlist 밖 marker를 bot 승인의 human proxy로 신뢰하지 않는다", () => {
+    const unknownReviewId = 900;
+    assert.throws(
+        () => selectLatestActiveDecisiveReviewsByReviewer([
+            review({
+                id: unknownReviewId,
+                state: "DISMISSED",
+                user: { login: "alice", type: "User" },
+            }),
+            review({
+                id: unknownReviewId + 1,
+                state: "APPROVED",
+                user: { login: "github-actions[bot]", type: "Bot" },
+                body: replayMarker(unknownReviewId),
+            }),
+        ]),
+        /allowlist/,
+    );
+});
+
+test("이관 승인 원 작성자의 write 권한이 사라지면 failure로 막는다", async () => {
+    const original = review({
+        id: REPLAY_REVIEW_ID,
+        state: "DISMISSED",
+        user: { login: "koongmai", type: "User" },
+    });
+    const proxy = review({
+        id: REPLAY_REVIEW_ID + 1,
+        state: "APPROVED",
+        submitted_at: "2026-08-20T01:00:00Z",
+        user: { login: "github-actions[bot]", type: "Bot" },
+        body: replayMarker(REPLAY_REVIEW_ID),
+    });
+    const current = pullRequest({ number: REPLAY_PULL_NUMBER });
+    const client = fakeClient(({ apiPath }) => {
+        if (apiPath.includes(`/pulls/${REPLAY_PULL_NUMBER}/reviews`)) {
+            return response([original, proxy]);
+        }
+        if (apiPath.includes("/collaborators/koongmai/permission")) {
+            return response({ permission: "read" });
+        }
+        throw new Error(`unexpected ${apiPath}`);
+    });
+
+    const result = await evaluatePullRequestOrder({
+        client,
+        repository: REPOSITORY,
+        pullRequest: current,
+        openPullRequests: [current],
+        reviewCache: new Map(),
+    });
+    assert.equal(result.state, "failure");
+    assert.equal(result.invalidProxyReviewId, REPLAY_REVIEW_ID);
+});
+
+test("A의 순서 위반 뒤 B가 정상 승인해도 A의 위반을 failure로 유지한다", async () => {
+    const older = pullRequest({ number: 1, user: { login: "bob" } });
+    const current = pullRequest({
+        number: 30,
+        created_at: "2026-08-20T00:00:00Z",
+        head: { sha: "3030303030303030303030303030303030303030", repo: { full_name: REPOSITORY } },
+    });
+    const currentReviews = [
+        review({
+            id: 10,
+            state: "APPROVED",
+            submitted_at: "2026-08-20T01:00:00Z",
+            user: { login: "alice", type: "User" },
+        }),
+        review({
+            id: 11,
+            state: "APPROVED",
+            submitted_at: "2026-08-20T02:00:00Z",
+            user: { login: "bob", type: "User" },
+        }),
+    ];
+    const client = fakeClient(({ apiPath }) => {
+        if (apiPath.includes("/pulls/30/reviews")) return response(currentReviews);
+        if (apiPath.includes("/collaborators/alice/permission")) return response({ permission: "write" });
+        if (apiPath.includes("/collaborators/bob/permission")) return response({ permission: "write" });
+        if (apiPath.includes("/pulls/1/reviews")) return response([]);
+        throw new Error(`unexpected ${apiPath}`);
+    });
+    const result = await evaluatePullRequestOrder({
+        client,
+        repository: REPOSITORY,
+        pullRequest: current,
+        openPullRequests: [older, current],
+        reviewCache: new Map(),
+    });
+    assert.equal(result.state, "failure");
+    assert.equal(result.oldestDebt.number, 1);
+    assert.match(result.reason, /@alice/);
+});
+
+test("commit status는 고정 context와 요청 상태를 검증한다", async () => {
+    const client = fakeClient(({ apiPath, method, body }) => {
+        assert.match(apiPath, /\/statuses\/1{40}$/);
+        assert.equal(method, "POST");
+        return response({ state: body.state, context: body.context });
+    });
+    await postOrderStatus({
+        client,
+        repository: REPOSITORY,
+        sha: "1111111111111111111111111111111111111111",
+        state: "pending",
+        description: "재계산 중",
+    });
+    assert.equal(client.calls[0].body.context, STATUS_CONTEXT);
+});
+
+test("열린 PR 전체를 pending 뒤 success/failure로 재계산하고 리뷰는 쓰지 않는다", async () => {
+    const pulls = [
+        pullRequest({ number: 1 }),
+        pullRequest({
+            number: 2,
+            created_at: "2026-08-02T00:00:00Z",
+            head: { sha: "2222222222222222222222222222222222222222", repo: { full_name: REPOSITORY } },
+        }),
+    ];
+    const client = fakeClient(({ apiPath, method, body }) => {
+        if (apiPath.includes("/pulls?state=open")) return response(pulls);
+        if (apiPath.includes("/reviews")) return response([]);
+        if (apiPath === `/repos/${REPOSITORY}/pulls/1`) return response(pulls[0]);
+        if (apiPath === `/repos/${REPOSITORY}/pulls/2`) return response(pulls[1]);
+        if (apiPath.includes("/statuses/") && method === "POST") {
+            return response({ state: body.state, context: body.context });
+        }
+        throw new Error(`unexpected ${method} ${apiPath}`);
+    });
+    const result = await recalculatePullRequests({
+        client, repository: REPOSITORY, logger: silent,
+    });
+    assert.equal(result.results.length, 2);
+    const writes = client.calls.filter((call) => call.method !== "GET");
+    assert.deepEqual(writes.map((call) => call.body.state), ["pending", "pending", "success", "success"]);
+    assert.equal(writes.some((call) => call.method === "PUT"), false);
+    assert.equal(writes.some((call) => call.apiPath.includes("/reviews")), false);
+});
+
+test("판정 read 실패 시 pending만 남고 final status는 쓰지 않는다", async () => {
+    const client = fakeClient(({ apiPath, method, body }) => {
+        if (apiPath.includes("/pulls?state=open")) return response([pullRequest()]);
+        if (apiPath.includes("/statuses/") && method === "POST") {
+            return response({ state: body.state, context: body.context });
+        }
+        if (apiPath.includes("/reviews")) throw new Error("reviews read failed");
+        throw new Error(`unexpected ${method} ${apiPath}`);
+    });
+    await assert.rejects(
+        () => recalculatePullRequests({ client, repository: REPOSITORY, logger: silent }),
+        /reviews read failed/,
+    );
+    const statusWrites = client.calls.filter((call) => call.apiPath.includes("/statuses/"));
+    assert.deepEqual(statusWrites.map((call) => call.body.state), ["pending"]);
+});
+
+test("strict review_id provenance를 만족한 과거 APPROVED만 bot 승인으로 이관한다", async () => {
+    const original = review({
+        id: REPLAY_REVIEW_ID,
+        state: "DISMISSED",
+        submitted_at: "2026-08-02T00:00:00Z",
+        user: { login: "koongmai", type: "User" },
+    });
+    const current = pullRequest({
+        number: REPLAY_PULL_NUMBER,
+        created_at: "2026-08-20T00:00:00Z",
+    });
+    const client = fakeClient(({ apiPath, method, body }) => {
+        if (apiPath.includes("/pulls?state=open")) return response([current]);
+        if (apiPath.includes(`/pulls/${REPLAY_PULL_NUMBER}/reviews`) && method === "GET") {
+            return response([original]);
+        }
+        if (apiPath.includes(`/issues/${REPLAY_PULL_NUMBER}/timeline`)) {
+            return response([{
+                id: REPLAY_DISMISSAL_EVENT_ID,
+                event: "review_dismissed",
+                actor: { login: "github-actions[bot]" },
+                dismissed_review: {
+                    review_id: String(REPLAY_REVIEW_ID),
+                    state: "approved",
+                    dismissal_message: renderDismissalMessage({
+                        number: REPLAY_PREDECESSOR_PULL_NUMBER,
+                        title: "먼저 볼 PR",
+                    }),
+                },
+            }]);
+        }
+        if (apiPath.includes("/collaborators/koongmai/permission")) {
+            return response({ permission: "write" });
+        }
+        if (apiPath.endsWith(`/pulls/${REPLAY_PULL_NUMBER}`) && method === "GET") {
+            return response(current);
+        }
+        if (apiPath.endsWith(`/pulls/${REPLAY_PULL_NUMBER}/reviews`) && method === "POST") {
+            return response({
+                state: "APPROVED",
+                user: { login: "github-actions[bot]" },
+                body: body.body,
+            });
+        }
+        throw new Error(`unexpected ${method} ${apiPath}`);
+    });
+    const result = await replayHistoricalApproval({
+        client, repository: REPOSITORY, reviewId: String(REPLAY_REVIEW_ID), logger: silent,
+    });
+    assert.equal(result.status, "replayed");
+    const created = client.calls.find((call) => call.method === "POST");
+    assert.equal(created.body.event, "APPROVE");
+    assert.match(created.body.body, new RegExp(replayMarker(REPLAY_REVIEW_ID)));
+    assert.match(created.body.body, /@koongmai/);
+    assert.match(created.body.body, new RegExp(`pullrequestreview-${REPLAY_REVIEW_ID}`));
+});
+
+test("CHANGES_REQUESTED dismissal은 historical replay 전에 fail-closed한다", async () => {
+    const original = review({
+        id: REPLAY_REVIEW_ID,
+        state: "DISMISSED",
+        user: { login: "koongmai", type: "User" },
+    });
+    const current = pullRequest({ number: REPLAY_PULL_NUMBER });
+    const client = fakeClient(({ apiPath, method }) => {
+        if (apiPath.includes("/pulls?state=open")) return response([current]);
+        if (apiPath.includes(`/pulls/${REPLAY_PULL_NUMBER}/reviews`) && method === "GET") {
+            return response([original]);
+        }
+        if (apiPath.includes(`/issues/${REPLAY_PULL_NUMBER}/timeline`)) {
+            return response([{
+                id: REPLAY_DISMISSAL_EVENT_ID,
+                event: "review_dismissed",
+                actor: { login: "github-actions[bot]" },
+                dismissed_review: {
+                    review_id: REPLAY_REVIEW_ID,
+                    state: "changes_requested",
+                    dismissal_message: renderDismissalMessage({
+                        number: REPLAY_PREDECESSOR_PULL_NUMBER,
+                        title: "먼저 볼 PR",
+                    }),
+                },
+            }]);
+        }
+        throw new Error(`unexpected ${method} ${apiPath}`);
+    });
+    await assert.rejects(
+        () => replayHistoricalApproval({ client, repository: REPOSITORY, reviewId: REPLAY_REVIEW_ID }),
+        /CHANGES_REQUESTED/,
+    );
+    assert.equal(client.calls.some((call) => call.method === "POST"), false);
+});
+
+test("동일 marker가 있어도 dismissal provenance를 먼저 다시 검증한다", async () => {
+    const original = review({
+        id: REPLAY_REVIEW_ID,
+        state: "DISMISSED",
+        user: { login: "koongmai", type: "User" },
+    });
+    const existing = review({
+        id: REPLAY_REVIEW_ID + 1,
+        state: "APPROVED",
+        user: { login: "github-actions[bot]", type: "Bot" },
+        body: replayMarker(REPLAY_REVIEW_ID),
+    });
+    const current = pullRequest({ number: REPLAY_PULL_NUMBER });
+    const client = fakeClient(({ apiPath, method }) => {
+        if (apiPath.includes("/pulls?state=open")) return response([current]);
+        if (apiPath.includes(`/pulls/${REPLAY_PULL_NUMBER}/reviews`) && method === "GET") {
+            return response([original, existing]);
+        }
+        if (apiPath.includes(`/issues/${REPLAY_PULL_NUMBER}/timeline`)) {
+            return response([{
+                id: REPLAY_DISMISSAL_EVENT_ID,
+                event: "review_dismissed",
+                actor: { login: "not-the-policy-bot" },
+                dismissed_review: {
+                    review_id: REPLAY_REVIEW_ID,
+                    state: "approved",
+                    dismissal_message: renderDismissalMessage({
+                        number: REPLAY_PREDECESSOR_PULL_NUMBER,
+                        title: "먼저 볼 PR",
+                    }),
+                },
+            }]);
+        }
+        throw new Error(`unexpected ${method} ${apiPath}`);
+    });
+
+    await assert.rejects(
+        () => replayHistoricalApproval({
+            client,
+            repository: REPOSITORY,
+            reviewId: REPLAY_REVIEW_ID,
+        }),
+        /dismissal actor/,
+    );
+    assert.equal(client.calls.some((call) => call.method === "POST"), false);
+});
+
+test("동일 시각의 더 큰 DISMISSED 결정 리뷰가 있으면 오래된 승인을 이관하지 않는다", async () => {
+    const submittedAt = "2026-08-02T00:00:00Z";
+    const original = review({
+        id: REPLAY_REVIEW_ID,
+        state: "DISMISSED",
+        submitted_at: submittedAt,
+        user: { login: "koongmai", type: "User" },
+    });
+    const newer = review({
+        id: REPLAY_REVIEW_ID + 1,
+        state: "DISMISSED",
+        submitted_at: submittedAt,
+        user: { login: "koongmai", type: "User" },
+    });
+    const current = pullRequest({ number: REPLAY_PULL_NUMBER });
+    const client = fakeClient(({ apiPath, method }) => {
+        if (apiPath.includes("/pulls?state=open")) return response([current]);
+        if (apiPath.includes(`/pulls/${REPLAY_PULL_NUMBER}/reviews`) && method === "GET") {
+            return response([original, newer]);
+        }
+        if (apiPath.includes(`/issues/${REPLAY_PULL_NUMBER}/timeline`)) {
+            return response([{
+                id: REPLAY_DISMISSAL_EVENT_ID,
+                event: "review_dismissed",
+                actor: { login: "github-actions[bot]" },
+                dismissed_review: {
+                    review_id: REPLAY_REVIEW_ID,
+                    state: "approved",
+                    dismissal_message: renderDismissalMessage({
+                        number: REPLAY_PREDECESSOR_PULL_NUMBER,
+                        title: "먼저 볼 PR",
+                    }),
+                },
+            }]);
+        }
+        if (apiPath.includes("/collaborators/koongmai/permission")) {
+            return response({ permission: "write" });
+        }
+        throw new Error(`unexpected ${method} ${apiPath}`);
+    });
+
+    await assert.rejects(
+        () => replayHistoricalApproval({
+            client,
+            repository: REPOSITORY,
+            reviewId: REPLAY_REVIEW_ID,
+        }),
+        /더 새로운 결정 리뷰/,
+    );
+    assert.equal(client.calls.some((call) => call.method === "POST"), false);
+});
+
+test("무권한 이벤트 감지와 trusted status/replay workflow를 분리한다", async () => {
     const workflow = await readFile(
         new URL("../workflows/oldest-review-order.yml", import.meta.url),
         "utf8",
     );
+    const eventWorkflow = await readFile(
+        new URL("../workflows/oldest-review-order-event.yml", import.meta.url),
+        "utf8",
+    );
 
-    assert.match(workflow, /^\s{2}pull_request_review:\s*$/m);
-    assert.match(workflow, /^\s{4}types: \[submitted\]\s*$/m);
-    assert.match(workflow, /^\s{2}contents: read\s*$/m);
-    assert.match(workflow, /^\s{2}pull-requests: write\s*$/m);
+    assert.match(eventWorkflow, /^\s{2}pull_request_review:\s*$/m);
+    assert.match(eventWorkflow, /types: \[submitted, dismissed\]/);
+    assert.match(eventWorkflow, /^\s{2}pull_request:\s*$/m);
+    assert.match(eventWorkflow, /^permissions: \{\}\s*$/m);
+    assert.doesNotMatch(eventWorkflow, /actions\/checkout|GITHUB_TOKEN|github\.token/);
+    assert.match(workflow, /^\s{2}workflow_run:\s*$/m);
+    assert.match(workflow, /workflows: \[Oldest Review Order Event\]/);
+    assert.doesNotMatch(workflow, /^\s{2}pull_request(?:_review)?:\s*$/m);
+    assert.doesNotMatch(workflow, /^\s{2}pull_request_target:\s*$/m);
+    assert.match(workflow, /^\s{2}workflow_dispatch:\s*$/m);
+    assert.match(workflow, /^\s{6}contents: read\s*$/m);
+    assert.match(workflow, /^\s{6}pull-requests: read\s*$/m);
+    assert.match(workflow, /^\s{6}statuses: write\s*$/m);
+    assert.match(workflow, /^\s{6}pull-requests: write\s*$/m);
     assert.match(workflow, /^\s{4}timeout-minutes: \d+\s*$/m);
     assert.match(workflow, /^\s{10}ref: \$\{\{ github\.event\.repository\.default_branch \}\}\s*$/m);
     assert.match(workflow, /^\s{10}persist-credentials: false\s*$/m);

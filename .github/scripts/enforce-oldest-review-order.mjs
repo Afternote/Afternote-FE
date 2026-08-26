@@ -2,9 +2,8 @@
 
 // 오래된 PR 을 내버려 둔 채 새 PR 만 리뷰하는 순서를 막는다.
 //
-// GitHub 은 리뷰 제출 버튼 자체를 가로막을 수 없다. 따라서 결정 리뷰가 제출되면
-// 아직 판정이 필요한 더 오래된 PR 을 조회하고, 그런 PR 이 있으면 방금 리뷰를
-// dismiss 한다. 판정 근거를 전부 읽기 전에는 쓰기 API 를 호출하지 않는다.
+// 리뷰 자체는 취소하지 않는다. trusted default branch workflow가 현재 head SHA에
+// 고정 commit status를 기록하고, 상태 변동 때 열린 PR 전체를 다시 계산한다.
 
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -13,9 +12,21 @@ import { pathToFileURL } from "node:url";
 
 export const DECISIVE_REVIEW_STATES = new Set(["APPROVED", "CHANGES_REQUESTED"]);
 export const WRITE_CAPABLE_PERMISSIONS = new Set(["write", "maintain", "admin"]);
+export const STATUS_CONTEXT = "oldest-review-order";
+export const REPLAY_MARKER_PREFIX = "<!-- oldest-review-order-replay:review_id=";
 
 const NON_WRITE_PERMISSIONS = new Set(["none", "read", "triage"]);
 const PAGE_SIZE = 100;
+const POLICY_DISMISSAL_PREFIX = "오래된 PR부터 리뷰해야 합니다. 가장 오래된 미처리 PR #";
+const POLICY_DISMISSAL_SUFFIX = "을 먼저 리뷰해 주세요. 이 리뷰는 순서 위반으로 자동 취소되었습니다.";
+const HISTORICAL_REPLAY_ALLOWLIST = new Map([
+    [5032388275, {
+        pullRequestNumber: 821,
+        author: "koongmai",
+        dismissalEventId: 30053730355,
+        predecessorPullRequestNumber: 741,
+    }],
+]);
 
 function requiredString(value, label) {
     if (typeof value !== "string" || value.length === 0) {
@@ -228,6 +239,79 @@ export function analyzeDecisiveReviews(reviews) {
     };
 }
 
+function replayReviewIdFromBody(body) {
+    if (typeof body !== "string") return null;
+    const lines = body.split(/\r?\n/).filter((line) => line.includes("oldest-review-order-replay:"));
+    if (lines.length === 0) return null;
+    if (lines.length !== 1) throw new Error("replay marker가 정확히 하나가 아닙니다.");
+    const match = lines[0].match(/^<!-- oldest-review-order-replay:review_id=([1-9]\d*) -->$/);
+    if (!match) throw new Error("replay marker 형식이 올바르지 않습니다.");
+    return Number(match[1]);
+}
+
+function historicalReplaySpec(reviewId) {
+    const spec = HISTORICAL_REPLAY_ALLOWLIST.get(reviewId);
+    if (!spec) {
+        throw new Error(`review_id ${reviewId}는 검증된 historical replay allowlist에 없습니다.`);
+    }
+    return spec;
+}
+
+/** reviewer별 최신 활성 human 결정과 검증된 replay proxy를 모두 고른다. */
+export function selectLatestActiveDecisiveReviewsByReviewer(reviews) {
+    if (!Array.isArray(reviews)) {
+        throw new Error("리뷰 목록 응답이 배열이 아닙니다.");
+    }
+    const latestByReviewer = new Map();
+    for (const review of reviews) {
+        const state = normalizeReviewState(review?.state);
+        if (!DECISIVE_REVIEW_STATES.has(state)) continue;
+        let reviewer = requiredString(review.user?.login, "review.user.login");
+        let proxyReviewId = null;
+        if (isBotReviewer(review.user)) {
+            if (reviewer !== "github-actions[bot]" || state !== "APPROVED") continue;
+            proxyReviewId = replayReviewIdFromBody(review.body);
+            if (proxyReviewId == null) continue;
+            const replaySpec = historicalReplaySpec(proxyReviewId);
+            const originals = reviews.filter((candidate) => candidate?.id === proxyReviewId);
+            if (originals.length !== 1 || normalizeReviewState(originals[0].state) !== "DISMISSED") {
+                throw new Error(`replay marker의 원 review_id ${proxyReviewId}가 유효한 DISMISSED 리뷰가 아닙니다.`);
+            }
+            if (isBotReviewer(originals[0].user)) {
+                throw new Error(`replay marker의 원 review_id ${proxyReviewId} 작성자가 human이 아닙니다.`);
+            }
+            reviewer = requiredString(originals[0].user?.login, "original review.user.login");
+            if (reviewer.toLowerCase() !== replaySpec.author.toLowerCase()) {
+                throw new Error(`replay marker의 원 review_id ${proxyReviewId} 작성자가 allowlist와 다릅니다.`);
+            }
+        }
+        const id = requiredInteger(review.id, "review.id");
+        const submittedAt = requiredString(review.submitted_at, "review.submitted_at");
+        const submittedTimestamp = parseTimestamp(submittedAt, "review.submitted_at");
+        const key = reviewer.toLowerCase();
+        const latest = latestByReviewer.get(key);
+        if (!latest || submittedTimestamp > latest.submittedTimestamp ||
+            (submittedTimestamp === latest.submittedTimestamp && id > latest.id)) {
+            latestByReviewer.set(key, {
+                id,
+                reviewer,
+                state,
+                submittedAt,
+                submittedTimestamp,
+                proxyReviewId,
+            });
+        }
+    }
+    return [...latestByReviewer.values()].sort((left, right) =>
+        left.submittedTimestamp - right.submittedTimestamp || left.id - right.id
+    );
+}
+
+/** 기존 단일 selector 호환: reviewer별 결정을 모은 뒤 전체 최신을 반환한다. */
+export function selectLatestActiveHumanDecisiveReview(reviews) {
+    return selectLatestActiveDecisiveReviewsByReviewer(reviews).at(-1) ?? null;
+}
+
 /**
  * PR 전체의 최신 변경요청을 낸 뒤 현재 다시 요청받은 리뷰어만 고른다.
  * GitHub는 리뷰 제출 시 그 사람의 요청을 제거하므로, 같은 리뷰어가 현재 요청 목록에
@@ -360,6 +444,12 @@ export async function paginateRest(client, apiPath) {
     return items;
 }
 
+async function cachedPaginateRest(client, cache, key, apiPath) {
+    if (!cache) return paginateRest(client, apiPath);
+    if (!cache.has(key)) cache.set(key, paginateRest(client, apiPath));
+    return cache.get(key);
+}
+
 function truncate(value, limit = 2_000) {
     const text = String(value ?? "");
     return text.length <= limit ? text : `${text.slice(0, limit)}...[truncated]`;
@@ -416,17 +506,26 @@ export function createGitHubClient({
     };
 }
 
-export async function findOldestReviewDebt(client, repository, currentPullRequest, reviewer) {
+export async function findOldestReviewDebt(
+    client,
+    repository,
+    currentPullRequest,
+    reviewer,
+    providedOpenPullRequests,
+    reviewCache,
+) {
     validateRepository(repository);
-    const openPullRequests = await paginateRest(
+    const openPullRequests = providedOpenPullRequests ?? await paginateRest(
         client,
         `/repos/${repository}/pulls?state=open&sort=created&direction=asc&per_page=${PAGE_SIZE}`,
     );
     const candidates = selectOlderPullRequests(openPullRequests, currentPullRequest, reviewer);
 
     for (const pullRequest of candidates) {
-        const reviews = await paginateRest(
+        const reviews = await cachedPaginateRest(
             client,
+            reviewCache,
+            pullRequest.number,
             `/repos/${repository}/pulls/${pullRequest.number}/reviews?per_page=${PAGE_SIZE}`,
         );
         const reviewState = analyzeDecisiveReviews(reviews);
@@ -469,79 +568,391 @@ function oneLineTitle(title) {
 export function renderDismissalMessage(oldestPullRequest) {
     const number = requiredInteger(oldestPullRequest?.number, "oldest pull_request.number");
     const title = oneLineTitle(oldestPullRequest?.title);
-    return `오래된 PR부터 리뷰해야 합니다. 가장 오래된 미처리 PR #${number} (${title})을 먼저 리뷰해 주세요. 이 리뷰는 순서 위반으로 자동 취소되었습니다.`;
+    return `${POLICY_DISMISSAL_PREFIX}${number} (${title})${POLICY_DISMISSAL_SUFFIX}`;
 }
 
-/**
- * 조회가 하나라도 실패하면 예외가 그대로 전파되고 PUT 은 호출되지 않는다.
- * oldestDebt 를 확정한 뒤에만 dismiss API 를 한 번 호출한다.
- */
-export async function enforceOldestReviewOrder({
-    event,
-    repository,
+export function parsePolicyDismissalMessage(message) {
+    const value = requiredString(message, "dismissal_message");
+    if (!value.startsWith(POLICY_DISMISSAL_PREFIX) || !value.endsWith(POLICY_DISMISSAL_SUFFIX)) {
+        throw new Error("oldest-review-order의 정확한 dismissal message가 아닙니다.");
+    }
+    const middle = value.slice(POLICY_DISMISSAL_PREFIX.length, -POLICY_DISMISSAL_SUFFIX.length);
+    const match = middle.match(/^([1-9]\d*) \(([^\r\n]+)\)$/);
+    if (!match || renderDismissalMessage({ number: Number(match[1]), title: match[2] }) !== value) {
+        throw new Error("oldest-review-order의 정확한 dismissal message가 아닙니다.");
+    }
+    return { number: Number(match[1]), title: match[2] };
+}
+
+function normalizeStatusPullRequest(pullRequest) {
+    const normalized = normalizeOpenPullRequest(pullRequest);
+    const state = requiredString(pullRequest.state, "pull_request.state").toLowerCase();
+    if (state !== "open" && state !== "closed") {
+        throw new Error(`PR #${normalized.number} state가 올바르지 않습니다: ${state}`);
+    }
+    const headSha = requiredString(pullRequest.head?.sha, "pull_request.head.sha");
+    if (!/^[0-9a-f]{40,64}$/i.test(headSha)) {
+        throw new Error(`PR #${normalized.number} head SHA가 올바르지 않습니다.`);
+    }
+    return {
+        ...normalized,
+        state,
+        headSha,
+        headRepository: requiredString(
+            pullRequest.head?.repo?.full_name,
+            "pull_request.head.repo.full_name",
+        ),
+    };
+}
+
+function statusDescription(value) {
+    return Array.from(requiredString(value, "status description").replace(/\s+/g, " "))
+        .slice(0, 140)
+        .join("");
+}
+
+export async function postOrderStatus({ client, repository, sha, state, description, targetUrl }) {
+    if (!new Set(["pending", "success", "failure"]).has(state)) {
+        throw new Error(`지원하지 않는 status state입니다: ${state}`);
+    }
+    const body = { state, context: STATUS_CONTEXT, description: statusDescription(description) };
+    if (targetUrl) body.target_url = targetUrl;
+    const response = await client.request(`/repos/${validateRepository(repository)}/statuses/${sha}`, {
+        method: "POST",
+        body,
+    });
+    if (response?.data?.state !== state || response?.data?.context !== STATUS_CONTEXT) {
+        throw new Error("commit status 응답이 요청과 다릅니다.");
+    }
+    return response.data;
+}
+
+export async function evaluatePullRequestOrder({
     client,
-    dryRun = false,
+    repository,
+    pullRequest,
+    openPullRequests,
+    reviewCache,
+}) {
+    const current = normalizeStatusPullRequest(pullRequest);
+    if (current.state === "closed") {
+        return { state: "success", reason: "닫힌 PR은 리뷰 순서 검사 대상이 아닙니다." };
+    }
+    if (current.draft) {
+        return { state: "success", reason: "draft PR은 리뷰 순서 검사 대상이 아닙니다." };
+    }
+    if (current.headRepository !== repository) {
+        return { state: "success", reason: "fork PR은 리뷰 순서 검사 대상이 아닙니다." };
+    }
+    const reviews = await cachedPaginateRest(
+        client,
+        reviewCache,
+        current.number,
+        `/repos/${repository}/pulls/${current.number}/reviews?per_page=${PAGE_SIZE}`,
+    );
+    const activeReviews = selectLatestActiveDecisiveReviewsByReviewer(reviews);
+    if (activeReviews.length === 0) {
+        return {
+            state: "success",
+            reason: "활성 human 결정 리뷰가 없습니다. 승인 여부는 네이티브 규칙이 확인합니다.",
+        };
+    }
+    const teamReviews = [];
+    const violations = [];
+    for (const activeReview of activeReviews) {
+        const permissionResponse = await client.request(
+            `/repos/${repository}/collaborators/${encodeURIComponent(activeReview.reviewer)}/permission`,
+            { method: "GET" },
+        );
+        if (classifyRepositoryPermission(permissionResponse?.data?.permission) === "non-team") {
+            if (activeReview.proxyReviewId != null) {
+                return {
+                    state: "failure",
+                    reason: `이관 승인 원 작성자 @${activeReview.reviewer}에게 현재 write 권한이 없습니다.`,
+                    invalidProxyReviewId: activeReview.proxyReviewId,
+                };
+            }
+            continue;
+        }
+        teamReviews.push(activeReview);
+        const oldestDebt = await findOldestReviewDebt(
+            client,
+            repository,
+            current,
+            activeReview.reviewer,
+            openPullRequests,
+            reviewCache,
+        );
+        if (oldestDebt) violations.push({ activeReview, oldestDebt });
+    }
+    if (teamReviews.length === 0) {
+        return { state: "success", reason: "활성 결정 리뷰 작성자에게 현재 write 권한이 없습니다." };
+    }
+    if (violations.length === 0) {
+        return { state: "success", reason: "모든 팀 리뷰어에게 더 오래된 미처리 PR이 없습니다." };
+    }
+    violations.sort((left, right) => comparePullRequestsOldestFirst(left.oldestDebt, right.oldestDebt));
+    const { activeReview, oldestDebt } = violations[0];
+    return {
+        state: "failure",
+        reason: `@${activeReview.reviewer}은 먼저 #${oldestDebt.number} (${oneLineTitle(oldestDebt.title)})을 리뷰해야 합니다.`,
+        oldestDebt,
+    };
+}
+
+async function getPullRequest(client, repository, number) {
+    const response = await client.request(`/repos/${repository}/pulls/${requiredInteger(number, "pull number")}`);
+    if (!response?.data || Array.isArray(response.data)) {
+        throw new Error(`PR #${number} 응답이 올바르지 않습니다.`);
+    }
+    return response.data;
+}
+
+/** pending을 먼저 기록하고, 모든 판정 read가 성공한 뒤에만 final status를 쓴다. */
+export async function recalculatePullRequests({
+    client,
+    repository,
+    scope = "all",
+    affectedPullRequestNumber,
+    eventPullRequestNumber,
+    targetUrl,
     logger = console,
 }) {
-    const classification = classifyReviewEvent(event, repository);
-    if (classification.status === "skipped") {
-        logger.log(`건너뜀: ${classification.reason}`);
-        return classification;
-    }
-
-    const context = classification.context;
-    const permissionResponse = await client.request(
-        `/repos/${repository}/collaborators/${encodeURIComponent(context.reviewer)}/permission`,
-        { method: "GET" },
+    const openPullRequests = await paginateRest(
+        client,
+        `/repos/${repository}/pulls?state=open&sort=created&direction=asc&per_page=${PAGE_SIZE}`,
     );
-    const permission = permissionResponse?.data?.permission;
-    if (classifyRepositoryPermission(permission) === "non-team") {
-        const result = { status: "skipped", reason: `쓰기 권한 없는 리뷰어(${permission})` };
-        logger.log(`건너뜀: ${result.reason}`);
-        return result;
+    for (const pullRequest of openPullRequests) normalizeStatusPullRequest(pullRequest);
+    let targets = [...openPullRequests];
+    if (scope === "affected") {
+        const affected = Number(affectedPullRequestNumber);
+        if (!Number.isInteger(affected) || affected < 1) throw new Error("affected PR 번호가 필요합니다.");
+        const current = targets.find((pullRequest) => pullRequest.number === affected) ??
+            await getPullRequest(client, repository, affected);
+        const normalized = normalizeStatusPullRequest(current);
+        targets = targets.filter((pullRequest) =>
+            comparePullRequestsOldestFirst(normalizeStatusPullRequest(pullRequest), normalized) >= 0
+        );
+        if (!targets.some((pullRequest) => pullRequest.number === affected)) targets.push(current);
+    } else if (scope !== "all") {
+        throw new Error(`지원하지 않는 재계산 범위입니다: ${scope}`);
+    }
+    if (eventPullRequestNumber) {
+        const eventNumber = Number(eventPullRequestNumber);
+        if (!targets.some((pullRequest) => pullRequest.number === eventNumber)) {
+            targets.push(await getPullRequest(client, repository, eventNumber));
+        }
+    }
+    targets = [...new Map(targets.map((pullRequest) => [pullRequest.number, pullRequest])).values()]
+        .sort(comparePullRequestsOldestFirst);
+
+    for (const pullRequest of targets) {
+        const current = normalizeStatusPullRequest(pullRequest);
+        await postOrderStatus({
+            client, repository, sha: current.headSha, state: "pending",
+            description: "오래된 PR 리뷰 순서를 재계산하는 중입니다.", targetUrl,
+        });
+    }
+    const decisions = [];
+    const reviewCache = new Map();
+    for (const pullRequest of targets) {
+        decisions.push({
+            pullRequest,
+            decision: await evaluatePullRequestOrder({
+                client, repository, pullRequest, openPullRequests, reviewCache,
+            }),
+        });
+    }
+    for (const { pullRequest } of decisions) {
+        const before = normalizeStatusPullRequest(pullRequest);
+        const after = normalizeStatusPullRequest(await getPullRequest(client, repository, before.number));
+        if (before.headSha !== after.headSha) {
+            await postOrderStatus({
+                client, repository, sha: after.headSha, state: "pending",
+                description: "PR head가 바뀌어 다음 재계산을 기다립니다.", targetUrl,
+            });
+            throw new Error(`PR #${before.number}의 head가 재계산 중 변경됐습니다.`);
+        }
+        if (before.state !== after.state || before.draft !== after.draft ||
+            before.headRepository !== after.headRepository) {
+            throw new Error(`PR #${before.number}의 상태가 재계산 중 변경됐습니다.`);
+        }
+    }
+    const results = [];
+    for (const { pullRequest, decision } of decisions) {
+        const current = normalizeStatusPullRequest(pullRequest);
+        await postOrderStatus({
+            client, repository, sha: current.headSha, state: decision.state,
+            description: decision.reason, targetUrl,
+        });
+        results.push({ number: current.number, headSha: current.headSha, ...decision });
+        logger.log(`#${current.number}: ${decision.state} — ${decision.reason}`);
+    }
+    return { status: "recalculated", scope, results };
+}
+
+export function replayMarker(reviewId) {
+    const id = Number(reviewId);
+    if (!Number.isInteger(id) || id < 1) throw new Error("review_id가 올바르지 않습니다.");
+    return `${REPLAY_MARKER_PREFIX}${id} -->`;
+}
+
+function hasExactMarker(body, marker) {
+    return typeof body === "string" && body.split(/\r?\n/).includes(marker);
+}
+
+/** 과거 정책이 취소한 APPROVED 하나만 provenance 검증 뒤 bot 승인으로 이관한다. */
+export async function replayHistoricalApproval({
+    client,
+    repository,
+    reviewId,
+    pullRequestNumber,
+    logger = console,
+}) {
+    const id = Number(reviewId);
+    const marker = replayMarker(id);
+    const replaySpec = historicalReplaySpec(id);
+    const requestedPullNumber = pullRequestNumber == null ? null : Number(pullRequestNumber);
+    if (requestedPullNumber != null && (!Number.isInteger(requestedPullNumber) || requestedPullNumber < 1)) {
+        throw new Error("pull_number가 올바르지 않습니다.");
+    }
+    if (requestedPullNumber != null && requestedPullNumber !== replaySpec.pullRequestNumber) {
+        throw new Error(`review_id ${id}의 검증된 PR은 #${replaySpec.pullRequestNumber}입니다.`);
+    }
+    const openPullRequests = await paginateRest(
+        client,
+        `/repos/${repository}/pulls?state=open&sort=created&direction=asc&per_page=${PAGE_SIZE}`,
+    );
+    const matches = [];
+    const reviewCache = new Map();
+    for (const pullRequest of openPullRequests) {
+        const current = normalizeStatusPullRequest(pullRequest);
+        const reviews = await cachedPaginateRest(
+            client,
+            reviewCache,
+            current.number,
+            `/repos/${repository}/pulls/${current.number}/reviews?per_page=${PAGE_SIZE}`,
+        );
+        const original = reviews.find((review) => review?.id === id);
+        if (original) matches.push({ pullRequest, reviews, original });
+    }
+    if (matches.length !== 1) {
+        throw new Error(`열린 PR에서 review_id ${id}를 정확히 하나 찾지 못했습니다.`);
+    }
+    const { pullRequest, reviews, original } = matches[0];
+    const current = normalizeStatusPullRequest(pullRequest);
+    if (current.number !== replaySpec.pullRequestNumber) {
+        throw new Error(`review_id ${id}가 allowlist의 PR #${replaySpec.pullRequestNumber}에 속하지 않습니다.`);
+    }
+    if (requestedPullNumber != null && current.number !== requestedPullNumber) {
+        throw new Error(`review_id ${id}가 요청한 PR #${requestedPullNumber}에 속하지 않습니다.`);
+    }
+    if (current.draft || current.headRepository !== repository) {
+        throw new Error("draft 또는 fork PR의 historical approval은 재생하지 않습니다.");
+    }
+    if (normalizeReviewState(original.state) !== "DISMISSED") {
+        throw new Error("원 리뷰의 현재 상태가 DISMISSED가 아닙니다.");
+    }
+    const author = requiredString(original.user?.login, "original review.user.login");
+    if (isBotReviewer(original.user)) throw new Error("원 리뷰 작성자가 human이 아닙니다.");
+    if (author.toLowerCase() !== replaySpec.author.toLowerCase()) {
+        throw new Error(`원 리뷰 작성자 @${author}가 allowlist와 다릅니다.`);
     }
 
-    const oldestDebt = await findOldestReviewDebt(
+    const timeline = await paginateRest(
+        client,
+        `/repos/${repository}/issues/${current.number}/timeline?per_page=${PAGE_SIZE}`,
+    );
+    const dismissals = timeline.filter((event) =>
+        event?.event === "review_dismissed" && String(event.dismissed_review?.review_id) === String(id)
+    );
+    if (dismissals.length !== 1) {
+        throw new Error(`review_id ${id}의 dismissal event를 정확히 하나 찾지 못했습니다.`);
+    }
+    const dismissal = dismissals[0];
+    if (dismissal.id !== replaySpec.dismissalEventId) {
+        throw new Error(`review_id ${id}의 dismissal event가 allowlist와 다릅니다.`);
+    }
+    if (dismissal.actor?.login !== "github-actions[bot]") {
+        throw new Error("dismissal actor가 github-actions[bot]이 아닙니다.");
+    }
+    if (String(dismissal.dismissed_review?.state).toLowerCase() !== "approved") {
+        throw new Error("dismissal 직전 상태가 APPROVED가 아닙니다. CHANGES_REQUESTED는 재생하지 않습니다.");
+    }
+    const provenance = parsePolicyDismissalMessage(dismissal.dismissed_review?.dismissal_message);
+    if (provenance.number !== replaySpec.predecessorPullRequestNumber) {
+        throw new Error(`review_id ${id}의 선행 PR provenance가 allowlist와 다릅니다.`);
+    }
+
+    const originalLink = `https://github.com/${repository}/pull/${current.number}#pullrequestreview-${id}`;
+    const body = [
+        marker,
+        `과거 oldest-review-order 정책이 자동 취소한 @${author}의 [원 승인 리뷰](${originalLink})를 1회 이관했습니다.`,
+        `검증된 당시 선행 PR: #${provenance.number} (${provenance.title})`,
+    ].join("\n\n");
+    const existing = reviews.filter((review) => hasExactMarker(review?.body, marker));
+    if (existing.length > 0) {
+        if (existing.length !== 1 || existing[0].user?.login !== "github-actions[bot]" ||
+            normalizeReviewState(existing[0].state) !== "APPROVED" || existing[0].body !== body) {
+            throw new Error("동일 replay marker가 검증된 bot 승인에 있지 않습니다.");
+        }
+        logger.log(`review_id ${id}는 이미 이관됐습니다.`);
+        return { status: "already-replayed", pullRequestNumber: current.number, marker };
+    }
+
+    const permission = await client.request(
+        `/repos/${repository}/collaborators/${encodeURIComponent(author)}/permission`,
+    );
+    if (classifyRepositoryPermission(permission?.data?.permission) !== "team") {
+        throw new Error(`원 리뷰 작성자 @${author}에게 현재 write 권한이 없습니다.`);
+    }
+    const originalTime = parseTimestamp(original.submitted_at, "original review.submitted_at");
+    const newer = reviews.find((review) => {
+        const state = normalizeReviewState(review?.state);
+        if (!DECISIVE_REVIEW_STATES.has(state) && state !== "DISMISSED") return false;
+        if (review?.id === id || review.user?.login?.toLowerCase() !== author.toLowerCase()) {
+            return false;
+        }
+        const submittedTimestamp = parseTimestamp(review.submitted_at, "newer review.submitted_at");
+        return submittedTimestamp > originalTime ||
+            (submittedTimestamp === originalTime && requiredInteger(review.id, "newer review.id") > id);
+    });
+    if (newer) throw new Error(`@${author}의 더 새로운 결정 리뷰가 있습니다.`);
+
+    const debt = await findOldestReviewDebt(
         client,
         repository,
-        { number: context.number, createdAt: context.createdAt },
-        context.reviewer,
+        current,
+        author,
+        openPullRequests,
+        reviewCache,
     );
-    if (!oldestDebt) {
-        const result = { status: "allowed", reason: "더 오래된 미처리 PR 없음" };
-        logger.log(result.reason);
-        return result;
-    }
+    if (debt) throw new Error(`@${author}의 현재 가장 오래된 리뷰 빚은 #${debt.number}입니다.`);
 
-    const message = renderDismissalMessage(oldestDebt);
-    if (dryRun) {
-        const result = {
-            status: "dry-run",
-            reason: `[dry-run] ${message}`,
-            message,
-            oldestDebt,
-        };
-        logger.log(result.reason);
-        return result;
+    const refreshed = normalizeStatusPullRequest(await getPullRequest(client, repository, current.number));
+    if (refreshed.state !== "open" || refreshed.headSha !== current.headSha) {
+        throw new Error("PR 상태 또는 head가 검증 중 변경됐습니다.");
     }
-    const dismissalResponse = await client.request(
-        `/repos/${repository}/pulls/${context.number}/reviews/${context.reviewId}/dismissals`,
-        { method: "PUT", body: { message, event: "DISMISS" } },
-    );
-    const dismissedState = normalizeReviewState(dismissalResponse?.data?.state);
-    if (dismissedState !== "DISMISSED") {
-        throw new Error(`review dismissal 응답 상태가 DISMISSED가 아닙니다: ${dismissedState}`);
+    const created = await client.request(`/repos/${repository}/pulls/${current.number}/reviews`, {
+        method: "POST",
+        body: { event: "APPROVE", commit_id: current.headSha, body },
+    });
+    if (normalizeReviewState(created?.data?.state) !== "APPROVED" ||
+        created?.data?.user?.login !== "github-actions[bot]" ||
+        !hasExactMarker(created?.data?.body, marker)) {
+        throw new Error("historical approval 생성 응답을 검증하지 못했습니다.");
     }
-    logger.log(message);
-    return { status: "dismissed", message, oldestDebt };
+    logger.log(`review_id ${id}를 PR #${current.number}에 이관했습니다.`);
+    return { status: "replayed", pullRequestNumber: current.number, marker, author, originalLink };
 }
 
 export function renderRunSummary(result) {
-    if (result.status === "dismissed") {
-        return `## 오래된 PR 리뷰 순서\n\n❌ ${result.message}`;
+    if (result.status === "recalculated") {
+        const blocked = result.results.filter((item) => item.state === "failure").length;
+        return `## 오래된 PR 리뷰 순서 재계산\n\n- 대상: ${result.results.length}개\n- 차단: ${blocked}개`;
     }
-    const marker = result.status === "allowed" ? "✅" : "ℹ️";
-    return `## 오래된 PR 리뷰 순서\n\n${marker} ${result.reason}`;
+    const replayed = result.status === "replayed" ? "이관 완료" : "이미 이관됨 — 쓰기 생략";
+    return `## 과거 승인 리뷰 이관\n\n✅ PR #${result.pullRequestNumber}: ${replayed}`;
 }
 
 function escapeWorkflowCommand(value) {
@@ -570,31 +981,58 @@ async function main() {
     } catch (error) {
         throw new Error(`GitHub 이벤트를 읽지 못했습니다: ${error.message}`);
     }
+    if (event.repository?.full_name && event.repository.full_name !== repository) {
+        throw new Error(`이벤트 저장소(${event.repository.full_name})와 실행 저장소(${repository})가 다릅니다.`);
+    }
 
     const client = createGitHubClient({
         token,
         apiUrl: process.env.GITHUB_API_URL ?? "https://api.github.com",
     });
-    const result = await enforceOldestReviewOrder({
-        event,
-        repository,
+    const targetUrl = process.env.GITHUB_RUN_ID
+        ? `${(process.env.GITHUB_SERVER_URL ?? "https://github.com").replace(/\/+$/, "")}/${repository}/actions/runs/${process.env.GITHUB_RUN_ID}`
+        : null;
+    const mode = process.env.MODE ?? "recalculate";
+    if (mode === "replay") {
+        const replay = await replayHistoricalApproval({
+            client,
+            repository,
+            reviewId: process.env.REVIEW_ID,
+            pullRequestNumber: process.env.REPLAY_PULL_NUMBER,
+        });
+        const replaySummary = renderRunSummary(replay);
+        console.log(replaySummary);
+        await appendStepSummary(replaySummary);
+        const recalculated = await recalculatePullRequests({
+            client,
+            repository,
+            scope: "affected",
+            affectedPullRequestNumber: replay.pullRequestNumber,
+            targetUrl,
+        });
+        const recalculationSummary = renderRunSummary(recalculated);
+        console.log(recalculationSummary);
+        await appendStepSummary(recalculationSummary);
+        return;
+    }
+    if (mode !== "recalculate") throw new Error(`지원하지 않는 실행 mode입니다: ${mode}`);
+    const result = await recalculatePullRequests({
         client,
-        dryRun: process.env.DRY_RUN === "true",
+        repository,
+        scope: process.env.RECALCULATE_SCOPE ?? "all",
+        affectedPullRequestNumber: process.env.AFFECTED_PULL_REQUEST,
+        eventPullRequestNumber: event.pull_request?.number,
+        targetUrl,
     });
     const summary = renderRunSummary(result);
     console.log(summary);
     await appendStepSummary(summary);
-
-    if (result.status === "dismissed") {
-        // 리뷰 취소를 성공시킨 뒤 job 도 실패시켜 순서 위반이 Checks 에 선명하게 남게 한다.
-        throw new Error(result.message);
-    }
 }
 
 const invokedPath = process.argv[1] ? pathToFileURL(path.resolve(process.argv[1])).href : "";
 if (import.meta.url === invokedPath) {
     main().catch((error) => {
-        console.error(`::error::${escapeWorkflowCommand(error.message)}`);
+        console.error(`::error::${escapeWorkflowCommand(`재계산 실패 — pending을 유지합니다: ${error.message}`)}`);
         process.exitCode = 1;
     });
 }
