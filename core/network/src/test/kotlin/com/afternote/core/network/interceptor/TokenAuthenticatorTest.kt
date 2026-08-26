@@ -175,6 +175,23 @@ class TokenAuthenticatorTest {
     }
 
     @Test
+    fun `code 파싱 실패한 400 - 세션 정리 후 중단`() {
+        // 본문 파싱이 안 되면 400 이 "세션 유지" 로 떨어져 무효 refresh 가 남았다 (#1126).
+        val repository =
+            FakeAuthRepository(
+                accessToken = "old-token",
+                onRotateToken = { Result.failure(httpFailure(400)) },
+                onClearSession = { Result.success(Unit) },
+            )
+
+        val request = authenticator(repository).authenticate(null, unauthorizedResponse())
+
+        assertNull(request)
+        assertEquals(1, repository.rotateCallCount)
+        assertEquals(1, repository.clearSessionCallCount)
+    }
+
+    @Test
     fun `refresh timeout - 세션 유지하고 현재 요청만 실패`() {
         val failure = SocketTimeoutException("temporary timeout")
         val repository =

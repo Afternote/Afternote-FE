@@ -24,6 +24,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Test
+import retrofit2.HttpException
 import java.net.Proxy
 import java.net.ProxySelector
 import java.util.concurrent.TimeUnit
@@ -31,6 +32,7 @@ import javax.net.SocketFactory
 import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.SSLSocketFactory
 import javax.net.ssl.X509TrustManager
+import retrofit2.Response as RetrofitResponse
 
 /**
  * [AuthInterceptor] 선제 reissue 동작 회귀 가드 (#408).
@@ -38,8 +40,9 @@ import javax.net.ssl.X509TrustManager
  * 가짜 시계·가짜 chain 기반 — 검증 계약:
  * 1. 기록된 deadline 이 없으면 reissue 없이 기존 토큰 부착
  * 2. 만료 임박이면 요청 전 reissue 후 새 토큰 부착
- * 3. 선제 reissue 실패는 best-effort — 기존 토큰으로 진행하고 clearSession 하지 않음
- *    (Fake 의 clearSession 이 error 를 던지므로 호출 자체가 테스트 실패로 드러난다)
+ * 3. 선제 reissue 의 **일시** 실패는 best-effort — 기존 토큰으로 진행하고 clearSession 하지 않음
+ *    (Fake 의 clearSession 이 error 를 던지므로 호출 자체가 테스트 실패로 드러난다).
+ *    refresh 가 거절당한 확정 실패는 예외다 — 락 안에서 세션 정리까지 끝난다 (#1126)
  * 4. 토큰 부재 시 미부착 + stale deadline 폐기
  *
  * `expiresIn` 수신은 발급 응답(로그인·reissue)에서 처리되므로(#410) 더 이상 인터셉터가 응답을
@@ -104,6 +107,28 @@ class AuthInterceptorTest {
         assertEquals("Bearer stored-token", chain.sentRequest?.header("Authorization"))
         // 만료 deadline 잔존 시 매 요청 reissue 폭주 — clear 됐어야 한다
         assertFalse(tracker.isExpiringSoon())
+    }
+
+    @Test
+    fun `선제 reissue 가 refresh 거절 - 락 안에서 세션 정리까지 끝난다`() {
+        tracker.record(expiresInSeconds = 30)
+        val repository =
+            FakeAuthRepository(
+                accessToken = "stored-token",
+                onRotateToken = {
+                    Result.failure(HttpException(RetrofitResponse.error<Unit>(400, "".toResponseBody())))
+                },
+                onClearSession = { Result.success(Unit) },
+            )
+        val chain = RecordingChain()
+
+        interceptor(repository).intercept(chain)
+
+        // 되돌릴 수 없는 실패라 어느 경로가 먼저 만나든 결론이 같다 — 정리를 미루면
+        // 그 창으로 중복 재발급이 빠져나간다 (#1126).
+        assertEquals(1, repository.clearSessionCallCount)
+        // 이 요청은 그대로 나가고(서버가 거부한다), 저장소가 비었으므로 다음 요청은 미부착 분기로 간다.
+        assertEquals("Bearer stored-token", chain.sentRequest?.header("Authorization"))
     }
 
     @Test
