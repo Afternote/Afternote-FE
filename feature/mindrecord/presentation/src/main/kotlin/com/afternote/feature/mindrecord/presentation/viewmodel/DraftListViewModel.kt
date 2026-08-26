@@ -2,11 +2,14 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
+import com.afternote.feature.mindrecord.presentation.reporting.MindRecordFailureStage
+import com.afternote.feature.mindrecord.presentation.reporting.recordMindRecordFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -32,6 +35,7 @@ class DraftListViewModel
         private val loader: MindRecordDraftLoader,
         private val diaryRepository: DiaryRepository,
         private val dailyQuestionRepository: DailyQuestionRepository,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<DraftListUiState>(DraftListUiState.Loading)
         val uiState: StateFlow<DraftListUiState> = _uiState.asStateFlow()
@@ -74,7 +78,17 @@ class DraftListViewModel
                             .map { item -> async { item to deleteOne(item) } }
                             .awaitAll()
                     }
-                val failed = results.filter { (_, result) -> result.isFailure }.map { (item, _) -> item }
+                // 되돌릴 수 없는 동작이고, 부분 실패는 목록과 서버 상태를 어긋나게 둔다 —
+                // 화면은 사용자에게 알리지만 콘솔에는 아무 흔적도 남지 않았다 (#964).
+                // 계측과 «실패 목록» 을 한 순회에 둔다 — 갈라 두면 나중에 한쪽만 고친다.
+                val failed =
+                    results
+                        .onEach { (_, result) ->
+                            result.exceptionOrNull()?.let { throwable ->
+                                errorReporter.recordMindRecordFailure(MindRecordFailureStage.DRAFT_DELETE, throwable)
+                            }
+                        }.filter { (_, result) -> result.isFailure }
+                        .map { (item, _) -> item }
 
                 val refreshed = collectDrafts()
                 _uiState.value =
@@ -143,7 +157,11 @@ class DraftListViewModel
         private suspend fun collectDrafts(): List<DraftItem>? =
             loader
                 .load()
-                .map { drafts ->
+                // 사용자가 «쓰다 만 글» 을 찾으러 들어오는 화면이라, 실패하면 작성물이 사라진
+                // 것처럼 보인다 — #519 가 실제로 그 형태의 결함이었다 (#964).
+                .onFailure { throwable ->
+                    errorReporter.recordMindRecordFailure(MindRecordFailureStage.DRAFT_LIST_LOAD, throwable)
+                }.map { drafts ->
                     val diaryItems =
                         // 날짜를 못 정한 항목은 toUi() 가 null 을 돌린다 — 정렬 키가 없어 뺀다.
                         drafts.diaries.mapNotNull { diary ->

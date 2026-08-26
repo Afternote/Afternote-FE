@@ -26,7 +26,7 @@ class LoginUseCase
     ) {
         /**
          * 로그인 후 세션을 저장한다. 반환 [Boolean] 은 "온보딩이 필요한 소셜 신규 가입자"인지 —
-         * 소셜 로그인 `newUser == true` 만 `true`, 이메일·기존 유저는 `false` (`newUser` 가 null 이어도 false).
+         * 소셜 로그인의 `isNewUser` 를 그대로 쓰고, 이메일 로그인은 신규 여부 개념이 없어 `false`.
          */
         suspend operator fun invoke(loginType: LoginType): Result<Boolean> {
             val sessionResult: Result<Session> =
@@ -57,8 +57,8 @@ class LoginUseCase
                     accessToken = session.accessToken,
                     refreshToken = session.refreshToken,
                 ).map {
-                    // 소셜 로그인이고 서버가 newUser=true 를 준 경우만 신규. 이메일(cast→null)·false·null 은 `== true` 로 모두 false.
-                    (session as? Session.SocialSession)?.isNewUser == true
+                    // 소셜 세션은 서버가 준 값을 그대로 신뢰한다(non-null). 이메일 로그인은 cast 가 null 이라 false.
+                    (session as? Session.SocialSession)?.isNewUser ?: false
                 }
         }
     }

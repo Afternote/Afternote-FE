@@ -34,7 +34,7 @@ fun OnboardingProfileEntry(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
-    val nameRequiredMessage = stringResource(R.string.signup_name_required)
+    val nameRequiredMessage = stringResource(R.string.onboarding_signup_name_required)
 
     val showSnackbar: (String) -> Unit = { message ->
         coroutineScope.launch {

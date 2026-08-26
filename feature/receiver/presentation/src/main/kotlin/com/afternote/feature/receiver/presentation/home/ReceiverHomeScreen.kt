@@ -28,6 +28,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
+import com.afternote.core.ui.icon.AfternoteSourceIcon
 import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -38,12 +39,10 @@ import com.afternote.feature.receiver.presentation.home.component.AfternoteSecti
 import com.afternote.feature.receiver.presentation.home.component.MindRecordSection
 import com.afternote.feature.receiver.presentation.home.component.SenderMessageHeroCard
 import com.afternote.feature.receiver.presentation.home.component.TimeLetterSection
-import com.afternote.feature.receiver.presentation.home.model.AfternoteSourceIcon
 import com.afternote.feature.receiver.presentation.home.model.MindRecordSummary
 import com.afternote.feature.receiver.presentation.home.model.ReceiverDownloadState
 import com.afternote.feature.receiver.presentation.home.model.ReceiverHomeUiState
 import com.afternote.feature.receiver.presentation.home.model.SenderMessage
-import com.afternote.feature.afternote.presentation.R as AfternoteFeatureR
 
 /**
  * 수신자 홈 화면 — 한 마디 + 마음의 기록·타임레터·애프터노트 카드 + 모든 기록 내려받기 버튼.
@@ -236,10 +235,10 @@ private fun ReceiverHomeScreenPreview() {
                     afternoteTotalCount = 10,
                     afternoteIcons =
                         listOf(
-                            AfternoteSourceIcon(AfternoteFeatureR.drawable.feature_afternote_img_insta_pattern),
-                            AfternoteSourceIcon(AfternoteFeatureR.drawable.feature_afternote_img_googlephoto_pattern),
-                            AfternoteSourceIcon(AfternoteFeatureR.drawable.feature_afternote_img_naver_mail_pattern),
-                            AfternoteSourceIcon(AfternoteFeatureR.drawable.feature_afternote_img_kakaotalk_pattern),
+                            AfternoteSourceIcon.SocialNetwork,
+                            AfternoteSourceIcon.GalleryAndFiles,
+                            AfternoteSourceIcon.Memorial,
+                            AfternoteSourceIcon.Other,
                         ),
                 ),
             onEvent = {},

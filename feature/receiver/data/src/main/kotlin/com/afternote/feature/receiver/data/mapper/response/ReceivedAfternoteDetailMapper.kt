@@ -1,6 +1,6 @@
 package com.afternote.feature.receiver.data.mapper.response
 
-import com.afternote.feature.afternote.data.mapper.categoryToAfternoteType
+import com.afternote.feature.afternote.data.mapper.afternoteTypeFromServerCategory
 import com.afternote.feature.afternote.data.mapper.formatDateFromServer
 import com.afternote.feature.afternote.data.mapper.toLeaveMessageBlocks
 import com.afternote.feature.receiver.data.dto.ReceivedAfternoteDetailDto
@@ -17,7 +17,10 @@ fun ReceivedAfternoteDetailDto.toDomain(): ReceivedAfternoteDetail =
         serviceName = serviceName,
         senderName = senderName,
         createdAt = createdAt?.let(::formatDateFromServer),
-        type = categoryToAfternoteType(category),
+        type =
+            requireNotNull(category?.let(::afternoteTypeFromServerCategory)) {
+                "해석할 수 없는 애프터노트 종류다: id=$id category=$category"
+            },
         processingMethods = processingMethods,
         leaveMessageBlocks = leaveMessage.toLeaveMessageBlocks(),
         playlist = playlist?.toDomain(),

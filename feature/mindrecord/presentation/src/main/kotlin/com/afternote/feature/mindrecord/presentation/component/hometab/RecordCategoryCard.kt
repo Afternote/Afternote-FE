@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.modifierextention.shimmerLoadingPlaceholder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_home_category_count_unavailable
 import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_total_label
 import java.text.NumberFormat
 import java.util.Locale
@@ -44,7 +45,11 @@ fun RecordCategoryCard(
     iconResId: Int,
     title: String,
     subtitle: String,
-    totalCount: Int,
+    /**
+     * 이 카테고리의 총 기록 수. **null 은 «아직 모름»** — 0 으로 접으면 조회 실패나 미연결이
+     * «기록 없음» 으로 확정된다. 수신자 홈(#952)·주간 요약(#562)과 같은 규칙이다 (#700).
+     */
+    totalCount: Int?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     // TODO: Vector Asset(xml)의 viewport 여백을 맞추면 이 플래그를 제거할 수 있습니다.
@@ -53,7 +58,7 @@ fun RecordCategoryCard(
 ) {
     val formattedCount =
         remember(totalCount) {
-            NumberFormat.getNumberInstance(Locale.getDefault()).format(totalCount)
+            totalCount?.let { NumberFormat.getNumberInstance(Locale.getDefault()).format(it) }
         }
 
     Column(
@@ -141,7 +146,7 @@ fun RecordCategoryCard(
                 )
             } else {
                 Text(
-                    text = formattedCount,
+                    text = formattedCount ?: stringResource(mindrecord_home_category_count_unavailable),
                     style = AfternoteDesign.typography.h3,
                     color = AfternoteDesign.colors.gray9,
                 )

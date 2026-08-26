@@ -75,16 +75,19 @@ fun AfternoteTypeFilterRow(
         }
     }
 
-    Box(
+    Row(
         modifier =
             modifier
                 .fillMaxWidth()
                 .bottomBorder(color = AfternoteDesign.colors.gray2, width = 1.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
             modifier =
                 Modifier
-                    .fillMaxWidth()
+                    // 화살표가 쓰는 폭을 뺀 나머지가 탭의 가용 폭이다. fillMaxWidth 로 두면
+                    // 화살표가 탭 위에 겹쳐 마지막 탭의 글자를 가린다.
+                    .weight(1f)
                     .then(
                         if (needsHorizontalFade) {
                             Modifier.horizontalFadingEdge(
@@ -112,8 +115,8 @@ fun AfternoteTypeFilterRow(
                 contentDescription = "더 보기",
                 modifier =
                     Modifier
+                        .padding(start = 8.dp)
                         .size(16.dp)
-                        .align(Alignment.CenterEnd)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,

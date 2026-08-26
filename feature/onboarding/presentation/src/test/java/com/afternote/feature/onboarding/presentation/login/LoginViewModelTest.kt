@@ -150,7 +150,7 @@ class LoginViewModelTest {
 
         viewModel.attemptEmailLogin()
 
-        assertEquals(UiText.Resource(R.string.login_social_rejected), viewModel.uiState.value.errorMessage)
+        assertEquals(UiText.Resource(R.string.onboarding_login_social_rejected), viewModel.uiState.value.errorMessage)
     }
 
     @Test
@@ -161,7 +161,7 @@ class LoginViewModelTest {
         viewModel.attemptEmailLogin()
 
         val state = viewModel.uiState.value
-        assertEquals(UiText.Resource(R.string.login_failed), state.errorMessage)
+        assertEquals(UiText.Resource(R.string.onboarding_login_failed), state.errorMessage)
         assertFalse(state.isLoading)
     }
 
@@ -171,7 +171,7 @@ class LoginViewModelTest {
 
         viewModel.attemptEmailLogin()
 
-        assertEquals(UiText.Resource(R.string.login_failed), viewModel.uiState.value.errorMessage)
+        assertEquals(UiText.Resource(R.string.onboarding_login_failed), viewModel.uiState.value.errorMessage)
     }
 
     @Test
