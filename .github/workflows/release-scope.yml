@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone release candidate
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha || 'develop' }}
           fetch-depth: 0
@@ -53,7 +53,7 @@ jobs:
             "$RELEASE_SCOPE_PATH"
 
       - name: Fill release sections on the PR body
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           RELEASE_SCOPE_PATH: ${{ runner.temp }}/afternote-release-scope/scope.json
           RELEASE_PR_NUMBER: ${{ github.event.pull_request.number || inputs.pull_request_number }}

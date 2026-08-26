@@ -20,7 +20,7 @@ data class ReceivedExportBundle(
 )
 
 data class ReceivedAfternoteDetail(
-    val title: String? = null,
+    val title: String,
     val senderName: String? = null,
     val createdAt: String? = null,
     val category: String? = null,

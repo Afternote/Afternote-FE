@@ -261,7 +261,7 @@ private fun ErrorBox(
             // 종전에는 콜백을 받아 두고 쓰지 않아, 화면에 재시도 수단이 없었다 (#614).
             TextButton(onClick = onRetry) {
                 Text(
-                    text = stringResource(R.string.mindrecord_receiver_retry),
+                    text = stringResource(R.string.mindrecord_error_retry),
                     style = AfternoteDesign.typography.bodySmallB,
                     color = AfternoteDesign.colors.gray9,
                 )

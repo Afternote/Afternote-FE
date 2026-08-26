@@ -1,10 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
-import android.net.Uri
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,7 +29,10 @@ import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialMediaSourceSheet
+import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialMediaTarget
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
+import com.afternote.feature.afternote.presentation.author.editor.memorial.rememberMemorialMediaSourceState
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.CategoryForm
@@ -70,6 +69,7 @@ fun AfternoteEditorScreen(
     onNavigateToSelectReceiver: () -> Unit,
     onThumbnailBytesReady: (ByteArray?) -> Unit,
     onThumbnailExtractionFailed: (Throwable) -> Unit,
+    onCaptureFailed: (Throwable) -> Unit,
     onThumbnailUploadErrorConsumed: () -> Unit,
     onValidationErrorConsumed: () -> Unit,
     modifier: Modifier = Modifier,
@@ -154,14 +154,14 @@ fun AfternoteEditorScreen(
         state.setMemorialPlaylistSongs(liveSongs)
     }
 
-    val memorialPhotoPickerLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
-            state.setMemorialPhoto(uri?.toString())
-        }
-    val memorialVideoPickerLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
-            state.setMemorialVideo(uri?.toString())
-        }
+    // 슬롯을 누르면 곧장 갤러리가 뜨는 대신 "갤러리에서 선택 / 촬영" 시트를 한 단계 끼운다 (#369).
+    val mediaSourceState =
+        rememberMemorialMediaSourceState(
+            snackbarHostState = snackbarHostState,
+            onPhotoSelected = state.setMemorialPhoto,
+            onVideoSelected = state.setMemorialVideo,
+            onCaptureFailed = onCaptureFailed,
+        )
 
     // 작성 도중 이탈 가드: 진입 시점 스냅샷 대비 변경이 있으면 뒤로가기 시 이탈 확인 팝업을 띄운다.
     // 입력이 debounce 로 휘발성 폼 상태에만 반영되어 pop 시 소실되기 때문. '내용 존재'가 아니라 '변경' 기준인
@@ -231,21 +231,15 @@ fun AfternoteEditorScreen(
                 isPrefillLoading = isPrefillLoading,
                 onNavigateToMemorialPlaylist = onNavigateToMemorialPlaylist,
                 onNavigateToSelectReceiver = onNavigateToSelectReceiver,
-                onPhotoAddClick = {
-                    memorialPhotoPickerLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
-                    )
-                },
-                onVideoAddClick = {
-                    memorialVideoPickerLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly),
-                    )
-                },
+                onPhotoAddClick = { mediaSourceState.open(MemorialMediaTarget.PHOTO) },
+                onVideoAddClick = { mediaSourceState.open(MemorialMediaTarget.VIDEO) },
                 onThumbnailBytesReady = onThumbnailBytesReady,
                 onThumbnailExtractionFailed = onThumbnailExtractionFailed,
             )
 
             AfternoteEditorDialogs(state = state)
+
+            MemorialMediaSourceSheet(state = mediaSourceState)
 
             if (showExitConfirm) {
                 Popup(
