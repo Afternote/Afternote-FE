@@ -115,7 +115,7 @@ class DailyQuestionWriteViewModelTest {
             )
 
         viewModel.onAnswerChanged("사용자가 방금 입력한 답변")
-        runBlocking { viewModel.uploadImage("content://just-picked") }
+        runBlocking { viewModel.uploadMedia("content://just-picked") }
         viewModel.submit()
 
         // 업로드 URL 은 에디터가 본문에 <img> 로 넣는다 — payload 필드로는 나가지 않는다 (#549).
@@ -139,7 +139,7 @@ class DailyQuestionWriteViewModelTest {
                 noopDraftLoader(),
             )
 
-        val url = runBlocking { viewModel.uploadImage("content://picked") }
+        val url = runBlocking { viewModel.uploadMedia("content://picked") }
 
         assertEquals("https://cdn/picked.jpg", url)
     }
@@ -231,7 +231,7 @@ class DailyQuestionWriteViewModelTest {
                 noopDraftLoader(),
             )
 
-        val previewUrl = runBlocking { viewModel.uploadImage("content://picked") }
+        val previewUrl = runBlocking { viewModel.uploadMedia("content://picked") }
         viewModel.onAnswerChanged("<p>본문</p><img src=\"$previewUrl\" />")
         viewModel.submit()
 
