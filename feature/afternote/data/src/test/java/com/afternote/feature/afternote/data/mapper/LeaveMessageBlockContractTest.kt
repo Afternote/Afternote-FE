@@ -31,12 +31,14 @@ class LeaveMessageBlockContractTest {
     /**
      * 본문은 실서버 응답 전문 그대로다 (`GET /afternotes/29`, 2026-08-07 실측).
      * 제목을 비워 보낸 블록이 `title: null` 로 돌아온다는 점이 이 케이스의 요지다.
+     *
+     * `isDraft` 는 캡처 이후 서버가 추가한 필드라 여기서만 보강했다.
      */
     @Test
     fun `작성자 상세 - leaveMessage 배열을 파싱해 블록으로 옮긴다`() {
         val response =
             """
-            {"afternoteId":29,"category":"SOCIAL","title":"509검증-배열","actions":["게시물 내리기"],
+            {"afternoteId":29,"category":"SOCIAL","title":"509검증-배열","isDraft":false,"actions":["게시물 내리기"],
              "leaveMessage":[{"title":"가족에게","body":"잘 부탁해"},{"title":null,"body":"제목 없는 블록"}],
              "credentials":{"id":"qa","password":"qa"},
              "receivers":[{"receiverId":7,"name":"QA407Receiver","relation":"DAUGHTER"}],
@@ -60,7 +62,7 @@ class LeaveMessageBlockContractTest {
         val detail =
             json
                 .decodeFromString<AfternoteDetailDto>(
-                    """{"afternoteId":11,"category":"SOCIAL","title":"t","leaveMessage":[{"title":"","body":"재현용 남기실 말씀"}]}""",
+                    """{"afternoteId":11,"category":"SOCIAL","title":"t","isDraft":false,"receivers":[],"credentials":{"id":"qa","password":"qa"},"leaveMessage":[{"title":"","body":"재현용 남기실 말씀"}]}""",
                 ).toDomain()
 
         assertEquals(
@@ -74,7 +76,7 @@ class LeaveMessageBlockContractTest {
         val detail =
             json
                 .decodeFromString<AfternoteDetailDto>(
-                    """{"afternoteId":1,"category":"SOCIAL","title":"t","leaveMessage":null}""",
+                    """{"afternoteId":1,"category":"SOCIAL","title":"t","isDraft":false,"receivers":[],"credentials":{"id":"qa","password":"qa"},"leaveMessage":null}""",
                 ).toDomain()
 
         assertTrue(detail.leaveMessageBlocks.isEmpty())
@@ -137,6 +139,8 @@ class LeaveMessageBlockContractTest {
 
         val encoded = json.encodeToString(AfternoteCreateAccountRequestDto.serializer(), request)
 
+        assertTrue(encoded.contains("\"category\":\"SOCIAL\""))
+        assertTrue(!encoded.contains("\"type\""))
         assertTrue(encoded.contains(""""leaveMessage":[{"title":"가족에게","body":"잘 부탁해"}]"""))
     }
 

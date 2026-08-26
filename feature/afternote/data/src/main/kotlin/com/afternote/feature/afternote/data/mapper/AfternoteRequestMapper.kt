@@ -9,6 +9,7 @@ import com.afternote.feature.afternote.data.dto.AfternotePlaylistDto
 import com.afternote.feature.afternote.data.dto.AfternoteReceiverRefDto
 import com.afternote.feature.afternote.data.dto.AfternoteSongDto
 import com.afternote.feature.afternote.data.dto.AfternoteUpdateRequestDto
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.AfternoteAccountCredentials
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
@@ -25,7 +26,7 @@ import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
 
 fun AfternoteUpdatePayload.toRequest() =
     AfternoteUpdateRequestDto(
-        category = category,
+        category = type.toAuthoringServerCategory(),
         title = title,
         processingMethods = processingMethods,
         leaveMessage = leaveMessageBlocks.toDto(),
@@ -33,6 +34,16 @@ fun AfternoteUpdatePayload.toRequest() =
         receivers = receivers?.map { it.toDto() },
         memorial = memorial?.toDto(),
     )
+
+/** 문자열 변환은 data 경계에서 끝낸다 — 화면·domain 은 [AfternoteType] 만 다룬다. */
+private fun AfternoteType.toAuthoringServerCategory(): String =
+    when (this) {
+        AfternoteType.SOCIAL_NETWORK -> "SOCIAL"
+        AfternoteType.BUSINESS -> "BUSINESS"
+        AfternoteType.GALLERY_AND_FILES -> "GALLERY"
+        AfternoteType.MEMORIAL -> "PLAYLIST"
+        AfternoteType.ESTATE -> error("Unsupported authoring type: $this")
+    }
 
 fun CreateAccountPayload.toSocialRequest() =
     AfternoteCreateAccountRequestDto(
@@ -44,7 +55,6 @@ fun CreateAccountPayload.toSocialRequest() =
         receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
     )
 
-/** BUSINESS 생성 요청. [toSocialRequest] 와 동일 필드 조립이며 category 만 "BUSINESS" 로 실린다. */
 fun CreateAccountPayload.toBusinessRequest() =
     AfternoteCreateAccountRequestDto(
         category = "BUSINESS",

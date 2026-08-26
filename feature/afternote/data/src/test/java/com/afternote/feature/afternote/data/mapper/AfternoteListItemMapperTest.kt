@@ -23,6 +23,7 @@ class AfternoteListItemMapperTest {
                     title = "은행 계정",
                     category = "SOCIAL",
                     createdAt = "2025-11-26T14:30:00",
+                    isDraft = false,
                 ),
             ).toDomainList().single()
 
@@ -85,10 +86,12 @@ class AfternoteListItemMapperTest {
         title: String = "t",
         category: String = "SOCIAL",
         createdAt: String = "2025-01-01T00:00:00",
+        isDraft: Boolean = false,
     ) = AfternoteListItemDto(
         afternoteId = afternoteId,
         title = title,
         category = category,
         createdAt = createdAt,
+        isDraft = isDraft,
     )
 }
