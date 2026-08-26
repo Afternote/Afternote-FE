@@ -3,9 +3,11 @@ package com.afternote.feature.mindrecord.presentation.screen.memoryspace
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.COMPACT_DEVICE_SPEC
+import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryItem
 import com.android.tools.screenshot.PreviewTest
 
@@ -14,6 +16,10 @@ import com.android.tools.screenshot.PreviewTest
  *
  * 상태 셋(기록 있음·0건·조회 실패)을 기본 크기와 좁은 화면([COMPACT_DEVICE_SPEC]) 양쪽에서
  * 고정한다. 0건과 실패는 문구뿐 아니라 **재시도 버튼 유무**로 갈리므로 따로 둔다.
+ *
+ * 문구는 하드코딩하지 않고 리소스에서 읽는다 — 잡으려는 것이 «세로가 모자라 잘리는가» 인데
+ * 문구가 다르면 줄바꿈과 세로 점유가 달라져 감시 대상 자체가 어긋난다. 리소스를 부르면
+ * 문구가 바뀔 때 baseline 이 빨개져 «갱신하라» 고 알려 준다 (#1131 리뷰).
  */
 @PreviewTest
 @Preview(showBackground = true, backgroundColor = 0xFFF5F5F5)
@@ -50,7 +56,7 @@ internal fun memorySpaceScreenEmptyScreenshot() {
             onBackClick = {},
             modifier = Modifier.fillMaxSize(),
             memories = emptyList(),
-            statusText = "아직 담긴 기록이 없어요.\n일기나 데일리 질문에 답하면 이곳에 쌓입니다.",
+            statusText = stringResource(R.string.mindrecord_memory_space_empty),
         )
     }
 }
@@ -64,7 +70,7 @@ internal fun memorySpaceScreenEmptyCompactScreenshot() {
             onBackClick = {},
             modifier = Modifier.fillMaxSize(),
             memories = emptyList(),
-            statusText = "아직 담긴 기록이 없어요.\n일기나 데일리 질문에 답하면 이곳에 쌓입니다.",
+            statusText = stringResource(R.string.mindrecord_memory_space_empty),
         )
     }
 }
@@ -79,7 +85,7 @@ internal fun memorySpaceScreenErrorScreenshot() {
             onBackClick = {},
             modifier = Modifier.fillMaxSize(),
             memories = emptyList(),
-            statusText = "기록을 불러오지 못했습니다.",
+            statusText = stringResource(R.string.mindrecord_error_memory_space_failed),
             onRetryClick = {},
         )
     }
@@ -94,7 +100,7 @@ internal fun memorySpaceScreenErrorCompactScreenshot() {
             onBackClick = {},
             modifier = Modifier.fillMaxSize(),
             memories = emptyList(),
-            statusText = "기록을 불러오지 못했습니다.",
+            statusText = stringResource(R.string.mindrecord_error_memory_space_failed),
             onRetryClick = {},
         )
     }
