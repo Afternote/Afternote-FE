@@ -195,6 +195,8 @@ class DailyQuestionWriteViewModel
          * 키 형태로 바꾼다 ([toWireContent]). 미리보기는 전체 URL 이라야 뜬다.
          */
         suspend fun uploadMedia(uriString: String): String? {
+            // 실패 문구의 수명은 «다음 업로드 시작까지» 다 — 화면에 걷는 수단이 따로 없고,
+            // 걷는 함수만 두면 호출부 0건인 죽은 코드가 된다 (#1019 리뷰 지적).
             _uiState.update { it.copy(isUploadingImage = true, imageUploadError = null) }
             return photoUploadRepository
                 .upload(uriString = uriString, directory = MIND_RECORD_UPLOAD_DIRECTORY)
@@ -212,10 +214,6 @@ class DailyQuestionWriteViewModel
                         )
                     }
                 }.getOrNull()
-        }
-
-        fun consumeImageUploadError() {
-            _uiState.update { it.copy(imageUploadError = null) }
         }
 
         /**
