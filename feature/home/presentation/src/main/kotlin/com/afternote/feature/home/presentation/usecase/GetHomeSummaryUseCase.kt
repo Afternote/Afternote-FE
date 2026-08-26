@@ -8,6 +8,7 @@ import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.domain.usecase.GetWeeklyRecordCountUseCase
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withTimeoutOrNull
 import java.time.YearMonth
 import javax.inject.Inject
 
@@ -36,13 +37,25 @@ class GetHomeSummaryUseCase
                     val profileDeferred = async { userRepository.getMyProfile() }
                     val receiversDeferred = async { userRepository.getReceivers() }
                     val todayQuestionDeferred = async { dailyQuestionRepository.getToday() }
-                    val weeklyCountDeferred = async { getWeeklyRecordCount() }
+                    // 예산을 **async 안에서** 건다. 밖에서 걸면 `await()` 만 끊기고 이 async 는
+                    // 여전히 coroutineScope 의 자식이라, scope 가 그 자식을 끝까지 기다린다 —
+                    // 타임아웃을 걸고도 60초를 그대로 서 있게 된다(가드 테스트가 잡았다).
+                    val weeklyCountDeferred =
+                        async { withTimeoutOrNull(WEEKLY_COUNT_BUDGET_MILLIS) { getWeeklyRecordCount() } }
 
                     val profile = profileDeferred.await()
                     val receivers = receiversDeferred.await()
                     val todayQuestionContent = todayQuestionDeferred.await().getOrNull()?.content
                     // 실패를 0 으로 접지 않는다 — «기록이 없음» 과 «못 불러옴» 은 다르다 (#562).
-                    val weeklyRecordCount = weeklyCountDeferred.await().getOrNull()
+                    //
+                    // **주간 수는 홈 전체를 붙잡지 못하게 한다.** 이 값만 `/mind-record` 에서
+                    // 오는데 그 엔드포인트가 병적으로 느려(#1122), 읽기 타임아웃 60초를 그대로
+                    // 기다리면 이름·오늘의 질문·NEXT STEP 이 250ms 에 도착해 있어도 홈 전체가
+                    // 그 동안 shimmer 로 남는다. 실기동 실측: 60,179ms 뒤 SocketTimeout.
+                    //
+                    // 예산을 넘기면 «못 불러옴»(null) 과 같이 다룬다 — 그리드가 이미 그 상태를
+                    // 그리므로 새 상태가 늘지 않고, 홈은 나머지 응답 속도로 뜬다.
+                    val weeklyRecordCount = weeklyCountDeferred.await()?.getOrNull()
 
                     HomeSummary(
                         userName = profile.name,
@@ -53,3 +66,9 @@ class GetHomeSummaryUseCase
                 }
             }
     }
+
+/**
+ * 주간 기록 수를 기다려 줄 예산. 홈의 나머지 조회는 실측 250ms 안팎이라 그보다 넉넉하되,
+ * 사용자가 «멈췄다» 고 느끼기 전에 끝난다.
+ */
+private const val WEEKLY_COUNT_BUDGET_MILLIS = 3_000L
