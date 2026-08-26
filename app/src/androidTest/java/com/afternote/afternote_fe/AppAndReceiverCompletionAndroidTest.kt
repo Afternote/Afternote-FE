@@ -48,7 +48,6 @@ import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.testing.FakeMindRecordReceiverRepository
-import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import com.afternote.feature.receiver.domain.model.AfterNoteListItem
 import com.afternote.feature.receiver.domain.model.AfterNotesListResult
@@ -613,7 +612,6 @@ class ReceiverRuntimeCompletionAndroidTest {
                 ) {
                     composable<Route.Home> { Text("home route") }
                     composable<Route.Afternote> { Text("afternote route") }
-                    composable<Route.MindRecord> { Text("mind record route") }
                     composable<Route.MemorySpace> { Text("memory space route") }
                     composable<Route.Setting> { Text("setting route") }
                 }
@@ -624,9 +622,6 @@ class ReceiverRuntimeCompletionAndroidTest {
         val homeActions = checkNotNull(actions)
         composeRule.runOnIdle { homeActions.onNextStepClick() }
         composeRule.onNodeWithText("afternote route").assertIsDisplayed()
-        composeRule.runOnIdle { homeActions.onRecordCategoryClick(MindRecordCategory.DIARY) }
-        composeRule.onNodeWithText("mind record route").assertIsDisplayed()
-
         composeRule.runOnIdle { checkNotNull(appState).navController.popBackStack() }
         composeRule.runOnIdle { homeActions.onMemoriesSectionClick() }
         composeRule.onNodeWithText("memory space route").assertIsDisplayed()

@@ -11,7 +11,6 @@ import com.afternote.feature.afternote.presentation.author.editor.model.EditorCa
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.home.presentation.HomeTabActions
-import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavActions
@@ -400,10 +399,6 @@ fun rememberHomeTabActions(
 
             override fun onNextStepClick() {
                 appState.navigateToBottomBarRoute(Route.Afternote)
-            }
-
-            override fun onRecordCategoryClick(category: MindRecordCategory) {
-                appState.navController.navigate(Route.MindRecord)
             }
 
             // TODO: 카드별 destination 디자인 확정 후 분기. 우선 마음의 기록 탭으로 임시 연결.

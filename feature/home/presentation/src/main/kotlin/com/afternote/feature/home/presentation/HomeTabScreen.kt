@@ -32,8 +32,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.mindrecord.presentation.hometab.homeTabMindRecordMemoriesSection
-import com.afternote.feature.mindrecord.presentation.hometab.homeTabMindRecordQuestionAndCategories
-import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
+import com.afternote.feature.mindrecord.presentation.hometab.homeTabMindRecordTodayQuestion
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -60,7 +59,6 @@ sealed interface HomeTabUiState {
     data class Success(
         val userName: String,
         val isRecipientDesignated: Boolean,
-        val categoryCounts: Map<MindRecordCategory, Int>,
         val isRefreshing: Boolean = false,
         /** 오늘의 질문 본문. 조회 실패 시 null — 카드가 중립 문구를 표시한다. */
         val todayQuestionContent: String? = null,
@@ -85,8 +83,6 @@ interface HomeTabActions {
 
     fun onNextStepClick()
 
-    fun onRecordCategoryClick(category: MindRecordCategory)
-
     fun onWeeklyImageClick()
 
     fun onWeeklyCountClick()
@@ -104,8 +100,6 @@ private object HomeTabActionsNoop : HomeTabActions {
     override fun onAnswerClick() {}
 
     override fun onNextStepClick() {}
-
-    override fun onRecordCategoryClick(category: MindRecordCategory) {}
 
     override fun onWeeklyImageClick() {}
 
@@ -147,8 +141,6 @@ fun HomeTabScreen(
                         // 조회 전이다 — 지정 여부를 결과로 확정하지 않는다 (#698).
                         recipientBadgeState = RecipientDesignationBadgeState.Unknown,
                         // 조회 전에는 아는 값이 없다 — 0 을 채워 넣지 않는다 (#700).
-                        categoryCounts = emptyMap(),
-                        categoryCountsLoading = true,
                         todayDateText = todayDateText,
                         todayQuestionContent = null,
                         isQuestionLoading = true,
@@ -167,8 +159,6 @@ fun HomeTabScreen(
                             } else {
                                 RecipientDesignationBadgeState.Incomplete(onClick = actions::onRecipientChipClick)
                             },
-                        categoryCounts = uiState.categoryCounts,
-                        categoryCountsLoading = false,
                         todayDateText = todayDateText,
                         todayQuestionContent = uiState.todayQuestionContent,
                         isQuestionLoading = false,
@@ -217,8 +207,6 @@ private fun HomeTabScrollContent(
      * 약속이 되고, 「널+폴백 대신 값으로 명시」(#934) 와도 어긋난다 (#698 리뷰).
      */
     recipientBadgeState: RecipientDesignationBadgeState,
-    categoryCounts: Map<MindRecordCategory, Int>,
-    categoryCountsLoading: Boolean,
     todayDateText: String,
     todayQuestionContent: String?,
     isQuestionLoading: Boolean,
@@ -251,14 +239,11 @@ private fun HomeTabScrollContent(
             Spacer(Modifier.height(32.dp))
         }
 
-        homeTabMindRecordQuestionAndCategories(
+        homeTabMindRecordTodayQuestion(
             dateText = todayDateText,
             questionText = todayQuestionContent,
             isQuestionLoading = isQuestionLoading,
-            categoryCounts = categoryCounts,
             onAnswerClick = actions::onAnswerClick,
-            onRecordCategoryClick = actions::onRecordCategoryClick,
-            isCategoryCountLoading = categoryCountsLoading,
         )
 
         item {
