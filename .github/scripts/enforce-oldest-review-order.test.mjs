@@ -731,7 +731,7 @@ test("동일 시각의 더 큰 DISMISSED 결정 리뷰가 있으면 오래된 �
 
 test("무권한 이벤트 감지와 trusted status/replay workflow를 분리한다", async () => {
     const workflow = await readFile(
-        new URL("../workflows/oldest-review-order.yml", import.meta.url),
+        new URL("../workflows/oldest-review-order-reconcile.yml", import.meta.url),
         "utf8",
     );
     const eventWorkflow = await readFile(
@@ -745,6 +745,7 @@ test("무권한 이벤트 감지와 trusted status/replay workflow를 분리한�
     assert.match(eventWorkflow, /^permissions: \{\}\s*$/m);
     assert.doesNotMatch(eventWorkflow, /actions\/checkout|GITHUB_TOKEN|github\.token/);
     assert.match(workflow, /^\s{2}workflow_run:\s*$/m);
+    assert.match(workflow, /^name: Oldest Review Order Reconcile\s*$/m);
     assert.match(workflow, /workflows: \[Oldest Review Order Event\]/);
     assert.doesNotMatch(workflow, /^\s{2}pull_request(?:_review)?:\s*$/m);
     assert.doesNotMatch(workflow, /^\s{2}pull_request_target:\s*$/m);
