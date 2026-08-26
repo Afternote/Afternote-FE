@@ -160,7 +160,7 @@ sealed interface TextFieldType {
 
     // Variant7을 쓸 때만 텍스트와 클릭 이벤트를 '필수'로 강제합니다.
     data class Variant7(
-        val text: String = "인증번호 받기",
+        val text: String,
         val onClick: () -> Unit,
         val enabled: Boolean = true,
     ) : TextFieldType
@@ -235,7 +235,7 @@ fun AfternoteTextField(
 private fun SearchIcon() {
     Icon(
         painter = painterResource(R.drawable.core_ui_ic_tabler_search),
-        contentDescription = "검색",
+        contentDescription = stringResource(R.string.core_ui_content_description_search),
         modifier = Modifier.size(18.dp),
     )
 }
@@ -269,10 +269,13 @@ private fun Variant8Suffix(
     type: TextFieldType.Variant8,
     onImeAction: (() -> Unit)?,
 ) {
+    val backInputContentDescription =
+        stringResource(R.string.core_ui_content_description_resident_number_back_input)
+
     Row(
         modifier =
             Modifier.semantics(mergeDescendants = true) {
-                contentDescription = "주민등록번호 뒷자리 입력"
+                contentDescription = backInputContentDescription
             },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),

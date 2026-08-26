@@ -15,6 +15,20 @@ class AfternoteDisplayResTest {
     private val unlistedServiceName = "직접 입력한 서비스"
 
     @Test
+    fun `홈 카테고리 필터는 비즈니스를 노출하고 서버 미지원 재산 처리는 제외한다`() {
+        assertEquals(
+            listOf(
+                null,
+                AfternoteType.SOCIAL_NETWORK,
+                AfternoteType.BUSINESS,
+                AfternoteType.GALLERY_AND_FILES,
+                AfternoteType.MEMORIAL,
+            ),
+            CATEGORY_FILTER_TABS,
+        )
+    }
+
+    @Test
     fun `카탈로그에 없는 이름은 그 항목의 카테고리 아이콘으로 떨어진다`() {
         AfternoteType.entries.forEach { type ->
             assertEquals(

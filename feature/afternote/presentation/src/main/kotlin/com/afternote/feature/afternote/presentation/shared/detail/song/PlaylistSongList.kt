@@ -156,7 +156,7 @@ fun SongSearchSection(
 private fun PlaylistSongListPreview() {
     val songs =
         (1..5).map { i ->
-            PlaylistSongDisplay(id = "$i", title = "노래 제목 $i", artist = "가수 이름")
+            PlaylistSongDisplay(selectionKey = "preview:$i", title = "노래 제목 $i", artist = "가수 이름")
         }
     var query by remember { mutableStateOf("") }
     // 리스트는 필터·검색을 소유하지 않으므로 호출부가 최종 목록을 넘기고 헤더도 주입한다 —
