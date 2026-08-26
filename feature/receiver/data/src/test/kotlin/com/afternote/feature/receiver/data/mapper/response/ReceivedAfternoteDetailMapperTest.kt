@@ -36,17 +36,17 @@ class ReceivedAfternoteDetailMapperTest {
 
     @Test
     fun `toDomain - category null이면 type null`() {
-        assertNull(ReceivedAfternoteDetailDto(id = 1L, category = null).toDomain().type)
+        assertNull(ReceivedAfternoteDetailDto(id = 1L, title = "제목", category = null).toDomain().type)
     }
 
     @Test
     fun `toDomain - createdAt null이면 createdAt null`() {
-        assertNull(ReceivedAfternoteDetailDto(id = 1L, createdAt = null).toDomain().createdAt)
+        assertNull(ReceivedAfternoteDetailDto(id = 1L, title = "제목", createdAt = null).toDomain().createdAt)
     }
 
     @Test
     fun `toDomain - playlist null이면 null`() {
-        assertNull(ReceivedAfternoteDetailDto(id = 1L, playlist = null).toDomain().playlist)
+        assertNull(ReceivedAfternoteDetailDto(id = 1L, title = "제목", playlist = null).toDomain().playlist)
     }
 
     @Test
@@ -54,6 +54,7 @@ class ReceivedAfternoteDetailMapperTest {
         val result =
             ReceivedAfternoteDetailDto(
                 id = 1L,
+                title = "제목",
                 playlist =
                     ReceivedPlaylistDto(
                         atmosphere = "차분",
@@ -74,6 +75,7 @@ class ReceivedAfternoteDetailMapperTest {
         val result =
             ReceivedAfternoteDetailDto(
                 id = 1L,
+                title = "제목",
                 credentials = ReceivedCredentialsDto(id = "u", password = "p"),
             ).toDomain()
 
