@@ -4,28 +4,62 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialDetail
 
-/** 애프터노트 상세 도메인 모델. */
+/**
+ * 발행 완료된 애프터노트 상세 도메인 모델.
+ *
+ * 모든 종류에 공통인 값만 직접 소유하고, 종류별 데이터는 [content]가 배타적으로 표현한다.
+ * 임시저장 상세는 필수값 계약이 다르므로 이 모델에 nullable로 섞지 않고 별도 모델로 다룬다.
+ */
 data class Detail(
     val id: Long,
-    val category: String,
-    val title: String,
+    val serviceName: String,
     val timestamps: DetailTimestamps,
-    val type: AfternoteType,
-    val credentials: DetailCredentials?,
     val receivers: List<DetailReceiver>,
-    /** 사후 처리 방법 선택지 — 서버 `actions` 필드. 화면·폼 어휘("처리 방법")에 맞춘 이름이다. */
-    val processingMethods: List<String>,
     val leaveMessageBlocks: List<LeaveMessageBlock>,
-    val memorial: MemorialDetail?,
+    val content: DetailContent,
 )
+
+sealed interface DetailContent {
+    val type: AfternoteType
+
+    data class SocialNetwork(
+        val credentials: DetailCredentials,
+        val processingMethods: List<String>,
+    ) : DetailContent {
+        override val type: AfternoteType = AfternoteType.SOCIAL_NETWORK
+    }
+
+    data class Business(
+        val credentials: DetailCredentials,
+        val processingMethods: List<String>,
+    ) : DetailContent {
+        override val type: AfternoteType = AfternoteType.BUSINESS
+    }
+
+    data class Gallery(
+        val processingMethods: List<String>,
+    ) : DetailContent {
+        override val type: AfternoteType = AfternoteType.GALLERY_AND_FILES
+    }
+
+    data class Memorial(
+        val memorial: MemorialDetail,
+    ) : DetailContent {
+        override val type: AfternoteType = AfternoteType.MEMORIAL
+    }
+
+    data object Estate : DetailContent {
+        override val type: AfternoteType = AfternoteType.ESTATE
+    }
+}
 
 data class DetailTimestamps(
     val updatedAt: String,
 )
 
 data class DetailCredentials(
-    val id: String?,
-    val password: String?,
+    val id: String,
+    val password: String,
 )
 
 /**

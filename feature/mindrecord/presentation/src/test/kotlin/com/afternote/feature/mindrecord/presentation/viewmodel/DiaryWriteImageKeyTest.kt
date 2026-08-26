@@ -1,8 +1,8 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
-import com.afternote.core.domain.repository.PhotoUploadRepository
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
+import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DiaryList
 import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
@@ -19,7 +19,6 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import java.lang.reflect.Proxy
 
 /**
  * 일기 본문 이미지가 서버 계약대로 fileKey 로 나가는지 (#1016).
@@ -74,10 +73,7 @@ class DiaryWriteImageKeyTest {
         DiaryWriteViewModel(
             savedStateHandle = SavedStateHandle(emptyMap()),
             repository = RecordingDiaryRepository(onCreate),
-            photoUploadRepository =
-                PhotoUploadRepository { _, _ ->
-                    Result.success(UPLOADED_URL)
-                },
+            photoUploadRepository = FakePhotoUploadRepository(uploadedUrl = UPLOADED_URL),
             userRepository = noReceiverUserRepository(),
             draftLoader = MindRecordDraftLoader(RecordingDiaryRepository {}, NoDailyQuestionRepository),
         )
@@ -128,14 +124,8 @@ private object NoDailyQuestionRepository : DailyQuestionRepository {
 }
 
 /** UserRepository 는 표면이 넓다 — 이 시나리오가 실제로 타는 두 호출만 답한다. */
-private fun noReceiverUserRepository(): UserRepository =
-    Proxy.newProxyInstance(
-        UserRepository::class.java.classLoader,
-        arrayOf(UserRepository::class.java),
-    ) { _, method, _ ->
-        when (method.name) {
-            "getReceiverListFlow" -> flowOf(emptyList<Any>())
-            "getReceivers" -> emptyList<Any>()
-            else -> error("Unexpected user repository call: ${method.name}")
-        }
-    } as UserRepository
+private fun noReceiverUserRepository(): FakeUserRepository =
+    FakeUserRepository.strict().apply {
+        onReceiverListFlow = { flowOf(emptyList()) }
+        onGetReceivers = { emptyList() }
+    }

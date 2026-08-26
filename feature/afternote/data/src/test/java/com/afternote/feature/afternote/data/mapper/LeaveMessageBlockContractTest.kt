@@ -63,7 +63,7 @@ class LeaveMessageBlockContractTest {
         val detail =
             json
                 .decodeFromString<AfternoteDetailDto>(
-                    """{"afternoteId":11,"category":"SOCIAL","title":"t","isDraft":false,"receivers":[],"leaveMessage":[{"title":"","body":"재현용 남기실 말씀"}]}""",
+                    """{"afternoteId":11,"category":"SOCIAL","title":"t","isDraft":false,"receivers":[],"credentials":{"id":"qa","password":"qa"},"leaveMessage":[{"title":"","body":"재현용 남기실 말씀"}]}""",
                 ).toDetailDomain()
 
         assertEquals(
@@ -77,7 +77,7 @@ class LeaveMessageBlockContractTest {
         val detail =
             json
                 .decodeFromString<AfternoteDetailDto>(
-                    """{"afternoteId":1,"category":"SOCIAL","title":"t","isDraft":false,"receivers":[],"leaveMessage":null}""",
+                    """{"afternoteId":1,"category":"SOCIAL","title":"t","isDraft":false,"receivers":[],"credentials":{"id":"qa","password":"qa"},"leaveMessage":null}""",
                 ).toDetailDomain()
 
         assertTrue(detail.leaveMessageBlocks.isEmpty())
@@ -140,6 +140,8 @@ class LeaveMessageBlockContractTest {
 
         val encoded = json.encodeToString(AfternoteCreateAccountRequestDto.serializer(), request)
 
+        assertTrue(encoded.contains("\"category\":\"SOCIAL\""))
+        assertTrue(!encoded.contains("\"type\""))
         assertTrue(encoded.contains(""""leaveMessage":[{"title":"가족에게","body":"잘 부탁해"}]"""))
     }
 
