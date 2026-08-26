@@ -14,8 +14,8 @@ import androidx.compose.ui.test.waitUntilAtLeastOneExists
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
-import com.afternote.afternote_fe.test.FakeUserRepository
-import com.afternote.core.domain.repository.PhotoUploadRepository
+import com.afternote.afternote_fe.test.appTestUserRepository
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
@@ -125,7 +125,7 @@ class MindRecordFlowAndroidTest {
             DailyQuestionWriteViewModel(
                 savedStateHandle = SavedStateHandle(emptyMap()),
                 repository = repository,
-                photoUploadRepository = PhotoUploadRepository { _, _ -> Result.success("https://cdn.test/question.jpg") },
+                photoUploadRepository = FakePhotoUploadRepository("https://cdn.test/question.jpg"),
                 draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
             )
         composeRule.setContent { AfternoteTheme {} }
@@ -164,8 +164,8 @@ class MindRecordFlowAndroidTest {
                     ),
                 ),
             repository = repository,
-            photoUploadRepository = PhotoUploadRepository { _, _ -> Result.success("https://cdn.test/image.jpg") },
-            userRepository = FakeUserRepository(),
+            photoUploadRepository = FakePhotoUploadRepository("https://cdn.test/image.jpg"),
+            userRepository = appTestUserRepository(),
             draftLoader = MindRecordDraftLoader(repository, FakeDailyQuestionRepository()),
         )
 }

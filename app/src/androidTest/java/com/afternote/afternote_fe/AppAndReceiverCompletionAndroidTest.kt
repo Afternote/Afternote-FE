@@ -34,12 +34,12 @@ import com.afternote.afternote_fe.navigation.rememberAfternoteAppState
 import com.afternote.afternote_fe.navigation.rememberHomeTabActions
 import com.afternote.afternote_fe.navigation.rememberReceiverNavActions
 import com.afternote.afternote_fe.test.FailureArtifactRule
-import com.afternote.afternote_fe.test.FakeAuthRepository
 import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.repository.UserProfileRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
+import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.model.Session
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -142,12 +142,16 @@ class AppAndReceiverCompletionAndroidTest {
 
     @Test
     fun invalidCredentials_correctedPasswordThenRetry_entersHomeWithoutReportingUserError() {
-        fakeAuth.emailLoginResults.addLast(
+        val emailLoginResults = ArrayDeque<Result<Session.DefaultSession>>()
+        emailLoginResults.addLast(
             Result.failure(CoreAuthFailure.InvalidLoginCredentials(IllegalStateException("rejected"))),
         )
-        fakeAuth.emailLoginResults.addLast(
+        emailLoginResults.addLast(
             Result.success(Session.DefaultSession("access", "refresh")),
         )
+        fakeAuth.onDefaultLogin = { _, _ ->
+            requireNotNull(emailLoginResults.removeFirstOrNull()) { "email login 응답이 준비되지 않음" }
+        }
 
         composeRule
             .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_start))

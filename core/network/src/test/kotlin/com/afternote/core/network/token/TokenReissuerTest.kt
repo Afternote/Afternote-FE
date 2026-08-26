@@ -1,9 +1,10 @@
 package com.afternote.core.network.token
 
+import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.model.TokenBundle
-import com.afternote.core.network.FakeAuthRepository
 import com.afternote.core.network.FakeErrorReporter
 import com.afternote.core.network.model.ApiException
+import com.afternote.core.network.networkFakeAuthRepository
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -33,7 +34,7 @@ class TokenReissuerTest {
 
     @Test
     fun `저장 토큰이 관찰 토큰과 다름 - 회전 생략하고 갱신된 토큰 반환`() {
-        val repository = FakeAuthRepository(accessToken = "refreshed-by-other-path")
+        val repository = networkFakeAuthRepository(accessToken = "refreshed-by-other-path")
         val coordinator = reissuer(repository)
 
         val outcome = coordinator.reissue(expectedAccessToken = "old-token")
@@ -48,7 +49,7 @@ class TokenReissuerTest {
     @Test
     fun `회전 성공 - 발급 응답 expiresIn 으로 deadline 기록`() {
         val repository =
-            FakeAuthRepository(
+            networkFakeAuthRepository(
                 accessToken = "old-token",
                 onRotateToken = {
                     accessToken = "fresh-token"
@@ -72,7 +73,7 @@ class TokenReissuerTest {
     fun `회전 성공했지만 expiresIn 미동봉 - deadline 폐기`() {
         tracker.record(expiresInSeconds = 30)
         val repository =
-            FakeAuthRepository(
+            networkFakeAuthRepository(
                 accessToken = "old-token",
                 onRotateToken = {
                     accessToken = "fresh-token"
@@ -95,7 +96,7 @@ class TokenReissuerTest {
             val failure = httpFailure(status)
             val reporter = FakeErrorReporter()
             val repository =
-                FakeAuthRepository(
+                networkFakeAuthRepository(
                     accessToken = "old-token",
                     onRotateToken = { Result.failure(failure) },
                 )
@@ -119,7 +120,7 @@ class TokenReissuerTest {
             )
         val reporter = FakeErrorReporter()
         val repository =
-            FakeAuthRepository(
+            networkFakeAuthRepository(
                 accessToken = "old-token",
                 onRotateToken = { Result.failure(failure) },
             )
@@ -138,7 +139,7 @@ class TokenReissuerTest {
         val failure = SocketTimeoutException("timeout while sending $secret")
         val reporter = FakeErrorReporter()
         val repository =
-            FakeAuthRepository(
+            networkFakeAuthRepository(
                 accessToken = "old-token",
                 onRotateToken = { Result.failure(failure) },
             )
@@ -170,7 +171,7 @@ class TokenReissuerTest {
             )
         val reporter = FakeErrorReporter()
         val repository =
-            FakeAuthRepository(
+            networkFakeAuthRepository(
                 accessToken = "old-token",
                 onRotateToken = { Result.failure(failure) },
             )
@@ -190,7 +191,7 @@ class TokenReissuerTest {
         tracker.record(expiresInSeconds = 30)
         val reporter = FakeErrorReporter()
         val repository =
-            FakeAuthRepository(
+            networkFakeAuthRepository(
                 accessToken = "old-token",
                 onRotateToken = {
                     Result.success(TokenBundle(accessToken = "", refreshToken = "refresh-token"))
@@ -218,7 +219,7 @@ class TokenReissuerTest {
             )
         val reporter = FakeErrorReporter()
         val repository =
-            FakeAuthRepository(
+            networkFakeAuthRepository(
                 accessToken = "old-token",
                 onRotateToken = { Result.failure(failure) },
             )
@@ -237,7 +238,7 @@ class TokenReissuerTest {
     @Test
     fun `저장 토큰이 빈 값 - TokenAlreadyChanged 가 아니라 회전 시도로 진행`() {
         val repository =
-            FakeAuthRepository(
+            networkFakeAuthRepository(
                 accessToken = null,
                 onRotateToken = { Result.failure(IllegalStateException("리프레시 토큰이 존재하지 않습니다.")) },
             )
