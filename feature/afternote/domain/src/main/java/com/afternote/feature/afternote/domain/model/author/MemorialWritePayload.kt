@@ -1,8 +1,11 @@
 package com.afternote.feature.afternote.domain.model.author
 
+import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
+
 data class CreateMemorialPayload(
     val title: String,
     val memorial: MemorialWritePayload,
+    val leaveMessageBlocks: List<LeaveMessageBlock> = emptyList(),
     val receiverIds: List<Long> = emptyList(),
 )
 
