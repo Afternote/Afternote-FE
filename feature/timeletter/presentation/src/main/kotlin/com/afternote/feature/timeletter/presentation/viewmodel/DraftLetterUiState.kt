@@ -10,6 +10,7 @@ sealed interface DraftLetterUiState {
         val drafts: List<TimeLetter>,
         val receiverNameMap: Map<Long, String> = emptyMap(),
         val isEditMode: Boolean = false,
+        val isDeleting: Boolean = false,
         val selectedIds: Set<Long> = emptySet(),
         @StringRes val messageRes: Int? = null,
     ) : DraftLetterUiState

@@ -84,7 +84,10 @@ fun NavGraphBuilder.timeLetterNavGraph(
         }
 
         composable<TimeLetterRoute.TimeLetterDraftRoute> {
-            DraftLetterScreen(onBackClick = actions::onDraftBack)
+            DraftLetterScreen(
+                onBackClick = actions::onDraftBack,
+                onOpenDraft = actions::onNavigateToEdit,
+            )
         }
 
         composable<TimeLetterRoute.TimeLetterDetailRoute> {

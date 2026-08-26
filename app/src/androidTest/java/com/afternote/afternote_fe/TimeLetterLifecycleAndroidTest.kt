@@ -150,15 +150,23 @@ class TimeLetterLifecycleAndroidTest {
             PrivateTimeLetterRepository(
                 draftLetters = TimeLetterList(listOf(firstDraft, secondDraft), totalCount = 2),
             )
-        var activeViewModel by mutableStateOf(DraftLetterViewModel(repository))
+        val userRepository = privateUserRepository(testReceivers)
+        var openedDraftId: Long? = null
+        var activeViewModel by mutableStateOf(DraftLetterViewModel(repository, userRepository.repository))
 
         composeRule.setContent {
             AfternoteTheme {
-                DraftLetterScreen(onBackClick = {}, viewModel = activeViewModel)
+                DraftLetterScreen(
+                    onBackClick = {},
+                    onOpenDraft = { openedDraftId = it },
+                    viewModel = activeViewModel,
+                )
             }
         }
         composeRule.onNodeWithText("첫 임시 편지").assertIsDisplayed()
         composeRule.onNodeWithText("둘째 임시 편지").assertIsDisplayed()
+        composeRule.onNode(hasText("첫 임시 편지") and hasClickAction()).performClick()
+        assertEquals(31L, openedDraftId)
 
         composeRule.onNodeWithText("수정").performClick()
         composeRule.onNode(hasText("첫 임시 편지") and hasClickAction()).performClick()
@@ -167,7 +175,9 @@ class TimeLetterLifecycleAndroidTest {
         composeRule.onNodeWithText("첫 임시 편지").assertDoesNotExist()
         composeRule.onNodeWithText("둘째 임시 편지").assertIsDisplayed()
 
-        composeRule.runOnIdle { activeViewModel = DraftLetterViewModel(repository) }
+        composeRule.runOnIdle {
+            activeViewModel = DraftLetterViewModel(repository, userRepository.repository)
+        }
         composeRule.waitUntil(timeoutMillis = TIMEOUT) { repository.temporaryListCalls == 2 }
         composeRule.onNodeWithText("첫 임시 편지").assertDoesNotExist()
         composeRule.onNodeWithText("둘째 임시 편지").assertIsDisplayed()

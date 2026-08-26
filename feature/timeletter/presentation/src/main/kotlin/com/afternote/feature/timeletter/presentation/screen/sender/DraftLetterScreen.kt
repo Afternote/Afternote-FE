@@ -38,6 +38,7 @@ import com.afternote.feature.timeletter.presentation.viewmodel.DraftLetterViewMo
 @Composable
 fun DraftLetterScreen(
     onBackClick: () -> Unit,
+    onOpenDraft: (Long) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DraftLetterViewModel = hiltViewModel(),
 ) {
@@ -56,6 +57,7 @@ fun DraftLetterScreen(
     DraftLetterContent(
         uiState = uiState,
         onBackClick = onBackClick,
+        onOpenDraft = onOpenDraft,
         onEditCompleteClick = viewModel::toggleEditMode,
         onToggleSelection = viewModel::toggleSelection,
         onDeleteAll = viewModel::deleteAll,
@@ -69,6 +71,7 @@ fun DraftLetterScreen(
 private fun DraftLetterContent(
     uiState: DraftLetterUiState,
     onBackClick: () -> Unit,
+    onOpenDraft: (Long) -> Unit,
     onEditCompleteClick: () -> Unit,
     onToggleSelection: (Long) -> Unit,
     onDeleteAll: () -> Unit,
@@ -105,6 +108,7 @@ private fun DraftLetterContent(
                     secondaryText = stringResource(R.string.timeletter_draft_delete_selected),
                     onSecondaryClick = onDeleteSelected,
                     type = AfternoteButtonType.Variant5,
+                    isLoading = successState.isDeleting,
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
                 )
             }
@@ -160,6 +164,7 @@ private fun DraftLetterContent(
                                     receiverNameMap = uiState.receiverNameMap,
                                     isEditMode = uiState.isEditMode,
                                     isSelected = draft.id in uiState.selectedIds,
+                                    onOpen = { onOpenDraft(draft.id) },
                                     onToggle = { onToggleSelection(draft.id) },
                                 )
                             }
@@ -185,6 +190,7 @@ private fun DraftLetterScreenPreview() {
                 receiverNameMap = mapOf(1L to "김지은", 2L to "이현우"),
             ),
         onBackClick = {},
+        onOpenDraft = {},
         onEditCompleteClick = {},
         onToggleSelection = {},
         onDeleteAll = {},

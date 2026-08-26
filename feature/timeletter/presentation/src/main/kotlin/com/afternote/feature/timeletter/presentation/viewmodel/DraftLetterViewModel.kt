@@ -2,6 +2,7 @@ package com.afternote.feature.timeletter.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
 import com.afternote.feature.timeletter.presentation.R
@@ -33,8 +34,8 @@ class DraftLetterViewModel
                 try {
                     val result = timeLetterRepository.getTemporaryTimeLetters()
                     val receiverNameMap =
-                        userRepository
-                            .getReceivers()
+                        runCatchingCancellable { userRepository.getReceivers() }
+                            .getOrElse { emptyList() }
                             .associate { receiver -> receiver.receiverId to receiver.name }
                     _uiState.value =
                         DraftLetterUiState.Success(
@@ -51,11 +52,13 @@ class DraftLetterViewModel
 
         fun toggleEditMode() {
             val current = _uiState.value as? DraftLetterUiState.Success ?: return
+            if (current.isDeleting) return
             _uiState.value = current.copy(isEditMode = !current.isEditMode, selectedIds = emptySet())
         }
 
         fun toggleSelection(id: Long) {
             val current = _uiState.value as? DraftLetterUiState.Success ?: return
+            if (current.isDeleting) return
             if (id !in current.drafts.map { it.id }) return
             val updated = if (id in current.selectedIds) current.selectedIds - id else current.selectedIds + id
             _uiState.value = current.copy(selectedIds = updated)
@@ -63,34 +66,49 @@ class DraftLetterViewModel
 
         fun deleteSelected() {
             val current = _uiState.value as? DraftLetterUiState.Success ?: return
-            if (current.selectedIds.isEmpty()) return
+            if (current.isDeleting || current.selectedIds.isEmpty()) return
+            val selectedIds = current.selectedIds
+            _uiState.value = current.copy(isDeleting = true, messageRes = null)
             viewModelScope.launch {
                 try {
-                    timeLetterRepository.deleteTimeLetters(current.selectedIds.toList())
-                    _uiState.value =
-                        current.copy(
-                            drafts = current.drafts.filter { it.id !in current.selectedIds },
+                    timeLetterRepository.deleteTimeLetters(selectedIds.toList())
+                    updateSuccessState { latest ->
+                        latest.copy(
+                            drafts = latest.drafts.filter { it.id !in selectedIds },
                             selectedIds = emptySet(),
                             isEditMode = false,
                         )
+                    }
                 } catch (cancellationException: CancellationException) {
                     throw cancellationException
                 } catch (_: Exception) {
-                    _uiState.value = current.copy(messageRes = R.string.timeletter_draft_delete_error)
+                    updateSuccessState { latest -> latest.copy(messageRes = R.string.timeletter_draft_delete_error) }
+                } finally {
+                    updateSuccessState { latest -> latest.copy(isDeleting = false) }
                 }
             }
         }
 
         fun deleteAll() {
             val current = _uiState.value as? DraftLetterUiState.Success ?: return
+            if (current.isDeleting) return
+            _uiState.value = current.copy(isDeleting = true, messageRes = null)
             viewModelScope.launch {
                 try {
                     timeLetterRepository.deleteAllTemporary()
-                    _uiState.value = DraftLetterUiState.Success(drafts = emptyList())
+                    updateSuccessState { latest ->
+                        latest.copy(
+                            drafts = emptyList(),
+                            selectedIds = emptySet(),
+                            isEditMode = false,
+                        )
+                    }
                 } catch (cancellationException: CancellationException) {
                     throw cancellationException
                 } catch (_: Exception) {
-                    _uiState.value = current.copy(messageRes = R.string.timeletter_draft_delete_error)
+                    updateSuccessState { latest -> latest.copy(messageRes = R.string.timeletter_draft_delete_error) }
+                } finally {
+                    updateSuccessState { latest -> latest.copy(isDeleting = false) }
                 }
             }
         }
@@ -98,5 +116,10 @@ class DraftLetterViewModel
         fun onMessageShown() {
             val current = _uiState.value as? DraftLetterUiState.Success ?: return
             _uiState.value = current.copy(messageRes = null)
+        }
+
+        private inline fun updateSuccessState(transform: (DraftLetterUiState.Success) -> DraftLetterUiState.Success) {
+            val current = _uiState.value as? DraftLetterUiState.Success ?: return
+            _uiState.value = transform(current)
         }
     }

@@ -135,7 +135,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
         val register = composeRule.onNode(hasText("등록") and hasClickAction())
         register.performClick()
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
-            viewModel.uiState.value.error == TimeLetterWriteError.RECIPIENT_REQUIRED
+            viewModel.uiState.value.error == TimeLetterWriteError.RecipientRequired
         }
         composeRule.onNodeWithText("수신자를 선택해주세요.").assertIsDisplayed()
 
@@ -146,7 +146,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
         }
         register.performClick()
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
-            viewModel.uiState.value.error == TimeLetterWriteError.SEND_DATE_REQUIRED
+            viewModel.uiState.value.error == TimeLetterWriteError.SendDateRequired
         }
         composeRule.onNodeWithText("발송 날짜를 선택해주세요.").assertIsDisplayed()
 

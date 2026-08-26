@@ -79,7 +79,7 @@ class TimeLetterFlowAndroidTest {
             viewModel.register("가을 편지", mapOf(0L to "잊지 않을게"))
         }
         composeRule.waitUntil(timeoutMillis = 5_000) {
-            viewModel.uiState.value.error == TimeLetterWriteError.SAVE_FAILED
+            viewModel.uiState.value.error == TimeLetterWriteError.SaveFailed
         }
         assertFalse(viewModel.uiState.value.registered)
 

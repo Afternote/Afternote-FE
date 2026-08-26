@@ -32,6 +32,7 @@ fun DraftLetterItem(
     receiverNameMap: Map<Long, String> = emptyMap(),
     isEditMode: Boolean = false,
     isSelected: Boolean = false,
+    onOpen: () -> Unit = {},
     onToggle: () -> Unit = {},
 ) {
     val resolvedReceiverNames =
@@ -64,7 +65,7 @@ fun DraftLetterItem(
                         if (isEditMode) {
                             Modifier.clickable(role = Role.Checkbox, onClick = onToggle)
                         } else {
-                            Modifier
+                            Modifier.clickable(role = Role.Button, onClick = onOpen)
                         },
                     ).padding(horizontal = 20.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
