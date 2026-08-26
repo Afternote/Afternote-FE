@@ -4,13 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.feature.afternote.presentation.shared.util.getIconResForType
+import com.afternote.core.ui.icon.AfternoteSourceIcon
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
 import com.afternote.feature.receiver.domain.model.AfterNoteListItem
 import com.afternote.feature.receiver.domain.repository.ReceiverRepository
 import com.afternote.feature.receiver.presentation.R
-import com.afternote.feature.receiver.presentation.home.model.AfternoteSourceIcon
 import com.afternote.feature.receiver.presentation.home.model.MindRecordSummary
 import com.afternote.feature.receiver.presentation.home.model.ReceiverDownloadState
 import com.afternote.feature.receiver.presentation.home.model.ReceiverHomeUiState
@@ -183,5 +183,19 @@ private fun List<AfterNoteListItem>.toAfternoteIcons(): List<AfternoteSourceIcon
         .mapNotNull { it.type }
         .distinct()
         .take(MAX_AFTERNOTE_ICONS)
-        .map { AfternoteSourceIcon(drawableResId = getIconResForType(it)) }
+        .map { it.toSourceIcon() }
         .toList()
+
+/**
+ * 애프터노트 종류를 홈이 그릴 아이콘으로 옮긴다 (#926).
+ *
+ * res id 를 상태에 담지 않는다 — 담으면 ViewModel 이 Android 리소스에 묶이고, 형제
+ * feature 의 `R` 을 가로질러 참조하게 된다. 어떤 그림인지는 core:ui 가 안다.
+ */
+private fun AfternoteType.toSourceIcon(): AfternoteSourceIcon =
+    when (this) {
+        AfternoteType.SOCIAL_NETWORK -> AfternoteSourceIcon.SocialNetwork
+        AfternoteType.GALLERY_AND_FILES -> AfternoteSourceIcon.GalleryAndFiles
+        AfternoteType.MEMORIAL -> AfternoteSourceIcon.Memorial
+        AfternoteType.BUSINESS, AfternoteType.ESTATE -> AfternoteSourceIcon.Other
+    }
