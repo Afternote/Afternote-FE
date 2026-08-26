@@ -1,0 +1,161 @@
+package com.afternote.feature.receiver.data.paging
+
+import androidx.paging.PagingSource
+import com.afternote.core.network.model.ApiException
+import com.afternote.core.network.model.BaseResponse
+import com.afternote.feature.receiver.data.dto.ReceivedAfternoteDto
+import com.afternote.feature.receiver.data.dto.ReceivedAfternoteListDto
+import com.afternote.feature.receiver.data.service.ReceiverAfternoteApiService
+import com.afternote.feature.receiver.domain.error.ReceiverFailure
+import com.afternote.feature.receiver.domain.model.AfterNoteListItem
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.yield
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import java.io.IOException
+
+/**
+ * 목록 로드 실패의 도메인 어휘 변환 회귀 가드 (#611).
+ *
+ * 이 경로는 형제인 `ReceiverAuthRepositoryImpl` 과 달리 번역이 없어 `ApiException`(인프라 타입)을
+ * 도메인 밖으로 그대로 흘렸다. 그 결과 화면이 사유를 가를 수 없어, 재시도로 풀리지 않는 «전달 조건
+ * 미충족»(403 / BE `ErrorCode.DELIVERY_CONDITION_NOT_MET` = 2009) 까지 "다시 시도" 로 수렴했다.
+ *
+ * code·문구는 2026-07-30 실기기 logcat 캡처 —
+ * `<-- 403` `{"status":403,"code":2009,"message":"아직 전달 조건이 충족되지 않았습니다."}`.
+ */
+class ReceiverAfternotePagingSourceTest {
+    /**
+     * 사유를 아는 거절은 **타입** 으로 나온다 — 소비처가 `serverCode == 2009` 를 되짚지 않아도 되게,
+     * 서버 code 지식을 이 계층에 가둔 결과다.
+     */
+    @Test
+    fun `전달 조건 미충족 403 은 전용 도메인 타입으로 나온다`() {
+        val result = loadWith { throw DELIVERY_CONDITION_NOT_MET_EXCEPTION }
+
+        val error = (result as PagingSource.LoadResult.Error).throwable
+        assertTrue("전용 타입으로 번역돼야 한다: $error", error is ReceiverFailure.DeliveryConditionNotMet)
+        assertEquals(DELIVERY_CONDITION_NOT_MET_EXCEPTION, error.cause)
+    }
+
+    @Test
+    fun `사유를 가르지 않은 서버 거절은 code 를 실은 ServerRejection 으로 남는다`() {
+        val otherRejection =
+            ApiException(status = 400, code = 1902, serverMessage = "인증번호가 만료되었습니다.", message = "만료")
+
+        val result = loadWith { throw otherRejection }
+
+        val error = (result as PagingSource.LoadResult.Error).throwable
+        assertTrue("ServerRejection 이어야 한다: $error", error is ReceiverFailure.ServerRejection)
+        val rejection = error as ReceiverFailure.ServerRejection
+        assertEquals(400, rejection.status)
+        assertEquals(1902, rejection.serverCode)
+        assertEquals(otherRejection, rejection.cause)
+    }
+
+    /**
+     * 순서 회귀 가드 — [ApiException] 은 [IOException] 의 **하위 타입**이다(OkHttp Interceptor 가
+     * 4xx·5xx 를 가로채 던질 때 전파되어야 해서). 변환의 IO 갈래를 위에 두면 서버가 내려준 거절이
+     * 통째로 «연결 없음» 으로 뭉개진다.
+     */
+    @Test
+    fun `서버 거절은 IOException 하위여도 연결 실패로 뭉개지지 않는다`() {
+        val result = loadWith { throw DELIVERY_CONDITION_NOT_MET_EXCEPTION }
+
+        val error = (result as PagingSource.LoadResult.Error).throwable
+        assertTrue("연결 실패로 뭉개졌다: $error", error is ReceiverFailure.DeliveryConditionNotMet)
+    }
+
+    @Test
+    fun `서버에 닿지 못한 실패는 연결 없음으로 옮기고 원인을 보존한다`() {
+        val offline = IOException("Unable to resolve host")
+
+        val result = loadWith { throw offline }
+
+        val error = (result as PagingSource.LoadResult.Error).throwable
+        assertTrue("연결 실패로 번역돼야 한다: $error", error is ReceiverFailure.NetworkUnavailable)
+        assertEquals(offline, error.cause)
+    }
+
+    /** 사유를 확인하지 못한 실패는 감싸지 않는다 — 없는 status·code 를 지어내지 않기 위해서다. */
+    @Test
+    fun `분류 대상이 아닌 실패는 원본 그대로 흘려보낸다`() {
+        val unexpected = IllegalStateException("boom")
+
+        val result = loadWith { throw unexpected }
+
+        assertEquals(unexpected, (result as PagingSource.LoadResult.Error).throwable)
+    }
+
+    @Test
+    fun `정상 응답은 단일 페이지로 실린다`() {
+        val result =
+            loadWith {
+                BaseResponse(
+                    status = 200,
+                    code = 200,
+                    data =
+                        ReceivedAfternoteListDto(
+                            afternotes = listOf(ReceivedAfternoteDto(id = 5L, title = "소셜 계정 정리 부탁해")),
+                            totalCount = 1,
+                        ),
+                )
+            }
+
+        val page = result as PagingSource.LoadResult.Page
+        assertEquals(1, page.data.size)
+        assertEquals(5L, page.data.first().id)
+    }
+
+    /**
+     * 번역 경계가 취소까지 삼키면 취소된 코루틴에서 호출부의 실패 갈래가 돈다 (#671 과 같은 규약).
+     *
+     * 여기서는 [loadWith] 를 쓰지 않는다 — 그 헬퍼는 자체 `runBlocking` 이벤트 루프를 열어
+     * 바깥 [kotlinx.coroutines.Job.cancel] 이 안쪽 대기에 닿지 못한다(테스트가 멈춘다).
+     */
+    @Test
+    fun `취소는 실패로 바뀌지 않고 그대로 전파된다`() =
+        runBlocking {
+            val source = ReceiverAfternotePagingSource(FakeReceiverAfternoteApiService { awaitCancellation() })
+            var observed: Throwable? = null
+            val job =
+                launch {
+                    runCatching {
+                        source.load(PagingSource.LoadParams.Refresh(key = null, loadSize = 50, placeholdersEnabled = false))
+                    }.onFailure { observed = it }
+                }
+            yield()
+            job.cancel()
+            job.join()
+
+            assertTrue("취소가 Result 로 삼켜졌다: $observed", observed == null || observed is CancellationException)
+        }
+
+    private fun loadWith(response: suspend () -> BaseResponse<ReceivedAfternoteListDto>): PagingSource.LoadResult<Int, AfterNoteListItem> =
+        runBlocking {
+            ReceiverAfternotePagingSource(FakeReceiverAfternoteApiService(response))
+                .load(PagingSource.LoadParams.Refresh(key = null, loadSize = 50, placeholdersEnabled = false))
+        }
+
+    private companion object {
+        val DELIVERY_CONDITION_NOT_MET_EXCEPTION =
+            ApiException(
+                status = 403,
+                code = 2009,
+                serverMessage = "아직 전달 조건이 충족되지 않았습니다.",
+                message = "아직 전달 조건이 충족되지 않았습니다.",
+            )
+    }
+}
+
+private class FakeReceiverAfternoteApiService(
+    private val response: suspend () -> BaseResponse<ReceivedAfternoteListDto>,
+) : ReceiverAfternoteApiService {
+    override suspend fun getReceiverAfternotes(): BaseResponse<ReceivedAfternoteListDto> = response()
+
+    override suspend fun getReceiverAfternoteDetail(afternoteId: Long) = error("이 테스트에서 호출되지 않는다")
+}

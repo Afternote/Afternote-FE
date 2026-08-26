@@ -26,6 +26,7 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_HEADER_SPACING
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_TOTAL_STEPS
 import com.afternote.feature.receiver.presentation.deliveryverification.component.ReceiverVerifyStep
+import com.afternote.feature.receiver.presentation.error.asDisplayText
 
 /**
  * 마스터 키 입력 화면(design 5) — 진행 인디케이터 2/3 + 단일 입력 + "다음" CTA (이슈 #215).
@@ -54,12 +55,7 @@ fun MasterKeyScreen(
     }
 
     val errorMessage =
-        uiState.error?.let { err ->
-            when (err) {
-                is ErrorPayload.Res -> stringResource(err.id)
-                is ErrorPayload.Text -> err.message
-            }
-        }
+        uiState.error?.asDisplayText()
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
             snackbarHostState.showSnackbar(errorMessage)
