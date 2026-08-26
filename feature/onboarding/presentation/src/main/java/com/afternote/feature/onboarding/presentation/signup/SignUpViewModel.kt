@@ -65,8 +65,8 @@ class SignUpViewModel
         // 이메일이 바뀌면 앞서 받은 인증 에러는 더 이상 그 이메일의 것이 아니다.
         fun updateEmail(value: String) = _uiState.update { it.copy(email = value, hasVerificationError = false) }
 
-        // photo picker 결과는 Entry 가 Uri.toString() 으로 변환해 push — VM 은 String 만 보관 (Framework Uri 의존 회피).
-        fun onProfileImagePicked(uri: String?) = _uiState.update { it.copy(profileImageUri = uri) }
+        // photo picker 선택은 Entry 가 Uri.toString() 으로 변환해 push — 취소(null)는 Screen 경계에서 무시한다.
+        fun onProfileImagePicked(uri: String) = _uiState.update { it.copy(profileImageUri = uri) }
 
         fun updateVerificationCode(value: String) = _uiState.update { it.copy(verificationCode = value, hasVerificationError = false) }
 
