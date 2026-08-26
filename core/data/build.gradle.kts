@@ -12,6 +12,7 @@ android {
 
 dependencies {
     implementation(projects.core.common)
+    testImplementation(testFixtures(projects.core.domain))
     // TokenDataSource 실물에 주입할 in-memory DataStore<Preferences> 구성용 (단위 테스트 전용)
     testImplementation(libs.androidx.datastore.preferences)
 }
