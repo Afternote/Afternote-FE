@@ -134,6 +134,8 @@ test('dependency graph generation is immutable, fail closed, and wrapper validat
   assert.equal((source.match(/validate-wrappers:\s*true/g) ?? []).length, 2);
   assert.match(source, /dependency-graph:\s*generate-and-submit/);
   assert.match(source, /dependency-graph:\s*generate-and-upload/);
+  assert.match(source, /Detect dependency graph input changes/);
+  assert.match(source, /if:\s*steps\.dependency-inputs\.outputs\.changed == 'true'/);
 });
 
 test('the privileged PR graph bridge never checks out or executes pull request code', async () => {
@@ -147,6 +149,9 @@ test('the privileged PR graph bridge never checks out or executes pull request c
   assert.match(source, /github\.event\.workflow_run\.conclusion == 'success'/);
   assert.match(source, /actions:\s*read/);
   assert.match(source, /contents:\s*write/);
+  assert.match(source, /actions\/github-script@[0-9a-f]{40} # v\d+\.\d+\.\d+/);
+  assert.match(source, /listWorkflowRunArtifacts/);
+  assert.match(source, /if:\s*steps\.dependency-graph-artifact\.outputs\.available == 'true'/);
   assert.match(source, /gradle\/actions\/dependency-submission@[0-9a-f]{40} # v\d+\.\d+\.\d+/);
   assert.match(source, /cache-disabled:\s*true/);
   assert.match(source, /dependency-graph:\s*download-and-submit/);
@@ -158,6 +163,8 @@ test('dependency review blocks high severity changes without enforcing a license
   const source = await readFile(new URL('../workflows/dependency-review.yml', import.meta.url), 'utf8');
 
   assert.match(source, /actions\/dependency-review-action@[0-9a-f]{40} # v\d+\.\d+\.\d+/);
+  assert.match(source, /Detect dependency graph input changes/);
+  assert.match(source, /if:\s*steps\.dependency-inputs\.outputs\.changed == 'true'/);
   assert.match(source, /fail-on-severity:\s*high/);
   assert.match(source, /license-check:\s*true/);
   assert.doesNotMatch(source, /(allow|deny)-licenses:/);
