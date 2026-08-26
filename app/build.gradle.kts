@@ -49,6 +49,11 @@ android {
                     apiLevel = 30
                     systemImageSource = "aosp"
                 }
+                create("pixel2Api34") {
+                    device = "Pixel 2"
+                    apiLevel = 34
+                    systemImageSource = "aosp"
+                }
             }
         }
     }
@@ -238,6 +243,7 @@ dependencies {
     // Managed-device androidTest — 실제 서버·OAuth 대신 Hilt fake를 주입하고 Compose semantics를 검증한다.
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4.accessibility)
     androidTestImplementation(libs.androidx.test.core.ktx)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.navigation.testing)

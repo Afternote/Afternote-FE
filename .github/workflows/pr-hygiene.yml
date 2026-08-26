@@ -1,0 +1,82 @@
+name: PR Hygiene Reconciliation
+
+on:
+  schedule:
+    - cron: '11 19 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: '라벨을 쓰지 않고 판정과 리포트만 생성'
+        required: false
+        default: true
+        type: boolean
+  pull_request_review:
+    types: [submitted]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+concurrency:
+  group: pr-hygiene
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: >-
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && github.ref_name == github.event.repository.default_branch)
+    name: Reconcile stale and review-debt labels
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Clone trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Run policy tests
+        run: node --test .github/scripts/reconcile-pr-hygiene.test.mjs
+
+      - name: Reconcile labels and write report
+        env:
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run == true && 'true' || 'false' }}
+          GITHUB_TOKEN: ${{ github.token }}
+          STALE_DAYS: '14'
+        run: node .github/scripts/reconcile-pr-hygiene.mjs
+
+  clear-stale:
+    if: >-
+      (github.event_name == 'pull_request_review' && github.event.review.user.type != 'Bot') ||
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request && github.event.comment.user.type != 'Bot')
+    name: Clear stale after human activity
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Remove stale label if present
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const pullNumber = context.payload.pull_request?.number ?? context.payload.issue?.number;
+            if (!Number.isSafeInteger(pullNumber)) {
+              core.setFailed('Could not resolve pull request number from activity payload');
+              return;
+            }
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pullNumber,
+                name: 'stale',
+              });
+              core.info(`Removed stale from #${pullNumber}`);
+            } catch (error) {
+              if (error.status === 404) {
+                core.info(`#${pullNumber} does not have stale`);
+                return;
+              }
+              throw error;

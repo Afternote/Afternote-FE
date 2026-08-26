@@ -81,8 +81,13 @@ jobs:
       - name: Set up CI-only app configuration
         uses: ./.github/actions/setup-ci-config
 
-      - name: Run Android Lint
-        run: ./gradlew lintDebug --continue --parallel --build-cache
+      - name: Run Android Lint and build merged manifest
+        run: ./gradlew lintDebug :app:processDebugMainManifest --continue --parallel --build-cache
+
+      - name: Verify merged Android manifest policy
+        run: >-
+          node .github/scripts/verify-android-manifest.mjs
+          app/build/intermediates/merged_manifest/debug/processDebugMainManifest/AndroidManifest.xml
 
       # 모듈별 lint XML 을 job summary 한 곳에 모은다 — :feature/* · :core/* 위반이
       # Actions step 로그(수만 줄)에 묻히던 문제(#279)를 여기서 푼다.
