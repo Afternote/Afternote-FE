@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.captureToImage
@@ -34,12 +35,12 @@ import com.afternote.afternote_fe.navigation.rememberAfternoteAppState
 import com.afternote.afternote_fe.navigation.rememberHomeTabActions
 import com.afternote.afternote_fe.navigation.rememberReceiverNavActions
 import com.afternote.afternote_fe.test.FailureArtifactRule
-import com.afternote.afternote_fe.test.FakeAuthRepository
 import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.repository.UserProfileRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
+import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.model.Session
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -142,12 +143,16 @@ class AppAndReceiverCompletionAndroidTest {
 
     @Test
     fun invalidCredentials_correctedPasswordThenRetry_entersHomeWithoutReportingUserError() {
-        fakeAuth.emailLoginResults.addLast(
+        val emailLoginResults = ArrayDeque<Result<Session.DefaultSession>>()
+        emailLoginResults.addLast(
             Result.failure(CoreAuthFailure.InvalidLoginCredentials(IllegalStateException("rejected"))),
         )
-        fakeAuth.emailLoginResults.addLast(
+        emailLoginResults.addLast(
             Result.success(Session.DefaultSession("access", "refresh")),
         )
+        fakeAuth.onDefaultLogin = { _, _ ->
+            requireNotNull(emailLoginResults.removeFirstOrNull()) { "email login 응답이 준비되지 않음" }
+        }
 
         composeRule
             .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_start))
@@ -324,9 +329,12 @@ class ReceiverRuntimeCompletionAndroidTest {
             .assertIsDisplayed()
         composeRule.onNodeWithText("언제나 응원할게").assertIsDisplayed()
         composeRule
-            .onNodeWithText(context.getString(ReceiverR.string.receiver_home_section_count_unavailable))
-            .performScrollTo()
-            .assertIsDisplayed()
+            .onAllNodes(
+                hasText(context.getString(ReceiverR.string.receiver_home_section_count_unavailable)),
+            ).apply {
+                assertCountEquals(2)
+                this[0].performScrollTo().assertIsDisplayed()
+            }
         composeRule
             .onNodeWithText("8개 라이프 이벤트 레터가 있습니다.")
             .performScrollTo()
@@ -337,9 +345,9 @@ class ReceiverRuntimeCompletionAndroidTest {
             .assertIsDisplayed()
 
         assertEquals(2, reporter.failures.size)
-        assertEquals("receiver_home_load", reporter.failures[0].second["home_stage"])
-        assertEquals("receiver_home_partial_load", reporter.failures[1].second["home_stage"])
-        assertEquals("mind_records", reporter.failures[1].second["home_failed_sources"])
+        assertEquals("receiver_home_load", reporter.failures[0].second["receiver_stage"])
+        assertEquals("receiver_home_partial_load", reporter.failures[1].second["receiver_stage"])
+        assertEquals("mind_records", reporter.failures[1].second["receiver_failed_sources"])
         assertEquals(listOf(2, 2, 2, 2), homeCallCounts())
     }
 
@@ -642,10 +650,9 @@ class ReceiverRuntimeCompletionAndroidTest {
         repository.detailResults.addLast(
             Result.success(
                 ReceivedAfternoteDetail(
-                    title = "Google Drive",
+                    serviceName = "Google Drive",
                     senderName = "이발신",
                     createdAt = "2026.08.22",
-                    category = "GALLERY",
                     type = AfternoteType.GALLERY_AND_FILES,
                     processingMethods = listOf("가족에게 폴더 전달"),
                     leaveMessageBlocks =
@@ -683,9 +690,8 @@ class ReceiverRuntimeCompletionAndroidTest {
         repository.detailResults.addLast(
             Result.success(
                 ReceivedAfternoteDetail(
-                    title = "추억 노트",
+                    serviceName = "추억 노트",
                     senderName = "이발신",
-                    category = "PLAYLIST",
                     type = AfternoteType.MEMORIAL,
                     leaveMessageBlocks =
                         listOf(LeaveMessageBlock(title = "마지막 말", body = "이 노래들을 기억해 줘")),

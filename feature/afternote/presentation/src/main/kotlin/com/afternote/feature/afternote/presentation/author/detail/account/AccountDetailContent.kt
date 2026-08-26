@@ -15,7 +15,6 @@ import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 data class AccountDetailContent(
     val serviceName: String = "",
     val type: AfternoteType = AfternoteType.SOCIAL_NETWORK,
-    val userName: String = "",
     val accountId: String = "",
     val password: String = "",
     val processingMethods: List<String> = emptyList(),
