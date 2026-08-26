@@ -1,32 +1,103 @@
 name: Oldest Review Order
 
-# GitHub은 리뷰 제출 자체를 사전에 막을 수 없다. 결정 리뷰가 제출된 직후 더 오래된
-# 미처리 PR을 확인하고, 순서를 건너뛴 리뷰라면 그 리뷰를 dismiss한 뒤 job을 실패시킨다.
 on:
-  pull_request_review:
-    types: [submitted]
+  workflow_run:
+    workflows: [Oldest Review Order Event]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      pull_number:
+        description: Pull request number for a historical review replay
+        required: false
+        type: string
+      review_id:
+        description: Review ID to replay
+        required: false
+        type: string
 
-permissions:
-  contents: read
-  pull-requests: write
+concurrency:
+  group: oldest-review-order-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions: {}
 
 jobs:
-  enforce:
-    name: Enforce oldest pull request review first
+  reconcile:
+    name: Reconcile oldest review order status
+    if: >-
+      github.event_name == 'workflow_run' ||
+      (github.event_name == 'workflow_dispatch' &&
+      inputs.pull_number == '' && inputs.review_id == '')
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+      statuses: write
     steps:
-      # pull_request_review의 GITHUB_REF는 refs/pull/.../merge다. write token으로 PR의
-      # 스크립트를 실행하지 않도록 항상 저장소의 trusted default branch를 checkout한다.
       - name: Clone trusted default branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.repository.default_branch }}
           persist-credentials: false
 
-      - name: Enforce oldest review order
+      - name: Reconcile oldest review order status
         env:
+          MODE: recalculate
+          RECALCULATE_SCOPE: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.pull_requests[0].number && 'affected' || 'all' }}
+          AFFECTED_PULL_REQUEST: ${{ github.event.workflow_run.pull_requests[0].number }}
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_EVENT_PATH: ${{ github.event_path }}
+          GITHUB_API_URL: ${{ github.api_url }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+        run: node .github/scripts/enforce-oldest-review-order.mjs
+
+  validate-replay-inputs:
+    name: Validate historical replay inputs
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      ((inputs.pull_number != '' && inputs.review_id == '') ||
+      (inputs.pull_number == '' && inputs.review_id != ''))
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    permissions: {}
+    steps:
+      - name: Require both replay inputs
+        run: |
+          echo 'Both pull_number and review_id are required for a historical replay.' >&2
+          exit 1
+
+  replay:
+    name: Replay historical review
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      inputs.pull_number != '' &&
+      inputs.review_id != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: write
+      statuses: write
+    steps:
+      - name: Clone trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Replay historical review
+        env:
+          MODE: replay
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+          GITHUB_API_URL: ${{ github.api_url }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          REPLAY_PULL_NUMBER: ${{ inputs.pull_number }}
+          REVIEW_ID: ${{ inputs.review_id }}
         run: node .github/scripts/enforce-oldest-review-order.mjs
