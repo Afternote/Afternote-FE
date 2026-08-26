@@ -27,4 +27,12 @@
     <!-- 홈 탭과 문안이 같지만 모듈 분리로 사본을 둔다 — 발신자 홈(home_tab_*)과 독립 수정 가능해야 한다. -->
     <string name="receiver_home_error_message">정보를 불러오지 못했습니다.</string>
     <string name="receiver_home_retry">다시 시도</string>
+
+    <!--
+      애프터노트 목록·플레이리스트는 발신자 화면([AfternoteHomeScreen]·공용 곡 목록 부품)을 공유하므로
+      관점이 갈리는 문구만 여기서 덮는다. 수신자 홈 섹션 설명과 같은 문안이지만, 위 error/retry 와 같은
+      이유로 사본을 둔다 (#620).
+    -->
+    <string name="receiver_afternote_list_header_description">고인이 사후 정리하고자 하는 데이터입니다.</string>
+    <string name="receiver_playlist_song_count_format">총 %1$d곡</string>
 </resources>
