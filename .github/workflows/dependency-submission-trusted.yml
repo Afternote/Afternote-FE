@@ -1,0 +1,45 @@
+name: Submit Trusted Branch Dependency Graph
+
+# develop·main 의 모든 새 SHA 에 신뢰된 base snapshot 을 직접 제출한다. PR dependency-review 는
+# base ref 와 head ref snapshot 을 짝지어 비교하므로 source-only push 도 최신 base SHA 가 필요하다.
+# PR artifact uploader 는 이 workflow 이름을 구독하지 않아 artifact 없는 후속 run 을 만들지 않는다.
+on:
+  push:
+    branches: [develop, main]
+
+concurrency:
+  group: trusted-branch-dependency-submission-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  submit-trusted-branch:
+    name: Submit trusted branch dependency graph
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      # PR artifact 와 같은 correlator 를 써야 base·head snapshot 이 같은 비교 축에 들어간다.
+      GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR: afternote-gradle-dependency-graph
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Generate and submit dependency graph
+        uses: gradle/actions/dependency-submission@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          additional-arguments: --no-configuration-cache --stacktrace
+          cache-provider: basic
+          dependency-graph: generate-and-submit
+          dependency-graph-continue-on-failure: false
+          validate-wrappers: true
