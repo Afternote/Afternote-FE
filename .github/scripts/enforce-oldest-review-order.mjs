@@ -129,6 +129,9 @@ function normalizeOpenPullRequest(pullRequest) {
     if (typeof pullRequest.draft !== "boolean") {
         throw new Error(`PR #${pullRequest.number ?? "?"}의 draft 값이 올바르지 않습니다.`);
     }
+    if (!Array.isArray(pullRequest.requested_reviewers)) {
+        throw new Error(`PR #${pullRequest.number ?? "?"}의 requested_reviewers 값이 올바르지 않습니다.`);
+    }
 
     const createdAt = requiredString(pullRequest.created_at, "pull_request.created_at");
     const createdTimestamp = parseTimestamp(createdAt, "pull_request.created_at");
@@ -137,6 +140,12 @@ function normalizeOpenPullRequest(pullRequest) {
         title: requiredString(pullRequest.title, "pull_request.title"),
         author: requiredString(pullRequest.user?.login, "pull_request.user.login"),
         draft: pullRequest.draft,
+        requestedReviewers: pullRequest.requested_reviewers.map((requested, index) =>
+            requiredString(
+                requested?.login,
+                `pull_request.requested_reviewers[${index}].login`,
+            ).toLowerCase()
+        ),
         createdAt,
         createdTimestamp,
     };
@@ -197,7 +206,12 @@ export function analyzeDecisiveReviews(reviews) {
         const submittedTimestamp = parseTimestamp(submittedAt, "review.submitted_at");
         const previous = latestByReviewer.get(reviewer);
         if (!previous || submittedTimestamp >= previous.submittedTimestamp) {
-            latestByReviewer.set(reviewer, { state, submittedAt, submittedTimestamp });
+            latestByReviewer.set(reviewer, {
+                reviewer,
+                state,
+                submittedAt,
+                submittedTimestamp,
+            });
         }
     }
 
@@ -218,7 +232,32 @@ export function analyzeDecisiveReviews(reviews) {
         debt: false,
         blockedAt: latest.submittedAt,
         blockedTimestamp: latest.submittedTimestamp,
+        outstandingReviews: outstanding,
     };
+}
+
+/**
+ * 변경요청을 낸 뒤 현재 다시 요청받은 리뷰어만 고른다.
+ * GitHub는 리뷰 제출 시 그 사람의 요청을 제거하므로, 같은 리뷰어가 현재 요청 목록에
+ * 다시 있다면 마지막 결정 뒤 작성자가 명시적으로 재리뷰를 요청한 것이다.
+ */
+export function selectRequestedOutstandingReview(reviewState, requestedReviewers) {
+    if (!Array.isArray(requestedReviewers)) {
+        throw new Error("requested_reviewers 응답이 배열이 아닙니다.");
+    }
+    const active = new Set(requestedReviewers.map((reviewer, index) =>
+        requiredString(reviewer, `requested_reviewers[${index}]`).toLowerCase()
+    ));
+    if (reviewState?.kind !== "changes-requested") {
+        return null;
+    }
+    if (!Array.isArray(reviewState.outstandingReviews)) {
+        throw new Error("미해소 변경요청 목록이 올바르지 않습니다.");
+    }
+    return reviewState.outstandingReviews
+        .filter((review) => active.has(review.reviewer))
+        .sort((left, right) => left.submittedTimestamp - right.submittedTimestamp)
+        .at(-1) ?? null;
 }
 
 /** 병합 커밋(parents 2개 이상)은 변경요청 반영 커밋으로 세지 않는다. */
@@ -248,7 +287,7 @@ export function hasSubstantiveCommitAfter(commits, blockedAt) {
     return found;
 }
 
-export function reviewDebtStatus(reviews, commits) {
+export function reviewDebtStatus(reviews, commits, requestedReviewers = []) {
     const reviewState = analyzeDecisiveReviews(reviews);
     if (reviewState.kind === "no-decisive-review") {
         return { debt: true, reason: "no-decisive-review" };
@@ -256,14 +295,25 @@ export function reviewDebtStatus(reviews, commits) {
     if (reviewState.kind === "resolved") {
         return { debt: false, reason: "resolved" };
     }
+    const requestedReview = selectRequestedOutstandingReview(reviewState, requestedReviewers);
+    if (!requestedReview) {
+        return {
+            debt: false,
+            reason: "changes-requested-not-rerequested",
+            blockedAt: reviewState.blockedAt,
+        };
+    }
     if (commits === undefined) {
         throw new Error("변경요청 이후 커밋 판정에 필요한 커밋 목록이 없습니다.");
     }
-    const fixed = hasSubstantiveCommitAfter(commits, reviewState.blockedAt);
+    const fixed = hasSubstantiveCommitAfter(commits, requestedReview.submittedAt);
     return {
         debt: fixed,
-        reason: fixed ? "changes-requested-fixed" : "changes-requested-not-fixed",
-        blockedAt: reviewState.blockedAt,
+        reason: fixed
+            ? "changes-requested-fixed-rerequested"
+            : "changes-requested-rerequested-not-fixed",
+        blockedAt: requestedReview.submittedAt,
+        reviewer: requestedReview.reviewer,
     };
 }
 
@@ -395,15 +445,24 @@ export async function findOldestReviewDebt(client, repository, currentPullReques
             continue;
         }
 
+        const requestedReview = selectRequestedOutstandingReview(
+            reviewState,
+            pullRequest.requestedReviewers,
+        );
+        if (!requestedReview) {
+            continue;
+        }
+
         const commits = await paginateRest(
             client,
             `/repos/${repository}/pulls/${pullRequest.number}/commits?per_page=${PAGE_SIZE}`,
         );
-        if (hasSubstantiveCommitAfter(commits, reviewState.blockedAt)) {
+        if (hasSubstantiveCommitAfter(commits, requestedReview.submittedAt)) {
             return {
                 ...pullRequest,
-                debtReason: "changes-requested-fixed",
-                blockedAt: reviewState.blockedAt,
+                debtReason: "changes-requested-fixed-rerequested",
+                blockedAt: requestedReview.submittedAt,
+                requestedReviewer: requestedReview.reviewer,
             };
         }
     }
