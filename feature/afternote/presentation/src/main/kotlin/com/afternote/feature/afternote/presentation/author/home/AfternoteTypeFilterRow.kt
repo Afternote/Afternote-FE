@@ -1,8 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.home
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
@@ -34,6 +33,8 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.util.TYPE_FILTER_TABS
 import com.afternote.feature.afternote.presentation.shared.util.typeLabelResFor
+
+internal const val AFTERNOTE_CATEGORY_MORE_INDICATOR_TEST_TAG = "afternoteCategoryMoreIndicator"
 
 /**
  * 종류 필터 탭 행. `null` 은 "전체" 탭이다.
@@ -108,20 +109,16 @@ fun AfternoteTypeFilterRow(
             }
         }
 
-        // 오른쪽 끝에 화살표 아이콘 (스크롤 가능할 때만 표시)
+        // 오른쪽 끝의 스크롤 가능 힌트. 최종 시안(4163:21839)에도 별도 reaction 이 없어 장식으로만 둔다.
         if (canScrollRight) {
             ArrowIcon(
                 iconRes = R.drawable.feature_afternote_ic_arrow_right_tab,
-                contentDescription = "더 보기",
+                contentDescription = null,
                 modifier =
                     Modifier
                         .padding(start = 8.dp)
                         .size(16.dp)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = {},
-                        ),
+                        .testTag(AFTERNOTE_CATEGORY_MORE_INDICATOR_TEST_TAG),
             )
         }
     }
