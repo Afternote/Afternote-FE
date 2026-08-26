@@ -19,9 +19,9 @@ private val SAMPLE_MESSAGE_BLOCKS =
 
 private val SAMPLE_ALBUM_COVERS =
     listOf(
-        AlbumCover(id = "1"),
-        AlbumCover(id = "2"),
-        AlbumCover(id = "3"),
+        AlbumCover(),
+        AlbumCover(),
+        AlbumCover(),
     )
 
 /** 영상 없는 기본 상태 — 시안대로 영상 섹션이 숨겨진다 (#274). */

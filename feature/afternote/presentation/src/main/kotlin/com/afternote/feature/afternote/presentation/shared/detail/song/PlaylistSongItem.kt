@@ -135,7 +135,7 @@ private fun AlbumCoverBox(albumImageUrl: String?) {
 @Composable
 private fun PlaylistSongItemPreview() {
     PlaylistSongItem(
-        song = PlaylistSongDisplay(id = "1", title = "노래 제목", artist = "가수 이름"),
+        song = PlaylistSongDisplay(selectionKey = "preview:1", title = "노래 제목", artist = "가수 이름"),
         selected = true,
     )
 }
