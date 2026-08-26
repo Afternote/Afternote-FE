@@ -64,8 +64,8 @@ fun SignUpResidentNumberScreen(
     }
 
     FlowStepScaffold(
-        topBarTitle = stringResource(R.string.signup_title),
-        actionButtonText = stringResource(R.string.signup_next),
+        topBarTitle = stringResource(R.string.onboarding_signup_title),
+        actionButtonText = stringResource(R.string.onboarding_signup_next),
         onBackClick = onBackClick,
         onActionClick = onNextClick,
         modifier = modifier,
@@ -83,7 +83,7 @@ fun SignUpResidentNumberScreen(
                         .padding(top = 43.dp),
             ) {
                 SignUpInputLabel(
-                    text = stringResource(R.string.signup_resident_number_label),
+                    text = stringResource(R.string.onboarding_signup_resident_number_label),
                 )
 
                 Spacer(modifier = Modifier.height(18.dp))
@@ -94,11 +94,11 @@ fun SignUpResidentNumberScreen(
                     type =
                         TextFieldType.Variant8(
                             backState = backNumberState,
-                            placeholder = stringResource(R.string.signup_resident_number_back_placeholder),
+                            placeholder = stringResource(R.string.onboarding_signup_resident_number_back_placeholder),
                             backFocusRequester = backFocusRequester,
                             frontFocusRequester = frontFocusRequester,
                         ),
-                    placeholder = stringResource(R.string.signup_resident_number_placeholder),
+                    placeholder = stringResource(R.string.onboarding_signup_resident_number_placeholder),
                     keyboardType = KeyboardType.Number,
                     onImeAction = { if (isNextEnabled) onNextClick() },
                 )

@@ -10,6 +10,7 @@ val googleWebClientId = socialLoginKey("GOOGLE_WEB_CLIENT_ID")
 
 android {
     namespace = "com.afternote.feature.onboarding.presentation"
+    resourcePrefix = "onboarding_"
 
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
 
