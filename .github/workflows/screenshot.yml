@@ -9,7 +9,8 @@ on:
   workflow_call:
     inputs:
       pull_request_number:
-        required: true
+        required: false
+        default: 0
         type: number
 
 permissions:
