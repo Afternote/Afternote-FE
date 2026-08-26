@@ -66,6 +66,13 @@ class ProcessingMethodListState(
         showTextField = !showTextField
     }
 
+    /**
+     * 텍스트 필드를 닫는다.
+     *
+     * [AddItemTextField] 가 항목 추가·포커스 해제로 스스로 물러날 때 부른다. 토글이 아니라
+     * 단방향이어야 한다 — 그 시점의 [showTextField] 는 항상 true 이므로 토글로도 닫히지만,
+     * 의도가 "닫는다" 인 곳에서 토글을 쓰면 이후 호출 순서 변경에 취약해진다.
+     */
     fun hideTextField() {
         showTextField = false
     }

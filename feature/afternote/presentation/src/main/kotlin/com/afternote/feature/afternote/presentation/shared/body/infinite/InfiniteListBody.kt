@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.paging.PagingData
@@ -15,6 +16,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.home.HomeHeaderSection
+import com.afternote.feature.afternote.presentation.author.home.NextStep
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.AfternoteListContent
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
 import kotlinx.coroutines.flow.flowOf
@@ -25,9 +27,9 @@ fun InfiniteListBody(
     selectedType: AfternoteType?,
     onTypeSelected: (AfternoteType?) -> Unit,
     onListItemClick: (id: Long, type: AfternoteType) -> Unit,
+    headerDescription: String,
+    nextStep: NextStep?,
     modifier: Modifier = Modifier,
-    nextStepText: String = "",
-    onNextStepClick: () -> Unit = {},
 ) {
     Column(
         modifier = modifier,
@@ -35,8 +37,8 @@ fun InfiniteListBody(
     ) {
         Spacer(Modifier.height(8.dp))
         HomeHeaderSection(
-            nextStepText = nextStepText,
-            onNextStepClick = onNextStepClick,
+            description = headerDescription,
+            nextStep = nextStep,
         )
         AfternoteListContent(
             items = items,
@@ -80,9 +82,14 @@ private fun InfiniteListBodyPreview() {
                 ),
             ).collectAsLazyPagingItems()
         InfiniteListBody(
-            nextStepText =
-                "가족들의 '주거래 은행' 정보를\n" +
-                    "입력하신 건 확인하셨나요?",
+            headerDescription = stringResource(R.string.afternote_home_header_description),
+            nextStep =
+                NextStep(
+                    text =
+                        "가족들의 '주거래 은행' 정보를\n" +
+                            "입력하신 건 확인하셨나요?",
+                    onClick = {},
+                ),
             items = items,
             selectedType = null,
             onTypeSelected = {},

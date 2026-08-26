@@ -169,7 +169,7 @@ internal fun AfternoteEditorNavigation(
         onRegisterClick = onRegisterClick,
         snackbarMessage = snackbarMessage,
         onSnackbarMessageConsumed = editViewModel::onErrorConsumed,
-        content = {
+        content = { snackbarHostState ->
             AfternoteEditorBody(
                 state = state,
                 form = uiState.form,
@@ -177,6 +177,8 @@ internal fun AfternoteEditorNavigation(
                 onNavigateToSelectReceiver = onNavigateToSelectReceiver,
                 onThumbnailBytesReady = editViewModel::uploadMemorialThumbnail,
                 onThumbnailExtractionFailed = editViewModel::onMemorialThumbnailExtractionFailed,
+                onCaptureFailed = editViewModel::onMemorialCaptureLaunchFailed,
+                snackbarHostState = snackbarHostState,
                 isPrefillLoading = uiState.isPrefillLoading,
             )
         },
