@@ -8,6 +8,7 @@ android {
     testOptions.unitTests.isIncludeAndroidResources = true
 
     namespace = "com.afternote.feature.home.presentation"
+    resourcePrefix = "home_"
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
 }
 

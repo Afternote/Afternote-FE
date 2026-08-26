@@ -5,6 +5,7 @@ plugins {
 
 android {
     namespace = "com.afternote.core.common"
+    resourcePrefix = "core_common_"
 }
 
 dependencies {
