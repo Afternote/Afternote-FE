@@ -12,11 +12,11 @@ name: Unit Test
 #     머지 전 어디서도 검출되지 않았다(#936 — develop 컴파일 실패 44건). 에뮬레이터 없이 컴파일만 검증.
 # lint.yml 과 setup 이 거의 동일하지만 분리 — lint 실패가 test 결과를 가리지 않도록 fail-fast 독립.
 
-# PR 검증은 pr-validation.yml 이 한 번에 부르고, 그 워크플로의 ci-gate job 이 결과를
-# 모아 단일 required check 로 만든다. concurrency 도 그쪽이 PR 단위로 건다 (#848).
+# PR 검증은 pr-validation.yml 이 한 번에 부르고, 이 워크플로의 job check 를
+# ruleset 에서 required 로 직접 요구한다. concurrency 는 진입점에서 PR 단위로 건다.
 #
 # 트리거를 workflow_call 하나로 두는 것이 요점이다 — on: pull_request 를 함께 남기면
-# 같은 검증이 PR 마다 두 벌씩 돌고, ci-gate 가 보지 않는 쪽이 별개 체크로 남는다.
+# 같은 검증과 동일한 이름의 check 가 PR 마다 두 벌씩 돈다.
 on:
   workflow_call:
 
