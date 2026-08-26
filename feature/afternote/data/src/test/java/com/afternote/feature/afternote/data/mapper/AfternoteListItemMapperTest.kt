@@ -13,7 +13,7 @@ import org.junit.Test
  *
  * 항목 매퍼를 따로 노출하지 않으므로 단건도 이 소비 경로로 확인한다 — 실제로 도는 경로 그대로다.
  */
-class AfternoteListItemDtoToDomainTest {
+class AfternoteListItemMapperTest {
     @Test
     fun `필드와 Long id를 그대로 매핑`() {
         val result =

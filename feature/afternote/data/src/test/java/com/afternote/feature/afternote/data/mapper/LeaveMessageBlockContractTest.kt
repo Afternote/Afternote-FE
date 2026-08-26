@@ -3,7 +3,6 @@ package com.afternote.feature.afternote.data.mapper
 import com.afternote.feature.afternote.data.dto.AfternoteCreateAccountRequestDto
 import com.afternote.feature.afternote.data.dto.AfternoteDetailDto
 import com.afternote.feature.afternote.data.dto.LeaveMessageBlockDto
-import com.afternote.feature.afternote.data.mapper.response.toDetailDomain
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.receiver.data.dto.ReceivedAfternoteDetailDto
 import com.afternote.feature.receiver.data.dto.ReceivedAfternoteListDto
@@ -46,7 +45,7 @@ class LeaveMessageBlockContractTest {
              "playlist":null,"updatedAt":"2026-08-07T06:21:14.553567"}
             """.trimIndent()
 
-        val detail = json.decodeFromString<AfternoteDetailDto>(response).toDetailDomain()
+        val detail = json.decodeFromString<AfternoteDetailDto>(response).toDomain()
 
         assertEquals(
             listOf(
@@ -64,7 +63,7 @@ class LeaveMessageBlockContractTest {
             json
                 .decodeFromString<AfternoteDetailDto>(
                     """{"afternoteId":11,"category":"SOCIAL","title":"t","isDraft":false,"receivers":[],"credentials":{"id":"qa","password":"qa"},"leaveMessage":[{"title":"","body":"재현용 남기실 말씀"}]}""",
-                ).toDetailDomain()
+                ).toDomain()
 
         assertEquals(
             listOf(LeaveMessageBlock(title = "", body = "재현용 남기실 말씀")),
@@ -78,7 +77,7 @@ class LeaveMessageBlockContractTest {
             json
                 .decodeFromString<AfternoteDetailDto>(
                     """{"afternoteId":1,"category":"SOCIAL","title":"t","isDraft":false,"receivers":[],"credentials":{"id":"qa","password":"qa"},"leaveMessage":null}""",
-                ).toDetailDomain()
+                ).toDomain()
 
         assertTrue(detail.leaveMessageBlocks.isEmpty())
     }

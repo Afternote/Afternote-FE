@@ -1,12 +1,9 @@
-package com.afternote.feature.afternote.data.mapper.response
+package com.afternote.feature.afternote.data.mapper
 
 import com.afternote.feature.afternote.data.dto.AfternoteDetailDto
 import com.afternote.feature.afternote.data.dto.AfternoteDetailReceiverDto
 import com.afternote.feature.afternote.data.dto.AfternotePlaylistDto
 import com.afternote.feature.afternote.data.dto.AfternoteSongDto
-import com.afternote.feature.afternote.data.mapper.afternoteTypeFromServerCategory
-import com.afternote.feature.afternote.data.mapper.formatDateFromServer
-import com.afternote.feature.afternote.data.mapper.toLeaveMessageBlocks
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
@@ -25,7 +22,7 @@ import kotlin.collections.mapNotNull
  * 임의의 종류로 메우면 라벨·아이콘·처리 방법이 다른 종류의 것으로 표시된다(#1048).
  * 던진 예외는 `AfternoteRepositoryImpl.safeCall` 이 잡아 `Result.failure` 로 옮긴다.
  */
-fun AfternoteDetailDto.toDetailDomain(): Detail {
+fun AfternoteDetailDto.toDomain(): Detail {
     val resolvedType =
         requireNotNull(afternoteTypeFromServerCategory(category)) {
             "해석할 수 없는 애프터노트 종류다: afternoteId=$afternoteId category=$category"
