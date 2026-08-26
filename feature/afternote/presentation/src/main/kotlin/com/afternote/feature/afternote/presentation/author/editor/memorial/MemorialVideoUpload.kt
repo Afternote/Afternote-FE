@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -52,6 +53,7 @@ import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 
 private const val TAG = "MemorialVideoUpload"
+internal const val MEMORIAL_VIDEO_ADD_TEST_TAG = "memorialVideoAdd"
 
 /**
  * 장례식에 남길 영상 추가 컴포넌트
@@ -151,6 +153,7 @@ fun MemorialVideoUpload(
                         .fillMaxWidth()
                         .height(80.dp)
                         .background(color = AfternoteDesign.colors.white, shape = RoundedCornerShape(size = 16.dp))
+                        .testTag(MEMORIAL_VIDEO_ADD_TEST_TAG)
                         .semantics { contentDescription = addContentDescription }
                         .clickable(onClick = onAddVideoClick),
             ) {
@@ -162,9 +165,10 @@ fun MemorialVideoUpload(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Spacer(modifier = Modifier.height(24.dp))
+                    // 카드 전체가 단일 클릭 영역을 소유한다. 자식 clickable 은 중앙 탭을 가로챈다.
                     PlusBadgeButton(
-                        contentDescription = addContentDescription,
-                        onClick = {},
+                        contentDescription = null,
+                        onClick = null,
                         paddingValues = PaddingValues(12.dp),
                         size = 24.dp,
                     )
