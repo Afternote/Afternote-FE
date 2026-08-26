@@ -1,16 +1,10 @@
 package com.afternote.feature.home.presentation
 
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.repository.UserProfileRepository
-import com.afternote.core.domain.repository.UserRepository
-import com.afternote.core.model.delivery.DeliveryConditionItem
-import com.afternote.core.model.delivery.ReceiverDeliveryConditions
+import com.afternote.core.domain.testing.FakeUserProfileRepository
+import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.Receiver
-import com.afternote.core.model.user.ReceiverCreated
-import com.afternote.core.model.user.ReceiverDetail
 import com.afternote.core.model.user.User
-import com.afternote.core.model.user.UserConnectedAccount
-import com.afternote.core.model.user.UserPushSetting
 import com.afternote.feature.home.presentation.usecase.GetHomeSummaryUseCase
 import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DiaryList
@@ -22,7 +16,6 @@ import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -249,7 +242,11 @@ class HomeTabViewModelTest {
 
 private class Fixture {
     val server = FakeHomeRepositories()
-    val profile = FakeUserProfileRepository()
+    val profile =
+        FakeUserProfileRepository.strict().apply {
+            onGetCachedUserName = { cachedUserName }
+            onSaveUserName = { name -> cachedUserName = name }
+        }
     val reporter = RecordingErrorReporter()
 
     fun viewModel(): HomeTabViewModel =
@@ -266,7 +263,14 @@ private class Fixture {
 }
 
 private class FakeHomeRepositories {
-    val userRepository = FakeUserRepository()
+    private val profiles = ArrayDeque<CompletableDeferred<User>>()
+    private val receivers = ArrayDeque<CompletableDeferred<List<Receiver>>>()
+
+    val userRepository =
+        FakeUserRepository.strict().apply {
+            onGetReceivers = { receivers.takeNext("getReceivers").await() }
+            onGetMyProfile = { profiles.takeNext("getMyProfile").await() }
+        }
 
     private val diaryResults = ArrayDeque<CompletableDeferred<Result<DiaryList>>>()
     val diaryRepository =
@@ -284,7 +288,8 @@ private class FakeHomeRepositories {
 
     fun enqueueRequest(): PendingHomeRequest =
         PendingHomeRequest().also { request ->
-            userRepository.enqueue(request.profile, request.receivers)
+            profiles.addLast(request.profile)
+            receivers.addLast(request.receivers)
             diaryResults.addLast(request.diary)
             questionResults.addLast(request.question)
         }
@@ -333,110 +338,6 @@ private class PendingHomeRequest {
     }
 }
 
-private class FakeUserRepository : UserRepository {
-    private val profiles = ArrayDeque<CompletableDeferred<User>>()
-    private val receivers = ArrayDeque<CompletableDeferred<List<Receiver>>>()
-
-    var profileCalls: Int = 0
-        private set
-    var receiverCalls: Int = 0
-        private set
-
-    fun enqueue(
-        profile: CompletableDeferred<User>,
-        receiverList: CompletableDeferred<List<Receiver>>,
-    ) {
-        profiles.addLast(profile)
-        receivers.addLast(receiverList)
-    }
-
-    override val receiverListFlow: Flow<List<Receiver>>
-        get() = unexpected("receiverListFlow")
-
-    override suspend fun getReceivers(): List<Receiver> {
-        receiverCalls++
-        return receivers.takeNext("getReceivers").await()
-    }
-
-    override suspend fun getMyProfile(): User {
-        profileCalls++
-        return profiles.takeNext("getMyProfile").await()
-    }
-
-    override suspend fun createReceiver(
-        name: String,
-        relation: String,
-        phone: String?,
-        email: String?,
-        message: String?,
-    ): ReceiverCreated = unexpected("createReceiver")
-
-    override suspend fun getReceiverDetail(receiverId: Long): ReceiverDetail = unexpected("getReceiverDetail")
-
-    override suspend fun updateReceiver(
-        receiverId: Long,
-        name: String,
-        phone: String,
-        relation: String,
-        email: String,
-    ): Receiver = unexpected("updateReceiver")
-
-    override suspend fun updateReceiverMessage(
-        receiverId: Long,
-        message: String,
-    ) = unexpected("updateReceiverMessage")
-
-    override suspend fun updateMyProfile(
-        name: String?,
-        phone: String?,
-        profileImageUrl: String?,
-    ): User = unexpected("updateMyProfile")
-
-    override suspend fun deleteAccount() = unexpected("deleteAccount")
-
-    override suspend fun logActivity() = unexpected("logActivity")
-
-    override suspend fun getMyPushSettings(): UserPushSetting = unexpected("getMyPushSettings")
-
-    override suspend fun updateMyPushSettings(
-        timeLetter: Boolean?,
-        mindRecord: Boolean?,
-        afterNote: Boolean?,
-    ): UserPushSetting = unexpected("updateMyPushSettings")
-
-    override suspend fun getConnectedAccounts(): UserConnectedAccount = unexpected("getConnectedAccounts")
-
-    override suspend fun linkConnectedAccount(
-        provider: String,
-        accessToken: String,
-    ): UserConnectedAccount = unexpected("linkConnectedAccount")
-
-    override suspend fun unlinkConnectedAccount(provider: String): UserConnectedAccount = unexpected("unlinkConnectedAccount")
-
-    override suspend fun getReceiverDeliveryConditions(receiverId: Long): ReceiverDeliveryConditions =
-        unexpected("getReceiverDeliveryConditions")
-
-    override suspend fun updateReceiverDeliveryConditions(
-        receiverId: Long,
-        conditions: List<DeliveryConditionItem>,
-    ): ReceiverDeliveryConditions = unexpected("updateReceiverDeliveryConditions")
-}
-
-private class FakeUserProfileRepository : UserProfileRepository {
-    var cachedUserName: String? = null
-    val savedUserNames = mutableListOf<String>()
-
-    override fun isPasskeyRegisteredFlow(): Flow<Boolean> = unexpected("isPasskeyRegisteredFlow")
-
-    override suspend fun savePasskeyRegistered(registered: Boolean) = unexpected("savePasskeyRegistered")
-
-    override suspend fun getCachedUserName(): String? = cachedUserName
-
-    override suspend fun saveUserName(name: String) {
-        savedUserNames += name
-    }
-}
-
 private class RecordingErrorReporter : ErrorReporter {
     data class Failure(
         val throwable: Throwable,
@@ -459,8 +360,6 @@ private fun <T> ArrayDeque<T>.takeNext(method: String): T =
     } else {
         removeFirst()
     }
-
-private fun unexpected(method: String): Nothing = error("$method 는 이 테스트에서 호출되면 안 됨")
 
 private fun successState(
     userName: String,
