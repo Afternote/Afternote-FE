@@ -9,6 +9,11 @@ data class DiaryWriteUiState(
     val title: String = "",
     val content: String = "",
     val mood: TodayMood? = null,
+    /**
+     * 화면에 표시할 기록 날짜. **표시 전용이다** — 서버는 생성·수정 어느 쪽에서도 이 값을
+     * 받지 않고 기록 날짜를 요청 시각으로 정한다 (#1008). 이어쓰기 프리필이 원래 날짜를
+     * 채워 주는 자리라 상태 자체는 남긴다.
+     */
     val date: LocalDate = LocalDate.now(),
     val imageUrl: String? = null,
     /** `GET /users/receivers` 로 불러온 내 수신인 목록. 로드 실패 시 빈 목록 (작성은 가능). */

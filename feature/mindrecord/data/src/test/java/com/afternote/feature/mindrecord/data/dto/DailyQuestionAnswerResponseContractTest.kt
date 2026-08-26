@@ -1,8 +1,10 @@
 package com.afternote.feature.mindrecord.data.dto
 
 import com.afternote.core.network.model.BaseResponse
+import kotlinx.serialization.MissingFieldException
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 /**
@@ -79,5 +81,43 @@ class DailyQuestionAnswerResponseContractTest {
             }.isFailure
 
         assertEquals(true, failed)
+    }
+
+    @Test
+    fun `isDraft 가 빠지면 정식 답변으로 접히지 않고 실패한다`() {
+        // false 로 접히면 임시저장이 정식 답변으로 보인다 — 계약 변경이 «정상적인 빈 값» 으로
+        // 둔갑하는 자리라 기본값을 두지 않는다 (#789).
+        val body =
+            """
+            {
+              "status": 200, "code": 200, "message": "성공",
+              "data": { "userDailyQuestionId": 19, "content": "응답 계약 실측" }
+            }
+            """.trimIndent()
+
+        assertThrows(MissingFieldException::class.java) {
+            json.decodeFromString(
+                BaseResponse.serializer(DailyQuestionAnswerResponseDto.serializer()),
+                body,
+            )
+        }
+    }
+
+    @Test
+    fun `content 가 빠져도 빈 문자열로 성공하지 않는다`() {
+        val body =
+            """
+            {
+              "status": 200, "code": 200, "message": "성공",
+              "data": { "userDailyQuestionId": 19, "isDraft": false }
+            }
+            """.trimIndent()
+
+        assertThrows(MissingFieldException::class.java) {
+            json.decodeFromString(
+                BaseResponse.serializer(DailyQuestionAnswerResponseDto.serializer()),
+                body,
+            )
+        }
     }
 }

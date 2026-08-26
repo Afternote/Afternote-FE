@@ -2,8 +2,8 @@ package com.afternote.feature.home.presentation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import com.android.tools.screenshot.PreviewTest
 
 /**

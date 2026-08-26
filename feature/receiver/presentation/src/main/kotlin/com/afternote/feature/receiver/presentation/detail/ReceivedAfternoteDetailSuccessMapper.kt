@@ -31,7 +31,7 @@ internal fun ReceivedAfternoteDetail.toReceivedDetailContentUiModel(): ReceivedD
 
 private fun ReceivedAfternoteDetail.toReceivedSocialNetworkDetailContent(): ReceivedSocialNetworkDetailContent =
     ReceivedSocialNetworkDetailContent(
-        serviceName = title.orEmpty(),
+        serviceName = title,
         accountId = credentials?.id.orEmpty(),
         password = credentials?.password.orEmpty(),
         processingMethods = processingMethods,
@@ -41,7 +41,7 @@ private fun ReceivedAfternoteDetail.toReceivedSocialNetworkDetailContent(): Rece
 
 private fun ReceivedAfternoteDetail.toReceivedGalleryDetailContent(): ReceivedGalleryDetailContent =
     ReceivedGalleryDetailContent(
-        serviceName = title.orEmpty(),
+        serviceName = title,
         finalWriteDate = createdAt.orEmpty(),
         processingMethods = processingMethods,
         messageBlocks = leaveMessageBlocks.toMessageBlockUiModels(),

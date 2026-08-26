@@ -61,7 +61,7 @@ fun WelcomeScreen(
             // 로고
             Image(
                 painter = painterResource(CommonR.drawable.core_common_logo),
-                contentDescription = stringResource(R.string.welcome_logo_description),
+                contentDescription = stringResource(R.string.onboarding_welcome_logo_description),
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -75,7 +75,7 @@ fun WelcomeScreen(
 
             // 메인 타이틀
             Text(
-                text = stringResource(R.string.welcome_title),
+                text = stringResource(R.string.onboarding_welcome_title),
                 style = AfternoteDesign.typography.h1,
                 color = AfternoteDesign.colors.black,
             )
@@ -83,8 +83,8 @@ fun WelcomeScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             // 설명 텍스트 ("애프터노트"만 강조)
-            val descriptionText = stringResource(R.string.welcome_description)
-            val highlight = stringResource(R.string.welcome_brand_name)
+            val descriptionText = stringResource(R.string.onboarding_welcome_description)
+            val highlight = stringResource(R.string.onboarding_welcome_brand_name)
             Text(
                 text =
                     buildAnnotatedString {
@@ -109,7 +109,7 @@ fun WelcomeScreen(
 
             // 시작하기 버튼
             AfternoteButton(
-                text = stringResource(R.string.welcome_start),
+                text = stringResource(R.string.onboarding_welcome_start),
                 onClick = {
                     focusManager.clearFocus()
                     onStartClick()
@@ -124,7 +124,7 @@ fun WelcomeScreen(
 
             // 전달 받은 기록 확인하기 버튼
             AfternoteButton(
-                text = stringResource(R.string.welcome_check_records),
+                text = stringResource(R.string.onboarding_welcome_check_records),
                 onClick = {
                     focusManager.clearFocus()
                     onCheckRecordsClick()
@@ -143,12 +143,12 @@ fun WelcomeScreen(
                 horizontalArrangement = Arrangement.Center,
             ) {
                 Text(
-                    text = stringResource(R.string.welcome_already_signed_up),
+                    text = stringResource(R.string.onboarding_welcome_already_signed_up),
                     style = AfternoteDesign.typography.captionLargeR,
                     color = AfternoteDesign.colors.gray5,
                 )
                 Text(
-                    text = stringResource(R.string.welcome_login),
+                    text = stringResource(R.string.onboarding_welcome_login),
                     style =
                         AfternoteDesign.typography.captionLargeR.copy(
                             textDecoration = TextDecoration.Underline,
