@@ -92,7 +92,15 @@ sealed class LoginDto {
     data class SocialLoginDto(
         override val accessToken: String,
         override val refreshToken: String,
-        @SerialName("newUser") val isNewUser: Boolean? = null,
+        /**
+         * 이번 로그인으로 계정이 새로 만들어졌는지. 온보딩(약관 동의) 진입 여부를 이 값 하나가 가른다.
+         *
+         * BE 는 primitive `boolean` 이라 항상 실려 온다. 기본값을 두지 않아 누락·오타가 조용한
+         * "기존 유저" 취급으로 흡수되지 않게 한다 — 키가 `newUser` 로 어긋나 있던 3개월간(#993)
+         * 이 분기가 통째로 죽어 있었고, nullable 기본값이 그 실패를 정상 동작처럼 보이게 했다.
+         * 서버 키 이름은 `AuthDtoSocialLoginContractTest` 가 배포 스키마 기준으로 가드한다.
+         */
+        @SerialName("isNewUser") val isNewUser: Boolean,
         override val expiresIn: Long? = null,
     ) : LoginDto()
 }

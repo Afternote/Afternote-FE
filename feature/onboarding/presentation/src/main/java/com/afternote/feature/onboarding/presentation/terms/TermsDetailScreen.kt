@@ -26,8 +26,8 @@ fun TermsDetailScreen(
     modifier: Modifier = Modifier,
 ) {
     FlowStepScaffold(
-        topBarTitle = stringResource(R.string.signup_title),
-        actionButtonText = stringResource(id = R.string.terms_next),
+        topBarTitle = stringResource(R.string.onboarding_signup_title),
+        actionButtonText = stringResource(id = R.string.onboarding_terms_next),
         onBackClick = onBackClick,
         onActionClick = onNextClick,
         modifier = modifier,
@@ -45,7 +45,7 @@ fun TermsDetailScreen(
 
                 // 인트로 텍스트
                 Text(
-                    text = stringResource(R.string.terms_detail_intro),
+                    text = stringResource(R.string.onboarding_terms_detail_intro),
                     style = AfternoteDesign.typography.bodySmallR,
                     color = AfternoteDesign.colors.gray9,
                 )
@@ -53,27 +53,27 @@ fun TermsDetailScreen(
                 // 각 약관 섹션들 (반복되는 구조는 별도 컴포저블로 분리하여 가독성 확보)
                 TermsSectionText(
                     title = "1. 서비스 이용약관",
-                    content = stringResource(R.string.terms_detail_section_1),
+                    content = stringResource(R.string.onboarding_terms_detail_section_1),
                 )
                 TermsSectionText(
                     title = "2. 개인정보 수집 및 이용 동의",
-                    content = stringResource(R.string.terms_detail_section_2),
+                    content = stringResource(R.string.onboarding_terms_detail_section_2),
                 )
                 TermsSectionText(
                     title = "3. 기록 및 콘텐츠 저장에 대한 안내",
-                    content = stringResource(R.string.terms_detail_section_3),
+                    content = stringResource(R.string.onboarding_terms_detail_section_3),
                 )
                 TermsSectionText(
                     title = "4. 계정 및 데이터 관리",
-                    content = stringResource(R.string.terms_detail_section_4),
+                    content = stringResource(R.string.onboarding_terms_detail_section_4),
                 )
                 TermsSectionText(
                     title = "5. 서비스 변경 및 종료",
-                    content = stringResource(R.string.terms_detail_section_5),
+                    content = stringResource(R.string.onboarding_terms_detail_section_5),
                 )
                 TermsSectionText(
                     title = "6. 동의 철회",
-                    content = stringResource(R.string.terms_detail_section_6),
+                    content = stringResource(R.string.onboarding_terms_detail_section_6),
                 )
 
                 // 맨 마지막 항목 아래에 약간의 여유 공간 추가 (스크롤 끝 도달 시 숨통 트이는 UX)
