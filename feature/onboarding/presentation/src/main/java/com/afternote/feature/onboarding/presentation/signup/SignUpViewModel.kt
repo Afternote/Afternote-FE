@@ -132,7 +132,7 @@ class SignUpViewModel
                         // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
                         if (error is CancellationException) throw error
                         errorReporter.recordAuthFailure(AuthFailureStage.EMAIL_CODE_SEND, error)
-                        _uiState.update { it.copy(errorMessage = error.toDisplayMessage(R.string.signup_code_send_failed)) }
+                        _uiState.update { it.copy(errorMessage = error.toDisplayMessage(R.string.onboarding_signup_code_send_failed)) }
                     }
                 _uiState.update { it.copy(isSendingCode = false) }
             }
@@ -180,7 +180,9 @@ class SignUpViewModel
                             _uiState.update { it.copy(hasVerificationError = true, errorMessage = null) }
                         } else {
                             errorReporter.recordAuthFailure(AuthFailureStage.EMAIL_VERIFY, error)
-                            _uiState.update { it.copy(errorMessage = error.toDisplayMessage(R.string.signup_email_verify_failed)) }
+                            _uiState.update {
+                                it.copy(errorMessage = error.toDisplayMessage(R.string.onboarding_signup_email_verify_failed))
+                            }
                         }
                     }
                 _uiState.update { it.copy(isVerifyingEmail = false) }
@@ -222,7 +224,7 @@ class SignUpViewModel
                                     // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
                                     if (error is CancellationException) throw error
                                     errorReporter.recordAuthFailure(AuthFailureStage.SIGN_UP, error)
-                                    _uiState.update { it.copy(errorMessage = error.toDisplayMessage(R.string.signup_failed)) }
+                                    _uiState.update { it.copy(errorMessage = error.toDisplayMessage(R.string.onboarding_signup_failed)) }
                                     return@launch
                                 }
                         }
@@ -240,7 +242,7 @@ class SignUpViewModel
                                 )
                                 _uiState.update {
                                     it.copy(
-                                        errorMessage = error.toDisplayMessage(R.string.signup_auto_login_failed),
+                                        errorMessage = error.toDisplayMessage(R.string.onboarding_signup_auto_login_failed),
                                     )
                                 }
                             }

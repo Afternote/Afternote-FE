@@ -149,7 +149,7 @@ class LoginViewModel
                                 is CoreAuthFailure.UserCancelledAuth,
                                 null,
                                 -> {
-                                    it.copy(isLoading = false, errorMessage = exception.toDisplayMessage(R.string.login_failed))
+                                    it.copy(isLoading = false, errorMessage = exception.toDisplayMessage(R.string.onboarding_login_failed))
                                 }
                             }
                         }
