@@ -75,6 +75,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Fetch pull request history for changed-module coverage
+        if: github.event_name == 'pull_request'
         env:
           BASE_REF: ${{ steps.pull-request.outputs.base-ref }}
           PR_NUMBER: ${{ inputs.pull_request_number }}
@@ -115,6 +116,7 @@ jobs:
           retention-days: 14
 
       - name: Summarize changed-module coverage
+        if: github.event_name == 'pull_request'
         env:
           KOVER_BASE_SHA: ${{ steps.pull-request.outputs.base-sha }}
           KOVER_HEAD_SHA: ${{ steps.pull-request.outputs.head-sha }}
