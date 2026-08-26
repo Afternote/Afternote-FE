@@ -11,8 +11,8 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
-import com.afternote.afternote_fe.test.FakeAuthRepository
-import com.afternote.afternote_fe.test.FakeUserRepository
+import com.afternote.afternote_fe.test.appTestAuthRepository
+import com.afternote.afternote_fe.test.appTestUserRepository
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.setting.presentation.screen.SettingScreen
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel
@@ -35,8 +35,8 @@ class SettingFlowAndroidTest {
 
     @Test
     fun profileAndSecurityEntries_emitExpectedNavigation() {
-        val auth = FakeAuthRepository(loggedIn = true)
-        val user = FakeUserRepository()
+        val auth = appTestAuthRepository(loggedIn = true)
+        val user = appTestUserRepository()
         val viewModel = SettingViewModel(auth, user)
         var destination: String? = null
 
@@ -56,8 +56,8 @@ class SettingFlowAndroidTest {
 
     @Test
     fun logout_cancelThenConfirm_callsRepositoryExactlyOnce() {
-        val auth = FakeAuthRepository(loggedIn = true)
-        val user = FakeUserRepository()
+        val auth = appTestAuthRepository(loggedIn = true)
+        val user = appTestUserRepository()
         val viewModel = SettingViewModel(auth, user)
         var navigationCalls = 0
 
@@ -81,8 +81,8 @@ class SettingFlowAndroidTest {
 
     @Test
     fun destructiveDelete_isNotCalledUntilViewModelCommand() {
-        val user = FakeUserRepository()
-        val viewModel = SettingViewModel(FakeAuthRepository(loggedIn = true), user)
+        val user = appTestUserRepository()
+        val viewModel = SettingViewModel(appTestAuthRepository(loggedIn = true), user)
         composeRule.setContent { AfternoteTheme {} }
 
         assertEquals(0, user.deleteAccountCalls)
@@ -94,8 +94,12 @@ class SettingFlowAndroidTest {
 
     @Test
     fun pushToggle_failure_rollsBackAndSendsExactPatchOnce() {
-        val user = FakeUserRepository()
-        user.pushSettingUpdateResults.addLast(Result.failure(IllegalStateException("offline")))
+        val user = appTestUserRepository()
+        val pushSettingUpdateResults = ArrayDeque<Result<com.afternote.core.model.user.UserPushSetting>>()
+        pushSettingUpdateResults.addLast(Result.failure(IllegalStateException("offline")))
+        user.onUpdateMyPushSettings = { _, _, _ ->
+            requireNotNull(pushSettingUpdateResults.removeFirstOrNull()) { "push setting 응답이 준비되지 않음" }.getOrThrow()
+        }
         val viewModel =
             PushNotificationViewModel(
                 context = ApplicationProvider.getApplicationContext(),

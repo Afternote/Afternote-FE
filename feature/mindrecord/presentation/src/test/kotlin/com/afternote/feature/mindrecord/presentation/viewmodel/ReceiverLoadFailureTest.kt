@@ -1,8 +1,9 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
-import com.afternote.core.domain.repository.PhotoUploadRepository
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
+import com.afternote.core.domain.testing.FakeUserRepository
+import com.afternote.core.model.user.Receiver
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DiaryList
@@ -27,7 +28,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.io.IOException
-import java.lang.reflect.Proxy
 
 /**
  * 수신인 조회 실패가 «등록된 수신인 없음» 과 구분되는지 (#1019).
@@ -92,10 +92,10 @@ class ReceiverLoadFailureTest {
                 DiaryWriteViewModel(
                     savedStateHandle = SavedStateHandle(emptyMap()),
                     repository = NoopDiaryRepository,
-                    photoUploadRepository = PhotoUploadRepository { _, _ -> error("업로드는 호출되지 않는다") },
+                    photoUploadRepository = FakePhotoUploadRepository.strict(),
                     userRepository =
                         userRepository {
-                            if (shouldFail) throw IOException("offline") else emptyList<Any>()
+                            if (shouldFail) throw IOException("offline") else emptyList()
                         },
                     draftLoader = MindRecordDraftLoader(NoopDiaryRepository, NoopDailyQuestionRepository),
                 )
@@ -126,14 +126,14 @@ class ReceiverLoadFailureTest {
                 DiaryWriteViewModel(
                     savedStateHandle = SavedStateHandle(emptyMap()),
                     repository = NoopDiaryRepository,
-                    photoUploadRepository = PhotoUploadRepository { _, _ -> error("업로드는 호출되지 않는다") },
+                    photoUploadRepository = FakePhotoUploadRepository.strict(),
                     userRepository =
                         userRepository {
                             if (shouldFail) {
                                 throw IOException("offline")
                             } else {
                                 stateInFlight = viewModel.uiState.value
-                                emptyList<Any>()
+                                emptyList()
                             }
                         },
                     draftLoader = MindRecordDraftLoader(NoopDiaryRepository, NoopDailyQuestionRepository),
@@ -158,23 +158,17 @@ class ReceiverLoadFailureTest {
         DiaryWriteViewModel(
             savedStateHandle = SavedStateHandle(emptyMap()),
             repository = NoopDiaryRepository,
-            photoUploadRepository = PhotoUploadRepository { _, _ -> error("업로드는 호출되지 않는다") },
-            userRepository = userRepository { failure?.let { throw it } ?: emptyList<Any>() },
+            photoUploadRepository = FakePhotoUploadRepository.strict(),
+            userRepository = userRepository { failure?.let { throw it } ?: emptyList() },
             draftLoader = MindRecordDraftLoader(NoopDiaryRepository, NoopDailyQuestionRepository),
         )
 
     /** UserRepository 는 표면이 넓다 — 이 시나리오가 타는 호출만 답한다. */
-    private fun userRepository(onGetReceivers: () -> Any): UserRepository =
-        Proxy.newProxyInstance(
-            UserRepository::class.java.classLoader,
-            arrayOf(UserRepository::class.java),
-        ) { _, method, _ ->
-            when (method.name) {
-                "getReceivers" -> onGetReceivers()
-                "getReceiverListFlow" -> flowOf(emptyList<Any>())
-                else -> error("Unexpected call: ${method.name}")
-            }
-        } as UserRepository
+    private fun userRepository(onGetReceivers: suspend () -> List<Receiver>): FakeUserRepository =
+        FakeUserRepository.strict().apply {
+            this.onGetReceivers = onGetReceivers
+            onReceiverListFlow = { flowOf(emptyList()) }
+        }
 }
 
 private object NoopDiaryRepository : DiaryRepository {

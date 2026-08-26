@@ -37,7 +37,7 @@ class ReceivedAfternoteDetailTitleContractTest {
 
         val detail = json.decodeFromString<BaseResponse<ReceivedAfternoteDetailDto>>(payload).requireData().toDomain()
 
-        assertEquals("인스타그램", detail.title)
+        assertEquals("인스타그램", detail.serviceName)
     }
 
     @Test
