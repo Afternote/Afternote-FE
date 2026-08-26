@@ -3,35 +3,15 @@ package com.afternote.core.network.interceptor
 import com.afternote.core.model.TokenBundle
 import com.afternote.core.network.FakeAuthRepository
 import com.afternote.core.network.FakeErrorReporter
+import com.afternote.core.network.FakeInterceptorChain
 import com.afternote.core.network.token.AccessTokenExpiryTracker
 import com.afternote.core.network.token.TokenReissuer
-import okhttp3.Authenticator
-import okhttp3.Cache
-import okhttp3.Call
-import okhttp3.CertificatePinner
-import okhttp3.Connection
-import okhttp3.ConnectionPool
-import okhttp3.CookieJar
-import okhttp3.Dns
-import okhttp3.EventListener
-import okhttp3.Interceptor
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Protocol
-import okhttp3.Request
-import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Test
 import retrofit2.HttpException
-import java.net.Proxy
-import java.net.ProxySelector
-import java.util.concurrent.TimeUnit
-import javax.net.SocketFactory
-import javax.net.ssl.HostnameVerifier
-import javax.net.ssl.SSLSocketFactory
-import javax.net.ssl.X509TrustManager
 import retrofit2.Response as RetrofitResponse
 
 /**
@@ -62,7 +42,7 @@ class AuthInterceptorTest {
     @Test
     fun `기록된 deadline 없음 - reissue 없이 저장된 토큰 부착`() {
         val repository = FakeAuthRepository(accessToken = "stored-token")
-        val chain = RecordingChain()
+        val chain = FakeInterceptorChain()
 
         interceptor(repository).intercept(chain)
 
@@ -81,7 +61,7 @@ class AuthInterceptorTest {
                     Result.success(TokenBundle(accessToken = "fresh-token", refreshToken = "r"))
                 },
             )
-        val chain = RecordingChain()
+        val chain = FakeInterceptorChain()
 
         interceptor(repository).intercept(chain)
 
@@ -99,7 +79,7 @@ class AuthInterceptorTest {
                 accessToken = "stored-token",
                 onRotateToken = { Result.failure(IllegalStateException("일시적 네트워크 오류")) },
             )
-        val chain = RecordingChain()
+        val chain = FakeInterceptorChain()
 
         interceptor(repository).intercept(chain)
 
@@ -120,7 +100,7 @@ class AuthInterceptorTest {
                 },
                 onClearSession = { Result.success(Unit) },
             )
-        val chain = RecordingChain()
+        val chain = FakeInterceptorChain()
 
         interceptor(repository).intercept(chain)
 
@@ -135,7 +115,7 @@ class AuthInterceptorTest {
     fun `토큰 부재 - 헤더 미부착 및 stale deadline 폐기`() {
         tracker.record(expiresInSeconds = 30)
         val repository = FakeAuthRepository(accessToken = null)
-        val chain = RecordingChain()
+        val chain = FakeInterceptorChain()
 
         interceptor(repository).intercept(chain)
 
@@ -143,114 +123,4 @@ class AuthInterceptorTest {
         assertNull(chain.sentRequest?.header("Authorization"))
         assertFalse(tracker.isExpiringSoon())
     }
-}
-
-/** [proceed] 에 들어온 요청을 캡처하고 단순 200 봉투를 돌려주는 가짜 chain. */
-private class RecordingChain : Interceptor.Chain {
-    var sentRequest: Request? = null
-        private set
-
-    override fun request(): Request = Request.Builder().url("https://afternote.kro.kr/api/v1/test").build()
-
-    override fun proceed(request: Request): Response {
-        sentRequest = request
-        return Response
-            .Builder()
-            .request(request)
-            .protocol(Protocol.HTTP_1_1)
-            .code(200)
-            .message("OK")
-            .body("""{"status":200,"code":200,"message":"성공","data":null}""".toResponseBody("application/json".toMediaType()))
-            .build()
-    }
-
-    override fun connection(): Connection? = null
-
-    override fun call(): Call = error("not used")
-
-    override fun connectTimeoutMillis(): Int = 0
-
-    override fun withConnectTimeout(
-        timeout: Int,
-        unit: TimeUnit,
-    ): Interceptor.Chain = this
-
-    override fun readTimeoutMillis(): Int = 0
-
-    override fun withReadTimeout(
-        timeout: Int,
-        unit: TimeUnit,
-    ): Interceptor.Chain = this
-
-    override fun writeTimeoutMillis(): Int = 0
-
-    override fun withWriteTimeout(
-        timeout: Int,
-        unit: TimeUnit,
-    ): Interceptor.Chain = this
-
-    // OkHttp 5.4 부터 Chain 이 클라이언트 설정 전체를 노출한다. 이 fake 는 요청 캡처만
-    // 담당하므로 전부 미사용 스텁 — with* 는 기존 withConnectTimeout 패턴, 조회는 call() 패턴.
-    override val followSslRedirects: Boolean get() = error("not used")
-
-    override val followRedirects: Boolean get() = error("not used")
-
-    override val dns: Dns get() = error("not used")
-
-    override val socketFactory: SocketFactory get() = error("not used")
-
-    override val retryOnConnectionFailure: Boolean get() = error("not used")
-
-    override val authenticator: Authenticator get() = error("not used")
-
-    override val cookieJar: CookieJar get() = error("not used")
-
-    override val cache: Cache? get() = null
-
-    override val proxy: Proxy? get() = null
-
-    override val proxySelector: ProxySelector get() = error("not used")
-
-    override val proxyAuthenticator: Authenticator get() = error("not used")
-
-    override val sslSocketFactoryOrNull: SSLSocketFactory? get() = null
-
-    override val x509TrustManagerOrNull: X509TrustManager? get() = null
-
-    override val hostnameVerifier: HostnameVerifier get() = error("not used")
-
-    override val certificatePinner: CertificatePinner get() = error("not used")
-
-    override val connectionPool: ConnectionPool get() = error("not used")
-
-    override val eventListener: EventListener get() = error("not used")
-
-    override fun withDns(dns: Dns): Interceptor.Chain = this
-
-    override fun withSocketFactory(socketFactory: SocketFactory): Interceptor.Chain = this
-
-    override fun withRetryOnConnectionFailure(retryOnConnectionFailure: Boolean): Interceptor.Chain = this
-
-    override fun withAuthenticator(authenticator: Authenticator): Interceptor.Chain = this
-
-    override fun withCookieJar(cookieJar: CookieJar): Interceptor.Chain = this
-
-    override fun withCache(cache: Cache?): Interceptor.Chain = this
-
-    override fun withProxy(proxy: Proxy?): Interceptor.Chain = this
-
-    override fun withProxySelector(proxySelector: ProxySelector): Interceptor.Chain = this
-
-    override fun withProxyAuthenticator(proxyAuthenticator: Authenticator): Interceptor.Chain = this
-
-    override fun withSslSocketFactory(
-        sslSocketFactory: SSLSocketFactory?,
-        x509TrustManager: X509TrustManager?,
-    ): Interceptor.Chain = this
-
-    override fun withHostnameVerifier(hostnameVerifier: HostnameVerifier): Interceptor.Chain = this
-
-    override fun withCertificatePinner(certificatePinner: CertificatePinner): Interceptor.Chain = this
-
-    override fun withConnectionPool(connectionPool: ConnectionPool): Interceptor.Chain = this
 }

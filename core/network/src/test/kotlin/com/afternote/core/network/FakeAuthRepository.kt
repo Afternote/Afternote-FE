@@ -5,6 +5,7 @@ import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.model.Session
 import com.afternote.core.model.TokenBundle
 import kotlinx.coroutines.flow.Flow
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * 토큰 갱신 경로(#408) 테스트 공용 가짜.
@@ -21,21 +22,23 @@ internal class FakeAuthRepository(
         error("clearSession 은 이 시나리오에서 호출되면 안 됨")
     },
 ) : AuthRepository {
-    var rotateCallCount = 0
-        private set
+    // 동시 진입 시나리오(#1126)에서도 세지므로 원자 카운터여야 한다.
+    private val rotateCalls = AtomicInteger()
+    private val clearSessionCalls = AtomicInteger()
 
-    var clearSessionCallCount = 0
-        private set
+    val rotateCallCount: Int get() = rotateCalls.get()
+
+    val clearSessionCallCount: Int get() = clearSessionCalls.get()
 
     override suspend fun getAccessToken(): Result<String?> = Result.success(accessToken)
 
     override suspend fun rotateToken(): Result<TokenBundle> {
-        rotateCallCount++
+        rotateCalls.incrementAndGet()
         return onRotateToken()
     }
 
     override suspend fun clearSession(): Result<Unit> {
-        clearSessionCallCount++
+        clearSessionCalls.incrementAndGet()
         return onClearSession()
     }
 
