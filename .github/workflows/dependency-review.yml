@@ -9,12 +9,29 @@ concurrency:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
   dependency-review:
     name: Review dependency changes
     runs-on: ubuntu-latest
     steps:
+      - name: Clone repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Detect dependency graph input changes
+        id: dependency-inputs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: node .github/scripts/detect-dependency-input-changes.mjs
+
+      - name: Skip unchanged dependency review
+        if: steps.dependency-inputs.outputs.changed == 'false'
+        run: echo "No dependency graph inputs changed; skipping dependency review."
+
       # PR 스냅샷은 두 워크플로를 거쳐야 API 에 올라온다 (fork PR 을 checkout 하지 않기 위한 분리다).
       #   1. Gradle Dependency Submission — PR 컨텍스트. 아티팩트만 만든다
       #   2. Submit PR Dependency Graph   — workflow_run. 그 아티팩트를 제출한다
@@ -35,6 +52,7 @@ jobs:
       # dependency-review-action 이 `pull_request` 컨텍스트를 전제해 workflow_run 으로 옮기면
       # PR 에 체크가 붙지 않는다. 그 재배치는 별건으로 다룬다.
       - name: Fail on newly introduced high-severity vulnerabilities
+        if: steps.dependency-inputs.outputs.changed == 'true'
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           fail-on-scopes: runtime, development, unknown
