@@ -195,6 +195,7 @@ internal fun AfternoteEditorNavigation(
         liveSongs = liveSongs,
         state = state,
         saveError = saveError,
+        validationErrorEvent = uiState.validationErrorEvent,
         thumbnailUploadFailed = uiState.thumbnailUploadFailed,
         isPrefillLoading = uiState.isPrefillLoading,
     )

@@ -27,10 +27,12 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.mod
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationErrorEvent
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationException
 import com.afternote.feature.afternote.presentation.author.editor.state.CategoryForm
 import com.afternote.feature.afternote.presentation.author.editor.state.DEFAULT_EDITOR_MESSAGE_BLOCKS
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
+import com.afternote.feature.afternote.presentation.author.editor.state.consume
 import com.afternote.feature.afternote.presentation.author.editor.state.withCategory
 import com.afternote.feature.afternote.presentation.author.editor.state.withLeaveMessageBlocks
 import com.afternote.feature.afternote.presentation.author.editor.state.withMemorialPhoto
@@ -371,7 +373,9 @@ class AfternoteEditorViewModel
                     playlistSongs = playlistSongs,
                 )
             if (validationError != null) {
-                internalState.update { it.copy(validationError = validationError) }
+                internalState.update {
+                    it.withValidationError(validationError)
+                }
                 return
             }
 
@@ -381,7 +385,7 @@ class AfternoteEditorViewModel
 
             viewModelScope.launch {
                 internalState.update {
-                    it.copy(isSaving = true, errorRes = null, validationError = null)
+                    it.copy(isSaving = true, errorRes = null, validationErrorEvent = null)
                 }
                 buildSaveCommand(
                     editingId = editingId,
@@ -557,11 +561,11 @@ class AfternoteEditorViewModel
                     null
                 }
             internalState.update {
-                it.copy(
-                    isSaving = false,
-                    validationError = validationError,
-                    errorRes = errorRes,
-                )
+                if (validationError != null) {
+                    it.withValidationError(validationError).copy(isSaving = false, errorRes = null)
+                } else {
+                    it.copy(isSaving = false, validationErrorEvent = null, errorRes = errorRes)
+                }
             }
         }
 
@@ -585,13 +589,26 @@ class AfternoteEditorViewModel
             val isSaving: Boolean = false,
             val isPrefillLoading: Boolean = false,
             val savedId: Long? = null,
-            val validationError: AfternoteValidationError? = null,
+            val validationErrorEvent: AfternoteValidationErrorEvent? = null,
+            val validationErrorOccurrence: Long = 0L,
             val errorRes: Int? = null,
             val pendingSaveSuccessId: Long? = null,
             val pendingThumbnailUrl: String? = null,
             val thumbnailUploadFailed: Boolean = false,
             val pendingPrefill: EditorFormPrefill? = null,
         )
+
+        private fun InternalState.withValidationError(error: AfternoteValidationError): InternalState {
+            val nextOccurrence = validationErrorOccurrence + 1L
+            return copy(
+                validationErrorEvent =
+                    AfternoteValidationErrorEvent(
+                        error = error,
+                        occurrence = nextOccurrence,
+                    ),
+                validationErrorOccurrence = nextOccurrence,
+            )
+        }
 
         private fun InternalState.toUiState(): AfternoteEditorUiState =
             AfternoteEditorUiState(
@@ -600,7 +617,7 @@ class AfternoteEditorViewModel
                 isSaving = isSaving,
                 isPrefillLoading = isPrefillLoading,
                 savedId = savedId,
-                validationError = validationError,
+                validationErrorEvent = validationErrorEvent,
                 errorRes = errorRes,
                 pendingSaveSuccessId = pendingSaveSuccessId,
                 pendingThumbnailUrl = pendingThumbnailUrl,
@@ -620,8 +637,10 @@ class AfternoteEditorViewModel
             internalState.update { it.copy(thumbnailUploadFailed = false) }
         }
 
-        fun onValidationErrorConsumed() {
-            internalState.update { it.copy(validationError = null) }
+        fun onValidationErrorConsumed(event: AfternoteValidationErrorEvent) {
+            internalState.update {
+                it.copy(validationErrorEvent = it.validationErrorEvent.consume(event))
+            }
         }
 
         // endregion

@@ -35,6 +35,7 @@ import com.afternote.feature.afternote.presentation.author.editor.memorial.playl
 import com.afternote.feature.afternote.presentation.author.editor.memorial.rememberMemorialMediaSourceState
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationErrorEvent
 import com.afternote.feature.afternote.presentation.author.editor.state.CategoryForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
@@ -71,11 +72,12 @@ fun AfternoteEditorScreen(
     onThumbnailExtractionFailed: (Throwable) -> Unit,
     onCaptureFailed: (Throwable) -> Unit,
     onThumbnailUploadErrorConsumed: () -> Unit,
-    onValidationErrorConsumed: () -> Unit,
+    onValidationErrorConsumed: (AfternoteValidationErrorEvent) -> Unit,
     modifier: Modifier = Modifier,
     state: AfternoteEditorState = rememberAfternoteEditorState(),
     liveSongs: List<Song> = emptyList(),
     saveError: String? = null,
+    validationErrorEvent: AfternoteValidationErrorEvent? = null,
     thumbnailUploadFailed: Boolean = false,
     isPrefillLoading: Boolean = false,
 ) {
@@ -126,7 +128,7 @@ fun AfternoteEditorScreen(
         }
     }
 
-    LaunchedEffect(saveError) {
+    LaunchedEffect(saveError, validationErrorEvent) {
         saveError?.let { message ->
             try {
                 snackbarHostState.showSnackbar(
@@ -135,7 +137,7 @@ fun AfternoteEditorScreen(
                 )
             } finally {
                 // dismiss 뿐 아니라 화면 이탈로 취소돼도 소비해야, 복귀 시 이미 고친 오류의 stale 안내가 재표출되지 않는다.
-                onValidationErrorConsumed()
+                validationErrorEvent?.let(onValidationErrorConsumed)
             }
         }
     }

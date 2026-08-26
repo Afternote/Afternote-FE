@@ -50,6 +50,20 @@ enum class AfternoteValidationError(
 }
 
 /**
+ * 한 번의 저장 시도에서 발생한 검증 오류 신호.
+ *
+ * 같은 [error]가 반복돼도 ViewModel 수명 동안 [occurrence]가 증가하므로 UI 상태가 새 신호로 발행된다.
+ * 소비 시에는 이 객체 전체를 돌려줘야 이전 Snackbar의 취소 콜백이 더 최신 신호를 지우지 않는다.
+ */
+data class AfternoteValidationErrorEvent(
+    val error: AfternoteValidationError,
+    val occurrence: Long,
+)
+
+internal fun AfternoteValidationErrorEvent?.consume(consumed: AfternoteValidationErrorEvent): AfternoteValidationErrorEvent? =
+    if (this == consumed) null else this
+
+/**
  * 에디터 화면의 단일 UI 상태.
  *
  * 일회성 신호(`pending*`)를 Channel 이 아니라 상태로 둔 건 configuration change·process death 뒤
@@ -69,7 +83,7 @@ data class AfternoteEditorUiState(
      */
     val isPrefillLoading: Boolean = false,
     val savedId: Long? = null,
-    val validationError: AfternoteValidationError? = null,
+    val validationErrorEvent: AfternoteValidationErrorEvent? = null,
     @param:StringRes val errorRes: Int? = null,
     /** 저장 성공 신호 — UI 가 nav 후 `onSaveSuccessConsumed` 로 reset. */
     val pendingSaveSuccessId: Long? = null,
@@ -79,4 +93,7 @@ data class AfternoteEditorUiState(
     val thumbnailUploadFailed: Boolean = false,
     /** 수정 모드 prefill 데이터 — UI 파사드가 form 에 적용 후 `onPrefillApplied` 로 reset (skeleton 종료 동시). */
     val pendingPrefill: EditorFormPrefill? = null,
-)
+) {
+    val validationError: AfternoteValidationError?
+        get() = validationErrorEvent?.error
+}
