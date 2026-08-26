@@ -207,7 +207,7 @@ class AfternoteDetailMapperTest {
                 memorial =
                     AfternotePlaylistDto(
                         memorialPhotoUrl = "memorial.jpg",
-                        songs = listOf(AfternoteSongDto(id = 3L, title = "s", artist = "a")),
+                        songs = listOf(AfternoteSongDto(title = "s", artist = "a")),
                         memorialVideo = AfternoteMemorialVideoDto(videoUrl = "v.mp4", thumbnailUrl = "t.jpg"),
                     ),
             ).toDomain()
@@ -218,13 +218,8 @@ class AfternoteDetailMapperTest {
         assertEquals("v.mp4", media.videoUrl)
         assertEquals("t.jpg", media.thumbnailUrl)
         assertEquals(1, memorial.songs.size)
-        assertEquals(
-            3L,
-            memorial
-                .songs
-                .single()
-                .id,
-        )
+        assertEquals("s", memorial.songs.single().title)
+        assertEquals("a", memorial.songs.single().artist)
     }
 
     @Test

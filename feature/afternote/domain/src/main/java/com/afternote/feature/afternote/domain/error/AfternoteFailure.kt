@@ -31,6 +31,18 @@ sealed class AfternoteFailure(
         val media: MediaKind,
         cause: Throwable,
     ) : AfternoteFailure("memorial media save failed: ${media.name}", cause)
+
+    /**
+     * 서버 응답 없이 전송 계층에서 끝난 실패(DNS 해석 불가·타임아웃·연결 거부 등)의 도메인 표현.
+     *
+     * data 계층이 저장 API 호출의 IO 예외를 이 타입으로 치환한다 — presentation 은 core:network 에
+     * 의존하지 않으므로, 이 타입 하나로 "네트워크 연결 안내" 분기를 할 수 있다
+     * ([com.afternote.core.domain.error.CoreAuthFailure.NetworkUnavailable] 과 같은 규약).
+     * 원인 예외는 [cause] 로 보존한다(로그 진단용).
+     */
+    class NetworkUnavailable(
+        cause: Throwable,
+    ) : AfternoteFailure("network unavailable", cause)
 }
 
 /** 저장 API 가 거절한 검증 사유. */

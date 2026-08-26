@@ -53,6 +53,9 @@ class AfternoteEditorReceiverPrefillTest {
             timestamps = DetailTimestamps(updatedAt = "2026-08-02"),
             receivers = receivers.toList(),
             leaveMessageBlocks = emptyList(),
-            content = DetailContent.Gallery(processingMethods = emptyList()),
+            content =
+                DetailContent.Gallery(
+                    processingMethods = emptyList(),
+                ),
         )
 }

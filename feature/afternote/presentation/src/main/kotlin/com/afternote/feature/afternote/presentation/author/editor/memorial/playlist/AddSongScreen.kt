@@ -83,7 +83,7 @@ fun AddSongScreen(
 
 private fun toSong(display: PlaylistSongDisplay): Song =
     Song(
-        id = display.selectionKey,
+        selectionKey = display.selectionKey,
         title = display.title,
         artist = display.artist,
         albumCoverUrl = display.albumImageUrl,

@@ -21,6 +21,7 @@ data class AfternoteCreatePlaylistRequestDto(
     @EncodeDefault @SerialName("category") val category: String = "PLAYLIST",
     @SerialName("title") val title: String,
     @SerialName("playlist") val memorial: AfternotePlaylistDto,
+    @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
     @SerialName("receivers") val receivers: List<AfternoteReceiverRefDto> = emptyList(),
 )
 
@@ -70,7 +71,6 @@ data class AfternotePlaylistDto(
 
 @Serializable
 data class AfternoteSongDto(
-    @SerialName("id") val id: Long? = null,
     @SerialName("title") val title: String,
     @SerialName("artist") val artist: String,
     @SerialName("coverUrl") val coverUrl: String? = null,
