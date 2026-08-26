@@ -13,7 +13,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.User
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
@@ -59,7 +59,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.lang.reflect.Proxy
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -374,18 +373,12 @@ private fun scriptedDiaryRepository(lists: MutableMap<FakeDiaryRepository.ListQu
         },
     )
 
-@Suppress("UNCHECKED_CAST")
-private fun privateProfileRepository(name: String): UserRepository =
-    Proxy.newProxyInstance(
-        UserRepository::class.java.classLoader,
-        arrayOf(UserRepository::class.java),
-    ) { _, method, _ ->
-        when (method.name) {
-            "getMyProfile" -> User(name = name, email = "test@afternote.local", phone = null, profileImageUrl = null)
-            "toString" -> "PrivateProfileRepository"
-            else -> error("Unexpected UserRepository call: ${method.name}")
+private fun privateProfileRepository(name: String): FakeUserRepository =
+    FakeUserRepository.strict().apply {
+        onGetMyProfile = {
+            User(name = name, email = "test@afternote.local", phone = null, profileImageUrl = null)
         }
-    } as UserRepository
+    }
 
 private fun diary(
     id: Long,

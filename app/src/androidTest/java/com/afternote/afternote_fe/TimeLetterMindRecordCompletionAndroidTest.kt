@@ -30,9 +30,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
-import com.afternote.afternote_fe.test.FakeUserRepository
+import com.afternote.afternote_fe.test.appTestUserRepository
 import com.afternote.afternote_fe.test.testReceiver
-import com.afternote.core.domain.repository.PhotoUploadRepository
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
+import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.User
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
@@ -114,7 +115,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
     @Test
     fun timeLetterWrite_uiValidationAndRapidRegister_preserveInputAndCreateOnce() {
         val repository = CompletionTimeLetterRepository()
-        val userRepository = FakeUserRepository(receivers = listOf(testReceiver()))
+        val userRepository = appTestUserRepository(receivers = listOf(testReceiver()))
         val viewModel = timeLetterWriteViewModel(repository, userRepository)
 
         composeRule.setContent {
@@ -210,7 +211,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
     @Test
     fun timeLetterRecipientSelector_roundTripPreservesTitleTextAndExactReceiverId() {
         val repository = CompletionTimeLetterRepository()
-        val userRepository = FakeUserRepository(receivers = listOf(testReceiver()))
+        val userRepository = appTestUserRepository(receivers = listOf(testReceiver()))
         val writeViewModel = timeLetterWriteViewModel(repository, userRepository)
         val recipientViewModel = RecipientListViewModel(userRepository)
         var showRecipient by mutableStateOf(false)
@@ -273,7 +274,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
                 registeredLetters = TimeLetterList(listOf(detailLetter), 1),
             )
         repository.detailResults.addLast(Result.success(completionDetailLetter()))
-        val userRepository = FakeUserRepository(receivers = listOf(testReceiver()))
+        val userRepository = appTestUserRepository(receivers = listOf(testReceiver()))
         val listViewModel = TimeletterViewModel(repository, userRepository)
         var detailViewModel by mutableStateOf<TimeLetterDetailViewModel?>(null)
 
@@ -433,7 +434,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
                 DailyQuestionWriteViewModel(
                     savedStateHandle = SavedStateHandle(emptyMap()),
                     repository = repository,
-                    photoUploadRepository = CompletionPhotoUploadRepository,
+                    photoUploadRepository = FakePhotoUploadRepository.strict(),
                     draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
                 )
         }
@@ -517,8 +518,8 @@ class TimeLetterMindRecordCompletionAndroidTest {
                                             ),
                                         ),
                                     repository = repository,
-                                    photoUploadRepository = CompletionPhotoUploadRepository,
-                                    userRepository = FakeUserRepository(),
+                                    photoUploadRepository = FakePhotoUploadRepository.strict(),
+                                    userRepository = appTestUserRepository(),
                                     draftLoader =
                                         MindRecordDraftLoader(repository, draftDailyQuestionRepository),
                                 )
@@ -637,7 +638,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
                 results.addLast(Result.failure(IllegalStateException("weekly offline")))
             }
         val userRepository =
-            FakeUserRepository(
+            appTestUserRepository(
                 profile = User("주간 사용자", "weekly@afternote.local", null, null),
                 receivers = emptyList(),
             )
@@ -700,7 +701,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
         repository: CompletionTimeLetterRepository,
         userRepository: FakeUserRepository,
     ): TimeLetterWriteViewModel {
-        val resolver = ResolveTimeLetterBlocksUseCase(CompletionPhotoUploadRepository)
+        val resolver = ResolveTimeLetterBlocksUseCase(FakePhotoUploadRepository.strict())
         return TimeLetterWriteViewModel(
             createTimeLetterUseCase = CreateTimeLetterUseCase(repository, resolver),
             resolveTimeLetterBlocksUseCase = resolver,
@@ -789,13 +790,6 @@ private class CompletionTimeLetterRepository(
     override suspend fun deleteAllTemporary() {
         error("Unexpected delete-all-drafts")
     }
-}
-
-private object CompletionPhotoUploadRepository : PhotoUploadRepository {
-    override suspend fun upload(
-        uriString: String,
-        directory: String,
-    ): Result<String> = error("Unexpected upload: $uriString")
 }
 
 private object CompletionFileMetadataRepository : FileMetadataRepository {
