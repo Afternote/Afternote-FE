@@ -325,6 +325,11 @@ docker run --rm -v "$PWD":/workspace -w /workspace afternote-screenshot:latest \
 
 [[Java] 객체지향 생활 체조 원칙 9가지 (from 소트웍스 앤솔러지)](https://jamie95.tistory.com/99)
 
+> **패키지 구조**
+>
+- `feature/*/presentation` 은 **기능(화면) 폴더**를 기본 단위로 한다. `screen/` · `viewmodel/` · `component/` 로 먼저 쪼개지 않는다.
+- 깊이 제한 · `shared/` 판정 기준 · `*UiState` 위치 · 이관 절차는 [presentation 패키지 구조 규칙](docs/convention/presentation-package-structure.md) 에 있다.
+
 # 🦥 깃 전략 및 컨벤션
 
 > **브랜치 전략**
