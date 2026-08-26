@@ -8,11 +8,12 @@ import com.afternote.feature.receiver.data.dto.ReceivedPlaylistDto
 import com.afternote.feature.receiver.data.dto.ReceivedSongDto
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 /**
  * [ReceivedAfternoteDetailDto.toDomain] 회귀 가드 (수신자 상세).
- * 경계: createdAt null→null·있으면 포맷, category null→type null, playlist·credentials nullable 매핑,
+ * 경계: createdAt null→null·있으면 포맷, 필수 type 매핑, playlist·credentials nullable 매핑,
  * memorialVideo의 video/thumbnail 추출.
  */
 class ReceivedAfternoteDetailMapperTest {
@@ -22,31 +23,32 @@ class ReceivedAfternoteDetailMapperTest {
             ReceivedAfternoteDetailDto(
                 id = 1L,
                 category = "MUSIC",
-                title = "추모",
+                serviceName = "추모",
                 senderName = "홍길동",
                 createdAt = "2025-11-26T14:30:00",
             ).toDomain()
 
-        assertEquals("추모", result.title)
+        assertEquals("추모", result.serviceName)
         assertEquals("홍길동", result.senderName)
         assertEquals("2025.11.26", result.createdAt)
-        assertEquals("MUSIC", result.category)
         assertEquals(AfternoteType.MEMORIAL, result.type)
     }
 
     @Test
-    fun `toDomain - category null이면 type null`() {
-        assertNull(ReceivedAfternoteDetailDto(id = 1L, title = "제목", category = null).toDomain().type)
+    fun `toDomain - category 를 해석할 수 없으면 실패다 - 임의의 종류로 메우지 않는다`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            ReceivedAfternoteDetailDto(id = 1L, serviceName = "제목", category = null).toDomain()
+        }
     }
 
     @Test
     fun `toDomain - createdAt null이면 createdAt null`() {
-        assertNull(ReceivedAfternoteDetailDto(id = 1L, title = "제목", createdAt = null).toDomain().createdAt)
+        assertNull(ReceivedAfternoteDetailDto(id = 1L, serviceName = "제목", category = "SOCIAL", createdAt = null).toDomain().createdAt)
     }
 
     @Test
     fun `toDomain - playlist null이면 null`() {
-        assertNull(ReceivedAfternoteDetailDto(id = 1L, title = "제목", playlist = null).toDomain().playlist)
+        assertNull(ReceivedAfternoteDetailDto(id = 1L, serviceName = "제목", category = "SOCIAL", playlist = null).toDomain().playlist)
     }
 
     @Test
@@ -54,7 +56,8 @@ class ReceivedAfternoteDetailMapperTest {
         val result =
             ReceivedAfternoteDetailDto(
                 id = 1L,
-                title = "제목",
+                serviceName = "제목",
+                category = "SOCIAL",
                 playlist =
                     ReceivedPlaylistDto(
                         atmosphere = "차분",
@@ -75,7 +78,8 @@ class ReceivedAfternoteDetailMapperTest {
         val result =
             ReceivedAfternoteDetailDto(
                 id = 1L,
-                title = "제목",
+                serviceName = "제목",
+                category = "SOCIAL",
                 credentials = ReceivedCredentialsDto(id = "u", password = "p"),
             ).toDomain()
 
