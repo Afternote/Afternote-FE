@@ -59,6 +59,8 @@ test("changes requested becomes debt only after explicit rerequest and a fix", (
     assert.match(guard, /requested_reviewers\[\]\.login/);
     assert.match(guard, /blocked_by/);
     assert.match(guard, /명시적 재리뷰 요청 없음/);
+    assert.match(guard, /sort_by\(\.t\) \| last/);
+    assert.doesNotMatch(guard, /group_by\(\.u/);
     assert.match(guard, /\(\.parents \| length\) < 2/);
     assert.match(guard, /select\(\.commit\.committer\.date > \\"\$blocked_at\\"\)/);
 });
