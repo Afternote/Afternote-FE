@@ -47,7 +47,7 @@ class DiaryWriteImageKeyTest {
         var sent: String? = null
         val viewModel = viewModel(onCreate = { sent = it.content })
 
-        val previewUrl = runBlocking { viewModel.uploadImage("content://picked") }
+        val previewUrl = runBlocking { viewModel.uploadMedia("content://picked") }
         viewModel.onTitleChanged("제목")
         viewModel.onContentChanged("<p>본문</p><img src=\"$previewUrl\" />")
         viewModel.onMoodSelected(TodayMood.HAPPY)

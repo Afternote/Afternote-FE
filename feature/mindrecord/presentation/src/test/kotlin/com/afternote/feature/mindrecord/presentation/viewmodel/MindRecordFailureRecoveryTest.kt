@@ -124,7 +124,7 @@ class MindRecordFailureRecoveryTest {
                 )
             advanceUntilIdle()
 
-            val uploading = launch { viewModel.uploadImage("content://picked.jpg") }
+            val uploading = launch { viewModel.uploadMedia("content://picked.jpg") }
             advanceUntilIdle()
             viewModel.onAnswerChanged("<p>답변</p>")
 

@@ -6,6 +6,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.COMPACT_DEVICE_SPEC
+import com.afternote.feature.onboarding.presentation.LARGE_FONT_SCALE
 import com.android.tools.screenshot.PreviewTest
 
 /**
@@ -105,6 +106,37 @@ internal fun findIdScreenCodeMismatchScreenshot() {
 @Preview(showBackground = true, device = COMPACT_DEVICE_SPEC)
 @Composable
 internal fun findIdScreenCodeMismatchCompactScreenshot() {
+    AfternoteTheme {
+        FindIdScreen(
+            initialEmail = "parkchae01@gmail.com",
+            initialCertificateCode = "123456",
+            isSendingCode = false,
+            isVerificationSent = true,
+            isSendCodeEnabled = true,
+            isVerifyEnabled = true,
+            isNextEnabled = false,
+            resendCooldownSeconds = 0,
+            hasVerificationError = true,
+            snackbarHostState = remember { SnackbarHostState() },
+            onEmailChange = {},
+            onCertificateCodeChange = {},
+            onRequestCode = {},
+            onVerifyCode = {},
+            onNextClick = {},
+            onBackClick = {},
+        )
+    }
+}
+
+/**
+ * 글자 확대(×1.5) 변형 — 아이디 찾기 — 인증번호 불일치.
+ *
+ * 화면 크기와 다른 축이라 좁은 화면 baseline 으로는 잡히지 않는다. 기준값은 [LARGE_FONT_SCALE].
+ */
+@PreviewTest
+@Preview(showBackground = true, fontScale = LARGE_FONT_SCALE)
+@Composable
+internal fun findIdScreenCodeMismatchLargeFontScreenshot() {
     AfternoteTheme {
         FindIdScreen(
             initialEmail = "parkchae01@gmail.com",
