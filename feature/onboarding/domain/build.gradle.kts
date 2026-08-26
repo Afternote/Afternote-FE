@@ -1,6 +1,7 @@
 plugins {
     id("java-library")
     alias(libs.plugins.jetbrains.kotlin.jvm)
+    id("afternote.kover")
 }
 java {
     sourceCompatibility = JavaVersion.VERSION_11

@@ -2,6 +2,7 @@ plugins {
     id("afternote.android.library")
     id("afternote.android.retrofit")
     id("afternote.android.hilt")
+    id("afternote.kover")
 }
 
 android {
