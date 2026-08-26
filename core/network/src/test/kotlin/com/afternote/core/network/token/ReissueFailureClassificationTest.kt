@@ -1,11 +1,11 @@
 package com.afternote.core.network.token
 
-import com.afternote.core.network.FakeAuthRepository
 import com.afternote.core.network.FakeErrorReporter
 import com.afternote.core.network.FakeInterceptorChain
 import com.afternote.core.network.interceptor.ApiErrorInterceptor
 import com.afternote.core.network.jsonResponse
 import com.afternote.core.network.model.ApiException
+import com.afternote.core.network.networkFakeAuthRepository
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -41,7 +41,7 @@ class ReissueFailureClassificationTest {
 
     private fun outcomeOf(failure: Throwable): TokenReissuer.Outcome {
         val repository =
-            FakeAuthRepository(
+            networkFakeAuthRepository(
                 accessToken = "old-token",
                 onRotateToken = { Result.failure(failure) },
                 onClearSession = {
