@@ -1,7 +1,7 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
-import com.afternote.core.domain.repository.PhotoUploadRepository
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
@@ -153,7 +153,7 @@ class DailyQuestionEditTest {
         return DailyQuestionWriteViewModel(
             handle,
             repository,
-            PhotoUploadRepository { _, _ -> error("업로드는 이 시나리오에서 호출되면 안 됨") },
+            FakePhotoUploadRepository.strict(),
             // 툴바 카운트는 이 시나리오의 관심사가 아니다 — **다른** 저장소를 넘긴다.
             // 같은 fake 를 넘기면 카운트 조회의 draftOnly=true 가 프리필 조회 기록에 섞여
             // «어느 목록을 봤는가» 단언이 무너진다 (#769·#770).
