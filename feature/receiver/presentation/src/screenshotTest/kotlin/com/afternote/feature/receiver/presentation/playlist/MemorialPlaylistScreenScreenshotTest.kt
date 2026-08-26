@@ -15,8 +15,8 @@ internal fun memorialPlaylistScreenScreenshot() {
         MemorialPlaylistScreen(
             songs =
                 listOf(
-                    PlaylistSongDisplay(id = "1", title = "노래 1", artist = "아티스트 1"),
-                    PlaylistSongDisplay(id = "2", title = "노래 2", artist = "아티스트 2"),
+                    PlaylistSongDisplay(selectionKey = "screenshot:1", title = "노래 1", artist = "아티스트 1"),
+                    PlaylistSongDisplay(selectionKey = "screenshot:2", title = "노래 2", artist = "아티스트 2"),
                 ),
             onBackClick = {},
         )
@@ -36,8 +36,8 @@ internal fun memorialPlaylistScreenCompactScreenshot() {
         MemorialPlaylistScreen(
             songs =
                 listOf(
-                    PlaylistSongDisplay(id = "1", title = "노래 1", artist = "아티스트 1"),
-                    PlaylistSongDisplay(id = "2", title = "노래 2", artist = "아티스트 2"),
+                    PlaylistSongDisplay(selectionKey = "1", title = "노래 1", artist = "아티스트 1"),
+                    PlaylistSongDisplay(selectionKey = "2", title = "노래 2", artist = "아티스트 2"),
                 ),
             onBackClick = {},
         )
