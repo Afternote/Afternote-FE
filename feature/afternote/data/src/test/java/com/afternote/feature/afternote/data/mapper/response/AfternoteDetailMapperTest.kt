@@ -6,7 +6,10 @@ import com.afternote.feature.afternote.data.dto.AfternoteDetailReceiverDto
 import com.afternote.feature.afternote.data.dto.AfternoteMemorialVideoDto
 import com.afternote.feature.afternote.data.dto.AfternotePlaylistDto
 import com.afternote.feature.afternote.data.dto.AfternoteSongDto
+import com.afternote.feature.afternote.data.dto.LeaveMessageBlockDto
 import com.afternote.feature.afternote.domain.AfternoteType
+import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
+import com.afternote.feature.afternote.domain.model.author.DetailContent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
@@ -15,26 +18,25 @@ import org.junit.Test
 
 /**
  * [AfternoteDetailDto.toDetailDomain] 회귀 가드 (작성자 상세).
- * 핵심 경계: receivers null→emptyList, receiver 필드 null→"", processingMethods null→emptyList,
- * memorialVideo null→video/thumbnail null,
- * credentials·memorial nullable 매핑.
+ * 핵심 경계: 공통 필드와 타입별 [DetailContent] 분리, 부분·부재 credentials 의 빈 값 강등,
+ * receivers null→emptyList, receiver 필드 null→"", processingMethods null→emptyList,
+ * memorialVideo null→video/thumbnail null.
  */
 class AfternoteDetailMapperTest {
     @Test
-    fun `toDetailDomain - 최소 응답은 nullable이 비거나 null`() {
+    fun `toDetailDomain - gallery 최소 응답은 컬렉션이 비어 있다`() {
         val result =
             AfternoteDetailDto(
                 afternoteId = 1L,
-                category = "SOCIAL",
+                category = "GALLERY",
                 title = "t",
             ).toDetailDomain()
 
         assertEquals(1L, result.id)
-        assertEquals(AfternoteType.SOCIAL_NETWORK, result.type)
+        val content = result.content as DetailContent.Gallery
+        assertEquals(AfternoteType.GALLERY_AND_FILES, content.type)
         assertTrue(result.receivers.isEmpty())
-        assertNull(result.credentials)
-        assertNull(result.memorial)
-        assertTrue(result.processingMethods.isEmpty())
+        assertTrue(content.processingMethods.isEmpty())
     }
 
     @Test
@@ -46,7 +48,7 @@ class AfternoteDetailMapperTest {
                 title = "t",
             ).toDetailDomain()
 
-        assertEquals(AfternoteType.BUSINESS, result.type)
+        assertTrue("사업자는 Business 내용으로 올라와야 한다", result.content is DetailContent.Business)
     }
 
     @Test
@@ -71,7 +73,7 @@ class AfternoteDetailMapperTest {
         val result =
             AfternoteDetailDto(
                 afternoteId = 1L,
-                category = "SOCIAL",
+                category = "GALLERY",
                 title = "t",
                 createdAt = "2025-11-26T14:30:00",
                 updatedAt = "2025-12-01T09:00:00",
@@ -92,6 +94,7 @@ class AfternoteDetailMapperTest {
             ).toDetailDomain()
 
         val receiver = result.receivers.single()
+        assertTrue(result.content is DetailContent.Gallery)
         assertEquals(5L, receiver.receiverId)
         assertEquals("", receiver.name)
         assertEquals("", receiver.relation)
@@ -129,8 +132,53 @@ class AfternoteDetailMapperTest {
                 credentials = AfternoteCredentialsDto(id = "user", password = "pw"),
             ).toDetailDomain()
 
-        assertEquals("user", result.credentials!!.id)
-        assertEquals("pw", result.credentials!!.password)
+        val credentials = (result.content as DetailContent.SocialNetwork).credentials
+        assertEquals("user", credentials.id)
+        assertEquals("pw", credentials.password)
+    }
+
+    @Test
+    fun `toDetailDomain - credentials가 아예 없으면 빈 값으로 낮춘다`() {
+        val result =
+            AfternoteDetailDto(
+                afternoteId = 1L,
+                category = "SOCIAL",
+                title = "t",
+            ).toDetailDomain()
+
+        val credentials = (result.content as DetailContent.SocialNetwork).credentials
+        assertEquals("", credentials.id)
+        assertEquals("", credentials.password)
+    }
+
+    @Test
+    fun `toDetailDomain - credentials id만 없으면 id를 빈 값으로 낮춘다`() {
+        val result =
+            AfternoteDetailDto(
+                afternoteId = 1L,
+                category = "SOCIAL",
+                title = "t",
+                credentials = AfternoteCredentialsDto(id = null, password = "pw"),
+            ).toDetailDomain()
+
+        val credentials = (result.content as DetailContent.SocialNetwork).credentials
+        assertEquals("", credentials.id)
+        assertEquals("pw", credentials.password)
+    }
+
+    @Test
+    fun `toDetailDomain - credentials password만 없으면 password를 빈 값으로 낮춘다`() {
+        val result =
+            AfternoteDetailDto(
+                afternoteId = 1L,
+                category = "SOCIAL",
+                title = "t",
+                credentials = AfternoteCredentialsDto(id = "user", password = null),
+            ).toDetailDomain()
+
+        val credentials = (result.content as DetailContent.SocialNetwork).credentials
+        assertEquals("user", credentials.id)
+        assertEquals("", credentials.password)
     }
 
     @Test
@@ -148,17 +196,35 @@ class AfternoteDetailMapperTest {
                     ),
             ).toDetailDomain()
 
-        val media = result.memorial!!.media
+        val memorial = (result.content as DetailContent.Memorial).memorial
+        val media = memorial.media
         assertEquals("memorial.jpg", media.photoUrl)
         assertEquals("v.mp4", media.videoUrl)
         assertEquals("t.jpg", media.thumbnailUrl)
-        assertEquals(1, result.memorial!!.songs.size)
+        assertEquals(1, memorial.songs.size)
         assertEquals(
             3L,
-            result.memorial!!
+            memorial
                 .songs
                 .single()
                 .id,
+        )
+    }
+
+    @Test
+    fun `toDetailDomain - playlist의 공통 leaveMessage도 보존한다`() {
+        val result =
+            AfternoteDetailDto(
+                afternoteId = 1L,
+                category = "PLAYLIST",
+                title = "t",
+                leaveMessage = listOf(LeaveMessageBlockDto(title = "가족에게", body = "잘 지내")),
+                memorial = AfternotePlaylistDto(),
+            ).toDetailDomain()
+
+        assertEquals(
+            listOf(LeaveMessageBlock(title = "가족에게", body = "잘 지내")),
+            result.leaveMessageBlocks,
         )
     }
 
@@ -172,8 +238,50 @@ class AfternoteDetailMapperTest {
                 memorial = AfternotePlaylistDto(memorialVideo = null),
             ).toDetailDomain()
 
-        val media = result.memorial!!.media
+        val media = (result.content as DetailContent.Memorial).memorial.media
         assertNull(media.videoUrl)
         assertNull(media.thumbnailUrl)
+    }
+
+    @Test
+    fun `toDetailDomain - playlist 타입에 playlist가 없으면 오류`() {
+        val exception =
+            assertThrows(IllegalArgumentException::class.java) {
+                AfternoteDetailDto(
+                    afternoteId = 1L,
+                    category = "PLAYLIST",
+                    title = "t",
+                ).toDetailDomain()
+            }
+
+        assertEquals("playlist is required for MEMORIAL detail", exception.message)
+    }
+
+    @Test
+    fun `toDetailDomain - 사업자 상세도 credentials 를 Business 내용에 싣는다`() {
+        val business =
+            AfternoteDetailDto(
+                afternoteId = 1L,
+                category = "BUSINESS",
+                title = "회사 계정",
+                credentials = AfternoteCredentialsDto(id = "user", password = "pw"),
+            ).toDetailDomain()
+
+        val content = business.content as DetailContent.Business
+        assertEquals(AfternoteType.BUSINESS, content.type)
+        assertEquals("user", content.credentials.id)
+        assertEquals("pw", content.credentials.password)
+    }
+
+    /** `ESTATE`(#491)는 아직 서버 enum 에 없어 응답으로 올라올 수 없다 — 왔다면 해석 실패다. */
+    @Test
+    fun `toDetailDomain - ESTATE 는 서버가 보낼 수 없는 값이라 해석 실패다`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            AfternoteDetailDto(
+                afternoteId = 2L,
+                category = "ESTATE",
+                title = "부동산",
+            ).toDetailDomain()
+        }
     }
 }
