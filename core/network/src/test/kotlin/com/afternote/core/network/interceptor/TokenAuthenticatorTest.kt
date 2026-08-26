@@ -1,9 +1,10 @@
 package com.afternote.core.network.interceptor
 
+import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.model.TokenBundle
-import com.afternote.core.network.FakeAuthRepository
 import com.afternote.core.network.FakeErrorReporter
 import com.afternote.core.network.model.ApiException
+import com.afternote.core.network.networkFakeAuthRepository
 import com.afternote.core.network.token.AccessTokenExpiryTracker
 import com.afternote.core.network.token.TokenReissuer
 import okhttp3.Protocol
@@ -69,7 +70,7 @@ class TokenAuthenticatorTest {
     @Test
     fun `재시도 3회 도달 - 회전 없이 세션 정리 후 중단`() {
         val repository =
-            FakeAuthRepository(
+            networkFakeAuthRepository(
                 accessToken = "old-token",
                 onClearSession = { Result.success(Unit) },
             )
@@ -83,7 +84,7 @@ class TokenAuthenticatorTest {
 
     @Test
     fun `직전 요청에 토큰이 없었음 - 회전·세션 정리 없이 중단`() {
-        val repository = FakeAuthRepository(accessToken = "stored")
+        val repository = networkFakeAuthRepository(accessToken = "stored")
 
         val request = authenticator(repository).authenticate(null, unauthorizedResponse(accessToken = null))
 
@@ -94,7 +95,7 @@ class TokenAuthenticatorTest {
 
     @Test
     fun `다른 경로가 이미 회전을 끝냄 - 회전 생략하고 새 토큰으로 재시도`() {
-        val repository = FakeAuthRepository(accessToken = "fresh-token")
+        val repository = networkFakeAuthRepository(accessToken = "fresh-token")
 
         val request = authenticator(repository).authenticate(null, unauthorizedResponse(accessToken = "old-token"))
 
@@ -105,7 +106,7 @@ class TokenAuthenticatorTest {
     @Test
     fun `회전 성공 - 새 토큰으로 재시도`() {
         val repository =
-            FakeAuthRepository(
+            networkFakeAuthRepository(
                 accessToken = "old-token",
                 onRotateToken = {
                     accessToken = "fresh-token"
@@ -123,7 +124,7 @@ class TokenAuthenticatorTest {
     @Test
     fun `서버가 동일 토큰을 반환 - 세션 정리 후 중단 (무한 재시도 방지)`() {
         val repository =
-            FakeAuthRepository(
+            networkFakeAuthRepository(
                 accessToken = "old-token",
                 onRotateToken = { Result.success(TokenBundle(accessToken = "old-token", refreshToken = "r")) },
                 onClearSession = { Result.success(Unit) },
@@ -139,7 +140,7 @@ class TokenAuthenticatorTest {
     fun `refresh 인증 거절 401 403 - 세션 정리 후 중단`() {
         listOf(401, 403).forEach { status ->
             val repository =
-                FakeAuthRepository(
+                networkFakeAuthRepository(
                     accessToken = "old-token",
                     onRotateToken = { Result.failure(httpFailure(status)) },
                     onClearSession = { Result.success(Unit) },
@@ -163,7 +164,7 @@ class TokenAuthenticatorTest {
                 message = "유효하지 않은 리프레시 토큰",
             )
         val repository =
-            FakeAuthRepository(
+            networkFakeAuthRepository(
                 accessToken = "old-token",
                 onRotateToken = { Result.failure(failure) },
                 onClearSession = { Result.success(Unit) },
@@ -180,7 +181,7 @@ class TokenAuthenticatorTest {
     fun `code 파싱 실패한 400 - 세션 정리 후 중단`() {
         // 본문 파싱이 안 되면 400 이 "세션 유지" 로 떨어져 무효 refresh 가 남았다 (#1126).
         val repository =
-            FakeAuthRepository(
+            networkFakeAuthRepository(
                 accessToken = "old-token",
                 onRotateToken = { Result.failure(httpFailure(400)) },
                 onClearSession = { Result.success(Unit) },
@@ -197,7 +198,7 @@ class TokenAuthenticatorTest {
     fun `refresh timeout - 세션 유지하고 현재 요청만 실패`() {
         val failure = SocketTimeoutException("temporary timeout")
         val repository =
-            FakeAuthRepository(
+            networkFakeAuthRepository(
                 accessToken = "old-token",
                 onRotateToken = { Result.failure(failure) },
             )
@@ -217,7 +218,7 @@ class TokenAuthenticatorTest {
     fun `refresh 5xx - 세션 유지하고 현재 요청만 실패`() {
         val failure = httpFailure(503)
         val repository =
-            FakeAuthRepository(
+            networkFakeAuthRepository(
                 accessToken = "old-token",
                 onRotateToken = { Result.failure(failure) },
             )
@@ -238,7 +239,7 @@ class TokenAuthenticatorTest {
         // 실기에서 이 경합은 확률적이라 잡히지 않는다(창이 3ms). 여기서는 세션 정리를 느리게 만들어
         // 창을 열어 둔 채 결정적으로 재현한다 — 실제 clearSession 도 DataStore I/O 다 (#1126).
         val repository =
-            FakeAuthRepository(
+            networkFakeAuthRepository(
                 accessToken = "old-token",
                 onRotateToken = { Result.failure(httpFailure(400)) },
                 onClearSession = {
