@@ -294,9 +294,9 @@ private fun PreviewMemorialReceivedDetail() {
             // 프리뷰 대표 데이터: 실앱은 곡마다 coverUrl → 커버 로드. 프리뷰/스크린샷은 네트워크 미지원이라 회색 박스로 표시.
             albumCovers =
                 listOf(
-                    AlbumCover(id = "1"),
-                    AlbumCover(id = "2"),
-                    AlbumCover(id = "3"),
+                    AlbumCover(),
+                    AlbumCover(),
+                    AlbumCover(),
                 ),
             songCount = 3,
         )
@@ -320,9 +320,9 @@ private fun PreviewMemorialReceivedDetailWithVideo() {
                 ),
             albumCovers =
                 listOf(
-                    AlbumCover(id = "1"),
-                    AlbumCover(id = "2"),
-                    AlbumCover(id = "3"),
+                    AlbumCover(),
+                    AlbumCover(),
+                    AlbumCover(),
                 ),
             songCount = 3,
             // 영상 섹션은 URL 있을 때만 노출 — 조건부 분기 상태 확인용 프리뷰 (썸네일은 네트워크 미지원이라 회색).
