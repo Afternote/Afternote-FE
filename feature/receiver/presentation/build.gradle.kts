@@ -3,12 +3,14 @@ plugins {
     id("afternote.android.hilt")
     kotlin("plugin.serialization")
     alias(libs.plugins.compose.screenshot)
+    id("afternote.kover")
 }
 
 android {
     testOptions.unitTests.isIncludeAndroidResources = true
 
     namespace = "com.afternote.feature.receiver.presentation"
+    resourcePrefix = "receiver_"
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
 }
 
@@ -35,6 +37,7 @@ dependencies {
     implementation(libs.androidx.paging.compose)
 
     testImplementation(libs.coroutines.test)
+    testImplementation(testFixtures(projects.feature.mindrecord.domain))
     testImplementation(libs.robolectric)
 
     // 실패 표기가 «레이아웃을 유지하는지» 는 실제로 그려 봐야 확인된다 (#952).

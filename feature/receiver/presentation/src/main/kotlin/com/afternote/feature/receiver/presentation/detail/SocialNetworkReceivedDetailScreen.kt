@@ -35,6 +35,7 @@ import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodsSection
 import com.afternote.feature.afternote.presentation.shared.model.AfternoteServiceDisplay
 import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
+import com.afternote.feature.receiver.presentation.R as ReceiverR
 
 /**
  * 수신 소셜 네트워크 상세 (Stateless).
@@ -92,10 +93,7 @@ private fun SocialNetworkReceivedDetailScrollContent(
 
         Spacer(modifier = Modifier.height(31.dp))
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            ReceivedAccountSection(
-                accountId = content.accountId,
-                password = content.password,
-            )
+            ReceivedAccountSection(credentials = content.credentials)
             ProcessingMethodsSection(methods = content.processingMethods)
             MessageSection(blocks = content.messageBlocks)
         }
@@ -107,62 +105,98 @@ private fun SocialNetworkReceivedDetailScrollContent(
  *
  * 발신자 화면의 동명 private composable과 시각적으로 동일하나, 향후 노출 정책 변경 가능성에 대비해
  * receiver 화면에 별도 정의한다.
+ *
+ * [credentials] 가 `null` 이면 — 서버가 수신자에게 자격증명을 내려주지 않았거나 발신자가 적지
+ * 않은 경우 — 아이디·비밀번호 행 대신 부재 문구를 그린다. 빈 값에 마스킹을 씌우면 수신자는
+ * 가려진 값이 있다고 믿고 "표시" 를 누르지만 아무것도 얻지 못한다 (#619).
  */
 @Composable
 private fun ReceivedAccountSection(
-    accountId: String,
-    password: String,
+    credentials: ReceivedAccountCredentialsUiModel?,
     modifier: Modifier = Modifier,
 ) {
-    var passwordVisible by remember { mutableStateOf(false) }
-
     DetailSection(
         iconResId = com.afternote.core.ui.R.drawable.core_ui_user,
         label = stringResource(R.string.feature_afternote_detail_section_account),
         modifier = modifier,
     ) {
+        if (credentials == null) {
+            Text(
+                text = stringResource(ReceiverR.string.receiver_detail_account_absent),
+                style = AfternoteDesign.typography.bodySmallR,
+                color = AfternoteDesign.colors.gray6,
+            )
+            return@DetailSection
+        }
+
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             DetailInfoRow(
                 iconResId = com.afternote.core.ui.R.drawable.core_ui_user,
                 label = stringResource(R.string.feature_afternote_detail_label_id),
-                value = accountId,
+                value = credentials.accountId ?: stringResource(ReceiverR.string.receiver_detail_account_value_absent),
             )
             HorizontalDivider(
                 color = AfternoteDesign.colors.gray2,
                 thickness = 1.dp,
             )
-            DetailInfoRow(
-                iconResId = R.drawable.feature_afternote_ic_lock,
-                label = stringResource(R.string.feature_afternote_detail_label_password),
-                value =
-                    if (passwordVisible) {
-                        password
-                    } else {
-                        stringResource(R.string.feature_afternote_detail_password_mask)
-                    },
-                trailingContent = {
-                    val toggleLabel =
-                        if (passwordVisible) {
-                            stringResource(R.string.feature_afternote_detail_password_hide)
-                        } else {
-                            stringResource(R.string.feature_afternote_detail_password_show)
-                        }
-                    Text(
-                        text = toggleLabel,
-                        style = AfternoteDesign.typography.captionLargeR,
-                        color = AfternoteDesign.colors.b1,
-                        modifier =
-                            Modifier.clickable(
-                                role = Role.Button,
-                                onClickLabel = toggleLabel,
-                            ) {
-                                passwordVisible = !passwordVisible
-                            },
-                    )
-                },
-            )
+            ReceivedPasswordRow(password = credentials.password)
         }
     }
+}
+
+/**
+ * 비밀번호 행. 값이 있을 때만 마스킹과 표시 토글을 붙인다 — 없는 값을 가리는 시늉을 하지 않는다.
+ */
+@Composable
+private fun ReceivedPasswordRow(
+    password: String?,
+    modifier: Modifier = Modifier,
+) {
+    val passwordLabel = stringResource(R.string.feature_afternote_detail_label_password)
+
+    if (password == null) {
+        DetailInfoRow(
+            iconResId = R.drawable.feature_afternote_ic_lock,
+            label = passwordLabel,
+            value = stringResource(ReceiverR.string.receiver_detail_account_value_absent),
+            modifier = modifier,
+        )
+        return
+    }
+
+    var passwordVisible by remember { mutableStateOf(false) }
+
+    DetailInfoRow(
+        iconResId = R.drawable.feature_afternote_ic_lock,
+        label = passwordLabel,
+        value =
+            if (passwordVisible) {
+                password
+            } else {
+                stringResource(R.string.feature_afternote_detail_password_mask)
+            },
+        modifier = modifier,
+        trailingContent = {
+            val toggleLabel =
+                if (passwordVisible) {
+                    stringResource(R.string.feature_afternote_detail_password_hide)
+                } else {
+                    stringResource(R.string.feature_afternote_detail_password_show)
+                }
+            Text(
+                text = toggleLabel,
+                style = AfternoteDesign.typography.captionLargeR,
+                color = AfternoteDesign.colors.b1,
+                modifier =
+                    Modifier.clickable(
+                        role = Role.Button,
+                        onClickLabel = toggleLabel,
+                    ) {
+                        passwordVisible = !passwordVisible
+                    },
+            )
+        },
+    )
 }
 
 @Preview(showBackground = true)
@@ -174,8 +208,11 @@ private fun SocialNetworkReceivedDetailScreenPreview() {
             content =
                 ReceivedSocialNetworkDetailContent(
                     serviceName = "인스타그램",
-                    accountId = "qwerty123",
-                    password = "qwerty123!",
+                    credentials =
+                        ReceivedAccountCredentialsUiModel(
+                            accountId = "qwerty123",
+                            password = "qwerty123!",
+                        ),
                     processingMethods = listOf("게시물 내리기", "추모 게시물 올리기", "추모 계정으로 전환하기"),
                     messageBlocks =
                         listOf(
