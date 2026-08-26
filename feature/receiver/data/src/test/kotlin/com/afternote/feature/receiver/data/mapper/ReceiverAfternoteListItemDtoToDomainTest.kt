@@ -47,8 +47,8 @@ class ReceiverAfternoteListItemDtoToDomainTest {
     }
 
     @Test
-    fun `toDomain - 대응하지 않는 type은 SOCIAL_NETWORK 기본값`() {
-        assertEquals(AfternoteType.SOCIAL_NETWORK, resp(category = "UNKNOWN").toDomain().type)
+    fun `toDomain - 아예 모르는 값도 type null - 특정 종류로 메우지 않는다`() {
+        assertNull(resp(category = "WHAT_IS_THIS").toDomain().type)
     }
 
     @Test
