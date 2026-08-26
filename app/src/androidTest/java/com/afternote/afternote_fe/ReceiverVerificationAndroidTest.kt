@@ -34,6 +34,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.IOException
 
 @RunWith(AndroidJUnit4::class)
 class ReceiverVerificationAndroidTest {
@@ -55,6 +56,7 @@ class ReceiverVerificationAndroidTest {
                     status = 400,
                     serverMessage = "인증번호가 일치하지 않습니다.",
                     serverCode = 1903,
+                    cause = CAUSE,
                 ),
             ),
         )
@@ -215,3 +217,9 @@ private class FakeReceiverAuthRepository : ReceiverAuthRepository {
 
     override suspend fun getSenderMessage(): Result<SenderMessageInfo> = error("unexpected getSenderMessage")
 }
+
+/**
+ * ServerRejection 이 나르는 원인 예외 자리. 프로덕션에서는 `ApiException` 이 들어오지만, 도메인 계약이
+ * 요구하는 것은 `Throwable` 뿐이라 이 테스트들은 core:network 를 끌어오지 않는다.
+ */
+private val CAUSE: Throwable = IOException("stub cause")

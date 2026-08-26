@@ -9,6 +9,8 @@ import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFai
 import com.afternote.feature.afternote.presentation.reporting.shouldReportInReceiverFlow
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverDeliveryDocumentUploadRepository
+import com.afternote.feature.receiver.presentation.error.ErrorPayload
+import com.afternote.feature.receiver.presentation.error.toErrorPayload
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
