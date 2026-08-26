@@ -3,6 +3,7 @@ package com.afternote.feature.afternote.presentation.shared.model
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.core.ui.R as CoreUiR
 
 /**
  * Maps API [typeKey] (when present), UI display keys / service titles, and label + icon resources.
@@ -19,19 +20,19 @@ enum class AfternoteService(
         typeKey = "SOCIAL_NETWORK",
         displayKey = "SOCIAL_NETWORK",
         stringResId = R.string.afternote_category_social_network,
-        iconResId = R.drawable.feature_afternote_ic_social_pattern,
+        iconResId = CoreUiR.drawable.core_ui_afternote_social_pattern,
     ),
     GALLERY_AND_FILES_CATEGORY(
         typeKey = "GALLERY_AND_FILES",
         displayKey = "GALLERY_AND_FILES",
         stringResId = R.string.receiver_afternote_item_gallery,
-        iconResId = R.drawable.feature_afternote_ic_gallery_pattern,
+        iconResId = CoreUiR.drawable.core_ui_afternote_gallery_pattern,
     ),
     MEMORIAL_CATEGORY(
         typeKey = "MEMORIAL",
         displayKey = "MEMORIAL",
         stringResId = R.string.receiver_afternote_item_memorial_guideline,
-        iconResId = R.drawable.feature_afternote_ic_memorial_guideline,
+        iconResId = CoreUiR.drawable.core_ui_afternote_memorial_guideline,
     ),
     INSTAGRAM(
         typeKey = "INSTAGRAM",
@@ -43,13 +44,13 @@ enum class AfternoteService(
         typeKey = "GALLERY",
         displayKey = "갤러리",
         stringResId = R.string.receiver_afternote_item_gallery,
-        iconResId = R.drawable.feature_afternote_ic_gallery_pattern,
+        iconResId = CoreUiR.drawable.core_ui_afternote_gallery_pattern,
     ),
     MEMORIAL_GUIDELINE(
         typeKey = "GUIDE",
         displayKey = "추억 노트",
         stringResId = R.string.receiver_afternote_item_memorial_guideline,
-        iconResId = R.drawable.feature_afternote_ic_memorial_guideline,
+        iconResId = CoreUiR.drawable.core_ui_afternote_memorial_guideline,
     ),
     NAVER_MAIL(
         typeKey = "NAVER_MAIL",
@@ -175,7 +176,7 @@ enum class AfternoteService(
         typeKey = null,
         displayKey = "파일",
         stringResId = R.string.receiver_afternote_item_gallery,
-        iconResId = R.drawable.feature_afternote_ic_gallery_pattern,
+        iconResId = CoreUiR.drawable.core_ui_afternote_gallery_pattern,
     ),
     ;
 
