@@ -29,6 +29,7 @@ internal fun ReceivedAfternoteDetail.toReceivedDetailContentUiModel(): ReceivedD
 private fun ReceivedAfternoteDetail.toReceivedSocialNetworkDetailContent(): ReceivedSocialNetworkDetailContent =
     ReceivedSocialNetworkDetailContent(
         serviceName = serviceName,
+        credentials = credentials.toUiModelOrNull(),
         processingMethods = processingMethods,
         messageBlocks = leaveMessageBlocks.toMessageBlockUiModels(),
         finalWriteDate = createdAt.orEmpty(),
