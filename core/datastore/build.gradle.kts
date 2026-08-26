@@ -1,5 +1,6 @@
 plugins {
     id("afternote.android.datastore")
+    id("afternote.kover")
 }
 
 android {

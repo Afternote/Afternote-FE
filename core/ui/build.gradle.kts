@@ -2,6 +2,7 @@ plugins {
     id("afternote.android.library.compose")
     kotlin("plugin.serialization")
     alias(libs.plugins.compose.screenshot)
+    id("afternote.kover")
 }
 
 android {

@@ -26,6 +26,11 @@
 
     <!-- Record card more-menu -->
     <string name="mindrecord_record_action_delete">삭제하기</string>
+    <!-- 되돌릴 수 없는 동작이라 확인을 받는다 (#582) -->
+    <string name="mindrecord_delete_confirm_title">이 기록을 삭제할까요?</string>
+    <string name="mindrecord_delete_confirm_message">삭제한 기록은 되돌릴 수 없어요.</string>
+    <string name="mindrecord_delete_confirm">삭제</string>
+    <string name="mindrecord_delete_cancel">취소</string>
     <string name="mindrecord_record_action_edit">수정하기</string>
     <string name="mindrecord_more_menu_cd">더보기 메뉴</string>
 
@@ -191,6 +196,15 @@
     <string name="mindrecord_error_daily_question_answer_required">답변을 입력해 주세요.</string>
     <string name="mindrecord_error_daily_question_missing">오늘의 질문을 불러오지 못해 저장할 수 없습니다. 잠시 후 다시 시도해 주세요.</string>
     <string name="mindrecord_error_weekly_report_failed">주간 리포트를 불러오지 못했습니다.</string>
+    <!-- 미디어 첨부 (#731) -->
+    <string name="mindrecord_write_media_upload_unavailable">지금은 첨부를 올릴 수 없어요. 잠시 뒤 다시 시도해 주세요.</string>
+    <string name="mindrecord_write_media_default_name">첨부파일</string>
+    <string name="mindrecord_write_media_upload_failed">%1$s 올리기에 실패했어요. 다시 시도해 주세요.</string>
+    <string name="mindrecord_write_media_attached">첨부: %1$s</string>
+
+    <!-- 주차 조회 실패 뒤에도 화면 안에서 복구할 수 있게 남기는 문구 (#723) -->
+    <string name="mindrecord_weekly_report_load_failed">%1$d월 %2$d주차 리포트를 불러오지 못했어요.</string>
+    <string name="mindrecord_weekly_report_retry">다시 시도</string>
     <string name="mindrecord_error_retry">다시 시도</string>
     <string name="mindrecord_error_image_upload_failed">이미지를 올리지 못했어요. 다시 시도해 주세요.</string>
     <string name="mindrecord_write_saving">저장하는 중이에요…</string>
@@ -201,6 +215,9 @@
     <!-- 수신자 열람 실패 (#614) — 서버 원문 대신 도메인 문구 -->
     <string name="mindrecord_receiver_delivery_not_ready">아직 열람할 수 있는 기록이 없어요.\n작성자가 전달 시점을 정하면 이곳에서 볼 수 있어요.</string>
     <string name="mindrecord_receiver_load_failed">마음의 기록을 불러오지 못했어요.</string>
-    <string name="mindrecord_receiver_retry">다시 시도</string>
     <string name="mindrecord_receiver_title">마음의 기록</string>
+    <!-- 카테고리 카드 기록 수를 아직 모를 때. en dash — 수신자 홈·주간 요약과 같은 표기 (#700·#952·#562). -->
+    <string name="mindrecord_home_category_count_unavailable">–</string>
+    <!-- 수신인 조회 실패 — «등록된 수신인 없음» 과 구분해야 한다 (#1019). -->
+    <string name="mindrecord_error_receiver_load_failed">수신인 목록을 불러오지 못했어요.</string>
 </resources>

@@ -37,7 +37,6 @@ fun ProcessingMethodList(
     onItemAdded: (String) -> Unit,
     onItemDeleteClick: (String) -> Unit,
     onItemEdited: (String, String) -> Unit,
-    onTextFieldVisibilityChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     initialShowTextField: Boolean = false,
     initialExpandedItemId: String? = null,
@@ -101,7 +100,9 @@ fun ProcessingMethodList(
         if (state.showTextField) {
             AddItemTextField(
                 onItemAdded = onItemAdded,
-                onVisibilityChanged = onTextFieldVisibilityChanged,
+                // AddItemTextField 는 항목을 넣거나 포커스를 잃으면 스스로 물러나겠다고 알린다.
+                // 그 신호를 [state] 로 되돌리지 않으면 필드가 열린 채 남는다 (#777).
+                onVisibilityChanged = { visible -> if (!visible) state.hideTextField() },
             )
         }
 
@@ -125,7 +126,6 @@ private fun ProcessingMethodListPreview() {
             onItemDeleteClick = {},
             onItemAdded = {},
             onItemEdited = { _, _ -> },
-            onTextFieldVisibilityChanged = {},
             initialShowTextField = true,
         )
     }
@@ -145,7 +145,6 @@ private fun ProcessingMethodListWithDropdownPreview() {
             onItemDeleteClick = {},
             onItemAdded = {},
             onItemEdited = { _, _ -> },
-            onTextFieldVisibilityChanged = {},
             initialShowTextField = false,
             initialExpandedItemId = "1",
         )

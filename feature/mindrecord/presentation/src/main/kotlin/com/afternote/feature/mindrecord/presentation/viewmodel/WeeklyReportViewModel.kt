@@ -68,6 +68,25 @@ class WeeklyReportViewModel
         fun selectWeek(monday: LocalDate) = load(monday)
 
         /**
+         * 조회 실패 화면의 재시도 — **실패한 주차를 그대로** 다시 부른다 (#723).
+         *
+         * 이번 주로 되돌리면 사용자가 보려던 주차가 유실돼, 나갔다 들어와도 복구되지 않는다.
+         * 로딩을 보여도 잃을 것이 없다 — 보고 있던 것이 오류 문구뿐이다.
+         */
+        fun retry() {
+            val target =
+                when (val phase = internalState.value.loadPhase) {
+                    is LoadPhase.Failed -> phase.monday
+
+                    is LoadPhase.Loaded -> phase.monday
+
+                    // 아직 첫 조회가 끝나지 않았다 — 겹쳐 부르지 않는다.
+                    LoadPhase.Loading -> return
+                }
+            load(target)
+        }
+
+        /**
          * 감정 분석 실패 상태에서 사용자가 누르는 재시도.
          *
          * FE 가 할 수 있는 것은 **재조회**뿐이다 — 서버 측 재분석 트리거는 Afternote-BE#117
@@ -90,19 +109,15 @@ class WeeklyReportViewModel
         fun refreshOnReturn(showsLoading: Boolean = false) {
             // 진입 직후의 ON_RESUME 은 init 로드와 겹친다 — 진행 중이면 건너뛴다.
             if (loadJob?.isActive == true) return
+            // 실패 상태면 **실패한 주**를 다시 시도한다. 이번 주로 되돌아가면 사용자가
+            // 보려던 주차가 유실돼, 나갔다 들어와도 복구되지 않는다 (#723).
             val current =
-                (internalState.value.loadPhase as? LoadPhase.Loaded)?.monday
-                    ?: weekOptions.first().monday
+                when (val phase = internalState.value.loadPhase) {
+                    is LoadPhase.Loaded -> phase.monday
+                    is LoadPhase.Failed -> phase.monday
+                    LoadPhase.Loading -> weekOptions.first().monday
+                }
             load(current, showsLoading = showsLoading, keepsStateOnFailure = true)
-        }
-
-        /** 조회 실패 화면의 재시도 — 로딩을 보여도 잃을 것이 없다(보고 있던 것이 오류 문구뿐). */
-        fun retry() {
-            // 실패 상태에서는 Loaded 가 없다 — 마지막으로 보던 주가 없으면 최신 주로 되돌린다.
-            val monday =
-                (internalState.value.loadPhase as? LoadPhase.Loaded)?.monday
-                    ?: weekOptions.first().monday
-            load(monday)
         }
 
         private fun load(
@@ -113,6 +128,8 @@ class WeeklyReportViewModel
             loadJob?.cancel()
             loadJob =
                 viewModelScope.launch {
+                    // 실패했을 때 되돌아갈 화면을 **로딩으로 덮기 전에** 잡아 둔다 (#723).
+                    val previousLoaded = internalState.value.loadPhase.lastLoadedOrNull()
                     if (showsLoading) {
                         internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
                     }
@@ -147,7 +164,13 @@ class WeeklyReportViewModel
                                     current.copy(
                                         loadPhase =
                                             LoadPhase.Failed(
-                                                UiText.Resource(R.string.mindrecord_error_weekly_report_failed),
+                                                message =
+                                                    UiText.DynamicOrResource(
+                                                        value = e.message,
+                                                        fallbackResId = R.string.mindrecord_error_weekly_report_failed,
+                                                    ),
+                                                monday = monday,
+                                                previous = previousLoaded,
                                             ),
                                     )
                                 }
@@ -265,21 +288,64 @@ class WeeklyReportViewModel
                 val userName: String,
             ) : LoadPhase
 
+            /**
+             * 조회 실패.
+             *
+             * [monday] 는 **사용자가 고른 주**다. 이 값이 없으면 재진입 자동 갱신이 이번 주로
+             * 되돌아가, 실패한 주를 다시 시도할 방법이 사라진다 (#723).
+             *
+             * [previous] 는 직전에 성공했던 화면이다. 남겨 두면 실패해도 리포트와 주차 선택
+             * UI 를 유지할 수 있다 — 종전에는 화면 전체가 오류 문구 하나로 바뀌어, 재시도도
+             * 다른 주차로 이동도 불가능했다.
+             */
             data class Failed(
                 val message: UiText,
+                val monday: LocalDate,
+                val previous: Loaded?,
             ) : LoadPhase
         }
 
+        /** 실패 상태에 보존해 둔 직전 성공 화면(없으면 null). */
+        private fun LoadPhase.lastLoadedOrNull(): LoadPhase.Loaded? =
+            when (this) {
+                is LoadPhase.Loaded -> this
+                is LoadPhase.Failed -> previous
+                LoadPhase.Loading -> null
+            }
+
         private fun InternalState.toUiState(): WeeklyReportUiState =
             when (val phase = loadPhase) {
-                LoadPhase.Loading -> WeeklyReportUiState.Loading
-                is LoadPhase.Failed -> WeeklyReportUiState.Error(phase.message)
-                is LoadPhase.Loaded -> phase.toSuccessUiState()
+                LoadPhase.Loading -> {
+                    WeeklyReportUiState.Loading
+                }
+
+                is LoadPhase.Loaded -> {
+                    phase.toSuccessUiState()
+                }
+
+                is LoadPhase.Failed -> {
+                    // 직전에 보던 리포트가 있으면 그 화면을 유지하고 실패는 배너로 알린다.
+                    // 화면 전체를 오류로 바꾸면 주차 선택 UI 까지 사라져 복구 수단이 없어진다.
+                    phase.previous?.toSuccessUiState()?.copy(
+                        loadFailure =
+                            WeeklyReportUiState.LoadFailure(
+                                message = phase.message,
+                                failedWeekLabel = phase.monday,
+                            ),
+                    ) ?: WeeklyReportUiState.Error(
+                        message = phase.message,
+                        weekOptions = weekOptions,
+                        failedMonday = phase.monday,
+                    )
+                }
             }
 
         private fun LoadPhase.Loaded.toSuccessUiState(): WeeklyReportUiState.Success {
             val sunday = monday.plusDays(WEEK_LENGTH - 1L)
-            val dailyQuestionDates = report.dailyQuestions.mapNotNull { parseLocalDateOrNull(it.date) }
+            // 주간 범위 방어를 **한 번만** 한다. 종전에는 집계만 범위를 걸고 HISTORY 는
+            // 전량을 렌더해, 같은 화면에 범위가 적용된 수치와 적용되지 않은 목록이
+            // 함께 있었다 (#547).
+            val dailyQuestionsInWeek = report.dailyQuestions.filter { it.date in monday..sunday }
             return WeeklyReportUiState.Success(
                 selectedMonday = monday,
                 weekOptions = weekOptions,
@@ -289,18 +355,22 @@ class WeeklyReportViewModel
                     countRecordedDays(
                         monday = monday,
                         week = report.week,
-                        dailyQuestionDates = dailyQuestionDates,
+                        dailyQuestionDates = dailyQuestionsInWeek.map { it.date },
                     ),
                 counts =
                     listOf(
-                        report.dailyQuestionAmount to MindRecordCategoryUi.DailyQuestion,
+                        // 서버 원본(`dailyQuestionAmount`) 이 아니라 **화면이 실제로 그리는 목록**을
+                        // 센다. 원본을 쓰면 범위 밖 항목이나 날짜를 해석하지 못해 빠진 항목이
+                        // 목록에는 없는데 수치에만 남는다 — 방향만 뒤집힌 같은 불일치다 (#547).
+                        dailyQuestionsInWeek.size to MindRecordCategoryUi.DailyQuestion,
+                        // 일기는 이 화면에 대응 목록이 없어 서버 수치를 그대로 쓴다.
                         report.diaryAmount to MindRecordCategoryUi.Diary,
                     ),
                 emotionAnalysisStatus = report.analysisStatus,
                 weekDays = mapWeekDays(monday, report.week),
                 emotionKeywords = mapEmotionKeywords(report.emotions),
                 summaryText = report.summaryText,
-                dailyQuestions = report.dailyQuestions.mapNotNull { it.toUi() },
+                dailyQuestions = dailyQuestionsInWeek.map { it.toUi() },
             )
         }
 
@@ -335,38 +405,16 @@ class WeeklyReportViewModel
                     .map { EmotionKeyword(keyword = it.keyword, count = it.percentage) }
 
             /**
-             * 날짜를 못 정하면 `null` 을 돌린다 — 호출부가 그 항목을 목록에서 뺀다.
+             * 날짜 해석은 이미 data 계층(`ServerDateParser`)이 끝냈다 — 여기서는 옮기기만 한다.
              *
-             * 오늘 날짜로 메우면 지난 주 답변이 오늘로 표시되고 실패 신호가 남지 않는다 (#751).
-             * 서버 명세에 `date` 형식이 정의돼 있지 않아 언제든 어긋날 수 있다.
+             * 해석하지 못한 항목은 매퍼가 이미 제외하므로 이 자리에 실패 갈래가 없다 (#547).
              */
-            private fun WeeklyReportDailyQuestion.toUi(): DailyQuestion? {
-                val resolvedDate =
-                    parseLocalDateOrNull(date) ?: run {
-                        Log.w(TAG, "주간리포트 데일리질문 날짜를 해석하지 못해 목록에서 제외한다: raw=$date")
-                        return null
-                    }
-                return DailyQuestion(
+            private fun WeeklyReportDailyQuestion.toUi(): DailyQuestion =
+                DailyQuestion(
                     title = title,
-                    date = resolvedDate,
+                    date = date,
                     content = content,
                 )
-            }
-
-            // 서버는 "yyyy.MM.dd 요일" 또는 ISO 포맷으로 내려옴 — 둘 다 허용.
-            private val DATE_FORMATTERS: List<DateTimeFormatter> =
-                listOf(
-                    DateTimeFormatter.ofPattern("yyyy.MM.dd"),
-                    DateTimeFormatter.ISO_DATE,
-                )
-
-            private fun parseLocalDateOrNull(raw: String): LocalDate? {
-                val datePart = raw.substringBefore(' ').trim()
-                for (formatter in DATE_FORMATTERS) {
-                    runCatching { return LocalDate.parse(datePart, formatter) }
-                }
-                return null
-            }
         }
     }
 

@@ -1,7 +1,4 @@
-import kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension
-import org.gradle.kotlin.dsl.configure
-
-// AGP 9.2.1·Firebase App Distribution 5.3.0 이 buildscript classpath 로 끌어오는 전이 의존성 중
+// AGP 9.3.2·Firebase App Distribution 5.3.0 이 buildscript classpath 로 끌어오는 전이 의존성 중
 // 보안 권고 영향권인 것들의 하한(#921·#975~#985). 루트 classpath 는 plugins 블록 처리 시점에
 // 리졸브가 끝나 아래 본문 훅으로는 늦고, buildscript 블록에서는 버전 카탈로그 accessor 를 쓸 수 없다
 // — libs.versions.toml 의 같은 이름 버전과 값을 맞춰 유지할 것.
@@ -34,7 +31,7 @@ buildscript {
 
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 plugins {
-    alias(libs.plugins.kover)
+    id("afternote.kover")
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.android.library) apply false
@@ -49,7 +46,7 @@ plugins {
 
 // 빌드·테스트 클래스패스의 보안 하한(#921·#975~#985·#1058·#1072). 상류가 취약 버전을 물고 있고 상류
 // 최신판도 아직 패치 버전 미만이라 constraint 로 올린다 — Robolectric 4.15.1(bcprov 1.80)·AGP
-// 9.2.1(bcprov 1.79·commons-lang3 3.16.0·jose4j 0.9.5·jdom2 2.0.6)·Firebase App Distribution 5.3.0
+// 9.3.2(bcprov 1.79·commons-lang3 3.16.0·jose4j 0.9.5·jdom2 2.0.6)·Firebase App Distribution 5.3.0
 // 과 AGP UTP 설정(netty — unified-test-platform-core 가 4.1.93, -host-emulator-control 이 4.1.110)
 // ·AGP androidLintTool 과 UTP(httpclient 4.5.6)·ktlint CLI(logback 1.3.16)·Kakao SDK 2.23.2(okhttp
 // 4.9.2→okio 2.8.0). androidLintTool·UTP 처럼 AGP 가 뒤늦게 만드는 configuration 까지 잡도록
@@ -160,89 +157,43 @@ subprojects {
     }
 }
 
-val coverageProjects =
-    subprojects.filter { project ->
-        project.buildFile.isFile &&
-            (
-                project.path == ":app" ||
-                    project.path.startsWith(":core:") ||
-                    project.path.startsWith(":feature:")
-            )
-    }
-
-val coverageClassExclusions =
-    arrayOf(
-        // Hilt/Dagger and Compose compiler output contains no hand-written product decisions.
-        "*Dagger*",
-        "*Hilt_*",
-        "*HiltWrapper_*",
-        "hilt_aggregated_deps.*",
-        "*_ComponentTreeDeps*",
-        "*_*Factory*",
-        "*_GeneratedInjector*",
-        "*_HiltModules*",
-        "*_MembersInjector*",
-        "*ComposableSingletons*",
-    )
-
-fun KoverProjectExtension.configureCoverageReports() {
-    reports {
-        filters {
-            excludes {
-                // BuildConfig, R, Manifest and other Android-generated classes.
-                androidGeneratedClasses()
-                classes(*coverageClassExclusions)
-            }
-        }
-    }
-}
-
-kover {
-    currentProject {
-        // The root owns only the merged report; source/test variants come from dependencies below.
-        createVariant("ci") {}
-    }
-    configureCoverageReports()
-}
-
-coverageProjects.forEach { coverageProject ->
-    coverageProject.pluginManager.apply("org.jetbrains.kotlinx.kover")
-    coverageProject.extensions.configure<KoverProjectExtension> {
-        configureCoverageReports()
-    }
-    coverageProject.pluginManager.withPlugin("com.android.application") {
-        coverageProject.extensions.configure<KoverProjectExtension> {
-            currentProject {
-                createVariant("ci") {
-                    add("debug")
-                }
-            }
-        }
-    }
-    coverageProject.pluginManager.withPlugin("com.android.library") {
-        coverageProject.extensions.configure<KoverProjectExtension> {
-            currentProject {
-                createVariant("ci") {
-                    add("debug")
-                }
-            }
-        }
-    }
-    coverageProject.pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
-        coverageProject.extensions.configure<KoverProjectExtension> {
-            currentProject {
-                createVariant("ci") {
-                    add("jvm")
-                }
-            }
-        }
-    }
-}
-
+// 커버리지 규약(kover 적용·리포트 필터·«ci» 변형)은 afternote.kover convention plugin 이 모듈마다
+// 스스로 건다. 루트에 남는 것은 «무엇을 합칠지» 뿐이다 — 예전에는 여기서 subprojects 를
+// configuration time 에 열거해 남의 프로젝트의 pluginManager·extensions 를 직접 조작했고,
+// 이 저장소에서 모듈 공통 설정이 convention plugin 밖에 있는 유일한 자리이자 Gradle
+// project isolation 의 첫 걸림돌이었다(#918 — #864 승인 리뷰의 유예분).
+//
+// 모듈이 늘면 여기 한 줄과 그 모듈 plugins 블록의 afternote.kover 가 함께 늘어야 한다. 둘이
+// 어긋나면 커버리지에서 조용히 빠지므로 build-logic 의 KoverAggregationTest 가 일치를 검사한다.
 dependencies {
-    coverageProjects.forEach { coverageProject ->
-        kover(project(coverageProject.path))
-    }
+    kover(project(":app"))
+    kover(project(":core:common"))
+    kover(project(":core:data"))
+    kover(project(":core:datastore"))
+    kover(project(":core:domain"))
+    kover(project(":core:model"))
+    kover(project(":core:network"))
+    kover(project(":core:ui"))
+    kover(project(":feature:afternote:data"))
+    kover(project(":feature:afternote:domain"))
+    kover(project(":feature:afternote:presentation"))
+    kover(project(":feature:home:presentation"))
+    kover(project(":feature:mindrecord:data"))
+    kover(project(":feature:mindrecord:domain"))
+    kover(project(":feature:mindrecord:presentation"))
+    kover(project(":feature:onboarding:data"))
+    kover(project(":feature:onboarding:domain"))
+    kover(project(":feature:onboarding:presentation"))
+    kover(project(":feature:receiver:data"))
+    kover(project(":feature:receiver:domain"))
+    kover(project(":feature:receiver:presentation"))
+    kover(project(":feature:setting:data"))
+    kover(project(":feature:setting:domain"))
+    kover(project(":feature:setting:presentation"))
+    kover(project(":feature:timeletter:data"))
+    kover(project(":feature:timeletter:domain"))
+    kover(project(":feature:timeletter:presentation"))
+    kover(project(":feature:timeletter:res"))
 }
 
 tasks.register<Exec>("installGitHooks") {
