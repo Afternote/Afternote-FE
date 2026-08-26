@@ -50,8 +50,8 @@ class AfternoteEditorState(
     /** 타이핑 디바운스 후 폼(및 스냅샷)에만 반영; [EditorFormState.leaveMessageBlocksRestoreGeneration]은 건드리지 않는다. */
     val setLeaveMessageBlocks: (List<EditorMessageTextBlock>) -> Unit,
     val addProcessingMethod: (text: String) -> Unit,
-    val deleteProcessingMethod: (itemId: String) -> Unit,
-    val editProcessingMethod: (itemId: String, newText: String) -> Unit,
+    val deleteProcessingMethod: (localId: Int) -> Unit,
+    val editProcessingMethod: (localId: Int, newText: String) -> Unit,
 ) {
     val editorMessages: SnapshotStateList<EditorMessage> get() = ui.editorMessages
 
@@ -183,8 +183,8 @@ fun rememberAfternoteEditorState(
     replaceReceiversIfEmpty: (List<AfternoteEditorReceiver>) -> Unit,
     setLeaveMessageBlocks: (List<EditorMessageTextBlock>) -> Unit,
     addProcessingMethod: (text: String) -> Unit,
-    deleteProcessingMethod: (itemId: String) -> Unit,
-    editProcessingMethod: (itemId: String, newText: String) -> Unit,
+    deleteProcessingMethod: (localId: Int) -> Unit,
+    editProcessingMethod: (localId: Int, newText: String) -> Unit,
 ): AfternoteEditorState {
     val idState = rememberTextFieldState()
     val passwordState = rememberTextFieldState()
@@ -245,8 +245,8 @@ fun rememberAfternoteEditorState(): AfternoteEditorState {
         setLeaveMessageBlocks = { blocks -> mutate { it.withLeaveMessageBlocks(blocks) } },
         addProcessingMethod = { text -> mutate { it.withProcessingMethodAdded(text) } },
         deleteProcessingMethod = { itemId -> mutate { it.withProcessingMethodDeleted(itemId) } },
-        editProcessingMethod = { itemId, newText ->
-            mutate { it.withProcessingMethodEdited(itemId = itemId, newText = newText) }
+        editProcessingMethod = { localId, newText ->
+            mutate { it.withProcessingMethodEdited(localId = localId, newText = newText) }
         },
     )
 }

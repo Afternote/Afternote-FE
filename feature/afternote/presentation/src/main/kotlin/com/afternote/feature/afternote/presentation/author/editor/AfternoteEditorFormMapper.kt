@@ -38,7 +38,7 @@ internal object AfternoteEditorFormMapper {
         val processingMethodItems =
             content.processingMethods().mapIndexed { index, text ->
                 ProcessingMethodItem(
-                    id = (index + 1).toString(),
+                    localId = index + 1,
                     text = text,
                 )
             }

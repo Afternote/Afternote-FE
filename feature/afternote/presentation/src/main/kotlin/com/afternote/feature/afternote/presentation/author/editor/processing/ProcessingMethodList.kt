@@ -34,12 +34,12 @@ import kotlinx.coroutines.launch
 @Composable
 fun ProcessingMethodList(
     items: List<ProcessingMethodItem>,
-    onItemAdded: (String) -> Unit,
-    onItemDeleteClick: (String) -> Unit,
-    onItemEdited: (String, String) -> Unit,
+    onItemAdded: (text: String) -> Unit,
+    onItemDeleteClick: (localId: Int) -> Unit,
+    onItemEdited: (localId: Int, newText: String) -> Unit,
     modifier: Modifier = Modifier,
     initialShowTextField: Boolean = false,
-    initialExpandedItemId: String? = null,
+    initialExpandedLocalId: Int? = null,
     state: ProcessingMethodListState =
         rememberProcessingMethodListState(
             initialShowTextField = initialShowTextField,
@@ -50,8 +50,8 @@ fun ProcessingMethodList(
 
     // items 참조가 바뀔 때마다 실행되지만, [ProcessingMethodListState.initializeExpandedStates]는
     // 기존 키의 expanded/편집 상태를 보존하고 신규 id만 시드하며, 제거된 행의 상태만 정리한다.
-    LaunchedEffect(items, initialExpandedItemId) {
-        state.initializeExpandedStates(items, initialExpandedItemId)
+    LaunchedEffect(items, initialExpandedLocalId) {
+        state.initializeExpandedStates(items, initialExpandedLocalId)
     }
 
     Column(
@@ -68,29 +68,29 @@ fun ProcessingMethodList(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         items.forEach { item ->
-            key(item.id) {
+            key(item.localId) {
                 ProcessingMethodCheckbox(
                     item = item,
-                    expanded = state.expandedStates[item.id] ?: false,
-                    isEditing = state.editingItemId == item.id,
+                    expanded = state.expandedStates[item.localId] ?: false,
+                    isEditing = state.editingLocalId == item.localId,
                     onMoreClick = {
                         focusManager.clearFocus()
-                        state.toggleItemExpanded(item.id)
+                        state.toggleItemExpanded(item.localId)
                     },
                     onDismissDropdown = {
-                        state.expandedStates[item.id] = false
+                        state.expandedStates[item.localId] = false
                     },
                     onEditClick = {
-                        state.expandedStates[item.id] = false
+                        state.expandedStates[item.localId] = false
                         // Defer editing to next frame so DropdownMenu dismiss settles first
                         scope.launch {
                             withFrameNanos { }
-                            state.startEditing(item.id)
+                            state.startEditing(item.localId)
                         }
                     },
-                    onDeleteClick = { onItemDeleteClick(item.id) },
+                    onDeleteClick = { onItemDeleteClick(item.localId) },
                     onEditConfirmed = { newText ->
-                        onItemEdited(item.id, newText)
+                        onItemEdited(item.localId, newText)
                         state.stopEditing()
                     },
                 )
@@ -100,9 +100,7 @@ fun ProcessingMethodList(
         if (state.showTextField) {
             AddItemTextField(
                 onItemAdded = onItemAdded,
-                // AddItemTextField 는 항목을 넣거나 포커스를 잃으면 스스로 물러나겠다고 알린다.
-                // 그 신호를 [state] 로 되돌리지 않으면 필드가 열린 채 남는다 (#777).
-                onVisibilityChanged = { visible -> if (!visible) state.hideTextField() },
+                onDismiss = state::hideTextField,
             )
         }
 
@@ -120,8 +118,8 @@ private fun ProcessingMethodListPreview() {
         ProcessingMethodList(
             items =
                 listOf(
-                    ProcessingMethodItem("1", "게시물 내리기"),
-                    ProcessingMethodItem("2", "댓글 비활성화"),
+                    ProcessingMethodItem(1, "게시물 내리기"),
+                    ProcessingMethodItem(2, "댓글 비활성화"),
                 ),
             onItemDeleteClick = {},
             onItemAdded = {},
@@ -138,15 +136,15 @@ private fun ProcessingMethodListWithDropdownPreview() {
         ProcessingMethodList(
             items =
                 listOf(
-                    ProcessingMethodItem("1", "게시물 내리기"),
-                    ProcessingMethodItem("2", "댓글 비활성화"),
-                    ProcessingMethodItem("3", "추모 계정으로 전환하기"),
+                    ProcessingMethodItem(1, "게시물 내리기"),
+                    ProcessingMethodItem(2, "댓글 비활성화"),
+                    ProcessingMethodItem(3, "추모 계정으로 전환하기"),
                 ),
             onItemDeleteClick = {},
             onItemAdded = {},
             onItemEdited = { _, _ -> },
             initialShowTextField = false,
-            initialExpandedItemId = "1",
+            initialExpandedLocalId = 1,
         )
     }
 }
