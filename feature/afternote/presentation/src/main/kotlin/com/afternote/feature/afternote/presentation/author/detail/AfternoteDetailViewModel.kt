@@ -165,7 +165,6 @@ class AfternoteDetailViewModel
                     val detail = phase.detail
                     AfternoteDetailUiState.Success(
                         detailId = detail.id,
-                        authorDisplayName = authorDisplayName,
                         isDeleting = isDeleting,
                         contentUiModel = detail.toDetailContentUiModel(authorDisplayName),
                         deleteResult = deleteResult,
