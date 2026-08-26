@@ -36,12 +36,22 @@ jobs:
           cache-read-only: true
           validate-wrappers: true
 
-      - name: Enable KVM access
+      - name: Enable and verify KVM access
         run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0660", OPTIONS+="static_node=kvm"' \
+          runner_user="$(id -un)"
+          echo "KERNEL==\"kvm\", OWNER=\"${runner_user}\", GROUP=\"kvm\", MODE=\"0660\", OPTIONS+=\"static_node=kvm\"" \
             | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
+          sudo udevadm trigger --name-match=kvm --settle
+
+          id
+          ls -l /dev/kvm
+          if [[ ! -c /dev/kvm || ! -r /dev/kvm || ! -w /dev/kvm ]]; then
+            echo "::error::/dev/kvm must be a character device readable and writable by the runner"
+            exit 1
+          fi
+          "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" "emulator"
+          "${ANDROID_HOME}/emulator/emulator" -accel-check
 
       - name: Set up CI-only app configuration
         uses: ./.github/actions/setup-ci-config

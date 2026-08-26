@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.captureToImage
@@ -324,9 +325,12 @@ class ReceiverRuntimeCompletionAndroidTest {
             .assertIsDisplayed()
         composeRule.onNodeWithText("언제나 응원할게").assertIsDisplayed()
         composeRule
-            .onNodeWithText(context.getString(ReceiverR.string.receiver_home_section_count_unavailable))
-            .performScrollTo()
-            .assertIsDisplayed()
+            .onAllNodes(
+                hasText(context.getString(ReceiverR.string.receiver_home_section_count_unavailable)),
+            ).apply {
+                assertCountEquals(2)
+                this[0].performScrollTo().assertIsDisplayed()
+            }
         composeRule
             .onNodeWithText("8개 라이프 이벤트 레터가 있습니다.")
             .performScrollTo()
@@ -337,9 +341,9 @@ class ReceiverRuntimeCompletionAndroidTest {
             .assertIsDisplayed()
 
         assertEquals(2, reporter.failures.size)
-        assertEquals("receiver_home_load", reporter.failures[0].second["home_stage"])
-        assertEquals("receiver_home_partial_load", reporter.failures[1].second["home_stage"])
-        assertEquals("mind_records", reporter.failures[1].second["home_failed_sources"])
+        assertEquals("receiver_home_load", reporter.failures[0].second["receiver_stage"])
+        assertEquals("receiver_home_partial_load", reporter.failures[1].second["receiver_stage"])
+        assertEquals("mind_records", reporter.failures[1].second["receiver_failed_sources"])
         assertEquals(listOf(2, 2, 2, 2), homeCallCounts())
     }
 

@@ -1,7 +1,6 @@
 package com.afternote.afternote_fe
 
 import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasClickAction
@@ -10,7 +9,6 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.waitUntilAtLeastOneExists
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
@@ -32,7 +30,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalTestApi::class)
 class MindRecordFlowAndroidTest {
     @get:Rule(order = 0)
     val composeRule = createComposeRule()
@@ -76,7 +73,10 @@ class MindRecordFlowAndroidTest {
         composeRule.onNodeWithText("기억할 하루").assertIsDisplayed()
         composeRule.onNodeWithText("김수신님에게").assertIsDisplayed()
         composeRule.onNode(hasText("등록") and hasClickAction()).performClick()
-        composeRule.waitUntilAtLeastOneExists(hasText("temporary"), timeoutMillis = 5_000)
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.submitState is SubmitState.Failed
+        }
+        composeRule.onNodeWithText("일기 등록에 실패했습니다.").assertIsDisplayed()
 
         composeRule.onNodeWithText("기억할 하루").assertIsDisplayed()
         composeRule.onNode(hasText("등록") and hasClickAction()).performClick()
