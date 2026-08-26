@@ -4,6 +4,8 @@ set -euo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd -- "${script_dir}/.." && pwd)"
+# shellcheck source=scripts/jarsigner-verification-policy.sh
+source "${script_dir}/jarsigner-verification-policy.sh"
 bundle_path="${repo_root}/app/build/outputs/bundle/release/app-release.aab"
 mapping_path="${repo_root}/app/build/outputs/mapping/release/mapping.txt"
 
@@ -50,26 +52,7 @@ export LC_ALL=C
 # unsigned entry(16)·서명 검증 실패(1) 등 나머지 비트는 실패로 처리한다.
 strict_status=0
 verification_output="$(jarsigner -verify -strict "${bundle_path}" 2>&1)" || strict_status=$?
-if [[ "${strict_status}" -ne 0 && "${strict_status}" -ne 4 ]]; then
-    printf '%s\n' "${verification_output}" >&2
-    echo "AAB JAR 서명 검증이 실패했습니다(jarsigner -strict exit ${strict_status})." >&2
-    exit 1
-fi
-if [[ "${verification_output}" != *"jar verified"* ]]; then
-    printf '%s\n' "${verification_output}" >&2
-    echo "AAB JAR 서명을 확인하지 못했습니다." >&2
-    exit 1
-fi
-# 그룹 4는 chainNotValidated 하나가 아니라 hasExpiredCert·notYetValidCert 까지 한 비트에 뭉친다.
-# 실측(JDK 21·25): 자가서명 정상·만료·유효 전 인증서가 모두 exit 4 라 서명 키의 유효기간 위반을
-# exit code 로는 가를 수 없다. LC_ALL=C 로 고정한 진단 문구로 잡는다.
-case "${verification_output}" in
-    *"signer certificate has expired"* | *"signer certificate is not yet valid"*)
-        printf '%s\n' "${verification_output}" >&2
-        echo "AAB 서명 인증서의 유효기간이 지났거나 아직 시작되지 않았습니다." >&2
-        exit 1
-        ;;
-esac
+verify_jarsigner_result "${strict_status}" "${verification_output}"
 
 if command -v shasum >/dev/null 2>&1; then
     bundle_sha256="$(shasum -a 256 "${bundle_path}" | awk '{print $1}')"
