@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.paging.PagingData
@@ -26,6 +27,7 @@ fun InfiniteListBody(
     selectedCategory: AfternoteType?,
     onCategorySelected: (AfternoteType?) -> Unit,
     onListItemClick: (id: Long, type: AfternoteType) -> Unit,
+    headerDescription: String,
     nextStep: NextStep?,
     modifier: Modifier = Modifier,
 ) {
@@ -34,7 +36,10 @@ fun InfiniteListBody(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Spacer(Modifier.height(8.dp))
-        HomeHeaderSection(nextStep = nextStep)
+        HomeHeaderSection(
+            description = headerDescription,
+            nextStep = nextStep,
+        )
         AfternoteListContent(
             items = items,
             selectedCategory = selectedCategory,
@@ -77,6 +82,7 @@ private fun InfiniteListBodyPreview() {
                 ),
             ).collectAsLazyPagingItems()
         InfiniteListBody(
+            headerDescription = stringResource(R.string.afternote_home_header_description),
             nextStep =
                 NextStep(
                     text =
