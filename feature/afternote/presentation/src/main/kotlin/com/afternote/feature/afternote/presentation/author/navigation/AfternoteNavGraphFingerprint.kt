@@ -46,6 +46,7 @@ internal fun AfternoteFingerprintLoginNavigation(
             noneEnrolled = stringResource(R.string.biometric_none_enrolled),
             hwUnavailable = stringResource(R.string.biometric_hw_unavailable),
             notAvailable = stringResource(R.string.biometric_not_available),
+            verificationFailed = stringResource(R.string.biometric_verification_failed),
         )
     val promptTitle = stringResource(R.string.biometric_prompt_title)
     val promptSubtitle = stringResource(R.string.biometric_prompt_subtitle)

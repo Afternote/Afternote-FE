@@ -11,6 +11,10 @@
 | `KAKAO_NATIVE_APP_KEY` | 카카오 SDK 초기화 (`KakaoSdk.init`) + 카카오 로그인 콜백 intent-filter 의 `kakao{NATIVE_APP_KEY}` scheme | [Kakao Developers](https://developers.kakao.com) → 내 애플리케이션 → 앱 키 → **네이티브 앱 키** |
 | `GOOGLE_WEB_CLIENT_ID` | Google 로그인 시 `CredentialManager.requestGoogleIdToken(serverClientId = ...)` 의 server client id (백엔드가 ID Token 의 `aud` 를 검증할 수 있도록 *Web* client ID 사용) | [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials → OAuth 2.0 Client IDs → **Web application** 타입 |
 
+## `google-services.json`
+
+`app/google-services.json` 도 `.gitignore` 대상이라 clone 으로 받아지지 않는다. Firebase Console → 프로젝트 설정 → 일반 → Android 앱 `com.afternote.afternote_fe` 카드에서 직접 내려받아 `app/google-services.json` 에 둔다. (콘솔 접근 권한이 없으면 1hyok 에게 Firebase 프로젝트 멤버 초대를 요청.)
+
 ## `local.properties` 양식
 
 프로젝트 루트의 `local.properties` 끝에 다음 라인 추가:
@@ -22,7 +26,30 @@ GOOGLE_WEB_CLIENT_ID=<구글 OAuth web client id>.apps.googleusercontent.com
 
 ## 키 수령 채널
 
-신규 팀원은 위 두 키를 **Slack DM 으로 1hyok 에게 요청**. (직접 발급 권한이 있는 경우 위 콘솔에서 직접 조회 가능.)
+신규 팀원은 **1hyok 에게 요청**하면 1Password 공유 링크(`Afternote Debug Build Config` 항목)를 받는다. 요청·전달은 Slack·카톡 등 편한 채널로 하면 된다 — 링크에 **수신자 이메일 제한과 만료**가 걸려 있어 지정 주소 밖으로 새도 열리지 않는다. 링크 하나에 아래 셋업에 필요한 값이 모두 들어 있다.
+
+| `local.properties` 키 | 공유 링크의 필드 |
+|---|---|
+| `KAKAO_NATIVE_APP_KEY` | `kakao_native_app_key` |
+| `GOOGLE_WEB_CLIENT_ID` | `google_web_client_id` |
+| `DEBUG_STORE_PASSWORD` | `debug_store_password` |
+| `DEBUG_KEY_ALIAS` | `debug_key_alias` |
+| `DEBUG_KEY_PASSWORD` | `debug_key_password` |
+| (공유 debug keystore 파일) | `debug_store_file_b64` |
+
+(직접 발급 권한이 있으면 위 콘솔에서 두 키를 직접 조회해도 된다.)
+
+<details>
+<summary>배포자용 — 링크 발급 방법</summary>
+
+```bash
+op item share "Afternote Debug Build Config" --emails <요청자 메일> --expires-in 3d
+```
+
+`--emails` 를 빼면 **링크를 아는 누구나** 열 수 있으니 반드시 붙인다. 1회만 열리게 하려면 `--view-once` 를 추가. 항목 값을 고친 뒤에는 링크를 **다시 발급해야** 반영된다.
+
+아이템 공유는 **필드 단위 선택이 안 되고 항목 전체가 나간다.** 배포에는 반드시 위 전용 항목을 쓰고, 다른 자격이 섞인 항목은 공유하지 않는다.
+</details>
 
 ## 누락 시 증상
 
@@ -38,15 +65,19 @@ debug 빌드는 빈 값으로도 통과하지만(로컬 개발 편의) 다음이
 
 debug 빌드는 기본적으로 머신마다 다른 `~/.android/debug.keystore` 로 서명되어, 카카오 로그인 키 해시를 팀원 머신별로 콘솔에 등록해야 한다. 팀 공유 debug keystore 를 배치하면 전 머신이 동일 키 해시로 서명되어 콘솔 등록이 keystore 1개로 끝난다. (미배치 시에도 빌드는 정상 — 기본 debug keystore 폴백 — 대신 본인 머신 키 해시를 직접 등록해야 카카오 로그인이 동작한다.)
 
-1. **keystore 수령·배치** — `afternote-debug-shared.jks` 를 **Slack DM 으로 1hyok 에게 요청** 후 홈 디렉토리에 배치 (예: `~/afternote-debug-shared.jks`)
+1. **keystore 수령·배치** — 위 1Password 공유 링크의 `debug_store_file_b64` 값을 복사한 뒤 홈 디렉토리에 복원한다. (공유 링크에는 파일 첨부가 실리지 않아 keystore 를 base64 텍스트로 전달한다.)
+
+    ```bash
+    pbpaste | base64 -d > ~/afternote-debug-shared.jks
+    ```
 
 2. **`local.properties` 끝에 4개 키 추가** (경로는 `~` 없이 **절대경로** — Gradle `file()` 은 `~` 를 확장하지 않는다)
 
     ```properties
     DEBUG_STORE_FILE=/Users/<you>/afternote-debug-shared.jks
-    DEBUG_STORE_PASSWORD=<keystore 비밀번호 — keystore 와 함께 전달>
+    DEBUG_STORE_PASSWORD=<공유 링크의 debug_store_password>
     DEBUG_KEY_ALIAS=afternote-debug-shared
-    DEBUG_KEY_PASSWORD=<key 비밀번호 — keystore 와 함께 전달>
+    DEBUG_KEY_PASSWORD=<공유 링크의 debug_key_password>
     ```
 
 3. **적용 확인** — `./gradlew :app:signingReport` 출력의 `Variant: debug` 에서 `Store:` 가 공유 keystore 경로를 가리키는지 확인
@@ -155,6 +186,22 @@ CI 가 사용하는 GitHub Secrets (Settings → Secrets and variables → Actio
 PR 검증용 lint·unit-test·screenshot은 repository secret 대신
 `.github/actions/setup-ci-config`가 만드는 결정적 CI 전용 placeholder를 사용한다. 이 fixture는
 배포에 사용할 수 없으며, `release-distribution.yml`은 계속 승인된 환경의 위 secret만 사용한다.
+
+### 배포 provenance — 이 APK 가 어느 commit·run 에서 나왔는지 (#851)
+
+배포 워크플로는 signing 이 끝난 그 APK 하나를 subject 로 [GitHub artifact attestation](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations)을 발급하고, 업로드 전에 스스로 검증한다. 서명·저장소·signer workflow·source commit·GitHub-hosted 러너 중 하나라도 어긋나거나 attestation subject digest 가 빌드 직후 digest 와 다르면 Firebase 업로드까지 가지 않는다.
+
+성공한 run 의 summary 에 남는 값은 넷이다 — source commit SHA, `sha256:` artifact digest, attestation URL, run URL. APK·AAB 와 R8 mapping 자체는 여기서도 public Actions artifact 로 게시하지 않는다.
+
+받은 APK 가 정말 그 배포 경로에서 나왔는지는 손에 든 파일로 직접 확인할 수 있다.
+
+```bash
+gh attestation verify ~/Downloads/afternote-release.apk --repo Afternote/Afternote-FE --signer-workflow Afternote/Afternote-FE/.github/workflows/release-distribution.yml --source-ref refs/heads/main --deny-self-hosted-runners
+```
+
+특정 릴리스 commit 으로 좁히려면 `--source-digest <commit SHA>` 를 더한다. 파일이 1비트라도 다르면 digest 가 달라져 검증이 실패한다.
+
+> 아래 로컬 fallback 으로 올린 빌드에는 attestation 이 없다. 그 경로로 배포한 APK 는 위 명령이 실패하는 게 정상이며, 그래서 CI 장애 때만 쓴다.
 
 ### 로컬 — 1hyok 머신 (fallback / 긴급 시)
 

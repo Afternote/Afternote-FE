@@ -35,7 +35,6 @@ fun ProcessingMethodListSection(
             onItemAdded = section.onItemAdded,
             onItemDeleteClick = section.onItemDeleteClick,
             onItemEdited = section.onItemEdited,
-            onTextFieldVisibilityChanged = section.onTextFieldVisibilityChanged,
         )
     }
 }
