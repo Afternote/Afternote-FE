@@ -298,7 +298,8 @@ fun DiaryWriteScreen(
                 onSaveDraftClick = { viewModel.submit(isDraft = true) },
                 onDraftCountClick = onDraftListClick,
                 draftCount = uiState.draftCount,
-                onImagePicked = viewModel::uploadImage,
+                onImagePicked = viewModel::uploadMedia,
+                onMediaPicked = viewModel::uploadMedia,
             )
         }
 

@@ -196,6 +196,12 @@
     <string name="mindrecord_error_daily_question_answer_required">답변을 입력해 주세요.</string>
     <string name="mindrecord_error_daily_question_missing">오늘의 질문을 불러오지 못해 저장할 수 없습니다. 잠시 후 다시 시도해 주세요.</string>
     <string name="mindrecord_error_weekly_report_failed">주간 리포트를 불러오지 못했습니다.</string>
+    <!-- 미디어 첨부 (#731) -->
+    <string name="mindrecord_write_media_upload_unavailable">지금은 첨부를 올릴 수 없어요. 잠시 뒤 다시 시도해 주세요.</string>
+    <string name="mindrecord_write_media_default_name">첨부파일</string>
+    <string name="mindrecord_write_media_upload_failed">%1$s 올리기에 실패했어요. 다시 시도해 주세요.</string>
+    <string name="mindrecord_write_media_attached">첨부: %1$s</string>
+
     <!-- 주차 조회 실패 뒤에도 화면 안에서 복구할 수 있게 남기는 문구 (#723) -->
     <string name="mindrecord_weekly_report_load_failed">%1$d월 %2$d주차 리포트를 불러오지 못했어요.</string>
     <string name="mindrecord_weekly_report_retry">다시 시도</string>

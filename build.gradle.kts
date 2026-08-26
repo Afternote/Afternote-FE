@@ -1,4 +1,4 @@
-// AGP 9.2.1·Firebase App Distribution 5.3.0 이 buildscript classpath 로 끌어오는 전이 의존성 중
+// AGP 9.3.2·Firebase App Distribution 5.3.0 이 buildscript classpath 로 끌어오는 전이 의존성 중
 // 보안 권고 영향권인 것들의 하한(#921·#975~#985). 루트 classpath 는 plugins 블록 처리 시점에
 // 리졸브가 끝나 아래 본문 훅으로는 늦고, buildscript 블록에서는 버전 카탈로그 accessor 를 쓸 수 없다
 // — libs.versions.toml 의 같은 이름 버전과 값을 맞춰 유지할 것.
@@ -46,7 +46,7 @@ plugins {
 
 // 빌드·테스트 클래스패스의 보안 하한(#921·#975~#985·#1058·#1072). 상류가 취약 버전을 물고 있고 상류
 // 최신판도 아직 패치 버전 미만이라 constraint 로 올린다 — Robolectric 4.15.1(bcprov 1.80)·AGP
-// 9.2.1(bcprov 1.79·commons-lang3 3.16.0·jose4j 0.9.5·jdom2 2.0.6)·Firebase App Distribution 5.3.0
+// 9.3.2(bcprov 1.79·commons-lang3 3.16.0·jose4j 0.9.5·jdom2 2.0.6)·Firebase App Distribution 5.3.0
 // 과 AGP UTP 설정(netty — unified-test-platform-core 가 4.1.93, -host-emulator-control 이 4.1.110)
 // ·AGP androidLintTool 과 UTP(httpclient 4.5.6)·ktlint CLI(logback 1.3.16)·Kakao SDK 2.23.2(okhttp
 // 4.9.2→okio 2.8.0). androidLintTool·UTP 처럼 AGP 가 뒤늦게 만드는 configuration 까지 잡도록
