@@ -201,6 +201,10 @@
     <string name="mindrecord_write_media_default_name">첨부파일</string>
     <string name="mindrecord_write_media_upload_failed">%1$s 올리기에 실패했어요. 다시 시도해 주세요.</string>
     <string name="mindrecord_write_media_attached">첨부: %1$s</string>
+
+    <!-- 주차 조회 실패 뒤에도 화면 안에서 복구할 수 있게 남기는 문구 (#723) -->
+    <string name="mindrecord_weekly_report_load_failed">%1$d월 %2$d주차 리포트를 불러오지 못했어요.</string>
+    <string name="mindrecord_weekly_report_retry">다시 시도</string>
     <string name="mindrecord_error_retry">다시 시도</string>
     <string name="mindrecord_error_image_upload_failed">이미지를 올리지 못했어요. 다시 시도해 주세요.</string>
     <string name="mindrecord_write_saving">저장하는 중이에요…</string>

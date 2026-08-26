@@ -83,10 +83,6 @@ class DiaryWriteViewModel
             _uiState.update { it.copy(mood = mood) }
         }
 
-        fun onDateSelected(date: LocalDate) {
-            _uiState.update { it.copy(date = date) }
-        }
-
         fun onReceiverToggled(receiverId: Long) {
             _uiState.update {
                 val selected = it.selectedReceiverIds
@@ -233,9 +229,8 @@ class DiaryWriteViewModel
                                 title = draft.title,
                                 content = draft.content,
                                 mood = draft.todayMood,
-                                // 서버가 날짜를 주지 않은 임시저장이면 날짜 선택기의 현재 값을
-                                // 유지한다 — 표시용으로 오늘을 지어내는 것과 달리, 여기서는
-                                // 사용자가 등록 전에 직접 고르는 값이다.
+                                // 표시 전용 값이다 — 서버가 날짜를 주면 그걸 보여 주고, 안 주면
+                                // 화면에 이미 떠 있던 값을 유지한다. 고르는 수단은 없다 (#1008).
                                 date = draft.toUi()?.date ?: it.date,
                                 imageUrl = draft.imageUrl,
                                 isDraftLoading = false,
