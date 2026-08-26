@@ -1,6 +1,6 @@
 package com.afternote.feature.timeletter.presentation.viewmodel
 
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterDeliveryMode
@@ -137,17 +137,11 @@ class TimeletterViewModelTest {
             arrayOf(TimeLetterRepository::class.java),
         ) { _, method, args -> handler(method.name, args) } as TimeLetterRepository
 
-    private fun userRepository(): UserRepository =
-        Proxy.newProxyInstance(
-            UserRepository::class.java.classLoader,
-            arrayOf(UserRepository::class.java),
-        ) { _, method, _ ->
-            when (method.name) {
-                "getReceiverListFlow" -> flowOf(emptyList<Any>())
-                "getReceivers" -> emptyList<Any>()
-                else -> error("Unexpected user repository call: ${method.name}")
-            }
-        } as UserRepository
+    private fun userRepository(): FakeUserRepository =
+        FakeUserRepository.strict().apply {
+            onReceiverListFlow = { flowOf(emptyList()) }
+            onGetReceivers = { emptyList() }
+        }
 
     private fun overlappingDeleteAndReloadRepository(
         deleteResult: CompletableDeferred<Unit>,
