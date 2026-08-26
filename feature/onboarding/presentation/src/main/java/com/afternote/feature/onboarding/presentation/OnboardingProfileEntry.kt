@@ -72,7 +72,7 @@ fun OnboardingProfileEntry(
         displayImageUri = uiState.profileImageUri?.toUri(),
         snackbarHostState = snackbarHostState,
         onNameChange = viewModel::updateName,
-        onProfileImagePick = { uri -> viewModel.onProfileImagePicked(uri?.toString()) },
+        onProfileImagePick = { uri -> viewModel.onProfileImagePicked(uri.toString()) },
         onCompleteClick = viewModel::submitSignUp,
         onBackClick = onBackClick,
         modifier = modifier,
