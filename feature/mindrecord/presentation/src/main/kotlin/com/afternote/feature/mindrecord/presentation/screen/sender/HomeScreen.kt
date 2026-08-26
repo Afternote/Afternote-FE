@@ -118,12 +118,17 @@ fun HomeScreen(
             TitleTopBar(
                 title = stringResource(MindRecordR.string.mindrecord_home_title),
                 actions = {
-                    ViewModeSwitcher(
-                        isListView = isListView,
-                        image1 = R.drawable.core_ui_list,
-                        image2 = R.drawable.core_ui_calendar,
-                        onViewChange = { isListView = it },
-                    )
+                    // 주간리포트는 리스트/캘린더 두 보기가 없다 — 스위치를 눌러도 화면이
+                    // 바뀌지 않으니 아예 노출하지 않는다. 컨트롤과 동작을 맞춘다 (#723).
+                    // 같은 이유로 아래 FAB 도 이 탭에서 숨긴다.
+                    if (selectedCategory != MindRecordCategoryUi.WeeklyReport) {
+                        ViewModeSwitcher(
+                            isListView = isListView,
+                            image1 = R.drawable.core_ui_list,
+                            image2 = R.drawable.core_ui_calendar,
+                            onViewChange = { isListView = it },
+                        )
+                    }
                 },
             )
         },
