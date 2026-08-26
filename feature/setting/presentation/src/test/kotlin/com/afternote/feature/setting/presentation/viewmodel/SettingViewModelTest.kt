@@ -1,7 +1,7 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
-import com.afternote.core.domain.repository.UserRepository
-import com.afternote.core.domain.repository.auth.AuthRepository
+import com.afternote.core.domain.testing.FakeAuthRepository
+import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.User
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -14,7 +14,6 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import java.lang.reflect.Proxy
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingViewModelTest {
@@ -70,23 +69,11 @@ class SettingViewModelTest {
 
     private fun viewModel(onDeleteAccount: () -> Unit): SettingViewModel =
         SettingViewModel(
-            authRepository =
-                repositoryProxy { methodName ->
-                    error("Unexpected AuthRepository call: $methodName")
-                },
+            authRepository = FakeAuthRepository.strict(),
             userRepository =
-                repositoryProxy { methodName ->
-                    when (methodName) {
-                        "getMyProfile" -> User("name", "user@example.com", null, null)
-                        "deleteAccount" -> onDeleteAccount()
-                        else -> error("Unexpected UserRepository call: $methodName")
-                    }
+                FakeUserRepository.strict().apply {
+                    onGetMyProfile = { User("name", "user@example.com", null, null) }
+                    this.onDeleteAccount = { onDeleteAccount() }
                 },
         )
-
-    private inline fun <reified T> repositoryProxy(crossinline onCall: (String) -> Any?): T =
-        Proxy.newProxyInstance(
-            T::class.java.classLoader,
-            arrayOf(T::class.java),
-        ) { _, method, _ -> onCall(method.name) } as T
 }

@@ -37,4 +37,5 @@ dependencies {
     implementation(libs.googleid)
 
     testImplementation(libs.coroutines.test)
+    testImplementation(testFixtures(projects.core.domain))
 }

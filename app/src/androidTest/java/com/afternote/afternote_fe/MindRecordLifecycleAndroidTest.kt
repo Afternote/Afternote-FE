@@ -13,7 +13,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.User
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
@@ -60,7 +60,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.lang.reflect.Proxy
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -176,6 +175,8 @@ class MindRecordLifecycleAndroidTest {
         composeRule.onNodeWithText("일기 임시저장").assertIsDisplayed()
         composeRule.onNodeWithText("질문 임시저장").assertIsDisplayed()
         composeRule.onNodeWithText("총 2개").assertIsDisplayed()
+        val initialDiaryQueryCount = diaryRepository.listQueries.size
+        val initialDailyQuestionQueryCount = dailyQuestionRepository.listQueries.size
 
         composeRule.onNodeWithText("선택").performClick()
         composeRule.onNode(hasText("질문 임시저장") and hasClickAction()).performClick()
@@ -197,8 +198,18 @@ class MindRecordLifecycleAndroidTest {
         composeRule.onNodeWithText("임시 저장된 항목이 없습니다.").assertIsDisplayed()
         assertEquals(listOf(201L), diaryRepository.deletedIds)
         assertEquals(listOf(202L), dailyQuestionRepository.deletedIds)
-        assertEquals(3, diaryRepository.listQueries.size)
-        assertEquals(3, dailyQuestionRepository.listQueries.size)
+        assertEquals(initialDiaryQueryCount + 2, diaryRepository.listQueries.size)
+        assertTrue(
+            diaryRepository.listQueries.all {
+                it == FakeDiaryRepository.ListQuery(currentMonth.toString(), true)
+            },
+        )
+        assertEquals(initialDailyQuestionQueryCount + 2, dailyQuestionRepository.listQueries.size)
+        assertTrue(
+            dailyQuestionRepository.listQueries.all {
+                it == FakeDailyQuestionRepository.ListQuery(date = null, draftOnly = true)
+            },
+        )
         assertTrue((viewModel.uiState.value as DraftListUiState.Success).items.isEmpty())
     }
 
@@ -301,6 +312,7 @@ class MindRecordLifecycleAndroidTest {
         }
         composeRule.onNodeWithText("질문 범위 최신").assertIsDisplayed()
         composeRule.onNodeWithText("숨길 질문 draft").assertDoesNotExist()
+        val initialGetAllCalls = repository.getAllCalls
 
         composeRule.runOnIdle {
             viewModel.applyFilter(
@@ -327,11 +339,11 @@ class MindRecordLifecycleAndroidTest {
             .onNode(hasText("2026-08-10 - 2026-08-31") and hasClickAction())
             .performClick()
         composeRule.onNodeWithText("초기화").performClick()
-        composeRule.onNodeWithText("마음의 기록").assertIsDisplayed()
+        composeRule.onNodeWithText("2026-08-10 - 2026-08-31").assertDoesNotExist()
         composeRule.onNodeWithText("범위 밖 일기").assertIsDisplayed()
         composeRule.onNodeWithText("데일리 질문").performClick()
         composeRule.onNodeWithText("범위 밖 질문").assertIsDisplayed()
-        assertEquals(1, repository.getAllCalls)
+        assertEquals(initialGetAllCalls, repository.getAllCalls)
         val reset = viewModel.uiState.value as ReceiverMindRecordUiState.Success
         assertFalse(reset.filter.isApplied)
         assertEquals(listOf(403L, 402L, 401L), reset.dailyQuestions.map(MindRecordSummary::id))
@@ -362,18 +374,12 @@ private fun scriptedDiaryRepository(lists: MutableMap<FakeDiaryRepository.ListQu
         },
     )
 
-@Suppress("UNCHECKED_CAST")
-private fun privateProfileRepository(name: String): UserRepository =
-    Proxy.newProxyInstance(
-        UserRepository::class.java.classLoader,
-        arrayOf(UserRepository::class.java),
-    ) { _, method, _ ->
-        when (method.name) {
-            "getMyProfile" -> User(name = name, email = "test@afternote.local", phone = null, profileImageUrl = null)
-            "toString" -> "PrivateProfileRepository"
-            else -> error("Unexpected UserRepository call: ${method.name}")
+private fun privateProfileRepository(name: String): FakeUserRepository =
+    FakeUserRepository.strict().apply {
+        onGetMyProfile = {
+            User(name = name, email = "test@afternote.local", phone = null, profileImageUrl = null)
         }
-    } as UserRepository
+    }
 
 private fun diary(
     id: Long,

@@ -34,6 +34,7 @@ dependencies {
     }
 
     testImplementation(libs.coroutines.test)
+    testImplementation(testFixtures(projects.core.domain))
     testImplementation(testFixtures(projects.feature.mindrecord.domain))
 
     // 캘린더 날짜 셀 상호작용을 JVM 에서 실제로 눌러 확인한다 (#724).

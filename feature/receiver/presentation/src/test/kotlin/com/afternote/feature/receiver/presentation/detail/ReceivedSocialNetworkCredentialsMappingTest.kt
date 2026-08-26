@@ -17,7 +17,7 @@ import org.junit.Test
 class ReceivedSocialNetworkCredentialsMappingTest {
     private fun detail(credentials: ReceivedAccountCredentials?) =
         ReceivedAfternoteDetail(
-            title = "인스타그램",
+            serviceName = "인스타그램",
             type = AfternoteType.SOCIAL_NETWORK,
             credentials = credentials,
         )
