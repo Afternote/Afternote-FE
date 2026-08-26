@@ -4,7 +4,7 @@ import com.afternote.feature.afternote.data.dto.AfternoteDetailDto
 import com.afternote.feature.afternote.data.dto.AfternoteDetailReceiverDto
 import com.afternote.feature.afternote.data.dto.AfternotePlaylistDto
 import com.afternote.feature.afternote.data.dto.AfternoteSongDto
-import com.afternote.feature.afternote.data.mapper.categoryToAfternoteType
+import com.afternote.feature.afternote.data.mapper.afternoteTypeFromServerCategory
 import com.afternote.feature.afternote.data.mapper.formatDateFromServer
 import com.afternote.feature.afternote.data.mapper.toLeaveMessageBlocks
 import com.afternote.feature.afternote.domain.AfternoteType
@@ -18,15 +18,25 @@ import com.afternote.feature.afternote.domain.model.author.playlist.MemorialDeta
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 import kotlin.collections.mapNotNull
 
+/**
+ * 서버 `category` 를 해석하지 못하면 상세를 만들지 않는다.
+ *
+ * 단건이라 «항목 기각» 이 곧 실패다 — [Detail.type] 이 non-null 이라 모르는 종류를 담을 자리가 없고,
+ * 임의의 종류로 메우면 라벨·아이콘·처리 방법이 다른 종류의 것으로 표시된다(#1048).
+ * 던진 예외는 `AfternoteRepositoryImpl.safeCall` 이 잡아 `Result.failure` 로 옮긴다.
+ */
 fun AfternoteDetailDto.toDetailDomain(): Detail {
-    val afternoteType = categoryToAfternoteType(category)
+    val resolvedType =
+        requireNotNull(afternoteTypeFromServerCategory(category)) {
+            "해석할 수 없는 애프터노트 종류다: afternoteId=$afternoteId category=$category"
+        }
     return Detail(
         id = afternoteId,
         serviceName = title,
         timestamps = toTimestamps(),
         receivers = receivers.toDomain(),
         leaveMessageBlocks = leaveMessage.toLeaveMessageBlocks(),
-        content = toDetailContent(afternoteType),
+        content = toDetailContent(resolvedType),
     )
 }
 

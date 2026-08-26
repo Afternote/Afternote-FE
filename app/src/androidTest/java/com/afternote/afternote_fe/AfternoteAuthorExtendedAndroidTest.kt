@@ -388,6 +388,7 @@ private fun AuthorEditorForUpdate(
         onNavigateToSelectReceiver = {},
         onThumbnailBytesReady = {},
         onThumbnailExtractionFailed = {},
+        onCaptureFailed = {},
         onThumbnailUploadErrorConsumed = viewModel::onThumbnailUploadErrorConsumed,
         onValidationErrorConsumed = viewModel::onValidationErrorConsumed,
         state = state,

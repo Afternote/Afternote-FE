@@ -189,6 +189,7 @@ internal fun AfternoteEditorNavigation(
         onNavigateToSelectReceiver = onNavigateToSelectReceiver,
         onThumbnailBytesReady = editViewModel::uploadMemorialThumbnail,
         onThumbnailExtractionFailed = editViewModel::onMemorialThumbnailExtractionFailed,
+        onCaptureFailed = editViewModel::onMemorialCaptureLaunchFailed,
         onThumbnailUploadErrorConsumed = editViewModel::onThumbnailUploadErrorConsumed,
         onValidationErrorConsumed = editViewModel::onValidationErrorConsumed,
         liveSongs = liveSongs,

@@ -130,6 +130,7 @@ fun NavGraphBuilder.receiverNavGraph(
         receiverComposable<ReceiverRoute.AfternoteDetailRoute> {
             ReceivedAfternoteDetailRoute(
                 onNavigateBack = actions::popBack,
+                onNavigateToFullList = actions::navigateToAfternoteList,
                 onNavigateToPlaylist = actions::navigateToMemorialPlaylist,
             )
         }

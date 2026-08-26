@@ -9,6 +9,5 @@ data class ProcessingMethodSection(
     val items: List<ProcessingMethodItem> = emptyList(),
     val onItemDeleteClick: (String) -> Unit = {},
     val onItemAdded: (String) -> Unit = {},
-    val onTextFieldVisibilityChanged: (Boolean) -> Unit = {},
     val onItemEdited: (String, String) -> Unit = { _, _ -> },
 )
