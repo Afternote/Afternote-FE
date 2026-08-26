@@ -3,12 +3,14 @@ plugins {
     id("afternote.android.hilt")
     kotlin("plugin.serialization")
     alias(libs.plugins.compose.screenshot)
+    id("afternote.kover")
 }
 
 android {
     testOptions.unitTests.isIncludeAndroidResources = true
 
     namespace = "com.afternote.feature.receiver.presentation"
+    resourcePrefix = "receiver_"
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
 }
 

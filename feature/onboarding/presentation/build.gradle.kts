@@ -3,6 +3,7 @@ plugins {
     id("afternote.android.hilt")
     kotlin("plugin.serialization")
     alias(libs.plugins.compose.screenshot)
+    id("afternote.kover")
 }
 
 // Google Cloud Console에서 발급받은 Web Client ID.
@@ -10,6 +11,7 @@ val googleWebClientId = socialLoginKey("GOOGLE_WEB_CLIENT_ID")
 
 android {
     namespace = "com.afternote.feature.onboarding.presentation"
+    resourcePrefix = "onboarding_"
 
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
 
