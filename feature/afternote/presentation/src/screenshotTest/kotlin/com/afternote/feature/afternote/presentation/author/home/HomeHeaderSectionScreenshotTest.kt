@@ -14,8 +14,7 @@ internal fun homeHeaderSectionScreenshot() {
     AfternoteTheme {
         HomeHeaderSection(
             description = stringResource(R.string.afternote_home_header_description),
-            nextStepText = "다음 단계 진행하기",
-            onNextStepClick = {},
+            nextStep = NextStep(text = "다음 단계 진행하기", onClick = {}),
         )
     }
 }
@@ -27,8 +26,7 @@ internal fun homeHeaderSectionNoNextStepScreenshot() {
     AfternoteTheme {
         HomeHeaderSection(
             description = stringResource(R.string.afternote_home_header_description),
-            nextStepText = "",
-            onNextStepClick = {},
+            nextStep = null,
         )
     }
 }

@@ -47,6 +47,7 @@ fun AfternoteHomeScreen(
     onCategorySelected: (AfternoteType?) -> Unit,
     onListItemClick: (id: Long, type: AfternoteType) -> Unit,
     headerDescription: String,
+    nextStep: NextStep?,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onFabClick: (() -> Unit)? = null,
@@ -100,6 +101,7 @@ fun AfternoteHomeScreen(
                 items.itemCount > 0 || selectedCategory != null -> {
                     InfiniteListBody(
                         modifier = bodyModifier,
+                        nextStep = nextStep,
                         items = items,
                         selectedCategory = selectedCategory,
                         onCategorySelected = onCategorySelected,
@@ -148,6 +150,11 @@ private fun AfternoteHomeScreenPreview() {
             onCategorySelected = {},
             onListItemClick = { _, _ -> },
             headerDescription = stringResource(R.string.afternote_home_header_description),
+            nextStep =
+                NextStep(
+                    text = "가족들의 '주거래 은행' 정보를\n입력하신 건 확인하셨나요?",
+                    onClick = {},
+                ),
             onFabClick = {},
             onSettingClick = {},
         )
@@ -175,6 +182,11 @@ private fun AfternoteHomeScreenLoadingPreview() {
             onCategorySelected = {},
             onListItemClick = { _, _ -> },
             headerDescription = stringResource(R.string.afternote_home_header_description),
+            nextStep =
+                NextStep(
+                    text = "가족들의 '주거래 은행' 정보를\n입력하신 건 확인하셨나요?",
+                    onClick = {},
+                ),
             onFabClick = {},
             onSettingClick = {},
         )

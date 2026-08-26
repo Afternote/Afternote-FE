@@ -16,6 +16,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.home.HomeHeaderSection
+import com.afternote.feature.afternote.presentation.author.home.NextStep
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.AfternoteListContent
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
 import kotlinx.coroutines.flow.flowOf
@@ -27,9 +28,8 @@ fun InfiniteListBody(
     onCategorySelected: (AfternoteType?) -> Unit,
     onListItemClick: (id: Long, type: AfternoteType) -> Unit,
     headerDescription: String,
+    nextStep: NextStep?,
     modifier: Modifier = Modifier,
-    nextStepText: String = "",
-    onNextStepClick: () -> Unit = {},
 ) {
     Column(
         modifier = modifier,
@@ -38,8 +38,7 @@ fun InfiniteListBody(
         Spacer(Modifier.height(8.dp))
         HomeHeaderSection(
             description = headerDescription,
-            nextStepText = nextStepText,
-            onNextStepClick = onNextStepClick,
+            nextStep = nextStep,
         )
         AfternoteListContent(
             items = items,
@@ -84,9 +83,13 @@ private fun InfiniteListBodyPreview() {
             ).collectAsLazyPagingItems()
         InfiniteListBody(
             headerDescription = stringResource(R.string.afternote_home_header_description),
-            nextStepText =
-                "가족들의 '주거래 은행' 정보를\n" +
-                    "입력하신 건 확인하셨나요?",
+            nextStep =
+                NextStep(
+                    text =
+                        "가족들의 '주거래 은행' 정보를\n" +
+                            "입력하신 건 확인하셨나요?",
+                    onClick = {},
+                ),
             items = items,
             selectedCategory = null,
             onCategorySelected = {},

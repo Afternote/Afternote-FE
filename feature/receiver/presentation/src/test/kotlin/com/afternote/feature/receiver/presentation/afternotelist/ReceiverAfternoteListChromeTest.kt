@@ -65,6 +65,7 @@ class ReceiverAfternoteListChromeTest {
             onCategorySelected = {},
             onListItemClick = { _, _ -> },
             headerDescription = stringResource(ReceiverR.string.receiver_afternote_list_header_description),
+            nextStep = null,
         )
     }
 

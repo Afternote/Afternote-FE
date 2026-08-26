@@ -25,7 +25,7 @@ data class ReceivedAfternoteDto(
 data class ReceivedAfternoteDetailDto(
     @SerialName("id") val id: Long,
     @SerialName("category") val category: String? = null,
-    @SerialName("title") val title: String? = null,
+    @SerialName("title") val title: String,
     @SerialName("actions") val processingMethods: List<String> = emptyList(),
     @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
     @SerialName("senderName") val senderName: String? = null,
