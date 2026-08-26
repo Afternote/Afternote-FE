@@ -1,16 +1,12 @@
 name: Android Managed Device Test
 
 # PR 필수 검증으로 올리기 전 안정화 단계다. 평소에는 정기 실행하고, 무거운 emulator QA 가
-# 필요한 PR 에 `android-test` 라벨을 붙이거나 PR 번호를 수동 입력해 정확한 head SHA 를 검사한다.
+# 필요한 PR 에 `android-test` 라벨을 붙이면 pull_request 권한 경계에서 정확한 head SHA 를 검사한다.
+# 수동·정기 실행은 default branch 만 검사해 PR 코드가 기본 브랜치 cache scope 를 오염시키지 않는다.
 # API 30 전체 회귀와 API 34 Accessibility Test Framework smoke 를 함께 실행한다. 실패를 감추는
 # job/test 재시도는 두지 않는다.
 on:
   workflow_dispatch:
-    inputs:
-      pull_request_number:
-        description: "선택: 검사할 열린 PR 번호 (비우면 선택한 ref 검사)"
-        required: false
-        type: number
   pull_request:
     types: [labeled, synchronize]
   schedule:
@@ -21,15 +17,17 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: android-managed-device-${{ github.event.pull_request.number || inputs.pull_request_number || github.ref }}
+  group: android-managed-device-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 jobs:
   managed-device:
     if: >-
       github.event_name == 'schedule' ||
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'android-test'))
+      (github.event_name == 'workflow_dispatch' && github.ref_name == github.event.repository.default_branch) ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.head.repo.full_name == github.repository &&
+       contains(github.event.pull_request.labels.*.name, 'android-test'))
     name: ${{ matrix.name }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -46,60 +44,17 @@ jobs:
             test_class: com.afternote.afternote_fe.AccessibilitySmokeAndroidTest
             artifact: accessibility-api34
     steps:
-      - name: Resolve exact target SHA
-        id: target
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        env:
-          INPUT_PR_NUMBER: ${{ inputs.pull_request_number }}
-        with:
-          script: |
-            let pullRequest;
-            if (context.eventName === 'pull_request') {
-              pullRequest = context.payload.pull_request;
-            } else if (process.env.INPUT_PR_NUMBER) {
-              const number = Number(process.env.INPUT_PR_NUMBER);
-              if (!Number.isSafeInteger(number) || number < 1) {
-                core.setFailed('pull_request_number must be a positive integer');
-                return;
-              }
-              const response = await github.rest.pulls.get({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: number,
-              });
-              pullRequest = response.data;
-            }
-
-            if (pullRequest) {
-              if (pullRequest.state !== 'open') {
-                core.setFailed(`PR #${pullRequest.number} is not open`);
-                return;
-              }
-              if (pullRequest.head.repo?.full_name !== `${context.repo.owner}/${context.repo.repo}`) {
-                core.setFailed('Fork PR code is not accepted by this write-adjacent workflow');
-                return;
-              }
-              core.setOutput('sha', pullRequest.head.sha);
-              core.setOutput('pull-request', String(pullRequest.number));
-              core.setOutput('branch', pullRequest.head.ref);
-              return;
-            }
-
-            core.setOutput('sha', context.sha);
-            core.setOutput('pull-request', 'none');
-            core.setOutput('branch', context.ref.replace(/^refs\/heads\//, ''));
-
       - name: Clone repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ steps.target.outputs.sha }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.event.repository.default_branch }}
           persist-credentials: false
 
       - name: Record tested revision
         env:
-          TARGET_BRANCH: ${{ steps.target.outputs.branch }}
-          TARGET_PR: ${{ steps.target.outputs.pull-request }}
-          TARGET_SHA: ${{ steps.target.outputs.sha }}
+          TARGET_BRANCH: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.event.repository.default_branch }}
+          TARGET_PR: ${{ github.event.pull_request.number || 'none' }}
+          TARGET_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
         run: |
           {
             echo "## Android Managed Device target"

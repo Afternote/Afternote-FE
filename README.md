@@ -236,11 +236,11 @@ bash .github/scripts/render-distribution-release-notes.sh /tmp/afternote-release
 
 ## Actions 에서 baseline 갱신 (기본 경로)
 
-1. GitHub Actions 의 **Generate Screenshot Baselines** 를 `develop` ref 에서 실행한다.
-2. `pull_request_number` 에 갱신할 열린 PR 번호를 입력한다.
-3. 읽기 전용 생성 job 이 PR 의 정확한 head SHA 를 CI 표준 Docker 이미지에서 렌더하고 검증한다.
+1. 갱신할 PR 에 `screenshot-baseline` 라벨을 붙인다.
+2. 읽기 전용 **Generate Screenshot Baselines** job 이 PR 의 정확한 head SHA 를 CI 표준 Docker 이미지에서 렌더하고 검증한다.
+3. 생성 job 은 라벨을 붙인 `pull_request` 권한 경계에서 실행되므로 PR 코드가 default branch cache 를 오염시키지 않는다.
 4. 별도 **Apply Screenshot Baselines** job 이 결과가 PNG baseline 경로만 바꾸는지와 PR head 가
-   그대로인지 재검증한 뒤 PR 브랜치에 커밋하고 필수 검사를 다시 요청한다.
+   그대로인지 checkout 없이 재검증한 뒤 PR 브랜치에 커밋하고 필수 검사를 다시 요청한다. 성공하면 라벨도 제거된다.
 
 무엇을 캡처할지는 Action 이 화면을 탐색해서 추측하지 않는다. 각 모듈의
 `src/screenshotTest/kotlin/**/*ScreenshotTest.kt` 가 Preview 함수, 상태와 device spec 을 선언하며,

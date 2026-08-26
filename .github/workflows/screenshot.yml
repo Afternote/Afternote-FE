@@ -134,7 +134,7 @@ jobs:
               `- baseline PNG: repo \`<module>/src/screenshotTestDebug/reference/...\` (${modules.map(m => `\`${m}\``).join(' · ')})`,
               '',
               '📝 **조치 가이드**:',
-              '- 의도된 시각 변경 → Actions의 `Generate Screenshot Baselines`를 `develop` ref에서 이 PR 번호로 실행',
+              '- 의도된 시각 변경 → 이 PR에 `screenshot-baseline` 라벨을 붙여 CI baseline 생성 요청',
               '- diff 가 anti-aliasing/font 차이로 보이면 docker 환경 변경 여부 (Dockerfile.screenshot) 점검',
               '',
               'CI ↔ 로컬 환경 차이는 본 워크플로의 container 단계가 root fix 한다 (README 의 "Compose Preview Screenshot Testing (docker baseline)" 섹션 참조).',
