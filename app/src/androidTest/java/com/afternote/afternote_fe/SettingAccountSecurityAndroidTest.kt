@@ -12,22 +12,20 @@ import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
-import com.afternote.core.domain.repository.UserRepository
-import com.afternote.core.domain.repository.auth.AuthRepository
-import com.afternote.core.model.Session
-import com.afternote.core.model.TokenBundle
+import com.afternote.core.domain.testing.FakeAuthRepository
+import com.afternote.core.domain.testing.FakeUserRepository
+import com.afternote.core.domain.testing.FakeUserRepository.ConnectedAccountLinkCall
+import com.afternote.core.domain.testing.FakeUserRepository.DeliveryUpdateCall
+import com.afternote.core.domain.testing.FakeUserRepository.ProfileUpdateCall
 import com.afternote.core.model.delivery.ConditionState
 import com.afternote.core.model.delivery.DeliveryConditionItem
 import com.afternote.core.model.delivery.DeliveryConditionType
 import com.afternote.core.model.delivery.DeliveryContentType
 import com.afternote.core.model.delivery.InactivityPeriod
 import com.afternote.core.model.delivery.ReceiverDeliveryConditions
-import com.afternote.core.model.user.Receiver
 import com.afternote.core.model.user.ReceiverCreated
-import com.afternote.core.model.user.ReceiverDetail
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
-import com.afternote.core.model.user.UserPushSetting
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.setting.presentation.component.PinSetupStep
 import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
@@ -48,7 +46,6 @@ import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
 import com.afternote.feature.setting.presentation.viewmodel.WithdrawUiState
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -58,6 +55,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import com.afternote.core.domain.testing.FakeUserRepository.ReceiverCreateCall as ReceiverRegistrationCall
 
 @RunWith(AndroidJUnit4::class)
 class SettingAccountSecurityAndroidTest {
@@ -73,8 +71,8 @@ class SettingAccountSecurityAndroidTest {
     @Test
     fun profileLoadValidationAndUpdateFailure_preserveExactContract() {
         val loadFailureRepository =
-            SettingContractUserRepository().apply {
-                profileResult = Result.failure(IllegalStateException("profile unavailable"))
+            settingContractUserRepository().apply {
+                onGetMyProfile = { throw IllegalStateException("profile unavailable") }
             }
         val loadFailureViewModel = ProfileEditViewModel(loadFailureRepository)
 
@@ -95,12 +93,12 @@ class SettingAccountSecurityAndroidTest {
         composeRule.runOnIdle { loadFailureViewModel.updateProfile("새 이름", "01012345678") }
         assertTrue(loadFailureRepository.profileUpdateCalls.isEmpty())
 
-        val updateFailureRepository = SettingContractUserRepository()
+        val updateFailureRepository = settingContractUserRepository()
         val updateFailureViewModel = ProfileEditViewModel(updateFailureRepository)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             updateFailureViewModel.uiState.value is ProfileEditUiState.Success
         }
-        updateFailureRepository.profileUpdateResult = Result.failure(IllegalStateException("offline"))
+        updateFailureRepository.onUpdateMyProfile = { _, _, _ -> throw IllegalStateException("offline") }
 
         composeRule.runOnIdle { updateFailureViewModel.updateProfile("   ", "") }
         val event = awaitEvent(updateFailureViewModel.events)
@@ -117,7 +115,7 @@ class SettingAccountSecurityAndroidTest {
 
     @Test
     fun connectedAccountLinkAndUnlink_preservePreCallAndFailureBoundaries() {
-        val linkRepository = SettingContractUserRepository()
+        val linkRepository = settingContractUserRepository()
         val linkViewModel = ConnectedAccountsViewModel(linkRepository)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             !linkViewModel.uiState.value.isLoading
@@ -127,9 +125,9 @@ class SettingAccountSecurityAndroidTest {
         val request = awaitEvent(linkViewModel.events)
 
         assertEquals(ConnectedAccountsEvent.RequestLink("google"), request)
-        assertTrue(linkRepository.linkCalls.isEmpty())
+        assertTrue(linkRepository.connectedLinkCalls.isEmpty())
 
-        linkRepository.linkResult = Result.failure(IllegalStateException("oauth rejected"))
+        linkRepository.onLinkConnectedAccount = { _, _ -> throw IllegalStateException("oauth rejected") }
         composeRule.runOnIdle { linkViewModel.link(provider = "google", accessToken = "google-token") }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             linkViewModel.uiState.value.errorMessage == "계정 연결에 실패했습니다."
@@ -137,34 +135,34 @@ class SettingAccountSecurityAndroidTest {
 
         assertEquals(
             listOf(ConnectedAccountLinkCall(provider = "google", accessToken = "google-token")),
-            linkRepository.linkCalls,
+            linkRepository.connectedLinkCalls,
         )
 
         val unlinkRepository =
-            SettingContractUserRepository().apply {
-                connectedAccountsResult = Result.success(connectedAccounts(google = true))
-                unlinkResult = Result.failure(IllegalStateException("server error"))
+            settingContractUserRepository().apply {
+                onGetConnectedAccounts = { connectedAccounts(google = true) }
+                onUnlinkConnectedAccount = { throw IllegalStateException("server error") }
             }
         val unlinkViewModel = ConnectedAccountsViewModel(unlinkRepository)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             !unlinkViewModel.uiState.value.isLoading
         }
 
-        assertTrue(unlinkRepository.unlinkCalls.isEmpty())
+        assertTrue(unlinkRepository.connectedUnlinkCalls.isEmpty())
         composeRule.runOnIdle { unlinkViewModel.onToggle(provider = "google", enabled = false) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            unlinkRepository.unlinkCalls.size == 1
+            unlinkRepository.connectedUnlinkCalls.size == 1
         }
 
-        assertEquals(listOf("google"), unlinkRepository.unlinkCalls)
+        assertEquals(listOf("google"), unlinkRepository.connectedUnlinkCalls)
         assertEquals("계정 연결 해제에 실패했습니다.", unlinkViewModel.uiState.value.errorMessage)
     }
 
     @Test
     fun receiverRegister_blankOptionalFieldsAndFailure_preserveExactPayload() {
         val repository =
-            SettingContractUserRepository().apply {
-                receiverCreateResult = Result.failure(IllegalStateException("offline"))
+            settingContractUserRepository().apply {
+                onCreateReceiver = { _, _, _, _, _ -> throw IllegalStateException("offline") }
             }
         val viewModel = ReceiverRegisterViewModel(repository)
 
@@ -191,7 +189,7 @@ class SettingAccountSecurityAndroidTest {
                     message = null,
                 ),
             ),
-            repository.receiverRegistrationCalls,
+            repository.receiverCreateCalls,
         )
         assertFalse(viewModel.uiState.value.isLoading)
     }
@@ -212,15 +210,14 @@ class SettingAccountSecurityAndroidTest {
                 ),
             )
         val repository =
-            SettingContractUserRepository().apply {
-                deliveryLoadResult =
-                    Result.success(
-                        ReceiverDeliveryConditions(
-                            receiverId = RECEIVER_ID,
-                            conditions = loadedConditions,
-                        ),
+            settingContractUserRepository().apply {
+                onGetReceiverDeliveryConditions = {
+                    ReceiverDeliveryConditions(
+                        receiverId = RECEIVER_ID,
+                        conditions = loadedConditions,
                     )
-                deliveryUpdateResult = Result.failure(IllegalStateException("save failed"))
+                }
+                onUpdateReceiverDeliveryConditions = { _, _ -> throw IllegalStateException("save failed") }
             }
         val viewModel =
             DeliveryConditionViewModel(
@@ -318,10 +315,10 @@ class SettingAccountSecurityAndroidTest {
 
     @Test
     fun withdrawFailure_requiresFinalConfirmationAndKeepsSession() {
-        val authRepository = SettingContractAuthRepository()
+        val authRepository = settingContractAuthRepository()
         val userRepository =
-            SettingContractUserRepository().apply {
-                deleteAccountResult = Result.failure(IllegalStateException("delete rejected"))
+            settingContractUserRepository().apply {
+                onDeleteAccount = { throw IllegalStateException("delete rejected") }
             }
         val viewModel = SettingViewModel(authRepository, userRepository)
         var successCalls = 0
@@ -368,30 +365,6 @@ class SettingAccountSecurityAndroidTest {
     }
 }
 
-private data class ProfileUpdateCall(
-    val name: String?,
-    val phone: String?,
-    val profileImageUrl: String?,
-)
-
-private data class ConnectedAccountLinkCall(
-    val provider: String,
-    val accessToken: String,
-)
-
-private data class ReceiverRegistrationCall(
-    val name: String,
-    val relation: String,
-    val phone: String?,
-    val email: String?,
-    val message: String?,
-)
-
-private data class DeliveryUpdateCall(
-    val receiverId: Long,
-    val conditions: List<DeliveryConditionItem>,
-)
-
 private enum class SecurityContractScreen {
     APP_LOCK,
     PASSKEY_ENTRY,
@@ -434,148 +407,31 @@ private fun deliveryCondition(
     fulfilledAt = null,
 )
 
-private class SettingContractUserRepository : UserRepository {
-    private val receivers = MutableStateFlow<List<Receiver>>(emptyList())
-    override val receiverListFlow: Flow<List<Receiver>> = receivers
-
-    var profileResult: Result<User> = Result.success(DEFAULT_USER)
-    var profileUpdateResult: Result<User> = Result.success(DEFAULT_USER)
-    var connectedAccountsResult: Result<UserConnectedAccount> = Result.success(connectedAccounts())
-    var linkResult: Result<UserConnectedAccount> = Result.success(connectedAccounts(google = true))
-    var unlinkResult: Result<UserConnectedAccount> = Result.success(connectedAccounts())
-    var receiverCreateResult: Result<ReceiverCreated> = Result.success(ReceiverCreated(1L, "AUTH-1"))
-    var deliveryLoadResult: Result<ReceiverDeliveryConditions> =
-        Result.success(ReceiverDeliveryConditions(receiverId = 77L, conditions = emptyList()))
-    var deliveryUpdateResult: Result<ReceiverDeliveryConditions> = deliveryLoadResult
-    var deleteAccountResult: Result<Unit> = Result.success(Unit)
-
-    val profileUpdateCalls = mutableListOf<ProfileUpdateCall>()
-    val linkCalls = mutableListOf<ConnectedAccountLinkCall>()
-    val unlinkCalls = mutableListOf<String>()
-    val receiverRegistrationCalls = mutableListOf<ReceiverRegistrationCall>()
-    val deliveryUpdateCalls = mutableListOf<DeliveryUpdateCall>()
-    var deleteAccountCalls = 0
-        private set
-
-    override suspend fun getMyProfile(): User = profileResult.getOrThrow()
-
-    override suspend fun updateMyProfile(
-        name: String?,
-        phone: String?,
-        profileImageUrl: String?,
-    ): User {
-        profileUpdateCalls += ProfileUpdateCall(name, phone, profileImageUrl)
-        return profileUpdateResult.getOrThrow()
+private fun settingContractUserRepository(): FakeUserRepository =
+    FakeUserRepository.strict().apply {
+        onReceiverListFlow = { receiverState }
+        onGetMyProfile = { DEFAULT_USER }
+        onUpdateMyProfile = { _, _, _ -> DEFAULT_USER }
+        onGetConnectedAccounts = { connectedAccounts() }
+        onLinkConnectedAccount = { _, _ -> connectedAccounts(google = true) }
+        onUnlinkConnectedAccount = { connectedAccounts() }
+        onCreateReceiver = { _, _, _, _, _ -> ReceiverCreated(1L, "AUTH-1") }
+        onGetReceiverDeliveryConditions = { receiverId -> ReceiverDeliveryConditions(receiverId, emptyList()) }
+        onUpdateReceiverDeliveryConditions = { receiverId, conditions ->
+            ReceiverDeliveryConditions(receiverId, conditions)
+        }
+        onDeleteAccount = {}
     }
 
-    override suspend fun getConnectedAccounts(): UserConnectedAccount = connectedAccountsResult.getOrThrow()
-
-    override suspend fun linkConnectedAccount(
-        provider: String,
-        accessToken: String,
-    ): UserConnectedAccount {
-        linkCalls += ConnectedAccountLinkCall(provider, accessToken)
-        return linkResult.getOrThrow()
-    }
-
-    override suspend fun unlinkConnectedAccount(provider: String): UserConnectedAccount {
-        unlinkCalls += provider
-        return unlinkResult.getOrThrow()
-    }
-
-    override suspend fun createReceiver(
-        name: String,
-        relation: String,
-        phone: String?,
-        email: String?,
-        message: String?,
-    ): ReceiverCreated {
-        receiverRegistrationCalls += ReceiverRegistrationCall(name, relation, phone, email, message)
-        return receiverCreateResult.getOrThrow()
-    }
-
-    override suspend fun getReceiverDeliveryConditions(receiverId: Long): ReceiverDeliveryConditions = deliveryLoadResult.getOrThrow()
-
-    override suspend fun updateReceiverDeliveryConditions(
-        receiverId: Long,
-        conditions: List<DeliveryConditionItem>,
-    ): ReceiverDeliveryConditions {
-        deliveryUpdateCalls += DeliveryUpdateCall(receiverId, conditions)
-        return deliveryUpdateResult.getOrThrow()
-    }
-
-    override suspend fun deleteAccount() {
-        deleteAccountCalls += 1
-        deleteAccountResult.getOrThrow()
-    }
-
-    override suspend fun getReceivers(): List<Receiver> = unexpected("getReceivers")
-
-    override suspend fun getReceiverDetail(receiverId: Long): ReceiverDetail = unexpected("getReceiverDetail")
-
-    override suspend fun updateReceiver(
-        receiverId: Long,
-        name: String,
-        phone: String,
-        relation: String,
-        email: String,
-    ): Receiver = unexpected("updateReceiver")
-
-    override suspend fun updateReceiverMessage(
-        receiverId: Long,
-        message: String,
-    ) = unexpected<Unit>("updateReceiverMessage")
-
-    override suspend fun logActivity() = unexpected<Unit>("logActivity")
-
-    override suspend fun getMyPushSettings(): UserPushSetting = unexpected("getMyPushSettings")
-
-    override suspend fun updateMyPushSettings(
-        timeLetter: Boolean?,
-        mindRecord: Boolean?,
-        afterNote: Boolean?,
-    ): UserPushSetting = unexpected("updateMyPushSettings")
-}
-
-private class SettingContractAuthRepository : AuthRepository {
-    private val loggedInState = MutableStateFlow(true)
-    override val isLoggedIn: Flow<Boolean> = loggedInState
-
-    var clearSessionCalls = 0
-        private set
-
-    override suspend fun clearSession(): Result<Unit> {
-        clearSessionCalls += 1
-        loggedInState.value = false
-        return Result.success(Unit)
-    }
-
-    override suspend fun saveSession(
-        accessToken: String,
-        refreshToken: String,
-    ): Result<Unit> = unexpected("saveSession")
-
-    override suspend fun updateTokens(
-        accessToken: String,
-        refreshToken: String,
-    ): Result<Unit> = unexpected("updateTokens")
-
-    override suspend fun getAccessToken(): Result<String?> = Result.success("access")
-
-    override suspend fun getRefreshToken(): Result<String?> = Result.success("refresh")
-
-    override suspend fun defaultLogin(
-        email: String,
-        password: String,
-    ): Result<Session.DefaultSession> = unexpected("defaultLogin")
-
-    override suspend fun kakaoLogin(oauthToken: String): Result<Session.SocialSession> = unexpected("kakaoLogin")
-
-    override suspend fun googleLogin(idToken: String): Result<Session.SocialSession> = unexpected("googleLogin")
-
-    override suspend fun rotateToken(): Result<TokenBundle> = unexpected("rotateToken")
-
-    override suspend fun logout(): Result<Unit> = unexpected("logout")
-}
-
-private fun <T> unexpected(method: String): T = error("$method must not be called by this contract test")
+private fun settingContractAuthRepository(): FakeAuthRepository =
+    FakeAuthRepository
+        .strict(
+            loggedIn = true,
+            accessToken = "access",
+            refreshToken = "refresh",
+        ).apply {
+            onIsLoggedIn = { loggedInState }
+            onGetAccessToken = null
+            onGetRefreshToken = null
+            onClearSession = null
+        }
