@@ -40,7 +40,9 @@ class TokenAuthenticator
             }
 
             // 회전은 선제 갱신 경로(AuthInterceptor)와 공유하는 단일 락(TokenReissuer) 경유 (#408) —
-            // 앞선 다른 경로/스레드가 이미 회전했으면 TokenAlreadyChanged 로 새 토큰만 받아 재시도
+            // 앞선 다른 경로/스레드가 이미 회전했으면 TokenAlreadyChanged 로 새 토큰만 받아 재시도.
+            // 인증 거절의 세션 정리는 락 안에서 끝난다 (#1126) — 여기서 정리하면 락이 풀린 뒤
+            // 정리가 끝나기까지가 대기자의 중복 재발급이 빠져나가는 창이 된다.
             return when (val outcome = tokenReissuer.reissue(expectedAccessToken = oldAccessToken)) {
                 is TokenReissuer.Outcome.TokenAlreadyChanged -> {
                     originalRequest.withBearer(outcome.accessToken)
@@ -57,8 +59,7 @@ class TokenAuthenticator
                 }
 
                 is TokenReissuer.Outcome.AuthenticationRejected -> {
-                    Log.e("TokenAuthenticator", "❌ 리이슈 인증 거절: 세션 만료 처리")
-                    runBlocking { authRepository.get().clearSession() }
+                    Log.e("TokenAuthenticator", "❌ 리이슈 인증 거절: 세션 만료 확정(정리 완료), 요청 중단")
                     null
                 }
 
