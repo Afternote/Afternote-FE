@@ -238,6 +238,7 @@ dependencies {
     androidTestImplementation(projects.core.data)
     androidTestImplementation(projects.feature.afternote.domain)
     androidTestImplementation(projects.feature.mindrecord.domain)
+    androidTestImplementation(testFixtures(projects.feature.mindrecord.domain))
     androidTestImplementation(projects.feature.receiver.domain)
     androidTestImplementation(projects.feature.timeletter.domain)
     kspAndroidTest(libs.hilt.compiler)

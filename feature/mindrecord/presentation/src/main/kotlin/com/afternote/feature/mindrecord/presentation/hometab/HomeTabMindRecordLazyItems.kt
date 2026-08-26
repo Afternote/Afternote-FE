@@ -1,5 +1,6 @@
 package com.afternote.feature.mindrecord.presentation.hometab
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -118,8 +119,9 @@ private fun HomeTabMindRecordMemoriesItem(
     )
 }
 
+@VisibleForTesting
 @Composable
-private fun MemoriesSectionContent(
+internal fun MemoriesSectionContent(
     onMemoriesSectionClick: () -> Unit,
     clickLabel: String,
     interactionSource: MutableInteractionSource,
@@ -141,12 +143,16 @@ private fun MemoriesSectionContent(
         ) {
             AfternoteSectionHeader(title = stringResource(mindrecord_home_tab_memories_section_title))
             Spacer(modifier = Modifier.height(12.dp))
-            // "그날의 기록 다시 읽기" 목적지는 넘기지 않는다 — Figma 의 이 버튼에 프로토타입
-            // 연결이 없고 #559 에도 확정 답변이 없다. 임의 목적지를 붙이면 미확정 탐색 동작이
-            // 제품 동작으로 굳는다. 확정되면 여기서 `onReadAgainClick` 을 채운다.
+            // 버튼은 **자기 컨테이너와 같은 곳**으로 보낸다 (#793).
+            //
+            // 목적지가 미확정이라 비워 뒀는데, 버튼이 자체 clickable 이라 클릭을 삼켜 카드
+            // 안에서 버튼만 죽은 영역이 됐다 — 카드 여백을 누르면 추억 공간이 열리고, 가장
+            // 눌러 보고 싶은 버튼만 아무 일도 안 한다. 새 목적지를 지어내는 게 아니라 이미
+            // 동작하는 카드의 목적지를 물려주는 것이라, 확정이 오면 이 인자만 바꾸면 된다.
             MemoriesCard(
                 question = question,
                 answer = answer,
+                onReadAgainClick = onMemoriesSectionClick,
             )
         }
     }
