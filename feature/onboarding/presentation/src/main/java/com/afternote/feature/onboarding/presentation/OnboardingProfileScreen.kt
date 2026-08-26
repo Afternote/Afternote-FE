@@ -73,7 +73,7 @@ fun OnboardingProfileScreen(
         modifier = modifier,
         topBar = {
             DetailTopBar(
-                title = stringResource(R.string.profile_top_bar_title),
+                title = stringResource(R.string.onboarding_profile_top_bar_title),
                 onBackClick = {
                     focusManager.clearFocus()
                     onBackClick()
@@ -100,7 +100,7 @@ fun OnboardingProfileScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    text = stringResource(R.string.profile_headline),
+                    text = stringResource(R.string.onboarding_profile_headline),
                     modifier = Modifier.fillMaxWidth(),
                     style = AfternoteDesign.typography.h1,
                     color = AfternoteDesign.colors.black,
@@ -126,7 +126,7 @@ fun OnboardingProfileScreen(
 
                 AfternoteTextField(
                     state = nameState,
-                    placeholder = stringResource(R.string.profile_name_placeholder),
+                    placeholder = stringResource(R.string.onboarding_profile_name_placeholder),
                     imeAction = ImeAction.Done,
                     onImeAction = {
                         focusManager.clearFocus()
@@ -135,7 +135,7 @@ fun OnboardingProfileScreen(
                 )
 
                 AfternoteButton(
-                    text = stringResource(R.string.profile_complete),
+                    text = stringResource(R.string.onboarding_profile_complete),
                     onClick = {
                         focusManager.clearFocus()
                         if (isCompleteEnabled) onCompleteClick()

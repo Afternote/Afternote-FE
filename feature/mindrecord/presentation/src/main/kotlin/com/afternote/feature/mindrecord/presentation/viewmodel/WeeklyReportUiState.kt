@@ -39,9 +39,30 @@ sealed interface WeeklyReportUiState {
          */
         val summaryText: String,
         val dailyQuestions: List<DailyQuestion>,
+        /**
+         * 주차 조회에 실패했지만 **직전에 보던 리포트가 남아 있는** 상태 (#723).
+         *
+         * 실패해도 화면 전체를 오류로 바꾸지 않는다. 리포트와 주차 선택 UI 를 유지한 채
+         * 배너로만 알려야 사용자가 재시도하거나 다른 주차로 옮길 수 있다.
+         */
+        val loadFailure: LoadFailure? = null,
     ) : WeeklyReportUiState
 
+    /** 화면을 유지한 채 알리는 조회 실패. [failedWeekLabel] 은 사용자가 고른 주의 월요일. */
+    data class LoadFailure(
+        val message: UiText,
+        val failedWeekLabel: LocalDate,
+    )
+
+    /**
+     * 보여 줄 리포트가 하나도 없는 실패 (첫 조회부터 실패).
+     *
+     * 이때도 [weekOptions] 와 [failedMonday] 를 함께 넘긴다 — 재시도와 주차 재선택 수단을
+     * 화면에 남겨야 복구가 가능하다. 종전에는 오류 문구 하나만 렌더해 둘 다 사라졌다 (#723).
+     */
     data class Error(
         val message: UiText,
+        val weekOptions: List<WeekOption>,
+        val failedMonday: LocalDate,
     ) : WeeklyReportUiState
 }

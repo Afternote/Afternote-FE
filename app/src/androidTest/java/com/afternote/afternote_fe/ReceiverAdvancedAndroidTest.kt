@@ -190,6 +190,7 @@ class ReceiverAdvancedAndroidTest {
             AfternoteTheme {
                 ReceivedAfternoteDetailRoute(
                     onBack = {},
+                    onNavigateToFullList = {},
                     onNavigateToPlaylist = {},
                     viewModel = viewModel,
                 )

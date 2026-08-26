@@ -40,7 +40,6 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.repository.UserProfileRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
-import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.model.Session
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -48,7 +47,8 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
-import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeMindRecordReceiverRepository
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import com.afternote.feature.receiver.domain.model.AfterNoteListItem
 import com.afternote.feature.receiver.domain.model.AfterNotesListResult
@@ -149,20 +149,20 @@ class AppAndReceiverCompletionAndroidTest {
         )
 
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.welcome_start))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_start))
             .performClick()
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.login_email_label))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_login_email_label))
             .performTextInput("receiver@afternote.local")
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.login_password_label))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_login_password_label))
             .performTextInput("wrong-password")
 
         val loginButton =
-            hasText(context.getString(OnboardingR.string.login_button)) and hasClickAction()
+            hasText(context.getString(OnboardingR.string.onboarding_login_button)) and hasClickAction()
         composeRule.onNode(loginButton).performClick()
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.login_invalid_credentials))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_login_invalid_credentials))
             .assertIsDisplayed()
 
         composeRule
@@ -205,7 +205,7 @@ class AppAndReceiverCompletionAndroidTest {
     @Test
     fun welcomeCheckRecords_opensActualReceivedRecordsStartDestination() {
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.welcome_check_records))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_check_records))
             .assertIsDisplayed()
             .performClick()
 
@@ -234,7 +234,10 @@ class ReceiverRuntimeCompletionAndroidTest {
     @Test
     fun receiverHome_allFailureThenRetryPartialSuccess_keepsAvailableSectionsAndReportsBothStages() {
         val repository = CompletionReceiverRepository()
-        val mindRecordRepository = CompletionMindRecordReceiverRepository()
+        // 완료 시점을 테스트가 쥐어야 세 조회의 경합 순서를 만들 수 있다.
+        val mindRecordHomeResults = ArrayDeque<CompletableDeferred<Result<ReceiverMindRecords>>>()
+        val mindRecordRepository =
+            FakeMindRecordReceiverRepository(onGetAll = { mindRecordHomeResults.removeFirst().await() })
         val timeLetterRepository = CompletionReceiverTimeLetterRepository()
 
         fun homeCallCounts(): List<Int> =
@@ -245,8 +248,8 @@ class ReceiverRuntimeCompletionAndroidTest {
                 repository.senderMessageCalls,
             )
 
-        val allFailureAttempt = enqueueHomeAttempt(repository, mindRecordRepository, timeLetterRepository)
-        val partialAttempt = enqueueHomeAttempt(repository, mindRecordRepository, timeLetterRepository)
+        val allFailureAttempt = enqueueHomeAttempt(repository, mindRecordHomeResults, timeLetterRepository)
+        val partialAttempt = enqueueHomeAttempt(repository, mindRecordHomeResults, timeLetterRepository)
         val reporter = FakeErrorReporter()
         val viewModel =
             ReceiverHomeViewModel(
@@ -656,7 +659,12 @@ class ReceiverRuntimeCompletionAndroidTest {
 
         composeRule.setContent {
             AfternoteTheme {
-                ReceivedAfternoteDetailRoute(onBack = {}, onNavigateToPlaylist = {}, viewModel = viewModel)
+                ReceivedAfternoteDetailRoute(
+                    onBack = {},
+                    onNavigateToFullList = {},
+                    onNavigateToPlaylist = {},
+                    viewModel = viewModel,
+                )
             }
         }
 
@@ -700,6 +708,7 @@ class ReceiverRuntimeCompletionAndroidTest {
             AfternoteTheme {
                 ReceivedAfternoteDetailRoute(
                     onBack = {},
+                    onNavigateToFullList = {},
                     onNavigateToPlaylist = playlistRoutes::add,
                     viewModel = viewModel,
                 )
@@ -742,7 +751,7 @@ private data class PendingHomeAttempt(
 /** 홈 한 번의 로드가 물리는 세 리포지토리 대기열에 결과 게이트를 한 벌씩 건다. */
 private fun enqueueHomeAttempt(
     receiverRepository: CompletionReceiverRepository,
-    mindRecordRepository: CompletionMindRecordReceiverRepository,
+    mindRecordHomeResults: ArrayDeque<CompletableDeferred<Result<ReceiverMindRecords>>>,
     timeLetterRepository: CompletionReceiverTimeLetterRepository,
 ): PendingHomeAttempt {
     val attempt =
@@ -753,7 +762,7 @@ private fun enqueueHomeAttempt(
             senderMessage = CompletableDeferred(),
         )
     receiverRepository.afterNoteHomeResults.addLast(attempt.afterNotes)
-    mindRecordRepository.homeResults.addLast(attempt.mindRecords)
+    mindRecordHomeResults.addLast(attempt.mindRecords)
     timeLetterRepository.homeResults.addLast(attempt.timeLetters)
     receiverRepository.senderMessageHomeResults.addLast(attempt.senderMessage)
     return attempt
@@ -802,17 +811,6 @@ private class CompletionReceiverRepository : ReceiverRepository {
     override suspend fun loadSenderMessage(): Result<SenderMessageInfo?> {
         senderMessageCalls += 1
         return senderMessageHomeResults.removeFirst().await()
-    }
-}
-
-private class CompletionMindRecordReceiverRepository : MindRecordReceiverRepository {
-    val homeResults = ArrayDeque<CompletableDeferred<Result<ReceiverMindRecords>>>()
-    var getAllCalls = 0
-        private set
-
-    override suspend fun getAll(): Result<ReceiverMindRecords> {
-        getAllCalls += 1
-        return homeResults.removeFirst().await()
     }
 }
 
