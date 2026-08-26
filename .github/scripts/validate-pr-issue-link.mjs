@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const CLOSING_REFERENCE_RE = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*:?[ \t]+(?:(?:([\w.-]+)\/([\w.-]+))?#(\d+)|https:\/\/github\.com\/([\w.-]+)\/([\w.-]+)\/issues\/(\d+))/gi;
+const ISSUE_REFERENCE_RE = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?|refs?|references?|part\s+of|related\s+to)\s*:?[ \t]+(?:(?:([\w.-]+)\/([\w.-]+))?#(\d+)|https:\/\/github\.com\/([\w.-]+)\/([\w.-]+)\/issues\/(\d+))/gi;
 
 function visibleMarkdown(text) {
     return String(text ?? "")
@@ -19,15 +19,15 @@ function requiredString(value, name) {
     return value.trim();
 }
 
-export function extractSameRepositoryClosingIssueNumbers(text, repository) {
+export function extractSameRepositoryIssueNumbers(text, repository) {
     const [expectedOwner, expectedName] = requiredString(repository, "repository").split("/");
     if (!expectedOwner || !expectedName) {
         throw new Error(`repository 형식이 owner/name 이 아닙니다: ${repository}`);
     }
 
     const issueNumbers = new Set();
-    CLOSING_REFERENCE_RE.lastIndex = 0;
-    for (const match of visibleMarkdown(text).matchAll(CLOSING_REFERENCE_RE)) {
+    ISSUE_REFERENCE_RE.lastIndex = 0;
+    for (const match of visibleMarkdown(text).matchAll(ISSUE_REFERENCE_RE)) {
         const owner = match[1] ?? match[4] ?? expectedOwner;
         const name = match[2] ?? match[5] ?? expectedName;
         const issueNumber = Number(match[3] ?? match[6]);
@@ -50,14 +50,14 @@ export async function validatePullRequestIssueLink({ pullRequest, repository, lo
         throw new Error("pull_request.number 값이 없습니다.");
     }
 
-    const references = extractSameRepositoryClosingIssueNumbers(pullRequest.body, repository);
+    const references = extractSameRepositoryIssueNumbers(pullRequest.body, repository);
     if (references.length === 0) {
         throw new Error(
-            `PR #${pullRequestNumber}에 같은 저장소의 closing issue가 없습니다. PR보다 이슈를 먼저 만들고 Closes #N을 추가하세요.`,
+            `PR #${pullRequestNumber}에 같은 저장소의 Issue 참조가 없습니다. 관련 기존 Issue를 재사용하고 Refs #N을 추가하세요.`,
         );
     }
 
-    const openIssues = [];
+    const issues = [];
     const rejected = [];
     for (const issueNumber of references) {
         let issue;
@@ -71,19 +71,15 @@ export async function validatePullRequestIssueLink({ pullRequest, repository, lo
             rejected.push(`#${issueNumber}: Issue가 아니라 PR`);
             continue;
         }
-        if (issue?.state !== "open") {
-            rejected.push(`#${issueNumber}: ${issue?.state ?? "unknown"}`);
-            continue;
-        }
-        openIssues.push(issueNumber);
+        issues.push(issueNumber);
     }
 
-    if (openIssues.length === 0) {
+    if (issues.length === 0) {
         throw new Error(
-            `PR #${pullRequestNumber}에 연결된 열린 Issue가 없습니다. ${rejected.join(", ")}`,
+            `PR #${pullRequestNumber}에 연결된 실제 Issue가 없습니다. ${rejected.join(", ")}`,
         );
     }
-    return { openIssues, rejected };
+    return { issues, rejected };
 }
 
 async function requestIssue(apiUrl, repository, token, issueNumber) {
@@ -117,9 +113,9 @@ async function main() {
         loadIssue: (issueNumber) => requestIssue(apiUrl, repository, token, issueNumber),
     });
     for (const warning of result.rejected) {
-        console.log(`::warning::무효 closing reference: ${warning}`);
+        console.log(`::warning::무효 Issue 참조: ${warning}`);
     }
-    console.log(`PR #${event.pull_request.number} linked open issues: ${result.openIssues.map((number) => `#${number}`).join(", ")}`);
+    console.log(`PR #${event.pull_request.number} linked issues: ${result.issues.map((number) => `#${number}`).join(", ")}`);
 }
 
 const isDirectExecution = process.argv[1]

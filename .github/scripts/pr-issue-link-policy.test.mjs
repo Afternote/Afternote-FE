@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
-    extractSameRepositoryClosingIssueNumbers,
+    extractSameRepositoryIssueNumbers,
     validatePullRequestIssueLink,
 } from "./validate-pr-issue-link.mjs";
 
@@ -23,30 +23,30 @@ function issueLoader(items) {
     };
 }
 
-test("extracts local and fully qualified closing issue references without duplicates", () => {
+test("extracts closing and non-closing Issue references without duplicates", () => {
     assert.deepEqual(
-        extractSameRepositoryClosingIssueNumbers(
-            "Closes #12, fixes: Afternote/Afternote-FE#13 and resolves https://github.com/Afternote/Afternote-FE/issues/12",
+        extractSameRepositoryIssueNumbers(
+            "Refs #12, Part of: Afternote/Afternote-FE#13, Related to #14, and closes https://github.com/Afternote/Afternote-FE/issues/12",
             "Afternote/Afternote-FE",
         ),
-        [12, 13],
+        [12, 13, 14],
     );
 });
 
 test("ignores another repository and the empty PR template", () => {
     assert.deepEqual(
-        extractSameRepositoryClosingIssueNumbers(
-            "Closes outside/repository#1\n- Closes #",
+        extractSameRepositoryIssueNumbers(
+            "Refs outside/repository#1\n- Refs #",
             "Afternote/Afternote-FE",
         ),
         [],
     );
 });
 
-test("ignores closing references in comments and code examples", () => {
+test("ignores Issue references in comments and code examples", () => {
     assert.deepEqual(
-        extractSameRepositoryClosingIssueNumbers(
-            "<!-- Closes #1 -->\n`Fixes #2`\n```md\nResolves #3\n```",
+        extractSameRepositoryIssueNumbers(
+            "<!-- Refs #1 -->\n`Part of #2`\n```md\nCloses #3\n```",
             "Afternote/Afternote-FE",
         ),
         [],
@@ -55,17 +55,44 @@ test("ignores closing references in comments and code examples", () => {
 
 test("accepts a same-repository open Issue", async () => {
     const result = await validatePullRequestIssueLink({
-        pullRequest: pullRequest({ body: "Closes #1228" }),
+        pullRequest: pullRequest({ body: "Refs #1228" }),
         repository: "Afternote/Afternote-FE",
         loadIssue: issueLoader(new Map([[1228, { number: 1228, state: "open" }]])),
     });
-    assert.deepEqual(result, { openIssues: [1228], rejected: [] });
+    assert.deepEqual(result, { issues: [1228], rejected: [] });
 });
 
-test("rejects a PR number used as a closing Issue", async () => {
+test("allows multiple pull requests to share one Issue regardless of closing behavior or state", async () => {
+    const loadIssue = issueLoader(new Map([[601, { number: 601, state: "closed" }]]));
+    const results = await Promise.all([
+        validatePullRequestIssueLink({
+            pullRequest: pullRequest({ number: 7, body: "Part of #601" }),
+            repository: "Afternote/Afternote-FE",
+            loadIssue,
+        }),
+        validatePullRequestIssueLink({
+            pullRequest: pullRequest({ number: 8, body: "Refs #601" }),
+            repository: "Afternote/Afternote-FE",
+            loadIssue,
+        }),
+        validatePullRequestIssueLink({
+            pullRequest: pullRequest({ number: 9, body: "Closes #601" }),
+            repository: "Afternote/Afternote-FE",
+            loadIssue,
+        }),
+    ]);
+
+    assert.deepEqual(results, [
+        { issues: [601], rejected: [] },
+        { issues: [601], rejected: [] },
+        { issues: [601], rejected: [] },
+    ]);
+});
+
+test("rejects a PR number used as an Issue reference", async () => {
     await assert.rejects(
         validatePullRequestIssueLink({
-            pullRequest: pullRequest({ body: "Closes #1227" }),
+            pullRequest: pullRequest({ body: "Refs #1227" }),
             repository: "Afternote/Afternote-FE",
             loadIssue: issueLoader(new Map([[1227, { number: 1227, state: "closed", pull_request: {} }]])),
         }),
@@ -73,36 +100,49 @@ test("rejects a PR number used as a closing Issue", async () => {
     );
 });
 
-test("rejects missing and closed Issues", async () => {
+test("accepts a closed Issue while warning about a missing reference", async () => {
+    const result = await validatePullRequestIssueLink({
+        pullRequest: pullRequest({ body: "Closes #1 and fixes #2" }),
+        repository: "Afternote/Afternote-FE",
+        loadIssue: issueLoader(new Map([[2, { number: 2, state: "closed" }]])),
+    });
+
+    assert.deepEqual(result, {
+        issues: [2],
+        rejected: ["#1: 조회 실패 (not found)"],
+    });
+});
+
+test("rejects a missing Issue", async () => {
     await assert.rejects(
         validatePullRequestIssueLink({
-            pullRequest: pullRequest({ body: "Closes #1 and fixes #2" }),
+            pullRequest: pullRequest({ body: "Closes #1" }),
             repository: "Afternote/Afternote-FE",
-            loadIssue: issueLoader(new Map([[2, { number: 2, state: "closed" }]])),
+            loadIssue: issueLoader(new Map()),
         }),
-        /조회 실패.*#2: closed/,
+        /연결된 실제 Issue가 없습니다.*조회 실패/,
     );
 });
 
-test("requires a closing reference rather than an incidental issue mention", async () => {
+test("requires an explicit Issue reference rather than an incidental number mention", async () => {
     await assert.rejects(
         validatePullRequestIssueLink({
-            pullRequest: pullRequest({ body: "Related to #1228" }),
+            pullRequest: pullRequest({ body: "See #1228 for context" }),
             repository: "Afternote/Afternote-FE",
             loadIssue: issueLoader(new Map([[1228, { number: 1228, state: "open" }]])),
         }),
-        /closing issue가 없습니다/,
+        /Issue 참조가 없습니다/,
     );
 });
 
-test("requires the closing reference in the PR body rather than the title", async () => {
+test("requires the Issue reference in the PR body rather than the title", async () => {
     await assert.rejects(
         validatePullRequestIssueLink({
-            pullRequest: pullRequest({ title: "Closes #1228" }),
+            pullRequest: pullRequest({ title: "Refs #1228" }),
             repository: "Afternote/Afternote-FE",
             loadIssue: issueLoader(new Map([[1228, { number: 1228, state: "open" }]])),
         }),
-        /closing issue가 없습니다/,
+        /Issue 참조가 없습니다/,
     );
 });
 
@@ -113,14 +153,17 @@ test("required Repository Quality check runs the issue guard on pull requests", 
     ]);
     assert.match(workflow, /^permissions:\n(?:  .+\n)*  issues: read$/m);
     assert.match(callerWorkflow, /^permissions:\n(?:  .+\n)*  issues: read$/m);
-    assert.match(workflow, /- name: Require linked open issue\n\s+if: github\.event_name == 'pull_request'/);
+    assert.match(workflow, /- name: Require linked Issue\n\s+if: github\.event_name == 'pull_request'/);
     assert.match(workflow, /GH_TOKEN: \$\{\{ github\.token \}\}/);
     assert.match(workflow, /run: node \.github\/scripts\/validate-pr-issue-link\.mjs/);
 });
 
-test("the PR template tells authors to create and close an actual Issue", async () => {
+test("the PR template tells authors to reuse an Issue across pull requests", async () => {
     const template = await readFile(templateUrl, "utf8");
-    assert.match(template, /PR 생성 전에 이슈를 먼저 만들고/);
-    assert.match(template, /^- Closes #$/m);
+    assert.match(template, /관련된 기존 Issue를 재사용/);
+    assert.match(template, /여러 PR이 같은 Issue를 공유/);
+    assert.match(template, /최종 완료하는 PR에서만 Closes\/Fixes\/Resolves/);
+    assert.match(template, /^- Refs #$/m);
+    assert.doesNotMatch(template, /^- Closes #$/m);
     assert.doesNotMatch(template, /^- closed #$/m);
 });
