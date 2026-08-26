@@ -18,8 +18,7 @@ data class MemorialVideoPayload(
 )
 
 data class MemorialSongPayload(
-    val id: Long? = null,
     val title: String,
     val artist: String,
-    val coverUrl: String? = null,
+    val coverUrl: String?,
 )

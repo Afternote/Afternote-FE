@@ -31,7 +31,7 @@ import com.afternote.feature.afternote.presentation.author.editor.model.EditorCa
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
-import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdown
+import com.afternote.feature.afternote.presentation.author.editor.selection.EditorSelectionDropdown
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.CategoryForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
@@ -61,10 +61,11 @@ internal fun EditorContent(
     ) {
         Spacer(modifier = Modifier.height(8.dp))
 
-        SelectionDropdown(
+        EditorSelectionDropdown(
             label = stringResource(R.string.afternote_editor_label_category),
             selectedValue = form.selectedCategory.toDropdownLabel(),
             options = editorCategoryDropdownLabels(),
+            optionLabel = { it },
             onValueSelected = state::onCategorySelected,
             expanded = state.categoryDropdownExpanded,
             onExpandedChange = state::onCategoryDropdownExpandedChange,
@@ -83,10 +84,11 @@ internal fun EditorContent(
         if (form.selectedCategory.hasServiceSelection) {
             Spacer(modifier = Modifier.height(20.dp))
 
-            SelectionDropdown(
+            EditorSelectionDropdown(
                 label = stringResource(R.string.afternote_editor_label_service_name),
                 selectedValue = form.selectedService.orEmpty(),
                 options = form.currentServiceOptions,
+                optionLabel = { it },
                 onValueSelected = state::onServiceSelected,
                 expanded = state.serviceDropdownExpanded,
                 onExpandedChange = state::onServiceDropdownExpandedChange,

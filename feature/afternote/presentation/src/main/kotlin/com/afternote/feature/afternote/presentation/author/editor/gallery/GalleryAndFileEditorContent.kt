@@ -25,11 +25,11 @@ import com.afternote.feature.afternote.presentation.author.editor.receiver.model
 fun GalleryAndFileEditorContent(
     editorMessages: List<EditorMessage>,
     recipientSection: AfternoteEditorReceiverSection,
+    processingMethodSection: ProcessingMethodSection,
     modifier: Modifier = Modifier,
     onMessageRegisterClick: (EditorMessage) -> Unit = {},
     onMessageDeleteClick: (EditorMessage) -> Unit = {},
     onMessageAddClick: () -> Unit = {},
-    processingMethodSection: ProcessingMethodSection = ProcessingMethodSection(),
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -73,9 +73,12 @@ private fun GalleryAndFileEditorContentPreview() {
                 ProcessingMethodSection(
                     items =
                         listOf(
-                            ProcessingMethodItem(id = "1", text = "계정 삭제"),
-                            ProcessingMethodItem(id = "2", text = "게시글 백업"),
+                            ProcessingMethodItem(localId = 1, text = "계정 삭제"),
+                            ProcessingMethodItem(localId = 2, text = "게시글 백업"),
                         ),
+                    onItemDeleteClick = {},
+                    onItemAdded = {},
+                    onItemEdited = { _, _ -> },
                 ),
         )
     }

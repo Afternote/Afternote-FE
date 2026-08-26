@@ -15,7 +15,7 @@ internal fun addItemTextFieldScreenshot() {
     AfternoteTheme {
         AddItemTextField(
             onItemAdded = {},
-            onVisibilityChanged = {},
+            onDismiss = {},
             modifier = Modifier.padding(16.dp),
         )
     }
