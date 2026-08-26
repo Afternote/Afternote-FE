@@ -11,6 +11,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -23,6 +24,7 @@ import com.afternote.feature.onboarding.presentation.R as OnboardingR
 /** API 34 Accessibility Test Framework로 첫 진입의 두 핵심 화면을 실제 렌더링해 검사한다. */
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
+@SdkSuppress(minSdkVersion = 34)
 @OptIn(ExperimentalTestApi::class)
 class AccessibilitySmokeAndroidTest {
     @get:Rule(order = 0)

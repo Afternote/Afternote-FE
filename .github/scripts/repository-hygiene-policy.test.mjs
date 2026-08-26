@@ -9,6 +9,13 @@ const managedDevice = await readFile(
 const hygiene = await readFile(new URL('../workflows/pr-hygiene.yml', import.meta.url), 'utf8');
 const lint = await readFile(new URL('../workflows/lint.yml', import.meta.url), 'utf8');
 const appBuild = await readFile(new URL('../../app/build.gradle.kts', import.meta.url), 'utf8');
+const accessibilitySmoke = await readFile(
+  new URL(
+    '../../app/src/androidTest/java/com/afternote/afternote_fe/AccessibilitySmokeAndroidTest.kt',
+    import.meta.url,
+  ),
+  'utf8',
+);
 
 test('accessibility smoke uses an API 34 managed device and only its dedicated class', () => {
   assert.match(appBuild, /create\("pixel2Api34"\)[\s\S]*?apiLevel = 34/);
@@ -16,6 +23,7 @@ test('accessibility smoke uses an API 34 managed device and only its dedicated c
   assert.match(managedDevice, /task: pixel2Api34DebugAndroidTest/);
   assert.match(managedDevice, /test_class: com\.afternote\.afternote_fe\.AccessibilitySmokeAndroidTest/);
   assert.match(managedDevice, /android\.testInstrumentationRunnerArguments\.class/);
+  assert.match(accessibilitySmoke, /@SdkSuppress\(minSdkVersion = 34\)/);
 });
 
 test('manifest policy runs against the AGP merged manifest after generation', () => {
