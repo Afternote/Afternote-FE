@@ -97,6 +97,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.IOException
 import javax.inject.Inject
 import com.afternote.core.ui.R as CoreUiR
 import com.afternote.feature.afternote.presentation.R as AfternoteFeatureR
@@ -351,6 +352,7 @@ class ReceiverRuntimeCompletionAndroidTest {
                     status = 400,
                     serverMessage = "인증번호가 만료되었습니다. 다시 발급해 주세요.",
                     serverCode = 1902,
+                    cause = CAUSE,
                 ),
             ),
         )
@@ -905,3 +907,9 @@ private class CompletionReceiverAuthRepository : ReceiverAuthRepository {
         error("unexpected getSenderMessage")
     }
 }
+
+/**
+ * ServerRejection 이 나르는 원인 예외 자리. 프로덕션에서는 `ApiException` 이 들어오지만, 도메인 계약이
+ * 요구하는 것은 `Throwable` 뿐이라 이 테스트들은 core:network 를 끌어오지 않는다.
+ */
+private val CAUSE: Throwable = IOException("stub cause")

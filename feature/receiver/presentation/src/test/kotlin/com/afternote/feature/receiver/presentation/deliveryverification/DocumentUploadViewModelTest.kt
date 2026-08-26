@@ -10,6 +10,7 @@ import com.afternote.feature.receiver.domain.model.ReceiverIdentity
 import com.afternote.feature.receiver.domain.model.SenderMessageInfo
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverDeliveryDocumentUploadRepository
+import com.afternote.feature.receiver.presentation.error.ErrorPayload
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
