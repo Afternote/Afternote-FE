@@ -1,8 +1,6 @@
 package com.afternote.core.data.repoimpl
 
-import com.afternote.core.domain.repository.auth.AuthRepository
-import com.afternote.core.model.Session
-import com.afternote.core.model.TokenBundle
+import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.network.dto.ReceiverDetailDto
 import com.afternote.core.network.dto.ReceiverListDto
@@ -23,9 +21,7 @@ import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.core.network.service.UserApiService
 import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -55,12 +51,12 @@ class UserRepositoryImplTest {
                 onCreateReceiver = onCreateReceiver,
             ),
         authRepository =
-            FakeAuthRepository(
+            FakeAuthRepository.strict(loggedIn = true).apply {
                 onClearSession = {
                     calls += "clearSession"
                     clearSessionResult
-                },
-            ),
+                }
+            },
     )
 
     @Test
@@ -239,39 +235,4 @@ private class FakeUserApiService(
         receiverId: Long,
         request: ReceiverDeliveryConditionUpdateRequestDto,
     ): BaseResponse<ReceiverDeliveryConditionDto> = TODO("이 테스트 미사용")
-}
-
-private class FakeAuthRepository(
-    private val onClearSession: () -> Result<Unit>,
-) : AuthRepository {
-    override val isLoggedIn: Flow<Boolean> = flowOf(true)
-
-    override suspend fun clearSession(): Result<Unit> = onClearSession()
-
-    override suspend fun saveSession(
-        accessToken: String,
-        refreshToken: String,
-    ): Result<Unit> = TODO("이 테스트 미사용")
-
-    override suspend fun updateTokens(
-        accessToken: String,
-        refreshToken: String,
-    ): Result<Unit> = TODO("이 테스트 미사용")
-
-    override suspend fun getAccessToken(): Result<String?> = TODO("이 테스트 미사용")
-
-    override suspend fun getRefreshToken(): Result<String?> = TODO("이 테스트 미사용")
-
-    override suspend fun defaultLogin(
-        email: String,
-        password: String,
-    ): Result<Session.DefaultSession> = TODO("이 테스트 미사용")
-
-    override suspend fun kakaoLogin(oauthToken: String): Result<Session.SocialSession> = TODO("이 테스트 미사용")
-
-    override suspend fun googleLogin(idToken: String): Result<Session.SocialSession> = TODO("이 테스트 미사용")
-
-    override suspend fun rotateToken(): Result<TokenBundle> = TODO("이 테스트 미사용")
-
-    override suspend fun logout(): Result<Unit> = TODO("이 테스트 미사용")
 }
