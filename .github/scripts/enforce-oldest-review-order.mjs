@@ -186,16 +186,13 @@ export function selectOlderPullRequests(openPullRequests, currentPullRequest, re
         .sort(comparePullRequestsOldestFirst);
 }
 
-/**
- * review-debt-guard 와 같은 방식으로 리뷰어별 최신 결정만 남긴다.
- * 누군가의 최신 결정이 CHANGES_REQUESTED 면 그중 가장 늦은 시각을 기준으로 삼는다.
- */
+/** review-debt-guard 와 같이 PR 전체에서 가장 최근에 제출된 결정만 남긴다. */
 export function analyzeDecisiveReviews(reviews) {
     if (!Array.isArray(reviews)) {
         throw new Error("리뷰 목록 응답이 배열이 아닙니다.");
     }
 
-    const latestByReviewer = new Map();
+    let latest = null;
     for (const review of reviews) {
         const state = normalizeReviewState(review?.state);
         if (!DECISIVE_REVIEW_STATES.has(state)) {
@@ -204,42 +201,37 @@ export function analyzeDecisiveReviews(reviews) {
         const reviewer = requiredString(review.user?.login, "review.user.login").toLowerCase();
         const submittedAt = requiredString(review.submitted_at, "review.submitted_at");
         const submittedTimestamp = parseTimestamp(submittedAt, "review.submitted_at");
-        const previous = latestByReviewer.get(reviewer);
-        if (!previous || submittedTimestamp >= previous.submittedTimestamp) {
-            latestByReviewer.set(reviewer, {
+        if (!latest || submittedTimestamp >= latest.submittedTimestamp) {
+            latest = {
                 reviewer,
                 state,
                 submittedAt,
                 submittedTimestamp,
-            });
+            };
         }
     }
 
-    if (latestByReviewer.size === 0) {
+    if (!latest) {
         return { kind: "no-decisive-review", debt: true, blockedAt: null };
     }
 
-    const outstanding = [...latestByReviewer.values()]
-        .filter((review) => review.state === "CHANGES_REQUESTED")
-        .sort((left, right) => left.submittedTimestamp - right.submittedTimestamp);
-    if (outstanding.length === 0) {
+    if (latest.state === "APPROVED") {
         return { kind: "resolved", debt: false, blockedAt: null };
     }
 
-    const latest = outstanding.at(-1);
     return {
         kind: "changes-requested",
         debt: false,
         blockedAt: latest.submittedAt,
         blockedTimestamp: latest.submittedTimestamp,
-        outstandingReviews: outstanding,
+        outstandingReviews: [latest],
     };
 }
 
 /**
- * 변경요청을 낸 뒤 현재 다시 요청받은 리뷰어만 고른다.
+ * PR 전체의 최신 변경요청을 낸 뒤 현재 다시 요청받은 리뷰어만 고른다.
  * GitHub는 리뷰 제출 시 그 사람의 요청을 제거하므로, 같은 리뷰어가 현재 요청 목록에
- * 다시 있다면 마지막 결정 뒤 작성자가 명시적으로 재리뷰를 요청한 것이다.
+ * 다시 있다면 최신 결정 뒤 작성자가 명시적으로 재리뷰를 요청한 것이다.
  */
 export function selectRequestedOutstandingReview(reviewState, requestedReviewers) {
     if (!Array.isArray(requestedReviewers)) {

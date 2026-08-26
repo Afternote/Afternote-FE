@@ -84,7 +84,8 @@ jobs:
           fi
 
           # 남은 것에서 «리뷰어의 공이 아닌» PR 을 걸러낸다. «누가» 봤는지는 따지지
-          # 않는다 — 팀에서 한 사람이 보면 그 PR 의 리뷰는 채워진 것이다.
+          # 않는다 — 팀에서 한 사람이 더 늦은 판정을 내리면 그 판정이 PR 의 현재
+          # 상태다. 더 오래된 다른 리뷰어의 변경요청을 다시 빚으로 살리지 않는다.
           #
           # 승인과 변경요청은 무게가 다르다.
           #   APPROVED        머지 가능한 상태다. 그 뒤에 작성자가 손보는 것은
@@ -93,10 +94,11 @@ jobs:
           #                   의무가 생기지는 않는다. 작성자가 같은 리뷰어에게 명시적으로
           #                   재요청해야 공이 돌아온다.
           #
-          # 그래서 빚은 두 종류다. (1) 아무도 판정을 내지 않은 PR,
-          # (2) 미해소 변경요청을 낸 리뷰어에게 재요청이 걸렸고 작성자가 이미 반영
-          # 커밋을 올린 PR. 재요청이 없거나 변경요청 뒤 새 커밋이 없으면 빚이 아니다.
-          # 반영 여부는 병합 커밋(parents 2개 이상)을 뺀 실질 커밋으로만 센다.
+          # 그래서 빚은 두 종류다. (1) 아무도 판정을 내리지 않은 PR,
+          # (2) PR 전체의 최신 판정이 변경요청이고, 그 리뷰어에게 재요청이 걸렸으며,
+          # 그 판정 뒤 작성자가 반영 커밋을 올린 PR. 재요청이 없거나 최신 변경요청 뒤
+          # 새 커밋이 없으면 빚이 아니다. 반영 여부는 병합 커밋(parents 2개 이상)을
+          # 뺀 실질 커밋으로만 센다.
           debt_file=$(mktemp)
           reviews_file=$(mktemp)
           while IFS=$'\t' read -r pn created title requested_reviewers; do
@@ -113,17 +115,17 @@ jobs:
               continue
             fi
 
-            # 리뷰어별 최신 판정이 CHANGES_REQUESTED 이면서, 현재 그 리뷰어에게 다시
-            # 요청이 걸린 것 중 가장 늦은 판정. 리뷰 제출 시 기존 요청은 제거되므로
-            # 이 교집합은 작성자가 마지막 판정 뒤 명시적으로 재요청했다는 뜻이다.
+            # PR 전체의 최신 판정만 본다. 그 판정이 CHANGES_REQUESTED 이면서 현재 같은
+            # 리뷰어에게 요청이 다시 걸렸다면, 리뷰 제출 시 제거된 요청을 작성자가
+            # 최신 판정 뒤 명시적으로 되살린 것이다. 이후 다른 리뷰어가 더 늦게 판정한
+            # 경우에는 과거 리뷰어의 남은 요청으로 공을 되돌리지 않는다.
             blocked=$(jq -rs --arg active ",$requested_reviewers," '
-                                 group_by(.u | ascii_downcase) | map(sort_by(.t) | last)
-                                 | map(.u |= ascii_downcase)
-                                 | map(select(.s == "CHANGES_REQUESTED"))
-                                 | map(select(.u as $reviewer
-                                              | $active | contains("," + $reviewer + ",")))
-                                 | sort_by(.t)
-                                 | if length == 0 then empty else last | [.u, .t] | @tsv end' \
+                                 sort_by(.t) | last
+                                 | .u |= ascii_downcase
+                                 | select(.s == "CHANGES_REQUESTED")
+                                 | select(.u as $reviewer
+                                          | $active | contains("," + $reviewer + ","))
+                                 | [.u, .t] | @tsv' \
                                "$reviews_file" 2>/dev/null || true)
 
             if [ -z "$blocked" ]; then
@@ -156,7 +158,7 @@ jobs:
           {
             echo "## 🚧 리뷰 적체 가드 — 이 PR 을 닫습니다"
             echo
-            echo "**아무도 리뷰하지 않은** PR 이 **${count}건** 남아 있습니다."
+            echo "**리뷰 응답을 기다리는** PR 이 **${count}건** 남아 있습니다."
             echo
             echo "| PR | 열린 날 | 경과 | 제목 |"
             echo "|---|---|---|---|"
@@ -167,7 +169,7 @@ jobs:
               echo "| #$n | $created | ${days}일 | $title |"
             done <<< "$debt"
             echo
-            echo "이 저장소는 아무도 응답하지 않은 PR 이 1건이라도 남아 있으면 새 PR 을 열 수 없습니다 (#1136)."
+            echo "이 저장소는 리뷰 응답을 기다리는 PR 이 1건이라도 남아 있으면 새 PR 을 열 수 없습니다 (#1136)."
             echo
             echo "각 PR 에 필요한 리뷰는 **한 건**입니다 — 누구든 먼저 판정을 내면 그 PR 은 모두의 목록에서 빠집니다. 승인 뒤 변경을 다시 볼 의무는 없고, **변경요청도 작성자가 같은 리뷰어에게 재요청한 뒤 반영 커밋을 올린 경우에만** 다시 리뷰어의 몫이 됩니다."
             echo

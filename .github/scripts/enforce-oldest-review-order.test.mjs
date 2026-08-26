@@ -173,10 +173,18 @@ test("결정 리뷰가 하나도 없으면 즉시 리뷰 빚이다", () => {
     assert.deepEqual(result, { kind: "no-decisive-review", debt: true, blockedAt: null });
 });
 
-test("리뷰어별 최신 결정으로 미해소 CHANGES_REQUESTED를 찾는다", () => {
+test("PR 전체의 최신 결정으로 현재 상태를 판단한다", () => {
     const resolved = analyzeDecisiveReviews([
-        review({ state: "CHANGES_REQUESTED", submitted_at: "2026-08-01T00:00:00Z" }),
-        review({ state: "APPROVED", submitted_at: "2026-08-02T00:00:00Z" }),
+        review({
+            state: "CHANGES_REQUESTED",
+            submitted_at: "2026-08-01T00:00:00Z",
+            user: { login: "alice" },
+        }),
+        review({
+            state: "APPROVED",
+            submitted_at: "2026-08-02T00:00:00Z",
+            user: { login: "bob" },
+        }),
     ]);
     assert.equal(resolved.kind, "resolved");
 
@@ -204,8 +212,33 @@ test("변경요청을 낸 리뷰어에게 현재 재요청이 걸린 경우만 �
         }),
     ]);
 
-    assert.equal(selectRequestedOutstandingReview(reviewState, ["ALICE"]).reviewer, "alice");
+    assert.equal(selectRequestedOutstandingReview(reviewState, ["alice"]), null);
+    assert.equal(selectRequestedOutstandingReview(reviewState, ["BOB"]).reviewer, "bob");
     assert.equal(selectRequestedOutstandingReview(reviewState, ["carol"]), null);
+});
+
+test("더 오래된 리뷰어의 요청은 이후 다른 변경요청을 리뷰 빚으로 되돌리지 않는다", () => {
+    const reviews = [
+        review({
+            state: "CHANGES_REQUESTED",
+            submitted_at: "2026-08-23T02:12:43Z",
+            user: { login: "Sadturtleman" },
+        }),
+        review({
+            state: "CHANGES_REQUESTED",
+            submitted_at: "2026-08-23T11:45:05Z",
+            user: { login: "1hyok" },
+        }),
+    ];
+    const commits = [commit({
+        commit: { committer: { date: "2026-08-23T03:15:59Z" } },
+    })];
+
+    const result = reviewDebtStatus(reviews, commits, ["Sadturtleman"]);
+
+    assert.equal(result.debt, false);
+    assert.equal(result.reason, "changes-requested-not-rerequested");
+    assert.equal(result.blockedAt, "2026-08-23T11:45:05Z");
 });
 
 test("변경요청 뒤 실질 커밋만 반영으로 세고 merge commit은 제외한다", () => {
@@ -337,6 +370,41 @@ test("CHANGES_REQUESTED 뒤 같은 리뷰어에게 재요청하고 반영했으�
     });
     assert.equal(result.status, "dismissed");
     assert.equal(result.oldestDebt.debtReason, "changes-requested-fixed-rerequested");
+});
+
+test("과거 리뷰어 요청이 남아도 더 늦은 다른 변경요청 뒤에는 dismiss하지 않는다", async () => {
+    const client = fakeClient(({ apiPath }) => {
+        if (apiPath.includes("/permission")) return response({ permission: "maintain" });
+        if (apiPath.includes("/pulls?state=open")) {
+            return response([pullRequest({
+                number: 767,
+                requested_reviewers: [{ login: "Sadturtleman" }],
+            })]);
+        }
+        if (apiPath.includes("/pulls/767/reviews")) {
+            return response([
+                review({
+                    state: "CHANGES_REQUESTED",
+                    submitted_at: "2026-08-23T02:12:43Z",
+                    user: { login: "Sadturtleman" },
+                }),
+                review({
+                    state: "CHANGES_REQUESTED",
+                    submitted_at: "2026-08-23T11:45:05Z",
+                    user: { login: "1hyok" },
+                }),
+            ]);
+        }
+        throw new Error(`최신 변경요청이 있는데 불필요한 API를 호출함: ${apiPath}`);
+    });
+
+    const result = await enforceOldestReviewOrder({
+        event: reviewEvent(), repository: REPOSITORY, client, logger: silent,
+    });
+
+    assert.equal(result.status, "allowed");
+    assert.equal(client.calls.some((call) => call.apiPath.includes("/commits")), false);
+    assert.equal(client.calls.some((call) => call.method !== "GET"), false);
 });
 
 test("변경요청 뒤 수정했어도 재리뷰 요청이 없으면 허용한다", async () => {
@@ -536,4 +604,6 @@ test("PR 생성 가드도 변경요청자의 명시적 재요청을 확인한다
     assert.match(workflow, /requested_reviewers\[\]\.login/);
     assert.match(workflow, /blocked_by/);
     assert.match(workflow, /재리뷰 요청 없음/);
+    assert.match(workflow, /sort_by\(\.t\) \| last/);
+    assert.doesNotMatch(workflow, /group_by\(\.u/);
 });
