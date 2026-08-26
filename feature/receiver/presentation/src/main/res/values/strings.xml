@@ -27,6 +27,17 @@
     <!-- 홈 탭과 문안이 같지만 모듈 분리로 사본을 둔다 — 발신자 홈(home_tab_*)과 독립 수정 가능해야 한다. -->
     <string name="receiver_home_error_message">정보를 불러오지 못했습니다.</string>
     <string name="receiver_home_retry">다시 시도</string>
+    <!--
+      전달 조건 미충족 안내. 서버도 같은 뜻의 문구를 내려주지만 싣지 않는다 — 사유가 도메인 타입으로
+      특정돼 있어 표시 문구는 여기가 갖는 것이 맞고(BE#92 — 서버 message 는 사용자 노출용이라는
+      규정이 없다), BE 쪽 문구도 ErrorCode enum 상수라 실을 만한 동적 정보가 없다.
+    -->
+    <string name="receiver_afternote_list_not_deliverable_message">아직 열람할 수 없는 상태입니다.</string>
+    <!--
+      재시도로 풀리지 않는 상태라 «다시 시도» 대신 무엇을 기다려야 하는지를 적는다 — 같은 문구를
+      재시도 버튼과 함께 두면 사용자가 같은 실패를 반복하게 된다(#611).
+    -->
+    <string name="receiver_afternote_list_not_deliverable_description">발신자가 정한 전달 조건이 충족되면 열람하실 수 있어요.</string>
 
     <!--
       애프터노트 목록·플레이리스트는 발신자 화면([AfternoteHomeScreen]·공용 곡 목록 부품)을 공유하므로
