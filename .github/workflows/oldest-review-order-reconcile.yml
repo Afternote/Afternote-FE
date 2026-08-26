@@ -16,6 +16,7 @@ on:
         type: string
 
 concurrency:
+  # pending 실행은 최신 하나로 합쳐질 수 있으므로 자동 실행도 항상 전체를 재계산한다.
   group: oldest-review-order-${{ github.repository }}
   cancel-in-progress: false
 
@@ -44,8 +45,7 @@ jobs:
       - name: Reconcile oldest review order status
         env:
           MODE: recalculate
-          RECALCULATE_SCOPE: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.pull_requests[0].number && 'affected' || 'all' }}
-          AFFECTED_PULL_REQUEST: ${{ github.event.workflow_run.pull_requests[0].number }}
+          RECALCULATE_SCOPE: all
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_EVENT_PATH: ${{ github.event_path }}

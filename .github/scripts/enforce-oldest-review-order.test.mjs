@@ -747,6 +747,8 @@ test("무권한 이벤트 감지와 trusted status/replay workflow를 분리한�
     assert.match(workflow, /^\s{2}workflow_run:\s*$/m);
     assert.match(workflow, /^name: Oldest Review Order Reconcile\s*$/m);
     assert.match(workflow, /workflows: \[Oldest Review Order Event\]/);
+    assert.match(workflow, /^\s{10}RECALCULATE_SCOPE: all\s*$/m);
+    assert.doesNotMatch(workflow, /AFFECTED_PULL_REQUEST:/);
     assert.doesNotMatch(workflow, /^\s{2}pull_request(?:_review)?:\s*$/m);
     assert.doesNotMatch(workflow, /^\s{2}pull_request_target:\s*$/m);
     assert.match(workflow, /^\s{2}workflow_dispatch:\s*$/m);
