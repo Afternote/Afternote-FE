@@ -107,6 +107,11 @@ class DiaryWriteViewModel
          * 저장 시 본문에 나가는 값은 이 URL 이 아니다 — 서버는 `img src` 에서 fileKey 를 기대하고
          * 전체 URL 을 받으면 호스트를 한 번 더 붙여 403 이 된다. 그래서 받은 URL 을 기억해 두고
          * 제출 직전에 키로 바꾼다 ([toWireContent]). 미리보기는 전체 URL 이라야 뜬다 (#1016).
+         *
+         * **첫 업로드 결과는 등록 payload 의 `imageUrl` 로도 실린다** (아래 `it.imageUrl == null`).
+         * 이 PR 이 첨부 대상을 이미지에서 미디어 전체로 넓히면서, 그 자리가 처음으로 음성·파일을
+         * 집을 수 있게 됐다 — 지금은 서버가 그 필드를 무시하고 응답 `imageUrl` 이 null 이라
+         * 사용자 영향이 없지만, 배선 자체는 남아 있다. 후속: #1195.
          */
         suspend fun uploadMedia(uriString: String): String? {
             _uiState.update { it.copy(isUploadingImage = true, imageUploadError = null) }

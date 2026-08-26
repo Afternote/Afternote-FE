@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.annotation.StringRes
+import androidx.exifinterface.media.ExifInterface
 import com.afternote.feature.mindrecord.presentation.R
 
 /**
@@ -58,9 +59,50 @@ fun Context.mediaImageSize(
             }
         }.getOrNull()
 
-    val width = bounds?.outWidth ?: 0
-    val height = bounds?.outHeight ?: 0
-    if (width <= 0 || height <= 0) return targetWidthPx to targetWidthPx
+    val fileWidth = bounds?.outWidth ?: 0
+    val fileHeight = bounds?.outHeight ?: 0
+    if (fileWidth <= 0 || fileHeight <= 0) return targetWidthPx to targetWidthPx
+
+    // 파일 픽셀과 «보이는» 크기가 다를 수 있다 — 아래 참조.
+    val (width, height) =
+        if (isUriRotatedQuarterTurn(uri)) fileHeight to fileWidth else fileWidth to fileHeight
 
     return targetWidthPx to (targetWidthPx.toLong() * height / width).toInt().coerceAtLeast(1)
 }
+
+/**
+ * 이 이미지를 뷰어가 **90도 돌려서** 보는가 (= 폭과 높이가 뒤바뀌는가).
+ *
+ * `BitmapFactory` 의 `outWidth`/`outHeight` 는 파일에 적힌 픽셀 크기라 EXIF `Orientation` 을
+ * 반영하지 않는다. 요즘 폰은 세로로 찍어도 센서 방향(가로)으로 저장하고 «돌려서 보라» 를
+ * EXIF 에 남기는데, 갤러리·웹뷰어는 그걸 존중하고 `BitmapFactory` 는 무시한다.
+ *
+ * 그래서 이걸 빼면 «400x300 파일 + Orientation=6» 이 320×240 으로 계산돼 **종전 상수와 같은
+ * 값**이 된다 — 비율 계산으로 바꾼 의미가 카메라 세로 촬영본에서만 통째로 사라진다. 첨부
+ * 입력에서 가장 흔한 쪽이라 여기서 잡는다 (#731 리뷰).
+ *
+ * 회전을 못 읽으면 «안 돌아간 것» 으로 본다 — 파일 픽셀 그대로 쓰는 종전 동작이다.
+ * (`ImageDecoder` 는 헤더 크기에 EXIF 를 적용해 주지만 API 28+ 라 minSdk 26 에서는 못 쓴다.)
+ */
+private fun Context.isUriRotatedQuarterTurn(uri: Uri): Boolean {
+    val orientation =
+        runCatching {
+            contentResolver.openInputStream(uri)?.use { stream ->
+                ExifInterface(stream).getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL,
+                )
+            }
+        }.getOrNull() ?: ExifInterface.ORIENTATION_NORMAL
+
+    return orientation in QUARTER_TURN_ORIENTATIONS
+}
+
+/** 폭과 높이가 뒤바뀌는 방향들. 180도 회전·좌우 반전은 비율이 그대로라 여기 없다. */
+private val QUARTER_TURN_ORIENTATIONS =
+    setOf(
+        ExifInterface.ORIENTATION_ROTATE_90,
+        ExifInterface.ORIENTATION_ROTATE_270,
+        ExifInterface.ORIENTATION_TRANSPOSE,
+        ExifInterface.ORIENTATION_TRANSVERSE,
+    )
