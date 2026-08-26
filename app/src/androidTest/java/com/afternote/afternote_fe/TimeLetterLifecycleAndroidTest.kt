@@ -17,8 +17,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
-import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
+import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
@@ -57,7 +58,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.lang.reflect.Proxy
 
 @RunWith(AndroidJUnit4::class)
 class TimeLetterLifecycleAndroidTest {
@@ -78,7 +78,7 @@ class TimeLetterLifecycleAndroidTest {
         val firstLoad = CompletableDeferred<Result<TimeLetterList>>()
         repository.nextListLoad = firstLoad
         val userRepository = privateUserRepository(testReceivers)
-        val viewModel = TimeletterViewModel(repository, userRepository.repository)
+        val viewModel = TimeletterViewModel(repository, userRepository)
 
         composeRule.setContent {
             AfternoteTheme {
@@ -203,7 +203,7 @@ class TimeLetterLifecycleAndroidTest {
                     ),
             )
         val repository = PrivateTimeLetterRepository(editingLetter = existingLetter)
-        val viewModel = writeViewModel(repository, privateUserRepository(testReceivers).repository, timeLetterId = 41L)
+        val viewModel = writeViewModel(repository, privateUserRepository(testReceivers), timeLetterId = 41L)
 
         composeRule.setContent {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -316,7 +316,7 @@ class TimeLetterLifecycleAndroidTest {
         userRepository: UserRepository,
         timeLetterId: Long,
     ): TimeLetterWriteViewModel {
-        val resolver = ResolveTimeLetterBlocksUseCase(PrivatePhotoUploadRepository)
+        val resolver = ResolveTimeLetterBlocksUseCase(FakePhotoUploadRepository.strict())
         return TimeLetterWriteViewModel(
             createTimeLetterUseCase = CreateTimeLetterUseCase(repository, resolver),
             resolveTimeLetterBlocksUseCase = resolver,
@@ -460,41 +460,17 @@ private class PrivateReceiverTimeLetterRepository : ReceiverTimeLetterRepository
     }
 }
 
-private class PrivateUserRepositoryFake(
-    receivers: List<Receiver>,
-) {
-    var getReceiversCalls = 0
-        private set
-
-    @Suppress("UNCHECKED_CAST")
-    val repository: UserRepository =
-        Proxy.newProxyInstance(
-            UserRepository::class.java.classLoader,
-            arrayOf(UserRepository::class.java),
-        ) { _, method, _ ->
-            when (method.name) {
-                "getReceiverListFlow" -> flowOf(receivers)
-                "getReceivers" -> receivers.also { getReceiversCalls += 1 }
-                "toString" -> "PrivateUserRepositoryFake"
-                else -> error("Unexpected UserRepository call: ${method.name}")
-            }
-        } as UserRepository
-}
-
-private object PrivatePhotoUploadRepository : PhotoUploadRepository {
-    override suspend fun upload(
-        uriString: String,
-        directory: String,
-    ): Result<String> = error("Local upload is not expected")
-}
-
 private object PrivateFileMetadataRepository : FileMetadataRepository {
     override suspend fun getFileName(uriString: String): String = error("File metadata is not expected")
 
     override suspend fun getMimeType(uriString: String): String? = error("File metadata is not expected")
 }
 
-private fun privateUserRepository(receivers: List<Receiver>) = PrivateUserRepositoryFake(receivers)
+private fun privateUserRepository(receivers: List<Receiver>): FakeUserRepository =
+    FakeUserRepository.strict().apply {
+        onReceiverListFlow = { flowOf(receivers) }
+        onGetReceivers = { receivers }
+    }
 
 private fun TimeLetterList.without(ids: List<Long>): TimeLetterList {
     val remaining = timeLetters.filterNot { it.id in ids }
