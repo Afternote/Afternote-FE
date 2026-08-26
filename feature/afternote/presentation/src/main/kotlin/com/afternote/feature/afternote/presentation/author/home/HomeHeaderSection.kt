@@ -36,8 +36,16 @@ data class NextStep(
     val onClick: () -> Unit,
 )
 
+/**
+ * 애프터노트 목록 상단 헤더.
+ *
+ * @param description 제목 아래 한 줄. 이 목록은 작성자와 수신자가 같은 화면을 공유하므로 기본값을
+ *   두지 않는다 — 발신자 문구("남길 기록을 정리해 보세요")가 수신자에게 그대로 새던 것이 #620 이다.
+ *   [nextStep] 이 디폴트를 걷은 것(#777)과 같은 이유다.
+ */
 @Composable
 internal fun HomeHeaderSection(
+    description: String,
     nextStep: NextStep?,
     modifier: Modifier = Modifier,
 ) {
@@ -54,7 +62,7 @@ internal fun HomeHeaderSection(
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = stringResource(R.string.afternote_home_header_description),
+            text = description,
             style = AfternoteDesign.typography.captionLargeR,
             color = AfternoteDesign.colors.black.copy(alpha = 89f / 255f),
         )
@@ -107,6 +115,7 @@ private fun NextStepCard(
 private fun HomeHeaderSectionPreview() {
     AfternoteTheme {
         HomeHeaderSection(
+            description = stringResource(R.string.afternote_home_header_description),
             nextStep =
                 NextStep(
                     text = "가족들의 '주거래 은행' 정보를\n입력하신 건 확인하셨나요?",

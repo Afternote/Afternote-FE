@@ -24,12 +24,19 @@ import com.afternote.core.ui.R
 /** 프로필 아이콘 앵커. 장식이라 semantics 이름이 없어 테스트가 이 태그로 존재 여부를 본다. */
 const val PROFILE_ICON_TEST_TAG = "home_top_bar_profile"
 
+/**
+ * 홈 계열 화면 공통 탑바.
+ *
+ * @param onSettingClick 설정 진입 콜백. `null` 이면 설정 아이콘을 그리지 않는다 — 회원이 아닌
+ *   흐름(수신자 열람)은 설정이 향할 곳이 없어서, no-op 을 넘겨 아이콘만 남기면 눌러도 아무 일이
+ *   일어나지 않는 가짜 액션이 된다 (#620).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeTopBar(
     modifier: Modifier = Modifier,
     showProfileIcon: Boolean = true,
-    onSettingClick: () -> Unit = {},
+    onSettingClick: (() -> Unit)? = {},
 ) {
     TopAppBar(
         navigationIcon = {
@@ -59,19 +66,24 @@ fun HomeTopBar(
                         modifier = Modifier.size(18.dp).testTag(PROFILE_ICON_TEST_TAG),
                     )
 
-                    Spacer(modifier = Modifier.width(15.dp))
+                    // 두 아이콘 사이 간격이라 설정이 없으면 함께 사라진다 (안 그러면 우측이 빈다).
+                    if (onSettingClick != null) {
+                        Spacer(modifier = Modifier.width(15.dp))
+                    }
                 }
 
-                Image(
-                    painter = painterResource(R.drawable.core_ui_settings),
-                    // 유일하게 눌리는 액션인데 접근성 트리에 이름이 없었다 — 스크린리더가
-                    // "버튼" 으로만 읽는다 (#613).
-                    contentDescription = stringResource(R.string.core_ui_home_top_bar_setting),
-                    modifier =
-                        Modifier
-                            .size(18.dp)
-                            .clickable(role = Role.Button) { onSettingClick() },
-                )
+                if (onSettingClick != null) {
+                    Image(
+                        painter = painterResource(R.drawable.core_ui_settings),
+                        // 유일하게 눌리는 액션인데 접근성 트리에 이름이 없었다 — 스크린리더가
+                        // "버튼" 으로만 읽는다 (#613).
+                        contentDescription = stringResource(R.string.core_ui_home_top_bar_setting),
+                        modifier =
+                            Modifier
+                                .size(18.dp)
+                                .clickable(role = Role.Button) { onSettingClick() },
+                    )
+                }
             }
         },
         colors =

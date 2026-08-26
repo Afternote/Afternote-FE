@@ -33,28 +33,15 @@ import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDis
 
 // region ── PlaylistSongList (list-level composable) ──
 
-fun filterSongsByQuery(
-    songs: List<PlaylistSongDisplay>,
-    searchQuery: String,
-): List<PlaylistSongDisplay> {
-    val query = searchQuery.trim().lowercase()
-    if (query.isEmpty()) return songs
-    return songs.filter { song ->
-        song.title.lowercase().contains(query) ||
-            song.artist.lowercase().contains(query)
-    }
-}
-
 /**
  * 노래 목록 렌더러 (헤더 슬롯 + 행들).
  * 소비자 화면이 [SongPlaylistScaffold] 안에서 직접 쓰거나, 선택 본문 [SelectableSongListBody] 를 통해 쓴다.
  *
  * 이 리스트는 필터도 검색도 소유하지 않는다 — [songs] 를 받은 그대로 그리고, 상단 헤더는 호출부가
- * [header] 로 주입한다(필수 — 모든 호출부가 헤더를 가진다). 검색창이 필요한 화면은
- * [SongSearchSection] 을 헤더로 주입하고, 관리 화면은 "총 N곡" 헤더를 주입한다 — 즉 검색은 "여러 헤더
- * 중 하나"일 뿐 리스트의 고정 지식이 아니다. 무엇을 걸러 보여줄지도 호출부가 정한다: 로컬 목록(수신자
- * 열람)은 [filterSongsByQuery] 로 좁혀 넘기고, API 검색(AddSong)은 서버 결과를 그대로 넘긴다. 리스트가
- * 내부 필터·검색을 갖던 시절엔 API 결과 이중 필터·죽은 검색 바인딩 문제가 있어 둘 다 호출부로 넘겼다 (2026-07).
+ * [header] 로 주입한다(필수 — 모든 호출부가 헤더를 가진다). 곡을 골라 담는 화면(AddSong)은
+ * [SongSearchSection] 을 헤더로 주입하고, 열람·관리 화면은 "총 N곡" 헤더를 주입한다 — 즉 검색은 "여러
+ * 헤더 중 하나"일 뿐 리스트의 고정 지식이 아니다. 리스트가 내부 필터·검색을 갖던 시절엔 API 결과
+ * 이중 필터·죽은 검색 바인딩 문제가 있어 둘 다 호출부로 넘겼다 (2026-07).
  * 구명 SearchableSongList — addsong 패키지 태생이라 "추가용 검색" 함의가 남아
  * [PlaylistSongDisplay]·[PlaylistSongItem] 가족 명명으로 개명 (2026-07).
  *
@@ -172,10 +159,10 @@ private fun PlaylistSongListPreview() {
             PlaylistSongDisplay(id = "$i", title = "노래 제목 $i", artist = "가수 이름")
         }
     var query by remember { mutableStateOf("") }
-    // 리스트는 필터·검색을 소유하지 않으므로 호출부가 걸러 넘기고 검색 헤더도 주입한다 —
-    // 실제 view-only 호출부와 같은 패턴 시연.
+    // 리스트는 필터·검색을 소유하지 않으므로 호출부가 최종 목록을 넘기고 헤더도 주입한다 —
+    // 실제 AddSong 호출부와 같은 패턴 시연(서버 검색 결과를 그대로 넘김).
     PlaylistSongList(
-        songs = filterSongsByQuery(songs, query),
+        songs = songs,
         header = {
             SongSearchSection(
                 searchQuery = query,

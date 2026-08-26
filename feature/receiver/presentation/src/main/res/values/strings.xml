@@ -38,4 +38,20 @@
       재시도 버튼과 함께 두면 사용자가 같은 실패를 반복하게 된다(#611).
     -->
     <string name="receiver_afternote_list_not_deliverable_description">발신자가 정한 전달 조건이 충족되면 열람하실 수 있어요.</string>
+
+    <!--
+      애프터노트 목록·플레이리스트는 발신자 화면([AfternoteHomeScreen]·공용 곡 목록 부품)을 공유하므로
+      관점이 갈리는 문구만 여기서 덮는다. 수신자 홈 섹션 설명과 같은 문안이지만, 위 error/retry 와 같은
+      이유로 사본을 둔다 (#620).
+    -->
+    <string name="receiver_afternote_list_header_description">고인이 사후 정리하고자 하는 데이터입니다.</string>
+    <string name="receiver_playlist_song_count_format">총 %1$d곡</string>
+
+    <!--
+      SOCIAL 수신 상세 ACCOUNT 섹션의 부재 문구. 서버는 수신자에게 credentials 를 내려주지 않고,
+      내려주더라도 발신자가 한쪽만 적었을 수 있다. 빈 값에 마스킹을 그려 "가려진 값이 있다" 고
+      오인시키는 대신 남기지 않았다는 사실을 명시한다 (#619).
+    -->
+    <string name="receiver_detail_account_absent">고인이 계정 정보를 남기지 않았습니다.</string>
+    <string name="receiver_detail_account_value_absent">남기지 않음</string>
 </resources>
