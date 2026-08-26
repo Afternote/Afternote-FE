@@ -122,7 +122,6 @@ class MindRecordDtoContractTest {
                     content = "c",
                     isDraft = false,
                     todayMood = TodayMoodDto.SOSO,
-                    imageUrl = null,
                     receiverIds = emptyList(),
                 ),
             )

@@ -73,28 +73,28 @@ fun FindIdScreen(
     val requestCodeText =
         when {
             isSendingCode -> {
-                stringResource(R.string.find_account_code_requesting)
+                stringResource(R.string.onboarding_find_account_code_requesting)
             }
 
             resendCooldownSeconds > 0 -> {
                 stringResource(
-                    R.string.find_account_code_resend_cooldown,
+                    R.string.onboarding_find_account_code_resend_cooldown,
                     resendCooldownSeconds,
                 )
             }
 
             isVerificationSent -> {
-                stringResource(R.string.find_account_code_resend)
+                stringResource(R.string.onboarding_find_account_code_resend)
             }
 
             else -> {
-                stringResource(R.string.find_account_code_request)
+                stringResource(R.string.onboarding_find_account_code_request)
             }
         }
 
     FlowStepScaffold(
-        topBarTitle = stringResource(R.string.find_id_title),
-        actionButtonText = stringResource(R.string.find_account_next),
+        topBarTitle = stringResource(R.string.onboarding_find_id_title),
+        actionButtonText = stringResource(R.string.onboarding_find_account_next),
         onBackClick = onBackClick,
         onActionClick = onNextClick,
         modifier = modifier,
@@ -107,12 +107,12 @@ fun FindIdScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text = stringResource(R.string.find_account_verify_email_title),
+                text = stringResource(R.string.onboarding_find_account_verify_email_title),
                 style = AfternoteDesign.typography.h1,
                 color = AfternoteDesign.colors.gray9,
             )
             Text(
-                text = stringResource(R.string.find_account_verify_email_description),
+                text = stringResource(R.string.onboarding_find_account_verify_email_description),
                 // 시안 텍스트 스펙 = NanumBarunGothic Regular 12 / 행간 18 → captionLargeR (bodySmallB 는 Bold 14/20 로 불일치)
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray5,
@@ -126,7 +126,7 @@ fun FindIdScreen(
                         onClick = onRequestCode,
                         enabled = isSendCodeEnabled,
                     ),
-                placeholder = stringResource(R.string.find_account_email_placeholder),
+                placeholder = stringResource(R.string.onboarding_find_account_email_placeholder),
                 keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next,
             )
@@ -137,14 +137,14 @@ fun FindIdScreen(
                 type =
                     if (isVerificationSent) {
                         TextFieldType.Variant7(
-                            text = stringResource(R.string.find_account_code_confirm),
+                            text = stringResource(R.string.onboarding_find_account_code_confirm),
                             onClick = onVerifyCode,
                             enabled = isVerifyEnabled,
                         )
                     } else {
                         TextFieldType.Basic
                     },
-                placeholder = stringResource(R.string.find_account_code_placeholder),
+                placeholder = stringResource(R.string.onboarding_find_account_code_placeholder),
                 keyboardType = KeyboardType.Number,
                 imeAction = ImeAction.Done,
                 onImeAction = {
@@ -155,13 +155,13 @@ fun FindIdScreen(
             // 인증번호 불일치는 인라인 에러로, 그 외 실패는 스낵바로 나뉜다 (시안 2431-14204).
             if (hasVerificationError) {
                 Text(
-                    text = stringResource(R.string.find_account_code_mismatch),
+                    text = stringResource(R.string.onboarding_find_account_code_mismatch),
                     style = AfternoteDesign.typography.captionLargeB,
                     color = AfternoteDesign.colors.error,
                 )
             } else if (isVerificationSent) {
                 Text(
-                    text = stringResource(R.string.find_account_code_sent),
+                    text = stringResource(R.string.onboarding_find_account_code_sent),
                     style = AfternoteDesign.typography.captionLargeB,
                     color = AfternoteDesign.colors.b1,
                 )

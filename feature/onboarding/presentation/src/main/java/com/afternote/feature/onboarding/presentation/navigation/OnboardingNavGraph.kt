@@ -269,7 +269,7 @@ private fun rememberSignUpEventHost(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val nameRequiredMessage = stringResource(R.string.signup_name_required)
+    val nameRequiredMessage = stringResource(R.string.onboarding_signup_name_required)
 
     LaunchedEffect(uiState.shouldNavigateToResidentNumber) {
         if (uiState.shouldNavigateToResidentNumber && onNavigateToResidentNumber != null) {
