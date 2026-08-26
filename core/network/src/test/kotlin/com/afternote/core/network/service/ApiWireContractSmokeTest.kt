@@ -6,7 +6,6 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
-import org.junit.After
 import org.junit.AfterClass
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -33,13 +32,11 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
  * Docker가 없는 일반 unit-test 실행에서는 건너뛰고, 전용 Actions workflow가 명시적으로 활성화한다.
  */
 class ApiWireContractSmokeTest {
-    private lateinit var mockClient: MockServerClient
     private lateinit var authService: AuthApiService
     private lateinit var userService: UserApiService
 
     @Before
     fun setUp() {
-        mockClient = MockServerClient(mockServer.host, mockServer.serverPort)
         mockClient.reset()
 
         val okHttpClient =
@@ -65,11 +62,6 @@ class ApiWireContractSmokeTest {
 
         authService = retrofit.create(AuthApiService::class.java)
         userService = retrofit.create(UserApiService::class.java)
-    }
-
-    @After
-    fun tearDown() {
-        mockClient.close()
     }
 
     @Test
@@ -154,6 +146,7 @@ class ApiWireContractSmokeTest {
             }
 
         private lateinit var mockServer: MockServerContainer
+        private lateinit var mockClient: MockServerClient
 
         @BeforeClass
         @JvmStatic
@@ -169,11 +162,16 @@ class ApiWireContractSmokeTest {
                     DockerImageName.parse("mockserver/mockserver:mockserver-$MOCKSERVER_VERSION"),
                 )
             mockServer.start()
+            mockClient = MockServerClient(mockServer.host, mockServer.serverPort)
         }
 
         @AfterClass
         @JvmStatic
         fun stopContainer() {
+            // MockServerClient.close() delegates to stop(), so it must run only after every test.
+            if (::mockClient.isInitialized) {
+                mockClient.close()
+            }
             if (::mockServer.isInitialized) {
                 mockServer.stop()
             }
