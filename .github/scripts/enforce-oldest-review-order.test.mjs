@@ -12,6 +12,7 @@ import {
     paginateRest,
     renderDismissalMessage,
     reviewDebtStatus,
+    selectRequestedOutstandingReview,
     selectOlderPullRequests,
 } from "./enforce-oldest-review-order.mjs";
 
@@ -44,6 +45,7 @@ function pullRequest(overrides = {}) {
         title: "오래된 PR",
         created_at: "2026-08-01T00:00:00Z",
         draft: false,
+        requested_reviewers: [],
         user: { login: "author" },
         ...overrides,
     };
@@ -171,10 +173,18 @@ test("결정 리뷰가 하나도 없으면 즉시 리뷰 빚이다", () => {
     assert.deepEqual(result, { kind: "no-decisive-review", debt: true, blockedAt: null });
 });
 
-test("리뷰어별 최신 결정으로 미해소 CHANGES_REQUESTED를 찾는다", () => {
+test("PR 전체의 최신 결정으로 현재 상태를 판단한다", () => {
     const resolved = analyzeDecisiveReviews([
-        review({ state: "CHANGES_REQUESTED", submitted_at: "2026-08-01T00:00:00Z" }),
-        review({ state: "APPROVED", submitted_at: "2026-08-02T00:00:00Z" }),
+        review({
+            state: "CHANGES_REQUESTED",
+            submitted_at: "2026-08-01T00:00:00Z",
+            user: { login: "alice" },
+        }),
+        review({
+            state: "APPROVED",
+            submitted_at: "2026-08-02T00:00:00Z",
+            user: { login: "bob" },
+        }),
     ]);
     assert.equal(resolved.kind, "resolved");
 
@@ -189,6 +199,46 @@ test("리뷰어별 최신 결정으로 미해소 CHANGES_REQUESTED를 찾는다"
     ]);
     assert.equal(blocked.kind, "changes-requested");
     assert.equal(blocked.blockedAt, "2026-08-03T00:00:00Z");
+    assert.equal(blocked.outstandingReviews.at(-1).reviewer, "bob");
+});
+
+test("변경요청을 낸 리뷰어에게 현재 재요청이 걸린 경우만 고른다", () => {
+    const reviewState = analyzeDecisiveReviews([
+        review({ state: "CHANGES_REQUESTED", user: { login: "Alice" } }),
+        review({
+            state: "CHANGES_REQUESTED",
+            submitted_at: "2026-08-03T00:00:00Z",
+            user: { login: "bob" },
+        }),
+    ]);
+
+    assert.equal(selectRequestedOutstandingReview(reviewState, ["alice"]), null);
+    assert.equal(selectRequestedOutstandingReview(reviewState, ["BOB"]).reviewer, "bob");
+    assert.equal(selectRequestedOutstandingReview(reviewState, ["carol"]), null);
+});
+
+test("더 오래된 리뷰어의 요청은 이후 다른 변경요청을 리뷰 빚으로 되돌리지 않는다", () => {
+    const reviews = [
+        review({
+            state: "CHANGES_REQUESTED",
+            submitted_at: "2026-08-23T02:12:43Z",
+            user: { login: "Sadturtleman" },
+        }),
+        review({
+            state: "CHANGES_REQUESTED",
+            submitted_at: "2026-08-23T11:45:05Z",
+            user: { login: "1hyok" },
+        }),
+    ];
+    const commits = [commit({
+        commit: { committer: { date: "2026-08-23T03:15:59Z" } },
+    })];
+
+    const result = reviewDebtStatus(reviews, commits, ["Sadturtleman"]);
+
+    assert.equal(result.debt, false);
+    assert.equal(result.reason, "changes-requested-not-rerequested");
+    assert.equal(result.blockedAt, "2026-08-23T11:45:05Z");
 });
 
 test("변경요청 뒤 실질 커밋만 반영으로 세고 merge commit은 제외한다", () => {
@@ -217,16 +267,18 @@ test("깨진 커밋 항목이 있으면 일부 근거만으로 리뷰 빚을 판
     );
 });
 
-test("reviewDebtStatus는 변경요청 반영 전후를 구분한다", () => {
+test("reviewDebtStatus는 명시적 재요청과 변경요청 반영을 모두 요구한다", () => {
     const reviews = [review({ state: "CHANGES_REQUESTED" })];
     assert.equal(
         reviewDebtStatus(reviews, [
             commit({ commit: { committer: { date: "2026-08-01T00:00:00Z" } } }),
-        ]).debt,
+        ], ["alice"]).debt,
         false,
     );
-    assert.equal(reviewDebtStatus(reviews, [commit()]).debt, true);
-    assert.throws(() => reviewDebtStatus(reviews), /커밋 목록이 없습니다/);
+    assert.equal(reviewDebtStatus(reviews, [commit()], ["alice"]).debt, true);
+    assert.equal(reviewDebtStatus(reviews, [commit()], []).reason, "changes-requested-not-rerequested");
+    assert.equal(reviewDebtStatus(reviews, [commit()], ["bob"]).debt, false);
+    assert.throws(() => reviewDebtStatus(reviews, undefined, ["alice"]), /커밋 목록이 없습니다/);
 });
 
 test("REST Link의 next 페이지를 끝까지 읽는다", async () => {
@@ -296,10 +348,15 @@ test("더 오래된 실제 리뷰 빚을 찾아 현재 리뷰를 dismiss한다",
     assert.match(dismissal.body.message, /#2 \(두 번째 오래된 미처리\)/);
 });
 
-test("CHANGES_REQUESTED 뒤 반영 커밋이 있으면 리뷰 빚으로 dismiss한다", async () => {
+test("CHANGES_REQUESTED 뒤 같은 리뷰어에게 재요청하고 반영했으면 리뷰 빚으로 dismiss한다", async () => {
     const client = fakeClient(({ apiPath, method }) => {
         if (apiPath.includes("/permission")) return response({ permission: "maintain" });
-        if (apiPath.includes("/pulls?state=open")) return response([pullRequest({ number: 4 })]);
+        if (apiPath.includes("/pulls?state=open")) {
+            return response([pullRequest({
+                number: 4,
+                requested_reviewers: [{ login: "alice" }],
+            })]);
+        }
         if (apiPath.includes("/pulls/4/reviews")) {
             return response([review({ state: "CHANGES_REQUESTED" })]);
         }
@@ -312,14 +369,75 @@ test("CHANGES_REQUESTED 뒤 반영 커밋이 있으면 리뷰 빚으로 dismiss�
         event: reviewEvent(), repository: REPOSITORY, client, logger: silent,
     });
     assert.equal(result.status, "dismissed");
-    assert.equal(result.oldestDebt.debtReason, "changes-requested-fixed");
+    assert.equal(result.oldestDebt.debtReason, "changes-requested-fixed-rerequested");
+});
+
+test("과거 리뷰어 요청이 남아도 더 늦은 다른 변경요청 뒤에는 dismiss하지 않는다", async () => {
+    const client = fakeClient(({ apiPath }) => {
+        if (apiPath.includes("/permission")) return response({ permission: "maintain" });
+        if (apiPath.includes("/pulls?state=open")) {
+            return response([pullRequest({
+                number: 767,
+                requested_reviewers: [{ login: "Sadturtleman" }],
+            })]);
+        }
+        if (apiPath.includes("/pulls/767/reviews")) {
+            return response([
+                review({
+                    state: "CHANGES_REQUESTED",
+                    submitted_at: "2026-08-23T02:12:43Z",
+                    user: { login: "Sadturtleman" },
+                }),
+                review({
+                    state: "CHANGES_REQUESTED",
+                    submitted_at: "2026-08-23T11:45:05Z",
+                    user: { login: "1hyok" },
+                }),
+            ]);
+        }
+        throw new Error(`최신 변경요청이 있는데 불필요한 API를 호출함: ${apiPath}`);
+    });
+
+    const result = await enforceOldestReviewOrder({
+        event: reviewEvent(), repository: REPOSITORY, client, logger: silent,
+    });
+
+    assert.equal(result.status, "allowed");
+    assert.equal(client.calls.some((call) => call.apiPath.includes("/commits")), false);
+    assert.equal(client.calls.some((call) => call.method !== "GET"), false);
+});
+
+test("변경요청 뒤 수정했어도 재리뷰 요청이 없으면 허용한다", async () => {
+    const client = fakeClient(({ apiPath }) => {
+        if (apiPath.includes("/permission")) return response({ permission: "maintain" });
+        if (apiPath.includes("/pulls?state=open")) {
+            return response([pullRequest({
+                number: 966,
+                requested_reviewers: [{ login: "koongmai" }],
+            })]);
+        }
+        if (apiPath.includes("/pulls/966/reviews")) {
+            return response([review({ state: "CHANGES_REQUESTED", user: { login: "1hyok" } })]);
+        }
+        throw new Error(`재요청이 없는데 불필요한 API를 호출함: ${apiPath}`);
+    });
+
+    const result = await enforceOldestReviewOrder({
+        event: reviewEvent(), repository: REPOSITORY, client, logger: silent,
+    });
+    assert.equal(result.status, "allowed");
+    assert.equal(client.calls.some((call) => call.apiPath.includes("/commits")), false);
+    assert.equal(client.calls.some((call) => call.method !== "GET"), false);
 });
 
 test("변경요청 뒤 반영 커밋이 없거나 이미 승인된 PR만 있으면 허용한다", async () => {
     const client = fakeClient(({ apiPath }) => {
         if (apiPath.includes("/permission")) return response({ permission: "admin" });
         if (apiPath.includes("/pulls?state=open")) {
-            return response([pullRequest({ number: 1 }), pullRequest({ number: 2 })]);
+            return response([
+                pullRequest({ number: 1, requested_reviewers: [{ login: "alice" }] }),
+                pullRequest({ number: 2 }),
+            ]);
         }
         if (apiPath.includes("/pulls/1/reviews")) {
             return response([review({ state: "CHANGES_REQUESTED" })]);
@@ -422,7 +540,10 @@ test("열린 PR, 리뷰, 커밋 조회 실패 시 dismiss 쓰기가 발생하지
                 if (apiPath.includes("/permission")) return response({ permission: "write" });
                 if (apiPath.includes("/pulls?state=open")) {
                     if (failingStage === "open") throw new Error("open read failed");
-                    return response([pullRequest({ number: 1 })]);
+                    return response([pullRequest({
+                        number: 1,
+                        requested_reviewers: [{ login: "alice" }],
+                    })]);
                 }
                 if (apiPath.includes("/pulls/1/reviews")) {
                     if (failingStage === "reviews") throw new Error("reviews read failed");
@@ -472,4 +593,17 @@ test("workflow는 trusted default branch에서만 write-token 스크립트를 �
     assert.match(workflow, /GITHUB_REPOSITORY: \$\{\{ github\.repository \}\}/);
     assert.match(workflow, /GITHUB_EVENT_PATH: \$\{\{ github\.event_path \}\}/);
     assert.doesNotMatch(workflow, /node --test/);
+});
+
+test("PR 생성 가드도 변경요청자의 명시적 재요청을 확인한다", async () => {
+    const workflow = await readFile(
+        new URL("../workflows/review-debt-guard.yml", import.meta.url),
+        "utf8",
+    );
+
+    assert.match(workflow, /requested_reviewers\[\]\.login/);
+    assert.match(workflow, /blocked_by/);
+    assert.match(workflow, /재리뷰 요청 없음/);
+    assert.match(workflow, /sort_by\(\.t\) \| last/);
+    assert.doesNotMatch(workflow, /group_by\(\.u/);
 });
