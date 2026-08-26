@@ -57,27 +57,27 @@ fun SignUpScreen(
     val verificationButtonText =
         when {
             isSendingCode -> {
-                stringResource(R.string.signup_verification_requesting)
+                stringResource(R.string.onboarding_signup_verification_requesting)
             }
 
             resendCooldownSeconds > 0 -> {
-                stringResource(R.string.signup_verification_resend_cooldown, resendCooldownSeconds)
+                stringResource(R.string.onboarding_signup_verification_resend_cooldown, resendCooldownSeconds)
             }
 
             isVerificationSent -> {
-                stringResource(R.string.signup_verification_resend)
+                stringResource(R.string.onboarding_signup_verification_resend)
             }
 
             else -> {
-                stringResource(R.string.signup_verification_request)
+                stringResource(R.string.onboarding_signup_verification_request)
             }
         }
     val isVerificationButtonEnabled =
         !isSendingCode && resendCooldownSeconds == 0 && isEmailFormatValid
 
     FlowStepScaffold(
-        topBarTitle = stringResource(R.string.signup_title),
-        actionButtonText = stringResource(R.string.signup_next),
+        topBarTitle = stringResource(R.string.onboarding_signup_title),
+        actionButtonText = stringResource(R.string.onboarding_signup_next),
         onBackClick = onBackClick,
         onActionClick = onNextClick,
         modifier = modifier,
@@ -104,7 +104,7 @@ fun SignUpScreen(
                             enabled = isVerificationButtonEnabled,
                         ),
                     state = emailState,
-                    placeholder = stringResource(R.string.signup_email_placeholder),
+                    placeholder = stringResource(R.string.onboarding_signup_email_placeholder),
                     keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next,
                 )
@@ -112,7 +112,7 @@ fun SignUpScreen(
                 // 인증번호 입력
                 AfternoteTextField(
                     state = verificationCodeState,
-                    placeholder = stringResource(R.string.signup_verification_code_placeholder),
+                    placeholder = stringResource(R.string.onboarding_signup_verification_code_placeholder),
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Done,
                     onImeAction = {
@@ -123,13 +123,13 @@ fun SignUpScreen(
                 // 인증번호 불일치는 인라인 에러로, 그 외 실패는 스낵바로 나뉜다 (시안 2431-14204).
                 if (hasVerificationError) {
                     Text(
-                        text = stringResource(R.string.signup_verification_mismatch),
+                        text = stringResource(R.string.onboarding_signup_verification_mismatch),
                         style = AfternoteDesign.typography.captionLargeB,
                         color = AfternoteDesign.colors.error,
                     )
                 } else if (isVerificationSent) {
                     Text(
-                        text = stringResource(R.string.signup_verification_sent),
+                        text = stringResource(R.string.onboarding_signup_verification_sent),
                         style = AfternoteDesign.typography.captionLargeB,
                         color = AfternoteDesign.colors.b1,
                     )

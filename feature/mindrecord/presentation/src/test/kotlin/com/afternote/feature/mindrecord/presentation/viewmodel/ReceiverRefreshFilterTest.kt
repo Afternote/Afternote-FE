@@ -4,6 +4,7 @@ import com.afternote.feature.mindrecord.domain.model.MindRecordSummary
 import com.afternote.feature.mindrecord.domain.model.MindRecordType
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
+import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -41,7 +42,7 @@ class ReceiverRefreshFilterTest {
     @Test
     fun `재진입 갱신이 정렬과 기간 필터를 지운다면 안 된다`() =
         runTest(dispatcher) {
-            val viewModel = ReceiverMindRecordViewModel(repository = FakeReceiverRepository())
+            val viewModel = ReceiverMindRecordViewModel(repository = FakeReceiverRepository(), errorReporter = RecordingErrorReporter())
             advanceUntilIdle()
 
             val applied =

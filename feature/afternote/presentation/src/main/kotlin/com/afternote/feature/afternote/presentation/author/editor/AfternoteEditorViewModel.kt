@@ -334,6 +334,16 @@ class AfternoteEditorViewModel
             errorReporter.recordAfternoteFailure(AfternoteFailureStage.MEMORIAL_THUMBNAIL_EXTRACT, throwable)
         }
 
+        /**
+         * 즉석 촬영 인텐트를 띄우지 못한 실패를 기록한다.
+         *
+         * 화면에는 "카메라를 사용할 수 없습니다" 한 줄만 나가고 사유가 지워지므로, UI 가 예외를
+         * 넘겨주지 않으면 저장공간 문제인지 카메라 앱 부재인지 콘솔에서 가를 수 없다.
+         */
+        fun onMemorialCaptureLaunchFailed(throwable: Throwable) {
+            errorReporter.recordAfternoteFailure(AfternoteFailureStage.MEMORIAL_CAPTURE_LAUNCH, throwable)
+        }
+
         fun saveAfternote(
             payload: RegisterAfternotePayload,
             selectedReceiverIds: List<Long>,
