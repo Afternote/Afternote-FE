@@ -5,36 +5,40 @@ import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.model.Session
 import com.afternote.core.model.TokenBundle
 import kotlinx.coroutines.flow.Flow
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * 토큰 갱신 경로(#408) 테스트 공용 가짜.
  * 미사용 멤버는 error — 의도치 않은 호출(특히 best-effort 경로의 clearSession)을 테스트 실패로 드러낸다.
- * [accessToken] 이 var 인 이유: rotate 중 저장 토큰 교체(in-flight stale 응답 가드) 시나리오 재현용.
+ * [accessToken] 이 var 이고 두 훅이 리시버를 받는 이유: rotate 중 저장 토큰 교체(in-flight stale
+ * 응답 가드)와 clearSession 이 토큰을 지운 뒤의 재진입(#1126) 시나리오를 재현하기 위함이다.
  */
 internal class FakeAuthRepository(
     var accessToken: String? = null,
     private val onRotateToken: FakeAuthRepository.() -> Result<TokenBundle> = {
         error("rotateToken 은 이 시나리오에서 호출되면 안 됨")
     },
-    private val onClearSession: () -> Result<Unit> = {
+    private val onClearSession: FakeAuthRepository.() -> Result<Unit> = {
         error("clearSession 은 이 시나리오에서 호출되면 안 됨")
     },
 ) : AuthRepository {
-    var rotateCallCount = 0
-        private set
+    // 동시 진입 시나리오(#1126)에서도 세지므로 원자 카운터여야 한다.
+    private val rotateCalls = AtomicInteger()
+    private val clearSessionCalls = AtomicInteger()
 
-    var clearSessionCallCount = 0
-        private set
+    val rotateCallCount: Int get() = rotateCalls.get()
+
+    val clearSessionCallCount: Int get() = clearSessionCalls.get()
 
     override suspend fun getAccessToken(): Result<String?> = Result.success(accessToken)
 
     override suspend fun rotateToken(): Result<TokenBundle> {
-        rotateCallCount++
+        rotateCalls.incrementAndGet()
         return onRotateToken()
     }
 
     override suspend fun clearSession(): Result<Unit> {
-        clearSessionCallCount++
+        clearSessionCalls.incrementAndGet()
         return onClearSession()
     }
 
