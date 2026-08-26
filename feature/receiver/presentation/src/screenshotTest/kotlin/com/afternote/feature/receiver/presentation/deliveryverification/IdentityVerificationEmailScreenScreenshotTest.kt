@@ -30,6 +30,28 @@ internal fun identityVerificationEmailScreenEmptyScreenshot() {
 @PreviewTest
 @Preview(showBackground = true)
 @Composable
+internal fun identityVerificationEmailScreenSendingScreenshot() {
+    AfternoteTheme {
+        IdentityVerificationEmailScreenContent(
+            uiState =
+                IdentityVerificationUiState(
+                    email = "user@example.com",
+                    isEmailFormatValid = true,
+                    isSendingCode = true,
+                ),
+            emailState = rememberTextFieldState("user@example.com"),
+            codeState = rememberTextFieldState(),
+            snackbarHostState = remember { SnackbarHostState() },
+            onBackClick = {},
+            onRequestCode = {},
+            onVerifyAndProceed = {},
+        )
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
 internal fun identityVerificationEmailScreenSentScreenshot() {
     AfternoteTheme {
         IdentityVerificationEmailScreenContent(

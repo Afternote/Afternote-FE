@@ -96,3 +96,35 @@ test("the local Gradle default stays uncached", async () => {
 
     assert.match(properties, /^org\.gradle\.caching=false$/m);
 });
+
+// setup-gradle 이 basic 캐시 키를 만들 때 해시하는 glob 정본 — 이 워크플로가 고정한 v6.3.0 기준.
+// https://github.com/gradle/actions/blob/v6.3.0/sources/src/cache-service-basic.ts
+//
+// 키 프리픽스가 `setup-java` 라 setup-java 의 목록(gradle.properties 포함)으로 착각하기 쉽다.
+// 둘은 다르다. 이 워크플로에서 캐시를 만드는 쪽은 setup-gradle 이므로 정본은 이쪽이다.
+const CACHE_KEY_INPUTS = [
+    "**/*.gradle*",
+    "**/gradle-wrapper.properties",
+    "buildSrc/**/Versions.kt",
+    "buildSrc/**/Dependencies.kt",
+    "gradle/*.versions.toml",
+    "**/versions.properties",
+];
+
+test("the warming workflow only runs when the cache key can actually change", async () => {
+    // 키가 그대로면 setup-gradle 이 exact match 로 복원하고 저장을 건너뛴다. 그런 run 은
+    // 저장이 원천적으로 불가능한데 11분을 쓴다 (#1047). 트리거를 키 입력과 일치시킨다 —
+    // 좁으면 캐시가 채워지지 않고, 넓으면 저장 못 하는 run 이 다시 생긴다.
+    const source = await readFile(new URL("build-cache-warm.yml", workflowDirectory), "utf8");
+    const pathsBlock = /^\s{4}paths:\n((?:\s{6}- .*\n)+)/m.exec(source)?.[1];
+
+    assert.ok(pathsBlock, "the warming workflow must filter its push trigger by path");
+    const declared = [...pathsBlock.matchAll(/^\s{6}- '(.+)'$/gm)].map((match) => match[1]);
+    assert.deepEqual(declared, CACHE_KEY_INPUTS);
+});
+
+test("manual warming stays available for a cache that needs rebuilding out of band", async () => {
+    const source = await readFile(new URL("build-cache-warm.yml", workflowDirectory), "utf8");
+
+    assert.match(source, /^\s{2}workflow_dispatch:$/m);
+});
