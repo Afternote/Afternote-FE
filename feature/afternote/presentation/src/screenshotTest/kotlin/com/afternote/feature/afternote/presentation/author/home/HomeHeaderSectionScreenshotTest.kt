@@ -11,8 +11,7 @@ import com.android.tools.screenshot.PreviewTest
 internal fun homeHeaderSectionScreenshot() {
     AfternoteTheme {
         HomeHeaderSection(
-            nextStepText = "다음 단계 진행하기",
-            onNextStepClick = {},
+            nextStep = NextStep(text = "다음 단계 진행하기", onClick = {}),
         )
     }
 }
@@ -22,9 +21,6 @@ internal fun homeHeaderSectionScreenshot() {
 @Composable
 internal fun homeHeaderSectionNoNextStepScreenshot() {
     AfternoteTheme {
-        HomeHeaderSection(
-            nextStepText = "",
-            onNextStepClick = {},
-        )
+        HomeHeaderSection(nextStep = null)
     }
 }

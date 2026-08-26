@@ -40,3 +40,21 @@ internal fun welcomeScreenCompactScreenshot() {
         )
     }
 }
+
+/**
+ * 글자 확대(×1.5) 변형 — 환영 화면.
+ *
+ * 화면 크기와 다른 축이라 좁은 화면 baseline 으로는 잡히지 않는다. 기준값은 [LARGE_FONT_SCALE].
+ */
+@PreviewTest
+@Preview(showBackground = true, fontScale = LARGE_FONT_SCALE)
+@Composable
+internal fun welcomeScreenLargeFontScreenshot() {
+    AfternoteTheme {
+        WelcomeScreen(
+            onStartClick = {},
+            onCheckRecordsClick = {},
+            onLoginClick = {},
+        )
+    }
+}

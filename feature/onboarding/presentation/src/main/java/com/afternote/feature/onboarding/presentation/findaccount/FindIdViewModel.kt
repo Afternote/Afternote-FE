@@ -62,7 +62,7 @@ class FindIdViewModel
                         // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
                         if (error is CancellationException) throw error
                         errorReporter.recordAuthFailure(AuthFailureStage.FIND_ACCOUNT_CODE_SEND, error)
-                        _uiState.update { it.copy(errorMessage = error.toDisplayMessage(R.string.find_account_failed)) }
+                        _uiState.update { it.copy(errorMessage = error.toDisplayMessage(R.string.onboarding_find_account_failed)) }
                     }
                 _uiState.update { it.copy(isSendingCode = false) }
             }
@@ -98,7 +98,7 @@ class FindIdViewModel
                                 // 아직 소비되지 않은 이전 실패 문구가 인라인과 겹쳐 뜨지 않게 한다.
                                 it.copy(hasVerificationError = true, errorMessage = null)
                             } else {
-                                it.copy(errorMessage = error.toDisplayMessage(R.string.find_account_failed))
+                                it.copy(errorMessage = error.toDisplayMessage(R.string.onboarding_find_account_failed))
                             }
                         }
                     }

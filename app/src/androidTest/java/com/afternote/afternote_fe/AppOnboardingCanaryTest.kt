@@ -69,13 +69,13 @@ class AppOnboardingCanaryTest {
     @Test
     fun coldStartWithoutSession_opensLoginFromWelcome() {
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.welcome_start))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_start))
             .assertIsDisplayed()
             .performClick()
 
         composeRule
             .onNode(
-                hasText(context.getString(OnboardingR.string.login_top_bar_title)) and
+                hasText(context.getString(OnboardingR.string.onboarding_login_top_bar_title)) and
                     hasClickAction(),
             ).assertIsDisplayed()
     }
@@ -91,7 +91,7 @@ class AppOnboardingCanaryTest {
 
         openLoginAndEnterCredentials()
         composeRule
-            .onNode(hasText(context.getString(OnboardingR.string.login_button)) and hasClickAction())
+            .onNode(hasText(context.getString(OnboardingR.string.onboarding_login_button)) and hasClickAction())
             .performClick()
 
         composeRule
@@ -135,13 +135,13 @@ class AppOnboardingCanaryTest {
 
     private fun openLoginAndEnterCredentials() {
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.welcome_start))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_start))
             .performClick()
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.login_email_label))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_login_email_label))
             .performTextInput("canary@afternote.local")
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.login_password_label))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_login_password_label))
             .performTextInput("password-1234")
     }
 }
