@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,17 +18,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.model.user.Receiver
@@ -54,6 +56,7 @@ fun ReceiverSelectBottomSheet(
     /** 조회 실패 문구. null 이면 «아직 등록 안 함» 이다 — 둘을 같은 빈 화면으로 보이지 않게 한다 (#1019). */
     loadError: String? = null,
     onRetry: (() -> Unit)? = null,
+    isLoading: Boolean = false,
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -75,6 +78,7 @@ fun ReceiverSelectBottomSheet(
             selectedReceiverIds = selectedReceiverIds,
             loadError = loadError,
             onRetry = onRetry,
+            isLoading = isLoading,
             onToggle = onToggle,
             onConfirm = onDismiss,
             modifier = modifier,
@@ -91,6 +95,7 @@ private fun ReceiverSelectContent(
     modifier: Modifier = Modifier,
     loadError: String? = null,
     onRetry: (() -> Unit)? = null,
+    isLoading: Boolean = false,
 ) {
     Column(
         modifier =
@@ -120,21 +125,35 @@ private fun ReceiverSelectContent(
                         .padding(vertical = 40.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                // 조회 실패와 «아직 등록 안 함» 은 같은 빈 목록이지만 사용자가 할 일이 다르다 —
-                // 실패는 다시 시도, 미등록은 등록이다. 문구로 갈라 준다 (#1019).
-                Text(
-                    text = loadError ?: stringResource(R.string.mindrecord_write_receiver_empty),
-                    style = AfternoteDesign.typography.captionLargeR,
-                    color = AfternoteDesign.colors.gray6,
-                )
-                if (loadError != null && onRetry != null) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = stringResource(R.string.mindrecord_write_receiver_retry),
-                        style = AfternoteDesign.typography.captionLargeR,
-                        color = AfternoteDesign.colors.gray9,
-                        modifier = Modifier.clickable(role = Role.Button, onClick = onRetry),
+                // 조회 중이 빠지면 재시도를 누른 순간부터 응답이 올 때까지 이 자리가 «등록 안 함»
+                // 을 고른다 — 목록은 아직 비었고 오류만 지워진 창이다. 이 PR 이 없애려던 혼동이
+                // 사용자 손으로 되돌아오므로, 세 상태를 모두 가른다 (#1019 리뷰).
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = AfternoteDesign.colors.gray6,
+                        strokeWidth = 2.dp,
                     )
+                } else {
+                    // 조회 실패와 «아직 등록 안 함» 은 같은 빈 목록이지만 사용자가 할 일이 다르다 —
+                    // 실패는 다시 시도, 미등록은 등록이다. 문구로 갈라 준다 (#1019).
+                    Text(
+                        text = loadError ?: stringResource(R.string.mindrecord_write_receiver_empty),
+                        style = AfternoteDesign.typography.captionLargeR,
+                        color = AfternoteDesign.colors.gray6,
+                    )
+                    if (loadError != null && onRetry != null) {
+                        // 이 모듈의 재시도는 MindRecordErrorBox 가 TextButton 으로 그린다.
+                        // 평문 Text + clickable 은 모양이 갈릴 뿐 아니라 터치 타깃이 글자
+                        // 높이(≈18dp)에 그쳐 접근성 최소치에 못 미친다 (#1019 리뷰).
+                        TextButton(onClick = onRetry) {
+                            Text(
+                                text = stringResource(R.string.mindrecord_error_retry),
+                                style = AfternoteDesign.typography.bodySmallB,
+                                color = AfternoteDesign.colors.gray9,
+                            )
+                        }
+                    }
                 }
             }
         } else {

@@ -324,6 +324,7 @@ fun DiaryWriteScreen(
                 selectedReceiverIds = uiState.selectedReceiverIds,
                 // 실패를 빈 목록으로 흡수하지 않는다 — 사용자가 «등록 안 함» 으로 오해한다 (#1019).
                 loadError = uiState.receiverLoadError?.asString(),
+                isLoading = uiState.isReceiverLoading,
                 onRetry = viewModel::loadReceivers,
                 onToggle = viewModel::onReceiverToggled,
                 onDismiss = { showReceiverSheet = false },

@@ -191,8 +191,6 @@ class DiaryWriteViewModel
             _uiState.update { it.copy(submitState = SubmitState.Idle) }
         }
 
-        // 실패해도 수신자 행이 "수신자 설정하기" 로 남을 뿐 작성 자체는 가능 — 에러는 조용히 무시.
-
         /**
          * 수신인 목록 조회. **실패를 빈 목록으로 흡수하지 않는다** (#1019).
          *
@@ -201,15 +199,20 @@ class DiaryWriteViewModel
          */
         fun loadReceivers() {
             viewModelScope.launch {
-                _uiState.update { it.copy(receiverLoadError = null) }
+                _uiState.update { it.copy(isReceiverLoading = true, receiverLoadError = null) }
                 runCatchingCancellable { userRepository.getReceivers() }
                     .onSuccess { receivers ->
-                        _uiState.update { it.copy(receivers = receivers, receiverLoadError = null) }
+                        _uiState.update {
+                            it.copy(receivers = receivers, isReceiverLoading = false, receiverLoadError = null)
+                        }
                     }.onFailure {
                         // 서버·예외 원문을 화면 문구로 쓰지 않는다 — 오프라인이면 «Unable to
                         // resolve host …» 가 그대로 노출된다. 도메인 문구로 고정한다 (#614·#1019).
                         _uiState.update {
-                            it.copy(receiverLoadError = UiText.Resource(R.string.mindrecord_error_receiver_load_failed))
+                            it.copy(
+                                isReceiverLoading = false,
+                                receiverLoadError = UiText.Resource(R.string.mindrecord_error_receiver_load_failed),
+                            )
                         }
                     }
             }

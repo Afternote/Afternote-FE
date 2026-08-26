@@ -20,8 +20,10 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.io.IOException
@@ -105,6 +107,51 @@ class ReceiverLoadFailureTest {
             advanceUntilIdle()
 
             assertNull("재시도 성공 뒤에도 실패 안내가 남았다", viewModel.uiState.value.receiverLoadError)
+        }
+
+    @Test
+    fun `재시도 중에는 미등록 문구가 아니라 조회 중이다`() =
+        runTest(dispatcher) {
+            // 시트는 «오류 문구 ?: 미등록 문구» 로 고른다. 재시도를 누른 순간 오류만 지워지고
+            // 목록은 아직 비어 있으므로, 조회 중 상태가 없으면 그 창에서 «등록된 수신자가
+            // 없습니다» 가 뜬다 — 이 PR 이 없애려던 혼동이 사용자 손으로 되돌아온다.
+            //
+            // 창의 길이는 서버가 정한다. 응답이 없으면 연결 10초·호출 30초까지 간다 (#1019 리뷰).
+            // fake 의 람다가 «요청이 떠 있는 그 창» 에서 실행되므로, 거기서 상태를 읽으면
+            // 사용자가 그 순간 보는 화면을 그대로 관찰할 수 있다.
+            lateinit var viewModel: DiaryWriteViewModel
+            var shouldFail = true
+            var stateInFlight: DiaryWriteUiState? = null
+            viewModel =
+                DiaryWriteViewModel(
+                    savedStateHandle = SavedStateHandle(emptyMap()),
+                    repository = NoopDiaryRepository,
+                    photoUploadRepository = PhotoUploadRepository { _, _ -> error("업로드는 호출되지 않는다") },
+                    userRepository =
+                        userRepository {
+                            if (shouldFail) {
+                                throw IOException("offline")
+                            } else {
+                                stateInFlight = viewModel.uiState.value
+                                emptyList<Any>()
+                            }
+                        },
+                    draftLoader = MindRecordDraftLoader(NoopDiaryRepository, NoopDailyQuestionRepository),
+                )
+            advanceUntilIdle()
+            assertNotNull(viewModel.uiState.value.receiverLoadError)
+
+            shouldFail = false
+            viewModel.loadReceivers()
+            advanceUntilIdle()
+
+            val inFlight = checkNotNull(stateInFlight) { "재시도가 조회를 걸지 않았다" }
+            // 오류는 이미 걷혔고 목록은 아직 비었다 — 이 창을 «미등록» 으로 읽으면 안 된다.
+            assertNull(inFlight.receiverLoadError)
+            assertEquals(emptyList<Any>(), inFlight.receivers)
+            assertTrue("조회 중 상태가 없어 시트가 «미등록» 을 고른다", inFlight.isReceiverLoading)
+
+            assertFalse("응답 뒤에도 조회 중이 남았다", viewModel.uiState.value.isReceiverLoading)
         }
 
     private fun viewModel(failure: Throwable?): DiaryWriteViewModel =
