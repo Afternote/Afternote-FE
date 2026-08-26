@@ -14,14 +14,14 @@ internal fun networkFakeAuthRepository(
     onRotateToken: suspend CoreFakeAuthRepository.() -> Result<TokenBundle> = {
         unexpectedCall("AuthRepository.rotateToken")
     },
-    onClearSession: suspend () -> Result<Unit> = {
+    onClearSession: suspend CoreFakeAuthRepository.() -> Result<Unit> = {
         unexpectedCall("AuthRepository.clearSession")
     },
 ): CoreFakeAuthRepository =
     CoreFakeAuthRepository.strict(accessToken = accessToken).apply {
         onGetAccessToken = null
         this.onRotateToken = onRotateToken
-        this.onClearSession = onClearSession
+        this.onClearSession = { onClearSession(this) }
     }
 
 internal class FakeErrorReporter : ErrorReporter {

@@ -18,6 +18,8 @@ import org.junit.Assert.assertThrows
 import org.junit.Test
 import retrofit2.HttpException
 import java.net.SocketTimeoutException
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.CountDownLatch
 import retrofit2.Response as RetrofitResponse
 
 /**
@@ -176,6 +178,23 @@ class TokenAuthenticatorTest {
     }
 
     @Test
+    fun `code 파싱 실패한 400 - 세션 정리 후 중단`() {
+        // 본문 파싱이 안 되면 400 이 "세션 유지" 로 떨어져 무효 refresh 가 남았다 (#1126).
+        val repository =
+            networkFakeAuthRepository(
+                accessToken = "old-token",
+                onRotateToken = { Result.failure(httpFailure(400)) },
+                onClearSession = { Result.success(Unit) },
+            )
+
+        val request = authenticator(repository).authenticate(null, unauthorizedResponse())
+
+        assertNull(request)
+        assertEquals(1, repository.rotateCallCount)
+        assertEquals(1, repository.clearSessionCallCount)
+    }
+
+    @Test
     fun `refresh timeout - 세션 유지하고 현재 요청만 실패`() {
         val failure = SocketTimeoutException("temporary timeout")
         val repository =
@@ -214,4 +233,48 @@ class TokenAuthenticatorTest {
         assertEquals(1, repository.rotateCallCount)
         assertEquals(0, repository.clearSessionCallCount)
     }
+
+    @Test
+    fun `동시 401 - 재발급은 한 번만 나가고 분류가 갈리지 않는다`() {
+        // 실기에서 이 경합은 확률적이라 잡히지 않는다(창이 3ms). 여기서는 세션 정리를 느리게 만들어
+        // 창을 열어 둔 채 결정적으로 재현한다 — 실제 clearSession 도 DataStore I/O 다 (#1126).
+        val repository =
+            networkFakeAuthRepository(
+                accessToken = "old-token",
+                onRotateToken = { Result.failure(httpFailure(400)) },
+                onClearSession = {
+                    Thread.sleep(SLOW_SESSION_CLEAR_MILLIS)
+                    accessToken = null
+                    Result.success(Unit)
+                },
+            )
+        val authenticator = authenticator(repository)
+        val results = ConcurrentLinkedQueue<String>()
+        val startTogether = CountDownLatch(1)
+        val threads =
+            List(CONCURRENT_CALLERS) {
+                Thread {
+                    startTogether.await()
+                    results +=
+                        runCatching { authenticator.authenticate(null, unauthorizedResponse()) }
+                            .fold(
+                                onSuccess = { if (it == null) "요청 중단" else "재시도" },
+                                onFailure = { "예외 ${it.javaClass.simpleName}" },
+                            )
+                }
+            }
+        threads.forEach { it.start() }
+        startTogether.countDown()
+        threads.forEach { it.join(THREAD_JOIN_TIMEOUT_MILLIS) }
+
+        // 정리가 락 밖에 있으면 대기자가 옛 저장 토큰을 보고 각자 재발급을 친다 — 그 창을 막았는지 본다.
+        assertEquals(1, repository.rotateCallCount)
+        assertEquals(1, repository.clearSessionCallCount)
+        // 같은 실패에 「세션 만료」와 「세션 유지」가 함께 남던 것이 이 이슈의 증상이다.
+        assertEquals(listOf("요청 중단"), results.distinct())
+    }
 }
+
+private const val CONCURRENT_CALLERS = 5
+private const val SLOW_SESSION_CLEAR_MILLIS = 80L
+private const val THREAD_JOIN_TIMEOUT_MILLIS = 5_000L
