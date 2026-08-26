@@ -41,6 +41,14 @@ enum class AfternoteFailureStage(
      */
     MEMORIAL_THUMBNAIL_EXTRACT("memorial_thumbnail_extract"),
 
+    /**
+     * 즉석 촬영 인텐트를 띄우지 못한 실패 — 결과 파일을 못 만들거나(저장공간) 받아 줄 앱이 없거나.
+     *
+     * 사용자에게는 "카메라를 사용할 수 없습니다" 한 줄만 나가 둘이 구분되지 않는다. 제보가 왔을 때
+     * 어느 쪽인지 가르려면 예외 자체가 남아 있어야 한다.
+     */
+    MEMORIAL_CAPTURE_LAUNCH("memorial_capture_launch"),
+
     DETAIL_LOAD("detail_load"),
 
     /**

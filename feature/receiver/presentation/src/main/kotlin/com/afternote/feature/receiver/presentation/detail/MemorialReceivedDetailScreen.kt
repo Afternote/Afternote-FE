@@ -65,10 +65,10 @@ import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiM
 @Composable
 fun MemorialReceivedDetailScreen(
     senderName: String,
+    onNavigateToFullList: () -> Unit,
+    onNavigateToPlaylist: () -> Unit,
+    onBackClick: () -> Unit,
     messageBlocks: List<MessageBlockUiModel> = emptyList(),
-    onNavigateToFullList: () -> Unit = {},
-    onNavigateToPlaylist: () -> Unit = {},
-    onBackClick: () -> Unit = {},
     profileImageResId: Int? = null,
     albumCovers: List<AlbumCover>,
     songCount: Int = 16,
@@ -282,6 +282,9 @@ private fun PreviewMemorialReceivedDetail() {
     AfternoteTheme {
         MemorialReceivedDetailScreen(
             senderName = "박서연",
+            onNavigateToFullList = {},
+            onNavigateToPlaylist = {},
+            onBackClick = {},
             messageBlocks =
                 listOf(
                     MessageBlockUiModel(
@@ -306,6 +309,9 @@ private fun PreviewMemorialReceivedDetailWithVideo() {
     AfternoteTheme {
         MemorialReceivedDetailScreen(
             senderName = "박서연",
+            onNavigateToFullList = {},
+            onNavigateToPlaylist = {},
+            onBackClick = {},
             messageBlocks =
                 listOf(
                     MessageBlockUiModel(

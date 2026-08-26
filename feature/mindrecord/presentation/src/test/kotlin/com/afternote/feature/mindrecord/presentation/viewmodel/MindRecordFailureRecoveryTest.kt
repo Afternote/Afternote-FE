@@ -1,5 +1,6 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
@@ -110,6 +111,7 @@ class MindRecordFailureRecoveryTest {
             val repository = NeverSubmittingRepository()
             val viewModel =
                 DailyQuestionWriteViewModel(
+                    savedStateHandle = SavedStateHandle(emptyMap()),
                     repository = repository,
                     photoUploadRepository = PhotoUploadRepository { _, _ -> uploadGate.await() },
                     // 툴바 카운트는 이 테스트의 관심사가 아니다 — 빈 목록으로 고정한다 (#769).

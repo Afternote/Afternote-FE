@@ -10,7 +10,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.afternote.afternote_fe.R
-import com.google.android.gms.common.wrappers.Wrappers.packageManager
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import java.util.concurrent.atomic.AtomicInteger
