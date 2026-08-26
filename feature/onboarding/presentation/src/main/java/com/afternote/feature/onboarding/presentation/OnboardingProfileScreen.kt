@@ -50,7 +50,7 @@ fun OnboardingProfileScreen(
     displayImageUri: Uri?,
     snackbarHostState: SnackbarHostState,
     onNameChange: (String) -> Unit,
-    onProfileImagePick: (Uri?) -> Unit,
+    onProfileImagePick: (Uri) -> Unit,
     onBackClick: () -> Unit,
     onCompleteClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -66,7 +66,7 @@ fun OnboardingProfileScreen(
     val photoPickerLauncher =
         rememberLauncherForActivityResult(
             contract = PickVisualMedia(),
-            onResult = onProfileImagePick,
+            onResult = { uri -> handleProfileImagePickerResult(uri, onProfileImagePick) },
         )
 
     Scaffold(
@@ -146,6 +146,14 @@ fun OnboardingProfileScreen(
             }
         }
     }
+}
+
+/** 포토 피커 취소 결과(null)는 선택 변경이 아니므로 기존 프로필 이미지를 그대로 둔다. */
+internal fun handleProfileImagePickerResult(
+    uri: Uri?,
+    onProfileImagePick: (Uri) -> Unit,
+) {
+    uri?.let(onProfileImagePick)
 }
 
 @Preview(showBackground = true)
