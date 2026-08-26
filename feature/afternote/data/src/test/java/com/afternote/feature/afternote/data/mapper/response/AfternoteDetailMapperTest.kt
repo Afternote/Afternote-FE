@@ -9,6 +9,7 @@ import com.afternote.feature.afternote.data.dto.AfternoteSongDto
 import com.afternote.feature.afternote.domain.AfternoteType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -39,7 +40,40 @@ class AfternoteDetailMapperTest {
     }
 
     @Test
-    fun `toDetailDomain - updatedAt 포맷`() {
+    fun `toDetailDomain - 사업자 상세는 BUSINESS 로 올라온다 - 소셜로 둔갑하지 않는다`() {
+        val result =
+            AfternoteDetailDto(
+                isDraft = false,
+                receivers = emptyList(),
+                afternoteId = 1L,
+                category = "BUSINESS",
+                title = "t",
+            ).toDetailDomain()
+
+        assertEquals(AfternoteType.BUSINESS, result.type)
+    }
+
+    @Test
+    fun `toDetailDomain - 해석할 수 없는 category 는 실패다 - 임의의 종류로 메우지 않는다`() {
+        val thrown =
+            assertThrows(IllegalArgumentException::class.java) {
+                AfternoteDetailDto(
+                    isDraft = false,
+                    receivers = emptyList(),
+                    afternoteId = 42L,
+                    category = "???",
+                    title = "t",
+                ).toDetailDomain()
+            }
+
+        assertTrue(
+            "진단에 식별자와 원본 값이 남아야 한다",
+            thrown.message!!.contains("42") && thrown.message!!.contains("???"),
+        )
+    }
+
+    @Test
+    fun `toDetailDomain - timestamps 포맷`() {
         val result =
             AfternoteDetailDto(
                 isDraft = false,

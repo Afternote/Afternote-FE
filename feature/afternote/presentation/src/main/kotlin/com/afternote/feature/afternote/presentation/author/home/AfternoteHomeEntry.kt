@@ -59,6 +59,10 @@ fun AfternoteHomeEntry(
                 AfternoteType.ESTATE -> Unit
             }
         },
+        // NEXT STEP 카드는 시안·컴포넌트가 다 있으나 «다음에 무엇을 하라» 를 만드는 원천이
+        // 서버에도 ViewModel 에도 없다. 여기서 null 을 넘기면 카드가 뜨지 않는다 — 종전에는
+        // InfiniteListBody 의 `= {}` 디폴트가 이 공백을 «탭해도 반응 없는 카드» 로 덮고 있었다 (#777).
+        nextStep = null,
         onFabClick = { navigateToAdd(selectedCategory) },
         onSettingClick = onSettingClick,
     )

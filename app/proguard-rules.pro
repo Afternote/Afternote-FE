@@ -37,19 +37,6 @@
     public static int println(...);
 }
 
-# Room — RoomDatabase 서브클래스가 reflection 으로 인스턴스화될 때
-# Class.canonicalName 매칭이 필요해서 obfuscate 되면 안 됨.
--keep class * extends androidx.room.RoomDatabase
--keep class * extends androidx.room.RoomDatabase { *; }
--keep @androidx.room.Database class *
--keep @androidx.room.Entity class *
--keep @androidx.room.Dao interface *
-
-# androidx.work — WorkDatabase 가 Room 기반이고 InitializationProvider 가 부팅 시 인스턴스화.
--keep class androidx.work.impl.WorkDatabase
--keep class androidx.work.impl.WorkDatabase_Impl
--keep class androidx.work.impl.** { *; }
-
 # androidx.startup — Initializer reflection 기반 호출.
 -keep class androidx.startup.InitializationProvider { *; }
 -keep class * extends androidx.startup.Initializer
