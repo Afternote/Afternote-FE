@@ -4,7 +4,7 @@ import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDis
 
 fun SearchedSong.toDisplay() =
     PlaylistSongDisplay(
-        selectionKey = id,
+        selectionKey = selectionKey,
         title = title,
         artist = artist,
     )

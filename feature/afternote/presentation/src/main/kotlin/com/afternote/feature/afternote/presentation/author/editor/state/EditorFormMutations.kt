@@ -49,10 +49,7 @@ internal fun EditorFormState.withMemorialPlaylistSongs(songs: List<Song>): Edito
  *
  * `size + 1` 은 중간 항목을 지운 뒤 추가할 때 남은 id 와 겹친다 — 겹치면 삭제·수정이 두 항목에 함께 걸린다.
  */
-private fun nextLocalId(existing: List<String>): String {
-    val max = existing.maxOfOrNull(String::toLong) ?: 0L
-    return (max + 1).toString()
-}
+private fun nextLocalId(existing: List<Int>): Int = (existing.maxOrNull() ?: 0) + 1
 
 internal fun EditorFormState.withReceiverDeleted(receiverId: String): EditorFormState =
     copy(afternoteEditReceivers = afternoteEditReceivers.filter { it.id != receiverId })
@@ -89,23 +86,23 @@ internal fun EditorFormState.withProcessingMethodAdded(text: String): EditorForm
     mapServiceForm { form ->
         val newItem =
             ProcessingMethodItem(
-                id = nextLocalId(form.processingMethods.map { it.id }),
+                localId = nextLocalId(form.processingMethods.map { it.localId }),
                 text = text,
             )
         form.withProcessingMethods(form.processingMethods + newItem)
     }
 
-internal fun EditorFormState.withProcessingMethodDeleted(itemId: String): EditorFormState =
-    mapServiceForm { form -> form.withProcessingMethods(form.processingMethods.filter { it.id != itemId }) }
+internal fun EditorFormState.withProcessingMethodDeleted(localId: Int): EditorFormState =
+    mapServiceForm { form -> form.withProcessingMethods(form.processingMethods.filter { it.localId != localId }) }
 
 internal fun EditorFormState.withProcessingMethodEdited(
-    itemId: String,
+    localId: Int,
     newText: String,
 ): EditorFormState =
     mapServiceForm { form ->
         form.withProcessingMethods(
             form.processingMethods.map { item ->
-                if (item.id == itemId) item.copy(text = newText) else item
+                if (item.localId == localId) item.copy(text = newText) else item
             },
         )
     }

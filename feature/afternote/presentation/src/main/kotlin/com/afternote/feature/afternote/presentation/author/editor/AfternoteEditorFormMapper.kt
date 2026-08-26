@@ -38,7 +38,7 @@ internal object AfternoteEditorFormMapper {
         val processingMethodItems =
             content.processingMethods().mapIndexed { index, text ->
                 ProcessingMethodItem(
-                    id = (index + 1).toString(),
+                    localId = index + 1,
                     text = text,
                 )
             }
@@ -54,7 +54,7 @@ internal object AfternoteEditorFormMapper {
             if (editorCategory == EditorCategory.MEMORIAL) {
                 memorial?.songs?.mapIndexed { index, s ->
                     Song(
-                        id = (s.id ?: index.toLong()).toString(),
+                        selectionKey = "detail:$index",
                         title = s.title,
                         artist = s.artist,
                         albumCoverUrl = s.coverUrl,
@@ -95,7 +95,6 @@ internal object AfternoteEditorFormMapper {
         val songs =
             playlistSongs.map { song ->
                 MemorialSongPayload(
-                    id = song.id.toLongOrNull(),
                     title = song.title,
                     artist = song.artist,
                     coverUrl = song.albumCoverUrl,
