@@ -106,7 +106,7 @@ class AuthRepositoryImplTest {
         val repository =
             repository(
                 FakeAuthApiService(
-                    onSocialLogin = { success(LoginDto.SocialLoginDto("access", "refresh")) },
+                    onSocialLogin = { success(LoginDto.SocialLoginDto("access", "refresh", isNewUser = false)) },
                 ),
             )
 

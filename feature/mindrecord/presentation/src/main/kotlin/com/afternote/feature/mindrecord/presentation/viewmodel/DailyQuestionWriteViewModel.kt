@@ -1,16 +1,19 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.annotation.StringRes
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.presentation.R
+import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.mindrecord.presentation.util.isHtmlBlank
-import com.afternote.feature.mindrecord.presentation.util.toUploadedFileKey
+import com.afternote.feature.mindrecord.presentation.util.toWireContent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,6 +27,7 @@ import javax.inject.Inject
 class DailyQuestionWriteViewModel
     @Inject
     constructor(
+        savedStateHandle: SavedStateHandle,
         private val repository: DailyQuestionRepository,
         private val photoUploadRepository: PhotoUploadRepository,
         private val draftLoader: MindRecordDraftLoader,
@@ -31,9 +35,63 @@ class DailyQuestionWriteViewModel
         private val _uiState = MutableStateFlow(DailyQuestionWriteUiState())
         val uiState: StateFlow<DailyQuestionWriteUiState> = _uiState.asStateFlow()
 
+        private val route = savedStateHandle.toRoute<MindRecordRoute.DailyQuestionWriteRoute>()
+
+        /** 프리필 대상 레코드 ID. 목록의 "수정하기"(#582)·임시저장 목록 탭(#770)이 채운다. */
+        private val editingAnswerId: Long? = route.answerId
+
         init {
-            loadTodayQuestion()
+            // 수정 진입이면 대상 레코드를 프리필하고, 신규면 오늘 질문을 부른다 (#582).
+            // 임시저장은 draftOnly=true 로만 내려오므로 어느 목록을 볼지 isDraft 로 가른다 (#770).
+            if (editingAnswerId != null) {
+                loadAnswer(editingAnswerId, route.isDraft)
+            } else {
+                loadTodayQuestion()
+            }
             loadDraftCount()
+        }
+
+        /**
+         * 대상 레코드를 프리필한다 (#582·#770).
+         *
+         * 오늘 질문을 다시 묻지 않는다 — 대상은 이미 특정된 레코드이고, 저장은
+         * `PATCH /daily-questions/{id}` 로 나간다. `questionId` 도 그래서 필요 없다.
+         * 임시저장 이어쓰기든 정식 답변 수정이든 조회하는 목록의 `draftOnly` 만 다르다.
+         */
+        private fun loadAnswer(
+            answerId: Long,
+            isDraft: Boolean,
+        ) {
+            viewModelScope.launch {
+                _uiState.update { it.copy(isQuestionLoading = true, questionLoadError = null) }
+                repository
+                    // 임시저장은 draftOnly=true 로만 내려온다. 당일이 지난 draft 는 이 경로가
+                    // 유일한 진입 수단이다 (#770).
+                    .getList(draftOnly = if (isDraft) true else null)
+                    .mapCatching { list -> list.first { it.dailyQuestionId == answerId } }
+                    .onSuccess { answer ->
+                        _uiState.update {
+                            it.copy(
+                                draftId = answer.dailyQuestionId,
+                                questionContent = answer.title,
+                                answer = answer.content,
+                                isQuestionLoading = false,
+                                contentLoaded = true,
+                            )
+                        }
+                    }.onFailure { e ->
+                        _uiState.update {
+                            it.copy(
+                                isQuestionLoading = false,
+                                questionLoadError =
+                                    UiText.DynamicOrResource(
+                                        value = e.message,
+                                        fallbackResId = R.string.mindrecord_error_daily_question_today_failed,
+                                    ),
+                            )
+                        }
+                    }
+            }
         }
 
         /** 툴바 카운트는 화면 장식이라 실패해도 화면을 막지 않고 '모름' 으로 남긴다. */
@@ -137,6 +195,8 @@ class DailyQuestionWriteViewModel
          * 키 형태로 바꾼다 ([toWireContent]). 미리보기는 전체 URL 이라야 뜬다.
          */
         suspend fun uploadImage(uriString: String): String? {
+            // 실패 문구의 수명은 «다음 업로드 시작까지» 다 — 화면에 걷는 수단이 따로 없고,
+            // 걷는 함수만 두면 호출부 0건인 죽은 코드가 된다 (#1019 리뷰 지적).
             _uiState.update { it.copy(isUploadingImage = true, imageUploadError = null) }
             return photoUploadRepository
                 .upload(uriString = uriString, directory = MIND_RECORD_UPLOAD_DIRECTORY)
@@ -155,20 +215,6 @@ class DailyQuestionWriteViewModel
                     }
                 }.getOrNull()
         }
-
-        fun consumeImageUploadError() {
-            _uiState.update { it.copy(imageUploadError = null) }
-        }
-
-        /**
-         * 제출 직전, **이번 작성 중 업로드한** 이미지의 `src` 만 fileKey 로 바꾼다.
-         *
-         * 이미 저장돼 본문에 들어 있는 영구 URL 은 건드리지 않는다 — 서버가 그대로 통과시키고
-         * (실측 확인), 키로 바꾸면 이미 옮겨진 파일을 다시 옮기려다 실패한다. 그래서 경로
-         * 패턴으로 훑지 않고 이번에 받은 URL 만 정확히 치환한다.
-         */
-        private fun String.toWireContent(): String =
-            uploadedImageUrls.fold(this) { content, url -> content.replace(url, url.toUploadedFileKey()) }
 
         /**
          * 저장(`isDraft=false`) / 임시저장(`isDraft=true`).
@@ -196,15 +242,20 @@ class DailyQuestionWriteViewModel
                 return
             }
 
+            // 수정·이어쓰기는 오늘 질문을 부르지 않아 questionId 가 없다. PATCH 는 대상 레코드
+            // ID 만 있으면 되고 명세에도 questionId 가 없다 (#582). 그래서 «둘 다 없을 때» 만
+            // 막는다 — 신규 작성인데 오늘 질문 조회가 실패한 경우다.
             val questionId = state.questionId
-            if (questionId == null) {
-                // 오늘 질문이 없으면 서버가 답변을 어디에 붙일지 알 수 없어 요청 자체가 불가능하다.
-                // 사유를 알리고 조회를 다시 걸어 사용자가 재시도할 수 있게 한다.
+            // 수정·이어쓰기 대상 레코드가 있으면 PATCH 로 나가므로 questionId 가 없어도 된다 (#582·#770).
+            if (questionId == null && state.draftId == null) {
+                // 서버가 답변을 어디에 붙일지 알 수 없어 요청 자체가 불가능하다. 사유를
+                // 알리고 조회를 다시 걸어 사용자가 재시도할 수 있게 한다 (#565).
                 failSubmit(R.string.mindrecord_error_daily_question_missing)
                 // 이미 조회 중이면 그대로 둔다 — 연타로 같은 요청을 겹쳐 쌓지 않는다.
                 if (!state.isQuestionLoading) loadTodayQuestion()
                 return
             }
+            if (!state.canSubmit) return
 
             viewModelScope.launch {
                 _uiState.update { it.copy(submitState = SubmitState.InProgress) }
@@ -215,7 +266,7 @@ class DailyQuestionWriteViewModel
                             id = state.draftId,
                             payload =
                                 DailyQuestionUpdatePayload(
-                                    content = state.answer.toWireContent(),
+                                    content = state.answer.toWireContent(uploadedImageUrls),
                                     isDraft = isDraft,
                                     questionId = questionId,
                                 ),
@@ -223,9 +274,10 @@ class DailyQuestionWriteViewModel
                     } else {
                         repository.create(
                             DailyQuestionCreatePayload(
-                                content = state.answer.toWireContent(),
+                                content = state.answer.toWireContent(uploadedImageUrls),
                                 isDraft = isDraft,
-                                questionId = questionId,
+                                // 생성 경로는 questionId 가 반드시 있다 — 위 가드가 null 을 걸렀다.
+                                questionId = requireNotNull(questionId),
                             ),
                         )
                     }
