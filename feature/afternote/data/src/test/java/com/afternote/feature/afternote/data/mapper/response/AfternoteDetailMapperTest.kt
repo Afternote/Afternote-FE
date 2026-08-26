@@ -258,7 +258,7 @@ class AfternoteDetailMapperTest {
     }
 
     @Test
-    fun `toDetailDomain - business와 estate도 각각 배타적인 content로 매핑`() {
+    fun `toDetailDomain - 사업자 상세도 credentials 를 Business 내용에 싣는다`() {
         val business =
             AfternoteDetailDto(
                 afternoteId = 1L,
@@ -266,15 +266,22 @@ class AfternoteDetailMapperTest {
                 title = "회사 계정",
                 credentials = AfternoteCredentialsDto(id = "user", password = "pw"),
             ).toDetailDomain()
-        val estate =
+
+        val content = business.content as DetailContent.Business
+        assertEquals(AfternoteType.BUSINESS, content.type)
+        assertEquals("user", content.credentials.id)
+        assertEquals("pw", content.credentials.password)
+    }
+
+    /** `ESTATE`(#491)는 아직 서버 enum 에 없어 응답으로 올라올 수 없다 — 왔다면 해석 실패다. */
+    @Test
+    fun `toDetailDomain - ESTATE 는 서버가 보낼 수 없는 값이라 해석 실패다`() {
+        assertThrows(IllegalArgumentException::class.java) {
             AfternoteDetailDto(
                 afternoteId = 2L,
                 category = "ESTATE",
                 title = "부동산",
             ).toDetailDomain()
-
-        assertTrue(business.content is DetailContent.Business)
-        assertEquals(AfternoteType.BUSINESS, business.content.type)
-        assertEquals(DetailContent.Estate, estate.content)
+        }
     }
 }
