@@ -4,6 +4,8 @@ set -euo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/jarsigner-verification-policy.sh
+# repository-quality checks each script independently without -x.
+# shellcheck disable=SC1091
 source "${script_dir}/jarsigner-verification-policy.sh"
 
 assert_accept() {
