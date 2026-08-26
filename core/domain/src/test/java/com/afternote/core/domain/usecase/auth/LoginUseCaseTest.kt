@@ -21,7 +21,7 @@ import org.junit.Test
  * 2. 로그인 성공 시 받은 세션 토큰을 그대로 [AuthRepository.saveSession]에 전달하는지
  * 3. 로그인 실패면 **saveSession을 호출하지 않고** 그 실패를 그대로 반환(short-circuit)하는지
  * 4. saveSession 실패면 그 실패를 반환하는지
- * 5. 반환값(신규 가입자 여부) — 소셜 `newUser=true` 만 true, 이메일·기존(false)·null 은 false
+ * 5. 반환값(신규 가입자 여부) — 소셜은 서버 `isNewUser` 그대로, 이메일 로그인은 항상 false
  *
  * 외부 라이브러리(mockk 등) 없이 호출 인자/횟수를 기록하는 직접 작성 fake를 사용한다.
  */
@@ -69,19 +69,6 @@ class LoginUseCaseTest {
         assertFalse(result.getOrThrow()) // isNewUser=false → 기존
         assertEquals("google-id-token", repo.googleArg)
         assertEquals("GAT" to "GRT", repo.saveSessionArgs)
-    }
-
-    @Test
-    fun `소셜 로그인 - isNewUser null 이면 false (기존 유저 취급)`() {
-        val repo =
-            FakeAuthRepository().apply {
-                kakaoResult =
-                    Result.success(Session.SocialSession(accessToken = "KAT", refreshToken = "KRT", isNewUser = null))
-            }
-        val result = runBlocking { LoginUseCase(repo)(LoginType.Kakao(oauthToken = "kakao-token")) }
-
-        assertTrue(result.isSuccess)
-        assertFalse(result.getOrThrow()) // null → false (`== true` 가 null 흡수)
     }
 
     @Test

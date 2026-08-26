@@ -97,6 +97,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.IOException
 import javax.inject.Inject
 import com.afternote.core.ui.R as CoreUiR
 import com.afternote.feature.afternote.presentation.R as AfternoteFeatureR
@@ -149,20 +150,20 @@ class AppAndReceiverCompletionAndroidTest {
         )
 
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.welcome_start))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_start))
             .performClick()
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.login_email_label))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_login_email_label))
             .performTextInput("receiver@afternote.local")
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.login_password_label))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_login_password_label))
             .performTextInput("wrong-password")
 
         val loginButton =
-            hasText(context.getString(OnboardingR.string.login_button)) and hasClickAction()
+            hasText(context.getString(OnboardingR.string.onboarding_login_button)) and hasClickAction()
         composeRule.onNode(loginButton).performClick()
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.login_invalid_credentials))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_login_invalid_credentials))
             .assertIsDisplayed()
 
         composeRule
@@ -205,7 +206,7 @@ class AppAndReceiverCompletionAndroidTest {
     @Test
     fun welcomeCheckRecords_opensActualReceivedRecordsStartDestination() {
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.welcome_check_records))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_check_records))
             .assertIsDisplayed()
             .performClick()
 
@@ -351,6 +352,7 @@ class ReceiverRuntimeCompletionAndroidTest {
                     status = 400,
                     serverMessage = "인증번호가 만료되었습니다. 다시 발급해 주세요.",
                     serverCode = 1902,
+                    cause = CAUSE,
                 ),
             ),
         )
@@ -660,7 +662,12 @@ class ReceiverRuntimeCompletionAndroidTest {
 
         composeRule.setContent {
             AfternoteTheme {
-                ReceivedAfternoteDetailRoute(onBack = {}, onNavigateToPlaylist = {}, viewModel = viewModel)
+                ReceivedAfternoteDetailRoute(
+                    onBack = {},
+                    onNavigateToFullList = {},
+                    onNavigateToPlaylist = {},
+                    viewModel = viewModel,
+                )
             }
         }
 
@@ -705,6 +712,7 @@ class ReceiverRuntimeCompletionAndroidTest {
             AfternoteTheme {
                 ReceivedAfternoteDetailRoute(
                     onBack = {},
+                    onNavigateToFullList = {},
                     onNavigateToPlaylist = playlistRoutes::add,
                     viewModel = viewModel,
                 )
@@ -899,3 +907,9 @@ private class CompletionReceiverAuthRepository : ReceiverAuthRepository {
         error("unexpected getSenderMessage")
     }
 }
+
+/**
+ * ServerRejection 이 나르는 원인 예외 자리. 프로덕션에서는 `ApiException` 이 들어오지만, 도메인 계약이
+ * 요구하는 것은 `Throwable` 뿐이라 이 테스트들은 core:network 를 끌어오지 않는다.
+ */
+private val CAUSE: Throwable = IOException("stub cause")
