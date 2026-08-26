@@ -209,8 +209,9 @@
     <!-- 수신자 열람 실패 (#614) — 서버 원문 대신 도메인 문구 -->
     <string name="mindrecord_receiver_delivery_not_ready">아직 열람할 수 있는 기록이 없어요.\n작성자가 전달 시점을 정하면 이곳에서 볼 수 있어요.</string>
     <string name="mindrecord_receiver_load_failed">마음의 기록을 불러오지 못했어요.</string>
-    <string name="mindrecord_receiver_retry">다시 시도</string>
     <string name="mindrecord_receiver_title">마음의 기록</string>
     <!-- 카테고리 카드 기록 수를 아직 모를 때. en dash — 수신자 홈·주간 요약과 같은 표기 (#700·#952·#562). -->
     <string name="mindrecord_home_category_count_unavailable">–</string>
+    <!-- 수신인 조회 실패 — «등록된 수신인 없음» 과 구분해야 한다 (#1019). -->
+    <string name="mindrecord_error_receiver_load_failed">수신인 목록을 불러오지 못했어요.</string>
 </resources>

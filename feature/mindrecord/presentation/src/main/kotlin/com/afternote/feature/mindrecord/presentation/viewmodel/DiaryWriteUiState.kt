@@ -16,8 +16,21 @@ data class DiaryWriteUiState(
      */
     val date: LocalDate = LocalDate.now(),
     val imageUrl: String? = null,
-    /** `GET /users/receivers` 로 불러온 내 수신인 목록. 로드 실패 시 빈 목록 (작성은 가능). */
+    /** `GET /users/receivers` 로 불러온 내 수신인 목록. */
     val receivers: List<Receiver> = emptyList(),
+    /**
+     * 수신인 조회 실패 안내. **빈 목록과 구분한다** — 조용히 흡수하면 사용자는 시트를 열어
+     * 빈 목록만 보고 «등록된 수신인이 없다» 로 읽는다 (#1019). 작성 자체는 계속 가능하다.
+     */
+    val receiverLoadError: UiText? = null,
+    /**
+     * 수신인 목록을 조회하는 중.
+     *
+     * 이게 없으면 «못 불러옴» 과 «아직 등록 안 함» 을 갈라 놓고도, 재시도를 누른 순간부터
+     * 응답이 올 때까지 `receivers` 는 빈 목록이고 오류만 지워져 시트가 다시 «등록 안 함» 을
+     * 고른다 — 이 PR 이 없애려던 그 혼동이 사용자 손으로 되돌아온다 (#1019 리뷰).
+     */
+    val isReceiverLoading: Boolean = false,
     /** 수신자 선택 바텀시트에서 고른 수신자 ID. 등록 payload 의 `receiverIds` 로 전송. */
     val selectedReceiverIds: Set<Long> = emptySet(),
     /** 임시저장 이어쓰기 — draft 프리필 로딩 중 여부. */
