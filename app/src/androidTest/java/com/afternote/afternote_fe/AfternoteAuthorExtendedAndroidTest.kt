@@ -50,6 +50,7 @@ import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
+import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.DetailReceiver
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
@@ -234,7 +235,7 @@ class AfternoteAuthorExtendedAndroidTest {
         composeRule.waitUntil(timeoutMillis = 5_000) { repository.updateCalls.size == 1 }
         val (updatedId, payload) = repository.updateCalls.single()
         assertEquals(73L, updatedId)
-        assertEquals("SOCIAL", payload.category)
+        assertEquals(AfternoteType.SOCIAL_NETWORK, payload.type)
         assertEquals("Instagram", payload.title)
         assertEquals(listOf("계정 보존"), payload.processingMethods)
         assertEquals(
@@ -309,7 +310,7 @@ private fun AuthorDetailForEdit(
         }
 
         is AfternoteDetailUiState.Success -> {
-            val account = state.contentUiModel as DetailContentUiModel.Account
+            val account = state.contentUiModel as DetailContentUiModel.SocialNetwork
             AccountDetailScreen(
                 onBackClick = {},
                 content = account.content,
@@ -437,7 +438,7 @@ private fun AuthorDetailForDelete(
         }
 
         is AfternoteDetailUiState.Success -> {
-            val account = state.contentUiModel as DetailContentUiModel.Account
+            val account = state.contentUiModel as DetailContentUiModel.SocialNetwork
             AccountDetailScreen(
                 onBackClick = {},
                 content = account.content,
@@ -590,11 +591,8 @@ private fun authorListItems(): List<ListItem> =
 private fun authorDetail(): Detail =
     Detail(
         id = 73L,
-        category = "SOCIAL",
-        title = "Instagram",
+        serviceName = "Instagram",
         timestamps = DetailTimestamps(createdAt = "2026.08.20", updatedAt = "2026.08.22"),
-        type = AfternoteType.SOCIAL_NETWORK,
-        credentials = DetailCredentials(id = "old@example.test", password = "old-password"),
         receivers =
             listOf(
                 DetailReceiver(
@@ -604,8 +602,11 @@ private fun authorDetail(): Detail =
                     phone = "",
                 ),
             ),
-        processingMethods = listOf("계정 삭제"),
         leaveMessageBlocks =
             listOf(LeaveMessageBlock(title = "마지막 말", body = "기억해 줘")),
-        memorial = null,
+        content =
+            DetailContent.SocialNetwork(
+                credentials = DetailCredentials(id = "old@example.test", password = "old-password"),
+                processingMethods = listOf("계정 삭제"),
+            ),
     )
