@@ -213,7 +213,6 @@
 
     <string name="login_kakao_button">카카오로 로그인</string>
     <string name="login_kakao_backend_not_ready">카카오 토큰을 발급받았습니다. 서버 연동(/auth/kakao) 대기 중입니다.</string>
-    <string name="login_kakao_failed">카카오 로그인에 실패했습니다.</string>
     <string name="login_kakao_sdk_not_initialized">카카오 SDK가 초기화되지 않았습니다. KAKAO_NATIVE_APP_KEY를 확인해주세요.</string>
 
     <string name="biometric_prompt_title">사용자 인증하기</string>
@@ -224,6 +223,7 @@
     <string name="biometric_no_hardware">이 기기는 생체 인식을 지원하지 않습니다.</string>
     <string name="biometric_none_enrolled">등록된 지문이나 화면 잠금이 없습니다. 설정에서 등록해 주세요.</string>
     <string name="biometric_hw_unavailable">생체 인식을 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.</string>
+    <string name="biometric_verification_failed">인증을 확인하지 못했습니다. 다시 시도해 주세요.</string>
 
     <string name="setting_menu_not_connected">이 메뉴는 아직 연결되지 않았습니다.</string>
     <string name="setting_logout">로그아웃</string>
@@ -318,4 +318,9 @@
     <string name="afternote_editor_exit_confirm_message">작성 중인 내용이 사라집니다.\n정말 나가시겠어요?</string>
     <string name="afternote_editor_exit_confirm_confirm">나가기</string>
     <string name="afternote_editor_exit_confirm_cancel">계속 작성</string>
+    <string name="afternote_editor_media_source_header">미디어 추가하기</string>
+    <string name="afternote_editor_media_source_gallery">갤러리에서 선택</string>
+    <string name="afternote_editor_media_source_take_photo">사진 촬영</string>
+    <string name="afternote_editor_media_source_take_video">영상 촬영</string>
+    <string name="afternote_editor_media_capture_unavailable">카메라를 사용할 수 없습니다.</string>
 </resources>

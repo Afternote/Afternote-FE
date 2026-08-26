@@ -2,6 +2,8 @@ plugins {
     id("afternote.android.library.compose")
     id("afternote.android.hilt")
     id("afternote.android.navigation")
+    alias(libs.plugins.compose.screenshot)
+    id("afternote.kover")
 }
 
 android {
@@ -10,6 +12,9 @@ android {
 
     // Robolectric 이 컴파일된 리소스로 화면을 띄운다 (#729).
     testOptions.unitTests.isIncludeAndroidResources = true
+
+    // 스크롤이 없는 화면은 세로가 모자라면 그대로 잘린다 — 좁은 화면 회귀를 CI 가 잡게 한다 (#1131).
+    experimentalProperties["android.experimental.enableScreenshotTest"] = true
 }
 
 dependencies {
@@ -27,6 +32,7 @@ dependencies {
     }
 
     testImplementation(libs.coroutines.test)
+    testImplementation(testFixtures(projects.feature.mindrecord.domain))
 
     // 컴파일된 리소스로 문구를 검증한다 — aapt2 의 앞뒤 공백 제거는 소스 XML 만 봐서는 잡히지 않는다 (#732).
     // 열린 주차 메뉴의 스크롤·최하단 선택도 JVM 에서 그대로 재현한다 (#729).
@@ -35,6 +41,15 @@ dependencies {
     // 수신자 기록 본문 시트도 JVM 에서 실제로 렌더해 확인한다 (#618).
     // 카드 미리보기의 대체 문자 제거도 HtmlCompat 파싱 결과라 실제 파서로 확인한다 (#549).
     testImplementation(libs.robolectric)
+    screenshotTestImplementation(libs.screenshot.validation.api)
+    screenshotTestImplementation(libs.androidx.compose.ui.tooling)
+
     testImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    implementation(libs.compose.rich.editor)
+
+    testImplementation(libs.coroutines.test)
+
+    // 라우트 인자 해석이 Bundle 을 타므로 실제 Android 구현이 필요하다 (#582).
+    testImplementation(libs.robolectric)
 }

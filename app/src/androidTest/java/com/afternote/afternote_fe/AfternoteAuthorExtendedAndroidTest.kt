@@ -380,7 +380,7 @@ private fun AuthorEditorForUpdate(
         snackbarMessage =
             (uiState.error as? AfternoteEditorError.Validation)?.let { stringResource(it.reason.messageResId) },
         onSnackbarMessageConsumed = viewModel::onErrorConsumed,
-        content = {
+        content = { editorSnackbarHostState ->
             AfternoteEditorBody(
                 state = state,
                 form = uiState.form,
@@ -388,6 +388,8 @@ private fun AuthorEditorForUpdate(
                 onNavigateToSelectReceiver = {},
                 onThumbnailBytesReady = {},
                 onThumbnailExtractionFailed = {},
+                onCaptureFailed = {},
+                snackbarHostState = editorSnackbarHostState,
                 isPrefillLoading = uiState.isPrefillLoading,
             )
         },

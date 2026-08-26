@@ -2,7 +2,7 @@ package com.afternote.feature.home.presentation.usecase
 
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
-import com.afternote.core.model.HomeSummary
+import com.afternote.feature.home.presentation.usecase.HomeSummary
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import kotlinx.coroutines.async

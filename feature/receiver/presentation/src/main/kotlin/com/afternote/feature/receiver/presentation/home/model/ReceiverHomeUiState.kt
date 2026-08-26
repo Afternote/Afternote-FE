@@ -2,6 +2,7 @@ package com.afternote.feature.receiver.presentation.home.model
 
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
+import com.afternote.core.ui.icon.AfternoteSourceIcon
 
 /**
  * 수신자 홈 화면 UI 상태.
@@ -46,10 +47,6 @@ data class MindRecordSummary(
 }
 
 @Immutable
-data class AfternoteSourceIcon(
-    val drawableResId: Int,
-)
-
 sealed interface ReceiverDownloadState {
     data object Idle : ReceiverDownloadState
 

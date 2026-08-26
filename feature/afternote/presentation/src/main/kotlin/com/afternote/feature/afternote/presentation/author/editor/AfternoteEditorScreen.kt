@@ -62,7 +62,7 @@ fun AfternoteEditorScreen(
     onRegisterClick: () -> Unit,
     snackbarMessage: String?,
     onSnackbarMessageConsumed: () -> Unit,
-    content: @Composable () -> Unit,
+    content: @Composable (SnackbarHostState) -> Unit,
     modifier: Modifier = Modifier,
     state: AfternoteEditorState = rememberAfternoteEditorState(),
     isPrefillLoading: Boolean = false,
@@ -188,7 +188,7 @@ fun AfternoteEditorScreen(
                     .padding(paddingValues)
                     .addFocusCleaner(focusManager),
         ) {
-            content()
+            content(snackbarHostState)
 
             AfternoteEditorDialogs(state = state)
 

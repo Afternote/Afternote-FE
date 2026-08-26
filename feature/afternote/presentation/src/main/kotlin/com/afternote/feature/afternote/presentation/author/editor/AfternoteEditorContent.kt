@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
@@ -32,6 +34,9 @@ import com.afternote.feature.afternote.presentation.author.editor.gallery.Galler
 import com.afternote.feature.afternote.presentation.author.editor.mapper.hasServiceSelection
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialEditorContent
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialEditorContentParams
+import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialMediaSourceSheet
+import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialMediaTarget
+import com.afternote.feature.afternote.presentation.author.editor.memorial.rememberMemorialMediaSourceState
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
@@ -116,17 +121,19 @@ fun AfternoteEditorBody(
     onNavigateToSelectReceiver: () -> Unit,
     onThumbnailBytesReady: (ByteArray?) -> Unit,
     onThumbnailExtractionFailed: (Throwable) -> Unit,
+    onCaptureFailed: (Throwable) -> Unit,
+    snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     isPrefillLoading: Boolean = false,
 ) {
-    val memorialPhotoPickerLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
-            state.setMemorialPhoto(uri?.toString())
-        }
-    val memorialVideoPickerLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
-            state.setMemorialVideo(uri?.toString())
-        }
+    // 슬롯을 누르면 곧장 갤러리가 뜨는 대신 "갤러리에서 선택 / 촬영" 시트를 한 단계 끼운다 (#369).
+    val mediaSourceState =
+        rememberMemorialMediaSourceState(
+            snackbarHostState = snackbarHostState,
+            onPhotoSelected = state.setMemorialPhoto,
+            onVideoSelected = state.setMemorialVideo,
+            onCaptureFailed = onCaptureFailed,
+        )
 
     EditorContent(
         state = state,
@@ -137,16 +144,8 @@ fun AfternoteEditorBody(
                 form = form,
                 onNavigateToMemorialPlaylist = onNavigateToMemorialPlaylist,
                 onNavigateToSelectReceiver = onNavigateToSelectReceiver,
-                onPhotoAddClick = {
-                    memorialPhotoPickerLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
-                    )
-                },
-                onVideoAddClick = {
-                    memorialVideoPickerLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly),
-                    )
-                },
+                onPhotoAddClick = { mediaSourceState.open(MemorialMediaTarget.PHOTO) },
+                onVideoAddClick = { mediaSourceState.open(MemorialMediaTarget.VIDEO) },
                 onThumbnailBytesReady = onThumbnailBytesReady,
                 onThumbnailExtractionFailed = onThumbnailExtractionFailed,
             )
@@ -154,6 +153,8 @@ fun AfternoteEditorBody(
         modifier = modifier,
         isPrefillLoading = isPrefillLoading,
     )
+
+    MemorialMediaSourceSheet(state = mediaSourceState)
 }
 
 /**
@@ -364,6 +365,8 @@ private fun EditorContentSocialPreview() {
             onNavigateToSelectReceiver = {},
             onThumbnailBytesReady = {},
             onThumbnailExtractionFailed = {},
+            onCaptureFailed = {},
+            snackbarHostState = remember { SnackbarHostState() },
         )
     }
 }
@@ -380,6 +383,8 @@ private fun EditorContentBusinessPreview() {
             onNavigateToSelectReceiver = {},
             onThumbnailBytesReady = {},
             onThumbnailExtractionFailed = {},
+            onCaptureFailed = {},
+            snackbarHostState = remember { SnackbarHostState() },
         )
     }
 }
@@ -396,6 +401,8 @@ private fun EditorContentGalleryPreview() {
             onNavigateToSelectReceiver = {},
             onThumbnailBytesReady = {},
             onThumbnailExtractionFailed = {},
+            onCaptureFailed = {},
+            snackbarHostState = remember { SnackbarHostState() },
         )
     }
 }
@@ -412,6 +419,8 @@ private fun EditorContentMemorialPreview() {
             onNavigateToSelectReceiver = {},
             onThumbnailBytesReady = {},
             onThumbnailExtractionFailed = {},
+            onCaptureFailed = {},
+            snackbarHostState = remember { SnackbarHostState() },
         )
     }
 }

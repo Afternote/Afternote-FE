@@ -58,8 +58,8 @@ fun LoginEntry(
     // (LocalContextGetResourceValueCall). 여기 `context` 는 Activity·Credential Manager 용이다.
     val resources = LocalResources.current
 
-    val googleNoCredentialsMessage = stringResource(R.string.login_google_no_credentials)
-    val screenUnavailableMessage = stringResource(R.string.login_screen_unavailable)
+    val googleNoCredentialsMessage = stringResource(R.string.onboarding_login_google_no_credentials)
+    val screenUnavailableMessage = stringResource(R.string.onboarding_login_screen_unavailable)
 
     val showErrorSnackbar: (String) -> Unit = { message ->
         coroutineScope.launch {
@@ -118,7 +118,7 @@ fun LoginEntry(
                                 viewModel.onSocialTokenRequestFailed(AuthProvider.KAKAO, exception)
                                 showErrorSnackbar(
                                     resources.getString(
-                                        exception.displayMessageResOrFallback(R.string.login_kakao_failed),
+                                        exception.displayMessageResOrFallback(R.string.onboarding_login_kakao_failed),
                                     ),
                                 )
                             }
@@ -154,7 +154,7 @@ fun LoginEntry(
 
                                 else -> {
                                     resources.getString(
-                                        exception.displayMessageResOrFallback(R.string.login_google_failed),
+                                        exception.displayMessageResOrFallback(R.string.onboarding_login_google_failed),
                                     )
                                 }
                             }
