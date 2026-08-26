@@ -178,6 +178,7 @@ private fun EditorMessageItem(
             CaptionLabeledTextField(
                 label = stringResource(R.string.afternote_editor_message_field_title),
                 state = message.titleState,
+                placeholder = stringResource(R.string.afternote_editor_message_title_placeholder),
             )
 
             Column(

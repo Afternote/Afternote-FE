@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
+import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.user.User
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -22,18 +23,19 @@ import com.afternote.feature.mindrecord.domain.model.Diary
 import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DiaryList
 import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
+import com.afternote.feature.mindrecord.domain.model.EmotionAnalysis
 import com.afternote.feature.mindrecord.domain.model.MindRecordSummary
 import com.afternote.feature.mindrecord.domain.model.MindRecordType
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
-import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDailyQuestion
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDay
-import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
-import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
-import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
-import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeMindRecordReceiverRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeWeeklyReportRepository
+import com.afternote.feature.mindrecord.domain.testing.unexpectedCall
 import com.afternote.feature.mindrecord.presentation.model.DayBackground
 import com.afternote.feature.mindrecord.presentation.model.DayContent
 import com.afternote.feature.mindrecord.presentation.screen.receiver.ReceiverMindRecordScreen
@@ -80,13 +82,14 @@ class MindRecordLifecycleAndroidTest {
         val currentPublished = diary(101L, "이번 달 공개 일기", currentMonth.atDay(3), isDraft = false)
         val currentDraft = diary(102L, "숨겨야 할 임시 일기", currentMonth.atDay(4), isDraft = true)
         val previousPublished = diary(103L, "지난달 삭제할 일기", previousMonth.atDay(5), isDraft = false)
-        val repository =
-            PrivateDiaryRepository().apply {
-                lists[PrivateDiaryQuery(currentMonth.toString(), null)] =
-                    DiaryList(listOf(currentPublished, currentDraft), 2, TodayMood.HAPPY)
-                lists[PrivateDiaryQuery(previousMonth.toString(), null)] =
-                    DiaryList(listOf(previousPublished), 1, TodayMood.SOSO)
-            }
+        val diaryLists =
+            mutableMapOf(
+                FakeDiaryRepository.ListQuery(currentMonth.toString(), null) to
+                    DiaryList(listOf(currentPublished, currentDraft), 2, TodayMood.HAPPY),
+                FakeDiaryRepository.ListQuery(previousMonth.toString(), null) to
+                    DiaryList(listOf(previousPublished), 1, TodayMood.SOSO),
+            )
+        val repository = scriptedDiaryRepository(diaryLists)
         val viewModel = DiaryListViewModel(repository)
 
         composeRule.setContent {
@@ -111,14 +114,14 @@ class MindRecordLifecycleAndroidTest {
         composeRule.onNodeWithContentDescription("더보기 메뉴").performClick()
         composeRule.onNodeWithText("삭제하기").performClick()
         composeRule.onNodeWithText("아직 등록된 일기가 없어요.").assertIsDisplayed()
-        assertEquals(listOf(103L), repository.deleteCalls)
+        assertEquals(listOf(103L), repository.deletedIds)
         assertEquals(
             listOf(
-                PrivateDiaryQuery(currentMonth.toString(), null),
-                PrivateDiaryQuery(previousMonth.toString(), null),
-                PrivateDiaryQuery(previousMonth.toString(), null),
+                FakeDiaryRepository.ListQuery(currentMonth.toString(), null),
+                FakeDiaryRepository.ListQuery(previousMonth.toString(), null),
+                FakeDiaryRepository.ListQuery(previousMonth.toString(), null),
             ),
-            repository.listCalls,
+            repository.listQueries,
         )
         val state = viewModel.uiState.value as DiaryListUiState.Success
         assertEquals(previousMonth, state.yearMonth)
@@ -128,18 +131,23 @@ class MindRecordLifecycleAndroidTest {
     @Test
     fun combinedDraftList_routesSelectedAndAllDeletesToExactRepositories() {
         val currentMonth = YearMonth.now()
-        val diaryRepository =
-            PrivateDiaryRepository().apply {
-                lists[PrivateDiaryQuery(currentMonth.toString(), true)] =
+        val diaryLists =
+            mutableMapOf(
+                FakeDiaryRepository.ListQuery(currentMonth.toString(), true) to
                     DiaryList(
                         diaries = listOf(diary(201L, "일기 임시저장", currentMonth.atDay(8), isDraft = true)),
                         monthDiaryCount = 1,
                         weeklyDominantMood = null,
-                    )
-            }
+                    ),
+            )
+        val diaryRepository = scriptedDiaryRepository(diaryLists)
         val dailyQuestionRepository =
-            PrivateDailyQuestionRepository(
-                questions =
+            FakeDailyQuestionRepository(
+                // 이 시나리오는 임시저장 목록의 조회·삭제만 태운다.
+                onGetToday = { unexpectedCall("DailyQuestionRepository.getToday") },
+                onCreate = { unexpectedCall("DailyQuestionRepository.create") },
+                onUpdate = { _, _ -> unexpectedCall("DailyQuestionRepository.update") },
+                initialAnswers =
                     listOf(
                         DailyQuestion(
                             dailyQuestionId = 202L,
@@ -155,6 +163,7 @@ class MindRecordLifecycleAndroidTest {
                 loader = MindRecordDraftLoader(diaryRepository, dailyQuestionRepository),
                 diaryRepository = diaryRepository,
                 dailyQuestionRepository = dailyQuestionRepository,
+                errorReporter = FakeErrorReporter(),
             )
 
         composeRule.setContent {
@@ -176,8 +185,8 @@ class MindRecordLifecycleAndroidTest {
             .assertIsDisplayed()
         composeRule.onNodeWithText("질문 임시저장").assertDoesNotExist()
         composeRule.onNodeWithText("일기 임시저장").assertIsDisplayed()
-        assertEquals(listOf(202L), dailyQuestionRepository.deleteCalls)
-        assertTrue(diaryRepository.deleteCalls.isEmpty())
+        assertEquals(listOf(202L), dailyQuestionRepository.deletedIds)
+        assertTrue(diaryRepository.deletedIds.isEmpty())
 
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
             (viewModel.uiState.value as? DraftListUiState.Success)?.deleteOutcome == null
@@ -185,16 +194,16 @@ class MindRecordLifecycleAndroidTest {
         composeRule.onNodeWithText("선택").performClick()
         composeRule.onNodeWithText("전체 삭제").performClick()
         composeRule.onNodeWithText("임시 저장된 항목이 없습니다.").assertIsDisplayed()
-        assertEquals(listOf(201L), diaryRepository.deleteCalls)
-        assertEquals(listOf(202L), dailyQuestionRepository.deleteCalls)
-        assertEquals(3, diaryRepository.listCalls.size)
-        assertEquals(3, dailyQuestionRepository.listCalls.size)
+        assertEquals(listOf(201L), diaryRepository.deletedIds)
+        assertEquals(listOf(202L), dailyQuestionRepository.deletedIds)
+        assertEquals(3, diaryRepository.listQueries.size)
+        assertEquals(3, dailyQuestionRepository.listQueries.size)
         assertTrue((viewModel.uiState.value as DraftListUiState.Success).items.isEmpty())
     }
 
     @Test
     fun weeklyReport_errorRetry_mapsSparsePartialWeekWithoutIndexDrift() {
-        val repository = PrivateWeeklyReportRepository()
+        val repository = FakeWeeklyReportRepository()
         repository.results.addLast(Result.failure(IllegalStateException("weekly offline")))
         val userRepository = privateProfileRepository("테스트 사용자")
         val viewModel = WeeklyReportViewModel(repository, userRepository)
@@ -235,10 +244,12 @@ class MindRecordLifecycleAndroidTest {
                         ),
                     dailyQuestions =
                         listOf(
-                            WeeklyReportDailyQuestion("같은 날 질문", "답변 A", wednesday.toString()),
-                            WeeklyReportDailyQuestion("다른 날 질문", "답변 B", friday.toString()),
+                            WeeklyReportDailyQuestion("같은 날 질문", "답변 A", wednesday),
+                            WeeklyReportDailyQuestion("다른 날 질문", "답변 B", friday),
                         ),
                     emotions = emptyList(),
+                    // 이 테스트들은 분석 상태를 보지 않는다 — 완료로 고정한다 (#725).
+                    emotionAnalysis = EmotionAnalysis(total = 0, succeeded = 0, pending = 0, failed = 0),
                 ),
             ),
         )
@@ -259,26 +270,28 @@ class MindRecordLifecycleAndroidTest {
     @Test
     fun receiverQuestionAndDiary_filterThenReset_reusesSingleRepositorySnapshot() {
         val repository =
-            PrivateMindRecordReceiverRepository(
-                records =
-                    ReceiverMindRecords(
-                        dailyQuestions =
-                            listOf(
-                                record(401L, MindRecordType.DAILY_QUESTION, "범위 밖 질문", "2026-07-01"),
-                                record(402L, MindRecordType.DAILY_QUESTION, "질문 범위 시작", "2026-08-12"),
-                                record(403L, MindRecordType.DAILY_QUESTION, "질문 범위 최신", "2026-08-20"),
-                                record(404L, MindRecordType.DAILY_QUESTION, "숨길 질문 draft", "2026-08-21", true),
-                            ),
-                        diaries =
-                            listOf(
-                                record(411L, MindRecordType.DIARY, "범위 밖 일기", "2026-07-02"),
-                                record(412L, MindRecordType.DIARY, "일기 범위 시작", "2026-08-13"),
-                                record(413L, MindRecordType.DIARY, "일기 범위 최신", "2026-08-19"),
-                                record(414L, MindRecordType.DIARY, "숨길 일기 draft", "2026-08-22", true),
-                            ),
+            FakeMindRecordReceiverRepository(
+                result =
+                    Result.success(
+                        ReceiverMindRecords(
+                            dailyQuestions =
+                                listOf(
+                                    record(401L, MindRecordType.DAILY_QUESTION, "범위 밖 질문", "2026-07-01"),
+                                    record(402L, MindRecordType.DAILY_QUESTION, "질문 범위 시작", "2026-08-12"),
+                                    record(403L, MindRecordType.DAILY_QUESTION, "질문 범위 최신", "2026-08-20"),
+                                    record(404L, MindRecordType.DAILY_QUESTION, "숨길 질문 draft", "2026-08-21", true),
+                                ),
+                            diaries =
+                                listOf(
+                                    record(411L, MindRecordType.DIARY, "범위 밖 일기", "2026-07-02"),
+                                    record(412L, MindRecordType.DIARY, "일기 범위 시작", "2026-08-13"),
+                                    record(413L, MindRecordType.DIARY, "일기 범위 최신", "2026-08-19"),
+                                    record(414L, MindRecordType.DIARY, "숨길 일기 draft", "2026-08-22", true),
+                                ),
+                        ),
                     ),
             )
-        val viewModel = ReceiverMindRecordViewModel(repository)
+        val viewModel = ReceiverMindRecordViewModel(repository, FakeErrorReporter())
 
         composeRule.setContent {
             AfternoteTheme {
@@ -329,99 +342,24 @@ class MindRecordLifecycleAndroidTest {
     }
 }
 
-private data class PrivateDiaryQuery(
-    val yearMonth: String,
-    val draftOnly: Boolean?,
-)
-
-private class PrivateDiaryRepository : DiaryRepository {
-    val lists = mutableMapOf<PrivateDiaryQuery, DiaryList>()
-    val listCalls = mutableListOf<PrivateDiaryQuery>()
-    val deleteCalls = mutableListOf<Long>()
-
-    override suspend fun getList(
-        yearMonth: String,
-        draftOnly: Boolean?,
-    ): Result<DiaryList> {
-        val query = PrivateDiaryQuery(yearMonth, draftOnly)
-        listCalls += query
-        return Result.success(lists[query] ?: DiaryList(emptyList(), 0, null))
-    }
-
-    override suspend fun create(payload: DiaryCreatePayload): Result<Unit> = error("Unexpected diary create")
-
-    override suspend fun update(
-        id: Long,
-        payload: DiaryUpdatePayload,
-    ): Result<Unit> = error("Unexpected diary update")
-
-    override suspend fun delete(id: Long): Result<Unit> {
-        deleteCalls += id
-        lists.replaceAll { _, list ->
-            val remaining = list.diaries.filterNot { it.diaryId == id }
-            list.copy(diaries = remaining, monthDiaryCount = remaining.size)
-        }
-        return Result.success(Unit)
-    }
-}
-
-private data class PrivateDailyQuestionQuery(
-    val date: String?,
-    val draftOnly: Boolean?,
-)
-
-private class PrivateDailyQuestionRepository(
-    questions: List<DailyQuestion>,
-) : DailyQuestionRepository {
-    private var questions = questions
-    val listCalls = mutableListOf<PrivateDailyQuestionQuery>()
-    val deleteCalls = mutableListOf<Long>()
-
-    override suspend fun getList(
-        date: String?,
-        draftOnly: Boolean?,
-    ): Result<List<DailyQuestion>> {
-        listCalls += PrivateDailyQuestionQuery(date, draftOnly)
-        return Result.success(questions)
-    }
-
-    override suspend fun getToday(): Result<TodayDailyQuestion> = error("Unexpected today question load")
-
-    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> = error("Unexpected question create")
-
-    override suspend fun update(
-        id: Long,
-        payload: DailyQuestionUpdatePayload,
-    ): Result<Long> = error("Unexpected question update")
-
-    override suspend fun delete(id: Long): Result<Unit> {
-        deleteCalls += id
-        questions = questions.filterNot { it.dailyQuestionId == id }
-        return Result.success(Unit)
-    }
-}
-
-private class PrivateWeeklyReportRepository : WeeklyReportRepository {
-    val results = ArrayDeque<Result<WeeklyReport>>()
-    val requestedDates = mutableListOf<String>()
-
-    override suspend fun getWeeklyReport(date: String): Result<WeeklyReport> {
-        requestedDates += date
-        return requireNotNull(results.removeFirstOrNull())
-    }
-}
-
-private class PrivateMindRecordReceiverRepository(
-    private val records: ReceiverMindRecords,
-) : MindRecordReceiverRepository {
-    var getAllCalls = 0
-        private set
-
-    override suspend fun getAll(): Result<ReceiverMindRecords> {
-        getAllCalls += 1
-        return Result.success(records)
-    }
-}
+/** 달·임시저장 여부마다 다른 목록을 돌려주는 조회. 삭제는 그 목록들에서 함께 지운다. */
+private fun scriptedDiaryRepository(lists: MutableMap<FakeDiaryRepository.ListQuery, DiaryList>) =
+    FakeDiaryRepository(
+        onGetList = { yearMonth, draftOnly ->
+            Result.success(
+                lists[FakeDiaryRepository.ListQuery(yearMonth, draftOnly)] ?: DiaryList(emptyList(), 0, null),
+            )
+        },
+        onCreate = { unexpectedCall("DiaryRepository.create") },
+        onUpdate = { _, _ -> unexpectedCall("DiaryRepository.update") },
+        onDelete = { id ->
+            lists.replaceAll { _, list ->
+                val remaining = list.diaries.filterNot { it.diaryId == id }
+                list.copy(diaries = remaining, monthDiaryCount = remaining.size)
+            }
+            Result.success(Unit)
+        },
+    )
 
 @Suppress("UNCHECKED_CAST")
 private fun privateProfileRepository(name: String): UserRepository =

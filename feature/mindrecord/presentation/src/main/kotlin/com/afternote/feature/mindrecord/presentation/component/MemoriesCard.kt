@@ -46,9 +46,9 @@ import com.afternote.feature.mindrecord.presentation.R
  *
  * @param question 최근 기록의 제목(데일리질문이면 질문 원문). null 이면 표시할 기록이 없다.
  * @param answer 그 기록의 본문 미리보기.
- * @param onReadAgainClick "그날의 기록 다시 읽기" 목적지. **아직 확정되지 않았다** — Figma 의
- *   이 버튼에 프로토타입 연결이 없고 #559 에도 확정 답변이 없어, 기본값은 아무 데도 보내지
- *   않는다. 목적지가 정해지면 호출부에서 이 인자만 채우면 된다.
+ * @param onReadAgainClick "그날의 기록 다시 읽기" 목적지. **최종 확정은 아직이다** — Figma 의
+ *   이 버튼에 프로토타입 연결이 없다. 다만 비워 두면 버튼이 클릭을 삼켜 카드 안에서 버튼만
+ *   죽은 영역이 되므로, 홈 호출부는 카드 자신의 목적지(추억 공간)를 물려준다 (#793).
  */
 @Composable
 fun MemoriesCard(

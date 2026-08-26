@@ -1,15 +1,12 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
-import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
-import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
-import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DiaryList
-import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
-import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
-import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -55,9 +52,15 @@ class DailyQuestionWriteViewModelTest {
                         Result.success(todayQuestion(isDraft = true))
                     }
                 },
-                onGetList = { Result.success(listOf(draft(content = "서버에 남아 있던 옛 임시저장본"))) },
+                onGetList = { _, _ -> Result.success(listOf(draft(content = "서버에 남아 있던 옛 임시저장본"))) },
             )
-        val viewModel = DailyQuestionWriteViewModel(repository, NoopPhotoUploadRepository, noopDraftLoader())
+        val viewModel =
+            DailyQuestionWriteViewModel(
+                SavedStateHandle(emptyMap()),
+                repository,
+                NoopPhotoUploadRepository,
+                noopDraftLoader(),
+            )
 
         viewModel.onAnswerChanged("사용자가 방금 입력한 답변")
         viewModel.submit()
@@ -73,10 +76,16 @@ class DailyQuestionWriteViewModelTest {
         val repository =
             FakeDailyQuestionRepository(
                 onGetToday = { Result.success(todayQuestion(isDraft = true)) },
-                onGetList = { Result.success(listOf(draft(content = "이어쓸 본문"))) },
+                onGetList = { _, _ -> Result.success(listOf(draft(content = "이어쓸 본문"))) },
             )
 
-        val viewModel = DailyQuestionWriteViewModel(repository, NoopPhotoUploadRepository, noopDraftLoader())
+        val viewModel =
+            DailyQuestionWriteViewModel(
+                SavedStateHandle(emptyMap()),
+                repository,
+                NoopPhotoUploadRepository,
+                noopDraftLoader(),
+            )
 
         assertEquals("이어쓸 본문", viewModel.uiState.value.answer)
         assertEquals(7L, viewModel.uiState.value.draftId)
@@ -95,12 +104,11 @@ class DailyQuestionWriteViewModelTest {
                         Result.success(todayQuestion(isDraft = true))
                     }
                 },
-                onGetList = {
-                    Result.success(listOf(draft(content = "옛 본문", imageUrl = "https://cdn/old.jpg")))
-                },
+                onGetList = { _, _ -> Result.success(listOf(draft(content = "옛 본문"))) },
             )
         val viewModel =
             DailyQuestionWriteViewModel(
+                SavedStateHandle(emptyMap()),
                 repository,
                 PhotoUploadRepository { _, _ -> Result.success("https://cdn/just-picked.jpg") },
                 noopDraftLoader(),
@@ -110,22 +118,53 @@ class DailyQuestionWriteViewModelTest {
         runBlocking { viewModel.uploadImage("content://just-picked") }
         viewModel.submit()
 
-        assertEquals("https://cdn/just-picked.jpg", viewModel.uiState.value.imageUrl)
+        // 업로드 URL 은 에디터가 본문에 <img> 로 넣는다 — payload 필드로는 나가지 않는다 (#549).
+        assertEquals("사용자가 방금 입력한 답변", viewModel.uiState.value.answer)
     }
 
     @Test
-    fun `화면에 이미지가 없으면 draft 이미지를 이어받는다`() {
+    fun `업로드한 URL 은 에디터에 돌려줄 뿐 상태에 따로 담지 않는다`() {
+        // 서버 계약에 `imageUrl` 이 없어 payload 로 보내 봐야 무시된다. 이미지가 남는
+        // 유일한 경로는 본문 HTML 의 <img> 뿐이라, ViewModel 은 URL 을 돌려주기만 한다 (#549).
+        val repository =
+            FakeDailyQuestionRepository(
+                onGetToday = { Result.success(todayQuestion(isDraft = false)) },
+                onGetList = { _, _ -> Result.success(emptyList()) },
+            )
+        val viewModel =
+            DailyQuestionWriteViewModel(
+                SavedStateHandle(emptyMap()),
+                repository,
+                PhotoUploadRepository { _, _ -> Result.success("https://cdn/picked.jpg") },
+                noopDraftLoader(),
+            )
+
+        val url = runBlocking { viewModel.uploadImage("content://picked") }
+
+        assertEquals("https://cdn/picked.jpg", url)
+    }
+
+    @Test
+    fun `이어쓰기는 본문에 실린 이미지를 그대로 가져온다`() {
+        // 이미지가 본문 안에 있으므로 이어쓰기가 본문만 복원하면 이미지도 따라온다.
+        // 여기서 고정하는 것은 ViewModel 단까지다 — 화면은 에디터가 외부 value 를 첫
+        // 컴포지션 1회만 시드해서 아직 성립하지 않는다 (#923 소관).
+        val html = "<p>이어쓸 본문</p><img src=\"https://cdn/old.jpg\" />"
         val repository =
             FakeDailyQuestionRepository(
                 onGetToday = { Result.success(todayQuestion(isDraft = true)) },
-                onGetList = {
-                    Result.success(listOf(draft(content = "이어쓸 본문", imageUrl = "https://cdn/old.jpg")))
-                },
+                onGetList = { _, _ -> Result.success(listOf(draft(content = html))) },
             )
 
-        val viewModel = DailyQuestionWriteViewModel(repository, NoopPhotoUploadRepository, noopDraftLoader())
+        val viewModel =
+            DailyQuestionWriteViewModel(
+                SavedStateHandle(emptyMap()),
+                repository,
+                NoopPhotoUploadRepository,
+                noopDraftLoader(),
+            )
 
-        assertEquals("https://cdn/old.jpg", viewModel.uiState.value.imageUrl)
+        assertEquals(html, viewModel.uiState.value.answer)
     }
 
     @Test
@@ -133,15 +172,21 @@ class DailyQuestionWriteViewModelTest {
         val repository =
             FakeDailyQuestionRepository(
                 onGetToday = { Result.failure(IllegalStateException("네트워크 실패")) },
-                onGetList = { Result.success(emptyList()) },
+                onGetList = { _, _ -> Result.success(emptyList()) },
             )
-        val viewModel = DailyQuestionWriteViewModel(repository, NoopPhotoUploadRepository, noopDraftLoader())
+        val viewModel =
+            DailyQuestionWriteViewModel(
+                SavedStateHandle(emptyMap()),
+                repository,
+                NoopPhotoUploadRepository,
+                noopDraftLoader(),
+            )
 
         viewModel.onAnswerChanged("답변")
         viewModel.submit()
 
         assertTrue(viewModel.uiState.value.submitState is SubmitState.Failed)
-        assertEquals(0, repository.createCallCount)
+        assertEquals(0, repository.createdPayloads.size)
     }
 
     private fun todayQuestion(isDraft: Boolean) =
@@ -153,46 +198,66 @@ class DailyQuestionWriteViewModelTest {
             isDraft = isDraft,
         )
 
-    private fun draft(
-        content: String,
-        imageUrl: String? = null,
-    ) = DailyQuestion(
-        dailyQuestionId = 7L,
-        title = "오늘의 질문",
-        content = content,
-        createdAt = "2026-08-13",
-        imageUrl = imageUrl,
-        isDraft = true,
-    )
-}
+    private fun draft(content: String) =
+        DailyQuestion(
+            dailyQuestionId = 7L,
+            title = "오늘의 질문",
+            content = content,
+            createdAt = "2026-08-13",
+            isDraft = true,
+        )
 
-/** 미지정 경로 호출은 error 로 드러낸다 (core:data 의 Fake 들과 같은 규칙). */
-private class FakeDailyQuestionRepository(
-    private val onGetToday: () -> Result<TodayDailyQuestion>,
-    private val onGetList: () -> Result<List<DailyQuestion>>,
-) : DailyQuestionRepository {
-    var createCallCount = 0
-        private set
+    @Test
+    fun `저장 시 방금 업로드한 이미지의 src 는 fileKey 로 나간다`() {
+        // 서버는 본문 img src 에서 fileKey 를 받아 staging→permanent 로 옮기고 전체 URL 로
+        // 재작성한다. 전체 URL 을 그대로 보내면 그 앞에 호스트를 한 번 더 붙여 403 이 된다
+        // (실서버 실측 2026-08-23, #549).
+        var sentContent: String? = null
+        val repository =
+            FakeDailyQuestionRepository(
+                onGetToday = { Result.success(todayQuestion(isDraft = false)) },
+                onCreate = { payload ->
+                    sentContent = payload.content
+                    Result.success(FakeDailyQuestionRepository.FIRST_CREATED_ID)
+                },
+            )
+        val viewModel =
+            DailyQuestionWriteViewModel(
+                SavedStateHandle(emptyMap()),
+                repository,
+                PhotoUploadRepository { _, _ ->
+                    Result.success("https://cdn.example.net/mindrecords/staging/13/a.png")
+                },
+                noopDraftLoader(),
+            )
 
-    override suspend fun getList(
-        date: String?,
-        draftOnly: Boolean?,
-    ): Result<List<DailyQuestion>> = onGetList()
+        val previewUrl = runBlocking { viewModel.uploadImage("content://picked") }
+        viewModel.onAnswerChanged("<p>본문</p><img src=\"$previewUrl\" />")
+        viewModel.submit()
 
-    override suspend fun getToday(): Result<TodayDailyQuestion> = onGetToday()
-
-    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> {
-        createCallCount += 1
-        // 서버가 돌려주는 "내 답변" 식별자 (#573).
-        return Result.success(CREATED_ANSWER_ID)
+        assertEquals("<p>본문</p><img src=\"mindrecords/staging/13/a.png\" />", sentContent)
     }
 
-    override suspend fun update(
-        id: Long,
-        payload: DailyQuestionUpdatePayload,
-    ): Result<Long> = error("update 는 이 시나리오에서 호출되면 안 됨")
+    @Test
+    fun `이미 저장된 영구 URL 은 그대로 내보낸다`() {
+        // 서버가 영구 URL 은 통과시킨다 — 키로 바꾸면 이미 옮겨진 파일을 다시 옮기려다 실패한다.
+        val permanent = "https://cdn.example.net/mindrecords/permanent/13/a.png"
+        var sentContent: String? = null
+        val repository =
+            FakeDailyQuestionRepository(
+                onGetToday = { Result.success(todayQuestion(isDraft = false)) },
+                onCreate = { payload ->
+                    sentContent = payload.content
+                    Result.success(FakeDailyQuestionRepository.FIRST_CREATED_ID)
+                },
+            )
+        val viewModel = DailyQuestionWriteViewModel(SavedStateHandle(emptyMap()), repository, NoopPhotoUploadRepository, noopDraftLoader())
 
-    override suspend fun delete(id: Long): Result<Unit> = error("delete 는 이 시나리오에서 호출되면 안 됨")
+        viewModel.onAnswerChanged("<p>수정</p><img src=\"$permanent\" />")
+        viewModel.submit()
+
+        assertEquals("<p>수정</p><img src=\"$permanent\" />", sentContent)
+    }
 }
 
 private object NoopPhotoUploadRepository : PhotoUploadRepository {
@@ -202,45 +267,17 @@ private object NoopPhotoUploadRepository : PhotoUploadRepository {
     ): Result<String> = error("upload 는 이 시나리오에서 호출되면 안 됨")
 }
 
-private const val CREATED_ANSWER_ID = 19L
-
 /** 툴바 카운트는 이 테스트의 관심사가 아니다 — 0건으로 고정한다 (#769). */
-private fun noopDraftLoader() =
+internal fun noopDraftLoader() =
     MindRecordDraftLoader(
-        diaryRepository = EmptyDraftDiaryRepository,
-        dailyQuestionRepository = EmptyDraftDailyQuestionRepository,
+        diaryRepository =
+            FakeDiaryRepository.strict().apply {
+                onGetList = { _, _ ->
+                    Result.success(DiaryList(diaries = emptyList(), monthDiaryCount = 0, weeklyDominantMood = null))
+                }
+            },
+        dailyQuestionRepository =
+            FakeDailyQuestionRepository.strict().apply {
+                onGetList = { _, _ -> Result.success(emptyList()) }
+            },
     )
-
-private object EmptyDraftDiaryRepository : DiaryRepository {
-    override suspend fun getList(
-        yearMonth: String,
-        draftOnly: Boolean?,
-    ): Result<DiaryList> = Result.success(DiaryList(diaries = emptyList(), monthDiaryCount = 0, weeklyDominantMood = null))
-
-    override suspend fun create(payload: DiaryCreatePayload): Result<Unit> = error("호출되면 안 됨")
-
-    override suspend fun update(
-        id: Long,
-        payload: DiaryUpdatePayload,
-    ): Result<Unit> = error("호출되면 안 됨")
-
-    override suspend fun delete(id: Long): Result<Unit> = error("호출되면 안 됨")
-}
-
-private object EmptyDraftDailyQuestionRepository : DailyQuestionRepository {
-    override suspend fun getList(
-        date: String?,
-        draftOnly: Boolean?,
-    ): Result<List<DailyQuestion>> = Result.success(emptyList())
-
-    override suspend fun getToday(): Result<TodayDailyQuestion> = error("호출되면 안 됨")
-
-    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> = error("호출되면 안 됨")
-
-    override suspend fun update(
-        id: Long,
-        payload: DailyQuestionUpdatePayload,
-    ): Result<Long> = error("호출되면 안 됨")
-
-    override suspend fun delete(id: Long): Result<Unit> = error("호출되면 안 됨")
-}

@@ -1,7 +1,7 @@
 package com.afternote.feature.receiver.presentation.detail
 
 import androidx.compose.runtime.Immutable
-import com.afternote.core.model.AlbumCover
+import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
 
 /**
@@ -31,11 +31,26 @@ sealed interface ReceivedDetailContentUiModel {
 @Immutable
 data class ReceivedSocialNetworkDetailContent(
     val serviceName: String = "",
-    val accountId: String = "",
-    val password: String = "",
+    val credentials: ReceivedAccountCredentialsUiModel? = null,
     val processingMethods: List<String> = emptyList(),
     val messageBlocks: List<MessageBlockUiModel> = emptyList(),
     val finalWriteDate: String = "",
+)
+
+/**
+ * 발신자가 남긴 계정 자격증명 표시 모델.
+ *
+ * **부재를 빈 문자열로 표현하지 않는다.** 서버는 수신자 상세에 `credentials` 를 아예 내려주지
+ * 않고(#619), 내려주더라도 발신자가 한쪽만 적었을 수 있다. 값이 없는 자리를 `""` 로 채우면
+ * 화면이 "가려진 값이 있다" 는 마스킹을 그리게 되므로, 없는 값은 `null` 로 남긴다.
+ *
+ * 양쪽 모두 없으면 이 모델을 만들지 않고 [ReceivedSocialNetworkDetailContent.credentials] 를
+ * `null` 로 둔다 — 이 타입이 존재하면 최소 한쪽에는 값이 있다는 뜻이다.
+ */
+@Immutable
+data class ReceivedAccountCredentialsUiModel(
+    val accountId: String?,
+    val password: String?,
 )
 
 @Immutable

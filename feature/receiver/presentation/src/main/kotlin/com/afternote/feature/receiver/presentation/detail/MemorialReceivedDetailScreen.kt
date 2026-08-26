@@ -36,7 +36,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import coil3.compose.AsyncImage
-import com.afternote.core.model.AlbumCover
 import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.bottombar.BottomBar
 import com.afternote.core.ui.bottombar.BottomNavTab
@@ -50,6 +49,7 @@ import com.afternote.feature.afternote.presentation.shared.MemorialContent
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
+import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
 
 /**
@@ -65,10 +65,10 @@ import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiM
 @Composable
 fun MemorialReceivedDetailScreen(
     senderName: String,
+    onNavigateToFullList: () -> Unit,
+    onNavigateToPlaylist: () -> Unit,
+    onBackClick: () -> Unit,
     messageBlocks: List<MessageBlockUiModel> = emptyList(),
-    onNavigateToFullList: () -> Unit = {},
-    onNavigateToPlaylist: () -> Unit = {},
-    onBackClick: () -> Unit = {},
     profileImageResId: Int? = null,
     albumCovers: List<AlbumCover>,
     songCount: Int = 16,
@@ -282,6 +282,9 @@ private fun PreviewMemorialReceivedDetail() {
     AfternoteTheme {
         MemorialReceivedDetailScreen(
             senderName = "박서연",
+            onNavigateToFullList = {},
+            onNavigateToPlaylist = {},
+            onBackClick = {},
             messageBlocks =
                 listOf(
                     MessageBlockUiModel(
@@ -306,6 +309,9 @@ private fun PreviewMemorialReceivedDetailWithVideo() {
     AfternoteTheme {
         MemorialReceivedDetailScreen(
             senderName = "박서연",
+            onNavigateToFullList = {},
+            onNavigateToPlaylist = {},
+            onBackClick = {},
             messageBlocks =
                 listOf(
                     MessageBlockUiModel(

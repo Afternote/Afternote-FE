@@ -1,9 +1,8 @@
 package com.afternote.feature.afternote.data.repositoryimpl.author
 
-import com.afternote.core.domain.error.NetworkUnavailableException
 import com.afternote.core.network.model.ApiException
-import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationException
 import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationKind
+import com.afternote.feature.afternote.domain.error.AfternoteFailure
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
@@ -21,17 +20,17 @@ import java.io.IOException
 class AfternoteAuthoringFailureMapperTest {
     @Test
     fun `이미 검증 예외면 그대로 반환`() {
-        val original = AfternoteAuthoringValidationException(AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED)
+        val original = AfternoteFailure.AuthoringValidation(AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED)
         assertSame(original, mapAuthoringFailure(original))
     }
 
     @Test
     fun `ApiException 475면 RECEIVERS_REQUIRED 검증 예외로 치환`() {
         val result = mapAuthoringFailure(ApiException(status = 400, code = 475, serverMessage = null, message = "x"))
-        assertTrue(result is AfternoteAuthoringValidationException)
+        assertTrue(result is AfternoteFailure.AuthoringValidation)
         assertEquals(
             AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED,
-            (result as AfternoteAuthoringValidationException).kind,
+            (result as AfternoteFailure.AuthoringValidation).kind,
         )
     }
 
@@ -42,12 +41,12 @@ class AfternoteAuthoringFailureMapperTest {
     }
 
     @Test
-    fun `전송 계층 IO 실패는 NetworkUnavailableException으로 치환`() {
+    fun `전송 계층 IO 실패는 AfternoteFailure_NetworkUnavailable 로 치환`() {
         val original = IOException("timeout")
 
         val result = mapAuthoringFailure(original)
 
-        assertTrue(result is NetworkUnavailableException)
+        assertTrue(result is AfternoteFailure.NetworkUnavailable)
         assertSame(original, result.cause)
     }
 
@@ -60,7 +59,7 @@ class AfternoteAuthoringFailureMapperTest {
     @Test
     fun `HttpException 400 + 바디 code 475면 검증 예외로 치환`() {
         val result = mapAuthoringFailure(httpException(code = 400, body = """{"code":475}"""))
-        assertTrue(result is AfternoteAuthoringValidationException)
+        assertTrue(result is AfternoteFailure.AuthoringValidation)
     }
 
     @Test

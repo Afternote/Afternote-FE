@@ -17,7 +17,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeAuthRepository
 import com.afternote.afternote_fe.test.FakeUserRepository
-import com.afternote.core.domain.error.NetworkUnavailableException
+import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.model.Session
@@ -69,13 +69,13 @@ class AppOnboardingCanaryTest {
     @Test
     fun coldStartWithoutSession_opensLoginFromWelcome() {
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.welcome_start))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_start))
             .assertIsDisplayed()
             .performClick()
 
         composeRule
             .onNode(
-                hasText(context.getString(OnboardingR.string.login_top_bar_title)) and
+                hasText(context.getString(OnboardingR.string.onboarding_login_top_bar_title)) and
                     hasClickAction(),
             ).assertIsDisplayed()
     }
@@ -83,7 +83,7 @@ class AppOnboardingCanaryTest {
     @Test
     fun emailLogin_networkFailureThenRetry_entersHomeOnce() {
         fakeAuth.emailLoginResults.addLast(
-            Result.failure(NetworkUnavailableException(IOException("offline"))),
+            Result.failure(CoreAuthFailure.NetworkUnavailable(IOException("offline"))),
         )
         fakeAuth.emailLoginResults.addLast(
             Result.success(Session.DefaultSession("access", "refresh")),
@@ -91,7 +91,7 @@ class AppOnboardingCanaryTest {
 
         openLoginAndEnterCredentials()
         composeRule
-            .onNode(hasText(context.getString(OnboardingR.string.login_button)) and hasClickAction())
+            .onNode(hasText(context.getString(OnboardingR.string.onboarding_login_button)) and hasClickAction())
             .performClick()
 
         composeRule
@@ -135,13 +135,13 @@ class AppOnboardingCanaryTest {
 
     private fun openLoginAndEnterCredentials() {
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.welcome_start))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_start))
             .performClick()
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.login_email_label))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_login_email_label))
             .performTextInput("canary@afternote.local")
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.login_password_label))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_login_password_label))
             .performTextInput("password-1234")
     }
 }

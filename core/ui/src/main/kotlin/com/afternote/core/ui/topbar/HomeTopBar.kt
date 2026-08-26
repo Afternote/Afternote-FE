@@ -13,17 +13,30 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 
+/** 프로필 아이콘 앵커. 장식이라 semantics 이름이 없어 테스트가 이 태그로 존재 여부를 본다. */
+const val PROFILE_ICON_TEST_TAG = "home_top_bar_profile"
+
+/**
+ * 홈 계열 화면 공통 탑바.
+ *
+ * @param onSettingClick 설정 진입 콜백. `null` 이면 설정 아이콘을 그리지 않는다 — 회원이 아닌
+ *   흐름(수신자 열람)은 설정이 향할 곳이 없어서, no-op 을 넘겨 아이콘만 남기면 눌러도 아무 일이
+ *   일어나지 않는 가짜 액션이 된다 (#620).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeTopBar(
     modifier: Modifier = Modifier,
     showProfileIcon: Boolean = true,
-    onSettingClick: () -> Unit = {},
+    onSettingClick: (() -> Unit)? = {},
 ) {
     TopAppBar(
         navigationIcon = {
@@ -44,23 +57,33 @@ fun HomeTopBar(
                         .padding(end = 25.dp),
             ) {
                 if (showProfileIcon) {
+                    // 목적지가 없어 어디서도 눌리지 않는다 — 장식이므로 이름을 붙이지 않는다.
+                    // 이름을 주면 TalkBack 이 포커스 가능한 노드로 읽어, 사용자가 액션이 있다고
+                    // 믿고 탭했다가 아무 반응도 얻지 못한다 (#613 리뷰).
                     Image(
                         painter = painterResource(R.drawable.core_ui_user),
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(18.dp).testTag(PROFILE_ICON_TEST_TAG),
                     )
 
-                    Spacer(modifier = Modifier.width(15.dp))
+                    // 두 아이콘 사이 간격이라 설정이 없으면 함께 사라진다 (안 그러면 우측이 빈다).
+                    if (onSettingClick != null) {
+                        Spacer(modifier = Modifier.width(15.dp))
+                    }
                 }
 
-                Image(
-                    painter = painterResource(R.drawable.core_ui_settings),
-                    contentDescription = null,
-                    modifier =
-                        Modifier
-                            .size(18.dp)
-                            .clickable { onSettingClick() },
-                )
+                if (onSettingClick != null) {
+                    Image(
+                        painter = painterResource(R.drawable.core_ui_settings),
+                        // 유일하게 눌리는 액션인데 접근성 트리에 이름이 없었다 — 스크린리더가
+                        // "버튼" 으로만 읽는다 (#613).
+                        contentDescription = stringResource(R.string.core_ui_home_top_bar_setting),
+                        modifier =
+                            Modifier
+                                .size(18.dp)
+                                .clickable(role = Role.Button) { onSettingClick() },
+                    )
+                }
             }
         },
         colors =

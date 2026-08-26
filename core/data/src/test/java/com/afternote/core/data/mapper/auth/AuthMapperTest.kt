@@ -14,9 +14,9 @@ import org.junit.Test
 /**
  * [AuthMapper] DTO → Domain 변환 회귀 가드.
  *
- * 매퍼가 단순 필드 복사라 분기 로직은 없지만, `accessToken` ↔ `refreshToken` 자리 바뀜·필드 누락·
- * nullable 경계(`isNewUser`) 같은 사고를 잡는다. 두 토큰엔 서로 다른 sentinel 값을 줘서 자리가
- * 바뀌면 도메인 객체 equals 비교가 실패하도록 하고, 결과는 전체 객체 단위로 비교한다.
+ * 매퍼가 단순 필드 복사라 분기 로직은 없지만, `accessToken` ↔ `refreshToken` 자리 바뀜·필드 누락
+ * 같은 사고를 잡는다. 두 토큰엔 서로 다른 sentinel 값을 줘서 자리가 바뀌면 도메인 객체 equals
+ * 비교가 실패하도록 하고, 결과는 전체 객체 단위로 비교한다.
  */
 class AuthMapperTest {
     @Test
@@ -48,10 +48,10 @@ class AuthMapperTest {
     }
 
     @Test
-    fun `toSocialLoginResult - 토큰·isNewUser 매핑 (null 경계 포함)`() {
-        // 서버가 newUser 를 생략할 수 있어(null) 그대로 보존돼야 한다 — true/false/null 왕복 확인.
+    fun `toSocialLoginResult - 토큰·isNewUser 매핑`() {
+        // isNewUser 는 온보딩 진입을 가르는 값이라 뒤집히면 안 된다 — true/false 왕복 확인(#993).
         // 토큰 자리 바뀜도 같은 케이스에서 객체 비교로 함께 가드.
-        listOf(true, false, null).forEach { newUser ->
+        listOf(true, false).forEach { newUser ->
             val result =
                 AuthMapper.toSocialLoginResult(
                     LoginDto.SocialLoginDto(

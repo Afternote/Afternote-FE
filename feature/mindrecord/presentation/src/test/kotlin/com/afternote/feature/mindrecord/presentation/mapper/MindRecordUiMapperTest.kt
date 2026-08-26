@@ -6,6 +6,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 import java.time.LocalDate
+import com.afternote.feature.mindrecord.domain.model.DailyQuestion as DailyQuestionDomain
 
 /**
  * [Diary.toUi] 날짜 해석 계약 가드 (#699).
@@ -60,4 +61,61 @@ class MindRecordUiMapperTest {
         createdAt = createdAt,
         todayMood = TodayMood.HAPPY,
     )
+
+    @Test
+    fun `일기 썸네일도 본문 HTML 의 첫 이미지에서 나온다`() {
+        // 서버 계약에 imageUrl 이 없다 — 요청에 실어 보내도 버려지고 응답에도 키가 없어
+        // 항상 null 이다. 그대로 두면 일기 카드 썸네일 자리가 영영 빈다 (#1024).
+        val diary =
+            Diary(
+                diaryId = 1L,
+                title = "제목",
+                content = "<p>본문</p><img src=\"https://cdn.example/mindrecords/permanent/13/a.png\" />",
+                date = "2026-08-25",
+                createdAt = "2026.08.25 화",
+                todayMood = TodayMood.HAPPY,
+            )
+
+        assertEquals("https://cdn.example/mindrecords/permanent/13/a.png", diary.toUi()?.imageUrl)
+    }
+
+    @Test
+    fun `본문에 이미지가 없는 일기는 썸네일 없이 텍스트 카드로 간다`() {
+        val diary =
+            Diary(
+                diaryId = 2L,
+                title = "제목",
+                content = "<p>글만 있는 본문</p>",
+                date = "2026-08-25",
+                createdAt = "2026.08.25 화",
+                todayMood = TodayMood.SOSO,
+            )
+
+        assertNull(diary.toUi()?.imageUrl)
+    }
+
+    @Test
+    fun `데일리질문 썸네일은 본문 HTML 의 첫 이미지에서 나온다`() {
+        // 서버 계약에 `imageUrl` 이 없어 응답 필드로는 영영 null 이다 — 본문에서 뽑지 않으면
+        // 이미지를 첨부해도 목록 카드 썸네일이 뜨지 않는다 (#549).
+        val ui =
+            dailyQuestion(content = "<p>사진과 함께</p><img src=\"https://cdn/a.png\" />").toUi()!!
+
+        assertEquals("https://cdn/a.png", ui.imageUrl)
+    }
+
+    @Test
+    fun `본문에 이미지가 없으면 썸네일 없이 텍스트 카드로 간다`() {
+        val ui = dailyQuestion(content = "<p>글만 있는 답변</p>").toUi()!!
+
+        assertNull(ui.imageUrl)
+    }
+
+    private fun dailyQuestion(content: String) =
+        DailyQuestionDomain(
+            dailyQuestionId = 1L,
+            title = "오늘의 질문",
+            content = content,
+            createdAt = "2026.08.23 일",
+        )
 }

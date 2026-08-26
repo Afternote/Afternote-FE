@@ -14,7 +14,12 @@
     <string name="receiver_home_afternote_section_title">애프터노트</string>
     <string name="receiver_home_afternote_section_desc">고인이 사후 정리하고자 하는 데이터입니다.</string>
     <string name="receiver_home_afternote_section_button">애프터노트 확인하러 가기</string>
-    <string name="receiver_home_section_count_unavailable">기록 수를 불러오지 못했습니다.</string>
+    <!--
+      조회 실패·미상일 때 개수 자리에 넣는 값. 문장을 통째로 갈아 끼우지 않고 숫자 자리만
+      바꾼다 — 섹션 레이아웃이 유지돼야 한다는 것이 시안 확정값이다 (#952, 4309:19394).
+      en dash(–) 다. hyphen 과 다르니 바꾸지 말 것.
+    -->
+    <string name="receiver_home_section_count_unavailable">–</string>
     <string name="receiver_home_download_all_button">모든 기록 내려받기</string>
     <string name="receiver_home_download_all_dialog_message">모든 기록을 내려받으시겠습니까?</string>
     <string name="receiver_home_download_all_failed">모든 기록 내려받기에 실패했습니다.</string>
@@ -22,4 +27,20 @@
     <!-- 홈 탭과 문안이 같지만 모듈 분리로 사본을 둔다 — 발신자 홈(home_tab_*)과 독립 수정 가능해야 한다. -->
     <string name="receiver_home_error_message">정보를 불러오지 못했습니다.</string>
     <string name="receiver_home_retry">다시 시도</string>
+
+    <!--
+      애프터노트 목록·플레이리스트는 발신자 화면([AfternoteHomeScreen]·공용 곡 목록 부품)을 공유하므로
+      관점이 갈리는 문구만 여기서 덮는다. 수신자 홈 섹션 설명과 같은 문안이지만, 위 error/retry 와 같은
+      이유로 사본을 둔다 (#620).
+    -->
+    <string name="receiver_afternote_list_header_description">고인이 사후 정리하고자 하는 데이터입니다.</string>
+    <string name="receiver_playlist_song_count_format">총 %1$d곡</string>
+
+    <!--
+      SOCIAL 수신 상세 ACCOUNT 섹션의 부재 문구. 서버는 수신자에게 credentials 를 내려주지 않고,
+      내려주더라도 발신자가 한쪽만 적었을 수 있다. 빈 값에 마스킹을 그려 "가려진 값이 있다" 고
+      오인시키는 대신 남기지 않았다는 사실을 명시한다 (#619).
+    -->
+    <string name="receiver_detail_account_absent">고인이 계정 정보를 남기지 않았습니다.</string>
+    <string name="receiver_detail_account_value_absent">남기지 않음</string>
 </resources>

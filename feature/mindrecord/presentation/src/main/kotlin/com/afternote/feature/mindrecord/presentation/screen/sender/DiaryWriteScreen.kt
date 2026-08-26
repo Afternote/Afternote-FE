@@ -17,7 +17,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -46,7 +45,6 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.mindrecord.domain.model.TodayMood
-import com.afternote.feature.mindrecord.presentation.component.BottomSheetCalendar
 import com.afternote.feature.mindrecord.presentation.component.ReceiverSelectBottomSheet
 import com.afternote.feature.mindrecord.presentation.component.WriteTextField
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryWriteViewModel
@@ -65,7 +63,6 @@ fun DiaryWriteScreen(
     viewModel: DiaryWriteViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var showPicker by remember { mutableStateOf(false) }
     var showReceiverSheet by remember { mutableStateOf(false) }
     val currentOnSubmitSuccess by rememberUpdatedState(onSubmitSuccess)
 
@@ -169,11 +166,15 @@ fun DiaryWriteScreen(
             }
 
             // Figma 2671:17922 — 날짜 선택 행 ("yyyy년 M월 d일" + 아래 화살표)
+            // **표시 전용이다.** 서버는 생성·수정 어느 쪽에서도 date 를 받지 않고 기록 날짜를
+            // 요청 시각으로 정한다 (실측 2026-08-25: POST·PATCH 에 date 를 실어도 저장분은
+            // 오늘, Swagger 스키마에도 필드가 없다). 고를 수 있게 두면 사용자는 고른 날짜로
+            // 남았다고 믿는데 실제로는 오늘로 저장된다 — 고르지 못하게 해 거짓을 없앤다 (#1008).
+            //
+            // BE 가 date 를 수용하면 이 자리에 피커를 되돌린다. 이어쓰기 프리필이 채워 주는
+            // 원래 날짜를 보여 주는 역할은 그대로다.
             Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable { showPicker = !showPicker },
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -182,12 +183,6 @@ fun DiaryWriteScreen(
                     style = AfternoteDesign.typography.captionLargeR,
                     color = AfternoteDesign.colors.gray9,
                 )
-                IconButton(onClick = { showPicker = !showPicker }) {
-                    Icon(
-                        painter = painterResource(R.drawable.core_ui_arrowdown),
-                        contentDescription = null,
-                    )
-                }
             }
 
             HorizontalDivider()
@@ -258,27 +253,52 @@ fun DiaryWriteScreen(
                 )
             }
 
-            // draft 프리필은 비동기 완료 — draftLoaded 전환 시 에디터를 재생성해 content 를 다시 시드한다.
-            key(uiState.draftLoaded) {
-                WriteTextField(
-                    value = uiState.content,
-                    onValueChange = viewModel::onContentChanged,
-                    onSaveDraftClick = { viewModel.submit(isDraft = true) },
-                    onDraftCountClick = onDraftListClick,
-                    draftCount = uiState.draftCount,
-                    onImagePicked = viewModel::uploadImage,
+            // 저장·업로드 진행 상태를 알린다 — 종전에는 액션만 잠기고 표시가 없어
+            // 사용자가 무반응으로 인식했다 (#716).
+            val progressText =
+                when {
+                    uiState.submitState is SubmitState.InProgress -> {
+                        stringResource(MindRecordR.string.mindrecord_write_saving)
+                    }
+
+                    uiState.isUploadingImage -> {
+                        stringResource(MindRecordR.string.mindrecord_write_uploading_image)
+                    }
+
+                    uiState.isDraftLoading -> {
+                        stringResource(MindRecordR.string.mindrecord_write_loading_draft)
+                    }
+
+                    else -> {
+                        null
+                    }
+                }
+            if (progressText != null) {
+                Text(
+                    text = progressText,
+                    color = AfternoteDesign.colors.gray6,
+                    style = AfternoteDesign.typography.captionLargeR,
                 )
             }
-        }
 
-        if (showPicker) {
-            BottomSheetCalendar(
-                initialDate = uiState.date,
-                onDismiss = { showPicker = false },
-                onDateSelect = { date ->
-                    viewModel.onDateSelected(date)
-                    showPicker = false
-                },
+            val uploadError = uiState.imageUploadError?.asString()
+            if (uploadError != null) {
+                Text(
+                    text = uploadError,
+                    color = AfternoteDesign.colors.error,
+                    style = AfternoteDesign.typography.captionLargeR,
+                )
+            }
+
+            // 프리필이 늦게 도착해도 WriteTextField 가 value 변경에 반응해 다시 시드한다 —
+            // key() 로 컴포넌트를 재생성하지 않는다 (#1018).
+            WriteTextField(
+                value = uiState.content,
+                onValueChange = viewModel::onContentChanged,
+                onSaveDraftClick = { viewModel.submit(isDraft = true) },
+                onDraftCountClick = onDraftListClick,
+                draftCount = uiState.draftCount,
+                onImagePicked = viewModel::uploadImage,
             )
         }
 
@@ -286,6 +306,10 @@ fun DiaryWriteScreen(
             ReceiverSelectBottomSheet(
                 receivers = uiState.receivers,
                 selectedReceiverIds = uiState.selectedReceiverIds,
+                // 실패를 빈 목록으로 흡수하지 않는다 — 사용자가 «등록 안 함» 으로 오해한다 (#1019).
+                loadError = uiState.receiverLoadError?.asString(),
+                isLoading = uiState.isReceiverLoading,
+                onRetry = viewModel::loadReceivers,
                 onToggle = viewModel::onReceiverToggled,
                 onDismiss = { showReceiverSheet = false },
             )

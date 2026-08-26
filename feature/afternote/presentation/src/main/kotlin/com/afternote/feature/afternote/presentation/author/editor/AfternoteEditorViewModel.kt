@@ -7,18 +7,15 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.core.domain.error.NetworkUnavailableException
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.afternote.domain.AfternoteType
-import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationException
 import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationKind
+import com.afternote.feature.afternote.domain.error.AfternoteFailure
 import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.SaveAfternoteCommand
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
-import com.afternote.feature.afternote.domain.usecase.editor.MemorialPhotoSaveException
-import com.afternote.feature.afternote.domain.usecase.editor.MemorialVideoSaveException
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.presentation.author.editor.mapper.toAfternoteEditorReceivers
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
@@ -30,7 +27,6 @@ import com.afternote.feature.afternote.presentation.author.editor.state.Afternot
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
-import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationException
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.author.editor.state.withMemorialPhoto
 import com.afternote.feature.afternote.presentation.author.editor.state.withMemorialPlaylistSongs
@@ -339,6 +335,16 @@ class AfternoteEditorViewModel
             errorReporter.recordAfternoteFailure(AfternoteFailureStage.MEMORIAL_THUMBNAIL_EXTRACT, throwable)
         }
 
+        /**
+         * 즉석 촬영 인텐트를 띄우지 못한 실패를 기록한다.
+         *
+         * 화면에는 "카메라를 사용할 수 없습니다" 한 줄만 나가고 사유가 지워지므로, UI 가 예외를
+         * 넘겨주지 않으면 저장공간 문제인지 카메라 앱 부재인지 콘솔에서 가를 수 없다.
+         */
+        fun onMemorialCaptureLaunchFailed(throwable: Throwable) {
+            errorReporter.recordAfternoteFailure(AfternoteFailureStage.MEMORIAL_CAPTURE_LAUNCH, throwable)
+        }
+
         fun saveAfternote(
             payload: RegisterAfternotePayload,
             selectedReceiverIds: List<Long>,
@@ -588,26 +594,33 @@ class AfternoteEditorViewModel
         // endregion
     }
 
+/**
+ * 저장 실패를 화면이 소비할 단일 오류 상태로 좁힌다.
+ *
+ * [AfternoteFailure] 는 루트로 받아 `when` 을 exhaustive 하게 만든다 — 실패 유형이 늘면 여기가
+ * 컴파일 에러로 잡힌다. `else` 로 뭉개 두면 새 유형이 조용히 서버 오류로 흘러간다.
+ */
 internal fun Throwable.toAfternoteEditorError(): AfternoteEditorError =
     when (this) {
-        is AfternoteAuthoringValidationException -> {
-            val reason =
-                when (kind) {
-                    AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED -> AfternoteValidationError.RECEIVERS_REQUIRED
+        is AfternoteFailure -> {
+            when (this) {
+                is AfternoteFailure.AuthoringValidation -> {
+                    val reason =
+                        when (kind) {
+                            AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED -> AfternoteValidationError.RECEIVERS_REQUIRED
+                        }
+                    AfternoteEditorError.Validation(reason)
                 }
-            AfternoteEditorError.Validation(reason)
-        }
 
-        is AfternoteValidationException -> {
-            AfternoteEditorError.Validation(validationError)
-        }
+                // 미디어 해석 실패는 사용자가 입력을 고쳐 푸는 검증 실패가 아니라 업로드 장애다.
+                is AfternoteFailure.MediaSave -> {
+                    AfternoteEditorError.Upload(AfternoteEditorError.Upload.Target.SAVE_MEDIA)
+                }
 
-        is NetworkUnavailableException -> {
-            AfternoteEditorError.Network
-        }
-
-        is MemorialPhotoSaveException, is MemorialVideoSaveException -> {
-            AfternoteEditorError.Upload(AfternoteEditorError.Upload.Target.SAVE_MEDIA)
+                is AfternoteFailure.NetworkUnavailable -> {
+                    AfternoteEditorError.Network
+                }
+            }
         }
 
         else -> {

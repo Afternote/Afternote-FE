@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -118,7 +119,44 @@ fun DailyQuestionWriteScreen(
                 )
             }
 
+            // 저장·업로드 진행 상태를 알린다 — 종전에는 액션만 잠기고 표시가 없어
+            // 사용자가 무반응으로 인식했다 (#716).
+            val progressText =
+                when {
+                    uiState.submitState is SubmitState.InProgress -> {
+                        stringResource(R.string.mindrecord_write_saving)
+                    }
+
+                    uiState.isUploadingImage -> {
+                        stringResource(R.string.mindrecord_write_uploading_image)
+                    }
+
+                    else -> {
+                        null
+                    }
+                }
+            if (progressText != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = progressText,
+                    color = AfternoteDesign.colors.gray6,
+                    style = AfternoteDesign.typography.captionLargeR,
+                )
+            }
+
+            val uploadError = uiState.imageUploadError?.asString()
+            if (uploadError != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = uploadError,
+                    color = AfternoteDesign.colors.error,
+                    style = AfternoteDesign.typography.captionLargeR,
+                )
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
+            // 프리필이 늦게 도착해도 WriteTextField 가 value 변경에 반응해 다시 시드한다 —
+            // key() 로 컴포넌트를 재생성하지 않는다 (#1018).
             WriteTextField(
                 value = uiState.answer,
                 onValueChange = viewModel::onAnswerChanged,
