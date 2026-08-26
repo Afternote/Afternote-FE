@@ -4,8 +4,18 @@ import com.afternote.core.network.dto.LoginDto
 import com.afternote.core.network.dto.SocialLoginRequestDto
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.junit.AfterClass
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -13,11 +23,6 @@ import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
-import org.mockserver.client.MockServerClient
-import org.mockserver.matchers.MatchType
-import org.mockserver.model.HttpRequest.request
-import org.mockserver.model.HttpResponse.response
-import org.mockserver.model.JsonBody.json
 import org.testcontainers.DockerClientFactory
 import org.testcontainers.mockserver.MockServerContainer
 import org.testcontainers.utility.DockerImageName
@@ -37,7 +42,7 @@ class ApiWireContractSmokeTest {
 
     @Before
     fun setUp() {
-        mockClient.reset()
+        controlPut("/mockserver/reset")
 
         val okHttpClient =
             OkHttpClient
@@ -67,37 +72,29 @@ class ApiWireContractSmokeTest {
     @Test
     fun `social login preserves HTTP route, strict request JSON, and response schema`() =
         runTest {
-            mockClient
-                .`when`(
-                    request()
-                        .withMethod("POST")
-                        .withPath("/api/v1/auth/social/login")
-                        .withBody(
-                            json(
-                                """{"provider":"KAKAO","accessToken":"provider-token"}""",
-                                MatchType.STRICT,
-                            ),
-                        ),
-                ).respond(
-                    response()
-                        .withStatusCode(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(
-                            """
-                            {
-                              "status": 200,
-                              "code": 200,
-                              "message": "ok",
-                              "data": {
-                                "accessToken": "access",
-                                "refreshToken": "refresh",
-                                "isNewUser": true,
-                                "expiresIn": 3600
-                              }
-                            }
-                            """.trimIndent(),
-                        ),
-                )
+            installExpectation(
+                method = "POST",
+                path = "/api/v1/auth/social/login",
+                requestBody =
+                    wireJson
+                        .parseToJsonElement(
+                            """{"provider":"KAKAO","accessToken":"provider-token"}""",
+                        ).jsonObject,
+                responseBody =
+                    """
+                    {
+                      "status": 200,
+                      "code": 200,
+                      "message": "ok",
+                      "data": {
+                        "accessToken": "access",
+                        "refreshToken": "refresh",
+                        "isNewUser": true,
+                        "expiresIn": 3600
+                      }
+                    }
+                    """.trimIndent(),
+            )
 
             val result =
                 authService.socialLogin(
@@ -110,35 +107,111 @@ class ApiWireContractSmokeTest {
             assertEquals("refresh", data.refreshToken)
             assertTrue(data.isNewUser)
             assertEquals(3600L, data.expiresIn)
+            assertExactlyOneRecordedRequest("POST", "/api/v1/auth/social/login")
         }
 
     @Test
     fun `authenticated receiver request preserves bearer header and relative API path`() =
         runTest {
-            mockClient
-                .`when`(
-                    request()
-                        .withMethod("GET")
-                        .withPath("/api/v1/users/receivers")
-                        .withHeader("Authorization", "Bearer contract-token"),
-                ).respond(
-                    response()
-                        .withStatusCode(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(
-                            """{"status":200,"code":200,"message":"ok","data":[]}""",
-                        ),
-                )
+            installExpectation(
+                method = "GET",
+                path = "/api/v1/users/receivers",
+                requestHeaders = mapOf("Authorization" to "Bearer contract-token"),
+                responseBody = """{"status":200,"code":200,"message":"ok","data":[]}""",
+            )
 
             val result = userService.getReceivers()
 
             assertEquals(200, result.status)
             assertTrue(result.data.orEmpty().isEmpty())
+            assertExactlyOneRecordedRequest("GET", "/api/v1/users/receivers")
         }
+
+    private fun installExpectation(
+        method: String,
+        path: String,
+        requestBody: JsonElement? = null,
+        requestHeaders: Map<String, String> = emptyMap(),
+        responseBody: String,
+    ) {
+        val expectation =
+            buildJsonObject {
+                putJsonObject("httpRequest") {
+                    put("method", method)
+                    put("path", path)
+                    if (requestHeaders.isNotEmpty()) {
+                        putJsonObject("headers") {
+                            requestHeaders.forEach { (name, value) ->
+                                put(name, buildJsonArray { add(JsonPrimitive(value)) })
+                            }
+                        }
+                    }
+                    if (requestBody != null) {
+                        putJsonObject("body") {
+                            put("type", "JSON")
+                            put("json", requestBody)
+                            put("matchType", "STRICT")
+                        }
+                    }
+                }
+                putJsonObject("httpResponse") {
+                    put("statusCode", 200)
+                    putJsonObject("headers") {
+                        put(
+                            "Content-Type",
+                            buildJsonArray { add(JsonPrimitive("application/json")) },
+                        )
+                    }
+                    put("body", responseBody)
+                }
+            }
+
+        controlPut("/mockserver/expectation", expectation.toString())
+    }
+
+    private fun assertExactlyOneRecordedRequest(
+        method: String,
+        path: String,
+    ) {
+        val matcher =
+            buildJsonObject {
+                put("method", method)
+                put("path", path)
+            }
+        val recorded =
+            wireJson
+                .parseToJsonElement(
+                    controlPut("/mockserver/retrieve?type=REQUESTS", matcher.toString()),
+                ).jsonArray
+
+        assertEquals("$method $path must cross the socket exactly once", 1, recorded.size)
+    }
+
+    private fun controlPut(
+        path: String,
+        payload: String = "",
+    ): String {
+        val request =
+            Request
+                .Builder()
+                .url("${mockServer.endpoint}$path")
+                .put(payload.toRequestBody(JSON_MEDIA_TYPE))
+                .build()
+
+        return controlClient.newCall(request).execute().use { response ->
+            val responseBody = response.body.string()
+            check(response.isSuccessful) {
+                "MockServer control PUT $path failed: ${response.code} $responseBody"
+            }
+            responseBody
+        }
+    }
 
     companion object {
         private const val ENABLE_ENV = "RUN_API_CONTRACT_SMOKE"
-        private const val MOCKSERVER_VERSION = "5.15.0"
+        private const val MOCKSERVER_VERSION = "7.6.0"
+        private val JSON_MEDIA_TYPE = "application/json".toMediaType()
+        private val controlClient = OkHttpClient()
         private val wireJson =
             Json {
                 ignoreUnknownKeys = true
@@ -146,7 +219,6 @@ class ApiWireContractSmokeTest {
             }
 
         private lateinit var mockServer: MockServerContainer
-        private lateinit var mockClient: MockServerClient
 
         @BeforeClass
         @JvmStatic
@@ -162,19 +234,16 @@ class ApiWireContractSmokeTest {
                     DockerImageName.parse("mockserver/mockserver:mockserver-$MOCKSERVER_VERSION"),
                 )
             mockServer.start()
-            mockClient = MockServerClient(mockServer.host, mockServer.serverPort)
         }
 
         @AfterClass
         @JvmStatic
         fun stopContainer() {
-            // MockServerClient.close() delegates to stop(), so it must run only after every test.
-            if (::mockClient.isInitialized) {
-                mockClient.close()
-            }
             if (::mockServer.isInitialized) {
                 mockServer.stop()
             }
+            controlClient.dispatcher.executorService.shutdown()
+            controlClient.connectionPool.evictAll()
         }
     }
 }

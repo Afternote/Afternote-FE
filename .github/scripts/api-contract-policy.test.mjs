@@ -31,18 +31,19 @@ test('contract smoke is explicit, Docker-backed, secretless, and bounded', () =>
   assert.doesNotMatch(workflow, /secrets\./);
 });
 
-test('wire smoke uses matching Testcontainers and MockServer versions', () => {
+test('wire smoke uses Testcontainers with a pinned MockServer REST API image', () => {
   assert.match(build, /testImplementation\(libs\.testcontainers\.mockserver\)/);
-  assert.match(build, /testImplementation\(libs\.mockserver\.client\)/);
-  assert.match(smoke, /MOCKSERVER_VERSION = "5\.15\.0"/);
+  assert.doesNotMatch(build, /mockserver\.client/);
+  assert.match(smoke, /MOCKSERVER_VERSION = "7\.6\.0"/);
   assert.match(smoke, /DockerClientFactory\.instance\(\)\.isDockerAvailable/);
-  assert.match(smoke, /MatchType\.STRICT/);
+  assert.match(smoke, /put\("matchType", "STRICT"\)/);
   assert.match(smoke, /\/api\/v1\/auth\/social\/login/);
   assert.match(smoke, /Authorization", "Bearer contract-token"/);
 });
 
-test('MockServer client stays alive across both contracts and closes only after the class', () => {
-  assert.match(smoke, /@BeforeClass[\s\S]*mockClient = MockServerClient/);
-  assert.match(smoke, /@AfterClass[\s\S]*mockClient\.close\(\)/);
-  assert.doesNotMatch(smoke, /@After\b[\s\S]{0,400}mockClient\.close\(\)/);
+test('REST control plane resets state and verifies exactly one recorded request', () => {
+  assert.match(smoke, /controlPut\("\/mockserver\/reset"\)/);
+  assert.match(smoke, /controlPut\("\/mockserver\/expectation"/);
+  assert.match(smoke, /\/mockserver\/retrieve\?type=REQUESTS/);
+  assert.match(smoke, /assertEquals\("\$method \$path must cross the socket exactly once", 1, recorded\.size\)/);
 });

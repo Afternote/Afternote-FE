@@ -27,6 +27,5 @@ dependencies {
     implementation(projects.core.model)
     testImplementation(libs.coroutines.test)
     testImplementation(libs.testcontainers.mockserver)
-    testImplementation(libs.mockserver.client)
     testImplementation(testFixtures(projects.core.domain))
 }
