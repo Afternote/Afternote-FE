@@ -67,10 +67,10 @@ fun AddSongScreen(
                         onSearchQueryChange = onSearchQueryChange,
                     )
                 },
-                initialSelectedSongIds = emptySet(),
+                initialSelectedSongKeys = emptySet(),
                 actionLabel = stringResource(R.string.add_button),
-                onAction = { selectedIds ->
-                    onSongsAdded(uiState.songs.filter { it.id in selectedIds }.map(::toSong))
+                onAction = { selectedKeys ->
+                    onSongsAdded(uiState.songs.filter { it.selectionKey in selectedKeys }.map(::toSong))
                 },
             )
         }
@@ -83,7 +83,7 @@ fun AddSongScreen(
 
 private fun toSong(display: PlaylistSongDisplay): Song =
     Song(
-        id = display.id,
+        id = display.selectionKey,
         title = display.title,
         artist = display.artist,
         albumCoverUrl = display.albumImageUrl,
@@ -100,7 +100,7 @@ private fun AddSongScreenPreview() {
                 AddSongUiState(
                     songs =
                         (1..9).map { i ->
-                            PlaylistSongDisplay(id = "s$i", title = "노래 제목 $i", artist = "가수 이름")
+                            PlaylistSongDisplay(selectionKey = "s$i", title = "노래 제목 $i", artist = "가수 이름")
                         },
                 ),
             onSearchQueryChange = {},
