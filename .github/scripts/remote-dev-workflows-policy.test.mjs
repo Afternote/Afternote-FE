@@ -17,11 +17,12 @@ const screenshotModules = [
 test("baseline generation executes PR code without write credentials", async () => {
     const source = await readWorkflow("screenshot-baseline-generate.yml");
 
-    assert.match(source, /^\s{2}workflow_dispatch:/m);
+    assert.match(source, /^\s{2}pull_request:\n\s{4}types: \[labeled\]$/m);
     assert.match(source, /^permissions:\n\s{2}contents: read\n\s{2}pull-requests: read$/m);
     assert.doesNotMatch(source, /^\s{2}contents: write$/m);
-    assert.match(source, /pullRequest\.head\.sha/);
-    assert.match(source, /pullRequest\.head\.repo\?\.full_name/);
+    assert.match(source, /github\.event\.label\.name == 'screenshot-baseline'/);
+    assert.match(source, /github\.event\.pull_request\.head\.sha/);
+    assert.match(source, /github\.event\.pull_request\.head\.repo\.full_name == github\.repository/);
     assert.match(source, /persist-credentials: false/);
     assert.match(source, /platforms: linux\/amd64/);
     assert.match(source, /docker run --rm --platform linux\/amd64/);
@@ -37,10 +38,13 @@ test("privileged baseline apply is a workflow-run bridge restricted to PNG basel
 
     assert.match(source, /^\s{2}workflow_run:/m);
     assert.match(source, /workflows: \["Generate Screenshot Baselines"\]/);
-    assert.match(source, /github\.event\.workflow_run\.event == 'workflow_dispatch'/);
+    assert.match(source, /github\.event\.workflow_run\.event == 'pull_request'/);
     assert.match(source, /^\s{2}contents: write$/m);
-    assert.match(source, /persist-credentials: false/);
-    assert.match(source, /Rejected non-baseline path/);
+    assert.doesNotMatch(source, /actions\/checkout@/);
+    assert.doesNotMatch(source, /git apply/);
+    assert.doesNotMatch(source, /child_process/);
+    assert.match(source, /files\.json/);
+    assert.match(source, /Rejected non-baseline or duplicate path/);
     assert.match(source, /89504e470d0a1a0a/);
     assert.match(source, /pullRequest\.head\.sha !== metadata\.headSha/);
     assert.match(source, /force: false/);
@@ -49,13 +53,14 @@ test("privileged baseline apply is a workflow-run bridge restricted to PNG basel
     }
 });
 
-test("managed device QA can target an exact labeled or manually selected PR", async () => {
+test("managed device QA uses labeled PR scope or the trusted default branch", async () => {
     const source = await readWorkflow("android-managed-device.yml");
 
     assert.match(source, /^\s{2}pull_request:\n\s{4}types: \[labeled, synchronize\]$/m);
     assert.match(source, /contains\(github\.event\.pull_request\.labels\.\*\.name, 'android-test'\)/);
-    assert.match(source, /pull_request_number:/);
-    assert.match(source, /ref: \$\{\{ steps\.target\.outputs\.sha \}\}/);
+    assert.match(source, /github\.ref_name == github\.event\.repository\.default_branch/);
+    assert.match(source, /ref: \$\{\{ github\.event_name == 'pull_request' && github\.event\.pull_request\.head\.sha \|\| github\.event\.repository\.default_branch \}\}/);
+    assert.doesNotMatch(source, /pull_request_number:/);
     assert.match(source, /persist-credentials: false/);
 });
 
