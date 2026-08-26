@@ -1,6 +1,6 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.User
 import com.afternote.feature.mindrecord.domain.model.EmotionAnalysis
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
@@ -23,7 +23,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import java.lang.reflect.Proxy
 import java.time.DayOfWeek
 import java.time.LocalDate
 
@@ -148,15 +147,9 @@ class WeeklyReportRecoveryTest {
         return viewModel
     }
 
-    private fun userRepository(): UserRepository =
-        Proxy.newProxyInstance(
-            UserRepository::class.java.classLoader,
-            arrayOf(UserRepository::class.java),
-        ) { _, method, _ ->
-            when (method.name) {
-                "getReceiverListFlow" -> flowOf(emptyList<Any>())
-                "getMyProfile" -> User(name = "adamtia", email = "a@b.c", phone = null, profileImageUrl = null)
-                else -> error("Unexpected user repository call: ${method.name}")
-            }
-        } as UserRepository
+    private fun userRepository(): FakeUserRepository =
+        FakeUserRepository.strict().apply {
+            onReceiverListFlow = { flowOf(emptyList()) }
+            onGetMyProfile = { User(name = "adamtia", email = "a@b.c", phone = null, profileImageUrl = null) }
+        }
 }
