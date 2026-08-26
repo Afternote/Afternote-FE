@@ -69,8 +69,8 @@ class OnboardingTermsRowWidthTest {
     @Test
     fun `전체동의 토글 영역은 행 오른쪽 끝까지 넓다`() {
         setTermsContent()
-        val agreeAll = composeRule.activity.getString(R.string.terms_agree_all)
-        val viewDetail = composeRule.activity.getString(R.string.terms_view_detail)
+        val agreeAll = composeRule.activity.getString(R.string.onboarding_terms_agree_all)
+        val viewDetail = composeRule.activity.getString(R.string.onboarding_terms_view_detail)
 
         val toggleRight =
             composeRule
