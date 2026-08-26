@@ -9,4 +9,5 @@ android {
 
 dependencies {
     implementation(projects.core.domain)
+    testImplementation(testFixtures(projects.core.domain))
 }
