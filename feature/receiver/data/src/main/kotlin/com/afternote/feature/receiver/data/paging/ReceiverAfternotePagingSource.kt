@@ -4,6 +4,7 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
+import com.afternote.feature.receiver.data.error.toReceiverFailure
 import com.afternote.feature.receiver.data.mapper.toReceiverDomainList
 import com.afternote.feature.receiver.data.service.ReceiverAfternoteApiService
 import com.afternote.feature.receiver.domain.model.AfterNoteListItem
@@ -30,5 +31,10 @@ internal class ReceiverAfternotePagingSource(
                 prevKey = null,
                 nextKey = null,
             )
-        }.getOrElse { LoadResult.Error(it) }
+        }.getOrElse { cause ->
+            // 인프라 타입을 그대로 흘리면 화면이 실패 사유를 가를 수 없어 «전달 조건 미충족»·«연결 없음»
+            // 처럼 처리가 갈리는 실패까지 하나의 "다시 시도" 로 수렴한다(#611). 사유가 확인되는 것만
+            // 도메인 어휘로 옮기고 나머지는 원본 그대로 둔다.
+            LoadResult.Error(cause.toReceiverFailure())
+        }
 }
