@@ -3,9 +3,16 @@ import { readdir, readFile } from "node:fs/promises";
 import test from "node:test";
 
 const workflowDirectory = new URL("../workflows/", import.meta.url);
-const GATE_WORKFLOW = "pr-validation.yml";
-// ci-gate 가 결과를 모아야 하는 검증들. 여기서 빠지면 그 검증은 머지를 막지 못한다.
+const ENTRY_WORKFLOW = "pr-validation.yml";
 const VALIDATION_WORKFLOWS = ["lint.yml", "unit-test.yml", "screenshot.yml", "repository-quality.yml"];
+// Repository ruleset 20911039 의 required context 와 함께 바꿔야 하는 외부 계약이다.
+const REQUIRED_VALIDATION_CONTEXTS = [
+    "Repository Quality / Repository Quality",
+    "Screenshot / Validate Compose Preview Screenshots",
+    "Static Analysis / Check Code Quality (Ktlint)",
+    "Static Analysis / Check Project Issues (Android Lint)",
+    "Unit Test / Run Unit Tests",
+];
 
 async function workflows() {
     const names = (await readdir(workflowDirectory)).filter((name) => name.endsWith(".yml"));
@@ -21,21 +28,24 @@ function jobNames(source) {
     return [...jobsSection.matchAll(/^ {2}([A-Za-z][\w-]*):$/gm)].map((match) => match[1]);
 }
 
-function needsOf(source, job) {
-    const pattern = new RegExp(`^ {2}${job}:$[\\s\\S]*?^ {4}needs:\\s*\\[([^\\]]*)\\]`, "m");
-    const match = pattern.exec(source);
-    return match ? match[1].split(",").map((entry) => entry.trim()) : [];
+function displayNameOf(source, job) {
+    const pattern = new RegExp(`^ {2}${job}:$[\\s\\S]*?^ {4}name:\\s*(.+)$`, "m");
+    return pattern.exec(source)?.[1]?.trim();
+}
+
+function calledWorkflowOf(source, job) {
+    const pattern = new RegExp(`^ {2}${job}:$[\\s\\S]*?^ {4}uses:\\s*\\./\\.github/workflows/(.+)$`, "m");
+    return pattern.exec(source)?.[1]?.trim();
 }
 
 test("pull request validation has exactly one entry point", async () => {
-    // 검증 워크플로가 스스로 pull_request 를 듣고 있으면 같은 검사가 두 벌 돌고,
-    // ci-gate 가 보지 않는 쪽이 별개 체크로 남는다.
+    // 검증 워크플로가 스스로 pull_request 를 듣고 있으면 같은 이름의 check 가 두 벌 돈다.
     const entryPoints = (await workflows())
         .filter(([name, source]) => /^on:\n(?:[^\n]*\n)*?\s{2}pull_request:/m.test(source) && VALIDATION_WORKFLOWS.includes(name))
         .map(([name]) => name);
 
     assert.deepEqual(entryPoints, []);
-    assert.match(await readWorkflow(GATE_WORKFLOW), /^on:\n\s{2}pull_request:$/m);
+    assert.match(await readWorkflow(ENTRY_WORKFLOW), /^on:\n\s{2}pull_request:$/m);
 });
 
 test("every validation workflow is reachable only as a reusable call", async () => {
@@ -44,42 +54,49 @@ test("every validation workflow is reachable only as a reusable call", async () 
     }
 });
 
-test("ci-gate aggregates every validation job in the entry workflow", async () => {
-    const gate = await readWorkflow(GATE_WORKFLOW);
-    const jobs = jobNames(gate);
+test("the entry workflow calls every validation workflow without an aggregate runner job", async () => {
+    const entry = await readWorkflow(ENTRY_WORKFLOW);
+    const jobs = jobNames(entry);
 
-    assert.ok(jobs.includes("ci-gate"));
-    const validationJobs = jobs.filter((job) => job !== "ci-gate");
-    assert.equal(validationJobs.length, VALIDATION_WORKFLOWS.length);
-    // 검증 job 을 추가하고 needs 갱신을 잊으면 그 검증은 게이트 밖에 남는다.
-    assert.deepEqual(needsOf(gate, "ci-gate").sort(), [...validationJobs].sort());
-
+    assert.equal(jobs.length, VALIDATION_WORKFLOWS.length);
+    assert.doesNotMatch(entry, /^ {2}ci-gate:$/m);
     for (const workflow of VALIDATION_WORKFLOWS) {
-        assert.ok(gate.includes(`uses: ./.github/workflows/${workflow}`), `${workflow} is not called`);
+        assert.ok(entry.includes(`uses: ./.github/workflows/${workflow}`), `${workflow} is not called`);
     }
 });
 
-test("ci-gate runs after failures and judges each conclusion explicitly", async () => {
-    const gate = await readWorkflow(GATE_WORKFLOW);
+test("required validation context names stay aligned with the repository ruleset", async () => {
+    const entry = await readWorkflow(ENTRY_WORKFLOW);
+    const contexts = [];
 
-    assert.match(gate, /^\s{4}if: always\(\)$/m);
-    // always() 로 돌기만 하고 아무것도 검사하지 않으면 게이트가 항상 초록이 된다.
-    assert.match(gate, /toJSON\(needs\)/);
-    assert.match(gate, /\.value\.result != "success"/);
-    assert.match(gate, /exit 1/);
+    for (const job of jobNames(entry)) {
+        const callerName = displayNameOf(entry, job);
+        const workflow = calledWorkflowOf(entry, job);
+        assert.ok(callerName, `${job} has no display name`);
+        assert.ok(workflow, `${job} is not a reusable workflow call`);
+
+        const reusable = await readWorkflow(workflow);
+        for (const reusableJob of jobNames(reusable)) {
+            const reusableName = displayNameOf(reusable, reusableJob);
+            assert.ok(reusableName, `${workflow}:${reusableJob} has no display name`);
+            contexts.push(`${callerName} / ${reusableName}`);
+        }
+    }
+
+    assert.deepEqual(contexts.sort(), [...REQUIRED_VALIDATION_CONTEXTS].sort());
 });
 
 test("stale runs are cancelled per pull request", async () => {
-    const gate = await readWorkflow(GATE_WORKFLOW);
+    const entry = await readWorkflow(ENTRY_WORKFLOW);
 
-    assert.match(gate, /^concurrency:\n\s{2}group: pr-validation-\$\{\{ github\.event\.pull_request\.number \|\| github\.ref \}\}\n\s{2}cancel-in-progress: true$/m);
+    assert.match(entry, /^concurrency:\n\s{2}group: pr-validation-\$\{\{ github\.event\.pull_request\.number \|\| github\.ref \}\}\n\s{2}cancel-in-progress: true$/m);
 });
 
 test("the entry point keeps no pull_request branch filter", async () => {
     // #683: base 변경(feat/* → develop)은 기본 activity type 에 없어 재트리거되지
     // 않는다. 필터가 있으면 스택 PR 이 검증을 한 번도 거치지 않고 머지된다.
-    const gate = await readWorkflow(GATE_WORKFLOW);
-    const trigger = /^on:\n\s{2}pull_request:\n([\s\S]*?)^\S/m.exec(gate)?.[1] ?? "";
+    const entry = await readWorkflow(ENTRY_WORKFLOW);
+    const trigger = /^on:\n\s{2}pull_request:\n([\s\S]*?)^\S/m.exec(entry)?.[1] ?? "";
 
     assert.doesNotMatch(trigger, /branches/);
 });
