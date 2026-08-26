@@ -1,8 +1,7 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
-import com.afternote.core.domain.model.UploadedFile
-import com.afternote.core.domain.repository.PhotoUploadRepository
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.DiaryList
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
@@ -59,7 +58,7 @@ class DailyQuestionWriteViewModelTest {
             DailyQuestionWriteViewModel(
                 SavedStateHandle(emptyMap()),
                 repository,
-                NoopPhotoUploadRepository,
+                FakePhotoUploadRepository.strict(),
                 noopDraftLoader(),
             )
 
@@ -84,7 +83,7 @@ class DailyQuestionWriteViewModelTest {
             DailyQuestionWriteViewModel(
                 SavedStateHandle(emptyMap()),
                 repository,
-                NoopPhotoUploadRepository,
+                FakePhotoUploadRepository.strict(),
                 noopDraftLoader(),
             )
 
@@ -111,9 +110,10 @@ class DailyQuestionWriteViewModelTest {
             DailyQuestionWriteViewModel(
                 SavedStateHandle(emptyMap()),
                 repository,
-                PhotoUploadRepository { _, _ ->
-                    Result.success(UploadedFile(fileUrl = "https://cdn/just-picked.jpg", fileKey = "mindrecords/1/just-picked.jpg"))
-                },
+                FakePhotoUploadRepository(
+                    uploadedUrl = "https://cdn/just-picked.jpg",
+                    uploadedKey = "mindrecords/1/just-picked.jpg",
+                ),
                 noopDraftLoader(),
             )
 
@@ -138,9 +138,10 @@ class DailyQuestionWriteViewModelTest {
             DailyQuestionWriteViewModel(
                 SavedStateHandle(emptyMap()),
                 repository,
-                PhotoUploadRepository { _, _ ->
-                    Result.success(UploadedFile(fileUrl = "https://cdn/picked.jpg", fileKey = "mindrecords/staging/13/picked.jpg"))
-                },
+                FakePhotoUploadRepository(
+                    uploadedUrl = "https://cdn/picked.jpg",
+                    uploadedKey = "mindrecords/staging/13/picked.jpg",
+                ),
                 noopDraftLoader(),
             )
 
@@ -165,7 +166,7 @@ class DailyQuestionWriteViewModelTest {
             DailyQuestionWriteViewModel(
                 SavedStateHandle(emptyMap()),
                 repository,
-                NoopPhotoUploadRepository,
+                FakePhotoUploadRepository.strict(),
                 noopDraftLoader(),
             )
 
@@ -183,7 +184,7 @@ class DailyQuestionWriteViewModelTest {
             DailyQuestionWriteViewModel(
                 SavedStateHandle(emptyMap()),
                 repository,
-                NoopPhotoUploadRepository,
+                FakePhotoUploadRepository.strict(),
                 noopDraftLoader(),
             )
 
@@ -230,14 +231,10 @@ class DailyQuestionWriteViewModelTest {
             DailyQuestionWriteViewModel(
                 SavedStateHandle(emptyMap()),
                 repository,
-                PhotoUploadRepository { _, _ ->
-                    Result.success(
-                        UploadedFile(
-                            fileUrl = "https://cdn.example.net/mindrecords/staging/13/a.png",
-                            fileKey = "mindrecords/staging/13/a.png",
-                        ),
-                    )
-                },
+                FakePhotoUploadRepository(
+                    uploadedUrl = "https://cdn.example.net/mindrecords/staging/13/a.png",
+                    uploadedKey = "mindrecords/staging/13/a.png",
+                ),
                 noopDraftLoader(),
             )
 
@@ -261,20 +258,19 @@ class DailyQuestionWriteViewModelTest {
                     Result.success(FakeDailyQuestionRepository.FIRST_CREATED_ID)
                 },
             )
-        val viewModel = DailyQuestionWriteViewModel(SavedStateHandle(emptyMap()), repository, NoopPhotoUploadRepository, noopDraftLoader())
+        val viewModel =
+            DailyQuestionWriteViewModel(
+                SavedStateHandle(emptyMap()),
+                repository,
+                FakePhotoUploadRepository.strict(),
+                noopDraftLoader(),
+            )
 
         viewModel.onAnswerChanged("<p>수정</p><img src=\"$permanent\" />")
         viewModel.submit()
 
         assertEquals("<p>수정</p><img src=\"$permanent\" />", sentContent)
     }
-}
-
-private object NoopPhotoUploadRepository : PhotoUploadRepository {
-    override suspend fun upload(
-        uriString: String,
-        directory: String,
-    ): Result<UploadedFile> = error("upload 는 이 시나리오에서 호출되면 안 됨")
 }
 
 /** 툴바 카운트는 이 테스트의 관심사가 아니다 — 0건으로 고정한다 (#769). */

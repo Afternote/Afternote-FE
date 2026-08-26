@@ -1,8 +1,7 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
-import com.afternote.core.domain.model.UploadedFile
-import com.afternote.core.domain.repository.PhotoUploadRepository
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
@@ -112,7 +111,7 @@ class DailyQuestionResumeDraftTest {
             DailyQuestionWriteViewModel(
                 savedStateHandle = SavedStateHandle(emptyMap()),
                 repository = repository,
-                photoUploadRepository = PhotoUploadRepository { _, _ -> Result.success(UploadedFile(fileUrl = "", fileKey = "")) },
+                photoUploadRepository = FakePhotoUploadRepository(uploadedUrl = "", uploadedKey = ""),
                 // 툴바 카운트는 이 테스트의 관심사가 아니다 — 같은 저장소를 넘겨 0건으로 둔다 (#769).
                 draftLoader =
                     MindRecordDraftLoader(
@@ -152,7 +151,7 @@ class DailyQuestionResumeDraftTest {
             DailyQuestionWriteViewModel(
                 savedStateHandle = SavedStateHandle(emptyMap()),
                 repository = repository,
-                photoUploadRepository = PhotoUploadRepository { _, _ -> Result.success(UploadedFile(fileUrl = "", fileKey = "")) },
+                photoUploadRepository = FakePhotoUploadRepository(uploadedUrl = "", uploadedKey = ""),
                 // 툴바 카운트는 이 테스트의 관심사가 아니다 — 같은 저장소를 넘겨 0건으로 둔다 (#769).
                 draftLoader =
                     MindRecordDraftLoader(

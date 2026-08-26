@@ -12,7 +12,7 @@ import androidx.paging.PagingData
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
-import com.afternote.afternote_fe.test.FakeUserRepository
+import com.afternote.afternote_fe.test.appTestUserRepository
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
@@ -316,7 +316,7 @@ private fun implementedCoverageViewModel(
 ): AfternoteEditorViewModel =
     AfternoteEditorViewModel(
         savedStateHandle = savedStateHandle,
-        userRepository = FakeUserRepository(),
+        userRepository = appTestUserRepository(),
         afternoteRepository = repository,
         memorialThumbnailUploadRepository =
             MemorialThumbnailUploadRepository {

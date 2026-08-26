@@ -2,7 +2,7 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.domain.model.UploadedFile
-import com.afternote.core.domain.repository.PhotoUploadRepository
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
@@ -114,7 +114,7 @@ class MindRecordFailureRecoveryTest {
                 DailyQuestionWriteViewModel(
                     savedStateHandle = SavedStateHandle(emptyMap()),
                     repository = repository,
-                    photoUploadRepository = PhotoUploadRepository { _, _ -> uploadGate.await() },
+                    photoUploadRepository = FakePhotoUploadRepository(onUpload = { _, _ -> uploadGate.await() }),
                     // 툴바 카운트는 이 테스트의 관심사가 아니다 — 빈 목록으로 고정한다 (#769).
                     draftLoader =
                         MindRecordDraftLoader(
@@ -139,7 +139,12 @@ class MindRecordFailureRecoveryTest {
 
             // 업로드를 끝내 코루틴을 정리한다.
             uploadGate.complete(
-                Result.success(UploadedFile(fileUrl = "https://cdn.example.com/a.png", fileKey = "mindrecords/staging/13/a.png")),
+                Result.success(
+                    UploadedFile(
+                        fileUrl = "https://cdn.example.com/a.png",
+                        fileKey = "mindrecords/staging/13/a.png",
+                    ),
+                ),
             )
             uploading.join()
         }

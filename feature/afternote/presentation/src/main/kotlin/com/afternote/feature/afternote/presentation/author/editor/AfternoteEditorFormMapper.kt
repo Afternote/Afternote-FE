@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.domain.model.author.AfternoteAccountCredentials
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
@@ -8,6 +9,7 @@ import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
+import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
@@ -32,17 +34,25 @@ import com.afternote.feature.afternote.presentation.author.editor.receiver.model
  */
 internal object AfternoteEditorFormMapper {
     fun buildEditorFormPrefill(detail: Detail): EditorFormPrefill {
+        val content = detail.content
         val processingMethodItems =
-            detail.processingMethods.mapIndexed { index, text ->
+            content.processingMethods().mapIndexed { index, text ->
                 ProcessingMethodItem(
                     id = (index + 1).toString(),
                     text = text,
                 )
             }
-        val editorCategory = EditorCategory.fromServerValue(detail.category)
+        val editorCategory = content.type.toEditorCategory()
+        val memorial = (content as? DetailContent.Memorial)?.memorial
+        val credentials =
+            when (content) {
+                is DetailContent.SocialNetwork -> content.credentials
+                is DetailContent.Business -> content.credentials
+                else -> null
+            }
         val memorialSongs: List<Song> =
             if (editorCategory == EditorCategory.MEMORIAL) {
-                detail.memorial?.songs?.mapIndexed { index, s ->
+                memorial?.songs?.mapIndexed { index, s ->
                     Song(
                         id = (s.id ?: index.toLong()).toString(),
                         title = s.title,
@@ -55,15 +65,15 @@ internal object AfternoteEditorFormMapper {
             }
         return EditorFormPrefill(
             loadedItemId = detail.id.toString(),
-            serviceName = detail.title,
+            serviceName = detail.serviceName,
             category = editorCategory,
-            accountId = detail.credentials?.id.orEmpty(),
-            password = detail.credentials?.password.orEmpty(),
+            accountId = credentials?.id.orEmpty(),
+            password = credentials?.password.orEmpty(),
             leaveMessageBlocks = detail.leaveMessageBlocks.map(LeaveMessageBlock::toEditorBlock),
             processingMethods = processingMethodItems,
-            memorialVideoUrl = detail.memorial?.media?.videoUrl,
-            memorialThumbnailUrl = detail.memorial?.media?.thumbnailUrl,
-            memorialPhotoUrl = detail.memorial?.media?.photoUrl,
+            memorialVideoUrl = memorial?.media?.videoUrl,
+            memorialThumbnailUrl = memorial?.media?.thumbnailUrl,
+            memorialPhotoUrl = memorial?.media?.photoUrl,
             memorialPlaylistSongs = memorialSongs,
             receivers =
                 detail.receivers.map { receiver ->
@@ -196,7 +206,7 @@ internal object AfternoteEditorFormMapper {
         when (category) {
             EditorCategory.MEMORIAL -> {
                 AfternoteUpdatePayload(
-                    category = EditorCategory.MEMORIAL.serverValue,
+                    type = AfternoteType.MEMORIAL,
                     title = payload.serviceName,
                     memorial =
                         buildMemorialWritePayload(
@@ -239,7 +249,7 @@ internal object AfternoteEditorFormMapper {
                 null
             }
         return AfternoteUpdatePayload(
-            category = category.serverValue,
+            type = category.toAfternoteType(),
             title = payload.serviceName,
             processingMethods = processingMethods.ifEmpty { null },
             leaveMessageBlocks = payload.messageBlocks.toLeaveMessageBlocks(),
@@ -249,6 +259,32 @@ internal object AfternoteEditorFormMapper {
         )
     }
 }
+
+private fun DetailContent.processingMethods(): List<String> =
+    when (this) {
+        is DetailContent.SocialNetwork -> processingMethods
+        is DetailContent.Business -> processingMethods
+        is DetailContent.Gallery -> processingMethods
+        is DetailContent.Memorial, DetailContent.Estate -> emptyList()
+    }
+
+private fun AfternoteType.toEditorCategory(): EditorCategory =
+    when (this) {
+        AfternoteType.SOCIAL_NETWORK -> EditorCategory.SOCIAL
+        AfternoteType.BUSINESS -> EditorCategory.BUSINESS
+        AfternoteType.GALLERY_AND_FILES -> EditorCategory.GALLERY
+        AfternoteType.ESTATE -> EditorCategory.ESTATE
+        AfternoteType.MEMORIAL -> EditorCategory.MEMORIAL
+    }
+
+private fun EditorCategory.toAfternoteType(): AfternoteType =
+    when (this) {
+        EditorCategory.SOCIAL -> AfternoteType.SOCIAL_NETWORK
+        EditorCategory.BUSINESS -> AfternoteType.BUSINESS
+        EditorCategory.GALLERY -> AfternoteType.GALLERY_AND_FILES
+        EditorCategory.ESTATE -> AfternoteType.ESTATE
+        EditorCategory.MEMORIAL -> AfternoteType.MEMORIAL
+    }
 
 private fun LeaveMessageBlock.toEditorBlock(): EditorMessageTextBlock =
     EditorMessageTextBlock(

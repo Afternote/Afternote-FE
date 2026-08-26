@@ -97,7 +97,22 @@ internal fun AccountDetailRoute(
 
         is AfternoteDetailUiState.Success -> {
             when (val model = state.contentUiModel) {
-                is DetailContentUiModel.Account -> {
+                is DetailContentUiModel.SocialNetwork -> {
+                    Box {
+                        AccountDetailScreen(
+                            content = model.content,
+                            snackbarHostState = snackbarHostState,
+                            onBackClick = onBack,
+                            onEditClick = { onNavigateToEditor(state.detailId) },
+                            onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
+                        )
+                        if (state.isDeleting) {
+                            DeleteInProgressOverlay()
+                        }
+                    }
+                }
+
+                is DetailContentUiModel.Business -> {
                     Box {
                         AccountDetailScreen(
                             content = model.content,
@@ -284,7 +299,6 @@ private fun AccountSection(
 private val PreviewAccountInstaContent =
     AccountDetailContent(
         serviceName = "인스타그램",
-        userName = "서영",
         accountId = "qwerty123",
         password = "qwerty123",
         processingMethods = listOf("게시물 내리기", "추모 게시물 올리기", "추모 계정으로 전환하기"),
