@@ -5,13 +5,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.navigation.NavController
-import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.home.presentation.HomeTabActions
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavActions
@@ -105,7 +105,7 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
             }
 
             override fun onWriteDailyQuestion() {
-                navController.navigate(MindRecordRoute.DailyQuestionWriteRoute)
+                navController.navigate(MindRecordRoute.DailyQuestionWriteRoute())
             }
 
             override fun onWriteDiary() {
@@ -128,12 +128,36 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
                 navController.popBackStack()
             }
 
+            override fun onEditDailyQuestion(answerId: Long) {
+                navController.navigate(MindRecordRoute.DailyQuestionWriteRoute(answerId = answerId))
+            }
+
+            override fun onEditDiary(
+                diaryId: Long,
+                yearMonth: String,
+            ) {
+                navController.navigate(
+                    MindRecordRoute.DiaryWriteRoute(
+                        recordId = diaryId,
+                        yearMonth = yearMonth,
+                        // 정식 기록이라 draft 목록이 아닌 전체 목록에서 찾는다 (#582).
+                        isDraft = false,
+                    ),
+                )
+            }
+
+            override fun onEditDailyQuestionDraft(draftId: Long) {
+                navController.navigate(
+                    MindRecordRoute.DailyQuestionWriteRoute(answerId = draftId, isDraft = true),
+                )
+            }
+
             override fun onEditDiaryDraft(
                 draftId: Long,
                 draftYearMonth: String,
             ) {
                 navController.navigate(
-                    MindRecordRoute.DiaryWriteRoute(draftId = draftId, draftYearMonth = draftYearMonth),
+                    MindRecordRoute.DiaryWriteRoute(recordId = draftId, yearMonth = draftYearMonth),
                 )
             }
         }
@@ -355,7 +379,9 @@ fun rememberHomeTabActions(
             override fun onAnswerClick() {
                 // 카드 문구가 "데일리질문 답변하기" 라 답변 작성 화면으로 보낸다.
                 // 기록 탭의 작성 진입(`MindRecordNavActions.onWriteDailyQuestion`)과 같은 목적지다.
-                appState.navController.navigate(MindRecordRoute.DailyQuestionWriteRoute)
+                // 라우트가 data class 라 **인스턴스**를 넘겨야 한다 — 클래스 참조로 넘기면
+                // 이동이 조용히 무산되고 홈의 이 버튼이 눌리지 않는다 (#770).
+                appState.navController.navigate(MindRecordRoute.DailyQuestionWriteRoute())
             }
 
             override fun onNextStepClick() {
@@ -484,8 +510,15 @@ fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions =
                 appState.navController.popBackStack()
             }
 
+            // 수신 상세의 "애프터노트 확인하기" 진입점(#777). 사용자는 목록에서 상세로 들어와 있는 것이
+            // 보통이므로 그냥 navigate 하면 [목록 → 상세 → 목록] 이 쌓여 뒤로가기가 방금 나온 상세로
+            // 되돌아간다. popUpTo 로 기존 목록까지 걷어내고, 목록이 백스택에 없는 진입(딥링크 등)에서는
+            // popUpTo 가 무시되고 push 만 일어나 양쪽 모두 맞는다.
             override fun navigateToAfternoteList() {
-                appState.navController.navigate(ReceiverRoute.AfternoteListRoute)
+                appState.navController.navigate(ReceiverRoute.AfternoteListRoute) {
+                    popUpTo(ReceiverRoute.AfternoteListRoute) { inclusive = false }
+                    launchSingleTop = true
+                }
             }
 
             override fun navigateToReceivedAfternoteDetail(afternoteId: Long) {

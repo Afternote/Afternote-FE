@@ -36,9 +36,11 @@ jobs:
           # 부모가 머지되면 GitHub 가 base 를 develop 로 이관하며 이 가드가 다시
           # 돌아 blocked_by 를 검사한다. 실패로 올리면 스택 PR 이 수명 내내 X 로
           # 남아 목록에서 진짜 CI 실패와 구분되지 않으므로 경고로만 남긴다.
+          stacked=0
           case "$BASE_REF" in
             develop|main) ;;
             *)
+              stacked=1
               echo "::warning::base 가 '$BASE_REF' — 스택 PR 은 base 를 develop 로 PATCH 한 뒤 머지할 것"
               ;;
           esac
@@ -54,8 +56,15 @@ jobs:
             open_blockers=$(gh api "repos/$GITHUB_REPOSITORY/issues/$n/dependencies/blocked_by" \
               --jq '.[] | select(.state == "open") | .number')
             for b in $open_blockers; do
-              echo "::error::#$n 이 아직 열린 #$b 에 blocked — 머지 순서 위반. 선행 PR 부터 머지할 것"
-              fail=1
+              if [ "$stacked" -eq 1 ]; then
+                # 스택 PR 은 develop 로 직접 머지되지 않는다. base 가 develop 로
+                # 이관되는 순간 이 가드가 다시 돌아 error 로 막으므로, 그전까지는
+                # 경고로만 남겨 진짜 CI 실패와 구분되게 한다.
+                echo "::warning::#$n 이 아직 열린 #$b 에 blocked — base 를 develop 로 이관하기 전에 선행 PR 부터 머지할 것"
+              else
+                echo "::error::#$n 이 아직 열린 #$b 에 blocked — 머지 순서 위반. 선행 PR 부터 머지할 것"
+                fail=1
+              fi
             done
           done
 

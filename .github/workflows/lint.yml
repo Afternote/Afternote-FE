@@ -1,4 +1,4 @@
-name: Static Analysis (Reviewdog)
+name: Static Analysis
 
 # PR 검증은 pr-validation.yml 이 한 번에 부르고, 그 워크플로의 ci-gate job 이 결과를
 # 모아 단일 required check 로 만든다. concurrency 도 그쪽이 PR 단위로 건다 (#848).
@@ -18,10 +18,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone repo
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -58,10 +58,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone repo
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: 'temurin'
           java-version: '21'

@@ -32,6 +32,9 @@ internal fun memorialReceivedDetailScreenScreenshot() {
     AfternoteTheme {
         MemorialReceivedDetailScreen(
             senderName = "서연",
+            onNavigateToFullList = {},
+            onNavigateToPlaylist = {},
+            onBackClick = {},
             messageBlocks = SAMPLE_MESSAGE_BLOCKS,
             albumCovers = SAMPLE_ALBUM_COVERS,
             songCount = 16,
@@ -47,6 +50,9 @@ internal fun memorialReceivedDetailScreenWithVideoScreenshot() {
     AfternoteTheme {
         MemorialReceivedDetailScreen(
             senderName = "서연",
+            onNavigateToFullList = {},
+            onNavigateToPlaylist = {},
+            onBackClick = {},
             messageBlocks = SAMPLE_MESSAGE_BLOCKS,
             albumCovers = SAMPLE_ALBUM_COVERS,
             songCount = 16,
