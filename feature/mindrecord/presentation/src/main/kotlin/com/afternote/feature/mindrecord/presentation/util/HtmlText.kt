@@ -70,6 +70,18 @@ fun String.toUploadedFileKey(): String =
     if (contains("://")) substringAfter("://").substringAfter('/') else this
 
 /**
+ * 제출 직전, **이번 작성 중 업로드한** 이미지의 `src` 만 fileKey 로 바꾼다 (#549·#1016).
+ *
+ * 이미 저장돼 본문에 들어 있는 영구 URL 은 건드리지 않는다 — 서버가 그대로 통과시키고,
+ * 키로 바꾸면 이미 옮겨진 파일을 다시 옮기려다 실패한다. 그래서 경로 패턴으로 훑지 않고
+ * 이번에 받은 URL 만 정확히 치환한다.
+ *
+ * 데일리질문과 일기가 같은 규칙을 쓴다 — 한쪽에만 있어서 일기 본문 이미지가 깨졌다 (#1016).
+ */
+fun String.toWireContent(uploadedImageUrls: Set<String>): String =
+    uploadedImageUrls.fold(this) { content, url -> content.replace(url, url.toUploadedFileKey()) }
+
+/**
  * 태그만 있고 보이는 글자가 없으면 비었다고 본다.
  *
  * 리치 에디터는 아무것도 입력하지 않아도 `<p></p>` 를 내보내므로 `isBlank()` 로는 "화면이

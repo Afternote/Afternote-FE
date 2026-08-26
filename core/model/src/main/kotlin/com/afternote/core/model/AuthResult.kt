@@ -34,7 +34,8 @@ sealed class Session {
     data class SocialSession(
         override val accessToken: String,
         override val refreshToken: String,
-        val isNewUser: Boolean?,
+        /** 이번 로그인으로 가입된 신규 사용자인지. 온보딩 진입 여부를 가른다(#993). */
+        val isNewUser: Boolean,
     ) : Session()
 }
 
