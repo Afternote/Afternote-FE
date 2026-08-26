@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.AfternoteService
+import com.afternote.core.ui.R as CoreUiR
 
 /**
  * 종류 필터 탭 순서. `null` 은 "전체" 탭이다.
@@ -32,10 +33,10 @@ fun typeLabelResFor(type: AfternoteType?): Int =
 /** Icon drawable res for an [AfternoteType]. */
 fun getIconResForType(type: AfternoteType): Int =
     when (type) {
-        AfternoteType.SOCIAL_NETWORK -> R.drawable.feature_afternote_ic_social_pattern
-        AfternoteType.GALLERY_AND_FILES -> R.drawable.feature_afternote_ic_gallery_pattern
-        AfternoteType.MEMORIAL -> R.drawable.feature_afternote_ic_memorial_guideline
-        AfternoteType.BUSINESS, AfternoteType.ESTATE -> R.drawable.feature_afternote_img_logo
+        AfternoteType.SOCIAL_NETWORK -> CoreUiR.drawable.core_ui_afternote_social_pattern
+        AfternoteType.GALLERY_AND_FILES -> CoreUiR.drawable.core_ui_afternote_gallery_pattern
+        AfternoteType.MEMORIAL -> CoreUiR.drawable.core_ui_afternote_memorial_guideline
+        AfternoteType.BUSINESS, AfternoteType.ESTATE -> CoreUiR.drawable.core_ui_afternote_logo
     }
 
 /**

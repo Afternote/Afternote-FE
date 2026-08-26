@@ -22,11 +22,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.icon.AfternoteSourceIcon
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.receiver.presentation.R
-import com.afternote.feature.receiver.presentation.home.model.AfternoteSourceIcon
-import com.afternote.feature.afternote.presentation.R as AfternoteFeatureR
 
 private const val MAX_VISIBLE_ICONS = 4
 private val ICON_SIZE = 32.dp
@@ -127,10 +126,10 @@ private fun AfternoteSectionPreview() {
             totalCount = 10,
             icons =
                 listOf(
-                    AfternoteSourceIcon(AfternoteFeatureR.drawable.feature_afternote_img_insta_pattern),
-                    AfternoteSourceIcon(AfternoteFeatureR.drawable.feature_afternote_img_googlephoto_pattern),
-                    AfternoteSourceIcon(AfternoteFeatureR.drawable.feature_afternote_img_naver_mail_pattern),
-                    AfternoteSourceIcon(AfternoteFeatureR.drawable.feature_afternote_img_kakaotalk_pattern),
+                    AfternoteSourceIcon.SocialNetwork,
+                    AfternoteSourceIcon.GalleryAndFiles,
+                    AfternoteSourceIcon.Memorial,
+                    AfternoteSourceIcon.Other,
                 ),
             onGoClick = {},
             modifier = Modifier.padding(20.dp),

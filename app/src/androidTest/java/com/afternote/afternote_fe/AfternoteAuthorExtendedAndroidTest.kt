@@ -377,7 +377,7 @@ private fun AuthorEditorForUpdate(
         },
         onThumbnailUploadErrorConsumed = viewModel::onThumbnailUploadErrorConsumed,
         onValidationErrorConsumed = viewModel::onValidationErrorConsumed,
-        content = {
+        content = { editorSnackbarHostState ->
             AfternoteEditorBody(
                 state = state,
                 form = uiState.form,
@@ -385,6 +385,8 @@ private fun AuthorEditorForUpdate(
                 onNavigateToSelectReceiver = {},
                 onThumbnailBytesReady = {},
                 onThumbnailExtractionFailed = {},
+                onCaptureFailed = {},
+                snackbarHostState = editorSnackbarHostState,
                 isPrefillLoading = uiState.isPrefillLoading,
             )
         },

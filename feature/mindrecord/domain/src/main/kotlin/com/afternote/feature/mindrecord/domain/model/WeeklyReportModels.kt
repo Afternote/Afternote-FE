@@ -1,5 +1,7 @@
 package com.afternote.feature.mindrecord.domain.model
 
+import java.time.LocalDate
+
 data class WeeklyReport(
     val dailyQuestionAmount: Int,
     val diaryAmount: Int,
@@ -77,7 +79,14 @@ data class WeeklyReportDay(
 data class WeeklyReportDailyQuestion(
     val title: String,
     val content: String,
-    val date: String,
+    /**
+     * 답변 날짜. **와이어 문자열이 아니라 해석된 값**이다 (#547).
+     *
+     * 서버 포맷(`yyyy.MM.dd 요일` / ISO) 해석은 data 계층 mapper 가 맡고, 해석하지 못한
+     * 항목은 그 경계에서 제외된다. 그래서 여기까지 올라온 값은 언제나 유효하고,
+     * 소비처마다 파싱을 다시 구현하거나 실패 폴백을 따로 정할 필요가 없다.
+     */
+    val date: LocalDate,
 )
 
 data class WeeklyReportEmotion(
