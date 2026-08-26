@@ -23,6 +23,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.AfternoteServiceDisplay
+import com.afternote.core.ui.R as CoreUiR
 
 /**
  * 애프터노트 작성자 상세 공통 상단: 서비스 아이콘·이름·최종 작성일.
@@ -78,7 +79,7 @@ private fun AfternoteDetailServiceHeaderPreview() {
             service =
                 AfternoteServiceDisplay(
                     serviceName = "서비스 이름",
-                    iconResId = R.drawable.feature_afternote_ic_memorial_guideline,
+                    iconResId = CoreUiR.drawable.core_ui_afternote_memorial_guideline,
                 ),
             finalWriteDate = "2024.05.20",
         )
