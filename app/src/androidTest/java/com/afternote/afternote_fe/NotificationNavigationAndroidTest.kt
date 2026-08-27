@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.waitUntilAtLeastOneExists
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.afternote.afternote_fe.notification.NotificationIntentContract
 import com.afternote.afternote_fe.notification.NotificationTopLevelDestination
 import com.afternote.core.common.notification.NotificationPendingIntentFactory
@@ -20,6 +21,7 @@ import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.testing.FakeAuthRepository
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -37,6 +39,8 @@ class NotificationNavigationAndroidTest {
     lateinit var authRepository: AuthRepository
 
     private val fakeAuth get() = authRepository as FakeAuthRepository
+    private lateinit var activityUnderTest: MainActivity
+    private lateinit var scenarioLaunchIntent: Intent
 
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
@@ -49,6 +53,18 @@ class NotificationNavigationAndroidTest {
     @Before
     fun inject() {
         hiltRule.inject()
+        activityUnderTest = composeRule.activity
+        scenarioLaunchIntent = Intent(activityUnderTest.intent)
+    }
+
+    @After
+    fun restoreScenarioLaunchIntent() {
+        if (!::activityUnderTest.isInitialized || !::scenarioLaunchIntent.isInitialized) return
+
+        // ActivityScenario filters lifecycle callbacks by its original launch Intent.
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            activityUnderTest.intent = scenarioLaunchIntent
+        }
     }
 
     @Test
