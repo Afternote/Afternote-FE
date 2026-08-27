@@ -152,7 +152,7 @@ class TimeLetterLifecycleAndroidTest {
             )
         val userRepository = privateUserRepository(testReceivers)
         var openedDraftId: Long? = null
-        var activeViewModel by mutableStateOf(DraftLetterViewModel(repository, userRepository.repository))
+        var activeViewModel by mutableStateOf(DraftLetterViewModel(repository, userRepository))
 
         composeRule.setContent {
             AfternoteTheme {
@@ -176,7 +176,7 @@ class TimeLetterLifecycleAndroidTest {
         composeRule.onNodeWithText("둘째 임시 편지").assertIsDisplayed()
 
         composeRule.runOnIdle {
-            activeViewModel = DraftLetterViewModel(repository, userRepository.repository)
+            activeViewModel = DraftLetterViewModel(repository, userRepository)
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT) { repository.temporaryListCalls == 2 }
         composeRule.onNodeWithText("첫 임시 편지").assertDoesNotExist()
