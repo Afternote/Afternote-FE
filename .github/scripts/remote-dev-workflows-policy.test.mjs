@@ -27,10 +27,11 @@ test("baseline generation executes PR code without write credentials", async () 
     assert.match(source, /platforms: linux\/amd64/);
     assert.match(source, /docker run --rm --platform linux\/amd64/);
     assert.match(source, /--rerun --no-daemon/);
-    for (const module of screenshotModules) {
-        assert.ok(source.includes(`${module}:updateScreenshotTest`), `${module} baseline is not updated`);
-        assert.ok(source.includes(`${module}:validateScreenshotTest`), `${module} baseline is not validated`);
-    }
+    assert.match(source, /gh api --paginate --slurp/);
+    assert.match(source, /resolve-pr-impact\.mjs/);
+    assert.match(source, /update_tasks\+=\("\$\{module\}:updateScreenshotTest"\)/);
+    assert.match(source, /validate_tasks\+=\("\$\{module\}:validateScreenshotTest"\)/);
+    assert.match(source, /SCREENSHOT_MODULES: \$\{\{ steps\.impact\.outputs\.screenshot_modules \}\}/);
 });
 
 test("privileged baseline apply is a workflow-run bridge restricted to PNG baselines", async () => {
@@ -51,12 +52,14 @@ test("privileged baseline apply is a workflow-run bridge restricted to PNG basel
     for (const workflow of ["pr-validation.yml", "codeql.yml", "merge-order-guard.yml"]) {
         assert.ok(source.includes(`workflow_id: '${workflow}'`), `${workflow} is not redispatched`);
     }
+    assert.match(source, /if: steps\.commit\.outputs\.changed == 'true'/);
+    assert.match(source, /workflow_id: 'codeql\.yml',[\s\S]*inputs: \{ pull_request_number: process\.env\.TARGET_PR \}/);
 });
 
-test("managed device QA runs for every same-repository PR or the trusted default branch", async () => {
+test("managed device keeps required contexts but boots only CI Test Plan lanes", async () => {
     const source = await readWorkflow("android-managed-device.yml");
 
-    assert.match(source, /^\s{2}pull_request:\n\s{4}types: \[opened, reopened, edited, labeled, synchronize\]$/m);
+    assert.match(source, /^\s{2}pull_request:\n\s{4}types: \[opened, reopened, edited, synchronize\]$/m);
     assert.doesNotMatch(source, /^\s{2}workflow_call:/m);
     assert.doesNotMatch(source, /contains\(github\.event\.pull_request\.labels\.\*\.name, 'android-test'\)/);
     assert.match(source, /github\.event_name == 'pull_request'/);
@@ -66,9 +69,8 @@ test("managed device QA runs for every same-repository PR or the trusted default
     assert.match(source, /cancel-in-progress: true/);
     assert.match(source, /^\s{6}pull_request_number:\n/m);
     assert.match(source, /^\s{6}expected_head_sha:\n/m);
-    assert.match(source, /^\s{6}expected_test_ref:\n/m);
+    assert.match(source, /^\s{6}expected_plan_digest:\n/m);
     assert.match(source, /head_repository.*!=.*GITHUB_REPOSITORY/);
-    assert.match(source, /has_label.*!=.*true/);
     assert.match(source, /target_sha.*!=.*EXPECTED_HEAD_SHA/);
     assert.match(source, /target_branch.*!=.*DISPATCH_REF_NAME/);
     assert.match(source, /target_sha.*!=.*EXECUTION_SHA/);
@@ -81,20 +83,25 @@ test("managed device QA runs for every same-repository PR or the trusted default
     const trustedCheckout = source.indexOf("Clone trusted target policy");
     const policyStaging = source.indexOf("Stage trusted Android test policy");
     const targetCheckout = source.indexOf("Clone tested revision");
+    const targetVerification = source.indexOf("Verify checked out revision");
+    const bootstrapVerifier = source.indexOf("Stage bootstrap result verifier from the tested revision");
     assert.ok(trustedCheckout >= 0 && trustedCheckout < policyStaging);
     assert.ok(policyStaging < targetCheckout);
+    assert.ok(targetCheckout < targetVerification && targetVerification < bootstrapVerifier);
     assert.match(source, /source=trusted/);
     assert.match(source, /source=bootstrap/);
     assert.doesNotMatch(source, /source=target/);
     assert.match(source, /Android test policy가 부분 설치된 상태입니다/);
-    assert.match(source, /bootstrap mode에서는 expected_test_ref를 사용할 수 없습니다/);
-    assert.match(source, /bootstrap mode에서는 androidTest 선언을 검증 없이 건너뛸 수 없습니다/);
-    assert.doesNotMatch(source, /node \.github\/scripts\/resolve-android-test-ref\.mjs/);
-    assert.match(source, /Verify declared direct androidTest executed/);
-    assert.match(
-        source,
-        /if: steps\.target\.outputs\.test_ref != '' && matrix\.test_class == ''/,
-    );
+    assert.match(source, /bootstrap mode에서는 expected_plan_digest를 사용할 수 없습니다/);
+    assert.match(source, /bootstrap mode에서는 selected selector를 신뢰된 parser 없이 실행할 수 없습니다/);
+    assert.match(source, /policy bootstrap full run/);
+    assert.match(source, /bootstrap result verifier가 tested revision에 없습니다/);
+    assert.match(source, /resolve-android-test-plan\.mjs/);
+    assert.match(source, /Validate selected tests in the tested revision/);
+    assert.match(source, /Verify every selected androidTest executed successfully/);
+    assert.match(source, /verify-android-test-plan-result\.mjs/);
+    assert.match(source, /if: steps\.target\.outputs\.run_lane == 'true'/);
+    assert.match(source, /selectors_json='\[\]'/);
     assert.match(source, /persist-credentials: false/);
 });
 

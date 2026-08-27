@@ -31,6 +31,29 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
 
+      - name: Resolve affected screenshot modules
+        id: impact
+        env:
+          CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          files_json="$RUNNER_TEMP/pull-request-files.json"
+          gh api --paginate --slurp \
+            "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files?per_page=100" \
+            > "$files_json"
+          env -u GH_TOKEN -u GITHUB_TOKEN \
+            node .github/scripts/classify-documentation-changes.mjs \
+            "$CHANGED_FILES" < "$files_json" > /dev/null
+          env -u GH_TOKEN -u GITHUB_TOKEN \
+            node .github/scripts/resolve-pr-impact.mjs "$files_json" \
+            >> "$GITHUB_OUTPUT"
+          if ! grep -q '^screenshot_required=true$' "$GITHUB_OUTPUT"; then
+            echo "::error::이 PR의 영향 범위에는 생성할 screenshot baseline이 없습니다"
+            exit 1
+          fi
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
 
@@ -55,8 +78,17 @@ jobs:
           cache-read-only: true
           validate-wrappers: true
 
-      - name: Generate then validate every screenshot baseline
+      - name: Generate then validate affected screenshot baselines
+        env:
+          SCREENSHOT_MODULES: ${{ steps.impact.outputs.screenshot_modules }}
         run: |
+          read -r -a modules <<< "$SCREENSHOT_MODULES"
+          update_tasks=()
+          validate_tasks=()
+          for module in "${modules[@]}"; do
+            update_tasks+=("${module}:updateScreenshotTest")
+            validate_tasks+=("${module}:validateScreenshotTest")
+          done
           docker run --rm --platform linux/amd64 \
             -v "$PWD":/workspace \
             -v "$HOME/.gradle":/root/.gradle \
@@ -64,22 +96,15 @@ jobs:
             -e KAKAO_NATIVE_APP_KEY \
             -e GOOGLE_WEB_CLIENT_ID \
             afternote-screenshot:latest \
-            bash -lc './gradlew \
-              :core:ui:updateScreenshotTest \
-              :feature:home:presentation:updateScreenshotTest \
-              :feature:receiver:presentation:updateScreenshotTest \
-              :feature:onboarding:presentation:updateScreenshotTest \
-              :feature:afternote:presentation:updateScreenshotTest \
-              :feature:mindrecord:presentation:updateScreenshotTest \
-              --rerun --no-daemon --console=plain \
-              && ./gradlew \
-              :core:ui:validateScreenshotTest \
-              :feature:home:presentation:validateScreenshotTest \
-              :feature:receiver:presentation:validateScreenshotTest \
-              :feature:onboarding:presentation:validateScreenshotTest \
-              :feature:afternote:presentation:validateScreenshotTest \
-              :feature:mindrecord:presentation:validateScreenshotTest \
-              --no-daemon --console=plain'
+            ./gradlew "${update_tasks[@]}" --rerun --no-daemon --console=plain
+          docker run --rm --platform linux/amd64 \
+            -v "$PWD":/workspace \
+            -v "$HOME/.gradle":/root/.gradle \
+            -w /workspace \
+            -e KAKAO_NATIVE_APP_KEY \
+            -e GOOGLE_WEB_CLIENT_ID \
+            afternote-screenshot:latest \
+            ./gradlew "${validate_tasks[@]}" --no-daemon --console=plain
 
       - name: Restore workspace ownership
         if: always()
@@ -87,6 +112,7 @@ jobs:
 
       - name: Package baseline-only PNG blobs
         env:
+          SCREENSHOT_MODULES: ${{ steps.impact.outputs.screenshot_modules }}
           TARGET_BRANCH: ${{ github.event.pull_request.head.ref }}
           TARGET_PR: ${{ github.event.pull_request.number }}
           TARGET_SHA: ${{ github.event.pull_request.head.sha }}
@@ -95,13 +121,13 @@ jobs:
           artifact="$RUNNER_TEMP/screenshot-baseline"
           mkdir -p "$artifact/blobs"
 
-          git add -A -- \
-            core/ui/src/screenshotTestDebug/reference \
-            feature/home/presentation/src/screenshotTestDebug/reference \
-            feature/receiver/presentation/src/screenshotTestDebug/reference \
-            feature/onboarding/presentation/src/screenshotTestDebug/reference \
-            feature/afternote/presentation/src/screenshotTestDebug/reference \
-            feature/mindrecord/presentation/src/screenshotTestDebug/reference
+          read -r -a modules <<< "$SCREENSHOT_MODULES"
+          baseline_paths=()
+          for module in "${modules[@]}"; do
+            module_path="${module#:}"
+            baseline_paths+=("${module_path//:/\/}/src/screenshotTestDebug/reference")
+          done
+          git add -A -- "${baseline_paths[@]}"
           ARTIFACT_DIR="$artifact" node <<'NODE'
           const childProcess = require('node:child_process');
           const fs = require('node:fs');

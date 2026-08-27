@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "ef21fe76c5ee04036029109b0a82a25629dd79b7.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "details.qa_account",
+      "device.avd",
+      "device.serial",
+      "text.qa_account",
+      "text.qa_credential"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "ef21fe76c5ee04036029109b0a82a25629dd79b7",
+  "head_ref": "fix/590-recorded-days-nondiary",
+  "base_sha": "6123a68af7295622222a98a4e09b9f4570e419ff",
+  "base_ref": "develop",
+  "recorded_at": "2026-08-23T12:36:22.380848+00:00",
+  "result": "pass",
+  "scenario": "PR #946(#590) 리뷰 QA: 실서버 상태를 '깊은 생각 1건만'으로 재구성(기존 QA 잔여 DQ 답변 24 삭제 → POST /deep-thought/categories '[QA_ACCOUNT_REDACTED]임시' → POST /deep-thought, 실측 week=[{day:23,type:DEEP_THOUGHT,emotion:null}], daily-question=[], amounts 0/0/1). 수정 전·후 같은 데이터 실측: 946 미포함 빌드(#937 head)='0일'(결함 재현), 946 빌드='1일의 마음을 기록하셨네요'(수정 확인). 달력 23일 칸 점 없는 숫자 — isDiary 표시 규칙 유지 확인. 스크린샷 [QA_CREDENTIAL_REDACTED].png. 상단 카운트 '데일리 질문 0/일기 0'+1일 조합은 깊은생각 열 부재(시안 3열) 잔여 갈래로 리뷰 [normal] 기록. 테스트 데이터 삭제 완료(week=[], amounts 0/0/0).",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true
+  },
+  "details": {
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe"
+    },
+    "diff_sha256": "0aa9b98a488639d800cb26753d854b7a5059ce69b8ee336acd26ddbbb668bcd6",
+    "changed_files": [
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/WeeklyReportRecordedDays.kt",
+      "feature/mindrecord/presentation/src/test/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/WeeklyReportRecordedDaysTest.kt"
+    ]
+  }
+}

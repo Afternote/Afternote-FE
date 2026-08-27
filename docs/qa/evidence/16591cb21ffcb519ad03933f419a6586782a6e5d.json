@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "16591cb21ffcb519ad03933f419a6586782a6e5d.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "device.avd",
+      "device.serial",
+      "text.qa_account",
+      "text.sensitive_value"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "16591cb21ffcb519ad03933f419a6586782a6e5d",
+  "head_ref": "fix/1126",
+  "base_sha": "817578e8d2d1bc80fba63906ecce08eae9ede04d",
+  "base_ref": "develop",
+  "recorded_at": "2026-08-26T07:11:45.963507+00:00",
+  "result": "pass",
+  "scenario": "PR #1194(#1126) 실기 검증: 재발급 확정 거절 처리. 전용 AVD [SENSITIVE_VALUE_REDACTED](API 35, [SENSITIVE_VALUE_REDACTED])를 새로 띄워 다른 세션과 격리했다. 재현 무대는 [QA_ACCOUNT_REDACTED] 유효 토큰을 DataStore 에 주입해 홈까지 도달시킨 뒤(홈 진입 요청 5건: users/me/activity·users/me·diary·users/receivers·daily-questions/today), 앱을 force-stop 하고 토큰만 무효 세트(access=expired-access-[QA_ACCOUNT_REDACTED] / refresh=rejected-refresh-[QA_ACCOUNT_REDACTED])로 갈아 끼워 콜드 스타트하는 것이다. pm clear 로 시작하면 온보딩 화면에 멈춰 요청이 1건으로 줄고 경합 조건 자체가 성립하지 않는다 — 이 절차가 핵심이다. \n\n(1) 서버 응답 실측: POST /api/v1/auth/reissue 에 무효 refresh 를 주면 400 {\"status\":400,\"code\":1107,\"message\":\"유효하지 않은 리프레시 토큰\",\"data\":null}. 이 PR 이 400 을 상태코드만으로 거절로 좁힌 근거와 맞물린다. \n(2) fix 빌드(16591cb2): 홈 진입 5건이 전부 401 → 재발급 HTTP 1회 → 400 → '리이슈 인증 거절: 세션 만료 확정(정리 완료), 요청 중단' 1건. 이후 4건은 '직전 요청이 애초에 토큰을 포함하지 않았음' (세션 정리가 끝난 뒤라 정상). 재발급 중복·분류 갈림 0건. \n(3) develop baseline(817578e8): 같은 절차 6회 반복 — 매 회 재발급 HTTP 1회, '세션 만료 처리' 1건, '세션 유지, 요청 중단' 0건. 즉 이슈 본문이 기록한 경합(HTTP 2회 + 분류 2종 갈림)은 이 기기에서 재현되지 않았다. 창이 3ms 라 확률적이라는 이슈의 분석과 일치하며, 그래서 계약은 유닛 테스트로 잠갔다(신규 5건). \n\n실기로 확정한 것: 서버의 400/1107 응답, fix 빌드의 회귀 부재(재발급 1회·거절 확정·세션 정리 완료). 실기로 확정하지 못한 것: 경합 창의 중복 재발급(확률적 미재현), 그리고 400 본문 파싱 실패 경로 — 실서버가 code 를 정확히 실어 주므로 실기로는 만들 수 없고 유닛 테스트가 가드한다.",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true,
+    "api": 35
+  },
+  "details": {
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe"
+    },
+    "diff_sha256": "afd818afbc12548c9fbea25c14ce737603c49e2ee908148c20aed72b5bafc115",
+    "changed_files": [
+      "core/network/src/main/kotlin/com/afternote/core/network/interceptor/AuthInterceptor.kt",
+      "core/network/src/main/kotlin/com/afternote/core/network/interceptor/TokenAuthenticator.kt",
+      "core/network/src/main/kotlin/com/afternote/core/network/token/TokenReissuer.kt",
+      "core/network/src/test/kotlin/com/afternote/core/network/FakeAuthRepository.kt",
+      "core/network/src/test/kotlin/com/afternote/core/network/interceptor/AuthInterceptorTest.kt",
+      "core/network/src/test/kotlin/com/afternote/core/network/interceptor/TokenAuthenticatorTest.kt",
+      "core/network/src/test/kotlin/com/afternote/core/network/token/TokenReissuerTest.kt"
+    ]
+  }
+}
