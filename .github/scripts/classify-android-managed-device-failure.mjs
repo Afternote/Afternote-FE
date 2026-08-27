@@ -10,10 +10,16 @@ const INFRASTRUCTURE_PATTERNS = [
 ];
 
 const BOOT_PHASE_PATTERNS = [
-    ["api34-managed-device-task", /(?:^|\s|:)pixel2Api34(?:DebugAndroidTest|Setup|Check)?\b/im],
+    ["managed-device-setup-task", /> Task [^\n]*:pixel2Api(?:30|34)(?:Setup|Check)\b/im],
+    ["api34-managed-device-task", /> Task [^\n]*:pixel2Api34DebugAndroidTest\b/im],
     ["gradle-managed-device", /gradle managed device|managed[ -]device/i],
-    ["emulator-start", /(?:launching|starting|started)[^\n]*(?:avd|emulator)/i],
-    ["system-image-provisioning", /(?:downloading|installing)[^\n]*(?:system image|system-images;android-34)/i],
+    ["emulator-start", /(?:launching|starting|started)[^\n]*(?:avd|emulator)|(?:avd|emulator)[^\n]*boot/i],
+    ["system-image-provisioning", /(?:preparing|downloading|installing)[^\n]*(?:system image|system-images;android-(?:30|34))/i],
+];
+
+const TEST_EXECUTION_PATTERNS = [
+    ["test-execution-started", /starting\s+\d+\s+tests?\s+on\s+pixel2Api(?:30|34)\b/i],
+    ["test-execution-progress", /pixel2Api(?:30|34)\s+tests\s+\d+\/\d+\s+completed/i],
 ];
 
 function matchingSignals(log, patterns) {
@@ -32,6 +38,7 @@ export function classifyAndroidManagedDeviceFailure({
     const normalizedOutcome = String(outcome ?? "").trim().toLowerCase();
     const infrastructureSignals = matchingSignals(log, INFRASTRUCTURE_PATTERNS);
     const bootPhaseSignals = matchingSignals(log, BOOT_PHASE_PATTERNS);
+    const testExecutionSignals = matchingSignals(log, TEST_EXECUTION_PATTERNS);
     const timedOut = normalizedExitCode === "124" ||
         normalizedOutcome === "cancelled" ||
         normalizedOutcome === "timed_out";
@@ -39,28 +46,43 @@ export function classifyAndroidManagedDeviceFailure({
         normalizedExitCode !== "" && normalizedExitCode !== "0"
     );
 
+    const supported = normalizedDevice === "api30" || normalizedDevice === "api34";
+    const noTestExecution = testResultCount === 0 && testExecutionSignals.length === 0;
+    const hasInfrastructureEvidence = infrastructureSignals.length > 0 || bootPhaseSignals.length > 0;
+    const api30Retryable = normalizedDevice === "api30" &&
+        normalizedExitCode === "124" &&
+        noTestExecution &&
+        hasInfrastructureEvidence &&
+        failed;
+    const api34Retryable = normalizedDevice === "api34" &&
+        noTestExecution &&
+        (infrastructureSignals.length > 0 || (timedOut && bootPhaseSignals.length > 0)) &&
+        failed;
+
     let reason = "not-failed";
-    if (normalizedDevice !== "api34") {
+    if (!supported) {
         reason = "unsupported-device";
     } else if (!failed) {
         reason = "not-failed";
     } else if (testResultCount > 0) {
         reason = "test-results-exist";
-    } else if (infrastructureSignals.length > 0) {
-        reason = "explicit-infrastructure-failure";
-    } else if (timedOut && bootPhaseSignals.length > 0) {
+    } else if (testExecutionSignals.length > 0) {
+        reason = "test-execution-started";
+    } else if (api30Retryable || (normalizedDevice === "api34" && timedOut && bootPhaseSignals.length > 0)) {
         reason = "managed-device-boot-timeout";
+    } else if (api34Retryable) {
+        reason = "explicit-infrastructure-failure";
     } else {
         reason = "not-proven-infrastructure-failure";
     }
 
     return {
-        retryable: normalizedDevice === "api34" && testResultCount === 0 && (
-            infrastructureSignals.length > 0 || (timedOut && bootPhaseSignals.length > 0)
-        ) && failed,
+        retryable: api30Retryable || api34Retryable,
         reason,
+        exitCode: normalizedExitCode,
         infrastructureSignals,
         bootPhaseSignals,
+        testExecutionSignals,
         testResultCount,
     };
 }
