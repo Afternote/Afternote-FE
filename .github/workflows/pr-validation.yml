@@ -10,7 +10,9 @@ name: PR Validation
 # type 에 없어 재트리거되지 않으므로, 필터가 있으면 스택 PR 이 검증을 한 번도 거치지
 # 않고 머지된다.
 on:
+  # 본문 QA 메타데이터를 바꾸면 이전 green check를 재사용하지 않고 다시 검증한다.
   pull_request:
+    types: [opened, synchronize, reopened, edited]
   # GITHUB_TOKEN 으로 PR 브랜치에 baseline/stack merge commit 을 올리면 pull_request
   # 이벤트가 다시 발생하지 않는다. 권한 있는 bridge 가 같은 SHA 에 필수 검증을 붙일 때 쓴다.
   workflow_dispatch:

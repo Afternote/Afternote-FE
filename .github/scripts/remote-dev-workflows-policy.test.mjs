@@ -59,8 +59,15 @@ test("managed device QA uses labeled PR scope or the trusted default branch", as
     assert.match(source, /^\s{2}pull_request:\n\s{4}types: \[labeled, synchronize\]$/m);
     assert.match(source, /contains\(github\.event\.pull_request\.labels\.\*\.name, 'android-test'\)/);
     assert.match(source, /github\.ref_name == github\.event\.repository\.default_branch/);
-    assert.match(source, /ref: \$\{\{ github\.event_name == 'pull_request' && github\.event\.pull_request\.head\.sha \|\| github\.event\.repository\.default_branch \}\}/);
-    assert.doesNotMatch(source, /pull_request_number:/);
+    assert.match(source, /^\s{6}pull_request_number:\n/m);
+    assert.match(source, /^\s{6}expected_head_sha:\n/m);
+    assert.match(source, /^\s{6}expected_test_ref:\n/m);
+    assert.match(source, /head_repository.*!=.*GITHUB_REPOSITORY/);
+    assert.match(source, /has_label.*!=.*true/);
+    assert.match(source, /target_sha.*!=.*EXPECTED_HEAD_SHA/);
+    assert.match(source, /ref: \$\{\{ steps\.target\.outputs\.sha \}\}/);
+    assert.match(source, /actual_sha.*!=.*EXPECTED_SHA/);
+    assert.match(source, /Verify declared direct androidTest executed/);
     assert.match(source, /persist-credentials: false/);
 });
 
