@@ -367,4 +367,5 @@ docker run --rm -v "$PWD":/workspace -w /workspace afternote-screenshot:latest \
 - 현재 `develop`·`main` 머지에는 **승인 1건**이 필요하다. `main`은 모든 리뷰 스레드 해결도 필요하다.
 - 리뷰 결과는 GitHub의 `APPROVED`·`CHANGES_REQUESTED`·일반 코멘트로 표현한다. 별도 RCA prefix나 12시간 SLA는 두지 않는다.
 - [리뷰 적체 가드](.github/workflows/review-debt-guard.yml)는 응답을 기다리는 다른 PR이 남은 팀원의 새 PR을 닫을 수 있다. 각 PR은 팀원 한 명이 먼저 유효한 판정을 내리면 최초 미응답 목록에서 빠진다.
-- 변경 요청에 대응한 뒤에는 실질 커밋, `/review-response` 코멘트 또는 해당 리뷰 스레드 답변으로 근거를 남기고 재검토를 받는다. 긴급 PR은 근거가 있을 때만 `review-debt-exempt` 라벨로 적체 가드를 우회한다.
+- 쓰기 권한이 있는 리뷰어별 최신 `APPROVED`·`CHANGES_REQUESTED` 가운데 PR 전체에서 가장 늦은 판정을 최종 판정으로 사용한다. 가장 늦은 판정이 승인이면 더 오래된 변경 요청은 자동 해제되고, 승인 뒤에 새 변경 요청이 오면 다시 차단된다.
+- 긴급 PR은 근거가 있을 때만 `review-debt-exempt` 라벨로 적체 가드를 우회한다.
