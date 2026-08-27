@@ -14,6 +14,7 @@ const FULL_REQUIRED_PATHS = new Set([
     ".github/workflows/android-managed-device.yml",
     ".github/scripts/ci-test-plan.mjs",
     ".github/scripts/resolve-android-test-plan.mjs",
+    ".github/scripts/render-android-test-results.mjs",
     ".github/scripts/validate-pr-ci-test-plan.mjs",
     ".github/scripts/verify-android-test-plan-result.mjs",
     "app/build.gradle.kts",
