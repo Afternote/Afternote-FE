@@ -1,8 +1,8 @@
 package com.afternote.feature.afternote.presentation.author.editor.processing
 
 import androidx.annotation.StringRes
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.processing.AfternoteActionsTemplate.defaultsFor
 
 /**
@@ -15,9 +15,9 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.Aft
  */
 object AfternoteActionsTemplate {
     @StringRes
-    fun defaultsFor(category: EditorCategory): List<Int> =
-        when (category) {
-            EditorCategory.SOCIAL -> {
+    fun defaultsFor(type: AfternoteType): List<Int> =
+        when (type) {
+            AfternoteType.SOCIAL_NETWORK -> {
                 listOf(
                     R.string.afternote_editor_actions_social_remove_post,
                     R.string.afternote_editor_actions_social_post_memorial,
@@ -25,20 +25,20 @@ object AfternoteActionsTemplate {
                 )
             }
 
-            EditorCategory.GALLERY -> {
+            AfternoteType.GALLERY_AND_FILES -> {
                 listOf(
                     R.string.afternote_editor_actions_gallery_send_folder,
                     R.string.afternote_editor_actions_gallery_delete_folder,
                 )
             }
 
-            EditorCategory.MEMORIAL -> {
+            AfternoteType.MEMORIAL -> {
                 emptyList()
             }
 
             // BUSINESS 는 소셜 폼을 재사용하지만 템플릿 prefill 미연결 상태(호출처 없음)는 동일해 빈 목록 유지.
             // ESTATE 는 디자인 확정 전 placeholder 만 노출되므로 prefill 대상 아님.
-            EditorCategory.BUSINESS, EditorCategory.ESTATE -> {
+            AfternoteType.BUSINESS, AfternoteType.ESTATE -> {
                 emptyList()
             }
         }
