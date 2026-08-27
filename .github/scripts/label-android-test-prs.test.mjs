@@ -288,7 +288,7 @@ test("presentation 변경의 명시적 required 결정도 근거로 함께 남�
     assert.deepEqual(plan.toLabel.map((item) => item.number), [1266]);
 });
 
-test("실제 누락 사례 10건은 잡고 검증된 CI 제외 3건만 남긴다", () => {
+test("경로 위험도나 QA 제외와 무관하게 모든 same-repository PR을 실행 대상으로 만든다", () => {
     const pullRequests = [
         pullRequest({ number: 440, files: ["feature/timeletter/data/src/main/AndroidManifest.xml"] }),
         pullRequest({ number: 767, files: ["app/src/androidTest/java/TimeLetterLifecycleAndroidTest.kt"] }),
@@ -329,8 +329,15 @@ test("실제 누락 사례 10건은 잡고 검증된 CI 제외 3건만 남긴다
         label: DEFAULT_LABEL,
     });
 
-    assert.deepEqual(plan.toLabel.map((item) => item.number), [440, 767, 771, 882, 966, 1197, 1219, 1262, 1055, 1265]);
-    assert.deepEqual(plan.notRequired.map((item) => item.number), [1098, 1099, 1264]);
+    assert.deepEqual(
+        plan.toLabel.map((item) => item.number),
+        [440, 767, 771, 882, 966, 1197, 1219, 1262, 1055, 1098, 1099, 1264, 1265],
+    );
+    assert.equal(
+        plan.toLabel.every((item) => item.requirement.matches[0].id === "all-pull-requests"),
+        true,
+    );
+    assert.deepEqual(plan.notRequired, []);
 });
 
 test("이미 붙은 라벨은 유지하고 자동 제거 계획을 만들지 않는다", () => {

@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 
-// Android 런타임 회귀 가능성이 큰 PR 에 `android-test` 라벨을 유지한다.
+// 모든 same-repository PR 에 `android-test` 라벨을 유지한다.
 //
-// 라벨은 단순 분류가 아니라 Android Managed Device 실행 스위치다. 한 번 성공한 뒤 사람이
-// 라벨을 제거하고 head 를 갱신하면 새 SHA 는 계측 테스트 없이 남는다. 이 스크립트는 default
-// branch 의 신뢰된 워크플로에서 열린 PR 전체를 다시 읽고, 보수적 파일 규칙이나 구조화 QA의
-// 명시적 결정에 해당하는데 라벨이 없는 PR 에만 라벨을 추가한다. 자동 제거는 하지 않는다.
-// 사람이 더 넓은 런타임 위험을 보고 붙인 라벨을 자동화가 지우면 안전 쪽 판단을 되돌리게 된다.
+// 라벨은 Android Managed Device 실행 스위치다. 한 번 성공한 뒤 사람이 라벨을 제거하고 head 를
+// 갱신하면 새 SHA 는 계측 테스트 없이 남는다. 이 스크립트는 default branch 의 신뢰된 워크플로에서
+// 열린 PR 전체를 다시 읽고 라벨이 없는 same-repository PR 에 추가한다. 경로 규칙과 구조화 QA 결정은
+// 실행 여부가 아니라 추가 위험 근거를 기록하는 데 유지한다. 자동 제거는 하지 않는다.
 
 import path from "node:path";
 import process from "node:process";
@@ -18,7 +17,7 @@ export const DEFAULT_LABEL = "android-test";
 export const DEFAULT_PENDING_LABEL = "android-test-dispatch-pending";
 
 const LABEL_COLOR = "1D76DB";
-const LABEL_DESCRIPTION = "PR head에서 Android Managed Device 계측 테스트 실행";
+const LABEL_DESCRIPTION = "모든 same-repository PR head에서 Android Managed Device 계측 테스트 실행";
 const PENDING_LABEL_COLOR = "FBCA04";
 const PENDING_LABEL_DESCRIPTION = "android-test 자동 dispatch 재시도 필요";
 const PULL_REQUEST_PAGE_SIZE = 50;
@@ -167,10 +166,21 @@ export function planLabelChanges({
     const skippedForks = [];
 
     for (const pullRequest of pullRequests) {
-        const requirement = classifyAndroidTestRequirement(pullRequest.files ?? [], {
+        const pathRequirement = classifyAndroidTestRequirement(pullRequest.files ?? [], {
             androidTestRequired: pullRequest.androidTestRequired === true,
             androidTestExcluded: pullRequest.androidTestExcluded === true,
         });
+        const requirement = {
+            required: true,
+            matches: [
+                {
+                    id: "all-pull-requests",
+                    description: "모든 same-repository PR의 필수 계측 테스트",
+                    paths: [],
+                },
+                ...pathRequirement.matches,
+            ],
+        };
         const candidate = { ...pullRequest, requirement };
         const hasLabel = (pullRequest.labels ?? []).includes(label);
         if (pullRequest.headRepository !== repository && (requirement.required || hasLabel)) {

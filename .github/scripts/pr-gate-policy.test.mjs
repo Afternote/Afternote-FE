@@ -8,12 +8,15 @@ const VALIDATION_WORKFLOWS = ["lint.yml", "unit-test.yml", "screenshot.yml", "re
 const HEAVY_VALIDATION_WORKFLOWS = ["lint.yml", "unit-test.yml", "screenshot.yml"];
 // Repository ruleset 20911039 의 required context 와 함께 바꿔야 하는 외부 계약이다.
 const REQUIRED_VALIDATION_CONTEXTS = [
-    "Android Managed Device / Pixel 2 API 30 androidTest",
     "Repository Quality / Repository Quality",
     "Screenshot / Validate Compose Preview Screenshots",
     "Static Analysis / Check Code Quality (Ktlint)",
     "Static Analysis / Check Project Issues (Android Lint)",
     "Unit Test / Run Unit Tests",
+];
+const REQUIRED_MANAGED_DEVICE_CONTEXTS = [
+    "Android Managed Device / Pixel 2 API 30 androidTest",
+    "Android Managed Device / Pixel 2 API 34 accessibility smoke",
 ];
 
 async function workflows() {
@@ -89,6 +92,14 @@ test("required validation context names stay aligned with the repository ruleset
     }
 
     assert.deepEqual(contexts.sort(), [...REQUIRED_VALIDATION_CONTEXTS].sort());
+});
+
+test("both managed device lanes stay aligned with the repository ruleset", async () => {
+    const managedDevice = await readWorkflow("android-managed-device.yml");
+    const contexts = [...managedDevice.matchAll(/^ {10}- name: (Pixel 2 API .+)$/gm)]
+        .map((match) => `Android Managed Device / ${match[1]}`);
+
+    assert.deepEqual(contexts.sort(), [...REQUIRED_MANAGED_DEVICE_CONTEXTS].sort());
 });
 
 test("stale runs are cancelled per pull request", async () => {
