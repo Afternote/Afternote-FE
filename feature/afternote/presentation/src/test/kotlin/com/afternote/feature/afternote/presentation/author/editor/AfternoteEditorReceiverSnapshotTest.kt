@@ -20,24 +20,7 @@ import java.lang.reflect.Proxy
 @Config(sdk = [35])
 class AfternoteEditorReceiverSnapshotTest {
     @Test
-    fun `기존 문자열 receiver id 스냅샷을 Long 폼으로 복원한다`() {
-        val savedStateHandle =
-            SavedStateHandle(
-                mapOf(
-                    "initialType" to AfternoteType.SOCIAL_NETWORK,
-                    SNAPSHOT_KEY to
-                        """{"type":"SOCIAL_NETWORK","selectedService":"인스타그램","receivers":[{"id":"7","name":"김수신","label":"딸"}]}""",
-                ),
-            )
-
-        val form = viewModel(savedStateHandle).currentForm()
-
-        assertEquals("인스타그램", form.selectedService)
-        assertEquals(7L, form.afternoteEditReceivers.single().id)
-    }
-
-    @Test
-    fun `새 receiver id 스냅샷은 숫자로 기록하고 다시 복원한다`() {
+    fun `receiver id 스냅샷은 숫자로 기록하고 다시 복원한다`() {
         val savedStateHandle = SavedStateHandle(mapOf("initialType" to AfternoteType.SOCIAL_NETWORK))
         val viewModel = viewModel(savedStateHandle)
 
@@ -75,6 +58,6 @@ class AfternoteEditorReceiverSnapshotTest {
         ) { _, method, _ -> error("${T::class.java.simpleName}.${method.name} 호출은 이 테스트에서 예상하지 않았습니다") } as T
 
     private companion object {
-        const val SNAPSHOT_KEY = "editor_form_snapshot_v2"
+        const val SNAPSHOT_KEY = "editor_form_snapshot_v3"
     }
 }
