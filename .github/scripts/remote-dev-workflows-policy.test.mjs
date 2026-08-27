@@ -59,8 +59,37 @@ test("managed device QA uses labeled PR scope or the trusted default branch", as
     assert.match(source, /^\s{2}pull_request:\n\s{4}types: \[labeled, synchronize\]$/m);
     assert.match(source, /contains\(github\.event\.pull_request\.labels\.\*\.name, 'android-test'\)/);
     assert.match(source, /github\.ref_name == github\.event\.repository\.default_branch/);
-    assert.match(source, /ref: \$\{\{ github\.event_name == 'pull_request' && github\.event\.pull_request\.head\.sha \|\| github\.event\.repository\.default_branch \}\}/);
-    assert.doesNotMatch(source, /pull_request_number:/);
+    assert.match(source, /^\s{6}pull_request_number:\n/m);
+    assert.match(source, /^\s{6}expected_head_sha:\n/m);
+    assert.match(source, /^\s{6}expected_test_ref:\n/m);
+    assert.match(source, /head_repository.*!=.*GITHUB_REPOSITORY/);
+    assert.match(source, /has_label.*!=.*true/);
+    assert.match(source, /target_sha.*!=.*EXPECTED_HEAD_SHA/);
+    assert.match(source, /target_branch.*!=.*DISPATCH_REF_NAME/);
+    assert.match(source, /target_sha.*!=.*EXECUTION_SHA/);
+    assert.match(
+        source,
+        /ref: \$\{\{ github\.event_name == 'pull_request' && github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/,
+    );
+    assert.doesNotMatch(source, /ref: \$\{\{ steps\.target\.outputs\.sha \}\}/);
+    assert.match(source, /actual_sha.*!=.*EXPECTED_SHA/);
+    const trustedCheckout = source.indexOf("Clone trusted target policy");
+    const policyStaging = source.indexOf("Stage trusted Android test policy");
+    const targetCheckout = source.indexOf("Clone tested revision");
+    assert.ok(trustedCheckout >= 0 && trustedCheckout < policyStaging);
+    assert.ok(policyStaging < targetCheckout);
+    assert.match(source, /source=trusted/);
+    assert.match(source, /source=bootstrap/);
+    assert.doesNotMatch(source, /source=target/);
+    assert.match(source, /Android test policy가 부분 설치된 상태입니다/);
+    assert.match(source, /bootstrap mode에서는 expected_test_ref를 사용할 수 없습니다/);
+    assert.match(source, /bootstrap mode에서는 androidTest 선언을 검증 없이 건너뛸 수 없습니다/);
+    assert.doesNotMatch(source, /node \.github\/scripts\/resolve-android-test-ref\.mjs/);
+    assert.match(source, /Verify declared direct androidTest executed/);
+    assert.match(
+        source,
+        /if: steps\.target\.outputs\.test_ref != '' && matrix\.test_class == ''/,
+    );
     assert.match(source, /persist-credentials: false/);
 });
 

@@ -12,6 +12,8 @@
 앱 QA가 필요 없으면 scope를 ci-only 또는 covered-by-ci로 바꾸고
 precondition/action/expected/risk 대신 exclusionReason을 쓰세요. 이 경우 evidence에는
 동일 input·boundary·observation을 단언하는 ci/test 근거가 하나 이상 필요합니다.
+androidTest.required가 true이면 실제 Activity/Compose/Android 경계를 검증할 testRef를 적습니다.
+false이면 reason과 함께 동일 input·boundary·observation의 ci/test evidence로 제외를 증명합니다.
 -->
 ```json
 {
@@ -20,11 +22,19 @@ precondition/action/expected/risk 대신 exclusionReason을 쓰세요. 이 경�
   "action": "",
   "expected": "",
   "risk": "",
+  "androidTest": {
+    "required": true,
+    "reason": "",
+    "testRef": "app/src/androidTest/...Test.kt#testName"
+  },
   "evidence": [
     {
-      "kind": "issue",
-      "ref": "#",
-      "assertion": ""
+      "kind": "test",
+      "ref": "app/src/androidTest/...Test.kt#testName",
+      "assertion": "",
+      "input": "",
+      "boundary": "",
+      "observation": ""
     }
   ]
 }

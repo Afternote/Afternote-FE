@@ -46,7 +46,10 @@ test("pull request validation has exactly one entry point", async () => {
         .map(([name]) => name);
 
     assert.deepEqual(entryPoints, []);
-    assert.match(await readWorkflow(ENTRY_WORKFLOW), /^on:\n\s{2}pull_request:$/m);
+    assert.match(
+        await readWorkflow(ENTRY_WORKFLOW),
+        /^\s{2}pull_request:\n\s{4}types: \[opened, synchronize, reopened, edited\]$/m,
+    );
 });
 
 test("every validation workflow is reachable only as a reusable call", async () => {
@@ -172,6 +175,12 @@ test("repository quality owns fail-closed paginated classification and pull requ
         /- name: Validate structured QA metadata\n\s+if: github\.event_name == 'pull_request'/,
     );
     assert.doesNotMatch(unitTest, /Validate structured QA metadata/);
+});
+
+test("editing QA metadata retriggers every required validation context", async () => {
+    const entry = await readWorkflow(ENTRY_WORKFLOW);
+
+    assert.match(entry, /types: \[opened, synchronize, reopened, edited\]/);
 });
 
 test("repository quality still runs on develop and main pushes", async () => {

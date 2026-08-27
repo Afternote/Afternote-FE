@@ -26,7 +26,8 @@
             android:label="@string/app_name"
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
-            android:theme="@style/Theme.Afternotefe.Main">
+            android:theme="@style/Theme.Afternotefe.Main"
+            android:usesCleartextTraffic="false">
         <!--
           광고 ID 수집·광고 개인화 신호 비활성화 — Analytics 는 breadcrumb 전용.
           https://firebase.google.com/docs/analytics/android/configure-data-collection
