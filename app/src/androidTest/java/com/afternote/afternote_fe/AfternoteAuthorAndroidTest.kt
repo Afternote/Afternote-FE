@@ -15,6 +15,7 @@ import androidx.paging.PagingData
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
+import com.afternote.afternote_fe.test.afternoteEditorSavedStateHandle
 import com.afternote.afternote_fe.test.appTestUserRepository
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
@@ -58,7 +59,7 @@ class AfternoteAuthorAndroidTest {
     @Test
     fun missingReceiver_blocksSaveAndExposesValidationSemantics() {
         val repository = FakeAfternoteRepository()
-        val viewModel = viewModel(repository, SavedStateHandle())
+        val viewModel = viewModel(repository, afternoteEditorSavedStateHandle(AfternoteType.SOCIAL_NETWORK))
         composeRule.setContent {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
             AfternoteTheme {
@@ -90,7 +91,7 @@ class AfternoteAuthorAndroidTest {
         val repository = FakeAfternoteRepository()
         repository.createSocialResults.addLast(Result.failure(IllegalStateException("offline")))
         repository.createSocialResults.addLast(Result.success(42L))
-        val viewModel = viewModel(repository, SavedStateHandle())
+        val viewModel = viewModel(repository, afternoteEditorSavedStateHandle(AfternoteType.SOCIAL_NETWORK))
         composeRule.setContent {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
             AfternoteTheme { Text(uiState.savedId?.toString().orEmpty()) }
@@ -121,7 +122,7 @@ class AfternoteAuthorAndroidTest {
 
     @Test
     fun savedState_recreatesTypeReceiverAndProcessingForm() {
-        val handle = SavedStateHandle()
+        val handle = afternoteEditorSavedStateHandle(AfternoteType.GALLERY_AND_FILES)
         val first = viewModel(FakeAfternoteRepository(), handle)
         composeRule.setContent { AfternoteTheme {} }
         composeRule.runOnIdle {
