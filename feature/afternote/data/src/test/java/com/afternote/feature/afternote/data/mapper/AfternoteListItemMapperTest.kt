@@ -13,7 +13,7 @@ import org.junit.Test
  *
  * 항목 매퍼를 따로 노출하지 않으므로 단건도 이 소비 경로로 확인한다 — 실제로 도는 경로 그대로다.
  */
-class AfternoteListItemDtoToDomainTest {
+class AfternoteListItemMapperTest {
     @Test
     fun `필드와 Long id를 그대로 매핑`() {
         val result =
@@ -23,6 +23,7 @@ class AfternoteListItemDtoToDomainTest {
                     title = "은행 계정",
                     category = "SOCIAL",
                     createdAt = "2025-11-26T14:30:00",
+                    isDraft = false,
                 ),
             ).toDomainList().single()
 
@@ -85,10 +86,12 @@ class AfternoteListItemDtoToDomainTest {
         title: String = "t",
         category: String = "SOCIAL",
         createdAt: String = "2025-01-01T00:00:00",
+        isDraft: Boolean = false,
     ) = AfternoteListItemDto(
         afternoteId = afternoteId,
         title = title,
         category = category,
         createdAt = createdAt,
+        isDraft = isDraft,
     )
 }

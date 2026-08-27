@@ -60,6 +60,46 @@
 
 별도 API나 유료 AI를 호출하지 않으며 기존 GitHub Actions 실행량만 사용한다. Actions의 **Collect Release Scope**에서 릴리스 PR 번호를 입력해 다시 산출할 수도 있다.
 
+### PR별 구조화 QA 원천
+
+모든 PR은 `QA Metadata` 섹션의 JSON 객체를 채운다. `app-runtime`·`release-only`는 `precondition`·`action`·`expected`·`risk`·`evidence`가 필요하다. `ci-only`·`covered-by-ci`는 빈 QA 문구 대신 `exclusionReason`과 동일 입력·경계·관찰 결과를 적은 `ci` 또는 `test` evidence가 필요하다. 누락과 `#123 관련 동작을 재현...` 형태의 generic 문구는 Unit Test workflow에서 실패한다. 게이트 도입(`QA_METADATA_GATE_CUTOFF`) 전에 생성된 PR은 섹션이 없으면 검증을 건너뛰므로, 리베이스로 이 workflow를 받아도 소급 차단되지 않는다. 섹션을 채우면 생성 시각과 무관하게 검증한다.
+
+```json
+{
+  "scope": "app-runtime",
+  "precondition": "삭제할 애프터노트가 목록에 있는 로그인 상태",
+  "action": "삭제 확인에서 확인을 눌러 DELETE 요청을 보낸다",
+  "expected": "성공 시 목록에서 제거되고 실패 시 기존 항목과 오류 안내가 유지된다",
+  "risk": "실패한 삭제가 성공처럼 보이거나 기존 항목이 유실될 수 있다",
+  "evidence": [
+    {
+      "kind": "issue",
+      "ref": "#550",
+      "assertion": "삭제 성공·실패의 관찰 결과를 정의한다"
+    }
+  ]
+}
+```
+
+앱 QA 제외 원천은 다음처럼 같은 경계를 검증하는 CI 근거를 구조화한다.
+
+```json
+{
+  "scope": "ci-only",
+  "exclusionReason": "GitHub Actions 제어 변경으로 APK 사용자 흐름이 존재하지 않는다",
+  "evidence": [
+    {
+      "kind": "ci",
+      "ref": "Unit Test / Run deployment script tests",
+      "assertion": "같은 스크립트 입력과 종료 상태를 CI에서 검증한다",
+      "input": "배포 판단 context fixture",
+      "boundary": "구조화 메타데이터 파싱부터 최종 JSON 검증까지",
+      "observation": "node test가 제외·병합·generic 0건을 단언한다"
+    }
+  ]
+}
+```
+
 ### 배포 — `main` → Firebase App Distribution (자동, 유일한 경로)
 
 여기서 배포는 검증할 `main` 빌드를 Firebase 테스터에게 전달하는 단계이며, Play Store 프로덕션 릴리스를 뜻하지 않는다.
@@ -78,7 +118,7 @@
 - 주차를 변경한 뒤 최신 리포트가 표시되는지 확인
 ```
 
-PR이 `main`에 머지되면 워크플로가 두 섹션을 릴리스 노트로 사용한다. 연결된 PR이나 필수 섹션을 찾지 못하면 배포하지 않는다.
+PR이 `main`에 머지되면 워크플로가 두 섹션을 릴리스 노트로 사용한다. 연결된 PR이나 필수 섹션을 찾지 못하면 배포하지 않는다. `## QA 포인트`에 사전조건·행동·기대 결과가 없는 generic fallback 문구가 있으면 릴리스 노트 렌더 단계에서 실패한다.
 
 CI 가 사용하는 GitHub Secrets (Settings → Secrets and variables → Actions):
 
@@ -135,4 +175,3 @@ bash .github/scripts/render-distribution-release-notes.sh /tmp/afternote-release
 
 - 추가/제거: Firebase Console → App Distribution → 테스터 및 그룹 → `afternote` 그룹 편집
 - 신규 테스터는 첫 초대 이메일에서 **App Tester** 앱 설치 안내를 받음 → 이후 빌드는 자동 알림
-

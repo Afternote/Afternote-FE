@@ -101,6 +101,8 @@ refactor(core): core:di 모듈 삭제 — 바인딩을 구현 옆으로 옮긴�
 
 ktlint 가 강제한다. 커밋 전 `./gradlew ktlintFormat` 을 돌린다.
 
+`feature/*/presentation`은 기능(화면) 폴더를 기본 단위로 한다. 깊이 제한과 `shared/` 판정 기준, 이관 절차는 [presentation 패키지 구조 규칙](docs/convention/presentation-package-structure.md)을 따른다.
+
 ## PR · 머지
 
 이슈 · PR 템플릿은 [`.github/`](.github/) 에 있다.
