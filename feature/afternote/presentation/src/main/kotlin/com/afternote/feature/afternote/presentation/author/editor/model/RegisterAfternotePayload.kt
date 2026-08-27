@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor.model
 
-import com.afternote.feature.afternote.domain.model.author.ProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 
 /**
@@ -15,5 +14,5 @@ data class RegisterAfternotePayload(
     val accountId: String = "",
     val password: String = "",
     val messageBlocks: List<EditorMessageTextBlock> = emptyList(),
-    val processingMethods: List<ProcessingMethod> = emptyList(),
+    val processingMethods: List<String> = emptyList(),
 )
