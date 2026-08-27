@@ -96,11 +96,7 @@ fun rememberOnboardingNavActions(navController: NavController): OnboardingNavAct
 fun rememberMindRecordNavActions(navController: NavController): MindRecordNavActions =
     remember(navController) {
         object : MindRecordNavActions {
-            override fun onMemorySpaceBack() {
-                navController.popBackStack()
-            }
-
-            override fun onReceiverMindRecordBack() {
+            override fun popBack() {
                 navController.popBackStack()
             }
 
@@ -112,20 +108,8 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
                 navController.navigate(MindRecordRoute.DiaryWriteRoute())
             }
 
-            override fun onWriteBack() {
-                navController.popBackStack()
-            }
-
-            override fun onWriteSubmitSuccess() {
-                navController.popBackStack()
-            }
-
             override fun onNavigateToDraftList() {
                 navController.navigate(MindRecordRoute.DraftListRoute)
-            }
-
-            override fun onDraftListBack() {
-                navController.popBackStack()
             }
 
             override fun onEditDailyQuestion(answerId: Long) {
@@ -167,6 +151,10 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
 fun rememberTimeLetterNavActions(navController: NavController): TimeLetterNavActions =
     remember(navController) {
         object : TimeLetterNavActions {
+            override fun popBack() {
+                navController.popBackStack()
+            }
+
             override fun onSettingClick() {
                 navController.navigate(Route.Setting)
             }
@@ -179,40 +167,20 @@ fun rememberTimeLetterNavActions(navController: NavController): TimeLetterNavAct
                 navController.navigate(TimeLetterRoute.TimeLetterWriteRoute(timeLetterId = timeLetterId))
             }
 
-            override fun onWriteBack() {
-                navController.popBackStack()
-            }
-
             override fun onNavigateToDraft() {
                 navController.navigate(TimeLetterRoute.TimeLetterDraftRoute)
-            }
-
-            override fun onDraftBack() {
-                navController.popBackStack()
             }
 
             override fun onNavigateToRecipient() {
                 navController.navigate(TimeLetterRoute.TimeLetterRecipientRoute)
             }
 
-            override fun onRecipientBack() {
-                navController.popBackStack()
-            }
-
             override fun onNavigateToDetail(timeLetterId: Long) {
                 navController.navigate(TimeLetterRoute.TimeLetterDetailRoute(timeLetterId))
             }
 
-            override fun onDetailBack() {
-                navController.popBackStack()
-            }
-
             override fun onNavigateToRecipientFilter() {
                 navController.navigate(TimeLetterRoute.TimeLetterRecipientFilterRoute)
-            }
-
-            override fun onRecipientFilterBack() {
-                navController.popBackStack()
             }
         }
     }
@@ -221,7 +189,7 @@ fun rememberTimeLetterNavActions(navController: NavController): TimeLetterNavAct
 fun rememberSettingNavActions(appState: AppState): SettingNavActions =
     remember(appState) {
         object : SettingNavActions {
-            override fun onSettingBack() {
+            override fun popBack() {
                 appState.navController.popBackStack()
             }
 
@@ -240,14 +208,6 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 appState.navController.navigate(SettingRoute.WithdrawConfirmRoute)
             }
 
-            override fun onWithdrawGuideBack() {
-                appState.navController.popBackStack()
-            }
-
-            override fun onWithdrawConfirmBack() {
-                appState.navController.popBackStack()
-            }
-
             override fun onWithdrawSuccess() {
                 appState.navController.navigate(Route.Onboarding) {
                     // 탈퇴 — 계정 사라진 상태라 stack 전체 비우고 Onboarding 진입. 뒤로가기로 인증된 화면에 못 돌아가게.
@@ -259,24 +219,12 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 appState.navController.navigate(SettingRoute.ProfileEditRoute)
             }
 
-            override fun onProfileEditBack() {
-                appState.navController.popBackStack()
-            }
-
             override fun onNavigateToLinkedAccount() {
                 appState.navController.navigate(SettingRoute.LinkedAccountRoute)
             }
 
-            override fun onLinkedAccountBack() {
-                appState.navController.popBackStack()
-            }
-
             override fun onNavigateToNotification() {
                 appState.navController.navigate(SettingRoute.NotificationRoute)
-            }
-
-            override fun onNotificationBack() {
-                appState.navController.popBackStack()
             }
 
             override fun onNavigateToRecipientList() {
@@ -289,72 +237,36 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 )
             }
 
-            override fun onRecipientListBack() {
-                appState.navController.popBackStack()
-            }
-
             override fun onNavigateToRecipientRegister() {
                 appState.navController.navigate(SettingRoute.RecipientRegisterRoute)
-            }
-
-            override fun onRecipientRegisterBack() {
-                appState.navController.popBackStack()
             }
 
             override fun onNavigateToRecipientEdit(receiverId: Long) {
                 appState.navController.navigate(SettingRoute.RecipientEditRoute(receiverId))
             }
 
-            override fun onRecipientEditBack() {
-                appState.navController.popBackStack()
-            }
-
             override fun onNavigateToAfterDelivery(receiverId: Long) {
                 appState.navController.navigate(SettingRoute.AfterDeliveryRoute(receiverId))
-            }
-
-            override fun onAfterDeliveryBack() {
-                appState.navController.popBackStack()
             }
 
             override fun onNavigateToPasskey() {
                 appState.navController.navigate(SettingRoute.PasskeyRoute)
             }
 
-            override fun onPasskeyBack() {
-                appState.navController.popBackStack()
-            }
-
             override fun onNavigateToPasskeyMaking() {
                 appState.navController.navigate(SettingRoute.PasskeyMakingRoute)
-            }
-
-            override fun onPasskeyMakingBack() {
-                appState.navController.popBackStack()
             }
 
             override fun onNavigateToPasskeyPassword() {
                 appState.navController.navigate(SettingRoute.PasskeyPasswordRoute)
             }
 
-            override fun onPasskeyPasswordBack() {
-                appState.navController.popBackStack()
-            }
-
             override fun onNavigateToAppLock() {
                 appState.navController.navigate(SettingRoute.AppLockSetupRoute)
             }
 
-            override fun onAppLockBack() {
-                appState.navController.popBackStack()
-            }
-
             override fun onNavigateToNotice() {
                 appState.navController.navigate(SettingRoute.NoticeRoute)
-            }
-
-            override fun onNoticeBack() {
-                appState.navController.popBackStack()
             }
         }
     }

@@ -41,19 +41,19 @@ fun NavGraphBuilder.timeLetterNavGraph(
             LaunchedEffect(uiState.savedAsDraft) {
                 if (uiState.savedAsDraft) {
                     viewModel.onSavedAsDraftShown()
-                    actions.onDraftBack()
+                    actions.popBack()
                 }
             }
             LaunchedEffect(uiState.registered) {
                 if (uiState.registered) {
                     viewModel.onRegisteredShown()
-                    actions.onWriteBack()
+                    actions.popBack()
                 }
             }
 
             TimeLetterWriteScreen(
                 uiState = uiState,
-                onBackClick = actions::onWriteBack,
+                onBackClick = actions::popBack,
                 onRegisterClick = { title, textContents -> viewModel.register(title, textContents) },
                 onDraftClick = { title, textContents -> viewModel.saveDraft(title, textContents) },
                 onNavigateToDraft = actions::onNavigateToDraft,
@@ -84,12 +84,12 @@ fun NavGraphBuilder.timeLetterNavGraph(
         }
 
         composable<TimeLetterRoute.TimeLetterDraftRoute> {
-            DraftLetterScreen(onBackClick = actions::onDraftBack)
+            DraftLetterScreen(onBackClick = actions::popBack)
         }
 
         composable<TimeLetterRoute.TimeLetterDetailRoute> {
             TimeLetterDetailScreen(
-                onBackClick = actions::onDetailBack,
+                onBackClick = actions::popBack,
             )
         }
 
@@ -101,10 +101,10 @@ fun NavGraphBuilder.timeLetterNavGraph(
                 }
             val writeViewModel: TimeLetterWriteViewModel = hiltViewModel(writeEntry)
             RecipientListScreen(
-                onBackClick = actions::onRecipientBack,
+                onBackClick = actions::popBack,
                 onConfirmClick = { recipients ->
                     writeViewModel.setRecipients(recipients.map { it.receiverId })
-                    actions.onRecipientBack()
+                    actions.popBack()
                 },
             )
         }
@@ -116,10 +116,10 @@ fun NavGraphBuilder.timeLetterNavGraph(
                 }
             val timeletterViewModel: TimeletterViewModel = hiltViewModel(homeEntry)
             RecipientListScreen(
-                onBackClick = actions::onRecipientFilterBack,
+                onBackClick = actions::popBack,
                 onConfirmClick = { recipients ->
                     timeletterViewModel.setReceiverFilter(recipients.map { it.receiverId })
-                    actions.onRecipientFilterBack()
+                    actions.popBack()
                 },
                 allowEmptyConfirm = true,
             )

@@ -38,7 +38,7 @@ fun NavGraphBuilder.settingNavGraph(
     navigation<Route.Setting>(startDestination = SettingRoute.SettingHomeRoute) {
         composable<SettingRoute.SettingHomeRoute> {
             SettingScreen(
-                onBackClick = actions::onSettingBack,
+                onBackClick = actions::popBack,
                 onLogoutSuccess = actions::onLogoutSuccess,
                 onProfileEditClick = actions::onNavigateToProfileEdit,
                 onPasswordChangeClick = {},
@@ -67,8 +67,8 @@ fun NavGraphBuilder.settingNavGraph(
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
             WithdrawGuideScreen(
                 uiState = uiState,
-                onBackClick = actions::onWithdrawGuideBack,
-                onCancelClick = actions::onWithdrawGuideBack,
+                onBackClick = actions::popBack,
+                onCancelClick = actions::popBack,
                 onConfirmClick = actions::onNavigateToWithdrawConfirm,
             )
         }
@@ -79,7 +79,7 @@ fun NavGraphBuilder.settingNavGraph(
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
             WithdrawConfirmScreen(
                 uiState = uiState,
-                onBackClick = actions::onWithdrawConfirmBack,
+                onBackClick = actions::popBack,
                 onWithdrawSuccess = actions::onWithdrawSuccess,
                 viewModel = viewModel,
             )
@@ -87,20 +87,20 @@ fun NavGraphBuilder.settingNavGraph(
 
         composable<SettingRoute.ProfileEditRoute> {
             ProfileEditScreen(
-                onBackClick = actions::onProfileEditBack,
+                onBackClick = actions::popBack,
                 onWithdrawGuideClick = actions::onNavigateToWithdrawGuide,
             )
         }
 
         composable<SettingRoute.LinkedAccountRoute> {
             ConnectedAccountsScreen(
-                onBack = actions::onLinkedAccountBack,
+                onBack = actions::popBack,
             )
         }
 
         composable<SettingRoute.NotificationRoute> {
             PushNotificationScreen(
-                onBack = actions::onNotificationBack,
+                onBack = actions::popBack,
             )
         }
 
@@ -110,12 +110,12 @@ fun NavGraphBuilder.settingNavGraph(
             val receivers by viewModel.receivers.collectAsStateWithLifecycle()
             ReceiverListScreen(
                 receivers = receivers,
-                onBackClick = actions::onRecipientListBack,
+                onBackClick = actions::popBack,
                 onConfirmClick = { receiver ->
                     if (route.selectForDeliveryConditions) {
                         actions.onNavigateToAfterDelivery(receiver.receiverId)
                     } else {
-                        actions.onRecipientListBack()
+                        actions.popBack()
                     }
                 },
             )
@@ -123,23 +123,23 @@ fun NavGraphBuilder.settingNavGraph(
 
         composable<SettingRoute.RecipientRegisterRoute> {
             ReceiverRegisterScreen(
-                onBackClick = actions::onRecipientRegisterBack,
-                onRegisterSuccess = actions::onRecipientRegisterBack,
+                onBackClick = actions::popBack,
+                onRegisterSuccess = actions::popBack,
             )
         }
 
         composable<SettingRoute.RecipientEditRoute> {
             ReceiverEditScreen(
-                onBackClick = actions::onRecipientEditBack,
-                onEditSuccess = actions::onRecipientEditBack,
+                onBackClick = actions::popBack,
+                onEditSuccess = actions::popBack,
             )
         }
 
         composable<SettingRoute.AfterDeliveryRoute> {
             val route = it.toRoute<SettingRoute.AfterDeliveryRoute>()
             DeliveryConditionScreen(
-                onBack = actions::onAfterDeliveryBack,
-                onSaveSuccess = actions::onAfterDeliveryBack,
+                onBack = actions::popBack,
+                onSaveSuccess = actions::popBack,
                 onLastGreetingEditClick = {
                     actions.onNavigateToRecipientEdit(route.receiverId)
                 },
@@ -150,10 +150,10 @@ fun NavGraphBuilder.settingNavGraph(
             val viewModel: PassKeyViewModel = hiltViewModel()
             val isPasskeyRegistered by viewModel.isPasskeyRegistered.collectAsStateWithLifecycle()
             if (isPasskeyRegistered == true) {
-                PassKeyListScreen(onBackClick = actions::onPasskeyBack)
+                PassKeyListScreen(onBackClick = actions::popBack)
             } else if (isPasskeyRegistered == false) {
                 PassKeyScreen(
-                    onBackClick = actions::onPasskeyBack,
+                    onBackClick = actions::popBack,
                     onRegisterClick = actions::onNavigateToPasskeyMaking,
                 )
             }
@@ -161,30 +161,30 @@ fun NavGraphBuilder.settingNavGraph(
 
         composable<SettingRoute.PasskeyMakingRoute> {
             PassKeyMakingScreen(
-                onBackClick = actions::onPasskeyMakingBack,
+                onBackClick = actions::popBack,
                 onPasswordAuthClick = actions::onNavigateToPasskeyPassword,
             )
         }
 
         composable<SettingRoute.PasskeyPasswordRoute> {
             PassKeyPasswordScreen(
-                onPinComplete = { actions.onPasskeyPasswordBack() },
-                onBack = actions::onPasskeyPasswordBack,
+                onPinComplete = { actions.popBack() },
+                onBack = actions::popBack,
             )
         }
 
         composable<SettingRoute.AppLockSetupRoute> {
             AppLockSetupScreen(
                 step = PinSetupStep.ENTER_NEW,
-                onPinComplete = { actions.onAppLockBack() },
-                onBack = actions::onAppLockBack,
+                onPinComplete = { actions.popBack() },
+                onBack = actions::popBack,
             )
         }
 
         composable<SettingRoute.NoticeRoute> {
             NoticeListScreen(
                 notices = emptyList(),
-                onBackClick = actions::onNoticeBack,
+                onBackClick = actions::popBack,
             )
         }
     }

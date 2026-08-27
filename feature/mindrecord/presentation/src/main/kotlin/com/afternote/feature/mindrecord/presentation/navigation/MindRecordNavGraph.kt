@@ -36,29 +36,29 @@ fun NavGraphBuilder.mindRecordNavGraph(actions: MindRecordNavActions) {
         )
     }
     composable<Route.MemorySpace> {
-        MemorySpaceScreen(onBackClick = actions::onMemorySpaceBack)
+        MemorySpaceScreen(onBackClick = actions::popBack)
     }
     composable<Route.ReceiverMindRecord> {
         // 앱바 뒤로가기를 실제로 붙인다 — 없으면 이 화면이 막다른 곳이 된다 (#614).
-        ReceiverMindRecordScreen(onBackClick = actions::onReceiverMindRecordBack)
+        ReceiverMindRecordScreen(onBackClick = actions::popBack)
     }
     composable<MindRecordRoute.DailyQuestionWriteRoute> {
         DailyQuestionWriteScreen(
-            onSubmitSuccess = actions::onWriteSubmitSuccess,
-            onBackClick = actions::onWriteBack,
+            onSubmitSuccess = actions::popBack,
+            onBackClick = actions::popBack,
             onDraftListClick = actions::onNavigateToDraftList,
         )
     }
     composable<MindRecordRoute.DiaryWriteRoute> {
         DiaryWriteScreen(
-            onSubmitSuccess = actions::onWriteSubmitSuccess,
-            onBackClick = actions::onWriteBack,
+            onSubmitSuccess = actions::popBack,
+            onBackClick = actions::popBack,
             onDraftListClick = actions::onNavigateToDraftList,
         )
     }
     composable<MindRecordRoute.DraftListRoute> {
         DraftListScreen(
-            onBackClick = actions::onDraftListBack,
+            onBackClick = actions::popBack,
             onDiaryDraftClick = actions::onEditDiaryDraft,
             onDailyQuestionDraftClick = actions::onEditDailyQuestionDraft,
         )
