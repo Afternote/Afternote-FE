@@ -38,6 +38,30 @@ test("develop validation calls only the unit and screenshot validation workflows
     assert.match(jobs, /screenshot:\n(?:\s{4}.+\n)*?\s{4}uses:\s*\.\/\.github\/workflows\/screenshot\.yml/);
 });
 
+test("develop validation grants pull request write only to the screenshot caller", async () => {
+    const source = withoutComments(await workflow("develop-validation.yml"));
+    const calledSource = withoutComments(await workflow("screenshot.yml"));
+    const workflowPermissions = source.slice(source.indexOf("permissions:\n"), source.indexOf("\njobs:\n"));
+    const unitTestJob = source.slice(source.indexOf("  unit-test:\n"), source.indexOf("\n  screenshot:\n"));
+    const screenshotJob = source.slice(source.indexOf("  screenshot:\n"), source.indexOf("\n  report:\n"));
+    const callerPermissions = screenshotJob.slice(
+        screenshotJob.indexOf("    permissions:\n"),
+        screenshotJob.indexOf("\n    uses:"),
+    );
+    const calledPermissions = calledSource.slice(
+        calledSource.indexOf("permissions:\n"),
+        calledSource.indexOf("\njobs:\n"),
+    );
+
+    assert.equal(workflowPermissions.trimEnd(), "permissions:\n  contents: read");
+    assert.doesNotMatch(unitTestJob, /permissions:/);
+    assert.equal(
+        callerPermissions.replaceAll(/^ {4}/gm, "").trimEnd(),
+        calledPermissions.trimEnd(),
+        "the caller must satisfy the reusable screenshot workflow permission ceiling exactly",
+    );
+});
+
 test("develop validation reuses read-only Gradle cache consumers", async () => {
     for (const name of ["unit-test.yml", "screenshot.yml"]) {
         const source = withoutComments(await workflow(name));
@@ -63,12 +87,19 @@ test("pull-request-only Kover context is skipped on develop pushes", async () =>
 
 test("the reporter is wired to the tested incident state machine with least privilege", async () => {
     const source = await workflow("develop-validation.yml");
+    const reportJob = source.slice(source.indexOf("  report:\n"));
+    const reportPermissions = reportJob.slice(
+        reportJob.indexOf("    permissions:\n"),
+        reportJob.indexOf("\n    steps:"),
+    );
 
-    assert.match(source, /report:\n(?:\s{4}.+\n)*?\s{4}if:\s*always\(\)/);
-    assert.match(source, /needs:\s*\[unit-test, screenshot\]/);
-    assert.match(source, /report:\n[\s\S]*?permissions:\n\s{6}contents:\s*read\n\s{6}issues:\s*write/);
-    assert.doesNotMatch(source, /pull-requests:\s*write/);
-    assert.match(source, /VALIDATION_RESULTS:\s*\$\{\{ toJSON\(needs\) \}\}/);
-    assert.match(source, /develop-validation-incident\.mjs/);
-    assert.match(source, /reconcileDevelopValidationIncident/);
+    assert.match(reportJob, /report:\n(?:\s{4}.+\n)*?\s{4}if:\s*always\(\)/);
+    assert.match(reportJob, /needs:\s*\[unit-test, screenshot\]/);
+    assert.equal(
+        reportPermissions.replaceAll(/^ {4}/gm, "").trimEnd(),
+        "permissions:\n  contents: read\n  issues: write",
+    );
+    assert.match(reportJob, /VALIDATION_RESULTS:\s*\$\{\{ toJSON\(needs\) \}\}/);
+    assert.match(reportJob, /develop-validation-incident\.mjs/);
+    assert.match(reportJob, /reconcileDevelopValidationIncident/);
 });
