@@ -6,7 +6,8 @@ name: Android Managed Device Test
 # 라벨 조정기의 자동 dispatch 도 PR head branch ref 에 생성하고 이벤트 SHA 를 현재 PR HEAD 와 다시
 # 대조한다. 정기·일반 수동 실행만 default branch 를 사용하므로 PR 코드가 기본 브랜치 cache scope 에서
 # 실행되지 않는다.
-# 실패를 감추는 job/test 재시도는 두지 않는다.
+# 테스트 실패는 재시도하지 않는다. API 34가 테스트 XML 없이 GMD 준비 단계에서 멈춘 경우만
+# default branch의 별도 복구 workflow가 첫 실행의 해당 job을 새 runner에서 한 번 재실행한다.
 on:
   workflow_dispatch:
     inputs:
@@ -50,7 +51,7 @@ jobs:
        github.event.pull_request.head.repo.full_name == github.repository)
     name: ${{ matrix.name }}
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: ${{ matrix.job_timeout_minutes }}
     strategy:
       fail-fast: false
       matrix:
@@ -58,11 +59,17 @@ jobs:
           - name: Pixel 2 API 30 androidTest
             task: pixel2Api30DebugAndroidTest
             device: api30
+            job_timeout_minutes: 25
+            gradle_timeout_minutes: 22
+            gradle_step_timeout_minutes: 23
             full_selector: ''
             artifact: api30
           - name: Pixel 2 API 34 accessibility smoke
             task: pixel2Api34DebugAndroidTest
             device: api34
+            job_timeout_minutes: 15
+            gradle_timeout_minutes: 12
+            gradle_step_timeout_minutes: 13
             full_selector: com.afternote.afternote_fe.AccessibilitySmokeAndroidTest
             artifact: accessibility-api34
     steps:
@@ -103,13 +110,24 @@ jobs:
               install -m 0644 \
                 .github/scripts/render-android-test-results.mjs \
                 "$policy_dir/render-android-test-results.mjs"
-              echo "renderer=trusted" >> "$GITHUB_OUTPUT"
+              renderer=trusted
             else
               # 이 renderer를 처음 도입하는 PR만 tested revision의 summary-only 구현을 쓴다.
               # selected 실행 증거 검증은 계속 위 trusted verifier가 소유한다.
-              echo "renderer=bootstrap" >> "$GITHUB_OUTPUT"
+              renderer=bootstrap
             fi
-            echo "source=trusted" >> "$GITHUB_OUTPUT"
+            if [[ -f .github/scripts/classify-android-managed-device-failure.mjs ]]; then
+              install -m 0644 \
+                .github/scripts/classify-android-managed-device-failure.mjs \
+                "$policy_dir/classify-android-managed-device-failure.mjs"
+              classifier=trusted
+            else
+              # 도입 PR에서는 default branch에 아직 없으므로 분류·자동 재실행을 생략한다.
+              # tested revision의 권한 없는 classifier를 신뢰 경계 밖에서 실행하지 않는다.
+              classifier=unavailable
+            fi
+            printf 'renderer=%s\nclassifier=%s\nsource=trusted\n' \
+              "$renderer" "$classifier" >> "$GITHUB_OUTPUT"
           elif [[ ! -e .github/scripts/ci-test-plan.mjs &&
                   ! -e .github/scripts/resolve-android-test-plan.mjs &&
                   ! -e .github/scripts/resolve-pr-impact.mjs &&
@@ -118,8 +136,10 @@ jobs:
             # 최초 도입 PR에서는 default branch에 새 helper들이 아직 없다. 선언 검증을 target
             # 코드에 맡기지 않고, 아래 단계가 selected/full 선언을 금지하는 fail-closed 예외다.
             echo "::warning::default branch에 Android test policy가 없어 bootstrap mode를 사용합니다"
-            echo "renderer=bootstrap" >> "$GITHUB_OUTPUT"
-            echo "source=bootstrap" >> "$GITHUB_OUTPUT"
+            printf '%s\n' \
+              renderer=bootstrap \
+              classifier=unavailable \
+              source=bootstrap >> "$GITHUB_OUTPUT"
           else
             echo "::error::Android test policy가 부분 설치된 상태입니다"
             exit 1
@@ -383,9 +403,11 @@ jobs:
       - name: Run managed-device androidTest
         id: android_test
         if: steps.target.outputs.run_lane == 'true'
+        timeout-minutes: ${{ matrix.gradle_step_timeout_minutes }}
         env:
           ARTIFACT_KEY: ${{ matrix.artifact }}
           DEVICE_TASK: ${{ matrix.task }}
+          GRADLE_TIMEOUT_MINUTES: ${{ matrix.gradle_timeout_minutes }}
           TEST_SELECTORS: ${{ steps.target.outputs.selectors }}
         run: |
           set -euo pipefail
@@ -399,7 +421,8 @@ jobs:
           mkdir -p "$log_directory"
 
           set +e
-          ./gradlew "$DEVICE_TASK" "${test_arguments[@]}" \
+          timeout --signal=TERM --kill-after=30s "${GRADLE_TIMEOUT_MINUTES}m" \
+            ./gradlew "$DEVICE_TASK" "${test_arguments[@]}" \
             -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect \
             --console=plain \
             --stacktrace > "$gradle_log" 2>&1
@@ -411,6 +434,61 @@ jobs:
             echo "log_path=$gradle_log"
           } >> "$GITHUB_OUTPUT"
           echo "Managed-device Gradle exit code: $status (full log is in the artifact)"
+
+      # Gradle 상한을 job 상한보다 먼저 끝내 아래 증거를 업로드할 시간을 확보한다. 환경 변수,
+      # process 인자, AVD 설정 파일은 수집하지 않아 CI 설정값이 artifact로 새지 않게 한다.
+      - name: Collect managed-device infrastructure diagnostics
+        if: >-
+          always() &&
+          steps.target.outputs.run_lane == 'true' &&
+          (steps.android_test.outcome != 'success' ||
+           steps.android_test.outputs.exit_code != '0')
+        run: |
+          set +e
+          diagnostics="$RUNNER_TEMP/android-test-diagnostics"
+          mkdir -p "$diagnostics"
+
+          {
+            date --iso-8601=seconds
+            uname -a
+            id
+            ls -l /dev/kvm
+            df -h
+            free -h
+            ps -eo pid,ppid,etimes,stat,%cpu,%mem,comm
+          } > "$diagnostics/runner.txt" 2>&1
+
+          timeout 15s adb devices -l > "$diagnostics/adb-devices.txt" 2>&1 || true
+          timeout 15s adb -e shell getprop > "$diagnostics/emulator-getprop.txt" 2>&1 || true
+          timeout 15s "${ANDROID_HOME}/emulator/emulator" -accel-check \
+            > "$diagnostics/emulator-accel-check.txt" 2>&1 || true
+
+      - name: Classify managed-device infrastructure failure
+        id: infrastructure_failure
+        if: >-
+          always() &&
+          steps.policy.outputs.classifier == 'trusted' &&
+          steps.target.outputs.run_lane == 'true' &&
+          (steps.android_test.outcome != 'success' ||
+           steps.android_test.outputs.exit_code != '0')
+        env:
+          ANDROID_TEST_EXIT_CODE: ${{ steps.android_test.outputs.exit_code }}
+          ANDROID_TEST_OUTCOME: ${{ steps.android_test.outcome }}
+          ARTIFACT_KEY: ${{ matrix.artifact }}
+          DEVICE: ${{ matrix.device }}
+          TARGET_SHA: ${{ steps.target.outputs.sha }}
+        run: |
+          marker="$RUNNER_TEMP/android-test-diagnostics/retry.json"
+          node "$RUNNER_TEMP/android-test-policy/classify-android-managed-device-failure.mjs" \
+            "$RUNNER_TEMP/android-test-logs/$ARTIFACT_KEY.log" \
+            app/build/outputs/androidTest-results/managedDevice \
+            "$marker"
+          {
+            echo "## Managed-device infrastructure classification"
+            echo
+            echo "- Retry eligible: \`$(jq -r '.retryable' "$marker")\`"
+            echo "- Reason: \`$(jq -r '.reason' "$marker")\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       # PR이 고른 selector의 실행 증거는 계속 default branch에서 staging한 verifier가 소유한다.
       # 오류는 다음 renderer가 summary와 annotation에 함께 싣도록 파일과 종료 코드로 넘긴다.
@@ -494,6 +572,18 @@ jobs:
           fromJSON(steps.android_test_results.outputs.annotation_chunks || '0') >= 5
         run: cat "$RUNNER_TEMP/android-test-annotations/chunk-5.log"
 
+      - name: Upload API 34 infrastructure retry marker
+        if: >-
+          always() &&
+          matrix.device == 'api34' &&
+          steps.infrastructure_failure.outputs.retryable == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: android-managed-device-retry-api34-${{ github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: error
+          retention-days: 1
+          path: ${{ runner.temp }}/android-test-diagnostics/retry.json
+
       - name: Upload androidTest reports and failure evidence
         if: always() && steps.target.outputs.run_lane == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -507,6 +597,7 @@ jobs:
             app/build/outputs/managed_device_android_test_additional_output/
             ${{ runner.temp }}/android-test-logs/
             ${{ runner.temp }}/android-test-annotations/
+            ${{ runner.temp }}/android-test-diagnostics/
             ${{ runner.temp }}/android-test-selected-verification.log
 
       # XML 요약과 artifact 업로드를 끝낸 뒤에만 red로 만든다. Gradle이 실패했다면 원래
@@ -515,9 +606,14 @@ jobs:
         if: always() && steps.target.outputs.run_lane == 'true'
         env:
           ANDROID_TEST_EXIT_CODE: ${{ steps.android_test.outputs.exit_code }}
+          ANDROID_TEST_OUTCOME: ${{ steps.android_test.outcome }}
           RESULT_RENDERER_EXIT_CODE: ${{ steps.android_test_results.outputs.exit_code }}
           SELECTED_VERIFIER_EXIT_CODE: ${{ steps.selected_android_test.outputs.exit_code }}
         run: |
+          if [[ "$ANDROID_TEST_OUTCOME" != "success" ]]; then
+            echo "Managed-device Gradle step did not complete: $ANDROID_TEST_OUTCOME"
+            exit 124
+          fi
           if [[ -n "$ANDROID_TEST_EXIT_CODE" && "$ANDROID_TEST_EXIT_CODE" != "0" ]]; then
             echo "Restoring managed-device Gradle exit code: $ANDROID_TEST_EXIT_CODE"
             exit "$ANDROID_TEST_EXIT_CODE"

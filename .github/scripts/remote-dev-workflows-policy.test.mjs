@@ -99,6 +99,9 @@ test("managed device keeps required contexts but boots only CI Test Plan lanes",
     assert.doesNotMatch(source, /source=target/);
     assert.match(source, /renderer=trusted/);
     assert.match(source, /renderer=bootstrap/);
+    assert.match(source, /classifier=trusted/);
+    assert.match(source, /classifier=unavailable/);
+    assert.doesNotMatch(source, /Stage bootstrap infrastructure classifier/);
     assert.match(source, /Android test policy가 부분 설치된 상태입니다/);
     assert.match(source, /bootstrap mode에서는 expected_plan_digest를 사용할 수 없습니다/);
     assert.match(source, /bootstrap mode에서는 selected selector를 신뢰된 parser 없이 실행할 수 없습니다/);
@@ -177,6 +180,55 @@ test("managed device summarizes XML and uploads the full Gradle log before faili
     assert.match(source, /exit "\$ANDROID_TEST_EXIT_CODE"/);
     assert.match(source, /SELECTED_VERIFIER_EXIT_CODE: \$\{\{ steps\.selected_android_test\.outputs\.exit_code \}\}/);
     assert.match(source, /RESULT_RENDERER_EXIT_CODE: \$\{\{ steps\.android_test_results\.outputs\.exit_code \}\}/);
+});
+
+test("managed device fails fast per lane and preserves only bounded infrastructure evidence", async () => {
+    const source = await readWorkflow("android-managed-device.yml");
+
+    assert.match(source, /timeout-minutes: \$\{\{ matrix\.job_timeout_minutes \}\}/);
+    assert.match(source, /device: api30[\s\S]*?job_timeout_minutes: 25[\s\S]*?gradle_timeout_minutes: 22[\s\S]*?gradle_step_timeout_minutes: 23/);
+    assert.match(source, /device: api34[\s\S]*?job_timeout_minutes: 15[\s\S]*?gradle_timeout_minutes: 12[\s\S]*?gradle_step_timeout_minutes: 13/);
+    assert.match(
+        source,
+        /- name: Run managed-device androidTest[\s\S]*?timeout-minutes: \$\{\{ matrix\.gradle_step_timeout_minutes \}\}/,
+    );
+    assert.match(source, /timeout --signal=TERM --kill-after=30s "\$\{GRADLE_TIMEOUT_MINUTES\}m"/);
+    assert.doesNotMatch(source, /timeout-minutes: 45/);
+
+    const gradle = source.indexOf("Run managed-device androidTest");
+    const diagnostics = source.indexOf("Collect managed-device infrastructure diagnostics");
+    const classifier = source.indexOf("Classify managed-device infrastructure failure");
+    const retryMarker = source.indexOf("Upload API 34 infrastructure retry marker");
+    const evidence = source.indexOf("Upload androidTest reports and failure evidence");
+    const restore = source.indexOf("Restore managed-device androidTest exit code");
+    assert.ok(gradle < diagnostics && diagnostics < classifier);
+    assert.ok(classifier < retryMarker && retryMarker < evidence && evidence < restore);
+
+    const diagnosticsStep = source.slice(diagnostics, classifier);
+    assert.match(diagnosticsStep, /adb devices -l/);
+    assert.match(diagnosticsStep, /emulator" -accel-check/);
+    assert.match(diagnosticsStep, /ps -eo pid,ppid,etimes,stat,%cpu,%mem,comm/);
+    assert.doesNotMatch(diagnosticsStep, /\.android\/avd|dmesg|printenv|ps [^\n]*command/);
+    assert.match(source, /steps\.policy\.outputs\.classifier == 'trusted'/);
+    assert.match(source, /ANDROID_TEST_OUTCOME: \$\{\{ steps\.android_test\.outcome \}\}/);
+    assert.match(source, /exit 124/);
+});
+
+test("API 34 recovery reruns only one validated first-attempt infrastructure failure", async () => {
+    const source = await readWorkflow("android-managed-device-retry.yml");
+
+    assert.match(source, /^\s{2}workflow_run:\n\s{4}workflows: \["Android Managed Device Test"\]/m);
+    assert.match(source, /github\.event\.workflow_run\.event == 'pull_request'/);
+    assert.match(source, /github\.event\.workflow_run\.head_repository\.full_name == github\.repository/);
+    assert.match(source, /github\.event\.workflow_run\.run_attempt == 1/);
+    assert.match(source, /^\s{6}actions: write$/m);
+    assert.doesNotMatch(source, /actions\/checkout@/);
+    assert.doesNotMatch(source, /^\s+run:/m);
+    assert.match(source, /marker\.sourceRunId === run\.id/);
+    assert.match(source, /marker\.headSha === run\.head_sha/);
+    assert.match(source, /marker\.testResultCount === 0/);
+    assert.match(source, /Pixel 2 API 34 accessibility smoke/);
+    assert.match(source, /POST \/repos\/\{owner\}\/\{repo\}\/actions\/jobs\/\{job_id\}\/rerun/);
 });
 
 test("managed device stages every local dependency of its trusted Android policy", async () => {
