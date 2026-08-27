@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
+import { copyFile, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 const workflowDirectory = new URL("../workflows/", import.meta.url);
 const readWorkflow = (name) => readFile(new URL(name, workflowDirectory), "utf8");
@@ -103,6 +107,67 @@ test("managed device keeps required contexts but boots only CI Test Plan lanes",
     assert.match(source, /if: steps\.target\.outputs\.run_lane == 'true'/);
     assert.match(source, /selectors_json='\[\]'/);
     assert.match(source, /persist-credentials: false/);
+});
+
+test("managed device stages every local dependency of its trusted Android policy", async () => {
+    const source = await readWorkflow("android-managed-device.yml");
+    const stageStart = source.indexOf("- name: Stage trusted Android test policy");
+    const stageEnd = source.indexOf("- name: Resolve and verify tested revision");
+    assert.ok(stageStart >= 0 && stageStart < stageEnd);
+
+    const stagedSource = source.slice(stageStart, stageEnd);
+    const stagedFiles = new Set(
+        [...stagedSource.matchAll(/\.github\/scripts\/([a-z0-9-]+\.mjs)/g)]
+            .map((match) => match[1]),
+    );
+    const scriptsDirectory = new URL("../scripts/", import.meta.url);
+    for (const stagedFile of stagedFiles) {
+        const script = await readFile(new URL(stagedFile, scriptsDirectory), "utf8");
+        for (const match of script.matchAll(/from\s+["']\.\/([^"']+\.mjs)["']/g)) {
+            assert.ok(
+                stagedFiles.has(match[1]),
+                `${stagedFile} imports ${match[1]}, but the workflow does not stage it`,
+            );
+        }
+    }
+
+    const stagedDirectory = await mkdtemp(path.join(tmpdir(), "android-test-policy-"));
+    try {
+        await Promise.all(
+            [...stagedFiles].map((file) => copyFile(
+                fileURLToPath(new URL(file, scriptsDirectory)),
+                path.join(stagedDirectory, file),
+            )),
+        );
+        const payloadPath = path.join(stagedDirectory, "pull-request.json");
+        await writeFile(payloadPath, JSON.stringify({
+            number: 1,
+            body: `## CI Test Plan
+
+\`\`\`json
+{
+  "androidTest": {
+    "mode": "selected",
+    "reason": "스테이징한 신뢰 정책을 실제 selected 계획으로 실행합니다.",
+    "tests": [
+      {
+        "path": "app/src/androidTest/java/com/afternote/afternote_fe/AccessibilitySmokeAndroidTest.kt",
+        "selector": "com.afternote.afternote_fe.AccessibilitySmokeAndroidTest#welcomeAndLogin_haveNoAutomatedAccessibilityErrors",
+        "device": "api30"
+      }
+    ]
+  }
+}
+\`\`\``,
+        }));
+        execFileSync(
+            process.execPath,
+            [path.join(stagedDirectory, "validate-pr-ci-test-plan.mjs"), payloadPath, process.cwd()],
+            { stdio: "pipe" },
+        );
+    } finally {
+        await rm(stagedDirectory, { recursive: true, force: true });
+    }
 });
 
 test("screenshot cleanup tolerates cancellation before Gradle setup", async () => {
