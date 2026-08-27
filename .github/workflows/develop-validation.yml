@@ -20,6 +20,9 @@ permissions:
 jobs:
   unit-test:
     name: Unit Test
+    permissions:
+      contents: read
+      pull-requests: read
     uses: ./.github/workflows/unit-test.yml
 
   screenshot:
