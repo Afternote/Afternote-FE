@@ -42,8 +42,8 @@ import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMe
 fun AfternoteEditorReceiverList(
     modifier: Modifier = Modifier,
     afternoteEditReceivers: List<AfternoteEditorReceiver>,
-    onAddClick: () -> Unit = {},
-    onItemDeleteClick: (Long) -> Unit = {},
+    onAddClick: () -> Unit,
+    onItemDeleteClick: (Long) -> Unit,
     state: AfternoteEditorReceiverListState = rememberAfternoteEditorReceiverListState(),
 ) {
     val focusManager = LocalFocusManager.current
@@ -163,6 +163,8 @@ private fun AfternoteEditorReceiverListPreview() {
                     AfternoteEditorReceiver(id = 2L, name = "김철수", label = "친구"),
                     AfternoteEditorReceiver(id = 3L, name = "이영희", label = "동료"),
                 ),
+            onAddClick = {},
+            onItemDeleteClick = {},
         )
     }
 }

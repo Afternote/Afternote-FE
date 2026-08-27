@@ -71,6 +71,8 @@ private fun GalleryAndFileEditorContentPreview() {
                         listOf(
                             AfternoteEditorReceiver(id = 1L, name = "홍길동", label = "가족"),
                         ),
+                    onAddClick = {},
+                    onItemDeleteClick = {},
                 ),
             processingMethodSection =
                 ProcessingMethodSection(

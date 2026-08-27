@@ -7,6 +7,6 @@ import androidx.compose.runtime.Immutable
 @Immutable
 data class AfternoteEditorReceiverSection(
     val afternoteEditReceivers: List<AfternoteEditorReceiver> = emptyList(),
-    val onAddClick: () -> Unit = {},
-    val onItemDeleteClick: (Long) -> Unit = {},
+    val onAddClick: () -> Unit,
+    val onItemDeleteClick: (Long) -> Unit,
 )

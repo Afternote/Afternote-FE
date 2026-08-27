@@ -28,6 +28,8 @@ internal fun sampleRecipientSection(hasRecipient: Boolean = true): AfternoteEdit
             } else {
                 emptyList()
             },
+        onAddClick = {},
+        onItemDeleteClick = {},
     )
 
 internal fun sampleProcessingMethodSection(): ProcessingMethodSection =
