@@ -139,49 +139,9 @@ keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-sh
 
 릴리스 PR이 열리거나 head가 갱신되면 [`release-scope.yml`](.github/workflows/release-scope.yml)이 마지막 성공 배포 이후 `develop`에 머지된 PR과 `Closes`·`Fixes`·`Resolves`로 완료 처리할 이슈를 모아 PR 본문의 `## 포함 이슈`를 채운다. head가 움직일 때마다 다시 채우므로 머지 직전에 목록을 손으로 대조할 필요가 없다.
 
-`## QA 포인트`는 비어 있을 때만 구성 PR 본문에서 모은 초안으로 채우고, 사람이 쓴 문장이 있으면 건드리지 않는다. 두 섹션은 main push 시 그대로 릴리스 노트가 되므로 배포 전에 테스터가 실행할 문장으로 다듬는다.
+`## QA 포인트`는 비어 있을 때 구성 PR 본문에 선택적으로 작성된 QA 포인트를 초안으로 모은다. 수집할 문장이 없으면 빈 섹션으로 두어 배포를 차단하고, 릴리스 PR에서 테스터가 실행할 동작과 기대 결과를 작성해야 한다. 사람이 쓴 문장이 있으면 자동화가 건드리지 않으며, `main` push 시 `포함 이슈`와 함께 그대로 릴리스 노트가 된다.
 
 별도 API나 유료 AI를 호출하지 않으며 기존 GitHub Actions 실행량만 사용한다. Actions의 **Collect Release Scope**에서 릴리스 PR 번호를 입력해 다시 산출할 수도 있다.
-
-### PR별 구조화 QA 원천
-
-모든 PR은 `QA Metadata` 섹션의 JSON 객체를 채운다. `app-runtime`·`release-only`는 `precondition`·`action`·`expected`·`risk`·`evidence`가 필요하다. `ci-only`·`covered-by-ci`는 빈 QA 문구 대신 `exclusionReason`과 동일 입력·경계·관찰 결과를 적은 `ci` 또는 `test` evidence가 필요하다. 누락과 `#123 관련 동작을 재현...` 형태의 generic 문구는 Unit Test workflow에서 실패한다. 게이트 도입(`QA_METADATA_GATE_CUTOFF`) 전에 생성된 PR은 섹션이 없으면 검증을 건너뛰므로, 리베이스로 이 workflow를 받아도 소급 차단되지 않는다. 섹션을 채우면 생성 시각과 무관하게 검증한다.
-
-```json
-{
-  "scope": "app-runtime",
-  "precondition": "삭제할 애프터노트가 목록에 있는 로그인 상태",
-  "action": "삭제 확인에서 확인을 눌러 DELETE 요청을 보낸다",
-  "expected": "성공 시 목록에서 제거되고 실패 시 기존 항목과 오류 안내가 유지된다",
-  "risk": "실패한 삭제가 성공처럼 보이거나 기존 항목이 유실될 수 있다",
-  "evidence": [
-    {
-      "kind": "issue",
-      "ref": "#550",
-      "assertion": "삭제 성공·실패의 관찰 결과를 정의한다"
-    }
-  ]
-}
-```
-
-앱 QA 제외 원천은 다음처럼 같은 경계를 검증하는 CI 근거를 구조화한다.
-
-```json
-{
-  "scope": "ci-only",
-  "exclusionReason": "GitHub Actions 제어 변경으로 APK 사용자 흐름이 존재하지 않는다",
-  "evidence": [
-    {
-      "kind": "ci",
-      "ref": "Unit Test / Run deployment script tests",
-      "assertion": "같은 스크립트 입력과 종료 상태를 CI에서 검증한다",
-      "input": "배포 판단 context fixture",
-      "boundary": "구조화 메타데이터 파싱부터 최종 JSON 검증까지",
-      "observation": "node test가 제외·병합·generic 0건을 단언한다"
-    }
-  ]
-}
-```
 
 ### 일반 배포 — `main` → Firebase App Distribution (자동)
 
@@ -358,7 +318,6 @@ docker run --rm -v "$PWD":/workspace -w /workspace afternote-screenshot:latest \
 - Issue는 [현재 Issue 템플릿](.github/ISSUE_TEMPLATE/custom.md)을 사용하고, 같은 작업의 기존 Issue가 있으면 새로 만들지 않고 재사용한다.
 - PR은 [현재 PR 템플릿](.github/PULL_REQUEST_TEMPLATE.md)을 그대로 채운다. 본문에 같은 저장소의 실제 Issue를 `Refs #N`으로 연결해야 Repository Quality 검사를 통과한다.
 - 여러 PR이 같은 Issue를 공유할 수 있다. 그 Issue의 작업을 최종 완료하는 PR에서만 `Closes #N`·`Fixes #N`·`Resolves #N`을 사용한다.
-- `QA Metadata`는 변경 경계에 맞게 `app-runtime`·`release-only` 또는 `ci-only`·`covered-by-ci`로 작성하고, 같은 입력과 결과를 확인하는 evidence를 남긴다.
 - 필수 검사는 머지 순서 가드, Ktlint, Android Lint, Unit Test, Screenshot, Repository Quality, CodeQL(Java/Kotlin·Actions)다. 이름이나 구성이 바뀌면 README 목록보다 활성 ruleset과 [PR 검증 진입점](.github/workflows/pr-validation.yml)을 우선한다.
 
 ## 코드 리뷰

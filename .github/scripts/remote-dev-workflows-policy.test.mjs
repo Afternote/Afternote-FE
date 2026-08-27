@@ -56,7 +56,7 @@ test("privileged baseline apply is a workflow-run bridge restricted to PNG basel
 test("managed device QA runs for every same-repository PR or the trusted default branch", async () => {
     const source = await readWorkflow("android-managed-device.yml");
 
-    assert.match(source, /^\s{2}pull_request:\n\s{4}types: \[opened, reopened, edited, labeled, synchronize\]$/m);
+    assert.match(source, /^\s{2}pull_request:\n\s{4}types: \[opened, reopened, labeled, synchronize\]$/m);
     assert.doesNotMatch(source, /^\s{2}workflow_call:/m);
     assert.doesNotMatch(source, /contains\(github\.event\.pull_request\.labels\.\*\.name, 'android-test'\)/);
     assert.match(source, /github\.event_name == 'pull_request'/);
@@ -66,7 +66,7 @@ test("managed device QA runs for every same-repository PR or the trusted default
     assert.match(source, /cancel-in-progress: true/);
     assert.match(source, /^\s{6}pull_request_number:\n/m);
     assert.match(source, /^\s{6}expected_head_sha:\n/m);
-    assert.match(source, /^\s{6}expected_test_ref:\n/m);
+    assert.doesNotMatch(source, /^\s{6}expected_test_ref:\n/m);
     assert.match(source, /head_repository.*!=.*GITHUB_REPOSITORY/);
     assert.match(source, /has_label.*!=.*true/);
     assert.match(source, /target_sha.*!=.*EXPECTED_HEAD_SHA/);
@@ -78,23 +78,15 @@ test("managed device QA runs for every same-repository PR or the trusted default
     );
     assert.doesNotMatch(source, /ref: \$\{\{ steps\.target\.outputs\.sha \}\}/);
     assert.match(source, /actual_sha.*!=.*EXPECTED_SHA/);
-    const trustedCheckout = source.indexOf("Clone trusted target policy");
-    const policyStaging = source.indexOf("Stage trusted Android test policy");
+    const targetResolution = source.indexOf("Resolve and verify tested revision");
     const targetCheckout = source.indexOf("Clone tested revision");
-    assert.ok(trustedCheckout >= 0 && trustedCheckout < policyStaging);
-    assert.ok(policyStaging < targetCheckout);
-    assert.match(source, /source=trusted/);
-    assert.match(source, /source=bootstrap/);
-    assert.doesNotMatch(source, /source=target/);
-    assert.match(source, /Android test policy가 부분 설치된 상태입니다/);
-    assert.match(source, /bootstrap mode에서는 expected_test_ref를 사용할 수 없습니다/);
-    assert.match(source, /bootstrap mode에서는 androidTest 선언을 검증 없이 건너뛸 수 없습니다/);
-    assert.doesNotMatch(source, /node \.github\/scripts\/resolve-android-test-ref\.mjs/);
-    assert.match(source, /Verify declared direct androidTest executed/);
-    assert.match(
-        source,
-        /if: steps\.target\.outputs\.test_ref != '' && matrix\.test_class == ''/,
-    );
+    assert.ok(targetResolution >= 0 && targetResolution < targetCheckout);
+    assert.equal((source.match(/actions\/checkout@/g) ?? []).length, 1);
+    assert.doesNotMatch(source, /Stage trusted Android test policy/);
+    assert.doesNotMatch(source, /resolve-android-test-ref\.mjs/);
+    assert.doesNotMatch(source, /verify-android-test-result\.mjs/);
+    assert.doesNotMatch(source, /test_ref|TEST_REF/);
+    assert.doesNotMatch(source, /Verify declared direct androidTest executed/);
     assert.match(source, /persist-credentials: false/);
 });
 

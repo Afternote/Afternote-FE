@@ -5,13 +5,11 @@
 // 모든 same-repository PR 은 라벨과 무관하게 pull_request 에서 Managed Device를 실행한다. 이 라벨은
 // 계측 검증 대상이라는 감사 표식이자 GITHUB_TOKEN 이 만든 commit을 정확한 HEAD로 재dispatch하는 복구
 // 수단이다. default branch 의 신뢰된 워크플로가 열린 PR 전체를 다시 읽어 누락된 라벨을 복구하며,
-// 경로 규칙과 구조화 QA 결정은 추가 위험 근거로 유지한다. 자동 제거는 하지 않는다.
+// 경로 규칙은 추가 위험 근거로 유지한다. 자동 제거는 하지 않는다.
 
 import path from "node:path";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
-
-import { inspectQaMetadata } from "./qa-metadata.mjs";
 
 export const DEFAULT_LABEL = "android-test";
 export const DEFAULT_PENDING_LABEL = "android-test-dispatch-pending";
@@ -23,8 +21,6 @@ const PENDING_LABEL_DESCRIPTION = "android-test 자동 dispatch 재시도 필요
 const PULL_REQUEST_PAGE_SIZE = 50;
 const CHANGED_FILE_PAGE_SIZE = 100;
 const MAX_CHANGED_FILE_PAGES = 30;
-const LEGACY_ANDROID_TEST_EXCLUDED_SCOPES = new Set(["ci-only", "covered-by-ci"]);
-
 const REQUIREMENT_RULES = [
     {
         id: "androidTest-source",
@@ -45,7 +41,6 @@ const REQUIREMENT_RULES = [
     {
         id: "runtime-presentation-source",
         description: "사용자에게 보이는 presentation 런타임 소스",
-        qaExcludable: true,
         matches: (filePath) =>
             /^feature\/[^/]+\/presentation\/src\/main\/(java|kotlin)\//.test(filePath) &&
             !/\/navigation\//.test(filePath),
@@ -64,7 +59,6 @@ const REQUIREMENT_RULES = [
     {
         id: "android-build-system",
         description: "Android 빌드 시스템",
-        qaExcludable: true,
         matches: (filePath) =>
             filePath === "build.gradle.kts" ||
             filePath === "settings.gradle.kts" ||
@@ -92,34 +86,16 @@ query($owner: String!, $name: String!, $cursor: String, $pageSize: Int!) {
                 number
                 headRefOid
                 headRepository { nameWithOwner }
-                body
                 labels(first: 100) { nodes { name } }
             }
         }
     }
 }`;
 
-export function classifyAndroidTestRequirement(
-    filePaths,
-    { androidTestRequired = false, androidTestExcluded = false } = {},
-) {
+export function classifyAndroidTestRequirement(filePaths) {
     const matches = [];
 
-    if (androidTestRequired) {
-        matches.push({
-            id: "qa-metadata-decision",
-            description: "PR QA 메타데이터의 명시적 계측 테스트 결정",
-            paths: [],
-        });
-    }
-
     for (const rule of REQUIREMENT_RULES) {
-        // 화면·빌드 시스템 변경은 실제 Android 경계를 건드릴 가능성이 높아 기본적으로 실행한다.
-        // 다만 구조화 QA가 동일 input·boundary·observation의 CI 근거로 제외를 증명한 경우에만
-        // 이 soft rule을 건너뛴다. manifest/navigation/계측 소스 같은 hard rule은 제외할 수 없다.
-        if (rule.qaExcludable === true && androidTestExcluded) {
-            continue;
-        }
         const matchedPaths = filePaths.filter((filePath) => rule.matches(filePath));
         if (matchedPaths.length > 0) {
             matches.push({
@@ -133,22 +109,6 @@ export function classifyAndroidTestRequirement(
     return {
         required: matches.length > 0,
         matches,
-    };
-}
-
-export function resolveAndroidTestDecision(body, { pullRequestNumber = "?" } = {}) {
-    const qaInspection = inspectQaMetadata(body, { pullRequestNumber });
-    if (!qaInspection.valid) {
-        return { required: false, excluded: false };
-    }
-
-    const explicitDecision = qaInspection.metadata.androidTest;
-    return {
-        required: explicitDecision?.required === true,
-        excluded:
-            explicitDecision?.required === false ||
-            (explicitDecision === undefined &&
-                LEGACY_ANDROID_TEST_EXCLUDED_SCOPES.has(qaInspection.metadata.scope)),
     };
 }
 
@@ -166,10 +126,7 @@ export function planLabelChanges({
     const skippedForks = [];
 
     for (const pullRequest of pullRequests) {
-        const pathRequirement = classifyAndroidTestRequirement(pullRequest.files ?? [], {
-            androidTestRequired: pullRequest.androidTestRequired === true,
-            androidTestExcluded: pullRequest.androidTestExcluded === true,
-        });
+        const pathRequirement = classifyAndroidTestRequirement(pullRequest.files ?? []);
         const requirement = {
             required: true,
             matches: [
@@ -231,16 +188,11 @@ function formatNumbers(pullRequests) {
 }
 
 function normalizePullRequest(node) {
-    const androidTestDecision = resolveAndroidTestDecision(node.body, {
-        pullRequestNumber: node.number,
-    });
     return {
         number: node.number,
         headRefOid: node.headRefOid,
         headRepository: node.headRepository?.nameWithOwner ?? null,
         labels: (node.labels?.nodes ?? []).map((item) => item.name),
-        androidTestRequired: androidTestDecision.required,
-        androidTestExcluded: androidTestDecision.excluded,
     };
 }
 
@@ -363,7 +315,6 @@ export async function fetchCurrentDispatchTarget(api, repository, number, label)
     const headSha = pullRequest?.head?.sha;
     const headRepository = pullRequest?.head?.repo?.full_name;
     const labels = (pullRequest?.labels ?? []).map((item) => item.name);
-    const qaInspection = inspectQaMetadata(pullRequest?.body, { pullRequestNumber: number });
 
     if (pullRequest?.state !== "open") {
         throw new Error(`PR이 open 상태가 아닙니다: ${pullRequest?.state ?? "unknown"}`);
@@ -384,10 +335,6 @@ export async function fetchCurrentDispatchTarget(api, repository, number, label)
     return {
         headBranch,
         headSha,
-        androidTestRef:
-            qaInspection.valid && qaInspection.metadata?.androidTest?.required === true
-                ? qaInspection.metadata.androidTest.testRef
-                : "",
     };
 }
 
@@ -436,11 +383,8 @@ export async function applyPlan(
             }
 
             // bridge가 관찰한 뒤 HEAD가 움직인 경합을 닫기 위해 dispatch 직전에 PR을 다시 읽는다.
-            const {
-                headBranch: currentHeadBranch,
-                headSha: currentHeadSha,
-                androidTestRef,
-            } = await fetchCurrentDispatchTarget(api, repository, pullRequest.number, label);
+            const { headBranch: currentHeadBranch, headSha: currentHeadSha } =
+                await fetchCurrentDispatchTarget(api, repository, pullRequest.number, label);
             await api(
                 `/repos/${repository}/actions/workflows/android-managed-device.yml/dispatches`,
                 {
@@ -451,7 +395,6 @@ export async function applyPlan(
                         inputs: {
                             pull_request_number: String(pullRequest.number),
                             expected_head_sha: currentHeadSha,
-                            expected_test_ref: androidTestRef,
                         },
                     },
                 },

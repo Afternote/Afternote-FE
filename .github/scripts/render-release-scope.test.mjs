@@ -5,6 +5,7 @@ import {
     applyReleaseScopeToBody,
     extractQaPoints,
     renderIssueSection,
+    renderQaDraftSection,
     summarizeReleaseScope,
 } from "./render-release-scope.mjs";
 
@@ -92,15 +93,16 @@ test("keeps QA points a human already wrote", () => {
     assert.doesNotMatch(updated, /자동 초안/);
 });
 
-test("fills an empty QA section so the distribution gate cannot fail on it", () => {
+test("keeps an empty QA section fail-closed when constituent PRs provide no draft", () => {
     const body = ["## 포함 이슈", "", "- #1", "", "## QA 포인트", ""].join("\n");
 
     const updated = applyReleaseScopeToBody(body, {
         issueSection: "- #562",
-        qaSection: "- 자동 초안",
+        qaSection: renderQaDraftSection({ qaPointsDraft: [] }),
     });
 
-    assert.match(updated, /## QA 포인트\n\n- 자동 초안/);
+    assert.match(updated, /## QA 포인트\n$/);
+    assert.doesNotMatch(updated, /직접 채워|자동 초안/);
 });
 
 test("appends both sections when the body has neither", () => {

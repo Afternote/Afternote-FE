@@ -12,7 +12,6 @@ import {
     fetchCurrentDispatchTarget,
     planLabelChanges,
     renderSummary,
-    resolveAndroidTestDecision,
 } from "./label-android-test-prs.mjs";
 
 const labelWorkflow = await readFile(new URL("../workflows/conflict-label.yml", import.meta.url), "utf8");
@@ -61,58 +60,6 @@ function currentPullRequest(overrides = {}) {
     };
 }
 
-function requiredQaBody(testRef) {
-    return `## QA Metadata
-\`\`\`json
-${JSON.stringify({
-    scope: "app-runtime",
-    precondition: "로그인한 사용자가 대상 화면에 있다",
-    action: "사용자 버튼을 눌러 실제 흐름을 실행한다",
-    expected: "완료 화면과 저장 상태가 표시된다",
-    risk: "사용자가 핵심 흐름을 완료할 수 없다",
-    androidTest: {
-        required: true,
-        reason: "실제 Activity와 Compose 경계를 검증해야 한다",
-        testRef,
-    },
-    evidence: [
-        {
-            kind: "test",
-            ref: testRef,
-            assertion: "같은 입력이 실제 화면 결과를 만든다",
-            input: "사용자 버튼 클릭",
-            boundary: "AndroidJUnit4 Activity와 Compose",
-            observation: "완료 화면과 저장 호출",
-        },
-    ],
-})}
-\`\`\``;
-}
-
-function coveredByCiQaBody({ androidTest } = {}) {
-    const metadata = {
-        scope: "covered-by-ci",
-        exclusionReason: "동일한 화면 크기와 글자 배율을 screenshot CI가 직접 렌더한다",
-        evidence: [
-            {
-                kind: "ci",
-                ref: "validateScreenshotTest compact large-font baseline",
-                assertion: "좁은 화면과 확대 글자에서도 우측 여백을 유지한다",
-                input: "360dp 화면과 fontScale 1.5",
-                boundary: "Compose 헤더의 최우측 픽셀",
-                observation: "우측 여백 26.5dp와 screenshot baseline 성공",
-            },
-        ],
-    };
-    if (androidTest !== undefined) {
-        metadata.androidTest = androidTest;
-    }
-    return `## QA Metadata
-\`\`\`json
-${JSON.stringify(metadata)}
-\`\`\``;
-}
-
 test("default branch의 PR Validation 요청과 정기 실행에서 라벨을 복구한다", () => {
     assert.match(labelWorkflow, /^  workflow_run:\n    workflows: \["PR Validation"\]\n    types: \[requested\]$/m);
     assert.match(labelWorkflow, /node \.github\/scripts\/label-android-test-prs\.mjs/);
@@ -130,7 +77,7 @@ test("default branch의 PR Validation 요청과 정기 실행에서 라벨을 �
 test("자동 라벨 dispatch는 PR branch event SHA와 현재 same-repository HEAD를 재검증한다", () => {
     assert.match(androidWorkflow, /^\s{6}pull_request_number:\n/m);
     assert.match(androidWorkflow, /^\s{6}expected_head_sha:\n/m);
-    assert.match(androidWorkflow, /^\s{6}expected_test_ref:\n/m);
+    assert.doesNotMatch(androidWorkflow, /^\s{6}expected_test_ref:\n/m);
     assert.match(androidWorkflow, /EXPECTED_HEAD_SHA.*\$\{\{ inputs\.expected_head_sha/);
     assert.match(androidWorkflow, /head_repository.*!=.*GITHUB_REPOSITORY/);
     assert.match(androidWorkflow, /target_sha.*!=.*EXPECTED_HEAD_SHA/);
@@ -142,8 +89,8 @@ test("자동 라벨 dispatch는 PR branch event SHA와 현재 same-repository HE
     );
     assert.doesNotMatch(androidWorkflow, /ref: \$\{\{ steps\.target\.outputs\.sha \}\}/);
     assert.match(androidWorkflow, /persist-credentials: false/);
-    assert.match(androidWorkflow, /resolve-android-test-ref\.mjs/);
-    assert.match(androidWorkflow, /verify-android-test-result\.mjs/);
+    assert.doesNotMatch(androidWorkflow, /resolve-android-test-ref\.mjs/);
+    assert.doesNotMatch(androidWorkflow, /verify-android-test-result\.mjs/);
 });
 
 test("계측 소스, manifest, navigation, 앱 진입점과 managed-device 설정을 대상으로 본다", () => {
@@ -186,7 +133,7 @@ test("문서, 단위 테스트와 screenshot baseline만으로는 무거운 계�
     assert.deepEqual(result.matches, []);
 });
 
-test("presentation 런타임 소스는 기본 대상이고 검증된 QA 제외만 soft rule을 건너뛴다", () => {
+test("presentation 런타임 소스를 추가 위험 근거로 분류한다", () => {
     const paths = [
         "feature/mindrecord/presentation/src/main/kotlin/com/afternote/screen/DailyQuestionWriteScreen.kt",
         "feature/home/presentation/src/main/kotlin/com/afternote/HomeTabViewModel.kt",
@@ -195,13 +142,9 @@ test("presentation 런타임 소스는 기본 대상이고 검증된 QA 제외�
     const required = classifyAndroidTestRequirement(paths);
     assert.equal(required.required, true);
     assert.deepEqual(required.matches.map((match) => match.id), ["runtime-presentation-source"]);
-
-    const excluded = classifyAndroidTestRequirement(paths, { androidTestExcluded: true });
-    assert.equal(excluded.required, false);
-    assert.deepEqual(excluded.matches, []);
 });
 
-test("Android 빌드 시스템 변경은 기본 대상이고 검증된 QA 제외만 soft rule을 건너뛴다", () => {
+test("Android 빌드 시스템 변경을 추가 위험 근거로 분류한다", () => {
     const paths = [
         "build.gradle.kts",
         "settings.gradle.kts",
@@ -216,79 +159,9 @@ test("Android 빌드 시스템 변경은 기본 대상이고 검증된 QA 제외
     assert.equal(required.required, true);
     assert.deepEqual(required.matches.map((match) => match.id), ["android-build-system"]);
     assert.deepEqual(required.matches[0].paths, paths);
-
-    const excluded = classifyAndroidTestRequirement(paths, { androidTestExcluded: true });
-    assert.equal(excluded.required, false);
-    assert.deepEqual(excluded.matches, []);
 });
 
-test("명시적 false와 유효한 legacy CI scope만 계측 제외로 해석한다", () => {
-    assert.deepEqual(resolveAndroidTestDecision(coveredByCiQaBody()), {
-        required: false,
-        excluded: true,
-    });
-    assert.deepEqual(
-        resolveAndroidTestDecision(
-            coveredByCiQaBody({
-                androidTest: {
-                    required: false,
-                    reason: "동일 입력과 화면 경계를 screenshot CI가 더 정밀하게 검증한다",
-                },
-            }),
-        ),
-        { required: false, excluded: true },
-    );
-    assert.deepEqual(resolveAndroidTestDecision(requiredQaBody("app/src/androidTest/FooTest.kt#flow")), {
-        required: true,
-        excluded: false,
-    });
-    assert.deepEqual(
-        resolveAndroidTestDecision(
-            coveredByCiQaBody().replace("우측 여백 26.5dp와 screenshot baseline 성공", ""),
-        ),
-        { required: false, excluded: false },
-    );
-});
-
-test("QA 제외로 manifest와 navigation 같은 hard runtime rule을 우회할 수 없다", () => {
-    const result = classifyAndroidTestRequirement(
-        [
-            "feature/timeletter/data/src/main/AndroidManifest.xml",
-            "feature/setting/presentation/src/main/kotlin/com/afternote/navigation/SettingNavGraph.kt",
-        ],
-        { androidTestExcluded: true },
-    );
-
-    assert.equal(result.required, true);
-    assert.deepEqual(result.matches.map((match) => match.id), ["android-manifest", "runtime-navigation"]);
-});
-
-test("presentation 변경의 명시적 required 결정도 근거로 함께 남긴다", () => {
-    const result = classifyAndroidTestRequirement(
-        ["feature/mindrecord/presentation/src/main/kotlin/screen/WriteScreen.kt"],
-        { androidTestRequired: true },
-    );
-
-    assert.equal(result.required, true);
-    assert.deepEqual(result.matches.map((match) => match.id), [
-        "qa-metadata-decision",
-        "runtime-presentation-source",
-    ]);
-
-    const plan = planLabelChanges({
-        pullRequests: [
-            pullRequest({
-                number: 1266,
-                androidTestRequired: true,
-                files: ["feature/mindrecord/presentation/src/main/kotlin/screen/WriteScreen.kt"],
-            }),
-        ],
-        repository: "Afternote/Afternote-FE",
-    });
-    assert.deepEqual(plan.toLabel.map((item) => item.number), [1266]);
-});
-
-test("경로 위험도나 QA 제외와 무관하게 모든 same-repository PR을 실행 대상으로 만든다", () => {
+test("변경 경로와 무관하게 모든 same-repository PR을 실행 대상으로 만든다", () => {
     const pullRequests = [
         pullRequest({ number: 440, files: ["feature/timeletter/data/src/main/AndroidManifest.xml"] }),
         pullRequest({ number: 767, files: ["app/src/androidTest/java/TimeLetterLifecycleAndroidTest.kt"] }),
@@ -314,7 +187,6 @@ test("경로 위험도나 QA 제외와 무관하게 모든 same-repository PR을
         pullRequest({ number: 1099, files: ["core/data/src/main/java/UserRepositoryImpl.kt"] }),
         pullRequest({
             number: 1264,
-            androidTestExcluded: true,
             files: [
                 "feature/mindrecord/presentation/src/main/kotlin/com/afternote/MemorySpaceScreen.kt",
                 "feature/mindrecord/presentation/src/screenshotTestDebug/reference/a.png",
@@ -556,6 +428,20 @@ test("pending PR 재시도는 android-test를 다시 쓰지 않고 성공 후 �
         ),
         false,
     );
+    const dispatch = api.calls.find((call) =>
+        call.apiPath.endsWith("/actions/workflows/android-managed-device.yml/dispatches"),
+    );
+    assert.deepEqual(dispatch, {
+        apiPath: "/repos/o/r/actions/workflows/android-managed-device.yml/dispatches",
+        method: "POST",
+        body: {
+            ref: "feature/test",
+            inputs: {
+                pull_request_number: "43",
+                expected_head_sha: "1111111111111111111111111111111111111111",
+            },
+        },
+    });
     assert.deepEqual(api.calls.at(-1), {
         apiPath: "/repos/o/r/issues/43/labels/android-test-dispatch-pending",
         method: "DELETE",

@@ -72,7 +72,7 @@ export function renderQaDraftSection(scope) {
     if (scope.qaPointsDraft.length > 0) {
         return scope.qaPointsDraft.map((point) => `- ${point}`).join("\n");
     }
-    return "- 테스터가 실행할 동작과 기대 결과를 직접 채워 주세요.";
+    return "";
 }
 
 function findSection(lines, heading) {

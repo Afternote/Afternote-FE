@@ -170,9 +170,8 @@ test("heavy reusable workflows default to full validation and preserve every req
     }
 });
 
-test("repository quality owns fail-closed paginated classification and pull request metadata gates", async () => {
+test("repository quality owns fail-closed paginated classification", async () => {
     const repositoryQuality = await readWorkflow("repository-quality.yml");
-    const unitTest = await readWorkflow("unit-test.yml");
 
     assert.match(repositoryQuality, /^ {4}outputs:\n {6}docs_only:\n(?: {8}.+\n)*? {8}value: \$\{\{ jobs\.repository-quality\.outputs\.docs_only \}\}$/m);
     assert.match(repositoryQuality, /^ {4}outputs:\n {6}docs_only: \$\{\{ steps\.classify-documentation-changes\.outputs\.docs_only \}\}$/m);
@@ -182,14 +181,9 @@ test("repository quality owns fail-closed paginated classification and pull requ
     assert.match(repositoryQuality, /if \[ "\$GITHUB_SHA" != "\$head_sha" \]; then/);
     assert.match(repositoryQuality, /persist-credentials: false/);
     assert.match(repositoryQuality, /env -u GH_TOKEN -u GITHUB_TOKEN/);
-    assert.match(
-        repositoryQuality,
-        /- name: Validate structured QA metadata\n\s+if: github\.event_name == 'pull_request'/,
-    );
-    assert.doesNotMatch(unitTest, /Validate structured QA metadata/);
 });
 
-test("editing QA metadata retriggers every required validation context", async () => {
+test("editing pull request metadata retriggers every required validation context", async () => {
     const entry = await readWorkflow(ENTRY_WORKFLOW);
 
     assert.match(entry, /types: \[opened, synchronize, reopened, edited\]/);
