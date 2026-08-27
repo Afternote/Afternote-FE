@@ -1,14 +1,18 @@
 package com.afternote.afternote_fe
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.afternote_fe.notification.NotificationNavigationRequest
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.ui.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -22,7 +26,14 @@ class MainViewModel
     constructor(
         authRepository: AuthRepository,
         private val userRepository: UserRepository,
+        private val savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
+        private val pendingNotificationRequestState = MutableStateFlow<NotificationNavigationRequest?>(null)
+
+        /** 아직 현재 Compose back stack에 반영하지 않은 최신 알림 진입 요청. */
+        internal val pendingNotificationRequest: StateFlow<NotificationNavigationRequest?> =
+            pendingNotificationRequestState.asStateFlow()
+
         /**
          * 초기 진입 시 null(로딩)이며, [AuthRepository.isLoggedIn]이 방출된 뒤 목적지가 확정된다.
          * null 여부가 기존 `isLoading`과 동일한 역할을 한다.
@@ -53,5 +64,30 @@ class MainViewModel
                         runCatchingCancellable { userRepository.logActivity() }
                     }
             }
+        }
+
+        /**
+         * 새 알림 발생을 큐에 넣는다. Activity 재생성 때 같은 initial Intent가 다시 전달되더라도
+         * [SavedStateHandle]에 기록한 마지막 소비 token이면 다시 내비게이션하지 않는다.
+         */
+        internal fun enqueueNotificationRequest(request: NotificationNavigationRequest) {
+            val occurrenceToken = request.occurrenceToken
+            if (savedStateHandle.get<String>(CONSUMED_NOTIFICATION_TOKEN_KEY) == occurrenceToken) return
+            if (pendingNotificationRequestState.value?.occurrenceToken == occurrenceToken) return
+            pendingNotificationRequestState.value = request
+        }
+
+        /**
+         * 처리한 token이 아직 pending인 요청과 같을 때만 비운다. 처리 도중 더 최신 알림이
+         * 도착해 pending 값이 바뀌면 이전 처리 완료가 새 요청을 지우지 않는다.
+         */
+        internal fun consumeNotificationRequest(occurrenceToken: String) {
+            if (pendingNotificationRequestState.value?.occurrenceToken != occurrenceToken) return
+            savedStateHandle[CONSUMED_NOTIFICATION_TOKEN_KEY] = occurrenceToken
+            pendingNotificationRequestState.value = null
+        }
+
+        private companion object {
+            const val CONSUMED_NOTIFICATION_TOKEN_KEY = "consumed_notification_occurrence_token"
         }
     }

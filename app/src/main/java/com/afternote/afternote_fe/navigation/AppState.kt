@@ -8,6 +8,7 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.afternote.afternote_fe.notification.NotificationTopLevelDestination
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
@@ -65,6 +66,24 @@ class AppState(
             // 애프터노트 서브그래프의 start는 인증 화면이다. restoreState = true이면
             // 저장된 홈 등으로 복원되어 인증을 건너뛴다. 진입점은 피처 NavGraph가 단일로 결정한다.
             restoreState = route != Route.Afternote
+        }
+    }
+
+    /**
+     * 로그인 후 알림 목적지로 이동하되 현재 Compose back stack 아래 화면은 보존한다.
+     * 바텀바 탭 전환용 popUp/restoreState 정책은 알림 진입에 적용하지 않는다.
+     */
+    internal fun navigateFromNotification(destination: NotificationTopLevelDestination) {
+        val route =
+            when (destination) {
+                NotificationTopLevelDestination.HOME -> Route.Home
+                NotificationTopLevelDestination.MIND_RECORD -> Route.MindRecord
+                NotificationTopLevelDestination.TIME_LETTER -> Route.TimeLetter
+                NotificationTopLevelDestination.AFTERNOTE -> Route.Afternote
+            }
+
+        navController.navigate(route) {
+            launchSingleTop = true
         }
     }
 }
