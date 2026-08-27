@@ -1,9 +1,10 @@
 name: Android Managed Device Test
 
-# PR 필수 검증으로 올리기 전 안정화 단계다. 평소에는 정기 실행하고, 무거운 emulator QA 가
-# 필요한 PR 에 `android-test` 라벨을 붙이면 pull_request 권한 경계에서 정확한 head SHA 를 검사한다.
-# 자동 dispatch 도 PR head branch ref 에 생성하고 이벤트 SHA 를 현재 PR HEAD 와 다시 대조한다. 정기·일반
-# 수동 실행만 default branch 를 사용하므로 PR 코드가 기본 브랜치 cache scope 에서 실행되지 않는다.
+# 모든 same-repository PR 을 pull_request 권한 경계에서 직접 실행하고 정확한 head SHA 를 검사한다.
+# `android-test` 라벨은 감사·복구 표식일 뿐 실행 조건이 아니다. fork PR 은 신뢰 경계상 자동 실행하지 않는다.
+# 라벨 조정기의 자동 dispatch 도 PR head branch ref 에 생성하고 이벤트 SHA 를 현재 PR HEAD 와 다시
+# 대조한다. 정기·일반 수동 실행만 default branch 를 사용하므로 PR 코드가 기본 브랜치 cache scope 에서
+# 실행되지 않는다.
 # API 30 전체 회귀와 API 34 Accessibility Test Framework smoke 를 함께 실행한다. 실패를 감추는
 # job/test 재시도는 두지 않는다.
 on:
@@ -25,7 +26,7 @@ on:
         default: ""
         type: string
   pull_request:
-    types: [labeled, synchronize]
+    types: [opened, reopened, edited, labeled, synchronize]
   schedule:
     - cron: "17 18 * * 2,5"
 
@@ -35,7 +36,7 @@ permissions:
 
 concurrency:
   group: android-managed-device-${{ github.event.pull_request.number || inputs.pull_request_number || github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   managed-device:
@@ -46,8 +47,7 @@ jobs:
          github.ref_name == github.event.repository.default_branch) ||
         inputs.pull_request_number > 0)) ||
       (github.event_name == 'pull_request' &&
-       github.event.pull_request.head.repo.full_name == github.repository &&
-       contains(github.event.pull_request.labels.*.name, 'android-test'))
+       github.event.pull_request.head.repo.full_name == github.repository)
     name: ${{ matrix.name }}
     runs-on: ubuntu-latest
     timeout-minutes: 45

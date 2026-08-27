@@ -3,8 +3,8 @@ name: PR Label Reconcile
 # 충돌 PR 은 `pull_request` 워크플로가 트리거되지 않는다 (#1028) — GitHub 이 base 와 head 를
 # 합친 `refs/pull/<N>/merge` 를 만들지 못하기 때문이다. 충돌 감지는 develop push 와 주기 실행이
 # 맡는다. 충돌 해소 뒤 PR Validation 이 요청되면 default branch 에서 즉시 다시 판정해 라벨을 뗀다.
-# 같은 default-branch 실행에서 변경 파일을 읽어 Android 런타임 위험 PR 의 `android-test`도
-# 복구한다. 이 라벨은 Managed Device 실행 스위치이므로 자동으로 제거하지 않는다.
+# 같은 default-branch 실행에서 모든 same-repository PR 의 `android-test`도 복구한다.
+# 이 라벨은 Managed Device 감사·복구 표식이므로 자동으로 제거하지 않는다.
 on:
   push:
     branches: [develop]
