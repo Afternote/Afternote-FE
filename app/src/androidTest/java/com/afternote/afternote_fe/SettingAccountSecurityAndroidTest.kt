@@ -41,6 +41,7 @@ import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionVie
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditEvent
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditUiState
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditViewModel
+import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterError
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterViewModel
 import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
@@ -171,12 +172,12 @@ class SettingAccountSecurityAndroidTest {
                 name = "김수신",
                 relation = "가족",
                 phone = "   ",
-                email = "",
+                email = "receiver@afternote.com",
                 message = null,
             )
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.uiState.value.errorMessage == "수신자 등록에 실패했습니다."
+            viewModel.uiState.value.error == ReceiverRegisterError.Generic
         }
 
         assertEquals(
@@ -185,7 +186,7 @@ class SettingAccountSecurityAndroidTest {
                     name = "김수신",
                     relation = "가족",
                     phone = null,
-                    email = null,
+                    email = "receiver@afternote.com",
                     message = null,
                 ),
             ),

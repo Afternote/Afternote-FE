@@ -1,9 +1,18 @@
 package com.afternote.afternote_fe
 
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -41,6 +50,7 @@ import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionUpdateRe
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.core.network.service.UserApiService
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.setting.presentation.screen.ReceiverRegisterScreen
 import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsViewModel
 import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionError
 import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionViewModel
@@ -50,6 +60,7 @@ import com.afternote.feature.setting.presentation.viewmodel.ProfileEditViewModel
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditEvent
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditViewModel
+import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterError
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterEvent
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterViewModel
 import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
@@ -305,7 +316,7 @@ class SettingCompletionAndroidTest {
 
         firstGate.complete(Result.failure(IllegalStateException("temporary failure")))
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.uiState.value.errorMessage == "수신자 등록에 실패했습니다."
+            viewModel.uiState.value.error == ReceiverRegisterError.Generic
         }
         assertFalse(viewModel.uiState.value.isLoading)
 
@@ -323,12 +334,44 @@ class SettingCompletionAndroidTest {
         }
 
         assertTrue(viewModel.uiState.value.isLoading)
-        assertEquals(null, viewModel.uiState.value.errorMessage)
+        assertEquals(null, viewModel.uiState.value.error)
         assertEquals(listOf(expectedCall, expectedCall), repository.receiverCreateCalls)
 
         retryGate.complete(Result.success(ReceiverCreated(receiverId = RECEIVER_ID, authCode = "AUTH-77")))
 
         assertEquals(ReceiverRegisterEvent.RegisterSuccess, awaitEvent(viewModel.events))
+    }
+
+    @Test
+    fun receiverRegistration_requiresValidEmailBeforeEnablingRegister() {
+        val viewModel = ReceiverRegisterViewModel(FakeUserRepository.strict())
+        composeRule.setContent {
+            AfternoteTheme {
+                ReceiverRegisterScreen(
+                    onBackClick = {},
+                    onRegisterSuccess = {},
+                    viewModel = viewModel,
+                )
+            }
+        }
+        val registerButton = hasText("등록") and hasClickAction()
+
+        composeRule.onNode(registerButton).assertIsNotEnabled()
+        composeRule.onNodeWithText("이름을 입력하세요").performTextInput("김수신")
+        composeRule
+            .onNode(hasText("관계를 선택하세요") and hasClickAction())
+            .performClick()
+        composeRule.onNodeWithText("어머니").performClick()
+        composeRule
+            .onNodeWithText("afternote@email.com")
+            .performScrollTo()
+            .performTextInput("invalid-email")
+        composeRule.onNode(registerButton).assertIsNotEnabled()
+
+        composeRule.onNodeWithText("invalid-email").performTextClearance()
+        composeRule.onNodeWithText("afternote@email.com").performTextInput("receiver@afternote.com")
+
+        composeRule.onNode(registerButton).assertIsEnabled()
     }
 
     @Test

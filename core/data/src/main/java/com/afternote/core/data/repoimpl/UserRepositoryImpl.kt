@@ -3,6 +3,7 @@ package com.afternote.core.data.repoimpl
 import android.util.Log
 import com.afternote.core.data.mapper.delivery.toRequestDto
 import com.afternote.core.data.mapper.user.toDomain
+import com.afternote.core.domain.error.ReceiverRegistrationRejected
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.model.delivery.DeliveryConditionItem
@@ -20,6 +21,7 @@ import com.afternote.core.network.dto.UserUpdateProfileRequestDto
 import com.afternote.core.network.dto.UserUpdatePushSettingRequestDto
 import com.afternote.core.network.dto.UserUpdateReceiverMessageRequestDto
 import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionUpdateRequestDto
+import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
 import com.afternote.core.network.service.UserApiService
@@ -53,21 +55,29 @@ class UserRepositoryImpl
             name: String,
             relation: String,
             phone: String?,
-            email: String?,
+            email: String,
             message: String?,
         ): ReceiverCreated {
             val result =
-                userApiService
-                    .createReceiver(
-                        UserCreateReceiverRequestDto(
-                            name = name,
-                            relation = relation,
-                            phone = phone,
-                            email = email,
-                            message = message,
-                        ),
-                    ).requireData()
-                    .toDomain()
+                try {
+                    userApiService
+                        .createReceiver(
+                            UserCreateReceiverRequestDto(
+                                name = name,
+                                relation = relation,
+                                phone = phone,
+                                email = email,
+                                message = message,
+                            ),
+                        ).requireData()
+                        .toDomain()
+                } catch (exception: ApiException) {
+                    val serverMessage = exception.serverMessage
+                    if (exception.status in 400..499 && !serverMessage.isNullOrBlank()) {
+                        throw ReceiverRegistrationRejected(serverMessage, exception)
+                    }
+                    throw exception
+                }
             receiverRefreshRevision.update { it + 1 }
             return result
         }

@@ -1,5 +1,6 @@
 package com.afternote.core.data.repoimpl
 
+import com.afternote.core.domain.error.ReceiverRegistrationRejected
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.network.dto.ReceiverDetailDto
@@ -163,7 +164,7 @@ class UserRepositoryImplTest {
                 name = "새 수신자",
                 relation = "친구",
                 phone = null,
-                email = null,
+                email = "receiver@afternote.com",
                 message = null,
             )
             collector.join()
@@ -171,6 +172,63 @@ class UserRepositoryImplTest {
             assertEquals(listOf("조회 1", "조회 2"), emissions.map { it.single().name })
             assertEquals(2, requestCount)
         }
+
+    @Test
+    fun `createReceiver - 4xx 서버 문구를 도메인 오류로 전달한다`() {
+        val repository =
+            repository(
+                onCreateReceiver = {
+                    throw ApiException(
+                        status = 400,
+                        code = 400,
+                        serverMessage = "올바른 이메일 형식이 아닙니다.",
+                        message = "올바른 이메일 형식이 아닙니다.",
+                    )
+                },
+            )
+
+        val exception =
+            assertThrows(ReceiverRegistrationRejected::class.java) {
+                runBlocking {
+                    repository.createReceiver(
+                        name = "새 수신자",
+                        relation = "친구",
+                        phone = null,
+                        email = "invalid",
+                        message = null,
+                    )
+                }
+            }
+
+        assertEquals("올바른 이메일 형식이 아닙니다.", exception.serverMessage)
+    }
+
+    @Test
+    fun `createReceiver - 5xx 서버 문구는 사용자 오류로 변환하지 않는다`() {
+        val serverFailure =
+            ApiException(
+                status = 500,
+                code = 500,
+                serverMessage = "internal database failure",
+                message = "internal database failure",
+            )
+        val repository = repository(onCreateReceiver = { throw serverFailure })
+
+        val exception =
+            assertThrows(ApiException::class.java) {
+                runBlocking {
+                    repository.createReceiver(
+                        name = "새 수신자",
+                        relation = "친구",
+                        phone = null,
+                        email = "receiver@afternote.com",
+                        message = null,
+                    )
+                }
+            }
+
+        assertEquals(serverFailure, exception)
+    }
 }
 
 private fun success() = BaseResponse<Unit>(status = 200, code = 200)

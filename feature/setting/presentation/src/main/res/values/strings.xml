@@ -157,4 +157,5 @@
     <string name="receiver_last_greeting_label">마지막 인사말</string>
     <string name="receiver_last_greeting_placeholder">마지막 인사말을 입력해주세요</string>
     <string name="receiver_custom_relation_placeholder">관계를 직접 입력해주세요</string>
+    <string name="receiver_register_error">수신자 등록에 실패했습니다.</string>
 </resources>

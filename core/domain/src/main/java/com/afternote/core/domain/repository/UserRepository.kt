@@ -21,7 +21,7 @@ interface UserRepository {
         name: String,
         relation: String,
         phone: String?,
-        email: String?,
+        email: String,
         message: String?,
     ): ReceiverCreated
 

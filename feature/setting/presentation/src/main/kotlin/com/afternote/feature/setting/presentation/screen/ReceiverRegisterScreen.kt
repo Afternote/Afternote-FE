@@ -1,5 +1,6 @@
 package com.afternote.feature.setting.presentation.screen
 
+import android.util.Patterns
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -45,6 +46,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
+import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterError
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterEvent
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterViewModel
 import com.afternote.core.ui.R as CoreR
@@ -70,13 +72,21 @@ fun ReceiverRegisterScreen(
         }
     }
 
+    val errorMessage =
+        when (val error = uiState.error) {
+            is ReceiverRegisterError.ServerMessage -> error.value
+            ReceiverRegisterError.Generic -> stringResource(R.string.receiver_register_error)
+            null -> null
+        }
+
     ReceiverRegisterContent(
         title = "수신자 등록",
         actionText = "등록",
         isLoading = uiState.isLoading,
-        errorMessage = uiState.errorMessage,
+        errorMessage = errorMessage,
         onBackClick = onBackClick,
         onRegister = viewModel::register,
+        requireValidEmail = true,
         modifier = modifier,
     )
 }
@@ -95,6 +105,7 @@ internal fun ReceiverRegisterContent(
     initialPhone: String = "",
     initialEmail: String = "",
     initialMessage: String = "",
+    requireValidEmail: Boolean = false,
 ) {
     val isPresetRelation = initialRelation in relationOptions
     val nameState = rememberTextFieldState(initialText = initialName)
@@ -119,7 +130,12 @@ internal fun ReceiverRegisterContent(
             CUSTOM_RELATION_OPTION -> customRelationState.text.toString().trim()
             else -> selectedRelation.orEmpty()
         }
-    val isFormValid = nameState.text.isNotBlank() && relation.isNotBlank()
+    val email = emailState.text.toString().trim()
+    val isEmailValid = email.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    val isFormValid =
+        nameState.text.isNotBlank() &&
+            relation.isNotBlank() &&
+            (!requireValidEmail || isEmailValid)
 
     Scaffold(
         modifier = modifier,
@@ -135,7 +151,7 @@ internal fun ReceiverRegisterContent(
                                 nameState.text.toString(),
                                 relation,
                                 phoneState.text.toString(),
-                                emailState.text.toString(),
+                                email,
                                 messageState.text.toString(),
                             )
                         },
