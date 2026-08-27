@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -25,7 +26,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.asString
-import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.domain.model.EmotionAnalysisStatus
@@ -47,7 +47,7 @@ fun WeeklyReportScreen(
 
     when (val state = uiState) {
         WeeklyReportUiState.Loading -> {
-            LoadingBody(modifier)
+            LoadingBox(modifier)
         }
 
         is WeeklyReportUiState.Error -> {
@@ -194,6 +194,13 @@ internal fun recordedSummaryHighlights(
     val daysStart = sentence.indexOf(daysText, startIndex = searchFrom).takeIf { it >= 0 && daysText.isNotEmpty() }
     if (daysStart != null) ranges += daysStart until (daysStart + daysText.length)
     return ranges
+}
+
+@Composable
+private fun LoadingBox(modifier: Modifier = Modifier) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator()
+    }
 }
 
 @Composable
