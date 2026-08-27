@@ -9,8 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
+import com.afternote.feature.afternote.presentation.author.editor.message.LeaveMessageEditorItem
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
@@ -23,13 +23,13 @@ import com.afternote.feature.afternote.presentation.author.editor.receiver.model
  */
 @Composable
 fun GalleryAndFileEditorContent(
-    editorMessages: List<EditorMessage>,
+    editorMessages: List<LeaveMessageEditorItem>,
     recipientSection: AfternoteEditorReceiverSection,
+    processingMethodSection: ProcessingMethodSection,
     modifier: Modifier = Modifier,
-    onMessageRegisterClick: (EditorMessage) -> Unit = {},
-    onMessageDeleteClick: (EditorMessage) -> Unit = {},
-    onMessageAddClick: () -> Unit = {},
-    processingMethodSection: ProcessingMethodSection = ProcessingMethodSection(),
+    onMessageRegisterClick: (LeaveMessageEditorItem) -> Unit,
+    onMessageDeleteClick: (LeaveMessageEditorItem) -> Unit,
+    onMessageAddClick: () -> Unit,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -57,11 +57,14 @@ private fun GalleryAndFileEditorContentPreview() {
         GalleryAndFileEditorContent(
             editorMessages =
                 listOf(
-                    EditorMessage(
+                    LeaveMessageEditorItem(
                         titleState = rememberTextFieldState("가족들에게"),
                         contentState = rememberTextFieldState("항상 고마워요."),
                     ),
                 ),
+            onMessageRegisterClick = {},
+            onMessageDeleteClick = {},
+            onMessageAddClick = {},
             recipientSection =
                 AfternoteEditorReceiverSection(
                     afternoteEditReceivers =
@@ -73,9 +76,12 @@ private fun GalleryAndFileEditorContentPreview() {
                 ProcessingMethodSection(
                     items =
                         listOf(
-                            ProcessingMethodItem(id = "1", text = "계정 삭제"),
-                            ProcessingMethodItem(id = "2", text = "게시글 백업"),
+                            ProcessingMethodItem(localId = 1, text = "계정 삭제"),
+                            ProcessingMethodItem(localId = 2, text = "게시글 백업"),
                         ),
+                    onItemDeleteClick = {},
+                    onItemAdded = {},
+                    onItemEdited = { _, _ -> },
                 ),
         )
     }
