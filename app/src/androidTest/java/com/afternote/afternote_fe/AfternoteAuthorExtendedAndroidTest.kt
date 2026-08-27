@@ -42,6 +42,7 @@ import androidx.paging.PagingState
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
+import com.afternote.afternote_fe.test.afternoteEditorSavedStateHandle
 import com.afternote.afternote_fe.test.appTestUserRepository
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
@@ -526,11 +527,9 @@ private fun editorViewModel(
 ): AfternoteEditorViewModel =
     AfternoteEditorViewModel(
         savedStateHandle =
-            SavedStateHandle(
-                mapOf(
-                    "itemId" to itemId,
-                    "initialType" to AfternoteType.SOCIAL_NETWORK,
-                ),
+            afternoteEditorSavedStateHandle(
+                initialType = AfternoteType.SOCIAL_NETWORK,
+                itemId = itemId,
             ),
         userRepository = appTestUserRepository(),
         afternoteRepository = repository,
