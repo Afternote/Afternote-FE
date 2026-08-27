@@ -4,9 +4,16 @@ import test from "node:test";
 
 const workflowDirectory = new URL("../workflows/", import.meta.url);
 const ENTRY_WORKFLOW = "pr-validation.yml";
-const VALIDATION_WORKFLOWS = ["lint.yml", "unit-test.yml", "screenshot.yml", "repository-quality.yml"];
+const VALIDATION_WORKFLOWS = [
+    "lint.yml",
+    "unit-test.yml",
+    "screenshot.yml",
+    "repository-quality.yml",
+    "android-managed-device.yml",
+];
 // Repository ruleset 20911039 의 required context 와 함께 바꿔야 하는 외부 계약이다.
 const REQUIRED_VALIDATION_CONTEXTS = [
+    "Android Managed Device / Pixel 2 API 30 androidTest",
     "Repository Quality / Repository Quality",
     "Screenshot / Validate Compose Preview Screenshots",
     "Static Analysis / Check Code Quality (Ktlint)",

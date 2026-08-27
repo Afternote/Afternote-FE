@@ -1,7 +1,7 @@
 name: PR Validation
 
-# PR 검증의 유일한 진입점이다. static analysis · unit test · screenshot ·
-# repository quality 를 reusable workflow 로 한 번씩 부르고, 각 job check 를 ruleset 에서
+# PR 검증의 유일한 진입점이다. static analysis · unit test · screenshot · repository quality ·
+# Android Managed Device 를 reusable workflow 로 한 번씩 부르고, 각 job check 를 ruleset 에서
 # 직접 required 로 요구한다. 모든 검증 뒤 집계용 runner 를 한 번 더 기다리지 않는다.
 # required context 이름은 pr-gate-policy.test.mjs 에 고정해 workflow 이름 변경과 ruleset
 # 변경이 함께 검토되도록 한다.
@@ -52,5 +52,11 @@ jobs:
   repository-quality:
     name: Repository Quality
     uses: ./.github/workflows/repository-quality.yml
+    with:
+      pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number }}
+
+  android-managed-device:
+    name: Android Managed Device
+    uses: ./.github/workflows/android-managed-device.yml
     with:
       pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number }}

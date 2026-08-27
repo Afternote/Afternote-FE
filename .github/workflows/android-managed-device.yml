@@ -1,13 +1,16 @@
 name: Android Managed Device Test
 
-# PR 필수 검증으로 올리기 전 안정화 단계다. 평소에는 정기 실행하고, 무거운 emulator QA 가
-# 필요한 PR 에 `android-test` 라벨을 붙이면 pull_request 권한 경계에서 정확한 head SHA 를 검사한다.
-# 수동·정기 실행은 default branch 만 검사해 PR 코드가 기본 브랜치 cache scope 를 오염시키지 않는다.
+# 모든 PR 에서는 pr-validation.yml 이 reusable workflow 로 호출해 정확한 head SHA 를 검사한다.
+# 수동·정기 실행은 default branch 만 검사해 runner·SDK 변화에 따른 주기적 회귀도 확인한다.
 # 실패를 감추는 job/test 재시도는 두지 않는다.
 on:
+  workflow_call:
+    inputs:
+      pull_request_number:
+        required: false
+        default: 0
+        type: number
   workflow_dispatch:
-  pull_request:
-    types: [labeled, synchronize]
   schedule:
     - cron: "17 18 * * 2,5"
 
@@ -16,17 +19,16 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: android-managed-device-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
+  group: android-managed-device-${{ github.event.pull_request.number || inputs.pull_request_number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   managed-device:
     if: >-
       github.event_name == 'schedule' ||
-      (github.event_name == 'workflow_dispatch' && github.ref_name == github.event.repository.default_branch) ||
-      (github.event_name == 'pull_request' &&
-       github.event.pull_request.head.repo.full_name == github.repository &&
-       contains(github.event.pull_request.labels.*.name, 'android-test'))
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'workflow_dispatch' &&
+       (inputs.pull_request_number > 0 || github.ref_name == github.event.repository.default_branch))
     name: Pixel 2 API 30 androidTest
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -34,13 +36,13 @@ jobs:
       - name: Clone repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.event.repository.default_branch }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
 
       - name: Record tested revision
         env:
-          TARGET_BRANCH: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.event.repository.default_branch }}
-          TARGET_PR: ${{ github.event.pull_request.number || 'none' }}
+          TARGET_BRANCH: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          TARGET_PR: ${{ inputs.pull_request_number || github.event.pull_request.number || 'none' }}
           TARGET_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
         run: |
           {

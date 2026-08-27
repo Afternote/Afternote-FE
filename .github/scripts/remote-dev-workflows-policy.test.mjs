@@ -53,14 +53,16 @@ test("privileged baseline apply is a workflow-run bridge restricted to PNG basel
     }
 });
 
-test("managed device QA uses labeled PR scope or the trusted default branch", async () => {
+test("managed device QA runs through PR validation or the trusted default branch", async () => {
     const source = await readWorkflow("android-managed-device.yml");
 
-    assert.match(source, /^\s{2}pull_request:\n\s{4}types: \[labeled, synchronize\]$/m);
-    assert.match(source, /contains\(github\.event\.pull_request\.labels\.\*\.name, 'android-test'\)/);
+    assert.match(source, /^\s{2}workflow_call:\n\s{4}inputs:\n\s{6}pull_request_number:/m);
+    assert.doesNotMatch(source, /^\s{2}pull_request:/m);
+    assert.doesNotMatch(source, /contains\(github\.event\.pull_request\.labels\.\*\.name, 'android-test'\)/);
+    assert.match(source, /github\.event_name == 'pull_request'/);
+    assert.match(source, /inputs\.pull_request_number > 0/);
     assert.match(source, /github\.ref_name == github\.event\.repository\.default_branch/);
-    assert.match(source, /ref: \$\{\{ github\.event_name == 'pull_request' && github\.event\.pull_request\.head\.sha \|\| github\.event\.repository\.default_branch \}\}/);
-    assert.doesNotMatch(source, /pull_request_number:/);
+    assert.match(source, /ref: \$\{\{ github\.event_name == 'pull_request' && github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/);
     assert.match(source, /persist-credentials: false/);
 });
 
