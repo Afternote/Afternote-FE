@@ -149,29 +149,57 @@ test("계측 소스, manifest, navigation, 앱 진입점과 managed-device 설�
     );
 });
 
-test("문서, 단위 테스트, screenshot baseline과 화면 내부 로직만으로는 무거운 계측 테스트를 강제하지 않는다", () => {
-    const result =
-        classifyAndroidTestRequirement([
-            "docs/testing/android-managed-device.md",
-            "core/data/src/test/kotlin/UserRepositoryTest.kt",
-            "feature/mindrecord/presentation/src/screenshotTest/kotlin/MemorySpaceScreenshotTest.kt",
-            "feature/mindrecord/presentation/src/screenshotTestDebug/reference/example.png",
-            "feature/mindrecord/presentation/src/main/kotlin/com/afternote/screen/DailyQuestionWriteScreen.kt",
-            "feature/home/presentation/src/main/kotlin/com/afternote/HomeTabViewModel.kt",
-        ]);
+test("문서, 단위 테스트와 screenshot baseline만으로는 무거운 계측 테스트를 강제하지 않는다", () => {
+    const result = classifyAndroidTestRequirement([
+        "docs/testing/android-managed-device.md",
+        "core/data/src/test/kotlin/UserRepositoryTest.kt",
+        "feature/mindrecord/presentation/src/screenshotTest/kotlin/MemorySpaceScreenshotTest.kt",
+        "feature/mindrecord/presentation/src/screenshotTestDebug/reference/example.png",
+    ]);
 
     assert.equal(result.required, false);
     assert.deepEqual(result.matches, []);
 });
 
-test("경로로 알 수 없는 화면 내부 변경도 QA 메타데이터가 required면 대상으로 본다", () => {
+test("presentation 런타임 소스는 기본 대상이고 검증된 QA 제외만 soft rule을 건너뛴다", () => {
+    const paths = [
+        "feature/mindrecord/presentation/src/main/kotlin/com/afternote/screen/DailyQuestionWriteScreen.kt",
+        "feature/home/presentation/src/main/kotlin/com/afternote/HomeTabViewModel.kt",
+    ];
+
+    const required = classifyAndroidTestRequirement(paths);
+    assert.equal(required.required, true);
+    assert.deepEqual(required.matches.map((match) => match.id), ["runtime-presentation-source"]);
+
+    const excluded = classifyAndroidTestRequirement(paths, { androidTestExcluded: true });
+    assert.equal(excluded.required, false);
+    assert.deepEqual(excluded.matches, []);
+});
+
+test("QA 제외로 manifest와 navigation 같은 hard runtime rule을 우회할 수 없다", () => {
+    const result = classifyAndroidTestRequirement(
+        [
+            "feature/timeletter/data/src/main/AndroidManifest.xml",
+            "feature/setting/presentation/src/main/kotlin/com/afternote/navigation/SettingNavGraph.kt",
+        ],
+        { androidTestExcluded: true },
+    );
+
+    assert.equal(result.required, true);
+    assert.deepEqual(result.matches.map((match) => match.id), ["android-manifest", "runtime-navigation"]);
+});
+
+test("presentation 변경의 명시적 required 결정도 근거로 함께 남긴다", () => {
     const result = classifyAndroidTestRequirement(
         ["feature/mindrecord/presentation/src/main/kotlin/screen/WriteScreen.kt"],
         { androidTestRequired: true },
     );
 
     assert.equal(result.required, true);
-    assert.deepEqual(result.matches.map((match) => match.id), ["qa-metadata-decision"]);
+    assert.deepEqual(result.matches.map((match) => match.id), [
+        "qa-metadata-decision",
+        "runtime-presentation-source",
+    ]);
 
     const plan = planLabelChanges({
         pullRequests: [
@@ -186,7 +214,7 @@ test("경로로 알 수 없는 화면 내부 변경도 QA 메타데이터가 req
     assert.deepEqual(plan.toLabel.map((item) => item.number), [1266]);
 });
 
-test("실제 누락 사례 8건은 잡고 unit, docs, screenshot 전용 5건은 제외한다", () => {
+test("실제 누락 사례 10건은 잡고 검증된 CI 제외 3건만 남긴다", () => {
     const pullRequests = [
         pullRequest({ number: 440, files: ["feature/timeletter/data/src/main/AndroidManifest.xml"] }),
         pullRequest({ number: 767, files: ["app/src/androidTest/java/TimeLetterLifecycleAndroidTest.kt"] }),
@@ -201,10 +229,23 @@ test("실제 누락 사례 8건은 잡고 unit, docs, screenshot 전용 5건은 
         pullRequest({ number: 1197, files: ["app/src/androidTest/java/AppCompletionAndroidTest.kt"] }),
         pullRequest({ number: 1219, files: ["app/src/androidTest/java/AfternoteAuthorAndroidTest.kt"] }),
         pullRequest({ number: 1262, files: [".github/workflows/android-managed-device.yml"] }),
-        pullRequest({ number: 1055, files: ["feature/home/presentation/src/test/kotlin/HomeTest.kt"] }),
+        pullRequest({
+            number: 1055,
+            files: [
+                "feature/home/presentation/src/main/kotlin/com/afternote/feature/home/presentation/HomeTabScreen.kt",
+                "feature/home/presentation/src/test/kotlin/HomeTest.kt",
+            ],
+        }),
         pullRequest({ number: 1098, files: ["docs/qa/status.md"] }),
         pullRequest({ number: 1099, files: ["core/data/src/main/java/UserRepositoryImpl.kt"] }),
-        pullRequest({ number: 1264, files: ["feature/mindrecord/presentation/src/screenshotTestDebug/reference/a.png"] }),
+        pullRequest({
+            number: 1264,
+            androidTestExcluded: true,
+            files: [
+                "feature/mindrecord/presentation/src/main/kotlin/com/afternote/MemorySpaceScreen.kt",
+                "feature/mindrecord/presentation/src/screenshotTestDebug/reference/a.png",
+            ],
+        }),
         pullRequest({ number: 1265, files: ["feature/mindrecord/presentation/src/main/kotlin/screen/WriteScreen.kt"] }),
     ];
 
@@ -214,8 +255,8 @@ test("실제 누락 사례 8건은 잡고 unit, docs, screenshot 전용 5건은 
         label: DEFAULT_LABEL,
     });
 
-    assert.deepEqual(plan.toLabel.map((item) => item.number), [440, 767, 771, 882, 966, 1197, 1219, 1262]);
-    assert.deepEqual(plan.notRequired.map((item) => item.number), [1055, 1098, 1099, 1264, 1265]);
+    assert.deepEqual(plan.toLabel.map((item) => item.number), [440, 767, 771, 882, 966, 1197, 1219, 1262, 1055, 1265]);
+    assert.deepEqual(plan.notRequired.map((item) => item.number), [1098, 1099, 1264]);
 });
 
 test("이미 붙은 라벨은 유지하고 자동 제거 계획을 만들지 않는다", () => {

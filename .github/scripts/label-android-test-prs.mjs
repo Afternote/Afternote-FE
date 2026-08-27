@@ -43,6 +43,14 @@ const REQUIREMENT_RULES = [
             /^(app|feature\/[^/]+\/presentation)\/src\/main\/(java|kotlin)\/.+\/navigation\//.test(filePath),
     },
     {
+        id: "runtime-presentation-source",
+        description: "사용자에게 보이는 presentation 런타임 소스",
+        qaExcludable: true,
+        matches: (filePath) =>
+            /^feature\/[^/]+\/presentation\/src\/main\/(java|kotlin)\//.test(filePath) &&
+            !/\/navigation\//.test(filePath),
+    },
+    {
         id: "app-entry-point",
         description: "앱 진입점",
         matches: (filePath) =>
@@ -78,7 +86,10 @@ query($owner: String!, $name: String!, $cursor: String, $pageSize: Int!) {
     }
 }`;
 
-export function classifyAndroidTestRequirement(filePaths, { androidTestRequired = false } = {}) {
+export function classifyAndroidTestRequirement(
+    filePaths,
+    { androidTestRequired = false, androidTestExcluded = false } = {},
+) {
     const matches = [];
 
     if (androidTestRequired) {
@@ -90,6 +101,12 @@ export function classifyAndroidTestRequirement(filePaths, { androidTestRequired 
     }
 
     for (const rule of REQUIREMENT_RULES) {
+        // 화면 내부 변경은 실제 Android 경계를 건드릴 가능성이 높아 기본적으로 실행한다.
+        // 다만 구조화 QA가 동일 input·boundary·observation의 CI 근거로 제외를 증명한 경우에만
+        // 이 soft rule을 건너뛴다. manifest/navigation/계측 소스 같은 hard rule은 제외할 수 없다.
+        if (rule.qaExcludable === true && androidTestExcluded) {
+            continue;
+        }
         const matchedPaths = filePaths.filter((filePath) => rule.matches(filePath));
         if (matchedPaths.length > 0) {
             matches.push({
@@ -122,6 +139,7 @@ export function planLabelChanges({
     for (const pullRequest of pullRequests) {
         const requirement = classifyAndroidTestRequirement(pullRequest.files ?? [], {
             androidTestRequired: pullRequest.androidTestRequired === true,
+            androidTestExcluded: pullRequest.androidTestExcluded === true,
         });
         const candidate = { ...pullRequest, requirement };
         const hasLabel = (pullRequest.labels ?? []).includes(label);
@@ -181,6 +199,8 @@ function normalizePullRequest(node) {
         labels: (node.labels?.nodes ?? []).map((item) => item.name),
         androidTestRequired:
             qaInspection.valid && qaInspection.metadata?.androidTest?.required === true,
+        androidTestExcluded:
+            qaInspection.valid && qaInspection.metadata?.androidTest?.required === false,
     };
 }
 
