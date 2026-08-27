@@ -7,35 +7,130 @@ on:
   schedule:
     - cron: '17 19 * * 2'
   workflow_dispatch:
+    inputs:
+      pull_request_number:
+        description: "현재 ref 와 일치해야 하는 열린 PR 번호. 비우면 전체 분석"
+        required: false
+        default: 0
+        type: number
 
 concurrency:
-  group: codeql-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: codeql-${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pull_request_number || github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
-  security-events: write
 
 jobs:
-  analyze:
-    name: Analyze (${{ matrix.language }})
+  # required workflow 자체에 paths-ignore 를 걸면 docs-only PR 의 CodeQL context 가
+  # Pending 으로 남는다. 작은 선행 job 이 전체 변경 경로를 확인하고, 아래 required job 을
+  # job-level if 로 skipped/success 처리한다. 분류 실패·빈 출력은 전체 분석으로 닫힌다.
+  classify-changes:
+    name: Classify documentation changes
+    if: github.event_name == 'pull_request' || inputs.pull_request_number > 0
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      docs_only: ${{ steps.path-scope.outputs.docs_only || 'false' }}
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Resolve documentation-only path scope
+        id: path-scope
+        env:
+          CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pull_request_number || github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+
+          if ! [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+            echo "::error::유효한 pull_request_number 가 필요합니다"
+            exit 1
+          fi
+
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            pull_request=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")
+            state=$(jq -r '.state' <<< "$pull_request")
+            head_sha=$(jq -r '.head.sha' <<< "$pull_request")
+            head_repository=$(jq -r '.head.repo.full_name' <<< "$pull_request")
+            if [ "$state" != "open" ] || [ "$head_repository" != "$GITHUB_REPOSITORY" ]; then
+              echo "::error::PR #$PR_NUMBER 는 이 저장소의 열린 PR이 아닙니다"
+              exit 1
+            fi
+            if [ "$GITHUB_SHA" != "$head_sha" ]; then
+              echo "::error::dispatch ref $GITHUB_SHA 가 PR #$PR_NUMBER head $head_sha 와 다릅니다"
+              exit 1
+            fi
+            CHANGED_FILES=$(jq -r '.changed_files' <<< "$pull_request")
+          elif [ -z "$CHANGED_FILES" ]; then
+            CHANGED_FILES=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.changed_files')
+          fi
+
+          if ! [[ "$CHANGED_FILES" =~ ^[0-9]+$ ]]; then
+            echo "::error::PR changed_files 값이 유효하지 않습니다: $CHANGED_FILES"
+            exit 1
+          fi
+
+          files_json=$(gh api --paginate --slurp \
+            "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files?per_page=100")
+          docs_only=$(env -u GH_TOKEN -u GITHUB_TOKEN \
+            node .github/scripts/classify-documentation-changes.mjs \
+            "$CHANGED_FILES" <<< "$files_json")
+          printf 'docs_only=%s\n' "$docs_only" >> "$GITHUB_OUTPUT"
+
+  analyze-actions:
+    name: Analyze (actions)
+    needs: classify-changes
+    if: ${{ !cancelled() && (needs.classify-changes.result != 'success' || needs.classify-changes.outputs.docs_only != 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - language: actions
-            build_mode: none
-            database_language: actions
-            source_extensions: .yml,.yaml
-            required_path_fragment: .github/workflows/
-          - language: java-kotlin
-            build_mode: manual
-            database_language: java
-            source_extensions: .kt
-            required_path_fragment: app/src/main/
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        with:
+          languages: actions
+          build-mode: none
+
+      - name: Analyze and upload CodeQL results
+        id: analyze
+        uses: github/codeql-action/analyze@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        with:
+          category: /language:actions
+
+      - name: Verify analyzed sources in the CodeQL database
+        env:
+          CODEQL_BUILD_MODE: none
+          CODEQL_DATABASE_LANGUAGE: actions
+          CODEQL_DATABASE_LOCATIONS: ${{ steps.analyze.outputs.db-locations }}
+          CODEQL_DISPLAY_LANGUAGE: actions
+          CODEQL_REQUIRED_PATH_FRAGMENT: .github/workflows/
+          CODEQL_SOURCE_EXTENSIONS: .yml,.yaml
+        run: node .github/scripts/verify-codeql-database.mjs
+
+  analyze-java-kotlin:
+    name: Analyze (java-kotlin)
+    needs: classify-changes
+    if: ${{ !cancelled() && (needs.classify-changes.result != 'success' || needs.classify-changes.outputs.docs_only != 'true') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - name: Clone repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -43,18 +138,14 @@ jobs:
           persist-credentials: false
 
       - name: Set up JDK 21
-        if: matrix.build_mode == 'manual'
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: temurin
           java-version: '21'
 
       # 읽기 전용이다 — push 에서도 쓰지 않는다. 이 job 은 --build-cache 를 쓸 수 없어
-      # (아래 주석) build-cache-1 이 빈 Gradle User Home 을 저장하게 되는데, Actions 캐시는
-      # 같은 키를 덮어쓰지 못하므로 그것이 먼저 저장되면 build-cache-warm.yml 이 채운
-      # 캐시가 올라갈 자리를 잃는다. develop push 의 캐시 writer 는 그 워크플로 하나다 (#996).
+      # build-cache-warm.yml 이 develop 에 채운 캐시 키를 빈 엔트리로 선점해서는 안 된다.
       - name: Set up Gradle and validate wrapper
-        if: matrix.build_mode == 'manual'
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         with:
           cache-provider: basic
@@ -62,29 +153,18 @@ jobs:
           validate-wrappers: true
 
       - name: Set up CI-only app configuration
-        if: matrix.build_mode == 'manual'
         uses: ./.github/actions/setup-ci-config
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
         with:
-          languages: ${{ matrix.language }}
-          build-mode: ${{ matrix.build_mode }}
+          languages: java-kotlin
+          build-mode: manual
 
       # Java/Kotlin extraction observes compiler invocations, so a clean manual build is the
       # contract. compileDebugSources covers every Android leaf; the two pure JVM leaves need classes.
-      #
-      # 추출에 필요한 것은 컴파일러 호출이지 APK 가 아니다. assembleDebug 는 그 뒤로
-      # dex 병합(R8)까지 끌고 갔고, 그 :app:mergeExtDexDebug 가 GitHub 러너(7GB)에서
-      # 힙을 넘겨 CodeQL 을 산발적으로 실패시켰다 — 코드 결함과 구분되지 않는 빨간불이었다.
-      # compileDebugSources 는 같은 114개 컴파일 task 를 그대로 돌리면서 dex·packaging 만
-      # 뺀다 (#1023).
-      #
-      # 이 워크플로는 #996 의 --build-cache 예외이기도 하다. compile task 가 FROM-CACHE 로
-      # 넘어가면 컴파일러가 아예 실행되지 않아 추출기가 소스를 담지 못하고, 아래 verify
-      # 스텝이 빈 database 로 실패한다. lint·unit-test·screenshot 에는 이 제약이 없다.
+      # FROM-CACHE 로 넘어가면 컴파일러가 실행되지 않아 추출기가 소스를 담지 못한다.
       - name: Compile Android and pure JVM Kotlin sources
-        if: matrix.build_mode == 'manual'
         run: >-
           ./gradlew compileDebugSources
           :feature:onboarding:domain:classes
@@ -97,14 +177,14 @@ jobs:
         id: analyze
         uses: github/codeql-action/analyze@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
         with:
-          category: /language:${{ matrix.language }}
+          category: /language:java-kotlin
 
       - name: Verify analyzed sources in the CodeQL database
         env:
-          CODEQL_BUILD_MODE: ${{ matrix.build_mode }}
-          CODEQL_DATABASE_LANGUAGE: ${{ matrix.database_language }}
+          CODEQL_BUILD_MODE: manual
+          CODEQL_DATABASE_LANGUAGE: java
           CODEQL_DATABASE_LOCATIONS: ${{ steps.analyze.outputs.db-locations }}
-          CODEQL_DISPLAY_LANGUAGE: ${{ matrix.language }}
-          CODEQL_REQUIRED_PATH_FRAGMENT: ${{ matrix.required_path_fragment }}
-          CODEQL_SOURCE_EXTENSIONS: ${{ matrix.source_extensions }}
+          CODEQL_DISPLAY_LANGUAGE: java-kotlin
+          CODEQL_REQUIRED_PATH_FRAGMENT: app/src/main/
+          CODEQL_SOURCE_EXTENSIONS: .kt
         run: node .github/scripts/verify-codeql-database.mjs
