@@ -5,6 +5,7 @@ import test from "node:test";
 const workflowDirectory = new URL("../workflows/", import.meta.url);
 const ENTRY_WORKFLOW = "pr-validation.yml";
 const VALIDATION_WORKFLOWS = ["lint.yml", "unit-test.yml", "screenshot.yml", "repository-quality.yml"];
+const HEAVY_VALIDATION_WORKFLOWS = ["lint.yml", "unit-test.yml", "screenshot.yml"];
 // Repository ruleset 20911039 의 required context 와 함께 바꿔야 하는 외부 계약이다.
 const REQUIRED_VALIDATION_CONTEXTS = [
     "Repository Quality / Repository Quality",
@@ -12,6 +13,10 @@ const REQUIRED_VALIDATION_CONTEXTS = [
     "Static Analysis / Check Code Quality (Ktlint)",
     "Static Analysis / Check Project Issues (Android Lint)",
     "Unit Test / Run Unit Tests",
+];
+const REQUIRED_MANAGED_DEVICE_CONTEXTS = [
+    "Pixel 2 API 30 androidTest",
+    "Pixel 2 API 34 accessibility smoke",
 ];
 
 async function workflows() {
@@ -45,7 +50,10 @@ test("pull request validation has exactly one entry point", async () => {
         .map(([name]) => name);
 
     assert.deepEqual(entryPoints, []);
-    assert.match(await readWorkflow(ENTRY_WORKFLOW), /^on:\n\s{2}pull_request:$/m);
+    assert.match(
+        await readWorkflow(ENTRY_WORKFLOW),
+        /^\s{2}pull_request:\n\s{4}types: \[opened, synchronize, reopened, edited\]$/m,
+    );
 });
 
 test("every validation workflow is reachable only as a reusable call", async () => {
@@ -86,6 +94,14 @@ test("required validation context names stay aligned with the repository ruleset
     assert.deepEqual(contexts.sort(), [...REQUIRED_VALIDATION_CONTEXTS].sort());
 });
 
+test("both direct managed device lanes stay aligned with the repository ruleset", async () => {
+    const managedDevice = await readWorkflow("android-managed-device.yml");
+    const contexts = [...managedDevice.matchAll(/^ {10}- name: (Pixel 2 API .+)$/gm)]
+        .map((match) => match[1]);
+
+    assert.deepEqual(contexts.sort(), [...REQUIRED_MANAGED_DEVICE_CONTEXTS].sort());
+});
+
 test("stale runs are cancelled per pull request", async () => {
     const entry = await readWorkflow(ENTRY_WORKFLOW);
 
@@ -105,13 +121,78 @@ test("token-authored commits preserve the pull request context on manual dispatc
     );
 });
 
-test("the entry point keeps no pull_request branch filter", async () => {
+test("the entry point keeps no pull_request branch or path filter", async () => {
     // #683: base 변경(feat/* → develop)은 기본 activity type 에 없어 재트리거되지
     // 않는다. 필터가 있으면 스택 PR 이 검증을 한 번도 거치지 않고 머지된다.
+    // required workflow 자체의 paths 필터는 제외된 PR 에 check 를 만들지 않아 ruleset 을
+    // 영구 pending 으로 남길 수 있으므로 변경 파일 분류는 job 안에서 한다.
     const entry = await readWorkflow(ENTRY_WORKFLOW);
     const trigger = /^on:\n\s{2}pull_request:\n([\s\S]*?)^\S/m.exec(entry)?.[1] ?? "";
 
     assert.doesNotMatch(trigger, /branches/);
+    assert.doesNotMatch(trigger, /^\s+paths(?:-ignore)?:/m);
+});
+
+test("documentation fast path runs full validation unless repository quality succeeds with an exact true output", async () => {
+    const entry = await readWorkflow(ENTRY_WORKFLOW);
+    const failClosedInput =
+        "run_validation: ${{ needs.repository-quality.result != 'success' || " +
+        "needs.repository-quality.outputs.docs_only != 'true' }}";
+
+    assert.equal((entry.match(/^ {4}needs: repository-quality$/gm) ?? []).length, HEAVY_VALIDATION_WORKFLOWS.length);
+    assert.equal(
+        (entry.match(/^ {4}if: \$\{\{ !cancelled\(\) \}\}$/gm) ?? []).length,
+        HEAVY_VALIDATION_WORKFLOWS.length,
+        "quality failures must fan out to full validation without reviving a cancelled stale run",
+    );
+    assert.equal(
+        entry.split(failClosedInput).length - 1,
+        HEAVY_VALIDATION_WORKFLOWS.length,
+        "missing, false, or failed classification must run every heavy validation workflow",
+    );
+});
+
+test("heavy reusable workflows default to full validation and preserve every required job context", async () => {
+    for (const name of HEAVY_VALIDATION_WORKFLOWS) {
+        const source = await readWorkflow(name);
+        const jobs = jobNames(source);
+
+        assert.match(
+            source,
+            /^ {6}run_validation:\n(?: {8}.+\n)*? {8}default: true\n {8}type: boolean$/m,
+            `${name} must default callers such as develop validation to the full suite`,
+        );
+        assert.equal(
+            (source.match(/^ {4}if: inputs\.run_validation$/gm) ?? []).length,
+            jobs.length,
+            `${name} must skip work at the existing required job boundary`,
+        );
+    }
+});
+
+test("repository quality owns fail-closed paginated classification and pull request metadata gates", async () => {
+    const repositoryQuality = await readWorkflow("repository-quality.yml");
+    const unitTest = await readWorkflow("unit-test.yml");
+
+    assert.match(repositoryQuality, /^ {4}outputs:\n {6}docs_only:\n(?: {8}.+\n)*? {8}value: \$\{\{ jobs\.repository-quality\.outputs\.docs_only \}\}$/m);
+    assert.match(repositoryQuality, /^ {4}outputs:\n {6}docs_only: \$\{\{ steps\.classify-documentation-changes\.outputs\.docs_only \}\}$/m);
+    assert.match(repositoryQuality, /gh api --paginate --slurp/);
+    assert.match(repositoryQuality, /classify-documentation-changes\.mjs "\$CHANGED_FILES"/);
+    assert.match(repositoryQuality, /if \[ "\$GITHUB_EVENT_NAME" = "workflow_dispatch" \]; then/);
+    assert.match(repositoryQuality, /if \[ "\$GITHUB_SHA" != "\$head_sha" \]; then/);
+    assert.match(repositoryQuality, /persist-credentials: false/);
+    assert.match(repositoryQuality, /env -u GH_TOKEN -u GITHUB_TOKEN/);
+    assert.match(
+        repositoryQuality,
+        /- name: Validate structured QA metadata\n\s+if: github\.event_name == 'pull_request'/,
+    );
+    assert.doesNotMatch(unitTest, /Validate structured QA metadata/);
+});
+
+test("editing QA metadata retriggers every required validation context", async () => {
+    const entry = await readWorkflow(ENTRY_WORKFLOW);
+
+    assert.match(entry, /types: \[opened, synchronize, reopened, edited\]/);
 });
 
 test("repository quality still runs on develop and main pushes", async () => {
