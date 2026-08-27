@@ -38,28 +38,31 @@ test("develop validation calls only the unit and screenshot validation workflows
     assert.match(jobs, /screenshot:\n(?:\s{4}.+\n)*?\s{4}uses:\s*\.\/\.github\/workflows\/screenshot\.yml/);
 });
 
-test("develop validation grants pull request write only to the screenshot caller", async () => {
+test("develop validation satisfies each reusable workflow permission ceiling exactly", async () => {
     const source = withoutComments(await workflow("develop-validation.yml"));
-    const calledSource = withoutComments(await workflow("screenshot.yml"));
     const workflowPermissions = source.slice(source.indexOf("permissions:\n"), source.indexOf("\njobs:\n"));
     const unitTestJob = source.slice(source.indexOf("  unit-test:\n"), source.indexOf("\n  screenshot:\n"));
     const screenshotJob = source.slice(source.indexOf("  screenshot:\n"), source.indexOf("\n  report:\n"));
-    const callerPermissions = screenshotJob.slice(
-        screenshotJob.indexOf("    permissions:\n"),
-        screenshotJob.indexOf("\n    uses:"),
-    );
-    const calledPermissions = calledSource.slice(
-        calledSource.indexOf("permissions:\n"),
-        calledSource.indexOf("\njobs:\n"),
-    );
 
     assert.equal(workflowPermissions.trimEnd(), "permissions:\n  contents: read");
-    assert.doesNotMatch(unitTestJob, /permissions:/);
-    assert.equal(
-        callerPermissions.replaceAll(/^ {4}/gm, "").trimEnd(),
-        calledPermissions.trimEnd(),
-        "the caller must satisfy the reusable screenshot workflow permission ceiling exactly",
-    );
+
+    for (const [jobName, job, workflowName] of [
+        ["unit test", unitTestJob, "unit-test.yml"],
+        ["screenshot", screenshotJob, "screenshot.yml"],
+    ]) {
+        const calledSource = withoutComments(await workflow(workflowName));
+        const callerPermissions = job.slice(job.indexOf("    permissions:\n"), job.indexOf("\n    uses:"));
+        const calledPermissions = calledSource.slice(
+            calledSource.indexOf("permissions:\n"),
+            calledSource.indexOf("\njobs:\n"),
+        );
+
+        assert.equal(
+            callerPermissions.replaceAll(/^ {4}/gm, "").trimEnd(),
+            calledPermissions.trimEnd(),
+            `the caller must satisfy the reusable ${jobName} workflow permission ceiling exactly`,
+        );
+    }
 });
 
 test("develop validation reuses read-only Gradle cache consumers", async () => {
