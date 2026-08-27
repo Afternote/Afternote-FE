@@ -8,6 +8,10 @@ on:
         required: false
         default: 0
         type: number
+    outputs:
+      docs_only:
+        description: "README.md 와 docs/ 아래 파일만 바뀐 PR인지 여부"
+        value: ${{ jobs.repository-quality.outputs.docs_only }}
   push:
     branches: [develop, main]
 
@@ -25,11 +29,14 @@ jobs:
     name: Repository Quality
     runs-on: ubuntu-latest
     timeout-minutes: 3
+    outputs:
+      docs_only: ${{ steps.classify-documentation-changes.outputs.docs_only }}
     steps:
       # GitHub 의 server-side paths 평가는 유한한 diff 앞부분만 보므로, 그 경계를 넘는 PR 을
       # 그대로 허용하면 뒤쪽 dependency 파일이 graph/review workflow 를 우회할 수 있다.
       # 공식 문서의 상충하는 300/3,000 한도 중 보수적인 300을 fail-closed 경계로 쓴다.
       - name: Guard server-side path filter boundary
+        id: changed-files
         if: inputs.pull_request_number > 0
         env:
           CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
@@ -39,7 +46,21 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ -z "$CHANGED_FILES" ]; then
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            pull_request=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")
+            state=$(jq -r '.state' <<< "$pull_request")
+            head_sha=$(jq -r '.head.sha' <<< "$pull_request")
+            head_repository=$(jq -r '.head.repo.full_name' <<< "$pull_request")
+            if [ "$state" != "open" ] || [ "$head_repository" != "$GITHUB_REPOSITORY" ]; then
+              echo "::error::PR #$PR_NUMBER 는 이 저장소의 열린 PR이 아닙니다"
+              exit 1
+            fi
+            if [ "$GITHUB_SHA" != "$head_sha" ]; then
+              echo "::error::dispatch ref $GITHUB_SHA 가 PR #$PR_NUMBER head $head_sha 와 다릅니다"
+              exit 1
+            fi
+            CHANGED_FILES=$(jq -r '.changed_files' <<< "$pull_request")
+          elif [ -z "$CHANGED_FILES" ]; then
             CHANGED_FILES=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.changed_files')
           fi
 
@@ -53,14 +74,43 @@ jobs:
             exit 1
           fi
 
+          printf 'count=%s\n' "$CHANGED_FILES" >> "$GITHUB_OUTPUT"
+
       - name: Clone repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # 최상위 paths 필터는 required check 자체를 만들지 않아 영구 pending 이 될 수 있다.
+      # 모든 파일 페이지와 GitHub 의 changed_files 총수를 대조한 뒤에만 무거운 Android
+      # required job 을 건너뛴다. API 응답 누락·형식 오류·rename 경계는 모두 실패로 닫힌다.
+      - name: Classify documentation-only changes
+        id: classify-documentation-changes
+        if: inputs.pull_request_number > 0
+        env:
+          CHANGED_FILES: ${{ steps.changed-files.outputs.count }}
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pull_request_number }}
+        run: |
+          set -euo pipefail
+
+          docs_only=$(
+            gh api --paginate --slurp \
+              "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files?per_page=100" \
+              | env -u GH_TOKEN -u GITHUB_TOKEN \
+                node .github/scripts/classify-documentation-changes.mjs "$CHANGED_FILES"
+          )
+          printf 'docs_only=%s\n' "$docs_only" >> "$GITHUB_OUTPUT"
 
       - name: Require linked Issue
         if: github.event_name == 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
         run: node .github/scripts/validate-pr-issue-link.mjs
+
+      - name: Validate structured QA metadata
+        if: github.event_name == 'pull_request'
+        run: node .github/scripts/validate-pr-qa-metadata.mjs "$GITHUB_EVENT_PATH"
 
       - name: Install actionlint
         env:
