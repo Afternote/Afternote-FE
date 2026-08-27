@@ -110,6 +110,15 @@ class DiaryListViewModel
                             loadPhase = if (showsLoading) LoadPhase.Loading else it.loadPhase,
                         )
                     }
+                    // **조회를 시작하기 직전**의 버전을 잡아 둔다.
+                    //
+                    // 끝난 시점에 읽으면 조회와 겹친 쓰기를 통째로 삼킨다 — GET 이 서버
+                    // snapshot 을 읽은 뒤 응답이 오는 사이에 create 가 성공하면, 이 결과에는
+                    // 새 항목이 없는데도 증가한 최신 버전을 «내가 본 버전» 으로 기록한다.
+                    // 그러면 복귀 시 두 값이 같아 재조회를 건너뛰고, 방금 저장한 항목이
+                    // 목록에서 빠진 채 고정된다 (#736 리뷰).
+                    val versionAtLoadStart = changeTracker.version
+
                     val listResult = repository.getList(yearMonth = yearMonth.toString(), draftOnly = null)
                     // 새 로드가 이 Job 을 취소했다면 상태는 그쪽이 결정하므로 여기서 멈춘다.
                     // repository 는 `runCatchingCancellable` 로 취소를 다시 던지므로 대개 여기 오기 전에
@@ -117,7 +126,7 @@ class DiaryListViewModel
                     ensureActive()
                     listResult
                         .onSuccess { result ->
-                            loadedVersion = changeTracker.version
+                            loadedVersion = versionAtLoadStart
                             internalState.update {
                                 // 목록을 새로 받아 왔으면 옛 삭제 실패 안내도 걷는다. 남겨 두면
                                 // «새로 받아 왔는데 실패 안내는 그대로» 가 되어 #716 이 고치려는

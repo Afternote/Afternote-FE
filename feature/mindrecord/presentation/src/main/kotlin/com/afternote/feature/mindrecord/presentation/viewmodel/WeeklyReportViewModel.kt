@@ -156,6 +156,13 @@ class WeeklyReportViewModel
                 viewModelScope.launch {
                     // 실패했을 때 되돌아갈 화면을 **로딩으로 덮기 전에** 잡아 둔다 (#723).
                     val previousLoaded = internalState.value.loadPhase.lastLoadedOrNull()
+                    // **조회를 시작하기 직전**의 버전을 잡아 둔다.
+                    //
+                    // 끝난 시점에 읽으면 조회와 겹친 쓰기를 통째로 삼킨다 — GET 이 서버
+                    // snapshot 을 읽은 뒤 응답이 오는 사이에 쓰기가 성공하면, 이 결과에는
+                    // 그 변경이 없는데도 증가한 최신 버전을 «내가 본 버전» 으로 기록한다.
+                    // 그러면 복귀 시 두 값이 같아 재조회를 건너뛴다 (#736 리뷰).
+                    val versionAtLoadStart = changeTracker.version
                     if (showsLoading) {
                         internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
                     }
@@ -178,7 +185,7 @@ class WeeklyReportViewModel
                     ensureActive()
                     result
                         .onSuccess { (report, profile) ->
-                            loadedVersion = changeTracker.version
+                            loadedVersion = versionAtLoadStart
                             internalState.update {
                                 it.copy(loadPhase = LoadPhase.Loaded(monday, report, profile.name))
                             }
