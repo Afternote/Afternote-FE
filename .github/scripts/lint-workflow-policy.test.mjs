@@ -4,11 +4,12 @@ import test from "node:test";
 
 const lintWorkflow = await readFile(new URL("../workflows/lint.yml", import.meta.url), "utf8");
 
-test("ktlint runs exactly once per pull request", () => {
+test("ktlint runs once with the planner-selected Gradle task array", () => {
     // ktlint 를 실제로 돌리는 자리는 Gradle 태스크 하나뿐이다. 검사를 한 번 더 하는 액션이
     // 끼면(과거 ScaCap/action-ktlint) 같은 규칙을 두 번 돌리며 job 의 30% 를 쓴다 (#1012).
-    const gradleInvocations = lintWorkflow.match(/^\s*run:.*ktlintCheck/gm) ?? [];
-    assert.equal(gradleInvocations.length, 1);
+    assert.match(lintWorkflow, /run_ktlint:/);
+    assert.match(lintWorkflow, /GRADLE_TASKS: \$\{\{ inputs\.ktlint_tasks \}\}/);
+    assert.match(lintWorkflow, /\.\/gradlew "\$\{tasks\[@\]\}" --continue --parallel --build-cache/);
     // 주석은 이력이라 남기고, 실제로 액션을 부르는 uses 줄만 금지한다.
     assert.doesNotMatch(lintWorkflow, /^\s*uses:\s*ScaCap\/action-ktlint/m);
 });
@@ -18,10 +19,9 @@ test("the ktlint binary version has a single source of truth", () => {
     assert.doesNotMatch(lintWorkflow, /ktlint_version/);
 });
 
-test("ktlint still checks the whole repository, not the pull request diff", () => {
-    // #875: 파일을 지우면서 남은 파일에 새로 발생하는 파일 단위 위반은 diff 필터로는
-    // 보이지 않는다. 저장소 전체를 검사하는 성질이 사라지면 그 회귀가 되돌아온다.
-    assert.match(lintWorkflow, /\.\/gradlew ktlintCheck[^\n]*--continue/);
+test("ktlint scope comes only from canonical Gradle tasks, not raw diff-line filters", () => {
+    assert.match(lintWorkflow, /ktlint_tasks:/);
+    assert.match(lintWorkflow, /default: "ktlintCheck :build-logic:ktlintCheck"/);
     assert.doesNotMatch(lintWorkflow, /filter_mode/);
 });
 
@@ -31,10 +31,10 @@ test("ktlint violations are rendered into the job summary even when the check fa
     assert.match(lintWorkflow, summaryStep);
 });
 
-test("Android Lint runs exactly once per pull request", () => {
-    const gradleInvocations = lintWorkflow.match(/^\s*run:.*lintDebug/gm) ?? [];
-    assert.equal(gradleInvocations.length, 1);
-    assert.match(lintWorkflow, /\.\/gradlew lintDebug[^\n]*--continue/);
+test("Android Lint runs once with reverse-dependent module tasks", () => {
+    assert.match(lintWorkflow, /run_android_lint:/);
+    assert.match(lintWorkflow, /GRADLE_TASKS: \$\{\{ inputs\.android_lint_tasks \}\}/);
+    assert.match(lintWorkflow, /if: inputs\.verify_manifest/);
 });
 
 test("Android Lint reports through the job summary, not a Docker reviewdog action", () => {

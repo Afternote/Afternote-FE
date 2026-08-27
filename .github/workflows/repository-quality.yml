@@ -12,6 +12,48 @@ on:
       docs_only:
         description: "README.md 와 docs/ 아래 파일만 바뀐 PR인지 여부"
         value: ${{ jobs.repository-quality.outputs.docs_only }}
+      ktlint_required:
+        description: "변경 파일에 Ktlint 검증이 필요한지 여부"
+        value: ${{ jobs.repository-quality.outputs.ktlint_required }}
+      ktlint_tasks:
+        description: "변경 모듈에 한정한 Ktlint Gradle task 목록"
+        value: ${{ jobs.repository-quality.outputs.ktlint_tasks }}
+      android_lint_required:
+        description: "영향 모듈에 Android Lint가 필요한지 여부"
+        value: ${{ jobs.repository-quality.outputs.android_lint_required }}
+      android_lint_tasks:
+        description: "역방향 의존 영향 범위의 Android Lint task 목록"
+        value: ${{ jobs.repository-quality.outputs.android_lint_tasks }}
+      verify_manifest:
+        description: "app merged manifest 정책 검증이 필요한지 여부"
+        value: ${{ jobs.repository-quality.outputs.verify_manifest }}
+      unit_test_required:
+        description: "영향 범위 단위 테스트 또는 정책 테스트가 필요한지 여부"
+        value: ${{ jobs.repository-quality.outputs.unit_test_required }}
+      run_node_tests:
+        description: "GitHub Actions 정책 Node 테스트가 필요한지 여부"
+        value: ${{ jobs.repository-quality.outputs.run_node_tests }}
+      unit_test_tasks:
+        description: "영향 모듈에 한정한 단위 테스트/Kover Gradle task 목록"
+        value: ${{ jobs.repository-quality.outputs.unit_test_tasks }}
+      coverage_modules:
+        description: "PR Kover 보고서 대상 모듈 목록"
+        value: ${{ jobs.repository-quality.outputs.coverage_modules }}
+      screenshot_required:
+        description: "영향받는 Compose screenshot baseline이 있는지 여부"
+        value: ${{ jobs.repository-quality.outputs.screenshot_required }}
+      screenshot_modules:
+        description: "영향받는 screenshot 모듈 목록"
+        value: ${{ jobs.repository-quality.outputs.screenshot_modules }}
+      screenshot_tasks:
+        description: "영향받는 screenshot 검증 task 목록"
+        value: ${{ jobs.repository-quality.outputs.screenshot_tasks }}
+      codeql_actions:
+        description: "Actions CodeQL 분석이 필요한지 여부"
+        value: ${{ jobs.repository-quality.outputs.codeql_actions }}
+      codeql_java_kotlin:
+        description: "Java/Kotlin CodeQL 분석이 필요한지 여부"
+        value: ${{ jobs.repository-quality.outputs.codeql_java_kotlin }}
   push:
     branches: [develop, main]
 
@@ -31,6 +73,20 @@ jobs:
     timeout-minutes: 3
     outputs:
       docs_only: ${{ steps.classify-documentation-changes.outputs.docs_only }}
+      ktlint_required: ${{ steps.classify-documentation-changes.outputs.ktlint_required }}
+      ktlint_tasks: ${{ steps.classify-documentation-changes.outputs.ktlint_tasks }}
+      android_lint_required: ${{ steps.classify-documentation-changes.outputs.android_lint_required }}
+      android_lint_tasks: ${{ steps.classify-documentation-changes.outputs.android_lint_tasks }}
+      verify_manifest: ${{ steps.classify-documentation-changes.outputs.verify_manifest }}
+      unit_test_required: ${{ steps.classify-documentation-changes.outputs.unit_test_required }}
+      run_node_tests: ${{ steps.classify-documentation-changes.outputs.run_node_tests }}
+      unit_test_tasks: ${{ steps.classify-documentation-changes.outputs.unit_test_tasks }}
+      coverage_modules: ${{ steps.classify-documentation-changes.outputs.coverage_modules }}
+      screenshot_required: ${{ steps.classify-documentation-changes.outputs.screenshot_required }}
+      screenshot_modules: ${{ steps.classify-documentation-changes.outputs.screenshot_modules }}
+      screenshot_tasks: ${{ steps.classify-documentation-changes.outputs.screenshot_tasks }}
+      codeql_actions: ${{ steps.classify-documentation-changes.outputs.codeql_actions }}
+      codeql_java_kotlin: ${{ steps.classify-documentation-changes.outputs.codeql_java_kotlin }}
     steps:
       # GitHub 의 server-side paths 평가는 유한한 diff 앞부분만 보므로, 그 경계를 넘는 PR 을
       # 그대로 허용하면 뒤쪽 dependency 파일이 graph/review workflow 를 우회할 수 있다.
@@ -46,6 +102,7 @@ jobs:
         run: |
           set -euo pipefail
 
+          pull_request_file="$RUNNER_TEMP/pull-request.json"
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
             pull_request=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")
             state=$(jq -r '.state' <<< "$pull_request")
@@ -60,8 +117,13 @@ jobs:
               exit 1
             fi
             CHANGED_FILES=$(jq -r '.changed_files' <<< "$pull_request")
+            printf '%s' "$pull_request" > "$pull_request_file"
           elif [ -z "$CHANGED_FILES" ]; then
-            CHANGED_FILES=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.changed_files')
+            pull_request=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")
+            CHANGED_FILES=$(jq -r '.changed_files' <<< "$pull_request")
+            printf '%s' "$pull_request" > "$pull_request_file"
+          else
+            jq '.pull_request' "$GITHUB_EVENT_PATH" > "$pull_request_file"
           fi
 
           if ! [[ "$CHANGED_FILES" =~ ^[0-9]+$ ]]; then
@@ -75,6 +137,7 @@ jobs:
           fi
 
           printf 'count=%s\n' "$CHANGED_FILES" >> "$GITHUB_OUTPUT"
+          printf 'pull_request_json=%s\n' "$pull_request_file" >> "$GITHUB_OUTPUT"
 
       - name: Clone repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -82,9 +145,10 @@ jobs:
           persist-credentials: false
 
       # 최상위 paths 필터는 required check 자체를 만들지 않아 영구 pending 이 될 수 있다.
-      # 모든 파일 페이지와 GitHub 의 changed_files 총수를 대조한 뒤에만 무거운 Android
-      # required job 을 건너뛴다. API 응답 누락·형식 오류·rename 경계는 모두 실패로 닫힌다.
-      - name: Classify documentation-only changes
+      # 모든 파일 페이지와 GitHub 의 changed_files 총수를 대조한 뒤 direct module과 역방향
+      # 의존 모듈을 계산한다. API 응답 누락·형식 오류·rename 경계는 모두 실패로 닫히며,
+      # 호출자는 이 step이 실패하면 기존 전체 task로 되돌아간다.
+      - name: Classify pull request impact
         id: classify-documentation-changes
         if: inputs.pull_request_number > 0
         env:
@@ -94,23 +158,33 @@ jobs:
         run: |
           set -euo pipefail
 
-          docs_only=$(
-            gh api --paginate --slurp \
-              "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files?per_page=100" \
-              | env -u GH_TOKEN -u GITHUB_TOKEN \
-                node .github/scripts/classify-documentation-changes.mjs "$CHANGED_FILES"
-          )
+          files_json="$RUNNER_TEMP/pull-request-files.json"
+          gh api --paginate --slurp \
+            "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files?per_page=100" \
+            > "$files_json"
+          printf 'files_json=%s\n' "$files_json" >> "$GITHUB_OUTPUT"
+
+          docs_only=$(env -u GH_TOKEN -u GITHUB_TOKEN \
+            node .github/scripts/classify-documentation-changes.mjs \
+            "$CHANGED_FILES" < "$files_json")
           printf 'docs_only=%s\n' "$docs_only" >> "$GITHUB_OUTPUT"
+          env -u GH_TOKEN -u GITHUB_TOKEN \
+            node .github/scripts/resolve-pr-impact.mjs "$files_json" \
+            >> "$GITHUB_OUTPUT"
 
       - name: Require linked Issue
-        if: github.event_name == 'pull_request'
+        if: inputs.pull_request_number > 0
         env:
           GH_TOKEN: ${{ github.token }}
-        run: node .github/scripts/validate-pr-issue-link.mjs
+        run: node .github/scripts/validate-pr-issue-link.mjs "${{ steps.changed-files.outputs.pull_request_json }}"
 
-      - name: Validate structured QA metadata
-        if: github.event_name == 'pull_request'
-        run: node .github/scripts/validate-pr-qa-metadata.mjs "$GITHUB_EVENT_PATH"
+      - name: Validate CI Test Plan
+        if: inputs.pull_request_number > 0
+        run: >-
+          node .github/scripts/validate-pr-ci-test-plan.mjs
+          "${{ steps.changed-files.outputs.pull_request_json }}"
+          "$GITHUB_WORKSPACE"
+          "${{ steps.classify-documentation-changes.outputs.files_json }}"
 
       - name: Install actionlint
         env:
@@ -133,7 +207,17 @@ jobs:
           printf '%s\n' "$tool_directory" >> "$GITHUB_PATH"
 
       - name: Run repository quality checks
-        run: scripts/repository-quality.sh
+        env:
+          FILES_JSON: ${{ steps.classify-documentation-changes.outputs.files_json }}
+          FULL_REPOSITORY: ${{ steps.classify-documentation-changes.outputs.repository_quality_full }}
+          PR_NUMBER: ${{ inputs.pull_request_number }}
+        run: |
+          if [[ "$PR_NUMBER" != "0" && "$FULL_REPOSITORY" == "false" ]]; then
+            scripts/repository-quality.sh . "$FILES_JSON"
+          else
+            scripts/repository-quality.sh
+          fi
 
       - name: Verify failing fixtures
+        if: inputs.pull_request_number == 0 || steps.classify-documentation-changes.outputs.repository_quality_fixtures == 'true'
         run: scripts/test-repository-quality.sh

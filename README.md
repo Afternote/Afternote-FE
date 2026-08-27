@@ -150,8 +150,12 @@ keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-sh
 - Issue는 [현재 Issue 템플릿](.github/ISSUE_TEMPLATE/custom.md)을 사용하고, 같은 작업의 기존 Issue가 있으면 새로 만들지 않고 재사용한다.
 - PR은 [현재 PR 템플릿](.github/PULL_REQUEST_TEMPLATE.md)을 그대로 채운다. 본문에 같은 저장소의 실제 Issue를 `Refs #N`으로 연결해야 Repository Quality 검사를 통과한다.
 - 여러 PR이 같은 Issue를 공유할 수 있다. 그 Issue의 작업을 최종 완료하는 PR에서만 `Closes #N`·`Fixes #N`·`Resolves #N`을 사용한다.
-- `QA Metadata`는 변경 경계에 맞게 `app-runtime`·`release-only` 또는 `ci-only`·`covered-by-ci`로 작성하고, 같은 입력과 결과를 확인하는 evidence를 남긴다.
+- `CI Test Plan`에는 Android 계측 테스트를 `none`·`selected`·`full`로 선언하고 선택 이유를 변경 경계 기준으로 남긴다.
 - 필수 검사는 머지 순서 가드, Ktlint, Android Lint, Unit Test, Screenshot, Repository Quality, CodeQL(Java/Kotlin·Actions)다. 이름이나 구성이 바뀌면 README 목록보다 활성 ruleset과 [PR 검증 진입점](.github/workflows/pr-validation.yml)을 우선한다.
+
+PR Validation은 rename의 이전·현재 경로를 포함한 전체 변경 파일을 기준으로 Ktlint는 직접 변경 모듈, Android Lint·단위 테스트·Kover는 역의존 모듈, Compose screenshot은 영향받는 baseline 모듈만 실행한다. Gradle 전역 설정·build-logic·영향도 계산기 자체가 바뀌거나 분류가 실패하면 전체 검증으로 닫히며, `develop`·`main` push도 전체 검증을 유지한다.
+
+`CI Test Plan`의 `none`은 두 필수 Managed Device check를 에뮬레이터 없이 성공 처리한다. `selected`는 선언한 `path`, fully-qualified `Class#method`, `api30` 또는 `api34`만 실행하고 JUnit XML의 실제 성공 결과까지 확인한다. `full`은 테스트 하네스·Gradle·릴리스 경계 변경에서 전체 API 30 회귀와 API 34 접근성 smoke를 실행한다.
 
 ## 코드 리뷰
 

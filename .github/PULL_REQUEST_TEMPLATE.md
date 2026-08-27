@@ -6,37 +6,19 @@
 - 
 -
 
-## 🧪 QA Metadata
+## 🧪 CI Test Plan
 <!--
-사용자·릴리스 동작을 검증해야 하면 아래 app-runtime 예시를 채웁니다.
-앱 QA가 필요 없으면 scope를 ci-only 또는 covered-by-ci로 바꾸고
-precondition/action/expected/risk 대신 exclusionReason을 쓰세요. 이 경우 evidence에는
-동일 input·boundary·observation을 단언하는 ci/test 근거가 하나 이상 필요합니다.
-androidTest.required가 true이면 실제 Activity/Compose/Android 경계를 검증할 testRef를 적습니다.
-false이면 reason과 함께 동일 input·boundary·observation의 ci/test evidence로 제외를 증명합니다.
+일반 CI는 변경 파일과 역의존 모듈만 자동으로 검사합니다.
+Android 계측 테스트만 none / selected / full 중 하나를 명시하세요.
+selected이면 현재 revision에 존재하는 FQCN#method와 실행 lane(api30/api34)을 tests에 적습니다.
 -->
 ```json
 {
-  "scope": "app-runtime",
-  "precondition": "",
-  "action": "",
-  "expected": "",
-  "risk": "",
   "androidTest": {
-    "required": true,
-    "reason": "",
-    "testRef": "app/src/androidTest/...Test.kt#testName"
-  },
-  "evidence": [
-    {
-      "kind": "test",
-      "ref": "app/src/androidTest/...Test.kt#testName",
-      "assertion": "",
-      "input": "",
-      "boundary": "",
-      "observation": ""
-    }
-  ]
+    "mode": "none",
+    "reason": "계측 테스트가 필요 없거나 필요한 이유를 변경 경계 기준으로 작성",
+    "tests": []
+  }
 }
 ```
 
