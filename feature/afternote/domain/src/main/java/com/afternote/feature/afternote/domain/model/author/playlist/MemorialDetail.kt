@@ -17,7 +17,6 @@ data class MemorialMedia(
 
 /** 추억 플레이리스트의 개별 곡. */
 data class DetailSong(
-    val id: Long?,
     val title: String,
     val artist: String,
     val coverUrl: String?,

@@ -117,11 +117,11 @@ class DiaryWriteViewModel
             _uiState.update { it.copy(isUploadingImage = true, imageUploadError = null) }
             return photoUploadRepository
                 .upload(uriString = uriString, directory = MIND_RECORD_UPLOAD_DIRECTORY)
-                .onSuccess { url ->
+                .onSuccess { uploaded ->
                     // 제출 직전 fileKey 로 바꿀 대상이다 (#1016).
-                    uploadedImageUrls += url
+                    uploadedImageUrls += uploaded.fileUrl
                     _uiState.update {
-                        val withUrl = if (it.imageUrl == null) it.copy(imageUrl = url) else it
+                        val withUrl = if (it.imageUrl == null) it.copy(imageUrl = uploaded.fileUrl) else it
                         withUrl.copy(isUploadingImage = false)
                     }
                 }.onFailure {
@@ -133,6 +133,7 @@ class DiaryWriteViewModel
                         )
                     }
                 }.getOrNull()
+                ?.fileUrl
         }
 
         fun submit(isDraft: Boolean = false) {

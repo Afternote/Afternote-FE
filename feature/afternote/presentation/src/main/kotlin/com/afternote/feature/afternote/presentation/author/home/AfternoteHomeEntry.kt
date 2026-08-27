@@ -23,13 +23,11 @@ import com.afternote.feature.afternote.presentation.R
 @Composable
 fun AfternoteHomeEntry(
     navigateToDetail: (Long) -> Unit,
-    navigateToGalleryDetail: (Long) -> Unit,
-    navigateToMemorialDetail: (Long) -> Unit,
-    navigateToAdd: (AfternoteType?) -> Unit,
+    navigateToAdd: (AfternoteType) -> Unit,
     onSettingClick: () -> Unit,
     viewModel: AfternoteHomeViewModel = hiltViewModel(),
 ) {
-    val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
+    val selectedType by viewModel.selectedType.collectAsStateWithLifecycle()
     val items = viewModel.pagedAfternotes.collectAsLazyPagingItems()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -43,17 +41,16 @@ fun AfternoteHomeEntry(
 
     AfternoteHomeScreen(
         items = items,
-        selectedCategory = selectedCategory,
+        selectedType = selectedType,
         snackbarHostState = snackbarHostState,
-        onCategorySelected = viewModel::selectTab,
+        onTypeSelected = viewModel::selectTab,
         onListItemClick = { id, type ->
             when (type) {
-                AfternoteType.GALLERY_AND_FILES -> navigateToGalleryDetail(id)
-
-                AfternoteType.MEMORIAL -> navigateToMemorialDetail(id)
-
-                // BUSINESS 상세는 소셜 상세 화면을 재사용한다 (구성 동일: 계정 정보·처리 방법·남긴 말씀 — 이슈 #467).
-                AfternoteType.SOCIAL_NETWORK, AfternoteType.BUSINESS -> navigateToDetail(id)
+                AfternoteType.SOCIAL_NETWORK,
+                AfternoteType.BUSINESS,
+                AfternoteType.GALLERY_AND_FILES,
+                AfternoteType.MEMORIAL,
+                -> navigateToDetail(id)
 
                 // ESTATE 는 placeholder 카테고리. 서버 미지원이라 리스트에 노출되지 않으므로 도달 시 무시.
                 AfternoteType.ESTATE -> Unit
@@ -63,7 +60,7 @@ fun AfternoteHomeEntry(
         // 서버에도 ViewModel 에도 없다. 여기서 null 을 넘기면 카드가 뜨지 않는다 — 종전에는
         // InfiniteListBody 의 `= {}` 디폴트가 이 공백을 «탭해도 반응 없는 카드» 로 덮고 있었다 (#777).
         nextStep = null,
-        onFabClick = { navigateToAdd(selectedCategory) },
+        onFabClick = { navigateToAdd(selectedType ?: AfternoteType.SOCIAL_NETWORK) },
         onSettingClick = onSettingClick,
         headerDescription = stringResource(R.string.afternote_home_header_description),
     )

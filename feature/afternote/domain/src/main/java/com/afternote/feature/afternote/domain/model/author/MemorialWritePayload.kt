@@ -1,8 +1,11 @@
 package com.afternote.feature.afternote.domain.model.author
 
+import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
+
 data class CreateMemorialPayload(
     val title: String,
     val memorial: MemorialWritePayload,
+    val leaveMessageBlocks: List<LeaveMessageBlock> = emptyList(),
     val receiverIds: List<Long> = emptyList(),
 )
 
@@ -18,8 +21,7 @@ data class MemorialVideoPayload(
 )
 
 data class MemorialSongPayload(
-    val id: Long? = null,
     val title: String,
     val artist: String,
-    val coverUrl: String? = null,
+    val coverUrl: String?,
 )

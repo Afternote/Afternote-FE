@@ -10,6 +10,6 @@ import com.android.tools.screenshot.PreviewTest
 @Composable
 internal fun unimplementedCategoryContentScreenshot() {
     AfternoteTheme {
-        UnimplementedCategoryContent()
+        UnimplementedTypeContent()
     }
 }

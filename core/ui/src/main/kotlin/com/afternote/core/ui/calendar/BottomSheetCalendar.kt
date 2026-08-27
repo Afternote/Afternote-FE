@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -115,6 +116,8 @@ fun DatePickerContent(
     onDateSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val previousMonthContentDescription = stringResource(R.string.core_ui_calendar_previous_month)
+    val nextMonthContentDescription = stringResource(R.string.core_ui_calendar_next_month)
     val formattedDate =
         "%d.%02d.%02d".format(
             selectedDate.year,
@@ -188,7 +191,7 @@ fun DatePickerContent(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.core_ui_arrow_left),
-                            contentDescription = "이전 달",
+                            contentDescription = previousMonthContentDescription,
                             modifier = Modifier.size(24.dp),
                             tint = AfternoteDesign.colors.gray9,
                         )
@@ -205,7 +208,7 @@ fun DatePickerContent(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.core_ui_right_arrow),
-                            contentDescription = "다음 달",
+                            contentDescription = nextMonthContentDescription,
                             modifier = Modifier.size(24.dp),
                             tint = AfternoteDesign.colors.gray9,
                         )

@@ -110,7 +110,10 @@ class DailyQuestionWriteViewModelTest {
             DailyQuestionWriteViewModel(
                 SavedStateHandle(emptyMap()),
                 repository,
-                FakePhotoUploadRepository(uploadedUrl = "https://cdn/just-picked.jpg"),
+                FakePhotoUploadRepository(
+                    uploadedUrl = "https://cdn/just-picked.jpg",
+                    uploadedKey = "mindrecords/1/just-picked.jpg",
+                ),
                 noopDraftLoader(),
             )
 
@@ -135,7 +138,10 @@ class DailyQuestionWriteViewModelTest {
             DailyQuestionWriteViewModel(
                 SavedStateHandle(emptyMap()),
                 repository,
-                FakePhotoUploadRepository(uploadedUrl = "https://cdn/picked.jpg"),
+                FakePhotoUploadRepository(
+                    uploadedUrl = "https://cdn/picked.jpg",
+                    uploadedKey = "mindrecords/staging/13/picked.jpg",
+                ),
                 noopDraftLoader(),
             )
 
@@ -225,7 +231,10 @@ class DailyQuestionWriteViewModelTest {
             DailyQuestionWriteViewModel(
                 SavedStateHandle(emptyMap()),
                 repository,
-                FakePhotoUploadRepository(uploadedUrl = "https://cdn.example.net/mindrecords/staging/13/a.png"),
+                FakePhotoUploadRepository(
+                    uploadedUrl = "https://cdn.example.net/mindrecords/staging/13/a.png",
+                    uploadedKey = "mindrecords/staging/13/a.png",
+                ),
                 noopDraftLoader(),
             )
 
