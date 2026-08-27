@@ -408,27 +408,34 @@ export async function applyPlan(
         try {
             if (dryRun) {
                 logger.log(
-                    `[dry-run] #${pullRequest.number} ${addLabel ? `${label} 라벨 부착 + ` : ""}` +
-                        "현재 HEAD dispatch",
+                    `[dry-run] #${pullRequest.number} ${
+                        addLabel ? `${label} 라벨 부착` : "현재 HEAD dispatch"
+                    }`,
                 );
                 continue;
             }
             if (addLabel) {
-                // 이 표식은 자동화가 소유한다. 프로세스가 어느 단계에서 끊겨도 다음 reconcile이
-                // dispatch를 재시도하며, 사람이나 다른 job이 붙인 안전 라벨은 절대 지우지 않는다.
-                await api(`/repos/${repository}/issues/${pullRequest.number}/labels`, {
-                    method: "POST",
-                    body: { labels: [pendingLabel] },
-                });
+                // pull_request:labeled가 현재 HEAD의 Managed Device를 직접 실행한다. 별도
+                // workflow_dispatch를 만들면 오래된 PR branch의 입력 schema와 충돌하고 같은
+                // HEAD를 중복 실행하므로, 최초 부착은 감사 표식만 쓴다.
                 await api(`/repos/${repository}/issues/${pullRequest.number}/labels`, {
                     method: "POST",
                     body: { labels: [label] },
                 });
+                logger.log(`#${pullRequest.number} ${label} 라벨 부착`);
+                continue;
             }
 
-            // changed-files를 읽은 뒤 push가 먼저 발생하고 라벨이 나중에 붙는 경합을 닫는다.
-            // 라벨을 붙인 다음 현재 PR을 다시 읽으면, 그 전에 끝난 push는 새 SHA로 dispatch하고
-            // 그 뒤의 push는 이미 라벨이 있으므로 synchronize 이벤트가 Managed Device를 실행한다.
+            if (!(pullRequest.labels ?? []).includes(pendingLabel)) {
+                // GITHUB_TOKEN이 만든 commit은 pull_request:synchronize를 만들지 않는다. bridge가
+                // 요청한 exact-HEAD dispatch가 실패하면 다음 reconcile이 다시 시도하도록 표시한다.
+                await api(`/repos/${repository}/issues/${pullRequest.number}/labels`, {
+                    method: "POST",
+                    body: { labels: [pendingLabel] },
+                });
+            }
+
+            // bridge가 관찰한 뒤 HEAD가 움직인 경합을 닫기 위해 dispatch 직전에 PR을 다시 읽는다.
             const {
                 headBranch: currentHeadBranch,
                 headSha: currentHeadSha,
@@ -453,7 +460,7 @@ export async function applyPlan(
                 `/repos/${repository}/issues/${pullRequest.number}/labels/${encodeURIComponent(pendingLabel)}`,
                 { method: "DELETE", allowNotFound: true },
             );
-            logger.log(`#${pullRequest.number} ${label} 라벨 부착 + 현재 HEAD dispatch`);
+            logger.log(`#${pullRequest.number} 현재 HEAD dispatch`);
         } catch (error) {
             failures.push(
                 `#${pullRequest.number} 자동 처리 실패(다음 reconcile에서 재시도): ${error.message}`,
@@ -488,8 +495,10 @@ async function main() {
         redispatchHeadSha,
     });
 
-    if (!dryRun && (plan.toLabel.length > 0 || plan.toRetry.length > 0)) {
+    if (!dryRun && plan.toLabel.length > 0) {
         await ensureLabelExists(api, repository, label);
+    }
+    if (!dryRun && plan.toRetry.length > 0) {
         await ensureLabelExists(api, repository, pendingLabel, {
             color: PENDING_LABEL_COLOR,
             description: PENDING_LABEL_DESCRIPTION,

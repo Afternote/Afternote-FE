@@ -445,22 +445,8 @@ test("changed files 한도를 넘으면 일부 파일만으로 판정하지 않�
     );
 });
 
-test("라벨 부착 뒤 다시 읽은 현재 HEAD branch scope로 dispatch한다", async () => {
-    const currentHeadBranch = "feature/android-flow";
-    const currentHeadSha = "4141414141414141414141414141414141414141";
-    const currentTestRef = "app/src/androidTest/java/com/afternote/FlowAndroidTest.kt#flow_succeeds";
-    const api = fakeApi({
-        responses: {
-            "/repos/o/r/pulls/40": currentPullRequest({
-                head: {
-                    ref: currentHeadBranch,
-                    sha: currentHeadSha,
-                    repo: { full_name: "o/r" },
-                },
-                body: requiredQaBody(currentTestRef),
-            }),
-        },
-    });
+test("새 라벨은 pending과 중복 dispatch 없이 pull_request:labeled 실행에 맡긴다", async () => {
+    const api = fakeApi();
     const failures = await applyPlan(
         api,
         "o/r",
@@ -473,34 +459,7 @@ test("라벨 부착 뒤 다시 읽은 현재 HEAD branch scope로 dispatch한다
         {
             apiPath: "/repos/o/r/issues/40/labels",
             method: "POST",
-            body: { labels: [DEFAULT_PENDING_LABEL] },
-        },
-        {
-            apiPath: "/repos/o/r/issues/40/labels",
-            method: "POST",
             body: { labels: [DEFAULT_LABEL] },
-        },
-        {
-            apiPath: "/repos/o/r/pulls/40",
-            method: "GET",
-            body: undefined,
-        },
-        {
-            apiPath: "/repos/o/r/actions/workflows/android-managed-device.yml/dispatches",
-            method: "POST",
-            body: {
-                ref: currentHeadBranch,
-                inputs: {
-                    pull_request_number: "40",
-                    expected_head_sha: currentHeadSha,
-                    expected_test_ref: currentTestRef,
-                },
-            },
-        },
-        {
-            apiPath: "/repos/o/r/issues/40/labels/android-test-dispatch-pending",
-            method: "DELETE",
-            body: undefined,
         },
     ]);
 });
@@ -543,7 +502,7 @@ test("현재 PR이 open, same-repository, labeled가 아니면 dispatch 대상�
     }
 });
 
-test("dispatch 실패 시 안전 라벨과 pending 표식을 남겨 다음 reconcile이 재시도하게 한다", async () => {
+test("token bridge dispatch 실패 시 pending 표식을 남겨 다음 reconcile이 재시도하게 한다", async () => {
     const api = fakeApi({
         responses: { "/repos/o/r/pulls/42": currentPullRequest() },
         failOn: (apiPath) => apiPath.includes("/actions/workflows/android-managed-device.yml/dispatches"),
@@ -552,17 +511,25 @@ test("dispatch 실패 시 안전 라벨과 pending 표식을 남겨 다음 recon
     const failures = await applyPlan(
         api,
         "o/r",
-        { toLabel: [{ number: 42, headRefOid: "4242424242424242424242424242424242424242" }] },
+        {
+            toLabel: [],
+            toRetry: [{
+                number: 42,
+                headRefOid: "4242424242424242424242424242424242424242",
+                labels: [DEFAULT_LABEL],
+            }],
+        },
         { label: DEFAULT_LABEL, dryRun: false, logger: silent },
     );
 
     assert.equal(failures.length, 1);
     assert.match(failures[0], /다음 reconcile에서 재시도/);
     assert.equal(api.calls.some((call) => call.method === "DELETE"), false);
-    assert.deepEqual(
-        api.calls.slice(0, 2).map((call) => call.body),
-        [{ labels: [DEFAULT_PENDING_LABEL] }, { labels: [DEFAULT_LABEL] }],
-    );
+    assert.deepEqual(api.calls[0], {
+        apiPath: "/repos/o/r/issues/42/labels",
+        method: "POST",
+        body: { labels: [DEFAULT_PENDING_LABEL] },
+    });
 });
 
 test("pending PR 재시도는 android-test를 다시 쓰지 않고 성공 후 표식만 지운다", async () => {
@@ -573,7 +540,11 @@ test("pending PR 재시도는 android-test를 다시 쓰지 않고 성공 후 �
         "o/r",
         {
             toLabel: [],
-            toRetry: [{ number: 43, headRefOid: "4343434343434343434343434343434343434343" }],
+            toRetry: [{
+                number: 43,
+                headRefOid: "4343434343434343434343434343434343434343",
+                labels: [DEFAULT_LABEL, DEFAULT_PENDING_LABEL],
+            }],
         },
         { label: DEFAULT_LABEL, dryRun: false, logger: silent },
     );
