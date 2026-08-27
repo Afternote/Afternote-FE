@@ -63,12 +63,45 @@ jobs:
 
           owner="${GITHUB_REPOSITORY%/*}"
           repo="${GITHUB_REPOSITORY#*/}"
-          issues=$(gh api graphql \
-            -f query='query($owner:String!,$repo:String!,$pr:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$pr){closingIssuesReferences(first:20){nodes{number}}}}}' \
+          pr_json=$(gh api graphql \
+            -f query='query($owner:String!,$repo:String!,$pr:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$pr){title body closingIssuesReferences(first:20){nodes{number repository{nameWithOwner}}}}}}' \
             -f owner="$owner" -f repo="$repo" -F pr="$PR_NUMBER" \
-            --jq '.data.repository.pullRequest.closingIssuesReferences.nodes[].number')
+            --jq '.data.repository.pullRequest')
+
+          # GitHub 가 close keyword 를 closingIssuesReferences 로 승격하지 못하는 경우가
+          # 있으므로(#879, #880, #1176), 제목·본문을 같은 공식 패턴으로 직접 파싱한다.
+          # 외부 저장소 참조는 이 저장소의 머지 순서와 무관하므로 제외한다.
+          issues=$(
+            PR_JSON="$pr_json" node <<'NODE'
+          const pr = JSON.parse(process.env.PR_JSON);
+          const ownRepo = process.env.GITHUB_REPOSITORY.toLowerCase();
+          const issues = new Set(
+              pr.closingIssuesReferences.nodes
+                  .filter(({ repository }) => repository.nameWithOwner.toLowerCase() === ownRepo)
+                  .map(({ number }) => number),
+          );
+          const text = `${pr.title}\n\n${pr.body || ""}`;
+          const regex = /\b(?:close[ds]?|fix(?:e[ds])?|resolve[ds]?)\s+(?:([\w.-]+\/[\w.-]+))?#(\d+)/gi;
+          let match;
+
+          while ((match = regex.exec(text)) !== null) {
+              const referencedRepo = (match[1] || ownRepo).toLowerCase();
+              if (referencedRepo !== ownRepo) continue;
+              issues.add(Number.parseInt(match[2], 10));
+          }
+
+          process.stdout.write([...issues].sort((a, b) => a - b).join("\n"));
+          NODE
+          )
 
           for n in $issues; do
+            issue_kind=$(gh api "repos/$GITHUB_REPOSITORY/issues/$n" \
+              --jq 'if has("pull_request") then "pull_request" else "issue" end')
+            if [ "$issue_kind" = "pull_request" ]; then
+              echo "::notice::#$n 은 PR 참조 — blocked_by 검사 대상에서 제외"
+              continue
+            fi
+
             open_blockers=$(gh api "repos/$GITHUB_REPOSITORY/issues/$n/dependencies/blocked_by" \
               --jq '.[] | select(.state == "open") | .number')
             for b in $open_blockers; do
@@ -115,17 +148,57 @@ jobs:
             exit 0
           fi
 
-          for n in $blocked; do
-            heads=$(gh api graphql \
-              -f query='query($owner:String!,$repo:String!,$n:Int!){repository(owner:$owner,name:$repo){issue(number:$n){closedByPullRequestsReferences(first:10,includeClosedPrs:false){nodes{headRefName}}}}}' \
-              -f owner="$owner" -f repo="$repo" -F n="$n" \
-              --jq '.data.repository.issue.closedByPullRequestsReferences.nodes[].headRefName')
-            for h in $heads; do
-              run_id=$(gh run list --workflow merge-order-guard.yml --branch "$h" \
-                --limit 1 --json databaseId --jq '.[0].databaseId // empty')
-              if [ -n "$run_id" ]; then
-                # 진행 중 런 재실행 거절 등은 치명 아님 — 경고로만 남긴다
-                gh run rerun "$run_id" || echo "::warning::run $run_id 재실행 실패 — 진행 중이거나 권한 문제"
-              fi
-            done
+          # closingIssuesReferences 로 승격되지 않은 close keyword도 guard 대상이다. blocker가
+          # 닫힐 때 같은 parser로 열린 PR을 다시 찾아야, 그 PR의 stale red check가 갱신된다.
+          prs_file="$RUNNER_TEMP/merge-order-open-prs.json"
+          gh api graphql --paginate --slurp \
+            -f query='query($owner:String!,$repo:String!,$endCursor:String){repository(owner:$owner,name:$repo){pullRequests(states:OPEN,first:100,after:$endCursor){nodes{headRefName title body closingIssuesReferences(first:20){nodes{number repository{nameWithOwner}}}} pageInfo{hasNextPage endCursor}}}}' \
+            -f owner="$owner" -f repo="$repo" > "$prs_file"
+          heads=$(
+            BLOCKED="$blocked" PRS_FILE="$prs_file" node <<'NODE'
+          const { readFileSync } = require("node:fs");
+          const pages = JSON.parse(readFileSync(process.env.PRS_FILE, "utf8"));
+          const blocked = new Set(
+              process.env.BLOCKED.split(/\s+/).filter(Boolean).map(Number),
+          );
+          const ownRepo = process.env.GITHUB_REPOSITORY.toLowerCase();
+          const heads = new Set();
+
+          for (const pr of pages.flatMap((page) => page.data.repository.pullRequests.nodes)) {
+              const issues = new Set(
+                  pr.closingIssuesReferences.nodes
+                      .filter(({ repository }) => repository.nameWithOwner.toLowerCase() === ownRepo)
+                      .map(({ number }) => number),
+              );
+              const text = `${pr.title}\n\n${pr.body || ""}`;
+              const regex = /\b(?:close[ds]?|fix(?:e[ds])?|resolve[ds]?)\s+(?:([\w.-]+\/[\w.-]+))?#(\d+)/gi;
+              let match;
+
+              while ((match = regex.exec(text)) !== null) {
+                  const referencedRepo = (match[1] || ownRepo).toLowerCase();
+                  if (referencedRepo !== ownRepo) continue;
+                  issues.add(Number.parseInt(match[2], 10));
+              }
+
+              if ([...issues].some((number) => blocked.has(number))) {
+                  heads.add(pr.headRefName);
+              }
+          }
+
+          process.stdout.write([...heads].sort().join("\n"));
+          NODE
+          )
+
+          if [ -z "$heads" ]; then
+            echo "blocking 하던 이슈를 닫는 열린 PR 없음 — 재실행 대상 없음"
+            exit 0
+          fi
+
+          for h in $heads; do
+            run_id=$(gh run list --workflow merge-order-guard.yml --branch "$h" \
+              --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+            if [ -n "$run_id" ]; then
+              # 진행 중 런 재실행 거절 등은 치명 아님 — 경고로만 남긴다
+              gh run rerun "$run_id" || echo "::warning::run $run_id 재실행 실패 — 진행 중이거나 권한 문제"
+            fi
           done
