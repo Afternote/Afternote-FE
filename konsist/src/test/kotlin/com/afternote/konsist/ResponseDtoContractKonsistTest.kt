@@ -110,9 +110,25 @@ class ResponseDtoContractKonsistTest {
                 "DailyQuestionAnswerResponseDto.isDraft",
             )
 
+        /** #957 — afternote (11건). `AfternoteDetailDto.createdAt` 은 #676 에서 해소(BE 응답에 없는 필드라 삭제). */
+        private val AFTERNOTE =
+            setOf(
+                "AfternoteDetailDto.updatedAt",
+                "AfternotePlaylistDto.songs",
+                "AfternotePageDto.content",
+                "AfternotePageDto.page",
+                "AfternotePageDto.size",
+                "AfternotePageDto.hasNext",
+                "ReceivedAfternoteListDto.afternotes",
+                "ReceivedAfternoteListDto.totalCount",
+                "ReceivedAfternoteDetailDto.processingMethods",
+                "ReceivedPlaylistDto.songs",
+                "MusicSearchResponseDto.tracks",
+            )
+
         /** #790 — timeletter (1건) */
         private val TIMELETTER = setOf("ReceivedTimeLetterDto.blocks")
 
-        val KNOWN_COERCING_DEFAULTS = MINDRECORD + TIMELETTER
+        val KNOWN_COERCING_DEFAULTS = MINDRECORD + AFTERNOTE + TIMELETTER
     }
 }
