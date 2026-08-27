@@ -2,10 +2,10 @@
 
 // 모든 same-repository PR 에 `android-test` 라벨을 유지한다.
 //
-// 라벨은 Android Managed Device 실행 스위치다. 한 번 성공한 뒤 사람이 라벨을 제거하고 head 를
-// 갱신하면 새 SHA 는 계측 테스트 없이 남는다. 이 스크립트는 default branch 의 신뢰된 워크플로에서
-// 열린 PR 전체를 다시 읽고 라벨이 없는 same-repository PR 에 추가한다. 경로 규칙과 구조화 QA 결정은
-// 실행 여부가 아니라 추가 위험 근거를 기록하는 데 유지한다. 자동 제거는 하지 않는다.
+// 모든 same-repository PR 은 라벨과 무관하게 pull_request 에서 Managed Device를 실행한다. 이 라벨은
+// 계측 검증 대상이라는 감사 표식이자 GITHUB_TOKEN 이 만든 commit을 정확한 HEAD로 재dispatch하는 복구
+// 수단이다. default branch 의 신뢰된 워크플로가 열린 PR 전체를 다시 읽어 누락된 라벨을 복구하며,
+// 경로 규칙과 구조화 QA 결정은 추가 위험 근거로 유지한다. 자동 제거는 하지 않는다.
 
 import path from "node:path";
 import process from "node:process";
@@ -17,7 +17,7 @@ export const DEFAULT_LABEL = "android-test";
 export const DEFAULT_PENDING_LABEL = "android-test-dispatch-pending";
 
 const LABEL_COLOR = "1D76DB";
-const LABEL_DESCRIPTION = "모든 same-repository PR head에서 Android Managed Device 계측 테스트 실행";
+const LABEL_DESCRIPTION = "모든 same-repository PR의 Android Managed Device 검증 표식";
 const PENDING_LABEL_COLOR = "FBCA04";
 const PENDING_LABEL_DESCRIPTION = "android-test 자동 dispatch 재시도 필요";
 const PULL_REQUEST_PAGE_SIZE = 50;

@@ -53,13 +53,14 @@ test("privileged baseline apply is a workflow-run bridge restricted to PNG basel
     }
 });
 
-test("managed device QA runs for every labeled same-repository PR or the trusted default branch", async () => {
+test("managed device QA runs for every same-repository PR or the trusted default branch", async () => {
     const source = await readWorkflow("android-managed-device.yml");
 
     assert.match(source, /^\s{2}pull_request:\n\s{4}types: \[opened, reopened, edited, labeled, synchronize\]$/m);
     assert.doesNotMatch(source, /^\s{2}workflow_call:/m);
-    assert.match(source, /contains\(github\.event\.pull_request\.labels\.\*\.name, 'android-test'\)/);
+    assert.doesNotMatch(source, /contains\(github\.event\.pull_request\.labels\.\*\.name, 'android-test'\)/);
     assert.match(source, /github\.event_name == 'pull_request'/);
+    assert.match(source, /github\.event\.pull_request\.head\.repo\.full_name == github\.repository/);
     assert.match(source, /inputs\.pull_request_number > 0/);
     assert.match(source, /github\.ref_name == github\.event\.repository\.default_branch/);
     assert.match(source, /cancel-in-progress: true/);

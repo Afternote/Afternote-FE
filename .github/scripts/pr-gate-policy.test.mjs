@@ -94,7 +94,7 @@ test("required validation context names stay aligned with the repository ruleset
     assert.deepEqual(contexts.sort(), [...REQUIRED_VALIDATION_CONTEXTS].sort());
 });
 
-test("both managed device lanes stay aligned with the repository ruleset", async () => {
+test("both direct managed device lanes stay aligned with the repository ruleset", async () => {
     const managedDevice = await readWorkflow("android-managed-device.yml");
     const contexts = [...managedDevice.matchAll(/^ {10}- name: (Pixel 2 API .+)$/gm)]
         .map((match) => match[1]);
