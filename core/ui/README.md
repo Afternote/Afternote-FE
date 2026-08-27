@@ -32,13 +32,13 @@ Column(
 ```
 
 ### 디자인 시스템 컴포넌트
-- **버튼**: [`AfternoteButton`](src/main/kotlin/com/afternote/core/ui/button/AfternoteButton.kt) (Default·Outlined·Disabled 타입)
+- **버튼**: [`AfternoteButton`](src/main/kotlin/com/afternote/core/ui/button/AfternoteButton.kt) (`Default`·`Active`·`Plain`·`Un`·`Variant5`) / [`AfternoteActionButton`](src/main/kotlin/com/afternote/core/ui/button/AfternoteButton.kt) / [`PlusBadgeButton`](src/main/kotlin/com/afternote/core/ui/button/PlusBadgeButton.kt)
 - **TopBar**: [`HomeTopBar`](src/main/kotlin/com/afternote/core/ui/topbar/HomeTopBar.kt) / [`DetailTopBar`](src/main/kotlin/com/afternote/core/ui/topbar/DetailTopBar.kt) / [`TitleTopBar`](src/main/kotlin/com/afternote/core/ui/topbar/TitleTopBar.kt)
 - **BottomBar**: [`BottomBar`](src/main/kotlin/com/afternote/core/ui/bottombar/BottomBar.kt)
-- **Popup**: [`Popup(type, ...)`](src/main/kotlin/com/afternote/core/ui/popup/Popup.kt) — 4가지 variant
-- **TextField**: [`CaptionLabeledTextField`](src/main/kotlin/com/afternote/core/ui/CaptionLabeledTextField.kt) / [`TextFieldShort`](src/main/kotlin/com/afternote/core/ui/TextFieldShort.kt)
+- **Popup**: [`Popup(type, ...)`](src/main/kotlin/com/afternote/core/ui/popup/Popup.kt) (`Default`·`Variant2`) / [`AfternoteErrorPopup`](src/main/kotlin/com/afternote/core/ui/popup/ErrorPopup.kt) / [`NetworkErrorPopup`](src/main/kotlin/com/afternote/core/ui/popup/ErrorPopup.kt)
+- **TextField**: [`CaptionLabeledTextField`](src/main/kotlin/com/afternote/core/ui/CaptionLabeledTextField.kt) / [`AfternoteTextField`](src/main/kotlin/com/afternote/core/ui/TextFieldShort.kt)
 - **Card / Section**: [`AfternoteOutlinedCard`](src/main/kotlin/com/afternote/core/ui/AfternoteOutlinedCard.kt) / [`AfternoteSectionHeader`](src/main/kotlin/com/afternote/core/ui/AfternoteSectionHeader.kt)
-- **Profile**: [`ProfileImage`](src/main/kotlin/com/afternote/core/ui/ProfileImage.kt)
+- **Profile**: [`ProfileImage`](src/main/kotlin/com/afternote/core/ui/ProfileImage.kt) / [`ProfileImagePicker`](src/main/kotlin/com/afternote/core/ui/ProfileImage.kt)
 - **Calendar**: [`BottomSheetCalendar`](src/main/kotlin/com/afternote/core/ui/calendar/BottomSheetCalendar.kt)
 - **Checkbox / Radio**: [`AfternoteCircularCheckbox`](src/main/kotlin/com/afternote/core/ui/button/AfternoteCircularCheckbox.kt) / [`CustomRadioButton`](src/main/kotlin/com/afternote/core/ui/button/CustomRadioButton.kt)
 - **FAB**: [`AfternoteFloatingActionButton`](src/main/kotlin/com/afternote/core/ui/button/FAB/AfternoteFloatingActionButton.kt) / [`PenFloatingActionButton`](src/main/kotlin/com/afternote/core/ui/button/FAB/PenFloatingActionButton.kt)
@@ -46,6 +46,8 @@ Column(
 - **Badge**: [`RecipientDesignationBadge`](src/main/kotlin/com/afternote/core/ui/badge/RecipientDesignationBadge.kt) / [`CircularCheckboxOutlineChip`](src/main/kotlin/com/afternote/core/ui/badge/CircularCheckboxOutlineChip.kt)
 - **View mode 전환**: [`ViewModeSwitcher`](src/main/kotlin/com/afternote/core/ui/ViewModeSwitcher.kt)
 - **한국어 자모 인덱스**: [`KoreanConsonantIndex`](src/main/kotlin/com/afternote/core/ui/KoreanConsonantIndex.kt)
+- **단계형 흐름**: [`FlowStepScaffold`](src/main/kotlin/com/afternote/core/ui/scaffold/FlowStepScaffold.kt) / [`FlowStepProgressBar`](src/main/kotlin/com/afternote/core/ui/scaffold/FlowStepProgressBar.kt)
+- **Modifier 확장**: [`addFocusCleaner`·`noRippleClickable`](src/main/kotlin/com/afternote/core/ui/modifierextention/ModifierExt.kt) / [`bottomBorder`·`dropShadow`·`horizontalFadingEdge`](src/main/kotlin/com/afternote/core/ui/modifierextention/DrawModifiers.kt) / [`shimmerLoadingPlaceholder`](src/main/kotlin/com/afternote/core/ui/modifierextention/ShimmerModifier.kt)
 
 ### 색·타입·테마
 - [`AfternoteDesign.colors`](src/main/kotlin/com/afternote/core/ui/theme/Color.kt) — 디자인 토큰. **`Color(0xFF...)` 하드코드 X**, 토큰만 사용.
@@ -67,6 +69,8 @@ core/ui/
 ├── calendar/      날짜 선택 BottomSheet
 ├── badge/         배지·칩
 ├── icon/          공용 아이콘
+├── scaffold/      단계형 화면 Scaffold·진행 인디케이터
+├── modifierextention/  공용 Modifier 확장
 └── (root)         Card / TextField / Profile / ObserveAsEvents / Route 등
 ```
 
