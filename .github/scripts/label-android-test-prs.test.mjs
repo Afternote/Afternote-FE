@@ -12,6 +12,7 @@ import {
     fetchCurrentDispatchTarget,
     planLabelChanges,
     renderSummary,
+    resolveAndroidTestDecision,
 } from "./label-android-test-prs.mjs";
 
 const labelWorkflow = await readFile(new URL("../workflows/conflict-label.yml", import.meta.url), "utf8");
@@ -85,6 +86,30 @@ ${JSON.stringify({
         },
     ],
 })}
+\`\`\``;
+}
+
+function coveredByCiQaBody({ androidTest } = {}) {
+    const metadata = {
+        scope: "covered-by-ci",
+        exclusionReason: "동일한 화면 크기와 글자 배율을 screenshot CI가 직접 렌더한다",
+        evidence: [
+            {
+                kind: "ci",
+                ref: "validateScreenshotTest compact large-font baseline",
+                assertion: "좁은 화면과 확대 글자에서도 우측 여백을 유지한다",
+                input: "360dp 화면과 fontScale 1.5",
+                boundary: "Compose 헤더의 최우측 픽셀",
+                observation: "우측 여백 26.5dp와 screenshot baseline 성공",
+            },
+        ],
+    };
+    if (androidTest !== undefined) {
+        metadata.androidTest = androidTest;
+    }
+    return `## QA Metadata
+\`\`\`json
+${JSON.stringify(metadata)}
 \`\`\``;
 }
 
@@ -174,6 +199,34 @@ test("presentation 런타임 소스는 기본 대상이고 검증된 QA 제외�
     const excluded = classifyAndroidTestRequirement(paths, { androidTestExcluded: true });
     assert.equal(excluded.required, false);
     assert.deepEqual(excluded.matches, []);
+});
+
+test("명시적 false와 유효한 legacy CI scope만 계측 제외로 해석한다", () => {
+    assert.deepEqual(resolveAndroidTestDecision(coveredByCiQaBody()), {
+        required: false,
+        excluded: true,
+    });
+    assert.deepEqual(
+        resolveAndroidTestDecision(
+            coveredByCiQaBody({
+                androidTest: {
+                    required: false,
+                    reason: "동일 입력과 화면 경계를 screenshot CI가 더 정밀하게 검증한다",
+                },
+            }),
+        ),
+        { required: false, excluded: true },
+    );
+    assert.deepEqual(resolveAndroidTestDecision(requiredQaBody("app/src/androidTest/FooTest.kt#flow")), {
+        required: true,
+        excluded: false,
+    });
+    assert.deepEqual(
+        resolveAndroidTestDecision(
+            coveredByCiQaBody().replace("우측 여백 26.5dp와 screenshot baseline 성공", ""),
+        ),
+        { required: false, excluded: false },
+    );
 });
 
 test("QA 제외로 manifest와 navigation 같은 hard runtime rule을 우회할 수 없다", () => {

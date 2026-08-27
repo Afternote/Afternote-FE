@@ -24,6 +24,7 @@ const PENDING_LABEL_DESCRIPTION = "android-test 자동 dispatch 재시도 필요
 const PULL_REQUEST_PAGE_SIZE = 50;
 const CHANGED_FILE_PAGE_SIZE = 100;
 const MAX_CHANGED_FILE_PAGES = 30;
+const LEGACY_ANDROID_TEST_EXCLUDED_SCOPES = new Set(["ci-only", "covered-by-ci"]);
 
 const REQUIREMENT_RULES = [
     {
@@ -123,6 +124,22 @@ export function classifyAndroidTestRequirement(
     };
 }
 
+export function resolveAndroidTestDecision(body, { pullRequestNumber = "?" } = {}) {
+    const qaInspection = inspectQaMetadata(body, { pullRequestNumber });
+    if (!qaInspection.valid) {
+        return { required: false, excluded: false };
+    }
+
+    const explicitDecision = qaInspection.metadata.androidTest;
+    return {
+        required: explicitDecision?.required === true,
+        excluded:
+            explicitDecision?.required === false ||
+            (explicitDecision === undefined &&
+                LEGACY_ANDROID_TEST_EXCLUDED_SCOPES.has(qaInspection.metadata.scope)),
+    };
+}
+
 export function planLabelChanges({
     pullRequests,
     repository,
@@ -191,16 +208,16 @@ function formatNumbers(pullRequests) {
 }
 
 function normalizePullRequest(node) {
-    const qaInspection = inspectQaMetadata(node.body, { pullRequestNumber: node.number });
+    const androidTestDecision = resolveAndroidTestDecision(node.body, {
+        pullRequestNumber: node.number,
+    });
     return {
         number: node.number,
         headRefOid: node.headRefOid,
         headRepository: node.headRepository?.nameWithOwner ?? null,
         labels: (node.labels?.nodes ?? []).map((item) => item.name),
-        androidTestRequired:
-            qaInspection.valid && qaInspection.metadata?.androidTest?.required === true,
-        androidTestExcluded:
-            qaInspection.valid && qaInspection.metadata?.androidTest?.required === false,
+        androidTestRequired: androidTestDecision.required,
+        androidTestExcluded: androidTestDecision.excluded,
     };
 }
 
