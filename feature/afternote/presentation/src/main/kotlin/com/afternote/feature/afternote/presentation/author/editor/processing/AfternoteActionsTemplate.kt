@@ -11,7 +11,7 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.Aft
  * 사용자는 항목을 자유롭게 수정·삭제·추가할 수 있고, 저장 시 현재 값이 그대로 서버 `actions` 로 전송된다.
  * 서버는 예시 생성 로직이 없으므로 클라이언트가 책임진다.
  *
- * [defaultsFor] 는 `stringRes` ID 리스트를 반환하며, 호출처(@Composable)에서 `stringResource(id)` 로 i18n 해석한다.
+ * [defaultsFor] 는 `stringRes` ID 리스트를 반환하며, Compose UI 경계에서 현재 locale 문자열로 해석한다.
  */
 object AfternoteActionsTemplate {
     @StringRes

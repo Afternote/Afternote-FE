@@ -152,11 +152,10 @@ internal object AfternoteEditorFormMapper {
 
         return when (type) {
             AfternoteType.GALLERY_AND_FILES -> {
-                val galleryMethods = processingMethods.ifEmpty { listOf("정보 전달") }
                 CreateAfternoteInput.Gallery(
                     CreateGalleryPayload(
                         title = payload.serviceName,
-                        processingMethods = galleryMethods,
+                        processingMethods = processingMethods,
                         leaveMessageBlocks = leaveMessageBlocks,
                         receiverIds = selectedReceiverIds,
                     ),

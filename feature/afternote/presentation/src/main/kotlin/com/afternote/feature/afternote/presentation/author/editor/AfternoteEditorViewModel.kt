@@ -37,6 +37,7 @@ import com.afternote.feature.afternote.presentation.author.editor.state.withPref
 import com.afternote.feature.afternote.presentation.author.editor.state.withProcessingMethodAdded
 import com.afternote.feature.afternote.presentation.author.editor.state.withProcessingMethodDeleted
 import com.afternote.feature.afternote.presentation.author.editor.state.withProcessingMethodEdited
+import com.afternote.feature.afternote.presentation.author.editor.state.withProcessingMethodsInitialized
 import com.afternote.feature.afternote.presentation.author.editor.state.withReceiverAddedIfAbsent
 import com.afternote.feature.afternote.presentation.author.editor.state.withReceiverDeleted
 import com.afternote.feature.afternote.presentation.author.editor.state.withReceiversReplacedIfEmpty
@@ -58,6 +59,7 @@ import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
 private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v2"
+private const val INITIALIZED_ACTION_TEMPLATE_TYPE_KEY = "initialized_action_template_type"
 
 private const val TAG = "AfternoteEditorViewModel"
 
@@ -210,7 +212,12 @@ class AfternoteEditorViewModel
             persistFormSnapshot(internalState.value.form)
         }
 
-        fun setType(type: AfternoteType) = mutateForm { it.withType(type) }
+        fun setType(type: AfternoteType) {
+            if (currentForm().selectedType != type) {
+                savedStateHandle.remove<String>(INITIALIZED_ACTION_TEMPLATE_TYPE_KEY)
+            }
+            mutateForm { it.withType(type) }
+        }
 
         fun setService(service: String) = mutateForm { it.withService(service) }
 
@@ -251,6 +258,25 @@ class AfternoteEditorViewModel
         fun replaceReceiversIfEmpty(receivers: List<AfternoteEditorReceiver>) = mutateForm { it.withReceiversReplacedIfEmpty(receivers) }
 
         fun applyPrefill(prefill: EditorFormPrefill) = mutateForm { it.withPrefillApplied(prefill) }
+
+        /**
+         * 신규 작성 화면의 카테고리 추천 처리 방법을 최초 한 번만 채운다.
+         *
+         * 초기화 표식을 폼 스냅샷과 같은 [SavedStateHandle]에 남겨, 사용자가 추천을 전부 지운 뒤
+         * 재구성·프로세스 복원이 일어나도 다시 삽입하지 않는다. 카테고리를 실제로 바꾸면
+         * [setType]이 표식을 지워 새 카테고리의 추천을 받을 수 있게 한다.
+         */
+        fun initializeProcessingMethodDefaults(
+            type: AfternoteType,
+            methods: List<String>,
+        ) {
+            if (isEditing || currentForm().selectedType != type) return
+            if (savedStateHandle.get<String>(INITIALIZED_ACTION_TEMPLATE_TYPE_KEY) == type.name) return
+
+            savedStateHandle[INITIALIZED_ACTION_TEMPLATE_TYPE_KEY] = type.name
+            if (methods.isEmpty() || currentForm().processingMethods.isNotEmpty()) return
+            mutateForm { it.withProcessingMethodsInitialized(methods) }
+        }
 
         fun addProcessingMethod(text: String) = mutateForm { it.withProcessingMethodAdded(text) }
 
