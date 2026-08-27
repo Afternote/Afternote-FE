@@ -71,7 +71,7 @@ internal fun buildOnRegisterClick(
             )
         editViewModel.saveAfternote(
             payload = payload,
-            selectedReceiverIds = form.afternoteEditReceivers.mapNotNull { it.id.toLongOrNull() },
+            selectedReceiverIds = form.afternoteEditReceivers.map { it.id },
             memorialMedia =
                 SaveAfternoteMemorialMedia(
                     memorialVideoUrl = form.memorialVideoUrl,

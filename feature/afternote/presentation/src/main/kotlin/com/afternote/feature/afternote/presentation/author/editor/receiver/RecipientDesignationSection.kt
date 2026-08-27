@@ -48,8 +48,8 @@ private fun RecipientDesignationSectionPreview() {
                 AfternoteEditorReceiverSection(
                     afternoteEditReceivers =
                         listOf(
-                            AfternoteEditorReceiver(id = "1", name = "홍길동", label = "가족"),
-                            AfternoteEditorReceiver(id = "2", name = "김철수", label = "친구"),
+                            AfternoteEditorReceiver(id = 1L, name = "홍길동", label = "가족"),
+                            AfternoteEditorReceiver(id = 2L, name = "김철수", label = "친구"),
                         ),
                 ),
         )

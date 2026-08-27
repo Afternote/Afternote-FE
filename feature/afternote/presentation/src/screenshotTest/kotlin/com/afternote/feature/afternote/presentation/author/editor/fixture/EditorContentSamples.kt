@@ -20,7 +20,7 @@ internal fun sampleRecipientSection(hasRecipient: Boolean = true): AfternoteEdit
             if (hasRecipient) {
                 listOf(
                     AfternoteEditorReceiver(
-                        id = "screenshot-receiver-1",
+                        id = 1L,
                         name = "홍길동",
                         label = "가족",
                     ),

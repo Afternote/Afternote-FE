@@ -43,7 +43,7 @@ fun AfternoteEditorReceiverList(
     modifier: Modifier = Modifier,
     afternoteEditReceivers: List<AfternoteEditorReceiver>,
     onAddClick: () -> Unit = {},
-    onItemDeleteClick: (String) -> Unit = {},
+    onItemDeleteClick: (Long) -> Unit = {},
     state: AfternoteEditorReceiverListState = rememberAfternoteEditorReceiverListState(),
 ) {
     val focusManager = LocalFocusManager.current
@@ -159,9 +159,9 @@ private fun AfternoteEditorReceiverListPreview() {
         AfternoteEditorReceiverList(
             afternoteEditReceivers =
                 listOf(
-                    AfternoteEditorReceiver(id = "1", name = "홍길동", label = "가족"),
-                    AfternoteEditorReceiver(id = "2", name = "김철수", label = "친구"),
-                    AfternoteEditorReceiver(id = "3", name = "이영희", label = "동료"),
+                    AfternoteEditorReceiver(id = 1L, name = "홍길동", label = "가족"),
+                    AfternoteEditorReceiver(id = 2L, name = "김철수", label = "친구"),
+                    AfternoteEditorReceiver(id = 3L, name = "이영희", label = "동료"),
                 ),
         )
     }

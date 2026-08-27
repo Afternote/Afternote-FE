@@ -53,17 +53,45 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.longOrNull
 import javax.inject.Inject
 
 private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v2"
 
 private const val TAG = "AfternoteEditorViewModel"
 
+/** v2 스냅샷의 문자열 ID와 새 숫자 ID를 모두 읽되, 새 스냅샷은 숫자로 기록한다. */
+private object ReceiverIdSerializer : KSerializer<Long> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ReceiverId", PrimitiveKind.LONG)
+
+    override fun serialize(
+        encoder: Encoder,
+        value: Long,
+    ) = encoder.encodeLong(value)
+
+    override fun deserialize(decoder: Decoder): Long {
+        if (decoder !is JsonDecoder) return decoder.decodeLong()
+        val primitive = decoder.decodeJsonElement() as? JsonPrimitive
+        return primitive?.longOrNull
+            ?: throw SerializationException("Receiver id must be a Long")
+    }
+}
+
 @Serializable
 private data class ReceiverSnap(
-    val id: String,
+    @Serializable(with = ReceiverIdSerializer::class)
+    val id: Long,
     val name: String,
     val label: String,
 )
@@ -240,10 +268,10 @@ class AfternoteEditorViewModel
             mutateForm { it.withMemorialPlaylistSongs(emptyList()) }
         }
 
-        fun deleteReceiver(receiverId: String) = mutateForm { it.withReceiverDeleted(receiverId) }
+        fun deleteReceiver(receiverId: Long) = mutateForm { it.withReceiverDeleted(receiverId) }
 
         fun addReceiverIfAbsent(
-            receiverId: String,
+            receiverId: Long,
             name: String,
             label: String,
         ) = mutateForm { it.withReceiverAddedIfAbsent(receiverId = receiverId, name = name, label = label) }
@@ -542,7 +570,7 @@ class AfternoteEditorViewModel
         }
 
         /** 수신자 선택 결과(id)를 폼에 넣기 위해 [refreshAuthorReceivers] 로 받아 둔 목록에서 이름·관계를 찾는다. */
-        fun getReceiverById(id: Long): AfternoteEditorReceiver? = internalState.value.authorReceivers.find { it.id == id.toString() }
+        fun getReceiverById(id: Long): AfternoteEditorReceiver? = internalState.value.authorReceivers.find { it.id == id }
 
         // region Internal state shaping
 
