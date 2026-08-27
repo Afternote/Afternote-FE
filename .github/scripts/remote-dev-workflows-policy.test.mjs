@@ -178,6 +178,20 @@ test("screenshot cleanup tolerates cancellation before Gradle setup", async () =
     assert.match(source, /sudo chown -R .*\$HOME\/\.gradle/);
 });
 
+test("screenshot failure comment rechecks the live baseline label before writing", async () => {
+    const source = await readWorkflow("screenshot.yml");
+    const commentStep = source.indexOf("- name: Comment artifact URL on PR (failure)");
+    const liveLabels = source.indexOf("github.rest.issues.listLabelsOnIssue", commentStep);
+    const baselineGuard = source.indexOf("labels.some(({ name }) => name === baselineLabel)", liveLabels);
+    const listComments = source.indexOf("github.rest.issues.listComments", baselineGuard);
+
+    assert.ok(commentStep >= 0, "screenshot failure comment step is missing");
+    assert.ok(liveLabels > commentStep, "live PR labels are not queried in the comment step");
+    assert.ok(baselineGuard > liveLabels, "screenshot-baseline is not checked after the live query");
+    assert.ok(listComments > baselineGuard, "comment lookup happens before the baseline label guard");
+    assert.match(source.slice(liveLabels, listComments), /core\.info\([\s\S]*return;/);
+});
+
 test("stack refresh only executes trusted default-branch code", async () => {
     const source = await readWorkflow("stack-refresh.yml");
 
