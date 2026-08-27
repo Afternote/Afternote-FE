@@ -57,13 +57,8 @@ class ReceiverAfternotePagingSourceTest {
         assertEquals(otherRejection, rejection.cause)
     }
 
-    /**
-     * 순서 회귀 가드 — [ApiException] 은 [IOException] 의 **하위 타입**이다(OkHttp Interceptor 가
-     * 4xx·5xx 를 가로채 던질 때 전파되어야 해서). 변환의 IO 갈래를 위에 두면 서버가 내려준 거절이
-     * 통째로 «연결 없음» 으로 뭉개진다.
-     */
     @Test
-    fun `서버 거절은 IOException 하위여도 연결 실패로 뭉개지지 않는다`() {
+    fun `서버 거절은 연결 실패로 뭉개지지 않는다`() {
         val result = loadWith { throw DELIVERY_CONDITION_NOT_MET_EXCEPTION }
 
         val error = (result as PagingSource.LoadResult.Error).throwable
