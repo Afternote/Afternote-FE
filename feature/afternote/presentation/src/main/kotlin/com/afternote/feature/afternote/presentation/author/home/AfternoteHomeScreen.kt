@@ -43,8 +43,8 @@ import kotlinx.coroutines.flow.flowOf
 @Composable
 fun AfternoteHomeScreen(
     items: LazyPagingItems<ListItemUiModel>,
-    selectedCategory: AfternoteType?,
-    onCategorySelected: (AfternoteType?) -> Unit,
+    selectedType: AfternoteType?,
+    onTypeSelected: (AfternoteType?) -> Unit,
     onListItemClick: (id: Long, type: AfternoteType) -> Unit,
     headerDescription: String,
     nextStep: NextStep?,
@@ -98,13 +98,13 @@ fun AfternoteHomeScreen(
                 }
 
                 // 카테고리 필터 0건도 이 경로에 남겨 카테고리 행을 유지한다(막다른 상태 방지).
-                items.itemCount > 0 || selectedCategory != null -> {
+                items.itemCount > 0 || selectedType != null -> {
                     InfiniteListBody(
                         modifier = bodyModifier,
                         nextStep = nextStep,
                         items = items,
-                        selectedCategory = selectedCategory,
-                        onCategorySelected = onCategorySelected,
+                        selectedType = selectedType,
+                        onTypeSelected = onTypeSelected,
                         onListItemClick = onListItemClick,
                         headerDescription = headerDescription,
                     )
@@ -146,8 +146,8 @@ private fun AfternoteHomeScreenPreview() {
             ).collectAsLazyPagingItems()
         AfternoteHomeScreen(
             items = items,
-            selectedCategory = null,
-            onCategorySelected = {},
+            selectedType = null,
+            onTypeSelected = {},
             onListItemClick = { _, _ -> },
             headerDescription = stringResource(R.string.afternote_home_header_description),
             nextStep =
@@ -178,8 +178,8 @@ private fun AfternoteHomeScreenLoadingPreview() {
             ).collectAsLazyPagingItems()
         AfternoteHomeScreen(
             items = items,
-            selectedCategory = null,
-            onCategorySelected = {},
+            selectedType = null,
+            onTypeSelected = {},
             onListItemClick = { _, _ -> },
             headerDescription = stringResource(R.string.afternote_home_header_description),
             nextStep =

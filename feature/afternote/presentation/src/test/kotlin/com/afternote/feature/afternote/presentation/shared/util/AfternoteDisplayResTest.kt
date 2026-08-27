@@ -24,7 +24,7 @@ class AfternoteDisplayResTest {
                 AfternoteType.GALLERY_AND_FILES,
                 AfternoteType.MEMORIAL,
             ),
-            CATEGORY_FILTER_TABS,
+            TYPE_FILTER_TABS,
         )
     }
 

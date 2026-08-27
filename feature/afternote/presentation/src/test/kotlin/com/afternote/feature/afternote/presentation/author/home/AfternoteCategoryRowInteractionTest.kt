@@ -32,7 +32,7 @@ class AfternoteCategoryRowInteractionTest {
         // Robolectric 폰트 폭에 기대지 않고 스크롤 가능 분기를 확정한다.
         composeRule.setContent {
             AfternoteTheme {
-                AfternoteCategoryRow(
+                AfternoteTypeFilterRow(
                     onTabSelected = { selectedTab = it },
                     modifier = Modifier.width(100.dp),
                 )
