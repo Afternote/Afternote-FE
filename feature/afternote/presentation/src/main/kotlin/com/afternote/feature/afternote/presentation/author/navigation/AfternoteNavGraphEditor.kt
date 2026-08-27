@@ -154,7 +154,8 @@ internal fun AfternoteEditorNavigation(
         }
     }
 
-    val snackbarMessage = uiState.error?.let { stringResource(it.messageResId()) }
+    val errorEvent = uiState.errorEvent
+    val snackbarMessage = errorEvent?.error?.let { stringResource(it.messageResId()) }
 
     val onRegisterClick =
         remember(editViewModel, state) {
@@ -168,7 +169,9 @@ internal fun AfternoteEditorNavigation(
         onBackClick = onPopBackStack,
         onRegisterClick = onRegisterClick,
         snackbarMessage = snackbarMessage,
-        onSnackbarMessageConsumed = editViewModel::onErrorConsumed,
+        onSnackbarMessageConsumed = {
+            errorEvent?.let(editViewModel::onErrorConsumed)
+        },
         content = { snackbarHostState ->
             AfternoteEditorBody(
                 state = state,
@@ -184,5 +187,6 @@ internal fun AfternoteEditorNavigation(
         },
         state = state,
         isPrefillLoading = uiState.isPrefillLoading,
+        snackbarMessageKey = errorEvent,
     )
 }
