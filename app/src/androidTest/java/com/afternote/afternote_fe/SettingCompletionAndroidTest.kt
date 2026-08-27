@@ -49,6 +49,7 @@ import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionVie
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditEvent
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditUiState
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditViewModel
+import com.afternote.feature.setting.presentation.viewmodel.PushNotificationEvent
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditEvent
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditViewModel
@@ -169,6 +170,7 @@ class SettingCompletionAndroidTest {
 
         assertTrue(viewModel.uiState.value.isMindRecordOn)
         assertFalse(viewModel.uiState.value.isNewsletterOn)
+        assertEquals(PushNotificationEvent.SaveFailure, awaitEvent(viewModel.events))
 
         composeRule.runOnIdle {
             viewModel.onAfternoteToggle(false)

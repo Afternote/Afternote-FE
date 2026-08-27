@@ -10,6 +10,10 @@ val googleWebClientId = socialLoginKey("GOOGLE_WEB_CLIENT_ID")
 android {
     namespace = "com.afternote.feature.setting.presentation"
 
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+
     buildFeatures {
         buildConfig = true
     }

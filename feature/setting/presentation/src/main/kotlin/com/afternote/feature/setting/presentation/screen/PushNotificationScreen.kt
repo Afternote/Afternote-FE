@@ -33,6 +33,7 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.DeviceAlarmOffSection
 import com.afternote.feature.setting.presentation.component.PushToggleSection
+import com.afternote.feature.setting.presentation.viewmodel.PushNotificationEvent
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationUiState
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel
 
@@ -46,10 +47,11 @@ fun PushNotificationScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val saveFailureMessage = stringResource(R.string.push_notification_save_failure)
 
-    LaunchedEffect(uiState.showSaveFailure) {
-        if (uiState.showSaveFailure) {
-            snackbarHostState.showSnackbar(saveFailureMessage)
-            viewModel.onSaveFailureShown()
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                PushNotificationEvent.SaveFailure -> snackbarHostState.showSnackbar(saveFailureMessage)
+            }
         }
     }
 
