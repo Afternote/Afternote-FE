@@ -1,6 +1,7 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
+import com.afternote.core.domain.model.UploadedFile
 import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
@@ -107,7 +108,7 @@ class MindRecordFailureRecoveryTest {
         runTest(dispatcher) {
             // 툴바 임시저장은 `enabled` 없는 clickable 이라 canSubmit 을 우회한다 — 그래서
             // 상태만으로는 부족하고 submit() 이 직접 막아야 한다 (리뷰 지적).
-            val uploadGate = CompletableDeferred<Result<String>>()
+            val uploadGate = CompletableDeferred<Result<UploadedFile>>()
             val repository = NeverSubmittingRepository()
             val viewModel =
                 DailyQuestionWriteViewModel(
@@ -137,7 +138,14 @@ class MindRecordFailureRecoveryTest {
             )
 
             // 업로드를 끝내 코루틴을 정리한다.
-            uploadGate.complete(Result.success("https://cdn.example.com/a.png"))
+            uploadGate.complete(
+                Result.success(
+                    UploadedFile(
+                        fileUrl = "https://cdn.example.com/a.png",
+                        fileKey = "mindrecords/staging/13/a.png",
+                    ),
+                ),
+            )
             uploading.join()
         }
 }

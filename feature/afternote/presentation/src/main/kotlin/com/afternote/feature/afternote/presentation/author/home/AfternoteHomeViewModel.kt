@@ -31,12 +31,12 @@ class AfternoteHomeViewModel
         private val afternoteRepository: AfternoteRepository,
     ) : ViewModel() {
         /** 선택된 종류 필터. `null` 은 전체다. */
-        private val _selectedCategory = MutableStateFlow<AfternoteType?>(null)
-        val selectedCategory: StateFlow<AfternoteType?> = _selectedCategory.asStateFlow()
+        private val _selectedType = MutableStateFlow<AfternoteType?>(null)
+        val selectedType: StateFlow<AfternoteType?> = _selectedType.asStateFlow()
 
         @OptIn(ExperimentalCoroutinesApi::class)
         val pagedAfternotes: Flow<PagingData<ListItemUiModel>> =
-            _selectedCategory
+            _selectedType
                 .flatMapLatest { type ->
                     afternoteRepository
                         .getPagedAfternotes(type)
@@ -44,8 +44,8 @@ class AfternoteHomeViewModel
                 }.cachedIn(viewModelScope)
 
         fun selectTab(tab: AfternoteType?) {
-            if (_selectedCategory.value == tab) return
-            _selectedCategory.value = tab
+            if (_selectedType.value == tab) return
+            _selectedType.value = tab
         }
     }
 

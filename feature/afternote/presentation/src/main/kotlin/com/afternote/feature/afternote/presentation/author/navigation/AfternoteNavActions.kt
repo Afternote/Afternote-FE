@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.navigation
 
 import com.afternote.core.ui.bottombar.BottomNavTab
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
+import com.afternote.feature.afternote.domain.AfternoteType
 
 /**
  * NavHost 루트에서 Afternote 서브그래프로 넘기는 네비게이션 명령 모음.
@@ -19,15 +19,11 @@ interface AfternoteNavActions {
 
     fun navigateToAfternoteDetail(itemId: Long)
 
-    fun navigateToGalleryDetail(itemId: Long)
-
-    fun navigateToMemorialDetail(itemId: Long)
-
-    fun navigateToNewEditor(initialCategory: String?)
+    fun navigateToNewEditor(initialType: AfternoteType)
 
     fun navigateToEditorForEdit(
         itemId: Long,
-        initialCategory: EditorCategory,
+        initialType: AfternoteType,
     )
 
     fun navigateToMemorialPlaylist()
