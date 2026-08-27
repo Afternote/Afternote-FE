@@ -338,7 +338,6 @@ class AfternoteEditorViewModel
                         Log.d(TAG, "uploadMemorialThumbnail: success, url=$url")
                         internalState.update { it.copy(pendingThumbnailUrl = url) }
                     }.onFailure { e ->
-                        Log.e(TAG, "uploadMemorialThumbnail: failed", e)
                         errorReporter.recordAfternoteFailure(AfternoteFailureStage.MEMORIAL_THUMBNAIL_UPLOAD, e)
                         internalState.update {
                             it.withError(
@@ -537,7 +536,6 @@ class AfternoteEditorViewModel
                             )
                         }
                     }.onFailure { e ->
-                        Log.e(TAG, "loadExistingAfternoteForEdit: id=$afternoteId failed", e)
                         errorReporter.recordAfternoteFailure(AfternoteFailureStage.PREFILL_LOAD, e)
                         // 실패 시 skeleton 에 갇히지 않도록 즉시 종료.
                         internalState.update { it.copy(isPrefillLoading = false) }
@@ -559,7 +557,6 @@ class AfternoteEditorViewModel
             // 보관 한도(최근 8건) 를 사용자 오류가 차지하면 실제 등록 장애가 밀려난다.
             // 여기 걸리는 건 검증 외 실패 전부다 — 그중 5xx 본문엔 내부 SQL 이 섞여 오므로 예외 타입만 남긴다.
             if (editorError !is AfternoteEditorError.Validation) {
-                Log.e(TAG, "handleSaveFailure: ${e.javaClass.name}")
                 errorReporter.recordAfternoteFailure(AfternoteFailureStage.SAVE, e)
             }
             internalState.update {
