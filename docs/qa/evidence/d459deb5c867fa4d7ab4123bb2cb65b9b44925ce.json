@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "d459deb5-pr967.json",
+    "schema": "legacy",
+    "field_mapping": {
+      "result": "checks[].result",
+      "scenario": "derived:pr+issue",
+      "not_covered": "not_covered",
+      "recorded_at": "performed_at"
+    },
+    "redactions": [
+      "details.account",
+      "details.fixture",
+      "details.server",
+      "device.identifier"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "d459deb5c867fa4d7ab4123bb2cb65b9b44925ce",
+  "head_ref": "fix/582-edit-route",
+  "base_sha": null,
+  "base_ref": null,
+  "recorded_at": "2026-08-25T17:44:00+09:00",
+  "result": "PASS",
+  "scenario": "PR #967 / issue #582 수정 검증",
+  "not_covered": [
+    "지난달 항목 수정 경로는 실기동 불가 — 일기 기록 날짜가 표시 전용이라(#1008) 과거 달 일기를 만들 수 없음. 달 전달 배선은 코드로 확인(MindRecordNavGraph:35 → AppNavigationActions.onEditDiary → DiaryWriteRoute.yearMonth)"
+  ],
+  "device": {
+    "is_emulator": true
+  },
+  "details": {
+    "pr": 967,
+    "issue": 582,
+    "checks": [
+      {
+        "name": "홈 「데일리질문 답변하기」 버튼 동작 (커밋 93efc5ed)",
+        "result": "PASS",
+        "detail": "탭 → 데일리질문 작성 화면 진입 확인 (Day 80 / 오늘의 추천 질문 / 임시저장 4). data class 라우트를 인스턴스로 넘기도록 고친 수정이 실동작으로 확인됨"
+      },
+      {
+        "name": "일기 「수정하기」 프리필 (blocking 1 해소 확인)",
+        "result": "PASS",
+        "detail": "기록 → 일기 → 더보기 → 수정하기 → 편집 화면에 제목·본문·기분(SOSO)·날짜(2026년 8월 25일) 모두 프리필. 빈 폼으로 열리지 않음"
+      }
+    ]
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "db14d2322ef5383e2b1995f0134f414187c0f047.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "device.avd",
+      "device.serial",
+      "text.auth_value",
+      "text.qa_account",
+      "text.sensitive_value"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "db14d2322ef5383e2b1995f0134f414187c0f047",
+  "head_ref": "fix/777",
+  "base_sha": "817578e8d2d1bc80fba63906ecce08eae9ede04d",
+  "base_ref": "develop",
+  "recorded_at": "2026-08-26T07:41:32.017267+00:00",
+  "result": "pass",
+  "scenario": "PR #1172(#777) 실서버 QA — 본문에 «실기 미확인» 으로 남긴 2번 네비게이션을 닫았다. 수신자 흐름을 끝까지 실기로 열었다: 온보딩→전달받은 기록 확인하기→발신자 등록([QA_ACCOUNT_REDACTED])→열람 신청 1단계 이메일 인증(실제 수신 코드 [AUTH_VALUE_REDACTED])→2단계 마스터 키([SENSITIVE_VALUE_REDACTED])→attachIdentity 성공→발신자 상세가 «열람 불가»→«열람 가능» 전환→수신자 홈→애프터노트 5건→추억 노트 상세. 하단 「애프터노트 확인하기」 탭 → 수신자 애프터노트 전체 목록으로 이동 확인, 이어서 뒤로가기 1회에 추억 노트 상세가 아니라 수신자 홈으로 나감(popUpTo 백스택 처리 의도대로). develop 대조는 코드로 확정: MemorialReceivedDetailScreen 의 onNavigateToFullList 가 `= {}` no-op 이고 ReceiverNavGraph 가 넘기지 않아 «버튼은 있는데 무반응» 이었다. 덤으로 수신자 목록에 BUSINESS 3건이 정상 표시돼 #1160 수신자측 매핑도 확인.",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true,
+    "api": 35,
+    "size": "1080x2400",
+    "density": 420
+  },
+  "details": {
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe"
+    },
+    "diff_sha256": "191f4baa8d78b069a960534834f4fa343ba0842fe9e7a957044dffd9fe98bbfe",
+    "changed_files": [
+      "app/src/androidTest/java/com/afternote/afternote_fe/AppAndReceiverCompletionAndroidTest.kt",
+      "app/src/androidTest/java/com/afternote/afternote_fe/ProcessingMethodListAndroidTest.kt",
+      "app/src/androidTest/java/com/afternote/afternote_fe/ReceiverAdvancedAndroidTest.kt",
+      "app/src/main/java/com/afternote/afternote_fe/navigation/AppNavigationActions.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/processing/ProcessingMethodList.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/processing/ProcessingMethodListSection.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/processing/ProcessingMethodListState.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/processing/model/ProcessingMethodSection.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/home/AfternoteHomeEntry.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/home/AfternoteHomeScreen.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/home/HomeHeaderSection.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/shared/body/infinite/InfiniteListBody.kt",
+      "feature/afternote/presentation/src/screenshotTest/kotlin/com/afternote/feature/afternote/presentation/author/home/HomeHeaderSectionScreenshotTest.kt",
+      "feature/afternote/presentation/src/test/kotlin/com/afternote/feature/afternote/presentation/author/editor/processing/ProcessingMethodListStateTest.kt",
+      "feature/receiver/presentation/src/main/kotlin/com/afternote/feature/receiver/presentation/afternotelist/ReceiverAfternoteHomeEntry.kt",
+      "feature/receiver/presentation/src/main/kotlin/com/afternote/feature/receiver/presentation/detail/MemorialReceivedDetailScreen.kt",
+      "feature/receiver/presentation/src/main/kotlin/com/afternote/feature/receiver/presentation/detail/ReceivedAfternoteDetailRoute.kt",
+      "feature/receiver/presentation/src/main/kotlin/com/afternote/feature/receiver/presentation/navigation/ReceiverNavGraph.kt",
+      "feature/receiver/presentation/src/screenshotTest/kotlin/com/afternote/feature/receiver/presentation/detail/MemorialReceivedDetailScreenScreenshotTest.kt"
+    ]
+  }
+}
