@@ -333,9 +333,9 @@ class ReceiverRuntimeCompletionAndroidTest {
             .assertIsDisplayed()
 
         assertEquals(2, reporter.failures.size)
-        assertEquals("receiver_home_load", reporter.failures[0].second["home_stage"])
-        assertEquals("receiver_home_partial_load", reporter.failures[1].second["home_stage"])
-        assertEquals("mind_records", reporter.failures[1].second["home_failed_sources"])
+        assertEquals("receiver_home_load", reporter.failures[0].second["receiver_stage"])
+        assertEquals("receiver_home_partial_load", reporter.failures[1].second["receiver_stage"])
+        assertEquals("mind_records", reporter.failures[1].second["receiver_failed_sources"])
         assertEquals(listOf(2, 2, 2, 2), homeCallCounts())
     }
 
