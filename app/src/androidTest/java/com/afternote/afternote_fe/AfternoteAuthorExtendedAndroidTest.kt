@@ -16,7 +16,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
@@ -226,9 +225,7 @@ class AfternoteAuthorExtendedAndroidTest {
         val topBarRegister =
             hasText("등록", substring = false) and
                 hasClickAction() and
-                SemanticsMatcher("without button role") { node ->
-                    node.config.getOrNull(SemanticsProperties.Role) != Role.Button
-                }
+                SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button)
         composeRule.onNode(topBarRegister).performClick()
 
         composeRule.waitUntil(timeoutMillis = 5_000) { repository.updateCalls.size == 1 }
@@ -284,9 +281,7 @@ class AfternoteAuthorExtendedAndroidTest {
         val topBarRegister =
             hasText("등록", substring = false) and
                 hasClickAction() and
-                SemanticsMatcher("without button role") { node ->
-                    node.config.getOrNull(SemanticsProperties.Role) != Role.Button
-                }
+                SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button)
 
         composeRule.onNode(topBarRegister).performClick()
         composeRule.onNodeWithText(validationMessage).assertIsDisplayed()
