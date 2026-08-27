@@ -39,8 +39,8 @@ class MemorialMediaUploadRepositoryImpl
 
                 is MediaInput.Local -> {
                     when (kind) {
-                        MediaKind.PHOTO -> photoUploadRepository.upload(input.uri, DIRECTORY_AFTERNOTES)
-                        MediaKind.VIDEO -> videoUploadRepository.upload(input.uri, DIRECTORY_AFTERNOTES)
+                        MediaKind.PHOTO -> photoUploadRepository.upload(input.uri, DIRECTORY_AFTERNOTES).map { it.fileUrl }
+                        MediaKind.VIDEO -> videoUploadRepository.upload(input.uri, DIRECTORY_AFTERNOTES).map { it.fileUrl }
                     }
                 }
             }

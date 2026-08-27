@@ -59,7 +59,7 @@ class ReceiverMemorialPlaylistViewModel
                                 ?.songs
                                 ?.mapIndexed { index, song ->
                                     PlaylistSongDisplay(
-                                        id = index.toString(),
+                                        selectionKey = "received:$index",
                                         title = song.title,
                                         artist = song.artist,
                                         albumImageUrl = song.coverUrl,

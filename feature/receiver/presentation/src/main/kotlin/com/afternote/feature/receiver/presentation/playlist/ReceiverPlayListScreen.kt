@@ -82,7 +82,7 @@ private fun PreviewMemorialPlaylist() {
         MemorialPlaylistScreen(
             songs =
                 (0..9).map { i ->
-                    PlaylistSongDisplay(id = "$i", title = "노래 제목", artist = "가수 이름")
+                    PlaylistSongDisplay(selectionKey = "preview:$i", title = "노래 제목", artist = "가수 이름")
                 },
             onBackClick = {},
             senderName = "서연",
