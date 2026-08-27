@@ -44,13 +44,13 @@ class AfternoteEditorReceiverPrefillTest {
         id: Long,
         name: String,
         relation: String,
-    ) = DetailReceiver(receiverId = id, name = name, relation = relation, phone = "010-0000-0000")
+    ) = DetailReceiver(receiverId = id, name = name, relation = relation)
 
     private fun detail(vararg receivers: DetailReceiver) =
         Detail(
             id = 1L,
             serviceName = "구글 포토",
-            timestamps = DetailTimestamps(createdAt = "2026-08-02", updatedAt = "2026-08-02"),
+            timestamps = DetailTimestamps(updatedAt = "2026-08-02"),
             receivers = receivers.toList(),
             leaveMessageBlocks = emptyList(),
             content =

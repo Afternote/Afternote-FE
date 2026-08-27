@@ -585,14 +585,13 @@ private fun authorDetail(): Detail =
     Detail(
         id = 73L,
         serviceName = "Instagram",
-        timestamps = DetailTimestamps(createdAt = "2026.08.20", updatedAt = "2026.08.22"),
+        timestamps = DetailTimestamps(updatedAt = "2026.08.22"),
         receivers =
             listOf(
                 DetailReceiver(
                     receiverId = 7L,
                     name = "김수신",
                     relation = "가족",
-                    phone = "",
                 ),
             ),
         leaveMessageBlocks =
