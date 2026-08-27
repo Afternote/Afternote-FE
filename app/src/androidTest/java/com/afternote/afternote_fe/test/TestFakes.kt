@@ -9,6 +9,8 @@ import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserPushSetting
 import com.afternote.feature.afternote.domain.AfternoteType
+import com.afternote.feature.mindrecord.domain.model.EmotionAnalysis
+import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 
 fun afternoteEditorSavedStateHandle(
     initialType: AfternoteType,
@@ -79,6 +81,17 @@ fun testReceiver(
     id: Long = 7L,
     name: String = "김수신",
 ): Receiver = Receiver(receiverId = id, name = name, relation = "가족", authCode = "fake-auth-$id")
+
+fun appTestEmptyWeeklyReport(): WeeklyReport =
+    WeeklyReport(
+        dailyQuestionAmount = 0,
+        diaryAmount = 0,
+        summaryText = "",
+        week = emptyList(),
+        dailyQuestions = emptyList(),
+        emotions = emptyList(),
+        emotionAnalysis = EmotionAnalysis(total = 0, succeeded = 0, pending = 0, failed = 0),
+    )
 
 private val DEFAULT_TEST_USER = User("테스트 사용자", "test@afternote.local", null, null)
 private val DEFAULT_TEST_PUSH_SETTING = UserPushSetting(true, true, true)

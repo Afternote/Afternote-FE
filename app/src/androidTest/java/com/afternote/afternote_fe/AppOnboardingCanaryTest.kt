@@ -15,12 +15,15 @@ import androidx.compose.ui.test.waitUntilAtLeastOneExists
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
+import com.afternote.afternote_fe.test.appTestEmptyWeeklyReport
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.Session
+import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeWeeklyReportRepository
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Assert.assertEquals
@@ -44,8 +47,12 @@ class AppOnboardingCanaryTest {
     @Inject
     lateinit var userRepository: UserRepository
 
+    @Inject
+    lateinit var weeklyReportRepository: WeeklyReportRepository
+
     private val fakeAuth get() = authRepository as FakeAuthRepository
     private val fakeUser get() = userRepository as FakeUserRepository
+    private val fakeWeeklyReport get() = weeklyReportRepository as FakeWeeklyReportRepository
 
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
@@ -82,6 +89,7 @@ class AppOnboardingCanaryTest {
 
     @Test
     fun emailLogin_networkFailureThenRetry_entersHomeOnce() {
+        fakeWeeklyReport.results.addLast(Result.success(appTestEmptyWeeklyReport()))
         val emailLoginResults = ArrayDeque<Result<Session.DefaultSession>>()
         emailLoginResults.addLast(
             Result.failure(CoreAuthFailure.NetworkUnavailable(IOException("offline"))),
@@ -123,6 +131,8 @@ class AppOnboardingCanaryTest {
         )
         assertEquals(2, fakeAuth.attemptedEmailLogins.size)
         assertEquals(1, fakeAuth.saveSessionCalls)
+        assertEquals(0, fakeAuth.rotateTokenCalls)
+        assertEquals(1, fakeWeeklyReport.requestedDates.size)
         assertEquals(1, fakeUser.logActivityCalls)
     }
 

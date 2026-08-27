@@ -9,13 +9,13 @@ import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.testing.FakeUserProfileRepository
 import com.afternote.feature.mindrecord.data.di.MindRecordRepositoryModule
 import com.afternote.feature.mindrecord.data.repositoryimpl.MindRecordReceiverRepositoryImpl
-import com.afternote.feature.mindrecord.data.repositoryimpl.WeeklyReportRepositoryImpl
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeWeeklyReportRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.components.SingletonComponent
@@ -61,7 +61,7 @@ object TestMindRecordRepositoryModule {
 
     @Provides
     @Singleton
-    fun provideWeeklyReportRepository(impl: WeeklyReportRepositoryImpl): WeeklyReportRepository = impl
+    fun provideWeeklyReportRepository(): WeeklyReportRepository = FakeWeeklyReportRepository()
 }
 
 @Module
