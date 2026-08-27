@@ -6,8 +6,9 @@ name: Android Managed Device Test
 # 라벨 조정기의 자동 dispatch 도 PR head branch ref 에 생성하고 이벤트 SHA 를 현재 PR HEAD 와 다시
 # 대조한다. 정기·일반 수동 실행만 default branch 를 사용하므로 PR 코드가 기본 브랜치 cache scope 에서
 # 실행되지 않는다.
-# 테스트 실패는 재시도하지 않는다. API 34가 테스트 XML 없이 GMD 준비 단계에서 멈춘 경우만
-# default branch의 별도 복구 workflow가 첫 실행의 해당 job을 새 runner에서 한 번 재실행한다.
+# 테스트 실패는 재시도하지 않는다. API 30/34가 테스트 XML과 실행 시작 신호 없이 GMD 준비
+# 단계에서 멈춘 경우만 default branch의 별도 복구 workflow가 첫 실행의 해당 job을 새 runner에서
+# 한 번 재실행한다. API 30은 Gradle timeout 종료 코드 124도 함께 요구한다.
 on:
   workflow_dispatch:
     inputs:
@@ -59,9 +60,9 @@ jobs:
           - name: Pixel 2 API 30 androidTest
             task: pixel2Api30DebugAndroidTest
             device: api30
-            job_timeout_minutes: 25
-            gradle_timeout_minutes: 22
-            gradle_step_timeout_minutes: 23
+            job_timeout_minutes: 35
+            gradle_timeout_minutes: 30
+            gradle_step_timeout_minutes: 31
             full_selector: ''
             artifact: api30
           - name: Pixel 2 API 34 accessibility smoke
@@ -572,14 +573,13 @@ jobs:
           fromJSON(steps.android_test_results.outputs.annotation_chunks || '0') >= 5
         run: cat "$RUNNER_TEMP/android-test-annotations/chunk-5.log"
 
-      - name: Upload API 34 infrastructure retry marker
+      - name: Upload managed-device infrastructure retry marker
         if: >-
           always() &&
-          matrix.device == 'api34' &&
           steps.infrastructure_failure.outputs.retryable == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: android-managed-device-retry-api34-${{ github.run_id }}-${{ github.run_attempt }}
+          name: android-managed-device-retry-${{ matrix.device }}-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: error
           retention-days: 1
           path: ${{ runner.temp }}/android-test-diagnostics/retry.json
