@@ -201,6 +201,27 @@ test("presentation 런타임 소스는 기본 대상이고 검증된 QA 제외�
     assert.deepEqual(excluded.matches, []);
 });
 
+test("Android 빌드 시스템 변경은 기본 대상이고 검증된 QA 제외만 soft rule을 건너뛴다", () => {
+    const paths = [
+        "build.gradle.kts",
+        "settings.gradle.kts",
+        "gradle.properties",
+        "gradle/libs.versions.toml",
+        "gradle/wrapper/gradle-wrapper.properties",
+        "build-logic/convention/src/main/kotlin/AndroidApplicationConventionPlugin.kt",
+        "feature/home/presentation/build.gradle.kts",
+    ];
+
+    const required = classifyAndroidTestRequirement(paths);
+    assert.equal(required.required, true);
+    assert.deepEqual(required.matches.map((match) => match.id), ["android-build-system"]);
+    assert.deepEqual(required.matches[0].paths, paths);
+
+    const excluded = classifyAndroidTestRequirement(paths, { androidTestExcluded: true });
+    assert.equal(excluded.required, false);
+    assert.deepEqual(excluded.matches, []);
+});
+
 test("명시적 false와 유효한 legacy CI scope만 계측 제외로 해석한다", () => {
     assert.deepEqual(resolveAndroidTestDecision(coveredByCiQaBody()), {
         required: false,

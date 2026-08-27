@@ -63,6 +63,19 @@ const REQUIREMENT_RULES = [
         matches: (filePath) => filePath === "app/build.gradle.kts",
     },
     {
+        id: "android-build-system",
+        description: "Android 빌드 시스템",
+        qaExcludable: true,
+        matches: (filePath) =>
+            filePath === "build.gradle.kts" ||
+            filePath === "settings.gradle.kts" ||
+            filePath === "gradle.properties" ||
+            filePath === "gradle/libs.versions.toml" ||
+            filePath.startsWith("gradle/wrapper/") ||
+            filePath.startsWith("build-logic/") ||
+            (filePath !== "app/build.gradle.kts" && filePath.endsWith("/build.gradle.kts")),
+    },
+    {
         id: "managed-device-config",
         description: "Managed Device 실행 설정",
         matches: (filePath) =>
@@ -102,7 +115,7 @@ export function classifyAndroidTestRequirement(
     }
 
     for (const rule of REQUIREMENT_RULES) {
-        // 화면 내부 변경은 실제 Android 경계를 건드릴 가능성이 높아 기본적으로 실행한다.
+        // 화면·빌드 시스템 변경은 실제 Android 경계를 건드릴 가능성이 높아 기본적으로 실행한다.
         // 다만 구조화 QA가 동일 input·boundary·observation의 CI 근거로 제외를 증명한 경우에만
         // 이 soft rule을 건너뛴다. manifest/navigation/계측 소스 같은 hard rule은 제외할 수 없다.
         if (rule.qaExcludable === true && androidTestExcluded) {
