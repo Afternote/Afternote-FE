@@ -52,12 +52,15 @@ import com.afternote.feature.timeletter.presentation.viewmodel.TimeletterUiState
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeletterViewModel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.flowOf
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.TimeZone
 
 @RunWith(AndroidJUnit4::class)
 class TimeLetterLifecycleAndroidTest {
@@ -69,6 +72,19 @@ class TimeLetterLifecycleAndroidTest {
         FailureArtifactRule {
             composeRule.onRoot().captureToImage().asAndroidBitmap()
         }
+
+    private lateinit var originalTimeZone: TimeZone
+
+    @Before
+    fun setUpTimeZone() {
+        originalTimeZone = TimeZone.getDefault()
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Seoul"))
+    }
+
+    @After
+    fun restoreTimeZone() {
+        TimeZone.setDefault(originalTimeZone)
+    }
 
     @Test
     fun senderList_loadingErrorSuccessFilterAndDeleteRetry_keepRepositoryBoundary() {
@@ -144,7 +160,12 @@ class TimeLetterLifecycleAndroidTest {
 
     @Test
     fun drafts_selectionDeleteReentryAndDeleteAll_reloadDurableRepositoryState() {
-        val firstDraft = timeLetter(id = 31L, title = "첫 임시 편지", status = TimeLetterStatus.DRAFT)
+        val firstDraft =
+            timeLetter(
+                id = 31L,
+                title = "한 줄을 넘길 만큼 아주 긴 첫 임시 편지 제목이 레이아웃 높이를 늘리지 않아야 합니다",
+                status = TimeLetterStatus.DRAFT,
+            )
         val secondDraft = timeLetter(id = 32L, title = "둘째 임시 편지", status = TimeLetterStatus.DRAFT)
         val repository =
             PrivateTimeLetterRepository(
@@ -163,23 +184,24 @@ class TimeLetterLifecycleAndroidTest {
                 )
             }
         }
-        composeRule.onNodeWithText("첫 임시 편지").assertIsDisplayed()
+        composeRule.onNodeWithText("한 줄을 넘길 만큼 아주 긴 첫 임시 편지 제목", substring = true).assertIsDisplayed()
+        composeRule.onNodeWithText("발송 예정일 2026. 10. 01.").assertIsDisplayed()
         composeRule.onNodeWithText("둘째 임시 편지").assertIsDisplayed()
-        composeRule.onNode(hasText("첫 임시 편지") and hasClickAction()).performClick()
+        composeRule.onNode(hasText("한 줄을 넘길 만큼 아주 긴 첫 임시 편지 제목", substring = true) and hasClickAction()).performClick()
         assertEquals(31L, openedDraftId)
 
         composeRule.onNodeWithText("수정").performClick()
-        composeRule.onNode(hasText("첫 임시 편지") and hasClickAction()).performClick()
+        composeRule.onNode(hasText("한 줄을 넘길 만큼 아주 긴 첫 임시 편지 제목", substring = true) and hasClickAction()).performClick()
         composeRule.onNodeWithText("삭제").performClick()
         composeRule.waitUntil(timeoutMillis = TIMEOUT) { repository.deleteCalls == listOf(listOf(31L)) }
-        composeRule.onNodeWithText("첫 임시 편지").assertDoesNotExist()
+        composeRule.onNodeWithText("한 줄을 넘길 만큼 아주 긴 첫 임시 편지 제목", substring = true).assertDoesNotExist()
         composeRule.onNodeWithText("둘째 임시 편지").assertIsDisplayed()
 
         composeRule.runOnIdle {
             activeViewModel = DraftLetterViewModel(repository, userRepository)
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT) { repository.temporaryListCalls == 2 }
-        composeRule.onNodeWithText("첫 임시 편지").assertDoesNotExist()
+        composeRule.onNodeWithText("한 줄을 넘길 만큼 아주 긴 첫 임시 편지 제목", substring = true).assertDoesNotExist()
         composeRule.onNodeWithText("둘째 임시 편지").assertIsDisplayed()
 
         composeRule.runOnIdle { activeViewModel.deleteAll() }
@@ -190,6 +212,45 @@ class TimeLetterLifecycleAndroidTest {
         composeRule.onNodeWithText("둘째 임시 편지").assertDoesNotExist()
         assertEquals(1, repository.deleteAllTemporaryCalls)
         assertTrue(repository.draftLetters.timeLetters.isEmpty())
+    }
+
+    @Test
+    fun draftReturnResult_refreshesRepositoryExactlyOnce() {
+        val draft = timeLetter(id = 35L, title = "등록 전 임시 편지", status = TimeLetterStatus.DRAFT)
+        val repository =
+            PrivateTimeLetterRepository(
+                draftLetters = TimeLetterList(listOf(draft), totalCount = 1),
+            )
+        val viewModel = DraftLetterViewModel(repository, privateUserRepository(testReceivers))
+        var refreshRequested by mutableStateOf(false)
+
+        composeRule.setContent {
+            AfternoteTheme {
+                DraftLetterScreen(
+                    onBackClick = {},
+                    onOpenDraft = {},
+                    viewModel = viewModel,
+                    refreshRequested = refreshRequested,
+                    onRefreshConsumed = { refreshRequested = false },
+                )
+            }
+        }
+        composeRule.onNodeWithText("등록 전 임시 편지").assertIsDisplayed()
+        assertEquals(1, repository.temporaryListCalls)
+
+        composeRule.runOnIdle {
+            repository.replaceDraftLetters(TimeLetterList(emptyList(), totalCount = 0))
+            refreshRequested = true
+        }
+
+        composeRule.waitUntil(timeoutMillis = TIMEOUT) {
+            repository.temporaryListCalls == 2 &&
+                viewModel.uiState.value.let { it is DraftLetterUiState.Success && it.drafts.isEmpty() }
+        }
+        composeRule.onNodeWithText("등록 전 임시 편지").assertDoesNotExist()
+        composeRule.runOnIdle { assertFalse(refreshRequested) }
+        composeRule.waitForIdle()
+        assertEquals(2, repository.temporaryListCalls)
     }
 
     @Test
@@ -245,7 +306,7 @@ class TimeLetterLifecycleAndroidTest {
         val call = repository.updateCalls.single()
         assertEquals(41L, call.timeLetterId)
         assertEquals("수정 제목", call.title)
-        assertEquals("2026-09-04T15:20:00", call.sendAt)
+        assertEquals("2026-09-04T15:20:00+09:00", call.sendAt)
         assertEquals(TimeLetterDeliveryMode.DATE, call.deliveryMode)
         assertEquals(TimeLetterStatus.SCHEDULED, call.status)
         assertEquals(
@@ -380,6 +441,10 @@ private class PrivateTimeLetterRepository(
         private set
     var deleteAllTemporaryCalls = 0
         private set
+
+    fun replaceDraftLetters(value: TimeLetterList) {
+        draftLetters = value
+    }
 
     override suspend fun getTimeLetters(): TimeLetterList {
         listCalls += 1

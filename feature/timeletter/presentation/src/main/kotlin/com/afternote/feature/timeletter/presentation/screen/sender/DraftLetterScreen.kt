@@ -41,11 +41,20 @@ fun DraftLetterScreen(
     onOpenDraft: (Long) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DraftLetterViewModel = hiltViewModel(),
+    refreshRequested: Boolean = false,
+    onRefreshConsumed: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val messageRes = (uiState as? DraftLetterUiState.Success)?.messageRes
     val message = messageRes?.let { stringResource(it) }
+
+    LaunchedEffect(refreshRequested) {
+        if (refreshRequested) {
+            onRefreshConsumed()
+            viewModel.loadDrafts()
+        }
+    }
 
     LaunchedEffect(messageRes) {
         if (message != null) {

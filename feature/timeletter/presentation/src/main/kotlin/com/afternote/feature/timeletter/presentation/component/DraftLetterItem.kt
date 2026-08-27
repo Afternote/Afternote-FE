@@ -108,6 +108,8 @@ fun DraftLetterItem(
                             ?: stringResource(R.string.timeletter_draft_untitled),
                     style = AfternoteDesign.typography.bodyBase,
                     color = AfternoteDesign.colors.gray9,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
