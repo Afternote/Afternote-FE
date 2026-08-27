@@ -54,6 +54,6 @@ private fun ListItem.toUiModel(): ListItemUiModel =
         id = id,
         serviceName = serviceName,
         date = date,
-        iconResId = getIconResForService(serviceName),
+        iconResId = getIconResForService(serviceName, type),
         type = type,
     )

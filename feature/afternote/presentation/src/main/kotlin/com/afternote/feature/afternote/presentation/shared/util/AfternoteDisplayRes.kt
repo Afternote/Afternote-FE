@@ -32,11 +32,32 @@ fun typeLabelResFor(type: AfternoteType?): Int =
     }
 
 /**
+ * 카탈로그 밖 서비스에 표시할 카테고리 아이콘.
+ *
+ * 소셜([4163:19696](https://www.figma.com/design/UP9ZR186jHvRBicjA2SOea/?node-id=4163-19696)),
+ * 비즈니스([4163:19699](https://www.figma.com/design/UP9ZR186jHvRBicjA2SOea/?node-id=4163-19699)),
+ * 갤러리([4163:19661](https://www.figma.com/design/UP9ZR186jHvRBicjA2SOea/?node-id=4163-19661))는
+ * Figma 최종 보드의 카테고리 아이콘을 사용한다.
+ * 재산 처리는 별도 아이콘이 없어 문서 성격이 같은 비즈니스 아이콘을 공유한다.
+ */
+fun getIconResForType(type: AfternoteType): Int =
+    when (type) {
+        AfternoteType.SOCIAL_NETWORK -> CoreUiR.drawable.core_ui_afternote_social_pattern
+        AfternoteType.BUSINESS, AfternoteType.ESTATE -> CoreUiR.drawable.core_ui_afternote_business_pattern
+        AfternoteType.GALLERY_AND_FILES -> CoreUiR.drawable.core_ui_afternote_gallery_category_pattern
+        AfternoteType.MEMORIAL -> CoreUiR.drawable.core_ui_afternote_memorial_guideline
+    }
+
+/**
  * 서비스 이름과 함께 표시할 아이콘 리소스.
  *
  * 서비스명 카탈로그에 등록된 이름이면 해당 서비스 아이콘을 사용한다.
- * 카탈로그에 없는 이름은 대체 아이콘이 확정될 때까지 기본 로고를 사용한다(#753).
+ * 카탈로그에 없는 이름이면 서버 category에서 온 [type]의 카테고리 아이콘을 사용한다(#753).
+ * 이름만으로 카테고리를 추론하지 않는다.
  */
-fun getIconResForService(serviceName: String): Int =
+fun getIconResForService(
+    serviceName: String,
+    type: AfternoteType,
+): Int =
     AfternoteService.fromDisplayKeyOrNull(serviceName)?.iconResId
-        ?: CoreUiR.drawable.core_ui_afternote_logo
+        ?: getIconResForType(type)
