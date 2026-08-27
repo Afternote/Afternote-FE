@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  issues: read
 
 concurrency:
   group: repository-quality-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -42,6 +43,12 @@ jobs:
 
       - name: Clone repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Require linked Issue
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node .github/scripts/validate-pr-issue-link.mjs
 
       - name: Install actionlint
         env:
