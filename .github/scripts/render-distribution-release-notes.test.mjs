@@ -28,27 +28,10 @@ async function runRenderer(t, qaPoints) {
     return { result, outputPath };
 }
 
-test("release notes reject an empty QA section", async (t) => {
-    const { result } = await runRenderer(t, "");
-
-    assert.equal(result.status, 1);
-    assert.match(result.stderr, /QA 포인트에는 확인할 동작과 기대 결과가 하나 이상 필요합니다/);
-});
-
 test("release notes reject the former generic fallback", async (t) => {
     const { result } = await runRenderer(
         t,
         "#550 관련 동작을 재현하고 수정 후 기대 결과가 충족되는지 확인",
-    );
-
-    assert.equal(result.status, 1);
-    assert.match(result.stderr, /generic fallback/);
-});
-
-test("release notes reject the release-scope placeholder", async (t) => {
-    const { result } = await runRenderer(
-        t,
-        "테스터가 실행할 동작과 기대 결과를 직접 채워 주세요.",
     );
 
     assert.equal(result.status, 1);

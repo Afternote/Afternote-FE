@@ -133,11 +133,8 @@ test("the entry point keeps no pull_request branch or path filter", async () => 
     assert.doesNotMatch(trigger, /^\s+paths(?:-ignore)?:/m);
 });
 
-test("documentation fast path runs full validation unless repository quality succeeds with an exact true output", async () => {
+test("impact outputs scope each heavy lane and classification failure runs full validation", async () => {
     const entry = await readWorkflow(ENTRY_WORKFLOW);
-    const failClosedInput =
-        "run_validation: ${{ needs.repository-quality.result != 'success' || " +
-        "needs.repository-quality.outputs.docs_only != 'true' }}";
 
     assert.equal((entry.match(/^ {4}needs: repository-quality$/gm) ?? []).length, HEAVY_VALIDATION_WORKFLOWS.length);
     assert.equal(
@@ -145,15 +142,18 @@ test("documentation fast path runs full validation unless repository quality suc
         HEAVY_VALIDATION_WORKFLOWS.length,
         "quality failures must fan out to full validation without reviving a cancelled stale run",
     );
-    assert.equal(
-        entry.split(failClosedInput).length - 1,
-        HEAVY_VALIDATION_WORKFLOWS.length,
-        "missing, false, or failed classification must run every heavy validation workflow",
-    );
+    for (const output of ["ktlint_required", "android_lint_required", "unit_test_required", "screenshot_required"]) {
+        assert.match(
+            entry,
+            new RegExp(`needs\\.repository-quality\\.result != 'success' \\|\\| needs\\.repository-quality\\.outputs\\.${output} != 'false'`),
+        );
+    }
+    assert.match(entry, /outputs\.ktlint_tasks \|\| 'ktlintCheck :build-logic:ktlintCheck'/);
+    assert.match(entry, /outputs\.screenshot_tasks \|\| ':core:ui:validateScreenshotTest/);
 });
 
 test("heavy reusable workflows default to full validation and preserve every required job context", async () => {
-    for (const name of HEAVY_VALIDATION_WORKFLOWS) {
+    for (const name of ["unit-test.yml", "screenshot.yml"]) {
         const source = await readWorkflow(name);
         const jobs = jobNames(source);
 
@@ -168,22 +168,39 @@ test("heavy reusable workflows default to full validation and preserve every req
             `${name} must skip work at the existing required job boundary`,
         );
     }
+    const lint = await readWorkflow("lint.yml");
+    for (const input of ["run_ktlint", "run_android_lint"]) {
+        assert.match(
+            lint,
+            new RegExp(`^ {6}${input}:\\n(?: {8}.+\\n)*? {8}default: true\\n {8}type: boolean$`, "m"),
+        );
+    }
+    assert.match(lint, /^ {4}if: inputs\.run_ktlint$/m);
+    assert.match(lint, /^ {4}if: inputs\.run_android_lint$/m);
 });
 
-test("repository quality owns fail-closed paginated classification", async () => {
+test("repository quality owns fail-closed paginated impact classification and PR gates", async () => {
     const repositoryQuality = await readWorkflow("repository-quality.yml");
+    const unitTest = await readWorkflow("unit-test.yml");
 
     assert.match(repositoryQuality, /^ {4}outputs:\n {6}docs_only:\n(?: {8}.+\n)*? {8}value: \$\{\{ jobs\.repository-quality\.outputs\.docs_only \}\}$/m);
     assert.match(repositoryQuality, /^ {4}outputs:\n {6}docs_only: \$\{\{ steps\.classify-documentation-changes\.outputs\.docs_only \}\}$/m);
     assert.match(repositoryQuality, /gh api --paginate --slurp/);
-    assert.match(repositoryQuality, /classify-documentation-changes\.mjs "\$CHANGED_FILES"/);
+    assert.match(repositoryQuality, /classify-documentation-changes\.mjs \\\n\s+"\$CHANGED_FILES"/);
+    assert.match(repositoryQuality, /resolve-pr-impact\.mjs "\$files_json"/);
     assert.match(repositoryQuality, /if \[ "\$GITHUB_EVENT_NAME" = "workflow_dispatch" \]; then/);
     assert.match(repositoryQuality, /if \[ "\$GITHUB_SHA" != "\$head_sha" \]; then/);
     assert.match(repositoryQuality, /persist-credentials: false/);
     assert.match(repositoryQuality, /env -u GH_TOKEN -u GITHUB_TOKEN/);
+    assert.match(
+        repositoryQuality,
+        /- name: Validate CI Test Plan\n\s+if: inputs\.pull_request_number > 0/,
+    );
+    assert.match(repositoryQuality, /pull_request_json=%s\\n' "\$pull_request_file"/);
+    assert.doesNotMatch(unitTest, /Validate CI Test Plan/);
 });
 
-test("editing pull request metadata retriggers every required validation context", async () => {
+test("editing CI Test Plan retriggers every required validation context", async () => {
     const entry = await readWorkflow(ENTRY_WORKFLOW);
 
     assert.match(entry, /types: \[opened, synchronize, reopened, edited\]/);

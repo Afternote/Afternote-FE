@@ -139,9 +139,15 @@ keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-sh
 
 릴리스 PR이 열리거나 head가 갱신되면 [`release-scope.yml`](.github/workflows/release-scope.yml)이 마지막 성공 배포 이후 `develop`에 머지된 PR과 `Closes`·`Fixes`·`Resolves`로 완료 처리할 이슈를 모아 PR 본문의 `## 포함 이슈`를 채운다. head가 움직일 때마다 다시 채우므로 머지 직전에 목록을 손으로 대조할 필요가 없다.
 
-`## QA 포인트`는 비어 있을 때 구성 PR 본문에 선택적으로 작성된 QA 포인트를 초안으로 모은다. 수집할 문장이 없으면 빈 섹션으로 두어 배포를 차단하고, 릴리스 PR에서 테스터가 실행할 동작과 기대 결과를 작성해야 한다. 사람이 쓴 문장이 있으면 자동화가 건드리지 않으며, `main` push 시 `포함 이슈`와 함께 그대로 릴리스 노트가 된다.
+`## QA 포인트`는 비어 있을 때만 구성 PR 본문에서 모은 초안으로 채우고, 사람이 쓴 문장이 있으면 건드리지 않는다. 두 섹션은 main push 시 그대로 릴리스 노트가 되므로 배포 전에 테스터가 실행할 문장으로 다듬는다.
 
 별도 API나 유료 AI를 호출하지 않으며 기존 GitHub Actions 실행량만 사용한다. Actions의 **Collect Release Scope**에서 릴리스 PR 번호를 입력해 다시 산출할 수도 있다.
+
+### PR 영향 범위 CI와 계측 테스트
+
+PR Validation은 GitHub가 보고한 변경 파일 수와 전체 paginated 파일 목록을 대조하고 rename의 이전·현재 경로를 모두 반영한다. Ktlint는 직접 변경 모듈, Android Lint·단위 테스트·Kover는 역의존 모듈, Compose screenshot은 영향받는 baseline 모듈만 실행한다. Gradle 전역 설정·build-logic·영향도 계산기 자체가 바뀌거나 분류가 실패하면 전체 검증으로 닫힌다. develop·main push도 전체 검증을 유지한다.
+
+PR 본문의 `CI Test Plan`은 에뮬레이터가 필요한 계측 테스트만 정한다. `none`은 두 필수 Managed Device check를 빠른 성공으로 남기고 에뮬레이터를 만들지 않는다. `selected`는 `path`, fully-qualified `Class#method`, `api30` 또는 `api34`를 선언하며 해당 테스트만 실행한 뒤 JUnit XML에서 실제 성공 결과를 확인한다. `full`은 전역 테스트 하네스·Gradle·릴리스 경계를 바꿀 때 전체 API 30 회귀와 API 34 접근성 smoke를 실행한다. 모든 열린 PR은 병합 전에 계획을 명시한다.
 
 ### 일반 배포 — `main` → Firebase App Distribution (자동)
 
@@ -318,6 +324,7 @@ docker run --rm -v "$PWD":/workspace -w /workspace afternote-screenshot:latest \
 - Issue는 [현재 Issue 템플릿](.github/ISSUE_TEMPLATE/custom.md)을 사용하고, 같은 작업의 기존 Issue가 있으면 새로 만들지 않고 재사용한다.
 - PR은 [현재 PR 템플릿](.github/PULL_REQUEST_TEMPLATE.md)을 그대로 채운다. 본문에 같은 저장소의 실제 Issue를 `Refs #N`으로 연결해야 Repository Quality 검사를 통과한다.
 - 여러 PR이 같은 Issue를 공유할 수 있다. 그 Issue의 작업을 최종 완료하는 PR에서만 `Closes #N`·`Fixes #N`·`Resolves #N`을 사용한다.
+- `CI Test Plan`에는 Android 계측 테스트를 `none`·`selected`·`full`로 선언하고 선택 이유를 변경 경계 기준으로 남긴다.
 - 필수 검사는 머지 순서 가드, Ktlint, Android Lint, Unit Test, Screenshot, Repository Quality, CodeQL(Java/Kotlin·Actions)다. 이름이나 구성이 바뀌면 README 목록보다 활성 ruleset과 [PR 검증 진입점](.github/workflows/pr-validation.yml)을 우선한다.
 
 ## 코드 리뷰

@@ -6,6 +6,22 @@
 - 
 -
 
+## 🧪 CI Test Plan
+<!--
+일반 CI는 변경 파일과 역의존 모듈만 자동으로 검사합니다.
+Android 계측 테스트만 none / selected / full 중 하나를 명시하세요.
+selected이면 현재 revision에 존재하는 FQCN#method와 실행 lane(api30/api34)을 tests에 적습니다.
+-->
+```json
+{
+  "androidTest": {
+    "mode": "none",
+    "reason": "계측 테스트가 필요 없거나 필요한 이유를 변경 경계 기준으로 작성",
+    "tests": []
+  }
+}
+```
+
 ## 📷𝘚𝘤𝘳𝘦𝘦𝘯𝘴𝘩𝘰𝘵
 
 
