@@ -116,14 +116,12 @@ test("필수 workflow 세 개를 각 PR 현재 branch 에 dispatch 한다", asyn
     ]);
 
     assert.equal(api.calls.length, 6);
-    assert.deepEqual(api.calls[0].body, {
-        ref: "feat/a",
-        inputs: { pull_request_number: "10" },
-    });
-    assert.deepEqual(api.calls[2].body, {
-        ref: "feat/a",
-        inputs: { pull_request_number: "10" },
-    });
+    for (const call of api.calls.slice(0, 3)) {
+        assert.deepEqual(call.body, {
+            ref: "feat/a",
+            inputs: { pull_request_number: "10" },
+        });
+    }
 });
 
 test("dry run 은 update 와 workflow dispatch 를 쓰지 않는다", async () => {
