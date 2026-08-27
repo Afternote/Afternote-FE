@@ -21,6 +21,7 @@ data class AfternoteCreatePlaylistRequestDto(
     @EncodeDefault @SerialName("category") val category: String = "PLAYLIST",
     @SerialName("title") val title: String,
     @SerialName("playlist") val memorial: AfternotePlaylistDto,
+    @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
     @SerialName("receivers") val receivers: List<AfternoteReceiverRefDto> = emptyList(),
 )
 
@@ -51,10 +52,10 @@ data class AfternoteDetailDto(
     @SerialName("afternoteId") val afternoteId: Long,
     @SerialName("category") val category: String,
     @SerialName("title") val title: String,
-    @SerialName("createdAt") val createdAt: String = "",
+    @SerialName("isDraft") val isDraft: Boolean,
     @SerialName("updatedAt") val updatedAt: String = "",
     @SerialName("credentials") val credentials: AfternoteCredentialsDto? = null,
-    @SerialName("receivers") val receivers: List<AfternoteDetailReceiverDto>? = null,
+    @SerialName("receivers") val receivers: List<AfternoteDetailReceiverDto>,
     @SerialName("actions") val processingMethods: List<String>? = null,
     @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
     @SerialName("playlist") val memorial: AfternotePlaylistDto? = null,
@@ -86,7 +87,6 @@ data class AfternoteDetailReceiverDto(
     @SerialName("receiverId") val receiverId: Long? = null,
     @SerialName("name") val name: String? = null,
     @SerialName("relation") val relation: String? = null,
-    @SerialName("phone") val phone: String? = null,
 )
 
 @Serializable
@@ -95,6 +95,7 @@ data class AfternoteListItemDto(
     @SerialName("title") val title: String,
     @SerialName("category") val category: String,
     @SerialName("createdAt") val createdAt: String,
+    @SerialName("isDraft") val isDraft: Boolean,
 )
 
 @Serializable
