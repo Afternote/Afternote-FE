@@ -29,7 +29,7 @@ fun <T : Any> BaseResponse<T>.requireData(): T {
             status = status,
             code = code,
             serverMessage = message,
-            message = message ?: "알 수 없는 서버 에러가 발생했습니다.",
+            fallbackMessage = "알 수 없는 서버 에러가 발생했습니다.",
         )
     }
     return data ?: throw ApiException(
@@ -37,7 +37,7 @@ fun <T : Any> BaseResponse<T>.requireData(): T {
         status = status,
         code = code,
         serverMessage = null,
-        message = "성공했으나 데이터가 비어있습니다.",
+        fallbackMessage = "성공했으나 데이터가 비어있습니다.",
     )
 }
 
@@ -52,18 +52,21 @@ fun <T : Any> BaseResponse<T>.requireData(): T {
  *   [BaseResponse.status]. 서버가 4xx·5xx 응답 모두에 `message`를 실어 보내므로(실측: 500 응답 body에
  *   내부 SQL 문구 — #511), [serverMessage] 유무만으로는 "서버가 예상하고 처리한 사용자 오류"와
  *   "장애"를 가를 수 없다. 그 판정이 필요한 호출처는 이 값의 대역을 본다.
- * @property serverMessage 서버가 실제로 내려준 사용자 친화 message. **null 이면 서버가 message 미제공**
- *   (4xx body 없거나 message blank). 호출처는 이 값이 null/non-null 인지로 "서버 message 있음/없음"
- *   을 판단 — `message` 는 클라 fallback 이 섞여 사용자에게 노출하면 안 됨.
- * @property message 디버깅 메시지 (serverMessage 있으면 그것, 없으면 클라 fallback).
- *   사용자 직접 노출 X — Logcat·Crashlytics 용.
+ * @property serverMessage 서버가 실제로 내려준 원문 message. **null 이면 서버가 message 미제공**
+ *   (4xx body 없거나 message blank). 값이 있어도 곧바로 사용자 노출 가능하다는 뜻은 아니며, 호출처가
+ *   status·code를 함께 판단한다. [Throwable.message]에는 클라이언트 fallback도 섞일 수 있다.
+ * [Throwable.message]는 [serverMessage]가 있으면 그 값을, 없으면 [fallbackMessage]를 사용한다.
+ * 사용자 직접 노출 X — Logcat·Crashlytics 용.
+ * @param fallbackMessage 서버 message가 없을 때 [Throwable.message]로 사용할 클라이언트 진단 문구.
  */
 class ApiException(
     val status: Int,
     val code: Int,
     val serverMessage: String?,
-    override val message: String,
-) : RuntimeException(message)
+    fallbackMessage: String,
+) : RuntimeException(serverMessage ?: fallbackMessage) {
+    override val message: String = serverMessage ?: fallbackMessage
+}
 
 fun BaseResponse<*>.requireStatus() {
     if (status != 200) {
@@ -71,7 +74,7 @@ fun BaseResponse<*>.requireStatus() {
             status = status,
             code = code,
             serverMessage = message,
-            message = message ?: "요청에 실패했습니다.",
+            fallbackMessage = "요청에 실패했습니다.",
         )
     }
 }

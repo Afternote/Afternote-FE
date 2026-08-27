@@ -1,11 +1,12 @@
 package com.afternote.core.network.calladapter
 
 import com.afternote.core.network.model.ApiException
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import okio.Timeout
 import retrofit2.Call
 import retrofit2.CallAdapter
@@ -115,21 +116,23 @@ private fun Response<*>.toApiExceptionOrNull(json: Json): ApiException? {
     if (code() !in 400..599) return null
 
     val rawBody = errorBody()?.string().orEmpty()
-    val parsed = runCatching { json.parseToJsonElement(rawBody).jsonObject }.getOrNull()
-    val code = runCatching { parsed?.get("code")?.jsonPrimitive?.intOrNull }.getOrNull() ?: code()
+    val parsed =
+        try {
+            json.parseToJsonElement(rawBody) as? JsonObject
+        } catch (_: SerializationException) {
+            null
+        }
+    val code = (parsed?.get("code") as? JsonPrimitive)?.intOrNull ?: code()
     val serverMessage =
-        runCatching { parsed?.get("message")?.jsonPrimitive?.contentOrNull }
-            .getOrNull()
+        (parsed?.get("message") as? JsonPrimitive)
+            ?.contentOrNull
             ?.takeUnless { it.isBlank() }
-    val message =
-        serverMessage
-            ?: raw().message.takeUnless { it.isBlank() }
-            ?: "요청에 실패했습니다."
+    val fallbackMessage = raw().message.takeUnless { it.isBlank() } ?: "요청에 실패했습니다."
 
     return ApiException(
         status = code(),
         code = code,
         serverMessage = serverMessage,
-        message = message,
+        fallbackMessage = fallbackMessage,
     )
 }

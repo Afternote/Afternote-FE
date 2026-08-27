@@ -18,7 +18,7 @@ class MindRecordReceiverFailureMapperTest {
         status: Int,
         code: Int,
     ) = Result.failure<Unit>(
-        ApiException(status = status, code = code, serverMessage = "서버 원문", message = "서버 원문"),
+        ApiException(status = status, code = code, serverMessage = "서버 원문", fallbackMessage = "서버 원문"),
     )
 
     @Test

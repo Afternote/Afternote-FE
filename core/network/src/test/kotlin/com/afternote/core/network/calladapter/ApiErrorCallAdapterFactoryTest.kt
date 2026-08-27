@@ -74,6 +74,25 @@ class ApiErrorCallAdapterFactoryTest {
         }
 
     @Test
+    fun `JSON 루트가 배열이거나 오류 필드가 비원시 값이면 HTTP fallback 사용`() =
+        runTest {
+            val bodies = listOf("[]", """{"code":{},"message":[]}""")
+
+            bodies.forEach { body ->
+                val failure =
+                    runCatching {
+                        serviceResponding { it.response(code = 502, message = "Bad Gateway", body = body) }
+                            .fetch()
+                    }.exceptionOrNull() as ApiException
+
+                assertEquals(502, failure.status)
+                assertEquals(502, failure.code)
+                assertNull(failure.serverMessage)
+                assertEquals("Bad Gateway", failure.message)
+            }
+        }
+
+    @Test
     fun `null 또는 blank 서버 문구는 서버 문구로 만들지 않음`() =
         runTest {
             val bodies = listOf("""{"code":1901,"message":null}""", """{"code":1901,"message":"  "}""")

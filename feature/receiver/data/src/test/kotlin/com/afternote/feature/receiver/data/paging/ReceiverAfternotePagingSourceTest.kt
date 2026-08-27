@@ -45,7 +45,12 @@ class ReceiverAfternotePagingSourceTest {
     @Test
     fun `사유를 가르지 않은 서버 거절은 code 를 실은 ServerRejection 으로 남는다`() {
         val otherRejection =
-            ApiException(status = 400, code = 1902, serverMessage = "인증번호가 만료되었습니다.", message = "만료")
+            ApiException(
+                status = 400,
+                code = 1902,
+                serverMessage = "인증번호가 만료되었습니다.",
+                fallbackMessage = "만료",
+            )
 
         val result = loadWith { throw otherRejection }
 
@@ -142,7 +147,7 @@ class ReceiverAfternotePagingSourceTest {
                 status = 403,
                 code = 2009,
                 serverMessage = "아직 전달 조건이 충족되지 않았습니다.",
-                message = "아직 전달 조건이 충족되지 않았습니다.",
+                fallbackMessage = "아직 전달 조건이 충족되지 않았습니다.",
             )
     }
 }

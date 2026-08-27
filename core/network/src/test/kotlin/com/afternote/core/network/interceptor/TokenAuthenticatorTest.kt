@@ -161,7 +161,7 @@ class TokenAuthenticatorTest {
                 status = 400,
                 code = 1107,
                 serverMessage = "유효하지 않은 리프레시 토큰",
-                message = "유효하지 않은 리프레시 토큰",
+                fallbackMessage = "유효하지 않은 리프레시 토큰",
             )
         val repository =
             networkFakeAuthRepository(

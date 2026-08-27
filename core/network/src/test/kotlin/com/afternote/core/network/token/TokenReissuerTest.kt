@@ -121,7 +121,7 @@ class TokenReissuerTest {
                 status = 400,
                 code = 1107,
                 serverMessage = "유효하지 않은 리프레시 토큰",
-                message = "유효하지 않은 리프레시 토큰",
+                fallbackMessage = "유효하지 않은 리프레시 토큰",
             )
         val reporter = FakeErrorReporter()
         val repository =
@@ -174,7 +174,7 @@ class TokenReissuerTest {
                 status = 503,
                 code = 503,
                 serverMessage = null,
-                message = "temporary server failure",
+                fallbackMessage = "temporary server failure",
             )
         val reporter = FakeErrorReporter()
         val repository =
@@ -221,7 +221,7 @@ class TokenReissuerTest {
         // 401·403·5xx 어디에도 안 걸려 "세션 유지" 로 떨어졌고, 그 길로 무효 refresh 가 남았다 (#1126).
         listOf(
             httpFailure(400),
-            ApiException(status = 400, code = 1999, serverMessage = "unparsed", message = "unparsed"),
+            ApiException(status = 400, code = 1999, serverMessage = "unparsed", fallbackMessage = "unparsed"),
         ).forEach { failure ->
             val reporter = FakeErrorReporter()
             val repository =
@@ -247,7 +247,7 @@ class TokenReissuerTest {
                 status = 404,
                 code = 1999,
                 serverMessage = "new server error",
-                message = "new server error",
+                fallbackMessage = "new server error",
             )
         val reporter = FakeErrorReporter()
         val repository =
