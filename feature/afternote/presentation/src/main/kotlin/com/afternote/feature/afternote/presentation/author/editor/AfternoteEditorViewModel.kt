@@ -24,6 +24,7 @@ import com.afternote.feature.afternote.presentation.author.editor.model.Register
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorError
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorErrorEvent
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
@@ -314,11 +315,10 @@ class AfternoteEditorViewModel
                         Log.e(TAG, "uploadMemorialThumbnail: failed", e)
                         errorReporter.recordAfternoteFailure(AfternoteFailureStage.MEMORIAL_THUMBNAIL_UPLOAD, e)
                         internalState.update {
-                            it.copy(
-                                error =
-                                    AfternoteEditorError.Upload(
-                                        AfternoteEditorError.Upload.Target.THUMBNAIL,
-                                    ),
+                            it.withError(
+                                AfternoteEditorError.Upload(
+                                    AfternoteEditorError.Upload.Target.THUMBNAIL,
+                                ),
                             )
                         }
                     }
@@ -366,7 +366,7 @@ class AfternoteEditorViewModel
                 )
             if (validationError != null) {
                 internalState.update {
-                    it.copy(error = AfternoteEditorError.Validation(validationError))
+                    it.withError(AfternoteEditorError.Validation(validationError))
                 }
                 return
             }
@@ -376,7 +376,7 @@ class AfternoteEditorViewModel
 
             viewModelScope.launch {
                 internalState.update {
-                    it.copy(isSaving = true, error = null)
+                    it.copy(isSaving = true, errorEvent = null)
                 }
                 buildSaveCommand(
                     editingId = editingId,
@@ -537,10 +537,7 @@ class AfternoteEditorViewModel
                 errorReporter.recordAfternoteFailure(AfternoteFailureStage.SAVE, e)
             }
             internalState.update {
-                it.copy(
-                    isSaving = false,
-                    error = editorError,
-                )
+                it.copy(isSaving = false).withError(editorError)
             }
         }
 
@@ -560,7 +557,8 @@ class AfternoteEditorViewModel
             val isSaving: Boolean = false,
             val isPrefillLoading: Boolean = false,
             val savedId: Long? = null,
-            val error: AfternoteEditorError? = null,
+            val errorEvent: AfternoteEditorErrorEvent? = null,
+            val errorOccurrence: Long = 0L,
             val pendingSaveSuccessId: Long? = null,
             val pendingThumbnailUrl: String? = null,
             val pendingPrefill: EditorFormPrefill? = null,
@@ -573,7 +571,7 @@ class AfternoteEditorViewModel
                 isSaving = isSaving,
                 isPrefillLoading = isPrefillLoading,
                 savedId = savedId,
-                error = error,
+                errorEvent = errorEvent,
                 pendingSaveSuccessId = pendingSaveSuccessId,
                 pendingThumbnailUrl = pendingThumbnailUrl,
                 pendingPrefill = pendingPrefill,
@@ -587,8 +585,18 @@ class AfternoteEditorViewModel
             internalState.update { it.copy(pendingThumbnailUrl = null) }
         }
 
-        fun onErrorConsumed() {
-            internalState.update { it.copy(error = null) }
+        private fun InternalState.withError(error: AfternoteEditorError): InternalState {
+            val nextOccurrence = errorOccurrence + 1L
+            return copy(
+                errorEvent = AfternoteEditorErrorEvent(error, nextOccurrence),
+                errorOccurrence = nextOccurrence,
+            )
+        }
+
+        fun onErrorConsumed(consumed: AfternoteEditorErrorEvent) {
+            internalState.update { current ->
+                if (current.errorEvent == consumed) current.copy(errorEvent = null) else current
+            }
         }
 
         // endregion

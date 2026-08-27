@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "9434cff751927d36117b27f8d58c6bd986d801f4.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "details.qa_account",
+      "details.screenshots",
+      "device.avd",
+      "device.serial",
+      "text.network_endpoint",
+      "text.person_name",
+      "text.private_identifier",
+      "text.qa_account",
+      "text.sensitive_value"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "9434cff751927d36117b27f8d58c6bd986d801f4",
+  "head_ref": "fix/935 (#935)",
+  "base_sha": "6123a68a",
+  "base_ref": "origin/develop",
+  "recorded_at": "2026-08-24T04:33:02.531240+00:00",
+  "result": "pass",
+  "scenario": "#935 죽은 AuthorReceiverRepository 제거 후 에디터 수신자 조회 실측 (2026-08-24 02:43~02:45 KST). dev 서버([NETWORK_ENDPOINT_REDACTED] / [SENSITIVE_VALUE_REDACTED])가 02:45 시점에 이미 무응답이라 응답 데이터 검증은 못 했고, 요청 발생 여부까지만 확인했다. 메모리상 폐쇄 시간대는 03~12시인데 그보다 일찍 닫혀 있었다.\n\n확인된 것 — (1) 노트 탭 → FAB → 소셜네트워크 에디터 진입 시 '--> GET [NETWORK_ENDPOINT_REDACTED]' 요청이 OkHttp 로그에 실제로 발생. #540 의 2026-07-30 실측 코멘트가 기록한 '네트워크 호출 0건(logcat OkHttp)' 과 대조되는 증거로, 죽은 리포지토리가 네트워크를 전혀 타지 않던 상태가 해소됐음을 보인다. (2) 요청에 쿼리 파라미터가 없고 Authorization 헤더만 실린다 — 서버가 토큰으로 호출자를 식별하므로 userId 개념이 불필요하다는 이슈 주장이 런타임에서 확인됨. (3) 조회가 SocketTimeoutException(10011ms)으로 실패해도 크래시 없이 에디터가 정상 렌더 — runCatchingCancellable + AUTHOR_RECEIVER_LOAD 계측 경로 동작(#884 receiverListFlow 크래시 회피 포함). 화면의 '수신자 추가*' 섹션은 응답이 없어 빈 상태로 남았다.\n\n미확인 — 응답 수신자 목록이 replaceReceiversIfEmpty 로 폼에 실제로 채워지는지. 서버 복구(12시 이후) 후 재확인 필요.\n\n빌드: :feature:afternote:{presentation,data}:compileDebugKotlin · :app:compileDebug{,UnitTest}Kotlin · :app:assembleDebug · ktlintCheck · :app:testDebugUnitTest 모두 BUILD SUCCESSFUL. :app:compileDebugAndroidTestKotlin 은 44건 실패하나 origin/develop 기준선과 오류 집계가 완전히 동일 (기존 드리프트, PR #949 가 처리 중).\n\n=== 2차 실측 (2026-08-24 13:22~13:32 KST, 서버 복구 후) — 미확인 항목 해소 ===\n서버 생존 확인(users/me 401 = 정상 응답) 후 같은 커밋 APK 재빌드·재설치. 앱 기동 시 만료된 access 를 POST /auth/reissue 200 으로 자동 복구.\n(1) GET /api/v1/users/receivers 가 200 으로 응답: {\"receiverId\":\"[PRIVATE_ID_REDACTED]\",\"name\":\"[PERSON_REDACTED]\",\"relation\":\"DAUGHTER\",\"authCode\":\"[SENSITIVE_VALUE_REDACTED]\"} 1건. (2) 노트 탭 → FAB → 소셜네트워크 에디터 진입 시 '수신자 추가' 섹션에 '[QA_ACCOUNT_REDACTED] / DAUGHTER' 행이 실제로 렌더됨 — 새벽 1차에서 비어 있던 자리다. refreshAuthorReceivers() → getReceivers() → replaceReceiversIfEmpty 경로가 실동작함을 확인. (3) 저장 완주: 서비스명(인스타그램)·계정정보·처리방법을 채우고 등록 → POST /api/v1/afternotes 요청 본문에 \"receivers\":[{\"receiverId\":\"[PRIVATE_ID_REDACTED]\"}] 가 실려 나갔고 응답 200. 목록에 '인스타그램 / 최종 작성일 2026.08.24' 생성 확인. 수신자 미지정 475 데드엔드(#540 이 P0 로 추적하던 증상)가 신규 작성 경로에서 실제로 해소됐다.\n부수 확인: 화면의 'DAUGHTER' 는 결함이 아니다. BE `Receiver.relation` 이 `private String` 자유 문자열이고 (Swagger example 이 DAUGHTER 일 뿐) enum 정규화가 없다. 앱 등록 화면 선택지는 한글(\"어머니\",\"아버지\",\"아들\",\"딸\")이고 설정·타임레터도 relation 을 그대로 표시한다 — QA 수신자를 curl 로 만들 때 영문이 들어간 데이터 탓이다.\n미해소로 남는 것: '수신자 추가' + 버튼은 여전히 무동작(#540, #791 선행 대기). 이 PR 범위 밖이다.",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true
+  },
+  "details": {
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe"
+    },
+    "diff_sha256": "9748ef78f5715afdce14034f37d1b083037e9de6861d59e33d9f45bf04537d5a",
+    "changed_files": [
+      "app/src/androidTest/java/com/afternote/afternote_fe/AfternoteAuthorAndroidTest.kt",
+      "app/src/androidTest/java/com/afternote/afternote_fe/AfternoteAuthorExtendedAndroidTest.kt",
+      "app/src/androidTest/java/com/afternote/afternote_fe/AfternoteAuthorImplementedCoverageAndroidTest.kt",
+      "feature/afternote/data/src/main/kotlin/com/afternote/feature/afternote/data/di/AfternoteAuthorRepositoryModule.kt",
+      "feature/afternote/data/src/main/kotlin/com/afternote/feature/afternote/data/repositoryimpl/author/AuthorReceiverRepositoryImpl.kt",
+      "feature/afternote/domain/src/main/java/com/afternote/feature/afternote/domain/model/author/AuthorReceiverEntry.kt",
+      "feature/afternote/domain/src/main/java/com/afternote/feature/afternote/domain/repository/author/AuthorReceiverRepository.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/AfternoteEditorViewModel.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/mapper/AuthorReceiverMapping.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/mapper/EditorReceiverMapping.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/navigation/AfternoteNavGraphEditor.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/reporting/AfternoteFailureReporting.kt"
+    ],
+    "reviews": []
+  }
+}

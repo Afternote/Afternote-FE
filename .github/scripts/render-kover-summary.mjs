@@ -207,23 +207,48 @@ async function main() {
     const headSha = process.env.KOVER_HEAD_SHA;
     const artifactUrl = process.env.KOVER_ARTIFACT_URL;
     const outputPath = process.env.GITHUB_STEP_SUMMARY;
+    const configuredModules = process.env.KOVER_COVERAGE_MODULES ?? "all";
     if (!baseSha || !headSha || !artifactUrl || !outputPath) {
         throw new Error(
             "KOVER_BASE_SHA, KOVER_HEAD_SHA, KOVER_ARTIFACT_URL, and GITHUB_STEP_SUMMARY are required",
         );
     }
 
-    const reportXml = await fs.readFile(
-        path.join(root, "build", "reports", "kover", "reportCi.xml"),
-        "utf8",
-    );
-    const report = parseKoverXml(reportXml);
-    const allModules = await discoverCoverageModules(root);
-    const changedModules = selectChangedModules(changedFilesBetween(baseSha, headSha), allModules);
-    const modules = [];
-    for (const module of changedModules) {
-        const sourceKeys = await collectModuleSourceKeys(root, module);
-        modules.push({ name: module, coverage: coverageForSourceKeys(report, sourceKeys) });
+    let report;
+    let modules;
+    if (configuredModules === "all") {
+        const reportXml = await fs.readFile(
+            path.join(root, "build", "reports", "kover", "reportCi.xml"),
+            "utf8",
+        );
+        report = parseKoverXml(reportXml);
+        const allModules = await discoverCoverageModules(root);
+        const changedModules = selectChangedModules(changedFilesBetween(baseSha, headSha), allModules);
+        modules = [];
+        for (const module of changedModules) {
+            const sourceKeys = await collectModuleSourceKeys(root, module);
+            modules.push({ name: module, coverage: coverageForSourceKeys(report, sourceKeys) });
+        }
+    } else {
+        report = { aggregate: emptyCounters() };
+        modules = [];
+        for (const projectPath of configuredModules.split(/\s+/).filter(Boolean)) {
+            const module = projectPath.replace(/^:/, "").replaceAll(":", "/");
+            const reportXml = await fs.readFile(
+                path.join(root, module, "build", "reports", "kover", "reportCi.xml"),
+                "utf8",
+            );
+            const moduleReport = parseKoverXml(reportXml);
+            addCounters(report.aggregate, moduleReport.aggregate);
+            modules.push({
+                name: module,
+                coverage: {
+                    counters: moduleReport.aggregate,
+                    matchedSources: moduleReport.sources.size,
+                    declaredSources: moduleReport.sources.size,
+                },
+            });
+        }
     }
 
     await fs.appendFile(
