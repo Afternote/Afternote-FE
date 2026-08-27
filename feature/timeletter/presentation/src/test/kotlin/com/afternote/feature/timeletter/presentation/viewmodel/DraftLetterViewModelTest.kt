@@ -129,6 +129,24 @@ class DraftLetterViewModelTest {
         assertEquals(com.afternote.feature.timeletter.presentation.R.string.timeletter_draft_delete_error, state.messageRes)
     }
 
+    @Test
+    fun `delete selected is disabled when no draft is selected`() {
+        val state = DraftLetterUiState.Success(drafts = testDrafts.timeLetters)
+
+        assertFalse(state.isDeleteSelectedEnabled)
+    }
+
+    @Test
+    fun `delete selected is enabled when a draft is selected`() {
+        val state =
+            DraftLetterUiState.Success(
+                drafts = testDrafts.timeLetters,
+                selectedIds = setOf(testDrafts.timeLetters.single().id),
+            )
+
+        assertTrue(state.isDeleteSelectedEnabled)
+    }
+
     private fun timeLetterRepository(handler: (String, Array<out Any?>?) -> Any?): TimeLetterRepository =
         Proxy.newProxyInstance(
             TimeLetterRepository::class.java.classLoader,

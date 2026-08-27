@@ -10,7 +10,7 @@
     <string name="timeletter_delete_failure">타임레터를 삭제하지 못했습니다. 다시 시도해 주세요.</string>
     <string name="timeletter_recipient_search_placeholder">이름으로 검색하기</string>
     <string name="timeletter_draft_title">임시 저장된 레터</string>
-    <string name="timeletter_draft_edit">수정</string>
+    <string name="timeletter_draft_edit">선택</string>
     <string name="timeletter_draft_done">완료</string>
     <string name="timeletter_draft_total">총 %1$d 개</string>
     <string name="timeletter_draft_total_selected">총 %1$d 개 선택</string>

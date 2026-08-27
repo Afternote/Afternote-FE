@@ -25,6 +25,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -138,7 +139,44 @@ class TimeLetterWriteViewModelTest {
             assertFalse(viewModel.uiState.value.savedAsDraft)
         }
 
-    private fun viewModel(repository: FakeTimeLetterRepository): TimeLetterWriteViewModel {
+    @Test
+    fun `draft edit checks the free plan limit before scheduling`() =
+        runTest {
+            val editingLetter = testEditingLetter(status = TimeLetterStatus.DRAFT)
+            val repository = FakeTimeLetterRepository(editingLetter = editingLetter, registeredCount = 3)
+            val viewModel = viewModel(repository, editingLetter.id)
+            advanceUntilIdle()
+
+            viewModel.register(title = "title", textContents = emptyMap())
+            advanceUntilIdle()
+
+            assertEquals(1, repository.listCallCount)
+            assertEquals(0, repository.updateCallCount)
+            assertTrue(viewModel.uiState.value.showFreePlanLimitPopup)
+            assertFalse(viewModel.uiState.value.registered)
+        }
+
+    @Test
+    fun `scheduled edit does not check the free plan limit again`() =
+        runTest {
+            val editingLetter = testEditingLetter(status = TimeLetterStatus.SCHEDULED)
+            val repository = FakeTimeLetterRepository(editingLetter = editingLetter, registeredCount = 3)
+            val viewModel = viewModel(repository, editingLetter.id)
+            advanceUntilIdle()
+
+            viewModel.register(title = "title", textContents = emptyMap())
+            advanceUntilIdle()
+
+            assertEquals(0, repository.listCallCount)
+            assertEquals(1, repository.updateCallCount)
+            assertFalse(viewModel.uiState.value.showFreePlanLimitPopup)
+            assertTrue(viewModel.uiState.value.registered)
+        }
+
+    private fun viewModel(
+        repository: FakeTimeLetterRepository,
+        editingTimeLetterId: Long? = null,
+    ): TimeLetterWriteViewModel {
         val resolveUseCase = ResolveTimeLetterBlocksUseCase(FakePhotoUploadRepository.strict())
         return TimeLetterWriteViewModel(
             createTimeLetterUseCase = CreateTimeLetterUseCase(repository, resolveUseCase),
@@ -150,19 +188,35 @@ class TimeLetterWriteViewModelTest {
                     onGetReceivers = { emptyList() }
                 },
             fileMetadataRepository = FakeFileMetadataRepository,
-            savedStateHandle = SavedStateHandle(mapOf("timeLetterId" to null)),
+            savedStateHandle = SavedStateHandle(mapOf("timeLetterId" to editingTimeLetterId)),
         )
     }
+
+    private fun testEditingLetter(status: TimeLetterStatus): TimeLetter =
+        TimeLetter(
+            id = 10L,
+            title = "existing title",
+            sendAt = "2026-08-29T19:30:00+09:00",
+            deliveredAt = null,
+            status = status,
+            blocks = emptyList(),
+            receiverIds = listOf(1L),
+        )
 }
 
 private class FakeTimeLetterRepository(
     private val createFailure: Throwable? = null,
     private val listFailure: Throwable? = null,
+    private val editingLetter: TimeLetter? = null,
+    private val registeredCount: Int = 0,
 ) : TimeLetterRepository {
     var createCallCount: Int = 0
         private set
 
     var listCallCount: Int = 0
+        private set
+
+    var updateCallCount: Int = 0
         private set
 
     override suspend fun getTemporaryTimeLetters(): TimeLetterList = TimeLetterList(emptyList(), 0)
@@ -183,10 +237,11 @@ private class FakeTimeLetterRepository(
     override suspend fun getTimeLetters(): TimeLetterList {
         listCallCount++
         listFailure?.let { throw it }
-        return TimeLetterList(emptyList(), 0)
+        return TimeLetterList(emptyList(), registeredCount)
     }
 
-    override suspend fun getTimeLetter(timeLetterId: Long): TimeLetter = error("getTimeLetter should not be called")
+    override suspend fun getTimeLetter(timeLetterId: Long): TimeLetter =
+        editingLetter?.takeIf { it.id == timeLetterId } ?: error("getTimeLetter should not be called")
 
     override suspend fun updateTimeLetter(
         timeLetterId: Long,
@@ -195,7 +250,15 @@ private class FakeTimeLetterRepository(
         sendAt: String?,
         deliveryMode: TimeLetterDeliveryMode?,
         status: TimeLetterStatus?,
-    ): TimeLetter = error("updateTimeLetter should not be called")
+    ): TimeLetter {
+        updateCallCount++
+        val letter = editingLetter ?: error("updateTimeLetter should not be called")
+        return letter.copy(
+            title = title,
+            sendAt = sendAt,
+            status = status ?: letter.status,
+        )
+    }
 
     override suspend fun deleteTimeLetters(timeLetterIds: List<Long>) = error("deleteTimeLetters should not be called")
 

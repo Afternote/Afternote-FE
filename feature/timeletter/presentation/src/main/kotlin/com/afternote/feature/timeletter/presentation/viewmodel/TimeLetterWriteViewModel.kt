@@ -59,6 +59,7 @@ class TimeLetterWriteViewModel
 
         private var receiverNameMap: Map<Long, String> = emptyMap()
         private var isCheckingRegisterLimit: Boolean = false
+        private var originalEditingStatus: TimeLetterStatus? = null
 
         init {
             viewModelScope.launch {
@@ -160,7 +161,7 @@ class TimeLetterWriteViewModel
             isCheckingRegisterLimit = true
             viewModelScope.launch {
                 try {
-                    if (state.editingTimeLetterId == null) {
+                    if (originalEditingStatus != TimeLetterStatus.SCHEDULED) {
                         val registeredCount =
                             runCatchingCancellable { timeLetterRepository.getTimeLetters().totalCount }
                                 .getOrElse {
@@ -356,6 +357,7 @@ class TimeLetterWriteViewModel
         private suspend fun loadEditingTimeLetter(timeLetterId: Long) {
             runCatchingCancellable { timeLetterRepository.getTimeLetter(timeLetterId) }
                 .onSuccess { letter ->
+                    originalEditingStatus = letter.status
                     val editorBlocks = letter.toEditorBlocks()
                     val sendAtDate = letter.sendAt?.take(10)
                     val sendHour =

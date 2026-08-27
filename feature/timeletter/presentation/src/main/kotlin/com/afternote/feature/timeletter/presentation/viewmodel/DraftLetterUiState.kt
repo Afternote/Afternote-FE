@@ -13,7 +13,10 @@ sealed interface DraftLetterUiState {
         val isDeleting: Boolean = false,
         val selectedIds: Set<Long> = emptySet(),
         @StringRes val messageRes: Int? = null,
-    ) : DraftLetterUiState
+    ) : DraftLetterUiState {
+        val isDeleteSelectedEnabled: Boolean
+            get() = selectedIds.isNotEmpty() && !isDeleting
+    }
 
     data class Error(
         @StringRes val messageRes: Int,

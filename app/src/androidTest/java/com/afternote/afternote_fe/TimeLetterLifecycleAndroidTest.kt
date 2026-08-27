@@ -5,6 +5,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
@@ -166,7 +168,13 @@ class TimeLetterLifecycleAndroidTest {
                 title = "한 줄을 넘길 만큼 아주 긴 첫 임시 편지 제목이 레이아웃 높이를 늘리지 않아야 합니다",
                 status = TimeLetterStatus.DRAFT,
             )
-        val secondDraft = timeLetter(id = 32L, title = "둘째 임시 편지", status = TimeLetterStatus.DRAFT)
+        val secondDraft =
+            timeLetter(
+                id = 32L,
+                title = "둘째 임시 편지",
+                sendAt = "2026-11-02T10:00:00",
+                status = TimeLetterStatus.DRAFT,
+            )
         val repository =
             PrivateTimeLetterRepository(
                 draftLetters = TimeLetterList(listOf(firstDraft, secondDraft), totalCount = 2),
@@ -190,9 +198,11 @@ class TimeLetterLifecycleAndroidTest {
         composeRule.onNode(hasText("한 줄을 넘길 만큼 아주 긴 첫 임시 편지 제목", substring = true) and hasClickAction()).performClick()
         assertEquals(31L, openedDraftId)
 
-        composeRule.onNodeWithText("수정").performClick()
+        composeRule.onNodeWithText("선택").performClick()
+        composeRule.onNodeWithText("선택 삭제").assertIsNotEnabled()
         composeRule.onNode(hasText("한 줄을 넘길 만큼 아주 긴 첫 임시 편지 제목", substring = true) and hasClickAction()).performClick()
-        composeRule.onNodeWithText("삭제").performClick()
+        composeRule.onNodeWithText("선택 삭제").assertIsEnabled()
+        composeRule.onNodeWithText("선택 삭제").performClick()
         composeRule.waitUntil(timeoutMillis = TIMEOUT) { repository.deleteCalls == listOf(listOf(31L)) }
         composeRule.onNodeWithText("한 줄을 넘길 만큼 아주 긴 첫 임시 편지 제목", substring = true).assertDoesNotExist()
         composeRule.onNodeWithText("둘째 임시 편지").assertIsDisplayed()

@@ -118,6 +118,7 @@ private fun DraftLetterContent(
                     onSecondaryClick = onDeleteSelected,
                     type = AfternoteButtonType.Variant5,
                     isLoading = successState.isDeleting,
+                    isSecondaryEnabled = successState.isDeleteSelectedEnabled,
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
                 )
             }
