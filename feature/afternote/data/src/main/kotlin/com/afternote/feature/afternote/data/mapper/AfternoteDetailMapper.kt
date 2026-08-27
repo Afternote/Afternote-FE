@@ -19,7 +19,7 @@ import kotlin.collections.mapNotNull
  * 서버 `category` 를 해석하지 못하면 상세를 만들지 않는다.
  *
  * 단건이라 «항목 기각» 이 곧 실패다 — [Detail.type] 이 non-null 이라 모르는 종류를 담을 자리가 없고,
- * 임의의 종류로 메우면 라벨·아이콘·처리 방법이 다른 종류의 것으로 표시된다(#1048).
+ * 임의의 종류로 메우면 라벨·처리 방법이 다른 종류의 것으로 표시된다(#1048).
  * 던진 예외는 `AfternoteRepositoryImpl.safeCall` 이 잡아 `Result.failure` 로 옮긴다.
  */
 fun AfternoteDetailDto.toDomain(): Detail {

@@ -216,7 +216,7 @@ private fun AccountDetailScrollContent(
                 .padding(horizontal = 20.dp),
     ) {
         AfternoteDetailServiceHeader(
-            service = AfternoteServiceDisplay.fromService(content.serviceName, content.type),
+            service = AfternoteServiceDisplay.fromService(content.serviceName),
             finalWriteDate = content.finalWriteDate,
         )
 

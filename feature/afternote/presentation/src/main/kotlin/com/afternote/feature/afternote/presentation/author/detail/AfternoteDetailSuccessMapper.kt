@@ -32,13 +32,11 @@ internal fun Detail.toGalleryDetailContent(content: DetailContent.Gallery): Gall
     )
 
 internal fun Detail.toAccountDetailContent(
-    type: AfternoteType,
     credentials: DetailCredentials,
     processingMethods: List<String>,
 ): AccountDetailContent =
     AccountDetailContent(
         serviceName = serviceName,
-        type = type,
         accountId = credentials.id,
         password = credentials.password,
         processingMethods = processingMethods,
@@ -115,7 +113,6 @@ internal fun Detail.toDetailContentUiModel(authorDisplayName: String): DetailCon
         is DetailContent.SocialNetwork -> {
             DetailContentUiModel.SocialNetwork(
                 toAccountDetailContent(
-                    type = content.type,
                     credentials = content.credentials,
                     processingMethods = content.processingMethods,
                 ),
@@ -126,7 +123,6 @@ internal fun Detail.toDetailContentUiModel(authorDisplayName: String): DetailCon
         is DetailContent.Business -> {
             DetailContentUiModel.Business(
                 toAccountDetailContent(
-                    type = content.type,
                     credentials = content.credentials,
                     processingMethods = content.processingMethods,
                 ),

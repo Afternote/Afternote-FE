@@ -11,7 +11,7 @@ private const val TAG = "AfternoteListMapper"
  *
  * 서버 `category` 를 해석하지 못한 항목은 목록에 올리지 않는다. 와이어는 관용하고 도메인은
  * 엄격하게 둔다 — [ListItem.type] 은 non-null 이라 «모르는 종류» 를 담을 자리가 없고,
- * 임의의 종류로 메우면 목록·필터·아이콘이 조용히 틀어진다(#1048).
+ * 임의의 종류로 메우면 목록·필터가 조용히 틀어진다(#1048).
  * 실패의 폭은 목록 전체가 아니라 그 항목 하나다.
  */
 fun List<AfternoteListItemDto>.toDomainList(): List<ListItem> =

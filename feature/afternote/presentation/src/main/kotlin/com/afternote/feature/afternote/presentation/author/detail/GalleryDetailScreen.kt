@@ -26,7 +26,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
-import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.detail.AfternoteDetailServiceHeader
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
@@ -133,11 +132,7 @@ private fun GalleryDetailScrollContent(
                 .padding(horizontal = 20.dp),
     ) {
         AfternoteDetailServiceHeader(
-            service =
-                AfternoteServiceDisplay.fromService(
-                    serviceName = content.serviceName,
-                    type = AfternoteType.GALLERY_AND_FILES,
-                ),
+            service = AfternoteServiceDisplay.fromService(content.serviceName),
             finalWriteDate = content.finalWriteDate,
         )
 
