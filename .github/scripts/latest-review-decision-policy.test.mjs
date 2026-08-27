@@ -24,6 +24,7 @@ test("the trusted workflow reconciles from the default branch with minimal write
     assert.match(reconcile, /^\s{2}workflow_dispatch:/m);
     assert.match(reconcile, /^permissions: \{\}$/m);
     assert.match(reconcile, /^\s{6}contents: read$/m);
+    assert.match(reconcile, /^\s{6}issues: read$/m);
     assert.match(reconcile, /^\s{6}pull-requests: write$/m);
     assert.match(reconcile, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
     assert.match(reconcile, /persist-credentials: false/);
