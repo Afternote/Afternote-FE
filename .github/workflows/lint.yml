@@ -7,6 +7,11 @@ name: Static Analysis
 # 같은 검증과 동일한 이름의 check 가 PR 마다 두 벌씩 돈다.
 on:
   workflow_call:
+    inputs:
+      pull_request_number:
+        required: false
+        default: 0
+        type: number
 
 permissions:
   contents: read
