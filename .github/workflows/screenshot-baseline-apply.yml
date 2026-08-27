@@ -221,6 +221,7 @@ jobs:
             core.setOutput('files', String(validated.length));
 
       - name: Dispatch required checks on the resulting SHA
+        if: steps.commit.outputs.changed == 'true'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           TARGET_BRANCH: ${{ steps.target.outputs.branch }}
@@ -240,6 +241,7 @@ jobs:
             await github.rest.actions.createWorkflowDispatch({
               ...common,
               workflow_id: 'codeql.yml',
+              inputs: { pull_request_number: process.env.TARGET_PR },
             });
             await github.rest.actions.createWorkflowDispatch({
               ...common,

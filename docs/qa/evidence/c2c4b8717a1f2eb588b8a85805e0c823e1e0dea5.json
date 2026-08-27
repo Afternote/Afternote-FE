@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "c2c4b8717a1f2eb588b8a85805e0c823e1e0dea5.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "details.qa_account",
+      "device.avd",
+      "device.serial",
+      "text.qa_account"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "c2c4b8717a1f2eb588b8a85805e0c823e1e0dea5",
+  "head_ref": "fix/716-failure-recovery",
+  "base_sha": "1619595236a1b8e3c9312ff10d8f5292d5abac4a",
+  "base_ref": "develop",
+  "recorded_at": "2026-08-23T07:23:01.156250+00:00",
+  "result": "fail-repro",
+  "scenario": "PR #904 리뷰 blocking 1·2 실측: PR head 빌드 + [QA_ACCOUNT_REDACTED] 토큰 주입 로그인 → 데일리질문 답변 생성 → 기내모드에서 삭제 실패 유발 → deleteError 배너가 HorizontalPager 페이지에서 리스트를 배너 폭만큼 가로로 밀어냄(케밥 화면 밖 이탈로 재시도 조작 불가 확인) → 기내모드 해제·탭 전환 재조회 성공 후에도 배너·파손 잔존(consumeDeleteError 미호출 실증). 스크린샷 2장 PR 코멘트 첨부. 유닛테스트: :feature:mindrecord:{data,presentation}:testDebugUnitTest + :app:compileDebugUnitTestKotlin 로컬 통과(CI는 develop lint.yml 정책 모순으로 미도달).",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true
+  },
+  "details": {
+    "diff_sha256": "abf322f04eb1fb7b3dc31b93973617a729a1281227461c0c3cc5b693690cf60b",
+    "changed_files": [
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/component/MindRecordErrorBox.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/sender/DailyQuestionAnswerListScreen.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/sender/DailyQuestionWriteScreen.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/sender/DiaryScreen.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/sender/DiaryWriteScreen.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/sender/DraftListScreen.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/sender/WeeklyReportScreen.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/DailyQuestionListUiState.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/DailyQuestionListViewModel.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/DailyQuestionWriteUiState.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/DailyQuestionWriteViewModel.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/DiaryListUiState.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/DiaryListViewModel.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/DiaryWriteUiState.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/DiaryWriteViewModel.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/DraftListViewModel.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/WeeklyReportViewModel.kt",
+      "feature/mindrecord/presentation/src/main/res/values/strings.xml"
+    ],
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe",
+      "installed_for_head": "c2c4b8717a1f2eb588b8a85805e0c823e1e0dea5"
+    }
+  }
+}

@@ -85,6 +85,8 @@ test("release workflow is secretless, non-deploying, and uploads reports only", 
 
     assert.match(workflow, /^\s*pull_request:\s*\n\s+branches: \[main\]/m);
     assert.match(workflow, /^\s*workflow_dispatch:\s*$/m);
+    assert.match(workflow, /github\.event\.pull_request\.head\.repo\.full_name == github\.repository/);
+    assert.match(workflow, /github\.event\.pull_request\.head\.ref == 'develop'/);
     assert.match(workflow, /uses: \.\/\.github\/actions\/setup-ci-config/);
     assert.match(workflow, /uses: \.\/\.github\/actions\/setup-ci-release-signing/);
     assert.match(workflow, /test-release-aab-negative-fixtures\.sh/);

@@ -58,11 +58,12 @@ fun AfternoteEditorScreen(
     modifier: Modifier = Modifier,
     state: AfternoteEditorState = rememberAfternoteEditorState(),
     isPrefillLoading: Boolean = false,
+    snackbarMessageKey: Any? = snackbarMessage,
 ) {
     val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(snackbarMessage) {
+    LaunchedEffect(snackbarMessageKey) {
         snackbarMessage?.let { message ->
             try {
                 snackbarHostState.showSnackbar(

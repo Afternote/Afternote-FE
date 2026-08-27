@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "3767e3d574e7efa91a0222509f50952cdb1d25c4.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "details.qa_account",
+      "details.screenshots",
+      "device.avd",
+      "device.serial"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "3767e3d574e7efa91a0222509f50952cdb1d25c4",
+  "head_ref": "refactor/929 (#929)",
+  "base_sha": "6123a68a",
+  "base_ref": "origin/develop",
+  "recorded_at": "2026-08-23T14:44:48.140426+00:00",
+  "result": "pass",
+  "scenario": "#929 core:startup 삭제 후 App Startup 동작 실측. (1) 매니페스트 머지 — debug·release 양쪽 merged manifest 의 androidx.startup.InitializationProvider 에 app 패키지의 DailyNotificationInitializer·KakaoInitializer meta-data 가 WorkManagerInitializer·EmojiCompat·ProcessLifecycle·ProfileInstaller 와 함께 병합됨을 확인. (2) 카카오 SDK 초기화 — SDK 가 앱키 이름으로 만드는 shared_prefs 파일을 run-as 로 삭제(백업 후 원복 대신 재생성 확인) → force-stop → 재기동하니 같은 파일이 23:19 에 재생성. KakaoSdk.init 이 app 모듈 BuildConfig 키로 실행됐고 파일명이 곧 그 키라 주입 값 정합성까지 확인. (3) 일일 알림 예약 — dumpsys jobscheduler 에 Trace tag: DailyNotificationWorker 잡이 Minimum latency +9h43m(= 다음 09:00), Requires batteryNotLow=true 로 등록. WorkManagerInitializer 선행 의존 유지 상태에서 NotificationScheduler 가 실행된 증거. (4) R8 — release mapping.txt 에서 두 Initializer 가 난독화 없이 원래 이름 유지, release dex 에 클래스 실존(리플렉션 인스턴스화 안전). 빌드: :app:assembleDebug·:app:compileDebugUnitTestKotlin·:konsist:test·:app:ktlintCheck·:app:assembleRelease 모두 BUILD SUCCESSFUL.",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true
+  },
+  "details": {
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe"
+    },
+    "diff_sha256": "74caeb3e563da13001f6c18c3c479199a541a65f0e98ceadebaea1570c3b2944",
+    "changed_files": [
+      "app/build.gradle.kts",
+      "app/src/main/AndroidManifest.xml",
+      "app/src/main/java/com/afternote/afternote_fe/GlobalApplication.kt",
+      "app/src/main/java/com/afternote/afternote_fe/startup/DailyNotificationInitializer.kt",
+      "app/src/main/java/com/afternote/afternote_fe/startup/KakaoInitializer.kt",
+      "core/startup/build.gradle.kts",
+      "core/startup/consumer-rules.pro",
+      "core/startup/proguard-rules.pro",
+      "core/startup/src/main/AndroidManifest.xml",
+      "konsist/src/test/kotlin/com/afternote/konsist/LayerDependencyKonsistTest.kt",
+      "settings.gradle.kts"
+    ],
+    "reviews": []
+  }
+}
