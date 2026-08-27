@@ -89,7 +89,20 @@ test("required validation context names stay aligned with the repository ruleset
 test("stale runs are cancelled per pull request", async () => {
     const entry = await readWorkflow(ENTRY_WORKFLOW);
 
-    assert.match(entry, /^concurrency:\n\s{2}group: pr-validation-\$\{\{ github\.event\.pull_request\.number \|\| github\.ref \}\}\n\s{2}cancel-in-progress: true$/m);
+    assert.match(
+        entry,
+        /^concurrency:\n\s{2}group: pr-validation-\$\{\{ github\.event\.pull_request\.number \|\| inputs\.pull_request_number \|\| github\.ref \}\}\n\s{2}cancel-in-progress: true$/m,
+    );
+});
+
+test("token-authored commits preserve the pull request context on manual dispatch", async () => {
+    const entry = await readWorkflow(ENTRY_WORKFLOW);
+
+    assert.match(entry, /^\s{2}workflow_dispatch:\n\s{4}inputs:\n\s{6}pull_request_number:/m);
+    assert.equal(
+        (entry.match(/pull_request_number: \$\{\{ inputs\.pull_request_number \|\| github\.event\.pull_request\.number \}\}/g) ?? []).length,
+        VALIDATION_WORKFLOWS.length,
+    );
 });
 
 test("the entry point keeps no pull_request branch filter", async () => {
