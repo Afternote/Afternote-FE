@@ -57,21 +57,23 @@ data class DropdownMenuStyle(
  * @param label 라벨 텍스트
  * @param selectedValue Currently selected value
  * @param options List of selectable options
+ * @param optionLabel Text displayed for each option
  * @param onValueSelected Callback when an option is selected
  * @param expanded Whether the dropdown menu is currently expanded
  * @param onExpandedChange Callback invoked when the user requests to open/close the menu
  * @param modifier Modifier for the component
  * @param isRequired 라벨에 필수 표시(*) 노출 여부
- * @param placeholder [selectedValue]가 비어 있을 때 앵커에 흐리게(gray5) 노출할 미선택 안내 문구 (null 이면 기존처럼 빈 값 그대로 렌더)
+ * @param placeholder [optionLabel]로 변환한 [selectedValue]가 비어 있을 때 앵커에 흐리게(gray5) 노출할 미선택 안내 문구
  * @param menuStyle Style configuration for the dropdown menu
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SelectionDropdown(
+fun <T> EditorSelectionDropdown(
     label: String,
-    selectedValue: String,
-    options: List<String>,
-    onValueSelected: (String) -> Unit,
+    selectedValue: T,
+    options: List<T>,
+    optionLabel: @Composable (T) -> String,
+    onValueSelected: (T) -> Unit,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -111,9 +113,10 @@ fun SelectionDropdown(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 // 미선택(빈 값) + placeholder 지정 시 안내 문구를 흐리게 노출 — 타이포는 선택값과 동일(bodyBase), 색만 gray5 (시안 700:36383).
-                val showPlaceholder = selectedValue.isBlank() && placeholder != null
+                val selectedLabel = optionLabel(selectedValue)
+                val showPlaceholder = selectedLabel.isBlank() && placeholder != null
                 Text(
-                    text = if (showPlaceholder) placeholder else selectedValue,
+                    text = if (showPlaceholder) placeholder else selectedLabel,
                     style =
                         AfternoteDesign.typography.bodyBase.copy(
                             color = if (showPlaceholder) AfternoteDesign.colors.gray5 else AfternoteDesign.colors.gray8,
@@ -136,8 +139,9 @@ fun SelectionDropdown(
                 shadowElevation = menuStyle.shadowElevation,
                 tonalElevation = menuStyle.tonalElevation,
             ) {
-                SelectionDropdownMenuItems(
+                EditorSelectionDropdownMenuItems(
                     options = options,
+                    optionLabel = optionLabel,
                     onSelect = { selected ->
                         onValueSelected(selected)
                         onExpandedChange(false)
@@ -152,9 +156,10 @@ fun SelectionDropdown(
  * 펼친 메뉴 항목 리스트 — Popup 컨텍스트 밖에서도 그릴 수 있어 Preview로 단독 확인 가능.
  */
 @Composable
-private fun SelectionDropdownMenuItems(
-    options: List<String>,
-    onSelect: (String) -> Unit,
+private fun <T> EditorSelectionDropdownMenuItems(
+    options: List<T>,
+    optionLabel: @Composable (T) -> String,
+    onSelect: (T) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
@@ -162,7 +167,7 @@ private fun SelectionDropdownMenuItems(
             DropdownMenuItem(
                 text = {
                     Text(
-                        text = option,
+                        text = optionLabel(option),
                         style =
                             AfternoteDesign.typography.bodyBase.copy(
                                 color = AfternoteDesign.colors.gray9,
@@ -178,12 +183,12 @@ private fun SelectionDropdownMenuItems(
 
 @Preview(showBackground = true)
 @Composable
-private fun SelectionDropdownPreview() {
+private fun EditorSelectionDropdownPreview() {
     AfternoteTheme {
         val social = stringResource(R.string.afternote_editor_category_social)
         var expanded by remember { mutableStateOf(false) }
         Box(modifier = Modifier.padding(24.dp)) {
-            SelectionDropdown(
+            EditorSelectionDropdown(
                 label = stringResource(R.string.afternote_editor_label_category),
                 selectedValue = social,
                 options =
@@ -192,6 +197,7 @@ private fun SelectionDropdownPreview() {
                         stringResource(R.string.afternote_editor_category_gallery),
                         stringResource(R.string.afternote_editor_category_memorial),
                     ),
+                optionLabel = { it },
                 onValueSelected = {},
                 expanded = expanded,
                 onExpandedChange = { expanded = it },
@@ -202,11 +208,11 @@ private fun SelectionDropdownPreview() {
 
 @Preview(showBackground = true, name = "Placeholder (unselected)")
 @Composable
-private fun SelectionDropdownPlaceholderPreview() {
+private fun EditorSelectionDropdownPlaceholderPreview() {
     AfternoteTheme {
         var expanded by remember { mutableStateOf(false) }
         Box(modifier = Modifier.padding(24.dp)) {
-            SelectionDropdown(
+            EditorSelectionDropdown(
                 label = stringResource(R.string.afternote_editor_label_service_name),
                 selectedValue = "",
                 options =
@@ -215,6 +221,7 @@ private fun SelectionDropdownPlaceholderPreview() {
                         "페이스북",
                         "직접 추가하기",
                     ),
+                optionLabel = { it },
                 onValueSelected = {},
                 expanded = expanded,
                 onExpandedChange = { expanded = it },
@@ -230,7 +237,7 @@ private fun SelectionDropdownPlaceholderPreview() {
 
 @Preview(showBackground = true, name = "Expanded menu items")
 @Composable
-private fun SelectionDropdownMenuItemsPreview() {
+private fun EditorSelectionDropdownMenuItemsPreview() {
     AfternoteTheme {
         Surface(
             shape = RoundedCornerShape(8.dp),
@@ -239,13 +246,14 @@ private fun SelectionDropdownMenuItemsPreview() {
             color = AfternoteDesign.colors.white,
             modifier = Modifier.padding(24.dp),
         ) {
-            SelectionDropdownMenuItems(
+            EditorSelectionDropdownMenuItems(
                 options =
                     listOf(
                         "인스타그램",
                         "페이스북",
                         "직접 추가하기",
                     ),
+                optionLabel = { it },
                 onSelect = {},
             )
         }

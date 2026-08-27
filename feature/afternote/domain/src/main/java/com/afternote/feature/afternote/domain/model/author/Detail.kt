@@ -54,7 +54,6 @@ sealed interface DetailContent {
 }
 
 data class DetailTimestamps(
-    val createdAt: String,
     val updatedAt: String,
 )
 
@@ -66,15 +65,10 @@ data class DetailCredentials(
 /**
  * 애프터노트에 지정된 수신자.
  *
- * [receiverId] 는 서버 스펙상 필수다(상세 응답의 `ReceiverRequest` 는 이 필드 하나뿐, nullable 표기 없음 —
- * 2026-08-02 Swagger 실측). DTO 는 방어적으로 nullable 이지만 그 경계는 매퍼가 흡수하고,
- * 도메인부터는 식별자가 있는 수신자만 다룬다.
- *
- * name·relation·phone 은 이 응답에 실리지 않아 현재 빈 문자열로 온다 — 서버 확장은 Afternote-BE #81.
+ * 식별자 없는 항목은 매퍼 경계에서 걸러, 도메인부터는 [receiverId] 가 있는 수신자만 다룬다.
  */
 data class DetailReceiver(
     val receiverId: Long,
     val name: String,
     val relation: String,
-    val phone: String,
 )

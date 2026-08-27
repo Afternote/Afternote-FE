@@ -24,3 +24,8 @@ dependencies {
         }
     }
 }
+
+tasks.withType<Test>().configureEach {
+    // 「해소된 항목은 경고로 알린다」 가 찍는 경고가 CI 로그에 남아야, 목록을 언제 갱신할지 알아챈다.
+    testLogging { showStandardStreams = true }
+}
