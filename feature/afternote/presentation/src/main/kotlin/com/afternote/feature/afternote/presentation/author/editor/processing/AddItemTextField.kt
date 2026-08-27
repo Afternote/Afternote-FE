@@ -32,8 +32,8 @@ import com.afternote.feature.afternote.presentation.R
  */
 @Composable
 fun AddItemTextField(
-    onItemAdded: (String) -> Unit,
-    onVisibilityChanged: (Boolean) -> Unit,
+    onItemAdded: (text: String) -> Unit,
+    onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val textFieldState = rememberTextFieldState()
@@ -49,7 +49,7 @@ fun AddItemTextField(
             onItemAdded(text)
             textFieldState.edit { replace(0, length, "") }
         }
-        onVisibilityChanged(false)
+        onDismiss()
         focusManager.clearFocus()
         keyboardController?.hide()
     }
@@ -84,7 +84,7 @@ private fun AddItemTextFieldPreview() {
     AfternoteTheme {
         AddItemTextField(
             onItemAdded = {},
-            onVisibilityChanged = {},
+            onDismiss = {},
         )
     }
 }

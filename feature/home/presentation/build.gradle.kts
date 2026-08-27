@@ -2,12 +2,14 @@ plugins {
     id("afternote.android.library.compose")
     id("afternote.android.hilt")
     alias(libs.plugins.compose.screenshot)
+    id("afternote.kover")
 }
 
 android {
     testOptions.unitTests.isIncludeAndroidResources = true
 
     namespace = "com.afternote.feature.home.presentation"
+    resourcePrefix = "home_"
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
 }
 
@@ -23,6 +25,7 @@ dependencies {
 
     // HomeTabViewModel 경합 테스트 — 가상 시간으로 viewModelScope 요청 순서를 제어한다.
     testImplementation(libs.coroutines.test)
+    testImplementation(testFixtures(projects.core.domain))
     testImplementation(testFixtures(projects.feature.mindrecord.domain))
 
     // 자리표시자가 화면에 도달하는지는 실제로 그려 봐야 확인된다 (#562).

@@ -38,9 +38,9 @@ private fun CoreAuthFailure.displayMessageResOrNull(): Int? =
     when (this) {
         is CoreAuthFailure.NetworkUnavailable -> R.string.onboarding_network_error
 
-        is CoreAuthFailure.EmailAlreadyRegistered -> R.string.signup_email_already_registered
+        is CoreAuthFailure.EmailAlreadyRegistered -> R.string.onboarding_signup_email_already_registered
 
-        is CoreAuthFailure.SocialLoginRejected -> R.string.login_social_rejected
+        is CoreAuthFailure.SocialLoginRejected -> R.string.onboarding_login_social_rejected
 
         // 셋 다 이 함수 밖에서 갈리므로 전용 문구를 갖지 않는다 — 자격 거절·인증번호 무효는 화면이
         // 입력 필드 인라인으로, 인증 취소는 소비처가 무시한다. `else` 가 아니라 열거해 두는 건

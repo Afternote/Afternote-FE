@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.ui.UiText
@@ -98,22 +99,29 @@ class DiaryWriteViewModel
         private val uploadedImageUrls = mutableSetOf<String>()
 
         /**
-         * 에디터에서 고른 이미지를 presigned URL 로 업로드하고 **미리보기에 쓸 URL** 을 반환한다
-         * (실패 시 null). 첫 업로드 이미지는 등록 payload 의 `imageUrl` (목록 카드 썸네일) 로도 쓴다.
+         * 에디터에서 고른 **미디어**(사진·음성·파일)를 presigned URL 로 업로드하고 **미리보기에
+         * 쓸 URL** 을 반환한다 (실패 시 null).
          *
          * 저장 시 본문에 나가는 값은 이 URL 이 아니다 — 서버는 `img src` 에서 fileKey 를 기대하고
          * 전체 URL 을 받으면 호스트를 한 번 더 붙여 403 이 된다. 그래서 받은 URL 을 기억해 두고
          * 제출 직전에 키로 바꾼다 ([toWireContent]). 미리보기는 전체 URL 이라야 뜬다 (#1016).
+         *
+         * **첫 업로드 결과는 등록 payload 의 `imageUrl` 로도 실린다** (아래 `it.imageUrl == null`).
+         * 이 PR 이 첨부 대상을 이미지에서 미디어 전체로 넓히면서, 그 자리가 처음으로 음성·파일을
+         * 집을 수 있게 됐다 — 지금은 서버가 그 필드를 무시하고 응답 `imageUrl` 이 null 이라
+         * 사용자 영향이 없지만, 배선 자체는 남아 있다. 후속: #1195.
          */
-        suspend fun uploadImage(uriString: String): String? {
+        suspend fun uploadMedia(uriString: String): String? {
+            // 실패 문구의 수명은 «다음 업로드 시작까지» 다 — 화면에 걷는 수단이 따로 없고,
+            // 걷는 함수만 두면 호출부 0건인 죽은 코드가 된다 (#1019 리뷰 지적).
             _uiState.update { it.copy(isUploadingImage = true, imageUploadError = null) }
             return photoUploadRepository
                 .upload(uriString = uriString, directory = MIND_RECORD_UPLOAD_DIRECTORY)
-                .onSuccess { url ->
+                .onSuccess { uploaded ->
                     // 제출 직전 fileKey 로 바꿀 대상이다 (#1016).
-                    uploadedImageUrls += url
+                    uploadedImageUrls += uploaded.fileUrl
                     _uiState.update {
-                        val withUrl = if (it.imageUrl == null) it.copy(imageUrl = url) else it
+                        val withUrl = if (it.imageUrl == null) it.copy(imageUrl = uploaded.fileUrl) else it
                         withUrl.copy(isUploadingImage = false)
                     }
                 }.onFailure {
@@ -125,10 +133,7 @@ class DiaryWriteViewModel
                         )
                     }
                 }.getOrNull()
-        }
-
-        fun consumeImageUploadError() {
-            _uiState.update { it.copy(imageUploadError = null) }
+                ?.fileUrl
         }
 
         fun submit(isDraft: Boolean = false) {
@@ -217,11 +222,29 @@ class DiaryWriteViewModel
             }
         }
 
-        private fun loadReceivers() {
+        /**
+         * 수신인 목록 조회. **실패를 빈 목록으로 흡수하지 않는다** (#1019).
+         *
+         * 흡수하면 화면이 «아직 등록 안 함» 과 «못 불러옴» 을 구분하지 못해, 사용자는 시트를
+         * 열어 빈 목록만 본다. 수신자 없이도 작성은 되므로 화면을 막지는 않는다.
+         */
+        fun loadReceivers() {
             viewModelScope.launch {
-                runCatching { userRepository.getReceivers() }
+                _uiState.update { it.copy(isReceiverLoading = true, receiverLoadError = null) }
+                runCatchingCancellable { userRepository.getReceivers() }
                     .onSuccess { receivers ->
-                        _uiState.update { it.copy(receivers = receivers) }
+                        _uiState.update {
+                            it.copy(receivers = receivers, isReceiverLoading = false, receiverLoadError = null)
+                        }
+                    }.onFailure {
+                        // 서버·예외 원문을 화면 문구로 쓰지 않는다 — 오프라인이면 «Unable to
+                        // resolve host …» 가 그대로 노출된다. 도메인 문구로 고정한다 (#614·#1019).
+                        _uiState.update {
+                            it.copy(
+                                isReceiverLoading = false,
+                                receiverLoadError = UiText.Resource(R.string.mindrecord_error_receiver_load_failed),
+                            )
+                        }
                     }
             }
         }

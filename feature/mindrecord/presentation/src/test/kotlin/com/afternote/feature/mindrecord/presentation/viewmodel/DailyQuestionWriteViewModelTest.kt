@@ -1,7 +1,7 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
-import com.afternote.core.domain.repository.PhotoUploadRepository
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.DiaryList
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
@@ -58,7 +58,7 @@ class DailyQuestionWriteViewModelTest {
             DailyQuestionWriteViewModel(
                 SavedStateHandle(emptyMap()),
                 repository,
-                NoopPhotoUploadRepository,
+                FakePhotoUploadRepository.strict(),
                 noopDraftLoader(),
             )
 
@@ -83,7 +83,7 @@ class DailyQuestionWriteViewModelTest {
             DailyQuestionWriteViewModel(
                 SavedStateHandle(emptyMap()),
                 repository,
-                NoopPhotoUploadRepository,
+                FakePhotoUploadRepository.strict(),
                 noopDraftLoader(),
             )
 
@@ -110,12 +110,15 @@ class DailyQuestionWriteViewModelTest {
             DailyQuestionWriteViewModel(
                 SavedStateHandle(emptyMap()),
                 repository,
-                PhotoUploadRepository { _, _ -> Result.success("https://cdn/just-picked.jpg") },
+                FakePhotoUploadRepository(
+                    uploadedUrl = "https://cdn/just-picked.jpg",
+                    uploadedKey = "mindrecords/1/just-picked.jpg",
+                ),
                 noopDraftLoader(),
             )
 
         viewModel.onAnswerChanged("사용자가 방금 입력한 답변")
-        runBlocking { viewModel.uploadImage("content://just-picked") }
+        runBlocking { viewModel.uploadMedia("content://just-picked") }
         viewModel.submit()
 
         // 업로드 URL 은 에디터가 본문에 <img> 로 넣는다 — payload 필드로는 나가지 않는다 (#549).
@@ -135,11 +138,14 @@ class DailyQuestionWriteViewModelTest {
             DailyQuestionWriteViewModel(
                 SavedStateHandle(emptyMap()),
                 repository,
-                PhotoUploadRepository { _, _ -> Result.success("https://cdn/picked.jpg") },
+                FakePhotoUploadRepository(
+                    uploadedUrl = "https://cdn/picked.jpg",
+                    uploadedKey = "mindrecords/staging/13/picked.jpg",
+                ),
                 noopDraftLoader(),
             )
 
-        val url = runBlocking { viewModel.uploadImage("content://picked") }
+        val url = runBlocking { viewModel.uploadMedia("content://picked") }
 
         assertEquals("https://cdn/picked.jpg", url)
     }
@@ -160,7 +166,7 @@ class DailyQuestionWriteViewModelTest {
             DailyQuestionWriteViewModel(
                 SavedStateHandle(emptyMap()),
                 repository,
-                NoopPhotoUploadRepository,
+                FakePhotoUploadRepository.strict(),
                 noopDraftLoader(),
             )
 
@@ -178,7 +184,7 @@ class DailyQuestionWriteViewModelTest {
             DailyQuestionWriteViewModel(
                 SavedStateHandle(emptyMap()),
                 repository,
-                NoopPhotoUploadRepository,
+                FakePhotoUploadRepository.strict(),
                 noopDraftLoader(),
             )
 
@@ -225,13 +231,14 @@ class DailyQuestionWriteViewModelTest {
             DailyQuestionWriteViewModel(
                 SavedStateHandle(emptyMap()),
                 repository,
-                PhotoUploadRepository { _, _ ->
-                    Result.success("https://cdn.example.net/mindrecords/staging/13/a.png")
-                },
+                FakePhotoUploadRepository(
+                    uploadedUrl = "https://cdn.example.net/mindrecords/staging/13/a.png",
+                    uploadedKey = "mindrecords/staging/13/a.png",
+                ),
                 noopDraftLoader(),
             )
 
-        val previewUrl = runBlocking { viewModel.uploadImage("content://picked") }
+        val previewUrl = runBlocking { viewModel.uploadMedia("content://picked") }
         viewModel.onAnswerChanged("<p>본문</p><img src=\"$previewUrl\" />")
         viewModel.submit()
 
@@ -251,20 +258,19 @@ class DailyQuestionWriteViewModelTest {
                     Result.success(FakeDailyQuestionRepository.FIRST_CREATED_ID)
                 },
             )
-        val viewModel = DailyQuestionWriteViewModel(SavedStateHandle(emptyMap()), repository, NoopPhotoUploadRepository, noopDraftLoader())
+        val viewModel =
+            DailyQuestionWriteViewModel(
+                SavedStateHandle(emptyMap()),
+                repository,
+                FakePhotoUploadRepository.strict(),
+                noopDraftLoader(),
+            )
 
         viewModel.onAnswerChanged("<p>수정</p><img src=\"$permanent\" />")
         viewModel.submit()
 
         assertEquals("<p>수정</p><img src=\"$permanent\" />", sentContent)
     }
-}
-
-private object NoopPhotoUploadRepository : PhotoUploadRepository {
-    override suspend fun upload(
-        uriString: String,
-        directory: String,
-    ): Result<String> = error("upload 는 이 시나리오에서 호출되면 안 됨")
 }
 
 /** 툴바 카운트는 이 테스트의 관심사가 아니다 — 0건으로 고정한다 (#769). */

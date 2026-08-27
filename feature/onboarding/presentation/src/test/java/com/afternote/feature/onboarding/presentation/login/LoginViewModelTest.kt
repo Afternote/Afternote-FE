@@ -2,16 +2,13 @@ package com.afternote.feature.onboarding.presentation.login
 
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.CoreAuthFailure
-import com.afternote.core.domain.repository.auth.AuthRepository
+import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.usecase.auth.LoginUseCase
 import com.afternote.core.model.Session
-import com.afternote.core.model.TokenBundle
 import com.afternote.core.ui.UiText
 import com.afternote.feature.onboarding.presentation.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -57,7 +54,13 @@ class LoginViewModelTest {
 
     private fun viewModel(onDefaultLogin: () -> Result<Session.DefaultSession>): LoginViewModel =
         LoginViewModel(
-            loginUseCase = LoginUseCase(FakeAuthRepository(onDefaultLogin)),
+            loginUseCase =
+                LoginUseCase(
+                    FakeAuthRepository.strict().apply {
+                        this.onDefaultLogin = { _, _ -> onDefaultLogin() }
+                        onSaveSession = { _, _ -> Result.success(Unit) }
+                    },
+                ),
             errorReporter = NoopErrorReporter,
         )
 
@@ -150,7 +153,7 @@ class LoginViewModelTest {
 
         viewModel.attemptEmailLogin()
 
-        assertEquals(UiText.Resource(R.string.login_social_rejected), viewModel.uiState.value.errorMessage)
+        assertEquals(UiText.Resource(R.string.onboarding_login_social_rejected), viewModel.uiState.value.errorMessage)
     }
 
     @Test
@@ -161,7 +164,7 @@ class LoginViewModelTest {
         viewModel.attemptEmailLogin()
 
         val state = viewModel.uiState.value
-        assertEquals(UiText.Resource(R.string.login_failed), state.errorMessage)
+        assertEquals(UiText.Resource(R.string.onboarding_login_failed), state.errorMessage)
         assertFalse(state.isLoading)
     }
 
@@ -171,7 +174,7 @@ class LoginViewModelTest {
 
         viewModel.attemptEmailLogin()
 
-        assertEquals(UiText.Resource(R.string.login_failed), viewModel.uiState.value.errorMessage)
+        assertEquals(UiText.Resource(R.string.onboarding_login_failed), viewModel.uiState.value.errorMessage)
     }
 
     @Test
@@ -183,44 +186,4 @@ class LoginViewModelTest {
 
         assertNull(viewModel.uiState.value.errorMessage)
     }
-}
-
-/**
- * [AuthRepository] 테스트 공용 가짜 — 미지정 경로 호출은 error 로 드러낸다
- * (core:data 의 FakeAuthApiService 와 같은 규칙). 로그인 성공 뒤 세션 저장까지가
- * [LoginUseCase] 경로라 [saveSession] 만 성공 고정으로 열어 둔다.
- */
-private class FakeAuthRepository(
-    private val onDefaultLogin: () -> Result<Session.DefaultSession>,
-) : AuthRepository {
-    override val isLoggedIn: Flow<Boolean> = flowOf(false)
-
-    override suspend fun saveSession(
-        accessToken: String,
-        refreshToken: String,
-    ): Result<Unit> = Result.success(Unit)
-
-    override suspend fun updateTokens(
-        accessToken: String,
-        refreshToken: String,
-    ): Result<Unit> = error("updateTokens 는 이 시나리오에서 호출되면 안 됨")
-
-    override suspend fun clearSession(): Result<Unit> = error("clearSession 은 이 시나리오에서 호출되면 안 됨")
-
-    override suspend fun getAccessToken(): Result<String?> = error("getAccessToken 은 이 시나리오에서 호출되면 안 됨")
-
-    override suspend fun getRefreshToken(): Result<String?> = error("getRefreshToken 은 이 시나리오에서 호출되면 안 됨")
-
-    override suspend fun defaultLogin(
-        email: String,
-        password: String,
-    ): Result<Session.DefaultSession> = onDefaultLogin()
-
-    override suspend fun kakaoLogin(oauthToken: String): Result<Session.SocialSession> = error("kakaoLogin 은 이 시나리오에서 호출되면 안 됨")
-
-    override suspend fun googleLogin(idToken: String): Result<Session.SocialSession> = error("googleLogin 은 이 시나리오에서 호출되면 안 됨")
-
-    override suspend fun rotateToken(): Result<TokenBundle> = error("rotateToken 은 이 시나리오에서 호출되면 안 됨")
-
-    override suspend fun logout(): Result<Unit> = error("logout 은 이 시나리오에서 호출되면 안 됨")
 }

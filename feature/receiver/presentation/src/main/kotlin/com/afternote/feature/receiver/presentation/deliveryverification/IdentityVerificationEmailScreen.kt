@@ -31,6 +31,7 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_HEADER_SPACING
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_TOTAL_STEPS
 import com.afternote.feature.receiver.presentation.deliveryverification.component.ReceiverVerifyStep
+import com.afternote.feature.receiver.presentation.error.asDisplayText
 
 /**
  * 본인 확인 이메일 인증(designs 3·4) — 이메일 + 인증번호 입력 화면 (이슈 #215).
@@ -68,12 +69,7 @@ fun IdentityVerificationEmailScreen(
     }
 
     val errorMessage =
-        uiState.error?.let { err ->
-            when (err) {
-                is ErrorPayload.Res -> stringResource(err.id)
-                is ErrorPayload.Text -> err.message
-            }
-        }
+        uiState.error?.asDisplayText()
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
             snackbarHostState.showSnackbar(errorMessage)
@@ -104,6 +100,13 @@ internal fun IdentityVerificationEmailScreenContent(
     onVerifyAndProceed: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val requestCodeText =
+        if (uiState.isSendingCode) {
+            stringResource(R.string.receiver_verify_code_requesting)
+        } else {
+            stringResource(R.string.receiver_verify_request_code)
+        }
+
     FlowStepScaffold(
         topBarTitle = stringResource(R.string.receiver_verify_title),
         actionButtonText = stringResource(R.string.receiver_verify_next_button),
@@ -137,7 +140,7 @@ internal fun IdentityVerificationEmailScreenContent(
                     state = emailState,
                     type =
                         TextFieldType.Variant7(
-                            text = stringResource(R.string.receiver_verify_request_code),
+                            text = requestCodeText,
                             onClick = onRequestCode,
                             enabled = uiState.isEmailFormatValid && !uiState.isSendingCode,
                         ),

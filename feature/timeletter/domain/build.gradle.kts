@@ -1,5 +1,6 @@
 plugins {
     id("afternote.android.domain")
+    id("afternote.kover")
 }
 
 android {
@@ -8,4 +9,5 @@ android {
 
 dependencies {
     implementation(projects.core.domain)
+    testImplementation(testFixtures(projects.core.domain))
 }

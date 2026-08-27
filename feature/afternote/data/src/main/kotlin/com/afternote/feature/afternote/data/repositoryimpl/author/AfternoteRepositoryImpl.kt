@@ -7,8 +7,8 @@ import androidx.paging.PagingData
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
-import com.afternote.feature.afternote.data.mapper.response.toDetailDomain
 import com.afternote.feature.afternote.data.mapper.toBusinessRequest
+import com.afternote.feature.afternote.data.mapper.toDomain
 import com.afternote.feature.afternote.data.mapper.toRequest
 import com.afternote.feature.afternote.data.mapper.toServerCategory
 import com.afternote.feature.afternote.data.mapper.toSocialRequest
@@ -42,7 +42,8 @@ class AfternoteRepositoryImpl
         @OptIn(ExperimentalCoroutinesApi::class)
         override fun getPagedAfternotes(type: AfternoteType?): Flow<PagingData<ListItem>> {
             val category = type?.toServerCategory()
-            // 서버가 모르는 종류는 보내면 400 이므로 요청 자체를 만들지 않는다.
+            // 서버 enum 에 없는 종류(ESTATE, #491)는 보내면 400 이라 요청 자체를 만들지 않는다.
+            // BUSINESS 는 Afternote-BE 78ee857 부터 정식 값이라 여기서 걸리지 않는다 (#1048).
             if (type != null && category == null) return flowOf(PagingData.empty())
 
             return invalidationTrigger.flatMapLatest {
@@ -55,7 +56,7 @@ class AfternoteRepositoryImpl
 
         override suspend fun getDetail(id: Long): Result<Detail> =
             safeCall {
-                api.getAfternoteDetail(afternoteId = id).requireData().toDetailDomain()
+                api.getAfternoteDetail(afternoteId = id).requireData().toDomain()
             }
 
         override suspend fun createSocial(payload: CreateAccountPayload): Result<Long> =

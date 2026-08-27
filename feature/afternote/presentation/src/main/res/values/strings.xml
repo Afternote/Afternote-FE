@@ -16,7 +16,7 @@
     <string name="home_record_now">지금 애프터노트에 기록하기</string>
     <string name="home_read_past_record">그날의 기록 다시 읽기</string>
     <string name="song_search_label">노래 검색</string>
-    <string name="song_search_placeholder">노래 제목 또는 가수명</string>
+    <string name="song_search_placeholder">노래 검색하기</string>
     <string name="add_button">추가하기</string>
 
     <string name="content_description_back">뒤로가기</string>
@@ -95,7 +95,7 @@
     <string name="afternote_category_gallery_and_files">갤러리 및 파일</string>
     <string name="afternote_category_estate">재산 처리</string>
     <string name="afternote_category_memorial">추억 노트</string>
-    <!-- Edit-screen category dropdown; must stay in sync with [EditorCategory.displayLabel] for [EditorCategory.fromDisplayLabel]. -->
+    <!-- 에디터 종류 드롭다운 — [AfternoteType.editScreenLabelRes] 가 매핑하는 대상. 역매핑은 없으니 표시 문구로 종류를 되짚지 말 것. -->
     <string name="afternote_editor_category_social">소셜네트워크</string>
     <string name="afternote_editor_category_business">비즈니스</string>
     <string name="afternote_editor_category_gallery">갤러리 및 파일</string>
@@ -119,7 +119,9 @@
     <string name="afternote_editor_label_messages">남기실 말씀</string>
     <string name="afternote_editor_label_category">종류</string>
     <string name="afternote_editor_label_service_name">서비스명</string>
-    <!-- 서비스명 미선택 placeholder — %1$s 는 [EditorCategory.displayLabel] (시안 700:36383: "소셜네트워크 선택하기") -->
+    <string name="afternote_editor_account_id_placeholder">아이디를 입력해 주세요.</string>
+    <string name="afternote_editor_account_password_placeholder">비밀번호를 입력해 주세요.</string>
+    <!-- 서비스명 미선택 placeholder — %1$s 는 [AfternoteType.toDropdownLabel] (시안 700:36383: "소셜네트워크 선택하기") -->
     <string name="afternote_editor_service_placeholder">%1$s 선택하기</string>
 
     <string name="afternote_editor_message_field_title">제목</string>
@@ -127,7 +129,10 @@
     <string name="afternote_editor_message_action_register">등록</string>
     <string name="afternote_editor_message_action_delete">삭제</string>
     <string name="afternote_editor_message_add_content_description">남기실 말씀 추가</string>
-    <string name="afternote_editor_message_text_field_placeholder">입력해 주세요</string>
+    <string name="afternote_editor_message_title_placeholder">제목을 입력해 주세요.</string>
+    <string name="afternote_editor_message_text_field_placeholder">내용을 입력해 주세요.</string>
+    <string name="afternote_editor_message_registered_expand_content_description">등록된 말씀 펼치기</string>
+    <string name="afternote_editor_message_registered_collapse_content_description">등록된 말씀 접기</string>
 
     <!-- 받은 기록함 (수신자 흐름) — 발신자 카드 리스트 -->
     <string name="receiver_records_box_title">받은 기록함</string>
@@ -162,6 +167,7 @@
     <string name="receiver_verify_email_placeholder">이메일 주소</string>
     <string name="receiver_verify_code_placeholder">인증번호</string>
     <string name="receiver_verify_request_code">인증번호 받기</string>
+    <string name="receiver_verify_code_requesting">전송 중…</string>
     <string name="receiver_verify_code_sent">인증번호가 전송되었습니다.\n수신 된 인증번호를 입력해 주세요.</string>
     <string name="receiver_verify_email_format_invalid">이메일 형식이 올바르지 않습니다.</string>
     <string name="receiver_verify_code_verify_failed">인증번호 확인에 실패했습니다. 잠시 후 다시 시도해주세요.</string>
@@ -210,7 +216,6 @@
 
     <string name="login_kakao_button">카카오로 로그인</string>
     <string name="login_kakao_backend_not_ready">카카오 토큰을 발급받았습니다. 서버 연동(/auth/kakao) 대기 중입니다.</string>
-    <string name="login_kakao_failed">카카오 로그인에 실패했습니다.</string>
     <string name="login_kakao_sdk_not_initialized">카카오 SDK가 초기화되지 않았습니다. KAKAO_NATIVE_APP_KEY를 확인해주세요.</string>
 
     <string name="biometric_prompt_title">사용자 인증하기</string>
@@ -221,6 +226,7 @@
     <string name="biometric_no_hardware">이 기기는 생체 인식을 지원하지 않습니다.</string>
     <string name="biometric_none_enrolled">등록된 지문이나 화면 잠금이 없습니다. 설정에서 등록해 주세요.</string>
     <string name="biometric_hw_unavailable">생체 인식을 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.</string>
+    <string name="biometric_verification_failed">인증을 확인하지 못했습니다. 다시 시도해 주세요.</string>
 
     <string name="setting_menu_not_connected">이 메뉴는 아직 연결되지 않았습니다.</string>
     <string name="setting_logout">로그아웃</string>
@@ -244,9 +250,7 @@
     <string name="afternote_edit_service_label">등록할 서비스</string>
     <string name="afternote_validation_account_credentials_required">계정 ID와 비밀번호를 입력해 주세요.</string>
     <string name="afternote_validation_actions_required">처리 방법을 한 가지 이상 추가해 주세요.</string>
-    <string name="afternote_validation_gallery_receivers_required">수신자를 한 명 이상 등록해 주세요. 설정에서 수신자를 등록해 주세요.</string>
     <string name="afternote_validation_receivers_required">수신자를 한 명 이상 선택해 주세요.</string>
-    <string name="afternote_validation_playlist_songs_required">플레이리스트에 노래를 한 곡 이상 추가해 주세요.</string>
     <string name="afternote_validation_leave_message_body_required">남기실 말씀의 내용을 입력해 주세요.</string>
     <string name="afternote_default_playlist_song_title">추억 플레이리스트 곡</string>
 

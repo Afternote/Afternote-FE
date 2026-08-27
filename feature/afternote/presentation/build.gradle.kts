@@ -3,6 +3,7 @@ plugins {
     id("afternote.android.hilt")
     kotlin("plugin.serialization")
     alias(libs.plugins.compose.screenshot)
+    id("afternote.kover")
 }
 
 android {
@@ -44,6 +45,10 @@ dependencies {
 
     testImplementation(libs.coroutines.test)
     testImplementation(libs.robolectric)
+
+    // 렌더는 같아도 클릭 전달·접근성 semantics 가 달라지는 컨트롤 회귀를 실제 Compose 트리로 검사한다 (#1168).
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     // Compose Preview Screenshot Testing (#330) — 1hyok 영역 마무리 묶음
     screenshotTestImplementation(libs.screenshot.validation.api)

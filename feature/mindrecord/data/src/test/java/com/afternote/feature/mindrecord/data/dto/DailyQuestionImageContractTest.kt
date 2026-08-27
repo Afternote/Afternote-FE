@@ -55,6 +55,7 @@ class DailyQuestionImageContractTest {
             { "status": 200, "code": 200,
               "data": [{ "userDailyQuestionId": 26, "title": "질문", "isDraft": false,
                          "createdAt": "2026.08.23 일",
+                         "receivers": [],
                          "content": "<p>사진과 함께</p><p><img src=\"https://cdn/probe.png\" alt=\"사진\" /></p>" }] }
             """.trimIndent()
 
@@ -79,7 +80,7 @@ class DailyQuestionImageContractTest {
             """
             { "status": 200, "code": 200,
               "data": [{ "userDailyQuestionId": 1, "title": "질문", "content": "<p>본문</p>",
-                         "createdAt": "2026.08.23 일", "isDraft": false }] }
+                         "createdAt": "2026.08.23 일", "isDraft": false, "receivers": [] }] }
             """.trimIndent()
 
         val item =

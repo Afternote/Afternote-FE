@@ -20,11 +20,10 @@ data class ReceivedExportBundle(
 )
 
 data class ReceivedAfternoteDetail(
-    val title: String? = null,
+    val type: AfternoteType,
+    val serviceName: String,
     val senderName: String? = null,
     val createdAt: String? = null,
-    val category: String? = null,
-    val type: AfternoteType? = null,
     val processingMethods: List<String> = emptyList(),
     val leaveMessageBlocks: List<LeaveMessageBlock> = emptyList(),
     val playlist: ReceivedPlaylistDetail? = null,

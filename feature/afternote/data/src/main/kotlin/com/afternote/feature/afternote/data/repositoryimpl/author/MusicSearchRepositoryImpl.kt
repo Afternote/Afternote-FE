@@ -20,14 +20,14 @@ class MusicSearchRepositoryImpl
             val trimmed = keyword.trim()
             if (trimmed.isEmpty()) return Result.success(emptyList())
             return runCatchingCancellable {
-                api.search(keyword = trimmed).tracks.mapIndexed { index, dto -> dto.toPlaylistSongDisplay(index) }
+                api.search(keyword = trimmed).tracks.mapIndexed { index, dto -> dto.toSearchedSong(index) }
             }
         }
 
-        private fun MusicTrackDto.toPlaylistSongDisplay(index: Int): SearchedSong {
-            val id = "$artist|$title|$index"
+        private fun MusicTrackDto.toSearchedSong(index: Int): SearchedSong {
+            val selectionKey = "search:$artist|$title|$index"
             return SearchedSong(
-                id = id,
+                selectionKey = selectionKey,
                 title = title,
                 artist = artist,
                 albumImageUrl = albumImageUrl,

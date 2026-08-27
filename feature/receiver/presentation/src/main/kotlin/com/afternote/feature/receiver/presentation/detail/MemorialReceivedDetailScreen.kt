@@ -65,10 +65,10 @@ import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiM
 @Composable
 fun MemorialReceivedDetailScreen(
     senderName: String,
+    onNavigateToFullList: () -> Unit,
+    onNavigateToPlaylist: () -> Unit,
+    onBackClick: () -> Unit,
     messageBlocks: List<MessageBlockUiModel> = emptyList(),
-    onNavigateToFullList: () -> Unit = {},
-    onNavigateToPlaylist: () -> Unit = {},
-    onBackClick: () -> Unit = {},
     profileImageResId: Int? = null,
     albumCovers: List<AlbumCover>,
     songCount: Int = 16,
@@ -282,6 +282,9 @@ private fun PreviewMemorialReceivedDetail() {
     AfternoteTheme {
         MemorialReceivedDetailScreen(
             senderName = "박서연",
+            onNavigateToFullList = {},
+            onNavigateToPlaylist = {},
+            onBackClick = {},
             messageBlocks =
                 listOf(
                     MessageBlockUiModel(
@@ -291,9 +294,9 @@ private fun PreviewMemorialReceivedDetail() {
             // 프리뷰 대표 데이터: 실앱은 곡마다 coverUrl → 커버 로드. 프리뷰/스크린샷은 네트워크 미지원이라 회색 박스로 표시.
             albumCovers =
                 listOf(
-                    AlbumCover(id = "1"),
-                    AlbumCover(id = "2"),
-                    AlbumCover(id = "3"),
+                    AlbumCover(),
+                    AlbumCover(),
+                    AlbumCover(),
                 ),
             songCount = 3,
         )
@@ -306,6 +309,9 @@ private fun PreviewMemorialReceivedDetailWithVideo() {
     AfternoteTheme {
         MemorialReceivedDetailScreen(
             senderName = "박서연",
+            onNavigateToFullList = {},
+            onNavigateToPlaylist = {},
+            onBackClick = {},
             messageBlocks =
                 listOf(
                     MessageBlockUiModel(
@@ -314,9 +320,9 @@ private fun PreviewMemorialReceivedDetailWithVideo() {
                 ),
             albumCovers =
                 listOf(
-                    AlbumCover(id = "1"),
-                    AlbumCover(id = "2"),
-                    AlbumCover(id = "3"),
+                    AlbumCover(),
+                    AlbumCover(),
+                    AlbumCover(),
                 ),
             songCount = 3,
             // 영상 섹션은 URL 있을 때만 노출 — 조건부 분기 상태 확인용 프리뷰 (썸네일은 네트워크 미지원이라 회색).

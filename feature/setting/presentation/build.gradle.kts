@@ -2,6 +2,7 @@ plugins {
     id("afternote.android.library.compose")
     id("afternote.android.hilt")
     id("afternote.android.navigation")
+    id("afternote.kover")
 }
 
 val googleWebClientId = socialLoginKey("GOOGLE_WEB_CLIENT_ID")
@@ -36,4 +37,5 @@ dependencies {
     implementation(libs.googleid)
 
     testImplementation(libs.coroutines.test)
+    testImplementation(testFixtures(projects.core.domain))
 }

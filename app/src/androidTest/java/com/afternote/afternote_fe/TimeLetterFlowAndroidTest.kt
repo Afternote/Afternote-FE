@@ -11,8 +11,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
-import com.afternote.afternote_fe.test.FakeUserRepository
-import com.afternote.core.domain.repository.PhotoUploadRepository
+import com.afternote.afternote_fe.test.appTestUserRepository
+import com.afternote.core.domain.model.UploadedFile
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetter
@@ -120,13 +121,23 @@ class TimeLetterFlowAndroidTest {
     private fun viewModel(repository: FakeTimeLetterRepository): TimeLetterWriteViewModel {
         val resolver =
             ResolveTimeLetterBlocksUseCase(
-                PhotoUploadRepository { uri, _ -> Result.success("https://cdn.test/${uri.substringAfterLast('/')}") },
+                FakePhotoUploadRepository(
+                    onUpload = { uri, _ ->
+                        val name = uri.substringAfterLast('/')
+                        Result.success(
+                            UploadedFile(
+                                fileUrl = "https://cdn.test/$name",
+                                fileKey = "timeletters/1/$name",
+                            ),
+                        )
+                    },
+                ),
             )
         return TimeLetterWriteViewModel(
             createTimeLetterUseCase = CreateTimeLetterUseCase(repository, resolver),
             resolveTimeLetterBlocksUseCase = resolver,
             timeLetterRepository = repository,
-            userRepository = FakeUserRepository(),
+            userRepository = appTestUserRepository(),
             fileMetadataRepository =
                 object : FileMetadataRepository {
                     override suspend fun getFileName(uriString: String): String = "fixture"

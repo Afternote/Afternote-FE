@@ -2,6 +2,7 @@ plugins {
     id("afternote.android.library.compose")
     id("afternote.android.hilt")
     id("afternote.android.navigation")
+    id("afternote.kover")
 }
 
 android {
@@ -21,6 +22,7 @@ dependencies {
     implementation(libs.compose.wheel.picker)
     implementation(libs.coil.compose)
     testImplementation(libs.coroutines.test)
+    testImplementation(testFixtures(projects.core.domain))
     testImplementation(libs.robolectric)
 
     testImplementation(platform(libs.androidx.compose.bom))

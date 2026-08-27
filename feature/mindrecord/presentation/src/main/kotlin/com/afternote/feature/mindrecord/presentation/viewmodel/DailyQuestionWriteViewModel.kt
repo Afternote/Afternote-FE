@@ -184,7 +184,7 @@ class DailyQuestionWriteViewModel
         }
 
         /**
-         * 에디터에서 고른 이미지를 업로드하고 **미리보기에 쓸 URL** 을 반환한다 (실패 시 null).
+         * 에디터에서 고른 **미디어**(사진·음성·파일)를 업로드하고 **미리보기에 쓸 URL** 을 반환한다 (실패 시 null).
          *
          * 반환한 URL 은 에디터가 본문 HTML 에 `<img src>` 로 삽입한다 — 그것이 서버에
          * 이미지가 남는 유일한 경로다. 종전에는 이 URL 을 등록 payload 의 `imageUrl` 로도
@@ -194,14 +194,16 @@ class DailyQuestionWriteViewModel
          * 를 기대하므로, 여기서 받은 URL 을 [uploadedImageUrls] 에 기억해 뒀다가 제출 직전에
          * 키 형태로 바꾼다 ([toWireContent]). 미리보기는 전체 URL 이라야 뜬다.
          */
-        suspend fun uploadImage(uriString: String): String? {
+        suspend fun uploadMedia(uriString: String): String? {
+            // 실패 문구의 수명은 «다음 업로드 시작까지» 다 — 화면에 걷는 수단이 따로 없고,
+            // 걷는 함수만 두면 호출부 0건인 죽은 코드가 된다 (#1019 리뷰 지적).
             _uiState.update { it.copy(isUploadingImage = true, imageUploadError = null) }
             return photoUploadRepository
                 .upload(uriString = uriString, directory = MIND_RECORD_UPLOAD_DIRECTORY)
-                .onSuccess { url ->
+                .onSuccess { uploaded ->
                     // 계약에 imageUrl 이 없어 상태로 들지 않는다 — 본문 img 로 들어가고,
                     // 제출 직전 fileKey 로 바뀔 수 있게 기억만 해 둔다 (#549).
-                    uploadedImageUrls += url
+                    uploadedImageUrls += uploaded.fileUrl
                     _uiState.update { it.copy(isUploadingImage = false) }
                 }.onFailure {
                     // null 로 흡수하면 사용자는 이미지가 붙은 줄 알고 저장한다 (#716).
@@ -212,10 +214,7 @@ class DailyQuestionWriteViewModel
                         )
                     }
                 }.getOrNull()
-        }
-
-        fun consumeImageUploadError() {
-            _uiState.update { it.copy(imageUploadError = null) }
+                ?.fileUrl
         }
 
         /**

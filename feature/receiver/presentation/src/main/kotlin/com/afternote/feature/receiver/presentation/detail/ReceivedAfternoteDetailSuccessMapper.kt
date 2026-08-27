@@ -3,6 +3,7 @@ package com.afternote.feature.receiver.presentation.detail
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.toMessageBlockUiModels
+import com.afternote.feature.receiver.domain.model.ReceivedAccountCredentials
 import com.afternote.feature.receiver.domain.model.ReceivedAfternoteDetail
 
 internal fun ReceivedAfternoteDetail.toReceivedDetailContentUiModel(): ReceivedDetailContentUiModel =
@@ -23,25 +24,37 @@ internal fun ReceivedAfternoteDetail.toReceivedDetailContentUiModel(): ReceivedD
         AfternoteType.BUSINESS, AfternoteType.ESTATE -> {
             ReceivedDetailContentUiModel.Unimplemented
         }
-
-        null -> {
-            ReceivedDetailContentUiModel.Unknown
-        }
     }
 
 private fun ReceivedAfternoteDetail.toReceivedSocialNetworkDetailContent(): ReceivedSocialNetworkDetailContent =
     ReceivedSocialNetworkDetailContent(
-        serviceName = title.orEmpty(),
-        accountId = credentials?.id.orEmpty(),
-        password = credentials?.password.orEmpty(),
+        serviceName = serviceName,
+        credentials = credentials.toUiModelOrNull(),
         processingMethods = processingMethods,
         messageBlocks = leaveMessageBlocks.toMessageBlockUiModels(),
         finalWriteDate = createdAt.orEmpty(),
     )
 
+/**
+ * 계정 자격증명을 표시 모델로 옮긴다.
+ *
+ * 공백뿐인 값은 미제공과 구분할 수 없으므로 `null` 로 접고, 그러고도 남는 값이 없으면 모델 자체를
+ * 만들지 않는다. 예전처럼 `orEmpty()` 로 뭉개면 화면이 빈 비밀번호에 마스킹을 그려, 수신자가
+ * 가려진 값이 있다고 오인한 채 "표시" 를 눌러도 아무것도 얻지 못했다 (#619).
+ */
+private fun ReceivedAccountCredentials?.toUiModelOrNull(): ReceivedAccountCredentialsUiModel? {
+    val accountId = this?.id?.takeIf(String::isNotBlank)
+    val password = this?.password?.takeIf(String::isNotBlank)
+    return if (accountId == null && password == null) {
+        null
+    } else {
+        ReceivedAccountCredentialsUiModel(accountId = accountId, password = password)
+    }
+}
+
 private fun ReceivedAfternoteDetail.toReceivedGalleryDetailContent(): ReceivedGalleryDetailContent =
     ReceivedGalleryDetailContent(
-        serviceName = title.orEmpty(),
+        serviceName = serviceName,
         finalWriteDate = createdAt.orEmpty(),
         processingMethods = processingMethods,
         messageBlocks = leaveMessageBlocks.toMessageBlockUiModels(),
@@ -53,9 +66,8 @@ private fun ReceivedAfternoteDetail.toReceivedMemorialDetailContent(): ReceivedM
         senderName = senderName.orEmpty(),
         messageBlocks = leaveMessageBlocks.toMessageBlockUiModels(),
         albumCovers =
-            songs.mapIndexed { index, song ->
+            songs.map { song ->
                 AlbumCover(
-                    id = index.toString(),
                     imageUrl = song.coverUrl,
                     title = song.title,
                 )

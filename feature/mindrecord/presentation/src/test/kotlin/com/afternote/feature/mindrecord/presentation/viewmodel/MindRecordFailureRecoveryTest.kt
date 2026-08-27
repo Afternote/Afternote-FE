@@ -1,7 +1,8 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
-import com.afternote.core.domain.repository.PhotoUploadRepository
+import com.afternote.core.domain.model.UploadedFile
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
@@ -108,13 +109,13 @@ class MindRecordFailureRecoveryTest {
         runTest(dispatcher) {
             // 툴바 임시저장은 `enabled` 없는 clickable 이라 canSubmit 을 우회한다 — 그래서
             // 상태만으로는 부족하고 submit() 이 직접 막아야 한다 (리뷰 지적).
-            val uploadGate = CompletableDeferred<Result<String>>()
+            val uploadGate = CompletableDeferred<Result<UploadedFile>>()
             val repository = NeverSubmittingRepository()
             val viewModel =
                 DailyQuestionWriteViewModel(
                     savedStateHandle = SavedStateHandle(emptyMap()),
                     repository = repository,
-                    photoUploadRepository = PhotoUploadRepository { _, _ -> uploadGate.await() },
+                    photoUploadRepository = FakePhotoUploadRepository(onUpload = { _, _ -> uploadGate.await() }),
                     // 툴바 카운트는 이 테스트의 관심사가 아니다 — 빈 목록으로 고정한다 (#769).
                     draftLoader =
                         MindRecordDraftLoader(
@@ -124,7 +125,7 @@ class MindRecordFailureRecoveryTest {
                 )
             advanceUntilIdle()
 
-            val uploading = launch { viewModel.uploadImage("content://picked.jpg") }
+            val uploading = launch { viewModel.uploadMedia("content://picked.jpg") }
             advanceUntilIdle()
             viewModel.onAnswerChanged("<p>답변</p>")
 
@@ -138,7 +139,14 @@ class MindRecordFailureRecoveryTest {
             )
 
             // 업로드를 끝내 코루틴을 정리한다.
-            uploadGate.complete(Result.success("https://cdn.example.com/a.png"))
+            uploadGate.complete(
+                Result.success(
+                    UploadedFile(
+                        fileUrl = "https://cdn.example.com/a.png",
+                        fileKey = "mindrecords/staging/13/a.png",
+                    ),
+                ),
+            )
             uploading.join()
         }
 }

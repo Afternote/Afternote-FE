@@ -53,7 +53,7 @@ data class DailyQuestionListItemDto(
     @JsonNames("draft")
     val isDraft: Boolean,
     // 상세 화면의 "수신인 OOO" 표시용 (#759).
-    @SerialName("receivers") val receivers: List<MindRecordReceiverDto> = emptyList(),
+    @SerialName("receivers") val receivers: List<MindRecordReceiverDto>,
 )
 
 @Serializable
@@ -92,6 +92,9 @@ data class TodayDailyQuestionDto(
 @Serializable
 data class DailyQuestionAnswerResponseDto(
     @SerialName("userDailyQuestionId") val userDailyQuestionId: Long,
-    @SerialName("content") val content: String = "",
-    @SerialName("isDraft") val isDraft: Boolean = false,
+    // 기본값을 두지 않는다 — 서버가 항상 채우는 값이라, 기본값이 있으면 키 누락과 계약
+    // 변경이 파싱 실패가 아니라 «정상적인 빈 값» 으로 바뀐다. 특히 isDraft 가 false 로
+    // 접히면 임시저장이 정식 답변으로 보인다 (#789).
+    @SerialName("content") val content: String,
+    @SerialName("isDraft") val isDraft: Boolean,
 )

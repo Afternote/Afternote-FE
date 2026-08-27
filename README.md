@@ -150,6 +150,46 @@ keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-sh
 
 별도 API나 유료 AI를 호출하지 않으며 기존 GitHub Actions 실행량만 사용한다. Actions의 **Collect Release Scope**에서 릴리스 PR 번호를 입력해 다시 산출할 수도 있다.
 
+### PR별 구조화 QA 원천
+
+모든 PR은 `QA Metadata` 섹션의 JSON 객체를 채운다. `app-runtime`·`release-only`는 `precondition`·`action`·`expected`·`risk`·`evidence`가 필요하다. `ci-only`·`covered-by-ci`는 빈 QA 문구 대신 `exclusionReason`과 동일 입력·경계·관찰 결과를 적은 `ci` 또는 `test` evidence가 필요하다. 누락과 `#123 관련 동작을 재현...` 형태의 generic 문구는 Unit Test workflow에서 실패한다. 게이트 도입(`QA_METADATA_GATE_CUTOFF`) 전에 생성된 PR은 섹션이 없으면 검증을 건너뛰므로, 리베이스로 이 workflow를 받아도 소급 차단되지 않는다. 섹션을 채우면 생성 시각과 무관하게 검증한다.
+
+```json
+{
+  "scope": "app-runtime",
+  "precondition": "삭제할 애프터노트가 목록에 있는 로그인 상태",
+  "action": "삭제 확인에서 확인을 눌러 DELETE 요청을 보낸다",
+  "expected": "성공 시 목록에서 제거되고 실패 시 기존 항목과 오류 안내가 유지된다",
+  "risk": "실패한 삭제가 성공처럼 보이거나 기존 항목이 유실될 수 있다",
+  "evidence": [
+    {
+      "kind": "issue",
+      "ref": "#550",
+      "assertion": "삭제 성공·실패의 관찰 결과를 정의한다"
+    }
+  ]
+}
+```
+
+앱 QA 제외 원천은 다음처럼 같은 경계를 검증하는 CI 근거를 구조화한다.
+
+```json
+{
+  "scope": "ci-only",
+  "exclusionReason": "GitHub Actions 제어 변경으로 APK 사용자 흐름이 존재하지 않는다",
+  "evidence": [
+    {
+      "kind": "ci",
+      "ref": "Unit Test / Run deployment script tests",
+      "assertion": "같은 스크립트 입력과 종료 상태를 CI에서 검증한다",
+      "input": "배포 판단 context fixture",
+      "boundary": "구조화 메타데이터 파싱부터 최종 JSON 검증까지",
+      "observation": "node test가 제외·병합·generic 0건을 단언한다"
+    }
+  ]
+}
+```
+
 ### 배포 — `main` → Firebase App Distribution (자동, 유일한 경로)
 
 여기서 배포는 검증할 `main` 빌드를 Firebase 테스터에게 전달하는 단계이며, Play Store 프로덕션 릴리스를 뜻하지 않는다.
@@ -168,7 +208,7 @@ keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-sh
 - 주차를 변경한 뒤 최신 리포트가 표시되는지 확인
 ```
 
-PR이 `main`에 머지되면 워크플로가 두 섹션을 릴리스 노트로 사용한다. 연결된 PR이나 필수 섹션을 찾지 못하면 배포하지 않는다.
+PR이 `main`에 머지되면 워크플로가 두 섹션을 릴리스 노트로 사용한다. 연결된 PR이나 필수 섹션을 찾지 못하면 배포하지 않는다. `## QA 포인트`에 사전조건·행동·기대 결과가 없는 generic fallback 문구가 있으면 릴리스 노트 렌더 단계에서 실패한다.
 
 CI 가 사용하는 GitHub Secrets (Settings → Secrets and variables → Actions):
 
@@ -186,6 +226,22 @@ CI 가 사용하는 GitHub Secrets (Settings → Secrets and variables → Actio
 PR 검증용 lint·unit-test·screenshot은 repository secret 대신
 `.github/actions/setup-ci-config`가 만드는 결정적 CI 전용 placeholder를 사용한다. 이 fixture는
 배포에 사용할 수 없으며, `release-distribution.yml`은 계속 승인된 환경의 위 secret만 사용한다.
+
+### 배포 provenance — 이 APK 가 어느 commit·run 에서 나왔는지 (#851)
+
+배포 워크플로는 signing 이 끝난 그 APK 하나를 subject 로 [GitHub artifact attestation](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations)을 발급하고, 업로드 전에 스스로 검증한다. 서명·저장소·signer workflow·source commit·GitHub-hosted 러너 중 하나라도 어긋나거나 attestation subject digest 가 빌드 직후 digest 와 다르면 Firebase 업로드까지 가지 않는다.
+
+성공한 run 의 summary 에 남는 값은 넷이다 — source commit SHA, `sha256:` artifact digest, attestation URL, run URL. APK·AAB 와 R8 mapping 자체는 여기서도 public Actions artifact 로 게시하지 않는다.
+
+받은 APK 가 정말 그 배포 경로에서 나왔는지는 손에 든 파일로 직접 확인할 수 있다.
+
+```bash
+gh attestation verify ~/Downloads/afternote-release.apk --repo Afternote/Afternote-FE --signer-workflow Afternote/Afternote-FE/.github/workflows/release-distribution.yml --source-ref refs/heads/main --deny-self-hosted-runners
+```
+
+특정 릴리스 commit 으로 좁히려면 `--source-digest <commit SHA>` 를 더한다. 파일이 1비트라도 다르면 digest 가 달라져 검증이 실패한다.
+
+> 아래 로컬 fallback 으로 올린 빌드에는 attestation 이 없다. 그 경로로 배포한 APK 는 위 명령이 실패하는 게 정상이며, 그래서 CI 장애 때만 쓴다.
 
 ### 로컬 — 1hyok 머신 (fallback / 긴급 시)
 
@@ -268,6 +324,11 @@ docker run --rm -v "$PWD":/workspace -w /workspace afternote-screenshot:latest \
     - 자세한 정보는 아래 링크를 참고하였다.
 
 [[Java] 객체지향 생활 체조 원칙 9가지 (from 소트웍스 앤솔러지)](https://jamie95.tistory.com/99)
+
+> **패키지 구조**
+>
+- `feature/*/presentation` 은 **기능(화면) 폴더**를 기본 단위로 한다. `screen/` · `viewmodel/` · `component/` 로 먼저 쪼개지 않는다.
+- 깊이 제한 · `shared/` 판정 기준 · `*UiState` 위치 · 이관 절차는 [presentation 패키지 구조 규칙](docs/convention/presentation-package-structure.md) 에 있다.
 
 # 🦥 깃 전략 및 컨벤션
 
