@@ -68,6 +68,35 @@ jobs:
           ref: ${{ github.event.repository.default_branch }}
           persist-credentials: false
 
+      - name: Stage trusted Android test policy
+        id: policy
+        run: |
+          set -euo pipefail
+          policy_dir="$RUNNER_TEMP/android-test-policy"
+          mkdir -p "$policy_dir"
+
+          if [[ -f .github/scripts/qa-metadata.mjs &&
+                -f .github/scripts/resolve-android-test-ref.mjs &&
+                -f .github/scripts/verify-android-test-result.mjs ]]; then
+            install -m 0644 .github/scripts/qa-metadata.mjs "$policy_dir/qa-metadata.mjs"
+            install -m 0644 \
+              .github/scripts/resolve-android-test-ref.mjs \
+              "$policy_dir/resolve-android-test-ref.mjs"
+            install -m 0644 \
+              .github/scripts/verify-android-test-result.mjs \
+              "$policy_dir/verify-android-test-result.mjs"
+            echo "source=trusted" >> "$GITHUB_OUTPUT"
+          elif [[ ! -e .github/scripts/resolve-android-test-ref.mjs &&
+                  ! -e .github/scripts/verify-android-test-result.mjs ]]; then
+            # 최초 도입 PR에서는 default branch에 새 helper 둘 다 아직 없다. 선언 검증을 target
+            # 코드에 맡기지 않고, 아래 단계가 androidTest 선언 자체를 금지하는 fail-closed 예외다.
+            echo "::warning::default branch에 Android test policy가 없어 bootstrap mode를 사용합니다"
+            echo "source=bootstrap" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Android test policy가 부분 설치된 상태입니다"
+            exit 1
+          fi
+
       - name: Resolve and verify tested revision
         id: target
         env:
@@ -79,6 +108,7 @@ jobs:
           EVENT_PR_SHA: ${{ github.event.pull_request.head.sha }}
           EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha || '' }}
           EXPECTED_TEST_REF: ${{ inputs.expected_test_ref || '' }}
+          POLICY_SOURCE: ${{ steps.policy.outputs.source }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
@@ -128,17 +158,27 @@ jobs:
 
           target_test_ref=""
           if [[ "$target_pr" != "none" ]]; then
-            target_test_ref="$(node .github/scripts/resolve-android-test-ref.mjs "$pull_request_file")"
+            if [[ "$POLICY_SOURCE" == "trusted" ]]; then
+              target_test_ref="$(
+                node "$RUNNER_TEMP/android-test-policy/resolve-android-test-ref.mjs" \
+                  "$pull_request_file"
+              )"
+            else
+              if [[ -n "$EXPECTED_TEST_REF" ]]; then
+                echo "::error::bootstrap mode에서는 expected_test_ref를 사용할 수 없습니다"
+                exit 1
+              fi
+              if jq -r '.body // ""' "$pull_request_file" | grep -Eq '"androidTest"[[:space:]]*:'; then
+                echo "::error::bootstrap mode에서는 androidTest 선언을 검증 없이 건너뛸 수 없습니다"
+                exit 1
+              fi
+            fi
           fi
           if [[ "$EVENT_NAME" == "workflow_dispatch" && "$target_pr" != "none" &&
                 "$target_test_ref" != "$EXPECTED_TEST_REF" ]]; then
             echo "::error::현재 PR의 testRef가 dispatch 기대값과 다릅니다"
             exit 1
           fi
-
-          install -m 0644 \
-            .github/scripts/verify-android-test-result.mjs \
-            "$RUNNER_TEMP/verify-android-test-result.mjs"
 
           {
             echo "pr=$target_pr"
@@ -236,7 +276,7 @@ jobs:
         env:
           TARGET_TEST_REF: ${{ steps.target.outputs.test_ref }}
         run: >-
-          node "$RUNNER_TEMP/verify-android-test-result.mjs"
+          node "$RUNNER_TEMP/android-test-policy/verify-android-test-result.mjs"
           "$TARGET_TEST_REF"
           app/build/outputs/androidTest-results/managedDevice
 

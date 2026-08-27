@@ -67,6 +67,18 @@ test("managed device QA uses labeled PR scope or the trusted default branch", as
     assert.match(source, /target_sha.*!=.*EXPECTED_HEAD_SHA/);
     assert.match(source, /ref: \$\{\{ steps\.target\.outputs\.sha \}\}/);
     assert.match(source, /actual_sha.*!=.*EXPECTED_SHA/);
+    const trustedCheckout = source.indexOf("Clone trusted target policy");
+    const policyStaging = source.indexOf("Stage trusted Android test policy");
+    const targetCheckout = source.indexOf("Clone tested revision");
+    assert.ok(trustedCheckout >= 0 && trustedCheckout < policyStaging);
+    assert.ok(policyStaging < targetCheckout);
+    assert.match(source, /source=trusted/);
+    assert.match(source, /source=bootstrap/);
+    assert.doesNotMatch(source, /source=target/);
+    assert.match(source, /Android test policy가 부분 설치된 상태입니다/);
+    assert.match(source, /bootstrap mode에서는 expected_test_ref를 사용할 수 없습니다/);
+    assert.match(source, /bootstrap mode에서는 androidTest 선언을 검증 없이 건너뛸 수 없습니다/);
+    assert.doesNotMatch(source, /node \.github\/scripts\/resolve-android-test-ref\.mjs/);
     assert.match(source, /Verify declared direct androidTest executed/);
     assert.match(
         source,
