@@ -35,7 +35,7 @@ fun debugVersionNameSuffix(
  * 커밋 sha 를 [SHORT_COMMIT_SHA_LENGTH] 자리로 정규화한다. 16진수가 아니거나 짧으면 null.
  *
  * 입력이 두 갈래라 정규화가 필요하다 — CI 의 `GITHUB_SHA` 도 로컬 `git rev-parse HEAD` 도 40자다.
- * QA 대장 파일명(`.codex/qa-evidence/emulator/<sha>.json`)과 대조하려면 자릿수가 일정해야 한다.
+ * QA 대장 파일명(`docs/qa/evidence/<full-head-sha>.json`)과 대조하려면 자릿수가 일정해야 한다.
  */
 fun shortCommitSha(rawCommitSha: String?): String? {
     val value = rawCommitSha?.trim()?.lowercase() ?: return null

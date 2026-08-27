@@ -153,9 +153,9 @@ test("required Repository Quality check runs the issue guard on pull requests", 
     ]);
     assert.match(workflow, /^permissions:\n(?:  .+\n)*  issues: read$/m);
     assert.match(callerWorkflow, /^permissions:\n(?:  .+\n)*  issues: read$/m);
-    assert.match(workflow, /- name: Require linked Issue\n\s+if: github\.event_name == 'pull_request'/);
+    assert.match(workflow, /- name: Require linked Issue\n\s+if: inputs\.pull_request_number > 0/);
     assert.match(workflow, /GH_TOKEN: \$\{\{ github\.token \}\}/);
-    assert.match(workflow, /run: node \.github\/scripts\/validate-pr-issue-link\.mjs/);
+    assert.match(workflow, /validate-pr-issue-link\.mjs "\$\{\{ steps\.changed-files\.outputs\.pull_request_json \}\}"/);
 });
 
 test("the PR template tells authors to reuse an Issue across pull requests", async () => {
