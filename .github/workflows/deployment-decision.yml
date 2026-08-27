@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone merged revision
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha || 'develop' }}
           fetch-depth: 0
@@ -50,7 +50,7 @@ jobs:
             "$DEPLOYMENT_DECISION_PATH"
 
       - name: Publish decision on the merged PR
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           DEPLOYMENT_DECISION_PATH: ${{ runner.temp }}/afternote-deployment-decision/decision.json
           TARGET_PR_NUMBER: ${{ github.event.pull_request.number || inputs.pull_request_number }}

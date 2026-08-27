@@ -1,10 +1,15 @@
 name: Gradle Dependency Submission
 
-# develop push 는 신뢰된 base snapshot 을 직접 제출한다. PR 은 fork 를 포함해 write token 없이
+# develop·main push 는 신뢰된 base snapshot 을 직접 제출한다. PR 은 fork 를 포함해 write token 없이
 # snapshot artifact 만 만들고, default branch 의 별도 workflow_run 이 이를 제출한다.
+#
+# main 이 함께 있어야 하는 이유 — dependency-review 는 PR 의 base ref 스냅샷과 head 스냅샷을
+# 짝지어 «추가된 의존성» 을 계산한다. develop 만 제출하면 릴리스 PR(develop → main)의 base 가
+# 빈 것으로 보여 의존성 전량이 신규 도입으로 잡히고, 그 안에 섞인 기존 취약점이 릴리스 PR
+# 탓으로 걸린다 (#1063).
 on:
   push:
-    branches: [develop]
+    branches: [develop, main]
   pull_request:
 
 concurrency:
@@ -15,9 +20,9 @@ permissions:
   contents: read
 
 jobs:
-  submit-default-branch:
+  submit-trusted-branch:
     if: github.event_name == 'push'
-    name: Submit trusted develop dependency graph
+    name: Submit trusted branch dependency graph
     runs-on: ubuntu-latest
     permissions:
       contents: write

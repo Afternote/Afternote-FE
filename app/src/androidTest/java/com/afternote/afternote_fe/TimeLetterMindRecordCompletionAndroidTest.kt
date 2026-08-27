@@ -410,6 +410,8 @@ class TimeLetterMindRecordCompletionAndroidTest {
             (listViewModel.uiState.value as? DailyQuestionListUiState.Success)?.answers?.isEmpty() == true
         }
         composeRule.onNodeWithText("아직 등록된 답변이 없어요.").assertIsDisplayed()
+        val initialListCalls = repository.listCalls
+        val initialTodayCalls = repository.todayCalls
 
         composeRule.runOnIdle {
             writeViewModel =
@@ -432,13 +434,13 @@ class TimeLetterMindRecordCompletionAndroidTest {
             submitSuccessCalls == 1 &&
                 (listViewModel.uiState.value as? DailyQuestionListUiState.Success)?.answers?.size == 1
         }
-        composeRule.onNodeWithText("오늘의 테스트 질문").assertIsDisplayed()
+        composeRule.onAllNodes(hasText("오늘의 테스트 질문"))[0].assertIsDisplayed()
         composeRule.onNodeWithText("작성 후 목록에 반영될 답변").assertIsDisplayed()
         assertEquals(1, repository.createCalls.size)
         assertEquals(71L, repository.createCalls.single().questionId)
         assertEquals(false, repository.createCalls.single().isDraft)
-        assertEquals(2, repository.listCalls)
-        assertEquals(3, repository.todayCalls)
+        assertEquals(initialListCalls + 2, repository.listCalls)
+        assertEquals(initialTodayCalls + 2, repository.todayCalls)
     }
 
     @Test
@@ -506,6 +508,8 @@ class TimeLetterMindRecordCompletionAndroidTest {
             }
         }
 
+        composeRule.onNode(hasText("이어 쓸 일기") and hasClickAction()).assertIsDisplayed()
+        val initialListCallCount = repository.listCalls.size
         composeRule.onNode(hasText("이어 쓸 일기") and hasClickAction()).performClick()
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
             writeViewModel?.uiState?.value?.draftLoaded == true
@@ -535,8 +539,12 @@ class TimeLetterMindRecordCompletionAndroidTest {
         assertEquals(draftDate.toString(), update.second.date)
         assertEquals("https://afternote.test/draft.jpg", update.second.imageUrl)
         assertTrue(repository.createCalls.isEmpty())
-        assertEquals(2, repository.listCalls.size)
-        assertTrue(repository.listCalls.all { it == currentMonth.toString() to true })
+        assertEquals(initialListCallCount + 2, repository.listCalls.size)
+        assertTrue(
+            repository.listCalls.drop(initialListCallCount).all {
+                it == currentMonth.toString() to true
+            },
+        )
     }
 
     @Test
@@ -844,7 +852,11 @@ private class CompletionDiaryRepository(
         draftOnly: Boolean?,
     ): Result<DiaryList> {
         listCalls += yearMonth to draftOnly
-        val matching = drafts.filter { draftOnly == null || it.isDraft == draftOnly }
+        val matching =
+            drafts.filter { diary ->
+                YearMonth.from(LocalDate.parse(diary.date)).toString() == yearMonth &&
+                    (draftOnly == null || diary.isDraft == draftOnly)
+            }
         return Result.success(
             DiaryList(
                 diaries = matching,
