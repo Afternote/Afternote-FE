@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "92dea962c84de74092fd6160a7f8d8feb4d7f962.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "device.avd",
+      "device.serial"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "92dea962c84de74092fd6160a7f8d8feb4d7f962",
+  "head_ref": "chore/1110",
+  "base_sha": "e1b307eb5a621a8ea07c20db0ca9963a567d79da",
+  "base_ref": "develop",
+  "recorded_at": "2026-08-25T20:57:59.553801+00:00",
+  "result": "pass",
+  "scenario": "PR #1186(#1110) 실기 검증: 철회된 Room 도입의 ProGuard keep 8줄과 GMS 유령 임포트를 걷은 뒤 R8 축소된 릴리스 APK 가 살아있는지. (1) R8 전후 비교 — 같은 워크트리에서 develop 원본과 변경본을 각각 :app:minifyReleaseWithR8 로 빌드. seeds.txt 전체 8251→5618, androidx.work.impl 심볼 2434→16, androidx.room 105→8, mapping.txt 잔존 work.impl 클래스 314→126. 남은 16건이 라이브러리 자체 룰과 매니페스트 컴포넌트가 지키는 몫이며 WorkDatabase·WorkDatabase_Impl 이 생성자째 보존됨 — 이슈가 정황으로 짚은 «room-runtime 이 생성자만 keep 한다» 가 실측으로 확인됨. (2) :app:assembleRelease BUILD SUCCESSFUL (11.1MB). 기존 설치본(debug 서명)을 지우지 않으려고 R8 산출물은 그대로 두고 apksigner 로 debug 키만 재서명해 설치. (3) 기동 — 크래시 없음, Displayed MainActivity +544ms, logcat 에 FATAL·ClassNotFound·NoSuchMethod 0건. (4) WorkManager 예약(핵심 회귀 지점) — dumpsys jobscheduler 에 Service: androidx.work.impl.background.systemjob.SystemJobService / Trace tag: DailyNotificationWorker / Minimum latency: +11h13m22s871ms 로 등록 확인. 축소 후에도 WorkDatabase_Impl 리플렉션 경로가 살아있다는 뜻. (5) 알림 채널 NotificationChannel{mId='afternote_fcm'} 생성 확인. 미검증: FCM 실수신 — c2dm.intent.RECEIVE 브로드캐스트가 서명 권한에 막혀 result=0 으로 서비스에 도달하지 않고 실 푸시는 서버 발송이 필요. 다만 FCM 쪽 변경은 호출 0건인 임포트 삭제이고 mapping.txt 의 Wrappers 잔존 수가 전후 모두 2로 같아 APK 내용 무변경. 주의: 앱 클래스 난독화 이름은 전후로 달라진다(keep 집합 축소로 R8 이름 배정 변경).",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true,
+    "api": 36
+  },
+  "details": {
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe"
+    },
+    "diff_sha256": "a81901231419fd9bbc8a7722a490eca630e9e6e38713de1f1facf24588afe9ae",
+    "changed_files": [
+      "app/proguard-rules.pro",
+      "app/src/main/java/com/afternote/afternote_fe/messaging/AfternoteFirebaseMessagingService.kt"
+    ]
+  }
+}

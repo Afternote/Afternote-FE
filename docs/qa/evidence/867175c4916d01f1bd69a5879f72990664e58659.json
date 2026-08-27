@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "867175c4916d01f1bd69a5879f72990664e58659.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "device.avd",
+      "device.serial",
+      "text.sensitive_value"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "867175c4916d01f1bd69a5879f72990664e58659",
+  "head_ref": "chore/1135",
+  "base_sha": "e1b307eb5a621a8ea07c20db0ca9963a567d79da",
+  "base_ref": "develop",
+  "recorded_at": "2026-08-25T16:35:26.681212+00:00",
+  "result": "pass",
+  "scenario": "PR #1161(#1135) 실기 검증: debug versionName 에 커밋 지문 주입. 이슈가 쓰던 명령 그대로 `adb shell dumpsys package com.afternote.afternote_fe | grep versionName` 로 대조. (1) clean 트리 빌드 설치 → versionName=1.0+867175c (기존 '1.0' 에서 커밋이 읽히게 됨). (2) 이슈가 말한 «검사 전후 대조» 재현 — untracked 파일 하나 추가해 dirty 빌드로 덮어 재설치하니 versionName=1.0+867175c-dirty 로 바뀌어, 다른 빌드가 덮인 사실이 대조에서 즉시 드러남(0825 사고 갈래). (3) 원복 빌드 재설치로 1.0+867175c 확인, 기기 정상 상태로 되돌림. APK 매니페스트 측 실측은 aapt2 dump badging 으로 병행(1.0+867175c / 1.0+52baddc-dirty / GITHUB_SHA 주입 시 1.0+0123456 — CI 경로는 dirty 트리에서도 env 가 이김). configuration cache: 무변경 재빌드 reused 0.65초, dirty 인 채 편집 파일 목록만 바뀌어도 reused, 커밋 변경 시에만 재저장. 로그인·서버 호출 없는 빌드 도구 검증이라 QA 계정 미사용. 기기는 lease 가드에 따라 [SENSITIVE_VALUE_REDACTED](타 세션 점유) 대신 [SENSITIVE_VALUE_REDACTED] 신규 기동.",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true
+  },
+  "details": {
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe"
+    },
+    "diff_sha256": "96f0c1fd319c5c6b5cd9274d785006e17080bb13f571971010dd604f1de4324b",
+    "changed_files": [
+      "app/build.gradle.kts",
+      "build-logic/src/main/kotlin/BuildFingerprint.kt",
+      "build-logic/src/test/kotlin/BuildFingerprintTest.kt"
+    ]
+  }
+}

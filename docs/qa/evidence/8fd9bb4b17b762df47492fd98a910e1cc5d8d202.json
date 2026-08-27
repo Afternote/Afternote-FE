@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "8fd9bb4b17b762df47492fd98a910e1cc5d8d202.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "details.qa_account",
+      "device.avd",
+      "device.serial"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "8fd9bb4b17b762df47492fd98a910e1cc5d8d202",
+  "head_ref": "fix/592-today-recommended-question",
+  "base_sha": "1619595236a1b8e3c9312ff10d8f5292d5abac4a",
+  "base_ref": "develop",
+  "recorded_at": "2026-08-23T07:23:01.214202+00:00",
+  "result": "repro-confirmed",
+  "scenario": "PR #909 리뷰 normal 1·2 실측: 로컬 검증 프록시(전 요청 dev 서버 포워드, GET /daily-questions/today만 500 주입) 경유 QA 빌드(BASE_URL만 교체, 앱 코드 PR head 그대로) → 배너 표시 확인 → 백그라운드→복귀(목록 성공+today 실패)에서 배너 무조작 소실 재현 → today=null 화면의 유령 간격 픽셀 측정: 첫 카드 top 390px(배너 미탑재 #904 빌드) vs 409px = 19px = 8dp(density 387). 스크린샷 2장 PR 코멘트 첨부.",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true
+  },
+  "details": {
+    "diff_sha256": "bfd6c4ca8d22cb1ccfbba705b5c22d9312544bcf4dfbf4244afb0eb5fc091efd",
+    "changed_files": [
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/sender/DailyQuestionAnswerListScreen.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/DailyQuestionListUiState.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/DailyQuestionListViewModel.kt"
+    ],
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe",
+      "installed_for_head": "8fd9bb4b17b762df47492fd98a910e1cc5d8d202"
+    }
+  }
+}

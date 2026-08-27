@@ -167,7 +167,7 @@ android {
     buildTypes {
         debug {
             // 설치된 앱이 어느 커밋으로 빌드됐는지 `adb shell dumpsys package` 한 줄로 읽히게 한다.
-            // 실기 QA 증거는 커밋 sha 로 대장에 남으므로(`.codex/qa-evidence/emulator/<sha>.json`),
+            // 실기 QA 증거는 전체 커밋 sha 로 대장에 남으므로(`docs/qa/evidence/<full-head-sha>.json`),
             // 앱이 스스로 커밋을 들고 있지 않으면 검증한 코드를 특정할 수 없다 — #1135.
             // release `versionName` 은 사용자에게 보이므로 건드리지 않는다.
             versionNameSuffix = resolveDebugVersionNameSuffix()

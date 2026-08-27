@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "53a2f7bc43c4922c96f00914052621eb95b6d75e.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": "not_covered",
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "device.avd",
+      "device.serial"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "53a2f7bc43c4922c96f00914052621eb95b6d75e",
+  "head_ref": "refs/pull/440/head",
+  "base_sha": "b834c1100bc5d5dcf7f34a6a28e1d108e4404ec5",
+  "base_ref": "origin/develop",
+  "recorded_at": "2026-08-22T19:00:00+00:00",
+  "result": "pass-with-observations",
+  "scenario": "오프라인+더미 세션으로 PR HEAD 실측(에뮬레이터 -no-audio, 무음 입력). 작성 화면→미디어 추가→음성 추가하기→RECORD_AUDIO 권한 프롬프트→허용→녹음 시트. 녹음 시작→타이머 진행(00:05)→녹음 중 홈 이탈 후 복귀 시 녹음 폐기 확인(시트·타이머·블록 없음)→재녹음→녹음 완료→'녹음 듣기/다시 녹음/음성 메시지 등록' 상태→듣기 트리거 시 오류 없음→등록 시 본문에 .m4a 오디오 블록 추가·삭제 버튼 노출.",
+  "not_covered": [
+    {
+      "pr": 440,
+      "reason": "실제 마이크 음질/재생 청취는 에뮬레이터 호스트 마이크 경유 시 QEMU 행·크래시(환경 문제)로 -no-audio 무음 입력 사용 — 앱 결함 아님. 등록(SCHEDULED) 제출·업로드는 수신자 선택 전제(오프라인)라 미검증. 리뷰의 blocking 1·4(이슈 연결 어긋남·develop 충돌)는 정적 사안."
+    }
+  ],
+  "device": {
+    "android": "15",
+    "is_emulator": true,
+    "note": "호스트 오디오 입력 사용 시 emulator 37.1.11 QEMU 메인 루프 행 → 크래시 재현. 이 AVD에서 녹음 QA는 -no-audio 권장."
+  },
+  "details": {
+    "dynamic": true,
+    "findings": [
+      {
+        "pr": 440,
+        "severity": "observation-confirming-review",
+        "title": "음성 추가하기는 녹음 전용 — 기존 오디오 파일 첨부 경로 제거 확인",
+        "detail": "PR HEAD에서 음성 추가하기가 권한→녹음기만 열고 파일 선택이 없음. develop 동일 진입점은 GET_CONTENT audio/* 파일 선택기를 열음(런타임 대조·ActivityTaskManager 로그). 리뷰(8/22 15:44) 지적 2(기존 음성 파일 첨부 제거)와 일치."
+      },
+      {
+        "pr": 440,
+        "severity": "observation",
+        "title": "오디오 블록에 내부 UUID 파일명 노출",
+        "detail": "등록된 블록 라벨이 '9a0a01f7-....m4a' 형태의 내부 파일명. 표시명 개선 여지."
+      }
+    ],
+    "app": {
+      "package": "com.afternote.afternote_fe",
+      "installed_for_head": "53a2f7bc43c4922c96f00914052621eb95b6d75e",
+      "mock": "debug_mock_mode=on (time-letters only)",
+      "note": "이 HEAD의 debug 서명이 현행과 달라 install -r 불가(INSTALL_FAILED_UPDATE_INCOMPATIBLE) — uninstall 후 클린 설치로 진행했고 QA 종료 시 제거함."
+    },
+    "purpose": "8/20 이후 리뷰 QA 감사 후속 — PR #440(음성 메시지 녹음) 리뷰 시점 HEAD 소급 런타임 QA"
+  }
+}

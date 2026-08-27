@@ -17,6 +17,7 @@ konsist/      아키텍처 규칙 테스트
 | [docs/release/distribution.md](docs/release/distribution.md) | 비개발자 APK 배포 (Firebase App Distribution) |
 | [docs/testing/screenshot.md](docs/testing/screenshot.md) | Compose Preview 스크린샷 baseline (docker) |
 | [docs/qa/status.md](docs/qa/status.md) | QA 현황 · 회차 기록 · 커버리지 |
+| [docs/qa/evidence/README.md](docs/qa/evidence/README.md) | 커밋별 런타임 QA 증거 · 기록 규약 |
 | [docs/qa/assumptions.md](docs/qa/assumptions.md) | 시안 · 명세에 없어 판단으로 정한 것 |
 
 ---
