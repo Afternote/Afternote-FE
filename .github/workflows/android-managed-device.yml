@@ -230,7 +230,9 @@ jobs:
             --stacktrace
 
       - name: Verify declared direct androidTest executed
-        if: steps.target.outputs.test_ref != ''
+        # API 34 lane은 accessibility smoke class만 필터 실행하므로, PR이 선언한 일반 직접
+        # 테스트의 XML 증거는 전체 suite를 실행하는 API 30 lane에서 한 번만 검증한다.
+        if: steps.target.outputs.test_ref != '' && matrix.test_class == ''
         env:
           TARGET_TEST_REF: ${{ steps.target.outputs.test_ref }}
         run: >-

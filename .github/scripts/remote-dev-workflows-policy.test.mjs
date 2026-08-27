@@ -68,6 +68,10 @@ test("managed device QA uses labeled PR scope or the trusted default branch", as
     assert.match(source, /ref: \$\{\{ steps\.target\.outputs\.sha \}\}/);
     assert.match(source, /actual_sha.*!=.*EXPECTED_SHA/);
     assert.match(source, /Verify declared direct androidTest executed/);
+    assert.match(
+        source,
+        /if: steps\.target\.outputs\.test_ref != '' && matrix\.test_class == ''/,
+    );
     assert.match(source, /persist-credentials: false/);
 });
 
