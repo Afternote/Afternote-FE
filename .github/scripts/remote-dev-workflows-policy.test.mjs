@@ -65,7 +65,13 @@ test("managed device QA uses labeled PR scope or the trusted default branch", as
     assert.match(source, /head_repository.*!=.*GITHUB_REPOSITORY/);
     assert.match(source, /has_label.*!=.*true/);
     assert.match(source, /target_sha.*!=.*EXPECTED_HEAD_SHA/);
-    assert.match(source, /ref: \$\{\{ steps\.target\.outputs\.sha \}\}/);
+    assert.match(source, /target_branch.*!=.*DISPATCH_REF_NAME/);
+    assert.match(source, /target_sha.*!=.*EXECUTION_SHA/);
+    assert.match(
+        source,
+        /ref: \$\{\{ github\.event_name == 'pull_request' && github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/,
+    );
+    assert.doesNotMatch(source, /ref: \$\{\{ steps\.target\.outputs\.sha \}\}/);
     assert.match(source, /actual_sha.*!=.*EXPECTED_SHA/);
     const trustedCheckout = source.indexOf("Clone trusted target policy");
     const policyStaging = source.indexOf("Stage trusted Android test policy");

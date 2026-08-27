@@ -51,6 +51,7 @@ function currentPullRequest(overrides = {}) {
     return {
         state: "open",
         head: {
+            ref: "feature/test",
             sha: "1111111111111111111111111111111111111111",
             repo: { full_name: "o/r" },
         },
@@ -101,18 +102,20 @@ test("default branch의 PR Validation 요청과 정기 실행에서 라벨을 �
     assert.match(labelWorkflow, /ANDROID_TEST_REDISPATCH_HEAD_SHA:.*workflow_run\.head_sha/);
 });
 
-test("자동 라벨 dispatch는 default branch workflow에서 현재 same-repository HEAD를 재검증한다", () => {
+test("자동 라벨 dispatch는 PR branch event SHA와 현재 same-repository HEAD를 재검증한다", () => {
     assert.match(androidWorkflow, /^\s{6}pull_request_number:\n/m);
     assert.match(androidWorkflow, /^\s{6}expected_head_sha:\n/m);
     assert.match(androidWorkflow, /^\s{6}expected_test_ref:\n/m);
     assert.match(androidWorkflow, /EXPECTED_HEAD_SHA.*\$\{\{ inputs\.expected_head_sha/);
     assert.match(androidWorkflow, /head_repository.*!=.*GITHUB_REPOSITORY/);
     assert.match(androidWorkflow, /target_sha.*!=.*EXPECTED_HEAD_SHA/);
+    assert.match(androidWorkflow, /target_branch.*!=.*DISPATCH_REF_NAME/);
+    assert.match(androidWorkflow, /target_sha.*!=.*EXECUTION_SHA/);
     assert.match(
         androidWorkflow,
-        /github\.event_name == 'workflow_dispatch' &&\n\s+github\.ref_name == github\.event\.repository\.default_branch/,
+        /ref: \$\{\{ github\.event_name == 'pull_request' && github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/,
     );
-    assert.match(androidWorkflow, /ref: \$\{\{ steps\.target\.outputs\.sha \}\}/);
+    assert.doesNotMatch(androidWorkflow, /ref: \$\{\{ steps\.target\.outputs\.sha \}\}/);
     assert.match(androidWorkflow, /persist-credentials: false/);
     assert.match(androidWorkflow, /resolve-android-test-ref\.mjs/);
     assert.match(androidWorkflow, /verify-android-test-result\.mjs/);
@@ -320,13 +323,18 @@ test("changed files 한도를 넘으면 일부 파일만으로 판정하지 않�
     );
 });
 
-test("라벨 부착 뒤 다시 읽은 현재 HEAD를 trusted workflow로 dispatch한다", async () => {
+test("라벨 부착 뒤 다시 읽은 현재 HEAD branch scope로 dispatch한다", async () => {
+    const currentHeadBranch = "feature/android-flow";
     const currentHeadSha = "4141414141414141414141414141414141414141";
     const currentTestRef = "app/src/androidTest/java/com/afternote/FlowAndroidTest.kt#flow_succeeds";
     const api = fakeApi({
         responses: {
             "/repos/o/r/pulls/40": currentPullRequest({
-                head: { sha: currentHeadSha, repo: { full_name: "o/r" } },
+                head: {
+                    ref: currentHeadBranch,
+                    sha: currentHeadSha,
+                    repo: { full_name: "o/r" },
+                },
                 body: requiredQaBody(currentTestRef),
             }),
         },
@@ -335,7 +343,7 @@ test("라벨 부착 뒤 다시 읽은 현재 HEAD를 trusted workflow로 dispatc
         api,
         "o/r",
         { toLabel: [{ number: 40, headRefOid: "4040404040404040404040404040404040404040" }] },
-        { label: DEFAULT_LABEL, dryRun: false, defaultBranch: "develop", logger: silent },
+        { label: DEFAULT_LABEL, dryRun: false, logger: silent },
     );
 
     assert.deepEqual(failures, []);
@@ -359,7 +367,7 @@ test("라벨 부착 뒤 다시 읽은 현재 HEAD를 trusted workflow로 dispatc
             apiPath: "/repos/o/r/actions/workflows/android-managed-device.yml/dispatches",
             method: "POST",
             body: {
-                ref: "develop",
+                ref: currentHeadBranch,
                 inputs: {
                     pull_request_number: "40",
                     expected_head_sha: currentHeadSha,
@@ -381,6 +389,7 @@ test("현재 PR이 open, same-repository, labeled가 아니면 dispatch 대상�
         [
             currentPullRequest({
                 head: {
+                    ref: "feature/test",
                     sha: "1111111111111111111111111111111111111111",
                     repo: { full_name: "fork/r" },
                 },
@@ -389,8 +398,20 @@ test("현재 PR이 open, same-repository, labeled가 아니면 dispatch 대상�
         ],
         [currentPullRequest({ labels: [] }), /라벨이 현재 PR에 없습니다/],
         [
-            currentPullRequest({ head: { sha: "bad", repo: { full_name: "o/r" } } }),
+            currentPullRequest({
+                head: { ref: "feature/test", sha: "bad", repo: { full_name: "o/r" } },
+            }),
             /HEAD SHA가 올바르지 않습니다/,
+        ],
+        [
+            currentPullRequest({
+                head: {
+                    ref: "",
+                    sha: "1111111111111111111111111111111111111111",
+                    repo: { full_name: "o/r" },
+                },
+            }),
+            /HEAD branch가 올바르지 않습니다/,
         ],
     ];
 
@@ -410,7 +431,7 @@ test("dispatch 실패 시 안전 라벨과 pending 표식을 남겨 다음 recon
         api,
         "o/r",
         { toLabel: [{ number: 42, headRefOid: "4242424242424242424242424242424242424242" }] },
-        { label: DEFAULT_LABEL, dryRun: false, defaultBranch: "develop", logger: silent },
+        { label: DEFAULT_LABEL, dryRun: false, logger: silent },
     );
 
     assert.equal(failures.length, 1);
@@ -432,7 +453,7 @@ test("pending PR 재시도는 android-test를 다시 쓰지 않고 성공 후 �
             toLabel: [],
             toRetry: [{ number: 43, headRefOid: "4343434343434343434343434343434343434343" }],
         },
-        { label: DEFAULT_LABEL, dryRun: false, defaultBranch: "develop", logger: silent },
+        { label: DEFAULT_LABEL, dryRun: false, logger: silent },
     );
 
     assert.deepEqual(failures, []);
@@ -456,7 +477,7 @@ test("dry run은 원격 쓰기를 하지 않는다", async () => {
         api,
         "o/r",
         { toLabel: [{ number: 41, headRefOid: "4141414141414141414141414141414141414141" }] },
-        { label: DEFAULT_LABEL, dryRun: true, defaultBranch: "develop", logger: silent },
+        { label: DEFAULT_LABEL, dryRun: true, logger: silent },
     );
 
     assert.deepEqual(api.calls, []);
@@ -477,7 +498,7 @@ test("한 PR 라벨 실패가 나머지 PR 처리를 막지 않는다", async ()
                 { number: 51, headRefOid: "5151515151515151515151515151515151515151" },
             ],
         },
-        { label: DEFAULT_LABEL, dryRun: false, defaultBranch: "develop", logger: silent },
+        { label: DEFAULT_LABEL, dryRun: false, logger: silent },
     );
 
     assert.equal(failures.length, 1);

@@ -299,6 +299,7 @@ export async function ensureLabelExists(
 
 export async function fetchCurrentDispatchTarget(api, repository, number, label) {
     const pullRequest = await api(`/repos/${repository}/pulls/${number}`);
+    const headBranch = pullRequest?.head?.ref;
     const headSha = pullRequest?.head?.sha;
     const headRepository = pullRequest?.head?.repo?.full_name;
     const labels = (pullRequest?.labels ?? []).map((item) => item.name);
@@ -316,8 +317,12 @@ export async function fetchCurrentDispatchTarget(api, repository, number, label)
     if (typeof headSha !== "string" || !/^[0-9a-f]{40}$/.test(headSha)) {
         throw new Error(`현재 HEAD SHA가 올바르지 않습니다: ${headSha ?? "unknown"}`);
     }
+    if (typeof headBranch !== "string" || headBranch.length === 0) {
+        throw new Error(`현재 HEAD branch가 올바르지 않습니다: ${headBranch ?? "unknown"}`);
+    }
 
     return {
+        headBranch,
         headSha,
         androidTestRef:
             qaInspection.valid && qaInspection.metadata?.androidTest?.required === true
@@ -330,7 +335,7 @@ export async function applyPlan(
     api,
     repository,
     plan,
-    { label, pendingLabel = DEFAULT_PENDING_LABEL, dryRun, defaultBranch, logger = console },
+    { label, pendingLabel = DEFAULT_PENDING_LABEL, dryRun, logger = console },
 ) {
     const failures = [];
 
@@ -364,18 +369,18 @@ export async function applyPlan(
             // changed-files를 읽은 뒤 push가 먼저 발생하고 라벨이 나중에 붙는 경합을 닫는다.
             // 라벨을 붙인 다음 현재 PR을 다시 읽으면, 그 전에 끝난 push는 새 SHA로 dispatch하고
             // 그 뒤의 push는 이미 라벨이 있으므로 synchronize 이벤트가 Managed Device를 실행한다.
-            const { headSha: currentHeadSha, androidTestRef } = await fetchCurrentDispatchTarget(
-                api,
-                repository,
-                pullRequest.number,
-                label,
-            );
+            const {
+                headBranch: currentHeadBranch,
+                headSha: currentHeadSha,
+                androidTestRef,
+            } = await fetchCurrentDispatchTarget(api, repository, pullRequest.number, label);
             await api(
                 `/repos/${repository}/actions/workflows/android-managed-device.yml/dispatches`,
                 {
                     method: "POST",
                     body: {
-                        ref: defaultBranch,
+                        // workflow_dispatch의 GITHUB_SHA/cache scope를 PR head branch에 결박한다.
+                        ref: currentHeadBranch,
                         inputs: {
                             pull_request_number: String(pullRequest.number),
                             expected_head_sha: currentHeadSha,
@@ -402,9 +407,8 @@ export async function applyPlan(
 async function main() {
     const token = process.env.GITHUB_TOKEN;
     const repository = process.env.GITHUB_REPOSITORY;
-    const defaultBranch = process.env.GITHUB_DEFAULT_BRANCH;
-    if (!token || !repository || !defaultBranch) {
-        throw new Error("GITHUB_TOKEN, GITHUB_REPOSITORY, GITHUB_DEFAULT_BRANCH가 필요합니다.");
+    if (!token || !repository) {
+        throw new Error("GITHUB_TOKEN, GITHUB_REPOSITORY가 필요합니다.");
     }
 
     const label = process.env.ANDROID_TEST_LABEL ?? DEFAULT_LABEL;
@@ -436,7 +440,6 @@ async function main() {
         label,
         pendingLabel,
         dryRun,
-        defaultBranch,
     });
     const summary = renderSummary({ plan, label, dryRun });
     console.log(summary);
