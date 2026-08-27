@@ -83,6 +83,9 @@ interface HomeTabActions {
 
     fun onNextStepClick()
 
+    /** 타임레터 NEXT STEP 카드 — 2026-08-09 확정 문구의 목적지 (#700). */
+    fun onTimeLetterNextStepClick()
+
     fun onWeeklyImageClick()
 
     fun onWeeklyCountClick()
@@ -100,6 +103,8 @@ private object HomeTabActionsNoop : HomeTabActions {
     override fun onAnswerClick() {}
 
     override fun onNextStepClick() {}
+
+    override fun onTimeLetterNextStepClick() {}
 
     override fun onWeeklyImageClick() {}
 
@@ -246,6 +251,18 @@ private fun HomeTabScrollContent(
             onAnswerClick = actions::onAnswerClick,
         )
 
+        // 정본(4327:99103)의 순서는 TODAY'S QUESTION → 타임레터 → AFTER NOTE NEXT STEP 이다.
+        // 문구는 2026-08-09 디자이너 확정분 (#700).
+        item {
+            NextStepCard(
+                sectionTitle = stringResource(R.string.home_tab_timeletter_next_step_section_title),
+                body = stringResource(R.string.home_tab_timeletter_next_step_body),
+                cta = stringResource(R.string.home_tab_timeletter_next_step_cta),
+                onClick = actions::onTimeLetterNextStepClick,
+            )
+            Spacer(modifier = Modifier.height(40.dp))
+        }
+
         item {
             AfternoteSectionHeader(title = stringResource(R.string.home_tab_next_step_section_title))
             Spacer(modifier = Modifier.height(12.dp))
@@ -291,6 +308,44 @@ private fun HomeTabScrollContent(
         homeTabMindRecordMemoriesSection(
             onMemoriesSectionClick = actions::onMemoriesSectionClick,
         )
+    }
+}
+
+/**
+ * NEXT STEP 카드 한 장. 타임레터·애프터노트가 같은 모양을 쓰므로 문구와 목적지만 받는다.
+ */
+@Composable
+private fun NextStepCard(
+    sectionTitle: String,
+    body: String,
+    cta: String,
+    onClick: () -> Unit,
+) {
+    AfternoteSectionHeader(title = sectionTitle)
+    Spacer(modifier = Modifier.height(12.dp))
+    AfternoteOutlinedCard(onClick = onClick) {
+        Column {
+            Text(
+                text = body,
+                style = AfternoteDesign.typography.inter,
+                color = AfternoteDesign.colors.gray8,
+            )
+            Spacer(modifier = Modifier.height(18.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    text = cta,
+                    style = AfternoteDesign.typography.captionLargeR,
+                    color = AfternoteDesign.colors.gray6,
+                )
+                RightArrowIcon(
+                    modifier = Modifier.size(width = 4.dp, height = 7.dp),
+                    tint = AfternoteDesign.colors.gray6,
+                )
+            }
+        }
     }
 }
 

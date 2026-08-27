@@ -401,6 +401,11 @@ fun rememberHomeTabActions(
                 appState.navigateToBottomBarRoute(Route.Afternote)
             }
 
+            // 카드 문구가 «타임레터 입력하러가기» 라 타임레터 탭으로 보낸다 (#700, 2026-08-09 확정).
+            override fun onTimeLetterNextStepClick() {
+                appState.navigateToBottomBarRoute(Route.TimeLetter)
+            }
+
             // TODO: 카드별 destination 디자인 확정 후 분기. 우선 마음의 기록 탭으로 임시 연결.
             override fun onWeeklyImageClick() {
                 appState.navigateToBottomBarRoute(Route.MindRecord)

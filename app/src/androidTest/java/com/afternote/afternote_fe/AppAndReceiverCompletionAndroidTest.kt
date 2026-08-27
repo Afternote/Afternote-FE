@@ -622,6 +622,8 @@ class ReceiverRuntimeCompletionAndroidTest {
                 ) {
                     composable<Route.Home> { Text("home route") }
                     composable<Route.Afternote> { Text("afternote route") }
+                    composable<Route.MindRecord> { Text("mind record route") }
+                    composable<Route.TimeLetter> { Text("time letter route") }
                     composable<Route.MemorySpace> { Text("memory space route") }
                     composable<Route.Setting> { Text("setting route") }
                 }
@@ -632,6 +634,19 @@ class ReceiverRuntimeCompletionAndroidTest {
         val homeActions = checkNotNull(actions)
         composeRule.runOnIdle { homeActions.onNextStepClick() }
         composeRule.onNodeWithText("afternote route").assertIsDisplayed()
+        // 카테고리 카드는 시안에 없어 사라졌지만(#700) 주간 이미지·카운트는 여전히
+        // Route.MindRecord 로 간다 — 살아 있는 진입점이라 가드를 그쪽으로 옮긴다 (리뷰 지적).
+        composeRule.runOnIdle { homeActions.onWeeklyImageClick() }
+        composeRule.onNodeWithText("mind record route").assertIsDisplayed()
+        composeRule.runOnIdle { checkNotNull(appState).navController.popBackStack() }
+        composeRule.runOnIdle { homeActions.onWeeklyCountClick() }
+        composeRule.onNodeWithText("mind record route").assertIsDisplayed()
+        composeRule.runOnIdle { checkNotNull(appState).navController.popBackStack() }
+
+        // 2026-08-09 확정된 타임레터 NEXT STEP 카드의 목적지 (#700).
+        composeRule.runOnIdle { homeActions.onTimeLetterNextStepClick() }
+        composeRule.onNodeWithText("time letter route").assertIsDisplayed()
+
         composeRule.runOnIdle { checkNotNull(appState).navController.popBackStack() }
         composeRule.runOnIdle { homeActions.onMemoriesSectionClick() }
         composeRule.onNodeWithText("memory space route").assertIsDisplayed()
