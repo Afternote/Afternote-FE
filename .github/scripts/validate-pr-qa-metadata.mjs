@@ -13,10 +13,21 @@ import { hasQaMetadataSection, inspectQaMetadata } from "./qa-metadata.mjs";
 // 본문을 고치기 전까지 리베이스하는 순간 막힌다 — 8/24 로 두는 동안 열린 PR 22건이,
 // 8/26 00:00Z 로 두는 동안 #1194 가 그 상태였다. 머지가 이 날짜를 넘기면 넘긴 만큼 다시 민다.
 export const QA_METADATA_GATE_CUTOFF = "2026-08-27T00:00:00Z";
+// 기존 구조화 QA 본문을 소급 차단하지 않는다. 도입 감사 시점에 열려 있던 가장 최근 PR
+// (#1265, 2026-08-27T06:44:06Z) 뒤로 경계를 고정하고 이후 PR은 명시적 결정을 요구한다.
+export const ANDROID_TEST_DECISION_GATE_CUTOFF = "2026-08-27T08:00:00Z";
 
 function isGrandfathered(pullRequest) {
     const createdAt = Date.parse(pullRequest?.created_at ?? "");
     return Number.isFinite(createdAt) && createdAt < Date.parse(QA_METADATA_GATE_CUTOFF);
+}
+
+function isAndroidTestDecisionGrandfathered(pullRequest) {
+    const createdAt = Date.parse(pullRequest?.created_at ?? "");
+    return (
+        Number.isFinite(createdAt) &&
+        createdAt < Date.parse(ANDROID_TEST_DECISION_GATE_CUTOFF)
+    );
 }
 
 function escapeWorkflowCommand(value) {
@@ -24,6 +35,40 @@ function escapeWorkflowCommand(value) {
         .replaceAll("%", "%25")
         .replaceAll("\r", "%0D")
         .replaceAll("\n", "%0A");
+}
+
+export async function validateAndroidTestReference(metadata, { root = process.cwd() } = {}) {
+    if (metadata?.androidTest?.required !== true) {
+        return;
+    }
+    const testRef = metadata.androidTest.testRef;
+    const [relativePath, testName] = testRef.split("#", 2);
+    const absolutePath = path.resolve(root, relativePath);
+    const relativeToRoot = path.relative(root, absolutePath);
+    if (relativeToRoot.startsWith("..") || path.isAbsolute(relativeToRoot)) {
+        throw new Error(`androidTest.testRef가 저장소 밖을 가리킵니다: ${testRef}`);
+    }
+
+    let stat;
+    try {
+        stat = await fs.stat(absolutePath);
+    } catch {
+        throw new Error(`androidTest.testRef 파일이 현재 PR revision에 없습니다: ${testRef}`);
+    }
+    if (!stat.isFile()) {
+        throw new Error(`androidTest.testRef가 파일이 아닙니다: ${testRef}`);
+    }
+
+    const source = await fs.readFile(absolutePath, "utf8");
+    const escapedTestName = testName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const testDeclaration = new RegExp(
+        `@Test(?:\\s*\\([^)]*\\))?\\s*` +
+            `(?:@[\\w:.]+(?:\\([^\\n]*\\))?\\s*)*` +
+            `fun\\s+${escapedTestName}\\s*\\(`,
+    );
+    if (!testDeclaration.test(source)) {
+        throw new Error(`androidTest.testRef의 @Test 메서드가 현재 PR revision에 없습니다: ${testRef}`);
+    }
 }
 
 export function validatePullRequestEvent(event) {
@@ -36,6 +81,7 @@ export function validatePullRequestEvent(event) {
     const number = event.pull_request.number ?? event.number ?? "?";
     const inspection = inspectQaMetadata(event.pull_request.body, {
         pullRequestNumber: number,
+        requireAndroidTestDecision: !isAndroidTestDecisionGrandfathered(event.pull_request),
     });
     return {
         skipped: false,
@@ -72,6 +118,15 @@ async function main() {
                 `::error title=구조화 QA 메타데이터 오류::${escapeWorkflowCommand(error)}`,
             );
         }
+        process.exitCode = 1;
+        return;
+    }
+    try {
+        await validateAndroidTestReference(validation.metadata);
+    } catch (error) {
+        console.error(
+            `::error title=구조화 QA 메타데이터 오류::${escapeWorkflowCommand(error.message)}`,
+        );
         process.exitCode = 1;
         return;
     }
