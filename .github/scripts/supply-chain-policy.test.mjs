@@ -171,9 +171,9 @@ test('dependency graph generation is immutable, fail closed, and wrapper validat
   const source = `${prSource}\n${trustedSource}`;
   const actionReferences = source.match(/gradle\/actions\/dependency-submission@[0-9a-f]{40} # v\d+\.\d+\.\d+/g);
 
-  assert.equal(actionReferences?.length, 2);
-  assert.equal((source.match(/dependency-graph-continue-on-failure:\s*false/g) ?? []).length, 2);
-  assert.equal((source.match(/validate-wrappers:\s*true/g) ?? []).length, 2);
+  assert.equal(actionReferences?.length, 3);
+  assert.equal((source.match(/dependency-graph-continue-on-failure:\s*false/g) ?? []).length, 3);
+  assert.equal((source.match(/validate-wrappers:\s*true/g) ?? []).length, 3);
   assert.match(prSource, /dependency-graph:\s*generate-and-upload/);
   assert.equal(workflowName(prSource), 'Generate PR Dependency Graph');
   assert.doesNotMatch(prSource, /^  push:/m);
@@ -182,6 +182,32 @@ test('dependency graph generation is immutable, fail closed, and wrapper validat
   assert.match(trustedSource, /^  push:/m);
   assert.doesNotMatch(trustedSource, /^  pull_request:/m);
   assert.doesNotMatch(trustedSource, /^    paths:/m);
+});
+
+test('manual dependency baseline is hard-wired to the checked-out main SHA', async () => {
+  const source = await readFile(
+    new URL('../workflows/dependency-submission-trusted.yml', import.meta.url),
+    'utf8',
+  );
+  const manualJob = /^  submit-main-baseline:\n[\s\S]+$/m.exec(source)?.[0];
+
+  assert.match(source, /^  workflow_dispatch:\s*$/m);
+  assert.doesNotMatch(source, /^  workflow_dispatch:\n    inputs:/m);
+  assert.match(
+    source,
+    /github\.event_name == 'workflow_dispatch' && 'refs\/heads\/main' \|\| github\.ref/,
+  );
+  assert.ok(manualJob);
+  assert.match(
+    manualJob,
+    /if:\s*github\.event_name == 'workflow_dispatch' && github\.ref == 'refs\/heads\/develop'/,
+  );
+  assert.match(manualJob, /GITHUB_DEPENDENCY_GRAPH_REF:\s*refs\/heads\/main/);
+  assert.match(manualJob, /^          ref:\s*refs\/heads\/main$/m);
+  assert.match(manualJob, /snapshot_sha="\$\(git rev-parse HEAD\)"/);
+  assert.match(manualJob, /GITHUB_DEPENDENCY_GRAPH_SHA=\$snapshot_sha/);
+  assert.match(manualJob, /dependency-graph:\s*generate-and-submit/);
+  assert.doesNotMatch(manualJob, /inputs\./);
 });
 
 test('dependency PR workflows use the same complete server-side path filter', async () => {
