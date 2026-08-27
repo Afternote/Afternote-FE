@@ -42,6 +42,7 @@ dependencies {
 
     // 실패 표기가 «레이아웃을 유지하는지» 는 실제로 그려 봐야 확인된다 (#952).
     testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(testFixtures(projects.core.ui))
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     screenshotTestImplementation(libs.screenshot.validation.api)
