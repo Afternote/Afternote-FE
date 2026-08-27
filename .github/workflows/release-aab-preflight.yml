@@ -18,6 +18,10 @@ concurrency:
 jobs:
   preflight:
     name: Build and verify release AAB
+    if: >-
+      github.event_name != 'pull_request' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       github.event.pull_request.head.ref == 'develop')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:

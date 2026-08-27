@@ -4,12 +4,28 @@ on:
   pull_request:
     paths:
       - 'core/network/**'
+      - 'core/common/**'
+      - 'core/domain/**'
+      - 'core/model/**'
+      - 'build-logic/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle.properties'
+      - 'gradle/**'
       - 'gradle/libs.versions.toml'
       - '.github/workflows/api-contract-smoke.yml'
   push:
     branches: [develop]
     paths:
       - 'core/network/**'
+      - 'core/common/**'
+      - 'core/domain/**'
+      - 'core/model/**'
+      - 'build-logic/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle.properties'
+      - 'gradle/**'
       - 'gradle/libs.versions.toml'
       - '.github/workflows/api-contract-smoke.yml'
   schedule:

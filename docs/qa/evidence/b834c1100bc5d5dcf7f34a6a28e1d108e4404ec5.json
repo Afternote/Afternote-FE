@@ -1,0 +1,80 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "b834c1100bc5d5dcf7f34a6a28e1d108e4404ec5.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": "not_covered",
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "device.avd",
+      "device.serial"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "b834c1100bc5d5dcf7f34a6a28e1d108e4404ec5",
+  "head_ref": "origin/develop",
+  "base_sha": "b834c1100bc5d5dcf7f34a6a28e1d108e4404ec5",
+  "base_ref": "origin/develop",
+  "recorded_at": "2026-08-22T18:40:00+00:00",
+  "result": "fail",
+  "scenario": "오프라인(비행기 모드)+더미 로컬 세션(qa-*)+debug 타임레터 목업으로 develop HEAD를 실측. 홈 오류·재시도 UI, 타임레터 작성 화면 입력, 임시저장 목록 표시(mock GET temporary 파싱), 임시저장 목록 수정 모드→항목 선택→삭제(mock DELETE 200)→목록 갱신은 정상. 결함 2건 발견.",
+  "not_covered": [
+    {
+      "pr": 792,
+      "reason": "카카오 인증 실패 스낵바·link 미요청 경로는 ConnectedAccountsScreen 도달이 전제인데, 설정 메뉴가 getMyProfile() 성공(Success)에서만 렌더되어 유효 서버 세션 없이는 도달 불가. 실계정/스테이징 세션 확보 시 재시도 필요."
+    },
+    {
+      "pr": 763,
+      "reason": "등록(SCHEDULED) 생성·수정·4xx serverMessage 표시는 수신자 선택이 전제(수신자 API 미목업·오프라인)라 미검증."
+    }
+  ],
+  "device": {
+    "android": "15",
+    "is_emulator": true
+  },
+  "details": {
+    "dynamic": true,
+    "findings": [
+      {
+        "pr": 763,
+        "severity": "defect",
+        "title": "발신 타임레터 목록이 조회 실패(Error)를 빈 목록 UI로 렌더",
+        "detail": "TimeletterScreen.kt:106 이 TimeletterUiState.Error에 EmptyTimeLetterContent('아직 등록된 타임레터가 없어요')를 그림. 재시도 없음. 목업이 200으로 2건을 줘도 DTO 파싱 실패 시 '없어요'로 위장됨을 런타임 재현(임시저장 픽스처는 파싱되어 카운트 1 표시 — 대조 증명). 수신자용 RecipientTimeletterScreen.kt:78 은 오류 문구+다시 시도를 정상 표시. 결함 도입은 8da873a5(2026-05-19)로 #763 이전이나, #763 리뷰·승인(8/22 02:25, 실측 없음)이 이 경로를 지나침."
+      },
+      {
+        "pr": 763,
+        "severity": "defect-candidate",
+        "title": "임시저장(DRAFT)도 수신자 0건이면 차단됨",
+        "detail": "TimeLetterWriteViewModel.kt:282 save() 공통 검증이 register뿐 아니라 saveDraft에도 적용되어 제목·내용만으로 임시저장 불가('수신자를 선택해주세요' 스낵바, 요청 미발생). 기존 이슈 #570이 정확히 추적 중(7/28엔 서버가 400으로 거부, #763 이후 FE 선차단으로 전환됨 — 정책 미해결). 실측 코멘트: https://github.com/Afternote/Afternote-FE/issues/570#issuecomment-5382083532"
+      },
+      {
+        "pr": null,
+        "severity": "crash",
+        "title": "수신자 선택 화면 진입 시 수신인 조회 실패가 미처리 예외로 앱 크래시 (develop 상주)",
+        "detail": "UserRepositoryImpl.receiverListFlow(무보호 map{getReceivers()}) + RecipientListViewModel stateIn(catch 없음) 조합. PR #771 HEAD에서 런타임 재현했고 해당 코드는 develop과 동일(유래 c9a8e19b 2026-04-09). dropbox에 8/21 17:16 동일 계열 크래시(ApiException 401 uncaught) 기록도 존재. 타임레터 작성의 수신자 선택 진입이 오프라인·401 상황에서 앱을 죽임. 이슈: https://github.com/Afternote/Afternote-FE/issues/884"
+      },
+      {
+        "pr": null,
+        "severity": "observation",
+        "title": "설정 화면 프로필 조회 실패 시 메뉴 전체 소실",
+        "detail": "SettingScreen.kt SettingUiState.Error 분기가 로그아웃 항목만 렌더(재시도 없음). 오프라인에서 설정의 모든 메뉴(연결된 계정·수신인 관리 등) 접근 불가."
+      },
+      {
+        "pr": null,
+        "severity": "observation",
+        "title": "debug 타임레터 목업 fixture가 현행 DTO 계약과 불일치",
+        "detail": "TimeLetterMockFixtures.MOCK_LIST_JSON의 블록에 url/mimeType 키 누락 → 현행 TimeLetterBlockDto(기본값 없는 nullable) 기준 전체 파싱 실패. debug 목업으로 목록 화면 검증이 불가능한 상태였음. (#767 HEAD 커밋이 이 직렬화 엄격성을 완화함)"
+      }
+    ],
+    "app": {
+      "package": "com.afternote.afternote_fe",
+      "installed_for_head": "b834c1100bc5d5dcf7f34a6a28e1d108e4404ec5",
+      "mock": "debug_mock_mode=on (time-letters only)"
+    },
+    "purpose": "8/20 이후 리뷰 QA 감사 후속 — 머지된 PR #763·#792 소급 런타임 QA (develop HEAD)"
+  }
+}

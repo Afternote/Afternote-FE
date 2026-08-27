@@ -29,6 +29,17 @@ test('contract smoke is explicit, Docker-backed, secretless, and bounded', () =>
   assert.match(workflow, /run: docker info/);
   assert.match(workflow, /--tests '\*ApiWireContractSmokeTest'/);
   assert.doesNotMatch(workflow, /secrets\./);
+  for (const affectedPath of [
+    'core/network/**',
+    'core/common/**',
+    'core/domain/**',
+    'core/model/**',
+    'build-logic/**',
+    'settings.gradle.kts',
+    'gradle/**',
+  ]) {
+    assert.ok(workflow.includes(`'${affectedPath}'`), `missing API reverse-dependency path ${affectedPath}`);
+  }
 });
 
 test('wire smoke uses Testcontainers with a pinned MockServer REST API image', () => {
