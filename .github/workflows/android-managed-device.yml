@@ -1,9 +1,12 @@
 name: Android Managed Device Test
 
-# PR 필수 검증으로 올리기 전 안정화 단계다. 수동 실행과 정기 실행의 최근 3회가 연속
-# 성공했는지는 별도 gate 이슈에서 판단하며, 실패를 감추는 job/test 재시도는 두지 않는다.
+# main PR 의 필수 API 30 검증이다. same-repository PR 을 pull_request 권한 경계에서
+# 직접 실행하고 정확한 head SHA 를 검사한다. fork PR 은 신뢰 경계상 자동 실행하지 않는다.
+# 수동·정기 실행은 event SHA 를 사용하며, 실패를 감추는 job/test 재시도는 두지 않는다.
 on:
   workflow_dispatch:
+  pull_request:
+    types: [opened, reopened, synchronize]
   schedule:
     - cron: "17 18 * * 2,5"
 
@@ -11,17 +14,34 @@ permissions:
   contents: read
 
 concurrency:
-  group: android-managed-device-${{ github.ref }}
-  cancel-in-progress: false
+  group: android-managed-device-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   managed-device:
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     name: Pixel 2 API 30 androidTest
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - name: Clone repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Verify checked out revision
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          if [[ "$actual_sha" != "$EXPECTED_SHA" ]]; then
+            echo "::error::checkout $actual_sha 가 기대한 revision $EXPECTED_SHA 와 다릅니다"
+            exit 1
+          fi
 
       - name: Set up JDK
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0

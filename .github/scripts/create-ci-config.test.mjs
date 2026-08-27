@@ -147,3 +147,27 @@ test("keeps pull request validation secretless and release credentials isolated"
         assert.match(releaseWorkflow, new RegExp(`secrets\\.${secretName}`));
     }
 });
+
+test("keeps the required managed-device check attached to same-repository pull request heads", async () => {
+    const source = await readFile(
+        join(githubDirectory, "workflows", "android-managed-device.yml"),
+        "utf8",
+    );
+
+    assert.match(
+        source,
+        /^\s{2}pull_request:\n\s{4}types:\s*\[opened,\s*reopened,\s*synchronize\]$/m,
+    );
+    assert.match(source, /^\s{4}name:\s*Pixel 2 API 30 androidTest$/m);
+    assert.match(
+        source,
+        /github\.event_name != 'pull_request'\s*\|\|\s*github\.event\.pull_request\.head\.repo\.full_name == github\.repository/,
+    );
+    assert.match(
+        source,
+        /ref:\s*\$\{\{\s*github\.event_name == 'pull_request' && github\.event\.pull_request\.head\.sha \|\| github\.sha\s*\}\}/,
+    );
+    assert.match(source, /persist-credentials:\s*false/);
+    assert.match(source, /actual_sha="\$\(git rev-parse HEAD\)"/);
+    assert.match(source, /"\$actual_sha" != "\$EXPECTED_SHA"/);
+});
