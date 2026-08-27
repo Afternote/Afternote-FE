@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "c1e78fd6d13caedfbf6b1292ab07bbd545b07262.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "device.avd",
+      "device.serial",
+      "text.qa_account"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "c1e78fd6d13caedfbf6b1292ab07bbd545b07262",
+  "head_ref": "security/1073",
+  "base_sha": "817578e8d2d1bc80fba63906ecce08eae9ede04d",
+  "base_ref": "develop",
+  "recorded_at": "2026-08-26T07:41:32.017267+00:00",
+  "result": "pass",
+  "scenario": "PR #1170(#1073) 실서버 QA — 본문의 «실제 앱 흐름에서의 확인» 을 끝냈다. 먼저 관문 도달 조건을 규명: AfternoteNavGraphFingerprint 가 isPasskeyRegistered==false 면 지문 화면을 스킵하는데 그 값은 서버가 아니라 로컬 DataStore(UserProfile.preferences_pb 의 is_passkey_registered)다. [QA_ACCOUNT_REDACTED] 은 서버 GET /users/passkeys 도 [] 라 관문이 통째로 스킵되고 있었다. 플래그를 세운 뒤 실기 흐름 완주: 로그인→노트 탭→「지문 로그인」 화면→「지문 인증하기」→BiometricPrompt 표시(mCurrentFocus=Window{BiometricPrompt})→Pixel Imprint 로 등록한 지문 인식→애프터노트 목록 진입. keystore2 가 challenge 실린 auth token 을 발급(add_auth_token authType=0x2, BiometricService addAuthToken: 0), 앱 FATAL·IllegalBlockSizeException 0건. 본문 실측이 DEVICE_CREDENTIAL(PIN) 경로였으므로 지문·PIN 양쪽에서 관문이 열림이 확인됨(API 35). 별건 사실: 앱에 패스키 등록 API 호출부가 없어(화면만 존재) 실사용자 중 이 경로를 지나는 사람은 사실상 없다.",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true,
+    "api": 35,
+    "size": "1080x2400",
+    "density": 420
+  },
+  "details": {
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe"
+    },
+    "diff_sha256": "4502a20ff3d87bf3580173bf24a55a0304c27ce8fc9ac30c25bf0d0ade9e65c7",
+    "changed_files": [
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/navigation/AfternoteNavGraphFingerprint.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/shared/fingerprint/BiometricAuth.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/shared/fingerprint/BiometricCryptoGate.kt",
+      "feature/afternote/presentation/src/main/res/values/strings.xml",
+      "feature/afternote/presentation/src/test/kotlin/com/afternote/feature/afternote/presentation/shared/fingerprint/BiometricCryptoGateTest.kt"
+    ]
+  }
+}

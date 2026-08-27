@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "18e57a142a69be5fd3581bae67a459cf09c1b4a7.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": "not_covered",
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "device.avd",
+      "device.serial"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "18e57a142a69be5fd3581bae67a459cf09c1b4a7",
+  "head_ref": "refs/pull/767/head",
+  "base_sha": "b834c1100bc5d5dcf7f34a6a28e1d108e4404ec5",
+  "base_ref": "origin/develop",
+  "recorded_at": "2026-08-22T18:45:00+00:00",
+  "result": "fail",
+  "scenario": "오프라인+더미 세션+debug 목업으로 PR HEAD 실측. 발신 타임레터 목록은 mock 2건 정상 표시(이 HEAD의 직렬화 완화 커밋 유효 — omitted nullable 필드 수용 확인). 작성 화면 임시저장 카운트 1 정상. 임시저장 목록 진입 시 결함 발견.",
+  "not_covered": [
+    {
+      "pr": 767,
+      "reason": "리뷰 지적 1(일반 모드 임시저장 항목 이어쓰기 진입 불가)과 지적 2(삭제 중복 입력 레이스·실패 복원)는 목록 Success 상태가 전제인데, 위 결함으로 오프라인에서는 목록 자체가 Error라 직접 재현 불가. 수신인 API가 살아 있는 세션에서 재검증 필요."
+    }
+  ],
+  "device": {
+    "android": "15",
+    "is_emulator": true
+  },
+  "details": {
+    "dynamic": true,
+    "findings": [
+      {
+        "pr": 767,
+        "severity": "defect",
+        "title": "수신인 이름 조회 실패가 임시저장 목록 전체 실패로 승격",
+        "detail": "DraftLetterViewModel.loadDrafts()가 getTemporaryTimeLetters() 성공 후 userRepository.getReceivers()를 같은 try에서 호출해, 이름 장식용 조회 실패만으로 전체가 DraftLetterUiState.Error('임시 저장된 레터를 불러올 수 없습니다')가 됨. 목업 로그로 draft GET 200 성공을 확인한 상태에서 재현. 같은 화면의 구버전(develop)은 동일 조건에서 '수신인 : 미지정'으로 목록을 정상 렌더하고, TimeletterViewModel은 동일 패턴을 getOrElse(emptyList())로 격리함. 리뷰(8/22 22:52)가 확인했다고 적은 '누락 수신인 count fallback'은 이 경로에서 도달 불가. PR 코멘트(전후 스크린샷 포함): https://github.com/Afternote/Afternote-FE/pull/767#issuecomment-5382096280"
+      }
+    ],
+    "app": {
+      "package": "com.afternote.afternote_fe",
+      "installed_for_head": "18e57a142a69be5fd3581bae67a459cf09c1b4a7",
+      "mock": "debug_mock_mode=on (time-letters only)"
+    },
+    "purpose": "8/20 이후 리뷰 QA 감사 후속 — PR #767(임시저장 목록 UI 개선) 리뷰 시점 HEAD 소급 런타임 QA"
+  }
+}

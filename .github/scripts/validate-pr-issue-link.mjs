@@ -98,24 +98,23 @@ async function requestIssue(apiUrl, repository, token, issueNumber) {
 }
 
 async function main() {
-    const eventPath = requiredString(process.env.GITHUB_EVENT_PATH, "GITHUB_EVENT_PATH");
+    const eventPath = requiredString(process.argv[2] ?? process.env.GITHUB_EVENT_PATH, "pull request JSON path");
     const repository = requiredString(process.env.GITHUB_REPOSITORY, "GITHUB_REPOSITORY");
     const token = requiredString(process.env.GH_TOKEN ?? process.env.GITHUB_TOKEN, "GH_TOKEN");
     const apiUrl = requiredString(process.env.GITHUB_API_URL ?? "https://api.github.com", "GITHUB_API_URL");
     const event = JSON.parse(await readFile(eventPath, "utf8"));
-    if (!event.pull_request) {
-        throw new Error("pull_request event가 아닙니다.");
-    }
+    const pullRequest = event.pull_request ?? event;
+    if (!Number.isInteger(pullRequest?.number)) throw new Error("pull request JSON이 아닙니다.");
 
     const result = await validatePullRequestIssueLink({
-        pullRequest: event.pull_request,
+        pullRequest,
         repository,
         loadIssue: (issueNumber) => requestIssue(apiUrl, repository, token, issueNumber),
     });
     for (const warning of result.rejected) {
         console.log(`::warning::무효 Issue 참조: ${warning}`);
     }
-    console.log(`PR #${event.pull_request.number} linked issues: ${result.issues.map((number) => `#${number}`).join(", ")}`);
+    console.log(`PR #${pullRequest.number} linked issues: ${result.issues.map((number) => `#${number}`).join(", ")}`);
 }
 
 const isDirectExecution = process.argv[1]

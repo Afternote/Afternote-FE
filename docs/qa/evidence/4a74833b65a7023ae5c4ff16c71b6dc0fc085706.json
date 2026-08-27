@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "4a74833b65a7023ae5c4ff16c71b6dc0fc085706.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "device.serial",
+      "text.device_identifier"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "4a74833b65a7023ae5c4ff16c71b6dc0fc085706",
+  "head_ref": "HEAD",
+  "base_sha": "62d5935c614ba2ac00a015e182a1769fd4f275bc",
+  "base_ref": "origin/develop",
+  "recorded_at": "2026-08-14T05:25:45.463167+00:00",
+  "result": "pass",
+  "scenario": "QA 전용 [DEVICE_NAME_REDACTED]에서 실서버 refresh 무효 400/code 1107을 인증 거절로 분류해 세션을 정리한 뒤, 현재 HEAD APK 재설치·재기동 시 시작·로그인 화면 유지 확인",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true
+  },
+  "details": {
+    "diff_sha256": "31ab9f830905749470761a4f32c96fd0a1c806a5fd3cd6c68ac84e050d534ce5",
+    "changed_files": [
+      "core/network/build.gradle.kts",
+      "core/network/src/main/kotlin/com/afternote/core/network/di/NetworkModule.kt",
+      "core/network/src/main/kotlin/com/afternote/core/network/interceptor/AuthInterceptor.kt",
+      "core/network/src/main/kotlin/com/afternote/core/network/interceptor/TokenAuthenticator.kt",
+      "core/network/src/main/kotlin/com/afternote/core/network/token/TokenReissuer.kt",
+      "core/network/src/test/kotlin/com/afternote/core/network/FakeAuthRepository.kt",
+      "core/network/src/test/kotlin/com/afternote/core/network/di/NetworkModuleTest.kt",
+      "core/network/src/test/kotlin/com/afternote/core/network/interceptor/AuthInterceptorTest.kt",
+      "core/network/src/test/kotlin/com/afternote/core/network/interceptor/TokenAuthenticatorTest.kt",
+      "core/network/src/test/kotlin/com/afternote/core/network/token/TokenReissuerTest.kt",
+      "git-hooks/pre-commit"
+    ],
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe",
+      "installed_for_head": "4a74833b65a7023ae5c4ff16c71b6dc0fc085706",
+      "installed_at_epoch": 1786685111,
+      "ui_sha256": "acbd09b7fda383bc23bbf8fa73e0dc206091402d8e2957b4f3c5a6b50e4ac104"
+    }
+  }
+}
