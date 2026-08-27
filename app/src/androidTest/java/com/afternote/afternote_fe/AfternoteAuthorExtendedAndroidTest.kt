@@ -40,6 +40,7 @@ import androidx.paging.PagingData
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.afternote_fe.test.appTestUserRepository
@@ -85,6 +86,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
@@ -247,6 +249,66 @@ class AfternoteAuthorExtendedAndroidTest {
     }
 
     @Test
+    fun repeatedValidation_afterSnackbarDismiss_showsAgainWithoutSaveCall() {
+        val repository =
+            AdvancedAfternoteRepository(
+                detailResult = Result.success(authorDetail().copy(receivers = emptyList())),
+            )
+        val viewModel = editorViewModel(repository, itemId = 73L)
+        var editorState: AfternoteEditorState? = null
+        var snackbarHostState: SnackbarHostState? = null
+        val validationMessage =
+            InstrumentationRegistry
+                .getInstrumentation()
+                .targetContext
+                .getString(R.string.afternote_validation_receivers_required)
+
+        composeRule.setContent {
+            AfternoteTheme {
+                AuthorEditorForUpdate(
+                    itemId = 73L,
+                    viewModel = viewModel,
+                    onStateReady = { editorState = it },
+                    onSnackbarHostReady = { snackbarHostState = it },
+                )
+            }
+        }
+
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            !viewModel.uiState.value.isPrefillLoading &&
+                editorState != null &&
+                snackbarHostState != null
+        }
+        composeRule.onNodeWithText("Instagram").assertIsDisplayed()
+        val topBarRegister =
+            hasText("등록", substring = false) and
+                hasClickAction() and
+                SemanticsMatcher("without button role") { node ->
+                    node.config.getOrNull(SemanticsProperties.Role) != Role.Button
+                }
+
+        composeRule.onNode(topBarRegister).performClick()
+        composeRule.onNodeWithText(validationMessage).assertIsDisplayed()
+        val firstOccurrence = requireNotNull(viewModel.uiState.value.errorEvent).occurrence
+        assertEquals(0, repository.updateCalls.size)
+
+        composeRule.runOnIdle {
+            requireNotNull(snackbarHostState).currentSnackbarData?.dismiss()
+        }
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            snackbarHostState?.currentSnackbarData == null && viewModel.uiState.value.errorEvent == null
+        }
+        composeRule.onNodeWithText(validationMessage).assertDoesNotExist()
+
+        composeRule.onNode(topBarRegister).performClick()
+        composeRule.onNodeWithText(validationMessage).assertIsDisplayed()
+        val secondOccurrence = requireNotNull(viewModel.uiState.value.errorEvent).occurrence
+
+        assertNotEquals(firstOccurrence, secondOccurrence)
+        assertEquals(0, repository.updateCalls.size)
+    }
+
+    @Test
     fun delete_cancelThenFailureAndRetrySuccess_callsOnlyAfterConfirmation() {
         val repository = AdvancedAfternoteRepository(detailResult = Result.success(authorDetail()))
         repository.deleteResults.addLast(Result.failure(IllegalStateException("offline")))
@@ -321,6 +383,7 @@ private fun AuthorEditorForUpdate(
     itemId: Long,
     viewModel: AfternoteEditorViewModel,
     onStateReady: (AfternoteEditorState) -> Unit,
+    onSnackbarHostReady: (SnackbarHostState) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val state =
@@ -378,6 +441,7 @@ private fun AuthorEditorForUpdate(
             errorEvent?.let(viewModel::onErrorConsumed)
         },
         content = { editorSnackbarHostState ->
+            onSnackbarHostReady(editorSnackbarHostState)
             AfternoteEditorBody(
                 state = state,
                 form = uiState.form,
@@ -532,7 +596,13 @@ private fun editorViewModel(
     itemId: Long,
 ): AfternoteEditorViewModel =
     AfternoteEditorViewModel(
-        savedStateHandle = SavedStateHandle(mapOf("itemId" to itemId)),
+        savedStateHandle =
+            SavedStateHandle(
+                mapOf(
+                    "itemId" to itemId,
+                    "initialType" to AfternoteType.SOCIAL_NETWORK,
+                ),
+            ),
         userRepository = appTestUserRepository(),
         afternoteRepository = repository,
         memorialThumbnailUploadRepository =
