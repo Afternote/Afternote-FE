@@ -135,10 +135,13 @@ export async function dispatchRequiredChecks(api, repository, results, { dryRun 
     }
     for (const result of results) {
         for (const workflow of REQUIRED_WORKFLOWS) {
-            const body = { ref: result.branch };
-            if (workflow === "pr-validation.yml" || workflow === "merge-order-guard.yml") {
-                body.inputs = { pull_request_number: String(result.number) };
-            }
+            // 세 workflow 모두 docs-only 판정과 PR 컨텍스트 검증에 번호를 사용한다.
+            // ref 만 넘기면 GITHUB_TOKEN 으로 갱신된 SHA 의 workflow_dispatch 에는
+            // pull_request payload 가 없어 무거운 검증을 안전하게 생략할 수 없다.
+            const body = {
+                ref: result.branch,
+                inputs: { pull_request_number: String(result.number) },
+            };
             await api(`/repos/${repository}/actions/workflows/${workflow}/dispatches`, {
                 method: "POST",
                 body,
