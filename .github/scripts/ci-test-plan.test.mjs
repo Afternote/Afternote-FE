@@ -108,6 +108,16 @@ test("하네스 변경은 full, Android 런타임 경계는 selected 이상을 �
         inspectAndroidTestImpact([".github/workflows/android-managed-device.yml"]).full,
         [".github/workflows/android-managed-device.yml"],
     );
+    assert.deepEqual(
+        inspectAndroidTestImpact([
+            ".github/scripts/classify-android-managed-device-failure.mjs",
+            ".github/workflows/android-managed-device-retry.yml",
+        ]).full,
+        [
+            ".github/scripts/classify-android-managed-device-failure.mjs",
+            ".github/workflows/android-managed-device-retry.yml",
+        ],
+    );
     await assert.rejects(
         validateCiTestPlanImpact(
             { androidTest: { mode: "none", reason: "CI only" } },
