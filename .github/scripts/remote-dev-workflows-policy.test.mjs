@@ -83,8 +83,11 @@ test("managed device keeps required contexts but boots only CI Test Plan lanes",
     const trustedCheckout = source.indexOf("Clone trusted target policy");
     const policyStaging = source.indexOf("Stage trusted Android test policy");
     const targetCheckout = source.indexOf("Clone tested revision");
+    const targetVerification = source.indexOf("Verify checked out revision");
+    const bootstrapVerifier = source.indexOf("Stage bootstrap result verifier from the tested revision");
     assert.ok(trustedCheckout >= 0 && trustedCheckout < policyStaging);
     assert.ok(policyStaging < targetCheckout);
+    assert.ok(targetCheckout < targetVerification && targetVerification < bootstrapVerifier);
     assert.match(source, /source=trusted/);
     assert.match(source, /source=bootstrap/);
     assert.doesNotMatch(source, /source=target/);
@@ -92,6 +95,7 @@ test("managed device keeps required contexts but boots only CI Test Plan lanes",
     assert.match(source, /bootstrap mode에서는 expected_plan_digest를 사용할 수 없습니다/);
     assert.match(source, /bootstrap mode에서는 selected selector를 신뢰된 parser 없이 실행할 수 없습니다/);
     assert.match(source, /policy bootstrap full run/);
+    assert.match(source, /bootstrap result verifier가 tested revision에 없습니다/);
     assert.match(source, /resolve-android-test-plan\.mjs/);
     assert.match(source, /Validate selected tests in the tested revision/);
     assert.match(source, /Verify every selected androidTest executed successfully/);

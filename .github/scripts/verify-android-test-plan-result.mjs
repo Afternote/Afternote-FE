@@ -44,22 +44,31 @@ async function collectXmlFiles(root) {
 }
 
 export function verifySelectedAndroidTests(selectors, documents) {
-    const pending = new Set(selectors);
+    const pendingMethods = new Set(selectors.filter((selector) => selector.includes("#")));
+    const classSelectors = new Set(selectors.filter((selector) => !selector.includes("#")));
+    const matchedClasses = new Set();
     for (const { file, xml } of documents) {
         for (const match of xml.matchAll(/<testcase\b([^>]*?)(?:\/>|>([\s\S]*?)<\/testcase>)/g)) {
             const fields = attributes(match[1]);
             const className = fields.get("classname") ?? fields.get("class") ?? "";
             const testName = (fields.get("name") ?? "").replace(/\[[^\]]*\]$/, "");
             const selector = `${className}#${testName}`;
-            if (!pending.has(selector)) continue;
+            const matchesMethod = pendingMethods.has(selector);
+            const matchesClass = classSelectors.has(className);
+            if (!matchesMethod && !matchesClass) continue;
             if (/<(?:failure|error|skipped)\b/.test(match[2] ?? "")) {
                 throw new Error(`선택 계측 테스트가 성공하지 않았습니다: ${selector} (${file})`);
             }
-            pending.delete(selector);
+            pendingMethods.delete(selector);
+            if (matchesClass) matchedClasses.add(className);
         }
     }
-    if (pending.size > 0) {
-        throw new Error(`Managed Device XML에서 실행 결과를 찾지 못했습니다: ${[...pending].join(", ")}`);
+    const missing = [
+        ...pendingMethods,
+        ...[...classSelectors].filter((selector) => !matchedClasses.has(selector)),
+    ];
+    if (missing.length > 0) {
+        throw new Error(`Managed Device XML에서 실행 결과를 찾지 못했습니다: ${missing.join(", ")}`);
     }
     return selectors.length;
 }

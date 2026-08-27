@@ -100,7 +100,7 @@ jobs:
                   ! -e .github/scripts/resolve-android-test-plan.mjs &&
                   ! -e .github/scripts/validate-pr-ci-test-plan.mjs &&
                   ! -e .github/scripts/verify-android-test-plan-result.mjs ]]; then
-            # 최초 도입 PR에서는 default branch에 새 helper 둘 다 아직 없다. 선언 검증을 target
+            # 최초 도입 PR에서는 default branch에 새 helper들이 아직 없다. 선언 검증을 target
             # 코드에 맡기지 않고, 아래 단계가 selected/full 선언을 금지하는 fail-closed 예외다.
             echo "::warning::default branch에 Android test policy가 없어 bootstrap mode를 사용합니다"
             echo "source=bootstrap" >> "$GITHUB_OUTPUT"
@@ -264,6 +264,22 @@ jobs:
             echo "::error::checkout $actual_sha 가 검증한 target $EXPECTED_SHA 와 다릅니다"
             exit 1
           fi
+
+      - name: Stage bootstrap result verifier from the tested revision
+        if: >-
+          steps.policy.outputs.source == 'bootstrap' &&
+          steps.target.outputs.run_lane == 'true' &&
+          steps.target.outputs.selectors_json != '[]'
+        run: |
+          set -euo pipefail
+          verifier=".github/scripts/verify-android-test-plan-result.mjs"
+          if [[ ! -f "$verifier" ]]; then
+            echo "::error::bootstrap result verifier가 tested revision에 없습니다"
+            exit 1
+          fi
+          install -m 0644 \
+            "$verifier" \
+            "$RUNNER_TEMP/android-test-policy/verify-android-test-plan-result.mjs"
 
       - name: Validate selected tests in the tested revision
         if: steps.target.outputs.mode == 'selected'
