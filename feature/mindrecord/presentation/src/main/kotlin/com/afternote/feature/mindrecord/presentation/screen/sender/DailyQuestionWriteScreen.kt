@@ -9,6 +9,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -119,6 +120,15 @@ fun DailyQuestionWriteScreen(
                     color = AfternoteDesign.colors.error,
                     style = AfternoteDesign.typography.captionLargeR,
                 )
+                // 실패 동안 저장이 막히므로 화면 안에서 풀 수단을 준다 — 없으면 쓴 답변을 들고
+                // 갇힌다. 이 모듈의 재시도는 TextButton 으로 그린다 (#1019).
+                TextButton(onClick = viewModel::retryResumeDraft) {
+                    Text(
+                        text = stringResource(R.string.mindrecord_error_retry),
+                        style = AfternoteDesign.typography.bodySmallB,
+                        color = AfternoteDesign.colors.gray9,
+                    )
+                }
             }
 
             val errorMessage = (uiState.submitState as? SubmitState.Failed)?.message?.asString()

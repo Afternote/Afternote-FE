@@ -62,7 +62,13 @@ data class DailyQuestionWriteUiState(
                 !isResumingDraft &&
                 submitState != SubmitState.InProgress &&
                 // 업로드 중 저장하면 본문에 아직 안 들어간 이미지가 빠진 채 나간다 (#716).
-                !isUploadingImage
+                !isUploadingImage &&
+                // 이어쓸 본문을 못 불러온 동안은 막는다. 경고만 띄우고 저장을 열어 두면
+                // 빈 에디터(`<p></p>`)도 isNotBlank() 라 버튼이 살아 있고, draftId 가 null 인
+                // 채 POST 로 나가 서버 upsert 가 기존 임시저장을 빈 본문으로 덮는다 —
+                // 이 PR 이 막으려던 바로 그 유실이다 (#1018 리뷰). 일기 화면의
+                // `!(isEditingDraft && draftLoadError != null)` 과 같은 성질이다.
+                draftResumeError == null
 }
 
 sealed interface SubmitState {

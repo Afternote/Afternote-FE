@@ -131,6 +131,14 @@ class DailyQuestionWriteViewModel
         }
 
         /**
+         * 이어쓰기 조회 재시도. 실패 동안은 저장이 막히므로(`canSubmit`) 화면을 벗어나지 않고
+         * 풀 수단이 있어야 한다 — 없으면 사용자가 쓴 답변을 들고 갇힌다 (#1018 리뷰).
+         */
+        fun retryResumeDraft() {
+            viewModelScope.launch { resumeDraft() }
+        }
+
+        /**
          * today 응답이 draft 존재를 알려주면 당일 임시저장 레코드를 찾아 이어쓰기 상태로 프리필한다.
          * 없으면 아무것도 하지 않고 신규 작성으로 폴백.
          *
@@ -147,6 +155,7 @@ class DailyQuestionWriteViewModel
          * 화면 값이 비어 있을 때만 draft 로 채우고, `draftId` 는 화면 입력과 겹치지 않아 항상 채운다
          * (없으면 재제출이 POST 로 나가 이어쓰기가 안 된다).
          */
+
         private suspend fun resumeDraft() {
             _uiState.update { it.copy(isResumingDraft = true, draftResumeError = null) }
             val listResult = repository.getList(date = LocalDate.now().toString(), draftOnly = true)

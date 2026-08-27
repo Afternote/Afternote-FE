@@ -21,6 +21,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -145,6 +146,43 @@ class DailyQuestionResumeDraftTest {
     }
 
     @Test
+    fun `이어쓰기 조회가 실패한 동안에는 저장할 수 없다`() {
+        // 경고만 띄우고 저장을 열어 두면 아무것도 막지 못한다. 빈 에디터가 내보내는
+        // `<p></p>` 도 isNotBlank() 라 버튼이 살아 있고, draftId 가 null 인 채 POST 로 나가
+        // 서버 upsert 가 기존 임시저장을 빈 본문으로 덮는다 (#1018 리뷰).
+        val viewModel = viewModel(currentAnswerFromEditor = "<p></p>", listFailure = IOException("offline"))
+
+        assertEquals(false, viewModel.uiState.value.canSubmit)
+    }
+
+    @Test
+    fun `실패 상태에서 저장을 눌러도 서버로 나가지 않는다`() {
+        // canSubmit 만 보면 화면 버튼은 막혀도 submit() 이 직접 불릴 때가 남는다.
+        val repository = fakeRepository(listFailure = IOException("offline"))
+        val viewModel = viewModelWith(repository, currentAnswerFromEditor = "<p>사용자가 쓴 답변</p>")
+
+        viewModel.submit(isDraft = true)
+        viewModel.submit(isDraft = false)
+
+        assertEquals(0, repository.createCalls)
+        assertEquals(0, repository.updateCalls)
+    }
+
+    @Test
+    fun `재시도가 성공하면 안내가 걷히고 저장이 다시 열린다`() {
+        // 차단만 걸고 푸는 길이 없으면 사용자가 쓴 답변을 들고 갇힌다.
+        val repository = fakeRepository(listFailure = IOException("offline"))
+        val viewModel = viewModelWith(repository, currentAnswerFromEditor = "<p>사용자가 쓴 답변</p>")
+        assertNotNull(viewModel.uiState.value.draftResumeError)
+
+        repository.clearListFailure()
+        viewModel.retryResumeDraft()
+
+        assertEquals(null, viewModel.uiState.value.draftResumeError)
+        assertEquals(true, viewModel.uiState.value.canSubmit)
+    }
+
+    @Test
     fun `임시저장이 정말 없으면 실패로 알리지 않는다`() {
         // 반대 방향이 없으면 «항상 오류» 로 만들어도 위 테스트가 통과한다.
         val viewModel = viewModel(currentAnswerFromEditor = "<p></p>", drafts = emptyList())
@@ -182,8 +220,12 @@ class DailyQuestionResumeDraftTest {
         currentAnswerFromEditor: String,
         listFailure: Throwable? = null,
         drafts: List<DailyQuestion>? = null,
+    ): DailyQuestionWriteViewModel = viewModelWith(fakeRepository(listFailure, drafts), currentAnswerFromEditor)
+
+    private fun viewModelWith(
+        repository: FakeResumeRepository,
+        currentAnswerFromEditor: String,
     ): DailyQuestionWriteViewModel {
-        val repository = fakeRepository(listFailure = listFailure, drafts = drafts)
         val viewModel =
             DailyQuestionWriteViewModel(
                 savedStateHandle = SavedStateHandle(emptyMap()),
@@ -219,6 +261,17 @@ private class FakeResumeRepository(
         todayArrived.complete(Unit)
     }
 
+    private var failure: Throwable? = listFailure
+
+    fun clearListFailure() {
+        failure = null
+    }
+
+    var createCalls = 0
+        private set
+    var updateCalls = 0
+        private set
+
     /** 마지막으로 받은 `draftOnly` — 인자를 흘리지 않는지 테스트가 본다. */
     var lastDraftOnly: Boolean? = null
         private set
@@ -228,7 +281,7 @@ private class FakeResumeRepository(
         draftOnly: Boolean?,
     ): Result<List<DailyQuestion>> {
         lastDraftOnly = draftOnly
-        listFailure?.let { return Result.failure(it) }
+        failure?.let { return Result.failure(it) }
         return Result.success(drafts ?: listOf(draft))
     }
 
@@ -237,12 +290,18 @@ private class FakeResumeRepository(
         return Result.success(today)
     }
 
-    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> = Result.success(1L)
+    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> {
+        createCalls += 1
+        return Result.success(1L)
+    }
 
     override suspend fun update(
         id: Long,
         payload: DailyQuestionUpdatePayload,
-    ): Result<Long> = Result.success(1L)
+    ): Result<Long> {
+        updateCalls += 1
+        return Result.success(1L)
+    }
 
     override suspend fun delete(id: Long): Result<Unit> = error("호출되면 안 됨")
 }
