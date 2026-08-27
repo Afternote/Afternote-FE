@@ -11,7 +11,7 @@ permissions:
   actions: write
   contents: write
   issues: write
-  pull-requests: read
+  pull-requests: write
 
 concurrency:
   group: screenshot-baseline-apply-${{ github.event.workflow_run.id }}
