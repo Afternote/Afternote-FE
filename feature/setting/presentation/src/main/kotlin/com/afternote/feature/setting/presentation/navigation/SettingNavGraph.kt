@@ -8,6 +8,7 @@ import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
@@ -198,8 +199,8 @@ fun NavGraphBuilder.settingNavGraph(
 
         composable<SettingRoute.CustomerCenterRoute> {
             val context = LocalContext.current
-            val phoneUri = context.getString(R.string.customer_center_phone_uri)
-            val emailAddress = context.getString(R.string.customer_center_email_address)
+            val phoneUri = stringResource(R.string.customer_center_phone_uri)
+            val emailAddress = stringResource(R.string.customer_center_email_address)
             CustomerCenterScreen(
                 onBackClick = actions::onCustomerCenterBack,
                 onPhoneInquiryClick = { context.openDialer(phoneUri) },
