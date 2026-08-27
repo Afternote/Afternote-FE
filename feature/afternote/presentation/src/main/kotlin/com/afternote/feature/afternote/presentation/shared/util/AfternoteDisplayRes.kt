@@ -4,22 +4,24 @@ import androidx.annotation.StringRes
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.AfternoteService
+import com.afternote.core.ui.R as CoreUiR
 
 /**
  * 종류 필터 탭 순서. `null` 은 "전체" 탭이다.
- * 비즈니스·재산 처리는 목록 조회 미지원(Afternote-BE#110, #491)이라 빠져 있다.
+ * 재산 처리는 서버 category enum 미지원(Afternote-BE#491)이라 빠져 있다.
  */
-val CATEGORY_FILTER_TABS: List<AfternoteType?> =
+val TYPE_FILTER_TABS: List<AfternoteType?> =
     listOf(
         null,
         AfternoteType.SOCIAL_NETWORK,
+        AfternoteType.BUSINESS,
         AfternoteType.GALLERY_AND_FILES,
         AfternoteType.MEMORIAL,
     )
 
 /** 종류 탭 라벨. `null` 은 "전체" 탭이다. */
 @StringRes
-fun categoryLabelResFor(type: AfternoteType?): Int =
+fun typeLabelResFor(type: AfternoteType?): Int =
     when (type) {
         null -> R.string.afternote_category_all
         AfternoteType.SOCIAL_NETWORK -> R.string.afternote_category_social_network
@@ -31,8 +33,12 @@ fun categoryLabelResFor(type: AfternoteType?): Int =
 
 /** Icon drawable res for an [AfternoteType]. */
 fun getIconResForType(type: AfternoteType): Int =
-    AfternoteService.fromTypeKeyOrNull(type.name)?.iconResId
-        ?: R.drawable.feature_afternote_img_logo
+    when (type) {
+        AfternoteType.SOCIAL_NETWORK -> CoreUiR.drawable.core_ui_afternote_social_pattern
+        AfternoteType.GALLERY_AND_FILES -> CoreUiR.drawable.core_ui_afternote_gallery_pattern
+        AfternoteType.MEMORIAL -> CoreUiR.drawable.core_ui_afternote_memorial_guideline
+        AfternoteType.BUSINESS, AfternoteType.ESTATE -> CoreUiR.drawable.core_ui_afternote_logo
+    }
 
 /**
  * Icon drawable res for a service title shown on a card.

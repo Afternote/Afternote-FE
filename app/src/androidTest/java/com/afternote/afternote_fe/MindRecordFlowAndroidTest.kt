@@ -1,7 +1,6 @@
 package com.afternote.afternote_fe
 
 import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasClickAction
@@ -10,16 +9,15 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.waitUntilAtLeastOneExists
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
-import com.afternote.afternote_fe.test.FakeDailyQuestionRepository
-import com.afternote.afternote_fe.test.FakeDiaryRepository
-import com.afternote.afternote_fe.test.FakeUserRepository
-import com.afternote.core.domain.repository.PhotoUploadRepository
+import com.afternote.afternote_fe.test.appTestUserRepository
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.domain.model.TodayMood
+import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
 import com.afternote.feature.mindrecord.presentation.screen.sender.DiaryWriteScreen
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryWriteViewModel
@@ -32,7 +30,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalTestApi::class)
 class MindRecordFlowAndroidTest {
     @get:Rule(order = 0)
     val composeRule = createComposeRule()
@@ -46,8 +43,15 @@ class MindRecordFlowAndroidTest {
     @Test
     fun diaryFailureThenRetry_preservesInputAndSendsExactPayload() {
         val repository = FakeDiaryRepository()
-        repository.createResults.addLast(Result.failure(IllegalStateException("temporary")))
-        repository.createResults.addLast(Result.success(Unit))
+        // 첫 저장은 실패, 재시도는 성공 — 입력이 남는지와 정확한 payload 를 본다.
+        val createResults =
+            ArrayDeque(
+                listOf(
+                    Result.failure<Unit>(IllegalStateException("temporary")),
+                    Result.success(Unit),
+                ),
+            )
+        repository.onCreate = { createResults.removeFirst() }
         val viewModel = diaryViewModel(repository)
         var successCalls = 0
 
@@ -69,7 +73,10 @@ class MindRecordFlowAndroidTest {
         composeRule.onNodeWithText("기억할 하루").assertIsDisplayed()
         composeRule.onNodeWithText("김수신님에게").assertIsDisplayed()
         composeRule.onNode(hasText("등록") and hasClickAction()).performClick()
-        composeRule.waitUntilAtLeastOneExists(hasText("temporary"), timeoutMillis = 5_000)
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            viewModel.uiState.value.submitState is SubmitState.Failed
+        }
+        composeRule.onNodeWithText("일기 등록에 실패했습니다.").assertIsDisplayed()
 
         composeRule.onNodeWithText("기억할 하루").assertIsDisplayed()
         composeRule.onNode(hasText("등록") and hasClickAction()).performClick()
@@ -105,13 +112,24 @@ class MindRecordFlowAndroidTest {
     @Test
     fun dailyQuestion_failureThenRetry_keepsAnswerAndAvoidsDuplicateSuccess() {
         val repository = FakeDailyQuestionRepository()
-        repository.createResults.addLast(Result.failure(IllegalStateException("offline")))
-        repository.createResults.addLast(Result.success(1L))
+        // 첫 저장은 실패, 재시도는 성공 — 실패 후 답변이 남는지와 중복 성공이 없는지를 본다.
+        val createResults =
+            ArrayDeque(
+                listOf(
+                    Result.failure<Long>(IllegalStateException("offline")),
+                    Result.success(FakeDailyQuestionRepository.FIRST_CREATED_ID),
+                ),
+            )
+        repository.onCreate = { createResults.removeFirst() }
         val viewModel =
             DailyQuestionWriteViewModel(
                 savedStateHandle = SavedStateHandle(emptyMap()),
                 repository = repository,
-                photoUploadRepository = PhotoUploadRepository { _, _ -> Result.success("https://cdn.test/question.jpg") },
+                photoUploadRepository =
+                    FakePhotoUploadRepository(
+                        uploadedUrl = "https://cdn.test/question.jpg",
+                        uploadedKey = "mindrecords/1/question.jpg",
+                    ),
                 draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
             )
         composeRule.setContent { AfternoteTheme {} }
@@ -150,8 +168,12 @@ class MindRecordFlowAndroidTest {
                     ),
                 ),
             repository = repository,
-            photoUploadRepository = PhotoUploadRepository { _, _ -> Result.success("https://cdn.test/image.jpg") },
-            userRepository = FakeUserRepository(),
+            photoUploadRepository =
+                FakePhotoUploadRepository(
+                    uploadedUrl = "https://cdn.test/image.jpg",
+                    uploadedKey = "mindrecords/1/image.jpg",
+                ),
+            userRepository = appTestUserRepository(),
             draftLoader = MindRecordDraftLoader(repository, FakeDailyQuestionRepository()),
         )
 }

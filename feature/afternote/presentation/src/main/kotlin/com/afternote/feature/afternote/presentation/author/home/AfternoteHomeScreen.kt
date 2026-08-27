@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
@@ -30,17 +31,27 @@ import com.afternote.feature.afternote.presentation.shared.body.infinite.Infinit
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
 import kotlinx.coroutines.flow.flowOf
 
+/**
+ * 애프터노트 목록 화면. 작성자(발신자)와 수신자가 같은 목록·카드·필터를 쓰므로 한 화면을 공유하고,
+ * 관점이 갈리는 조각만 호출부가 채운다.
+ *
+ * @param headerDescription 상단 헤더 한 줄. 기본값을 두지 않는 이유는 [HomeHeaderSection] KDoc 참조 (#620).
+ * @param onSettingClick 설정 진입. `null`(기본)이면 탑바의 회원 액션(프로필·설정)을 그리지 않는다 —
+ *   수신자는 로그인 사용자가 아니라 두 아이콘 모두 향할 곳이 없다.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AfternoteHomeScreen(
     items: LazyPagingItems<ListItemUiModel>,
-    selectedCategory: AfternoteType?,
-    onCategorySelected: (AfternoteType?) -> Unit,
+    selectedType: AfternoteType?,
+    onTypeSelected: (AfternoteType?) -> Unit,
     onListItemClick: (id: Long, type: AfternoteType) -> Unit,
+    headerDescription: String,
+    nextStep: NextStep?,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onFabClick: (() -> Unit)? = null,
-    onSettingClick: () -> Unit = {},
+    onSettingClick: (() -> Unit)? = null,
 ) {
     val refreshState = items.loadState.refresh
     val isInitialLoading = refreshState is LoadState.Loading && items.itemCount == 0
@@ -51,7 +62,10 @@ fun AfternoteHomeScreen(
         containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            HomeTopBar(onSettingClick = onSettingClick)
+            HomeTopBar(
+                showProfileIcon = onSettingClick != null,
+                onSettingClick = onSettingClick,
+            )
         },
         floatingActionButton = {
             if (onFabClick != null) {
@@ -84,13 +98,15 @@ fun AfternoteHomeScreen(
                 }
 
                 // 카테고리 필터 0건도 이 경로에 남겨 카테고리 행을 유지한다(막다른 상태 방지).
-                items.itemCount > 0 || selectedCategory != null -> {
+                items.itemCount > 0 || selectedType != null -> {
                     InfiniteListBody(
                         modifier = bodyModifier,
+                        nextStep = nextStep,
                         items = items,
-                        selectedCategory = selectedCategory,
-                        onCategorySelected = onCategorySelected,
+                        selectedType = selectedType,
+                        onTypeSelected = onTypeSelected,
                         onListItemClick = onListItemClick,
+                        headerDescription = headerDescription,
                     )
                 }
 
@@ -130,10 +146,17 @@ private fun AfternoteHomeScreenPreview() {
             ).collectAsLazyPagingItems()
         AfternoteHomeScreen(
             items = items,
-            selectedCategory = null,
-            onCategorySelected = {},
+            selectedType = null,
+            onTypeSelected = {},
             onListItemClick = { _, _ -> },
+            headerDescription = stringResource(R.string.afternote_home_header_description),
+            nextStep =
+                NextStep(
+                    text = "가족들의 '주거래 은행' 정보를\n입력하신 건 확인하셨나요?",
+                    onClick = {},
+                ),
             onFabClick = {},
+            onSettingClick = {},
         )
     }
 }
@@ -155,10 +178,17 @@ private fun AfternoteHomeScreenLoadingPreview() {
             ).collectAsLazyPagingItems()
         AfternoteHomeScreen(
             items = items,
-            selectedCategory = null,
-            onCategorySelected = {},
+            selectedType = null,
+            onTypeSelected = {},
             onListItemClick = { _, _ -> },
+            headerDescription = stringResource(R.string.afternote_home_header_description),
+            nextStep =
+                NextStep(
+                    text = "가족들의 '주거래 은행' 정보를\n입력하신 건 확인하셨나요?",
+                    onClick = {},
+                ),
             onFabClick = {},
+            onSettingClick = {},
         )
     }
 }

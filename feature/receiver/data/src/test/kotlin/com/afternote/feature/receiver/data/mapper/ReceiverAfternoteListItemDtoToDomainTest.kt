@@ -10,7 +10,7 @@ import org.junit.Test
 /**
  * [ReceivedAfternoteDto.toDomain] / [toReceiverDomainList] 회귀 가드.
  * 수신자 목록 DTO→[com.afternote.feature.receiver.domain.model.AfterNoteListItem] 매핑.
- * 서버 카테고리를 [AfternoteType] 으로 바꾸는 규칙과 null 가드(category·createdAt)를 검증한다.
+ * 서버 카테고리를 [AfternoteType] 으로 바꾸는 규칙과 createdAt null 가드를 검증한다.
  */
 class ReceiverAfternoteListItemDtoToDomainTest {
     @Test
@@ -37,14 +37,18 @@ class ReceiverAfternoteListItemDtoToDomainTest {
     }
 
     @Test
-    fun `toDomain - 서버가 모르는 category 를 보내면 type null`() {
-        assertNull(resp(category = "ESTATE").toDomain().type)
-        assertNull(resp(category = "BUSINESS").toDomain().type)
+    fun `toDomain - 사업자는 서버가 아는 종류다 - BUSINESS 로 올라온다`() {
+        assertEquals(AfternoteType.BUSINESS, resp(category = "BUSINESS").toDomain().type)
     }
 
     @Test
-    fun `toDomain - category null이면 type null`() {
-        assertNull(resp(category = null).toDomain().type)
+    fun `toDomain - 서버가 모르는 category 를 보내면 type null`() {
+        assertNull(resp(category = "ESTATE").toDomain().type)
+    }
+
+    @Test
+    fun `toDomain - 아예 모르는 값도 type null - 특정 종류로 메우지 않는다`() {
+        assertNull(resp(category = "WHAT_IS_THIS").toDomain().type)
     }
 
     @Test
@@ -73,7 +77,7 @@ class ReceiverAfternoteListItemDtoToDomainTest {
     private fun resp(
         id: Long = 1L,
         title: String = "t",
-        category: String? = "SOCIAL",
+        category: String = "SOCIAL",
         createdAt: String? = "2025-01-01T00:00:00",
     ) = ReceivedAfternoteDto(
         id = id,

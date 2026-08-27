@@ -1,10 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
-import android.net.Uri
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,7 +10,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -22,7 +17,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
@@ -33,17 +27,11 @@ import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
-import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
+import com.afternote.feature.afternote.presentation.author.editor.processing.CustomServiceDialog
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
-import com.afternote.feature.afternote.presentation.author.editor.state.CategoryForm
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.debounce
-import kotlin.time.Duration.Companion.milliseconds
-
-private const val EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS = 1_000L
 
 /**
  * 애프터노트 수정/작성 화면
@@ -55,79 +43,27 @@ private const val EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS = 1_000L
  * - 계정 정보 입력 (아이디, 비밀번호)
  * - 계정 처리 방법 선택 (라디오 버튼)
  * - 처리 방법 리스트 (체크박스)
- * - 남기실 말씀 (멀티라인 텍스트 필드; Process Death 대비 [snapshotFlow] + debounce로 폼 동기화)
+ * - 남기실 말씀 (동적 텍스트 입력 목록)
  *
- * 추모 곡 목록은 [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] SSOT의 스냅샷을
- * [liveSongs]로 전달받아 표시한다 (Compose 상태 홀더에 직접 의존하지 않는다).
+ * 추모 곡 목록은 [EditorFormState]의 추모 전용 폼에 동기화된 스냅샷으로 표시한다.
  */
-@OptIn(FlowPreview::class)
 @Composable
 fun AfternoteEditorScreen(
     form: EditorFormState,
     onBackClick: () -> Unit,
     onRegisterClick: () -> Unit,
-    onNavigateToMemorialPlaylist: () -> Unit,
-    onNavigateToSelectReceiver: () -> Unit,
-    onThumbnailBytesReady: (ByteArray?) -> Unit,
-    onThumbnailExtractionFailed: (Throwable) -> Unit,
-    onThumbnailUploadErrorConsumed: () -> Unit,
-    onValidationErrorConsumed: () -> Unit,
+    snackbarMessage: String?,
+    onSnackbarMessageConsumed: () -> Unit,
+    content: @Composable (SnackbarHostState) -> Unit,
     modifier: Modifier = Modifier,
     state: AfternoteEditorState = rememberAfternoteEditorState(),
-    liveSongs: List<Song> = emptyList(),
-    saveError: String? = null,
-    thumbnailUploadFailed: Boolean = false,
     isPrefillLoading: Boolean = false,
 ) {
     val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
-    val thumbnailUploadFailedMessage = stringResource(R.string.afternote_editor_thumbnail_upload_failed)
 
-    // 화면 재진입 시 폼 SSOT의 leaveMessageBlocks를 휘발성 SnapshotStateList<EditorMessage>에 한 번 동기화한다.
-    // (TextFieldState는 rememberSaveable로 복원되지만 EditorMessage SnapshotStateList는 비저장 상태라 폼에서 재구성한다.)
-    LaunchedEffect(state) {
-        state.syncEditorMessagesFromForm(form.leaveMessageBlocks)
-    }
-
-    LaunchedEffect(form.leaveMessageBlocksRestoreGeneration) {
-        if (form.leaveMessageBlocksRestoreGeneration != 0L) {
-            state.syncEditorMessagesFromForm(form.leaveMessageBlocks)
-        }
-    }
-
-    // 타이핑 자동 저장: 각 블록의 TextFieldState(UI 소유)를 snapshotFlow 로 관찰해 순수 문자열
-    // 스냅샷으로 변환하고, 1s 디바운스로 묶어 폼 SSOT 에 반영한다. key=size 라 블록 추가/삭제 시
-    // 재시작해 새 블록 상태도 관찰에 편입. 디바운스 창 안의 이탈 손실은 아래 DisposableEffect 가 맡는다.
-    LaunchedEffect(state.editorMessages.size) {
-        snapshotFlow {
-            state.editorMessages.map { msg ->
-                EditorMessageTextBlock(
-                    title = msg.titleState.text.toString(),
-                    body = msg.contentState.text.toString(),
-                )
-            }
-        }.debounce(EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS.milliseconds)
-            .collect { blocks ->
-                state.setLeaveMessageBlocks(blocks)
-            }
-    }
-
-    // 화면 이탈 시 디바운스 윈도우(1s) 안의 미반영 타이핑이 폼 SSOT에 도달하지 못하는 손실을 방지한다.
-    DisposableEffect(state) {
-        onDispose {
-            val blocks =
-                state.editorMessages.map { msg ->
-                    EditorMessageTextBlock(
-                        title = msg.titleState.text.toString(),
-                        body = msg.contentState.text.toString(),
-                    )
-                }
-            state.setLeaveMessageBlocks(blocks)
-        }
-    }
-
-    LaunchedEffect(saveError) {
-        saveError?.let { message ->
+    LaunchedEffect(snackbarMessage) {
+        snackbarMessage?.let { message ->
             try {
                 snackbarHostState.showSnackbar(
                     message = message,
@@ -135,37 +71,14 @@ fun AfternoteEditorScreen(
                 )
             } finally {
                 // dismiss 뿐 아니라 화면 이탈로 취소돼도 소비해야, 복귀 시 이미 고친 오류의 stale 안내가 재표출되지 않는다.
-                onValidationErrorConsumed()
+                onSnackbarMessageConsumed()
             }
         }
     }
 
-    LaunchedEffect(thumbnailUploadFailed) {
-        if (thumbnailUploadFailed) {
-            snackbarHostState.showSnackbar(
-                message = thumbnailUploadFailedMessage,
-                withDismissAction = true,
-            )
-            onThumbnailUploadErrorConsumed()
-        }
-    }
-
-    LaunchedEffect(liveSongs) {
-        state.setMemorialPlaylistSongs(liveSongs)
-    }
-
-    val memorialPhotoPickerLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
-            state.setMemorialPhoto(uri?.toString())
-        }
-    val memorialVideoPickerLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
-            state.setMemorialVideo(uri?.toString())
-        }
-
     // 작성 도중 이탈 가드: 진입 시점 스냅샷 대비 변경이 있으면 뒤로가기 시 이탈 확인 팝업을 띄운다.
-    // 입력이 debounce 로 휘발성 폼 상태에만 반영되어 pop 시 소실되기 때문. '내용 존재'가 아니라 '변경' 기준인
-    // 이유는 수정 모드(prefill)에서 무변경 이탈에도 매번 경고하게 되어서다. 스냅샷은 프리필 적용 완료
+    // '내용 존재'가 아니라 '변경' 기준인 이유는 수정 모드(prefill)에서 무변경 이탈에도 매번 경고하게
+    // 되어서다. 스냅샷은 프리필 적용 완료
     // (isPrefillLoading=false 전환) 후 1회 캡처하고, 하위 화면 왕복·프로세스 복원에도 유지되도록 saveable 로 둔다.
     var showExitConfirm by rememberSaveable { mutableStateOf(false) }
     var baselineContentSignature by rememberSaveable { mutableStateOf<String?>(null) }
@@ -224,28 +137,15 @@ fun AfternoteEditorScreen(
                     .padding(paddingValues)
                     .addFocusCleaner(focusManager),
         ) {
-            EditorContent(
-                state = state,
-                form = form,
-                liveSongs = liveSongs,
-                isPrefillLoading = isPrefillLoading,
-                onNavigateToMemorialPlaylist = onNavigateToMemorialPlaylist,
-                onNavigateToSelectReceiver = onNavigateToSelectReceiver,
-                onPhotoAddClick = {
-                    memorialPhotoPickerLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
-                    )
-                },
-                onVideoAddClick = {
-                    memorialVideoPickerLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly),
-                    )
-                },
-                onThumbnailBytesReady = onThumbnailBytesReady,
-                onThumbnailExtractionFailed = onThumbnailExtractionFailed,
-            )
+            content(snackbarHostState)
 
-            AfternoteEditorDialogs(state = state)
+            if (state.isCustomServiceDialogVisible) {
+                CustomServiceDialog(
+                    serviceNameState = state.customServiceNameState,
+                    onDismiss = state::dismissCustomServiceDialog,
+                    onAddClick = state::onAddCustomService,
+                )
+            }
 
             if (showExitConfirm) {
                 Popup(
@@ -286,19 +186,16 @@ internal fun editorContentSignature(
 ): String {
     val comparableForm =
         form.copy(
-            // 식별자·자동 파생값 — 사용자 편집이 아니므로 판정 제외.
-            loadedItemId = null,
-            leaveMessageBlocksRestoreGeneration = 0L,
-            // 남기실 말씀은 debounce 전 라이브 입력(state.editorMessages)으로 판정하므로 스냅샷은 제외.
-            leaveMessageBlocks = emptyList(),
             // 카테고리 전용 입력은 아래에서 따로 낸다 — 전용 필드가 0개인 ESTATE 를 중립 원소로 쓴다.
-            categoryForm = CategoryForm.Estate,
+            typeForm = AfternoteTypeForm.Estate,
         )
     return listOf(
         comparableForm.toString(),
-        form.categoryForm.enteredContentOrNull() ?: NO_ENTERED_CONTENT,
+        form.typeForm.enteredContentOrNull() ?: NO_ENTERED_CONTENT,
         state.idState.text,
         state.passwordState.text,
-        state.editorMessages.map { "${it.titleState.text}\u0001${it.contentState.text}" },
+        state.editorMessages.map {
+            "${it.titleState.text}\u0001${it.contentState.text}\u0001${it.isRegistered}"
+        },
     ).joinToString("\u0002")
 }

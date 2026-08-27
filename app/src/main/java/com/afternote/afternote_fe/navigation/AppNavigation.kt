@@ -27,6 +27,7 @@ import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.author.navigation.afternoteNavGraph
+import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.home.presentation.HomeTabScreen
 import com.afternote.feature.home.presentation.HomeTabViewModel
 import com.afternote.feature.mindrecord.presentation.navigation.mindRecordNavGraph
@@ -132,6 +133,9 @@ fun AppNavigation(
             afternoteNavGraph(
                 graphScopedParentEntry = {
                     appState.navController.getBackStackEntry<Route.Afternote>()
+                },
+                editorFlowParentEntry = {
+                    appState.navController.getBackStackEntry<AfternoteRoute.EditorFlowRoute>()
                 },
                 actions = afternoteNavActions,
             )

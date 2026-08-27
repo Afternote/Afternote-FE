@@ -12,6 +12,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -41,7 +42,7 @@ import androidx.paging.PagingState
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
-import com.afternote.afternote_fe.test.FakeUserRepository
+import com.afternote.afternote_fe.test.appTestUserRepository
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
@@ -50,6 +51,7 @@ import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
+import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.DetailReceiver
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
@@ -68,11 +70,12 @@ import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetai
 import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel
 import com.afternote.feature.afternote.presentation.author.detail.DetailContentUiModel
 import com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailScreen
+import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorBody
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreen
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternotePayloadBuilder
-import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeEntry
@@ -116,17 +119,13 @@ class AfternoteAuthorExtendedAndroidTest {
             Pager(PagingConfig(pageSize = 20)) { pagingSource }.flow
         repository.listFlows[AfternoteType.SOCIAL_NETWORK] = flowOf(PagingData.empty())
         val viewModel = AfternoteHomeViewModel(repository)
-        val accountRoutes = mutableListOf<Long>()
-        val galleryRoutes = mutableListOf<Long>()
-        val memorialRoutes = mutableListOf<Long>()
+        val detailRoutes = mutableListOf<Long>()
         val addRoutes = mutableListOf<AfternoteType?>()
 
         composeRule.setContent {
             AfternoteTheme {
                 AfternoteHomeEntry(
-                    navigateToDetail = accountRoutes::add,
-                    navigateToGalleryDetail = galleryRoutes::add,
-                    navigateToMemorialDetail = memorialRoutes::add,
+                    navigateToDetail = detailRoutes::add,
                     navigateToAdd = addRoutes::add,
                     onSettingClick = {},
                     viewModel = viewModel,
@@ -153,9 +152,7 @@ class AfternoteAuthorExtendedAndroidTest {
             .onNodeWithContentDescription("추억 노트")
             .performScrollTo()
             .performClick()
-        assertEquals(listOf(101L), accountRoutes)
-        assertEquals(listOf(102L), galleryRoutes)
-        assertEquals(listOf(103L), memorialRoutes)
+        assertEquals(listOf(101L, 102L, 103L), detailRoutes)
 
         composeRule.onNodeWithText("소셜네트워크").performClick()
         composeRule.waitUntil(timeoutMillis = 5_000) {
@@ -220,7 +217,7 @@ class AfternoteAuthorExtendedAndroidTest {
             .onNode(hasSetTextAction() and hasText("old@example.test"))
             .performTextReplacement("edited@example.test")
         composeRule.runOnIdle {
-            checkNotNull(editorViewModel).editProcessingMethod("1", "계정 보존")
+            checkNotNull(editorViewModel).editProcessingMethod(1, "계정 보존")
         }
         composeRule.onNodeWithText("계정 보존").performScrollTo().assertIsDisplayed()
         val topBarRegister =
@@ -234,7 +231,7 @@ class AfternoteAuthorExtendedAndroidTest {
         composeRule.waitUntil(timeoutMillis = 5_000) { repository.updateCalls.size == 1 }
         val (updatedId, payload) = repository.updateCalls.single()
         assertEquals(73L, updatedId)
-        assertEquals("SOCIAL", payload.category)
+        assertEquals(AfternoteType.SOCIAL_NETWORK, payload.type)
         assertEquals("Instagram", payload.title)
         assertEquals(listOf("계정 보존"), payload.processingMethods)
         assertEquals(
@@ -309,7 +306,7 @@ private fun AuthorDetailForEdit(
         }
 
         is AfternoteDetailUiState.Success -> {
-            val account = state.contentUiModel as DetailContentUiModel.Account
+            val account = state.contentUiModel as DetailContentUiModel.SocialNetwork
             AccountDetailScreen(
                 onBackClick = {},
                 content = account.content,
@@ -329,17 +326,15 @@ private fun AuthorEditorForUpdate(
     val state =
         rememberAfternoteEditorState(
             getCurrentForm = viewModel::currentForm,
-            setCategory = viewModel::setCategory,
+            setType = viewModel::setType,
             setService = viewModel::setService,
             setMemorialPhoto = viewModel::setMemorialPhoto,
             setMemorialVideo = viewModel::setMemorialVideo,
             addReceiverIfAbsent = viewModel::addReceiverIfAbsent,
             applyPrefill = viewModel::applyPrefill,
             setMemorialThumbnail = viewModel::setMemorialThumbnail,
-            setMemorialPlaylistSongs = viewModel::setMemorialPlaylistSongs,
             deleteReceiver = viewModel::deleteReceiver,
             replaceReceiversIfEmpty = viewModel::replaceReceiversIfEmpty,
-            setLeaveMessageBlocks = viewModel::setLeaveMessageBlocks,
             addProcessingMethod = viewModel::addProcessingMethod,
             deleteProcessingMethod = viewModel::deleteProcessingMethod,
             editProcessingMethod = viewModel::editProcessingMethod,
@@ -358,37 +353,37 @@ private fun AuthorEditorForUpdate(
         form = uiState.form,
         onBackClick = {},
         onRegisterClick = {
-            state.setLeaveMessageBlocks(
-                state.editorMessages.map { message ->
-                    EditorMessageTextBlock(
-                        title = message.titleState.text.toString(),
-                        body = message.contentState.text.toString(),
-                    )
-                },
-            )
             val form = state.currentForm()
             val payload =
                 SaveAfternotePayloadBuilder.build(
                     form = form,
+                    messageBlocks = state.currentEditorMessageBlocks(),
                     accountId = state.idState.text.toString(),
                     password = state.passwordState.text.toString(),
                     date = LocalDate.of(2026, 8, 22),
                 )
             viewModel.saveAfternote(
-                editingId = itemId,
-                category = form.selectedCategory,
                 payload = payload,
                 selectedReceiverIds = form.afternoteEditReceivers.map { it.id.toLong() },
-                playlistSongs = emptyList(),
                 memorialMedia = SaveAfternoteMemorialMedia(),
             )
         },
-        onNavigateToMemorialPlaylist = {},
-        onNavigateToSelectReceiver = {},
-        onThumbnailBytesReady = {},
-        onThumbnailExtractionFailed = {},
-        onThumbnailUploadErrorConsumed = viewModel::onThumbnailUploadErrorConsumed,
-        onValidationErrorConsumed = viewModel::onValidationErrorConsumed,
+        snackbarMessage =
+            (uiState.error as? AfternoteEditorError.Validation)?.let { stringResource(it.reason.messageResId) },
+        onSnackbarMessageConsumed = viewModel::onErrorConsumed,
+        content = { editorSnackbarHostState ->
+            AfternoteEditorBody(
+                state = state,
+                form = uiState.form,
+                onNavigateToMemorialPlaylist = {},
+                onNavigateToSelectReceiver = {},
+                onThumbnailBytesReady = {},
+                onThumbnailExtractionFailed = {},
+                onCaptureFailed = {},
+                snackbarHostState = editorSnackbarHostState,
+                isPrefillLoading = uiState.isPrefillLoading,
+            )
+        },
         state = state,
         isPrefillLoading = uiState.isPrefillLoading,
     )
@@ -436,7 +431,7 @@ private fun AuthorDetailForDelete(
         }
 
         is AfternoteDetailUiState.Success -> {
-            val account = state.contentUiModel as DetailContentUiModel.Account
+            val account = state.contentUiModel as DetailContentUiModel.SocialNetwork
             AccountDetailScreen(
                 onBackClick = {},
                 content = account.content,
@@ -521,7 +516,7 @@ private fun detailViewModel(
     AfternoteDetailViewModel(
         savedStateHandle = SavedStateHandle(mapOf("itemId" to itemId)),
         afternoteRepository = repository,
-        userRepository = FakeUserRepository(),
+        userRepository = appTestUserRepository(),
         errorReporter = FakeErrorReporter(),
     )
 
@@ -531,7 +526,7 @@ private fun editorViewModel(
 ): AfternoteEditorViewModel =
     AfternoteEditorViewModel(
         savedStateHandle = SavedStateHandle(mapOf("itemId" to itemId)),
-        userRepository = FakeUserRepository(),
+        userRepository = appTestUserRepository(),
         afternoteRepository = repository,
         memorialThumbnailUploadRepository =
             MemorialThumbnailUploadRepository {
@@ -589,22 +584,21 @@ private fun authorListItems(): List<ListItem> =
 private fun authorDetail(): Detail =
     Detail(
         id = 73L,
-        category = "SOCIAL",
-        title = "Instagram",
-        timestamps = DetailTimestamps(createdAt = "2026.08.20", updatedAt = "2026.08.22"),
-        type = AfternoteType.SOCIAL_NETWORK,
-        credentials = DetailCredentials(id = "old@example.test", password = "old-password"),
+        serviceName = "Instagram",
+        timestamps = DetailTimestamps(updatedAt = "2026.08.22"),
         receivers =
             listOf(
                 DetailReceiver(
                     receiverId = 7L,
                     name = "김수신",
                     relation = "가족",
-                    phone = "",
                 ),
             ),
-        processingMethods = listOf("계정 삭제"),
         leaveMessageBlocks =
             listOf(LeaveMessageBlock(title = "마지막 말", body = "기억해 줘")),
-        memorial = null,
+        content =
+            DetailContent.SocialNetwork(
+                credentials = DetailCredentials(id = "old@example.test", password = "old-password"),
+                processingMethods = listOf("계정 삭제"),
+            ),
     )

@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
-import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.Detail
+import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailReceiver
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
 import org.junit.Assert.assertEquals
@@ -44,19 +44,18 @@ class AfternoteEditorReceiverPrefillTest {
         id: Long,
         name: String,
         relation: String,
-    ) = DetailReceiver(receiverId = id, name = name, relation = relation, phone = "010-0000-0000")
+    ) = DetailReceiver(receiverId = id, name = name, relation = relation)
 
     private fun detail(vararg receivers: DetailReceiver) =
         Detail(
             id = 1L,
-            category = "GALLERY_AND_FILES",
-            title = "구글 포토",
-            timestamps = DetailTimestamps(createdAt = "2026-08-02", updatedAt = "2026-08-02"),
-            type = AfternoteType.entries.first(),
-            credentials = null,
+            serviceName = "구글 포토",
+            timestamps = DetailTimestamps(updatedAt = "2026-08-02"),
             receivers = receivers.toList(),
-            processingMethods = emptyList(),
             leaveMessageBlocks = emptyList(),
-            memorial = null,
+            content =
+                DetailContent.Gallery(
+                    processingMethods = emptyList(),
+                ),
         )
 }

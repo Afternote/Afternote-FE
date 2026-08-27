@@ -20,3 +20,15 @@ val AfternoteType.editScreenLabelRes: Int
             AfternoteType.ESTATE -> R.string.afternote_editor_category_estate
             AfternoteType.MEMORIAL -> R.string.afternote_editor_category_memorial
         }
+
+/**
+ * 서비스 카탈로그 드롭다운을 제공하는 에디터 타입인지 여부.
+ *
+ * MEMORIAL은 서비스명 입력 없이 고정 제목을 사용한다. ESTATE는 에디터 미설계 상태라 현재 드롭다운을
+ * 제공하지 않으며, 구현이 열리면 하위 항목 카탈로그와 함께 이 값을 갱신한다(#491).
+ */
+val AfternoteType.hasServiceSelection: Boolean
+    get() =
+        this == AfternoteType.SOCIAL_NETWORK ||
+            this == AfternoteType.BUSINESS ||
+            this == AfternoteType.GALLERY_AND_FILES
