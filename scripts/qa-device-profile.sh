@@ -2,13 +2,14 @@
 
 # 에뮬레이터 QA 기기의 화면 프로파일을 조회·전환한다.
 #
-# 이 레포의 QA 증거 대장(.codex/qa-evidence/emulator/<sha>.json)은 오랫동안 AVD 이름만 적어
+# 이 레포의 QA 증거 대장(docs/qa/evidence/<full-head-sha>.json)은 오랫동안 AVD 이름만 적어
 # 왔는데, 이름만으로는 어떤 화면에서 검증했는지 단정할 수 없다. `wm size`/`wm density`
 # override 는 재부팅으로도 풀리지 않고 세션 사이에 조용히 남기 때문이다. 실제로 2026-08-25
-# 감사에서 Pixel_7_Claude_QA 에 1080x2340 @387dpi override 가 남아 있어, 표준 411x914dp 가
+# 감사에서 당시 QA AVD에 1080x2340 @387dpi override 가 남아 있어, 표준 411x914dp 가
 # 아니라 446x967dp 에서 QA 가 돌고 있었다.
 #
-# 그래서 실측 전에는 status 로 실효 dp 를 확인하고, --json 출력을 증거에 그대로 넣는다.
+# 그래서 실측 전에는 status 로 실효 dp 를 확인한다. --json 출력은 공개 증거에 넣을 수 있도록
+# 로컬 serial과 AVD 이름을 제외한다.
 
 set -uo pipefail
 
@@ -25,7 +26,7 @@ Usage: qa-device-profile.sh <status|standard|compact> [--serial <serial>] [--jso
   compact    720x1600 @320dpi(=360x800dp) 로 전환한다 — 국내 보급형 기준
 
   --serial   대상 기기 지정 (생략하면 연결된 기기가 하나일 때만 자동 선택)
-  --json     QA 증거(.codex/qa-evidence/emulator/<sha>.json)의 device 블록을 출력한다
+  --json     공개 QA 증거용 device 블록을 출력한다 (serial·AVD 이름 제외)
 USAGE
     exit 2
 }
@@ -184,8 +185,6 @@ main() {
 
     if [ "$json_output" = "true" ]; then
         printf '{\n'
-        printf '  "serial": "%s",\n' "$target"
-        printf '  "avd": "%s",\n' "${avd:-null}"
         printf '  "is_emulator": %s,\n' "$([ -n "$avd" ] && echo true || echo false)"
         printf '  "api_level": %s,\n' "${api_level:-null}"
         printf '  "screen": {\n'

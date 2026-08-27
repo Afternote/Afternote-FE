@@ -22,11 +22,11 @@ permissions:
   contents: read
 
 jobs:
-  # required workflow 자체에 paths-ignore 를 걸면 docs-only PR 의 CodeQL context 가
+  # required workflow 자체에 paths-ignore 를 걸면 분석 불필요 PR 의 CodeQL context 가
   # Pending 으로 남는다. 작은 선행 job 이 전체 변경 경로를 확인하고, 아래 required job 을
   # job-level if 로 skipped/success 처리한다. 분류 실패·빈 출력은 전체 분석으로 닫힌다.
   classify-changes:
-    name: Classify documentation changes
+    name: Classify CodeQL impact
     if: github.event_name == 'pull_request' || inputs.pull_request_number > 0
     runs-on: ubuntu-latest
     timeout-minutes: 3
@@ -34,14 +34,15 @@ jobs:
       contents: read
       pull-requests: read
     outputs:
-      docs_only: ${{ steps.path-scope.outputs.docs_only || 'false' }}
+      actions_required: ${{ steps.path-scope.outputs.codeql_actions || 'true' }}
+      java_kotlin_required: ${{ steps.path-scope.outputs.codeql_java_kotlin || 'true' }}
     steps:
       - name: Clone repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - name: Resolve documentation-only path scope
+      - name: Resolve language impact
         id: path-scope
         env:
           CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
@@ -78,17 +79,21 @@ jobs:
             exit 1
           fi
 
-          files_json=$(gh api --paginate --slurp \
-            "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files?per_page=100")
-          docs_only=$(env -u GH_TOKEN -u GITHUB_TOKEN \
+          files_json="$RUNNER_TEMP/pull-request-files.json"
+          gh api --paginate --slurp \
+            "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files?per_page=100" \
+            > "$files_json"
+          env -u GH_TOKEN -u GITHUB_TOKEN \
             node .github/scripts/classify-documentation-changes.mjs \
-            "$CHANGED_FILES" <<< "$files_json")
-          printf 'docs_only=%s\n' "$docs_only" >> "$GITHUB_OUTPUT"
+            "$CHANGED_FILES" < "$files_json" > /dev/null
+          env -u GH_TOKEN -u GITHUB_TOKEN \
+            node .github/scripts/resolve-pr-impact.mjs "$files_json" \
+            | grep '^codeql_' >> "$GITHUB_OUTPUT"
 
   analyze-actions:
     name: Analyze (actions)
     needs: classify-changes
-    if: ${{ !cancelled() && (needs.classify-changes.result != 'success' || needs.classify-changes.outputs.docs_only != 'true') }}
+    if: ${{ !cancelled() && (needs.classify-changes.result != 'success' || needs.classify-changes.outputs.actions_required != 'false') }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -125,7 +130,7 @@ jobs:
   analyze-java-kotlin:
     name: Analyze (java-kotlin)
     needs: classify-changes
-    if: ${{ !cancelled() && (needs.classify-changes.result != 'success' || needs.classify-changes.outputs.docs_only != 'true') }}
+    if: ${{ !cancelled() && (needs.classify-changes.result != 'success' || needs.classify-changes.outputs.java_kotlin_required != 'false') }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:

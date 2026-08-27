@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "280f937d102a3e81d5c30be76c85aa7971c20268.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "details.qa_account",
+      "device.avd",
+      "device.serial",
+      "text.private_identifier",
+      "text.qa_account"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "280f937d102a3e81d5c30be76c85aa7971c20268",
+  "head_ref": "fix/678",
+  "base_sha": "feba0a899f31ae24443b09f565583963e0ed5e4d",
+  "base_ref": "refactor/677",
+  "recorded_at": "2026-08-23T06:30:18.293042+00:00",
+  "result": "pass",
+  "scenario": "PR #886(#678): 실서버 왕복 — [QA_ACCOUNT_REDACTED] 계정(토큰 DataStore 주입 로그인), API 생성(POST /afternotes PLAYLIST + leaveMessage, FE 직렬화 동형 바디) → afternoteId=[PRIVATE_ID_REDACTED] 저장·재조회 확인(BE#104 동작), 앱 수정 진입 시 서버 말씀 프리필 등록·접힘 복원, 앱에서 2번째 말씀 입력·등록 후 저장 → 서버에 2건 반영(updatedAt 갱신). 앱 UI 단독 생성은 #540(수신자 추가 무동작)으로 원천 불가라 생성은 API 경유. UI 경로(빈 상태 렌더 위치·입력·등록 접힘·펼침 토글)는 새벽 오프라인 실측에서 선검증(PR 코멘트 1~4컷).",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true
+  },
+  "details": {
+    "diff_sha256": "48ffb52afc16f6a26a844acde6f77ddb943b39331a23424c37ab5270e94460be",
+    "changed_files": [
+      "feature/afternote/data/src/main/kotlin/com/afternote/feature/afternote/data/dto/AfternoteDto.kt",
+      "feature/afternote/data/src/main/kotlin/com/afternote/feature/afternote/data/mapper/InputToRequest.kt",
+      "feature/afternote/data/src/test/java/com/afternote/feature/afternote/data/mapper/LeaveMessageBlockContractTest.kt",
+      "feature/afternote/domain/src/main/java/com/afternote/feature/afternote/domain/model/author/MemorialWritePayload.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/AfternoteEditorContent.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/AfternoteEditorFormMapper.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/memorial/MemorialEditorContent.kt",
+      "feature/afternote/presentation/src/test/kotlin/com/afternote/feature/afternote/presentation/author/editor/EditorLeaveMessageBlocksTest.kt"
+    ],
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe",
+      "installed_for_head": "280f937d102a3e81d5c30be76c85aa7971c20268"
+    }
+  }
+}
