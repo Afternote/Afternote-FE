@@ -1,5 +1,6 @@
 package com.afternote.afternote_fe.test
 
+import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeUserRepository
@@ -7,6 +8,7 @@ import com.afternote.core.model.user.Receiver
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserPushSetting
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.timeletter.domain.model.RecordedAudio
 import com.afternote.feature.timeletter.domain.repository.VoiceRecorderRepository
 
@@ -23,6 +25,17 @@ object FakeVoiceRecorderRepository : VoiceRecorderRepository {
 
     override fun release() = Unit
 }
+
+fun afternoteEditorSavedStateHandle(
+    initialType: AfternoteType,
+    itemId: Long? = null,
+): SavedStateHandle =
+    SavedStateHandle(
+        buildMap {
+            put("initialType", initialType)
+            itemId?.let { put("itemId", it) }
+        },
+    )
 
 /**
  * 기존 app androidTest 공용 Auth fake 의 기본 허용 범위를 정본 fixture 위에 보존한다.
