@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "549349852a1bc004faf7660174c745835cabbc93.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": "not_covered",
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "device.avd",
+      "device.serial",
+      "text.sensitive_value"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "549349852a1bc004faf7660174c745835cabbc93",
+  "head_ref": "fix/936",
+  "base_sha": "6123a68a55006dcbcaba39a53c86e2c74d5ac775",
+  "base_ref": "origin/develop",
+  "recorded_at": "2026-08-23T12:15:57+00:00",
+  "result": "pass",
+  "scenario": "수정 6클래스만 필터 실행: AfternoteAuthorExtendedAndroidTest, AppAndReceiverCompletionAndroidTest, ReceiverRuntimeCompletionAndroidTest, ReceiverAdvancedAndroidTest, SettingAccountSecurityAndroidTest, SettingCompletionAndroidTest. 1차 실행(컴파일 수정만 반영)에서 7건 실패 → 런타임 드리프트로 판정·수정 → 2차 29/29 통과 (0 failures, 0 errors, XML 교차 확인).",
+  "not_covered": [
+    {
+      "reason": "나머지 androidTest 13파일은 이번 diff 미접촉이라 미실행 — 화·금 GMD 전량 실행이 커버. 이번 적발로 확인된 '컴파일 게이트가 못 잡는 런타임 드리프트' 부류는 GMD 가 유일한 그물."
+    }
+  ],
+  "device": {
+    "android": "15",
+    "is_emulator": true
+  },
+  "details": {
+    "dynamic": true,
+    "findings": [
+      {
+        "issue": 936,
+        "note": "1차 실측이 이슈에 없던 런타임 드리프트 7건 적발: SavedStateHandle String id 주입 5건(toRoute Long 읽기와 충돌, LongNavType 크래시), 마스터 키 [SENSITIVE_VALUE_REDACTED] 형식 게이트(#887) 반려 1건, 탈퇴 확인 플로우 변경(즉시 호출·결과 팝업) 1건. 전부 head 에 수정 포함. androidTest 잔여 파일의 SavedStateHandle 주입 전수 grep — String id 패턴 추가 발견 없음(RECEIVER_ID·timeLetterId·draftId 모두 Long/null)."
+      }
+    ],
+    "app": {
+      "package": "com.afternote.afternote_fe",
+      "installed_for_head": true,
+      "mock": "테스트 내 fake 리포지토리 (실서버 미사용)"
+    },
+    "purpose": "#936 androidTest 컴파일 44건 수정 + 런타임 드리프트 정리 — 화요일 GMD 정기 실행 전 수정 클래스 런타임 green 확정"
+  }
+}

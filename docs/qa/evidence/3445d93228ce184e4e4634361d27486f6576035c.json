@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "3445d93228ce184e4e4634361d27486f6576035c.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "device.avd",
+      "device.serial",
+      "text.person_name",
+      "text.private_identifier"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "3445d93228ce184e4e4634361d27486f6576035c",
+  "head_ref": "fix/993",
+  "base_sha": "71679cd235565d22faee08952b2f4983b99fb16e",
+  "base_ref": "develop",
+  "recorded_at": "2026-08-26T09:13:09.345746+00:00",
+  "result": "pass",
+  "scenario": "PR #1165(#993) 실서버 QA — 카카오 실계정으로 소셜 로그인해 isNewUser 계약을 실응답으로 확정. POST /api/v1/auth/social/login → 200 {\"accessToken\":…,\"refreshToken\":…,\"expiresIn\":3600,\"isNewUser\":false}. 종전 FE 가 쓰던 newUser 키는 응답에 없다. 이 PR 이 isNewUser 를 non-null 로 좁혔으므로 키가 어긋나면 역직렬화 실패로 로그인 자체가 죽는 구조 — 로그인이 홈까지 완주한 사실이 곧 키 계약 검증이다(users/me·daily-questions/today·diary 후속 호출 모두 200, 홈에 «안녕하세요, [PERSON_REDACTED]님» 렌더). isNewUser=false 라 WelcomeRoute 로 가지 않고 홈으로 가는 분기 정상. 사전에 배포 OpenAPI 로 SocialLoginResponse.isNewUser(boolean primitive) 도 확인. 남은 것: isNewUser=true(신규 가입→WelcomeRoute) 는 Afternote 미가입 소셜 계정이 있어야 재현되며 이번 계정은 이미 가입(sub=[PRIVATE_ID_REDACTED])이라 미실시. 기기 함정: 카카오 로그인 폼은 uiautomator 덤프에 입력값이 평문으로 나온다 — 비밀번호 입력 뒤에는 덤프를 찍지 말 것.",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true,
+    "api": 35,
+    "size": "1080x2400",
+    "density": 420
+  },
+  "details": {
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe"
+    },
+    "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "changed_files": []
+  }
+}
