@@ -12,7 +12,7 @@ import com.android.tools.screenshot.PreviewTest
 @Composable
 internal fun afternoteCategoryRowAllScreenshot() {
     AfternoteTheme {
-        AfternoteCategoryRow(
+        AfternoteTypeFilterRow(
             onTabSelected = {},
             selectedTab = null,
         )
@@ -30,7 +30,7 @@ internal fun afternoteCategoryRowAllScreenshot() {
 @Composable
 internal fun afternoteCategoryRowAllCompactScreenshot() {
     AfternoteTheme {
-        AfternoteCategoryRow(
+        AfternoteTypeFilterRow(
             onTabSelected = {},
             selectedTab = null,
         )
@@ -49,7 +49,7 @@ internal fun afternoteCategoryRowAllCompactScreenshot() {
 @Composable
 internal fun afternoteCategoryRowAllLargeFontScreenshot() {
     AfternoteTheme {
-        AfternoteCategoryRow(
+        AfternoteTypeFilterRow(
             onTabSelected = {},
             selectedTab = null,
         )
