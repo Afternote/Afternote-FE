@@ -58,7 +58,11 @@ class AfternoteAuthorImplementedCoverageAndroidTest {
     @Test
     fun gallerySave_routesTrimmedGalleryPayloadToOnlyGalleryEndpoint() {
         val repository = ImplementedCoverageAfternoteRepository()
-        val viewModel = implementedCoverageViewModel(repository)
+        val viewModel =
+            implementedCoverageViewModel(
+                repository,
+                initialType = AfternoteType.GALLERY_AND_FILES,
+            )
         collectSaveState(viewModel)
 
         composeRule.runOnIdle {
@@ -99,7 +103,11 @@ class AfternoteAuthorImplementedCoverageAndroidTest {
     @Test
     fun businessSave_routesCredentialsAndActionsToBusinessEndpoint() {
         val repository = ImplementedCoverageAfternoteRepository()
-        val viewModel = implementedCoverageViewModel(repository)
+        val viewModel =
+            implementedCoverageViewModel(
+                repository,
+                initialType = AfternoteType.BUSINESS,
+            )
         collectSaveState(viewModel)
 
         composeRule.runOnIdle {
@@ -149,6 +157,7 @@ class AfternoteAuthorImplementedCoverageAndroidTest {
         val viewModel =
             implementedCoverageViewModel(
                 repository = repository,
+                initialType = AfternoteType.MEMORIAL,
                 videoInputs = videoInputs,
                 photoInputs = photoInputs,
             )
@@ -225,8 +234,13 @@ class AfternoteAuthorImplementedCoverageAndroidTest {
 
     @Test
     fun memorialMediaAndPlaylist_recreateFromSavedStateWithoutLosingSelection() {
-        val handle = SavedStateHandle()
-        val first = implementedCoverageViewModel(ImplementedCoverageAfternoteRepository(), handle)
+        val handle = SavedStateHandle(mapOf("initialType" to AfternoteType.MEMORIAL))
+        val first =
+            implementedCoverageViewModel(
+                repository = ImplementedCoverageAfternoteRepository(),
+                initialType = AfternoteType.MEMORIAL,
+                savedStateHandle = handle,
+            )
         composeRule.setContent { AfternoteTheme {} }
 
         composeRule.runOnIdle {
@@ -239,7 +253,12 @@ class AfternoteAuthorImplementedCoverageAndroidTest {
             )
         }
 
-        val restored = implementedCoverageViewModel(ImplementedCoverageAfternoteRepository(), handle).currentForm()
+        val restored =
+            implementedCoverageViewModel(
+                repository = ImplementedCoverageAfternoteRepository(),
+                initialType = AfternoteType.MEMORIAL,
+                savedStateHandle = handle,
+            ).currentForm()
         assertEquals(AfternoteType.MEMORIAL, restored.selectedType)
         assertEquals("content://videos/farewell", restored.memorialVideoUrl)
         assertEquals("content://photos/portrait", restored.pickedMemorialPhotoUri)
@@ -301,7 +320,8 @@ private class ImplementedCoverageAfternoteRepository : AfternoteRepository {
 
 private fun implementedCoverageViewModel(
     repository: ImplementedCoverageAfternoteRepository,
-    savedStateHandle: SavedStateHandle = SavedStateHandle(),
+    initialType: AfternoteType,
+    savedStateHandle: SavedStateHandle = SavedStateHandle(mapOf("initialType" to initialType)),
     videoInputs: MutableList<MediaInput> = mutableListOf(),
     photoInputs: MutableList<MediaInput> = mutableListOf(),
 ): AfternoteEditorViewModel =
