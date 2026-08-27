@@ -30,6 +30,14 @@ data class DailyQuestionWriteUiState(
     val questionLoadError: UiText? = null,
     /** 이어쓸 임시저장 본문을 불러오는 중 (#923). */
     val isResumingDraft: Boolean = false,
+    /**
+     * 임시저장 이어쓰기 조회 실패.
+     *
+     * «불러오지 못함» 을 «임시저장 없음» 과 갈라야 하는 이유는 저장이 upsert 라서다 — 실패를
+     * 삼키면 사용자는 빈 화면을 «아직 임시저장이 없다» 로 읽고, 그대로 저장하는 순간 서버에
+     * 남아 있던 임시저장이 덮인다. 일기 화면은 같은 실패를 draftLoadError 로 이미 드러낸다 (#1018).
+     */
+    val draftResumeError: UiText? = null,
     val submitState: SubmitState = SubmitState.Idle,
     /** 이미지 업로드 진행 중 — 끝나기 전에 저장하면 이미지 없이 기록이 먼저 올라간다 (#716). */
     val isUploadingImage: Boolean = false,

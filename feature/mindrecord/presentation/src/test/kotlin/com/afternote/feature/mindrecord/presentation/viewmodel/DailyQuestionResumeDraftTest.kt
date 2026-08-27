@@ -2,6 +2,7 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.domain.testing.FakePhotoUploadRepository
+import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
@@ -11,6 +12,7 @@ import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
+import com.afternote.feature.mindrecord.presentation.R
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -22,6 +24,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.io.IOException
 
 /**
  * 이어쓰기가 임시저장 본문을 싣는지 고정한다 (#923).
@@ -125,8 +128,38 @@ class DailyQuestionResumeDraftTest {
         assertEquals(true, repository.lastDraftOnly)
     }
 
-    private fun fakeRepository(): FakeResumeRepository =
+    @Test
+    fun `이어쓰기 조회 실패는 «임시저장 없음» 과 구분해 알린다`() {
+        // 저장이 upsert 다 — 실패를 삼키면 사용자가 빈 화면을 «아직 임시저장이 없다» 로 읽고,
+        // 그대로 저장하는 순간 서버에 남아 있던 임시저장이 덮인다 (#1018).
+        val viewModel = viewModel(currentAnswerFromEditor = "<p></p>", listFailure = IOException("offline"))
+
+        val state = viewModel.uiState.value
+        assertEquals(
+            UiText.Resource(R.string.mindrecord_error_daily_question_draft_load_failed),
+            state.draftResumeError,
+        )
+        assertEquals(false, state.isResumingDraft)
+        // 실패했으므로 이어쓸 것을 찾지 못한 상태다 — 없는 draftId 를 지어내지 않는다.
+        assertEquals(null, state.draftId)
+    }
+
+    @Test
+    fun `임시저장이 정말 없으면 실패로 알리지 않는다`() {
+        // 반대 방향이 없으면 «항상 오류» 로 만들어도 위 테스트가 통과한다.
+        val viewModel = viewModel(currentAnswerFromEditor = "<p></p>", drafts = emptyList())
+
+        assertEquals(null, viewModel.uiState.value.draftResumeError)
+        assertEquals(false, viewModel.uiState.value.isResumingDraft)
+    }
+
+    private fun fakeRepository(
+        listFailure: Throwable? = null,
+        drafts: List<DailyQuestion>? = null,
+    ): FakeResumeRepository =
         FakeResumeRepository(
+            listFailure = listFailure,
+            drafts = drafts,
             today =
                 TodayDailyQuestion(
                     questionId = 1L,
@@ -145,8 +178,12 @@ class DailyQuestionResumeDraftTest {
                 ),
         )
 
-    private fun viewModel(currentAnswerFromEditor: String): DailyQuestionWriteViewModel {
-        val repository = fakeRepository()
+    private fun viewModel(
+        currentAnswerFromEditor: String,
+        listFailure: Throwable? = null,
+        drafts: List<DailyQuestion>? = null,
+    ): DailyQuestionWriteViewModel {
+        val repository = fakeRepository(listFailure = listFailure, drafts = drafts)
         val viewModel =
             DailyQuestionWriteViewModel(
                 savedStateHandle = SavedStateHandle(emptyMap()),
@@ -173,6 +210,8 @@ class DailyQuestionResumeDraftTest {
 private class FakeResumeRepository(
     private val today: TodayDailyQuestion,
     private val draft: DailyQuestion,
+    private val listFailure: Throwable? = null,
+    private val drafts: List<DailyQuestion>? = null,
 ) : DailyQuestionRepository {
     private val todayArrived = CompletableDeferred<Unit>()
 
@@ -189,7 +228,8 @@ private class FakeResumeRepository(
         draftOnly: Boolean?,
     ): Result<List<DailyQuestion>> {
         lastDraftOnly = draftOnly
-        return Result.success(listOf(draft))
+        listFailure?.let { return Result.failure(it) }
+        return Result.success(drafts ?: listOf(draft))
     }
 
     override suspend fun getToday(): Result<TodayDailyQuestion> {

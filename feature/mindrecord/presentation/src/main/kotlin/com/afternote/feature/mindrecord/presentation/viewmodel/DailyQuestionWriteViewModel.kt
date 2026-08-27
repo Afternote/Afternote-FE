@@ -148,10 +148,22 @@ class DailyQuestionWriteViewModel
          * (없으면 재제출이 POST 로 나가 이어쓰기가 안 된다).
          */
         private suspend fun resumeDraft() {
-            _uiState.update { it.copy(isResumingDraft = true) }
+            _uiState.update { it.copy(isResumingDraft = true, draftResumeError = null) }
+            val listResult = repository.getList(date = LocalDate.now().toString(), draftOnly = true)
+            // 실패를 «임시저장 없음» 으로 접지 않는다. 저장이 upsert 라, 사용자가 빈 화면을
+            // «아직 없다» 로 읽고 저장하면 서버에 남아 있던 임시저장이 덮인다 (#1018).
+            if (listResult.isFailure) {
+                _uiState.update {
+                    it.copy(
+                        isResumingDraft = false,
+                        draftResumeError =
+                            UiText.Resource(R.string.mindrecord_error_daily_question_draft_load_failed),
+                    )
+                }
+                return
+            }
             val draft =
-                repository
-                    .getList(date = LocalDate.now().toString(), draftOnly = true)
+                listResult
                     .getOrNull()
                     ?.firstOrNull { it.isDraft }
                     ?: run {

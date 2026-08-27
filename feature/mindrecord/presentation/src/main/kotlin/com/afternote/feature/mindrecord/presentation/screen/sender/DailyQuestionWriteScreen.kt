@@ -109,6 +109,18 @@ fun DailyQuestionWriteScreen(
                 dayNumber = uiState.questionDay,
             )
 
+            // 이어쓰기 조회 실패는 저장 실패와 다른 시점·다른 원인이라 따로 알린다. 삼키면
+            // 사용자가 빈 화면을 «임시저장 없음» 으로 읽고 저장해 기존 임시저장을 덮는다 (#1018).
+            val draftResumeErrorText = uiState.draftResumeError?.asString()
+            if (draftResumeErrorText != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = draftResumeErrorText,
+                    color = AfternoteDesign.colors.error,
+                    style = AfternoteDesign.typography.captionLargeR,
+                )
+            }
+
             val errorMessage = (uiState.submitState as? SubmitState.Failed)?.message?.asString()
             if (errorMessage != null) {
                 Spacer(modifier = Modifier.height(8.dp))
