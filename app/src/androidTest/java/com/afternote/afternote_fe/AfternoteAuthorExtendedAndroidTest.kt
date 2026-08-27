@@ -525,7 +525,13 @@ private fun editorViewModel(
     itemId: Long,
 ): AfternoteEditorViewModel =
     AfternoteEditorViewModel(
-        savedStateHandle = SavedStateHandle(mapOf("itemId" to itemId)),
+        savedStateHandle =
+            SavedStateHandle(
+                mapOf(
+                    "itemId" to itemId,
+                    "initialType" to AfternoteType.SOCIAL_NETWORK,
+                ),
+            ),
         userRepository = appTestUserRepository(),
         afternoteRepository = repository,
         memorialThumbnailUploadRepository =
