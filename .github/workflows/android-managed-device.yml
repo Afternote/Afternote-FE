@@ -81,6 +81,7 @@ jobs:
 
           if [[ -f .github/scripts/ci-test-plan.mjs &&
                 -f .github/scripts/resolve-android-test-plan.mjs &&
+                -f .github/scripts/resolve-pr-impact.mjs &&
                 -f .github/scripts/validate-pr-ci-test-plan.mjs &&
                 -f .github/scripts/verify-android-test-plan-result.mjs ]]; then
             install -m 0644 \
@@ -90,6 +91,9 @@ jobs:
               .github/scripts/resolve-android-test-plan.mjs \
               "$policy_dir/resolve-android-test-plan.mjs"
             install -m 0644 \
+              .github/scripts/resolve-pr-impact.mjs \
+              "$policy_dir/resolve-pr-impact.mjs"
+            install -m 0644 \
               .github/scripts/validate-pr-ci-test-plan.mjs \
               "$policy_dir/validate-pr-ci-test-plan.mjs"
             install -m 0644 \
@@ -98,6 +102,7 @@ jobs:
             echo "source=trusted" >> "$GITHUB_OUTPUT"
           elif [[ ! -e .github/scripts/ci-test-plan.mjs &&
                   ! -e .github/scripts/resolve-android-test-plan.mjs &&
+                  ! -e .github/scripts/resolve-pr-impact.mjs &&
                   ! -e .github/scripts/validate-pr-ci-test-plan.mjs &&
                   ! -e .github/scripts/verify-android-test-plan-result.mjs ]]; then
             # 최초 도입 PR에서는 default branch에 새 helper들이 아직 없다. 선언 검증을 target
