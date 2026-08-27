@@ -45,6 +45,7 @@ test("privileged baseline apply is a workflow-run bridge restricted to PNG basel
     assert.match(source, /workflows: \["Generate Screenshot Baselines"\]/);
     assert.match(source, /github\.event\.workflow_run\.event == 'pull_request'/);
     assert.match(source, /^\s{2}contents: write$/m);
+    assert.match(source, /^\s{2}pull-requests: write$/m);
     assert.doesNotMatch(source, /actions\/checkout@/);
     assert.doesNotMatch(source, /git apply/);
     assert.doesNotMatch(source, /child_process/);
