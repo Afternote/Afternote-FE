@@ -12,8 +12,11 @@ const TEST_PATH_PATTERN = /^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$)).+\/src\/androidTest
 const SELECTOR_PATTERN = /^(?:[A-Za-z_][A-Za-z0-9_]*\.)+[A-Za-z_][A-Za-z0-9_$]*#[A-Za-z_][A-Za-z0-9_]*$/;
 const FULL_REQUIRED_PATHS = new Set([
     ".github/workflows/android-managed-device.yml",
+    ".github/workflows/android-managed-device-retry.yml",
+    ".github/scripts/classify-android-managed-device-failure.mjs",
     ".github/scripts/ci-test-plan.mjs",
     ".github/scripts/resolve-android-test-plan.mjs",
+    ".github/scripts/render-android-test-results.mjs",
     ".github/scripts/validate-pr-ci-test-plan.mjs",
     ".github/scripts/verify-android-test-plan-result.mjs",
     "app/build.gradle.kts",
