@@ -64,9 +64,7 @@ class ApiException(
     val code: Int,
     val serverMessage: String?,
     fallbackMessage: String,
-) : RuntimeException(serverMessage ?: fallbackMessage) {
-    override val message: String = serverMessage ?: fallbackMessage
-}
+) : RuntimeException(serverMessage ?: fallbackMessage)
 
 fun BaseResponse<*>.requireStatus() {
     if (status != 200) {
