@@ -1,9 +1,11 @@
 import { pathToFileURL } from "node:url";
 
 export const DECISIVE_REVIEW_STATES = new Set(["APPROVED", "CHANGES_REQUESTED"]);
+export const REVIEW_RESPONSE_COMMAND = "/review-response";
 
 const WRITE_PERMISSIONS = new Set(["admin", "maintain", "write"]);
 const NON_WRITE_PERMISSIONS = new Set(["triage", "read", "none"]);
+const AUTHOR_ACTION_KINDS = new Set(["commit", "issue-comment", "review-reply"]);
 
 function requiredString(value, name) {
     if (typeof value !== "string" || value.trim() === "") {
@@ -24,6 +26,19 @@ function normalizeReviewState(value) {
     return requiredString(value, "review.state").toUpperCase();
 }
 
+function normalizeLogin(value, name) {
+    return requiredString(value, name).toLowerCase();
+}
+
+function normalizeTimestamp(value, name) {
+    const timestampText = requiredString(value, name);
+    const timestamp = Date.parse(timestampText);
+    if (!Number.isFinite(timestamp)) {
+        throw new Error(`${name} 값이 올바른 시각이 아닙니다: ${timestampText}`);
+    }
+    return { timestampText, timestamp };
+}
+
 function normalizeRepository(repository) {
     const value = requiredString(repository, "repository");
     if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(value)) {
@@ -39,18 +54,14 @@ function normalizeDecisiveReview(review) {
     }
 
     const id = requiredPositiveInteger(review?.id, "review.id");
-    const reviewer = requiredString(
+    const reviewer = normalizeLogin(
         review?.user?.login ?? review?.reviewer,
         "review.user.login",
-    ).toLowerCase();
-    const submittedAt = requiredString(
+    );
+    const { timestampText: submittedAt, timestamp: submittedTimestamp } = normalizeTimestamp(
         review?.submitted_at ?? review?.submittedAt,
         "review.submitted_at",
     );
-    const submittedTimestamp = Date.parse(submittedAt);
-    if (!Number.isFinite(submittedTimestamp)) {
-        throw new Error(`review.submitted_at 값이 올바른 시각이 아닙니다: ${submittedAt}`);
-    }
 
     return { id, reviewer, state, submittedAt, submittedTimestamp };
 }
@@ -90,7 +101,181 @@ export function selectLatestDecisiveReviewsByReviewer(reviews) {
     return [...latestByReviewer.values()].sort(compareDecisiveReviews);
 }
 
-export function buildDismissalPlan(reviews, permissionByReviewer) {
+function isSubstantiveReviewResponse(body) {
+    if (typeof body !== "string") {
+        return false;
+    }
+    const trimmed = body.trim();
+    if (!trimmed.toLowerCase().startsWith(REVIEW_RESPONSE_COMMAND)) {
+        return false;
+    }
+    const remainder = trimmed.slice(REVIEW_RESPONSE_COMMAND.length);
+    return /^(?:[ \t]+|\r?\n)[\s\S]*\S$/.test(remainder);
+}
+
+function normalizeAuthorAction({ kind, id, actedAt, reviewer = null }) {
+    const normalizedKind = requiredString(kind, "author action kind");
+    if (!AUTHOR_ACTION_KINDS.has(normalizedKind)) {
+        throw new Error(`알 수 없는 author action kind 입니다: ${normalizedKind}`);
+    }
+    const normalizedId = requiredString(
+        typeof id === "number" ? String(id) : id,
+        "author action id",
+    );
+    const { timestampText, timestamp } = normalizeTimestamp(actedAt, "author action actedAt");
+    return {
+        kind: normalizedKind,
+        id: normalizedId,
+        actedAt: timestampText,
+        actedTimestamp: timestamp,
+        reviewer: reviewer === null ? null : normalizeLogin(reviewer, "author action reviewer"),
+    };
+}
+
+function compareAuthorActions(left, right) {
+    return left.actedTimestamp - right.actedTimestamp
+        || left.kind.localeCompare(right.kind)
+        || left.id.localeCompare(right.id);
+}
+
+export function collectAuthorActions({
+    pullAuthor,
+    reviews,
+    commits = [],
+    issueComments = [],
+    reviewComments = [],
+}) {
+    const author = normalizeLogin(pullAuthor, "pull_request.user.login");
+    for (const [name, value] of Object.entries({ commits, issueComments, reviewComments })) {
+        if (!Array.isArray(value)) {
+            throw new Error(`${name} 응답이 배열이 아닙니다.`);
+        }
+    }
+
+    const decisiveReviews = reviews
+        .map((review) => normalizeDecisiveReview(review))
+        .filter(Boolean);
+    const changeRequestById = new Map(
+        decisiveReviews
+            .filter((review) => review.state === "CHANGES_REQUESTED")
+            .map((review) => [review.id, review]),
+    );
+    const actions = [];
+
+    for (const commit of commits) {
+        const commitAuthors = [commit?.author?.login, commit?.committer?.login]
+            .filter((login) => typeof login === "string")
+            .map((login) => login.toLowerCase());
+        if (!commitAuthors.includes(author)) {
+            continue;
+        }
+        if (!Array.isArray(commit?.parents)) {
+            throw new Error("commit.parents 응답이 배열이 아닙니다.");
+        }
+        if (commit.parents.length !== 1) {
+            continue;
+        }
+        actions.push(normalizeAuthorAction({
+            kind: "commit",
+            id: requiredString(commit?.sha, "commit.sha"),
+            actedAt: commit?.commit?.committer?.date ?? commit?.commit?.author?.date,
+        }));
+    }
+
+    for (const comment of issueComments) {
+        const commenter = comment?.user?.login;
+        if (typeof commenter !== "string" || commenter.toLowerCase() !== author) {
+            continue;
+        }
+        if (!isSubstantiveReviewResponse(comment?.body)) {
+            continue;
+        }
+        actions.push(normalizeAuthorAction({
+            kind: "issue-comment",
+            id: requiredPositiveInteger(comment?.id, "issue comment.id"),
+            actedAt: comment?.created_at,
+        }));
+    }
+
+    const reviewCommentById = new Map();
+    for (const comment of reviewComments) {
+        reviewCommentById.set(requiredPositiveInteger(comment?.id, "review comment.id"), comment);
+    }
+    for (const comment of reviewComments) {
+        const commenter = comment?.user?.login;
+        if (typeof commenter !== "string" || commenter.toLowerCase() !== author) {
+            continue;
+        }
+        if (comment?.in_reply_to_id === undefined || comment?.in_reply_to_id === null) {
+            continue;
+        }
+        const rootCommentId = requiredPositiveInteger(
+            comment.in_reply_to_id,
+            "review comment.in_reply_to_id",
+        );
+        const rootComment = reviewCommentById.get(rootCommentId);
+        if (!rootComment) {
+            throw new Error(`review comment #${comment.id}의 원본 댓글 #${rootCommentId}이 없습니다.`);
+        }
+        const rootReviewId = requiredPositiveInteger(
+            rootComment?.pull_request_review_id,
+            "review comment.pull_request_review_id",
+        );
+        const changeRequest = changeRequestById.get(rootReviewId);
+        if (!changeRequest) {
+            continue;
+        }
+        actions.push(normalizeAuthorAction({
+            kind: "review-reply",
+            id: requiredPositiveInteger(comment?.id, "review comment.id"),
+            actedAt: comment?.created_at,
+            reviewer: changeRequest.reviewer,
+        }));
+    }
+
+    return actions.sort(compareAuthorActions);
+}
+
+function findReviewedResponseEvidence({
+    reviews,
+    blockingReview,
+    approval,
+    authorActions,
+}) {
+    const reviewerReviews = reviews
+        .map((review) => normalizeDecisiveReview(review))
+        .filter((review) => review && review.reviewer === blockingReview.reviewer)
+        .sort(compareDecisiveReviews);
+    const relevantActions = authorActions.filter((action) =>
+        (action.reviewer === null || action.reviewer === blockingReview.reviewer)
+        && action.actedTimestamp < approval.submittedTimestamp);
+    const action = relevantActions.at(-1);
+    if (!action || action.actedTimestamp >= blockingReview.submittedTimestamp) {
+        return null;
+    }
+
+    const priorReview = reviewerReviews
+        .filter((review) => review.submittedTimestamp < action.actedTimestamp)
+        .at(-1);
+    if (!priorReview || priorReview.state !== "CHANGES_REQUESTED") {
+        return null;
+    }
+
+    const reviewsAfterResponse = reviewerReviews.filter((review) =>
+        review.submittedTimestamp > action.actedTimestamp
+        && compareDecisiveReviews(review, approval) <= 0);
+    if (reviewsAfterResponse.length !== 1 || reviewsAfterResponse[0].id !== blockingReview.id) {
+        return null;
+    }
+
+    return {
+        reviewer: blockingReview.reviewer,
+        priorBlockingReview: priorReview,
+        action,
+    };
+}
+
+export function buildDismissalPlan(reviews, permissionByReviewer, context = {}) {
     if (!(permissionByReviewer instanceof Map)) {
         throw new Error("permissionByReviewer 는 Map 이어야 합니다.");
     }
@@ -104,20 +289,80 @@ export function buildDismissalPlan(reviews, permissionByReviewer) {
     });
 
     if (writeReviews.length === 0) {
-        return { status: "no-write-review", latestReview: null, blockingReviews: [] };
+        return {
+            status: "no-write-review",
+            latestReview: null,
+            blockingReviews: [],
+            responseEvidence: [],
+            pendingReviewers: [],
+        };
     }
 
     const latestReview = writeReviews.at(-1);
     if (latestReview.state !== "APPROVED") {
-        return { status: "latest-changes-requested", latestReview, blockingReviews: [] };
+        return {
+            status: "latest-changes-requested",
+            latestReview,
+            blockingReviews: [],
+            responseEvidence: [],
+            pendingReviewers: [],
+        };
     }
 
     const blockingReviews = writeReviews.filter((review) => review.state === "CHANGES_REQUESTED");
     if (blockingReviews.length === 0) {
-        return { status: "already-approved", latestReview, blockingReviews: [] };
+        return {
+            status: "already-approved",
+            latestReview,
+            blockingReviews: [],
+            responseEvidence: [],
+            pendingReviewers: [],
+        };
     }
 
-    return { status: "dismiss", latestReview, blockingReviews };
+    const pullAuthor = normalizeLogin(context?.pullAuthor, "pull_request.user.login");
+    const authorActions = collectAuthorActions({
+        pullAuthor,
+        reviews,
+        commits: context?.commits,
+        issueComments: context?.issueComments,
+        reviewComments: context?.reviewComments,
+    });
+    const responseEvidence = [];
+    const pendingReviewers = [];
+    for (const blockingReview of blockingReviews) {
+        const evidence = findReviewedResponseEvidence({
+            reviews,
+            blockingReview,
+            approval: latestReview,
+            authorActions,
+        });
+        if (evidence) {
+            responseEvidence.push(evidence);
+        } else {
+            pendingReviewers.push(blockingReview.reviewer);
+        }
+    }
+
+    if (pendingReviewers.length > 0) {
+        return {
+            status: "awaiting-reviewed-author-response",
+            latestReview,
+            blockingReviews,
+            responseEvidence,
+            pendingReviewers,
+            pullAuthor,
+        };
+    }
+
+    return {
+        status: "dismiss",
+        latestReview,
+        blockingReviews,
+        responseEvidence,
+        pendingReviewers: [],
+        pullAuthor,
+    };
 }
 
 export class GitHubClient {
@@ -180,8 +425,20 @@ export class GitHubClient {
 export async function planPullRequest(client, repository, pullNumber) {
     const normalizedRepository = normalizeRepository(repository);
     const normalizedPullNumber = requiredPositiveInteger(pullNumber, "pull number");
+    const pullRequest = await client.request(
+        `/repos/${normalizedRepository}/pulls/${normalizedPullNumber}`,
+    );
     const reviews = await client.paginate(
         `/repos/${normalizedRepository}/pulls/${normalizedPullNumber}/reviews`,
+    );
+    const commits = await client.paginate(
+        `/repos/${normalizedRepository}/pulls/${normalizedPullNumber}/commits`,
+    );
+    const issueComments = await client.paginate(
+        `/repos/${normalizedRepository}/issues/${normalizedPullNumber}/comments`,
+    );
+    const reviewComments = await client.paginate(
+        `/repos/${normalizedRepository}/pulls/${normalizedPullNumber}/comments`,
     );
     const latestByReviewer = selectLatestDecisiveReviewsByReviewer(reviews);
     const permissionByReviewer = new Map();
@@ -195,7 +452,12 @@ export async function planPullRequest(client, repository, pullNumber) {
 
     return {
         pullNumber: normalizedPullNumber,
-        ...buildDismissalPlan(reviews, permissionByReviewer),
+        ...buildDismissalPlan(reviews, permissionByReviewer, {
+            pullAuthor: pullRequest?.user?.login,
+            commits,
+            issueComments,
+            reviewComments,
+        }),
     };
 }
 
@@ -206,6 +468,7 @@ export async function applyDismissalPlan(client, repository, plan) {
     }
 
     const pullNumber = requiredPositiveInteger(plan.pullNumber, "pull number");
+    const pullAuthor = normalizeLogin(plan.pullAuthor, "pull_request.user.login");
     const approval = normalizeDecisiveReview(plan.latestReview);
     if (!approval || approval.state !== "APPROVED") {
         throw new Error(`#${pullNumber} dismissal plan의 최종 승인이 올바르지 않습니다.`);
@@ -220,10 +483,27 @@ export async function applyDismissalPlan(client, repository, plan) {
         if (compareDecisiveReviews(blockingReview, approval) >= 0) {
             throw new Error(`#${pullNumber} 최종 승인보다 늦은 변경요청은 dismiss할 수 없습니다.`);
         }
+        const evidence = plan.responseEvidence?.find(
+            (candidate) => candidate?.reviewer === blockingReview.reviewer,
+        );
+        if (!evidence) {
+            throw new Error(`#${pullNumber} @${blockingReview.reviewer}의 검토된 작성자 대응 근거가 없습니다.`);
+        }
+        const priorBlockingReview = normalizeDecisiveReview(evidence?.priorBlockingReview);
+        const action = normalizeAuthorAction(evidence.action);
+        if (!priorBlockingReview || priorBlockingReview.state !== "CHANGES_REQUESTED") {
+            throw new Error(`#${pullNumber} @${blockingReview.reviewer}의 이전 변경요청 근거가 없습니다.`);
+        }
+        if (priorBlockingReview.reviewer !== blockingReview.reviewer
+            || !(priorBlockingReview.submittedTimestamp < action.actedTimestamp)
+            || !(action.actedTimestamp < blockingReview.submittedTimestamp)) {
+            throw new Error(`#${pullNumber} @${blockingReview.reviewer}의 작성자 대응·재리뷰 순서가 올바르지 않습니다.`);
+        }
 
         const message = [
-            `@${approval.reviewer}의 더 늦은 승인(review #${approval.id})을 최종 판정으로 사용합니다.`,
-            "저장소 정책은 PR 전체에서 가장 최근의 APPROVED/CHANGES_REQUESTED 판정을 우선합니다.",
+            `작성자 @${pullAuthor}의 대응(${action.kind} ${action.id}) 뒤`,
+            `@${blockingReview.reviewer}와 @${approval.reviewer}가 모두 재검토했습니다.`,
+            `더 늦은 승인(review #${approval.id})을 최종 판정으로 사용합니다.`,
         ].join(" ");
         const response = await client.request(
             `/repos/${normalizedRepository}/pulls/${pullNumber}/reviews/${blockingReview.id}/dismissals`,
