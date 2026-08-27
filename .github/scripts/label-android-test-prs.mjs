@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 
-// Android 런타임 회귀 가능성이 큰 PR 에 `android-test` 라벨을 유지한다.
+// 모든 same-repository PR 에 `android-test` 라벨을 유지한다.
 //
-// 라벨은 단순 분류가 아니라 Android Managed Device 실행 스위치다. 한 번 성공한 뒤 사람이
-// 라벨을 제거하고 head 를 갱신하면 새 SHA 는 계측 테스트 없이 남는다. 이 스크립트는 default
-// branch 의 신뢰된 워크플로에서 열린 PR 전체를 다시 읽고, 보수적 파일 규칙이나 구조화 QA의
-// 명시적 결정에 해당하는데 라벨이 없는 PR 에만 라벨을 추가한다. 자동 제거는 하지 않는다.
-// 사람이 더 넓은 런타임 위험을 보고 붙인 라벨을 자동화가 지우면 안전 쪽 판단을 되돌리게 된다.
+// 모든 same-repository PR 은 라벨과 무관하게 pull_request 에서 Managed Device를 실행한다. 이 라벨은
+// 계측 검증 대상이라는 감사 표식이자 GITHUB_TOKEN 이 만든 commit을 정확한 HEAD로 재dispatch하는 복구
+// 수단이다. default branch 의 신뢰된 워크플로가 열린 PR 전체를 다시 읽어 누락된 라벨을 복구하며,
+// 경로 규칙과 구조화 QA 결정은 추가 위험 근거로 유지한다. 자동 제거는 하지 않는다.
 
 import path from "node:path";
 import process from "node:process";
@@ -18,7 +17,7 @@ export const DEFAULT_LABEL = "android-test";
 export const DEFAULT_PENDING_LABEL = "android-test-dispatch-pending";
 
 const LABEL_COLOR = "1D76DB";
-const LABEL_DESCRIPTION = "PR head에서 Android Managed Device 계측 테스트 실행";
+const LABEL_DESCRIPTION = "모든 same-repository PR의 Android Managed Device 검증 표식";
 const PENDING_LABEL_COLOR = "FBCA04";
 const PENDING_LABEL_DESCRIPTION = "android-test 자동 dispatch 재시도 필요";
 const PULL_REQUEST_PAGE_SIZE = 50;
@@ -167,10 +166,21 @@ export function planLabelChanges({
     const skippedForks = [];
 
     for (const pullRequest of pullRequests) {
-        const requirement = classifyAndroidTestRequirement(pullRequest.files ?? [], {
+        const pathRequirement = classifyAndroidTestRequirement(pullRequest.files ?? [], {
             androidTestRequired: pullRequest.androidTestRequired === true,
             androidTestExcluded: pullRequest.androidTestExcluded === true,
         });
+        const requirement = {
+            required: true,
+            matches: [
+                {
+                    id: "all-pull-requests",
+                    description: "모든 same-repository PR의 필수 계측 테스트",
+                    paths: [],
+                },
+                ...pathRequirement.matches,
+            ],
+        };
         const candidate = { ...pullRequest, requirement };
         const hasLabel = (pullRequest.labels ?? []).includes(label);
         if (pullRequest.headRepository !== repository && (requirement.required || hasLabel)) {
@@ -398,27 +408,34 @@ export async function applyPlan(
         try {
             if (dryRun) {
                 logger.log(
-                    `[dry-run] #${pullRequest.number} ${addLabel ? `${label} 라벨 부착 + ` : ""}` +
-                        "현재 HEAD dispatch",
+                    `[dry-run] #${pullRequest.number} ${
+                        addLabel ? `${label} 라벨 부착` : "현재 HEAD dispatch"
+                    }`,
                 );
                 continue;
             }
             if (addLabel) {
-                // 이 표식은 자동화가 소유한다. 프로세스가 어느 단계에서 끊겨도 다음 reconcile이
-                // dispatch를 재시도하며, 사람이나 다른 job이 붙인 안전 라벨은 절대 지우지 않는다.
-                await api(`/repos/${repository}/issues/${pullRequest.number}/labels`, {
-                    method: "POST",
-                    body: { labels: [pendingLabel] },
-                });
+                // pull_request:labeled가 현재 HEAD의 Managed Device를 직접 실행한다. 별도
+                // workflow_dispatch를 만들면 오래된 PR branch의 입력 schema와 충돌하고 같은
+                // HEAD를 중복 실행하므로, 최초 부착은 감사 표식만 쓴다.
                 await api(`/repos/${repository}/issues/${pullRequest.number}/labels`, {
                     method: "POST",
                     body: { labels: [label] },
                 });
+                logger.log(`#${pullRequest.number} ${label} 라벨 부착`);
+                continue;
             }
 
-            // changed-files를 읽은 뒤 push가 먼저 발생하고 라벨이 나중에 붙는 경합을 닫는다.
-            // 라벨을 붙인 다음 현재 PR을 다시 읽으면, 그 전에 끝난 push는 새 SHA로 dispatch하고
-            // 그 뒤의 push는 이미 라벨이 있으므로 synchronize 이벤트가 Managed Device를 실행한다.
+            if (!(pullRequest.labels ?? []).includes(pendingLabel)) {
+                // GITHUB_TOKEN이 만든 commit은 pull_request:synchronize를 만들지 않는다. bridge가
+                // 요청한 exact-HEAD dispatch가 실패하면 다음 reconcile이 다시 시도하도록 표시한다.
+                await api(`/repos/${repository}/issues/${pullRequest.number}/labels`, {
+                    method: "POST",
+                    body: { labels: [pendingLabel] },
+                });
+            }
+
+            // bridge가 관찰한 뒤 HEAD가 움직인 경합을 닫기 위해 dispatch 직전에 PR을 다시 읽는다.
             const {
                 headBranch: currentHeadBranch,
                 headSha: currentHeadSha,
@@ -443,7 +460,7 @@ export async function applyPlan(
                 `/repos/${repository}/issues/${pullRequest.number}/labels/${encodeURIComponent(pendingLabel)}`,
                 { method: "DELETE", allowNotFound: true },
             );
-            logger.log(`#${pullRequest.number} ${label} 라벨 부착 + 현재 HEAD dispatch`);
+            logger.log(`#${pullRequest.number} 현재 HEAD dispatch`);
         } catch (error) {
             failures.push(
                 `#${pullRequest.number} 자동 처리 실패(다음 reconcile에서 재시도): ${error.message}`,
@@ -478,8 +495,10 @@ async function main() {
         redispatchHeadSha,
     });
 
-    if (!dryRun && (plan.toLabel.length > 0 || plan.toRetry.length > 0)) {
+    if (!dryRun && plan.toLabel.length > 0) {
         await ensureLabelExists(api, repository, label);
+    }
+    if (!dryRun && plan.toRetry.length > 0) {
         await ensureLabelExists(api, repository, pendingLabel, {
             color: PENDING_LABEL_COLOR,
             description: PENDING_LABEL_DESCRIPTION,
