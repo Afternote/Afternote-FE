@@ -19,7 +19,7 @@ sealed class AfternoteFailure(
     ) : AfternoteFailure("afternote authoring validation: ${kind.name}", null)
 
     /**
-     * 추모 미디어(영상·영정 사진)를 저장 페이로드에 실을 URL 로 해석하지 못한 실패.
+     * 추억 노트 미디어(장례식에 남길 영상·영정사진)를 저장 페이로드에 실을 URL 로 해석하지 못한 실패.
      *
      * 매체별로 타입을 나누지 않고 [media] 로 구분한다 — 화면은 둘을 같은 문구로 처리하고
      * (`AfternoteEditorViewModel.handleSaveFailure` 의 generic 폴백), 갈라 보던 코드가 없었다(#934 실측).
