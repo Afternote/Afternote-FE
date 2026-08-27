@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "a1e25a1e1ca5a732500deedad75234fe066e20e6.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": "not_covered",
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "device.avd",
+      "device.serial"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "a1e25a1e1ca5a732500deedad75234fe066e20e6",
+  "head_ref": "refs/pull/771/head",
+  "base_sha": "b834c1100bc5d5dcf7f34a6a28e1d108e4404ec5",
+  "base_ref": "origin/develop",
+  "recorded_at": "2026-08-22T18:55:00+00:00",
+  "result": "fail",
+  "scenario": "오프라인+더미 세션으로 PR HEAD 실측. 타임레터 작성 화면 → 수신자 카드 탭 → 수신자 선택 화면(TimeLetterRecipientRoute) 진입 직후 앱 크래시(프로세스 종료, 런처 이탈) 재현.",
+  "not_covered": [
+    {
+      "pr": 771,
+      "reason": "리뷰가 반영 확인한 빈 이메일 안내·400/409 제한과 남은 지적(등록·수정 phone 필수성 불일치)은 수신인 등록/수정 화면 도달이 전제인데, 위 크래시(오프라인)와 설정 메뉴 게이트(프로필 조회 성공 필요) 때문에 이 환경에서 도달 불가. 유효 세션 환경에서 재검증 필요."
+    }
+  ],
+  "device": {
+    "android": "15",
+    "is_emulator": true
+  },
+  "details": {
+    "dynamic": true,
+    "findings": [
+      {
+        "pr": 771,
+        "severity": "crash",
+        "title": "수신자 선택 화면 진입 시 수신인 조회 실패가 미처리 예외로 앱 크래시",
+        "detail": "GET /api/v1/users/receivers가 UnknownHostException으로 실패하자 uncaught로 프로세스 사망(dropbox data_app_crash 2026-08-23 03:42:41, Suppressed: StandaloneCoroutine/Dispatchers.Main.immediate). 원인: UserRepositoryImpl.receiverListFlow = receiverRefreshRevision.map { getReceivers() } 가 무보호 네트워크 호출이고, RecipientListViewModel의 stateIn 경로에 catch가 없음. 이 코드는 develop과 바이트 동일(771 신규 아님; 유래 c9a8e19b 2026-04-09 '수신자 목록')이나, 771의 주제 영역(수신인 오류 처리)이자 771이 같은 파일(UserRepositoryImpl)을 수정한 PR이라 리뷰 시 런타임 실측이 있었다면 잡혔을 결함. 동일 계열 선행 crash가 dropbox에 존재(2026-08-21 17:16:36, ApiException '인증되지 않은 요청입니다' — ApiErrorInterceptor throw가 uncaught, 401에서도 같은 화면 계열이 앱을 죽임). 이슈: https://github.com/Afternote/Afternote-FE/issues/884 · PR 코멘트: https://github.com/Afternote/Afternote-FE/pull/771#issuecomment-5382083633"
+      }
+    ],
+    "app": {
+      "package": "com.afternote.afternote_fe",
+      "installed_for_head": "a1e25a1e1ca5a732500deedad75234fe066e20e6",
+      "mock": "debug_mock_mode=on (time-letters only)"
+    },
+    "purpose": "8/20 이후 리뷰 QA 감사 후속 — PR #771(수신인 입력 검증·오류 처리 개선) 리뷰 시점 HEAD 소급 런타임 QA"
+  }
+}

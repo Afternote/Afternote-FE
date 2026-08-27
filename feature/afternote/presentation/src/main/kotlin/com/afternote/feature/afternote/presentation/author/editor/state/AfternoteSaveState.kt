@@ -57,12 +57,23 @@ sealed interface AfternoteEditorError {
 }
 
 /**
+ * 한 번의 오류 안내를 식별하는 이벤트.
+ *
+ * 같은 [error]가 연속으로 발생해도 [occurrence]가 달라 UI effect가 다시 실행된다. 소비할 때는
+ * 이 객체 전체를 돌려줘야 이전 Snackbar의 종료 콜백이 더 최신 이벤트를 지우지 않는다.
+ */
+data class AfternoteEditorErrorEvent(
+    val error: AfternoteEditorError,
+    val occurrence: Long,
+)
+
+/**
  * 에디터 화면의 단일 UI 상태.
  *
  * 일회성 신호(`pending*`)를 Channel 이 아니라 상태로 둔 건 configuration change·process death 뒤
  * 재구독에서도 마지막 신호가 살아남아야 해서다. non-null 이면 UI 가 처리 후 `on*Consumed()` 로 되돌린다.
  *
- * 에디터 오류는 [error] 한 필드에서 종류까지 보존한다. 5xx 본문에 내부 SQL 이 섞여 올 수 있으므로
+ * 에디터 오류는 [errorEvent] 한 필드에서 종류와 발생 순서를 보존한다. 5xx 본문에 내부 SQL 이 섞여 올 수 있으므로
  * 서버 raw 메시지는 상태에 싣지 않고, UI가 오류 종류를 안전한 로컬 문구로 변환한다.
  */
 data class AfternoteEditorUiState(
@@ -76,11 +87,14 @@ data class AfternoteEditorUiState(
      */
     val isPrefillLoading: Boolean = false,
     val savedId: Long? = null,
-    val error: AfternoteEditorError? = null,
+    val errorEvent: AfternoteEditorErrorEvent? = null,
     /** 저장 성공 신호 — UI 가 nav 후 `onSaveSuccessConsumed` 로 reset. */
     val pendingSaveSuccessId: Long? = null,
     /** 추모 영상 썸네일 업로드 완료 신호 — UI 파사드가 form 에 url 적용 후 `onThumbnailUploadedConsumed` 로 reset. */
     val pendingThumbnailUrl: String? = null,
     /** 수정 모드 prefill 데이터 — UI 파사드가 form 에 적용 후 `onPrefillApplied` 로 reset (skeleton 종료 동시). */
     val pendingPrefill: EditorFormPrefill? = null,
-)
+) {
+    val error: AfternoteEditorError?
+        get() = errorEvent?.error
+}

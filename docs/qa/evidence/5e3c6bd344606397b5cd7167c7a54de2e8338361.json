@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "5e3c6bd344606397b5cd7167c7a54de2e8338361.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "device.serial",
+      "text.device_identifier",
+      "text.qa_account"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "5e3c6bd344606397b5cd7167c7a54de2e8338361",
+  "head_ref": "HEAD",
+  "base_sha": "d8e2c8afb3ed568139af07707b535ff5e34a8d70",
+  "base_ref": "origin/feat/697",
+  "recorded_at": "2026-08-10T07:44:13.216067+00:00",
+  "result": "pass",
+  "scenario": "[DEVICE_NAME_REDACTED]: [QA_ACCOUNT_REDACTED] 홈에서 네트워크 차단 후 오류 화면 진입, 연결 복구 뒤 오류 화면 당겨서 새로고침으로 홈 정상 복구 확인",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true
+  },
+  "details": {
+    "diff_sha256": "13b078a6dfb88c6640f4006a498a1e187f2693b271f0705fb11fec4b7212e400",
+    "changed_files": [
+      "app/src/main/java/com/afternote/afternote_fe/screen/HomeTabScreen.kt",
+      "app/src/main/java/com/afternote/afternote_fe/screen/HomeTabViewModel.kt",
+      "app/src/screenshotTest/kotlin/com/afternote/afternote_fe/screen/HomeTabScreenScreenshotTest.kt",
+      "app/src/screenshotTestDebug/reference/com/afternote/afternote_fe/screen/HomeTabScreenScreenshotTestKt/homeTabScreenErrorScreenshot_748aa731_0.png",
+      "core/network/src/main/kotlin/com/afternote/core/network/di/NetworkModule.kt",
+      "core/network/src/test/kotlin/com/afternote/core/network/di/NetworkModuleTest.kt"
+    ],
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe",
+      "installed_for_head": "5e3c6bd344606397b5cd7167c7a54de2e8338361",
+      "installed_at_epoch": 1786347737,
+      "ui_sha256": "5cb91e03dea16e15fbc6c6e9f1f22001e208c4c98870b9f0c9cb95c7c725863c"
+    }
+  }
+}

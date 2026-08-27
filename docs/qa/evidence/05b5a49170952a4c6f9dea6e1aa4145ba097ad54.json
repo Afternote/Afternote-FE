@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "05b5a49170952a4c6f9dea6e1aa4145ba097ad54.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "device.serial",
+      "text.device_identifier"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "05b5a49170952a4c6f9dea6e1aa4145ba097ad54",
+  "head_ref": "HEAD",
+  "base_sha": "68dfef7440ce578cf3510f0d8755b1a3a7e2a598",
+  "base_ref": "origin/develop",
+  "recorded_at": "2026-08-09T15:04:56.555591+00:00",
+  "result": "pass",
+  "scenario": "[DEVICE_NAME_REDACTED]에서 FCM notification 메시지 백그라운드 수신과 포그라운드 onMessageReceived 커스텀 알림 표시 확인; 현재 HEAD APK 재설치 후 MainActivity 전면 확인",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true
+  },
+  "details": {
+    "diff_sha256": "0fa7f67b7945f4cc9a27a6c830d02299fa596be303e731f7a2adb1b561f0c429",
+    "changed_files": [
+      "app/build.gradle.kts",
+      "app/src/main/AndroidManifest.xml",
+      "app/src/main/java/com/afternote/afternote_fe/GlobalApplication.kt",
+      "app/src/main/java/com/afternote/afternote_fe/messaging/AfternoteFirebaseMessagingService.kt",
+      "app/src/main/java/com/afternote/afternote_fe/messaging/FcmNotificationChannel.kt",
+      "app/src/main/res/values/strings.xml",
+      "app/src/test/java/com/afternote/afternote_fe/messaging/FcmNotificationContentResolverTest.kt",
+      "gradle/libs.versions.toml"
+    ],
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe",
+      "installed_for_head": "05b5a49170952a4c6f9dea6e1aa4145ba097ad54",
+      "installed_at_epoch": 1786287812,
+      "ui_sha256": "5cb91e03dea16e15fbc6c6e9f1f22001e208c4c98870b9f0c9cb95c7c725863c"
+    }
+  }
+}

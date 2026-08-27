@@ -1,12 +1,12 @@
 name: Unit Test
 
-# 코드가 바뀐 모든 PR 과 develop 에서 unit test 실행:
+# PR에서는 변경 모듈과 역의존 모듈, develop에서는 전체 unit test 실행:
 #   - node --test .github/scripts/*.test.mjs : 배포 판단 스크립트 회귀 가드.
 #   - :koverXmlReportCi / :koverHtmlReportCi : Android debug + 순수 JVM 테스트와 aggregate coverage
 #   - :konsist:test : 순수 JVM 모듈(testDebugUnitTest 미보유)이라 별도 명시. 레이어 의존 아키텍처 가드.
 #   - :build-logic:test : included build 라 루트 태스크에 안 묶여 별도 명시. release 키 가드(TestKit) 회귀 가드.
-#   - :app:compileDebugAndroidTestKotlin : androidTest 소스셋 컴파일 가드. GMD 스위트는 화·금 정기 실행과
-#     `android-test` 라벨 PR 에만 돌아 무거운 emulator 없이도 모든 PR 의 컴파일은 먼저 검증한다.
+#   - :app:compileDebugAndroidTestKotlin : production/androidTest 변경 시 계측 소스셋 컴파일 가드.
+#     GMD는 CI Test Plan selected/full 또는 화·금 정기 실행에서만 에뮬레이터를 만든다.
 # lint.yml 과 setup 이 거의 동일하지만 분리 — lint 실패가 test 결과를 가리지 않도록 fail-fast 독립.
 
 # PR 검증은 pr-validation.yml 이 한 번에 부르고, 이 워크플로의 job check 를
@@ -26,6 +26,21 @@ on:
         required: false
         default: true
         type: boolean
+      run_node_tests:
+        description: "GitHub Actions 정책 Node 테스트 실행 여부"
+        required: false
+        default: true
+        type: boolean
+      gradle_tasks:
+        description: "신뢰된 영향도 계산기가 만든 Gradle task 목록"
+        required: false
+        default: ":koverXmlReportCi :koverHtmlReportCi :konsist:test :build-logic:test :app:compileDebugAndroidTestKotlin"
+        type: string
+      coverage_modules:
+        description: "Kover 요약 대상 project path 목록 또는 all"
+        required: false
+        default: "all"
+        type: string
 
 permissions:
   contents: read
@@ -83,7 +98,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Fetch pull request history for changed-module coverage
-        if: inputs.pull_request_number > 0
+        if: inputs.pull_request_number > 0 && inputs.coverage_modules == 'all'
         env:
           BASE_REF: ${{ steps.pull-request.outputs.base-ref }}
           PR_NUMBER: ${{ inputs.pull_request_number }}
@@ -93,15 +108,18 @@ jobs:
             "+refs/pull/${PR_NUMBER}/head:refs/remotes/origin/kover-head"
 
       - name: Run deployment script tests
+        if: inputs.run_node_tests
         run: node --test .github/scripts/*.test.mjs
 
       - name: Set up JDK 21
+        if: inputs.gradle_tasks != ''
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: 'temurin'
           java-version: '21'
 
       - name: Set up Gradle and validate wrapper
+        if: inputs.gradle_tasks != ''
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         with:
           cache-provider: basic
@@ -109,26 +127,36 @@ jobs:
           validate-wrappers: true
 
       - name: Set up CI-only app configuration
+        if: inputs.gradle_tasks != ''
         uses: ./.github/actions/setup-ci-config
 
-      - name: Run unit tests, androidTest compile guard, and aggregate Kover reports
-        run: ./gradlew :koverXmlReportCi :koverHtmlReportCi :konsist:test :build-logic:test :app:compileDebugAndroidTestKotlin --continue --parallel --build-cache
+      - name: Run affected unit tests, androidTest compile guard, and Kover reports
+        if: inputs.gradle_tasks != ''
+        env:
+          GRADLE_TASKS: ${{ inputs.gradle_tasks }}
+        run: |
+          read -r -a tasks <<< "$GRADLE_TASKS"
+          ./gradlew "${tasks[@]}" --continue --parallel --build-cache
 
       - name: Upload Kover coverage reports
         id: kover-artifact
+        if: contains(inputs.gradle_tasks, 'kover')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: kover-jvm-coverage
-          path: build/reports/kover/
+          path: |
+            build/reports/kover/
+            **/build/reports/kover/
           if-no-files-found: error
           retention-days: 14
 
       - name: Summarize changed-module coverage
-        if: inputs.pull_request_number > 0
+        if: inputs.pull_request_number > 0 && contains(inputs.gradle_tasks, 'kover')
         env:
           KOVER_BASE_SHA: ${{ steps.pull-request.outputs.base-sha }}
           KOVER_HEAD_SHA: ${{ steps.pull-request.outputs.head-sha }}
           KOVER_ARTIFACT_URL: ${{ steps.kover-artifact.outputs.artifact-url }}
+          KOVER_COVERAGE_MODULES: ${{ inputs.coverage_modules }}
         run: node .github/scripts/render-kover-summary.mjs
 
       # 실패한 테스트의 HTML/XML 리포트를 PR artifact 로 보존 — CI 로그에서 stack trace 추적이 빠름.
