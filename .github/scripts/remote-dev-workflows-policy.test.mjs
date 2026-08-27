@@ -64,6 +64,14 @@ test("managed device QA uses labeled PR scope or the trusted default branch", as
     assert.match(source, /persist-credentials: false/);
 });
 
+test("screenshot cleanup tolerates cancellation before Gradle setup", async () => {
+    const source = await readWorkflow("screenshot.yml");
+
+    assert.match(source, /sudo chown -R .*\$GITHUB_WORKSPACE/);
+    assert.match(source, /if \[\[ -e "\$HOME\/\.gradle" \]\]; then/);
+    assert.match(source, /sudo chown -R .*\$HOME\/\.gradle/);
+});
+
 test("stack refresh only executes trusted default-branch code", async () => {
     const source = await readWorkflow("stack-refresh.yml");
 

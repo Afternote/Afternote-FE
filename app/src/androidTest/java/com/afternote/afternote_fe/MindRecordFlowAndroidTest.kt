@@ -125,7 +125,11 @@ class MindRecordFlowAndroidTest {
             DailyQuestionWriteViewModel(
                 savedStateHandle = SavedStateHandle(emptyMap()),
                 repository = repository,
-                photoUploadRepository = FakePhotoUploadRepository("https://cdn.test/question.jpg"),
+                photoUploadRepository =
+                    FakePhotoUploadRepository(
+                        uploadedUrl = "https://cdn.test/question.jpg",
+                        uploadedKey = "mindrecords/1/question.jpg",
+                    ),
                 draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
             )
         composeRule.setContent { AfternoteTheme {} }
@@ -164,7 +168,11 @@ class MindRecordFlowAndroidTest {
                     ),
                 ),
             repository = repository,
-            photoUploadRepository = FakePhotoUploadRepository("https://cdn.test/image.jpg"),
+            photoUploadRepository =
+                FakePhotoUploadRepository(
+                    uploadedUrl = "https://cdn.test/image.jpg",
+                    uploadedKey = "mindrecords/1/image.jpg",
+                ),
             userRepository = appTestUserRepository(),
             draftLoader = MindRecordDraftLoader(repository, FakeDailyQuestionRepository()),
         )

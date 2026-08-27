@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.data.mapper.response
+package com.afternote.feature.afternote.data.mapper
 
 import com.afternote.feature.afternote.data.dto.AfternoteCredentialsDto
 import com.afternote.feature.afternote.data.dto.AfternoteDetailDto
@@ -17,20 +17,22 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * [AfternoteDetailDto.toDetailDomain] 회귀 가드 (작성자 상세).
+ * [AfternoteDetailDto.toDomain] 회귀 가드 (작성자 상세).
  * 핵심 경계: 공통 필드와 타입별 [DetailContent] 분리, 부분·부재 credentials 의 빈 값 강등,
  * receivers null→emptyList, receiver 필드 null→"", processingMethods null→emptyList,
  * memorialVideo null→video/thumbnail null.
  */
 class AfternoteDetailMapperTest {
     @Test
-    fun `toDetailDomain - gallery 최소 응답은 컬렉션이 비어 있다`() {
+    fun `toDomain - gallery 최소 응답은 컬렉션이 비어 있다`() {
         val result =
             AfternoteDetailDto(
+                isDraft = false,
+                receivers = emptyList(),
                 afternoteId = 1L,
                 category = "GALLERY",
                 title = "t",
-            ).toDetailDomain()
+            ).toDomain()
 
         assertEquals(1L, result.id)
         val content = result.content as DetailContent.Gallery
@@ -40,26 +42,30 @@ class AfternoteDetailMapperTest {
     }
 
     @Test
-    fun `toDetailDomain - 사업자 상세는 BUSINESS 로 올라온다 - 소셜로 둔갑하지 않는다`() {
+    fun `toDomain - 사업자 상세는 BUSINESS 로 올라온다 - 소셜로 둔갑하지 않는다`() {
         val result =
             AfternoteDetailDto(
+                isDraft = false,
+                receivers = emptyList(),
                 afternoteId = 1L,
                 category = "BUSINESS",
                 title = "t",
-            ).toDetailDomain()
+            ).toDomain()
 
         assertTrue("사업자는 Business 내용으로 올라와야 한다", result.content is DetailContent.Business)
     }
 
     @Test
-    fun `toDetailDomain - 해석할 수 없는 category 는 실패다 - 임의의 종류로 메우지 않는다`() {
+    fun `toDomain - 해석할 수 없는 category 는 실패다 - 임의의 종류로 메우지 않는다`() {
         val thrown =
             assertThrows(IllegalArgumentException::class.java) {
                 AfternoteDetailDto(
+                    isDraft = false,
+                    receivers = emptyList(),
                     afternoteId = 42L,
                     category = "???",
                     title = "t",
-                ).toDetailDomain()
+                ).toDomain()
             }
 
         assertTrue(
@@ -69,46 +75,46 @@ class AfternoteDetailMapperTest {
     }
 
     @Test
-    fun `toDetailDomain - timestamps 포맷`() {
+    fun `toDomain - timestamps 포맷`() {
         val result =
             AfternoteDetailDto(
+                isDraft = false,
+                receivers = emptyList(),
                 afternoteId = 1L,
                 category = "GALLERY",
                 title = "t",
-                createdAt = "2025-11-26T14:30:00",
                 updatedAt = "2025-12-01T09:00:00",
-            ).toDetailDomain()
+            ).toDomain()
 
-        assertEquals("2025.11.26", result.timestamps.createdAt)
         assertEquals("2025.12.01", result.timestamps.updatedAt)
     }
 
     @Test
-    fun `toDetailDomain - receiver의 null 필드는 빈 문자열`() {
+    fun `toDomain - receiver의 null 필드는 빈 문자열`() {
         val result =
             AfternoteDetailDto(
+                isDraft = false,
                 afternoteId = 1L,
                 category = "GALLERY",
                 title = "t",
                 receivers = listOf(AfternoteDetailReceiverDto(receiverId = 5L)),
-            ).toDetailDomain()
+            ).toDomain()
 
         val receiver = result.receivers.single()
         assertTrue(result.content is DetailContent.Gallery)
         assertEquals(5L, receiver.receiverId)
         assertEquals("", receiver.name)
         assertEquals("", receiver.relation)
-        assertEquals("", receiver.phone)
     }
 
     /**
-     * DTO 는 방어적으로 receiverId 가 nullable 이지만 서버 스펙상 필수다(상세 응답 `ReceiverRequest` 는
-     * 이 필드 하나뿐). 도메인은 non-null 이므로 경계인 이 매퍼가 걸러야 한다.
+     * DTO 는 방어적으로 receiverId 가 nullable 이지만 도메인은 non-null 이므로, 경계인 이 매퍼가 걸러야 한다.
      */
     @Test
-    fun `toDetailDomain - receiverId 없는 항목은 도메인으로 올리지 않는다`() {
+    fun `toDomain - receiverId 없는 항목은 도메인으로 올리지 않는다`() {
         val result =
             AfternoteDetailDto(
+                isDraft = false,
                 afternoteId = 1L,
                 category = "GALLERY",
                 title = "t",
@@ -117,20 +123,22 @@ class AfternoteDetailMapperTest {
                         AfternoteDetailReceiverDto(receiverId = null, name = "식별자없음"),
                         AfternoteDetailReceiverDto(receiverId = 9L, name = "김수신"),
                     ),
-            ).toDetailDomain()
+            ).toDomain()
 
         assertEquals(listOf(9L), result.receivers.map { it.receiverId })
     }
 
     @Test
-    fun `toDetailDomain - credentials 매핑`() {
+    fun `toDomain - credentials 매핑`() {
         val result =
             AfternoteDetailDto(
+                isDraft = false,
+                receivers = emptyList(),
                 afternoteId = 1L,
                 category = "SOCIAL",
                 title = "t",
                 credentials = AfternoteCredentialsDto(id = "user", password = "pw"),
-            ).toDetailDomain()
+            ).toDomain()
 
         val credentials = (result.content as DetailContent.SocialNetwork).credentials
         assertEquals("user", credentials.id)
@@ -138,13 +146,15 @@ class AfternoteDetailMapperTest {
     }
 
     @Test
-    fun `toDetailDomain - credentials가 아예 없으면 빈 값으로 낮춘다`() {
+    fun `toDomain - credentials가 아예 없으면 빈 값으로 낮춘다`() {
         val result =
             AfternoteDetailDto(
+                isDraft = false,
+                receivers = emptyList(),
                 afternoteId = 1L,
                 category = "SOCIAL",
                 title = "t",
-            ).toDetailDomain()
+            ).toDomain()
 
         val credentials = (result.content as DetailContent.SocialNetwork).credentials
         assertEquals("", credentials.id)
@@ -152,14 +162,16 @@ class AfternoteDetailMapperTest {
     }
 
     @Test
-    fun `toDetailDomain - credentials id만 없으면 id를 빈 값으로 낮춘다`() {
+    fun `toDomain - credentials id만 없으면 id를 빈 값으로 낮춘다`() {
         val result =
             AfternoteDetailDto(
+                isDraft = false,
+                receivers = emptyList(),
                 afternoteId = 1L,
                 category = "SOCIAL",
                 title = "t",
                 credentials = AfternoteCredentialsDto(id = null, password = "pw"),
-            ).toDetailDomain()
+            ).toDomain()
 
         val credentials = (result.content as DetailContent.SocialNetwork).credentials
         assertEquals("", credentials.id)
@@ -167,14 +179,16 @@ class AfternoteDetailMapperTest {
     }
 
     @Test
-    fun `toDetailDomain - credentials password만 없으면 password를 빈 값으로 낮춘다`() {
+    fun `toDomain - credentials password만 없으면 password를 빈 값으로 낮춘다`() {
         val result =
             AfternoteDetailDto(
+                isDraft = false,
+                receivers = emptyList(),
                 afternoteId = 1L,
                 category = "SOCIAL",
                 title = "t",
                 credentials = AfternoteCredentialsDto(id = "user", password = null),
-            ).toDetailDomain()
+            ).toDomain()
 
         val credentials = (result.content as DetailContent.SocialNetwork).credentials
         assertEquals("user", credentials.id)
@@ -182,19 +196,21 @@ class AfternoteDetailMapperTest {
     }
 
     @Test
-    fun `toDetailDomain - playlist 미디어·곡 매핑`() {
+    fun `toDomain - playlist 미디어·곡 매핑`() {
         val result =
             AfternoteDetailDto(
+                isDraft = false,
+                receivers = emptyList(),
                 afternoteId = 1L,
                 category = "PLAYLIST",
                 title = "t",
                 memorial =
                     AfternotePlaylistDto(
                         memorialPhotoUrl = "memorial.jpg",
-                        songs = listOf(AfternoteSongDto(id = 3L, title = "s", artist = "a")),
+                        songs = listOf(AfternoteSongDto(title = "s", artist = "a")),
                         memorialVideo = AfternoteMemorialVideoDto(videoUrl = "v.mp4", thumbnailUrl = "t.jpg"),
                     ),
-            ).toDetailDomain()
+            ).toDomain()
 
         val memorial = (result.content as DetailContent.Memorial).memorial
         val media = memorial.media
@@ -202,25 +218,22 @@ class AfternoteDetailMapperTest {
         assertEquals("v.mp4", media.videoUrl)
         assertEquals("t.jpg", media.thumbnailUrl)
         assertEquals(1, memorial.songs.size)
-        assertEquals(
-            3L,
-            memorial
-                .songs
-                .single()
-                .id,
-        )
+        assertEquals("s", memorial.songs.single().title)
+        assertEquals("a", memorial.songs.single().artist)
     }
 
     @Test
-    fun `toDetailDomain - playlist의 공통 leaveMessage도 보존한다`() {
+    fun `toDomain - playlist의 공통 leaveMessage도 보존한다`() {
         val result =
             AfternoteDetailDto(
+                isDraft = false,
+                receivers = emptyList(),
                 afternoteId = 1L,
                 category = "PLAYLIST",
                 title = "t",
                 leaveMessage = listOf(LeaveMessageBlockDto(title = "가족에게", body = "잘 지내")),
                 memorial = AfternotePlaylistDto(),
-            ).toDetailDomain()
+            ).toDomain()
 
         assertEquals(
             listOf(LeaveMessageBlock(title = "가족에게", body = "잘 지내")),
@@ -229,14 +242,16 @@ class AfternoteDetailMapperTest {
     }
 
     @Test
-    fun `toDetailDomain - memorialVideo null이면 video thumbnail null`() {
+    fun `toDomain - memorialVideo null이면 video thumbnail null`() {
         val result =
             AfternoteDetailDto(
+                isDraft = false,
+                receivers = emptyList(),
                 afternoteId = 1L,
                 category = "PLAYLIST",
                 title = "t",
                 memorial = AfternotePlaylistDto(memorialVideo = null),
-            ).toDetailDomain()
+            ).toDomain()
 
         val media = (result.content as DetailContent.Memorial).memorial.media
         assertNull(media.videoUrl)
@@ -244,28 +259,32 @@ class AfternoteDetailMapperTest {
     }
 
     @Test
-    fun `toDetailDomain - playlist 타입에 playlist가 없으면 오류`() {
+    fun `toDomain - playlist 타입에 playlist가 없으면 오류`() {
         val exception =
             assertThrows(IllegalArgumentException::class.java) {
                 AfternoteDetailDto(
+                    isDraft = false,
+                    receivers = emptyList(),
                     afternoteId = 1L,
                     category = "PLAYLIST",
                     title = "t",
-                ).toDetailDomain()
+                ).toDomain()
             }
 
         assertEquals("playlist is required for MEMORIAL detail", exception.message)
     }
 
     @Test
-    fun `toDetailDomain - 사업자 상세도 credentials 를 Business 내용에 싣는다`() {
+    fun `toDomain - 사업자 상세도 credentials 를 Business 내용에 싣는다`() {
         val business =
             AfternoteDetailDto(
+                isDraft = false,
+                receivers = emptyList(),
                 afternoteId = 1L,
                 category = "BUSINESS",
                 title = "회사 계정",
                 credentials = AfternoteCredentialsDto(id = "user", password = "pw"),
-            ).toDetailDomain()
+            ).toDomain()
 
         val content = business.content as DetailContent.Business
         assertEquals(AfternoteType.BUSINESS, content.type)
@@ -275,13 +294,15 @@ class AfternoteDetailMapperTest {
 
     /** `ESTATE`(#491)는 아직 서버 enum 에 없어 응답으로 올라올 수 없다 — 왔다면 해석 실패다. */
     @Test
-    fun `toDetailDomain - ESTATE 는 서버가 보낼 수 없는 값이라 해석 실패다`() {
+    fun `toDomain - ESTATE 는 서버가 보낼 수 없는 값이라 해석 실패다`() {
         assertThrows(IllegalArgumentException::class.java) {
             AfternoteDetailDto(
+                isDraft = false,
+                receivers = emptyList(),
                 afternoteId = 2L,
                 category = "ESTATE",
                 title = "부동산",
-            ).toDetailDomain()
+            ).toDomain()
         }
     }
 }

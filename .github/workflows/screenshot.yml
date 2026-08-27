@@ -87,7 +87,11 @@ jobs:
       # root 소유 파일에서 실패하므로, 소유권을 runner 로 복구한다.
       - name: Restore workspace ownership for post steps
         if: always()
-        run: sudo chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE" "$HOME/.gradle"
+        run: |
+          sudo chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE"
+          if [[ -e "$HOME/.gradle" ]]; then
+            sudo chown -R "$(id -u):$(id -g)" "$HOME/.gradle"
+          fi
 
       # 아티팩트 경로도 같은 목록에서 만든다 — 여기만 빠지면 CI 가 빨개졌을 때 무엇이 어떻게
       # 그려졌는지 볼 방법이 없다.
