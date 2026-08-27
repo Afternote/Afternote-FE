@@ -6,9 +6,10 @@ name: Submit Trusted Branch Dependency Graph
 on:
   push:
     branches: [develop, main]
+  workflow_dispatch:
 
 concurrency:
-  group: trusted-branch-dependency-submission-${{ github.ref }}
+  group: trusted-branch-dependency-submission-${{ github.event_name == 'workflow_dispatch' && 'refs/heads/main' || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -16,6 +17,7 @@ permissions:
 
 jobs:
   submit-trusted-branch:
+    if: github.event_name == 'push'
     name: Submit trusted branch dependency graph
     runs-on: ubuntu-latest
     permissions:
@@ -36,6 +38,47 @@ jobs:
           java-version: '21'
 
       - name: Generate and submit dependency graph
+        uses: gradle/actions/dependency-submission@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          additional-arguments: --no-configuration-cache --stacktrace
+          cache-provider: basic
+          dependency-graph: generate-and-submit
+          dependency-graph-continue-on-failure: false
+          validate-wrappers: true
+
+  submit-main-baseline:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/develop'
+    name: Submit main dependency graph baseline
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      # 임의 입력을 받지 않고 실제 checkout 한 main HEAD 에만 기준선을 귀속한다.
+      GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR: afternote-gradle-dependency-graph
+      GITHUB_DEPENDENCY_GRAPH_REF: refs/heads/main
+    steps:
+      - name: Clone main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/heads/main
+          persist-credentials: false
+
+      - name: Bind snapshot to checked-out main SHA
+        id: main-snapshot
+        shell: bash
+        run: |
+          snapshot_sha="$(git rev-parse HEAD)"
+          echo "sha=$snapshot_sha" >> "$GITHUB_OUTPUT"
+          echo "GITHUB_DEPENDENCY_GRAPH_SHA=$snapshot_sha" >> "$GITHUB_ENV"
+          echo "Submitting refs/heads/main at \`$snapshot_sha\`." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Generate and submit main dependency graph baseline
         uses: gradle/actions/dependency-submission@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         with:
           additional-arguments: --no-configuration-cache --stacktrace
