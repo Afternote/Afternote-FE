@@ -45,7 +45,7 @@
 
 배포 시점은 위 기준에 따라 사람이 정한다 — `develop` → `main` 릴리스 PR을 여는 것이 곧 배포 결정이다.
 
-릴리스 PR이 열리거나 head가 갱신되면 [`release-scope.yml`](../../.github/workflows/release-scope.yml)이 마지막 성공 배포 이후 `develop`에 머지된 PR과 그 연결 이슈를 모아 PR 본문의 `## 포함 이슈`를 채운다. head가 움직일 때마다 다시 채우므로 머지 직전에 목록을 손으로 대조할 필요가 없다.
+릴리스 PR이 열리거나 head가 갱신되면 [`release-scope.yml`](../../.github/workflows/release-scope.yml)이 마지막 성공 배포 이후 `develop`에 머지된 PR과 `Closes`·`Fixes`·`Resolves`로 완료 처리할 이슈를 모아 PR 본문의 `## 포함 이슈`를 채운다. head가 움직일 때마다 다시 채우므로 머지 직전에 목록을 손으로 대조할 필요가 없다.
 
 `## QA 포인트`는 비어 있을 때만 구성 PR 본문에서 모은 초안으로 채우고, 사람이 쓴 문장이 있으면 건드리지 않는다. 두 섹션은 main push 시 그대로 릴리스 노트가 되므로 배포 전에 테스터가 실행할 문장으로 다듬는다.
 
@@ -113,7 +113,10 @@
 
 PR이 `main`에 머지되면 워크플로가 두 섹션을 릴리스 노트로 사용한다. 연결된 PR이나 필수 섹션을 찾지 못하면 배포하지 않는다. `## QA 포인트`에 사전조건·행동·기대 결과가 없는 generic fallback 문구가 있으면 릴리스 노트 렌더 단계에서 실패한다.
 
-보호된 `release-distribution` Environment의 관리자가 등록하는 GitHub Secrets:
+CI가 사용하는 GitHub Secrets (Settings → Secrets and variables → Actions):
+
+- `KAKAO_NATIVE_APP_KEY`·`GOOGLE_WEB_CLIENT_ID`·`GOOGLE_SERVICES_JSON_B64`는 Environment를 사용하지 않는 dependency audit에서도 필요하므로 repository-level secret으로 둔다.
+- release keystore·Firebase 자격·WIF 설정은 보호된 `release-distribution` Environment의 secret으로 둔다.
 
 | 키 | 용도 |
 |---|---|
