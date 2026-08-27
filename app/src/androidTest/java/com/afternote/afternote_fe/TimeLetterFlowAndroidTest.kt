@@ -12,6 +12,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.appTestUserRepository
+import com.afternote.core.domain.model.UploadedFile
 import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
@@ -121,7 +122,15 @@ class TimeLetterFlowAndroidTest {
         val resolver =
             ResolveTimeLetterBlocksUseCase(
                 FakePhotoUploadRepository(
-                    onUpload = { uri, _ -> Result.success("https://cdn.test/${uri.substringAfterLast('/')}") },
+                    onUpload = { uri, _ ->
+                        val name = uri.substringAfterLast('/')
+                        Result.success(
+                            UploadedFile(
+                                fileUrl = "https://cdn.test/$name",
+                                fileKey = "timeletters/1/$name",
+                            ),
+                        )
+                    },
                 ),
             )
         return TimeLetterWriteViewModel(

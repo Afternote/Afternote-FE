@@ -200,10 +200,10 @@ class DailyQuestionWriteViewModel
             _uiState.update { it.copy(isUploadingImage = true, imageUploadError = null) }
             return photoUploadRepository
                 .upload(uriString = uriString, directory = MIND_RECORD_UPLOAD_DIRECTORY)
-                .onSuccess { url ->
+                .onSuccess { uploaded ->
                     // 계약에 imageUrl 이 없어 상태로 들지 않는다 — 본문 img 로 들어가고,
                     // 제출 직전 fileKey 로 바뀔 수 있게 기억만 해 둔다 (#549).
-                    uploadedImageUrls += url
+                    uploadedImageUrls += uploaded.fileUrl
                     _uiState.update { it.copy(isUploadingImage = false) }
                 }.onFailure {
                     // null 로 흡수하면 사용자는 이미지가 붙은 줄 알고 저장한다 (#716).
@@ -214,6 +214,7 @@ class DailyQuestionWriteViewModel
                         )
                     }
                 }.getOrNull()
+                ?.fileUrl
         }
 
         /**
