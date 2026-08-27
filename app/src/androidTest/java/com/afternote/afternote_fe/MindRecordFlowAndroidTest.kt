@@ -12,6 +12,7 @@ import androidx.compose.ui.test.performClick
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
+import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.afternote_fe.test.appTestUserRepository
 import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -131,6 +132,7 @@ class MindRecordFlowAndroidTest {
                         uploadedKey = "mindrecords/1/question.jpg",
                     ),
                 draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
+                errorReporter = FakeErrorReporter(),
             )
         composeRule.setContent { AfternoteTheme {} }
         composeRule.waitUntil(timeoutMillis = 5_000) { !viewModel.uiState.value.isQuestionLoading }
@@ -175,5 +177,6 @@ class MindRecordFlowAndroidTest {
                 ),
             userRepository = appTestUserRepository(),
             draftLoader = MindRecordDraftLoader(repository, FakeDailyQuestionRepository()),
+            errorReporter = FakeErrorReporter(),
         )
 }

@@ -9,6 +9,7 @@ import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
+import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
@@ -80,6 +81,7 @@ class DiaryWriteImageKeyTest {
                 ),
             userRepository = noReceiverUserRepository(),
             draftLoader = MindRecordDraftLoader(RecordingDiaryRepository {}, NoDailyQuestionRepository),
+            errorReporter = RecordingErrorReporter(),
         )
 
     private companion object {

@@ -436,6 +436,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
                     repository = repository,
                     photoUploadRepository = FakePhotoUploadRepository.strict(),
                     draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
+                    errorReporter = FakeErrorReporter(),
                 )
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
@@ -522,6 +523,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
                                     userRepository = appTestUserRepository(),
                                     draftLoader =
                                         MindRecordDraftLoader(repository, draftDailyQuestionRepository),
+                                    errorReporter = FakeErrorReporter(),
                                 )
                         },
                     )
