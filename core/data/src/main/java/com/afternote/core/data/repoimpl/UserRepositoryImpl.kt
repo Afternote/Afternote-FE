@@ -21,12 +21,19 @@ import com.afternote.core.network.dto.UserUpdateProfileRequestDto
 import com.afternote.core.network.dto.UserUpdatePushSettingRequestDto
 import com.afternote.core.network.dto.UserUpdateReceiverMessageRequestDto
 import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionUpdateRequestDto
+import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
 import com.afternote.core.network.service.UserApiService
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 import com.afternote.core.data.mapper.delivery.toDomain as toDeliveryConditionsDomain
@@ -41,26 +48,51 @@ class UserRepositoryImpl
     ) : UserRepository {
         private val receiverRefreshRevision = MutableStateFlow(0L)
 
-        // 마지막으로 조회에 성공한 목록. 갱신 실패가 «이미 보고 있던 목록» 을 지우지 않도록 붙들어 둔다.
-        // 구독자마다 map 이 따로 돌아 쓰기와 읽기가 다른 스레드에서 일어나므로 가시성을 @Volatile 로 준다.
-        @Volatile
-        private var lastKnownReceivers: List<Receiver> = emptyList()
-
-        // 조회 실패를 예외로 흘리면 구독 중인 화면이 미처리 예외로 죽는다. 마지막 성공 목록으로 낮춰 흐름을
-        // 유지한다 — 화면의 오류 표시·재시도는 #714 범위다.
+        // 조회 실패를 예외로 흘리면 구독 중인 화면이 미처리 예외로 죽는다. 일반적인 일시 실패는 같은
+        // 로그인 구간에서 이 collector가 마지막으로 성공한 목록으로 낮춘다. 캐시를 flow 안에 두는 이유는
+        // 저장소 인스턴스보다 수명이 짧은 «로그인 구간 + collector»에 귀속해 계정 사이에 섞이지 않게 하기 위함이다.
+        @OptIn(ExperimentalCoroutinesApi::class)
         override val receiverListFlow: Flow<List<Receiver>> =
-            receiverRefreshRevision.map {
-                runCatchingCancellable { getReceivers() }
-                    .onFailure { Log.e("UserRepository", "수신인 목록 조회 실패: ${it.javaClass.name}") }
-                    .getOrDefault(lastKnownReceivers)
-                    .also { lastKnownReceivers = it }
+            authRepository.isLoggedIn
+                .distinctUntilChanged()
+                .flatMapLatest { loggedIn ->
+                    if (!loggedIn) {
+                        flowOf(emptyList())
+                    } else {
+                        receiverListForAuthenticatedSession()
+                    }
+                }
+
+        private fun receiverListForAuthenticatedSession(): Flow<List<Receiver>> =
+            flow {
+                var lastKnownReceivers = emptyList<Receiver>()
+                receiverRefreshRevision.collect {
+                    val receivers =
+                        runCatchingCancellable { getReceivers() }
+                            .onFailure { Log.e("UserRepository", "수신인 목록 조회 실패: ${it.javaClass.name}") }
+                            .fold(
+                                onSuccess = { it },
+                                onFailure = { failure ->
+                                    if (failure is ApiException && failure.status == UNAUTHORIZED_STATUS) {
+                                        emptyList()
+                                    } else {
+                                        lastKnownReceivers
+                                    }
+                                },
+                            )
+                    lastKnownReceivers = receivers
+                    emit(receivers)
+                }
             }
 
-        override suspend fun getReceivers(): List<Receiver> =
-            userApiService
+        override suspend fun getReceivers(): List<Receiver> {
+            if (!authRepository.isLoggedIn.first()) return emptyList()
+
+            return userApiService
                 .getReceivers()
                 .requireData()
                 .map { it.toDomain() }
+        }
 
         override suspend fun createReceiver(
             name: String,
@@ -230,4 +262,8 @@ class UserRepositoryImpl
                     request = ReceiverDeliveryConditionUpdateRequestDto(conditions.map { it.toRequestDto() }),
                 ).requireData()
                 .toDeliveryConditionsDomain()
+
+        private companion object {
+            const val UNAUTHORIZED_STATUS = 401
+        }
     }
