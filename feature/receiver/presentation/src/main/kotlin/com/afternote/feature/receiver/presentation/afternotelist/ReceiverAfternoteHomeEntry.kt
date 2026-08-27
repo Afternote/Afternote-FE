@@ -68,8 +68,8 @@ fun ReceiverAfternoteHomeEntry(
         null -> {
             AfternoteHomeScreen(
                 items = items,
-                selectedCategory = selectedTab,
-                onCategorySelected = viewModel::selectTab,
+                selectedType = selectedTab,
+                onTypeSelected = viewModel::selectTab,
                 onListItemClick = { id, _ -> navigateToDetail(id) },
                 headerDescription = stringResource(R.string.receiver_afternote_list_header_description),
                 // NEXT STEP 은 «내가 남길 기록» 을 재촉하는 발신자용 카드다. 수신자 목록에는 없다.

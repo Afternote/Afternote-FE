@@ -3,12 +3,13 @@ package com.afternote.feature.afternote.presentation.author.editor
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.repository.UserRepository
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -24,9 +25,14 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import java.lang.reflect.Proxy
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35])
 class AfternoteEditorValidationEventTest {
     private val dispatcher = StandardTestDispatcher()
 
@@ -49,47 +55,47 @@ class AfternoteEditorValidationEventTest {
 
             viewModel.saveInvalidSocialAfternote()
             runCurrent()
-            val first = requireNotNull(viewModel.uiState.value.validationErrorEvent)
+            val first = requireNotNull(viewModel.uiState.value.errorEvent)
 
             // 소비(null)와 다음 동일 오류를 UI 수집기가 각각 관찰하지 못하고 합쳐도, 새 occurrence로 구분돼야 한다.
-            viewModel.onValidationErrorConsumed(first)
+            viewModel.onErrorConsumed(first)
             viewModel.saveInvalidSocialAfternote()
             runCurrent()
-            val second = requireNotNull(viewModel.uiState.value.validationErrorEvent)
+            val second = requireNotNull(viewModel.uiState.value.errorEvent)
 
-            assertEquals(AfternoteValidationError.TITLE_REQUIRED, first.error)
+            assertEquals(
+                AfternoteValidationError.TITLE_REQUIRED,
+                (first.error as AfternoteEditorError.Validation).reason,
+            )
             assertEquals(first.error, second.error)
             assertNotEquals("같은 오류도 저장 시도마다 별도 UI 이벤트여야 한다", first, second)
 
             viewModel.saveInvalidSocialAfternote()
             runCurrent()
-            val third = requireNotNull(viewModel.uiState.value.validationErrorEvent)
+            val third = requireNotNull(viewModel.uiState.value.errorEvent)
             assertEquals(second.error, third.error)
             assertNotEquals("소비 전 같은 오류도 저장 시도마다 별도 UI 이벤트여야 한다", second, third)
 
-            viewModel.onValidationErrorConsumed(second)
+            viewModel.onErrorConsumed(second)
             runCurrent()
-            assertEquals("이전 Snackbar의 종료가 최신 이벤트를 지우면 안 된다", third, viewModel.uiState.value.validationErrorEvent)
+            assertEquals("이전 Snackbar의 종료가 최신 이벤트를 지우면 안 된다", third, viewModel.uiState.value.errorEvent)
 
-            viewModel.onValidationErrorConsumed(third)
+            viewModel.onErrorConsumed(third)
             runCurrent()
-            assertNull(viewModel.uiState.value.validationErrorEvent)
+            assertNull(viewModel.uiState.value.errorEvent)
         }
 
     private fun AfternoteEditorViewModel.saveInvalidSocialAfternote() {
         saveAfternote(
-            editingId = null,
-            category = EditorCategory.SOCIAL,
             payload = RegisterAfternotePayload(serviceName = "", date = "2026.08.27"),
             selectedReceiverIds = listOf(1L),
-            playlistSongs = emptyList(),
             memorialMedia = SaveAfternoteMemorialMedia(),
         )
     }
 
     private fun viewModel(): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
-            savedStateHandle = SavedStateHandle(),
+            savedStateHandle = SavedStateHandle(mapOf("initialType" to AfternoteType.SOCIAL_NETWORK)),
             userRepository = repositoryProxy<UserRepository>(),
             afternoteRepository = repositoryProxy<AfternoteRepository>(),
             memorialThumbnailUploadRepository =

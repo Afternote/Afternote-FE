@@ -18,10 +18,11 @@ import com.android.tools.screenshot.PreviewTest
 internal fun selectionDropdownPlaceholderScreenshot() {
     AfternoteTheme {
         Box(modifier = Modifier.padding(24.dp)) {
-            SelectionDropdown(
+            EditorSelectionDropdown(
                 label = stringResource(R.string.afternote_editor_label_service_name),
                 selectedValue = "",
                 options = emptyList(),
+                optionLabel = { it },
                 onValueSelected = {},
                 expanded = false,
                 onExpandedChange = {},
@@ -42,10 +43,11 @@ internal fun selectionDropdownPlaceholderScreenshot() {
 internal fun selectionDropdownSelectedScreenshot() {
     AfternoteTheme {
         Box(modifier = Modifier.padding(24.dp)) {
-            SelectionDropdown(
+            EditorSelectionDropdown(
                 label = stringResource(R.string.afternote_editor_label_service_name),
                 selectedValue = "인스타그램",
                 options = emptyList(),
+                optionLabel = { it },
                 onValueSelected = {},
                 expanded = false,
                 onExpandedChange = {},

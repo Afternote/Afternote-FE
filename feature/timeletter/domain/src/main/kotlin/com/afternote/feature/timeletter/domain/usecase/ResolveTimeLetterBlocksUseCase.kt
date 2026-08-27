@@ -36,6 +36,7 @@ class ResolveTimeLetterBlocksUseCase
                                     photoUploadRepository
                                         .upload(input.uriString, TIME_LETTER_DIRECTORY)
                                         .getOrElse { throw it }
+                                        .fileUrl
                                 } else {
                                     input.uriString
                                 }
