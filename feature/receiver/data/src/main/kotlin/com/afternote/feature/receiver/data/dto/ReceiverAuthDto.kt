@@ -52,6 +52,7 @@ data class ReceiverEmailAuthVerifyDto(
 @Serializable
 data class ReceiverAuthPresignedUrlRequestDto(
     @SerialName("extension") val extension: String,
+    @SerialName("contentLength") val contentLength: Long,
 )
 
 @Serializable
@@ -60,6 +61,7 @@ data class ReceiverAuthPresignedUrlDto(
     @SerialName("fileKey") val fileKey: String,
     @SerialName("fileUrl") val fileUrl: String,
     @SerialName("contentType") val contentType: String,
+    @SerialName("contentLength") val contentLength: Long,
 )
 
 /**
@@ -114,6 +116,7 @@ fun ReceiverAuthPresignedUrlDto.toDomain(): ReceiverAuthPresignedUrl =
         fileKey = fileKey,
         fileUrl = fileUrl,
         contentType = contentType,
+        contentLength = contentLength,
     )
 
 fun DeliveryVerificationDto.toDomain(): DeliveryVerification =
