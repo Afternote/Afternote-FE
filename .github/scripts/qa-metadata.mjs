@@ -1,4 +1,4 @@
-// PR 본문의 `QA Metadata` 섹션을 파싱·검증한다. validate-pr-qa-metadata.mjs 가 Unit Test 에서
+// PR 본문의 `QA Metadata` 섹션을 파싱·검증한다. validate-pr-qa-metadata.mjs 가 Repository Quality 에서
 // 이 함수들로 게이트를 건다 (#809).
 //
 // 원래 qa-semantic-audit.mjs 의 앞부분이었다. 그 스크립트는 deployment-decision.yml 의 판정 위에
@@ -227,4 +227,3 @@ export function inspectQaMetadata(body, options = {}) {
         errors: errors.map((error) => `PR #${pullRequestNumber}: ${error}`),
     };
 }
-
