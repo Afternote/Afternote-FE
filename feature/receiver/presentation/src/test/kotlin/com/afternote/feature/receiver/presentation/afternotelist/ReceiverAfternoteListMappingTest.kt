@@ -5,6 +5,7 @@ import com.afternote.feature.afternote.presentation.shared.model.AfternoteServic
 import com.afternote.feature.afternote.presentation.shared.util.getIconResForType
 import com.afternote.feature.receiver.domain.model.AfterNoteListItem
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
 /**
