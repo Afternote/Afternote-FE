@@ -88,25 +88,147 @@ test("managed device keeps required contexts but boots only CI Test Plan lanes",
     const policyStaging = source.indexOf("Stage trusted Android test policy");
     const targetCheckout = source.indexOf("Clone tested revision");
     const targetVerification = source.indexOf("Verify checked out revision");
+    const bootstrapRenderer = source.indexOf("Stage bootstrap result renderer from the tested revision");
     const bootstrapVerifier = source.indexOf("Stage bootstrap result verifier from the tested revision");
     assert.ok(trustedCheckout >= 0 && trustedCheckout < policyStaging);
     assert.ok(policyStaging < targetCheckout);
-    assert.ok(targetCheckout < targetVerification && targetVerification < bootstrapVerifier);
+    assert.ok(targetCheckout < targetVerification && targetVerification < bootstrapRenderer);
+    assert.ok(bootstrapRenderer < bootstrapVerifier);
     assert.match(source, /source=trusted/);
     assert.match(source, /source=bootstrap/);
     assert.doesNotMatch(source, /source=target/);
+    assert.match(source, /renderer=trusted/);
+    assert.match(source, /renderer=bootstrap/);
+    assert.match(source, /classifier=trusted/);
+    assert.match(source, /classifier=unavailable/);
+    assert.doesNotMatch(source, /Stage bootstrap infrastructure classifier/);
     assert.match(source, /Android test policy가 부분 설치된 상태입니다/);
     assert.match(source, /bootstrap mode에서는 expected_plan_digest를 사용할 수 없습니다/);
     assert.match(source, /bootstrap mode에서는 selected selector를 신뢰된 parser 없이 실행할 수 없습니다/);
     assert.match(source, /policy bootstrap full run/);
+    assert.match(source, /bootstrap result renderer가 tested revision에 없습니다/);
     assert.match(source, /bootstrap result verifier가 tested revision에 없습니다/);
     assert.match(source, /resolve-android-test-plan\.mjs/);
     assert.match(source, /Validate selected tests in the tested revision/);
-    assert.match(source, /Verify every selected androidTest executed successfully/);
+    assert.match(source, /Verify selected androidTest results/);
+    assert.match(source, /Summarize androidTest results/);
     assert.match(source, /verify-android-test-plan-result\.mjs/);
     assert.match(source, /if: steps\.target\.outputs\.run_lane == 'true'/);
     assert.match(source, /selectors_json='\[\]'/);
     assert.match(source, /persist-credentials: false/);
+
+    const bootstrapRendererStep = source.slice(bootstrapRenderer, bootstrapVerifier);
+    assert.match(bootstrapRendererStep, /steps\.target\.outputs\.run_lane == 'true'/);
+    assert.doesNotMatch(bootstrapRendererStep, /selectors_json != '\[\]'/);
+});
+
+test("managed device summarizes XML and uploads the full Gradle log before failing", async () => {
+    const source = await readWorkflow("android-managed-device.yml");
+
+    assert.match(source, /- name: Run managed-device androidTest\n\s+id: android_test/);
+    assert.match(source, /--console=plain \\\n\s+--stacktrace > "\$gradle_log" 2>&1/);
+    assert.match(source, /echo "exit_code=\$status"/);
+    assert.match(
+        source,
+        /- name: Verify selected androidTest results\n\s+id: selected_android_test\n\s+if: >-\n\s+always\(\) &&[\s\S]*?steps\.target\.outputs\.selectors_json != '\[\]'/,
+    );
+    assert.match(
+        source,
+        /- name: Summarize androidTest results\n\s+id: android_test_results\n\s+if: always\(\) && steps\.target\.outputs\.run_lane == 'true'/,
+    );
+    const summaryStep = source.slice(
+        source.indexOf("- name: Summarize androidTest results\n"),
+        source.indexOf("- name: Upload androidTest reports and failure evidence"),
+    );
+    assert.doesNotMatch(summaryStep, /selectors_json != '\[\]'/);
+    assert.match(
+        summaryStep,
+        /ANDROID_TEST_ANNOTATION_DIR: \$\{\{ runner\.temp \}\}\/android-test-annotations/,
+    );
+    assert.match(summaryStep, /SELECTED_VERIFIER_EXIT_CODE/);
+    assert.match(summaryStep, /render-android-test-results\.mjs/);
+    assert.match(source, /\$\{\{ runner\.temp \}\}\/android-test-logs\//);
+    assert.match(source, /\$\{\{ runner\.temp \}\}\/android-test-annotations\//);
+
+    const verify = source.indexOf("Verify selected androidTest results");
+    const summary = source.indexOf("Summarize androidTest results\n");
+    const annotationSteps = [1, 2, 3, 4, 5].map((index) =>
+        source.indexOf(`- name: Publish androidTest annotations ${index}\n`),
+    );
+    const upload = source.indexOf("Upload androidTest reports and failure evidence");
+    const restore = source.indexOf("Restore managed-device androidTest exit code");
+    assert.equal([...source.matchAll(/- name: Publish androidTest annotations \d+\n/g)].length, 5);
+    assert.ok(verify >= 0 && verify < summary);
+    annotationSteps.forEach((stepStart, offset) => {
+        const index = offset + 1;
+        const next = annotationSteps[offset + 1] ?? upload;
+        assert.ok(stepStart > summary && stepStart < next);
+        const step = source.slice(stepStart, next);
+        assert.match(step, /if: >-\n\s+always\(\) &&/);
+        assert.match(step, /steps\.target\.outputs\.run_lane == 'true'/);
+        assert.ok(
+            step.includes(
+                `fromJSON(steps.android_test_results.outputs.annotation_chunks || '0') >= ${index}`,
+            ),
+        );
+        assert.ok(
+            step.includes(`run: cat "$RUNNER_TEMP/android-test-annotations/chunk-${index}.log"`),
+        );
+    });
+    assert.ok(annotationSteps.at(-1) < upload && upload < restore);
+    assert.match(source, /ANDROID_TEST_EXIT_CODE: \$\{\{ steps\.android_test\.outputs\.exit_code \}\}/);
+    assert.match(source, /exit "\$ANDROID_TEST_EXIT_CODE"/);
+    assert.match(source, /SELECTED_VERIFIER_EXIT_CODE: \$\{\{ steps\.selected_android_test\.outputs\.exit_code \}\}/);
+    assert.match(source, /RESULT_RENDERER_EXIT_CODE: \$\{\{ steps\.android_test_results\.outputs\.exit_code \}\}/);
+});
+
+test("managed device fails fast per lane and preserves only bounded infrastructure evidence", async () => {
+    const source = await readWorkflow("android-managed-device.yml");
+
+    assert.match(source, /timeout-minutes: \$\{\{ matrix\.job_timeout_minutes \}\}/);
+    assert.match(source, /device: api30[\s\S]*?job_timeout_minutes: 25[\s\S]*?gradle_timeout_minutes: 22[\s\S]*?gradle_step_timeout_minutes: 23/);
+    assert.match(source, /device: api34[\s\S]*?job_timeout_minutes: 15[\s\S]*?gradle_timeout_minutes: 12[\s\S]*?gradle_step_timeout_minutes: 13/);
+    assert.match(
+        source,
+        /- name: Run managed-device androidTest[\s\S]*?timeout-minutes: \$\{\{ matrix\.gradle_step_timeout_minutes \}\}/,
+    );
+    assert.match(source, /timeout --signal=TERM --kill-after=30s "\$\{GRADLE_TIMEOUT_MINUTES\}m"/);
+    assert.doesNotMatch(source, /timeout-minutes: 45/);
+
+    const gradle = source.indexOf("Run managed-device androidTest");
+    const diagnostics = source.indexOf("Collect managed-device infrastructure diagnostics");
+    const classifier = source.indexOf("Classify managed-device infrastructure failure");
+    const retryMarker = source.indexOf("Upload API 34 infrastructure retry marker");
+    const evidence = source.indexOf("Upload androidTest reports and failure evidence");
+    const restore = source.indexOf("Restore managed-device androidTest exit code");
+    assert.ok(gradle < diagnostics && diagnostics < classifier);
+    assert.ok(classifier < retryMarker && retryMarker < evidence && evidence < restore);
+
+    const diagnosticsStep = source.slice(diagnostics, classifier);
+    assert.match(diagnosticsStep, /adb devices -l/);
+    assert.match(diagnosticsStep, /emulator" -accel-check/);
+    assert.match(diagnosticsStep, /ps -eo pid,ppid,etimes,stat,%cpu,%mem,comm/);
+    assert.doesNotMatch(diagnosticsStep, /\.android\/avd|dmesg|printenv|ps [^\n]*command/);
+    assert.match(source, /steps\.policy\.outputs\.classifier == 'trusted'/);
+    assert.match(source, /ANDROID_TEST_OUTCOME: \$\{\{ steps\.android_test\.outcome \}\}/);
+    assert.match(source, /exit 124/);
+});
+
+test("API 34 recovery reruns only one validated first-attempt infrastructure failure", async () => {
+    const source = await readWorkflow("android-managed-device-retry.yml");
+
+    assert.match(source, /^\s{2}workflow_run:\n\s{4}workflows: \["Android Managed Device Test"\]/m);
+    assert.match(source, /github\.event\.workflow_run\.event == 'pull_request'/);
+    assert.match(source, /github\.event\.workflow_run\.head_repository\.full_name == github\.repository/);
+    assert.match(source, /github\.event\.workflow_run\.run_attempt == 1/);
+    assert.match(source, /^\s{6}actions: write$/m);
+    assert.doesNotMatch(source, /actions\/checkout@/);
+    assert.doesNotMatch(source, /^\s+run:/m);
+    assert.match(source, /marker\.sourceRunId === run\.id/);
+    assert.match(source, /marker\.headSha === run\.head_sha/);
+    assert.match(source, /marker\.testResultCount === 0/);
+    assert.match(source, /Pixel 2 API 34 accessibility smoke/);
+    assert.match(source, /POST \/repos\/\{owner\}\/\{repo\}\/actions\/jobs\/\{job_id\}\/rerun/);
 });
 
 test("managed device stages every local dependency of its trusted Android policy", async () => {
