@@ -24,6 +24,9 @@ jobs:
 
   screenshot:
     name: Screenshot
+    permissions:
+      contents: read
+      pull-requests: write
     uses: ./.github/workflows/screenshot.yml
 
   report:
