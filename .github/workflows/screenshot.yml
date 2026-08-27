@@ -7,6 +7,11 @@ name: Compose Preview Screenshot Test
 # 같은 검증과 동일한 이름의 check 가 PR 마다 두 벌씩 돈다.
 on:
   workflow_call:
+    inputs:
+      pull_request_number:
+        required: false
+        default: 0
+        type: number
 
 permissions:
   contents: read
@@ -67,16 +72,26 @@ jobs:
             -w /workspace \
             -e KAKAO_NATIVE_APP_KEY \
             -e GOOGLE_WEB_CLIENT_ID \
-            -e SCREENSHOT_MODULES \
             afternote-screenshot:latest \
-            sh -c './gradlew $(for m in $SCREENSHOT_MODULES; do printf "%s:validateScreenshotTest " "$m"; done) --parallel --build-cache'
+            ./gradlew \
+              :core:ui:validateScreenshotTest \
+              :feature:home:presentation:validateScreenshotTest \
+              :feature:receiver:presentation:validateScreenshotTest \
+              :feature:onboarding:presentation:validateScreenshotTest \
+              :feature:afternote:presentation:validateScreenshotTest \
+              :feature:mindrecord:presentation:validateScreenshotTest \
+              --parallel --build-cache
 
       # 컨테이너가 root 로 gradle 을 실행해 workspace · ~/.gradle 산출물이 root 소유가 된다.
       # job 종료 시 'Post Restore Gradle cache'(캐시 저장)의 hashFiles/tar 가 runner 권한이라
       # root 소유 파일에서 실패하므로, 소유권을 runner 로 복구한다.
       - name: Restore workspace ownership for post steps
         if: always()
-        run: sudo chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE" "$HOME/.gradle"
+        run: |
+          sudo chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE"
+          if [[ -e "$HOME/.gradle" ]]; then
+            sudo chown -R "$(id -u):$(id -g)" "$HOME/.gradle"
+          fi
 
       # 아티팩트 경로도 같은 목록에서 만든다 — 여기만 빠지면 CI 가 빨개졌을 때 무엇이 어떻게
       # 그려졌는지 볼 방법이 없다.
@@ -123,7 +138,7 @@ jobs:
               `- baseline PNG: repo \`<module>/src/screenshotTestDebug/reference/...\` (${modules.map(m => `\`${m}\``).join(' · ')})`,
               '',
               '📝 **조치 가이드**:',
-              '- 의도된 시각 변경 → `docker build -t afternote-screenshot:latest -f Dockerfile.screenshot .` 후 `docker run --rm -v "$PWD":/workspace -w /workspace afternote-screenshot:latest ./gradlew :<module>:updateScreenshotTest` 로 baseline 갱신 + commit/push',
+              '- 의도된 시각 변경 → 이 PR에 `screenshot-baseline` 라벨을 붙여 CI baseline 생성 요청',
               '- diff 가 anti-aliasing/font 차이로 보이면 docker 환경 변경 여부 (Dockerfile.screenshot) 점검',
               '',
               'CI ↔ 로컬 환경 차이는 본 워크플로의 container 단계가 root fix 한다 (README 의 "Compose Preview Screenshot Testing (docker baseline)" 섹션 참조).',
