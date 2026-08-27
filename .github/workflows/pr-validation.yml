@@ -11,10 +11,18 @@ name: PR Validation
 # 않고 머지된다.
 on:
   pull_request:
+  # GITHUB_TOKEN 으로 PR 브랜치에 baseline/stack merge commit 을 올리면 pull_request
+  # 이벤트가 다시 발생하지 않는다. 권한 있는 bridge 가 같은 SHA 에 필수 검증을 붙일 때 쓴다.
+  workflow_dispatch:
+    inputs:
+      pull_request_number:
+        description: "현재 ref 와 일치해야 하는 열린 PR 번호"
+        required: true
+        type: number
 
 # 같은 PR 의 옛 실행을 끊는다. head 가 갱신되면 이전 SHA 의 결과는 판단 근거가 아니다.
 concurrency:
-  group: pr-validation-${{ github.event.pull_request.number || github.ref }}
+  group: pr-validation-${{ github.event.pull_request.number || inputs.pull_request_number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -26,15 +34,23 @@ jobs:
   static-analysis:
     name: Static Analysis
     uses: ./.github/workflows/lint.yml
+    with:
+      pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number }}
 
   unit-test:
     name: Unit Test
     uses: ./.github/workflows/unit-test.yml
+    with:
+      pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number }}
 
   screenshot:
     name: Screenshot
     uses: ./.github/workflows/screenshot.yml
+    with:
+      pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number }}
 
   repository-quality:
     name: Repository Quality
     uses: ./.github/workflows/repository-quality.yml
+    with:
+      pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number }}

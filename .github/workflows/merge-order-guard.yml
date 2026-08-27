@@ -11,6 +11,13 @@ on:
     types: [opened, reopened, synchronize, edited]
   issues:
     types: [closed, reopened]
+  # GITHUB_TOKEN 이 만든 baseline/stack merge commit 에도 최신 SHA 기준 guard 를 붙인다.
+  workflow_dispatch:
+    inputs:
+      pull_request_number:
+        description: "검사할 열린 PR 번호"
+        required: true
+        type: number
 
 permissions:
   issues: read
@@ -18,19 +25,28 @@ permissions:
 
 jobs:
   guard:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: closing 이슈 blocked_by 검사
         env:
           GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pull_request_number }}
           BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
           # gh api 실패가 빈 목록으로 위장돼 가드가 초록으로 새는 것 방지(fail-closed)
           set -euo pipefail
 
           fail=0
+
+          if ! [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+            echo "::error::유효한 pull_request_number 가 필요합니다"
+            exit 1
+          fi
+
+          if [ -z "$BASE_REF" ]; then
+            BASE_REF=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.base.ref')
+          fi
 
           # 스택 PR 안내 — base 가 부모 브랜치면 애초에 develop 로 머지되지 않고,
           # 부모가 머지되면 GitHub 가 base 를 develop 로 이관하며 이 가드가 다시
