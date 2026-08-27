@@ -45,6 +45,7 @@ test("privileged baseline apply is a workflow-run bridge restricted to PNG basel
     assert.match(source, /workflows: \["Generate Screenshot Baselines"\]/);
     assert.match(source, /github\.event\.workflow_run\.event == 'pull_request'/);
     assert.match(source, /^\s{2}contents: write$/m);
+    assert.match(source, /^\s{2}pull-requests: write$/m);
     assert.doesNotMatch(source, /actions\/checkout@/);
     assert.doesNotMatch(source, /git apply/);
     assert.doesNotMatch(source, /child_process/);
@@ -186,7 +187,7 @@ test("managed device fails fast per lane and preserves only bounded infrastructu
     const source = await readWorkflow("android-managed-device.yml");
 
     assert.match(source, /timeout-minutes: \$\{\{ matrix\.job_timeout_minutes \}\}/);
-    assert.match(source, /device: api30[\s\S]*?job_timeout_minutes: 25[\s\S]*?gradle_timeout_minutes: 22[\s\S]*?gradle_step_timeout_minutes: 23/);
+    assert.match(source, /device: api30[\s\S]*?job_timeout_minutes: 35[\s\S]*?gradle_timeout_minutes: 30[\s\S]*?gradle_step_timeout_minutes: 31/);
     assert.match(source, /device: api34[\s\S]*?job_timeout_minutes: 15[\s\S]*?gradle_timeout_minutes: 12[\s\S]*?gradle_step_timeout_minutes: 13/);
     assert.match(
         source,
@@ -198,7 +199,7 @@ test("managed device fails fast per lane and preserves only bounded infrastructu
     const gradle = source.indexOf("Run managed-device androidTest");
     const diagnostics = source.indexOf("Collect managed-device infrastructure diagnostics");
     const classifier = source.indexOf("Classify managed-device infrastructure failure");
-    const retryMarker = source.indexOf("Upload API 34 infrastructure retry marker");
+    const retryMarker = source.indexOf("Upload managed-device infrastructure retry marker");
     const evidence = source.indexOf("Upload androidTest reports and failure evidence");
     const restore = source.indexOf("Restore managed-device androidTest exit code");
     assert.ok(gradle < diagnostics && diagnostics < classifier);
@@ -211,10 +212,11 @@ test("managed device fails fast per lane and preserves only bounded infrastructu
     assert.doesNotMatch(diagnosticsStep, /\.android\/avd|dmesg|printenv|ps [^\n]*command/);
     assert.match(source, /steps\.policy\.outputs\.classifier == 'trusted'/);
     assert.match(source, /ANDROID_TEST_OUTCOME: \$\{\{ steps\.android_test\.outcome \}\}/);
+    assert.match(source, /android-managed-device-retry-\$\{\{ matrix\.device \}\}-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
     assert.match(source, /exit 124/);
 });
 
-test("API 34 recovery reruns only one validated first-attempt infrastructure failure", async () => {
+test("managed-device recovery reruns only one validated first-attempt infrastructure failure", async () => {
     const source = await readWorkflow("android-managed-device-retry.yml");
 
     assert.match(source, /^\s{2}workflow_run:\n\s{4}workflows: \["Android Managed Device Test"\]/m);
@@ -227,6 +229,12 @@ test("API 34 recovery reruns only one validated first-attempt infrastructure fai
     assert.match(source, /marker\.sourceRunId === run\.id/);
     assert.match(source, /marker\.headSha === run\.head_sha/);
     assert.match(source, /marker\.testResultCount === 0/);
+    assert.match(source, /marker\.testExecutionSignals\.length === 0/);
+    assert.match(source, /marker\.exitCode === devicePolicy\.requiredExitCode/);
+    assert.match(source, /android-managed-device-retry-api30-/);
+    assert.match(source, /android-managed-device-retry-api34-/);
+    assert.match(source, /Expected exactly one retry marker artifact/);
+    assert.match(source, /Pixel 2 API 30 androidTest/);
     assert.match(source, /Pixel 2 API 34 accessibility smoke/);
     assert.match(source, /POST \/repos\/\{owner\}\/\{repo\}\/actions\/jobs\/\{job_id\}\/rerun/);
 });
