@@ -84,7 +84,7 @@ data class DiaryListItemDto(
     val isDraft: Boolean,
     // 상세 화면이 "수신인 OOO" 로 보여준다. 서버가 늘 함께 내려주는데 종전에는 선언하지
     // 않아 버려졌다 (#759).
-    @SerialName("receivers") val receivers: List<MindRecordReceiverDto> = emptyList(),
+    @SerialName("receivers") val receivers: List<MindRecordReceiverDto>,
 )
 
 /** 기록에 지정된 수신자 요약 (OpenAPI `MindRecordReceiverSummaryResponse`). */
