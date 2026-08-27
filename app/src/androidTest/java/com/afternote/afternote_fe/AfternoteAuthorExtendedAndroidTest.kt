@@ -349,6 +349,8 @@ private fun AuthorEditorForUpdate(
         }
     }
 
+    val errorEvent = uiState.errorEvent
+
     AfternoteEditorScreen(
         form = uiState.form,
         onBackClick = {},
@@ -369,8 +371,12 @@ private fun AuthorEditorForUpdate(
             )
         },
         snackbarMessage =
-            (uiState.error as? AfternoteEditorError.Validation)?.let { stringResource(it.reason.messageResId) },
-        onSnackbarMessageConsumed = viewModel::onErrorConsumed,
+            (errorEvent?.error as? AfternoteEditorError.Validation)?.let {
+                stringResource(it.reason.messageResId)
+            },
+        onSnackbarMessageConsumed = {
+            errorEvent?.let(viewModel::onErrorConsumed)
+        },
         content = { editorSnackbarHostState ->
             AfternoteEditorBody(
                 state = state,
@@ -386,6 +392,7 @@ private fun AuthorEditorForUpdate(
         },
         state = state,
         isPrefillLoading = uiState.isPrefillLoading,
+        snackbarMessageKey = errorEvent,
     )
 }
 
