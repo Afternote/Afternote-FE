@@ -17,7 +17,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -25,18 +24,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.navigation.DeleteInProgressOverlay
-import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent
-import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadErrorContent
-import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
-import com.afternote.feature.afternote.presentation.author.navigation.ObserveDeleteResult
-import com.afternote.feature.afternote.presentation.author.navigation.rememberDeleteFailedHandler
 import com.afternote.feature.afternote.presentation.shared.detail.AfternoteDetailServiceHeader
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
@@ -48,71 +39,11 @@ import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiM
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 
 /**
- * 갤러리 상세 Stateful Route.
- *
- * [com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailRoute] 와 동일하게 공용 [AfternoteDetailViewModel]·[AfternoteDetailUiState] 를 쓰고,
- * 성공 시 [AfternoteDetailUiState.Success.contentUiModel] 이 갤러리가 아니면 폴백한다.
- */
-@Composable
-internal fun GalleryDetailRoute(
-    onBack: () -> Unit,
-    onNavigateToEditor: (itemId: Long) -> Unit,
-    viewModel: AfternoteDetailViewModel = hiltViewModel(),
-) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    ObserveDeleteResult(
-        deleteResult = (uiState as? AfternoteDetailUiState.Success)?.deleteResult,
-        onConsumed = viewModel::onDeleteResultConsumed,
-        onDeleteSucceeded = onBack,
-        onDeleteFailed = rememberDeleteFailedHandler(snackbarHostState),
-    )
-
-    when (val state = uiState) {
-        AfternoteDetailUiState.Loading -> {
-            DetailLoadingContent()
-        }
-
-        is AfternoteDetailUiState.Error -> {
-            DetailLoadErrorContent(
-                messageRes = state.messageRes,
-                onBackClick = onBack,
-            )
-        }
-
-        is AfternoteDetailUiState.Success -> {
-            when (val model = state.contentUiModel) {
-                is DetailContentUiModel.Gallery -> {
-                    Box {
-                        GalleryDetailScreen(
-                            content = model.content,
-                            snackbarHostState = snackbarHostState,
-                            onBackClick = onBack,
-                            onEditClick = { onNavigateToEditor(state.detailId) },
-                            onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
-                        )
-                        if (state.isDeleting) {
-                            DeleteInProgressOverlay()
-                        }
-                    }
-                }
-
-                else -> {
-                    DesignPendingDetailContent(onBackClick = onBack)
-                }
-            }
-        }
-    }
-}
-
-/**
  * 갤러리 상세 표시 데이터.
  */
 @Immutable
 data class GalleryDetailContent(
     val serviceName: String = "",
-    val userName: String = "",
     val finalWriteDate: String = "",
     val afternoteEditReceivers: List<ReceiverUiModel> = emptyList(),
     val processingMethods: List<String> = emptyList(),
@@ -224,7 +155,6 @@ private fun GalleryDetailScrollContent(
 internal val GALLERY_PREVIEW_CONTENT =
     GalleryDetailContent(
         serviceName = "갤러리",
-        userName = "서영",
         finalWriteDate = "2025.11.26",
         processingMethods = listOf("'엽사' 폴더 박선호에게 전송", "'흑역사' 폴더 삭제"),
         afternoteEditReceivers =

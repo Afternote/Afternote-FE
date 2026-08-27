@@ -7,7 +7,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.navigation.NavController
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomNavTab
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.home.presentation.HomeTabActions
@@ -453,28 +453,18 @@ fun rememberAfternoteNavActions(
                 appState.navController.navigate(AfternoteRoute.DetailRoute(itemId = itemId))
             }
 
-            override fun navigateToGalleryDetail(itemId: Long) {
-                appState.navController.navigate(AfternoteRoute.GalleryDetailRoute(itemId = itemId))
-            }
-
-            override fun navigateToMemorialDetail(itemId: Long) {
-                appState.navController.navigate(
-                    AfternoteRoute.MemorialDetailRoute(itemId = itemId),
-                )
-            }
-
-            override fun navigateToNewEditor(initialCategory: String?) {
-                appState.navController.navigate(AfternoteRoute.EditorRoute(initialCategory = initialCategory))
+            override fun navigateToNewEditor(initialType: AfternoteType) {
+                appState.navController.navigate(AfternoteRoute.EditorFlowRoute(initialType = initialType))
             }
 
             override fun navigateToEditorForEdit(
                 itemId: Long,
-                initialCategory: EditorCategory,
+                initialType: AfternoteType,
             ) {
                 appState.navController.navigate(
-                    AfternoteRoute.EditorRoute(
+                    AfternoteRoute.EditorFlowRoute(
                         itemId = itemId,
-                        initialCategory = initialCategory.name,
+                        initialType = initialType,
                     ),
                 )
             }

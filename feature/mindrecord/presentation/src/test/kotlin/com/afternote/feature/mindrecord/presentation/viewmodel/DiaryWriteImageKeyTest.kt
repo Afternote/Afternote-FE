@@ -73,13 +73,18 @@ class DiaryWriteImageKeyTest {
         DiaryWriteViewModel(
             savedStateHandle = SavedStateHandle(emptyMap()),
             repository = RecordingDiaryRepository(onCreate),
-            photoUploadRepository = FakePhotoUploadRepository(uploadedUrl = UPLOADED_URL),
+            photoUploadRepository =
+                FakePhotoUploadRepository(
+                    uploadedUrl = UPLOADED_URL,
+                    uploadedKey = UPLOADED_KEY,
+                ),
             userRepository = noReceiverUserRepository(),
             draftLoader = MindRecordDraftLoader(RecordingDiaryRepository {}, NoDailyQuestionRepository),
         )
 
     private companion object {
         const val UPLOADED_URL = "https://cdn.example.net/mindrecords/staging/13/a.png"
+        const val UPLOADED_KEY = "mindrecords/staging/13/a.png"
     }
 }
 

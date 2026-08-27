@@ -161,8 +161,7 @@ private fun InlineEditTextField(
 
     LaunchedEffect(Unit) {
         // Wait one frame for DropdownMenu dismiss to settle before requesting focus
-        @Suppress("UNUSED_VARIABLE")
-        val frame = withFrameNanos { it }
+        withFrameNanos { }
         focusRequester.requestFocus()
     }
 }
@@ -173,7 +172,7 @@ private fun ProcessingMethodCheckboxPreview() {
     AfternoteTheme {
         Column {
             ProcessingMethodCheckbox(
-                item = ProcessingMethodItem("1", "게시물 내리기"),
+                item = ProcessingMethodItem(1, "게시물 내리기"),
             )
         }
     }
@@ -185,7 +184,7 @@ private fun ProcessingMethodCheckboxEditingPreview() {
     AfternoteTheme {
         Column {
             ProcessingMethodCheckbox(
-                item = ProcessingMethodItem("1", "게시물 내리기"),
+                item = ProcessingMethodItem(1, "게시물 내리기"),
                 isEditing = true,
                 onEditConfirmed = {},
             )

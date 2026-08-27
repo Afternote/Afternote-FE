@@ -61,8 +61,8 @@ class ReceiverAfternoteListChromeTest {
 
         AfternoteHomeScreen(
             items = items,
-            selectedCategory = null,
-            onCategorySelected = {},
+            selectedType = null,
+            onTypeSelected = {},
             onListItemClick = { _, _ -> },
             headerDescription = stringResource(ReceiverR.string.receiver_afternote_list_header_description),
             nextStep = null,

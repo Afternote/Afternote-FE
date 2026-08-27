@@ -7,8 +7,8 @@ import androidx.paging.PagingData
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
-import com.afternote.feature.afternote.data.mapper.response.toDetailDomain
 import com.afternote.feature.afternote.data.mapper.toBusinessRequest
+import com.afternote.feature.afternote.data.mapper.toDomain
 import com.afternote.feature.afternote.data.mapper.toRequest
 import com.afternote.feature.afternote.data.mapper.toServerCategory
 import com.afternote.feature.afternote.data.mapper.toSocialRequest
@@ -56,7 +56,7 @@ class AfternoteRepositoryImpl
 
         override suspend fun getDetail(id: Long): Result<Detail> =
             safeCall {
-                api.getAfternoteDetail(afternoteId = id).requireData().toDetailDomain()
+                api.getAfternoteDetail(afternoteId = id).requireData().toDomain()
             }
 
         override suspend fun createSocial(payload: CreateAccountPayload): Result<Long> =
