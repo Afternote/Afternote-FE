@@ -12,6 +12,11 @@ on:
         required: false
         default: 0
         type: number
+      run_validation:
+        description: "false 이면 required check 이름을 유지한 채 무거운 검증을 건너뜀"
+        required: false
+        default: true
+        type: boolean
 
 permissions:
   contents: read
@@ -20,6 +25,7 @@ permissions:
 jobs:
   ktlint:
     name: Check Code Quality (Ktlint)
+    if: inputs.run_validation
     runs-on: ubuntu-latest
     steps:
       - name: Clone repo
@@ -60,6 +66,7 @@ jobs:
 
   android-lint:
     name: Check Project Issues (Android Lint)
+    if: inputs.run_validation
     runs-on: ubuntu-latest
     steps:
       - name: Clone repo

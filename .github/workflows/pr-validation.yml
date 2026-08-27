@@ -1,8 +1,9 @@
 name: PR Validation
 
-# PR 검증의 유일한 진입점이다. static analysis · unit test · screenshot ·
-# repository quality 를 reusable workflow 로 한 번씩 부르고, 각 job check 를 ruleset 에서
-# 직접 required 로 요구한다. 모든 검증 뒤 집계용 runner 를 한 번 더 기다리지 않는다.
+# PR 검증의 유일한 진입점이다. repository quality 가 변경 파일을 완전하게 분류한 뒤
+# static analysis · unit test · screenshot 을 reusable workflow 로 한 번씩 부른다.
+# 각 job check 를 ruleset 에서 직접 required 로 요구하므로 문서 전용 PR 도 같은 이름의
+# check 를 만들되, 무거운 job 내부는 즉시 건너뛴다. 모든 검증 뒤 집계용 runner 는 없다.
 # required context 이름은 pr-gate-policy.test.mjs 에 고정해 workflow 이름 변경과 ruleset
 # 변경이 함께 검토되도록 한다.
 #
@@ -31,26 +32,35 @@ permissions:
   pull-requests: write
 
 jobs:
-  static-analysis:
-    name: Static Analysis
-    uses: ./.github/workflows/lint.yml
-    with:
-      pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number }}
-
-  unit-test:
-    name: Unit Test
-    uses: ./.github/workflows/unit-test.yml
-    with:
-      pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number }}
-
-  screenshot:
-    name: Screenshot
-    uses: ./.github/workflows/screenshot.yml
-    with:
-      pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number }}
-
   repository-quality:
     name: Repository Quality
     uses: ./.github/workflows/repository-quality.yml
     with:
       pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number }}
+
+  static-analysis:
+    name: Static Analysis
+    needs: repository-quality
+    if: ${{ !cancelled() }}
+    uses: ./.github/workflows/lint.yml
+    with:
+      pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number }}
+      run_validation: ${{ needs.repository-quality.result != 'success' || needs.repository-quality.outputs.docs_only != 'true' }}
+
+  unit-test:
+    name: Unit Test
+    needs: repository-quality
+    if: ${{ !cancelled() }}
+    uses: ./.github/workflows/unit-test.yml
+    with:
+      pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number }}
+      run_validation: ${{ needs.repository-quality.result != 'success' || needs.repository-quality.outputs.docs_only != 'true' }}
+
+  screenshot:
+    name: Screenshot
+    needs: repository-quality
+    if: ${{ !cancelled() }}
+    uses: ./.github/workflows/screenshot.yml
+    with:
+      pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number }}
+      run_validation: ${{ needs.repository-quality.result != 'success' || needs.repository-quality.outputs.docs_only != 'true' }}
