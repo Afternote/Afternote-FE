@@ -77,7 +77,8 @@ class DiaryListContractTest {
             {
               "status": 200, "code": 200,
               "data": { "diaries": [{ "id": 123, "date": "2026-03-21", "createdAt": "2026.03.21 토",
-                        "title": "t", "content": "c", "todayMood": "SOSO", "isDraft": true }],
+                        "title": "t", "content": "c", "todayMood": "SOSO", "isDraft": true,
+                        "receivers": [] }],
                         "monthDiaryCount": 1, "weeklyDominantMood": null }
             }
             """.trimIndent()
