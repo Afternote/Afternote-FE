@@ -1,87 +1,22 @@
 #!/usr/bin/env node
 
-// 모든 same-repository PR 에 `android-test` 라벨을 유지한다.
-//
-// 모든 same-repository PR 은 라벨과 무관하게 pull_request 에서 Managed Device를 실행한다. 이 라벨은
-// 계측 검증 대상이라는 감사 표식이자 GITHUB_TOKEN 이 만든 commit을 정확한 HEAD로 재dispatch하는 복구
-// 수단이다. default branch 의 신뢰된 워크플로가 열린 PR 전체를 다시 읽어 누락된 라벨을 복구하며,
-// 경로 규칙과 구조화 QA 결정은 추가 위험 근거로 유지한다. 자동 제거는 하지 않는다.
+// CI Test Plan이 selected/full인 same-repository PR에만 `android-test` 라벨을 유지한다.
+// token-authored commit에는 현재 plan digest와 exact HEAD를 묶어 Managed Device workflow를 다시 dispatch한다.
 
 import path from "node:path";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
 
-import { inspectQaMetadata } from "./qa-metadata.mjs";
+import { ciTestPlanDigest, inspectPullRequestCiTestPlan } from "./ci-test-plan.mjs";
 
 export const DEFAULT_LABEL = "android-test";
 export const DEFAULT_PENDING_LABEL = "android-test-dispatch-pending";
 
 const LABEL_COLOR = "1D76DB";
-const LABEL_DESCRIPTION = "모든 same-repository PR의 Android Managed Device 검증 표식";
+const LABEL_DESCRIPTION = "CI Test Plan이 selected/full인 Android Managed Device 검증 대상";
 const PENDING_LABEL_COLOR = "FBCA04";
 const PENDING_LABEL_DESCRIPTION = "android-test 자동 dispatch 재시도 필요";
 const PULL_REQUEST_PAGE_SIZE = 50;
-const CHANGED_FILE_PAGE_SIZE = 100;
-const MAX_CHANGED_FILE_PAGES = 30;
-const LEGACY_ANDROID_TEST_EXCLUDED_SCOPES = new Set(["ci-only", "covered-by-ci"]);
-
-const REQUIREMENT_RULES = [
-    {
-        id: "androidTest-source",
-        description: "계측 테스트 소스",
-        matches: (filePath) => /(^|\/)src\/androidTest\//.test(filePath),
-    },
-    {
-        id: "android-manifest",
-        description: "Android manifest",
-        matches: (filePath) => /(^|\/)src\/main\/AndroidManifest\.xml$/.test(filePath),
-    },
-    {
-        id: "runtime-navigation",
-        description: "앱 런타임 navigation",
-        matches: (filePath) =>
-            /^(app|feature\/[^/]+\/presentation)\/src\/main\/(java|kotlin)\/.+\/navigation\//.test(filePath),
-    },
-    {
-        id: "runtime-presentation-source",
-        description: "사용자에게 보이는 presentation 런타임 소스",
-        qaExcludable: true,
-        matches: (filePath) =>
-            /^feature\/[^/]+\/presentation\/src\/main\/(java|kotlin)\//.test(filePath) &&
-            !/\/navigation\//.test(filePath),
-    },
-    {
-        id: "app-entry-point",
-        description: "앱 진입점",
-        matches: (filePath) =>
-            /^app\/src\/main\/(java|kotlin)\/.+\/(MainActivity|AfternoteApplication)\.kt$/.test(filePath),
-    },
-    {
-        id: "app-build-config",
-        description: "앱 Android 빌드 설정",
-        matches: (filePath) => filePath === "app/build.gradle.kts",
-    },
-    {
-        id: "android-build-system",
-        description: "Android 빌드 시스템",
-        qaExcludable: true,
-        matches: (filePath) =>
-            filePath === "build.gradle.kts" ||
-            filePath === "settings.gradle.kts" ||
-            filePath === "gradle.properties" ||
-            filePath === "gradle/libs.versions.toml" ||
-            filePath.startsWith("gradle/wrapper/") ||
-            filePath.startsWith("build-logic/") ||
-            (filePath !== "app/build.gradle.kts" && filePath.endsWith("/build.gradle.kts")),
-    },
-    {
-        id: "managed-device-config",
-        description: "Managed Device 실행 설정",
-        matches: (filePath) =>
-            filePath === ".github/workflows/android-managed-device.yml" ||
-            filePath.startsWith(".github/actions/setup-ci-config/"),
-    },
-];
 
 const OPEN_PULL_REQUESTS_QUERY = `
 query($owner: String!, $name: String!, $cursor: String, $pageSize: Int!) {
@@ -90,6 +25,7 @@ query($owner: String!, $name: String!, $cursor: String, $pageSize: Int!) {
             pageInfo { hasNextPage endCursor }
             nodes {
                 number
+                createdAt
                 headRefOid
                 headRepository { nameWithOwner }
                 body
@@ -99,56 +35,17 @@ query($owner: String!, $name: String!, $cursor: String, $pageSize: Int!) {
     }
 }`;
 
-export function classifyAndroidTestRequirement(
-    filePaths,
-    { androidTestRequired = false, androidTestExcluded = false } = {},
-) {
-    const matches = [];
-
-    if (androidTestRequired) {
-        matches.push({
-            id: "qa-metadata-decision",
-            description: "PR QA 메타데이터의 명시적 계측 테스트 결정",
-            paths: [],
-        });
+export function resolveAndroidTestDecision(pullRequest) {
+    const inspection = inspectPullRequestCiTestPlan(pullRequest);
+    if (!inspection.valid) {
+        return { required: true, mode: "full", valid: false, digest: "" };
     }
-
-    for (const rule of REQUIREMENT_RULES) {
-        // 화면·빌드 시스템 변경은 실제 Android 경계를 건드릴 가능성이 높아 기본적으로 실행한다.
-        // 다만 구조화 QA가 동일 input·boundary·observation의 CI 근거로 제외를 증명한 경우에만
-        // 이 soft rule을 건너뛴다. manifest/navigation/계측 소스 같은 hard rule은 제외할 수 없다.
-        if (rule.qaExcludable === true && androidTestExcluded) {
-            continue;
-        }
-        const matchedPaths = filePaths.filter((filePath) => rule.matches(filePath));
-        if (matchedPaths.length > 0) {
-            matches.push({
-                id: rule.id,
-                description: rule.description,
-                paths: matchedPaths,
-            });
-        }
-    }
-
+    const plan = inspection.plan;
     return {
-        required: matches.length > 0,
-        matches,
-    };
-}
-
-export function resolveAndroidTestDecision(body, { pullRequestNumber = "?" } = {}) {
-    const qaInspection = inspectQaMetadata(body, { pullRequestNumber });
-    if (!qaInspection.valid) {
-        return { required: false, excluded: false };
-    }
-
-    const explicitDecision = qaInspection.metadata.androidTest;
-    return {
-        required: explicitDecision?.required === true,
-        excluded:
-            explicitDecision?.required === false ||
-            (explicitDecision === undefined &&
-                LEGACY_ANDROID_TEST_EXCLUDED_SCOPES.has(qaInspection.metadata.scope)),
+        required: plan.androidTest.mode !== "none",
+        mode: plan.androidTest.mode,
+        valid: true,
+        digest: ciTestPlanDigest(plan),
     };
 }
 
@@ -166,25 +63,21 @@ export function planLabelChanges({
     const skippedForks = [];
 
     for (const pullRequest of pullRequests) {
-        const pathRequirement = classifyAndroidTestRequirement(pullRequest.files ?? [], {
-            androidTestRequired: pullRequest.androidTestRequired === true,
-            androidTestExcluded: pullRequest.androidTestExcluded === true,
-        });
         const requirement = {
-            required: true,
-            matches: [
-                {
-                    id: "all-pull-requests",
-                    description: "모든 same-repository PR의 필수 계측 테스트",
-                    paths: [],
-                },
-                ...pathRequirement.matches,
-            ],
+            required: pullRequest.androidTestRequired === true,
+            matches: pullRequest.androidTestRequired === true
+                ? [{ id: `ci-test-plan-${pullRequest.androidTestMode}`, description: "CI Test Plan", paths: [] }]
+                : [],
         };
         const candidate = { ...pullRequest, requirement };
         const hasLabel = (pullRequest.labels ?? []).includes(label);
         if (pullRequest.headRepository !== repository && (requirement.required || hasLabel)) {
             skippedForks.push(candidate);
+            continue;
+        }
+
+        if (!requirement.required) {
+            notRequired.push(pullRequest);
             continue;
         }
 
@@ -197,11 +90,6 @@ export function planLabelChanges({
             } else {
                 alreadyLabeled.push(candidate);
             }
-            continue;
-        }
-
-        if (!requirement.required) {
-            notRequired.push(pullRequest);
             continue;
         }
 
@@ -218,7 +106,7 @@ export function renderSummary({ plan, label, dryRun }) {
         `- 라벨 부착: ${plan.toLabel.length}건${formatNumbers(plan.toLabel)}`,
         `- dispatch 재시도: ${(plan.toRetry ?? []).length}건${formatNumbers(plan.toRetry ?? [])}`,
         `- 이미 유지 중: ${plan.alreadyLabeled.length}건${formatNumbers(plan.alreadyLabeled)}`,
-        `- 경로 규칙 비대상: ${plan.notRequired.length}건${formatNumbers(plan.notRequired)}`,
+        `- plan=none: ${plan.notRequired.length}건${formatNumbers(plan.notRequired)}`,
         `- fork라 실행 불가: ${plan.skippedForks.length}건${formatNumbers(plan.skippedForks)}`,
     ].join("\n");
 }
@@ -231,8 +119,10 @@ function formatNumbers(pullRequests) {
 }
 
 function normalizePullRequest(node) {
-    const androidTestDecision = resolveAndroidTestDecision(node.body, {
-        pullRequestNumber: node.number,
+    const androidTestDecision = resolveAndroidTestDecision({
+        number: node.number,
+        created_at: node.createdAt,
+        body: node.body,
     });
     return {
         number: node.number,
@@ -240,7 +130,8 @@ function normalizePullRequest(node) {
         headRepository: node.headRepository?.nameWithOwner ?? null,
         labels: (node.labels?.nodes ?? []).map((item) => item.name),
         androidTestRequired: androidTestDecision.required,
-        androidTestExcluded: androidTestDecision.excluded,
+        androidTestMode: androidTestDecision.mode,
+        planDigest: androidTestDecision.digest,
     };
 }
 
@@ -301,44 +192,6 @@ async function fetchOpenPullRequests(api, repository) {
     }
 }
 
-export async function fetchChangedFiles(
-    api,
-    repository,
-    number,
-    { pageSize = CHANGED_FILE_PAGE_SIZE, maxPages = MAX_CHANGED_FILE_PAGES } = {},
-) {
-    const files = [];
-
-    for (let page = 1; page <= maxPages; page += 1) {
-        const result = await api(
-            `/repos/${repository}/pulls/${number}/files?per_page=${pageSize}&page=${page}`,
-        );
-        if (!Array.isArray(result)) {
-            throw new Error(`#${number} changed files 응답이 배열이 아닙니다.`);
-        }
-        files.push(...result.map((item) => item.filename));
-        if (result.length < pageSize) {
-            return files;
-        }
-    }
-
-    throw new Error(`#${number} changed files가 ${maxPages * pageSize}개를 넘어 판정을 중단합니다.`);
-}
-
-export async function collectPullRequestsWithFiles(api, repository, { fetchPullRequests = fetchOpenPullRequests } = {}) {
-    const pullRequests = await fetchPullRequests(api, repository);
-    const collected = [];
-
-    for (const pullRequest of pullRequests) {
-        collected.push({
-            ...pullRequest,
-            files: await fetchChangedFiles(api, repository, pullRequest.number),
-        });
-    }
-
-    return collected;
-}
-
 export async function ensureLabelExists(
     api,
     repository,
@@ -363,7 +216,7 @@ export async function fetchCurrentDispatchTarget(api, repository, number, label)
     const headSha = pullRequest?.head?.sha;
     const headRepository = pullRequest?.head?.repo?.full_name;
     const labels = (pullRequest?.labels ?? []).map((item) => item.name);
-    const qaInspection = inspectQaMetadata(pullRequest?.body, { pullRequestNumber: number });
+    const decision = resolveAndroidTestDecision(pullRequest);
 
     if (pullRequest?.state !== "open") {
         throw new Error(`PR이 open 상태가 아닙니다: ${pullRequest?.state ?? "unknown"}`);
@@ -373,6 +226,9 @@ export async function fetchCurrentDispatchTarget(api, repository, number, label)
     }
     if (!labels.includes(label)) {
         throw new Error(`${label} 라벨이 현재 PR에 없습니다.`);
+    }
+    if (!decision.valid || !decision.required || !decision.digest) {
+        throw new Error("현재 CI Test Plan이 유효한 selected/full 계획이 아닙니다.");
     }
     if (typeof headSha !== "string" || !/^[0-9a-f]{40}$/.test(headSha)) {
         throw new Error(`현재 HEAD SHA가 올바르지 않습니다: ${headSha ?? "unknown"}`);
@@ -384,10 +240,7 @@ export async function fetchCurrentDispatchTarget(api, repository, number, label)
     return {
         headBranch,
         headSha,
-        androidTestRef:
-            qaInspection.valid && qaInspection.metadata?.androidTest?.required === true
-                ? qaInspection.metadata.androidTest.testRef
-                : "",
+        planDigest: decision.digest,
     };
 }
 
@@ -439,7 +292,7 @@ export async function applyPlan(
             const {
                 headBranch: currentHeadBranch,
                 headSha: currentHeadSha,
-                androidTestRef,
+                planDigest,
             } = await fetchCurrentDispatchTarget(api, repository, pullRequest.number, label);
             await api(
                 `/repos/${repository}/actions/workflows/android-managed-device.yml/dispatches`,
@@ -451,7 +304,7 @@ export async function applyPlan(
                         inputs: {
                             pull_request_number: String(pullRequest.number),
                             expected_head_sha: currentHeadSha,
-                            expected_test_ref: androidTestRef,
+                            expected_plan_digest: planDigest,
                         },
                     },
                 },
@@ -486,7 +339,7 @@ async function main() {
     }
     const dryRun = process.env.DRY_RUN === "true";
     const api = createApi(token);
-    const pullRequests = await collectPullRequestsWithFiles(api, repository);
+    const pullRequests = await fetchOpenPullRequests(api, repository);
     const plan = planLabelChanges({
         pullRequests,
         repository,

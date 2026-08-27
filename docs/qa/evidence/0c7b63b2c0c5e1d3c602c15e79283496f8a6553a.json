@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "0c7b63b2c0c5e1d3c602c15e79283496f8a6553a.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "device.avd",
+      "device.serial"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "0c7b63b2c0c5e1d3c602c15e79283496f8a6553a",
+  "head_ref": "fix/1048",
+  "base_sha": "817578e8d2d1bc80fba63906ecce08eae9ede04d",
+  "base_ref": "develop",
+  "recorded_at": "2026-08-26T07:41:32.017267+00:00",
+  "result": "pass",
+  "scenario": "PR #1160(#1048) 실서버 QA — 서버 열린 시간대 실기동. 앱 에디터로 사업자(비즈니스) 애프터노트를 만들어 서버에 category=BUSINESS 로 저장됨을 API 로 확인(afternoteId 40). 목록·상세·편집 모두 정상. 핵심 대조: 서비스명이 AfternoteService 카탈로그에 있으면 아이콘이 서비스명 우선이라 develop 과 차이가 안 난다 — 카탈로그 밖 이름('우리회사 ERP')으로 BUSINESS 를 만들어 대조하니 develop(817578e8d)은 소셜네트워크 카테고리 아이콘으로 앉고(categoryToAfternoteType 의 SOCIAL_NETWORK 폴백) 이 브랜치는 아니다 — 이슈가 말한 오표시 재현·해소 확인. 어긋난 것 2건: (1) 생성·수정 요청은 toServerCategory() 를 안 타서 develop 도 BUSINESS 를 POST/PATCH 로 보내 200 을 받는다(코덱은 목록 필터 전용), (2) PR 본문 확인항목 1 의 «비즈니스 탭» 은 CATEGORY_FILTER_TABS 에 없어 현 UI 로 도달 불가. 단 서버는 ?category=BUSINESS 필터를 200/3건으로 정상 지원하므로 제외 사유(BE#110)는 이미 해소됨 — 탭 복원은 후속 이슈감.",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true,
+    "api": 35,
+    "size": "1080x2400",
+    "density": 420
+  },
+  "details": {
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe"
+    },
+    "diff_sha256": "8586231b004f4f412323454d66ded570dd21db932589327a6e2d77dba195a040",
+    "changed_files": [
+      "feature/afternote/data/build.gradle.kts",
+      "feature/afternote/data/src/main/kotlin/com/afternote/feature/afternote/data/mapper/AfternoteCategoryCodec.kt",
+      "feature/afternote/data/src/main/kotlin/com/afternote/feature/afternote/data/mapper/AfternoteListItemDtoToDomain.kt",
+      "feature/afternote/data/src/main/kotlin/com/afternote/feature/afternote/data/mapper/MappingUtils.kt",
+      "feature/afternote/data/src/main/kotlin/com/afternote/feature/afternote/data/mapper/response/AfternoteDetailMapper.kt",
+      "feature/afternote/data/src/main/kotlin/com/afternote/feature/afternote/data/repositoryimpl/author/AfternoteRepositoryImpl.kt",
+      "feature/afternote/data/src/test/java/com/afternote/feature/afternote/data/mapper/AfternoteCategoryCodecTest.kt",
+      "feature/afternote/data/src/test/java/com/afternote/feature/afternote/data/mapper/AfternoteListItemDtoToDomainTest.kt",
+      "feature/afternote/data/src/test/java/com/afternote/feature/afternote/data/mapper/response/AfternoteDetailMapperTest.kt",
+      "feature/receiver/data/src/main/kotlin/com/afternote/feature/receiver/data/mapper/response/ReceivedAfternoteDetailMapper.kt",
+      "feature/receiver/data/src/test/kotlin/com/afternote/feature/receiver/data/mapper/ReceiverAfternoteListItemDtoToDomainTest.kt"
+    ]
+  }
+}
