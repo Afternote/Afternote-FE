@@ -1,4 +1,4 @@
-// PR 본문의 `QA Metadata` 섹션을 파싱·검증한다. validate-pr-qa-metadata.mjs 가 Unit Test 에서
+// PR 본문의 `QA Metadata` 섹션을 파싱·검증한다. validate-pr-qa-metadata.mjs 가 Repository Quality 에서
 // 이 함수들로 게이트를 건다 (#809).
 //
 // 원래 qa-semantic-audit.mjs 의 앞부분이었다. 그 스크립트는 deployment-decision.yml 의 판정 위에
@@ -172,6 +172,80 @@ function validateEvidence(metadata, errors) {
     });
 }
 
+function validateAndroidTestDecision(raw, evidence, errors, requiredDecision) {
+    const decision = raw.androidTest;
+    if (decision === undefined) {
+        if (requiredDecision) {
+            errors.push("`androidTest` 계측 테스트 필요 여부 결정이 필요합니다.");
+        }
+        return null;
+    }
+    if (!decision || typeof decision !== "object" || Array.isArray(decision)) {
+        errors.push("`androidTest`는 객체여야 합니다.");
+        return null;
+    }
+    if (typeof decision.required !== "boolean") {
+        errors.push("`androidTest.required`는 true 또는 false여야 합니다.");
+    }
+
+    const reason = normalizedText(decision.reason);
+    if (!reason || isGenericQaText(reason)) {
+        errors.push("`androidTest.reason`에 구체적인 필요·제외 근거가 필요합니다.");
+    } else if (reason.length > MAX_METADATA_TEXT_LENGTH) {
+        errors.push(`\`androidTest.reason\`은 ${MAX_METADATA_TEXT_LENGTH}자 이하여야 합니다.`);
+    }
+
+    const normalized = { required: decision.required, reason };
+    if (decision.required === true) {
+        const testRef = normalizedText(decision.testRef);
+        if (!testRef || isGenericQaText(testRef)) {
+            errors.push("`androidTest.testRef`에 직접 동작을 검증할 계측 테스트 참조가 필요합니다.");
+        } else if (
+            !/^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$)).+\/src\/androidTest\/.+\.kt#[A-Za-z_][A-Za-z0-9_]*$/.test(
+                testRef,
+            )
+        ) {
+            errors.push(
+                "`androidTest.testRef`는 `.../src/androidTest/...Test.kt#testName` 형식이어야 합니다.",
+            );
+        } else if (testRef.length > MAX_METADATA_TEXT_LENGTH) {
+            errors.push(`\`androidTest.testRef\`는 ${MAX_METADATA_TEXT_LENGTH}자 이하여야 합니다.`);
+        }
+        normalized.testRef = testRef;
+        const matchingDirectEvidence = evidence.some(
+            (item) =>
+                item.kind === "test" &&
+                item.ref === testRef &&
+                normalizedText(item.input) &&
+                normalizedText(item.boundary) &&
+                normalizedText(item.observation),
+        );
+        if (!matchingDirectEvidence) {
+            errors.push(
+                "계측 테스트 필요 결정에는 testRef와 같은 ref 및 input·boundary·observation을 적은 test evidence가 필요합니다.",
+            );
+        }
+    } else if (decision.required === false) {
+        if (normalizedText(decision.testRef)) {
+            errors.push("`androidTest.required`가 false이면 `testRef`를 함께 둘 수 없습니다.");
+        }
+        const matchingBoundaryEvidence = evidence.some(
+            (item) =>
+                (item.kind === "ci" || item.kind === "test") &&
+                normalizedText(item.input) &&
+                normalizedText(item.boundary) &&
+                normalizedText(item.observation),
+        );
+        if (!matchingBoundaryEvidence) {
+            errors.push(
+                "계측 테스트 제외에는 동일 입력·경계·관찰 결과를 적은 ci/test evidence가 필요합니다.",
+            );
+        }
+    }
+
+    return normalized;
+}
+
 export function inspectQaMetadata(body, options = {}) {
     const pullRequestNumber = options.pullRequestNumber ?? "?";
     const errors = [];
@@ -192,6 +266,15 @@ export function inspectQaMetadata(body, options = {}) {
     }
     const evidence = validateEvidence(raw, errors);
     const metadata = { scope, evidence };
+    const androidTest = validateAndroidTestDecision(
+        raw,
+        evidence,
+        errors,
+        options.requireAndroidTestDecision === true,
+    );
+    if (androidTest) {
+        metadata.androidTest = androidTest;
+    }
 
     if (RUNNABLE_SCOPES.has(scope)) {
         for (const key of ["precondition", "action", "expected", "risk"]) {
@@ -227,4 +310,3 @@ export function inspectQaMetadata(body, options = {}) {
         errors: errors.map((error) => `PR #${pullRequestNumber}: ${error}`),
     };
 }
-
