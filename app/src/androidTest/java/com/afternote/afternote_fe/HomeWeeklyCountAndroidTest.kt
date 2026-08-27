@@ -21,7 +21,6 @@ import com.afternote.feature.home.presentation.usecase.GetHomeSummaryUseCase
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
-import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
 import com.afternote.feature.mindrecord.domain.usecase.GetWeeklyRecordCountUseCase
 import org.junit.Rule
 import org.junit.Test
@@ -91,7 +90,6 @@ class HomeWeeklyCountAndroidTest {
             getHomeSummary =
                 GetHomeSummaryUseCase(
                     userRepository = appTestUserRepository(),
-                    diaryRepository = FakeDiaryRepository(),
                     dailyQuestionRepository = FakeDailyQuestionRepository(),
                     getWeeklyRecordCount =
                         GetWeeklyRecordCountUseCase(
