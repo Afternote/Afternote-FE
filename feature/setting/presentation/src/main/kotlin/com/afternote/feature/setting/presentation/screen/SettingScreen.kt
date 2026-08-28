@@ -39,6 +39,7 @@ import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
 fun SettingScreen(
     onBackClick: () -> Unit,
     onLogoutSuccess: () -> Unit,
+    onReceivedRecordsClick: () -> Unit,
     onProfileEditClick: () -> Unit,
     onPasswordChangeClick: () -> Unit,
     onLinkedAccountClick: () -> Unit,
@@ -89,6 +90,7 @@ fun SettingScreen(
         SettingScreenContent(
             uiState = uiState,
             onLogoutClick = viewModel::logout,
+            onReceivedRecordsClick = onReceivedRecordsClick,
             onProfileEditClick = onProfileEditClick,
             onPasswordChangeClick = onPasswordChangeClick,
             onLinkedAccountClick = onLinkedAccountClick,
@@ -114,6 +116,7 @@ fun SettingScreen(
 private fun SettingScreenContent(
     uiState: SettingUiState,
     onLogoutClick: () -> Unit,
+    onReceivedRecordsClick: () -> Unit,
     onProfileEditClick: () -> Unit,
     onPasswordChangeClick: () -> Unit,
     onLinkedAccountClick: () -> Unit,
@@ -170,6 +173,11 @@ private fun SettingScreenContent(
                     email = state.email,
                     onNoticeClick = onNoticeClick,
                     onRecipientListClick = onRecipientListClick,
+                )
+
+                SettingMenuItem(
+                    label = stringResource(R.string.settings_received_records),
+                    onClick = onReceivedRecordsClick,
                 )
 
                 SettingSection(title = stringResource(R.string.settings_section_account)) {
@@ -279,6 +287,7 @@ private fun SettingScreenPrev() {
         SettingScreenContent(
             uiState = SettingUiState.Success(name = "박서연", email = "afternote@email.com"),
             onLogoutClick = {},
+            onReceivedRecordsClick = {},
             onProfileEditClick = {},
             onPasswordChangeClick = {},
             onLinkedAccountClick = {},

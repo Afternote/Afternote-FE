@@ -40,6 +40,7 @@ fun NavGraphBuilder.settingNavGraph(
             SettingScreen(
                 onBackClick = actions::onSettingBack,
                 onLogoutSuccess = actions::onLogoutSuccess,
+                onReceivedRecordsClick = actions::onNavigateToReceivedRecords,
                 onProfileEditClick = actions::onNavigateToProfileEdit,
                 onPasswordChangeClick = {},
                 onLinkedAccountClick = actions::onNavigateToLinkedAccount,

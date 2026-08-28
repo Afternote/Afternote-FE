@@ -5,6 +5,9 @@ interface SettingNavActions {
 
     fun onLogoutSuccess()
 
+    // 앱 계층 구현이 붙기 전까지 단독 컴파일을 위한 단계적 기본값.
+    fun onNavigateToReceivedRecords() {}
+
     fun onNavigateToWithdrawGuide()
 
     fun onNavigateToWithdrawConfirm()

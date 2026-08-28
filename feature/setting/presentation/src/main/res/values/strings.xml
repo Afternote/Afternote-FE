@@ -3,6 +3,7 @@
     <string name="setting_receiver_search_placeholder">이름으로 검색하기</string>
     <!-- 설정 공통 -->
     <string name="settings_title">설정</string>
+    <string name="settings_received_records">받은 기록 확인하기</string>
     <!-- 섹션 헤더 -->
     <string name="settings_section_account">계정</string>
     <string name="settings_section_recipient">수신자 관리</string>

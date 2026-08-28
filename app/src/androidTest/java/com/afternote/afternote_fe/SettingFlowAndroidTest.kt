@@ -18,6 +18,7 @@ import com.afternote.feature.setting.presentation.screen.SettingScreen
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -52,6 +53,28 @@ class SettingFlowAndroidTest {
 
         composeRule.onNodeWithText("앱 잠금 설정").performScrollTo().performClick()
         assertEquals("app-lock", destination)
+    }
+
+    @Test
+    fun receivedRecordsEntry_emitsNavigationWithoutClearingMemberSession() {
+        val auth = appTestAuthRepository(loggedIn = true)
+        val viewModel = SettingViewModel(auth, appTestUserRepository())
+        var navigationCalls = 0
+
+        setSettingContent(
+            viewModel = viewModel,
+            onReceivedRecords = { navigationCalls += 1 },
+        )
+
+        composeRule
+            .onNodeWithText("받은 기록 확인하기")
+            .performScrollTo()
+            .performClick()
+
+        assertEquals(1, navigationCalls)
+        assertEquals(0, auth.logoutCalls)
+        assertEquals(0, auth.clearSessionCalls)
+        assertTrue(auth.loggedIn)
     }
 
     @Test
@@ -119,6 +142,7 @@ class SettingFlowAndroidTest {
     private fun setSettingContent(
         viewModel: SettingViewModel,
         onLogoutSuccess: () -> Unit = {},
+        onReceivedRecords: () -> Unit = {},
         onProfileEdit: () -> Unit = {},
         onAppLock: () -> Unit = {},
     ) {
@@ -127,6 +151,7 @@ class SettingFlowAndroidTest {
                 SettingScreen(
                     onBackClick = {},
                     onLogoutSuccess = onLogoutSuccess,
+                    onReceivedRecordsClick = onReceivedRecords,
                     onProfileEditClick = onProfileEdit,
                     onPasswordChangeClick = {},
                     onLinkedAccountClick = {},
