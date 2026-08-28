@@ -36,7 +36,7 @@ import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
-import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.receiver.presentation.R
 
 /**
  * 발신자 상세(designs 11·12) — 받은 기록함 카드 클릭 진입 (이슈 #215).

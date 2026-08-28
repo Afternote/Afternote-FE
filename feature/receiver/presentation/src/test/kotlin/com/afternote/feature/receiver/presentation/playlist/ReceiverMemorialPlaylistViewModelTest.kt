@@ -2,10 +2,10 @@ package com.afternote.feature.receiver.presentation.playlist
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.receiver.domain.model.ReceivedAfternoteDetail
 import com.afternote.feature.receiver.domain.repository.ReceiverRepository
 import com.afternote.feature.receiver.domain.testing.FakeReceiverRepository
+import com.afternote.feature.receiver.presentation.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
