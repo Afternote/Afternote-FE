@@ -28,6 +28,7 @@ jobs:
   dependency-review:
     name: Review dependency changes
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       # PR snapshot 은 두 workflow 를 거쳐 API 에 올라온다 (fork PR 을 checkout 하지 않기 위한 분리다).
       #   1. Generate PR Dependency Graph — PR context 에서 artifact 만 만든다.
