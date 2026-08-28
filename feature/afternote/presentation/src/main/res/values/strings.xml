@@ -214,8 +214,11 @@
     <!-- Afternote editor (author) — UI strings -->
     <string name="afternote_editor_screen_title">애프터노트 작성하기</string>
     <string name="afternote_editor_submit">등록</string>
-    <string name="afternote_editor_custom_service_dialog_title">직접 입력하기</string>
-    <string name="afternote_editor_custom_service_name_label">추가 서비스명</string>
+    <string name="afternote_editor_service_sheet_title_social">소셜 네트워크 서비스 선택</string>
+    <string name="afternote_editor_service_sheet_title_gallery">갤러리 및 파일 서비스 선택</string>
+    <string name="afternote_editor_service_sheet_title_business">비즈니스 서비스 선택</string>
+    <string name="afternote_editor_service_search_placeholder">서비스 검색하기</string>
+    <string name="afternote_editor_service_search_empty">검색 결과가 없습니다.</string>
     <string name="afternote_editor_playlist_screen_title">추억 플레이리스트</string>
     <string name="afternote_editor_playlist_add_screen_title">플레이리스트 추가</string>
     <string name="afternote_editor_playlist_song_count_format">총 %1$d곡</string>
