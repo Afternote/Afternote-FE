@@ -24,16 +24,19 @@ import retrofit2.Response as RetrofitResponse
 
 /**
  * [TokenAuthenticator] 401 사후 대응 계약 회귀 가드 (#408 에서 코디네이터 경유로 전환).
- * `android.util.Log` 는 `isReturnDefaultValues` 로 no-op — 로그가 끼는 실패 경로도 JVM 에서 돈다.
+ * 자체 계약 위반은 [FakeErrorReporter] 로 보고하고, [TokenReissuer] 가 이미 분류한 결과는 중복 보고하지 않는다.
  */
 class TokenAuthenticatorTest {
     private val tracker = AccessTokenExpiryTracker { 0L }
 
-    private fun authenticator(repository: FakeAuthRepository) =
-        TokenAuthenticator(
-            authRepository = { repository },
-            tokenReissuer = TokenReissuer({ repository }, tracker, FakeErrorReporter()),
-        )
+    private fun authenticator(
+        repository: FakeAuthRepository,
+        reporter: FakeErrorReporter = FakeErrorReporter(),
+    ) = TokenAuthenticator(
+        authRepository = { repository },
+        tokenReissuer = TokenReissuer({ repository }, tracker, reporter),
+        errorReporter = reporter,
+    )
 
     private fun httpFailure(status: Int): HttpException = HttpException(RetrofitResponse.error<Unit>(status, "".toResponseBody()))
 
@@ -69,28 +72,32 @@ class TokenAuthenticatorTest {
 
     @Test
     fun `재시도 3회 도달 - 회전 없이 세션 정리 후 중단`() {
+        val reporter = FakeErrorReporter()
         val repository =
             networkFakeAuthRepository(
                 accessToken = "old-token",
                 onClearSession = { Result.success(Unit) },
             )
 
-        val request = authenticator(repository).authenticate(null, unauthorizedResponse(priorCount = 2))
+        val request = authenticator(repository, reporter).authenticate(null, unauthorizedResponse(priorCount = 2))
 
         assertNull(request)
         assertEquals(0, repository.rotateCallCount)
         assertEquals(1, repository.clearSessionCallCount)
+        assertContractViolation(reporter, "retry_limit")
     }
 
     @Test
     fun `직전 요청에 토큰이 없었음 - 회전·세션 정리 없이 중단`() {
+        val reporter = FakeErrorReporter()
         val repository = networkFakeAuthRepository(accessToken = "stored")
 
-        val request = authenticator(repository).authenticate(null, unauthorizedResponse(accessToken = null))
+        val request = authenticator(repository, reporter).authenticate(null, unauthorizedResponse(accessToken = null))
 
         assertNull(request)
         assertEquals(0, repository.rotateCallCount)
         assertEquals(0, repository.clearSessionCallCount)
+        assertContractViolation(reporter, "missing_auth_header")
     }
 
     @Test
@@ -123,6 +130,7 @@ class TokenAuthenticatorTest {
 
     @Test
     fun `서버가 동일 토큰을 반환 - 세션 정리 후 중단 (무한 재시도 방지)`() {
+        val reporter = FakeErrorReporter()
         val repository =
             networkFakeAuthRepository(
                 accessToken = "old-token",
@@ -130,15 +138,17 @@ class TokenAuthenticatorTest {
                 onClearSession = { Result.success(Unit) },
             )
 
-        val request = authenticator(repository).authenticate(null, unauthorizedResponse())
+        val request = authenticator(repository, reporter).authenticate(null, unauthorizedResponse())
 
         assertNull(request)
         assertEquals(1, repository.clearSessionCallCount)
+        assertContractViolation(reporter, "same_token")
     }
 
     @Test
     fun `refresh 인증 거절 401 403 - 세션 정리 후 중단`() {
         listOf(401, 403).forEach { status ->
+            val reporter = FakeErrorReporter()
             val repository =
                 networkFakeAuthRepository(
                     accessToken = "old-token",
@@ -146,16 +156,18 @@ class TokenAuthenticatorTest {
                     onClearSession = { Result.success(Unit) },
                 )
 
-            val request = authenticator(repository).authenticate(null, unauthorizedResponse())
+            val request = authenticator(repository, reporter).authenticate(null, unauthorizedResponse())
 
             assertNull(request)
             assertEquals(1, repository.rotateCallCount)
             assertEquals(1, repository.clearSessionCallCount)
+            assertEquals(0, reporter.writtenFailures.size)
         }
     }
 
     @Test
     fun `refresh 무효 400 code 1107 - 세션 정리 후 중단`() {
+        val reporter = FakeErrorReporter()
         val failure =
             ApiException(
                 status = 400,
@@ -170,15 +182,17 @@ class TokenAuthenticatorTest {
                 onClearSession = { Result.success(Unit) },
             )
 
-        val request = authenticator(repository).authenticate(null, unauthorizedResponse())
+        val request = authenticator(repository, reporter).authenticate(null, unauthorizedResponse())
 
         assertNull(request)
         assertEquals(1, repository.rotateCallCount)
         assertEquals(1, repository.clearSessionCallCount)
+        assertEquals(0, reporter.writtenFailures.size)
     }
 
     @Test
     fun `code 파싱 실패한 400 - 세션 정리 후 중단`() {
+        val reporter = FakeErrorReporter()
         // 본문 파싱이 안 되면 400 이 "세션 유지" 로 떨어져 무효 refresh 가 남았다 (#1126).
         val repository =
             networkFakeAuthRepository(
@@ -187,15 +201,17 @@ class TokenAuthenticatorTest {
                 onClearSession = { Result.success(Unit) },
             )
 
-        val request = authenticator(repository).authenticate(null, unauthorizedResponse())
+        val request = authenticator(repository, reporter).authenticate(null, unauthorizedResponse())
 
         assertNull(request)
         assertEquals(1, repository.rotateCallCount)
         assertEquals(1, repository.clearSessionCallCount)
+        assertEquals(0, reporter.writtenFailures.size)
     }
 
     @Test
     fun `refresh timeout - 세션 유지하고 현재 요청만 실패`() {
+        val reporter = FakeErrorReporter()
         val failure = SocketTimeoutException("temporary timeout")
         val repository =
             networkFakeAuthRepository(
@@ -205,17 +221,19 @@ class TokenAuthenticatorTest {
 
         val thrown =
             assertThrows(TokenReissueFailureException::class.java) {
-                authenticator(repository).authenticate(null, unauthorizedResponse())
+                authenticator(repository, reporter).authenticate(null, unauthorizedResponse())
             }
 
         assertNull(thrown.message)
         assertSame(failure, thrown.cause)
         assertEquals(1, repository.rotateCallCount)
         assertEquals(0, repository.clearSessionCallCount)
+        assertReissueFailure(reporter, failureKind = "transport", errorType = SocketTimeoutException::class.java.name)
     }
 
     @Test
     fun `refresh 5xx - 세션 유지하고 현재 요청만 실패`() {
+        val reporter = FakeErrorReporter()
         val failure = httpFailure(503)
         val repository =
             networkFakeAuthRepository(
@@ -225,13 +243,14 @@ class TokenAuthenticatorTest {
 
         val thrown =
             assertThrows(TokenReissueFailureException::class.java) {
-                authenticator(repository).authenticate(null, unauthorizedResponse())
+                authenticator(repository, reporter).authenticate(null, unauthorizedResponse())
             }
 
         assertNull(thrown.message)
         assertSame(failure, thrown.cause)
         assertEquals(1, repository.rotateCallCount)
         assertEquals(0, repository.clearSessionCallCount)
+        assertReissueFailure(reporter, failureKind = "server", errorType = HttpException::class.java.name)
     }
 
     @Test
@@ -272,6 +291,36 @@ class TokenAuthenticatorTest {
         assertEquals(1, repository.clearSessionCallCount)
         // 같은 실패에 「세션 만료」와 「세션 유지」가 함께 남던 것이 이 이슈의 증상이다.
         assertEquals(listOf("요청 중단"), results.distinct())
+    }
+
+    private fun assertContractViolation(
+        reporter: FakeErrorReporter,
+        authStage: String,
+    ) {
+        val (_, attributes) = reporter.writtenFailures.single()
+        assertEquals(
+            mapOf(
+                "auth_stage" to authStage,
+                "error_type" to IllegalStateException::class.java.name,
+            ),
+            attributes,
+        )
+    }
+
+    private fun assertReissueFailure(
+        reporter: FakeErrorReporter,
+        failureKind: String,
+        errorType: String,
+    ) {
+        val (_, attributes) = reporter.writtenFailures.single()
+        assertEquals(
+            mapOf(
+                "auth_stage" to "token_reissue",
+                "failure_kind" to failureKind,
+                "error_type" to errorType,
+            ),
+            attributes,
+        )
     }
 }
 

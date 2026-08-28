@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.presentation.shared.detail.song
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,14 +21,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import coil3.compose.AsyncImagePainter
 import com.afternote.core.ui.button.CustomRadioButton
 import com.afternote.core.ui.modifierextention.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
-
-private const val TAG = "PlaylistSongItem"
 
 /**
  * 추억 플레이리스트·노래 추가 등에서 공통으로 쓰는 노래 한 줄 아이템.
@@ -120,13 +116,6 @@ private fun AlbumCoverBox(albumImageUrl: String?) {
             contentScale = ContentScale.Crop,
             // 로드 실패 폴백 = URL 없음과 동일한 gray8 (더미 placeholder 이미지 대신 통일).
             error = ColorPainter(AfternoteDesign.colors.gray8),
-            onError = { state: AsyncImagePainter.State.Error ->
-                Log.e(
-                    TAG,
-                    "Coil load failed: albumImageUrl=$albumImageUrl",
-                    state.result.throwable,
-                )
-            },
         )
     }
 }
