@@ -41,7 +41,7 @@ class ReceiverHomeHeaderTest {
                 ReceiverHomeScreen(
                     uiState = ReceiverHomeUiState.Loading,
                     onEvent = {},
-                    actions = ReceiverHomeActions(),
+                    actions = ReceiverHomeActions.Noop,
                 )
             }
         }
@@ -58,7 +58,7 @@ class ReceiverHomeHeaderTest {
                 ReceiverHomeScreen(
                     uiState = ReceiverHomeUiState.Loading,
                     onEvent = {},
-                    actions = ReceiverHomeActions(onSettingClick = { settingClicks += 1 }),
+                    actions = ReceiverHomeActions.Noop.copy(onSettingClick = { settingClicks += 1 }),
                 )
             }
         }
