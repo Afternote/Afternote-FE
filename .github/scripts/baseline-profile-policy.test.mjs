@@ -42,11 +42,12 @@ test("Baseline Profile uses the AGP 9 compatible producer and explicit consumer 
 });
 
 test("generator records startup without an absolute performance threshold", async () => {
-    const [generator, profile] = await Promise.all([
+    const [generator, profile, startupProfile] = await Promise.all([
         readRepositoryFile(
             "baselineprofile/src/main/java/com/afternote/baselineprofile/BaselineProfileGenerator.kt",
         ),
         readRepositoryFile("app/src/main/generated/baselineProfiles/baseline-prof.txt"),
+        readRepositoryFile("app/src/main/generated/baselineProfiles/startup-prof.txt"),
     ]);
 
     assert.match(generator, /BaselineProfileRule\(\)/);
@@ -58,7 +59,8 @@ test("generator records startup without an absolute performance threshold", asyn
 
     assert.match(profile, /^Lcom\/afternote\/afternote_fe\/GlobalApplication;$/m);
     assert.match(profile, /^Lcom\/afternote\/afternote_fe\/MainActivity;$/m);
-    assert.doesNotMatch(profile, /todo|placeholder/i);
+    assert.ok(profile.split("\n").filter(Boolean).length > 100, "committed profile is only a seed");
+    assert.equal(startupProfile, profile, "all collected startup rules must feed dex layout");
 });
 
 test("API boundary devices are explicit and the smoke remains valid for existing full lanes", async () => {
