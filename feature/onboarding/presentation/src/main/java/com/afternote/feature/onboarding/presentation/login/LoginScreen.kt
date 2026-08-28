@@ -233,7 +233,7 @@ private fun SocialLoginGroup(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 카카오 로그인 버튼
+        // 카카오 로그인 버튼 — 높이는 이메일 로그인 버튼과 같은 48dp 규격(#775, 디자이너 확정).
         Button(
             onClick = {
                 focusManager.clearFocus()
@@ -242,7 +242,7 @@ private fun SocialLoginGroup(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
+                    .height(48.dp),
             shape = RoundedCornerShape(8.dp),
             colors =
                 ButtonDefaults.buttonColors(
@@ -250,23 +250,29 @@ private fun SocialLoginGroup(
                 ),
             contentPadding = PaddingValues(0.dp),
         ) {
+            // 공식 에셋(1400x208)을 FillBounds 로 늘리면 기기 폭에 따라 로고·문구가 왜곡된다.
+            // 컨테이너 색이 에셋 배경(#FEE500)과 동일하므로 Fit 으로 비율을 지키고
+            // 남는 영역은 배경색으로 자연스럽게 이어지게 한다.
             Image(
                 painter = painterResource(R.drawable.onboarding_kakao_login_large_wide_1),
                 contentDescription = stringResource(R.string.onboarding_login_kakao),
-                modifier = Modifier.fillMaxWidth(),
-                contentScale = ContentScale.FillBounds,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit,
             )
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 구글 로그인 버튼
+        // 구글 로그인 버튼 — 높이는 이메일 로그인 버튼과 같은 48dp 규격(#775, 디자이너 확정).
         OutlinedButton(
             onClick = {
                 focusManager.clearFocus()
                 onGoogleLoginClick()
             },
-            modifier = Modifier.fillMaxWidth(),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
             shape = RoundedCornerShape(4.dp),
             // 💡 외곽선과 내부 컨텐츠(Text) 사이의 패딩을 정확히 12.dp로 고정합니다.
             contentPadding = PaddingValues(12.dp),
