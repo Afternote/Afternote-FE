@@ -16,6 +16,8 @@ const screenshotModules = [
     ":feature:onboarding:presentation",
     ":feature:afternote:presentation",
     ":feature:mindrecord:presentation",
+    ":feature:setting:presentation",
+    ":feature:timeletter:presentation",
 ];
 
 test("baseline generation executes PR code without write credentials", async () => {
@@ -54,11 +56,29 @@ test("privileged baseline apply is a workflow-run bridge restricted to PNG basel
     assert.match(source, /89504e470d0a1a0a/);
     assert.match(source, /pullRequest\.head\.sha !== metadata\.headSha/);
     assert.match(source, /force: false/);
+    for (const module of screenshotModules) {
+        const root = `${module.slice(1).replaceAll(":", "/")}/src/screenshotTestDebug/reference/`;
+        assert.ok(source.includes(`'${root}'`), `${module} baseline root is not allowed`);
+    }
     for (const workflow of ["pr-validation.yml", "codeql.yml", "merge-order-guard.yml"]) {
         assert.ok(source.includes(`workflow_id: '${workflow}'`), `${workflow} is not redispatched`);
     }
     assert.match(source, /if: steps\.commit\.outputs\.changed == 'true'/);
     assert.match(source, /workflow_id: 'codeql\.yml',[\s\S]*inputs: \{ pull_request_number: process\.env\.TARGET_PR \}/);
+});
+
+test("screenshot workflow fallbacks cover every baseline module", async () => {
+    const [reusable, validation] = await Promise.all([
+        readWorkflow("screenshot.yml"),
+        readWorkflow("pr-validation.yml"),
+    ]);
+    const moduleFallback = screenshotModules.join(" ");
+    const taskFallback = screenshotModules.map((module) => `${module}:validateScreenshotTest`).join(" ");
+
+    for (const [name, source] of [["reusable", reusable], ["PR", validation]]) {
+        assert.ok(source.includes(taskFallback), `${name} task fallback is incomplete`);
+        assert.ok(source.includes(moduleFallback), `${name} module fallback is incomplete`);
+    }
 });
 
 test("managed device keeps required contexts but boots only CI Test Plan lanes", async () => {
