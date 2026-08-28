@@ -11,8 +11,8 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import com.afternote.core.ui.Route
+import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadErrorContent
-import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
 import com.afternote.feature.receiver.presentation.afternotelist.ReceiverAfternoteHomeEntry
 import com.afternote.feature.receiver.presentation.deliveryverification.DeliveryVerificationCompleteScreen
 import com.afternote.feature.receiver.presentation.deliveryverification.DeliveryVerificationFlowViewModel
@@ -140,7 +140,7 @@ fun NavGraphBuilder.receiverNavGraph(
             val playlistUiState by playlistViewModel.uiState.collectAsStateWithLifecycle()
             when (val state = playlistUiState) {
                 ReceiverMemorialPlaylistUiState.Loading -> {
-                    DetailLoadingContent()
+                    LoadingBody()
                 }
 
                 is ReceiverMemorialPlaylistUiState.Error -> {

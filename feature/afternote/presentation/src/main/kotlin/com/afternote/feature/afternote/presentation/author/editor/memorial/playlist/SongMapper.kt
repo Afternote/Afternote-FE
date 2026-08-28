@@ -7,4 +7,5 @@ fun SearchedSong.toDisplay() =
         selectionKey = selectionKey,
         title = title,
         artist = artist,
+        albumImageUrl = albumImageUrl,
     )

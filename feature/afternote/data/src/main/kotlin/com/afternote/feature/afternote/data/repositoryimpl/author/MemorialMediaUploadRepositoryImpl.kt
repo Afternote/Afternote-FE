@@ -15,7 +15,7 @@ import javax.inject.Inject
 internal const val DIRECTORY_AFTERNOTES = "afternotes"
 
 /**
- * 추모 미디어 *상태 해석* + 필요 시 업로드. 업로드 자체(presigned 발급·S3 PUT·MIME 추론)는
+ * 추억 노트 미디어 *상태 해석* + 필요 시 업로드. 업로드 자체(presigned 발급·S3 PUT·MIME 추론)는
  * [PhotoUploadRepository] · [VideoUploadRepository] 가 담당하고, 본 클래스는 분기 라우팅만 한다.
  */
 class MemorialMediaUploadRepositoryImpl

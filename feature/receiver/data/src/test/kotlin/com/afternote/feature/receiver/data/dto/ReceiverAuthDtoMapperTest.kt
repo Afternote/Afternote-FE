@@ -70,12 +70,14 @@ class ReceiverAuthDtoMapperTest {
                 fileKey = "key",
                 fileUrl = "file",
                 contentType = "image/jpeg",
+                contentLength = 123L,
             ).toDomain()
 
         assertEquals("url", result.presignedUrl)
         assertEquals("key", result.fileKey)
         assertEquals("file", result.fileUrl)
         assertEquals("image/jpeg", result.contentType)
+        assertEquals(123L, result.contentLength)
     }
 
     @Test
