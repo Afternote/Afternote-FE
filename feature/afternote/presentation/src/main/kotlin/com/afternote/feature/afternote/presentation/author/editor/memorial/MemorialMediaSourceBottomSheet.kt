@@ -28,6 +28,7 @@ import com.afternote.core.ui.modifierextention.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.editor.isLocalContentUri
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.core.ui.R as CoreUiR
 
@@ -52,12 +53,15 @@ internal enum class MemorialMediaTarget {
  *   값이 있으면 곧 로컬 첨부다. 지우면 표시가 서버 사진([EditorFormState.memorialPhotoUrl])으로
  *   돌아간다.
  * - 영상: [EditorFormState.memorialVideoUrl] 은 로컬 픽과 원격 prefill 이 한 필드를 공유하므로
- *   `content://` 스킴으로 가른다 — `AfternoteEditorViewModel.videoMediaInput` 과 같은 기준.
+ *   [isLocalContentUri] 로 가른다 — `AfternoteEditorViewModel.videoMediaInput` 과 같은 기준.
+ *
+ * 알려진 구멍(#1406): 수정 모드에서 서버 영상을 로컬 영상으로 교체하면 원격 URL 이 덮여 이 가드가
+ * 못 가른다 — 그 로컬 영상을 지우면 폼은 비지만 저장 후 서버 영상이 남는 거짓 삭제가 된다.
  */
 internal fun EditorFormState.removableMemorialMediaTargets(): Set<MemorialMediaTarget> =
     buildSet {
         if (!pickedMemorialPhotoUri.isNullOrBlank()) add(MemorialMediaTarget.PHOTO)
-        if (memorialVideoUrl?.startsWith("content://") == true) add(MemorialMediaTarget.VIDEO)
+        if (memorialVideoUrl?.isLocalContentUri() == true) add(MemorialMediaTarget.VIDEO)
     }
 
 /**
