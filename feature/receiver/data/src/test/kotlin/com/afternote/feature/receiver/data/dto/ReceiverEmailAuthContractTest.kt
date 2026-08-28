@@ -21,7 +21,7 @@ import org.junit.Test
  * `accessCode` 를 응답에서 제거할 예정이라([ReceiverEmailAuthVerifyDto] 참고), 제거 배포가 언제 나가든
  * 파싱이 깨지지 않아야 한다 (#454).
  *
- * 에러 응답(404 code 1901 / 400 code 1902·1903)은 HTTP 4xx 라 `ApiErrorInterceptor` 가 가로채는 경로 —
+ * 에러 응답(404 code 1901 / 400 code 1902·1903)은 HTTP 4xx 라 Retrofit CallAdapter가 가로채는 경로 —
  * 그 이후의 도메인 예외 변환은 `ReceiverAuthRepositoryImplEmailAuthTest` 가 가드한다.
  */
 class ReceiverEmailAuthContractTest {

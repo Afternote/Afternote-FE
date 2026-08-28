@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.asString
 import com.afternote.core.ui.modifierextention.dropShadow
 import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -53,7 +54,6 @@ import com.afternote.feature.receiver.presentation.deliveryverification.componen
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_HEADER_SPACING
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_TOTAL_STEPS
 import com.afternote.feature.receiver.presentation.deliveryverification.component.ReceiverVerifyStep
-import com.afternote.feature.receiver.presentation.error.asDisplayText
 
 /**
  * 증빙 서류 업로드 화면(designs 6·7·8) — 사망진단서 + 가족관계증명서 첨부 후 열람 신청 제출 (이슈 #215).
@@ -120,9 +120,9 @@ fun DocumentUploadScreen(
         }
     }
 
-    // sealed ErrorPayload 분기 — 타입 자체가 "Res / Text 중 하나" 강제, 우선순위 로직 불필요.
+    // VM 은 리소스 또는 표시 가능한 동적 문구를 UiText 하나로 운반하므로 별도 우선순위 분기가 필요 없다.
     val errorMessage =
-        uiState.error?.asDisplayText()
+        uiState.error?.asString()
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
             snackbarHostState.showSnackbar(errorMessage)
