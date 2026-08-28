@@ -55,6 +55,10 @@ fun AfternoteEditorScreen(
     onRegisterClick: () -> Unit,
     snackbarMessage: String?,
     onSnackbarMessageConsumed: () -> Unit,
+    // 스낵바 쌍과 같은 이유로 기본값을 주지 않는다: 새 진입 경로가 검증 팝업 배선을 빠뜨리면
+    // 조용히 팝업 없는 에디터가 되는 대신 컴파일 단계에서 걸리게 한다.
+    validationMessage: String?,
+    onValidationMessageConsumed: () -> Unit,
     content: @Composable (SnackbarHostState) -> Unit,
     modifier: Modifier = Modifier,
     state: AfternoteEditorState = rememberAfternoteEditorState(),
@@ -162,6 +166,15 @@ fun AfternoteEditorScreen(
                     onDismiss = { showExitConfirm = false },
                     confirmText = stringResource(R.string.afternote_editor_exit_confirm_confirm),
                     dismissText = stringResource(R.string.afternote_editor_exit_confirm_cancel),
+                )
+            }
+
+            if (validationMessage != null) {
+                Popup(
+                    type = PopupType.Default,
+                    message = validationMessage,
+                    onConfirm = onValidationMessageConsumed,
+                    onDismiss = onValidationMessageConsumed,
                 )
             }
         }

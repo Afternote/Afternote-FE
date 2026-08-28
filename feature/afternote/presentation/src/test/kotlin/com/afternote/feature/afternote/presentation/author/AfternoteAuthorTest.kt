@@ -2,10 +2,7 @@ package com.afternote.feature.afternote.presentation.author
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -20,8 +17,6 @@ import com.afternote.feature.afternote.presentation.author.editor.AfternoteEdito
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
-import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorError
-import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Rule
@@ -39,16 +34,16 @@ class AfternoteAuthorTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun missingReceiver_blocksSaveAndExposesValidationSemantics() {
-        val repository = FakeAfternoteRepository.strict()
+    fun emptyReceivers_saveProceedsWithoutValidationError() {
+        // 수신자는 전 카테고리 선택 항목(#951 합의·서버 계약) — 비워 둔 채로 저장이 그대로 진행돼야 한다.
+        val repository =
+            FakeAfternoteRepository.strict().apply {
+                onCreateSocial = { Result.success(41L) }
+            }
         val viewModel = viewModel(repository, afternoteEditorSavedStateHandle(AfternoteType.SOCIAL_NETWORK))
         composeRule.setContent {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-            AfternoteTheme {
-                (uiState.error as? AfternoteEditorError.Validation)?.let {
-                    Text(stringResource(it.reason.messageResId))
-                }
-            }
+            AfternoteTheme { Text(uiState.savedId?.toString().orEmpty()) }
         }
 
         composeRule.runOnIdle {
@@ -59,13 +54,10 @@ class AfternoteAuthorTest {
                 memorialMedia = SaveAfternoteMemorialMedia(),
             )
         }
+        composeRule.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.savedId == 41L }
 
-        composeRule.onNodeWithText("수신자를 한 명 이상 선택해 주세요.").assertIsDisplayed()
-        assertEquals(0, repository.socialPayloads.size)
-        assertEquals(
-            AfternoteEditorError.Validation(AfternoteValidationError.RECEIVERS_REQUIRED),
-            viewModel.uiState.value.error,
-        )
+        assertNull(viewModel.uiState.value.error)
+        assertEquals(emptyList<Long>(), repository.socialPayloads.single().receiverIds)
     }
 
     @Test

@@ -12,8 +12,8 @@ enum class AfternoteValidationError(
     TITLE_REQUIRED(R.string.afternote_validation_title_required),
     ACCOUNT_CREDENTIALS_REQUIRED(R.string.afternote_validation_account_credentials_required),
 
-    /** 처리 방법 1개 이상 필요 (계정·갤러리 폼 공통). */
-    PROCESSING_METHODS_REQUIRED(R.string.afternote_validation_processing_methods_required),
+    /** 둘 이상의 필수 입력이 동시에 비어 있어 특정 필드 하나로 안내를 좁힐 수 없음. */
+    MULTIPLE_REQUIRED_FIELDS(R.string.afternote_validation_multiple_required_fields),
 
     /** ESTATE 등 디자인 미확정으로 placeholder 만 노출되는 카테고리에서 저장 시도 시. */
     UNIMPLEMENTED_TYPE(R.string.afternote_validation_unimplemented_category),
@@ -32,7 +32,7 @@ enum class AfternoteValidationError(
  * 에디터에서 UI가 소비할 단일 오류 상태.
  *
  * nullable [AfternoteEditorUiState.error]의 `null`은 오류가 없는 정상 상태이고, 값이 있을 때만
- * 오류 종류에 맞는 안내를 노출한다. 화면 표현은 디자인 확정 전까지 기존 Snackbar를 유지한다.
+ * 오류 종류에 맞는 안내를 노출한다. 검증 오류는 확인 팝업, 네트워크·서버·업로드 오류는 Snackbar로 표시한다.
  */
 sealed interface AfternoteEditorError {
     data class Validation(
