@@ -5,7 +5,7 @@ import com.afternote.feature.afternote.presentation.author.editor.receiver.model
 
 internal fun Receiver.toAfternoteEditorReceiver(): AfternoteEditorReceiver =
     AfternoteEditorReceiver(
-        id = receiverId.toString(),
+        id = receiverId,
         name = name,
         label = relation,
     )

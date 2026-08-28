@@ -32,6 +32,7 @@ class AfternoteDetailMapperTest {
                 afternoteId = 1L,
                 category = "GALLERY",
                 title = "t",
+                updatedAt = UPDATED_AT,
             ).toDomain()
 
         assertEquals(1L, result.id)
@@ -50,6 +51,7 @@ class AfternoteDetailMapperTest {
                 afternoteId = 1L,
                 category = "BUSINESS",
                 title = "t",
+                updatedAt = UPDATED_AT,
             ).toDomain()
 
         assertTrue("사업자는 Business 내용으로 올라와야 한다", result.content is DetailContent.Business)
@@ -65,6 +67,7 @@ class AfternoteDetailMapperTest {
                     afternoteId = 42L,
                     category = "???",
                     title = "t",
+                    updatedAt = UPDATED_AT,
                 ).toDomain()
             }
 
@@ -97,6 +100,7 @@ class AfternoteDetailMapperTest {
                 afternoteId = 1L,
                 category = "GALLERY",
                 title = "t",
+                updatedAt = UPDATED_AT,
                 receivers = listOf(AfternoteDetailReceiverDto(receiverId = 5L)),
             ).toDomain()
 
@@ -118,6 +122,7 @@ class AfternoteDetailMapperTest {
                 afternoteId = 1L,
                 category = "GALLERY",
                 title = "t",
+                updatedAt = UPDATED_AT,
                 receivers =
                     listOf(
                         AfternoteDetailReceiverDto(receiverId = null, name = "식별자없음"),
@@ -137,6 +142,7 @@ class AfternoteDetailMapperTest {
                 afternoteId = 1L,
                 category = "SOCIAL",
                 title = "t",
+                updatedAt = UPDATED_AT,
                 credentials = AfternoteCredentialsDto(id = "user", password = "pw"),
             ).toDomain()
 
@@ -154,6 +160,7 @@ class AfternoteDetailMapperTest {
                 afternoteId = 1L,
                 category = "SOCIAL",
                 title = "t",
+                updatedAt = UPDATED_AT,
             ).toDomain()
 
         val credentials = (result.content as DetailContent.SocialNetwork).credentials
@@ -170,6 +177,7 @@ class AfternoteDetailMapperTest {
                 afternoteId = 1L,
                 category = "SOCIAL",
                 title = "t",
+                updatedAt = UPDATED_AT,
                 credentials = AfternoteCredentialsDto(id = null, password = "pw"),
             ).toDomain()
 
@@ -187,6 +195,7 @@ class AfternoteDetailMapperTest {
                 afternoteId = 1L,
                 category = "SOCIAL",
                 title = "t",
+                updatedAt = UPDATED_AT,
                 credentials = AfternoteCredentialsDto(id = "user", password = null),
             ).toDomain()
 
@@ -204,6 +213,7 @@ class AfternoteDetailMapperTest {
                 afternoteId = 1L,
                 category = "PLAYLIST",
                 title = "t",
+                updatedAt = UPDATED_AT,
                 memorial =
                     AfternotePlaylistDto(
                         memorialPhotoUrl = "memorial.jpg",
@@ -231,8 +241,9 @@ class AfternoteDetailMapperTest {
                 afternoteId = 1L,
                 category = "PLAYLIST",
                 title = "t",
+                updatedAt = UPDATED_AT,
                 leaveMessage = listOf(LeaveMessageBlockDto(title = "가족에게", body = "잘 지내")),
-                memorial = AfternotePlaylistDto(),
+                memorial = AfternotePlaylistDto(songs = emptyList()),
             ).toDomain()
 
         assertEquals(
@@ -250,7 +261,8 @@ class AfternoteDetailMapperTest {
                 afternoteId = 1L,
                 category = "PLAYLIST",
                 title = "t",
-                memorial = AfternotePlaylistDto(memorialVideo = null),
+                updatedAt = UPDATED_AT,
+                memorial = AfternotePlaylistDto(songs = emptyList(), memorialVideo = null),
             ).toDomain()
 
         val media = (result.content as DetailContent.Memorial).memorial.media
@@ -268,6 +280,7 @@ class AfternoteDetailMapperTest {
                     afternoteId = 1L,
                     category = "PLAYLIST",
                     title = "t",
+                    updatedAt = UPDATED_AT,
                 ).toDomain()
             }
 
@@ -283,6 +296,7 @@ class AfternoteDetailMapperTest {
                 afternoteId = 1L,
                 category = "BUSINESS",
                 title = "회사 계정",
+                updatedAt = UPDATED_AT,
                 credentials = AfternoteCredentialsDto(id = "user", password = "pw"),
             ).toDomain()
 
@@ -302,7 +316,12 @@ class AfternoteDetailMapperTest {
                 afternoteId = 2L,
                 category = "ESTATE",
                 title = "부동산",
+                updatedAt = UPDATED_AT,
             ).toDomain()
         }
+    }
+
+    private companion object {
+        const val UPDATED_AT = "2025-12-01T09:00:00"
     }
 }

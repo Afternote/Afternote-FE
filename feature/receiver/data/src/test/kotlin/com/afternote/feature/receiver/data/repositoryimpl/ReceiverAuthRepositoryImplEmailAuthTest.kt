@@ -46,7 +46,7 @@ class ReceiverAuthRepositoryImplEmailAuthTest {
                             status = 404,
                             code = 1901,
                             serverMessage = "등록된 수신자 이메일이 아닙니다.",
-                            message = "등록된 수신자 이메일이 아닙니다.",
+                            fallbackMessage = "등록된 수신자 이메일이 아닙니다.",
                         )
                     },
                 ),
@@ -71,7 +71,7 @@ class ReceiverAuthRepositoryImplEmailAuthTest {
                             status = 400,
                             code = 1902,
                             serverMessage = "인증번호가 만료되었거나 존재하지 않습니다. 다시 요청해주세요.",
-                            message = "인증번호가 만료되었거나 존재하지 않습니다. 다시 요청해주세요.",
+                            fallbackMessage = "인증번호가 만료되었거나 존재하지 않습니다. 다시 요청해주세요.",
                         )
                     },
                 ),

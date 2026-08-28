@@ -1,10 +1,6 @@
 plugins {
-    id("afternote.android.domain")
+    id("afternote.jvm.domain")
     id("afternote.kover")
-}
-
-android {
-    namespace = "com.afternote.feature.afternote.domain"
 }
 dependencies {
     implementation(projects.core.domain)

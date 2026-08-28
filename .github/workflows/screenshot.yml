@@ -125,11 +125,24 @@ jobs:
 
       # 실패 시 PR 에 artifact URL + 조치 가이드 자동 코멘트.
       # 같은 PR 의 재실행에서는 기존 코멘트를 update (marker 로 중복 누적 방지).
+      # baseline 생성 요청이 이미 들어왔으면 최신 라벨을 확인해 중복 안내를 남기지 않는다.
       - name: Comment artifact URL on PR (failure)
         if: failure() && github.event_name == 'pull_request'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
+            const baselineLabel = 'screenshot-baseline';
+            const labels = await github.paginate(github.rest.issues.listLabelsOnIssue, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            });
+            if (labels.some(({ name }) => name === baselineLabel)) {
+              core.info(`${baselineLabel} 라벨이 있어 screenshot 실패 안내 댓글을 생략합니다.`);
+              return;
+            }
+
             const marker = '<!-- screenshot-fail-bot -->';
             const modules = process.env.SCREENSHOT_MODULES.trim().split(/\s+/);
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;

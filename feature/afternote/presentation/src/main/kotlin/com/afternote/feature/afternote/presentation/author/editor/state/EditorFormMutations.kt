@@ -47,12 +47,12 @@ internal fun EditorFormState.withMemorialPlaylistSongs(songs: List<Song>): Edito
  */
 private fun nextLocalId(existing: List<Int>): Int = (existing.maxOrNull() ?: 0) + 1
 
-internal fun EditorFormState.withReceiverDeleted(receiverId: String): EditorFormState =
+internal fun EditorFormState.withReceiverDeleted(receiverId: Long): EditorFormState =
     copy(afternoteEditReceivers = afternoteEditReceivers.filter { it.id != receiverId })
 
 /** 수신자 선택 화면에서 돌아온 결과 반영 — 이미 담긴 수신자면 그대로 둔다. */
 internal fun EditorFormState.withReceiverAddedIfAbsent(
-    receiverId: String,
+    receiverId: Long,
     name: String,
     label: String,
 ): EditorFormState {
@@ -81,6 +81,16 @@ internal fun EditorFormState.withProcessingMethodAdded(text: String): EditorForm
                 text = text,
             )
         form.withProcessingMethods(form.processingMethods + newItem)
+    }
+
+internal fun EditorFormState.withProcessingMethodsInitialized(methods: List<String>): EditorFormState =
+    mapServiceForm { form ->
+        if (form.processingMethods.isNotEmpty()) return@mapServiceForm form
+        form.withProcessingMethods(
+            methods.mapIndexed { index, text ->
+                ProcessingMethodItem(localId = index + 1, text = text)
+            },
+        )
     }
 
 internal fun EditorFormState.withProcessingMethodDeleted(localId: Int): EditorFormState =

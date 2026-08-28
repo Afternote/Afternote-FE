@@ -4,9 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent
 import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadErrorContent
-import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
 
 /**
  * 수신 애프터노트 상세 Stateful Route.
@@ -35,7 +35,7 @@ fun ReceivedAfternoteDetailRoute(
 
     when (val state = uiState) {
         ReceivedAfternoteDetailUiState.Loading -> {
-            DetailLoadingContent()
+            LoadingBody()
         }
 
         is ReceivedAfternoteDetailUiState.Error -> {
