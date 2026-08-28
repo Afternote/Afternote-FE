@@ -90,7 +90,6 @@ data class TimeLetterDto(
     @SerialName("id") val id: Long,
     @SerialName("title") val title: String?,
     @SerialName("sendAt") val sendAt: String?,
-    @SerialName("deliveredAt") val deliveredAt: String?,
     @SerialName("status") val status: TimeLetterStatusDto,
     @SerialName("blocks") val blocks: List<TimeLetterBlockDto>,
     @SerialName("receiverIds") val receiverIds: List<Long>,
