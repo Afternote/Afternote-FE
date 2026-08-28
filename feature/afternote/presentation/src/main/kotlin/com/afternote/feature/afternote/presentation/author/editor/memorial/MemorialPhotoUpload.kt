@@ -21,7 +21,7 @@ fun MemorialPhotoUpload(
     modifier: Modifier = Modifier,
     label: String? = null,
     displayImageUri: String? = null,
-    onAddPhotoClick: () -> Unit = {},
+    onAddPhotoClick: () -> Unit,
 ) {
     val labelText = label ?: stringResource(R.string.afternote_editor_memorial_photo_label)
     Column(
@@ -56,7 +56,7 @@ private fun MemorialPhotoUploadPreview() {
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             // 이미지 없음
-            MemorialPhotoUpload()
+            MemorialPhotoUpload(onAddPhotoClick = {})
         }
     }
 }

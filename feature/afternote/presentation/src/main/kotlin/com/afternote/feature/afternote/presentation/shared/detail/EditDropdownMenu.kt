@@ -37,15 +37,18 @@ import androidx.compose.ui.window.Popup as ComposePopup
  * Material3 `DropdownMenu` 과 달리 `androidx.compose.ui.window.Popup` 기반이라
  * 등장 페이드·스케일 애니메이션은 없다. 필요하면 메뉴 `Column` 을
  * `androidx.compose.animation.AnimatedVisibility` 로 감싸면 된다.
+ *
+ * @param onEditClick 편집 항목 클릭 콜백. **null 이면 편집 항목 자체를 그리지 않는다** — 편집이
+ *   없는 메뉴(수신자 행)와 "핸들러를 안 넘겨 죽은 편집 버튼이 그려지는" 미배선을 타입으로 구분하기
+ *   위해 `showEditItem` 플래그 + no-op 디폴트 대신 nullable 핸들러 하나로 모델링한다 (#1388).
  */
 @Composable
 fun EditDropdownMenu(
     expanded: Boolean,
     onDismissRequest: () -> Unit,
     onDeleteClick: () -> Unit,
+    onEditClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
-    onEditClick: () -> Unit = {},
-    showEditItem: Boolean = true,
     popupPositionProvider: PopupPositionProvider = rememberFixedRightPopupPositionProvider(),
 ) {
     if (!expanded) return
@@ -56,11 +59,13 @@ fun EditDropdownMenu(
         properties = PopupProperties(focusable = true),
     ) {
         EditDropdownMenuItems(
-            showEditItem = showEditItem,
-            onEditClick = {
-                onDismissRequest()
-                onEditClick()
-            },
+            onEditClick =
+                onEditClick?.let { onEdit ->
+                    {
+                        onDismissRequest()
+                        onEdit()
+                    }
+                },
             onDeleteClick = {
                 onDismissRequest()
                 onDeleteClick()
@@ -77,8 +82,7 @@ fun EditDropdownMenu(
  */
 @Composable
 private fun EditDropdownMenuItems(
-    showEditItem: Boolean,
-    onEditClick: () -> Unit,
+    onEditClick: (() -> Unit)?,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -93,7 +97,7 @@ private fun EditDropdownMenuItems(
                 ).background(AfternoteDesign.colors.white)
                 .width(IntrinsicSize.Max),
     ) {
-        if (showEditItem) {
+        if (onEditClick != null) {
             CustomDropdownItem(
                 text = stringResource(R.string.feature_afternote_menu_edit),
                 onClick = onEditClick,
@@ -135,7 +139,6 @@ private fun EditDropdownMenuItemsPreview() {
     AfternoteTheme {
         Box(modifier = Modifier.padding(24.dp)) {
             EditDropdownMenuItems(
-                showEditItem = true,
                 onEditClick = {},
                 onDeleteClick = {},
             )

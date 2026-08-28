@@ -58,11 +58,11 @@ fun ProcessingMethodCheckbox(
     item: ProcessingMethodItem,
     expanded: Boolean = false,
     isEditing: Boolean = false,
-    onMoreClick: () -> Unit = {},
-    onDismissDropdown: () -> Unit = {},
-    onEditClick: () -> Unit = {},
-    onDeleteClick: () -> Unit = {},
-    onEditConfirmed: (String) -> Unit = {},
+    onMoreClick: () -> Unit,
+    onDismissDropdown: () -> Unit,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onEditConfirmed: (String) -> Unit,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -174,6 +174,11 @@ private fun ProcessingMethodCheckboxPreview() {
         Column {
             ProcessingMethodCheckbox(
                 item = ProcessingMethodItem(1, "게시물 내리기"),
+                onMoreClick = {},
+                onDismissDropdown = {},
+                onEditClick = {},
+                onDeleteClick = {},
+                onEditConfirmed = {},
             )
         }
     }
@@ -187,6 +192,10 @@ private fun ProcessingMethodCheckboxEditingPreview() {
             ProcessingMethodCheckbox(
                 item = ProcessingMethodItem(1, "게시물 내리기"),
                 isEditing = true,
+                onMoreClick = {},
+                onDismissDropdown = {},
+                onEditClick = {},
+                onDeleteClick = {},
                 onEditConfirmed = {},
             )
         }

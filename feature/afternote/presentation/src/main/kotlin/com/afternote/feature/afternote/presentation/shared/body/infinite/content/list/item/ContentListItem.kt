@@ -36,7 +36,7 @@ import com.afternote.feature.afternote.presentation.R
 fun AfternoteListItem(
     uiModel: ListItemUiModel,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = {},
+    onClick: () -> Unit,
 ) {
     Row(
         modifier =
@@ -104,6 +104,7 @@ private fun AfternoteListItemPreview() {
                     iconResId = R.drawable.feature_afternote_img_insta_pattern,
                     type = AfternoteType.SOCIAL_NETWORK,
                 ),
+            onClick = {},
         )
     }
 }

@@ -145,8 +145,8 @@ fun AccountDetailScreen(
     content: AccountDetailContent = AccountDetailContent(),
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     isEditable: Boolean = true,
-    onEditClick: () -> Unit = {},
-    onDeleteConfirm: () -> Unit = {},
+    onEditClick: () -> Unit,
+    onDeleteConfirm: () -> Unit,
     state: AfternoteDetailState = rememberAfternoteDetailState(),
 ) {
     if (isEditable && state.showDeleteDialog) {
@@ -330,6 +330,7 @@ private fun AccountDetailScreenPreview() {
             content = PreviewAccountInstaContent,
             onBackClick = {},
             onEditClick = {},
+            onDeleteConfirm = {},
         )
     }
 }
@@ -348,6 +349,7 @@ private fun AccountDetailScreenWithDropdownPreview() {
             content = PreviewAccountInstaContent,
             onBackClick = {},
             onEditClick = {},
+            onDeleteConfirm = {},
             state = stateWithDropdown,
         )
     }

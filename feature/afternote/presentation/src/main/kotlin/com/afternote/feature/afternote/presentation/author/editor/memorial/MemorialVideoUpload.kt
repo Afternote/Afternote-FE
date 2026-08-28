@@ -72,8 +72,8 @@ fun MemorialVideoUpload(
     videoUrl: String? = null,
     thumbnailUrl: String? = null,
     onAddVideoClick: () -> Unit,
-    onThumbnailBytesReady: (ByteArray?) -> Unit = {},
-    onThumbnailExtractionFailed: (Throwable) -> Unit = {},
+    onThumbnailBytesReady: (ByteArray?) -> Unit,
+    onThumbnailExtractionFailed: (Throwable) -> Unit,
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     val hasVideo = !videoUrl.isNullOrBlank()
@@ -235,12 +235,16 @@ private fun MemorialVideoUploadPreview() {
             // 영상 없음
             MemorialVideoUpload(
                 onAddVideoClick = {},
+                onThumbnailBytesReady = {},
+                onThumbnailExtractionFailed = {},
             )
 
             // 영상 있음 (실기기에서 선택 시 썸네일 표시)
             MemorialVideoUpload(
                 videoUrl = "test",
                 onAddVideoClick = {},
+                onThumbnailBytesReady = {},
+                onThumbnailExtractionFailed = {},
             )
         }
     }

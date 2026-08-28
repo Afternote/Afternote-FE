@@ -65,10 +65,10 @@ import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDis
 fun MemorialPlaylistEntry(
     songs: List<Song>,
     modifier: Modifier = Modifier,
-    onBackClick: () -> Unit = {},
-    onNavigateToAddSongScreen: () -> Unit = {},
-    onClearAllSongs: () -> Unit = {},
-    onRemoveSongs: (Set<String>) -> Unit = {},
+    onBackClick: () -> Unit,
+    onNavigateToAddSongScreen: () -> Unit,
+    onClearAllSongs: () -> Unit,
+    onRemoveSongs: (Set<String>) -> Unit,
     initialEditMode: Boolean = false,
     initialSelectedSongKeys: Set<String> = emptySet(),
 ) {
@@ -172,6 +172,10 @@ private fun MemorialPlaylistEntryPreview() {
     AfternoteLightTheme {
         MemorialPlaylistEntry(
             songs = memorialPlaylistPreviewSongs().take(3),
+            onBackClick = {},
+            onNavigateToAddSongScreen = {},
+            onClearAllSongs = {},
+            onRemoveSongs = {},
         )
     }
 }
@@ -182,6 +186,10 @@ private fun MemorialPlaylistEntryEditModePreview() {
     AfternoteLightTheme {
         MemorialPlaylistEntry(
             songs = memorialPlaylistPreviewSongs().take(4),
+            onBackClick = {},
+            onNavigateToAddSongScreen = {},
+            onClearAllSongs = {},
+            onRemoveSongs = {},
             initialEditMode = true,
         )
     }
@@ -193,6 +201,10 @@ private fun MemorialPlaylistEntryEditModeSelectionPreview() {
     AfternoteLightTheme {
         MemorialPlaylistEntry(
             songs = memorialPlaylistPreviewSongs().take(4),
+            onBackClick = {},
+            onNavigateToAddSongScreen = {},
+            onClearAllSongs = {},
+            onRemoveSongs = {},
             initialEditMode = true,
             initialSelectedSongKeys = setOf("preview:1", "preview:3"),
         )
