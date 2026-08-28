@@ -50,6 +50,7 @@ import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.testing.FakeMindRecordReceiverRepository
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
+import com.afternote.feature.receiver.domain.error.ReceiverRejectionReason
 import com.afternote.feature.receiver.domain.model.AfterNoteListItem
 import com.afternote.feature.receiver.domain.model.AfterNotesListResult
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
@@ -372,10 +373,8 @@ class ReceiverRuntimeCompletionAndroidTest {
             }
         verifyEmailResults.addLast(
             Result.failure(
-                ReceiverFailure.ServerRejection(
-                    status = 400,
-                    serverMessage = "인증번호가 만료되었습니다. 다시 발급해 주세요.",
-                    serverCode = 1902,
+                ReceiverFailure.UserRejection(
+                    reason = ReceiverRejectionReason.RECEIVER_EMAIL_AUTH_CODE_NOT_FOUND,
                     cause = CAUSE,
                 ),
             ),
@@ -416,7 +415,7 @@ class ReceiverRuntimeCompletionAndroidTest {
             .onNodeWithText(context.getString(AfternoteFeatureR.string.receiver_verify_next_button))
             .performClick()
         composeRule
-            .onNodeWithText("인증번호가 만료되었습니다. 다시 발급해 주세요.")
+            .onNodeWithText("인증번호가 만료되었거나 존재하지 않습니다. 다시 요청해주세요.")
             .assertIsDisplayed()
 
         composeRule

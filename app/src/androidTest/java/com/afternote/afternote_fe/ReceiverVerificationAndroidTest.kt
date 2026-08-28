@@ -13,6 +13,7 @@ import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
+import com.afternote.feature.receiver.domain.error.ReceiverRejectionReason
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
 import com.afternote.feature.receiver.domain.model.ReceiverEmailAuthResult
@@ -52,10 +53,8 @@ class ReceiverVerificationAndroidTest {
             }
         verifyEmailResults.addLast(
             Result.failure(
-                ReceiverFailure.ServerRejection(
-                    status = 400,
-                    serverMessage = "인증번호가 일치하지 않습니다.",
-                    serverCode = 1903,
+                ReceiverFailure.UserRejection(
+                    reason = ReceiverRejectionReason.RECEIVER_EMAIL_AUTH_CODE_MISMATCH,
                     cause = CAUSE,
                 ),
             ),
@@ -81,7 +80,7 @@ class ReceiverVerificationAndroidTest {
         composeRule.onNodeWithText("인증번호가 전송되었습니다.\n수신 된 인증번호를 입력해 주세요.").assertIsDisplayed()
         composeRule.onNodeWithText("인증번호").performTextInput("123456")
         composeRule.onNodeWithText("다음").performClick()
-        composeRule.onNodeWithText("인증번호가 일치하지 않습니다.").assertIsDisplayed()
+        composeRule.onNodeWithText("이메일 인증번호가 일치하지 않습니다.").assertIsDisplayed()
 
         composeRule.onNodeWithText("다음").performClick()
         composeRule.waitUntil(timeoutMillis = 5_000) { verifiedCalls == 1 }

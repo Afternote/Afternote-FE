@@ -7,6 +7,7 @@ import com.afternote.feature.receiver.data.dto.ReceivedAfternoteDto
 import com.afternote.feature.receiver.data.dto.ReceivedAfternoteListDto
 import com.afternote.feature.receiver.data.service.ReceiverAfternoteApiService
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
+import com.afternote.feature.receiver.domain.error.ReceiverRejectionReason
 import com.afternote.feature.receiver.domain.model.AfterNoteListItem
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.awaitCancellation
@@ -43,7 +44,7 @@ class ReceiverAfternotePagingSourceTest {
     }
 
     @Test
-    fun `사유를 가르지 않은 서버 거절은 code 를 실은 ServerRejection 으로 남는다`() {
+    fun `표시 사유를 아는 서버 거절은 code 대신 도메인 사유를 싣는다`() {
         val otherRejection =
             ApiException(
                 status = 400,
@@ -55,10 +56,9 @@ class ReceiverAfternotePagingSourceTest {
         val result = loadWith { throw otherRejection }
 
         val error = (result as PagingSource.LoadResult.Error).throwable
-        assertTrue("ServerRejection 이어야 한다: $error", error is ReceiverFailure.ServerRejection)
-        val rejection = error as ReceiverFailure.ServerRejection
-        assertEquals(400, rejection.status)
-        assertEquals(1902, rejection.serverCode)
+        assertTrue("UserRejection 이어야 한다: $error", error is ReceiverFailure.UserRejection)
+        val rejection = error as ReceiverFailure.UserRejection
+        assertEquals(ReceiverRejectionReason.RECEIVER_EMAIL_AUTH_CODE_NOT_FOUND, rejection.reason)
         assertEquals(otherRejection, rejection.cause)
     }
 
