@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class MusicSearchResponseDto(
-    @SerialName("tracks") val tracks: List<MusicTrackDto> = emptyList(),
+    @SerialName("tracks") val tracks: List<MusicTrackDto>,
 )
 
 @Serializable

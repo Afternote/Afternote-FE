@@ -2,7 +2,6 @@ package com.afternote.feature.afternote.presentation.author.editor.memorial
 
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -42,7 +41,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import coil3.compose.AsyncImage
-import coil3.compose.AsyncImagePainter
 import com.afternote.core.ui.button.PlusBadgeButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -52,7 +50,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 
-private const val TAG = "MemorialVideoUpload"
 internal const val MEMORIAL_VIDEO_ADD_TEST_TAG = "memorialVideoAdd"
 
 /**
@@ -202,13 +199,6 @@ fun MemorialVideoUpload(
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop,
                             error = painterResource(R.drawable.feature_afternote_img_placeholder_1),
-                            onError = { state: AsyncImagePainter.State.Error ->
-                                Log.e(
-                                    TAG,
-                                    "Coil load failed: url=$thumbnailUrl",
-                                    state.result.throwable,
-                                )
-                            },
                         )
                     }
 

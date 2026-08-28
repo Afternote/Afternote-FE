@@ -27,7 +27,6 @@ import javax.net.ssl.X509TrustManager
  * 인터셉터 단위 테스트용 가짜 [Interceptor.Chain].
  *
  * 나가는 요청을 [sentRequest] 에 잡아 두고, 돌려줄 응답은 [respond] 가 정한다 — 기본은 성공 봉투다.
- * 실패 응답을 주면 `ApiErrorInterceptor` 의 본문 파싱까지 실제 코드로 태울 수 있다.
  */
 internal class FakeInterceptorChain(
     private val url: String = "https://afternote.kro.kr/api/v1/test",

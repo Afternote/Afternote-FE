@@ -6,8 +6,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ReceivedAfternoteListDto(
-    @SerialName("afternotes") val afternotes: List<ReceivedAfternoteDto> = emptyList(),
-    @SerialName("totalCount") val totalCount: Int = 0,
+    @SerialName("afternotes") val afternotes: List<ReceivedAfternoteDto>,
+    @SerialName("totalCount") val totalCount: Int,
 )
 
 @Serializable
@@ -26,7 +26,7 @@ data class ReceivedAfternoteDetailDto(
     @SerialName("id") val id: Long,
     @SerialName("category") val category: String? = null,
     @SerialName("title") val serviceName: String,
-    @SerialName("actions") val processingMethods: List<String> = emptyList(),
+    @SerialName("actions") val processingMethods: List<String>?,
     @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
     @SerialName("senderName") val senderName: String? = null,
     @SerialName("createdAt") val createdAt: String? = null,
@@ -43,7 +43,7 @@ data class ReceivedCredentialsDto(
 @Serializable
 data class ReceivedPlaylistDto(
     @SerialName("atmosphere") val atmosphere: String? = null,
-    @SerialName("songs") val songs: List<ReceivedSongDto> = emptyList(),
+    @SerialName("songs") val songs: List<ReceivedSongDto>,
     @SerialName("memorialVideo") val memorialVideo: ReceivedMemorialVideoDto? = null,
 )
 

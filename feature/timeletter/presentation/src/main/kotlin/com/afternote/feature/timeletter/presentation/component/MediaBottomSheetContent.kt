@@ -47,7 +47,7 @@ fun MediaBottomSheetContent(
         )
         HorizontalDivider()
         MediaItem(
-            painter = painterResource(id = R.drawable.ic_mic),
+            painter = painterResource(id = CoreUiR.drawable.core_ui_ic_mic),
             text = "음성 추가하기",
             onClick = onVoiceClick,
         )

@@ -3,14 +3,21 @@ package com.afternote.feature.onboarding.presentation.terms
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.remember
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import com.afternote.core.ui.testing.MinimumTouchTargetSize
+import com.afternote.core.ui.testing.assertAccessibleClickTargets
+import com.afternote.core.ui.testing.scanEnabledClickTargets
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,7 +43,10 @@ class OnboardingTermsRowWidthTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
-    private fun setTermsContent() {
+    private fun setTermsContent(
+        onToggleAll: (Boolean) -> Unit = {},
+        onViewTermsClick: (TermsType) -> Unit = {},
+    ) {
         composeRule.setContent {
             AfternoteTheme {
                 OnboardingTermsScreen(
@@ -46,8 +56,8 @@ class OnboardingTermsRowWidthTest {
                     onTermsToggle = {},
                     onPrivacyToggle = {},
                     onMarketingToggle = {},
-                    onToggleAll = {},
-                    onViewTermsClick = {},
+                    onToggleAll = onToggleAll,
+                    onViewTermsClick = onViewTermsClick,
                     onNextClick = {},
                     onBackClick = {},
                 )
@@ -90,5 +100,31 @@ class OnboardingTermsRowWidthTest {
             toggleRight.value,
             0.5f,
         )
+    }
+
+    @Test
+    fun `약관 타깃은 이름 역할 상태를 갖고 콜백을 구분한다`() {
+        var toggleAllValue: Boolean? = null
+        val openedTerms = mutableListOf<TermsType>()
+        setTermsContent(
+            onToggleAll = { toggleAllValue = it },
+            onViewTermsClick = openedTerms::add,
+        )
+
+        composeRule.assertAccessibleClickTargets()
+        val targets = composeRule.scanEnabledClickTargets()
+        val agreeAll = composeRule.activity.getString(R.string.onboarding_terms_agree_all)
+        val agreeAllTarget = targets.single { it.name == agreeAll }
+        val detailTargets = targets.filter { it.name == "전체보기" }
+        assertEquals(Role.Checkbox, agreeAllTarget.role)
+        assertEquals("Off", agreeAllTarget.toggleableState.toString())
+        assertFalse(agreeAllTarget.isSmallerThan(MinimumTouchTargetSize))
+        assertEquals(3, detailTargets.size)
+        assertEquals(listOf(Role.Button, Role.Button, Role.Button), detailTargets.map { it.role })
+
+        composeRule.onNodeWithText(agreeAll).performClick()
+        composeRule.onAllNodesWithText("전체보기")[0].performClick()
+        assertEquals(true, toggleAllValue)
+        assertEquals(listOf(TermsType.SERVICE), openedTerms)
     }
 }

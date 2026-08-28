@@ -26,6 +26,7 @@ data class ReceiverAuthPresignedUrl(
     val fileKey: String,
     val fileUrl: String,
     val contentType: String,
+    val contentLength: Long,
 )
 
 data class DeliveryVerification(
