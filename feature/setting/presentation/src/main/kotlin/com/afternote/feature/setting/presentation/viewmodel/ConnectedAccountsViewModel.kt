@@ -2,6 +2,7 @@ package com.afternote.feature.setting.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.feature.setting.presentation.R
@@ -42,7 +43,7 @@ class ConnectedAccountsViewModel
             loadJob =
                 viewModelScope.launch {
                     _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-                    runCatching { userRepository.getConnectedAccounts() }
+                    runCatchingCancellable { userRepository.getConnectedAccounts() }
                         .onSuccess { accounts ->
                             _uiState.update {
                                 it.copy(isLoading = false, accounts = accounts.toStateList(), errorMessage = null)
@@ -75,7 +76,7 @@ class ConnectedAccountsViewModel
             if (mutationJob?.isActive == true) return
             mutationJob =
                 viewModelScope.launch {
-                    runCatching { userRepository.linkConnectedAccount(provider, accessToken) }
+                    runCatchingCancellable { userRepository.linkConnectedAccount(provider, accessToken) }
                         .onSuccess { accounts -> _uiState.update { it.copy(accounts = accounts.toStateList()) } }
                         .onFailure { _events.send(ConnectedAccountsEvent.ShowError("계정 연결에 실패했습니다.")) }
                 }
@@ -85,7 +86,7 @@ class ConnectedAccountsViewModel
             if (mutationJob?.isActive == true) return
             mutationJob =
                 viewModelScope.launch {
-                    runCatching { userRepository.unlinkConnectedAccount(provider) }
+                    runCatchingCancellable { userRepository.unlinkConnectedAccount(provider) }
                         .onSuccess { accounts -> _uiState.update { it.copy(accounts = accounts.toStateList()) } }
                         .onFailure { _events.send(ConnectedAccountsEvent.ShowError("계정 연결 해제에 실패했습니다.")) }
                 }

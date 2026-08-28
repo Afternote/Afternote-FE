@@ -37,5 +37,7 @@ dependencies {
     implementation(libs.googleid)
     testImplementation(libs.junit)
     testImplementation(libs.coroutines.test)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core.ktx)
     testImplementation(testFixtures(projects.core.domain))
 }

@@ -260,20 +260,11 @@ private fun SettingScreenContent(
         }
 
         is SettingUiState.Error -> {
-            Column(
+            SettingLoadErrorContent(
+                message = state.message,
+                onRetry = onRetry,
                 modifier = modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                SettingLoadErrorContent(
-                    message = state.message,
-                    onRetry = onRetry,
-                    modifier = Modifier.weight(1f),
-                )
-                SettingMenuItem(
-                    label = stringResource(R.string.settings_logout),
-                    onClick = { showLogoutDialog = true },
-                )
-            }
+            )
         }
     }
 }

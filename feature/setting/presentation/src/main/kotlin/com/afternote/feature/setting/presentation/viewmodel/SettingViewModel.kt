@@ -2,6 +2,7 @@ package com.afternote.feature.setting.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -66,7 +67,7 @@ class SettingViewModel
             loadJob =
                 viewModelScope.launch {
                     _uiState.value = SettingUiState.Loading
-                    runCatching { userRepository.getMyProfile() }
+                    runCatchingCancellable { userRepository.getMyProfile() }
                         .onSuccess { profile ->
                             _uiState.value =
                                 SettingUiState.Success(

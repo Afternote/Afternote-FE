@@ -1,7 +1,7 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
 data class PushNotificationUiState(
-    val isLoading: Boolean = false,
+    val isLoading: Boolean = true,
     val errorMessage: String? = null,
     val isDeviceAlarmOn: Boolean = false,
     // 마케팅 알림 (기기 알림 꺼졌을 때)
