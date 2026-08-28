@@ -44,7 +44,33 @@ class AfternoteDetailViewModelTest {
     }
 
     @Test
-    fun `refreshOnReturn - 진행 중인 최초 로드와 겹치면 건너뛴다`() =
+    fun `첫 진입 resume 은 재조회를 트리거하지 않는다`() =
+        runTest {
+            // init 로드가 «실패» 로 빠르게 끝난 뒤 첫 ON_RESUME 이 도착하는 CI 회귀 시나리오 —
+            // 여기서 자동 재조회가 걸리면 에러 화면이 표시되지 않은 채 다음 응답을 소비해 버린다.
+            val results =
+                ArrayDeque<Result<Detail>>(
+                    listOf(
+                        Result.failure(IOException("offline")),
+                        Result.success(detail(serviceName = "Instagram")),
+                    ),
+                )
+            val repository =
+                FakeAfternoteRepository.strict().apply {
+                    onGetDetail = { results.removeFirst() }
+                }
+            val viewModel = viewModel(repository)
+            val states = recordStates(viewModel)
+
+            // 첫 진입 화면의 ON_RESUME (init 로드는 이미 실패로 종료됨).
+            viewModel.refreshOnReturn()
+
+            assertEquals(listOf(73L), repository.requestedDetailIds)
+            assertTrue(states.last() is AfternoteDetailUiState.Error)
+        }
+
+    @Test
+    fun `refreshOnReturn - 진행 중인 로드와 겹치면 건너뛴다`() =
         runTest {
             val gate = CompletableDeferred<Unit>()
             val repository =
@@ -57,7 +83,8 @@ class AfternoteDetailViewModelTest {
             val viewModel = viewModel(repository)
             val states = recordStates(viewModel)
 
-            // 최초 진입 화면의 ON_RESUME — init 로드가 아직 도는 중이다.
+            // init 로드가 아직 도는 중 — 첫 resume(스킵) 뒤 또 한 번 resume 이 와도 중복이 없어야 한다.
+            viewModel.refreshOnReturn()
             viewModel.refreshOnReturn()
             gate.complete(Unit)
 
@@ -82,7 +109,8 @@ class AfternoteDetailViewModelTest {
             val viewModel = viewModel(repository)
             val states = recordStates(viewModel)
 
-            viewModel.refreshOnReturn()
+            viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
+            viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME
 
             assertEquals(listOf(73L, 73L), repository.requestedDetailIds)
             assertEquals("Facebook", states.last().serviceNameOrNull())
@@ -109,7 +137,8 @@ class AfternoteDetailViewModelTest {
             val viewModel = viewModel(repository, errorReporter = reporter)
             val states = recordStates(viewModel)
 
-            viewModel.refreshOnReturn()
+            viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
+            viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME
 
             // 잘 보고 있던 상세가 에러 화면으로 대체되지 않는다.
             assertEquals("Instagram", states.last().serviceNameOrNull())

@@ -55,8 +55,18 @@ class AfternoteDetailViewModel
             savedStateHandle.toRoute<AfternoteRoute.DetailRoute>().itemId
         private val internalState = MutableStateFlow(InternalState())
 
-        /** 진행 중인 상세 조회. 최초 진입 ON_RESUME 과 init 로드의 중복을 이 Job 으로 가른다. */
+        /** 진행 중인 상세 조회 — 첫 진입 이후의 ON_RESUME 이 실행 중인 로드와 겹치면 건너뛰기 위한 가드. */
         private var loadJob: Job? = null
+
+        /**
+         * 다음 [refreshOnReturn] 이 첫 ON_RESUME(진입 자체)인지. 첫 resume 은 init 로드와 같은
+         * 진입이므로 갱신하지 않는다 — Job 가드만으로는 init 로드가 (특히 실패로) 빨리 끝난 뒤
+         * 도착한 첫 resume 이 순차 재조회를 걸어, 에러 화면과 수동 재시도가 통째로 건너뛰어진다.
+         * 컴포지션 플래그(rememberSaveable)가 아니라 VM 필드인 이유: 프로세스 사망 후 복원에서
+         * SavedState 는 살아 돌아오는데 VM 은 새로 만들어져 수명이 어긋난다 — VM 필드는 init 로드와
+         * 같은 수명이라 복원 직후의 첫 resume 도 정확히 스킵된다.
+         */
+        private var isFirstResume = true
 
         val uiState: StateFlow<AfternoteDetailUiState> =
             internalState
@@ -90,11 +100,14 @@ class AfternoteDetailViewModel
          * - 실패해도 보고 있던 상세를 유지한다. 일시적 실패로 잘 보던 화면이 에러로 대체되면
          *   사용자 입장에서는 인과가 설명되지 않는다.
          *
-         * 진입 직후의 ON_RESUME 은 init 로드와 겹친다 — 진행 중이면 건너뛴다. 컴포지션 쪽 플래그가
-         * 아니라 VM 이 들고 있는 Job 으로 판단해야 프로세스 사망 후 복원(VM 재생성 + 플래그 복원)에서도
-         * 중복이 나지 않는다 (마인드레코드 `DiaryListViewModel.refreshOnReturn` 과 같은 규칙).
+         * 첫 ON_RESUME(진입 자체)은 [isFirstResume] 로 스킵하고, 그 이후의 resume 이 실행 중인
+         * 로드와 겹치면(빠른 resume 연타 등) 진행 중인 Job 으로 건너뛴다.
          */
         fun refreshOnReturn() {
+            if (isFirstResume) {
+                isFirstResume = false
+                return
+            }
             if (loadJob?.isActive == true) return
             loadDetail(afternoteIdFromNav, showsLoading = false, keepsStateOnFailure = true)
         }
