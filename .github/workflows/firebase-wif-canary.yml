@@ -34,6 +34,7 @@ jobs:
   guard:
     name: Guard deployable ref and explicit upload confirmation
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions: {}
     steps:
       - name: Restrict canary to deployable branches
@@ -58,6 +59,7 @@ jobs:
     name: Build signed APK and canary-upload with WIF
     needs: guard
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     environment: release-distribution
     permissions:
       attestations: write
@@ -67,6 +69,8 @@ jobs:
       # google-github-actions/auth가 ADC 파일을 안전하게 만들려면 checkout이 먼저 실행돼야 한다.
       - name: Clone repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Prepare Firebase release notes
         env:

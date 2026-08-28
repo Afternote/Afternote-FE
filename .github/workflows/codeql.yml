@@ -2,6 +2,8 @@ name: CodeQL
 
 on:
   pull_request:
+  merge_group:
+    types: [checks_requested]
   push:
     branches: [develop, main]
   schedule:
@@ -15,7 +17,7 @@ on:
         type: number
 
 concurrency:
-  group: codeql-${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pull_request_number || github.ref }}
+  group: codeql-${{ github.workflow }}-${{ github.event.pull_request.number || github.event.merge_group.head_ref || inputs.pull_request_number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -35,6 +37,7 @@ jobs:
       pull-requests: read
     outputs:
       actions_required: ${{ steps.path-scope.outputs.codeql_actions || 'true' }}
+      javascript_typescript_required: ${{ steps.path-scope.outputs.codeql_javascript_typescript || 'true' }}
       java_kotlin_required: ${{ steps.path-scope.outputs.codeql_java_kotlin || 'true' }}
     steps:
       - name: Clone repository
@@ -83,9 +86,19 @@ jobs:
           gh api --paginate --slurp \
             "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files?per_page=100" \
             > "$files_json"
-          env -u GH_TOKEN -u GITHUB_TOKEN \
+          docs_only=$(env -u GH_TOKEN -u GITHUB_TOKEN \
             node .github/scripts/classify-documentation-changes.mjs \
-            "$CHANGED_FILES" < "$files_json" > /dev/null
+            "$CHANGED_FILES" < "$files_json")
+          if [ "$docs_only" = "true" ]; then
+            echo "codeql_javascript_typescript=false" >> "$GITHUB_OUTPUT"
+          elif [ "$docs_only" = "false" ]; then
+            # 이 저장소의 런타임 JavaScript 는 CI/릴리스 자동화다. 문서 전용이 아닌
+            # 변경은 해당 자동화와 상호작용할 수 있으므로 JS 분석을 fail-open 하지 않는다.
+            echo "codeql_javascript_typescript=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::문서 변경 분류 결과가 유효하지 않습니다: $docs_only"
+            exit 1
+          fi
           env -u GH_TOKEN -u GITHUB_TOKEN \
             node .github/scripts/resolve-pr-impact.mjs "$files_json" \
             | grep '^codeql_' >> "$GITHUB_OUTPUT"
@@ -125,6 +138,45 @@ jobs:
           CODEQL_DISPLAY_LANGUAGE: actions
           CODEQL_REQUIRED_PATH_FRAGMENT: .github/workflows/
           CODEQL_SOURCE_EXTENSIONS: .yml,.yaml
+        run: node .github/scripts/verify-codeql-database.mjs
+
+  analyze-javascript-typescript:
+    name: Analyze (javascript-typescript)
+    needs: classify-changes
+    if: ${{ !cancelled() && (needs.classify-changes.result != 'success' || needs.classify-changes.outputs.javascript_typescript_required != 'false') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        with:
+          languages: javascript-typescript
+          build-mode: none
+
+      - name: Analyze and upload CodeQL results
+        id: analyze
+        uses: github/codeql-action/analyze@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        with:
+          category: /language:javascript-typescript
+
+      - name: Verify analyzed sources in the CodeQL database
+        env:
+          CODEQL_BUILD_MODE: none
+          # codeql-action의 db-locations output은 사용자 입력 alias가 아니라
+          # canonical extractor 이름(javascript)을 key로 사용한다.
+          CODEQL_DATABASE_LANGUAGE: javascript
+          CODEQL_DATABASE_LOCATIONS: ${{ steps.analyze.outputs.db-locations }}
+          CODEQL_DISPLAY_LANGUAGE: javascript-typescript
+          CODEQL_REQUIRED_PATH_FRAGMENT: .github/scripts/
+          CODEQL_SOURCE_EXTENSIONS: .js,.jsx,.mjs,.cjs,.ts,.tsx
         run: node .github/scripts/verify-codeql-database.mjs
 
   analyze-java-kotlin:

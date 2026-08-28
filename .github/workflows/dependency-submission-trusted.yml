@@ -20,6 +20,7 @@ jobs:
     if: github.event_name == 'push'
     name: Submit trusted branch dependency graph
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: write
     env:
@@ -50,6 +51,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/develop'
     name: Submit main dependency graph baseline
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: write
     env:

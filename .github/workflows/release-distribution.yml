@@ -26,6 +26,7 @@ jobs:
   distribute:
     name: Build Release and Upload to Firebase App Distribution
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     # 보호 규칙(deployment branch 제한·required reviewer·environment secret)은 워크플로 파일로
     # 지정할 수 없다 — 여긴 연결점만 만들고 실제 설정은 Settings → Environments 에서 한다.
     environment: release-distribution
@@ -42,6 +43,8 @@ jobs:
       # ref 가 main 으로 고정되므로, 예전의 수동 실행용 브랜치 가드는 더 방어할 대상이 없어 제거했다.
       - name: Clone repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Load release metadata from main PR
         env:
