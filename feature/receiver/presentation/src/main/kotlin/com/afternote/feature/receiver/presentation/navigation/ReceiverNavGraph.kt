@@ -142,8 +142,8 @@ fun NavGraphBuilder.receiverNavGraph(
             val playlistUiState by playlistViewModel.uiState.collectAsStateWithLifecycle()
 
             // 화면을 떠났다 돌아오면 다시 조회한다 — 백스택에 살아 있는 동안 옛 값이 남지 않게
-            // 한다 (#701). 로딩을 방출하지 않는 refreshOnReturn() 을 쓰고, 최초 진입의 중복
-            // 호출은 VM 이 진행 중인 Job 으로 막는다.
+            // 한다 (#701). 로딩을 방출하지 않는 refreshOnReturn() 을 쓴다. 첫 진입의 ON_RESUME
+            // 스킵(진입은 init 로드가 담당)과 실행 중 로드와의 중복 차단은 VM 이 판단한다.
             LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
                 playlistViewModel.refreshOnReturn()
             }

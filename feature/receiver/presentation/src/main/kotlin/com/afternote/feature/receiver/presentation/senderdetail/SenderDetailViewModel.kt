@@ -48,8 +48,17 @@ class SenderDetailViewModel
         private val _uiState = MutableStateFlow<SenderDetailUiState>(SenderDetailUiState.Loading)
         val uiState: StateFlow<SenderDetailUiState> = _uiState.asStateFlow()
 
-        /** 진행 중인 상태 조회. 최초 진입 ON_RESUME 과 init 로드의 중복을 이 Job 으로 가른다. */
+        /** 진행 중인 상태 조회 — 첫 진입 이후의 ON_RESUME 이 실행 중인 로드와 겹치면 건너뛰기 위한 가드. */
         private var loadJob: Job? = null
+
+        /**
+         * 다음 [refreshOnReturn] 이 첫 ON_RESUME(진입 자체)인지. 첫 resume 은 init 로드와 같은
+         * 진입이므로 갱신하지 않는다 — Job 가드만으로는 init 로드가 빨리 끝난 뒤 도착한 첫
+         * resume 이 순차 재조회를 건다. VM 필드인 이유는
+         * [com.afternote.feature.receiver.presentation.detail.ReceivedAfternoteDetailViewModel] 과
+         * 동일 — 프로세스 사망 후 복원에서도 init 로드와 수명이 일치한다.
+         */
+        private var isFirstResume = true
 
         init {
             load()
@@ -60,11 +69,14 @@ class SenderDetailViewModel
          * 옛 상태(예: "신청 전")를 그대로 보여주지 않게 한다.
          *
          * 최초 진입 로드와 두 가지가 다르다 — 로딩을 방출하지 않고, 상태 조회가 실패해도 보고 있던
-         * 정보 박스를 유지한다. 진입 직후의 ON_RESUME 은 init 로드와 겹친다 — 진행 중이면 건너뛴다.
-         * 컴포지션 쪽 플래그가 아니라 VM 이 들고 있는 Job 으로 판단해야 프로세스 사망 후 복원에서도
-         * 중복이 나지 않는다.
+         * 정보 박스를 유지한다. 첫 ON_RESUME(진입 자체)은 [isFirstResume] 로 스킵하고, 그 이후의
+         * resume 이 실행 중인 로드와 겹치면 진행 중인 Job 으로 건너뛴다.
          */
         fun refreshOnReturn() {
+            if (isFirstResume) {
+                isFirstResume = false
+                return
+            }
             if (loadJob?.isActive == true) return
             load(showsLoading = false, keepsStateOnFailure = true)
         }

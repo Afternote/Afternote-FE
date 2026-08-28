@@ -65,8 +65,9 @@ fun SenderDetailScreen(
     val shouldOpenReceiverHome = (uiState as? SenderDetailUiState.Success)?.shouldOpenReceiverHome == true
 
     // 열람 신청 흐름에서 복귀하면 상태를 다시 조회한다 — 신청 직후 돌아온 화면이 "신청 전" 을
-    // 그대로 보여주지 않게 한다 (#701). 로딩을 방출하지 않는 refreshOnReturn() 을 쓰고,
-    // 최초 진입의 중복 호출은 VM 이 진행 중인 Job 으로 막는다.
+    // 그대로 보여주지 않게 한다 (#701). 로딩을 방출하지 않는 refreshOnReturn() 을 쓴다.
+    // 첫 진입의 ON_RESUME 스킵(진입은 init 로드가 담당)과 실행 중 로드와의 중복 차단은
+    // VM 이 판단한다.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refreshOnReturn()
     }

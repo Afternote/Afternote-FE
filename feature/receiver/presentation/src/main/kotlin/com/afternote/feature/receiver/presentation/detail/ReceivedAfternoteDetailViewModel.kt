@@ -46,8 +46,17 @@ class ReceivedAfternoteDetailViewModel
 
         private val internalState = MutableStateFlow(InternalState())
 
-        /** 진행 중인 상세 조회. 최초 진입 ON_RESUME 과 init 로드의 중복을 이 Job 으로 가른다. */
+        /** 진행 중인 상세 조회 — 첫 진입 이후의 ON_RESUME 이 실행 중인 로드와 겹치면 건너뛰기 위한 가드. */
         private var loadJob: Job? = null
+
+        /**
+         * 다음 [refreshOnReturn] 이 첫 ON_RESUME(진입 자체)인지. 첫 resume 은 init 로드와 같은
+         * 진입이므로 갱신하지 않는다 — Job 가드만으로는 init 로드가 (특히 실패로) 빨리 끝난 뒤
+         * 도착한 첫 resume 이 순차 재조회를 걸어, 에러 화면과 «다시 시도하기» 가 통째로
+         * 건너뛰어진다 (#701 CI 회귀). VM 필드인 이유는 [AfternoteDetailViewModel] 과 동일 —
+         * 프로세스 사망 후 복원에서도 init 로드와 수명이 일치한다.
+         */
+        private var isFirstResume = true
 
         val uiState: StateFlow<ReceivedAfternoteDetailUiState> =
             internalState
@@ -70,10 +79,14 @@ class ReceivedAfternoteDetailViewModel
          * 다른 화면에서 상세로 복귀했을 때의 자동 갱신 (#701).
          *
          * [retry] 와 두 가지가 다르다 — 로딩을 방출하지 않고, 실패해도 보고 있던 상세를 유지한다.
-         * 진입 직후의 ON_RESUME 은 init 로드와 겹친다 — 진행 중이면 건너뛴다. 컴포지션 쪽 플래그가
-         * 아니라 VM 이 들고 있는 Job 으로 판단해야 프로세스 사망 후 복원에서도 중복이 나지 않는다.
+         * 첫 ON_RESUME(진입 자체)은 [isFirstResume] 로 스킵하고, 그 이후의 resume 이 실행 중인
+         * 로드와 겹치면 진행 중인 Job 으로 건너뛴다.
          */
         fun refreshOnReturn() {
+            if (isFirstResume) {
+                isFirstResume = false
+                return
+            }
             if (loadJob?.isActive == true) return
             loadDetail(afternoteIdFromNav, showsLoading = false, keepsStateOnFailure = true)
         }

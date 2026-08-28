@@ -143,7 +143,25 @@ class ReceiverHomeViewModelTest {
     // region 재진입 갱신 (#701)
 
     @Test
-    fun `refreshOnReturn - 진행 중인 최초 로드와 겹치면 건너뛴다`() =
+    fun `첫 진입 resume 은 재조회를 트리거하지 않는다`() =
+        runTest(dispatcher) {
+            val fixture = Fixture()
+            fixture.receiver.onGetReceivedAfterNotes = { Result.success(afterNotes(totalCount = 5)) }
+            fixture.mindRecord.result = Result.success(mindRecords(dailyQuestionCount = 1, diaryCount = 1))
+            fixture.timeLetter.onGetReceivedTimeLetters = { timeLetters(totalCount = 1) }
+            val viewModel = fixture.viewModel()
+            advanceUntilIdle()
+
+            // 첫 진입 화면의 ON_RESUME (init 로드는 이미 종료됨) — 재조회가 걸리면 안 된다.
+            viewModel.refreshOnReturn()
+            advanceUntilIdle()
+
+            assertEquals(1, fixture.receiver.getReceivedAfterNotesCalls)
+            assertTrue(viewModel.uiState.value is ReceiverHomeUiState.Success)
+        }
+
+    @Test
+    fun `refreshOnReturn - 진행 중인 로드와 겹치면 건너뛴다`() =
         runTest(dispatcher) {
             val fixture = Fixture()
             fixture.receiver.onGetReceivedAfterNotes = { Result.success(afterNotes(totalCount = 5)) }
@@ -151,7 +169,8 @@ class ReceiverHomeViewModelTest {
             fixture.timeLetter.onGetReceivedTimeLetters = { timeLetters(totalCount = 1) }
 
             val viewModel = fixture.viewModel()
-            // 최초 진입 화면의 ON_RESUME — init 로드가 아직 도는 중이다.
+            // init 로드가 아직 도는 중 — 첫 resume(스킵) 뒤 또 한 번 resume 이 와도 중복이 없어야 한다.
+            viewModel.refreshOnReturn()
             viewModel.refreshOnReturn()
             advanceUntilIdle()
 
@@ -167,11 +186,12 @@ class ReceiverHomeViewModelTest {
             fixture.mindRecord.result = Result.success(mindRecords(dailyQuestionCount = 1, diaryCount = 1))
             fixture.timeLetter.onGetReceivedTimeLetters = { timeLetters(totalCount = 4) }
             val viewModel = fixture.viewModel()
+            viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
             advanceUntilIdle()
             viewModel.onEvent(ReceiverHomeEvent.RequestDownload)
             fixture.receiver.onGetReceivedAfterNotes = { Result.success(afterNotes(totalCount = 6)) }
 
-            viewModel.refreshOnReturn()
+            viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME
             // 로딩을 방출하지 않는다 — 갱신이 도는 동안에도 기존 화면을 유지한다.
             assertEquals(5, (viewModel.uiState.value as ReceiverHomeUiState.Success).afternoteTotalCount)
             advanceUntilIdle()
@@ -190,13 +210,14 @@ class ReceiverHomeViewModelTest {
             fixture.mindRecord.result = Result.success(mindRecords(dailyQuestionCount = 1, diaryCount = 1))
             fixture.timeLetter.onGetReceivedTimeLetters = { timeLetters(totalCount = 4) }
             val viewModel = fixture.viewModel()
+            viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
             advanceUntilIdle()
 
             fixture.receiver.onGetReceivedAfterNotes = { Result.failure(IllegalStateException("애프터노트 실패")) }
             fixture.mindRecord.result = Result.failure(IllegalStateException("마음의 기록 실패"))
             fixture.timeLetter.onGetReceivedTimeLetters = { throw IllegalStateException("타임레터 실패") }
             fixture.receiver.onLoadSenderMessage = { Result.failure(IllegalStateException("한 마디 실패")) }
-            viewModel.refreshOnReturn()
+            viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME
             advanceUntilIdle()
 
             // 잘 보고 있던 홈이 에러 화면으로 대체되지 않는다.
@@ -219,13 +240,14 @@ class ReceiverHomeViewModelTest {
             fixture.mindRecord.result = Result.success(mindRecords(dailyQuestionCount = 1, diaryCount = 1))
             fixture.timeLetter.onGetReceivedTimeLetters = { timeLetters(totalCount = 4) }
             val viewModel = fixture.viewModel()
+            viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
             advanceUntilIdle()
 
             // 한 소스만 실패, 나머지는 새 값으로 성공 — 실패 섹션을 null 로 꺼뜨린 부분 화면 대신
             // 완결된 기존 화면을 유지한다.
             fixture.receiver.onGetReceivedAfterNotes = { Result.failure(IllegalStateException("애프터노트 실패")) }
             fixture.timeLetter.onGetReceivedTimeLetters = { timeLetters(totalCount = 9) }
-            viewModel.refreshOnReturn()
+            viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME
             advanceUntilIdle()
 
             val state = viewModel.uiState.value as ReceiverHomeUiState.Success
