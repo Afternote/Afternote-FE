@@ -55,6 +55,18 @@ export function extractTitleIssueNumber(title) {
     return Number(matches[0][1]);
 }
 
+function issueAssigneeLogins(issue) {
+    return (issue?.assignees ?? [])
+        .map((assignee) => typeof assignee === "string" ? assignee : assignee?.login)
+        .filter(Boolean);
+}
+
+// 봇은 Issue 담당자로 지정할 수 없으므로 담당자 대조에서 면제한다.
+// review-debt-guard·review-request-all 의 봇 면제 규약과 같은 경계다.
+function isBotAuthor(user, login) {
+    return user?.type === "Bot" || login.endsWith("[bot]");
+}
+
 export async function validatePullRequestIssueLink({ pullRequest, repository, loadIssue }) {
     if (typeof loadIssue !== "function") {
         throw new Error("loadIssue 함수가 필요합니다.");
@@ -63,6 +75,7 @@ export async function validatePullRequestIssueLink({ pullRequest, repository, lo
     if (!Number.isInteger(pullRequestNumber)) {
         throw new Error("pull_request.number 값이 없습니다.");
     }
+    const author = requiredString(pullRequest?.user?.login, "pull_request.user.login");
 
     const titleIssueNumber = extractTitleIssueNumber(pullRequest.title);
     if (titleIssueNumber === null) {
@@ -85,6 +98,7 @@ export async function validatePullRequestIssueLink({ pullRequest, repository, lo
 
     const issues = [];
     const rejected = [];
+    const issuesByNumber = new Map();
     for (const issueNumber of references) {
         let issue;
         try {
@@ -97,6 +111,7 @@ export async function validatePullRequestIssueLink({ pullRequest, repository, lo
             rejected.push(`#${issueNumber}: Issue가 아니라 PR`);
             continue;
         }
+        issuesByNumber.set(issueNumber, issue);
         issues.push(issueNumber);
     }
 
@@ -110,6 +125,20 @@ export async function validatePullRequestIssueLink({ pullRequest, repository, lo
         throw new Error(
             `PR #${pullRequestNumber} 제목의 대표 Issue #${titleIssueNumber}가 실제 Issue로 확인되지 않았습니다. ${titleRejection ?? "Issue 조회 결과를 확인하세요."}`,
         );
+    }
+
+    if (!isBotAuthor(pullRequest.user, author)) {
+        const assignees = issueAssigneeLogins(issuesByNumber.get(titleIssueNumber));
+        if (assignees.length === 0) {
+            throw new Error(
+                `PR #${pullRequestNumber}의 대표 Issue #${titleIssueNumber}에 담당자가 없습니다. Issue에 @${author}를 어사인한 뒤 다시 실행하세요.`,
+            );
+        }
+        if (!assignees.some((login) => login.toLowerCase() === author.toLowerCase())) {
+            throw new Error(
+                `PR #${pullRequestNumber} 작성자 @${author}는 대표 Issue #${titleIssueNumber}의 담당자(${assignees.map((login) => `@${login}`).join(", ")})가 아닙니다. 본인이 담당하는 Issue로만 PR을 열 수 있습니다.`,
+            );
+        }
     }
     return { issues, rejected };
 }
