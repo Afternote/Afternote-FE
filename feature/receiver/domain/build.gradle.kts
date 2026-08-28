@@ -12,4 +12,7 @@ dependencies {
     implementation(projects.feature.afternote.domain)
     implementation(libs.coroutines.core)
     implementation(libs.androidx.paging.common)
+
+    testFixturesImplementation(libs.coroutines.core)
+    testFixturesImplementation(libs.androidx.paging.common)
 }
