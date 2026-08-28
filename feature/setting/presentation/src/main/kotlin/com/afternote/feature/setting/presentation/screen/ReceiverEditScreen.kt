@@ -17,6 +17,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditEvent
+import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditUiState
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditViewModel
 
 @Composable
@@ -37,6 +38,21 @@ fun ReceiverEditScreen(
         }
     }
 
+    ReceiverEditContent(
+        uiState = uiState,
+        onBackClick = onBackClick,
+        onRegister = viewModel::update,
+        modifier = modifier,
+    )
+}
+
+@Composable
+internal fun ReceiverEditContent(
+    uiState: ReceiverEditUiState,
+    onBackClick: () -> Unit,
+    onRegister: (name: String, relation: String, phone: String, email: String, message: String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val receiver = uiState.receiver
     if (receiver != null) {
         ReceiverRegisterContent(
@@ -45,7 +61,7 @@ fun ReceiverEditScreen(
             isLoading = uiState.isSaving,
             errorMessage = uiState.errorMessage,
             onBackClick = onBackClick,
-            onRegister = viewModel::update,
+            onRegister = onRegister,
             modifier = modifier,
             initialName = receiver.name,
             initialRelation = receiver.relation,

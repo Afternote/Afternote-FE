@@ -86,6 +86,35 @@ fun TimeletterScreen(
         }
     }
 
+    TimeletterScreenContent(
+        uiState = uiState,
+        viewMode = viewMode,
+        onViewModeChange = { viewMode = it },
+        snackbarHostState = snackbarHostState,
+        onLetterClick = onLetterClick,
+        onSettingClick = onSettingClick,
+        onWriteClick = onWriteClick,
+        onEditClick = onEditClick,
+        onFilterRecipientClick = onFilterRecipientClick,
+        onDeleteClick = { pendingDeleteId = it },
+        modifier = modifier,
+    )
+}
+
+@Composable
+internal fun TimeletterScreenContent(
+    uiState: TimeletterUiState,
+    viewMode: ViewMode,
+    onViewModeChange: (ViewMode) -> Unit,
+    snackbarHostState: SnackbarHostState,
+    onLetterClick: (Long) -> Unit,
+    onSettingClick: () -> Unit,
+    onWriteClick: () -> Unit,
+    onEditClick: (Long) -> Unit,
+    onFilterRecipientClick: () -> Unit,
+    onDeleteClick: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Scaffold(
         modifier = modifier,
         containerColor = Color.Transparent,
@@ -112,12 +141,12 @@ fun TimeletterScreen(
                     letters = state.letters,
                     receiverNameMap = state.receiverNameMap,
                     viewMode = viewMode,
-                    onViewModeChange = { viewMode = it },
+                    onViewModeChange = onViewModeChange,
                     selectedFilterReceiverIds = state.selectedFilterReceiverIds,
                     onFilterClick = onFilterRecipientClick,
                     onLetterClick = onLetterClick,
                     onEditClick = onEditClick,
-                    onDeleteClick = { pendingDeleteId = it },
+                    onDeleteClick = onDeleteClick,
                     modifier = Modifier.padding(paddingValues),
                 )
             }

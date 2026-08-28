@@ -35,7 +35,9 @@ import com.afternote.feature.setting.presentation.social.requestGoogleIdToken
 import com.afternote.feature.setting.presentation.social.requestKakaoAccessToken
 import com.afternote.feature.setting.presentation.social.toKakaoAuthResult
 import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsEvent
+import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsUiState
 import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsViewModel
+import com.afternote.feature.setting.presentation.viewmodel.SocialAccountState
 
 @Composable
 fun ConnectedAccountsScreen(
@@ -100,6 +102,23 @@ fun ConnectedAccountsScreen(
         }
     }
 
+    ConnectedAccountsContent(
+        uiState = uiState,
+        snackbarHostState = snackbarHostState,
+        onBack = onBack,
+        onToggle = viewModel::onToggle,
+        modifier = modifier,
+    )
+}
+
+@Composable
+internal fun ConnectedAccountsContent(
+    uiState: ConnectedAccountsUiState,
+    snackbarHostState: SnackbarHostState,
+    onBack: () -> Unit,
+    onToggle: (provider: String, enabled: Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Scaffold(
         modifier = modifier,
         containerColor = Color.Transparent,
@@ -132,7 +151,7 @@ fun ConnectedAccountsScreen(
             uiState.accounts.forEach { account ->
                 SocialAccountRow(
                     account = account,
-                    onToggle = { enabled -> viewModel.onToggle(account.provider, enabled) },
+                    onToggle = { enabled -> onToggle(account.provider, enabled) },
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
@@ -143,5 +162,28 @@ fun ConnectedAccountsScreen(
 @Preview(showBackground = true)
 @Composable
 private fun ConnectedAccountScreenPrev() {
-    ConnectedAccountsScreen(onBack = {})
+    ConnectedAccountsContent(
+        uiState =
+            ConnectedAccountsUiState(
+                accounts =
+                    listOf(
+                        SocialAccountState(
+                            provider = "google",
+                            iconRes = R.drawable.ic_google_logo,
+                            labelRes = R.string.login_with_google,
+                            isConnected = true,
+                            email = "example@gmail.com",
+                        ),
+                        SocialAccountState(
+                            provider = "kakao",
+                            iconRes = R.drawable.ic_kakao_logo,
+                            labelRes = R.string.login_with_kakao,
+                            isConnected = false,
+                        ),
+                    ),
+            ),
+        snackbarHostState = remember { SnackbarHostState() },
+        onBack = {},
+        onToggle = { _, _ -> },
+    )
 }

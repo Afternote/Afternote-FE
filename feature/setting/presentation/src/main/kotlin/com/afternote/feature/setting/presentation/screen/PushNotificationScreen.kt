@@ -60,7 +60,7 @@ fun PushNotificationScreen(
 }
 
 @Composable
-private fun PushNotificationContent(
+internal fun PushNotificationContent(
     uiState: PushNotificationUiState,
     onBack: () -> Unit,
     onDeviceAlarmClick: () -> Unit,
