@@ -45,6 +45,7 @@ import com.afternote.core.ui.button.PlusBadgeButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.editor.isLocalContentUri
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -93,7 +94,7 @@ fun MemorialVideoUpload(
             onThumbnailBytesReady(null)
             return@LaunchedEffect
         }
-        if (!videoUrl.startsWith("content://")) {
+        if (!videoUrl.isLocalContentUri()) {
             thumbnailBitmap = null
             onThumbnailBytesReady(null)
             return@LaunchedEffect
