@@ -34,6 +34,8 @@ docker run --rm --platform linux/amd64 -v "$PWD":/workspace -w /workspace aftern
             :feature:onboarding:presentation:updateScreenshotTest \
             :feature:afternote:presentation:updateScreenshotTest \
             :feature:mindrecord:presentation:updateScreenshotTest \
+            :feature:setting:presentation:updateScreenshotTest \
+            :feature:timeletter:presentation:updateScreenshotTest \
             --rerun
 ```
 
@@ -52,7 +54,9 @@ docker run --rm --platform linux/amd64 -v "$PWD":/workspace -w /workspace aftern
             :feature:receiver:presentation:validateScreenshotTest \
             :feature:onboarding:presentation:validateScreenshotTest \
             :feature:afternote:presentation:validateScreenshotTest \
-            :feature:mindrecord:presentation:validateScreenshotTest
+            :feature:mindrecord:presentation:validateScreenshotTest \
+            :feature:setting:presentation:validateScreenshotTest \
+            :feature:timeletter:presentation:validateScreenshotTest
 ```
 
 → baseline 과 docker 환경에서 새로 그린 PNG 비교. 실패 시 `build/outputs/screenshotTest-results/preview/debug/diffs/` 에서 diff PNG 확인.
