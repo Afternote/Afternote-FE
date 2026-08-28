@@ -23,6 +23,18 @@ internal fun memorialPlaylistScreenScreenshot() {
     }
 }
 
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+internal fun memorialPlaylistScreenEmptyScreenshot() {
+    AfternoteTheme {
+        MemorialPlaylistScreen(
+            songs = emptyList(),
+            onBackClick = {},
+        )
+    }
+}
+
 /**
  * 좁은 화면(360×800dp @320dpi) 변형 — 곡 제목·아티스트 행이 폭에 맞춰 줄어드는지 본다.
  *

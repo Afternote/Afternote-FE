@@ -1,6 +1,7 @@
 package com.afternote.feature.receiver.presentation.deliveryverification
 
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.ui.UiText
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
@@ -10,7 +11,6 @@ import com.afternote.feature.receiver.domain.model.ReceiverIdentity
 import com.afternote.feature.receiver.domain.model.SenderMessageInfo
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverDeliveryDocumentUploadRepository
-import com.afternote.feature.receiver.presentation.error.ErrorPayload
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -95,7 +95,7 @@ class DocumentUploadViewModelTest {
         viewModel.submit()
 
         val state = viewModel.uiState.value
-        assertEquals(ErrorPayload.Res(R.string.receiver_verify_document_upload_in_progress), state.error)
+        assertEquals(UiText.Resource(R.string.receiver_verify_document_upload_in_progress), state.error)
         assertFalse(state.isSubmitting)
         assertTrue(auth.submittedPayloads.isEmpty())
     }
@@ -183,7 +183,10 @@ private class FakeReceiverAuthRepository : ReceiverAuthRepository {
         authCode: String,
     ): Result<ReceiverEmailAuthResult> = error("verifyEmailAuthCode 는 이 시나리오에서 호출되면 안 됨")
 
-    override suspend fun getPresignedUrl(extension: String): Result<ReceiverAuthPresignedUrl> = error("getPresignedUrl 은 이 시나리오에서 호출되면 안 됨")
+    override suspend fun getPresignedUrl(
+        extension: String,
+        contentLength: Long,
+    ): Result<ReceiverAuthPresignedUrl> = error("getPresignedUrl 은 이 시나리오에서 호출되면 안 됨")
 
     override suspend fun getDeliveryVerificationStatus(): Result<DeliveryVerification> =
         error("getDeliveryVerificationStatus 는 이 시나리오에서 호출되면 안 됨")

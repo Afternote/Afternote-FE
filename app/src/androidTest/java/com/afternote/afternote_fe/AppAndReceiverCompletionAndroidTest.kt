@@ -903,7 +903,10 @@ private class CompletionReceiverAuthRepository : ReceiverAuthRepository {
         return verifyEmailResults.removeFirst()
     }
 
-    override suspend fun getPresignedUrl(extension: String): Result<ReceiverAuthPresignedUrl> {
+    override suspend fun getPresignedUrl(
+        extension: String,
+        contentLength: Long,
+    ): Result<ReceiverAuthPresignedUrl> {
         error("unexpected getPresignedUrl")
     }
 

@@ -128,7 +128,7 @@ class AfternoteAuthorAndroidTest {
         composeRule.runOnIdle {
             first.setType(AfternoteType.GALLERY_AND_FILES)
             first.setService("Google Photos")
-            first.addReceiverIfAbsent("7", "김수신", "가족")
+            first.addReceiverIfAbsent(7L, "김수신", "가족")
             first.addProcessingMethod("전체 파일 전달")
         }
 
@@ -136,7 +136,7 @@ class AfternoteAuthorAndroidTest {
 
         assertEquals(AfternoteType.GALLERY_AND_FILES, restored.selectedType)
         assertEquals("Google Photos", restored.selectedService)
-        assertEquals("7", restored.afternoteEditReceivers.single().id)
+        assertEquals(7L, restored.afternoteEditReceivers.single().id)
         assertEquals("전체 파일 전달", restored.processingMethods.single().text)
     }
 

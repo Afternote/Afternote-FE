@@ -28,7 +28,6 @@ internal fun mapAuthoringFailure(throwable: Throwable): Throwable {
         return if (throwable.code == RECEIVERS_REQUIRED_SERVER_CODE) {
             AfternoteFailure.AuthoringValidation(AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED)
         } else {
-            // ApiException도 IOException의 하위 타입이므로 서버 응답 실패를 네트워크 단절로 오분류하지 않는다.
             throwable
         }
     }

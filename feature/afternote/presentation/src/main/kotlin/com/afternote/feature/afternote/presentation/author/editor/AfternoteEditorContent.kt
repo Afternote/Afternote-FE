@@ -223,10 +223,10 @@ private fun GalleryPrefillSkeleton() {
 
 @Composable
 private fun MemorialPrefillSkeleton() {
-    // 추모 사진.
+    // 영정사진.
     SkeletonBar(height = 180.dp)
     Spacer(modifier = Modifier.height(20.dp))
-    // 추모 영상.
+    // 장례식에 남길 영상.
     SkeletonBar(height = 120.dp)
     Spacer(modifier = Modifier.height(20.dp))
     // 추억 플레이리스트.

@@ -1,9 +1,20 @@
 package com.afternote.core.network.service
 
+import com.afternote.core.network.dto.AppPlatformDto
+import com.afternote.core.network.dto.EmailFindRequestDto
+import com.afternote.core.network.dto.FindSendCodeRequestDto
 import com.afternote.core.network.dto.LoginDto
+import com.afternote.core.network.dto.PasswordFindRequestDto
 import com.afternote.core.network.dto.SocialLoginRequestDto
+import com.afternote.core.network.dto.delivery.ConditionStateDto
+import com.afternote.core.network.dto.delivery.DeliveryConditionItemRequestDto
+import com.afternote.core.network.dto.delivery.DeliveryConditionTypeDto
+import com.afternote.core.network.dto.delivery.DeliveryContentTypeDto
+import com.afternote.core.network.dto.delivery.InactivityPeriodDto
+import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionUpdateRequestDto
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
@@ -37,6 +48,8 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
  * Docker가 없는 일반 unit-test 실행에서는 건너뛰고, 전용 Actions workflow가 명시적으로 활성화한다.
  */
 class ApiWireContractSmokeTest {
+    private lateinit var accountService: AccountApiService
+    private lateinit var appVersionService: AppVersionApiService
     private lateinit var authService: AuthApiService
     private lateinit var userService: UserApiService
 
@@ -56,17 +69,19 @@ class ApiWireContractSmokeTest {
                             .build(),
                     )
                 }.build()
-        val retrofit =
+        val publicRetrofit =
             Retrofit
                 .Builder()
                 .baseUrl("${mockServer.endpoint}/api/v1/")
-                .client(okHttpClient)
                 .addConverterFactory(
                     wireJson.asConverterFactory("application/json".toMediaType()),
                 ).build()
+        val authenticatedRetrofit = publicRetrofit.newBuilder().client(okHttpClient).build()
 
-        authService = retrofit.create(AuthApiService::class.java)
-        userService = retrofit.create(UserApiService::class.java)
+        accountService = publicRetrofit.create(AccountApiService::class.java)
+        appVersionService = publicRetrofit.create(AppVersionApiService::class.java)
+        authService = publicRetrofit.create(AuthApiService::class.java)
+        userService = authenticatedRetrofit.create(UserApiService::class.java)
     }
 
     @Test
@@ -108,6 +123,7 @@ class ApiWireContractSmokeTest {
             assertTrue(data.isNewUser)
             assertEquals(3600L, data.expiresIn)
             assertExactlyOneRecordedRequest("POST", "/api/v1/auth/social/login")
+            assertNoAuthorizationHeader("POST", "/api/v1/auth/social/login")
         }
 
     @Test
@@ -127,11 +143,252 @@ class ApiWireContractSmokeTest {
             assertExactlyOneRecordedRequest("GET", "/api/v1/users/receivers")
         }
 
+    @Test
+    fun `activity ping preserves authenticated bodyless POST route`() =
+        runTest {
+            installExpectation(
+                method = "POST",
+                path = "/api/v1/users/me/activity",
+                requestHeaders = mapOf("Authorization" to "Bearer contract-token"),
+                responseBody = """{"status":200,"code":200,"message":"ok","data":null}""",
+            )
+
+            val result = userService.logActivity()
+
+            assertEquals(200, result.status)
+            assertEquals(null, result.data)
+            assertExactlyOneRecordedRequest("POST", "/api/v1/users/me/activity")
+        }
+
+    @Test
+    fun `delivery conditions GET preserves authenticated receiver path and response schema`() =
+        runTest {
+            installExpectation(
+                method = "GET",
+                path = "/api/v1/users/me/receivers/77/delivery-conditions",
+                requestHeaders = mapOf("Authorization" to "Bearer contract-token"),
+                responseBody =
+                    """
+                    {
+                      "status": 200,
+                      "code": 200,
+                      "message": "ok",
+                      "data": {
+                        "receiverId": 77,
+                        "conditions": [{
+                          "contentType": "AFTERNOTE",
+                          "conditionType": "INACTIVITY",
+                          "inactivityPeriod": "ONE_YEAR",
+                          "state": "PENDING_CONFIRMATION",
+                          "fulfilled": false,
+                          "gracePeriodStartedAt": "2026-08-28T03:05:00",
+                          "fulfilledAt": null
+                        }]
+                      }
+                    }
+                    """.trimIndent(),
+            )
+
+            val result = userService.getReceiverDeliveryConditions(77)
+            val data = requireNotNull(result.data)
+            val condition = data.conditions.single()
+
+            assertEquals(77L, data.receiverId)
+            assertEquals(DeliveryContentTypeDto.AFTERNOTE, condition.contentType)
+            assertEquals(DeliveryConditionTypeDto.INACTIVITY, condition.conditionType)
+            assertEquals(InactivityPeriodDto.ONE_YEAR, condition.inactivityPeriod)
+            assertEquals(ConditionStateDto.PENDING_CONFIRMATION, condition.state)
+            assertEquals(false, condition.fulfilled)
+            assertEquals("2026-08-28T03:05:00", condition.gracePeriodStartedAt)
+            assertEquals(null, condition.fulfilledAt)
+            assertExactlyOneRecordedRequest("GET", "/api/v1/users/me/receivers/77/delivery-conditions")
+        }
+
+    @Test
+    fun `delivery conditions PUT preserves authenticated receiver path strict body and response schema`() =
+        runTest {
+            installExpectation(
+                method = "PUT",
+                path = "/api/v1/users/me/receivers/77/delivery-conditions",
+                requestBody =
+                    wireJson
+                        .parseToJsonElement(
+                            """
+                            {
+                              "conditions": [{
+                                "contentType": "AFTERNOTE",
+                                "conditionType": "INACTIVITY",
+                                "inactivityPeriod": "ONE_YEAR"
+                              }]
+                            }
+                            """.trimIndent(),
+                        ).jsonObject,
+                requestHeaders = mapOf("Authorization" to "Bearer contract-token"),
+                responseBody =
+                    """
+                    {
+                      "status": 200,
+                      "code": 200,
+                      "message": "ok",
+                      "data": {
+                        "receiverId": 77,
+                        "conditions": [{
+                          "contentType": "AFTERNOTE",
+                          "conditionType": "INACTIVITY",
+                          "inactivityPeriod": "ONE_YEAR",
+                          "state": "ACTIVE",
+                          "fulfilled": false,
+                          "gracePeriodStartedAt": null,
+                          "fulfilledAt": null
+                        }]
+                      }
+                    }
+                    """.trimIndent(),
+            )
+
+            val result =
+                userService.updateReceiverDeliveryConditions(
+                    receiverId = 77,
+                    request =
+                        ReceiverDeliveryConditionUpdateRequestDto(
+                            conditions =
+                                listOf(
+                                    DeliveryConditionItemRequestDto(
+                                        contentType = DeliveryContentTypeDto.AFTERNOTE,
+                                        conditionType = DeliveryConditionTypeDto.INACTIVITY,
+                                        inactivityPeriod = InactivityPeriodDto.ONE_YEAR,
+                                    ),
+                                ),
+                        ),
+                )
+            val condition = requireNotNull(result.data).conditions.single()
+
+            assertEquals(ConditionStateDto.ACTIVE, condition.state)
+            assertEquals(false, condition.fulfilled)
+            assertExactlyOneRecordedRequest("PUT", "/api/v1/users/me/receivers/77/delivery-conditions")
+        }
+
+    @Test
+    fun `find code preserves public POST strict email body and expiresAt response`() =
+        runTest {
+            installExpectation(
+                method = "POST",
+                path = "/api/v1/auth/find/send/code",
+                requestBody =
+                    wireJson
+                        .parseToJsonElement("""{"email":"local@example.com"}""")
+                        .jsonObject,
+                responseBody =
+                    """{"status":200,"code":200,"message":"ok","data":{"expiresAt":"2026-08-28T03:05:00Z"}}""",
+            )
+
+            val result = accountService.sendFindCode(FindSendCodeRequestDto("local@example.com"))
+
+            assertEquals("2026-08-28T03:05:00Z", requireNotNull(result.data).expiresAt)
+            assertExactlyOneRecordedRequest("POST", "/api/v1/auth/find/send/code")
+            assertNoAuthorizationHeader("POST", "/api/v1/auth/find/send/code")
+        }
+
+    @Test
+    fun `email find preserves public POST strict verification body and account response`() =
+        runTest {
+            installExpectation(
+                method = "POST",
+                path = "/api/v1/auth/email/find",
+                requestBody =
+                    wireJson
+                        .parseToJsonElement(
+                            """{"email":"local@example.com","certificateCode":"123456"}""",
+                        ).jsonObject,
+                responseBody =
+                    """{"status":200,"code":200,"message":"ok","data":{"name":"테스터","email":"local@example.com"}}""",
+            )
+
+            val result =
+                accountService.findEmail(
+                    EmailFindRequestDto(email = "local@example.com", certificateCode = "123456"),
+                )
+            val data = requireNotNull(result.data)
+
+            assertEquals("테스터", data.name)
+            assertEquals("local@example.com", data.email)
+            assertExactlyOneRecordedRequest("POST", "/api/v1/auth/email/find")
+            assertNoAuthorizationHeader("POST", "/api/v1/auth/email/find")
+        }
+
+    @Test
+    fun `password find preserves public POST strict reset body and empty response`() =
+        runTest {
+            installExpectation(
+                method = "POST",
+                path = "/api/v1/auth/password/find",
+                requestBody =
+                    wireJson
+                        .parseToJsonElement(
+                            """
+                            {
+                              "email": "local@example.com",
+                              "certificateCode": "123456",
+                              "newPassword": "NewPass1!",
+                              "confirmPassword": "NewPass1!"
+                            }
+                            """.trimIndent(),
+                        ).jsonObject,
+                responseBody = """{"status":200,"code":200,"message":"ok","data":null}""",
+            )
+
+            val result =
+                accountService.findPassword(
+                    PasswordFindRequestDto(
+                        email = "local@example.com",
+                        certificateCode = "123456",
+                        newPassword = "NewPass1!",
+                        confirmPassword = "NewPass1!",
+                    ),
+                )
+
+            assertEquals(200, result.status)
+            assertEquals(null, result.data)
+            assertExactlyOneRecordedRequest("POST", "/api/v1/auth/password/find")
+            assertNoAuthorizationHeader("POST", "/api/v1/auth/password/find")
+        }
+
+    @Test
+    fun `app version preserves public GET exact query and nullable store response`() =
+        runTest {
+            installExpectation(
+                method = "GET",
+                path = "/api/v1/app/version",
+                requestQueryParameters =
+                    mapOf(
+                        "platform" to "ANDROID",
+                        "versionCode" to "10001",
+                    ),
+                responseBody =
+                    """{"status":200,"code":200,"message":"ok","data":{"updateRequired":false,"latestVersionCode":10001,"storeUrl":null}}""",
+            )
+
+            val result = appVersionService.checkVersion(platform = AppPlatformDto.ANDROID, versionCode = 10001)
+            val data = requireNotNull(result.data)
+
+            assertEquals(false, data.updateRequired)
+            assertEquals(10001, data.latestVersionCode)
+            assertEquals(null, data.storeUrl)
+            assertExactlyOneRecordedRequest("GET", "/api/v1/app/version")
+            assertRecordedQueryExactly(
+                method = "GET",
+                path = "/api/v1/app/version",
+                expected = mapOf("platform" to "ANDROID", "versionCode" to "10001"),
+            )
+            assertNoAuthorizationHeader("GET", "/api/v1/app/version")
+        }
+
     private fun installExpectation(
         method: String,
         path: String,
         requestBody: JsonElement? = null,
         requestHeaders: Map<String, String> = emptyMap(),
+        requestQueryParameters: Map<String, String> = emptyMap(),
         responseBody: String,
     ) {
         val expectation =
@@ -142,6 +399,13 @@ class ApiWireContractSmokeTest {
                     if (requestHeaders.isNotEmpty()) {
                         putJsonObject("headers") {
                             requestHeaders.forEach { (name, value) ->
+                                put(name, buildJsonArray { add(JsonPrimitive(value)) })
+                            }
+                        }
+                    }
+                    if (requestQueryParameters.isNotEmpty()) {
+                        putJsonObject("queryStringParameters") {
+                            requestQueryParameters.forEach { (name, value) ->
                                 put(name, buildJsonArray { add(JsonPrimitive(value)) })
                             }
                         }
@@ -173,18 +437,63 @@ class ApiWireContractSmokeTest {
         method: String,
         path: String,
     ) {
+        val recorded = recordedRequests(method, path)
+
+        assertEquals("$method $path must cross the socket exactly once", 1, recorded.size)
+    }
+
+    private fun assertRecordedQueryExactly(
+        method: String,
+        path: String,
+        expected: Map<String, String>,
+    ) {
+        val actual =
+            recordedRequests(method, path)
+                .single()
+                .jsonObject["queryStringParameters"]
+                ?.jsonObject
+        val expectedJson =
+            buildJsonObject {
+                expected.forEach { (name, value) ->
+                    put(name, buildJsonArray { add(JsonPrimitive(value)) })
+                }
+            }
+
+        assertEquals(expectedJson, actual)
+    }
+
+    private fun assertNoAuthorizationHeader(
+        method: String,
+        path: String,
+    ) {
+        val headerNames =
+            recordedRequests(method, path)
+                .single()
+                .jsonObject["headers"]
+                ?.jsonObject
+                ?.keys
+                .orEmpty()
+
+        assertTrue(
+            "$method $path must be callable without Authorization",
+            headerNames.none { it.equals("Authorization", ignoreCase = true) },
+        )
+    }
+
+    private fun recordedRequests(
+        method: String,
+        path: String,
+    ): JsonArray {
         val matcher =
             buildJsonObject {
                 put("method", method)
                 put("path", path)
             }
-        val recorded =
-            wireJson
-                .parseToJsonElement(
-                    controlPut("/mockserver/retrieve?type=REQUESTS", matcher.toString()),
-                ).jsonArray
 
-        assertEquals("$method $path must cross the socket exactly once", 1, recorded.size)
+        return wireJson
+            .parseToJsonElement(
+                controlPut("/mockserver/retrieve?type=REQUESTS", matcher.toString()),
+            ).jsonArray
     }
 
     private fun controlPut(

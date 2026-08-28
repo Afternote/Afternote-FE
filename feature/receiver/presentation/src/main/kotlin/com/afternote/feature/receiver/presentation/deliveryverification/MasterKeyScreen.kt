@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.asString
 import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -26,7 +27,6 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_HEADER_SPACING
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_TOTAL_STEPS
 import com.afternote.feature.receiver.presentation.deliveryverification.component.ReceiverVerifyStep
-import com.afternote.feature.receiver.presentation.error.asDisplayText
 
 /**
  * 마스터 키 입력 화면(design 5) — 진행 인디케이터 2/3 + 단일 입력 + "다음" CTA (이슈 #215).
@@ -55,7 +55,7 @@ fun MasterKeyScreen(
     }
 
     val errorMessage =
-        uiState.error?.asDisplayText()
+        uiState.error?.asString()
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
             snackbarHostState.showSnackbar(errorMessage)
