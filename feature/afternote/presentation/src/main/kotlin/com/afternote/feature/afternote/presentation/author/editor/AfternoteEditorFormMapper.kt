@@ -42,7 +42,7 @@ internal object AfternoteEditorFormMapper {
             receivers =
                 detail.receivers.map { receiver ->
                     AfternoteEditorReceiver(
-                        id = receiver.receiverId.toString(),
+                        id = receiver.receiverId,
                         name = receiver.name,
                         label = receiver.relation,
                     )
