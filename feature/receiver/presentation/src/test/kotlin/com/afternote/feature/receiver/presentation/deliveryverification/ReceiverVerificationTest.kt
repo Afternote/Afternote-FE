@@ -59,6 +59,7 @@ class ReceiverVerificationTest {
         composeRule.setContent {
             AfternoteTheme {
                 IdentityVerificationEmailScreen(
+                    senderId = "sender-1",
                     onBackClick = {},
                     onVerified = { verifiedCalls += 1 },
                     viewModel = viewModel,
@@ -84,7 +85,7 @@ class ReceiverVerificationTest {
             ),
             auth.verifiedEmailCodes,
         )
-        assertEquals(1, identity.markVerifiedCallCount)
+        assertEquals(listOf("sender-1"), identity.markVerifiedSenderIds)
         assertEquals(1, verifiedCalls)
     }
 
@@ -99,7 +100,7 @@ class ReceiverVerificationTest {
             )
         composeRule.setContent {
             AfternoteTheme {
-                IdentityVerificationEmailScreen({}, {}, viewModel = viewModel)
+                IdentityVerificationEmailScreen("sender-1", {}, {}, viewModel = viewModel)
             }
         }
 

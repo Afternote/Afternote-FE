@@ -15,13 +15,20 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 private object IdentityVerificationKeys {
-    val VERIFIED = booleanPreferencesKey("identity_verified")
+    /**
+     * 발신자별 본인 확인 키 (#597). 이전의 단일 `identity_verified` 키는 발신자 구분 없이 전역이라
+     * 발신자 A 인증만으로 발신자 B 의 이메일 관문까지 열렸다. 키를 발신자 단위로 쪼개 격리한다.
+     *
+     * 구 전역 키에 남은 값은 조회 대상에서 빠져 자연 무효화된다 — 발신자 카드가 in-memory 라
+     * 앱 재시작 시 재등록(새 senderId)이 전제라 마이그레이션 실익이 없다.
+     */
+    fun verified(senderId: String): Preferences.Key<Boolean> = booleanPreferencesKey("identity_verified_$senderId")
 }
 
 /**
  * [IdentityVerificationRepository] 의 DataStore Preferences 기반 구현.
  *
- * 사람 단위 1회 검증 정책 → 단일 boolean 키 (`identity_verified`).
+ * 발신자별 1회 검증 정책 → 발신자별 boolean 키 (`identity_verified_<senderId>`).
  * process death · 앱 재시작 후에도 값 유지.
  */
 @Singleton
@@ -30,7 +37,7 @@ class IdentityVerificationRepositoryImpl
     constructor(
         @param:IdentityVerificationDataStore private val dataStore: DataStore<Preferences>,
     ) : IdentityVerificationRepository {
-        override val isVerified: Flow<Boolean> =
+        override fun isVerified(senderId: String): Flow<Boolean> =
             // dataStore.data 가 Flow<Preferences> source — 디스크 파일 변경 감지해 새 Preferences 흘림.
             // 왜 Flow? 디스크 값이 시간에 따라 변할 수 있고 (verify 완료 시 false → true),
             // UI 가 그 변화를 자동 reactive 하게 받아 화면 갱신해야 해서.
@@ -54,12 +61,12 @@ class IdentityVerificationRepositoryImpl
                 }.map { preferences ->
                     // `preferences` = typed Map<Preferences.Key<*>, ...> (immutable). subscript 접근 = Map 처럼.
                     // SharedPreferences 레거시 이름 그대로 가져옴 — "settings UI" 어감이지만 실체는 단순 키-값 컨테이너.
-                    preferences[IdentityVerificationKeys.VERIFIED] ?: false
+                    preferences[IdentityVerificationKeys.verified(senderId)] ?: false
                 }
 
-        override suspend fun markVerified() {
+        override suspend fun markVerified(senderId: String) {
             dataStore.edit { preferences ->
-                preferences[IdentityVerificationKeys.VERIFIED] = true
+                preferences[IdentityVerificationKeys.verified(senderId)] = true
             }
         }
     }

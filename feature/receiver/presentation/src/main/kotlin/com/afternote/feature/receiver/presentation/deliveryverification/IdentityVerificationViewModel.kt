@@ -28,6 +28,10 @@ import javax.inject.Inject
  * UI 가 마스터 키(5) 단계로 이동. 이메일 인증은 신원 확인까지만 담당하며 마스터 키를 대신 획득하지
  * 않는다 — 그랬다면 마스터 키 단계가 무력화된다 (#454).
  *
+ * `senderId` 는 [MasterKeyViewModel.submit] 과 같은 규약으로 자체 SavedStateHandle 이 아니라 parent
+ * backStackEntry 의 [DeliveryVerificationFlowViewModel] 에서 받아 [verifyAndProceed] 호출 시점에
+ * 전달된다 — 인증 캐시가 발신자별 키에 기록되어 다른 발신자의 관문을 열지 않는다 (#597).
+ *
  * 메모리 정책상 ViewModel 은 [androidx.compose.foundation.text.input.TextFieldState] 를 보유하지 않는다.
  * UI 가 입력값을 [onEmailChange]·[onCodeChange] 로 흘려주고 본 VM 은 String 만 관리.
  *
@@ -90,7 +94,7 @@ class IdentityVerificationViewModel
             }
         }
 
-        fun verifyAndProceed() {
+        fun verifyAndProceed(senderId: String) {
             val state = _uiState.value
             if (!state.canSubmit) return
             _uiState.update { it.copy(isVerifying = true, error = null) }
@@ -98,7 +102,7 @@ class IdentityVerificationViewModel
                 receiverAuthRepository
                     .verifyEmailAuthCode(email = state.email.trim(), authCode = state.code.trim())
                     .onSuccess {
-                        identityVerificationRepository.markVerified()
+                        identityVerificationRepository.markVerified(senderId)
                         _uiState.update { it.copy(isVerifying = false, isVerified = true) }
                     }.onFailure { throwable ->
                         if (throwable.shouldReportInReceiverFlow()) {

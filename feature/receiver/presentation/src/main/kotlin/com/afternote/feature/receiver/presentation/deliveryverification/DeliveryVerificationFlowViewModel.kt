@@ -39,6 +39,7 @@ class DeliveryVerificationFlowViewModel
 
         /**
          * 본인 확인 캐시 여부 — Intro 진입 시 즉시 MasterKey 로 jump 할지 판단용.
+         * 이 흐름의 [senderId] 에 대한 인증만 본다 — 다른 발신자 인증은 이 관문을 열지 않는다 (#597).
          *
          * gate 의 Flow 를 viewModelScope 안에서 StateFlow 로 변환 (collectAsStateWithLifecycle 가 즉시 값 필요).
          *
@@ -48,7 +49,7 @@ class DeliveryVerificationFlowViewModel
          * (Google 공식 권장값 — Architecture guide / State production 섹션)
          */
         val isIdentityVerified: StateFlow<Boolean> =
-            identityVerificationRepository.isVerified.stateIn(
+            identityVerificationRepository.isVerified(senderId).stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000),
                 initialValue = false,

@@ -41,9 +41,13 @@ import com.afternote.feature.receiver.presentation.deliveryverification.componen
  *
  * 인증번호 발송·검증은 실 API(`receiver-auth/email` 계열) — 서버 거절 안내 문구(이메일 미등록 등) 는
  * 스낵바로 노출된다 (#407).
+ *
+ * `senderId` 는 [MasterKeyScreen] 과 같은 규약으로 parent backStackEntry 의
+ * [DeliveryVerificationFlowViewModel] 에서 받아 검증 성공 시점의 발신자별 캐시 기록에 쓴다 (#597).
  */
 @Composable
 fun IdentityVerificationEmailScreen(
+    senderId: String,
     onBackClick: () -> Unit,
     onVerified: () -> Unit,
     modifier: Modifier = Modifier,
@@ -84,7 +88,7 @@ fun IdentityVerificationEmailScreen(
         snackbarHostState = snackbarHostState,
         onBackClick = onBackClick,
         onRequestCode = viewModel::requestVerificationCode,
-        onVerifyAndProceed = viewModel::verifyAndProceed,
+        onVerifyAndProceed = { viewModel.verifyAndProceed(senderId) },
         modifier = modifier,
     )
 }
