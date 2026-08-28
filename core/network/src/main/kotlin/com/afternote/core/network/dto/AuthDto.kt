@@ -11,7 +11,7 @@ data class SendEmailCodeRequestDto(
 @Serializable
 data class VerifyEmailRequestDto(
     val email: String,
-    @SerialName("certificateCode") val certificateCode: String,
+    val certificateCode: String,
 )
 
 /** 아이디/비밀번호 찾기 전용 인증번호 발송 요청 (POST /auth/find/send/code). 회원가입용 [SendEmailCodeRequestDto] 와 엔드포인트가 다르다. */
@@ -34,7 +34,7 @@ data class FindSendCodeDto(
 @Serializable
 data class EmailFindRequestDto(
     val email: String,
-    @SerialName("certificateCode") val certificateCode: String,
+    val certificateCode: String,
 )
 
 /** 아이디 찾기 결과. 이 앱의 로그인 아이디가 곧 [email] 이라 서버는 가입 이메일을 그대로 돌려준다. */
@@ -48,7 +48,7 @@ data class EmailFindDto(
 @Serializable
 data class PasswordFindRequestDto(
     val email: String,
-    @SerialName("certificateCode") val certificateCode: String,
+    val certificateCode: String,
     val newPassword: String,
     val confirmPassword: String,
 )
