@@ -557,6 +557,13 @@ jobs:
         if: steps.target.outputs.run_lane == 'true'
         uses: ./.github/actions/setup-ci-config
 
+      # selected 모드의 다중 Class#method 목록은 기기 러너가 비결정적으로 일부를
+      # 떨어뜨린다(#1378 실측 — 클래스당 2개뿐인 4항목 목록조차 런에 따라 중간이
+      # 사라진다). 단일 selector invocation 은 full_selector 레인들이 상시 증명하는
+      # 신뢰 경로이므로: 1차는 전체 목록으로 돌리고, 그 결과 XML 에 없는 선언
+      # selector 만 단일 항목으로 재실행해 합본한다. 뒤 단계(verify·render)는 재귀
+      # 탐색이라 합본을 무수정으로 읽는다. Gradle 시간 예산은 invocation 수와
+      # 무관하게 GRADLE_TIMEOUT_MINUTES 전체를 공유한다.
       - name: Run managed-device androidTest
         id: android_test
         if: steps.target.outputs.run_lane == 'true'
@@ -565,26 +572,106 @@ jobs:
           ARTIFACT_KEY: ${{ matrix.artifact }}
           DEVICE_TASK: ${{ matrix.task }}
           GRADLE_TIMEOUT_MINUTES: ${{ matrix.gradle_timeout_minutes }}
-          TEST_SELECTORS: ${{ steps.target.outputs.selectors }}
+          TEST_SELECTORS_JSON: ${{ steps.target.outputs.selectors_json }}
         run: |
           set -euo pipefail
-          test_arguments=()
-          if [[ -n "$TEST_SELECTORS" ]]; then
-            test_arguments+=("-Pandroid.testInstrumentationRunnerArguments.class=$TEST_SELECTORS")
-          fi
-
           log_directory="$RUNNER_TEMP/android-test-logs"
           gradle_log="$log_directory/$ARTIFACT_KEY.log"
           mkdir -p "$log_directory"
+          : > "$gradle_log"
 
-          set +e
-          timeout --signal=TERM --kill-after=30s "${GRADLE_TIMEOUT_MINUTES}m" \
-            ./gradlew "$DEVICE_TASK" "${test_arguments[@]}" \
-            -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect \
-            --console=plain \
-            --stacktrace > "$gradle_log" 2>&1
-          status=$?
-          set -e
+          results_root="app/build/outputs/androidTest-results/managedDevice"
+          chunk_store="$RUNNER_TEMP/android-test-chunk-results"
+          deadline=$(( $(date +%s) + GRADLE_TIMEOUT_MINUTES * 60 ))
+
+          run_gradle() {  # $1: selector 목록(빈 문자열 = 필터 없음), $2: 로그 라벨
+            local selectors="$1" label="$2" remaining rc
+            local test_arguments=()
+            if [[ -n "$selectors" ]]; then
+              test_arguments+=("-Pandroid.testInstrumentationRunnerArguments.class=$selectors")
+            fi
+            if [[ -n "$label" ]]; then
+              echo "=== $label ===" >> "$gradle_log"
+            fi
+            remaining=$(( deadline - $(date +%s) ))
+            if (( remaining <= 0 )); then
+              echo "Managed-device Gradle budget exhausted before: $label" >> "$gradle_log"
+              return 124
+            fi
+            set +e
+            timeout --signal=TERM --kill-after=30s "${remaining}s" \
+              ./gradlew "$DEVICE_TASK" "${test_arguments[@]}" \
+              -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect \
+              --console=plain \
+              --stacktrace >> "$gradle_log" 2>&1
+            rc=$?
+            set -e
+            return "$rc"
+          }
+
+          # verifier 와 같은 판정(name·classname 속성 쌍)으로 live XML 에 실행
+          # 기록이 있는지 본다.
+          selector_recorded() {  # $1: Class#method
+            local cls="${1%%#*}" method="${1#*#}"
+            grep -rqE "<testcase[^>]*(name=\"$method\"[^>]*classname=\"$cls\"|classname=\"$cls\"[^>]*name=\"$method\")" \
+              "$results_root" 2>/dev/null
+          }
+
+          preserve_results() {  # $1: 보존 디렉터리 이름
+            [[ -d "$results_root" ]] || return 0
+            mkdir -p "$chunk_store/$1"
+            (cd "$results_root" && find . -name '*.xml' -print0 | tar --null -cf - -T -) \
+              | tar -xf - -C "$chunk_store/$1"
+          }
+
+          if [[ -z "$TEST_SELECTORS_JSON" || "$TEST_SELECTORS_JSON" == "[]" ]]; then
+            set +e
+            run_gradle "" ""
+            status=$?
+            set -e
+          else
+            declared=()
+            while IFS= read -r entry; do
+              declared+=("$entry")
+            done < <(jq -r '.[]' <<< "$TEST_SELECTORS_JSON")
+            joined="$(jq -r 'join(",")' <<< "$TEST_SELECTORS_JSON")"
+            set +e
+            run_gradle "$joined" "selected invocation: 전체 목록 ${#declared[@]}개"
+            status=$?
+            set -e
+
+            # 누락 판정은 1차 런의 live 결과에 대해 한 번만 한다 — 재실행이 시작되면
+            # live 는 마지막 invocation 결과로 바뀌기 때문이다.
+            missing=()
+            if (( status == 0 )); then
+              for selector in "${declared[@]}"; do
+                [[ "$selector" == *"#"* ]] || continue
+                if ! selector_recorded "$selector"; then
+                  missing+=("$selector")
+                fi
+              done
+            fi
+
+            retried=0
+            for selector in ${missing[@]+"${missing[@]}"}; do
+              preserve_results "invocation-$retried"
+              retried=$(( retried + 1 ))
+              set +e
+              run_gradle "$selector" "selected retry $retried/${#missing[@]}: $selector (목록 실행에서 누락 — #1378)"
+              status=$?
+              set -e
+              if (( status != 0 )); then
+                break
+              fi
+            done
+            # 재실행이 있었으면 이전 invocation 들의 XML 을 합본으로 되돌린다.
+            # 각 invocation 의 결과는 다음 invocation 직전 한 번만 보존되므로
+            # testcase 중복이 없다(마지막 invocation 은 live 디렉터리가 소유).
+            if (( retried > 0 )) && [[ -d "$chunk_store" ]]; then
+              mkdir -p "$results_root/chunks"
+              cp -R "$chunk_store/." "$results_root/chunks/"
+            fi
+          fi
 
           {
             echo "exit_code=$status"
