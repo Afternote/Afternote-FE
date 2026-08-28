@@ -116,7 +116,9 @@ class EditorTouchTargetTest {
                     )
                     AfternoteEditorReceiverList(
                         afternoteEditReceivers =
-                            listOf(AfternoteEditorReceiver(id = "1", name = "Name", label = "Family")),
+                            listOf(AfternoteEditorReceiver(id = 1L, name = "Name", label = "Family")),
+                        onAddClick = {},
+                        onItemDeleteClick = {},
                         state = receiverState,
                     )
                 }
@@ -133,7 +135,7 @@ class EditorTouchTargetTest {
         moreNodes[1].performClick()
         composeRule.waitForIdle()
         assertEquals(1, processingMoreClicks)
-        assertEquals(true, receiverState.expandedStates["1"])
+        assertEquals(true, receiverState.expandedStates[1L])
     }
 
     @Test

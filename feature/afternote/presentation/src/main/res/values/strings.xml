@@ -105,12 +105,12 @@
     <string name="afternote_editor_category_unimplemented_title">준비 중인 카테고리예요</string>
     <string name="afternote_editor_category_unimplemented_description">디자인 확정 후 입력 화면이 제공됩니다.\n다른 카테고리를 먼저 이용해 주세요.</string>
     <string name="afternote_validation_unimplemented_category">아직 지원하지 않는 카테고리입니다. 다른 카테고리를 선택해 주세요.</string>
-    <!-- Afternote editor (author) — actions prefill 템플릿 (디자인 의도: 사용자가 카테고리 선택 시 예시 노출 후 자유 수정) -->
-    <string name="afternote_editor_actions_social_remove_post">게시물 내리기</string>
-    <string name="afternote_editor_actions_social_post_memorial">추모 게시물 올리기</string>
-    <string name="afternote_editor_actions_social_switch_memorial_account">추모 계정으로 전환하기</string>
-    <string name="afternote_editor_actions_gallery_send_folder">\'엽사\' 폴더 박선호에게 전송</string>
-    <string name="afternote_editor_actions_gallery_delete_folder">\'흑역사\' 폴더 삭제</string>
+    <!-- Afternote editor (author) — 처리 방법 기본값 (디자인 의도: 사용자가 카테고리 선택 시 예시 노출 후 자유 수정) -->
+    <string name="afternote_editor_processing_method_social_remove_post">게시물 내리기</string>
+    <string name="afternote_editor_processing_method_social_post_memorial">추모 게시물 올리기</string>
+    <string name="afternote_editor_processing_method_social_switch_memorial_account">추모 계정으로 전환하기</string>
+    <string name="afternote_editor_processing_method_gallery_send_folder">\'엽사\' 폴더 박선호에게 전송</string>
+    <string name="afternote_editor_processing_method_gallery_delete_folder">\'흑역사\' 폴더 삭제</string>
 
     <string name="afternote_editor_label_account_info">계정 정보</string>
     <string name="afternote_editor_label_process_method_list">처리 방법 리스트</string>
@@ -249,7 +249,7 @@
     <string name="afternote_validation_title_required">등록할 서비스(플랫폼)명을 선택해 주세요.</string>
     <string name="afternote_edit_service_label">등록할 서비스</string>
     <string name="afternote_validation_account_credentials_required">계정 ID와 비밀번호를 입력해 주세요.</string>
-    <string name="afternote_validation_actions_required">처리 방법을 한 가지 이상 추가해 주세요.</string>
+    <string name="afternote_validation_processing_methods_required">처리 방법을 한 가지 이상 추가해 주세요.</string>
     <string name="afternote_validation_receivers_required">수신자를 한 명 이상 선택해 주세요.</string>
     <string name="afternote_validation_leave_message_body_required">남기실 말씀의 내용을 입력해 주세요.</string>
     <string name="afternote_default_playlist_song_title">추억 플레이리스트 곡</string>
