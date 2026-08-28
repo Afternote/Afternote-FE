@@ -57,6 +57,19 @@ export const ASSIGNEE_BY_MODULE = Object.freeze({
 
 export const GUARD_COMMENT_MARKER = "<!-- issue-metadata-guard:v1 -->";
 
+// #1407: bug 이슈는 조직 이슈 필드 Priority 로 심각도를 지정해야 한다. Issue Form 은
+// 필드 값을 자동 부착하지 못하므로, 빈 값은 안내 코멘트 후 유예를 두고 fail-closed 로 닫는다.
+export const PRIORITY_FIELD_NAME = "Priority";
+export const PRIORITY_COMMENT_MARKER = "<!-- issue-metadata-guard:priority:v1 -->";
+export const PRIORITY_GRACE_MS = 24 * 60 * 60 * 1000;
+
+export const PRIORITY_OPTION_GUIDE = Object.freeze([
+    "Urgent: 치명 — 크래시·데이터 소실·보안 무력화·핵심 경로 차단·가짜 성공",
+    "High: 심각 — 실패·틀린 값의 정상 위장, 핵심 기능 무동작",
+    "Medium: 불편 — 우회로가 있는 오동작·틀린 표시, 핵심 흐름은 유지",
+    "Low: 경미 — 문구·정렬·마감 품질 흠, 기능 영향 없음",
+]);
+
 function unique(values) {
     return [...new Set(values)];
 }
@@ -169,6 +182,32 @@ export function inspectIssue(issue) {
     };
 }
 
+export function priorityFieldState(issue, now = Date.now()) {
+    const values = issue.issue_field_values;
+    if (!Array.isArray(values)) {
+        return { status: "unknown" };
+    }
+    const set = values.some((value) => value?.issue_field_name === PRIORITY_FIELD_NAME &&
+        value?.single_select_option?.name);
+    if (set) {
+        return { status: "set" };
+    }
+    const createdAt = Date.parse(issue.created_at ?? "");
+    const overdue = Number.isFinite(createdAt) && now - createdAt > PRIORITY_GRACE_MS;
+    return { status: overdue ? "missing-overdue" : "missing" };
+}
+
+export function renderPriorityComment() {
+    return [
+        PRIORITY_COMMENT_MARKER,
+        "bug 이슈는 사이드바 Fields > Priority 로 심각도를 지정해야 합니다. 판정 기준:",
+        "",
+        ...PRIORITY_OPTION_GUIDE.map((line) => `- ${line}`),
+        "",
+        "등록 후 24시간이 지나도 비어 있으면 자동으로 닫습니다. 닫힌 뒤에는 값을 지정하고 다시 열어 주세요.",
+    ].join("\n");
+}
+
 export function renderInvalidComment(repository, reasons) {
     return [
         GUARD_COMMENT_MARKER,
@@ -202,6 +241,44 @@ async function assertReconciled(api, repository, issueNumber, expected) {
         inspection.expectedAssignee !== expected.expectedAssignee) {
         throw new Error(`Issue #${issueNumber} metadata postcondition failed`);
     }
+}
+
+async function reconcilePriorityField(api, repository, issue) {
+    let state = priorityFieldState(issue);
+    if (state.status === "unknown") {
+        // 이벤트 페이로드에는 issue_field_values 가 없을 수 있다. 단건 재조회로 보강한다.
+        state = priorityFieldState(await api(`/repos/${repository}/issues/${issue.number}`));
+    }
+    if (state.status === "unknown") {
+        throw new Error(`Issue #${issue.number}: API 응답에 issue_field_values 가 없습니다 — ` +
+            "토큰의 이슈 필드 지원 여부를 확인해야 합니다");
+    }
+    if (state.status === "set") {
+        return { status: "set" };
+    }
+
+    const comments = await listIssueComments(api, repository, issue.number);
+    if (!comments.some((comment) => comment.body?.includes(PRIORITY_COMMENT_MARKER))) {
+        await api(`/repos/${repository}/issues/${issue.number}/comments`, {
+            method: "POST",
+            body: { body: renderPriorityComment() },
+        });
+    }
+    if (state.status !== "missing-overdue") {
+        return { status: "reminded" };
+    }
+
+    if (issue.state !== "closed") {
+        await api(`/repos/${repository}/issues/${issue.number}`, {
+            method: "PATCH",
+            body: { state: "closed", state_reason: "not_planned" },
+        });
+    }
+    const latest = await api(`/repos/${repository}/issues/${issue.number}`);
+    if (latest.state !== "closed") {
+        throw new Error(`Issue #${issue.number} missing priority close postcondition failed`);
+    }
+    return { status: "closed" };
 }
 
 export async function reconcileIssue(api, repository, issue) {
@@ -241,13 +318,22 @@ export async function reconcileIssue(api, repository, issue) {
         });
     }
     await assertReconciled(api, repository, issue.number, inspection);
-    return {
+    const priority = inspection.typeKey === "bug"
+        ? await reconcilePriorityField(api, repository, issue)
+        : null;
+    const result = {
         number: issue.number,
-        action: inspection.needsUpdate ? "corrected" : "unchanged",
+        action: priority?.status === "closed"
+            ? "closed-priority-missing"
+            : inspection.needsUpdate ? "corrected" : "unchanged",
         label: inspection.expectedLabel,
         areaLabel: inspection.expectedAreaLabel,
         assignee: inspection.expectedAssignee,
     };
+    if (priority) {
+        result.priority = priority.status;
+    }
+    return result;
 }
 
 function createApi(token) {

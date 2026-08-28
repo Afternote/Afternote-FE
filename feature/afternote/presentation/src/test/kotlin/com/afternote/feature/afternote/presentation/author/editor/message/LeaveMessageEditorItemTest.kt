@@ -154,7 +154,7 @@ class LeaveMessageEditorItemTest {
         AfternoteEditorState(
             idState = TextFieldState(),
             passwordState = TextFieldState(),
-            customServiceNameState = TextFieldState(),
+            serviceSearchQueryState = TextFieldState(),
             getCurrentForm = { EditorFormState() },
             setType = {},
             setService = {},

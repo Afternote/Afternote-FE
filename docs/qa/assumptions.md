@@ -19,6 +19,7 @@
 | #739 | #1216 | 인증번호 발송 중 버튼 **문구** («전송 중…») | `receiver_verify_code_requesting` |
 | #554 | 64cf93888 | 수신인 검색 placeholder **문구** («이름으로 검색하기») | `setting_receiver_search_placeholder`·`timeletter_recipient_search_placeholder` |
 | #648 | #1346 | 복수 선택 행의 **선택 컨트롤 비주얼** (라디오 시안 → core 원형 체크박스) | `PlaylistSongItem.SongSelectionCheckbox` |
+| #490 | #1350 | 서비스 검색 **일치 규칙**과 카탈로그 밖 **기존 custom 값 처리** | `filterEditorServiceOptions` · `EditorFormState.currentServiceOptions` |
 
 ---
 
@@ -369,3 +370,23 @@ navigate 대상 한 줄.
 
 **뒤집을 때**: `PlaylistSongItem.SongSelectionCheckbox` 하나다. 시안이 선택 컨트롤을
 그리면 그 모양으로 바꾸면 되고, semantics(복수 선택)는 게이트 확정이라 유지된다.
+
+## #490 — 서비스 선택 바텀시트의 검색 규칙과 카탈로그 밖 기존 값
+
+**정한 것 1**: 검색은 trim 한 query 의 대소문자 무시 **부분 문자열** 일치로 하고, 결과는
+원본 카탈로그 순서를 유지한다.
+
+**정한 것 2**: 고정 카탈로그에 없는 기존(legacy) custom 서비스 값은 폼에 보존해 그대로
+표시하되, 선택 후보 목록에는 올리지 않는다.
+
+**근거가 없는 이유**: 시안은 바텀시트 구성만 보여주고 검색 일치 규칙·정렬 순서를 정의하지
+않는다. 기존 custom 값은 「직접 추가하기」 제거(게이트 확정) 뒤에 남는 데이터라 처리 방식이
+시안·명세 어디에도 없다.
+
+**판단 근거**: (검색) 짧은 고정 카탈로그라 부분 일치가 관대하고, 재정렬은 시안에 없는 새
+규칙을 만드는 셈이라 원본 순서를 지켰다. (기존 값) 지우면 사용자 데이터 파괴고, 후보로
+노출하면 제거하기로 한 커스텀 플로우가 사실상 부활한다 — 보존+미노출이 양쪽 결정을 존중한다.
+
+**뒤집을 때**: 검색은 `filterEditorServiceOptions` 함수 하나, 후보 노출은
+`EditorFormState.currentServiceOptions` 다. 기존 값 정리(마이그레이션·삭제)가 확정되면
+보존 동작을 그 정책으로 바꾼다.
