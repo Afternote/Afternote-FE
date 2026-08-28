@@ -1,6 +1,5 @@
 package com.afternote.core.data.repoimpl
 
-import android.util.Log
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.data.mapper.delivery.toRequestDto
@@ -71,8 +70,15 @@ class UserRepositoryImpl
                 receiverRefreshRevision.collect {
                     val receivers =
                         runCatchingCancellable { getReceivers() }
-                            .onFailure { Log.e("UserRepository", "수신인 목록 조회 실패: ${it.javaClass.name}") }
-                            .fold(
+                            .onFailure {
+                                // 이 flow 가 하는 일이 «예외를 삼켜 화면을 살리는 것» 이라, 삼킨 뒤의
+                                // 기록이 이 실패 경로의 유일한 신호다. logcat 은 실기에서 회수되지 않으므로
+                                // 크래시 리포팅 창구로 남긴다. 취소 제외·문구 redaction 은 리포터 정책이 담당한다.
+                                errorReporter.recordFailure(
+                                    throwable = it,
+                                    attributes = mapOf(KEY_STAGE to STAGE_RECEIVER_LIST),
+                                )
+                            }.fold(
                                 onSuccess = { it },
                                 onFailure = { failure ->
                                     if (failure is ApiException && failure.status == UNAUTHORIZED_STATUS) {
@@ -87,6 +93,10 @@ class UserRepositoryImpl
                 }
             }
 
+        /**
+         * 비로그인 상태에서는 서버를 호출하지 않고 빈 목록을 돌려준다. 따라서 호출처는 빈 목록만으로
+         * «수신인 없음» 과 «로그인 안 됨» 을 구분할 수 없다 — 구분이 필요하면 [AuthRepository.isLoggedIn] 을 함께 봐야 한다.
+         */
         override suspend fun getReceivers(): List<Receiver> {
             if (!authRepository.isLoggedIn.first()) return emptyList()
 
@@ -275,3 +285,5 @@ class UserRepositoryImpl
 
 private const val KEY_ACCOUNT_STAGE = "account_stage"
 private const val ACCOUNT_STAGE_DELETE_SESSION_CLEANUP = "delete_session_cleanup"
+private const val KEY_STAGE = "stage"
+private const val STAGE_RECEIVER_LIST = "receiver_list"

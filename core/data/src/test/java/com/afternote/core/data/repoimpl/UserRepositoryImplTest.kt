@@ -168,6 +168,27 @@ class UserRepositoryImplTest {
         assertEquals(emptyList<Receiver>(), emitted)
     }
 
+    /**
+     * 이 flow 는 예외를 삼켜 화면을 살리므로, 삼킨 뒤의 리포터 기록이 이 실패 경로의 유일한 신호다.
+     * logcat 은 실기에서 회수되지 않는다 — 기록이 빠지면 이 경로는 무음으로 재발한다.
+     */
+    @Test
+    fun `receiverListFlow - 삼킨 조회 실패는 리포터에 단계와 함께 남는다`() {
+        val repository = repository(onGetReceivers = { throw UnknownHostException("Unable to resolve host") })
+
+        runBlocking { repository.receiverListFlow.first() }
+
+        val (reported, attributes) = errorReporter.writtenFailures.single()
+        assertEquals(UnknownHostException::class.java.name, reported.message)
+        assertEquals(
+            mapOf(
+                "stage" to "receiver_list",
+                "error_type" to UnknownHostException::class.java.name,
+            ),
+            attributes,
+        )
+    }
+
     @Test
     fun `receiverListFlow - 세션 만료도 흐름을 끊지 않는다`() {
         val repository =
