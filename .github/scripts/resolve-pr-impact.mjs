@@ -7,6 +7,8 @@ import { pathToFileURL } from "node:url";
 
 const SOURCE_FILE_PATTERN = /\.(?:java|kt)$/;
 const KOTLIN_FILE_PATTERN = /\.kts?$/;
+const JVM_LIBRARY_PLUGIN_PATTERN =
+    /id\("(?:java-library|afternote\.jvm\.(?:library|domain))"\)/;
 const GLOBAL_GRADLE_PATHS = new Set([
     "build.gradle.kts",
     "settings.gradle.kts",
@@ -128,6 +130,10 @@ function isProductionModulePath(filePath, module) {
 
 function sortedProjectPaths(values) {
     return [...values].sort((left, right) => left.localeCompare(right));
+}
+
+export function isAndroidModuleBuild(buildSource) {
+    return !JVM_LIBRARY_PLUGIN_PATTERN.test(buildSource);
 }
 
 export function resolvePrImpact(changedFiles, modules, dependencies) {
@@ -354,7 +360,7 @@ export async function inspectModules(root) {
         modules.push({
             projectPath,
             directory,
-            android: !/id\("java-library"\)/.test(source),
+            android: isAndroidModuleBuild(source),
             coverage: /id\("afternote\.kover"\)/.test(source),
             screenshot: await pathExists(path.join(root, directory, "src", "screenshotTest")),
             buildSource: source,

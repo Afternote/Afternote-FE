@@ -194,7 +194,10 @@ private class FakeReceiverAuthRepository : ReceiverAuthRepository {
         return verifyEmailResults.removeFirst()
     }
 
-    override suspend fun getPresignedUrl(extension: String): Result<ReceiverAuthPresignedUrl> = error("unexpected getPresignedUrl")
+    override suspend fun getPresignedUrl(
+        extension: String,
+        contentLength: Long,
+    ): Result<ReceiverAuthPresignedUrl> = error("unexpected getPresignedUrl")
 
     override suspend fun submitDeliveryVerification(
         deathCertificateUrl: String?,

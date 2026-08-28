@@ -163,9 +163,9 @@ private const val CODE_UNSUPPORTED_SOCIAL_LOGIN = 1209
  * 옮기지 않는다(BE#92 — 사용자 노출용이라는 규정이 없어 계약이 아니다). 사유가 확인된 실패만
  * 치환하고 나머지는 그대로 두어, 소비처가 일반 문구로 내려앉는다(5xx 본문 실측 #511).
  *
- * [ApiException] 을 먼저 거르는 이유 — IOException 서브클래스라 순서를 바꾸면 서버 응답 실패가
- * 전송 실패로 잡힌다. 취소는 다시 보지 않는다 — 호출부가 전부 [runCatchingCancellable] 이라
- * `CancellationException` 이 [Result] 에 담긴 채로 도달하지 않는다.
+ * 서버 응답 실패인 [ApiException]과 전송 실패인 [IOException]은 서로 다른 타입 계열이다. 취소는
+ * 다시 보지 않는다 — 호출부가 전부 [runCatchingCancellable]이라 `CancellationException`이 [Result]에
+ * 담긴 채로 도달하지 않는다.
  */
 private fun <T> Result<T>.mapLoginFailure(): Result<T> =
     when (val exception = exceptionOrNull()) {

@@ -10,6 +10,13 @@ import com.android.tools.screenshot.PreviewTest
 @Composable
 internal fun galleryDetailScreenScreenshot() {
     AfternoteTheme {
-        GalleryDetailScreen(onBackClick = {})
+        GalleryDetailScreen(
+            onBackClick = {},
+            content =
+                GalleryDetailContent(
+                    serviceName = "직접 입력한 갤러리 서비스",
+                    finalWriteDate = "2026.08.28",
+                ),
+        )
     }
 }

@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.domain.repository.author
 
 /**
- * 추모 미디어(영정 사진·추모 영상)의 *상태 해석* + 필요 시 업로드.
+ * 추억 노트 미디어(영정사진·장례식에 남길 영상)의 *상태 해석* + 필요 시 업로드.
  *
  * 로컬/원격 판별은 호출부가 [MediaInput] 을 구성할 때 끝내고, 여기서는 [when] 분기로만 처리한다.
  *

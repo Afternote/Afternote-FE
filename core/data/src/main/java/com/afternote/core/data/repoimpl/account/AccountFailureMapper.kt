@@ -17,8 +17,6 @@ private const val CODE_EMAIL_ALREADY_REGISTERED = 1200
  */
 internal fun <T> Result<T>.mapAccountFailure(): Result<T> =
     when (val exception = exceptionOrNull()) {
-        // ApiException 이 IOException 을 상속하므로 순서가 곧 의미다 — 서버가 응답을 준 실패를
-        // 전송 실패로 뭉뚱그리지 않도록 먼저 판정한다.
         is ApiException -> {
             when (exception.code) {
                 CODE_INVALID_VERIFICATION -> {
