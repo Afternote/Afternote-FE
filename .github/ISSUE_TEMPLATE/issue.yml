@@ -1,0 +1,63 @@
+name: 이슈 등록
+description: 작업 유형과 주 담당 모듈을 지정해 이슈를 등록합니다.
+title: ""
+body:
+  - type: dropdown
+    id: work-type
+    attributes:
+      label: 작업 유형
+      description: 이슈의 주된 변경 성격을 하나 선택해 주세요.
+      options:
+        - bug — 버그·오동작
+        - enhancement — 신규 기능·기존 기능 개선
+        - documentation — 문서
+        - maintenance — CI·빌드·의존성·저장소 운영 유지보수
+        - refactor — 동작 변경 없는 구조·책임·경계 개선
+        - release — 배포·릴리스 파이프라인 및 산출물
+        - security — 보안 취약점·권한·자격·공급망 대응
+        - test — 테스트·검증·회귀 방지
+    validations:
+      required: true
+
+  - type: dropdown
+    id: primary-module
+    attributes:
+      label: 주 담당 모듈
+      description: 여러 영역이 겹치면 주된 원인과 실제 수정 파일을 기준으로 하나를 선택해 주세요.
+      options:
+        - afternote — 애프터노트
+        - onboarding — 온보딩
+        - core — 코어
+        - receiver — 수신자 관리
+        - setting — 설정
+        - timeletter — 타임레터
+        - mindrecord — 마음의 기록
+        - home — 홈
+        - platform — Android 앱·CI·빌드·릴리스·저장소 운영
+    validations:
+      required: true
+
+  - type: textarea
+    id: overview
+    attributes:
+      label: 개요
+      description: 문제, 필요한 변경, 완료 조건을 구체적으로 적어 주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: child-issues
+    attributes:
+      label: 자식 이슈
+      description: 연결할 자식 이슈가 있으면 번호를 적어 주세요.
+      placeholder: "- #123"
+    validations:
+      required: false
+
+  - type: textarea
+    id: note
+    attributes:
+      label: 참고
+      description: 추가 제약이나 참고 자료가 있으면 적어 주세요.
+    validations:
+      required: false
