@@ -188,7 +188,10 @@ test("managed device summarizes XML and uploads the full Gradle log before faili
     const source = await readWorkflow("android-managed-device.yml");
 
     assert.match(source, /- name: Run managed-device androidTest\n\s+id: android_test/);
-    assert.match(source, /--console=plain \\\n\s+--stacktrace > "\$gradle_log" 2>&1/);
+    // #1378: invocation 을 반복하므로 로그는 append 로 한 파일에 모은다. 파일은 루프
+    // 앞에서 한 번 비운다.
+    assert.match(source, /: > "\$gradle_log"/);
+    assert.match(source, /--console=plain \\\n\s+--stacktrace >> "\$gradle_log" 2>&1/);
     assert.match(source, /echo "exit_code=\$status"/);
     assert.match(
         source,
@@ -264,7 +267,13 @@ test("managed device fails fast per lane and preserves only bounded infrastructu
         source,
         /- name: Run managed-device androidTest[\s\S]*?timeout-minutes: \$\{\{ matrix\.gradle_step_timeout_minutes \}\}/,
     );
-    assert.match(source, /timeout --signal=TERM --kill-after=30s "\$\{GRADLE_TIMEOUT_MINUTES\}m"/);
+    // #1378: 다중 selector 목록 실행에서 누락된 선언 selector 는 신뢰 경로인 단일
+    // selector invocation 으로 재실행해 합본하되, Gradle 시간 예산은 invocation
+    // 수와 무관하게 lane 의 GRADLE_TIMEOUT_MINUTES 전체를 공유한다.
+    assert.match(source, /deadline=\$\(\( \$\(date \+%s\) \+ GRADLE_TIMEOUT_MINUTES \* 60 \)\)/);
+    assert.match(source, /timeout --signal=TERM --kill-after=30s "\$\{remaining\}s"/);
+    assert.match(source, /selector_recorded/);
+    assert.match(source, /selected retry \$retried\/\$\{#missing\[@\]\}/);
     assert.doesNotMatch(source, /timeout-minutes: 45/);
 
     const gradle = source.indexOf("Run managed-device androidTest");
