@@ -36,6 +36,7 @@ const DEFAULT_ISSUE_TYPE_IDS = {
 // 감사가 발행한 이슈에만 붙는 표식. 닫힌 이슈까지 조회 범위를 넓히면서도 저장소 전체 이슈를
 // 페이징하지 않기 위한 것이다 (#1191).
 const AUDIT_TRACKING_LABEL = "dependency-audit";
+const AUDIT_AREA_LABEL = "area:platform";
 
 const COORDINATE_DISPLAY_NAMES = {
     "com.android.tools.build:gradle": "Android Gradle Plugin",
@@ -225,18 +226,33 @@ export function selectActionableFindings(audit) {
     ].sort((left, right) => left.key.localeCompare(right.key));
 }
 
-function templateBody(template) {
-    return String(template).replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "");
-}
-
-export function renderIssueBody(template, finding) {
+export function renderIssueBody(finding) {
     const markers = findingMarkers(finding);
-    const replacement = `${cleanMentions(finding.overview)}\n\n${markers.key}\n${markers.fingerprint}  `;
-    const body = templateBody(template);
-    if (!/No response {2}/.test(body)) {
-        throw new Error("이슈 템플릿의 Overview No response 위치를 찾지 못했습니다.");
-    }
-    return body.replace(/No response {2}/, replacement);
+    const typeDescription = finding.label === "bug" ? "버그·오동작" : "신규 기능·기존 기능 개선";
+    return [
+        "### 작업 유형",
+        "",
+        `${finding.label} — ${typeDescription}`,
+        "",
+        "### 주 담당 모듈",
+        "",
+        "platform — Android 앱·CI·빌드·릴리스·저장소 운영",
+        "",
+        "### 개요",
+        "",
+        cleanMentions(finding.overview),
+        "",
+        markers.key,
+        markers.fingerprint,
+        "",
+        "### 자식 이슈",
+        "",
+        "_No response_",
+        "",
+        "### 참고",
+        "",
+        "dependency-audit 자동 생성 이슈",
+    ].join("\n");
 }
 
 function updateCommentBody(finding, audit) {
@@ -329,6 +345,7 @@ async function ensureIssueMetadata(api, issue, finding, repository, assignee, is
         ...(issue.labels ?? []).map((label) => typeof label === "string" ? label : label.name),
         finding.label,
         AUDIT_TRACKING_LABEL,
+        AUDIT_AREA_LABEL,
     ]).filter(Boolean);
     const assignees = unique([
         ...(issue.assignees ?? []).map((item) => item.login),
@@ -353,7 +370,6 @@ async function ensureIssueMetadata(api, issue, finding, repository, assignee, is
 export async function publishFindings({
     audit,
     findings,
-    template,
     token,
     repository,
     assignee,
@@ -376,8 +392,8 @@ export async function publishFindings({
                 method: "POST",
                 body: JSON.stringify({
                     title: finding.title.slice(0, 256),
-                    body: renderIssueBody(template, finding),
-                    labels: [finding.label, AUDIT_TRACKING_LABEL],
+                    body: renderIssueBody(finding),
+                    labels: [finding.label, AUDIT_TRACKING_LABEL, AUDIT_AREA_LABEL],
                     assignees: [assignee],
                 }),
             });
@@ -424,9 +440,9 @@ export async function publishFindings({
 }
 
 async function main() {
-    const [auditPath, templatePath] = process.argv.slice(2);
-    if (!auditPath || !templatePath) {
-        throw new Error("audit JSON path와 issue template path가 필요합니다.");
+    const [auditPath] = process.argv.slice(2);
+    if (!auditPath) {
+        throw new Error("audit JSON path가 필요합니다.");
     }
     const token = process.env.GITHUB_TOKEN;
     const repository = process.env.GITHUB_REPOSITORY;
@@ -434,7 +450,6 @@ async function main() {
         throw new Error("GITHUB_TOKEN과 GITHUB_REPOSITORY가 필요합니다.");
     }
     const audit = JSON.parse(await fs.readFile(auditPath, "utf8"));
-    const template = await fs.readFile(templatePath, "utf8");
     const findings = selectActionableFindings(audit);
     if (findings.length === 0) {
         console.log("이슈 등록 기준에 해당하는 의존성 결과가 없습니다.");
@@ -443,7 +458,6 @@ async function main() {
     const results = await publishFindings({
         audit,
         findings,
-        template,
         token,
         repository,
         assignee: process.env.DEPENDENCY_AUDIT_ASSIGNEE ?? "1hyok",
