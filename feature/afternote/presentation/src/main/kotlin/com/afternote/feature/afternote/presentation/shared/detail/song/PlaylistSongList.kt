@@ -47,7 +47,7 @@ import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDis
  *
  * @param songs 표시할 노래 목록 (호출부가 이미 필터링한 최종 목록 — 리스트는 그대로 그린다)
  * @param onSongClick 노래 행 클릭 콜백 (null이면 비클릭)
- * @param isSelected 각 행의 선택 상태 판정 (null이면 라디오 없음 = 비선택 모드; 예: view-only 열람)
+ * @param isSelected 각 행의 선택 상태 판정 (null이면 체크박스 없음 = 비선택 모드; 예: view-only 열람)
  * @param header 첫 아이템으로 그릴 헤더 (검색창·"총 N곡" 등). 필수 — 현재 모든 호출부가 헤더를 가진다.
  */
 @Composable
