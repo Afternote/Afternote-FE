@@ -8,6 +8,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
+import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.core.data.repoimpl.UserRepositoryImpl
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeUserRepository
@@ -509,7 +510,7 @@ class SettingCompletionAndroidTest {
         val firstGate = userApi.enqueueDelete()
         val retryGate = userApi.enqueueDelete()
         val authRepository = completionStatefulWithdrawalAuthRepository(calls)
-        val repository = UserRepositoryImpl(userApi, authRepository)
+        val repository = UserRepositoryImpl(userApi, authRepository, FakeErrorReporter())
         val viewModel = SettingViewModel(authRepository, repository)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value is SettingUiState.Success
