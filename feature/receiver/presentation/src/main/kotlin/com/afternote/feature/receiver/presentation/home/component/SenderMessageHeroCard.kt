@@ -69,8 +69,8 @@ fun SenderMessageHeroCard(
 /**
  * SenderMessageHeroCard 전용 파스텔 그라데이션 (그린 → 크림 → 피치).
  *
- * 본 화면 1회용 + 다른 화면 (예: [HeroCard]) 의 그라데이션과 색 조합이 달라 디자인 시스템
- * 토큰으로 추상화하면 재사용성보다 SSOT 위반 비용이 큼.
+ * 본 화면 1회용이고 다른 화면의 그라데이션과 색 조합이 달라, 디자인 시스템 토큰으로 추상화하면
+ * 재사용성보다 SSOT 위반 비용이 큼.
  * 공용 색상 토큰으로 일반화하기 어려운 화면 전용 예외라 이 한 곳에 고정.
  */
 private fun heroGradient(): Brush =
