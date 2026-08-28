@@ -59,6 +59,10 @@ object TestMindRecordRepositoryModule {
     @Singleton
     fun provideMindRecordReceiverRepository(impl: MindRecordReceiverRepositoryImpl): MindRecordReceiverRepository = impl
 
+    /**
+     * 홈 진입 계측이 `/mind-record` 실제 API를 호출하지 않도록 strict fake로 격리한다
+     * (#562, #1288). 응답을 쓰는 테스트는 [FakeWeeklyReportRepository.results]에 명시적으로 준비한다.
+     */
     @Provides
     @Singleton
     fun provideWeeklyReportRepository(): WeeklyReportRepository = FakeWeeklyReportRepository()
