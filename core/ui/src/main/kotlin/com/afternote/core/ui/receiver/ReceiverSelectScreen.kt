@@ -27,6 +27,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -34,6 +35,7 @@ import com.afternote.core.common.util.KoreanConsonantUtil
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.KoreanConsonantIndex
 import com.afternote.core.ui.ProfileImage
+import com.afternote.core.ui.R
 import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
@@ -49,8 +51,11 @@ import kotlinx.coroutines.launch
  *
  * 검색 필드 + 초성 인덱스(ㄱ~ㅎ) + 단일 선택 목록 + 하단 완료 버튼 조립.
  * 데이터 조회·ViewModel·내비게이션은 소비 기능이 소유하고, 이 화면은
- * 목록·현재 선택·콜백·문구만 받는다. 선택/해제 규칙(같은 항목 재탭 시 해제 등)은
+ * 목록·현재 선택·콜백을 받는다. 선택/해제 규칙(같은 항목 재탭 시 해제 등)은
  * 소비자가 [onReceiverToggle] 에서 결정한다.
+ *
+ * 문구 중 [title] 만 진입 맥락에 따라 갈리므로(설정 "수신자 목록" / 애프터노트 "수신자 선택")
+ * 필수 파라미터고, 검색 안내·완료 버튼은 공용 기본값을 쓴다 — 필요하면 덮을 수 있다.
  *
  * @param listReplacement 검색 필드 아래 목록 영역을 통째로 대체할 상태 화면 —
  *   로딩·조회 실패·빈 목록처럼 소비 기능마다 다른 상태를 끼운다. null 이면 목록을 그린다.
@@ -58,14 +63,14 @@ import kotlinx.coroutines.launch
 @Composable
 fun ReceiverSelectScreen(
     title: String,
-    searchPlaceholder: String,
-    confirmText: String,
     receivers: List<ReceiverSelectItem>,
     selectedReceiverId: Long?,
     onReceiverToggle: (Long) -> Unit,
     onBackClick: () -> Unit,
     onConfirmClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    searchPlaceholder: String = stringResource(R.string.core_ui_receiver_select_search_placeholder),
+    confirmText: String = stringResource(R.string.core_ui_receiver_select_confirm),
     listReplacement: (@Composable () -> Unit)? = null,
 ) {
     Scaffold(
@@ -239,8 +244,6 @@ private fun ReceiverSelectScreenPreview() {
     AfternoteTheme {
         ReceiverSelectScreen(
             title = "수신자 선택",
-            searchPlaceholder = "이름으로 검색하기",
-            confirmText = "수신자 선택 완료하기",
             receivers =
                 listOf(
                     ReceiverSelectItem(id = 1L, name = "김혜성", relation = "아들"),
