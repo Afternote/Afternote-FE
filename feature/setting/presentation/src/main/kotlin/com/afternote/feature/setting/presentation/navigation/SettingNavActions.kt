@@ -5,6 +5,9 @@ interface SettingNavActions {
 
     fun onLogoutSuccess()
 
+    // 앱 계층이 실제 수신자 그래프 이동을 붙이기 전까지의 단계적 기본값. 통합 시 추상으로 조인다.
+    fun onNavigateToReceivedRecords() {}
+
     fun onNavigateToWithdrawGuide()
 
     fun onNavigateToWithdrawConfirm()
