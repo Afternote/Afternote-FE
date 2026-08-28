@@ -20,32 +20,32 @@ class AfternoteEditorValidatorTest {
         val error =
             AfternoteEditorValidator.validate(
                 form = EditorFormState(typeForm = AfternoteTypeForm.Social()),
-                payload = payload.copy(processingMethods = listOf("계정 삭제")),
+                payload = payload,
             )
 
         assertEquals(AfternoteValidationError.ACCOUNT_CREDENTIALS_REQUIRED, error)
     }
 
     @Test
-    fun `계정형 폼은 처리 방법이 한 개 이상 필요하다`() {
+    fun `계정형 폼은 처리 방법이 없어도 저장할 수 있다`() {
         val error =
             AfternoteEditorValidator.validate(
                 form = EditorFormState(typeForm = AfternoteTypeForm.Social()),
                 payload = payload.copy(accountId = "account", password = "password"),
             )
 
-        assertEquals(AfternoteValidationError.PROCESSING_METHODS_REQUIRED, error)
+        assertNull(error)
     }
 
     @Test
-    fun `갤러리 폼은 처리 방법이 한 개 이상 필요하다`() {
+    fun `갤러리 폼은 처리 방법이 없어도 저장할 수 있다`() {
         val error =
             AfternoteEditorValidator.validate(
                 form = EditorFormState(typeForm = AfternoteTypeForm.Gallery()),
                 payload = payload,
             )
 
-        assertEquals(AfternoteValidationError.PROCESSING_METHODS_REQUIRED, error)
+        assertNull(error)
     }
 
     @Test

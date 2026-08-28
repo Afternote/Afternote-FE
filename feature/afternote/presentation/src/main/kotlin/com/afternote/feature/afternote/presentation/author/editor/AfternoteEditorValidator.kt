@@ -29,22 +29,18 @@ internal object AfternoteEditorValidator {
             errors += AfternoteValidationError.LEAVE_MESSAGE_BODY_REQUIRED
         }
         when (type) {
-            // BUSINESS 는 시안(700:38735)의 필수 항목(계정 정보·처리 방법)이 SOCIAL 과 동일해 같은 규칙을 쓴다.
+            // 필수 판정 기준은 서버 계약(정식 등록 타이트 검증)이다 — 계정형은 계정 정보만 서버가 요구하고,
+            // 처리 방법(actions)·수신자는 서버도 「생략 또는 빈 배열 가능」인 선택 항목이다.
             AfternoteType.SOCIAL_NETWORK, AfternoteType.BUSINESS -> {
                 if (payload.accountId.isBlank() || payload.password.isBlank()) {
                     errors += AfternoteValidationError.ACCOUNT_CREDENTIALS_REQUIRED
                 }
-                if (payload.processingMethods.isEmpty()) {
-                    errors += AfternoteValidationError.PROCESSING_METHODS_REQUIRED
-                }
             }
 
-            AfternoteType.GALLERY_AND_FILES -> {
-                if (payload.processingMethods.isEmpty()) {
-                    errors += AfternoteValidationError.PROCESSING_METHODS_REQUIRED
-                }
-            }
+            AfternoteType.GALLERY_AND_FILES -> {}
 
+            // 서버는 정식 등록 시 추모 플레이리스트 곡을 필수로 검증한다(PLAYLIST_SONGS_REQUIRED) —
+            // 확정 안내 문구가 없어 FE 검증 신설은 #1389 에서 다룬다.
             AfternoteType.MEMORIAL -> {}
 
             // ESTATE 는 디자인 확정 전 placeholder 만 노출. UI 자체에서 입력이 막혀 있지만

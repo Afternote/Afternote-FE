@@ -12,9 +12,6 @@ enum class AfternoteValidationError(
     TITLE_REQUIRED(R.string.afternote_validation_title_required),
     ACCOUNT_CREDENTIALS_REQUIRED(R.string.afternote_validation_account_credentials_required),
 
-    /** 처리 방법 1개 이상 필요 (계정·갤러리 폼 공통). */
-    PROCESSING_METHODS_REQUIRED(R.string.afternote_validation_processing_methods_required),
-
     /** 둘 이상의 필수 입력이 동시에 비어 있어 특정 필드 하나로 안내를 좁힐 수 없음. */
     MULTIPLE_REQUIRED_FIELDS(R.string.afternote_validation_multiple_required_fields),
 
