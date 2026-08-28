@@ -183,12 +183,26 @@ class DailyQuestionResumeDraftTest {
     }
 
     @Test
-    fun `임시저장이 정말 없으면 실패로 알리지 않는다`() {
-        // 반대 방향이 없으면 «항상 오류» 로 만들어도 위 테스트가 통과한다.
-        val viewModel = viewModel(currentAnswerFromEditor = "<p></p>", drafts = emptyList())
+    fun `빈 목록도 이어쓰기 실패로 차단한다`() {
+        // 이 경로는 today.isDraft=true 일 때만 돈다 — 서버가 «임시저장이 있다» 고 이미 말한
+        // 상태다. 그런데 /today 는 서버의 LocalDate.now() 로 고르고 이 목록은 **기기의**
+        // LocalDate.now() 를 필터로 보내므로, 날짜 경계·시간대가 어긋나면 실제 draft 가
+        // 있어도 200 빈 목록이 온다. 그때 잠금을 풀면 POST 가 그 레코드를 upsert 해 사용자가
+        // 보지 못한 본문을 덮는다 (#1018 리뷰).
+        val repository = fakeRepository(drafts = emptyList())
+        val viewModel = viewModelWith(repository, currentAnswerFromEditor = "<p>사용자가 쓴 답변</p>")
 
-        assertEquals(null, viewModel.uiState.value.draftResumeError)
-        assertEquals(false, viewModel.uiState.value.isResumingDraft)
+        val state = viewModel.uiState.value
+        assertEquals(
+            UiText.Resource(R.string.mindrecord_error_daily_question_draft_load_failed),
+            state.draftResumeError,
+        )
+        assertEquals(false, state.canSubmit)
+
+        viewModel.submit(isDraft = true)
+        viewModel.submit(isDraft = false)
+        assertEquals(0, repository.createCalls)
+        assertEquals(0, repository.updateCalls)
     }
 
     private fun fakeRepository(

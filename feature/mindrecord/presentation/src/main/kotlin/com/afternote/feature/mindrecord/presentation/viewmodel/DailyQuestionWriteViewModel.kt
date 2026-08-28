@@ -159,9 +159,16 @@ class DailyQuestionWriteViewModel
         private suspend fun resumeDraft() {
             _uiState.update { it.copy(isResumingDraft = true, draftResumeError = null) }
             val listResult = repository.getList(date = LocalDate.now().toString(), draftOnly = true)
-            // 실패를 «임시저장 없음» 으로 접지 않는다. 저장이 upsert 라, 사용자가 빈 화면을
-            // «아직 없다» 로 읽고 저장하면 서버에 남아 있던 임시저장이 덮인다 (#1018).
-            if (listResult.isFailure) {
+            // **여기까지 왔다는 것은 서버가 «임시저장이 있다»(today.isDraft) 고 이미 말한 것이다.**
+            // 그러므로 조회 실패든 빈 목록이든 «임시저장 없음» 이 아니라 «있는 걸 못 찾았다» 다.
+            //
+            // 빈 목록이 정상 경로처럼 보이지만 아니다 — /today 는 서버의 LocalDate.now() 로
+            // 레코드를 고르는데 이 목록 요청은 **기기의** LocalDate.now() 를 날짜 필터로 보낸다.
+            // 날짜 경계나 시간대가 어긋나면 실제 draft 가 있어도 200 빈 목록이 온다. 그때 잠금을
+            // 풀면 questionId 가 있는 POST 가 같은 서버 레코드를 upsert 해, 사용자가 보지 못한
+            // 기존 본문을 덮는다 (#1018 리뷰).
+            val draft = listResult.getOrNull()?.firstOrNull { it.isDraft }
+            if (draft == null) {
                 _uiState.update {
                     it.copy(
                         isResumingDraft = false,
@@ -171,14 +178,6 @@ class DailyQuestionWriteViewModel
                 }
                 return
             }
-            val draft =
-                listResult
-                    .getOrNull()
-                    ?.firstOrNull { it.isDraft }
-                    ?: run {
-                        _uiState.update { it.copy(isResumingDraft = false) }
-                        return
-                    }
             _uiState.update {
                 // 빈 에디터는 `<p></p>` 를 내보내므로 `isBlank()` 로는 "비어 있음" 을 판정할 수
                 // 없다. 태그를 걷어 낸 본문으로 판단해야 사용자가 아무것도 안 쓴 상태에서
