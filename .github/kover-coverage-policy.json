@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "mode": "warn",
+  "source": {
+    "ref": "develop",
+    "sha": "393f99660bf2a62ef03d64f191f3c1ff26459dc6",
+    "runUrl": "https://github.com/Afternote/Afternote-FE/actions/runs/33156896621"
+  },
+  "modules": {
+    "app": {
+      "line": { "missed": 352, "covered": 10 },
+      "branch": { "missed": 57, "covered": 17 }
+    },
+    "core/common": {
+      "line": { "missed": 60, "covered": 59 },
+      "branch": { "missed": 12, "covered": 28 }
+    },
+    "core/data": {
+      "line": { "missed": 300, "covered": 168 },
+      "branch": { "missed": 49, "covered": 47 }
+    },
+    "core/datastore": {
+      "line": { "missed": 29, "covered": 89 },
+      "branch": { "missed": 10, "covered": 28 }
+    },
+    "core/domain": {
+      "line": { "missed": 2, "covered": 43 },
+      "branch": { "missed": 0, "covered": 14 }
+    },
+    "core/model": {
+      "line": { "missed": 4, "covered": 81 },
+      "branch": null
+    },
+    "core/network": {
+      "line": { "missed": 145, "covered": 384 },
+      "branch": { "missed": 348, "covered": 134 }
+    },
+    "core/ui": {
+      "line": { "missed": 769, "covered": 1377 },
+      "branch": { "missed": 598, "covered": 290 }
+    },
+    "feature/afternote/data": {
+      "line": { "missed": 158, "covered": 209 },
+      "branch": { "missed": 312, "covered": 150 }
+    },
+    "feature/afternote/domain": {
+      "line": { "missed": 15, "covered": 136 },
+      "branch": { "missed": 0, "covered": 4 }
+    },
+    "feature/afternote/presentation": {
+      "line": { "missed": 3225, "covered": 1681 },
+      "branch": { "missed": 2013, "covered": 470 }
+    },
+    "feature/home/presentation": {
+      "line": { "missed": 140, "covered": 152 },
+      "branch": { "missed": 63, "covered": 55 }
+    },
+    "feature/mindrecord/data": {
+      "line": { "missed": 139, "covered": 184 },
+      "branch": { "missed": 77, "covered": 65 }
+    },
+    "feature/mindrecord/domain": {
+      "line": { "missed": 0, "covered": 99 },
+      "branch": { "missed": 1, "covered": 7 }
+    },
+    "feature/mindrecord/presentation": {
+      "line": { "missed": 3905, "covered": 1341 },
+      "branch": { "missed": 2024, "covered": 371 }
+    },
+    "feature/onboarding/data": {
+      "line": null,
+      "branch": null
+    },
+    "feature/onboarding/domain": {
+      "line": null,
+      "branch": null
+    },
+    "feature/onboarding/presentation": {
+      "line": { "missed": 1154, "covered": 270 },
+      "branch": { "missed": 709, "covered": 71 }
+    },
+    "feature/receiver/data": {
+      "line": { "missed": 103, "covered": 210 },
+      "branch": { "missed": 216, "covered": 66 }
+    },
+    "feature/receiver/domain": {
+      "line": { "missed": 1, "covered": 70 },
+      "branch": { "missed": 0, "covered": 4 }
+    },
+    "feature/receiver/presentation": {
+      "line": { "missed": 2054, "covered": 617 },
+      "branch": { "missed": 1089, "covered": 175 }
+    },
+    "feature/setting/data": {
+      "line": null,
+      "branch": null
+    },
+    "feature/setting/domain": {
+      "line": { "missed": 4, "covered": 0 },
+      "branch": null
+    },
+    "feature/setting/presentation": {
+      "line": { "missed": 2719, "covered": 45 },
+      "branch": { "missed": 1187, "covered": 15 }
+    },
+    "feature/timeletter/data": {
+      "line": { "missed": 257, "covered": 0 },
+      "branch": { "missed": 126, "covered": 0 }
+    },
+    "feature/timeletter/domain": {
+      "line": { "missed": 24, "covered": 110 },
+      "branch": { "missed": 8, "covered": 17 }
+    },
+    "feature/timeletter/presentation": {
+      "line": { "missed": 2035, "covered": 552 },
+      "branch": { "missed": 1080, "covered": 145 }
+    },
+    "feature/timeletter/res": {
+      "line": null,
+      "branch": null
+    }
+  }
+}

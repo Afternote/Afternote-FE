@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -7,9 +8,15 @@ import test from "node:test";
 import {
     collectModuleSourceKeys,
     coverageForSourceKeys,
+    changedFilesBetween,
+    evaluateCoveragePolicy,
+    includeBaselineModules,
+    loadCoveragePolicy,
     parseKoverXml,
+    renderPolicyAnnotations,
     renderSummary,
     selectChangedModules,
+    validateCoveragePolicy,
 } from "./render-kover-summary.mjs";
 
 const REPORT = `<?xml version="1.0" encoding="UTF-8"?>
@@ -31,6 +38,37 @@ const REPORT = `<?xml version="1.0" encoding="UTF-8"?>
   <counter type="BRANCH" missed="1" covered="3"/>
   <counter type="LINE" missed="7" covered="13"/>
 </report>`;
+
+const POLICY = {
+    schemaVersion: 1,
+    mode: "warn",
+    source: {
+        ref: "develop",
+        sha: "0123456789abcdef0123456789abcdef01234567",
+        runUrl: "https://github.com/example/repository/actions/runs/123",
+    },
+    modules: {
+        app: {
+            line: { missed: 2, covered: 8 },
+            branch: { missed: 1, covered: 3 },
+        },
+        empty: {
+            line: null,
+            branch: null,
+        },
+    },
+};
+
+function moduleCoverage(name, line, branch) {
+    return {
+        name,
+        coverage: {
+            counters: { LINE: line, BRANCH: branch },
+            matchedSources: 1,
+            declaredSources: 1,
+        },
+    };
+}
 
 test("parses report-level and source-level line and branch counters", () => {
     const report = parseKoverXml(REPORT);
@@ -55,6 +93,88 @@ test("maps changed paths to the deepest app, core, or feature module", () => {
             ["app", "core/network", "feature/timeletter/domain", "feature/timeletter/presentation"],
         ),
         ["app", "core/network", "feature/timeletter/presentation"],
+    );
+});
+
+test("keeps deleted production files in changed-module coverage selection", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "kover-deleted-module-"));
+    const source = path.join(root, "feature/deleted/domain/src/main/Deleted.kt");
+    await fs.mkdir(path.dirname(source), { recursive: true });
+    await fs.writeFile(source, "package example\nclass Deleted\n");
+    execFileSync("git", ["init", "--quiet"], { cwd: root });
+    execFileSync("git", ["config", "user.name", "Kover Test"], { cwd: root });
+    execFileSync("git", ["config", "user.email", "kover@example.invalid"], { cwd: root });
+    execFileSync("git", ["add", "."], { cwd: root });
+    execFileSync("git", ["commit", "--quiet", "-m", "base"], { cwd: root });
+    const base = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
+
+    await fs.rm(source);
+    execFileSync("git", ["add", "--all"], { cwd: root });
+    execFileSync("git", ["commit", "--quiet", "-m", "delete"], { cwd: root });
+    const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
+
+    const changedFiles = changedFilesBetween(base, head, root);
+    assert.deepEqual(changedFiles, ["feature/deleted/domain/src/main/Deleted.kt"]);
+    assert.deepEqual(
+        selectChangedModules(changedFiles, ["feature/deleted/domain"]),
+        ["feature/deleted/domain"],
+    );
+});
+
+test("evaluates both baseline and destination modules when production code is renamed", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "kover-renamed-module-"));
+    const oldSource = "feature/old/domain/src/main/Old.kt";
+    const newSource = "feature/new/domain/src/main/Old.kt";
+    await fs.mkdir(path.join(root, path.dirname(oldSource)), { recursive: true });
+    await fs.writeFile(path.join(root, oldSource), "package example\nclass Renamed\n");
+    execFileSync("git", ["init", "--quiet"], { cwd: root });
+    execFileSync("git", ["config", "user.name", "Kover Test"], { cwd: root });
+    execFileSync("git", ["config", "user.email", "kover@example.invalid"], { cwd: root });
+    execFileSync("git", ["add", "."], { cwd: root });
+    execFileSync("git", ["commit", "--quiet", "-m", "base"], { cwd: root });
+    const base = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
+
+    await fs.mkdir(path.join(root, path.dirname(newSource)), { recursive: true });
+    execFileSync("git", ["mv", oldSource, newSource], { cwd: root });
+    execFileSync("git", ["commit", "--quiet", "-m", "rename"], { cwd: root });
+    const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
+
+    const changedFiles = changedFilesBetween(base, head, root);
+    assert.deepEqual(changedFiles, [oldSource, newSource]);
+
+    const policy = structuredClone(POLICY);
+    policy.modules["feature/old/domain"] = {
+        line: { missed: 1, covered: 9 },
+        branch: { missed: 1, covered: 3 },
+    };
+    const knownModules = includeBaselineModules(["feature/new/domain"], policy);
+    const changedModules = selectChangedModules(changedFiles, knownModules);
+    assert.deepEqual(changedModules, ["feature/new/domain", "feature/old/domain"]);
+
+    const evaluation = evaluateCoveragePolicy({
+        policy,
+        modules: [
+            moduleCoverage(
+                "feature/new/domain",
+                { missed: 1, covered: 1 },
+                { missed: 0, covered: 0 },
+            ),
+            {
+                name: "feature/old/domain",
+                coverage: coverageForSourceKeys(parseKoverXml(REPORT), new Set()),
+            },
+        ],
+    });
+    assert.equal(
+        evaluation.modules.find(({ name }) => name === "feature/new/domain")?.result,
+        "untracked",
+    );
+    assert.deepEqual(
+        evaluation.regressions.map(({ module, type, status }) => ({ module, type, status })),
+        [
+            { module: "feature/old/domain", type: "LINE", status: "missing" },
+            { module: "feature/old/domain", type: "BRANCH", status: "missing" },
+        ],
     );
 });
 
@@ -90,6 +210,105 @@ test("sums only source files owned by a changed module", () => {
     assert.equal(coverage.declaredSources, 2);
 });
 
+test("loads the committed warning-only baseline with exact develop provenance", async () => {
+    const policy = await loadCoveragePolicy(
+        new URL("../kover-coverage-policy.json", import.meta.url),
+    );
+
+    assert.equal(policy.mode, "warn");
+    assert.equal(policy.source.sha, "393f99660bf2a62ef03d64f191f3c1ff26459dc6");
+    assert.equal(
+        policy.source.runUrl,
+        "https://github.com/Afternote/Afternote-FE/actions/runs/33156896621",
+    );
+    assert.deepEqual(policy.modules["feature/onboarding/data"], {
+        line: null,
+        branch: null,
+    });
+});
+
+test("rejects missing metrics and zero-total baseline counters", () => {
+    const missingMetric = structuredClone(POLICY);
+    delete missingMetric.modules.app.branch;
+    assert.throws(
+        () => validateCoveragePolicy(missingMetric),
+        /baseline app\.branch is required/,
+    );
+
+    const zeroTotal = structuredClone(POLICY);
+    zeroTotal.modules.app.line = { missed: 0, covered: 0 };
+    assert.throws(
+        () => validateCoveragePolicy(zeroTotal),
+        /must be null when no coverage counter is measurable/,
+    );
+});
+
+test("detects exact line regression and missing branch coverage without a base artifact", () => {
+    const evaluation = evaluateCoveragePolicy({
+        policy: POLICY,
+        modules: [
+            moduleCoverage(
+                "app",
+                { missed: 21, covered: 79 },
+                { missed: 0, covered: 0 },
+            ),
+        ],
+    });
+
+    assert.equal(evaluation.mode, "warn");
+    assert.deepEqual(
+        evaluation.regressions.map(({ module, type, status }) => ({ module, type, status })),
+        [
+            { module: "app", type: "LINE", status: "regression" },
+            { module: "app", type: "BRANCH", status: "missing" },
+        ],
+    );
+    assert.match(renderPolicyAnnotations(evaluation)[0], /^::warning /);
+    assert.match(renderPolicyAnnotations(evaluation)[1], /not measurable/);
+
+    const enforced = evaluateCoveragePolicy({
+        policy: POLICY,
+        mode: "enforce",
+        modules: [moduleCoverage("app", { missed: 21, covered: 79 }, { missed: 1, covered: 3 })],
+    });
+    assert.match(renderPolicyAnnotations(enforced)[0], /^::error /);
+});
+
+test("handles zero-test, newly measurable, and renamed untracked modules", () => {
+    const evaluation = evaluateCoveragePolicy({
+        policy: POLICY,
+        modules: [
+            moduleCoverage("empty", { missed: 0, covered: 0 }, { missed: 0, covered: 0 }),
+            moduleCoverage("feature/renamed/data", { missed: 1, covered: 1 }, { missed: 0, covered: 0 }),
+        ],
+    });
+
+    assert.equal(evaluation.modules[0].result, "not-applicable");
+    assert.equal(evaluation.modules[1].result, "untracked");
+    assert.equal(evaluation.regressions.length, 0);
+    assert.match(renderPolicyAnnotations(evaluation)[0], /^::notice /);
+
+    const newlyMeasurablePolicy = structuredClone(POLICY);
+    newlyMeasurablePolicy.modules.app.branch = null;
+    const newlyMeasurable = evaluateCoveragePolicy({
+        policy: newlyMeasurablePolicy,
+        modules: [moduleCoverage("app", { missed: 2, covered: 8 }, { missed: 1, covered: 1 })],
+    });
+    assert.equal(newlyMeasurable.modules[0].metrics.BRANCH.status, "newly-measurable");
+    assert.equal(newlyMeasurable.regressions.length, 0);
+});
+
+test("does not warn when changed-module line and branch ratios hold or improve", () => {
+    const evaluation = evaluateCoveragePolicy({
+        policy: POLICY,
+        modules: [moduleCoverage("app", { missed: 20, covered: 80 }, { missed: 2, covered: 8 })],
+    });
+
+    assert.equal(evaluation.modules[0].result, "pass");
+    assert.equal(evaluation.regressions.length, 0);
+    assert.deepEqual(renderPolicyAnnotations(evaluation), []);
+});
+
 test("renders artifact link, aggregate totals, changed modules, and report-only policy", () => {
     const report = parseKoverXml(REPORT);
     const summary = renderSummary({
@@ -107,4 +326,28 @@ test("renders artifact link, aggregate totals, changed modules, and report-only 
     assert.match(summary, /Aggregate line: \*\*65\.00% \(13\/20\)\*\*/);
     assert.match(summary, /`app` \| 80\.00% \(8\/10\) \| 75\.00% \(3\/4\)/);
     assert.match(summary, /no coverage percentage threshold is enforced/);
+});
+
+test("preserves the coverage summary and appends warning-only ratchet evidence", () => {
+    const report = parseKoverXml(REPORT);
+    const modules = [
+        {
+            name: "app",
+            coverage: coverageForSourceKeys(report, new Set(["com.example.app:Home.kt"])),
+        },
+    ];
+    const policyEvaluation = evaluateCoveragePolicy({ policy: POLICY, modules });
+    const summary = renderSummary({
+        aggregate: report.aggregate,
+        artifactUrl: "https://example.test/artifact",
+        modules,
+        policyEvaluation,
+    });
+
+    assert.match(summary, /### Changed modules/);
+    assert.match(summary, /`app` \| 80\.00% \(8\/10\) \| 75\.00% \(3\/4\)/);
+    assert.match(summary, /### Coverage non-regression/);
+    assert.match(summary, /Policy mode: `warn`/);
+    assert.match(summary, /Warning-only non-regression baseline/);
+    assert.match(summary, /No absolute coverage percentage threshold is enforced/);
 });
