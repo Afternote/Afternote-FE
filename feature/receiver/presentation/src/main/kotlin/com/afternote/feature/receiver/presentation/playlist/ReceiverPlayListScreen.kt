@@ -18,7 +18,6 @@ import com.afternote.feature.afternote.presentation.shared.detail.song.PlaylistS
 import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScaffold
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 import com.afternote.feature.receiver.presentation.R
-import com.afternote.feature.afternote.presentation.R as AfternoteR
 
 /**
  * 수신자 추억 노트 플레이리스트 전체보기 화면 (view-only).
@@ -39,7 +38,7 @@ fun MemorialPlaylistScreen(
     senderName: String = "",
 ) {
     SongPlaylistScaffold(
-        title = stringResource(AfternoteR.string.receiver_memorial_playlist_screen_title, senderName),
+        title = stringResource(R.string.receiver_memorial_playlist_screen_title, senderName),
         onBackClick = onBackClick,
         modifier = modifier,
     ) { paddingValues ->
