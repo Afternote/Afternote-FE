@@ -36,6 +36,7 @@ const DEFAULT_ISSUE_TYPE_IDS = {
 // 감사가 발행한 이슈에만 붙는 표식. 닫힌 이슈까지 조회 범위를 넓히면서도 저장소 전체 이슈를
 // 페이징하지 않기 위한 것이다 (#1191).
 const AUDIT_TRACKING_LABEL = "dependency-audit";
+const AUDIT_AREA_LABEL = "area:platform";
 
 const COORDINATE_DISPLAY_NAMES = {
     "com.android.tools.build:gradle": "Android Gradle Plugin",
@@ -235,7 +236,7 @@ export function renderIssueBody(finding) {
         "",
         "### 주 담당 모듈",
         "",
-        "repository-ops — CI·공용 테스트·릴리스·저장소 운영",
+        "platform — Android 앱·CI·빌드·릴리스·저장소 운영",
         "",
         "### 개요",
         "",
@@ -344,6 +345,7 @@ async function ensureIssueMetadata(api, issue, finding, repository, assignee, is
         ...(issue.labels ?? []).map((label) => typeof label === "string" ? label : label.name),
         finding.label,
         AUDIT_TRACKING_LABEL,
+        AUDIT_AREA_LABEL,
     ]).filter(Boolean);
     const assignees = unique([
         ...(issue.assignees ?? []).map((item) => item.login),
@@ -391,7 +393,7 @@ export async function publishFindings({
                 body: JSON.stringify({
                     title: finding.title.slice(0, 256),
                     body: renderIssueBody(finding),
-                    labels: [finding.label, AUDIT_TRACKING_LABEL],
+                    labels: [finding.label, AUDIT_TRACKING_LABEL, AUDIT_AREA_LABEL],
                     assignees: [assignee],
                 }),
             });
