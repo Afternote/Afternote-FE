@@ -179,15 +179,21 @@ private fun TitleSection(
     categoryLabel: String,
     userName: String,
 ) {
+    // 프로필 로드 실패·로딩 경합으로 이름이 비어 있으면 이름 세그먼트를 생략해
+    // "…에 대한 님의 기록" 렌더를 막는다.
+    val titleSuffix =
+        if (userName.isBlank()) {
+            stringResource(R.string.feature_afternote_memorial_detail_title_suffix_no_name)
+        } else {
+            stringResource(R.string.feature_afternote_memorial_detail_title_suffix, userName)
+        }
     Text(
         text =
             buildAnnotatedString {
                 withStyle(style = SpanStyle(color = AfternoteDesign.colors.gray9)) {
                     append(categoryLabel)
                 }
-                // 프로필 로드 실패·로딩 경합으로 이름이 비어 있으면 이름 세그먼트를 생략해
-                // "…에 대한 님의 기록" 렌더를 막는다.
-                append(if (userName.isBlank()) "에 대한\n기록" else "에 대한\n${userName}님의 기록")
+                append(titleSuffix)
             },
         style = AfternoteDesign.typography.bodyLargeB,
     )
