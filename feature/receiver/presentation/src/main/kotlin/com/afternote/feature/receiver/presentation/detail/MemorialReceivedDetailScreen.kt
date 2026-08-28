@@ -44,13 +44,14 @@ import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
-import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.MemorialContent
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
 import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
+import com.afternote.feature.receiver.presentation.R
+import com.afternote.feature.afternote.presentation.R as AfternoteR
 
 /**
  * MEMORIAL(추억 노트) 카테고리의 수신자 측 상세 화면.
@@ -75,7 +76,7 @@ fun MemorialReceivedDetailScreen(
     memorialVideoUrl: String? = null,
     memorialThumbnailUrl: String? = null,
 ) {
-    profileImageResId ?: R.drawable.feature_afternote_img_default_profile_deceased
+    profileImageResId ?: R.drawable.receiver_img_default_profile_deceased
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -204,7 +205,7 @@ private fun ReceiverVideoSection(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.feature_afternote_ic_play_arrow),
+                    painter = painterResource(R.drawable.receiver_ic_play_arrow),
                     contentDescription = "Play",
                     tint = AfternoteDesign.colors.white,
                     modifier =
@@ -253,7 +254,7 @@ private fun ReceiverMemorialVideoThumbnail(thumbnailUrl: String?) {
                     ),
         )
         Image(
-            painter = painterResource(R.drawable.feature_afternote_ic_playback),
+            painter = painterResource(AfternoteR.drawable.feature_afternote_ic_playback),
             contentDescription = "영상 재생",
             modifier =
                 Modifier
