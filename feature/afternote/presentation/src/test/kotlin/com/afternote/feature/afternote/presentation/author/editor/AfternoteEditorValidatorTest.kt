@@ -21,7 +21,6 @@ class AfternoteEditorValidatorTest {
             AfternoteEditorValidator.validate(
                 form = EditorFormState(typeForm = AfternoteTypeForm.Social()),
                 payload = payload.copy(processingMethods = listOf("계정 삭제")),
-                selectedReceiverIds = listOf(1L),
             )
 
         assertEquals(AfternoteValidationError.ACCOUNT_CREDENTIALS_REQUIRED, error)
@@ -33,7 +32,6 @@ class AfternoteEditorValidatorTest {
             AfternoteEditorValidator.validate(
                 form = EditorFormState(typeForm = AfternoteTypeForm.Social()),
                 payload = payload.copy(accountId = "account", password = "password"),
-                selectedReceiverIds = listOf(1L),
             )
 
         assertEquals(AfternoteValidationError.PROCESSING_METHODS_REQUIRED, error)
@@ -45,7 +43,6 @@ class AfternoteEditorValidatorTest {
             AfternoteEditorValidator.validate(
                 form = EditorFormState(typeForm = AfternoteTypeForm.Gallery()),
                 payload = payload,
-                selectedReceiverIds = listOf(1L),
             )
 
         assertEquals(AfternoteValidationError.PROCESSING_METHODS_REQUIRED, error)
@@ -57,7 +54,6 @@ class AfternoteEditorValidatorTest {
             AfternoteEditorValidator.validate(
                 form = EditorFormState(typeForm = AfternoteTypeForm.Social()),
                 payload = payload.copy(serviceName = ""),
-                selectedReceiverIds = emptyList(),
             )
 
         assertEquals(AfternoteValidationError.MULTIPLE_REQUIRED_FIELDS, error)
@@ -69,7 +65,6 @@ class AfternoteEditorValidatorTest {
             AfternoteEditorValidator.validate(
                 form = EditorFormState(typeForm = AfternoteTypeForm.Memorial()),
                 payload = payload,
-                selectedReceiverIds = listOf(1L),
             )
 
         assertNull(error)

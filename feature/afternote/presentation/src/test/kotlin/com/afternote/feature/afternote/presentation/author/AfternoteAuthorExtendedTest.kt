@@ -156,7 +156,17 @@ class AfternoteAuthorExtendedTest {
         val repository =
             FakeAfternoteRepository.strict().apply {
                 onGetDetail = {
-                    Result.success(authorDetail().copy(receivers = emptyList()))
+                    // 수신자는 선택 항목(#951)이라 비어 있어도 오류에 끼지 않는다 — 계정정보 누락만 단일 오류로 떠야 한다.
+                    Result.success(
+                        authorDetail().copy(
+                            receivers = emptyList(),
+                            content =
+                                DetailContent.SocialNetwork(
+                                    credentials = DetailCredentials(id = "", password = ""),
+                                    processingMethods = listOf("계정 삭제"),
+                                ),
+                        ),
+                    )
                 }
             }
         val viewModel = editorViewModel(repository, itemId = 73L)
@@ -164,7 +174,7 @@ class AfternoteAuthorExtendedTest {
         val validationMessage =
             RuntimeEnvironment
                 .getApplication()
-                .getString(R.string.afternote_validation_receivers_required)
+                .getString(R.string.afternote_validation_account_credentials_required)
 
         composeRule.setContent {
             AfternoteTheme {
