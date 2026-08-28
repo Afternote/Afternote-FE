@@ -295,6 +295,8 @@
     <string name="feature_afternote_detail_password_mask">••••••••</string>
     <string name="feature_afternote_detail_quote_mark">❝ </string>
     <string name="feature_afternote_detail_section_additional_receiver">추가  수신자</string>
+    <string name="feature_afternote_memorial_detail_sharing_notice">이 추억 노트는 지정된 신뢰할 연락처에게만 공유되며,\n안전하게 보관됩니다.</string>
+    <string name="feature_afternote_memorial_video_no_app">영상을 재생할 수 있는 앱이 없습니다.</string>
 
     <!-- Afternote editor (author) — UI strings -->
     <string name="afternote_editor_screen_title">애프터노트 작성하기</string>
