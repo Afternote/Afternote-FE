@@ -112,12 +112,13 @@ test("renders dependency issues with the same structured metadata fields as the 
     );
     const body = renderIssueBody(finding);
     assert.match(body, /### 작업 유형\n\nbug — 버그·오동작/);
-    assert.match(body, /### 주 담당 모듈\n\nrepository-ops —/);
+    assert.match(body, /### 주 담당 모듈\n\nplatform —/);
     assert.match(body, /dependency-audit-key: consistency:androidx\.compose\.runtime:runtime/);
     assert.match(body, /### 자식 이슈\n\n_No response_/);
 });
 
 const TRACKING_LABEL = "dependency-audit";
+const AREA_LABEL = "area:platform";
 
 function securityFinding() {
     const [finding] = selectActionableFindings(
@@ -142,7 +143,7 @@ function auditIssue({ number = 986, state, body }) {
         html_url: `https://example.test/${number}`,
         state,
         body,
-        labels: [{ name: "bug" }, { name: TRACKING_LABEL }],
+        labels: [{ name: "bug" }, { name: TRACKING_LABEL }, { name: AREA_LABEL }],
         assignees: [],
     };
 }
@@ -285,7 +286,7 @@ test("labels newly created issues so they stay discoverable after being closed",
     const { actions, calls } = await publish(finding, []);
 
     assert.deepEqual(actions, ["created"]);
-    assert.deepEqual(created(calls)[0].body.labels, ["bug", TRACKING_LABEL]);
+    assert.deepEqual(created(calls)[0].body.labels, ["bug", TRACKING_LABEL, AREA_LABEL]);
 });
 
 test("scopes the closed-issue lookup to the tracking label but lists open issues in full", async () => {

@@ -3,10 +3,11 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import {
+    AREA_LABEL_BY_MODULE,
     ASSIGNEE_BY_MODULE,
-    CLASSIFICATION_LABELS,
     GUARD_COMMENT_MARKER,
     LEGACY_ISSUE_MAX,
+    TYPE_LABELS,
     inspectIssue,
     readFormSection,
     reconcileIssue,
@@ -90,27 +91,35 @@ test("maps every primary module to the repository owner table", () => {
         assert.equal(inspection.status, "valid", module);
         assert.equal(inspection.expectedAssignee, assignee, module);
         assert.equal(inspection.expectedLabel, "enhancement", module);
+        assert.equal(inspection.expectedAreaLabel, AREA_LABEL_BY_MODULE[module], module);
     }
 });
 
 test("maps every work type to exactly one classification label", () => {
-    for (const label of CLASSIFICATION_LABELS) {
+    for (const label of TYPE_LABELS) {
         const inspection = inspectIssue(issue({ body: formBody(label, "core") }));
         assert.equal(inspection.status, "valid", label);
         assert.equal(inspection.expectedLabel, label, label);
-        assert.deepEqual(inspection.labels, [label], label);
+        assert.deepEqual(inspection.labels, [label, "area:core"], label);
     }
 });
 
-test("replaces wrong category labels and assignees while preserving operational labels", () => {
+test("replaces wrong type, area, legacy internal labels and assignees while preserving operational labels", () => {
     const inspection = inspectIssue(issue({
         body: formBody("bug", "timeletter"),
-        labels: [{ name: "enhancement" }, { name: "P1" }, { name: "documentation" }],
+        labels: [
+            { name: "enhancement" },
+            { name: "P1" },
+            { name: "documentation" },
+            { name: "internal" },
+            { name: "area:core" },
+            { name: "area:home" },
+        ],
         assignees: [{ login: "1hyok" }, { login: "Sadturtleman" }],
     }));
     assert.equal(inspection.status, "valid");
     assert.equal(inspection.needsUpdate, true);
-    assert.deepEqual(inspection.labels, ["P1", "bug"]);
+    assert.deepEqual(inspection.labels, ["P1", "bug", "area:timeletter"]);
     assert.deepEqual(inspection.assignees, ["koongmai"]);
 });
 
@@ -144,9 +153,13 @@ test("corrects metadata and verifies the persisted postcondition", async () => {
         number: original.number,
         action: "corrected",
         label: "documentation",
+        areaLabel: "area:mindrecord",
         assignee: "Sadturtleman",
     });
-    assert.deepEqual(fake.currentIssue().labels, [{ name: "P0" }, { name: "documentation" }]);
+    assert.deepEqual(
+        fake.currentIssue().labels,
+        [{ name: "P0" }, { name: "documentation" }, { name: "area:mindrecord" }],
+    );
     assert.deepEqual(fake.currentIssue().assignees, [{ login: "Sadturtleman" }]);
     assert.equal(fake.calls.filter((call) => call.method === "PATCH").length, 1);
 });
@@ -173,7 +186,7 @@ test("issue form and workflow preserve strict metadata enforcement boundaries", 
     assert.match(config, /^blank_issues_enabled: false$/m);
     assert.match(form, /label: 작업 유형[\s\S]*validations:\n\s+required: true/);
     assert.match(form, /label: 주 담당 모듈[\s\S]*validations:\n\s+required: true/);
-    for (const type of CLASSIFICATION_LABELS) {
+    for (const type of TYPE_LABELS) {
         assert.match(form, new RegExp(`- ${type} —`));
     }
     for (const module of Object.keys(ASSIGNEE_BY_MODULE)) {

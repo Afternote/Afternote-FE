@@ -9,29 +9,50 @@ import { pathToFileURL } from "node:url";
 // 정기 재검사에서 소급 종료하지 않고, 이후 생성된 이슈부터 fail-closed로 관리한다.
 export const LEGACY_ISSUE_MAX = 1342;
 
-export const CLASSIFICATION_LABELS = Object.freeze([
+export const TYPE_LABELS = Object.freeze([
     "bug",
     "enhancement",
     "documentation",
-    "internal",
+    "maintenance",
+    "refactor",
+    "release",
+    "security",
+    "test",
 ]);
 
 export const TYPE_LABEL_BY_KEY = Object.freeze({
     bug: "bug",
     enhancement: "enhancement",
     documentation: "documentation",
-    internal: "internal",
+    maintenance: "maintenance",
+    refactor: "refactor",
+    release: "release",
+    security: "security",
+    test: "test",
+});
+
+export const AREA_LABEL_BY_MODULE = Object.freeze({
+    afternote: "area:afternote",
+    onboarding: "area:onboarding",
+    core: "area:core",
+    receiver: "area:receiver",
+    setting: "area:setting",
+    timeletter: "area:timeletter",
+    mindrecord: "area:mindrecord",
+    home: "area:home",
+    platform: "area:platform",
 });
 
 export const ASSIGNEE_BY_MODULE = Object.freeze({
     afternote: "1hyok",
     onboarding: "1hyok",
     core: "1hyok",
+    receiver: "1hyok",
     setting: "koongmai",
     timeletter: "koongmai",
     mindrecord: "Sadturtleman",
     home: "Sadturtleman",
-    "repository-ops": "1hyok",
+    platform: "1hyok",
 });
 
 export const GUARD_COMMENT_MARKER = "<!-- issue-metadata-guard:v1 -->";
@@ -87,13 +108,14 @@ export function expectedMetadata(issue) {
     const typeKey = optionKey(typeValue);
     const moduleKey = optionKey(moduleValue);
     const expectedLabel = TYPE_LABEL_BY_KEY[typeKey];
+    const expectedAreaLabel = AREA_LABEL_BY_MODULE[moduleKey];
     const expectedAssignee = ASSIGNEE_BY_MODULE[moduleKey];
     const reasons = [];
 
     if (!expectedLabel) {
         reasons.push("`작업 유형`이 없거나 허용된 값이 아닙니다.");
     }
-    if (!expectedAssignee) {
+    if (!expectedAssignee || !expectedAreaLabel) {
         reasons.push("`주 담당 모듈`이 없거나 허용된 값이 아닙니다.");
     }
     if (reasons.length > 0) {
@@ -104,6 +126,7 @@ export function expectedMetadata(issue) {
         typeKey,
         moduleKey,
         expectedLabel,
+        expectedAreaLabel,
         expectedAssignee,
     };
 }
@@ -124,8 +147,10 @@ export function inspectIssue(issue) {
     const currentLabels = labelNames(issue);
     const currentAssignees = assigneeLogins(issue);
     const targetLabels = unique([
-        ...currentLabels.filter((label) => !CLASSIFICATION_LABELS.includes(label)),
+        ...currentLabels.filter((label) => !TYPE_LABELS.includes(label) &&
+            label !== "internal" && !label.startsWith("area:")),
         expected.expectedLabel,
+        expected.expectedAreaLabel,
     ]);
     const targetAssignees = [expected.expectedAssignee];
     const needsUpdate = !sameStringSet(currentLabels, targetLabels) ||
@@ -137,6 +162,7 @@ export function inspectIssue(issue) {
         labels: targetLabels,
         assignees: targetAssignees,
         expectedLabel: expected.expectedLabel,
+        expectedAreaLabel: expected.expectedAreaLabel,
         expectedAssignee: expected.expectedAssignee,
         moduleKey: expected.moduleKey,
         typeKey: expected.typeKey,
@@ -172,6 +198,7 @@ async function assertReconciled(api, repository, issueNumber, expected) {
     const inspection = inspectIssue(latest);
     if (inspection.status !== "valid" || inspection.needsUpdate ||
         inspection.expectedLabel !== expected.expectedLabel ||
+        inspection.expectedAreaLabel !== expected.expectedAreaLabel ||
         inspection.expectedAssignee !== expected.expectedAssignee) {
         throw new Error(`Issue #${issueNumber} metadata postcondition failed`);
     }
@@ -218,6 +245,7 @@ export async function reconcileIssue(api, repository, issue) {
         number: issue.number,
         action: inspection.needsUpdate ? "corrected" : "unchanged",
         label: inspection.expectedLabel,
+        areaLabel: inspection.expectedAreaLabel,
         assignee: inspection.expectedAssignee,
     };
 }
