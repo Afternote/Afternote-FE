@@ -13,6 +13,7 @@
 | #716 | #904 | 실패·진행 **표현** (기존 텍스트 재사용, 새 컴포넌트 미신설) | 각 화면의 진행/실패 `Text` — 표현 통일은 #446 |
 | #592 | #909 | `getToday()` **실패 시 표시 방식** (영역을 그리지 않음) | `DailyQuestionAnswerListScreen.TodayRecommendedQuestion` |
 | #751 | #908 | 날짜 파싱 실패 항목을 **목록에서 제외** (내용까지 숨김) | `MindRecordUiMapper.toUi()` · `WeeklyReportViewModel.toUi()` |
+| #648 | #1346 | 복수 선택 행의 **선택 컨트롤 비주얼** (라디오 시안 → core 원형 체크박스) | `PlaylistSongItem.SongSelectionCheckbox` |
 
 ---
 
@@ -302,3 +303,18 @@ Compose 테스트로 고정했다.
 | fileKey (`mindrecords/staging/...png`) | `https://cdn/...permanent/...png` | 200 |
 
 추측으로 진행한 항목이 아니므로 이 문서에서는 근거만 남기고 판단 보류 목록에서 뺀다.
+
+## #648 — 플레이리스트 복수 선택 행의 컨트롤 비주얼
+
+**정한 것**: 곡 선택 행의 라디오 비주얼을 기존 core `AfternoteCircularCheckbox` 로 바꾸고,
+행 전체에 `Role.Checkbox` toggleable semantics 를 부여했다.
+
+**근거가 없는 이유**: 시안은 여전히 라디오 비주얼이다. #648 의 「디자인 승인 게이트 해제
+(2026-08-28)」는 복수 선택 확정과 checkbox semantics 까지만 정하고, 색·크기·간격은 «최신
+플레이리스트 시안과 기존 core 선택 컴포넌트에 맞춰 구현 담당자가 결정» 으로 위임했다.
+
+**판단 근거**: 새 모양을 만들면 미확정 디자인이 굳는다. 이미 있는 core 선택 컴포넌트를
+재사용하는 쪽이 되돌리기 쉽고, 복수 선택 실동작과 컨트롤 관용도 일치한다.
+
+**뒤집을 때**: `PlaylistSongItem.SongSelectionCheckbox` 하나다. 시안이 선택 컨트롤을
+그리면 그 모양으로 바꾸면 되고, semantics(복수 선택)는 게이트 확정이라 유지된다.
