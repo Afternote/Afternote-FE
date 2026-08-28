@@ -1,14 +1,9 @@
-package com.afternote.afternote_fe
+package com.afternote.feature.setting.presentation
 
-import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.afternote.afternote_fe.test.FailureArtifactRule
-import com.afternote.afternote_fe.test.FakeErrorReporter
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.data.repoimpl.UserRepositoryImpl
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeUserRepository
@@ -68,6 +63,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import java.util.ArrayDeque
 import com.afternote.core.domain.testing.FakeUserRepository.ConnectedAccountLinkCall as CompletionConnectedLinkCall
 import com.afternote.core.domain.testing.FakeUserRepository.DeliveryUpdateCall as CompletionDeliveryUpdateCall
@@ -77,16 +75,12 @@ import com.afternote.core.domain.testing.FakeUserRepository.ReceiverCreateCall a
 import com.afternote.core.domain.testing.FakeUserRepository.ReceiverMessageCall as CompletionReceiverMessageCall
 import com.afternote.core.domain.testing.FakeUserRepository.ReceiverUpdateCall as CompletionReceiverEditCall
 
-@RunWith(AndroidJUnit4::class)
-class SettingCompletionAndroidTest {
-    @get:Rule(order = 0)
+@RunWith(RobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(sdk = [35])
+class SettingCompletionTest {
+    @get:Rule
     val composeRule = createComposeRule()
-
-    @get:Rule(order = 1)
-    val failureArtifactRule =
-        FailureArtifactRule {
-            composeRule.onRoot().captureToImage().asAndroidBitmap()
-        }
 
     @Test
     fun profileUpdate_success_emitsExactPayloadAndEventAfterPendingRequest() {
@@ -510,7 +504,7 @@ class SettingCompletionAndroidTest {
         val firstGate = userApi.enqueueDelete()
         val retryGate = userApi.enqueueDelete()
         val authRepository = completionStatefulWithdrawalAuthRepository(calls)
-        val repository = UserRepositoryImpl(userApi, authRepository, FakeErrorReporter())
+        val repository = UserRepositoryImpl(userApi, authRepository, NoopErrorReporter)
         val viewModel = SettingViewModel(authRepository, repository)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value is SettingUiState.Success
@@ -565,6 +559,13 @@ class SettingCompletionAndroidTest {
         const val TIMEOUT_MILLIS = 5_000L
         const val RECEIVER_ID = 77L
     }
+}
+
+private object NoopErrorReporter : ErrorReporter {
+    override fun writeFailure(
+        throwable: Throwable,
+        attributes: Map<String, String>,
+    ) = Unit
 }
 
 private val COMPLETION_DEFAULT_USER =
