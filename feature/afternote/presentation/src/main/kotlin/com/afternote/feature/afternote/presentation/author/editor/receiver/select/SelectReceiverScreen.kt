@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -16,6 +15,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AfternoteButton
+import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.receiver.ReceiverSelectItem
 import com.afternote.core.ui.receiver.ReceiverSelectScreen
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -55,7 +55,7 @@ internal fun SelectReceiverScreen(
                 }
 
                 uiState.isLoading && uiState.receivers.isEmpty() -> {
-                    { SelectReceiverLoading() }
+                    { LoadingBody() }
                 }
 
                 uiState.receivers.isEmpty() -> {
@@ -67,16 +67,6 @@ internal fun SelectReceiverScreen(
                 }
             },
     )
-}
-
-@Composable
-private fun SelectReceiverLoading() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        CircularProgressIndicator()
-    }
 }
 
 @Composable
