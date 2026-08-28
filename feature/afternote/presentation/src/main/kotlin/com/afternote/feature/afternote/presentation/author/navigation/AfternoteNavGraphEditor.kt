@@ -175,15 +175,25 @@ internal fun AfternoteEditorNavigation(
     }
 
     val errorEvent = uiState.errorEvent
-    val validationMessage =
-        (errorEvent?.error as? AfternoteEditorError.Validation)?.let {
-            stringResource(it.reason.messageResId)
+    // 오류 하나는 정확히 한 채널로만 간다 — 검증 실패는 확인 팝업, 그 외 전부는 스낵바.
+    val validationMessage: String?
+    val snackbarMessage: String?
+    when (val error = errorEvent?.error) {
+        null -> {
+            validationMessage = null
+            snackbarMessage = null
         }
-    val snackbarMessage =
-        errorEvent
-            ?.error
-            ?.takeUnless { it is AfternoteEditorError.Validation }
-            ?.let { stringResource(it.messageResId()) }
+
+        is AfternoteEditorError.Validation -> {
+            validationMessage = stringResource(error.messageResId())
+            snackbarMessage = null
+        }
+
+        else -> {
+            validationMessage = null
+            snackbarMessage = stringResource(error.messageResId())
+        }
+    }
 
     val onRegisterClick =
         remember(editViewModel, state) {

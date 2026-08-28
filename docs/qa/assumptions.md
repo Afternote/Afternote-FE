@@ -18,6 +18,7 @@
 | #619 | #1169 | 계정 정보 부재의 **표현·문구** («남기지 않음») | `receiver_detail_account_absent`·`receiver_detail_account_value_absent` |
 | #739 | #1216 | 인증번호 발송 중 버튼 **문구** («전송 중…») | `receiver_verify_code_requesting` |
 | #554 | 64cf93888 | 수신인 검색 placeholder **문구** («이름으로 검색하기») | `setting_receiver_search_placeholder`·`timeletter_recipient_search_placeholder` |
+| #648 | #1346 | 복수 선택 행의 **선택 컨트롤 비주얼** (라디오 시안 → core 원형 체크박스) | `PlaylistSongItem.SongSelectionCheckbox` |
 | #490 | #1350 | 서비스 검색 **일치 규칙**과 카탈로그 밖 **기존 custom 값 처리** | `filterEditorServiceOptions` · `EditorFormState.currentServiceOptions` |
 
 ---
@@ -354,6 +355,21 @@ navigate 대상 한 줄.
 **판단 근거**: 리터럴 노출은 QA 결함이라 검색 키(이름)를 안내하는 문구로 채웠다.
 **뒤집을 때**: `setting_receiver_search_placeholder`·`timeletter_recipient_search_placeholder`
 두 문자열 — 디자이너가 후속 확정하면 그 값으로 바꾼다(#794 참고).
+
+## #648 — 플레이리스트 복수 선택 행의 컨트롤 비주얼
+
+**정한 것**: 곡 선택 행의 라디오 비주얼을 기존 core `AfternoteCircularCheckbox` 로 바꾸고,
+행 전체에 `Role.Checkbox` toggleable semantics 를 부여했다.
+
+**근거가 없는 이유**: 시안은 여전히 라디오 비주얼이다. #648 의 「디자인 승인 게이트 해제
+(2026-08-28)」는 복수 선택 확정과 checkbox semantics 까지만 정하고, 색·크기·간격은 «최신
+플레이리스트 시안과 기존 core 선택 컴포넌트에 맞춰 구현 담당자가 결정» 으로 위임했다.
+
+**판단 근거**: 새 모양을 만들면 미확정 디자인이 굳는다. 이미 있는 core 선택 컴포넌트를
+재사용하는 쪽이 되돌리기 쉽고, 복수 선택 실동작과 컨트롤 관용도 일치한다.
+
+**뒤집을 때**: `PlaylistSongItem.SongSelectionCheckbox` 하나다. 시안이 선택 컨트롤을
+그리면 그 모양으로 바꾸면 되고, semantics(복수 선택)는 게이트 확정이라 유지된다.
 
 ## #490 — 서비스 선택 바텀시트의 검색 규칙과 카탈로그 밖 기존 값
 
