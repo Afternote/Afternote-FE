@@ -15,19 +15,14 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
-import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
 import com.afternote.feature.receiver.domain.model.ReceiverEmailAuthResult
-import com.afternote.feature.receiver.domain.model.ReceiverIdentity
-import com.afternote.feature.receiver.domain.model.SenderMessageInfo
-import com.afternote.feature.receiver.domain.repository.IdentityVerificationRepository
-import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
-import com.afternote.feature.receiver.domain.repository.ReceiverDeliveryDocumentUploadRepository
+import com.afternote.feature.receiver.domain.testing.FakeIdentityVerificationRepository
+import com.afternote.feature.receiver.domain.testing.FakeReceiverAuthRepository
+import com.afternote.feature.receiver.domain.testing.FakeReceiverDeliveryDocumentUploadRepository
 import com.afternote.feature.receiver.presentation.deliveryverification.DocumentSlot
 import com.afternote.feature.receiver.presentation.deliveryverification.DocumentUploadViewModel
 import com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationEmailScreen
 import com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationViewModel
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -49,8 +44,13 @@ class ReceiverVerificationAndroidTest {
 
     @Test
     fun emailMismatchThenRetry_preservesContextAndVerifiesOnce() {
-        val auth = FakeReceiverAuthRepository()
-        auth.verifyEmailResults.addLast(
+        val verifyEmailResults = ArrayDeque<Result<ReceiverEmailAuthResult>>()
+        val auth =
+            FakeReceiverAuthRepository.strict().apply {
+                onSendEmailAuthCode = { Result.success(Unit) }
+                onVerifyEmailAuthCode = { _, _ -> verifyEmailResults.removeFirst() }
+            }
+        verifyEmailResults.addLast(
             Result.failure(
                 ReceiverFailure.ServerRejection(
                     status = 400,
@@ -60,7 +60,7 @@ class ReceiverVerificationAndroidTest {
                 ),
             ),
         )
-        auth.verifyEmailResults.addLast(
+        verifyEmailResults.addLast(
             Result.success(ReceiverEmailAuthResult(7L, "김수신", "이발신")),
         )
         val identity = FakeIdentityVerificationRepository()
@@ -94,13 +94,13 @@ class ReceiverVerificationAndroidTest {
             ),
             auth.verifiedEmailCodes,
         )
-        assertEquals(1, identity.markVerifiedCalls)
+        assertEquals(1, identity.markVerifiedCallCount)
         assertEquals(1, verifiedCalls)
     }
 
     @Test
     fun invalidEmail_doesNotCallRepositoryAndShowsSemantics() {
-        val auth = FakeReceiverAuthRepository()
+        val auth = FakeReceiverAuthRepository.strict()
         val viewModel =
             IdentityVerificationViewModel(
                 auth,
@@ -122,10 +122,28 @@ class ReceiverVerificationAndroidTest {
 
     @Test
     fun documentFailureThenRetry_submitsOnlySuccessfulUrlOnce() {
-        val upload = FakeDocumentUploadRepository()
-        upload.results.addLast(Result.failure(IllegalStateException("upload failed")))
-        upload.results.addLast(Result.success("https://cdn.test/death.pdf"))
-        val auth = FakeReceiverAuthRepository()
+        val uploadResults = ArrayDeque<Result<String>>()
+        val upload =
+            FakeReceiverDeliveryDocumentUploadRepository.strict().apply {
+                onUpload = { _, _ -> uploadResults.removeFirst() }
+            }
+        uploadResults.addLast(Result.failure(IllegalStateException("upload failed")))
+        uploadResults.addLast(Result.success("https://cdn.test/death.pdf"))
+        val auth =
+            FakeReceiverAuthRepository.strict().apply {
+                onSubmitDeliveryVerification = { deathCertificateUrl, familyRelationCertificateUrl ->
+                    Result.success(
+                        DeliveryVerification(
+                            id = 1L,
+                            status = DeliveryVerificationStatus.PENDING,
+                            deathCertificateUrl = deathCertificateUrl,
+                            familyRelationCertificateUrl = familyRelationCertificateUrl,
+                            adminNote = null,
+                            createdAt = null,
+                        ),
+                    )
+                }
+            }
         val viewModel = DocumentUploadViewModel(upload, auth, FakeErrorReporter())
         composeRule.setContent { AfternoteTheme {} }
 
@@ -145,80 +163,8 @@ class ReceiverVerificationAndroidTest {
         composeRule.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.isSubmitted }
 
         assertEquals(listOf("https://cdn.test/death.pdf" to null), auth.deliverySubmissions)
-        assertEquals(2, upload.calls)
+        assertEquals(2, upload.uploadCalls.size)
     }
-}
-
-private class FakeIdentityVerificationRepository : IdentityVerificationRepository {
-    private val state = MutableStateFlow(false)
-    override val isVerified: Flow<Boolean> = state
-    var markVerifiedCalls = 0
-
-    override suspend fun markVerified() {
-        markVerifiedCalls += 1
-        state.value = true
-    }
-}
-
-private class FakeDocumentUploadRepository : ReceiverDeliveryDocumentUploadRepository {
-    val results = ArrayDeque<Result<String>>()
-    var calls = 0
-
-    override suspend fun upload(
-        bytes: ByteArray,
-        extension: String,
-    ): Result<String> {
-        calls += 1
-        return results.removeFirst()
-    }
-}
-
-private class FakeReceiverAuthRepository : ReceiverAuthRepository {
-    val sentEmails = mutableListOf<String>()
-    val verifiedEmailCodes = mutableListOf<Pair<String, String>>()
-    val verifyEmailResults = ArrayDeque<Result<ReceiverEmailAuthResult>>()
-    val deliverySubmissions = mutableListOf<Pair<String?, String?>>()
-
-    override suspend fun verifyMasterKey(authCode: String): Result<ReceiverIdentity> = error("unexpected verifyMasterKey")
-
-    override suspend fun sendEmailAuthCode(email: String): Result<Unit> {
-        sentEmails += email
-        return Result.success(Unit)
-    }
-
-    override suspend fun verifyEmailAuthCode(
-        email: String,
-        authCode: String,
-    ): Result<ReceiverEmailAuthResult> {
-        verifiedEmailCodes += email to authCode
-        return verifyEmailResults.removeFirst()
-    }
-
-    override suspend fun getPresignedUrl(
-        extension: String,
-        contentLength: Long,
-    ): Result<ReceiverAuthPresignedUrl> = error("unexpected getPresignedUrl")
-
-    override suspend fun submitDeliveryVerification(
-        deathCertificateUrl: String?,
-        familyRelationCertificateUrl: String?,
-    ): Result<DeliveryVerification> {
-        deliverySubmissions += deathCertificateUrl to familyRelationCertificateUrl
-        return Result.success(
-            DeliveryVerification(
-                id = 1L,
-                status = DeliveryVerificationStatus.PENDING,
-                deathCertificateUrl = deathCertificateUrl,
-                familyRelationCertificateUrl = familyRelationCertificateUrl,
-                adminNote = null,
-                createdAt = null,
-            ),
-        )
-    }
-
-    override suspend fun getDeliveryVerificationStatus(): Result<DeliveryVerification> = error("unexpected getDeliveryVerificationStatus")
-
-    override suspend fun getSenderMessage(): Result<SenderMessageInfo> = error("unexpected getSenderMessage")
 }
 
 /**
