@@ -180,7 +180,7 @@ private fun ReceiverMindRecords.toHomeSummary(): MindRecordSummary =
 
 private fun List<AfterNoteListItem>.toAfternoteIcons(): List<AfternoteSourceIcon> =
     asSequence()
-        .mapNotNull { it.type }
+        .map { it.type }
         .distinct()
         .take(MAX_AFTERNOTE_ICONS)
         .map { it.toSourceIcon() }

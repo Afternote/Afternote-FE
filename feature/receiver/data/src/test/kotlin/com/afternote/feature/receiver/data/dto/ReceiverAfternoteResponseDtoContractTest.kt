@@ -30,6 +30,26 @@ class ReceiverAfternoteResponseDtoContractTest {
     }
 
     @Test
+    fun `수신 목록 항목 category 키가 빠져도 null로 파싱된다`() {
+        val response =
+            json.decodeFromString<ReceivedAfternoteDto>(
+                """{"id":1,"title":"소셜 계정 정리"}""",
+            )
+
+        assertNull(response.category)
+    }
+
+    @Test
+    fun `수신 목록 항목 category 명시적 null도 null로 파싱된다`() {
+        val response =
+            json.decodeFromString<ReceivedAfternoteDto>(
+                """{"id":1,"title":"소셜 계정 정리","category":null}""",
+            )
+
+        assertNull(response.category)
+    }
+
+    @Test
     fun `수신 상세 actions 키가 빠지면 빈 목록으로 접히지 않고 실패한다`() {
         assertMissingKey<ReceivedAfternoteDetailDto>(
             body = """{"id":1,"category":"SOCIAL","title":"t"}""",

@@ -3,6 +3,7 @@ package com.afternote.feature.receiver.data.repositoryimpl
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
 import com.afternote.feature.receiver.data.local.ReceiverAuthCodeDataSource
@@ -36,6 +37,7 @@ class ReceiverRepositoryImpl
         private val authCodeDataSource: ReceiverAuthCodeDataSource,
         private val api: ReceiverAfternoteApiService,
         private val receiverAuthRepository: ReceiverAuthRepository,
+        private val errorReporter: ErrorReporter,
     ) : ReceiverRepository {
         override val authCodeFlow: Flow<String?> = authCodeDataSource.savedCodeFlow
 
@@ -48,7 +50,7 @@ class ReceiverRepositoryImpl
         override fun getPagedReceivedAfternotes(): Flow<PagingData<AfterNoteListItem>> =
             Pager(
                 config = PagingConfig(pageSize = PAGE_SIZE),
-                pagingSourceFactory = { ReceiverAfternotePagingSource(api) },
+                pagingSourceFactory = { ReceiverAfternotePagingSource(api, errorReporter) },
             ).flow
 
         override suspend fun getReceivedAfterNotes(): Result<AfterNotesListResult> =
@@ -56,7 +58,7 @@ class ReceiverRepositoryImpl
                 api
                     .getReceiverAfternotes()
                     .requireData()
-                    .toDomainResult()
+                    .toDomainResult(errorReporter)
             }
 
         override suspend fun getReceivedAfternoteDetail(afternoteId: Long): Result<ReceivedAfternoteDetail> =
