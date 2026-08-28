@@ -55,11 +55,6 @@ class ReceiverAfternoteListItemDtoToDomainTest {
     }
 
     @Test
-    fun `toDomainOrNull - category 누락도 항목을 거절한다`() {
-        assertNull(resp(category = null).toDomainOrNull())
-    }
-
-    @Test
     fun `toDomainOrNull - createdAt null이면 lastUpdatedAt null`() {
         assertNull(requireNotNull(resp(createdAt = null).toDomainOrNull()).lastUpdatedAt)
     }
@@ -75,20 +70,19 @@ class ReceiverAfternoteListItemDtoToDomainTest {
     }
 
     @Test
-    fun `toReceiverDomainList - category가 잘못됐거나 누락된 항목만 제외하고 유효 항목은 보존한다`() {
+    fun `toReceiverDomainList - 지원하지 않는 category 항목만 제외하고 유효 항목은 보존한다`() {
         val reporter = RecordingErrorReporter()
         val list =
             listOf(
                 resp(id = 1L, category = "SOCIAL"),
                 resp(id = 2L, category = "ESTATE"),
-                resp(id = 3L, category = null),
-                resp(id = 4L, category = "BUSINESS"),
+                resp(id = 3L, category = "BUSINESS"),
             ).toReceiverDomainList(reporter)
 
-        assertEquals(listOf(1L, 4L), list.map { it.id })
+        assertEquals(listOf(1L, 3L), list.map { it.id })
         assertEquals(1, reporter.failures.size)
         assertEquals("receiver_list_mapping", reporter.failures.single().attributes["receiver_stage"])
-        assertEquals("2", reporter.failures.single().attributes["rejected_item_count"])
+        assertEquals("1", reporter.failures.single().attributes["rejected_item_count"])
     }
 
     @Test
@@ -105,10 +99,40 @@ class ReceiverAfternoteListItemDtoToDomainTest {
         assertEquals(0, reporter.failures.size)
     }
 
+    @Test
+    fun `toDomainResult - 디코딩 실패와 category 매핑 실패를 별도 이벤트로 보고한다`() {
+        val reporter = RecordingErrorReporter()
+        val result =
+            ReceivedAfternoteListDto(
+                afternotes =
+                    listOf(
+                        resp(id = 1L, category = "SOCIAL"),
+                        resp(id = 2L, category = "ESTATE"),
+                        resp(id = 3L, category = "BUSINESS"),
+                    ),
+                totalCount = 7,
+                decodingRejectedItemCount = 2,
+            ).toDomainResult(reporter)
+
+        assertEquals(7, result.totalCount)
+        assertEquals(listOf(1L, 3L), result.items.map { it.id })
+
+        val failuresByStage = reporter.failures.associateBy { it.attributes["receiver_stage"] }
+        assertEquals(setOf("receiver_list_decoding", "receiver_list_mapping"), failuresByStage.keys)
+
+        val decodingFailure = requireNotNull(failuresByStage["receiver_list_decoding"])
+        assertEquals("2", decodingFailure.attributes["rejected_item_count"])
+        assertEquals(ReceiverListDecodingFailure::class.java.name, decodingFailure.attributes["error_type"])
+
+        val mappingFailure = requireNotNull(failuresByStage["receiver_list_mapping"])
+        assertEquals("1", mappingFailure.attributes["rejected_item_count"])
+        assertEquals(ReceiverListMappingFailure::class.java.name, mappingFailure.attributes["error_type"])
+    }
+
     private fun resp(
         id: Long = 1L,
         title: String = "t",
-        category: String? = "SOCIAL",
+        category: String = "SOCIAL",
         createdAt: String? = "2025-01-01T00:00:00",
     ) = ReceivedAfternoteDto(
         id = id,

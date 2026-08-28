@@ -6,6 +6,7 @@ import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.feature.receiver.data.dto.ReceivedAfternoteDto
 import com.afternote.feature.receiver.data.dto.ReceivedAfternoteListDto
+import com.afternote.feature.receiver.data.mapper.ReceiverListDecodingFailure
 import com.afternote.feature.receiver.data.mapper.ReceiverListMappingFailure
 import com.afternote.feature.receiver.data.service.ReceiverAfternoteApiService
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
@@ -15,6 +16,7 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
+import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -31,6 +33,12 @@ import java.io.IOException
  * `<-- 403` `{"status":403,"code":2009,"message":"아직 전달 조건이 충족되지 않았습니다."}`.
  */
 class ReceiverAfternotePagingSourceTest {
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            coerceInputValues = true
+        }
+
     /**
      * 사유를 아는 거절은 **타입** 으로 나온다 — 소비처가 `serverCode == 2009` 를 되짚지 않아도 되게,
      * 서버 code 지식을 이 계층에 가둔 결과다.
@@ -114,28 +122,31 @@ class ReceiverAfternotePagingSourceTest {
     }
 
     @Test
-    fun `category가 잘못됐거나 누락된 항목만 제외하고 유효 항목은 페이지로 반환한다`() {
+    fun `raw 응답에서 디코딩 불가와 미지원 category 항목만 제외하고 유효 항목은 페이지로 반환한다`() {
         val reporter = RecordingErrorReporter()
         val result =
             loadWith(reporter) {
-                BaseResponse(
-                    status = 200,
-                    code = 200,
-                    data =
-                        ReceivedAfternoteListDto(
-                            afternotes =
-                                listOf(
-                                    ReceivedAfternoteDto(id = 5L, title = "소셜 계정", category = "SOCIAL"),
-                                    ReceivedAfternoteDto(
-                                        id = 987_654_321L,
-                                        title = "sensitive-title-marker",
-                                        category = "SENSITIVE_CATEGORY_MARKER",
-                                    ),
-                                    ReceivedAfternoteDto(id = 876_543_210L, title = "missing-category-title-marker", category = null),
-                                    ReceivedAfternoteDto(id = 8L, title = "사업자 항목", category = "BUSINESS"),
-                                ),
-                            totalCount = 4,
-                        ),
+                json.decodeFromString<BaseResponse<ReceivedAfternoteListDto>>(
+                    """
+                    {
+                      "status": 200,
+                      "code": 200,
+                      "data": {
+                        "afternotes": [
+                          {"id":5,"title":"소셜 계정","category":"SOCIAL"},
+                          {
+                            "id":987654321,
+                            "title":"sensitive-title-marker",
+                            "category":"SENSITIVE_CATEGORY_MARKER"
+                          },
+                          {"id":876543210,"title":"missing-category-title-marker"},
+                          {"id":765432109,"title":"null-category-title-marker","category":null},
+                          {"id":8,"title":"사업자 항목","category":"BUSINESS"}
+                        ],
+                        "totalCount": 9
+                      }
+                    }
+                    """.trimIndent(),
                 )
             }
 
@@ -143,16 +154,28 @@ class ReceiverAfternotePagingSourceTest {
         val page = result as PagingSource.LoadResult.Page
         assertEquals(listOf(5L, 8L), page.data.map { it.id })
 
-        val failure = reporter.failures.single()
-        assertEquals("receiver_list_mapping", failure.attributes["receiver_stage"])
-        assertEquals("2", failure.attributes["rejected_item_count"])
-        assertEquals(ReceiverListMappingFailure::class.java.name, failure.attributes["error_type"])
-        val reportedPayload = failure.throwable.message.orEmpty() + failure.attributes.toString()
+        val failuresByStage = reporter.failures.associateBy { it.attributes["receiver_stage"] }
+        assertEquals(setOf("receiver_list_decoding", "receiver_list_mapping"), failuresByStage.keys)
+
+        val decodingFailure = requireNotNull(failuresByStage["receiver_list_decoding"])
+        assertEquals("2", decodingFailure.attributes["rejected_item_count"])
+        assertEquals(ReceiverListDecodingFailure::class.java.name, decodingFailure.attributes["error_type"])
+
+        val mappingFailure = requireNotNull(failuresByStage["receiver_list_mapping"])
+        assertEquals("1", mappingFailure.attributes["rejected_item_count"])
+        assertEquals(ReceiverListMappingFailure::class.java.name, mappingFailure.attributes["error_type"])
+
+        val reportedPayload =
+            reporter.failures.joinToString { failure ->
+                failure.throwable.message.orEmpty() + failure.attributes.toString()
+            }
         assertTrue("raw category 가 보고됐다: $reportedPayload", "SENSITIVE_CATEGORY_MARKER" !in reportedPayload)
         assertTrue("raw id 가 보고됐다: $reportedPayload", "987654321" !in reportedPayload)
         assertTrue("raw title 이 보고됐다: $reportedPayload", "sensitive-title-marker" !in reportedPayload)
         assertTrue("raw id 가 보고됐다: $reportedPayload", "876543210" !in reportedPayload)
         assertTrue("raw title 이 보고됐다: $reportedPayload", "missing-category-title-marker" !in reportedPayload)
+        assertTrue("raw id 가 보고됐다: $reportedPayload", "765432109" !in reportedPayload)
+        assertTrue("raw title 이 보고됐다: $reportedPayload", "null-category-title-marker" !in reportedPayload)
     }
 
     /**

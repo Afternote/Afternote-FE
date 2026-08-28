@@ -29,7 +29,7 @@ internal class ReceiverAfternotePagingSource(
         runCatchingCancellable<LoadResult<Int, AfterNoteListItem>> {
             val response = api.getReceiverAfternotes().requireData()
             LoadResult.Page(
-                data = response.afternotes.toReceiverDomainList(errorReporter),
+                data = response.toReceiverDomainList(errorReporter),
                 prevKey = null,
                 nextKey = null,
             )

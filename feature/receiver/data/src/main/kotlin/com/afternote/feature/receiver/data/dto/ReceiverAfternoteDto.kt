@@ -4,17 +4,28 @@ import com.afternote.feature.afternote.data.dto.LeaveMessageBlockDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-@Serializable
-data class ReceivedAfternoteListDto(
+@ConsistentCopyVisibility
+@Serializable(with = ReceivedAfternoteListDtoSerializer::class)
+data class ReceivedAfternoteListDto internal constructor(
     @SerialName("afternotes") val afternotes: List<ReceivedAfternoteDto>,
     @SerialName("totalCount") val totalCount: Int,
-)
+    internal val decodingRejectedItemCount: Int,
+) {
+    constructor(
+        afternotes: List<ReceivedAfternoteDto>,
+        totalCount: Int,
+    ) : this(
+        afternotes = afternotes,
+        totalCount = totalCount,
+        decodingRejectedItemCount = 0,
+    )
+}
 
 @Serializable
 data class ReceivedAfternoteDto(
     @SerialName("id") val id: Long,
     @SerialName("title") val title: String,
-    @SerialName("category") val category: String? = null,
+    @SerialName("category") val category: String,
     @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
     @SerialName("senderId") val senderId: Long? = null,
     @SerialName("senderName") val senderName: String? = null,
