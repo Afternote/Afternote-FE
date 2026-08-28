@@ -1,6 +1,14 @@
 plugins {
     `kotlin-dsl`
     `kotlin-dsl-precompiled-script-plugins`
+    alias(libs.plugins.ktlint)
+}
+
+ktlint {
+    version.set(libs.versions.ktlint)
+    filter {
+        exclude { it.file.path.contains("build/") }
+    }
 }
 
 dependencies {
@@ -76,6 +84,14 @@ gradlePlugin {
         register("androidDomain") {
             id = "afternote.android.domain"
             implementationClass = "AndroidDomainConventionPlugin"
+        }
+        register("jvmLibrary") {
+            id = "afternote.jvm.library"
+            implementationClass = "JvmLibraryConventionPlugin"
+        }
+        register("jvmDomain") {
+            id = "afternote.jvm.domain"
+            implementationClass = "JvmDomainConventionPlugin"
         }
         register("androidApplication") {
             id = "afternote.android.application"
