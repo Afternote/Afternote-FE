@@ -28,7 +28,7 @@ import java.lang.reflect.Proxy
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
-class AfternoteEditorActionDefaultsTest {
+class AfternoteEditorProcessingMethodDefaultsTest {
     private val dispatcher = StandardTestDispatcher()
 
     @Before

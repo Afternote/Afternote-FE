@@ -16,7 +16,7 @@ import com.afternote.feature.afternote.presentation.author.editor.AfternoteEdito
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternotePayloadBuilder
-import com.afternote.feature.afternote.presentation.author.editor.processing.AfternoteActionsTemplate
+import com.afternote.feature.afternote.presentation.author.editor.processing.AfternoteProcessingMethodDefaults
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
@@ -85,10 +85,10 @@ internal fun buildOnRegisterClick(
         )
     }
 
-internal fun isEditorBaselinePrefillLoading(
+internal fun shouldDeferEditorBaselineCapture(
     isPrefillLoading: Boolean,
-    isActionTemplateInitializing: Boolean,
-): Boolean = isPrefillLoading || isActionTemplateInitializing
+    isProcessingMethodDefaultsInitializing: Boolean,
+): Boolean = isPrefillLoading || isProcessingMethodDefaultsInitializing
 
 /**
  * 작성자 에디터 화면: type-safe editor flow + 단방향 이벤트.
@@ -129,16 +129,16 @@ internal fun AfternoteEditorNavigation(
     val selectedType = uiState.form.selectedType
     val defaultProcessingMethods =
         remember(context, selectedType) {
-            AfternoteActionsTemplate.defaultsFor(selectedType).map(context::getString)
+            AfternoteProcessingMethodDefaults.defaultsFor(selectedType).map(context::getString)
         }
-    val isActionTemplateInitializing = remember(selectedType) { mutableStateOf(true) }
+    val isProcessingMethodDefaultsInitializing = remember(selectedType) { mutableStateOf(true) }
 
     LaunchedEffect(selectedType, defaultProcessingMethods) {
         editViewModel.initializeProcessingMethodDefaults(
             type = selectedType,
             methods = defaultProcessingMethods,
         )
-        isActionTemplateInitializing.value = false
+        isProcessingMethodDefaultsInitializing.value = false
     }
 
     LaunchedEffect(Unit) { editViewModel.refreshAuthorReceivers() }
@@ -210,11 +210,11 @@ internal fun AfternoteEditorNavigation(
             )
         },
         state = state,
-        // body skeleton과 별개로, 추천 템플릿이 들어오기 전 빈 폼을 이탈 기준선으로 잡지 않는다.
-        isPrefillLoading =
-            isEditorBaselinePrefillLoading(
+        // body skeleton과 별개로, 추천 처리 방법 기본값이 들어오기 전 빈 폼을 이탈 기준선으로 잡지 않는다.
+        shouldDeferBaselineCapture =
+            shouldDeferEditorBaselineCapture(
                 isPrefillLoading = uiState.isPrefillLoading,
-                isActionTemplateInitializing = isActionTemplateInitializing.value,
+                isProcessingMethodDefaultsInitializing = isProcessingMethodDefaultsInitializing.value,
             ),
         snackbarMessageKey = errorEvent,
     )

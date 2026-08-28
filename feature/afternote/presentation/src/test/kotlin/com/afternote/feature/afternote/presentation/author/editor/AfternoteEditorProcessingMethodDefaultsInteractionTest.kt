@@ -11,7 +11,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
-import com.afternote.feature.afternote.presentation.author.navigation.isEditorBaselinePrefillLoading
+import com.afternote.feature.afternote.presentation.author.navigation.shouldDeferEditorBaselineCapture
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -21,14 +21,14 @@ import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
-class AfternoteEditorActionDefaultsInteractionTest {
+class AfternoteEditorProcessingMethodDefaultsInteractionTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     @Test
-    fun `추천 템플릿 적용 뒤 기준선을 잡아 무변경 이탈을 바로 허용한다`() {
+    fun `추천 처리 방법 기본값 적용 뒤 기준선을 잡아 무변경 이탈을 바로 허용한다`() {
         var form by mutableStateOf(EditorFormState())
-        var isActionTemplateInitializing by mutableStateOf(true)
+        var isProcessingMethodDefaultsInitializing by mutableStateOf(true)
         var backClicks = 0
 
         composeRule.setContent {
@@ -40,10 +40,10 @@ class AfternoteEditorActionDefaultsInteractionTest {
                     snackbarMessage = null,
                     onSnackbarMessageConsumed = {},
                     content = {},
-                    isPrefillLoading =
-                        isEditorBaselinePrefillLoading(
+                    shouldDeferBaselineCapture =
+                        shouldDeferEditorBaselineCapture(
                             isPrefillLoading = false,
-                            isActionTemplateInitializing = isActionTemplateInitializing,
+                            isProcessingMethodDefaultsInitializing = isProcessingMethodDefaultsInitializing,
                         ),
                 )
             }
@@ -57,7 +57,7 @@ class AfternoteEditorActionDefaultsInteractionTest {
                             processingMethods = listOf(ProcessingMethodItem(localId = 1, text = "계정 삭제")),
                         ),
                 )
-            isActionTemplateInitializing = false
+            isProcessingMethodDefaultsInitializing = false
         }
         composeRule.waitForIdle()
 
