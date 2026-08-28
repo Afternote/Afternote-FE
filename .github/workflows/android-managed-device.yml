@@ -1,7 +1,9 @@
 name: Android Managed Device Test
 
-# 모든 same-repository PR 에 두 required context를 만들되, CI Test Plan이 none이면 에뮬레이터를
+# 모든 same-repository PR 에 기존 두 required context를 만들되, CI Test Plan이 none이면 에뮬레이터를
 # 만들지 않는다. selected는 선언한 FQCN#method와 lane만, full은 API 30 전체와 API 34 smoke를 실행한다.
+# minSdk API 26과 targetSdk API 36 경계 smoke는 scheduled_only라 정기/default-branch 수동 실행에서만
+# 에뮬레이터를 띄우고 PR full 또는 복구 dispatch 비용을 늘리지 않는다.
 # PR head SHA와 default branch에서 staging한 parser/verifier를 함께 검증한다. fork PR은 실행하지 않는다.
 # 라벨 조정기의 자동 dispatch 도 PR head branch ref 에 생성하고 이벤트 SHA 를 현재 PR HEAD 와 다시
 # 대조한다. 정기·일반 수동 실행만 default branch 를 사용하므로 PR 코드가 기본 브랜치 cache scope 에서
@@ -27,6 +29,11 @@ on:
         required: false
         default: ""
         type: string
+      generate_baseline_profile:
+        description: "선택한 branch ref에서 API 34 Baseline Profile artifact만 생성"
+        required: false
+        default: false
+        type: boolean
   pull_request:
     types: [opened, reopened, edited, synchronize]
   schedule:
@@ -41,10 +48,131 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  baseline-profile-generation:
+    name: Generate Baseline Profile artifact
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      inputs.generate_baseline_profile &&
+      inputs.pull_request_number == 0
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Clone dispatched branch revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Verify checked out dispatch revision
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Set up JDK
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle and validate wrapper
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          cache-provider: basic
+          cache-read-only: true
+          validate-wrappers: true
+
+      - name: Enable and verify KVM access
+        run: |
+          set -euo pipefail
+          runner_user="$(id -un)"
+          echo "KERNEL==\"kvm\", OWNER=\"${runner_user}\", GROUP=\"kvm\", MODE=\"0660\", OPTIONS+=\"static_node=kvm\"" \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm --settle
+          test -c /dev/kvm
+          test -r /dev/kvm
+          test -w /dev/kvm
+          "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" emulator
+          "${ANDROID_HOME}/emulator/emulator" -accel-check
+
+      - name: Set up CI-only app configuration
+        uses: ./.github/actions/setup-ci-config
+
+      - name: Set up one-run release signing
+        uses: ./.github/actions/setup-ci-release-signing
+
+      - name: Generate API 34 Baseline Profile
+        id: baseline_profile
+        continue-on-error: true
+        timeout-minutes: 30
+        run: |
+          set -euo pipefail
+          log_dir="$RUNNER_TEMP/baseline-profile-log"
+          log_path="$log_dir/generate.log"
+          profile_dir="app/src/main/generated/baselineProfiles"
+          mkdir -p "$log_dir"
+
+          set +e
+          ./gradlew :app:generateBaselineProfile \
+            -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect \
+            -x :app:uploadCrashlyticsMappingFileRelease \
+            --no-daemon \
+            --stacktrace > "$log_path" 2>&1
+          status=$?
+          set -e
+
+          if [[ "$status" == "0" ]] &&
+             ! find "$profile_dir" -type f -name '*-prof.txt' -size +0c -print -quit | grep -q .; then
+            echo 'Generated Baseline Profile is missing or empty.' >> "$log_path"
+            status=66
+          fi
+          {
+            echo "exit_code=$status"
+            echo "log_path=$log_path"
+          } >> "$GITHUB_OUTPUT"
+          exit "$status"
+
+      - name: Remove ephemeral release configuration
+        if: always()
+        run: |
+          rm -f app/google-services.json local.properties
+          for path in \
+            "${AFTERNOTE_CI_RELEASE_KEYSTORE:-}" \
+            "${AFTERNOTE_CI_RELEASE_STORE_PASSWORD_FILE:-}" \
+            "${AFTERNOTE_CI_RELEASE_KEY_PASSWORD_FILE:-}"; do
+            if [[ -n "$path" ]]; then
+              rm -f -- "$path"
+            fi
+          done
+
+      - name: Upload generated Baseline Profile and full log
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: baseline-profile-${{ github.sha }}-${{ github.run_id }}
+          if-no-files-found: warn
+          retention-days: 7
+          path: |
+            app/src/main/generated/baselineProfiles/
+            ${{ runner.temp }}/baseline-profile-log/
+
+      - name: Restore Baseline Profile generation exit code
+        if: always()
+        env:
+          GENERATION_EXIT_CODE: ${{ steps.baseline_profile.outputs.exit_code }}
+          GENERATION_OUTCOME: ${{ steps.baseline_profile.outcome }}
+        run: |
+          if [[ "$GENERATION_OUTCOME" != "success" ]]; then
+            echo "Baseline Profile generation did not complete: $GENERATION_OUTCOME"
+          fi
+          if ! [[ "$GENERATION_EXIT_CODE" =~ ^[0-9]+$ ]]; then
+            exit 124
+          fi
+          exit "$GENERATION_EXIT_CODE"
+
   managed-device:
     if: >-
       github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' &&
+       !inputs.generate_baseline_profile &&
        ((inputs.pull_request_number == 0 &&
          github.ref_name == github.event.repository.default_branch) ||
         inputs.pull_request_number > 0)) ||
@@ -57,6 +185,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - name: Pixel 2 API 26 minSdk smoke
+            task: pixel2Api26DebugAndroidTest
+            device: api26
+            job_timeout_minutes: 20
+            gradle_timeout_minutes: 16
+            gradle_step_timeout_minutes: 17
+            full_selector: com.afternote.afternote_fe.ApiBoundarySmokeAndroidTest
+            artifact: min-sdk-api26
+            scheduled_only: true
           - name: Pixel 2 API 30 androidTest
             task: pixel2Api30DebugAndroidTest
             device: api30
@@ -65,6 +202,7 @@ jobs:
             gradle_step_timeout_minutes: 31
             full_selector: ''
             artifact: api30
+            scheduled_only: false
           - name: Pixel 2 API 34 accessibility smoke
             task: pixel2Api34DebugAndroidTest
             device: api34
@@ -73,6 +211,16 @@ jobs:
             gradle_step_timeout_minutes: 13
             full_selector: com.afternote.afternote_fe.AccessibilitySmokeAndroidTest
             artifact: accessibility-api34
+            scheduled_only: false
+          - name: Pixel 2 API 36 targetSdk smoke
+            task: pixel2Api36DebugAndroidTest
+            device: api36
+            job_timeout_minutes: 20
+            gradle_timeout_minutes: 16
+            gradle_step_timeout_minutes: 17
+            full_selector: com.afternote.afternote_fe.ApiBoundarySmokeAndroidTest
+            artifact: target-sdk-api36
+            scheduled_only: true
     steps:
       - name: Clone trusted target policy
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -162,6 +310,7 @@ jobs:
           EXECUTION_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           FULL_SELECTOR: ${{ matrix.full_selector }}
           POLICY_SOURCE: ${{ steps.policy.outputs.source }}
+          SCHEDULED_ONLY: ${{ matrix.scheduled_only }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
@@ -254,7 +403,14 @@ jobs:
           mode="$(jq -r '.androidTest.mode' "$plan_file")"
           selectors_json='[]'
           run_lane=false
-          if [[ "$mode" == "full" ]]; then
+          if [[ "$SCHEDULED_ONLY" != "true" && "$SCHEDULED_ONLY" != "false" ]]; then
+            echo "::error::scheduled_only matrix 값은 true 또는 false여야 합니다"
+            exit 1
+          fi
+          if [[ "$SCHEDULED_ONLY" == "true" && "$target_pr" != "none" ]]; then
+            # API 경계 lane은 default branch의 정기/일반 수동 실행만 허용한다.
+            run_lane=false
+          elif [[ "$mode" == "full" ]]; then
             run_lane=true
             if [[ -n "$FULL_SELECTOR" ]]; then
               selectors_json="$(jq -nc --arg selector "$FULL_SELECTOR" '[$selector]')"
