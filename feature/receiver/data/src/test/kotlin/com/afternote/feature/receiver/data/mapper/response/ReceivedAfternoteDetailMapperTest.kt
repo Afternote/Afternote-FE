@@ -26,6 +26,7 @@ class ReceivedAfternoteDetailMapperTest {
                 serviceName = "추모",
                 senderName = "홍길동",
                 createdAt = "2025-11-26T14:30:00",
+                processingMethods = null,
             ).toDomain()
 
         assertEquals("추모", result.serviceName)
@@ -37,18 +38,34 @@ class ReceivedAfternoteDetailMapperTest {
     @Test
     fun `toDomain - category 를 해석할 수 없으면 실패다 - 임의의 종류로 메우지 않는다`() {
         assertThrows(IllegalArgumentException::class.java) {
-            ReceivedAfternoteDetailDto(id = 1L, serviceName = "제목", category = null).toDomain()
+            ReceivedAfternoteDetailDto(id = 1L, serviceName = "제목", category = null, processingMethods = null).toDomain()
         }
     }
 
     @Test
     fun `toDomain - createdAt null이면 createdAt null`() {
-        assertNull(ReceivedAfternoteDetailDto(id = 1L, serviceName = "제목", category = "SOCIAL", createdAt = null).toDomain().createdAt)
+        assertNull(
+            ReceivedAfternoteDetailDto(
+                id = 1L,
+                serviceName = "제목",
+                category = "SOCIAL",
+                createdAt = null,
+                processingMethods = null,
+            ).toDomain().createdAt,
+        )
     }
 
     @Test
     fun `toDomain - playlist null이면 null`() {
-        assertNull(ReceivedAfternoteDetailDto(id = 1L, serviceName = "제목", category = "SOCIAL", playlist = null).toDomain().playlist)
+        assertNull(
+            ReceivedAfternoteDetailDto(
+                id = 1L,
+                serviceName = "제목",
+                category = "SOCIAL",
+                playlist = null,
+                processingMethods = null,
+            ).toDomain().playlist,
+        )
     }
 
     @Test
@@ -58,6 +75,7 @@ class ReceivedAfternoteDetailMapperTest {
                 id = 1L,
                 serviceName = "제목",
                 category = "SOCIAL",
+                processingMethods = null,
                 playlist =
                     ReceivedPlaylistDto(
                         atmosphere = "차분",
@@ -80,6 +98,7 @@ class ReceivedAfternoteDetailMapperTest {
                 id = 1L,
                 serviceName = "제목",
                 category = "SOCIAL",
+                processingMethods = null,
                 credentials = ReceivedCredentialsDto(id = "u", password = "p"),
             ).toDomain()
 

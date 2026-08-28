@@ -65,7 +65,7 @@ class LeaveMessageBlockContractTest {
         val detail =
             json
                 .decodeFromString<AfternoteDetailDto>(
-                    """{"afternoteId":11,"category":"SOCIAL","title":"t","isDraft":false,"receivers":[],"credentials":{"id":"qa","password":"qa"},"leaveMessage":[{"title":"","body":"재현용 남기실 말씀"}]}""",
+                    """{"afternoteId":11,"category":"SOCIAL","title":"t","isDraft":false,"updatedAt":"2026-08-07T06:21:14.553567","receivers":[],"credentials":{"id":"qa","password":"qa"},"leaveMessage":[{"title":"","body":"재현용 남기실 말씀"}]}""",
                 ).toDomain()
 
         assertEquals(
@@ -79,7 +79,7 @@ class LeaveMessageBlockContractTest {
         val detail =
             json
                 .decodeFromString<AfternoteDetailDto>(
-                    """{"afternoteId":1,"category":"SOCIAL","title":"t","isDraft":false,"receivers":[],"credentials":{"id":"qa","password":"qa"},"leaveMessage":null}""",
+                    """{"afternoteId":1,"category":"SOCIAL","title":"t","isDraft":false,"updatedAt":"2026-08-07T06:21:14.553567","receivers":[],"credentials":{"id":"qa","password":"qa"},"leaveMessage":null}""",
                 ).toDomain()
 
         assertTrue(detail.leaveMessageBlocks.isEmpty())
@@ -106,7 +106,7 @@ class LeaveMessageBlockContractTest {
         val detail =
             json
                 .decodeFromString<ReceivedAfternoteDetailDto>(
-                    """{"id":1,"category":"GALLERY","title":"사진첩","leaveMessage":[{"title":null,"body":"사진은 남겨줘"}]}""",
+                    """{"id":1,"category":"GALLERY","title":"사진첩","actions":null,"leaveMessage":[{"title":null,"body":"사진은 남겨줘"}]}""",
                 ).toDomain()
 
         assertEquals(

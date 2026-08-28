@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ISSUE_REFERENCE_RE = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?|refs?|references?|part\s+of|related\s+to)\s*:?[ \t]+(?:(?:([\w.-]+)\/([\w.-]+))?#(\d+)|https:\/\/github\.com\/([\w.-]+)\/([\w.-]+)\/issues\/(\d+))/gi;
+const TITLE_ISSUE_REFERENCE_RE = /\(#([1-9]\d*)\)/g;
 
 function visibleMarkdown(text) {
     return String(text ?? "")
@@ -41,6 +42,19 @@ export function extractSameRepositoryIssueNumbers(text, repository) {
     return [...issueNumbers];
 }
 
+export function extractTitleIssueNumber(title) {
+    const normalizedTitle = requiredString(title, "pull_request.title");
+    TITLE_ISSUE_REFERENCE_RE.lastIndex = 0;
+    const matches = [...normalizedTitle.matchAll(TITLE_ISSUE_REFERENCE_RE)];
+    if (
+        matches.length !== 1
+        || matches[0].index + matches[0][0].length !== normalizedTitle.length
+    ) {
+        return null;
+    }
+    return Number(matches[0][1]);
+}
+
 export async function validatePullRequestIssueLink({ pullRequest, repository, loadIssue }) {
     if (typeof loadIssue !== "function") {
         throw new Error("loadIssue 함수가 필요합니다.");
@@ -50,10 +64,22 @@ export async function validatePullRequestIssueLink({ pullRequest, repository, lo
         throw new Error("pull_request.number 값이 없습니다.");
     }
 
+    const titleIssueNumber = extractTitleIssueNumber(pullRequest.title);
+    if (titleIssueNumber === null) {
+        throw new Error(
+            `PR #${pullRequestNumber} 제목은 대표 Issue 번호 하나로 끝나야 합니다. '변경 요약 (#123)' 형식을 사용하세요.`,
+        );
+    }
+
     const references = extractSameRepositoryIssueNumbers(pullRequest.body, repository);
     if (references.length === 0) {
         throw new Error(
             `PR #${pullRequestNumber}에 같은 저장소의 Issue 참조가 없습니다. 관련 기존 Issue를 재사용하고 Refs #N을 추가하세요.`,
+        );
+    }
+    if (!references.includes(titleIssueNumber)) {
+        throw new Error(
+            `PR #${pullRequestNumber} 제목의 대표 Issue #${titleIssueNumber}를 본문에서도 Closes #${titleIssueNumber} 또는 Refs #${titleIssueNumber}로 연결하세요.`,
         );
     }
 
@@ -77,6 +103,12 @@ export async function validatePullRequestIssueLink({ pullRequest, repository, lo
     if (issues.length === 0) {
         throw new Error(
             `PR #${pullRequestNumber}에 연결된 실제 Issue가 없습니다. ${rejected.join(", ")}`,
+        );
+    }
+    if (!issues.includes(titleIssueNumber)) {
+        const titleRejection = rejected.find((message) => message.startsWith(`#${titleIssueNumber}:`));
+        throw new Error(
+            `PR #${pullRequestNumber} 제목의 대표 Issue #${titleIssueNumber}가 실제 Issue로 확인되지 않았습니다. ${titleRejection ?? "Issue 조회 결과를 확인하세요."}`,
         );
     }
     return { issues, rejected };

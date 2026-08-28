@@ -2,6 +2,7 @@ package com.afternote.core.network.di
 
 import com.afternote.core.network.BuildConfig
 import com.afternote.core.network.service.AccountApiService
+import com.afternote.core.network.service.AppVersionApiService
 import com.afternote.core.network.service.AuthApiService
 import com.afternote.core.network.service.ImageApiService
 import com.afternote.core.network.service.TokenApiService
@@ -44,6 +45,10 @@ object ServiceModule {
     @Provides
     @Singleton
     fun provideAccountApiService(retrofit: Retrofit): AccountApiService = retrofit.create<AccountApiService>()
+
+    @Provides
+    @Singleton
+    fun provideAppVersionApiService(retrofit: Retrofit): AppVersionApiService = retrofit.create<AppVersionApiService>()
 
     @Provides
     @Singleton

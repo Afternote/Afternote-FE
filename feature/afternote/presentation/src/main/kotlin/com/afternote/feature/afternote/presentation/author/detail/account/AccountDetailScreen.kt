@@ -31,6 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
@@ -43,7 +44,6 @@ import com.afternote.feature.afternote.presentation.author.detail.rememberAftern
 import com.afternote.feature.afternote.presentation.author.navigation.DeleteInProgressOverlay
 import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent
 import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadErrorContent
-import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
 import com.afternote.feature.afternote.presentation.author.navigation.ObserveDeleteResult
 import com.afternote.feature.afternote.presentation.author.navigation.rememberDeleteFailedHandler
 import com.afternote.feature.afternote.presentation.shared.detail.AfternoteDetailServiceHeader
@@ -85,7 +85,7 @@ internal fun AccountDetailRoute(
 
     when (val state = uiState) {
         AfternoteDetailUiState.Loading -> {
-            DetailLoadingContent()
+            LoadingBody()
         }
 
         is AfternoteDetailUiState.Error -> {

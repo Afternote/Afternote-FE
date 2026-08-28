@@ -58,14 +58,14 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
-private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v2"
+private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v3"
 private const val INITIALIZED_ACTION_TEMPLATE_TYPE_KEY = "initialized_action_template_type"
 
 private const val TAG = "AfternoteEditorViewModel"
 
 @Serializable
 private data class ReceiverSnap(
-    val id: String,
+    val id: Long,
     val name: String,
     val label: String,
 )
@@ -247,10 +247,10 @@ class AfternoteEditorViewModel
             mutateForm { it.withMemorialPlaylistSongs(emptyList()) }
         }
 
-        fun deleteReceiver(receiverId: String) = mutateForm { it.withReceiverDeleted(receiverId) }
+        fun deleteReceiver(receiverId: Long) = mutateForm { it.withReceiverDeleted(receiverId) }
 
         fun addReceiverIfAbsent(
-            receiverId: String,
+            receiverId: Long,
             name: String,
             label: String,
         ) = mutateForm { it.withReceiverAddedIfAbsent(receiverId = receiverId, name = name, label = label) }
@@ -565,7 +565,7 @@ class AfternoteEditorViewModel
         }
 
         /** 수신자 선택 결과(id)를 폼에 넣기 위해 [refreshAuthorReceivers] 로 받아 둔 목록에서 이름·관계를 찾는다. */
-        fun getReceiverById(id: Long): AfternoteEditorReceiver? = internalState.value.authorReceivers.find { it.id == id.toString() }
+        fun getReceiverById(id: Long): AfternoteEditorReceiver? = internalState.value.authorReceivers.find { it.id == id }
 
         // region Internal state shaping
 
