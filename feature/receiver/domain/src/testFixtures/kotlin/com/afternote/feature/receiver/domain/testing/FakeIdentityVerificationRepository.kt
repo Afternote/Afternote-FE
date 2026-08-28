@@ -21,12 +21,8 @@ class FakeIdentityVerificationRepository(
 ) : IdentityVerificationRepository {
     val verifiedSenderIds = MutableStateFlow(initialVerifiedSenderIds)
 
-    private val isVerifiedAccessCounter = AtomicInteger()
     private val markVerifiedCallCounter = AtomicInteger()
     private val markVerifiedSenderIdsRecord = CopyOnWriteArrayList<String>()
-
-    val isVerifiedAccessCount: Int
-        get() = isVerifiedAccessCounter.get()
 
     val markVerifiedCallCount: Int
         get() = markVerifiedCallCounter.get()
@@ -35,10 +31,7 @@ class FakeIdentityVerificationRepository(
     val markVerifiedSenderIds: List<String>
         get() = markVerifiedSenderIdsRecord.toList()
 
-    override fun isVerified(senderId: String): Flow<Boolean> {
-        isVerifiedAccessCounter.incrementAndGet()
-        return onIsVerified?.invoke(senderId) ?: verifiedSenderIds.map { senderId in it }
-    }
+    override fun isVerified(senderId: String): Flow<Boolean> = onIsVerified?.invoke(senderId) ?: verifiedSenderIds.map { senderId in it }
 
     override suspend fun markVerified(senderId: String) {
         markVerifiedCallCounter.incrementAndGet()

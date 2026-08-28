@@ -53,7 +53,7 @@ class DeliveryVerificationFlowViewModelTest {
             val viewModelA = flowViewModel(senderId = "sender-a", repository = repository)
             val viewModelB = flowViewModel(senderId = "sender-b", repository = repository)
 
-            // WhileSubscribed 라 구독이 있어야 upstream(DataStore 대역) 을 collect 한다.
+            // WhileSubscribed 라 구독이 있어야 upstream(repository 캐시 대역) 을 collect 한다.
             val jobs =
                 listOf(
                     launch { viewModelA.isIdentityVerified.collect {} },

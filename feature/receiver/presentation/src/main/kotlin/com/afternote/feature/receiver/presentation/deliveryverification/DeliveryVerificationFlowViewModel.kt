@@ -43,9 +43,9 @@ class DeliveryVerificationFlowViewModel
          *
          * gate 의 Flow 를 viewModelScope 안에서 StateFlow 로 변환 (collectAsStateWithLifecycle 가 즉시 값 필요).
          *
-         * `WhileSubscribed(5_000)`: 구독자 있을 때만 upstream(DataStore) collect.
+         * `WhileSubscribed(5_000)`: 구독자 있을 때만 upstream(repository 캐시) collect.
          * 모든 구독자 사라진 후 5초 더 기다리고 멈춤 — configuration change(회전·다크모드 등) 의
-         * destroy→recreate 갭(수십 ms) 동안 DataStore 재읽기 회피용 grace. 5초 후엔 자원 해제.
+         * destroy→recreate 갭(수십 ms) 동안 upstream 재구독 회피용 grace. 5초 후엔 자원 해제.
          * (Google 공식 권장값 — Architecture guide / State production 섹션)
          */
         val isIdentityVerified: StateFlow<Boolean> =

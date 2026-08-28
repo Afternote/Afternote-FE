@@ -68,7 +68,7 @@ sealed interface ReceiverRoute {
      *
      * 인증 성공 시 [com.afternote.feature.receiver.domain.repository.IdentityVerificationRepository]
      * 캐시가 해당 발신자에 대해 켜져 같은 발신자 재진입 시 마스터 키로 직진 (#597 — 발신자별 격리,
-     * 다른 발신자 흐름에서는 다시 인증). DataStore 영구 저장이라 앱 재시작 후에도 유지.
+     * 다른 발신자 흐름에서는 다시 인증). 캐시는 프로세스 수명 — 앱 재시작 후에는 다시 인증한다.
      */
     @Serializable
     data object IdentityVerificationEmailRoute : ReceiverRoute
