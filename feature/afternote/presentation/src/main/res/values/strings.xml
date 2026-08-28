@@ -106,8 +106,6 @@
 
     <!-- 수신자 선택 화면 (#540, 시안 3631:24820) -->
     <string name="afternote_select_receiver_title">수신자 선택</string>
-    <string name="afternote_select_receiver_search_placeholder">이름으로 검색하기</string>
-    <string name="afternote_select_receiver_confirm">수신자 선택 완료하기</string>
     <string name="afternote_select_receiver_load_failed">수신자 목록을 불러오지 못했습니다.</string>
     <string name="afternote_select_receiver_retry">다시 시도</string>
     <!-- 이 화면의 빈 상태는 시안 정의가 없어 FE 잠정안. -->

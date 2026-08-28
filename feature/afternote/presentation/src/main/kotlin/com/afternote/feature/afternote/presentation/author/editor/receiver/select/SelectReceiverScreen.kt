@@ -40,8 +40,6 @@ internal fun SelectReceiverScreen(
 ) {
     ReceiverSelectScreen(
         title = stringResource(R.string.afternote_select_receiver_title),
-        searchPlaceholder = stringResource(R.string.afternote_select_receiver_search_placeholder),
-        confirmText = stringResource(R.string.afternote_select_receiver_confirm),
         receivers =
             remember(uiState.receivers) {
                 uiState.receivers.map { ReceiverSelectItem(id = it.id, name = it.name, relation = it.label) }
