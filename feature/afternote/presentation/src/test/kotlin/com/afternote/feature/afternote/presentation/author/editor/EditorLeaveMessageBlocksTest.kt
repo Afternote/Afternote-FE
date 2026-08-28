@@ -162,7 +162,6 @@ class EditorLeaveMessageBlocksTest {
                     password = "password",
                     processingMethods = listOf("계정 삭제"),
                 ),
-            selectedReceiverIds = listOf(1L),
         )
 
     private fun payloadOf(vararg blocks: EditorMessageTextBlock) =

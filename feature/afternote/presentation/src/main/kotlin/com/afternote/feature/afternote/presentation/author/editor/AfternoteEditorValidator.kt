@@ -15,16 +15,14 @@ internal object AfternoteEditorValidator {
     fun validate(
         form: EditorFormState,
         payload: RegisterAfternotePayload,
-        selectedReceiverIds: List<Long>,
     ): AfternoteValidationError? {
         val type = form.selectedType
-        // 미구현 placeholder 카테고리는 입력 상태와 무관하게 저장 불가 — 개별 필드 검증(수신자·서비스명)보다 먼저 차단해
+        // 미구현 placeholder 카테고리는 입력 상태와 무관하게 저장 불가 — 개별 필드 검증(서비스명 등)보다 먼저 차단해
         // "서비스명을 선택하라" 류의 그릴 수도 없는 필드에 대한 안내가 나가지 않게 한다.
         if (type == AfternoteType.ESTATE) {
             return AfternoteValidationError.UNIMPLEMENTED_TYPE
         }
         val errors = mutableListOf<AfternoteValidationError>()
-        if (selectedReceiverIds.isEmpty()) errors += AfternoteValidationError.RECEIVERS_REQUIRED
         if (payload.serviceName.trim().isEmpty()) errors += AfternoteValidationError.TITLE_REQUIRED
         // 아무것도 안 쓴 빈 칸은 저장 시 버려지지만, 제목만 채운 블록은 서버가 400 으로 거절한다.
         if (payload.messageBlocks.any { it.title.isNotBlank() && it.body.isBlank() }) {
