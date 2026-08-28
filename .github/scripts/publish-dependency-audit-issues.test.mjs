@@ -97,22 +97,7 @@ test("does not create issues for ordinary patch or minor updates", () => {
     assert.deepEqual(findings, []);
 });
 
-test("renders the repository template without changing optional No response sections", () => {
-    const twoSpaces = "  ";
-    const fourSpaces = "    ";
-    const template = [
-        "---",
-        "name: Custom",
-        "---",
-        "",
-        `## 📜 Overview (Required)${fourSpaces}`,
-        `<!-- overview -->${twoSpaces}`,
-        `No response${twoSpaces}`,
-        "",
-        `## 📌 Child Issue(Optional)${twoSpaces}`,
-        `No response${twoSpaces}`,
-        "",
-    ].join("\n");
+test("renders dependency issues with the same structured metadata fields as the issue form", () => {
     const [finding] = selectActionableFindings(
         audit({
             consistencyFindings: [
@@ -125,14 +110,14 @@ test("renders the repository template without changing optional No response sect
             ],
         }),
     );
-    const body = renderIssueBody(template, finding);
-    assert.doesNotMatch(body, /^---/);
+    const body = renderIssueBody(finding);
+    assert.match(body, /### 작업 유형\n\nbug — 버그·오동작/);
+    assert.match(body, /### 주 담당 모듈\n\nrepository-ops —/);
     assert.match(body, /dependency-audit-key: consistency:androidx\.compose\.runtime:runtime/);
-    assert.match(body, /## 📌 Child Issue\(Optional\)[\s\S]*No response  /);
+    assert.match(body, /### 자식 이슈\n\n_No response_/);
 });
 
 const TRACKING_LABEL = "dependency-audit";
-const TEMPLATE = ["## 📜 Overview (Required)  ", "No response  ", ""].join("\n");
 
 function securityFinding() {
     const [finding] = selectActionableFindings(
@@ -221,7 +206,6 @@ async function publish(finding, issues, commentsByNumber) {
     const results = await publishFindings({
         audit: audit(),
         findings: [finding],
-        template: TEMPLATE,
         token: "test-token",
         repository: "Afternote/Afternote-FE",
         assignee: "1hyok",
