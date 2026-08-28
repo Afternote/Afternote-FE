@@ -107,6 +107,8 @@ jobs:
               'feature/onboarding/presentation/src/screenshotTestDebug/reference/',
               'feature/afternote/presentation/src/screenshotTestDebug/reference/',
               'feature/mindrecord/presentation/src/screenshotTestDebug/reference/',
+              'feature/setting/presentation/src/screenshotTestDebug/reference/',
+              'feature/timeletter/presentation/src/screenshotTestDebug/reference/',
             ];
             const artifact = path.resolve(process.env.ARTIFACT_DIR);
             const filesPath = path.join(artifact, 'files.json');
@@ -241,6 +243,11 @@ jobs:
             await github.rest.actions.createWorkflowDispatch({
               ...common,
               workflow_id: 'codeql.yml',
+              inputs: { pull_request_number: process.env.TARGET_PR },
+            });
+            await github.rest.actions.createWorkflowDispatch({
+              ...common,
+              workflow_id: 'base-freshness-probe.yml',
               inputs: { pull_request_number: process.env.TARGET_PR },
             });
             await github.rest.actions.createWorkflowDispatch({
