@@ -25,6 +25,12 @@ const IMPACT_POLICY_PATHS = new Set([
     ".github/workflows/unit-test.yml",
     ".github/workflows/screenshot.yml",
     ".github/workflows/codeql.yml",
+    // 기대 실패 목록(xfail)은 검증 정책 그 자체다 — 목록·메커니즘 변경은 모든 lane 으로
+    // fail-closed 해, 잘못 지운 항목이 그 자리에서 red 를 만들게 한다.
+    ".github/ci-expected-failures.json",
+    ".github/ci-expected-failures.init.gradle",
+    ".github/scripts/ci-expected-failures.mjs",
+    ".github/scripts/ci-expected-failures.test.mjs",
 ]);
 
 function normalizePath(value) {
