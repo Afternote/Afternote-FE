@@ -47,10 +47,12 @@ test("GitHub pagination and rename payloads include both old and new paths", () 
     );
 });
 
-test("explicit and convention JVM plugins are excluded from Android lint task selection", () => {
+test("JVM and Android test plugins are excluded from Android lint task selection", () => {
     assert.equal(isAndroidModuleBuild('plugins { id("java-library") }'), false);
     assert.equal(isAndroidModuleBuild('plugins { id("afternote.jvm.library") }'), false);
     assert.equal(isAndroidModuleBuild('plugins { id("afternote.jvm.domain") }'), false);
+    assert.equal(isAndroidModuleBuild('plugins { id("com.android.test") }'), false);
+    assert.equal(isAndroidModuleBuild('plugins { alias(libs.plugins.android.test) }'), false);
     assert.equal(isAndroidModuleBuild('plugins { id("afternote.android.library") }'), true);
 
     const mixedModules = [module(":app"), module(":core:model", { android: false })];
