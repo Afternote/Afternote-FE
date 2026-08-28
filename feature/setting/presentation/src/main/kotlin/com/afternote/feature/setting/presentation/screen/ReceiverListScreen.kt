@@ -27,6 +27,8 @@ fun ReceiverListScreen(
     var selectedId by remember { mutableStateOf<Long?>(null) }
 
     ReceiverSelectScreen(
+        // 유일하게 공용 기본값("수신자 선택")을 벗어나는 소비자다 — #631 이 이 화면을
+        // 관리 화면으로 바꾸면 선택 컴포넌트 소비 자체가 사라진다.
         title = "수신자 목록",
         receivers =
             remember(receivers) {

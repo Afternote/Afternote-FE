@@ -54,21 +54,22 @@ import kotlinx.coroutines.launch
  * 목록·현재 선택·콜백을 받는다. 선택/해제 규칙(같은 항목 재탭 시 해제 등)은
  * 소비자가 [onReceiverToggle] 에서 결정한다.
  *
- * 문구 중 [title] 만 진입 맥락에 따라 갈리므로(설정 "수신자 목록" / 애프터노트 "수신자 선택")
- * 필수 파라미터고, 검색 안내·완료 버튼은 공용 기본값을 쓴다 — 필요하면 덮을 수 있다.
+ * 문구 3종은 시안(3631:24820) 기준 공용 기본값을 쓴다 — 작성 플로우(애프터노트·타임레터·
+ * 마음의 기록)는 모두 같은 문구라 그대로 두면 된다. 설정만 "수신자 목록" 으로 [title] 을
+ * 덮는데, 그 화면은 #631 로 선택이 아닌 관리 화면이 되면서 이 컴포넌트 소비를 그만둔다.
  *
  * @param listReplacement 검색 필드 아래 목록 영역을 통째로 대체할 상태 화면 —
  *   로딩·조회 실패·빈 목록처럼 소비 기능마다 다른 상태를 끼운다. null 이면 목록을 그린다.
  */
 @Composable
 fun ReceiverSelectScreen(
-    title: String,
     receivers: List<ReceiverSelectItem>,
     selectedReceiverId: Long?,
     onReceiverToggle: (Long) -> Unit,
     onBackClick: () -> Unit,
     onConfirmClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    title: String = stringResource(R.string.core_ui_receiver_select_title),
     searchPlaceholder: String = stringResource(R.string.core_ui_receiver_select_search_placeholder),
     confirmText: String = stringResource(R.string.core_ui_receiver_select_confirm),
     listReplacement: (@Composable () -> Unit)? = null,
@@ -243,7 +244,6 @@ private fun ReceiverSelectRow(
 private fun ReceiverSelectScreenPreview() {
     AfternoteTheme {
         ReceiverSelectScreen(
-            title = "수신자 선택",
             receivers =
                 listOf(
                     ReceiverSelectItem(id = 1L, name = "김혜성", relation = "아들"),

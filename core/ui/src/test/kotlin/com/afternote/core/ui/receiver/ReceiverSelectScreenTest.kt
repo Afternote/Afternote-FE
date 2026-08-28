@@ -98,7 +98,6 @@ class ReceiverSelectScreenTest {
         composeRule.setContent {
             AfternoteTheme {
                 ReceiverSelectScreen(
-                    title = "수신자 선택",
                     receivers = receivers,
                     selectedReceiverId = selectedReceiverId,
                     onReceiverToggle = onReceiverToggle,
