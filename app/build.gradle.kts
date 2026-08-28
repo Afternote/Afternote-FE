@@ -256,6 +256,7 @@ dependencies {
     androidTestImplementation(projects.core.data)
     androidTestImplementation(testFixtures(projects.core.domain))
     androidTestImplementation(projects.feature.afternote.domain)
+    androidTestImplementation(testFixtures(projects.feature.afternote.domain))
     androidTestImplementation(projects.feature.mindrecord.domain)
     androidTestImplementation(testFixtures(projects.feature.mindrecord.domain))
     androidTestImplementation(projects.feature.receiver.domain)

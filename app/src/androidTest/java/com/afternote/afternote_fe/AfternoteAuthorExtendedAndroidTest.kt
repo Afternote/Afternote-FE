@@ -47,10 +47,6 @@ import com.afternote.afternote_fe.test.appTestUserRepository
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
-import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
-import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
-import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
-import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
@@ -59,11 +55,11 @@ import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.model.author.ProcessingMethod
 import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
-import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MediaKind
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
+import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailDeleteResult
@@ -116,10 +112,14 @@ class AfternoteAuthorExtendedAndroidTest {
                 releaseFirstLoad = releaseFirstLoad,
                 successItems = authorListItems(),
             )
-        val repository = AdvancedAfternoteRepository()
-        repository.listFlows[null] =
+        val listFlows = mutableMapOf<AfternoteType?, Flow<PagingData<ListItem>>>()
+        val repository =
+            FakeAfternoteRepository.strict().apply {
+                onGetPagedAfternotes = { type -> listFlows[type] ?: flowOf(PagingData.empty()) }
+            }
+        listFlows[null] =
             Pager(PagingConfig(pageSize = 20)) { pagingSource }.flow
-        repository.listFlows[AfternoteType.SOCIAL_NETWORK] = flowOf(PagingData.empty())
+        listFlows[AfternoteType.SOCIAL_NETWORK] = flowOf(PagingData.empty())
         val viewModel = AfternoteHomeViewModel(repository)
         val detailRoutes = mutableListOf<Long>()
         val addRoutes = mutableListOf<AfternoteType?>()
@@ -167,7 +167,7 @@ class AfternoteAuthorExtendedAndroidTest {
         composeRule.onNodeWithContentDescription("추가").performClick()
 
         assertEquals(listOf(AfternoteType.SOCIAL_NETWORK), addRoutes)
-        repository.listFlows[null] = flowOf(PagingData.empty())
+        listFlows[null] = flowOf(PagingData.empty())
         composeRule.onNodeWithText("전체").performClick()
         composeRule
             .onNodeWithText("아직 등록된 답변이 없어요.\n답변을 등록해 자신을 알아 보아요.")
@@ -180,7 +180,11 @@ class AfternoteAuthorExtendedAndroidTest {
 
     @Test
     fun detailEdit_updatesExactPrefilledPayloadThroughEditorRoute() {
-        val repository = AdvancedAfternoteRepository(detailResult = Result.success(authorDetail()))
+        val repository =
+            FakeAfternoteRepository.strict().apply {
+                onGetDetail = { Result.success(authorDetail()) }
+                onUpdate = { id, _ -> Result.success(id) }
+            }
         val detailViewModel = detailViewModel(repository, itemId = 73L)
         var routedItemId by mutableStateOf<String?>(null)
         var editorViewModel: AfternoteEditorViewModel? = null
@@ -242,16 +246,18 @@ class AfternoteAuthorExtendedAndroidTest {
         assertEquals("old-password", payload.credentials?.password)
         assertEquals(listOf(ReceiverRefPayload(7L)), payload.receivers)
         assertNull(payload.memorial)
-        assertEquals(listOf(73L, 73L), repository.detailCalls)
+        assertEquals(listOf(73L, 73L), repository.requestedDetailIds)
         assertEquals("73", routedItemId)
     }
 
     @Test
     fun repeatedValidation_afterSnackbarDismiss_showsAgainWithoutSaveCall() {
         val repository =
-            AdvancedAfternoteRepository(
-                detailResult = Result.success(authorDetail().copy(receivers = emptyList())),
-            )
+            FakeAfternoteRepository.strict().apply {
+                onGetDetail = {
+                    Result.success(authorDetail().copy(receivers = emptyList()))
+                }
+            }
         val viewModel = editorViewModel(repository, itemId = 73L)
         var editorState: AfternoteEditorState? = null
         var snackbarHostState: SnackbarHostState? = null
@@ -306,9 +312,18 @@ class AfternoteAuthorExtendedAndroidTest {
 
     @Test
     fun delete_cancelThenFailureAndRetrySuccess_callsOnlyAfterConfirmation() {
-        val repository = AdvancedAfternoteRepository(detailResult = Result.success(authorDetail()))
-        repository.deleteResults.addLast(Result.failure(IllegalStateException("offline")))
-        repository.deleteResults.addLast(Result.success(Unit))
+        val deleteResults =
+            ArrayDeque(
+                listOf(
+                    Result.failure(IllegalStateException("offline")),
+                    Result.success(Unit),
+                ),
+            )
+        val repository =
+            FakeAfternoteRepository.strict().apply {
+                onGetDetail = { Result.success(authorDetail()) }
+                onDelete = { deleteResults.removeFirst() }
+            }
         val viewModel = detailViewModel(repository, itemId = 73L)
         val deletedIds = mutableListOf<Long>()
 
@@ -323,21 +338,21 @@ class AfternoteAuthorExtendedAndroidTest {
 
         composeRule.onNodeWithText("Instagram").assertIsDisplayed()
         openDeleteDialog()
-        assertEquals(emptyList<Long>(), repository.deleteCalls)
+        assertEquals(emptyList<Long>(), repository.deletedIds)
         composeRule.onNodeWithText("취소하기").performClick()
-        assertEquals(emptyList<Long>(), repository.deleteCalls)
+        assertEquals(emptyList<Long>(), repository.deletedIds)
 
         openDeleteDialog()
         composeRule.onNodeWithText("삭제하기").performClick()
         composeRule.onNodeWithText("삭제에 실패했습니다.").assertIsDisplayed()
-        assertEquals(listOf(73L), repository.deleteCalls)
+        assertEquals(listOf(73L), repository.deletedIds)
         assertEquals(emptyList<Long>(), deletedIds)
 
         openDeleteDialog()
         composeRule.onNodeWithText("삭제하기").performClick()
         composeRule.waitUntil(timeoutMillis = 5_000) { deletedIds == listOf(73L) }
 
-        assertEquals(listOf(73L, 73L), repository.deleteCalls)
+        assertEquals(listOf(73L, 73L), repository.deletedIds)
         assertEquals(listOf(73L), deletedIds)
     }
 
@@ -534,50 +549,8 @@ private class RetryListPagingSource(
     override fun getRefreshKey(state: PagingState<Int, ListItem>): Int? = null
 }
 
-private class AdvancedAfternoteRepository(
-    var detailResult: Result<Detail> = Result.failure(NoSuchElementException()),
-) : AfternoteRepository {
-    val listFlows = mutableMapOf<AfternoteType?, Flow<PagingData<ListItem>>>()
-    val requestedTypes = mutableListOf<AfternoteType?>()
-    val detailCalls = mutableListOf<Long>()
-    val updateCalls = mutableListOf<Pair<Long, AfternoteUpdatePayload>>()
-    val deleteCalls = mutableListOf<Long>()
-    val deleteResults = ArrayDeque<Result<Unit>>()
-
-    override fun getPagedAfternotes(type: AfternoteType?): Flow<PagingData<ListItem>> {
-        requestedTypes += type
-        return listFlows[type] ?: flowOf(PagingData.empty())
-    }
-
-    override suspend fun getDetail(id: Long): Result<Detail> {
-        detailCalls += id
-        return detailResult
-    }
-
-    override suspend fun createSocial(payload: CreateAccountPayload): Result<Long> = error("unexpected createSocial")
-
-    override suspend fun createBusiness(payload: CreateAccountPayload): Result<Long> = error("unexpected createBusiness")
-
-    override suspend fun createGallery(payload: CreateGalleryPayload): Result<Long> = error("unexpected createGallery")
-
-    override suspend fun createMemorial(payload: CreateMemorialPayload): Result<Long> = error("unexpected createMemorial")
-
-    override suspend fun update(
-        id: Long,
-        payload: AfternoteUpdatePayload,
-    ): Result<Long> {
-        updateCalls += id to payload
-        return Result.success(id)
-    }
-
-    override suspend fun delete(id: Long): Result<Unit> {
-        deleteCalls += id
-        return deleteResults.removeFirstOrNull() ?: Result.success(Unit)
-    }
-}
-
 private fun detailViewModel(
-    repository: AdvancedAfternoteRepository,
+    repository: FakeAfternoteRepository,
     itemId: Long,
 ): AfternoteDetailViewModel =
     AfternoteDetailViewModel(
@@ -588,7 +561,7 @@ private fun detailViewModel(
     )
 
 private fun editorViewModel(
-    repository: AdvancedAfternoteRepository,
+    repository: FakeAfternoteRepository,
     itemId: Long,
 ): AfternoteEditorViewModel =
     AfternoteEditorViewModel(
