@@ -26,38 +26,44 @@ internal fun Throwable.toReceiverFailure(): Throwable =
     }
 
 /**
- * 서버 응답의 status·code·message 를 도메인 어휘로 번역한다.
+ * 서버 응답의 status·code·message 를 도메인 어휘로 번역한다. 판정 순서 —
  *
- * 노출과 리포팅 판정의 폭은 의도적으로 다르다. `4xx + 비어 있지 않은 서버 문구`면 서버가 예상하고
- * 처리한 [ReceiverFailure.UserRejection] 이므로 리포팅에서 제외한다. 그중 화면에 별도 안내가 필요한
- * 5개 code 만 [ReceiverRejectionReason] 으로 채우고, 미등재 code 는 `reason = null` 로 두어 서버 원문을
- * 노출하지 않는다. 5xx 또는 문구 없는 4xx 는 [ReceiverFailure.UnexpectedServerFailure] 로 기록한다.
- * [ReceiverFailure.DeliveryConditionNotMet]도 같은 사용자 거절 게이트를 통과한 code 2009만 승격한다.
+ * 1. 4xx 대역이 아니면 [ReceiverFailure.UnexpectedServerFailure]. 등재 code 여도 5xx 봉투는 장애다.
+ * 2. FE 가 등재한 code 는 **code 만으로** 사유가 확정된다 — 2009 는
+ *    [ReceiverFailure.DeliveryConditionNotMet], 나머지 5개는 [ReceiverRejectionReason] 을 채운
+ *    [ReceiverFailure.UserRejection]. 이 분기의 화면 문구는 로컬 리소스라 서버 문구를 쓰지 않으므로,
+ *    서버가 문구를 비워 보내도 확정 사유가 유지된다(#1339 리뷰).
+ * 3. 미등재 code 만 서버 문구 게이트를 지난다. 문구가 있으면 서버가 예상하고 처리한 사용자 거절로
+ *    보아 `reason = null` 인 [ReceiverFailure.UserRejection](리포팅 제외, 서버 원문 미노출), 문구까지
+ *    없으면 계약 불일치 신호로 [ReceiverFailure.UnexpectedServerFailure] 로 기록한다.
  *
  * **BE `ErrorCode` 번호를 아는 것은 이 계층까지다.** 도메인 실패는 status·code·message 어느 것도
  * 운반하지 않으며, presentation 은 번역된 타입과 사유만 소비한다.
  */
-internal fun ApiException.toReceiverServerFailure(): ReceiverFailure =
-    when {
-        status in CLIENT_ERROR_STATUS_RANGE && !serverMessage.isNullOrBlank() -> {
-            when (code) {
-                DELIVERY_CONDITION_NOT_MET -> {
-                    ReceiverFailure.DeliveryConditionNotMet(this)
-                }
+internal fun ApiException.toReceiverServerFailure(): ReceiverFailure {
+    val registeredReason = code.toReceiverRejectionReasonOrNull()
+    return when {
+        status !in CLIENT_ERROR_STATUS_RANGE -> {
+            ReceiverFailure.UnexpectedServerFailure(this)
+        }
 
-                else -> {
-                    ReceiverFailure.UserRejection(
-                        reason = code.toReceiverRejectionReasonOrNull(),
-                        cause = this,
-                    )
-                }
-            }
+        code == DELIVERY_CONDITION_NOT_MET -> {
+            ReceiverFailure.DeliveryConditionNotMet(this)
+        }
+
+        registeredReason != null -> {
+            ReceiverFailure.UserRejection(reason = registeredReason, cause = this)
+        }
+
+        !serverMessage.isNullOrBlank() -> {
+            ReceiverFailure.UserRejection(reason = null, cause = this)
         }
 
         else -> {
             ReceiverFailure.UnexpectedServerFailure(this)
         }
     }
+}
 
 private fun Int.toReceiverRejectionReasonOrNull(): ReceiverRejectionReason? =
     when (this) {

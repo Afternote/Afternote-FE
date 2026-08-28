@@ -112,9 +112,10 @@ fun ErrorReporter.recordAfternoteFailure(
  * "보관 한도(최근 8건)" 서술이 이 수치를 가리킨다) 사용자 오류가 실제 장애를 밀어낸다.
  * https://firebase.google.com/docs/crashlytics/android/customize-crash-reports
  *
- * `4xx + 비어 있지 않은 서버 문구` 판정은 Data 계층이 [ReceiverFailure.UserRejection] 으로 번역했다.
- * 5xx 와 문구 없는 4xx 는 [ReceiverFailure.UnexpectedServerFailure] 로 남아 기록된다. presentation 은
- * HTTP status·BE code·서버 message 를 되짚지 않고 도메인 결과만 소비한다.
+ * 사용자 거절 판정은 Data 계층이 [ReceiverFailure.UserRejection] 으로 번역했다 — FE 가 등재한 code 는
+ * code 만으로, 미등재 code 는 `4xx + 비어 있지 않은 서버 문구`로. 5xx 와 문구 없는 미등재 4xx 는
+ * [ReceiverFailure.UnexpectedServerFailure] 로 남아 기록된다. presentation 은 HTTP status·BE code·서버
+ * message 를 되짚지 않고 도메인 결과만 소비한다.
  *
  * 다른 흐름에는 쓰지 않는다. 회원가입 이메일 인증은 사용자 오류가 code 1207 하나로만 와서 호출부가
  * 타입(`CoreAuthFailure.EmailVerification`)만 보고 거른다 — 문구 유무를 따질 필요가 없다.

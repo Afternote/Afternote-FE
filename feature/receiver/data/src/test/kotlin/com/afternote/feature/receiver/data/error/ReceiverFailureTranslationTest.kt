@@ -47,9 +47,37 @@ class ReceiverFailureTranslationTest {
     }
 
     @Test
-    fun `문구 없는 4xx 는 등재 code 여도 예상 밖 서버 실패다`() {
+    fun `등재 5개 code 는 서버 문구가 없어도 확정 사유로 번역한다`() {
+        val cases =
+            listOf(
+                Triple(404, 1900, ReceiverRejectionReason.INVALID_AUTH_CODE),
+                Triple(404, 1901, ReceiverRejectionReason.RECEIVER_EMAIL_NOT_FOUND),
+                Triple(400, 1902, ReceiverRejectionReason.RECEIVER_EMAIL_AUTH_CODE_NOT_FOUND),
+                Triple(400, 1903, ReceiverRejectionReason.RECEIVER_EMAIL_AUTH_CODE_MISMATCH),
+                Triple(409, 2008, ReceiverRejectionReason.VERIFICATION_ALREADY_SUBMITTED),
+            )
+
+        cases.forEach { (status, code, expectedReason) ->
+            listOf(null, "  \n  ").forEach { serverMessage ->
+                val original = apiException(status = status, code = code, serverMessage = serverMessage)
+
+                val failure = original.toReceiverServerFailure()
+
+                assertTrue(
+                    "code=$code serverMessage=$serverMessage: $failure",
+                    failure is ReceiverFailure.UserRejection,
+                )
+                failure as ReceiverFailure.UserRejection
+                assertEquals("code=$code serverMessage=$serverMessage", expectedReason, failure.reason)
+                assertSame("code=$code serverMessage=$serverMessage", original, failure.cause)
+            }
+        }
+    }
+
+    @Test
+    fun `문구 없는 4xx 는 미등재 code 면 예상 밖 서버 실패다`() {
         listOf(null, "  \n  ").forEach { serverMessage ->
-            val original = apiException(status = 404, code = 1900, serverMessage = serverMessage)
+            val original = apiException(status = 422, code = 4999, serverMessage = serverMessage)
 
             val failure = original.toReceiverServerFailure()
 
@@ -69,7 +97,7 @@ class ReceiverFailureTranslationTest {
     }
 
     @Test
-    fun `전달 조건 미충족 2009 는 4xx 와 문구가 함께 있을 때만 전용 사유다`() {
+    fun `전달 조건 미충족 2009 는 4xx 면 문구와 무관하게 전용 사유다`() {
         val original = apiException(status = 403, code = 2009, serverMessage = "아직 전달 조건이 충족되지 않았습니다.")
 
         val failure = original.toReceiverServerFailure()
@@ -89,13 +117,13 @@ class ReceiverFailureTranslationTest {
     }
 
     @Test
-    fun `2009 여도 문구 없는 4xx 면 예상 밖 서버 실패다`() {
+    fun `2009 는 문구 없는 4xx 여도 전달 조건 미충족이다`() {
         listOf(null, "  \n  ").forEach { serverMessage ->
             val original = apiException(status = 403, code = 2009, serverMessage = serverMessage)
 
             val failure = original.toReceiverServerFailure()
 
-            assertTrue("serverMessage=$serverMessage: $failure", failure is ReceiverFailure.UnexpectedServerFailure)
+            assertTrue("serverMessage=$serverMessage: $failure", failure is ReceiverFailure.DeliveryConditionNotMet)
             assertSame(original, failure.cause)
         }
     }

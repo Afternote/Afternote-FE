@@ -33,7 +33,7 @@ class ReceiverFlowReportingTest {
     }
 
     @Test
-    fun `data 가 5xx 나 문구 없는 4xx 로 번역한 예상 밖 서버 실패는 기록 대상이다`() {
+    fun `data 가 5xx 나 문구 없는 미등재 4xx 로 번역한 예상 밖 서버 실패는 기록 대상이다`() {
         val outage = ReceiverFailure.UnexpectedServerFailure(CAUSE)
 
         assertTrue(outage.shouldReportInReceiverFlow())
