@@ -1,7 +1,7 @@
 package com.afternote.feature.receiver.presentation.detail
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -175,21 +175,19 @@ private fun ReceiverVideoSection(
                         // clip 을 clickable 앞에: 눌림 피드백이 InfoCard 의 12dp 둥근 모서리 안에서만 그려지게 (모서리 밖 사각 번짐 방지)
                         .clip(RoundedCornerShape(12.dp))
                         .clickable {
-                            val intent = Intent(Intent.ACTION_VIEW, memorialVideoUrl.toUri())
-                            if (context.packageManager.resolveActivity(
-                                    intent,
-                                    PackageManager.MATCH_DEFAULT_ONLY,
-                                ) != null
-                            ) {
-                                context.startActivity(intent)
-                            } else {
-                                Toast
-                                    .makeText(
-                                        context,
-                                        "영상을 재생할 수 있는 앱이 없습니다.",
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
-                            }
+                            launchReceivedMemorialVideo(
+                                videoUrl = memorialVideoUrl,
+                                startActivity = context::startActivity,
+                                onUnavailable = {
+                                    // 안내 채널·문구는 현행 유지 — Snackbar·리소스화는 #1391 건 3.
+                                    Toast
+                                        .makeText(
+                                            context,
+                                            "영상을 재생할 수 있는 앱이 없습니다.",
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                },
+                            )
                         },
             ) {
                 ReceiverMemorialVideoThumbnail(thumbnailUrl = memorialThumbnailUrl)
@@ -218,6 +216,54 @@ private fun ReceiverVideoSection(
                 )
             }
         }
+    }
+}
+
+/**
+ * 서버가 준 추모 영상 URL을 외부 재생 앱으로 연다.
+ *
+ * 수신자 화면은 발신자가 저장한 값을 여는 쪽인데 서버는 비관리 URL 을 원문 그대로 반환하므로,
+ * http/https 가 아닌 스킴은 실행하지 않는다 (#1394 — 발신자발 위험 스킴 차단).
+ * Android 11+ 패키지 가시성에서는 외부 앱 사전 조회가 실제 처리 가능한 앱이 있어도 실패할 수
+ * 있다. 따라서 http/https URL만 선별한 뒤 실행을 직접 시도하고, OS가 명시적으로 거부한 경우에만
+ * [onUnavailable] 로 폴백한다. 작성자 쪽 상세의 `launchMemorialVideo`(PR #1336)와 같은 패턴 —
+ * 그쪽은 afternote 모듈 internal 이라 공유 없이 이식했다 (공유 승격 검토는 #1391).
+ */
+internal fun launchReceivedMemorialVideo(
+    videoUrl: String,
+    startActivity: (Intent) -> Unit,
+    onUnavailable: () -> Unit,
+) {
+    val uri =
+        try {
+            videoUrl
+                .takeUnless { it.isBlank() || it.any(Char::isWhitespace) }
+                ?.toUri()
+                ?.takeIf {
+                    val scheme = it.scheme
+                    (
+                        scheme.equals("http", ignoreCase = true) ||
+                            scheme.equals("https", ignoreCase = true)
+                    ) &&
+                        !it.host.isNullOrBlank()
+                }
+        } catch (_: IllegalArgumentException) {
+            null
+        }
+
+    if (uri == null) {
+        onUnavailable()
+        return
+    }
+
+    try {
+        startActivity(Intent(Intent.ACTION_VIEW, uri))
+    } catch (_: ActivityNotFoundException) {
+        onUnavailable()
+    } catch (_: SecurityException) {
+        onUnavailable()
+    } catch (_: IllegalArgumentException) {
+        onUnavailable()
     }
 }
 
