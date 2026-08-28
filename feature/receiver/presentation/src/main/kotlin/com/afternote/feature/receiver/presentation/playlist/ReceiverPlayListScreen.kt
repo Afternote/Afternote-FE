@@ -1,5 +1,6 @@
 package com.afternote.feature.receiver.presentation.playlist
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,6 +13,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.feature.afternote.presentation.shared.detail.song.PlaylistEmptyContent
 import com.afternote.feature.afternote.presentation.shared.detail.song.PlaylistSongList
 import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScaffold
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
@@ -41,14 +43,24 @@ fun MemorialPlaylistScreen(
         onBackClick = onBackClick,
         modifier = modifier,
     ) { paddingValues ->
-        PlaylistSongList(
+        Box(
             modifier =
                 Modifier
                     .padding(paddingValues)
                     .fillMaxSize(),
-            songs = songs,
-            header = { ReceiverPlaylistSongCountHeader(songCount = songs.size) },
-        )
+        ) {
+            PlaylistSongList(
+                modifier = Modifier.fillMaxSize(),
+                songs = songs,
+                header = { ReceiverPlaylistSongCountHeader(songCount = songs.size) },
+            )
+            if (songs.isEmpty()) {
+                PlaylistEmptyContent(
+                    text = stringResource(R.string.receiver_playlist_empty_message),
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
     }
 }
 

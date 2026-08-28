@@ -70,9 +70,19 @@ class ReceiverAuthRepositoryImpl
                 }
             }
 
-        override suspend fun getPresignedUrl(extension: String): Result<ReceiverAuthPresignedUrl> =
+        override suspend fun getPresignedUrl(
+            extension: String,
+            contentLength: Long,
+        ): Result<ReceiverAuthPresignedUrl> =
             runCatchingCancellable {
-                api.getPresignedUrl(ReceiverAuthPresignedUrlRequestDto(extension)).requireData().toDomain()
+                api
+                    .getPresignedUrl(
+                        ReceiverAuthPresignedUrlRequestDto(
+                            extension = extension,
+                            contentLength = contentLength,
+                        ),
+                    ).requireData()
+                    .toDomain()
             }
 
         override suspend fun submitDeliveryVerification(

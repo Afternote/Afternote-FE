@@ -55,7 +55,7 @@ internal object AfternoteEditorValidator {
 
     private fun validateProcessingMethods(payload: RegisterAfternotePayload): AfternoteValidationError? {
         if (payload.processingMethods.isEmpty()) {
-            return AfternoteValidationError.ACTIONS_REQUIRED
+            return AfternoteValidationError.PROCESSING_METHODS_REQUIRED
         }
         return null
     }

@@ -35,6 +35,9 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -186,7 +189,7 @@ fun DatePickerContent(
                                 .height(8.dp)
                                 .width(4.dp)
                                 .clipToBounds()
-                                .clickable { onPrevMonth() },
+                                .clickable(role = Role.Button) { onPrevMonth() },
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
@@ -203,7 +206,7 @@ fun DatePickerContent(
                                 .height(8.dp)
                                 .width(4.dp)
                                 .clipToBounds()
-                                .clickable { onNextMonth() },
+                                .clickable(role = Role.Button) { onNextMonth() },
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
@@ -300,7 +303,8 @@ fun PickerDayCell(
                 .padding(4.dp)
                 .clip(CircleShape)
                 .background(bgColor)
-                .clickable(onClick = onSelect),
+                .clickable(role = Role.RadioButton, onClick = onSelect)
+                .semantics { selected = model.isSelected },
         contentAlignment = Alignment.Center,
     ) {
         Text(

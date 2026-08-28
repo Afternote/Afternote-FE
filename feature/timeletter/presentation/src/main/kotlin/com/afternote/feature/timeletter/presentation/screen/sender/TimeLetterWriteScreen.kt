@@ -100,6 +100,7 @@ import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteUi
 import com.afternote.feature.timeletter.presentation.viewmodel.VoiceRecordingState
 import java.time.LocalDate
 import java.time.LocalTime
+import com.afternote.core.ui.R as CoreUiR
 
 private enum class MicrophonePermissionError {
     Denied,
@@ -552,7 +553,7 @@ fun TimeLetterWriteScreen(
 
                     is EditorBlock.Audio -> {
                         MediaBlockChip(
-                            iconRes = R.drawable.ic_mic,
+                            iconRes = CoreUiR.drawable.core_ui_ic_mic,
                             label = block.name,
                             onRemove = { onRemoveBlock(block.id) },
                         )
