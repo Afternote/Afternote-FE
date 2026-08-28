@@ -1,0 +1,2 @@
+Lcom/afternote/afternote_fe/GlobalApplication;
+Lcom/afternote/afternote_fe/MainActivity;

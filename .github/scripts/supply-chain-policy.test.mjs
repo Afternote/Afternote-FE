@@ -28,6 +28,67 @@ async function workflows() {
   );
 }
 
+function runnerJobBlocks(source) {
+  const lines = source.split('\n');
+  const blocks = [];
+  let inJobs = false;
+  let current = null;
+
+  const flush = () => {
+    if (current && /^    runs-on:/m.test(current.source)) {
+      blocks.push(current);
+    }
+    current = null;
+  };
+
+  for (const line of lines) {
+    if (line === 'jobs:') {
+      inJobs = true;
+      continue;
+    }
+    if (!inJobs) {
+      continue;
+    }
+    if (/^\S/.test(line)) {
+      flush();
+      inJobs = false;
+      continue;
+    }
+    const job = /^  ([A-Za-z0-9_-]+):\s*$/.exec(line);
+    if (job) {
+      flush();
+      current = { name: job[1], source: `${line}\n` };
+    } else if (current) {
+      current.source += `${line}\n`;
+    }
+  }
+  flush();
+  return blocks;
+}
+
+function checkoutStepBlocks(source) {
+  const lines = source.split('\n');
+  const blocks = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    if (!/^\s+uses:\s*actions\/checkout@/.test(lines[index])) {
+      continue;
+    }
+    const usesIndent = /^\s*/.exec(lines[index])[0].length;
+    const stepIndent = usesIndent - 2;
+    const block = [lines[index]];
+    for (let cursor = index + 1; cursor < lines.length; cursor += 1) {
+      const line = lines[cursor];
+      const indent = /^\s*/.exec(line)[0].length;
+      if (line.trim().length > 0 && indent <= stepIndent) {
+        break;
+      }
+      block.push(line);
+    }
+    blocks.push(block.join('\n'));
+  }
+  return blocks;
+}
+
 function eventPathFilters(source, eventName) {
   const match = new RegExp(`^  ${eventName}:\\n    paths:\\n((?:      - '[^']+'\\n)+)`, 'm').exec(
     source,
@@ -157,6 +218,37 @@ test('Gradle caching has a single owner in every workflow', async () => {
       assert.doesNotMatch(source, /uses:\s*actions\/cache@/, `${name} uses a competing Gradle cache`);
     }
   }
+});
+
+test('every runner job has an explicit positive timeout', async () => {
+  const missing = [];
+  for (const [workflow, source] of await workflows()) {
+    for (const job of runnerJobBlocks(source)) {
+      const timeout = /^    timeout-minutes:\s*(.+)\s*$/m.exec(job.source)?.[1];
+      if (!timeout || (!/^[1-9][0-9]*$/.test(timeout) && !/^\$\{\{.+\}\}$/.test(timeout))) {
+        missing.push(`${workflow}: ${job.name}`);
+      }
+    }
+  }
+  assert.deepEqual(missing, []);
+});
+
+test('checkout never persists the workflow token in the worktree', async () => {
+  const unsafe = [];
+  for (const [workflow, source] of await workflows()) {
+    checkoutStepBlocks(source).forEach((block, index) => {
+      if (!/^\s+persist-credentials:\s*false\s*$/m.test(block)) {
+        unsafe.push(`${workflow}: checkout ${index + 1}`);
+      }
+    });
+  }
+  assert.deepEqual(unsafe, []);
+});
+
+test('reusable lint jobs keep a read-only token', async () => {
+  const lint = await readFile(new URL('../workflows/lint.yml', import.meta.url), 'utf8');
+  assert.match(lint, /^permissions:\n  contents: read$/m);
+  assert.doesNotMatch(lint, /pull-requests:\s*write/);
 });
 
 test('dependency audit resolves and tests every domain module on its current platform', async () => {
