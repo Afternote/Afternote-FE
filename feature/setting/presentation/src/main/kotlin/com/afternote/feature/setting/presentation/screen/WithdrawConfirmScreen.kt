@@ -48,6 +48,8 @@ fun WithdrawConfirmScreen(
 ) {
     val userName = (uiState as? SettingUiState.Success)?.name.orEmpty()
     val userEmail = (uiState as? SettingUiState.Success)?.email.orEmpty()
+    val textState = rememberTextFieldState()
+    var showError by remember { mutableStateOf(false) }
     val withdrawUiState by viewModel.withdrawUiState.collectAsStateWithLifecycle()
 
     when (withdrawUiState) {
@@ -76,28 +78,6 @@ fun WithdrawConfirmScreen(
         WithdrawUiState.Loading,
         -> {}
     }
-
-    WithdrawConfirmContent(
-        userName = userName,
-        userEmail = userEmail,
-        onBackClick = onBackClick,
-        onWithdrawClick = viewModel::deleteAccount,
-        isLoading = withdrawUiState == WithdrawUiState.Loading,
-        modifier = modifier,
-    )
-}
-
-@Composable
-internal fun WithdrawConfirmContent(
-    userName: String,
-    userEmail: String,
-    onBackClick: () -> Unit,
-    onWithdrawClick: () -> Unit,
-    isLoading: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    val textState = rememberTextFieldState()
-    var showError by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -144,12 +124,12 @@ internal fun WithdrawConfirmContent(
                 onWithdrawClick = {
                     if (textState.text.toString() == WITHDRAW_CONFIRM_TEXT) {
                         showError = false
-                        onWithdrawClick()
+                        viewModel.deleteAccount()
                     } else {
                         showError = true
                     }
                 },
-                isLoading = isLoading,
+                isLoading = withdrawUiState == WithdrawUiState.Loading,
             )
             Spacer(Modifier.height(24.dp))
         }

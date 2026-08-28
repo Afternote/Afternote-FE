@@ -52,7 +52,7 @@ fun AppLockSetupScreen(
 }
 
 @Composable
-internal fun AppLockSetupContent(
+private fun AppLockSetupContent(
     step: PinSetupStep,
     passwordLength: Int,
     onDigitClick: (String) -> Unit,

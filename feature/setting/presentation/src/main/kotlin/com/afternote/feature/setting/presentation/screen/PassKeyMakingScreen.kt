@@ -93,45 +93,6 @@ fun PassKeyMakingScreen(
         )
     }
 
-    PassKeyMakingContent(
-        onBackClick = onBackClick,
-        onBiometricAuthClick = biometricAuthClick@{
-            if (isAuthenticating || activity == null) return@biometricAuthClick
-            isAuthenticating = true
-            coroutineScope.launch {
-                try {
-                    val result = authenticate(activity)
-                    when (result) {
-                        BiometricResult.Success -> {
-                            viewModel.savePasskeyRegistered()
-                            showCompletionDialog = true
-                        }
-
-                        BiometricResult.Canceled -> {}
-
-                        is BiometricResult.Error -> {
-                            errorMessage = result.message
-                        }
-                    }
-                } finally {
-                    isAuthenticating = false
-                }
-            }
-        },
-        onPasswordAuthClick = onPasswordAuthClick,
-        isBiometricAvailable = isBiometricAvailable,
-        modifier = modifier,
-    )
-}
-
-@Composable
-internal fun PassKeyMakingContent(
-    onBackClick: () -> Unit,
-    onBiometricAuthClick: () -> Unit,
-    onPasswordAuthClick: () -> Unit,
-    isBiometricAvailable: Boolean,
-    modifier: Modifier = Modifier,
-) {
     Scaffold(
         modifier = modifier,
         containerColor = Color.Transparent,
@@ -172,7 +133,31 @@ internal fun PassKeyMakingContent(
             ) {
                 AfternoteButton(
                     text = "지문 인증하기",
-                    onClick = onBiometricAuthClick,
+                    onClick = {
+                        if (isAuthenticating || activity == null) return@AfternoteButton
+                        isAuthenticating = true
+                        coroutineScope.launch {
+                            try {
+                                val result = authenticate(activity)
+                                when (result) {
+                                    BiometricResult.Success -> {
+                                        viewModel.savePasskeyRegistered()
+                                        showCompletionDialog = true
+                                    }
+
+                                    BiometricResult.Canceled -> {
+                                        Unit
+                                    }
+
+                                    is BiometricResult.Error -> {
+                                        errorMessage = result.message
+                                    }
+                                }
+                            } finally {
+                                isAuthenticating = false
+                            }
+                        }
+                    },
                     type = if (isBiometricAvailable) AfternoteButtonType.Default else AfternoteButtonType.Un,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -235,10 +220,5 @@ private suspend fun authenticate(activity: FragmentActivity): BiometricResult =
 @Preview(showBackground = true)
 @Composable
 private fun PassKeyMakingScreenPrev() {
-    PassKeyMakingContent(
-        onBackClick = {},
-        onBiometricAuthClick = {},
-        onPasswordAuthClick = {},
-        isBiometricAvailable = true,
-    )
+    PassKeyMakingScreen(onBackClick = {}, onPasswordAuthClick = {})
 }

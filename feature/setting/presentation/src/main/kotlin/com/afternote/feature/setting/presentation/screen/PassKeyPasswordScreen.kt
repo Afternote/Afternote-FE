@@ -43,25 +43,6 @@ fun PassKeyPasswordScreen(
         }
     }
 
-    PassKeyPasswordContent(
-        passwordLength = uiState.pin.length,
-        onDigitClick = viewModel::onDigitInput,
-        onDeleteClick = viewModel::onDelete,
-        onConfirmClick = { currentOnPinComplete(uiState.pin) },
-        onBack = onBack,
-        modifier = modifier,
-    )
-}
-
-@Composable
-internal fun PassKeyPasswordContent(
-    passwordLength: Int,
-    onDigitClick: (String) -> Unit,
-    onDeleteClick: () -> Unit,
-    onConfirmClick: () -> Unit,
-    onBack: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
     Scaffold(
         topBar = {
             DetailTopBar(
@@ -82,10 +63,10 @@ internal fun PassKeyPasswordContent(
             Spacer(modifier = Modifier.height(40.dp))
             InsertPasswordContent(
                 titleText = "비밀번호를 입력해 주세요.",
-                passwordLength = passwordLength,
-                onDigitClick = onDigitClick,
-                onDeleteClick = onDeleteClick,
-                onConfirmClick = onConfirmClick,
+                passwordLength = uiState.pin.length,
+                onDigitClick = viewModel::onDigitInput,
+                onDeleteClick = viewModel::onDelete,
+                onConfirmClick = { currentOnPinComplete(uiState.pin) },
             )
         }
     }
@@ -94,11 +75,8 @@ internal fun PassKeyPasswordContent(
 @Preview(showBackground = true)
 @Composable
 private fun PassKeyPasswordScreenPreview() {
-    PassKeyPasswordContent(
-        passwordLength = 0,
-        onDigitClick = {},
-        onDeleteClick = {},
-        onConfirmClick = {},
+    PassKeyPasswordScreen(
+        onPinComplete = {},
         onBack = {},
     )
 }
