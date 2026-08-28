@@ -1,22 +1,19 @@
-package com.afternote.afternote_fe
+package com.afternote.feature.timeletter.presentation
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.core.domain.testing.FakeUserRepository
@@ -58,17 +55,16 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
-@RunWith(AndroidJUnit4::class)
-class TimeLetterLifecycleAndroidTest {
-    @get:Rule(order = 0)
+@RunWith(RobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(sdk = [35])
+class TimeLetterLifecycleTest {
+    @get:Rule
     val composeRule = createComposeRule()
-
-    @get:Rule(order = 1)
-    val failureArtifactRule =
-        FailureArtifactRule {
-            composeRule.onRoot().captureToImage().asAndroidBitmap()
-        }
 
     @Test
     fun senderList_loadingErrorSuccessFilterAndDeleteRetry_keepRepositoryBoundary() {
@@ -316,6 +312,10 @@ class TimeLetterLifecycleAndroidTest {
         }
         composeRule.onNodeWithText("타임레터를 불러올 수 없습니다.").assertIsDisplayed()
         composeRule.onNodeWithText("다시 시도").performClick()
+        composeRule.waitUntil(timeoutMillis = TIMEOUT) {
+            listViewModel.uiState.value is RecipientTimeletterUiState.Success
+        }
+        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("받은 편지"))
         composeRule.onNodeWithText("받은 편지").assertIsDisplayed()
         assertEquals(2, repository.getReceivedTimeLettersCalls)
 
@@ -332,6 +332,9 @@ class TimeLetterLifecycleAndroidTest {
         }
         composeRule.onNodeWithText("타임레터를 불러올 수 없습니다.").assertIsDisplayed()
         composeRule.onNodeWithText("다시 시도").performClick()
+        composeRule.waitUntil(timeoutMillis = TIMEOUT) {
+            detailViewModel?.uiState?.value is RecipientTimeLetterDetailUiState.Success
+        }
         composeRule.onNodeWithText("받은 편지").assertIsDisplayed()
         composeRule.onNodeWithText("복구된 상세 본문").assertIsDisplayed()
         assertEquals(listOf(71L, 71L), repository.requestedDetailIds)
