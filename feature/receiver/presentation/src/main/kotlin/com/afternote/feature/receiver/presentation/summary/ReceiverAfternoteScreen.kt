@@ -33,7 +33,7 @@ import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.receiver.presentation.R
 
 /**
  * 수신자 애프터노트 메인 Entry.
@@ -168,7 +168,7 @@ fun ReceiverAfterNoteScreen(
                         summary.mindRecordTotalCount,
                     ),
                 btnText = stringResource(R.string.receiver_mindrecord_section_button),
-                imageResource = painterResource(R.drawable.feature_afternote_img_book),
+                imageResource = painterResource(R.drawable.receiver_img_book),
                 onButtonClick = onNavigateToRecord,
             )
 
@@ -181,7 +181,7 @@ fun ReceiverAfterNoteScreen(
                         summary.timeLetterTotalCount,
                     ),
                 btnText = stringResource(R.string.receiver_timeletter_section_button),
-                imageResource = painterResource(R.drawable.feature_afternote_img_letter),
+                imageResource = painterResource(R.drawable.receiver_img_letter),
                 onButtonClick = onNavigateToTimeLetter,
             )
 
@@ -194,7 +194,7 @@ fun ReceiverAfterNoteScreen(
                         summary.afternoteTotalCount,
                     ),
                 btnText = stringResource(R.string.receiver_afternote_section_button),
-                imageResource = painterResource(R.drawable.feature_afternote_img_notebook),
+                imageResource = painterResource(R.drawable.receiver_img_notebook),
                 onButtonClick = onNavigateToAfternote,
             )
 
