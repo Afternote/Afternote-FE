@@ -24,7 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.receiver.presentation.R
 
 /**
  * HeroCard 전용 파스텔 그라데이션 (라이트 블루 → 화이트-ish → 라이트 피치).
@@ -57,7 +57,7 @@ fun HeroCard(
                 .background(brush = HeroGradient),
     ) {
         Image(
-            painter = painterResource(R.drawable.feature_afternote_img_hero_background),
+            painter = painterResource(R.drawable.receiver_img_hero_background),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop,
@@ -76,7 +76,7 @@ fun HeroCard(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = stringResource(R.string.feature_afternote_hero_last_greeting_caption),
+                text = stringResource(R.string.receiver_hero_last_greeting_caption),
                 style =
                     AfternoteDesign.typography.bodySmallR.copy(
                         fontWeight = FontWeight.Medium,

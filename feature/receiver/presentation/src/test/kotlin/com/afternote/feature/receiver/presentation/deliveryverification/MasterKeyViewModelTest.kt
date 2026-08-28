@@ -2,9 +2,9 @@ package com.afternote.feature.receiver.presentation.deliveryverification
 
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.ui.UiText
-import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.receiver.domain.testing.FakeReceiverAuthRepository
 import com.afternote.feature.receiver.domain.testing.FakeReceiverRepository
+import com.afternote.feature.receiver.presentation.R
 import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
