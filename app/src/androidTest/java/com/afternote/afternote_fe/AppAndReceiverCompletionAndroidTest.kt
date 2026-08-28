@@ -77,9 +77,8 @@ import com.afternote.feature.receiver.presentation.home.ReceiverHomeViewModel
 import com.afternote.feature.receiver.presentation.home.model.ReceiverHomeUiState
 import com.afternote.feature.receiver.presentation.navigation.ReceiverNavActions
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
-import com.afternote.feature.timeletter.domain.model.ReceivedTimeLetter
 import com.afternote.feature.timeletter.domain.model.ReceivedTimeLetterList
-import com.afternote.feature.timeletter.domain.repository.ReceiverTimeLetterRepository
+import com.afternote.feature.timeletter.domain.testing.FakeReceiverTimeLetterRepository
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import kotlinx.coroutines.CompletableDeferred
@@ -243,13 +242,19 @@ class ReceiverRuntimeCompletionAndroidTest {
         val mindRecordHomeResults = ArrayDeque<CompletableDeferred<Result<ReceiverMindRecords>>>()
         val mindRecordRepository =
             FakeMindRecordReceiverRepository(onGetAll = { mindRecordHomeResults.removeFirst().await() })
-        val timeLetterRepository = CompletionReceiverTimeLetterRepository()
+        val timeLetterHomeResults = ArrayDeque<CompletableDeferred<Result<ReceivedTimeLetterList>>>()
+        val timeLetterRepository =
+            FakeReceiverTimeLetterRepository.strict().apply {
+                onGetReceivedTimeLetters = {
+                    timeLetterHomeResults.removeFirst().await().getOrThrow()
+                }
+            }
 
         fun homeCallCounts(): List<Int> =
             listOf(
                 repository.getReceivedAfterNotesCalls,
                 mindRecordRepository.getAllCalls,
-                timeLetterRepository.listCalls,
+                timeLetterRepository.getReceivedTimeLettersCalls,
                 repository.loadSenderMessageCalls,
             )
 
@@ -257,14 +262,14 @@ class ReceiverRuntimeCompletionAndroidTest {
             enqueueHomeAttempt(
                 afterNoteHomeResults,
                 mindRecordHomeResults,
-                timeLetterRepository,
+                timeLetterHomeResults,
                 senderMessageHomeResults,
             )
         val partialAttempt =
             enqueueHomeAttempt(
                 afterNoteHomeResults,
                 mindRecordHomeResults,
-                timeLetterRepository,
+                timeLetterHomeResults,
                 senderMessageHomeResults,
             )
         val reporter = FakeErrorReporter()
@@ -796,7 +801,7 @@ private data class PendingHomeAttempt(
 private fun enqueueHomeAttempt(
     afterNoteHomeResults: ArrayDeque<CompletableDeferred<Result<AfterNotesListResult>>>,
     mindRecordHomeResults: ArrayDeque<CompletableDeferred<Result<ReceiverMindRecords>>>,
-    timeLetterRepository: CompletionReceiverTimeLetterRepository,
+    timeLetterHomeResults: ArrayDeque<CompletableDeferred<Result<ReceivedTimeLetterList>>>,
     senderMessageHomeResults: ArrayDeque<CompletableDeferred<Result<SenderMessageInfo?>>>,
 ): PendingHomeAttempt {
     val attempt =
@@ -808,25 +813,9 @@ private fun enqueueHomeAttempt(
         )
     afterNoteHomeResults.addLast(attempt.afterNotes)
     mindRecordHomeResults.addLast(attempt.mindRecords)
-    timeLetterRepository.homeResults.addLast(attempt.timeLetters)
+    timeLetterHomeResults.addLast(attempt.timeLetters)
     senderMessageHomeResults.addLast(attempt.senderMessage)
     return attempt
-}
-
-private class CompletionReceiverTimeLetterRepository : ReceiverTimeLetterRepository {
-    val homeResults = ArrayDeque<CompletableDeferred<Result<ReceivedTimeLetterList>>>()
-    var listCalls = 0
-        private set
-
-    // 실패는 throw 로 전달 — 인터페이스가 Result 대신 예외 계약이라 ViewModel 쪽 runCatching 이 받는다.
-    override suspend fun getReceivedTimeLetters(): ReceivedTimeLetterList {
-        listCalls += 1
-        return homeResults.removeFirst().await().getOrThrow()
-    }
-
-    override suspend fun getReceivedTimeLetterDetail(timeLetterReceiverId: Long): ReceivedTimeLetter {
-        error("unexpected getReceivedTimeLetterDetail")
-    }
 }
 
 /**
