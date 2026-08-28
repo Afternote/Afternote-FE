@@ -77,7 +77,7 @@ internal fun BoxScope.SongPlaylistFloatingActionSlot(content: @Composable () -> 
 }
 
 /**
- * selectable·management 공통 본문: 선택 상태(selectedSongKeys)를 소유하고 라디오 목록 + 선택 시
+ * selectable·management 공통 본문: 선택 상태(selectedSongKeys)를 소유하고 체크박스 목록 + 선택 시
  * 하단에 [AfternoteButton] 액션을 그린다. 두 모드의 차이는 [header] 와 액션 파라미터뿐이다.
  *
  * 액션은 항상 "실행 → 선택 초기화 → 화면 유지"라 동작이 같아, 클릭 시 본문이 콜백을 부른 뒤 선택을
