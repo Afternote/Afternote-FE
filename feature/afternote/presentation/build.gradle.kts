@@ -44,6 +44,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
 
     testImplementation(libs.coroutines.test)
+    testImplementation(testFixtures(projects.core.domain))
+    testImplementation(testFixtures(projects.feature.afternote.domain))
     testImplementation(libs.robolectric)
 
     // 렌더는 같아도 클릭 전달·접근성 semantics 가 달라지는 컨트롤 회귀를 실제 Compose 트리로 검사한다 (#1168).
