@@ -11,7 +11,11 @@ body:
         - bug — 버그·오동작
         - enhancement — 신규 기능·기존 기능 개선
         - documentation — 문서
-        - internal — CI·공용 테스트·릴리스·저장소 운영
+        - maintenance — CI·빌드·의존성·저장소 운영 유지보수
+        - refactor — 동작 변경 없는 구조·책임·경계 개선
+        - release — 배포·릴리스 파이프라인 및 산출물
+        - security — 보안 취약점·권한·자격·공급망 대응
+        - test — 테스트·검증·회귀 방지
     validations:
       required: true
 
@@ -24,11 +28,12 @@ body:
         - afternote — 애프터노트
         - onboarding — 온보딩
         - core — 코어
+        - receiver — 수신자 관리
         - setting — 설정
         - timeletter — 타임레터
         - mindrecord — 마음의 기록
         - home — 홈
-        - repository-ops — CI·공용 테스트·릴리스·저장소 운영
+        - platform — Android 앱·CI·빌드·릴리스·저장소 운영
     validations:
       required: true
 

@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   enforce:
-    name: Enforce assignee and classification label
+    name: Enforce assignee, type, and area labels
     runs-on: ubuntu-latest
     timeout-minutes: 3
     permissions:
