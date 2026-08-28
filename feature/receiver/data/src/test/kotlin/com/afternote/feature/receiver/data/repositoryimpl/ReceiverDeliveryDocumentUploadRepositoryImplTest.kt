@@ -1,11 +1,7 @@
 package com.afternote.feature.receiver.data.repositoryimpl
 
-import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
-import com.afternote.feature.receiver.domain.model.ReceiverEmailAuthResult
-import com.afternote.feature.receiver.domain.model.ReceiverIdentity
-import com.afternote.feature.receiver.domain.model.SenderMessageInfo
-import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
+import com.afternote.feature.receiver.domain.testing.FakeReceiverAuthRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
@@ -23,17 +19,18 @@ class ReceiverDeliveryDocumentUploadRepositoryImplTest {
     @Test
     fun `업로드 바이트 크기를 presigned 요청과 S3 Content-Length에 동일하게 쓴다`() {
         val bytes = byteArrayOf(1, 2, 3, 4)
-        val authRepository =
-            RecordingReceiverAuthRepository(
-                presigned =
-                    ReceiverAuthPresignedUrl(
-                        presignedUrl = "https://s3.example/document.pdf",
-                        fileKey = "receiver-auth/staging/document.pdf",
-                        fileUrl = "https://cdn.example/document.pdf",
-                        contentType = "application/pdf",
-                        contentLength = bytes.size.toLong(),
-                    ),
+        val presigned =
+            ReceiverAuthPresignedUrl(
+                presignedUrl = "https://s3.example/document.pdf",
+                fileKey = "receiver-auth/staging/document.pdf",
+                fileUrl = "https://cdn.example/document.pdf",
+                contentType = "application/pdf",
+                contentLength = bytes.size.toLong(),
             )
+        val authRepository =
+            FakeReceiverAuthRepository.strict().apply {
+                onGetPresignedUrl = { _, _ -> Result.success(presigned) }
+            }
         var uploadedRequest: Request? = null
         val uploadClient =
             OkHttpClient
@@ -51,8 +48,7 @@ class ReceiverDeliveryDocumentUploadRepositoryImplTest {
 
         val uploadedUrl = runBlocking { repository.upload(bytes, "pdf").getOrThrow() }
 
-        assertEquals("pdf", authRepository.requestedExtension)
-        assertEquals(bytes.size.toLong(), authRepository.requestedContentLength)
+        assertEquals(listOf("pdf" to bytes.size.toLong()), authRepository.presignedUrlRequests)
         val request = requireNotNull(uploadedRequest)
         assertEquals(bytes.size.toString(), request.header("Content-Length"))
         assertEquals("application/pdf", request.header("Content-Type"))
@@ -67,17 +63,18 @@ class ReceiverDeliveryDocumentUploadRepositoryImplTest {
     @Test
     fun `서버가 다른 contentLength를 돌려주면 S3 PUT 전에 실패한다`() {
         val bytes = byteArrayOf(1, 2, 3)
-        val authRepository =
-            RecordingReceiverAuthRepository(
-                presigned =
-                    ReceiverAuthPresignedUrl(
-                        presignedUrl = "https://s3.example/document.pdf",
-                        fileKey = "receiver-auth/staging/document.pdf",
-                        fileUrl = "https://cdn.example/document.pdf",
-                        contentType = "application/pdf",
-                        contentLength = bytes.size.toLong() + 1,
-                    ),
+        val presigned =
+            ReceiverAuthPresignedUrl(
+                presignedUrl = "https://s3.example/document.pdf",
+                fileKey = "receiver-auth/staging/document.pdf",
+                fileUrl = "https://cdn.example/document.pdf",
+                contentType = "application/pdf",
+                contentLength = bytes.size.toLong() + 1,
             )
+        val authRepository =
+            FakeReceiverAuthRepository.strict().apply {
+                onGetPresignedUrl = { _, _ -> Result.success(presigned) }
+            }
         var uploadCallCount = 0
         val uploadClient =
             OkHttpClient
@@ -110,40 +107,4 @@ class ReceiverDeliveryDocumentUploadRepositoryImplTest {
             .message("OK")
             .body(ByteArray(0).toResponseBody())
             .build()
-}
-
-private class RecordingReceiverAuthRepository(
-    private val presigned: ReceiverAuthPresignedUrl,
-) : ReceiverAuthRepository {
-    var requestedExtension: String? = null
-        private set
-    var requestedContentLength: Long? = null
-        private set
-
-    override suspend fun getPresignedUrl(
-        extension: String,
-        contentLength: Long,
-    ): Result<ReceiverAuthPresignedUrl> {
-        requestedExtension = extension
-        requestedContentLength = contentLength
-        return Result.success(presigned)
-    }
-
-    override suspend fun verifyMasterKey(authCode: String): Result<ReceiverIdentity> = error("unused")
-
-    override suspend fun sendEmailAuthCode(email: String): Result<Unit> = error("unused")
-
-    override suspend fun verifyEmailAuthCode(
-        email: String,
-        authCode: String,
-    ): Result<ReceiverEmailAuthResult> = error("unused")
-
-    override suspend fun submitDeliveryVerification(
-        deathCertificateUrl: String?,
-        familyRelationCertificateUrl: String?,
-    ): Result<DeliveryVerification> = error("unused")
-
-    override suspend fun getDeliveryVerificationStatus(): Result<DeliveryVerification> = error("unused")
-
-    override suspend fun getSenderMessage(): Result<SenderMessageInfo> = error("unused")
 }
