@@ -16,6 +16,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,6 +32,7 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionBanner
 import com.afternote.feature.mindrecord.presentation.component.WriteTextField
+import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionWriteUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.SubmitState
 import java.time.LocalDate
@@ -48,7 +50,6 @@ fun DailyQuestionWriteScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentOnSubmitSuccess by rememberUpdatedState(onSubmitSuccess)
-    var questionExpanded by remember { mutableStateOf(true) }
 
     LaunchedEffect(uiState.submitState) {
         if (uiState.submitState is SubmitState.Succeeded) {
@@ -57,14 +58,50 @@ fun DailyQuestionWriteScreen(
         }
     }
 
+    DailyQuestionWriteScreenContent(
+        uiState = uiState,
+        // 현재 시각을 화면 밖에서 받는다 — 안에서 LocalDate.now() 를 부르면 screenshotTest
+        // baseline 이 날마다 달라진다 (#1359).
+        date = LocalDate.now(),
+        modifier = modifier,
+        onBackClick = onBackClick,
+        onSubmit = { viewModel.submit() },
+        onSaveDraft = { viewModel.submit(isDraft = true) },
+        onDraftListClick = onDraftListClick,
+        onAnswerChanged = viewModel::onAnswerChanged,
+        onMediaPicked = viewModel::uploadMedia,
+    )
+}
+
+/**
+ * ViewModel 과 현재 시각에서 분리된 데일리질문 작성 화면 본문 (#1359).
+ *
+ * screenshotTest 가 고정 상태를 그대로 렌더할 수 있도록 상태는 [uiState], 날짜는 [date] 로
+ * 받고 이벤트는 콜백으로 받는다. 제출 성공 신호는 화면 밖 이동이라 래퍼가 소유한다.
+ */
+@Composable
+internal fun DailyQuestionWriteScreenContent(
+    uiState: DailyQuestionWriteUiState,
+    date: LocalDate,
+    modifier: Modifier = Modifier,
+    onBackClick: () -> Unit = {},
+    onSubmit: () -> Unit = {},
+    onSaveDraft: () -> Unit = {},
+    onDraftListClick: () -> Unit = {},
+    onAnswerChanged: (String) -> Unit = {},
+    onMediaPicked: suspend (String) -> String? = { null },
+) {
+    // 배너 접힘은 이 화면 안에서만 의미가 있는 표시 상태다 — Content 가 소유한다.
+    var questionExpanded by rememberSaveable { mutableStateOf(true) }
+
     Scaffold(
         topBar = {
             // Figma 2372:22546 — 상단바: 뒤로가기 / 가운데 날짜 / 우측 저장 버튼
             DetailTopBar(
-                title = LocalDate.now().format(TopBarDateFormatter),
+                title = date.format(TopBarDateFormatter),
                 actions = {
                     Button(
-                        onClick = { viewModel.submit() },
+                        onClick = onSubmit,
                         enabled = uiState.canSubmit,
                         shape = RoundedCornerShape(6.dp),
                         colors =
@@ -159,12 +196,12 @@ fun DailyQuestionWriteScreen(
             // key() 로 컴포넌트를 재생성하지 않는다 (#1018).
             WriteTextField(
                 value = uiState.answer,
-                onValueChange = viewModel::onAnswerChanged,
-                onSaveDraftClick = { viewModel.submit(isDraft = true) },
+                onValueChange = onAnswerChanged,
+                onSaveDraftClick = onSaveDraft,
                 onDraftCountClick = onDraftListClick,
                 draftCount = uiState.draftCount,
-                onImagePicked = viewModel::uploadMedia,
-                onMediaPicked = viewModel::uploadMedia,
+                onImagePicked = onMediaPicked,
+                onMediaPicked = onMediaPicked,
             )
         }
     }
