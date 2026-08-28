@@ -175,7 +175,15 @@ internal fun AfternoteEditorNavigation(
     }
 
     val errorEvent = uiState.errorEvent
-    val snackbarMessage = errorEvent?.error?.let { stringResource(it.messageResId()) }
+    val validationMessage =
+        (errorEvent?.error as? AfternoteEditorError.Validation)?.let {
+            stringResource(it.reason.messageResId)
+        }
+    val snackbarMessage =
+        errorEvent
+            ?.error
+            ?.takeUnless { it is AfternoteEditorError.Validation }
+            ?.let { stringResource(it.messageResId()) }
 
     val onRegisterClick =
         remember(editViewModel, state) {
@@ -192,6 +200,10 @@ internal fun AfternoteEditorNavigation(
         onSnackbarMessageConsumed = {
             errorEvent?.let(editViewModel::onErrorConsumed)
         },
+        validationMessage = validationMessage,
+        onValidationMessageConsumed = {
+            errorEvent?.let(editViewModel::onErrorConsumed)
+        },
         content = { snackbarHostState ->
             AfternoteEditorBody(
                 state = state,
@@ -203,6 +215,7 @@ internal fun AfternoteEditorNavigation(
                 onCaptureFailed = editViewModel::onMemorialCaptureLaunchFailed,
                 snackbarHostState = snackbarHostState,
                 isPrefillLoading = uiState.isPrefillLoading,
+                isTypeSelectionEnabled = !editViewModel.isEditing,
             )
         },
         state = state,

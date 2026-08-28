@@ -60,6 +60,8 @@ fun AfternoteEditorScreen(
     state: AfternoteEditorState = rememberAfternoteEditorState(),
     shouldDeferBaselineCapture: Boolean = false,
     snackbarMessageKey: Any? = snackbarMessage,
+    validationMessage: String? = null,
+    onValidationMessageConsumed: () -> Unit = {},
 ) {
     val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
@@ -162,6 +164,15 @@ fun AfternoteEditorScreen(
                     onDismiss = { showExitConfirm = false },
                     confirmText = stringResource(R.string.afternote_editor_exit_confirm_confirm),
                     dismissText = stringResource(R.string.afternote_editor_exit_confirm_cancel),
+                )
+            }
+
+            if (validationMessage != null) {
+                Popup(
+                    type = PopupType.Default,
+                    message = validationMessage,
+                    onConfirm = onValidationMessageConsumed,
+                    onDismiss = onValidationMessageConsumed,
                 )
             }
         }

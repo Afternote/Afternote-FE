@@ -156,7 +156,12 @@ class EditorLeaveMessageBlocksTest {
     private fun validateSocial(vararg blocks: EditorMessageTextBlock): AfternoteValidationError? =
         AfternoteEditorValidator.validate(
             form = EditorFormState(typeForm = AfternoteTypeForm.Social()),
-            payload = payloadOf(*blocks),
+            payload =
+                payloadOf(*blocks).copy(
+                    accountId = "account",
+                    password = "password",
+                    processingMethods = listOf("계정 삭제"),
+                ),
             selectedReceiverIds = listOf(1L),
         )
 

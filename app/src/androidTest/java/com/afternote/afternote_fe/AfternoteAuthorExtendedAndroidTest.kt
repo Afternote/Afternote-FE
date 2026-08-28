@@ -247,14 +247,13 @@ class AfternoteAuthorExtendedAndroidTest {
     }
 
     @Test
-    fun repeatedValidation_afterSnackbarDismiss_showsAgainWithoutSaveCall() {
+    fun repeatedValidation_afterPopupConfirm_showsAgainWithoutSaveCall() {
         val repository =
             AdvancedAfternoteRepository(
                 detailResult = Result.success(authorDetail().copy(receivers = emptyList())),
             )
         val viewModel = editorViewModel(repository, itemId = 73L)
         var editorState: AfternoteEditorState? = null
-        var snackbarHostState: SnackbarHostState? = null
         val validationMessage =
             InstrumentationRegistry
                 .getInstrumentation()
@@ -267,15 +266,13 @@ class AfternoteAuthorExtendedAndroidTest {
                     itemId = 73L,
                     viewModel = viewModel,
                     onStateReady = { editorState = it },
-                    onSnackbarHostReady = { snackbarHostState = it },
                 )
             }
         }
 
         composeRule.waitUntil(timeoutMillis = 5_000) {
             !viewModel.uiState.value.isPrefillLoading &&
-                editorState != null &&
-                snackbarHostState != null
+                editorState != null
         }
         composeRule.onNodeWithText("Instagram").assertIsDisplayed()
         val topBarRegister =
@@ -288,11 +285,9 @@ class AfternoteAuthorExtendedAndroidTest {
         val firstOccurrence = requireNotNull(viewModel.uiState.value.errorEvent).occurrence
         assertEquals(0, repository.updateCalls.size)
 
-        composeRule.runOnIdle {
-            requireNotNull(snackbarHostState).currentSnackbarData?.dismiss()
-        }
+        composeRule.onNodeWithText("확인").performClick()
         composeRule.waitUntil(timeoutMillis = 5_000) {
-            snackbarHostState?.currentSnackbarData == null && viewModel.uiState.value.errorEvent == null
+            viewModel.uiState.value.errorEvent == null
         }
         composeRule.onNodeWithText(validationMessage).assertDoesNotExist()
 
@@ -379,7 +374,6 @@ private fun AuthorEditorForUpdate(
     itemId: Long,
     viewModel: AfternoteEditorViewModel,
     onStateReady: (AfternoteEditorState) -> Unit,
-    onSnackbarHostReady: (SnackbarHostState) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val state =
@@ -429,15 +423,18 @@ private fun AuthorEditorForUpdate(
                 memorialMedia = SaveAfternoteMemorialMedia(),
             )
         },
-        snackbarMessage =
+        snackbarMessage = null,
+        validationMessage =
             (errorEvent?.error as? AfternoteEditorError.Validation)?.let {
                 stringResource(it.reason.messageResId)
             },
         onSnackbarMessageConsumed = {
             errorEvent?.let(viewModel::onErrorConsumed)
         },
+        onValidationMessageConsumed = {
+            errorEvent?.let(viewModel::onErrorConsumed)
+        },
         content = { editorSnackbarHostState ->
-            onSnackbarHostReady(editorSnackbarHostState)
             AfternoteEditorBody(
                 state = state,
                 form = uiState.form,

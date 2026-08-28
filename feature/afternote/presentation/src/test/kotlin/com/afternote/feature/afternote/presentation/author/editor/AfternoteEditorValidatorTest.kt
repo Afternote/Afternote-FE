@@ -52,6 +52,18 @@ class AfternoteEditorValidatorTest {
     }
 
     @Test
+    fun `필수 입력이 둘 이상 비면 복수 누락 오류를 반환한다`() {
+        val error =
+            AfternoteEditorValidator.validate(
+                form = EditorFormState(typeForm = AfternoteTypeForm.Social()),
+                payload = payload.copy(serviceName = ""),
+                selectedReceiverIds = emptyList(),
+            )
+
+        assertEquals(AfternoteValidationError.MULTIPLE_REQUIRED_FIELDS, error)
+    }
+
+    @Test
     fun `추모 폼은 플레이리스트가 비어 있어도 저장할 수 있다`() {
         val error =
             AfternoteEditorValidator.validate(

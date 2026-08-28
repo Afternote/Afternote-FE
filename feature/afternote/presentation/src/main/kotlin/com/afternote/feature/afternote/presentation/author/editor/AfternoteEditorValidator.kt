@@ -8,7 +8,8 @@ import com.afternote.feature.afternote.presentation.author.editor.state.EditorFo
 /**
  * 애프터노트 저장 전 필수 필드 검증.
  *
- * 카테고리별 필수 입력 조건을 검사하여 첫 번째 오류를 반환합니다.
+ * 카테고리별 필수 입력 조건을 모두 검사한다. 누락이 하나면 해당 필드 오류를, 둘 이상이면
+ * [AfternoteValidationError.MULTIPLE_REQUIRED_FIELDS]를 반환한다.
  */
 internal object AfternoteEditorValidator {
     fun validate(
@@ -22,41 +23,40 @@ internal object AfternoteEditorValidator {
         if (type == AfternoteType.ESTATE) {
             return AfternoteValidationError.UNIMPLEMENTED_TYPE
         }
-        if (selectedReceiverIds.isEmpty()) {
-            return AfternoteValidationError.RECEIVERS_REQUIRED
-        }
-        if (payload.serviceName.trim().isEmpty()) {
-            return AfternoteValidationError.TITLE_REQUIRED
-        }
+        val errors = mutableListOf<AfternoteValidationError>()
+        if (selectedReceiverIds.isEmpty()) errors += AfternoteValidationError.RECEIVERS_REQUIRED
+        if (payload.serviceName.trim().isEmpty()) errors += AfternoteValidationError.TITLE_REQUIRED
         // 아무것도 안 쓴 빈 칸은 저장 시 버려지지만, 제목만 채운 블록은 서버가 400 으로 거절한다.
         if (payload.messageBlocks.any { it.title.isNotBlank() && it.body.isBlank() }) {
-            return AfternoteValidationError.LEAVE_MESSAGE_BODY_REQUIRED
+            errors += AfternoteValidationError.LEAVE_MESSAGE_BODY_REQUIRED
         }
-        return when (type) {
+        when (type) {
             // BUSINESS 는 시안(700:38735)의 필수 항목(계정 정보·처리 방법)이 SOCIAL 과 동일해 같은 규칙을 쓴다.
-            AfternoteType.SOCIAL_NETWORK, AfternoteType.BUSINESS -> validateAccount(payload)
+            AfternoteType.SOCIAL_NETWORK, AfternoteType.BUSINESS -> {
+                if (payload.accountId.isBlank() || payload.password.isBlank()) {
+                    errors += AfternoteValidationError.ACCOUNT_CREDENTIALS_REQUIRED
+                }
+                if (payload.processingMethods.isEmpty()) {
+                    errors += AfternoteValidationError.PROCESSING_METHODS_REQUIRED
+                }
+            }
 
-            AfternoteType.GALLERY_AND_FILES -> validateProcessingMethods(payload)
+            AfternoteType.GALLERY_AND_FILES -> {
+                if (payload.processingMethods.isEmpty()) {
+                    errors += AfternoteValidationError.PROCESSING_METHODS_REQUIRED
+                }
+            }
 
-            AfternoteType.MEMORIAL -> null
+            AfternoteType.MEMORIAL -> {}
 
             // ESTATE 는 디자인 확정 전 placeholder 만 노출. UI 자체에서 입력이 막혀 있지만
             // 안전망으로 Validator 에서도 저장을 차단한다.
-            AfternoteType.ESTATE -> AfternoteValidationError.UNIMPLEMENTED_TYPE
+            AfternoteType.ESTATE -> {}
         }
-    }
-
-    private fun validateAccount(payload: RegisterAfternotePayload): AfternoteValidationError? {
-        if (payload.accountId.isBlank() || payload.password.isBlank()) {
-            return AfternoteValidationError.ACCOUNT_CREDENTIALS_REQUIRED
+        return when (errors.size) {
+            0 -> null
+            1 -> errors.single()
+            else -> AfternoteValidationError.MULTIPLE_REQUIRED_FIELDS
         }
-        return validateProcessingMethods(payload)
-    }
-
-    private fun validateProcessingMethods(payload: RegisterAfternotePayload): AfternoteValidationError? {
-        if (payload.processingMethods.isEmpty()) {
-            return AfternoteValidationError.PROCESSING_METHODS_REQUIRED
-        }
-        return null
     }
 }

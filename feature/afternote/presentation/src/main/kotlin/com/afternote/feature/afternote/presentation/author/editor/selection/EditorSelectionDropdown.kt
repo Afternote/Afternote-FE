@@ -63,6 +63,7 @@ data class DropdownMenuStyle(
  * @param onExpandedChange Callback invoked when the user requests to open/close the menu
  * @param modifier Modifier for the component
  * @param isRequired 라벨에 필수 표시(*) 노출 여부
+ * @param enabled false이면 선택 앵커와 메뉴를 비활성화하고 드롭다운 셰브론을 숨긴다
  * @param placeholder [optionLabel]로 변환한 [selectedValue]가 비어 있을 때 앵커에 흐리게(gray5) 노출할 미선택 안내 문구
  * @param menuStyle Style configuration for the dropdown menu
  */
@@ -78,6 +79,7 @@ fun <T> EditorSelectionDropdown(
     onExpandedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     isRequired: Boolean = false,
+    enabled: Boolean = true,
     placeholder: String? = null,
     menuStyle: DropdownMenuStyle = DropdownMenuStyle(),
 ) {
@@ -98,15 +100,17 @@ fun <T> EditorSelectionDropdown(
 
         // Material 3 ExposedDropdownMenuBox: 앵커–메뉴 너비·접근성, 서브컴포지션 없이 처리
         ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = onExpandedChange,
+            expanded = expanded && enabled,
+            onExpandedChange = { if (enabled) onExpandedChange(it) },
             modifier = Modifier.fillMaxWidth(),
         ) {
             Row(
                 modifier =
                     Modifier
-                        .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable)
-                        .fillMaxWidth()
+                        .menuAnchor(
+                            type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                            enabled = enabled,
+                        ).fillMaxWidth()
                         .bottomBorder(color = AfternoteDesign.colors.gray3, width = 0.58.dp)
                         .padding(top = 4.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -123,15 +127,17 @@ fun <T> EditorSelectionDropdown(
                         ),
                 )
 
-                Icon(
-                    painter = painterResource(R.drawable.feature_afternote_ic_dropdown_vector),
-                    contentDescription = stringResource(R.string.afternote_editor_content_description_dropdown),
-                    tint = AfternoteDesign.colors.gray8,
-                )
+                if (enabled) {
+                    Icon(
+                        painter = painterResource(R.drawable.feature_afternote_ic_dropdown_vector),
+                        contentDescription = stringResource(R.string.afternote_editor_content_description_dropdown),
+                        tint = AfternoteDesign.colors.gray8,
+                    )
+                }
             }
 
             ExposedDropdownMenu(
-                expanded = expanded,
+                expanded = expanded && enabled,
                 onDismissRequest = { onExpandedChange(false) },
                 modifier = Modifier.offset(y = menuStyle.menuOffset),
                 shape = menuStyle.shape,
