@@ -1,6 +1,7 @@
 package com.afternote.core.network.di
 
 import com.afternote.core.network.BuildConfig
+import com.afternote.core.network.calladapter.ApiErrorCallAdapterFactory
 import com.afternote.core.network.service.AccountApiService
 import com.afternote.core.network.service.AppVersionApiService
 import com.afternote.core.network.service.AuthApiService
@@ -30,17 +31,25 @@ object ServiceModule {
 
     @Provides
     @Singleton
-    fun provideTokenApiService(
+    @Named("RefreshRetrofit")
+    fun provideRefreshRetrofit(
         @Named("RefreshClient") refreshClient: OkHttpClient,
         json: Json,
-    ): TokenApiService =
+        apiErrorCallAdapterFactory: ApiErrorCallAdapterFactory,
+    ): Retrofit =
         Retrofit
             .Builder()
             .baseUrl(BuildConfig.BASE_URL)
             .client(refreshClient)
+            .addCallAdapterFactory(apiErrorCallAdapterFactory)
             .addConverterFactory(json.asConverterFactory(contentType = "application/json".toMediaType()))
             .build()
-            .create<TokenApiService>()
+
+    @Provides
+    @Singleton
+    fun provideTokenApiService(
+        @Named("RefreshRetrofit") retrofit: Retrofit,
+    ): TokenApiService = retrofit.create<TokenApiService>()
 
     @Provides
     @Singleton

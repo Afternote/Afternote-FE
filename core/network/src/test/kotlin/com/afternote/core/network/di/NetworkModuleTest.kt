@@ -1,26 +1,37 @@
 package com.afternote.core.network.di
 
-import com.afternote.core.network.interceptor.ApiErrorInterceptor
+import com.afternote.core.network.calladapter.ApiErrorCallAdapterFactory
 import okhttp3.logging.HttpLoggingInterceptor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class NetworkModuleTest {
     private val baseClient = NetworkModule.provideBaseOkHttpClient()
 
     @Test
-    fun `재발급 클라이언트 - API 오류 본문 변환 인터셉터를 가장 바깥에 배치`() {
-        val apiErrorInterceptor = ApiErrorInterceptor(NetworkModule.provideJson())
+    fun `재발급 클라이언트 - HTTP 오류 변환 인터셉터 없이 로깅만 배치`() {
+        val loggingInterceptor = HttpLoggingInterceptor()
 
         val client =
             NetworkModule.provideRefreshOkHttpClient(
                 baseClient = baseClient,
-                loggingInterceptor = HttpLoggingInterceptor(),
-                apiErrorInterceptor = apiErrorInterceptor,
+                loggingInterceptor = loggingInterceptor,
             )
 
-        assertSame(apiErrorInterceptor, client.interceptors.first())
+        assertEquals(listOf(loggingInterceptor), client.interceptors)
+    }
+
+    @Test
+    fun `메인과 재발급 Retrofit - 같은 API 오류 CallAdapter를 등록`() {
+        val json = NetworkModule.provideJson()
+        val factory = ApiErrorCallAdapterFactory(json)
+        val mainRetrofit = NetworkModule.provideRetrofit(baseClient, json, factory)
+        val refreshRetrofit = ServiceModule.provideRefreshRetrofit(baseClient, json, factory)
+
+        assertTrue(mainRetrofit.callAdapterFactories().contains(factory))
+        assertTrue(refreshRetrofit.callAdapterFactories().contains(factory))
     }
 
     @Test
