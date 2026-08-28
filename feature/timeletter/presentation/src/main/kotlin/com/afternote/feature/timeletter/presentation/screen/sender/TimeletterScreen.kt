@@ -34,6 +34,7 @@ import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.presentation.R
 import com.afternote.feature.timeletter.presentation.component.EmptyTimeLetterContent
 import com.afternote.feature.timeletter.presentation.component.TimeLetterContent
+import com.afternote.feature.timeletter.presentation.component.TimeLetterLoadErrorContent
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeletterUiState
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeletterViewModel
 import com.afternote.feature.timeletter.presentation.viewmodel.ViewMode
@@ -104,7 +105,11 @@ fun TimeletterScreen(
             }
 
             is TimeletterUiState.Error -> {
-                EmptyTimeLetterContent(modifier = Modifier.padding(paddingValues))
+                TimeLetterLoadErrorContent(
+                    message = stringResource(R.string.timeletter_write_load_failed),
+                    onRetry = viewModel::load,
+                    modifier = Modifier.padding(paddingValues),
+                )
             }
 
             is TimeletterUiState.Success -> {

@@ -38,6 +38,7 @@ fun TimeLetterBottomBar(
     onDraftClick: () -> Unit,
     onDraftCountClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isEnabled: Boolean = true,
 ) {
     Row(
         modifier =
@@ -52,7 +53,7 @@ fun TimeLetterBottomBar(
             modifier =
                 Modifier
                     .size(24.dp)
-                    .clickable(onClick = onMediaAddClick),
+                    .clickable(enabled = isEnabled, onClick = onMediaAddClick),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -69,7 +70,7 @@ fun TimeLetterBottomBar(
             modifier =
                 Modifier
                     .size(24.dp)
-                    .clickable(onClick = onTextStyleClick),
+                    .clickable(enabled = isEnabled, onClick = onTextStyleClick),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -95,22 +96,25 @@ fun TimeLetterBottomBar(
                 painter = painterResource(R.drawable.ic_align_center),
                 selected = textAlign == TextAlign.Center, // 상태 반영
                 onClick = onAlignCenterClick,
+                enabled = isEnabled,
             )
             AlignButton(
                 painter = painterResource(R.drawable.ic_align_left),
                 selected = textAlign == TextAlign.Start,
                 onClick = onAlignLeftClick,
+                enabled = isEnabled,
             )
             AlignButton(
                 painter = painterResource(R.drawable.ic_align_right),
                 selected = textAlign == TextAlign.End,
                 onClick = onAlignRightClick,
+                enabled = isEnabled,
             )
         }
 
         Spacer(modifier = Modifier.weight(1f))
 
-        TextButton(onClick = onDraftClick) {
+        TextButton(onClick = onDraftClick, enabled = isEnabled) {
             Text(
                 text = "임시저장",
                 style = AfternoteDesign.typography.captionLargeR,
@@ -122,7 +126,7 @@ fun TimeLetterBottomBar(
                 text = "$draftCount",
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray7,
-                modifier = Modifier.clickable(onClick = onDraftCountClick),
+                modifier = Modifier.clickable(enabled = isEnabled, onClick = onDraftCountClick),
             )
         }
     }

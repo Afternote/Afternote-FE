@@ -37,18 +37,21 @@ class DraftLetterViewModel
 
         fun toggleEditMode() {
             val current = _uiState.value as? DraftLetterUiState.Success ?: return
+            if (current.isDeleting) return
             _uiState.value = current.copy(isEditMode = !current.isEditMode, selectedIds = emptySet())
         }
 
         fun toggleSelection(id: Long) {
             val current = _uiState.value as? DraftLetterUiState.Success ?: return
+            if (current.isDeleting) return
             val updated = if (id in current.selectedIds) current.selectedIds - id else current.selectedIds + id
             _uiState.value = current.copy(selectedIds = updated)
         }
 
         fun deleteSelected() {
             val current = _uiState.value as? DraftLetterUiState.Success ?: return
-            if (current.selectedIds.isEmpty()) return
+            if (current.selectedIds.isEmpty() || current.isDeleting) return
+            _uiState.value = current.copy(isDeleting = true, errorMessage = null)
             viewModelScope.launch {
                 runCatching {
                     timeLetterRepository.deleteTimeLetters(current.selectedIds.toList())
@@ -58,18 +61,31 @@ class DraftLetterViewModel
                             drafts = current.drafts.filter { it.id !in current.selectedIds },
                             selectedIds = emptySet(),
                             isEditMode = false,
+                            isDeleting = false,
                         )
+                }.onFailure {
+                    _uiState.value = current.copy(isDeleting = false, errorMessage = "임시저장 레터를 삭제할 수 없습니다.")
                 }
             }
         }
 
         fun deleteAll() {
+            val current = _uiState.value as? DraftLetterUiState.Success ?: return
+            if (current.isDeleting) return
+            _uiState.value = current.copy(isDeleting = true, errorMessage = null)
             viewModelScope.launch {
                 runCatching {
                     timeLetterRepository.deleteAllTemporary()
                 }.onSuccess {
                     _uiState.value = DraftLetterUiState.Success(drafts = emptyList())
+                }.onFailure {
+                    _uiState.value = current.copy(isDeleting = false, errorMessage = "임시저장 레터를 삭제할 수 없습니다.")
                 }
             }
+        }
+
+        fun consumeErrorMessage() {
+            val current = _uiState.value as? DraftLetterUiState.Success ?: return
+            _uiState.value = current.copy(errorMessage = null)
         }
     }

@@ -1,12 +1,19 @@
 package com.afternote.feature.timeletter.presentation.screen.sender
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -15,6 +22,7 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.presentation.component.DraftLetterItem
+import com.afternote.feature.timeletter.presentation.component.TimeLetterLoadErrorContent
 import com.afternote.feature.timeletter.presentation.component.TimeLetterTextButton
 import com.afternote.feature.timeletter.presentation.viewmodel.DraftLetterUiState
 import com.afternote.feature.timeletter.presentation.viewmodel.DraftLetterViewModel
@@ -26,6 +34,14 @@ fun DraftLetterScreen(
     viewModel: DraftLetterViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val errorMessage = (uiState as? DraftLetterUiState.Success)?.errorMessage
+
+    LaunchedEffect(errorMessage) {
+        errorMessage ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(errorMessage)
+        viewModel.consumeErrorMessage()
+    }
 
     DraftLetterContent(
         uiState = uiState,
@@ -39,6 +55,8 @@ fun DraftLetterScreen(
             }
         },
         onToggleSelection = viewModel::toggleSelection,
+        onRetry = viewModel::loadDrafts,
+        snackbarHostState = snackbarHostState,
         modifier = modifier,
     )
 }
@@ -49,13 +67,17 @@ private fun DraftLetterContent(
     onBackClick: () -> Unit,
     onEditCompleteClick: () -> Unit,
     onToggleSelection: (Long) -> Unit,
+    onRetry: () -> Unit,
+    snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
 ) {
     val isEditMode = (uiState as? DraftLetterUiState.Success)?.isEditMode ?: false
     val selectedIds = (uiState as? DraftLetterUiState.Success)?.selectedIds ?: emptySet()
+    val isDeleting = (uiState as? DraftLetterUiState.Success)?.isDeleting ?: false
 
     Scaffold(
         modifier = modifier,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             DetailTopBar(
                 title = "임시저장된 레터",
@@ -68,7 +90,8 @@ private fun DraftLetterContent(
                                 selectedIds.isEmpty() -> "취소"
                                 else -> "삭제"
                             },
-                        isActive = isEditMode && selectedIds.isNotEmpty(),
+                        isActive = !isDeleting,
+                        isLoading = isDeleting,
                         onClick = onEditCompleteClick,
                     )
                 },
@@ -77,11 +100,20 @@ private fun DraftLetterContent(
     ) { innerPadding ->
         when (uiState) {
             is DraftLetterUiState.Loading -> {
-                Unit
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(innerPadding),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
             }
 
             is DraftLetterUiState.Error -> {
-                Unit
+                TimeLetterLoadErrorContent(
+                    message = uiState.message,
+                    onRetry = onRetry,
+                    modifier = Modifier.padding(innerPadding),
+                )
             }
 
             is DraftLetterUiState.Success -> {
@@ -101,6 +133,14 @@ private fun DraftLetterContent(
                             isSelected = draft.id in selectedIds,
                             onToggle = { onToggleSelection(draft.id) },
                         )
+                    }
+                }
+                if (isDeleting) {
+                    Box(
+                        modifier = Modifier.fillMaxSize().padding(innerPadding),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator()
                     }
                 }
             }
@@ -148,6 +188,8 @@ private fun DraftLetterScreenNormalPreview() {
         onBackClick = {},
         onEditCompleteClick = {},
         onToggleSelection = {},
+        onRetry = {},
+        snackbarHostState = remember { SnackbarHostState() },
     )
 }
 
@@ -184,5 +226,7 @@ private fun DraftLetterScreenEditModePreview() {
         onBackClick = {},
         onEditCompleteClick = {},
         onToggleSelection = {},
+        onRetry = {},
+        snackbarHostState = remember { SnackbarHostState() },
     )
 }
