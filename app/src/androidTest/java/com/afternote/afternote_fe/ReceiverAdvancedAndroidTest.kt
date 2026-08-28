@@ -19,7 +19,6 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.paging.PagingData
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
@@ -27,18 +26,12 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.receiver.domain.model.AfterNoteListItem
-import com.afternote.feature.receiver.domain.model.AfterNotesListResult
-import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.ReceivedAccountCredentials
 import com.afternote.feature.receiver.domain.model.ReceivedAfternoteDetail
 import com.afternote.feature.receiver.domain.model.ReceivedExportBundle
-import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
-import com.afternote.feature.receiver.domain.model.ReceiverEmailAuthResult
 import com.afternote.feature.receiver.domain.model.ReceiverIdentity
-import com.afternote.feature.receiver.domain.model.SenderMessageInfo
-import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
-import com.afternote.feature.receiver.domain.repository.ReceiverRepository
+import com.afternote.feature.receiver.domain.testing.FakeReceiverAuthRepository
+import com.afternote.feature.receiver.domain.testing.FakeReceiverRepository
 import com.afternote.feature.receiver.presentation.deliveryverification.MasterKeyScreen
 import com.afternote.feature.receiver.presentation.deliveryverification.MasterKeyViewModel
 import com.afternote.feature.receiver.presentation.detail.ReceivedAfternoteDetailRoute
@@ -51,9 +44,6 @@ import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistry
 import com.afternote.feature.receiver.presentation.summary.ReceiverAfterNoteScreen
 import com.afternote.feature.receiver.presentation.summary.ReceiverDownloadAllEvent
 import com.afternote.feature.receiver.presentation.summary.ReceiverDownloadAllViewModel
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.flowOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -79,9 +69,16 @@ class ReceiverAdvancedAndroidTest {
         val senderRegistry = SenderRegistry()
         val registrationViewModel = SenderRegistrationViewModel(senderRegistry)
         val recordsViewModel = ReceivedRecordsViewModel(senderRegistry)
-        val receiverRepository = AdvancedReceiverRepository()
-        val authRepository = AdvancedReceiverAuthRepository()
-        authRepository.masterKeyResults.addLast(
+        val masterKeyResults = ArrayDeque<Result<ReceiverIdentity>>()
+        val receiverRepository =
+            FakeReceiverRepository.strict().apply {
+                onSaveAuthCode = { authCodeState.value = it }
+            }
+        val authRepository =
+            FakeReceiverAuthRepository.strict().apply {
+                onVerifyMasterKey = { masterKeyResults.removeFirst() }
+            }
+        masterKeyResults.addLast(
             Result.success(
                 ReceiverIdentity(
                     receiverId = 7L,
@@ -167,7 +164,7 @@ class ReceiverAdvancedAndroidTest {
         val attached = checkNotNull(senderRegistry.findById(sender.id))
         assertEquals(listOf(normalizedMasterKey), authRepository.verifiedMasterKeys)
         assertEquals(listOf(normalizedMasterKey), receiverRepository.savedAuthCodes)
-        assertEquals(normalizedMasterKey, receiverRepository.authCode.value)
+        assertEquals(normalizedMasterKey, receiverRepository.authCodeState.value)
         assertEquals(normalizedMasterKey, attached.authCode)
         assertEquals("이발신", attached.realSenderName)
         assertEquals("가족", attached.relation)
@@ -176,9 +173,13 @@ class ReceiverAdvancedAndroidTest {
 
     @Test
     fun receivedDetail_failureThenRetry_showsRecoveredDetailAndCallsSameIdTwice() {
-        val repository = AdvancedReceiverRepository()
-        repository.detailResults.addLast(Result.failure(IllegalStateException("offline")))
-        repository.detailResults.addLast(Result.success(receivedSocialDetail()))
+        val detailResults = ArrayDeque<Result<ReceivedAfternoteDetail>>()
+        val repository =
+            FakeReceiverRepository.strict().apply {
+                onGetReceivedAfternoteDetail = { detailResults.removeFirst() }
+            }
+        detailResults.addLast(Result.failure(IllegalStateException("offline")))
+        detailResults.addLast(Result.success(receivedSocialDetail()))
         val viewModel =
             ReceivedAfternoteDetailViewModel(
                 savedStateHandle = SavedStateHandle(mapOf("afternoteId" to 91L)),
@@ -203,19 +204,25 @@ class ReceiverAdvancedAndroidTest {
         composeRule.onNodeWithText("표시").performClick()
         composeRule.onNodeWithText("receiver-password").assertIsDisplayed()
 
-        assertEquals(listOf(91L, 91L), repository.detailIds)
+        assertEquals(listOf(91L, 91L), repository.requestedDetailIds)
     }
 
     @Test
     fun download_cancelThenDownloadFailureSaveFailureAndSuccess_preservesStageBoundaries() {
-        val repository = AdvancedReceiverRepository()
         val saveFailureBundle = ReceivedExportBundle(payloadJson = "{\"attempt\":2}")
         val successBundle = ReceivedExportBundle(payloadJson = "{\"attempt\":3}")
-        repository.downloadResults.addLast(Result.failure(IllegalStateException("offline")))
-        repository.downloadResults.addLast(Result.success(saveFailureBundle))
-        repository.downloadResults.addLast(Result.success(successBundle))
-        repository.saveResults.addLast(Result.failure(IllegalStateException("disk full")))
-        repository.saveResults.addLast(Result.success(Unit))
+        val downloadResults = ArrayDeque<Result<ReceivedExportBundle>>()
+        val saveResults = ArrayDeque<Result<Unit>>()
+        val repository =
+            FakeReceiverRepository.strict().apply {
+                onDownloadReceivedExport = { downloadResults.removeFirst() }
+                onSaveReceivedExportToFile = { saveResults.removeFirst() }
+            }
+        downloadResults.addLast(Result.failure(IllegalStateException("offline")))
+        downloadResults.addLast(Result.success(saveFailureBundle))
+        downloadResults.addLast(Result.success(successBundle))
+        saveResults.addLast(Result.failure(IllegalStateException("disk full")))
+        saveResults.addLast(Result.success(Unit))
         val viewModel = ReceiverDownloadAllViewModel(repository, FakeErrorReporter())
 
         composeRule.setContent {
@@ -279,78 +286,6 @@ private enum class RegistrationPhase {
     REGISTRATION,
     RECORDS,
     MASTER_KEY,
-}
-
-private class AdvancedReceiverRepository : ReceiverRepository {
-    val authCode = MutableStateFlow<String?>(null)
-    override val authCodeFlow: Flow<String?> = authCode
-    val savedAuthCodes = mutableListOf<String>()
-    val detailIds = mutableListOf<Long>()
-    val detailResults = ArrayDeque<Result<ReceivedAfternoteDetail>>()
-    val downloadResults = ArrayDeque<Result<ReceivedExportBundle>>()
-    val saveResults = ArrayDeque<Result<Unit>>()
-    val savedBundles = mutableListOf<ReceivedExportBundle>()
-    var downloadCalls = 0
-
-    override suspend fun currentAuthCode(): String? = authCode.value
-
-    override suspend fun saveAuthCode(code: String) {
-        savedAuthCodes += code
-        authCode.value = code
-    }
-
-    override fun getPagedReceivedAfternotes(): Flow<PagingData<AfterNoteListItem>> = flowOf(PagingData.empty())
-
-    override suspend fun getReceivedAfterNotes(): Result<AfterNotesListResult> =
-        Result.success(AfterNotesListResult(items = emptyList(), totalCount = 0))
-
-    override suspend fun getReceivedAfternoteDetail(afternoteId: Long): Result<ReceivedAfternoteDetail> {
-        detailIds += afternoteId
-        return detailResults.removeFirst()
-    }
-
-    override suspend fun downloadReceivedExport(): Result<ReceivedExportBundle> {
-        downloadCalls += 1
-        return downloadResults.removeFirst()
-    }
-
-    override suspend fun saveReceivedExportToFile(bundle: ReceivedExportBundle): Result<Unit> {
-        savedBundles += bundle
-        return saveResults.removeFirst()
-    }
-
-    override suspend fun loadSenderMessage(): Result<SenderMessageInfo?> = Result.success(null)
-}
-
-private class AdvancedReceiverAuthRepository : ReceiverAuthRepository {
-    val masterKeyResults = ArrayDeque<Result<ReceiverIdentity>>()
-    val verifiedMasterKeys = mutableListOf<String>()
-
-    override suspend fun verifyMasterKey(authCode: String): Result<ReceiverIdentity> {
-        verifiedMasterKeys += authCode
-        return masterKeyResults.removeFirst()
-    }
-
-    override suspend fun sendEmailAuthCode(email: String): Result<Unit> = error("unexpected sendEmailAuthCode")
-
-    override suspend fun verifyEmailAuthCode(
-        email: String,
-        authCode: String,
-    ): Result<ReceiverEmailAuthResult> = error("unexpected verifyEmailAuthCode")
-
-    override suspend fun getPresignedUrl(
-        extension: String,
-        contentLength: Long,
-    ): Result<ReceiverAuthPresignedUrl> = error("unexpected getPresignedUrl")
-
-    override suspend fun submitDeliveryVerification(
-        deathCertificateUrl: String?,
-        familyRelationCertificateUrl: String?,
-    ): Result<DeliveryVerification> = error("unexpected submitDeliveryVerification")
-
-    override suspend fun getDeliveryVerificationStatus(): Result<DeliveryVerification> = error("unexpected getDeliveryVerificationStatus")
-
-    override suspend fun getSenderMessage(): Result<SenderMessageInfo> = error("unexpected getSenderMessage")
 }
 
 private fun receivedSocialDetail(): ReceivedAfternoteDetail =
