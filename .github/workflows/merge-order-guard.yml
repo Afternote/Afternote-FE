@@ -27,6 +27,7 @@ jobs:
   guard:
     if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: closing 이슈 blocked_by 검사
         env:
@@ -127,6 +128,7 @@ jobs:
       issues: read
       pull-requests: read
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: 이 이슈가 blocking 하던 열린 PR 의 guard 재실행
         env:
