@@ -140,6 +140,20 @@ test("impact-policy workflow changes fail closed to every lane", () => {
     assert.ok(impact.screenshotTasks.length > 0);
 });
 
+test("expected-failure list changes fail closed to every lane", () => {
+    for (const policyPath of [
+        ".github/ci-expected-failures.json",
+        ".github/ci-expected-failures.init.gradle",
+        ".github/scripts/ci-expected-failures.mjs",
+    ]) {
+        const impact = resolvePrImpact([policyPath], modules, dependencies);
+
+        assert.equal(impact.repositoryQualityFull, true, `${policyPath} must force full validation`);
+        assert.ok(impact.unitTestTasks.length > 0);
+        assert.ok(impact.screenshotTasks.length > 0);
+    }
+});
+
 test("documentation-only changes have no heavy impact", () => {
     const impact = resolvePrImpact(["README.md", "docs/testing.md"], modules, dependencies);
 
