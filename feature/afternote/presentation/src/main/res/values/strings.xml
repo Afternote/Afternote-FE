@@ -246,5 +246,7 @@
     <string name="afternote_editor_media_source_gallery">갤러리에서 선택</string>
     <string name="afternote_editor_media_source_take_photo">사진 촬영</string>
     <string name="afternote_editor_media_source_take_video">영상 촬영</string>
+    <string name="afternote_editor_media_source_remove_photo">사진 삭제</string>
+    <string name="afternote_editor_media_source_remove_video">영상 삭제</string>
     <string name="afternote_editor_media_capture_unavailable">카메라를 사용할 수 없습니다.</string>
 </resources>
