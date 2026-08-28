@@ -60,11 +60,17 @@ test("privileged baseline apply is a workflow-run bridge restricted to PNG basel
         const root = `${module.slice(1).replaceAll(":", "/")}/src/screenshotTestDebug/reference/`;
         assert.ok(source.includes(`'${root}'`), `${module} baseline root is not allowed`);
     }
-    for (const workflow of ["pr-validation.yml", "codeql.yml", "merge-order-guard.yml"]) {
+    for (const workflow of [
+        "pr-validation.yml",
+        "codeql.yml",
+        "base-freshness-probe.yml",
+        "merge-order-guard.yml",
+    ]) {
         assert.ok(source.includes(`workflow_id: '${workflow}'`), `${workflow} is not redispatched`);
     }
     assert.match(source, /if: steps\.commit\.outputs\.changed == 'true'/);
     assert.match(source, /workflow_id: 'codeql\.yml',[\s\S]*inputs: \{ pull_request_number: process\.env\.TARGET_PR \}/);
+    assert.match(source, /workflow_id: 'base-freshness-probe\.yml',[\s\S]*inputs: \{ pull_request_number: process\.env\.TARGET_PR \}/);
 });
 
 test("screenshot workflow fallbacks cover every baseline module", async () => {
@@ -137,10 +143,45 @@ test("managed device keeps required contexts but boots only CI Test Plan lanes",
     assert.match(source, /if: steps\.target\.outputs\.run_lane == 'true'/);
     assert.match(source, /selectors_json='\[\]'/);
     assert.match(source, /persist-credentials: false/);
+    assert.match(source, /SCHEDULED_ONLY: \$\{\{ matrix\.scheduled_only \}\}/);
+    assert.match(
+        source,
+        /SCHEDULED_ONLY.*== "true" && "\$target_pr" != "none"[\s\S]*?run_lane=false/,
+    );
+    assert.match(source, /scheduled_only matrix 값은 true 또는 false여야 합니다/);
 
     const bootstrapRendererStep = source.slice(bootstrapRenderer, bootstrapVerifier);
     assert.match(bootstrapRendererStep, /steps\.target\.outputs\.run_lane == 'true'/);
     assert.doesNotMatch(bootstrapRendererStep, /selectors_json != '\[\]'/);
+});
+
+test("managed device exposes a secretless branch Baseline Profile artifact mode", async () => {
+    const source = await readWorkflow("android-managed-device.yml");
+    const generatorStart = source.indexOf("  baseline-profile-generation:\n");
+    const managedDeviceStart = source.indexOf("  managed-device:\n", generatorStart);
+    assert.ok(generatorStart >= 0 && managedDeviceStart > generatorStart);
+
+    const generator = source.slice(generatorStart, managedDeviceStart);
+    const managedDevice = source.slice(managedDeviceStart);
+    assert.match(source, /^\s{6}generate_baseline_profile:\n/m);
+    assert.match(source, /type: boolean/);
+    assert.match(generator, /github\.event_name == 'workflow_dispatch'/);
+    assert.match(generator, /inputs\.generate_baseline_profile/);
+    assert.match(generator, /inputs\.pull_request_number == 0/);
+    assert.match(generator, /ref: \$\{\{ github\.sha \}\}/);
+    assert.match(generator, /persist-credentials: false/);
+    assert.match(generator, /uses: \.\/\.github\/actions\/setup-ci-config/);
+    assert.match(generator, /uses: \.\/\.github\/actions\/setup-ci-release-signing/);
+    assert.match(generator, /:app:generateBaselineProfile/);
+    assert.match(generator, /-x :app:uploadCrashlyticsMappingFileRelease/);
+    assert.match(generator, /continue-on-error: true/);
+    assert.match(generator, /baseline-profile-log/);
+    assert.match(generator, /generate\.log/);
+    assert.match(generator, /app\/src\/main\/generated\/baselineProfiles\//);
+    assert.match(generator, /actions\/upload-artifact@[0-9a-f]{40} # v7\.0\.1/);
+    assert.match(generator, /Restore Baseline Profile generation exit code/);
+    assert.doesNotMatch(generator, /secrets\./);
+    assert.match(managedDevice, /!inputs\.generate_baseline_profile/);
 });
 
 test("managed device summarizes XML and uploads the full Gradle log before failing", async () => {
@@ -209,6 +250,16 @@ test("managed device fails fast per lane and preserves only bounded infrastructu
     assert.match(source, /timeout-minutes: \$\{\{ matrix\.job_timeout_minutes \}\}/);
     assert.match(source, /device: api30[\s\S]*?job_timeout_minutes: 35[\s\S]*?gradle_timeout_minutes: 30[\s\S]*?gradle_step_timeout_minutes: 31/);
     assert.match(source, /device: api34[\s\S]*?job_timeout_minutes: 15[\s\S]*?gradle_timeout_minutes: 12[\s\S]*?gradle_step_timeout_minutes: 13/);
+    assert.match(
+        source,
+        /device: api26[\s\S]*?full_selector: com\.afternote\.afternote_fe\.ApiBoundarySmokeAndroidTest[\s\S]*?scheduled_only: true/,
+    );
+    assert.match(
+        source,
+        /device: api36[\s\S]*?full_selector: com\.afternote\.afternote_fe\.ApiBoundarySmokeAndroidTest[\s\S]*?scheduled_only: true/,
+    );
+    assert.match(source, /device: api30[\s\S]*?scheduled_only: false/);
+    assert.match(source, /device: api34[\s\S]*?scheduled_only: false/);
     assert.match(
         source,
         /- name: Run managed-device androidTest[\s\S]*?timeout-minutes: \$\{\{ matrix\.gradle_step_timeout_minutes \}\}/,
