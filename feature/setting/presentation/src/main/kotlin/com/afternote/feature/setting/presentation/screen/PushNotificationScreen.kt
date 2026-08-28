@@ -12,13 +12,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,12 +24,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.popup.AfternoteErrorPopup
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.DeviceAlarmOffSection
 import com.afternote.feature.setting.presentation.component.PushToggleSection
-import com.afternote.feature.setting.presentation.viewmodel.PushNotificationEvent
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationUiState
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel
 
@@ -44,20 +40,9 @@ fun PushNotificationScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val snackbarHostState = remember { SnackbarHostState() }
-    val saveFailureMessage = stringResource(R.string.push_notification_save_failure)
-
-    LaunchedEffect(viewModel) {
-        viewModel.events.collect { event ->
-            when (event) {
-                PushNotificationEvent.SaveFailure -> snackbarHostState.showSnackbar(saveFailureMessage)
-            }
-        }
-    }
 
     PushNotificationContent(
         uiState = uiState,
-        snackbarHostState = snackbarHostState,
         onBack = onBack,
         onDeviceAlarmClick = {
             val intent =
@@ -73,12 +58,22 @@ fun PushNotificationScreen(
         onEmailCheck = viewModel::onEmailChecked,
         onPushCheck = viewModel::onPushChecked,
     )
+
+    if (uiState.showSaveFailure) {
+        AfternoteErrorPopup(
+            iconRes = R.drawable.ic_save_failure,
+            title = stringResource(R.string.push_notification_save_failure_title),
+            description = stringResource(R.string.push_notification_save_failure),
+            buttonText = stringResource(R.string.push_notification_save_failure_retry),
+            onButtonClick = viewModel::onSaveFailureRetry,
+            onDismiss = viewModel::onSaveFailureDismiss,
+        )
+    }
 }
 
 @Composable
 private fun PushNotificationContent(
     uiState: PushNotificationUiState,
-    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onBack: () -> Unit,
     onDeviceAlarmClick: () -> Unit,
     onNewsletterToggle: (Boolean) -> Unit,
@@ -89,7 +84,6 @@ private fun PushNotificationContent(
     onPushCheck: (Boolean) -> Unit,
 ) {
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             DetailTopBar(
                 title = stringResource(R.string.push_notification_title),

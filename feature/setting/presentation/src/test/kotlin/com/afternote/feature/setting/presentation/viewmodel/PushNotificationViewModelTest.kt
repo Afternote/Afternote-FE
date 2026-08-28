@@ -4,7 +4,6 @@ import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.user.UserPushSetting
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -51,29 +50,32 @@ class PushNotificationViewModelTest {
         }
 
     @Test
-    fun `각 토글 저장 실패 시 이전 값으로 롤백하고 실패 이벤트를 매번 보낸다`() =
+    fun `각 토글 저장 실패 시 이전 값으로 롤백하고 실패 안내를 표시한다`() =
         runTest(dispatcher) {
             val calls = mutableListOf<PushUpdateCall>()
-            val viewModel = viewModel(calls = calls, updateFailure = IllegalStateException("offline"))
+            val viewModel = viewModel(calls = calls, failUpdateAttempts = Int.MAX_VALUE)
             runCurrent()
 
             viewModel.onNewsletterToggle(false)
             assertFalse(viewModel.uiState.value.isNewsletterOn)
             runCurrent()
             assertTrue(viewModel.uiState.value.isNewsletterOn)
-            assertEquals(PushNotificationEvent.SaveFailure, viewModel.events.first())
+            assertTrue(viewModel.uiState.value.showSaveFailure)
+            viewModel.onSaveFailureDismiss()
+            assertFalse(viewModel.uiState.value.showSaveFailure)
 
             viewModel.onMindRecordToggle(false)
             assertFalse(viewModel.uiState.value.isMindRecordOn)
             runCurrent()
             assertTrue(viewModel.uiState.value.isMindRecordOn)
-            assertEquals(PushNotificationEvent.SaveFailure, viewModel.events.first())
+            assertTrue(viewModel.uiState.value.showSaveFailure)
+            viewModel.onSaveFailureDismiss()
 
             viewModel.onAfternoteToggle(false)
             assertFalse(viewModel.uiState.value.isAfternoteOn)
             runCurrent()
             assertTrue(viewModel.uiState.value.isAfternoteOn)
-            assertEquals(PushNotificationEvent.SaveFailure, viewModel.events.first())
+            assertTrue(viewModel.uiState.value.showSaveFailure)
 
             assertEquals(
                 listOf(
@@ -85,11 +87,41 @@ class PushNotificationViewModelTest {
             )
         }
 
+    @Test
+    fun `저장 실패 안내에서 재시도하면 마지막 변경을 다시 저장한다`() =
+        runTest(dispatcher) {
+            val calls = mutableListOf<PushUpdateCall>()
+            val viewModel = viewModel(calls = calls, failUpdateAttempts = 1)
+            runCurrent()
+
+            viewModel.onMindRecordToggle(false)
+            runCurrent()
+
+            assertTrue(viewModel.uiState.value.isMindRecordOn)
+            assertTrue(viewModel.uiState.value.showSaveFailure)
+
+            viewModel.onSaveFailureRetry()
+
+            assertFalse(viewModel.uiState.value.showSaveFailure)
+            assertFalse(viewModel.uiState.value.isMindRecordOn)
+            runCurrent()
+            assertFalse(viewModel.uiState.value.isMindRecordOn)
+            assertFalse(viewModel.uiState.value.showSaveFailure)
+            assertEquals(
+                listOf(
+                    PushUpdateCall(timeLetter = null, mindRecord = false, afterNote = null),
+                    PushUpdateCall(timeLetter = null, mindRecord = false, afterNote = null),
+                ),
+                calls,
+            )
+        }
+
     private fun viewModel(
         calls: MutableList<PushUpdateCall>,
-        updateFailure: Throwable? = null,
+        failUpdateAttempts: Int = 0,
     ): PushNotificationViewModel {
         val initial = UserPushSetting(timeLetter = true, mindRecord = true, afterNote = true)
+        var remainingFailures = failUpdateAttempts
         val repository =
             repositoryProxy { methodName, args ->
                 when (methodName) {
@@ -105,7 +137,10 @@ class PushNotificationViewModelTest {
                                 mindRecord = parameters[1] as Boolean?,
                                 afterNote = parameters[2] as Boolean?,
                             )
-                        updateFailure?.let { throw it }
+                        if (remainingFailures > 0) {
+                            remainingFailures--
+                            throw IllegalStateException("offline")
+                        }
                         initial.copy(
                             timeLetter = (parameters[0] as Boolean?) ?: initial.timeLetter,
                             mindRecord = (parameters[1] as Boolean?) ?: initial.mindRecord,
