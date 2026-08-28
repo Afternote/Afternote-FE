@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteFieldContainer
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.receiver.presentation.R
 import com.afternote.feature.receiver.presentation.deliveryverification.DocumentSlotState
 
 /**

@@ -39,6 +39,8 @@ class AfternoteEditorProcessingMethodDefaultsInteractionTest {
                     onRegisterClick = {},
                     snackbarMessage = null,
                     onSnackbarMessageConsumed = {},
+                    validationMessage = null,
+                    onValidationMessageConsumed = {},
                     content = {},
                     shouldDeferBaselineCapture =
                         shouldDeferEditorBaselineCapture(
