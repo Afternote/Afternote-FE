@@ -2,6 +2,7 @@ package com.afternote.feature.mindrecord.presentation.screen.sender
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,7 +13,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -31,6 +31,7 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionBanner
 import com.afternote.feature.mindrecord.presentation.component.WriteTextField
+import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionWriteUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.SubmitState
 import java.time.LocalDate
@@ -57,14 +58,44 @@ fun DailyQuestionWriteScreen(
         }
     }
 
+    DailyQuestionWriteScreenContent(
+        uiState = uiState,
+        date = LocalDate.now(),
+        questionExpanded = questionExpanded,
+        modifier = modifier,
+        onSubmitClick = { viewModel.submit() },
+        onBackClick = onBackClick,
+        onQuestionToggle = { questionExpanded = !questionExpanded },
+        onAnswerChanged = viewModel::onAnswerChanged,
+        onSaveDraftClick = { viewModel.submit(isDraft = true) },
+        onDraftListClick = onDraftListClick,
+        onMediaPicked = viewModel::uploadMedia,
+    )
+}
+
+/** ViewModel·현재 시각 없이 같은 작성 상태를 Preview·screenshotTest 에 고정하는 본문 경계 (#1131). */
+@Composable
+internal fun DailyQuestionWriteScreenContent(
+    uiState: DailyQuestionWriteUiState,
+    date: LocalDate,
+    modifier: Modifier = Modifier,
+    questionExpanded: Boolean = true,
+    onSubmitClick: () -> Unit = {},
+    onBackClick: () -> Unit = {},
+    onQuestionToggle: () -> Unit = {},
+    onAnswerChanged: (String) -> Unit = {},
+    onSaveDraftClick: () -> Unit = {},
+    onDraftListClick: () -> Unit = {},
+    onMediaPicked: (suspend (uriString: String) -> String?)? = null,
+) {
     Scaffold(
         topBar = {
             // Figma 2372:22546 — 상단바: 뒤로가기 / 가운데 날짜 / 우측 저장 버튼
             DetailTopBar(
-                title = LocalDate.now().format(TopBarDateFormatter),
+                title = date.format(TopBarDateFormatter),
                 actions = {
                     Button(
-                        onClick = { viewModel.submit() },
+                        onClick = onSubmitClick,
                         enabled = uiState.canSubmit,
                         shape = RoundedCornerShape(6.dp),
                         colors =
@@ -105,7 +136,7 @@ fun DailyQuestionWriteScreen(
             DailyQuestionBanner(
                 questionText = questionText,
                 expanded = questionExpanded,
-                onToggle = { questionExpanded = !questionExpanded },
+                onToggle = onQuestionToggle,
                 dayNumber = uiState.questionDay,
             )
 
@@ -159,12 +190,12 @@ fun DailyQuestionWriteScreen(
             // key() 로 컴포넌트를 재생성하지 않는다 (#1018).
             WriteTextField(
                 value = uiState.answer,
-                onValueChange = viewModel::onAnswerChanged,
-                onSaveDraftClick = { viewModel.submit(isDraft = true) },
+                onValueChange = onAnswerChanged,
+                onSaveDraftClick = onSaveDraftClick,
                 onDraftCountClick = onDraftListClick,
                 draftCount = uiState.draftCount,
-                onImagePicked = viewModel::uploadMedia,
-                onMediaPicked = viewModel::uploadMedia,
+                onImagePicked = onMediaPicked,
+                onMediaPicked = onMediaPicked,
             )
         }
     }
@@ -174,6 +205,18 @@ fun DailyQuestionWriteScreen(
 @Composable
 private fun DailyQuestionWriteScreenPreview() {
     AfternoteTheme {
-        // Preview는 ViewModel 없이 호출 불가 — 컴파일 확인용 placeholder
+        DailyQuestionWriteScreenContent(
+            uiState =
+                DailyQuestionWriteUiState(
+                    questionId = 28L,
+                    questionDay = 28,
+                    questionContent = "오늘 가장 오래 기억하고 싶은 순간은 무엇인가요?",
+                    answer = "<p>가족과 늦은 저녁을 먹으며 웃었던 순간.</p>",
+                    isQuestionLoading = false,
+                    draftCount = 1,
+                ),
+            date = LocalDate.of(2026, 8, 28),
+            modifier = Modifier.fillMaxSize(),
+        )
     }
 }
