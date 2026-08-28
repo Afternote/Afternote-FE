@@ -205,9 +205,56 @@ class DailyQuestionResumeDraftTest {
         assertEquals(0, repository.updateCalls)
     }
 
+    @Test
+    fun `정상 경로에서도 빈 HTML 은 저장할 수 없다`() {
+        // 이어쓰기 차단은 «불러오지 못한» 경우만 막는다. 임시저장이 아예 없어 정상적으로
+        // 신규 작성으로 들어온 화면에서 에디터를 비우면 `<p></p>` 가 남는데, isNotBlank() 는
+        // 이것을 «썼다» 로 읽어 버튼이 살아 있었다 — 빈 답변이 그대로 create 됐다 (#1018 리뷰).
+        val repository = fakeRepository(todayIsDraft = false)
+        val viewModel = viewModelWith(repository, currentAnswerFromEditor = "<p></p>")
+
+        assertEquals(false, viewModel.uiState.value.canSubmit)
+
+        // 하단 툴바 임시저장은 `enabled` 없는 clickable 이라 canSubmit 을 우회한다.
+        viewModel.submit(isDraft = true)
+        viewModel.submit(isDraft = false)
+        assertEquals(0, repository.createCalls)
+        assertEquals(0, repository.updateCalls)
+    }
+
+    @Test
+    fun `이어쓴 본문을 지우면 기존 임시저장을 빈 값으로 덮지 않는다`() {
+        // 조회는 성공해 draftId 가 잡혀 있다 — 이 상태에서 저장이 열리면 PATCH 가 나가
+        // 서버의 기존 본문이 빈 HTML 로 덮인다. 되돌릴 수 없는 유실이다.
+        val repository = fakeRepository()
+        val viewModel = viewModelWith(repository, currentAnswerFromEditor = "<p></p>")
+        assertEquals("<p>이어쓸 본문</p>", viewModel.uiState.value.answer)
+        assertEquals(7L, viewModel.uiState.value.draftId)
+
+        viewModel.onAnswerChanged("<p></p>")
+
+        assertEquals(false, viewModel.uiState.value.canSubmit)
+        viewModel.submit(isDraft = true)
+        viewModel.submit(isDraft = false)
+        assertEquals(0, repository.updateCalls)
+        assertEquals(0, repository.createCalls)
+    }
+
+    @Test
+    fun `사진만 있고 글자가 없는 본문은 저장할 수 있다`() {
+        // 태그를 통째로 걷어 판정하면 «이미지 한 장» 이 빈 것으로 접혀 저장이 막힌다.
+        // 사진만 남기는 기록은 정상 입력이다.
+        val repository = fakeRepository(todayIsDraft = false)
+        val viewModel =
+            viewModelWith(repository, currentAnswerFromEditor = """<p><img src="https://cdn.example.com/a.png" /></p>""")
+
+        assertEquals(true, viewModel.uiState.value.canSubmit)
+    }
+
     private fun fakeRepository(
         listFailure: Throwable? = null,
         drafts: List<DailyQuestion>? = null,
+        todayIsDraft: Boolean = true,
     ): FakeResumeRepository =
         FakeResumeRepository(
             listFailure = listFailure,
@@ -218,7 +265,7 @@ class DailyQuestionResumeDraftTest {
                     day = 16,
                     content = "질문",
                     isAnswered = false,
-                    isDraft = true,
+                    isDraft = todayIsDraft,
                 ),
             draft =
                 DailyQuestion(

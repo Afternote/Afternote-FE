@@ -258,7 +258,9 @@ class DailyQuestionWriteViewModel
                 return
             }
 
-            if (state.answer.isBlank()) {
+            // 태그만 남은 `<p></p>` 도 «비었다» 로 본다 — `isBlank()` 는 false 라 여기를 통과해
+            // 빈 답변이 create 되거나 이어쓰던 draft 가 빈 본문으로 update 됐다 (#1018 리뷰).
+            if (state.answer.isHtmlBlank()) {
                 failSubmit(R.string.mindrecord_error_daily_question_answer_required)
                 return
             }
