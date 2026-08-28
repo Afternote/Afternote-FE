@@ -92,7 +92,7 @@ fun MemorialDetailScreen(
     isEditable: Boolean = true,
     onEditClick: () -> Unit = {},
     onDeleteConfirm: () -> Unit = {},
-    onVideoClick: (String) -> Unit = {},
+    onVideoClick: (String) -> Unit,
     state: AfternoteDetailState = rememberAfternoteDetailState(),
 ) {
     val memorialCategoryLabel = stringResource(R.string.afternote_category_memorial)
@@ -497,6 +497,7 @@ private fun MemorialDetailScreenPreview() {
                 ),
             onBackClick = {},
             onEditClick = {},
+            onVideoClick = {},
         )
     }
 }
@@ -525,6 +526,7 @@ private fun MemorialDetailScreenDeleteDialogPreview() {
                 ),
             onBackClick = {},
             onEditClick = {},
+            onVideoClick = {},
             state = stateWithDialog,
         )
     }
