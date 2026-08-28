@@ -44,11 +44,25 @@ export function extractMarkdownLinks(source) {
     return links;
 }
 
+function stripInlineHtml(value) {
+    let result = "";
+    let tagDepth = 0;
+    for (const character of value) {
+        if (character === "<") {
+            tagDepth += 1;
+        } else if (character === ">" && tagDepth > 0) {
+            tagDepth -= 1;
+        } else if (tagDepth === 0) {
+            result += character;
+        }
+    }
+    return result;
+}
+
 function githubSlug(value) {
-    return value
+    return stripInlineHtml(value)
         .trim()
         .toLocaleLowerCase("en-US")
-        .replace(/<[^>]*>/g, "")
         .replace(/[^\p{L}\p{N}\p{M}\s_-]/gu, "")
         .replace(/\s+/g, "-");
 }

@@ -32,13 +32,22 @@ test("models GitHub heading anchors including Unicode, duplicates, and explicit 
         "# 설치 & 실행",
         "## Setup!",
         "## Setup!",
+        "## Before <em>after</em>",
+        "## Safe <<script>> tail",
         "<a id=\"stable-target\"></a>",
         "```md",
         "# Hidden",
         "```",
     ].join("\n"));
 
-    assert.deepEqual([...anchors], ["설치-실행", "setup", "setup-1", "stable-target"]);
+    assert.deepEqual([...anchors], [
+        "설치-실행",
+        "setup",
+        "setup-1",
+        "before-after",
+        "safe-tail",
+        "stable-target",
+    ]);
 });
 
 test("checks relative files and Markdown anchors and fails closed on escapes", async (t) => {
