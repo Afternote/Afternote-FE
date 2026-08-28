@@ -39,12 +39,12 @@ class AfternoteEditorState(
     private val getCurrentForm: () -> EditorFormState,
     private val setType: (AfternoteType) -> Unit,
     private val setService: (String) -> Unit,
-    private val addReceiverIfAbsent: (receiverId: String, name: String, label: String) -> Unit,
+    private val addReceiverIfAbsent: (receiverId: Long, name: String, label: String) -> Unit,
     private val applyPrefill: (EditorFormPrefill) -> Unit,
     val setMemorialPhoto: (String?) -> Unit,
     val setMemorialVideo: (String?) -> Unit,
     val setMemorialThumbnail: (String?) -> Unit,
-    val deleteReceiver: (receiverId: String) -> Unit,
+    val deleteReceiver: (receiverId: Long) -> Unit,
     val replaceReceiversIfEmpty: (List<AfternoteEditorReceiver>) -> Unit,
     val addProcessingMethod: (text: String) -> Unit,
     val deleteProcessingMethod: (localId: Int) -> Unit,
@@ -101,7 +101,7 @@ class AfternoteEditorState(
         name: String,
         relation: String,
     ) {
-        addReceiverIfAbsent(receiverId.toString(), name, relation)
+        addReceiverIfAbsent(receiverId, name, relation)
     }
 
     fun addEditorMessage() {
@@ -236,10 +236,10 @@ fun rememberAfternoteEditorState(
     setService: (String) -> Unit,
     setMemorialPhoto: (String?) -> Unit,
     setMemorialVideo: (String?) -> Unit,
-    addReceiverIfAbsent: (receiverId: String, name: String, label: String) -> Unit,
+    addReceiverIfAbsent: (receiverId: Long, name: String, label: String) -> Unit,
     applyPrefill: (EditorFormPrefill) -> Unit,
     setMemorialThumbnail: (String?) -> Unit,
-    deleteReceiver: (receiverId: String) -> Unit,
+    deleteReceiver: (receiverId: Long) -> Unit,
     replaceReceiversIfEmpty: (List<AfternoteEditorReceiver>) -> Unit,
     addProcessingMethod: (text: String) -> Unit,
     deleteProcessingMethod: (localId: Int) -> Unit,
