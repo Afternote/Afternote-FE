@@ -28,7 +28,6 @@ import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.editor.processing.CustomServiceDialog
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
@@ -40,7 +39,7 @@ import com.afternote.feature.afternote.presentation.author.editor.state.remember
  * 피그마 디자인 기반:
  * - 헤더 (뒤로가기, 타이틀, 등록 버튼)
  * - 종류 선택 드롭다운
- * - 서비스명 선택 드롭다운
+ * - 검색 가능한 서비스명 선택 바텀시트
  * - 계정 정보 입력 (아이디, 비밀번호)
  * - 계정 처리 방법 선택 (라디오 버튼)
  * - 처리 방법 리스트 (체크박스)
@@ -146,14 +145,6 @@ fun AfternoteEditorScreen(
                     .addFocusCleaner(focusManager),
         ) {
             content(snackbarHostState)
-
-            if (state.isCustomServiceDialogVisible) {
-                CustomServiceDialog(
-                    serviceNameState = state.customServiceNameState,
-                    onDismiss = state::dismissCustomServiceDialog,
-                    onAddClick = state::onAddCustomService,
-                )
-            }
 
             if (showExitConfirm) {
                 Popup(

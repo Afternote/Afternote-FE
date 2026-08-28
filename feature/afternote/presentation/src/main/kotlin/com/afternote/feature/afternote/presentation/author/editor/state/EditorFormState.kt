@@ -7,8 +7,6 @@ import com.afternote.feature.afternote.presentation.author.editor.receiver.model
 import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 
-internal const val CUSTOM_ADD_OPTION = "직접 추가하기"
-
 /**
  * ViewModel이 소유하는 에디터 폼 상태.
  *
@@ -45,16 +43,13 @@ data class EditorFormState(
     val currentServiceOptions: List<String>
         get() =
             when (selectedType) {
-                AfternoteType.SOCIAL_NETWORK -> AfternoteServiceCatalog.socialServices + CUSTOM_ADD_OPTION
+                AfternoteType.SOCIAL_NETWORK -> AfternoteServiceCatalog.socialServices
 
                 AfternoteType.GALLERY_AND_FILES -> AfternoteServiceCatalog.galleryServices
 
-                // 비즈니스는 서비스 직접 추가를 지원하지 않는다.
                 AfternoteType.BUSINESS -> AfternoteServiceCatalog.businessServices
 
                 // 서비스 선택 UI가 없는 유형이다.
                 AfternoteType.MEMORIAL, AfternoteType.ESTATE -> emptyList()
             }
-
-    fun isCustomAddOption(service: String): Boolean = service == CUSTOM_ADD_OPTION
 }
