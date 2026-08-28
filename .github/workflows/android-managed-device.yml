@@ -557,6 +557,11 @@ jobs:
         if: steps.target.outputs.run_lane == 'true'
         uses: ./.github/actions/setup-ci-config
 
+      # selected 모드에서 같은 클래스의 Class#method selector 를 한 invocation 에 3개
+      # 이상 실으면 utp 발견 단계가 앞 2개만 남긴다(#1378 실측). 클래스별 최대 2개씩
+      # 청크로 나눠 invocation 을 반복하고, 청크별 결과 XML 을 보존해 뒤 단계
+      # (verify·render)가 재귀 탐색으로 합본을 읽게 한다. Gradle 시간 예산은 청크
+      # 개수와 무관하게 GRADLE_TIMEOUT_MINUTES 전체를 공유한다.
       - name: Run managed-device androidTest
         id: android_test
         if: steps.target.outputs.run_lane == 'true'
@@ -565,26 +570,80 @@ jobs:
           ARTIFACT_KEY: ${{ matrix.artifact }}
           DEVICE_TASK: ${{ matrix.task }}
           GRADLE_TIMEOUT_MINUTES: ${{ matrix.gradle_timeout_minutes }}
-          TEST_SELECTORS: ${{ steps.target.outputs.selectors }}
+          TEST_SELECTORS_JSON: ${{ steps.target.outputs.selectors_json }}
         run: |
           set -euo pipefail
-          test_arguments=()
-          if [[ -n "$TEST_SELECTORS" ]]; then
-            test_arguments+=("-Pandroid.testInstrumentationRunnerArguments.class=$TEST_SELECTORS")
-          fi
-
           log_directory="$RUNNER_TEMP/android-test-logs"
           gradle_log="$log_directory/$ARTIFACT_KEY.log"
           mkdir -p "$log_directory"
+          : > "$gradle_log"
 
-          set +e
-          timeout --signal=TERM --kill-after=30s "${GRADLE_TIMEOUT_MINUTES}m" \
-            ./gradlew "$DEVICE_TASK" "${test_arguments[@]}" \
-            -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect \
-            --console=plain \
-            --stacktrace > "$gradle_log" 2>&1
-          status=$?
-          set -e
+          invocations_file="$RUNNER_TEMP/android-test-invocations.json"
+          if [[ -z "$TEST_SELECTORS_JSON" || "$TEST_SELECTORS_JSON" == "[]" ]]; then
+            echo '[""]' > "$invocations_file"
+          else
+            jq -c '
+              def chunks($n): [range(0; length; $n) as $i | .[$i:$i + $n]];
+              (group_by(split("#")[0]) | map(chunks(2))) as $per_class
+              | ($per_class | map(length) | max) as $rounds
+              | [range(0; $rounds) as $i
+                  | [$per_class[] | select(length > $i) | .[$i][]]
+                  | join(",")]
+            ' <<< "$TEST_SELECTORS_JSON" > "$invocations_file"
+          fi
+
+          results_root="app/build/outputs/androidTest-results/managedDevice"
+          chunk_store="$RUNNER_TEMP/android-test-chunk-results"
+          invocation_count="$(jq 'length' "$invocations_file")"
+          deadline=$(( $(date +%s) + GRADLE_TIMEOUT_MINUTES * 60 ))
+          status=0
+          last_executed=-1
+          for (( index = 0; index < invocation_count; index++ )); do
+            selectors="$(jq -r --argjson i "$index" '.[$i]' "$invocations_file")"
+            test_arguments=()
+            if [[ -n "$selectors" ]]; then
+              test_arguments+=("-Pandroid.testInstrumentationRunnerArguments.class=$selectors")
+            fi
+            if (( invocation_count > 1 )); then
+              echo "=== selected invocation $(( index + 1 ))/$invocation_count: $selectors ===" >> "$gradle_log"
+            fi
+            remaining=$(( deadline - $(date +%s) ))
+            if (( remaining <= 0 )); then
+              status=124
+              echo "Managed-device Gradle budget exhausted before invocation $(( index + 1 ))" >> "$gradle_log"
+              break
+            fi
+            set +e
+            timeout --signal=TERM --kill-after=30s "${remaining}s" \
+              ./gradlew "$DEVICE_TASK" "${test_arguments[@]}" \
+              -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect \
+              --console=plain \
+              --stacktrace >> "$gradle_log" 2>&1
+            status=$?
+            set -e
+            last_executed=$index
+            if (( invocation_count > 1 )) && [[ -d "$results_root" ]]; then
+              mkdir -p "$chunk_store/chunk-$index"
+              (cd "$results_root" && find . -name '*.xml' -print0 | tar --null -cf - -T -) \
+                | tar -xf - -C "$chunk_store/chunk-$index"
+            fi
+            if (( status != 0 )); then
+              break
+            fi
+          done
+          # 마지막으로 실행한 청크의 XML 은 live 디렉터리에 이미 있으므로 합본에서
+          # 제외한다 — testcase 가 중복되면 render 집계·annotation 이 이중이 된다.
+          if (( invocation_count > 1 )) && [[ -d "$chunk_store" ]]; then
+            mkdir -p "$results_root/chunks"
+            for chunk_dir in "$chunk_store"/chunk-*; do
+              [[ -d "$chunk_dir" ]] || continue
+              if [[ "$chunk_dir" == "$chunk_store/chunk-$last_executed" ]]; then
+                continue
+              fi
+              mkdir -p "$results_root/chunks/$(basename "$chunk_dir")"
+              cp -R "$chunk_dir/." "$results_root/chunks/$(basename "$chunk_dir")/"
+            done
+          fi
 
           {
             echo "exit_code=$status"
