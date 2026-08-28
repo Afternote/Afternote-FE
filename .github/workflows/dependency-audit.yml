@@ -134,10 +134,7 @@ jobs:
         if: github.event_name == 'schedule' || inputs.publish_issues
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          node .github/scripts/publish-dependency-audit-issues.mjs \
-            "$REPORT_DIR/dependency-audit.json" \
-            .github/ISSUE_TEMPLATE/custom.md
+        run: node .github/scripts/publish-dependency-audit-issues.mjs "$REPORT_DIR/dependency-audit.json"
 
       - name: Upload machine-readable audit evidence
         if: always()
