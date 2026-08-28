@@ -87,7 +87,14 @@ class AfternoteEditorValidationEventTest {
 
     private fun AfternoteEditorViewModel.saveInvalidSocialAfternote() {
         saveAfternote(
-            payload = RegisterAfternotePayload(serviceName = "", date = "2026.08.27"),
+            payload =
+                RegisterAfternotePayload(
+                    serviceName = "",
+                    date = "2026.08.27",
+                    accountId = "account",
+                    password = "password",
+                    processingMethods = listOf("계정 삭제"),
+                ),
             selectedReceiverIds = listOf(1L),
             memorialMedia = SaveAfternoteMemorialMedia(),
         )
