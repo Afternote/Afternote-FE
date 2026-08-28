@@ -16,7 +16,7 @@ fun ReceivedTimeLetterDto.toDomain(): ReceivedTimeLetter =
         senderName = senderName,
         deliveredAt = deliveredAt,
         createdAt = createdAt,
-        isRead = isRead ?: false,
+        isRead = isRead,
     )
 
 fun ReceivedTimeLetterListDto.toDomain(): ReceivedTimeLetterList =
