@@ -147,7 +147,7 @@ keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-sh
 
 ## Issue와 PR
 
-- Issue는 [현재 Issue 템플릿](.github/ISSUE_TEMPLATE/custom.md)을 사용하고, 같은 작업의 기존 Issue가 있으면 새로 만들지 않고 재사용한다.
+- Issue는 [현재 Issue form](.github/ISSUE_TEMPLATE/issue.yml)을 사용하고, 같은 작업의 기존 Issue가 있으면 새로 만들지 않고 재사용한다.
 - PR은 [현재 PR 템플릿](.github/PULL_REQUEST_TEMPLATE.md)을 그대로 채운다. 본문에 같은 저장소의 실제 Issue를 `Refs #N`으로 연결해야 Repository Quality 검사를 통과한다.
 - 여러 PR이 같은 Issue를 공유할 수 있다. 그 Issue의 작업을 최종 완료하는 PR에서만 `Closes #N`·`Fixes #N`·`Resolves #N`을 사용한다.
 - `CI Test Plan`에는 Android 계측 테스트를 `none`·`selected`·`full`로 선언하고 선택 이유를 변경 경계 기준으로 남긴다.
