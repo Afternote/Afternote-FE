@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
+import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.core.data.repoimpl.UserRepositoryImpl
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.network.dto.ReceiverDetailDto
@@ -70,11 +71,11 @@ class ReceiverSessionIsolationAndroidTest {
                     status = 401,
                     code = 401,
                     serverMessage = "인증되지 않은 요청입니다.",
-                    message = "인증되지 않은 요청입니다.",
+                    fallbackMessage = "인증되지 않은 요청입니다.",
                 ),
             ),
         )
-        val repository = UserRepositoryImpl(userApi, authRepository)
+        val repository = UserRepositoryImpl(userApi, authRepository, FakeErrorReporter())
         val viewModel = RecipientListViewModel(repository)
 
         composeRule.setContent {
