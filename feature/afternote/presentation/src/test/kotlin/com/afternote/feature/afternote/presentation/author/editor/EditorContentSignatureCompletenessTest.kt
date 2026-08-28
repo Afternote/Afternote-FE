@@ -97,7 +97,7 @@ class EditorContentSignatureCompletenessTest {
         val after =
             editorContentSignature(
                 EditorFormState(
-                    afternoteEditReceivers = listOf(AfternoteEditorReceiver(id = "1", name = "김수신", label = "딸")),
+                    afternoteEditReceivers = listOf(AfternoteEditorReceiver(id = 1L, name = "김수신", label = "딸")),
                 ),
                 state,
             )

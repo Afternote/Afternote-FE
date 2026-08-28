@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor.receiver
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -18,14 +19,14 @@ class AfternoteEditorReceiverListState(
     var showTextField by mutableStateOf(initialShowTextField)
         private set
 
-    val expandedStates = mutableStateMapOf<String, Boolean>()
+    val expandedStates = mutableStateMapOf<Long, Boolean>()
 
     /**
      * 초기화: 수신자들의 expanded 상태 설정
      */
     fun initializeExpandedStates(
         afternoteEditReceivers: List<AfternoteEditorReceiver>,
-        initialExpandedItemId: String?,
+        initialExpandedItemId: Long?,
     ) {
         afternoteEditReceivers.forEach { receiver ->
             if (!expandedStates.containsKey(receiver.id)) {
@@ -44,7 +45,7 @@ class AfternoteEditorReceiverListState(
     /**
      * 아이템 expanded 상태 토글
      */
-    fun toggleItemExpanded(itemId: String) {
+    fun toggleItemExpanded(itemId: Long) {
         expandedStates[itemId] = !(expandedStates[itemId] ?: false)
     }
 }

@@ -119,8 +119,10 @@ private fun AccountEditorContentPreview() {
                     AfternoteEditorReceiverSection(
                         afternoteEditReceivers =
                             listOf(
-                                AfternoteEditorReceiver(id = "1", name = "홍길동", label = "가족"),
+                                AfternoteEditorReceiver(id = 1L, name = "홍길동", label = "가족"),
                             ),
+                        onAddClick = {},
+                        onItemDeleteClick = {},
                     ),
                 processingMethodSection =
                     ProcessingMethodSection(
