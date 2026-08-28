@@ -10,6 +10,7 @@ import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
+import com.afternote.feature.afternote.presentation.author.navigation.model.SELECTED_RECEIVER_ID_KEY
 import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
@@ -461,6 +462,19 @@ fun rememberAfternoteNavActions(
 
             override fun navigateToMemorialPlaylist() {
                 appState.navController.navigate(AfternoteRoute.MemorialPlaylistRoute)
+            }
+
+            override fun navigateToSelectReceiver() {
+                appState.navController.navigate(AfternoteRoute.SelectReceiverRoute)
+            }
+
+            override fun popBackWithSelectedReceiver(receiverId: Long) {
+                // 선택 화면이 현재 destination 이므로 previousBackStackEntry 가 에디터다.
+                // 에디터는 복귀 시 SELECTED_RECEIVER_ID_KEY 를 읽고 지운다 (AfternoteNavGraphEditor).
+                appState.navController.previousBackStackEntry
+                    ?.savedStateHandle
+                    ?.set(SELECTED_RECEIVER_ID_KEY, receiverId)
+                appState.navController.popBackStack()
             }
 
             override fun navigateToAddSong() {
