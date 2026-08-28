@@ -106,6 +106,8 @@ class EditorTouchTargetTest {
     @Test
     fun `processing and receiver more actions are distinct named button callbacks`() {
         var processingMoreClicks = 0
+        var receiverAddClicks = 0
+        val deletedReceiverIds = mutableListOf<Long>()
         val receiverState = AfternoteEditorReceiverListState()
         composeRule.setContent {
             AfternoteTheme {
@@ -116,7 +118,9 @@ class EditorTouchTargetTest {
                     )
                     AfternoteEditorReceiverList(
                         afternoteEditReceivers =
-                            listOf(AfternoteEditorReceiver(id = "1", name = "Name", label = "Family")),
+                            listOf(AfternoteEditorReceiver(id = 1L, name = "Name", label = "Family")),
+                        onAddClick = { receiverAddClicks++ },
+                        onItemDeleteClick = { deletedReceiverIds += it },
                         state = receiverState,
                     )
                 }
@@ -133,7 +137,12 @@ class EditorTouchTargetTest {
         moreNodes[1].performClick()
         composeRule.waitForIdle()
         assertEquals(1, processingMoreClicks)
-        assertEquals(true, receiverState.expandedStates["1"])
+        assertEquals(true, receiverState.expandedStates[1L])
+
+        composeRule.onNodeWithText("삭제하기").performClick()
+        composeRule.onNodeWithContentDescription("추가").performClick()
+        assertEquals(listOf(1L), deletedReceiverIds)
+        assertEquals(1, receiverAddClicks)
     }
 
     @Test
