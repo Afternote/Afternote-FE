@@ -11,7 +11,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.paging.PagingData
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
@@ -19,17 +18,11 @@ import com.afternote.afternote_fe.test.afternoteEditorSavedStateHandle
 import com.afternote.afternote_fe.test.appTestUserRepository
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
-import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
-import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
-import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
-import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
-import com.afternote.feature.afternote.domain.model.author.Detail
-import com.afternote.feature.afternote.domain.model.author.ListItem
-import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MediaKind
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
+import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
@@ -37,8 +30,6 @@ import com.afternote.feature.afternote.presentation.author.editor.message.Editor
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Rule
@@ -58,7 +49,7 @@ class AfternoteAuthorAndroidTest {
 
     @Test
     fun missingReceiver_blocksSaveAndExposesValidationSemantics() {
-        val repository = FakeAfternoteRepository()
+        val repository = FakeAfternoteRepository.strict()
         val viewModel = viewModel(repository, afternoteEditorSavedStateHandle(AfternoteType.SOCIAL_NETWORK))
         composeRule.setContent {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -79,7 +70,7 @@ class AfternoteAuthorAndroidTest {
         }
 
         composeRule.onNodeWithText("수신자를 한 명 이상 선택해 주세요.").assertIsDisplayed()
-        assertEquals(0, repository.createSocialPayloads.size)
+        assertEquals(0, repository.socialPayloads.size)
         assertEquals(
             AfternoteEditorError.Validation(AfternoteValidationError.RECEIVERS_REQUIRED),
             viewModel.uiState.value.error,
@@ -88,9 +79,17 @@ class AfternoteAuthorAndroidTest {
 
     @Test
     fun createFailureThenRetry_keepsExactPayloadAndEmitsSingleSuccess() {
-        val repository = FakeAfternoteRepository()
-        repository.createSocialResults.addLast(Result.failure(IllegalStateException("offline")))
-        repository.createSocialResults.addLast(Result.success(42L))
+        val createSocialResults =
+            ArrayDeque(
+                listOf(
+                    Result.failure(IllegalStateException("offline")),
+                    Result.success(42L),
+                ),
+            )
+        val repository =
+            FakeAfternoteRepository.strict().apply {
+                onCreateSocial = { createSocialResults.removeFirst() }
+            }
         val viewModel = viewModel(repository, afternoteEditorSavedStateHandle(AfternoteType.SOCIAL_NETWORK))
         composeRule.setContent {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -111,9 +110,9 @@ class AfternoteAuthorAndroidTest {
         }
         composeRule.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.savedId == 42L }
 
-        assertEquals(2, repository.createSocialPayloads.size)
-        assertEquals(repository.createSocialPayloads.first(), repository.createSocialPayloads.last())
-        val sent = repository.createSocialPayloads.last()
+        assertEquals(2, repository.socialPayloads.size)
+        assertEquals(repository.socialPayloads.first(), repository.socialPayloads.last())
+        val sent = repository.socialPayloads.last()
         assertEquals("Instagram", sent.title)
         assertEquals(listOf(7L), sent.receiverIds)
         assertEquals("author@example.test", sent.credentials?.id)
@@ -123,7 +122,7 @@ class AfternoteAuthorAndroidTest {
     @Test
     fun savedState_recreatesTypeReceiverAndProcessingForm() {
         val handle = afternoteEditorSavedStateHandle(AfternoteType.GALLERY_AND_FILES)
-        val first = viewModel(FakeAfternoteRepository(), handle)
+        val first = viewModel(FakeAfternoteRepository.strict(), handle)
         composeRule.setContent { AfternoteTheme {} }
         composeRule.runOnIdle {
             first.setType(AfternoteType.GALLERY_AND_FILES)
@@ -132,7 +131,7 @@ class AfternoteAuthorAndroidTest {
             first.addProcessingMethod("전체 파일 전달")
         }
 
-        val restored = viewModel(FakeAfternoteRepository(), handle).currentForm()
+        val restored = viewModel(FakeAfternoteRepository.strict(), handle).currentForm()
 
         assertEquals(AfternoteType.GALLERY_AND_FILES, restored.selectedType)
         assertEquals("Google Photos", restored.selectedService)
@@ -185,31 +184,4 @@ class AfternoteAuthorAndroidTest {
                 ),
             errorReporter = FakeErrorReporter(),
         )
-}
-
-private class FakeAfternoteRepository : AfternoteRepository {
-    val createSocialPayloads = mutableListOf<CreateAccountPayload>()
-    val createSocialResults = ArrayDeque<Result<Long>>()
-
-    override fun getPagedAfternotes(type: AfternoteType?): Flow<PagingData<ListItem>> = flowOf(PagingData.empty())
-
-    override suspend fun getDetail(id: Long): Result<Detail> = Result.failure(NoSuchElementException())
-
-    override suspend fun createSocial(payload: CreateAccountPayload): Result<Long> {
-        createSocialPayloads += payload
-        return createSocialResults.removeFirstOrNull() ?: Result.success(1L)
-    }
-
-    override suspend fun createBusiness(payload: CreateAccountPayload): Result<Long> = error("unexpected createBusiness")
-
-    override suspend fun createGallery(payload: CreateGalleryPayload): Result<Long> = error("unexpected createGallery")
-
-    override suspend fun createMemorial(payload: CreateMemorialPayload): Result<Long> = error("unexpected createMemorial")
-
-    override suspend fun update(
-        id: Long,
-        payload: AfternoteUpdatePayload,
-    ): Result<Long> = error("unexpected update")
-
-    override suspend fun delete(id: Long): Result<Unit> = error("unexpected delete")
 }
