@@ -1,16 +1,11 @@
-package com.afternote.afternote_fe
+package com.afternote.feature.receiver.presentation.deliveryverification
 
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.afternote.afternote_fe.test.FailureArtifactRule
-import com.afternote.afternote_fe.test.FakeErrorReporter
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import com.afternote.feature.receiver.domain.error.ReceiverRejectionReason
@@ -20,28 +15,23 @@ import com.afternote.feature.receiver.domain.model.ReceiverEmailAuthResult
 import com.afternote.feature.receiver.domain.testing.FakeIdentityVerificationRepository
 import com.afternote.feature.receiver.domain.testing.FakeReceiverAuthRepository
 import com.afternote.feature.receiver.domain.testing.FakeReceiverDeliveryDocumentUploadRepository
-import com.afternote.feature.receiver.presentation.deliveryverification.DocumentSlot
-import com.afternote.feature.receiver.presentation.deliveryverification.DocumentUploadViewModel
-import com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationEmailScreen
-import com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationViewModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import java.io.IOException
 
-@RunWith(AndroidJUnit4::class)
-class ReceiverVerificationAndroidTest {
-    @get:Rule(order = 0)
+@RunWith(RobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(sdk = [35])
+class ReceiverVerificationTest {
+    @get:Rule
     val composeRule = createComposeRule()
-
-    @get:Rule(order = 1)
-    val failureArtifactRule =
-        FailureArtifactRule {
-            composeRule.onRoot().captureToImage().asAndroidBitmap()
-        }
 
     @Test
     fun emailMismatchThenRetry_preservesContextAndVerifiesOnce() {
@@ -63,7 +53,7 @@ class ReceiverVerificationAndroidTest {
             Result.success(ReceiverEmailAuthResult(7L, "김수신", "이발신")),
         )
         val identity = FakeIdentityVerificationRepository()
-        val viewModel = IdentityVerificationViewModel(auth, identity, FakeErrorReporter())
+        val viewModel = IdentityVerificationViewModel(auth, identity, NoopErrorReporter)
         var verifiedCalls = 0
         composeRule.setContent {
             AfternoteTheme {
@@ -104,7 +94,7 @@ class ReceiverVerificationAndroidTest {
             IdentityVerificationViewModel(
                 auth,
                 FakeIdentityVerificationRepository(),
-                FakeErrorReporter(),
+                NoopErrorReporter,
             )
         composeRule.setContent {
             AfternoteTheme {
@@ -143,7 +133,7 @@ class ReceiverVerificationAndroidTest {
                     )
                 }
             }
-        val viewModel = DocumentUploadViewModel(upload, auth, FakeErrorReporter())
+        val viewModel = DocumentUploadViewModel(upload, auth, NoopErrorReporter)
         composeRule.setContent { AfternoteTheme {} }
 
         composeRule.runOnIdle {
@@ -164,6 +154,13 @@ class ReceiverVerificationAndroidTest {
         assertEquals(listOf("https://cdn.test/death.pdf" to null), auth.deliverySubmissions)
         assertEquals(2, upload.uploadCalls.size)
     }
+}
+
+private object NoopErrorReporter : ErrorReporter {
+    override fun writeFailure(
+        throwable: Throwable,
+        attributes: Map<String, String>,
+    ) = Unit
 }
 
 /**

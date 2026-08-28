@@ -1,18 +1,14 @@
-package com.afternote.afternote_fe
+package com.afternote.feature.setting.presentation
 
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.afternote.afternote_fe.test.FailureArtifactRule
-import com.afternote.afternote_fe.test.appTestAuthRepository
-import com.afternote.afternote_fe.test.appTestUserRepository
+import com.afternote.core.domain.testing.FakeAuthRepository
+import com.afternote.core.domain.testing.FakeUserRepository
+import com.afternote.core.model.user.Receiver
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.setting.presentation.screen.SettingScreen
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel
@@ -21,22 +17,21 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
-@RunWith(AndroidJUnit4::class)
-class SettingFlowAndroidTest {
-    @get:Rule(order = 0)
+@RunWith(RobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(sdk = [35])
+class SettingFlowTest {
+    @get:Rule
     val composeRule = createComposeRule()
-
-    @get:Rule(order = 1)
-    val failureArtifactRule =
-        FailureArtifactRule {
-            composeRule.onRoot().captureToImage().asAndroidBitmap()
-        }
 
     @Test
     fun profileAndSecurityEntries_emitExpectedNavigation() {
-        val auth = appTestAuthRepository(loggedIn = true)
-        val user = appTestUserRepository()
+        val auth = settingFlowAuthRepository(loggedIn = true)
+        val user = settingFlowUserRepository()
         val viewModel = SettingViewModel(auth, user)
         var destination: String? = null
 
@@ -56,8 +51,8 @@ class SettingFlowAndroidTest {
 
     @Test
     fun logout_cancelThenConfirm_callsRepositoryExactlyOnce() {
-        val auth = appTestAuthRepository(loggedIn = true)
-        val user = appTestUserRepository()
+        val auth = settingFlowAuthRepository(loggedIn = true)
+        val user = settingFlowUserRepository()
         val viewModel = SettingViewModel(auth, user)
         var navigationCalls = 0
 
@@ -81,8 +76,8 @@ class SettingFlowAndroidTest {
 
     @Test
     fun destructiveDelete_isNotCalledUntilViewModelCommand() {
-        val user = appTestUserRepository()
-        val viewModel = SettingViewModel(appTestAuthRepository(loggedIn = true), user)
+        val user = settingFlowUserRepository()
+        val viewModel = SettingViewModel(settingFlowAuthRepository(loggedIn = true), user)
         composeRule.setContent { AfternoteTheme {} }
 
         assertEquals(0, user.deleteAccountCalls)
@@ -94,7 +89,7 @@ class SettingFlowAndroidTest {
 
     @Test
     fun pushToggle_failure_rollsBackAndSendsExactPatchOnce() {
-        val user = appTestUserRepository()
+        val user = settingFlowUserRepository()
         val pushSettingUpdateResults = ArrayDeque<Result<com.afternote.core.model.user.UserPushSetting>>()
         pushSettingUpdateResults.addLast(Result.failure(IllegalStateException("offline")))
         user.onUpdateMyPushSettings = { _, _, _ ->
@@ -149,3 +144,30 @@ class SettingFlowAndroidTest {
         }
     }
 }
+
+private fun settingFlowAuthRepository(loggedIn: Boolean): FakeAuthRepository =
+    FakeAuthRepository.strict(loggedIn = loggedIn).apply {
+        onIsLoggedIn = null
+        onSaveSession = null
+        onUpdateTokens = null
+        onClearSession = null
+        onGetAccessToken = null
+        onGetRefreshToken = null
+        onDefaultLogin = null
+        onLogout = null
+    }
+
+private fun settingFlowUserRepository(): FakeUserRepository =
+    FakeUserRepository.strict().apply {
+        receiverState.value = listOf(Receiver(7L, "김수신", "가족", "fake-auth-7"))
+        onReceiverListFlow = null
+        onGetReceivers = null
+        onCreateReceiver = null
+        onGetMyProfile = null
+        onUpdateMyProfile = null
+        onDeleteAccount = null
+        onLogActivity = null
+        onGetMyPushSettings = null
+        onUpdateMyPushSettings = null
+        onGetConnectedAccounts = null
+    }
