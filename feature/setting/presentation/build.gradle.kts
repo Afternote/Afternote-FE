@@ -14,6 +14,8 @@ android {
         buildConfig = true
     }
 
+    testOptions.unitTests.isIncludeAndroidResources = true
+
     defaultConfig {
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
     }
@@ -38,4 +40,9 @@ dependencies {
 
     testImplementation(libs.coroutines.test)
     testImplementation(testFixtures(projects.core.domain))
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
