@@ -23,6 +23,7 @@ import com.afternote.core.ui.button.FAB.PenFloatingActionButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
+import com.afternote.feature.afternote.presentation.shared.detail.song.PlaylistEmptyContent
 import com.afternote.feature.afternote.presentation.shared.detail.song.PlaylistSongList
 import com.afternote.feature.afternote.presentation.shared.detail.song.SelectableSongListBody
 import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistFloatingActionSlot
@@ -117,6 +118,12 @@ fun MemorialPlaylistEntry(
                         MemorialPlaylistListHeader(songCount = displaySongs.size)
                     },
                 )
+                if (displaySongs.isEmpty()) {
+                    PlaylistEmptyContent(
+                        text = stringResource(R.string.afternote_editor_playlist_empty_message),
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
                 SongPlaylistFloatingActionSlot {
                     PenFloatingActionButton(onClick = onNavigateToAddSongScreen, size = 48.dp, iconSize = 17.dp)
                 }

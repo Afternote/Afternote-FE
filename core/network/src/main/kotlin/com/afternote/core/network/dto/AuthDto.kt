@@ -20,6 +20,17 @@ data class FindSendCodeRequestDto(
     val email: String,
 )
 
+/**
+ * 아이디/비밀번호 찾기 인증번호 발송 결과.
+ *
+ * [expiresAt]은 서버가 발급한 인증번호의 UTC 만료 절대시각(ISO-8601)이다. 네트워크 계층에서
+ * 필수 응답 필드로 보존하고, 화면에서 카운트다운을 표시할지는 별도 제품 흐름이 결정한다.
+ */
+@Serializable
+data class FindSendCodeDto(
+    @SerialName("expiresAt") val expiresAt: String,
+)
+
 @Serializable
 data class EmailFindRequestDto(
     val email: String,
@@ -31,6 +42,15 @@ data class EmailFindRequestDto(
 data class EmailFindDto(
     val name: String,
     val email: String,
+)
+
+/** 비밀번호 찾기/재설정 요청. 인증번호 검증과 새 비밀번호 반영을 한 요청에서 수행한다. */
+@Serializable
+data class PasswordFindRequestDto(
+    val email: String,
+    @SerialName("certificateCode") val certificateCode: String,
+    val newPassword: String,
+    val confirmPassword: String,
 )
 
 @Serializable

@@ -159,6 +159,43 @@ test('Gradle caching has a single owner in every workflow', async () => {
   }
 });
 
+test('dependency audit resolves and tests every domain module on its current platform', async () => {
+  const source = await readFile(
+    new URL('../workflows/dependency-audit.yml', import.meta.url),
+    'utf8',
+  );
+  const reportCommands = [
+    'run_report core-model-runtime :core:model:dependencies --configuration runtimeClasspath',
+    'run_report core-domain-runtime :core:domain:dependencies --configuration runtimeClasspath',
+    'run_report afternote-domain-runtime :feature:afternote:domain:dependencies --configuration runtimeClasspath',
+    'run_report mindrecord-domain-runtime :feature:mindrecord:domain:dependencies --configuration debugRuntimeClasspath',
+    'run_report onboarding-domain-runtime :feature:onboarding:domain:dependencies --configuration runtimeClasspath',
+    'run_report receiver-domain-runtime :feature:receiver:domain:dependencies --configuration debugRuntimeClasspath',
+    'run_report setting-domain-runtime :feature:setting:domain:dependencies --configuration runtimeClasspath',
+    'run_report timeletter-domain-runtime :feature:timeletter:domain:dependencies --configuration debugRuntimeClasspath',
+  ];
+
+  assert.match(source, /\.\/gradlew assembleDebug testDebugUnitTest/);
+  reportCommands.forEach((command) => {
+    assert.ok(source.includes(command), `${command} is missing`);
+    const name = command.split(' ')[1];
+    assert.match(source, new RegExp(`--resolved-report "\\$REPORT_DIR/resolved/${name}\\.txt"`));
+  });
+  const testTasks = [
+    ':core:model:test',
+    ':core:domain:test',
+    ':feature:afternote:domain:test',
+    ':feature:mindrecord:domain:testDebugUnitTest',
+    ':feature:onboarding:domain:test',
+    ':feature:receiver:domain:testDebugUnitTest',
+    ':feature:setting:domain:test',
+    ':feature:timeletter:domain:testDebugUnitTest',
+  ];
+  testTasks.forEach((task) => {
+    assert.ok(source.includes(task), `${task} is missing`);
+  });
+});
+
 test('dependency graph generation is immutable, fail closed, and wrapper validated', async () => {
   const prSource = await readFile(
     new URL('../workflows/dependency-submission.yml', import.meta.url),

@@ -2,6 +2,7 @@ package com.afternote.feature.receiver.presentation.deliveryverification
 
 import androidx.paging.PagingData
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.ui.UiText
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.receiver.domain.model.AfterNoteListItem
 import com.afternote.feature.receiver.domain.model.AfterNotesListResult
@@ -14,7 +15,6 @@ import com.afternote.feature.receiver.domain.model.ReceiverIdentity
 import com.afternote.feature.receiver.domain.model.SenderMessageInfo
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverRepository
-import com.afternote.feature.receiver.presentation.error.ErrorPayload
 import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -53,7 +53,7 @@ class MasterKeyViewModelTest {
             viewModel.submit(senderId = "sender-id", authCode = invalidMasterKey)
 
             assertEquals(
-                ErrorPayload.Res(R.string.receiver_verify_master_key_invalid_format),
+                UiText.Resource(R.string.receiver_verify_master_key_invalid_format),
                 viewModel.uiState.value.error,
             )
             assertFalse(viewModel.uiState.value.isSubmitting)
@@ -141,7 +141,10 @@ private class RecordingReceiverAuthRepository : ReceiverAuthRepository {
         authCode: String,
     ): Result<ReceiverEmailAuthResult> = error("호출되면 안 됨")
 
-    override suspend fun getPresignedUrl(extension: String): Result<ReceiverAuthPresignedUrl> = error("호출되면 안 됨")
+    override suspend fun getPresignedUrl(
+        extension: String,
+        contentLength: Long,
+    ): Result<ReceiverAuthPresignedUrl> = error("호출되면 안 됨")
 
     override suspend fun submitDeliveryVerification(
         deathCertificateUrl: String?,
