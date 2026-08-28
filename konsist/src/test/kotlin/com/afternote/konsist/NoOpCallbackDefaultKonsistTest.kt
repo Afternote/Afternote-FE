@@ -87,7 +87,10 @@ class NoOpCallbackDefaultKonsistTest {
             val constructorParams =
                 file
                     .classes()
-                    .flatMap { cls -> cls.primaryConstructor?.parameters.orEmpty().noOpCallbacks(file, cls.name) }
+                    .flatMap { cls ->
+                        val parameters = cls.primaryConstructor?.parameters.orEmpty()
+                        parameters.noOpCallbacks(file, cls.name)
+                    }
             composableFunctionParams + constructorParams
         }
 
