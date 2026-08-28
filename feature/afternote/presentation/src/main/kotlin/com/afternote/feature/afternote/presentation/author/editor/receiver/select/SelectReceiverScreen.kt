@@ -39,7 +39,6 @@ internal fun SelectReceiverScreen(
     modifier: Modifier = Modifier,
 ) {
     ReceiverSelectScreen(
-        title = stringResource(R.string.afternote_select_receiver_title),
         receivers =
             remember(uiState.receivers) {
                 uiState.receivers.map { ReceiverSelectItem(id = it.id, name = it.name, relation = it.label) }
