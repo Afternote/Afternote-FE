@@ -105,6 +105,9 @@ test("workflow generates only on the default branch and validates PR packaging w
     assert.match(workflow, /ref: \$\{\{ github\.event_name == 'pull_request' && github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/);
     assert.match(workflow, /uses: \.\/\.github\/actions\/setup-ci-config/);
     assert.match(workflow, /uses: \.\/\.github\/actions\/setup-ci-release-signing/);
+    assert.match(workflow, /rule_count=.*grep -cve/);
+    assert.match(workflow, /cmp -s \"\$profile\" \"\$startup_profile\"/);
+    assert.doesNotMatch(workflow, /grep -Eiq 'todo\|placeholder'/);
 
     const generation = workflow.slice(
         workflow.indexOf("- name: Enable and verify KVM access"),

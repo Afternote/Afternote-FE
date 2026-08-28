@@ -63,10 +63,17 @@ jobs:
         run: |
           set -euo pipefail
           profile='app/src/main/generated/baselineProfiles/baseline-prof.txt'
+          startup_profile='app/src/main/generated/baselineProfiles/startup-prof.txt'
           test -s "$profile"
+          test -s "$startup_profile"
           grep -Eq '^L[^[:space:]]+;$' "$profile"
-          if grep -Eiq 'todo|placeholder' "$profile"; then
-            echo '::error::Committed Baseline Profile contains a placeholder.'
+          rule_count="$(grep -cve '^[[:space:]]*$' "$profile")"
+          if (( rule_count < 100 )); then
+            echo "::error::Committed Baseline Profile has only ${rule_count} rules."
+            exit 1
+          fi
+          if ! cmp -s "$profile" "$startup_profile"; then
+            echo '::error::Startup Profile must match the collected Baseline Profile.'
             exit 1
           fi
 
