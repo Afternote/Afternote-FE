@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial.playlist
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
@@ -19,7 +18,6 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 
-private const val TAG = "AddSongViewModel"
 private const val SEARCH_DEBOUNCE_MS = 300L
 
 @HiltViewModel
@@ -58,9 +56,7 @@ class AddSongViewModel
                             }
                         }.onFailure { e ->
                             // 예외 원문은 서버 5xx 본문(내부 SQL)·역직렬화 예외(응답 원문 발췌·DTO 클래스명)를
-                            // 그대로 실어 오므로 화면에 싣지 않는다 — ApiException.message 는 Logcat 전용이라고
-                            // core:network 계약이 명시한다. 사용자에겐 원인과 무관하게 고정 안내만 노출.
-                            Log.e(TAG, "onSearchQueryChange: search failed", e)
+                            // 그대로 실어 오므로 화면에 싣지 않는다. 사용자에겐 원인과 무관하게 고정 안내만 노출.
                             errorReporter.recordAfternoteFailure(AfternoteFailureStage.MUSIC_SEARCH, e)
                             _uiState.update {
                                 it.copy(

@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -14,6 +15,7 @@ import com.afternote.feature.afternote.presentation.author.editor.AfternoteEdito
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternotePayloadBuilder
+import com.afternote.feature.afternote.presentation.author.editor.processing.AfternoteProcessingMethodDefaults
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
@@ -82,6 +84,11 @@ internal fun buildOnRegisterClick(
         )
     }
 
+internal fun shouldDeferEditorBaselineCapture(
+    isPrefillLoading: Boolean,
+    isProcessingMethodDefaultsInitializing: Boolean,
+): Boolean = isPrefillLoading || isProcessingMethodDefaultsInitializing
+
 /**
  * 작성자 에디터 화면: type-safe editor flow + 단방향 이벤트.
  *
@@ -116,6 +123,19 @@ internal fun AfternoteEditorNavigation(
             deleteProcessingMethod = editViewModel::deleteProcessingMethod,
             editProcessingMethod = editViewModel::editProcessingMethod,
         )
+
+    val selectedType = uiState.form.selectedType
+    val defaultProcessingMethods =
+        AfternoteProcessingMethodDefaults.defaultsFor(selectedType).map { stringResource(it) }
+    val isProcessingMethodDefaultsInitializing = remember(selectedType) { mutableStateOf(true) }
+
+    LaunchedEffect(selectedType) {
+        editViewModel.initializeProcessingMethodDefaults(
+            type = selectedType,
+            methods = defaultProcessingMethods,
+        )
+        isProcessingMethodDefaultsInitializing.value = false
+    }
 
     LaunchedEffect(Unit) { editViewModel.refreshAuthorReceivers() }
 
@@ -186,7 +206,12 @@ internal fun AfternoteEditorNavigation(
             )
         },
         state = state,
-        isPrefillLoading = uiState.isPrefillLoading,
+        // body skeleton과 별개로, 추천 처리 방법 기본값이 들어오기 전 빈 폼을 이탈 기준선으로 잡지 않는다.
+        shouldDeferBaselineCapture =
+            shouldDeferEditorBaselineCapture(
+                isPrefillLoading = uiState.isPrefillLoading,
+                isProcessingMethodDefaultsInitializing = isProcessingMethodDefaultsInitializing.value,
+            ),
         snackbarMessageKey = errorEvent,
     )
 }
