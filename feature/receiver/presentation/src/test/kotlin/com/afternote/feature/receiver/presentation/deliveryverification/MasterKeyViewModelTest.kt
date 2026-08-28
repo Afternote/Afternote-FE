@@ -141,7 +141,10 @@ private class RecordingReceiverAuthRepository : ReceiverAuthRepository {
         authCode: String,
     ): Result<ReceiverEmailAuthResult> = error("호출되면 안 됨")
 
-    override suspend fun getPresignedUrl(extension: String): Result<ReceiverAuthPresignedUrl> = error("호출되면 안 됨")
+    override suspend fun getPresignedUrl(
+        extension: String,
+        contentLength: Long,
+    ): Result<ReceiverAuthPresignedUrl> = error("호출되면 안 됨")
 
     override suspend fun submitDeliveryVerification(
         deathCertificateUrl: String?,
