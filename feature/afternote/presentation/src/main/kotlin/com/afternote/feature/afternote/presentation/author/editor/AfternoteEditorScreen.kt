@@ -45,7 +45,7 @@ import com.afternote.feature.afternote.presentation.author.editor.state.remember
  * - 처리 방법 리스트 (체크박스)
  * - 남기실 말씀 (동적 텍스트 입력 목록)
  *
- * 추모 곡 목록은 [EditorFormState]의 추모 전용 폼에 동기화된 스냅샷으로 표시한다.
+ * 추억 플레이리스트 곡 목록은 [EditorFormState]의 추억 노트 전용 폼에 동기화된 스냅샷으로 표시한다.
  */
 @Composable
 fun AfternoteEditorScreen(

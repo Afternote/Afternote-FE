@@ -82,7 +82,7 @@ data class AfternoteEditorUiState(
     val isSaving: Boolean = false,
     /**
      * 수정 모드 진입 직후 `getDetail()` 응답 → [pendingPrefill] 신호 도착 전까지 true. UI는 이 구간 동안
-     * prefill 대상 섹션(서비스명·계정·처리 방법·메시지·추모 미디어 등)을 skeleton placeholder 로 표시한다.
+     * prefill 대상 섹션(서비스명·계정·처리 방법·메시지·추억 노트 미디어 등)을 skeleton placeholder 로 표시한다.
      * 신규 작성 모드(`itemId == null`)는 항상 false.
      */
     val isPrefillLoading: Boolean = false,
@@ -90,7 +90,7 @@ data class AfternoteEditorUiState(
     val errorEvent: AfternoteEditorErrorEvent? = null,
     /** 저장 성공 신호 — UI 가 nav 후 `onSaveSuccessConsumed` 로 reset. */
     val pendingSaveSuccessId: Long? = null,
-    /** 추모 영상 썸네일 업로드 완료 신호 — UI 파사드가 form 에 url 적용 후 `onThumbnailUploadedConsumed` 로 reset. */
+    /** 장례식에 남길 영상 썸네일 업로드 완료 신호 — UI 파사드가 form 에 url 적용 후 `onThumbnailUploadedConsumed` 로 reset. */
     val pendingThumbnailUrl: String? = null,
     /** 수정 모드 prefill 데이터 — UI 파사드가 form 에 적용 후 `onPrefillApplied` 로 reset (skeleton 종료 동시). */
     val pendingPrefill: EditorFormPrefill? = null,
