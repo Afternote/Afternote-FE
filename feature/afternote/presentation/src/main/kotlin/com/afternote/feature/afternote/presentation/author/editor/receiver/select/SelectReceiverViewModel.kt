@@ -42,8 +42,8 @@ class SelectReceiverViewModel
         private val userRepository: UserRepository,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
-        private val internalState = MutableStateFlow(SelectReceiverUiState())
-        val uiState: StateFlow<SelectReceiverUiState> = internalState.asStateFlow()
+        private val _uiState = MutableStateFlow(SelectReceiverUiState())
+        val uiState: StateFlow<SelectReceiverUiState> = _uiState.asStateFlow()
 
         init {
             refresh()
@@ -52,10 +52,10 @@ class SelectReceiverViewModel
         /** 수신자 목록을 (재)조회한다. 실패 화면의 "다시 시도" 도 여기로 온다. */
         fun refresh() {
             viewModelScope.launch {
-                internalState.update { it.copy(isLoading = true, loadFailed = false) }
+                _uiState.update { it.copy(isLoading = true, loadFailed = false) }
                 runCatchingCancellable { userRepository.getReceivers() }
                     .onSuccess { receivers ->
-                        internalState.update { state ->
+                        _uiState.update { state ->
                             state.copy(
                                 isLoading = false,
                                 receivers = receivers.toAfternoteEditorReceivers(),
@@ -69,14 +69,14 @@ class SelectReceiverViewModel
                         }
                     }.onFailure { e ->
                         errorReporter.recordAfternoteFailure(AfternoteFailureStage.RECEIVER_SELECT_LOAD, e)
-                        internalState.update { it.copy(isLoading = false, loadFailed = true) }
+                        _uiState.update { it.copy(isLoading = false, loadFailed = true) }
                     }
             }
         }
 
         /** 같은 수신자를 다시 탭하면 해제, 다른 수신자를 탭하면 교체하는 단일 선택. */
         fun toggleReceiverSelection(receiverId: Long) {
-            internalState.update { state ->
+            _uiState.update { state ->
                 state.copy(
                     selectedReceiverId = if (state.selectedReceiverId == receiverId) null else receiverId,
                 )
