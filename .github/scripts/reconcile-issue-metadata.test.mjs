@@ -7,8 +7,13 @@ import {
     ASSIGNEE_BY_MODULE,
     GUARD_COMMENT_MARKER,
     LEGACY_ISSUE_MAX,
+    PRIORITY_COMMENT_MARKER,
+    PRIORITY_FIELD_NAME,
+    PRIORITY_GRACE_MS,
+    PRIORITY_OPTION_GUIDE,
     TYPE_LABELS,
     inspectIssue,
+    priorityFieldState,
     readFormSection,
     reconcileIssue,
 } from "./reconcile-issue-metadata.mjs";
@@ -202,4 +207,100 @@ test("issue form and workflow preserve strict metadata enforcement boundaries", 
     assert.match(workflow, /actions\/checkout@[0-9a-f]{40}/);
     assert.match(workflow, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
     assert.match(workflow, /persist-credentials: false/);
+});
+
+function priorityValue(option = "High") {
+    return {
+        data_type: "single_select",
+        issue_field_name: PRIORITY_FIELD_NAME,
+        single_select_option: { name: option },
+    };
+}
+
+test("priorityFieldState distinguishes unknown, set, missing, and overdue", () => {
+    const now = Date.now();
+    assert.equal(priorityFieldState(issue()).status, "unknown");
+    assert.equal(priorityFieldState(issue({
+        issue_field_values: [priorityValue("Urgent")],
+    })).status, "set");
+    assert.equal(priorityFieldState(issue({
+        issue_field_values: [{ issue_field_name: "Effort", single_select_option: { name: "High" } }],
+        created_at: new Date(now).toISOString(),
+    }), now).status, "missing");
+    assert.equal(priorityFieldState(issue({
+        issue_field_values: [],
+        created_at: new Date(now - PRIORITY_GRACE_MS - 60_000).toISOString(),
+    }), now).status, "missing-overdue");
+    assert.equal(priorityFieldState(issue({ issue_field_values: [] }), now).status, "missing");
+});
+
+test("fresh bug issue missing priority gets exactly one reminder and stays open", async () => {
+    const original = issue({
+        issue_field_values: [],
+        created_at: new Date().toISOString(),
+    });
+    const fake = fakeApi(original);
+
+    const result = await reconcileIssue(fake.api, repository, original);
+    await reconcileIssue(fake.api, repository, fake.currentIssue());
+
+    assert.equal(result.action, "corrected");
+    assert.equal(result.priority, "reminded");
+    assert.equal(fake.currentIssue().state, "open");
+    assert.equal(fake.comments().length, 1);
+    assert.match(fake.comments()[0].body, new RegExp(PRIORITY_COMMENT_MARKER));
+    for (const line of PRIORITY_OPTION_GUIDE) {
+        assert.ok(fake.comments()[0].body.includes(`- ${line}`), line);
+    }
+});
+
+test("bug issue past the grace period is closed as not planned", async () => {
+    const original = issue({
+        issue_field_values: [],
+        created_at: new Date(Date.now() - PRIORITY_GRACE_MS - 60_000).toISOString(),
+    });
+    const fake = fakeApi(original);
+
+    const result = await reconcileIssue(fake.api, repository, original);
+
+    assert.equal(result.action, "closed-priority-missing");
+    assert.equal(result.priority, "closed");
+    assert.equal(fake.currentIssue().state, "closed");
+    assert.equal(fake.currentIssue().state_reason, "not_planned");
+    assert.equal(fake.comments().length, 1);
+});
+
+test("bug issue with priority set and non-bug issues pass without comments", async () => {
+    const withPriority = issue({ issue_field_values: [priorityValue()] });
+    const fakeBug = fakeApi(withPriority);
+    const bugResult = await reconcileIssue(fakeBug.api, repository, withPriority);
+    assert.equal(bugResult.priority, "set");
+    assert.equal(fakeBug.comments().length, 0);
+
+    const nonBug = issue({ body: formBody("refactor", "core") });
+    const fakeRefactor = fakeApi(nonBug);
+    const refactorResult = await reconcileIssue(fakeRefactor.api, repository, nonBug);
+    assert.equal("priority" in refactorResult, false);
+    assert.equal(fakeRefactor.comments().length, 0);
+});
+
+test("event payload without field values falls back to a fresh fetch", async () => {
+    const stored = issue({ issue_field_values: [priorityValue()] });
+    const fake = fakeApi(stored);
+    const eventPayload = structuredClone(stored);
+    delete eventPayload.issue_field_values;
+
+    const result = await reconcileIssue(fake.api, repository, eventPayload);
+
+    assert.equal(result.priority, "set");
+    assert.equal(fake.comments().length, 0);
+});
+
+test("missing field support in every response fails loudly", async () => {
+    const original = issue();
+    const fake = fakeApi(original);
+    await assert.rejects(
+        () => reconcileIssue(fake.api, repository, original),
+        /issue_field_values/,
+    );
 });
