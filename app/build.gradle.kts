@@ -261,6 +261,7 @@ dependencies {
     androidTestImplementation(projects.feature.receiver.domain)
     androidTestImplementation(testFixtures(projects.feature.receiver.domain))
     androidTestImplementation(projects.feature.timeletter.domain)
+    androidTestImplementation(testFixtures(projects.feature.timeletter.domain))
     kspAndroidTest(libs.hilt.compiler)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     androidTestUtil(libs.androidx.test.orchestrator)

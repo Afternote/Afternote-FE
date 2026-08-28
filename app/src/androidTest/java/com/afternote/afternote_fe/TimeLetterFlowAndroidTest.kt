@@ -15,13 +15,10 @@ import com.afternote.afternote_fe.test.appTestUserRepository
 import com.afternote.core.domain.model.UploadedFile
 import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetter
-import com.afternote.feature.timeletter.domain.model.TimeLetterDeliveryMode
-import com.afternote.feature.timeletter.domain.model.TimeLetterList
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
-import com.afternote.feature.timeletter.domain.repository.FileMetadataRepository
-import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
+import com.afternote.feature.timeletter.domain.testing.FakeFileMetadataRepository
+import com.afternote.feature.timeletter.domain.testing.FakeTimeLetterRepository
 import com.afternote.feature.timeletter.domain.usecase.CreateTimeLetterUseCase
 import com.afternote.feature.timeletter.domain.usecase.ResolveTimeLetterBlocksUseCase
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeLetterWriteScreen
@@ -68,8 +65,25 @@ class TimeLetterFlowAndroidTest {
     @Test
     fun scheduledSave_failureThenRetry_keepsExactPayload() {
         val repository = FakeTimeLetterRepository()
-        repository.createResults.addLast(Result.failure(IllegalStateException("offline")))
-        repository.createResults.addLast(Result.success(Unit))
+        val createResults =
+            ArrayDeque(
+                listOf(
+                    Result.failure(IllegalStateException("offline")),
+                    Result.success(Unit),
+                ),
+            )
+        repository.onCreateTimeLetter = { call ->
+            createResults.removeFirst().getOrThrow()
+            TimeLetter(
+                id = 1L,
+                title = call.title,
+                sendAt = call.sendAt,
+                deliveredAt = null,
+                status = call.status,
+                blocks = emptyList(),
+                receiverIds = call.receiverIds,
+            )
+        }
         val viewModel = viewModel(repository)
         composeRule.setContent { AfternoteTheme {} }
         composeRule.runOnIdle {
@@ -139,58 +153,11 @@ class TimeLetterFlowAndroidTest {
             timeLetterRepository = repository,
             userRepository = appTestUserRepository(),
             fileMetadataRepository =
-                object : FileMetadataRepository {
-                    override suspend fun getFileName(uriString: String): String = "fixture"
-
-                    override suspend fun getMimeType(uriString: String): String? = "application/pdf"
-                },
+                FakeFileMetadataRepository(
+                    fileName = "fixture",
+                    mimeType = "application/pdf",
+                ),
             savedStateHandle = SavedStateHandle(mapOf("timeLetterId" to null)),
         )
     }
-}
-
-private data class TimeLetterCreateCall(
-    val title: String?,
-    val blocks: List<NewTimeLetterBlock>,
-    val sendAt: String?,
-    val deliveryMode: TimeLetterDeliveryMode,
-    val status: TimeLetterStatus,
-    val receiverIds: List<Long>,
-)
-
-private class FakeTimeLetterRepository : TimeLetterRepository {
-    val createCalls = mutableListOf<TimeLetterCreateCall>()
-    val createResults = ArrayDeque<Result<Unit>>()
-
-    override suspend fun getTimeLetters(): TimeLetterList = TimeLetterList(emptyList(), 0)
-
-    override suspend fun getTemporaryTimeLetters(): TimeLetterList = TimeLetterList(emptyList(), 0)
-
-    override suspend fun getTimeLetter(timeLetterId: Long): TimeLetter = error("unexpected getTimeLetter")
-
-    override suspend fun createTimeLetter(
-        title: String?,
-        blocks: List<NewTimeLetterBlock>,
-        sendAt: String?,
-        deliveryMode: TimeLetterDeliveryMode,
-        status: TimeLetterStatus,
-        receiverIds: List<Long>,
-    ): TimeLetter {
-        createCalls += TimeLetterCreateCall(title, blocks, sendAt, deliveryMode, status, receiverIds)
-        createResults.removeFirstOrNull()?.getOrThrow()
-        return TimeLetter(1L, title, sendAt, null, status, emptyList(), receiverIds)
-    }
-
-    override suspend fun updateTimeLetter(
-        timeLetterId: Long,
-        title: String?,
-        blocks: List<NewTimeLetterBlock>,
-        sendAt: String?,
-        deliveryMode: TimeLetterDeliveryMode?,
-        status: TimeLetterStatus?,
-    ): TimeLetter = error("unexpected updateTimeLetter")
-
-    override suspend fun deleteTimeLetters(timeLetterIds: List<Long>) = error("unexpected deleteTimeLetters")
-
-    override suspend fun deleteAllTemporary() = Unit
 }
