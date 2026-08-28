@@ -1,22 +1,19 @@
-package com.afternote.afternote_fe
+package com.afternote.feature.timeletter.presentation
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.core.domain.testing.FakeUserRepository
@@ -31,9 +28,9 @@ import com.afternote.feature.timeletter.domain.model.TimeLetterBlockType
 import com.afternote.feature.timeletter.domain.model.TimeLetterDeliveryMode
 import com.afternote.feature.timeletter.domain.model.TimeLetterList
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
-import com.afternote.feature.timeletter.domain.repository.FileMetadataRepository
-import com.afternote.feature.timeletter.domain.repository.ReceiverTimeLetterRepository
-import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
+import com.afternote.feature.timeletter.domain.testing.FakeFileMetadataRepository
+import com.afternote.feature.timeletter.domain.testing.FakeReceiverTimeLetterRepository
+import com.afternote.feature.timeletter.domain.testing.FakeTimeLetterRepository
 import com.afternote.feature.timeletter.domain.usecase.CreateTimeLetterUseCase
 import com.afternote.feature.timeletter.domain.usecase.ResolveTimeLetterBlocksUseCase
 import com.afternote.feature.timeletter.presentation.screen.recipient.RecipientTimeLetterDetailScreen
@@ -58,25 +55,42 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
-@RunWith(AndroidJUnit4::class)
-class TimeLetterLifecycleAndroidTest {
-    @get:Rule(order = 0)
+@RunWith(RobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(sdk = [35])
+class TimeLetterLifecycleTest {
+    @get:Rule
     val composeRule = createComposeRule()
-
-    @get:Rule(order = 1)
-    val failureArtifactRule =
-        FailureArtifactRule {
-            composeRule.onRoot().captureToImage().asAndroidBitmap()
-        }
 
     @Test
     fun senderList_loadingErrorSuccessFilterAndDeleteRetry_keepRepositoryBoundary() {
-        val repository = PrivateTimeLetterRepository()
-        repository.deleteResults.addLast(Result.failure(IllegalStateException("delete failed")))
-        repository.deleteResults.addLast(Result.success(Unit))
+        val repository = FakeTimeLetterRepository()
+        val deleteResults =
+            ArrayDeque(
+                listOf(
+                    Result.failure(IllegalStateException("delete failed")),
+                    Result.success(Unit),
+                ),
+            )
         val firstLoad = CompletableDeferred<Result<TimeLetterList>>()
-        repository.nextListLoad = firstLoad
+        var nextListLoad: CompletableDeferred<Result<TimeLetterList>>? = firstLoad
+        repository.onGetTimeLetters = {
+            val loaded =
+                nextListLoad?.also { nextListLoad = null }?.await()?.getOrThrow()
+                    ?: repository.registeredLetters
+            repository.registeredLetters = loaded
+            loaded
+        }
+        repository.onDeleteTimeLetters = { ids ->
+            deleteResults.removeFirst().getOrThrow()
+            ids.forEach(repository.details::remove)
+            repository.registeredLetters = repository.registeredLetters.without(ids)
+            repository.temporaryLetters = repository.temporaryLetters.without(ids)
+        }
         val userRepository = privateUserRepository(testReceivers)
         val viewModel = TimeletterViewModel(repository, userRepository)
 
@@ -86,7 +100,7 @@ class TimeLetterLifecycleAndroidTest {
             }
         }
 
-        composeRule.waitUntil(timeoutMillis = TIMEOUT) { repository.listCalls == 1 }
+        composeRule.waitUntil(timeoutMillis = TIMEOUT) { repository.getTimeLettersCalls == 1 }
         assertEquals(TimeletterUiState.Loading, viewModel.uiState.value)
 
         firstLoad.complete(Result.failure(IllegalStateException("offline")))
@@ -106,7 +120,7 @@ class TimeLetterLifecycleAndroidTest {
             )
         val retryLoad = CompletableDeferred<Result<TimeLetterList>>()
         composeRule.runOnIdle {
-            repository.nextListLoad = retryLoad
+            nextListLoad = retryLoad
             viewModel.load()
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT) { viewModel.uiState.value == TimeletterUiState.Loading }
@@ -119,7 +133,7 @@ class TimeLetterLifecycleAndroidTest {
         composeRule.onNodeWithText("김수신").assertIsDisplayed()
         composeRule.onNodeWithText("김수신에게").assertIsDisplayed()
         composeRule.onNodeWithText("박친구에게").assertDoesNotExist()
-        assertEquals(2, repository.listCalls)
+        assertEquals(2, repository.getTimeLettersCalls)
         assertEquals(2, userRepository.getReceiversCalls)
         val success = viewModel.uiState.value as TimeletterUiState.Success
         assertEquals(setOf(7L), success.selectedFilterReceiverIds)
@@ -138,7 +152,7 @@ class TimeLetterLifecycleAndroidTest {
             .assertIsDisplayed()
         composeRule.onNodeWithText("김수신에게").assertDoesNotExist()
         assertEquals(listOf(listOf(11L), listOf(11L)), repository.deleteCalls)
-        assertEquals(3, repository.listCalls)
+        assertEquals(3, repository.getTimeLettersCalls)
         assertEquals(3, userRepository.getReceiversCalls)
     }
 
@@ -147,8 +161,8 @@ class TimeLetterLifecycleAndroidTest {
         val firstDraft = timeLetter(id = 31L, title = "첫 임시 편지", status = TimeLetterStatus.DRAFT)
         val secondDraft = timeLetter(id = 32L, title = "둘째 임시 편지", status = TimeLetterStatus.DRAFT)
         val repository =
-            PrivateTimeLetterRepository(
-                draftLetters = TimeLetterList(listOf(firstDraft, secondDraft), totalCount = 2),
+            FakeTimeLetterRepository(
+                temporaryLetters = TimeLetterList(listOf(firstDraft, secondDraft), totalCount = 2),
             )
         var activeViewModel by mutableStateOf(DraftLetterViewModel(repository))
 
@@ -168,7 +182,7 @@ class TimeLetterLifecycleAndroidTest {
         composeRule.onNodeWithText("둘째 임시 편지").assertIsDisplayed()
 
         composeRule.runOnIdle { activeViewModel = DraftLetterViewModel(repository) }
-        composeRule.waitUntil(timeoutMillis = TIMEOUT) { repository.temporaryListCalls == 2 }
+        composeRule.waitUntil(timeoutMillis = TIMEOUT) { repository.getTemporaryTimeLettersCalls == 2 }
         composeRule.onNodeWithText("첫 임시 편지").assertDoesNotExist()
         composeRule.onNodeWithText("둘째 임시 편지").assertIsDisplayed()
 
@@ -179,7 +193,7 @@ class TimeLetterLifecycleAndroidTest {
         }
         composeRule.onNodeWithText("둘째 임시 편지").assertDoesNotExist()
         assertEquals(1, repository.deleteAllTemporaryCalls)
-        assertTrue(repository.draftLetters.timeLetters.isEmpty())
+        assertTrue(repository.temporaryLetters.timeLetters.isEmpty())
     }
 
     @Test
@@ -202,7 +216,7 @@ class TimeLetterLifecycleAndroidTest {
                         ),
                     ),
             )
-        val repository = PrivateTimeLetterRepository(editingLetter = existingLetter)
+        val repository = FakeTimeLetterRepository(details = mapOf(existingLetter.id to existingLetter))
         val viewModel = writeViewModel(repository, privateUserRepository(testReceivers), timeLetterId = 41L)
 
         composeRule.setContent {
@@ -248,20 +262,34 @@ class TimeLetterLifecycleAndroidTest {
             ),
             call.blocks,
         )
-        assertEquals(1, repository.detailCalls)
-        assertEquals(0, repository.listCalls)
-        assertEquals(0, repository.createCalls)
+        assertEquals(listOf(41L), repository.requestedDetailIds)
+        assertEquals(0, repository.getTimeLettersCalls)
+        assertEquals(0, repository.createCalls.size)
         assertEquals(listOf(7L), viewModel.uiState.value.recipientIds)
     }
 
     @Test
     fun recipientListAndDetail_errorRetry_recoversBothRepositoryBoundaries() {
         val receivedLetter = receivedTimeLetter()
-        val repository = PrivateReceiverTimeLetterRepository()
-        repository.listResults.addLast(Result.failure(IllegalStateException("list offline")))
-        repository.listResults.addLast(Result.success(ReceivedTimeLetterList(listOf(receivedLetter), 1)))
-        repository.detailResults.addLast(Result.failure(IllegalStateException("detail offline")))
-        repository.detailResults.addLast(Result.success(receivedLetter))
+        val listResults =
+            ArrayDeque(
+                listOf(
+                    Result.failure(IllegalStateException("list offline")),
+                    Result.success(ReceivedTimeLetterList(listOf(receivedLetter), 1)),
+                ),
+            )
+        val detailResults =
+            ArrayDeque(
+                listOf(
+                    Result.failure(IllegalStateException("detail offline")),
+                    Result.success(receivedLetter),
+                ),
+            )
+        val repository =
+            FakeReceiverTimeLetterRepository.strict().apply {
+                onGetReceivedTimeLetters = { listResults.removeFirst().getOrThrow() }
+                onGetReceivedTimeLetterDetail = { detailResults.removeFirst().getOrThrow() }
+            }
         val listViewModel = RecipientTimeletterViewModel(repository)
         var detailViewModel by mutableStateOf<RecipientTimeLetterDetailViewModel?>(null)
         var showDetail by mutableStateOf(false)
@@ -284,8 +312,12 @@ class TimeLetterLifecycleAndroidTest {
         }
         composeRule.onNodeWithText("타임레터를 불러올 수 없습니다.").assertIsDisplayed()
         composeRule.onNodeWithText("다시 시도").performClick()
+        composeRule.waitUntil(timeoutMillis = TIMEOUT) {
+            listViewModel.uiState.value is RecipientTimeletterUiState.Success
+        }
+        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("받은 편지"))
         composeRule.onNodeWithText("받은 편지").assertIsDisplayed()
-        assertEquals(2, repository.listCalls)
+        assertEquals(2, repository.getReceivedTimeLettersCalls)
 
         composeRule.runOnIdle {
             detailViewModel =
@@ -300,9 +332,12 @@ class TimeLetterLifecycleAndroidTest {
         }
         composeRule.onNodeWithText("타임레터를 불러올 수 없습니다.").assertIsDisplayed()
         composeRule.onNodeWithText("다시 시도").performClick()
+        composeRule.waitUntil(timeoutMillis = TIMEOUT) {
+            detailViewModel?.uiState?.value is RecipientTimeLetterDetailUiState.Success
+        }
         composeRule.onNodeWithText("받은 편지").assertIsDisplayed()
         composeRule.onNodeWithText("복구된 상세 본문").assertIsDisplayed()
-        assertEquals(listOf(71L, 71L), repository.detailIds)
+        assertEquals(listOf(71L, 71L), repository.requestedDetailIds)
     }
 
     private fun deleteVisibleLetter() {
@@ -312,7 +347,7 @@ class TimeLetterLifecycleAndroidTest {
     }
 
     private fun writeViewModel(
-        repository: PrivateTimeLetterRepository,
+        repository: FakeTimeLetterRepository,
         userRepository: UserRepository,
         timeLetterId: Long,
     ): TimeLetterWriteViewModel {
@@ -322,7 +357,7 @@ class TimeLetterLifecycleAndroidTest {
             resolveTimeLetterBlocksUseCase = resolver,
             timeLetterRepository = repository,
             userRepository = userRepository,
-            fileMetadataRepository = PrivateFileMetadataRepository,
+            fileMetadataRepository = FakeFileMetadataRepository.strict(),
             savedStateHandle = SavedStateHandle(mapOf("timeLetterId" to timeLetterId)),
         )
     }
@@ -336,134 +371,6 @@ class TimeLetterLifecycleAndroidTest {
                 Receiver(receiverId = 8L, name = "박친구", relation = "친구", authCode = "auth-8"),
             )
     }
-}
-
-private data class PrivateTimeLetterUpdateCall(
-    val timeLetterId: Long,
-    val title: String?,
-    val blocks: List<NewTimeLetterBlock>,
-    val sendAt: String?,
-    val deliveryMode: TimeLetterDeliveryMode?,
-    val status: TimeLetterStatus?,
-)
-
-private class PrivateTimeLetterRepository(
-    registeredLetters: TimeLetterList = TimeLetterList(emptyList(), 0),
-    draftLetters: TimeLetterList = TimeLetterList(emptyList(), 0),
-    private val editingLetter: TimeLetter? = null,
-) : TimeLetterRepository {
-    var registeredLetters = registeredLetters
-        private set
-    var draftLetters = draftLetters
-        private set
-    var nextListLoad: CompletableDeferred<Result<TimeLetterList>>? = null
-    val deleteResults = ArrayDeque<Result<Unit>>()
-    val deleteCalls = mutableListOf<List<Long>>()
-    val updateCalls = mutableListOf<PrivateTimeLetterUpdateCall>()
-    var listCalls = 0
-        private set
-    var temporaryListCalls = 0
-        private set
-    var detailCalls = 0
-        private set
-    var createCalls = 0
-        private set
-    var deleteAllTemporaryCalls = 0
-        private set
-
-    override suspend fun getTimeLetters(): TimeLetterList {
-        listCalls += 1
-        val pending = nextListLoad
-        nextListLoad = null
-        val loaded = pending?.await()?.getOrThrow() ?: registeredLetters
-        registeredLetters = loaded
-        return loaded
-    }
-
-    override suspend fun getTemporaryTimeLetters(): TimeLetterList {
-        temporaryListCalls += 1
-        return draftLetters
-    }
-
-    override suspend fun getTimeLetter(timeLetterId: Long): TimeLetter {
-        detailCalls += 1
-        return requireNotNull(editingLetter).also { assertEquals(timeLetterId, it.id) }
-    }
-
-    override suspend fun createTimeLetter(
-        title: String?,
-        blocks: List<NewTimeLetterBlock>,
-        sendAt: String?,
-        deliveryMode: TimeLetterDeliveryMode,
-        status: TimeLetterStatus,
-        receiverIds: List<Long>,
-    ): TimeLetter {
-        createCalls += 1
-        return timeLetter(
-            id = 999L,
-            title = title,
-            receiverIds = receiverIds,
-            sendAt = sendAt,
-            status = status,
-        )
-    }
-
-    override suspend fun updateTimeLetter(
-        timeLetterId: Long,
-        title: String?,
-        blocks: List<NewTimeLetterBlock>,
-        sendAt: String?,
-        deliveryMode: TimeLetterDeliveryMode?,
-        status: TimeLetterStatus?,
-    ): TimeLetter {
-        updateCalls +=
-            PrivateTimeLetterUpdateCall(
-                timeLetterId = timeLetterId,
-                title = title,
-                blocks = blocks,
-                sendAt = sendAt,
-                deliveryMode = deliveryMode,
-                status = status,
-            )
-        return requireNotNull(editingLetter).copy(title = title, sendAt = sendAt)
-    }
-
-    override suspend fun deleteTimeLetters(timeLetterIds: List<Long>) {
-        deleteCalls += timeLetterIds
-        val result = deleteResults.removeFirstOrNull() ?: Result.success(Unit)
-        result.getOrThrow()
-        registeredLetters = registeredLetters.without(timeLetterIds)
-        draftLetters = draftLetters.without(timeLetterIds)
-    }
-
-    override suspend fun deleteAllTemporary() {
-        deleteAllTemporaryCalls += 1
-        draftLetters = TimeLetterList(emptyList(), 0)
-    }
-}
-
-private class PrivateReceiverTimeLetterRepository : ReceiverTimeLetterRepository {
-    val listResults = ArrayDeque<Result<ReceivedTimeLetterList>>()
-    val detailResults = ArrayDeque<Result<ReceivedTimeLetter>>()
-    val detailIds = mutableListOf<Long>()
-    var listCalls = 0
-        private set
-
-    override suspend fun getReceivedTimeLetters(): ReceivedTimeLetterList {
-        listCalls += 1
-        return requireNotNull(listResults.removeFirstOrNull()).getOrThrow()
-    }
-
-    override suspend fun getReceivedTimeLetterDetail(timeLetterReceiverId: Long): ReceivedTimeLetter {
-        detailIds += timeLetterReceiverId
-        return requireNotNull(detailResults.removeFirstOrNull()).getOrThrow()
-    }
-}
-
-private object PrivateFileMetadataRepository : FileMetadataRepository {
-    override suspend fun getFileName(uriString: String): String = error("File metadata is not expected")
-
-    override suspend fun getMimeType(uriString: String): String? = error("File metadata is not expected")
 }
 
 private fun privateUserRepository(receivers: List<Receiver>): FakeUserRepository =

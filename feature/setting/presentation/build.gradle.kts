@@ -9,6 +9,7 @@ val googleWebClientId = socialLoginKey("GOOGLE_WEB_CLIENT_ID")
 
 android {
     namespace = "com.afternote.feature.setting.presentation"
+    testOptions.unitTests.isIncludeAndroidResources = true
 
     buildFeatures {
         buildConfig = true
@@ -38,4 +39,10 @@ dependencies {
 
     testImplementation(libs.coroutines.test)
     testImplementation(testFixtures(projects.core.domain))
+    testImplementation(projects.core.network)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.androidx.test.core.ktx)
+    testImplementation(libs.robolectric)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
