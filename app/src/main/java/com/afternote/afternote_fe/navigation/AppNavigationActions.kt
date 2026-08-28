@@ -232,6 +232,11 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 }
             }
 
+            override fun onNavigateToReceivedRecords() {
+                // 회원 세션은 유지한 채 수신자 그래프를 쌓는다. 받은 기록함의 back은 설정으로 복귀한다.
+                appState.navController.navigate(Route.Receiver)
+            }
+
             override fun onNavigateToWithdrawGuide() {
                 appState.navController.navigate(SettingRoute.WithdrawGuideRoute)
             }
