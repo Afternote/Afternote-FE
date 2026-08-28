@@ -15,6 +15,7 @@ import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRout
 import com.afternote.feature.receiver.presentation.recordsbox.SenderEntry
 import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -47,8 +48,25 @@ class SenderDetailViewModel
         private val _uiState = MutableStateFlow<SenderDetailUiState>(SenderDetailUiState.Loading)
         val uiState: StateFlow<SenderDetailUiState> = _uiState.asStateFlow()
 
+        /** 진행 중인 상태 조회. 최초 진입 ON_RESUME 과 init 로드의 중복을 이 Job 으로 가른다. */
+        private var loadJob: Job? = null
+
         init {
             load()
+        }
+
+        /**
+         * 열람 신청 흐름 등 다른 화면에서 복귀했을 때의 자동 갱신 (#701) — 신청 직후 돌아온 화면이
+         * 옛 상태(예: "신청 전")를 그대로 보여주지 않게 한다.
+         *
+         * 최초 진입 로드와 두 가지가 다르다 — 로딩을 방출하지 않고, 상태 조회가 실패해도 보고 있던
+         * 정보 박스를 유지한다. 진입 직후의 ON_RESUME 은 init 로드와 겹친다 — 진행 중이면 건너뛴다.
+         * 컴포지션 쪽 플래그가 아니라 VM 이 들고 있는 Job 으로 판단해야 프로세스 사망 후 복원에서도
+         * 중복이 나지 않는다.
+         */
+        fun refreshOnReturn() {
+            if (loadJob?.isActive == true) return
+            load(showsLoading = false, keepsStateOnFailure = true)
         }
 
         /**
@@ -83,16 +101,43 @@ class SenderDetailViewModel
             }
         }
 
-        private fun load() {
+        private fun load(
+            showsLoading: Boolean = true,
+            keepsStateOnFailure: Boolean = false,
+        ) {
+            loadJob?.cancel()
             val sender = senderRegistry.findById(senderId)
             if (sender == null) {
                 _uiState.value = SenderDetailUiState.SenderNotFound
                 return
             }
-            _uiState.value = SenderDetailUiState.Loading
-            viewModelScope.launch {
-                _uiState.value = resolveState(sender)
+            if (showsLoading) {
+                _uiState.value = SenderDetailUiState.Loading
             }
+            loadJob =
+                viewModelScope.launch {
+                    val resolved = resolveState(sender)
+                    _uiState.update { current ->
+                        when {
+                            // 자동 갱신의 조회 실패: 잘 보고 있던 정보 박스를 에러로 대체하지 않는다.
+                            keepsStateOnFailure &&
+                                resolved is SenderDetailUiState.StatusLoadFailed &&
+                                current is SenderDetailUiState.Success -> {
+                                current
+                            }
+
+                            // 갱신이 화면을 교체해도 미소비 네비게이션 신호는 잃지 않는다 — "기록 열람하기"
+                            // 클릭과 갱신 완료가 겹치면 새 Success 의 기본값 false 가 이동을 삼킨다.
+                            resolved is SenderDetailUiState.Success && current is SenderDetailUiState.Success -> {
+                                resolved.copy(shouldOpenReceiverHome = current.shouldOpenReceiverHome)
+                            }
+
+                            else -> {
+                                resolved
+                            }
+                        }
+                    }
+                }
         }
 
         private suspend fun resolveState(sender: SenderEntry): SenderDetailUiState {

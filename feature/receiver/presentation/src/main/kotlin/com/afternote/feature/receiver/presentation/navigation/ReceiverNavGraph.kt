@@ -5,6 +5,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
@@ -138,6 +140,13 @@ fun NavGraphBuilder.receiverNavGraph(
         receiverComposable<ReceiverRoute.MemorialPlaylistRoute> {
             val playlistViewModel: ReceiverMemorialPlaylistViewModel = hiltViewModel()
             val playlistUiState by playlistViewModel.uiState.collectAsStateWithLifecycle()
+
+            // 화면을 떠났다 돌아오면 다시 조회한다 — 백스택에 살아 있는 동안 옛 값이 남지 않게
+            // 한다 (#701). 로딩을 방출하지 않는 refreshOnReturn() 을 쓰고, 최초 진입의 중복
+            // 호출은 VM 이 진행 중인 Job 으로 막는다.
+            LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+                playlistViewModel.refreshOnReturn()
+            }
             when (val state = playlistUiState) {
                 ReceiverMemorialPlaylistUiState.Loading -> {
                     LoadingBody()
