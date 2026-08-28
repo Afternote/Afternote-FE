@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
@@ -51,6 +52,8 @@ fun AfternoteListContent(
                     text = stringResource(R.string.afternote_home_filtered_empty),
                     style = AfternoteDesign.typography.bodySmallR,
                     color = AfternoteDesign.colors.gray6,
+                    // 확정 문구(#567)가 두 줄이라 가운데 정렬 Box 안에서 줄맞춤을 위해 명시한다.
+                    textAlign = TextAlign.Center,
                 )
             }
         } else {
