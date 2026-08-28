@@ -77,9 +77,19 @@ jobs:
           cache-read-only: true
           validate-wrappers: true
 
-      - name: Run validateScreenshotTest in container
+      # develop 에 의도적으로 남긴 red 게이트 모듈(.github/ci-expected-failures.json)의 lane 을
+      # 분리한다 — 게이트 실패가 무관 PR 의 required check 를 빨갛게 만들지 않게 하고,
+      # 아래 probe 단계가 XPASS(게이트 lane 이 통과하기 시작)를 감시한다.
+      - name: Partition screenshot tasks against expected failures
+        id: expected-failures
         env:
           GRADLE_TASKS: ${{ inputs.gradle_tasks }}
+        run: node .github/scripts/ci-expected-failures.mjs partition-screenshot "$GRADLE_TASKS" >> "$GITHUB_OUTPUT"
+
+      - name: Run validateScreenshotTest in container
+        if: steps.expected-failures.outputs.normal_tasks != ''
+        env:
+          GRADLE_TASKS: ${{ steps.expected-failures.outputs.normal_tasks }}
         run: |
           read -r -a tasks <<< "$GRADLE_TASKS"
           docker run --rm \
@@ -91,6 +101,28 @@ jobs:
             afternote-screenshot:latest \
             ./gradlew "${tasks[@]}" \
               --parallel --build-cache
+
+      # 기대 실패 lane 은 모듈별로 따로 돌린다 — 실패는 게이트 유지(notice), 통과는 목록
+      # 제거 요구(error). 한 lane 의 실패가 다른 lane 의 XPASS 판정을 가리지 않게 분리 실행한다.
+      - name: Probe expected-failure screenshot lanes (XPASS check)
+        if: steps.expected-failures.outputs.expected_tasks != ''
+        env:
+          EXPECTED_TASKS: ${{ steps.expected-failures.outputs.expected_tasks }}
+        run: |
+          xpassed=""
+          for task in $EXPECTED_TASKS; do
+            if docker run --rm \
+              -v "$PWD":/workspace \
+              -v "$HOME/.gradle":/root/.gradle \
+              -w /workspace \
+              -e KAKAO_NATIVE_APP_KEY \
+              -e GOOGLE_WEB_CLIENT_ID \
+              afternote-screenshot:latest \
+              ./gradlew "$task" --build-cache; then
+              xpassed="$xpassed $task"
+            fi
+          done
+          node .github/scripts/ci-expected-failures.mjs report-screenshot "$EXPECTED_TASKS" "$xpassed"
 
       # 컨테이너가 root 로 gradle 을 실행해 workspace · ~/.gradle 산출물이 root 소유가 된다.
       # job 종료 시 'Post Restore Gradle cache'(캐시 저장)의 hashFiles/tar 가 runner 권한이라
