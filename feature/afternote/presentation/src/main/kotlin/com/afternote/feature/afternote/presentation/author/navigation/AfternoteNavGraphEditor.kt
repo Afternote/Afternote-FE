@@ -6,7 +6,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
@@ -125,15 +124,12 @@ internal fun AfternoteEditorNavigation(
             editProcessingMethod = editViewModel::editProcessingMethod,
         )
 
-    val context = LocalContext.current
     val selectedType = uiState.form.selectedType
     val defaultProcessingMethods =
-        remember(context, selectedType) {
-            AfternoteProcessingMethodDefaults.defaultsFor(selectedType).map(context::getString)
-        }
+        AfternoteProcessingMethodDefaults.defaultsFor(selectedType).map { stringResource(it) }
     val isProcessingMethodDefaultsInitializing = remember(selectedType) { mutableStateOf(true) }
 
-    LaunchedEffect(selectedType, defaultProcessingMethods) {
+    LaunchedEffect(selectedType) {
         editViewModel.initializeProcessingMethodDefaults(
             type = selectedType,
             methods = defaultProcessingMethods,
