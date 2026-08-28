@@ -15,9 +15,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -53,17 +50,10 @@ fun WeeklyReportScreen(
     // 갱신을 이 화면이 직접 건다. HomeScreen 이 VM 을 호이스팅해 대신 걸어 주면, 탭에
     // 들어가지 않아도 VM 이 만들어져 `init` 조회가 미리 나간다 (#736).
     //
-    // **첫 ON_RESUME 은 건너뛴다.** 그 시점의 조회는 `init` 이 이미 걸었다. Job 가드가
-    // 대개 막아 주지만 그건 조회가 아직 진행 중일 때뿐이라, 즉시 끝나는 응답(캐시·즉시
-    // 실패)에서는 같은 진입에 요청이 두 번 나간다 — 줄이려던 것을 늘리는 셈이다.
-    // 앱 셸의 홈 탭도 같은 방식으로 첫 resume 을 건너뛴다.
-    var isFirstResume by rememberSaveable { mutableStateOf(true) }
+    // 첫 ON_RESUME 을 건너뛰는 판단은 ViewModel 이 한다 — 화면 저장 상태에 두면 프로세스
+    // 사망 뒤 «지나갔음» 만 복원돼 새 ViewModel 의 init 과 겹친다 (#736 리뷰).
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        if (isFirstResume) {
-            isFirstResume = false
-        } else {
-            viewModel.refreshOnReturn()
-        }
+        viewModel.refreshOnReturn()
     }
 
     when (val state = uiState) {
