@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -25,6 +24,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -47,10 +47,8 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.presentation.component.ReceiverSelectBottomSheet
 import com.afternote.feature.mindrecord.presentation.component.WriteTextField
-import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryWriteUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.SubmitState
-import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 
@@ -75,51 +73,6 @@ fun DiaryWriteScreen(
         }
     }
 
-    DiaryWriteScreenContent(
-        uiState = uiState,
-        modifier = modifier,
-        onSubmitClick = { viewModel.submit() },
-        onBackClick = onBackClick,
-        onReceiverClick = { showReceiverSheet = true },
-        onTitleChanged = viewModel::onTitleChanged,
-        onMoodSelected = viewModel::onMoodSelected,
-        onContentChanged = viewModel::onContentChanged,
-        onSaveDraftClick = { viewModel.submit(isDraft = true) },
-        onDraftListClick = onDraftListClick,
-        onMediaPicked = viewModel::uploadMedia,
-        receiverSheetContent = {
-            if (showReceiverSheet) {
-                ReceiverSelectBottomSheet(
-                    receivers = uiState.receivers,
-                    selectedReceiverIds = uiState.selectedReceiverIds,
-                    // 실패를 빈 목록으로 흡수하지 않는다 — 사용자가 «등록 안 함» 으로 오해한다 (#1019).
-                    loadError = uiState.receiverLoadError?.asString(),
-                    isLoading = uiState.isReceiverLoading,
-                    onRetry = viewModel::loadReceivers,
-                    onToggle = viewModel::onReceiverToggled,
-                    onDismiss = { showReceiverSheet = false },
-                )
-            }
-        },
-    )
-}
-
-/** ViewModel 없이 같은 작성 상태를 Preview·screenshotTest 에 고정하는 본문 경계 (#1131). */
-@Composable
-internal fun DiaryWriteScreenContent(
-    uiState: DiaryWriteUiState,
-    modifier: Modifier = Modifier,
-    onSubmitClick: () -> Unit = {},
-    onBackClick: () -> Unit = {},
-    onReceiverClick: () -> Unit = {},
-    onTitleChanged: (String) -> Unit = {},
-    onMoodSelected: (TodayMood) -> Unit = {},
-    onContentChanged: (String) -> Unit = {},
-    onSaveDraftClick: () -> Unit = {},
-    onDraftListClick: () -> Unit = {},
-    onMediaPicked: (suspend (uriString: String) -> String?)? = null,
-    receiverSheetContent: @Composable () -> Unit = {},
-) {
     Scaffold(
         topBar = {
             DetailTopBar(
@@ -127,7 +80,7 @@ internal fun DiaryWriteScreenContent(
                 onBackClick = onBackClick,
                 actions = {
                     Button(
-                        onClick = onSubmitClick,
+                        onClick = { viewModel.submit() },
                         enabled = uiState.canSubmit,
                         shape = RoundedCornerShape(6.dp),
                         colors =
@@ -160,7 +113,7 @@ internal fun DiaryWriteScreenContent(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .clickable(onClick = onReceiverClick)
+                        .clickable { showReceiverSheet = true }
                         .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -236,7 +189,7 @@ internal fun DiaryWriteScreenContent(
 
             TextField(
                 value = uiState.title,
-                onValueChange = onTitleChanged,
+                onValueChange = viewModel::onTitleChanged,
                 colors =
                     TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
@@ -277,15 +230,15 @@ internal fun DiaryWriteScreenContent(
                 Spacer(modifier = Modifier.width(12.dp))
 
                 MoodChip("😊", selected = uiState.mood == TodayMood.HAPPY) {
-                    onMoodSelected(TodayMood.HAPPY)
+                    viewModel.onMoodSelected(TodayMood.HAPPY)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 MoodChip("😐", selected = uiState.mood == TodayMood.SOSO) {
-                    onMoodSelected(TodayMood.SOSO)
+                    viewModel.onMoodSelected(TodayMood.SOSO)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 MoodChip("😢", selected = uiState.mood == TodayMood.SAD) {
-                    onMoodSelected(TodayMood.SAD)
+                    viewModel.onMoodSelected(TodayMood.SAD)
                 }
             }
 
@@ -341,16 +294,27 @@ internal fun DiaryWriteScreenContent(
             // key() 로 컴포넌트를 재생성하지 않는다 (#1018).
             WriteTextField(
                 value = uiState.content,
-                onValueChange = onContentChanged,
-                onSaveDraftClick = onSaveDraftClick,
+                onValueChange = viewModel::onContentChanged,
+                onSaveDraftClick = { viewModel.submit(isDraft = true) },
                 onDraftCountClick = onDraftListClick,
                 draftCount = uiState.draftCount,
-                onImagePicked = onMediaPicked,
-                onMediaPicked = onMediaPicked,
+                onImagePicked = viewModel::uploadMedia,
+                onMediaPicked = viewModel::uploadMedia,
             )
         }
 
-        receiverSheetContent()
+        if (showReceiverSheet) {
+            ReceiverSelectBottomSheet(
+                receivers = uiState.receivers,
+                selectedReceiverIds = uiState.selectedReceiverIds,
+                // 실패를 빈 목록으로 흡수하지 않는다 — 사용자가 «등록 안 함» 으로 오해한다 (#1019).
+                loadError = uiState.receiverLoadError?.asString(),
+                isLoading = uiState.isReceiverLoading,
+                onRetry = viewModel::loadReceivers,
+                onToggle = viewModel::onReceiverToggled,
+                onDismiss = { showReceiverSheet = false },
+            )
+        }
     }
 }
 
@@ -389,16 +353,6 @@ private fun TodayMood.emoji(): String =
 @Composable
 private fun DiaryWriteScreenPreview() {
     AfternoteTheme {
-        DiaryWriteScreenContent(
-            uiState =
-                DiaryWriteUiState(
-                    title = "비 오는 날의 기록",
-                    content = "<p>창문을 두드리는 빗소리를 오래 들었다.</p>",
-                    mood = TodayMood.HAPPY,
-                    date = LocalDate.of(2026, 8, 28),
-                    draftCount = 2,
-                ),
-            modifier = Modifier.fillMaxSize(),
-        )
+        // ViewModel 의존이 있어 Preview는 비워둠
     }
 }
