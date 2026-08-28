@@ -387,7 +387,6 @@ class AfternoteEditorViewModel
                 AfternoteEditorValidator.validate(
                     form = form,
                     payload = payload,
-                    selectedReceiverIds = selectedReceiverIds,
                 )
             if (validationError != null) {
                 internalState.update {

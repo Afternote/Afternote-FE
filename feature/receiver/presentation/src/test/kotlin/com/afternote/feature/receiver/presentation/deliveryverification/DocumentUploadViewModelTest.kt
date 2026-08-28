@@ -2,11 +2,11 @@ package com.afternote.feature.receiver.presentation.deliveryverification
 
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.ui.UiText
-import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
 import com.afternote.feature.receiver.domain.testing.FakeReceiverAuthRepository
 import com.afternote.feature.receiver.domain.testing.FakeReceiverDeliveryDocumentUploadRepository
+import com.afternote.feature.receiver.presentation.R
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

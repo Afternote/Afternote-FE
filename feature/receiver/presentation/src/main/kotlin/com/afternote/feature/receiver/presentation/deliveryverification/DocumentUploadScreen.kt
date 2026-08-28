@@ -48,7 +48,7 @@ import com.afternote.core.ui.modifierextention.dropShadow
 import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.receiver.presentation.R
 import com.afternote.feature.receiver.presentation.deliveryverification.component.DocumentSlotCard
 import com.afternote.feature.receiver.presentation.deliveryverification.component.DocumentSourceBottomSheet
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_HEADER_SPACING
