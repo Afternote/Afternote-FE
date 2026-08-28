@@ -2,6 +2,7 @@ plugins {
     id("afternote.android.library.compose")
     id("afternote.android.hilt")
     id("afternote.android.navigation")
+    alias(libs.plugins.compose.screenshot)
     id("afternote.kover")
 }
 
@@ -9,6 +10,7 @@ val googleWebClientId = socialLoginKey("GOOGLE_WEB_CLIENT_ID")
 
 android {
     namespace = "com.afternote.feature.setting.presentation"
+    experimentalProperties["android.experimental.enableScreenshotTest"] = true
     testOptions.unitTests.isIncludeAndroidResources = true
 
     buildFeatures {
@@ -45,4 +47,7 @@ dependencies {
     testImplementation(libs.androidx.test.core.ktx)
     testImplementation(libs.robolectric)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    screenshotTestImplementation(libs.screenshot.validation.api)
+    screenshotTestImplementation(libs.androidx.compose.ui.tooling)
 }
