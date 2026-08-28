@@ -451,7 +451,7 @@ private fun AuthorEditorForUpdate(
             )
         },
         state = state,
-        isPrefillLoading = uiState.isPrefillLoading,
+        shouldDeferBaselineCapture = uiState.isPrefillLoading,
         snackbarMessageKey = errorEvent,
     )
 }

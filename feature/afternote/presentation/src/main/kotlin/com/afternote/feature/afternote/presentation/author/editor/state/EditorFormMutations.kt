@@ -83,6 +83,16 @@ internal fun EditorFormState.withProcessingMethodAdded(text: String): EditorForm
         form.withProcessingMethods(form.processingMethods + newItem)
     }
 
+internal fun EditorFormState.withProcessingMethodsInitialized(methods: List<String>): EditorFormState =
+    mapServiceForm { form ->
+        if (form.processingMethods.isNotEmpty()) return@mapServiceForm form
+        form.withProcessingMethods(
+            methods.mapIndexed { index, text ->
+                ProcessingMethodItem(localId = index + 1, text = text)
+            },
+        )
+    }
+
 internal fun EditorFormState.withProcessingMethodDeleted(localId: Int): EditorFormState =
     mapServiceForm { form -> form.withProcessingMethods(form.processingMethods.filter { it.localId != localId }) }
 

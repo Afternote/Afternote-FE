@@ -13,7 +13,7 @@ enum class AfternoteValidationError(
     ACCOUNT_CREDENTIALS_REQUIRED(R.string.afternote_validation_account_credentials_required),
 
     /** 처리 방법 1개 이상 필요 (계정·갤러리 폼 공통). */
-    ACTIONS_REQUIRED(R.string.afternote_validation_actions_required),
+    PROCESSING_METHODS_REQUIRED(R.string.afternote_validation_processing_methods_required),
 
     /** ESTATE 등 디자인 미확정으로 placeholder 만 노출되는 카테고리에서 저장 시도 시. */
     UNIMPLEMENTED_TYPE(R.string.afternote_validation_unimplemented_category),
