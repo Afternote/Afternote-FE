@@ -416,6 +416,9 @@ test('Dependabot updates Actions and the screenshot image but not Gradle version
   assert.match(source, /package-ecosystem:\s*docker/);
   assert.doesNotMatch(source, /package-ecosystem:\s*gradle/);
   assert.doesNotMatch(source, /auto-merge|automerge/);
+  assert.doesNotMatch(source, /^\s+- internal$/m);
+  assert.equal(source.match(/^\s+- maintenance$/gm)?.length, 2);
+  assert.equal(source.match(/^\s+- area:platform$/gm)?.length, 2);
 });
 
 test('the Gradle wrapper JAR and distribution stay on the reviewed official checksums', async () => {
