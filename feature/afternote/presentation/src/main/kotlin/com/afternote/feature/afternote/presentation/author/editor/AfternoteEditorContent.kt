@@ -40,6 +40,8 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.mod
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
 import com.afternote.feature.afternote.presentation.author.editor.selection.EditorSelectionDropdown
+import com.afternote.feature.afternote.presentation.author.editor.selection.EditorServiceSelectionField
+import com.afternote.feature.afternote.presentation.author.editor.selection.EditorServiceSelectionSheet
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
@@ -88,23 +90,13 @@ internal fun EditorContent(
         if (form.selectedType.hasServiceSelection) {
             Spacer(modifier = Modifier.height(20.dp))
 
-            EditorSelectionDropdown(
-                label = stringResource(R.string.afternote_editor_label_service_name),
-                selectedValue = form.selectedService.orEmpty(),
-                options = form.currentServiceOptions,
-                optionLabel = { it },
-                onValueSelected = state::onServiceSelected,
-                expanded = state.serviceDropdownExpanded,
-                onExpandedChange = state::onServiceDropdownExpandedChange,
+            EditorServiceSelectionField(
+                selectedService = form.selectedService,
+                onClick = state::openServiceSelectionSheet,
                 placeholder =
                     stringResource(
                         R.string.afternote_editor_service_placeholder,
                         form.selectedType.toDropdownLabel(),
-                    ),
-                menuStyle =
-                    DropdownMenuStyle(
-                        shadowElevation = 10.dp,
-                        tonalElevation = 10.dp,
                     ),
             )
         }
@@ -158,6 +150,14 @@ fun AfternoteEditorBody(
     )
 
     MemorialMediaSourceSheet(state = mediaSourceState)
+    EditorServiceSelectionSheet(
+        visible = state.isServiceSelectionSheetVisible,
+        type = form.selectedType,
+        services = form.currentServiceOptions,
+        searchQueryState = state.serviceSearchQueryState,
+        onDismissRequest = state::dismissServiceSelectionSheet,
+        onServiceSelected = state::onServiceSelected,
+    )
 }
 
 /**
