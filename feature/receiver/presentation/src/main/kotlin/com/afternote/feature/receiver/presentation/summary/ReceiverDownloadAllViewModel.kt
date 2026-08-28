@@ -3,8 +3,8 @@ package com.afternote.feature.receiver.presentation.summary
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.receiver.domain.repository.ReceiverRepository
+import com.afternote.feature.receiver.presentation.R
 import com.afternote.feature.receiver.presentation.reporting.ReceiverFailureStage
 import com.afternote.feature.receiver.presentation.reporting.recordReceiverFailure
 import dagger.hilt.android.lifecycle.HiltViewModel

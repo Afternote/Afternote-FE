@@ -34,7 +34,7 @@ import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
-import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.receiver.presentation.R
 
 /**
  * 받은 기록함 — 수신자가 등록한 발신자 카드 리스트.
