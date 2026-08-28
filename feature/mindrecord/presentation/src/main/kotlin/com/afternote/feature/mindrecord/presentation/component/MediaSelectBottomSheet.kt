@@ -112,7 +112,7 @@ private fun MediaSelectContent(
         )
         HorizontalDivider(thickness = 1.dp, color = AfternoteDesign.colors.gray3)
         MediaItem(
-            icon = painterResource(R.drawable.mindrecord_ic_mic),
+            icon = painterResource(CoreUiR.drawable.core_ui_ic_mic),
             text = stringResource(R.string.mindrecord_media_sheet_voice),
             onClick = onVoiceClick,
         )
