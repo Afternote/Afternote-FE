@@ -25,6 +25,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -149,6 +150,50 @@ class AfternoteAuthorExtendedTest {
         assertNull(payload.memorial)
         assertEquals(listOf(73L, 73L), repository.requestedDetailIds)
         assertEquals("73", routedItemId)
+    }
+
+    @Test
+    fun serviceSelectionSheet_dismissPreservesCustomPrefillAndSearchSelectsExactCatalogValue() {
+        val repository =
+            FakeAfternoteRepository.strict().apply {
+                onGetDetail = { Result.success(authorDetail()) }
+            }
+        val viewModel = editorViewModel(repository, itemId = 73L)
+        var editorState: AfternoteEditorState? = null
+
+        composeRule.setContent {
+            AfternoteTheme {
+                AuthorEditorForUpdate(
+                    itemId = 73L,
+                    viewModel = viewModel,
+                    onStateReady = { editorState = it },
+                )
+            }
+        }
+
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            !viewModel.uiState.value.isPrefillLoading && editorState != null
+        }
+        composeRule.onNodeWithText("Instagram").assertIsDisplayed().performClick()
+        composeRule.onNodeWithText("소셜 네트워크 서비스 선택").assertIsDisplayed()
+        composeRule.onNodeWithText("서비스 검색하기").performTextInput("  페이  ")
+        composeRule.onNodeWithText("페이스북").assertIsDisplayed()
+        composeRule.onNodeWithText("인스타그램").assertDoesNotExist()
+
+        composeRule.runOnIdle { checkNotNull(editorState).dismissServiceSelectionSheet() }
+        composeRule.onNodeWithText("소셜 네트워크 서비스 선택").assertDoesNotExist()
+        assertEquals("Instagram", viewModel.currentForm().selectedService)
+        assertEquals("", checkNotNull(editorState).serviceSearchQueryState.text.toString())
+
+        composeRule.onNodeWithText("Instagram").performClick()
+        composeRule.onNodeWithText("인스타그램").assertIsDisplayed()
+        composeRule.onNodeWithText("서비스 검색하기").performTextInput("페이")
+        composeRule.onNodeWithText("페이스북").performClick()
+
+        composeRule.onNodeWithText("소셜 네트워크 서비스 선택").assertDoesNotExist()
+        composeRule.onNodeWithText("페이스북").assertIsDisplayed()
+        assertEquals("페이스북", viewModel.currentForm().selectedService)
+        assertEquals("", checkNotNull(editorState).serviceSearchQueryState.text.toString())
     }
 
     @Test
