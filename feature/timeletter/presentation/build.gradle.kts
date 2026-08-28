@@ -25,6 +25,7 @@ dependencies {
     implementation(libs.coil.compose)
     testImplementation(libs.coroutines.test)
     testImplementation(testFixtures(projects.core.domain))
+    testImplementation(testFixtures(projects.feature.timeletter.domain))
     testImplementation(libs.robolectric)
 
     testImplementation(platform(libs.androidx.compose.bom))
