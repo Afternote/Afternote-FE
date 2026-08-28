@@ -91,6 +91,19 @@ class TimeLetterWriteViewModelTest {
         }
 
     @Test
+    fun `선택한 수신자 ID 목록은 null 변환 없이 생성 경계까지 전달된다`() =
+        runTest {
+            val repository = FakeTimeLetterRepository()
+            val viewModel = viewModel(repository)
+            viewModel.setRecipients(listOf(1L, 2L))
+
+            viewModel.saveDraft(title = "제목", textContents = emptyMap())
+            advanceUntilIdle()
+
+            assertEquals(listOf(1L, 2L), repository.createCalls.single().receiverIds)
+        }
+
+    @Test
     fun `등록 개수 조회 취소 - 사용자 오류로 변환하지 않음`() =
         runTest {
             val repository =
