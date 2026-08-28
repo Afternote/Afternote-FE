@@ -150,6 +150,8 @@ class EditorTouchTargetTest {
                     onRegisterClick = { registerClicks++ },
                     snackbarMessage = null,
                     onSnackbarMessageConsumed = {},
+                    validationMessage = null,
+                    onValidationMessageConsumed = {},
                     content = {},
                 )
             }
