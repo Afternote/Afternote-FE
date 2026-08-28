@@ -54,3 +54,31 @@ test("CodeQL preserves both required context names and skips only an unaffected 
     assert.match(kotlin, /security-events: write/);
     assert.doesNotMatch(source, /^\s{4}strategy:/m);
 });
+
+test("CodeQL compiles every domain module with the task for its current platform", async () => {
+    const source = await readFile(workflowUrl, "utf8");
+    const kotlin = jobBlock(source, "analyze-java-kotlin");
+    const jvmModules = [
+        ":core:model",
+        ":core:domain",
+        ":feature:afternote:domain",
+        ":feature:onboarding:domain",
+        ":feature:setting:domain",
+    ];
+    const androidModules = [
+        ":feature:mindrecord:domain",
+        ":feature:receiver:domain",
+        ":feature:timeletter:domain",
+    ];
+
+    assert.match(kotlin, /\.\/gradlew compileDebugSources/);
+    jvmModules.forEach((projectPath) => {
+        assert.ok(kotlin.includes(`${projectPath}:classes`), `${projectPath} classes task is missing`);
+    });
+    androidModules.forEach((projectPath) => {
+        assert.ok(
+            kotlin.includes(`${projectPath}:compileDebugKotlin`),
+            `${projectPath} compileDebugKotlin task is missing`,
+        );
+    });
+});

@@ -1,5 +1,6 @@
 package com.afternote.core.data.repoimpl
 
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.network.dto.ReceiverDetailDto
@@ -34,6 +35,7 @@ import java.net.UnknownHostException
 
 class UserRepositoryImplTest {
     private val calls = mutableListOf<String>()
+    private val errorReporter = RecordingErrorReporter()
 
     private fun repository(
         deleteAccountResponse: BaseResponse<Unit> = success(),
@@ -60,6 +62,7 @@ class UserRepositoryImplTest {
                     clearSessionResult
                 }
             },
+        errorReporter = errorReporter,
     )
 
     @Test
@@ -69,6 +72,7 @@ class UserRepositoryImplTest {
         runBlocking { repository.deleteAccount() }
 
         assertEquals(listOf("deleteAccount", "clearSession"), calls)
+        assertEquals(0, errorReporter.writtenFailures.size)
     }
 
     @Test
@@ -80,6 +84,7 @@ class UserRepositoryImplTest {
         }
 
         assertEquals(listOf("deleteAccount"), calls)
+        assertEquals(0, errorReporter.writtenFailures.size)
     }
 
     /**
@@ -88,11 +93,21 @@ class UserRepositoryImplTest {
      */
     @Test
     fun `deleteAccount - 세션 정리가 실패해도 탈퇴는 성공으로 끝난다`() {
-        val repository = repository(clearSessionResult = Result.failure(IllegalStateException("datastore 쓰기 실패")))
+        val failure = IllegalStateException("datastore 쓰기 실패")
+        val repository = repository(clearSessionResult = Result.failure(failure))
 
         runBlocking { repository.deleteAccount() }
 
         assertEquals(listOf("deleteAccount", "clearSession"), calls)
+        val (reported, attributes) = errorReporter.writtenFailures.single()
+        assertEquals(IllegalStateException::class.java.name, reported.message)
+        assertEquals(
+            mapOf(
+                "account_stage" to "delete_session_cleanup",
+                "error_type" to IllegalStateException::class.java.name,
+            ),
+            attributes,
+        )
     }
 
     /** 정리가 DELETE 앞에 오면 요청이 토큰 없이 나가므로, 순서 자체가 계약이다. */
@@ -162,7 +177,7 @@ class UserRepositoryImplTest {
                         status = 401,
                         code = 401,
                         serverMessage = "인증되지 않은 요청입니다.",
-                        message = "인증되지 않은 요청입니다.",
+                        fallbackMessage = "인증되지 않은 요청입니다.",
                     )
                 },
             )
@@ -353,7 +368,7 @@ class UserRepositoryImplTest {
                                 status = 401,
                                 code = 401,
                                 serverMessage = "인증되지 않은 요청입니다.",
-                                message = "인증되지 않은 요청입니다.",
+                                fallbackMessage = "인증되지 않은 요청입니다.",
                             )
                         }
                     },
@@ -391,6 +406,17 @@ class UserRepositoryImplTest {
 
     private companion object {
         const val TEST_TIMEOUT_MILLIS = 2_000L
+    }
+}
+
+private class RecordingErrorReporter : ErrorReporter {
+    val writtenFailures = mutableListOf<Pair<Throwable, Map<String, String>>>()
+
+    override fun writeFailure(
+        throwable: Throwable,
+        attributes: Map<String, String>,
+    ) {
+        writtenFailures += throwable to attributes
     }
 }
 

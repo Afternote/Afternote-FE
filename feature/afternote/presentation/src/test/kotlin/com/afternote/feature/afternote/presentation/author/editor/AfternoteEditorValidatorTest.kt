@@ -36,7 +36,7 @@ class AfternoteEditorValidatorTest {
                 selectedReceiverIds = listOf(1L),
             )
 
-        assertEquals(AfternoteValidationError.ACTIONS_REQUIRED, error)
+        assertEquals(AfternoteValidationError.PROCESSING_METHODS_REQUIRED, error)
     }
 
     @Test
@@ -48,7 +48,7 @@ class AfternoteEditorValidatorTest {
                 selectedReceiverIds = listOf(1L),
             )
 
-        assertEquals(AfternoteValidationError.ACTIONS_REQUIRED, error)
+        assertEquals(AfternoteValidationError.PROCESSING_METHODS_REQUIRED, error)
     }
 
     @Test

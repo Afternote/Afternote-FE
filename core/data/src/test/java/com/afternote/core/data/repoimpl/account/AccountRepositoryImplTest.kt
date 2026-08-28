@@ -3,8 +3,10 @@ package com.afternote.core.data.repoimpl.account
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.network.dto.EmailFindDto
 import com.afternote.core.network.dto.EmailFindRequestDto
+import com.afternote.core.network.dto.FindSendCodeDto
 import com.afternote.core.network.dto.FindSendCodeRequestDto
 import com.afternote.core.network.dto.PasswordChangeRequestDto
+import com.afternote.core.network.dto.PasswordFindRequestDto
 import com.afternote.core.network.dto.SendEmailCodeRequestDto
 import com.afternote.core.network.dto.SignUpDto
 import com.afternote.core.network.dto.SignUpRequestDto
@@ -37,7 +39,7 @@ class AccountRepositoryImplTest {
                             status = 400,
                             code = 1207,
                             serverMessage = "인증번호가 유효하지 않습니다.",
-                            message = "인증번호가 유효하지 않습니다.",
+                            fallbackMessage = "인증번호가 유효하지 않습니다.",
                         )
                     },
                 ),
@@ -55,7 +57,7 @@ class AccountRepositoryImplTest {
             repository(
                 FakeAccountApiService(
                     onVerifyEmail = {
-                        throw ApiException(status = 500, code = 500, serverMessage = null, message = "서버 오류")
+                        throw ApiException(status = 500, code = 500, serverMessage = null, fallbackMessage = "서버 오류")
                     },
                 ),
             )
@@ -90,9 +92,12 @@ private class FakeAccountApiService(
 ) : AccountApiService {
     override suspend fun sendEmailCode(body: SendEmailCodeRequestDto): BaseResponse<Unit> = error("sendEmailCode 는 이 시나리오에서 호출되면 안 됨")
 
-    override suspend fun sendFindCode(body: FindSendCodeRequestDto): BaseResponse<Unit> = error("sendFindCode 는 이 시나리오에서 호출되면 안 됨")
+    override suspend fun sendFindCode(body: FindSendCodeRequestDto): BaseResponse<FindSendCodeDto> =
+        error("sendFindCode 는 이 시나리오에서 호출되면 안 됨")
 
     override suspend fun findEmail(body: EmailFindRequestDto): BaseResponse<EmailFindDto> = error("findEmail 은 이 시나리오에서 호출되면 안 됨")
+
+    override suspend fun findPassword(body: PasswordFindRequestDto): BaseResponse<Unit> = error("findPassword 는 이 시나리오에서 호출되면 안 됨")
 
     override suspend fun verifyEmail(body: VerifyEmailRequestDto): BaseResponse<Unit> = onVerifyEmail()
 
