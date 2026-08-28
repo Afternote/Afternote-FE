@@ -29,7 +29,7 @@ fun RecipientDesignationSection(
     ) {
         EditorSectionLabel(
             text = stringResource(R.string.afternote_editor_label_receiver_add),
-            isRequired = true,
+            isRequired = false,
         )
         AfternoteEditorReceiverList(
             afternoteEditReceivers = section.afternoteEditReceivers,
