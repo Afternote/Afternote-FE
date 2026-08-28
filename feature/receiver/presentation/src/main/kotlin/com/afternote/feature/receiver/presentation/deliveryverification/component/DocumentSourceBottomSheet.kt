@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.modifierextention.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.receiver.presentation.R
 
 /**
  * 서류 업로드 소스 선택 BottomSheet(design 7) — 6 의 입력 박스 클릭 시 표시.
