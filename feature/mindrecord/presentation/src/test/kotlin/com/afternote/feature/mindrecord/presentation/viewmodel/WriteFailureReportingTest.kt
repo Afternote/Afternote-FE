@@ -17,6 +17,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Test
 import java.io.IOException
@@ -118,6 +119,31 @@ class WriteFailureReportingTest {
             advanceUntilIdle()
 
             assertEquals(listOf("media_upload"), reporter.stages)
+        }
+
+    @Test
+    fun `데일리질문 미디어 업로드 실패도 media_upload 으로 기록된다`() =
+        runTest(dispatcher) {
+            // 같은 stage 라도 호출부가 둘이다 — 일기 쪽만 보면 데일리질문 계측 호출을 지워도
+            // 통과한다 (#964 리뷰).
+            val reporter = RecordingErrorReporter()
+            val repository = FakeDailyQuestionRepository()
+            val viewModel =
+                DailyQuestionWriteViewModel(
+                    savedStateHandle = SavedStateHandle(emptyMap()),
+                    repository = repository,
+                    photoUploadRepository = failingUpload(),
+                    draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
+                    errorReporter = reporter,
+                )
+            advanceUntilIdle()
+
+            viewModel.uploadMedia("content://media/1")
+            advanceUntilIdle()
+
+            assertEquals(listOf("media_upload"), reporter.stages)
+            // 기록만 남기고 화면 안내를 빠뜨리면 사용자는 첨부가 붙은 줄 안다 (#716).
+            assertNotNull(viewModel.uiState.value.imageUploadError)
         }
 
     private fun diaryViewModel(

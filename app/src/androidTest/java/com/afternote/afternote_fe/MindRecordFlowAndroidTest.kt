@@ -19,6 +19,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
+import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestionWriteScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DiaryWriteScreen
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryWriteViewModel
@@ -53,7 +54,8 @@ class MindRecordFlowAndroidTest {
                 ),
             )
         repository.onCreate = { createResults.removeFirst() }
-        val viewModel = diaryViewModel(repository)
+        val reporter = FakeErrorReporter()
+        val viewModel = diaryViewModel(repository, reporter)
         var successCalls = 0
 
         composeRule.setContent {
@@ -90,6 +92,10 @@ class MindRecordFlowAndroidTest {
         assertEquals(TodayMood.HAPPY, payload.todayMood)
         assertEquals(listOf(7L), payload.receiverIds)
         assertFalse(payload.isDraft)
+
+        // 실패는 한 번뿐이었으므로 기록도 한 번이다. 성공한 재시도가 더 남기면 Crashlytics
+        // 보관 한도(최근 8건)를 잡음으로 채운다 (#964).
+        assertEquals(listOf("diary_submit"), reporter.mindRecordStages)
     }
 
     @Test
@@ -122,6 +128,7 @@ class MindRecordFlowAndroidTest {
                 ),
             )
         repository.onCreate = { createResults.removeFirst() }
+        val reporter = FakeErrorReporter()
         val viewModel =
             DailyQuestionWriteViewModel(
                 savedStateHandle = SavedStateHandle(emptyMap()),
@@ -132,35 +139,45 @@ class MindRecordFlowAndroidTest {
                         uploadedKey = "mindrecords/1/question.jpg",
                     ),
                 draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
-                errorReporter = FakeErrorReporter(),
+                errorReporter = reporter,
             )
-        composeRule.setContent { AfternoteTheme {} }
+        // 실제 작성 화면을 띄운다 — 빈 테마만 compose 하고 submit() 을 직접 부르면 화면과
+        // ViewModel 사이 결선이 검증되지 않아, 계측 호출을 지워도 통과한다 (#964 리뷰).
+        composeRule.setContent {
+            AfternoteTheme {
+                DailyQuestionWriteScreen(viewModel = viewModel, onSubmitSuccess = { })
+            }
+        }
         composeRule.waitUntil(timeoutMillis = 5_000) { !viewModel.uiState.value.isQuestionLoading }
 
-        composeRule.runOnIdle {
-            viewModel.onAnswerChanged("오늘은 용기 냈다")
-            viewModel.submit()
-        }
+        composeRule.runOnIdle { viewModel.onAnswerChanged("오늘은 용기 냈다") }
+        composeRule.onNode(hasText("저장") and hasClickAction()).performClick()
         composeRule.waitUntil(timeoutMillis = 5_000) {
             viewModel.uiState.value.submitState is SubmitState.Failed
         }
-        assertEquals("오늘은 용기 냈다", viewModel.uiState.value.answer)
+        // 실제 화면을 태우므로 에디터가 되돌려 주는 HTML 이 그대로 상태에 들어간다 —
+        // 종전 테스트는 화면을 건너뛰어 원문 문자열이 남았다.
+        assertEquals("<p>오늘은 용기 냈다</p>", viewModel.uiState.value.answer)
+        assertEquals(listOf("daily_question_submit"), reporter.mindRecordStages)
 
-        composeRule.runOnIdle {
-            viewModel.consumeSubmitResult()
-            viewModel.submit()
-        }
+        composeRule.runOnIdle { viewModel.consumeSubmitResult() }
+        composeRule.onNode(hasText("저장") and hasClickAction()).performClick()
         composeRule.waitUntil(timeoutMillis = 5_000) {
             viewModel.uiState.value.submitState is SubmitState.Succeeded
         }
 
         assertEquals(2, repository.createdPayloads.size)
         assertEquals(repository.createdPayloads.first(), repository.createdPayloads.last())
-        assertEquals("오늘은 용기 냈다", repository.createdPayloads.last().content)
+        assertEquals("<p>오늘은 용기 냈다</p>", repository.createdPayloads.last().content)
         assertFalse(repository.createdPayloads.last().isDraft)
+        // 성공한 재시도는 기록을 늘리지 않는다.
+        assertEquals(listOf("daily_question_submit"), reporter.mindRecordStages)
     }
 
-    private fun diaryViewModel(repository: FakeDiaryRepository): DiaryWriteViewModel =
+    private fun diaryViewModel(
+        repository: FakeDiaryRepository,
+        reporter: FakeErrorReporter = FakeErrorReporter(),
+    ): DiaryWriteViewModel =
         DiaryWriteViewModel(
             savedStateHandle =
                 SavedStateHandle(
@@ -177,6 +194,6 @@ class MindRecordFlowAndroidTest {
                 ),
             userRepository = appTestUserRepository(),
             draftLoader = MindRecordDraftLoader(repository, FakeDailyQuestionRepository()),
-            errorReporter = FakeErrorReporter(),
+            errorReporter = reporter,
         )
 }
