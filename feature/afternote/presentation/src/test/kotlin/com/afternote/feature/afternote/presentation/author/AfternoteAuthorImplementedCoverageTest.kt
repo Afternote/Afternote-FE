@@ -1,18 +1,10 @@
-package com.afternote.afternote_fe
+package com.afternote.feature.afternote.presentation.author
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.afternote.afternote_fe.test.FailureArtifactRule
-import com.afternote.afternote_fe.test.FakeErrorReporter
-import com.afternote.afternote_fe.test.afternoteEditorSavedStateHandle
-import com.afternote.afternote_fe.test.appTestUserRepository
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
@@ -38,17 +30,16 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
-@RunWith(AndroidJUnit4::class)
-class AfternoteAuthorImplementedCoverageAndroidTest {
-    @get:Rule(order = 0)
+@RunWith(RobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(sdk = [35])
+class AfternoteAuthorImplementedCoverageTest {
+    @get:Rule
     val composeRule = createComposeRule()
-
-    @get:Rule(order = 1)
-    val failureArtifactRule =
-        FailureArtifactRule {
-            composeRule.onRoot().captureToImage().asAndroidBitmap()
-        }
 
     @Test
     fun gallerySave_routesTrimmedGalleryPayloadToOnlyGalleryEndpoint() {
@@ -281,7 +272,7 @@ private fun implementedCoverageViewModel(
 ): AfternoteEditorViewModel =
     AfternoteEditorViewModel(
         savedStateHandle = savedStateHandle,
-        userRepository = appTestUserRepository(),
+        userRepository = afternoteAuthorUserRepository(),
         afternoteRepository = repository,
         memorialThumbnailUploadRepository =
             MemorialThumbnailUploadRepository {
@@ -315,5 +306,5 @@ private fun implementedCoverageViewModel(
                         )
                     },
             ),
-        errorReporter = FakeErrorReporter(),
+        errorReporter = NoopAuthorErrorReporter,
     )
