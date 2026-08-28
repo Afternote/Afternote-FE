@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "a3b3b1f24ce280f88cd3bdc0adeddbdba9d7b9db.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": "not_covered",
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "device.avd",
+      "device.serial"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "a3b3b1f24ce280f88cd3bdc0adeddbdba9d7b9db",
+  "head_ref": "refs/pull/721/head",
+  "base_sha": "b834c1100bc5d5dcf7f34a6a28e1d108e4404ec5",
+  "base_ref": "origin/develop",
+  "recorded_at": "2026-08-22T18:50:00+00:00",
+  "result": "pass-with-observations",
+  "scenario": "오프라인+더미 세션으로 PR HEAD 실측. 홈 전면 조회 실패는 전체 오류+다시 시도 UI로 정상 처리(빈 성공 아님). 기록 탭 진입·서브탭(데일리 질문/일기/주간리포트) 렌더 정상. OkHttp 디버그 로그로 요청 타임라인 계측.",
+  "not_covered": [
+    {
+      "pr": 721,
+      "reason": "리뷰 [blocking] 지적(부분 조회 실패가 빈 성공으로 수렴 → '기록 없음' 오인)은 일부 API만 실패하는 부분 실패 상태가 전제인데, 오프라인은 전 API 동시 실패라 재현 불가(전면 실패는 오류 UI로 정상). MEMORIES 카드→추억 공간 진입 흐름도 홈 카드가 오류 상태라 미검증. mindrecord 계열은 debug 목업 미지원."
+    }
+  ],
+  "device": {
+    "android": "15",
+    "is_emulator": true
+  },
+  "details": {
+    "dynamic": true,
+    "findings": [
+      {
+        "pr": 721,
+        "severity": "observation-confirming-review",
+        "title": "기록 탭 1회 진입에 데일리질문 중복 요청 실측",
+        "detail": "기록 탭 진입 03:41:06~07 사이 GET /api/v1/daily-questions/today 2회(06.790, 07.505), GET /api/v1/daily-questions 2회(06.927, 07.509) — 0.7초 내 동일 리소스 중복 호출. 리뷰(8/20 21:36)의 [normal] '데일리질문 조회 중복 실행·요청 간 경합' 지적과 같은 모양의 동작을 런타임에서 관측(위치는 홈 최초 진입이 아니라 기록 탭 진입; 홈 진입 시엔 today 1회). 네트워크 성공 환경에서 늦은 응답 역전 시 경합 관찰 필요."
+      }
+    ],
+    "app": {
+      "package": "com.afternote.afternote_fe",
+      "installed_for_head": "a3b3b1f24ce280f88cd3bdc0adeddbdba9d7b9db",
+      "mock": "debug_mock_mode=on (time-letters only, mindrecord 미해당)"
+    },
+    "purpose": "8/20 이후 리뷰 QA 감사 후속 — PR #721(홈 MEMORIES 카드·추억 공간 실기록 연결) 리뷰 시점 HEAD 소급 런타임 QA"
+  }
+}

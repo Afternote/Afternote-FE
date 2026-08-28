@@ -1,0 +1,147 @@
+package com.afternote.feature.receiver.domain.testing
+
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
+import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class FakeReceiverRepositoriesTest {
+    @Test
+    fun `인증 코드 저장은 호출 원문을 기록하고 정규화한 상태를 flow와 단발 조회에 공유한다`() {
+        val repository = FakeReceiverRepository(initialAuthCode = "  initial  ")
+
+        assertEquals("initial", repository.authCodeState.value)
+        assertNull(FakeReceiverRepository(initialAuthCode = "   ").authCodeState.value)
+
+        runBlocking { repository.saveAuthCode("  next-code  ") }
+
+        assertEquals(listOf("  next-code  "), repository.savedAuthCodes)
+        assertEquals("next-code", repository.authCodeState.value)
+        assertEquals("next-code", runBlocking { repository.currentAuthCode() })
+        assertSame(repository.authCodeState, repository.authCodeFlow)
+
+        runBlocking { repository.saveAuthCode("   ") }
+
+        assertNull(repository.authCodeState.value)
+    }
+
+    @Test
+    fun `ReceiverRepository onX는 기록 뒤 기본 메모리 변경을 대체한다`() {
+        val repository =
+            FakeReceiverRepository(
+                initialAuthCode = "initial",
+                onSaveAuthCode = {},
+            )
+
+        runBlocking { repository.saveAuthCode("replacement") }
+
+        assertEquals(listOf("replacement"), repository.savedAuthCodes)
+        assertEquals("initial", repository.authCodeState.value)
+    }
+
+    @Test
+    fun `인증 제출 기본 경로는 URL을 기록하고 이후 상태 조회에도 보존한다`() {
+        val repository = FakeReceiverAuthRepository()
+
+        val submitted =
+            runBlocking {
+                repository.submitDeliveryVerification(
+                    deathCertificateUrl = "https://cdn.test/death.pdf",
+                    familyRelationCertificateUrl = null,
+                )
+            }.getOrThrow()
+        val reloaded = runBlocking { repository.getDeliveryVerificationStatus() }.getOrThrow()
+
+        assertEquals(
+            listOf("https://cdn.test/death.pdf" to null),
+            repository.deliverySubmissions,
+        )
+        assertEquals("https://cdn.test/death.pdf", submitted.deathCertificateUrl)
+        assertNull(submitted.familyRelationCertificateUrl)
+        assertEquals(submitted, reloaded)
+        assertEquals(1, repository.getDeliveryVerificationStatusCalls)
+    }
+
+    @Test
+    fun `presigned URL 기본 경로는 요청 contentLength를 응답에도 보존한다`() {
+        val repository = FakeReceiverAuthRepository()
+
+        val result = runBlocking { repository.getPresignedUrl("pdf", 357L) }.getOrThrow()
+
+        assertEquals(listOf("pdf" to 357L), repository.presignedUrlRequests)
+        assertEquals(357L, result.contentLength)
+    }
+
+    @Test
+    fun `서류 업로드는 바이트 snapshot과 확장자를 기록한다`() {
+        val repository =
+            FakeReceiverDeliveryDocumentUploadRepository(
+                defaultFileUrl = "https://cdn.test/document.pdf",
+            )
+        val bytes = byteArrayOf(1, 2, 3)
+
+        val result = runBlocking { repository.upload(bytes, "pdf") }
+        bytes[0] = 9
+
+        assertEquals("https://cdn.test/document.pdf", result.getOrThrow())
+        assertEquals(1, repository.uploadCalls.size)
+        assertTrue(
+            repository.uploadCalls
+                .single()
+                .bytes
+                .contentEquals(byteArrayOf(1, 2, 3)),
+        )
+        assertEquals("pdf", repository.uploadCalls.single().extension)
+    }
+
+    @Test
+    fun `본인 확인 기본 경로는 호출을 기록하고 상태를 true로 바꾼다`() {
+        val repository = FakeIdentityVerificationRepository()
+
+        runBlocking { repository.markVerified() }
+
+        assertEquals(1, repository.markVerifiedCallCount)
+        assertTrue(repository.verificationState.value)
+        assertFalse(FakeIdentityVerificationRepository(initialVerified = false).verificationState.value)
+    }
+
+    @Test
+    fun `병렬 호출도 업로드 기록과 본인 확인 호출 수를 유실하지 않는다`() {
+        val uploadRepository = FakeReceiverDeliveryDocumentUploadRepository()
+        val identityRepository = FakeIdentityVerificationRepository()
+
+        runBlocking {
+            coroutineScope {
+                repeat(64) { index ->
+                    launch(Dispatchers.Default) {
+                        uploadRepository.upload(byteArrayOf(index.toByte()), "pdf").getOrThrow()
+                        identityRepository.markVerified()
+                    }
+                }
+            }
+        }
+
+        assertEquals(64, uploadRepository.uploadCalls.size)
+        assertEquals(64, identityRepository.markVerifiedCallCount)
+    }
+
+    @Test
+    fun `strict fixture는 flow 프로퍼티를 포함해 열지 않은 경로를 실패시킨다`() {
+        val receiverRepository = FakeReceiverRepository.strict()
+        val authRepository = FakeReceiverAuthRepository.strict()
+
+        assertThrows(IllegalStateException::class.java) {
+            receiverRepository.authCodeFlow
+        }
+        assertThrows(IllegalStateException::class.java) {
+            runBlocking { authRepository.getSenderMessage() }
+        }
+    }
+}

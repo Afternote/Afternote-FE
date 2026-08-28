@@ -1,27 +1,70 @@
 name: Android Managed Device Test
 
-# PR 필수 검증으로 올리기 전 안정화 단계다. 수동 실행과 정기 실행의 최근 3회가 연속
-# 성공했는지는 별도 gate 이슈에서 판단하며, 실패를 감추는 job/test 재시도는 두지 않는다.
+# 모든 same-repository PR 에 기존 두 required context를 만들되, CI Test Plan이 none이면 에뮬레이터를
+# 만들지 않는다. selected는 선언한 FQCN#method와 lane만, full은 API 30 전체와 API 34 smoke를 실행한다.
+# minSdk API 26과 targetSdk API 36 경계 smoke는 scheduled_only라 정기/default-branch 수동 실행에서만
+# 에뮬레이터를 띄우고 PR full 또는 복구 dispatch 비용을 늘리지 않는다.
+# PR head SHA와 default branch에서 staging한 parser/verifier를 함께 검증한다. fork PR은 실행하지 않는다.
+# 라벨 조정기의 자동 dispatch 도 PR head branch ref 에 생성하고 이벤트 SHA 를 현재 PR HEAD 와 다시
+# 대조한다. 정기·일반 수동 실행만 default branch 를 사용하므로 PR 코드가 기본 브랜치 cache scope 에서
+# 실행되지 않는다.
+# 테스트 실패는 재시도하지 않는다. API 30/34가 테스트 XML과 실행 시작 신호 없이 GMD 준비
+# 단계에서 멈춘 경우만 default branch의 별도 복구 workflow가 첫 실행의 해당 job을 새 runner에서
+# 한 번 재실행한다. API 30은 Gradle timeout 종료 코드 124도 함께 요구한다.
 on:
   workflow_dispatch:
+    inputs:
+      pull_request_number:
+        description: "자동 복구할 열린 PR 번호, 0이면 default branch"
+        required: false
+        default: 0
+        type: number
+      expected_head_sha:
+        description: "PR 자동 복구가 관찰한 40자리 head SHA"
+        required: false
+        default: ""
+        type: string
+      expected_plan_digest:
+        description: "라벨 조정기가 관찰한 CI Test Plan SHA-256"
+        required: false
+        default: ""
+        type: string
+      generate_baseline_profile:
+        description: "선택한 branch ref에서 API 34 Baseline Profile artifact만 생성"
+        required: false
+        default: false
+        type: boolean
+  pull_request:
+    types: [opened, reopened, edited, synchronize]
   schedule:
     - cron: "17 18 * * 2,5"
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
-  group: android-managed-device-${{ github.ref }}
-  cancel-in-progress: false
+  group: android-managed-device-${{ github.event.pull_request.number || inputs.pull_request_number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  managed-device:
-    name: Pixel 2 API 30 androidTest
+  baseline-profile-generation:
+    name: Generate Baseline Profile artifact
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      inputs.generate_baseline_profile &&
+      inputs.pull_request_number == 0
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 40
     steps:
-      - name: Clone repo
+      - name: Clone dispatched branch revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Verify checked out dispatch revision
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
 
       - name: Set up JDK
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
@@ -36,30 +79,706 @@ jobs:
           cache-read-only: true
           validate-wrappers: true
 
-      - name: Enable KVM access
+      - name: Enable and verify KVM access
         run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0660", OPTIONS+="static_node=kvm"' \
+          set -euo pipefail
+          runner_user="$(id -un)"
+          echo "KERNEL==\"kvm\", OWNER=\"${runner_user}\", GROUP=\"kvm\", MODE=\"0660\", OPTIONS+=\"static_node=kvm\"" \
             | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
+          sudo udevadm trigger --name-match=kvm --settle
+          test -c /dev/kvm
+          test -r /dev/kvm
+          test -w /dev/kvm
+          "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" emulator
+          "${ANDROID_HOME}/emulator/emulator" -accel-check
 
       - name: Set up CI-only app configuration
         uses: ./.github/actions/setup-ci-config
 
-      - name: Run managed-device androidTest
-        run: |
-          ./gradlew pixel2Api30DebugAndroidTest \
-            -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect \
-            --stacktrace
+      - name: Set up one-run release signing
+        uses: ./.github/actions/setup-ci-release-signing
 
-      - name: Upload androidTest reports and failure evidence
+      - name: Generate API 34 Baseline Profile
+        id: baseline_profile
+        continue-on-error: true
+        timeout-minutes: 30
+        run: |
+          set -euo pipefail
+          log_dir="$RUNNER_TEMP/baseline-profile-log"
+          log_path="$log_dir/generate.log"
+          profile_dir="app/src/main/generated/baselineProfiles"
+          mkdir -p "$log_dir"
+
+          set +e
+          ./gradlew :app:generateBaselineProfile \
+            -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect \
+            -x :app:uploadCrashlyticsMappingFileRelease \
+            --no-daemon \
+            --stacktrace > "$log_path" 2>&1
+          status=$?
+          set -e
+
+          if [[ "$status" == "0" ]] &&
+             ! find "$profile_dir" -type f -name '*-prof.txt' -size +0c -print -quit | grep -q .; then
+            echo 'Generated Baseline Profile is missing or empty.' >> "$log_path"
+            status=66
+          fi
+          {
+            echo "exit_code=$status"
+            echo "log_path=$log_path"
+          } >> "$GITHUB_OUTPUT"
+          exit "$status"
+
+      - name: Remove ephemeral release configuration
+        if: always()
+        run: |
+          rm -f app/google-services.json local.properties
+          for path in \
+            "${AFTERNOTE_CI_RELEASE_KEYSTORE:-}" \
+            "${AFTERNOTE_CI_RELEASE_STORE_PASSWORD_FILE:-}" \
+            "${AFTERNOTE_CI_RELEASE_KEY_PASSWORD_FILE:-}"; do
+            if [[ -n "$path" ]]; then
+              rm -f -- "$path"
+            fi
+          done
+
+      - name: Upload generated Baseline Profile and full log
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: android-managed-device-results-${{ github.run_attempt }}
+          name: baseline-profile-${{ github.sha }}-${{ github.run_id }}
+          if-no-files-found: warn
+          retention-days: 7
+          path: |
+            app/src/main/generated/baselineProfiles/
+            ${{ runner.temp }}/baseline-profile-log/
+
+      - name: Restore Baseline Profile generation exit code
+        if: always()
+        env:
+          GENERATION_EXIT_CODE: ${{ steps.baseline_profile.outputs.exit_code }}
+          GENERATION_OUTCOME: ${{ steps.baseline_profile.outcome }}
+        run: |
+          if [[ "$GENERATION_OUTCOME" != "success" ]]; then
+            echo "Baseline Profile generation did not complete: $GENERATION_OUTCOME"
+          fi
+          if ! [[ "$GENERATION_EXIT_CODE" =~ ^[0-9]+$ ]]; then
+            exit 124
+          fi
+          exit "$GENERATION_EXIT_CODE"
+
+  managed-device:
+    if: >-
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' &&
+       !inputs.generate_baseline_profile &&
+       ((inputs.pull_request_number == 0 &&
+         github.ref_name == github.event.repository.default_branch) ||
+        inputs.pull_request_number > 0)) ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ matrix.job_timeout_minutes }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Pixel 2 API 26 minSdk smoke
+            task: pixel2Api26DebugAndroidTest
+            device: api26
+            job_timeout_minutes: 20
+            gradle_timeout_minutes: 16
+            gradle_step_timeout_minutes: 17
+            full_selector: com.afternote.afternote_fe.ApiBoundarySmokeAndroidTest
+            artifact: min-sdk-api26
+            scheduled_only: true
+          - name: Pixel 2 API 30 androidTest
+            task: pixel2Api30DebugAndroidTest
+            device: api30
+            job_timeout_minutes: 35
+            gradle_timeout_minutes: 30
+            gradle_step_timeout_minutes: 31
+            full_selector: ''
+            artifact: api30
+            scheduled_only: false
+          - name: Pixel 2 API 34 accessibility smoke
+            task: pixel2Api34DebugAndroidTest
+            device: api34
+            job_timeout_minutes: 15
+            gradle_timeout_minutes: 12
+            gradle_step_timeout_minutes: 13
+            full_selector: com.afternote.afternote_fe.AccessibilitySmokeAndroidTest
+            artifact: accessibility-api34
+            scheduled_only: false
+          - name: Pixel 2 API 36 targetSdk smoke
+            task: pixel2Api36DebugAndroidTest
+            device: api36
+            job_timeout_minutes: 20
+            gradle_timeout_minutes: 16
+            gradle_step_timeout_minutes: 17
+            full_selector: com.afternote.afternote_fe.ApiBoundarySmokeAndroidTest
+            artifact: target-sdk-api36
+            scheduled_only: true
+    steps:
+      - name: Clone trusted target policy
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Stage trusted Android test policy
+        id: policy
+        run: |
+          set -euo pipefail
+          policy_dir="$RUNNER_TEMP/android-test-policy"
+          mkdir -p "$policy_dir"
+
+          if [[ -f .github/scripts/ci-test-plan.mjs &&
+                -f .github/scripts/resolve-android-test-plan.mjs &&
+                -f .github/scripts/resolve-pr-impact.mjs &&
+                -f .github/scripts/validate-pr-ci-test-plan.mjs &&
+                -f .github/scripts/verify-android-test-plan-result.mjs ]]; then
+            install -m 0644 \
+              .github/scripts/ci-test-plan.mjs \
+              "$policy_dir/ci-test-plan.mjs"
+            install -m 0644 \
+              .github/scripts/resolve-android-test-plan.mjs \
+              "$policy_dir/resolve-android-test-plan.mjs"
+            install -m 0644 \
+              .github/scripts/resolve-pr-impact.mjs \
+              "$policy_dir/resolve-pr-impact.mjs"
+            install -m 0644 \
+              .github/scripts/validate-pr-ci-test-plan.mjs \
+              "$policy_dir/validate-pr-ci-test-plan.mjs"
+            install -m 0644 \
+              .github/scripts/verify-android-test-plan-result.mjs \
+              "$policy_dir/verify-android-test-plan-result.mjs"
+            if [[ -f .github/scripts/render-android-test-results.mjs ]]; then
+              install -m 0644 \
+                .github/scripts/render-android-test-results.mjs \
+                "$policy_dir/render-android-test-results.mjs"
+              renderer=trusted
+            else
+              # 이 renderer를 처음 도입하는 PR만 tested revision의 summary-only 구현을 쓴다.
+              # selected 실행 증거 검증은 계속 위 trusted verifier가 소유한다.
+              renderer=bootstrap
+            fi
+            if [[ -f .github/scripts/classify-android-managed-device-failure.mjs ]]; then
+              install -m 0644 \
+                .github/scripts/classify-android-managed-device-failure.mjs \
+                "$policy_dir/classify-android-managed-device-failure.mjs"
+              classifier=trusted
+            else
+              # 도입 PR에서는 default branch에 아직 없으므로 분류·자동 재실행을 생략한다.
+              # tested revision의 권한 없는 classifier를 신뢰 경계 밖에서 실행하지 않는다.
+              classifier=unavailable
+            fi
+            printf 'renderer=%s\nclassifier=%s\nsource=trusted\n' \
+              "$renderer" "$classifier" >> "$GITHUB_OUTPUT"
+          elif [[ ! -e .github/scripts/ci-test-plan.mjs &&
+                  ! -e .github/scripts/resolve-android-test-plan.mjs &&
+                  ! -e .github/scripts/resolve-pr-impact.mjs &&
+                  ! -e .github/scripts/validate-pr-ci-test-plan.mjs &&
+                  ! -e .github/scripts/verify-android-test-plan-result.mjs ]]; then
+            # 최초 도입 PR에서는 default branch에 새 helper들이 아직 없다. 선언 검증을 target
+            # 코드에 맡기지 않고, 아래 단계가 selected/full 선언을 금지하는 fail-closed 예외다.
+            echo "::warning::default branch에 Android test policy가 없어 bootstrap mode를 사용합니다"
+            printf '%s\n' \
+              renderer=bootstrap \
+              classifier=unavailable \
+              source=bootstrap >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Android test policy가 부분 설치된 상태입니다"
+            exit 1
+          fi
+
+      - name: Resolve and verify tested revision
+        id: target
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          DISPATCH_REF_NAME: ${{ github.ref_name }}
+          DISPATCH_PR_NUMBER: ${{ inputs.pull_request_number || 0 }}
+          DEVICE: ${{ matrix.device }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+          EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
+          EVENT_PR_SHA: ${{ github.event.pull_request.head.sha }}
+          EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha || '' }}
+          EXPECTED_PLAN_DIGEST: ${{ inputs.expected_plan_digest || '' }}
+          EXECUTION_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          FULL_SELECTOR: ${{ matrix.full_selector }}
+          POLICY_SOURCE: ${{ steps.policy.outputs.source }}
+          SCHEDULED_ONLY: ${{ matrix.scheduled_only }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          pull_request_file="$RUNNER_TEMP/android-test-pull-request.json"
+
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            target_pr="$EVENT_PR_NUMBER"
+            target_branch="$EVENT_PR_BRANCH"
+            target_sha="$EVENT_PR_SHA"
+            jq '.pull_request' "$GITHUB_EVENT_PATH" > "$pull_request_file"
+          elif [[ "$EVENT_NAME" == "workflow_dispatch" && "$DISPATCH_PR_NUMBER" != "0" ]]; then
+            if ! [[ "$DISPATCH_PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+              echo "::error::유효한 pull_request_number 가 필요합니다"
+              exit 1
+            fi
+            if ! [[ "$EXPECTED_HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "::error::expected_head_sha 는 40자리 lowercase commit SHA 여야 합니다"
+              exit 1
+            fi
+            if ! [[ "$EXPECTED_PLAN_DIGEST" =~ ^[0-9a-f]{64}$ ]]; then
+              echo "::error::expected_plan_digest 는 64자리 lowercase SHA-256 이어야 합니다"
+              exit 1
+            fi
+
+            pull_request="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$DISPATCH_PR_NUMBER")"
+            printf '%s' "$pull_request" > "$pull_request_file"
+            state="$(jq -r '.state' <<< "$pull_request")"
+            head_repository="$(jq -r '.head.repo.full_name // ""' <<< "$pull_request")"
+            target_branch="$(jq -r '.head.ref' <<< "$pull_request")"
+            target_sha="$(jq -r '.head.sha' <<< "$pull_request")"
+
+            if [[ "$state" != "open" || "$head_repository" != "$GITHUB_REPOSITORY" ]]; then
+              echo "::error::PR #$DISPATCH_PR_NUMBER 는 열린 same-repository PR 이어야 합니다"
+              exit 1
+            fi
+            if [[ "$target_sha" != "$EXPECTED_HEAD_SHA" ]]; then
+              echo "::error::PR head $target_sha 가 dispatch 기대값 $EXPECTED_HEAD_SHA 와 다릅니다"
+              exit 1
+            fi
+            if [[ "$target_branch" != "$DISPATCH_REF_NAME" ]]; then
+              echo "::error::dispatch ref $DISPATCH_REF_NAME 가 현재 PR branch $target_branch 와 다릅니다"
+              exit 1
+            fi
+            target_pr="$DISPATCH_PR_NUMBER"
+          else
+            target_pr="none"
+            target_branch="$DEFAULT_BRANCH"
+            target_sha="$EXECUTION_SHA"
+          fi
+
+          if [[ "$target_sha" != "$EXECUTION_SHA" ]]; then
+            echo "::error::실행 event SHA $EXECUTION_SHA 가 검증한 target $target_sha 와 다릅니다"
+            exit 1
+          fi
+
+          plan_file="$RUNNER_TEMP/android-test-plan.json"
+          plan_digest=""
+          if [[ "$target_pr" != "none" ]]; then
+            if [[ "$POLICY_SOURCE" == "trusted" ]]; then
+              resolution="$(node "$RUNNER_TEMP/android-test-policy/resolve-android-test-plan.mjs" "$pull_request_file")"
+              jq -c '.plan' <<< "$resolution" > "$plan_file"
+              plan_digest="$(jq -r '.digest' <<< "$resolution")"
+            else
+              if [[ -n "$EXPECTED_PLAN_DIGEST" ]]; then
+                echo "::error::bootstrap mode에서는 expected_plan_digest를 사용할 수 없습니다"
+                exit 1
+              fi
+              if jq -r '.body // ""' "$pull_request_file" \
+                | grep -Eq '"mode"[[:space:]]*:[[:space:]]*"selected"'; then
+                echo "::error::bootstrap mode에서는 selected selector를 신뢰된 parser 없이 실행할 수 없습니다"
+                exit 1
+              fi
+              if jq -r '.body // ""' "$pull_request_file" \
+                | grep -Eq '"mode"[[:space:]]*:[[:space:]]*"full"'; then
+                jq -nc '{androidTest:{mode:"full",reason:"trusted CI Test Plan policy bootstrap full run"}}' > "$plan_file"
+              else
+                jq -nc '{androidTest:{mode:"none",reason:"trusted CI Test Plan policy bootstrap"}}' > "$plan_file"
+              fi
+            fi
+          else
+            jq -nc '{androidTest:{mode:"full",reason:"trusted default-branch scheduled or manual run"}}' > "$plan_file"
+          fi
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && "$target_pr" != "none" &&
+                "$plan_digest" != "$EXPECTED_PLAN_DIGEST" ]]; then
+            echo "::error::현재 PR의 CI Test Plan digest가 dispatch 기대값과 다릅니다"
+            exit 1
+          fi
+
+          mode="$(jq -r '.androidTest.mode' "$plan_file")"
+          selectors_json='[]'
+          run_lane=false
+          if [[ "$SCHEDULED_ONLY" != "true" && "$SCHEDULED_ONLY" != "false" ]]; then
+            echo "::error::scheduled_only matrix 값은 true 또는 false여야 합니다"
+            exit 1
+          fi
+          if [[ "$SCHEDULED_ONLY" == "true" && "$target_pr" != "none" ]]; then
+            # API 경계 lane은 default branch의 정기/일반 수동 실행만 허용한다.
+            run_lane=false
+          elif [[ "$mode" == "full" ]]; then
+            run_lane=true
+            if [[ -n "$FULL_SELECTOR" ]]; then
+              selectors_json="$(jq -nc --arg selector "$FULL_SELECTOR" '[$selector]')"
+            fi
+          elif [[ "$mode" == "selected" ]]; then
+            selectors_json="$(jq -c --arg device "$DEVICE" \
+              '[.androidTest.tests[] | select(.device == $device) | .selector]' "$plan_file")"
+            if [[ "$(jq 'length' <<< "$selectors_json")" -gt 0 ]]; then
+              run_lane=true
+            fi
+          elif [[ "$mode" != "none" ]]; then
+            echo "::error::알 수 없는 androidTest mode: $mode"
+            exit 1
+          fi
+          selectors="$(jq -r 'join(",")' <<< "$selectors_json")"
+
+          {
+            echo "pr=$target_pr"
+            echo "branch=$target_branch"
+            echo "sha=$target_sha"
+            echo "mode=$mode"
+            echo "plan_digest=$plan_digest"
+            echo "pull_request_file=$pull_request_file"
+            echo "run_lane=$run_lane"
+            echo "selectors=$selectors"
+            echo "selectors_json=$selectors_json"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Clone tested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # pull_request 는 head SHA, dispatch·schedule 은 그 branch/tag 에 결박된 event SHA 다.
+          # API 응답에서 유래한 step output 을 checkout ref 로 직접 사용하지 않는다.
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Verify checked out revision
+        env:
+          EXPECTED_SHA: ${{ steps.target.outputs.sha }}
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          if [[ "$actual_sha" != "$EXPECTED_SHA" ]]; then
+            echo "::error::checkout $actual_sha 가 검증한 target $EXPECTED_SHA 와 다릅니다"
+            exit 1
+          fi
+
+      - name: Stage bootstrap result renderer from the tested revision
+        if: >-
+          steps.policy.outputs.renderer == 'bootstrap' &&
+          steps.target.outputs.run_lane == 'true'
+        run: |
+          set -euo pipefail
+          renderer=".github/scripts/render-android-test-results.mjs"
+          if [[ ! -f "$renderer" ]]; then
+            echo "::error::bootstrap result renderer가 tested revision에 없습니다"
+            exit 1
+          fi
+          install -m 0644 \
+            "$renderer" \
+            "$RUNNER_TEMP/android-test-policy/render-android-test-results.mjs"
+
+      - name: Stage bootstrap result verifier from the tested revision
+        if: >-
+          steps.policy.outputs.source == 'bootstrap' &&
+          steps.target.outputs.run_lane == 'true' &&
+          steps.target.outputs.selectors_json != '[]'
+        run: |
+          set -euo pipefail
+          verifier=".github/scripts/verify-android-test-plan-result.mjs"
+          if [[ ! -f "$verifier" ]]; then
+            echo "::error::bootstrap result verifier가 tested revision에 없습니다"
+            exit 1
+          fi
+          install -m 0644 \
+            "$verifier" \
+            "$RUNNER_TEMP/android-test-policy/verify-android-test-plan-result.mjs"
+
+      - name: Validate selected tests in the tested revision
+        if: steps.target.outputs.mode == 'selected'
+        env:
+          PULL_REQUEST_FILE: ${{ steps.target.outputs.pull_request_file }}
+        run: >-
+          node "$RUNNER_TEMP/android-test-policy/validate-pr-ci-test-plan.mjs"
+          "$PULL_REQUEST_FILE"
+          "$GITHUB_WORKSPACE"
+
+      - name: Record tested revision
+        env:
+          TARGET_BRANCH: ${{ steps.target.outputs.branch }}
+          TARGET_MODE: ${{ steps.target.outputs.mode }}
+          TARGET_PR: ${{ steps.target.outputs.pr }}
+          TARGET_RUN_LANE: ${{ steps.target.outputs.run_lane }}
+          TARGET_SELECTORS: ${{ steps.target.outputs.selectors }}
+          TARGET_SHA: ${{ steps.target.outputs.sha }}
+        run: |
+          {
+            echo "## Android Managed Device target"
+            echo
+            echo "- PR: $TARGET_PR"
+            echo "- Branch: \`$TARGET_BRANCH\`"
+            echo "- Commit: \`$TARGET_SHA\`"
+            echo "- Plan mode: \`$TARGET_MODE\`"
+            echo "- This lane boots an emulator: \`$TARGET_RUN_LANE\`"
+            if [[ -n "$TARGET_SELECTORS" ]]; then
+              echo "- Selectors: \`$TARGET_SELECTORS\`"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Set up JDK
+        if: steps.target.outputs.run_lane == 'true'
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle and validate wrapper
+        if: steps.target.outputs.run_lane == 'true'
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          cache-provider: basic
+          cache-read-only: true
+          validate-wrappers: true
+
+      - name: Enable and verify KVM access
+        if: steps.target.outputs.run_lane == 'true'
+        run: |
+          runner_user="$(id -un)"
+          echo "KERNEL==\"kvm\", OWNER=\"${runner_user}\", GROUP=\"kvm\", MODE=\"0660\", OPTIONS+=\"static_node=kvm\"" \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm --settle
+
+          id
+          ls -l /dev/kvm
+          if [[ ! -c /dev/kvm || ! -r /dev/kvm || ! -w /dev/kvm ]]; then
+            echo "::error::/dev/kvm must be a character device readable and writable by the runner"
+            exit 1
+          fi
+          "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" "emulator"
+          "${ANDROID_HOME}/emulator/emulator" -accel-check
+
+      - name: Set up CI-only app configuration
+        if: steps.target.outputs.run_lane == 'true'
+        uses: ./.github/actions/setup-ci-config
+
+      - name: Run managed-device androidTest
+        id: android_test
+        if: steps.target.outputs.run_lane == 'true'
+        timeout-minutes: ${{ matrix.gradle_step_timeout_minutes }}
+        env:
+          ARTIFACT_KEY: ${{ matrix.artifact }}
+          DEVICE_TASK: ${{ matrix.task }}
+          GRADLE_TIMEOUT_MINUTES: ${{ matrix.gradle_timeout_minutes }}
+          TEST_SELECTORS: ${{ steps.target.outputs.selectors }}
+        run: |
+          set -euo pipefail
+          test_arguments=()
+          if [[ -n "$TEST_SELECTORS" ]]; then
+            test_arguments+=("-Pandroid.testInstrumentationRunnerArguments.class=$TEST_SELECTORS")
+          fi
+
+          log_directory="$RUNNER_TEMP/android-test-logs"
+          gradle_log="$log_directory/$ARTIFACT_KEY.log"
+          mkdir -p "$log_directory"
+
+          set +e
+          timeout --signal=TERM --kill-after=30s "${GRADLE_TIMEOUT_MINUTES}m" \
+            ./gradlew "$DEVICE_TASK" "${test_arguments[@]}" \
+            -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect \
+            --console=plain \
+            --stacktrace > "$gradle_log" 2>&1
+          status=$?
+          set -e
+
+          {
+            echo "exit_code=$status"
+            echo "log_path=$gradle_log"
+          } >> "$GITHUB_OUTPUT"
+          echo "Managed-device Gradle exit code: $status (full log is in the artifact)"
+
+      # Gradle 상한을 job 상한보다 먼저 끝내 아래 증거를 업로드할 시간을 확보한다. 환경 변수,
+      # process 인자, AVD 설정 파일은 수집하지 않아 CI 설정값이 artifact로 새지 않게 한다.
+      - name: Collect managed-device infrastructure diagnostics
+        if: >-
+          always() &&
+          steps.target.outputs.run_lane == 'true' &&
+          (steps.android_test.outcome != 'success' ||
+           steps.android_test.outputs.exit_code != '0')
+        run: |
+          set +e
+          diagnostics="$RUNNER_TEMP/android-test-diagnostics"
+          mkdir -p "$diagnostics"
+
+          {
+            date --iso-8601=seconds
+            uname -a
+            id
+            ls -l /dev/kvm
+            df -h
+            free -h
+            ps -eo pid,ppid,etimes,stat,%cpu,%mem,comm
+          } > "$diagnostics/runner.txt" 2>&1
+
+          timeout 15s adb devices -l > "$diagnostics/adb-devices.txt" 2>&1 || true
+          timeout 15s adb -e shell getprop > "$diagnostics/emulator-getprop.txt" 2>&1 || true
+          timeout 15s "${ANDROID_HOME}/emulator/emulator" -accel-check \
+            > "$diagnostics/emulator-accel-check.txt" 2>&1 || true
+
+      - name: Classify managed-device infrastructure failure
+        id: infrastructure_failure
+        if: >-
+          always() &&
+          steps.policy.outputs.classifier == 'trusted' &&
+          steps.target.outputs.run_lane == 'true' &&
+          (steps.android_test.outcome != 'success' ||
+           steps.android_test.outputs.exit_code != '0')
+        env:
+          ANDROID_TEST_EXIT_CODE: ${{ steps.android_test.outputs.exit_code }}
+          ANDROID_TEST_OUTCOME: ${{ steps.android_test.outcome }}
+          ARTIFACT_KEY: ${{ matrix.artifact }}
+          DEVICE: ${{ matrix.device }}
+          TARGET_SHA: ${{ steps.target.outputs.sha }}
+        run: |
+          marker="$RUNNER_TEMP/android-test-diagnostics/retry.json"
+          node "$RUNNER_TEMP/android-test-policy/classify-android-managed-device-failure.mjs" \
+            "$RUNNER_TEMP/android-test-logs/$ARTIFACT_KEY.log" \
+            app/build/outputs/androidTest-results/managedDevice \
+            "$marker"
+          {
+            echo "## Managed-device infrastructure classification"
+            echo
+            echo "- Retry eligible: \`$(jq -r '.retryable' "$marker")\`"
+            echo "- Reason: \`$(jq -r '.reason' "$marker")\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # PR이 고른 selector의 실행 증거는 계속 default branch에서 staging한 verifier가 소유한다.
+      # 오류는 다음 renderer가 summary와 annotation에 함께 싣도록 파일과 종료 코드로 넘긴다.
+      - name: Verify selected androidTest results
+        id: selected_android_test
+        if: >-
+          always() &&
+          steps.target.outputs.run_lane == 'true' &&
+          steps.target.outputs.selectors_json != '[]'
+        env:
+          TARGET_SELECTORS_JSON: ${{ steps.target.outputs.selectors_json }}
+        run: |
+          verification_log="$RUNNER_TEMP/android-test-selected-verification.log"
+          set +e
+          node "$RUNNER_TEMP/android-test-policy/verify-android-test-plan-result.mjs" \
+            "$TARGET_SELECTORS_JSON" \
+            app/build/outputs/androidTest-results/managedDevice \
+            > "$verification_log" 2>&1
+          status=$?
+          set -e
+          {
+            echo "exit_code=$status"
+            echo "log_path=$verification_log"
+          } >> "$GITHUB_OUTPUT"
+          echo "Selected androidTest verifier exit code: $status"
+
+      # Gradle 또는 selected verifier 실패와 무관하게 XML을 읽고 한 화면짜리 summary와
+      # file/line annotation을 만든다. 도입 PR 이후에는 default branch의 trusted renderer다.
+      - name: Summarize androidTest results
+        id: android_test_results
+        if: always() && steps.target.outputs.run_lane == 'true'
+        env:
+          ANDROID_TEST_ANNOTATION_DIR: ${{ runner.temp }}/android-test-annotations
+          SELECTED_VERIFIER_EXIT_CODE: ${{ steps.selected_android_test.outputs.exit_code }}
+          SELECTED_VERIFIER_LOG: ${{ steps.selected_android_test.outputs.log_path }}
+        run: |
+          set +e
+          node "$RUNNER_TEMP/android-test-policy/render-android-test-results.mjs" \
+            app/build/outputs/androidTest-results/managedDevice \
+            "$GITHUB_WORKSPACE" \
+            "$SELECTED_VERIFIER_LOG" \
+            "$SELECTED_VERIFIER_EXIT_CODE"
+          status=$?
+          set -e
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+
+      # GitHub는 한 step의 error annotation을 10개로 제한한다. renderer가 job 한도인
+      # 50개까지 나눈 파일을 서로 다른 step에서 재생해 각 annotation을 UI에 보존한다.
+      - name: Publish androidTest annotations 1
+        if: >-
+          always() &&
+          steps.target.outputs.run_lane == 'true' &&
+          fromJSON(steps.android_test_results.outputs.annotation_chunks || '0') >= 1
+        run: cat "$RUNNER_TEMP/android-test-annotations/chunk-1.log"
+
+      - name: Publish androidTest annotations 2
+        if: >-
+          always() &&
+          steps.target.outputs.run_lane == 'true' &&
+          fromJSON(steps.android_test_results.outputs.annotation_chunks || '0') >= 2
+        run: cat "$RUNNER_TEMP/android-test-annotations/chunk-2.log"
+
+      - name: Publish androidTest annotations 3
+        if: >-
+          always() &&
+          steps.target.outputs.run_lane == 'true' &&
+          fromJSON(steps.android_test_results.outputs.annotation_chunks || '0') >= 3
+        run: cat "$RUNNER_TEMP/android-test-annotations/chunk-3.log"
+
+      - name: Publish androidTest annotations 4
+        if: >-
+          always() &&
+          steps.target.outputs.run_lane == 'true' &&
+          fromJSON(steps.android_test_results.outputs.annotation_chunks || '0') >= 4
+        run: cat "$RUNNER_TEMP/android-test-annotations/chunk-4.log"
+
+      - name: Publish androidTest annotations 5
+        if: >-
+          always() &&
+          steps.target.outputs.run_lane == 'true' &&
+          fromJSON(steps.android_test_results.outputs.annotation_chunks || '0') >= 5
+        run: cat "$RUNNER_TEMP/android-test-annotations/chunk-5.log"
+
+      - name: Upload managed-device infrastructure retry marker
+        if: >-
+          always() &&
+          steps.infrastructure_failure.outputs.retryable == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: android-managed-device-retry-${{ matrix.device }}-${{ github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: error
+          retention-days: 1
+          path: ${{ runner.temp }}/android-test-diagnostics/retry.json
+
+      - name: Upload androidTest reports and failure evidence
+        if: always() && steps.target.outputs.run_lane == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: android-managed-device-${{ matrix.artifact }}-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: warn
           retention-days: 7
           path: |
             app/build/reports/androidTests/managedDevice/
             app/build/outputs/androidTest-results/managedDevice/
             app/build/outputs/managed_device_android_test_additional_output/
+            ${{ runner.temp }}/android-test-logs/
+            ${{ runner.temp }}/android-test-annotations/
+            ${{ runner.temp }}/android-test-diagnostics/
+            ${{ runner.temp }}/android-test-selected-verification.log
+
+      # XML 요약과 artifact 업로드를 끝낸 뒤에만 red로 만든다. Gradle이 실패했다면 원래
+      # 종료 코드를 우선 복원하고, Gradle 성공 뒤 result verifier만 실패한 경우 그 코드를 쓴다.
+      - name: Restore managed-device androidTest exit code
+        if: always() && steps.target.outputs.run_lane == 'true'
+        env:
+          ANDROID_TEST_EXIT_CODE: ${{ steps.android_test.outputs.exit_code }}
+          ANDROID_TEST_OUTCOME: ${{ steps.android_test.outcome }}
+          RESULT_RENDERER_EXIT_CODE: ${{ steps.android_test_results.outputs.exit_code }}
+          SELECTED_VERIFIER_EXIT_CODE: ${{ steps.selected_android_test.outputs.exit_code }}
+        run: |
+          if [[ "$ANDROID_TEST_OUTCOME" != "success" ]]; then
+            echo "Managed-device Gradle step did not complete: $ANDROID_TEST_OUTCOME"
+            exit 124
+          fi
+          if [[ -n "$ANDROID_TEST_EXIT_CODE" && "$ANDROID_TEST_EXIT_CODE" != "0" ]]; then
+            echo "Restoring managed-device Gradle exit code: $ANDROID_TEST_EXIT_CODE"
+            exit "$ANDROID_TEST_EXIT_CODE"
+          fi
+          if [[ -n "$SELECTED_VERIFIER_EXIT_CODE" && "$SELECTED_VERIFIER_EXIT_CODE" != "0" ]]; then
+            echo "Selected androidTest result verification failed."
+            exit "$SELECTED_VERIFIER_EXIT_CODE"
+          fi
+          if [[ -n "$RESULT_RENDERER_EXIT_CODE" && "$RESULT_RENDERER_EXIT_CODE" != "0" ]]; then
+            echo "Android test XML summary failed."
+            exit "$RESULT_RENDERER_EXIT_CODE"
+          fi

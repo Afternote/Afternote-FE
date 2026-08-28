@@ -1,0 +1,229 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "428022ff3f56a78ba1d4a4cf341e581292fc560e.json",
+    "schema": 2,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "purpose",
+      "not_covered": "limits",
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "details.app.session",
+      "device.avd",
+      "device.serial",
+      "text.sensitive_value"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "428022ff3f56a78ba1d4a4cf341e581292fc560e",
+  "head_ref": "develop",
+  "base_sha": null,
+  "base_ref": "origin/develop",
+  "recorded_at": "2026-08-25T12:06:53.705843+00:00",
+  "result": "로그인 전 5개 + 로그인 후 19개 = 24개 화면을 360x800dp 로 검사했다. 화면 밖으로 나간 텍스트 노드 0건. 텍스트 겹침은 애프터노트 홈·상세의 카테고리 탭 행 1건이 실제 결함으로 확인됐다(#1141) — 411x914dp 에서는 재현되지 않는 좁은 화면 전용이다. 프로필 이미지 위 + 버튼, 접근성 라벨과 표시 텍스트 쌍의 겹침은 오탐으로 확인했다.",
+  "scenario": "좁은 화면(360x800dp @320dpi)에서 잘림·오버플로 확인 — #1128 / #1129",
+  "not_covered": [
+    "겹침·잘림은 uiautomator 노드 bounds 로 자동 판정했고, 검출된 건만 스크린샷으로 눈검증했다. 검출되지 않은 시각 결함(색·간격·정렬)은 이 실측의 범위가 아니다.",
+    "앞선 시도([SENSITIVE_VALUE_REDACTED], 17시대)는 다른 세션과 기기를 공유해 오염됐다 — 그 결과는 채택하지 않았다."
+  ],
+  "device": {
+    "is_emulator": true,
+    "api_level": 35,
+    "screen": {
+      "physical": "1080x2400",
+      "density": 420,
+      "override": "720x1600",
+      "override_density": 320,
+      "effective_dp": "360x800"
+    }
+  },
+  "details": {
+    "app": {
+      "package": "com.afternote.afternote_fe",
+      "built_from": "worktree .claude/worktrees/qa-dev (origin/develop)",
+      "installed_at": "2026-08-25 18:43:19",
+      "note": "이 sha 를 직접 assembleDebug 해서 adb install -r 로 설치한 뒤 검사했다. 설치 시각은 검사 시작 전이고, 검사 중 lastUpdateTime 변화 없음."
+    },
+    "screens": [
+      {
+        "name": "welcome",
+        "label": "진입 화면",
+        "offscreen_nodes": 0
+      },
+      {
+        "name": "login",
+        "label": "로그인",
+        "offscreen_nodes": 0
+      },
+      {
+        "name": "signup_email",
+        "label": "회원가입 1/4 이메일 인증",
+        "offscreen_nodes": 0
+      },
+      {
+        "name": "received_records_empty",
+        "label": "받은 기록함(빈 상태)",
+        "offscreen_nodes": 0
+      },
+      {
+        "name": "sender_registration",
+        "label": "발신자 등록하기",
+        "offscreen_nodes": 0
+      },
+      {
+        "name": "home",
+        "label": "홈 탭",
+        "offscreen_nodes": 0,
+        "overlaps": 0
+      },
+      {
+        "name": "tab_record",
+        "label": "기록 탭",
+        "offscreen_nodes": 0,
+        "overlaps": 0
+      },
+      {
+        "name": "tab_timeletter",
+        "label": "타임레터 탭",
+        "offscreen_nodes": 0,
+        "overlaps": 0
+      },
+      {
+        "name": "tab_afternote",
+        "label": "노트 탭",
+        "offscreen_nodes": 0,
+        "overlaps": 1
+      },
+      {
+        "name": "afternote_detail",
+        "label": "애프터노트 상세",
+        "offscreen_nodes": 0,
+        "overlaps": 1
+      },
+      {
+        "name": "afternote_editor",
+        "label": "애프터노트 편집기",
+        "offscreen_nodes": 0,
+        "overlaps": 0
+      },
+      {
+        "name": "setting_list",
+        "label": "설정",
+        "offscreen_nodes": 0,
+        "overlaps": 0
+      },
+      {
+        "name": "setting_bottom",
+        "label": "설정 하단",
+        "offscreen_nodes": 0,
+        "overlaps": 0
+      },
+      {
+        "name": "set_profile",
+        "label": "프로필 수정",
+        "offscreen_nodes": 0,
+        "overlaps": 0
+      },
+      {
+        "name": "set_password",
+        "label": "비밀번호 변경",
+        "offscreen_nodes": 0,
+        "overlaps": 0
+      },
+      {
+        "name": "set_accounts",
+        "label": "연결된 계정",
+        "offscreen_nodes": 0,
+        "overlaps": 0
+      },
+      {
+        "name": "set_notification",
+        "label": "알림 설정",
+        "offscreen_nodes": 0,
+        "overlaps": 0
+      },
+      {
+        "name": "set_receiver_add",
+        "label": "수신자 등록",
+        "offscreen_nodes": 0,
+        "overlaps": 0
+      },
+      {
+        "name": "set_delivery_cond",
+        "label": "사후 전달 조건",
+        "offscreen_nodes": 0,
+        "overlaps": 0
+      },
+      {
+        "name": "set_passkey",
+        "label": "패스키 관리",
+        "offscreen_nodes": 0,
+        "overlaps": 0
+      },
+      {
+        "name": "set_applock",
+        "label": "앱 잠금 설정",
+        "offscreen_nodes": 0,
+        "overlaps": 0
+      },
+      {
+        "name": "set_withdraw",
+        "label": "회원 탈퇴",
+        "offscreen_nodes": 0,
+        "overlaps": 0
+      },
+      {
+        "name": "daily_question_write",
+        "label": "데일리질문 작성",
+        "offscreen_nodes": 0,
+        "overlaps": 0
+      },
+      {
+        "name": "record_fab",
+        "label": "일기 작성",
+        "offscreen_nodes": 0,
+        "overlaps": 0
+      }
+    ],
+    "isolation": "[SENSITIVE_VALUE_REDACTED] 은 이 실측을 위해 따로 부팅했고, 세션 기기 락(~/.claude/hooks/emulator-lease-guard.sh)으로 다른 세션의 접근을 막았다.",
+    "defects": [
+      {
+        "issue": 1141,
+        "screen": "afternote_home / afternote_detail",
+        "summary": "카테고리 탭 `추억 노트` 가 더보기 화살표와 겹침 (360dp 전용, 겹침비 0.34)"
+      },
+      {
+        "issue": 1147,
+        "screen": "setting_withdraw",
+        "summary": "글자 1.5배에서 '탈퇴할 계정' 카드의 이메일이 잘림 (고정 높이 그릇)"
+      }
+    ],
+    "font_scale_pass": {
+      "scale": 1.5,
+      "screen_dp": "411x914",
+      "screens": 17,
+      "note": "글자 확대는 화면 크기와 독립된 축이라 따로 훑었다. 자동 판정(화면 밖 노드·텍스트 겹침·말줄임)에 더해 대표 화면은 스크린샷을 눈으로 확인했다. 1.3 배에서는 검사한 화면이 모두 정상이었다.",
+      "defects": [
+        {
+          "issue": 1141,
+          "screen": "afternote_home",
+          "type": "겹침",
+          "summary": "카테고리 탭이 더보기 화살표와 겹침 — 411dp 에서도 재현(겹침비 1.0). 좁은 화면 전용이 아니었다"
+        },
+        {
+          "issue": 1147,
+          "screen": "setting_withdraw",
+          "type": "잘림",
+          "summary": "'탈퇴할 계정' 카드가 고정 높이라 이메일 줄이 카드 밖으로 클리핑"
+        }
+      ],
+      "false_positives": [
+        "프로필 이미지 위 + 버튼 오버레이('기본' ↔ '추가') — 의도된 디자인",
+        "접근성 라벨과 표시 텍스트 쌍('계정 정보, 필수 항목' ↔ '계정 정보') — 같은 요소의 두 표현"
+      ],
+      "limit": "클리핑 잘림은 노드 bounds 로 잡히지 않는다(bounds 가 컨테이너 안으로 잘려 나온다). #1147 도 자동 신호는 '말줄임 0건'이었고 스크린샷을 봐야 발견됐다."
+    }
+  }
+}

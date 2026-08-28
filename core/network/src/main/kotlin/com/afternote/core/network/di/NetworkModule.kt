@@ -4,7 +4,7 @@ import android.content.Context
 import coil3.ImageLoader
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import com.afternote.core.network.BuildConfig
-import com.afternote.core.network.interceptor.ApiErrorInterceptor
+import com.afternote.core.network.calladapter.ApiErrorCallAdapterFactory
 import com.afternote.core.network.interceptor.AuthInterceptor
 import com.afternote.core.network.interceptor.FeatureNetworkInterceptor
 import com.afternote.core.network.interceptor.OptionalDebugNetworkInterceptor
@@ -119,36 +119,43 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
             redactHeader("Authorization")
         }
 
+    /**
+     * 모든 클라이언트의 공통 뿌리. 파생은 [OkHttpClient.newBuilder] 로 — 설정값만이 아니라
+     * ConnectionPool · Dispatcher · 스레드풀을 실제로 공유한다.
+     * 인터셉터는 여기 두지 않는다: 로깅은 각 클라이언트가 마지막에 달아야 최종 요청·응답을 관찰하는데,
+     * base 에 두면 파생 시 맨 앞으로 밀린다.
+     */
+    @Provides
+    @Singleton
+    @Named("BaseClient")
+    fun provideBaseOkHttpClient(): OkHttpClient = OkHttpClient.Builder().withApiTimeouts().build()
+
     // 리이슈를 할 때 일반용 OkhttpClient만 사용하면 액세스 토큰이 계속 헤더에 포함되어 401을 받는 행위가 무한 반복
     // 이를 해결하기 위해 401을 받았을 때는 토큰을 헤더에 포함하지 않고 요청을 보내는 버전
     @Provides
     @Singleton
     @Named("RefreshClient")
     fun provideRefreshOkHttpClient(
+        @Named("BaseClient") baseClient: OkHttpClient,
         loggingInterceptor: HttpLoggingInterceptor,
-        apiErrorInterceptor: ApiErrorInterceptor,
     ): OkHttpClient =
-        OkHttpClient
-            .Builder() // 이제부터 인터셉터를 담을게
-            .withApiTimeouts()
-            .addInterceptor(apiErrorInterceptor)
+        baseClient
+            .newBuilder()
             .addInterceptor(loggingInterceptor)
-            .build() // 인터셉터 다 담았어
+            .build()
 
     @Provides
     @Singleton
     @Named("MainClient")
     fun provideMainOkHttpClient(
+        @Named("BaseClient") baseClient: OkHttpClient,
         @OptionalDebugNetworkInterceptor debugInterceptors: Set<@JvmSuppressWildcards Interceptor>,
         @FeatureNetworkInterceptor featureInterceptors: Set<@JvmSuppressWildcards Interceptor>,
         loggingInterceptor: HttpLoggingInterceptor,
         authInterceptor: AuthInterceptor,
         tokenAuthenticator: TokenAuthenticator,
-        apiErrorInterceptor: ApiErrorInterceptor,
     ): OkHttpClient {
-        val builder = OkHttpClient.Builder().withApiTimeouts()
-        // 가장 외곽(응답 마지막) — 4xx/5xx 본문의 message 를 파싱해 ApiException 으로 변환
-        builder.addInterceptor(apiErrorInterceptor)
+        val builder = baseClient.newBuilder()
         // 디버그 전용(피처 모듈) 인터셉터: 네트워크로 나가기 전에 가짜 응답을 반환할 수 있음
         debugInterceptors.forEach { builder.addInterceptor(it) }
         // 피처 모듈이 제공하는 프로덕션 인터셉터(예: 수신자 X-Auth-Code 자동 부착)
@@ -168,38 +175,34 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
     @Provides
     @Singleton
     @Named("S3Upload")
-    fun provideS3UploadOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient =
-        OkHttpClient
-            .Builder()
-            .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+    fun provideS3UploadOkHttpClient(
+        @Named("BaseClient") baseClient: OkHttpClient,
+        loggingInterceptor: HttpLoggingInterceptor,
+    ): OkHttpClient =
+        baseClient
+            .newBuilder()
             .readTimeout(UPLOAD_IO_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .writeTimeout(UPLOAD_IO_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .callTimeout(UPLOAD_CALL_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .addInterceptor(loggingInterceptor)
             .build()
 
-    /** Coil 전용. 인증 헤더 없이 이미지 호스트만 다루며, DEBUG 멀티바인딩 인터셉터(예: mock.image → Picsum)를 동일하게 적용한다.
-     *  모든 이미지 요청에 동일한 `User-Agent` 를 부착해 presentation 의 ImageRequest 별 부착 boilerplate 를 제거한다. */
+    /**
+     * Coil 전용. 인증 헤더가 붙지 않는 이미지 호스트만 다룬다.
+     * Coil 기본 로더를 그냥 쓰지 않는 이유는 이 두 가지뿐 — base 파생이라 커넥션 풀·디스패처를
+     * 공유하면서, 이미지 요청에도 디버그 로깅과 호출 상한([CALL_TIMEOUT_SECONDS])이 걸린다.
+     */
     @Provides
     @Singleton
     @Named("CoilImage")
     fun provideCoilImageOkHttpClient(
-        @OptionalDebugNetworkInterceptor debugInterceptors: Set<@JvmSuppressWildcards Interceptor>,
+        @Named("BaseClient") baseClient: OkHttpClient,
         loggingInterceptor: HttpLoggingInterceptor,
-    ): OkHttpClient {
-        val builder = OkHttpClient.Builder().withApiTimeouts()
-        builder.addInterceptor { chain ->
-            chain.proceed(
-                chain
-                    .request()
-                    .newBuilder()
-                    .header("User-Agent", "Afternote Android App")
-                    .build(),
-            )
-        }
-        debugInterceptors.forEach { builder.addInterceptor(it) }
-        return builder.addInterceptor(loggingInterceptor).build()
-    }
+    ): OkHttpClient =
+        baseClient
+            .newBuilder()
+            .addInterceptor(loggingInterceptor)
+            .build()
 
     @Provides
     @Singleton
@@ -218,12 +221,15 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
     fun provideRetrofit(
         @Named("MainClient") okHttpClient: OkHttpClient,
         json: Json,
+        apiErrorCallAdapterFactory: ApiErrorCallAdapterFactory,
     ): Retrofit =
         Retrofit
             .Builder()
             .baseUrl(BuildConfig.BASE_URL)
             // 느린 것이 확인된 경로만 여유 있는 파생 클라이언트로 태운다 (#1122).
             .callFactory(SlowEndpointCallFactory(okHttpClient))
+            // HTTP 응답을 받은 뒤 400..599 본문을 ApiException 으로 변환한다.
+            .addCallAdapterFactory(apiErrorCallAdapterFactory)
             // json과 코틀린의 dto 데이터 클래스 타입 간 번역기
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()

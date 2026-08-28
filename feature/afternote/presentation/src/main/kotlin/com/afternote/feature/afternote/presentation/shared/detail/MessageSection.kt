@@ -21,7 +21,7 @@ import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiM
  * "남기신 말씀" 섹션.
  *
  * 작성자가 남긴 말씀은 제목·본문 한 쌍이 여러 개일 수 있고, 시안은 그 하나하나를 **각각의 카드**로 그린다
- * ([Figma 변경 시안](https://www.figma.com/design/UP9ZR186jHvRBicjA2SOea/%EC%95%A0%ED%94%84%ED%84%B0%EB%85%B8%ED%8A%B8--new-?node-id=3628-17591)).
+ * ([Figma 변경 시안](https://www.figma.com/design/UP9ZR186jHvRBicjA2SOea/%EC%95%A0%ED%94%84%ED%84%B0%EB%85%B8%ED%8A%B8--new-?node-id=4327-67019)).
  * [blocks] 가 비어 있으면 빈 카드 하나에 `feature_afternote_detail_no_message` 문구를 gray5 로 표시한다.
  */
 @Composable

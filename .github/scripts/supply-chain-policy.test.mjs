@@ -5,11 +5,106 @@ import test from 'node:test';
 
 const workflowDirectory = new URL('../workflows/', import.meta.url);
 
+const dependencyPathFilters = [
+  '**/*.gradle',
+  '**/*.gradle.kts',
+  '**/*.lockfile',
+  '**/build-logic/**',
+  '**/buildSrc/**',
+  '**/gradle.properties',
+  '**/gradlew',
+  '**/gradlew.bat',
+  'gradle/**',
+  '.github/workflows/dependency-review.yml',
+  '.github/workflows/dependency-submission.yml',
+  '.github/workflows/dependency-submission-trusted.yml',
+  '.github/workflows/dependency-submission-upload.yml',
+];
+
 async function workflows() {
   const names = (await readdir(workflowDirectory)).filter((name) => name.endsWith('.yml'));
   return Promise.all(
     names.map(async (name) => [name, await readFile(new URL(name, workflowDirectory), 'utf8')]),
   );
+}
+
+function runnerJobBlocks(source) {
+  const lines = source.split('\n');
+  const blocks = [];
+  let inJobs = false;
+  let current = null;
+
+  const flush = () => {
+    if (current && /^    runs-on:/m.test(current.source)) {
+      blocks.push(current);
+    }
+    current = null;
+  };
+
+  for (const line of lines) {
+    if (line === 'jobs:') {
+      inJobs = true;
+      continue;
+    }
+    if (!inJobs) {
+      continue;
+    }
+    if (/^\S/.test(line)) {
+      flush();
+      inJobs = false;
+      continue;
+    }
+    const job = /^  ([A-Za-z0-9_-]+):\s*$/.exec(line);
+    if (job) {
+      flush();
+      current = { name: job[1], source: `${line}\n` };
+    } else if (current) {
+      current.source += `${line}\n`;
+    }
+  }
+  flush();
+  return blocks;
+}
+
+function checkoutStepBlocks(source) {
+  const lines = source.split('\n');
+  const blocks = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    if (!/^\s+uses:\s*actions\/checkout@/.test(lines[index])) {
+      continue;
+    }
+    const usesIndent = /^\s*/.exec(lines[index])[0].length;
+    const stepIndent = usesIndent - 2;
+    const block = [lines[index]];
+    for (let cursor = index + 1; cursor < lines.length; cursor += 1) {
+      const line = lines[cursor];
+      const indent = /^\s*/.exec(line)[0].length;
+      if (line.trim().length > 0 && indent <= stepIndent) {
+        break;
+      }
+      block.push(line);
+    }
+    blocks.push(block.join('\n'));
+  }
+  return blocks;
+}
+
+function eventPathFilters(source, eventName) {
+  const match = new RegExp(`^  ${eventName}:\\n    paths:\\n((?:      - '[^']+'\\n)+)`, 'm').exec(
+    source,
+  );
+  assert.ok(match, `${eventName} must declare a paths filter`);
+  return match[1].trim().split('\n').map((line) => {
+    const path = /^- '([^']+)'$/.exec(line.trim());
+    assert.ok(path, `invalid dependency path filter: ${line}`);
+    return path[1];
+  });
+}
+
+function workflowName(source) {
+  const match = /^name:\s*(.+)$/m.exec(source);
+  assert.ok(match, 'workflow must declare a top-level name');
+  return match[1].trim();
 }
 
 // 같은 저장소의 로컬 액션·reusable workflow 는 uses 대상이 이 저장소의 리비전이라
@@ -125,17 +220,139 @@ test('Gradle caching has a single owner in every workflow', async () => {
   }
 });
 
+test('every runner job has an explicit positive timeout', async () => {
+  const missing = [];
+  for (const [workflow, source] of await workflows()) {
+    for (const job of runnerJobBlocks(source)) {
+      const timeout = /^    timeout-minutes:\s*(.+)\s*$/m.exec(job.source)?.[1];
+      if (!timeout || (!/^[1-9][0-9]*$/.test(timeout) && !/^\$\{\{.+\}\}$/.test(timeout))) {
+        missing.push(`${workflow}: ${job.name}`);
+      }
+    }
+  }
+  assert.deepEqual(missing, []);
+});
+
+test('checkout never persists the workflow token in the worktree', async () => {
+  const unsafe = [];
+  for (const [workflow, source] of await workflows()) {
+    checkoutStepBlocks(source).forEach((block, index) => {
+      if (!/^\s+persist-credentials:\s*false\s*$/m.test(block)) {
+        unsafe.push(`${workflow}: checkout ${index + 1}`);
+      }
+    });
+  }
+  assert.deepEqual(unsafe, []);
+});
+
+test('reusable lint jobs keep a read-only token', async () => {
+  const lint = await readFile(new URL('../workflows/lint.yml', import.meta.url), 'utf8');
+  assert.match(lint, /^permissions:\n  contents: read$/m);
+  assert.doesNotMatch(lint, /pull-requests:\s*write/);
+});
+
+test('dependency audit resolves and tests every domain module on its current platform', async () => {
+  const source = await readFile(
+    new URL('../workflows/dependency-audit.yml', import.meta.url),
+    'utf8',
+  );
+  const reportCommands = [
+    'run_report core-model-runtime :core:model:dependencies --configuration runtimeClasspath',
+    'run_report core-domain-runtime :core:domain:dependencies --configuration runtimeClasspath',
+    'run_report afternote-domain-runtime :feature:afternote:domain:dependencies --configuration runtimeClasspath',
+    'run_report mindrecord-domain-runtime :feature:mindrecord:domain:dependencies --configuration debugRuntimeClasspath',
+    'run_report onboarding-domain-runtime :feature:onboarding:domain:dependencies --configuration runtimeClasspath',
+    'run_report receiver-domain-runtime :feature:receiver:domain:dependencies --configuration debugRuntimeClasspath',
+    'run_report setting-domain-runtime :feature:setting:domain:dependencies --configuration runtimeClasspath',
+    'run_report timeletter-domain-runtime :feature:timeletter:domain:dependencies --configuration debugRuntimeClasspath',
+  ];
+
+  assert.match(source, /\.\/gradlew assembleDebug testDebugUnitTest/);
+  reportCommands.forEach((command) => {
+    assert.ok(source.includes(command), `${command} is missing`);
+    const name = command.split(' ')[1];
+    assert.match(source, new RegExp(`--resolved-report "\\$REPORT_DIR/resolved/${name}\\.txt"`));
+  });
+  const testTasks = [
+    ':core:model:test',
+    ':core:domain:test',
+    ':feature:afternote:domain:test',
+    ':feature:mindrecord:domain:testDebugUnitTest',
+    ':feature:onboarding:domain:test',
+    ':feature:receiver:domain:testDebugUnitTest',
+    ':feature:setting:domain:test',
+    ':feature:timeletter:domain:testDebugUnitTest',
+  ];
+  testTasks.forEach((task) => {
+    assert.ok(source.includes(task), `${task} is missing`);
+  });
+});
+
 test('dependency graph generation is immutable, fail closed, and wrapper validated', async () => {
-  const source = await readFile(new URL('../workflows/dependency-submission.yml', import.meta.url), 'utf8');
+  const prSource = await readFile(
+    new URL('../workflows/dependency-submission.yml', import.meta.url),
+    'utf8',
+  );
+  const trustedSource = await readFile(
+    new URL('../workflows/dependency-submission-trusted.yml', import.meta.url),
+    'utf8',
+  );
+  const source = `${prSource}\n${trustedSource}`;
   const actionReferences = source.match(/gradle\/actions\/dependency-submission@[0-9a-f]{40} # v\d+\.\d+\.\d+/g);
 
-  assert.equal(actionReferences?.length, 2);
-  assert.equal((source.match(/dependency-graph-continue-on-failure:\s*false/g) ?? []).length, 2);
-  assert.equal((source.match(/validate-wrappers:\s*true/g) ?? []).length, 2);
-  assert.match(source, /dependency-graph:\s*generate-and-submit/);
-  assert.match(source, /dependency-graph:\s*generate-and-upload/);
-  assert.match(source, /Detect dependency graph input changes/);
-  assert.match(source, /if:\s*steps\.dependency-inputs\.outputs\.changed == 'true'/);
+  assert.equal(actionReferences?.length, 3);
+  assert.equal((source.match(/dependency-graph-continue-on-failure:\s*false/g) ?? []).length, 3);
+  assert.equal((source.match(/validate-wrappers:\s*true/g) ?? []).length, 3);
+  assert.match(prSource, /dependency-graph:\s*generate-and-upload/);
+  assert.equal(workflowName(prSource), 'Generate PR Dependency Graph');
+  assert.doesNotMatch(prSource, /^  push:/m);
+  assert.match(trustedSource, /dependency-graph:\s*generate-and-submit/);
+  assert.equal(workflowName(trustedSource), 'Submit Trusted Branch Dependency Graph');
+  assert.match(trustedSource, /^  push:/m);
+  assert.doesNotMatch(trustedSource, /^  pull_request:/m);
+  assert.doesNotMatch(trustedSource, /^    paths:/m);
+});
+
+test('manual dependency baseline is hard-wired to the checked-out main SHA', async () => {
+  const source = await readFile(
+    new URL('../workflows/dependency-submission-trusted.yml', import.meta.url),
+    'utf8',
+  );
+  const manualJob = /^  submit-main-baseline:\n[\s\S]+$/m.exec(source)?.[0];
+
+  assert.match(source, /^  workflow_dispatch:\s*$/m);
+  assert.doesNotMatch(source, /^  workflow_dispatch:\n    inputs:/m);
+  assert.match(
+    source,
+    /github\.event_name == 'workflow_dispatch' && 'refs\/heads\/main' \|\| github\.ref/,
+  );
+  assert.ok(manualJob);
+  assert.match(
+    manualJob,
+    /if:\s*github\.event_name == 'workflow_dispatch' && github\.ref == 'refs\/heads\/develop'/,
+  );
+  assert.match(manualJob, /GITHUB_DEPENDENCY_GRAPH_REF:\s*refs\/heads\/main/);
+  assert.match(manualJob, /^          ref:\s*refs\/heads\/main$/m);
+  assert.match(manualJob, /snapshot_sha="\$\(git rev-parse HEAD\)"/);
+  assert.match(manualJob, /GITHUB_DEPENDENCY_GRAPH_SHA=\$snapshot_sha/);
+  assert.match(manualJob, /dependency-graph:\s*generate-and-submit/);
+  assert.doesNotMatch(manualJob, /inputs\./);
+});
+
+test('dependency PR workflows use the same complete server-side path filter', async () => {
+  const submission = await readFile(
+    new URL('../workflows/dependency-submission.yml', import.meta.url),
+    'utf8',
+  );
+  const review = await readFile(
+    new URL('../workflows/dependency-review.yml', import.meta.url),
+    'utf8',
+  );
+
+  assert.deepEqual(eventPathFilters(submission, 'pull_request'), dependencyPathFilters);
+  assert.deepEqual(eventPathFilters(review, 'pull_request'), dependencyPathFilters);
+  assert.doesNotMatch(submission, /Detect dependency graph input changes/);
+  assert.doesNotMatch(review, /Detect dependency graph input changes/);
 });
 
 test('the privileged PR graph bridge never checks out or executes pull request code', async () => {
@@ -143,14 +360,26 @@ test('the privileged PR graph bridge never checks out or executes pull request c
     new URL('../workflows/dependency-submission-upload.yml', import.meta.url),
     'utf8',
   );
+  const prSource = await readFile(
+    new URL('../workflows/dependency-submission.yml', import.meta.url),
+    'utf8',
+  );
+  const trustedSource = await readFile(
+    new URL('../workflows/dependency-submission-trusted.yml', import.meta.url),
+    'utf8',
+  );
+  const subscribedWorkflow = /workflows:\s*\[([^\]]+)\]/.exec(source)?.[1]?.trim();
 
   assert.match(source, /workflow_run:/);
+  assert.equal(subscribedWorkflow, workflowName(prSource));
+  assert.notEqual(subscribedWorkflow, workflowName(trustedSource));
   assert.match(source, /github\.event\.workflow_run\.event == 'pull_request'/);
   assert.match(source, /github\.event\.workflow_run\.conclusion == 'success'/);
   assert.match(source, /actions:\s*read/);
   assert.match(source, /contents:\s*write/);
   assert.match(source, /actions\/github-script@[0-9a-f]{40} # v\d+\.\d+\.\d+/);
   assert.match(source, /listWorkflowRunArtifacts/);
+  assert.match(source, /core\.setFailed\('Expected dependency graph artifact/);
   assert.match(source, /if:\s*steps\.dependency-graph-artifact\.outputs\.available == 'true'/);
   assert.match(source, /gradle\/actions\/dependency-submission@[0-9a-f]{40} # v\d+\.\d+\.\d+/);
   assert.match(source, /cache-disabled:\s*true/);
@@ -159,12 +388,21 @@ test('the privileged PR graph bridge never checks out or executes pull request c
   assert.doesNotMatch(source, /^\s+-?\s*run:/m);
 });
 
+test('pull requests beyond the conservative path-filter boundary fail closed', async () => {
+  const source = await readFile(
+    new URL('../workflows/repository-quality.yml', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(source, /github\.event\.pull_request\.changed_files/);
+  assert.match(source, /MAX_PATH_FILTER_FILES:\s*300/);
+  assert.match(source, /CHANGED_FILES > MAX_PATH_FILTER_FILES/);
+});
+
 test('dependency review blocks high severity changes without enforcing a license allowlist', async () => {
   const source = await readFile(new URL('../workflows/dependency-review.yml', import.meta.url), 'utf8');
 
   assert.match(source, /actions\/dependency-review-action@[0-9a-f]{40} # v\d+\.\d+\.\d+/);
-  assert.match(source, /Detect dependency graph input changes/);
-  assert.match(source, /if:\s*steps\.dependency-inputs\.outputs\.changed == 'true'/);
   assert.match(source, /fail-on-severity:\s*high/);
   assert.match(source, /license-check:\s*true/);
   assert.doesNotMatch(source, /(allow|deny)-licenses:/);
@@ -178,6 +416,9 @@ test('Dependabot updates Actions and the screenshot image but not Gradle version
   assert.match(source, /package-ecosystem:\s*docker/);
   assert.doesNotMatch(source, /package-ecosystem:\s*gradle/);
   assert.doesNotMatch(source, /auto-merge|automerge/);
+  assert.doesNotMatch(source, /^\s+- internal$/m);
+  assert.equal(source.match(/^\s+- maintenance$/gm)?.length, 2);
+  assert.equal(source.match(/^\s+- area:platform$/gm)?.length, 2);
 });
 
 test('the Gradle wrapper JAR and distribution stay on the reviewed official checksums', async () => {

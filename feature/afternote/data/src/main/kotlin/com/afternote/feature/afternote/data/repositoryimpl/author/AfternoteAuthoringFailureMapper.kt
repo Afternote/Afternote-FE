@@ -6,6 +6,7 @@ import com.afternote.feature.afternote.domain.error.AfternoteFailure
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import retrofit2.HttpException
+import java.io.IOException
 
 private val apiErrorJson =
     Json {
@@ -18,13 +19,17 @@ private data class ApiErrorBodyDto(
 )
 
 /**
- * 저장 API 실패 Throwable을 도메인 검증 예외로 치환할 수 있으면 치환한다.
+ * 저장 API 실패를 presentation이 네트워크·서버·검증 오류로 타입 분기할 수 있는 도메인 예외로 치환한다.
  */
 internal fun mapAuthoringFailure(throwable: Throwable): Throwable {
     if (throwable is AfternoteFailure.AuthoringValidation) return throwable
 
-    if (throwable is ApiException && throwable.code == RECEIVERS_REQUIRED_SERVER_CODE) {
-        return AfternoteFailure.AuthoringValidation(AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED)
+    if (throwable is ApiException) {
+        return if (throwable.code == RECEIVERS_REQUIRED_SERVER_CODE) {
+            AfternoteFailure.AuthoringValidation(AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED)
+        } else {
+            throwable
+        }
     }
 
     if (throwable is HttpException && throwable.code() == HTTP_BAD_REQUEST) {
@@ -36,6 +41,10 @@ internal fun mapAuthoringFailure(throwable: Throwable): Throwable {
         if (parsed?.code == RECEIVERS_REQUIRED_SERVER_CODE) {
             return AfternoteFailure.AuthoringValidation(AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED)
         }
+    }
+
+    if (throwable is IOException) {
+        return AfternoteFailure.NetworkUnavailable(throwable)
     }
 
     return throwable

@@ -44,15 +44,17 @@ plugins {
     alias(libs.plugins.firebase.crashlytics) apply false
 }
 
-// 빌드·테스트 클래스패스의 보안 하한(#921·#975~#985·#1058·#1072). 상류가 취약 버전을 물고 있고 상류
+// 빌드·테스트 클래스패스의 보안 하한(#921·#975~#985·#1058·#1072·#1262). 상류가 취약 버전을 물고 있고 상류
 // 최신판도 아직 패치 버전 미만이라 constraint 로 올린다 — Robolectric 4.15.1(bcprov 1.80)·AGP
 // 9.3.2(bcprov 1.79·commons-lang3 3.16.0·jose4j 0.9.5·jdom2 2.0.6)·Firebase App Distribution 5.3.0
 // 과 AGP UTP 설정(netty — unified-test-platform-core 가 4.1.93, -host-emulator-control 이 4.1.110)
-// ·AGP androidLintTool 과 UTP(httpclient 4.5.6)·ktlint CLI(logback 1.3.16)·Kakao SDK 2.23.2(okhttp
-// 4.9.2→okio 2.8.0). androidLintTool·UTP 처럼 AGP 가 뒤늦게 만드는 configuration 까지 잡도록
-// configureEach 로 걸고, require 시맨틱이라 상류가 하한 이상을 선언하게 되면 그쪽이 이긴다. okhttp 를
-// 뺀 나머지는 빌드 도구 경유라 APK 산출물에는 없다(releaseRuntimeClasspath 실측). build-logic 은
-// 별도 빌드라 build-logic/build.gradle.kts 가 같은 하한을 선언한다.
+// ·AGP androidLintTool 과 UTP(httpclient 4.5.6)·ktlint CLI(logback 1.3.16)·Compose Accessibility Test
+// Framework(protobuf-javalite 3.19.1)·Kakao SDK 2.23.2(okhttp 4.9.2→okio 2.8.0). androidLintTool·UTP
+// 처럼 AGP 가 뒤늦게 만드는 configuration 까지 잡도록
+// configureEach 로 걸고, require 시맨틱이라 상류가 하한 이상을 선언하게 되면 그쪽이 이긴다. okhttp 는
+// production 런타임, protobuf-javalite 는 androidTest 런타임에만 있고 나머지는 빌드 도구 경유라
+// release APK 에 없다(releaseRuntimeClasspath 실측). build-logic 은 별도 빌드라
+// build-logic/build.gradle.kts 가 같은 하한을 선언한다.
 data class SecurityFloor(
     val module: String,
     val version: String,
@@ -106,6 +108,13 @@ val securityFloors =
                 module = "org.apache.httpcomponents:httpclient",
                 version = libs.versions.httpclient.get(),
                 because = "GHSA-7r82-7xv7-xcpj — 4.5.13 미만 취약 — #1072",
+            ),
+            SecurityFloor(
+                module = "com.google.protobuf:protobuf-javalite",
+                version = libs.versions.protobufJavalite.get(),
+                because =
+                    "GHSA-4gg5-vx3j-xwc7·GHSA-735f-pc8j-v9w8 — " +
+                        "Accessibility Test Framework 4.1.1 경유 3.19.1 잔존 — #1262",
             ),
         ) +
         // logback-core 만 취약하지만 classic 은 core 와 같은 버전이라야 동작해 함께 올린다.
@@ -194,26 +203,4 @@ dependencies {
     kover(project(":feature:timeletter:domain"))
     kover(project(":feature:timeletter:presentation"))
     kover(project(":feature:timeletter:res"))
-}
-
-tasks.register<Exec>("installGitHooks") {
-    group = "verification"
-    description = "Installs git-hooks/pre-commit into the shared git hooks dir (run once per clone)."
-    workingDir(layout.projectDirectory)
-    commandLine(
-        "sh",
-        "-c",
-        // worktree 에서는 .git 이 디렉터리가 아니라 gitdir 포인터 파일이라 ".git/hooks" 가
-        // 성립하지 않는다. hooks 는 메인 저장소와 공용이므로 항상
-        // `git rev-parse --git-common-dir` 기준으로 설치한다.
-        // pre-push(컴파일 검증)는 제거됨 — PR 시점 검증(CI·create-pr)으로 위임(#478).
-        // 과거 클론에 설치된 잔존본도 여기서 걷어낸다.
-        "HOOKS_DIR=\"\$(git rev-parse --git-common-dir 2>/dev/null)/hooks\"; " +
-            "if test -d \"\$HOOKS_DIR\"; then " +
-            "cp git-hooks/pre-commit \"\$HOOKS_DIR/pre-commit\" && " +
-            "chmod +x \"\$HOOKS_DIR/pre-commit\" && " +
-            "rm -f \"\$HOOKS_DIR/pre-push\" && " +
-            "echo \"Installed \$HOOKS_DIR/pre-commit (removed legacy pre-push)\"; " +
-            "else echo \"installGitHooks: git hooks dir not found, skipping\"; fi",
-    )
 }

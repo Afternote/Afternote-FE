@@ -1,8 +1,7 @@
 package com.afternote.core.data.repoimpl
 
-import com.afternote.core.domain.repository.auth.AuthRepository
-import com.afternote.core.model.Session
-import com.afternote.core.model.TokenBundle
+import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.network.dto.ReceiverDetailDto
 import com.afternote.core.network.dto.ReceiverListDto
@@ -23,9 +22,7 @@ import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.core.network.service.UserApiService
 import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -36,6 +33,7 @@ import org.junit.Test
 
 class UserRepositoryImplTest {
     private val calls = mutableListOf<String>()
+    private val errorReporter = RecordingErrorReporter()
 
     private fun repository(
         deleteAccountResponse: BaseResponse<Unit> = success(),
@@ -55,12 +53,13 @@ class UserRepositoryImplTest {
                 onCreateReceiver = onCreateReceiver,
             ),
         authRepository =
-            FakeAuthRepository(
+            FakeAuthRepository.strict(loggedIn = true).apply {
                 onClearSession = {
                     calls += "clearSession"
                     clearSessionResult
-                },
-            ),
+                }
+            },
+        errorReporter = errorReporter,
     )
 
     @Test
@@ -70,6 +69,7 @@ class UserRepositoryImplTest {
         runBlocking { repository.deleteAccount() }
 
         assertEquals(listOf("deleteAccount", "clearSession"), calls)
+        assertEquals(0, errorReporter.writtenFailures.size)
     }
 
     @Test
@@ -81,6 +81,7 @@ class UserRepositoryImplTest {
         }
 
         assertEquals(listOf("deleteAccount"), calls)
+        assertEquals(0, errorReporter.writtenFailures.size)
     }
 
     /**
@@ -89,11 +90,21 @@ class UserRepositoryImplTest {
      */
     @Test
     fun `deleteAccount - 세션 정리가 실패해도 탈퇴는 성공으로 끝난다`() {
-        val repository = repository(clearSessionResult = Result.failure(IllegalStateException("datastore 쓰기 실패")))
+        val failure = IllegalStateException("datastore 쓰기 실패")
+        val repository = repository(clearSessionResult = Result.failure(failure))
 
         runBlocking { repository.deleteAccount() }
 
         assertEquals(listOf("deleteAccount", "clearSession"), calls)
+        val (reported, attributes) = errorReporter.writtenFailures.single()
+        assertEquals(IllegalStateException::class.java.name, reported.message)
+        assertEquals(
+            mapOf(
+                "account_stage" to "delete_session_cleanup",
+                "error_type" to IllegalStateException::class.java.name,
+            ),
+            attributes,
+        )
     }
 
     /** 정리가 DELETE 앞에 오면 요청이 토큰 없이 나가므로, 순서 자체가 계약이다. */
@@ -177,6 +188,17 @@ class UserRepositoryImplTest {
         }
 }
 
+private class RecordingErrorReporter : ErrorReporter {
+    val writtenFailures = mutableListOf<Pair<Throwable, Map<String, String>>>()
+
+    override fun writeFailure(
+        throwable: Throwable,
+        attributes: Map<String, String>,
+    ) {
+        writtenFailures += throwable to attributes
+    }
+}
+
 private fun success() = BaseResponse<Unit>(status = 200, code = 200)
 
 private fun <T> dataResponse(data: T) = BaseResponse(status = 200, code = 200, data = data)
@@ -239,39 +261,4 @@ private class FakeUserApiService(
         receiverId: Long,
         request: ReceiverDeliveryConditionUpdateRequestDto,
     ): BaseResponse<ReceiverDeliveryConditionDto> = TODO("이 테스트 미사용")
-}
-
-private class FakeAuthRepository(
-    private val onClearSession: () -> Result<Unit>,
-) : AuthRepository {
-    override val isLoggedIn: Flow<Boolean> = flowOf(true)
-
-    override suspend fun clearSession(): Result<Unit> = onClearSession()
-
-    override suspend fun saveSession(
-        accessToken: String,
-        refreshToken: String,
-    ): Result<Unit> = TODO("이 테스트 미사용")
-
-    override suspend fun updateTokens(
-        accessToken: String,
-        refreshToken: String,
-    ): Result<Unit> = TODO("이 테스트 미사용")
-
-    override suspend fun getAccessToken(): Result<String?> = TODO("이 테스트 미사용")
-
-    override suspend fun getRefreshToken(): Result<String?> = TODO("이 테스트 미사용")
-
-    override suspend fun defaultLogin(
-        email: String,
-        password: String,
-    ): Result<Session.DefaultSession> = TODO("이 테스트 미사용")
-
-    override suspend fun kakaoLogin(oauthToken: String): Result<Session.SocialSession> = TODO("이 테스트 미사용")
-
-    override suspend fun googleLogin(idToken: String): Result<Session.SocialSession> = TODO("이 테스트 미사용")
-
-    override suspend fun rotateToken(): Result<TokenBundle> = TODO("이 테스트 미사용")
-
-    override suspend fun logout(): Result<Unit> = TODO("이 테스트 미사용")
 }

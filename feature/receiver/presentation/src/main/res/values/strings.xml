@@ -46,6 +46,7 @@
     -->
     <string name="receiver_afternote_list_header_description">고인이 사후 정리하고자 하는 데이터입니다.</string>
     <string name="receiver_playlist_song_count_format">총 %1$d곡</string>
+    <string name="receiver_playlist_empty_message">고인이 남긴 곡이 없어요.</string>
 
     <!--
       SOCIAL 수신 상세 ACCOUNT 섹션의 부재 문구. 서버는 수신자에게 credentials 를 내려주지 않고,

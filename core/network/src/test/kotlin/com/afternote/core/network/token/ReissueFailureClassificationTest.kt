@@ -1,12 +1,15 @@
 package com.afternote.core.network.token
 
-import com.afternote.core.network.FakeAuthRepository
 import com.afternote.core.network.FakeErrorReporter
-import com.afternote.core.network.FakeInterceptorChain
-import com.afternote.core.network.interceptor.ApiErrorInterceptor
+import com.afternote.core.network.calladapter.ApiErrorCallAdapterFactory
+import com.afternote.core.network.di.NetworkModule
+import com.afternote.core.network.di.ServiceModule
+import com.afternote.core.network.dto.ReissueRequestDto
 import com.afternote.core.network.jsonResponse
 import com.afternote.core.network.model.ApiException
-import kotlinx.serialization.json.Json
+import com.afternote.core.network.networkFakeAuthRepository
+import kotlinx.coroutines.runBlocking
+import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -15,33 +18,48 @@ import org.junit.Test
  * "서버가 이렇게 응답하면 재발급은 이렇게 분류된다" 를 **응답 본문에서 분류까지** 잠그는 가드 (#1126).
  *
  * [TokenReissuerTest] 는 `rotateToken()` 이 던지는 예외를 가짜가 직접 주입하므로, 정작 그 예외를
- * 만드는 구간 — `ApiErrorInterceptor` 의 본문 파싱 — 이 테스트에서 빠져 있었다. 이 이슈의 위험이
+ * 만드는 구간 — Retrofit `ApiErrorCallAdapterFactory`의 본문 파싱 — 이 테스트에서 빠져 있었다. 이 이슈의 위험이
  * 정확히 그 구간에 있다: 재발급 400 의 `code=1107` 은 **파싱에 성공해야** 읽히고, 실패하면
- * `code` 자리에 HTTP 상태(400)가 들어간다([ApiErrorInterceptor] 참조). 그래서 여기서는
- * 실제 인터셉터로 예외를 만들어 [TokenReissuer] 에 먹인다.
+ * `code` 자리에 HTTP 상태(400)가 들어간다. 그래서 여기서는 실제 Refresh Retrofit으로 예외를 만들어
+ * [TokenReissuer]에 먹인다.
  *
- * 재발급은 토큰 미부착 `RefreshClient` 를 타는데 거기에도 `ApiErrorInterceptor` 가 붙어 있어
- * (`NetworkModule.provideRefreshOkHttpClient`), 재발급 실패는 항상 [ApiException] 으로 온다.
+ * 재발급은 토큰 미부착 `RefreshClient`와 별도 Refresh Retrofit을 타며, 그 Retrofit에도 같은
+ * CallAdapter가 등록돼 재발급의 HTTP 400..599 실패도 [ApiException]으로 온다.
  */
 class ReissueFailureClassificationTest {
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = NetworkModule.provideJson()
     private val tracker = AccessTokenExpiryTracker { 0L }
 
-    /** 실제 [ApiErrorInterceptor] 에 이 응답을 먹여 나온 예외 — 프로덕션이 만드는 것과 같은 값이다. */
+    /** 실제 Refresh Retrofit에 이 응답을 먹여 나온 예외 — 프로덕션이 만드는 것과 같은 값이다. */
     private fun failureFrom(
         status: Int,
         body: String,
         contentType: String = "application/json",
-    ): Throwable =
-        runCatching {
-            ApiErrorInterceptor(json).intercept(
-                FakeInterceptorChain(respond = { it.jsonResponse(code = status, body = body, contentType = contentType) }),
+    ): Throwable {
+        val client =
+            OkHttpClient
+                .Builder()
+                .addInterceptor { chain ->
+                    chain.request().jsonResponse(code = status, body = body, contentType = contentType)
+                }.build()
+        val retrofit =
+            ServiceModule.provideRefreshRetrofit(
+                refreshClient = client,
+                json = json,
+                apiErrorCallAdapterFactory = ApiErrorCallAdapterFactory(json),
             )
-        }.exceptionOrNull() ?: error("ApiErrorInterceptor 가 $status 를 예외로 바꾸지 않았다")
+        val service = ServiceModule.provideTokenApiService(retrofit)
+
+        return runBlocking {
+            runCatching { service.reissue(ReissueRequestDto(refreshToken = "refresh-token")) }
+                .exceptionOrNull()
+                ?: error("ApiErrorCallAdapterFactory 가 $status 를 예외로 바꾸지 않았다")
+        }
+    }
 
     private fun outcomeOf(failure: Throwable): TokenReissuer.Outcome {
         val repository =
-            FakeAuthRepository(
+            networkFakeAuthRepository(
                 accessToken = "old-token",
                 onRotateToken = { Result.failure(failure) },
                 onClearSession = {

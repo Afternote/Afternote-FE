@@ -1,11 +1,11 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
 import android.content.Context
-import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.result.runCatchingCancellable
+import com.afternote.core.domain.error.PushSettingFailure
 import com.afternote.core.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -36,18 +36,15 @@ class PushNotificationViewModel internal constructor(
     private var failedUpdate: PushSettingUpdate? = null
 
     init {
-        Log.d(TAG, "init: deviceAlarmOn=$deviceAlarmOn")
         _uiState.update { it.copy(isDeviceAlarmOn = deviceAlarmOn) }
         loadPushSettings()
     }
 
     private fun loadPushSettings() {
         viewModelScope.launch {
-            Log.d(TAG, "loadPushSettings: start")
             _uiState.update { it.copy(isLoading = true) }
             runCatchingCancellable { userRepository.getMyPushSettings() }
                 .onSuccess { setting ->
-                    Log.d(TAG, "loadPushSettings: success=$setting")
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -56,8 +53,7 @@ class PushNotificationViewModel internal constructor(
                             isAfternoteOn = setting.afterNote,
                         )
                     }
-                }.onFailure { e ->
-                    Log.e(TAG, "loadPushSettings: failed", e)
+                }.onFailure {
                     _uiState.update { it.copy(isLoading = false) }
                 }
         }
@@ -83,19 +79,22 @@ class PushNotificationViewModel internal constructor(
 
     fun onSaveFailureDismiss() {
         failedUpdate = null
-        _uiState.update { it.copy(showSaveFailure = false) }
+        _uiState.update { it.copy(saveFailure = null) }
     }
 
     fun onSaveFailureRetry() {
         val update = failedUpdate ?: return
         failedUpdate = null
-        _uiState.update { it.copy(showSaveFailure = false) }
+        _uiState.update { it.copy(saveFailure = null) }
         updatePushSetting(update)
     }
 
     private fun updatePushSetting(update: PushSettingUpdate) {
+        if (_uiState.value.isUpdating(update.setting)) return
         val previousValue = _uiState.value.valueOf(update.setting)
-        _uiState.update { it.withValue(update.setting, update.on) }
+        _uiState.update {
+            it.withValue(update.setting, update.on).withUpdating(update.setting, updating = true)
+        }
         viewModelScope.launch {
             runCatchingCancellable {
                 userRepository.updateMyPushSettings(
@@ -104,19 +103,17 @@ class PushNotificationViewModel internal constructor(
                     afterNote = update.on.takeIf { update.setting == PushSetting.AFTERNOTE },
                 )
             }.onSuccess {
-                Log.d(TAG, "updatePushSetting: success, setting=${update.setting}, on=${update.on}")
-            }.onFailure { e ->
-                Log.e(TAG, "updatePushSetting: failed, setting=${update.setting}, on=${update.on}", e)
+                _uiState.update { it.withUpdating(update.setting, updating = false) }
+            }.onFailure { failure ->
                 failedUpdate = update
                 _uiState.update {
-                    it.withValue(update.setting, previousValue).copy(showSaveFailure = true)
+                    it
+                        .withValue(update.setting, previousValue)
+                        .withUpdating(update.setting, updating = false)
+                        .copy(saveFailure = failure.toSaveFailure())
                 }
             }
         }
-    }
-
-    companion object {
-        private const val TAG = "PushNotificationVM"
     }
 }
 
@@ -146,4 +143,27 @@ private fun PushNotificationUiState.withValue(
         PushSetting.NEWSLETTER -> copy(isNewsletterOn = on)
         PushSetting.MIND_RECORD -> copy(isMindRecordOn = on)
         PushSetting.AFTERNOTE -> copy(isAfternoteOn = on)
+    }
+
+private fun PushNotificationUiState.isUpdating(setting: PushSetting): Boolean =
+    when (setting) {
+        PushSetting.NEWSLETTER -> isNewsletterUpdating
+        PushSetting.MIND_RECORD -> isMindRecordUpdating
+        PushSetting.AFTERNOTE -> isAfternoteUpdating
+    }
+
+private fun PushNotificationUiState.withUpdating(
+    setting: PushSetting,
+    updating: Boolean,
+): PushNotificationUiState =
+    when (setting) {
+        PushSetting.NEWSLETTER -> copy(isNewsletterUpdating = updating)
+        PushSetting.MIND_RECORD -> copy(isMindRecordUpdating = updating)
+        PushSetting.AFTERNOTE -> copy(isAfternoteUpdating = updating)
+    }
+
+private fun Throwable.toSaveFailure(): PushNotificationSaveFailure =
+    when (this) {
+        is PushSettingFailure.NetworkUnavailable -> PushNotificationSaveFailure.NETWORK
+        else -> PushNotificationSaveFailure.SERVER
     }

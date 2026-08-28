@@ -1,6 +1,7 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.error.PushSettingFailure
+import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.UserPushSetting
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -12,10 +13,11 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import java.lang.reflect.Proxy
+import java.io.IOException
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PushNotificationViewModelTest {
@@ -41,8 +43,10 @@ class PushNotificationViewModelTest {
             viewModel.onNewsletterToggle(false)
 
             assertFalse(viewModel.uiState.value.isNewsletterOn)
+            assertTrue(viewModel.uiState.value.isNewsletterUpdating)
             runCurrent()
             assertFalse(viewModel.uiState.value.isNewsletterOn)
+            assertFalse(viewModel.uiState.value.isNewsletterUpdating)
             assertEquals(
                 listOf(PushUpdateCall(timeLetter = false, mindRecord = null, afterNote = null)),
                 calls,
@@ -60,22 +64,22 @@ class PushNotificationViewModelTest {
             assertFalse(viewModel.uiState.value.isNewsletterOn)
             runCurrent()
             assertTrue(viewModel.uiState.value.isNewsletterOn)
-            assertTrue(viewModel.uiState.value.showSaveFailure)
+            assertEquals(PushNotificationSaveFailure.SERVER, viewModel.uiState.value.saveFailure)
             viewModel.onSaveFailureDismiss()
-            assertFalse(viewModel.uiState.value.showSaveFailure)
+            assertNull(viewModel.uiState.value.saveFailure)
 
             viewModel.onMindRecordToggle(false)
             assertFalse(viewModel.uiState.value.isMindRecordOn)
             runCurrent()
             assertTrue(viewModel.uiState.value.isMindRecordOn)
-            assertTrue(viewModel.uiState.value.showSaveFailure)
+            assertEquals(PushNotificationSaveFailure.SERVER, viewModel.uiState.value.saveFailure)
             viewModel.onSaveFailureDismiss()
 
             viewModel.onAfternoteToggle(false)
             assertFalse(viewModel.uiState.value.isAfternoteOn)
             runCurrent()
             assertTrue(viewModel.uiState.value.isAfternoteOn)
-            assertTrue(viewModel.uiState.value.showSaveFailure)
+            assertEquals(PushNotificationSaveFailure.SERVER, viewModel.uiState.value.saveFailure)
 
             assertEquals(
                 listOf(
@@ -98,15 +102,15 @@ class PushNotificationViewModelTest {
             runCurrent()
 
             assertTrue(viewModel.uiState.value.isMindRecordOn)
-            assertTrue(viewModel.uiState.value.showSaveFailure)
+            assertEquals(PushNotificationSaveFailure.SERVER, viewModel.uiState.value.saveFailure)
 
             viewModel.onSaveFailureRetry()
 
-            assertFalse(viewModel.uiState.value.showSaveFailure)
+            assertNull(viewModel.uiState.value.saveFailure)
             assertFalse(viewModel.uiState.value.isMindRecordOn)
             runCurrent()
             assertFalse(viewModel.uiState.value.isMindRecordOn)
-            assertFalse(viewModel.uiState.value.showSaveFailure)
+            assertNull(viewModel.uiState.value.saveFailure)
             assertEquals(
                 listOf(
                     PushUpdateCall(timeLetter = null, mindRecord = false, afterNote = null),
@@ -116,51 +120,70 @@ class PushNotificationViewModelTest {
             )
         }
 
+    @Test
+    fun `네트워크 저장 실패는 네트워크 오류 안내로 구분한다`() =
+        runTest(dispatcher) {
+            val calls = mutableListOf<PushUpdateCall>()
+            val viewModel =
+                viewModel(
+                    calls = calls,
+                    failUpdateAttempts = 1,
+                    updateFailure = PushSettingFailure.NetworkUnavailable(IOException("offline")),
+                )
+            runCurrent()
+
+            viewModel.onAfternoteToggle(false)
+            runCurrent()
+
+            assertEquals(PushNotificationSaveFailure.NETWORK, viewModel.uiState.value.saveFailure)
+            assertTrue(viewModel.uiState.value.isAfternoteOn)
+            assertFalse(viewModel.uiState.value.isAfternoteUpdating)
+        }
+
+    @Test
+    fun `저장 중 같은 토글을 다시 변경해도 중복 요청하지 않는다`() =
+        runTest(dispatcher) {
+            val calls = mutableListOf<PushUpdateCall>()
+            val viewModel = viewModel(calls = calls)
+            runCurrent()
+
+            viewModel.onNewsletterToggle(false)
+            viewModel.onNewsletterToggle(true)
+
+            assertFalse(viewModel.uiState.value.isNewsletterOn)
+            assertTrue(viewModel.uiState.value.isNewsletterUpdating)
+            runCurrent()
+            assertEquals(
+                listOf(PushUpdateCall(timeLetter = false, mindRecord = null, afterNote = null)),
+                calls,
+            )
+            assertFalse(viewModel.uiState.value.isNewsletterUpdating)
+        }
+
     private fun viewModel(
         calls: MutableList<PushUpdateCall>,
         failUpdateAttempts: Int = 0,
+        updateFailure: Throwable = IllegalStateException("server"),
     ): PushNotificationViewModel {
         val initial = UserPushSetting(timeLetter = true, mindRecord = true, afterNote = true)
         var remainingFailures = failUpdateAttempts
         val repository =
-            repositoryProxy { methodName, args ->
-                when (methodName) {
-                    "getMyPushSettings" -> {
-                        initial
+            FakeUserRepository(pushSetting = initial).apply {
+                onUpdateMyPushSettings = { timeLetter, mindRecord, afterNote ->
+                    calls += PushUpdateCall(timeLetter, mindRecord, afterNote)
+                    if (remainingFailures > 0) {
+                        remainingFailures--
+                        throw updateFailure
                     }
-
-                    "updateMyPushSettings" -> {
-                        val parameters = checkNotNull(args)
-                        calls +=
-                            PushUpdateCall(
-                                timeLetter = parameters[0] as Boolean?,
-                                mindRecord = parameters[1] as Boolean?,
-                                afterNote = parameters[2] as Boolean?,
-                            )
-                        if (remainingFailures > 0) {
-                            remainingFailures--
-                            throw IllegalStateException("offline")
-                        }
-                        initial.copy(
-                            timeLetter = (parameters[0] as Boolean?) ?: initial.timeLetter,
-                            mindRecord = (parameters[1] as Boolean?) ?: initial.mindRecord,
-                            afterNote = (parameters[2] as Boolean?) ?: initial.afterNote,
-                        )
-                    }
-
-                    else -> {
-                        error("Unexpected UserRepository call: $methodName")
-                    }
+                    initial.copy(
+                        timeLetter = timeLetter ?: initial.timeLetter,
+                        mindRecord = mindRecord ?: initial.mindRecord,
+                        afterNote = afterNote ?: initial.afterNote,
+                    )
                 }
             }
         return PushNotificationViewModel(userRepository = repository, deviceAlarmOn = true)
     }
-
-    private fun repositoryProxy(onCall: (String, Array<out Any?>?) -> Any?): UserRepository =
-        Proxy.newProxyInstance(
-            UserRepository::class.java.classLoader,
-            arrayOf(UserRepository::class.java),
-        ) { _, method, args -> onCall(method.name, args) } as UserRepository
 }
 
 private data class PushUpdateCall(

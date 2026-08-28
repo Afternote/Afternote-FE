@@ -4,15 +4,17 @@
 
 ## 왜 필요했나
 
-2026-08-25 기준 에뮬레이터 QA 증거(`.codex/qa-evidence/emulator/<sha>.json`) 24건은 전부 같은
-기기였다 — android-35 / 1080×2400 @420dpi, 전부 에뮬레이터, 실기기 0건.
+2026-08-25에 조사한 에뮬레이터 QA 증거 24건(schema 1 23건 + legacy 1건, 현재
+`docs/qa/evidence/<full-head-sha>.json`으로 이관)은 전부 같은 기기였다 — android-35 /
+1080×2400 @420dpi, 전부 에뮬레이터, 실기기 0건. 8/27 이관한 전체 34건의 원본 스키마 분포는
+schema 1 32건 + schema 2 1건 + legacy 1건이다.
 
-문제는 그 기기가 표준도 아니었다는 점이다. `Pixel_7_Claude_QA` 에 `wm size 1080x2340` +
+문제는 그 기기가 표준도 아니었다는 점이다. 당시 QA AVD에 `wm size 1080x2340` +
 `wm density 387` override 가 남아 있어 실효 **446×967dp** 로 돌고 있었다. 표준 Pixel 7(411×914dp)
 보다 넓고, 국내 보급형(360×800dp) 대비 폭 24%·높이 21% 여유다. 잘림과 오버플로가 QA 에서
 구조적으로 잡히지 않는 화면이었다.
 
-증거에는 `"avd": "Pixel_7_Claude_QA"` 라고만 적혀 있었다. `wm` override 는 재부팅으로 풀리지
+비공개 원본 증거에는 AVD 이름만 적혀 있었다. `wm` override 는 재부팅으로 풀리지
 않고 세션 사이에 조용히 남기 때문에, **기기 이름만으로는 어떤 화면에서 검증했는지 사후에 알 수 없다.**
 
 ## 프로파일 두 가지
@@ -33,7 +35,7 @@
 
 `compact` 의 dpi 를 320 으로 잡는 것은 실기기의 리소스 버킷(xhdpi)을 맞추기 위해서다. 같은
 360×800dp 라도 160dpi(mdpi)로 만들면 다른 `drawable`/`dimen` 이 선택돼 기준으로 쓸 수 없다.
-보유 AVD 중 `KUIT_7th_Device` 가 360×800dp @160dpi 라 이 이유로 부적합하다.
+다른 보유 AVD 하나도 360×800dp @160dpi 라 이 이유로 부적합하다.
 
 ## 실측 전에 두 가지를 확정한다
 
@@ -43,7 +45,7 @@
 
 ### 2. 앱이 어느 커밋인가
 
-**증거 대장은 파일 이름이 커밋 sha 다**(`.codex/qa-evidence/emulator/<sha>.json`). 증거를 남긴다는
+**증거 대장은 파일 이름이 전체 커밋 sha 다**(`docs/qa/evidence/<full-head-sha>.json`). 증거를 남긴다는
 것은 "이 커밋의 앱을 돌렸다"는 선언이므로, 돌린 앱의 출처가 확정돼야 한다.
 
 그런데 지금 앱은 커밋 정보를 들고 있지 않다. `versionCode` 는 Play 워크플로가 주입할 때만 바뀌고,
@@ -70,14 +72,14 @@ adb install -r .claude/worktrees/qa-dev/app/build/outputs/apk/debug/app-debug.ap
 ```
 
 `google-services.json` 은 gitignore 라 새 워크트리에 없다 — 복사하지 않으면 빌드가 깨진다.
-`-r` 재설치는 DataStore 를 지우지 않으므로 QA 계정 세션이 그대로 유지된다.
+`-r` 재설치는 DataStore 를 지우지 않으므로 로그인 세션이 그대로 유지된다.
 
 앱이 커밋을 들고 다니게 되면(#1135) 이 단계는 "설치된 앱의 sha 를 읽어 확인"으로 줄어든다.
 
 ### 3. 기기를 나 혼자 쓰는가
 
 에이전트 세션 여러 개가 같은 개발 머신에서 돌면 **에뮬레이터 한 대를 공유하게 된다.** 2026-08-25
-이 저장소 작업 중에는 세션 17개가 `emulator-5554` 하나를 함께 쓰고 있었고, 좁은 화면 QA 도중
+이 저장소 작업 중에는 세션 17개가 에뮬레이터 하나를 함께 쓰고 있었고, 좁은 화면 QA 도중
 다른 세션이 APK 를 재설치하고(`lastUpdateTime` 갱신), 토큰을 비우고(로그아웃), 화면 override 를
 풀었다. **아무 신호도 없다** — 검사 결과만 조용히 오염된다.
 
@@ -85,7 +87,7 @@ adb install -r .claude/worktrees/qa-dev/app/build/outputs/apk/debug/app-debug.ap
 
 ```bash
 $ANDROID_HOME/emulator/emulator -avd <AVD 이름> -no-snapshot-load &
-adb devices          # 새로 붙은 serial 확인 (emulator-5556 …)
+adb devices          # 새로 붙은 serial 확인
 ```
 
 그 뒤 모든 명령에 `-s <serial>` 을 붙인다. 붙이지 않으면 기기가 여러 대일 때 어디로 갔는지
@@ -108,7 +110,7 @@ adb -s <serial> shell dumpsys package com.afternote.afternote_fe | grep lastUpda
 ## 증거에 남기는 것 (schema 2)
 
 **실측을 시작하기 전에** `status` 로 override 부터 확인하고, `--json` 출력을 증거의 `device`
-블록에 그대로 넣는다.
+블록에 넣는다. 이 JSON은 공개 기록용이라 로컬 serial과 AVD 이름을 포함하지 않는다.
 
 ```bash
 ./scripts/qa-device-profile.sh status --json
@@ -116,8 +118,6 @@ adb -s <serial> shell dumpsys package com.afternote.afternote_fe | grep lastUpda
 
 ```json
 "device": {
-  "serial": "emulator-5554",
-  "avd": "Pixel_7_Claude_QA",
   "is_emulator": true,
   "api_level": 35,
   "screen": {
@@ -130,8 +130,9 @@ adb -s <serial> shell dumpsys package com.afternote.afternote_fe | grep lastUpda
 }
 ```
 
-schema 1 로 기록된 기존 24건은 당시 화면 값을 복원할 수 없으므로 소급하지 않는다. schema 1 증거는
-**화면 스펙 미상**으로 읽는다.
+8/25 조사 대상 24건은 schema 1 23건과 legacy 1건이었다. 이 기록들은 당시 화면 값을 복원할 수
+없으므로 소급하지 않고 **화면 스펙 미상**으로 읽는다. 8/27 이관한 전체 34건 중에서는 schema 2
+1건만 구조화된 화면 값을 보존하며, 나머지는 schema 1 32건과 legacy 1건이다.
 
 ## 매 PR 에 기기를 늘리지 않는 이유
 

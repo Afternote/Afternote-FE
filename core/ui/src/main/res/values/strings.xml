@@ -1,19 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="core_ui_view_mode_list">목록 보기</string>
+    <string name="core_ui_view_mode_calendar">달력 보기</string>
     <string name="core_ui_nav_item_home">홈</string>
     <string name="core_ui_nav_item_mindrecord">기록</string>
     <string name="core_ui_nav_item_timeletter">타임레터</string>
     <string name="core_ui_nav_item_note">노트</string>
 
-    <string name="core_ui_request_verification_code">인증번호 받기</string>
-    <string name="core_ui_content_description_add_file">파일 추가</string>
     <string name="core_ui_content_description_back">뒤로가기</string>
     <string name="core_ui_content_description_close">닫기</string>
     <string name="core_ui_content_description_profile_edit">프로필 수정 버튼</string>
     <string name="core_ui_content_description_profile_image">프로필 이미지</string>
+    <string name="core_ui_content_description_search">검색</string>
+    <string name="core_ui_content_description_resident_number_back_input">주민등록번호 뒷자리 입력</string>
     <string name="core_ui_fab_content_description_add">추가</string>
     <string name="core_ui_button_loading">로딩 중</string>
     <string name="core_ui_text_field_placeholder">입력해 주세요</string>
+    <string name="core_ui_popup_confirm">확인</string>
+    <string name="core_ui_popup_yes">예</string>
+    <string name="core_ui_popup_no">아니요</string>
+    <string name="core_ui_calendar_previous_month">이전 달</string>
+    <string name="core_ui_calendar_next_month">다음 달</string>
 
     <string name="core_ui_recipient_designated">수신인 지정 완료</string>
     <string name="core_ui_recipient_not_designated">수신인 지정 미완료</string>

@@ -4,9 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent
 import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadErrorContent
-import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
 
 /**
  * 수신 애프터노트 상세 Stateful Route.
@@ -26,7 +26,7 @@ import com.afternote.feature.afternote.presentation.author.navigation.DetailLoad
  */
 @Composable
 fun ReceivedAfternoteDetailRoute(
-    onBack: () -> Unit,
+    onNavigateBack: () -> Unit,
     onNavigateToFullList: () -> Unit,
     onNavigateToPlaylist: (afternoteId: Long) -> Unit,
     viewModel: ReceivedAfternoteDetailViewModel = hiltViewModel(),
@@ -35,13 +35,13 @@ fun ReceivedAfternoteDetailRoute(
 
     when (val state = uiState) {
         ReceivedAfternoteDetailUiState.Loading -> {
-            DetailLoadingContent()
+            LoadingBody()
         }
 
         is ReceivedAfternoteDetailUiState.Error -> {
             DetailLoadErrorContent(
                 messageRes = state.messageRes,
-                onBackClick = onBack,
+                onBackClick = onNavigateBack,
                 onRetryClick = viewModel::retry,
             )
         }
@@ -51,14 +51,14 @@ fun ReceivedAfternoteDetailRoute(
                 is ReceivedDetailContentUiModel.SocialNetwork -> {
                     SocialNetworkReceivedDetailScreen(
                         content = model.content,
-                        onBackClick = onBack,
+                        onBackClick = onNavigateBack,
                     )
                 }
 
                 is ReceivedDetailContentUiModel.Gallery -> {
                     GalleryReceivedDetailScreen(
                         content = model.content,
-                        onBackClick = onBack,
+                        onBackClick = onNavigateBack,
                     )
                 }
 
@@ -72,14 +72,12 @@ fun ReceivedAfternoteDetailRoute(
                         memorialThumbnailUrl = model.content.memorialThumbnailUrl,
                         onNavigateToFullList = onNavigateToFullList,
                         onNavigateToPlaylist = { onNavigateToPlaylist(state.detailId) },
-                        onBackClick = onBack,
+                        onBackClick = onNavigateBack,
                     )
                 }
 
-                ReceivedDetailContentUiModel.Unimplemented,
-                ReceivedDetailContentUiModel.Unknown,
-                -> {
-                    DesignPendingDetailContent(onBackClick = onBack)
+                ReceivedDetailContentUiModel.Unimplemented -> {
+                    DesignPendingDetailContent(onBackClick = onNavigateBack)
                 }
             }
         }

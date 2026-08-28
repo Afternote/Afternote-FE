@@ -43,7 +43,16 @@ interface ReceiverAuthRepository {
         authCode: String,
     ): Result<ReceiverEmailAuthResult>
 
-    suspend fun getPresignedUrl(extension: String): Result<ReceiverAuthPresignedUrl>
+    /**
+     * [contentLength] 바이트를 업로드할 presigned URL을 발급한다.
+     *
+     * 서버는 이 값을 요청 필수 필드로 받고, 응답에 같은 값을 돌려준다. S3 PUT의
+     * `Content-Length`도 이 값과 일치해야 한다.
+     */
+    suspend fun getPresignedUrl(
+        extension: String,
+        contentLength: Long,
+    ): Result<ReceiverAuthPresignedUrl>
 
     /**
      * 사망확인 서류 제출 — 두 URL 중 **하나 이상** 은 non-null 이어야 한다 (서버가 최소 1개 요구).

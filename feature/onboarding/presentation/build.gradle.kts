@@ -43,10 +43,12 @@ dependencies {
 
     // ViewModel 코루틴 테스트 — runTest 와 Main 디스패처 치환으로 viewModelScope 를 제어한다.
     testImplementation(libs.coroutines.test)
+    testImplementation(testFixtures(projects.core.domain))
 
     // 레이아웃 폭 배분은 픽셀이 아니라 노드 bounds 라, 스크린샷 대신 Compose 로 직접 잰다.
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(testFixtures(projects.core.ui))
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     // Compose Preview Screenshot Testing (#330)

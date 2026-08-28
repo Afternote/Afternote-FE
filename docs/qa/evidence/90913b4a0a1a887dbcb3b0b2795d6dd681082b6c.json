@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "90913b4a0a1a887dbcb3b0b2795d6dd681082b6c.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "device.serial"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "90913b4a0a1a887dbcb3b0b2795d6dd681082b6c",
+  "head_ref": "HEAD",
+  "base_sha": "c612880530339748cebe4810813dd70308ff8fef",
+  "base_ref": "origin/feat/601-13-save-errors",
+  "recorded_at": "2026-08-22T17:24:17.895369+00:00",
+  "result": "pass",
+  "scenario": "PR #883: 오프라인 더미 로컬 세션에서 빈 목록은 추가 버튼만 노출, 수동 폼 생성, 제목·내용 입력 후 항목 등록, 등록 항목 접기·펼치기, 두 번째 빈 폼 추가·삭제, 화면 회전 재생성 후 등록된 접힌 상태와 값 유지 확인",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true
+  },
+  "details": {
+    "diff_sha256": "ed0c9236b0250e7bfda43be00f9a8f882eaa16923bde24a8a1a4587a31d50877",
+    "changed_files": [
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/AfternoteEditorContent.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/AfternoteEditorDialogs.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/AfternoteEditorFormMapper.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/AfternoteEditorScreen.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/AfternoteEditorViewModel.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/SaveAfternotePayloadBuilder.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/account/AccountEditorContent.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/gallery/GalleryAndFileEditorContent.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/message/EditorMessage.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/message/EditorMessageSection.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/message/EditorMessageTextBlock.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/message/LeaveMessageEditorItem.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/state/AfternoteEditorState.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/state/AfternoteEditorUiHolder.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/state/EditorFormMutations.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/state/EditorFormState.kt",
+      "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/navigation/AfternoteNavGraphEditor.kt",
+      "feature/afternote/presentation/src/main/res/values/strings.xml",
+      "feature/afternote/presentation/src/screenshotTest/kotlin/com/afternote/feature/afternote/presentation/author/editor/message/EditorMessageSectionScreenshotTest.kt",
+      "feature/afternote/presentation/src/screenshotTestDebug/reference/com/afternote/feature/afternote/presentation/author/editor/message/EditorMessageSectionScreenshotTestKt/editorMessageSectionRegisteredCollapsedScreenshot_748aa731_0.png",
+      "feature/afternote/presentation/src/screenshotTestDebug/reference/com/afternote/feature/afternote/presentation/author/editor/message/EditorMessageSectionScreenshotTestKt/editorMessageSectionRegisteredExpandedScreenshot_748aa731_0.png",
+      "feature/afternote/presentation/src/test/kotlin/com/afternote/feature/afternote/presentation/author/editor/AfternoteEditorFormPrefillTest.kt",
+      "feature/afternote/presentation/src/test/kotlin/com/afternote/feature/afternote/presentation/author/editor/EditorContentSignatureCompletenessTest.kt",
+      "feature/afternote/presentation/src/test/kotlin/com/afternote/feature/afternote/presentation/author/editor/EditorLeaveMessageBlocksTest.kt",
+      "feature/afternote/presentation/src/test/kotlin/com/afternote/feature/afternote/presentation/author/editor/message/LeaveMessageEditorItemTest.kt"
+    ],
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe",
+      "installed_for_head": "90913b4a0a1a887dbcb3b0b2795d6dd681082b6c",
+      "installed_at_epoch": 1787419035,
+      "ui_sha256": "d6c7f4e7f657faa28c5bf68231f6bbbc21fb00b38f2d5696e5ec537f4989daad"
+    }
+  }
+}

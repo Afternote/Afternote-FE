@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "64fb893434b158eec050c7f71d35d2e207a2e824.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "details.qa_account",
+      "device.avd",
+      "device.serial",
+      "text.qa_account"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "64fb893434b158eec050c7f71d35d2e207a2e824",
+  "head_ref": "feat/559",
+  "base_sha": "b834c1100bc5d5dcf7f34a6a28e1d108e4404ec5",
+  "base_ref": "develop",
+  "recorded_at": "2026-08-23T11:38:07.938930+00:00",
+  "result": "pass",
+  "scenario": "PR #721(#559) 재리뷰 QA — [QA_ACCOUNT_REDACTED] 실서버. API 로 데일리질문 답변 1건 생성(userDailyQuestionId=24) 후: 홈 MEMORIES 카드가 실답변(질문+본문 미리보기) 표시, 추억 공간 진입 시 실기록 카드 렌더. 홈 진입~카드 노출 로그캣 집계로 GET /api/v1/daily-questions 정확히 1회(중복 조회 수정 확인, 64fb8934). 네트워크 차단 후 추억 공간 재진입 → '기록을 불러오지 못했습니다.'+다시 시도하기(빈 성공 수렴 대신 에러 승격, 5d3485cf) → 복구 후 재시도 → 4요청(일기 3개월+데일리질문) 각 1회 200, 카드 복원. 부분 실패+합산 0건 경계는 선택적 실패 유발 수단 부재로 코드 근거. '그날의 기록 다시 읽기' no-op 은 KDoc 문서화된 미확정 재량. 돌아가기 인셋 정상.",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true
+  },
+  "details": {
+    "diff_sha256": "9d5f6662efc55d07dded3b1a2678a3e71d089c37851b89d39b250e5448d6ff44",
+    "changed_files": [
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/component/MemoriesCard.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/component/memoryspace/MemorySpaceCardField.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/component/memoryspace/MemorySpaceHeader.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/component/memoryspace/MemorySpacePhotoCard.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/hometab/HomeTabMindRecordLazyItems.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/model/memoryspace/MemoryItem.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/memoryspace/MemorySpaceScreen.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/MemoriesCardViewModel.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/MemorySpaceUiState.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/MemorySpaceViewModel.kt",
+      "feature/mindrecord/presentation/src/main/res/values/strings.xml"
+    ],
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe",
+      "installed_for_head": "64fb893434b158eec050c7f71d35d2e207a2e824"
+    }
+  }
+}

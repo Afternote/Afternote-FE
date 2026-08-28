@@ -1,53 +1,128 @@
 name: Unit Test
 
-# 모든 PR 에서 unit test 실행:
+# PR에서는 변경 모듈과 역의존 모듈, develop에서는 전체 unit test 실행:
 #   - node --test .github/scripts/*.test.mjs : 배포 판단 스크립트 회귀 가드.
 #   - :koverXmlReportCi / :koverHtmlReportCi : Android debug + 순수 JVM 테스트와 aggregate coverage
 #   - :konsist:test : 순수 JVM 모듈(testDebugUnitTest 미보유)이라 별도 명시. 레이어 의존 아키텍처 가드.
 #   - :build-logic:test : included build 라 루트 태스크에 안 묶여 별도 명시. release 키 가드(TestKit) 회귀 가드.
-#   - :app:compileDebugAndroidTestKotlin : androidTest 소스셋 컴파일 가드. GMD 스위트는 PR 트리거 없이
-#     화·금 스케줄로만 돌아(android-managed-device.yml), main 코드 변경이 androidTest 를 깨뜨려도
-#     머지 전 어디서도 검출되지 않았다(#936 — develop 컴파일 실패 44건). 에뮬레이터 없이 컴파일만 검증.
+#   - :app:compileDebugAndroidTestKotlin : production/androidTest 변경 시 계측 소스셋 컴파일 가드.
+#     GMD는 CI Test Plan selected/full 또는 화·금 정기 실행에서만 에뮬레이터를 만든다.
 # lint.yml 과 setup 이 거의 동일하지만 분리 — lint 실패가 test 결과를 가리지 않도록 fail-fast 독립.
 
-# PR 검증은 pr-validation.yml 이 한 번에 부르고, 그 워크플로의 ci-gate job 이 결과를
-# 모아 단일 required check 로 만든다. concurrency 도 그쪽이 PR 단위로 건다 (#848).
+# PR 검증은 pr-validation.yml 이 한 번에 부르고, 이 워크플로의 job check 를
+# ruleset 에서 required 로 직접 요구한다. concurrency 는 진입점에서 PR 단위로 건다.
 #
 # 트리거를 workflow_call 하나로 두는 것이 요점이다 — on: pull_request 를 함께 남기면
-# 같은 검증이 PR 마다 두 벌씩 돌고, ci-gate 가 보지 않는 쪽이 별개 체크로 남는다.
+# 같은 검증과 동일한 이름의 check 가 PR 마다 두 벌씩 돈다.
 on:
   workflow_call:
+    inputs:
+      pull_request_number:
+        required: false
+        default: 0
+        type: number
+      run_validation:
+        description: "false 이면 required check 이름을 유지한 채 무거운 검증을 건너뜀"
+        required: false
+        default: true
+        type: boolean
+      run_node_tests:
+        description: "GitHub Actions 정책 Node 테스트 실행 여부"
+        required: false
+        default: true
+        type: boolean
+      gradle_tasks:
+        description: "신뢰된 영향도 계산기가 만든 Gradle task 목록"
+        required: false
+        default: ":koverXmlReportCi :koverHtmlReportCi :konsist:test :build-logic:test :app:compileDebugAndroidTestKotlin"
+        type: string
+      coverage_modules:
+        description: "Kover 요약 대상 project path 목록 또는 all"
+        required: false
+        default: "all"
+        type: string
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
   unit-test:
     name: Run Unit Tests
+    if: inputs.run_validation
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Clone repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Resolve pull request context
+        id: pull-request
+        if: inputs.pull_request_number > 0
+        env:
+          EVENT_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          EVENT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          EVENT_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pull_request_number }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+            echo "::error::유효한 pull_request_number 가 필요합니다"
+            exit 1
+          fi
+
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            base_ref=$EVENT_BASE_REF
+            base_sha=$EVENT_BASE_SHA
+            head_sha=$EVENT_HEAD_SHA
+          else
+            pull_request=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")
+            state=$(jq -r '.state' <<< "$pull_request")
+            base_ref=$(jq -r '.base.ref' <<< "$pull_request")
+            base_sha=$(jq -r '.base.sha' <<< "$pull_request")
+            head_sha=$(jq -r '.head.sha' <<< "$pull_request")
+            if [ "$state" != "open" ]; then
+              echo "::error::PR #$PR_NUMBER 는 열려 있지 않습니다"
+              exit 1
+            fi
+            if [ "$GITHUB_SHA" != "$head_sha" ]; then
+              echo "::error::dispatch ref $GITHUB_SHA 가 PR #$PR_NUMBER head $head_sha 와 다릅니다"
+              exit 1
+            fi
+          fi
+
+          {
+            echo "base-ref=$base_ref"
+            echo "base-sha=$base_sha"
+            echo "head-sha=$head_sha"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Fetch pull request history for changed-module coverage
+        if: inputs.pull_request_number > 0 && inputs.coverage_modules == 'all'
         env:
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_REF: ${{ steps.pull-request.outputs.base-ref }}
+          PR_NUMBER: ${{ inputs.pull_request_number }}
         run: |
           git fetch --no-tags --prune --unshallow origin \
             "+refs/heads/${BASE_REF}:refs/remotes/origin/kover-base" \
             "+refs/pull/${PR_NUMBER}/head:refs/remotes/origin/kover-head"
 
       - name: Run deployment script tests
+        if: inputs.run_node_tests
         run: node --test .github/scripts/*.test.mjs
 
       - name: Set up JDK 21
+        if: inputs.gradle_tasks != ''
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: 'temurin'
           java-version: '21'
 
       - name: Set up Gradle and validate wrapper
+        if: inputs.gradle_tasks != ''
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         with:
           cache-provider: basic
@@ -55,25 +130,37 @@ jobs:
           validate-wrappers: true
 
       - name: Set up CI-only app configuration
+        if: inputs.gradle_tasks != ''
         uses: ./.github/actions/setup-ci-config
 
-      - name: Run unit tests, androidTest compile guard, and aggregate Kover reports
-        run: ./gradlew :koverXmlReportCi :koverHtmlReportCi :konsist:test :build-logic:test :app:compileDebugAndroidTestKotlin --continue --parallel --build-cache
+      - name: Run affected unit tests, androidTest compile guard, and Kover reports
+        if: inputs.gradle_tasks != ''
+        env:
+          GRADLE_TASKS: ${{ inputs.gradle_tasks }}
+        run: |
+          read -r -a tasks <<< "$GRADLE_TASKS"
+          ./gradlew "${tasks[@]}" --continue --parallel --build-cache
 
       - name: Upload Kover coverage reports
         id: kover-artifact
+        if: contains(inputs.gradle_tasks, 'kover')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: kover-jvm-coverage
-          path: build/reports/kover/
+          path: |
+            build/reports/kover/
+            **/build/reports/kover/
           if-no-files-found: error
           retention-days: 14
 
       - name: Summarize changed-module coverage
+        if: inputs.pull_request_number > 0 && contains(inputs.gradle_tasks, 'kover')
         env:
-          KOVER_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          KOVER_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          KOVER_BASE_SHA: ${{ steps.pull-request.outputs.base-sha }}
+          KOVER_HEAD_SHA: ${{ steps.pull-request.outputs.head-sha }}
           KOVER_ARTIFACT_URL: ${{ steps.kover-artifact.outputs.artifact-url }}
+          KOVER_COVERAGE_MODULES: ${{ inputs.coverage_modules }}
+          KOVER_POLICY_PATH: .github/kover-coverage-policy.json
         run: node .github/scripts/render-kover-summary.mjs
 
       # 실패한 테스트의 HTML/XML 리포트를 PR artifact 로 보존 — CI 로그에서 stack trace 추적이 빠름.

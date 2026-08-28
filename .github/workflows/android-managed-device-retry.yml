@@ -1,0 +1,185 @@
+name: Recover Android Managed Device Infrastructure
+
+# 검토된 default branch 정의만 actions:write를 가진다. PR workflow가 만든 작은 JSON marker를
+# 원 run/attempt/head/device/job과 다시 대조한 뒤, API 30/34 인프라 실패 job 하나만 새 runner에서
+# 한 번 재실행한다. 두 lane이 동시에 marker를 만들면 자동 복구하지 않는다.
+on:
+  workflow_run:
+    workflows: ["Android Managed Device Test"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-managed-device-retry-${{ github.event.workflow_run.id }}
+  cancel-in-progress: false
+
+jobs:
+  retry-managed-device-infrastructure:
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      github.event.workflow_run.run_attempt == 1 &&
+      (github.event.workflow_run.conclusion == 'failure' ||
+       github.event.workflow_run.conclusion == 'cancelled')
+    name: Retry one proven managed-device infrastructure failure
+    permissions:
+      actions: write
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Find retry marker from the completed run
+        id: artifact
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            const expectedNames = new Set([
+              `android-managed-device-retry-api30-${run.id}-${run.run_attempt}`,
+              `android-managed-device-retry-api34-${run.id}-${run.run_attempt}`,
+            ]);
+            const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: run.id,
+              per_page: 100,
+            });
+            const matches = artifacts.filter((artifact) =>
+              expectedNames.has(artifact.name) && !artifact.expired,
+            );
+            if (matches.length === 0) {
+              core.info('No managed-device infrastructure retry marker was produced.');
+              core.setOutput('found', 'false');
+              return;
+            }
+            if (matches.length !== 1) {
+              core.warning(`Expected exactly one retry marker artifact, found ${matches.length}.`);
+              core.setOutput('found', 'false');
+              return;
+            }
+            core.setOutput('found', 'true');
+            core.setOutput('name', matches[0].name);
+
+      - name: Download retry marker
+        if: steps.artifact.outputs.found == 'true'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ steps.artifact.outputs.name }}
+          path: ${{ runner.temp }}/android-managed-device-retry
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Validate marker and rerun the failed managed-device job
+        if: steps.artifact.outputs.found == 'true'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          MARKER_ARTIFACT_NAME: ${{ steps.artifact.outputs.name }}
+          MARKER_PATH: ${{ runner.temp }}/android-managed-device-retry/retry.json
+        with:
+          script: |
+            const fs = require('node:fs');
+            const path = require('node:path');
+            const run = context.payload.workflow_run;
+            const supportedDevices = new Map([
+              ['api30', {
+                jobName: 'Pixel 2 API 30 androidTest',
+                reasons: new Set(['managed-device-boot-timeout']),
+                requiredExitCode: '124',
+              }],
+              ['api34', {
+                jobName: 'Pixel 2 API 34 accessibility smoke',
+                reasons: new Set([
+                  'managed-device-boot-timeout',
+                  'explicit-infrastructure-failure',
+                ]),
+                requiredExitCode: null,
+              }],
+            ]);
+            const markerPath = path.resolve(process.env.MARKER_PATH);
+            let stat;
+            try {
+              stat = fs.lstatSync(markerPath);
+            } catch (error) {
+              core.warning(`Retry marker is unavailable: ${error.message}`);
+              return;
+            }
+            if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 16 * 1024) {
+              core.warning('Retry marker must be a small regular file.');
+              return;
+            }
+
+            let marker;
+            try {
+              marker = JSON.parse(fs.readFileSync(markerPath, 'utf8'));
+            } catch (error) {
+              core.warning(`Retry marker is not valid JSON: ${error.message}`);
+              return;
+            }
+            const devicePolicy = supportedDevices.get(marker.device);
+            const expectedArtifactName =
+              `android-managed-device-retry-${marker.device}-${run.id}-${run.run_attempt}`;
+            const signalArraysAreValid =
+              Array.isArray(marker.infrastructureSignals) &&
+              Array.isArray(marker.bootPhaseSignals) &&
+              Array.isArray(marker.testExecutionSignals);
+            const hasRequiredEvidence = signalArraysAreValid && (
+              (marker.reason === 'explicit-infrastructure-failure' &&
+               marker.infrastructureSignals.length > 0) ||
+              (marker.reason === 'managed-device-boot-timeout' &&
+               (marker.bootPhaseSignals.length > 0 ||
+                (marker.device === 'api30' && marker.infrastructureSignals.length > 0)))
+            );
+            const valid =
+              devicePolicy !== undefined &&
+              marker.schemaVersion === 1 &&
+              marker.sourceRunId === run.id &&
+              marker.runAttempt === run.run_attempt &&
+              marker.headSha === run.head_sha &&
+              process.env.MARKER_ARTIFACT_NAME === expectedArtifactName &&
+              marker.retryable === true &&
+              devicePolicy.reasons.has(marker.reason) &&
+              marker.testResultCount === 0 &&
+              signalArraysAreValid &&
+              marker.testExecutionSignals.length === 0 &&
+              hasRequiredEvidence &&
+              (devicePolicy.requiredExitCode === null ||
+               marker.exitCode === devicePolicy.requiredExitCode);
+            if (!valid) {
+              core.warning('Retry marker metadata does not match the completed workflow run.');
+              return;
+            }
+
+            const response = await github.request(
+              'GET /repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt_number}/jobs',
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: run.id,
+                attempt_number: run.run_attempt,
+                per_page: 100,
+              },
+            );
+            const candidates = response.data.jobs.filter((job) =>
+              job.name === devicePolicy.jobName &&
+              ['failure', 'cancelled'].includes(job.conclusion),
+            );
+            if (candidates.length !== 1) {
+              core.warning(
+                `Expected one failed ${marker.device} job, found ${candidates.length}.`,
+              );
+              return;
+            }
+
+            await github.request('POST /repos/{owner}/{repo}/actions/jobs/{job_id}/rerun', {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              job_id: candidates[0].id,
+              enable_debug_logging: false,
+            });
+            await core.summary
+              .addHeading(`${marker.device.toUpperCase()} infrastructure recovery`)
+              .addRaw(`Re-running job ${candidates[0].id} once on a fresh runner: ${marker.reason}`)
+              .write();

@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.firebase.app.distribution)
     alias(libs.plugins.firebase.crashlytics)
     id("afternote.kover")
+    alias(libs.plugins.androidx.baselineprofile)
 }
 
 val localProperties = Properties()
@@ -44,9 +45,24 @@ android {
         execution = "ANDROIDX_TEST_ORCHESTRATOR"
         managedDevices {
             localDevices {
+                create("pixel2Api26") {
+                    device = "Pixel 2"
+                    apiLevel = 26
+                    systemImageSource = "aosp"
+                }
                 create("pixel2Api30") {
                     device = "Pixel 2"
                     apiLevel = 30
+                    systemImageSource = "aosp"
+                }
+                create("pixel2Api34") {
+                    device = "Pixel 2"
+                    apiLevel = 34
+                    systemImageSource = "aosp"
+                }
+                create("pixel2Api36") {
+                    device = "Pixel 2"
+                    apiLevel = 36
                     systemImageSource = "aosp"
                 }
             }
@@ -167,7 +183,7 @@ android {
     buildTypes {
         debug {
             // 설치된 앱이 어느 커밋으로 빌드됐는지 `adb shell dumpsys package` 한 줄로 읽히게 한다.
-            // 실기 QA 증거는 커밋 sha 로 대장에 남으므로(`.codex/qa-evidence/emulator/<sha>.json`),
+            // 실기 QA 증거는 전체 커밋 sha 로 대장에 남으므로(`docs/qa/evidence/<full-head-sha>.json`),
             // 앱이 스스로 커밋을 들고 있지 않으면 검증한 코드를 특정할 수 없다 — #1135.
             // release `versionName` 은 사용자에게 보이므로 건드리지 않는다.
             versionNameSuffix = resolveDebugVersionNameSuffix()
@@ -188,6 +204,15 @@ android {
     }
 }
 
+baselineProfile {
+    // 생성은 주간/manual workflow가 소유한다. 일반 release 빌드가 에뮬레이터를 암묵적으로
+    // 띄우지 않으며, 검토 가능한 단일 profile을 source에 저장해 패키징한다.
+    automaticGenerationDuringBuild = false
+    mergeIntoMain = true
+    saveInSrc = true
+    dexLayoutOptimization = true
+}
+
 dependencies {
     implementation(libs.coil.compose)
     implementation(libs.androidx.hilt.navigation.compose)
@@ -197,6 +222,7 @@ dependencies {
     implementation(libs.androidx.startup.runtime)
     // DailyNotificationInitializer 가 WorkManagerInitializer 를 선행 의존으로 지정한다.
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.profileinstaller)
 
     // 카카오 OAuth redirect Activity(`com.kakao.sdk.auth.AuthCodeHandlerActivity`)를
     // app 매니페스트에서 직접 참조하므로 컴파일 classpath에 노출 필요.
@@ -228,6 +254,9 @@ dependencies {
     implementation(projects.feature.onboarding.presentation)
     implementation(projects.feature.setting.presentation)
 
+    // Feature — domain (AppNavigationActions 가 에디터 종류를 AfternoteType 으로 받는다)
+    implementation(projects.feature.afternote.domain)
+
     // Feature — data (Hilt @Module / 바인딩이 루트 그래프에 포함되도록 app이 classpath에 둔다)
     implementation(projects.feature.afternote.data)
     implementation(projects.feature.receiver.data)
@@ -235,9 +264,12 @@ dependencies {
     implementation(projects.feature.timeletter.data)
     implementation(projects.feature.onboarding.data)
 
+    baselineProfile(project(":baselineprofile"))
+
     // Managed-device androidTest — 실제 서버·OAuth 대신 Hilt fake를 주입하고 Compose semantics를 검증한다.
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4.accessibility)
     androidTestImplementation(libs.androidx.test.core.ktx)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.navigation.testing)
@@ -245,11 +277,15 @@ dependencies {
     androidTestImplementation(libs.hilt.android.testing)
     androidTestImplementation(libs.coroutines.test)
     androidTestImplementation(projects.core.data)
+    androidTestImplementation(testFixtures(projects.core.domain))
     androidTestImplementation(projects.feature.afternote.domain)
+    androidTestImplementation(testFixtures(projects.feature.afternote.domain))
     androidTestImplementation(projects.feature.mindrecord.domain)
     androidTestImplementation(testFixtures(projects.feature.mindrecord.domain))
     androidTestImplementation(projects.feature.receiver.domain)
+    androidTestImplementation(testFixtures(projects.feature.receiver.domain))
     androidTestImplementation(projects.feature.timeletter.domain)
+    androidTestImplementation(testFixtures(projects.feature.timeletter.domain))
     kspAndroidTest(libs.hilt.compiler)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     androidTestUtil(libs.androidx.test.orchestrator)

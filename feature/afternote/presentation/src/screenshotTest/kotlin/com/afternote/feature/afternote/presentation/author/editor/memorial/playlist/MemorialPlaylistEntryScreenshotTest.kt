@@ -7,8 +7,18 @@ import com.android.tools.screenshot.PreviewTest
 
 private fun screenshotSongs(): List<Song> =
     listOf(
-        Song(id = "1", title = "노래 제목 1", artist = "아티스트 1", albumCoverUrl = null),
-        Song(id = "2", title = "노래 제목 2", artist = "아티스트 2", albumCoverUrl = null),
+        Song(
+            selectionKey = "screenshot:1",
+            title = "노래 제목 1",
+            artist = "아티스트 1",
+            albumCoverUrl = null,
+        ),
+        Song(
+            selectionKey = "screenshot:2",
+            title = "노래 제목 2",
+            artist = "아티스트 2",
+            albumCoverUrl = null,
+        ),
     )
 
 @PreviewTest
@@ -49,7 +59,7 @@ internal fun memorialPlaylistEntryEditModeSelectionScreenshot() {
         MemorialPlaylistEntry(
             songs = screenshotSongs(),
             initialEditMode = true,
-            initialSelectedSongIds = setOf("1"),
+            initialSelectedSongKeys = setOf("screenshot:1"),
         )
     }
 }

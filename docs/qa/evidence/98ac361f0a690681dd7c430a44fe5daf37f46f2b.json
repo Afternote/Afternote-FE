@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "98ac361f0a690681dd7c430a44fe5daf37f46f2b.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "details.qa_account",
+      "device.avd",
+      "device.serial",
+      "text.qa_credential"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "98ac361f0a690681dd7c430a44fe5daf37f46f2b",
+  "head_ref": "fix/729-week-dropdown-scroll",
+  "base_sha": "104462fdf025a663d6009fec54eb6f23e2e3664b",
+  "base_ref": "develop",
+  "recorded_at": "2026-08-23T12:36:22.380848+00:00",
+  "result": "pass",
+  "scenario": "PR #937(#729) 리뷰 QA: 실서버+에뮬레이터. 주간리포트 주차 드롭다운 — 열린 메뉴 완전 노출 5개(8월3주차~7월3주차, 6번째는 스크롤로만 도달), 메뉴 내부 fling 스크롤로 최하단 도달(2025년 9월/8월 구간 노출), 최하단 '8월 4주차 리포트'(2025-08-25) 탭 → 헤더·dateRange '2025.08.25. - 2025.08.31.' 갱신·재조회(빈 주 0건 정상 렌더). 시안 700-35071 대조: 5개 가시·선택항목만 진한색 일치, 스크롤바 인디케이터·전폭 메뉴는 미구현 편차(리뷰에 재량 기록). 스크린샷 [QA_CREDENTIAL_REDACTED].png/[QA_CREDENTIAL_REDACTED].png/[QA_CREDENTIAL_REDACTED].png(리뷰 코멘트 첨부). 함정: 메뉴 밖(y>1195 물리px) 스와이프 시작점은 메뉴를 닫고 메인을 스크롤시킴.",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true
+  },
+  "details": {
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe"
+    },
+    "diff_sha256": "fe8fc4bbaf68bf42d0e97e0b6498a5d77e7c0126cc1bf41eee1ecbaa37d61b75",
+    "changed_files": [
+      "feature/mindrecord/presentation/build.gradle.kts",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/component/WeeklyReportReviewCard.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/WeeklyReportViewModel.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/WeeklyReportWeekOptions.kt",
+      "feature/mindrecord/presentation/src/test/kotlin/com/afternote/feature/mindrecord/presentation/component/WeeklyReportWeekMenuTest.kt",
+      "feature/mindrecord/presentation/src/test/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/WeeklyReportWeekOptionsTest.kt"
+    ]
+  }
+}

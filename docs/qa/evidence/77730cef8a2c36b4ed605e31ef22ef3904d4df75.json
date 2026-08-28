@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "77730cef8a2c36b4ed605e31ef22ef3904d4df75.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "device.avd",
+      "device.serial",
+      "text.network_endpoint",
+      "text.sensitive_value"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "77730cef8a2c36b4ed605e31ef22ef3904d4df75",
+  "head_ref": "chore/1188",
+  "base_sha": "e1b307eb5a621a8ea07c20db0ca9963a567d79da",
+  "base_ref": "develop",
+  "recorded_at": "2026-08-25T21:26:32.550788+00:00",
+  "result": "pass",
+  "scenario": "PR #1193(#1188) 실기 검증: Kakao SDK 2.24.0 이 :app:lintVitalRelease 를 Instantiatable 로 깨뜨리는데 그게 오탐인지. lint 를 임시 억제해 만든 R8 축소 릴리스 APK 를 debug 키로만 재서명해 설치하고 kakao<앱키>://oauth 딥링크를 던졌다. 결과: ActivityTaskManager START 가 cmp=com.afternote.afternote_fe/com.kakao.sdk.auth.AuthCodeHandlerActivity 로 잡히고 ActivityManager 가 'Start proc … for next-top-activity {…/AuthCodeHandlerActivity}' 로 프로세스를 띄웠다 — 즉 시스템이 그 액티비티를 실제로 인스턴스화했다. logcat 에 Unable to instantiate activity·ClassNotFoundException·FATAL 0건. lint 가 «시스템이 인스턴스화하지 못한다» 고 말한 동작이 실기에서 성립하므로 오탐으로 확정. 정적 대조도 함께: aar 상속 체인(AuthCodeHandlerActivity->CustomTabLauncherActivity->AppCompatActivity)·바이트코드 major 61·클래스 수 74·SDK 매니페스트 선언·proguard.txt 가 2.23.2 와 전부 동일하고, releaseRuntimeClasspath 의 appcompat 도 양쪽 1.7.1 로 같다. 유일한 차이는 2.24.0 이 Gradle Module Metadata 를 함께 배포하고 variant 가 aar 만 노출한다는 것. okhttp/okio 도 양쪽 5.4.0/3.17.0 으로 같아 #1072 하한은 유지. 이후 사용자 지시로 전용 AVD([SENSITIVE_VALUE_REDACTED], API 35)를 새로 만들어 깨끗한 기기에서 «카카오 로그인 왕복»을 끝까지 밟았다: 온보딩→로그인 화면→카카오 버튼 탭에서 AuthCodeHandlerActivity 기동, CustomTab 으로 [NETWORK_ENDPOINT_REDACTED] 폼 표시, 사용자가 실계정으로 로그인, 리다이렉트를 AuthCodeHandlerActivity 가 수신해 MainActivity 복귀, 백엔드 소셜 로그인까지 성공해 홈 화면(이름·데일리질문·수신인 상태) 정상 렌더. E AndroidRuntime: FATAL EXCEPTION 0건. 즉 lint 가 지목한 액티비티가 R8 축소 릴리스에서 왕복의 양 끝을 모두 수행했다. 기기 함정 2건: avdmanager 기본 AVD 는 hw.keyboard=no 라 호스트 키보드 입력이 게스트로 전달되지 않는다(기존 QA AVD 들은 yes) — config.ini 를 고치고 재부팅해야 한다. 그리고 hw.keyboard=yes 로 바꾸면 Gboard 가 물리 키보드 모드 미니 툴바(백스페이스·탭·이모지·메뉴)를 화면 왼쪽에 오버레이로 띄워 콘텐츠를 가리는데, show_ime_with_hard_keyboard=0 으로는 안 사라지고 `ime disable <gboard>` 로 IME 를 꺼야 사라진다.",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true,
+    "api": 35
+  },
+  "details": {
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe"
+    },
+    "diff_sha256": "7d825eb9325786a4082f31b4226a453f334c385936509b7b0bd356f6b56b2704",
+    "changed_files": [
+      "app/src/main/AndroidManifest.xml",
+      "gradle/libs.versions.toml"
+    ]
+  }
+}

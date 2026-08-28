@@ -42,7 +42,7 @@ class ProcessingMethodListAndroidTest {
                 var items by remember { mutableStateOf(emptyList<ProcessingMethodItem>()) }
                 ProcessingMethodList(
                     items = items,
-                    onItemAdded = { text -> items = items + ProcessingMethodItem(id = text, text = text) },
+                    onItemAdded = { text -> items = items + ProcessingMethodItem(localId = items.size, text = text) },
                     onItemDeleteClick = {},
                     onItemEdited = { _, _ -> },
                     initialShowTextField = true,

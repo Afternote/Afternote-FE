@@ -11,5 +11,13 @@ data class PushNotificationUiState(
     val isNewsletterOn: Boolean = false,
     val isMindRecordOn: Boolean = false,
     val isAfternoteOn: Boolean = false,
-    val showSaveFailure: Boolean = false,
+    val isNewsletterUpdating: Boolean = false,
+    val isMindRecordUpdating: Boolean = false,
+    val isAfternoteUpdating: Boolean = false,
+    val saveFailure: PushNotificationSaveFailure? = null,
 )
+
+enum class PushNotificationSaveFailure {
+    NETWORK,
+    SERVER,
+}

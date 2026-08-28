@@ -24,6 +24,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.TextFieldType
+import com.afternote.core.ui.asString
 import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -31,7 +32,6 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_HEADER_SPACING
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_TOTAL_STEPS
 import com.afternote.feature.receiver.presentation.deliveryverification.component.ReceiverVerifyStep
-import com.afternote.feature.receiver.presentation.error.asDisplayText
 
 /**
  * 본인 확인 이메일 인증(designs 3·4) — 이메일 + 인증번호 입력 화면 (이슈 #215).
@@ -69,7 +69,7 @@ fun IdentityVerificationEmailScreen(
     }
 
     val errorMessage =
-        uiState.error?.asDisplayText()
+        uiState.error?.asString()
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
             snackbarHostState.showSnackbar(errorMessage)
@@ -100,6 +100,13 @@ internal fun IdentityVerificationEmailScreenContent(
     onVerifyAndProceed: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val requestCodeText =
+        if (uiState.isSendingCode) {
+            stringResource(R.string.receiver_verify_code_requesting)
+        } else {
+            stringResource(R.string.receiver_verify_request_code)
+        }
+
     FlowStepScaffold(
         topBarTitle = stringResource(R.string.receiver_verify_title),
         actionButtonText = stringResource(R.string.receiver_verify_next_button),
@@ -133,7 +140,7 @@ internal fun IdentityVerificationEmailScreenContent(
                     state = emailState,
                     type =
                         TextFieldType.Variant7(
-                            text = stringResource(R.string.receiver_verify_request_code),
+                            text = requestCodeText,
                             onClick = onRequestCode,
                             enabled = uiState.isEmailFormatValid && !uiState.isSendingCode,
                         ),

@@ -14,12 +14,14 @@ import com.afternote.feature.receiver.domain.model.ReceivedPlaylistSong
 
 fun ReceivedAfternoteDetailDto.toDomain(): ReceivedAfternoteDetail =
     ReceivedAfternoteDetail(
-        title = title,
+        serviceName = serviceName,
         senderName = senderName,
         createdAt = createdAt?.let(::formatDateFromServer),
-        category = category,
-        type = category?.let(::afternoteTypeFromServerCategory),
-        processingMethods = processingMethods,
+        type =
+            requireNotNull(category?.let(::afternoteTypeFromServerCategory)) {
+                "해석할 수 없는 애프터노트 종류다: id=$id category=$category"
+            },
+        processingMethods = processingMethods.orEmpty(),
         leaveMessageBlocks = leaveMessage.toLeaveMessageBlocks(),
         playlist = playlist?.toDomain(),
         credentials = credentials?.toDomain(),

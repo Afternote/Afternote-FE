@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import {
@@ -11,6 +12,8 @@ import {
     renderSummary,
     resolveMergeStates,
 } from "./label-conflicting-prs.mjs";
+
+const conflictLabelWorkflow = await readFile(new URL("../workflows/conflict-label.yml", import.meta.url), "utf8");
 
 /**
  * 호출을 기록하는 가짜 API. `responses` 로 특정 경로의 응답을 지정한다.
@@ -47,6 +50,18 @@ function pullRequest(overrides = {}) {
         ...overrides,
     };
 }
+
+test("PR 검증 요청 직후 default branch 에서 충돌 라벨을 다시 판정한다", () => {
+    assert.match(conflictLabelWorkflow, /^  workflow_run:\n    workflows: \["PR Validation"\]\n    types: \[requested\]$/m);
+    assert.doesNotMatch(conflictLabelWorkflow, /^\s*pull_request_target\s*:/m);
+});
+
+test("라벨 조정 job은 PR 라벨 쓰기 권한을 명시한다", () => {
+    assert.match(
+        conflictLabelWorkflow,
+        /^    permissions:\n      actions: write\n      contents: read\n      issues: write\n      pull-requests: write$/m,
+    );
+});
 
 test("충돌 PR 에 라벨을 붙이고 해소된 PR 에서 뗀다", () => {
     const plan = planLabelChanges({

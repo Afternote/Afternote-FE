@@ -65,7 +65,7 @@ run_profile() {
     STUB_PHYSICAL_DENSITY="${STUB_PHYSICAL_DENSITY:-420}" \
     STUB_OVERRIDE_SIZE="${STUB_OVERRIDE_SIZE:-}" \
     STUB_OVERRIDE_DENSITY="${STUB_OVERRIDE_DENSITY:-}" \
-    STUB_AVD="${STUB_AVD:-Pixel_7_Claude_QA}" \
+    STUB_AVD="${STUB_AVD:-QA_Test_AVD}" \
     STUB_API="${STUB_API:-35}" \
         "$profile_script" "$@"
 }
@@ -86,6 +86,20 @@ assert_contains() {
         echo "  FAIL: $description" >&2
         echo "    기대(포함): $needle" >&2
         echo "    실제: $haystack" >&2
+        failures=$((failures + 1))
+    fi
+}
+
+assert_not_contains() {
+    local description=$1
+    local haystack=$2
+    local needle=$3
+
+    if [[ "$haystack" != *"$needle"* ]]; then
+        echo "  ok: $description"
+    else
+        echo "  FAIL: $description" >&2
+        echo "    공개 출력에 포함되면 안 됨: $needle" >&2
         failures=$((failures + 1))
     fi
 }
@@ -136,7 +150,8 @@ echo "증거용 JSON"
 reset_fixtures
 STUB_OVERRIDE_SIZE="1080x2340" STUB_OVERRIDE_DENSITY="387"
 output=$(run_profile status --json)
-assert_contains "avd 를 담는다" "$output" '"avd": "Pixel_7_Claude_QA"'
+assert_not_contains "로컬 serial 을 제외한다" "$output" '"serial"'
+assert_not_contains "로컬 AVD 이름을 제외한다" "$output" '"avd"'
 assert_contains "api_level 을 담는다" "$output" '"api_level": 35'
 assert_contains "override 를 담는다" "$output" '"override": "1080x2340"'
 assert_contains "실효 dp 를 담는다" "$output" '"effective_dp": "446x967"'

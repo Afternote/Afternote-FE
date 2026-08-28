@@ -7,7 +7,7 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUpl
 import javax.inject.Inject
 
 /**
- * 추모 영상·영정 사진의 *서버 저장 직전 정리* 도메인 로직.
+ * 장례식에 남길 영상·영정사진의 *서버 저장 직전 정리* 도메인 로직.
  *
  * 호출부가 로컬/원격을 확정한 [MediaInput] 을 Repository 가 저장 페이로드에 실을 URL 로 해석해 주고,
  * 본 UseCase 는 그 실패를 [AfternoteFailure.MediaSave] 로 wrap 한다. 도메인 본문이 `"content://"` 같은 인프라

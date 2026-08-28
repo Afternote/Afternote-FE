@@ -1,6 +1,6 @@
 package com.afternote.core.data.repoimpl
 
-import android.util.Log
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.data.mapper.delivery.toRequestDto
 import com.afternote.core.data.mapper.user.toDomain
 import com.afternote.core.domain.repository.UserRepository
@@ -37,6 +37,7 @@ class UserRepositoryImpl
     constructor(
         private val userApiService: UserApiService,
         private val authRepository: AuthRepository,
+        private val errorReporter: ErrorReporter,
     ) : UserRepository {
         private val receiverRefreshRevision = MutableStateFlow(0L)
 
@@ -139,15 +140,18 @@ class UserRepositoryImpl
          *
          * `clearSession()` 의 실패는 삼킨다. 서버 계정은 이미 지워졌으므로 여기서 예외를 올리면
          * 화면이 "탈퇴 실패" 로 표시돼 사용자가 재시도하고, 그 재시도는 없는 계정에 대해 실패한다.
-         * 대신 흔적은 남긴다 — 조용히 넘기면 로컬 토큰이 남은 채로 이 버그가 재발해도 탐지되지 않는다.
-         * 예외 인스턴스가 아니라 타입만 넘기는 건 release 에서 `Log.e` 가 제거되지 않아서다.
+         * 대신 [ErrorReporter] 에 비식별 단계만 붙여 남긴다 — 조용히 넘기면 로컬 토큰이 남은 채로
+         * 이 버그가 재발해도 탐지되지 않는다. 예외 원문 제거는 리포터 공통 정책이 담당한다.
          */
         override suspend fun deleteAccount() {
             userApiService
                 .deleteAccount()
                 .requireStatus()
             authRepository.clearSession().onFailure {
-                Log.e("UserRepository", "탈퇴 후 세션 정리 실패: ${it.javaClass.name}")
+                errorReporter.recordFailure(
+                    throwable = it,
+                    attributes = mapOf(KEY_ACCOUNT_STAGE to ACCOUNT_STAGE_DELETE_SESSION_CLEANUP),
+                )
             }
         }
 
@@ -168,15 +172,17 @@ class UserRepositoryImpl
             mindRecord: Boolean?,
             afterNote: Boolean?,
         ): UserPushSetting =
-            userApiService
-                .updateMyPushSettings(
-                    UserUpdatePushSettingRequestDto(
-                        timeLetter = timeLetter,
-                        mindRecord = mindRecord,
-                        afterNote = afterNote,
-                    ),
-                ).requireData()
-                .toDomain()
+            mapPushSettingFailure {
+                userApiService
+                    .updateMyPushSettings(
+                        UserUpdatePushSettingRequestDto(
+                            timeLetter = timeLetter,
+                            mindRecord = mindRecord,
+                            afterNote = afterNote,
+                        ),
+                    ).requireData()
+                    .toDomain()
+            }
 
         override suspend fun getConnectedAccounts(): UserConnectedAccount =
             userApiService
@@ -218,3 +224,6 @@ class UserRepositoryImpl
                 ).requireData()
                 .toDeliveryConditionsDomain()
     }
+
+private const val KEY_ACCOUNT_STAGE = "account_stage"
+private const val ACCOUNT_STAGE_DELETE_SESSION_CLEANUP = "delete_session_cleanup"

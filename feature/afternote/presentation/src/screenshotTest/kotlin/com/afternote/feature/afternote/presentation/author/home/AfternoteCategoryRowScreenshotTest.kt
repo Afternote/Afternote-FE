@@ -12,7 +12,7 @@ import com.android.tools.screenshot.PreviewTest
 @Composable
 internal fun afternoteCategoryRowAllScreenshot() {
     AfternoteTheme {
-        AfternoteCategoryRow(
+        AfternoteTypeFilterRow(
             onTabSelected = {},
             selectedTab = null,
         )
@@ -20,7 +20,7 @@ internal fun afternoteCategoryRowAllScreenshot() {
 }
 
 /**
- * 좁은 화면(360×800dp @320dpi) 변형 — 탭 4개가 가용 폭에 들어가지 않아 더보기 화살표가 나타난다.
+ * 좁은 화면(360×800dp @320dpi) 변형 — 탭 5개가 가용 폭에 들어가지 않아 더보기 화살표가 나타난다.
  *
  * 화살표가 마지막 탭 「추억 노트」 위에 겹쳐 글자를 가리던 #1141 의 회귀 가드다.
  * 기준값은 [COMPACT_DEVICE_SPEC].
@@ -30,7 +30,7 @@ internal fun afternoteCategoryRowAllScreenshot() {
 @Composable
 internal fun afternoteCategoryRowAllCompactScreenshot() {
     AfternoteTheme {
-        AfternoteCategoryRow(
+        AfternoteTypeFilterRow(
             onTabSelected = {},
             selectedTab = null,
         )
@@ -49,7 +49,7 @@ internal fun afternoteCategoryRowAllCompactScreenshot() {
 @Composable
 internal fun afternoteCategoryRowAllLargeFontScreenshot() {
     AfternoteTheme {
-        AfternoteCategoryRow(
+        AfternoteTypeFilterRow(
             onTabSelected = {},
             selectedTab = null,
         )

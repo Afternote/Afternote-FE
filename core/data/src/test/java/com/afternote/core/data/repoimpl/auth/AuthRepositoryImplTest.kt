@@ -138,7 +138,9 @@ class AuthRepositoryImplTest {
         tracker.record(expiresInSeconds = 30)
         val authApiService =
             FakeAuthApiService(
-                onLogout = { throw ApiException(status = 500, code = 500, serverMessage = null, message = "서버 오류") },
+                onLogout = {
+                    throw ApiException(status = 500, code = 500, serverMessage = null, fallbackMessage = "서버 오류")
+                },
             )
 
         val result = runBlocking { repository(authApiService).logout() }
@@ -201,7 +203,14 @@ class AuthRepositoryImplTest {
         val repository =
             repository(
                 FakeAuthApiService(
-                    onLogin = { throw ApiException(status = 401, code = 1202, serverMessage = "서버 문구", message = "서버 문구") },
+                    onLogin = {
+                        throw ApiException(
+                            status = 401,
+                            code = 1202,
+                            serverMessage = "서버 문구",
+                            fallbackMessage = "서버 문구",
+                        )
+                    },
                 ),
             )
 
@@ -218,7 +227,14 @@ class AuthRepositoryImplTest {
         val repository =
             repository(
                 FakeAuthApiService(
-                    onLogin = { throw ApiException(status = 500, code = 1904, serverMessage = internalMessage, message = internalMessage) },
+                    onLogin = {
+                        throw ApiException(
+                            status = 500,
+                            code = 1904,
+                            serverMessage = internalMessage,
+                            fallbackMessage = internalMessage,
+                        )
+                    },
                 ),
             )
 
@@ -233,7 +249,14 @@ class AuthRepositoryImplTest {
         val repository =
             repository(
                 FakeAuthApiService(
-                    onLogin = { throw ApiException(status = 401, code = 1201, serverMessage = null, message = "클라 폴백 문구") },
+                    onLogin = {
+                        throw ApiException(
+                            status = 401,
+                            code = 1201,
+                            serverMessage = null,
+                            fallbackMessage = "클라 폴백 문구",
+                        )
+                    },
                 ),
             )
 
@@ -252,7 +275,7 @@ class AuthRepositoryImplTest {
                             status = 400,
                             code = 1208,
                             serverMessage = "소셜 로그인에 실패했습니다.",
-                            message = "소셜 로그인에 실패했습니다.",
+                            fallbackMessage = "소셜 로그인에 실패했습니다.",
                         )
                     },
                 ),

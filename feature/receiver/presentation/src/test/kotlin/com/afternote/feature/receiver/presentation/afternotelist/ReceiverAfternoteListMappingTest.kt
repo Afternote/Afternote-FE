@@ -9,14 +9,14 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
 /**
- * 수신 목록 카드가 발신자가 고른 서비스명을 보여준다는 계약 (이슈 #617).
+ * 수신 목록 카드가 발신자가 고른 서비스명을 보여준다는 계약 (이슈 #617, #753).
  *
- * 종류는 아이콘과 필터 탭이 담으므로 카드 주 텍스트로 새어 나오면 안 된다.
+ * 알려진 서비스 아이콘은 이름이, 카탈로그 밖 fallback과 필터 탭은 종류가 결정한다.
  */
 class ReceiverAfternoteListMappingTest {
     private fun listItem(
         serviceName: String,
-        type: AfternoteType? = AfternoteType.SOCIAL_NETWORK,
+        type: AfternoteType = AfternoteType.SOCIAL_NETWORK,
     ) = AfterNoteListItem(
         id = 5,
         serviceName = serviceName,
@@ -46,14 +46,6 @@ class ReceiverAfternoteListMappingTest {
     }
 
     @Test
-    fun `종류를 모르는 응답도 서비스명은 그대로 보여준다`() {
-        val uiModel = listItem(serviceName = "갤러리", type = null).toUiModel()
-
-        assertEquals("갤러리", uiModel.serviceName)
-        assertEquals(AfternoteType.SOCIAL_NETWORK, uiModel.type)
-    }
-
-    @Test
     fun `카탈로그에 있는 서비스명이면 그 서비스 아이콘을 쓴다`() {
         val uiModel =
             listItem(
@@ -64,19 +56,17 @@ class ReceiverAfternoteListMappingTest {
         assertEquals(AfternoteService.INSTAGRAM.iconResId, uiModel.iconResId)
     }
 
-    /**
-     * 카탈로그 밖 이름은 #490 이전에 저장된 "직접 추가하기" 데이터에서만 온다.
-     * MEMORIAL 은 저장 라벨 "추억 노트" 가 카탈로그에 걸려 이 경로를 타지 않으므로 검증에 쓰지 않는다.
-     */
+    /** 카탈로그 밖 이름은 #490 이전에 저장된 "직접 추가하기" 데이터에서만 온다. */
     @Test
-    fun `카탈로그에 없는 이름은 소셜이 아니라 그 항목의 종류 아이콘으로 떨어진다`() {
-        val uiModel =
-            listItem(
-                serviceName = "내가 직접 적은 서비스",
-                type = AfternoteType.GALLERY_AND_FILES,
-            ).toUiModel()
+    fun `카탈로그에 없는 이름은 그 항목의 종류 아이콘으로 떨어진다`() {
+        AfternoteType.entries.forEach { type ->
+            val uiModel =
+                listItem(
+                    serviceName = "내가 직접 적은 서비스",
+                    type = type,
+                ).toUiModel()
 
-        assertEquals(getIconResForType(AfternoteType.GALLERY_AND_FILES), uiModel.iconResId)
-        assertNotEquals(getIconResForType(AfternoteType.SOCIAL_NETWORK), uiModel.iconResId)
+            assertEquals(getIconResForType(type), uiModel.iconResId)
+        }
     }
 }

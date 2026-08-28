@@ -30,9 +30,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
-import com.afternote.afternote_fe.test.FakeUserRepository
+import com.afternote.afternote_fe.test.appTestUserRepository
 import com.afternote.afternote_fe.test.testReceiver
-import com.afternote.core.domain.repository.PhotoUploadRepository
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
+import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.User
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
@@ -76,8 +77,8 @@ import com.afternote.feature.timeletter.domain.model.TimeLetterBlockType
 import com.afternote.feature.timeletter.domain.model.TimeLetterDeliveryMode
 import com.afternote.feature.timeletter.domain.model.TimeLetterList
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
-import com.afternote.feature.timeletter.domain.repository.FileMetadataRepository
-import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
+import com.afternote.feature.timeletter.domain.testing.FakeFileMetadataRepository
+import com.afternote.feature.timeletter.domain.testing.FakeTimeLetterRepository
 import com.afternote.feature.timeletter.domain.usecase.CreateTimeLetterUseCase
 import com.afternote.feature.timeletter.domain.usecase.ResolveTimeLetterBlocksUseCase
 import com.afternote.feature.timeletter.presentation.screen.sender.RecipientListScreen
@@ -113,8 +114,17 @@ class TimeLetterMindRecordCompletionAndroidTest {
 
     @Test
     fun timeLetterWrite_uiValidationAndRapidRegister_preserveInputAndCreateOnce() {
-        val repository = CompletionTimeLetterRepository()
-        val userRepository = FakeUserRepository(receivers = listOf(testReceiver()))
+        val allowCreate = CompletableDeferred<Unit>()
+        val repository =
+            FakeTimeLetterRepository.strict().apply {
+                onGetTimeLetters = { registeredLetters }
+                onGetTemporaryTimeLetters = { temporaryLetters }
+                onCreateTimeLetter = { call ->
+                    allowCreate.await()
+                    completionCreatedLetter(call)
+                }
+            }
+        val userRepository = appTestUserRepository(receivers = listOf(testReceiver()))
         val viewModel = timeLetterWriteViewModel(repository, userRepository)
 
         composeRule.setContent {
@@ -199,18 +209,21 @@ class TimeLetterMindRecordCompletionAndroidTest {
         assertEquals("첫 번째 실제 텍스트 블록", call.blocks[0].textContent)
         assertEquals("https://afternote.test/remember", call.blocks[1].url)
 
-        composeRule.runOnIdle { repository.allowCreate.complete(Unit) }
+        composeRule.runOnIdle { allowCreate.complete(Unit) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
             viewModel.uiState.value.registered && !viewModel.uiState.value.isSaving
         }
-        assertEquals(1, repository.registeredListCalls)
+        assertEquals(1, repository.getTimeLettersCalls)
         assertEquals(1, repository.createCalls.size)
     }
 
     @Test
     fun timeLetterRecipientSelector_roundTripPreservesTitleTextAndExactReceiverId() {
-        val repository = CompletionTimeLetterRepository()
-        val userRepository = FakeUserRepository(receivers = listOf(testReceiver()))
+        val repository =
+            FakeTimeLetterRepository.strict().apply {
+                onGetTemporaryTimeLetters = { temporaryLetters }
+            }
+        val userRepository = appTestUserRepository(receivers = listOf(testReceiver()))
         val writeViewModel = timeLetterWriteViewModel(repository, userRepository)
         val recipientViewModel = RecipientListViewModel(userRepository)
         var showRecipient by mutableStateOf(false)
@@ -267,13 +280,20 @@ class TimeLetterMindRecordCompletionAndroidTest {
     fun timeLetterSenderDetail_routeIdLoadingFailureRetryAndSuccess_areConnected() {
         val firstLoad = CompletableDeferred<Result<TimeLetter>>()
         val detailLetter = completionDetailLetter()
+        var nextDetailGate: CompletableDeferred<Result<TimeLetter>>? = firstLoad
+        val detailResults = ArrayDeque<Result<TimeLetter>>()
+        detailResults.addLast(Result.success(completionDetailLetter()))
         val repository =
-            CompletionTimeLetterRepository(
-                nextDetailGate = firstLoad,
-                registeredLetters = TimeLetterList(listOf(detailLetter), 1),
-            )
-        repository.detailResults.addLast(Result.success(completionDetailLetter()))
-        val userRepository = FakeUserRepository(receivers = listOf(testReceiver()))
+            FakeTimeLetterRepository.strict().apply {
+                registeredLetters = TimeLetterList(listOf(detailLetter), 1)
+                onGetTimeLetters = { registeredLetters }
+                onGetTimeLetter = {
+                    val gate = nextDetailGate
+                    nextDetailGate = null
+                    (gate?.await() ?: requireNotNull(detailResults.removeFirstOrNull())).getOrThrow()
+                }
+            }
+        val userRepository = appTestUserRepository(receivers = listOf(testReceiver()))
         val listViewModel = TimeletterViewModel(repository, userRepository)
         var detailViewModel by mutableStateOf<TimeLetterDetailViewModel?>(null)
 
@@ -299,7 +319,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
         }
 
         composeRule.onNode(hasText("상세 route 편지") and hasClickAction()).performClick()
-        composeRule.waitUntil(timeoutMillis = TIMEOUT) { repository.detailIds == listOf(509L) }
+        composeRule.waitUntil(timeoutMillis = TIMEOUT) { repository.requestedDetailIds == listOf(509L) }
         assertEquals(TimeLetterDetailUiState.Loading, detailViewModel?.uiState?.value)
         composeRule
             .onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate))
@@ -325,8 +345,8 @@ class TimeLetterMindRecordCompletionAndroidTest {
         composeRule
             .onNodeWithText("🔗 https://afternote.test/detail")
             .assertIsDisplayed()
-        assertEquals(listOf(509L, 509L), repository.detailIds)
-        assertEquals(1, repository.registeredListCalls)
+        assertEquals(listOf(509L, 509L), repository.requestedDetailIds)
+        assertEquals(1, repository.getTimeLettersCalls)
         assertEquals(3, userRepository.getReceiversCalls)
     }
 
@@ -376,7 +396,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
             retryViewModel.uiState.value is DailyQuestionListUiState.Error
         }
-        composeRule.onNodeWithText("home offline").assertIsDisplayed()
+        composeRule.onNodeWithText("데일리 질문을 불러오지 못했습니다.").assertIsDisplayed()
 
         listResults.addLast(
             Result.success(
@@ -425,13 +445,15 @@ class TimeLetterMindRecordCompletionAndroidTest {
             (listViewModel.uiState.value as? DailyQuestionListUiState.Success)?.answers?.isEmpty() == true
         }
         composeRule.onNodeWithText("아직 등록된 답변이 없어요.").assertIsDisplayed()
+        val initialListQueryCount = repository.listQueries.size
+        val initialGetTodayCalls = repository.getTodayCalls
 
         composeRule.runOnIdle {
             writeViewModel =
                 DailyQuestionWriteViewModel(
                     savedStateHandle = SavedStateHandle(emptyMap()),
                     repository = repository,
-                    photoUploadRepository = CompletionPhotoUploadRepository,
+                    photoUploadRepository = FakePhotoUploadRepository.strict(),
                     draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
                 )
         }
@@ -448,13 +470,20 @@ class TimeLetterMindRecordCompletionAndroidTest {
             submitSuccessCalls == 1 &&
                 (listViewModel.uiState.value as? DailyQuestionListUiState.Success)?.answers?.size == 1
         }
-        composeRule.onNodeWithText("오늘의 테스트 질문").assertIsDisplayed()
+        composeRule.onAllNodes(hasText("오늘의 테스트 질문"))[0].assertIsDisplayed()
         composeRule.onNodeWithText("작성 후 목록에 반영될 답변").assertIsDisplayed()
         assertEquals(1, repository.createdPayloads.size)
         assertEquals(71L, repository.createdPayloads.single().questionId)
         assertEquals(false, repository.createdPayloads.single().isDraft)
-        assertEquals(2, repository.listQueries.size)
-        assertEquals(3, repository.getTodayCalls)
+        assertEquals(initialListQueryCount + 2, repository.listQueries.size)
+        assertEquals(
+            listOf(
+                FakeDailyQuestionRepository.ListQuery(date = null, draftOnly = true),
+                FakeDailyQuestionRepository.ListQuery(date = null, draftOnly = null),
+            ),
+            repository.listQueries.drop(initialListQueryCount),
+        )
+        assertEquals(initialGetTodayCalls + 2, repository.getTodayCalls)
     }
 
     @Test
@@ -502,13 +531,14 @@ class TimeLetterMindRecordCompletionAndroidTest {
                                     savedStateHandle =
                                         SavedStateHandle(
                                             mapOf(
-                                                "draftId" to draftId,
-                                                "draftYearMonth" to draftYearMonth,
+                                                "recordId" to draftId,
+                                                "yearMonth" to draftYearMonth,
+                                                "isDraft" to true,
                                             ),
                                         ),
                                     repository = repository,
-                                    photoUploadRepository = CompletionPhotoUploadRepository,
-                                    userRepository = FakeUserRepository(),
+                                    photoUploadRepository = FakePhotoUploadRepository.strict(),
+                                    userRepository = appTestUserRepository(),
                                     draftLoader =
                                         MindRecordDraftLoader(repository, draftDailyQuestionRepository),
                                 )
@@ -523,6 +553,8 @@ class TimeLetterMindRecordCompletionAndroidTest {
             }
         }
 
+        composeRule.onNode(hasText("이어 쓸 일기") and hasClickAction()).assertIsDisplayed()
+        val initialDiaryQueryCount = repository.listQueries.size
         composeRule.onNode(hasText("이어 쓸 일기") and hasClickAction()).performClick()
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
             writeViewModel?.uiState?.value?.draftLoaded == true
@@ -551,30 +583,41 @@ class TimeLetterMindRecordCompletionAndroidTest {
         assertEquals(TodayMood.SOSO, update.second.todayMood)
         // date·imageUrl 은 수정 요청 계약에 없어 페이로드에서 걷었다 (#955).
         assertTrue(repository.createdPayloads.isEmpty())
-        assertEquals(2, repository.listQueries.size)
+        assertEquals(initialDiaryQueryCount + 2, repository.listQueries.size)
         assertTrue(
-            repository.listQueries.all { it == FakeDiaryRepository.ListQuery(currentMonth.toString(), true) },
+            repository.listQueries.drop(initialDiaryQueryCount).all {
+                it == FakeDiaryRepository.ListQuery(currentMonth.toString(), true)
+            },
         )
     }
 
     @Test
     fun memorySpace_supportedSuccess_opensAndClosesDetailThenNavigatesBack() {
         val memoryDate = LocalDate.now()
+        val memory =
+            Diary(
+                diaryId = 501L,
+                title = "추억이 된 하루",
+                content = "이 순간은 나에게 특별한 의미가 있었습니다.",
+                date = memoryDate.toString(),
+                createdAt = memoryDate.toString(),
+                todayMood = TodayMood.HAPPY,
+                imageUrl = "https://afternote.test/memory.jpg",
+                isDraft = false,
+            )
         val diaryRepository =
             FakeDiaryRepository(
-                initialDiaries =
-                    listOf(
-                        Diary(
-                            diaryId = 501L,
-                            title = "추억이 된 하루",
-                            content = "이 순간은 나에게 특별한 의미가 있었습니다.",
-                            date = memoryDate.toString(),
-                            createdAt = memoryDate.toString(),
-                            todayMood = TodayMood.HAPPY,
-                            imageUrl = "https://afternote.test/memory.jpg",
-                            isDraft = false,
+                onGetList = { yearMonth, _ ->
+                    val diaries =
+                        if (yearMonth == YearMonth.from(memoryDate).toString()) listOf(memory) else emptyList()
+                    Result.success(
+                        DiaryList(
+                            diaries = diaries,
+                            monthDiaryCount = diaries.size,
+                            weeklyDominantMood = diaries.firstOrNull()?.todayMood,
                         ),
-                    ),
+                    )
+                },
             )
         val viewModel = MemorySpaceViewModel(diaryRepository, FakeDailyQuestionRepository())
         var backCalls = 0
@@ -614,7 +657,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
                 results.addLast(Result.failure(IllegalStateException("weekly offline")))
             }
         val userRepository =
-            FakeUserRepository(
+            appTestUserRepository(
                 profile = User("주간 사용자", "weekly@afternote.local", null, null),
                 receivers = emptyList(),
             )
@@ -674,16 +717,16 @@ class TimeLetterMindRecordCompletionAndroidTest {
     }
 
     private fun timeLetterWriteViewModel(
-        repository: CompletionTimeLetterRepository,
+        repository: FakeTimeLetterRepository,
         userRepository: FakeUserRepository,
     ): TimeLetterWriteViewModel {
-        val resolver = ResolveTimeLetterBlocksUseCase(CompletionPhotoUploadRepository)
+        val resolver = ResolveTimeLetterBlocksUseCase(FakePhotoUploadRepository.strict())
         return TimeLetterWriteViewModel(
             createTimeLetterUseCase = CreateTimeLetterUseCase(repository, resolver),
             resolveTimeLetterBlocksUseCase = resolver,
             timeLetterRepository = repository,
             userRepository = userRepository,
-            fileMetadataRepository = CompletionFileMetadataRepository,
+            fileMetadataRepository = FakeFileMetadataRepository.strict(),
             savedStateHandle = SavedStateHandle(mapOf("timeLetterId" to null)),
         )
     }
@@ -695,91 +738,16 @@ class TimeLetterMindRecordCompletionAndroidTest {
     }
 }
 
-private data class CompletionTimeLetterCreateCall(
-    val title: String?,
-    val blocks: List<NewTimeLetterBlock>,
-    val sendAt: String?,
-    val deliveryMode: TimeLetterDeliveryMode,
-    val status: TimeLetterStatus,
-    val receiverIds: List<Long>,
-)
-
-private class CompletionTimeLetterRepository(
-    var nextDetailGate: CompletableDeferred<Result<TimeLetter>>? = null,
-    var registeredLetters: TimeLetterList = TimeLetterList(emptyList(), 0),
-) : TimeLetterRepository {
-    val allowCreate = CompletableDeferred<Unit>()
-    val createCalls = mutableListOf<CompletionTimeLetterCreateCall>()
-    val detailResults = ArrayDeque<Result<TimeLetter>>()
-    val detailIds = mutableListOf<Long>()
-    var registeredListCalls = 0
-        private set
-
-    override suspend fun getTimeLetters(): TimeLetterList {
-        registeredListCalls += 1
-        return registeredLetters
-    }
-
-    override suspend fun getTemporaryTimeLetters(): TimeLetterList = TimeLetterList(emptyList(), 0)
-
-    override suspend fun getTimeLetter(timeLetterId: Long): TimeLetter {
-        detailIds += timeLetterId
-        val gate = nextDetailGate
-        nextDetailGate = null
-        return (gate?.await() ?: requireNotNull(detailResults.removeFirstOrNull())).getOrThrow()
-    }
-
-    override suspend fun createTimeLetter(
-        title: String?,
-        blocks: List<NewTimeLetterBlock>,
-        sendAt: String?,
-        deliveryMode: TimeLetterDeliveryMode,
-        status: TimeLetterStatus,
-        receiverIds: List<Long>,
-    ): TimeLetter {
-        createCalls += CompletionTimeLetterCreateCall(title, blocks, sendAt, deliveryMode, status, receiverIds)
-        allowCreate.await()
-        return TimeLetter(
-            id = 901L,
-            title = title,
-            sendAt = sendAt,
-            deliveredAt = null,
-            status = status,
-            blocks = emptyList(),
-            receiverIds = receiverIds,
-        )
-    }
-
-    override suspend fun updateTimeLetter(
-        timeLetterId: Long,
-        title: String?,
-        blocks: List<NewTimeLetterBlock>,
-        sendAt: String?,
-        deliveryMode: TimeLetterDeliveryMode?,
-        status: TimeLetterStatus?,
-    ): TimeLetter = error("Unexpected time-letter update: $timeLetterId")
-
-    override suspend fun deleteTimeLetters(timeLetterIds: List<Long>) {
-        error("Unexpected time-letter delete: $timeLetterIds")
-    }
-
-    override suspend fun deleteAllTemporary() {
-        error("Unexpected delete-all-drafts")
-    }
-}
-
-private object CompletionPhotoUploadRepository : PhotoUploadRepository {
-    override suspend fun upload(
-        uriString: String,
-        directory: String,
-    ): Result<String> = error("Unexpected upload: $uriString")
-}
-
-private object CompletionFileMetadataRepository : FileMetadataRepository {
-    override suspend fun getFileName(uriString: String): String = error("Unexpected file-name lookup: $uriString")
-
-    override suspend fun getMimeType(uriString: String): String? = error("Unexpected MIME lookup: $uriString")
-}
+private fun completionCreatedLetter(call: FakeTimeLetterRepository.CreateCall): TimeLetter =
+    TimeLetter(
+        id = 901L,
+        title = call.title,
+        sendAt = call.sendAt,
+        deliveredAt = null,
+        status = call.status,
+        blocks = emptyList(),
+        receiverIds = call.receiverIds,
+    )
 
 /** 이 파일의 데일리질문 시나리오가 공유하는 "오늘의 질문". `questionId` 를 단언하는 곳이 있다. */
 private fun completionToday() = TodayDailyQuestion(71L, 71, "오늘의 테스트 질문", false)

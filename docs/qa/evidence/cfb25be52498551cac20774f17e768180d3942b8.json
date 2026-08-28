@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "cfb25be52498551cac20774f17e768180d3942b8.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "device.serial"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "cfb25be52498551cac20774f17e768180d3942b8",
+  "head_ref": "HEAD",
+  "base_sha": "68dfef7440ce578cf3510f0d8755b1a3a7e2a598",
+  "base_ref": "origin/develop",
+  "recorded_at": "2026-08-04T11:14:48.545723+00:00",
+  "result": "pass",
+  "scenario": "기존 계정 수신자 목록 로드 후 로그아웃·신규 QA 계정 전환 시 이전 계정 수신자 미노출",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true
+  },
+  "details": {
+    "diff_sha256": "14ed3ff0d79f859501d7c21dd18b6da1965c82f0889605969631647e9be6d27a",
+    "changed_files": [
+      "app/src/main/java/com/afternote/afternote_fe/screen/HomeTabViewModel.kt",
+      "core/data/src/main/java/com/afternote/core/data/repoimpl/UserRepositoryImpl.kt",
+      "core/data/src/test/java/com/afternote/core/data/repoimpl/UserRepositoryImplTest.kt"
+    ],
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe",
+      "installed_for_head": "cfb25be52498551cac20774f17e768180d3942b8",
+      "installed_at_epoch": 1785841237,
+      "ui_sha256": "9cb7b8764123f809a58c719cb5db82439f448ddb76d884f538b541ffa517d89b"
+    }
+  }
+}

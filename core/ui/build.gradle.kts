@@ -9,6 +9,7 @@ android {
     namespace = "com.afternote.core.ui"
     resourcePrefix = "core_ui_"
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
+    testFixtures.enable = true
     // robolectric Compose UI 테스트가 stringResource 를 읽으려면 JVM 테스트에 리소스가 실려야 한다 (#516)
     testOptions.unitTests.isIncludeAndroidResources = true
 }
@@ -29,4 +30,8 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    // feature Compose 테스트가 같은 48dp 판정·진단 형식을 공유한다 (#1167).
+    testFixturesImplementation(platform(libs.androidx.compose.bom))
+    testFixturesImplementation(libs.androidx.compose.ui.test.junit4)
 }

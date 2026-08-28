@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
@@ -94,7 +95,7 @@ fun ProcessingMethodCheckbox(
                 contentDescription = stringResource(R.string.afternote_editor_content_description_more),
                 modifier =
                     Modifier
-                        .clickable(onClick = onMoreClick),
+                        .clickable(role = Role.Button, onClick = onMoreClick),
             )
             EditDropdownMenu(
                 expanded = expanded,
@@ -161,8 +162,7 @@ private fun InlineEditTextField(
 
     LaunchedEffect(Unit) {
         // Wait one frame for DropdownMenu dismiss to settle before requesting focus
-        @Suppress("UNUSED_VARIABLE")
-        val frame = withFrameNanos { it }
+        withFrameNanos { }
         focusRequester.requestFocus()
     }
 }
@@ -173,7 +173,7 @@ private fun ProcessingMethodCheckboxPreview() {
     AfternoteTheme {
         Column {
             ProcessingMethodCheckbox(
-                item = ProcessingMethodItem("1", "게시물 내리기"),
+                item = ProcessingMethodItem(1, "게시물 내리기"),
             )
         }
     }
@@ -185,7 +185,7 @@ private fun ProcessingMethodCheckboxEditingPreview() {
     AfternoteTheme {
         Column {
             ProcessingMethodCheckbox(
-                item = ProcessingMethodItem("1", "게시물 내리기"),
+                item = ProcessingMethodItem(1, "게시물 내리기"),
                 isEditing = true,
                 onEditConfirmed = {},
             )
