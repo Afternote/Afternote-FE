@@ -4,6 +4,7 @@ import test from "node:test";
 import {
     changedPathsFromGithubFiles,
     githubOutputLines,
+    isAndroidModuleBuild,
     resolvePrImpact,
 } from "./resolve-pr-impact.mjs";
 
@@ -44,6 +45,31 @@ test("GitHub pagination and rename payloads include both old and new paths", () 
         ]),
         ["README.md", "feature/home/New.kt", "feature/home/Old.kt"],
     );
+});
+
+test("explicit and convention JVM plugins are excluded from Android lint task selection", () => {
+    assert.equal(isAndroidModuleBuild('plugins { id("java-library") }'), false);
+    assert.equal(isAndroidModuleBuild('plugins { id("afternote.jvm.library") }'), false);
+    assert.equal(isAndroidModuleBuild('plugins { id("afternote.jvm.domain") }'), false);
+    assert.equal(isAndroidModuleBuild('plugins { id("afternote.android.library") }'), true);
+
+    const mixedModules = [module(":app"), module(":core:model", { android: false })];
+    const mixedDependencies = new Map([
+        [":app", new Set([":core:model"])],
+        [":core:model", new Set()],
+    ]);
+    const impact = resolvePrImpact(
+        ["core/model/src/main/kotlin/UserModel.kt"],
+        mixedModules,
+        mixedDependencies,
+    );
+
+    assert.deepEqual(impact.coverageModules, [":app", ":core:model"]);
+    assert.deepEqual(impact.androidLintTasks, [
+        ":app:lintDebug",
+        ":app:processDebugMainManifest",
+    ]);
+    assert.ok(!impact.androidLintTasks.includes(":core:model:lintDebug"));
 });
 
 test("production changes run direct formatting and reverse-dependent tests and lint", () => {

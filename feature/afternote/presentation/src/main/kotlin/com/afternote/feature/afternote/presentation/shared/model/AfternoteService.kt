@@ -21,7 +21,7 @@ enum class AfternoteService(
         stringResId = R.string.receiver_afternote_item_gallery,
         iconResId = CoreUiR.drawable.core_ui_afternote_gallery_pattern,
     ),
-    MEMORIAL_GUIDELINE(
+    MEMORIAL(
         displayKey = "추억 노트",
         stringResId = R.string.receiver_afternote_item_memorial_guideline,
         iconResId = CoreUiR.drawable.core_ui_afternote_memorial_guideline,

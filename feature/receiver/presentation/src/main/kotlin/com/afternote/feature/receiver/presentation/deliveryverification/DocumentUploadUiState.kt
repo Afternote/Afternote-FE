@@ -1,7 +1,7 @@
 package com.afternote.feature.receiver.presentation.deliveryverification
 
 import androidx.compose.runtime.Immutable
-import com.afternote.feature.receiver.presentation.error.ErrorPayload
+import com.afternote.core.ui.UiText
 
 /**
  * 증빙 서류 업로드(6·7·8) UI 상태.
@@ -19,9 +19,9 @@ data class DocumentUploadUiState(
      * 한 번 표시한 뒤 `consumeError()` 로 되돌리므로, 실패한 적 없는 상태와 이미 보여 준 상태가 같은
      * 값이 된다. 마지막 시도의 성패를 알아야 하면 [isSubmitting]·[isSubmitted]·슬롯의 `fileUrl` 를 본다.
      *
-     * [ErrorPayload.Res] 또는 [ErrorPayload.Text] 둘 중 하나이며, [isSubmitted] 와 같은 소비형 필드다.
+     * 표시 가능한 서버 message 와 클라이언트 fallback 을 [UiText] 하나로 운반하며, [isSubmitted] 와 같은 소비형 필드다.
      */
-    val error: ErrorPayload? = null,
+    val error: UiText? = null,
     /** 제출 성공 신호 — UI 가 LaunchedEffect 로 완료 화면 이동 후 [DocumentUploadViewModel.onSubmittedConsumed] 로 reset. */
     val isSubmitted: Boolean = false,
 ) {

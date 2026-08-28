@@ -26,11 +26,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.toggleShadow_1
 import com.afternote.core.ui.theme.toggleShadow_2
+
+internal const val VIEW_MODE_PILL_TEST_TAG = "view_mode_pill"
+internal const val VIEW_MODE_INDICATOR_TEST_TAG = "view_mode_indicator"
 
 @Composable
 fun ViewModeSwitcher(
@@ -61,6 +70,7 @@ fun ViewModeSwitcher(
     Box(
         modifier =
             modifier
+                .testTag(VIEW_MODE_PILL_TEST_TAG)
                 .size(width = containerWidth, height = containerHeight)
                 .clip(CircleShape)
                 .background(AfternoteDesign.colors.gray2)
@@ -70,6 +80,7 @@ fun ViewModeSwitcher(
             modifier =
                 Modifier
                     .offset(x = animatedOffset, y = 0.dp)
+                    .testTag(VIEW_MODE_INDICATOR_TEST_TAG)
                     .size(indicatorSize)
                     .dropShadow(
                         shape = CircleShape,
@@ -84,11 +95,13 @@ fun ViewModeSwitcher(
             SwitcherIcon(
                 icon = painterResource(image1),
                 isSelected = isListView,
+                contentDescription = stringResource(R.string.core_ui_view_mode_list),
                 onClick = { onViewChange(true) },
             )
             SwitcherIcon(
                 icon = painterResource(image2),
                 isSelected = !isListView,
+                contentDescription = stringResource(R.string.core_ui_view_mode_calendar),
                 onClick = { onViewChange(false) },
             )
         }
@@ -99,6 +112,7 @@ fun ViewModeSwitcher(
 private fun RowScope.SwitcherIcon(
     icon: Painter,
     isSelected: Boolean,
+    contentDescription: String,
     onClick: () -> Unit,
 ) {
     val iconTint by animateColorAsState(
@@ -120,8 +134,12 @@ private fun RowScope.SwitcherIcon(
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
+                    role = Role.RadioButton,
                     onClick = onClick,
-                ),
+                ).semantics {
+                    this.contentDescription = contentDescription
+                    selected = isSelected
+                },
         contentAlignment = Alignment.Center,
     ) {
         Icon(

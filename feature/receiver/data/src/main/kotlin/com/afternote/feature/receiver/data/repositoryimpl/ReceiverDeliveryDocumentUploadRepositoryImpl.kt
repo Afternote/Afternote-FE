@@ -14,7 +14,7 @@ import javax.inject.Inject
 import javax.inject.Named
 
 /**
- * `getPresignedUrl(extension)` 으로 presigned URL 을 받아 바이트를 PUT 하는 일반화된 구현.
+ * 파일 크기와 확장자로 presigned URL 을 받아 같은 크기의 바이트를 PUT 하는 일반화된 구현.
  *
  * 인증·헤더 부착은 [ReceiverAuthRepository] 측 호출에서, S3 PUT 은 [okHttpClient] 로 분리되어
  * 작성자 측 [com.afternote.feature.afternote.data.repositoryimpl.author.MemorialThumbnailUploadRepositoryImpl]
@@ -34,9 +34,15 @@ class ReceiverDeliveryDocumentUploadRepositoryImpl
             runCatchingCancellable {
                 val presigned =
                     receiverAuthRepository
-                        .getPresignedUrl(extension)
-                        .getOrThrow()
+                        .getPresignedUrl(
+                            extension = extension,
+                            contentLength = bytes.size.toLong(),
+                        ).getOrThrow()
 
+                check(presigned.contentLength == bytes.size.toLong()) {
+                    "Presigned content length mismatch: expected ${bytes.size}, " +
+                        "received ${presigned.contentLength}"
+                }
                 val contentType = presigned.contentType.ifBlank { CONTENT_TYPE_FALLBACK }
                 val body = bytes.toRequestBody(contentType.toMediaType())
                 val request =
@@ -45,6 +51,7 @@ class ReceiverDeliveryDocumentUploadRepositoryImpl
                         .url(presigned.presignedUrl)
                         .put(body)
                         .header("Content-Type", contentType)
+                        .header("Content-Length", presigned.contentLength.toString())
                         .build()
 
                 withContext(ioDispatcher) {

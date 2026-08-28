@@ -26,7 +26,7 @@ class AfternoteAuthoringFailureMapperTest {
 
     @Test
     fun `ApiException 475면 RECEIVERS_REQUIRED 검증 예외로 치환`() {
-        val result = mapAuthoringFailure(ApiException(status = 400, code = 475, serverMessage = null, message = "x"))
+        val result = mapAuthoringFailure(ApiException(status = 400, code = 475, serverMessage = null, fallbackMessage = "x"))
         assertTrue(result is AfternoteFailure.AuthoringValidation)
         assertEquals(
             AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED,
@@ -36,7 +36,7 @@ class AfternoteAuthoringFailureMapperTest {
 
     @Test
     fun `ApiException 다른 코드는 그대로 통과`() {
-        val original = ApiException(status = 400, code = 400, serverMessage = null, message = "x")
+        val original = ApiException(status = 400, code = 400, serverMessage = null, fallbackMessage = "x")
         assertSame(original, mapAuthoringFailure(original))
     }
 

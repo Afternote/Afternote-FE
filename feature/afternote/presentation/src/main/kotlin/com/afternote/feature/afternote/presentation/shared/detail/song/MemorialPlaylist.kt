@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.presentation.shared.detail.song
 
-import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -31,7 +30,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import coil3.compose.AsyncImagePainter
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.modifierextention.FadingEdgeDirection
 import com.afternote.core.ui.modifierextention.horizontalFadingEdge
@@ -39,8 +37,6 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
-
-private const val TAG = "MemorialPlaylist"
 
 /**
  * 추억 플레이리스트 카드 (수신자 뷰·작성자 편집 공통).
@@ -221,13 +217,6 @@ private fun MemorialPlaylistAlbumCoverBox(album: AlbumCover) {
             modifier = modifier,
             contentScale = ContentScale.Crop,
             error = painterResource(R.drawable.feature_afternote_img_placeholder_1),
-            onError = { state: AsyncImagePainter.State.Error ->
-                Log.e(
-                    TAG,
-                    "Coil load failed: album.imageUrl=${album.imageUrl}",
-                    state.result.throwable,
-                )
-            },
         )
     } else {
         // 둥글기는 공유 modifier 의 clip(8.dp) 이 이미 처리 — background 에 shape 중복 지정 불필요.
