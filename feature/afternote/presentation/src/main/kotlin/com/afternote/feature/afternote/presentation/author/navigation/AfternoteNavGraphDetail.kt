@@ -32,6 +32,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -225,6 +227,14 @@ internal fun AfternoteDetailNavigation(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // 수정 화면에서 저장 후 복귀하면 상세를 다시 조회한다 — 백스택에 살아 있는 동안 수정 전
+    // 값이 남지 않게 한다 (#701). ON_RESUME 은 화면 off/on·홈 버튼 복귀에서도 발화하므로
+    // 로딩을 방출하지 않는 refreshOnReturn() 을 쓴다. 최초 진입의 중복 호출은 VM 이 진행 중인
+    // Job 으로 막는다 — 마인드레코드 DraftListScreen 이 쓰는 결선과 같다.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshOnReturn()
+    }
 
     ObserveDeleteResult(
         deleteResult = (uiState as? AfternoteDetailUiState.Success)?.deleteResult,

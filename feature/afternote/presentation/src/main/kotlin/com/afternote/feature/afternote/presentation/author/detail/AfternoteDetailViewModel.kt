@@ -13,6 +13,7 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.Afte
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -54,6 +55,9 @@ class AfternoteDetailViewModel
             savedStateHandle.toRoute<AfternoteRoute.DetailRoute>().itemId
         private val internalState = MutableStateFlow(InternalState())
 
+        /** 진행 중인 상세 조회. 최초 진입 ON_RESUME 과 init 로드의 중복을 이 Job 으로 가른다. */
+        private var loadJob: Job? = null
+
         val uiState: StateFlow<AfternoteDetailUiState> =
             internalState
                 .map { it.toUiState() }
@@ -78,22 +82,53 @@ class AfternoteDetailViewModel
 
         // region Data Loading
 
-        private fun loadDetail(afternoteId: Long) {
-            viewModelScope.launch {
-                internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
-                afternoteRepository
-                    .getDetail(id = afternoteId)
-                    .onSuccess { detail ->
-                        internalState.update { it.copy(loadPhase = LoadPhase.Loaded(detail)) }
-                    }.onFailure { e ->
-                        errorReporter.recordAfternoteFailure(AfternoteFailureStage.DETAIL_LOAD, e)
-                        internalState.update {
-                            it.copy(
-                                loadPhase = LoadPhase.Failed(messageRes = R.string.afternote_detail_load_error),
-                            )
-                        }
+        /**
+         * 수정 화면 등 다른 화면에서 상세로 복귀했을 때의 자동 갱신 (#701).
+         *
+         * 최초 진입 로드와 두 가지가 다르다.
+         * - 로딩을 방출하지 않는다. 화면이 살아 있는 채로 발화하므로 스피너가 재진입마다 번쩍인다.
+         * - 실패해도 보고 있던 상세를 유지한다. 일시적 실패로 잘 보던 화면이 에러로 대체되면
+         *   사용자 입장에서는 인과가 설명되지 않는다.
+         *
+         * 진입 직후의 ON_RESUME 은 init 로드와 겹친다 — 진행 중이면 건너뛴다. 컴포지션 쪽 플래그가
+         * 아니라 VM 이 들고 있는 Job 으로 판단해야 프로세스 사망 후 복원(VM 재생성 + 플래그 복원)에서도
+         * 중복이 나지 않는다 (마인드레코드 `DiaryListViewModel.refreshOnReturn` 과 같은 규칙).
+         */
+        fun refreshOnReturn() {
+            if (loadJob?.isActive == true) return
+            loadDetail(afternoteIdFromNav, showsLoading = false, keepsStateOnFailure = true)
+        }
+
+        private fun loadDetail(
+            afternoteId: Long,
+            showsLoading: Boolean = true,
+            keepsStateOnFailure: Boolean = false,
+        ) {
+            loadJob?.cancel()
+            loadJob =
+                viewModelScope.launch {
+                    if (showsLoading) {
+                        internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
                     }
-            }
+                    afternoteRepository
+                        .getDetail(id = afternoteId)
+                        .onSuccess { detail ->
+                            internalState.update { it.copy(loadPhase = LoadPhase.Loaded(detail)) }
+                        }.onFailure { e ->
+                            // 화면을 유지하는 자동 갱신 실패도 기록한다 — 사용자에게 안 보이는 만큼
+                            // 콘솔이 유일한 관측 지점이다.
+                            errorReporter.recordAfternoteFailure(AfternoteFailureStage.DETAIL_LOAD, e)
+                            internalState.update { current ->
+                                if (keepsStateOnFailure && current.loadPhase is LoadPhase.Loaded) {
+                                    current
+                                } else {
+                                    current.copy(
+                                        loadPhase = LoadPhase.Failed(messageRes = R.string.afternote_detail_load_error),
+                                    )
+                                }
+                            }
+                        }
+                }
         }
 
         fun deleteAfternote(afternoteId: Long) {
