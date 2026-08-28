@@ -135,6 +135,10 @@ class MindRecordRequestCountTest {
             advanceUntilIdle()
             advanceTimeBy(10 * 60 * 1000L)
             advanceUntilIdle()
+            // 화면에 들어온 첫 ON_RESUME 은 init 조회가 덮으므로 건너뛴다 — 여기서 보려는
+            // 것은 «나갔다 돌아온» 갱신이라 그 뒤부터 센다 (#736 리뷰).
+            viewModel.refreshOnReturn()
+            advanceUntilIdle()
             val afterPolling = repository.calls
 
             viewModel.refreshOnReturn()

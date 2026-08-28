@@ -55,6 +55,9 @@ class WeeklyReportViewModel
 
         /** 마지막으로 성공한 조회 시점의 데이터 버전 (#736). */
         private var loadedVersion: Long? = null
+
+        /** 이 ViewModel 이 ON_RESUME 을 한 번이라도 받았는지 — init 로드와의 중복을 가른다. */
+        private var hasSeenFirstResume: Boolean = false
         private var loadJob: Job? = null
 
         val uiState: StateFlow<WeeklyReportUiState> =
@@ -116,7 +119,19 @@ class WeeklyReportViewModel
          * 화면을 유지한다. 보고 있던 주를 그대로 다시 조회한다.
          */
         fun refreshOnReturn(showsLoading: Boolean = false) {
-            // 진입 직후의 ON_RESUME 은 init 로드와 겹친다 — 진행 중이면 건너뛴다.
+            // **이 ViewModel 이 받는 첫 ON_RESUME 은 init 로드가 이미 덮는다.**
+            //
+            // 이 상태를 화면의 rememberSaveable 로 두면 프로세스 사망 뒤 되살아난 «지나갔음»
+            // 플래그가 새 ViewModel 의 init 과 겹친다 — 저장 상태는 복원되는데 ViewModel 은
+            // 새로 만들어지기 때문이다. 그러면 이 PR 이 막으려는 같은 주차 GET 이 다시 두 번
+            // 나간다. 그래서 ViewModel 수명에 묶는다 (#736 리뷰).
+            //
+            // Job 가드만으로는 부족하다 — 즉시 끝나는 응답(캐시·즉시 실패)에서는 init 로드가
+            // 이미 끝나 있어 그냥 통과한다.
+            if (!hasSeenFirstResume) {
+                hasSeenFirstResume = true
+                return
+            }
             if (loadJob?.isActive == true) return
             // 성공해서 보고 있는 화면이라면, 데이터가 바뀌었을 때만 다시 부른다 (#736).
             // 실패 상태는 이 가드에 걸리지 않는다 — 실패한 주차를 다시 시도해야 한다 (#723).
