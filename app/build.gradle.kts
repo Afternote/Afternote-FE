@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.firebase.app.distribution)
     alias(libs.plugins.firebase.crashlytics)
     id("afternote.kover")
+    alias(libs.plugins.androidx.baselineprofile)
 }
 
 val localProperties = Properties()
@@ -44,6 +45,11 @@ android {
         execution = "ANDROIDX_TEST_ORCHESTRATOR"
         managedDevices {
             localDevices {
+                create("pixel2Api26") {
+                    device = "Pixel 2"
+                    apiLevel = 26
+                    systemImageSource = "aosp"
+                }
                 create("pixel2Api30") {
                     device = "Pixel 2"
                     apiLevel = 30
@@ -52,6 +58,11 @@ android {
                 create("pixel2Api34") {
                     device = "Pixel 2"
                     apiLevel = 34
+                    systemImageSource = "aosp"
+                }
+                create("pixel2Api36") {
+                    device = "Pixel 2"
+                    apiLevel = 36
                     systemImageSource = "aosp"
                 }
             }
@@ -193,6 +204,15 @@ android {
     }
 }
 
+baselineProfile {
+    // 생성은 주간/manual workflow가 소유한다. 일반 release 빌드가 에뮬레이터를 암묵적으로
+    // 띄우지 않으며, 검토 가능한 단일 profile을 source에 저장해 패키징한다.
+    automaticGenerationDuringBuild = false
+    mergeIntoMain = true
+    saveInSrc = true
+    dexLayoutOptimization = true
+}
+
 dependencies {
     implementation(libs.coil.compose)
     implementation(libs.androidx.hilt.navigation.compose)
@@ -202,6 +222,7 @@ dependencies {
     implementation(libs.androidx.startup.runtime)
     // DailyNotificationInitializer 가 WorkManagerInitializer 를 선행 의존으로 지정한다.
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.profileinstaller)
 
     // 카카오 OAuth redirect Activity(`com.kakao.sdk.auth.AuthCodeHandlerActivity`)를
     // app 매니페스트에서 직접 참조하므로 컴파일 classpath에 노출 필요.
@@ -245,6 +266,8 @@ dependencies {
 
     testImplementation(libs.coroutines.test)
     testImplementation(testFixtures(projects.core.domain))
+
+    baselineProfile(project(":baselineprofile"))
 
     // Managed-device androidTest — 실제 서버·OAuth 대신 Hilt fake를 주입하고 Compose semantics를 검증한다.
     androidTestImplementation(platform(libs.androidx.compose.bom))

@@ -28,6 +28,7 @@ dependencyResolutionManagement {
 rootProject.name = "afternote-fe"
 
 include(":app")
+include(":baselineprofile")
 
 // Core Modules
 include(":core:common")
