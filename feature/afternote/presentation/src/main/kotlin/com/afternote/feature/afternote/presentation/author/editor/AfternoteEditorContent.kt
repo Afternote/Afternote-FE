@@ -53,6 +53,7 @@ internal fun EditorContent(
     typeContent: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     isPrefillLoading: Boolean = false,
+    isTypeSelectionEnabled: Boolean = true,
 ) {
     Column(
         modifier =
@@ -72,6 +73,7 @@ internal fun EditorContent(
             onValueSelected = state::onTypeSelected,
             expanded = state.typeDropdownExpanded,
             onExpandedChange = state::onTypeDropdownExpandedChange,
+            enabled = isTypeSelectionEnabled,
             menuStyle =
                 DropdownMenuStyle(
                     shadowElevation = 10.dp,
@@ -125,6 +127,7 @@ fun AfternoteEditorBody(
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     isPrefillLoading: Boolean = false,
+    isTypeSelectionEnabled: Boolean = true,
 ) {
     // 슬롯을 누르면 곧장 갤러리가 뜨는 대신 "갤러리에서 선택 / 촬영" 시트를 한 단계 끼운다 (#369).
     // 지울 수 있는 첨부가 있으면 같은 시트에 "삭제" 갈래가 더해진다 (#1114).
@@ -155,6 +158,7 @@ fun AfternoteEditorBody(
         },
         modifier = modifier,
         isPrefillLoading = isPrefillLoading,
+        isTypeSelectionEnabled = isTypeSelectionEnabled,
     )
 
     MemorialMediaSourceSheet(
