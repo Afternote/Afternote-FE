@@ -2,7 +2,6 @@ package com.afternote.feature.afternote.presentation.author.navigation
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -230,7 +229,7 @@ internal fun AfternoteDetailNavigation(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val onVideoClick = rememberMemorialVideoClickHandler()
+    val onVideoClick = rememberMemorialVideoClickHandler(snackbarHostState)
 
     ObserveDeleteResult(
         deleteResult = (uiState as? AfternoteDetailUiState.Success)?.deleteResult,
@@ -336,20 +335,20 @@ private fun AfternoteDetailSuccessContent(
 }
 
 @Composable
-private fun rememberMemorialVideoClickHandler(): (String) -> Unit {
+private fun rememberMemorialVideoClickHandler(snackbarHostState: SnackbarHostState): (String) -> Unit {
     val context = LocalContext.current
-    return remember(context) {
+    val resources = LocalResources.current
+    val scope = rememberCoroutineScope()
+    return remember(context, snackbarHostState, resources, scope) {
         { videoUrl ->
             launchMemorialVideo(
                 videoUrl = videoUrl,
                 startActivity = context::startActivity,
                 onUnavailable = {
-                    Toast
-                        .makeText(
-                            context,
-                            R.string.feature_afternote_memorial_video_no_app,
-                            Toast.LENGTH_SHORT,
-                        ).show()
+                    val message = resources.getString(R.string.feature_afternote_memorial_video_no_app)
+                    scope.launch {
+                        snackbarHostState.showSnackbar(message = message)
+                    }
                 },
             )
         }
