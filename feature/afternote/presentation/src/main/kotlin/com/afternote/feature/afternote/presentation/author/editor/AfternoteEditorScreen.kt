@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import com.afternote.core.ui.modifierextention.addFocusCleaner
 import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
@@ -120,12 +121,14 @@ fun AfternoteEditorScreen(
                         style = AfternoteDesign.typography.bodySmallB,
                         color = AfternoteDesign.colors.gray9,
                         modifier =
-                            Modifier.clickable(
-                                onClick = {
-                                    focusManager.clearFocus()
-                                    onRegisterClick()
-                                },
-                            ),
+                            Modifier
+                                .clickable(
+                                    role = Role.Button,
+                                    onClick = {
+                                        focusManager.clearFocus()
+                                        onRegisterClick()
+                                    },
+                                ),
                     )
                 },
             )
