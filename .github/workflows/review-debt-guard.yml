@@ -20,6 +20,7 @@ permissions:
 jobs:
   debt-check:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: 미처리 리뷰 요청 검사
         env:

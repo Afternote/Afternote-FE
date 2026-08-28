@@ -9,6 +9,8 @@ const SOURCE_FILE_PATTERN = /\.(?:java|kt)$/;
 const KOTLIN_FILE_PATTERN = /\.kts?$/;
 const JVM_LIBRARY_PLUGIN_PATTERN =
     /id\("(?:java-library|afternote\.jvm\.(?:library|domain))"\)/;
+const ANDROID_TEST_PLUGIN_PATTERN =
+    /(?:id\("com\.android\.test"\)|alias\(libs\.plugins\.android\.test\))/;
 const GLOBAL_GRADLE_PATHS = new Set([
     "build.gradle.kts",
     "settings.gradle.kts",
@@ -133,7 +135,10 @@ function sortedProjectPaths(values) {
 }
 
 export function isAndroidModuleBuild(buildSource) {
-    return !JVM_LIBRARY_PLUGIN_PATTERN.test(buildSource);
+    return (
+        !JVM_LIBRARY_PLUGIN_PATTERN.test(buildSource) &&
+        !ANDROID_TEST_PLUGIN_PATTERN.test(buildSource)
+    );
 }
 
 export function resolvePrImpact(changedFiles, modules, dependencies) {
