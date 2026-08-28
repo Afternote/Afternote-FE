@@ -51,9 +51,12 @@ jobs:
     name: Run Unit Tests
     if: inputs.run_validation
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Clone repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Resolve pull request context
         id: pull-request
@@ -157,6 +160,7 @@ jobs:
           KOVER_HEAD_SHA: ${{ steps.pull-request.outputs.head-sha }}
           KOVER_ARTIFACT_URL: ${{ steps.kover-artifact.outputs.artifact-url }}
           KOVER_COVERAGE_MODULES: ${{ inputs.coverage_modules }}
+          KOVER_POLICY_PATH: .github/kover-coverage-policy.json
         run: node .github/scripts/render-kover-summary.mjs
 
       # 실패한 테스트의 HTML/XML 리포트를 PR artifact 로 보존 — CI 로그에서 stack trace 추적이 빠름.
