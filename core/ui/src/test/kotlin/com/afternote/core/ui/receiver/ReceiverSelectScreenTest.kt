@@ -99,8 +99,6 @@ class ReceiverSelectScreenTest {
             AfternoteTheme {
                 ReceiverSelectScreen(
                     title = "수신자 선택",
-                    searchPlaceholder = "이름으로 검색하기",
-                    confirmText = "수신자 선택 완료하기",
                     receivers = receivers,
                     selectedReceiverId = selectedReceiverId,
                     onReceiverToggle = onReceiverToggle,

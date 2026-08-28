@@ -6,12 +6,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.model.setting.ReceiverListItem
 import com.afternote.core.ui.receiver.ReceiverSelectItem
 import com.afternote.core.ui.receiver.ReceiverSelectScreen
-import com.afternote.feature.setting.presentation.R
 
 /**
  * 설정의 수신자 목록(선택) 화면 — 공용 [ReceiverSelectScreen] 소비 (#791).
@@ -30,8 +28,6 @@ fun ReceiverListScreen(
 
     ReceiverSelectScreen(
         title = "수신자 목록",
-        searchPlaceholder = stringResource(R.string.setting_receiver_search_placeholder),
-        confirmText = "수신자 선택 완료하기",
         receivers =
             remember(receivers) {
                 receivers.map { ReceiverSelectItem(id = it.receiverId, name = it.name, relation = it.relation) }
