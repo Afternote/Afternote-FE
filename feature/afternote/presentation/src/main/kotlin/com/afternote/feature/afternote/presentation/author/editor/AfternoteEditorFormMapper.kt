@@ -42,7 +42,7 @@ internal object AfternoteEditorFormMapper {
             receivers =
                 detail.receivers.map { receiver ->
                     AfternoteEditorReceiver(
-                        id = receiver.receiverId.toString(),
+                        id = receiver.receiverId,
                         name = receiver.name,
                         label = receiver.relation,
                     )
@@ -152,11 +152,10 @@ internal object AfternoteEditorFormMapper {
 
         return when (type) {
             AfternoteType.GALLERY_AND_FILES -> {
-                val galleryMethods = processingMethods.ifEmpty { listOf("정보 전달") }
                 CreateAfternoteInput.Gallery(
                     CreateGalleryPayload(
                         title = payload.serviceName,
-                        processingMethods = galleryMethods,
+                        processingMethods = processingMethods,
                         leaveMessageBlocks = leaveMessageBlocks,
                         receiverIds = selectedReceiverIds,
                     ),
@@ -244,7 +243,7 @@ internal object AfternoteEditorFormMapper {
             }
 
             AfternoteType.GALLERY_AND_FILES, AfternoteType.SOCIAL_NETWORK, AfternoteType.BUSINESS -> {
-                buildActionsUpdatePayload(type, payload, selectedReceiverIds)
+                buildProcessingMethodsUpdatePayload(type, payload, selectedReceiverIds)
             }
 
             // placeholder 카테고리는 Validator 에서 차단됨. 도달 시 호출자 버그.
@@ -258,7 +257,7 @@ internal object AfternoteEditorFormMapper {
      * [AfternoteUpdatePayload.processingMethods] 를 채우고 계정형(SOCIAL·BUSINESS)만 credentials 를 싣는다.
      * MEMORIAL 은 [AfternoteUpdatePayload.memorial] 기반이라 [buildUpdatePayload] 의 별도 분기.
      */
-    private fun buildActionsUpdatePayload(
+    private fun buildProcessingMethodsUpdatePayload(
         type: AfternoteType,
         payload: RegisterAfternotePayload,
         selectedReceiverIds: List<Long>,

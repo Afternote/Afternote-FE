@@ -33,6 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
@@ -46,16 +47,6 @@ import com.afternote.feature.afternote.presentation.author.detail.GalleryDetailS
 import com.afternote.feature.afternote.presentation.author.detail.MemorialDetailScreen
 import com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailScreen
 import kotlinx.coroutines.launch
-
-@Composable
-fun DetailLoadingContent() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        CircularProgressIndicator()
-    }
-}
 
 @Composable
 fun DesignPendingDetailContent(onBackClick: () -> Unit) {
@@ -244,7 +235,7 @@ internal fun AfternoteDetailNavigation(
 
     when (val state = uiState) {
         AfternoteDetailUiState.Loading -> {
-            DetailLoadingContent()
+            LoadingBody()
         }
 
         is AfternoteDetailUiState.Error -> {

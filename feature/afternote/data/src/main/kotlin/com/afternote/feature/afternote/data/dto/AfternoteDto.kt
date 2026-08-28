@@ -20,7 +20,7 @@ data class AfternoteCreateGalleryRequestDto(
 data class AfternoteCreatePlaylistRequestDto(
     @EncodeDefault @SerialName("category") val category: String = "PLAYLIST",
     @SerialName("title") val title: String,
-    @SerialName("playlist") val memorial: AfternotePlaylistDto,
+    @SerialName("playlist") val memorial: AfternotePlaylistRequestDto,
     @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
     @SerialName("receivers") val receivers: List<AfternoteReceiverRefDto> = emptyList(),
 )
@@ -44,7 +44,7 @@ data class AfternoteUpdateRequestDto(
     @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
     @SerialName("credentials") val credentials: AfternoteCredentialsDto? = null,
     @SerialName("receivers") val receivers: List<AfternoteReceiverRefDto>? = null,
-    @SerialName("playlist") val memorial: AfternotePlaylistDto? = null,
+    @SerialName("playlist") val memorial: AfternotePlaylistRequestDto? = null,
 )
 
 @Serializable
@@ -53,7 +53,7 @@ data class AfternoteDetailDto(
     @SerialName("category") val category: String,
     @SerialName("title") val title: String,
     @SerialName("isDraft") val isDraft: Boolean,
-    @SerialName("updatedAt") val updatedAt: String = "",
+    @SerialName("updatedAt") val updatedAt: String,
     @SerialName("credentials") val credentials: AfternoteCredentialsDto? = null,
     @SerialName("receivers") val receivers: List<AfternoteDetailReceiverDto>,
     @SerialName("actions") val processingMethods: List<String>? = null,
@@ -63,6 +63,14 @@ data class AfternoteDetailDto(
 
 @Serializable
 data class AfternotePlaylistDto(
+    @SerialName("atmosphere") val atmosphere: String? = null,
+    @SerialName("memorialPhotoUrl") val memorialPhotoUrl: String? = null,
+    @SerialName("songs") val songs: List<AfternoteSongDto>,
+    @SerialName("memorialVideo") val memorialVideo: AfternoteMemorialVideoDto? = null,
+)
+
+@Serializable
+data class AfternotePlaylistRequestDto(
     @SerialName("atmosphere") val atmosphere: String? = null,
     @SerialName("memorialPhotoUrl") val memorialPhotoUrl: String? = null,
     @SerialName("songs") val songs: List<AfternoteSongDto> = emptyList(),
@@ -105,10 +113,10 @@ data class AfternoteIdDto(
 
 @Serializable
 data class AfternotePageDto(
-    @SerialName("content") val content: List<AfternoteListItemDto> = emptyList(),
-    @SerialName("page") val page: Int = 0,
-    @SerialName("size") val size: Int = 10,
-    @SerialName("hasNext") val hasNext: Boolean = false,
+    @SerialName("content") val content: List<AfternoteListItemDto>,
+    @SerialName("page") val page: Int,
+    @SerialName("size") val size: Int,
+    @SerialName("hasNext") val hasNext: Boolean,
 )
 
 @Serializable

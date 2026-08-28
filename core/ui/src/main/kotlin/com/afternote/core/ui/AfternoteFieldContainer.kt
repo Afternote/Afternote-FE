@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -62,7 +63,7 @@ fun AfternoteFieldContainer(
                 .border(1.dp, borderColor, RoundedCornerShape(8.dp))
                 .then(
                     if (onClick != null) {
-                        Modifier.clickable(enabled = enabled, onClick = onClick)
+                        Modifier.clickable(enabled = enabled, role = Role.Button, onClick = onClick)
                     } else {
                         Modifier
                     },

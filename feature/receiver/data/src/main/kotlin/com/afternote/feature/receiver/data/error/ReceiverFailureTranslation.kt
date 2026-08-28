@@ -11,9 +11,8 @@ private const val DELIVERY_CONDITION_NOT_MET = 2009
  * 인프라 예외를 수신자 도메인 실패로 옮긴다. **사유를 확인하지 못한 실패는 원본 그대로 돌려준다** —
  * 없는 `status`·`serverCode` 를 지어내 감싸면 그 가짜 값을 소비처가 실제 대역으로 읽는다.
  *
- * `when` 의 순서가 계약이다. [ApiException] 은 [IOException] 의 **하위 타입**이라(OkHttp
- * Interceptor 가 4xx·5xx 를 가로채 던질 때 OkHttp 가 그대로 전파해야 하므로 그렇게 선언돼 있다),
- * IO 갈래를 위에 두면 서버가 내려준 거절까지 «네트워크 없음» 으로 뭉개진다.
+ * 서버가 응답하며 거절한 [ApiException]과 서버에 닿지 못한 [IOException]을 별도 도메인 타입으로
+ * 옮긴다. 둘은 Retrofit CallAdapter 경계부터 서로 다른 타입 계열이다.
  *
  * 취소는 여기 오지 않는다 — 호출처의 `runCatchingCancellable` 이 `CancellationException` 을
  * 먼저 되던진다.

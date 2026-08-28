@@ -5,7 +5,7 @@ import com.afternote.feature.afternote.data.dto.AfternoteCreateGalleryRequestDto
 import com.afternote.feature.afternote.data.dto.AfternoteCreatePlaylistRequestDto
 import com.afternote.feature.afternote.data.dto.AfternoteCredentialsDto
 import com.afternote.feature.afternote.data.dto.AfternoteMemorialVideoDto
-import com.afternote.feature.afternote.data.dto.AfternotePlaylistDto
+import com.afternote.feature.afternote.data.dto.AfternotePlaylistRequestDto
 import com.afternote.feature.afternote.data.dto.AfternoteReceiverRefDto
 import com.afternote.feature.afternote.data.dto.AfternoteSongDto
 import com.afternote.feature.afternote.data.dto.AfternoteUpdateRequestDto
@@ -84,7 +84,7 @@ fun CreateMemorialPayload.toRequest() =
     )
 
 fun MemorialWritePayload.toDto() =
-    AfternotePlaylistDto(
+    AfternotePlaylistRequestDto(
         memorialPhotoUrl = memorialPhotoUrl,
         songs = songs.map { it.toDto() },
         memorialVideo = memorialVideo?.toDto(),

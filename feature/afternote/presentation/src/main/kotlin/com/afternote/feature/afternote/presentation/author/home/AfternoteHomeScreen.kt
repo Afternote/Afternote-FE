@@ -20,13 +20,13 @@ import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.afternote.core.ui.button.FAB.PenFloatingActionButton
+import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.body.EmptyListBody
 import com.afternote.feature.afternote.presentation.shared.body.ErrorListBody
-import com.afternote.feature.afternote.presentation.shared.body.LoadingListBody
 import com.afternote.feature.afternote.presentation.shared.body.infinite.InfiniteListBody
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
 import kotlinx.coroutines.flow.flowOf
@@ -85,7 +85,7 @@ fun AfternoteHomeScreen(
             val bodyModifier = Modifier.fillMaxSize()
             when {
                 isInitialLoading -> {
-                    LoadingListBody(modifier = bodyModifier)
+                    LoadingBody(modifier = bodyModifier)
                 }
 
                 // 전면 에러는 보여줄 데이터가 전무할 때만. 목록이 있는 상태의 refresh 실패는
@@ -161,7 +161,7 @@ private fun AfternoteHomeScreenPreview() {
     }
 }
 
-// 초기 로딩 상태(refresh=Loading, 0건) → LoadingListBody. Paging 의 loadState 를 주입해 재현한다.
+// 초기 로딩 상태(refresh=Loading, 0건) → LoadingBody. Paging 의 loadState 를 주입해 재현한다.
 @Preview(showBackground = true)
 @Composable
 private fun AfternoteHomeScreenLoadingPreview() {
