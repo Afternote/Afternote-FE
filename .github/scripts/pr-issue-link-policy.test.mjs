@@ -11,8 +11,14 @@ const workflowUrl = new URL("../workflows/repository-quality.yml", import.meta.u
 const callerWorkflowUrl = new URL("../workflows/pr-validation.yml", import.meta.url);
 const templateUrl = new URL("../PULL_REQUEST_TEMPLATE.md", import.meta.url);
 
-function pullRequest({ title = "change", body = "", number = 7, user = { login: "author", type: "User" } } = {}) {
-    return { number, title, body, user };
+function pullRequest({
+    title = "change",
+    body = "",
+    number = 7,
+    user = { login: "author", type: "User" },
+    labels = [],
+} = {}) {
+    return { number, title, body, user, labels };
 }
 
 function assignedIssue(number, overrides = {}) {
@@ -201,6 +207,52 @@ test("exempts bot authors from the assignee check but keeps the Issue link requi
             loadIssue,
         }),
         /제목은 대표 Issue 번호 하나로 끝나야 합니다/,
+    );
+});
+
+test("the issue-assignee-exempt label skips the assignee check but keeps the Issue link requirement", async () => {
+    const labels = [{ name: "issue-assignee-exempt" }];
+    const loadIssue = issueLoader(new Map([
+        [1228, assignedIssue(1228, { assignees: [{ login: "someone-else" }] })],
+    ]));
+    const result = await validatePullRequestIssueLink({
+        pullRequest: pullRequest({ title: "change (#1228)", body: "Refs #1228", labels }),
+        repository: "Afternote/Afternote-FE",
+        loadIssue,
+    });
+    assert.deepEqual(result, { issues: [1228], rejected: [] });
+
+    const unassigned = await validatePullRequestIssueLink({
+        pullRequest: pullRequest({ title: "change (#12)", body: "Refs #12", labels }),
+        repository: "Afternote/Afternote-FE",
+        loadIssue: issueLoader(new Map([[12, assignedIssue(12, { assignees: [] })]])),
+    });
+    assert.deepEqual(unassigned, { issues: [12], rejected: [] });
+
+    await assert.rejects(
+        validatePullRequestIssueLink({
+            pullRequest: pullRequest({ title: "change", body: "", labels }),
+            repository: "Afternote/Afternote-FE",
+            loadIssue,
+        }),
+        /제목은 대표 Issue 번호 하나로 끝나야 합니다/,
+    );
+});
+
+test("unrelated labels keep the assignee rejection and point at the exempt label", async () => {
+    await assert.rejects(
+        validatePullRequestIssueLink({
+            pullRequest: pullRequest({
+                title: "change (#1228)",
+                body: "Refs #1228",
+                labels: [{ name: "review-debt-exempt" }, "bug"],
+            }),
+            repository: "Afternote/Afternote-FE",
+            loadIssue: issueLoader(new Map([
+                [1228, assignedIssue(1228, { assignees: [{ login: "someone-else" }] })],
+            ])),
+        }),
+        /담당자\(@someone-else\)가 아닙니다.*`issue-assignee-exempt` 라벨/,
     );
 });
 

@@ -67,6 +67,17 @@ function isBotAuthor(user, login) {
     return user?.type === "Bot" || login.endsWith("[bot]");
 }
 
+const ISSUE_ASSIGNEE_EXEMPT_LABEL = "issue-assignee-exempt";
+
+// 다른 담당자의 모듈이 develop 을 깨뜨렸을 때처럼 어사인 이관을 기다릴 수 없는
+// 긴급 PR 은 라벨 하나로 담당자 대조만 면제한다 — review-debt-exempt 와 같은 규약.
+// Issue 연결 요건 자체는 면제하지 않는다.
+export function hasIssueAssigneeExemptLabel(pullRequest) {
+    return (pullRequest?.labels ?? [])
+        .map((label) => typeof label === "string" ? label : label?.name)
+        .includes(ISSUE_ASSIGNEE_EXEMPT_LABEL);
+}
+
 export async function validatePullRequestIssueLink({ pullRequest, repository, loadIssue }) {
     if (typeof loadIssue !== "function") {
         throw new Error("loadIssue 함수가 필요합니다.");
@@ -127,7 +138,7 @@ export async function validatePullRequestIssueLink({ pullRequest, repository, lo
         );
     }
 
-    if (!isBotAuthor(pullRequest.user, author)) {
+    if (!isBotAuthor(pullRequest.user, author) && !hasIssueAssigneeExemptLabel(pullRequest)) {
         const assignees = issueAssigneeLogins(issuesByNumber.get(titleIssueNumber));
         if (assignees.length === 0) {
             throw new Error(
@@ -136,7 +147,7 @@ export async function validatePullRequestIssueLink({ pullRequest, repository, lo
         }
         if (!assignees.some((login) => login.toLowerCase() === author.toLowerCase())) {
             throw new Error(
-                `PR #${pullRequestNumber} 작성자 @${author}는 대표 Issue #${titleIssueNumber}의 담당자(${assignees.map((login) => `@${login}`).join(", ")})가 아닙니다. 본인이 담당하는 Issue로만 PR을 열 수 있습니다.`,
+                `PR #${pullRequestNumber} 작성자 @${author}는 대표 Issue #${titleIssueNumber}의 담당자(${assignees.map((login) => `@${login}`).join(", ")})가 아닙니다. 본인이 담당하는 Issue로만 PR을 열 수 있습니다. 담당자 이관을 기다릴 수 없는 긴급 수선이면 \`${ISSUE_ASSIGNEE_EXEMPT_LABEL}\` 라벨을 붙인 뒤 재검증(본문 수정 또는 push)을 트리거하세요.`,
             );
         }
     }
@@ -172,6 +183,9 @@ async function main() {
         repository,
         loadIssue: (issueNumber) => requestIssue(apiUrl, repository, token, issueNumber),
     });
+    if (hasIssueAssigneeExemptLabel(pullRequest)) {
+        console.log(`${ISSUE_ASSIGNEE_EXEMPT_LABEL} 라벨 — 담당자 대조 건너뜀`);
+    }
     for (const warning of result.rejected) {
         console.log(`::warning::무효 Issue 참조: ${warning}`);
     }
