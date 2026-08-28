@@ -48,34 +48,14 @@
     <string name="receiver_afternote_item_google_mail">구글 메일</string>
     <string name="receiver_afternote_item_outlook">outlook</string>
     <string name="receiver_memorial_video_no_app">영상을 재생할 수 있는 앱이 없습니다.</string>
-    <string name="receiver_memorial_playlist_screen_title">%1$s님의 플레이리스트</string>
-    <string name="receiver_memorial_playlist_load_error">플레이리스트를 불러오지 못했습니다.</string>
 
-    <string name="receiver_sender_record_title">故 %1$s님이 남기신 기록</string>
-    <string name="receiver_afternote_section_count">%1$d개의 애프터노트가 있습니다.</string>
-    <string name="receiver_timeletter_section_count">%1$d개 라이프 이벤트 레터가 있습니다.</string>
     <string name="receiver_timeletter_unread_count">%1$d개의 읽지 않은 타임 레터가 있습니다.</string>
     <string name="receiver_timeletter_sort_by_date">날짜순</string>
     <string name="receiver_timeletter_sort_unread_first">읽지 않은 순</string>
-    <string name="receiver_download_all_button">모든 기록 내려받기</string>
-    <string name="receiver_download_all_dialog_message">모든 기록을 내려받으시겠습니까?</string>
-    <string name="receiver_download_all_failed">모든 기록 내려받기에 실패했습니다.</string>
-    <string name="receiver_download_all_save_failed">파일 저장에 실패했습니다.</string>
-    <string name="receiver_hero_default_message">가족들에게…\n내가 없어도 너무 슬퍼하지마.</string>
-    <string name="receiver_mindrecord_section_title">마음의 기록</string>
-    <string name="receiver_mindrecord_section_desc">고인의 일상적인 생각과 감정, 일기들입니다.</string>
-    <string name="receiver_mindrecord_section_button">마음의 기록 확인하러 가기</string>
-    <string name="receiver_timeletter_section_title">타임레터</string>
-    <string name="receiver_timeletter_section_desc">고인이 특별한 날에 작성한 편지입니다.</string>
-    <string name="receiver_timeletter_section_button">라이프 이벤트 레터 확인하러 가기</string>
-    <string name="receiver_afternote_section_title">애프터노트</string>
-    <string name="receiver_afternote_section_desc">고인이 사후 정리하고자 하는 데이터입니다.</string>
-    <string name="receiver_afternote_section_button">애프터노트 확인하러 가기</string>
     <string name="receiver_mindrecord_date_button_format">%1$d월 %2$d일</string>
     <string name="receiver_mindrecord_date_picker_confirm">선택하기</string>
     <string name="receiver_mindrecord_date_picker_content_description">%1$d년 %2$d월 선택</string>
     <string name="receiver_mindrecord_year_month_format">%1$d년 %2$d월</string>
-    <string name="receiver_mindrecord_section_count">%1$d개 마음의 기록이 있습니다.</string>
     <string name="receiver_mindrecord_title">마음의 기록</string>
     <string name="receiver_mindrecord_today_section">오늘의 기록</string>
     <string name="receiver_mindrecord_date_section">날짜별 기록</string>
@@ -134,85 +114,22 @@
     <string name="afternote_editor_message_registered_expand_content_description">등록된 말씀 펼치기</string>
     <string name="afternote_editor_message_registered_collapse_content_description">등록된 말씀 접기</string>
 
-    <!-- 받은 기록함 (수신자 흐름) — 발신자 카드 리스트 -->
-    <string name="receiver_records_box_title">받은 기록함</string>
-    <!-- 이 화면의 빈 상태는 시안 정의가 없어 FE 잠정안. 문구 확정 시 교체 (#508). -->
-    <string name="receiver_records_box_empty">아직 등록된 발신자가 없습니다.\n발신자를 등록하여 기록을 확인해 보세요.</string>
-    <!-- 발신자 등록(15·16) -->
-    <string name="receiver_sender_registration_title">발신자 등록하기</string>
-    <string name="receiver_sender_registration_name_label">이름</string>
+    <!--
+      수신자 인증·발신자 등록 흐름의 표시 문구는 :feature:receiver:presentation 으로 이동했다(#1066).
+      아래 잔여분은 어느 모듈에서도 참조하지 않는 정의들 — 미구현 화면 몫인지 확인 후 이동·삭제 판단이
+      필요해 잔류시킨다.
+    -->
     <string name="receiver_sender_registration_name_placeholder">이름을 지정해주세요</string>
-    <string name="receiver_sender_registration_submit">발신자 등록하기</string>
-
-    <!-- 발신자 상세(11·12) — 정보 박스 4행 + 액션 버튼 -->
-    <string name="receiver_sender_detail_top_bar_title">받은 기록함</string>
-    <string name="receiver_sender_detail_row_records">기록</string>
-    <string name="receiver_sender_detail_row_status">상태</string>
-    <string name="receiver_sender_detail_row_requested_at">신청일</string>
-    <string name="receiver_sender_detail_row_approved_at">승인일</string>
-    <string name="receiver_sender_detail_records_kept">보관 중</string>
-    <string name="receiver_sender_detail_status_unavailable">열람 불가</string>
-    <string name="receiver_sender_detail_status_pending">승인 대기</string>
-    <string name="receiver_sender_detail_status_available">열람 가능</string>
-    <string name="receiver_sender_detail_status_rejected">검토 거절</string>
-    <string name="receiver_sender_detail_no_request_record">신청 기록이 없습니다</string>
-    <string name="receiver_sender_detail_no_approval_record">승인 기록이 없습니다</string>
-    <string name="receiver_sender_detail_request_verification">열람 신청하기</string>
-    <string name="receiver_sender_detail_pending_button">심사 진행 중</string>
-    <string name="receiver_sender_detail_open_records">기록 열람하기</string>
-    <string name="receiver_sender_detail_status_load_failed">열람 신청 상태를 불러오지 못했습니다.</string>
-    <string name="receiver_sender_detail_not_found">발신자를 찾을 수 없습니다.</string>
-
-    <!-- 본인 확인 이메일 인증 (3·4) -->
-    <string name="receiver_verify_email_placeholder">이메일 주소</string>
-    <string name="receiver_verify_code_placeholder">인증번호</string>
-    <string name="receiver_verify_request_code">인증번호 받기</string>
-    <string name="receiver_verify_code_requesting">전송 중…</string>
-    <string name="receiver_verify_code_sent">인증번호가 전송되었습니다.\n수신 된 인증번호를 입력해 주세요.</string>
-    <string name="receiver_verify_email_format_invalid">이메일 형식이 올바르지 않습니다.</string>
-    <string name="receiver_verify_code_verify_failed">인증번호 확인에 실패했습니다. 잠시 후 다시 시도해주세요.</string>
-    <string name="receiver_verify_code_send_failed">인증번호 발송에 실패했습니다. 잠시 후 다시 시도해주세요.</string>
-
-    <string name="receiver_verify_title">수신자 인증</string>
-    <string name="receiver_verify_self_title">수신자 본인 확인</string>
-    <string name="receiver_verify_intro">고인의 소중한 정보를 보호하기 위해\n가족 관계 및 사망 사실 확인이 필요합니다.</string>
-    <string name="receiver_verify_start_button">인증 시작하기</string>
-    <string name="receiver_verify_next_button">다음</string>
     <string name="receiver_verify_confirm_button">인증하기</string>
-    <string name="receiver_verify_email_description">수신자 본인 확인을 위해 이메일 인증이 필요합니다.</string>
     <string name="receiver_verify_email_label">이메일 주소</string>
     <string name="receiver_verify_code_description">입력하신 이메일로 인증번호를 보냈습니다.\n수신된 메일에서 인증번호를 확인하고 입력해주세요.</string>
     <string name="receiver_verify_master_key_required">마스터 키를 입력해주세요.</string>
-    <string name="receiver_verify_master_key_title">마스터 키 입력</string>
-    <string name="receiver_verify_master_key_description">전달 받은 마스터 키를 입력해 주세요.</string>
-    <string name="receiver_verify_master_key_placeholder">마스터 키 입력</string>
-    <string name="receiver_verify_master_key_invalid_format">마스터 키 형식이 올바르지 않습니다. 전달받은 마스터 키를 다시 확인해 주세요.</string>
     <string name="receiver_verify_error_network">네트워크 연결을 확인해주세요.</string>
-    <string name="receiver_verify_error_unknown">마스터 키 검증에 실패했습니다.</string>
     <string name="receiver_verify_complete_confirm">확인</string>
-    <string name="receiver_verify_documents_required">사망진단서 또는 가족관계증명서 중 하나 이상 업로드해주세요.</string>
-    <string name="receiver_verify_document_upload_failed">서류 업로드에 실패했습니다.</string>
-    <string name="receiver_verify_document_read_failed">선택한 파일을 불러오지 못했습니다. 다시 선택해 주세요.</string>
-    <string name="receiver_verify_document_upload_in_progress">서류 업로드가 진행 중입니다. 완료된 후 신청해 주세요.</string>
-    <string name="receiver_verify_submit_failed">열람 신청에 실패했습니다.</string>
-    <string name="receiver_verify_complete_title">열람 신청 완료</string>
     <string name="receiver_verify_status_pending">현재 서류 확인중입니다.\n빠르게 처리하여 열람하실 수 있도록 하겠습니다.</string>
     <string name="receiver_verify_status_approved">승인되었습니다. 열람이 가능합니다.</string>
     <string name="receiver_verify_status_rejected">제출하신 서류 검토 결과 거절되었습니다. 다시 제출해 주세요.</string>
-    <string name="receiver_verify_document_upload_title">증빙 서류 업로드</string>
-    <string name="receiver_verify_document_upload_description">사망 사실 확인을 위한 서류를 업로드해 주세요.\n담당자의 확인 후 열람 승인됩니다.</string>
-    <string name="receiver_verify_death_cert_title">사망진단서 업로드</string>
-    <string name="receiver_verify_family_cert_title">가족관계증명서 업로드</string>
-    <string name="receiver_verify_document_input_label">서류 촬영 또는 파일 첨부</string>
-    <string name="receiver_verify_document_input_placeholder">촬영 또는 파일 첨부</string>
-    <string name="receiver_verify_bottom_sheet_header">미디어 추가하기</string>
-    <string name="receiver_verify_add_image">이미지 추가하기</string>
-    <string name="receiver_verify_add_file">파일 추가하기</string>
     <string name="receiver_verify_wait_for_approval">인증이 완료된 후에 이용 가능합니다.</string>
-    <string name="receiver_verify_document_uploading">업로드 중…</string>
-    <string name="receiver_verify_complete_description">제출하신 서류를 확인 중입니다.\n빠르게 검토하여 열람하실 수 있도록 안내드리겠습니다.</string>
-    <string name="receiver_verify_complete_back_to_records">받은 기록함으로 돌아가기</string>
-    <string name="receiver_verify_step_description">수신자 인증 진행도 4단계 중 %1$d단계</string>
 
     <string name="login_kakao_button">카카오로 로그인</string>
     <string name="login_kakao_backend_not_ready">카카오 토큰을 발급받았습니다. 서버 연동(/auth/kakao) 대기 중입니다.</string>
@@ -278,7 +195,6 @@
     <string name="feature_afternote_menu_delete_record">삭제하기</string>
     <string name="feature_afternote_empty_list_body">아직 등록된 답변이 없어요.\n답변을 등록해 자신을 알아 보아요.</string>
     <string name="feature_afternote_content_description_recipient_profile">프로필 사진</string>
-    <string name="feature_afternote_hero_last_greeting_caption">고인이 남긴 마지막 인사말</string>
 
     <string name="feature_afternote_detail_title">애프터노트 상세</string>
     <string name="feature_afternote_detail_edit">수정</string>
