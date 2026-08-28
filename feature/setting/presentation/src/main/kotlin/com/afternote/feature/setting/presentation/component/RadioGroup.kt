@@ -1,10 +1,10 @@
 package com.afternote.feature.setting.presentation.component
 
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Arrangement.Absolute.spacedBy
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.button.AfternoteRadioGroup
 
 @Composable
 fun RadioGroup(
@@ -13,19 +13,16 @@ fun RadioGroup(
     onSelectIndex: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val indexedItems = items.withIndex().toList()
-
-    AfternoteRadioGroup(
-        options = indexedItems,
-        selectedValue = indexedItems.getOrNull(selectedIndex),
-        onSelect = { onSelectIndex(it.index) },
+    Column(
         modifier = modifier,
-        itemContentPadding = PaddingValues(16.dp),
-        itemDecoration = { _, selected -> radioGroupCardDecoration(selected) },
-    ) { indexedItem, selected ->
-        RadioGroupCardContent(
-            item = indexedItem.value,
-            selected = selected,
-        )
+        verticalArrangement = spacedBy(12.dp),
+    ) {
+        items.forEachIndexed { index, item ->
+            RadioGroupCard(
+                item = item,
+                selected = index == selectedIndex,
+                onClick = { onSelectIndex(index) },
+            )
+        }
     }
 }
