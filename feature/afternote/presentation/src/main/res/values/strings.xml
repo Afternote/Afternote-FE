@@ -304,6 +304,7 @@
     <string name="afternote_editor_playlist_screen_title">추억 플레이리스트</string>
     <string name="afternote_editor_playlist_add_screen_title">플레이리스트 추가</string>
     <string name="afternote_editor_playlist_song_count_format">총 %1$d곡</string>
+    <string name="afternote_editor_playlist_empty_message">아직 추가한 곡이 없어요.\n아래 연필 버튼을 눌러 곡을 추가해 보세요.</string>
     <string name="afternote_editor_playlist_delete_all">전체 삭제</string>
     <string name="afternote_editor_playlist_delete_selected">선택 삭제</string>
     <string name="afternote_editor_content_description_dropdown">드롭다운</string>
