@@ -40,6 +40,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
@@ -246,7 +247,8 @@ private fun Variant7Suffix(type: TextFieldType.Variant7) {
         text = type.text,
         modifier =
             if (type.enabled) {
-                Modifier.clickable(onClick = type.onClick)
+                Modifier
+                    .clickable(role = Role.Button, onClick = type.onClick)
             } else {
                 Modifier
             },
