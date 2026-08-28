@@ -225,7 +225,7 @@ private fun EditorSelectionDropdownPlaceholderPreview() {
                     listOf(
                         "인스타그램",
                         "페이스북",
-                        "직접 추가하기",
+                        "X",
                     ),
                 optionLabel = { it },
                 onValueSelected = {},
@@ -257,7 +257,7 @@ private fun EditorSelectionDropdownMenuItemsPreview() {
                     listOf(
                         "인스타그램",
                         "페이스북",
-                        "직접 추가하기",
+                        "X",
                     ),
                 optionLabel = { it },
                 onSelect = {},
