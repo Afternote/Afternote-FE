@@ -3,6 +3,7 @@ package com.afternote.feature.setting.presentation.screen
 import android.content.Intent
 import android.provider.Settings
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,6 +31,7 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.DeviceAlarmOffSection
 import com.afternote.feature.setting.presentation.component.PushToggleSection
+import com.afternote.feature.setting.presentation.component.SettingLoadErrorContent
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationUiState
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel
 
@@ -56,6 +59,7 @@ fun PushNotificationScreen(
         onSmsCheck = viewModel::onSmsChecked,
         onEmailCheck = viewModel::onEmailChecked,
         onPushCheck = viewModel::onPushChecked,
+        onRetry = viewModel::retryLoadPushSettings,
     )
 }
 
@@ -70,6 +74,7 @@ private fun PushNotificationContent(
     onSmsCheck: (Boolean) -> Unit,
     onEmailCheck: (Boolean) -> Unit,
     onPushCheck: (Boolean) -> Unit,
+    onRetry: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -114,20 +119,37 @@ private fun PushNotificationContent(
 
             Spacer(Modifier.height(8.dp))
 
-            if (uiState.isDeviceAlarmOn) {
-                PushToggleSection(
-                    uiState = uiState,
-                    onNewsletterToggle = onNewsletterToggle,
-                    onMindRecordToggle = onMindRecordToggle,
-                    onAfternoteToggle = onAfternoteToggle,
-                )
-            } else {
-                DeviceAlarmOffSection(
-                    uiState = uiState,
-                    onSmsCheck = onSmsCheck,
-                    onEmailCheck = onEmailCheck,
-                    onPushCheck = onPushCheck,
-                )
+            Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                when {
+                    uiState.isLoading -> {
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    }
+
+                    uiState.errorMessage != null -> {
+                        SettingLoadErrorContent(
+                            message = stringResource(R.string.setting_push_load_error),
+                            onRetry = onRetry,
+                        )
+                    }
+
+                    uiState.isDeviceAlarmOn -> {
+                        PushToggleSection(
+                            uiState = uiState,
+                            onNewsletterToggle = onNewsletterToggle,
+                            onMindRecordToggle = onMindRecordToggle,
+                            onAfternoteToggle = onAfternoteToggle,
+                        )
+                    }
+
+                    else -> {
+                        DeviceAlarmOffSection(
+                            uiState = uiState,
+                            onSmsCheck = onSmsCheck,
+                            onEmailCheck = onEmailCheck,
+                            onPushCheck = onPushCheck,
+                        )
+                    }
+                }
             }
 
             Spacer(Modifier.height(24.dp))
@@ -153,6 +175,7 @@ private fun PreviewAlarmOn() {
         onSmsCheck = {},
         onEmailCheck = {},
         onPushCheck = {},
+        onRetry = {},
     )
 }
 
@@ -169,5 +192,6 @@ private fun PreviewAlarmOff() {
         onSmsCheck = {},
         onEmailCheck = {},
         onPushCheck = {},
+        onRetry = {},
     )
 }

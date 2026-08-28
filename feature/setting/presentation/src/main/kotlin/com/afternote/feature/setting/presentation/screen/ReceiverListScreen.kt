@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,10 +38,59 @@ import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.ReceiverListItem
+import com.afternote.feature.setting.presentation.component.SettingLoadErrorContent
+import com.afternote.feature.setting.presentation.viewmodel.ReceiverListUiState
 import kotlinx.coroutines.launch
 
 @Composable
 fun ReceiverListScreen(
+    uiState: ReceiverListUiState,
+    onBackClick: () -> Unit,
+    onConfirmClick: (ReceiverListItem) -> Unit,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    when (uiState) {
+        ReceiverListUiState.Loading -> {
+            Scaffold(
+                modifier = modifier,
+                topBar = { DetailTopBar(title = "수신자 목록", onBackClick = onBackClick) },
+            ) { innerPadding ->
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(innerPadding),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+        }
+
+        ReceiverListUiState.Error -> {
+            Scaffold(
+                modifier = modifier,
+                topBar = { DetailTopBar(title = "수신자 목록", onBackClick = onBackClick) },
+            ) { innerPadding ->
+                SettingLoadErrorContent(
+                    message = stringResource(R.string.setting_receivers_load_error),
+                    onRetry = onRetry,
+                    modifier = Modifier.padding(innerPadding),
+                )
+            }
+        }
+
+        is ReceiverListUiState.Success -> {
+            ReceiverListContent(
+                receivers = uiState.receivers,
+                onBackClick = onBackClick,
+                onConfirmClick = onConfirmClick,
+                modifier = modifier,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReceiverListContent(
     receivers: List<ReceiverListItem>,
     onBackClick: () -> Unit,
     onConfirmClick: (ReceiverListItem) -> Unit,
@@ -163,13 +213,16 @@ fun ReceiverListScreen(
 @Composable
 private fun ReceiverListScreenPrev() {
     ReceiverListScreen(
-        receivers =
-            listOf(
-                ReceiverListItem(receiverId = 1L, name = "박경민", relation = "친구"),
-                ReceiverListItem(receiverId = 2L, name = "김철수", relation = "가족"),
-                ReceiverListItem(receiverId = 3L, name = "이영희", relation = "연인"),
+        uiState =
+            ReceiverListUiState.Success(
+                listOf(
+                    ReceiverListItem(receiverId = 1L, name = "박경민", relation = "친구"),
+                    ReceiverListItem(receiverId = 2L, name = "김철수", relation = "가족"),
+                    ReceiverListItem(receiverId = 3L, name = "이영희", relation = "연인"),
+                ),
             ),
         onBackClick = {},
         onConfirmClick = { _ -> },
+        onRetry = {},
     )
 }

@@ -35,7 +35,7 @@ dependencies {
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
-
+    testImplementation(libs.junit)
     testImplementation(libs.coroutines.test)
     testImplementation(testFixtures(projects.core.domain))
 }

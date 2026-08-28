@@ -28,6 +28,7 @@ import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
+import com.afternote.feature.setting.presentation.component.SettingLoadErrorContent
 import com.afternote.feature.setting.presentation.component.SettingMenuItem
 import com.afternote.feature.setting.presentation.component.SettingProfile
 import com.afternote.feature.setting.presentation.component.SettingSection
@@ -88,6 +89,7 @@ fun SettingScreen(
     ) { innerPadding ->
         SettingScreenContent(
             uiState = uiState,
+            onRetry = viewModel::refresh,
             onLogoutClick = viewModel::logout,
             onProfileEditClick = onProfileEditClick,
             onPasswordChangeClick = onPasswordChangeClick,
@@ -113,6 +115,7 @@ fun SettingScreen(
 @Composable
 private fun SettingScreenContent(
     uiState: SettingUiState,
+    onRetry: () -> Unit,
     onLogoutClick: () -> Unit,
     onProfileEditClick: () -> Unit,
     onPasswordChangeClick: () -> Unit,
@@ -261,6 +264,11 @@ private fun SettingScreenContent(
                 modifier = modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                SettingLoadErrorContent(
+                    message = state.message,
+                    onRetry = onRetry,
+                    modifier = Modifier.weight(1f),
+                )
                 SettingMenuItem(
                     label = stringResource(R.string.settings_logout),
                     onClick = { showLogoutDialog = true },
@@ -278,6 +286,7 @@ private fun SettingScreenPrev() {
     ) { innerPadding ->
         SettingScreenContent(
             uiState = SettingUiState.Success(name = "박서연", email = "afternote@email.com"),
+            onRetry = {},
             onLogoutClick = {},
             onProfileEditClick = {},
             onPasswordChangeClick = {},

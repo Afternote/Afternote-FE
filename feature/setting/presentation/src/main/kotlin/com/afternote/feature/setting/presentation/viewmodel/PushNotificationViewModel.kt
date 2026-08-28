@@ -9,6 +9,7 @@ import com.afternote.core.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,6 +25,7 @@ class PushNotificationViewModel
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(PushNotificationUiState())
         val uiState: StateFlow<PushNotificationUiState> = _uiState.asStateFlow()
+        private var loadJob: Job? = null
 
         init {
             val deviceAlarmOn = NotificationManagerCompat.from(context).areNotificationsEnabled()
@@ -32,26 +34,35 @@ class PushNotificationViewModel
             loadPushSettings()
         }
 
+        fun retryLoadPushSettings() {
+            loadPushSettings()
+        }
+
         private fun loadPushSettings() {
-            viewModelScope.launch {
-                Log.d(TAG, "loadPushSettings: start")
-                _uiState.update { it.copy(isLoading = true) }
-                runCatching { userRepository.getMyPushSettings() }
-                    .onSuccess { setting ->
-                        Log.d(TAG, "loadPushSettings: success=$setting")
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                isNewsletterOn = setting.timeLetter,
-                                isMindRecordOn = setting.mindRecord,
-                                isAfternoteOn = setting.afterNote,
-                            )
+            if (loadJob?.isActive == true) return
+            loadJob =
+                viewModelScope.launch {
+                    Log.d(TAG, "loadPushSettings: start")
+                    _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+                    runCatching { userRepository.getMyPushSettings() }
+                        .onSuccess { setting ->
+                            Log.d(TAG, "loadPushSettings: success=$setting")
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    errorMessage = null,
+                                    isNewsletterOn = setting.timeLetter,
+                                    isMindRecordOn = setting.mindRecord,
+                                    isAfternoteOn = setting.afterNote,
+                                )
+                            }
+                        }.onFailure { e ->
+                            Log.e(TAG, "loadPushSettings: failed", e)
+                            _uiState.update {
+                                it.copy(isLoading = false, errorMessage = "푸시 알림 설정을 불러올 수 없습니다.")
+                            }
                         }
-                    }.onFailure { e ->
-                        Log.e(TAG, "loadPushSettings: failed", e)
-                        _uiState.update { it.copy(isLoading = false) }
-                    }
-            }
+                }
         }
 
         fun onSmsChecked(checked: Boolean) = _uiState.update { it.copy(isSmsChecked = checked) }

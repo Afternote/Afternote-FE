@@ -1,11 +1,13 @@
 package com.afternote.feature.setting.presentation.screen
 
 import android.app.Activity
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -14,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -29,6 +32,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.BuildConfig
 import com.afternote.feature.setting.presentation.R
+import com.afternote.feature.setting.presentation.component.SettingLoadErrorContent
 import com.afternote.feature.setting.presentation.component.SocialAccountRow
 import com.afternote.feature.setting.presentation.social.KakaoAuthResult
 import com.afternote.feature.setting.presentation.social.requestGoogleIdToken
@@ -111,30 +115,51 @@ fun ConnectedAccountsScreen(
             )
         },
     ) { paddingValues ->
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.sns_login_section_title),
-                style = AfternoteDesign.typography.bodyLargeR,
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = stringResource(R.string.sns_login_section_desc),
-                style = AfternoteDesign.typography.bodySmallR,
-            )
-            Spacer(modifier = Modifier.height(24.dp))
+        when {
+            uiState.isLoading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(paddingValues),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
 
-            uiState.accounts.forEach { account ->
-                SocialAccountRow(
-                    account = account,
-                    onToggle = { enabled -> viewModel.onToggle(account.provider, enabled) },
+            uiState.errorMessage != null -> {
+                SettingLoadErrorContent(
+                    message = stringResource(R.string.setting_connected_accounts_load_error),
+                    onRetry = viewModel::retryLoadConnectedAccounts,
+                    modifier = Modifier.padding(paddingValues),
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            else -> {
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues)
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.sns_login_section_title),
+                        style = AfternoteDesign.typography.bodyLargeR,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.sns_login_section_desc),
+                        style = AfternoteDesign.typography.bodySmallR,
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    uiState.accounts.forEach { account ->
+                        SocialAccountRow(
+                            account = account,
+                            onToggle = { enabled -> viewModel.onToggle(account.provider, enabled) },
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
             }
         }
     }
