@@ -35,7 +35,7 @@ sealed interface AfternoteDetailUiState {
  * 삭제 액션 결과를 UI state 에 흡수하기 위한 sealed wrapper — 성공/실패 상호 배타 보장.
  *
  * Google 공식 가이드 — ViewModel events should always result in a UI state update.
- * Channel + ObserveAsEvents 패턴은 producer(VM) 가 consumer(UI) 보다 오래 살 때 delivery 보장 X
+ * Channel 로 쏘고 화면이 collect 하는 패턴은 producer(VM) 가 consumer(UI) 보다 오래 살 때 delivery 보장 X
  * (configuration change · process death · 분할 화면 일관성 결함). nullable 필드 흡수로 통일.
  */
 sealed interface AfternoteDetailDeleteResult {
