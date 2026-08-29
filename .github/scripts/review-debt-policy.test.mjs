@@ -63,7 +63,32 @@ test("changes requested becomes debt only after explicit rerequest and a fix", (
     assert.match(guard, /sort_by\(\.t\) \| last/);
     assert.doesNotMatch(guard, /group_by\(\.u/);
     assert.match(guard, /\(\.parents \| length\) < 2/);
-    assert.match(guard, /select\(\.commit\.committer\.date > \\"\$blocked_at\\"\)/);
+    // 반영 판정의 기준 시각은 여전히 최신 변경요청 시각이다. 집계가 jq 에서 awk 로
+    // 옮겨 갔을 뿐, 그 이전 커밋을 반영으로 세지 않는다.
+    assert.match(guard, /-v cutoff="\$blocked_at"/);
+    assert.match(guard, /\$4 > cutoff/);
+});
+
+test("a reviewer's own commit is never counted as the author's fix", () => {
+    // 누가 올렸는지를 안 보면 리뷰어가 미는 CI 재트리거 커밋이 «작성자가 반영했다» 가
+    // 된다. 8/28 에 리뷰어가 건 +0/-0 커밋 하나로 koongmai PR 3건(#1379·#1365·#882)이
+    // 전부 가짜 빚이 됐고, 재트리거한 리뷰어가 그 대가로 자기 PR 을 못 열었다 (#1459).
+    assert.match(guard, /\(\.author\.login \/\/ ""\)/);
+    assert.match(guard, /login == target/);
+    // 계정이 연결되지 않은 커밋은 login 이 비어 가릴 수 없다. 같은 PR 에서 작성자
+    // 것으로 확인된 커밋의 이메일을 폴백 신원으로 쓴다.
+    assert.match(guard, /\(\.commit\.author\.email \/\/ ""\)/);
+    assert.match(guard, /email in own/);
+});
+
+test("an empty commit is not a fix", () => {
+    // pulls/{n}/commits 응답에는 파일 정보가 없다. 작성자 커밋으로 좁힌 후보에 한해
+    // commits/{sha} 를 조회해 바뀐 파일이 0건이면 버린다.
+    assert.match(guard, /repos\/\$REPO\/commits\/\$sha/);
+    assert.match(guard, /\(\.files \/\/ \[\]\) \| length/);
+    assert.match(guard, /\[ "\$changed" -gt 0 \] \|\| continue/);
+    // 조회 실패를 «빈 커밋» 으로 접으면 조회 장애가 빚을 통째로 지운다. 반영으로 센다.
+    assert.match(guard, /\'\'\|\*\[!0-9\]\*\) changed=1/);
 });
 
 test("a fix delivered by a merge commit still counts as a response", () => {
