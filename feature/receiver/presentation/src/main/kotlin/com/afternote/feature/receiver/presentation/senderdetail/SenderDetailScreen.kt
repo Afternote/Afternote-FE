@@ -170,7 +170,7 @@ private fun SuccessBody(
         Text(
             text = displayName,
             style =
-                AfternoteDesign.typography.bodyLargeB.copy(fontSize = 32.sp),
+                AfternoteDesign.typography.bodyLargeB.copy(fontSize = 32.sp, lineHeight = 32.sp),
             color = AfternoteDesign.colors.gray9,
             textAlign = TextAlign.Center,
         )
