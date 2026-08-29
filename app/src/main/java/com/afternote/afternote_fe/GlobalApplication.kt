@@ -5,9 +5,17 @@ import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import com.afternote.afternote_fe.messaging.FcmNotificationChannel
+import com.afternote.afternote_fe.messaging.PushTokenSynchronizer
 import com.afternote.core.network.di.CoilImageLoaderEntryPoint
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.android.HiltAndroidApp
+import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 @HiltAndroidApp
 class GlobalApplication :
@@ -22,6 +30,36 @@ class GlobalApplication :
     override fun onCreate() {
         super.onCreate()
         FcmNotificationChannel.create(this)
-        // 기동 초기화는 startup 패키지의 Initializer 에 두고, Firebase 채널만 여기서 생성한다.
+        startPushTokenSync()
+        // 그 밖의 기동 초기화는 startup 패키지의 Initializer 에 둔다.
+    }
+
+    /**
+     * FCM 토큰 등록 관찰을 시작한다 (#1493).
+     *
+     * `androidx.startup` Initializer 가 아니라 여기인 이유는 **시점**이다. `InitializationProvider`
+     * 는 `Application.onCreate()` **이전**에 도는 ContentProvider 라, 그 시점에 Hilt 컴포넌트를
+     * 꺼내면 계기 테스트에서 «The component was not created» 로 프로세스가 죽는다 — 테스트는
+     * `HiltTestApplication` 을 쓰고 컴포넌트는 `HiltAndroidRule` 이 만들기 때문이다. 앱 모듈
+     * androidTest 가 전멸한다. 이 자리는 테스트에서 아예 실행되지 않아(=`HiltTestApplication` 이
+     * 이 클래스를 대체) 그 충돌이 없다.
+     *
+     * 관찰은 앱 프로세스 수명 동안 유지돼야 해서 이 스코프는 취소하지 않는다.
+     */
+    private fun startPushTokenSync() {
+        val synchronizer =
+            EntryPointAccessors
+                .fromApplication(this, PushTokenSyncEntryPoint::class.java)
+                .pushTokenSynchronizer()
+
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            synchronizer.observeLogin()
+        }
+    }
+
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    internal interface PushTokenSyncEntryPoint {
+        fun pushTokenSynchronizer(): PushTokenSynchronizer
     }
 }
