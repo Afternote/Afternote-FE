@@ -4,6 +4,7 @@ import test from "node:test";
 
 import {
     CONFIG_RELATIVE_PATH,
+    evaluateAndroidTestResults,
     loadExpectedFailures,
     partitionScreenshotTasks,
     planUnitProbes,
@@ -22,15 +23,33 @@ const sampleConfig = {
             reason: "계약 게이트",
         },
     ],
+    androidTests: [
+        {
+            className: "com.afternote.afternote_fe.SampleAndroidTest",
+            tests: ["flakyScenario"],
+            issues: [1439],
+            reason: "계측 게이트",
+        },
+    ],
     screenshotModules: [
         { module: ":feature:setting:presentation", issues: [1360], reason: "Content 경계 분리 대기" },
     ],
 };
 
+const androidCase = (name, status) => ({
+    className: "com.afternote.afternote_fe.SampleAndroidTest",
+    name,
+    status,
+});
+
 test("저장소의 기대 실패 목록은 스키마를 지키고 추적 이슈를 가진다", async () => {
     const config = await loadExpectedFailures();
 
-    for (const entry of [...(config.unitTests ?? []), ...(config.screenshotModules ?? [])]) {
+    for (const entry of [
+        ...(config.unitTests ?? []),
+        ...(config.androidTests ?? []),
+        ...(config.screenshotModules ?? []),
+    ]) {
         assert.ok(entry.issues.length > 0);
         assert.ok(entry.reason.length > 0);
     }
@@ -166,4 +185,84 @@ test("기대 실패 목록·스크립트 변경은 full validation 을 강제한
             `${policyPath} 가 IMPACT_POLICY_PATHS 에 없습니다`,
         );
     }
+});
+
+test("androidTest 스키마: FQCN·테스트 목록·추적 이슈가 강제된다", () => {
+    assert.throws(
+        () => validateExpectedFailuresConfig({ androidTests: [{ ...sampleConfig.androidTests[0], className: "not a class" }] }),
+        /FQCN/,
+    );
+    assert.throws(
+        () => validateExpectedFailuresConfig({ androidTests: [{ ...sampleConfig.androidTests[0], tests: [] }] }),
+        /비어 있지 않은 배열/,
+    );
+    assert.throws(
+        () => validateExpectedFailuresConfig({ androidTests: [{ ...sampleConfig.androidTests[0], issues: [] }] }),
+        /추적 이슈/,
+    );
+    assert.throws(
+        () => validateExpectedFailuresConfig({ androidTests: [{ ...sampleConfig.androidTests[0], devices: [] }] }),
+        /비어 있지 않은 배열/,
+    );
+    assert.doesNotThrow(() => validateExpectedFailuresConfig(sampleConfig));
+});
+
+test("androidTest 판정: 등재된 실패는 흡수하고 목록 밖 실패는 red 다", () => {
+    const absorbed = evaluateAndroidTestResults([androidCase("flakyScenario", "failure")], sampleConfig, "api30");
+    assert.equal(absorbed.failed, false);
+    assert.deepEqual(absorbed.absorbed, ["com.afternote.afternote_fe.SampleAndroidTest#flakyScenario"]);
+    assert.match(absorbed.lines[0], /기대 실패 게이트 유지/);
+
+    const regression = evaluateAndroidTestResults(
+        [{ className: "com.afternote.afternote_fe.OtherAndroidTest", name: "newlyBroken", status: "failure" }],
+        sampleConfig,
+        "api30",
+    );
+    assert.equal(regression.failed, true);
+    assert.deepEqual(regression.unexpected, ["com.afternote.afternote_fe.OtherAndroidTest#newlyBroken"]);
+    assert.match(regression.lines[0], /목록에 없는 androidTest 실패/);
+});
+
+test("androidTest 판정: XPASS 는 목록 제거를 요구하는 red 다", () => {
+    const verdict = evaluateAndroidTestResults([androidCase("flakyScenario", "passed")], sampleConfig, "api30");
+
+    assert.equal(verdict.failed, true);
+    assert.deepEqual(verdict.xpassed, ["com.afternote.afternote_fe.SampleAndroidTest#flakyScenario"]);
+    assert.match(verdict.lines[0], new RegExp(CONFIG_RELATIVE_PATH.replace(/[.]/g, "\\.")));
+});
+
+test("androidTest 판정: 실행되지 않은 게이트와 건너뛴 테스트는 침묵한다", () => {
+    assert.equal(evaluateAndroidTestResults([], sampleConfig, "api30").failed, false);
+    assert.equal(evaluateAndroidTestResults([], sampleConfig, "api30").lines.length, 0);
+
+    const skipped = evaluateAndroidTestResults([androidCase("flakyScenario", "skipped")], sampleConfig, "api30");
+    assert.equal(skipped.failed, false);
+    assert.equal(skipped.absorbed.length, 0);
+    assert.equal(skipped.xpassed.length, 0);
+});
+
+test("androidTest 판정: devices 를 적으면 그 lane 에서만 흡수한다", () => {
+    const scoped = {
+        androidTests: [{ ...sampleConfig.androidTests[0], devices: ["api36"] }],
+    };
+
+    assert.equal(evaluateAndroidTestResults([androidCase("flakyScenario", "failure")], scoped, "api36").failed, false);
+    assert.equal(evaluateAndroidTestResults([androidCase("flakyScenario", "failure")], scoped, "api30").failed, true);
+});
+
+test("managed-device job 은 목록을 staging 해 실행 결과를 판정하고 기대 실패만 흡수한다", async () => {
+    const workflow = await readFile(new URL("../workflows/android-managed-device.yml", import.meta.url), "utf8");
+
+    assert.match(workflow, /ci-expected-failures\.mjs" \\\n\s+report-android/);
+    assert.match(workflow, /expected_failures=trusted/);
+    // 도입 PR 이 명령 없는 default branch 사본을 실행해 스스로 red 가 되지 않게, 파일이
+    // 아니라 명령의 존재로 가른다.
+    assert.match(workflow, /grep -q '"report-android"' \.github\/scripts\/ci-expected-failures\.mjs/);
+    assert.match(workflow, /expected_failures=unavailable/);
+    assert.match(workflow, /steps\.policy\.outputs\.expected_failures == 'trusted'/);
+    assert.match(workflow, /EXPECTED_FAILURES_ROOT/);
+    // 목록 밖 실패·XPASS 는 Gradle 이 통과했더라도 red 여야 한다.
+    assert.match(workflow, /EXPECTED_FAILURES_EXIT_CODE" != "0"/);
+    // 흡수는 기대 실패가 실제로 잡혔을 때만 — 인프라 실패를 삼키지 않는다.
+    assert.match(workflow, /EXPECTED_ABSORBED:-0\}" != "0"/);
 });
