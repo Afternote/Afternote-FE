@@ -70,15 +70,12 @@ object TestMindRecordRepositoryModule {
      * (#936 · #1022 · #1030 의 androidTest 컴파일 파손 원인). 요청한 주차가 `requestedDates` 에
      * 남아 「열지 않은 탭은 부르지 않는다」(#736) 를 횟수로 단언할 수 있다.
      *
-     * 응답을 큐에 넣지 않은 테스트에는 **실패**를 돌려준다 — 주간 수는 실패를 0 으로 접지 않고
-     * 미상(대시)으로 그리므로(#562), 그 화면이 홈의 다른 단언을 방해하지 않는다.
+     * 큐가 비면 **터뜨린다**(정본 fixture 의 기본). 조용히 실패나 빈 리포트를 돌려주면 요청 횟수가
+     * 어긋난 것을 놓친다 — 홈에 닿는 테스트는 자기가 기대하는 응답을 명시적으로 큐에 넣는다.
      */
     @Provides
     @Singleton
-    fun provideWeeklyReportRepository(): WeeklyReportRepository =
-        FakeWeeklyReportRepository(
-            whenQueueEmpty = Result.failure(IllegalStateException("주간 리포트 응답이 큐에 없다 — 테스트가 값을 넣지 않았다")),
-        )
+    fun provideWeeklyReportRepository(): WeeklyReportRepository = FakeWeeklyReportRepository()
 }
 
 @Module
