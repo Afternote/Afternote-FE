@@ -11,6 +11,7 @@ import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
+import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -161,6 +162,7 @@ class DailyQuestionEditTest {
                 diaryRepository = EditTestEmptyDiaryRepository,
                 dailyQuestionRepository = EditTestEmptyDailyQuestionRepository,
             ),
+            RecordingErrorReporter(),
         )
     }
 

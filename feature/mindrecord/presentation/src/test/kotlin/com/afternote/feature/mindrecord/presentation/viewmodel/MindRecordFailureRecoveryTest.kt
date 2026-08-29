@@ -12,6 +12,7 @@ import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
+import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -121,6 +122,7 @@ class MindRecordFailureRecoveryTest {
                             diaryRepository = EmptyDiaryRepository,
                             dailyQuestionRepository = repository,
                         ),
+                    errorReporter = RecordingErrorReporter(),
                 )
             advanceUntilIdle()
 

@@ -23,6 +23,10 @@ sealed interface AfternoteRoute {
     @Serializable
     data object EditorRoute : AfternoteRoute
 
+    /** [EditorRoute] 위에 쌓이는 수신자 선택 화면 (#540). 선택 결과는 SavedStateHandle 로 반환한다. */
+    @Serializable
+    data object SelectReceiverRoute : AfternoteRoute
+
     @Serializable
     data object AddSongRoute : AfternoteRoute
 
