@@ -57,12 +57,3 @@ private fun ReceiverRejectionReason.toUiText(): UiText =
             UiText.Resource(R.string.receiver_error_verification_already_submitted)
         }
     }
-
-/**
- * 전달 조건이 아직 충족되지 않아 거절된 실패인가.
- *
- * 판정은 타입 하나로 끝난다 — 어느 서버 code 였는지는 data 계층
- * (`ReceiverFailureTranslation`)이 이미 해석했다. 재시도로 풀리지 않는 유일한 목록 실패라
- * 화면이 이 하나만 따로 가른다.
- */
-internal fun Throwable.isDeliveryConditionNotMet(): Boolean = this is ReceiverFailure.DeliveryConditionNotMet
