@@ -27,7 +27,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,7 +41,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.button.AfternoteButton
@@ -50,7 +48,6 @@ import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.modifierextention.addFocusCleaner
 import com.afternote.core.ui.popup.NetworkErrorPopup
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.onboarding.presentation.R
 
@@ -328,27 +325,5 @@ private fun SocialLoginButton(
                 style = AfternoteDesign.typography.captionLargeB,
             )
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun LoginScreenPreview() {
-    AfternoteTheme {
-        LoginScreen(
-            initialEmail = "",
-            initialPassword = "",
-            onEmailChange = {},
-            onPasswordChange = {},
-            onLoginClick = {},
-            onSignUpClick = {},
-            onFindAccountClick = {},
-            onKakaoLoginClick = {},
-            onGoogleLoginClick = {},
-            onRetryLogin = {},
-            onNetworkErrorDismiss = {},
-            onBackClick = {},
-            snackbarHostState = remember { SnackbarHostState() },
-        )
     }
 }
