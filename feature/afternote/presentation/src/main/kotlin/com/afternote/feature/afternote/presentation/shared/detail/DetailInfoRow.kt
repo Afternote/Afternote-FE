@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -18,12 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.button.AfternoteCircularCheckbox
-import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
  * 상세 화면용 정보 행: 원형 배경 아이콘 + 라벨·값 + (선택) 우측 슬롯.
@@ -76,34 +71,6 @@ fun DetailInfoRow(
         if (trailingContent != null) {
             Spacer(modifier = Modifier.weight(1f))
             trailingContent()
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun DetailInfoRowPreview() {
-    AfternoteTheme {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            DetailInfoRow(
-                iconResId = com.afternote.core.ui.R.drawable.core_ui_ic_mail,
-                label = "이메일",
-                value = "afternote@example.com",
-            )
-            DetailInfoRow(
-                iconResId = com.afternote.core.ui.R.drawable.core_ui_settings,
-                label = "상태",
-                value = "활성",
-                trailingContent = {
-                    AfternoteCircularCheckbox(
-                        state = CheckboxState.Default,
-                        size = 20.dp,
-                    )
-                },
-            )
         }
     }
 }

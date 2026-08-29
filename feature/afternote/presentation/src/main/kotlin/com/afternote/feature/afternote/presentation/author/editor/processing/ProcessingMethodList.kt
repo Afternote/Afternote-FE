@@ -16,11 +16,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.PlusBadgeButton
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import kotlinx.coroutines.launch
@@ -107,44 +105,6 @@ fun ProcessingMethodList(
         PlusBadgeButton(
             contentDescription = stringResource(R.string.afternote_editor_content_description_add),
             onClick = { state.toggleTextField() },
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ProcessingMethodListPreview() {
-    AfternoteTheme {
-        ProcessingMethodList(
-            items =
-                listOf(
-                    ProcessingMethodItem(1, "게시물 내리기"),
-                    ProcessingMethodItem(2, "댓글 비활성화"),
-                ),
-            onItemDeleteClick = {},
-            onItemAdded = {},
-            onItemEdited = { _, _ -> },
-            initialShowTextField = true,
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "드롭다운 펼쳐진 상태")
-@Composable
-private fun ProcessingMethodListWithDropdownPreview() {
-    AfternoteTheme {
-        ProcessingMethodList(
-            items =
-                listOf(
-                    ProcessingMethodItem(1, "게시물 내리기"),
-                    ProcessingMethodItem(2, "댓글 비활성화"),
-                    ProcessingMethodItem(3, "추모 계정으로 전환하기"),
-                ),
-            onItemDeleteClick = {},
-            onItemAdded = {},
-            onItemEdited = { _, _ -> },
-            initialShowTextField = false,
-            initialExpandedLocalId = 1,
         )
     }
 }
