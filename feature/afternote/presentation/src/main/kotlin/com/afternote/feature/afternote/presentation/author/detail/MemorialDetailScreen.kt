@@ -44,14 +44,12 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.modifierextention.FadingEdgeDirection
 import com.afternote.core.ui.modifierextention.horizontalFadingEdge
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
@@ -477,66 +475,6 @@ private fun AlbumCoverItem(album: AlbumCover) {
                         color = AfternoteDesign.colors.gray3,
                         shape = RoundedCornerShape(8.dp),
                     ),
-        )
-    }
-}
-
-private fun memorialDetailPreviewAlbumCovers(): List<AlbumCover> =
-    listOf(
-        AlbumCover(),
-        AlbumCover(),
-        AlbumCover(),
-        AlbumCover(),
-    )
-
-@Preview(
-    showBackground = true,
-    device = "spec:width=390dp,height=844dp,dpi=420,isRound=false",
-)
-@Composable
-private fun MemorialDetailScreenPreview() {
-    AfternoteTheme {
-        MemorialDetailScreen(
-            content =
-                MemorialDetailContent(
-                    finalWriteDate = "2025.11.26",
-                    songCount = 16,
-                    albumCovers = memorialDetailPreviewAlbumCovers(),
-                ),
-            userName = "서영",
-            onBackClick = {},
-            onEditClick = {},
-            onVideoClick = {},
-        )
-    }
-}
-
-@Preview(
-    showBackground = true,
-    device = "spec:width=390dp,height=844dp,dpi=420,isRound=false",
-    name = "Memorial Guideline Detail - Delete Dialog",
-)
-@Composable
-private fun MemorialDetailScreenDeleteDialogPreview() {
-    AfternoteTheme {
-        val stateWithDialog =
-            remember {
-                AfternoteDetailState().apply {
-                    showDeleteDialog()
-                }
-            }
-        MemorialDetailScreen(
-            content =
-                MemorialDetailContent(
-                    finalWriteDate = "2025.11.26",
-                    songCount = 16,
-                    albumCovers = memorialDetailPreviewAlbumCovers(),
-                ),
-            userName = "서영",
-            onBackClick = {},
-            onEditClick = {},
-            onVideoClick = {},
-            state = stateWithDialog,
         )
     }
 }

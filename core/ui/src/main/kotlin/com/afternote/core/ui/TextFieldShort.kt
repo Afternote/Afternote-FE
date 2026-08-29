@@ -5,13 +5,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -23,7 +21,6 @@ import androidx.compose.foundation.text.input.OutputTransformation
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.maxLength
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,10 +42,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import android.view.KeyEvent as NativeKeyEvent
 
 // ============================================================================
@@ -364,53 +359,6 @@ private fun Variant8MaskDots(dotCount: Int) {
                             color = AfternoteDesign.colors.black,
                             shape = CircleShape,
                         ),
-            )
-        }
-    }
-}
-
-// ============================================================================
-// 4. 피그마 9종 카탈로그 프리뷰 (타입 이름으로만 호출)
-// ============================================================================
-
-@Preview(
-    showBackground = true,
-    backgroundColor = 0xFFC0C0C0,
-    name = "AfternoteTextField 피그마 9종 (ALL EMPTY)",
-)
-@Composable
-private fun AfternoteTextFieldFigmaPreview() {
-    AfternoteTheme {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            AfternoteTextField(
-                state = rememberTextFieldState(),
-                placeholder = "nonfield/writing/write/field",
-            )
-
-            AfternoteTextField(
-                state = rememberTextFieldState(),
-                type = TextFieldType.Search,
-                placeholder = "nonsearch/search",
-            )
-
-            AfternoteTextField(
-                state = rememberTextFieldState(),
-                type =
-                    TextFieldType.Variant7(
-                        text = "인증번호 받기",
-                        onClick = { },
-                    ),
-                placeholder = "Variant 7",
-            )
-
-            val variant8Back = rememberTextFieldState()
-            AfternoteTextField(
-                state = rememberTextFieldState(),
-                type = TextFieldType.Variant8(backState = variant8Back),
-                placeholder = "Variant 8",
             )
         }
     }
