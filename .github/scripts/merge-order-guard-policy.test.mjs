@@ -171,3 +171,36 @@ test("API failures remain fail-closed", () => {
     assert.doesNotMatch(guard, /issue_kind=\$\(gh api[^\n]*\|\|\s*true/);
     assert.doesNotMatch(guard, /open_blockers=\$\(gh api[^\n]*\|\|\s*true/);
 });
+
+test("merge queue groups still produce the guard context", () => {
+    // guard 가 merge group 에서 빠지면 required context 가 비어 큐가 멈춘다.
+    assert.match(guard, /^\s{2}merge_group:\n\s{4}types: \[checks_requested\]$/m);
+    assert.match(guard, /^\s+github\.event_name == 'merge_group'$/m);
+    assert.match(guard, /MERGE_GROUP_HEAD_REF: \$\{\{ github\.event\.merge_group\.head_ref \}\}/);
+    assert.match(guard, /MERGE_GROUP_BASE_REF: \$\{\{ github\.event\.merge_group\.base_ref \}\}/);
+});
+
+test("the queue ref yields the pull request number and base branch", () => {
+    // gh-readonly-queue/<base>/pr-<N>-<sha> 에서 번호와 base 를 뽑아 같은 검사를 돌린다.
+    const script = /if \[ -z "\$\{PR_NUMBER:-\}" \] && \[ -n "\$\{MERGE_GROUP_HEAD_REF:-\}" \]; then\n([\s\S]*?)\n\s+fi\n/.exec(
+        guard,
+    );
+    assert.ok(script, "queue ref parser must stay extractable for policy tests");
+
+    const result = spawnSync(
+        "bash",
+        [
+            "-c",
+            `set -euo pipefail
+PR_NUMBER=""
+MERGE_GROUP_HEAD_REF="refs/heads/gh-readonly-queue/develop/pr-1477-0123456789abcdef0123456789abcdef01234567"
+MERGE_GROUP_BASE_REF="refs/heads/develop"
+${script[1]}
+printf '%s %s' "$PR_NUMBER" "$BASE_REF"`,
+        ],
+        { encoding: "utf8" },
+    );
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout, "1477 develop");
+});
