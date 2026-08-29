@@ -410,6 +410,7 @@ class ReceiverRuntimeCompletionAndroidTest {
         composeRule.setContent {
             AfternoteTheme {
                 IdentityVerificationEmailScreen(
+                    senderId = "sender-1",
                     onBackClick = {},
                     onVerified = { verifiedTransitions += 1 },
                     viewModel = viewModel,
@@ -456,7 +457,7 @@ class ReceiverRuntimeCompletionAndroidTest {
             ),
             authRepository.verifiedEmailCodes,
         )
-        assertEquals(1, identityRepository.markVerifiedCallCount)
+        assertEquals(listOf("sender-1"), identityRepository.markVerifiedSenderIds)
         assertEquals(1, verifiedTransitions)
         assertTrue(reporter.failures.isEmpty())
     }

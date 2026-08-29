@@ -80,8 +80,10 @@ fun NavGraphBuilder.receiverNavGraph(
                 }
             }
 
-            receiverComposable<ReceiverRoute.IdentityVerificationEmailRoute> {
+            receiverComposable<ReceiverRoute.IdentityVerificationEmailRoute> { backStackEntry ->
+                val flowVm = backStackEntry.deliveryFlowViewModel(deliveryFlowParentEntry)
                 IdentityVerificationEmailScreen(
+                    senderId = flowVm.senderId,
                     onBackClick = actions::popBack,
                     onVerified = actions::proceedToMasterKey,
                 )
