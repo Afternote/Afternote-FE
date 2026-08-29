@@ -30,6 +30,12 @@ enum class AfternoteFailureStage(
      */
     AUTHOR_RECEIVER_LOAD("author_receiver_load"),
 
+    /**
+     * 수신자 선택 화면(#540)의 목록 조회 — [AUTHOR_RECEIVER_LOAD] 와 같은 `GET users/receivers` 지만
+     * 실패한 화면이 달라 키를 나눈다. 이쪽은 화면이 실패를 보여 주고 재시도를 받는다.
+     */
+    RECEIVER_SELECT_LOAD("receiver_select_load"),
+
     MEMORIAL_THUMBNAIL_UPLOAD("memorial_thumbnail_upload"),
 
     /**

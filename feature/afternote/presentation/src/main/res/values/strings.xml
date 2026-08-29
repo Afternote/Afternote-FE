@@ -104,6 +104,12 @@
     <!-- 서비스명 미선택 placeholder — %1$s 는 [AfternoteType.toDropdownLabel] (시안 700:36383: "소셜네트워크 선택하기") -->
     <string name="afternote_editor_service_placeholder">%1$s 선택하기</string>
 
+    <!-- 수신자 선택 화면 (#540, 시안 3631:24820) -->
+    <string name="afternote_select_receiver_load_failed">수신자 목록을 불러오지 못했습니다.</string>
+    <string name="afternote_select_receiver_retry">다시 시도</string>
+    <!-- 이 화면의 빈 상태는 시안 정의가 없어 FE 잠정안. -->
+    <string name="afternote_select_receiver_empty">등록된 수신자가 없습니다.\n설정에서 수신자를 먼저 등록해 주세요.</string>
+
     <string name="afternote_editor_message_field_title">제목</string>
     <string name="afternote_editor_message_field_body">내용</string>
     <string name="afternote_editor_message_action_register">등록</string>
