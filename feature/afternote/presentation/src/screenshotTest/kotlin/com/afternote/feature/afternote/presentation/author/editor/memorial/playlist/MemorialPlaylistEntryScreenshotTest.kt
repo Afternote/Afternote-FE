@@ -26,7 +26,13 @@ private fun screenshotSongs(): List<Song> =
 @Composable
 internal fun memorialPlaylistEntryEmptyScreenshot() {
     AfternoteTheme {
-        MemorialPlaylistEntry(songs = emptyList())
+        MemorialPlaylistEntry(
+            songs = emptyList(),
+            onBackClick = {},
+            onNavigateToAddSongScreen = {},
+            onClearAllSongs = {},
+            onRemoveSongs = {},
+        )
     }
 }
 
@@ -35,7 +41,13 @@ internal fun memorialPlaylistEntryEmptyScreenshot() {
 @Composable
 internal fun memorialPlaylistEntryWithSongsScreenshot() {
     AfternoteTheme {
-        MemorialPlaylistEntry(songs = screenshotSongs())
+        MemorialPlaylistEntry(
+            songs = screenshotSongs(),
+            onBackClick = {},
+            onNavigateToAddSongScreen = {},
+            onClearAllSongs = {},
+            onRemoveSongs = {},
+        )
     }
 }
 
@@ -46,6 +58,10 @@ internal fun memorialPlaylistEntryEditModeScreenshot() {
     AfternoteTheme {
         MemorialPlaylistEntry(
             songs = screenshotSongs(),
+            onBackClick = {},
+            onNavigateToAddSongScreen = {},
+            onClearAllSongs = {},
+            onRemoveSongs = {},
             initialEditMode = true,
         )
     }
@@ -58,6 +74,10 @@ internal fun memorialPlaylistEntryEditModeSelectionScreenshot() {
     AfternoteTheme {
         MemorialPlaylistEntry(
             songs = screenshotSongs(),
+            onBackClick = {},
+            onNavigateToAddSongScreen = {},
+            onClearAllSongs = {},
+            onRemoveSongs = {},
             initialEditMode = true,
             initialSelectedSongKeys = setOf("screenshot:1"),
         )

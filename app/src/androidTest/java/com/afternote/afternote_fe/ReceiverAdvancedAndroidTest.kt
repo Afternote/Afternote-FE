@@ -25,6 +25,8 @@ import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
+import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailRoute
+import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel
 import com.afternote.feature.receiver.domain.model.ReceivedAccountCredentials
 import com.afternote.feature.receiver.domain.model.ReceivedAfternoteDetail
 import com.afternote.feature.receiver.domain.model.ReceivedExportBundle
@@ -33,8 +35,6 @@ import com.afternote.feature.receiver.domain.testing.FakeReceiverAuthRepository
 import com.afternote.feature.receiver.domain.testing.FakeReceiverRepository
 import com.afternote.feature.receiver.presentation.deliveryverification.MasterKeyScreen
 import com.afternote.feature.receiver.presentation.deliveryverification.MasterKeyViewModel
-import com.afternote.feature.receiver.presentation.detail.ReceivedAfternoteDetailRoute
-import com.afternote.feature.receiver.presentation.detail.ReceivedAfternoteDetailViewModel
 import com.afternote.feature.receiver.presentation.recordsbox.ReceivedRecordsScreen
 import com.afternote.feature.receiver.presentation.recordsbox.ReceivedRecordsViewModel
 import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistrationScreen

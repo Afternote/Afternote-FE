@@ -58,7 +58,6 @@ fun appTestUserRepository(
         onGetMyProfile = null
         onUpdateMyProfile = null
         onDeleteAccount = null
-        onLogActivity = null
         onGetMyPushSettings = null
         onUpdateMyPushSettings = null
         onGetConnectedAccounts = { defaultConnectedAccounts(this.profile.email) }
@@ -66,6 +65,10 @@ fun appTestUserRepository(
 
 class FakeErrorReporter : ErrorReporter {
     val failures = mutableListOf<Pair<Throwable, Map<String, String>>>()
+
+    /** 기록된 마음의 기록 stage 목록. 콘솔 필터 값이라 문자열까지 고정한다 (#964). */
+    val mindRecordStages: List<String>
+        get() = failures.mapNotNull { it.second["mind_record_stage"] }
 
     override fun writeFailure(
         throwable: Throwable,

@@ -219,8 +219,9 @@ jobs:
           build-mode: manual
 
       # Java/Kotlin extraction observes compiler invocations, so a clean manual build is the
-      # contract. Pure JVM modules use classes; Android domains retain explicit debug compilation
-      # so a partial migration cannot silently remove them from extraction coverage.
+      # contract. Domain 모듈은 전부 순수 JVM 이라 classes 로 컴파일한다 (#1151). android 규약을
+      # 타는 domain 이 다시 생기면 그 모듈은 compileDebugKotlin 이어야 하며, 아래 정책 테스트가
+      # 빌드 스크립트를 읽어 이 목록과 대조하므로 한쪽만 바뀌면 그 자리에서 깨진다.
       # FROM-CACHE 로 넘어가면 컴파일러가 실행되지 않아 추출기가 소스를 담지 못한다.
       - name: Compile Android and pure JVM Kotlin sources
         run: >-
@@ -228,11 +229,11 @@ jobs:
           :core:model:classes
           :core:domain:classes
           :feature:afternote:domain:classes
-          :feature:mindrecord:domain:compileDebugKotlin
+          :feature:mindrecord:domain:classes
           :feature:onboarding:domain:classes
-          :feature:receiver:domain:compileDebugKotlin
+          :feature:receiver:domain:classes
           :feature:setting:domain:classes
-          :feature:timeletter:domain:compileDebugKotlin
+          :feature:timeletter:domain:classes
           --no-configuration-cache
           --stacktrace
           --console=plain

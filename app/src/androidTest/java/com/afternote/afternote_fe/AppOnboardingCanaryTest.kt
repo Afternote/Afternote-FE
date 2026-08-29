@@ -123,7 +123,6 @@ class AppOnboardingCanaryTest {
         )
         assertEquals(2, fakeAuth.attemptedEmailLogins.size)
         assertEquals(1, fakeAuth.saveSessionCalls)
-        assertEquals(1, fakeUser.logActivityCalls)
     }
 
     @Test

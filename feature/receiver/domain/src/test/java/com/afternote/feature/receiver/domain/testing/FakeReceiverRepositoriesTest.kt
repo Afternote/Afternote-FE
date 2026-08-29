@@ -2,6 +2,7 @@ package com.afternote.feature.receiver.domain.testing
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -102,14 +103,17 @@ class FakeReceiverRepositoriesTest {
     }
 
     @Test
-    fun `본인 확인 기본 경로는 호출을 기록하고 상태를 true로 바꾼다`() {
+    fun `본인 확인 기본 경로는 호출을 기록하고 해당 발신자만 true로 바꾼다`() {
         val repository = FakeIdentityVerificationRepository()
 
-        runBlocking { repository.markVerified() }
+        runBlocking { repository.markVerified("sender-a") }
 
         assertEquals(1, repository.markVerifiedCallCount)
-        assertTrue(repository.verificationState.value)
-        assertFalse(FakeIdentityVerificationRepository(initialVerified = false).verificationState.value)
+        assertEquals(listOf("sender-a"), repository.markVerifiedSenderIds)
+        assertEquals(setOf("sender-a"), repository.verifiedSenderIds.value)
+        assertTrue(runBlocking { repository.isVerified("sender-a").first() })
+        assertFalse(runBlocking { repository.isVerified("sender-b").first() })
+        assertTrue(FakeIdentityVerificationRepository().verifiedSenderIds.value.isEmpty())
     }
 
     @Test
@@ -122,7 +126,7 @@ class FakeReceiverRepositoriesTest {
                 repeat(64) { index ->
                     launch(Dispatchers.Default) {
                         uploadRepository.upload(byteArrayOf(index.toByte()), "pdf").getOrThrow()
-                        identityRepository.markVerified()
+                        identityRepository.markVerified("sender-$index")
                     }
                 }
             }
@@ -130,6 +134,7 @@ class FakeReceiverRepositoriesTest {
 
         assertEquals(64, uploadRepository.uploadCalls.size)
         assertEquals(64, identityRepository.markVerifiedCallCount)
+        assertEquals(64, identityRepository.verifiedSenderIds.value.size)
     }
 
     @Test

@@ -72,7 +72,6 @@ fun AfternoteEditorReceiverList(
                 onDismissDropdown = {
                     state.expandedStates[receiver.id] = false
                 },
-                showEditItem = false,
                 onDeleteClick = { onItemDeleteClick(receiver.id) },
             )
         }
@@ -101,10 +100,9 @@ private fun AfternoteEditorReceiverItem(
     modifier: Modifier = Modifier,
     receiver: AfternoteEditorReceiver,
     expanded: Boolean = false,
-    onMoreClick: () -> Unit = {},
-    onDismissDropdown: () -> Unit = {},
-    showEditItem: Boolean = true,
-    onDeleteClick: () -> Unit = {},
+    onMoreClick: () -> Unit,
+    onDismissDropdown: () -> Unit,
+    onDeleteClick: () -> Unit,
 ) {
     Row(
         modifier =
@@ -145,7 +143,8 @@ private fun AfternoteEditorReceiverItem(
                 expanded = expanded,
                 onDismissRequest = onDismissDropdown,
                 onDeleteClick = onDeleteClick,
-                showEditItem = showEditItem,
+                // 수신자 행 메뉴엔 편집이 없다 — null 이 편집 항목 자체를 숨긴다.
+                onEditClick = null,
             )
         }
     }

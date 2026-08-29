@@ -1,5 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.navigation
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -23,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -30,7 +33,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -223,6 +229,15 @@ internal fun AfternoteDetailNavigation(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val onVideoClick = rememberMemorialVideoClickHandler(snackbarHostState)
+
+    // 수정 화면에서 저장 후 복귀하면 상세를 다시 조회한다 — 백스택에 살아 있는 동안 수정 전
+    // 값이 남지 않게 한다 (#701). ON_RESUME 은 화면 off/on·홈 버튼 복귀에서도 발화하므로
+    // 로딩을 방출하지 않는 refreshOnReturn() 을 쓴다. 첫 진입의 ON_RESUME 스킵(진입은 init
+    // 로드가 담당)과 실행 중 로드와의 중복 차단은 VM 이 판단한다 — 결선부는 무조건 부른다.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshOnReturn()
+    }
 
     ObserveDeleteResult(
         deleteResult = (uiState as? AfternoteDetailUiState.Success)?.deleteResult,
@@ -250,6 +265,7 @@ internal fun AfternoteDetailNavigation(
                 onBackClick = onNavigateBack,
                 onNavigateToEditor = onNavigateToEditor,
                 onDeleteConfirm = viewModel::deleteAfternote,
+                onVideoClick = onVideoClick,
             )
         }
     }
@@ -262,6 +278,7 @@ private fun AfternoteDetailSuccessContent(
     onBackClick: () -> Unit,
     onNavigateToEditor: (itemId: Long, type: AfternoteType) -> Unit,
     onDeleteConfirm: (itemId: Long) -> Unit,
+    onVideoClick: (String) -> Unit,
 ) {
     Box {
         when (val model = state.contentUiModel) {
@@ -304,12 +321,14 @@ private fun AfternoteDetailSuccessContent(
             is DetailContentUiModel.Memorial -> {
                 MemorialDetailScreen(
                     content = model.content,
+                    userName = state.authorDisplayName,
                     snackbarHostState = snackbarHostState,
                     onBackClick = onBackClick,
                     onEditClick = {
                         onNavigateToEditor(state.detailId, model.type)
                     },
                     onDeleteConfirm = { onDeleteConfirm(state.detailId) },
+                    onVideoClick = onVideoClick,
                 )
             }
 
@@ -321,5 +340,71 @@ private fun AfternoteDetailSuccessContent(
         if (state.isDeleting) {
             DeleteInProgressOverlay()
         }
+    }
+}
+
+@Composable
+private fun rememberMemorialVideoClickHandler(snackbarHostState: SnackbarHostState): (String) -> Unit {
+    val context = LocalContext.current
+    val resources = LocalResources.current
+    val scope = rememberCoroutineScope()
+    return remember(context, snackbarHostState, resources, scope) {
+        { videoUrl ->
+            launchMemorialVideo(
+                videoUrl = videoUrl,
+                startActivity = context::startActivity,
+                onUnavailable = {
+                    val message = resources.getString(R.string.feature_afternote_memorial_video_no_app)
+                    scope.launch {
+                        snackbarHostState.showSnackbar(message = message)
+                    }
+                },
+            )
+        }
+    }
+}
+
+/**
+ * 서버가 준 추모 영상 URL을 외부 재생 앱으로 연다.
+ *
+ * Android 11+ 패키지 가시성에서는 외부 앱 사전 조회가 실제 처리 가능한 앱이 있어도 실패할 수 있다.
+ * 따라서 http/https URL만 선별한 뒤 실행을 직접 시도하고, OS가 명시적으로 거부한 경우에만
+ * [onUnavailable] 로 폴백한다.
+ */
+internal fun launchMemorialVideo(
+    videoUrl: String,
+    startActivity: (Intent) -> Unit,
+    onUnavailable: () -> Unit,
+) {
+    val uri =
+        try {
+            videoUrl
+                .takeUnless { it.isBlank() || it.any(Char::isWhitespace) }
+                ?.toUri()
+                ?.takeIf {
+                    val scheme = it.scheme
+                    (
+                        scheme.equals("http", ignoreCase = true) ||
+                            scheme.equals("https", ignoreCase = true)
+                    ) &&
+                        !it.host.isNullOrBlank()
+                }
+        } catch (_: IllegalArgumentException) {
+            null
+        }
+
+    if (uri == null) {
+        onUnavailable()
+        return
+    }
+
+    try {
+        startActivity(Intent(Intent.ACTION_VIEW, uri))
+    } catch (_: ActivityNotFoundException) {
+        onUnavailable()
+    } catch (_: SecurityException) {
+        onUnavailable()
+    } catch (_: IllegalArgumentException) {
+        onUnavailable()
     }
 }

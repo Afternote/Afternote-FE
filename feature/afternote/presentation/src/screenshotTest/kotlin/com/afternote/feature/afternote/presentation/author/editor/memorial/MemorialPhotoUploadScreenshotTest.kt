@@ -17,6 +17,7 @@ internal fun memorialPhotoUploadEmptyScreenshot() {
             modifier = Modifier.padding(16.dp),
             label = "추모 사진",
             displayImageUri = null,
+            onAddPhotoClick = {},
         )
     }
 }
