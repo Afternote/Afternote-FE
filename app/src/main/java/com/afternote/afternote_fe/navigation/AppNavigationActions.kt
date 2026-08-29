@@ -11,6 +11,8 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.author.navigation.model.SELECTED_RECEIVER_ID_KEY
+import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteNavActions
+import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceivedAfternoteRoute
 import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
@@ -517,9 +519,9 @@ fun rememberAfternoteNavActions(
  * 각 화면 ViewModel 에서 처리.
  */
 @Composable
-fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions =
+fun rememberReceivedAfternoteNavActions(appState: AppState): ReceivedAfternoteNavActions =
     remember(appState) {
-        object : ReceiverNavActions {
+        object : ReceivedAfternoteNavActions {
             override fun popBack() {
                 appState.navController.popBackStack()
             }
@@ -528,23 +530,33 @@ fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions =
             // 보통이므로 그냥 navigate 하면 [목록 → 상세 → 목록] 이 쌓여 뒤로가기가 방금 나온 상세로
             // 되돌아간다. popUpTo 로 기존 목록까지 걷어내고, 목록이 백스택에 없는 진입(딥링크 등)에서는
             // popUpTo 가 무시되고 push 만 일어나 양쪽 모두 맞는다.
-            override fun navigateToAfternoteList() {
-                appState.navController.navigate(ReceiverRoute.AfternoteListRoute) {
-                    popUpTo(ReceiverRoute.AfternoteListRoute) { inclusive = false }
+            override fun navigateToList() {
+                appState.navController.navigate(ReceivedAfternoteRoute.ListRoute) {
+                    popUpTo(ReceivedAfternoteRoute.ListRoute) { inclusive = false }
                     launchSingleTop = true
                 }
             }
 
-            override fun navigateToReceivedAfternoteDetail(afternoteId: Long) {
+            override fun navigateToDetail(afternoteId: Long) {
                 appState.navController.navigate(
-                    ReceiverRoute.AfternoteDetailRoute(afternoteId = afternoteId),
+                    ReceivedAfternoteRoute.DetailRoute(afternoteId = afternoteId),
                 )
             }
 
             override fun navigateToMemorialPlaylist(afternoteId: Long) {
                 appState.navController.navigate(
-                    ReceiverRoute.MemorialPlaylistRoute(afternoteId = afternoteId),
+                    ReceivedAfternoteRoute.MemorialPlaylistRoute(afternoteId = afternoteId),
                 )
+            }
+        }
+    }
+
+@Composable
+fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions =
+    remember(appState) {
+        object : ReceiverNavActions {
+            override fun popBack() {
+                appState.navController.popBackStack()
             }
 
             override fun navigateToSenderRegistration() {
@@ -619,7 +631,7 @@ fun rememberReceiverHomeActions(appState: AppState): ReceiverHomeActions =
             onNavigateToMindRecord = { appState.navController.navigate(Route.ReceiverMindRecord) },
             onNavigateToTimeLetter = { appState.navController.navigate(Route.TimeLetter) },
             onNavigateToAfternote = {
-                appState.navController.navigate(ReceiverRoute.AfternoteListRoute)
+                appState.navController.navigate(ReceivedAfternoteRoute.ListRoute)
             },
         )
     }
