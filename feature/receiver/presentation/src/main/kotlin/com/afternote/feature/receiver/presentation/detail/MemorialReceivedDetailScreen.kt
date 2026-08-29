@@ -227,7 +227,8 @@ private fun ReceiverVideoSection(
  * Android 11+ 패키지 가시성에서는 외부 앱 사전 조회가 실제 처리 가능한 앱이 있어도 실패할 수
  * 있다. 따라서 http/https URL만 선별한 뒤 실행을 직접 시도하고, OS가 명시적으로 거부한 경우에만
  * [onUnavailable] 로 폴백한다. 작성자 쪽 상세의 `launchMemorialVideo`(PR #1336)와 같은 패턴 —
- * 그쪽은 afternote 모듈 internal 이라 공유 없이 이식했다 (공유 승격 검토는 #1391).
+ * 그쪽은 afternote 모듈 internal 이라 공유 없이 이식했다. 본문이 37줄 문자 단위로 같으므로
+ * 두 PR 머지 뒤 core:common 으로 승격한다 (#1436).
  */
 internal fun launchReceivedMemorialVideo(
     videoUrl: String,
