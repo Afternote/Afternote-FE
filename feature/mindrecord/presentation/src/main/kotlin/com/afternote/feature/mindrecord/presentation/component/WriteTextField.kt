@@ -122,9 +122,6 @@ fun WriteTextField(
 
     var showTextStyleToolbar by remember { mutableStateOf(false) }
     var sheet: KeyboardSheet by remember { mutableStateOf(KeyboardSheet.None) }
-
-    /** 링크 시트가 마지막 «완료» 를 거절했는지 — 시트를 닫거나 다시 성공하면 걷힌다 (#1067). */
-    var linkError by remember { mutableStateOf(false) }
     val imeVisible = WindowInsets.isImeVisible
     val editorFocusRequester = remember { FocusRequester() }
 
@@ -316,29 +313,27 @@ fun WriteTextField(
 
         KeyboardSheet.LinkAdd -> {
             LinkBottomSheet(
-                onDismiss = {
-                    linkError = false
-                    sheet = KeyboardSheet.None
-                },
+                onDismiss = { sheet = KeyboardSheet.None },
+                // 검증 없이 이어붙이면 `javascript:` 가 그대로 저장되고, 따옴표 하나로 속성이 닫힌다.
+                // 본문은 수신자가 나중에 열람하는 값이라 저장되는 순간 남에게 실린다 (#1067).
+                //
+                // 거절(false)은 시트가 받아 사유를 띄운다 — 조용히 무시하면 사용자는 «완료를 눌렀는데
+                // 안 들어갔다» 만 본다. 안내를 걷는 시점(입력을 고치는 순간)도 입력 상태를 가진 시트가
+                // 안다 (#1067 리뷰).
                 onConfirm = { url ->
-                    // 검증 없이 이어붙이면 `javascript:` 가 그대로 저장되고, 따옴표 하나로 속성이
-                    // 닫힌다. 본문은 수신자가 나중에 열람하는 값이라 저장되는 순간 남에게 실린다 (#1067).
                     val href = url.toBodyLinkHrefOrNull()
                     if (href == null) {
-                        // 조용히 아무 일도 안 하면 사용자는 «완료를 눌렀는데 안 들어갔다» 만 본다.
-                        // 시트는 열어 둔 채 사유를 알려 고칠 수 있게 한다.
-                        linkError = true
+                        false
                     } else {
                         keepEditorFocus {
                             // 링크 텍스트는 사용자가 적은 원문을 보여 준다 — punycode 로 바뀐 호스트를
                             // 보여 주면 자기가 넣은 주소를 못 알아본다. 표시용도 이스케이프한다.
                             state.setHtml(state.toHtml() + "<a href=\"$href\">${url.trim().escapeHtml()}</a>")
                         }
-                        linkError = false
                         sheet = KeyboardSheet.None
+                        true
                     }
                 },
-                isError = linkError,
             )
         }
     }

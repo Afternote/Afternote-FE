@@ -143,7 +143,15 @@ fun String.toBodyLinkHrefOrNull(): String? {
     // 공백·제어문자가 섞이면 속성 경계를 넘거나 사람이 읽는 주소와 실제가 갈린다.
     if (trimmed.isEmpty() || trimmed.any { it.isWhitespace() || it.isISOControl() }) return null
 
-    val declared = DECLARED_SCHEME.find(trimmed)?.groupValues?.get(1)
+    // `example.com:8080` 은 스킴 선언이 아니라 host:port 다 — 스킴 문자 집합에 `.` 이 있어
+    // `example.com` 이 통째로 스킴으로 매치된다. 「`://` 가 없고 콜론 뒤가 전부 숫자」면 포트로 읽는다.
+    // `javascript:alert(1)` 은 콜론 뒤가 숫자가 아니라 그대로 스킴 선언으로 남는다 (#1067 리뷰).
+    val declared =
+        DECLARED_SCHEME
+            .find(trimmed)
+            ?.groupValues
+            ?.get(1)
+            ?.takeUnless { trimmed.looksLikeHostPort(it) }
     val scheme = declared?.lowercase() ?: DEFAULT_SCHEME
     // 스킴을 적었는데 허용 목록 밖이면 거부한다 — https 를 덧붙여 살려 내지 않는다.
     if (scheme !in ALLOWED_SCHEMES) return null
@@ -176,6 +184,11 @@ fun String.toBodyLinkHrefOrNull(): String? {
 
     val asciiHost = runCatching { IDN.toASCII(host, IDN.ALLOW_UNASSIGNED) }.getOrNull() ?: return null
     if (asciiHost.isEmpty()) return null
+    // **변환한 값에 대고 한 번 더 본다.** nameprep(NFKC) 이 전각 문자를 ASCII 구분자로 되돌리므로,
+    // 원문에 대고 한 검사만으로는 `google.com＠evil.com` 이 `google.com@evil.com` 이 되어 통과한다.
+    // 그러면 링크 텍스트는 원문을 보여 주고 목적지는 evil.com 이 된다 — 이 함수가 막으려던 위장 그대로다.
+    // 정상 호스트에는 이 문자들이 들어갈 수 없다.
+    if (asciiHost.any { it in HOST_FORBIDDEN }) return null
 
     val normalized =
         buildString {
@@ -194,16 +207,20 @@ fun String.toBodyLinkHrefOrNull(): String? {
 }
 
 /**
- * `&`·`<`·`>`·`"`·`'` 를 엔티티로 바꾼다 — 속성과 텍스트 양쪽에 안전한 최소 집합.
+ * `&`·`<`·`>`·`"` 를 엔티티로 바꾼다 — 큰따옴표 속성과 텍스트 양쪽에 안전한 최소 집합.
  *
  * `&` 를 **가장 먼저** 바꾼다. 나중에 바꾸면 앞서 만든 엔티티의 `&` 를 다시 인코딩해 `&amp;lt;` 가 된다.
+ *
+ * **`'` 는 일부러 바꾸지 않는다.** 큰따옴표 속성 안에서 홑따옴표는 경계를 못 만들고, 리치 에디터가
+ * 속성값의 숫자 문자 참조를 디코드하지 않아 `&#39;` 를 넣으면 `&amp;#39;` 로 굳어 **저장되는 주소가
+ * 달라진다** — 사용자가 적지 않은 값이 서버로 올라간다 (#1067 리뷰). 텍스트 노드 쪽도 `'` 를 그대로
+ * 두는 편이 왕복 뒤 원문과 같다.
  */
 fun String.escapeHtml(): String =
     replace("&", "&amp;")
         .replace("<", "&lt;")
         .replace(">", "&gt;")
         .replace("\"", "&quot;")
-        .replace("'", "&#39;")
 
 /** 비ASCII 바이트만 UTF-8 percent-encoding 한다. 이미 인코딩된 `%XX` 는 ASCII 라 그대로 지나간다. */
 private fun String.percentEncodeNonAscii(): String =
@@ -218,6 +235,21 @@ private const val HEX = "0123456789ABCDEF"
 
 /** 입력이 스스로 선언한 스킴. `://` 가 아니라 `:` 까지만 본다 — `javascript:` 도 «선언했다» 로 잡는다. */
 private val DECLARED_SCHEME = Regex("""^([A-Za-z][A-Za-z0-9+.\-]*):""")
+
+/**
+ * `<scheme>:` 로 매치됐지만 실제로는 `host:port` 인가.
+ *
+ * `://` 가 없고 콜론 뒤 첫 조각이 전부 숫자일 때만 그렇게 읽는다.
+ */
+private fun String.looksLikeHostPort(matchedScheme: String): Boolean {
+    if (startsWith("$matchedScheme://", ignoreCase = true)) return false
+    val afterColon = substring(matchedScheme.length + 1)
+    val port = afterColon.takeWhile { it !in "/?#" }
+    return port.isNotEmpty() && port.all { it.isDigit() }
+}
+
+/** 정상 호스트에는 들어갈 수 없는 구분자들. nameprep 이 전각에서 되돌려 놓는 것들이다. */
+private const val HOST_FORBIDDEN = "@/:?#[]\\"
 
 private val ALLOWED_SCHEMES = setOf("http", "https")
 
