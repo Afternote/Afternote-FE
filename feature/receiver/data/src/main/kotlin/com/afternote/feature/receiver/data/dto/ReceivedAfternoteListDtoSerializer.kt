@@ -33,10 +33,17 @@ object ReceivedAfternoteListDtoSerializer : KSerializer<ReceivedAfternoteListDto
         )
 
     override fun deserialize(decoder: Decoder): ReceivedAfternoteListDto {
+        // 아래에서 쓰는 decodeJsonElement 는 JsonDecoder 에만 있다. 다른 포맷(ProtoBuf 등)에서는
+        // 이 전략 자체가 성립하지 않으므로 여기서 명시적으로 끊는다.
         val jsonDecoder =
             decoder as? JsonDecoder
                 ?: throw SerializationException("ReceivedAfternoteListDto supports JSON only")
+        // 새 Json 인스턴스를 만들면 NetworkModule 의 ignoreUnknownKeys·coerceInputValues 가 날아간다.
+        // 원소 디코딩도 같은 규칙을 따르도록 디코더가 쓰고 있는 인스턴스를 그대로 재사용한다.
         val json = jsonDecoder.json
+        // 응답을 통째로 JsonElement 로 받아 봉투 모양으로 다시 읽는다. 봉투(afternotes 배열·totalCount)는
+        // strict 로 검증되고, 배열 원소는 JsonElement 인 채로 통과해 검증이 아래 mapNotNull 로 미뤄진다.
+        // 그래서 totalCount 누락처럼 봉투가 깨진 응답은 원소 격리 없이 목록 전체 실패로 끝난다.
         val wire =
             json.decodeFromJsonElement(
                 ReceivedAfternoteListWireDto.serializer(),
@@ -45,7 +52,10 @@ object ReceivedAfternoteListDtoSerializer : KSerializer<ReceivedAfternoteListDto
         val afternotes =
             wire.afternotes.mapNotNull { rawAfternote ->
                 if (rawAfternote !is JsonObject) {
-                    // 원소가 객체조차 아니면 여기서 반드시 실패한다. 예외 메시지는 라이브러리에 맡긴다.
+                    // 객체가 아닌 원소(숫자·문자열·null·배열)는 이 디코딩에서 반드시 예외로 끝난다.
+                    // 직접 throw 하지 않는 것은 라이브러리 표준 메시지와 경로 정보를 그대로 쓰기 위해서다.
+                    // 따라서 아래 return 은 실행되지 않는다. 그럼에도 지워서는 안 되는데, 이 블록이 반드시
+                    // 빠져나가야 아래에서 rawAfternote 가 JsonObject 로 스마트 캐스트되기 때문이다.
                     json.decodeFromJsonElement(ReceivedAfternoteDto.serializer(), rawAfternote)
                     return@mapNotNull null
                 }
@@ -59,16 +69,23 @@ object ReceivedAfternoteListDtoSerializer : KSerializer<ReceivedAfternoteListDto
                     )
                     return@mapNotNull null
                 }
+                // category 가 문자열임이 확인된 원소만 여기 도달한다. 이 블록의 디코딩 세 번 중
+                // 결과를 실제로 쓰는 곳은 여기뿐이고, 나머지 둘은 예외를 던지게 하려는 검증용이다.
                 json.decodeFromJsonElement(ReceivedAfternoteDto.serializer(), rawAfternote)
             }
 
         return ReceivedAfternoteListDto(
             afternotes = afternotes,
+            // 서버가 내려준 값을 제외 후 크기로 덮지 않는다. 페이징 총량의 정본은 서버다.
             totalCount = wire.totalCount,
             decodingRejectedItemCount = wire.afternotes.size - afternotes.size,
         )
     }
 
+    /**
+     * 인코딩도 wire DTO 를 거쳐 나간다. [ReceivedAfternoteListDto.decodingRejectedItemCount] 는 wire 에
+     * 없는 필드라, 이렇게 갈아 담는 것만으로 내부 집계값이 JSON 으로 새 나가지 않는다.
+     */
     override fun serialize(
         encoder: Encoder,
         value: ReceivedAfternoteListDto,
@@ -89,8 +106,15 @@ object ReceivedAfternoteListDtoSerializer : KSerializer<ReceivedAfternoteListDto
     }
 }
 
+// category 자리를 채우기만 하면 되는 값이라 계약상 유효한 문자열이면 무엇이든 된다. 이 값으로 만들어진
+// DTO 는 검증 직후 버려지므로 실제 데이터로 쓰이지 않는다.
 private const val CATEGORY_VALIDATION_PLACEHOLDER = "SOCIAL"
 
+/**
+ * 공개 DTO 와 실제 JSON 사이에 끼운 중간 표현. 원소 타입만 [JsonElement] 로 열어 두어, 봉투 계약은
+ * strict 로 유지하면서 원소 검증만 [ReceivedAfternoteListDtoSerializer] 가 직접 하도록 넘긴다.
+ * 구현 세부이므로 private 이다 — 밖에서 쓰이기 시작하면 원소 검증이 통째로 빠진 경로가 생긴다.
+ */
 @Serializable
 private data class ReceivedAfternoteListWireDto(
     @SerialName("afternotes") val afternotes: List<JsonElement>,
