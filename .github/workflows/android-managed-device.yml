@@ -36,6 +36,10 @@ on:
         type: boolean
   pull_request:
     types: [opened, reopened, edited, synchronize]
+  # merge queue 는 큐 ref 에서 두 required lane 을 다시 요구한다. merge group 에는 PR 이
+  # 없어 CI Test Plan 을 읽을 수 없으므로 default branch 실행과 같은 full 로 판정한다.
+  merge_group:
+    types: [checks_requested]
   schedule:
     - cron: "17 18 * * 2,5"
 
@@ -177,7 +181,8 @@ jobs:
          github.ref_name == github.event.repository.default_branch) ||
         inputs.pull_request_number > 0)) ||
       (github.event_name == 'pull_request' &&
-       github.event.pull_request.head.repo.full_name == github.repository)
+       github.event.pull_request.head.repo.full_name == github.repository) ||
+      github.event_name == 'merge_group'
     name: ${{ matrix.name }}
     runs-on: ubuntu-latest
     timeout-minutes: ${{ matrix.job_timeout_minutes }}
@@ -407,8 +412,11 @@ jobs:
             echo "::error::scheduled_only matrix 값은 true 또는 false여야 합니다"
             exit 1
           fi
-          if [[ "$SCHEDULED_ONLY" == "true" && "$target_pr" != "none" ]]; then
+          if [[ "$SCHEDULED_ONLY" == "true" && "$target_pr" != "none" ]] ||
+             [[ "$SCHEDULED_ONLY" == "true" && "$EVENT_NAME" == "merge_group" ]]; then
             # API 경계 lane은 default branch의 정기/일반 수동 실행만 허용한다.
+            # merge group 도 target_pr 이 none 이지만 required 인 API 30·34 만 돌리면
+            # 되므로 경계 lane 을 큐에서 함께 뺀다.
             run_lane=false
           elif [[ "$mode" == "full" ]]; then
             run_lane=true

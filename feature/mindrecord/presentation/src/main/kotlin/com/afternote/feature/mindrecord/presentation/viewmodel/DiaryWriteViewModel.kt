@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.domain.repository.UserRepository
@@ -15,6 +16,8 @@ import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
+import com.afternote.feature.mindrecord.presentation.reporting.MindRecordFailureStage
+import com.afternote.feature.mindrecord.presentation.reporting.recordMindRecordFailure
 import com.afternote.feature.mindrecord.presentation.util.toWireContent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,6 +46,7 @@ class DiaryWriteViewModel
         private val photoUploadRepository: PhotoUploadRepository,
         private val userRepository: UserRepository,
         private val draftLoader: MindRecordDraftLoader,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val route = savedStateHandle.toRoute<MindRecordRoute.DiaryWriteRoute>()
 
@@ -123,7 +127,9 @@ class DiaryWriteViewModel
                         val withUrl = if (it.imageUrl == null) it.copy(imageUrl = uploaded.fileUrl) else it
                         withUrl.copy(isUploadingImage = false)
                     }
-                }.onFailure {
+                }.onFailure { e ->
+                    // 첨부가 빠진 채 저장이 이어질 수 있는 자리라 남긴다 (#964).
+                    errorReporter.recordMindRecordFailure(MindRecordFailureStage.MEDIA_UPLOAD, e)
                     // null 로 흡수하면 사용자는 이미지가 붙은 줄 알고 저장한다 (#716).
                     _uiState.update {
                         it.copy(
@@ -177,6 +183,9 @@ class DiaryWriteViewModel
                         // 임시저장이 하나 늘었으니 툴바 숫자도 따라가야 한다 (#769).
                         if (isDraft) loadDraftCount()
                     }.onFailure { e ->
+                        // 방금 쓴 글이 서버에 닿지 못한 자리다 — 재현이 어려워 실기 QA 로
+                        // 잡히지 않으므로 텔레메트리에 남긴다 (#964).
+                        errorReporter.recordMindRecordFailure(MindRecordFailureStage.DIARY_SUBMIT, e)
                         _uiState.update {
                             it.copy(
                                 submitState =
