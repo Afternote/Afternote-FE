@@ -159,6 +159,7 @@ private fun ReceiverVideoSection(
     memorialThumbnailUrl: String? = null,
 ) {
     val context = LocalContext.current
+    val noVideoAppMessage = stringResource(R.string.receiver_memorial_video_no_app)
     Column(modifier = Modifier.fillMaxWidth()) {
         ReceiverSectionHeader()
         Spacer(modifier = Modifier.height(12.dp))
@@ -181,7 +182,7 @@ private fun ReceiverVideoSection(
                                 Toast
                                     .makeText(
                                         context,
-                                        context.getString(R.string.receiver_memorial_video_no_app),
+                                        noVideoAppMessage,
                                         Toast.LENGTH_SHORT,
                                     ).show()
                             }
