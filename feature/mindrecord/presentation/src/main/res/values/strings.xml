@@ -194,6 +194,7 @@
     <string name="mindrecord_error_diary_list_failed">일기를 불러오지 못했습니다.</string>
     <string name="mindrecord_error_diary_submit_failed">일기 등록에 실패했습니다.</string>
     <string name="mindrecord_error_diary_draft_load_failed">임시 저장된 일기를 불러오지 못했습니다.</string>
+    <string name="mindrecord_error_daily_question_draft_load_failed">임시저장한 답변을 불러오지 못했어요. 이대로 저장하면 이전 임시저장이 덮어써집니다.</string>
     <string name="mindrecord_error_daily_question_submit_failed">등록에 실패했습니다.</string>
     <string name="mindrecord_error_daily_question_answer_required">답변을 입력해 주세요.</string>
     <string name="mindrecord_error_daily_question_missing">오늘의 질문을 불러오지 못해 저장할 수 없습니다. 잠시 후 다시 시도해 주세요.</string>
