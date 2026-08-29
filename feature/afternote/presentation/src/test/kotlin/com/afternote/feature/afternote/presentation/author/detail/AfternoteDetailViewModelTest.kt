@@ -2,6 +2,7 @@ package com.afternote.feature.afternote.presentation.author.detail
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
@@ -28,7 +29,12 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.IOException
 
-/** 상세 재진입 갱신([AfternoteDetailViewModel.refreshOnReturn]) 계약 가드 (#701). */
+/**
+ * 상세 재진입 갱신([AfternoteDetailViewModel.refreshOnReturn]) 계약 가드 (#701).
+ *
+ * 상세와 별도로 도착하는 작성자 표시명이 Success 에 실리는 경로도 함께 가드한다 — 두 요청의
+ * 도착 순서에 따라 갈리고, 재진입 갱신이 만드는 새 Success 가 그 값을 떨어뜨리기 쉬운 자리다.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
@@ -147,6 +153,60 @@ class AfternoteDetailViewModelTest {
             assertEquals(1, reporter.reportedErrors.size)
         }
 
+    @Test
+    fun `작성자 표시명이 상세보다 늦게 도착해도 Success 에 실린다`() =
+        runTest {
+            // 상세와 표시명은 출처가 다른 두 요청이라 도착 순서가 뒤집힌다. 이름이 늦는 쪽이 실제 경로 —
+            // 그때 이미 그려진 Success 에 이름이 실려야 제목의 이름 세그먼트가 뒤늦게라도 채워진다.
+            val profileGate = CompletableDeferred<Unit>()
+            val userRepository =
+                afternoteAuthorUserRepository().apply {
+                    onGetMyProfile = {
+                        profileGate.await()
+                        profile
+                    }
+                }
+            val repository =
+                FakeAfternoteRepository.strict().apply {
+                    onGetDetail = { Result.success(detail(serviceName = "Instagram")) }
+                }
+            val viewModel = viewModel(repository, userRepository = userRepository)
+            val states = recordStates(viewModel)
+
+            // 이름이 도착하기 전 — 화면은 이미 상세를 그리고 있고 이름 자리는 비어 있다.
+            assertEquals("", states.last().authorDisplayNameOrNull())
+
+            profileGate.complete(Unit)
+
+            assertEquals(userRepository.profile.name, states.last().authorDisplayNameOrNull())
+        }
+
+    @Test
+    fun `재진입 갱신이 이미 도착한 작성자 표시명을 지우지 않는다`() =
+        runTest {
+            val results =
+                ArrayDeque(
+                    listOf(
+                        Result.success(detail(serviceName = "Instagram")),
+                        Result.success(detail(serviceName = "Threads")),
+                    ),
+                )
+            val repository =
+                FakeAfternoteRepository.strict().apply {
+                    onGetDetail = { results.removeFirst() }
+                }
+            val userRepository = afternoteAuthorUserRepository()
+            val viewModel = viewModel(repository, userRepository = userRepository)
+            val states = recordStates(viewModel)
+
+            viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
+            viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME
+
+            // 갱신이 만든 새 Success 도 이름을 들고 있어야 제목이 «…에 대한 기록» 으로 되돌아가지 않는다.
+            assertEquals("Threads", states.last().serviceNameOrNull())
+            assertEquals(userRepository.profile.name, states.last().authorDisplayNameOrNull())
+        }
+
     private fun TestScope.recordStates(viewModel: AfternoteDetailViewModel): List<AfternoteDetailUiState> {
         val states = mutableListOf<AfternoteDetailUiState>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
@@ -158,11 +218,12 @@ class AfternoteDetailViewModelTest {
     private fun viewModel(
         repository: FakeAfternoteRepository,
         errorReporter: ErrorReporter = NoopAuthorErrorReporter,
+        userRepository: FakeUserRepository = afternoteAuthorUserRepository(),
     ): AfternoteDetailViewModel =
         AfternoteDetailViewModel(
             savedStateHandle = SavedStateHandle(mapOf("itemId" to 73L)),
             afternoteRepository = repository,
-            userRepository = afternoteAuthorUserRepository(),
+            userRepository = userRepository,
             errorReporter = errorReporter,
         )
 }
@@ -171,6 +232,8 @@ private fun AfternoteDetailUiState.serviceNameOrNull(): String? =
     ((this as? AfternoteDetailUiState.Success)?.contentUiModel as? DetailContentUiModel.SocialNetwork)
         ?.content
         ?.serviceName
+
+private fun AfternoteDetailUiState.authorDisplayNameOrNull(): String? = (this as? AfternoteDetailUiState.Success)?.authorDisplayName
 
 private fun detail(serviceName: String): Detail =
     Detail(

@@ -14,9 +14,9 @@ internal fun memorialDetailScreenScreenshot() {
             onBackClick = {},
             content =
                 MemorialDetailContent(
-                    userName = "서영",
                     finalWriteDate = "2025.11.26",
                 ),
+            userName = "서영",
         )
     }
 }

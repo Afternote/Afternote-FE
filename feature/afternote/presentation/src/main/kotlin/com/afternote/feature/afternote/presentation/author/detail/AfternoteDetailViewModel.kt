@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.repository.UserRepository
-import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
@@ -54,12 +53,9 @@ class AfternoteDetailViewModel
         val uiState: StateFlow<AfternoteDetailUiState> = _uiState.asStateFlow()
 
         /**
-         * 조회해 둔 상세 원본. 작성자 표시명이 상세보다 늦게 도착하면 Success 를 다시 매핑해야 하는데,
-         * [AfternoteDetailUiState.Success] 는 변환이 끝난 [DetailContentUiModel] 만 들고 있어 원본이 필요하다.
+         * 작성자 표시명 — 상세와 별도로 조회된다. 도착 전에는 빈 문자열이고, 도착하면 보고 있는 Success 와
+         * 이후 갱신이 만드는 Success 양쪽에 실린다. 상세보다 먼저 도착하는 경로가 있어 Success 밖에도 필요하다.
          */
-        private var loadedDetail: Detail? = null
-
-        /** 작성자 표시명 — 상세와 별도로 조회되므로 빈 문자열로 시작해, 도착하면 Success 에 반영한다. */
         private var authorDisplayName: String = ""
 
         /** 진행 중인 상세 조회 — 첫 진입 이후의 ON_RESUME 이 실행 중인 로드와 겹치면 건너뛰기 위한 가드. */
@@ -130,7 +126,6 @@ class AfternoteDetailViewModel
                     ensureActive()
                     result
                         .onSuccess { detail ->
-                            loadedDetail = detail
                             _uiState.update { current ->
                                 // 진행 중인 삭제와 미소비 삭제 결과는 갱신이 덮지 않는다 — 새 Success 의
                                 // 기본값이 삭제 진행 표시를 풀고 결과 안내를 지운다.
@@ -138,7 +133,8 @@ class AfternoteDetailViewModel
                                 AfternoteDetailUiState.Success(
                                     detailId = detail.id,
                                     isDeleting = previous?.isDeleting ?: false,
-                                    contentUiModel = detail.toDetailContentUiModel(authorDisplayName),
+                                    contentUiModel = detail.toDetailContentUiModel(),
+                                    authorDisplayName = authorDisplayName,
                                     deleteResult = previous?.deleteResult,
                                 )
                             }
@@ -195,14 +191,10 @@ class AfternoteDetailViewModel
 
         // region State shaping
 
-        /**
-         * 늦게 도착한 작성자 표시명을 반영한다. 상세를 이미 받아 둔 뒤면 보고 있는 Success 의
-         * [DetailContentUiModel] 을 새 이름으로 다시 매핑한다.
-         */
+        /** 늦게 도착한 작성자 표시명을 반영한다. 아직 Loading 이면 필드에만 남아 다음 Success 에 실린다. */
         private fun applyAuthorDisplayName(name: String) {
             authorDisplayName = name
-            val detail = loadedDetail ?: return
-            updateSuccess { it.copy(contentUiModel = detail.toDetailContentUiModel(name)) }
+            updateSuccess { it.copy(authorDisplayName = name) }
         }
 
         /** 삭제 진행·결과는 Success 에만 존재하므로, 그 외 상태에서는 갱신하지 않는다. */

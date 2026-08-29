@@ -314,6 +314,7 @@ private fun AfternoteDetailSuccessContent(
             is DetailContentUiModel.Memorial -> {
                 MemorialDetailScreen(
                     content = model.content,
+                    userName = state.authorDisplayName,
                     snackbarHostState = snackbarHostState,
                     onBackClick = onBackClick,
                     onEditClick = {
