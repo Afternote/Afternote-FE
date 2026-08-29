@@ -154,7 +154,8 @@ jobs:
             build/reports/kover/
             **/build/reports/kover/
           if-no-files-found: error
-          retention-days: 14
+          # 표준 보관 기간 7일 — 리포트·디버깅용 artifact 는 이 값 하나로 통일한다 (#1400).
+          retention-days: 7
 
       - name: Summarize changed-module coverage
         if: inputs.pull_request_number > 0 && contains(inputs.gradle_tasks, 'kover')
@@ -185,4 +186,5 @@ jobs:
             **/build/test-results/testDebugUnitTest
             **/build/reports/tests/test
             **/build/test-results/test
+          # 표준 보관 기간 7일 — 리포트·디버깅용 artifact 는 이 값 하나로 통일한다 (#1400).
           retention-days: 7

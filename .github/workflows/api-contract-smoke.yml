@@ -83,6 +83,7 @@ jobs:
         with:
           name: api-wire-contract-reports-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: warn
+          # 표준 보관 기간 7일 — 리포트·디버깅용 artifact 는 이 값 하나로 통일한다 (#1400).
           retention-days: 7
           path: |
             core/network/build/reports/tests/testDebugUnitTest/

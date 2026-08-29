@@ -143,6 +143,8 @@ jobs:
         with:
           name: android-dependency-audit
           path: ${{ env.REPORT_DIR }}
+          # 예외: 주간 감사 증거 — 스케줄 주기가 7일이라 표준 7일이면 다음 실행 시점에 직전 회차가
+          # 만료돼 회차 간 비교가 끊긴다. 한 회차가 겹치도록 14일로 둔다 (#1400).
           retention-days: 14
 
       - name: Fail when current compatibility gate failed

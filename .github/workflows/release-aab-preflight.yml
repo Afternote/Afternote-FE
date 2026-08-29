@@ -125,6 +125,7 @@ jobs:
         with:
           name: release-aab-preflight-report
           if-no-files-found: error
+          # 예외: 릴리스 산출물 — 배포 후 추적 근거로 90일 보관한다 (#1400).
           retention-days: 90
           path: |
             ${{ runner.temp }}/release-aab-report/release-aab-preflight.json
