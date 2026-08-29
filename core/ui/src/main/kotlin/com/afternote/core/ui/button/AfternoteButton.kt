@@ -278,7 +278,7 @@ fun AfternoteActionButton(
             Text(
                 text = text,
                 style =
-                    AfternoteDesign.typography.bodySmallB.copy(fontSize = 13.sp),
+                    AfternoteDesign.typography.bodySmallB.copy(fontSize = 13.sp, lineHeight = 19.5.sp),
                 color = contentColor,
             )
             Spacer(modifier = Modifier.width(9.dp))
