@@ -84,7 +84,7 @@ class AfternoteDetailViewModel
                         // authorDisplayName 이 빈 문자열로 남으면 TitleSection 이 이름 세그먼트를 생략해 렌더한다.
                     }
             }
-            loadDetail(afternoteIdFromNav)
+            loadDetail(afternoteIdFromNav, LoadTrigger.Entry)
         }
 
         // region Data Loading
@@ -106,14 +106,28 @@ class AfternoteDetailViewModel
                 return
             }
             if (loadJob?.isActive == true) return
-            loadDetail(afternoteIdFromNav, showsLoading = false, keepsStateOnFailure = true)
+            loadDetail(afternoteIdFromNav, LoadTrigger.AutoRefresh)
+        }
+
+        /**
+         * 상세 조회를 시작한 계기. 로딩을 방출할지, 실패를 화면으로 말할지가 계기마다 다르고 **함께** 정해진다 —
+         * 호출부가 두 boolean 을 각각 고르면 «스피너는 띄우고 실패는 삼킨다» 같은 뜻 없는 조합이 표현 가능해진다.
+         * 사용자가 직접 누르는 재조회가 생기면 여기에 `UserRequested` 를 더하고 규칙은 [loadDetail] 안에서만 정한다.
+         */
+        private enum class LoadTrigger {
+            /** 화면 진입(init). 보여 줄 것이 없으니 로딩을 띄우고, 실패는 에러 화면으로 말한다. */
+            Entry,
+
+            /** 백스택 복귀(ON_RESUME). 화면이 살아 있으니 조용히 갱신하고, 실패해도 보던 상세를 지킨다. */
+            AutoRefresh,
         }
 
         private fun loadDetail(
             afternoteId: Long,
-            showsLoading: Boolean = true,
-            keepsStateOnFailure: Boolean = false,
+            trigger: LoadTrigger,
         ) {
+            val showsLoading = trigger == LoadTrigger.Entry
+            val keepsStateOnFailure = trigger == LoadTrigger.AutoRefresh
             loadJob =
                 viewModelScope.launch {
                     if (showsLoading) {
@@ -122,17 +136,25 @@ class AfternoteDetailViewModel
                     afternoteRepository
                         .getDetail(id = afternoteId)
                         .onSuccess { detail ->
+                            // 매핑은 update 밖에서 한 번만 한다 — update 의 람다는 경합 시 재실행된다.
+                            val contentUiModel = detail.toDetailContentUiModel()
                             _uiState.update { current ->
-                                // 진행 중인 삭제와 미소비 삭제 결과는 갱신이 덮지 않는다 — 새 Success 의
-                                // 기본값이 삭제 진행 표시를 풀고 결과 안내를 지운다.
-                                val previous = current as? AfternoteDetailUiState.Success
-                                AfternoteDetailUiState.Success(
-                                    detailId = detail.id,
-                                    isDeleting = previous?.isDeleting ?: false,
-                                    contentUiModel = detail.toDetailContentUiModel(),
-                                    authorDisplayName = authorDisplayName,
-                                    deleteResult = previous?.deleteResult,
-                                )
+                                // 갱신은 «상세 부분만» 바꾼다. 진행 중인 삭제(isDeleting)와 미소비 삭제
+                                // 결과(deleteResult)는 이 로드와 무관한 다른 작업의 상태라, 새 Success 로
+                                // 덮으면 그 기본값이 삭제 진행 표시를 풀고 결과 안내를 지운다.
+                                if (current is AfternoteDetailUiState.Success) {
+                                    current.copy(
+                                        detailId = detail.id,
+                                        contentUiModel = contentUiModel,
+                                        authorDisplayName = authorDisplayName,
+                                    )
+                                } else {
+                                    AfternoteDetailUiState.Success(
+                                        detailId = detail.id,
+                                        contentUiModel = contentUiModel,
+                                        authorDisplayName = authorDisplayName,
+                                    )
+                                }
                             }
                         }.onFailure { e ->
                             // 화면을 유지하는 자동 갱신 실패도 기록한다 — 사용자에게 안 보이는 만큼

@@ -207,6 +207,35 @@ class AfternoteDetailViewModelTest {
             assertEquals(userRepository.profile.name, states.last().authorDisplayNameOrNull())
         }
 
+    @Test
+    fun `재진입 갱신이 미소비 삭제 결과를 지우지 않는다`() =
+        runTest {
+            // 삭제 결과는 UI 가 LaunchedEffect 로 한 번 읽고 소비하는 신호다. 그 사이에 도착한 갱신이
+            // 신호를 지우면 삭제에 성공하고도 화면이 닫히지 않는다.
+            val details =
+                ArrayDeque(
+                    listOf(
+                        Result.success(detail(serviceName = "Instagram")),
+                        Result.success(detail(serviceName = "Threads")),
+                    ),
+                )
+            val repository =
+                FakeAfternoteRepository.strict().apply {
+                    onGetDetail = { details.removeFirst() }
+                    onDelete = { Result.success(Unit) }
+                }
+            val viewModel = viewModel(repository)
+            val states = recordStates(viewModel)
+
+            viewModel.deleteAfternote(73L)
+            viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
+            viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME
+
+            val last = states.last() as AfternoteDetailUiState.Success
+            assertEquals("Threads", states.last().serviceNameOrNull())
+            assertEquals(AfternoteDetailDeleteResult.Succeeded(73L), last.deleteResult)
+        }
+
     private fun TestScope.recordStates(viewModel: AfternoteDetailViewModel): List<AfternoteDetailUiState> {
         val states = mutableListOf<AfternoteDetailUiState>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
