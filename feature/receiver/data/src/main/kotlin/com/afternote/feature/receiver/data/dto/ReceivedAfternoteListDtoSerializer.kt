@@ -1,5 +1,6 @@
 package com.afternote.feature.receiver.data.dto
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -24,7 +25,14 @@ import kotlinx.serialization.json.encodeToJsonElement
  * 따라서 다른 필수 필드의 계약 위반은 감추지 않고 목록 전체 디코딩 실패로 남는다.
  */
 object ReceivedAfternoteListDtoSerializer : KSerializer<ReceivedAfternoteListDto> {
-    override val descriptor: SerialDescriptor = ReceivedAfternoteListWireDto.serializer().descriptor
+    // 위임 대상의 descriptor 를 그대로 내보내면 이 타입의 직렬화 이름이 파일 안에 숨긴
+    // ReceivedAfternoteListWireDto 로 잡힌다. 구조는 그대로 위임하되 이름만 공개 DTO 로 돌려 놓는다.
+    @OptIn(ExperimentalSerializationApi::class)
+    override val descriptor: SerialDescriptor =
+        SerialDescriptor(
+            "com.afternote.feature.receiver.data.dto.ReceivedAfternoteListDto",
+            ReceivedAfternoteListWireDto.serializer().descriptor,
+        )
 
     override fun deserialize(decoder: Decoder): ReceivedAfternoteListDto {
         val jsonDecoder =
