@@ -105,6 +105,13 @@ data class UserPushSettingDto(
 )
 
 @Serializable
+data class PasskeyDto(
+    @SerialName("id") val id: Long,
+    @SerialName("displayName") val displayName: String,
+    @SerialName("createdAt") val createdAt: String,
+)
+
+@Serializable
 data class UserConnectedAccountDto(
     @SerialName("local") val local: Boolean,
     @SerialName("google") val google: Boolean,

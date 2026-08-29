@@ -3,6 +3,7 @@ package com.afternote.core.data.repoimpl
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.model.user.Receiver
+import com.afternote.core.network.dto.PasskeyDto
 import com.afternote.core.network.dto.ReceiverDetailDto
 import com.afternote.core.network.dto.ReceiverListDto
 import com.afternote.core.network.dto.SocialAccountLinkRequestDto
@@ -466,6 +467,8 @@ private class FakeUserApiService(
         onCreateReceiver(request)
 
     override suspend fun getReceiverDetail(receiverId: Long): BaseResponse<ReceiverDetailDto> = TODO("이 테스트 미사용")
+
+    override suspend fun getPasskeys(): BaseResponse<List<PasskeyDto>> = TODO("이 테스트 미사용")
 
     override suspend fun updateReceiver(
         receiverId: Long,

@@ -27,6 +27,7 @@ import com.afternote.feature.setting.presentation.screen.ReceiverRegisterScreen
 import com.afternote.feature.setting.presentation.screen.SettingScreen
 import com.afternote.feature.setting.presentation.screen.WithdrawConfirmScreen
 import com.afternote.feature.setting.presentation.screen.WithdrawGuideScreen
+import com.afternote.feature.setting.presentation.viewmodel.PassKeyListViewModel
 import com.afternote.feature.setting.presentation.viewmodel.PassKeyViewModel
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverListViewModel
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
@@ -150,7 +151,16 @@ fun NavGraphBuilder.settingNavGraph(
             val viewModel: PassKeyViewModel = hiltViewModel()
             val isPasskeyRegistered by viewModel.isPasskeyRegistered.collectAsStateWithLifecycle()
             if (isPasskeyRegistered == true) {
-                PassKeyListScreen(onBackClick = actions::onPasskeyBack)
+                val listViewModel: PassKeyListViewModel = hiltViewModel()
+                val uiState by listViewModel.uiState.collectAsStateWithLifecycle()
+                PassKeyListScreen(
+                    passkeys = uiState.passkeys,
+                    isLoading = uiState.isLoading,
+                    errorMessage = uiState.errorMessage,
+                    onBackClick = actions::onPasskeyBack,
+                    onRegisterClick = actions::onNavigateToPasskeyMaking,
+                    onRetryClick = listViewModel::retry,
+                )
             } else if (isPasskeyRegistered == false) {
                 PassKeyScreen(
                     onBackClick = actions::onPasskeyBack,

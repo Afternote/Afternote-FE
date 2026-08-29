@@ -1,5 +1,6 @@
 package com.afternote.core.network.service
 
+import com.afternote.core.network.dto.PasskeyDto
 import com.afternote.core.network.dto.ReceiverDetailDto
 import com.afternote.core.network.dto.ReceiverListDto
 import com.afternote.core.network.dto.SocialAccountLinkRequestDto
@@ -68,6 +69,10 @@ interface UserApiService {
     // 회원 탈퇴
     @DELETE("users/me")
     suspend fun deleteAccount(): BaseResponse<Unit>
+
+    // 등록된 패스키 목록 조회
+    @GET("users/passkeys")
+    suspend fun getPasskeys(): BaseResponse<List<PasskeyDto>>
 
     /**
      * 활동 기록(ping) — 서버에 "이 사용자가 방금 활동했다" 는 **사실만** 알리는 무바디 신호.

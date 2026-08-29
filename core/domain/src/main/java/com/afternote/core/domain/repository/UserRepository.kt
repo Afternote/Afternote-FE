@@ -2,6 +2,7 @@ package com.afternote.core.domain.repository
 
 import com.afternote.core.model.delivery.DeliveryConditionItem
 import com.afternote.core.model.delivery.ReceiverDeliveryConditions
+import com.afternote.core.model.user.Passkey
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.model.user.ReceiverCreated
 import com.afternote.core.model.user.ReceiverDetail
@@ -63,6 +64,9 @@ interface UserRepository {
 
     // 회원 탈퇴
     suspend fun deleteAccount()
+
+    // 등록된 패스키 목록 조회
+    suspend fun getPasskeys(): List<Passkey>
 
     // 활동 기록(ping) — 앱 실행/로그인 확정 시 미사용(INACTIVITY) 전달조건 타이머를 리셋
     suspend fun logActivity()

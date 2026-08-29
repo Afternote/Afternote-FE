@@ -1,11 +1,13 @@
 package com.afternote.core.data.mapper.user
 
+import com.afternote.core.model.user.Passkey
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.model.user.ReceiverCreated
 import com.afternote.core.model.user.ReceiverDetail
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserPushSetting
+import com.afternote.core.network.dto.PasskeyDto
 import com.afternote.core.network.dto.ReceiverDetailDto
 import com.afternote.core.network.dto.ReceiverListDto
 import com.afternote.core.network.dto.UserConnectedAccountDto
@@ -64,6 +66,13 @@ fun UserPatchReceiverDto.toDomain(): Receiver =
         name = name,
         relation = relation,
         authCode = "",
+    )
+
+fun PasskeyDto.toDomain(): Passkey =
+    Passkey(
+        id = id,
+        displayName = displayName,
+        createdAt = createdAt,
     )
 
 fun UserPushSettingDto.toDomain(): UserPushSetting =

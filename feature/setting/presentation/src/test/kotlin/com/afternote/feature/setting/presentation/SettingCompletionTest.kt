@@ -19,6 +19,7 @@ import com.afternote.core.model.user.ReceiverDetail
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserPushSetting
+import com.afternote.core.network.dto.PasskeyDto
 import com.afternote.core.network.dto.ReceiverDetailDto
 import com.afternote.core.network.dto.ReceiverListDto
 import com.afternote.core.network.dto.SocialAccountLinkRequestDto
@@ -809,6 +810,8 @@ private class CompletionGatedWithdrawalUserApi(
     }
 
     override suspend fun getReceivers(): BaseResponse<List<ReceiverListDto>> = completionUnexpected("getReceivers")
+
+    override suspend fun getPasskeys(): BaseResponse<List<PasskeyDto>> = completionUnexpected("getPasskeys")
 
     override suspend fun createReceiver(request: UserCreateReceiverRequestDto): BaseResponse<UserCreateReceiverDto> =
         completionUnexpected("createReceiver")

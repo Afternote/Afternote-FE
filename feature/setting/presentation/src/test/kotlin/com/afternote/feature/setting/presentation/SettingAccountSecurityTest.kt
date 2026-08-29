@@ -18,6 +18,7 @@ import com.afternote.core.model.delivery.DeliveryConditionType
 import com.afternote.core.model.delivery.DeliveryContentType
 import com.afternote.core.model.delivery.InactivityPeriod
 import com.afternote.core.model.delivery.ReceiverDeliveryConditions
+import com.afternote.core.model.user.Passkey
 import com.afternote.core.model.user.ReceiverCreated
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
@@ -279,7 +280,17 @@ class SettingAccountSecurityTest {
                     }
 
                     SecurityContractScreen.PASSKEY_LIST -> {
-                        PassKeyListScreen(onBackClick = {})
+                        PassKeyListScreen(
+                            passkeys =
+                                listOf(
+                                    Passkey(id = 1L, displayName = "테스트 패스키", createdAt = "2026-07-28T10:15:30"),
+                                ),
+                            isLoading = false,
+                            errorMessage = null,
+                            onBackClick = {},
+                            onRegisterClick = {},
+                            onRetryClick = {},
+                        )
                     }
                 }
             }
@@ -303,8 +314,8 @@ class SettingAccountSecurityTest {
         assertEquals(1, registerCalls)
 
         composeRule.onNodeWithText("패스키 목록").assertIsDisplayed()
-        composeRule.onNodeWithText("이름").assertIsDisplayed()
-        composeRule.onNodeWithText("생성일시").assertIsDisplayed()
+        composeRule.onNodeWithText("테스트 패스키").assertIsDisplayed()
+        composeRule.onNodeWithText("2026.07.28 10:15").assertIsDisplayed()
     }
 
     @Test

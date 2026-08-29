@@ -8,6 +8,7 @@ import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.model.delivery.DeliveryConditionItem
 import com.afternote.core.model.delivery.ReceiverDeliveryConditions
+import com.afternote.core.model.user.Passkey
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.model.user.ReceiverCreated
 import com.afternote.core.model.user.ReceiverDetail
@@ -210,6 +211,12 @@ class UserRepositoryImpl
                 )
             }
         }
+
+        override suspend fun getPasskeys(): List<Passkey> =
+            userApiService
+                .getPasskeys()
+                .requireData()
+                .map { it.toDomain() }
 
         override suspend fun logActivity() {
             userApiService

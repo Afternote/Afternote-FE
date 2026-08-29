@@ -3,6 +3,7 @@ package com.afternote.core.domain.testing
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.delivery.DeliveryConditionItem
 import com.afternote.core.model.delivery.ReceiverDeliveryConditions
+import com.afternote.core.model.user.Passkey
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.model.user.ReceiverCreated
 import com.afternote.core.model.user.ReceiverDetail
@@ -26,6 +27,7 @@ class FakeUserRepository(
     receivers: List<Receiver> = listOf(DEFAULT_RECEIVER),
     @Volatile var pushSetting: UserPushSetting = DEFAULT_PUSH_SETTING,
     @Volatile var connectedAccounts: UserConnectedAccount = defaultConnectedAccounts(profile.email),
+    @Volatile var passkeys: List<Passkey> = emptyList(),
     receiverDetails: Map<Long, ReceiverDetail> = emptyMap(),
     deliveryConditions: Map<Long, ReceiverDeliveryConditions> = emptyMap(),
     var onReceiverListFlow: (() -> Flow<List<Receiver>>)? = null,
@@ -37,6 +39,7 @@ class FakeUserRepository(
     var onGetMyProfile: (suspend () -> User)? = null,
     var onUpdateMyProfile: (suspend (String?, String?, String?) -> User)? = null,
     var onDeleteAccount: (suspend () -> Unit)? = null,
+    var onGetPasskeys: (suspend () -> List<Passkey>)? = null,
     var onLogActivity: (suspend () -> Unit)? = null,
     var onGetMyPushSettings: (suspend () -> UserPushSetting)? = null,
     var onUpdateMyPushSettings: (suspend (Boolean?, Boolean?, Boolean?) -> UserPushSetting)? = null,
@@ -59,6 +62,7 @@ class FakeUserRepository(
     private val getReceiversCounter = AtomicInteger()
     private val getProfileCounter = AtomicInteger()
     private val deleteAccountCounter = AtomicInteger()
+    private val getPasskeysCounter = AtomicInteger()
     private val logActivityCounter = AtomicInteger()
     private val getPushSettingsCounter = AtomicInteger()
     private val getConnectedAccountsCounter = AtomicInteger()
@@ -80,6 +84,7 @@ class FakeUserRepository(
     val getProfileCalls: Int get() = getProfileCounter.get()
     val profileCalls: Int get() = getProfileCounter.get()
     val deleteAccountCalls: Int get() = deleteAccountCounter.get()
+    val getPasskeysCalls: Int get() = getPasskeysCounter.get()
     val logActivityCalls: Int get() = logActivityCounter.get()
     val getMyPushSettingsCalls: Int get() = getPushSettingsCounter.get()
     val getConnectedAccountsCalls: Int get() = getConnectedAccountsCounter.get()
@@ -183,6 +188,12 @@ class FakeUserRepository(
     override suspend fun deleteAccount() {
         deleteAccountCounter.incrementAndGet()
         onDeleteAccount?.invoke()
+    }
+
+    override suspend fun getPasskeys(): List<Passkey> {
+        getPasskeysCounter.incrementAndGet()
+        onGetPasskeys?.let { return it() }
+        return passkeys
     }
 
     override suspend fun logActivity() {
@@ -313,6 +324,7 @@ class FakeUserRepository(
                 onGetMyProfile = { unexpectedCall("UserRepository.getMyProfile") },
                 onUpdateMyProfile = { _, _, _ -> unexpectedCall("UserRepository.updateMyProfile") },
                 onDeleteAccount = { unexpectedCall("UserRepository.deleteAccount") },
+                onGetPasskeys = { unexpectedCall("UserRepository.getPasskeys") },
                 onLogActivity = { unexpectedCall("UserRepository.logActivity") },
                 onGetMyPushSettings = { unexpectedCall("UserRepository.getMyPushSettings") },
                 onUpdateMyPushSettings = { _, _, _ -> unexpectedCall("UserRepository.updateMyPushSettings") },
