@@ -35,7 +35,7 @@ import com.afternote.afternote_fe.navigation.rememberHomeTabActions
 import com.afternote.afternote_fe.navigation.rememberReceiverNavActions
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
-import com.afternote.afternote_fe.test.appTestEmptyWeeklyReport
+import com.afternote.afternote_fe.test.emptyWeeklyReport
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.repository.UserProfileRepository
@@ -101,12 +101,24 @@ import com.afternote.feature.home.presentation.R as HomeR
 import com.afternote.feature.onboarding.presentation.R as OnboardingR
 import com.afternote.feature.receiver.presentation.R as ReceiverR
 
+/** 이 테스트의 관심 밖인 외부 라우팅을 채우는 no-op 묶음. */
+private val noopActions =
+    ReceiverHomeActions(
+        onSettingClick = {},
+        onNavigateToMindRecord = {},
+        onNavigateToTimeLetter = {},
+        onNavigateToAfternote = {},
+    )
+
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
 @OptIn(ExperimentalTestApi::class)
 class AppAndReceiverCompletionAndroidTest {
     @Inject
     lateinit var authRepository: AuthRepository
+
+    @Inject
+    lateinit var weeklyReportRepository: WeeklyReportRepository
 
     @Inject
     lateinit var errorReporter: ErrorReporter
@@ -138,11 +150,17 @@ class AppAndReceiverCompletionAndroidTest {
     @Before
     fun inject() {
         hiltRule.inject()
+        // 홈이 진입 시 주간 기록 수를 부른다 (#562). 정본 fake 는 큐가 비면 터뜨리므로,
+        // 주간 수에 관심이 없는 이 테스트도 기대하는 응답을 명시적으로 넣는다 — 조용히 접으면
+        // 요청 횟수가 어긋난 것을 놓친다.
+        (weeklyReportRepository as FakeWeeklyReportRepository).results.addLast(
+            Result.success(emptyWeeklyReport()),
+        )
     }
 
     @Test
     fun invalidCredentials_correctedPasswordThenRetry_entersHomeWithoutReportingUserError() {
-        fakeWeeklyReport.results.addLast(Result.success(appTestEmptyWeeklyReport()))
+        fakeWeeklyReport.results.addLast(Result.success(emptyWeeklyReport()))
         val emailLoginResults = ArrayDeque<Result<Session.DefaultSession>>()
         emailLoginResults.addLast(
             Result.failure(CoreAuthFailure.InvalidLoginCredentials(IllegalStateException("rejected"))),
@@ -297,7 +315,7 @@ class ReceiverRuntimeCompletionAndroidTest {
                 ReceiverHomeScreen(
                     uiState = uiState,
                     onEvent = viewModel::onEvent,
-                    actions = ReceiverHomeActions.Noop,
+                    actions = noopActions,
                 )
             }
         }

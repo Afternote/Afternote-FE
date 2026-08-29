@@ -60,8 +60,18 @@ object TestMindRecordRepositoryModule {
     fun provideMindRecordReceiverRepository(impl: MindRecordReceiverRepositoryImpl): MindRecordReceiverRepository = impl
 
     /**
-     * 홈 진입 계측이 `/mind-record` 실제 API를 호출하지 않도록 strict fake로 격리한다
-     * (#562, #1288). 응답을 쓰는 테스트는 [FakeWeeklyReportRepository.results]에 명시적으로 준비한다.
+     * 주간 리포트도 fake 로 격리한다.
+     *
+     * 실제 구현은 네트워크를 탄다 — 홈이 진입 시 주간 기록 수를 부르고(#562) 주간리포트 탭도
+     * 합성되기만 하면 이 경로를 지나므로, 실제 구현으로 두면 계측이 실서버에 붙는다. CI stub
+     * 응답이 TokenAuthenticator 를 타고 FakeAuthRepository 로 흘러들어 인증 테스트가 깨졌다.
+     *
+     * 정본 fixture 를 쓴다 — 시나리오마다 클래스를 새로 만들면 계약이 바뀔 때 고칠 곳이 갈라진다
+     * (#936 · #1022 · #1030 의 androidTest 컴파일 파손 원인). 요청한 주차가 `requestedDates` 에
+     * 남아 「열지 않은 탭은 부르지 않는다」(#736) 를 횟수로 단언할 수 있다.
+     *
+     * 큐가 비면 **터뜨린다**(정본 fixture 의 기본). 조용히 실패나 빈 리포트를 돌려주면 요청 횟수가
+     * 어긋난 것을 놓친다 — 홈에 닿는 테스트는 자기가 기대하는 응답을 명시적으로 큐에 넣는다.
      */
     @Provides
     @Singleton

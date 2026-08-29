@@ -18,6 +18,7 @@ import androidx.paging.PagingData
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
@@ -33,6 +34,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.atomic.AtomicInteger
+import com.afternote.feature.afternote.presentation.R as AfternoteR
 
 @RunWith(AndroidJUnit4::class)
 class AfternoteAuthorExtendedAndroidTest {
@@ -105,7 +107,7 @@ class AfternoteAuthorExtendedAndroidTest {
         }
         composeRule.onNodeWithText("소셜네트워크").assertIsSelected()
         composeRule
-            .onNodeWithText("해당 카테고리에 등록된 애프터노트가 없어요.")
+            .onNodeWithText(copy(AfternoteR.string.afternote_home_filtered_empty))
             .assertIsDisplayed()
         composeRule.onNodeWithContentDescription("추가").performClick()
 
@@ -113,13 +115,20 @@ class AfternoteAuthorExtendedAndroidTest {
         listFlows[null] = flowOf(PagingData.empty())
         composeRule.onNodeWithText("전체").performClick()
         composeRule
-            .onNodeWithText("아직 등록된 답변이 없어요.\n답변을 등록해 자신을 알아 보아요.")
+            .onNodeWithText(copy(AfternoteR.string.feature_afternote_empty_list_body))
             .assertIsDisplayed()
         assertEquals(
             listOf(null, AfternoteType.SOCIAL_NETWORK, null),
             repository.requestedTypes,
         )
     }
+
+    /** 빈 상태 안내 문구는 리소스가 정본이다 — 문구가 바뀌어도 단언이 따라간다 (#567). */
+    private fun copy(resId: Int): String =
+        InstrumentationRegistry
+            .getInstrumentation()
+            .targetContext
+            .getString(resId)
 }
 
 private class RetryListPagingSource(
