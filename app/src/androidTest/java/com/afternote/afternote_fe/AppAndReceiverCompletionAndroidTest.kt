@@ -37,7 +37,7 @@ import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.CoreAuthFailure
-import com.afternote.core.domain.repository.UserProfileRepository
+import com.afternote.core.domain.repository.UserProfileCacheRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.model.Session
@@ -119,7 +119,7 @@ class AppAndReceiverCompletionAndroidTest {
     lateinit var errorReporter: ErrorReporter
 
     @Inject
-    lateinit var userProfileRepository: UserProfileRepository
+    lateinit var userProfileRepository: UserProfileCacheRepository
 
     private val fakeAuth get() = authRepository as FakeAuthRepository
     private val fakeErrorReporter get() = errorReporter as FakeErrorReporter
