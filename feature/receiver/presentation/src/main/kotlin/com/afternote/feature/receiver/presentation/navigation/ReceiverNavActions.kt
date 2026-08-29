@@ -13,13 +13,6 @@ package com.afternote.feature.receiver.presentation.navigation
 interface ReceiverNavActions {
     fun popBack()
 
-    fun navigateToAfternoteList()
-
-    fun navigateToReceivedAfternoteDetail(afternoteId: Long)
-
-    /** 추억 상세의 "추억 플레이리스트" 카드 → 추억 플레이리스트 화면 진입 (#274). */
-    fun navigateToMemorialPlaylist(afternoteId: Long)
-
     /** 받은 기록함의 FAB → 발신자 등록 화면(이슈 #215, 디자인 15·16) 진입. */
     fun navigateToSenderRegistration()
 
