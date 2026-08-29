@@ -136,6 +136,7 @@ keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-sh
 - 기본·통합 브랜치는 `develop`, Firebase 일반 배포 기준 브랜치는 `main`이다. 일반 변경은 `develop`을 향하고, 릴리스 PR만 `develop`에서 `main`으로 올린다.
 - 작업 브랜치는 변경 성격을 나타내는 lowercase prefix와 `/`를 사용한다. 예: `feat/123`, `fix/123-login`, `docs/readme-refresh`. 언더스코어 사용 규칙은 없다.
 - 서로 의존하는 변경은 부모 작업 브랜치를 base로 둔 스택 PR을 사용할 수 있다. 부모가 머지되면 base를 `develop`로 이관하고 [머지 순서 가드](.github/workflows/merge-order-guard.yml)를 통과시킨다.
+- 스택 PR의 base 갱신은 `PUT /repos/{owner}/{repo}/pulls/{number}/update-branch`로 하지 못한다. 네이티브 스택 멤버는 base가 `develop`인 밑단까지 포함해 이 엔드포인트가 `403 Updating a stacked PR's branch via this endpoint is not supported`로 거절한다. base를 로컬에서 머지하고 평범하게 push하면 통하며, 이 경로는 기존 커밋 SHA를 유지해 리뷰어의 파일 조회 상태와 이미 받은 CI 결과를 살린다. `rebase` 뒤 강제 push는 SHA를 전부 갈아치우므로 둘 다 잃는다.
 - `develop`·`main`의 삭제와 강제 push는 금지된다. 머지 조건의 최종 정본은 GitHub의 [활성 ruleset](https://github.com/Afternote/Afternote-FE/rules)과 PR의 Required 상태다.
 
 ## 커밋

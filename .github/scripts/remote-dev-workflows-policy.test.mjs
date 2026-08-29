@@ -402,17 +402,6 @@ test("screenshot failure comment rechecks the live baseline label before writing
     assert.match(source.slice(liveLabels, listComments), /core\.info\([\s\S]*return;/);
 });
 
-test("stack refresh only executes trusted default-branch code", async () => {
-    const source = await readWorkflow("stack-refresh.yml");
-
-    assert.match(source, /^\s{2}workflow_dispatch:/m);
-    assert.match(source, /github\.ref_name == github\.event\.repository\.default_branch/);
-    assert.match(source, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
-    assert.match(source, /persist-credentials: false/);
-    assert.match(source, /node --test \.github\/scripts\/refresh-pr-stack\.test\.mjs/);
-    assert.match(source, /MAX_DEPTH: \$\{\{ inputs\.max_depth \}\}/);
-});
-
 test("required checks expose manual dispatch for token-authored commits", async () => {
     const validation = await readWorkflow("pr-validation.yml");
     const guard = await readWorkflow("merge-order-guard.yml");
