@@ -21,10 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
@@ -34,7 +32,6 @@ import com.afternote.feature.afternote.presentation.shared.detail.DetailSection
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodsSection
 import com.afternote.feature.afternote.presentation.shared.model.AfternoteServiceDisplay
-import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
 import com.afternote.feature.receiver.presentation.R as ReceiverR
 
 /**
@@ -197,32 +194,4 @@ private fun ReceivedPasswordRow(
             )
         },
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SocialNetworkReceivedDetailScreenPreview() {
-    AfternoteTheme {
-        SocialNetworkReceivedDetailScreen(
-            onBackClick = {},
-            content =
-                ReceivedSocialNetworkDetailContent(
-                    serviceName = "인스타그램",
-                    credentials =
-                        ReceivedAccountCredentialsUiModel(
-                            accountId = "qwerty123",
-                            password = "qwerty123!",
-                        ),
-                    processingMethods = listOf("게시물 내리기", "추모 게시물 올리기", "추모 계정으로 전환하기"),
-                    messageBlocks =
-                        listOf(
-                            MessageBlockUiModel(
-                                title = "가족에게",
-                                body = "이 계정에는 우리 가족 여행 사진이 많아.\n계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
-                            ),
-                        ),
-                    finalWriteDate = "2025.11.26",
-                ),
-        )
-    }
 }

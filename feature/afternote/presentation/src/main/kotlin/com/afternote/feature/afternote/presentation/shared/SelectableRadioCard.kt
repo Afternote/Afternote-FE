@@ -17,11 +17,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.CustomRadioButton
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
  * 선택 가능한 라디오 버튼 카드 컴포넌트
@@ -104,19 +102,5 @@ fun SelectableRadioCard(
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SelectableRadioCardPreview() {
-    AfternoteTheme {
-        // 선택됨 - 제목 + 설명
-        SelectableRadioCard(
-            title = "제목 텍스트",
-            description = "설명 텍스트",
-            selected = true,
-            onClick = {},
-        )
     }
 }

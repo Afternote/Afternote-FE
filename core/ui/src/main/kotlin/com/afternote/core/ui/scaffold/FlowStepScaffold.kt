@@ -10,17 +10,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.modifierextention.addFocusCleaner
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 
 /**
@@ -115,38 +112,6 @@ fun FlowStepScaffold(
                 )
             }
             content()
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun FlowStepScaffoldWithProgressPreview() {
-    AfternoteTheme {
-        FlowStepScaffold(
-            topBarTitle = "회원가입",
-            actionButtonText = "다음",
-            onBackClick = {},
-            onActionClick = {},
-            currentStep = 2,
-            totalSteps = 4,
-        ) {
-            Text(text = "Step content")
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun FlowStepScaffoldNoProgressPreview() {
-    AfternoteTheme {
-        FlowStepScaffold(
-            topBarTitle = "수신자 인증",
-            actionButtonText = "받은 기록함으로 돌아가기",
-            onBackClick = {},
-            onActionClick = {},
-        ) {
-            Text(text = "Complete content")
         }
     }
 }

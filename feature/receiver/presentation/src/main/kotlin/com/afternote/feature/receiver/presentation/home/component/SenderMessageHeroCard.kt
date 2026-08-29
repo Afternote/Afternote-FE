@@ -17,10 +17,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.receiver.presentation.R
 
 /**
@@ -82,23 +80,3 @@ private fun heroGradient(): Brush =
                 Color(0xFFF8E9DA),
             ),
     )
-
-@Preview(showBackground = true)
-@Composable
-private fun SenderMessageHeroCardPreview() {
-    AfternoteTheme {
-        Column(modifier = Modifier.padding(20.dp)) {
-            SenderMessageHeroCard(
-                senderName = "서연",
-                date = "2026.04.04",
-                message = "내가 없어도 너의 시간이 멈추지 않고\n행복하게 흘러갔으면 좋겠어.\n하늘에서 지켜줄게. 너무 슬퍼하지마 ㅎㅎ",
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            SenderMessageHeroCard(
-                senderName = "서연",
-                date = "2026.04.04",
-                message = "한 줄짜리 메시지",
-            )
-        }
-    }
-}
