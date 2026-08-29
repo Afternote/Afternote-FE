@@ -243,6 +243,10 @@ dependencies {
     implementation(projects.core.ui)
     implementation(projects.core.model)
     implementation(projects.core.data)
+    // 알림 권한을 물어본 사실을 기기 수명 저장소에 남긴다 (#1454).
+    // 저장소 창구는 core:datastore 의 LocalStoreRegistry 이고, 스키마(타입드 접근자)는 각 모듈이 갖는다.
+    implementation(projects.core.datastore)
+    implementation(libs.androidx.datastore.preferences)
     implementation(projects.core.domain)
 
     // Feature — presentation
