@@ -1,18 +1,12 @@
-package com.afternote.afternote_fe
+package com.afternote.feature.mindrecord.presentation
 
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.afternote.afternote_fe.test.FailureArtifactRule
-import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.User
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -39,6 +33,7 @@ import com.afternote.feature.mindrecord.domain.testing.FakeWeeklyReportRepositor
 import com.afternote.feature.mindrecord.domain.testing.unexpectedCall
 import com.afternote.feature.mindrecord.presentation.model.DayBackground
 import com.afternote.feature.mindrecord.presentation.model.DayContent
+import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
 import com.afternote.feature.mindrecord.presentation.screen.receiver.ReceiverMindRecordScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DiaryScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DraftListScreen
@@ -60,20 +55,19 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 
-@RunWith(AndroidJUnit4::class)
-class MindRecordLifecycleAndroidTest {
-    @get:Rule(order = 0)
+@RunWith(RobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(sdk = [35], qualifiers = "w360dp-h800dp-xhdpi")
+class MindRecordLifecycleTest {
+    @get:Rule
     val composeRule = createComposeRule()
-
-    @get:Rule(order = 1)
-    val failureArtifactRule =
-        FailureArtifactRule {
-            composeRule.onRoot().captureToImage().asAndroidBitmap()
-        }
 
     @Test
     fun diaryList_excludesDraftChangesMonthAndReloadsAfterDelete() {
@@ -163,7 +157,7 @@ class MindRecordLifecycleAndroidTest {
                 loader = MindRecordDraftLoader(diaryRepository, dailyQuestionRepository),
                 diaryRepository = diaryRepository,
                 dailyQuestionRepository = dailyQuestionRepository,
-                errorReporter = FakeErrorReporter(),
+                errorReporter = RecordingErrorReporter(),
             )
 
         composeRule.setContent {
@@ -303,7 +297,7 @@ class MindRecordLifecycleAndroidTest {
                         ),
                     ),
             )
-        val viewModel = ReceiverMindRecordViewModel(repository, FakeErrorReporter())
+        val viewModel = ReceiverMindRecordViewModel(repository, RecordingErrorReporter())
 
         composeRule.setContent {
             AfternoteTheme {
@@ -339,6 +333,10 @@ class MindRecordLifecycleAndroidTest {
             .onNode(hasText("2026-08-10 - 2026-08-31") and hasClickAction())
             .performClick()
         composeRule.onNodeWithText("초기화").performClick()
+        composeRule.waitUntil(timeoutMillis = TIMEOUT) {
+            (viewModel.uiState.value as? ReceiverMindRecordUiState.Success)?.filter?.isApplied == false
+        }
+        composeRule.waitForIdle()
         composeRule.onNodeWithText("2026-08-10 - 2026-08-31").assertDoesNotExist()
         composeRule.onNodeWithText("범위 밖 일기").assertIsDisplayed()
         composeRule.onNodeWithText("데일리 질문").performClick()
