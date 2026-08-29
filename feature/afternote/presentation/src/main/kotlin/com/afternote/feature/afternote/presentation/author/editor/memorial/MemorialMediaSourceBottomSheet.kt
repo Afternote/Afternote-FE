@@ -22,11 +22,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.modifierextention.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.isLocalContentUri
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
@@ -171,46 +169,6 @@ private fun MemorialMediaSourceOption(
             text = label,
             style = AfternoteDesign.typography.bodyBase,
             color = labelColor,
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun MemorialMediaSourceBottomSheetPhotoPreview() {
-    AfternoteTheme {
-        MemorialMediaSourceBottomSheet(
-            target = MemorialMediaTarget.PHOTO,
-            onPickFromGallery = {},
-            onCapture = {},
-            onRemove = null,
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun MemorialMediaSourceBottomSheetVideoPreview() {
-    AfternoteTheme {
-        MemorialMediaSourceBottomSheet(
-            target = MemorialMediaTarget.VIDEO,
-            onPickFromGallery = {},
-            onCapture = {},
-            onRemove = null,
-        )
-    }
-}
-
-// 첨부가 있는 슬롯 — 삭제 항목이 함께 뜬다 (#1114).
-@Preview(showBackground = true)
-@Composable
-private fun MemorialMediaSourceBottomSheetRemovablePreview() {
-    AfternoteTheme {
-        MemorialMediaSourceBottomSheet(
-            target = MemorialMediaTarget.VIDEO,
-            onPickFromGallery = {},
-            onCapture = {},
-            onRemove = {},
         )
     }
 }
