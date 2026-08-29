@@ -82,6 +82,22 @@ test("the warming workflow covers the tasks pull request jobs actually run", asy
     }
 });
 
+test("the warming workflow excludes the expected-failure gates instead of reporting them", async () => {
+    // 워밍은 게이트가 아니라 실패해도 아무것도 막지 못한다. 그래서 red 가 남아 있으면
+    // develop 을 실제로 깨뜨린 회귀가 같은 빨간 X 에 묻힌다. 의도된 실패
+    // (.github/ci-expected-failures.json)는 unit-test.yml 과 같은 init script 로 제외한다.
+    const warm = await readFile(new URL("build-cache-warm.yml", workflowDirectory), "utf8");
+    const unitTest = await readFile(new URL("unit-test.yml", workflowDirectory), "utf8");
+    const initScript = "--init-script .github/ci-expected-failures.init.gradle";
+
+    assert.ok(unitTest.includes(initScript), "unit-test.yml no longer excludes the gates this way");
+    assert.ok(withoutComments(warm).includes(initScript), "warming must exclude the expected-failure gates");
+
+    // 게이트 해제를 강제하는 XPASS probe 는 unit-test.yml 몫이다. 실패가 머지를 막지 못하는
+    // 이 워크플로에 얹으면 감시가 아니라 무시되는 red 가 하나 더 생긴다.
+    assert.doesNotMatch(withoutComments(warm), /probe-unit/);
+});
+
 test("CodeQL stays out of the build cache in both directions", async () => {
     const source = await readFile(new URL("codeql.yml", workflowDirectory), "utf8");
 
