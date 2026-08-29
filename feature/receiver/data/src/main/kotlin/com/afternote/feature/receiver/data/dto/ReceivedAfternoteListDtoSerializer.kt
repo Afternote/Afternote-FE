@@ -52,12 +52,9 @@ object ReceivedAfternoteListDtoSerializer : KSerializer<ReceivedAfternoteListDto
         val afternotes =
             wire.afternotes.mapNotNull { rawAfternote ->
                 if (rawAfternote !is JsonObject) {
-                    // 객체가 아닌 원소(숫자·문자열·null·배열)는 이 디코딩에서 반드시 예외로 끝난다.
-                    // 직접 throw 하지 않는 것은 라이브러리 표준 메시지와 경로 정보를 그대로 쓰기 위해서다.
-                    // 따라서 아래 return 은 실행되지 않는다. 그럼에도 지워서는 안 되는데, 이 블록이 반드시
-                    // 빠져나가야 아래에서 rawAfternote 가 JsonObject 로 스마트 캐스트되기 때문이다.
-                    json.decodeFromJsonElement(ReceivedAfternoteDto.serializer(), rawAfternote)
-                    return@mapNotNull null
+                    throw SerializationException(
+                        "afternotes element must be a JSON object, but was ${rawAfternote::class.simpleName}",
+                    )
                 }
                 val rawCategory = rawAfternote["category"] as? JsonPrimitive
                 if (rawCategory?.isString != true) {
