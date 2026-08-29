@@ -18,7 +18,7 @@
 | #619 | #1169 | 계정 정보 부재의 **표현·문구** («남기지 않음») | `receiver_detail_account_absent`·`receiver_detail_account_value_absent` |
 | #739 | #1216 | 인증번호 발송 중 버튼 **문구** («전송 중…») | `receiver_verify_code_requesting` |
 | #554 | 64cf93888 | 수신인 검색 placeholder **문구** («이름으로 검색하기») | `setting_receiver_search_placeholder`·`timeletter_recipient_search_placeholder` |
-| #1067 | #TBD | 본문 링크의 **스킴 없는 입력 처리**(https 로 읽음)와 **거절 안내 문구** | `toBodyLinkHrefOrNull` 의 `DEFAULT_SCHEME` · `mindrecord_link_sheet_invalid` |
+| #1067 | #1449 | 본문 링크의 **스킴 없는 입력 처리**(https 로 읽음)와 **거절 안내 문구** | `toBodyLinkHrefOrNull` 의 `DEFAULT_SCHEME` · `mindrecord_link_sheet_invalid` |
 | #648 | #1346 | 복수 선택 행의 **선택 컨트롤 비주얼** (라디오 시안 → core 원형 체크박스) | `PlaylistSongItem.SongSelectionCheckbox` |
 | #490 | #1350 | 서비스 검색 **일치 규칙**과 카탈로그 밖 **기존 custom 값 처리** | `filterEditorServiceOptions` · `EditorFormState.currentServiceOptions` |
 
