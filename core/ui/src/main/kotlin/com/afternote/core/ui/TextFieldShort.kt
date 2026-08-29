@@ -282,12 +282,12 @@ private fun Variant8Suffix(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // 1. 고정된 하이픈 — 폰트 여백 없이 정확히 14x2 크기로 고정
+        // 1. 고정된 하이픈 — 폰트 여백 없이 정확히 14x1.75 크기로 고정 (시안 Vector 58 strokeWeight)
         Box(
             modifier =
                 Modifier
                     .width(14.dp)
-                    .height(1.dp)
+                    .height(1.75.dp)
                     .background(
                         color = AfternoteDesign.colors.gray9,
                     ),
