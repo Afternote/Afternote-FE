@@ -1,6 +1,5 @@
 package com.afternote.feature.receiver.presentation.home
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,17 +11,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AfternoteButton
@@ -51,6 +51,7 @@ fun ReceiverHomeScreen(
     actions: ReceiverHomeActions,
     modifier: Modifier = Modifier,
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
     Scaffold(
         modifier = modifier,
         containerColor = Color.Transparent,
@@ -60,6 +61,7 @@ fun ReceiverHomeScreen(
                 onSettingClick = actions.onSettingClick,
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         when (uiState) {
             ReceiverHomeUiState.Loading -> { }
@@ -80,6 +82,7 @@ fun ReceiverHomeScreen(
                 )
                 DownloadDialogHost(
                     state = uiState.download,
+                    snackbarHostState = snackbarHostState,
                     onEvent = onEvent,
                 )
             }
@@ -141,13 +144,20 @@ private fun SuccessContent(
     }
 }
 
+/**
+ * 내려받기 확인 팝업 + 결과 처리.
+ *
+ * 실패 안내는 잠정 Snackbar 다 — 서버 작업 실패의 정본은 #446 공통 에러 팝업이라 컴포넌트가
+ * 나오면 그쪽으로 재정렬된다 (#1391, #713 전례). `showSnackbar` 는 표출이 끝날 때까지 suspend
+ * 하므로 소비 이벤트는 표출 뒤에 보낸다 — 표출 중에는 [state] 가 Failed 로 유지돼 effect 가
+ * 재시작되지 않고, 소비로 Idle 이 되면 이미 완료된 effect 만 정리된다 (#664 AddSongScreen 컨벤션).
+ */
 @Composable
 private fun DownloadDialogHost(
     state: ReceiverDownloadState,
+    snackbarHostState: SnackbarHostState,
     onEvent: (ReceiverHomeEvent) -> Unit,
 ) {
-    val context = LocalContext.current
-    val resources = LocalResources.current
     val currentOnEvent by rememberUpdatedState(onEvent)
 
     val showDialog =
@@ -162,19 +172,22 @@ private fun DownloadDialogHost(
         )
     }
 
-    LaunchedEffect(state) {
-        when (state) {
-            is ReceiverDownloadState.Failed -> {
-                Toast.makeText(context, resources.getString(state.messageRes), Toast.LENGTH_SHORT).show()
+    when (state) {
+        is ReceiverDownloadState.Failed -> {
+            val message = stringResource(state.messageRes)
+            LaunchedEffect(state) {
+                snackbarHostState.showSnackbar(message = message, withDismissAction = true)
                 currentOnEvent(ReceiverHomeEvent.ConsumeDownloadResult)
             }
-
-            ReceiverDownloadState.Done -> {
-                currentOnEvent(ReceiverHomeEvent.ConsumeDownloadResult)
-            }
-
-            else -> { }
         }
+
+        ReceiverDownloadState.Done -> {
+            LaunchedEffect(state) {
+                currentOnEvent(ReceiverHomeEvent.ConsumeDownloadResult)
+            }
+        }
+
+        else -> { }
     }
 }
 
