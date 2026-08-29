@@ -2,6 +2,7 @@ package com.afternote.feature.afternote.presentation.author.detail
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.domain.testing.FakeUserProfileRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
@@ -9,6 +10,7 @@ import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.presentation.author.NoopAuthorErrorReporter
+import com.afternote.feature.afternote.presentation.author.afternoteAuthorUserProfileRepository
 import com.afternote.feature.afternote.presentation.author.afternoteAuthorUserRepository
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -207,6 +209,83 @@ class AfternoteDetailViewModelTest {
             assertEquals(userRepository.profile.name, states.last().authorDisplayNameOrNull())
         }
 
+    @Test
+    fun `캐시된 이름은 원격 응답을 기다리지 않고 제목에 실린다`() =
+        runTest {
+            // 원격만 쓰면 왕복이 끝나야 이름 세그먼트가 채워져, 진입마다 제목이 눈앞에서 다시 쓰인다.
+            val profileGate = CompletableDeferred<Unit>()
+            val userRepository =
+                afternoteAuthorUserRepository().apply {
+                    onGetMyProfile = {
+                        profileGate.await()
+                        profile.copy(name = "서버 이름")
+                    }
+                }
+            val userProfileRepository = afternoteAuthorUserProfileRepository(cachedUserName = "캐시 이름")
+            val viewModel =
+                viewModel(
+                    FakeAfternoteRepository.strict().apply {
+                        onGetDetail = { Result.success(detail(serviceName = "Instagram")) }
+                    },
+                    userRepository = userRepository,
+                    userProfileRepository = userProfileRepository,
+                )
+            val states = recordStates(viewModel)
+
+            // 원격이 아직 오지 않은 시점에 이미 이름이 실려 있다.
+            assertEquals("캐시 이름", states.last().authorDisplayNameOrNull())
+
+            profileGate.complete(Unit)
+
+            // 원격 값이 정본이라 캐시를 덮고, 다음 진입을 위해 캐시도 최신화한다.
+            assertEquals("서버 이름", states.last().authorDisplayNameOrNull())
+            assertEquals(listOf("서버 이름"), userProfileRepository.savedUserNames.toList())
+        }
+
+    @Test
+    fun `캐시 조회가 실패해도 원격 이름으로 채운다`() =
+        runTest {
+            val userProfileRepository =
+                afternoteAuthorUserProfileRepository().apply {
+                    onGetCachedUserName = { throw IOException("DataStore 읽기 실패") }
+                }
+            val userRepository = afternoteAuthorUserRepository()
+            val viewModel =
+                viewModel(
+                    FakeAfternoteRepository.strict().apply {
+                        onGetDetail = { Result.success(detail(serviceName = "Instagram")) }
+                    },
+                    userRepository = userRepository,
+                    userProfileRepository = userProfileRepository,
+                )
+            val states = recordStates(viewModel)
+
+            assertEquals(userRepository.profile.name, states.last().authorDisplayNameOrNull())
+        }
+
+    @Test
+    fun `캐시 저장이 실패해도 화면은 이름을 유지한다`() =
+        runTest {
+            // 저장은 «다음 진입» 을 위한 것이라, 실패해도 지금 보고 있는 화면을 흔들면 안 된다.
+            val userProfileRepository =
+                afternoteAuthorUserProfileRepository().apply {
+                    onSaveUserName = { throw IOException("DataStore 쓰기 실패") }
+                }
+            val userRepository = afternoteAuthorUserRepository()
+            val viewModel =
+                viewModel(
+                    FakeAfternoteRepository.strict().apply {
+                        onGetDetail = { Result.success(detail(serviceName = "Instagram")) }
+                    },
+                    userRepository = userRepository,
+                    userProfileRepository = userProfileRepository,
+                )
+            val states = recordStates(viewModel)
+
+            assertEquals(userRepository.profile.name, states.last().authorDisplayNameOrNull())
+            assertTrue(states.last() is AfternoteDetailUiState.Success)
+        }
+
     private fun TestScope.recordStates(viewModel: AfternoteDetailViewModel): List<AfternoteDetailUiState> {
         val states = mutableListOf<AfternoteDetailUiState>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
@@ -219,11 +298,13 @@ class AfternoteDetailViewModelTest {
         repository: FakeAfternoteRepository,
         errorReporter: ErrorReporter = NoopAuthorErrorReporter,
         userRepository: FakeUserRepository = afternoteAuthorUserRepository(),
+        userProfileRepository: FakeUserProfileRepository = afternoteAuthorUserProfileRepository(),
     ): AfternoteDetailViewModel =
         AfternoteDetailViewModel(
             savedStateHandle = SavedStateHandle(mapOf("itemId" to 73L)),
             afternoteRepository = repository,
             userRepository = userRepository,
+            userProfileRepository = userProfileRepository,
             errorReporter = errorReporter,
         )
 }

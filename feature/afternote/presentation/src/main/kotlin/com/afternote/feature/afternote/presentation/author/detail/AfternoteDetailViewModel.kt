@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.common.result.runCatchingCancellable
+import com.afternote.core.domain.repository.UserProfileRepository
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.presentation.R
@@ -26,7 +28,8 @@ import javax.inject.Inject
  *
  * - 상세 조회: GET /api/afternotes/{id}
  * - 삭제: DELETE /api/afternotes/{id}
- * - 작성자 표시명: [UserRepository.getMyProfile] (네비게이션 인자로 전달하지 않음)
+ * - 작성자 표시명: [UserProfileRepository.getCachedUserName] 으로 즉시 채우고
+ *   [UserRepository.getMyProfile] 로 재검증한다 (네비게이션 인자로 전달하지 않음)
  * - 상세 ID: [SavedStateHandle.toRoute]로 복원한 타입 안전 [AfternoteRoute.DetailRoute]에서 조회.
  *
  * [AfternoteDetailUiState] 를 그대로 들고 [uiState] 로 노출한다 — Loading/Success/Error 3분기.
@@ -44,6 +47,7 @@ class AfternoteDetailViewModel
         savedStateHandle: SavedStateHandle,
         private val afternoteRepository: AfternoteRepository,
         private val userRepository: UserRepository,
+        private val userProfileRepository: UserProfileRepository,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val afternoteIdFromNav: Long =
@@ -72,16 +76,31 @@ class AfternoteDetailViewModel
         private var isFirstResume = true
 
         init {
-            viewModelScope.launch {
-                runCatching { userRepository.getMyProfile() }
-                    .onSuccess { profile ->
-                        applyAuthorDisplayName(profile.name)
-                    }.onFailure {
-                        // 의도된 폴백: 표시명은 장식 정보라 실패해도 화면을 차단하지 않는다.
-                        // authorDisplayName 이 빈 문자열로 남으면 TitleSection 이 이름 세그먼트를 생략해 렌더한다.
-                    }
-            }
+            viewModelScope.launch { loadAuthorDisplayName() }
             loadDetail(afternoteIdFromNav)
+        }
+
+        /**
+         * 작성자 표시명을 «캐시 먼저, 원격으로 재검증» 순으로 채운다 (#1497).
+         *
+         * 원격만 쓰면 왕복이 끝나기 전까지 제목이 «추억 노트에 대한 기록» 으로 그려졌다가
+         * «…OO님의 기록» 으로 눈앞에서 다시 쓰인다. 홈이 콜드스타트 placeholder 로 쓰는 캐시가
+         * 같은 값이라 그대로 읽는다 (#135 · #136).
+         *
+         * 캐시·저장 실패는 표시에 영향이 없어 삼킨다 — 다음 진입의 placeholder 가 한 번 더 비는 것뿐이다.
+         * 원격까지 실패하고 캐시도 없으면 빈 문자열로 남아 TitleSection 이 이름 세그먼트를 생략해 렌더한다.
+         */
+        private suspend fun loadAuthorDisplayName() {
+            runCatchingCancellable { userProfileRepository.getCachedUserName() }
+                .getOrNull()
+                ?.takeIf { it.isNotBlank() }
+                ?.let(::applyAuthorDisplayName)
+
+            runCatchingCancellable { userRepository.getMyProfile() }
+                .onSuccess { profile ->
+                    applyAuthorDisplayName(profile.name)
+                    runCatchingCancellable { userProfileRepository.saveUserName(profile.name) }
+                }
         }
 
         // region Data Loading
