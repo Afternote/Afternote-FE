@@ -11,8 +11,18 @@ const workflowUrl = new URL("../workflows/repository-quality.yml", import.meta.u
 const callerWorkflowUrl = new URL("../workflows/pr-validation.yml", import.meta.url);
 const templateUrl = new URL("../PULL_REQUEST_TEMPLATE.md", import.meta.url);
 
-function pullRequest({ title = "change", body = "", number = 7 } = {}) {
-    return { number, title, body };
+function pullRequest({
+    title = "change",
+    body = "",
+    number = 7,
+    user = { login: "author", type: "User" },
+    labels = [],
+} = {}) {
+    return { number, title, body, user, labels };
+}
+
+function assignedIssue(number, overrides = {}) {
+    return { number, state: "open", assignees: [{ login: "author" }], ...overrides };
 }
 
 function issueLoader(items) {
@@ -64,13 +74,13 @@ test("accepts a same-repository open Issue", async () => {
     const result = await validatePullRequestIssueLink({
         pullRequest: pullRequest({ title: "change (#1228)", body: "Refs #1228" }),
         repository: "Afternote/Afternote-FE",
-        loadIssue: issueLoader(new Map([[1228, { number: 1228, state: "open" }]])),
+        loadIssue: issueLoader(new Map([[1228, assignedIssue(1228)]])),
     });
     assert.deepEqual(result, { issues: [1228], rejected: [] });
 });
 
 test("allows multiple pull requests to share one Issue regardless of closing behavior or state", async () => {
-    const loadIssue = issueLoader(new Map([[601, { number: 601, state: "closed" }]]));
+    const loadIssue = issueLoader(new Map([[601, assignedIssue(601, { state: "closed" })]]));
     const results = await Promise.all([
         validatePullRequestIssueLink({
             pullRequest: pullRequest({ number: 7, title: "first change (#601)", body: "Part of #601" }),
@@ -111,13 +121,150 @@ test("accepts a closed Issue while warning about a missing reference", async () 
     const result = await validatePullRequestIssueLink({
         pullRequest: pullRequest({ title: "change (#2)", body: "Closes #1 and fixes #2" }),
         repository: "Afternote/Afternote-FE",
-        loadIssue: issueLoader(new Map([[2, { number: 2, state: "closed" }]])),
+        loadIssue: issueLoader(new Map([[2, assignedIssue(2, { state: "closed" })]])),
     });
 
     assert.deepEqual(result, {
         issues: [2],
         rejected: ["#1: 조회 실패 (not found)"],
     });
+});
+
+test("rejects an author who is not an assignee of the representative Issue", async () => {
+    await assert.rejects(
+        validatePullRequestIssueLink({
+            pullRequest: pullRequest({ title: "change (#1228)", body: "Refs #1228" }),
+            repository: "Afternote/Afternote-FE",
+            loadIssue: issueLoader(new Map([
+                [1228, assignedIssue(1228, { assignees: [{ login: "someone-else" }] })],
+            ])),
+        }),
+        /작성자 @author는 대표 Issue #1228의 담당자\(@someone-else\)가 아닙니다/,
+    );
+});
+
+test("rejects an unassigned representative Issue", async () => {
+    await assert.rejects(
+        validatePullRequestIssueLink({
+            pullRequest: pullRequest({ title: "change (#1228)", body: "Refs #1228" }),
+            repository: "Afternote/Afternote-FE",
+            loadIssue: issueLoader(new Map([
+                [1228, assignedIssue(1228, { assignees: [] })],
+            ])),
+        }),
+        /대표 Issue #1228에 담당자가 없습니다.*@author를 어사인/,
+    );
+});
+
+test("matches the assignee login case-insensitively among multiple assignees", async () => {
+    const result = await validatePullRequestIssueLink({
+        pullRequest: pullRequest({
+            title: "change (#1228)",
+            body: "Refs #1228",
+            user: { login: "Author", type: "User" },
+        }),
+        repository: "Afternote/Afternote-FE",
+        loadIssue: issueLoader(new Map([
+            [1228, assignedIssue(1228, { assignees: [{ login: "someone-else" }, "author"] })],
+        ])),
+    });
+    assert.deepEqual(result, { issues: [1228], rejected: [] });
+});
+
+test("checks the assignee only on the representative Issue, not other references", async () => {
+    const result = await validatePullRequestIssueLink({
+        pullRequest: pullRequest({ title: "change (#1228)", body: "Refs #1228\nRefs #1229" }),
+        repository: "Afternote/Afternote-FE",
+        loadIssue: issueLoader(new Map([
+            [1228, assignedIssue(1228)],
+            [1229, assignedIssue(1229, { assignees: [{ login: "someone-else" }] })],
+        ])),
+    });
+    assert.deepEqual(result, { issues: [1228, 1229], rejected: [] });
+});
+
+test("exempts bot authors from the assignee check but keeps the Issue link requirement", async () => {
+    const loadIssue = issueLoader(new Map([[12, assignedIssue(12, { assignees: [] })]]));
+    const result = await validatePullRequestIssueLink({
+        pullRequest: pullRequest({
+            title: "chore(deps): bump upload-artifact (#12)",
+            body: "Refs #12",
+            user: { login: "dependabot[bot]", type: "Bot" },
+        }),
+        repository: "Afternote/Afternote-FE",
+        loadIssue,
+    });
+    assert.deepEqual(result, { issues: [12], rejected: [] });
+
+    await assert.rejects(
+        validatePullRequestIssueLink({
+            pullRequest: pullRequest({
+                title: "chore(deps): bump upload-artifact",
+                body: "",
+                user: { login: "dependabot[bot]", type: "Bot" },
+            }),
+            repository: "Afternote/Afternote-FE",
+            loadIssue,
+        }),
+        /제목은 대표 Issue 번호 하나로 끝나야 합니다/,
+    );
+});
+
+test("the issue-assignee-exempt label skips the assignee check but keeps the Issue link requirement", async () => {
+    const labels = [{ name: "issue-assignee-exempt" }];
+    const loadIssue = issueLoader(new Map([
+        [1228, assignedIssue(1228, { assignees: [{ login: "someone-else" }] })],
+    ]));
+    const result = await validatePullRequestIssueLink({
+        pullRequest: pullRequest({ title: "change (#1228)", body: "Refs #1228", labels }),
+        repository: "Afternote/Afternote-FE",
+        loadIssue,
+    });
+    assert.deepEqual(result, { issues: [1228], rejected: [] });
+
+    const unassigned = await validatePullRequestIssueLink({
+        pullRequest: pullRequest({ title: "change (#12)", body: "Refs #12", labels }),
+        repository: "Afternote/Afternote-FE",
+        loadIssue: issueLoader(new Map([[12, assignedIssue(12, { assignees: [] })]])),
+    });
+    assert.deepEqual(unassigned, { issues: [12], rejected: [] });
+
+    await assert.rejects(
+        validatePullRequestIssueLink({
+            pullRequest: pullRequest({ title: "change", body: "", labels }),
+            repository: "Afternote/Afternote-FE",
+            loadIssue,
+        }),
+        /제목은 대표 Issue 번호 하나로 끝나야 합니다/,
+    );
+});
+
+test("unrelated labels keep the assignee rejection and point at the exempt label", async () => {
+    await assert.rejects(
+        validatePullRequestIssueLink({
+            pullRequest: pullRequest({
+                title: "change (#1228)",
+                body: "Refs #1228",
+                labels: [{ name: "review-debt-exempt" }, "bug"],
+            }),
+            repository: "Afternote/Afternote-FE",
+            loadIssue: issueLoader(new Map([
+                [1228, assignedIssue(1228, { assignees: [{ login: "someone-else" }] })],
+            ])),
+        }),
+        /담당자\(@someone-else\)가 아닙니다.*`issue-assignee-exempt` 라벨/,
+    );
+});
+
+test("requires the pull request author login", async () => {
+    await assert.rejects(
+        validatePullRequestIssueLink({
+            pullRequest: pullRequest({ title: "change (#1228)", body: "Refs #1228", user: null }),
+            repository: "Afternote/Afternote-FE",
+            loadIssue: issueLoader(new Map([[1228, assignedIssue(1228)]])),
+        }),
+        /pull_request\.user\.login 값이 없습니다/,
+    );
 });
 
 test("rejects a missing Issue", async () => {
@@ -216,6 +363,7 @@ test("the PR template tells authors to reuse an Issue across pull requests", asy
     assert.match(template, /관련된 기존 Issue를 재사용/);
     assert.match(template, /PR 제목 끝에 대표 Issue 하나를 `\(#N\)` 형식/);
     assert.match(template, /여러 PR이 같은 Issue를 공유/);
+    assert.match(template, /대표 Issue에는 PR 작성자가 담당자로 지정/);
     assert.match(template, /최종 완료하는 PR에서만 Closes\/Fixes\/Resolves/);
     assert.match(template, /^- Refs #$/m);
     assert.doesNotMatch(template, /^- Closes #$/m);

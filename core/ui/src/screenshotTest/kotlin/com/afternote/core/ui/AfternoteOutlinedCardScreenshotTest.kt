@@ -10,7 +10,7 @@ import com.android.tools.screenshot.PreviewTest
 /**
  * [AfternoteOutlinedCard] 의 시각 회귀 baseline.
  *
- * main 의 `@Preview` 함수는 AS 미리보기 용도로 유지. 본 함수는 *baseline PNG 생성용*.
+ * 이 함수가 해당 컴포저블의 유일한 `@Preview` 다 — main 의 중복 프리뷰는 삭제됐다 (#1434).
  * 의도된 시각 변경 시 `./gradlew :core:ui:updateScreenshotTest` 로 baseline 갱신.
  */
 @PreviewTest
