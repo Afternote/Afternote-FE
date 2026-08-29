@@ -56,7 +56,7 @@ class DiaryWriteImageKeyTest {
     }
 
     @Test
-    fun `업로드가 남기는 것은 미리보기 URL 하나뿐이다`() {
+    fun `업로드는 미리보기 URL 을 돌려주고 진행 플래그를 내린다`() {
         // 종전에는 «첫 업로드» 를 화면 상태의 imageUrl 로도 집었다. 조건이 순서뿐이라 첨부가
         // 미디어 전체로 넓어진 뒤에는 음성을 먼저 붙이면 그 자리에 `.m4a` 가 실렸다 (#1195).
         val viewModel = viewModel()
@@ -83,8 +83,11 @@ class DiaryWriteImageKeyTest {
 
     @Test
     fun `제출 payload 는 서버 계약 필드만 담는다`() {
-        // DiaryCreateRequest = [title, content, isDraft, todayMood, receiverIds]. 대표 이미지가
+        // 서버 `DiaryCreateRequest` 에 `imageUrl` 이 없다 — 그게 이 PR 의 근거다. 대표 이미지가
         // payload 로 새어 나가면 여기서 갈린다 (#1195).
+        //
+        // (필드 목록을 여기 나열하지 않는다. 초안에 `date` 를 빠뜨렸는데 서버가 그 사이 추가한
+        //  것이었다 — 목록은 이 테스트가 지키는 것도 아니면서 낡을 뿐이다.)
         var sent: DiaryCreatePayload? = null
         val viewModel = viewModel(onCreate = { sent = it })
 
@@ -99,6 +102,9 @@ class DiaryWriteImageKeyTest {
         assertEquals("<p>본문</p>", payload.content)
         assertEquals(TodayMood.HAPPY, payload.todayMood)
         assertEquals(emptyList<Long>(), payload.receiverIds)
+        // 값 확인만으로는 **초과 필드**를 못 본다 — 누군가 payload 에 `imageUrl` 을 더하면 위 네
+        // 단언은 그대로 통과한다. 형태로 막는다 (#1195 리뷰). 옆 테스트와 같은 방식이다.
+        assertEquals(false, payload.toString().contains("imageUrl="))
     }
 
     @Test
