@@ -1,11 +1,9 @@
 package com.afternote.core.ui.popup
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -17,11 +15,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.modifierextention.dropShadow
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 
 private val PopupCardShape = RoundedCornerShape(16.dp)
 
@@ -89,35 +85,5 @@ fun AfternotePopupCardLayout(
         Spacer(modifier = Modifier.height(20.dp))
 
         actions()
-    }
-}
-
-/** 개발용: 단일/이중 버튼 카드 스타일을 한 화면에서 확인 (피그마 시안 대응). */
-@Preview(showBackground = true, name = "Popup cards — single & double")
-@Composable
-private fun AfternotePopupCardLayoutsPreview() {
-    AfternoteTheme {
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(AfternoteDesign.colors.gray8)
-                    .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            PopupContent(
-                type = PopupType.Default,
-                message = "아이디/비밀번호 찾기의 경우,\n고객센터로 문의 바랍니다.",
-                onConfirm = {},
-                onDismiss = {},
-            )
-            PopupContent(
-                type = PopupType.Variant2,
-                message = "아이디/비밀번호 찾기의 경우,\n고객센터로 문의 바랍니다.",
-                onConfirm = {},
-                onDismiss = {},
-            )
-        }
     }
 }
