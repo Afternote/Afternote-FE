@@ -138,7 +138,7 @@ class AppOnboardingCanaryTest {
         assertEquals(1, fakeAuth.saveSessionCalls)
         assertEquals(0, fakeAuth.rotateTokenCalls)
         assertEquals(1, fakeWeeklyReport.requestedDates.size)
-        assertEquals(1, fakeUser.logActivityCalls)
+        // `logActivityCalls` 단언은 걷는다 — #1413 이 활동 ping 자체를 제거해 develop 에 그 API 가 없다.
     }
 
     @Test
