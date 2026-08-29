@@ -12,6 +12,7 @@ import com.afternote.feature.receiver.domain.repository.ReceiverRepository
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -92,8 +93,13 @@ class ReceivedAfternoteDetailViewModel
                     if (showsLoading) {
                         _uiState.value = ReceivedAfternoteDetailUiState.Loading
                     }
-                    receiverRepository
-                        .getReceivedAfternoteDetail(afternoteId = afternoteId)
+                    val result = receiverRepository.getReceivedAfternoteDetail(afternoteId = afternoteId)
+                    // 새 로드가 이 Job 을 취소했다면 화면은 그쪽이 결정한다. repository 는
+                    // `runCatchingCancellable` 로 취소를 다시 던져 대개 여기까지 오지 않지만, 조회가
+                    // 값으로 끝난 뒤에 취소가 들어오면 취소된 로드가 그대로 새 화면을 덮는다 —
+                    // «다시 시도하기» 가 진행 중인 자동 갱신을 자르는 순간이 그 창이다.
+                    ensureActive()
+                    result
                         .onSuccess { detail ->
                             _uiState.value =
                                 ReceivedAfternoteDetailUiState.Success(

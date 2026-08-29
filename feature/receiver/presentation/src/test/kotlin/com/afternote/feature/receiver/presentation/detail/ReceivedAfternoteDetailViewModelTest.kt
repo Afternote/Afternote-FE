@@ -8,12 +8,14 @@ import com.afternote.feature.receiver.domain.testing.FakeReceiverRepository
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -146,6 +148,40 @@ class ReceivedAfternoteDetailViewModelTest {
             assertTrue(states.none { it is ReceivedAfternoteDetailUiState.Error })
             // 화면에 안 보이는 실패인 만큼 콘솔 기록은 남긴다.
             assertEquals(1, reporter.reportedErrors.size)
+        }
+
+    @Test
+    fun `retry 가 자른 옛 로드는 값을 들고 돌아와도 새 화면을 덮지 않는다`() =
+        runTest {
+            // 취소는 repository 의 `runCatchingCancellable` 이 대개 먼저 걷어내지만, 조회가 값으로
+            // 끝난 뒤에 취소가 들어오는 창이 남는다. 실기에서는 좁아 재현이 들쭉날쭉하므로
+            // NonCancellable 로 그 창을 넓혀 결정적으로 만든다 — 가드가 없으면 방출이
+            // [Loading, Fresh, Stale] 이 되어 사용자가 방금 부른 화면이 옛 값으로 덮인다.
+            val staleGate = CompletableDeferred<Unit>()
+            var call = 0
+            val repository =
+                FakeReceiverRepository.strict().apply {
+                    onGetReceivedAfternoteDetail = {
+                        if (call++ == 0) {
+                            withContext(NonCancellable) { staleGate.await() }
+                            Result.success(receivedDetail(serviceName = "Stale"))
+                        } else {
+                            Result.success(receivedDetail(serviceName = "Fresh"))
+                        }
+                    }
+                }
+            val viewModel = viewModel(repository)
+            val states = recordStates(viewModel)
+
+            // 첫 로드가 매달린 사이 사용자가 «다시 시도하기» — 옛 Job 은 잘리고 새 로드가 화면을 채운다.
+            viewModel.retry()
+            assertEquals("Fresh", states.last().serviceNameOrNull())
+
+            // 잘린 옛 로드가 이제야 값을 들고 돌아온다.
+            staleGate.complete(Unit)
+
+            assertEquals("Fresh", states.last().serviceNameOrNull())
+            assertTrue(states.none { it.serviceNameOrNull() == "Stale" })
         }
 
     private fun TestScope.recordStates(viewModel: ReceivedAfternoteDetailViewModel): List<ReceivedAfternoteDetailUiState> {

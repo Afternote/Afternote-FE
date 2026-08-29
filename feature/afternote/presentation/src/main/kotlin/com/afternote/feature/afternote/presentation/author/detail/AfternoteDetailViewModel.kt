@@ -14,6 +14,7 @@ import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureSt
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -114,14 +115,20 @@ class AfternoteDetailViewModel
             showsLoading: Boolean = true,
             keepsStateOnFailure: Boolean = false,
         ) {
+            // 지금은 취소할 로드가 없다 — 호출자가 init 과 [refreshOnReturn] 뿐이고 후자는 Job 가드를
+            // 통과한 뒤에만 여기 닿는다. 수신 상세처럼 가드를 거치지 않는 retry 가 붙는 순간
+            // 실효가 생기므로, 그때 조용히 깨지지 않게 남겨 둔다.
             loadJob?.cancel()
             loadJob =
                 viewModelScope.launch {
                     if (showsLoading) {
                         _uiState.value = AfternoteDetailUiState.Loading
                     }
-                    afternoteRepository
-                        .getDetail(id = afternoteId)
+                    val result = afternoteRepository.getDetail(id = afternoteId)
+                    // 위 cancel 과 같은 이유로 남기는 가드 — 취소된 로드가 값을 들고 돌아와 새 화면을
+                    // 덮는 창을 닫는다 (수신 상세에서는 retry 로 실제 재현된다).
+                    ensureActive()
+                    result
                         .onSuccess { detail ->
                             loadedDetail = detail
                             _uiState.update { current ->
