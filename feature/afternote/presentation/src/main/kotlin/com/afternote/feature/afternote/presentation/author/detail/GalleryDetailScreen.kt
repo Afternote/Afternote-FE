@@ -22,9 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
@@ -151,27 +149,3 @@ private fun GalleryDetailScrollContent(
 }
 
 // endregion
-
-internal val GALLERY_PREVIEW_CONTENT =
-    GalleryDetailContent(
-        serviceName = "갤러리",
-        finalWriteDate = "2025.11.26",
-        processingMethods = listOf("'엽사' 폴더 박선호에게 전송", "'흑역사' 폴더 삭제"),
-        afternoteEditReceivers =
-            listOf(
-                ReceiverUiModel(id = "1", name = "김지은", label = "친구"),
-                ReceiverUiModel(id = "2", name = "김혜성", label = "친구"),
-            ),
-    )
-
-@Preview(showBackground = true)
-@Composable
-private fun GalleryDetailScreenPreview() {
-    AfternoteTheme {
-        GalleryDetailScreen(
-            content = GALLERY_PREVIEW_CONTENT,
-            onBackClick = {},
-            onEditClick = {},
-        )
-    }
-}
