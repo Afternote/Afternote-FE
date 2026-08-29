@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
@@ -12,6 +13,8 @@ import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
+import com.afternote.feature.mindrecord.presentation.reporting.MindRecordFailureStage
+import com.afternote.feature.mindrecord.presentation.reporting.recordMindRecordFailure
 import com.afternote.feature.mindrecord.presentation.util.isHtmlBlank
 import com.afternote.feature.mindrecord.presentation.util.toWireContent
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,6 +34,7 @@ class DailyQuestionWriteViewModel
         private val repository: DailyQuestionRepository,
         private val photoUploadRepository: PhotoUploadRepository,
         private val draftLoader: MindRecordDraftLoader,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(DailyQuestionWriteUiState())
         val uiState: StateFlow<DailyQuestionWriteUiState> = _uiState.asStateFlow()
@@ -205,7 +209,9 @@ class DailyQuestionWriteViewModel
                     // 제출 직전 fileKey 로 바뀔 수 있게 기억만 해 둔다 (#549).
                     uploadedImageUrls += uploaded.fileUrl
                     _uiState.update { it.copy(isUploadingImage = false) }
-                }.onFailure {
+                }.onFailure { e ->
+                    // 첨부가 빠진 채 저장이 이어질 수 있는 자리라 남긴다 (#964).
+                    errorReporter.recordMindRecordFailure(MindRecordFailureStage.MEDIA_UPLOAD, e)
                     // null 로 흡수하면 사용자는 이미지가 붙은 줄 알고 저장한다 (#716).
                     _uiState.update {
                         it.copy(
@@ -301,6 +307,8 @@ class DailyQuestionWriteViewModel
                         // 이미 옮겨진 파일을 다시 옮기려다 실패한다 (#549).
                         uploadedImageUrls.clear()
                     }.onFailure { e ->
+                        // 저장이 upsert 라 실패가 기존 임시저장 상태와도 얽힌다 (#964·#1018).
+                        errorReporter.recordMindRecordFailure(MindRecordFailureStage.DAILY_QUESTION_SUBMIT, e)
                         _uiState.update {
                             it.copy(
                                 submitState =
