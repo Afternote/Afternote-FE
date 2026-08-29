@@ -52,6 +52,7 @@ class AppOnboardingCanaryTest {
 
     private val fakeAuth get() = authRepository as FakeAuthRepository
     private val fakeUser get() = userRepository as FakeUserRepository
+    private val fakeWeeklyReport get() = weeklyReportRepository as FakeWeeklyReportRepository
 
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
@@ -135,6 +136,8 @@ class AppOnboardingCanaryTest {
         )
         assertEquals(2, fakeAuth.attemptedEmailLogins.size)
         assertEquals(1, fakeAuth.saveSessionCalls)
+        assertEquals(0, fakeAuth.rotateTokenCalls)
+        assertEquals(1, fakeWeeklyReport.requestedDates.size)
         assertEquals(1, fakeUser.logActivityCalls)
     }
 

@@ -128,6 +128,7 @@ class AppAndReceiverCompletionAndroidTest {
 
     private val fakeAuth get() = authRepository as FakeAuthRepository
     private val fakeErrorReporter get() = errorReporter as FakeErrorReporter
+    private val fakeWeeklyReport get() = weeklyReportRepository as FakeWeeklyReportRepository
 
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
@@ -218,6 +219,8 @@ class AppAndReceiverCompletionAndroidTest {
             fakeAuth.attemptedEmailLogins,
         )
         assertEquals(1, fakeAuth.saveSessionCalls)
+        assertEquals(0, fakeAuth.rotateTokenCalls)
+        assertEquals(1, fakeWeeklyReport.requestedDates.size)
         assertTrue(fakeErrorReporter.failures.isEmpty())
     }
 
