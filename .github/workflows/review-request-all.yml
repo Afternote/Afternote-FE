@@ -136,8 +136,8 @@ jobs:
           # 이미 걸려 있으면 다시 걸지 않는다. synchronize 는 force-push 마다 온다.
           current=$(gh api "repos/$REPO/pulls/$PR_NUMBER" \
             --jq '[.requested_reviewers[].login] | join(" ")')
-          blocked_lc=$(printf '%s' "$blocked" | tr 'A-Z' 'a-z')
-          current_lc=$(printf '%s' "$current" | tr 'A-Z' 'a-z')
+          blocked_lc=$(printf '%s' "$blocked" | tr '[:upper:]' '[:lower:]')
+          current_lc=$(printf '%s' "$current" | tr '[:upper:]' '[:lower:]')
           case " $current_lc " in
             *" $blocked_lc "*) echo "@$blocked 요청이 이미 걸려 있음 — 건너뜀"; exit 0 ;;
           esac
