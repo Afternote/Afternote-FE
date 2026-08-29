@@ -11,6 +11,7 @@ import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
+import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -118,6 +119,7 @@ class DailyQuestionResumeDraftTest {
                         diaryRepository = NoDiaryDraftsRepository,
                         dailyQuestionRepository = repository,
                     ),
+                errorReporter = RecordingErrorReporter(),
             )
         viewModel.onAnswerChanged("<p></p>")
         repository.releaseDraft()
@@ -158,6 +160,7 @@ class DailyQuestionResumeDraftTest {
                         diaryRepository = NoDiaryDraftsRepository,
                         dailyQuestionRepository = repository,
                     ),
+                errorReporter = RecordingErrorReporter(),
             )
         // 에디터가 컴포지션 직후 현재 HTML 을 되돌려 주는 것을 재현한다.
         viewModel.onAnswerChanged(currentAnswerFromEditor)
