@@ -16,13 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
 
 private val HeaderSpacing = 8.dp
@@ -167,80 +165,5 @@ fun FindIdScreen(
                 )
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun FindIdScreenPreview() {
-    AfternoteTheme {
-        FindIdScreen(
-            initialEmail = "",
-            initialCertificateCode = "",
-            isSendingCode = false,
-            isVerificationSent = false,
-            isSendCodeEnabled = false,
-            isVerifyEnabled = false,
-            isNextEnabled = false,
-            resendCooldownSeconds = 0,
-            hasVerificationError = false,
-            snackbarHostState = remember { SnackbarHostState() },
-            onEmailChange = {},
-            onCertificateCodeChange = {},
-            onRequestCode = {},
-            onVerifyCode = {},
-            onNextClick = {},
-            onBackClick = {},
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "인증번호 전송됨")
-@Composable
-private fun FindIdScreenCodeSentPreview() {
-    AfternoteTheme {
-        FindIdScreen(
-            initialEmail = "parkchae01@gmail.com",
-            initialCertificateCode = "",
-            isSendingCode = false,
-            isVerificationSent = true,
-            isSendCodeEnabled = true,
-            isVerifyEnabled = false,
-            isNextEnabled = false,
-            resendCooldownSeconds = 0,
-            hasVerificationError = false,
-            snackbarHostState = remember { SnackbarHostState() },
-            onEmailChange = {},
-            onCertificateCodeChange = {},
-            onRequestCode = {},
-            onVerifyCode = {},
-            onNextClick = {},
-            onBackClick = {},
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "인증번호 불일치")
-@Composable
-private fun FindIdScreenErrorPreview() {
-    AfternoteTheme {
-        FindIdScreen(
-            initialEmail = "parkchae01@gmail.com",
-            initialCertificateCode = "123456",
-            isSendingCode = false,
-            isVerificationSent = true,
-            isSendCodeEnabled = true,
-            isVerifyEnabled = true,
-            isNextEnabled = false,
-            resendCooldownSeconds = 0,
-            hasVerificationError = true,
-            snackbarHostState = remember { SnackbarHostState() },
-            onEmailChange = {},
-            onCertificateCodeChange = {},
-            onRequestCode = {},
-            onVerifyCode = {},
-            onNextClick = {},
-            onBackClick = {},
-        )
     }
 }

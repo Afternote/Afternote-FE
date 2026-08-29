@@ -9,11 +9,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.ProfileImagePicker
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 
 @Composable
@@ -44,19 +42,6 @@ fun MemorialPhotoUpload(
                 onPickClick = onAddPhotoClick,
                 displayImageUri = displayImageUri,
             )
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun MemorialPhotoUploadPreview() {
-    AfternoteTheme {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-        ) {
-            // 이미지 없음
-            MemorialPhotoUpload(onAddPhotoClick = {})
         }
     }
 }

@@ -27,13 +27,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailState
@@ -54,8 +52,6 @@ import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMe
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodsSection
 import com.afternote.feature.afternote.presentation.shared.model.AfternoteServiceDisplay
-import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
-import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 
 /**
  * 소셜 네트워크 상세 Stateful Route.
@@ -292,65 +288,3 @@ private fun AccountSection(
 }
 
 // endregion
-
-/**
- * Android Studio @Preview 전용 고정 데이터.
- */
-private val PreviewAccountInstaContent =
-    AccountDetailContent(
-        serviceName = "인스타그램",
-        accountId = "qwerty123",
-        password = "qwerty123",
-        processingMethods = listOf("게시물 내리기", "추모 게시물 올리기", "추모 계정으로 전환하기"),
-        // 시안이 블록 2개 상태를 규격으로 두므로 프리뷰(스크린샷 baseline)도 제목 있는 블록과 없는 블록을 함께 담는다.
-        messageBlocks =
-            listOf(
-                MessageBlockUiModel(
-                    title = "가족에게",
-                    body = "이 계정에는 우리 가족 여행 사진이 많아.\n계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
-                ),
-                MessageBlockUiModel(body = "비밀번호는 주기적으로 바뀌니 메모 앱도 함께 확인해 줘."),
-            ),
-        finalWriteDate = "2025.11.26",
-        afternoteEditReceivers =
-            listOf(
-                ReceiverUiModel(
-                    id = "1",
-                    name = "황규운",
-                    label = "친구",
-                ),
-            ),
-    )
-
-@Preview(showBackground = true)
-@Composable
-private fun AccountDetailScreenPreview() {
-    AfternoteTheme {
-        AccountDetailScreen(
-            content = PreviewAccountInstaContent,
-            onBackClick = {},
-            onEditClick = {},
-            onDeleteConfirm = {},
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun AccountDetailScreenWithDropdownPreview() {
-    AfternoteTheme {
-        val stateWithDropdown =
-            remember {
-                AfternoteDetailState().apply {
-                    toggleDropdownMenu()
-                }
-            }
-        AccountDetailScreen(
-            content = PreviewAccountInstaContent,
-            onBackClick = {},
-            onEditClick = {},
-            onDeleteConfirm = {},
-            state = stateWithDropdown,
-        )
-    }
-}
