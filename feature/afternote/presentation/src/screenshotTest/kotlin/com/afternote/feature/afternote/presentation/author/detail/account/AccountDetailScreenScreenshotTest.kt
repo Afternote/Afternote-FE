@@ -13,6 +13,8 @@ internal fun accountDetailScreenScreenshot() {
     AfternoteTheme {
         AccountDetailScreen(
             onBackClick = {},
+            onEditClick = {},
+            onDeleteConfirm = {},
             content =
                 AccountDetailContent(
                     serviceName = "직접 입력한 소셜 서비스",
@@ -30,6 +32,8 @@ internal fun accountDetailBusinessFallbackScreenshot() {
     AfternoteTheme {
         AccountDetailScreen(
             onBackClick = {},
+            onEditClick = {},
+            onDeleteConfirm = {},
             content =
                 AccountDetailContent(
                     serviceName = "직접 입력한 비즈니스 서비스",

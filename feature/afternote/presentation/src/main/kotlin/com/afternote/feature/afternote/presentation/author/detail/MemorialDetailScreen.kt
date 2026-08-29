@@ -2,9 +2,11 @@ package com.afternote.feature.afternote.presentation.author.detail
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,8 +36,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -56,6 +60,8 @@ import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
 import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
+
+internal const val MEMORIAL_VIDEO_CARD_TEST_TAG = "memorialVideoCard"
 
 /**
  * 추억 노트 상세 표시 데이터.
@@ -86,6 +92,7 @@ fun MemorialDetailScreen(
     isEditable: Boolean = true,
     onEditClick: () -> Unit = {},
     onDeleteConfirm: () -> Unit = {},
+    onVideoClick: (String) -> Unit,
     state: AfternoteDetailState = rememberAfternoteDetailState(),
 ) {
     val memorialCategoryLabel = stringResource(R.string.afternote_category_memorial)
@@ -135,6 +142,7 @@ fun MemorialDetailScreen(
             content = content,
             categoryLabel = memorialCategoryLabel,
             userName = userName,
+            onVideoClick = onVideoClick,
             modifier =
                 Modifier
                     .padding(paddingValues)
@@ -148,6 +156,7 @@ private fun MemorialDetailScrollContent(
     content: MemorialDetailContent,
     categoryLabel: String,
     userName: String,
+    onVideoClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -160,7 +169,10 @@ private fun MemorialDetailScrollContent(
         Spacer(modifier = Modifier.height(24.dp))
         TitleSection(categoryLabel = categoryLabel, userName = userName)
         Spacer(modifier = Modifier.height(24.dp))
-        CardSection(content = content)
+        CardSection(content = content, onVideoClick = onVideoClick)
+        Spacer(modifier = Modifier.height(24.dp))
+        SharingNotice()
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
@@ -169,22 +181,31 @@ private fun TitleSection(
     categoryLabel: String,
     userName: String,
 ) {
+    // 프로필 로드 실패·로딩 경합으로 이름이 비어 있으면 이름 세그먼트를 생략해
+    // "…에 대한 님의 기록" 렌더를 막는다.
+    val titleSuffix =
+        if (userName.isBlank()) {
+            stringResource(R.string.feature_afternote_memorial_detail_title_suffix_no_name)
+        } else {
+            stringResource(R.string.feature_afternote_memorial_detail_title_suffix, userName)
+        }
     Text(
         text =
             buildAnnotatedString {
                 withStyle(style = SpanStyle(color = AfternoteDesign.colors.gray9)) {
                     append(categoryLabel)
                 }
-                // 프로필 로드 실패·로딩 경합으로 이름이 비어 있으면 이름 세그먼트를 생략해
-                // "…에 대한 님의 기록" 렌더를 막는다.
-                append(if (userName.isBlank()) "에 대한 기록" else "에 대한 ${userName}님의 기록")
+                append(titleSuffix)
             },
         style = AfternoteDesign.typography.bodyLargeB,
     )
 }
 
 @Composable
-private fun CardSection(content: MemorialDetailContent) {
+private fun CardSection(
+    content: MemorialDetailContent,
+    onVideoClick: (String) -> Unit,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         PhotoCard(
             finalWriteDate = content.finalWriteDate,
@@ -198,7 +219,30 @@ private fun CardSection(content: MemorialDetailContent) {
         VideoCard(
             videoUrl = content.memorialVideoUrl,
             thumbnailUrl = content.memorialThumbnailUrl,
+            onClick = onVideoClick,
         )
+    }
+}
+
+@Composable
+private fun SharingNotice() {
+    InfoCard(modifier = Modifier.fillMaxWidth()) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = "•",
+                style =
+                    AfternoteDesign.typography.bodySmallR.copy(
+                        color = AfternoteDesign.colors.gray6,
+                    ),
+            )
+            Text(
+                text = stringResource(R.string.feature_afternote_memorial_detail_sharing_notice),
+                style =
+                    AfternoteDesign.typography.bodySmallR.copy(
+                        color = AfternoteDesign.colors.gray6,
+                    ),
+            )
+        }
     }
 }
 
@@ -241,11 +285,17 @@ private fun PhotoCard(
 private fun VideoCard(
     videoUrl: String?,
     thumbnailUrl: String?,
+    onClick: (String) -> Unit,
 ) {
     if (videoUrl.isNullOrBlank()) return
 
     InfoCard(
-        modifier = Modifier.fillMaxWidth(),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .clickable(role = Role.Button) { onClick(videoUrl) }
+                .testTag(MEMORIAL_VIDEO_CARD_TEST_TAG),
         content = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
@@ -455,6 +505,7 @@ private fun MemorialDetailScreenPreview() {
             userName = "서영",
             onBackClick = {},
             onEditClick = {},
+            onVideoClick = {},
         )
     }
 }
@@ -483,6 +534,7 @@ private fun MemorialDetailScreenDeleteDialogPreview() {
             userName = "서영",
             onBackClick = {},
             onEditClick = {},
+            onVideoClick = {},
             state = stateWithDialog,
         )
     }

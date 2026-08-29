@@ -19,6 +19,8 @@ internal fun memorialVideoUploadEmptyScreenshot() {
             videoUrl = null,
             thumbnailUrl = null,
             onAddVideoClick = {},
+            onThumbnailBytesReady = {},
+            onThumbnailExtractionFailed = {},
         )
     }
 }

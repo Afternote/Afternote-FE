@@ -334,6 +334,7 @@ private fun AuthorDetailForEdit(
                 onBackClick = {},
                 content = account.content,
                 onEditClick = { onEdit(state.detailId.toString()) },
+                onDeleteConfirm = {},
             )
         }
     }
@@ -470,6 +471,7 @@ private fun AuthorDetailForDelete(
                 onBackClick = {},
                 content = account.content,
                 snackbarHostState = snackbarHostState,
+                onEditClick = {},
                 onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
             )
         }

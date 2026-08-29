@@ -115,6 +115,10 @@ class EditorTouchTargetTest {
                     ProcessingMethodCheckbox(
                         item = ProcessingMethodItem(1, "Method"),
                         onMoreClick = { processingMoreClicks++ },
+                        onDismissDropdown = {},
+                        onEditClick = {},
+                        onDeleteClick = {},
+                        onEditConfirmed = {},
                     )
                     AfternoteEditorReceiverList(
                         afternoteEditReceivers =
