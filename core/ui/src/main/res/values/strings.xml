@@ -35,4 +35,8 @@
     <string name="core_ui_network_error_retry">다시 시도하기</string>
     <!-- 홈 상단바 설정 액션 접근성 이름 (#613). 프로필 아이콘은 목적지가 없는 장식이라 이름을 두지 않는다. -->
     <string name="core_ui_home_top_bar_setting">설정</string>
+    <!-- 수신자 선택 화면 공용 문구 (#791). 소비자가 달리 쓰려면 파라미터로 덮는다. -->
+    <string name="core_ui_receiver_select_title">수신자 선택</string>
+    <string name="core_ui_receiver_select_search_placeholder">이름으로 검색하기</string>
+    <string name="core_ui_receiver_select_confirm">수신자 선택 완료하기</string>
 </resources>
