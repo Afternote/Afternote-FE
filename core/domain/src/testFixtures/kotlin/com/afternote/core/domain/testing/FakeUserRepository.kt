@@ -8,6 +8,7 @@ import com.afternote.core.model.user.ReceiverCreated
 import com.afternote.core.model.user.ReceiverDetail
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
+import com.afternote.core.model.user.UserMarketingConsent
 import com.afternote.core.model.user.UserPushSetting
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +26,7 @@ class FakeUserRepository(
     @Volatile var profile: User = DEFAULT_USER,
     receivers: List<Receiver> = listOf(DEFAULT_RECEIVER),
     @Volatile var pushSetting: UserPushSetting = DEFAULT_PUSH_SETTING,
+    @Volatile var marketingConsent: UserMarketingConsent = DEFAULT_MARKETING_CONSENT,
     @Volatile var connectedAccounts: UserConnectedAccount = defaultConnectedAccounts(profile.email),
     receiverDetails: Map<Long, ReceiverDetail> = emptyMap(),
     deliveryConditions: Map<Long, ReceiverDeliveryConditions> = emptyMap(),
@@ -39,6 +41,8 @@ class FakeUserRepository(
     var onDeleteAccount: (suspend () -> Unit)? = null,
     var onGetMyPushSettings: (suspend () -> UserPushSetting)? = null,
     var onUpdateMyPushSettings: (suspend (Boolean?, Boolean?, Boolean?) -> UserPushSetting)? = null,
+    var onGetMyMarketingConsents: (suspend () -> UserMarketingConsent)? = null,
+    var onUpdateMyMarketingConsents: (suspend (Boolean?, Boolean?, Boolean?) -> UserMarketingConsent)? = null,
     var onGetConnectedAccounts: (suspend () -> UserConnectedAccount)? = null,
     var onLinkConnectedAccount: (suspend (String, String) -> UserConnectedAccount)? = null,
     var onUnlinkConnectedAccount: (suspend (String) -> UserConnectedAccount)? = null,
@@ -59,6 +63,7 @@ class FakeUserRepository(
     private val getProfileCounter = AtomicInteger()
     private val deleteAccountCounter = AtomicInteger()
     private val getPushSettingsCounter = AtomicInteger()
+    private val getMarketingConsentsCounter = AtomicInteger()
     private val getConnectedAccountsCounter = AtomicInteger()
 
     val receiverCreateCalls = CopyOnWriteArrayList<ReceiverCreateCall>()
@@ -67,6 +72,7 @@ class FakeUserRepository(
     val receiverMessageCalls = CopyOnWriteArrayList<ReceiverMessageCall>()
     val profileUpdateCalls = CopyOnWriteArrayList<ProfileUpdateCall>()
     val pushUpdateCalls = CopyOnWriteArrayList<PushUpdateCall>()
+    val marketingConsentUpdateCalls = CopyOnWriteArrayList<MarketingConsentUpdateCall>()
     val connectedLinkCalls = CopyOnWriteArrayList<ConnectedAccountLinkCall>()
     val connectedUnlinkCalls = CopyOnWriteArrayList<String>()
     val deliveryLoadCalls = CopyOnWriteArrayList<Long>()
@@ -79,9 +85,12 @@ class FakeUserRepository(
     val profileCalls: Int get() = getProfileCounter.get()
     val deleteAccountCalls: Int get() = deleteAccountCounter.get()
     val getMyPushSettingsCalls: Int get() = getPushSettingsCounter.get()
+    val getMyMarketingConsentsCalls: Int get() = getMarketingConsentsCounter.get()
     val getConnectedAccountsCalls: Int get() = getConnectedAccountsCounter.get()
     val pushSettingUpdates: List<Triple<Boolean?, Boolean?, Boolean?>>
         get() = pushUpdateCalls.map { Triple(it.timeLetter, it.mindRecord, it.afterNote) }
+    val marketingConsentUpdates: List<Triple<Boolean?, Boolean?, Boolean?>>
+        get() = marketingConsentUpdateCalls.map { Triple(it.sms, it.email, it.push) }
 
     override val receiverListFlow: Flow<List<Receiver>>
         get() {
@@ -204,6 +213,28 @@ class FakeUserRepository(
         return pushSetting
     }
 
+    override suspend fun getMyMarketingConsents(): UserMarketingConsent {
+        getMarketingConsentsCounter.incrementAndGet()
+        onGetMyMarketingConsents?.let { return it() }
+        return marketingConsent
+    }
+
+    override suspend fun updateMyMarketingConsents(
+        sms: Boolean?,
+        email: Boolean?,
+        push: Boolean?,
+    ): UserMarketingConsent {
+        marketingConsentUpdateCalls += MarketingConsentUpdateCall(sms, email, push)
+        onUpdateMyMarketingConsents?.let { return it(sms, email, push) }
+        marketingConsent =
+            UserMarketingConsent(
+                sms = sms ?: marketingConsent.sms,
+                email = email ?: marketingConsent.email,
+                push = push ?: marketingConsent.push,
+            )
+        return marketingConsent
+    }
+
     override suspend fun getConnectedAccounts(): UserConnectedAccount {
         getConnectedAccountsCounter.incrementAndGet()
         onGetConnectedAccounts?.let { return it() }
@@ -257,6 +288,12 @@ class FakeUserRepository(
         val afterNote: Boolean?,
     )
 
+    data class MarketingConsentUpdateCall(
+        val sms: Boolean?,
+        val email: Boolean?,
+        val push: Boolean?,
+    )
+
     data class ReceiverCreateCall(
         val name: String,
         val relation: String,
@@ -292,6 +329,7 @@ class FakeUserRepository(
         private val DEFAULT_USER = User("테스트 사용자", "test@afternote.local", null, null)
         private val DEFAULT_RECEIVER = Receiver(7L, "김수신", "가족", "fake-auth-7")
         private val DEFAULT_PUSH_SETTING = UserPushSetting(true, true, true)
+        private val DEFAULT_MARKETING_CONSENT = UserMarketingConsent(true, true, false)
 
         fun strict(): FakeUserRepository =
             FakeUserRepository(
@@ -307,6 +345,8 @@ class FakeUserRepository(
                 onDeleteAccount = { unexpectedCall("UserRepository.deleteAccount") },
                 onGetMyPushSettings = { unexpectedCall("UserRepository.getMyPushSettings") },
                 onUpdateMyPushSettings = { _, _, _ -> unexpectedCall("UserRepository.updateMyPushSettings") },
+                onGetMyMarketingConsents = { unexpectedCall("UserRepository.getMyMarketingConsents") },
+                onUpdateMyMarketingConsents = { _, _, _ -> unexpectedCall("UserRepository.updateMyMarketingConsents") },
                 onGetConnectedAccounts = { unexpectedCall("UserRepository.getConnectedAccounts") },
                 onLinkConnectedAccount = { _, _ -> unexpectedCall("UserRepository.linkConnectedAccount") },
                 onUnlinkConnectedAccount = { unexpectedCall("UserRepository.unlinkConnectedAccount") },

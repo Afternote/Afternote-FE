@@ -18,6 +18,7 @@ import com.afternote.core.model.user.ReceiverCreated
 import com.afternote.core.model.user.ReceiverDetail
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
+import com.afternote.core.model.user.UserMarketingConsent
 import com.afternote.core.model.user.UserPushSetting
 import com.afternote.core.network.dto.ReceiverDetailDto
 import com.afternote.core.network.dto.ReceiverListDto
@@ -26,9 +27,11 @@ import com.afternote.core.network.dto.UserConnectedAccountDto
 import com.afternote.core.network.dto.UserCreateReceiverDto
 import com.afternote.core.network.dto.UserCreateReceiverRequestDto
 import com.afternote.core.network.dto.UserDto
+import com.afternote.core.network.dto.UserMarketingConsentDto
 import com.afternote.core.network.dto.UserPatchReceiverDto
 import com.afternote.core.network.dto.UserPatchReceiverRequestDto
 import com.afternote.core.network.dto.UserPushSettingDto
+import com.afternote.core.network.dto.UserUpdateMarketingConsentRequestDto
 import com.afternote.core.network.dto.UserUpdateProfileRequestDto
 import com.afternote.core.network.dto.UserUpdatePushSettingRequestDto
 import com.afternote.core.network.dto.UserUpdateReceiverMessageRequestDto
@@ -583,6 +586,13 @@ private val COMPLETION_DEFAULT_PUSH_SETTING =
         afterNote = true,
     )
 
+private val COMPLETION_DEFAULT_MARKETING_CONSENT =
+    UserMarketingConsent(
+        sms = true,
+        email = true,
+        push = false,
+    )
+
 private val COMPLETION_DEFAULT_RECEIVER_DETAIL =
     ReceiverDetail(
         receiverId = 77L,
@@ -675,6 +685,14 @@ private class CompletionUserScenario {
                 } finally {
                     synchronized(this@CompletionUserScenario) { pushUpdateCompletions += 1 }
                 }
+            }
+            onGetMyMarketingConsents = { COMPLETION_DEFAULT_MARKETING_CONSENT }
+            onUpdateMyMarketingConsents = { sms, email, push ->
+                COMPLETION_DEFAULT_MARKETING_CONSENT.copy(
+                    sms = sms ?: COMPLETION_DEFAULT_MARKETING_CONSENT.sms,
+                    email = email ?: COMPLETION_DEFAULT_MARKETING_CONSENT.email,
+                    push = push ?: COMPLETION_DEFAULT_MARKETING_CONSENT.push,
+                )
             }
             onCreateReceiver = { _, _, _, _, _ ->
                 takeGate(receiverCreateGates, "createReceiver").await().getOrThrow()
@@ -832,6 +850,11 @@ private class CompletionGatedWithdrawalUserApi(
 
     override suspend fun updateMyPushSettings(request: UserUpdatePushSettingRequestDto): BaseResponse<UserPushSettingDto> =
         completionUnexpected("updateMyPushSettings")
+
+    override suspend fun getMyMarketingConsents(): BaseResponse<UserMarketingConsentDto> = completionUnexpected("getMyMarketingConsents")
+
+    override suspend fun updateMyMarketingConsents(request: UserUpdateMarketingConsentRequestDto): BaseResponse<UserMarketingConsentDto> =
+        completionUnexpected("updateMyMarketingConsents")
 
     override suspend fun getConnectedAccounts(): BaseResponse<UserConnectedAccountDto> = completionUnexpected("getConnectedAccounts")
 

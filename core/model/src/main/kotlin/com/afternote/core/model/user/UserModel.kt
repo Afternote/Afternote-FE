@@ -38,6 +38,12 @@ data class UserPushSetting(
     val afterNote: Boolean,
 )
 
+data class UserMarketingConsent(
+    val sms: Boolean,
+    val email: Boolean,
+    val push: Boolean,
+)
+
 data class UserConnectedAccount(
     val local: Boolean,
     val google: Boolean,

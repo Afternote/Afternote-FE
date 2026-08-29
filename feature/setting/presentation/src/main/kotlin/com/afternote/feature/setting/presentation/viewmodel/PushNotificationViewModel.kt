@@ -28,6 +28,7 @@ class PushNotificationViewModel
         init {
             refreshDeviceAlarmStatus()
             loadPushSettings()
+            loadMarketingConsents()
         }
 
         fun refreshDeviceAlarmStatus() {
@@ -58,11 +59,60 @@ class PushNotificationViewModel
             }
         }
 
-        fun onSmsChecked(checked: Boolean) = _uiState.update { it.copy(isSmsChecked = checked) }
+        private fun loadMarketingConsents() {
+            viewModelScope.launch {
+                Log.d(TAG, "loadMarketingConsents: start")
+                runCatching { userRepository.getMyMarketingConsents() }
+                    .onSuccess { consent ->
+                        Log.d(TAG, "loadMarketingConsents: success=$consent")
+                        _uiState.update {
+                            it.copy(
+                                isSmsChecked = consent.sms,
+                                isEmailChecked = consent.email,
+                                isPushChecked = consent.push,
+                            )
+                        }
+                    }.onFailure { e ->
+                        Log.e(TAG, "loadMarketingConsents: failed", e)
+                    }
+            }
+        }
 
-        fun onEmailChecked(checked: Boolean) = _uiState.update { it.copy(isEmailChecked = checked) }
+        fun onSmsChecked(checked: Boolean) {
+            _uiState.update { it.copy(isSmsChecked = checked) }
+            viewModelScope.launch {
+                runCatching { userRepository.updateMyMarketingConsents(sms = checked, email = null, push = null) }
+                    .onSuccess { Log.d(TAG, "onSmsChecked: success, checked=$checked") }
+                    .onFailure { e ->
+                        Log.e(TAG, "onSmsChecked: failed, checked=$checked", e)
+                        _uiState.update { it.copy(isSmsChecked = !checked) }
+                    }
+            }
+        }
 
-        fun onPushChecked(checked: Boolean) = _uiState.update { it.copy(isPushChecked = checked) }
+        fun onEmailChecked(checked: Boolean) {
+            _uiState.update { it.copy(isEmailChecked = checked) }
+            viewModelScope.launch {
+                runCatching { userRepository.updateMyMarketingConsents(sms = null, email = checked, push = null) }
+                    .onSuccess { Log.d(TAG, "onEmailChecked: success, checked=$checked") }
+                    .onFailure { e ->
+                        Log.e(TAG, "onEmailChecked: failed, checked=$checked", e)
+                        _uiState.update { it.copy(isEmailChecked = !checked) }
+                    }
+            }
+        }
+
+        fun onPushChecked(checked: Boolean) {
+            _uiState.update { it.copy(isPushChecked = checked) }
+            viewModelScope.launch {
+                runCatching { userRepository.updateMyMarketingConsents(sms = null, email = null, push = checked) }
+                    .onSuccess { Log.d(TAG, "onPushChecked: success, checked=$checked") }
+                    .onFailure { e ->
+                        Log.e(TAG, "onPushChecked: failed, checked=$checked", e)
+                        _uiState.update { it.copy(isPushChecked = !checked) }
+                    }
+            }
+        }
 
         fun onNewsletterToggle(on: Boolean) {
             _uiState.update { it.copy(isNewsletterOn = on) }

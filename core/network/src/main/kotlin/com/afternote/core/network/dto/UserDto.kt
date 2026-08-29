@@ -44,6 +44,13 @@ data class UserUpdatePushSettingRequestDto(
 )
 
 @Serializable
+data class UserUpdateMarketingConsentRequestDto(
+    @SerialName("sms") val sms: Boolean? = null,
+    @SerialName("email") val email: Boolean? = null,
+    @SerialName("push") val push: Boolean? = null,
+)
+
+@Serializable
 data class SocialAccountLinkRequestDto(
     @SerialName("accessToken") val accessToken: String,
 )
@@ -102,6 +109,13 @@ data class UserPushSettingDto(
     @SerialName("timeLetter") val timeLetter: Boolean,
     @SerialName("mindRecord") val mindRecord: Boolean,
     @SerialName("afterNote") val afterNote: Boolean,
+)
+
+@Serializable
+data class UserMarketingConsentDto(
+    @SerialName("sms") val sms: Boolean,
+    @SerialName("email") val email: Boolean,
+    @SerialName("push") val push: Boolean,
 )
 
 @Serializable

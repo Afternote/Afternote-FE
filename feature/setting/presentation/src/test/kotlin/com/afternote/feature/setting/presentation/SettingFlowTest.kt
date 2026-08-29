@@ -168,5 +168,7 @@ private fun settingFlowUserRepository(): FakeUserRepository =
         onDeleteAccount = null
         onGetMyPushSettings = null
         onUpdateMyPushSettings = null
+        onGetMyMarketingConsents = null
+        onUpdateMyMarketingConsents = null
         onGetConnectedAccounts = null
     }

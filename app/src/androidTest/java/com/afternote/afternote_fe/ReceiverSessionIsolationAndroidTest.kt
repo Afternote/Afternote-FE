@@ -18,9 +18,11 @@ import com.afternote.core.network.dto.UserConnectedAccountDto
 import com.afternote.core.network.dto.UserCreateReceiverDto
 import com.afternote.core.network.dto.UserCreateReceiverRequestDto
 import com.afternote.core.network.dto.UserDto
+import com.afternote.core.network.dto.UserMarketingConsentDto
 import com.afternote.core.network.dto.UserPatchReceiverDto
 import com.afternote.core.network.dto.UserPatchReceiverRequestDto
 import com.afternote.core.network.dto.UserPushSettingDto
+import com.afternote.core.network.dto.UserUpdateMarketingConsentRequestDto
 import com.afternote.core.network.dto.UserUpdateProfileRequestDto
 import com.afternote.core.network.dto.UserUpdatePushSettingRequestDto
 import com.afternote.core.network.dto.UserUpdateReceiverMessageRequestDto
@@ -173,6 +175,12 @@ private class SessionReceiverUserApi : UserApiService {
 
     override suspend fun updateMyPushSettings(request: UserUpdatePushSettingRequestDto): BaseResponse<UserPushSettingDto> =
         receiverSessionUnexpected("updateMyPushSettings")
+
+    override suspend fun getMyMarketingConsents(): BaseResponse<UserMarketingConsentDto> =
+        receiverSessionUnexpected("getMyMarketingConsents")
+
+    override suspend fun updateMyMarketingConsents(request: UserUpdateMarketingConsentRequestDto): BaseResponse<UserMarketingConsentDto> =
+        receiverSessionUnexpected("updateMyMarketingConsents")
 
     override suspend fun getConnectedAccounts(): BaseResponse<UserConnectedAccountDto> = receiverSessionUnexpected("getConnectedAccounts")
 

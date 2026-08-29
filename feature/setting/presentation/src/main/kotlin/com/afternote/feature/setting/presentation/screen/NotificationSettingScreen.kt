@@ -39,6 +39,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.DeviceAlarmOffSection
+import com.afternote.feature.setting.presentation.component.SettingMenuItem
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel
 
 @Composable
@@ -131,12 +132,19 @@ fun NotificationSettingScreen(
             }
 
             Spacer(Modifier.height(8.dp))
-            DeviceAlarmOffSection(
-                uiState = uiState,
-                onSmsCheck = viewModel::onSmsChecked,
-                onEmailCheck = viewModel::onEmailChecked,
-                onPushCheck = { onPushNotificationClick() },
-            )
+            if (uiState.isDeviceAlarmOn) {
+                SettingMenuItem(
+                    label = stringResource(R.string.push_notification_title),
+                    onClick = onPushNotificationClick,
+                )
+            } else {
+                DeviceAlarmOffSection(
+                    uiState = uiState,
+                    onSmsCheck = viewModel::onSmsChecked,
+                    onEmailCheck = viewModel::onEmailChecked,
+                    onPushCheck = viewModel::onPushChecked,
+                )
+            }
         }
     }
 }

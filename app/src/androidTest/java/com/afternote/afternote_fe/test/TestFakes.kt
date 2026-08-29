@@ -60,6 +60,8 @@ fun appTestUserRepository(
         onDeleteAccount = null
         onGetMyPushSettings = null
         onUpdateMyPushSettings = null
+        onGetMyMarketingConsents = null
+        onUpdateMyMarketingConsents = null
         onGetConnectedAccounts = { defaultConnectedAccounts(this.profile.email) }
     }
 
