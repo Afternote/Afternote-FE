@@ -12,10 +12,29 @@ internal fun memorialDetailScreenScreenshot() {
     AfternoteTheme {
         MemorialDetailScreen(
             onBackClick = {},
+            onVideoClick = {},
             content =
                 MemorialDetailContent(
                     userName = "서영",
                     finalWriteDate = "2025.11.26",
+                ),
+        )
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+internal fun memorialDetailScreenWithVideoScreenshot() {
+    AfternoteTheme {
+        MemorialDetailScreen(
+            onBackClick = {},
+            onVideoClick = {},
+            content =
+                MemorialDetailContent(
+                    userName = "서영",
+                    finalWriteDate = "2025.11.26",
+                    memorialVideoUrl = "https://cdn.example.com/memorial.mp4",
                 ),
         )
     }
