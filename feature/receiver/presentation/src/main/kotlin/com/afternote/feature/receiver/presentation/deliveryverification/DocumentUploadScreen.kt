@@ -248,42 +248,6 @@ internal fun DocumentUploadScreenContent(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-private fun DocumentUploadEmptyPreview() {
-    AfternoteTheme {
-        DocumentUploadScreenContent(
-            uiState = DocumentUploadUiState(),
-            snackbarHostState = remember { SnackbarHostState() },
-            onBackClick = {},
-            onSlotClick = {},
-            onFamilyFieldBottomChanged = {},
-            onSubmitClick = {},
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun DocumentUploadFilledPreview() {
-    AfternoteTheme {
-        DocumentUploadScreenContent(
-            uiState =
-                DocumentUploadUiState(
-                    deathCertificate =
-                        DocumentSlotState(displayName = "사망진단서.jpeg", fileUrl = "https://x"),
-                    familyRelationCertificate =
-                        DocumentSlotState(displayName = "가족관계증명서.pdf", fileUrl = "https://y"),
-                ),
-            snackbarHostState = remember { SnackbarHostState() },
-            onBackClick = {},
-            onSlotClick = {},
-            onFamilyFieldBottomChanged = {},
-            onSubmitClick = {},
-        )
-    }
-}
-
 @Preview(showBackground = true, heightDp = 780)
 @Composable
 private fun DocumentUploadWithSheetOpenPreview() {

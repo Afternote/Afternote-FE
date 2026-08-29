@@ -161,26 +161,3 @@ private fun SignUpScreenPreview() {
         )
     }
 }
-
-@Preview(showBackground = true, name = "인증번호 불일치")
-@Composable
-private fun SignUpScreenMismatchPreview() {
-    AfternoteTheme {
-        SignUpScreen(
-            initialEmail = "user@example.com",
-            initialVerificationCode = "000000",
-            isVerificationSent = true,
-            isSendingCode = false,
-            isEmailFormatValid = true,
-            resendCooldownSeconds = 0,
-            hasVerificationError = true,
-            isNextEnabled = false,
-            snackbarHostState = remember { SnackbarHostState() },
-            onEmailChange = {},
-            onVerificationCodeChange = {},
-            onRequestVerification = {},
-            onNextClick = {},
-            onBackClick = {},
-        )
-    }
-}
