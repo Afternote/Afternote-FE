@@ -1,7 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor.selection
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -14,12 +13,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,12 +23,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.modifierextention.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.EditorSectionLabel
 
@@ -182,85 +176,6 @@ private fun <T> EditorSelectionDropdownMenuItems(
                 },
                 onClick = { onSelect(option) },
                 contentPadding = PaddingValues(16.dp),
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun EditorSelectionDropdownPreview() {
-    AfternoteTheme {
-        val social = stringResource(R.string.afternote_editor_category_social)
-        var expanded by remember { mutableStateOf(false) }
-        Box(modifier = Modifier.padding(24.dp)) {
-            EditorSelectionDropdown(
-                label = stringResource(R.string.afternote_editor_label_category),
-                selectedValue = social,
-                options =
-                    listOf(
-                        social,
-                        stringResource(R.string.afternote_editor_category_gallery),
-                        stringResource(R.string.afternote_editor_category_memorial),
-                    ),
-                optionLabel = { it },
-                onValueSelected = {},
-                expanded = expanded,
-                onExpandedChange = { expanded = it },
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Placeholder (unselected)")
-@Composable
-private fun EditorSelectionDropdownPlaceholderPreview() {
-    AfternoteTheme {
-        var expanded by remember { mutableStateOf(false) }
-        Box(modifier = Modifier.padding(24.dp)) {
-            EditorSelectionDropdown(
-                label = stringResource(R.string.afternote_editor_label_service_name),
-                selectedValue = "",
-                options =
-                    listOf(
-                        "인스타그램",
-                        "페이스북",
-                        "X",
-                    ),
-                optionLabel = { it },
-                onValueSelected = {},
-                expanded = expanded,
-                onExpandedChange = { expanded = it },
-                placeholder =
-                    stringResource(
-                        R.string.afternote_editor_service_placeholder,
-                        stringResource(R.string.afternote_editor_category_social),
-                    ),
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Expanded menu items")
-@Composable
-private fun EditorSelectionDropdownMenuItemsPreview() {
-    AfternoteTheme {
-        Surface(
-            shape = RoundedCornerShape(8.dp),
-            shadowElevation = 4.dp,
-            tonalElevation = 0.dp,
-            color = AfternoteDesign.colors.white,
-            modifier = Modifier.padding(24.dp),
-        ) {
-            EditorSelectionDropdownMenuItems(
-                options =
-                    listOf(
-                        "인스타그램",
-                        "페이스북",
-                        "X",
-                    ),
-                optionLabel = { it },
-                onSelect = {},
             )
         }
     }

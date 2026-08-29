@@ -23,14 +23,12 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.modifierextention.addFocusCleaner
 import com.afternote.core.ui.modifierextention.noRippleClickable
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.common.R as CommonR
 
 @Composable
@@ -162,17 +160,5 @@ fun WelcomeScreen(
                 )
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun WelcomeScreenPreview() {
-    AfternoteTheme {
-        WelcomeScreen(
-            onStartClick = {},
-            onCheckRecordsClick = {},
-            onLoginClick = {},
-        )
     }
 }

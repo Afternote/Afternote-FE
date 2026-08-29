@@ -454,7 +454,7 @@ class AfternoteEditorViewModel
         // 영상: 로컬 pick(content://) 인지 원격 prefill URL 인지를 진입 경계에서 한 번 확정해 MediaInput 으로 넘긴다.
         private fun videoMediaInput(url: String?): MediaInput {
             if (url.isNullOrBlank()) return MediaInput.None
-            return if (url.startsWith("content://")) MediaInput.Local(url) else MediaInput.Remote(url)
+            return if (url.isLocalContentUri()) MediaInput.Local(url) else MediaInput.Remote(url)
         }
 
         // 영정 사진: 새로 고른 로컬 픽 우선 → 없으면 기존 원격 → 둘 다 없으면 없음.
