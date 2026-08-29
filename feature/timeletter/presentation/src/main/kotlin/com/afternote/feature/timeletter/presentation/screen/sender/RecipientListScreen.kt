@@ -1,17 +1,12 @@
 package com.afternote.feature.timeletter.presentation.screen.sender
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -43,6 +38,8 @@ import com.afternote.core.ui.KoreanConsonantIndex
 import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
+import com.afternote.core.ui.emptystate.ListEmptyState
+import com.afternote.core.ui.emptystate.ListSearchEmptyState
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.timeletter.presentation.R
@@ -71,7 +68,7 @@ fun RecipientListScreen(
 }
 
 @Composable
-private fun RecipientListContent(
+internal fun RecipientListContent(
     recipients: List<ReceiverListItem>,
     onBackClick: () -> Unit,
     onConfirmClick: (List<ReceiverListItem>) -> Unit,
@@ -137,7 +134,11 @@ private fun RecipientListContent(
         },
     ) { innerPadding ->
         if (recipients.isEmpty()) {
-            RecipientListEmptyContent(
+            ListEmptyState(
+                title = stringResource(R.string.timeletter_recipient_empty_title),
+                description = stringResource(R.string.timeletter_recipient_empty_description),
+                icon = painterResource(R.drawable.ic_recipient_empty),
+                registerButtonText = stringResource(R.string.timeletter_recipient_register),
                 onRegisterClick = onRegisterClick,
                 modifier =
                     Modifier
@@ -160,7 +161,10 @@ private fun RecipientListContent(
                     modifier = Modifier.padding(horizontal = 20.dp),
                 )
                 if (groupedRecipients.isEmpty()) {
-                    RecipientSearchEmptyContent(modifier = Modifier.fillMaxSize())
+                    ListSearchEmptyState(
+                        message = stringResource(R.string.timeletter_recipient_search_empty),
+                        modifier = Modifier.fillMaxSize(),
+                    )
                 } else {
                     Row(modifier = Modifier.fillMaxSize()) {
                         LazyColumn(
@@ -215,68 +219,6 @@ private fun RecipientListContent(
 }
 
 @Composable
-private fun RecipientSearchEmptyContent(modifier: Modifier = Modifier) {
-    Box(
-        modifier =
-            modifier
-                .padding(horizontal = 20.dp)
-                .padding(top = 24.dp),
-    ) {
-        Text(
-            text = stringResource(R.string.timeletter_recipient_search_empty),
-            style = AfternoteDesign.typography.bodyLargeR,
-            color = AfternoteDesign.colors.gray8,
-        )
-    }
-}
-
-@Composable
-private fun RecipientListEmptyContent(
-    onRegisterClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier.padding(horizontal = 20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Spacer(modifier = Modifier.height(105.dp))
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.Start,
-            ) {
-                Text(
-                    text = stringResource(R.string.timeletter_recipient_empty_title),
-                    style = AfternoteDesign.typography.h1,
-                    color = AfternoteDesign.colors.black,
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = stringResource(R.string.timeletter_recipient_empty_description),
-                    style = AfternoteDesign.typography.h3,
-                    color = AfternoteDesign.colors.gray6,
-                )
-            }
-            Spacer(modifier = Modifier.height(56.dp))
-            Image(
-                painter = painterResource(R.drawable.ic_recipient_empty),
-                contentDescription = null,
-                modifier = Modifier.size(134.dp),
-            )
-        }
-        Spacer(modifier = Modifier.height(56.dp))
-
-        AfternoteButton(
-            text = stringResource(R.string.timeletter_recipient_register),
-            onClick = onRegisterClick,
-            modifier = Modifier.padding(bottom = 16.dp),
-        )
-    }
-}
-
-@Composable
 private fun ConsonantSectionHeader(consonant: Char) {
     Text(
         text = consonant.toString(),
@@ -284,12 +226,6 @@ private fun ConsonantSectionHeader(consonant: Char) {
         color = AfternoteDesign.colors.gray5,
         modifier = Modifier.padding(vertical = 8.dp),
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun RecipientSearchEmptyPreview() {
-    RecipientSearchEmptyContent()
 }
 
 @Preview(showBackground = true)
