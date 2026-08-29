@@ -33,7 +33,7 @@ import com.afternote.feature.afternote.presentation.R
 fun AfternoteListItem(
     uiModel: ListItemUiModel,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = {},
+    onClick: () -> Unit,
 ) {
     Row(
         modifier =

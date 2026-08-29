@@ -45,11 +45,14 @@ import com.afternote.core.ui.Route
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
+import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailRoute
+import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel
 import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.testing.FakeMindRecordReceiverRepository
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
+import com.afternote.feature.receiver.domain.error.ReceiverRejectionReason
 import com.afternote.feature.receiver.domain.model.AfterNoteListItem
 import com.afternote.feature.receiver.domain.model.AfterNotesListResult
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
@@ -68,8 +71,6 @@ import com.afternote.feature.receiver.presentation.deliveryverification.Document
 import com.afternote.feature.receiver.presentation.deliveryverification.DocumentUploadViewModel
 import com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationEmailScreen
 import com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationViewModel
-import com.afternote.feature.receiver.presentation.detail.ReceivedAfternoteDetailRoute
-import com.afternote.feature.receiver.presentation.detail.ReceivedAfternoteDetailViewModel
 import com.afternote.feature.receiver.presentation.home.ReceiverHomeActions
 import com.afternote.feature.receiver.presentation.home.ReceiverHomeEvent
 import com.afternote.feature.receiver.presentation.home.ReceiverHomeScreen
@@ -385,10 +386,8 @@ class ReceiverRuntimeCompletionAndroidTest {
             }
         verifyEmailResults.addLast(
             Result.failure(
-                ReceiverFailure.ServerRejection(
-                    status = 400,
-                    serverMessage = "인증번호가 만료되었습니다. 다시 발급해 주세요.",
-                    serverCode = 1902,
+                ReceiverFailure.UserRejection(
+                    reason = ReceiverRejectionReason.RECEIVER_EMAIL_AUTH_CODE_NOT_FOUND,
                     cause = CAUSE,
                 ),
             ),
@@ -409,6 +408,7 @@ class ReceiverRuntimeCompletionAndroidTest {
         composeRule.setContent {
             AfternoteTheme {
                 IdentityVerificationEmailScreen(
+                    senderId = "sender-1",
                     onBackClick = {},
                     onVerified = { verifiedTransitions += 1 },
                     viewModel = viewModel,
@@ -429,7 +429,7 @@ class ReceiverRuntimeCompletionAndroidTest {
             .onNodeWithText(context.getString(ReceiverR.string.receiver_verify_next_button))
             .performClick()
         composeRule
-            .onNodeWithText("인증번호가 만료되었습니다. 다시 발급해 주세요.")
+            .onNodeWithText("인증번호가 만료되었거나 존재하지 않습니다. 다시 요청해주세요.")
             .assertIsDisplayed()
 
         composeRule
@@ -455,7 +455,7 @@ class ReceiverRuntimeCompletionAndroidTest {
             ),
             authRepository.verifiedEmailCodes,
         )
-        assertEquals(1, identityRepository.markVerifiedCallCount)
+        assertEquals(listOf("sender-1"), identityRepository.markVerifiedSenderIds)
         assertEquals(1, verifiedTransitions)
         assertTrue(reporter.failures.isEmpty())
     }

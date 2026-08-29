@@ -1,7 +1,21 @@
 plugins {
     id("java-library")
     alias(libs.plugins.jetbrains.kotlin.jvm)
+    // build-logic 이 이미 클래스패스에 올려 둔 플러그인이라 버전을 다시 선언하면 충돌한다.
+    id("org.jlleitschuh.gradle.ktlint")
 }
+
+// 이 모듈은 convention plugin(afternote.jvm.library) 대신 java-library 를 직접 쓰느라 ktlint 만
+// 빠져 있었다. resolve-pr-impact.mjs 는 «.kt 가 바뀐 모듈» 마다 `<모듈>:ktlintCheck` 를 고르므로
+// (PR #1279 이후), 태스크가 없으면 konsist 소스를 건드리는 PR 의 Ktlint job 이 태스크 선택 단계에서
+// 죽는다. build-logic 과 같은 방식으로 플러그인만 직접 적용한다.
+ktlint {
+    version.set(libs.versions.ktlint)
+    filter {
+        exclude { it.file.path.contains("build/") }
+    }
+}
+
 java {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11

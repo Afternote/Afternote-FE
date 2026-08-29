@@ -49,6 +49,7 @@ internal fun tryApplyReceiverSelectionFromSavedState(
 ) {
     val id = backStackEntry.savedStateHandle[SELECTED_RECEIVER_ID_KEY] as? Long ?: return
     backStackEntry.savedStateHandle.remove<Long>(SELECTED_RECEIVER_ID_KEY)
+    // 목록 로드 실패 시 선택이 조용히 소실되는 경로, #1405
     val receiver = viewModel.getReceiverById(id) ?: return
     state.addReceiverById(id, receiver.name, receiver.label)
 }

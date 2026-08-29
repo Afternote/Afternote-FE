@@ -37,7 +37,6 @@ class FakeUserRepository(
     var onGetMyProfile: (suspend () -> User)? = null,
     var onUpdateMyProfile: (suspend (String?, String?, String?) -> User)? = null,
     var onDeleteAccount: (suspend () -> Unit)? = null,
-    var onLogActivity: (suspend () -> Unit)? = null,
     var onGetMyPushSettings: (suspend () -> UserPushSetting)? = null,
     var onUpdateMyPushSettings: (suspend (Boolean?, Boolean?, Boolean?) -> UserPushSetting)? = null,
     var onGetConnectedAccounts: (suspend () -> UserConnectedAccount)? = null,
@@ -59,7 +58,6 @@ class FakeUserRepository(
     private val getReceiversCounter = AtomicInteger()
     private val getProfileCounter = AtomicInteger()
     private val deleteAccountCounter = AtomicInteger()
-    private val logActivityCounter = AtomicInteger()
     private val getPushSettingsCounter = AtomicInteger()
     private val getConnectedAccountsCounter = AtomicInteger()
 
@@ -80,7 +78,6 @@ class FakeUserRepository(
     val getProfileCalls: Int get() = getProfileCounter.get()
     val profileCalls: Int get() = getProfileCounter.get()
     val deleteAccountCalls: Int get() = deleteAccountCounter.get()
-    val logActivityCalls: Int get() = logActivityCounter.get()
     val getMyPushSettingsCalls: Int get() = getPushSettingsCounter.get()
     val getConnectedAccountsCalls: Int get() = getConnectedAccountsCounter.get()
     val pushSettingUpdates: List<Triple<Boolean?, Boolean?, Boolean?>>
@@ -183,11 +180,6 @@ class FakeUserRepository(
     override suspend fun deleteAccount() {
         deleteAccountCounter.incrementAndGet()
         onDeleteAccount?.invoke()
-    }
-
-    override suspend fun logActivity() {
-        logActivityCounter.incrementAndGet()
-        onLogActivity?.invoke()
     }
 
     override suspend fun getMyPushSettings(): UserPushSetting {
@@ -313,7 +305,6 @@ class FakeUserRepository(
                 onGetMyProfile = { unexpectedCall("UserRepository.getMyProfile") },
                 onUpdateMyProfile = { _, _, _ -> unexpectedCall("UserRepository.updateMyProfile") },
                 onDeleteAccount = { unexpectedCall("UserRepository.deleteAccount") },
-                onLogActivity = { unexpectedCall("UserRepository.logActivity") },
                 onGetMyPushSettings = { unexpectedCall("UserRepository.getMyPushSettings") },
                 onUpdateMyPushSettings = { _, _, _ -> unexpectedCall("UserRepository.updateMyPushSettings") },
                 onGetConnectedAccounts = { unexpectedCall("UserRepository.getConnectedAccounts") },

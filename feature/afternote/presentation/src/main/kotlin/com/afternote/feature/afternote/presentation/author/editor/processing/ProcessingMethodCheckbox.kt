@@ -55,11 +55,11 @@ fun ProcessingMethodCheckbox(
     item: ProcessingMethodItem,
     expanded: Boolean = false,
     isEditing: Boolean = false,
-    onMoreClick: () -> Unit = {},
-    onDismissDropdown: () -> Unit = {},
-    onEditClick: () -> Unit = {},
-    onDeleteClick: () -> Unit = {},
-    onEditConfirmed: (String) -> Unit = {},
+    onMoreClick: () -> Unit,
+    onDismissDropdown: () -> Unit,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onEditConfirmed: (String) -> Unit,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
