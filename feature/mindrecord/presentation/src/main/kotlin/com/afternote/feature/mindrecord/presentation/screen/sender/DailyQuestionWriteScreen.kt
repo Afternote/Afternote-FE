@@ -70,6 +70,7 @@ fun DailyQuestionWriteScreen(
         onDraftListClick = onDraftListClick,
         onAnswerChanged = viewModel::onAnswerChanged,
         onMediaPicked = viewModel::uploadMedia,
+        onRetryResumeDraft = viewModel::retryResumeDraft,
     )
 }
 
@@ -90,6 +91,7 @@ internal fun DailyQuestionWriteScreenContent(
     onDraftListClick: () -> Unit = {},
     onAnswerChanged: (String) -> Unit = {},
     onMediaPicked: suspend (String) -> String? = { null },
+    onRetryResumeDraft: () -> Unit = {},
 ) {
     // 배너 접힘은 이 화면 안에서만 의미가 있는 표시 상태다 — Content 가 소유한다.
     var questionExpanded by remember { mutableStateOf(true) }
@@ -158,7 +160,7 @@ internal fun DailyQuestionWriteScreenContent(
                 )
                 // 실패 동안 저장이 막히므로 화면 안에서 풀 수단을 준다 — 없으면 쓴 답변을 들고
                 // 갇힌다. 이 모듈의 재시도는 TextButton 으로 그린다 (#1019).
-                TextButton(onClick = viewModel::retryResumeDraft) {
+                TextButton(onClick = onRetryResumeDraft) {
                     Text(
                         text = stringResource(R.string.mindrecord_error_retry),
                         style = AfternoteDesign.typography.bodySmallB,
