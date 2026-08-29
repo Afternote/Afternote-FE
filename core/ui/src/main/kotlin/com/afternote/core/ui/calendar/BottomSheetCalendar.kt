@@ -39,7 +39,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -313,32 +312,6 @@ fun PickerDayCell(
             color = textColor,
         )
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun DatePickerContentPreview() {
-    DatePickerContent(
-        title = "발송 예정일",
-        currentYear = 2026,
-        currentMonth = 5,
-        selectedDate = LocalDate.of(2026, 5, 30),
-        onPrevMonth = {},
-        onNextMonth = {},
-        onDateSelect = {},
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun CalendarGridContentPreview() {
-    CalendarGridContent(
-        currentYear = 2026,
-        currentMonth = 5,
-        selectedDate = LocalDate.of(2026, 5, 30),
-        onDateSelect = {},
-        modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
-    )
 }
 
 fun buildPickerDays(

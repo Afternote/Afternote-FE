@@ -17,11 +17,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
@@ -152,51 +150,5 @@ internal fun SelectableSongListBody(
         if (floatingActionButton != null && selectedSongKeys.isEmpty()) {
             SongPlaylistFloatingActionSlot { floatingActionButton() }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SelectableSongListBodySingleActionPreview() {
-    val songs =
-        remember {
-            listOf(
-                PlaylistSongDisplay(selectionKey = "preview:1", title = "보고싶다", artist = "김범수"),
-                PlaylistSongDisplay(selectionKey = "preview:2", title = "사랑했나봐", artist = "윤도현"),
-                PlaylistSongDisplay(selectionKey = "preview:3", title = "나의 옛날이야기", artist = "김광석"),
-            )
-        }
-    AfternoteTheme {
-        SelectableSongListBody(
-            songs = songs,
-            header = {},
-            initialSelectedSongKeys = setOf("preview:1"),
-            actionLabel = "추가하기",
-            onAction = {},
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SelectableSongListBodyDualActionPreview() {
-    val songs =
-        remember {
-            listOf(
-                PlaylistSongDisplay(selectionKey = "preview:1", title = "보고싶다", artist = "김범수"),
-                PlaylistSongDisplay(selectionKey = "preview:2", title = "사랑했나봐", artist = "윤도현"),
-                PlaylistSongDisplay(selectionKey = "preview:3", title = "나의 옛날이야기", artist = "김광석"),
-            )
-        }
-    AfternoteTheme {
-        SelectableSongListBody(
-            songs = songs,
-            header = {},
-            initialSelectedSongKeys = setOf("preview:1", "preview:2"),
-            actionLabel = "전체 삭제",
-            onAction = {},
-            secondaryActionLabel = "선택 삭제",
-            onSecondaryAction = {},
-        )
     }
 }

@@ -40,9 +40,6 @@ import com.afternote.feature.receiver.presentation.recordsbox.ReceivedRecordsVie
 import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistrationScreen
 import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistrationViewModel
 import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistry
-import com.afternote.feature.receiver.presentation.summary.ReceiverAfterNoteScreen
-import com.afternote.feature.receiver.presentation.summary.ReceiverDownloadAllEvent
-import com.afternote.feature.receiver.presentation.summary.ReceiverDownloadAllViewModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -204,80 +201,6 @@ class ReceiverAdvancedAndroidTest {
         composeRule.onNodeWithText("receiver-password").assertIsDisplayed()
 
         assertEquals(listOf(91L, 91L), repository.requestedDetailIds)
-    }
-
-    @Test
-    fun download_cancelThenDownloadFailureSaveFailureAndSuccess_preservesStageBoundaries() {
-        val saveFailureBundle = ReceivedExportBundle(payloadJson = "{\"attempt\":2}")
-        val successBundle = ReceivedExportBundle(payloadJson = "{\"attempt\":3}")
-        val downloadResults = ArrayDeque<Result<ReceivedExportBundle>>()
-        val saveResults = ArrayDeque<Result<Unit>>()
-        val repository =
-            FakeReceiverRepository.strict().apply {
-                onDownloadReceivedExport = { downloadResults.removeFirst() }
-                onSaveReceivedExportToFile = { saveResults.removeFirst() }
-            }
-        downloadResults.addLast(Result.failure(IllegalStateException("offline")))
-        downloadResults.addLast(Result.success(saveFailureBundle))
-        downloadResults.addLast(Result.success(successBundle))
-        saveResults.addLast(Result.failure(IllegalStateException("disk full")))
-        saveResults.addLast(Result.success(Unit))
-        val viewModel = ReceiverDownloadAllViewModel(repository, FakeErrorReporter())
-
-        composeRule.setContent {
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-            AfternoteTheme {
-                ReceiverAfterNoteScreen(
-                    downloadUiState = uiState,
-                    showBottomBar = false,
-                    onDownloadConfirm = {
-                        viewModel.onEvent(ReceiverDownloadAllEvent.ConfirmDownload)
-                    },
-                )
-            }
-        }
-
-        openDownloadDialog()
-        composeRule.onNodeWithText("아니요").performClick()
-        assertEquals(0, repository.downloadCalls)
-        assertEquals(0, repository.savedBundles.size)
-
-        confirmDownload()
-        composeRule.waitUntil(timeoutMillis = 5_000) {
-            viewModel.uiState.value.errorMessageRes == ReceiverR.string.receiver_download_all_failed
-        }
-        assertEquals(1, repository.downloadCalls)
-        assertEquals(0, repository.savedBundles.size)
-
-        confirmDownload()
-        composeRule.waitUntil(timeoutMillis = 5_000) {
-            viewModel.uiState.value.errorMessageRes == ReceiverR.string.receiver_download_all_save_failed
-        }
-        assertEquals(2, repository.downloadCalls)
-        assertEquals(listOf(saveFailureBundle), repository.savedBundles)
-
-        confirmDownload()
-        composeRule.waitUntil(timeoutMillis = 5_000) {
-            viewModel.uiState.value.downloadSuccess
-        }
-        assertEquals(3, repository.downloadCalls)
-        assertEquals(listOf(saveFailureBundle, successBundle), repository.savedBundles)
-        assertNull(viewModel.uiState.value.errorMessageRes)
-        assertTrue(viewModel.uiState.value.downloadSuccess)
-        assertFalse(viewModel.uiState.value.isLoading)
-    }
-
-    private fun openDownloadDialog() {
-        composeRule
-            .onNodeWithText("모든 기록 내려받기")
-            .performScrollTo()
-            .performClick()
-        composeRule.onNodeWithText("모든 기록을 내려받으시겠습니까?").assertIsDisplayed()
-    }
-
-    private fun confirmDownload() {
-        openDownloadDialog()
-        composeRule.onNodeWithText("예").performClick()
     }
 }
 

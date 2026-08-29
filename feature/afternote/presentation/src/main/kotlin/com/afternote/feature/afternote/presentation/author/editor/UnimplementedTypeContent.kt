@@ -13,10 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 
 /**
@@ -54,13 +52,5 @@ internal fun UnimplementedTypeContent(modifier: Modifier = Modifier) {
                 textAlign = TextAlign.Center,
             )
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun UnimplementedTypeContentPreview() {
-    AfternoteTheme {
-        UnimplementedTypeContent()
     }
 }

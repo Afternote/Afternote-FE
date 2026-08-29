@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.FAB.PenFloatingActionButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.detail.song.PlaylistEmptyContent
 import com.afternote.feature.afternote.presentation.shared.detail.song.PlaylistSongList
 import com.afternote.feature.afternote.presentation.shared.detail.song.SelectableSongListBody
@@ -153,48 +152,6 @@ private fun MemorialPlaylistListHeader(
                 AfternoteDesign.typography.bodySmallR.copy(
                     color = AfternoteDesign.colors.gray9,
                 ),
-        )
-    }
-}
-
-private fun memorialPlaylistPreviewSongs(): List<Song> =
-    (1..11).map { index ->
-        Song(
-            selectionKey = "preview:$index",
-            title = "노래 제목",
-            artist = "가수 이름",
-        )
-    }
-
-@Preview(showBackground = true, name = "목록 모드")
-@Composable
-private fun MemorialPlaylistEntryPreview() {
-    AfternoteLightTheme {
-        MemorialPlaylistEntry(
-            songs = memorialPlaylistPreviewSongs().take(3),
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "편집 모드")
-@Composable
-private fun MemorialPlaylistEntryEditModePreview() {
-    AfternoteLightTheme {
-        MemorialPlaylistEntry(
-            songs = memorialPlaylistPreviewSongs().take(4),
-            initialEditMode = true,
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "편집 모드 - 선택 중")
-@Composable
-private fun MemorialPlaylistEntryEditModeSelectionPreview() {
-    AfternoteLightTheme {
-        MemorialPlaylistEntry(
-            songs = memorialPlaylistPreviewSongs().take(4),
-            initialEditMode = true,
-            initialSelectedSongKeys = setOf("preview:1", "preview:3"),
         )
     }
 }
