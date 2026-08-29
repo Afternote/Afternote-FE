@@ -7,6 +7,7 @@ import com.afternote.core.datastore.LocalStoreRegistry
 import com.afternote.core.datastore.StoreScope
 import com.afternote.core.datastore.TokenDataSource
 import com.afternote.core.domain.error.CoreAuthFailure
+import com.afternote.core.domain.repository.push.PushTokenRepository
 import com.afternote.core.network.dto.LoginDto
 import com.afternote.core.network.dto.LoginRequestDto
 import com.afternote.core.network.dto.LogoutRequestDto
@@ -61,12 +62,16 @@ class AuthRepositoryImplTest {
     private fun repository(
         authApiService: AuthApiService = FakeAuthApiService(),
         tokenApiService: TokenApiService = FakeTokenApiService(),
+        pushTokenRepository: FakePushTokenRepository = FakePushTokenRepository(),
+        deviceToken: String? = "device-token",
     ) = AuthRepositoryImpl(
         tokenDataSource = tokenDataSource,
         authApiService = authApiService,
         tokenApiService = tokenApiService,
         expiryTracker = tracker,
         localStoreRegistry = localStoreRegistry,
+        pushTokenRepository = pushTokenRepository,
+        devicePushTokenProvider = { deviceToken },
     )
 
     @Test
@@ -333,6 +338,39 @@ class AuthRepositoryImplTest {
 
         assertTrue(result.exceptionOrNull() is CoreAuthFailure.NetworkUnavailable)
     }
+
+    @Test
+    fun `logout - 이 기기 푸시 토큰을 해제한다`() {
+        val pushTokenRepository = FakePushTokenRepository()
+        val repository = repository(pushTokenRepository = pushTokenRepository, deviceToken = "device-token")
+
+        val result = runBlocking { repository.logout() }
+
+        assertTrue(result.isSuccess)
+        assertEquals(listOf("device-token"), pushTokenRepository.unregistered)
+    }
+
+    @Test
+    fun `logout - 기기 토큰을 못 얻으면 해제를 건너뛴다`() {
+        val pushTokenRepository = FakePushTokenRepository()
+        val repository = repository(pushTokenRepository = pushTokenRepository, deviceToken = null)
+
+        val result = runBlocking { repository.logout() }
+
+        assertTrue(result.isSuccess)
+        assertTrue(pushTokenRepository.unregistered.isEmpty())
+    }
+
+    @Test
+    fun `logout - 푸시 토큰 해제가 실패해도 로그아웃은 끝난다`() {
+        val pushTokenRepository = FakePushTokenRepository(failing = true)
+        val repository = repository(pushTokenRepository = pushTokenRepository, deviceToken = "device-token")
+
+        val result = runBlocking { repository.logout() }
+
+        assertTrue(result.isSuccess)
+        assertNull(runBlocking { tokenDataSource.getAccessToken() })
+    }
 }
 
 private fun <T> success(data: T) = BaseResponse(status = 200, code = 200, message = "성공", data = data)
@@ -397,5 +435,19 @@ private class InMemoryPreferencesDataStore : DataStore<Preferences> {
         val transformed = transform(state.value)
         state.value = transformed
         return transformed
+    }
+}
+
+private class FakePushTokenRepository(
+    private val failing: Boolean = false,
+) : PushTokenRepository {
+    val unregistered = mutableListOf<String>()
+
+    override suspend fun register(token: String): Result<Unit> =
+        if (failing) Result.failure(IllegalStateException("등록 실패")) else Result.success(Unit)
+
+    override suspend fun unregister(token: String): Result<Unit> {
+        unregistered += token
+        return if (failing) Result.failure(IllegalStateException("해제 실패")) else Result.success(Unit)
     }
 }

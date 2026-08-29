@@ -11,10 +11,17 @@ import com.afternote.afternote_fe.R
 import com.afternote.core.common.notification.NotificationPendingIntentFactory
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.runBlocking
 import java.util.UUID
+import javax.inject.Inject
 import com.afternote.core.common.R as CommonR
 
+@AndroidEntryPoint
 class AfternoteFirebaseMessagingService : FirebaseMessagingService() {
+    @Inject
+    lateinit var pushTokenSynchronizer: PushTokenSynchronizer
+
     override fun onCreate() {
         super.onCreate()
         FcmNotificationChannel.create(this)
@@ -23,6 +30,18 @@ class AfternoteFirebaseMessagingService : FirebaseMessagingService() {
     override fun onRegistered(installationId: String) {
         super.onRegistered(installationId)
         Log.d(TAG, "FCM installation registered")
+    }
+
+    /**
+     * 토큰이 회전하면 서버에 다시 알린다 (#1493). 알리지 않으면 서버가 죽은 토큰으로 발송해
+     * 이 기기에는 아무것도 오지 않는다.
+     *
+     * 이 콜백은 Firebase SDK 의 백그라운드 스레드에서 불리므로 [runBlocking] 으로 서비스가 살아 있는
+     * 동안 끝낸다 — 여기서 발사만 하고 반환하면 프로세스 종료로 요청이 잘린다.
+     */
+    override fun onNewToken(token: String) {
+        super.onNewToken(token)
+        runBlocking { pushTokenSynchronizer.onTokenRotated(token) }
     }
 
     override fun onUnregistered(installationId: String) {

@@ -6,7 +6,9 @@ import com.afternote.core.datastore.LocalStoreRegistry
 import com.afternote.core.datastore.StoreScope
 import com.afternote.core.datastore.TokenDataSource
 import com.afternote.core.domain.error.CoreAuthFailure
+import com.afternote.core.domain.push.DevicePushTokenProvider
 import com.afternote.core.domain.repository.auth.AuthRepository
+import com.afternote.core.domain.repository.push.PushTokenRepository
 import com.afternote.core.model.Session
 import com.afternote.core.model.TokenBundle
 import com.afternote.core.network.dto.LoginRequestDto
@@ -32,6 +34,9 @@ internal class AuthRepositoryImpl
         private val expiryTracker: AccessTokenExpiryTracker,
         // 로그아웃·탈퇴 시 SESSION 스코프 로컬 저장소 일괄 정리 (#912).
         private val localStoreRegistry: LocalStoreRegistry,
+        // 로그아웃 때 이 기기의 FCM 토큰을 서버에서 지운다 (#1493).
+        private val pushTokenRepository: PushTokenRepository,
+        private val devicePushTokenProvider: DevicePushTokenProvider,
     ) : AuthRepository {
         override suspend fun clearSession() =
             runCatchingCancellable {
@@ -129,6 +134,10 @@ internal class AuthRepositoryImpl
          */
         override suspend fun logout(): Result<Unit> =
             runCatchingCancellable {
+                // 푸시 토큰 해제가 먼저다 — 이 요청도 액세스 토큰을 달고 나가므로 세션이 살아 있어야 한다.
+                // 실패해도 로그아웃은 진행한다(best-effort). 남은 토큰은 서버가 다음 발송 실패로 정리한다.
+                unregisterDevicePushToken()
+
                 val refreshToken = getRefreshToken().getOrNull()
                 if (refreshToken != null) {
                     runCatchingCancellable { authApiService.logout(LogoutRequestDto(refreshToken)) }
@@ -139,6 +148,18 @@ internal class AuthRepositoryImpl
                 localStoreRegistry.clearScope(StoreScope.SESSION)
                 expiryTracker.clear()
             }
+
+        /**
+         * 이 기기 토큰을 서버에서 지운다. 토큰 조회·해제 어느 쪽이 실패해도 삼킨다 —
+         * 로그아웃이 네트워크 상태에 인질로 잡히면 안 된다.
+         */
+        private suspend fun unregisterDevicePushToken() {
+            runCatchingCancellable {
+                devicePushTokenProvider.currentToken()?.let { token ->
+                    pushTokenRepository.unregister(token)
+                }
+            }
+        }
 
         /**
          * 발급 응답의 [expiresInSeconds](잔여 수명 초)로 선제 reissue deadline 을 기록한다.
