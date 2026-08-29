@@ -39,7 +39,7 @@ enum class ConditionState {
     /**
      * INACTIVITY 안전장치 — 미사용이 감지됐지만 곧장 전달하지 않고 "정말 부재/사망이 맞는지"
      * 확인하는 유예 대기 상태. 이 기간(문서상 7일, [DeliveryConditionItem.gracePeriodStartedAt] 부터 카운트)
-     * 에 사용자가 앱을 열면(활동 ping) 본인 생존이 확인돼 조건이 취소·리셋되고, 무반응이면 부재 확정 →
+     * 에 사용자가 앱을 열면(로그인·토큰 재발급을 서버가 활동으로 집계) 본인 생존이 확인돼 조건이 취소·리셋되고, 무반응이면 부재 확정 →
      * FULFILLED. 잠깐 앱을 안 썼을 뿐인 산 사람의 유산이 열리는 오발동을 막는 완충 단계.
      */
     PENDING_CONFIRMATION,
