@@ -42,6 +42,7 @@ internal class MemorialMediaSourceState(
     private val openTarget: MutableState<MemorialMediaTarget?>,
     private val onPickFromGallery: (MemorialMediaTarget) -> Unit,
     private val onCapture: (MemorialMediaTarget) -> Unit,
+    private val onRemove: (MemorialMediaTarget) -> Unit,
 ) {
     /** 시트가 열려 있는 슬롯. null 이면 시트가 닫혀 있다. */
     val target: MemorialMediaTarget? get() = openTarget.value
@@ -62,6 +63,11 @@ internal class MemorialMediaSourceState(
         consumeTarget()?.let(onCapture)
     }
 
+    /** 슬롯의 로컬 첨부 삭제 (#1114). 갈래 선택과 같은 규칙으로 시트를 닫고 넘긴다. */
+    fun remove() {
+        consumeTarget()?.let(onRemove)
+    }
+
     /** 인텐트를 쏘기 전에 시트를 닫는다 — 결과를 들고 돌아왔을 때 시트가 남아 있으면 화면을 가린다. */
     private fun consumeTarget(): MemorialMediaTarget? = target?.also { dismiss() }
 }
@@ -80,6 +86,8 @@ internal class MemorialMediaSourceState(
  *
  * @param onPhotoSelected 영정사진 확정 URI. 취소·실패에는 호출되지 않는다 — 슬롯의 기존 값이 그대로 남는다.
  * @param onVideoSelected 장례식에 남길 영상 확정 URI. 위와 같다.
+ * @param onPhotoRemoved 시트의 삭제 항목으로 영정사진 로컬 첨부를 지웠을 때 (#1114).
+ * @param onVideoRemoved 위와 같다 — 장례식에 남길 영상.
  * @param onCaptureFailed 촬영 인텐트를 띄우지 못한 사유. 화면 문구는 두 갈래가 같아 사유가 지워지므로
  *   호출처가 텔레메트리로 남긴다.
  */
@@ -88,6 +96,8 @@ internal fun rememberMemorialMediaSourceState(
     snackbarHostState: SnackbarHostState,
     onPhotoSelected: (String) -> Unit,
     onVideoSelected: (String) -> Unit,
+    onPhotoRemoved: () -> Unit,
+    onVideoRemoved: () -> Unit,
     onCaptureFailed: (Throwable) -> Unit,
 ): MemorialMediaSourceState {
     val context = LocalContext.current
@@ -166,6 +176,12 @@ internal fun rememberMemorialMediaSourceState(
                     scope.launch { snackbarHostState.showSnackbar(captureUnavailableMessage) }
                 }
             },
+            onRemove = { target ->
+                when (target) {
+                    MemorialMediaTarget.PHOTO -> onPhotoRemoved()
+                    MemorialMediaTarget.VIDEO -> onVideoRemoved()
+                }
+            },
         )
     }
 }
@@ -208,10 +224,17 @@ private inline fun launchCapture(
  * [MemorialMediaSourceState.target] 이 정해져 있을 때만 뜨는 소스 선택 시트.
  *
  * `ModalBottomSheet` 자체를 여기서 감싸 두어, 호출 화면은 이 컴포저블 한 줄만 두면 된다.
+ *
+ * @param removableTargets 삭제 항목을 노출할 슬롯 집합 — 호출 화면이 최신 폼으로
+ *   [removableMemorialMediaTargets] 를 계산해 넘긴다. 상태 객체는 remember 로 한 번 만들어져
+ *   폼 변화를 못 보므로, 폼 파생 값은 매 컴포지션 파라미터로 흐른다.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun MemorialMediaSourceSheet(state: MemorialMediaSourceState) {
+internal fun MemorialMediaSourceSheet(
+    state: MemorialMediaSourceState,
+    removableTargets: Set<MemorialMediaTarget>,
+) {
     val target = state.target ?: return
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
@@ -224,6 +247,7 @@ internal fun MemorialMediaSourceSheet(state: MemorialMediaSourceState) {
             target = target,
             onPickFromGallery = state::pickFromGallery,
             onCapture = state::capture,
+            onRemove = if (target in removableTargets) state::remove else null,
         )
     }
 }
