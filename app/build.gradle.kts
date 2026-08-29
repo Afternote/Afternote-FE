@@ -264,6 +264,9 @@ dependencies {
     implementation(projects.feature.timeletter.data)
     implementation(projects.feature.onboarding.data)
 
+    testImplementation(libs.coroutines.test)
+    testImplementation(testFixtures(projects.core.domain))
+
     baselineProfile(project(":baselineprofile"))
 
     // Managed-device androidTest — 실제 서버·OAuth 대신 Hilt fake를 주입하고 Compose semantics를 검증한다.

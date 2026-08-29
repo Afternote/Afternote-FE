@@ -14,6 +14,15 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
+/** 이 테스트의 관심 밖인 외부 라우팅을 채우는 no-op 묶음. */
+private val noopActions =
+    ReceiverHomeActions(
+        onSettingClick = {},
+        onNavigateToMindRecord = {},
+        onNavigateToTimeLetter = {},
+        onNavigateToAfternote = {},
+    )
+
 /**
  * 수신자 홈 내려받기 실패 안내의 Snackbar 표출 가드 (#1391).
  *
@@ -57,7 +66,7 @@ class ReceiverHomeDownloadSnackbarTest {
                             download = download,
                         ),
                     onEvent = { },
-                    actions = ReceiverHomeActions.Noop,
+                    actions = noopActions,
                 )
             }
         }
