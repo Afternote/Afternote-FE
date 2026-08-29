@@ -8,12 +8,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
  * 화면 우측 하단에 떠 있는 대장 버튼(FAB).
@@ -41,13 +39,5 @@ fun AfternoteFloatingActionButton(
             contentDescription = stringResource(R.string.core_ui_fab_content_description_add),
             modifier = Modifier.size(iconSize),
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun AfternoteFloatingActionButtonPreview() {
-    AfternoteTheme {
-        AfternoteFloatingActionButton(onClick = {})
     }
 }

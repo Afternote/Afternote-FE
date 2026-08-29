@@ -17,13 +17,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.AfternoteServiceDisplay
-import com.afternote.core.ui.R as CoreUiR
 
 /**
  * 애프터노트 작성자 상세 공통 상단: 서비스 아이콘·이름·최종 작성일.
@@ -68,20 +65,5 @@ fun AfternoteDetailServiceHeader(
                 color = AfternoteDesign.colors.gray6,
             )
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun AfternoteDetailServiceHeaderPreview() {
-    AfternoteTheme {
-        AfternoteDetailServiceHeader(
-            service =
-                AfternoteServiceDisplay(
-                    serviceName = "서비스 이름",
-                    iconResId = CoreUiR.drawable.core_ui_afternote_memorial_guideline,
-                ),
-            finalWriteDate = "2024.05.20",
-        )
     }
 }
