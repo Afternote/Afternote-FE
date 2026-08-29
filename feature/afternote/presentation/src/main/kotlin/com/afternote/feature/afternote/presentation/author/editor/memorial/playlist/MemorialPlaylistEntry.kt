@@ -64,10 +64,10 @@ import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDis
 fun MemorialPlaylistEntry(
     songs: List<Song>,
     modifier: Modifier = Modifier,
-    onBackClick: () -> Unit = {},
-    onNavigateToAddSongScreen: () -> Unit = {},
-    onClearAllSongs: () -> Unit = {},
-    onRemoveSongs: (Set<String>) -> Unit = {},
+    onBackClick: () -> Unit,
+    onNavigateToAddSongScreen: () -> Unit,
+    onClearAllSongs: () -> Unit,
+    onRemoveSongs: (Set<String>) -> Unit,
     initialEditMode: Boolean = false,
     initialSelectedSongKeys: Set<String> = emptySet(),
 ) {

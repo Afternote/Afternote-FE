@@ -58,7 +58,6 @@ fun appTestUserRepository(
         onGetMyProfile = null
         onUpdateMyProfile = null
         onDeleteAccount = null
-        onLogActivity = null
         onGetMyPushSettings = null
         onUpdateMyPushSettings = null
         onGetConnectedAccounts = { defaultConnectedAccounts(this.profile.email) }

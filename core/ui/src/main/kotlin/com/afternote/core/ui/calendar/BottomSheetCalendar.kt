@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
@@ -177,7 +178,7 @@ fun DatePickerContent(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "${currentYear}년 ${currentMonth}월",
+                        text = stringResource(R.string.core_ui_calendar_year_month, currentYear, currentMonth),
                         style = AfternoteDesign.typography.bodySmallR,
                         color = AfternoteDesign.colors.gray9,
                         modifier = Modifier.weight(1f),
@@ -240,7 +241,7 @@ fun CalendarGridContent(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
-        val dayLabels = listOf("일", "월", "화", "수", "목", "금", "토")
+        val dayLabels = stringArrayResource(R.array.core_ui_calendar_day_labels)
         Row(modifier = Modifier.fillMaxWidth()) {
             dayLabels.forEach { label ->
                 Text(

@@ -52,8 +52,8 @@ fun AccountDetailScreen(
     content: AccountDetailContent = AccountDetailContent(),
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     isEditable: Boolean = true,
-    onEditClick: () -> Unit = {},
-    onDeleteConfirm: () -> Unit = {},
+    onEditClick: () -> Unit,
+    onDeleteConfirm: () -> Unit,
     state: AfternoteDetailState = rememberAfternoteDetailState(),
 ) {
     if (isEditable && state.showDeleteDialog) {

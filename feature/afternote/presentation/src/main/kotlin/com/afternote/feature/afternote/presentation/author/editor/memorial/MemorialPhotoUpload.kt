@@ -19,7 +19,7 @@ fun MemorialPhotoUpload(
     modifier: Modifier = Modifier,
     label: String? = null,
     displayImageUri: String? = null,
-    onAddPhotoClick: () -> Unit = {},
+    onAddPhotoClick: () -> Unit,
 ) {
     val labelText = label ?: stringResource(R.string.afternote_editor_memorial_photo_label)
     Column(

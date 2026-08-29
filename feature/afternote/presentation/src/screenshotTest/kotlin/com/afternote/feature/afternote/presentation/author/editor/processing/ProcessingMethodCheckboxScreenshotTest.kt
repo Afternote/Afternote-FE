@@ -17,6 +17,11 @@ internal fun processingMethodCheckboxScreenshot() {
         ProcessingMethodCheckbox(
             item = ProcessingMethodItem(localId = 1, text = "보관"),
             modifier = Modifier.padding(16.dp),
+            onMoreClick = {},
+            onDismissDropdown = {},
+            onEditClick = {},
+            onDeleteClick = {},
+            onEditConfirmed = {},
         )
     }
 }

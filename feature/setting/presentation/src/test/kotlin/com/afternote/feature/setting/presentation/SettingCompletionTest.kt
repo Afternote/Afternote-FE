@@ -828,8 +828,6 @@ private class CompletionGatedWithdrawalUserApi(
     override suspend fun updateMyProfile(request: UserUpdateProfileRequestDto): BaseResponse<UserDto> =
         completionUnexpected("updateMyProfile")
 
-    override suspend fun logActivity(): BaseResponse<Unit> = completionUnexpected("logActivity")
-
     override suspend fun getMyPushSettings(): BaseResponse<UserPushSettingDto> = completionUnexpected("getMyPushSettings")
 
     override suspend fun updateMyPushSettings(request: UserUpdatePushSettingRequestDto): BaseResponse<UserPushSettingDto> =
