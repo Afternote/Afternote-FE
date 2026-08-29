@@ -44,6 +44,8 @@ class MemorialVideoLauncherTest {
                 "ftp://cdn.example.com/memorial.mp4",
                 "content://videos/memorial",
                 "javascript:alert(1)",
+                "intent://memorial#Intent;scheme=https;end",
+                "tel:0212345678",
                 "https:///missing-host.mp4",
             )
         var startedCount = 0
