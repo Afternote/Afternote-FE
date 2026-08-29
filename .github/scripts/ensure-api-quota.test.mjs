@@ -77,6 +77,9 @@ test("게이트 워크플로가 quota 확인과 실패 분류를 모두 건다",
         assert.match(workflow, /ensure-api-quota\.mjs ensure/, `${name} 이 사전 quota 확인을 걸지 않았다`);
         assert.match(workflow, /ensure-api-quota\.mjs classify/, `${name} 이 실패 원인 분류를 걸지 않았다`);
         // 분류는 실패했을 때만 의미가 있다.
-        assert.match(workflow, /if: failure\(\)\n\s+run: node \.github\/scripts\/ensure-api-quota\.mjs classify/);
+        assert.match(workflow, /if: failure\(\)\n(?:.*\n)*?\s+node \.github\/scripts\/ensure-api-quota\.mjs classify/);
+        // default branch 사본에 스크립트가 아직 없는 부트스트랩 한 번만 건너뛴다. 이 가드가
+        // 없으면 스크립트를 심는 PR 이 자기 게이트에서 모듈을 못 찾아 죽는다.
+        assert.match(workflow, /if \[ ! -f \.github\/scripts\/ensure-api-quota\.mjs \]; then/);
     }
 });

@@ -55,7 +55,14 @@ jobs:
       - name: Ensure GitHub API quota
         env:
           GH_TOKEN: ${{ github.token }}
-        run: node .github/scripts/ensure-api-quota.mjs ensure
+        run: |
+          # default branch 사본에 이 스크립트가 아직 없는 동안(= 스크립트를 심는 이 PR 자신)에는
+          # 건너뛴다. 머지 뒤에는 항상 존재하므로 이 경로는 부트스트랩 한 번에만 쓰인다.
+          if [ ! -f .github/scripts/ensure-api-quota.mjs ]; then
+            echo "::notice::quota 스크립트가 default branch 에 아직 없습니다 — 건너뜁니다"
+            exit 0
+          fi
+          node .github/scripts/ensure-api-quota.mjs ensure
 
       - name: closing 이슈 blocked_by 검사
         env:
@@ -189,7 +196,14 @@ jobs:
       # 빨간 체크를 보고도 원인을 로그까지 들어가야 안다 (#1465).
       - name: Classify a failed gate as rate limit exhaustion
         if: failure()
-        run: node .github/scripts/ensure-api-quota.mjs classify
+        run: |
+          # default branch 사본에 이 스크립트가 아직 없는 동안(= 스크립트를 심는 이 PR 자신)에는
+          # 건너뛴다. 머지 뒤에는 항상 존재하므로 이 경로는 부트스트랩 한 번에만 쓰인다.
+          if [ ! -f .github/scripts/ensure-api-quota.mjs ]; then
+            echo "::notice::quota 스크립트가 default branch 에 아직 없습니다 — 건너뜁니다"
+            exit 0
+          fi
+          node .github/scripts/ensure-api-quota.mjs classify
         env:
           GH_TOKEN: ${{ github.token }}
   refresh:
