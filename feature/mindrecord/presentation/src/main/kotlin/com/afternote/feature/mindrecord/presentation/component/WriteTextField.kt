@@ -179,10 +179,14 @@ fun WriteTextField(
                     // 않는다. 다만 고정값을 박으면 세로 사진이 본문에 4:3 으로 박제되므로
                     // 원본 비율로 높이를 계산한다 (#731 리뷰).
                     val (imageWidth, imageHeight) = context.mediaImageSize(uri, MEDIA_IMAGE_WIDTH_PX)
-                    "<img src=\"$fileKey\" alt=\"$displayName\" width=\"$imageWidth\" " +
+                    // `displayName` 은 파일을 넘긴 앱(content provider)이 정하는 값이라 따옴표가
+                    // 들어올 수 있다. 이스케이프하지 않으면 `alt` 가 그 자리에서 닫히고 뒤따르는
+                    // `width`/`height` 가 값으로 먹혀 **이미지가 저장된 본문에서 사라진다** (#1067 리뷰).
+                    "<img src=\"$fileKey\" alt=\"${displayName.escapeHtml()}\" width=\"$imageWidth\" " +
                         "height=\"$imageHeight\" />"
                 } else {
-                    "<a href=\"$fileKey\">$displayName</a>"
+                    // 링크 텍스트도 같은 출처다 — 이름 속 태그가 마크업으로 살아난다.
+                    "<a href=\"$fileKey\">${displayName.escapeHtml()}</a>"
                 }
             keepEditorFocus { state.setHtml(state.toHtml() + html) }
             attachments += displayName
