@@ -11,13 +11,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.receiver.presentation.R
 
 /**
  * 재시도 버튼. 재시도가 실제로 유효한 실패에서만 넘긴다 — 라벨과 동작을 한 타입에 묶어, 버튼은
@@ -78,30 +74,5 @@ internal fun ReceiverAfternoteListErrorBody(
                 }
             }
         }
-    }
-}
-
-/** 전달 조건 미충족 — 재시도로 풀리지 않아 버튼이 없다. */
-@Preview(showBackground = true)
-@Composable
-private fun ReceiverAfternoteListErrorBodyNotDeliverablePreview() {
-    AfternoteTheme {
-        ReceiverAfternoteListErrorBody(
-            title = "아직 전달 조건이 충족되지 않았습니다.",
-            description = stringResource(R.string.receiver_afternote_list_not_deliverable_description),
-        )
-    }
-}
-
-/** 연결 실패 — 재시도가 유효하다. */
-@Preview(showBackground = true)
-@Composable
-private fun ReceiverAfternoteListErrorBodyNetworkPreview() {
-    AfternoteTheme {
-        ReceiverAfternoteListErrorBody(
-            title = "네트워크 연결 오류",
-            description = "인터넷 연결을 확인한 후 다시 시도해 주세요.",
-            retry = ListErrorRetry(label = "다시 시도하기", onClick = {}),
-        )
     }
 }
