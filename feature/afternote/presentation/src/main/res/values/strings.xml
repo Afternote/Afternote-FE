@@ -259,4 +259,15 @@
          신규 키는 #1079 규약대로 afternote_ 프리픽스를 쓴다. -->
     <string name="afternote_receiver_detail_title">故 %1$s님의 애프터노트</string>
     <string name="afternote_receiver_detail_confirm">애프터노트 확인하기</string>
+
+    <!-- 수신 애프터노트 화면 (#1461 로 :feature:receiver:presentation 에서 이관) -->
+    <string name="receiver_afternote_list_header_description">고인이 사후 정리하고자 하는 데이터입니다.</string>
+    <string name="receiver_afternote_list_not_deliverable_description">발신자가 정한 전달 조건이 충족되면 열람하실 수 있어요.</string>
+    <string name="receiver_afternote_list_not_deliverable_message">아직 열람할 수 없는 상태입니다.</string>
+    <string name="receiver_detail_account_absent">고인이 계정 정보를 남기지 않았습니다.</string>
+    <string name="receiver_detail_account_value_absent">남기지 않음</string>
+    <string name="receiver_memorial_playlist_load_error">플레이리스트를 불러오지 못했습니다.</string>
+    <string name="receiver_memorial_playlist_screen_title">%1$s님의 플레이리스트</string>
+    <string name="receiver_playlist_empty_message">고인이 남긴 곡이 없어요.</string>
+    <string name="receiver_playlist_song_count_format">총 %1$d곡</string>
 </resources>
