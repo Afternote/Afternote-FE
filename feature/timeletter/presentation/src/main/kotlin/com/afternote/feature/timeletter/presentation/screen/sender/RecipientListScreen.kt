@@ -159,54 +159,74 @@ private fun RecipientListContent(
                     imeAction = ImeAction.Search,
                     modifier = Modifier.padding(horizontal = 20.dp),
                 )
-                Row(modifier = Modifier.fillMaxSize()) {
-                    LazyColumn(
-                        state = listState,
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .padding(start = 20.dp),
-                    ) {
-                        groupedRecipients.forEach { (consonant, groupItems) ->
-                            stickyHeader(key = "header_$consonant") {
-                                ConsonantSectionHeader(consonant = consonant)
-                            }
-                            items(groupItems, key = { it.receiverId }) { recipient ->
-                                RecipientListItem(
-                                    recipient = recipient,
-                                    selected = recipient.receiverId in selectedIds,
-                                    onSelectedChange = { checked ->
-                                        if (checked) {
-                                            selectedIds.add(recipient.receiverId)
-                                        } else {
-                                            selectedIds.remove(recipient.receiverId)
-                                        }
-                                    },
-                                )
-                            }
-                        }
-                        item { Spacer(modifier = Modifier.padding(14.dp)) }
-                    }
-                    Box(
-                        modifier =
-                            Modifier
-                                .fillMaxHeight()
-                                .padding(end = 8.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        KoreanConsonantIndex(
-                            selectedConsonant = selectedConsonant,
-                            onConsonantSelect = { consonant ->
-                                selectedConsonant = consonant
-                                consonantIndexMap[consonant]?.let { index ->
-                                    coroutineScope.launch { listState.scrollToItem(index) }
+                if (groupedRecipients.isEmpty()) {
+                    RecipientSearchEmptyContent(modifier = Modifier.fillMaxSize())
+                } else {
+                    Row(modifier = Modifier.fillMaxSize()) {
+                        LazyColumn(
+                            state = listState,
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .padding(start = 20.dp),
+                        ) {
+                            groupedRecipients.forEach { (consonant, groupItems) ->
+                                stickyHeader(key = "header_$consonant") {
+                                    ConsonantSectionHeader(consonant = consonant)
                                 }
-                            },
-                        )
+                                items(groupItems, key = { it.receiverId }) { recipient ->
+                                    RecipientListItem(
+                                        recipient = recipient,
+                                        selected = recipient.receiverId in selectedIds,
+                                        onSelectedChange = { checked ->
+                                            if (checked) {
+                                                selectedIds.add(recipient.receiverId)
+                                            } else {
+                                                selectedIds.remove(recipient.receiverId)
+                                            }
+                                        },
+                                    )
+                                }
+                            }
+                            item { Spacer(modifier = Modifier.padding(14.dp)) }
+                        }
+                        Box(
+                            modifier =
+                                Modifier
+                                    .fillMaxHeight()
+                                    .padding(end = 8.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            KoreanConsonantIndex(
+                                selectedConsonant = selectedConsonant,
+                                onConsonantSelect = { consonant ->
+                                    selectedConsonant = consonant
+                                    consonantIndexMap[consonant]?.let { index ->
+                                        coroutineScope.launch { listState.scrollToItem(index) }
+                                    }
+                                },
+                            )
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun RecipientSearchEmptyContent(modifier: Modifier = Modifier) {
+    Box(
+        modifier =
+            modifier
+                .padding(horizontal = 20.dp)
+                .padding(top = 24.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.timeletter_recipient_search_empty),
+            style = AfternoteDesign.typography.bodyLargeR,
+            color = AfternoteDesign.colors.gray8,
+        )
     }
 }
 
@@ -264,6 +284,12 @@ private fun ConsonantSectionHeader(consonant: Char) {
         color = AfternoteDesign.colors.gray5,
         modifier = Modifier.padding(vertical = 8.dp),
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RecipientSearchEmptyPreview() {
+    RecipientSearchEmptyContent()
 }
 
 @Preview(showBackground = true)

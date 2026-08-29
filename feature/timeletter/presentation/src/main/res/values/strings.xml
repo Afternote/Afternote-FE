@@ -12,4 +12,5 @@
     <string name="timeletter_recipient_empty_title">등록된 수신자가 없습니다.</string>
     <string name="timeletter_recipient_empty_description">수신자를 등록하고 쉽게 관리해 보세요.</string>
     <string name="timeletter_recipient_register">수신자 등록하기</string>
+    <string name="timeletter_recipient_search_empty">일치하는 수신자가 없습니다.</string>
 </resources>

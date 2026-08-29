@@ -31,27 +31,44 @@ import org.robolectric.annotation.GraphicsMode
 /** #791 공용 API 전에도 설정 selector가 지켜야 하는 표현 가능한 경계만 검증한다. */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [35])
+@Config(sdk = [35], qualifiers = "w360dp-h800dp-xhdpi")
 class ReceiverSelectionBoundaryTest {
     @get:Rule
     val composeRule = createComposeRule()
 
     @Test
-    fun emptyList_disablesConfirmationAndAllowsCancel() {
+    fun emptyList_showsEmptyStateAndAllowsCancel() {
         var backCalls = 0
         var confirmCalls = 0
+        var registerCalls = 0
         setReceiverContent(
             receivers = emptyList(),
             onBack = { backCalls += 1 },
             onConfirm = { confirmCalls += 1 },
+            onRegister = { registerCalls += 1 },
         )
 
         composeRule.onAllNodes(checkboxMatcher).assertCountEquals(0)
-        composeRule.onNodeWithText("수신자 선택 완료하기").assertIsNotEnabled()
+        composeRule.onNodeWithText("수신자 선택 완료하기").assertDoesNotExist()
+        composeRule.onNodeWithText("등록된 수신자가 없습니다.").assertIsDisplayed()
+        composeRule.onNodeWithText("수신자 등록하기").performClick()
         composeRule.onNodeWithContentDescription("뒤로가기").performClick()
 
+        assertEquals(1, registerCalls)
         assertEquals(1, backCalls)
         assertEquals(0, confirmCalls)
+    }
+
+    @Test
+    fun searchNoResult_showsSearchEmptyStateWithoutRegisterCta() {
+        val receivers = defaultReceivers()
+        setReceiverContent(receivers = receivers)
+
+        composeRule.onNodeWithText("이름으로 검색하기").performTextInput("없는 이름")
+
+        composeRule.onNodeWithText("일치하는 수신자가 없습니다.").assertIsDisplayed()
+        composeRule.onNodeWithText("수신자 등록하기").assertDoesNotExist()
+        composeRule.onNodeWithText("수신자 선택 완료하기").assertIsNotEnabled()
     }
 
     @Test
@@ -109,6 +126,7 @@ class ReceiverSelectionBoundaryTest {
         receivers: List<ReceiverListItem>,
         onBack: () -> Unit = {},
         onConfirm: (ReceiverListItem) -> Unit = {},
+        onRegister: () -> Unit = {},
     ) {
         composeRule.setContent {
             AfternoteTheme {
@@ -116,6 +134,7 @@ class ReceiverSelectionBoundaryTest {
                     receivers = receivers,
                     onBackClick = onBack,
                     onConfirmClick = onConfirm,
+                    onRegisterClick = onRegister,
                 )
             }
         }

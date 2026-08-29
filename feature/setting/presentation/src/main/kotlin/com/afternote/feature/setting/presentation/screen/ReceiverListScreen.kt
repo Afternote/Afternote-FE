@@ -135,48 +135,68 @@ fun ReceiverListScreen(
                     imeAction = ImeAction.Search,
                     modifier = Modifier.padding(horizontal = 20.dp),
                 )
-                Row(modifier = Modifier.fillMaxSize()) {
-                    LazyColumn(
-                        state = listState,
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .padding(start = 20.dp),
-                    ) {
-                        groupedReceivers.forEach { (_, items) ->
-                            items(items, key = { it.receiverId }) { receiver ->
-                                ReceiverListItem(
-                                    receiver = receiver,
-                                    selected = receiver.receiverId == selectedId,
-                                    onSelectedChange = {
-                                        selectedId =
-                                            if (selectedId == receiver.receiverId) null else receiver.receiverId
-                                    },
-                                )
-                            }
-                        }
-                        item { Spacer(modifier = Modifier.padding(14.dp)) }
-                    }
-                    Box(
-                        modifier =
-                            Modifier
-                                .fillMaxHeight()
-                                .padding(end = 8.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        KoreanConsonantIndex(
-                            selectedConsonant = selectedConsonant,
-                            onConsonantSelect = { consonant ->
-                                selectedConsonant = consonant
-                                consonantIndexMap[consonant]?.let { index ->
-                                    coroutineScope.launch { listState.scrollToItem(index) }
+                if (groupedReceivers.isEmpty()) {
+                    ReceiverSearchEmptyContent(modifier = Modifier.fillMaxSize())
+                } else {
+                    Row(modifier = Modifier.fillMaxSize()) {
+                        LazyColumn(
+                            state = listState,
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .padding(start = 20.dp),
+                        ) {
+                            groupedReceivers.forEach { (_, items) ->
+                                items(items, key = { it.receiverId }) { receiver ->
+                                    ReceiverListItem(
+                                        receiver = receiver,
+                                        selected = receiver.receiverId == selectedId,
+                                        onSelectedChange = {
+                                            selectedId =
+                                                if (selectedId == receiver.receiverId) null else receiver.receiverId
+                                        },
+                                    )
                                 }
-                            },
-                        )
+                            }
+                            item { Spacer(modifier = Modifier.padding(14.dp)) }
+                        }
+                        Box(
+                            modifier =
+                                Modifier
+                                    .fillMaxHeight()
+                                    .padding(end = 8.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            KoreanConsonantIndex(
+                                selectedConsonant = selectedConsonant,
+                                onConsonantSelect = { consonant ->
+                                    selectedConsonant = consonant
+                                    consonantIndexMap[consonant]?.let { index ->
+                                        coroutineScope.launch { listState.scrollToItem(index) }
+                                    }
+                                },
+                            )
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ReceiverSearchEmptyContent(modifier: Modifier = Modifier) {
+    Box(
+        modifier =
+            modifier
+                .padding(horizontal = 20.dp)
+                .padding(top = 24.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.setting_receiver_search_empty),
+            style = AfternoteDesign.typography.bodyLargeR,
+            color = AfternoteDesign.colors.gray8,
+        )
     }
 }
 
@@ -224,6 +244,12 @@ private fun RecipientListEmptyContent(
             modifier = Modifier.padding(bottom = 16.dp),
         )
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ReceiverSearchEmptyPreview() {
+    ReceiverSearchEmptyContent()
 }
 
 @Preview(showBackground = true)

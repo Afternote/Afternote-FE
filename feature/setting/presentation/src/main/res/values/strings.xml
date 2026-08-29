@@ -4,6 +4,7 @@
     <string name="setting_receiver_empty_title">등록된 수신자가 없습니다.</string>
     <string name="setting_receiver_empty_description">수신자를 등록하고 쉽게 관리해 보세요.</string>
     <string name="setting_receiver_empty_register">수신자 등록하기</string>
+    <string name="setting_receiver_search_empty">일치하는 수신자가 없습니다.</string>
     <!-- 설정 공통 -->
     <string name="settings_title">설정</string>
     <!-- 섹션 헤더 -->
