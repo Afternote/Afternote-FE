@@ -19,10 +19,14 @@ import com.afternote.core.model.user.ReceiverDetail
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserPushSetting
+import com.afternote.core.network.dto.LoginDto
+import com.afternote.core.network.dto.LoginRequestDto
+import com.afternote.core.network.dto.LogoutRequestDto
 import com.afternote.core.network.dto.PasskeyDto
 import com.afternote.core.network.dto.ReceiverDetailDto
 import com.afternote.core.network.dto.ReceiverListDto
 import com.afternote.core.network.dto.SocialAccountLinkRequestDto
+import com.afternote.core.network.dto.SocialLoginRequestDto
 import com.afternote.core.network.dto.UserConnectedAccountDto
 import com.afternote.core.network.dto.UserCreateReceiverDto
 import com.afternote.core.network.dto.UserCreateReceiverRequestDto
@@ -36,6 +40,7 @@ import com.afternote.core.network.dto.UserUpdateReceiverMessageRequestDto
 import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionDto
 import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionUpdateRequestDto
 import com.afternote.core.network.model.BaseResponse
+import com.afternote.core.network.service.AuthApiService
 import com.afternote.core.network.service.UserApiService
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsViewModel
@@ -58,6 +63,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.json.JsonElement
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -505,7 +511,7 @@ class SettingCompletionTest {
         val firstGate = userApi.enqueueDelete()
         val retryGate = userApi.enqueueDelete()
         val authRepository = completionStatefulWithdrawalAuthRepository(calls)
-        val repository = UserRepositoryImpl(userApi, authRepository, NoopErrorReporter)
+        val repository = UserRepositoryImpl(userApi, CompletionUnusedAuthApiService(), authRepository, NoopErrorReporter)
         val viewModel = SettingViewModel(authRepository, repository)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value is SettingUiState.Success
@@ -855,6 +861,19 @@ private class CompletionGatedWithdrawalUserApi(
         receiverId: Long,
         request: ReceiverDeliveryConditionUpdateRequestDto,
     ): BaseResponse<ReceiverDeliveryConditionDto> = completionUnexpected("updateReceiverDeliveryConditions")
+}
+
+private class CompletionUnusedAuthApiService : AuthApiService {
+    override suspend fun login(body: LoginRequestDto): BaseResponse<LoginDto.DefaultLoginDto> = completionUnexpected("login")
+
+    override suspend fun socialLogin(body: SocialLoginRequestDto): BaseResponse<LoginDto.SocialLoginDto> =
+        completionUnexpected("socialLogin")
+
+    override suspend fun logout(body: LogoutRequestDto): BaseResponse<Unit> = completionUnexpected("logout")
+
+    override suspend fun getPasskeyRegisterOptions(): BaseResponse<JsonElement> = completionUnexpected("getPasskeyRegisterOptions")
+
+    override suspend fun registerPasskey(credential: JsonElement): BaseResponse<PasskeyDto> = completionUnexpected("registerPasskey")
 }
 
 private fun completionStatefulWithdrawalAuthRepository(calls: CompletionCallLedger): FakeAuthRepository =

@@ -25,6 +25,7 @@ import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionUpdateRe
 import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
+import com.afternote.core.network.service.AuthApiService
 import com.afternote.core.network.service.UserApiService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -36,6 +37,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import com.afternote.core.data.mapper.delivery.toDomain as toDeliveryConditionsDomain
 
@@ -45,6 +47,7 @@ class UserRepositoryImpl
     @Inject
     constructor(
         private val userApiService: UserApiService,
+        private val authApiService: AuthApiService,
         private val authRepository: AuthRepository,
         private val errorReporter: ErrorReporter,
     ) : UserRepository {
@@ -217,6 +220,18 @@ class UserRepositoryImpl
                 .getPasskeys()
                 .requireData()
                 .map { it.toDomain() }
+
+        override suspend fun getPasskeyRegisterOptions(): String =
+            authApiService
+                .getPasskeyRegisterOptions()
+                .requireData()
+                .toString()
+
+        override suspend fun registerPasskey(credentialJson: String): Passkey =
+            authApiService
+                .registerPasskey(Json.parseToJsonElement(credentialJson))
+                .requireData()
+                .toDomain()
 
         override suspend fun logActivity() {
             userApiService

@@ -27,6 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.credentials.CredentialManager
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.afternote.core.ui.button.AfternoteButton
@@ -61,6 +62,7 @@ fun PassKeyMakingScreen(
 ) {
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity<FragmentActivity>() }
+    val credentialManager = remember(context) { CredentialManager.create(context) }
     val coroutineScope = rememberCoroutineScope()
     val isBiometricAvailable =
         remember {
@@ -141,8 +143,18 @@ fun PassKeyMakingScreen(
                                 val result = authenticate(activity)
                                 when (result) {
                                     BiometricResult.Success -> {
-                                        viewModel.savePasskeyRegistered()
-                                        showCompletionDialog = true
+                                        when (
+                                            val registration =
+                                                registerPasskeyWithCredentialManager(
+                                                    context = activity,
+                                                    credentialManager = credentialManager,
+                                                    viewModel = viewModel,
+                                                )
+                                        ) {
+                                            PasskeyRegistrationResult.Success -> showCompletionDialog = true
+                                            PasskeyRegistrationResult.Canceled -> Unit
+                                            is PasskeyRegistrationResult.Error -> errorMessage = registration.message
+                                        }
                                     }
 
                                     BiometricResult.Canceled -> {

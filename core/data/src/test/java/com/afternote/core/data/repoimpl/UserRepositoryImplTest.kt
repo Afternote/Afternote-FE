@@ -3,10 +3,14 @@ package com.afternote.core.data.repoimpl
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.model.user.Receiver
+import com.afternote.core.network.dto.LoginDto
+import com.afternote.core.network.dto.LoginRequestDto
+import com.afternote.core.network.dto.LogoutRequestDto
 import com.afternote.core.network.dto.PasskeyDto
 import com.afternote.core.network.dto.ReceiverDetailDto
 import com.afternote.core.network.dto.ReceiverListDto
 import com.afternote.core.network.dto.SocialAccountLinkRequestDto
+import com.afternote.core.network.dto.SocialLoginRequestDto
 import com.afternote.core.network.dto.UserConnectedAccountDto
 import com.afternote.core.network.dto.UserCreateReceiverDto
 import com.afternote.core.network.dto.UserCreateReceiverRequestDto
@@ -21,6 +25,7 @@ import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionDto
 import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionUpdateRequestDto
 import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.BaseResponse
+import com.afternote.core.network.service.AuthApiService
 import com.afternote.core.network.service.UserApiService
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.cancelAndJoin
@@ -29,6 +34,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.json.JsonElement
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
@@ -56,6 +62,7 @@ class UserRepositoryImplTest {
                 onGetReceivers = onGetReceivers,
                 onCreateReceiver = onCreateReceiver,
             ),
+        authApiService = FakeAuthApiService(),
         authRepository =
             authRepository.apply {
                 onClearSession = {
@@ -506,4 +513,16 @@ private class FakeUserApiService(
         receiverId: Long,
         request: ReceiverDeliveryConditionUpdateRequestDto,
     ): BaseResponse<ReceiverDeliveryConditionDto> = TODO("이 테스트 미사용")
+}
+
+private class FakeAuthApiService : AuthApiService {
+    override suspend fun login(body: LoginRequestDto): BaseResponse<LoginDto.DefaultLoginDto> = TODO("이 테스트 미사용")
+
+    override suspend fun socialLogin(body: SocialLoginRequestDto): BaseResponse<LoginDto.SocialLoginDto> = TODO("이 테스트 미사용")
+
+    override suspend fun logout(body: LogoutRequestDto): BaseResponse<Unit> = TODO("이 테스트 미사용")
+
+    override suspend fun getPasskeyRegisterOptions(): BaseResponse<JsonElement> = TODO("이 테스트 미사용")
+
+    override suspend fun registerPasskey(credential: JsonElement): BaseResponse<PasskeyDto> = TODO("이 테스트 미사용")
 }

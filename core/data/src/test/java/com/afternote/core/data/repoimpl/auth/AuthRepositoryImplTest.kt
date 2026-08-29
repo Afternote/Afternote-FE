@@ -10,6 +10,7 @@ import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.network.dto.LoginDto
 import com.afternote.core.network.dto.LoginRequestDto
 import com.afternote.core.network.dto.LogoutRequestDto
+import com.afternote.core.network.dto.PasskeyDto
 import com.afternote.core.network.dto.ReissueDto
 import com.afternote.core.network.dto.ReissueRequestDto
 import com.afternote.core.network.dto.SocialLoginRequestDto
@@ -21,6 +22,7 @@ import com.afternote.core.network.token.AccessTokenExpiryTracker
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.JsonElement
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -360,6 +362,10 @@ private class FakeAuthApiService(
         logoutRequests += body
         return onLogout()
     }
+
+    override suspend fun getPasskeyRegisterOptions(): BaseResponse<JsonElement> = error("getPasskeyRegisterOptions 는 이 시나리오에서 호출되면 안 됨")
+
+    override suspend fun registerPasskey(credential: JsonElement): BaseResponse<PasskeyDto> = error("registerPasskey 는 이 시나리오에서 호출되면 안 됨")
 }
 
 private class FakeTokenApiService(

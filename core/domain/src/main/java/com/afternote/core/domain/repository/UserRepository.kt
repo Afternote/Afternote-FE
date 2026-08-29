@@ -68,6 +68,17 @@ interface UserRepository {
     // 등록된 패스키 목록 조회
     suspend fun getPasskeys(): List<Passkey>
 
+    /**
+     * 패스키 등록용 challenge 옵션 조회 — 서버가 내려준 원본 JSON 문자열을 그대로 반환한다.
+     * 호출부(Android Credential Manager)가 이 문자열을 그대로 `CreatePublicKeyCredentialRequest`에 전달한다.
+     */
+    suspend fun getPasskeyRegisterOptions(): String
+
+    /**
+     * Credential Manager가 반환한 등록 응답 JSON을 그대로 서버에 전달해 패스키 등록을 완료한다.
+     */
+    suspend fun registerPasskey(credentialJson: String): Passkey
+
     // 활동 기록(ping) — 앱 실행/로그인 확정 시 미사용(INACTIVITY) 전달조건 타이머를 리셋
     suspend fun logActivity()
 

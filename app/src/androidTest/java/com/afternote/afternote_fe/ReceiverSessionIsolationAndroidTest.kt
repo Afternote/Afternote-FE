@@ -11,9 +11,14 @@ import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.core.data.repoimpl.UserRepositoryImpl
 import com.afternote.core.domain.testing.FakeAuthRepository
+import com.afternote.core.network.dto.LoginDto
+import com.afternote.core.network.dto.LoginRequestDto
+import com.afternote.core.network.dto.LogoutRequestDto
+import com.afternote.core.network.dto.PasskeyDto
 import com.afternote.core.network.dto.ReceiverDetailDto
 import com.afternote.core.network.dto.ReceiverListDto
 import com.afternote.core.network.dto.SocialAccountLinkRequestDto
+import com.afternote.core.network.dto.SocialLoginRequestDto
 import com.afternote.core.network.dto.UserConnectedAccountDto
 import com.afternote.core.network.dto.UserCreateReceiverDto
 import com.afternote.core.network.dto.UserCreateReceiverRequestDto
@@ -28,10 +33,12 @@ import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionDto
 import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionUpdateRequestDto
 import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.BaseResponse
+import com.afternote.core.network.service.AuthApiService
 import com.afternote.core.network.service.UserApiService
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.timeletter.presentation.screen.sender.RecipientListScreen
 import com.afternote.feature.timeletter.presentation.viewmodel.RecipientListViewModel
+import kotlinx.serialization.json.JsonElement
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -75,7 +82,8 @@ class ReceiverSessionIsolationAndroidTest {
                 ),
             ),
         )
-        val repository = UserRepositoryImpl(userApi, authRepository, FakeErrorReporter())
+        val repository =
+            UserRepositoryImpl(userApi, ReceiverSessionUnusedAuthApiService(), authRepository, FakeErrorReporter())
         val viewModel = RecipientListViewModel(repository)
 
         composeRule.setContent {
@@ -146,6 +154,8 @@ private class SessionReceiverUserApi : UserApiService {
         return result.getOrThrow()
     }
 
+    override suspend fun getPasskeys(): BaseResponse<List<PasskeyDto>> = receiverSessionUnexpected("getPasskeys")
+
     override suspend fun createReceiver(request: UserCreateReceiverRequestDto): BaseResponse<UserCreateReceiverDto> =
         receiverSessionUnexpected("createReceiver")
 
@@ -196,3 +206,16 @@ private class SessionReceiverUserApi : UserApiService {
 }
 
 private fun <T> receiverSessionUnexpected(method: String): T = error("$method must not be called by this test")
+
+private class ReceiverSessionUnusedAuthApiService : AuthApiService {
+    override suspend fun login(body: LoginRequestDto): BaseResponse<LoginDto.DefaultLoginDto> = receiverSessionUnexpected("login")
+
+    override suspend fun socialLogin(body: SocialLoginRequestDto): BaseResponse<LoginDto.SocialLoginDto> =
+        receiverSessionUnexpected("socialLogin")
+
+    override suspend fun logout(body: LogoutRequestDto): BaseResponse<Unit> = receiverSessionUnexpected("logout")
+
+    override suspend fun getPasskeyRegisterOptions(): BaseResponse<JsonElement> = receiverSessionUnexpected("getPasskeyRegisterOptions")
+
+    override suspend fun registerPasskey(credential: JsonElement): BaseResponse<PasskeyDto> = receiverSessionUnexpected("registerPasskey")
+}

@@ -9,15 +9,22 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.credentials.CredentialManager
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.popup.Popup
+import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.InsertPasswordContent
@@ -34,13 +41,35 @@ fun PassKeyPasswordScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentOnPinComplete by rememberUpdatedState(onPinComplete)
+    val context = LocalContext.current
+    val credentialManager = remember(context) { CredentialManager.create(context) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(uiState.isComplete) {
         if (uiState.isComplete) {
-            passKeyViewModel.savePasskeyRegistered()
-            currentOnPinComplete(uiState.pin)
+            when (
+                val registration =
+                    registerPasskeyWithCredentialManager(
+                        context = context,
+                        credentialManager = credentialManager,
+                        viewModel = passKeyViewModel,
+                    )
+            ) {
+                PasskeyRegistrationResult.Success -> currentOnPinComplete(uiState.pin)
+                PasskeyRegistrationResult.Canceled -> Unit
+                is PasskeyRegistrationResult.Error -> errorMessage = registration.message
+            }
             viewModel.resetPin()
         }
+    }
+
+    errorMessage?.let { msg ->
+        Popup(
+            type = PopupType.Default,
+            message = msg,
+            onConfirm = { errorMessage = null },
+            onDismiss = { errorMessage = null },
+        )
     }
 
     Scaffold(

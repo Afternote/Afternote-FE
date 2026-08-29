@@ -40,6 +40,8 @@ class FakeUserRepository(
     var onUpdateMyProfile: (suspend (String?, String?, String?) -> User)? = null,
     var onDeleteAccount: (suspend () -> Unit)? = null,
     var onGetPasskeys: (suspend () -> List<Passkey>)? = null,
+    var onGetPasskeyRegisterOptions: (suspend () -> String)? = null,
+    var onRegisterPasskey: (suspend (String) -> Passkey)? = null,
     var onLogActivity: (suspend () -> Unit)? = null,
     var onGetMyPushSettings: (suspend () -> UserPushSetting)? = null,
     var onUpdateMyPushSettings: (suspend (Boolean?, Boolean?, Boolean?) -> UserPushSetting)? = null,
@@ -196,6 +198,19 @@ class FakeUserRepository(
         return passkeys
     }
 
+    override suspend fun getPasskeyRegisterOptions(): String {
+        onGetPasskeyRegisterOptions?.let { return it() }
+        return "{}"
+    }
+
+    override suspend fun registerPasskey(credentialJson: String): Passkey {
+        onRegisterPasskey?.let { return it(credentialJson) }
+        val id = (passkeys.maxOfOrNull(Passkey::id) ?: 0L) + 1L
+        val created = Passkey(id = id, displayName = "패스키", createdAt = "2026-01-01T00:00:00")
+        passkeys = passkeys + created
+        return created
+    }
+
     override suspend fun logActivity() {
         logActivityCounter.incrementAndGet()
         onLogActivity?.invoke()
@@ -325,6 +340,8 @@ class FakeUserRepository(
                 onUpdateMyProfile = { _, _, _ -> unexpectedCall("UserRepository.updateMyProfile") },
                 onDeleteAccount = { unexpectedCall("UserRepository.deleteAccount") },
                 onGetPasskeys = { unexpectedCall("UserRepository.getPasskeys") },
+                onGetPasskeyRegisterOptions = { unexpectedCall("UserRepository.getPasskeyRegisterOptions") },
+                onRegisterPasskey = { unexpectedCall("UserRepository.registerPasskey") },
                 onLogActivity = { unexpectedCall("UserRepository.logActivity") },
                 onGetMyPushSettings = { unexpectedCall("UserRepository.getMyPushSettings") },
                 onUpdateMyPushSettings = { _, _, _ -> unexpectedCall("UserRepository.updateMyPushSettings") },
