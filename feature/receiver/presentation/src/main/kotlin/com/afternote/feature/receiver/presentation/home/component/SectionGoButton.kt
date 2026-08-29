@@ -15,11 +15,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
  * 수신자 홈의 «… 확인하러 가기 ›» 작은 회색 알약 버튼.
@@ -52,13 +50,5 @@ fun SectionGoButton(
             modifier = Modifier.size(width = 4.dp, height = 7.dp),
             tint = AfternoteDesign.colors.gray7,
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SectionGoButtonPreview() {
-    AfternoteTheme {
-        SectionGoButton(text = "마음의 기록 확인하러 가기", onClick = {}, modifier = Modifier.padding(16.dp))
     }
 }

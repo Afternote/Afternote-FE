@@ -14,15 +14,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.TextFieldType
@@ -145,31 +142,6 @@ fun SongSearchSection(
             imeAction = ImeAction.Search,
         )
     }
-}
-
-// endregion
-
-// region ── Previews ──
-
-@Preview(showBackground = true, name = "PlaylistSongList 단독")
-@Composable
-private fun PlaylistSongListPreview() {
-    val songs =
-        (1..5).map { i ->
-            PlaylistSongDisplay(selectionKey = "preview:$i", title = "노래 제목 $i", artist = "가수 이름")
-        }
-    var query by remember { mutableStateOf("") }
-    // 리스트는 필터·검색을 소유하지 않으므로 호출부가 최종 목록을 넘기고 헤더도 주입한다 —
-    // 실제 AddSong 호출부와 같은 패턴 시연(서버 검색 결과를 그대로 넘김).
-    PlaylistSongList(
-        songs = songs,
-        header = {
-            SongSearchSection(
-                searchQuery = query,
-                onSearchQueryChange = { query = it },
-            )
-        },
-    )
 }
 
 // endregion

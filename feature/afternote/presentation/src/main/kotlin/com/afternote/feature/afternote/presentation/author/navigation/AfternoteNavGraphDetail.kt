@@ -32,14 +32,12 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
@@ -397,24 +395,5 @@ internal fun launchMemorialVideo(
         onUnavailable()
     } catch (_: IllegalArgumentException) {
         onUnavailable()
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun DeleteInProgressOverlayPreview() {
-    AfternoteTheme {
-        DeleteInProgressOverlay()
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun DetailLoadErrorContentPreview() {
-    AfternoteTheme {
-        DetailLoadErrorContent(
-            messageRes = R.string.afternote_detail_load_error,
-            onBackClick = {},
-        )
     }
 }

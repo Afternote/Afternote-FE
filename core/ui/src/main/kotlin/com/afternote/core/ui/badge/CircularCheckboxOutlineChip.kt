@@ -16,13 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
 import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
  * 원형 체크 아이콘 + 라벨 + (선택) 화살표를 담은 **외곽선 칩** 레이아웃.
@@ -73,38 +71,5 @@ fun CircularCheckboxOutlineChip(
                 tint = AfternoteDesign.colors.gray6,
             )
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun CircularCheckboxOutlineChipPreview() {
-    AfternoteTheme {
-        CircularCheckboxOutlineChip(
-            label = "수신인 지정",
-            checkboxState = CheckboxState.Default,
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Checked")
-@Composable
-private fun CircularCheckboxOutlineChipCheckedPreview() {
-    AfternoteTheme {
-        CircularCheckboxOutlineChip(
-            label = "수신인 지정 완료",
-            checkboxState = CheckboxState.Variant2,
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "With Arrow")
-@Composable
-private fun CircularCheckboxOutlineChipWithArrowPreview() {
-    AfternoteTheme {
-        CircularCheckboxOutlineChip(
-            label = "수신인 지정",
-            showTrailingArrow = true,
-        )
     }
 }
