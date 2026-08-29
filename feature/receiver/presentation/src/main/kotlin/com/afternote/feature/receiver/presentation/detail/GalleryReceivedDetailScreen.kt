@@ -13,9 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
@@ -23,7 +21,6 @@ import com.afternote.feature.afternote.presentation.shared.detail.AfternoteDetai
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodsSection
 import com.afternote.feature.afternote.presentation.shared.model.AfternoteServiceDisplay
-import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
 
 /**
  * 수신 갤러리 상세 (Stateless).
@@ -84,27 +81,5 @@ private fun GalleryReceivedDetailScrollContent(
             ProcessingMethodsSection(methods = content.processingMethods)
             MessageSection(blocks = content.messageBlocks)
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun GalleryReceivedDetailScreenPreview() {
-    AfternoteTheme {
-        GalleryReceivedDetailScreen(
-            onBackClick = {},
-            content =
-                ReceivedGalleryDetailContent(
-                    serviceName = "갤러리",
-                    finalWriteDate = "2025.11.26",
-                    processingMethods = listOf("'엽사' 폴더 박선호에게 전송", "'흑역사' 폴더 삭제"),
-                    messageBlocks =
-                        listOf(
-                            MessageBlockUiModel(
-                                body = "이 계정에는 우리 가족 여행 사진이 많아.\n계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
-                            ),
-                        ),
-                ),
-        )
     }
 }

@@ -28,11 +28,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
  * 하나의 [selectedValue]만 받는 공용 라디오 그룹입니다.
@@ -145,18 +143,5 @@ private fun RadioIndicator(
                 )
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun AfternoteRadioGroupPreview() {
-    AfternoteTheme {
-        AfternoteRadioGroup(
-            options = listOf("첫 번째", "두 번째"),
-            selectedValue = "첫 번째",
-            onSelect = {},
-            modifier = Modifier.padding(16.dp),
-        ) { _, _ -> }
     }
 }

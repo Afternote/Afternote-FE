@@ -18,7 +18,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -41,7 +40,6 @@ import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.modifierextention.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.EditorSectionLabel
@@ -265,17 +263,3 @@ internal fun AfternoteType.serviceSelectionSheetTitleResOrNull(): Int? =
         AfternoteType.BUSINESS -> R.string.afternote_editor_service_sheet_title_business
         AfternoteType.MEMORIAL, AfternoteType.ESTATE -> null
     }
-
-@Preview(showBackground = true)
-@Composable
-private fun EditorServiceSelectionSheetContentPreview() {
-    AfternoteTheme {
-        EditorServiceSelectionSheetContent(
-            title = "소셜 네트워크 서비스 선택",
-            type = AfternoteType.SOCIAL_NETWORK,
-            services = listOf("인스타그램", "페이스북", "X"),
-            searchQueryState = rememberTextFieldState(),
-            onServiceSelected = {},
-        )
-    }
-}

@@ -10,10 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
 
@@ -88,32 +86,5 @@ private fun MessageBlockRow(content: @Composable () -> Unit) {
         ) {
             content()
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun MessageSectionPreview() {
-    AfternoteTheme {
-        MessageSection(
-            blocks =
-                listOf(
-                    MessageBlockUiModel(
-                        title = "가족에게",
-                        body = "소중한 사람들에게 남기는 마지막 메시지입니다.",
-                    ),
-                    MessageBlockUiModel(
-                        body = "이 계정에는 우리 가족 여행 사진이 많아. 계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
-                    ),
-                ),
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun MessageSectionEmptyPreview() {
-    AfternoteTheme {
-        MessageSection(blocks = emptyList())
     }
 }

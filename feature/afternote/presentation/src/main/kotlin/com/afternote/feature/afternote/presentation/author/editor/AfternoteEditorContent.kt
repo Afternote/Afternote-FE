@@ -17,15 +17,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.modifierextention.shimmerLoadingPlaceholder
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.account.AccountEditorContent
@@ -44,9 +41,7 @@ import com.afternote.feature.afternote.presentation.author.editor.selection.Edit
 import com.afternote.feature.afternote.presentation.author.editor.selection.EditorServiceSelectionField
 import com.afternote.feature.afternote.presentation.author.editor.selection.EditorServiceSelectionSheet
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
-import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
-import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 
 @Composable
 internal fun EditorContent(
@@ -364,77 +359,5 @@ internal fun AfternoteTypeContent(
                     ),
             )
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun EditorContentSocialPreview() {
-    AfternoteTheme {
-        val state = rememberAfternoteEditorState()
-        AfternoteEditorBody(
-            state = state,
-            form = state.currentForm().copy(typeForm = AfternoteTypeForm.pristineFor(AfternoteType.SOCIAL_NETWORK)),
-            onNavigateToMemorialPlaylist = {},
-            onNavigateToSelectReceiver = {},
-            onThumbnailBytesReady = {},
-            onThumbnailExtractionFailed = {},
-            onCaptureFailed = {},
-            snackbarHostState = remember { SnackbarHostState() },
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun EditorContentBusinessPreview() {
-    AfternoteTheme {
-        val state = rememberAfternoteEditorState()
-        AfternoteEditorBody(
-            state = state,
-            form = state.currentForm().copy(typeForm = AfternoteTypeForm.pristineFor(AfternoteType.BUSINESS)),
-            onNavigateToMemorialPlaylist = {},
-            onNavigateToSelectReceiver = {},
-            onThumbnailBytesReady = {},
-            onThumbnailExtractionFailed = {},
-            onCaptureFailed = {},
-            snackbarHostState = remember { SnackbarHostState() },
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun EditorContentGalleryPreview() {
-    AfternoteTheme {
-        val state = rememberAfternoteEditorState()
-        AfternoteEditorBody(
-            state = state,
-            form = state.currentForm().copy(typeForm = AfternoteTypeForm.pristineFor(AfternoteType.GALLERY_AND_FILES)),
-            onNavigateToMemorialPlaylist = {},
-            onNavigateToSelectReceiver = {},
-            onThumbnailBytesReady = {},
-            onThumbnailExtractionFailed = {},
-            onCaptureFailed = {},
-            snackbarHostState = remember { SnackbarHostState() },
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun EditorContentMemorialPreview() {
-    AfternoteTheme {
-        val state = rememberAfternoteEditorState()
-        AfternoteEditorBody(
-            state = state,
-            form = state.currentForm().copy(typeForm = AfternoteTypeForm.pristineFor(AfternoteType.MEMORIAL)),
-            onNavigateToMemorialPlaylist = {},
-            onNavigateToSelectReceiver = {},
-            onThumbnailBytesReady = {},
-            onThumbnailExtractionFailed = {},
-            onCaptureFailed = {},
-            snackbarHostState = remember { SnackbarHostState() },
-        )
     }
 }
