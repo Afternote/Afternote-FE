@@ -3,6 +3,7 @@ package com.afternote.feature.receiver.data.dto
 import com.afternote.feature.afternote.data.mapper.formatDateFromServer
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
+import com.afternote.feature.receiver.domain.model.ReceivedRecordBox
 import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
 import com.afternote.feature.receiver.domain.model.ReceiverEmailAuthResult
 import com.afternote.feature.receiver.domain.model.ReceiverIdentity
@@ -88,6 +89,41 @@ data class DeliveryVerificationDto(
     @SerialName("createdAt") val createdAt: String? = null,
 )
 
+/**
+ * `receiver-auth/record-boxes` 응답 — 서버는 목록을 `recordBoxes` 로 한 번 감싸 내려준다.
+ *
+ * 기록함이 하나도 없어도 서버는 빈 배열을 담아 보내므로 기본값을 두지 않는다. 기본값을 두면 서버가
+ * 키를 빼거나 이름을 바꿔도 «기록함 0건» 으로 조용히 성공해 계약 누락이 은폐된다.
+ */
+@Serializable
+data class ReceivedRecordBoxListDto(
+    @SerialName("recordBoxes") val recordBoxes: List<ReceivedRecordBoxDto>,
+)
+
+/**
+ * 받은 기록함 한 칸.
+ *
+ * 서버가 주는 필드를 전부 적어 계약을 코드에 고정한다 — `ReceivedRecordBoxContractTest` 가 이 형태를
+ * 지킨다. 도메인으로 옮기는 건 지금 소비하는 것뿐이고, 나머지(`receiverName`·`relation`·
+ * `recordStatus`·`viewStatus`)는 목록 화면이 이 API 로 옮겨갈 때(#607) 함께 올린다.
+ *
+ * `requestedAt`·`approvedAt` 은 열람 신청이 없으면 통째로 null 이고, `approvedAt` 은 승인 상태에서만
+ * 채워진다. `verificationStatus` 도 신청 전에는 null 이라 [DeliveryVerificationStatus.UNKNOWN] 이 된다.
+ */
+@Serializable
+data class ReceivedRecordBoxDto(
+    @SerialName("receiverId") val receiverId: Long,
+    @SerialName("accessCode") val accessCode: String,
+    @SerialName("senderName") val senderName: String,
+    @SerialName("receiverName") val receiverName: String? = null,
+    @SerialName("relation") val relation: String? = null,
+    @SerialName("recordStatus") val recordStatus: String? = null,
+    @SerialName("viewStatus") val viewStatus: String? = null,
+    @SerialName("verificationStatus") val verificationStatus: String? = null,
+    @SerialName("requestedAt") val requestedAt: String? = null,
+    @SerialName("approvedAt") val approvedAt: String? = null,
+)
+
 @Serializable
 data class ReceiverMessageDto(
     @SerialName("senderName") val senderName: String,
@@ -127,6 +163,16 @@ fun DeliveryVerificationDto.toDomain(): DeliveryVerification =
         familyRelationCertificateUrl = familyRelationCertificateUrl,
         adminNote = adminNote,
         createdAt = createdAt,
+    )
+
+fun ReceivedRecordBoxDto.toDomain(): ReceivedRecordBox =
+    ReceivedRecordBox(
+        receiverId = receiverId,
+        accessCode = accessCode,
+        senderName = senderName,
+        verificationStatus = verificationStatus?.let(DeliveryVerificationStatus::fromRaw) ?: DeliveryVerificationStatus.UNKNOWN,
+        requestedAt = requestedAt,
+        approvedAt = approvedAt,
     )
 
 fun ReceiverMessageDto.toDomain(): SenderMessageInfo =

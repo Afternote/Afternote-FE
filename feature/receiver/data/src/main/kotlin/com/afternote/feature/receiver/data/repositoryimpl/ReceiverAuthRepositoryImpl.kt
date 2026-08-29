@@ -13,6 +13,7 @@ import com.afternote.feature.receiver.data.dto.toDomain
 import com.afternote.feature.receiver.data.error.toReceiverServerFailure
 import com.afternote.feature.receiver.data.service.ReceiverAuthApiService
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
+import com.afternote.feature.receiver.domain.model.ReceivedRecordBox
 import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
 import com.afternote.feature.receiver.domain.model.ReceiverEmailAuthResult
 import com.afternote.feature.receiver.domain.model.ReceiverIdentity
@@ -112,5 +113,14 @@ class ReceiverAuthRepositoryImpl
         override suspend fun getSenderMessage(): Result<SenderMessageInfo> =
             runCatchingCancellable {
                 api.getSenderMessage().requireData().toDomain()
+            }
+
+        override suspend fun getReceivedRecordBoxes(): Result<List<ReceivedRecordBox>> =
+            runCatchingCancellable {
+                api
+                    .getReceivedRecordBoxes()
+                    .requireData()
+                    .recordBoxes
+                    .map { it.toDomain() }
             }
     }
