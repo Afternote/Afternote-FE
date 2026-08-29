@@ -36,6 +36,7 @@ import com.afternote.feature.afternote.presentation.author.editor.memorial.Memor
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialMediaSourceSheet
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialMediaTarget
 import com.afternote.feature.afternote.presentation.author.editor.memorial.rememberMemorialMediaSourceState
+import com.afternote.feature.afternote.presentation.author.editor.memorial.removableMemorialMediaTargets
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
@@ -121,11 +122,14 @@ fun AfternoteEditorBody(
     isTypeSelectionEnabled: Boolean = true,
 ) {
     // 슬롯을 누르면 곧장 갤러리가 뜨는 대신 "갤러리에서 선택 / 촬영" 시트를 한 단계 끼운다 (#369).
+    // 지울 수 있는 첨부가 있으면 같은 시트에 "삭제" 갈래가 더해진다 (#1114).
     val mediaSourceState =
         rememberMemorialMediaSourceState(
             snackbarHostState = snackbarHostState,
             onPhotoSelected = state.setMemorialPhoto,
             onVideoSelected = state.setMemorialVideo,
+            onPhotoRemoved = { state.setMemorialPhoto(null) },
+            onVideoRemoved = { state.setMemorialVideo(null) },
             onCaptureFailed = onCaptureFailed,
         )
 
@@ -149,7 +153,10 @@ fun AfternoteEditorBody(
         isTypeSelectionEnabled = isTypeSelectionEnabled,
     )
 
-    MemorialMediaSourceSheet(state = mediaSourceState)
+    MemorialMediaSourceSheet(
+        state = mediaSourceState,
+        removableTargets = form.removableMemorialMediaTargets(),
+    )
     EditorServiceSelectionSheet(
         visible = state.isServiceSelectionSheetVisible,
         type = form.selectedType,
