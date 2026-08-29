@@ -126,9 +126,6 @@ class AppAndReceiverCompletionAndroidTest {
     @Inject
     lateinit var userProfileRepository: UserProfileRepository
 
-    @Inject
-    lateinit var weeklyReportRepository: WeeklyReportRepository
-
     private val fakeAuth get() = authRepository as FakeAuthRepository
     private val fakeErrorReporter get() = errorReporter as FakeErrorReporter
     private val fakeWeeklyReport get() = weeklyReportRepository as FakeWeeklyReportRepository
@@ -160,7 +157,6 @@ class AppAndReceiverCompletionAndroidTest {
 
     @Test
     fun invalidCredentials_correctedPasswordThenRetry_entersHomeWithoutReportingUserError() {
-        fakeWeeklyReport.results.addLast(Result.success(emptyWeeklyReport()))
         val emailLoginResults = ArrayDeque<Result<Session.DefaultSession>>()
         emailLoginResults.addLast(
             Result.failure(CoreAuthFailure.InvalidLoginCredentials(IllegalStateException("rejected"))),

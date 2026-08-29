@@ -50,9 +50,6 @@ class AppOnboardingCanaryTest {
     @Inject
     lateinit var userRepository: UserRepository
 
-    @Inject
-    lateinit var weeklyReportRepository: WeeklyReportRepository
-
     private val fakeAuth get() = authRepository as FakeAuthRepository
     private val fakeUser get() = userRepository as FakeUserRepository
     private val fakeWeeklyReport get() = weeklyReportRepository as FakeWeeklyReportRepository
@@ -98,7 +95,6 @@ class AppOnboardingCanaryTest {
 
     @Test
     fun emailLogin_networkFailureThenRetry_entersHomeOnce() {
-        fakeWeeklyReport.results.addLast(Result.success(emptyWeeklyReport()))
         val emailLoginResults = ArrayDeque<Result<Session.DefaultSession>>()
         emailLoginResults.addLast(
             Result.failure(CoreAuthFailure.NetworkUnavailable(IOException("offline"))),
