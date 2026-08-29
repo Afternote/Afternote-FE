@@ -524,7 +524,6 @@ class ApiWireContractSmokeTest {
         private val wireJson =
             Json {
                 ignoreUnknownKeys = true
-                coerceInputValues = true
             }
 
         private lateinit var mockServer: MockServerContainer
