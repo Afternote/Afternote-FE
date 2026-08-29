@@ -15,6 +15,7 @@ internal fun memorialMediaSourceBottomSheetPhotoScreenshot() {
             target = MemorialMediaTarget.PHOTO,
             onPickFromGallery = {},
             onCapture = {},
+            onRemove = null,
         )
     }
 }
@@ -29,6 +30,22 @@ internal fun memorialMediaSourceBottomSheetVideoScreenshot() {
             target = MemorialMediaTarget.VIDEO,
             onPickFromGallery = {},
             onCapture = {},
+            onRemove = null,
+        )
+    }
+}
+
+/** 첨부가 있는 슬롯 — 삭제 항목이 파괴적 동작 색(error)으로 더해진다 (#1114). */
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+internal fun memorialMediaSourceBottomSheetRemovableScreenshot() {
+    AfternoteTheme {
+        MemorialMediaSourceBottomSheet(
+            target = MemorialMediaTarget.VIDEO,
+            onPickFromGallery = {},
+            onCapture = {},
+            onRemove = {},
         )
     }
 }
