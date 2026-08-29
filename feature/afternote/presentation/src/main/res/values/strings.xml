@@ -104,6 +104,12 @@
     <!-- 서비스명 미선택 placeholder — %1$s 는 [AfternoteType.toDropdownLabel] (시안 700:36383: "소셜네트워크 선택하기") -->
     <string name="afternote_editor_service_placeholder">%1$s 선택하기</string>
 
+    <!-- 수신자 선택 화면 (#540, 시안 3631:24820) -->
+    <string name="afternote_select_receiver_load_failed">수신자 목록을 불러오지 못했습니다.</string>
+    <string name="afternote_select_receiver_retry">다시 시도</string>
+    <!-- 이 화면의 빈 상태는 시안 정의가 없어 FE 잠정안. -->
+    <string name="afternote_select_receiver_empty">등록된 수신자가 없습니다.\n설정에서 수신자를 먼저 등록해 주세요.</string>
+
     <string name="afternote_editor_message_field_title">제목</string>
     <string name="afternote_editor_message_field_body">내용</string>
     <string name="afternote_editor_message_action_register">등록</string>
@@ -113,23 +119,6 @@
     <string name="afternote_editor_message_text_field_placeholder">내용을 입력해 주세요.</string>
     <string name="afternote_editor_message_registered_expand_content_description">등록된 말씀 펼치기</string>
     <string name="afternote_editor_message_registered_collapse_content_description">등록된 말씀 접기</string>
-
-    <!--
-      수신자 인증·발신자 등록 흐름의 표시 문구는 :feature:receiver:presentation 으로 이동했다(#1066).
-      아래 잔여분은 어느 모듈에서도 참조하지 않는 정의들 — 미구현 화면 몫인지 확인 후 이동·삭제 판단이
-      필요해 잔류시킨다.
-    -->
-    <string name="receiver_sender_registration_name_placeholder">이름을 지정해주세요</string>
-    <string name="receiver_verify_confirm_button">인증하기</string>
-    <string name="receiver_verify_email_label">이메일 주소</string>
-    <string name="receiver_verify_code_description">입력하신 이메일로 인증번호를 보냈습니다.\n수신된 메일에서 인증번호를 확인하고 입력해주세요.</string>
-    <string name="receiver_verify_master_key_required">마스터 키를 입력해주세요.</string>
-    <string name="receiver_verify_error_network">네트워크 연결을 확인해주세요.</string>
-    <string name="receiver_verify_complete_confirm">확인</string>
-    <string name="receiver_verify_status_pending">현재 서류 확인중입니다.\n빠르게 처리하여 열람하실 수 있도록 하겠습니다.</string>
-    <string name="receiver_verify_status_approved">승인되었습니다. 열람이 가능합니다.</string>
-    <string name="receiver_verify_status_rejected">제출하신 서류 검토 결과 거절되었습니다. 다시 제출해 주세요.</string>
-    <string name="receiver_verify_wait_for_approval">인증이 완료된 후에 이용 가능합니다.</string>
 
     <string name="login_kakao_button">카카오로 로그인</string>
     <string name="login_kakao_backend_not_ready">카카오 토큰을 발급받았습니다. 서버 연동(/auth/kakao) 대기 중입니다.</string>
@@ -167,7 +156,6 @@
     <string name="afternote_edit_service_label">등록할 서비스</string>
     <string name="afternote_validation_account_credentials_required">계정정보: 계정 정보가 입력되지 않으면 저장할 수 없습니다.</string>
     <string name="afternote_validation_multiple_required_fields">입력하지 않은 항목이 있습니다. 확인 후 다시 시도해 주세요.</string>
-    <string name="afternote_validation_receivers_required">수신자를 한 명 이상 선택해 주세요.</string>
     <string name="afternote_validation_leave_message_body_required">남기실 말씀의 내용을 입력해 주세요.</string>
     <string name="afternote_default_playlist_song_title">추억 플레이리스트 곡</string>
 
@@ -213,6 +201,10 @@
     <string name="feature_afternote_detail_password_mask">••••••••</string>
     <string name="feature_afternote_detail_quote_mark">❝ </string>
     <string name="feature_afternote_detail_section_additional_receiver">추가  수신자</string>
+    <string name="feature_afternote_memorial_detail_title_suffix">에 대한\n%1$s님의 기록</string>
+    <string name="feature_afternote_memorial_detail_title_suffix_no_name">에 대한\n기록</string>
+    <string name="feature_afternote_memorial_detail_sharing_notice">이 추억 노트는 지정된 신뢰할 연락처에게만 공유되며,\n안전하게 보관됩니다.</string>
+    <string name="feature_afternote_memorial_video_no_app">영상을 재생할 수 있는 앱이 없습니다.</string>
 
     <!-- Afternote editor (author) — UI strings -->
     <string name="afternote_editor_screen_title">애프터노트 작성하기</string>
@@ -251,8 +243,6 @@
     <string name="afternote_editor_media_source_remove_video">영상 삭제</string>
     <string name="afternote_editor_media_capture_unavailable">카메라를 사용할 수 없습니다.</string>
     <!-- 추억 노트 상세. 이름 세그먼트는 프로필 로드 실패·경합으로 비어 있을 수 있어 두 갈래로 둔다. -->
-    <string name="afternote_detail_record_suffix_anonymous">에 대한 기록</string>
-    <string name="afternote_detail_record_suffix_named">에 대한 %1$s님의 기록</string>
     <string name="afternote_detail_playlist_song_count">현재 %1$d개의 노래가 담겨 있습니다.</string>
     <string name="afternote_home_next_step_section_title">NEXT STEP</string>
     <!-- 수신 애프터노트 상세. 이 화면 문자열은 afternote 모듈에 모여 있고(#1461 이 화면까지 이 모듈로 옮긴다),

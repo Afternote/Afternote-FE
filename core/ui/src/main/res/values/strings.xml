@@ -47,4 +47,8 @@
         <item>금</item>
         <item>토</item>
     </string-array>
+    <!-- 수신자 선택 화면 공용 문구 (#791). 소비자가 달리 쓰려면 파라미터로 덮는다. -->
+    <string name="core_ui_receiver_select_title">수신자 선택</string>
+    <string name="core_ui_receiver_select_search_placeholder">이름으로 검색하기</string>
+    <string name="core_ui_receiver_select_confirm">수신자 선택 완료하기</string>
 </resources>

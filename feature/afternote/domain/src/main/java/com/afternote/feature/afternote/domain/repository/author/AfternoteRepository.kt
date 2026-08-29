@@ -10,11 +10,6 @@ import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import kotlinx.coroutines.flow.Flow
 
-/**
- * 작성/수정 호출의 서버 검증 실패는
- * [com.afternote.feature.afternote.domain.error.AfternoteFailure.AuthoringValidation]으로
- * Result.failure에 담겨 전달된다.
- */
 interface AfternoteRepository {
     /**
      * 전체 목록은 [type] 을 null 로 전달. CUD 성공 시 구현체가 PagingSource를 invalidate하므로
