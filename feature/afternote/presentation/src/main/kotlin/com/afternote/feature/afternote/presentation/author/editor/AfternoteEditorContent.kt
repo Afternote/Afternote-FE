@@ -277,7 +277,7 @@ internal fun AfternoteTypeContent(
     onPhotoAddClick: () -> Unit,
     onVideoAddClick: () -> Unit,
     onThumbnailBytesReady: (ByteArray?) -> Unit,
-    onThumbnailExtractionFailed: (Throwable) -> Unit = {},
+    onThumbnailExtractionFailed: (Throwable) -> Unit,
 ) {
     when (form.selectedType) {
         AfternoteType.MEMORIAL -> {
