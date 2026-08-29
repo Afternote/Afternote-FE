@@ -23,7 +23,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,7 +31,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.ProfileImagePicker
@@ -40,7 +38,6 @@ import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.modifierextention.addFocusCleaner
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -154,20 +151,4 @@ internal fun handleProfileImagePickerResult(
     onProfileImagePick: (Uri) -> Unit,
 ) {
     uri?.let(onProfileImagePick)
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun OnboardingProfileScreenPreview() {
-    AfternoteTheme {
-        OnboardingProfileScreen(
-            initialName = "Afternote",
-            displayImageUri = null,
-            snackbarHostState = remember { SnackbarHostState() },
-            onNameChange = {},
-            onProfileImagePick = {},
-            onBackClick = {},
-            onCompleteClick = {},
-        )
-    }
 }
