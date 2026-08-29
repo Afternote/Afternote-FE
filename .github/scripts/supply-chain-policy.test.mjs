@@ -1,9 +1,18 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
+import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+
+import { inspectModules } from './resolve-pr-impact.mjs';
 
 const workflowDirectory = new URL('../workflows/', import.meta.url);
+const repoRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
+
+function escapeForRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 const dependencyPathFilters = [
   '**/*.gradle',
@@ -256,36 +265,45 @@ test('dependency audit resolves and tests every domain module on its current pla
     new URL('../workflows/dependency-audit.yml', import.meta.url),
     'utf8',
   );
-  const reportCommands = [
-    'run_report core-model-runtime :core:model:dependencies --configuration runtimeClasspath',
-    'run_report core-domain-runtime :core:domain:dependencies --configuration runtimeClasspath',
-    'run_report afternote-domain-runtime :feature:afternote:domain:dependencies --configuration runtimeClasspath',
-    'run_report mindrecord-domain-runtime :feature:mindrecord:domain:dependencies --configuration debugRuntimeClasspath',
-    'run_report onboarding-domain-runtime :feature:onboarding:domain:dependencies --configuration runtimeClasspath',
-    'run_report receiver-domain-runtime :feature:receiver:domain:dependencies --configuration debugRuntimeClasspath',
-    'run_report setting-domain-runtime :feature:setting:domain:dependencies --configuration runtimeClasspath',
-    'run_report timeletter-domain-runtime :feature:timeletter:domain:dependencies --configuration debugRuntimeClasspath',
-  ];
+
+  // 모듈 목록을 여기 손으로 적으면 규약 마이그레이션 때 워크플로와 갈린다. #1151 이 domain
+  // 3모듈을 JVM 으로 옮겼을 때 이 목록은 낡은 태스크를 그대로 고정하고 있었고, 그래서
+  // 「없는 configuration 을 묻는 워크플로」가 초록으로 통과했다(#1306). 주간 스케줄이라
+  // 다음 실행 전까지 아무도 몰랐을 결함이다. 빌드 스크립트에서 판정해 규약이 바뀌면
+  // 워크플로도 따라오도록 강제한다.
+  const modules = await inspectModules(repoRoot);
+  const domainModules = modules.filter(
+    ({ projectPath }) => projectPath.endsWith(':domain') || projectPath === ':core:model',
+  );
+  assert.ok(domainModules.length > 0, 'domain 모듈을 하나도 못 찾았다 — 판정이 망가졌다');
 
   assert.match(source, /\.\/gradlew assembleDebug testDebugUnitTest/);
-  reportCommands.forEach((command) => {
+
+  domainModules.forEach(({ projectPath, android }) => {
+    const configuration = android ? 'debugRuntimeClasspath' : 'runtimeClasspath';
+    const command = `${projectPath}:dependencies --configuration ${configuration}`;
     assert.ok(source.includes(command), `${command} is missing`);
-    const name = command.split(' ')[1];
-    assert.match(source, new RegExp(`--resolved-report "\\$REPORT_DIR/resolved/${name}\\.txt"`));
+
+    const testTask = android ? `${projectPath}:testDebugUnitTest` : `${projectPath}:test`;
+    // `:test` 로만 찾으면 `:testDebugUnitTest` 가 그대로 통과한다 — 경계를 본다.
+    assert.ok(
+      new RegExp(`${escapeForRegex(testTask)}(?![A-Za-z])`).test(source),
+      `${testTask} is missing`,
+    );
   });
-  const testTasks = [
-    ':core:model:test',
-    ':core:domain:test',
-    ':feature:afternote:domain:test',
-    ':feature:mindrecord:domain:testDebugUnitTest',
-    ':feature:onboarding:domain:test',
-    ':feature:receiver:domain:testDebugUnitTest',
-    ':feature:setting:domain:test',
-    ':feature:timeletter:domain:testDebugUnitTest',
-  ];
-  testTasks.forEach((task) => {
-    assert.ok(source.includes(task), `${task} is missing`);
-  });
+
+  // run_report 로 뽑아 놓고 --resolved-report 에 안 적으면 그 모듈은 감사에서 조용히
+  // 빠진다. 실패가 아니라 «취약점 없음» 으로 보이는 누락이라 눈에 띄지 않는다.
+  const produced = [...source.matchAll(/^\s*run_report\s+(\S+)\s/gm)].map((match) => match[1]);
+  assert.ok(produced.length > 0, 'run_report 선언을 하나도 못 찾았다 — 판정이 망가졌다');
+
+  const collected = new Set(
+    [...source.matchAll(/--resolved-report "\$REPORT_DIR\/resolved\/([^"]+)\.txt"/g)].map(
+      (match) => match[1],
+    ),
+  );
+  const missing = produced.filter((name) => !collected.has(name));
+  assert.deepEqual(missing, [], `수집 단계에 넘어가지 않는 리포트가 있다: ${missing.join(', ')}`);
 });
 
 test('dependency graph generation is immutable, fail closed, and wrapper validated', async () => {
