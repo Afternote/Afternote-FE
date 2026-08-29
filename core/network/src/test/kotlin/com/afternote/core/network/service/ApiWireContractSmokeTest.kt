@@ -54,7 +54,6 @@ class ApiWireContractSmokeTest {
     private lateinit var appVersionService: AppVersionApiService
     private lateinit var authService: AuthApiService
     private lateinit var userService: UserApiService
-    private lateinit var pushTokenService: PushTokenApiService
 
     @Before
     fun setUp() {
@@ -85,7 +84,6 @@ class ApiWireContractSmokeTest {
         appVersionService = publicRetrofit.create(AppVersionApiService::class.java)
         authService = publicRetrofit.create(AuthApiService::class.java)
         userService = authenticatedRetrofit.create(UserApiService::class.java)
-        pushTokenService = authenticatedRetrofit.create(PushTokenApiService::class.java)
     }
 
     @Test
@@ -175,7 +173,7 @@ class ApiWireContractSmokeTest {
             )
 
             val result =
-                pushTokenService.registerPushToken(
+                userService.registerPushToken(
                     RegisterPushTokenRequestDto(token = "fcm-token", platform = "ANDROID"),
                 )
 
@@ -199,7 +197,7 @@ class ApiWireContractSmokeTest {
                 responseBody = """{"status":200,"code":200,"message":"ok","data":null}""",
             )
 
-            val result = pushTokenService.deletePushToken(DeletePushTokenRequestDto(token = "fcm-token"))
+            val result = userService.deletePushToken(DeletePushTokenRequestDto(token = "fcm-token"))
 
             assertEquals(200, result.status)
             assertExactlyOneRecordedRequest("DELETE", "/api/v1/users/push-tokens")

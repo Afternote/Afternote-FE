@@ -5,17 +5,17 @@ import com.afternote.core.domain.repository.push.PushTokenRepository
 import com.afternote.core.network.dto.DeletePushTokenRequestDto
 import com.afternote.core.network.dto.RegisterPushTokenRequestDto
 import com.afternote.core.network.model.requireStatus
-import com.afternote.core.network.service.PushTokenApiService
+import com.afternote.core.network.service.UserApiService
 import javax.inject.Inject
 
 internal class PushTokenRepositoryImpl
     @Inject
     constructor(
-        private val pushTokenApiService: PushTokenApiService,
+        private val userApiService: UserApiService,
     ) : PushTokenRepository {
         override suspend fun register(token: String): Result<Unit> =
             runCatchingCancellable {
-                pushTokenApiService
+                userApiService
                     .registerPushToken(
                         RegisterPushTokenRequestDto(token = token, platform = ANDROID_PLATFORM),
                     ).requireStatus()
@@ -23,7 +23,7 @@ internal class PushTokenRepositoryImpl
 
         override suspend fun unregister(token: String): Result<Unit> =
             runCatchingCancellable {
-                pushTokenApiService
+                userApiService
                     .deletePushToken(DeletePushTokenRequestDto(token = token))
                     .requireStatus()
             }
