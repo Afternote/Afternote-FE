@@ -79,7 +79,7 @@ jobs:
           # 아니므로 뺀다(review-request-all 도 draft 에는 요청을 걸지 않는다).
           if ! open_prs=$(gh api "repos/$REPO/pulls?state=open&per_page=100" --paginate \
                 --jq ".[] | select(.draft == false) | select(.user.login != \"$AUTHOR\")
-                           | \"\(.number)\t\(.created_at[0:10])\t\(.title)\t\([.requested_reviewers[].login | ascii_downcase] | join(\",\"))\""); then
+                           | \"\(.number)\t\(.created_at[0:10])\t\(.user.login)\t\([.requested_reviewers[].login | ascii_downcase] | join(\",\"))\t\(.title)\""); then
             echo "::error::열린 PR 조회에 실패했다 — 근거 없이 PR 을 닫지 않는다. 재실행할 것"
             exit 1
           fi
@@ -102,7 +102,7 @@ jobs:
           # 뺀 실질 커밋으로만 센다.
           debt_file=$(mktemp)
           reviews_file=$(mktemp)
-          while IFS=$'\t' read -r pn created title requested_reviewers; do
+          while IFS=$'\t' read -r pn created pr_author requested_reviewers title; do
             [ -n "$pn" ] || continue
 
             gh api "repos/$REPO/pulls/$pn/reviews" --paginate \
@@ -135,12 +135,34 @@ jobs:
             fi
             IFS=$'\t' read -r blocked_by blocked_at <<< "$blocked"
 
-            fixed=$(gh api "repos/$REPO/pulls/$pn/commits?per_page=100" --paginate \
-              --jq "[.[] | select((.parents | length) < 2)
-                         | select(.commit.committer.date > \"$blocked_at\")] | length" 2>/dev/null || true)
+            # 반영을 비병합 커밋으로만 세면 병합으로 반영한 PR 을 놓친다. base 를
+            # 끌어와 충돌을 풀며 지적을 반영하면 그 뒤 커밋이 전부 parents 2개라
+            # «미반영» 이 된다 — #1316 은 리뷰가 지목한 파일이 실제로 바뀌고 작성자
+            # 응답 코멘트까지 2건 달린 채로 8/29 까지 빚에서 빠져 있었다(#1450).
+            # 병합 커밋의 first-parent diff 는 base 에서 들어온 변경을 통째로 담아
+            # 반영분과 구별되지 않으므로, 커밋 대신 «작성자가 응답했는가» 를 함께 본다.
+            #
+            # 페이지마다 집계하면 100건이 넘는 PR 에서 숫자가 여러 줄로 나와 비교가
+            # 깨진다. 건별로 뽑아 한 번에 센다.
+            fixed=$( { gh api "repos/$REPO/pulls/$pn/commits?per_page=100" --paginate \
+              --jq ".[] | select((.parents | length) < 2)
+                        | select(.commit.committer.date > \"$blocked_at\") | .sha" 2>/dev/null || true; } \
+              | wc -l | tr -d ' ')
 
-            if [ "${fixed:-0}" -gt 0 ]; then
-              echo "#$pn — @$blocked_by 재리뷰 요청 뒤 변경요청 반영(${fixed}커밋), 아직 미응답"
+            said=$( { gh api "repos/$REPO/issues/$pn/comments?per_page=100" --paginate \
+              --jq ".[] | select(.user.login == \"$pr_author\")
+                        | select(.created_at > \"$blocked_at\") | .id" 2>/dev/null || true; } \
+              | wc -l | tr -d ' ')
+
+            answered=$( { gh api "repos/$REPO/pulls/$pn/comments?per_page=100" --paginate \
+              --jq ".[] | select(.user.login == \"$pr_author\")
+                        | select(.created_at > \"$blocked_at\") | .id" 2>/dev/null || true; } \
+              | wc -l | tr -d ' ')
+
+            responses=$(( ${said:-0} + ${answered:-0} ))
+
+            if [ "${fixed:-0}" -gt 0 ] || [ "$responses" -gt 0 ]; then
+              echo "#$pn — @$blocked_by 재리뷰 요청 뒤 변경요청 반영(${fixed}커밋 · 응답 ${responses}건), 아직 미응답"
               printf '%s\t%s\t%s\n' "$pn" "$created" "$title" >> "$debt_file"
             else
               echo "#$pn — 변경요청 미반영, 공은 작성자에게"

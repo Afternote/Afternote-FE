@@ -66,8 +66,8 @@
     <string name="afternote_home_append_error">애프터노트 추가 목록을 불러오지 못했습니다.</string>
     <string name="afternote_home_load_error">애프터노트 목록을 불러오지 못했습니다.</string>
     <string name="afternote_home_retry">다시 시도</string>
-    <!-- 카테고리 필터 결과 0건 안내. 디자이너 미확정 플레이스홀더 문구 — 확정 시 교체. -->
-    <string name="afternote_home_filtered_empty">해당 카테고리에 등록된 애프터노트가 없어요.</string>
+    <!-- 카테고리 필터 결과 0건 안내. 문구는 #567 디자인 승인 게이트 해제(2026-08-28)로 확정. -->
+    <string name="afternote_home_filtered_empty">이 카테고리에 등록된 애프터노트가 없어요.\n아래 연필 버튼을 눌러 애프터노트를 등록해 보세요.</string>
     <string name="afternote_home_header_description">소중한 사람에게 남길 기록을 미리 정리해 보세요.</string>
     <string name="afternote_category_all">전체</string>
     <string name="afternote_category_social_network">소셜네트워크</string>
@@ -177,7 +177,8 @@
     <string name="feature_afternote_dialog_delete_confirm">삭제하기</string>
     <string name="feature_afternote_menu_edit">수정하기</string>
     <string name="feature_afternote_menu_delete_record">삭제하기</string>
-    <string name="feature_afternote_empty_list_body">아직 등록된 답변이 없어요.\n답변을 등록해 자신을 알아 보아요.</string>
+    <!-- 전체 목록 0건 안내. 종전 mindrecord 답변 문구 복제를 애프터노트 맥락으로 교체 — 문구는 #567 디자인 승인 게이트 해제(2026-08-28)로 확정. -->
+    <string name="feature_afternote_empty_list_body">아직 등록된 애프터노트가 없어요.\n아래 연필 버튼을 눌러 애프터노트를 등록해 보세요.</string>
     <string name="feature_afternote_content_description_recipient_profile">프로필 사진</string>
 
     <string name="feature_afternote_detail_title">애프터노트 상세</string>
@@ -228,5 +229,7 @@
     <string name="afternote_editor_media_source_gallery">갤러리에서 선택</string>
     <string name="afternote_editor_media_source_take_photo">사진 촬영</string>
     <string name="afternote_editor_media_source_take_video">영상 촬영</string>
+    <string name="afternote_editor_media_source_remove_photo">사진 삭제</string>
+    <string name="afternote_editor_media_source_remove_video">영상 삭제</string>
     <string name="afternote_editor_media_capture_unavailable">카메라를 사용할 수 없습니다.</string>
 </resources>
