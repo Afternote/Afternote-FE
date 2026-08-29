@@ -13,7 +13,6 @@ import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureSt
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -58,7 +57,11 @@ class AfternoteDetailViewModel
          */
         private var authorDisplayName: String = ""
 
-        /** 진행 중인 상세 조회 — 첫 진입 이후의 ON_RESUME 이 실행 중인 로드와 겹치면 건너뛰기 위한 가드. */
+        /**
+         * 진행 중인 상세 조회 — 첫 진입 이후의 ON_RESUME 이 실행 중인 로드와 겹치면 건너뛰기 위한 가드.
+         * 상세 조회는 한 번에 하나라는 규칙을 이 필드가 지킨다. 새 호출자(수신 상세 같은 retry)를 붙일 때는
+         * 이 가드를 통과시키거나, 취소·중복 응답 처리를 그 자리에서 함께 정해야 한다.
+         */
         private var loadJob: Job? = null
 
         /**
@@ -111,20 +114,13 @@ class AfternoteDetailViewModel
             showsLoading: Boolean = true,
             keepsStateOnFailure: Boolean = false,
         ) {
-            // 지금은 취소할 로드가 없다 — 호출자가 init 과 [refreshOnReturn] 뿐이고 후자는 Job 가드를
-            // 통과한 뒤에만 여기 닿는다. 수신 상세처럼 가드를 거치지 않는 retry 가 붙는 순간
-            // 실효가 생기므로, 그때 조용히 깨지지 않게 남겨 둔다.
-            loadJob?.cancel()
             loadJob =
                 viewModelScope.launch {
                     if (showsLoading) {
                         _uiState.value = AfternoteDetailUiState.Loading
                     }
-                    val result = afternoteRepository.getDetail(id = afternoteId)
-                    // 위 cancel 과 같은 이유로 남기는 가드 — 취소된 로드가 값을 들고 돌아와 새 화면을
-                    // 덮는 창을 닫는다 (수신 상세에서는 retry 로 실제 재현된다).
-                    ensureActive()
-                    result
+                    afternoteRepository
+                        .getDetail(id = afternoteId)
                         .onSuccess { detail ->
                             _uiState.update { current ->
                                 // 진행 중인 삭제와 미소비 삭제 결과는 갱신이 덮지 않는다 — 새 Success 의
