@@ -18,9 +18,6 @@ enum class AfternoteValidationError(
     /** ESTATE 등 디자인 미확정으로 placeholder 만 노출되는 카테고리에서 저장 시도 시. */
     UNIMPLEMENTED_TYPE(R.string.afternote_validation_unimplemented_category),
 
-    /** 수신자 최소 1명 필요 (모든 카테고리). API 400/475와 동일 메시지. */
-    RECEIVERS_REQUIRED(R.string.afternote_validation_receivers_required),
-
     /**
      * 남기실 말씀에 제목만 쓰고 본문을 비운 블록이 있을 때. 서버가 본문을 필수로 검증해
      * 그대로 보내면 400 이므로 저장 전에 막는다 — 입력한 제목을 조용히 버리지 않기 위함이다.

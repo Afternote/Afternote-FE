@@ -34,7 +34,6 @@ internal fun afternoteAuthorUserRepository(): FakeUserRepository =
         onGetMyProfile = null
         onUpdateMyProfile = null
         onDeleteAccount = null
-        onLogActivity = null
         onGetMyPushSettings = null
         onUpdateMyPushSettings = null
         onGetConnectedAccounts = { testConnectedAccounts(profile.email) }

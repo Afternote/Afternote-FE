@@ -43,6 +43,18 @@ class ReceivedAfternoteDetailMapperTest {
     }
 
     @Test
+    fun `toDomain - 알 수 없는 ESTATE category 는 IllegalArgumentException 이다`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            ReceivedAfternoteDetailDto(
+                id = 1L,
+                serviceName = "제목",
+                category = "ESTATE",
+                processingMethods = null,
+            ).toDomain()
+        }
+    }
+
+    @Test
     fun `toDomain - createdAt null이면 createdAt null`() {
         assertNull(
             ReceivedAfternoteDetailDto(
