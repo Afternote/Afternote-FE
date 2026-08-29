@@ -1,6 +1,5 @@
 package com.afternote.feature.receiver.presentation.detail
 
-import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -14,10 +13,8 @@ import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRout
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -44,7 +41,9 @@ class ReceivedAfternoteDetailViewModel
         private val afternoteIdFromNav: Long =
             savedStateHandle.toRoute<ReceiverRoute.AfternoteDetailRoute>().afternoteId
 
-        private val internalState = MutableStateFlow(InternalState())
+        private val _uiState =
+            MutableStateFlow<ReceivedAfternoteDetailUiState>(ReceivedAfternoteDetailUiState.Loading)
+        val uiState: StateFlow<ReceivedAfternoteDetailUiState> = _uiState.asStateFlow()
 
         /** 진행 중인 상세 조회 — 첫 진입 이후의 ON_RESUME 이 실행 중인 로드와 겹치면 건너뛰기 위한 가드. */
         private var loadJob: Job? = null
@@ -57,15 +56,6 @@ class ReceivedAfternoteDetailViewModel
          * 프로세스 사망 후 복원에서도 init 로드와 수명이 일치한다.
          */
         private var isFirstResume = true
-
-        val uiState: StateFlow<ReceivedAfternoteDetailUiState> =
-            internalState
-                .map { it.toUiState() }
-                .stateIn(
-                    scope = viewModelScope,
-                    started = SharingStarted.WhileSubscribed(5_000),
-                    initialValue = ReceivedAfternoteDetailUiState.Loading,
-                )
 
         init {
             loadDetail(afternoteIdFromNav)
@@ -99,71 +89,30 @@ class ReceivedAfternoteDetailViewModel
             loadJob?.cancel()
             loadJob =
                 viewModelScope.launch {
-                    internalState.update {
-                        it.copy(
-                            loadPhase = if (showsLoading) LoadPhase.Loading else it.loadPhase,
-                            detailId = afternoteId,
-                        )
+                    if (showsLoading) {
+                        _uiState.value = ReceivedAfternoteDetailUiState.Loading
                     }
                     receiverRepository
                         .getReceivedAfternoteDetail(afternoteId = afternoteId)
                         .onSuccess { detail ->
-                            internalState.update {
-                                it.copy(loadPhase = LoadPhase.Loaded(detail.toReceivedDetailContentUiModel()))
-                            }
+                            _uiState.value =
+                                ReceivedAfternoteDetailUiState.Success(
+                                    detailId = afternoteId,
+                                    contentUiModel = detail.toReceivedDetailContentUiModel(),
+                                )
                         }.onFailure { e ->
                             // 화면을 유지하는 자동 갱신 실패도 기록한다 — 콘솔이 유일한 관측 지점이다.
                             errorReporter.recordAfternoteFailure(AfternoteFailureStage.RECEIVED_DETAIL_LOAD, e)
-                            internalState.update { current ->
-                                if (keepsStateOnFailure && current.loadPhase is LoadPhase.Loaded) {
+                            _uiState.update { current ->
+                                if (keepsStateOnFailure && current is ReceivedAfternoteDetailUiState.Success) {
                                     current
                                 } else {
-                                    current.copy(
-                                        loadPhase =
-                                            LoadPhase.Failed(
-                                                messageRes = R.string.afternote_detail_load_error,
-                                            ),
+                                    ReceivedAfternoteDetailUiState.Error(
+                                        messageRes = R.string.afternote_detail_load_error,
                                     )
                                 }
                             }
                         }
                 }
         }
-
-        private data class InternalState(
-            val loadPhase: LoadPhase = LoadPhase.Loading,
-            val detailId: Long = 0L,
-        )
-
-        private sealed interface LoadPhase {
-            data object Loading : LoadPhase
-
-            data class Loaded(
-                val contentUiModel: ReceivedDetailContentUiModel,
-            ) : LoadPhase
-
-            data class Failed(
-                @param:StringRes val messageRes: Int,
-            ) : LoadPhase
-        }
-
-        private fun InternalState.toUiState(): ReceivedAfternoteDetailUiState =
-            when (val phase = loadPhase) {
-                LoadPhase.Loading -> {
-                    ReceivedAfternoteDetailUiState.Loading
-                }
-
-                is LoadPhase.Loaded -> {
-                    ReceivedAfternoteDetailUiState.Success(
-                        detailId = detailId,
-                        contentUiModel = phase.contentUiModel,
-                    )
-                }
-
-                is LoadPhase.Failed -> {
-                    ReceivedAfternoteDetailUiState.Error(
-                        messageRes = phase.messageRes,
-                    )
-                }
-            }
     }

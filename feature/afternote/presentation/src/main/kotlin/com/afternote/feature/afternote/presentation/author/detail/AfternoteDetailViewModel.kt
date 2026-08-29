@@ -15,10 +15,8 @@ import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFai
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -31,16 +29,13 @@ import javax.inject.Inject
  * - 작성자 표시명: [UserRepository.getMyProfile] (네비게이션 인자로 전달하지 않음)
  * - 상세 ID: [SavedStateHandle.toRoute]로 복원한 타입 안전 [AfternoteRoute.DetailRoute]에서 조회.
  *
- * 내부 [InternalState] (flat) 로 조회·작성자·삭제 진행 단계를 관리하고, public [uiState] 는
- * [AfternoteDetailUiState] 로 매핑해 Loading/Success/Error 3분기로 노출한다.
+ * [AfternoteDetailUiState] 를 그대로 들고 [uiState] 로 노출한다 — Loading/Success/Error 3분기.
  * 삭제 결과(성공/실패)는 [AfternoteDetailUiState.Success.deleteResult] nullable 필드에 흡수한다 —
  * UI 가 LaunchedEffect 로 소비한 뒤 [onDeleteResultConsumed] 로 reset.
  *
  * 사용자 가시 메시지는 VM 에 하드코딩하지 않고 [androidx.annotation.StringRes] id 로만 노출한다.
  * 실패 시 예외 원문(`Throwable.message`)은 UI 로 넘기지 않는다 — 서버 5xx 본문·역직렬화 예외에
  * 내부 SQL·응답 원문 발췌가 섞여 오므로 사용자에게 노출하면 안 된다.
- *
- * [SharingStarted.WhileSubscribed] 로 UI 구독이 없을 때 업스트림 [map] 을 중지해 백그라운드 리소스를 절약한다.
  */
 @HiltViewModel
 class AfternoteDetailViewModel
@@ -53,7 +48,18 @@ class AfternoteDetailViewModel
     ) : ViewModel() {
         private val afternoteIdFromNav: Long =
             savedStateHandle.toRoute<AfternoteRoute.DetailRoute>().itemId
-        private val internalState = MutableStateFlow(InternalState())
+
+        private val _uiState = MutableStateFlow<AfternoteDetailUiState>(AfternoteDetailUiState.Loading)
+        val uiState: StateFlow<AfternoteDetailUiState> = _uiState.asStateFlow()
+
+        /**
+         * 조회해 둔 상세 원본. 작성자 표시명이 상세보다 늦게 도착하면 Success 를 다시 매핑해야 하는데,
+         * [AfternoteDetailUiState.Success] 는 변환이 끝난 [DetailContentUiModel] 만 들고 있어 원본이 필요하다.
+         */
+        private var loadedDetail: Detail? = null
+
+        /** 작성자 표시명 — 상세와 별도로 조회되므로 빈 문자열로 시작해, 도착하면 Success 에 반영한다. */
+        private var authorDisplayName: String = ""
 
         /** 진행 중인 상세 조회 — 첫 진입 이후의 ON_RESUME 이 실행 중인 로드와 겹치면 건너뛰기 위한 가드. */
         private var loadJob: Job? = null
@@ -68,20 +74,11 @@ class AfternoteDetailViewModel
          */
         private var isFirstResume = true
 
-        val uiState: StateFlow<AfternoteDetailUiState> =
-            internalState
-                .map { it.toUiState() }
-                .stateIn(
-                    scope = viewModelScope,
-                    started = SharingStarted.WhileSubscribed(5_000),
-                    initialValue = AfternoteDetailUiState.Loading,
-                )
-
         init {
             viewModelScope.launch {
                 runCatching { userRepository.getMyProfile() }
                     .onSuccess { profile ->
-                        internalState.update { it.copy(authorDisplayName = profile.name) }
+                        applyAuthorDisplayName(profile.name)
                     }.onFailure {
                         // 의도된 폴백: 표시명은 장식 정보라 실패해도 화면을 차단하지 않는다.
                         // authorDisplayName 이 빈 문자열로 남으면 TitleSection 이 이름 세그먼트를 생략해 렌더한다.
@@ -121,22 +118,33 @@ class AfternoteDetailViewModel
             loadJob =
                 viewModelScope.launch {
                     if (showsLoading) {
-                        internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
+                        _uiState.value = AfternoteDetailUiState.Loading
                     }
                     afternoteRepository
                         .getDetail(id = afternoteId)
                         .onSuccess { detail ->
-                            internalState.update { it.copy(loadPhase = LoadPhase.Loaded(detail)) }
+                            loadedDetail = detail
+                            _uiState.update { current ->
+                                // 진행 중인 삭제와 미소비 삭제 결과는 갱신이 덮지 않는다 — 새 Success 의
+                                // 기본값이 삭제 진행 표시를 풀고 결과 안내를 지운다.
+                                val previous = current as? AfternoteDetailUiState.Success
+                                AfternoteDetailUiState.Success(
+                                    detailId = detail.id,
+                                    isDeleting = previous?.isDeleting ?: false,
+                                    contentUiModel = detail.toDetailContentUiModel(authorDisplayName),
+                                    deleteResult = previous?.deleteResult,
+                                )
+                            }
                         }.onFailure { e ->
                             // 화면을 유지하는 자동 갱신 실패도 기록한다 — 사용자에게 안 보이는 만큼
                             // 콘솔이 유일한 관측 지점이다.
                             errorReporter.recordAfternoteFailure(AfternoteFailureStage.DETAIL_LOAD, e)
-                            internalState.update { current ->
-                                if (keepsStateOnFailure && current.loadPhase is LoadPhase.Loaded) {
+                            _uiState.update { current ->
+                                if (keepsStateOnFailure && current is AfternoteDetailUiState.Success) {
                                     current
                                 } else {
-                                    current.copy(
-                                        loadPhase = LoadPhase.Failed(messageRes = R.string.afternote_detail_load_error),
+                                    AfternoteDetailUiState.Error(
+                                        messageRes = R.string.afternote_detail_load_error,
                                     )
                                 }
                             }
@@ -145,13 +153,13 @@ class AfternoteDetailViewModel
         }
 
         fun deleteAfternote(afternoteId: Long) {
-            if (internalState.value.isDeleting) return
+            if ((_uiState.value as? AfternoteDetailUiState.Success)?.isDeleting == true) return
             viewModelScope.launch {
-                internalState.update { it.copy(isDeleting = true) }
+                updateSuccess { it.copy(isDeleting = true) }
                 afternoteRepository
                     .delete(id = afternoteId)
                     .onSuccess {
-                        internalState.update {
+                        updateSuccess {
                             it.copy(
                                 isDeleting = false,
                                 deleteResult = AfternoteDetailDeleteResult.Succeeded(afternoteId),
@@ -159,7 +167,7 @@ class AfternoteDetailViewModel
                         }
                     }.onFailure { e ->
                         errorReporter.recordAfternoteFailure(AfternoteFailureStage.DETAIL_DELETE, e)
-                        internalState.update {
+                        updateSuccess {
                             it.copy(
                                 isDeleting = false,
                                 deleteResult =
@@ -173,56 +181,33 @@ class AfternoteDetailViewModel
         }
 
         fun onDeleteResultConsumed() {
-            internalState.update { it.copy(deleteResult = null) }
+            updateSuccess { it.copy(deleteResult = null) }
         }
 
         // endregion
 
-        // region Internal state shaping
+        // region State shaping
 
         /**
-         * VM 내부에서만 다루는 평탄한 상태.
-         * public [AfternoteDetailUiState] 는 이 값을 [toUiState] 로 매핑해 노출한다.
+         * 늦게 도착한 작성자 표시명을 반영한다. 상세를 이미 받아 둔 뒤면 보고 있는 Success 의
+         * [DetailContentUiModel] 을 새 이름으로 다시 매핑한다.
          */
-        private data class InternalState(
-            val loadPhase: LoadPhase = LoadPhase.Loading,
-            val authorDisplayName: String = "",
-            val isDeleting: Boolean = false,
-            val deleteResult: AfternoteDetailDeleteResult? = null,
-        )
-
-        private sealed interface LoadPhase {
-            data object Loading : LoadPhase
-
-            data class Loaded(
-                val detail: Detail,
-            ) : LoadPhase
-
-            data class Failed(
-                val messageRes: Int? = null,
-            ) : LoadPhase
+        private fun applyAuthorDisplayName(name: String) {
+            authorDisplayName = name
+            val detail = loadedDetail ?: return
+            updateSuccess { it.copy(contentUiModel = detail.toDetailContentUiModel(name)) }
         }
 
-        private fun InternalState.toUiState(): AfternoteDetailUiState =
-            when (val phase = loadPhase) {
-                LoadPhase.Loading -> {
-                    AfternoteDetailUiState.Loading
-                }
-
-                is LoadPhase.Loaded -> {
-                    val detail = phase.detail
-                    AfternoteDetailUiState.Success(
-                        detailId = detail.id,
-                        isDeleting = isDeleting,
-                        contentUiModel = detail.toDetailContentUiModel(authorDisplayName),
-                        deleteResult = deleteResult,
-                    )
-                }
-
-                is LoadPhase.Failed -> {
-                    AfternoteDetailUiState.Error(messageRes = phase.messageRes)
+        /** 삭제 진행·결과는 Success 에만 존재하므로, 그 외 상태에서는 갱신하지 않는다. */
+        private fun updateSuccess(transform: (AfternoteDetailUiState.Success) -> AfternoteDetailUiState) {
+            _uiState.update { current ->
+                if (current is AfternoteDetailUiState.Success) {
+                    transform(current)
+                } else {
+                    current
                 }
             }
+        }
 
         // endregion
     }
