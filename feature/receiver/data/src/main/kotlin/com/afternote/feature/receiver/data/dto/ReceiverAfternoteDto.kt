@@ -51,7 +51,7 @@ data class ReceivedAfternoteDetailDto(
     @SerialName("title") val serviceName: String,
     @SerialName("actions") val processingMethods: List<String>?,
     @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
-    @SerialName("senderName") val senderName: String? = null,
+    @SerialName("senderName") val senderName: String,
     @SerialName("createdAt") val createdAt: String? = null,
     @SerialName("credentials") val credentials: ReceivedCredentialsDto? = null,
     @SerialName("playlist") val playlist: ReceivedPlaylistDto? = null,
