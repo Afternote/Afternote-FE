@@ -114,23 +114,6 @@
     <string name="afternote_editor_message_registered_expand_content_description">등록된 말씀 펼치기</string>
     <string name="afternote_editor_message_registered_collapse_content_description">등록된 말씀 접기</string>
 
-    <!--
-      수신자 인증·발신자 등록 흐름의 표시 문구는 :feature:receiver:presentation 으로 이동했다(#1066).
-      아래 잔여분은 어느 모듈에서도 참조하지 않는 정의들 — 미구현 화면 몫인지 확인 후 이동·삭제 판단이
-      필요해 잔류시킨다.
-    -->
-    <string name="receiver_sender_registration_name_placeholder">이름을 지정해주세요</string>
-    <string name="receiver_verify_confirm_button">인증하기</string>
-    <string name="receiver_verify_email_label">이메일 주소</string>
-    <string name="receiver_verify_code_description">입력하신 이메일로 인증번호를 보냈습니다.\n수신된 메일에서 인증번호를 확인하고 입력해주세요.</string>
-    <string name="receiver_verify_master_key_required">마스터 키를 입력해주세요.</string>
-    <string name="receiver_verify_error_network">네트워크 연결을 확인해주세요.</string>
-    <string name="receiver_verify_complete_confirm">확인</string>
-    <string name="receiver_verify_status_pending">현재 서류 확인중입니다.\n빠르게 처리하여 열람하실 수 있도록 하겠습니다.</string>
-    <string name="receiver_verify_status_approved">승인되었습니다. 열람이 가능합니다.</string>
-    <string name="receiver_verify_status_rejected">제출하신 서류 검토 결과 거절되었습니다. 다시 제출해 주세요.</string>
-    <string name="receiver_verify_wait_for_approval">인증이 완료된 후에 이용 가능합니다.</string>
-
     <string name="login_kakao_button">카카오로 로그인</string>
     <string name="login_kakao_backend_not_ready">카카오 토큰을 발급받았습니다. 서버 연동(/auth/kakao) 대기 중입니다.</string>
     <string name="login_kakao_sdk_not_initialized">카카오 SDK가 초기화되지 않았습니다. KAKAO_NATIVE_APP_KEY를 확인해주세요.</string>
