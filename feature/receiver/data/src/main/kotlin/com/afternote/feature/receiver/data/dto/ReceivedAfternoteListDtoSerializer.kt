@@ -43,23 +43,23 @@ object ReceivedAfternoteListDtoSerializer : KSerializer<ReceivedAfternoteListDto
                 jsonDecoder.decodeJsonElement(),
             )
         val afternotes =
-            wire.afternotes.mapNotNull { element ->
-                val item = element as? JsonObject
-                if (item == null) {
-                    json.decodeFromJsonElement(ReceivedAfternoteDto.serializer(), element)
+            wire.afternotes.mapNotNull { rawAfternote ->
+                if (rawAfternote !is JsonObject) {
+                    // 원소가 객체조차 아니면 여기서 반드시 실패한다. 예외 메시지는 라이브러리에 맡긴다.
+                    json.decodeFromJsonElement(ReceivedAfternoteDto.serializer(), rawAfternote)
                     return@mapNotNull null
                 }
-                val category = item["category"] as? JsonPrimitive
-                if (category?.isString != true) {
+                val rawCategory = rawAfternote["category"] as? JsonPrimitive
+                if (rawCategory?.isString != true) {
                     // category만 유효한 문자열로 바꿔 나머지 필수 필드까지 strict 검증한 뒤 제외한다.
                     // 그래야 category 오류가 함께 들어왔다는 이유로 id/title 등의 계약 위반이 가려지지 않는다.
                     json.decodeFromJsonElement(
                         ReceivedAfternoteDto.serializer(),
-                        JsonObject(item + ("category" to JsonPrimitive(CATEGORY_VALIDATION_PLACEHOLDER))),
+                        JsonObject(rawAfternote + ("category" to JsonPrimitive(CATEGORY_VALIDATION_PLACEHOLDER))),
                     )
                     return@mapNotNull null
                 }
-                json.decodeFromJsonElement(ReceivedAfternoteDto.serializer(), item)
+                json.decodeFromJsonElement(ReceivedAfternoteDto.serializer(), rawAfternote)
             }
 
         return ReceivedAfternoteListDto(
