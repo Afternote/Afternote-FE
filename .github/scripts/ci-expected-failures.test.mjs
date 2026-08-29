@@ -228,7 +228,7 @@ test("androidTest 판정: XPASS 는 목록 제거를 요구하는 red 다", () =
 
     assert.equal(verdict.failed, true);
     assert.deepEqual(verdict.xpassed, ["com.afternote.afternote_fe.SampleAndroidTest#flakyScenario"]);
-    assert.match(verdict.lines[0], new RegExp(CONFIG_RELATIVE_PATH.replace(/[.]/g, "\\.")));
+    assert.match(verdict.lines[0], new RegExp(CONFIG_RELATIVE_PATH.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 });
 
 test("androidTest 판정: 실행되지 않은 게이트와 건너뛴 테스트는 침묵한다", () => {
