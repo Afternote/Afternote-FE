@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.navigation
+package com.afternote.feature.afternote.presentation.author.editor.receiver.select
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue

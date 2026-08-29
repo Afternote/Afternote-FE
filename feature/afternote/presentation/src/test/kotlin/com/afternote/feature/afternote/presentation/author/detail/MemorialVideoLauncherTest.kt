@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.navigation
+package com.afternote.feature.afternote.presentation.author.detail
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
