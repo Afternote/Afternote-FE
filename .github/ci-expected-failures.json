@@ -17,6 +17,7 @@
       "reason": "타임레터 DTO 누락 키 계약 게이트 — 구현 머지 전까지 의도된 실패"
     }
   ],
+  "androidTests": [],
   "screenshotModules": [
     {
       "module": ":feature:setting:presentation",

@@ -137,12 +137,15 @@ test("keeps pull request validation secretless and release credentials isolated"
 
     const releaseWorkflow = workflows.get("release-distribution.yml");
     assert.doesNotMatch(releaseWorkflow, /\.\/\.github\/actions\/setup-ci-config/);
+    // Firebase 인증은 장기 JSON 키에서 WIF 로 옮겼다 (#850) — 릴리스 경로가 Google 자격을
+    // 다룬다는 사실은 그대로고, 그 자격이 저장된 비밀이 아니라 단기 토큰으로 바뀌었다.
     for (const secretName of [
         "GOOGLE_SERVICES_JSON_B64",
         "KAKAO_NATIVE_APP_KEY",
         "GOOGLE_WEB_CLIENT_ID",
         "RELEASE_STORE_FILE_B64",
-        "FIREBASE_SERVICE_ACCOUNT_JSON",
+        "GCP_WORKLOAD_IDENTITY_PROVIDER",
+        "GCP_FIREBASE_SERVICE_ACCOUNT",
     ]) {
         assert.match(releaseWorkflow, new RegExp(`secrets\\.${secretName}`));
     }

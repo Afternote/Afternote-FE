@@ -68,7 +68,6 @@ internal const val MEMORIAL_VIDEO_CARD_TEST_TAG = "memorialVideoCard"
  */
 @Immutable
 data class MemorialDetailContent(
-    val userName: String = "",
     val finalWriteDate: String = "",
     val profileImageUri: String? = null,
     val albumCovers: List<AlbumCover> = emptyList(),
@@ -88,6 +87,7 @@ fun MemorialDetailScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
     content: MemorialDetailContent = MemorialDetailContent(),
+    userName: String = "",
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     isEditable: Boolean = true,
     onEditClick: () -> Unit = {},
@@ -141,6 +141,7 @@ fun MemorialDetailScreen(
         MemorialDetailScrollContent(
             content = content,
             categoryLabel = memorialCategoryLabel,
+            userName = userName,
             onVideoClick = onVideoClick,
             modifier =
                 Modifier
@@ -154,6 +155,7 @@ fun MemorialDetailScreen(
 private fun MemorialDetailScrollContent(
     content: MemorialDetailContent,
     categoryLabel: String,
+    userName: String,
     onVideoClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -165,7 +167,7 @@ private fun MemorialDetailScrollContent(
                 .padding(horizontal = 20.dp),
     ) {
         Spacer(modifier = Modifier.height(24.dp))
-        TitleSection(categoryLabel = categoryLabel, userName = content.userName)
+        TitleSection(categoryLabel = categoryLabel, userName = userName)
         Spacer(modifier = Modifier.height(24.dp))
         CardSection(content = content, onVideoClick = onVideoClick)
         Spacer(modifier = Modifier.height(24.dp))
@@ -297,7 +299,7 @@ private fun VideoCard(
         content = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "장례식에 남길 영상",
+                    text = stringResource(R.string.afternote_editor_funeral_video_label),
                     style =
                         AfternoteDesign.typography.textField.copy(
                             fontWeight = FontWeight.Medium,
@@ -328,7 +330,8 @@ private fun VideoThumbnail(thumbnailUrl: String?) {
         if (!thumbnailUrl.isNullOrBlank()) {
             AsyncImage(
                 model = thumbnailUrl,
-                contentDescription = "장례식에 남길 영상 썸네일",
+                contentDescription =
+                    stringResource(R.string.afternote_content_description_memorial_video_thumbnail),
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
             )
@@ -354,7 +357,7 @@ private fun VideoThumbnail(thumbnailUrl: String?) {
         // 재생 아이콘
         Image(
             painter = painterResource(R.drawable.feature_afternote_ic_playback),
-            contentDescription = "영상 재생",
+            contentDescription = stringResource(R.string.content_description_video_play),
             modifier =
                 Modifier
                     .align(Alignment.Center)
@@ -380,7 +383,7 @@ private fun PlaylistCard(
         content = {
             Column {
                 Text(
-                    text = "추억 플레이리스트",
+                    text = stringResource(R.string.afternote_editor_playlist_screen_title),
                     style =
                         AfternoteDesign.typography.textField.copy(
                             fontWeight = FontWeight.Medium,
@@ -393,7 +396,7 @@ private fun PlaylistCard(
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "현재 ${songCount}개의 노래가 담겨 있습니다.",
+                    text = stringResource(R.string.afternote_detail_playlist_song_count, songCount),
                     style =
                         AfternoteDesign.typography.bodySmallR.copy(
                             color = AfternoteDesign.colors.black,
@@ -496,11 +499,11 @@ private fun MemorialDetailScreenPreview() {
         MemorialDetailScreen(
             content =
                 MemorialDetailContent(
-                    userName = "서영",
                     finalWriteDate = "2025.11.26",
                     songCount = 16,
                     albumCovers = memorialDetailPreviewAlbumCovers(),
                 ),
+            userName = "서영",
             onBackClick = {},
             onEditClick = {},
             onVideoClick = {},
@@ -525,11 +528,11 @@ private fun MemorialDetailScreenDeleteDialogPreview() {
         MemorialDetailScreen(
             content =
                 MemorialDetailContent(
-                    userName = "서영",
                     finalWriteDate = "2025.11.26",
                     songCount = 16,
                     albumCovers = memorialDetailPreviewAlbumCovers(),
                 ),
+            userName = "서영",
             onBackClick = {},
             onEditClick = {},
             onVideoClick = {},

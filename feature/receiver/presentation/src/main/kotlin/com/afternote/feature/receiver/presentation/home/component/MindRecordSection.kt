@@ -29,8 +29,9 @@ fun MindRecordSection(
         description = stringResource(R.string.receiver_home_mindrecord_section_desc),
         countLine =
             rememberCountLine(
-                prefix = "${countText(summary?.totalCount)}개 ",
-                suffix = "마음의 기록이 있습니다.",
+                prefix =
+                    stringResource(R.string.receiver_home_mindrecord_count_prefix, countText(summary?.totalCount)),
+                suffix = stringResource(R.string.receiver_home_mindrecord_count_suffix),
             ),
         buttonText = stringResource(R.string.receiver_home_mindrecord_section_button),
         onButtonClick = onGoClick,

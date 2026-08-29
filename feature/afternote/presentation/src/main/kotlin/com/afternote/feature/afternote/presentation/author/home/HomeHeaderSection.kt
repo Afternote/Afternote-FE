@@ -14,11 +14,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteOutlinedCard
 import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.feature.afternote.presentation.R
 
 /**
  * NEXT STEP 카드에 필요한 값 묶음.
@@ -52,7 +54,7 @@ internal fun HomeHeaderSection(
                 .padding(horizontal = 25.dp),
     ) {
         Text(
-            text = "애프터노트",
+            text = stringResource(R.string.afternote_home_title),
             style = AfternoteDesign.typography.h1,
             color = AfternoteDesign.colors.gray9,
         )
@@ -82,7 +84,7 @@ private fun NextStepCard(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        AfternoteSectionHeader(title = "NEXT STEP")
+        AfternoteSectionHeader(title = stringResource(R.string.afternote_home_next_step_section_title))
         AfternoteOutlinedCard(
             onClick = onClick,
             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 20.dp),

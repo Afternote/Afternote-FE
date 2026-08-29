@@ -50,27 +50,27 @@ fun TermsDetailScreen(
 
                 // 각 약관 섹션들 (반복되는 구조는 별도 컴포저블로 분리하여 가독성 확보)
                 TermsSectionText(
-                    title = "1. 서비스 이용약관",
+                    title = stringResource(R.string.onboarding_terms_detail_section_1_title),
                     content = stringResource(R.string.onboarding_terms_detail_section_1),
                 )
                 TermsSectionText(
-                    title = "2. 개인정보 수집 및 이용 동의",
+                    title = stringResource(R.string.onboarding_terms_detail_section_2_title),
                     content = stringResource(R.string.onboarding_terms_detail_section_2),
                 )
                 TermsSectionText(
-                    title = "3. 기록 및 콘텐츠 저장에 대한 안내",
+                    title = stringResource(R.string.onboarding_terms_detail_section_3_title),
                     content = stringResource(R.string.onboarding_terms_detail_section_3),
                 )
                 TermsSectionText(
-                    title = "4. 계정 및 데이터 관리",
+                    title = stringResource(R.string.onboarding_terms_detail_section_4_title),
                     content = stringResource(R.string.onboarding_terms_detail_section_4),
                 )
                 TermsSectionText(
-                    title = "5. 서비스 변경 및 종료",
+                    title = stringResource(R.string.onboarding_terms_detail_section_5_title),
                     content = stringResource(R.string.onboarding_terms_detail_section_5),
                 )
                 TermsSectionText(
-                    title = "6. 동의 철회",
+                    title = stringResource(R.string.onboarding_terms_detail_section_6_title),
                     content = stringResource(R.string.onboarding_terms_detail_section_6),
                 )
 
