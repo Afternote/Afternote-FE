@@ -36,10 +36,13 @@ import com.afternote.feature.afternote.presentation.author.editor.memorial.Memor
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialMediaSourceSheet
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialMediaTarget
 import com.afternote.feature.afternote.presentation.author.editor.memorial.rememberMemorialMediaSourceState
+import com.afternote.feature.afternote.presentation.author.editor.memorial.removableMemorialMediaTargets
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
 import com.afternote.feature.afternote.presentation.author.editor.selection.EditorSelectionDropdown
+import com.afternote.feature.afternote.presentation.author.editor.selection.EditorServiceSelectionField
+import com.afternote.feature.afternote.presentation.author.editor.selection.EditorServiceSelectionSheet
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
@@ -52,6 +55,7 @@ internal fun EditorContent(
     typeContent: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     isPrefillLoading: Boolean = false,
+    isTypeSelectionEnabled: Boolean = true,
 ) {
     Column(
         modifier =
@@ -71,6 +75,7 @@ internal fun EditorContent(
             onValueSelected = state::onTypeSelected,
             expanded = state.typeDropdownExpanded,
             onExpandedChange = state::onTypeDropdownExpandedChange,
+            enabled = isTypeSelectionEnabled,
             menuStyle =
                 DropdownMenuStyle(
                     shadowElevation = 10.dp,
@@ -86,23 +91,13 @@ internal fun EditorContent(
         if (form.selectedType.hasServiceSelection) {
             Spacer(modifier = Modifier.height(20.dp))
 
-            EditorSelectionDropdown(
-                label = stringResource(R.string.afternote_editor_label_service_name),
-                selectedValue = form.selectedService.orEmpty(),
-                options = form.currentServiceOptions,
-                optionLabel = { it },
-                onValueSelected = state::onServiceSelected,
-                expanded = state.serviceDropdownExpanded,
-                onExpandedChange = state::onServiceDropdownExpandedChange,
+            EditorServiceSelectionField(
+                selectedService = form.selectedService,
+                onClick = state::openServiceSelectionSheet,
                 placeholder =
                     stringResource(
                         R.string.afternote_editor_service_placeholder,
                         form.selectedType.toDropdownLabel(),
-                    ),
-                menuStyle =
-                    DropdownMenuStyle(
-                        shadowElevation = 10.dp,
-                        tonalElevation = 10.dp,
                     ),
             )
         }
@@ -124,13 +119,17 @@ fun AfternoteEditorBody(
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     isPrefillLoading: Boolean = false,
+    isTypeSelectionEnabled: Boolean = true,
 ) {
     // 슬롯을 누르면 곧장 갤러리가 뜨는 대신 "갤러리에서 선택 / 촬영" 시트를 한 단계 끼운다 (#369).
+    // 지울 수 있는 첨부가 있으면 같은 시트에 "삭제" 갈래가 더해진다 (#1114).
     val mediaSourceState =
         rememberMemorialMediaSourceState(
             snackbarHostState = snackbarHostState,
             onPhotoSelected = state.setMemorialPhoto,
             onVideoSelected = state.setMemorialVideo,
+            onPhotoRemoved = { state.setMemorialPhoto(null) },
+            onVideoRemoved = { state.setMemorialVideo(null) },
             onCaptureFailed = onCaptureFailed,
         )
 
@@ -151,9 +150,21 @@ fun AfternoteEditorBody(
         },
         modifier = modifier,
         isPrefillLoading = isPrefillLoading,
+        isTypeSelectionEnabled = isTypeSelectionEnabled,
     )
 
-    MemorialMediaSourceSheet(state = mediaSourceState)
+    MemorialMediaSourceSheet(
+        state = mediaSourceState,
+        removableTargets = form.removableMemorialMediaTargets(),
+    )
+    EditorServiceSelectionSheet(
+        visible = state.isServiceSelectionSheetVisible,
+        type = form.selectedType,
+        services = form.currentServiceOptions,
+        searchQueryState = state.serviceSearchQueryState,
+        onDismissRequest = state::dismissServiceSelectionSheet,
+        onServiceSelected = state::onServiceSelected,
+    )
 }
 
 /**

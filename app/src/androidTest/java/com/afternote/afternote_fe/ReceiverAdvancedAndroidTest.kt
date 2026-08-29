@@ -25,7 +25,6 @@ import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
-import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.receiver.domain.model.ReceivedAccountCredentials
 import com.afternote.feature.receiver.domain.model.ReceivedAfternoteDetail
 import com.afternote.feature.receiver.domain.model.ReceivedExportBundle
@@ -51,7 +50,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import com.afternote.feature.afternote.presentation.R as AfternoteFeatureR
+import com.afternote.feature.receiver.presentation.R as ReceiverR
 
 @RunWith(AndroidJUnit4::class)
 class ReceiverAdvancedAndroidTest {
@@ -245,14 +244,14 @@ class ReceiverAdvancedAndroidTest {
 
         confirmDownload()
         composeRule.waitUntil(timeoutMillis = 5_000) {
-            viewModel.uiState.value.errorMessageRes == AfternoteFeatureR.string.receiver_download_all_failed
+            viewModel.uiState.value.errorMessageRes == ReceiverR.string.receiver_download_all_failed
         }
         assertEquals(1, repository.downloadCalls)
         assertEquals(0, repository.savedBundles.size)
 
         confirmDownload()
         composeRule.waitUntil(timeoutMillis = 5_000) {
-            viewModel.uiState.value.errorMessageRes == AfternoteFeatureR.string.receiver_download_all_save_failed
+            viewModel.uiState.value.errorMessageRes == ReceiverR.string.receiver_download_all_save_failed
         }
         assertEquals(2, repository.downloadCalls)
         assertEquals(listOf(saveFailureBundle), repository.savedBundles)

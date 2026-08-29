@@ -25,6 +25,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -152,20 +153,13 @@ class AfternoteAuthorExtendedTest {
     }
 
     @Test
-    fun repeatedValidation_afterSnackbarDismiss_showsAgainWithoutSaveCall() {
+    fun serviceSelectionSheet_dismissPreservesCustomPrefillAndSearchSelectsExactCatalogValue() {
         val repository =
             FakeAfternoteRepository.strict().apply {
-                onGetDetail = {
-                    Result.success(authorDetail().copy(receivers = emptyList()))
-                }
+                onGetDetail = { Result.success(authorDetail()) }
             }
         val viewModel = editorViewModel(repository, itemId = 73L)
         var editorState: AfternoteEditorState? = null
-        var snackbarHostState: SnackbarHostState? = null
-        val validationMessage =
-            RuntimeEnvironment
-                .getApplication()
-                .getString(R.string.afternote_validation_receivers_required)
 
         composeRule.setContent {
             AfternoteTheme {
@@ -173,15 +167,73 @@ class AfternoteAuthorExtendedTest {
                     itemId = 73L,
                     viewModel = viewModel,
                     onStateReady = { editorState = it },
-                    onSnackbarHostReady = { snackbarHostState = it },
+                )
+            }
+        }
+
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            !viewModel.uiState.value.isPrefillLoading && editorState != null
+        }
+        composeRule.onNodeWithText("Instagram").assertIsDisplayed().performClick()
+        composeRule.onNodeWithText("소셜 네트워크 서비스 선택").assertIsDisplayed()
+        composeRule.onNodeWithText("서비스 검색하기").performTextInput("  페이  ")
+        composeRule.onNodeWithText("페이스북").assertIsDisplayed()
+        composeRule.onNodeWithText("인스타그램").assertDoesNotExist()
+
+        composeRule.runOnIdle { checkNotNull(editorState).dismissServiceSelectionSheet() }
+        composeRule.onNodeWithText("소셜 네트워크 서비스 선택").assertDoesNotExist()
+        assertEquals("Instagram", viewModel.currentForm().selectedService)
+        assertEquals("", checkNotNull(editorState).serviceSearchQueryState.text.toString())
+
+        composeRule.onNodeWithText("Instagram").performClick()
+        composeRule.onNodeWithText("인스타그램").assertIsDisplayed()
+        composeRule.onNodeWithText("서비스 검색하기").performTextInput("페이")
+        composeRule.onNodeWithText("페이스북").performClick()
+
+        composeRule.onNodeWithText("소셜 네트워크 서비스 선택").assertDoesNotExist()
+        composeRule.onNodeWithText("페이스북").assertIsDisplayed()
+        assertEquals("페이스북", viewModel.currentForm().selectedService)
+        assertEquals("", checkNotNull(editorState).serviceSearchQueryState.text.toString())
+    }
+
+    @Test
+    fun repeatedValidation_afterPopupConfirm_showsAgainWithoutSaveCall() {
+        val repository =
+            FakeAfternoteRepository.strict().apply {
+                onGetDetail = {
+                    // 수신자는 선택 항목(#951)이라 비어 있어도 오류에 끼지 않는다 — 계정정보 누락만 단일 오류로 떠야 한다.
+                    Result.success(
+                        authorDetail().copy(
+                            receivers = emptyList(),
+                            content =
+                                DetailContent.SocialNetwork(
+                                    credentials = DetailCredentials(id = "", password = ""),
+                                    processingMethods = listOf("계정 삭제"),
+                                ),
+                        ),
+                    )
+                }
+            }
+        val viewModel = editorViewModel(repository, itemId = 73L)
+        var editorState: AfternoteEditorState? = null
+        val validationMessage =
+            RuntimeEnvironment
+                .getApplication()
+                .getString(R.string.afternote_validation_account_credentials_required)
+
+        composeRule.setContent {
+            AfternoteTheme {
+                AuthorEditorForUpdate(
+                    itemId = 73L,
+                    viewModel = viewModel,
+                    onStateReady = { editorState = it },
                 )
             }
         }
 
         composeRule.waitUntil(timeoutMillis = 5_000) {
             !viewModel.uiState.value.isPrefillLoading &&
-                editorState != null &&
-                snackbarHostState != null
+                editorState != null
         }
         composeRule.onNodeWithText("Instagram").assertIsDisplayed()
         val topBarRegister =
@@ -194,11 +246,9 @@ class AfternoteAuthorExtendedTest {
         val firstOccurrence = requireNotNull(viewModel.uiState.value.errorEvent).occurrence
         assertEquals(0, repository.updateCalls.size)
 
-        composeRule.runOnIdle {
-            requireNotNull(snackbarHostState).currentSnackbarData?.dismiss()
-        }
+        composeRule.onNodeWithText("확인").performClick()
         composeRule.waitUntil(timeoutMillis = 5_000) {
-            snackbarHostState?.currentSnackbarData == null && viewModel.uiState.value.errorEvent == null
+            viewModel.uiState.value.errorEvent == null
         }
         composeRule.onNodeWithText(validationMessage).assertDoesNotExist()
 
@@ -294,7 +344,6 @@ private fun AuthorEditorForUpdate(
     itemId: Long,
     viewModel: AfternoteEditorViewModel,
     onStateReady: (AfternoteEditorState) -> Unit,
-    onSnackbarHostReady: (SnackbarHostState) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val state =
@@ -344,15 +393,18 @@ private fun AuthorEditorForUpdate(
                 memorialMedia = SaveAfternoteMemorialMedia(),
             )
         },
-        snackbarMessage =
+        snackbarMessage = null,
+        validationMessage =
             (errorEvent?.error as? AfternoteEditorError.Validation)?.let {
                 stringResource(it.reason.messageResId)
             },
         onSnackbarMessageConsumed = {
             errorEvent?.let(viewModel::onErrorConsumed)
         },
+        onValidationMessageConsumed = {
+            errorEvent?.let(viewModel::onErrorConsumed)
+        },
         content = { editorSnackbarHostState ->
-            onSnackbarHostReady(editorSnackbarHostState)
             AfternoteEditorBody(
                 state = state,
                 form = uiState.form,
