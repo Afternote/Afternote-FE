@@ -222,10 +222,14 @@ class AfternoteDetailViewModel
          * Success 가 아닐 때 이 함수가 불리면 노트는 지워지는데 UI 는 아무것도 모른다(진행 표시도,
          * 결과 안내도, 화면 pop 도 없다). 중복 호출 가드도 non-Success 에서는 늘 통과한다.
          * 지금은 결선상 Success 에서만 호출되지만, 그 불변식은 VM 밖(내비게이션 분기)에 있다.
+         *
+         * 지울 id 도 인자로 받지 않고 그 Success 에서 꺼낸다 — 화면에 보이는 것과 다른 항목을 지우는
+         * 경우를 시그니처에서 없앤다. 호출부가 넘기던 값도 같은 Success 의 `detailId` 였다.
          */
-        fun deleteAfternote(afternoteId: Long) {
+        fun deleteAfternote() {
             val current = _uiState.value as? AfternoteDetailUiState.Success ?: return
             if (current.isDeleting) return
+            val afternoteId = current.detailId
             viewModelScope.launch {
                 updateSuccess { it.copy(isDeleting = true) }
                 afternoteRepository

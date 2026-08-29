@@ -306,7 +306,7 @@ class AfternoteDetailViewModelTest {
             val viewModel = viewModel(repository)
             val states = recordStates(viewModel)
 
-            viewModel.deleteAfternote(73L)
+            viewModel.deleteAfternote()
             viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
             viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME
 
@@ -401,7 +401,7 @@ class AfternoteDetailViewModelTest {
             val viewModel = viewModel(repository)
             val states = recordStates(viewModel)
 
-            viewModel.deleteAfternote(73L)
+            viewModel.deleteAfternote()
 
             assertTrue(states.last() is AfternoteDetailUiState.Error)
             assertEquals(emptyList<Long>(), deletedIds)
