@@ -47,6 +47,7 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.presentation.component.ReceiverSelectBottomSheet
 import com.afternote.feature.mindrecord.presentation.component.WriteTextField
+import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryWriteUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.SubmitState
 import java.time.format.DateTimeFormatter
@@ -73,6 +74,59 @@ fun DiaryWriteScreen(
         }
     }
 
+    DiaryWriteScreenContent(
+        uiState = uiState,
+        modifier = modifier,
+        onBackClick = onBackClick,
+        onSubmit = { viewModel.submit() },
+        onSaveDraft = { viewModel.submit(isDraft = true) },
+        onDraftListClick = onDraftListClick,
+        onTitleChanged = viewModel::onTitleChanged,
+        onContentChanged = viewModel::onContentChanged,
+        onMoodSelected = viewModel::onMoodSelected,
+        onReceiverRowClick = { showReceiverSheet = true },
+        onMediaPicked = viewModel::uploadMedia,
+    )
+
+    if (showReceiverSheet) {
+        ReceiverSelectBottomSheet(
+            receivers = uiState.receivers,
+            selectedReceiverIds = uiState.selectedReceiverIds,
+            // 실패를 빈 목록으로 흡수하지 않는다 — 사용자가 «등록 안 함» 으로 오해한다 (#1019).
+            loadError = uiState.receiverLoadError?.asString(),
+            isLoading = uiState.isReceiverLoading,
+            onRetry = viewModel::loadReceivers,
+            onToggle = viewModel::onReceiverToggled,
+            onDismiss = { showReceiverSheet = false },
+        )
+    }
+}
+
+/**
+ * ViewModel 과 분리된 일기 작성 화면 본문 (#1359).
+ *
+ * screenshotTest 가 고정 상태를 그대로 렌더할 수 있도록 상태는 [uiState] 하나로 받고
+ * 이벤트는 콜백으로 받는다. 수신자 바텀시트와 제출 성공 신호는 **래퍼가 소유한다** —
+ * 시트는 자체 표시 상태를 들고 있어 baseline 을 흔들고, 성공 신호는 화면 밖 이동이라
+ * 렌더와 무관하다.
+ *
+ * 콜백 기본값을 두는 것은 이 화면을 상태만으로 렌더하는 자리(프리뷰·screenshotTest)를
+ * 위해서다. 프로덕션 호출부는 래퍼 하나뿐이라 누락이 생기지 않는다.
+ */
+@Composable
+internal fun DiaryWriteScreenContent(
+    uiState: DiaryWriteUiState,
+    modifier: Modifier = Modifier,
+    onBackClick: () -> Unit = {},
+    onSubmit: () -> Unit = {},
+    onSaveDraft: () -> Unit = {},
+    onDraftListClick: () -> Unit = {},
+    onTitleChanged: (String) -> Unit = {},
+    onContentChanged: (String) -> Unit = {},
+    onMoodSelected: (TodayMood) -> Unit = {},
+    onReceiverRowClick: () -> Unit = {},
+    onMediaPicked: suspend (String) -> String? = { null },
+) {
     Scaffold(
         topBar = {
             DetailTopBar(
@@ -83,7 +137,11 @@ fun DiaryWriteScreen(
                     // 돌지 않아 무엇이 빠졌는지 알릴 자리가 없다 — 회색 버튼만으로는 고장과
                     // 구분되지 않는다 (#722). 색은 종전대로 미완성일 때 흐리게 둔다.
                     Button(
-                        onClick = { viewModel.submit() },
+                        onClick = onSubmit,
+                        // 완성되지 않아도 **누를 수는 있게** 둔다 — `canSubmit` 이 아닌 이유다.
+                        // 비활성이면 submit() 이 아예 돌지 않아 무엇이 빠졌는지 알릴 자리가 없고,
+                        // 회색 버튼만으로는 고장과 구분되지 않는다 (#722). 색은 아래에서 미완성일
+                        // 때 흐리게 둔다.
                         enabled = uiState.submitState != SubmitState.InProgress,
                         shape = RoundedCornerShape(6.dp),
                         colors =
@@ -126,7 +184,7 @@ fun DiaryWriteScreen(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .clickable { showReceiverSheet = true }
+                        .clickable(onClick = onReceiverRowClick)
                         .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -202,7 +260,7 @@ fun DiaryWriteScreen(
 
             TextField(
                 value = uiState.title,
-                onValueChange = viewModel::onTitleChanged,
+                onValueChange = onTitleChanged,
                 colors =
                     TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
@@ -243,15 +301,15 @@ fun DiaryWriteScreen(
                 Spacer(modifier = Modifier.width(12.dp))
 
                 MoodChip("😊", selected = uiState.mood == TodayMood.HAPPY) {
-                    viewModel.onMoodSelected(TodayMood.HAPPY)
+                    onMoodSelected(TodayMood.HAPPY)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 MoodChip("😐", selected = uiState.mood == TodayMood.SOSO) {
-                    viewModel.onMoodSelected(TodayMood.SOSO)
+                    onMoodSelected(TodayMood.SOSO)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 MoodChip("😢", selected = uiState.mood == TodayMood.SAD) {
-                    viewModel.onMoodSelected(TodayMood.SAD)
+                    onMoodSelected(TodayMood.SAD)
                 }
             }
 
@@ -307,25 +365,12 @@ fun DiaryWriteScreen(
             // key() 로 컴포넌트를 재생성하지 않는다 (#1018).
             WriteTextField(
                 value = uiState.content,
-                onValueChange = viewModel::onContentChanged,
-                onSaveDraftClick = { viewModel.submit(isDraft = true) },
+                onValueChange = onContentChanged,
+                onSaveDraftClick = onSaveDraft,
                 onDraftCountClick = onDraftListClick,
                 draftCount = uiState.draftCount,
-                onImagePicked = viewModel::uploadMedia,
-                onMediaPicked = viewModel::uploadMedia,
-            )
-        }
-
-        if (showReceiverSheet) {
-            ReceiverSelectBottomSheet(
-                receivers = uiState.receivers,
-                selectedReceiverIds = uiState.selectedReceiverIds,
-                // 실패를 빈 목록으로 흡수하지 않는다 — 사용자가 «등록 안 함» 으로 오해한다 (#1019).
-                loadError = uiState.receiverLoadError?.asString(),
-                isLoading = uiState.isReceiverLoading,
-                onRetry = viewModel::loadReceivers,
-                onToggle = viewModel::onReceiverToggled,
-                onDismiss = { showReceiverSheet = false },
+                onImagePicked = onMediaPicked,
+                onMediaPicked = onMediaPicked,
             )
         }
     }
