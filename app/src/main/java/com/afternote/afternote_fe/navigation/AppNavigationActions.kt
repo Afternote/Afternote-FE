@@ -601,7 +601,6 @@ fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions =
 fun rememberReceiverHomeActions(appState: AppState): ReceiverHomeActions =
     remember(appState) {
         ReceiverHomeActions(
-            onSettingClick = { appState.navController.navigate(Route.Setting) },
             onNavigateToMindRecord = { appState.navController.navigate(Route.ReceiverMindRecord) },
             onNavigateToTimeLetter = { appState.navController.navigate(Route.TimeLetter) },
             onNavigateToAfternote = {
