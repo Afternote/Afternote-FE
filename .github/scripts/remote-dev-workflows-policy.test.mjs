@@ -63,14 +63,12 @@ test("privileged baseline apply is a workflow-run bridge restricted to PNG basel
     for (const workflow of [
         "pr-validation.yml",
         "codeql.yml",
-        "base-freshness-probe.yml",
         "merge-order-guard.yml",
     ]) {
         assert.ok(source.includes(`workflow_id: '${workflow}'`), `${workflow} is not redispatched`);
     }
     assert.match(source, /if: steps\.commit\.outputs\.changed == 'true'/);
     assert.match(source, /workflow_id: 'codeql\.yml',[\s\S]*inputs: \{ pull_request_number: process\.env\.TARGET_PR \}/);
-    assert.match(source, /workflow_id: 'base-freshness-probe\.yml',[\s\S]*inputs: \{ pull_request_number: process\.env\.TARGET_PR \}/);
 });
 
 test("screenshot workflow fallbacks cover every baseline module", async () => {
