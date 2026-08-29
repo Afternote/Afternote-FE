@@ -1,7 +1,6 @@
 package com.afternote.feature.receiver.presentation.afternotelist
 
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
-import com.afternote.feature.receiver.presentation.error.isDeliveryConditionNotMet
 
 /**
  * 목록 로드 실패 중 **화면 처리가 갈리는 것**만 담는다.
@@ -29,8 +28,8 @@ internal sealed interface ReceiverAfternoteListError {
  * 경로에 그대로 남긴다는 뜻이지, 처리하지 못했다는 뜻이 아니다.
  */
 internal fun Throwable.toListError(): ReceiverAfternoteListError? =
-    when {
-        isDeliveryConditionNotMet() -> ReceiverAfternoteListError.NotDeliverable
-        this is ReceiverFailure.NetworkUnavailable -> ReceiverAfternoteListError.NetworkUnavailable
+    when (this) {
+        is ReceiverFailure.DeliveryConditionNotMet -> ReceiverAfternoteListError.NotDeliverable
+        is ReceiverFailure.NetworkUnavailable -> ReceiverAfternoteListError.NetworkUnavailable
         else -> null
     }
