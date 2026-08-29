@@ -166,7 +166,6 @@ private fun timeLetterFlowUserRepository(): FakeUserRepository =
         onGetMyProfile = null
         onUpdateMyProfile = null
         onDeleteAccount = null
-        onLogActivity = null
         onGetMyPushSettings = null
         onUpdateMyPushSettings = null
         onGetConnectedAccounts = null

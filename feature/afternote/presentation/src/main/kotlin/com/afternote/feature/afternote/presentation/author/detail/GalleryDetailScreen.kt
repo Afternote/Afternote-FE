@@ -60,8 +60,8 @@ fun GalleryDetailScreen(
     content: GalleryDetailContent = GalleryDetailContent(),
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     isEditable: Boolean = true,
-    onEditClick: () -> Unit = {},
-    onDeleteConfirm: () -> Unit = {},
+    onEditClick: () -> Unit,
+    onDeleteConfirm: () -> Unit,
     state: AfternoteDetailState = rememberAfternoteDetailState(),
 ) {
     if (isEditable && state.showDeleteDialog) {

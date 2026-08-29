@@ -1,10 +1,13 @@
 package com.afternote.feature.receiver.data.paging
 
 import androidx.paging.PagingSource
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.feature.receiver.data.dto.ReceivedAfternoteDto
 import com.afternote.feature.receiver.data.dto.ReceivedAfternoteListDto
+import com.afternote.feature.receiver.data.mapper.ReceiverListDecodingFailure
+import com.afternote.feature.receiver.data.mapper.ReceiverListMappingFailure
 import com.afternote.feature.receiver.data.service.ReceiverAfternoteApiService
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import com.afternote.feature.receiver.domain.error.ReceiverRejectionReason
@@ -14,6 +17,7 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
+import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -30,6 +34,12 @@ import java.io.IOException
  * `<-- 403` `{"status":403,"code":2009,"message":"아직 전달 조건이 충족되지 않았습니다."}`.
  */
 class ReceiverAfternotePagingSourceTest {
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            coerceInputValues = true
+        }
+
     /**
      * 사유를 아는 거절은 **타입** 으로 나온다 — 소비처가 `serverCode == 2009` 를 되짚지 않아도 되게,
      * 서버 code 지식을 이 계층에 가둔 결과다.
@@ -111,6 +121,63 @@ class ReceiverAfternotePagingSourceTest {
         assertEquals(5L, page.data.first().id)
     }
 
+    @Test
+    fun `raw 응답에서 디코딩 불가와 미지원 category 항목만 제외하고 유효 항목은 페이지로 반환한다`() {
+        val reporter = RecordingErrorReporter()
+        val result =
+            loadWith(reporter) {
+                json.decodeFromString<BaseResponse<ReceivedAfternoteListDto>>(
+                    """
+                    {
+                      "status": 200,
+                      "code": 200,
+                      "data": {
+                        "afternotes": [
+                          {"id":5,"title":"소셜 계정","category":"SOCIAL"},
+                          {
+                            "id":987654321,
+                            "title":"sensitive-title-marker",
+                            "category":"SENSITIVE_CATEGORY_MARKER"
+                          },
+                          {"id":876543210,"title":"missing-category-title-marker"},
+                          {"id":765432109,"title":"null-category-title-marker","category":null},
+                          {"id":8,"title":"사업자 항목","category":"BUSINESS"}
+                        ],
+                        "totalCount": 9
+                      }
+                    }
+                    """.trimIndent(),
+                )
+            }
+
+        assertTrue("일부 잘못된 항목 때문에 페이지 전체가 실패했다: $result", result is PagingSource.LoadResult.Page)
+        val page = result as PagingSource.LoadResult.Page
+        assertEquals(listOf(5L, 8L), page.data.map { it.id })
+
+        val failuresByStage = reporter.failures.associateBy { it.attributes["receiver_stage"] }
+        assertEquals(setOf("receiver_list_decoding", "receiver_list_mapping"), failuresByStage.keys)
+
+        val decodingFailure = requireNotNull(failuresByStage["receiver_list_decoding"])
+        assertEquals("2", decodingFailure.attributes["rejected_item_count"])
+        assertEquals(ReceiverListDecodingFailure::class.java.name, decodingFailure.attributes["error_type"])
+
+        val mappingFailure = requireNotNull(failuresByStage["receiver_list_mapping"])
+        assertEquals("1", mappingFailure.attributes["rejected_item_count"])
+        assertEquals(ReceiverListMappingFailure::class.java.name, mappingFailure.attributes["error_type"])
+
+        val reportedPayload =
+            reporter.failures.joinToString { failure ->
+                failure.throwable.message.orEmpty() + failure.attributes.toString()
+            }
+        assertTrue("raw category 가 보고됐다: $reportedPayload", "SENSITIVE_CATEGORY_MARKER" !in reportedPayload)
+        assertTrue("raw id 가 보고됐다: $reportedPayload", "987654321" !in reportedPayload)
+        assertTrue("raw title 이 보고됐다: $reportedPayload", "sensitive-title-marker" !in reportedPayload)
+        assertTrue("raw id 가 보고됐다: $reportedPayload", "876543210" !in reportedPayload)
+        assertTrue("raw title 이 보고됐다: $reportedPayload", "missing-category-title-marker" !in reportedPayload)
+        assertTrue("raw id 가 보고됐다: $reportedPayload", "765432109" !in reportedPayload)
+        assertTrue("raw title 이 보고됐다: $reportedPayload", "null-category-title-marker" !in reportedPayload)
+    }
+
     /**
      * 번역 경계가 취소까지 삼키면 취소된 코루틴에서 호출부의 실패 갈래가 돈다 (#671 과 같은 규약).
      *
@@ -120,7 +187,11 @@ class ReceiverAfternotePagingSourceTest {
     @Test
     fun `취소는 실패로 바뀌지 않고 그대로 전파된다`() =
         runBlocking {
-            val source = ReceiverAfternotePagingSource(FakeReceiverAfternoteApiService { awaitCancellation() })
+            val source =
+                ReceiverAfternotePagingSource(
+                    api = FakeReceiverAfternoteApiService { awaitCancellation() },
+                    errorReporter = RecordingErrorReporter(),
+                )
             var observed: Throwable? = null
             val job =
                 launch {
@@ -135,9 +206,12 @@ class ReceiverAfternotePagingSourceTest {
             assertTrue("취소가 Result 로 삼켜졌다: $observed", observed == null || observed is CancellationException)
         }
 
-    private fun loadWith(response: suspend () -> BaseResponse<ReceivedAfternoteListDto>): PagingSource.LoadResult<Int, AfterNoteListItem> =
+    private fun loadWith(
+        errorReporter: ErrorReporter = RecordingErrorReporter(),
+        response: suspend () -> BaseResponse<ReceivedAfternoteListDto>,
+    ): PagingSource.LoadResult<Int, AfterNoteListItem> =
         runBlocking {
-            ReceiverAfternotePagingSource(FakeReceiverAfternoteApiService(response))
+            ReceiverAfternotePagingSource(FakeReceiverAfternoteApiService(response), errorReporter)
                 .load(PagingSource.LoadParams.Refresh(key = null, loadSize = 50, placeholdersEnabled = false))
         }
 
@@ -149,6 +223,22 @@ class ReceiverAfternotePagingSourceTest {
                 serverMessage = "아직 전달 조건이 충족되지 않았습니다.",
                 fallbackMessage = "아직 전달 조건이 충족되지 않았습니다.",
             )
+    }
+}
+
+private class RecordingErrorReporter : ErrorReporter {
+    data class Failure(
+        val throwable: Throwable,
+        val attributes: Map<String, String>,
+    )
+
+    val failures = mutableListOf<Failure>()
+
+    override fun writeFailure(
+        throwable: Throwable,
+        attributes: Map<String, String>,
+    ) {
+        failures += Failure(throwable, attributes)
     }
 }
 

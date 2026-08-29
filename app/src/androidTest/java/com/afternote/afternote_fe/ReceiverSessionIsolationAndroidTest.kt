@@ -176,8 +176,6 @@ private class SessionReceiverUserApi : UserApiService {
 
     override suspend fun deleteAccount(): BaseResponse<Unit> = receiverSessionUnexpected("deleteAccount")
 
-    override suspend fun logActivity(): BaseResponse<Unit> = receiverSessionUnexpected("logActivity")
-
     override suspend fun getMyPushSettings(): BaseResponse<UserPushSettingDto> = receiverSessionUnexpected("getMyPushSettings")
 
     override suspend fun updateMyPushSettings(request: UserUpdatePushSettingRequestDto): BaseResponse<UserPushSettingDto> =

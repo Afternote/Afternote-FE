@@ -71,8 +71,8 @@ fun MemorialVideoUpload(
     videoUrl: String? = null,
     thumbnailUrl: String? = null,
     onAddVideoClick: () -> Unit,
-    onThumbnailBytesReady: (ByteArray?) -> Unit = {},
-    onThumbnailExtractionFailed: (Throwable) -> Unit = {},
+    onThumbnailBytesReady: (ByteArray?) -> Unit,
+    onThumbnailExtractionFailed: (Throwable) -> Unit,
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     val hasVideo = !videoUrl.isNullOrBlank()
