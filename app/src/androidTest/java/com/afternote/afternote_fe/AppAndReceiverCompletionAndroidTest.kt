@@ -45,6 +45,8 @@ import com.afternote.core.ui.Route
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
+import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailRoute
+import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel
 import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.testing.FakeMindRecordReceiverRepository
@@ -68,8 +70,6 @@ import com.afternote.feature.receiver.presentation.deliveryverification.Document
 import com.afternote.feature.receiver.presentation.deliveryverification.DocumentUploadViewModel
 import com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationEmailScreen
 import com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationViewModel
-import com.afternote.feature.receiver.presentation.detail.ReceivedAfternoteDetailRoute
-import com.afternote.feature.receiver.presentation.detail.ReceivedAfternoteDetailViewModel
 import com.afternote.feature.receiver.presentation.home.ReceiverHomeActions
 import com.afternote.feature.receiver.presentation.home.ReceiverHomeEvent
 import com.afternote.feature.receiver.presentation.home.ReceiverHomeScreen
@@ -97,6 +97,15 @@ import com.afternote.feature.afternote.presentation.R as AfternoteFeatureR
 import com.afternote.feature.home.presentation.R as HomeR
 import com.afternote.feature.onboarding.presentation.R as OnboardingR
 import com.afternote.feature.receiver.presentation.R as ReceiverR
+
+/** 이 테스트의 관심 밖인 외부 라우팅을 채우는 no-op 묶음. */
+private val noopActions =
+    ReceiverHomeActions(
+        onSettingClick = {},
+        onNavigateToMindRecord = {},
+        onNavigateToTimeLetter = {},
+        onNavigateToAfternote = {},
+    )
 
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
@@ -287,7 +296,7 @@ class ReceiverRuntimeCompletionAndroidTest {
                 ReceiverHomeScreen(
                     uiState = uiState,
                     onEvent = viewModel::onEvent,
-                    actions = ReceiverHomeActions.Noop,
+                    actions = noopActions,
                 )
             }
         }

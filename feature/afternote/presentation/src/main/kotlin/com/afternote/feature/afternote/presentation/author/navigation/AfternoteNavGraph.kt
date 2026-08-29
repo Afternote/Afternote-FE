@@ -20,7 +20,8 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.Afte
  *
  * 앱 모듈의 NavHost에 직접 연결되며, [Route.Afternote]를 graph route로 사용합니다.
  * 에디터·추억 플레이리스트·곡 추가 화면은 [AfternoteRoute.EditorFlowRoute] 중첩 그래프에 묶여
- * 같은 [AfternoteEditorViewModel]의 폼을 공유합니다.
+ * 같은 [AfternoteEditorViewModel]의 폼을 공유합니다. 수신자 선택 화면(#540)은 같은 중첩 그래프에
+ * 있지만 전용 ViewModel 을 쓰고, 결과는 에디터 엔트리의 SavedStateHandle 로만 돌려줍니다.
  *
  * 네비게이션 호출은 [AfternoteNavActions]로만 전달합니다. 작성자 표시명 등 UI 데이터는
  * 그래프 인자가 아니라 각 화면 ViewModel이 Repository로 조회한다.
@@ -59,9 +60,16 @@ fun NavGraphBuilder.afternoteNavGraph(
                     backStackEntry = backStackEntry,
                     editViewModel = editorViewModel,
                     onNavigateToMemorialPlaylist = actions::navigateToMemorialPlaylist,
-                    onNavigateToSelectReceiver = {}, // TODO: 수신인 선택 화면 라우팅 연결
+                    onNavigateToSelectReceiver = actions::navigateToSelectReceiver,
                     onPopBackStack = actions::popBack,
                     onSaveSuccessNavigateHome = actions::popToAfternoteHome,
+                )
+            }
+
+            afternoteComposable<AfternoteRoute.SelectReceiverRoute> {
+                AfternoteSelectReceiverNavigation(
+                    onPopBackStack = actions::popBack,
+                    onReceiverConfirmed = actions::popBackWithSelectedReceiver,
                 )
             }
 

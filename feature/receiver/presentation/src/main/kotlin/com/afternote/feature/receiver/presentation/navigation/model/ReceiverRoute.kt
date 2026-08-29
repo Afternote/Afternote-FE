@@ -93,24 +93,4 @@ sealed interface ReceiverRoute {
      */
     @Serializable
     data object DeliveryVerificationCompleteRoute : ReceiverRoute
-
-    /** 수신한 애프터노트 페이지드 목록. */
-    @Serializable
-    data object AfternoteListRoute : ReceiverRoute
-
-    /** 수신 애프터노트 상세. */
-    @Serializable
-    data class AfternoteDetailRoute(
-        val afternoteId: Long,
-    ) : ReceiverRoute
-
-    /**
-     * 수신 추억 플레이리스트 — 추억 상세
-     * ([com.afternote.feature.receiver.presentation.detail.MemorialReceivedDetailScreen]) 의
-     * "추억 플레이리스트" 카드 클릭 진입.
-     */
-    @Serializable
-    data class MemorialPlaylistRoute(
-        val afternoteId: Long,
-    ) : ReceiverRoute
 }
