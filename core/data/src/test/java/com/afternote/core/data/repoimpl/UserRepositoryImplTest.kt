@@ -481,8 +481,6 @@ private class FakeUserApiService(
 
     override suspend fun updateMyProfile(request: UserUpdateProfileRequestDto): BaseResponse<UserDto> = TODO("이 테스트 미사용")
 
-    override suspend fun logActivity(): BaseResponse<Unit> = TODO("이 테스트 미사용")
-
     override suspend fun getMyPushSettings(): BaseResponse<UserPushSettingDto> = TODO("이 테스트 미사용")
 
     override suspend fun updateMyPushSettings(request: UserUpdatePushSettingRequestDto): BaseResponse<UserPushSettingDto> =

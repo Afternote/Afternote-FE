@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.data.mapper
 
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.data.dto.AfternoteCreateAccountRequestDto
 import com.afternote.feature.afternote.data.dto.AfternoteCreatePlaylistRequestDto
 import com.afternote.feature.afternote.data.dto.AfternoteDetailDto
@@ -96,7 +97,11 @@ class LeaveMessageBlockContractTest {
              "totalCount":2}
             """.trimIndent()
 
-        val items = json.decodeFromString<ReceivedAfternoteListDto>(response).afternotes.toReceiverDomainList()
+        val items =
+            json
+                .decodeFromString<ReceivedAfternoteListDto>(response)
+                .afternotes
+                .toReceiverDomainList(NoopErrorReporter)
 
         assertEquals(listOf(1L, 2L), items.map { it.id })
     }
@@ -167,4 +172,11 @@ class LeaveMessageBlockContractTest {
         assertTrue(encoded.contains("\"category\":\"PLAYLIST\""))
         assertTrue(encoded.contains(""""leaveMessage":[{"title":"가족에게","body":"노래 들으며 기억해줘"}]"""))
     }
+}
+
+private object NoopErrorReporter : ErrorReporter {
+    override fun writeFailure(
+        throwable: Throwable,
+        attributes: Map<String, String>,
+    ) = Unit
 }

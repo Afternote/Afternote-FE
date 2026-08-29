@@ -25,7 +25,11 @@ class MemorialVideoUploadInteractionTest {
         var addClicks = 0
         composeRule.setContent {
             AfternoteTheme {
-                MemorialVideoUpload(onAddVideoClick = { addClicks += 1 })
+                MemorialVideoUpload(
+                    onAddVideoClick = { addClicks += 1 },
+                    onThumbnailBytesReady = {},
+                    onThumbnailExtractionFailed = {},
+                )
             }
         }
 
