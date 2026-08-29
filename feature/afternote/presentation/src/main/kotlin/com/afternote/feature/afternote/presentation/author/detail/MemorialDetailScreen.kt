@@ -68,7 +68,6 @@ internal const val MEMORIAL_VIDEO_CARD_TEST_TAG = "memorialVideoCard"
  */
 @Immutable
 data class MemorialDetailContent(
-    val userName: String = "",
     val finalWriteDate: String = "",
     val profileImageUri: String? = null,
     val albumCovers: List<AlbumCover> = emptyList(),
@@ -88,6 +87,7 @@ fun MemorialDetailScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
     content: MemorialDetailContent = MemorialDetailContent(),
+    userName: String = "",
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     isEditable: Boolean = true,
     onEditClick: () -> Unit = {},
@@ -141,6 +141,7 @@ fun MemorialDetailScreen(
         MemorialDetailScrollContent(
             content = content,
             categoryLabel = memorialCategoryLabel,
+            userName = userName,
             onVideoClick = onVideoClick,
             modifier =
                 Modifier
@@ -154,6 +155,7 @@ fun MemorialDetailScreen(
 private fun MemorialDetailScrollContent(
     content: MemorialDetailContent,
     categoryLabel: String,
+    userName: String,
     onVideoClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -165,7 +167,7 @@ private fun MemorialDetailScrollContent(
                 .padding(horizontal = 20.dp),
     ) {
         Spacer(modifier = Modifier.height(24.dp))
-        TitleSection(categoryLabel = categoryLabel, userName = content.userName)
+        TitleSection(categoryLabel = categoryLabel, userName = userName)
         Spacer(modifier = Modifier.height(24.dp))
         CardSection(content = content, onVideoClick = onVideoClick)
         Spacer(modifier = Modifier.height(24.dp))
@@ -497,11 +499,11 @@ private fun MemorialDetailScreenPreview() {
         MemorialDetailScreen(
             content =
                 MemorialDetailContent(
-                    userName = "서영",
                     finalWriteDate = "2025.11.26",
                     songCount = 16,
                     albumCovers = memorialDetailPreviewAlbumCovers(),
                 ),
+            userName = "서영",
             onBackClick = {},
             onEditClick = {},
             onVideoClick = {},
@@ -526,11 +528,11 @@ private fun MemorialDetailScreenDeleteDialogPreview() {
         MemorialDetailScreen(
             content =
                 MemorialDetailContent(
-                    userName = "서영",
                     finalWriteDate = "2025.11.26",
                     songCount = 16,
                     albumCovers = memorialDetailPreviewAlbumCovers(),
                 ),
+            userName = "서영",
             onBackClick = {},
             onEditClick = {},
             onVideoClick = {},
