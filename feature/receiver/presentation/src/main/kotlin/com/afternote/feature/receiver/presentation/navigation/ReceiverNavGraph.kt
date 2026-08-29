@@ -13,20 +13,13 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import com.afternote.core.ui.Route
-import com.afternote.core.ui.loading.LoadingBody
-import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadErrorContent
-import com.afternote.feature.receiver.presentation.afternotelist.ReceiverAfternoteHomeEntry
 import com.afternote.feature.receiver.presentation.deliveryverification.DeliveryVerificationCompleteScreen
 import com.afternote.feature.receiver.presentation.deliveryverification.DeliveryVerificationFlowViewModel
 import com.afternote.feature.receiver.presentation.deliveryverification.DocumentUploadScreen
 import com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationEmailScreen
 import com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationIntroScreen
 import com.afternote.feature.receiver.presentation.deliveryverification.MasterKeyScreen
-import com.afternote.feature.receiver.presentation.detail.ReceivedAfternoteDetailRoute
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
-import com.afternote.feature.receiver.presentation.playlist.MemorialPlaylistScreen
-import com.afternote.feature.receiver.presentation.playlist.ReceiverMemorialPlaylistUiState
-import com.afternote.feature.receiver.presentation.playlist.ReceiverMemorialPlaylistViewModel
 import com.afternote.feature.receiver.presentation.recordsbox.ReceivedRecordsScreen
 import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistrationScreen
 import com.afternote.feature.receiver.presentation.senderdetail.SenderDetailScreen
@@ -121,53 +114,6 @@ fun NavGraphBuilder.receiverNavGraph(
 
         receiverComposable<ReceiverRoute.HomeRoute> {
             homeContent()
-        }
-
-        receiverComposable<ReceiverRoute.AfternoteListRoute> {
-            ReceiverAfternoteHomeEntry(
-                navigateToDetail = actions::navigateToReceivedAfternoteDetail,
-            )
-        }
-
-        receiverComposable<ReceiverRoute.AfternoteDetailRoute> {
-            ReceivedAfternoteDetailRoute(
-                onNavigateBack = actions::popBack,
-                onNavigateToFullList = actions::navigateToAfternoteList,
-                onNavigateToPlaylist = actions::navigateToMemorialPlaylist,
-            )
-        }
-
-        receiverComposable<ReceiverRoute.MemorialPlaylistRoute> {
-            val playlistViewModel: ReceiverMemorialPlaylistViewModel = hiltViewModel()
-            val playlistUiState by playlistViewModel.uiState.collectAsStateWithLifecycle()
-
-            // 화면을 떠났다 돌아오면 다시 조회한다 — 백스택에 살아 있는 동안 옛 값이 남지 않게
-            // 한다 (#701). 로딩을 방출하지 않는 refreshOnReturn() 을 쓴다. 첫 진입의 ON_RESUME
-            // 스킵(진입은 init 로드가 담당)과 실행 중 로드와의 중복 차단은 VM 이 판단한다.
-            LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-                playlistViewModel.refreshOnReturn()
-            }
-            when (val state = playlistUiState) {
-                ReceiverMemorialPlaylistUiState.Loading -> {
-                    LoadingBody()
-                }
-
-                is ReceiverMemorialPlaylistUiState.Error -> {
-                    DetailLoadErrorContent(
-                        messageRes = state.messageRes,
-                        onBackClick = actions::popBack,
-                        onRetryClick = playlistViewModel::retry,
-                    )
-                }
-
-                is ReceiverMemorialPlaylistUiState.Success -> {
-                    MemorialPlaylistScreen(
-                        senderName = state.senderName,
-                        songs = state.songs,
-                        onBackClick = actions::popBack,
-                    )
-                }
-            }
         }
     }
 }
