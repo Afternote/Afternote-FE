@@ -83,13 +83,30 @@ sealed interface AfternoteTypeForm {
         val thumbnailUrl: String? = null,
         val photoUrl: String? = null,
         val playlistSongs: List<Song> = emptyList(),
+        /**
+         * 수정 모드 prefill 로 받은 **서버에 저장된** 영상. [videoUrl] 이 로컬 교체분으로 덮인 뒤에도
+         * 「서버에는 아직 이게 있다」를 잃지 않기 위해 따로 든다.
+         *
+         * 수정(PATCH) 계약은 삭제를 표현하지 못한다 — 필드를 비워 보내면 BE 가 기존 값 유지로
+         * 읽는다. 그래서 서버 영상은 이 폼에서 지울 수 없고, 지운 척하면 폼만 비고 서버에는
+         * 그대로 남는다(#1406). 되돌아갈 자리를 남겨 거짓 빈 슬롯을 만들지 않는다.
+         */
+        val serverVideoUrl: String? = null,
+        /** [serverVideoUrl] 의 썸네일. 로컬 교체를 취소하면 영상과 함께 이 값으로 돌아간다. */
+        val serverThumbnailUrl: String? = null,
     ) : AfternoteTypeForm {
         override val type = AfternoteType.MEMORIAL
 
         fun displayPhotoUri(): String? = pickedPhotoUri ?: photoUrl
 
-        /** 썸네일은 영상에서 자동 파생된 값이라 사용자 입력이 아니다 — pristine 판정 전에 지운다. */
-        override fun enteredContentOrNull(): String? = copy(thumbnailUrl = null).takeUnless { it == PRISTINE }?.toString()
+        /**
+         * 썸네일은 영상에서 자동 파생된 값이라 사용자 입력이 아니다 — pristine 판정 전에 지운다.
+         * 서버 원본 두 칸도 같은 이유로 뺀다. prefill 이 채워 넣는 값이지 사용자가 넣은 값이 아니다.
+         */
+        override fun enteredContentOrNull(): String? =
+            copy(thumbnailUrl = null, serverVideoUrl = null, serverThumbnailUrl = null)
+                .takeUnless { it == PRISTINE }
+                ?.toString()
 
         private companion object {
             val PRISTINE = Memorial()
@@ -134,6 +151,9 @@ sealed interface AfternoteTypeForm {
                         thumbnailUrl = content.thumbnailUrl,
                         photoUrl = content.photoUrl,
                         playlistSongs = content.playlistSongs,
+                        // 표시용 칸과 같은 값으로 시작하지만, 로컬 교체가 들어와도 이쪽은 그대로 남는다.
+                        serverVideoUrl = content.videoUrl,
+                        serverThumbnailUrl = content.thumbnailUrl,
                     )
                 }
 

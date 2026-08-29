@@ -33,8 +33,22 @@ internal fun EditorFormState.withService(service: String): EditorFormState = map
 
 internal fun EditorFormState.withMemorialPhoto(uri: String?): EditorFormState = mapMemorial { it.copy(pickedPhotoUri = uri) }
 
-/** 영상이 바뀌면 그 영상에서 뽑은 썸네일은 무효가 되므로 함께 비운다. */
-internal fun EditorFormState.withMemorialVideo(url: String?): EditorFormState = mapMemorial { it.copy(videoUrl = url, thumbnailUrl = null) }
+/**
+ * 영상이 바뀌면 그 영상에서 뽑은 썸네일은 무효가 되므로 함께 비운다.
+ *
+ * `null`(삭제)은 **이 폼에서 새로 붙인 로컬 영상만** 걷어낸다. 서버에 저장된 영상은 수정 계약으로
+ * 지울 수 없어(빈 필드 = 기존 값 유지), 폼에서 없앤 척하면 저장 뒤 되살아난다 — 지웠다고 믿은
+ * 장례식 영상이 그대로 남는다(#1406). 원본이 있으면 그 표시로 되돌려, 폼이 서버 상태와 어긋난
+ * 빈 슬롯을 보여주지 않게 한다.
+ */
+internal fun EditorFormState.withMemorialVideo(url: String?): EditorFormState =
+    mapMemorial { form ->
+        if (url == null) {
+            form.copy(videoUrl = form.serverVideoUrl, thumbnailUrl = form.serverThumbnailUrl)
+        } else {
+            form.copy(videoUrl = url, thumbnailUrl = null)
+        }
+    }
 
 internal fun EditorFormState.withMemorialThumbnail(dataUrl: String?): EditorFormState = mapMemorial { it.copy(thumbnailUrl = dataUrl) }
 

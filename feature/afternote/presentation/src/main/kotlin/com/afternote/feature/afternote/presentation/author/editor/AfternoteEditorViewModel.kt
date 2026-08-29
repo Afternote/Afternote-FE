@@ -89,6 +89,9 @@ private data class EditorFormSnapshot(
     val memorialThumbnailUrl: String? = null,
     val memorialPhotoUrl: String? = null,
     val memorialPlaylistSongs: List<Song> = emptyList(),
+    // 서버 원본을 안 실으면 프로세스 재생성 뒤 「되돌아갈 자리」를 잃어 삭제가 다시 거짓이 된다(#1406).
+    val memorialServerVideoUrl: String? = null,
+    val memorialServerThumbnailUrl: String? = null,
 ) {
     fun toEditorFormState(): EditorFormState =
         EditorFormState(
@@ -122,6 +125,8 @@ private data class EditorFormSnapshot(
                     thumbnailUrl = memorialThumbnailUrl,
                     photoUrl = memorialPhotoUrl,
                     playlistSongs = memorialPlaylistSongs,
+                    serverVideoUrl = memorialServerVideoUrl,
+                    serverThumbnailUrl = memorialServerThumbnailUrl,
                 )
             }
 
@@ -146,6 +151,8 @@ private data class EditorFormSnapshot(
                 memorialThumbnailUrl = form.memorialThumbnailUrl,
                 memorialPhotoUrl = form.memorialPhotoUrl,
                 memorialPlaylistSongs = form.memorialPlaylistSongs,
+                memorialServerVideoUrl = form.memorialForm?.serverVideoUrl,
+                memorialServerThumbnailUrl = form.memorialForm?.serverThumbnailUrl,
             )
     }
 }
