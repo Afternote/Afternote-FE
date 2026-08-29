@@ -7,6 +7,7 @@ import com.afternote.feature.mindrecord.domain.model.DiaryList
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
+import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -60,6 +61,7 @@ class DailyQuestionWriteViewModelTest {
                 repository,
                 FakePhotoUploadRepository.strict(),
                 noopDraftLoader(),
+                RecordingErrorReporter(),
             )
 
         viewModel.onAnswerChanged("사용자가 방금 입력한 답변")
@@ -85,6 +87,7 @@ class DailyQuestionWriteViewModelTest {
                 repository,
                 FakePhotoUploadRepository.strict(),
                 noopDraftLoader(),
+                RecordingErrorReporter(),
             )
 
         assertEquals("이어쓸 본문", viewModel.uiState.value.answer)
@@ -115,6 +118,7 @@ class DailyQuestionWriteViewModelTest {
                     uploadedKey = "mindrecords/1/just-picked.jpg",
                 ),
                 noopDraftLoader(),
+                RecordingErrorReporter(),
             )
 
         viewModel.onAnswerChanged("사용자가 방금 입력한 답변")
@@ -143,6 +147,7 @@ class DailyQuestionWriteViewModelTest {
                     uploadedKey = "mindrecords/staging/13/picked.jpg",
                 ),
                 noopDraftLoader(),
+                RecordingErrorReporter(),
             )
 
         val url = runBlocking { viewModel.uploadMedia("content://picked") }
@@ -168,6 +173,7 @@ class DailyQuestionWriteViewModelTest {
                 repository,
                 FakePhotoUploadRepository.strict(),
                 noopDraftLoader(),
+                RecordingErrorReporter(),
             )
 
         assertEquals(html, viewModel.uiState.value.answer)
@@ -186,6 +192,7 @@ class DailyQuestionWriteViewModelTest {
                 repository,
                 FakePhotoUploadRepository.strict(),
                 noopDraftLoader(),
+                RecordingErrorReporter(),
             )
 
         viewModel.onAnswerChanged("답변")
@@ -236,6 +243,7 @@ class DailyQuestionWriteViewModelTest {
                     uploadedKey = "mindrecords/staging/13/a.png",
                 ),
                 noopDraftLoader(),
+                RecordingErrorReporter(),
             )
 
         val previewUrl = runBlocking { viewModel.uploadMedia("content://picked") }
@@ -264,6 +272,7 @@ class DailyQuestionWriteViewModelTest {
                 repository,
                 FakePhotoUploadRepository.strict(),
                 noopDraftLoader(),
+                RecordingErrorReporter(),
             )
 
         viewModel.onAnswerChanged("<p>수정</p><img src=\"$permanent\" />")
