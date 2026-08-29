@@ -21,7 +21,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
@@ -137,13 +136,4 @@ private fun AlbumCoverBox(albumImageUrl: String?) {
             error = ColorPainter(AfternoteDesign.colors.gray8),
         )
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun PlaylistSongItemPreview() {
-    PlaylistSongItem(
-        song = PlaylistSongDisplay(selectionKey = "preview:1", title = "노래 제목", artist = "가수 이름"),
-        selected = true,
-    )
 }

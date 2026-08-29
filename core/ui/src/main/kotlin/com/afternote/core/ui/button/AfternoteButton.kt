@@ -4,7 +4,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -31,13 +30,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 
 enum class AfternoteButtonType {
     Default,
@@ -258,54 +255,6 @@ private fun Variant5LabelDivider() {
     )
 }
 
-@Preview(showBackground = true, name = "Default")
-@Composable
-private fun AfternoteButtonDefaultPreview() {
-    AfternoteTheme {
-        Column {
-            AfternoteButton(
-                text = "시작하기",
-                onClick = {},
-                type = AfternoteButtonType.Default,
-            )
-            AfternoteButton(
-                text = "활성",
-                onClick = {},
-                type = AfternoteButtonType.Active,
-            )
-            AfternoteButton(
-                text = "일반",
-                onClick = {},
-                type = AfternoteButtonType.Plain,
-            )
-            AfternoteButton(
-                text = "비활성",
-                onClick = {},
-                type = AfternoteButtonType.Un,
-            )
-            AfternoteButton(
-                text = "로딩",
-                onClick = {},
-                type = AfternoteButtonType.Default,
-                isLoading = true,
-            )
-            AfternoteButton(
-                text = "로그인",
-                onClick = {},
-                type = AfternoteButtonType.Variant5,
-                secondaryText = "회원가입",
-            )
-            AfternoteButton(
-                text = "전체 삭제",
-                onClick = {},
-                type = AfternoteButtonType.Variant5,
-                secondaryText = "선택 삭제",
-                onSecondaryClick = {},
-            )
-        }
-    }
-}
-
 @Composable
 fun AfternoteActionButton(
     text: String,
@@ -329,43 +278,11 @@ fun AfternoteActionButton(
             Text(
                 text = text,
                 style =
-                    AfternoteDesign.typography.bodySmallB.copy(fontSize = 13.sp),
+                    AfternoteDesign.typography.bodySmallB.copy(fontSize = 13.sp, lineHeight = 19.5.sp),
                 color = contentColor,
             )
             Spacer(modifier = Modifier.width(9.dp))
             RightArrowIcon(modifier = Modifier.size(width = 5.dp, height = 9.dp))
-        }
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFFCCCCCC)
-@Composable
-private fun AfternoteActionButtonPreview() {
-    AfternoteTheme {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            AfternoteActionButton(
-                text = "마음의 기록 남기기",
-                containerColor = AfternoteDesign.colors.accent1,
-                onClick = {},
-            )
-            AfternoteActionButton(
-                text = "마음의 기록 남기기",
-                containerColor = AfternoteDesign.colors.accent2,
-                onClick = {},
-            )
-            AfternoteActionButton(
-                text = "마음의 기록 남기기",
-                containerColor = AfternoteDesign.colors.accent5,
-                onClick = {},
-            )
-            AfternoteActionButton(
-                text = "마음의 기록 남기기",
-                containerColor = AfternoteDesign.colors.accent10,
-                onClick = {},
-            )
         }
     }
 }
