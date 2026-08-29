@@ -4,6 +4,9 @@
 # 이 워크플로는 PR 의 closing 이슈에 아직 열린 blocked_by 가 있으면 check 를
 # 실패시킨다. branch protection 에서 required check 로 지정하면 머지 버튼이
 # 실제로 잠긴다. base 가 develop/main 이 아닌 스택 PR 은 경고로만 남긴다.
+#
+# base 가 트렁크가 아닌 PR 은 네이티브 스택 등록 여부(stackEntry)도 함께 본다 — 미등록도
+# 경고로만 남긴다 (#1474).
 name: merge-order-guard
 
 on:
@@ -80,6 +83,31 @@ jobs:
 
           owner="${GITHUB_REPOSITORY%/*}"
           repo="${GITHUB_REPOSITORY#*/}"
+
+          # 네이티브 스택 등록 여부 — base 이름만으로는 «스택으로 묶인 PR» 과 «base 만 상위
+          # 브랜치로 물린 PR» 이 구분되지 않는다. 미등록이어도 머지 순서는 지켜지므로
+          # (delete_branch_on_merge 가 밑단 머지 시 base 를 develop 로 이관한다) 막지 않는다.
+          # 다만 그 이관의 근거가 스택 기능이 아니라 저장소 설정이고, 등록하지 않으면 스택 맵·
+          # 서버측 자동 rebase·gh stack merge 를 못 얻으므로 그 사실은 드러낸다 (#1474).
+          #
+          # error 로 올리지 않는 이유는 CI 가 고칠 수 없기 때문이다 — GraphQL 에 스택 뮤테이션이
+          # 없고(PullRequestStack* 은 읽기 전용), 열린 PR 을 묶는 경로는 `gh stack submit` 의
+          # 대화형 Ctrl+B 뿐이다. 막으면 #1059 가 이미 걷어낸 «수명 내내 red» 가 되돌아온다.
+          # 조회 자체는 `if` 조건에 두어 실패가 blocked_by 판정을 막지 않게 한다 — 경고 하나 때문에
+          # 머지 게이트가 죽으면 안 된다. blocked_by 쪽 조회는 그대로 fail-closed 로 남는다.
+          if [ "$stacked" -eq 1 ]; then
+            if stack_entry=$(gh api graphql \
+              -f query='query($owner:String!,$repo:String!,$pr:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$pr){stackEntry{position}}}}' \
+              -f owner="$owner" -f repo="$repo" -F pr="$PR_NUMBER" \
+              --jq '.data.repository.pullRequest.stackEntry'); then
+              if [ -z "$stack_entry" ] || [ "$stack_entry" = "null" ]; then
+                echo "::warning::네이티브 스택 미등록 — 터미널에서 'gh stack init --base develop <밑단> <윗단>' 뒤 'gh stack submit' 에서 새 PR 을 모두 해제하고 Ctrl+B 로 링크할 것"
+              fi
+            else
+              echo "::warning::스택 등록 여부를 조회하지 못했다 — 등록 상태를 손으로 확인할 것"
+            fi
+          fi
+
           pr_json=$(gh api graphql \
             -f query='query($owner:String!,$repo:String!,$pr:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$pr){title body closingIssuesReferences(first:20){nodes{number repository{nameWithOwner}}}}}}' \
             -f owner="$owner" -f repo="$repo" -F pr="$PR_NUMBER" \
