@@ -14,7 +14,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -22,7 +21,6 @@ import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.asString
 import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.receiver.presentation.R
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_HEADER_SPACING
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_TOTAL_STEPS
@@ -120,34 +118,6 @@ internal fun MasterKeyScreenContent(
             state = authCodeState,
             placeholder = stringResource(R.string.receiver_verify_master_key_placeholder),
             modifier = Modifier.fillMaxWidth().imePadding(),
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun MasterKeyScreenEmptyPreview() {
-    AfternoteTheme {
-        MasterKeyScreenContent(
-            authCodeState = rememberTextFieldState(),
-            isSubmitting = false,
-            snackbarHostState = remember { SnackbarHostState() },
-            onBackClick = {},
-            onSubmitClick = {},
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun MasterKeyScreenFilledPreview() {
-    AfternoteTheme {
-        MasterKeyScreenContent(
-            authCodeState = rememberTextFieldState("ABC-DEF-GHI"),
-            isSubmitting = false,
-            snackbarHostState = remember { SnackbarHostState() },
-            onBackClick = {},
-            onSubmitClick = {},
         )
     }
 }
