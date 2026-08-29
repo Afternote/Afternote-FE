@@ -35,6 +35,7 @@ import com.afternote.afternote_fe.navigation.rememberHomeTabActions
 import com.afternote.afternote_fe.navigation.rememberReceiverNavActions
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
+import com.afternote.afternote_fe.test.emptyWeeklyReport
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.repository.UserProfileRepository
@@ -47,7 +48,9 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
+import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeMindRecordReceiverRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeWeeklyReportRepository
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import com.afternote.feature.receiver.domain.model.AfterNoteListItem
@@ -115,6 +118,9 @@ class AppAndReceiverCompletionAndroidTest {
     lateinit var authRepository: AuthRepository
 
     @Inject
+    lateinit var weeklyReportRepository: WeeklyReportRepository
+
+    @Inject
     lateinit var errorReporter: ErrorReporter
 
     @Inject
@@ -140,6 +146,12 @@ class AppAndReceiverCompletionAndroidTest {
     @Before
     fun inject() {
         hiltRule.inject()
+        // 홈이 진입 시 주간 기록 수를 부른다 (#562). 정본 fake 는 큐가 비면 터뜨리므로,
+        // 주간 수에 관심이 없는 이 테스트도 기대하는 응답을 명시적으로 넣는다 — 조용히 접으면
+        // 요청 횟수가 어긋난 것을 놓친다.
+        (weeklyReportRepository as FakeWeeklyReportRepository).results.addLast(
+            Result.success(emptyWeeklyReport()),
+        )
     }
 
     @Test
