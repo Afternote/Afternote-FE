@@ -13,6 +13,13 @@
 | #716 | #904 | 실패·진행 **표현** (기존 텍스트 재사용, 새 컴포넌트 미신설) | 각 화면의 진행/실패 `Text` — 표현 통일은 #446 |
 | #592 | #909 | `getToday()` **실패 시 표시 방식** (영역을 그리지 않음) | `DailyQuestionAnswerListScreen.TodayRecommendedQuestion` |
 | #751 | #908 | 날짜 파싱 실패 항목을 **목록에서 제외** (내용까지 숨김) | `MindRecordUiMapper.toUi()` · `WeeklyReportViewModel.toUi()` |
+| #506 | #1052 | 홈 '수신인 지정 미완료' 칩의 **목적지** (등록 화면) | `AppNavigationActions.onRecipientChipClick()` 한 줄 |
+| #611 | #1171 | 수신자 목록 전달 조건 미충족 **안내 문구** | `receiver_afternote_list_not_deliverable_message`·`_description` |
+| #619 | #1169 | 계정 정보 부재의 **표현·문구** («남기지 않음») | `receiver_detail_account_absent`·`receiver_detail_account_value_absent` |
+| #739 | #1216 | 인증번호 발송 중 버튼 **문구** («전송 중…») | `receiver_verify_code_requesting` |
+| #554 | 64cf93888 | 수신인 검색 placeholder **문구** («이름으로 검색하기») | `setting_receiver_search_placeholder`·`timeletter_recipient_search_placeholder` |
+| #648 | #1346 | 복수 선택 행의 **선택 컨트롤 비주얼** (라디오 시안 → core 원형 체크박스) | `PlaylistSongItem.SongSelectionCheckbox` |
+| #490 | #1350 | 서비스 검색 **일치 규칙**과 카탈로그 밖 **기존 custom 값 처리** | `filterEditorServiceOptions` · `EditorFormState.currentServiceOptions` |
 
 ---
 
@@ -302,6 +309,88 @@ Compose 테스트로 고정했다.
 | fileKey (`mindrecords/staging/...png`) | `https://cdn/...permanent/...png` | 200 |
 
 추측으로 진행한 항목이 아니므로 이 문서에서는 근거만 남기고 판단 보류 목록에서 뺀다.
+
+## 소급 기록 5건 (2026-08-28 감사)
+
+디자인 대기 해제(2026-08-23) 뒤 병합된 구현을 감사해, 기록 없이 병합된 재량 결정을 소급해
+적는다. 아래 다섯 건 모두 시안·명세에 근거가 없음을 2026-08-28 시안 텍스트 전수 검색으로
+재확인했다.
+
+### #506 — 홈 '수신인 지정 미완료' 칩의 목적지
+
+**정한 것**: `SettingRoute.RecipientRegisterRoute`(수신자 등록 화면). **근거가 없는 이유**:
+이슈 Note 가 «등록인지 목록인지 기획 확정 전» 이라고 남겼다. **판단 근거**: 칩은
+미완료(등록 수신자 0명)일 때만 눌리므로 목록으로 보내면 빈 화면이다 — 0명에서 유효한 다음
+행동은 등록뿐이다. **뒤집을 때**: `AppNavigationActions.onRecipientChipClick()` 의
+navigate 대상 한 줄.
+
+### #611 — 수신자 목록 전달 조건 미충족 안내 문구
+
+**정한 것**: «아직 열람할 수 없는 상태입니다.» + «발신자가 정한 전달 조건이 충족되면
+열람하실 수 있어요.». **근거가 없는 이유**: 시안 수신자 구역에 이 실패 상태의 화면·문구가
+없다. **판단 근거**: 403(code 2009)은 재시도가 무의미한 상태라, 원인과 기다릴 대상을
+알리는 쪽으로 적었다 — #614 에서 정한 문구 방향과 결이 같다. **뒤집을 때**:
+`receiver_afternote_list_not_deliverable_message`·`_description` 두 문자열.
+
+### #619 — 계정 정보 부재의 표현
+
+**정한 것**: 서버가 credentials 를 안 준 계정 섹션은 마스킹 대신 «고인이 계정 정보를
+남기지 않았습니다.» / 값 자리 «남기지 않음» 으로 표시한다. **근거가 없는 이유**: 시안에
+계정 정보 부재 변형이 없다. **판단 근거**: 가짜 마스킹은 없는 값을 있다고 믿게 한다 —
+부재를 타입으로 올리고 화면은 부재를 부재로 말한다. **뒤집을 때**:
+`receiver_detail_account_absent`·`receiver_detail_account_value_absent` 와 해당 분기 렌더.
+
+### #739 — 인증번호 발송 중 버튼 문구
+
+**정한 것**: 발송 요청 중 버튼 문구를 «전송 중…» 으로 바꾼다. **근거가 없는 이유**: 시안에
+발송 진행 상태 변형이 없다. **판단 근거**: 비활성화만으로는 탭이 접수됐는지 알 수 없다는
+이슈 지적을 최소 표현(문구 전환)으로 해소했다. **뒤집을 때**:
+`receiver_verify_code_requesting` 문자열 하나.
+
+### #554 — 수신인 검색 placeholder 문구
+
+**정한 것**: 타임레터 수신인 선택·설정 수신자 목록 검색창 placeholder 를 «이름으로
+검색하기» 로 적었다. **근거가 없는 이유**: 당시 시안 placeholder 가 리터럴 `Text Field`
+였고, 2026-08-15 디자이너 일괄 확정에서도 이 두 검색창은 빠졌다(#794 의 08-16 전수 실측).
+**판단 근거**: 리터럴 노출은 QA 결함이라 검색 키(이름)를 안내하는 문구로 채웠다.
+**뒤집을 때**: `setting_receiver_search_placeholder`·`timeletter_recipient_search_placeholder`
+두 문자열 — 디자이너가 후속 확정하면 그 값으로 바꾼다(#794 참고).
+
+## #648 — 플레이리스트 복수 선택 행의 컨트롤 비주얼
+
+**정한 것**: 곡 선택 행의 라디오 비주얼을 기존 core `AfternoteCircularCheckbox` 로 바꾸고,
+행 전체에 `Role.Checkbox` toggleable semantics 를 부여했다.
+
+**근거가 없는 이유**: 시안은 여전히 라디오 비주얼이다. #648 의 「디자인 승인 게이트 해제
+(2026-08-28)」는 복수 선택 확정과 checkbox semantics 까지만 정하고, 색·크기·간격은 «최신
+플레이리스트 시안과 기존 core 선택 컴포넌트에 맞춰 구현 담당자가 결정» 으로 위임했다.
+
+**판단 근거**: 새 모양을 만들면 미확정 디자인이 굳는다. 이미 있는 core 선택 컴포넌트를
+재사용하는 쪽이 되돌리기 쉽고, 복수 선택 실동작과 컨트롤 관용도 일치한다.
+
+**뒤집을 때**: `PlaylistSongItem.SongSelectionCheckbox` 하나다. 시안이 선택 컨트롤을
+그리면 그 모양으로 바꾸면 되고, semantics(복수 선택)는 게이트 확정이라 유지된다.
+
+## #490 — 서비스 선택 바텀시트의 검색 규칙과 카탈로그 밖 기존 값
+
+**정한 것 1**: 검색은 trim 한 query 의 대소문자 무시 **부분 문자열** 일치로 하고, 결과는
+원본 카탈로그 순서를 유지한다.
+
+**정한 것 2**: 고정 카탈로그에 없는 기존(legacy) custom 서비스 값은 폼에 보존해 그대로
+표시하되, 선택 후보 목록에는 올리지 않는다.
+
+**근거가 없는 이유**: 시안은 바텀시트 구성만 보여주고 검색 일치 규칙·정렬 순서를 정의하지
+않는다. 기존 custom 값은 「직접 추가하기」 제거(게이트 확정) 뒤에 남는 데이터라 처리 방식이
+시안·명세 어디에도 없다.
+
+**판단 근거**: (검색) 짧은 고정 카탈로그라 부분 일치가 관대하고, 재정렬은 시안에 없는 새
+규칙을 만드는 셈이라 원본 순서를 지켰다. (기존 값) 지우면 사용자 데이터 파괴고, 후보로
+노출하면 제거하기로 한 커스텀 플로우가 사실상 부활한다 — 보존+미노출이 양쪽 결정을 존중한다.
+
+**뒤집을 때**: 검색은 `filterEditorServiceOptions` 함수 하나, 후보 노출은
+`EditorFormState.currentServiceOptions` 다. 기존 값 정리(마이그레이션·삭제)가 확정되면
+보존 동작을 그 정책으로 바꾼다.
+
 ## #700 — 홈 시안 정본 (해소) + 타임레터 NEXT STEP 문구 (추측 진행)
 
 **정본은 확정됐다 — 추측이 아니다.** 파일에 페이지가 둘뿐이고(`정리 Screen Design`,

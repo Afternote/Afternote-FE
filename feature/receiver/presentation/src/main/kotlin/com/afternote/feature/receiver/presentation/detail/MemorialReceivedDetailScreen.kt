@@ -32,7 +32,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import coil3.compose.AsyncImage
@@ -42,15 +41,15 @@ import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
-import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.MemorialContent
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
 import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
+import com.afternote.feature.receiver.presentation.R
+import com.afternote.feature.afternote.presentation.R as AfternoteR
 
 /**
  * MEMORIAL(추억 노트) 카테고리의 수신자 측 상세 화면.
@@ -75,7 +74,7 @@ fun MemorialReceivedDetailScreen(
     memorialVideoUrl: String? = null,
     memorialThumbnailUrl: String? = null,
 ) {
-    profileImageResId ?: R.drawable.feature_afternote_img_default_profile_deceased
+    profileImageResId ?: R.drawable.receiver_img_default_profile_deceased
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -204,7 +203,7 @@ private fun ReceiverVideoSection(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.feature_afternote_ic_play_arrow),
+                    painter = painterResource(R.drawable.receiver_ic_play_arrow),
                     contentDescription = "Play",
                     tint = AfternoteDesign.colors.white,
                     modifier =
@@ -253,7 +252,7 @@ private fun ReceiverMemorialVideoThumbnail(thumbnailUrl: String?) {
                     ),
         )
         Image(
-            painter = painterResource(R.drawable.feature_afternote_ic_playback),
+            painter = painterResource(AfternoteR.drawable.feature_afternote_ic_playback),
             contentDescription = "영상 재생",
             modifier =
                 Modifier
@@ -274,59 +273,4 @@ private fun ReceiverSectionHeader(title: String = LABEL_VIDEO_SECTION) {
             ),
         modifier = Modifier.padding(bottom = 8.dp),
     )
-}
-
-@Preview(showBackground = true, name = "No video")
-@Composable
-private fun PreviewMemorialReceivedDetail() {
-    AfternoteTheme {
-        MemorialReceivedDetailScreen(
-            senderName = "박서연",
-            onNavigateToFullList = {},
-            onNavigateToPlaylist = {},
-            onBackClick = {},
-            messageBlocks =
-                listOf(
-                    MessageBlockUiModel(
-                        body = "이 계정에는 우리 가족 여행 사진이 많아. 계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
-                    ),
-                ),
-            // 프리뷰 대표 데이터: 실앱은 곡마다 coverUrl → 커버 로드. 프리뷰/스크린샷은 네트워크 미지원이라 회색 박스로 표시.
-            albumCovers =
-                listOf(
-                    AlbumCover(),
-                    AlbumCover(),
-                    AlbumCover(),
-                ),
-            songCount = 3,
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "With video")
-@Composable
-private fun PreviewMemorialReceivedDetailWithVideo() {
-    AfternoteTheme {
-        MemorialReceivedDetailScreen(
-            senderName = "박서연",
-            onNavigateToFullList = {},
-            onNavigateToPlaylist = {},
-            onBackClick = {},
-            messageBlocks =
-                listOf(
-                    MessageBlockUiModel(
-                        body = "이 계정에는 우리 가족 여행 사진이 많아. 계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
-                    ),
-                ),
-            albumCovers =
-                listOf(
-                    AlbumCover(),
-                    AlbumCover(),
-                    AlbumCover(),
-                ),
-            songCount = 3,
-            // 영상 섹션은 URL 있을 때만 노출 — 조건부 분기 상태 확인용 프리뷰 (썸네일은 네트워크 미지원이라 회색).
-            memorialVideoUrl = "https://example.com/memorial.mp4",
-        )
-    }
 }

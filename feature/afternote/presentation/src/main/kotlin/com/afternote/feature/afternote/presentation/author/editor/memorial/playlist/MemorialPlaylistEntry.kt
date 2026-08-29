@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.FAB.PenFloatingActionButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.detail.song.PlaylistEmptyContent
 import com.afternote.feature.afternote.presentation.shared.detail.song.PlaylistSongList
 import com.afternote.feature.afternote.presentation.shared.detail.song.SelectableSongListBody
@@ -37,8 +36,8 @@ import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDis
  * 공용 부품([SongPlaylistScaffold] + 모드별 본문)의 입력 형태로 매핑한다. 변경은 콜백 인텐트로 위임한다.
  *
  * 화면은 두 모드를 오간다 (헤더 연필 = 토글):
- * - 목록 모드(시안 2672:16318): 라디오 없는 열람 목록 + 노래 추가 펜 FAB
- * - 편집 모드(시안 2672:17024): 라디오 선택 목록 + 곡 선택 시 "전체 삭제/선택 삭제" 하단 바, FAB 숨김.
+ * - 목록 모드(시안 2672:16318): 체크박스 없는 열람 목록 + 노래 추가 펜 FAB
+ * - 편집 모드(시안 2672:17024): 체크박스 선택 목록 + 곡 선택 시 "전체 삭제/선택 삭제" 하단 바, FAB 숨김.
  *   시안은 미선택 상태에도 바를 그려놨지만 미선택 "선택 삭제"가 no-op 인 모순이 있어 시안 실수로
  *   판단, 선택 시 노출로 구현하고 디자이너 질의 중 (2026-07-17). 회신이 상시 노출로 확정되면
  *   selectable 본문에 상시 노출 파라미터를 되살려 스왑.
@@ -153,48 +152,6 @@ private fun MemorialPlaylistListHeader(
                 AfternoteDesign.typography.bodySmallR.copy(
                     color = AfternoteDesign.colors.gray9,
                 ),
-        )
-    }
-}
-
-private fun memorialPlaylistPreviewSongs(): List<Song> =
-    (1..11).map { index ->
-        Song(
-            selectionKey = "preview:$index",
-            title = "노래 제목",
-            artist = "가수 이름",
-        )
-    }
-
-@Preview(showBackground = true, name = "목록 모드")
-@Composable
-private fun MemorialPlaylistEntryPreview() {
-    AfternoteLightTheme {
-        MemorialPlaylistEntry(
-            songs = memorialPlaylistPreviewSongs().take(3),
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "편집 모드")
-@Composable
-private fun MemorialPlaylistEntryEditModePreview() {
-    AfternoteLightTheme {
-        MemorialPlaylistEntry(
-            songs = memorialPlaylistPreviewSongs().take(4),
-            initialEditMode = true,
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "편집 모드 - 선택 중")
-@Composable
-private fun MemorialPlaylistEntryEditModeSelectionPreview() {
-    AfternoteLightTheme {
-        MemorialPlaylistEntry(
-            songs = memorialPlaylistPreviewSongs().take(4),
-            initialEditMode = true,
-            initialSelectedSongKeys = setOf("preview:1", "preview:3"),
         )
     }
 }

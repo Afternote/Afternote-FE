@@ -18,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -27,8 +26,7 @@ import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.asString
 import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.receiver.presentation.R
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_HEADER_SPACING
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_TOTAL_STEPS
 import com.afternote.feature.receiver.presentation.deliveryverification.component.ReceiverVerifyStep
@@ -176,42 +174,5 @@ internal fun IdentityVerificationEmailScreenContent(
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun IdentityVerificationEmailEmptyPreview() {
-    AfternoteTheme {
-        IdentityVerificationEmailScreenContent(
-            uiState = IdentityVerificationUiState(),
-            emailState = rememberTextFieldState(),
-            codeState = rememberTextFieldState(),
-            snackbarHostState = remember { SnackbarHostState() },
-            onBackClick = {},
-            onRequestCode = {},
-            onVerifyAndProceed = {},
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun IdentityVerificationEmailSentPreview() {
-    AfternoteTheme {
-        IdentityVerificationEmailScreenContent(
-            uiState =
-                IdentityVerificationUiState(
-                    email = "user@example.com",
-                    isEmailFormatValid = true,
-                    isVerificationSent = true,
-                ),
-            emailState = rememberTextFieldState("user@example.com"),
-            codeState = rememberTextFieldState(),
-            snackbarHostState = remember { SnackbarHostState() },
-            onBackClick = {},
-            onRequestCode = {},
-            onVerifyAndProceed = {},
-        )
     }
 }

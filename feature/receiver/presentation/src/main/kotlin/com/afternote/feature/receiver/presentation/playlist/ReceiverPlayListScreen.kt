@@ -5,12 +5,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.shared.detail.song.PlaylistEmptyContent
@@ -18,7 +16,6 @@ import com.afternote.feature.afternote.presentation.shared.detail.song.PlaylistS
 import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScaffold
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 import com.afternote.feature.receiver.presentation.R
-import com.afternote.feature.afternote.presentation.R as AfternoteR
 
 /**
  * 수신자 추억 노트 플레이리스트 전체보기 화면 (view-only).
@@ -39,7 +36,7 @@ fun MemorialPlaylistScreen(
     senderName: String = "",
 ) {
     SongPlaylistScaffold(
-        title = stringResource(AfternoteR.string.receiver_memorial_playlist_screen_title, senderName),
+        title = stringResource(R.string.receiver_memorial_playlist_screen_title, senderName),
         onBackClick = onBackClick,
         modifier = modifier,
     ) { paddingValues ->
@@ -83,21 +80,6 @@ private fun ReceiverPlaylistSongCountHeader(
                 AfternoteDesign.typography.bodySmallR.copy(
                     color = AfternoteDesign.colors.gray9,
                 ),
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun PreviewMemorialPlaylist() {
-    MaterialTheme {
-        MemorialPlaylistScreen(
-            songs =
-                (0..9).map { i ->
-                    PlaylistSongDisplay(selectionKey = "preview:$i", title = "노래 제목", artist = "가수 이름")
-                },
-            onBackClick = {},
-            senderName = "서연",
         )
     }
 }

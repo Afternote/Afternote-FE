@@ -1,7 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor.selection
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -14,12 +13,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,12 +23,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.modifierextention.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.EditorSectionLabel
 
@@ -63,6 +57,7 @@ data class DropdownMenuStyle(
  * @param onExpandedChange Callback invoked when the user requests to open/close the menu
  * @param modifier Modifier for the component
  * @param isRequired 라벨에 필수 표시(*) 노출 여부
+ * @param enabled false이면 선택 앵커와 메뉴를 비활성화하고 드롭다운 셰브론을 숨긴다
  * @param placeholder [optionLabel]로 변환한 [selectedValue]가 비어 있을 때 앵커에 흐리게(gray5) 노출할 미선택 안내 문구
  * @param menuStyle Style configuration for the dropdown menu
  */
@@ -78,6 +73,7 @@ fun <T> EditorSelectionDropdown(
     onExpandedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     isRequired: Boolean = false,
+    enabled: Boolean = true,
     placeholder: String? = null,
     menuStyle: DropdownMenuStyle = DropdownMenuStyle(),
 ) {
@@ -98,15 +94,17 @@ fun <T> EditorSelectionDropdown(
 
         // Material 3 ExposedDropdownMenuBox: 앵커–메뉴 너비·접근성, 서브컴포지션 없이 처리
         ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = onExpandedChange,
+            expanded = expanded && enabled,
+            onExpandedChange = { if (enabled) onExpandedChange(it) },
             modifier = Modifier.fillMaxWidth(),
         ) {
             Row(
                 modifier =
                     Modifier
-                        .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable)
-                        .fillMaxWidth()
+                        .menuAnchor(
+                            type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                            enabled = enabled,
+                        ).fillMaxWidth()
                         .bottomBorder(color = AfternoteDesign.colors.gray3, width = 0.58.dp)
                         .padding(top = 4.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -123,15 +121,17 @@ fun <T> EditorSelectionDropdown(
                         ),
                 )
 
-                Icon(
-                    painter = painterResource(R.drawable.feature_afternote_ic_dropdown_vector),
-                    contentDescription = stringResource(R.string.afternote_editor_content_description_dropdown),
-                    tint = AfternoteDesign.colors.gray8,
-                )
+                if (enabled) {
+                    Icon(
+                        painter = painterResource(R.drawable.feature_afternote_ic_dropdown_vector),
+                        contentDescription = stringResource(R.string.afternote_editor_content_description_dropdown),
+                        tint = AfternoteDesign.colors.gray8,
+                    )
+                }
             }
 
             ExposedDropdownMenu(
-                expanded = expanded,
+                expanded = expanded && enabled,
                 onDismissRequest = { onExpandedChange(false) },
                 modifier = Modifier.offset(y = menuStyle.menuOffset),
                 shape = menuStyle.shape,
@@ -176,85 +176,6 @@ private fun <T> EditorSelectionDropdownMenuItems(
                 },
                 onClick = { onSelect(option) },
                 contentPadding = PaddingValues(16.dp),
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun EditorSelectionDropdownPreview() {
-    AfternoteTheme {
-        val social = stringResource(R.string.afternote_editor_category_social)
-        var expanded by remember { mutableStateOf(false) }
-        Box(modifier = Modifier.padding(24.dp)) {
-            EditorSelectionDropdown(
-                label = stringResource(R.string.afternote_editor_label_category),
-                selectedValue = social,
-                options =
-                    listOf(
-                        social,
-                        stringResource(R.string.afternote_editor_category_gallery),
-                        stringResource(R.string.afternote_editor_category_memorial),
-                    ),
-                optionLabel = { it },
-                onValueSelected = {},
-                expanded = expanded,
-                onExpandedChange = { expanded = it },
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Placeholder (unselected)")
-@Composable
-private fun EditorSelectionDropdownPlaceholderPreview() {
-    AfternoteTheme {
-        var expanded by remember { mutableStateOf(false) }
-        Box(modifier = Modifier.padding(24.dp)) {
-            EditorSelectionDropdown(
-                label = stringResource(R.string.afternote_editor_label_service_name),
-                selectedValue = "",
-                options =
-                    listOf(
-                        "인스타그램",
-                        "페이스북",
-                        "직접 추가하기",
-                    ),
-                optionLabel = { it },
-                onValueSelected = {},
-                expanded = expanded,
-                onExpandedChange = { expanded = it },
-                placeholder =
-                    stringResource(
-                        R.string.afternote_editor_service_placeholder,
-                        stringResource(R.string.afternote_editor_category_social),
-                    ),
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Expanded menu items")
-@Composable
-private fun EditorSelectionDropdownMenuItemsPreview() {
-    AfternoteTheme {
-        Surface(
-            shape = RoundedCornerShape(8.dp),
-            shadowElevation = 4.dp,
-            tonalElevation = 0.dp,
-            color = AfternoteDesign.colors.white,
-            modifier = Modifier.padding(24.dp),
-        ) {
-            EditorSelectionDropdownMenuItems(
-                options =
-                    listOf(
-                        "인스타그램",
-                        "페이스북",
-                        "직접 추가하기",
-                    ),
-                optionLabel = { it },
-                onSelect = {},
             )
         }
     }

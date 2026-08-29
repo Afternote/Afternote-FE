@@ -28,7 +28,6 @@ import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.editor.processing.CustomServiceDialog
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
@@ -40,7 +39,7 @@ import com.afternote.feature.afternote.presentation.author.editor.state.remember
  * 피그마 디자인 기반:
  * - 헤더 (뒤로가기, 타이틀, 등록 버튼)
  * - 종류 선택 드롭다운
- * - 서비스명 선택 드롭다운
+ * - 검색 가능한 서비스명 선택 바텀시트
  * - 계정 정보 입력 (아이디, 비밀번호)
  * - 계정 처리 방법 선택 (라디오 버튼)
  * - 처리 방법 리스트 (체크박스)
@@ -55,6 +54,10 @@ fun AfternoteEditorScreen(
     onRegisterClick: () -> Unit,
     snackbarMessage: String?,
     onSnackbarMessageConsumed: () -> Unit,
+    // 스낵바 쌍과 같은 이유로 기본값을 주지 않는다: 새 진입 경로가 검증 팝업 배선을 빠뜨리면
+    // 조용히 팝업 없는 에디터가 되는 대신 컴파일 단계에서 걸리게 한다.
+    validationMessage: String?,
+    onValidationMessageConsumed: () -> Unit,
     content: @Composable (SnackbarHostState) -> Unit,
     modifier: Modifier = Modifier,
     state: AfternoteEditorState = rememberAfternoteEditorState(),
@@ -143,14 +146,6 @@ fun AfternoteEditorScreen(
         ) {
             content(snackbarHostState)
 
-            if (state.isCustomServiceDialogVisible) {
-                CustomServiceDialog(
-                    serviceNameState = state.customServiceNameState,
-                    onDismiss = state::dismissCustomServiceDialog,
-                    onAddClick = state::onAddCustomService,
-                )
-            }
-
             if (showExitConfirm) {
                 Popup(
                     type = PopupType.Variant2,
@@ -162,6 +157,15 @@ fun AfternoteEditorScreen(
                     onDismiss = { showExitConfirm = false },
                     confirmText = stringResource(R.string.afternote_editor_exit_confirm_confirm),
                     dismissText = stringResource(R.string.afternote_editor_exit_confirm_cancel),
+                )
+            }
+
+            if (validationMessage != null) {
+                Popup(
+                    type = PopupType.Default,
+                    message = validationMessage,
+                    onConfirm = onValidationMessageConsumed,
+                    onDismiss = onValidationMessageConsumed,
                 )
             }
         }

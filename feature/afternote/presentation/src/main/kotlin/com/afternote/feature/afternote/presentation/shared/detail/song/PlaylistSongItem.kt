@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,10 +19,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.afternote.core.ui.button.CustomRadioButton
+import com.afternote.core.ui.button.AfternoteCircularCheckbox
+import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.modifierextention.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
@@ -32,14 +35,14 @@ import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDis
  *
  * UI: 앨범 48dp(gray8 placeholder), 제목 Bold 14sp Gray9, 가수 12sp Gray6, 하단 Gray6 1dp 구분선.
  *
- * - [onClick]이 있으면 클릭 가능, [selected]로 선택 라디오 표시 (null이면 라디오 없음)
+ * - [onClick]이 있으면 클릭 가능, [selected]로 복수 선택 체크 표시 (null이면 선택 UI 없음)
  * - [onClick] 콜백은 [song] 을 실어 되돌려준다: 행이 이미 자기 곡을 알므로, 호출부(리스트 루프)가
  *   곡 캡처용 래핑 람다를 만들지 않고 per-song 람다를 그대로 넘길 수 있다.
  *
  * @param song 표시용 모델 [PlaylistSongDisplay] (Feature별 Song/Entity에서 매핑)
 // * @param displayIndex 목록 내 순번 (이미지/placeholder용, 현재는 미사용, API 호환용)
  * @param onClick 클릭 시 이 행의 [song] 과 함께 호출 (null이면 비클릭)
- * @param selected 선택 라디오 상태 (true/false=라디오 표시, null=라디오 없음 — 예: view-only 열람)
+ * @param selected 복수 선택 상태 (true/false=체크박스 표시, null=선택 semantics 없음 — 예: view-only 열람)
  */
 @Composable
 fun PlaylistSongItem(
@@ -47,10 +50,27 @@ fun PlaylistSongItem(
     onClick: ((PlaylistSongDisplay) -> Unit)? = null,
     selected: Boolean? = null,
 ) {
+    val fullWidthModifier = Modifier.fillMaxWidth()
+    val interactionModifier =
+        when {
+            onClick == null -> {
+                fullWidthModifier
+            }
+
+            selected != null -> {
+                fullWidthModifier.toggleable(
+                    value = selected,
+                    role = Role.Checkbox,
+                    onValueChange = { onClick(song) },
+                )
+            }
+
+            else -> {
+                fullWidthModifier.clickable { onClick(song) }
+            }
+        }
     val rowModifier =
-        Modifier
-            .fillMaxWidth()
-            .let { if (onClick != null) it.clickable { onClick(song) } else it }
+        interactionModifier
             .bottomBorder(color = AfternoteDesign.colors.gray3, width = 1.dp)
             .padding(8.dp)
 
@@ -79,22 +99,20 @@ fun PlaylistSongItem(
                     ),
             )
         }
-        selected?.let { SongSelectionRadio(selected = it) }
+        selected?.let { SongSelectionCheckbox(selected = it) }
     }
 }
 
 /**
- * 선택/관리 모드 행 우측의 선택 라디오 (24dp·gray9/gray4).
+ * 선택/관리 모드 행 우측의 원형 체크박스 (24dp·core 선택 색상).
  * PlaylistSongItem 의 selected 가 non-null 일 때만 렌더된다.
  */
 @Composable
-private fun SongSelectionRadio(selected: Boolean) {
-    CustomRadioButton(
-        selected = selected,
-        onClick = null,
-        buttonSize = 24.dp,
-        selectedColor = AfternoteDesign.colors.gray9,
-        unselectedColor = AfternoteDesign.colors.gray3,
+private fun SongSelectionCheckbox(selected: Boolean) {
+    AfternoteCircularCheckbox(
+        state = if (selected) CheckboxState.Default else CheckboxState.None,
+        size = 24.dp,
+        modifier = Modifier.clearAndSetSemantics {},
     )
 }
 
@@ -118,13 +136,4 @@ private fun AlbumCoverBox(albumImageUrl: String?) {
             error = ColorPainter(AfternoteDesign.colors.gray8),
         )
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun PlaylistSongItemPreview() {
-    PlaylistSongItem(
-        song = PlaylistSongDisplay(selectionKey = "preview:1", title = "노래 제목", artist = "가수 이름"),
-        selected = true,
-    )
 }

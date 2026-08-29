@@ -97,6 +97,15 @@ import com.afternote.feature.home.presentation.R as HomeR
 import com.afternote.feature.onboarding.presentation.R as OnboardingR
 import com.afternote.feature.receiver.presentation.R as ReceiverR
 
+/** 이 테스트의 관심 밖인 외부 라우팅을 채우는 no-op 묶음. */
+private val noopActions =
+    ReceiverHomeActions(
+        onSettingClick = {},
+        onNavigateToMindRecord = {},
+        onNavigateToTimeLetter = {},
+        onNavigateToAfternote = {},
+    )
+
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
 @OptIn(ExperimentalTestApi::class)
@@ -207,10 +216,10 @@ class AppAndReceiverCompletionAndroidTest {
             .performClick()
 
         composeRule
-            .onNodeWithText(context.getString(AfternoteFeatureR.string.receiver_records_box_title))
+            .onNodeWithText(context.getString(ReceiverR.string.receiver_records_box_title))
             .assertIsDisplayed()
         composeRule
-            .onNodeWithText(context.getString(AfternoteFeatureR.string.receiver_records_box_empty))
+            .onNodeWithText(context.getString(ReceiverR.string.receiver_records_box_empty))
             .assertIsDisplayed()
     }
 }
@@ -286,7 +295,7 @@ class ReceiverRuntimeCompletionAndroidTest {
                 ReceiverHomeScreen(
                     uiState = uiState,
                     onEvent = viewModel::onEvent,
-                    actions = ReceiverHomeActions.Noop,
+                    actions = noopActions,
                 )
             }
         }
@@ -408,30 +417,30 @@ class ReceiverRuntimeCompletionAndroidTest {
         }
 
         composeRule
-            .onNodeWithText(context.getString(AfternoteFeatureR.string.receiver_verify_email_placeholder))
+            .onNodeWithText(context.getString(ReceiverR.string.receiver_verify_email_placeholder))
             .performTextInput("receiver@example.test")
         composeRule
-            .onNodeWithText(context.getString(AfternoteFeatureR.string.receiver_verify_request_code))
+            .onNodeWithText(context.getString(ReceiverR.string.receiver_verify_request_code))
             .performClick()
         composeRule
-            .onNodeWithText(context.getString(AfternoteFeatureR.string.receiver_verify_code_placeholder))
+            .onNodeWithText(context.getString(ReceiverR.string.receiver_verify_code_placeholder))
             .performTextInput("123456")
         composeRule
-            .onNodeWithText(context.getString(AfternoteFeatureR.string.receiver_verify_next_button))
+            .onNodeWithText(context.getString(ReceiverR.string.receiver_verify_next_button))
             .performClick()
         composeRule
             .onNodeWithText("인증번호가 만료되었습니다. 다시 발급해 주세요.")
             .assertIsDisplayed()
 
         composeRule
-            .onNodeWithText(context.getString(AfternoteFeatureR.string.receiver_verify_request_code))
+            .onNodeWithText(context.getString(ReceiverR.string.receiver_verify_request_code))
             .performClick()
         composeRule.waitUntil(timeoutMillis = 5_000) { authRepository.sentEmails.size == 2 }
         composeRule
             .onNode(hasSetTextAction() and hasText("123456"))
             .performTextReplacement("654321")
         composeRule
-            .onNodeWithText(context.getString(AfternoteFeatureR.string.receiver_verify_next_button))
+            .onNodeWithText(context.getString(ReceiverR.string.receiver_verify_next_button))
             .performClick()
         composeRule.waitUntil(timeoutMillis = 5_000) { verifiedTransitions == 1 }
 
