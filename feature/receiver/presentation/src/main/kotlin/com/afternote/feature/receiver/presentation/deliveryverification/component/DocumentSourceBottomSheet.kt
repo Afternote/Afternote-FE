@@ -20,12 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.modifierextention.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.receiver.presentation.R
 
 /**
@@ -109,17 +107,6 @@ private fun BottomSheetOption(
             text = label,
             style = AfternoteDesign.typography.bodyBase,
             color = AfternoteDesign.colors.gray9,
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun DocumentSourceBottomSheetPreview() {
-    AfternoteTheme {
-        DocumentSourceBottomSheet(
-            onPickImage = {},
-            onPickFile = {},
         )
     }
 }

@@ -37,13 +37,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import coil3.compose.AsyncImage
 import com.afternote.core.ui.button.PlusBadgeButton
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.isLocalContentUri
 import kotlinx.coroutines.CoroutineDispatcher
@@ -221,28 +219,6 @@ fun MemorialVideoUpload(
                             .size(32.dp),
                 )
             }
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun MemorialVideoUploadPreview() {
-    AfternoteTheme {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-        ) {
-            // 영상 없음
-            MemorialVideoUpload(
-                onAddVideoClick = {},
-            )
-
-            // 영상 있음 (실기기에서 선택 시 썸네일 표시)
-            MemorialVideoUpload(
-                videoUrl = "test",
-                onAddVideoClick = {},
-            )
         }
     }
 }

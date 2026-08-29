@@ -14,15 +14,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteOutlinedCard
 import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.presentation.R
 
 /**
  * NEXT STEP 카드에 필요한 값 묶음.
@@ -107,20 +103,5 @@ private fun NextStepCard(
                 )
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun HomeHeaderSectionPreview() {
-    AfternoteTheme {
-        HomeHeaderSection(
-            description = stringResource(R.string.afternote_home_header_description),
-            nextStep =
-                NextStep(
-                    text = "가족들의 '주거래 은행' 정보를\n입력하신 건 확인하셨나요?",
-                    onClick = {},
-                ),
-        )
     }
 }

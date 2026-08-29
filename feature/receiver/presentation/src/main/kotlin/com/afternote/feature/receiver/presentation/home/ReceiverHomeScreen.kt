@@ -24,25 +24,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
-import com.afternote.core.ui.icon.AfternoteSourceIcon
 import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.receiver.presentation.R
 import com.afternote.feature.receiver.presentation.home.component.AfternoteSection
 import com.afternote.feature.receiver.presentation.home.component.MindRecordSection
 import com.afternote.feature.receiver.presentation.home.component.SenderMessageHeroCard
 import com.afternote.feature.receiver.presentation.home.component.TimeLetterSection
-import com.afternote.feature.receiver.presentation.home.model.MindRecordSummary
 import com.afternote.feature.receiver.presentation.home.model.ReceiverDownloadState
 import com.afternote.feature.receiver.presentation.home.model.ReceiverHomeUiState
-import com.afternote.feature.receiver.presentation.home.model.SenderMessage
 
 /**
  * 수신자 홈 화면 — 한 마디 + 마음의 기록·타임레터·애프터노트 카드 + 모든 기록 내려받기 버튼.
@@ -210,39 +205,5 @@ private fun ErrorState(
                 )
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ReceiverHomeScreenPreview() {
-    AfternoteTheme {
-        ReceiverHomeScreen(
-            uiState =
-                ReceiverHomeUiState.Success(
-                    senderName = "박서연",
-                    senderMessage =
-                        SenderMessage(
-                            date = "2026.04.04",
-                            body = "내가 없어도 너의 시간이 멈추지 않고\n행복하게 흘러갔으면 좋겠어.\n하늘에서 지켜줄게. 너무 슬퍼하지마 ㅎㅎ",
-                        ),
-                    mindRecord =
-                        MindRecordSummary(
-                            dailyQuestionCount = 18,
-                            diaryCount = 18,
-                        ),
-                    timeLetterTotalCount = 30,
-                    afternoteTotalCount = 10,
-                    afternoteIcons =
-                        listOf(
-                            AfternoteSourceIcon.SocialNetwork,
-                            AfternoteSourceIcon.GalleryAndFiles,
-                            AfternoteSourceIcon.Memorial,
-                            AfternoteSourceIcon.Other,
-                        ),
-                ),
-            onEvent = {},
-            actions = ReceiverHomeActions.Noop,
-        )
     }
 }
