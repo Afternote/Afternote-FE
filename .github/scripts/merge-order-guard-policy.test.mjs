@@ -166,6 +166,38 @@ test("refresh passes large open-PR payloads through a file instead of one enviro
     assert.doesNotMatch(guard, /PRS_JSON=/);
 });
 
+function stackRegistrationBlock() {
+    const match = /# 조회 자체는 `if` 조건에 두어[\s\S]*?\n {10}fi\n/.exec(guard);
+    assert.ok(match, "stack registration warning block must stay extractable for policy tests");
+    return match[0];
+}
+
+test("stack registration is inspected through stackEntry, not the base branch name alone", () => {
+    const block = stackRegistrationBlock();
+
+    assert.match(block, /pullRequest\(number:\$pr\)\{stackEntry\{position\}\}/);
+    // base 이름 판정(stacked)과 등록 판정을 겹쳐 둔다 — 트렁크 base 인 PR 은 조회하지 않는다.
+    assert.match(block, /if \[ "\$stacked" -eq 1 \]; then/);
+});
+
+test("an unregistered stack PR is only warned about, never failed", () => {
+    const block = stackRegistrationBlock();
+
+    // CI 가 고칠 수 없는 신호다 — gh stack 링크는 대화형 Ctrl+B 뿐이라 error 로 올리면
+    // #1059 가 걷어낸 «수명 내내 red» 가 되돌아온다.
+    assert.match(block, /echo "::warning::네이티브 스택 미등록/);
+    assert.doesNotMatch(block, /::error::/);
+    assert.doesNotMatch(block, /fail=1/);
+});
+
+test("a failed registration lookup degrades to a warning instead of killing the blocked_by verdict", () => {
+    const block = stackRegistrationBlock();
+
+    // 조회를 `if` 조건에 두면 set -e 가 스크립트를 끊지 않는다.
+    assert.match(block, /if stack_entry=\$\(gh api graphql/);
+    assert.match(block, /else\n\s+echo "::warning::스택 등록 여부를 조회하지 못했다/);
+});
+
 test("API failures remain fail-closed", () => {
     assert.match(guard, /set -euo pipefail/);
     assert.doesNotMatch(guard, /issue_kind=\$\(gh api[^\n]*\|\|\s*true/);
