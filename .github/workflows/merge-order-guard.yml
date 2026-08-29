@@ -27,6 +27,7 @@ on:
         type: number
 
 permissions:
+  contents: read
   issues: read
   pull-requests: read
 
@@ -38,6 +39,24 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      # 게이트 스크립트는 **default branch 사본**으로 돌린다. PR 사본을 체크아웃하면 PR 이
+      # 자기를 검사하는 가드를 고쳐 통과시킬 수 있다. 필요한 건 .github/scripts 뿐이라
+      # sparse-checkout 으로 좁힌다.
+      - name: Clone gate scripts from the default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+
+      # 한도가 바닥인 채로 들어가면 게이트가 코드와 무관하게 빨개진다. 남은 quota 를 요약에
+      # 남기고, 부족하면 리셋까지 기다린다 — 즉시 실패시키면 사람이 재실행을 걸고 그 재실행이
+      # 남은 quota 를 더 태운다 (#1465).
+      - name: Ensure GitHub API quota
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node .github/scripts/ensure-api-quota.mjs ensure
+
       - name: closing 이슈 blocked_by 검사
         env:
           GH_TOKEN: ${{ github.token }}
@@ -165,6 +184,14 @@ jobs:
           exit "$fail"
 
   # blocker 이슈가 닫히면(=선행 PR 머지) 기다리던 PR 의 guard 를 재실행해 초록으로 갱신한다.
+
+      # 실패가 «가드가 사실을 확인하고 거절함» 인지 «한도 소진» 인지 가른다. 구분이 없으면
+      # 빨간 체크를 보고도 원인을 로그까지 들어가야 안다 (#1465).
+      - name: Classify a failed gate as rate limit exhaustion
+        if: failure()
+        run: node .github/scripts/ensure-api-quota.mjs classify
+        env:
+          GH_TOKEN: ${{ github.token }}
   refresh:
     if: github.event_name == 'issues'
     permissions:
