@@ -167,6 +167,8 @@
     <string name="mindrecord_link_sheet_title">링크 추가하기</string>
     <string name="mindrecord_link_sheet_confirm">완료</string>
     <string name="mindrecord_link_sheet_placeholder">URL을 입력하세요.</string>
+    <!-- 링크 거절 안내. http/https 만 본문에 넣는다 (#1067). -->
+    <string name="mindrecord_link_sheet_invalid">http 또는 https 로 시작하는 주소만 넣을 수 있어요.</string>
     <string name="mindrecord_toolbar_align_left_cd">왼쪽 정렬</string>
     <string name="mindrecord_toolbar_align_center_cd">가운데 정렬</string>
     <string name="mindrecord_toolbar_align_right_cd">오른쪽 정렬</string>

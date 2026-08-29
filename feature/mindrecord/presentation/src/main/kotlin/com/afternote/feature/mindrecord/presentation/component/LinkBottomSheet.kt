@@ -49,6 +49,7 @@ fun LinkBottomSheet(
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit,
     modifier: Modifier = Modifier,
+    isError: Boolean = false,
 ) {
     // core 정본이 `TextFieldState` 를 받는다. 상태 소유자가 이 로컬 하나뿐이라 국소 변경이다 (#634).
     val urlState = rememberTextFieldState()
@@ -71,6 +72,7 @@ fun LinkBottomSheet(
         LinkSheetContent(
             urlState = urlState,
             onConfirm = { onConfirm(urlState.text.toString()) },
+            isError = isError,
             modifier = modifier,
         )
     }
@@ -81,6 +83,7 @@ private fun LinkSheetContent(
     urlState: TextFieldState,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
+    isError: Boolean = false,
 ) {
     Column(
         modifier =
@@ -118,6 +121,15 @@ private fun LinkSheetContent(
             keyboardType = KeyboardType.Uri,
             modifier = Modifier.fillMaxWidth(),
         )
+
+        // 거절을 조용히 넘기면 «완료를 눌렀는데 안 들어갔다» 만 남는다 — 사유를 적어 고칠 수 있게 한다 (#1067).
+        if (isError) {
+            Text(
+                text = stringResource(R.string.mindrecord_link_sheet_invalid),
+                style = AfternoteDesign.typography.captionLargeR,
+                color = AfternoteDesign.colors.error,
+            )
+        }
     }
 }
 

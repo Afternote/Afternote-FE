@@ -1,6 +1,8 @@
 package com.afternote.feature.mindrecord.presentation.util
 
 import androidx.core.text.HtmlCompat
+import java.net.IDN
+import java.net.URI
 
 /**
  * HTML 직렬화된 본문에서 태그를 제거해 리스트 카드에 노출할 plain text 로 변환.
@@ -111,3 +113,112 @@ private val HTML_MEDIA_TAG = Regex("""<(img|video|audio|iframe|embed)\b""", Rege
 
 /** 공백으로 렌더되는 엔티티. 나머지는 가시 문자로 본다. */
 private val HTML_SPACE_ENTITIES = setOf("&nbsp;", "&#160;", "&ensp;", "&emsp;", "&thinsp;")
+
+/**
+ * 사용자가 입력한 링크를 본문 `<a href>` 에 넣을 수 있는 형태로 정규화한다. 넣을 수 없으면 null.
+ *
+ * 종전에는 **검증이 아예 없었다** — 입력 문자열이 `<a href="$url">$url</a>` 로 그대로
+ * 이어붙여져 두 가지가 열려 있었다 (#1067).
+ *
+ * 1. **스킴 제한 없음.** `javascript:alert(1)` 이 그대로 `href` 에 저장됐다. 이 본문은 수신자가
+ *    나중에 열람하는 값이고 웹 뷰어도 같은 HTML 을 읽으므로, 저장되는 순간 다른 사람에게 실리는
+ *    스크립트가 된다.
+ * 2. **이스케이프 없음.** 따옴표 하나로 속성을 닫고 태그를 덧붙일 수 있었다.
+ *
+ * 그래서 이 함수는 **넣어도 되는 것만 통과시키고, 통과한 값도 이스케이프해서** 돌려준다.
+ *
+ * 유니코드는 거부하지 않는다 — 한글 도메인·한글 경로는 붙여넣기로 흔히 들어오는 정상 주소다.
+ * 호스트는 [java.net.IDN] 으로 punycode 로 바꾸고, 그 뒤 경로·쿼리는 UTF-8 percent-encoding 한다.
+ * `java.net.URI` 는 비ASCII 에서 그냥 던지므로 **변환을 먼저 하고 그다음에 검증**한다.
+ *
+ * 스킴을 안 적으면 `https` 로 읽는다 — 시트 placeholder 가 «URL을 입력하세요.» 뿐이라 사용자가
+ * 호스트부터 적는 것이 흔하다. 다만 **스킴을 적었다면 그 값을 존중**해서, `javascript:` 앞에
+ * `https://` 를 붙여 «정상 주소» 로 만들어 버리지 않는다.
+ *
+ * `user@host` 형태(userinfo)는 거부한다 — `https://google.com@evil.com` 은 보이는 것과 실제 목적지가
+ * 다른 고전적인 위장이고, 이 시트로 그걸 만들 이유가 없다.
+ */
+fun String.toBodyLinkHrefOrNull(): String? {
+    val trimmed = trim()
+    // 공백·제어문자가 섞이면 속성 경계를 넘거나 사람이 읽는 주소와 실제가 갈린다.
+    if (trimmed.isEmpty() || trimmed.any { it.isWhitespace() || it.isISOControl() }) return null
+
+    val declared = DECLARED_SCHEME.find(trimmed)?.groupValues?.get(1)
+    val scheme = declared?.lowercase() ?: DEFAULT_SCHEME
+    // 스킴을 적었는데 허용 목록 밖이면 거부한다 — https 를 덧붙여 살려 내지 않는다.
+    if (scheme !in ALLOWED_SCHEMES) return null
+
+    val rest =
+        when (declared) {
+            // `javascript:alert(1)` 처럼 `//` 없는 형태는 여기서 걸린다.
+            null -> {
+                trimmed
+            }
+
+            else -> {
+                val prefix = "$declared://"
+                if (!trimmed.startsWith(prefix, ignoreCase = true)) return null
+                trimmed.substring(prefix.length)
+            }
+        }
+    if (rest.isEmpty()) return null
+
+    val authorityEnd = rest.indexOfFirst { it in "/?#" }.takeIf { it >= 0 } ?: rest.length
+    val authority = rest.substring(0, authorityEnd)
+    val tail = rest.substring(authorityEnd)
+    // userinfo 위장 차단. 대괄호(IPv6) 도 이 시트의 입력으로 볼 이유가 없다.
+    if (authority.isEmpty() || '@' in authority || '[' in authority || ']' in authority) return null
+
+    val host = authority.substringBefore(':')
+    val port = authority.substringAfter(':', missingDelimiterValue = "")
+    if (host.isEmpty()) return null
+    if (port.isNotEmpty() && (port.toIntOrNull() == null)) return null
+
+    val asciiHost = runCatching { IDN.toASCII(host, IDN.ALLOW_UNASSIGNED) }.getOrNull() ?: return null
+    if (asciiHost.isEmpty()) return null
+
+    val normalized =
+        buildString {
+            append(scheme)
+            append("://")
+            append(asciiHost)
+            if (port.isNotEmpty()) append(':').append(port)
+            append(tail.percentEncodeNonAscii())
+        }
+
+    // 남은 형태 오류(잘못된 percent-encoding 등)는 URI 파서에 맡긴다. 여기까지 왔으면 전부 ASCII 다.
+    val parsed = runCatching { URI(normalized) }.getOrNull() ?: return null
+    if (parsed.host.isNullOrEmpty()) return null
+
+    return normalized.escapeHtml()
+}
+
+/**
+ * `&`·`<`·`>`·`"`·`'` 를 엔티티로 바꾼다 — 속성과 텍스트 양쪽에 안전한 최소 집합.
+ *
+ * `&` 를 **가장 먼저** 바꾼다. 나중에 바꾸면 앞서 만든 엔티티의 `&` 를 다시 인코딩해 `&amp;lt;` 가 된다.
+ */
+fun String.escapeHtml(): String =
+    replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("\"", "&quot;")
+        .replace("'", "&#39;")
+
+/** 비ASCII 바이트만 UTF-8 percent-encoding 한다. 이미 인코딩된 `%XX` 는 ASCII 라 그대로 지나간다. */
+private fun String.percentEncodeNonAscii(): String =
+    buildString {
+        for (byte in this@percentEncodeNonAscii.toByteArray(Charsets.UTF_8)) {
+            val value = byte.toInt() and 0xFF
+            if (value < 0x80) append(value.toChar()) else append('%').append(HEX[value ushr 4]).append(HEX[value and 0xF])
+        }
+    }
+
+private const val HEX = "0123456789ABCDEF"
+
+/** 입력이 스스로 선언한 스킴. `://` 가 아니라 `:` 까지만 본다 — `javascript:` 도 «선언했다» 로 잡는다. */
+private val DECLARED_SCHEME = Regex("""^([A-Za-z][A-Za-z0-9+.\-]*):""")
+
+private val ALLOWED_SCHEMES = setOf("http", "https")
+
+private const val DEFAULT_SCHEME = "https"

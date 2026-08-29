@@ -18,6 +18,7 @@
 | #619 | #1169 | 계정 정보 부재의 **표현·문구** («남기지 않음») | `receiver_detail_account_absent`·`receiver_detail_account_value_absent` |
 | #739 | #1216 | 인증번호 발송 중 버튼 **문구** («전송 중…») | `receiver_verify_code_requesting` |
 | #554 | 64cf93888 | 수신인 검색 placeholder **문구** («이름으로 검색하기») | `setting_receiver_search_placeholder`·`timeletter_recipient_search_placeholder` |
+| #1067 | #TBD | 본문 링크의 **스킴 없는 입력 처리**(https 로 읽음)와 **거절 안내 문구** | `toBodyLinkHrefOrNull` 의 `DEFAULT_SCHEME` · `mindrecord_link_sheet_invalid` |
 | #648 | #1346 | 복수 선택 행의 **선택 컨트롤 비주얼** (라디오 시안 → core 원형 체크박스) | `PlaylistSongItem.SongSelectionCheckbox` |
 | #490 | #1350 | 서비스 검색 **일치 규칙**과 카탈로그 밖 **기존 custom 값 처리** | `filterEditorServiceOptions` · `EditorFormState.currentServiceOptions` |
 
@@ -390,3 +391,25 @@ navigate 대상 한 줄.
 **뒤집을 때**: 검색은 `filterEditorServiceOptions` 함수 하나, 후보 노출은
 `EditorFormState.currentServiceOptions` 다. 기존 값 정리(마이그레이션·삭제)가 확정되면
 보존 동작을 그 정책으로 바꾼다.
+
+## #1067 — 본문 링크 입력의 스킴 처리와 거절 안내
+
+**정한 것 1**: 사용자가 스킴을 적지 않으면 `https` 로 읽는다 (`example.com` → `https://example.com`).
+
+**정한 것 2**: 거절 안내 문구를 «http 또는 https 로 시작하는 주소만 넣을 수 있어요.» 로 적고,
+시트를 닫지 않은 채 입력 필드 아래에 보여 준다.
+
+**근거가 없는 이유**: 링크 시트 시안(533:16183)은 제목·완료 버튼·URL 입력 필드만 그리고,
+입력 규칙도 실패 상태도 정의하지 않는다. placeholder 도 «URL을 입력하세요.» 뿐이라 스킴을
+요구하는지 알 수 없다.
+
+**판단 근거**: (1) 호스트부터 적는 입력이 흔한데 그걸 거부하면 정상 사용을 막는다. 다만
+**스킴을 적었다면 그 값을 존중**해서 `javascript:` 앞에 `https://` 를 붙여 정상 주소로
+둔갑시키지 않는다. (2) 조용히 무시하면 사용자는 «완료를 눌렀는데 안 들어갔다» 만 보게 된다 —
+사유를 알려야 고칠 수 있다. 시트를 닫지 않는 것은 방금 적은 값을 잃지 않게 하기 위해서다.
+
+**뒤집을 때**: 스킴 기본값은 `toBodyLinkHrefOrNull` 의 `DEFAULT_SCHEME` 상수 하나,
+문구는 `mindrecord_link_sheet_invalid` 하나다.
+
+> 스킴 제한(`http`/`https` 만) 자체는 추측이 아니다 — 본문은 수신자가 열람하는 저장 값이라
+> `javascript:` 를 넣을 수 있으면 남에게 실린다. 되돌릴 대상이 아니다.
