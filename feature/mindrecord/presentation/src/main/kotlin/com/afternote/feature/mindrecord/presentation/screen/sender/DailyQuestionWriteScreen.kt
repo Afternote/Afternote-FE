@@ -9,6 +9,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -69,6 +70,7 @@ fun DailyQuestionWriteScreen(
         onDraftListClick = onDraftListClick,
         onAnswerChanged = viewModel::onAnswerChanged,
         onMediaPicked = viewModel::uploadMedia,
+        onRetryResumeDraft = viewModel::retryResumeDraft,
     )
 }
 
@@ -89,6 +91,7 @@ internal fun DailyQuestionWriteScreenContent(
     onDraftListClick: () -> Unit = {},
     onAnswerChanged: (String) -> Unit = {},
     onMediaPicked: suspend (String) -> String? = { null },
+    onRetryResumeDraft: () -> Unit = {},
 ) {
     // 배너 접힘은 이 화면 안에서만 의미가 있는 표시 상태다 — Content 가 소유한다.
     var questionExpanded by remember { mutableStateOf(true) }
@@ -144,6 +147,27 @@ internal fun DailyQuestionWriteScreenContent(
                 onToggle = { questionExpanded = !questionExpanded },
                 dayNumber = uiState.questionDay,
             )
+
+            // 이어쓰기 조회 실패는 저장 실패와 다른 시점·다른 원인이라 따로 알린다. 삼키면
+            // 사용자가 빈 화면을 «임시저장 없음» 으로 읽고 저장해 기존 임시저장을 덮는다 (#1018).
+            val draftResumeErrorText = uiState.draftResumeError?.asString()
+            if (draftResumeErrorText != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = draftResumeErrorText,
+                    color = AfternoteDesign.colors.error,
+                    style = AfternoteDesign.typography.captionLargeR,
+                )
+                // 실패 동안 저장이 막히므로 화면 안에서 풀 수단을 준다 — 없으면 쓴 답변을 들고
+                // 갇힌다. 이 모듈의 재시도는 TextButton 으로 그린다 (#1019).
+                TextButton(onClick = onRetryResumeDraft) {
+                    Text(
+                        text = stringResource(R.string.mindrecord_error_retry),
+                        style = AfternoteDesign.typography.bodySmallB,
+                        color = AfternoteDesign.colors.gray9,
+                    )
+                }
+            }
 
             val errorMessage = (uiState.submitState as? SubmitState.Failed)?.message?.asString()
             if (errorMessage != null) {
