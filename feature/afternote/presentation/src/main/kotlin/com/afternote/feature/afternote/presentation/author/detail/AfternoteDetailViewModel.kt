@@ -15,6 +15,7 @@ import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureSt
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -109,6 +110,16 @@ class AfternoteDetailViewModel
         // region Data Loading
 
         /**
+         * 로드 실패 화면의 «다시 시도» (#1510).
+         *
+         * [refreshOnReturn] 과 달리 사용자가 직접 누른 동작이라, 진행 중인 로드가 있어도 건너뛰지 않는다 —
+         * 누른 결과가 조용히 사라지면 안 되므로 그 로드를 자르고 새로 시작한다.
+         */
+        fun retry() {
+            loadDetail(afternoteIdFromNav, LoadTrigger.UserRequested)
+        }
+
+        /**
          * 수정 화면 등 다른 화면에서 상세로 복귀했을 때의 자동 갱신 (#701).
          *
          * 최초 진입 로드와 두 가지가 다르다.
@@ -139,21 +150,33 @@ class AfternoteDetailViewModel
 
             /** 백스택 복귀(ON_RESUME). 화면이 살아 있으니 조용히 갱신하고, 실패해도 보던 상세를 지킨다. */
             AutoRefresh,
+
+            /** 사용자가 누른 «다시 시도». 기다림을 인지해야 하니 로딩을 띄우고, 실패는 반드시 화면으로 말한다. */
+            UserRequested,
         }
 
         private fun loadDetail(
             afternoteId: Long,
             trigger: LoadTrigger,
         ) {
-            val showsLoading = trigger == LoadTrigger.Entry
+            val showsLoading =
+                when (trigger) {
+                    LoadTrigger.Entry, LoadTrigger.UserRequested -> true
+                    LoadTrigger.AutoRefresh -> false
+                }
             val keepsStateOnFailure = trigger == LoadTrigger.AutoRefresh
+            // 재시도는 진행 중인 갱신을 자르고 들어온다 — 자르지 않으면 두 로드가 같은 화면을 두고 경합한다.
+            loadJob?.cancel()
             loadJob =
                 viewModelScope.launch {
                     if (showsLoading) {
                         _uiState.value = AfternoteDetailUiState.Loading
                     }
-                    afternoteRepository
-                        .getDetail(id = afternoteId)
+                    val result = afternoteRepository.getDetail(id = afternoteId)
+                    // 잘린 로드가 값을 들고 돌아와 새 화면을 덮는 창을 닫는다. repository 는 취소를 다시
+                    // 던지므로 조회 «도중» 취소는 여기까지 오지 않지만, 값이 나온 뒤 잘린 경우가 남는다.
+                    ensureActive()
+                    result
                         .onSuccess { detail ->
                             // 매핑은 update 밖에서 한 번만 한다 — update 의 람다는 경합 시 재실행된다.
                             val contentUiModel = detail.toDetailContentUiModel()
@@ -192,8 +215,17 @@ class AfternoteDetailViewModel
                 }
         }
 
+        /**
+         * 삭제는 상세를 보고 있을 때만 뜻이 있다 — 그 전제를 상태에서 직접 확인한다.
+         *
+         * 상태 갱신은 [updateSuccess] 가 Success 밖에서 no-op 이라 이미 안전하지만, **서버 호출은 아니다.**
+         * Success 가 아닐 때 이 함수가 불리면 노트는 지워지는데 UI 는 아무것도 모른다(진행 표시도,
+         * 결과 안내도, 화면 pop 도 없다). 중복 호출 가드도 non-Success 에서는 늘 통과한다.
+         * 지금은 결선상 Success 에서만 호출되지만, 그 불변식은 VM 밖(내비게이션 분기)에 있다.
+         */
         fun deleteAfternote(afternoteId: Long) {
-            if ((_uiState.value as? AfternoteDetailUiState.Success)?.isDeleting == true) return
+            val current = _uiState.value as? AfternoteDetailUiState.Success ?: return
+            if (current.isDeleting) return
             viewModelScope.launch {
                 updateSuccess { it.copy(isDeleting = true) }
                 afternoteRepository

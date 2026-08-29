@@ -255,6 +255,7 @@ internal fun AfternoteDetailNavigation(
             DetailLoadErrorContent(
                 messageRes = state.messageRes,
                 onBackClick = onNavigateBack,
+                onRetryClick = viewModel::retry,
             )
         }
 
