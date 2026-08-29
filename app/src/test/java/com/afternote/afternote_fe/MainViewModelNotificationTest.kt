@@ -4,7 +4,6 @@ import androidx.lifecycle.SavedStateHandle
 import com.afternote.afternote_fe.notification.NotificationEntryRequest
 import com.afternote.afternote_fe.notification.NotificationEntrySource
 import com.afternote.core.domain.testing.FakeAuthRepository
-import com.afternote.core.domain.testing.FakeUserRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -89,7 +88,6 @@ class MainViewModelNotificationTest {
     private fun viewModel(savedStateHandle: SavedStateHandle): MainViewModel =
         MainViewModel(
             authRepository = FakeAuthRepository(loggedIn = false),
-            userRepository = FakeUserRepository.strict(),
             savedStateHandle = savedStateHandle,
         )
 

@@ -29,12 +29,27 @@ function runsOnPullRequests(source) {
     return /^on:\n(?:[^\n]*\n)*?\s{2}pull_request:/m.test(source);
 }
 
+// 캐시를 만드는 액션은 setup-gradle 하나가 아니다. dependency-submission 도 같은 Gradle User
+// Home 엔트리를 같은 키로 저장한다 — 이쪽을 세지 않아 develop writer 가 둘이 된 채로 정책이
+// 통과한 적이 있다 (#1480).
+function gradleCacheSteps(source) {
+    return (withoutComments(source).match(/uses:\s*gradle\/actions\/(?:setup-gradle|dependency-submission)@/g) ?? [])
+        .length;
+}
+
+// 생략은 read-only 선언이 아니라 액션 기본값에 맡기는 것이고, dependency-submission 은 그
+// 기본값으로 develop 에서도 저장한다. 그래서 «false 명시» 를 세면 위반이 그대로 새어 나간다 —
+// 판정은 «step 마다 true 를 명시했는가» 여야 한다.
+function readOnlyDeclarations(source) {
+    return (withoutComments(source).match(/cache-read-only:\s*true/g) ?? []).length;
+}
+
 test("exactly one workflow may write the shared Gradle User Home cache", async () => {
     // Actions 캐시는 같은 키를 덮어쓰지 못한다. writer 가 둘이면 먼저 끝난 쪽이 키를
     // 차지하고, build cache 를 채운 쪽의 저장이 조용히 버려진다 (#996).
     const writers = (await workflows())
-        .filter(([, source]) => runsOnDevelopPush(source))
-        .filter(([, source]) => /cache-read-only:\s*false/.test(withoutComments(source)))
+        .filter(([, source]) => runsOnDevelopPush(source) || runsOnPullRequests(source))
+        .filter(([, source]) => gradleCacheSteps(source) > readOnlyDeclarations(source))
         .map(([name]) => name);
 
     assert.deepEqual(writers, ["build-cache-warm.yml"]);
@@ -42,13 +57,17 @@ test("exactly one workflow may write the shared Gradle User Home cache", async (
 
 test("every other Gradle workflow reads the cache without writing to it", async () => {
     for (const [name, source] of await workflows()) {
-        if (name === "build-cache-warm.yml" || !/uses:\s*gradle\/actions\/setup-gradle@/.test(source)) {
+        if (name === "build-cache-warm.yml" || gradleCacheSteps(source) === 0) {
             continue;
         }
         if (!runsOnPullRequests(source) && !runsOnDevelopPush(source)) {
             continue;
         }
-        assert.match(source, /cache-read-only:\s*true/, `${name} must not write to the shared cache`);
+        assert.equal(
+            readOnlyDeclarations(source),
+            gradleCacheSteps(source),
+            `${name} must declare cache-read-only: true on every Gradle cache step`,
+        );
         // 조건식으로 쓰면 pull_request 가 아닌 trigger 에서 writer 로 돌변한다.
         assert.doesNotMatch(
             source,
@@ -80,6 +99,22 @@ test("the warming workflow covers the tasks pull request jobs actually run", asy
         assert.ok(unitTest.includes(task), `unit-test.yml no longer runs ${task}`);
         assert.ok(warm.includes(task), `warming misses ${task}`);
     }
+});
+
+test("the warming workflow excludes the expected-failure gates instead of reporting them", async () => {
+    // 워밍은 게이트가 아니라 실패해도 아무것도 막지 못한다. 그래서 red 가 남아 있으면
+    // develop 을 실제로 깨뜨린 회귀가 같은 빨간 X 에 묻힌다. 의도된 실패
+    // (.github/ci-expected-failures.json)는 unit-test.yml 과 같은 init script 로 제외한다.
+    const warm = await readFile(new URL("build-cache-warm.yml", workflowDirectory), "utf8");
+    const unitTest = await readFile(new URL("unit-test.yml", workflowDirectory), "utf8");
+    const initScript = "--init-script .github/ci-expected-failures.init.gradle";
+
+    assert.ok(unitTest.includes(initScript), "unit-test.yml no longer excludes the gates this way");
+    assert.ok(withoutComments(warm).includes(initScript), "warming must exclude the expected-failure gates");
+
+    // 게이트 해제를 강제하는 XPASS probe 는 unit-test.yml 몫이다. 실패가 머지를 막지 못하는
+    // 이 워크플로에 얹으면 감시가 아니라 무시되는 red 가 하나 더 생긴다.
+    assert.doesNotMatch(withoutComments(warm), /probe-unit/);
 });
 
 test("CodeQL stays out of the build cache in both directions", async () => {

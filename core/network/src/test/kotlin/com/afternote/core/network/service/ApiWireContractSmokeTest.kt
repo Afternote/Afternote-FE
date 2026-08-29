@@ -144,23 +144,6 @@ class ApiWireContractSmokeTest {
         }
 
     @Test
-    fun `activity ping preserves authenticated bodyless POST route`() =
-        runTest {
-            installExpectation(
-                method = "POST",
-                path = "/api/v1/users/me/activity",
-                requestHeaders = mapOf("Authorization" to "Bearer contract-token"),
-                responseBody = """{"status":200,"code":200,"message":"ok","data":null}""",
-            )
-
-            val result = userService.logActivity()
-
-            assertEquals(200, result.status)
-            assertEquals(null, result.data)
-            assertExactlyOneRecordedRequest("POST", "/api/v1/users/me/activity")
-        }
-
-    @Test
     fun `delivery conditions GET preserves authenticated receiver path and response schema`() =
         runTest {
             installExpectation(
