@@ -16,6 +16,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.afternote.afternote_fe.test.FailureArtifactRule
+import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
@@ -66,6 +67,9 @@ class DailyQuestionResumeFailureAndroidTest {
                 repository = repository,
                 photoUploadRepository = FakePhotoUploadRepository.strict(),
                 draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
+                // #964 텔레메트리가 필수 인자로 들어왔다. 이 테스트는 기록 내용을 보지 않으므로
+                // 받아만 두는 fake 를 넘긴다.
+                errorReporter = FakeErrorReporter(),
             )
 
         composeRule.setContent {
@@ -117,6 +121,9 @@ class DailyQuestionResumeFailureAndroidTest {
                 repository = repository,
                 photoUploadRepository = FakePhotoUploadRepository.strict(),
                 draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
+                // #964 텔레메트리가 필수 인자로 들어왔다. 이 테스트는 기록 내용을 보지 않으므로
+                // 받아만 두는 fake 를 넘긴다.
+                errorReporter = FakeErrorReporter(),
             )
 
         composeRule.setContent {
