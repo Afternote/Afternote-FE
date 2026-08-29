@@ -297,7 +297,7 @@ private fun VideoCard(
         content = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "장례식에 남길 영상",
+                    text = stringResource(R.string.afternote_editor_funeral_video_label),
                     style =
                         AfternoteDesign.typography.textField.copy(
                             fontWeight = FontWeight.Medium,
@@ -328,7 +328,8 @@ private fun VideoThumbnail(thumbnailUrl: String?) {
         if (!thumbnailUrl.isNullOrBlank()) {
             AsyncImage(
                 model = thumbnailUrl,
-                contentDescription = "장례식에 남길 영상 썸네일",
+                contentDescription =
+                    stringResource(R.string.afternote_content_description_memorial_video_thumbnail),
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
             )
@@ -354,7 +355,7 @@ private fun VideoThumbnail(thumbnailUrl: String?) {
         // 재생 아이콘
         Image(
             painter = painterResource(R.drawable.feature_afternote_ic_playback),
-            contentDescription = "영상 재생",
+            contentDescription = stringResource(R.string.content_description_video_play),
             modifier =
                 Modifier
                     .align(Alignment.Center)
@@ -380,7 +381,7 @@ private fun PlaylistCard(
         content = {
             Column {
                 Text(
-                    text = "추억 플레이리스트",
+                    text = stringResource(R.string.afternote_editor_playlist_screen_title),
                     style =
                         AfternoteDesign.typography.textField.copy(
                             fontWeight = FontWeight.Medium,
@@ -393,7 +394,7 @@ private fun PlaylistCard(
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "현재 ${songCount}개의 노래가 담겨 있습니다.",
+                    text = stringResource(R.string.afternote_detail_playlist_song_count, songCount),
                     style =
                         AfternoteDesign.typography.bodySmallR.copy(
                             color = AfternoteDesign.colors.black,

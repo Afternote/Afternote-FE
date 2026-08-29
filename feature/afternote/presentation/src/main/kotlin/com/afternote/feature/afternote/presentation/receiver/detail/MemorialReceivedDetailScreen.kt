@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
@@ -82,7 +83,7 @@ fun MemorialReceivedDetailScreen(
             // → 탑바가 상태바(시계·배터리) 밑에서 시작(겹침 방지). 동적 인셋이라 회전·분할화면에도 대응.
             Column(modifier = Modifier.statusBarsPadding()) {
                 DetailTopBar(
-                    title = "故 ${senderName}님의 애프터노트",
+                    title = stringResource(R.string.afternote_receiver_detail_title, senderName),
                     onBackClick = { onBackClick() },
                 )
             }
@@ -117,7 +118,6 @@ fun MemorialReceivedDetailScreen(
                     },
                     playlistContent = {
                         MemorialPlaylist(
-                            label = "추억 플레이리스트",
                             songCount = songCount,
                             albumCovers = albumCovers,
                             onCardClick = onNavigateToPlaylist,
@@ -143,7 +143,7 @@ fun MemorialReceivedDetailScreen(
                 Spacer(modifier = Modifier.height(70.dp))
 
                 AfternoteButton(
-                    text = "애프터노트 확인하기",
+                    text = stringResource(R.string.afternote_receiver_detail_confirm),
                     onClick = onNavigateToFullList,
                     type = AfternoteButtonType.Default,
                 )
@@ -153,14 +153,13 @@ fun MemorialReceivedDetailScreen(
     }
 }
 
-private const val LABEL_VIDEO_SECTION = "장례식에 남길 영상"
-
 @Composable
 private fun ReceiverVideoSection(
     memorialVideoUrl: String? = null,
     memorialThumbnailUrl: String? = null,
 ) {
     val context = LocalContext.current
+    val noVideoAppMessage = stringResource(R.string.receiver_memorial_video_no_app)
     Column(modifier = Modifier.fillMaxWidth()) {
         ReceiverSectionHeader()
         Spacer(modifier = Modifier.height(12.dp))
@@ -190,7 +189,7 @@ private fun ReceiverVideoSection(
                                     Toast
                                         .makeText(
                                             context,
-                                            "영상을 재생할 수 있는 앱이 없습니다.",
+                                            noVideoAppMessage,
                                             Toast.LENGTH_SHORT,
                                         ).show()
                                 },
@@ -211,7 +210,9 @@ private fun ReceiverVideoSection(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.receiver_ic_play_arrow),
-                    contentDescription = "Play",
+                    // 영상이 없을 때만 그리는 플레이스홀더다. clickable 이 없어 재생 액션이 없으므로
+                    // 라벨을 붙이면 없는 어포던스를 알린다. 맥락은 위 ReceiverSectionHeader 가 읽어 준다.
+                    contentDescription = null,
                     tint = AfternoteDesign.colors.white,
                     modifier =
                         Modifier
@@ -295,7 +296,8 @@ private fun ReceiverMemorialVideoThumbnail(thumbnailUrl: String?) {
         if (!thumbnailUrl.isNullOrBlank()) {
             AsyncImage(
                 model = thumbnailUrl,
-                contentDescription = "장례식에 남길 영상 썸네일",
+                contentDescription =
+                    stringResource(R.string.afternote_content_description_memorial_video_thumbnail),
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
             )
@@ -317,7 +319,7 @@ private fun ReceiverMemorialVideoThumbnail(thumbnailUrl: String?) {
         )
         Image(
             painter = painterResource(R.drawable.feature_afternote_ic_playback),
-            contentDescription = "영상 재생",
+            contentDescription = stringResource(R.string.content_description_video_play),
             modifier =
                 Modifier
                     .align(Alignment.Center)
@@ -327,7 +329,7 @@ private fun ReceiverMemorialVideoThumbnail(thumbnailUrl: String?) {
 }
 
 @Composable
-private fun ReceiverSectionHeader(title: String = LABEL_VIDEO_SECTION) {
+private fun ReceiverSectionHeader(title: String = stringResource(R.string.afternote_editor_funeral_video_label)) {
     Text(
         text = title,
         style =
