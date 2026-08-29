@@ -129,4 +129,12 @@
     <string name="receiver_verify_complete_description">제출하신 서류를 확인 중입니다.\n빠르게 검토하여 열람하실 수 있도록 안내드리겠습니다.</string>
     <string name="receiver_verify_complete_back_to_records">받은 기록함으로 돌아가기</string>
     <string name="receiver_verify_step_description">수신자 인증 진행도 4단계 중 %1$d단계</string>
+    <!-- 홈 섹션 건수 문장. rememberCountLine 이 숫자 앞부분과 뒷문장을 나눠 받아 서로 다른 스타일로
+         그리므로 리소스도 그 경계대로 둘로 둔다. 끝 공백이 유효하므로 따옴표로 감싼다. -->
+    <string name="receiver_home_mindrecord_count_prefix">"%1$s개 "</string>
+    <string name="receiver_home_mindrecord_count_suffix">마음의 기록이 있습니다.</string>
+    <string name="receiver_home_timeletter_count_prefix">"%1$s개 "</string>
+    <string name="receiver_home_timeletter_count_suffix">라이프 이벤트 레터가 있습니다.</string>
+    <string name="receiver_home_afternote_count_prefix">%1$s개</string>
+    <string name="receiver_home_afternote_count_suffix">의 애프터노트가 있습니다.</string>
 </resources>

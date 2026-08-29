@@ -167,15 +167,23 @@ private fun TitleSection(
     categoryLabel: String,
     userName: String,
 ) {
+    // 프로필 로드 실패·로딩 경합으로 이름이 비어 있으면 이름 세그먼트를 생략해
+    // "…에 대한 님의 기록" 렌더를 막는다.
+    // buildAnnotatedString 람다는 @Composable 이 아니라 stringResource 를 그 안에서 부를 수 없다.
+    val recordSuffix =
+        if (userName.isBlank()) {
+            stringResource(R.string.afternote_detail_record_suffix_anonymous)
+        } else {
+            stringResource(R.string.afternote_detail_record_suffix_named, userName)
+        }
+
     Text(
         text =
             buildAnnotatedString {
                 withStyle(style = SpanStyle(color = AfternoteDesign.colors.gray9)) {
                     append(categoryLabel)
                 }
-                // 프로필 로드 실패·로딩 경합으로 이름이 비어 있으면 이름 세그먼트를 생략해
-                // "…에 대한 님의 기록" 렌더를 막는다.
-                append(if (userName.isBlank()) "에 대한 기록" else "에 대한 ${userName}님의 기록")
+                append(recordSuffix)
             },
         style = AfternoteDesign.typography.bodyLargeB,
     )
@@ -247,7 +255,7 @@ private fun VideoCard(
         content = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "장례식에 남길 영상",
+                    text = stringResource(R.string.afternote_editor_funeral_video_label),
                     style =
                         AfternoteDesign.typography.textField.copy(
                             fontWeight = FontWeight.Medium,
@@ -331,7 +339,7 @@ private fun PlaylistCard(
         content = {
             Column {
                 Text(
-                    text = "추억 플레이리스트",
+                    text = stringResource(R.string.afternote_editor_playlist_screen_title),
                     style =
                         AfternoteDesign.typography.textField.copy(
                             fontWeight = FontWeight.Medium,
@@ -344,7 +352,7 @@ private fun PlaylistCard(
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "현재 ${songCount}개의 노래가 담겨 있습니다.",
+                    text = stringResource(R.string.afternote_detail_playlist_song_count, songCount),
                     style =
                         AfternoteDesign.typography.bodySmallR.copy(
                             color = AfternoteDesign.colors.black,

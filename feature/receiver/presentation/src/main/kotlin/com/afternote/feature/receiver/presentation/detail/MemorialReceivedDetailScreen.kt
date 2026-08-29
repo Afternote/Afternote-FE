@@ -84,7 +84,7 @@ fun MemorialReceivedDetailScreen(
             // → 탑바가 상태바(시계·배터리) 밑에서 시작(겹침 방지). 동적 인셋이라 회전·분할화면에도 대응.
             Column(modifier = Modifier.statusBarsPadding()) {
                 DetailTopBar(
-                    title = "故 ${senderName}님의 애프터노트",
+                    title = stringResource(AfternoteR.string.afternote_receiver_detail_title, senderName),
                     onBackClick = { onBackClick() },
                 )
             }
@@ -119,7 +119,6 @@ fun MemorialReceivedDetailScreen(
                     },
                     playlistContent = {
                         MemorialPlaylist(
-                            label = "추억 플레이리스트",
                             songCount = songCount,
                             albumCovers = albumCovers,
                             onCardClick = onNavigateToPlaylist,
@@ -145,7 +144,7 @@ fun MemorialReceivedDetailScreen(
                 Spacer(modifier = Modifier.height(70.dp))
 
                 AfternoteButton(
-                    text = "애프터노트 확인하기",
+                    text = stringResource(AfternoteR.string.afternote_receiver_detail_confirm),
                     onClick = onNavigateToFullList,
                     type = AfternoteButtonType.Default,
                 )
@@ -154,8 +153,6 @@ fun MemorialReceivedDetailScreen(
         }
     }
 }
-
-private const val LABEL_VIDEO_SECTION = "장례식에 남길 영상"
 
 @Composable
 private fun ReceiverVideoSection(
@@ -185,7 +182,7 @@ private fun ReceiverVideoSection(
                                 Toast
                                     .makeText(
                                         context,
-                                        "영상을 재생할 수 있는 앱이 없습니다.",
+                                        context.getString(AfternoteR.string.receiver_memorial_video_no_app),
                                         Toast.LENGTH_SHORT,
                                     ).show()
                             }
@@ -267,7 +264,7 @@ private fun ReceiverMemorialVideoThumbnail(thumbnailUrl: String?) {
 }
 
 @Composable
-private fun ReceiverSectionHeader(title: String = LABEL_VIDEO_SECTION) {
+private fun ReceiverSectionHeader(title: String = stringResource(AfternoteR.string.afternote_editor_funeral_video_label)) {
     Text(
         text = title,
         style =

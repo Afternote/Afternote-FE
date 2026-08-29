@@ -4,7 +4,7 @@
     <string name="nav_home">홈</string>
     <string name="nav_record">기록</string>
     <string name="nav_timeletter">타임 레터</string>
-    <string name="nav_afternote">애프터노트</string>
+    <string name="afternote_home_title">애프터노트</string>
     <string name="home_coming_soon">홈 (준비 중)</string>
 
     <string name="home_greeting">안녕하세요, %1$s님</string>
@@ -250,4 +250,13 @@
     <string name="afternote_editor_media_source_remove_photo">사진 삭제</string>
     <string name="afternote_editor_media_source_remove_video">영상 삭제</string>
     <string name="afternote_editor_media_capture_unavailable">카메라를 사용할 수 없습니다.</string>
+    <!-- 추억 노트 상세. 이름 세그먼트는 프로필 로드 실패·경합으로 비어 있을 수 있어 두 갈래로 둔다. -->
+    <string name="afternote_detail_record_suffix_anonymous">에 대한 기록</string>
+    <string name="afternote_detail_record_suffix_named">에 대한 %1$s님의 기록</string>
+    <string name="afternote_detail_playlist_song_count">현재 %1$d개의 노래가 담겨 있습니다.</string>
+    <string name="afternote_home_next_step_section_title">NEXT STEP</string>
+    <!-- 수신 애프터노트 상세. 이 화면 문자열은 afternote 모듈에 모여 있고(#1461 이 화면까지 이 모듈로 옮긴다),
+         신규 키는 #1079 규약대로 afternote_ 프리픽스를 쓴다. -->
+    <string name="afternote_receiver_detail_title">故 %1$s님의 애프터노트</string>
+    <string name="afternote_receiver_detail_confirm">애프터노트 확인하기</string>
 </resources>
