@@ -16,6 +16,15 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
+/** 이 테스트의 관심 밖인 외부 라우팅을 채우는 no-op 묶음. */
+private val noopActions =
+    ReceiverHomeActions(
+        onSettingClick = {},
+        onNavigateToMindRecord = {},
+        onNavigateToTimeLetter = {},
+        onNavigateToAfternote = {},
+    )
+
 /**
  * 수신자 홈 헤더가 수신자가 실제로 할 수 있는 액션만 두는지 (#613, 시안 4327:73626).
  *
@@ -41,7 +50,7 @@ class ReceiverHomeHeaderTest {
                 ReceiverHomeScreen(
                     uiState = ReceiverHomeUiState.Loading,
                     onEvent = {},
-                    actions = ReceiverHomeActions.Noop,
+                    actions = noopActions,
                 )
             }
         }
@@ -58,7 +67,7 @@ class ReceiverHomeHeaderTest {
                 ReceiverHomeScreen(
                     uiState = ReceiverHomeUiState.Loading,
                     onEvent = {},
-                    actions = ReceiverHomeActions.Noop.copy(onSettingClick = { settingClicks += 1 }),
+                    actions = noopActions.copy(onSettingClick = { settingClicks += 1 }),
                 )
             }
         }

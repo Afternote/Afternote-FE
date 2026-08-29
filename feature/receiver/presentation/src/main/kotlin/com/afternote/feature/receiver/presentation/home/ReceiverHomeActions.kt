@@ -10,18 +10,4 @@ data class ReceiverHomeActions(
     val onNavigateToMindRecord: () -> Unit,
     val onNavigateToTimeLetter: () -> Unit,
     val onNavigateToAfternote: () -> Unit,
-) {
-    companion object {
-        /**
-         * 프리뷰·테스트 전용 no-op 묶음. 프로덕션 호출부는 no-op 디폴트에 기대지 말고
-         * 전 액션을 명시적으로 채워야 한다 (#1388 — 배선 누락이 컴파일을 통과하는 통로 차단).
-         */
-        val Noop =
-            ReceiverHomeActions(
-                onSettingClick = {},
-                onNavigateToMindRecord = {},
-                onNavigateToTimeLetter = {},
-                onNavigateToAfternote = {},
-            )
-    }
-}
+)
