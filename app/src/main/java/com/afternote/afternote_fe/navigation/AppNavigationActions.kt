@@ -96,11 +96,7 @@ fun rememberOnboardingNavActions(navController: NavController): OnboardingNavAct
 fun rememberMindRecordNavActions(navController: NavController): MindRecordNavActions =
     remember(navController) {
         object : MindRecordNavActions {
-            override fun onMemorySpaceBack() {
-                navController.popBackStack()
-            }
-
-            override fun onReceiverMindRecordBack() {
+            override fun popBack() {
                 navController.popBackStack()
             }
 
@@ -112,20 +108,8 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
                 navController.navigate(MindRecordRoute.DiaryWriteRoute())
             }
 
-            override fun onWriteBack() {
-                navController.popBackStack()
-            }
-
-            override fun onWriteSubmitSuccess() {
-                navController.popBackStack()
-            }
-
             override fun onNavigateToDraftList() {
                 navController.navigate(MindRecordRoute.DraftListRoute)
-            }
-
-            override fun onDraftListBack() {
-                navController.popBackStack()
             }
 
             override fun onEditDailyQuestion(answerId: Long) {

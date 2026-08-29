@@ -36,29 +36,33 @@ fun NavGraphBuilder.mindRecordNavGraph(actions: MindRecordNavActions) {
         )
     }
     composable<Route.MemorySpace> {
-        MemorySpaceScreen(onBackClick = actions::onMemorySpaceBack)
+        MemorySpaceScreen(onBackClick = actions::popBack)
     }
     composable<Route.ReceiverMindRecord> {
         // 앱바 뒤로가기를 실제로 붙인다 — 없으면 이 화면이 막다른 곳이 된다 (#614).
-        ReceiverMindRecordScreen(onBackClick = actions::onReceiverMindRecordBack)
+        ReceiverMindRecordScreen(onBackClick = actions::popBack)
     }
     composable<MindRecordRoute.DailyQuestionWriteRoute> {
         DailyQuestionWriteScreen(
-            onSubmitSuccess = actions::onWriteSubmitSuccess,
-            onBackClick = actions::onWriteBack,
+            // 제출 성공도 뒤로가기와 같은 «한 칸 뒤로» 다. 화면 이벤트 이름은 그대로 두고
+            // 여기서 같은 명령에 붙인다 — 둘이 갈리면 이 두 줄만 달라진다 (#1311).
+            onSubmitSuccess = actions::popBack,
+            onBackClick = actions::popBack,
             onDraftListClick = actions::onNavigateToDraftList,
         )
     }
     composable<MindRecordRoute.DiaryWriteRoute> {
         DiaryWriteScreen(
-            onSubmitSuccess = actions::onWriteSubmitSuccess,
-            onBackClick = actions::onWriteBack,
+            // 제출 성공도 뒤로가기와 같은 «한 칸 뒤로» 다. 화면 이벤트 이름은 그대로 두고
+            // 여기서 같은 명령에 붙인다 — 둘이 갈리면 이 두 줄만 달라진다 (#1311).
+            onSubmitSuccess = actions::popBack,
+            onBackClick = actions::popBack,
             onDraftListClick = actions::onNavigateToDraftList,
         )
     }
     composable<MindRecordRoute.DraftListRoute> {
         DraftListScreen(
-            onBackClick = actions::onDraftListBack,
+            onBackClick = actions::popBack,
             onDiaryDraftClick = actions::onEditDiaryDraft,
             onDailyQuestionDraftClick = actions::onEditDailyQuestionDraft,
         )
