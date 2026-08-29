@@ -15,7 +15,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,12 +24,10 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
 
 @Composable
@@ -151,24 +148,6 @@ private fun PasswordRuleItem(
             text = text,
             style = AfternoteDesign.typography.captionLargeB,
             color = color,
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SignUpPasswordScreenPreview() {
-    AfternoteTheme {
-        SignUpPasswordScreen(
-            initialPassword = "",
-            initialPasswordConfirm = "",
-            isPasswordRuleSatisfied = false,
-            isNextEnabled = false,
-            snackbarHostState = remember { SnackbarHostState() },
-            onPasswordChange = {},
-            onPasswordConfirmChange = {},
-            onNextClick = {},
-            onBackClick = {},
         )
     }
 }

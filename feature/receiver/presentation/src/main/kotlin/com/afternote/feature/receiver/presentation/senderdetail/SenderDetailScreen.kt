@@ -26,7 +26,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -36,7 +35,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.receiver.presentation.R
 
@@ -350,61 +348,4 @@ private fun SenderVerificationState?.statusValue(): String? {
             SenderVerificationState.Rejected -> R.string.receiver_sender_detail_status_rejected
         }
     return stringResource(res)
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SenderDetailNotRequestedPreview() {
-    AfternoteTheme {
-        SenderDetailScreenContent(
-            uiState =
-                SenderDetailUiState.Success(
-                    displayName = "김혜성",
-                    verification = SenderVerificationState.NotRequested,
-                    requestedAt = null,
-                    approvedAt = null,
-                ),
-            onBackClick = {},
-            onRequestVerification = {},
-            onOpenReceiverHome = {},
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SenderDetailPendingPreview() {
-    AfternoteTheme {
-        SenderDetailScreenContent(
-            uiState =
-                SenderDetailUiState.Success(
-                    displayName = "김혜성",
-                    verification = SenderVerificationState.Pending,
-                    requestedAt = "2026.05.03.",
-                    approvedAt = null,
-                ),
-            onBackClick = {},
-            onRequestVerification = {},
-            onOpenReceiverHome = {},
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SenderDetailApprovedPreview() {
-    AfternoteTheme {
-        SenderDetailScreenContent(
-            uiState =
-                SenderDetailUiState.Success(
-                    displayName = "김혜성",
-                    verification = SenderVerificationState.Approved,
-                    requestedAt = "2026.05.03.",
-                    approvedAt = "2026.05.03.",
-                ),
-            onBackClick = {},
-            onRequestVerification = {},
-            onOpenReceiverHome = {},
-        )
-    }
 }

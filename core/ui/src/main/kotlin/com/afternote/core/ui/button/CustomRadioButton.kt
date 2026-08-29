@@ -6,10 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement.spacedBy
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
@@ -23,11 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
  * 커스텀 라디오 버튼 컴포넌트
@@ -113,27 +108,6 @@ fun CustomRadioButton(
                             ),
                 )
             }
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun CustomRadioButtonPreview() {
-    AfternoteTheme {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            CustomRadioButton(
-                selected = true,
-                onClick = {},
-            )
-            CustomRadioButton(
-                selected = false,
-                onClick = {},
-            )
         }
     }
 }
