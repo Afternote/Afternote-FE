@@ -14,11 +14,13 @@ import org.junit.Test
 class MemorialMediaSourceStateTest {
     private val galleryCalls = mutableListOf<MemorialMediaTarget>()
     private val captureCalls = mutableListOf<MemorialMediaTarget>()
+    private val removeCalls = mutableListOf<MemorialMediaTarget>()
     private val state =
         MemorialMediaSourceState(
             openTarget = mutableStateOf(null),
             onPickFromGallery = galleryCalls::add,
             onCapture = captureCalls::add,
+            onRemove = removeCalls::add,
         )
 
     @Test
@@ -54,13 +56,25 @@ class MemorialMediaSourceStateTest {
     }
 
     @Test
+    fun `삭제를 고르면 시트를 닫고 그 슬롯으로 넘긴다`() {
+        state.open(MemorialMediaTarget.PHOTO)
+
+        state.remove()
+
+        assertEquals(listOf(MemorialMediaTarget.PHOTO), removeCalls)
+        assertNull(state.target)
+    }
+
+    @Test
     fun `닫힌 상태의 선택은 인텐트를 쏘지 않는다`() {
         // 시트가 사라지는 애니메이션 도중 들어온 탭이 인텐트를 두 번 쏘는 것을 막는다.
         state.pickFromGallery()
         state.capture()
+        state.remove()
 
         assertEquals(emptyList<MemorialMediaTarget>(), galleryCalls)
         assertEquals(emptyList<MemorialMediaTarget>(), captureCalls)
+        assertEquals(emptyList<MemorialMediaTarget>(), removeCalls)
     }
 
     @Test
