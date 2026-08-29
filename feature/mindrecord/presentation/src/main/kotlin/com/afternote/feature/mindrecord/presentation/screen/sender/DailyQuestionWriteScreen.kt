@@ -16,7 +16,6 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -92,7 +91,7 @@ internal fun DailyQuestionWriteScreenContent(
     onMediaPicked: suspend (String) -> String? = { null },
 ) {
     // 배너 접힘은 이 화면 안에서만 의미가 있는 표시 상태다 — Content 가 소유한다.
-    var questionExpanded by rememberSaveable { mutableStateOf(true) }
+    var questionExpanded by remember { mutableStateOf(true) }
 
     Scaffold(
         topBar = {
