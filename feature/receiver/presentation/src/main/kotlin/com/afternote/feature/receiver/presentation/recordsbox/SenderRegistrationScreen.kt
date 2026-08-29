@@ -17,7 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -25,7 +24,6 @@ import com.afternote.core.ui.CaptionLabeledTextField
 import com.afternote.core.ui.ProfileImagePicker
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.receiver.presentation.R
 
@@ -122,29 +120,5 @@ internal fun SenderRegistrationScreenContent(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SenderRegistrationScreenEmptyPreview() {
-    AfternoteTheme {
-        SenderRegistrationScreenContent(
-            nameState = rememberTextFieldState(),
-            onBackClick = {},
-            onSubmitClick = {},
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SenderRegistrationScreenFilledPreview() {
-    AfternoteTheme {
-        SenderRegistrationScreenContent(
-            nameState = rememberTextFieldState("Text Field"),
-            onBackClick = {},
-            onSubmitClick = {},
-        )
     }
 }

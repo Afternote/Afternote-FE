@@ -15,10 +15,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
  * 단계형 흐름(회원가입·수신자 인증·기타 마법사) 의 상단 진행 인디케이터 (#221).
@@ -71,20 +69,4 @@ fun FlowStepProgressBar(
         strokeCap = StrokeCap.Round,
         drawStopIndicator = {},
     )
-}
-
-@Preview(showBackground = true, name = "FlowStepProgressBar - 1/4")
-@Composable
-private fun FlowStepProgressBarStep1Preview() {
-    AfternoteTheme {
-        FlowStepProgressBar(currentStep = 1, totalSteps = 4)
-    }
-}
-
-@Preview(showBackground = true, name = "FlowStepProgressBar - 2/3")
-@Composable
-private fun FlowStepProgressBarStep2Preview() {
-    AfternoteTheme {
-        FlowStepProgressBar(currentStep = 2, totalSteps = 3)
-    }
 }

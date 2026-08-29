@@ -27,14 +27,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.modifierextention.FadingEdgeDirection
 import com.afternote.core.ui.modifierextention.horizontalFadingEdge
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 
@@ -223,46 +221,5 @@ private fun MemorialPlaylistAlbumCoverBox(album: AlbumCover) {
         Box(
             modifier = modifier.background(color = AfternoteDesign.colors.gray3),
         )
-    }
-}
-
-private fun memorialPlaylistPreviewAlbumCovers(): List<AlbumCover> =
-    listOf(
-        AlbumCover(),
-        AlbumCover(),
-        AlbumCover(),
-        AlbumCover(),
-    )
-
-@Preview(showBackground = true, name = "Action (arrow)")
-@Composable
-private fun MemorialPlaylistActionPreview() {
-    AfternoteTheme {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-        ) {
-            MemorialPlaylist(
-                songCount = 16,
-                albumCovers = memorialPlaylistPreviewAlbumCovers(),
-                onCardClick = {},
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "No action")
-@Composable
-private fun MemorialPlaylistNoActionPreview() {
-    AfternoteTheme {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-        ) {
-            MemorialPlaylist(
-                songCount = 4,
-                albumCovers = memorialPlaylistPreviewAlbumCovers(),
-            )
-        }
     }
 }
