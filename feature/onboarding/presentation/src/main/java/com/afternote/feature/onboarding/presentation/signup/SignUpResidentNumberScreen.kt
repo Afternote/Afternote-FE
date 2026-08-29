@@ -17,12 +17,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.scaffold.FlowStepScaffold
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
@@ -105,21 +103,4 @@ fun SignUpResidentNumberScreen(
             }
         },
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SignUpResidentNumberScreenPreview() {
-    AfternoteTheme {
-        SignUpResidentNumberScreen(
-            initialFrontNumber = "",
-            initialBackNumber = "",
-            isNextEnabled = false,
-            snackbarHostState = remember { SnackbarHostState() },
-            onFrontNumberChange = {},
-            onBackNumberChange = {},
-            onNextClick = {},
-            onBackClick = {},
-        )
-    }
 }

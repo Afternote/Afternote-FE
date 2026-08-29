@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const guard = await readFile(new URL("../workflows/review-debt-guard.yml", import.meta.url), "utf8");
+const requestAll = await readFile(new URL("../workflows/review-request-all.yml", import.meta.url), "utf8");
 
 test("team membership is judged by real permission, not author_association", () => {
     // 웹훅 페이로드의 author_association 은 조직 멤버십이 비공개면 MEMBER 대신
@@ -63,4 +64,44 @@ test("changes requested becomes debt only after explicit rerequest and a fix", (
     assert.doesNotMatch(guard, /group_by\(\.u/);
     assert.match(guard, /\(\.parents \| length\) < 2/);
     assert.match(guard, /select\(\.commit\.committer\.date > \\"\$blocked_at\\"\)/);
+});
+
+test("a fix delivered by a merge commit still counts as a response", () => {
+    // 비병합 커밋만 세면 base 를 끌어와 충돌을 풀며 반영한 PR 이 «미반영» 이 된다.
+    // #1316 은 리뷰가 지목한 파일이 실제로 바뀌고 작성자 응답 코멘트도 2건 달린
+    // 채로 빚에서 빠져 있었다. 커밋과 함께 작성자의 응답을 본다 (#1450).
+    assert.match(guard, /issues\/\$pn\/comments/);
+    assert.match(guard, /pulls\/\$pn\/comments/);
+    assert.match(guard, /select\(\.user\.login == \\"\$pr_author\\"\)/);
+    assert.match(guard, /\[ "\$\{fixed:-0\}" -gt 0 \] \|\| \[ "\$responses" -gt 0 \]/);
+});
+
+test("counts are taken per item so paginated pull requests do not break the comparison", () => {
+    // --paginate 는 페이지마다 jq 를 돌린다. 페이지 단위로 length 를 뽑으면 커밋이
+    // 100건을 넘는 PR 에서 숫자가 여러 줄로 나와 -gt 비교가 죽는다.
+    assert.doesNotMatch(guard, /\| length" 2>\/dev\/null/);
+    assert.match(guard, /\| wc -l \| tr -d ' '/);
+});
+
+test("rerequests are automated so silence cannot pass the guard", () => {
+    // 가드는 변경요청을 낸 리뷰어에게 요청이 다시 걸린 경우에만 빚으로 센다. 그
+    // 되살리기를 작성자 손에 맡기면 아무도 걸지 않아 가드가 통째로 무력해진다 —
+    // 8/29 실측에서 반영까지 끝난 7건이 전원 «빚 아님» 이었다 (#1450).
+    assert.match(requestAll, /^\s*types: \[opened, ready_for_review, reopened, synchronize\]/m);
+    assert.match(requestAll, /^\s{2}rerequest:/m);
+    assert.match(requestAll, /github\.event\.action == 'synchronize'/);
+    assert.match(requestAll, /--add-reviewer "\$blocked"/);
+    // 기존 전원 요청은 반영 커밋마다 다시 돌지 않는다.
+    assert.match(requestAll, /github\.event\.action != 'synchronize'/);
+});
+
+test("the rerequest job and the guard judge by the same latest decision", () => {
+    // 한쪽만 «PR 전체의 최신 판정» 을 보면 자동 재요청이 빚으로 이어지지 않거나,
+    // 이미 승인된 PR 에 요청을 되살린다.
+    for (const wf of [guard, requestAll]) {
+        assert.match(wf, /sort_by\(\.t\) \| last/);
+        assert.match(wf, /CHANGES_REQUESTED/);
+    }
+    // 봇·fork 는 토큰이 read-only 라 요청을 걸 수 없다.
+    assert.match(requestAll, /\[ "\$HEAD_REPO" != "\$REPO" \]/);
 });

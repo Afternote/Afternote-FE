@@ -22,7 +22,6 @@ import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import com.afternote.core.ui.popup.rememberFixedRightPopupPositionProvider
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import androidx.compose.ui.window.Popup as ComposePopup
 
@@ -126,19 +125,5 @@ private fun CustomDropdownItem(
             style = AfternoteDesign.typography.bodyBase,
             color = AfternoteDesign.colors.gray9,
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun EditDropdownMenuItemsPreview() {
-    AfternoteTheme {
-        Box(modifier = Modifier.padding(24.dp)) {
-            EditDropdownMenuItems(
-                showEditItem = true,
-                onEditClick = {},
-                onDeleteClick = {},
-            )
-        }
     }
 }
