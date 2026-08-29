@@ -180,6 +180,7 @@
     <string name="time_letter_recipients_count">%d명에게</string>
     <string name="content_description_expand_down">아래로</string>
     <string name="content_description_video_play">영상 재생</string>
+    <string name="afternote_content_description_memorial_video_thumbnail">장례식에 남길 영상 썸네일</string>
 
     <string name="post_delivery_last_greeting_placeholder">마지막 인사말을 입력해주세요</string>
     <string name="post_delivery_confirm">확인</string>
@@ -230,7 +231,7 @@
     <string name="afternote_editor_content_description_dropdown">드롭다운</string>
     <string name="afternote_editor_content_description_add">추가</string>
     <string name="afternote_editor_content_description_more">더보기</string>
-    <string name="afternote_editor_semantics_required_field">필수 항목</string>
+    <string name="afternote_editor_semantics_required_field_description">%1$s, 필수 항목</string>
     <string name="afternote_editor_funeral_video_label">장례식에 남길 영상</string>
     <string name="afternote_editor_funeral_video_cd_change">영상 변경</string>
     <string name="afternote_editor_funeral_video_cd_add">영상 추가</string>

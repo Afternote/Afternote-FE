@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
@@ -204,7 +205,9 @@ private fun ReceiverVideoSection(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.receiver_ic_play_arrow),
-                    contentDescription = "Play",
+                    // 영상이 없을 때만 그리는 플레이스홀더다. clickable 이 없어 재생 액션이 없으므로
+                    // 라벨을 붙이면 없는 어포던스를 알린다. 맥락은 위 ReceiverSectionHeader 가 읽어 준다.
+                    contentDescription = null,
                     tint = AfternoteDesign.colors.white,
                     modifier =
                         Modifier
@@ -231,7 +234,8 @@ private fun ReceiverMemorialVideoThumbnail(thumbnailUrl: String?) {
         if (!thumbnailUrl.isNullOrBlank()) {
             AsyncImage(
                 model = thumbnailUrl,
-                contentDescription = "장례식에 남길 영상 썸네일",
+                contentDescription =
+                    stringResource(AfternoteR.string.afternote_content_description_memorial_video_thumbnail),
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
             )
@@ -253,7 +257,7 @@ private fun ReceiverMemorialVideoThumbnail(thumbnailUrl: String?) {
         )
         Image(
             painter = painterResource(AfternoteR.drawable.feature_afternote_ic_playback),
-            contentDescription = "영상 재생",
+            contentDescription = stringResource(AfternoteR.string.content_description_video_play),
             modifier =
                 Modifier
                     .align(Alignment.Center)

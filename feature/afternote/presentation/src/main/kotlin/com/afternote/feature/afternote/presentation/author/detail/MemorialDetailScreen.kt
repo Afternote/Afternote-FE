@@ -278,7 +278,8 @@ private fun VideoThumbnail(thumbnailUrl: String?) {
         if (!thumbnailUrl.isNullOrBlank()) {
             AsyncImage(
                 model = thumbnailUrl,
-                contentDescription = "장례식에 남길 영상 썸네일",
+                contentDescription =
+                    stringResource(R.string.afternote_content_description_memorial_video_thumbnail),
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
             )
@@ -304,7 +305,7 @@ private fun VideoThumbnail(thumbnailUrl: String?) {
         // 재생 아이콘
         Image(
             painter = painterResource(R.drawable.feature_afternote_ic_playback),
-            contentDescription = "영상 재생",
+            contentDescription = stringResource(R.string.content_description_video_play),
             modifier =
                 Modifier
                     .align(Alignment.Center)
