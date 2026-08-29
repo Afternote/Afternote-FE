@@ -54,43 +54,48 @@ class AfternoteRepositoryImpl
         }
 
         override suspend fun getDetail(id: Long): Result<Detail> =
-            safeCall {
+            runCatchingCancellable {
                 api.getAfternoteDetail(afternoteId = id).requireData().toDomain()
             }
 
         override suspend fun createSocial(payload: CreateAccountPayload): Result<Long> =
-            safeCall(errorMapper = ::mapAuthoringFailure) {
+            runCatchingCancellable {
                 api.createAfternoteAccount(payload.toSocialRequest()).requireData().afternoteId
-            }.onSuccess { invalidatePagedAfternotes() }
+            }.mapAuthoringFailure()
+                .onSuccess { invalidatePagedAfternotes() }
 
         override suspend fun createBusiness(payload: CreateAccountPayload): Result<Long> =
-            safeCall(errorMapper = ::mapAuthoringFailure) {
+            runCatchingCancellable {
                 api.createAfternoteAccount(payload.toBusinessRequest()).requireData().afternoteId
-            }.onSuccess { invalidatePagedAfternotes() }
+            }.mapAuthoringFailure()
+                .onSuccess { invalidatePagedAfternotes() }
 
         override suspend fun createGallery(payload: CreateGalleryPayload): Result<Long> =
-            safeCall(errorMapper = ::mapAuthoringFailure) {
+            runCatchingCancellable {
                 api.createAfternoteGallery(payload.toRequest()).requireData().afternoteId
-            }.onSuccess { invalidatePagedAfternotes() }
+            }.mapAuthoringFailure()
+                .onSuccess { invalidatePagedAfternotes() }
 
         override suspend fun createMemorial(payload: CreateMemorialPayload): Result<Long> =
-            safeCall(errorMapper = ::mapAuthoringFailure) {
+            runCatchingCancellable {
                 api.createAfternotePlaylist(payload.toRequest()).requireData().afternoteId
-            }.onSuccess { invalidatePagedAfternotes() }
+            }.mapAuthoringFailure()
+                .onSuccess { invalidatePagedAfternotes() }
 
         override suspend fun update(
             id: Long,
             payload: AfternoteUpdatePayload,
         ): Result<Long> =
-            safeCall(errorMapper = ::mapAuthoringFailure) {
+            runCatchingCancellable {
                 api
                     .updateAfternote(afternoteId = id, request = payload.toRequest())
                     .requireData()
                     .afternoteId
-            }.onSuccess { invalidatePagedAfternotes() }
+            }.mapAuthoringFailure()
+                .onSuccess { invalidatePagedAfternotes() }
 
         override suspend fun delete(id: Long): Result<Unit> =
-            safeCall {
+            runCatchingCancellable {
                 api.deleteAfternote(afternoteId = id).requireStatus()
             }.onSuccess { invalidatePagedAfternotes() }
 
@@ -98,18 +103,3 @@ class AfternoteRepositoryImpl
             invalidationTrigger.value++
         }
     }
-
-/**
- * 취소 보존은 [runCatchingCancellable] 에 맡기고, [errorMapper] 를 통한 도메인 예외 치환만 얹는다.
- *
- * 실패 처리를 `Result` 위에서 하는 건 취소를 건드리지 않기 위해서다: 블록 안에서 `Throwable` 을
- * 잡으면 [errorMapper] 가 취소까지 다른 예외로 바꿔 전파를 끊는다.
- */
-private suspend inline fun <T> safeCall(
-    crossinline errorMapper: (Throwable) -> Throwable = { it },
-    crossinline block: suspend () -> T,
-): Result<T> {
-    val result = runCatchingCancellable { block() }
-    val failure = result.exceptionOrNull() ?: return result
-    return Result.failure(errorMapper(failure))
-}
