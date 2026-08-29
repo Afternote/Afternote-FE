@@ -167,4 +167,5 @@ jobs:
           name: screenshot-baseline-artifact
           path: ${{ runner.temp }}/screenshot-baseline/
           if-no-files-found: error
+          # 예외: job 간 전송용 — 소비하는 job 이 같은 run 안에서 끝나므로 1일이면 족하다 (#1400).
           retention-days: 1

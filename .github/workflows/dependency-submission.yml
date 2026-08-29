@@ -55,6 +55,7 @@ jobs:
         uses: gradle/actions/dependency-submission@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         with:
           additional-arguments: --no-configuration-cache --stacktrace
+          # 예외: job 간 전송용 — 제출 job 이 같은 run 안에서 소비한다 (#1400).
           artifact-retention-days: 1
           cache-provider: basic
           cache-read-only: true

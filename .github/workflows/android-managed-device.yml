@@ -153,6 +153,7 @@ jobs:
         with:
           name: baseline-profile-${{ github.sha }}-${{ github.run_id }}
           if-no-files-found: warn
+          # 표준 보관 기간 7일 — 리포트·디버깅용 artifact 는 이 값 하나로 통일한다 (#1400).
           retention-days: 7
           path: |
             app/src/main/generated/baselineProfiles/
@@ -850,6 +851,7 @@ jobs:
         with:
           name: android-managed-device-retry-${{ matrix.device }}-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: error
+          # 예외: job 간 전송용 — 소비하는 job 이 같은 run 안에서 끝나므로 1일이면 족하다 (#1400).
           retention-days: 1
           path: ${{ runner.temp }}/android-test-diagnostics/retry.json
 
@@ -859,6 +861,7 @@ jobs:
         with:
           name: android-managed-device-${{ matrix.artifact }}-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: warn
+          # 표준 보관 기간 7일 — 리포트·디버깅용 artifact 는 이 값 하나로 통일한다 (#1400).
           retention-days: 7
           path: |
             app/build/reports/androidTests/managedDevice/
