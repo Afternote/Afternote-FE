@@ -1,5 +1,6 @@
 package com.afternote.afternote_fe.messaging
 
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.push.DevicePushTokenProvider
 import com.afternote.core.domain.repository.push.PushTokenRepository
 import com.afternote.core.domain.testing.FakeAuthRepository
@@ -98,6 +99,45 @@ class PushTokenSynchronizerTest {
             assertTrue(pushTokenRepository.registered.isEmpty())
         }
 
+    @Test
+    fun `로그인 등록 직후 같은 값으로 회전 통보가 와도 다시 보내지 않는다`() =
+        runTest(dispatcher) {
+            val pushTokenRepository = RecordingPushTokenRepository()
+            val synchronizer =
+                synchronizer(
+                    FakeAuthRepository(loggedIn = true, accessToken = "access"),
+                    pushTokenRepository,
+                    deviceToken = "fid-1",
+                )
+
+            backgroundScope.launch { synchronizer.observeLogin() }
+            advanceUntilIdle()
+            // register() 성공이 그 자리에서 onRegistered 를 부르는 실제 순서를 흉내낸다.
+            synchronizer.onTokenRotated("fid-1")
+            advanceUntilIdle()
+
+            assertEquals(listOf("fid-1"), pushTokenRepository.registered)
+        }
+
+    @Test
+    fun `값이 실제로 바뀐 회전은 다시 보낸다`() =
+        runTest(dispatcher) {
+            val pushTokenRepository = RecordingPushTokenRepository()
+            val synchronizer =
+                synchronizer(
+                    FakeAuthRepository(loggedIn = true, accessToken = "access"),
+                    pushTokenRepository,
+                    deviceToken = "fid-1",
+                )
+
+            backgroundScope.launch { synchronizer.observeLogin() }
+            advanceUntilIdle()
+            synchronizer.onTokenRotated("fid-2")
+            advanceUntilIdle()
+
+            assertEquals(listOf("fid-1", "fid-2"), pushTokenRepository.registered)
+        }
+
     private fun synchronizer(
         authRepository: FakeAuthRepository,
         pushTokenRepository: PushTokenRepository,
@@ -106,7 +146,19 @@ class PushTokenSynchronizerTest {
         authRepository = authRepository,
         devicePushTokenProvider = DevicePushTokenProvider { deviceToken },
         pushTokenRepository = pushTokenRepository,
+        errorReporter = RecordingErrorReporter(),
     )
+
+    private class RecordingErrorReporter : ErrorReporter {
+        val failures = mutableListOf<Throwable>()
+
+        override fun writeFailure(
+            throwable: Throwable,
+            attributes: Map<String, String>,
+        ) {
+            failures += throwable
+        }
+    }
 
     private class RecordingPushTokenRepository : PushTokenRepository {
         val registered = mutableListOf<String>()

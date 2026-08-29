@@ -27,21 +27,18 @@ class AfternoteFirebaseMessagingService : FirebaseMessagingService() {
         FcmNotificationChannel.create(this)
     }
 
+    /**
+     * FID 가 발급·회전되면 서버에 다시 알린다 (#1493). 알리지 않으면 서버가 죽은 식별자로 발송해
+     * 이 기기에는 아무것도 오지 않는다.
+     *
+     * 이 앱은 FID 기반 등록 모델이라 이 콜백이 레거시 `onNewToken` 자리를 대신한다.
+     * Firebase SDK 의 백그라운드 스레드에서 불리므로 [runBlocking] 으로 서비스가 살아 있는 동안
+     * 끝낸다 — 발사만 하고 반환하면 프로세스 종료로 요청이 잘린다.
+     */
     override fun onRegistered(installationId: String) {
         super.onRegistered(installationId)
         Log.d(TAG, "FCM installation registered")
-    }
-
-    /**
-     * 토큰이 회전하면 서버에 다시 알린다 (#1493). 알리지 않으면 서버가 죽은 토큰으로 발송해
-     * 이 기기에는 아무것도 오지 않는다.
-     *
-     * 이 콜백은 Firebase SDK 의 백그라운드 스레드에서 불리므로 [runBlocking] 으로 서비스가 살아 있는
-     * 동안 끝낸다 — 여기서 발사만 하고 반환하면 프로세스 종료로 요청이 잘린다.
-     */
-    override fun onNewToken(token: String) {
-        super.onNewToken(token)
-        runBlocking { pushTokenSynchronizer.onTokenRotated(token) }
+        runBlocking { pushTokenSynchronizer.onTokenRotated(installationId) }
     }
 
     override fun onUnregistered(installationId: String) {
