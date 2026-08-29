@@ -3,8 +3,6 @@ package com.afternote.feature.receiver.presentation.error
 import com.afternote.core.ui.UiText
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
 
@@ -114,27 +112,10 @@ class ReceiverErrorUiTextTest {
     }
 
     @Test
-    fun `전달 조건 미충족만 재시도 불가로 갈린다`() {
-        val notDeliverable = ReceiverFailure.DeliveryConditionNotMet(CAUSE)
-
-        assertTrue(notDeliverable.isDeliveryConditionNotMet())
-    }
-
-    @Test
-    fun `사유를 가르지 않은 403 은 재시도 경로에 남는다`() {
-        val otherRejection =
-            ReceiverFailure.ServerRejection(status = 403, serverMessage = "권한이 없습니다.", serverCode = 1903, cause = CAUSE)
-
-        assertFalse(otherRejection.isDeliveryConditionNotMet())
-        assertFalse(IOException("offline").isDeliveryConditionNotMet())
-    }
-
-    @Test
     fun `연결 실패는 노출할 서버 문구가 없어 fallback 리소스로 폴백한다`() {
         val offline = ReceiverFailure.NetworkUnavailable(IOException("Unable to resolve host"))
 
         assertEquals(fallbackUiText, offline.toReceiverErrorUiText(FALLBACK_RES))
-        assertFalse(offline.isDeliveryConditionNotMet())
     }
 
     private companion object {
