@@ -20,7 +20,6 @@ class AfternoteResponseDtoContractTest {
     private val json =
         Json {
             ignoreUnknownKeys = true
-            coerceInputValues = true
         }
 
     @Test

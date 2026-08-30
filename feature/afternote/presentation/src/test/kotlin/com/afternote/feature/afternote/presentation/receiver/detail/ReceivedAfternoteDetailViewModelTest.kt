@@ -212,6 +212,7 @@ private fun receivedDetail(serviceName: String): ReceivedAfternoteDetail =
     ReceivedAfternoteDetail(
         type = AfternoteType.SOCIAL_NETWORK,
         serviceName = serviceName,
+        senderName = "이발신",
     )
 
 private class RecordingErrorReporter : ErrorReporter {

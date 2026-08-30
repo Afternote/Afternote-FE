@@ -1,10 +1,10 @@
 package com.afternote.core.data.di
 
-import com.afternote.core.data.repoimpl.UserProfileRepositoryImpl
+import com.afternote.core.data.repoimpl.UserProfileCacheRepositoryImpl
 import com.afternote.core.data.repoimpl.UserRepositoryImpl
 import com.afternote.core.data.repoimpl.auth.AuthRepositoryImpl
 import com.afternote.core.domain.repository.MyProfileRepository
-import com.afternote.core.domain.repository.UserProfileRepository
+import com.afternote.core.domain.repository.UserProfileCacheRepository
 import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
@@ -47,5 +47,5 @@ abstract class CoreUserRepositoryModule {
 
     @Binds
     @Singleton
-    internal abstract fun bindUserProfileRepository(impl: UserProfileRepositoryImpl): UserProfileRepository
+    internal abstract fun bindUserProfileCacheRepository(impl: UserProfileCacheRepositoryImpl): UserProfileCacheRepository
 }

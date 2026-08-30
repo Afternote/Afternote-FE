@@ -12,16 +12,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.receiver.ReceiverSelectItem
 import com.afternote.core.ui.receiver.ReceiverSelectScreen
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 
 /**
  * 애프터노트 에디터의 수신자 선택 화면 (#540, 시안 3631:24820).
@@ -101,29 +98,6 @@ private fun SelectReceiverLoadFailed(onRetryClick: () -> Unit) {
             text = stringResource(R.string.afternote_select_receiver_retry),
             onClick = onRetryClick,
             modifier = Modifier.padding(top = 16.dp, start = 20.dp, end = 20.dp),
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SelectReceiverScreenPreview() {
-    AfternoteTheme {
-        SelectReceiverScreen(
-            uiState =
-                SelectReceiverUiState(
-                    receivers =
-                        listOf(
-                            AfternoteEditorReceiver(id = 1L, name = "김혜성", label = "아들"),
-                            AfternoteEditorReceiver(id = 2L, name = "박경민", label = "친구"),
-                            AfternoteEditorReceiver(id = 3L, name = "이영희", label = "연인"),
-                        ),
-                    selectedReceiverId = 1L,
-                ),
-            onBackClick = {},
-            onReceiverToggle = {},
-            onRetryClick = {},
-            onConfirmClick = {},
         )
     }
 }

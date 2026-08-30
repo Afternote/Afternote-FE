@@ -18,7 +18,6 @@ class ReceiverAfternoteResponseDtoContractTest {
     private val json =
         Json {
             ignoreUnknownKeys = true
-            coerceInputValues = true
         }
 
     @Test
@@ -161,7 +160,7 @@ class ReceiverAfternoteResponseDtoContractTest {
     @Test
     fun `수신 상세 actions 키가 빠지면 빈 목록으로 접히지 않고 실패한다`() {
         assertMissingKey<ReceivedAfternoteDetailDto>(
-            body = """{"id":1,"category":"SOCIAL","title":"t"}""",
+            body = """{"id":1,"category":"SOCIAL","title":"t","senderName":"홍길동"}""",
             key = "actions",
         )
     }
@@ -170,7 +169,7 @@ class ReceiverAfternoteResponseDtoContractTest {
     fun `수신 상세 actions 명시적 null은 파싱되고 도메인 빈 목록으로 복구된다`() {
         val response =
             json.decodeFromString<ReceivedAfternoteDetailDto>(
-                """{"id":1,"category":"SOCIAL","title":"t","actions":null}""",
+                """{"id":1,"category":"SOCIAL","title":"t","senderName":"홍길동","actions":null}""",
             )
 
         assertNull(response.processingMethods)

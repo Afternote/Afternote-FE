@@ -63,7 +63,7 @@ private fun ReceivedAfternoteDetail.toReceivedGalleryDetailContent(): ReceivedGa
 private fun ReceivedAfternoteDetail.toReceivedMemorialDetailContent(): ReceivedMemorialDetailContent {
     val songs = playlist?.songs.orEmpty()
     return ReceivedMemorialDetailContent(
-        senderName = senderName.orEmpty(),
+        senderName = senderName,
         messageBlocks = leaveMessageBlocks.toMessageBlockUiModels(),
         albumCovers =
             songs.map { song ->
