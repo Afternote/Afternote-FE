@@ -27,6 +27,7 @@ import com.afternote.feature.afternote.presentation.author.editor.state.Afternot
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
+import com.afternote.feature.afternote.presentation.author.editor.state.MemorialVideoAttachment
 import com.afternote.feature.afternote.presentation.author.editor.state.withMemorialPhoto
 import com.afternote.feature.afternote.presentation.author.editor.state.withMemorialPlaylistSongs
 import com.afternote.feature.afternote.presentation.author.editor.state.withMemorialThumbnail
@@ -85,8 +86,8 @@ private data class EditorFormSnapshot(
     val receivers: List<ReceiverSnap> = emptyList(),
     val processingMethods: List<ProcessingMethodSnap> = emptyList(),
     val pickedMemorialPhotoUri: String? = null,
-    val memorialVideoUrl: String? = null,
-    val memorialThumbnailUrl: String? = null,
+    val pickedMemorialVideo: MemorialVideoAttachment? = null,
+    val serverMemorialVideo: MemorialVideoAttachment? = null,
     val memorialPhotoUrl: String? = null,
     val memorialPlaylistSongs: List<Song> = emptyList(),
 ) {
@@ -118,8 +119,8 @@ private data class EditorFormSnapshot(
             AfternoteType.MEMORIAL -> {
                 AfternoteTypeForm.Memorial(
                     pickedPhotoUri = pickedMemorialPhotoUri,
-                    videoUrl = memorialVideoUrl,
-                    thumbnailUrl = memorialThumbnailUrl,
+                    pickedVideo = pickedMemorialVideo,
+                    serverVideo = serverMemorialVideo,
                     photoUrl = memorialPhotoUrl,
                     playlistSongs = memorialPlaylistSongs,
                 )
@@ -142,8 +143,8 @@ private data class EditorFormSnapshot(
                     },
                 processingMethods = form.processingMethods.map { ProcessingMethodSnap(it.localId, it.text) },
                 pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
-                memorialVideoUrl = form.memorialVideoUrl,
-                memorialThumbnailUrl = form.memorialThumbnailUrl,
+                pickedMemorialVideo = form.memorialForm?.pickedVideo,
+                serverMemorialVideo = form.memorialForm?.serverVideo,
                 memorialPhotoUrl = form.memorialPhotoUrl,
                 memorialPlaylistSongs = form.memorialPlaylistSongs,
             )

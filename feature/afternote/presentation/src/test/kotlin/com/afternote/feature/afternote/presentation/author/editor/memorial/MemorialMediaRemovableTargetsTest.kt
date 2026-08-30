@@ -2,6 +2,7 @@ package com.afternote.feature.afternote.presentation.author.editor.memorial
 
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
+import com.afternote.feature.afternote.presentation.author.editor.state.MemorialVideoAttachment
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -16,14 +17,16 @@ class MemorialMediaRemovableTargetsTest {
     private fun memorialForm(
         pickedPhotoUri: String? = null,
         photoUrl: String? = null,
-        videoUrl: String? = null,
+        pickedVideoUrl: String? = null,
+        serverVideoUrl: String? = null,
     ): EditorFormState =
         EditorFormState(
             typeForm =
                 AfternoteTypeForm.Memorial(
                     pickedPhotoUri = pickedPhotoUri,
                     photoUrl = photoUrl,
-                    videoUrl = videoUrl,
+                    pickedVideo = MemorialVideoAttachment.ofOrNull(pickedVideoUrl),
+                    serverVideo = MemorialVideoAttachment.ofOrNull(serverVideoUrl),
                 ),
         )
 
@@ -40,13 +43,13 @@ class MemorialMediaRemovableTargetsTest {
         )
         assertEquals(
             setOf(MemorialMediaTarget.VIDEO),
-            memorialForm(videoUrl = "content://videos/new").removableMemorialMediaTargets(),
+            memorialForm(pickedVideoUrl = "content://videos/new").removableMemorialMediaTargets(),
         )
         assertEquals(
             setOf(MemorialMediaTarget.PHOTO, MemorialMediaTarget.VIDEO),
             memorialForm(
                 pickedPhotoUri = "content://photos/new",
-                videoUrl = "content://videos/new",
+                pickedVideoUrl = "content://videos/new",
             ).removableMemorialMediaTargets(),
         )
     }
@@ -58,7 +61,7 @@ class MemorialMediaRemovableTargetsTest {
             emptySet<MemorialMediaTarget>(),
             memorialForm(
                 photoUrl = "https://cdn.test/portrait.jpg",
-                videoUrl = "https://cdn.test/farewell.mp4",
+                serverVideoUrl = "https://cdn.test/farewell.mp4",
             ).removableMemorialMediaTargets(),
         )
     }
