@@ -20,6 +20,7 @@ import com.afternote.feature.afternote.presentation.author.editor.model.Register
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -140,6 +141,11 @@ class AfternoteEditorPrefillFailureTest {
             shouldFail = false
             viewModel.retryPrefill()
             runCurrent()
+            // 화면이 pendingPrefill 을 폼·TextFieldState 에 실은 뒤 통보하는 단계. 이걸 거쳐야
+            // isPrefillLoading 이 내려간다 — 저장 가드가 «읽는 중» 도 막으므로 (#705) 여기서
+            // 생략하면 폼이 아직 비어 있는 상태의 저장이 되어 정상 경로가 아니다.
+            viewModel.onPrefillConsumed()
+            runCurrent()
             viewModel.saveAfternote(
                 payload = SAVE_PAYLOAD,
                 selectedReceiverIds = listOf(7L),
@@ -167,6 +173,47 @@ class AfternoteEditorPrefillFailureTest {
                 isProcessingMethodDefaultsInitializing = false,
                 isPrefillFailed = true,
             ),
+        )
+    }
+
+    @Test
+    fun `prefill 이 아직 도착하지 않았으면 저장이 나가지 않는다`() =
+        runTest(dispatcher) {
+            // 상세 GET 이 영영 끝나지 않는 저장소 — skeleton 이 떠 있는 창을 그대로 붙잡아 둔다.
+            val neverCompleting =
+                FakeAfternoteRepository.strict().apply {
+                    onGetDetail = { awaitCancellation() }
+                    onUpdate = { _, _ -> error("prefill 이 도착하기 전에 수정이 나가면 안 됩니다") }
+                }
+            val viewModel = viewModel(neverCompleting, RecordingErrorReporter())
+            backgroundScope.launch { viewModel.uiState.collect {} }
+            runCurrent()
+            assertTrue("전제: 아직 prefill 을 읽는 중이어야 한다", viewModel.uiState.value.isPrefillLoading)
+            assertFalse("이 경로는 실패가 아니다", viewModel.uiState.value.isPrefillFailed)
+
+            viewModel.saveAfternote(
+                payload = SAVE_PAYLOAD,
+                selectedReceiverIds = listOf(7L),
+                memorialMedia = SaveAfternoteMemorialMedia(),
+            )
+            runCurrent()
+
+            assertTrue(
+                "느린 상세 GET 을 앞질러 저장하면 기존 기록이 빈 폼으로 덮인다",
+                neverCompleting.updateCalls.isEmpty(),
+            )
+            assertEquals(AfternoteEditorError.PrefillUnavailable, viewModel.uiState.value.error)
+        }
+
+    @Test
+    fun `prefill 진행 중에는 등록 버튼이 잠긴다`() {
+        assertFalse(
+            "skeleton 이 떠 있는 동안 등록이 눌리면 ViewModel 가드까지 가서야 막힌다",
+            isEditorSubmitEnabled(isSaving = false, isPrefillFailed = false, isPrefillLoading = true),
+        )
+        assertTrue(
+            "prefill 이 끝난 정상 편집 상태에서는 잠기지 않는다",
+            isEditorSubmitEnabled(isSaving = false, isPrefillFailed = false, isPrefillLoading = false),
         )
     }
 

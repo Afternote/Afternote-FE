@@ -171,6 +171,11 @@ internal fun AfternoteEditorNavigation(
         snackbarMessageKey = errorEvent,
         // 저장 왕복 중과 prefill 실패 중에는 «등록» 을 잠근다 (#705) — 진행 상태를 화면에 실어
         // 유휴처럼 보이지 않게 하고, 읽지 못한 기록을 빈 폼으로 덮는 저장을 아예 시작하지 않는다.
-        isSubmitEnabled = !uiState.isSaving && !uiState.isPrefillFailed,
+        isSubmitEnabled =
+            isEditorSubmitEnabled(
+                isSaving = uiState.isSaving,
+                isPrefillFailed = uiState.isPrefillFailed,
+                isPrefillLoading = uiState.isPrefillLoading,
+            ),
     )
 }

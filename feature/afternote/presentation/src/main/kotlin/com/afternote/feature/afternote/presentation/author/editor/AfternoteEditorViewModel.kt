@@ -384,7 +384,12 @@ class AfternoteEditorViewModel
             if (editorState.isSaving) return
             // prefill 을 못 읽은 채로 저장하면 서버가 빈 폼 값으로 기존 기록을 덮는다 (#705).
             // 화면이 이미 저장 액션을 막지만, 저장 진입점은 여기 하나뿐이라 규칙도 여기서 지킨다.
-            if (editorState.isPrefillFailed) {
+            //
+            // 실패(isPrefillFailed)뿐 아니라 «아직 읽는 중»(isPrefillLoading)도 막는다 — skeleton 이
+            // 떠 있는 동안에도 등록 버튼은 눌리고, 그때 폼은 아직 기본 빈 값이라 느린 상세 GET 을
+            // 앞질러 저장하면 같은 덮어쓰기가 난다. isPrefillLoading 은 편집 진입(itemId != null)에서만
+            // true 라 신규 작성은 영향받지 않는다.
+            if (editorState.isPrefillFailed || editorState.isPrefillLoading) {
                 internalState.update { it.withError(AfternoteEditorError.PrefillUnavailable) }
                 return
             }
