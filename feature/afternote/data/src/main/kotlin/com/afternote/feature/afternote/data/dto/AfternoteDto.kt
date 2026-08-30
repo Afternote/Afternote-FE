@@ -69,12 +69,33 @@ data class AfternotePlaylistDto(
     @SerialName("memorialVideo") val memorialVideo: AfternoteMemorialVideoDto? = null,
 )
 
+/**
+ * 추억 노트 플레이리스트 쓰기 바디 — 생성(POST)·수정(PATCH) 공용.
+ *
+ * **키가 나가느냐 마느냐가 곧 의미다.** BE 는 수정에서 「키 없음 = 기존 값 유지」와
+ * 「키 있고 JSON null = 삭제(DB 참조 제거 + S3 객체 회수)」를 가른다 — 판별은
+ * `PlaylistRequestDeserializer` 의 `node.has(...)`, 반영은 `AfternotePlaylist.update` 의 specified
+ * 플래그다 (Afternote-BE `72fee63` · BE#259).
+ *
+ * kotlinx.serialization 은 `encodeDefaults = false`(`NetworkModule.provideJson()` 이 켜지 않으므로
+ * 기본값)에서 **기본값과 같은 값을 키째 뺀다.** 그래서 이 클래스에서 기본값의 유무는 편의가 아니라
+ * 계약이다 — 기본값을 달아 두면 그 슬롯은 「유지」 말고는 말할 수 없게 된다 (#1596).
+ *
+ * - [memorialPhotoUrl] · [memorialVideo] 는 기본값을 두지 않는다. 폼이 비었으면 `null` 이 그대로
+ *   실려 삭제로 읽힌다. 그러므로 이 DTO 는 **폼 전체 스냅샷에서만** 만들어야 한다 — 일부만 아는
+ *   호출부가 만들면 나머지 슬롯이 조용히 지워진다.
+ * - [atmosphere] 는 기본값을 남겨 늘 생략한다. FE 화면에 없는 값이라 삭제를 지시할 자격이 없다.
+ * - `memorialAudioUrl` 은 아직 필드를 두지 않는다 — 같은 이유이고, 첨부 수단이 생기는 #1118 에서
+ *   위 규칙대로 편입한다.
+ * - [songs] 는 기본값을 남긴다. 「빈 목록이면 생략」은 #1295 가 못박은 결정이라 이 PR 이 뒤집지
+ *   않는다 — 그 결과 「곡 전부 삭제」를 FE 가 표현하지 못하는 것은 별개 결함으로 #1599 이다.
+ */
 @Serializable
 data class AfternotePlaylistRequestDto(
     @SerialName("atmosphere") val atmosphere: String? = null,
-    @SerialName("memorialPhotoUrl") val memorialPhotoUrl: String? = null,
+    @SerialName("memorialPhotoUrl") val memorialPhotoUrl: String?,
     @SerialName("songs") val songs: List<AfternoteSongDto> = emptyList(),
-    @SerialName("memorialVideo") val memorialVideo: AfternoteMemorialVideoDto? = null,
+    @SerialName("memorialVideo") val memorialVideo: AfternoteMemorialVideoDto?,
 )
 
 @Serializable
