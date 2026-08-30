@@ -107,18 +107,26 @@ data class ReceivedRecordBoxListDto(
  * 지킨다. 도메인으로 옮기는 건 지금 소비하는 것뿐이고, 나머지(`receiverName`·`relation`·
  * `recordStatus`·`viewStatus`)는 목록 화면이 이 API 로 옮겨갈 때(#607) 함께 올린다.
  *
- * `requestedAt`·`approvedAt` 은 열람 신청이 없으면 통째로 null 이고, `approvedAt` 은 승인 상태에서만
- * 채워진다. `verificationStatus` 도 신청 전에는 null 이라 [DeliveryVerificationStatus.UNKNOWN] 이 된다.
+ * **nullable 은 BE 실코드로 판정한 것만 둔다.** OpenAPI 에 `requiredMode` 표기가 없어 문서만으로는
+ * 전 필드가 optional 로 보이지만(BE#269), 실제 계약은 이렇다.
+ *
+ * - `receiverName` — `Receiver.name` 이 `@Column(nullable = false)`, 서버가 비울 수 없다.
+ * - `recordStatus` — `determineRecordStatus()` 가 `STORED`·`EMPTY` 중 하나를 항상 반환한다.
+ * - `viewStatus` — `determineViewStatus()` 가 `VIEWABLE`·`PENDING`·`REQUESTABLE` 중 하나를 항상 반환한다.
+ * - `relation` — `@Column(length = 50)` 로 DB 가 null 을 허용한다.
+ * - `verificationStatus`·`requestedAt` — 열람 신청이 없으면 통째로 null 이다.
+ *   (`verificationStatus` 가 null 이면 [DeliveryVerificationStatus.UNKNOWN] 이 된다.)
+ * - `approvedAt` — 승인 상태에서만 채워진다.
  */
 @Serializable
 data class ReceivedRecordBoxDto(
     @SerialName("receiverId") val receiverId: Long,
     @SerialName("accessCode") val accessCode: String,
     @SerialName("senderName") val senderName: String,
-    @SerialName("receiverName") val receiverName: String? = null,
+    @SerialName("receiverName") val receiverName: String,
     @SerialName("relation") val relation: String? = null,
-    @SerialName("recordStatus") val recordStatus: String? = null,
-    @SerialName("viewStatus") val viewStatus: String? = null,
+    @SerialName("recordStatus") val recordStatus: String,
+    @SerialName("viewStatus") val viewStatus: String,
     @SerialName("verificationStatus") val verificationStatus: String? = null,
     @SerialName("requestedAt") val requestedAt: String? = null,
     @SerialName("approvedAt") val approvedAt: String? = null,

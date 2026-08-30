@@ -5,6 +5,7 @@ import com.afternote.core.network.model.requireData
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -94,8 +95,10 @@ class ReceivedRecordBoxContractTest {
         val payload =
             """{"status":200,"code":200,"data":{"recordBoxes":[
             |{"receiverId":4,"accessCode":"aaaaaaaa-0000-4000-8000-000000000001","senderName":"김혜성",
+            |"receiverName":"김지은","recordStatus":"STORED","viewStatus":"VIEWABLE",
             |"verificationStatus":"APPROVED","approvedAt":"2026-07-29T16:00:10"},
             |{"receiverId":5,"accessCode":"bbbbbbbb-0000-4000-8000-000000000002","senderName":"박경민",
+            |"receiverName":"김지은","recordStatus":"STORED","viewStatus":"VIEWABLE",
             |"verificationStatus":"APPROVED","approvedAt":"2026-08-01T09:00:00"}]}}
             """.trimMargin().replace("\n", "")
 
@@ -119,5 +122,67 @@ class ReceivedRecordBoxContractTest {
         val boxes = json.decodeFromString<BaseResponse<ReceivedRecordBoxListDto>>(payload).requireData().recordBoxes
 
         assertTrue(boxes.isEmpty())
+    }
+
+    /**
+     * 서버가 항상 채우는 필드는 누락이 **실패로 드러나야** 한다.
+     *
+     * `receiverName`(`Receiver.name` 은 DB NOT NULL)·`recordStatus`·`viewStatus`(둘 다 서버가 분기마다
+     * 값을 반환)를 nullable 로 두면, 계약이 바뀌어도 「이름 없는 기록함」 이 화면까지 흘러간다.
+     * #607 이 이 필드들을 도메인으로 올릴 때 폴백을 떠안지 않도록 여기서 막는다.
+     */
+    @Test
+    fun `항상 오는 필드가 빠지면 디코드가 실패한다`() {
+        listOf("receiverName", "recordStatus", "viewStatus").forEach { missing ->
+            val payload = approvedBoxPayload(omit = missing)
+
+            val failure =
+                runCatching {
+                    json.decodeFromString<BaseResponse<ReceivedRecordBoxListDto>>(payload).requireData().recordBoxes
+                }.exceptionOrNull()
+
+            assertNotNull("$missing 누락이 조용히 통과했다", failure)
+        }
+    }
+
+    /**
+     * 명시적 `null` 도 마찬가지다 — `coerceInputValues` 는 기본값이 있어야 동작하므로,
+     * 기본값을 두지 않은 이 필드들을 구해 주지 않는다.
+     */
+    @Test
+    fun `항상 오는 필드가 null 로 오면 디코드가 실패한다`() {
+        listOf("receiverName", "recordStatus", "viewStatus").forEach { nulled ->
+            val payload = approvedBoxPayload(nullify = nulled)
+
+            val failure =
+                runCatching {
+                    json.decodeFromString<BaseResponse<ReceivedRecordBoxListDto>>(payload).requireData().recordBoxes
+                }.exceptionOrNull()
+
+            assertNotNull("$nulled 의 null 이 조용히 통과했다", failure)
+        }
+    }
+
+    /** 승인된 칸 한 건짜리 응답. [omit] 은 키를 통째로 빼고, [nullify] 는 값을 `null` 로 바꾼다. */
+    private fun approvedBoxPayload(
+        omit: String? = null,
+        nullify: String? = null,
+    ): String {
+        val fields =
+            listOf(
+                "receiverId" to "4",
+                "accessCode" to "\"59c04a15-1f4a-4b2e-9a0c-2f4e8d7b6c31\"",
+                "senderName" to "\"김혜성\"",
+                "receiverName" to "\"김지은\"",
+                "recordStatus" to "\"STORED\"",
+                "viewStatus" to "\"VIEWABLE\"",
+                "verificationStatus" to "\"APPROVED\"",
+                "approvedAt" to "\"2026-07-29T16:00:10\"",
+            ).filterNot { (key, _) -> key == omit }
+                .joinToString(",") { (key, value) ->
+                    "\"$key\":${if (key == nullify) "null" else value}"
+                }
+
+        return """{"status":200,"code":200,"data":{"recordBoxes":[{$fields}]}}"""
     }
 }
