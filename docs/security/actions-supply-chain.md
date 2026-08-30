@@ -101,7 +101,7 @@ GitHub 문서의 정의는 이렇다 — 조직 설정 화면의 **Require actio
 
 > When you enable **Require actions to be pinned to a full-length commit SHA**, all actions must be pinned to a full-length commit SHA to be used. This includes actions from your organization and actions authored by GitHub. **Reusable workflows can still be referenced by tag.**
 
-재사용 워크플로는 태그 참조가 허용된다는 점이 예외다. Afternote-FE 의 재사용 워크플로 참조는 4건 전부 로컬(`./.github/workflows/*.yml`)이라 어느 쪽이든 영향이 없고, BE·demo 에는 재사용 워크플로 참조가 없다.
+재사용 워크플로는 태그 참조가 허용된다는 점이 예외다. Afternote-FE 의 재사용 워크플로 참조는 `develop` 기준 6건(고유 파일 4개) 전부 로컬(`./.github/workflows/*.yml`)이라 어느 쪽이든 영향이 없고, BE·demo 에는 재사용 워크플로 참조가 없다.
 
 ## 4. 판정 — `allowed_actions`
 
