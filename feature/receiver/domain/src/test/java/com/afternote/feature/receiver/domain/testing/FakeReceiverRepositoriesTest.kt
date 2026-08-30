@@ -1,5 +1,8 @@
 package com.afternote.feature.receiver.domain.testing
 
+import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
+import com.afternote.feature.receiver.domain.model.ReceiverIdentity
+import com.afternote.feature.receiver.domain.model.SenderEntry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
@@ -148,5 +151,23 @@ class FakeReceiverRepositoriesTest {
         assertThrows(IllegalStateException::class.java) {
             runBlocking { authRepository.getSenderMessage() }
         }
+    }
+
+    @Test
+    fun `SenderRegistry strict fixture의 flow는 안전하고 suspend 호출은 failure Result를 반환한다`() {
+        val initial = SenderEntry(id = "sender-1", name = "별칭")
+        val repository = FakeSenderRegistryRepository.strict(initialSenders = listOf(initial))
+        val identity = ReceiverIdentity(1L, "수신자", "발신자", "친구")
+
+        assertEquals(listOf(initial), runBlocking { repository.senders.first() })
+        assertTrue(runBlocking { repository.register("새 별칭") }.isFailure)
+        assertTrue(runBlocking { repository.findById(initial.id) }.isFailure)
+        assertTrue(runBlocking { repository.attachIdentity(initial.id, "key", identity) }.isFailure)
+        assertTrue(
+            runBlocking {
+                repository.updateVerificationStatus(initial.id, DeliveryVerificationStatus.APPROVED)
+            }.isFailure,
+        )
+        assertEquals(listOf(initial), repository.senderEntries.value)
     }
 }

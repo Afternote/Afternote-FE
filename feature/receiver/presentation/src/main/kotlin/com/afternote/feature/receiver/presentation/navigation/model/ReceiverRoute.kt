@@ -25,7 +25,7 @@ sealed interface ReceiverRoute {
     /**
      * 발신자 등록(15·16) — 받은 기록함의 FAB 에서 진입. 사용자가 발신자에게 부여하는 별칭(라벨) 입력.
      *
-     * 백엔드 *발신자 라벨 등록 API* 가 미확정이라 1단계는 클라 로컬 stub registry 에만 보관한다.
+     * 백엔드 *발신자 라벨 등록 API* 가 미확정이라 1단계는 클라 로컬 registry 에 영속한다.
      */
     @Serializable
     data object SenderRegistrationRoute : ReceiverRoute
@@ -68,7 +68,8 @@ sealed interface ReceiverRoute {
      *
      * 인증 성공 시 [com.afternote.feature.receiver.domain.repository.IdentityVerificationRepository]
      * 캐시가 해당 발신자에 대해 켜져 같은 발신자 재진입 시 마스터 키로 직진 (#597 — 발신자별 격리,
-     * 다른 발신자 흐름에서는 다시 인증). 캐시는 프로세스 수명 — 앱 재시작 후에는 다시 인증한다.
+     * 다른 발신자 흐름에서는 다시 인증). 카드 ID 와 인증 캐시는 같은 세션 수명으로
+     * 영속하며, 로그아웃 후 다음 계정에는 승계하지 않는다.
      */
     @Serializable
     data object IdentityVerificationEmailRoute : ReceiverRoute
