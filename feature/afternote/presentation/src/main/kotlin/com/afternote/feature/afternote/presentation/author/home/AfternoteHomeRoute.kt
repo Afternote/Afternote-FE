@@ -1,8 +1,7 @@
-package com.afternote.feature.afternote.presentation.author.navigation
+package com.afternote.feature.afternote.presentation.author.home
 
 import androidx.compose.runtime.Composable
 import com.afternote.feature.afternote.domain.AfternoteType
-import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeEntry
 
 @Composable
 internal fun AfternoteHomeNavigation(

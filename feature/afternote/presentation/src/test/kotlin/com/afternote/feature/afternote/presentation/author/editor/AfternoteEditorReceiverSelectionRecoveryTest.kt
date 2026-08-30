@@ -11,7 +11,6 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnai
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorError
-import com.afternote.feature.afternote.presentation.author.navigation.messageResId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch

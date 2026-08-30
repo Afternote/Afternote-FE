@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.navigation
+package com.afternote.feature.afternote.presentation.author.detail
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
