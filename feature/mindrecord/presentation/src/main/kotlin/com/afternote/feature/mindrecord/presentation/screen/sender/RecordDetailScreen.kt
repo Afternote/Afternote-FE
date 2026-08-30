@@ -55,7 +55,7 @@ fun RecordDetailScreen(
     modifier: Modifier = Modifier,
     viewModel: RecordDetailViewModel = hiltViewModel(),
     isDiary: Boolean = false,
-    onBackClick: () -> Unit = {},
+    onBackClick: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
