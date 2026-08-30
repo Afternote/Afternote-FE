@@ -23,6 +23,7 @@ import com.afternote.core.ui.findActivity
 import com.afternote.feature.onboarding.presentation.BuildConfig
 import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.displayMessageResOrFallback
+import com.afternote.feature.onboarding.presentation.login.passkey.requestPasskeyAssertion
 import com.afternote.feature.onboarding.presentation.login.social.requestGoogleIdToken
 import com.afternote.feature.onboarding.presentation.login.social.requestKakaoAccessToken
 import com.afternote.feature.onboarding.presentation.reporting.AuthProvider
@@ -32,9 +33,13 @@ import kotlinx.coroutines.launch
  * 로그인 Entry.
  *
  * ViewModel 주입·이벤트 수집을 전담하고, Screen에 순수 상태만 전달합니다.
- * 소셜 로그인 SDK(카카오) 및 Credential Manager(구글)는 Activity/Context에
+ * 소셜 로그인 SDK(카카오) 및 Credential Manager(구글·패스키)는 Activity/Context에
  * 강하게 의존하므로 UI 레이어(Entry)에서 처리한 뒤 순수 토큰 문자열만
  * ViewModel로 전달하여 ViewModel과 Data 레이어의 플랫폼 독립성을 보장합니다.
+ *
+ * 패스키(#764)는 전용 버튼이 없습니다 — [공식 UX 권고](https://developer.android.com/design/ui/mobile/guides/patterns/passkeys)
+ * 가 수단별 버튼 대신 통합 선택기를 쓰라고 해서, 진입점은 화면 진입 자체입니다. 등록된 패스키가
+ * 없으면 `NoCredentialException` 을 조용히 삼키고 기존 로그인 폼이 그대로 남습니다.
  */
 @Composable
 fun LoginEntry(
@@ -73,6 +78,34 @@ fun LoginEntry(
     val withClearFocus: (() -> Unit) -> Unit = { action ->
         focusManager.clearFocus()
         action()
+    }
+
+    // 화면 진입 시 패스키 인증 옵션을 미리 받아 둔다. 중복 시도 차단은 ViewModel 이 맡는다 —
+    // 구성 변경으로 이 LaunchedEffect 가 다시 돌아도 시스템 선택기가 두 번 뜨지 않는다.
+    LaunchedEffect(Unit) {
+        viewModel.startPasskeyLogin()
+    }
+    // 옵션이 도착하면 시스템 통합 선택기를 띄운다. Credential Manager 는 Activity 를 쥐고 있어야
+    // 해서 ViewModel 이 직접 부를 수 없고, 이 자리(컴포지션 수명)에서만 부를 수 있다.
+    LaunchedEffect(uiState.passkeyRequestJson) {
+        val requestJson = uiState.passkeyRequestJson ?: return@LaunchedEffect
+        viewModel.onPasskeyRequestConsumed()
+        requestPasskeyAssertion(
+            context = context,
+            credentialManager = credentialManager,
+            requestJson = requestJson,
+        ).onSuccess { assertionJson ->
+            viewModel.loginWithPasskey(assertionJson)
+        }.onFailure { exception ->
+            // 사용자가 요청한 적 없는 자동 시도다. "이 기기에 쓸 패스키가 없다"
+            // (NoCredentialException) 와 "시트를 닫았다" 는 실패가 아니라 예정된 결말이라
+            // 화면에도 콘솔에도 남기지 않는다 — 구글 로그인 쪽이 NoCredentialException 을
+            // 안내·계측 대상으로 삼는 것과 갈리는 지점이고, 이유는 그쪽이 사용자가 버튼을
+            // 눌러 시작한 흐름이라 "왜 아무 일도 안 일어났는지" 를 설명해야 하기 때문이다.
+            if (exception is NoCredentialException) return@onFailure
+            if (exception is CoreAuthFailure.UserCancelledAuth) return@onFailure
+            viewModel.onPasskeyAssertionFailed(exception)
+        }
     }
 
     LaunchedEffect(uiState.isLoggedIn) {

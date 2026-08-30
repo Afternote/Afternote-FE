@@ -32,4 +32,12 @@ data class LoginUiState(
      * UI 가 표시 후 [LoginViewModel.onErrorConsumed] 로 reset.
      */
     val errorMessage: UiText? = null,
+    /**
+     * 패스키 인증 요청 원문 — 서버에서 옵션을 받아 오면 채워지는 **소비형 신호**다.
+     *
+     * 값 자체를 화면이 그리지는 않는다. Credential Manager 호출은 Activity 를 쥐고 있어야 해서
+     * UI 계층에만 둘 수 있고(`LoginEntry`), ViewModel 은 "이제 시스템 선택기를 띄울 수 있다" 는
+     * 사실만 여기 실어 보낸다. UI 가 집어간 뒤 [LoginViewModel.onPasskeyRequestConsumed] 로 reset.
+     */
+    val passkeyRequestJson: String? = null,
 )

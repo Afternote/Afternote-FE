@@ -3,7 +3,9 @@ package com.afternote.feature.onboarding.presentation.login
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.testing.FakeAuthRepository
+import com.afternote.core.domain.testing.FakePasskeyRepository
 import com.afternote.core.domain.usecase.auth.LoginUseCase
+import com.afternote.core.domain.usecase.auth.PasskeyLoginUseCase
 import com.afternote.feature.onboarding.presentation.reporting.AuthProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -60,6 +62,12 @@ class LoginViewModelReportingTest {
                     onKakaoLogin = { Result.failure(failure) }
                     onGoogleLogin = { Result.failure(failure) }
                 },
+            ),
+        // 이 파일이 보는 것은 이메일·소셜 실패의 기록 키다 — 패스키 경로는 닫아 둔다.
+        passkeyLoginUseCase =
+            PasskeyLoginUseCase(
+                passkeyRepository = FakePasskeyRepository.strict(),
+                authRepository = FakeAuthRepository.strict(),
             ),
         errorReporter = reporter,
     )

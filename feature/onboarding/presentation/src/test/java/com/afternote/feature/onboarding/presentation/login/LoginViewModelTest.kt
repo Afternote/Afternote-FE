@@ -3,7 +3,9 @@ package com.afternote.feature.onboarding.presentation.login
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.testing.FakeAuthRepository
+import com.afternote.core.domain.testing.FakePasskeyRepository
 import com.afternote.core.domain.usecase.auth.LoginUseCase
+import com.afternote.core.domain.usecase.auth.PasskeyLoginUseCase
 import com.afternote.core.model.Session
 import com.afternote.core.ui.UiText
 import com.afternote.feature.onboarding.presentation.R
@@ -60,6 +62,13 @@ class LoginViewModelTest {
                         this.onDefaultLogin = { _, _ -> onDefaultLogin() }
                         onSaveSession = { _, _ -> Result.success(Unit) }
                     },
+                ),
+            // 이 파일은 이메일 로그인 실패 표시만 본다 — 패스키 경로는 전부 닫아 두어,
+            // 열리면 그 자리에서 드러나게 한다(패스키 계약은 LoginViewModelPasskeyTest 가 가드).
+            passkeyLoginUseCase =
+                PasskeyLoginUseCase(
+                    passkeyRepository = FakePasskeyRepository.strict(),
+                    authRepository = FakeAuthRepository.strict(),
                 ),
             errorReporter = NoopErrorReporter,
         )

@@ -6,6 +6,7 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.domain.usecase.auth.LoginUseCase
+import com.afternote.core.domain.usecase.auth.PasskeyLoginUseCase
 import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.reporting.AuthFailureStage
 import com.afternote.feature.onboarding.presentation.reporting.AuthProvider
@@ -24,6 +25,7 @@ class LoginViewModel
     @Inject
     constructor(
         private val loginUseCase: LoginUseCase,
+        private val passkeyLoginUseCase: PasskeyLoginUseCase,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(LoginUiState())
@@ -31,6 +33,14 @@ class LoginViewModel
 
         /** 네트워크 실패 팝업의 "다시 시도하기" 가 재실행할 마지막 시도. */
         private var lastAttempt: LoginType? = null
+
+        /**
+         * 이 화면 인스턴스에서 패스키 자동 시도를 이미 걸었는지.
+         *
+         * 구성 변경으로 컴포지션이 다시 만들어져도 시스템 선택기를 두 번 띄우지 않기 위한 것이다 —
+         * ViewModel 은 구성 변경을 넘겨 살아남으므로 이 플래그가 그 경계 역할을 한다.
+         */
+        private var passkeyAttempted = false
 
         fun updateEmail(value: String) {
             // 입력이 바뀌면 앞선 자격 거절은 더 이상 이 입력의 판정이 아니다.
@@ -57,6 +67,90 @@ class LoginViewModel
 
         fun loginWithGoogle(idToken: String) {
             login(LoginType.Google(idToken))
+        }
+
+        /**
+         * 화면 진입 시 1회, 패스키 인증 옵션을 미리 받아 둔다.
+         *
+         * 로그인 수단별 전용 버튼을 두지 않는 것이 [공식 UX 권고](https://developer.android.com/design/ui/mobile/guides/patterns/passkeys)
+         * 라, 진입점은 버튼이 아니라 화면 진입 자체다. 성공하면 [LoginUiState.passkeyRequestJson]
+         * 으로 UI 에 넘겨 시스템 선택기를 띄우게 한다.
+         *
+         * **실패는 화면에 알리지 않는다.** 사용자가 요청한 적 없는 시도라, 여기서 오류를 띄우면
+         * 이메일 로그인을 하러 온 사람에게 설명할 수 없는 안내가 뜬다 — 기존 로그인 폼은 무간섭으로 남는다.
+         */
+        fun startPasskeyLogin() {
+            if (passkeyAttempted) return
+            passkeyAttempted = true
+            viewModelScope.launch {
+                passkeyLoginUseCase
+                    .requestOptions()
+                    .onSuccess { options ->
+                        _uiState.update { it.copy(passkeyRequestJson = options.requestJson) }
+                    }.onFailure { exception ->
+                        if (exception is CancellationException) throw exception
+                        // 오프라인은 장애가 아니다 — 비행기 모드로 앱을 연 것만으로 기록이 쌓이면
+                        // 보관 한도를 정상 상황이 차지한다. 그 밖의 실패는 이 단계가 통째로 죽어도
+                        // 화면에 흔적이 없으므로 계측이 유일한 신호다.
+                        if (exception !is CoreAuthFailure.NetworkUnavailable) {
+                            errorReporter.recordAuthFailure(
+                                stage = AuthFailureStage.PASSKEY_OPTIONS,
+                                throwable = exception,
+                                provider = AuthProvider.PASSKEY,
+                            )
+                        }
+                    }
+            }
+        }
+
+        /** UI 가 [LoginUiState.passkeyRequestJson] 을 집어 Credential Manager 로 넘긴 뒤 reset. */
+        fun onPasskeyRequestConsumed() {
+            _uiState.update { it.copy(passkeyRequestJson = null) }
+        }
+
+        /**
+         * Credential Manager 단계의 실패를 기록한다. 서버 호출 이전이라 [login] 경로를 타지 않는다.
+         *
+         * 정상 이탈(이 기기에 패스키 없음 · 사용자가 시트를 닫음)은 UI 가 걸러서 넘기지 않는다.
+         */
+        fun onPasskeyAssertionFailed(throwable: Throwable) {
+            errorReporter.recordAuthFailure(
+                stage = AuthFailureStage.PASSKEY_ASSERTION,
+                throwable = throwable,
+                provider = AuthProvider.PASSKEY,
+            )
+        }
+
+        /**
+         * 받아온 assertion 으로 서버 검증·로그인을 마친다.
+         *
+         * 실패 표시가 [login] 과 다르다 — 인라인도 재시도 팝업도 쓰지 않고 스낵바 하나로 모은다.
+         * 인라인은 걸 입력 필드가 없고, 재시도 팝업의 "다시 시도하기" 는 [lastAttempt]
+         * ([LoginType]) 를 재실행하는 장치라 패스키에는 재실행할 대상이 없다 — 띄우면 눌러도
+         * 아무 일도 일어나지 않는 버튼이 된다.
+         */
+        fun loginWithPasskey(assertionJson: String) {
+            if (_uiState.value.isLoading) return
+            viewModelScope.launch {
+                _uiState.update { it.copy(isLoading = true, hasCredentialError = false) }
+                passkeyLoginUseCase(assertionJson)
+                    .onSuccess {
+                        _uiState.update { it.copy(isLoading = false, isLoggedIn = true) }
+                    }.onFailure { exception ->
+                        if (exception is CancellationException) throw exception
+                        errorReporter.recordAuthFailure(
+                            stage = AuthFailureStage.LOGIN,
+                            throwable = exception,
+                            provider = AuthProvider.PASSKEY,
+                        )
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                errorMessage = exception.toDisplayMessage(R.string.onboarding_login_passkey_failed),
+                            )
+                        }
+                    }
+            }
         }
 
         /**

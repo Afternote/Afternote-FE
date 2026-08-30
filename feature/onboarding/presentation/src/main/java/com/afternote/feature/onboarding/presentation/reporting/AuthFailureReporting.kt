@@ -37,6 +37,21 @@ enum class AuthFailureStage(
 
     /** 가입 성공 직후의 자동 로그인 — 여기서 깨지면 가입은 됐는데 로그인 화면으로 되돌아간다. */
     AUTO_LOGIN_AFTER_SIGN_UP("auto_login_after_sign_up"),
+
+    /**
+     * 패스키 인증 옵션 발급 — 서버 호출이지만 로그인 시도 이전이다.
+     *
+     * 화면 진입 시 자동으로 던지는 시도라 사용자는 실패를 보지 못한다. 계측이 없으면 이 단계가
+     * 통째로 죽어도 "패스키 쓰는 사람이 없네" 로만 보인다.
+     */
+    PASSKEY_OPTIONS("passkey_options"),
+
+    /**
+     * Credential Manager 에서 assertion 을 받아오는 단계 — 서버 호출 이전.
+     *
+     * 정상 이탈(이 기기에 패스키 없음 · 사용자가 시트를 닫음)은 호출부가 걸러서 넘기지 않는다.
+     */
+    PASSKEY_ASSERTION("passkey_assertion"),
 }
 
 /** 로그인 수단. 어느 경로에서 실패가 몰리는지 구분한다. */
@@ -46,6 +61,7 @@ enum class AuthProvider(
     EMAIL("email"),
     KAKAO("kakao"),
     GOOGLE("google"),
+    PASSKEY("passkey"),
 }
 
 /**
