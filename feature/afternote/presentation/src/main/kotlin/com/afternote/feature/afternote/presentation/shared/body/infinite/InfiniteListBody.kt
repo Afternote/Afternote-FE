@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.shared.body.infinite
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +16,11 @@ import com.afternote.feature.afternote.presentation.author.home.NextStep
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.AfternoteListContent
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
 
+/**
+ * @param filterRowScrollState 카테고리 필터 행의 가로 스크롤 위치. 화면이 `when` 위에서 만들어 여기로
+ *   꿰는 값이다 — 근거는 [com.afternote.feature.afternote.presentation.author.home.AfternoteTypeFilterRow]
+ *   KDoc (#1635). 기본값을 두지 않는 이유는 [AfternoteListContent] 의 같은 파라미터와 같다.
+ */
 @Composable
 fun InfiniteListBody(
     items: LazyPagingItems<ListItemUiModel>,
@@ -23,6 +29,7 @@ fun InfiniteListBody(
     onListItemClick: (id: Long, type: AfternoteType) -> Unit,
     headerDescription: String,
     nextStep: NextStep?,
+    filterRowScrollState: ScrollState,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -39,6 +46,7 @@ fun InfiniteListBody(
             selectedType = selectedType,
             onTypeSelected = onTypeSelected,
             onListItemClick = onListItemClick,
+            filterRowScrollState = filterRowScrollState,
         )
     }
 }

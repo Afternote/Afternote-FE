@@ -1,18 +1,25 @@
 package com.afternote.feature.afternote.presentation.author.home
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -64,12 +71,28 @@ fun AfternoteHomeScreen(
 ) {
     val refreshState = items.loadState.refresh
     val isRefreshing = refreshState is LoadState.Loading && items.itemCount > 0
+
+    // 직전 렌더에 상단(헤더·카테고리 필터 행)이 있었는지. 카테고리 전환은 새 Paging 세대를 만들어
+    // `refresh = Loading` + `itemCount == 0` 을 다시 만드는데, 그 상태만 보면 «첫 진입» 과 구분이 없어
+    // 이미 보고 있던 상단까지 로딩 화면으로 덮인다 (#1635). 상단 유무를 되먹여 그 둘을 가른다.
+    // 되먹임이 발산하지 않는 이유: 이 값은 로딩 갈래의 결과만 바꾸고, 그 갈래가 내는 두 상태
+    // (InitialLoading·Reloading)의 상단 유무는 각각 false·true 로 자기 입력과 같다.
+    // 화면 회전에도 유지해야 전환 도중 회전이 상단을 다시 걷어 가지 않는다.
+    var chromeAlreadyVisible by rememberSaveable { mutableStateOf(false) }
     val bodyState =
         afternoteHomeBodyState(
             refreshState = refreshState,
             itemCount = items.itemCount,
             selectedType = selectedType,
+            chromeAlreadyVisible = chromeAlreadyVisible,
         )
+    val drawsTopChrome = bodyState.drawsTopChrome(showsHeaderOnEmptyList)
+    LaunchedEffect(drawsTopChrome) { chromeAlreadyVisible = drawsTopChrome }
+
+    // 카테고리 필터 행의 가로 스크롤 위치는 본문 분기 «위» 에서 만든다. 행 안에서 remember 하면 본문이
+    // 바뀔 때마다 서브트리가 폐기돼 0 으로 돌아가고, 오른쪽으로 밀어 고른 끝 탭이 전환 후 화면 밖으로
+    // 나간다. 호출부가 둘(목록·0건)이라 «같은 자리» 도 아니었다 (#1635).
+    val filterRowScrollState = rememberScrollState()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -102,6 +125,17 @@ fun AfternoteHomeScreen(
                     LoadingBody(modifier = bodyModifier)
                 }
 
+                is AfternoteHomeBodyState.Reloading -> {
+                    ReloadingBody(
+                        headerDescription = headerDescription,
+                        nextStep = nextStep,
+                        selectedType = bodyState.selectedType,
+                        onTypeSelected = onTypeSelected,
+                        filterRowScrollState = filterRowScrollState,
+                        modifier = bodyModifier,
+                    )
+                }
+
                 AfternoteHomeBodyState.Error -> {
                     ErrorListBody(
                         onRetry = items::retry,
@@ -116,6 +150,7 @@ fun AfternoteHomeScreen(
                         selectedType = bodyState.selectedType,
                         onTypeSelected = onTypeSelected,
                         onRetry = items::retry,
+                        filterRowScrollState = filterRowScrollState,
                         modifier = bodyModifier,
                     )
                 }
@@ -129,6 +164,7 @@ fun AfternoteHomeScreen(
                         onTypeSelected = onTypeSelected,
                         onListItemClick = onListItemClick,
                         headerDescription = headerDescription,
+                        filterRowScrollState = filterRowScrollState,
                     )
                 }
 
@@ -139,6 +175,7 @@ fun AfternoteHomeScreen(
                             nextStep = nextStep,
                             emptyListDescription = emptyListDescription,
                             onTypeSelected = onTypeSelected,
+                            filterRowScrollState = filterRowScrollState,
                             modifier = bodyModifier,
                         )
                     } else {
@@ -146,6 +183,53 @@ fun AfternoteHomeScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * 상단(헤더·카테고리 필터 행)을 이미 보고 있던 사용자가 맞는 로딩 본문 (#1635).
+ *
+ * **[com.afternote.core.ui.loading.LoadingBody] 로 화면을 통째로 덮지 않는다.** 카테고리를 바꾸면
+ * [AfternoteHomeViewModel] 의 `flatMapLatest` 가 새 Paging 세대를 만들고, 0건 상태에서 전환하면
+ * `refresh = Loading` + `itemCount == 0` 이라 종전에는 첫 진입과 똑같이 판정돼 **방금 탭한 카테고리
+ * 행까지 사라졌다가 다시 나타났다.** 사라진 동안 그 화면에는 조작할 것이 하나도 없고, 응답이 느리면
+ * 그 상태가 그대로 길어진다. 어느 로딩이 이 본문을 타는지는 [afternoteHomeBodyState] 가 가른다.
+ *
+ * 상단 배치는 목록·필터 0건·필터 실패와 같다 — [HomeBodyTopSpacing]·[HomeBodySectionSpacing] 를 공유해
+ * 로딩이 끼어도 헤더와 행이 **같은 자리에** 머문다. 위쪽이 뛰지 않는 것이 이 본문의 목적이다.
+ *
+ * 이 본문도 `showsHeaderOnEmptyList` 를 보지 않는다. 볼 필요가 없다 — [drawsTopChrome] 되먹임 때문에
+ * 상단이 없던 상태에서 시작한 로드는 애초에 이 본문에 오지 않는다. 수신자 0건에서 카테고리를 고르면
+ * 종전대로 전체 로딩을 지나 목록 상태(그쪽도 헤더를 그린다)로 간다.
+ */
+@Composable
+internal fun ReloadingBody(
+    headerDescription: String,
+    nextStep: NextStep?,
+    selectedType: AfternoteType?,
+    onTypeSelected: (AfternoteType?) -> Unit,
+    filterRowScrollState: ScrollState,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(HomeBodySectionSpacing),
+    ) {
+        Spacer(Modifier.height(HomeBodyTopSpacing))
+        HomeHeaderSection(
+            description = headerDescription,
+            nextStep = nextStep,
+        )
+        // 필터 행과 로딩 사이에는 간격을 두지 않는다 — 목록 상태의 AfternoteListContent 와 같은 배치다.
+        Column(modifier = Modifier.weight(1f)) {
+            // 방금 탭한 카테고리를 로딩 중에도 선택 상태로 둔다. 「전체」로 돌아오는 전환이면 null 이다.
+            AfternoteTypeFilterRow(
+                onTabSelected = onTypeSelected,
+                selectedTab = selectedType,
+                scrollState = filterRowScrollState,
+            )
+            LoadingBody(modifier = Modifier.weight(1f))
         }
     }
 }
@@ -177,6 +261,7 @@ internal fun FilteredErrorBody(
     selectedType: AfternoteType,
     onTypeSelected: (AfternoteType?) -> Unit,
     onRetry: () -> Unit,
+    filterRowScrollState: ScrollState,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -194,6 +279,7 @@ internal fun FilteredErrorBody(
             AfternoteTypeFilterRow(
                 onTabSelected = onTypeSelected,
                 selectedTab = selectedType,
+                scrollState = filterRowScrollState,
             )
             ErrorListBody(
                 onRetry = onRetry,
@@ -228,6 +314,7 @@ internal fun EmptyHomeBody(
     nextStep: NextStep?,
     emptyListDescription: String,
     onTypeSelected: (AfternoteType?) -> Unit,
+    filterRowScrollState: ScrollState,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -247,6 +334,7 @@ internal fun EmptyHomeBody(
             AfternoteTypeFilterRow(
                 onTabSelected = onTypeSelected,
                 selectedTab = null,
+                scrollState = filterRowScrollState,
             )
             EmptyListBody(description = emptyListDescription)
         }
