@@ -32,9 +32,10 @@ import com.afternote.feature.afternote.presentation.shared.body.infinite.content
  * 관점이 갈리는 조각만 호출부가 채운다.
  *
  * @param headerDescription 상단 헤더 한 줄. 기본값을 두지 않는 이유는 [HomeHeaderSection] KDoc 참조 (#620).
- * @param showsHeaderOnEmptyList 목록이 0건이고 카테고리 필터도 없을 때 헤더(제목·설명·NEXT STEP 슬롯)를
- *   그릴지. 작성자 시안(`애프터노트_목록X` 4327:66762)은 0건에서도 헤더를 그대로 두므로 작성자는 `true` 다.
- *   수신자는 `false` — 시안이 «헤더 없음» 이어서가 아니라 **수신자 0건 시안이 아예 없어서**다. 2026-08-31
+ * @param showsHeaderOnEmptyList 목록이 0건이고 카테고리 필터도 없을 때 화면 상단(제목·설명·NEXT STEP
+ *   슬롯 **과 카테고리 필터 행**)을 그릴지. 작성자 시안(`애프터노트_목록X` 4327:66762)은 0건에서도 이
+ *   상단을 그대로 두므로 작성자는 `true` 다.
+ *   수신자는 `false` — 시안이 «상단 없음» 이어서가 아니라 **수신자 0건 시안이 아예 없어서**다. 2026-08-31
  *   에 정본 페이지(`4327:43064`) TEXT 노드 6482개를 전수 조회했고, 수신자 구역(4327:73596)의 빈 상태는
  *   「받은 기록함」(4327:74361) 하나뿐이다 — 그건 + FAB 을 가진 다른 화면이라 이 목록의 근거가 못 된다.
  *   기본값을 두지 않는 이유는 [HomeHeaderSection] KDoc 과 같다(#620·#777): 관점이 갈리는 조각은 호출부가
@@ -124,6 +125,7 @@ fun AfternoteHomeScreen(
                             headerDescription = headerDescription,
                             nextStep = nextStep,
                             emptyListDescription = emptyListDescription,
+                            onTypeSelected = onTypeSelected,
                             modifier = bodyModifier,
                         )
                     } else {
@@ -146,12 +148,20 @@ fun AfternoteHomeScreen(
  *
  * [nextStep] 은 여전히 호출부가 정한다 — 문구를 만드는 원천이 서버에도 ViewModel 에도 없어 현재는 `null`
  * 이고(Afternote-BE#270), 이 함수는 값이 생겼을 때 카드가 헤더 아래 제자리에 붙는 것만 보장한다.
+ *
+ * 카테고리 필터 행도 여기서 그린다 — 시안 `애프터노트_목록X` 는 0건에서도 헤더 아래 필터 행을 두고,
+ * 그게 없으면 첫 진입 사용자는 카테고리라는 축이 있다는 것 자체를 볼 수 없다. **이 경로를 목록 상태의
+ * [com.afternote.feature.afternote.presentation.shared.body.infinite.InfiniteListBody] 로 합치지 마라** —
+ * 그쪽 [com.afternote.feature.afternote.presentation.shared.body.infinite.content.AfternoteListContent] 의
+ * 0건 문구는 `afternote_home_filtered_empty`(카테고리 필터 결과 0건)라, 합치는 순간 전체 0건 문구
+ * `feature_afternote_empty_list_body` 가 그 문구로 뒤바뀐다. 두 문구는 #567 에서 일부러 갈라 놓은 것이다.
  */
 @Composable
 internal fun EmptyHomeBody(
     headerDescription: String,
     nextStep: NextStep?,
     emptyListDescription: String,
+    onTypeSelected: (AfternoteType?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -163,6 +173,16 @@ internal fun EmptyHomeBody(
             description = headerDescription,
             nextStep = nextStep,
         )
-        EmptyListBody(description = emptyListDescription)
+        // 필터 행과 빈 본문 사이에는 간격을 두지 않는다 — 목록 상태의 AfternoteListContent 와 같은 배치다.
+        Column {
+            // 이 본문은 «0건이고 필터도 없음» 분기에서만 그려지므로 선택 탭은 정의상 «전체»(null)다.
+            // selectedType 을 넘겨받지 않는 이유이자, `무필터 0건 본문은 전체 탭을 선택 상태로 그린다`
+            // 테스트가 이 불변을 고정한다.
+            AfternoteTypeFilterRow(
+                onTabSelected = onTypeSelected,
+                selectedTab = null,
+            )
+            EmptyListBody(description = emptyListDescription)
+        }
     }
 }
