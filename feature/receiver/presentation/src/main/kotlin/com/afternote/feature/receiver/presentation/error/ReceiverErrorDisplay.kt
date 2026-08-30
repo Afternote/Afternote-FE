@@ -29,6 +29,11 @@ private fun ReceiverFailure.displayUiTextOrNull(): UiText? =
         is ReceiverFailure.DeliveryConditionNotMet -> {
             null
         }
+
+        // 「아직 만들지 않았다」에 전용 문구를 두지 않는다 — 호출처 폴백(내려받기 실패 안내)이 맞다.
+        is ReceiverFailure.ExportNotSupported -> {
+            null
+        }
     }
 
 /**

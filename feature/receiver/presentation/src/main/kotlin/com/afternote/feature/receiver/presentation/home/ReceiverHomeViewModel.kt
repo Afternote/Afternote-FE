@@ -8,6 +8,7 @@ import com.afternote.core.ui.icon.AfternoteSourceIcon
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
+import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import com.afternote.feature.receiver.domain.model.AfterNoteListItem
 import com.afternote.feature.receiver.domain.repository.ReceiverRepository
 import com.afternote.feature.receiver.presentation.R
@@ -152,7 +153,9 @@ class ReceiverHomeViewModel
                                 )
                             }
                     }.onFailure { e ->
-                        errorReporter.recordReceiverFailure(ReceiverFailureStage.RECEIVED_EXPORT_DOWNLOAD, e)
+                        if (e !is ReceiverFailure.ExportNotSupported) {
+                            errorReporter.recordReceiverFailure(ReceiverFailureStage.RECEIVED_EXPORT_DOWNLOAD, e)
+                        }
                         updateDownload(
                             ReceiverDownloadState.Failed(R.string.receiver_home_download_all_failed),
                         )
