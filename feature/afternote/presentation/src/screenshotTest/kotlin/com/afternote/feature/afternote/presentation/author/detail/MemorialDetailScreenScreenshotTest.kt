@@ -12,6 +12,8 @@ internal fun memorialDetailScreenScreenshot() {
     AfternoteTheme {
         MemorialDetailScreen(
             onBackClick = {},
+            onEditClick = {},
+            onDeleteConfirm = {},
             onVideoClick = {},
             content =
                 MemorialDetailContent(
@@ -29,6 +31,8 @@ internal fun memorialDetailScreenWithVideoScreenshot() {
     AfternoteTheme {
         MemorialDetailScreen(
             onBackClick = {},
+            onEditClick = {},
+            onDeleteConfirm = {},
             onVideoClick = {},
             content =
                 MemorialDetailContent(

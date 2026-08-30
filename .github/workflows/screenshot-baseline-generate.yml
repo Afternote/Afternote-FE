@@ -78,14 +78,67 @@ jobs:
           cache-read-only: true
           validate-wrappers: true
 
-      - name: Generate then validate affected screenshot baselines
+      # 검증 lane(screenshot.yml)과 같은 정본으로 기대 실패 모듈을 가른다.
+      # screenshot_modules 는 역의존까지 포함하므로 core:ui 를 건드리면 이를 소비하는
+      # presentation 모듈이 전부 들어온다. 그중 .github/ci-expected-failures.json 에 오른
+      # 모듈은 컴파일 자체가 실패하도록 남겨 둔 것이라, 파티션 없이 펼치면 그 실패가
+      # 남의 골든 생성까지 통째로 죽인다 — core:ui 변경 PR 은 라벨을 달아도 골든을
+      # 받을 수 없었다 (#1448).
+      - name: Partition baseline modules against expected failures
+        id: expected-failures
         env:
           SCREENSHOT_MODULES: ${{ steps.impact.outputs.screenshot_modules }}
         run: |
+          set -euo pipefail
           read -r -a modules <<< "$SCREENSHOT_MODULES"
           update_tasks=()
-          validate_tasks=()
           for module in "${modules[@]}"; do
+            update_tasks+=("${module}:updateScreenshotTest")
+          done
+          node .github/scripts/ci-expected-failures.mjs \
+            partition-screenshot "${update_tasks[*]}" >> "$GITHUB_OUTPUT"
+
+      # 조용히 빠지면 「내 모듈 골든이 왜 안 왔지」로 다시 헤맨다. 무엇이 빠졌는지,
+      # 왜 빠졌는지를 job summary 에 남긴다.
+      - name: Report modules excluded from baseline generation
+        env:
+          EXPECTED_TASKS: ${{ steps.expected-failures.outputs.expected_tasks }}
+          NORMAL_TASKS: ${{ steps.expected-failures.outputs.normal_tasks }}
+        run: |
+          set -euo pipefail
+          if [ -n "$EXPECTED_TASKS" ]; then
+            {
+              echo "### 골든 생성에서 제외된 모듈"
+              echo
+              echo "아래 모듈은 \`.github/ci-expected-failures.json\` 에 기대 실패로 등재돼 있어 생성 대상에서 뺐다."
+              echo "이 모듈들의 골든은 해당 게이트 이슈가 닫힌 뒤에 받을 수 있다."
+              echo
+              for task in $EXPECTED_TASKS; do
+                echo "- \`${task%:updateScreenshotTest}\`"
+              done
+              echo
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ -z "$NORMAL_TASKS" ]; then
+            {
+              echo "### 생성할 골든이 없다"
+              echo
+              echo "영향 범위의 screenshot 모듈이 **전부** 기대 실패로 등재돼 있다."
+              echo
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::영향 범위의 screenshot 모듈이 전부 기대 실패 목록에 있어 생성할 골든이 없습니다"
+            exit 1
+          fi
+
+      - name: Generate then validate affected screenshot baselines
+        env:
+          NORMAL_TASKS: ${{ steps.expected-failures.outputs.normal_tasks }}
+        run: |
+          read -r -a normal <<< "$NORMAL_TASKS"
+          update_tasks=()
+          validate_tasks=()
+          for task in "${normal[@]}"; do
+            module="${task%:updateScreenshotTest}"
             update_tasks+=("${module}:updateScreenshotTest")
             validate_tasks+=("${module}:validateScreenshotTest")
           done
@@ -110,9 +163,11 @@ jobs:
         if: always()
         run: sudo chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE" "$HOME/.gradle"
 
+      # 패키징 대상도 생성 lane 과 같아야 한다. 제외된 모듈의 reference 경로를 넣으면
+      # 골든을 만든 적 없는 자리를 스테이징하게 된다.
       - name: Package baseline-only PNG blobs
         env:
-          SCREENSHOT_MODULES: ${{ steps.impact.outputs.screenshot_modules }}
+          NORMAL_TASKS: ${{ steps.expected-failures.outputs.normal_tasks }}
           TARGET_BRANCH: ${{ github.event.pull_request.head.ref }}
           TARGET_PR: ${{ github.event.pull_request.number }}
           TARGET_SHA: ${{ github.event.pull_request.head.sha }}
@@ -121,10 +176,11 @@ jobs:
           artifact="$RUNNER_TEMP/screenshot-baseline"
           mkdir -p "$artifact/blobs"
 
-          read -r -a modules <<< "$SCREENSHOT_MODULES"
+          read -r -a normal <<< "$NORMAL_TASKS"
           baseline_paths=()
-          for module in "${modules[@]}"; do
-            module_path="${module#:}"
+          for task in "${normal[@]}"; do
+            module_path="${task%:updateScreenshotTest}"
+            module_path="${module_path#:}"
             baseline_paths+=("${module_path//:/\/}/src/screenshotTestDebug/reference")
           done
           git add -A -- "${baseline_paths[@]}"
@@ -167,4 +223,5 @@ jobs:
           name: screenshot-baseline-artifact
           path: ${{ runner.temp }}/screenshot-baseline/
           if-no-files-found: error
+          # 예외: job 간 전송용 — 소비하는 job 이 같은 run 안에서 끝나므로 1일이면 족하다 (#1400).
           retention-days: 1

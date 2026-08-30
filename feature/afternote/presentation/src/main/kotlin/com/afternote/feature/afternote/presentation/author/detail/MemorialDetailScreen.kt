@@ -88,8 +88,8 @@ fun MemorialDetailScreen(
     userName: String = "",
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     isEditable: Boolean = true,
-    onEditClick: () -> Unit = {},
-    onDeleteConfirm: () -> Unit = {},
+    onEditClick: () -> Unit,
+    onDeleteConfirm: () -> Unit,
     onVideoClick: (String) -> Unit,
     state: AfternoteDetailState = rememberAfternoteDetailState(),
 ) {
