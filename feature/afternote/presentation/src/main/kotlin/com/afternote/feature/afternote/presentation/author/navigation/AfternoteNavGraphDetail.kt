@@ -1,7 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.navigation
 
-import android.content.ActivityNotFoundException
-import android.content.Intent
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -33,11 +31,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.common.media.launchMemorialVideo
 import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
@@ -353,6 +351,14 @@ private fun rememberMemorialVideoClickHandler(snackbarHostState: SnackbarHostSta
             launchMemorialVideo(
                 videoUrl = videoUrl,
                 startActivity = context::startActivity,
+                // 원인이 다르면 문구도 달라야 한다 — 둘을 한 문장으로 덮으면 스킴이 막힌
+                // 상황에 «재생할 앱이 없습니다» 라는 거짓 안내가 나간다.
+                onRejected = {
+                    val message = resources.getString(R.string.feature_afternote_memorial_video_invalid_url)
+                    scope.launch {
+                        snackbarHostState.showSnackbar(message = message)
+                    }
+                },
                 onUnavailable = {
                     val message = resources.getString(R.string.feature_afternote_memorial_video_no_app)
                     scope.launch {
@@ -361,50 +367,5 @@ private fun rememberMemorialVideoClickHandler(snackbarHostState: SnackbarHostSta
                 },
             )
         }
-    }
-}
-
-/**
- * 서버가 준 추모 영상 URL을 외부 재생 앱으로 연다.
- *
- * Android 11+ 패키지 가시성에서는 외부 앱 사전 조회가 실제 처리 가능한 앱이 있어도 실패할 수 있다.
- * 따라서 http/https URL만 선별한 뒤 실행을 직접 시도하고, OS가 명시적으로 거부한 경우에만
- * [onUnavailable] 로 폴백한다.
- */
-internal fun launchMemorialVideo(
-    videoUrl: String,
-    startActivity: (Intent) -> Unit,
-    onUnavailable: () -> Unit,
-) {
-    val uri =
-        try {
-            videoUrl
-                .takeUnless { it.isBlank() || it.any(Char::isWhitespace) }
-                ?.toUri()
-                ?.takeIf {
-                    val scheme = it.scheme
-                    (
-                        scheme.equals("http", ignoreCase = true) ||
-                            scheme.equals("https", ignoreCase = true)
-                    ) &&
-                        !it.host.isNullOrBlank()
-                }
-        } catch (_: IllegalArgumentException) {
-            null
-        }
-
-    if (uri == null) {
-        onUnavailable()
-        return
-    }
-
-    try {
-        startActivity(Intent(Intent.ACTION_VIEW, uri))
-    } catch (_: ActivityNotFoundException) {
-        onUnavailable()
-    } catch (_: SecurityException) {
-        onUnavailable()
-    } catch (_: IllegalArgumentException) {
-        onUnavailable()
     }
 }
