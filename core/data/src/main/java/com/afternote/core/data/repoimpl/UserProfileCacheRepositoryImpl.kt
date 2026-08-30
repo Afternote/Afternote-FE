@@ -1,15 +1,15 @@
 package com.afternote.core.data.repoimpl
 
 import com.afternote.core.datastore.UserProfileDataSource
-import com.afternote.core.domain.repository.UserProfileRepository
+import com.afternote.core.domain.repository.UserProfileCacheRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-internal class UserProfileRepositoryImpl
+internal class UserProfileCacheRepositoryImpl
     @Inject
     constructor(
         private val dataSource: UserProfileDataSource,
-    ) : UserProfileRepository {
+    ) : UserProfileCacheRepository {
         override fun isPasskeyRegisteredFlow(): Flow<Boolean> = dataSource.isPasskeyRegisteredFlow()
 
         override suspend fun savePasskeyRegistered(registered: Boolean) {

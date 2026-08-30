@@ -29,7 +29,6 @@ class LeaveMessageBlockContractTest {
     private val json =
         Json {
             ignoreUnknownKeys = true
-            coerceInputValues = true
         }
 
     /**

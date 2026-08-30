@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.navigation
+package com.afternote.feature.afternote.presentation.shared.detail
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
