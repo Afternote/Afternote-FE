@@ -14,6 +14,7 @@ konsist/      아키텍처 규칙 테스트
 
 | 문서 | 내용 |
 |---|---|
+| [docs/security/actions-supply-chain.md](docs/security/actions-supply-chain.md) | Actions SHA 고정 · 허용 목록 정책 (조직 수준 감사) |
 | [docs/release/distribution.md](docs/release/distribution.md) | 비개발자 APK 배포 (Firebase App Distribution) |
 | [docs/testing/screenshot.md](docs/testing/screenshot.md) | Compose Preview 스크린샷 baseline (Docker) |
 | [docs/qa/status.md](docs/qa/status.md) | QA 현황 · 회차 기록 · 커버리지 |
