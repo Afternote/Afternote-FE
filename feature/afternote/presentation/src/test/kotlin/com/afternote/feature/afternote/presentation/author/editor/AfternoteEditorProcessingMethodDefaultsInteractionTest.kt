@@ -9,7 +9,6 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
-import com.afternote.feature.afternote.presentation.author.editor.shouldDeferEditorBaselineCapture
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import org.junit.Assert.assertEquals

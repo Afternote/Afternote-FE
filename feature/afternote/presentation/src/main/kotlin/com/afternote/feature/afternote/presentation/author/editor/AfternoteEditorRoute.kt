@@ -9,11 +9,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorBody
-import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreen
-import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
-import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
-import com.afternote.feature.afternote.presentation.author.editor.SaveAfternotePayloadBuilder
 import com.afternote.feature.afternote.presentation.author.editor.processing.AfternoteProcessingMethodDefaults
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState

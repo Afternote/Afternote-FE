@@ -12,10 +12,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.fragment.app.FragmentActivity
 import com.afternote.core.ui.findActivity
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.fingerprint.BiometricAuthResult
-import com.afternote.feature.afternote.presentation.shared.fingerprint.BiometricMessages
-import com.afternote.feature.afternote.presentation.shared.fingerprint.FingerprintLoginScreen
-import com.afternote.feature.afternote.presentation.shared.fingerprint.authenticateBiometric
 import kotlinx.coroutines.launch
 
 @Composable
