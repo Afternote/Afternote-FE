@@ -23,8 +23,12 @@ import org.robolectric.annotation.Config
 /**
  * #567 — 빈 목록 두 상태가 각자의 확정 문구를 보여주는지 검증한다.
  *
- * 전체 목록 0건은 [EmptyListBody], 카테고리 필터 결과 0건은 [AfternoteListContent] 내부 빈 상태 경로다.
- * 두 문구가 서로의 상태에 새어 나오지 않아야 한다.
+ * 전체 목록 0건은 [EmptyHomeBody](작성자)·[EmptyListBody](수신자), 카테고리 필터 결과 0건은
+ * [AfternoteListContent] 내부 빈 상태 경로다. 두 문구가 서로의 상태에 새어 나오지 않아야 한다.
+ *
+ * 작성자 전체 0건을 [EmptyListBody] 가 아니라 [EmptyHomeBody] 로 판정하는 이유: 실제로 그려지는 것이
+ * 그쪽이고, 이 상태를 목록 경로([AfternoteListContent])로 합치려는 «정리» 가 들어오면 전체 0건 문구가
+ * 조용히 필터 0건 문구로 바뀐다. 그 리팩터링을 여기서 빨갛게 만든다 (#1175 후속).
  *
  * 두 상태를 가르는 [AfternoteHomeScreen] 전체가 아니라 각 빈 상태 컴포저블을 직접 띄우는 이유:
  * 화면은 `loadState.refresh` 가 Loading 인 동안 초기 로딩(LoadingBody)을 그리는데,
@@ -41,12 +45,25 @@ class AfternoteHomeEmptyCopyTest {
 
     @Test
     fun `전체 목록 0건이면 애프터노트 등록 안내 문구를 보여준다`() {
-        composeRule.setContent {
-            AfternoteTheme { EmptyListBody(description = stringRes(R.string.feature_afternote_empty_list_body)) }
-        }
+        composeRule.setContent { AfternoteTheme { AuthorEmptyBody() } }
 
         composeRule.onNodeWithText(string(R.string.feature_afternote_empty_list_body)).assertExists()
         composeRule.onNodeWithText(string(R.string.afternote_home_filtered_empty)).assertDoesNotExist()
+    }
+
+    /**
+     * 수신자 경로(`showsHeaderOnEmptyList = false`)의 0건 본문. 문구 자체는 관점마다 다르지만(#1630),
+     * **카테고리 필터 0건 문구가 섞이지 않는다**는 것은 같다. 발신자 문구가 수신자에게 새지 않는 것까지 함께 본다.
+     */
+    @Test
+    fun `헤더 없는 0건 본문에도 카테고리 필터 문구가 새지 않는다`() {
+        composeRule.setContent {
+            AfternoteTheme { EmptyListBody(description = stringRes(R.string.afternote_receiver_list_empty_body)) }
+        }
+
+        composeRule.onNodeWithText(string(R.string.afternote_receiver_list_empty_body)).assertExists()
+        composeRule.onNodeWithText(string(R.string.afternote_home_filtered_empty)).assertDoesNotExist()
+        composeRule.onNodeWithText(string(R.string.feature_afternote_empty_list_body)).assertDoesNotExist()
     }
 
     @Test
@@ -61,6 +78,17 @@ class AfternoteHomeEmptyCopyTest {
 
     @Composable
     private fun stringRes(resId: Int): String = stringResource(resId)
+
+    /** 작성자 전체 0건 본문. [AfternoteHomeScreen] 의 `showsHeaderOnEmptyList = true` 경로가 그리는 것. */
+    @Composable
+    private fun AuthorEmptyBody() {
+        EmptyHomeBody(
+            headerDescription = stringRes(R.string.afternote_home_header_description),
+            nextStep = null,
+            emptyListDescription = stringRes(R.string.feature_afternote_empty_list_body),
+            onTypeSelected = {},
+        )
+    }
 
     /** 카테고리를 고른 채 결과가 0건인 목록. [AfternoteListContent] 는 itemCount 만 보므로 수집을 기다리지 않는다. */
     @Composable
