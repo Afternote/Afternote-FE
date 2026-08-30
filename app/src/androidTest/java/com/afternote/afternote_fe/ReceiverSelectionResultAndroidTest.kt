@@ -2,11 +2,14 @@ package com.afternote.afternote_fe
 
 import androidx.activity.compose.setContent
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
@@ -32,11 +35,13 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
+import kotlinx.coroutines.CompletableDeferred
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.IOException
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import com.afternote.core.ui.R as CoreUiR
 import com.afternote.feature.afternote.presentation.R as AfternoteR
@@ -60,6 +65,18 @@ import com.afternote.feature.afternote.presentation.R as AfternoteR
  * 소비처는 현재 애프터노트 에디터 하나다(0830 `origin/develop` 실측 — 설정은 #631 로 관리 화면이
  * 되며 공용 컴포넌트 소비를 그만두고, 타임레터·마음의 기록은 아직 각 기능 전용 구현이다).
  * 소비처가 늘어나면 각 모듈이 자기 route 테스트를 여기 옆에 더한다.
+ *
+ * **배리어 규약.** `navController` 의 destination 은 `popBackStack()` 순간 뒤집히지만 화면 조립은
+ * 그 뒤에 따라온다. 그래서 라우트 대기만으로는 "선택 화면이 사라졌다" 를 보장하지 못한다.
+ * 화면 전환 판정은 항상 [waitForEditorAddButtons] 로 한다 — "추가" 설명이 붙은 버튼은 에디터에만
+ * 있고 선택 화면엔 없다. 부정 단언("들어오지 않았다") 앞에는 추가로 [awaitReceiverLoad] 로
+ * 저장소를 한 바퀴 돌린다. 선택 결과 반영도 같은 저장소 홉(`resolveSelectedReceiver`)을 지나므로,
+ * 그 홉에 IO 나 지연이 생겨도 단언 뒤로 착지할 수 없다.
+ *
+ * **진입 경로 주의.** [Route.Afternote] 의 시작 화면은 지문 로그인이고, 계측에 주입되는
+ * `FakeUserProfileCacheRepository` 가 패스키 미등록(false)을 내야 홈으로 자동 통과한다.
+ * 그 fake 기본값이 바뀌면 세 테스트가 모두 홈 대기에서 멈추므로, 실패 메시지에 현재 destination 을
+ * 실어 원인이 드러나게 했다([waitForRoute]).
  */
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
@@ -125,7 +142,9 @@ class ReceiverSelectionResultAndroidTest {
         composeRule.onNodeWithText(PARK.name).performClick()
         composeRule.onNodeWithText(confirmText).assertIsEnabled().performClick()
 
-        waitForRoute<AfternoteRoute.EditorRoute>()
+        waitForRoute<AfternoteRoute.EditorRoute>("에디터")
+        // 선택 화면에도 세 사람이 모두 떠 있으므로, 에디터가 조립된 뒤에야 이름으로 판정할 수 있다.
+        waitForEditorAddButtons()
         waitForEditorReceiver(PARK.name)
         // 이미 지정돼 있던 수신자는 유지되고, 고르지 않은 수신자는 따라 들어오지 않는다.
         composeRule.onNodeWithText(KIM.name).performScrollTo().assertIsDisplayed()
@@ -142,42 +161,61 @@ class ReceiverSelectionResultAndroidTest {
         receiverSource.receivers = listOf(KIM, PARK)
         openReceiverSelect()
         composeRule.onNodeWithText(PARK.name).performClick()
+
+        // 복귀 직후 판정은 «취소가 값을 흘렸다» 를 놓칠 수 있다 — 흘린 값의 반영은 저장소를 한 번
+        // 더 지나기 때문이다. 그 홉을 게이트로 붙잡았다 풀어 반드시 먼저 착지하게 만든 뒤 판정한다.
+        val gate = receiverSource.gateNextLoad()
         composeRule
             .onNodeWithContentDescription(copy(CoreUiR.string.core_ui_content_description_back))
             .performClick()
 
-        waitForRoute<AfternoteRoute.EditorRoute>()
-        waitForEditorReceiver(KIM.name)
+        waitForRoute<AfternoteRoute.EditorRoute>("에디터")
+        waitForEditorAddButtons()
+        releaseGatedLoad(gate)
+
+        composeRule.onNodeWithText(KIM.name).performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText(PARK.name).assertDoesNotExist()
     }
 
     /**
-     * 목록을 못 그리는 상태(빈 목록·조회 실패)에서는 완료가 잠겨 있고, 재시도로 목록이 살아난 뒤에야
-     * 선택이 완료를 연다.
+     * 목록을 못 그리는 상태(로딩·빈 목록·조회 실패)에서는 완료가 잠겨 있고, 재시도로 목록이
+     * 살아난 뒤에야 선택이 완료를 연다.
      *
-     * 상태 화면은 소비 기능이 소유하고(`listReplacement`) 완료 버튼은 공용 컴포넌트가 소유한다 —
-     * 둘이 실제로 한 화면에 조립됐을 때의 조합은 여기서만 드러난다.
+     * 빈 목록 문구는 **조회 전 초기 상태에서도** 그려진다(`SelectReceiverUiState()` 기본값이
+     * `isLoading=false, receivers=[]` 라 화면 분기가 빈 목록으로 떨어진다). 그래서 "빈 목록 문구가
+     * 보인다" 만으로는 조회가 일어났는지조차 알 수 없다. 조회를 게이트로 붙잡아 **로딩 표시가
+     * 빈 목록 문구를 대신하고 있는 것**을 먼저 확인하고, 풀어 준 뒤에 빈 목록 문구를 단언한다.
      */
     @Test
     fun afternoteSelectReceiver_emptyAndLoadFailureBlockConfirmUntilRetryLoadsList() {
         receiverSource.receivers = emptyList()
         openNewSocialEditor()
 
+        val emptyLoad = receiverSource.gateNextLoad()
         openReceiverSelect()
-        composeRule.onNodeWithText(copy(AfternoteR.string.afternote_select_receiver_empty)).assertIsDisplayed()
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            composeRule
+                .onAllNodes(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeRule.onNodeWithText(emptyText).assertDoesNotExist()
+        emptyLoad.barrier.complete(Unit)
+
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            composeRule.onAllNodesWithText(emptyText).fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithText(confirmText).assertIsNotEnabled()
         composeRule
             .onNodeWithContentDescription(copy(CoreUiR.string.core_ui_content_description_back))
             .performClick()
-        waitForRoute<AfternoteRoute.EditorRoute>()
+        waitForRoute<AfternoteRoute.EditorRoute>("에디터")
+        waitForEditorAddButtons()
 
         receiverSource.failing = true
         openReceiverSelect()
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            composeRule
-                .onAllNodesWithText(copy(AfternoteR.string.afternote_select_receiver_load_failed))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
+            composeRule.onAllNodesWithText(loadFailedText).fetchSemanticsNodes().isNotEmpty()
         }
         composeRule.onNodeWithText(confirmText).assertIsNotEnabled()
 
@@ -196,14 +234,20 @@ class ReceiverSelectionResultAndroidTest {
     private val confirmText: String
         get() = copy(CoreUiR.string.core_ui_receiver_select_confirm)
 
+    private val emptyText: String
+        get() = copy(AfternoteR.string.afternote_select_receiver_empty)
+
+    private val loadFailedText: String
+        get() = copy(AfternoteR.string.afternote_select_receiver_load_failed)
+
     private fun openNewSocialEditor() {
-        waitForRoute<AfternoteRoute.AfternoteHomeRoute>()
+        waitForRoute<AfternoteRoute.AfternoteHomeRoute>("애프터노트 홈(지문 로그인 자동 통과)")
         composeRule.runOnIdle {
             navController.navigate(
                 AfternoteRoute.EditorFlowRoute(initialType = AfternoteType.SOCIAL_NETWORK),
             )
         }
-        waitForRoute<AfternoteRoute.EditorRoute>()
+        waitForRoute<AfternoteRoute.EditorRoute>("에디터")
         waitForEditorAddButtons()
     }
 
@@ -211,24 +255,46 @@ class ReceiverSelectionResultAndroidTest {
      * 수신자 지정 섹션의 추가 버튼을 눌러 선택 화면으로 간다.
      *
      * 계정 카테고리 폼에는 같은 "추가" 설명을 가진 버튼이 수신자 지정·처리 방법 두 곳에 있고,
-     * 시안 순서상 수신자 지정이 앞이라 첫 번째가 대상이다. 순서가 바뀌면 라우트 대기에서 즉시 실패한다.
+     * 시안 순서상 수신자 지정이 앞이라 첫 번째가 대상이다(개수 단언으로 그 전제를 고정한다).
+     * 순서가 바뀌면 라우트 대기가 현재 destination 을 실은 메시지로 실패한다.
      */
     private fun openReceiverSelect() {
         waitForEditorAddButtons()
-        composeRule.onAllNodesWithContentDescription(addDescription()).run {
+        composeRule.onAllNodesWithContentDescription(addDescription).run {
             assertCountEquals(EDITOR_ADD_BUTTON_COUNT)
             get(0).performScrollTo().performClick()
         }
-        waitForRoute<AfternoteRoute.SelectReceiverRoute>()
+        waitForRoute<AfternoteRoute.SelectReceiverRoute>("수신자 선택 화면")
     }
 
+    /**
+     * 에디터가 조립됐음을 확정한다. "추가" 설명이 붙은 버튼은 에디터에만 있고 선택 화면엔 없어,
+     * 수신자 이름과 달리 두 화면을 구분하는 앵커가 된다.
+     */
     private fun waitForEditorAddButtons() {
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             composeRule
-                .onAllNodesWithContentDescription(addDescription())
+                .onAllNodesWithContentDescription(addDescription)
                 .fetchSemanticsNodes()
                 .size == EDITOR_ADD_BUTTON_COUNT
         }
+    }
+
+    /**
+     * 게이트에 걸린 목록 조회가 **실제로 시작된 것**을 확인하고 풀어, 저장소 왕복 한 바퀴를
+     * 완주시킨다. 시작·완료 모두 직전 값보다 커졌는지로 판정한다 — 그래야 배리어 자체가
+     * 무조건 참인 조건으로 무너지지 않는다.
+     */
+    private fun releaseGatedLoad(gate: GatedLoad) {
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            receiverSource.loadsStarted.get() > gate.startedBefore
+        }
+        val completedBefore = receiverSource.loadsCompleted.get()
+        gate.barrier.complete(Unit)
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            receiverSource.loadsCompleted.get() > completedBefore
+        }
+        composeRule.waitForIdle()
     }
 
     private fun waitForEditorReceiver(name: String) {
@@ -237,13 +303,22 @@ class ReceiverSelectionResultAndroidTest {
         }
     }
 
-    private inline fun <reified T : Any> waitForRoute() {
-        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            navController.currentDestination?.hasRoute<T>() == true
+    /** 실패 시 현재 destination 을 함께 남긴다 — 「10초 뒤 조건 미충족」만으론 원인이 안 드러난다. */
+    private inline fun <reified T : Any> waitForRoute(description: String) {
+        try {
+            composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+                navController.currentDestination?.hasRoute<T>() == true
+            }
+        } catch (e: ComposeTimeoutException) {
+            throw AssertionError(
+                "$description 으로 이동하지 못했습니다. 현재 destination=${navController.currentDestination?.route}",
+                e,
+            )
         }
     }
 
-    private fun addDescription(): String = copy(AfternoteR.string.afternote_editor_content_description_add)
+    private val addDescription: String
+        get() = copy(AfternoteR.string.afternote_editor_content_description_add)
 
     /** 화면 문구는 리소스가 정본이다 — 문구가 바뀌어도 단언이 따라간다 (#567). */
     private fun copy(resId: Int): String =
@@ -252,7 +327,12 @@ class ReceiverSelectionResultAndroidTest {
             .targetContext
             .getString(resId)
 
-    /** 조회 시점마다 응답을 갈아끼우는 수신자 목록 소스. */
+    /**
+     * 조회 시점마다 응답을 갈아끼우는 수신자 목록 소스.
+     *
+     * [gateNextLoad] 로 다음 조회를 붙잡아 두면 로딩 상태를 관찰할 수 있고, 부정 단언 앞에
+     * 저장소 왕복을 강제로 완주시키는 배리어로도 쓴다.
+     */
     private class StagedReceiverSource {
         @Volatile
         var receivers: List<Receiver> = emptyList()
@@ -260,11 +340,39 @@ class ReceiverSelectionResultAndroidTest {
         @Volatile
         var failing: Boolean = false
 
-        fun load(): List<Receiver> {
-            if (failing) throw IOException("수신자 목록 조회 실패(테스트)")
-            return receivers
+        val loadsStarted = AtomicInteger()
+        val loadsCompleted = AtomicInteger()
+
+        @Volatile
+        private var gate: CompletableDeferred<Unit>? = null
+
+        fun gateNextLoad(): GatedLoad {
+            val barrier = CompletableDeferred<Unit>()
+            val startedBefore = loadsStarted.get()
+            gate = barrier
+            return GatedLoad(barrier = barrier, startedBefore = startedBefore)
+        }
+
+        suspend fun load(): List<Receiver> {
+            loadsStarted.incrementAndGet()
+            gate?.let { barrier ->
+                gate = null
+                barrier.await()
+            }
+            try {
+                if (failing) throw IOException("수신자 목록 조회 실패(테스트)")
+                return receivers
+            } finally {
+                loadsCompleted.incrementAndGet()
+            }
         }
     }
+
+    /** 붙잡아 둔 조회 한 건 — 푸는 쪽이 "언제부터"를 알아야 시작 판정이 무조건 참이 되지 않는다. */
+    private class GatedLoad(
+        val barrier: CompletableDeferred<Unit>,
+        val startedBefore: Int,
+    )
 
     private companion object {
         const val TIMEOUT_MILLIS = 10_000L
