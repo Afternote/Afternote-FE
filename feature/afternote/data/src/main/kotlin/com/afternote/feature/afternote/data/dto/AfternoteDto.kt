@@ -36,10 +36,27 @@ data class AfternoteCreateAccountRequestDto(
     @SerialName("receivers") val receivers: List<AfternoteReceiverRefDto> = emptyList(),
 )
 
+/**
+ * 애프터노트 수정(PATCH) 요청 바디 — **부분 갱신이다.**
+ *
+ * `null` 인 슬롯은 `encodeDefaults = false` 덕분에 **키째 빠지고**, 서버는 그것을 「기존 값 유지」로
+ * 읽는다 (Afternote-BE `bbff47c` · BE#200·#201). 그러므로 여기서 기본값 `null` 은 편의가 아니라
+ * 계약이다 — 사용자가 만지지 않은 필드를 이 DTO 에 채우면 그 순간 낡은 값이 남의 변경을 덮는다
+ * (#1617).
+ *
+ * [title] 에도 기본값을 둔다. 제목은 늘 폼에 떠 있어 「안 바꿨다」를 말할 수단이 필요하다 —
+ * 서버도 `title` 생략을 계약으로 못박아 뒀다(`updateAfternote_OmitCategoryAndTitle_Success`).
+ *
+ * [category] 만 늘 실린다. 값을 바꾸는 필드가 아니라 **대상 확인용 단언**이라 lost update 축에
+ * 참여하지 않는다 — 서버는 저장값과 다르면 400 을 내고 같으면 아무것도 바꾸지 않는다.
+ *
+ * 빈 컬렉션은 생략이 아니라 **삭제**다. `[]` 를 실으면 서버가 관계를 통째로 갈아 끼운다
+ * (`actions`·`leaveMessage`·`receivers`, 그리고 `playlist.songs` — #1599).
+ */
 @Serializable
 data class AfternoteUpdateRequestDto(
     @SerialName("category") val category: String,
-    @SerialName("title") val title: String,
+    @SerialName("title") val title: String? = null,
     @SerialName("actions") val processingMethods: List<String>? = null,
     @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
     @SerialName("credentials") val credentials: AfternoteCredentialsDto? = null,

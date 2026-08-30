@@ -155,9 +155,13 @@ class FakeAfternoteRepository(
     }
 }
 
+/**
+ * 수정은 **부분 갱신**이라 `null` 슬롯은 「안 건드림」이다 — 서버와 같이 기존 값을 남긴다 (#1617).
+ * 여기서 덮어써 버리면 페이로드가 필드를 뺐는지 여부를 테스트가 구분하지 못한다.
+ */
 private fun ListItem.updatedWith(payload: AfternoteUpdatePayload): ListItem =
     copy(
-        serviceName = payload.title,
+        serviceName = payload.title ?: serviceName,
         type = payload.type,
         account = account.updatedWith(payload.credentials),
     )
@@ -174,13 +178,13 @@ private fun Account.updatedWith(credentials: AfternoteAccountCredentials?): Acco
 
 private fun Detail.updatedWith(payload: AfternoteUpdatePayload): Detail =
     copy(
-        serviceName = payload.title,
+        serviceName = payload.title ?: serviceName,
         receivers =
             payload.receivers?.map { ref ->
                 receivers.firstOrNull { it.receiverId == ref.receiverId }
                     ?: DetailReceiver(receiverId = ref.receiverId, name = "", relation = "")
             } ?: receivers,
-        leaveMessageBlocks = payload.leaveMessageBlocks,
+        leaveMessageBlocks = payload.leaveMessageBlocks ?: leaveMessageBlocks,
         content = content.updatedWith(payload),
     )
 

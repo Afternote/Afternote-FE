@@ -22,14 +22,17 @@ import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
 
 /**
  * 도메인 → 요청 wire. 요청 바디 루트는 `toRequest`, 그 안에 실리는 부분 DTO 는 `toDto` 다.
+ *
+ * 수정 페이로드는 **슬롯을 하나도 접지 않고 그대로 옮긴다** (#1617). 어떤 필드를 실을지는 이미
+ * `AfternoteEditorFormMapper` 가 프리필 원본과 비교해 정했다 — 여기서 `ifEmpty { null }` 류로 한 번
+ * 더 손대면 「전부 삭제」가 「안 건드림」으로 조용히 바뀐다.
  */
-
 fun AfternoteUpdatePayload.toRequest() =
     AfternoteUpdateRequestDto(
         category = type.toAuthoringServerCategory(),
         title = title,
         processingMethods = processingMethods,
-        leaveMessage = leaveMessageBlocks.toDto(),
+        leaveMessage = leaveMessageBlocks.toPatchDto(),
         credentials = credentials?.toDto(),
         receivers = receivers?.map { it.toDto() },
         memorial = memorial?.toDto(),

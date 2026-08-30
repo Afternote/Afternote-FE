@@ -219,38 +219,123 @@ internal object AfternoteEditorFormMapper {
             receiverIds = selectedReceiverIds,
         )
 
+    /**
+     * 수정 요청 페이로드를 조립한다 — **[baseline] 과 달라진 필드만 싣는다** (#1617).
+     *
+     * 폼 전체 스냅샷을 매번 통째로 보내면, 에디터를 연 뒤 서버가 바뀐 경우 사용자가 만진 적도 없는
+     * 필드가 낡은 값으로 덮인다. 서버는 「키 없음 = 유지」로 읽으므로, 안 건드린 필드를 아예 빼는
+     * 것으로 그 사고를 구조적으로 없앤다.
+     *
+     * @param baseline 수정 진입 시 받은 상세 응답을 [buildUpdateBaseline] 로 옮긴 **원본 스냅샷**.
+     *   `null`(상세를 아직/끝내 못 받음)이면 비교할 기준이 없으므로 종전처럼 전량을 싣는다 —
+     *   덜 보내다 사용자의 편집을 잃는 것보다 낫다.
+     */
     fun buildUpdatePayload(
         type: AfternoteType,
         payload: RegisterAfternotePayload,
         selectedReceiverIds: List<Long>,
         playlistSongs: List<Song>,
         memorialMedia: MemorialMediaUrls,
-    ): AfternoteUpdatePayload =
-        when (type) {
-            AfternoteType.MEMORIAL -> {
-                AfternoteUpdatePayload(
-                    type = AfternoteType.MEMORIAL,
-                    title = payload.serviceName,
-                    leaveMessageBlocks = payload.messageBlocks.toLeaveMessageBlocks(),
-                    memorial =
-                        buildMemorialWritePayload(
-                            playlistSongs = playlistSongs,
-                            memorialPhotoUrl = memorialMedia.memorialPhotoUrl,
-                            memorialVideoUrl = memorialMedia.memorialVideoUrl,
-                            memorialThumbnailUrl = memorialMedia.memorialThumbnailUrl,
-                        ),
-                )
-            }
+        baseline: AfternoteUpdatePayload?,
+    ): AfternoteUpdatePayload {
+        val full =
+            when (type) {
+                AfternoteType.MEMORIAL -> {
+                    AfternoteUpdatePayload(
+                        type = AfternoteType.MEMORIAL,
+                        title = payload.serviceName,
+                        leaveMessageBlocks = payload.messageBlocks.toLeaveMessageBlocks(),
+                        memorial =
+                            buildMemorialWritePayload(
+                                playlistSongs = playlistSongs,
+                                memorialPhotoUrl = memorialMedia.memorialPhotoUrl,
+                                memorialVideoUrl = memorialMedia.memorialVideoUrl,
+                                memorialThumbnailUrl = memorialMedia.memorialThumbnailUrl,
+                            ),
+                    )
+                }
 
-            AfternoteType.GALLERY_AND_FILES, AfternoteType.SOCIAL_NETWORK, AfternoteType.BUSINESS -> {
-                buildProcessingMethodsUpdatePayload(type, payload, selectedReceiverIds)
-            }
+                AfternoteType.GALLERY_AND_FILES, AfternoteType.SOCIAL_NETWORK, AfternoteType.BUSINESS -> {
+                    buildProcessingMethodsUpdatePayload(type, payload, selectedReceiverIds)
+                }
 
-            // placeholder 카테고리는 Validator 에서 차단됨. 도달 시 호출자 버그.
-            AfternoteType.ESTATE -> {
-                error("Unimplemented type cannot be saved: $type")
+                // placeholder 카테고리는 Validator 에서 차단됨. 도달 시 호출자 버그.
+                AfternoteType.ESTATE -> {
+                    error("Unimplemented type cannot be saved: $type")
+                }
             }
-        }
+        return full.omittingFieldsUnchangedFrom(baseline)
+    }
+
+    /**
+     * 수정 진입 시 받은 상세를 **「서버가 지금 들고 있는 값」 그대로의 수정 페이로드**로 옮긴다.
+     *
+     * [buildUpdatePayload] 가 만드는 현재 폼 페이로드와 **같은 어휘**라, 필드끼리 바로 견줄 수 있다.
+     * 프리필([buildEditorFormPrefill])을 거치지 않고 [Detail] 에서 직접 만드는 이유는, 프리필이
+     * 화면 표시용으로 값을 한 번 가공하기 때문이다 — 비교 기준은 가공 전 원본이어야 한다.
+     */
+    fun buildUpdateBaseline(detail: Detail): AfternoteUpdatePayload {
+        val content = detail.content
+        return AfternoteUpdatePayload(
+            type = content.type,
+            title = detail.serviceName,
+            processingMethods =
+                when (content) {
+                    is DetailContent.SocialNetwork -> content.processingMethods
+                    is DetailContent.Business -> content.processingMethods
+                    is DetailContent.Gallery -> content.processingMethods
+                    is DetailContent.Memorial, DetailContent.Estate -> null
+                },
+            leaveMessageBlocks = detail.leaveMessageBlocks,
+            credentials =
+                when (content) {
+                    is DetailContent.SocialNetwork -> content.credentials.toAccountCredentials()
+                    is DetailContent.Business -> content.credentials.toAccountCredentials()
+                    is DetailContent.Gallery, is DetailContent.Memorial, DetailContent.Estate -> null
+                },
+            // 추억 노트 수정 페이로드는 수신자를 싣지 않으므로(아래 when 의 MEMORIAL 분기 참고)
+            // 기준도 같은 자리를 비워 둔다 — 그래야 「양쪽 다 없음」으로 맞아떨어진다.
+            receivers =
+                when (content) {
+                    is DetailContent.Memorial, DetailContent.Estate -> {
+                        null
+                    }
+
+                    is DetailContent.SocialNetwork, is DetailContent.Business, is DetailContent.Gallery -> {
+                        detail.receivers.map { ReceiverRefPayload(receiverId = it.receiverId) }
+                    }
+                },
+            memorial =
+                (content as? DetailContent.Memorial)?.let { memorialContent ->
+                    MemorialWritePayload(
+                        memorialPhotoUrl = memorialContent.memorial.media.photoUrl,
+                        songs =
+                            memorialContent.memorial.songs.map { song ->
+                                MemorialSongPayload(
+                                    title = song.title,
+                                    artist = song.artist,
+                                    coverUrl = song.coverUrl,
+                                )
+                            },
+                        memorialVideo =
+                            memorialContent.memorial.media.videoUrl?.ifBlank { null }?.let { url ->
+                                MemorialVideoPayload(
+                                    videoUrl = url,
+                                    thumbnailUrl =
+                                        memorialContent.memorial.media.thumbnailUrl
+                                            ?.ifBlank { null },
+                                )
+                            },
+                    )
+                },
+        )
+    }
+
+    private fun DetailCredentials.toAccountCredentials() =
+        AfternoteAccountCredentials(
+            id = id.ifBlank { null },
+            password = password.ifBlank { null },
+        )
 
     /**
      * 처리 방법 기반 카테고리(SOCIAL·BUSINESS·GALLERY) 공용 update payload —
@@ -275,7 +360,9 @@ internal object AfternoteEditorFormMapper {
         return AfternoteUpdatePayload(
             type = type,
             title = payload.serviceName,
-            processingMethods = processingMethods.ifEmpty { null },
+            // 빈 목록을 null 로 접지 않는다 — 「전부 지웠다」와 「안 건드렸다」는 다른 지시이고,
+            // 후자는 이제 baseline 비교가 판정한다 (#1617).
+            processingMethods = processingMethods,
             leaveMessageBlocks = payload.messageBlocks.toLeaveMessageBlocks(),
             credentials = credentials,
             receivers = selectedReceiverIds.map { ReceiverRefPayload(receiverId = it) },
@@ -283,6 +370,59 @@ internal object AfternoteEditorFormMapper {
         )
     }
 }
+
+/**
+ * [baseline] 과 값이 같은 필드를 `null` 로 떨어뜨려 요청에서 키째 빠지게 한다 (#1617).
+ *
+ * **필드를 빼기만 한다 — 채우지 않는다.** 기준이 없으면([baseline] 이 `null`) 손대지 않고 전량을
+ * 그대로 돌려준다.
+ *
+ * 비교는 [normalizedForDiff] 를 거친 값끼리 한다. 서버가 준 원본과 폼을 왕복한 값은 공백·빈 문자열·
+ * 정렬에서 어긋날 수 있고, 그 차이를 「사용자가 고쳤다」로 읽으면 안 건드린 필드가 다시 실린다.
+ */
+private fun AfternoteUpdatePayload.omittingFieldsUnchangedFrom(baseline: AfternoteUpdatePayload?): AfternoteUpdatePayload {
+    if (baseline == null) return this
+    val current = normalizedForDiff()
+    val original = baseline.normalizedForDiff()
+    return copy(
+        title = title.takeIf { current.title != original.title },
+        processingMethods = processingMethods.takeIf { current.processingMethods != original.processingMethods },
+        leaveMessageBlocks = leaveMessageBlocks.takeIf { current.leaveMessageBlocks != original.leaveMessageBlocks },
+        credentials = credentials.takeIf { current.credentials != original.credentials },
+        receivers = receivers.takeIf { current.receivers != original.receivers },
+        memorial = memorial.takeIf { current.memorial != original.memorial },
+    )
+}
+
+/**
+ * 「달라졌는가」만 판정하기 위한 정규형 — **전송값이 아니다.**
+ *
+ * 서버 원본과 폼 왕복본이 뜻은 같은데 표기만 다른 경우를 흡수한다: 앞뒤 공백, 빈 문자열과 `null`,
+ * 그리고 뜻이 없는 정렬(수신자는 순서가 의미를 갖지 않는다 — 처리 방법·곡은 사용자가 정한 순서라
+ * 정렬하지 않는다).
+ */
+private fun AfternoteUpdatePayload.normalizedForDiff(): AfternoteUpdatePayload =
+    copy(
+        title = title?.trim(),
+        processingMethods = processingMethods?.map { it.trim() }?.filter { it.isNotEmpty() },
+        leaveMessageBlocks =
+            leaveMessageBlocks
+                ?.map { LeaveMessageBlock(title = it.title?.trim()?.ifEmpty { null }, body = it.body.trim()) }
+                ?.filter { it.body.isNotEmpty() },
+        credentials =
+            credentials
+                ?.let { AfternoteAccountCredentials(id = it.id?.ifBlank { null }, password = it.password?.ifBlank { null }) }
+                ?.takeIf { it.id != null || it.password != null },
+        receivers = receivers?.sortedBy { it.receiverId },
+        memorial =
+            memorial?.let { media ->
+                MemorialWritePayload(
+                    memorialPhotoUrl = media.memorialPhotoUrl?.ifBlank { null },
+                    songs = media.songs,
+                    memorialVideo = media.memorialVideo?.takeIf { !it.videoUrl.isNullOrBlank() },
+                )
+            },
+    )
 
 private fun LeaveMessageBlock.toEditorBlock(): EditorMessageTextBlock =
     EditorMessageTextBlock(

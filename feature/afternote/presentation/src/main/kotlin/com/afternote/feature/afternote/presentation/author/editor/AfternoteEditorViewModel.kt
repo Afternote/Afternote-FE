@@ -10,6 +10,7 @@ import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.error.AfternoteFailure
+import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.SaveAfternoteCommand
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
@@ -467,6 +468,7 @@ class AfternoteEditorViewModel
                     selectedReceiverIds = selectedReceiverIds,
                     playlistSongs = playlistSongs,
                     memorialMedia = memorialMediaForSave,
+                    updateBaseline = editorState.updateBaseline,
                 ).fold(
                     onSuccess = { command ->
                         executeSaveCommand(command).fold(
@@ -527,6 +529,7 @@ class AfternoteEditorViewModel
             selectedReceiverIds: List<Long>,
             playlistSongs: List<Song>,
             memorialMedia: SaveAfternoteMemorialMedia,
+            updateBaseline: AfternoteUpdatePayload?,
         ): Result<SaveAfternoteCommand> {
             val resolved =
                 resolveMemorialMediaForSave(
@@ -552,6 +555,7 @@ class AfternoteEditorViewModel
                                     memorialThumbnailUrl = memorialMedia.memorialVideo.displayed?.thumbnailUrl,
                                     memorialPhotoUrl = resolved.resolvedMemorialPhotoUrl,
                                 ),
+                            baseline = updateBaseline,
                         )
                     SaveAfternoteCommand.Update(id = editingId, payload = updatePayload)
                 } else {
@@ -584,6 +588,9 @@ class AfternoteEditorViewModel
                             it.copy(
                                 originalType = prefill.type,
                                 pendingPrefill = prefill,
+                                // 화면에 뿌릴 prefill 과 별개로, 가공 전 원본을 저장 때 견줄 기준으로 남긴다.
+                                // 이 값은 폼 변경을 따라가지 않는다 — 따라가면 비교할 대상이 사라진다 (#1617).
+                                updateBaseline = AfternoteEditorFormMapper.buildUpdateBaseline(detail),
                             )
                         }
                     }.onFailure { e ->
@@ -652,6 +659,13 @@ class AfternoteEditorViewModel
             val pendingThumbnailUrl: String? = null,
             val memorialThumbnailRetryToken: Int = 0,
             val pendingPrefill: EditorFormPrefill? = null,
+            /**
+             * 수정 진입 시 받은 상세를 그대로 옮긴 **pristine baseline** (#1617).
+             *
+             * 저장 시 현재 폼과 견줘 **달라진 필드만** 요청에 싣는 기준이다. `null` 이면 기준이 없다는
+             * 뜻이라(신규 작성이거나 상세 로드 실패) 종전처럼 전량을 싣는다.
+             */
+            val updateBaseline: AfternoteUpdatePayload? = null,
         )
 
         private fun InternalState.toUiState(): AfternoteEditorUiState =

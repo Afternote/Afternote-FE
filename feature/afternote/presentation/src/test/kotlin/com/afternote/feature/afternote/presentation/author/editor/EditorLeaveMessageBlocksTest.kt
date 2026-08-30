@@ -94,6 +94,9 @@ class EditorLeaveMessageBlocksTest {
                 selectedReceiverIds = emptyList(),
                 playlistSongs = emptyList(),
                 memorialMedia = MemorialMediaUrls(),
+                // 여기서 보는 것은 블록을 *어떻게 빚는가* 라서, 변경 판정이 끼어들지 않게 기준을 비운다.
+                // 안 건드린 필드를 빼는 축은 AfternoteEditorPartialUpdateTest 가 따로 고정한다 (#1617).
+                baseline = null,
             )
 
         assertEquals(
@@ -131,6 +134,9 @@ class EditorLeaveMessageBlocksTest {
                 selectedReceiverIds = emptyList(),
                 playlistSongs = emptyList(),
                 memorialMedia = MemorialMediaUrls(),
+                // 여기서 보는 것은 블록을 *어떻게 빚는가* 라서, 변경 판정이 끼어들지 않게 기준을 비운다.
+                // 안 건드린 필드를 빼는 축은 AfternoteEditorPartialUpdateTest 가 따로 고정한다 (#1617).
+                baseline = null,
             )
 
         assertEquals(
