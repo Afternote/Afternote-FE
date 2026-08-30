@@ -15,8 +15,9 @@ import com.afternote.feature.onboarding.presentation.terms.TermsState
  * 로 갱신. 단발성 navigation/error 신호는 UI 가 소비 후 [SignUpViewModel] 의 `onXxxConsumed()`
  * 콜백 호출로 reset.
  *
- * 폼 룰 (const + regex) 은 본 data class 의 companion 으로 묶어 ViewModel + UI 양쪽에서
- * `SignUpUiState.RESIDENT_REGISTRATION_FRONT_DIGIT_COUNT` 식으로 참조.
+ * 폼 상수는 본 data class 의 companion 으로 묶어 ViewModel + UI 양쪽에서
+ * `SignUpUiState.RESIDENT_REGISTRATION_FRONT_DIGIT_COUNT` 식으로 참조한다. 새 비밀번호 규칙은
+ * 다른 온보딩 흐름에서도 재사용할 수 있도록 [OnboardingPasswordRule]에 둔다.
  */
 data class SignUpUiState(
     /** Step 1 입력값 — 이메일. */

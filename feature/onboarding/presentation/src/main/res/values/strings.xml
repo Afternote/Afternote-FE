@@ -78,7 +78,7 @@
     <string name="onboarding_signup_resident_number_back_placeholder">0</string>
     <string name="onboarding_signup_password_input_label">비밀번호 입력</string>
     <string name="onboarding_signup_password_confirm_placeholder">비밀번호 확인</string>
-    <string name="onboarding_signup_password_rule_combination">8 ~ 16자의 영문 대소문자, 숫자, 특수문자를 조합하여 설정해 주세요.</string>
+    <string name="onboarding_signup_password_rule_combination">8 ~ 15자의 영문, 숫자, 특수문자(@, $, !, %, *, #, ?, &amp;)를 각각 1자 이상 사용해 주세요.</string>
     <string name="onboarding_signup_password_rule_reuse">이전에 사용한 적 없는 비밀번호가 안전합니다.</string>
     <string name="onboarding_signup_failed">회원가입 실패</string>
     <string name="onboarding_signup_code_send_failed">인증번호를 보내지 못했어요. 잠시 후 다시 시도해주세요.</string>
