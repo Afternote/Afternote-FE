@@ -43,6 +43,19 @@
     <string name="onboarding_find_account_next">다음</string>
     <string name="onboarding_find_account_failed">요청에 실패했습니다.</string>
 
+    <!-- 비밀번호 찾기 (#457) — 이메일 인증 화면은 위 onboarding_find_account_* 문구를 아이디 찾기와 공유한다. -->
+    <string name="onboarding_find_password_title">비밀번호 찾기</string>
+    <string name="onboarding_find_password_reset_title">비밀번호 변경</string>
+    <string name="onboarding_find_password_reset_description">비밀번호를 변경해 주세요.</string>
+    <string name="onboarding_find_password_complete_message">비밀번호가 변경되었습니다.\n변경된 비밀번호로 로그인해 주세요.</string>
+    <string name="onboarding_find_password_complete_login">로그인</string>
+    <string name="onboarding_find_password_social_blocked">소셜 로그인 계정은 비밀번호 찾기를\n사용 하실 수 없습니다.</string>
+    <!-- 시안 미정의 잠정 문구 — 최종 제출 시점의 인증번호 만료·불일치(1207)는 화면에 상태가 없어 스낵바로 안내한다 -->
+    <string name="onboarding_find_password_code_expired">인증번호가 만료되었거나 올바르지 않습니다.\n이메일 인증부터 다시 진행해 주세요.</string>
+    <!-- 시안 미정의 잠정 문구 — 서버 code 1206(새 비밀번호가 기존과 동일). 클라는 기존 비밀번호를 몰라 사전 판정이 불가하다 -->
+    <string name="onboarding_find_password_unchanged">지금 쓰고 있는 비밀번호입니다. 다른 비밀번호를 입력해 주세요.</string>
+    <string name="onboarding_find_password_failed">비밀번호를 변경하지 못했어요. 잠시 후 다시 시도해주세요.</string>
+
     <string name="onboarding_step_description">회원가입 진행도 4단계 중 %1$d단계</string>
 
     <string name="onboarding_signup_title">회원가입</string>

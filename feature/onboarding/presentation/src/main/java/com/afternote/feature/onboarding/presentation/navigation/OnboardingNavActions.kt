@@ -43,4 +43,21 @@ interface OnboardingNavActions {
 
     /** 로그인 → 아이디 찾기. */
     fun navigateToFindId()
+
+    /** 로그인 → 비밀번호 찾기 (이메일 인증). */
+    fun navigateToFindPassword()
+
+    /** 비밀번호 찾기 — 이메일 인증 → 새 비밀번호 입력. */
+    fun proceedToFindPasswordReset()
+
+    /**
+     * 비밀번호 재설정 성공 → 완료 안내로 교체.
+     *
+     * 찾기 흐름을 백스택에서 비운다 — 비밀번호는 이미 바뀌었고 인증번호는 서버가 소비해서,
+     * 뒤로가기로 앞 두 화면에 돌아가면 유효하지 않은 입력만 남는다.
+     */
+    fun replaceFindPasswordWithComplete()
+
+    /** 완료 안내 → 로그인. 찾기 흐름의 마지막 화면까지 비우고 로그인으로 돌려보낸다. */
+    fun replaceFindPasswordWithLogin()
 }
