@@ -1,5 +1,6 @@
 package com.afternote.feature.receiver.data.dto
 
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.data.mapper.formatDateFromServer
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
@@ -144,6 +145,47 @@ data class ReceiverMessageDto(
     @SerialName("createdAt") val createdAt: String? = null,
 )
 
+private const val RECEIVER_STAGE_KEY = "receiver_stage"
+private const val VERIFICATION_STATUS_STAGE = "verification_status_mapping"
+private const val UNKNOWN_STATUS_KEY = "unknown_status"
+
+/** 서버가 도메인에 없는 상태 문자열을 보냈음을 알리는 non-fatal 신호. */
+internal class VerificationStatusMappingFailure : RuntimeException()
+
+/**
+ * 서버 상태 문자열을 도메인 값으로 옮긴다. **모르는 값이면 화면은 그대로 두고 텔레메트리에 남긴다** (#1554).
+ *
+ * 화면을 실패로 떨어뜨리지 않는 이유는, 서버가 상태를 하나 추가했을 뿐인데 사용자가 화면을 통째로
+ * 못 보게 되기 때문이다. 그렇다고 조용히 [DeliveryVerificationStatus.UNKNOWN] 으로 흡수하면
+ * 「아직 열람 신청 안 함」으로 그려져 이미 신청한 사용자에게 신청 버튼이 다시 보인다 — 그 사실을
+ * 아무도 모르는 것이 종전 동작이었다.
+ *
+ * `null` 은 신호가 아니다. 열람 신청 전에는 서버가 이 필드를 채우지 않으므로 정상 경로다.
+ *
+ * 상태 문자열은 서버가 정의한 enum 이름이라 텔레메트리에 담되, **enum 형태일 때만** 담는다. 응답 본문이
+ * 통째로 흘러들어 개인정보가 섞이는 경로를 만들지 않기 위함이다.
+ */
+private fun resolveVerificationStatus(
+    raw: String?,
+    errorReporter: ErrorReporter,
+): DeliveryVerificationStatus {
+    if (raw == null) return DeliveryVerificationStatus.UNKNOWN
+
+    DeliveryVerificationStatus.fromWireOrNull(raw)?.let { return it }
+
+    errorReporter.recordFailure(
+        throwable = VerificationStatusMappingFailure(),
+        attributes =
+            buildMap {
+                put(RECEIVER_STAGE_KEY, VERIFICATION_STATUS_STAGE)
+                if (raw.matches(ENUM_LIKE)) put(UNKNOWN_STATUS_KEY, raw)
+            },
+    )
+    return DeliveryVerificationStatus.UNKNOWN
+}
+
+private val ENUM_LIKE = Regex("^[A-Za-z_]{1,32}$")
+
 fun ReceiverAuthVerifyDto.toDomain(): ReceiverIdentity =
     ReceiverIdentity(
         receiverId = receiverId,
@@ -168,22 +210,22 @@ fun ReceiverAuthPresignedUrlDto.toDomain(): ReceiverAuthPresignedUrl =
         contentLength = contentLength,
     )
 
-fun DeliveryVerificationDto.toDomain(): DeliveryVerification =
+fun DeliveryVerificationDto.toDomain(errorReporter: ErrorReporter): DeliveryVerification =
     DeliveryVerification(
         id = id,
-        status = DeliveryVerificationStatus.fromRaw(status),
+        status = resolveVerificationStatus(status, errorReporter),
         deathCertificateUrl = deathCertificateUrl,
         familyRelationCertificateUrl = familyRelationCertificateUrl,
         adminNote = adminNote,
         createdAt = createdAt,
     )
 
-fun ReceivedRecordBoxDto.toDomain(): ReceivedRecordBox =
+fun ReceivedRecordBoxDto.toDomain(errorReporter: ErrorReporter): ReceivedRecordBox =
     ReceivedRecordBox(
         receiverId = receiverId,
         masterKey = accessCode,
         senderName = senderName,
-        verificationStatus = verificationStatus?.let(DeliveryVerificationStatus::fromRaw) ?: DeliveryVerificationStatus.UNKNOWN,
+        verificationStatus = resolveVerificationStatus(verificationStatus, errorReporter),
         requestedAt = requestedAt,
         approvedAt = approvedAt,
     )

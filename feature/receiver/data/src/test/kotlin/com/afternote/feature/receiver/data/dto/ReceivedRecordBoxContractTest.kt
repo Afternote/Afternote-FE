@@ -2,6 +2,7 @@ package com.afternote.feature.receiver.data.dto
 
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.core.network.model.requireData
+import com.afternote.feature.receiver.data.reporting.RecordingErrorReporter
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
@@ -21,6 +22,8 @@ import org.junit.Test
  * Json 디코드 → `requireData()` → `toDomain()` 을 통과시킨다. Json 설정은 `NetworkModule.provideJson` 과 동일.
  */
 class ReceivedRecordBoxContractTest {
+    private val reporter = RecordingErrorReporter()
+
     private val json =
         Json {
             ignoreUnknownKeys = true
@@ -38,7 +41,7 @@ class ReceivedRecordBoxContractTest {
 
         val boxes = json.decodeFromString<BaseResponse<ReceivedRecordBoxListDto>>(payload).requireData().recordBoxes
 
-        val box = boxes.single().toDomain()
+        val box = boxes.single().toDomain(reporter)
         assertEquals(4L, box.receiverId)
         assertEquals("59c04a15-1f4a-4b2e-9a0c-2f4e8d7b6c31", box.masterKey)
         assertEquals("김혜성", box.senderName)
@@ -63,7 +66,7 @@ class ReceivedRecordBoxContractTest {
                 .requireData()
                 .recordBoxes
                 .single()
-                .toDomain()
+                .toDomain(reporter)
 
         assertEquals(DeliveryVerificationStatus.PENDING, box.verificationStatus)
         assertNull(box.approvedAt)
@@ -83,7 +86,7 @@ class ReceivedRecordBoxContractTest {
                 .requireData()
                 .recordBoxes
                 .single()
-                .toDomain()
+                .toDomain(reporter)
 
         assertEquals(DeliveryVerificationStatus.UNKNOWN, box.verificationStatus)
         assertNull(box.requestedAt)
@@ -107,7 +110,7 @@ class ReceivedRecordBoxContractTest {
                 .decodeFromString<BaseResponse<ReceivedRecordBoxListDto>>(payload)
                 .requireData()
                 .recordBoxes
-                .map { it.toDomain() }
+                .map { it.toDomain(reporter) }
 
         assertEquals(2, boxes.size)
         val mine = boxes.first { it.masterKey == "bbbbbbbb-0000-4000-8000-000000000002" }
@@ -149,7 +152,7 @@ class ReceivedRecordBoxContractTest {
                 .requireData()
                 .recordBoxes
                 .single()
-                .toDomain()
+                .toDomain(reporter)
 
         assertEquals(DeliveryVerificationStatus.APPROVED, box.verificationStatus)
         assertEquals("2026-08-25T18:43:47.696636", box.requestedAt)
