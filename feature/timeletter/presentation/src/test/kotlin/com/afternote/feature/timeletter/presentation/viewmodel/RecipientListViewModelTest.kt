@@ -51,6 +51,11 @@ class RecipientListViewModelTest {
             advanceUntilIdle()
 
             assertEquals(2, repository.receiverListFlowCalls)
-            assertEquals("새 수신자", viewModel.recipients.value.single().name)
+            assertEquals(
+                "새 수신자",
+                viewModel.recipients.value
+                    .single()
+                    .name,
+            )
         }
 }
