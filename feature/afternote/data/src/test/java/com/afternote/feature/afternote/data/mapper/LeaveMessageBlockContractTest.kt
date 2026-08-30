@@ -111,7 +111,7 @@ class LeaveMessageBlockContractTest {
         val detail =
             json
                 .decodeFromString<ReceivedAfternoteDetailDto>(
-                    """{"id":1,"category":"GALLERY","title":"사진첩","actions":null,"leaveMessage":[{"title":null,"body":"사진은 남겨줘"}]}""",
+                    """{"id":1,"category":"GALLERY","title":"사진첩","senderName":"이발신","actions":null,"leaveMessage":[{"title":null,"body":"사진은 남겨줘"}]}""",
                 ).toDomain()
 
         assertEquals(
