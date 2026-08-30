@@ -47,6 +47,7 @@
     <string name="receiver_afternote_item_daum_mail">다음 메일</string>
     <string name="receiver_afternote_item_google_mail">구글 메일</string>
     <string name="receiver_afternote_item_outlook">outlook</string>
+    <string name="receiver_memorial_video_invalid_url">영상 주소가 올바르지 않아 재생할 수 없습니다.</string>
     <string name="receiver_memorial_video_no_app">영상을 재생할 수 있는 앱이 없습니다.</string>
 
     <string name="receiver_timeletter_unread_count">%1$d개의 읽지 않은 타임 레터가 있습니다.</string>
