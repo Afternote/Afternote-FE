@@ -131,15 +131,9 @@ private fun TextFieldShort(
                     Box(
                         modifier =
                             if (suffixFollowsText) {
-                                Modifier
-                                    // Row 가 suffix 를 먼저 재고 남긴 폭까지만 배정받는다(상한).
-                                    // 없으면 첫 자식이라 컨테이너 폭 전체를 상한으로 받아, 긴
-                                    // placeholder 가 suffix 를 화면 밖으로 밀어낸다.
-                                    .weight(1f, fill = false)
-                                    // 그 안에서 폭을 내용 크기로 고정한다. 없으면 입력이 들어찬
-                                    // 순간 텍스트필드가 배정폭을 끝까지 채워 suffix 가 다시
-                                    // 오른쪽으로 밀린다(빈 상태에서는 증상이 안 보인다).
-                                    .width(IntrinsicSize.Max)
+                                // 폭을 내용 크기로 고정한다. 없으면(= weight(1f) 기본값이면)
+                                // 텍스트필드가 배정폭을 끝까지 채워 suffix 가 오른쪽 끝으로 밀린다.
+                                Modifier.width(IntrinsicSize.Max)
                             } else {
                                 Modifier.weight(1f)
                             },
