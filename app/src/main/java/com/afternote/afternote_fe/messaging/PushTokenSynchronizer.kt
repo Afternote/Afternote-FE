@@ -40,7 +40,6 @@ class PushTokenSynchronizer
     ) {
         private val mutex = Mutex()
 
-        @Volatile
         private var lastRegistered: String? = null
 
         /**
