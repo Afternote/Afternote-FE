@@ -63,6 +63,8 @@ fun AfternoteHomeEntry(
         // 0건이어도 헤더를 그린다 — 시안 `애프터노트_목록X`(4327:66762)에 제목·설명·NEXT STEP 이 모두 있다.
         // 종전에는 이 경로가 EmptyListBody 만 그려 첫 진입 사용자에게 화면 제목이 보이지 않았다 (#1175).
         showsHeaderOnEmptyList = true,
+        // 발신자 문구 — «아래 연필 버튼» 은 바로 아래 onFabClick 이 그리는 그 FAB 이다.
+        emptyListDescription = stringResource(R.string.feature_afternote_empty_list_body),
         onFabClick = { navigateToAdd(selectedType ?: AfternoteType.SOCIAL_NETWORK) },
         onSettingClick = onSettingClick,
         headerDescription = stringResource(R.string.afternote_home_header_description),

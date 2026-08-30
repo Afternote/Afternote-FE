@@ -2,6 +2,7 @@ package com.afternote.feature.afternote.presentation.author.home
 
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.paging.PagingData
@@ -40,7 +41,9 @@ class AfternoteHomeEmptyCopyTest {
 
     @Test
     fun `전체 목록 0건이면 애프터노트 등록 안내 문구를 보여준다`() {
-        composeRule.setContent { AfternoteTheme { EmptyListBody() } }
+        composeRule.setContent {
+            AfternoteTheme { EmptyListBody(description = stringRes(R.string.feature_afternote_empty_list_body)) }
+        }
 
         composeRule.onNodeWithText(string(R.string.feature_afternote_empty_list_body)).assertExists()
         composeRule.onNodeWithText(string(R.string.afternote_home_filtered_empty)).assertDoesNotExist()
@@ -55,6 +58,9 @@ class AfternoteHomeEmptyCopyTest {
     }
 
     private fun string(resId: Int): String = composeRule.activity.getString(resId)
+
+    @Composable
+    private fun stringRes(resId: Int): String = stringResource(resId)
 
     /** 카테고리를 고른 채 결과가 0건인 목록. [AfternoteListContent] 는 itemCount 만 보므로 수집을 기다리지 않는다. */
     @Composable
