@@ -144,13 +144,13 @@ class NotificationNavigationAndroidTest {
 
     private fun deliverWarmNotification(
         source: NotificationEntrySource,
-        occurrenceToken: String,
+        occurrenceId: String,
     ) {
         val pendingIntent =
             NotificationPendingIntentFactory.create(
                 context = context,
                 source = source.contractValue,
-                occurrenceToken = occurrenceToken,
+                occurrenceId = occurrenceId,
             )
 
         assertNotNull(pendingIntent)
@@ -159,7 +159,7 @@ class NotificationNavigationAndroidTest {
 
     private fun awaitNotificationIntent(
         source: NotificationEntrySource,
-        occurrenceToken: String,
+        occurrenceId: String,
     ) {
         composeRule.waitUntil(timeoutMillis = 10_000) {
             activityUnderTest.intent.getStringExtra(
@@ -167,7 +167,7 @@ class NotificationNavigationAndroidTest {
             ) == source.contractValue &&
                 activityUnderTest.intent.getStringExtra(
                     NotificationPendingIntentFactory.EXTRA_NOTIFICATION_OCCURRENCE_TOKEN,
-                ) == occurrenceToken
+                ) == occurrenceId
         }
     }
 
