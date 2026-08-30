@@ -30,6 +30,8 @@ class MemorialDetailScreenInteractionTest {
             AfternoteTheme {
                 MemorialDetailScreen(
                     onBackClick = {},
+                    onEditClick = {},
+                    onDeleteConfirm = {},
                     content = MemorialDetailContent(memorialVideoUrl = videoUrl),
                     userName = "서영",
                     onVideoClick = { clickedUrl = it },
@@ -52,6 +54,8 @@ class MemorialDetailScreenInteractionTest {
             AfternoteTheme {
                 MemorialDetailScreen(
                     onBackClick = {},
+                    onEditClick = {},
+                    onDeleteConfirm = {},
                     onVideoClick = {},
                     content = MemorialDetailContent(),
                     userName = "서영",
@@ -68,6 +72,8 @@ class MemorialDetailScreenInteractionTest {
             AfternoteTheme {
                 MemorialDetailScreen(
                     onBackClick = {},
+                    onEditClick = {},
+                    onDeleteConfirm = {},
                     onVideoClick = {},
                     content = MemorialDetailContent(),
                     userName = "서영",
