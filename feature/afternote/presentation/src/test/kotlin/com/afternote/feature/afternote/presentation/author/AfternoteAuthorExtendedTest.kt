@@ -486,6 +486,7 @@ private fun detailViewModel(
         savedStateHandle = SavedStateHandle(mapOf("itemId" to itemId)),
         afternoteRepository = repository,
         userRepository = afternoteAuthorUserRepository(),
+        userProfileRepository = afternoteAuthorUserProfileRepository(),
         errorReporter = NoopAuthorErrorReporter,
     )
 
