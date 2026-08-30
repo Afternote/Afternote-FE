@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,6 +36,11 @@ internal const val AFTERNOTE_CATEGORY_MORE_INDICATOR_TEST_TAG = "afternoteCatego
 
 /**
  * 종류 필터 탭 행. `null` 은 "전체" 탭이다.
+ *
+ * 탭을 감싸는 행에 [Modifier.selectableGroup] 을 건다. 각 탭이 [Role.Tab] 으로 개별 선택 상태를
+ * 노출하는 것만으로는 «이들이 하나의 상호배타 그룹» 이라는 관계가 접근성 트리에 실리지 않아,
+ * 스크린리더가 「N 개 중 M 번째」를 읽어 주지 못한다 (#1636). core:ui 의 `AfternoteRadioGroup` 과
+ * 같은 관용구다.
  *
  * 노출 대상은 [TYPE_FILTER_TABS] 가 정한다.
  */
@@ -86,6 +92,7 @@ fun AfternoteTypeFilterRow(
                     // 화살표가 쓰는 폭을 뺀 나머지가 탭의 가용 폭이다. fillMaxWidth 로 두면
                     // 화살표가 탭 위에 겹쳐 마지막 탭의 글자를 가린다.
                     .weight(1f)
+                    .selectableGroup()
                     .then(
                         if (needsHorizontalFade) {
                             Modifier.horizontalFadingEdge(
