@@ -32,6 +32,9 @@ const IMPACT_POLICY_PATHS = new Set([
     ".github/scripts/ci-expected-failures.mjs",
     ".github/scripts/ci-expected-failures.test.mjs",
 ]);
+// 아키텍처 가드 전용 순수 JVM 모듈. src/main 이 없어 프로덕션 소스 분기를 탈 수 없고,
+// kover 도 안 붙어 coverageModules 로도 안 잡힌다 — 소스셋 판정에서 따로 건져야 한다.
+const KONSIST_PROJECT_PATH = ":konsist";
 
 function normalizePath(value) {
     return String(value ?? "")
@@ -249,6 +252,12 @@ export function resolvePrImpact(changedFiles, modules, dependencies) {
 
         if (relative.startsWith("src/test/") || relative.startsWith("src/testDebug/")) {
             unitOnlySeeds.add(module.projectPath);
+            if (module.projectPath === KONSIST_PROJECT_PATH) {
+                // :konsist 의 가드는 통째로 src/test 에 산다. unitOnlySeeds 에 담아 봐야
+                // coverage 가 없어 coverageModules 에서 걸러지므로, 가드를 새로 쓰거나 고친 PR 이
+                // 그 가드를 한 번도 실행하지 않고 통과한다(#1521 이 실제로 그랬다).
+                runKonsist = true;
+            }
         } else if (
             relative.startsWith("src/screenshotTest/") ||
             relative.startsWith("src/screenshotTestDebug/") ||
@@ -305,7 +314,7 @@ export function resolvePrImpact(changedFiles, modules, dependencies) {
     );
     const unitTestTasks = coverageModules.map((projectPath) => `${projectPath}:koverXmlReportCi`);
     if (runKonsist) {
-        unitTestTasks.push(":konsist:test");
+        unitTestTasks.push(`${KONSIST_PROJECT_PATH}:test`);
     }
     if (buildLogicChange) {
         unitTestTasks.push(":build-logic:test");
