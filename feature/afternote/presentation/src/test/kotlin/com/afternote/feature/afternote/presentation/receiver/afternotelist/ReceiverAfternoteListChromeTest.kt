@@ -14,9 +14,9 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.PROFILE_ICON_TEST_TAG
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeScreen
-import com.afternote.feature.afternote.presentation.shared.body.infinite.InfiniteListBody
-import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
+import com.afternote.feature.afternote.presentation.home.AfternoteHomeScreen
+import com.afternote.feature.afternote.presentation.shared.component.InfiniteListBody
+import com.afternote.feature.afternote.presentation.shared.component.ListItemUiModel
 import kotlinx.coroutines.flow.flowOf
 import org.junit.Rule
 import org.junit.Test

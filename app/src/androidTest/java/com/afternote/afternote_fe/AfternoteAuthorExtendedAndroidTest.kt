@@ -24,8 +24,8 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
-import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeEntry
-import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeViewModel
+import com.afternote.feature.afternote.presentation.home.AfternoteHomeEntry
+import com.afternote.feature.afternote.presentation.home.AfternoteHomeViewModel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
