@@ -76,6 +76,75 @@ fun NetworkErrorPopup(
     )
 }
 
+/**
+ * 서버가 응답했지만 요청을 처리하지 못한 실패 안내(시안 `3628:23785`). 5xx 처럼 사용자가 고칠 수
+ * 없는 장애가 대상이라 액션은 재시도 하나다 — 서버가 준 거절 문구는 이쪽이 아니라 호출처가
+ * 자기 문구로 안내한다.
+ */
+@Composable
+fun ServerErrorPopup(
+    onRetry: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AfternoteErrorPopup(
+        iconRes = R.drawable.core_ui_ic_server,
+        title = stringResource(R.string.core_ui_server_error_title),
+        description = stringResource(R.string.core_ui_server_error_description),
+        buttonText = stringResource(R.string.core_ui_server_error_retry),
+        onButtonClick = onRetry,
+        onDismiss = onDismiss,
+        modifier = modifier,
+    )
+}
+
+/**
+ * 파일 업로드 실패 안내(시안 `3628:23795`). [ServerErrorPopup] 과 갈라 둔 이유 — 사용자가 방금 고른
+ * 파일이 올라가지 못했다는 사실이 "서버에 문제가 발생했다" 보다 구체적이고, 재시도의 대상도
+ * 화면 전체가 아니라 그 첨부 하나다.
+ */
+@Composable
+fun UploadErrorPopup(
+    onRetry: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AfternoteErrorPopup(
+        iconRes = R.drawable.core_ui_ic_upload_cloud,
+        title = stringResource(R.string.core_ui_upload_error_title),
+        description = stringResource(R.string.core_ui_upload_error_description),
+        buttonText = stringResource(R.string.core_ui_upload_error_retry),
+        onButtonClick = onRetry,
+        onDismiss = onDismiss,
+        modifier = modifier,
+    )
+}
+
+/**
+ * 권한 부족 안내(시안 `3628:23805`). 다른 셋과 달리 액션이 "확인" 인 이유 — 같은 자격으로 다시
+ * 보내도 결과가 같아 재시도가 오도이기 때문이다. 그래서 파라미터도 `onRetry` 가 아니라
+ * [onConfirm] 이다.
+ *
+ * 로그인이 만료된 401 은 이 팝업이 아니다 — 그쪽은 재로그인이라는 할 일이 있고 "관리자에게
+ * 문의" 는 문의 대상이 없다. 이 팝업은 403 전용으로 둔다.
+ */
+@Composable
+fun AccessDeniedPopup(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AfternoteErrorPopup(
+        iconRes = R.drawable.core_ui_ic_lock,
+        title = stringResource(R.string.core_ui_access_denied_title),
+        description = stringResource(R.string.core_ui_access_denied_description),
+        buttonText = stringResource(R.string.core_ui_access_denied_confirm),
+        onButtonClick = onConfirm,
+        onDismiss = onDismiss,
+        modifier = modifier,
+    )
+}
+
 /** Dialog 래퍼 없이 카드 본체만 렌더링합니다. 프리뷰 및 테스트 전용. */
 @Composable
 internal fun AfternoteErrorPopupContent(
