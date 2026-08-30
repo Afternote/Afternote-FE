@@ -415,6 +415,34 @@ test('pull requests beyond the conservative path-filter boundary fail closed', a
   assert.match(source, /github\.event\.pull_request\.changed_files/);
   assert.match(source, /MAX_PATH_FILTER_FILES:\s*300/);
   assert.match(source, /CHANGED_FILES > MAX_PATH_FILTER_FILES/);
+  // 경계를 넘은 PR 은 여전히 exit 1 로 닫힌다 — 면제는 아래 테스트가 잠그는 릴리스 PR 하나뿐이다.
+  assert.match(source, /paths 안전 경계 \$\{MAX_PATH_FILTER_FILES\}개를 초과했습니다[^]*?exit 1/);
+});
+
+test('only the release pull request is exempt from the path-filter boundary', async () => {
+  const source = await readFile(
+    new URL('../workflows/repository-quality.yml', import.meta.url),
+    'utf8',
+  );
+
+  // 면제 조건은 «릴리스 PR 인가» 다 — base main + head develop 둘 다 요구한다.
+  // 크기를 기준으로 열면(예: 파일 수 상한 상향) 가드 자체가 무의미해진다.
+  assert.match(source, /base_ref="\$\(jq -r '\.base\.ref' "\$pull_request_file"\)"/);
+  assert.match(source, /head_ref="\$\(jq -r '\.head\.ref' "\$pull_request_file"\)"/);
+  assert.match(
+    source,
+    /if \[ "\$base_ref" = "main" \] && \[ "\$head_ref" = "develop" \]; then/,
+  );
+
+  // 면제될 때는 실패시키지 않되 근거를 로그에 남긴다.
+  assert.match(source, /::notice::릴리스 PR\(develop → main\)이라 paths 경계/);
+
+  // 면제 분기 안에는 exit 가 없어야 하고, 그 밖의 초과는 여전히 실패한다.
+  const exemption = source.match(
+    /if \[ "\$base_ref" = "main" \] && \[ "\$head_ref" = "develop" \]; then([^]*?)else/,
+  );
+  assert.ok(exemption, 'release exemption branch not found');
+  assert.doesNotMatch(exemption[1], /exit\s+1/);
 });
 
 test('dependency review blocks high severity changes without enforcing a license allowlist', async () => {
