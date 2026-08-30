@@ -8,11 +8,13 @@ data class MemorialDetail(
     val media: MemorialMedia,
 )
 
-/** 추억 사진·장례식 영상. 셋 다 미등록일 수 있어 개별 nullable 이다. */
+/** 추억 사진·장례식 영상·추모 음성. 넷 다 미등록일 수 있어 개별 nullable 이다. */
 data class MemorialMedia(
     val photoUrl: String?,
     val videoUrl: String?,
     val thumbnailUrl: String?,
+    /** 추모 음성 URL (#1118). 서버 `playlist.memorialAudioUrl`. */
+    val audioUrl: String?,
 )
 
 /** 추억 플레이리스트의 개별 곡. */

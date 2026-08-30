@@ -37,6 +37,9 @@ internal enum class MemorialMediaTarget {
 
     /** 장례식에 남길 영상 — 갤러리 영상 선택 / 영상 촬영. */
     VIDEO,
+
+    /** 추모 음성 — 파일(SAF)에서 선택 / 즉석 녹음 (#1118). */
+    AUDIO,
 }
 
 /**
@@ -51,7 +54,11 @@ internal enum class MemorialMediaTarget {
  *   값이 있으면 곧 로컬 첨부다. 지우면 표시가 서버 사진([EditorFormState.memorialPhotoUrl])으로
  *   돌아간다.
  * - 영상: [EditorFormState.memorialVideoUrl] 은 로컬 픽과 원격 prefill 이 한 필드를 공유하므로
- *   [isLocalContentUri] 로 가른다 — `AfternoteEditorViewModel.videoMediaInput` 과 같은 기준.
+ *   [isLocalContentUri] 로 가른다 — `AfternoteEditorViewModel.singleFieldMediaInput` 과 같은 기준.
+ * - 음성 (#1118): **여기만 원격도 삭제 대상이다.** 요청 DTO 의 `memorialAudioUrl` 에 기본값을 두지
+ *   않아 폼이 비면 JSON null 이 그대로 실리고, BE 가 그것을 삭제로 읽는다
+ *   (`PlaylistRequestDeserializer` → `AfternotePlaylist.update`, Afternote-BE `72fee63`).
+ *   즉 음성은 「거짓 삭제」가 되지 않는다. 사진·영상을 같은 모양으로 옮기는 것은 #1596·#1597 몫이다.
  *
  * 알려진 구멍(#1406): 수정 모드에서 서버 영상을 로컬 영상으로 교체하면 원격 URL 이 덮여 이 가드가
  * 못 가른다 — 그 로컬 영상을 지우면 폼은 비지만 저장 후 서버 영상이 남는 거짓 삭제가 된다.
@@ -60,6 +67,7 @@ internal fun EditorFormState.removableMemorialMediaTargets(): Set<MemorialMediaT
     buildSet {
         if (!pickedMemorialPhotoUri.isNullOrBlank()) add(MemorialMediaTarget.PHOTO)
         if (memorialVideoUrl?.isLocalContentUri() == true) add(MemorialMediaTarget.VIDEO)
+        if (!memorialAudioUrl.isNullOrBlank()) add(MemorialMediaTarget.AUDIO)
     }
 
 /**
@@ -105,8 +113,22 @@ internal fun MemorialMediaSourceBottomSheet(
         )
         Spacer(Modifier.height(18.dp))
         MemorialMediaSourceOption(
-            iconRes = CoreUiR.drawable.core_ui_ic_image,
-            label = stringResource(R.string.afternote_editor_media_source_gallery),
+            // 음성은 갤러리(사진 선택기)의 대상이 아니라 문서 선택기로 고른다 — 아이콘·문구도 그에 맞춘다.
+            iconRes =
+                when (target) {
+                    MemorialMediaTarget.PHOTO, MemorialMediaTarget.VIDEO -> CoreUiR.drawable.core_ui_ic_image
+                    MemorialMediaTarget.AUDIO -> CoreUiR.drawable.core_ui_ic_file
+                },
+            label =
+                when (target) {
+                    MemorialMediaTarget.PHOTO, MemorialMediaTarget.VIDEO -> {
+                        stringResource(R.string.afternote_editor_media_source_gallery)
+                    }
+
+                    MemorialMediaTarget.AUDIO -> {
+                        stringResource(R.string.afternote_editor_media_source_pick_audio)
+                    }
+                },
             onClick = onPickFromGallery,
         )
         MemorialMediaSourceOption(
@@ -114,11 +136,13 @@ internal fun MemorialMediaSourceBottomSheet(
                 when (target) {
                     MemorialMediaTarget.PHOTO -> R.drawable.feature_afternote_ic_camera
                     MemorialMediaTarget.VIDEO -> R.drawable.feature_afternote_ic_videocam
+                    MemorialMediaTarget.AUDIO -> CoreUiR.drawable.core_ui_ic_mic
                 },
             label =
                 when (target) {
                     MemorialMediaTarget.PHOTO -> stringResource(R.string.afternote_editor_media_source_take_photo)
                     MemorialMediaTarget.VIDEO -> stringResource(R.string.afternote_editor_media_source_take_video)
+                    MemorialMediaTarget.AUDIO -> stringResource(R.string.afternote_editor_media_source_record_audio)
                 },
             onClick = onCapture,
         )
@@ -129,6 +153,7 @@ internal fun MemorialMediaSourceBottomSheet(
                     when (target) {
                         MemorialMediaTarget.PHOTO -> stringResource(R.string.afternote_editor_media_source_remove_photo)
                         MemorialMediaTarget.VIDEO -> stringResource(R.string.afternote_editor_media_source_remove_video)
+                        MemorialMediaTarget.AUDIO -> stringResource(R.string.afternote_editor_media_source_remove_audio)
                     },
                 onClick = onRemove,
                 // 되돌릴 수 없는 파괴적 동작임을 색으로 가른다 — 추가 갈래(갤러리·촬영)와 같은 회색이면

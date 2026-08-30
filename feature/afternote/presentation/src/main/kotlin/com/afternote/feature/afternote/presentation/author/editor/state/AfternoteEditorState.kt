@@ -43,6 +43,7 @@ class AfternoteEditorState(
     private val applyPrefill: (EditorFormPrefill) -> Unit,
     val setMemorialPhoto: (String?) -> Unit,
     val setMemorialVideo: (String?) -> Unit,
+    val setMemorialAudio: (String?) -> Unit,
     val setMemorialThumbnail: (String?) -> Unit,
     val deleteReceiver: (receiverId: Long) -> Unit,
     val replaceReceiversIfEmpty: (List<AfternoteEditorReceiver>) -> Unit,
@@ -223,6 +224,7 @@ fun rememberAfternoteEditorState(
     setService: (String) -> Unit,
     setMemorialPhoto: (String?) -> Unit,
     setMemorialVideo: (String?) -> Unit,
+    setMemorialAudio: (String?) -> Unit,
     addReceiverIfAbsent: (receiverId: Long, name: String, label: String) -> Unit,
     applyPrefill: (EditorFormPrefill) -> Unit,
     setMemorialThumbnail: (String?) -> Unit,
@@ -250,6 +252,7 @@ fun rememberAfternoteEditorState(
             setService = setService,
             setMemorialPhoto = setMemorialPhoto,
             setMemorialVideo = setMemorialVideo,
+            setMemorialAudio = setMemorialAudio,
             addReceiverIfAbsent = addReceiverIfAbsent,
             applyPrefill = applyPrefill,
             setMemorialThumbnail = setMemorialThumbnail,
@@ -275,6 +278,7 @@ fun rememberAfternoteEditorState(): AfternoteEditorState {
         setService = { service -> mutate { it.withService(service) } },
         setMemorialPhoto = { uri -> mutate { it.withMemorialPhoto(uri) } },
         setMemorialVideo = { url -> mutate { it.withMemorialVideo(url) } },
+        setMemorialAudio = { url -> mutate { it.withMemorialAudio(url) } },
         addReceiverIfAbsent = { receiverId, name, label ->
             mutate { it.withReceiverAddedIfAbsent(receiverId = receiverId, name = name, label = label) }
         },

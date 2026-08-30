@@ -78,6 +78,7 @@ internal fun buildOnRegisterClick(
                     memorialThumbnailUrl = form.memorialThumbnailUrl,
                     memorialPhotoUrl = form.memorialPhotoUrl,
                     pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
+                    memorialAudioUrl = form.memorialAudioUrl,
                 ),
         )
     }

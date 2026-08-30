@@ -4,4 +4,7 @@ package com.afternote.feature.afternote.domain.repository.author
 enum class MediaKind {
     PHOTO,
     VIDEO,
+
+    /** 추모 음성 (#1118). 서버 `playlist.memorialAudioUrl` 에 실린다 — 추억 노트당 1개. */
+    AUDIO,
 }

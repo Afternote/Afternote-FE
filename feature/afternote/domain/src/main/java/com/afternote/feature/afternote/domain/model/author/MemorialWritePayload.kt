@@ -13,6 +13,8 @@ data class MemorialWritePayload(
     val memorialPhotoUrl: String? = null,
     val songs: List<MemorialSongPayload> = emptyList(),
     val memorialVideo: MemorialVideoPayload? = null,
+    /** 추모 음성 URL (#1118). 서버 `playlist.memorialAudioUrl` — 추억 노트당 1개, mp3·m4a·wav. */
+    val memorialAudioUrl: String? = null,
 )
 
 data class MemorialVideoPayload(

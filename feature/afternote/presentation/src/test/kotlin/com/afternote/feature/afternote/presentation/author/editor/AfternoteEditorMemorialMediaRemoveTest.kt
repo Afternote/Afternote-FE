@@ -111,6 +111,7 @@ class AfternoteEditorMemorialMediaRemoveTest {
                     videoUrl = null,
                     thumbnailUrl = null,
                     photoUrl = photoUrl,
+                    audioUrl = null,
                     playlistSongs = emptyList(),
                 ),
             leaveMessageBlocks = emptyList(),

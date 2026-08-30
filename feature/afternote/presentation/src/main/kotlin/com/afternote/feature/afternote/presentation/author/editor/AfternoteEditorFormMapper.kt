@@ -79,6 +79,7 @@ internal object AfternoteEditorFormMapper {
                     videoUrl = memorial.media.videoUrl,
                     thumbnailUrl = memorial.media.thumbnailUrl,
                     photoUrl = memorial.media.photoUrl,
+                    audioUrl = memorial.media.audioUrl,
                     playlistSongs =
                         memorial.songs.mapIndexed { index, song ->
                             Song(
@@ -115,6 +116,7 @@ internal object AfternoteEditorFormMapper {
         memorialPhotoUrl: String? = null,
         memorialVideoUrl: String? = null,
         memorialThumbnailUrl: String? = null,
+        memorialAudioUrl: String? = null,
     ): MemorialWritePayload {
         val songs =
             playlistSongs.map { song ->
@@ -135,6 +137,7 @@ internal object AfternoteEditorFormMapper {
             memorialPhotoUrl = memorialPhotoUrl?.ifBlank { null },
             songs = songs,
             memorialVideo = memorialVideo,
+            memorialAudioUrl = memorialAudioUrl?.ifBlank { null },
         )
     }
 
@@ -146,6 +149,7 @@ internal object AfternoteEditorFormMapper {
         memorialVideoUrl: String?,
         memorialThumbnailUrl: String?,
         memorialPhotoUrl: String?,
+        memorialAudioUrl: String?,
     ): CreateAfternoteInput {
         val processingMethods = payload.processingMethods
         val leaveMessageBlocks = payload.messageBlocks.toLeaveMessageBlocks()
@@ -169,6 +173,7 @@ internal object AfternoteEditorFormMapper {
                         memorialPhotoUrl = memorialPhotoUrl,
                         memorialVideoUrl = memorialVideoUrl,
                         memorialThumbnailUrl = memorialThumbnailUrl,
+                        memorialAudioUrl = memorialAudioUrl,
                     )
                 CreateAfternoteInput.Memorial(
                     CreateMemorialPayload(
@@ -238,6 +243,7 @@ internal object AfternoteEditorFormMapper {
                             memorialPhotoUrl = memorialMedia.memorialPhotoUrl,
                             memorialVideoUrl = memorialMedia.memorialVideoUrl,
                             memorialThumbnailUrl = memorialMedia.memorialThumbnailUrl,
+                            memorialAudioUrl = memorialMedia.memorialAudioUrl,
                         ),
                 )
             }
@@ -309,4 +315,5 @@ internal data class MemorialMediaUrls(
     val memorialVideoUrl: String? = null,
     val memorialThumbnailUrl: String? = null,
     val memorialPhotoUrl: String? = null,
+    val memorialAudioUrl: String? = null,
 )

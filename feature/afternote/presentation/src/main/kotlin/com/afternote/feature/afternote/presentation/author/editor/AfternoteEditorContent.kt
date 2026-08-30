@@ -123,8 +123,10 @@ fun AfternoteEditorBody(
             snackbarHostState = snackbarHostState,
             onPhotoSelected = state.setMemorialPhoto,
             onVideoSelected = state.setMemorialVideo,
+            onAudioSelected = state.setMemorialAudio,
             onPhotoRemoved = { state.setMemorialPhoto(null) },
             onVideoRemoved = { state.setMemorialVideo(null) },
+            onAudioRemoved = { state.setMemorialAudio(null) },
             onCaptureFailed = onCaptureFailed,
         )
 
@@ -139,6 +141,7 @@ fun AfternoteEditorBody(
                 onNavigateToSelectReceiver = onNavigateToSelectReceiver,
                 onPhotoAddClick = { mediaSourceState.open(MemorialMediaTarget.PHOTO) },
                 onVideoAddClick = { mediaSourceState.open(MemorialMediaTarget.VIDEO) },
+                onAudioAddClick = { mediaSourceState.open(MemorialMediaTarget.AUDIO) },
                 onThumbnailBytesReady = onThumbnailBytesReady,
                 onThumbnailExtractionFailed = onThumbnailExtractionFailed,
             )
@@ -276,6 +279,7 @@ internal fun AfternoteTypeContent(
     onNavigateToSelectReceiver: () -> Unit,
     onPhotoAddClick: () -> Unit,
     onVideoAddClick: () -> Unit,
+    onAudioAddClick: () -> Unit,
     onThumbnailBytesReady: (ByteArray?) -> Unit,
     onThumbnailExtractionFailed: (Throwable) -> Unit,
 ) {
@@ -286,6 +290,7 @@ internal fun AfternoteTypeContent(
                 playlistAlbumCovers = form.displayAlbumCovers(),
                 memorialVideoUrl = form.memorialVideoUrl,
                 memorialThumbnailUrl = form.memorialThumbnailUrl,
+                memorialAudioUrl = form.memorialAudioUrl,
                 editorMessages = state.editorMessages,
                 onMessageRegisterClick = state::registerEditorMessage,
                 onMessageDeleteClick = state::removeEditorMessage,
@@ -299,6 +304,7 @@ internal fun AfternoteTypeContent(
                 onSongAddClick = onNavigateToMemorialPlaylist,
                 onPhotoAddClick = onPhotoAddClick,
                 onVideoAddClick = onVideoAddClick,
+                onAudioAddClick = onAudioAddClick,
                 onThumbnailBytesReady = onThumbnailBytesReady,
                 onThumbnailExtractionFailed = onThumbnailExtractionFailed,
             )

@@ -69,4 +69,25 @@ class MemorialMediaSourceBottomSheetInteractionTest {
         composeRule.onNodeWithText("영상 삭제").assertExists()
         composeRule.onNodeWithText("사진 삭제").assertDoesNotExist()
     }
+
+    @Test
+    fun `음성 슬롯은 갤러리-촬영이 아니라 파일 선택-녹음으로 갈린다`() {
+        // 음성은 사진 선택기 대상이 아니라 문서 선택기로 고르고, «촬영» 대신 녹음 인텐트를 쏜다 (#1118).
+        composeRule.setContent {
+            AfternoteTheme {
+                MemorialMediaSourceBottomSheet(
+                    target = MemorialMediaTarget.AUDIO,
+                    onPickFromGallery = {},
+                    onCapture = {},
+                    onRemove = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("파일에서 선택").assertExists()
+        composeRule.onNodeWithText("음성 녹음").assertExists()
+        composeRule.onNodeWithText("음성 삭제").assertExists()
+        composeRule.onNodeWithText("갤러리에서 선택").assertDoesNotExist()
+        composeRule.onNodeWithText("영상 촬영").assertDoesNotExist()
+    }
 }

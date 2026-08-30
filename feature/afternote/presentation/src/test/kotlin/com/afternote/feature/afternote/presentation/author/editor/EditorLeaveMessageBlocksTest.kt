@@ -114,6 +114,7 @@ class EditorLeaveMessageBlocksTest {
                 memorialVideoUrl = null,
                 memorialThumbnailUrl = null,
                 memorialPhotoUrl = null,
+                memorialAudioUrl = null,
             )
 
         assertEquals(
@@ -149,6 +150,7 @@ class EditorLeaveMessageBlocksTest {
                 memorialVideoUrl = null,
                 memorialThumbnailUrl = null,
                 memorialPhotoUrl = null,
+                memorialAudioUrl = null,
             )
         return (input as CreateAfternoteInput.Social).payload.leaveMessageBlocks
     }

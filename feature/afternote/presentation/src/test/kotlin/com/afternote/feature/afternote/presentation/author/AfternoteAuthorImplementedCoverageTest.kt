@@ -140,12 +140,14 @@ class AfternoteAuthorImplementedCoverageTest {
         val repository = implementedCoverageRepository(AfternoteType.MEMORIAL)
         val videoInputs = mutableListOf<MediaInput>()
         val photoInputs = mutableListOf<MediaInput>()
+        val audioInputs = mutableListOf<MediaInput>()
         val viewModel =
             implementedCoverageViewModel(
                 repository = repository,
                 savedStateHandle = afternoteEditorSavedStateHandle(AfternoteType.MEMORIAL),
                 videoInputs = videoInputs,
                 photoInputs = photoInputs,
+                audioInputs = audioInputs,
             )
         collectSaveState(viewModel)
         val songs =
@@ -170,6 +172,7 @@ class AfternoteAuthorImplementedCoverageTest {
                         memorialThumbnailUrl = "https://cdn.test/thumbnail.jpg",
                         memorialPhotoUrl = "https://cdn.test/old-photo.jpg",
                         pickedMemorialPhotoUri = "content://photos/new-portrait",
+                        memorialAudioUrl = "content://audio/last-words",
                     ),
             )
         }
@@ -184,6 +187,10 @@ class AfternoteAuthorImplementedCoverageTest {
         assertEquals(
             listOf(MediaInput.Local("content://photos/new-portrait")),
             photoInputs,
+        )
+        assertEquals(
+            listOf(MediaInput.Local("content://audio/last-words")),
+            audioInputs,
         )
         assertEquals(
             CreateMemorialPayload(
@@ -209,6 +216,7 @@ class AfternoteAuthorImplementedCoverageTest {
                                 videoUrl = "https://cdn.test/uploaded-video.mp4",
                                 thumbnailUrl = "https://cdn.test/thumbnail.jpg",
                             ),
+                        memorialAudioUrl = "https://cdn.test/uploaded-audio.m4a",
                     ),
                 receiverIds = listOf(7L),
             ),
@@ -269,6 +277,7 @@ private fun implementedCoverageViewModel(
     savedStateHandle: SavedStateHandle,
     videoInputs: MutableList<MediaInput> = mutableListOf(),
     photoInputs: MutableList<MediaInput> = mutableListOf(),
+    audioInputs: MutableList<MediaInput> = mutableListOf(),
 ): AfternoteEditorViewModel =
     AfternoteEditorViewModel(
         savedStateHandle = savedStateHandle,
@@ -285,6 +294,7 @@ private fun implementedCoverageViewModel(
                         when (kind) {
                             MediaKind.VIDEO -> videoInputs += input
                             MediaKind.PHOTO -> photoInputs += input
+                            MediaKind.AUDIO -> audioInputs += input
                         }
                         Result.success(
                             when (input) {
@@ -296,6 +306,7 @@ private fun implementedCoverageViewModel(
                                     when (kind) {
                                         MediaKind.VIDEO -> "https://cdn.test/uploaded-video.mp4"
                                         MediaKind.PHOTO -> "https://cdn.test/uploaded-photo.jpg"
+                                        MediaKind.AUDIO -> "https://cdn.test/uploaded-audio.m4a"
                                     }
                                 }
 

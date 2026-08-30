@@ -6,6 +6,8 @@ data class SaveAfternoteMemorialMedia(
     val memorialThumbnailUrl: String? = null,
     val memorialPhotoUrl: String? = null,
     val pickedMemorialPhotoUri: String? = null,
+    /** 추모 음성 (#1118). 영상과 같이 로컬 URI 와 원격 URL 이 한 필드를 공유한다. */
+    val memorialAudioUrl: String? = null,
 )
 
 /**

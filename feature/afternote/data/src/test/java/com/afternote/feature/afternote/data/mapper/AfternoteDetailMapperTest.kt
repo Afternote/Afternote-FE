@@ -219,6 +219,7 @@ class AfternoteDetailMapperTest {
                         memorialPhotoUrl = "memorial.jpg",
                         songs = listOf(AfternoteSongDto(title = "s", artist = "a")),
                         memorialVideo = AfternoteMemorialVideoDto(videoUrl = "v.mp4", thumbnailUrl = "t.jpg"),
+                        memorialAudioUrl = "voice.m4a",
                     ),
             ).toDomain()
 
@@ -227,6 +228,7 @@ class AfternoteDetailMapperTest {
         assertEquals("memorial.jpg", media.photoUrl)
         assertEquals("v.mp4", media.videoUrl)
         assertEquals("t.jpg", media.thumbnailUrl)
+        assertEquals("voice.m4a", media.audioUrl)
         assertEquals(1, memorial.songs.size)
         assertEquals("s", memorial.songs.single().title)
         assertEquals("a", memorial.songs.single().artist)
@@ -268,6 +270,23 @@ class AfternoteDetailMapperTest {
         val media = (result.content as DetailContent.Memorial).memorial.media
         assertNull(media.videoUrl)
         assertNull(media.thumbnailUrl)
+    }
+
+    @Test
+    fun `toDomain - memorialAudioUrl 이 없으면 audioUrl null`() {
+        // 서버가 필드를 아예 빼고 보내도(구버전 응답) 파싱이 깨지지 않아야 한다 (#1118).
+        val result =
+            AfternoteDetailDto(
+                isDraft = false,
+                receivers = emptyList(),
+                afternoteId = 1L,
+                category = "PLAYLIST",
+                title = "t",
+                updatedAt = UPDATED_AT,
+                memorial = AfternotePlaylistDto(songs = emptyList()),
+            ).toDomain()
+
+        assertNull((result.content as DetailContent.Memorial).memorial.media.audioUrl)
     }
 
     @Test

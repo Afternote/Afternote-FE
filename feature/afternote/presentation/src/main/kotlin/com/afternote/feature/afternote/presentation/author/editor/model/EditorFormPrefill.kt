@@ -55,6 +55,8 @@ sealed interface EditorContentPrefill {
         val videoUrl: String?,
         val thumbnailUrl: String?,
         val photoUrl: String?,
+        /** 추모 음성 URL (#1118). 미첨부면 null. */
+        val audioUrl: String?,
         val playlistSongs: List<Song>,
     ) : EditorContentPrefill {
         override val type: AfternoteType = AfternoteType.MEMORIAL

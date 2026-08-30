@@ -67,6 +67,8 @@ data class AfternotePlaylistDto(
     @SerialName("memorialPhotoUrl") val memorialPhotoUrl: String? = null,
     @SerialName("songs") val songs: List<AfternoteSongDto>,
     @SerialName("memorialVideo") val memorialVideo: AfternoteMemorialVideoDto? = null,
+    // 추모 음성 (#1118). 서버 응답에서 nullable — 미첨부면 null 로 온다.
+    @SerialName("memorialAudioUrl") val memorialAudioUrl: String? = null,
 )
 
 @Serializable
@@ -75,6 +77,20 @@ data class AfternotePlaylistRequestDto(
     @SerialName("memorialPhotoUrl") val memorialPhotoUrl: String? = null,
     @SerialName("songs") val songs: List<AfternoteSongDto> = emptyList(),
     @SerialName("memorialVideo") val memorialVideo: AfternoteMemorialVideoDto? = null,
+    /**
+     * 추모 음성 URL (#1118). 업로드로 발급된 afternotes 키(mp3·m4a·wav)만 서버가 받는다.
+     *
+     * **기본값을 두지 않는 것이 계약이다.** kotlinx.serialization 은 `encodeDefaults = false`
+     * (`NetworkModule.provideJson()` 이 켜지 않으므로 기본값)에서 기본값과 같은 값을 키째 뺀다.
+     * BE 는 수정에서 「키 없음 = 기존 값 유지」와 「키 있고 JSON null = 삭제」를 가르므로
+     * (`PlaylistRequestDeserializer` 의 `node.has(...)` → `AfternotePlaylist.update` 의 specified 플래그,
+     * Afternote-BE `72fee63`), 기본값을 달면 이 슬롯은 「유지」 말고는 말할 수 없게 된다.
+     * 같은 규칙을 사진·영상까지 넓히는 것은 #1596 이 맡는다.
+     *
+     * 기본값이 없으므로 이 DTO 는 **폼 전체 스냅샷에서만** 만들어야 한다 — 음성을 모르는 호출부가
+     * 만들면 서버 음성이 조용히 지워진다.
+     */
+    @SerialName("memorialAudioUrl") val memorialAudioUrl: String?,
 )
 
 @Serializable

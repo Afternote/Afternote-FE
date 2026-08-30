@@ -160,6 +160,7 @@ class LeaveMessageEditorItemTest {
             setService = {},
             setMemorialPhoto = {},
             setMemorialVideo = {},
+            setMemorialAudio = {},
             addReceiverIfAbsent = { _, _, _ -> },
             applyPrefill = {},
             setMemorialThumbnail = {},

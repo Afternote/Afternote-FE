@@ -215,7 +215,7 @@ private fun DetailContent.updatedWith(payload: AfternoteUpdatePayload): DetailCo
             DetailContent.Memorial(
                 memorial =
                     if (memorial == null) {
-                        previous ?: MemorialDetail(emptyList(), MemorialMedia(null, null, null))
+                        previous ?: MemorialDetail(emptyList(), MemorialMedia(null, null, null, null))
                     } else {
                         MemorialDetail(
                             songs = memorial.songs.map { DetailSong(it.title, it.artist, it.coverUrl) },
@@ -224,6 +224,7 @@ private fun DetailContent.updatedWith(payload: AfternoteUpdatePayload): DetailCo
                                     photoUrl = memorial.memorialPhotoUrl,
                                     videoUrl = memorial.memorialVideo?.videoUrl,
                                     thumbnailUrl = memorial.memorialVideo?.thumbnailUrl,
+                                    audioUrl = memorial.memorialAudioUrl,
                                 ),
                         )
                     },

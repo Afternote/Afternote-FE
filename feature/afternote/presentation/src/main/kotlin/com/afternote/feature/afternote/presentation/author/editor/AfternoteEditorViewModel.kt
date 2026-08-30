@@ -27,6 +27,7 @@ import com.afternote.feature.afternote.presentation.author.editor.state.Afternot
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
+import com.afternote.feature.afternote.presentation.author.editor.state.withMemorialAudio
 import com.afternote.feature.afternote.presentation.author.editor.state.withMemorialPhoto
 import com.afternote.feature.afternote.presentation.author.editor.state.withMemorialPlaylistSongs
 import com.afternote.feature.afternote.presentation.author.editor.state.withMemorialThumbnail
@@ -88,6 +89,7 @@ private data class EditorFormSnapshot(
     val memorialVideoUrl: String? = null,
     val memorialThumbnailUrl: String? = null,
     val memorialPhotoUrl: String? = null,
+    val memorialAudioUrl: String? = null,
     val memorialPlaylistSongs: List<Song> = emptyList(),
 ) {
     fun toEditorFormState(): EditorFormState =
@@ -121,6 +123,7 @@ private data class EditorFormSnapshot(
                     videoUrl = memorialVideoUrl,
                     thumbnailUrl = memorialThumbnailUrl,
                     photoUrl = memorialPhotoUrl,
+                    audioUrl = memorialAudioUrl,
                     playlistSongs = memorialPlaylistSongs,
                 )
             }
@@ -145,6 +148,7 @@ private data class EditorFormSnapshot(
                 memorialVideoUrl = form.memorialVideoUrl,
                 memorialThumbnailUrl = form.memorialThumbnailUrl,
                 memorialPhotoUrl = form.memorialPhotoUrl,
+                memorialAudioUrl = form.memorialAudioUrl,
                 memorialPlaylistSongs = form.memorialPlaylistSongs,
             )
     }
@@ -224,6 +228,8 @@ class AfternoteEditorViewModel
         fun setMemorialVideo(url: String?) = mutateForm { it.withMemorialVideo(url) }
 
         fun setMemorialThumbnail(dataUrl: String?) = mutateForm { it.withMemorialThumbnail(dataUrl) }
+
+        fun setMemorialAudio(url: String?) = mutateForm { it.withMemorialAudio(url) }
 
         fun addMemorialPlaylistSongs(songs: List<Song>) {
             if (songs.isEmpty()) return
@@ -451,8 +457,9 @@ class AfternoteEditorViewModel
                 }
             }
 
-        // 영상: 로컬 pick(content://) 인지 원격 prefill URL 인지를 진입 경계에서 한 번 확정해 MediaInput 으로 넘긴다.
-        private fun videoMediaInput(url: String?): MediaInput {
+        // 영상·음성: 로컬 pick(content://) 인지 원격 prefill URL 인지를 진입 경계에서 한 번 확정해
+        // MediaInput 으로 넘긴다. 두 슬롯이 같은 «한 필드에 로컬·원격이 섞인다» 모양이라 판정도 공유한다.
+        private fun singleFieldMediaInput(url: String?): MediaInput {
             if (url.isNullOrBlank()) return MediaInput.None
             return if (url.isLocalContentUri()) MediaInput.Local(url) else MediaInput.Remote(url)
         }
@@ -478,12 +485,13 @@ class AfternoteEditorViewModel
         ): Result<SaveAfternoteCommand> {
             val resolved =
                 resolveMemorialMediaForSave(
-                    video = videoMediaInput(memorialMedia.memorialVideoUrl),
+                    video = singleFieldMediaInput(memorialMedia.memorialVideoUrl),
                     photo =
                         photoMediaInput(
                             picked = memorialMedia.pickedMemorialPhotoUri,
                             existing = memorialMedia.memorialPhotoUrl,
                         ),
+                    audio = singleFieldMediaInput(memorialMedia.memorialAudioUrl),
                 ).getOrElse { return Result.failure(it) }
 
             val command =
@@ -499,6 +507,7 @@ class AfternoteEditorViewModel
                                     memorialVideoUrl = resolved.resolvedVideoUrl,
                                     memorialThumbnailUrl = memorialMedia.memorialThumbnailUrl,
                                     memorialPhotoUrl = resolved.resolvedMemorialPhotoUrl,
+                                    memorialAudioUrl = resolved.resolvedMemorialAudioUrl,
                                 ),
                         )
                     SaveAfternoteCommand.Update(id = editingId, payload = updatePayload)
@@ -512,6 +521,7 @@ class AfternoteEditorViewModel
                             memorialVideoUrl = resolved.resolvedVideoUrl,
                             memorialThumbnailUrl = memorialMedia.memorialThumbnailUrl,
                             memorialPhotoUrl = resolved.resolvedMemorialPhotoUrl,
+                            memorialAudioUrl = resolved.resolvedMemorialAudioUrl,
                         )
                     SaveAfternoteCommand.Create(input = createInput)
                 }

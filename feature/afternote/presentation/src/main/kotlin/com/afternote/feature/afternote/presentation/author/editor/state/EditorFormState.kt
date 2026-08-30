@@ -31,6 +31,7 @@ data class EditorFormState(
     val memorialVideoUrl: String? get() = memorialForm?.videoUrl
     val memorialThumbnailUrl: String? get() = memorialForm?.thumbnailUrl
     val memorialPhotoUrl: String? get() = memorialForm?.photoUrl
+    val memorialAudioUrl: String? get() = memorialForm?.audioUrl
     val memorialPlaylistSongs: List<Song> get() = memorialForm?.playlistSongs.orEmpty()
 
     fun displayMemorialPhotoUri(): String? = memorialForm?.displayPhotoUri()

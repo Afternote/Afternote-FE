@@ -38,6 +38,9 @@ internal fun EditorFormState.withMemorialVideo(url: String?): EditorFormState = 
 
 internal fun EditorFormState.withMemorialThumbnail(dataUrl: String?): EditorFormState = mapMemorial { it.copy(thumbnailUrl = dataUrl) }
 
+/** 추모 음성 첨부·교체·삭제 (#1118). 영상과 달리 파생 값이 없어 필드 하나만 바뀐다. */
+internal fun EditorFormState.withMemorialAudio(url: String?): EditorFormState = mapMemorial { it.copy(audioUrl = url) }
+
 internal fun EditorFormState.withMemorialPlaylistSongs(songs: List<Song>): EditorFormState = mapMemorial { it.copy(playlistSongs = songs) }
 
 /**
