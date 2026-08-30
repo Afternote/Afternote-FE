@@ -125,6 +125,38 @@ class ReceivedRecordBoxContractTest {
     }
 
     /**
+     * 실서버 응답 형태 그대로 (dev `afternote.kro.kr`, 2026-08-30 12:1x KST 실측).
+     *
+     * 시각이 **오프셋 없는 마이크로초 6자리**(`2026-08-25T18:44:02.585799`)로 온다 — 스키마의
+     * `format: date-time` 은 RFC 3339 라 오프셋이 필수인데 실제 값은 그렇지 않다(BE#269).
+     * 표시는 `T` 앞만 쓰므로 무사하지만, 누가 날짜 파서를 규격대로 바꾸면 여기서 깨진다.
+     *
+     * 접근 코드는 실측값이 아니라 자리만 맞춘 가짜다 — 실제 마스터 키는 열람 자격이라 넣지 않는다.
+     */
+    @Test
+    fun `실서버 응답 형태 — 마이크로초가 붙은 시각도 그대로 도달한다`() {
+        val payload =
+            """{"status":200,"code":200,"message":"성공","data":{"recordBoxes":[
+            |{"receiverId":14,"accessCode":"00000000-0000-4000-8000-00000000abcd","senderName":"김혜성",
+            |"receiverName":"김지은","relation":"DAUGHTER","recordStatus":"STORED","viewStatus":"VIEWABLE",
+            |"verificationStatus":"APPROVED","requestedAt":"2026-08-25T18:43:47.696636",
+            |"approvedAt":"2026-08-25T18:44:02.585799"}]}}
+            """.trimMargin().replace("\n", "")
+
+        val box =
+            json
+                .decodeFromString<BaseResponse<ReceivedRecordBoxListDto>>(payload)
+                .requireData()
+                .recordBoxes
+                .single()
+                .toDomain()
+
+        assertEquals(DeliveryVerificationStatus.APPROVED, box.verificationStatus)
+        assertEquals("2026-08-25T18:43:47.696636", box.requestedAt)
+        assertEquals("2026-08-25T18:44:02.585799", box.approvedAt)
+    }
+
+    /**
      * 서버가 항상 채우는 필드는 누락이 **실패로 드러나야** 한다.
      *
      * `receiverName`(`Receiver.name` 은 DB NOT NULL)·`recordStatus`·`viewStatus`(둘 다 서버가 분기마다

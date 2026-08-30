@@ -65,6 +65,23 @@ class SenderDetailApprovedAtTest {
             assertEquals(SenderVerificationState.Approved, state.verification)
         }
 
+    /**
+     * 실서버는 시각을 마이크로초 6자리까지 보낸다 (dev 실측 2026-08-30, `2026-08-25T18:44:02.585799`).
+     * 표시는 `T` 앞만 쓰므로 무사하다 — 소수부가 표시로 새지 않는지 실제 형태로 못박는다.
+     */
+    @Test
+    fun `실서버 형태의 마이크로초 시각도 날짜만 표시한다`() =
+        runTest(dispatcher) {
+            val fixture = Fixture(DeliveryVerificationStatus.APPROVED)
+            fixture.auth.recordBoxes = listOf(recordBox(MY_AUTH_CODE, approvedAt = "2026-08-25T18:44:02.585799"))
+
+            val viewModel = fixture.viewModel()
+            advanceUntilIdle()
+            val state = viewModel.uiState.value as SenderDetailUiState.Success
+
+            assertEquals("2026.08.25.", state.approvedAt)
+        }
+
     @Test
     fun `같은 이메일의 다른 발신자 칸이 섞여 와도 내 접근 코드의 승인일만 쓴다`() =
         runTest(dispatcher) {
