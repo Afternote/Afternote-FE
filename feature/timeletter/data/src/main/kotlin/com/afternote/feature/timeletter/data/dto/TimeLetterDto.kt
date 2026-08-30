@@ -85,6 +85,8 @@ data class TimeLetterDeleteRequestDto(
     @SerialName("timeLetterIds") val timeLetterIds: List<Long>,
 )
 
+// deliveredAt 필드가 없다 — TimeLetterResponse(발신 응답) 계약엔 이 키가 아예 없다(#790).
+// 배달 시각은 ReceivedTimeLetterDto 쪽(수신 응답)에만 존재한다.
 @Serializable
 data class TimeLetterDto(
     @SerialName("id") val id: Long,
