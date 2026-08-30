@@ -1,10 +1,12 @@
 package com.afternote.core.network.service
 
 import com.afternote.core.network.dto.AppPlatformDto
+import com.afternote.core.network.dto.DeletePushTokenRequestDto
 import com.afternote.core.network.dto.EmailFindRequestDto
 import com.afternote.core.network.dto.FindSendCodeRequestDto
 import com.afternote.core.network.dto.LoginDto
 import com.afternote.core.network.dto.PasswordFindRequestDto
+import com.afternote.core.network.dto.RegisterPushTokenRequestDto
 import com.afternote.core.network.dto.SocialLoginRequestDto
 import com.afternote.core.network.dto.delivery.ConditionStateDto
 import com.afternote.core.network.dto.delivery.DeliveryConditionItemRequestDto
@@ -141,6 +143,64 @@ class ApiWireContractSmokeTest {
             assertEquals(200, result.status)
             assertTrue(result.data.orEmpty().isEmpty())
             assertExactlyOneRecordedRequest("GET", "/api/v1/users/receivers")
+        }
+
+    @Test
+    fun `push token PUT preserves authenticated route and strict request JSON`() =
+        runTest {
+            installExpectation(
+                method = "PUT",
+                path = "/api/v1/users/push-tokens",
+                requestHeaders = mapOf("Authorization" to "Bearer contract-token"),
+                requestBody =
+                    wireJson
+                        .parseToJsonElement(
+                            """{"token":"fcm-token","platform":"ANDROID"}""",
+                        ).jsonObject,
+                responseBody =
+                    """
+                    {
+                      "status": 200,
+                      "code": 200,
+                      "message": "ok",
+                      "data": {
+                        "token": "fcm-token",
+                        "platform": "ANDROID",
+                        "lastSeenAt": "2026-08-29T20:00:00"
+                      }
+                    }
+                    """.trimIndent(),
+            )
+
+            val result =
+                userService.registerPushToken(
+                    RegisterPushTokenRequestDto(token = "fcm-token", platform = "ANDROID"),
+                )
+
+            assertEquals(200, result.status)
+            assertEquals("fcm-token", result.data?.token)
+            assertExactlyOneRecordedRequest("PUT", "/api/v1/users/push-tokens")
+        }
+
+    /** DELETE 가 본문을 싣는 드문 경로다 — `@HTTP(hasBody = true)` 가 빠지면 여기서 잡힌다. */
+    @Test
+    fun `push token DELETE carries request body on the wire`() =
+        runTest {
+            installExpectation(
+                method = "DELETE",
+                path = "/api/v1/users/push-tokens",
+                requestHeaders = mapOf("Authorization" to "Bearer contract-token"),
+                requestBody =
+                    wireJson
+                        .parseToJsonElement("""{"token":"fcm-token"}""")
+                        .jsonObject,
+                responseBody = """{"status":200,"code":200,"message":"ok","data":null}""",
+            )
+
+            val result = userService.deletePushToken(DeletePushTokenRequestDto(token = "fcm-token"))
+
+            assertEquals(200, result.status)
+            assertExactlyOneRecordedRequest("DELETE", "/api/v1/users/push-tokens")
         }
 
     @Test
