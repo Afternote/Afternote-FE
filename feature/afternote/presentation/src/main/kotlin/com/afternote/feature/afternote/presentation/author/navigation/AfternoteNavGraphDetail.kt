@@ -68,7 +68,7 @@ fun DesignPendingDetailContent(onBackClick: () -> Unit) {
                     .padding(paddingValues),
             contentAlignment = Alignment.Center,
         ) {
-            Text(text = stringResource(R.string.design_pending))
+            Text(text = stringResource(R.string.afternote_design_pending))
         }
     }
 }
@@ -354,7 +354,7 @@ private fun rememberMemorialVideoClickHandler(snackbarHostState: SnackbarHostSta
                 videoUrl = videoUrl,
                 startActivity = context::startActivity,
                 onUnavailable = {
-                    val message = resources.getString(R.string.feature_afternote_memorial_video_no_app)
+                    val message = resources.getString(R.string.afternote_memorial_video_no_app)
                     scope.launch {
                         snackbarHostState.showSnackbar(message = message)
                     }

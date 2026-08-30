@@ -189,7 +189,7 @@ class AppAndReceiverCompletionAndroidTest {
                     SemanticsMatcher.expectValue(SemanticsProperties.Selected, false),
             ).performClick()
         val fingerprintTitle =
-            context.getString(AfternoteFeatureR.string.feature_afternote_fingerprint_login_title)
+            context.getString(AfternoteFeatureR.string.afternote_fingerprint_login_title)
         composeRule.waitUntilAtLeastOneExists(hasText(fingerprintTitle), timeoutMillis = 5_000)
         composeRule.onNodeWithText(fingerprintTitle).assertIsDisplayed()
         composeRule

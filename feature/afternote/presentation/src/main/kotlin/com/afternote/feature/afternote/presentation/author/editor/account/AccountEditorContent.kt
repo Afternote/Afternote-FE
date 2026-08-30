@@ -50,13 +50,13 @@ fun AccountEditorContent(
             )
 
             CaptionLabeledTextField(
-                label = stringResource(R.string.feature_afternote_detail_label_id),
+                label = stringResource(R.string.afternote_detail_label_id),
                 state = accountSection.idState,
                 placeholder = stringResource(R.string.afternote_editor_account_id_placeholder),
             )
 
             CaptionLabeledTextField(
-                label = stringResource(R.string.feature_afternote_detail_label_password),
+                label = stringResource(R.string.afternote_detail_label_password),
                 state = accountSection.passwordState,
                 placeholder = stringResource(R.string.afternote_editor_account_password_placeholder),
                 keyboardType = KeyboardType.Password,

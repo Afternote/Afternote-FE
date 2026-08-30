@@ -74,7 +74,7 @@ fun MemorialReceivedDetailScreen(
     memorialVideoUrl: String? = null,
     memorialThumbnailUrl: String? = null,
 ) {
-    profileImageResId ?: R.drawable.receiver_img_default_profile_deceased
+    profileImageResId ?: R.drawable.afternote_receiver_img_default_profile_deceased
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -159,7 +159,7 @@ private fun ReceiverVideoSection(
     memorialThumbnailUrl: String? = null,
 ) {
     val context = LocalContext.current
-    val noVideoAppMessage = stringResource(R.string.receiver_memorial_video_no_app)
+    val noVideoAppMessage = stringResource(R.string.afternote_receiver_memorial_video_no_app)
     Column(modifier = Modifier.fillMaxWidth()) {
         ReceiverSectionHeader()
         Spacer(modifier = Modifier.height(12.dp))
@@ -209,7 +209,7 @@ private fun ReceiverVideoSection(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.receiver_ic_play_arrow),
+                    painter = painterResource(R.drawable.afternote_receiver_ic_play_arrow),
                     // 영상이 없을 때만 그리는 플레이스홀더다. clickable 이 없어 재생 액션이 없으므로
                     // 라벨을 붙이면 없는 어포던스를 알린다. 맥락은 위 ReceiverSectionHeader 가 읽어 준다.
                     contentDescription = null,
@@ -318,8 +318,8 @@ private fun ReceiverMemorialVideoThumbnail(thumbnailUrl: String?) {
                     ),
         )
         Image(
-            painter = painterResource(R.drawable.feature_afternote_ic_playback),
-            contentDescription = stringResource(R.string.content_description_video_play),
+            painter = painterResource(R.drawable.afternote_ic_playback),
+            contentDescription = stringResource(R.string.afternote_content_description_video_play),
             modifier =
                 Modifier
                     .align(Alignment.Center)

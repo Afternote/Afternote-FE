@@ -41,15 +41,15 @@ internal fun AfternoteFingerprintLoginNavigation(
 
     val messages =
         BiometricMessages(
-            initFailed = stringResource(R.string.biometric_init_failed),
-            noHardware = stringResource(R.string.biometric_no_hardware),
-            noneEnrolled = stringResource(R.string.biometric_none_enrolled),
-            hwUnavailable = stringResource(R.string.biometric_hw_unavailable),
-            notAvailable = stringResource(R.string.biometric_not_available),
-            verificationFailed = stringResource(R.string.biometric_verification_failed),
+            initFailed = stringResource(R.string.afternote_biometric_init_failed),
+            noHardware = stringResource(R.string.afternote_biometric_no_hardware),
+            noneEnrolled = stringResource(R.string.afternote_biometric_none_enrolled),
+            hwUnavailable = stringResource(R.string.afternote_biometric_hw_unavailable),
+            notAvailable = stringResource(R.string.afternote_biometric_not_available),
+            verificationFailed = stringResource(R.string.afternote_biometric_verification_failed),
         )
-    val promptTitle = stringResource(R.string.biometric_prompt_title)
-    val promptSubtitle = stringResource(R.string.biometric_prompt_subtitle)
+    val promptTitle = stringResource(R.string.afternote_biometric_prompt_title)
+    val promptSubtitle = stringResource(R.string.afternote_biometric_prompt_subtitle)
 
     FingerprintLoginScreen(
         onFingerprintAuthClick = {
