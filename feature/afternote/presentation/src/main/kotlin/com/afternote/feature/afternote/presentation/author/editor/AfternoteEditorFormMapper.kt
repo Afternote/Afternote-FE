@@ -293,7 +293,7 @@ internal object AfternoteEditorFormMapper {
                     is DetailContent.Business -> content.credentials.toAccountCredentials()
                     is DetailContent.Gallery, is DetailContent.Memorial, DetailContent.Estate -> null
                 },
-            // 추억 노트 수정 페이로드는 수신자를 싣지 않으므로(아래 when 의 MEMORIAL 분기 참고)
+            // 추억 노트 수정 페이로드는 수신자를 싣지 않으므로([buildUpdatePayload] 의 MEMORIAL 분기)
             // 기준도 같은 자리를 비워 둔다 — 그래야 「양쪽 다 없음」으로 맞아떨어진다.
             receivers =
                 when (content) {
