@@ -28,8 +28,10 @@ import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
  * 서버는 저장된 카테고리와 다르면 400 을 내고(`CATEGORY_CANNOT_BE_CHANGED`), 같으면 아무것도
  * 바꾸지 않는다. 카테고리는 수정 화면에서 애초에 바꿀 수 없다.
  *
- * 미디어만 규칙이 다르다 — [MemorialWritePayload] 안에서는 빈 배열이 아니라 **명시적 JSON null** 이
- * 삭제다 (#1596). 그쪽 계약은 해당 DTO KDoc 에 적혀 있다.
+ * **판정 단위는 서버가 반영하는 단위와 같아야 한다.** 객체를 통째로 「바뀌었다/아니다」로 재면, 그
+ * 객체 안에서 안 건드린 형제 슬롯이 낡은 값째 함께 실려 나간다. 그래서 [credentials] 는 id·비밀번호를
+ * 따로 재고(서버도 `CredentialsRelationSupport.update` 가 둘을 독립으로 갱신한다), [memorial] 은
+ * 슬롯별 [FieldPatch] 를 든 [MemorialPatchPayload] 로 말한다 (#1617).
  */
 data class AfternoteUpdatePayload(
     val type: AfternoteType,
@@ -38,9 +40,16 @@ data class AfternoteUpdatePayload(
     val leaveMessageBlocks: List<LeaveMessageBlock>? = null,
     val credentials: AfternoteAccountCredentials? = null,
     val receivers: List<ReceiverRefPayload>? = null,
-    val memorial: MemorialWritePayload? = null,
+    val memorial: MemorialPatchPayload? = null,
 )
 
+/**
+ * 계정 정보. **수정에서 `null` 슬롯은 「안 건드림」이라 요청에서 빠진다.**
+ *
+ * 서버가 id 와 비밀번호를 각각 `!= null` 일 때만 갈아 끼우므로(`CredentialsRelationSupport.update`),
+ * 한쪽만 실어 보내는 것이 곧 「나머지는 그대로 두라」가 된다. 둘 다 싣는 편이 안전해 보이지만
+ * 반대다 — 안 고친 쪽이 낡은 값으로 남의 변경을 되돌린다 (#1617).
+ */
 data class AfternoteAccountCredentials(
     val id: String? = null,
     val password: String? = null,

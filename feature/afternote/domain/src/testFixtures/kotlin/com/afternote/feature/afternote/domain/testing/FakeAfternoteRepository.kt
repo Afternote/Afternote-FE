@@ -12,7 +12,9 @@ import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.DetailReceiver
+import com.afternote.feature.afternote.domain.model.author.FieldPatch
 import com.afternote.feature.afternote.domain.model.author.ListItem
+import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialDetail
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
@@ -221,13 +223,20 @@ private fun DetailContent.updatedWith(payload: AfternoteUpdatePayload): DetailCo
                     if (memorial == null) {
                         previous ?: MemorialDetail(emptyList(), MemorialMedia(null, null, null))
                     } else {
+                        // 서버와 같이 **슬롯별로** 반영한다 — 만지지 않은 슬롯(FieldPatch.Unchanged·songs null)은
+                        // 기존 값을 남긴다. 여기서 통째로 갈아 끼우면 부분 PATCH 의 결함이 테스트에 안 잡힌다 (#1617).
+                        val previousMedia = previous?.media
+                        val video = memorial.memorialVideo.resolve(previousMedia?.toVideoPayload())
                         MemorialDetail(
-                            songs = memorial.songs.map { DetailSong(it.title, it.artist, it.coverUrl) },
+                            songs =
+                                memorial.songs
+                                    ?.map { DetailSong(it.title, it.artist, it.coverUrl) }
+                                    ?: previous?.songs.orEmpty(),
                             media =
                                 MemorialMedia(
-                                    photoUrl = memorial.memorialPhotoUrl,
-                                    videoUrl = memorial.memorialVideo?.videoUrl,
-                                    thumbnailUrl = memorial.memorialVideo?.thumbnailUrl,
+                                    photoUrl = memorial.memorialPhotoUrl.resolve(previousMedia?.photoUrl),
+                                    videoUrl = video?.videoUrl,
+                                    thumbnailUrl = video?.thumbnailUrl,
                                 ),
                         )
                     },
@@ -244,3 +253,13 @@ private fun AfternoteAccountCredentials?.toDetailCredentials(previous: DetailCre
         id = this?.id ?: previous?.id.orEmpty(),
         password = this?.password ?: previous?.password.orEmpty(),
     )
+
+/** 만지지 않은 슬롯은 기존 값을 남긴다 — 서버 `AfternotePlaylist.update` 의 specified 플래그와 같은 규칙. */
+private fun <T> FieldPatch<T>.resolve(previous: T): T =
+    when (this) {
+        is FieldPatch.Unchanged -> previous
+        is FieldPatch.Set -> value
+    }
+
+private fun MemorialMedia.toVideoPayload(): MemorialVideoPayload? =
+    videoUrl?.let { MemorialVideoPayload(videoUrl = it, thumbnailUrl = thumbnailUrl) }

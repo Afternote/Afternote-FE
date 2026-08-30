@@ -48,6 +48,15 @@ sealed interface AfternoteEditorError {
      */
     data object ReceiverSelectionUnavailable : AfternoteEditorError
 
+    /**
+     * 수정 대상의 원본을 못 받아 **무엇이 바뀌었는지 판정할 수 없음** (#1617).
+     *
+     * 상세 조회가 실패하면 폼이 비어 있는 채로 열린다. 그 상태로 저장하면 「안 건드림」과 「전부
+     * 지움」을 가릴 기준이 없어, 처리 방법·수신자·남기실 말씀이 빈 값으로 나가 서버 내용을 지운다.
+     * 저장 실패가 아니라 **저장을 시작하면 안 되는 상태**라, 사용자에게 다시 불러오라고 알린다.
+     */
+    data object PrefillUnavailable : AfternoteEditorError
+
     data class Upload(
         val target: Target,
     ) : AfternoteEditorError {

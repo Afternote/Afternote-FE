@@ -10,7 +10,6 @@ import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.error.AfternoteFailure
-import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.SaveAfternoteCommand
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
@@ -445,6 +444,14 @@ class AfternoteEditorViewModel
             val typeForSave =
                 if (editingId != null) (editorState.originalType ?: type) else type
 
+            // 수정인데 기준 스냅샷이 없다 = 상세를 못 받았다. 이 상태로 보내면 「안 건드림」과
+            // 「전부 지움」을 가릴 수 없어 빈 폼이 그대로 삭제 지시가 된다 (#1617).
+            val updateBaseline = editorState.updateBaseline
+            if (editingId != null && updateBaseline == null) {
+                internalState.update { it.withError(AfternoteEditorError.PrefillUnavailable) }
+                return
+            }
+
             viewModelScope.launch {
                 internalState.update {
                     it.copy(isSaving = true, errorEvent = null)
@@ -468,7 +475,7 @@ class AfternoteEditorViewModel
                     selectedReceiverIds = selectedReceiverIds,
                     playlistSongs = playlistSongs,
                     memorialMedia = memorialMediaForSave,
-                    updateBaseline = editorState.updateBaseline,
+                    updateBaseline = updateBaseline,
                 ).fold(
                     onSuccess = { command ->
                         executeSaveCommand(command).fold(
@@ -529,7 +536,7 @@ class AfternoteEditorViewModel
             selectedReceiverIds: List<Long>,
             playlistSongs: List<Song>,
             memorialMedia: SaveAfternoteMemorialMedia,
-            updateBaseline: AfternoteUpdatePayload?,
+            updateBaseline: AfternoteEditorSnapshot?,
         ): Result<SaveAfternoteCommand> {
             val resolved =
                 resolveMemorialMediaForSave(
@@ -555,7 +562,11 @@ class AfternoteEditorViewModel
                                     memorialThumbnailUrl = memorialMedia.memorialVideo.displayed?.thumbnailUrl,
                                     memorialPhotoUrl = resolved.resolvedMemorialPhotoUrl,
                                 ),
-                            baseline = updateBaseline,
+                            // saveAfternote 가 기준 없는 수정을 이미 막았다 — 여기 도달하면 반드시 있다.
+                            baseline =
+                                checkNotNull(updateBaseline) {
+                                    "수정 저장에 기준 스냅샷이 없다 — saveAfternote 의 가드가 빠졌다"
+                                },
                         )
                     SaveAfternoteCommand.Update(id = editingId, payload = updatePayload)
                 } else {
@@ -665,7 +676,7 @@ class AfternoteEditorViewModel
              * 저장 시 현재 폼과 견줘 **달라진 필드만** 요청에 싣는 기준이다. `null` 이면 기준이 없다는
              * 뜻이라(신규 작성이거나 상세 로드 실패) 종전처럼 전량을 싣는다.
              */
-            val updateBaseline: AfternoteUpdatePayload? = null,
+            val updateBaseline: AfternoteEditorSnapshot? = null,
         )
 
         private fun InternalState.toUiState(): AfternoteEditorUiState =

@@ -2,12 +2,14 @@ package com.afternote.feature.afternote.presentation.author.editor
 
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
-import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.DetailReceiver
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
+import com.afternote.feature.afternote.domain.model.author.FieldPatch
+import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
+import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
 import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialDetail
@@ -16,22 +18,21 @@ import com.afternote.feature.afternote.presentation.author.editor.memorial.playl
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * 수정 요청이 **사용자가 만진 필드만** 싣는지 고정한다 (#1617).
+ * 수정 요청이 **사용자가 만진 슬롯만** 싣는지 고정한다 (#1617).
  *
  * 종전에는 폼이 든 전체 스냅샷이 매번 통째로 나갔다. 에디터를 연 뒤 서버가 바뀌면, 사용자가 건드린
- * 적도 없는 필드가 낡은 로컬 값으로 덮였다 — 곡을 만진 적 없는 「제목만 수정」이 남이 추가한 곡을
- * 전부 지우는 lost update 다.
+ * 적도 없는 필드가 낡은 로컬 값으로 덮였다.
  *
- * 여기서 고정하는 축은 둘이다.
- * 1. 안 건드린 필드는 페이로드에서 `null` 이 된다 → 요청에서 키째 빠진다 → 서버가 「유지」로 읽는다.
- * 2. **비운 것은 안 건드린 것과 다르다** — 빈 목록은 그대로 실려 「전부 삭제」로 나간다
- *    (#1596·#1599 가 세운 계약).
+ * 고정하는 축은 셋이다.
+ * 1. 안 건드린 슬롯은 페이로드에서 빠진다 → 요청에서 키째 빠진다 → 서버가 「유지」로 읽는다.
+ * 2. **비운 것은 안 건드린 것과 다르다** — 빈 목록·명시적 삭제는 그대로 실린다 (#1596·#1599).
+ * 3. **판정 단위는 서버가 반영하는 단위와 같다** — 계정 정보는 id·비밀번호를 따로, 플레이리스트는
+ *    사진·영상·곡을 따로 잰다. 객체째 재면 안 건드린 형제 슬롯이 낡은 값으로 딸려 나간다.
  */
 class AfternoteEditorPartialUpdateTest {
     private val socialDetail =
@@ -94,14 +95,14 @@ class AfternoteEditorPartialUpdateTest {
     private fun buildSocialUpdate(
         payload: RegisterAfternotePayload = untouchedSocialPayload(),
         selectedReceiverIds: List<Long> = listOf(11L, 22L),
-        baseline: AfternoteUpdatePayload? = AfternoteEditorFormMapper.buildUpdateBaseline(socialDetail),
+        detail: Detail = socialDetail,
     ) = AfternoteEditorFormMapper.buildUpdatePayload(
         type = AfternoteType.SOCIAL_NETWORK,
         payload = payload,
         selectedReceiverIds = selectedReceiverIds,
         playlistSongs = emptyList(),
         memorialMedia = MemorialMediaUrls(),
-        baseline = baseline,
+        baseline = AfternoteEditorFormMapper.buildUpdateBaseline(detail),
     )
 
     @Test
@@ -142,10 +143,6 @@ class AfternoteEditorPartialUpdateTest {
         assertEquals(listOf(ReceiverRefPayload(receiverId = 11L)), updated.receivers)
     }
 
-    /**
-     * 「전부 삭제」와 「안 건드림」이 갈린다 — 빈 목록은 접히지 않고 그대로 실려야 한다.
-     * 접어 버리면 사용자가 전부 지운 저장이 서버에 반영되지 않는다.
-     */
     @Test
     fun `수신자를 전부 빼면 빈 목록이 실려 전부 삭제로 나간다`() {
         val updated = buildSocialUpdate(selectedReceiverIds = emptyList())
@@ -160,6 +157,29 @@ class AfternoteEditorPartialUpdateTest {
         assertEquals(emptyList<String>(), updated.processingMethods)
     }
 
+    /**
+     * 서버는 `actions` 원소를 검증 없이 저장하므로 `[""]` 가 실제로 남아 있을 수 있다. 비교 전에
+     * 빈 문자열을 걷어내면 그 행을 지운 저장이 「양쪽 다 빈 목록」으로 상쇄돼 **삭제가 사라진다.**
+     */
+    @Test
+    fun `서버에 빈 문자열 처리 방법만 있을 때 그 행을 지우면 삭제가 나간다`() {
+        val detailWithBlank =
+            socialDetail.copy(
+                content =
+                    DetailContent.SocialNetwork(
+                        credentials = DetailCredentials(id = "account", password = "pw"),
+                        processingMethods = listOf(""),
+                    ),
+            )
+        val updated =
+            buildSocialUpdate(
+                payload = untouchedSocialPayload(processingMethods = emptyList()),
+                detail = detailWithBlank,
+            )
+
+        assertEquals(emptyList<String>(), updated.processingMethods)
+    }
+
     @Test
     fun `남기실 말씀을 전부 빼면 빈 목록이 실려 전부 삭제로 나간다`() {
         val updated = buildSocialUpdate(payload = untouchedSocialPayload(messageBlocks = emptyList()))
@@ -167,12 +187,25 @@ class AfternoteEditorPartialUpdateTest {
         assertEquals(emptyList<LeaveMessageBlock>(), updated.leaveMessageBlocks)
     }
 
+    /**
+     * 서버가 id 와 비밀번호를 **따로** 갱신하므로(`CredentialsRelationSupport.update`), 안 고친 쪽은
+     * 실으면 안 된다. 함께 실으면 그 사이 다른 기기가 바꾼 id 가 낡은 값으로 되돌아간다.
+     */
     @Test
-    fun `계정 정보를 고치면 계정 정보가 실린다`() {
+    fun `비밀번호만 고치면 아이디는 실리지 않는다`() {
         val updated = buildSocialUpdate(payload = untouchedSocialPayload(password = "새 비밀번호"))
 
         assertEquals("새 비밀번호", updated.credentials?.password)
+        assertNull("아이디는 만진 적이 없다", updated.credentials?.id)
         assertNull("제목은 그대로다", updated.title)
+    }
+
+    @Test
+    fun `아이디만 고치면 비밀번호는 실리지 않는다`() {
+        val updated = buildSocialUpdate(payload = untouchedSocialPayload(accountId = "새 아이디"))
+
+        assertEquals("새 아이디", updated.credentials?.id)
+        assertNull("비밀번호는 만진 적이 없다", updated.credentials?.password)
     }
 
     /**
@@ -194,18 +227,6 @@ class AfternoteEditorPartialUpdateTest {
             )
 
         assertNull(updated.leaveMessageBlocks)
-    }
-
-    /** 기준이 없으면(상세 로드 실패 등) 덜 보내다 사용자의 편집을 잃느니 종전처럼 전량을 싣는다. */
-    @Test
-    fun `기준 스냅샷이 없으면 종전처럼 전량을 싣는다`() {
-        val updated = buildSocialUpdate(baseline = null)
-
-        assertEquals("인스타그램", updated.title)
-        assertEquals(listOf("계정 삭제", "사진 백업"), updated.processingMethods)
-        assertNotNull(updated.leaveMessageBlocks)
-        assertNotNull(updated.credentials)
-        assertEquals(2, updated.receivers?.size)
     }
 
     private fun buildMemorialUpdate(
@@ -239,13 +260,37 @@ class AfternoteEditorPartialUpdateTest {
         assertNull("곡을 건드린 적이 없다", updated.memorial)
     }
 
+    /**
+     * **곡만 고친 저장이 사진·영상을 건드리면 안 된다.**
+     *
+     * 사진·영상 슬롯은 기본값이 없는 DTO 로 나가던 동안 `null` 이 곧 삭제였다. 곡을 바꿨다는 이유로
+     * 셋을 함께 실으면, 그 사이 다른 기기가 올린 사진·영상이 명시적 null 로 지워진다.
+     */
     @Test
-    fun `곡을 전부 빼면 플레이리스트가 빈 곡 목록과 함께 실린다`() {
+    fun `곡만 고치면 사진과 영상 슬롯은 말하지 않는다`() {
+        val updated =
+            buildMemorialUpdate(
+                playlistSongs =
+                    listOf(Song(selectionKey = "detail:0", title = "새 곡", artist = "가수", albumCoverUrl = null)),
+            )
+
+        val memorial = requireNotNull(updated.memorial) { "곡을 고쳤으므로 플레이리스트가 실려야 한다" }
+        assertEquals(
+            listOf(MemorialSongPayload(title = "새 곡", artist = "가수", coverUrl = null)),
+            memorial.songs,
+        )
+        assertEquals("사진을 건드린 적이 없다", FieldPatch.Unchanged, memorial.memorialPhotoUrl)
+        assertEquals("영상을 건드린 적이 없다", FieldPatch.Unchanged, memorial.memorialVideo)
+    }
+
+    @Test
+    fun `곡을 전부 빼면 빈 곡 목록만 실리고 미디어는 말하지 않는다`() {
         val updated = buildMemorialUpdate(playlistSongs = emptyList())
 
         val memorial = requireNotNull(updated.memorial) { "곡을 지웠으므로 플레이리스트가 실려야 한다" }
-        assertTrue("곡을 지운 것은 명시적 삭제다", memorial.songs.isEmpty())
-        assertEquals("같이 실리는 사진은 종전 값 그대로다", "https://cdn.test/afternotes/photo.jpg", memorial.memorialPhotoUrl)
+        assertTrue("곡을 지운 것은 명시적 삭제다", memorial.songs?.isEmpty() == true)
+        assertEquals(FieldPatch.Unchanged, memorial.memorialPhotoUrl)
+        assertEquals(FieldPatch.Unchanged, memorial.memorialVideo)
     }
 
     /** 선택 키는 화면 전용 식별자라 서버로 나가지 않는다 — 재조회로 값이 달라져도 변경이 아니다. */
@@ -260,8 +305,9 @@ class AfternoteEditorPartialUpdateTest {
         assertNull(updated.memorial)
     }
 
+    /** 사진만 지운 저장은 사진 슬롯만 삭제로 말하고, 곡·영상은 건드리지 않는다. */
     @Test
-    fun `영정 사진을 지우면 플레이리스트가 실려 삭제를 말한다`() {
+    fun `영정 사진만 지우면 사진 슬롯만 삭제로 나간다`() {
         val updated =
             buildMemorialUpdate(
                 memorialMedia =
@@ -272,7 +318,35 @@ class AfternoteEditorPartialUpdateTest {
                     ),
             )
 
-        assertNotNull(updated.memorial)
-        assertNull("빈 사진은 명시적 null 로 나가 삭제가 된다", updated.memorial?.memorialPhotoUrl)
+        val memorial = requireNotNull(updated.memorial) { "사진을 지웠으므로 플레이리스트가 실려야 한다" }
+        assertEquals(FieldPatch.Set(null), memorial.memorialPhotoUrl)
+        assertNull("곡을 건드린 적이 없다", memorial.songs)
+        assertEquals("영상을 건드린 적이 없다", FieldPatch.Unchanged, memorial.memorialVideo)
+    }
+
+    @Test
+    fun `추모 영상만 바꾸면 영상 슬롯만 실린다`() {
+        val updated =
+            buildMemorialUpdate(
+                memorialMedia =
+                    MemorialMediaUrls(
+                        memorialVideoUrl = "https://cdn.test/afternotes/new-video.mp4",
+                        memorialThumbnailUrl = "https://cdn.test/afternotes/thumb.jpg",
+                        memorialPhotoUrl = "https://cdn.test/afternotes/photo.jpg",
+                    ),
+            )
+
+        val memorial = requireNotNull(updated.memorial) { "영상을 바꿨으므로 플레이리스트가 실려야 한다" }
+        assertEquals(
+            FieldPatch.Set(
+                MemorialVideoPayload(
+                    videoUrl = "https://cdn.test/afternotes/new-video.mp4",
+                    thumbnailUrl = "https://cdn.test/afternotes/thumb.jpg",
+                ),
+            ),
+            memorial.memorialVideo,
+        )
+        assertEquals("사진을 건드린 적이 없다", FieldPatch.Unchanged, memorial.memorialPhotoUrl)
+        assertNull("곡을 건드린 적이 없다", memorial.songs)
     }
 }

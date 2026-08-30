@@ -84,8 +84,8 @@ class AfternoteAuthorExtendedTest {
      * 상세 → 수정 → 저장을 실제 화면으로 완주하며, **사용자가 만진 필드만** 요청에 실리는지 본다 (#1617).
      *
      * 여기서 손대는 것은 계정 ID 와 처리 방법 둘뿐이다. 제목·남기실 말씀·수신자는 프리필된 채로
-     * 두므로 페이로드에서 빠져야 한다 — 종전에는 폼 스냅샷이 통째로 실려, 에디터를 연 뒤 서버가
-     * 바뀌면 만진 적 없는 필드가 낡은 값으로 덮였다.
+     * 두므로 페이로드에서 빠져야 하고, **계정 정보 안에서도 안 고친 비밀번호는 빠져야 한다** —
+     * 종전에는 폼 스냅샷이 통째로 실려, 에디터를 연 뒤 서버가 바뀌면 만진 적 없는 값이 덮였다.
      */
     @Test
     fun detailEdit_sendsOnlyTouchedFieldsThroughEditorRoute() {
@@ -145,10 +145,12 @@ class AfternoteAuthorExtendedTest {
         val (updatedId, payload) = repository.updateCalls.single()
         assertEquals(73L, updatedId)
         assertEquals(AfternoteType.SOCIAL_NETWORK, payload.type)
-        // 만진 둘 — 처리 방법과 계정 ID. 계정은 한 덩어리라 안 고친 비밀번호도 함께 실린다.
+        // 만진 둘 — 처리 방법과 계정 ID.
         assertEquals(listOf("계정 보존"), payload.processingMethods)
         assertEquals("edited@example.test", payload.credentials?.id)
-        assertEquals("old-password", payload.credentials?.password)
+        // 계정 정보 안에서도 슬롯별로 갈린다: 서버가 id·비밀번호를 따로 갱신하므로, 안 고친
+        // 비밀번호를 함께 실으면 그 사이 다른 기기가 바꾼 값이 낡은 값으로 되돌아간다 (#1617).
+        assertNull("비밀번호는 고친 적이 없다", payload.credentials?.password)
         // 안 만진 나머지 — 키째 빠져야 서버가 기존 값을 유지한다.
         assertNull("제목을 고친 적이 없다", payload.title)
         assertNull("남기실 말씀을 고친 적이 없다", payload.leaveMessageBlocks)

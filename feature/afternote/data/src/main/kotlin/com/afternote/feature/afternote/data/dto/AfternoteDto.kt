@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.data.dto
 
+import com.afternote.feature.afternote.domain.model.author.FieldPatch
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
@@ -61,7 +62,7 @@ data class AfternoteUpdateRequestDto(
     @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
     @SerialName("credentials") val credentials: AfternoteCredentialsDto? = null,
     @SerialName("receivers") val receivers: List<AfternoteReceiverRefDto>? = null,
-    @SerialName("playlist") val memorial: AfternotePlaylistRequestDto? = null,
+    @SerialName("playlist") val memorial: AfternotePlaylistPatchDto? = null,
 )
 
 @Serializable
@@ -119,6 +120,39 @@ data class AfternotePlaylistRequestDto(
     @SerialName("memorialPhotoUrl") val memorialPhotoUrl: String?,
     @SerialName("songs") val songs: List<AfternoteSongDto>,
     @SerialName("memorialVideo") val memorialVideo: AfternoteMemorialVideoDto?,
+)
+
+/**
+ * 추억 노트 플레이리스트 **수정(PATCH) 전용** 바디 — 만진 슬롯만 말한다 (#1617).
+ *
+ * [AfternotePlaylistRequestDto] 와 나눠 둔 이유가 계약 그 자체다. 생성은 「이 노트가 가져야 할
+ * 상태」를 통째로 말해야 해서 슬롯에 기본값을 두지 않는다(그래서 항상 직렬화된다). 수정은 반대다 —
+ * **만지지 않은 슬롯은 키째 빠져야** 서버가 기존 값을 유지한다.
+ *
+ * 한 DTO 로 겸하면 둘 중 하나가 반드시 깨진다. 실제로 그랬다: 수정에서 생성용 DTO 를 쓰는 동안,
+ * 곡만 바꾼 저장이 `{"memorialPhotoUrl":null,"memorialVideo":null}` 을 함께 실어 **그 사이 다른
+ * 기기가 올린 영정사진·추모 영상을 지웠다.** 기본값이 없는 슬롯은 `encodeDefaults = false` 로도
+ * 생략되지 않고, `null` 이면 곧 삭제 지시이기 때문이다.
+ *
+ * 슬롯별 표현이 다른 것은 서버가 그렇게 읽기 때문이다:
+ * - [memorialPhotoUrl]·[memorialVideo] — `PlaylistRequestDeserializer` 가 `node.has(...)` 로 키
+ *   유무를 보고 `AfternotePlaylist.update` 가 그 플래그로 유지/삭제를 가른다. 3상태가 필요해
+ *   [FieldPatch] 를 쓴다. 기본값 [FieldPatch.Unchanged] 가 곧 「키 생략」이다.
+ * - [songs] — `PlaylistRelationStrategy.update` 가 `songs != null` 일 때만 `items` 를 통째로 갈아
+ *   끼운다. `null`(안 건드림)과 `[]`(전부 삭제)로 두 뜻이 다 나오므로 [FieldPatch] 가 필요 없다.
+ * - `atmosphere`·`memorialAudioUrl` — FE 화면에 없는 값이라 삭제를 지시할 자격이 없다. 슬롯 자체를
+ *   두지 않아 영영 생략된다.
+ */
+@Serializable
+data class AfternotePlaylistPatchDto(
+    @SerialName("memorialPhotoUrl")
+    @Serializable(with = FieldPatchSerializer::class)
+    val memorialPhotoUrl: FieldPatch<String?> = FieldPatch.Unchanged,
+    @SerialName("songs")
+    val songs: List<AfternoteSongDto>? = null,
+    @SerialName("memorialVideo")
+    @Serializable(with = FieldPatchSerializer::class)
+    val memorialVideo: FieldPatch<AfternoteMemorialVideoDto?> = FieldPatch.Unchanged,
 )
 
 @Serializable

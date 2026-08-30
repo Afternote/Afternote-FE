@@ -27,6 +27,10 @@ internal fun AfternoteEditorError.messageResId(): Int =
             R.string.afternote_editor_receiver_selection_unavailable
         }
 
+        AfternoteEditorError.PrefillUnavailable -> {
+            R.string.afternote_editor_prefill_unavailable
+        }
+
         is AfternoteEditorError.Upload -> {
             when (target) {
                 AfternoteEditorError.Upload.Target.THUMBNAIL -> R.string.afternote_editor_thumbnail_upload_failed

@@ -5,6 +5,7 @@ import com.afternote.feature.afternote.data.dto.AfternoteCreateGalleryRequestDto
 import com.afternote.feature.afternote.data.dto.AfternoteCreatePlaylistRequestDto
 import com.afternote.feature.afternote.data.dto.AfternoteCredentialsDto
 import com.afternote.feature.afternote.data.dto.AfternoteMemorialVideoDto
+import com.afternote.feature.afternote.data.dto.AfternotePlaylistPatchDto
 import com.afternote.feature.afternote.data.dto.AfternotePlaylistRequestDto
 import com.afternote.feature.afternote.data.dto.AfternoteReceiverRefDto
 import com.afternote.feature.afternote.data.dto.AfternoteSongDto
@@ -15,6 +16,8 @@ import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayloa
 import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
+import com.afternote.feature.afternote.domain.model.author.FieldPatch
+import com.afternote.feature.afternote.domain.model.author.MemorialPatchPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
@@ -35,8 +38,29 @@ fun AfternoteUpdatePayload.toRequest() =
         leaveMessage = leaveMessageBlocks.toPatchDto(),
         credentials = credentials?.toDto(),
         receivers = receivers?.map { it.toDto() },
-        memorial = memorial?.toDto(),
+        memorial = memorial?.toPatchDto(),
     )
+
+/**
+ * 플레이리스트 수정 슬롯 → wire. 슬롯의 [FieldPatch] 를 **그대로** 옮긴다 (#1617).
+ *
+ * [FieldPatch.Unchanged] 를 여기서 `null` 이나 기존 값으로 바꿔치기하면 안 된다 — 전자는 삭제로,
+ * 후자는 남의 변경을 되돌리는 덮어쓰기로 나간다. 「말하지 않음」은 끝까지 말하지 않는 것으로만
+ * 표현된다.
+ */
+fun MemorialPatchPayload.toPatchDto() =
+    AfternotePlaylistPatchDto(
+        memorialPhotoUrl = memorialPhotoUrl,
+        songs = songs?.map { it.toDto() },
+        memorialVideo = memorialVideo.map { it?.toDto() },
+    )
+
+/** 슬롯을 열어 값만 바꾸고 「안 건드림」은 그대로 통과시킨다. */
+private inline fun <T, R> FieldPatch<T>.map(transform: (T) -> R): FieldPatch<R> =
+    when (this) {
+        is FieldPatch.Unchanged -> FieldPatch.Unchanged
+        is FieldPatch.Set -> FieldPatch.Set(transform(value))
+    }
 
 /** 문자열 변환은 data 경계에서 끝낸다 — 화면·domain 은 [AfternoteType] 만 다룬다. */
 private fun AfternoteType.toAuthoringServerCategory(): String =

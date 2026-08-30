@@ -152,6 +152,7 @@
     <string name="afternote_editor_save_failed_generic">저장에 실패했습니다.</string>
     <string name="afternote_editor_search_failed_generic">검색 실패</string>
     <string name="afternote_editor_receiver_selection_unavailable">수신자 목록을 불러오지 못해 선택한 수신자를 반영하지 못했습니다. 잠시 후 다시 선택해 주세요.</string>
+    <string name="afternote_editor_prefill_unavailable">기존 내용을 불러오지 못해 저장할 수 없습니다. 화면을 나갔다 다시 들어와 주세요.</string>
     <string name="afternote_editor_thumbnail_upload_failed">영상 미리보기를 올리지 못했습니다.</string>
     <string name="afternote_editor_thumbnail_extract_failed">영상에서 미리보기를 만들지 못했습니다.</string>
     <string name="afternote_editor_thumbnail_retry">다시 시도</string>
