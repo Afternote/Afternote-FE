@@ -1,6 +1,10 @@
 package com.afternote.afternote_fe
 
+import android.app.ActivityOptions
 import android.content.Intent
+import android.os.Build
+import android.os.Bundle
+import android.os.SystemClock
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
@@ -72,6 +76,32 @@ class NotificationNavigationAndroidTest {
             activityUnderTest.finish()
         }
         instrumentation.waitForIdleSync()
+        awaitActivityDestroyed()
+    }
+
+    /**
+     * `ActivityScenario`는 대상 Activity를 실행 Intent로 식별해서, 알림 Intent가 들어와 있는 동안의
+     * lifecycle 이벤트를 «intent 불일치»로 통째로 무시한다. 그 구간에 RESUMED가 끼면 scenario의
+     * stage는 STARTED 같은 전이 stage에 멈춰 있게 되고, steady stage(RESUMED·PAUSED·STOPPED·
+     * DESTROYED)가 아닌 채로 rule의 `close()`가 돌면 "Current state was null unexpectedly"로 죽는다.
+     * 위에서 Intent를 되돌린 뒤 DESTROYED까지 기다려, scenario가 steady stage를 관측한 상태로
+     * teardown에 넘긴다.
+     */
+    private fun awaitActivityDestroyed() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val deadline = SystemClock.uptimeMillis() + ACTIVITY_TEARDOWN_TIMEOUT_MILLIS
+        while (SystemClock.uptimeMillis() < deadline) {
+            var stage: Stage? = null
+            instrumentation.runOnMainSync {
+                stage =
+                    ActivityLifecycleMonitorRegistry
+                        .getInstance()
+                        .getLifecycleStageOf(activityUnderTest)
+            }
+            if (stage == Stage.DESTROYED) return
+            instrumentation.waitForIdleSync()
+            SystemClock.sleep(ACTIVITY_TEARDOWN_POLL_MILLIS)
+        }
     }
 
     @Test
@@ -154,8 +184,25 @@ class NotificationNavigationAndroidTest {
             )
 
         assertNotNull(pendingIntent)
-        pendingIntent?.send()
+        pendingIntent?.send(context, 0, null, null, null, null, backgroundActivityStartOptions())
     }
+
+    /**
+     * 실제 알림 탭은 시스템(SystemUI)이 content [android.app.PendingIntent]를 보내므로 background
+     * activity start 가 허용된다. 이 테스트는 앱 프로세스가 스스로 보내기 때문에 Android 14의 BAL
+     * hardening 에 막힌다 — 앱이 백그라운드일 때만(`Background activity launch blocked`). 보내는 쪽
+     * 권한을 시스템과 같게 명시해 프로덕션 진입과 같은 조건으로 맞춘다.
+     */
+    private fun backgroundActivityStartOptions(): Bundle? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            ActivityOptions
+                .makeBasic()
+                .setPendingIntentBackgroundActivityStartMode(
+                    ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED,
+                ).toBundle()
+        } else {
+            null
+        }
 
     private fun awaitNotificationIntent(
         source: NotificationEntrySource,
@@ -187,4 +234,9 @@ class NotificationNavigationAndroidTest {
     private fun selectedBottomBarMatcher(labelResource: Int): SemanticsMatcher =
         hasText(context.getString(labelResource)) and
             SemanticsMatcher.expectValue(SemanticsProperties.Selected, true)
+
+    private companion object {
+        const val ACTIVITY_TEARDOWN_TIMEOUT_MILLIS = 10_000L
+        const val ACTIVITY_TEARDOWN_POLL_MILLIS = 50L
+    }
 }
