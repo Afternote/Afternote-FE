@@ -32,6 +32,15 @@ interface AfternoteNavActions {
     fun navigateToSelectReceiver()
 
     /**
+     * 수신자 선택 화면의 등록 진입(0건 CTA · 목록 하단 행) → 설정의 수신자 등록 화면(#1427).
+     *
+     * 선택 화면 **위로** push 한다 — 등록을 마치거나 취소하면 pop 되어 선택 화면으로 돌아오고,
+     * 그 아래 에디터도 백스택에 남아 작성 중 내용이 유지된다. 등록 화면 자체는 setting 소유라
+     * 목적지 라우트만 참조하고 화면은 건드리지 않는다.
+     */
+    fun navigateToReceiverRegister()
+
+    /**
      * 수신자 선택 완료 → 선택한 [receiverId] 를 이전 엔트리(에디터)의 SavedStateHandle 에
      * `SELECTED_RECEIVER_ID_KEY`([Long])로 쓰고 pop. 에디터가 복귀 시 읽어 폼에 반영한다.
      */

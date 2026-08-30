@@ -89,11 +89,41 @@ class ReceiverSelectScreenTest {
         composeRule.onNodeWithText("박친구").assertDoesNotExist()
     }
 
+    @Test
+    fun `등록 진입 콜백이 없으면 목록 하단 등록 행을 그리지 않는다`() {
+        setContent(selectedReceiverId = null)
+
+        composeRule.onNodeWithText("새 수신자 등록").assertDoesNotExist()
+    }
+
+    @Test
+    fun `등록 진입 콜백이 있으면 목록 하단 등록 행이 콜백을 낸다`() {
+        var registerClicks = 0
+        setContent(selectedReceiverId = null, onRegisterReceiverClick = { registerClicks += 1 })
+
+        composeRule.onNodeWithText("새 수신자 등록").performClick()
+
+        assertEquals(1, registerClicks)
+    }
+
+    @Test
+    fun `등록 행은 목록 자리에만 붙는다 — listReplacement 가 있으면 그리지 않는다`() {
+        setContent(
+            selectedReceiverId = null,
+            listReplacement = { Text("빈 목록 표시") },
+            onRegisterReceiverClick = {},
+        )
+
+        composeRule.onNodeWithText("빈 목록 표시").assertIsDisplayed()
+        composeRule.onNodeWithText("새 수신자 등록").assertDoesNotExist()
+    }
+
     private fun setContent(
         selectedReceiverId: Long?,
         onReceiverToggle: (Long) -> Unit = {},
         onConfirmClick: (Long) -> Unit = {},
         listReplacement: (@androidx.compose.runtime.Composable () -> Unit)? = null,
+        onRegisterReceiverClick: (() -> Unit)? = null,
     ) {
         composeRule.setContent {
             AfternoteTheme {
@@ -104,6 +134,7 @@ class ReceiverSelectScreenTest {
                     onBackClick = {},
                     onConfirmClick = onConfirmClick,
                     listReplacement = listReplacement,
+                    onRegisterReceiverClick = onRegisterReceiverClick,
                 )
             }
         }
