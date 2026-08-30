@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.home
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -20,6 +21,7 @@ import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.shared.body.EmptyListBody
 import com.afternote.feature.afternote.presentation.shared.body.ErrorListBody
+import com.afternote.feature.afternote.presentation.shared.body.ListRefreshErrorBanner
 import com.afternote.feature.afternote.presentation.shared.body.infinite.InfiniteListBody
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
 
@@ -91,15 +93,23 @@ fun AfternoteHomeScreen(
 
                 // 카테고리 필터 0건도 이 경로에 남겨 카테고리 행을 유지한다(막다른 상태 방지).
                 items.itemCount > 0 || selectedType != null -> {
-                    InfiniteListBody(
-                        modifier = bodyModifier,
-                        nextStep = nextStep,
-                        items = items,
-                        selectedType = selectedType,
-                        onTypeSelected = onTypeSelected,
-                        onListItemClick = onListItemClick,
-                        headerDescription = headerDescription,
-                    )
+                    Column(modifier = bodyModifier) {
+                        // 목록은 살아 있고 새로고침만 실패한 상태. 종전에는 이 갈래가 실패를 통째로
+                        // 삼켜 «당겨도 아무 일도 없는» 화면이 됐다 (#705).
+                        if (shouldShowRefreshErrorBanner(refreshState, items.itemCount)) {
+                            ListRefreshErrorBanner(onRetry = items::retry)
+                        }
+                        InfiniteListBody(
+                            // 배너가 붙으면 목록은 남은 높이를 채운다 — fillMaxSize 로 두면 배너 높이만큼 넘친다.
+                            modifier = Modifier.weight(1f),
+                            nextStep = nextStep,
+                            items = items,
+                            selectedType = selectedType,
+                            onTypeSelected = onTypeSelected,
+                            onListItemClick = onListItemClick,
+                            headerDescription = headerDescription,
+                        )
+                    }
                 }
 
                 else -> {
@@ -109,3 +119,14 @@ fun AfternoteHomeScreen(
         }
     }
 }
+
+/**
+ * 목록을 유지한 채 새로고침 실패만 알려야 하는 상태인지 (#705).
+ *
+ * 보여 줄 것이 전무하면([itemCount] 0) 전면 오류([ErrorListBody])가 맡으므로 배너는 그리지 않는다 —
+ * 두 표시가 겹치면 같은 실패를 두 번 말하게 된다.
+ */
+internal fun shouldShowRefreshErrorBanner(
+    refreshState: LoadState,
+    itemCount: Int,
+): Boolean = refreshState is LoadState.Error && itemCount > 0

@@ -26,6 +26,10 @@ internal fun AfternoteEditorError.messageResId(): Int =
             R.string.afternote_editor_receiver_selection_unavailable
         }
 
+        AfternoteEditorError.PrefillUnavailable -> {
+            R.string.afternote_editor_prefill_load_failed
+        }
+
         is AfternoteEditorError.Upload -> {
             when (target) {
                 AfternoteEditorError.Upload.Target.THUMBNAIL -> R.string.afternote_editor_thumbnail_upload_failed
@@ -82,7 +86,15 @@ internal fun buildOnRegisterClick(
         )
     }
 
+/**
+ * 이탈 확인 기준선(진입 시점 폼 스냅샷) 캡처를 미뤄야 하는지.
+ *
+ * prefill 실패도 «아직 기준선을 잡을 때가 아니다» 에 포함한다 (#705) — 실패 화면의 빈 폼을 기준선으로
+ * 잡아 두면 재시도가 성공해 폼이 채워지는 순간 «사용자가 고친 것» 으로 오인돼 뒤로가기마다 이탈 확인
+ * 팝업이 뜬다.
+ */
 internal fun shouldDeferEditorBaselineCapture(
     isPrefillLoading: Boolean,
     isProcessingMethodDefaultsInitializing: Boolean,
-): Boolean = isPrefillLoading || isProcessingMethodDefaultsInitializing
+    isPrefillFailed: Boolean = false,
+): Boolean = isPrefillLoading || isProcessingMethodDefaultsInitializing || isPrefillFailed

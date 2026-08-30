@@ -18,7 +18,12 @@ import com.afternote.feature.afternote.presentation.R
  *
  * Paging 3 스트림을 LazyPagingItems로 수집해 Screen에 그대로 전달한다.
  * append 단계 에러는 Snackbar로만 노출하며, 사용자가 다음 페이지에 다시 진입하면
- * Paging이 자동으로 재시도한다.
+ * Paging이 자동으로 재시도한다. refresh 실패는 목록이 남아 있으면 화면이 배너로,
+ * 없으면 전면 오류로 말한다([AfternoteHomeScreen]).
+ *
+ * 두 실패 모두 [AfternoteHomeViewModel.onListLoadFailed] 로 계측한다 (#705) — Paging 은 실패를
+ * `LoadState` 에만 실어 주고 삼키므로, 이 결선이 없으면 목록 장애가 콘솔에 남지 않는다.
+ * 중복 억제는 VM 이 맡는다.
  */
 @Composable
 fun AfternoteHomeEntry(
@@ -35,7 +40,20 @@ fun AfternoteHomeEntry(
     val appendErrorMessage = stringResource(R.string.afternote_home_append_error)
     LaunchedEffect(appendState) {
         if (appendState is LoadState.Error) {
+            viewModel.onListLoadFailed(appendState.error)
             snackbarHostState.showSnackbar(message = appendErrorMessage)
+        }
+    }
+
+    val refreshState = items.loadState.refresh
+    LaunchedEffect(refreshState) {
+        when (refreshState) {
+            is LoadState.Error -> viewModel.onListLoadFailed(refreshState.error)
+
+            // 성공한 로드가 실패 구간을 닫는다 — 다음 실패는 새 사건으로 다시 기록된다.
+            is LoadState.NotLoading -> viewModel.onListLoadSucceeded()
+
+            is LoadState.Loading -> Unit
         }
     }
 

@@ -48,6 +48,14 @@ sealed interface AfternoteEditorError {
      */
     data object ReceiverSelectionUnavailable : AfternoteEditorError
 
+    /**
+     * 수정 진입 prefill 조회 실패 (#705).
+     *
+     * 저장 실패가 아니라 «기존 기록을 아직 읽지 못했다» 는 사실이다. 이 상태에서 저장이 나가면
+     * 서버가 빈 폼 값으로 기존 기록을 덮으므로, 화면은 폼 대신 오류·재시도를 보이고 저장은 막는다.
+     */
+    data object PrefillUnavailable : AfternoteEditorError
+
     data class Upload(
         val target: Target,
     ) : AfternoteEditorError {
@@ -91,6 +99,13 @@ data class AfternoteEditorUiState(
      * 신규 작성 모드(`itemId == null`)는 항상 false.
      */
     val isPrefillLoading: Boolean = false,
+    /**
+     * 수정 모드 prefill 조회가 실패해 폼을 채우지 못한 상태 (#705).
+     *
+     * true 인 동안 화면은 빈 폼이 아니라 오류·재시도를 그리고 저장을 막는다 — 빈 폼으로 저장하면
+     * 서버가 기존 기록을 그 빈 값으로 덮는다. 재시도가 성공하면 false 로 돌아간다.
+     */
+    val isPrefillFailed: Boolean = false,
     val savedId: Long? = null,
     val errorEvent: AfternoteEditorErrorEvent? = null,
     /** 저장 성공 신호 — UI 가 nav 후 `onSaveSuccessConsumed` 로 reset. */

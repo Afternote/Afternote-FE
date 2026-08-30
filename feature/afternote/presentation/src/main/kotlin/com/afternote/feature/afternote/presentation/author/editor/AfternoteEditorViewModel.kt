@@ -45,6 +45,7 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.Afte
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -172,6 +173,10 @@ class AfternoteEditorViewModel
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val route = savedStateHandle.toRoute<AfternoteRoute.EditorFlowRoute>()
+
+        /** 진행 중인 prefill 조회 — 재시도가 이전 조회를 자르기 위한 핸들. */
+        private var prefillJob: Job? = null
+
         private val formSnapshotJson =
             Json {
                 ignoreUnknownKeys = true
@@ -377,6 +382,12 @@ class AfternoteEditorViewModel
         ) {
             val editorState = internalState.value
             if (editorState.isSaving) return
+            // prefill 을 못 읽은 채로 저장하면 서버가 빈 폼 값으로 기존 기록을 덮는다 (#705).
+            // 화면이 이미 저장 액션을 막지만, 저장 진입점은 여기 하나뿐이라 규칙도 여기서 지킨다.
+            if (editorState.isPrefillFailed) {
+                internalState.update { it.withError(AfternoteEditorError.PrefillUnavailable) }
+                return
+            }
 
             val form = editorState.form
             val editingId = readEditItemId()
@@ -518,28 +529,51 @@ class AfternoteEditorViewModel
             return Result.success(command)
         }
 
+        /**
+         * 수정 진입 prefill 조회 실패 화면의 «다시 시도» (#705).
+         *
+         * 실패 상태를 걷고 skeleton 을 다시 세운 뒤 같은 조회를 새로 건다. 이미 성공해 폼이 채워진
+         * 뒤라면 부를 일이 없고(화면이 오류 상태에서만 버튼을 그린다), 신규 작성 진입은 [readEditItemId]
+         * 가 null 이라 아무 일도 하지 않는다.
+         */
+        fun retryPrefill() {
+            val afternoteId = readEditItemId() ?: return
+            loadExistingAfternoteForEdit(afternoteId)
+        }
+
+        /**
+         * 수정 진입 시 기존 애프터노트를 읽어 폼에 실을 prefill 을 만든다.
+         *
+         * 실패를 «빈 폼» 으로 흘려보내지 않는다 (#705) — 서버 수정(PATCH)은 보낸 값으로 기존 기록을
+         * 덮으므로, 못 읽은 상태의 빈 폼이 저장되면 기록이 소실된다. 그래서 실패는 [InternalState.isPrefillFailed]
+         * 로 남겨 화면이 오류·재시도를 그리고 [saveAfternote] 가 저장을 막게 한다.
+         */
         private fun loadExistingAfternoteForEdit(afternoteId: Long) {
-            viewModelScope.launch {
-                afternoteRepository
-                    .getDetail(id = afternoteId)
-                    .onSuccess { detail ->
-                        val prefill = AfternoteEditorFormMapper.buildEditorFormPrefill(detail)
-                        // UI 레이어 파사드가 TextFieldState·SnapshotStateList 등 UI 상태를 갱신하도록 위임.
-                        // skeleton 종료는 UI 가 prefill 적용을 마친 뒤 [onPrefillConsumed] 로 통보한다
-                        // (uiState 갱신 시점에 prefill 도착했어도 UI 가 form·TextFieldState 에 반영하기 전이라
-                        //  여기서 끄면 skeleton 사라짐 → 빈 폼 → prefill 깜빡임 발생).
-                        internalState.update {
-                            it.copy(
-                                originalType = prefill.type,
-                                pendingPrefill = prefill,
-                            )
+            // 재시도가 진행 중인 조회를 자르고 들어온다 — 자르지 않으면 두 응답이 같은 폼을 두고 경합한다.
+            prefillJob?.cancel()
+            prefillJob =
+                viewModelScope.launch {
+                    internalState.update { it.copy(isPrefillLoading = true, isPrefillFailed = false) }
+                    afternoteRepository
+                        .getDetail(id = afternoteId)
+                        .onSuccess { detail ->
+                            val prefill = AfternoteEditorFormMapper.buildEditorFormPrefill(detail)
+                            // UI 레이어 파사드가 TextFieldState·SnapshotStateList 등 UI 상태를 갱신하도록 위임.
+                            // skeleton 종료는 UI 가 prefill 적용을 마친 뒤 [onPrefillConsumed] 로 통보한다
+                            // (uiState 갱신 시점에 prefill 도착했어도 UI 가 form·TextFieldState 에 반영하기 전이라
+                            //  여기서 끄면 skeleton 사라짐 → 빈 폼 → prefill 깜빡임 발생).
+                            internalState.update {
+                                it.copy(
+                                    originalType = prefill.type,
+                                    pendingPrefill = prefill,
+                                )
+                            }
+                        }.onFailure { e ->
+                            errorReporter.recordAfternoteFailure(AfternoteFailureStage.PREFILL_LOAD, e)
+                            // skeleton 은 걷되 빈 폼으로 넘기지 않는다 — 오류·재시도 상태로 남긴다.
+                            internalState.update { it.copy(isPrefillLoading = false, isPrefillFailed = true) }
                         }
-                    }.onFailure { e ->
-                        errorReporter.recordAfternoteFailure(AfternoteFailureStage.PREFILL_LOAD, e)
-                        // 실패 시 skeleton 에 갇히지 않도록 즉시 종료.
-                        internalState.update { it.copy(isPrefillLoading = false) }
-                    }
-            }
+                }
         }
 
         /**
@@ -593,6 +627,7 @@ class AfternoteEditorViewModel
             val authorReceivers: List<AfternoteEditorReceiver> = emptyList(),
             val isSaving: Boolean = false,
             val isPrefillLoading: Boolean = false,
+            val isPrefillFailed: Boolean = false,
             val savedId: Long? = null,
             val errorEvent: AfternoteEditorErrorEvent? = null,
             val errorOccurrence: Long = 0L,
@@ -607,6 +642,7 @@ class AfternoteEditorViewModel
                 authorReceivers = authorReceivers,
                 isSaving = isSaving,
                 isPrefillLoading = isPrefillLoading,
+                isPrefillFailed = isPrefillFailed,
                 savedId = savedId,
                 errorEvent = errorEvent,
                 pendingSaveSuccessId = pendingSaveSuccessId,
