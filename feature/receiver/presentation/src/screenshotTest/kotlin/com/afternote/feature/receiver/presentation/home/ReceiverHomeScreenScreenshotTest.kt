@@ -12,7 +12,6 @@ import com.android.tools.screenshot.PreviewTest
 /** baseline 은 화면 픽셀만 본다 — 외부 라우팅은 눌리지 않으므로 빈 액션으로 채운다. */
 private val noopActions =
     ReceiverHomeActions(
-        onSettingClick = {},
         onNavigateToMindRecord = {},
         onNavigateToTimeLetter = {},
         onNavigateToAfternote = {},
