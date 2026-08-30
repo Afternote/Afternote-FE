@@ -1,5 +1,6 @@
 package com.afternote.feature.receiver.presentation.deliveryverification
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
@@ -10,6 +11,7 @@ import com.afternote.feature.afternote.presentation.reporting.shouldReportInRece
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverDeliveryDocumentUploadRepository
 import com.afternote.feature.receiver.presentation.R
+import com.afternote.feature.receiver.presentation.error.toReceiverErrorPopupOrNull
 import com.afternote.feature.receiver.presentation.error.toReceiverErrorUiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,6 +40,14 @@ class DocumentUploadViewModel
         private val _uiState = MutableStateFlow(DocumentUploadUiState())
         val uiState: StateFlow<DocumentUploadUiState> = _uiState.asStateFlow()
 
+        /**
+         * 팝업의 "다시 시도하기" 가 되돌릴 마지막 시도 (#446). 팝업이 사라질 때 함께 비운다 —
+         * 업로드 재시도는 사용자가 고른 파일 바이트를 붙들고 있어야 하므로, 안 비우면 화면이 살아
+         * 있는 내내 서류 한 장이 힙에 남는다. 팝업 없이는 재시도 진입점 자체가 없으므로 팝업의
+         * 수명이 곧 이 값의 수명이다.
+         */
+        private var pendingRetry: (() -> Unit)? = null
+
         fun uploadDocument(
             slot: DocumentSlot,
             bytes: ByteArray,
@@ -64,8 +74,10 @@ class DocumentUploadViewModel
                     }.onFailure { throwable ->
                         errorReporter.recordAfternoteFailure(AfternoteFailureStage.DOCUMENT_UPLOAD, throwable)
                         updateSlot(slot) { previous }
-                        _uiState.update {
-                            it.copy(error = UiText.Resource(R.string.receiver_verify_document_upload_failed))
+                        // 재시도는 같은 바이트를 다시 올리는 것이다 — 파일 선택부터 다시 시키면
+                        // 「다시 시도하기」 가 이름과 달리 처음부터 하기가 된다 (#446).
+                        showFailure(throwable, R.string.receiver_verify_document_upload_failed, uploadPath = true) {
+                            uploadDocument(slot, bytes, extension, displayName)
                         }
                     }
             }
@@ -95,7 +107,7 @@ class DocumentUploadViewModel
                 return
             }
             _uiState.update {
-                it.copy(isSubmitting = true, error = null)
+                it.copy(isSubmitting = true, error = null, errorPopup = null)
             }
             viewModelScope.launch {
                 receiverAuthRepository
@@ -107,13 +119,44 @@ class DocumentUploadViewModel
                         if (throwable.shouldReportInReceiverFlow()) {
                             errorReporter.recordAfternoteFailure(AfternoteFailureStage.DELIVERY_SUBMIT, throwable)
                         }
-                        _uiState.update {
-                            it.copy(
-                                isSubmitting = false,
-                                error = throwable.toReceiverErrorUiText(R.string.receiver_verify_submit_failed),
-                            )
-                        }
+                        _uiState.update { it.copy(isSubmitting = false) }
+                        showFailure(throwable, R.string.receiver_verify_submit_failed, retry = ::submit)
                     }
+            }
+        }
+
+        /** 팝업의 "다시 시도하기" — 팝업을 닫고 실패한 그 요청을 그대로 다시 보낸다 (#446). */
+        fun retryFailedRequest() {
+            val retry = pendingRetry
+            _uiState.update { it.copy(errorPopup = null) }
+            pendingRetry = null
+            retry?.invoke()
+        }
+
+        /** 팝업의 닫기 — 재시도 없이 화면으로 돌아간다. 붙들고 있던 시도도 함께 버린다. */
+        fun onErrorPopupDismissed() {
+            _uiState.update { it.copy(errorPopup = null) }
+            pendingRetry = null
+        }
+
+        /**
+         * 실패를 팝업(서버 작업 실패)과 스낵바(서버가 준 거절 사유) 중 한쪽으로만 보낸다 — 둘 다
+         * 세우면 모달 뒤에서 스낵바가 혼자 떴다 사라진다.
+         */
+        private fun showFailure(
+            throwable: Throwable,
+            @StringRes fallbackRes: Int,
+            uploadPath: Boolean = false,
+            retry: () -> Unit,
+        ) {
+            val popup = throwable.toReceiverErrorPopupOrNull(uploadPath = uploadPath)
+            pendingRetry = if (popup == null) null else retry
+            _uiState.update {
+                if (popup == null) {
+                    it.copy(error = throwable.toReceiverErrorUiText(fallbackRes))
+                } else {
+                    it.copy(errorPopup = popup)
+                }
             }
         }
 
