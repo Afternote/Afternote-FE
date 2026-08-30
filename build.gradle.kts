@@ -191,7 +191,6 @@ dependencies {
     kover(project(":feature:mindrecord:domain"))
     kover(project(":feature:mindrecord:presentation"))
     kover(project(":feature:onboarding:data"))
-    kover(project(":feature:onboarding:domain"))
     kover(project(":feature:onboarding:presentation"))
     kover(project(":feature:receiver:data"))
     kover(project(":feature:receiver:domain"))
