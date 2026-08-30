@@ -71,6 +71,14 @@ fun AppNavigation(
     // 13+ 는 런타임 권한이 없으면 알림이 한 건도 게시되지 않는다 (#1454).
     NotificationPermissionEffect(snackbarHostState = snackbarHostState)
 
+    // 알림 탭 진입을 목적지 화면으로 옮긴다 (#1111). startDestination 이 Home 이라는 것이
+    // MainViewModel 이 인증 스트림에서 확정한 「로그인 상태」 그 자체다 — 로그아웃이면
+    // Route.Onboarding 이고, 그때 목적지로 보내면 알림이 인증 관문을 건너뛴다.
+    NotificationEntryEffect(
+        appState = appState,
+        isSignedIn = startDestination == Route.Home,
+    )
+
     Scaffold(
         modifier = modifier,
         containerColor = AfternoteDesign.colors.gray1,

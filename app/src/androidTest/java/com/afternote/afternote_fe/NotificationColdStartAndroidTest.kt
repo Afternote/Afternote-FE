@@ -7,6 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.afternote.afternote_fe.notification.NotificationEntryRequest
 import com.afternote.afternote_fe.notification.NotificationEntrySource
+import com.afternote.core.common.notification.NotificationDestination
 import com.afternote.core.common.notification.NotificationPendingIntentFactory
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -49,6 +50,8 @@ class NotificationColdStartAndroidTest {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         val source = NotificationEntrySource.FCM
         val occurrenceToken = "cold-start-1"
+        // 폴백(HOME)이 아닌 목적지를 실어 cold start 경로에서 extra 가 살아남는지 본다.
+        val destination = NotificationDestination.TIME_LETTER
         activityMonitor = instrumentation.addMonitor(MainActivity::class.java.name, null, false)
 
         val pendingIntent =
@@ -56,6 +59,7 @@ class NotificationColdStartAndroidTest {
                 context = context,
                 source = source.contractValue,
                 occurrenceToken = occurrenceToken,
+                destination = destination,
             )
 
         assertNotNull(pendingIntent)
@@ -77,7 +81,11 @@ class NotificationColdStartAndroidTest {
         }
 
         assertEquals(
-            NotificationEntryRequest(source = source, occurrenceToken = occurrenceToken),
+            NotificationEntryRequest(
+                source = source,
+                occurrenceToken = occurrenceToken,
+                destination = destination,
+            ),
             pendingEntry,
         )
     }
