@@ -77,10 +77,17 @@ sealed interface AfternoteTypeForm {
         }
     }
 
+    /**
+     * 미디어 두 축을 같은 모양으로 든다 — `picked`(이 폼에서 고른 것) + 서버에 저장된 것.
+     *
+     * 어느 칸에 들었는지가 곧 출처다. 그래서 삭제는 `picked` 를 비우는 것으로 끝나고 표시는 서버 값으로
+     * 저절로 되돌아간다. 종전 영상 축은 한 칸이 둘을 겸해 출처를 URL 스킴으로 추론했고, 로컬로 덮이는
+     * 순간 서버 값을 잃어 「지운 척했지만 서버엔 남는」 거짓 삭제가 났다(#1406).
+     */
     data class Memorial(
         val pickedPhotoUri: String? = null,
-        val videoUrl: String? = null,
-        val thumbnailUrl: String? = null,
+        val pickedVideo: MemorialVideoAttachment? = null,
+        val serverVideo: MemorialVideoAttachment? = null,
         val photoUrl: String? = null,
         val playlistSongs: List<Song> = emptyList(),
     ) : AfternoteTypeForm {
@@ -88,8 +95,17 @@ sealed interface AfternoteTypeForm {
 
         fun displayPhotoUri(): String? = pickedPhotoUri ?: photoUrl
 
-        /** 썸네일은 영상에서 자동 파생된 값이라 사용자 입력이 아니다 — pristine 판정 전에 지운다. */
-        override fun enteredContentOrNull(): String? = copy(thumbnailUrl = null).takeUnless { it == PRISTINE }?.toString()
+        /** 이 폼에서 고른 영상이 있으면 그것, 없으면 서버에 저장된 것. */
+        fun displayVideo(): MemorialVideoAttachment? = pickedVideo ?: serverVideo
+
+        /**
+         * 서버 원본은 prefill 이 채워 넣는 값이지 사용자가 넣은 값이 아니라 뺀다. 고른 영상의 썸네일도
+         * 같은 이유로 [MemorialVideoAttachment.userEnteredPart] 로 걷어낸다.
+         */
+        override fun enteredContentOrNull(): String? =
+            copy(serverVideo = null, pickedVideo = pickedVideo?.userEnteredPart())
+                .takeUnless { it == PRISTINE }
+                ?.toString()
 
         private companion object {
             val PRISTINE = Memorial()
@@ -130,8 +146,11 @@ sealed interface AfternoteTypeForm {
 
                 is EditorContentPrefill.Memorial -> {
                     Memorial(
-                        videoUrl = content.videoUrl,
-                        thumbnailUrl = content.thumbnailUrl,
+                        serverVideo =
+                            MemorialVideoAttachment.ofOrNull(
+                                url = content.videoUrl,
+                                thumbnailUrl = content.thumbnailUrl,
+                            ),
                         photoUrl = content.photoUrl,
                         playlistSongs = content.playlistSongs,
                     )

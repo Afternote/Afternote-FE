@@ -28,8 +28,13 @@ data class EditorFormState(
     val memorialForm: AfternoteTypeForm.Memorial? get() = typeForm as? AfternoteTypeForm.Memorial
 
     val pickedMemorialPhotoUri: String? get() = memorialForm?.pickedPhotoUri
-    val memorialVideoUrl: String? get() = memorialForm?.videoUrl
-    val memorialThumbnailUrl: String? get() = memorialForm?.thumbnailUrl
+
+    /** 이 폼에서 새로 고른 영상. 값이 있으면 곧 로컬 첨부이므로 삭제 가능 판정의 기준이 된다. */
+    val pickedMemorialVideo: MemorialVideoAttachment? get() = memorialForm?.pickedVideo
+
+    /** 화면이 그리고 저장이 싣는 영상 — 고른 것이 있으면 그것, 없으면 서버에 저장된 것. */
+    val memorialVideoUrl: String? get() = memorialForm?.displayVideo()?.url
+    val memorialThumbnailUrl: String? get() = memorialForm?.displayVideo()?.thumbnailUrl
     val memorialPhotoUrl: String? get() = memorialForm?.photoUrl
     val memorialPlaylistSongs: List<Song> get() = memorialForm?.playlistSongs.orEmpty()
 
