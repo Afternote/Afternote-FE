@@ -51,4 +51,10 @@
     <string name="core_ui_receiver_select_title">수신자 선택</string>
     <string name="core_ui_receiver_select_search_placeholder">이름으로 검색하기</string>
     <string name="core_ui_receiver_select_confirm">수신자 선택 완료하기</string>
+
+    <!-- 「더보기(⋯)」 액션 팝업 메뉴 공통 문구 (#643).
+         afternote(feature_afternote_menu_*)·mindrecord(mindrecord_record_action_*) 가 같은 값을
+         각자 갖고 있던 것을 core 정본으로 올린다. -->
+    <string name="core_ui_action_menu_edit">수정하기</string>
+    <string name="core_ui_action_menu_delete">삭제하기</string>
 </resources>

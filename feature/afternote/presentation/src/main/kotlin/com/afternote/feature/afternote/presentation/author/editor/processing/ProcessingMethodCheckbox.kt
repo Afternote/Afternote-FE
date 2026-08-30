@@ -33,10 +33,11 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
 import com.afternote.core.ui.button.CheckboxState
+import com.afternote.core.ui.popup.AfternoteActionMenu
+import com.afternote.core.ui.popup.editDeleteActionMenuItems
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
-import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 
 @Composable
 private fun processingMethodTextStyle(): TextStyle =
@@ -94,11 +95,14 @@ fun ProcessingMethodCheckbox(
                     Modifier
                         .clickable(role = Role.Button, onClick = onMoreClick),
             )
-            EditDropdownMenu(
+            AfternoteActionMenu(
                 expanded = expanded,
                 onDismissRequest = onDismissDropdown,
-                onDeleteClick = onDeleteClick,
-                onEditClick = onEditClick,
+                items =
+                    editDeleteActionMenuItems(
+                        onEditClick = onEditClick,
+                        onDeleteClick = onDeleteClick,
+                    ),
             )
         }
     }
