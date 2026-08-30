@@ -90,8 +90,8 @@ fun MemorialDetailScreen(
     userName: String = "",
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     isEditable: Boolean = true,
-    onEditClick: () -> Unit = {},
-    onDeleteConfirm: () -> Unit = {},
+    onEditClick: () -> Unit,
+    onDeleteConfirm: () -> Unit,
     onVideoClick: (String) -> Unit,
     state: AfternoteDetailState = rememberAfternoteDetailState(),
 ) {
@@ -506,6 +506,7 @@ private fun MemorialDetailScreenPreview() {
             userName = "서영",
             onBackClick = {},
             onEditClick = {},
+            onDeleteConfirm = {},
             onVideoClick = {},
         )
     }
@@ -535,6 +536,7 @@ private fun MemorialDetailScreenDeleteDialogPreview() {
             userName = "서영",
             onBackClick = {},
             onEditClick = {},
+            onDeleteConfirm = {},
             onVideoClick = {},
             state = stateWithDialog,
         )

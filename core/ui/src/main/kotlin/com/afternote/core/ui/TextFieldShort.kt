@@ -77,6 +77,13 @@ private fun TextFieldShort(
     modifier: Modifier = Modifier,
     placeholder: String? = null,
     suffix: @Composable (() -> Unit)? = null,
+    /**
+     * `true` 면 [suffix] 를 앞 텍스트 바로 뒤 8dp 에 붙이고 남는 폭을 오른쪽에 비운다.
+     *
+     * 기본값(`false`)은 앞 텍스트가 남는 폭을 전부 먹어 suffix 가 오른쪽 끝으로 밀리는 배치다 —
+     * `Variant7`(인증번호 받기)·`Search` 는 그쪽이 시안이고, `Variant8`(주민번호) 만 앞에 붙는다.
+     */
+    suffixFollowsText: Boolean = false,
     trailingContent: @Composable (() -> Unit)? = null,
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Default,
@@ -122,7 +129,14 @@ private fun TextFieldShort(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(
-                        modifier = Modifier.weight(1f),
+                        modifier =
+                            if (suffixFollowsText) {
+                                // 폭을 내용 크기로 고정한다. 없으면(= weight(1f) 기본값이면)
+                                // 텍스트필드가 배정폭을 끝까지 채워 suffix 가 오른쪽 끝으로 밀린다.
+                                Modifier.width(IntrinsicSize.Max)
+                            } else {
+                                Modifier.weight(1f)
+                            },
                         contentAlignment = Alignment.CenterStart,
                     ) {
                         if (state.text.isEmpty() && placeholder != null) {
@@ -211,6 +225,7 @@ fun AfternoteTextField(
                     null
                 }
             },
+        suffixFollowsText = type is TextFieldType.Variant8,
         suffix =
             when (type) {
                 is TextFieldType.Variant7 -> {

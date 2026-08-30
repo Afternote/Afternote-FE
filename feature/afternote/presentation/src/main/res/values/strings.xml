@@ -46,6 +46,7 @@
     <string name="afternote_receiver_afternote_item_daum_mail">다음 메일</string>
     <string name="afternote_receiver_afternote_item_google_mail">구글 메일</string>
     <string name="afternote_receiver_afternote_item_outlook">outlook</string>
+    <string name="afternote_receiver_memorial_video_invalid_url">영상 주소가 올바르지 않아 재생할 수 없습니다.</string>
     <string name="afternote_receiver_memorial_video_no_app">영상을 재생할 수 있는 앱이 없습니다.</string>
 
     <string name="afternote_receiver_timeletter_unread_count">%1$d개의 읽지 않은 타임 레터가 있습니다.</string>
@@ -204,6 +205,7 @@
     <string name="afternote_memorial_detail_title_suffix_no_name">에 대한\n기록</string>
     <string name="afternote_memorial_detail_sharing_notice">이 추억 노트는 지정된 신뢰할 연락처에게만 공유되며,\n안전하게 보관됩니다.</string>
     <string name="afternote_memorial_video_no_app">영상을 재생할 수 있는 앱이 없습니다.</string>
+    <string name="afternote_memorial_video_invalid_url">영상 주소가 올바르지 않아 재생할 수 없습니다.</string>
 
     <!-- Afternote editor (author) — UI strings -->
     <string name="afternote_editor_screen_title">애프터노트 작성하기</string>
@@ -230,6 +232,7 @@
     <string name="afternote_editor_last_moment_question_default">마지막 순간,\n당신을 어떤 모습으로 기억해 주길 바라나요?</string>
     <string name="afternote_editor_save_failed_generic">저장에 실패했습니다.</string>
     <string name="afternote_editor_search_failed_generic">검색 실패</string>
+    <string name="afternote_editor_receiver_selection_unavailable">수신자 목록을 불러오지 못해 선택한 수신자를 반영하지 못했습니다. 잠시 후 다시 선택해 주세요.</string>
     <string name="afternote_editor_thumbnail_upload_failed">영정사진 업로드에 실패했습니다.</string>
     <string name="afternote_editor_exit_confirm_message">작성 중인 내용이 사라집니다.\n정말 나가시겠어요?</string>
     <string name="afternote_editor_exit_confirm_confirm">나가기</string>

@@ -74,7 +74,7 @@ data class ReceivedGalleryDetailContent(
  */
 @Immutable
 data class ReceivedMemorialDetailContent(
-    val senderName: String = "",
+    val senderName: String,
     val messageBlocks: List<MessageBlockUiModel> = emptyList(),
     val albumCovers: List<AlbumCover> = emptyList(),
     val songCount: Int = 0,

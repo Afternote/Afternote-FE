@@ -24,14 +24,7 @@ data class BaseResponse<T>(
 )
 
 fun <T : Any> BaseResponse<T>.requireData(): T {
-    if (status != 200) {
-        throw ApiException(
-            status = status,
-            code = code,
-            serverMessage = message,
-            fallbackMessage = "알 수 없는 서버 에러가 발생했습니다.",
-        )
-    }
+    throwIfEnvelopeFailed(fallbackMessage = "알 수 없는 서버 에러가 발생했습니다.")
     return data ?: throw ApiException(
         // 봉투는 성공(200)이라 했는데 payload 가 비었다 — 계약 위반이므로 status 는 그대로 200 으로 남긴다.
         status = status,
@@ -67,12 +60,24 @@ class ApiException(
 ) : RuntimeException(serverMessage ?: fallbackMessage)
 
 fun BaseResponse<*>.requireStatus() {
+    throwIfEnvelopeFailed(fallbackMessage = "요청에 실패했습니다.")
+}
+
+/**
+ * 봉투가 실패를 말하면(`status != 200`) [ApiException] 으로 올린다.
+ *
+ * [fallbackMessage] 를 인자로 받는 이유 — 이 문구는 서버가 `message` 를 주지 않았을 때만
+ * [Throwable.message] 로 쓰이는 진단 문구이고(사용자 직접 노출 X), 실패가 payload 를 요구한
+ * 호출([requireData])에서 왔는지 성공 여부만 보는 호출([requireStatus])에서 왔는지를 가르는
+ * 단서다. 하나로 합치면 그 구분이 사라지므로 호출처가 각자의 문구를 넘긴다.
+ */
+private fun BaseResponse<*>.throwIfEnvelopeFailed(fallbackMessage: String) {
     if (status != 200) {
         throw ApiException(
             status = status,
             code = code,
             serverMessage = message,
-            fallbackMessage = "요청에 실패했습니다.",
+            fallbackMessage = fallbackMessage,
         )
     }
 }

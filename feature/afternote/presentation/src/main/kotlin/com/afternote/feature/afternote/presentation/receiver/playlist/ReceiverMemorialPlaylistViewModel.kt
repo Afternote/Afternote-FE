@@ -105,7 +105,7 @@ class ReceiverMemorialPlaylistViewModel
                                     }.orEmpty()
                             _uiState.value =
                                 ReceiverMemorialPlaylistUiState.Success(
-                                    senderName = detail.senderName.orEmpty(),
+                                    senderName = detail.senderName,
                                     songs = songs,
                                     memorialVideoUrl = playlist?.memorialVideoUrl,
                                     memorialThumbnailUrl = playlist?.memorialThumbnailUrl,
