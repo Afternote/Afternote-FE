@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.asString
+import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
@@ -42,7 +42,7 @@ import java.time.YearMonth
 fun DailyQuestionAnswerListScreen(
     modifier: Modifier = Modifier,
     isListView: Boolean = true,
-    onEditClick: (Long) -> Unit = {},
+    onEditClick: (Long) -> Unit,
     viewModel: DailyQuestionListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -60,7 +60,7 @@ fun DailyQuestionAnswerListScreen(
 
     when (val state = uiState) {
         DailyQuestionListUiState.Loading -> {
-            LoadingBox(modifier)
+            LoadingBody(modifier)
         }
 
         is DailyQuestionListUiState.Error -> {
@@ -105,8 +105,8 @@ private fun DailyQuestionListContent(
     answers: List<DailyQuestion>,
     modifier: Modifier = Modifier,
     todayQuestion: TodayQuestionUi? = null,
-    onEdit: (Long) -> Unit = {},
-    onDelete: (Long) -> Unit = {},
+    onEdit: (Long) -> Unit,
+    onDelete: (Long) -> Unit,
 ) {
     var yearMonth by remember { mutableStateOf(YearMonth.now()) }
     val onYearMonthChanged: (YearMonth) -> Unit = { yearMonth = it }
@@ -172,13 +172,6 @@ private fun DailyQuestionListContent(
     }
 }
 
-@Composable
-private fun LoadingBox(modifier: Modifier = Modifier) {
-    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
-    }
-}
-
 @Preview(showBackground = true)
 @Composable
 private fun DailyQuestionAnswerListScreenPreviewFalse() {
@@ -187,6 +180,8 @@ private fun DailyQuestionAnswerListScreenPreviewFalse() {
             modifier = Modifier,
             isListView = false,
             answers = emptyList(),
+            onDelete = {},
+            onEdit = {},
         )
     }
 }
@@ -199,6 +194,8 @@ private fun DailyQuestionAnswerListScreenPreviewTrue() {
             modifier = Modifier,
             isListView = true,
             answers = emptyList(),
+            onDelete = {},
+            onEdit = {},
         )
     }
 }

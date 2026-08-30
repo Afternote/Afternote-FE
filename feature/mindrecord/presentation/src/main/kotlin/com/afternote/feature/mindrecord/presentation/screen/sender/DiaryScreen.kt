@@ -14,7 +14,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,6 +27,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.asString
+import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
@@ -55,14 +55,14 @@ fun DiaryScreen(
      * «수정하기» — 기록 ID 와 **보고 있는 달**. 달을 빼면 프리필이 이번 달 목록에서 그
      * 기록을 찾다 실패하고, 빈 화면에서 저장하면 원본을 덮어쓸 수 있다 (#582 리뷰).
      */
-    onEditClick: (Long, YearMonth) -> Unit = { _, _ -> },
+    onEditClick: (Long, YearMonth) -> Unit,
     viewModel: DiaryListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     when (val state = uiState) {
         DiaryListUiState.Loading -> {
-            LoadingBox(modifier)
+            LoadingBody(modifier)
         }
 
         is DiaryListUiState.Error -> {
@@ -115,9 +115,9 @@ internal fun DiaryListContent(
     monthDiaryCount: Int = 0,
     weeklyMoodEmoji: String? = null,
     /** «수정하기» — 기록 ID 와 이 화면이 보고 있는 달. 달은 여기서만 알 수 있다. */
-    onEdit: (Long, YearMonth) -> Unit = { _, _ -> },
-    onDelete: (Long) -> Unit = {},
-    onYearMonthChanged: (YearMonth) -> Unit = {},
+    onEdit: (Long, YearMonth) -> Unit,
+    onDelete: (Long) -> Unit,
+    onYearMonthChanged: (YearMonth) -> Unit,
 ) {
     if (isListView && diaries.isEmpty()) {
         MindRecordEmptyState(
@@ -193,13 +193,6 @@ internal fun DiaryListContent(
     }
 }
 
-@Composable
-private fun LoadingBox(modifier: Modifier = Modifier) {
-    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
-    }
-}
-
 @Preview(showBackground = true)
 @Composable
 private fun DiaryScreenPreviewTrue() {
@@ -210,6 +203,9 @@ private fun DiaryScreenPreviewTrue() {
             diaries = emptyList(),
             // 프리뷰는 고정 월로 렌더한다 — YearMonth.now() 면 달이 바뀔 때마다 결과가 달라진다.
             yearMonth = PreviewYearMonth,
+            onDelete = {},
+            onYearMonthChanged = {},
+            onEdit = { _, _ -> },
         )
     }
 }
@@ -223,6 +219,9 @@ private fun DiaryScreenPreviewFalse() {
             isListView = false,
             diaries = emptyList(),
             yearMonth = PreviewYearMonth,
+            onDelete = {},
+            onYearMonthChanged = {},
+            onEdit = { _, _ -> },
         )
     }
 }
