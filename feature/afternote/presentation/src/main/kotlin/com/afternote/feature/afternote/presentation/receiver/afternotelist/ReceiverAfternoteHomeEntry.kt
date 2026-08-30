@@ -74,6 +74,9 @@ fun ReceiverAfternoteHomeEntry(
                 headerDescription = stringResource(R.string.receiver_afternote_list_header_description),
                 // NEXT STEP 은 «내가 남길 기록» 을 재촉하는 발신자용 카드다. 수신자 목록에는 없다.
                 nextStep = null,
+                // 0건 헤더는 작성자 시안(4327:66762)에서만 확인된 처분이다. 수신자 빈 상태 시안이 확인되기
+                // 전까지 종전 렌더를 유지한다 — 이 화면은 공유물이라 확인 안 된 변경을 태우지 않는다 (#1175).
+                showsHeaderOnEmptyList = false,
                 modifier = modifier,
             )
         }

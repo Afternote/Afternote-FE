@@ -35,6 +35,15 @@ data class NextStep(
 )
 
 /**
+ * 헤더 위 여백. 목록 상태([com.afternote.feature.afternote.presentation.shared.body.infinite.InfiniteListBody])와
+ * 빈 목록 상태([EmptyHomeBody])가 헤더를 **같은 자리**에 두도록 한 곳에서 정의한다 (#1175).
+ */
+internal val HomeBodyTopSpacing = 8.dp
+
+/** 헤더와 그 아래 본문 사이 여백. [HomeBodyTopSpacing] 과 같은 이유로 공유한다 (#1175). */
+internal val HomeBodySectionSpacing = 16.dp
+
+/**
  * 애프터노트 목록 상단 헤더.
  *
  * @param description 제목 아래 한 줄. 이 목록은 작성자와 수신자가 같은 화면을 공유하므로 기본값을

@@ -15,6 +15,7 @@ import com.afternote.core.ui.topbar.PROFILE_ICON_TEST_TAG
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeScreen
+import com.afternote.feature.afternote.presentation.shared.body.EmptyListBody
 import com.afternote.feature.afternote.presentation.shared.body.infinite.InfiniteListBody
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
 import kotlinx.coroutines.flow.flowOf
@@ -76,6 +77,23 @@ class ReceiverAfternoteListChromeTest {
             .assertDoesNotExist()
     }
 
+    /**
+     * 0건 헤더 승격(#1175)이 수신자에게 새지 않는지.
+     *
+     * [AfternoteHomeScreen] 은 `showsHeaderOnEmptyList` 를 디폴트 없이 받으므로 수신자 호출부가 `false` 를
+     * 명시하지 않으면 컴파일이 막힌다. 여기서는 그 `false` 가 실제로 그리는 본문에 발신자 조각(화면 제목·
+     * 발신자 문구·NEXT STEP)이 하나도 없다는 것을 고정한다 — 헤더가 [EmptyListBody] 자체로 내려가는 순간
+     * 수신자에게도 그대로 새기 때문이다(#620 과 같은 통로).
+     */
+    @Test
+    fun `수신자 0건 목록 본문은 발신자 헤더를 물려받지 않는다`() {
+        composeRule.setContent { AfternoteTheme { EmptyListBody() } }
+
+        composeRule.onNodeWithText(string(R.string.afternote_home_title)).assertDoesNotExist()
+        composeRule.onNodeWithText(string(R.string.afternote_home_header_description)).assertDoesNotExist()
+        composeRule.onNodeWithText(string(R.string.afternote_home_next_step_section_title)).assertDoesNotExist()
+    }
+
     private fun string(resId: Int): String = composeRule.activity.getString(resId)
 
     /** [ReceiverAfternoteHomeEntry] 가 화면에 넘기는 것과 같은 구성 — Entry 는 hiltViewModel 을 잡아 직접 못 띄운다. */
@@ -88,6 +106,8 @@ class ReceiverAfternoteListChromeTest {
             onListItemClick = { _, _ -> },
             headerDescription = stringResource(R.string.receiver_afternote_list_header_description),
             nextStep = null,
+            // 0건 헤더는 작성자 시안(4327:66762)에서만 확인된 처분이라 수신자는 종전 렌더를 유지한다 (#1175).
+            showsHeaderOnEmptyList = false,
         )
     }
 
