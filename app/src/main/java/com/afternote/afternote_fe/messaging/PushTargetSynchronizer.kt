@@ -55,7 +55,7 @@ class PushTargetSynchronizer
                 .collect { isLoggedIn ->
                     runCatchingCancellable {
                         if (isLoggedIn) {
-                            registerCurrentToken()
+                            registerCurrentTargetId()
                         } else {
                             mutex.withLock { lastRegistered = null }
                         }
@@ -84,7 +84,7 @@ class PushTargetSynchronizer
          * 기기 식별자 조회는 Firebase SDK 를 그대로 타므로 **동기 예외**로 실패할 수 있다
          * (`FirebaseApp` 미초기화 등). 그 갈래를 여기서 닫아 두면 위 `collect` 는 관찰만 이어 간다.
          */
-        private suspend fun registerCurrentToken() {
+        private suspend fun registerCurrentTargetId() {
             val targetId =
                 runCatchingCancellable { devicePushTargetProvider.currentTargetId() }
                     .onFailure { error ->
