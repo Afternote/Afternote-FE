@@ -62,7 +62,7 @@ data class AfternoteUpdateRequestDto(
     @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
     @SerialName("credentials") val credentials: AfternoteCredentialsDto? = null,
     @SerialName("receivers") val receivers: List<AfternoteReceiverRefDto>? = null,
-    @SerialName("playlist") val memorial: AfternotePlaylistPatchDto? = null,
+    @SerialName("playlist") val memorial: AfternotePlaylistPatchRequestDto? = null,
 )
 
 @Serializable
@@ -144,7 +144,7 @@ data class AfternotePlaylistRequestDto(
  *   두지 않아 영영 생략된다.
  */
 @Serializable
-data class AfternotePlaylistPatchDto(
+data class AfternotePlaylistPatchRequestDto(
     @SerialName("memorialPhotoUrl")
     @Serializable(with = FieldPatchSerializer::class)
     val memorialPhotoUrl: FieldPatch<String?> = FieldPatch.Unchanged,

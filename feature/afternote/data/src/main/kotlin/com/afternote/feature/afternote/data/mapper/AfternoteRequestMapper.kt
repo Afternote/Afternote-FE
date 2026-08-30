@@ -5,7 +5,7 @@ import com.afternote.feature.afternote.data.dto.AfternoteCreateGalleryRequestDto
 import com.afternote.feature.afternote.data.dto.AfternoteCreatePlaylistRequestDto
 import com.afternote.feature.afternote.data.dto.AfternoteCredentialsDto
 import com.afternote.feature.afternote.data.dto.AfternoteMemorialVideoDto
-import com.afternote.feature.afternote.data.dto.AfternotePlaylistPatchDto
+import com.afternote.feature.afternote.data.dto.AfternotePlaylistPatchRequestDto
 import com.afternote.feature.afternote.data.dto.AfternotePlaylistRequestDto
 import com.afternote.feature.afternote.data.dto.AfternoteReceiverRefDto
 import com.afternote.feature.afternote.data.dto.AfternoteSongDto
@@ -49,7 +49,7 @@ fun AfternoteUpdatePayload.toRequest() =
  * 표현된다.
  */
 fun MemorialPatchPayload.toPatchDto() =
-    AfternotePlaylistPatchDto(
+    AfternotePlaylistPatchRequestDto(
         memorialPhotoUrl = memorialPhotoUrl,
         songs = songs?.map { it.toDto() },
         memorialVideo = memorialVideo.map { it?.toDto() },
