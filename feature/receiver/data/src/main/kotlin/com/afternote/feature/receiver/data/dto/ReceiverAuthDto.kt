@@ -112,6 +112,7 @@ data class ReceivedRecordBoxListDto(
  *
  * - `receiverName` — `Receiver.name` 이 `@Column(nullable = false)`, 서버가 비울 수 없다.
  * - `recordStatus` — `determineRecordStatus()` 가 `STORED`·`EMPTY` 중 하나를 항상 반환한다.
+ *   (배포 스키마의 enum 엔 `DELETED` 도 있지만 서버가 채우는 경로가 없다 — BE#269.)
  * - `viewStatus` — `determineViewStatus()` 가 `VIEWABLE`·`PENDING`·`REQUESTABLE` 중 하나를 항상 반환한다.
  * - `relation` — `@Column(length = 50)` 로 DB 가 null 을 허용한다.
  * - `verificationStatus`·`requestedAt` — 열람 신청이 없으면 통째로 null 이다.
