@@ -112,6 +112,7 @@ internal fun rememberMemorialMediaSourceState(
     val scope = rememberCoroutineScope()
     val captureUnavailableMessage = stringResource(R.string.afternote_editor_media_capture_unavailable)
     val recordUnavailableMessage = stringResource(R.string.afternote_editor_media_record_unavailable)
+    val audioPickUnavailableMessage = stringResource(R.string.afternote_editor_media_audio_pick_unavailable)
     val audioUnsupportedMessage = stringResource(R.string.afternote_editor_media_audio_unsupported)
 
     val openTarget = rememberSaveable { mutableStateOf<MemorialMediaTarget?>(null) }
@@ -191,7 +192,7 @@ internal fun rememberMemorialMediaSourceState(
                             launch = { audioPickLauncher.launch(MemorialAudioFormats.supportedMimeTypes.toTypedArray()) },
                         ) { failure ->
                             onCaptureFailed(failure)
-                            scope.launch { snackbarHostState.showSnackbar(recordUnavailableMessage) }
+                            scope.launch { snackbarHostState.showSnackbar(audioPickUnavailableMessage) }
                         }
                     }
                 }
