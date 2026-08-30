@@ -14,7 +14,7 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.mod
 sealed interface AfternoteTypeForm {
     val type: AfternoteType
 
-    /** 이탈 가드 지문에 실을 조각. 사용자가 이 카테고리에 실제로 넣은 값이 없으면 `null`. */
+    /** 이탈 가드 지문에 실을 조각. 수정 진입 기준선을 포함해 비교할 카테고리 상태가 없으면 `null`. */
     fun enteredContentOrNull(): String?
 
     sealed interface WithServiceAndProcessingMethods : AfternoteTypeForm {
@@ -80,9 +80,9 @@ sealed interface AfternoteTypeForm {
     /**
      * 미디어 두 축을 같은 모양으로 든다 — `picked`(이 폼에서 고른 것) + 서버에 저장된 것.
      *
-     * 어느 칸에 들었는지가 곧 출처다. 그래서 삭제는 `picked` 를 비우는 것으로 끝나고 표시는 서버 값으로
-     * 저절로 되돌아간다. 종전 영상 축은 한 칸이 둘을 겸해 출처를 URL 스킴으로 추론했고, 로컬로 덮이는
-     * 순간 서버 값을 잃어 「지운 척했지만 서버엔 남는」 거짓 삭제가 났다(#1406).
+     * 어느 칸에 들었는지가 곧 출처다. 삭제는 현재 표시된 층을 비워, `picked` 였으면 서버 값으로
+     * 돌아가고 서버 값이었으면 PATCH `null` 로 이어진다. 종전 영상 축은 한 칸이 둘을 겸해 출처를 URL
+     * 스킴으로 추론했고, 로컬로 덮이는 순간 서버 값을 잃어 거짓 삭제가 났다(#1406, #1597).
      */
     data class Memorial(
         val pickedPhotoUri: String? = null,
@@ -99,12 +99,14 @@ sealed interface AfternoteTypeForm {
         fun displayVideo(): MemorialVideoAttachment? = pickedVideo ?: serverVideo
 
         /**
-         * 서버 원본은 prefill 이 채워 넣는 값이지 사용자가 넣은 값이 아니라 뺀다. 고른 영상의 썸네일도
-         * 같은 이유로 [MemorialVideoAttachment.userEnteredPart] 로 걷어낸다.
+         * 미디어 URL은 수정 진입 기준선과 비교해야 서버 원본 삭제도 미저장 변경으로 잡힌다. 썸네일만
+         * 영상에서 자동 파생되는 값이라 [MemorialVideoAttachment.userEnteredPart] 로 양쪽에서 걷어낸다.
          */
         override fun enteredContentOrNull(): String? =
-            copy(serverVideo = null, pickedVideo = pickedVideo?.userEnteredPart())
-                .takeUnless { it == PRISTINE }
+            copy(
+                pickedVideo = pickedVideo?.userEnteredPart(),
+                serverVideo = serverVideo?.userEnteredPart(),
+            ).takeUnless { it == PRISTINE }
                 ?.toString()
 
         private companion object {

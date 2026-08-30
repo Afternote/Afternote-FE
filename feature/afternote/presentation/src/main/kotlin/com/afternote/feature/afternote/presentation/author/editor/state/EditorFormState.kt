@@ -29,7 +29,7 @@ data class EditorFormState(
 
     val pickedMemorialPhotoUri: String? get() = memorialForm?.pickedPhotoUri
 
-    /** 이 폼에서 새로 고른 영상. 값이 있으면 곧 로컬 첨부이므로 삭제 가능 판정의 기준이 된다. */
+    /** 이 폼에서 새로 고른 영상. 서버 원본보다 먼저 표시되고, 삭제하면 서버 원본으로 돌아간다. */
     val pickedMemorialVideo: MemorialVideoAttachment? get() = memorialForm?.pickedVideo
 
     /** 화면이 그리고 저장이 싣는 영상 — 고른 것이 있으면 그것, 없으면 서버에 저장된 것. */

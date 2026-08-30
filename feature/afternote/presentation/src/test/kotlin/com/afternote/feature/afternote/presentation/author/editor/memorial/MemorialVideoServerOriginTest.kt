@@ -76,13 +76,17 @@ class MemorialVideoServerOriginTest {
     }
 
     @Test
-    fun `서버 영상으로 돌아가면 삭제 항목도 다시 감춰진다`() {
+    fun `서버 영상으로 돌아가도 삭제 항목은 열려 있다`() {
         val removed =
             prefilledEditForm()
                 .withMemorialVideo(localVideo)
                 .withMemorialVideo(null)
 
-        assertEquals(emptySet<MemorialMediaTarget>(), removed.removableMemorialMediaTargets())
+        // #1561 은 여기서 삭제 항목이 «다시 감춰진다» 고 잠갔다. 그 근거는 계약 한계였다 —
+        // PATCH 가 삭제를 표현하지 못하던 시절엔 서버 영상에 삭제를 열어 두면 폼만 비고 서버에는
+        // 남는 거짓 삭제가 됐다. BE 가 «명시적 null = 삭제» 를 열면서(#1597) 그 근거가 사라졌으므로
+        // 이 단언을 뒤집는다. 이제 서버로 돌아간 슬롯도 지울 수 있고, 지우면 실제로 지워진다.
+        assertEquals(setOf(MemorialMediaTarget.VIDEO), removed.removableMemorialMediaTargets())
     }
 
     @Test

@@ -31,18 +31,35 @@ internal fun EditorFormState.withType(type: AfternoteType): EditorFormState =
 
 internal fun EditorFormState.withService(service: String): EditorFormState = mapServiceForm { it.withService(service) }
 
-internal fun EditorFormState.withMemorialPhoto(uri: String?): EditorFormState = mapMemorial { it.copy(pickedPhotoUri = uri) }
+/**
+ * 사진 선택은 `picked` 층을 교체한다. `null`(시트의 삭제)은 현재 표시된 한 층만 걷는다 — 로컬
+ * 교체분이 있으면 서버 사진으로 돌아가고, 서버 사진만 있으면 서버 축을 비워 PATCH `null` 로 잇는다.
+ */
+internal fun EditorFormState.withMemorialPhoto(uri: String?): EditorFormState =
+    mapMemorial { form ->
+        when {
+            uri != null -> form.copy(pickedPhotoUri = uri)
+            form.pickedPhotoUri != null -> form.copy(pickedPhotoUri = null)
+            else -> form.copy(photoUrl = null)
+        }
+    }
 
 /**
  * 영상 첨부는 통째로 갈린다 — 새 영상에는 썸네일이 아직 없고, 이전 영상의 썸네일을 물려주면 다른
  * 영상의 그림이 붙는다.
  *
- * `null`(삭제)은 **이 폼에서 새로 붙인 영상만** 걷어낸다. 서버에 저장된 영상은 수정 계약으로 지울 수
- * 없어(빈 필드 = 기존 값 유지), 폼에서 없앤 척하면 저장 뒤 되살아난다(#1406). 서버 원본은 다른 칸에
- * 그대로 있으므로 표시가 저절로 그쪽으로 돌아간다.
+ * `null`(시트의 삭제)은 현재 표시된 한 층만 걷는다. 고른 영상이 있으면 서버 원본으로 돌아가고,
+ * 서버 영상만 있으면 서버 축을 비운다. 후자는 #1596의 명시적 `null` 직렬화와 BE 삭제 계약으로 이어져
+ * 저장 뒤 다시 살아나는 거짓 삭제를 만들지 않는다(#1597).
  */
 internal fun EditorFormState.withMemorialVideo(url: String?): EditorFormState =
-    mapMemorial { form -> form.copy(pickedVideo = MemorialVideoAttachment.ofOrNull(url)) }
+    mapMemorial { form ->
+        when {
+            url != null -> form.copy(pickedVideo = MemorialVideoAttachment.ofOrNull(url))
+            form.pickedVideo != null -> form.copy(pickedVideo = null)
+            else -> form.copy(serverVideo = null)
+        }
+    }
 
 /**
  * 고른 영상에서 뽑아 올린 썸네일을 붙인다. 영상이 없으면 아무 일도 하지 않는다 — 썸네일만 남는
