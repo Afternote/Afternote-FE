@@ -306,13 +306,105 @@ class AfternoteDetailViewModelTest {
             val viewModel = viewModel(repository)
             val states = recordStates(viewModel)
 
-            viewModel.deleteAfternote(73L)
+            viewModel.deleteAfternote()
             viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
             viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME
 
             val last = states.last() as AfternoteDetailUiState.Success
             assertEquals("Threads", states.last().serviceNameOrNull())
             assertEquals(AfternoteDetailDeleteResult.Succeeded(73L), last.deleteResult)
+        }
+
+    @Test
+    fun `실패 화면에서 재시도하면 로딩을 띄우고 상세를 다시 조회한다`() =
+        runTest {
+            val gate = CompletableDeferred<Unit>()
+            var invocation = 0
+            val repository =
+                FakeAfternoteRepository.strict().apply {
+                    onGetDetail = {
+                        invocation += 1
+                        if (invocation == 1) {
+                            Result.failure(IOException("offline"))
+                        } else {
+                            gate.await()
+                            Result.success(detail(serviceName = "Instagram"))
+                        }
+                    }
+                }
+            val viewModel = viewModel(repository)
+            val states = recordStates(viewModel)
+
+            assertTrue(states.last() is AfternoteDetailUiState.Error)
+
+            viewModel.retry()
+
+            // 응답이 오기 전 — 사용자가 누른 동작이므로 기다림을 표시한다(자동 갱신과 갈리는 지점).
+            assertTrue(states.last() is AfternoteDetailUiState.Loading)
+
+            gate.complete(Unit)
+
+            assertEquals("Instagram", states.last().serviceNameOrNull())
+        }
+
+    @Test
+    fun `재시도가 자른 갱신은 그 응답으로 새 화면을 덮지 않는다`() =
+        runTest {
+            // 자동 갱신이 값을 받아 든 «뒤» 재시도가 그 로드를 자르는 창 — 여기서 옛 응답이 새 화면을
+            // 덮으면 사용자가 재시도로 얻은 결과가 조용히 사라진다.
+            lateinit var viewModelRef: AfternoteDetailViewModel
+            var invocation = 0
+            val repository =
+                FakeAfternoteRepository.strict().apply {
+                    onGetDetail = {
+                        invocation += 1
+                        when (invocation) {
+                            1 -> {
+                                Result.success(detail(serviceName = "Instagram"))
+                            }
+
+                            2 -> {
+                                viewModelRef.retry()
+                                Result.success(detail(serviceName = "Stale"))
+                            }
+
+                            else -> {
+                                Result.success(detail(serviceName = "Retry"))
+                            }
+                        }
+                    }
+                }
+            val viewModel = viewModel(repository)
+            viewModelRef = viewModel
+            val states = recordStates(viewModel)
+
+            viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
+            viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME — 이 로드가 재시도에 잘린다
+
+            assertEquals("Retry", states.last().serviceNameOrNull())
+        }
+
+    @Test
+    fun `상세를 보고 있지 않으면 삭제 요청을 보내지 않는다`() =
+        runTest {
+            // 상태 갱신은 updateSuccess 가 알아서 no-op 이지만 서버 호출은 아니다 — 막지 않으면
+            // 노트는 지워지는데 화면은 아무것도 모른다(진행 표시·결과 안내·pop 전부 없음).
+            val deletedIds = mutableListOf<Long>()
+            val repository =
+                FakeAfternoteRepository.strict().apply {
+                    onGetDetail = { Result.failure(IOException("offline")) }
+                    onDelete = { id ->
+                        deletedIds += id
+                        Result.success(Unit)
+                    }
+                }
+            val viewModel = viewModel(repository)
+            val states = recordStates(viewModel)
+
+            viewModel.deleteAfternote()
+
+            assertTrue(states.last() is AfternoteDetailUiState.Error)
+            assertEquals(emptyList<Long>(), deletedIds)
         }
 
     private fun TestScope.recordStates(viewModel: AfternoteDetailViewModel): List<AfternoteDetailUiState> {

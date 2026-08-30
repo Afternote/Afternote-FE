@@ -472,7 +472,7 @@ private fun AuthorDetailForDelete(
                 content = account.content,
                 snackbarHostState = snackbarHostState,
                 onEditClick = {},
-                onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
+                onDeleteConfirm = viewModel::deleteAfternote,
             )
         }
     }

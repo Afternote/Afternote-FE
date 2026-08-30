@@ -253,6 +253,7 @@ internal fun AfternoteDetailNavigation(
             DetailLoadErrorContent(
                 messageRes = state.messageRes,
                 onBackClick = onNavigateBack,
+                onRetryClick = viewModel::retry,
             )
         }
 
@@ -275,7 +276,7 @@ private fun AfternoteDetailSuccessContent(
     snackbarHostState: SnackbarHostState,
     onBackClick: () -> Unit,
     onNavigateToEditor: (itemId: Long, type: AfternoteType) -> Unit,
-    onDeleteConfirm: (itemId: Long) -> Unit,
+    onDeleteConfirm: () -> Unit,
     onVideoClick: (String) -> Unit,
 ) {
     Box {
@@ -288,7 +289,7 @@ private fun AfternoteDetailSuccessContent(
                     onEditClick = {
                         onNavigateToEditor(state.detailId, model.type)
                     },
-                    onDeleteConfirm = { onDeleteConfirm(state.detailId) },
+                    onDeleteConfirm = onDeleteConfirm,
                 )
             }
 
@@ -300,7 +301,7 @@ private fun AfternoteDetailSuccessContent(
                     onEditClick = {
                         onNavigateToEditor(state.detailId, model.type)
                     },
-                    onDeleteConfirm = { onDeleteConfirm(state.detailId) },
+                    onDeleteConfirm = onDeleteConfirm,
                 )
             }
 
@@ -312,7 +313,7 @@ private fun AfternoteDetailSuccessContent(
                     onEditClick = {
                         onNavigateToEditor(state.detailId, model.type)
                     },
-                    onDeleteConfirm = { onDeleteConfirm(state.detailId) },
+                    onDeleteConfirm = onDeleteConfirm,
                 )
             }
 
@@ -325,7 +326,7 @@ private fun AfternoteDetailSuccessContent(
                     onEditClick = {
                         onNavigateToEditor(state.detailId, model.type)
                     },
-                    onDeleteConfirm = { onDeleteConfirm(state.detailId) },
+                    onDeleteConfirm = onDeleteConfirm,
                     onVideoClick = onVideoClick,
                 )
             }
