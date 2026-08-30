@@ -8,6 +8,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.IOException
 
 /** HTTP·BE 오류 봉투를 수신자 도메인 어휘로 번역하는 경계의 회귀 가드(#1053). */
 class ReceiverFailureTranslationTest {
@@ -126,6 +127,54 @@ class ReceiverFailureTranslationTest {
             assertTrue("serverMessage=$serverMessage: $failure", failure is ReceiverFailure.DeliveryConditionNotMet)
             assertSame(original, failure.cause)
         }
+    }
+
+    @Test
+    fun `성공 결과는 값을 그대로 돌려준다`() {
+        val result = Result.success("ok").mapReceiverFailure()
+
+        assertEquals("ok", result.getOrNull())
+    }
+
+    @Test
+    fun `서버 거절 실패는 도메인 어휘로 옮긴다`() {
+        val original = apiException(status = 404, code = 1901, serverMessage = "등록된 수신자 이메일이 아닙니다.")
+
+        val failure = Result.failure<Unit>(original).mapReceiverFailure().exceptionOrNull()
+
+        assertTrue("$failure", failure is ReceiverFailure.UserRejection)
+        assertEquals(ReceiverRejectionReason.RECEIVER_EMAIL_NOT_FOUND, (failure as ReceiverFailure.UserRejection).reason)
+        assertSame(original, failure.cause)
+    }
+
+    @Test
+    fun `전송 계층 실패는 연결 불가로 옮긴다`() {
+        val original = IOException("Unable to resolve host")
+
+        val failure = Result.failure<Unit>(original).mapReceiverFailure().exceptionOrNull()
+
+        assertTrue("$failure", failure is ReceiverFailure.NetworkUnavailable)
+        assertSame(original, failure?.cause)
+    }
+
+    /** 도메인 어휘가 없는 실패까지 감싸면 매핑 실패 같은 진단 신호가 소비처에서 사라진다. */
+    @Test
+    fun `분류 대상이 아닌 실패는 원본 인스턴스 그대로 나간다`() {
+        val original = IllegalStateException("boom")
+
+        val failure = Result.failure<Unit>(original).mapReceiverFailure().exceptionOrNull()
+
+        assertSame(original, failure)
+    }
+
+    /** 위임으로 두 번 지나는 경로(문서 업로드 → presigned URL 발급) 가 실패를 겹겹이 감싸지 않는지. */
+    @Test
+    fun `이미 번역된 실패는 다시 감싸지 않는다`() {
+        val original = ReceiverFailure.DeliveryConditionNotMet(apiException(status = 403, code = 2009, serverMessage = null))
+
+        val failure = Result.failure<Unit>(original).mapReceiverFailure().exceptionOrNull()
+
+        assertSame(original, failure)
     }
 
     private fun apiException(
