@@ -26,9 +26,15 @@ import org.junit.Test
  * 시안에서 그 자리의 fontSize·lineHeight 를 실측해 둘 다 명시한다. 시안값이 소수점이면
  * 반올림하지 않는다(`lineHeight = 19.5.sp`). 시안값이 원 토큰과 같다면 `copy` 자체가 불필요하다.
  *
- * ### 이 가드가 못 잡는 것
+ * ### 경계 — 못 잡는 것과 헛짚는 것
  * 토큰을 지역 변수로 받아 두고 `copy` 하는 우회(`val base = …typography.h2; base.copy(fontSize = …)`)
  * 는 지나친다. 레포에 그런 자리는 없고, 잡으려면 타입 추론이 필요해 정적 텍스트 검사 범위를 넘는다.
+ *
+ * 반대로 **주석·문자열에 적힌 예시도 코드로 친다.** 이 레포는 설명을 코드 주석에 많이 담기 때문에
+ * 「이렇게 쓰지 말 것」을 예시로 적으면 이 가드가 헛짚는다 — 그때는 예시에서 `copy(` 를 빼거나
+ * 토큰명을 `<토큰>` 처럼 흐려 적는다. 주석을 걷어내고 보는 편이 정확하지만, 문자열 안의 `//`
+ * (URL 등)까지 가려내야 해서 파서가 오히려 더 자주 틀린다. `ReceiverHomeResourceKonsistTest`
+ * 도 같은 이유로 주석 오탐을 감수한다.
  */
 class TypographyLineHeightKonsistTest {
     @Test
