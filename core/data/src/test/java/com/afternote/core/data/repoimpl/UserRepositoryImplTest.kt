@@ -1,6 +1,8 @@
 package com.afternote.core.data.repoimpl
 
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.domain.repository.UserReceiverRepository
+import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.network.dto.DeletePushTokenRequestDto
@@ -327,6 +329,46 @@ class UserRepositoryImplTest {
                 )
                 assertEquals("조회 2", withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.single().name)
                 assertEquals(2, requestCount)
+            } finally {
+                collector.cancelAndJoin()
+            }
+        }
+
+    /**
+     * 수신자 구현이 [UserRepositoryImpl] 밖으로 나갔어도 좁은 계약과 합본 계약은 **같은 인스턴스**를
+     * 봐야 한다 (#1282). 여기서 갈리면 `UserReceiverRepository` 로 등록한 수신자가
+     * `UserRepository` 구독자의 목록을 갱신하지 못하고 화면이 방금 만든 수신인을 놓친다.
+     */
+    @Test
+    fun `좁은 계약과 합본 계약은 같은 수신자 갱신 상태를 본다`() =
+        runBlocking {
+            var requestCount = 0
+            val repository =
+                repository(
+                    onGetReceivers = {
+                        requestCount += 1
+                        dataResponse(listOf(receiverDto("조회 $requestCount")))
+                    },
+                    onCreateReceiver = { dataResponse(UserCreateReceiverDto(receiverId = 2L, authCode = "AUTH-2")) },
+                )
+            val narrowContract: UserReceiverRepository = repository
+            val mergedContract: UserRepository = repository
+            val emissions = Channel<List<Receiver>>(capacity = Channel.UNLIMITED)
+            val collector =
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    mergedContract.receiverListFlow.collect { emissions.send(it) }
+                }
+
+            try {
+                assertEquals("조회 1", withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.single().name)
+                narrowContract.createReceiver(
+                    name = "새 수신자",
+                    relation = "친구",
+                    phone = null,
+                    email = null,
+                    message = null,
+                )
+                assertEquals("조회 2", withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.single().name)
             } finally {
                 collector.cancelAndJoin()
             }
