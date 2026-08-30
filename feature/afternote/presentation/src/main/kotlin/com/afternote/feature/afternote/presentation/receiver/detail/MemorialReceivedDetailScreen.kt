@@ -2,7 +2,6 @@ package com.afternote.feature.afternote.presentation.receiver.detail
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,8 +20,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,6 +33,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -50,6 +54,7 @@ import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
 import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
+import kotlinx.coroutines.launch
 
 /**
  * MEMORIAL(추억 노트) 카테고리의 수신자 측 상세 화면.
@@ -73,11 +78,14 @@ fun MemorialReceivedDetailScreen(
     songCount: Int = 16,
     memorialVideoUrl: String? = null,
     memorialThumbnailUrl: String? = null,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     profileImageResId ?: R.drawable.receiver_img_default_profile_deceased
+    val onVideoClick = rememberReceivedMemorialVideoClickHandler(snackbarHostState)
 
     Scaffold(
         containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             // statusBarsPadding: 엣지투엣지로 그려 콘텐츠가 상태바 아래까지 깔리므로, 상태바 높이만큼 top 패딩
             // → 탑바가 상태바(시계·배터리) 밑에서 시작(겹침 방지). 동적 인셋이라 회전·분할화면에도 대응.
@@ -134,6 +142,7 @@ fun MemorialReceivedDetailScreen(
                             ReceiverVideoSection(
                                 memorialVideoUrl = memorialVideoUrl,
                                 memorialThumbnailUrl = memorialThumbnailUrl,
+                                onVideoClick = onVideoClick,
                             )
                         }
                     },
@@ -153,13 +162,42 @@ fun MemorialReceivedDetailScreen(
     }
 }
 
+/**
+ * 추모 영상 카드의 클릭 처리를 만든다.
+ *
+ * 실행 실패는 서버 작업 실패가 아니라 이 기기의 사정(막힌 URL·재생 앱 없음)이라 재시도 팝업(#446)이 아니라
+ * 스낵바로 알린다 — 작성자 쪽 상세(#1336)와 같은 채널이다. 원인이 다르면 문구도 다르므로 콜백 둘을 각각
+ * 다른 리소스에 붙인다 (#1391).
+ */
+@Composable
+private fun rememberReceivedMemorialVideoClickHandler(snackbarHostState: SnackbarHostState): (String) -> Unit {
+    val context = LocalContext.current
+    val resources = LocalResources.current
+    val scope = rememberCoroutineScope()
+    return remember(context, resources, scope, snackbarHostState) {
+        { videoUrl ->
+            launchReceivedMemorialVideo(
+                videoUrl = videoUrl,
+                startActivity = context::startActivity,
+                onRejected = {
+                    val message = resources.getString(R.string.receiver_memorial_video_invalid_url)
+                    scope.launch { snackbarHostState.showSnackbar(message) }
+                },
+                onUnavailable = {
+                    val message = resources.getString(R.string.receiver_memorial_video_no_app)
+                    scope.launch { snackbarHostState.showSnackbar(message) }
+                },
+            )
+        }
+    }
+}
+
 @Composable
 private fun ReceiverVideoSection(
+    onVideoClick: (String) -> Unit,
     memorialVideoUrl: String? = null,
     memorialThumbnailUrl: String? = null,
 ) {
-    val context = LocalContext.current
-    val noVideoAppMessage = stringResource(R.string.receiver_memorial_video_no_app)
     Column(modifier = Modifier.fillMaxWidth()) {
         ReceiverSectionHeader()
         Spacer(modifier = Modifier.height(12.dp))
@@ -170,31 +208,7 @@ private fun ReceiverVideoSection(
                         .fillMaxWidth()
                         // clip 을 clickable 앞에: 눌림 피드백이 InfoCard 의 12dp 둥근 모서리 안에서만 그려지게 (모서리 밖 사각 번짐 방지)
                         .clip(RoundedCornerShape(12.dp))
-                        .clickable {
-                            launchReceivedMemorialVideo(
-                                videoUrl = memorialVideoUrl,
-                                startActivity = context::startActivity,
-                                // 원인이 다르면 문구도 달라야 한다 — 아래 둘을 한 문장으로 덮으면
-                                // 스킴 차단 상황에 «앱이 없습니다» 라는 거짓 안내가 나간다.
-                                // 채널(Snackbar) 전환·리소스화·표출 테스트는 #1391 건 3.
-                                onRejected = {
-                                    Toast
-                                        .makeText(
-                                            context,
-                                            "영상 주소가 올바르지 않아 재생할 수 없습니다.",
-                                            Toast.LENGTH_SHORT,
-                                        ).show()
-                                },
-                                onUnavailable = {
-                                    Toast
-                                        .makeText(
-                                            context,
-                                            noVideoAppMessage,
-                                            Toast.LENGTH_SHORT,
-                                        ).show()
-                                },
-                            )
-                        },
+                        .clickable { onVideoClick(memorialVideoUrl) },
             ) {
                 ReceiverMemorialVideoThumbnail(thumbnailUrl = memorialThumbnailUrl)
             }

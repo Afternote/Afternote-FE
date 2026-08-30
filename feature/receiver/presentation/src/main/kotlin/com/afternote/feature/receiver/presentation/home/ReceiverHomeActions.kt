@@ -6,7 +6,6 @@ package com.afternote.feature.receiver.presentation.home
  * 데이터 로드/다운로드는 ViewModel이 관할하고, 외부 화면 이동만 호출 측이 채운다.
  */
 data class ReceiverHomeActions(
-    val onSettingClick: () -> Unit,
     val onNavigateToMindRecord: () -> Unit,
     val onNavigateToTimeLetter: () -> Unit,
     val onNavigateToAfternote: () -> Unit,
