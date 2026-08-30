@@ -38,6 +38,7 @@ import com.afternote.feature.afternote.presentation.author.editor.state.withProc
 import com.afternote.feature.afternote.presentation.author.editor.state.withProcessingMethodsInitialized
 import com.afternote.feature.afternote.presentation.author.editor.state.withReceiverAddedIfAbsent
 import com.afternote.feature.afternote.presentation.author.editor.state.withReceiverDeleted
+import com.afternote.feature.afternote.presentation.author.editor.state.withReceiversReplaced
 import com.afternote.feature.afternote.presentation.author.editor.state.withReceiversReplacedIfEmpty
 import com.afternote.feature.afternote.presentation.author.editor.state.withService
 import com.afternote.feature.afternote.presentation.author.editor.state.withType
@@ -577,6 +578,22 @@ class AfternoteEditorViewModel
                 internalState.update { it.withError(AfternoteEditorError.ReceiverSelectionUnavailable) }
                 null
             }
+        }
+
+        /**
+         * 수신자 선택 화면이 확정한 [receiverIds] 전체를 폼에 반영한다 (#1426).
+         *
+         * 화면은 폼의 현재 수신자를 선택 상태로 열고 확정된 전체를 돌려준다 — 그래서 반영은
+         * «추가» 가 아니라 «교체» 다. 화면에서 푼 수신자는 폼에서도 빠진다.
+         *
+         * 이미 폼에 있는 id 는 표시에 필요한 이름·관계를 폼이 이미 들고 있으므로 재조회하지 않는다.
+         * 새로 들어온 id 만 [resolveSelectedReceiver] 로 해석하고, 해석 실패는 그쪽이 오류 이벤트로
+         * 알린다 — 그 id 만 빠지고 나머지 선택은 반영된다 (#1405).
+         */
+        suspend fun applySelectedReceivers(receiverIds: List<Long>) {
+            val alreadyInForm = currentForm().afternoteEditReceivers.associateBy { it.id }
+            val next = receiverIds.mapNotNull { id -> alreadyInForm[id] ?: resolveSelectedReceiver(id) }
+            mutateForm { it.withReceiversReplaced(next) }
         }
 
         private fun findReceiverById(id: Long): AfternoteEditorReceiver? = internalState.value.authorReceivers.find { it.id == id }

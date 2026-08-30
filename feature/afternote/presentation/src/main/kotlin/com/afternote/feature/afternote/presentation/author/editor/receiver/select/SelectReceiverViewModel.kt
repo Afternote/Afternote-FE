@@ -22,7 +22,12 @@ data class SelectReceiverUiState(
     val isLoading: Boolean = false,
     val loadFailed: Boolean = false,
     val receivers: List<AfternoteEditorReceiver> = emptyList(),
-    val selectedReceiverId: Long? = null,
+    /**
+     * 선택된 수신자 id — 탭한 순서를 보존한다.
+     *
+     * 빈 목록이 «아무도 선택하지 않음» 이다. null 로 없음을 표현하지 않는다 (#1426).
+     */
+    val selectedReceiverIds: List<Long> = emptyList(),
 )
 
 /**
@@ -31,9 +36,10 @@ data class SelectReceiverUiState(
  * 서버 `GET users/receivers` 는 액세스 토큰으로 호출자를 식별하므로 파라미터가 없다 —
  * 별도의 userId 없이 [UserRepository.getReceivers] 를 그대로 쓴다.
  *
- * 선택은 단일이다: 완료 시 에디터에는 수신자 id 하나만 SavedStateHandle 로 돌려주고
- * (`SELECTED_RECEIVER_ID_KEY`), 여러 명 지정은 화면 재진입 반복으로 한다 —
- * 폼 쪽 `addReceiverIfAbsent` 가 중복 추가를 거른다.
+ * 선택은 복수다 (#1426): 한 번 진입해 여러 명을 고르고, 완료 시 확정된 id 전체를
+ * `SELECTED_RECEIVER_IDS_KEY` 로 에디터에 돌려준다. 화면은 에디터 폼에 이미 있는 수신자를
+ * 선택 상태로 열고([applyPreselection]), 돌려주는 목록이 곧 폼의 수신자 전체가 된다 —
+ * 화면에서 푼 수신자는 폼에서도 빠진다.
  */
 @HiltViewModel
 class SelectReceiverViewModel
@@ -45,8 +51,24 @@ class SelectReceiverViewModel
         private val _uiState = MutableStateFlow(SelectReceiverUiState())
         val uiState: StateFlow<SelectReceiverUiState> = _uiState.asStateFlow()
 
+        private var isPreselectionApplied = false
+
         init {
             refresh()
+        }
+
+        /**
+         * 에디터 폼에 이미 있는 수신자를 선택 상태로 연다 (#1426).
+         *
+         * 화면 최초 진입에만 반영한다 — 재구성마다 다시 넣으면 사용자가 방금 푼 선택이 되살아난다.
+         */
+        fun applyPreselection(receiverIds: List<Long>) {
+            if (isPreselectionApplied) return
+            isPreselectionApplied = true
+            if (receiverIds.isEmpty()) return
+            _uiState.update { state ->
+                state.copy(selectedReceiverIds = (receiverIds + state.selectedReceiverIds).distinct())
+            }
         }
 
         /** 수신자 목록을 (재)조회한다. 실패 화면의 "다시 시도" 도 여기로 온다. */
@@ -61,8 +83,8 @@ class SelectReceiverViewModel
                                 receivers = receivers.toAfternoteEditorReceivers(),
                                 // 재조회로 목록에서 사라진 수신자를 가리키는 선택은 해제한다 —
                                 // 남겨 두면 완료 버튼이 이미 없는 id 를 에디터로 돌려보낸다.
-                                selectedReceiverId =
-                                    state.selectedReceiverId?.takeIf { selected ->
+                                selectedReceiverIds =
+                                    state.selectedReceiverIds.filter { selected ->
                                         receivers.any { it.receiverId == selected }
                                     },
                             )
@@ -74,11 +96,13 @@ class SelectReceiverViewModel
             }
         }
 
-        /** 같은 수신자를 다시 탭하면 해제, 다른 수신자를 탭하면 교체하는 단일 선택. */
+/** 탭한 수신자를 선택 목록에 더하고, 이미 선택된 수신자를 다시 탭하면 그 항목만 뺀다 (#1426). */
         fun toggleReceiverSelection(receiverId: Long) {
             _uiState.update { state ->
+                val selected = state.selectedReceiverIds
                 state.copy(
-                    selectedReceiverId = if (state.selectedReceiverId == receiverId) null else receiverId,
+                    selectedReceiverIds =
+                        if (receiverId in selected) selected - receiverId else selected + receiverId,
                 )
             }
         }

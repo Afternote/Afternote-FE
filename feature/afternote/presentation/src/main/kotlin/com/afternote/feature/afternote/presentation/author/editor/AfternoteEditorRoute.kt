@@ -13,7 +13,6 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.Aft
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
-import com.afternote.feature.afternote.presentation.author.navigation.model.SELECTED_RECEIVER_ID_KEY
 
 /**
  * 작성자 에디터 화면: type-safe editor flow + 단방향 이벤트.
@@ -75,7 +74,6 @@ internal fun AfternoteEditorNavigation(
         tryApplyReceiverSelectionFromSavedState(
             backStackEntry,
             editViewModel,
-            state,
         )
     }
 
