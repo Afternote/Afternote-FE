@@ -1,21 +1,17 @@
 package com.afternote.core.ui.receiver
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,14 +29,12 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.common.util.KoreanConsonantUtil
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.KoreanConsonantIndex
-import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.R
 import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
 import com.afternote.core.ui.button.CheckboxState
-import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import kotlinx.coroutines.launch
 
@@ -207,32 +201,17 @@ private fun ReceiverSelectRow(
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .clickable(onClick = onToggle)
-                .padding(top = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        ProfileImage(size = 50.dp)
-        Spacer(modifier = Modifier.width(10.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = receiver.name,
-                style = AfternoteDesign.typography.captionLargeB,
+    ReceiverProfileRow(
+        name = receiver.name,
+        relation = receiver.relation,
+        onClick = onToggle,
+        modifier = modifier,
+        trailing = {
+            AfternoteCircularCheckbox(
+                state = if (selected) CheckboxState.Default else CheckboxState.None,
+                onClick = onToggle,
+                size = 20.dp,
             )
-            Spacer(modifier = Modifier.padding(top = 5.dp))
-            Text(
-                text = receiver.relation,
-                style = AfternoteDesign.typography.captionLargeR,
-                color = AfternoteDesign.colors.gray8,
-            )
-        }
-        AfternoteCircularCheckbox(
-            state = if (selected) CheckboxState.Default else CheckboxState.None,
-            onClick = onToggle,
-            size = 20.dp,
-        )
-    }
+        },
+    )
 }
