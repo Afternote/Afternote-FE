@@ -18,10 +18,11 @@ import com.android.tools.screenshot.PreviewTest
 internal fun selectionDropdownPlaceholderScreenshot() {
     AfternoteTheme {
         Box(modifier = Modifier.padding(24.dp)) {
-            SelectionDropdown(
+            EditorSelectionDropdown(
                 label = stringResource(R.string.afternote_editor_label_service_name),
                 selectedValue = "",
                 options = emptyList(),
+                optionLabel = { it },
                 onValueSelected = {},
                 expanded = false,
                 onExpandedChange = {},
@@ -42,10 +43,11 @@ internal fun selectionDropdownPlaceholderScreenshot() {
 internal fun selectionDropdownSelectedScreenshot() {
     AfternoteTheme {
         Box(modifier = Modifier.padding(24.dp)) {
-            SelectionDropdown(
+            EditorSelectionDropdown(
                 label = stringResource(R.string.afternote_editor_label_service_name),
                 selectedValue = "인스타그램",
                 options = emptyList(),
+                optionLabel = { it },
                 onValueSelected = {},
                 expanded = false,
                 onExpandedChange = {},
@@ -54,6 +56,27 @@ internal fun selectionDropdownSelectedScreenshot() {
                         R.string.afternote_editor_service_placeholder,
                         stringResource(R.string.afternote_editor_category_social),
                     ),
+            )
+        }
+    }
+}
+
+// 수정 모드의 종류 필드 — 값과 하단선은 유지하되 드롭다운 셰브론과 선택 동작은 제거한다 (#951).
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+internal fun selectionDropdownDisabledScreenshot() {
+    AfternoteTheme {
+        Box(modifier = Modifier.padding(24.dp)) {
+            EditorSelectionDropdown(
+                label = stringResource(R.string.afternote_editor_label_category),
+                selectedValue = stringResource(R.string.afternote_editor_category_social),
+                options = emptyList(),
+                optionLabel = { it },
+                onValueSelected = {},
+                expanded = false,
+                onExpandedChange = {},
+                enabled = false,
             )
         }
     }

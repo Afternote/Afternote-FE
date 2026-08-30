@@ -23,7 +23,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.ui.AfternoteOutlinedCard
 import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.badge.RecipientDesignationBadge
@@ -34,6 +33,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.mindrecord.presentation.hometab.homeTabMindRecordMemoriesSection
 import com.afternote.feature.mindrecord.presentation.hometab.homeTabMindRecordQuestionAndCategories
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -146,8 +146,10 @@ fun HomeTabScreen(
                 is HomeTabUiState.Loading -> {
                     HomeTabScrollContent(
                         userName = uiState.cachedUserName ?: "\u2026",
-                        isRecipientDesignated = false,
-                        categoryCounts = MindRecordCategory.entries.associateWith { 0 },
+                        // 조회 전이다 — 지정 여부를 결과로 확정하지 않는다 (#698).
+                        recipientBadgeState = RecipientDesignationBadgeState.Unknown,
+                        // 조회 전에는 아는 값이 없다 — 0 을 채워 넣지 않는다 (#700).
+                        categoryCounts = emptyMap(),
                         categoryCountsLoading = true,
                         todayDateText = todayDateText,
                         todayQuestionContent = null,
@@ -159,7 +161,12 @@ fun HomeTabScreen(
                 is HomeTabUiState.Success -> {
                     HomeTabScrollContent(
                         userName = uiState.userName,
-                        isRecipientDesignated = uiState.isRecipientDesignated,
+                        recipientBadgeState =
+                            if (uiState.isRecipientDesignated) {
+                                RecipientDesignationBadgeState.Completed
+                            } else {
+                                RecipientDesignationBadgeState.Incomplete(onClick = actions::onRecipientChipClick)
+                            },
                         categoryCounts = uiState.categoryCounts,
                         categoryCountsLoading = false,
                         todayDateText = todayDateText,
@@ -202,7 +209,13 @@ fun HomeTabScreen(
 @Composable
 private fun HomeTabScrollContent(
     userName: String,
-    isRecipientDesignated: Boolean,
+    /**
+     * 수신인 지정 배지 상태.
+     *
+     * `Boolean?` 로 좁혔다 다시 펼치지 않는다 — 「null = 미결정」이 주석으로만 유지되는
+     * 약속이 되고, 「널+폴백 대신 값으로 명시」(#934) 와도 어긋난다 (#698 리뷰).
+     */
+    recipientBadgeState: RecipientDesignationBadgeState,
     categoryCounts: Map<MindRecordCategory, Int>,
     categoryCountsLoading: Boolean,
     todayDateText: String,
@@ -230,16 +243,7 @@ private fun HomeTabScrollContent(
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            RecipientDesignationBadge(
-                state =
-                    if (isRecipientDesignated) {
-                        RecipientDesignationBadgeState.Completed
-                    } else {
-                        RecipientDesignationBadgeState.Incomplete(
-                            onClick = actions::onRecipientChipClick,
-                        )
-                    },
-            )
+            RecipientDesignationBadge(state = recipientBadgeState)
 
             Spacer(Modifier.height(32.dp))
         }

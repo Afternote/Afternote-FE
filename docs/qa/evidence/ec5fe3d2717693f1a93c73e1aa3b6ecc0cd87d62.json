@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "ec5fe3d2717693f1a93c73e1aa3b6ecc0cd87d62.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "device.avd",
+      "device.serial"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "ec5fe3d2717693f1a93c73e1aa3b6ecc0cd87d62",
+  "head_ref": "fix/1126",
+  "base_sha": "817578e8d2d1bc80fba63906ecce08eae9ede04d",
+  "base_ref": "develop",
+  "recorded_at": "2026-08-26T08:02:35.327027+00:00",
+  "result": "pass",
+  "scenario": "PR #1194(#1126) 2차 실기 — 경합 창의 결정 실험. 1차(같은 대장 16591cb2 항목)에서 develop 6회 반복에도 경합이 재현되지 않아 미확정으로 남겼던 것을, 세션 정리 창을 인위적으로 넓혀 결정적으로 재현했다. 실험 방법: AuthRepositoryImpl.clearSession() 맨 앞에 Thread.sleep(800) 을 넣은 APK 를 두 벌 만들었다 — (A) develop 프로덕션 코드(817578e8 의 TokenReissuer·TokenAuthenticator·AuthInterceptor)+지연, (B) 이 브랜치 코드+같은 지연. 지연 패치는 커밋하지 않았고 빌드 후 워크트리를 원복했다(status clean 확인). \n\n같은 기기·같은 절차(유효 토큰으로 홈 도달 → force-stop → 토큰만 무효 세트로 교체 → 콜드 스타트)로 3회씩:\n- (A) develop+지연: 401 5건 → 재발급 HTTP **5회**, '리이슈 인증 거절: 세션 만료 처리' 5건. 3회 모두 동일. 즉 정리가 락 밖에 있으면 창이 열린 동안 **동시 진입 전원이 각자 재발급을 친다**. \n- (B) fix+지연: 401 5건 → 재발급 HTTP **1회**, '세션 만료 확정(정리 완료), 요청 중단' 5건. 3회 모두 동일. \n\n결정적 증거는 (B) 의 타임스탬프다: 17:00:14.397 에 재발급 400 응답을 받고, 지연 800ms 뒤인 17:00:15.207 에 대기자 5건이 한꺼번에 처리됐다 — 락이 세션 정리 완료까지 대기자를 붙들었다는 직접 증거. (A) 는 16:58:20.646 첫 재발급 이후 21.080·21.098·21.114·21.131 로 14~16ms 간격 재발급이 줄줄이 나갔다. \n\n이슈 원본 증상('세션 유지, 요청 중단' 3건)이 이번엔 안 나온 이유: 창이 800ms 라 5건 모두 정리 전에 락을 잡아 rotate→400→거절이 됐다. 원본은 창이 3ms 라 일부만 정리 전에 잡고 나머지는 정리 후에 잡아 refresh 부재로 UnexpectedFailure(=세션 유지)가 된 것 — 같은 뿌리(실패 결과 미공유)의 다른 표현이다. \n\n남은 미확정: 400 본문 파싱 실패 경로는 실서버가 code=1107 을 정확히 실어 주므로 실기로 만들 수 없다. ReissueFailureClassificationTest 가 실제 ApiErrorInterceptor 를 태워 가드하며, develop 코드에 대고 돌리면 '빈 본문 -> UnexpectedFailure' 로 실패하는 것을 확인했다.",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true,
+    "api": 35
+  },
+  "details": {
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe"
+    },
+    "diff_sha256": "70ad99bc6f06b5ccda8325ceebde5ca59e23e4f0f5c0d6f633c0d88ecd216f55",
+    "changed_files": [
+      "core/network/src/main/kotlin/com/afternote/core/network/interceptor/AuthInterceptor.kt",
+      "core/network/src/main/kotlin/com/afternote/core/network/interceptor/TokenAuthenticator.kt",
+      "core/network/src/main/kotlin/com/afternote/core/network/token/TokenReissuer.kt",
+      "core/network/src/test/kotlin/com/afternote/core/network/FakeAuthRepository.kt",
+      "core/network/src/test/kotlin/com/afternote/core/network/FakeInterceptorChain.kt",
+      "core/network/src/test/kotlin/com/afternote/core/network/interceptor/AuthInterceptorTest.kt",
+      "core/network/src/test/kotlin/com/afternote/core/network/interceptor/TokenAuthenticatorTest.kt",
+      "core/network/src/test/kotlin/com/afternote/core/network/token/ReissueFailureClassificationTest.kt",
+      "core/network/src/test/kotlin/com/afternote/core/network/token/TokenReissuerTest.kt"
+    ]
+  }
+}

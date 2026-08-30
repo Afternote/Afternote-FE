@@ -1,6 +1,5 @@
 package com.afternote.feature.receiver.presentation.home
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,38 +11,33 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.receiver.presentation.R
 import com.afternote.feature.receiver.presentation.home.component.AfternoteSection
 import com.afternote.feature.receiver.presentation.home.component.MindRecordSection
 import com.afternote.feature.receiver.presentation.home.component.SenderMessageHeroCard
 import com.afternote.feature.receiver.presentation.home.component.TimeLetterSection
-import com.afternote.feature.receiver.presentation.home.model.AfternoteSourceIcon
-import com.afternote.feature.receiver.presentation.home.model.MindRecordSummary
 import com.afternote.feature.receiver.presentation.home.model.ReceiverDownloadState
 import com.afternote.feature.receiver.presentation.home.model.ReceiverHomeUiState
-import com.afternote.feature.receiver.presentation.home.model.SenderMessage
-import com.afternote.feature.afternote.presentation.R as AfternoteFeatureR
 
 /**
  * 수신자 홈 화면 — 한 마디 + 마음의 기록·타임레터·애프터노트 카드 + 모든 기록 내려받기 버튼.
@@ -57,15 +51,23 @@ fun ReceiverHomeScreen(
     actions: ReceiverHomeActions,
     modifier: Modifier = Modifier,
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
     Scaffold(
         modifier = modifier,
         containerColor = Color.Transparent,
         topBar = {
+            // 수신자에게 유효한 헤더 액션이 없다 — 둘 다 그리지 않는다 (#613).
+            //
+            // 프로필 아이콘은 목적지가 없는 장식이었고, 톱니는 **회원 설정 화면**을 그대로 열었다.
+            // 수신자는 로그인한 적이 없는 사용자(`X-Auth-Code` 기반)라 그 화면의 유일한 항목인
+            // 「로그아웃」에 지울 세션이 없다. 수신자용 설정 계약이 생기기 전까지 새 화면이나
+            // 가짜 로그아웃을 지어내지 않고 진입점을 내린다(#613 디자인 게이트 해제).
             HomeTopBar(
                 showProfileIcon = false,
-                onSettingClick = actions.onSettingClick,
+                onSettingClick = null,
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         when (uiState) {
             ReceiverHomeUiState.Loading -> { }
@@ -86,6 +88,7 @@ fun ReceiverHomeScreen(
                 )
                 DownloadDialogHost(
                     state = uiState.download,
+                    snackbarHostState = snackbarHostState,
                     onEvent = onEvent,
                 )
             }
@@ -147,13 +150,20 @@ private fun SuccessContent(
     }
 }
 
+/**
+ * 내려받기 확인 팝업 + 결과 처리.
+ *
+ * 실패 안내는 잠정 Snackbar 다 — 서버 작업 실패의 정본은 #446 공통 에러 팝업이라 컴포넌트가
+ * 나오면 그쪽으로 재정렬된다 (#1391, #713 전례). `showSnackbar` 는 표출이 끝날 때까지 suspend
+ * 하므로 소비 이벤트는 표출 뒤에 보낸다 — 표출 중에는 [state] 가 Failed 로 유지돼 effect 가
+ * 재시작되지 않고, 소비로 Idle 이 되면 이미 완료된 effect 만 정리된다 (#664 AddSongScreen 컨벤션).
+ */
 @Composable
 private fun DownloadDialogHost(
     state: ReceiverDownloadState,
+    snackbarHostState: SnackbarHostState,
     onEvent: (ReceiverHomeEvent) -> Unit,
 ) {
-    val context = LocalContext.current
-    val resources = LocalResources.current
     val currentOnEvent by rememberUpdatedState(onEvent)
 
     val showDialog =
@@ -168,19 +178,22 @@ private fun DownloadDialogHost(
         )
     }
 
-    LaunchedEffect(state) {
-        when (state) {
-            is ReceiverDownloadState.Failed -> {
-                Toast.makeText(context, resources.getString(state.messageRes), Toast.LENGTH_SHORT).show()
+    when (state) {
+        is ReceiverDownloadState.Failed -> {
+            val message = stringResource(state.messageRes)
+            LaunchedEffect(state) {
+                snackbarHostState.showSnackbar(message = message, withDismissAction = true)
                 currentOnEvent(ReceiverHomeEvent.ConsumeDownloadResult)
             }
-
-            ReceiverDownloadState.Done -> {
-                currentOnEvent(ReceiverHomeEvent.ConsumeDownloadResult)
-            }
-
-            else -> { }
         }
+
+        ReceiverDownloadState.Done -> {
+            LaunchedEffect(state) {
+                currentOnEvent(ReceiverHomeEvent.ConsumeDownloadResult)
+            }
+        }
+
+        else -> { }
     }
 }
 
@@ -211,39 +224,5 @@ private fun ErrorState(
                 )
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ReceiverHomeScreenPreview() {
-    AfternoteTheme {
-        ReceiverHomeScreen(
-            uiState =
-                ReceiverHomeUiState.Success(
-                    senderName = "박서연",
-                    senderMessage =
-                        SenderMessage(
-                            date = "2026.04.04",
-                            body = "내가 없어도 너의 시간이 멈추지 않고\n행복하게 흘러갔으면 좋겠어.\n하늘에서 지켜줄게. 너무 슬퍼하지마 ㅎㅎ",
-                        ),
-                    mindRecord =
-                        MindRecordSummary(
-                            dailyQuestionCount = 18,
-                            diaryCount = 18,
-                        ),
-                    timeLetterTotalCount = 30,
-                    afternoteTotalCount = 10,
-                    afternoteIcons =
-                        listOf(
-                            AfternoteSourceIcon(AfternoteFeatureR.drawable.feature_afternote_img_insta_pattern),
-                            AfternoteSourceIcon(AfternoteFeatureR.drawable.feature_afternote_img_googlephoto_pattern),
-                            AfternoteSourceIcon(AfternoteFeatureR.drawable.feature_afternote_img_naver_mail_pattern),
-                            AfternoteSourceIcon(AfternoteFeatureR.drawable.feature_afternote_img_kakaotalk_pattern),
-                        ),
-                ),
-            onEvent = {},
-            actions = ReceiverHomeActions.Noop,
-        )
     }
 }

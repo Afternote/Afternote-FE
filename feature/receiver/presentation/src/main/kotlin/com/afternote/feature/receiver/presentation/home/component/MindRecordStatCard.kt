@@ -2,12 +2,9 @@ package com.afternote.feature.receiver.presentation.home.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -20,12 +17,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.R as CoreUiR
+import com.afternote.feature.receiver.presentation.R
 
 /**
  * 마음의 기록 섹션 안에 들어가는 작은 통계 카드: 아이콘 → 라벨 → TOTAL → 카운트 (수직 정렬).
@@ -35,7 +31,8 @@ fun MindRecordStatCard(
     iconResId: Int,
     label: String,
     totalLabel: String,
-    count: Int,
+    /** 조회 실패·미상이면 null — 카드를 숨기지 않고 개수 자리만 대시로 둔다 (#952). */
+    count: Int?,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -81,35 +78,9 @@ fun MindRecordStatCard(
         )
         Spacer(modifier = Modifier.height(2.dp))
         Text(
-            text = count.toString(),
+            text = count?.toString() ?: stringResource(R.string.receiver_home_section_count_unavailable),
             style = AfternoteDesign.typography.h3,
             color = AfternoteDesign.colors.gray9,
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun MindRecordStatCardPreview() {
-    AfternoteTheme {
-        Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            MindRecordStatCard(
-                iconResId = CoreUiR.drawable.core_ui_ic_mindrecord,
-                label = "데일리 질문",
-                totalLabel = "TOTAL",
-                count = 18,
-                modifier = Modifier.weight(1f),
-            )
-            MindRecordStatCard(
-                iconResId = CoreUiR.drawable.core_ui_ic_diary,
-                label = "일기",
-                totalLabel = "TOTAL",
-                count = 18,
-                modifier = Modifier.weight(1f),
-            )
-        }
     }
 }

@@ -1,28 +1,60 @@
-name: Static Analysis (Reviewdog)
+name: Static Analysis
 
-# base 필터를 두지 않는다 — base 변경(feat/* → develop)은 pull_request 기본 activity type 에
-# 없어 재트리거되지 않으므로, 필터가 있으면 스택 PR 이 검증을 한 번도 거치지 않고 머지된다.
+# PR 검증은 pr-validation.yml 이 한 번에 부르고, 이 워크플로의 두 job check 를
+# ruleset 에서 required 로 직접 요구한다. concurrency 는 진입점에서 PR 단위로 건다.
+#
+# 트리거를 workflow_call 하나로 두는 것이 요점이다 — on: pull_request 를 함께 남기면
+# 같은 검증과 동일한 이름의 check 가 PR 마다 두 벌씩 돈다.
 on:
-  pull_request:
-
-concurrency:
-  group: static-analysis-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  workflow_call:
+    inputs:
+      pull_request_number:
+        required: false
+        default: 0
+        type: number
+      run_ktlint:
+        description: "영향 범위 Ktlint 실행 여부"
+        required: false
+        default: true
+        type: boolean
+      ktlint_tasks:
+        description: "신뢰된 영향도 계산기가 만든 Ktlint task 목록"
+        required: false
+        default: "ktlintCheck :build-logic:ktlintCheck"
+        type: string
+      run_android_lint:
+        description: "영향 범위 Android Lint 실행 여부"
+        required: false
+        default: true
+        type: boolean
+      android_lint_tasks:
+        description: "신뢰된 영향도 계산기가 만든 Android Lint task 목록"
+        required: false
+        default: "lintDebug :app:processDebugMainManifest"
+        type: string
+      verify_manifest:
+        description: "app merged manifest 정책 검증 여부"
+        required: false
+        default: true
+        type: boolean
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   ktlint:
     name: Check Code Quality (Ktlint)
+    if: inputs.run_ktlint
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Clone repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up JDK 21
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -46,7 +78,11 @@ jobs:
       # 위반은 diff 필터로 보이지 않는다 (#875).
       # --build-cache 는 CI 한정 — gradle.properties 의 org.gradle.caching=false 로컬 기본값은 그대로다 (#996).
       - name: Run Ktlint
-        run: ./gradlew ktlintCheck --continue --parallel --build-cache
+        env:
+          GRADLE_TASKS: ${{ inputs.ktlint_tasks }}
+        run: |
+          read -r -a tasks <<< "$GRADLE_TASKS"
+          ./gradlew "${tasks[@]}" --continue --parallel --build-cache
 
       # 실패한 위치를 Actions 로그 수천 줄이 아니라 job summary 상단에서 바로 보게 한다.
       # ktlint-gradle 이 모듈마다 남긴 checkstyle XML 을 읽으므로 검사가 다시 돌지 않는다.
@@ -56,13 +92,17 @@ jobs:
 
   android-lint:
     name: Check Project Issues (Android Lint)
+    if: inputs.run_android_lint
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Clone repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up JDK 21
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -77,35 +117,28 @@ jobs:
       - name: Set up CI-only app configuration
         uses: ./.github/actions/setup-ci-config
 
-      - name: Run Android Lint
-        run: ./gradlew lintDebug --continue --parallel --build-cache
-
-      # 모듈별 lint XML 을 한 파일로 합쳐 Reviewdog 가 :feature/* · :core/* 위반도
-      # PR 인라인 코멘트로 띄우도록 한다. 이전엔 :app XML 한 개만 전달돼 다른 모듈 위반이
-      # Actions step 로그(수만 줄)에 묻혔다.
-      - name: Merge module lint XMLs into one
-        if: always()
+      - name: Run Android Lint and build merged manifest
+        env:
+          GRADLE_TASKS: ${{ inputs.android_lint_tasks }}
         run: |
-          set -e
-          out=app/build/reports/lint-results-merged.xml
-          mkdir -p app/build/reports
-          {
-            echo '<?xml version="1.0" encoding="UTF-8"?>'
-            echo '<issues format="6" by="lint" client="gradle" type="baseline" name="merged">'
-            find . -path '*/build/reports/lint-results-debug.xml' -print | while read -r xml; do
-              xmllint --xpath '//issue' "$xml" 2>/dev/null || true
-            done
-            echo '</issues>'
-          } > "$out"
-          modules=$(find . -path '*/build/reports/lint-results-debug.xml' | wc -l)
-          issues=$(grep -c '<issue ' "$out" || echo 0)
-          echo "merged $issues issues from $modules modules → $out"
+          read -r -a tasks <<< "$GRADLE_TASKS"
+          ./gradlew "${tasks[@]}" --continue --parallel --build-cache
 
-      - name: Report Android Lint (Reviewdog)
+      - name: Verify merged Android manifest policy
+        if: inputs.verify_manifest
+        run: >-
+          node .github/scripts/verify-android-manifest.mjs
+          app/build/intermediates/merged_manifest/debug/processDebugMainManifest/AndroidManifest.xml
+
+      # 모듈별 lint XML 을 job summary 한 곳에 모은다 — :feature/* · :core/* 위반이
+      # Actions step 로그(수만 줄)에 묻히던 문제(#279)를 여기서 푼다.
+      #
+      # 예전엔 이 자리에서 XML 을 합쳐 reviewdog(dvdandroid/action-android-lint)에 넘겼다.
+      # 그 도커 액션은 매 run 마다 reviewdog 을 `wget -q … | sh` 로 받는데, 설치가 실패해도
+      # 파이프 exit status 는 sh 의 것이라 이미지 빌드는 성공하고 entrypoint 에서
+      # `reviewdog: not found` 로 죽었다 — lint 위반이 0건이어도 required check 가 red 가
+      # 됐다. 이미지는 job 당 한 번만 빌드되므로 스텝 재시도로는 풀리지 않는다 (#1093).
+      # 인라인 코멘트를 job summary 로 대체한 판단은 ktlint 쪽과 같다 (#1012).
+      - name: Summarize Android Lint violations
         if: always()
-        uses: dvdandroid/action-android-lint@21c9fa6500c10caa12d8c581d9e280925f39510d # v1.3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-pr-review
-          level: warning
-          lint_xml_file: app/build/reports/lint-results-merged.xml
+        run: node .github/scripts/render-android-lint-summary.mjs

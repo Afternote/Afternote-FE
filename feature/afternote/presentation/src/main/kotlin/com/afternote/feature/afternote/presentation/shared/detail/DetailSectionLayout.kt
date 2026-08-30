@@ -17,10 +17,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
  * 상세 화면 **매크로 레이아웃** 세트: [DetailSectionHeader] + 고정 헤더-카드 간격 + [DetailCard] 본문.
@@ -97,22 +95,5 @@ fun DetailCard(
                 ).padding(16.dp),
     ) {
         content()
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun DetailSectionPreview() {
-    AfternoteTheme {
-        DetailSection(
-            iconResId = com.afternote.core.ui.R.drawable.core_ui_settings,
-            label = "섹션 헤더",
-        ) {
-            Text(
-                text = "카드 내부 콘텐츠입니다.",
-                style = AfternoteDesign.typography.bodySmallR,
-                color = AfternoteDesign.colors.gray9,
-            )
-        }
     }
 }

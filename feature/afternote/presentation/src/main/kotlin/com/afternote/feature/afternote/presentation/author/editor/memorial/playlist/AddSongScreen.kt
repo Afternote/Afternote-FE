@@ -12,9 +12,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.detail.song.SelectableSongListBody
 import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScaffold
 import com.afternote.feature.afternote.presentation.shared.detail.song.SongSearchSection
@@ -67,10 +65,10 @@ fun AddSongScreen(
                         onSearchQueryChange = onSearchQueryChange,
                     )
                 },
-                initialSelectedSongIds = emptySet(),
+                initialSelectedSongKeys = emptySet(),
                 actionLabel = stringResource(R.string.add_button),
-                onAction = { selectedIds ->
-                    onSongsAdded(uiState.songs.filter { it.id in selectedIds }.map(::toSong))
+                onAction = { selectedKeys ->
+                    onSongsAdded(uiState.songs.filter { it.selectionKey in selectedKeys }.map(::toSong))
                 },
             )
         }
@@ -83,30 +81,8 @@ fun AddSongScreen(
 
 private fun toSong(display: PlaylistSongDisplay): Song =
     Song(
-        id = display.id,
+        selectionKey = display.selectionKey,
         title = display.title,
         artist = display.artist,
         albumCoverUrl = display.albumImageUrl,
     )
-
-// 선택 상태(추가하기 버튼 노출)는 [SelectableSongListBody] 내부 소유라 AddSongUiState 로 못 만든다 —
-// 이 프리뷰는 검색 목록만 보여준다 (버튼 노출 시각은 core AfternoteButton·memorial 선택 스크린샷이 커버).
-@Preview(showBackground = true)
-@Composable
-private fun AddSongScreenPreview() {
-    AfternoteLightTheme {
-        AddSongScreen(
-            uiState =
-                AddSongUiState(
-                    songs =
-                        (1..9).map { i ->
-                            PlaylistSongDisplay(id = "s$i", title = "노래 제목 $i", artist = "가수 이름")
-                        },
-                ),
-            onSearchQueryChange = {},
-            onErrorConsumed = {},
-            onBackClick = {},
-            onSongsAdded = {},
-        )
-    }
-}

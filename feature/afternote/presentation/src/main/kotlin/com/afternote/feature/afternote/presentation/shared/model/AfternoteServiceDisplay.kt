@@ -18,11 +18,7 @@ data class AfternoteServiceDisplay(
     @param:DrawableRes val iconResId: Int,
 ) {
     companion object {
-        /**
-         * API 서비스 이름과 카테고리로부터 아이콘을 해석해 묶음을 만든다.
-         *
-         * @param type 서버 category 에서 온 카테고리. 이름이 카탈로그에 없을 때 아이콘의 근거가 된다.
-         */
+        /** API 서비스 이름과 서버 category로부터 아이콘을 해석해 묶음을 만든다. */
         fun fromService(
             serviceName: String,
             type: AfternoteType,

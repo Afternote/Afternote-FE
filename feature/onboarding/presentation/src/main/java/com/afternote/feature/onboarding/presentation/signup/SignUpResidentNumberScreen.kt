@@ -17,12 +17,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.scaffold.FlowStepScaffold
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
@@ -64,8 +62,8 @@ fun SignUpResidentNumberScreen(
     }
 
     FlowStepScaffold(
-        topBarTitle = stringResource(R.string.signup_title),
-        actionButtonText = stringResource(R.string.signup_next),
+        topBarTitle = stringResource(R.string.onboarding_signup_title),
+        actionButtonText = stringResource(R.string.onboarding_signup_next),
         onBackClick = onBackClick,
         onActionClick = onNextClick,
         modifier = modifier,
@@ -83,7 +81,7 @@ fun SignUpResidentNumberScreen(
                         .padding(top = 43.dp),
             ) {
                 SignUpInputLabel(
-                    text = stringResource(R.string.signup_resident_number_label),
+                    text = stringResource(R.string.onboarding_signup_resident_number_label),
                 )
 
                 Spacer(modifier = Modifier.height(18.dp))
@@ -94,32 +92,15 @@ fun SignUpResidentNumberScreen(
                     type =
                         TextFieldType.Variant8(
                             backState = backNumberState,
-                            placeholder = stringResource(R.string.signup_resident_number_back_placeholder),
+                            placeholder = stringResource(R.string.onboarding_signup_resident_number_back_placeholder),
                             backFocusRequester = backFocusRequester,
                             frontFocusRequester = frontFocusRequester,
                         ),
-                    placeholder = stringResource(R.string.signup_resident_number_placeholder),
+                    placeholder = stringResource(R.string.onboarding_signup_resident_number_placeholder),
                     keyboardType = KeyboardType.Number,
                     onImeAction = { if (isNextEnabled) onNextClick() },
                 )
             }
         },
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SignUpResidentNumberScreenPreview() {
-    AfternoteTheme {
-        SignUpResidentNumberScreen(
-            initialFrontNumber = "",
-            initialBackNumber = "",
-            isNextEnabled = false,
-            snackbarHostState = remember { SnackbarHostState() },
-            onFrontNumberChange = {},
-            onBackNumberChange = {},
-            onNextClick = {},
-            onBackClick = {},
-        )
-    }
 }

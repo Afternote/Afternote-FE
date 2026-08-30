@@ -38,6 +38,7 @@ import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionList
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportViewModel
 import kotlinx.coroutines.flow.drop
+import java.time.YearMonth
 import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 
 @Composable
@@ -51,6 +52,8 @@ fun HomeScreen(
     // 프리페치가 되므로 트레이드오프를 받아들인다.
     weeklyReportViewModel: WeeklyReportViewModel = hiltViewModel(),
     onWriteClick: (MindRecordCategoryUi) -> Unit = {},
+    onEditDailyQuestion: (Long) -> Unit = {},
+    onEditDiary: (Long, YearMonth) -> Unit = { _, _ -> },
 ) {
     // Figma 2757:16116 — 마음의 기록 탭은 데일리 질문 / 일기 / 주간리포트 3개
     val categories =
@@ -115,12 +118,17 @@ fun HomeScreen(
             TitleTopBar(
                 title = stringResource(MindRecordR.string.mindrecord_home_title),
                 actions = {
-                    ViewModeSwitcher(
-                        isListView = isListView,
-                        image1 = R.drawable.core_ui_list,
-                        image2 = R.drawable.core_ui_calendar,
-                        onViewChange = { isListView = it },
-                    )
+                    // 주간리포트는 리스트/캘린더 두 보기가 없다 — 스위치를 눌러도 화면이
+                    // 바뀌지 않으니 아예 노출하지 않는다. 컨트롤과 동작을 맞춘다 (#723).
+                    // 같은 이유로 아래 FAB 도 이 탭에서 숨긴다.
+                    if (selectedCategory != MindRecordCategoryUi.WeeklyReport) {
+                        ViewModeSwitcher(
+                            isListView = isListView,
+                            image1 = R.drawable.core_ui_list,
+                            image2 = R.drawable.core_ui_calendar,
+                            onViewChange = { isListView = it },
+                        )
+                    }
                 },
             )
         },
@@ -153,7 +161,7 @@ fun HomeScreen(
                                 matchContentSize = false,
                             ),
                         width = 80.dp,
-                        color = Color(0xFF1F1F1F),
+                        color = AfternoteDesign.colors.gray9,
                     )
                 },
             ) {
@@ -175,9 +183,23 @@ fun HomeScreen(
 
             HorizontalPager(state = pagerState) { _ ->
                 when (selectedCategory) {
-                    MindRecordCategoryUi.DailyQuestion -> DailyQuestionAnswerListScreen(isListView = isListView)
-                    MindRecordCategoryUi.Diary -> DiaryScreen(isListView = isListView)
-                    else -> WeeklyReportScreen()
+                    MindRecordCategoryUi.DailyQuestion -> {
+                        DailyQuestionAnswerListScreen(
+                            isListView = isListView,
+                            onEditClick = onEditDailyQuestion,
+                        )
+                    }
+
+                    MindRecordCategoryUi.Diary -> {
+                        DiaryScreen(
+                            isListView = isListView,
+                            onEditClick = onEditDiary,
+                        )
+                    }
+
+                    else -> {
+                        WeeklyReportScreen()
+                    }
                 }
             }
         }

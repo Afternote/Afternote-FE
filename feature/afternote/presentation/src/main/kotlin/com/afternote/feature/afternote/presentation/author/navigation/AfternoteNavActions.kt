@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.navigation
 
 import com.afternote.core.ui.bottombar.BottomNavTab
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
+import com.afternote.feature.afternote.domain.AfternoteType
 
 /**
  * NavHost 루트에서 Afternote 서브그래프로 넘기는 네비게이션 명령 모음.
@@ -19,18 +19,23 @@ interface AfternoteNavActions {
 
     fun navigateToAfternoteDetail(itemId: Long)
 
-    fun navigateToGalleryDetail(itemId: Long)
-
-    fun navigateToMemorialDetail(itemId: Long)
-
-    fun navigateToNewEditor(initialCategory: String?)
+    fun navigateToNewEditor(initialType: AfternoteType)
 
     fun navigateToEditorForEdit(
         itemId: Long,
-        initialCategory: EditorCategory,
+        initialType: AfternoteType,
     )
 
     fun navigateToMemorialPlaylist()
+
+    /** 에디터 수신자 `+` → 수신자 선택 화면(#540). 에디터 위에 push 된다. */
+    fun navigateToSelectReceiver()
+
+    /**
+     * 수신자 선택 완료 → 선택한 [receiverId] 를 이전 엔트리(에디터)의 SavedStateHandle 에
+     * `SELECTED_RECEIVER_ID_KEY`([Long])로 쓰고 pop. 에디터가 복귀 시 읽어 폼에 반영한다.
+     */
+    fun popBackWithSelectedReceiver(receiverId: Long)
 
     fun navigateToAddSong()
 

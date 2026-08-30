@@ -40,6 +40,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
@@ -76,6 +77,13 @@ private fun TextFieldShort(
     modifier: Modifier = Modifier,
     placeholder: String? = null,
     suffix: @Composable (() -> Unit)? = null,
+    /**
+     * `true` 면 [suffix] 를 앞 텍스트 바로 뒤 8dp 에 붙이고 남는 폭을 오른쪽에 비운다.
+     *
+     * 기본값(`false`)은 앞 텍스트가 남는 폭을 전부 먹어 suffix 가 오른쪽 끝으로 밀리는 배치다 —
+     * `Variant7`(인증번호 받기)·`Search` 는 그쪽이 시안이고, `Variant8`(주민번호) 만 앞에 붙는다.
+     */
+    suffixFollowsText: Boolean = false,
     trailingContent: @Composable (() -> Unit)? = null,
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Default,
@@ -121,7 +129,14 @@ private fun TextFieldShort(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(
-                        modifier = Modifier.weight(1f),
+                        modifier =
+                            if (suffixFollowsText) {
+                                // 폭을 내용 크기로 고정한다. 없으면(= weight(1f) 기본값이면)
+                                // 텍스트필드가 배정폭을 끝까지 채워 suffix 가 오른쪽 끝으로 밀린다.
+                                Modifier.width(IntrinsicSize.Max)
+                            } else {
+                                Modifier.weight(1f)
+                            },
                         contentAlignment = Alignment.CenterStart,
                     ) {
                         if (state.text.isEmpty() && placeholder != null) {
@@ -160,7 +175,7 @@ sealed interface TextFieldType {
 
     // Variant7을 쓸 때만 텍스트와 클릭 이벤트를 '필수'로 강제합니다.
     data class Variant7(
-        val text: String = "인증번호 받기",
+        val text: String,
         val onClick: () -> Unit,
         val enabled: Boolean = true,
     ) : TextFieldType
@@ -210,6 +225,7 @@ fun AfternoteTextField(
                     null
                 }
             },
+        suffixFollowsText = type is TextFieldType.Variant8,
         suffix =
             when (type) {
                 is TextFieldType.Variant7 -> {
@@ -235,7 +251,7 @@ fun AfternoteTextField(
 private fun SearchIcon() {
     Icon(
         painter = painterResource(R.drawable.core_ui_ic_tabler_search),
-        contentDescription = "검색",
+        contentDescription = stringResource(R.string.core_ui_content_description_search),
         modifier = Modifier.size(18.dp),
     )
 }
@@ -246,7 +262,8 @@ private fun Variant7Suffix(type: TextFieldType.Variant7) {
         text = type.text,
         modifier =
             if (type.enabled) {
-                Modifier.clickable(onClick = type.onClick)
+                Modifier
+                    .clickable(role = Role.Button, onClick = type.onClick)
             } else {
                 Modifier
             },
@@ -269,20 +286,23 @@ private fun Variant8Suffix(
     type: TextFieldType.Variant8,
     onImeAction: (() -> Unit)?,
 ) {
+    val backInputContentDescription =
+        stringResource(R.string.core_ui_content_description_resident_number_back_input)
+
     Row(
         modifier =
             Modifier.semantics(mergeDescendants = true) {
-                contentDescription = "주민등록번호 뒷자리 입력"
+                contentDescription = backInputContentDescription
             },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // 1. 고정된 하이픈 — 폰트 여백 없이 정확히 14x2 크기로 고정
+        // 1. 고정된 하이픈 — 폰트 여백 없이 정확히 14x1.75 크기로 고정 (시안 Vector 58 strokeWeight)
         Box(
             modifier =
                 Modifier
                     .width(14.dp)
-                    .height(1.dp)
+                    .height(1.75.dp)
                     .background(
                         color = AfternoteDesign.colors.gray9,
                     ),

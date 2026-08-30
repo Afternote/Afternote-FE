@@ -1,0 +1,132 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+const guard = await readFile(new URL("../workflows/review-debt-guard.yml", import.meta.url), "utf8");
+const requestAll = await readFile(new URL("../workflows/review-request-all.yml", import.meta.url), "utf8");
+
+test("team membership is judged by real permission, not author_association", () => {
+    // 웹훅 페이로드의 author_association 은 조직 멤버십이 비공개면 MEMBER 대신
+    // CONTRIBUTOR 를 내린다. 이 조직은 공개 멤버가 0명이라, 레포에 직접 초대된 한
+    // 계정만 COLLABORATOR 로 찍혀 검사를 받고 나머지 팀원은 전원 건너뛰어졌다.
+    // 가드가 한 사람만 막는 상태였다 (8/25 #1152·#1154 통과 / #1112 만 닫힘).
+    // 주석은 이력이라 남기고, 실제로 값을 끌어오는 자리만 금지한다.
+    assert.doesNotMatch(guard, /^\s*[A-Z_]+:\s*\$\{\{[^\n]*author_association/m);
+    assert.doesNotMatch(guard, /\$ASSOCIATION/);
+    assert.match(guard, /collaborators\/\$AUTHOR\/permission/);
+});
+
+test("only write-capable accounts are subject to the guard", () => {
+    // read 권한만 있는 계정은 리뷰로 판정을 낼 수 없으니 빚을 질 수도 없다.
+    assert.match(guard, /^\s*admin\|maintain\|write\)/m);
+    // 빈 값·예상 밖 값까지 «권한 없음» 으로 접으면 조회 실패가 통과로 둔갑한다.
+    assert.match(guard, /^\s*read\|none\)[^\n]*exit 0/m);
+    assert.match(guard, /^\s*\*\) echo "::error::권한 값을 알 수 없다[^\n]*exit 1/m);
+});
+
+test("a failed permission lookup fails the run instead of passing the pull request", () => {
+    // 조회 실패를 «권한 없음» 으로 접으면 가드 전체가 조용히 무력해진다.
+    assert.match(guard, /if ! perm=\$\(gh api[^\n]*\n\s*echo "::error::[^\n]*\n\s*exit 1/);
+});
+
+test("forks are excluded by head repository, not by contributor status", () => {
+    // fork PR 은 토큰이 read-only 라 닫지도 못한다. 그것이 원래 걸러내려던 것이고,
+    // author_association 은 그 판정에 쓸 수 없는 축이었다.
+    assert.match(guard, /\[ "\$HEAD_REPO" != "\$REPO" \]/);
+});
+
+test("the debt sweep still fails closed when open pull requests cannot be listed", () => {
+    // 조회 실패를 «빚 없음» 으로 오인하면 새 PR 이 전부 통과한다.
+    assert.match(guard, /if ! open_prs=\$\(gh api[^\n]*\n(?:[^\n]*\n)*?\s*exit 1/);
+});
+
+test("a pull request is never counted as debt against its own author", () => {
+    // 자기 PR 은 자신이 리뷰할 수 없다.
+    assert.match(guard, /select\(\.user\.login != \\"\$AUTHOR\\"\)/);
+});
+
+test("the dead review_request_removed path is gone", () => {
+    // 빚 기준은 여전히 열린 PR 전체다. 변경요청 뒤 명시적 재요청 여부를 확인하더라도
+    // 요청 제거 자체를 별도 감사하는 job 은 가드 런 19건 동안 발동한 적이 없었다.
+    // 주석은 이력이라 남기고, 실제로 트리거를 걸고 job 을 세우는 자리만 금지한다.
+    assert.doesNotMatch(guard, /^\s*types:[^\n]*review_request_removed/m);
+    assert.doesNotMatch(guard, /^\s{2}bypass-audit:/m);
+});
+
+test("changes requested becomes debt only after explicit rerequest and a fix", () => {
+    // 수정 커밋만으로 리뷰 의무를 만들지 않는다. 변경요청을 낸 리뷰어가 현재 요청
+    // 목록에 다시 들어온 경우에만 반영 여부를 보고 빚으로 센다.
+    assert.match(guard, /CHANGES_REQUESTED/);
+    assert.match(guard, /requested_reviewers\[\]\.login/);
+    assert.match(guard, /blocked_by/);
+    assert.match(guard, /명시적 재리뷰 요청 없음/);
+    assert.match(guard, /sort_by\(\.t\) \| last/);
+    assert.doesNotMatch(guard, /group_by\(\.u/);
+    assert.match(guard, /\(\.parents \| length\) < 2/);
+    // 반영 판정의 기준 시각은 여전히 최신 변경요청 시각이다. 집계가 jq 에서 awk 로
+    // 옮겨 갔을 뿐, 그 이전 커밋을 반영으로 세지 않는다.
+    assert.match(guard, /-v cutoff="\$blocked_at"/);
+    assert.match(guard, /\$4 > cutoff/);
+});
+
+test("a reviewer's own commit is never counted as the author's fix", () => {
+    // 누가 올렸는지를 안 보면 리뷰어가 미는 CI 재트리거 커밋이 «작성자가 반영했다» 가
+    // 된다. 8/28 에 리뷰어가 건 +0/-0 커밋 하나로 koongmai PR 3건(#1379·#1365·#882)이
+    // 전부 가짜 빚이 됐고, 재트리거한 리뷰어가 그 대가로 자기 PR 을 못 열었다 (#1459).
+    assert.match(guard, /\(\.author\.login \/\/ ""\)/);
+    assert.match(guard, /login == target/);
+    // 계정이 연결되지 않은 커밋은 login 이 비어 가릴 수 없다. 같은 PR 에서 작성자
+    // 것으로 확인된 커밋의 이메일을 폴백 신원으로 쓴다.
+    assert.match(guard, /\(\.commit\.author\.email \/\/ ""\)/);
+    assert.match(guard, /email in own/);
+});
+
+test("an empty commit is not a fix", () => {
+    // pulls/{n}/commits 응답에는 파일 정보가 없다. 작성자 커밋으로 좁힌 후보에 한해
+    // commits/{sha} 를 조회해 바뀐 파일이 0건이면 버린다.
+    assert.match(guard, /repos\/\$REPO\/commits\/\$sha/);
+    assert.match(guard, /\(\.files \/\/ \[\]\) \| length/);
+    assert.match(guard, /\[ "\$changed" -gt 0 \] \|\| continue/);
+    // 조회 실패를 «빈 커밋» 으로 접으면 조회 장애가 빚을 통째로 지운다. 반영으로 센다.
+    assert.match(guard, /\'\'\|\*\[!0-9\]\*\) changed=1/);
+});
+
+test("a fix delivered by a merge commit still counts as a response", () => {
+    // 비병합 커밋만 세면 base 를 끌어와 충돌을 풀며 반영한 PR 이 «미반영» 이 된다.
+    // #1316 은 리뷰가 지목한 파일이 실제로 바뀌고 작성자 응답 코멘트도 2건 달린
+    // 채로 빚에서 빠져 있었다. 커밋과 함께 작성자의 응답을 본다 (#1450).
+    assert.match(guard, /issues\/\$pn\/comments/);
+    assert.match(guard, /pulls\/\$pn\/comments/);
+    assert.match(guard, /select\(\.user\.login == \\"\$pr_author\\"\)/);
+    assert.match(guard, /\[ "\$\{fixed:-0\}" -gt 0 \] \|\| \[ "\$responses" -gt 0 \]/);
+});
+
+test("counts are taken per item so paginated pull requests do not break the comparison", () => {
+    // --paginate 는 페이지마다 jq 를 돌린다. 페이지 단위로 length 를 뽑으면 커밋이
+    // 100건을 넘는 PR 에서 숫자가 여러 줄로 나와 -gt 비교가 죽는다.
+    assert.doesNotMatch(guard, /\| length" 2>\/dev\/null/);
+    assert.match(guard, /\| wc -l \| tr -d ' '/);
+});
+
+test("rerequests are automated so silence cannot pass the guard", () => {
+    // 가드는 변경요청을 낸 리뷰어에게 요청이 다시 걸린 경우에만 빚으로 센다. 그
+    // 되살리기를 작성자 손에 맡기면 아무도 걸지 않아 가드가 통째로 무력해진다 —
+    // 8/29 실측에서 반영까지 끝난 7건이 전원 «빚 아님» 이었다 (#1450).
+    assert.match(requestAll, /^\s*types: \[opened, ready_for_review, reopened, synchronize\]/m);
+    assert.match(requestAll, /^\s{2}rerequest:/m);
+    assert.match(requestAll, /github\.event\.action == 'synchronize'/);
+    assert.match(requestAll, /--add-reviewer "\$blocked"/);
+    // 기존 전원 요청은 반영 커밋마다 다시 돌지 않는다.
+    assert.match(requestAll, /github\.event\.action != 'synchronize'/);
+});
+
+test("the rerequest job and the guard judge by the same latest decision", () => {
+    // 한쪽만 «PR 전체의 최신 판정» 을 보면 자동 재요청이 빚으로 이어지지 않거나,
+    // 이미 승인된 PR 에 요청을 되살린다.
+    for (const wf of [guard, requestAll]) {
+        assert.match(wf, /sort_by\(\.t\) \| last/);
+        assert.match(wf, /CHANGES_REQUESTED/);
+    }
+    // 봇·fork 는 토큰이 read-only 라 요청을 걸 수 없다.
+    assert.match(requestAll, /\[ "\$HEAD_REPO" != "\$REPO" \]/);
+});

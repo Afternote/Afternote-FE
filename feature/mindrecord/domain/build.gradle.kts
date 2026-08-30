@@ -1,11 +1,10 @@
 plugins {
-    id("afternote.android.domain")
-}
-
-android {
-    namespace = "com.afternote.feature.mindrecord.domain"
+    id("afternote.jvm.domain")
+    id("afternote.kover")
 }
 
 dependencies {
     implementation(libs.coroutines.core)
+
+    testFixturesImplementation(libs.coroutines.core)
 }

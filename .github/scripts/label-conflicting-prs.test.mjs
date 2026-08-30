@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import {
@@ -12,9 +13,14 @@ import {
     resolveMergeStates,
 } from "./label-conflicting-prs.mjs";
 
+const conflictLabelWorkflow = await readFile(new URL("../workflows/conflict-label.yml", import.meta.url), "utf8");
+
 /**
  * 호출을 기록하는 가짜 API. `responses` 로 특정 경로의 응답을 지정한다.
  */
+/** 테스트 출력이 CI 로그에서 실제 조작처럼 보이지 않도록 삼킨다. */
+const silent = { log() {} };
+
 function fakeApi({ responses = {}, failOn = null } = {}) {
     const calls = [];
     const api = async (apiPath, options = {}) => {
@@ -44,6 +50,18 @@ function pullRequest(overrides = {}) {
         ...overrides,
     };
 }
+
+test("PR 검증 요청 직후 default branch 에서 충돌 라벨을 다시 판정한다", () => {
+    assert.match(conflictLabelWorkflow, /^  workflow_run:\n    workflows: \["PR Validation"\]\n    types: \[requested\]$/m);
+    assert.doesNotMatch(conflictLabelWorkflow, /^\s*pull_request_target\s*:/m);
+});
+
+test("라벨 조정 job은 PR 라벨 쓰기 권한을 명시한다", () => {
+    assert.match(
+        conflictLabelWorkflow,
+        /^    permissions:\n      actions: write\n      contents: read\n      issues: write\n      pull-requests: write$/m,
+    );
+});
 
 test("충돌 PR 에 라벨을 붙이고 해소된 PR 에서 뗀다", () => {
     const plan = planLabelChanges({
@@ -195,7 +213,7 @@ test("라벨을 붙이고 안내 코멘트를 한 번 남긴다", async () => {
         api,
         "o/r",
         { toLabel: [{ number: 40, baseRefName: "develop" }], toUnlabel: [] },
-        { label: DEFAULT_LABEL, dryRun: false },
+        { label: DEFAULT_LABEL, dryRun: false, logger: silent },
     );
 
     assert.deepEqual(failures, []);
@@ -217,7 +235,7 @@ test("마커 코멘트가 이미 있으면 다시 달지 않는다", async () =>
         api,
         "o/r",
         { toLabel: [{ number: 41, baseRefName: "develop" }], toUnlabel: [] },
-        { label: DEFAULT_LABEL, dryRun: false },
+        { label: DEFAULT_LABEL, dryRun: false, logger: silent },
     );
 
     const posts = api.calls.filter((call) => call.method === "POST").map((call) => call.apiPath);
@@ -231,7 +249,7 @@ test("해소된 PR 에서 라벨만 지운다", async () => {
         api,
         "o/r",
         { toLabel: [], toUnlabel: [{ number: 42 }] },
-        { label: DEFAULT_LABEL, dryRun: false },
+        { label: DEFAULT_LABEL, dryRun: false, logger: silent },
     );
 
     assert.deepEqual(api.calls, [
@@ -246,7 +264,7 @@ test("dry run 은 아무것도 쓰지 않는다", async () => {
         api,
         "o/r",
         { toLabel: [{ number: 43, baseRefName: "develop" }], toUnlabel: [{ number: 44 }] },
-        { label: DEFAULT_LABEL, dryRun: true },
+        { label: DEFAULT_LABEL, dryRun: true, logger: silent },
     );
 
     assert.deepEqual(api.calls, []);
@@ -268,7 +286,7 @@ test("한 PR 이 실패해도 나머지를 처리하고 실패를 모아 돌려�
             ],
             toUnlabel: [],
         },
-        { label: DEFAULT_LABEL, dryRun: false },
+        { label: DEFAULT_LABEL, dryRun: false, logger: silent },
     );
 
     assert.equal(failures.length, 1);
@@ -286,6 +304,22 @@ test("라벨이 없으면 만들고, 있으면 만들지 않는다", async () =>
     const existing = fakeApi({ responses: { "/repos/o/r/labels/conflict": { name: "conflict" } } });
     await ensureLabelExists(existing, "o/r", DEFAULT_LABEL);
     assert.equal(existing.calls.filter((call) => call.method === "POST").length, 0);
+});
+
+test("진행 상황은 주입한 로거로 나간다", async () => {
+    // 기본값이 console 이면 테스트 출력이 CI 로그에 «#60 라벨 부착» 으로 섞여
+    // 실제 조작과 구분되지 않는다. 주입 지점이 사라지지 않게 고정한다.
+    const lines = [];
+    const api = fakeApi({ responses: { "/repos/o/r/issues/60/comments": [] } });
+
+    await applyPlan(
+        api,
+        "o/r",
+        { toLabel: [{ number: 60, baseRefName: "develop" }], toUnlabel: [] },
+        { label: DEFAULT_LABEL, dryRun: false, logger: { log: (line) => lines.push(line) } },
+    );
+
+    assert.deepEqual(lines, ["#60 라벨 부착 (base develop)"]);
 });
 
 test("요약에 건수와 PR 번호가 남는다", () => {

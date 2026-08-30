@@ -15,8 +15,13 @@ import com.android.tools.screenshot.PreviewTest
 internal fun processingMethodCheckboxScreenshot() {
     AfternoteTheme {
         ProcessingMethodCheckbox(
-            item = ProcessingMethodItem(id = "1", text = "보관"),
+            item = ProcessingMethodItem(localId = 1, text = "보관"),
             modifier = Modifier.padding(16.dp),
+            onMoreClick = {},
+            onDismissDropdown = {},
+            onEditClick = {},
+            onDeleteClick = {},
+            onEditConfirmed = {},
         )
     }
 }

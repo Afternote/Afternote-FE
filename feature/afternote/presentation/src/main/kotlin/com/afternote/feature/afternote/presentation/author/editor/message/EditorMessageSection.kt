@@ -17,27 +17,29 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.CaptionLabeledTextField
 import com.afternote.core.ui.button.PlusBadgeButton
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.EditorSectionLabel
 
@@ -51,9 +53,9 @@ import com.afternote.feature.afternote.presentation.author.editor.EditorSectionL
  */
 @Composable
 fun EditorMessageSection(
-    messages: List<EditorMessage>,
-    onRegisterClick: (EditorMessage) -> Unit,
-    onDeleteClick: (EditorMessage) -> Unit,
+    messages: List<LeaveMessageEditorItem>,
+    onRegisterClick: (LeaveMessageEditorItem) -> Unit,
+    onDeleteClick: (LeaveMessageEditorItem) -> Unit,
     onAddClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -69,13 +71,16 @@ fun EditorMessageSection(
 
         messages.forEachIndexed { index, message ->
             key(message.id) {
-                EditorMessageItem(
-                    message = message,
-                    showDeleteButton = index > 0,
-                    onRegisterClick = { onRegisterClick(message) },
-                    onDeleteClick = { onDeleteClick(message) },
-                    focusManager = focusManager,
-                )
+                if (message.isRegistered) {
+                    RegisteredEditorMessageItem(message = message)
+                } else {
+                    EditorMessageItem(
+                        message = message,
+                        onRegisterClick = { onRegisterClick(message) },
+                        onDeleteClick = { onDeleteClick(message) },
+                        focusManager = focusManager,
+                    )
+                }
 
                 if (index < messages.lastIndex) {
                     Spacer(modifier = Modifier.height(8.dp))
@@ -96,10 +101,65 @@ fun EditorMessageSection(
     }
 }
 
+/** 내부 등록을 마친 말씀을 입력 라벨·액션 없이 보여주는 읽기 전용 블록. */
+@Composable
+private fun RegisteredEditorMessageItem(
+    message: LeaveMessageEditorItem,
+    modifier: Modifier = Modifier,
+) {
+    val toggleDescription =
+        stringResource(
+            if (message.isBodyVisible) {
+                R.string.afternote_editor_message_registered_collapse_content_description
+            } else {
+                R.string.afternote_editor_message_registered_expand_content_description
+            },
+        )
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(4.dp))
+                    .clickable(role = Role.Button, onClick = message::toggleBodyVisibility)
+                    .semantics {
+                        contentDescription = toggleDescription
+                    },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = message.titleState.text.toString(),
+                style = AfternoteDesign.typography.textField,
+                color = AfternoteDesign.colors.gray9,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(
+                painter = painterResource(R.drawable.feature_afternote_ic_dropdown_vector),
+                contentDescription = null,
+                tint = AfternoteDesign.colors.gray8,
+                modifier = Modifier.rotate(if (message.isBodyVisible) 180f else 0f),
+            )
+        }
+
+        if (message.isBodyVisible) {
+            Text(
+                text = message.contentState.text.toString(),
+                style = AfternoteDesign.typography.bodySmallR,
+                color = AfternoteDesign.colors.gray7,
+            )
+        }
+    }
+}
+
 @Composable
 private fun EditorMessageItem(
-    message: EditorMessage,
-    showDeleteButton: Boolean,
+    message: LeaveMessageEditorItem,
     onRegisterClick: () -> Unit,
     onDeleteClick: () -> Unit,
     focusManager: FocusManager,
@@ -115,6 +175,7 @@ private fun EditorMessageItem(
             CaptionLabeledTextField(
                 label = stringResource(R.string.afternote_editor_message_field_title),
                 state = message.titleState,
+                placeholder = stringResource(R.string.afternote_editor_message_title_placeholder),
             )
 
             Column(
@@ -135,21 +196,19 @@ private fun EditorMessageItem(
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (showDeleteButton) {
-                Text(
-                    text = stringResource(R.string.afternote_editor_message_action_delete),
-                    style = AfternoteDesign.typography.bodySmallB,
-                    color = AfternoteDesign.colors.gray6,
-                    modifier =
-                        Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .clickable(role = Role.Button) {
-                                focusManager.clearFocus()
-                                onDeleteClick()
-                            }.padding(horizontal = 8.dp, vertical = 8.dp),
-                )
-                Spacer(Modifier.width(8.dp))
-            }
+            Text(
+                text = stringResource(R.string.afternote_editor_message_action_delete),
+                style = AfternoteDesign.typography.bodySmallB,
+                color = AfternoteDesign.colors.gray6,
+                modifier =
+                    Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .clickable(role = Role.Button) {
+                            focusManager.clearFocus()
+                            onDeleteClick()
+                        }.padding(horizontal = 8.dp, vertical = 8.dp),
+            )
+            Spacer(Modifier.width(8.dp))
 
             Text(
                 text = stringResource(R.string.afternote_editor_message_action_register),
@@ -212,27 +271,4 @@ private fun EditorMessageContentField(
             }
         },
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun EditorMessageSectionPreview() {
-    AfternoteTheme {
-        EditorMessageSection(
-            messages =
-                listOf(
-                    EditorMessage(
-                        titleState = rememberTextFieldState("남긴말1"),
-                        contentState = rememberTextFieldState(),
-                    ),
-                    EditorMessage(
-                        titleState = rememberTextFieldState(),
-                        contentState = rememberTextFieldState(),
-                    ),
-                ),
-            onRegisterClick = {},
-            onDeleteClick = {},
-            onAddClick = {},
-        )
-    }
 }

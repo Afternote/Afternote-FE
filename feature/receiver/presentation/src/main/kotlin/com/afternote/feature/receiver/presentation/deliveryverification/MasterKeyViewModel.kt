@@ -3,12 +3,14 @@ package com.afternote.feature.receiver.presentation.deliveryverification
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.feature.afternote.presentation.R
+import com.afternote.core.ui.UiText
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import com.afternote.feature.afternote.presentation.reporting.shouldReportInReceiverFlow
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverRepository
+import com.afternote.feature.receiver.presentation.R
+import com.afternote.feature.receiver.presentation.error.toReceiverErrorUiText
 import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -58,7 +60,7 @@ class MasterKeyViewModel
             if (trimmed.isEmpty() || _uiState.value.isSubmitting) return
             if (!MASTER_KEY_UUID_REGEX.matches(trimmed)) {
                 _uiState.update {
-                    it.copy(error = ErrorPayload.Res(R.string.receiver_verify_master_key_invalid_format))
+                    it.copy(error = UiText.Resource(R.string.receiver_verify_master_key_invalid_format))
                 }
                 return
             }
@@ -78,7 +80,7 @@ class MasterKeyViewModel
                         _uiState.update {
                             it.copy(
                                 isSubmitting = false,
-                                error = throwable.toErrorPayload(R.string.receiver_verify_error_unknown),
+                                error = throwable.toReceiverErrorUiText(R.string.receiver_verify_error_unknown),
                             )
                         }
                     }

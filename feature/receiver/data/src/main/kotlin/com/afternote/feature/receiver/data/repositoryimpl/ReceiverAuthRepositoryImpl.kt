@@ -10,11 +10,10 @@ import com.afternote.feature.receiver.data.dto.ReceiverAuthPresignedUrlRequestDt
 import com.afternote.feature.receiver.data.dto.ReceiverAuthVerifyRequestDto
 import com.afternote.feature.receiver.data.dto.ReceiverEmailAuthVerifyRequestDto
 import com.afternote.feature.receiver.data.dto.toDomain
+import com.afternote.feature.receiver.data.error.toReceiverServerFailure
 import com.afternote.feature.receiver.data.service.ReceiverAuthApiService
-import com.afternote.feature.receiver.domain.error.ReceiverDeliveryVerificationException
-import com.afternote.feature.receiver.domain.error.ReceiverEmailAuthException
-import com.afternote.feature.receiver.domain.error.ReceiverMasterKeyException
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
+import com.afternote.feature.receiver.domain.model.ReceivedRecordBox
 import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
 import com.afternote.feature.receiver.domain.model.ReceiverEmailAuthResult
 import com.afternote.feature.receiver.domain.model.ReceiverIdentity
@@ -43,7 +42,7 @@ class ReceiverAuthRepositoryImpl
                 try {
                     api.verifyMasterKey(ReceiverAuthVerifyRequestDto(authCode)).requireData().toDomain()
                 } catch (e: ApiException) {
-                    throw ReceiverMasterKeyException(status = e.status, serverMessage = e.serverMessage, serverCode = e.code)
+                    throw e.toReceiverServerFailure()
                 }
             }
 
@@ -52,7 +51,7 @@ class ReceiverAuthRepositoryImpl
                 try {
                     api.sendEmailAuthCode(ReceiverAuthCodeEmailSendRequestDto(email)).requireStatus()
                 } catch (e: ApiException) {
-                    throw ReceiverEmailAuthException(status = e.status, serverMessage = e.serverMessage, serverCode = e.code)
+                    throw e.toReceiverServerFailure()
                 }
             }
 
@@ -68,13 +67,23 @@ class ReceiverAuthRepositoryImpl
                         ).requireData()
                         .toDomain()
                 } catch (e: ApiException) {
-                    throw ReceiverEmailAuthException(status = e.status, serverMessage = e.serverMessage, serverCode = e.code)
+                    throw e.toReceiverServerFailure()
                 }
             }
 
-        override suspend fun getPresignedUrl(extension: String): Result<ReceiverAuthPresignedUrl> =
+        override suspend fun getPresignedUrl(
+            extension: String,
+            contentLength: Long,
+        ): Result<ReceiverAuthPresignedUrl> =
             runCatchingCancellable {
-                api.getPresignedUrl(ReceiverAuthPresignedUrlRequestDto(extension)).requireData().toDomain()
+                api
+                    .getPresignedUrl(
+                        ReceiverAuthPresignedUrlRequestDto(
+                            extension = extension,
+                            contentLength = contentLength,
+                        ),
+                    ).requireData()
+                    .toDomain()
             }
 
         override suspend fun submitDeliveryVerification(
@@ -92,11 +101,7 @@ class ReceiverAuthRepositoryImpl
                         ).requireData()
                         .toDomain()
                 } catch (e: ApiException) {
-                    throw ReceiverDeliveryVerificationException(
-                        status = e.status,
-                        serverMessage = e.serverMessage,
-                        serverCode = e.code,
-                    )
+                    throw e.toReceiverServerFailure()
                 }
             }
 
@@ -108,5 +113,14 @@ class ReceiverAuthRepositoryImpl
         override suspend fun getSenderMessage(): Result<SenderMessageInfo> =
             runCatchingCancellable {
                 api.getSenderMessage().requireData().toDomain()
+            }
+
+        override suspend fun getReceivedRecordBoxes(): Result<List<ReceivedRecordBox>> =
+            runCatchingCancellable {
+                api
+                    .getReceivedRecordBoxes()
+                    .requireData()
+                    .recordBoxes
+                    .map { it.toDomain() }
             }
     }

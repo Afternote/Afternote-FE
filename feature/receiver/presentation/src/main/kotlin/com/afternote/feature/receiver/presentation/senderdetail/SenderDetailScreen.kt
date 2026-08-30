@@ -26,17 +26,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
-import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.receiver.presentation.R
 
 /**
  * 발신자 상세(designs 11·12) — 받은 기록함 카드 클릭 진입 (이슈 #215).
@@ -61,6 +61,14 @@ fun SenderDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val shouldOpenReceiverHome = (uiState as? SenderDetailUiState.Success)?.shouldOpenReceiverHome == true
+
+    // 열람 신청 흐름에서 복귀하면 상태를 다시 조회한다 — 신청 직후 돌아온 화면이 "신청 전" 을
+    // 그대로 보여주지 않게 한다 (#701). 로딩을 방출하지 않는 refreshOnReturn() 을 쓴다.
+    // 첫 진입의 ON_RESUME 스킵(진입은 init 로드가 담당)과 실행 중 로드와의 중복 차단은
+    // VM 이 판단한다.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshOnReturn()
+    }
 
     LaunchedEffect(shouldOpenReceiverHome) {
         if (shouldOpenReceiverHome) {
@@ -172,7 +180,7 @@ private fun SuccessBody(
         Text(
             text = displayName,
             style =
-                AfternoteDesign.typography.bodyLargeB.copy(fontSize = 32.sp),
+                AfternoteDesign.typography.bodyLargeB.copy(fontSize = 32.sp, lineHeight = 32.sp),
             color = AfternoteDesign.colors.gray9,
             textAlign = TextAlign.Center,
         )
@@ -340,61 +348,4 @@ private fun SenderVerificationState?.statusValue(): String? {
             SenderVerificationState.Rejected -> R.string.receiver_sender_detail_status_rejected
         }
     return stringResource(res)
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SenderDetailNotRequestedPreview() {
-    AfternoteTheme {
-        SenderDetailScreenContent(
-            uiState =
-                SenderDetailUiState.Success(
-                    displayName = "김혜성",
-                    verification = SenderVerificationState.NotRequested,
-                    requestedAt = null,
-                    approvedAt = null,
-                ),
-            onBackClick = {},
-            onRequestVerification = {},
-            onOpenReceiverHome = {},
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SenderDetailPendingPreview() {
-    AfternoteTheme {
-        SenderDetailScreenContent(
-            uiState =
-                SenderDetailUiState.Success(
-                    displayName = "김혜성",
-                    verification = SenderVerificationState.Pending,
-                    requestedAt = "2026.05.03.",
-                    approvedAt = null,
-                ),
-            onBackClick = {},
-            onRequestVerification = {},
-            onOpenReceiverHome = {},
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SenderDetailApprovedPreview() {
-    AfternoteTheme {
-        SenderDetailScreenContent(
-            uiState =
-                SenderDetailUiState.Success(
-                    displayName = "김혜성",
-                    verification = SenderVerificationState.Approved,
-                    requestedAt = "2026.05.03.",
-                    approvedAt = "2026.05.03.",
-                ),
-            onBackClick = {},
-            onRequestVerification = {},
-            onOpenReceiverHome = {},
-        )
-    }
 }

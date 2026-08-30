@@ -1,14 +1,13 @@
 package com.afternote.feature.afternote.data.repositoryimpl.author
 
-import android.util.Log
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
-import com.afternote.feature.afternote.data.mapper.response.toDetailDomain
 import com.afternote.feature.afternote.data.mapper.toBusinessRequest
+import com.afternote.feature.afternote.data.mapper.toDomain
 import com.afternote.feature.afternote.data.mapper.toRequest
 import com.afternote.feature.afternote.data.mapper.toServerCategory
 import com.afternote.feature.afternote.data.mapper.toSocialRequest
@@ -42,7 +41,8 @@ class AfternoteRepositoryImpl
         @OptIn(ExperimentalCoroutinesApi::class)
         override fun getPagedAfternotes(type: AfternoteType?): Flow<PagingData<ListItem>> {
             val category = type?.toServerCategory()
-            // 서버가 모르는 종류는 보내면 400 이므로 요청 자체를 만들지 않는다.
+            // 서버 enum 에 없는 종류(ESTATE, #491)는 보내면 400 이라 요청 자체를 만들지 않는다.
+            // BUSINESS 는 Afternote-BE 78ee857 부터 정식 값이라 여기서 걸리지 않는다 (#1048).
             if (type != null && category == null) return flowOf(PagingData.empty())
 
             return invalidationTrigger.flatMapLatest {
@@ -55,7 +55,7 @@ class AfternoteRepositoryImpl
 
         override suspend fun getDetail(id: Long): Result<Detail> =
             safeCall {
-                api.getAfternoteDetail(afternoteId = id).requireData().toDetailDomain()
+                api.getAfternoteDetail(afternoteId = id).requireData().toDomain()
             }
 
         override suspend fun createSocial(payload: CreateAccountPayload): Result<Long> =
@@ -100,8 +100,7 @@ class AfternoteRepositoryImpl
     }
 
 /**
- * 취소 보존은 [runCatchingCancellable] 에 맡기고, 이 계층 고유의 두 책임만 얹는다 —
- * 실패 로깅과 [errorMapper] 를 통한 도메인 예외 치환.
+ * 취소 보존은 [runCatchingCancellable] 에 맡기고, [errorMapper] 를 통한 도메인 예외 치환만 얹는다.
  *
  * 실패 처리를 `Result` 위에서 하는 건 취소를 건드리지 않기 위해서다: 블록 안에서 `Throwable` 을
  * 잡으면 [errorMapper] 가 취소까지 다른 예외로 바꿔 전파를 끊는다.
@@ -112,10 +111,5 @@ private suspend inline fun <T> safeCall(
 ): Result<T> {
     val result = runCatchingCancellable { block() }
     val failure = result.exceptionOrNull() ?: return result
-    failure.logRepositoryFailure()
     return Result.failure(errorMapper(failure))
-}
-
-private fun Throwable.logRepositoryFailure() {
-    Log.e("AfternoteRepository", message ?: "Unknown Error", this)
 }

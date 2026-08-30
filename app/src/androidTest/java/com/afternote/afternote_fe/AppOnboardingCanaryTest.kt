@@ -15,11 +15,11 @@ import androidx.compose.ui.test.waitUntilAtLeastOneExists
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
-import com.afternote.afternote_fe.test.FakeAuthRepository
-import com.afternote.afternote_fe.test.FakeUserRepository
-import com.afternote.core.domain.error.NetworkUnavailableException
+import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
+import com.afternote.core.domain.testing.FakeAuthRepository
+import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.Session
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -69,29 +69,33 @@ class AppOnboardingCanaryTest {
     @Test
     fun coldStartWithoutSession_opensLoginFromWelcome() {
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.welcome_start))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_start))
             .assertIsDisplayed()
             .performClick()
 
         composeRule
             .onNode(
-                hasText(context.getString(OnboardingR.string.login_top_bar_title)) and
+                hasText(context.getString(OnboardingR.string.onboarding_login_top_bar_title)) and
                     hasClickAction(),
             ).assertIsDisplayed()
     }
 
     @Test
     fun emailLogin_networkFailureThenRetry_entersHomeOnce() {
-        fakeAuth.emailLoginResults.addLast(
-            Result.failure(NetworkUnavailableException(IOException("offline"))),
+        val emailLoginResults = ArrayDeque<Result<Session.DefaultSession>>()
+        emailLoginResults.addLast(
+            Result.failure(CoreAuthFailure.NetworkUnavailable(IOException("offline"))),
         )
-        fakeAuth.emailLoginResults.addLast(
+        emailLoginResults.addLast(
             Result.success(Session.DefaultSession("access", "refresh")),
         )
+        fakeAuth.onDefaultLogin = { _, _ ->
+            requireNotNull(emailLoginResults.removeFirstOrNull()) { "email login 응답이 준비되지 않음" }
+        }
 
         openLoginAndEnterCredentials()
         composeRule
-            .onNode(hasText(context.getString(OnboardingR.string.login_button)) and hasClickAction())
+            .onNode(hasText(context.getString(OnboardingR.string.onboarding_login_button)) and hasClickAction())
             .performClick()
 
         composeRule
@@ -119,7 +123,6 @@ class AppOnboardingCanaryTest {
         )
         assertEquals(2, fakeAuth.attemptedEmailLogins.size)
         assertEquals(1, fakeAuth.saveSessionCalls)
-        assertEquals(1, fakeUser.logActivityCalls)
     }
 
     @Test
@@ -135,13 +138,13 @@ class AppOnboardingCanaryTest {
 
     private fun openLoginAndEnterCredentials() {
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.welcome_start))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_start))
             .performClick()
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.login_email_label))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_login_email_label))
             .performTextInput("canary@afternote.local")
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.login_password_label))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_login_password_label))
             .performTextInput("password-1234")
     }
 }

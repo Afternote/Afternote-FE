@@ -14,7 +14,12 @@
     <string name="receiver_home_afternote_section_title">애프터노트</string>
     <string name="receiver_home_afternote_section_desc">고인이 사후 정리하고자 하는 데이터입니다.</string>
     <string name="receiver_home_afternote_section_button">애프터노트 확인하러 가기</string>
-    <string name="receiver_home_section_count_unavailable">기록 수를 불러오지 못했습니다.</string>
+    <!--
+      조회 실패·미상일 때 개수 자리에 넣는 값. 문장을 통째로 갈아 끼우지 않고 숫자 자리만
+      바꾼다 — 섹션 레이아웃이 유지돼야 한다는 것이 시안 확정값이다 (#952, 4309:19394).
+      en dash(–) 다. hyphen 과 다르니 바꾸지 말 것.
+    -->
+    <string name="receiver_home_section_count_unavailable">–</string>
     <string name="receiver_home_download_all_button">모든 기록 내려받기</string>
     <string name="receiver_home_download_all_dialog_message">모든 기록을 내려받으시겠습니까?</string>
     <string name="receiver_home_download_all_failed">모든 기록 내려받기에 실패했습니다.</string>
@@ -22,4 +27,116 @@
     <!-- 홈 탭과 문안이 같지만 모듈 분리로 사본을 둔다 — 발신자 홈(home_tab_*)과 독립 수정 가능해야 한다. -->
     <string name="receiver_home_error_message">정보를 불러오지 못했습니다.</string>
     <string name="receiver_home_retry">다시 시도</string>
+    <!--
+      전달 조건 미충족 안내. 서버도 같은 뜻의 문구를 내려주지만 싣지 않는다 — 사유가 도메인 타입으로
+      특정돼 있어 표시 문구는 여기가 갖는 것이 맞고(BE#92 — 서버 message 는 사용자 노출용이라는
+      규정이 없다), BE 쪽 문구도 ErrorCode enum 상수라 실을 만한 동적 정보가 없다.
+    -->
+    <!--
+      재시도로 풀리지 않는 상태라 «다시 시도» 대신 무엇을 기다려야 하는지를 적는다 — 같은 문구를
+      재시도 버튼과 함께 두면 사용자가 같은 실패를 반복하게 된다(#611).
+    -->
+
+    <!--
+      서버의 고정 ErrorCode 문구를 도메인 사유별 로컬 리소스로 옮긴 값(#1053). 서버 message 는
+      사용자 노출 계약이 아니므로 받아 쓰지 않는다. 문구를 바꿀 때는 Data 계층의 사유 번역과 함께
+      검토해, 미등재 code 나 5xx 내부 문구가 화면에 새지 않게 한다.
+    -->
+    <string name="receiver_error_invalid_auth_code">유효하지 않은 인증번호입니다.</string>
+    <string name="receiver_error_email_not_found">등록된 수신자 이메일이 아닙니다.</string>
+    <string name="receiver_error_email_auth_code_not_found">인증번호가 만료되었거나 존재하지 않습니다. 다시 요청해주세요.</string>
+    <string name="receiver_error_email_auth_code_mismatch">이메일 인증번호가 일치하지 않습니다.</string>
+    <string name="receiver_error_verification_already_submitted">이미 대기 중인 인증 요청이 존재합니다.</string>
+
+    <!--
+      애프터노트 목록·플레이리스트는 발신자 화면([AfternoteHomeScreen]·공용 곡 목록 부품)을 공유하므로
+      관점이 갈리는 문구만 여기서 덮는다. 수신자 홈 섹션 설명과 같은 문안이지만, 위 error/retry 와 같은
+      이유로 사본을 둔다 (#620).
+    -->
+
+    <!--
+      SOCIAL 수신 상세 ACCOUNT 섹션의 부재 문구. 서버는 수신자에게 credentials 를 내려주지 않고,
+      내려주더라도 발신자가 한쪽만 적었을 수 있다. 빈 값에 마스킹을 그려 "가려진 값이 있다" 고
+      오인시키는 대신 남기지 않았다는 사실을 명시한다 (#619).
+    -->
+
+    <!-- 추억 플레이리스트 (수신자 열람) -->
+
+    <!-- 받은 기록함 (수신자 흐름) — 발신자 카드 리스트 -->
+    <string name="receiver_records_box_title">받은 기록함</string>
+    <!-- 이 화면의 빈 상태는 시안 정의가 없어 FE 잠정안. 문구 확정 시 교체 (#508). -->
+    <string name="receiver_records_box_empty">아직 등록된 발신자가 없습니다.\n발신자를 등록하여 기록을 확인해 보세요.</string>
+    <!-- 발신자 등록(15·16) -->
+    <string name="receiver_sender_registration_title">발신자 등록하기</string>
+    <string name="receiver_sender_registration_name_label">이름</string>
+    <string name="receiver_sender_registration_submit">발신자 등록하기</string>
+
+    <!-- 발신자 상세(11·12) — 정보 박스 4행 + 액션 버튼 -->
+    <string name="receiver_sender_detail_top_bar_title">받은 기록함</string>
+    <string name="receiver_sender_detail_row_records">기록</string>
+    <string name="receiver_sender_detail_row_status">상태</string>
+    <string name="receiver_sender_detail_row_requested_at">신청일</string>
+    <string name="receiver_sender_detail_row_approved_at">승인일</string>
+    <string name="receiver_sender_detail_records_kept">보관 중</string>
+    <string name="receiver_sender_detail_status_unavailable">열람 불가</string>
+    <string name="receiver_sender_detail_status_pending">승인 대기</string>
+    <string name="receiver_sender_detail_status_available">열람 가능</string>
+    <string name="receiver_sender_detail_status_rejected">검토 거절</string>
+    <string name="receiver_sender_detail_no_request_record">신청 기록이 없습니다</string>
+    <string name="receiver_sender_detail_no_approval_record">승인 기록이 없습니다</string>
+    <string name="receiver_sender_detail_request_verification">열람 신청하기</string>
+    <string name="receiver_sender_detail_pending_button">심사 진행 중</string>
+    <string name="receiver_sender_detail_open_records">기록 열람하기</string>
+    <string name="receiver_sender_detail_status_load_failed">열람 신청 상태를 불러오지 못했습니다.</string>
+    <string name="receiver_sender_detail_not_found">발신자를 찾을 수 없습니다.</string>
+
+    <!-- 본인 확인 이메일 인증 (3·4) -->
+    <string name="receiver_verify_email_placeholder">이메일 주소</string>
+    <string name="receiver_verify_code_placeholder">인증번호</string>
+    <string name="receiver_verify_request_code">인증번호 받기</string>
+    <string name="receiver_verify_code_requesting">전송 중…</string>
+    <string name="receiver_verify_code_sent">인증번호가 전송되었습니다.\n수신 된 인증번호를 입력해 주세요.</string>
+    <string name="receiver_verify_email_format_invalid">이메일 형식이 올바르지 않습니다.</string>
+    <string name="receiver_verify_code_verify_failed">인증번호 확인에 실패했습니다. 잠시 후 다시 시도해주세요.</string>
+    <string name="receiver_verify_code_send_failed">인증번호 발송에 실패했습니다. 잠시 후 다시 시도해주세요.</string>
+
+    <!-- 수신자 인증 공통·마스터 키·증빙 서류 업로드 -->
+    <string name="receiver_verify_title">수신자 인증</string>
+    <string name="receiver_verify_self_title">수신자 본인 확인</string>
+    <string name="receiver_verify_intro">고인의 소중한 정보를 보호하기 위해\n가족 관계 및 사망 사실 확인이 필요합니다.</string>
+    <string name="receiver_verify_start_button">인증 시작하기</string>
+    <string name="receiver_verify_next_button">다음</string>
+    <string name="receiver_verify_email_description">수신자 본인 확인을 위해 이메일 인증이 필요합니다.</string>
+    <string name="receiver_verify_master_key_title">마스터 키 입력</string>
+    <string name="receiver_verify_master_key_description">전달 받은 마스터 키를 입력해 주세요.</string>
+    <string name="receiver_verify_master_key_placeholder">마스터 키 입력</string>
+    <string name="receiver_verify_master_key_invalid_format">마스터 키 형식이 올바르지 않습니다. 전달받은 마스터 키를 다시 확인해 주세요.</string>
+    <string name="receiver_verify_error_unknown">마스터 키 검증에 실패했습니다.</string>
+    <string name="receiver_verify_documents_required">사망진단서 또는 가족관계증명서 중 하나 이상 업로드해주세요.</string>
+    <string name="receiver_verify_document_upload_failed">서류 업로드에 실패했습니다.</string>
+    <string name="receiver_verify_document_read_failed">선택한 파일을 불러오지 못했습니다. 다시 선택해 주세요.</string>
+    <string name="receiver_verify_document_upload_in_progress">서류 업로드가 진행 중입니다. 완료된 후 신청해 주세요.</string>
+    <string name="receiver_verify_submit_failed">열람 신청에 실패했습니다.</string>
+    <string name="receiver_verify_complete_title">열람 신청 완료</string>
+    <string name="receiver_verify_document_upload_title">증빙 서류 업로드</string>
+    <string name="receiver_verify_document_upload_description">사망 사실 확인을 위한 서류를 업로드해 주세요.\n담당자의 확인 후 열람 승인됩니다.</string>
+    <string name="receiver_verify_death_cert_title">사망진단서 업로드</string>
+    <string name="receiver_verify_family_cert_title">가족관계증명서 업로드</string>
+    <string name="receiver_verify_document_input_label">서류 촬영 또는 파일 첨부</string>
+    <string name="receiver_verify_document_input_placeholder">촬영 또는 파일 첨부</string>
+    <string name="receiver_verify_bottom_sheet_header">미디어 추가하기</string>
+    <string name="receiver_verify_add_image">이미지 추가하기</string>
+    <string name="receiver_verify_add_file">파일 추가하기</string>
+    <string name="receiver_verify_document_uploading">업로드 중…</string>
+    <string name="receiver_verify_complete_description">제출하신 서류를 확인 중입니다.\n빠르게 검토하여 열람하실 수 있도록 안내드리겠습니다.</string>
+    <string name="receiver_verify_complete_back_to_records">받은 기록함으로 돌아가기</string>
+    <string name="receiver_verify_step_description">수신자 인증 진행도 4단계 중 %1$d단계</string>
+    <!-- 홈 섹션 건수 문장. rememberCountLine 이 숫자 앞부분과 뒷문장을 나눠 받아 서로 다른 스타일로
+         그리므로 리소스도 그 경계대로 둘로 둔다. 끝 공백이 유효하므로 따옴표로 감싼다. -->
+    <string name="receiver_home_mindrecord_count_prefix">"%1$s개 "</string>
+    <string name="receiver_home_mindrecord_count_suffix">마음의 기록이 있습니다.</string>
+    <string name="receiver_home_timeletter_count_prefix">"%1$s개 "</string>
+    <string name="receiver_home_timeletter_count_suffix">라이프 이벤트 레터가 있습니다.</string>
+    <string name="receiver_home_afternote_count_prefix">%1$s개</string>
+    <string name="receiver_home_afternote_count_suffix">의 애프터노트가 있습니다.</string>
 </resources>

@@ -1,0 +1,146 @@
+# 리뷰어 자동 요청 (#1136)
+#
+# 리뷰 요청을 손으로 걸다 보면 빠뜨린다. PR 이 열리면 작성자를 뺀 팀 전원에게
+# 자동으로 요청한다. GitHub 은 자기 PR 의 작성자를 리뷰어로 받지 않으므로
+# 목록에 전원을 적어도 작성자는 자동으로 빠진다.
+#
+# 이 워크플로는 review-debt-guard 와 한 세트다. 요청이 자동으로 걸려야
+# "리뷰를 안 하면 새 PR 을 못 연다" 가 성립한다 — 요청을 손으로 걸던 때는
+# 아예 걸지 않는 것으로 가드를 통과할 수 있었다.
+#
+# 같은 구멍이 «변경요청 뒤» 에 그대로 남아 있었다(#1450). GitHub 은 변경요청
+# 리뷰를 제출하는 순간 그 리뷰어의 요청을 떼어 내는데, 가드는 그 리뷰어에게
+# 요청이 다시 걸린 경우에만 빚으로 센다. 되살리는 일이 작성자 손에 맡겨져 있어
+# 8/29 실측에서 반영까지 끝난 PR 7건이 전원 «빚 아님» 이었고, 그중 하나는
+# dependabot 이 작성자라 되살릴 주체 자체가 없었다. 반영 커밋이 올라오면
+# 재요청도 자동으로 건다.
+#
+# 옛 Review Assign(.github/workflows/PRassign.yml)을 대체한다. 그쪽은 develop
+# 에서 파일만 지워졌을 뿐 워크플로 등록이 살아 있어, 파일이 남은 옛 브랜치에서
+# 갈라진 PR 에는 지금도 구버전이 실행된다. 이 워크플로를 들이면서 함께 disable
+# 해야 중복 요청이 나지 않는다.
+name: review-request-all
+
+on:
+  pull_request:
+    types: [opened, ready_for_review, reopened, synchronize]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  request:
+    # draft 에는 걸지 않는다. 리뷰할 수 없는 PR 로 남의 미처리 건수를 늘리면
+    # review-debt-guard 가 그 사람의 새 PR 을 닫아 버린다.
+    if: github.event.pull_request.draft == false && github.event.action != 'synchronize'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 작성자를 뺀 전원에게 리뷰 요청
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          ASSOCIATION: ${{ github.event.pull_request.author_association }}
+          TEAM: 1hyok koongmai Sadturtleman
+        run: |
+          set -euo pipefail
+
+          case "$AUTHOR" in
+            *'[bot]'|dependabot|github-actions) echo "봇 PR — 건너뜀"; exit 0 ;;
+          esac
+
+          # 외부 기여자 PR 은 토큰이 read-only 라 요청을 걸 수 없다.
+          case "$ASSOCIATION" in
+            OWNER|MEMBER|COLLABORATOR) ;;
+            *) echo "외부 기여자($ASSOCIATION) — 건너뜀"; exit 0 ;;
+          esac
+
+          # 이미 걸려 있는 요청은 다시 걸지 않는다. reopened·ready_for_review 가
+          # 여러 번 오갈 때 같은 사람에게 요청이 반복되는 것을 막는다.
+          current=$(gh api "repos/$REPO/pulls/$PR_NUMBER" \
+            --jq '[.requested_reviewers[].login] | join(" ")')
+
+          targets=""
+          for u in $TEAM; do
+            [ "$u" != "$AUTHOR" ] || continue
+            case " $current " in
+              *" $u "*) continue ;;
+            esac
+            targets="${targets:+$targets,}$u"
+          done
+
+          if [ -z "$targets" ]; then
+            echo "추가할 리뷰어 없음 (이미 요청됨 또는 작성자뿐)"
+            exit 0
+          fi
+
+          echo "리뷰 요청: $targets"
+          gh pr edit "$PR_NUMBER" --repo "$REPO" --add-reviewer "$targets"
+
+  # 변경요청 뒤 반영 커밋이 올라오면 그 리뷰어에게 다시 요청을 건다(#1450).
+  #
+  # 판정 기준은 review-debt-guard 와 같아야 한다 — 여기서 거는 요청이 곧 그쪽의
+  # 빚 성립 조건이므로, 한쪽만 «PR 전체의 최신 판정» 을 보면 자동 재요청이 빚으로
+  # 이어지지 않거나 이미 승인된 PR 을 되살린다.
+  rerequest:
+    if: github.event.pull_request.draft == false && github.event.action == 'synchronize'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 변경요청 리뷰어에게 재요청
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          set -euo pipefail
+
+          # 봇 PR 은 건너뛴다. dependabot 이 연 PR 에서는 GITHUB_TOKEN 이 read-only 라
+          # 요청을 걸지 못한다 — 시도하면 403 으로 죽을 뿐이다. 봇 PR 의 변경요청이
+          # 빚이 되지 못하는 구멍은 이 워크플로로는 못 메운다(#1450 에 남겨 둔다).
+          case "$AUTHOR" in
+            *'[bot]'|dependabot|github-actions) echo "봇 PR — 건너뜀"; exit 0 ;;
+          esac
+
+          # fork PR 도 토큰이 read-only 다. 팀원 여부를 author_association 으로 가르지
+          # 않는 이유는 review-debt-guard 주석에 있다 — 비공개 멤버가 CONTRIBUTOR 로
+          # 내려와 팀원 대부분이 조용히 빠진다. 실제 제약인 head 저장소로 가른다.
+          if [ "$HEAD_REPO" != "$REPO" ]; then
+            echo "fork PR($HEAD_REPO) — 토큰이 read-only 라 건너뜀"
+            exit 0
+          fi
+
+          # PR 전체의 최신 판정만 본다. 승인 뒤 올라온 커밋은 재요청 대상이 아니다.
+          # --paginate 는 페이지마다 jq 를 돌리므로 정렬은 모아서 한 번에 한다.
+          blocked=$( { gh api "repos/$REPO/pulls/$PR_NUMBER/reviews" --paginate \
+            --jq '.[] | select(.state == "APPROVED" or .state == "CHANGES_REQUESTED")
+                      | {u: .user.login, s: .state, t: .submitted_at}' 2>/dev/null || true; } \
+            | jq -rs 'sort_by(.t) | last // empty | select(.s == "CHANGES_REQUESTED") | .u')
+
+          if [ -z "$blocked" ]; then
+            echo "최신 판정이 변경요청이 아님 — 재요청할 대상 없음"
+            exit 0
+          fi
+
+          # 자기 자신은 리뷰어가 될 수 없다(422). 작성자가 자기 PR 에 변경요청을 낼
+          # 수는 없지만, 소유권이 옮겨진 PR 에서 그렇게 보일 수 있다.
+          if [ "$blocked" = "$AUTHOR" ]; then
+            echo "변경요청을 낸 사람이 작성자 본인 — 건너뜀"
+            exit 0
+          fi
+
+          # 이미 걸려 있으면 다시 걸지 않는다. synchronize 는 force-push 마다 온다.
+          current=$(gh api "repos/$REPO/pulls/$PR_NUMBER" \
+            --jq '[.requested_reviewers[].login] | join(" ")')
+          blocked_lc=$(printf '%s' "$blocked" | tr '[:upper:]' '[:lower:]')
+          current_lc=$(printf '%s' "$current" | tr '[:upper:]' '[:lower:]')
+          case " $current_lc " in
+            *" $blocked_lc "*) echo "@$blocked 요청이 이미 걸려 있음 — 건너뜀"; exit 0 ;;
+          esac
+
+          echo "변경요청 뒤 반영 커밋 — @$blocked 에게 재리뷰 요청"
+          gh pr edit "$PR_NUMBER" --repo "$REPO" --add-reviewer "$blocked"

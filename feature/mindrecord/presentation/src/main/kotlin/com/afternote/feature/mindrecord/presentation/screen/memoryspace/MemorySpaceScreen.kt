@@ -87,8 +87,9 @@ private fun MemorySpaceUiState.statusText(): String? =
         }
     }
 
+/** 상태 없는 본문. screenshotTest 가 이 자리에서 좁은 화면 회귀를 잡는다 (#1131). */
 @Composable
-private fun MemorySpaceContent(
+internal fun MemorySpaceContent(
     onBackClick: () -> Unit,
     memories: List<MemoryItem>,
     modifier: Modifier = Modifier,
@@ -123,7 +124,7 @@ private fun MemorySpaceContent(
         modifier =
             modifier
                 .fillMaxSize()
-                .background(Color(0xFFF5F5F5)),
+                .background(AfternoteDesign.colors.gray1),
     ) {
         Box(
             modifier =

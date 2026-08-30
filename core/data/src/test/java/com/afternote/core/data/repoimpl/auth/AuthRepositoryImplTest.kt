@@ -6,9 +6,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import com.afternote.core.datastore.LocalStoreRegistry
 import com.afternote.core.datastore.StoreScope
 import com.afternote.core.datastore.TokenDataSource
-import com.afternote.core.domain.error.InvalidLoginCredentialsException
-import com.afternote.core.domain.error.NetworkUnavailableException
-import com.afternote.core.domain.error.SocialLoginRejectedException
+import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.network.dto.LoginDto
 import com.afternote.core.network.dto.LoginRequestDto
 import com.afternote.core.network.dto.LogoutRequestDto
@@ -34,8 +32,8 @@ import kotlin.coroutines.cancellation.CancellationException
 /**
  * [AuthRepositoryImpl] 의 선제 reissue deadline 관리 계약 회귀 가드 (#408, PR #411 리뷰 반영).
  * 로그인 경로의 실패 매핑 계약(#628)도 함께 가드한다 — 전송 계층 IO 실패 →
- * [NetworkUnavailableException], 자격 거절(1201·1202) → [InvalidLoginCredentialsException],
- * 소셜 거절(1208·1209) → [SocialLoginRejectedException], 그 밖의 서버 실패는 치환하지 않아
+ * [CoreAuthFailure.NetworkUnavailable], 자격 거절(1201·1202) → [CoreAuthFailure.InvalidLoginCredentials],
+ * 소셜 거절(1208·1209) → [CoreAuthFailure.SocialLoginRejected], 그 밖의 서버 실패는 치환하지 않아
  * 소비처에서 일반 문구로 내려앉는다. 서버 `message` 는 판정에 쓰지 않는다(BE#92).
  *
  * 계약 — 발급(로그인) 응답의 `expiresIn` 은 기록하고, 생략(null)이면 이전 토큰 기준 stale
@@ -108,7 +106,7 @@ class AuthRepositoryImplTest {
         val repository =
             repository(
                 FakeAuthApiService(
-                    onSocialLogin = { success(LoginDto.SocialLoginDto("access", "refresh")) },
+                    onSocialLogin = { success(LoginDto.SocialLoginDto("access", "refresh", isNewUser = false)) },
                 ),
             )
 
@@ -140,7 +138,9 @@ class AuthRepositoryImplTest {
         tracker.record(expiresInSeconds = 30)
         val authApiService =
             FakeAuthApiService(
-                onLogout = { throw ApiException(status = 500, code = 500, serverMessage = null, message = "서버 오류") },
+                onLogout = {
+                    throw ApiException(status = 500, code = 500, serverMessage = null, fallbackMessage = "서버 오류")
+                },
             )
 
         val result = runBlocking { repository(authApiService).logout() }
@@ -183,7 +183,7 @@ class AuthRepositoryImplTest {
     }
 
     @Test
-    fun `defaultLogin - 전송 계층 IO 실패는 NetworkUnavailableException 으로 치환 (원인 보존)`() {
+    fun `defaultLogin - 전송 계층 IO 실패는 NetworkUnavailable 로 치환 (원인 보존)`() {
         val repository =
             repository(
                 FakeAuthApiService(
@@ -194,23 +194,30 @@ class AuthRepositoryImplTest {
         val result = runBlocking { repository.defaultLogin("user@example.com", "pw") }
 
         val exception = result.exceptionOrNull()
-        assertTrue(exception is NetworkUnavailableException)
+        assertTrue(exception is CoreAuthFailure.NetworkUnavailable)
         assertTrue(exception?.cause is UnknownHostException)
     }
 
     @Test
-    fun `defaultLogin - 자격 거절(1202)은 InvalidLoginCredentialsException 으로 치환 (원인 보존)`() {
+    fun `defaultLogin - 자격 거절(1202)은 InvalidLoginCredentials 로 치환 (원인 보존)`() {
         val repository =
             repository(
                 FakeAuthApiService(
-                    onLogin = { throw ApiException(status = 401, code = 1202, serverMessage = "서버 문구", message = "서버 문구") },
+                    onLogin = {
+                        throw ApiException(
+                            status = 401,
+                            code = 1202,
+                            serverMessage = "서버 문구",
+                            fallbackMessage = "서버 문구",
+                        )
+                    },
                 ),
             )
 
         val result = runBlocking { repository.defaultLogin("user@example.com", "pw") }
 
         val exception = result.exceptionOrNull()
-        assertTrue(exception is InvalidLoginCredentialsException)
+        assertTrue(exception is CoreAuthFailure.InvalidLoginCredentials)
         assertTrue(exception?.cause is ApiException)
     }
 
@@ -220,7 +227,14 @@ class AuthRepositoryImplTest {
         val repository =
             repository(
                 FakeAuthApiService(
-                    onLogin = { throw ApiException(status = 500, code = 1904, serverMessage = internalMessage, message = internalMessage) },
+                    onLogin = {
+                        throw ApiException(
+                            status = 500,
+                            code = 1904,
+                            serverMessage = internalMessage,
+                            fallbackMessage = internalMessage,
+                        )
+                    },
                 ),
             )
 
@@ -235,17 +249,24 @@ class AuthRepositoryImplTest {
         val repository =
             repository(
                 FakeAuthApiService(
-                    onLogin = { throw ApiException(status = 401, code = 1201, serverMessage = null, message = "클라 폴백 문구") },
+                    onLogin = {
+                        throw ApiException(
+                            status = 401,
+                            code = 1201,
+                            serverMessage = null,
+                            fallbackMessage = "클라 폴백 문구",
+                        )
+                    },
                 ),
             )
 
         val result = runBlocking { repository.defaultLogin("user@example.com", "pw") }
 
-        assertTrue(result.exceptionOrNull() is InvalidLoginCredentialsException)
+        assertTrue(result.exceptionOrNull() is CoreAuthFailure.InvalidLoginCredentials)
     }
 
     @Test
-    fun `socialLogin - 소셜 거절(1208)은 SocialLoginRejectedException 으로 치환`() {
+    fun `socialLogin - 소셜 거절(1208)은 SocialLoginRejected 로 치환`() {
         val repository =
             repository(
                 FakeAuthApiService(
@@ -254,7 +275,7 @@ class AuthRepositoryImplTest {
                             status = 400,
                             code = 1208,
                             serverMessage = "소셜 로그인에 실패했습니다.",
-                            message = "소셜 로그인에 실패했습니다.",
+                            fallbackMessage = "소셜 로그인에 실패했습니다.",
                         )
                     },
                 ),
@@ -262,7 +283,7 @@ class AuthRepositoryImplTest {
 
         val result = runBlocking { repository.kakaoLogin("oauth-token") }
 
-        assertTrue(result.exceptionOrNull() is SocialLoginRejectedException)
+        assertTrue(result.exceptionOrNull() is CoreAuthFailure.SocialLoginRejected)
     }
 
     @Test
@@ -276,7 +297,7 @@ class AuthRepositoryImplTest {
 
         val result = runBlocking { repository.kakaoLogin("oauth-token") }
 
-        assertTrue(result.exceptionOrNull() is NetworkUnavailableException)
+        assertTrue(result.exceptionOrNull() is CoreAuthFailure.NetworkUnavailable)
     }
 
     @Test
@@ -310,7 +331,7 @@ class AuthRepositoryImplTest {
 
         val result = runBlocking { repository.googleLogin("id-token") }
 
-        assertTrue(result.exceptionOrNull() is NetworkUnavailableException)
+        assertTrue(result.exceptionOrNull() is CoreAuthFailure.NetworkUnavailable)
     }
 }
 

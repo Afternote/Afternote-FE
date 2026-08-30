@@ -7,8 +7,18 @@ import com.android.tools.screenshot.PreviewTest
 
 private fun screenshotSongs(): List<Song> =
     listOf(
-        Song(id = "1", title = "노래 제목 1", artist = "아티스트 1", albumCoverUrl = null),
-        Song(id = "2", title = "노래 제목 2", artist = "아티스트 2", albumCoverUrl = null),
+        Song(
+            selectionKey = "screenshot:1",
+            title = "노래 제목 1",
+            artist = "아티스트 1",
+            albumCoverUrl = null,
+        ),
+        Song(
+            selectionKey = "screenshot:2",
+            title = "노래 제목 2",
+            artist = "아티스트 2",
+            albumCoverUrl = null,
+        ),
     )
 
 @PreviewTest
@@ -16,7 +26,13 @@ private fun screenshotSongs(): List<Song> =
 @Composable
 internal fun memorialPlaylistEntryEmptyScreenshot() {
     AfternoteTheme {
-        MemorialPlaylistEntry(songs = emptyList())
+        MemorialPlaylistEntry(
+            songs = emptyList(),
+            onBackClick = {},
+            onNavigateToAddSongScreen = {},
+            onClearAllSongs = {},
+            onRemoveSongs = {},
+        )
     }
 }
 
@@ -25,7 +41,13 @@ internal fun memorialPlaylistEntryEmptyScreenshot() {
 @Composable
 internal fun memorialPlaylistEntryWithSongsScreenshot() {
     AfternoteTheme {
-        MemorialPlaylistEntry(songs = screenshotSongs())
+        MemorialPlaylistEntry(
+            songs = screenshotSongs(),
+            onBackClick = {},
+            onNavigateToAddSongScreen = {},
+            onClearAllSongs = {},
+            onRemoveSongs = {},
+        )
     }
 }
 
@@ -36,6 +58,10 @@ internal fun memorialPlaylistEntryEditModeScreenshot() {
     AfternoteTheme {
         MemorialPlaylistEntry(
             songs = screenshotSongs(),
+            onBackClick = {},
+            onNavigateToAddSongScreen = {},
+            onClearAllSongs = {},
+            onRemoveSongs = {},
             initialEditMode = true,
         )
     }
@@ -48,8 +74,12 @@ internal fun memorialPlaylistEntryEditModeSelectionScreenshot() {
     AfternoteTheme {
         MemorialPlaylistEntry(
             songs = screenshotSongs(),
+            onBackClick = {},
+            onNavigateToAddSongScreen = {},
+            onClearAllSongs = {},
+            onRemoveSongs = {},
             initialEditMode = true,
-            initialSelectedSongIds = setOf("1"),
+            initialSelectedSongKeys = setOf("screenshot:1"),
         )
     }
 }

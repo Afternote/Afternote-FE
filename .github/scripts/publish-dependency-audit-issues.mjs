@@ -33,6 +33,11 @@ const DEFAULT_ISSUE_TYPE_IDS = {
     Task: "IT_kwDOD_R4ms4B5VUs",
 };
 
+// 감사가 발행한 이슈에만 붙는 표식. 닫힌 이슈까지 조회 범위를 넓히면서도 저장소 전체 이슈를
+// 페이징하지 않기 위한 것이다 (#1191).
+const AUDIT_TRACKING_LABEL = "dependency-audit";
+const AUDIT_AREA_LABEL = "area:platform";
+
 const COORDINATE_DISPLAY_NAMES = {
     "com.android.tools.build:gradle": "Android Gradle Plugin",
     "org.jetbrains.kotlin:kotlin-gradle-plugin": "Kotlin Gradle Plugin",
@@ -221,18 +226,33 @@ export function selectActionableFindings(audit) {
     ].sort((left, right) => left.key.localeCompare(right.key));
 }
 
-function templateBody(template) {
-    return String(template).replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "");
-}
-
-export function renderIssueBody(template, finding) {
+export function renderIssueBody(finding) {
     const markers = findingMarkers(finding);
-    const replacement = `${cleanMentions(finding.overview)}\n\n${markers.key}\n${markers.fingerprint}  `;
-    const body = templateBody(template);
-    if (!/No response {2}/.test(body)) {
-        throw new Error("이슈 템플릿의 Overview No response 위치를 찾지 못했습니다.");
-    }
-    return body.replace(/No response {2}/, replacement);
+    const typeDescription = finding.label === "bug" ? "버그·오동작" : "신규 기능·기존 기능 개선";
+    return [
+        "### 작업 유형",
+        "",
+        `${finding.label} — ${typeDescription}`,
+        "",
+        "### 주 담당 모듈",
+        "",
+        "platform — Android 앱·CI·빌드·릴리스·저장소 운영",
+        "",
+        "### 개요",
+        "",
+        cleanMentions(finding.overview),
+        "",
+        markers.key,
+        markers.fingerprint,
+        "",
+        "### 자식 이슈",
+        "",
+        "_No response_",
+        "",
+        "### 참고",
+        "",
+        "dependency-audit 자동 생성 이슈",
+    ].join("\n");
 }
 
 function updateCommentBody(finding, audit) {
@@ -272,18 +292,38 @@ function apiClient(token) {
     };
 }
 
-async function listOpenIssues(api, repository) {
+async function listIssues(api, repository, query) {
     const issues = [];
     for (let page = 1; page <= 10; page += 1) {
-        const batch = await api(
-            `/repos/${repository}/issues?state=open&per_page=100&page=${page}`,
-        );
+        const search = new URLSearchParams({ ...query, per_page: "100", page: String(page) });
+        const batch = await api(`/repos/${repository}/issues?${search}`);
         issues.push(...batch.filter((issue) => !issue.pull_request));
         if (batch.length < 100) {
             break;
         }
     }
     return issues;
+}
+
+// 열린 이슈는 라벨 없이 전량 조회한다 — 추적 라벨 도입 전에 만들어진 이슈도 계속 찾아야 하고,
+// 그 비용은 어차피 지금도 치르고 있다. 닫힌 이슈까지 같은 방식으로 훑으면 저장소 이슈 전체를
+// 페이징하게 되므로 그쪽만 라벨로 좁힌다. 라벨이 떨어진 닫힌 이슈는 «못 찾아서 새로 만든다» 는
+// 종전과 같은 실패 모드로 떨어질 뿐, 잘못 종료되지는 않는다.
+async function listTrackedIssues(api, repository) {
+    const open = await listIssues(api, repository, { state: "open" });
+    const closed = await listIssues(api, repository, {
+        state: "closed",
+        labels: AUDIT_TRACKING_LABEL,
+    });
+    return [...open, ...closed];
+}
+
+async function hasFingerprint(api, repository, issue, markers) {
+    if (issue.body?.includes(markers.fingerprint)) {
+        return true;
+    }
+    const comments = await listIssueComments(api, repository, issue.number);
+    return comments.some((comment) => comment.body?.includes(markers.fingerprint));
 }
 
 async function listIssueComments(api, repository, issueNumber) {
@@ -304,6 +344,8 @@ async function ensureIssueMetadata(api, issue, finding, repository, assignee, is
     const labels = unique([
         ...(issue.labels ?? []).map((label) => typeof label === "string" ? label : label.name),
         finding.label,
+        AUDIT_TRACKING_LABEL,
+        AUDIT_AREA_LABEL,
     ]).filter(Boolean);
     const assignees = unique([
         ...(issue.assignees ?? []).map((item) => item.login),
@@ -325,52 +367,82 @@ async function ensureIssueMetadata(api, issue, finding, repository, assignee, is
     });
 }
 
-async function publishFindings({ audit, findings, template, token, repository, assignee }) {
-    const api = apiClient(token);
+export async function publishFindings({
+    audit,
+    findings,
+    token,
+    repository,
+    assignee,
+    api = apiClient(token),
+}) {
     const issueTypeIds = {
         Bug: process.env.BUG_ISSUE_TYPE_ID ?? DEFAULT_ISSUE_TYPE_IDS.Bug,
         Task: process.env.TASK_ISSUE_TYPE_ID ?? DEFAULT_ISSUE_TYPE_IDS.Task,
     };
-    const openIssues = await listOpenIssues(api, repository);
+    const trackedIssues = await listTrackedIssues(api, repository);
     const results = [];
     for (const finding of findings) {
         const markers = findingMarkers(finding);
-        let issue = openIssues.find((candidate) => candidate.body?.includes(markers.key));
+        const result = (action, issue) => {
+            results.push({ action, number: issue.number, url: issue.html_url, key: finding.key });
+        };
+        let issue = trackedIssues.find((candidate) => candidate.body?.includes(markers.key));
         if (!issue) {
             issue = await api(`/repos/${repository}/issues`, {
                 method: "POST",
                 body: JSON.stringify({
                     title: finding.title.slice(0, 256),
-                    body: renderIssueBody(template, finding),
-                    labels: [finding.label],
+                    body: renderIssueBody(finding),
+                    labels: [finding.label, AUDIT_TRACKING_LABEL, AUDIT_AREA_LABEL],
                     assignees: [assignee],
                 }),
             });
-            openIssues.push(issue);
+            trackedIssues.push(issue);
             await ensureIssueMetadata(api, issue, finding, repository, assignee, issueTypeIds);
-            results.push({ action: "created", number: issue.number, url: issue.html_url, key: finding.key });
+            result("created", issue);
+            continue;
+        }
+
+        // 사람이 닫은 감사 이슈는 «이번 회차는 대응하지 않는다» 는 판정이다. 상황이 그대로인데
+        // 되살리면 보류를 표현할 자리가 사라지고, 판정 근거를 담은 코멘트도 새 번호에는 따라오지
+        // 않는다 (#1191). 그래서 fingerprint 가 그대로면 손대지 않고, 달라졌을 때만 다시 묻는다.
+        if (issue.state === "closed") {
+            if (await hasFingerprint(api, repository, issue, markers)) {
+                result("suppressed", issue);
+                continue;
+            }
+            await api(`/repos/${repository}/issues/${issue.number}`, {
+                method: "PATCH",
+                body: JSON.stringify({ state: "open" }),
+            });
+            issue.state = "open";
+            await ensureIssueMetadata(api, issue, finding, repository, assignee, issueTypeIds);
+            await api(`/repos/${repository}/issues/${issue.number}/comments`, {
+                method: "POST",
+                body: JSON.stringify({ body: updateCommentBody(finding, audit) }),
+            });
+            result("reopened", issue);
             continue;
         }
 
         await ensureIssueMetadata(api, issue, finding, repository, assignee, issueTypeIds);
-        const comments = await listIssueComments(api, repository, issue.number);
-        if (issue.body?.includes(markers.fingerprint) || comments.some((comment) => comment.body?.includes(markers.fingerprint))) {
-            results.push({ action: "unchanged", number: issue.number, url: issue.html_url, key: finding.key });
+        if (await hasFingerprint(api, repository, issue, markers)) {
+            result("unchanged", issue);
             continue;
         }
         await api(`/repos/${repository}/issues/${issue.number}/comments`, {
             method: "POST",
             body: JSON.stringify({ body: updateCommentBody(finding, audit) }),
         });
-        results.push({ action: "commented", number: issue.number, url: issue.html_url, key: finding.key });
+        result("commented", issue);
     }
     return results;
 }
 
 async function main() {
-    const [auditPath, templatePath] = process.argv.slice(2);
-    if (!auditPath || !templatePath) {
-        throw new Error("audit JSON path와 issue template path가 필요합니다.");
+    const [auditPath] = process.argv.slice(2);
+    if (!auditPath) {
+        throw new Error("audit JSON path가 필요합니다.");
     }
     const token = process.env.GITHUB_TOKEN;
     const repository = process.env.GITHUB_REPOSITORY;
@@ -378,7 +450,6 @@ async function main() {
         throw new Error("GITHUB_TOKEN과 GITHUB_REPOSITORY가 필요합니다.");
     }
     const audit = JSON.parse(await fs.readFile(auditPath, "utf8"));
-    const template = await fs.readFile(templatePath, "utf8");
     const findings = selectActionableFindings(audit);
     if (findings.length === 0) {
         console.log("이슈 등록 기준에 해당하는 의존성 결과가 없습니다.");
@@ -387,7 +458,6 @@ async function main() {
     const results = await publishFindings({
         audit,
         findings,
-        template,
         token,
         repository,
         assignee: process.env.DEPENDENCY_AUDIT_ASSIGNEE ?? "1hyok",

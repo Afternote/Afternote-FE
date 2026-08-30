@@ -3,20 +3,15 @@ package com.afternote.feature.receiver.presentation.home
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.mindrecord.domain.model.MindRecordType
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
-import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeMindRecordReceiverRepository
 import com.afternote.feature.receiver.domain.model.AfterNotesListResult
-import com.afternote.feature.receiver.domain.model.ReceivedAfternoteDetail
-import com.afternote.feature.receiver.domain.model.ReceivedExportBundle
 import com.afternote.feature.receiver.domain.model.SenderMessageInfo
-import com.afternote.feature.receiver.domain.repository.ReceiverRepository
+import com.afternote.feature.receiver.domain.testing.FakeReceiverRepository
 import com.afternote.feature.receiver.presentation.home.model.ReceiverHomeUiState
-import com.afternote.feature.timeletter.domain.model.ReceivedTimeLetter
 import com.afternote.feature.timeletter.domain.model.ReceivedTimeLetterList
-import com.afternote.feature.timeletter.domain.repository.ReceiverTimeLetterRepository
+import com.afternote.feature.timeletter.domain.testing.FakeReceiverTimeLetterRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -52,10 +47,10 @@ class ReceiverHomeViewModelTest {
     fun `성공 - 세 기록 repository의 실제 합계와 마음의 기록 하위 합계를 표시`() =
         runTest(dispatcher) {
             val fixture = Fixture()
-            fixture.receiver.afterNotes = Result.success(afterNotes(totalCount = 5))
+            fixture.receiver.onGetReceivedAfterNotes = { Result.success(afterNotes(totalCount = 5)) }
             fixture.mindRecord.result = Result.success(mindRecords(dailyQuestionCount = 2, diaryCount = 3))
-            fixture.timeLetter.result = Result.success(timeLetters(totalCount = 4))
-            fixture.receiver.message =
+            fixture.timeLetter.onGetReceivedTimeLetters = { timeLetters(totalCount = 4) }
+            fixture.receiver.onLoadSenderMessage = {
                 Result.success(
                     SenderMessageInfo(
                         senderName = "서연",
@@ -63,6 +58,7 @@ class ReceiverHomeViewModelTest {
                         createdAt = "2026.08.22",
                     ),
                 )
+            }
 
             val viewModel = fixture.viewModel()
             advanceUntilIdle()
@@ -81,9 +77,9 @@ class ReceiverHomeViewModelTest {
     fun `정상 빈 목록 - 조회 실패 null과 구분되는 0을 유지`() =
         runTest(dispatcher) {
             val fixture = Fixture()
-            fixture.receiver.afterNotes = Result.success(afterNotes(totalCount = 0))
+            fixture.receiver.onGetReceivedAfterNotes = { Result.success(afterNotes(totalCount = 0)) }
             fixture.mindRecord.result = Result.success(mindRecords(dailyQuestionCount = 0, diaryCount = 0))
-            fixture.timeLetter.result = Result.success(timeLetters(totalCount = 0))
+            fixture.timeLetter.onGetReceivedTimeLetters = { timeLetters(totalCount = 0) }
 
             val viewModel = fixture.viewModel()
             advanceUntilIdle()
@@ -100,9 +96,9 @@ class ReceiverHomeViewModelTest {
         runTest(dispatcher) {
             val fixture = Fixture()
             val afternoteFailure = IllegalStateException("애프터노트 실패")
-            fixture.receiver.afterNotes = Result.failure(afternoteFailure)
+            fixture.receiver.onGetReceivedAfterNotes = { Result.failure(afternoteFailure) }
             fixture.mindRecord.result = Result.failure(IllegalStateException("마음의 기록 실패"))
-            fixture.timeLetter.result = Result.success(timeLetters(totalCount = 2))
+            fixture.timeLetter.onGetReceivedTimeLetters = { timeLetters(totalCount = 2) }
 
             val viewModel = fixture.viewModel()
             advanceUntilIdle()
@@ -124,10 +120,10 @@ class ReceiverHomeViewModelTest {
         runTest(dispatcher) {
             val fixture = Fixture()
             val firstFailure = IllegalStateException("애프터노트 실패")
-            fixture.receiver.afterNotes = Result.failure(firstFailure)
+            fixture.receiver.onGetReceivedAfterNotes = { Result.failure(firstFailure) }
             fixture.mindRecord.result = Result.failure(IllegalStateException("마음의 기록 실패"))
-            fixture.timeLetter.result = Result.failure(IllegalStateException("타임레터 실패"))
-            fixture.receiver.message = Result.failure(IllegalStateException("한 마디 실패"))
+            fixture.timeLetter.onGetReceivedTimeLetters = { throw IllegalStateException("타임레터 실패") }
+            fixture.receiver.onLoadSenderMessage = { Result.failure(IllegalStateException("한 마디 실패")) }
 
             val viewModel = fixture.viewModel()
             advanceUntilIdle()
@@ -145,9 +141,13 @@ class ReceiverHomeViewModelTest {
 }
 
 private class Fixture {
-    val receiver = FakeReceiverRepository()
+    val receiver =
+        FakeReceiverRepository.strict().apply {
+            onGetReceivedAfterNotes = { Result.success(afterNotes(totalCount = 0)) }
+            onLoadSenderMessage = { Result.success(null) }
+        }
     val mindRecord = FakeMindRecordReceiverRepository()
-    val timeLetter = FakeReceiverTimeLetterRepository()
+    val timeLetter = FakeReceiverTimeLetterRepository.strict()
     val reporter = RecordingErrorReporter()
 
     fun viewModel(): ReceiverHomeViewModel =
@@ -157,45 +157,6 @@ private class Fixture {
             receiverTimeLetterRepository = timeLetter,
             errorReporter = reporter,
         )
-}
-
-private class FakeReceiverRepository : ReceiverRepository {
-    var afterNotes: Result<AfterNotesListResult> = Result.success(afterNotes(totalCount = 0))
-    var message: Result<SenderMessageInfo?> = Result.success(null)
-
-    override val authCodeFlow: Flow<String?> = flowOf(null)
-
-    override suspend fun currentAuthCode(): String? = unexpected("currentAuthCode")
-
-    override suspend fun saveAuthCode(code: String) = unexpected("saveAuthCode")
-
-    override fun getPagedReceivedAfternotes() = unexpected("getPagedReceivedAfternotes")
-
-    override suspend fun getReceivedAfterNotes(): Result<AfterNotesListResult> = afterNotes
-
-    override suspend fun getReceivedAfternoteDetail(afternoteId: Long): Result<ReceivedAfternoteDetail> =
-        unexpected("getReceivedAfternoteDetail")
-
-    override suspend fun downloadReceivedExport(): Result<ReceivedExportBundle> = unexpected("downloadReceivedExport")
-
-    override suspend fun saveReceivedExportToFile(bundle: ReceivedExportBundle): Result<Unit> = unexpected("saveReceivedExportToFile")
-
-    override suspend fun loadSenderMessage(): Result<SenderMessageInfo?> = message
-}
-
-private class FakeMindRecordReceiverRepository : MindRecordReceiverRepository {
-    var result: Result<ReceiverMindRecords> = Result.success(mindRecords(0, 0))
-
-    override suspend fun getAll(): Result<ReceiverMindRecords> = result
-}
-
-private class FakeReceiverTimeLetterRepository : ReceiverTimeLetterRepository {
-    var result: Result<ReceivedTimeLetterList> = Result.success(timeLetters(0))
-
-    override suspend fun getReceivedTimeLetters(): ReceivedTimeLetterList = result.getOrThrow()
-
-    override suspend fun getReceivedTimeLetterDetail(timeLetterReceiverId: Long): ReceivedTimeLetter =
-        unexpected("getReceivedTimeLetterDetail")
 }
 
 private class RecordingErrorReporter : ErrorReporter {
@@ -241,5 +202,3 @@ private fun mindRecord(
 
 private fun timeLetters(totalCount: Int): ReceivedTimeLetterList =
     ReceivedTimeLetterList(timeLetters = emptyList(), totalCount = totalCount)
-
-private fun unexpected(method: String): Nothing = error("$method 는 이 테스트에서 호출되면 안 됨")

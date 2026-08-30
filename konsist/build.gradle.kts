@@ -1,7 +1,10 @@
 plugins {
     id("java-library")
     alias(libs.plugins.jetbrains.kotlin.jvm)
+    // 아래 Java 11 고정 때문에 afternote.jvm.library(17) 를 탈 수 없어 ktlint 만 빠져 있었다 (#1419).
+    id("afternote.jvm.lint")
 }
+
 java {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
@@ -23,4 +26,9 @@ dependencies {
             because("카탈로그 선언 버전으로 정렬 — konsist 전이 1.9.0 과 불일치(#974)")
         }
     }
+}
+
+tasks.withType<Test>().configureEach {
+    // 「해소된 항목은 경고로 알린다」 가 찍는 경고가 CI 로그에 남아야, 목록을 언제 갱신할지 알아챈다.
+    testLogging { showStandardStreams = true }
 }

@@ -2,6 +2,7 @@ plugins {
     id("afternote.android.library")
     id("afternote.android.retrofit")
     id("afternote.android.hilt")
+    id("afternote.kover")
 }
 
 android {
@@ -24,4 +25,7 @@ dependencies {
     implementation(projects.core.common)
     implementation(projects.core.domain)
     implementation(projects.core.model)
+    testImplementation(libs.coroutines.test)
+    testImplementation(libs.testcontainers.mockserver)
+    testImplementation(testFixtures(projects.core.domain))
 }

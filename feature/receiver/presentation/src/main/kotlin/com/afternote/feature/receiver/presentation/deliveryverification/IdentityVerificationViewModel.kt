@@ -3,13 +3,13 @@ package com.afternote.feature.receiver.presentation.deliveryverification
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import com.afternote.feature.afternote.presentation.reporting.shouldReportInReceiverFlow
-import com.afternote.feature.receiver.domain.error.ReceiverServerRejectionException
 import com.afternote.feature.receiver.domain.repository.IdentityVerificationRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
+import com.afternote.feature.receiver.presentation.R
+import com.afternote.feature.receiver.presentation.error.toReceiverErrorUiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,14 +21,16 @@ import javax.inject.Inject
 /**
  * 수신자 본인 확인 이메일 인증(designs 3·4) ViewModel — 인증번호 발송 + 코드 검증 (이슈 #215, #407).
  *
- * [ReceiverAuthRepository.sendEmailAuthCode]·[ReceiverAuthRepository.verifyEmailAuthCode] 로
- * 실 API(`receiver-auth/email` 계열) 를 호출한다. 서버가 안내한 4xx 거절(이메일 미등록·인증번호
- * 만료/불일치 등) 의 문구는 [ReceiverServerRejectionException.serverMessage] 를 그대로 노출하고,
- * 그 외(5xx 장애·인프라 실패)는 정적 리소스로 폴백 — 판정은 [toErrorPayload] 가 가른다 (#651).
+ * [ReceiverAuthRepository.sendEmailAuthCode]·[ReceiverAuthRepository.verifyEmailAuthCode] 로 실 API 를
+ * 호출한다. 실패 문구를 서버 문구로 낼지 정적 리소스로 낼지는 [toReceiverErrorUiText] 가 가른다 (#651).
  *
  * 검증 성공 시 [IdentityVerificationRepository.markVerified] 로 캐시를 켜고 isVerified 신호 발행 →
  * UI 가 마스터 키(5) 단계로 이동. 이메일 인증은 신원 확인까지만 담당하며 마스터 키를 대신 획득하지
  * 않는다 — 그랬다면 마스터 키 단계가 무력화된다 (#454).
+ *
+ * `senderId` 는 [MasterKeyViewModel.submit] 과 같은 규약으로 자체 SavedStateHandle 이 아니라 parent
+ * backStackEntry 의 [DeliveryVerificationFlowViewModel] 에서 받아 [verifyAndProceed] 호출 시점에
+ * 전달된다 — 인증 캐시가 발신자별 키에 기록되어 다른 발신자의 관문을 열지 않는다 (#597).
  *
  * 메모리 정책상 ViewModel 은 [androidx.compose.foundation.text.input.TextFieldState] 를 보유하지 않는다.
  * UI 가 입력값을 [onEmailChange]·[onCodeChange] 로 흘려주고 본 VM 은 String 만 관리.
@@ -85,14 +87,14 @@ class IdentityVerificationViewModel
                         _uiState.update {
                             it.copy(
                                 isSendingCode = false,
-                                error = throwable.toErrorPayload(R.string.receiver_verify_code_send_failed),
+                                error = throwable.toReceiverErrorUiText(R.string.receiver_verify_code_send_failed),
                             )
                         }
                     }
             }
         }
 
-        fun verifyAndProceed() {
+        fun verifyAndProceed(senderId: String) {
             val state = _uiState.value
             if (!state.canSubmit) return
             _uiState.update { it.copy(isVerifying = true, error = null) }
@@ -100,7 +102,7 @@ class IdentityVerificationViewModel
                 receiverAuthRepository
                     .verifyEmailAuthCode(email = state.email.trim(), authCode = state.code.trim())
                     .onSuccess {
-                        identityVerificationRepository.markVerified()
+                        identityVerificationRepository.markVerified(senderId)
                         _uiState.update { it.copy(isVerifying = false, isVerified = true) }
                     }.onFailure { throwable ->
                         if (throwable.shouldReportInReceiverFlow()) {
@@ -112,7 +114,7 @@ class IdentityVerificationViewModel
                         _uiState.update {
                             it.copy(
                                 isVerifying = false,
-                                error = throwable.toErrorPayload(R.string.receiver_verify_code_verify_failed),
+                                error = throwable.toReceiverErrorUiText(R.string.receiver_verify_code_verify_failed),
                             )
                         }
                     }

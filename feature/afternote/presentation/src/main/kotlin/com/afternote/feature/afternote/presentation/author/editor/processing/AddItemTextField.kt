@@ -15,10 +15,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.TextFieldType
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 
 /**
@@ -32,8 +30,8 @@ import com.afternote.feature.afternote.presentation.R
  */
 @Composable
 fun AddItemTextField(
-    onItemAdded: (String) -> Unit,
-    onVisibilityChanged: (Boolean) -> Unit,
+    onItemAdded: (text: String) -> Unit,
+    onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val textFieldState = rememberTextFieldState()
@@ -49,7 +47,7 @@ fun AddItemTextField(
             onItemAdded(text)
             textFieldState.edit { replace(0, length, "") }
         }
-        onVisibilityChanged(false)
+        onDismiss()
         focusManager.clearFocus()
         keyboardController?.hide()
     }
@@ -76,15 +74,4 @@ fun AddItemTextField(
                     wasFocused = now
                 },
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun AddItemTextFieldPreview() {
-    AfternoteTheme {
-        AddItemTextField(
-            onItemAdded = {},
-            onVisibilityChanged = {},
-        )
-    }
 }

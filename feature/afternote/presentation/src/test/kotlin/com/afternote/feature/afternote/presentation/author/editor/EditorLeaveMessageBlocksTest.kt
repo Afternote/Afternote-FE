@@ -1,11 +1,13 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
+import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Test
@@ -17,6 +19,21 @@ import org.junit.Test
  * 거절된다. 구분자로 한 문자열에 인코딩하던 시절의 `EditorMessagesCodec` 을 대신하는 경계다.
  */
 class EditorLeaveMessageBlocksTest {
+    @Test
+    fun `저장 빌더는 별도로 받은 현재 말씀을 payload에 싣는다`() {
+        val blocks = listOf(EditorMessageTextBlock(title = "가족에게", body = "잘 부탁해"))
+
+        val payload =
+            SaveAfternotePayloadBuilder.build(
+                form = EditorFormState(typeForm = AfternoteTypeForm.Social(selectedService = "인스타그램")),
+                messageBlocks = blocks,
+                accountId = "account",
+                password = "password",
+            )
+
+        assertEquals(blocks, payload.messageBlocks)
+    }
+
     @Test
     fun `아무것도 안 쓴 빈 칸은 전송에서 제외된다`() {
         val blocks =
@@ -65,8 +82,15 @@ class EditorLeaveMessageBlocksTest {
     fun `수정 페이로드도 같은 규칙으로 블록을 싣는다`() {
         val payload =
             AfternoteEditorFormMapper.buildUpdatePayload(
-                category = EditorCategory.SOCIAL,
-                payload = payloadOf(EditorMessageTextBlock(title = "", body = "고쳐 쓴 말씀")),
+                type = AfternoteType.SOCIAL_NETWORK,
+                payload =
+                    payloadOf(
+                        EditorMessageTextBlock(
+                            title = "",
+                            body = "고쳐 쓴 말씀",
+                            isRegistered = true,
+                        ),
+                    ),
                 selectedReceiverIds = emptyList(),
                 playlistSongs = emptyList(),
                 memorialMedia = MemorialMediaUrls(),
@@ -78,10 +102,47 @@ class EditorLeaveMessageBlocksTest {
         )
     }
 
+    /** 생성 payload 에 `leaveMessageBlocks` 가 없어 입력이 조용히 버려지던 회귀 가드 (이슈 #678). */
+    @Test
+    fun `메모리얼 생성도 남기실 말씀을 싣는다`() {
+        val input =
+            AfternoteEditorFormMapper.buildCreateInput(
+                type = AfternoteType.MEMORIAL,
+                payload = payloadOf(EditorMessageTextBlock(title = "가족에게", body = "잘 지내")),
+                selectedReceiverIds = emptyList(),
+                playlistSongs = emptyList(),
+                memorialVideoUrl = null,
+                memorialThumbnailUrl = null,
+                memorialPhotoUrl = null,
+            )
+
+        assertEquals(
+            listOf(LeaveMessageBlock(title = "가족에게", body = "잘 지내")),
+            (input as CreateAfternoteInput.Memorial).payload.leaveMessageBlocks,
+        )
+    }
+
+    @Test
+    fun `메모리얼 수정도 기존 남기실 말씀을 다시 싣는다`() {
+        val payload =
+            AfternoteEditorFormMapper.buildUpdatePayload(
+                type = AfternoteType.MEMORIAL,
+                payload = payloadOf(EditorMessageTextBlock(title = "가족에게", body = "잘 지내")),
+                selectedReceiverIds = emptyList(),
+                playlistSongs = emptyList(),
+                memorialMedia = MemorialMediaUrls(),
+            )
+
+        assertEquals(
+            listOf(LeaveMessageBlock(title = "가족에게", body = "잘 지내")),
+            payload.leaveMessageBlocks,
+        )
+    }
+
     private fun createSocial(vararg blocks: EditorMessageTextBlock): List<LeaveMessageBlock>? {
         val input =
             AfternoteEditorFormMapper.buildCreateInput(
-                category = EditorCategory.SOCIAL,
+                type = AfternoteType.SOCIAL_NETWORK,
                 payload = payloadOf(*blocks),
                 selectedReceiverIds = emptyList(),
                 playlistSongs = emptyList(),
@@ -94,10 +155,13 @@ class EditorLeaveMessageBlocksTest {
 
     private fun validateSocial(vararg blocks: EditorMessageTextBlock): AfternoteValidationError? =
         AfternoteEditorValidator.validate(
-            category = EditorCategory.SOCIAL,
-            payload = payloadOf(*blocks),
-            selectedReceiverIds = listOf(1L),
-            playlistSongs = emptyList(),
+            form = EditorFormState(typeForm = AfternoteTypeForm.Social()),
+            payload =
+                payloadOf(*blocks).copy(
+                    accountId = "account",
+                    password = "password",
+                    processingMethods = listOf("계정 삭제"),
+                ),
         )
 
     private fun payloadOf(vararg blocks: EditorMessageTextBlock) =

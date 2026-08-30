@@ -2,18 +2,16 @@ package com.afternote.afternote_fe.messaging
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.PendingIntent
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.afternote.afternote_fe.R
-import com.google.android.gms.common.wrappers.Wrappers.packageManager
+import com.afternote.core.common.notification.NotificationPendingIntentFactory
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.UUID
 import com.afternote.core.common.R as CommonR
 
 class AfternoteFirebaseMessagingService : FirebaseMessagingService() {
@@ -41,13 +39,18 @@ class AfternoteFirebaseMessagingService : FirebaseMessagingService() {
                 fallbackTitle = getString(R.string.fcm_notification_fallback_title),
             ) ?: return
 
-        showNotification(content, notificationId(message.messageId))
+        val occurrenceToken = FcmNotificationIdentity.occurrenceToken(message.messageId)
+
+        showNotification(
+            content = content,
+            occurrenceToken = occurrenceToken,
+        )
     }
 
     @SuppressLint("MissingPermission")
     private fun showNotification(
         content: FcmNotificationContent,
-        notificationId: Int,
+        occurrenceToken: String,
     ) {
         if (
             ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
@@ -69,35 +72,24 @@ class AfternoteFirebaseMessagingService : FirebaseMessagingService() {
                         setContentText(body)
                         setStyle(NotificationCompat.BigTextStyle().bigText(body))
                     }
-                    buildContentPendingIntent(notificationId)?.let(::setContentIntent)
+                    // BE 목적지 계약 전에는 FCM data를 화면 이동 payload로 연결하지 않는다.
+                    NotificationPendingIntentFactory
+                        .create(
+                            context = this@AfternoteFirebaseMessagingService,
+                            source = NOTIFICATION_SOURCE,
+                            occurrenceToken = occurrenceToken,
+                        )?.let(::setContentIntent)
                 }.build()
 
-        NotificationManagerCompat.from(this).notify(notificationId, notification)
+        NotificationManagerCompat
+            .from(this)
+            .notify(FcmNotificationIdentity.notificationTag(occurrenceToken), NOTIFICATION_ID, notification)
     }
-
-    private fun buildContentPendingIntent(notificationId: Int): PendingIntent? {
-        val launchIntent =
-            packageManager
-                .getLaunchIntentForPackage(packageName)
-                ?.apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                }
-                ?: return null
-
-        return PendingIntent.getActivity(
-            this,
-            notificationId,
-            launchIntent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-        )
-    }
-
-    private fun notificationId(messageId: String?): Int = messageId?.hashCode() ?: nextNotificationId.incrementAndGet()
 
     private companion object {
         const val TAG = "AfternoteFCM"
-        val nextNotificationId = AtomicInteger(FCM_NOTIFICATION_ID_START)
-        const val FCM_NOTIFICATION_ID_START = 2_000
+        const val NOTIFICATION_SOURCE = "fcm"
+        const val NOTIFICATION_ID = 2_000
     }
 }
 
@@ -105,6 +97,16 @@ internal data class FcmNotificationContent(
     val title: String,
     val body: String?,
 )
+
+internal object FcmNotificationIdentity {
+    fun occurrenceToken(messageId: String?): String =
+        messageId
+            ?.takeIf(String::isNotBlank)
+            ?: UUID.randomUUID().toString()
+
+    /** NotificationManager의 `(tag, id)` identity를 프로세스 재시작 뒤에도 occurrence별로 유지한다. */
+    fun notificationTag(occurrenceToken: String): String = "fcm:$occurrenceToken"
+}
 
 internal object FcmNotificationContentResolver {
     fun resolve(
