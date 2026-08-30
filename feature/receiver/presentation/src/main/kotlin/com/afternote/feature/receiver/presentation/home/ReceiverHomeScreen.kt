@@ -56,9 +56,15 @@ fun ReceiverHomeScreen(
         modifier = modifier,
         containerColor = Color.Transparent,
         topBar = {
+            // 수신자에게 유효한 헤더 액션이 없다 — 둘 다 그리지 않는다 (#613).
+            //
+            // 프로필 아이콘은 목적지가 없는 장식이었고, 톱니는 **회원 설정 화면**을 그대로 열었다.
+            // 수신자는 로그인한 적이 없는 사용자(`X-Auth-Code` 기반)라 그 화면의 유일한 항목인
+            // 「로그아웃」에 지울 세션이 없다. 수신자용 설정 계약이 생기기 전까지 새 화면이나
+            // 가짜 로그아웃을 지어내지 않고 진입점을 내린다(#613 디자인 게이트 해제).
             HomeTopBar(
                 showProfileIcon = false,
-                onSettingClick = actions.onSettingClick,
+                onSettingClick = null,
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
