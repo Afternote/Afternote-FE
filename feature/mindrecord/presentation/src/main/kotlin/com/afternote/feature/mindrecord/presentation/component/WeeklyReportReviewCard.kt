@@ -46,7 +46,7 @@ fun WeeklyReportReviewCard(
     modifier: Modifier = Modifier,
     selectedMonday: LocalDate? = null,
     weekOptions: List<WeekOption> = emptyList(),
-    onWeekSelect: (LocalDate) -> Unit = {},
+    onWeekSelect: (LocalDate) -> Unit,
     dateRange: String = "2025.11.10. - 2025.11.16.",
     counts: List<Pair<Int, MindRecordCategoryUi>> =
         listOf(
@@ -214,6 +214,8 @@ private fun weekLabel(monday: LocalDate): String =
 @Composable
 private fun WeeklyReportScreenPreview() {
     AfternoteTheme {
-        WeeklyReportReviewCard()
+        WeeklyReportReviewCard(
+            onWeekSelect = {},
+        )
     }
 }

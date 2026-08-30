@@ -50,8 +50,8 @@ private val DateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
 fun DiaryComponent(
     diary: DailyDiary,
     modifier: Modifier = Modifier,
-    onEdit: () -> Unit = {},
-    onDelete: () -> Unit = {},
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
 
@@ -169,6 +169,8 @@ private fun DiaryComponentPreview() {
                     emotion = "😊",
                     imageUrl = "https://example.com/image.jpg",
                 ),
+            onDelete = {},
+            onEdit = {},
         )
     }
 }
@@ -185,6 +187,8 @@ private fun DiaryComponentNoImagePreview() {
                     date = LocalDate.now(),
                     emotion = "😊",
                 ),
+            onDelete = {},
+            onEdit = {},
         )
     }
 }

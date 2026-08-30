@@ -55,7 +55,7 @@ fun MemoriesCard(
     modifier: Modifier = Modifier,
     question: String? = null,
     answer: String? = null,
-    onReadAgainClick: () -> Unit = {},
+    onReadAgainClick: () -> Unit,
 ) {
     val cardShape = RoundedCornerShape(8.dp)
     val buttonShape = RoundedCornerShape(20.dp)
@@ -154,6 +154,7 @@ private fun MemoriesCardPreview() {
         MemoriesCard(
             question = "내 인생에서 가장 소중했던 순간은?",
             answer = "아이가 태어났을 때...",
+            onReadAgainClick = {},
         )
     }
 }
@@ -163,6 +164,8 @@ private fun MemoriesCardPreview() {
 @Composable
 private fun MemoriesCardEmptyPreview() {
     AfternoteTheme {
-        MemoriesCard()
+        MemoriesCard(
+            onReadAgainClick = {},
+        )
     }
 }

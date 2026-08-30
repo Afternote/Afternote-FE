@@ -37,9 +37,9 @@ fun WeeklySummaryGrid(
     recordedCount: Int = 7,
     recentRecordDate: String = "26.02.01",
     recentRecordTitle: String = "최근 기록 제목최근 기록 제목...",
-    onImageClick: () -> Unit = {},
-    onCountCardClick: () -> Unit = {},
-    onRecentRecordClick: () -> Unit = {},
+    onImageClick: () -> Unit,
+    onCountCardClick: () -> Unit,
+    onRecentRecordClick: () -> Unit,
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val gap = 8.dp
@@ -167,6 +167,10 @@ fun WeeklySummaryGrid(
 @Composable
 private fun WeeklySummaryGridPreview() {
     AfternoteTheme {
-        WeeklySummaryGrid()
+        WeeklySummaryGrid(
+            onImageClick = {},
+            onCountCardClick = {},
+            onRecentRecordClick = {},
+        )
     }
 }

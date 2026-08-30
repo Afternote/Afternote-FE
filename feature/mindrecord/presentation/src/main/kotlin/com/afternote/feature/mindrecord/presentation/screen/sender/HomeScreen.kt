@@ -51,9 +51,9 @@ fun HomeScreen(
     // 마음의 기록 탭 진입마다 요약 조회가 한 번 나간다. 대신 탭을 열면 스피너 없이 즉시 보이는
     // 프리페치가 되므로 트레이드오프를 받아들인다.
     weeklyReportViewModel: WeeklyReportViewModel = hiltViewModel(),
-    onWriteClick: (MindRecordCategoryUi) -> Unit = {},
-    onEditDailyQuestion: (Long) -> Unit = {},
-    onEditDiary: (Long, YearMonth) -> Unit = { _, _ -> },
+    onWriteClick: (MindRecordCategoryUi) -> Unit,
+    onEditDailyQuestion: (Long) -> Unit,
+    onEditDiary: (Long, YearMonth) -> Unit,
 ) {
     // Figma 2757:16116 — 마음의 기록 탭은 데일리 질문 / 일기 / 주간리포트 3개
     val categories =
@@ -210,6 +210,10 @@ fun HomeScreen(
 @Composable
 private fun HomeScreenPreview() {
     AfternoteTheme {
-        HomeScreen()
+        HomeScreen(
+            onEditDailyQuestion = {},
+            onWriteClick = {},
+            onEditDiary = { _, _ -> },
+        )
     }
 }

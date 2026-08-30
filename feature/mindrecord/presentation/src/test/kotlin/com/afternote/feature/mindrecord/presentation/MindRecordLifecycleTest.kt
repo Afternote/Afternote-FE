@@ -87,7 +87,10 @@ class MindRecordLifecycleTest {
 
         composeRule.setContent {
             AfternoteTheme {
-                DiaryScreen(viewModel = viewModel)
+                DiaryScreen(
+                    viewModel = viewModel,
+                    onEditClick = { _, _ -> },
+                )
             }
         }
 
@@ -161,7 +164,12 @@ class MindRecordLifecycleTest {
 
         composeRule.setContent {
             AfternoteTheme {
-                DraftListScreen(viewModel = viewModel)
+                DraftListScreen(
+                    viewModel = viewModel,
+                    onBackClick = {},
+                    onDailyQuestionDraftClick = {},
+                    onDiaryDraftClick = { _, _ -> },
+                )
             }
         }
 
@@ -300,7 +308,10 @@ class MindRecordLifecycleTest {
 
         composeRule.setContent {
             AfternoteTheme {
-                ReceiverMindRecordScreen(viewModel = viewModel)
+                ReceiverMindRecordScreen(
+                    viewModel = viewModel,
+                    onBackClick = {},
+                )
             }
         }
         composeRule.onNodeWithText("질문 범위 최신").assertIsDisplayed()
