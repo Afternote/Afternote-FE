@@ -29,6 +29,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
@@ -59,6 +61,14 @@ fun SenderDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val shouldOpenReceiverHome = (uiState as? SenderDetailUiState.Success)?.shouldOpenReceiverHome == true
+
+    // 열람 신청 흐름에서 복귀하면 상태를 다시 조회한다 — 신청 직후 돌아온 화면이 "신청 전" 을
+    // 그대로 보여주지 않게 한다 (#701). 로딩을 방출하지 않는 refreshOnReturn() 을 쓴다.
+    // 첫 진입의 ON_RESUME 스킵(진입은 init 로드가 담당)과 실행 중 로드와의 중복 차단은
+    // VM 이 판단한다.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshOnReturn()
+    }
 
     LaunchedEffect(shouldOpenReceiverHome) {
         if (shouldOpenReceiverHome) {
@@ -170,7 +180,7 @@ private fun SuccessBody(
         Text(
             text = displayName,
             style =
-                AfternoteDesign.typography.bodyLargeB.copy(fontSize = 32.sp),
+                AfternoteDesign.typography.bodyLargeB.copy(fontSize = 32.sp, lineHeight = 32.sp),
             color = AfternoteDesign.colors.gray9,
             textAlign = TextAlign.Center,
         )

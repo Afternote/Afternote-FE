@@ -43,14 +43,14 @@ fun EditorSectionLabel(
             fontWeight = FontWeight.Medium,
         ),
 ) {
-    val requiredMarkerDescription =
-        stringResource(R.string.afternote_editor_semantics_required_field)
+    val requiredFieldDescription =
+        stringResource(R.string.afternote_editor_semantics_required_field_description, text)
 
     Row(
         modifier =
             modifier.semantics(mergeDescendants = true) {
                 if (isRequired) {
-                    contentDescription = "$text, $requiredMarkerDescription"
+                    contentDescription = requiredFieldDescription
                 }
             },
         verticalAlignment = Alignment.CenterVertically,

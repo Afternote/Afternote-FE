@@ -15,7 +15,6 @@ data class DiaryWriteUiState(
      * 채워 주는 자리라 상태 자체는 남긴다.
      */
     val date: LocalDate = LocalDate.now(),
-    val imageUrl: String? = null,
     /** `GET /users/receivers` 로 불러온 내 수신인 목록. */
     val receivers: List<Receiver> = emptyList(),
     /**

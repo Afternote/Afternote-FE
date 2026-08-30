@@ -34,6 +34,10 @@ internal fun AfternoteEditorError.messageResId(): Int =
             R.string.afternote_editor_save_failed_generic
         }
 
+        AfternoteEditorError.ReceiverSelectionUnavailable -> {
+            R.string.afternote_editor_receiver_selection_unavailable
+        }
+
         is AfternoteEditorError.Upload -> {
             when (target) {
                 AfternoteEditorError.Upload.Target.THUMBNAIL -> R.string.afternote_editor_thumbnail_upload_failed
@@ -42,14 +46,20 @@ internal fun AfternoteEditorError.messageResId(): Int =
         }
     }
 
-internal fun tryApplyReceiverSelectionFromSavedState(
+/**
+ * 수신자 선택 화면이 남긴 id 를 폼에 반영한다.
+ *
+ * 목록 로드 실패로 id 를 해석할 수 없으면 [AfternoteEditorViewModel.resolveSelectedReceiver] 가 재조회 후
+ * 오류 이벤트를 세운다 — 선택이 조용히 사라지지 않는다 (#1405).
+ */
+internal suspend fun tryApplyReceiverSelectionFromSavedState(
     backStackEntry: NavBackStackEntry,
     viewModel: AfternoteEditorViewModel,
     state: AfternoteEditorState,
 ) {
     val id = backStackEntry.savedStateHandle[SELECTED_RECEIVER_ID_KEY] as? Long ?: return
     backStackEntry.savedStateHandle.remove<Long>(SELECTED_RECEIVER_ID_KEY)
-    val receiver = viewModel.getReceiverById(id) ?: return
+    val receiver = viewModel.resolveSelectedReceiver(id) ?: return
     state.addReceiverById(id, receiver.name, receiver.label)
 }
 
