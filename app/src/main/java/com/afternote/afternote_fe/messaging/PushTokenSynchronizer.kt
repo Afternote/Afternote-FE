@@ -43,27 +43,54 @@ class PushTokenSynchronizer
         @Volatile
         private var lastRegistered: String? = null
 
-        /** 로그인 상태를 계속 지켜본다. 앱 프로세스가 사는 동안 돈다. */
+        /**
+         * 로그인 상태를 계속 지켜본다. 앱 프로세스가 사는 동안 돈다.
+         *
+         * 방출 하나를 처리하다 난 예외는 여기서 삼킨다. 이 `collect` 가 끝나면 **그 프로세스에서는
+         * 이후 어떤 로그인도 다시 등록하지 못해**, 이 클래스가 고치려던 «푸시가 기기에 도달하지
+         * 않는다» 로 그대로 되돌아가기 때문이다. 한 번의 실패는 그 로그인 한 건만 잃게 둔다.
+         */
         suspend fun observeLogin() {
             authRepository.isLoggedIn
                 .distinctUntilChanged()
                 .collect { isLoggedIn ->
-                    if (isLoggedIn) {
-                        registerCurrentToken()
-                    } else {
-                        mutex.withLock { lastRegistered = null }
+                    runCatchingCancellable {
+                        if (isLoggedIn) {
+                            registerCurrentToken()
+                        } else {
+                            mutex.withLock { lastRegistered = null }
+                        }
+                    }.onFailure { error ->
+                        errorReporter.recordFailure(error, mapOf("stage" to STAGE_OBSERVE_LOGIN))
                     }
                 }
         }
 
-        /** FID 회전 통보를 받았을 때. 로그인 상태가 아니면 아무것도 하지 않는다. */
+        /**
+         * FID 회전 통보를 받았을 때. 로그인 상태가 아니면 아무것도 하지 않는다.
+         *
+         * 부르는 쪽이 `FirebaseMessagingService.onRegistered` 의 `runBlocking` 이라 예외가 새면
+         * SDK 스레드로 나간다. 해제 경로(`AuthRepositoryImpl.unregisterDevicePushToken`)와 같이
+         * 여기서 접는다.
+         */
         suspend fun onTokenRotated(token: String) {
-            if (!isLoggedIn()) return
-            registerOnce(token)
+            runCatchingCancellable {
+                if (isLoggedIn()) registerOnce(token)
+            }.onFailure { error ->
+                errorReporter.recordFailure(error, mapOf("stage" to STAGE_TOKEN_ROTATED))
+            }
         }
 
+        /**
+         * 기기 식별자 조회는 Firebase SDK 를 그대로 타므로 **동기 예외**로 실패할 수 있다
+         * (`FirebaseApp` 미초기화 등). 그 갈래를 여기서 닫아 두면 위 `collect` 는 관찰만 이어 간다.
+         */
         private suspend fun registerCurrentToken() {
-            val token = devicePushTokenProvider.currentToken() ?: return
+            val token =
+                runCatchingCancellable { devicePushTokenProvider.currentToken() }
+                    .onFailure { error ->
+                        errorReporter.recordFailure(error, mapOf("stage" to STAGE_DEVICE_TOKEN))
+                    }.getOrNull() ?: return
             registerOnce(token)
         }
 
@@ -75,7 +102,7 @@ class PushTokenSynchronizer
                     .register(token)
                     .onSuccess { lastRegistered = token }
                     .onFailure { error ->
-                        errorReporter.recordFailure(error, mapOf("stage" to "push_token_register"))
+                        errorReporter.recordFailure(error, mapOf("stage" to STAGE_REGISTER))
                     }
             }
         }
@@ -85,3 +112,8 @@ class PushTokenSynchronizer
                 authRepository.getAccessToken().getOrNull() != null
             }.getOrNull() ?: false
     }
+
+private const val STAGE_REGISTER = "push_token_register"
+private const val STAGE_DEVICE_TOKEN = "push_token_device_token"
+private const val STAGE_OBSERVE_LOGIN = "push_token_observe_login"
+private const val STAGE_TOKEN_ROTATED = "push_token_rotated"

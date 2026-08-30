@@ -138,26 +138,132 @@ class PushTokenSynchronizerTest {
             assertEquals(listOf("fid-1", "fid-2"), pushTokenRepository.registered)
         }
 
+    // 이 두 건이 리뷰 지적(#1498)의 가드다. 대역이 null 만 돌려주던 시절엔 «동기 예외» 양식이
+    // 한 건도 안 덮여 있었다 — 그 예외는 collect 를 끝내 프로세스 수명 내내 등록을 못 하게 만든다.
+    @Test
+    fun `기기 토큰 조회가 던져도 관찰이 끊기지 않아 다음 로그인은 등록된다`() =
+        runTest(dispatcher) {
+            val pushTokenRepository = RecordingPushTokenRepository()
+            val authRepository = FakeAuthRepository(loggedIn = false, accessToken = "access")
+            var failing = true
+            val synchronizer =
+                synchronizer(
+                    authRepository = authRepository,
+                    pushTokenRepository = pushTokenRepository,
+                    devicePushTokenProvider =
+                        FakeDevicePushTokenProvider {
+                            if (failing) throw IllegalStateException("API disabled") else "fcm-token"
+                        },
+                )
+
+            backgroundScope.launch { synchronizer.observeLogin() }
+            advanceUntilIdle()
+
+            authRepository.loggedIn = true
+            advanceUntilIdle()
+            assertTrue(pushTokenRepository.registered.isEmpty())
+
+            failing = false
+            authRepository.loggedIn = false
+            advanceUntilIdle()
+            authRepository.loggedIn = true
+            advanceUntilIdle()
+
+            assertEquals(listOf("fcm-token"), pushTokenRepository.registered)
+        }
+
+    @Test
+    fun `기기 토큰 조회가 던지면 삼키지 않고 기록한다`() =
+        runTest(dispatcher) {
+            val errorReporter = RecordingErrorReporter()
+            val authRepository = FakeAuthRepository(loggedIn = true, accessToken = "access")
+            val synchronizer =
+                synchronizer(
+                    authRepository = authRepository,
+                    pushTokenRepository = RecordingPushTokenRepository(),
+                    devicePushTokenProvider =
+                        FakeDevicePushTokenProvider { throw IllegalStateException("API disabled") },
+                    errorReporter = errorReporter,
+                )
+
+            backgroundScope.launch { synchronizer.observeLogin() }
+            advanceUntilIdle()
+
+            assertEquals(listOf(IllegalStateException::class.java.name), errorReporter.recordedTypes)
+            assertEquals("push_token_device_token", errorReporter.failures.single()["stage"])
+        }
+
+    @Test
+    fun `회전 통보 처리가 던져도 호출부로 예외가 나가지 않는다`() =
+        runTest(dispatcher) {
+            val errorReporter = RecordingErrorReporter()
+            val synchronizer =
+                synchronizer(
+                    authRepository = FakeAuthRepository(loggedIn = true, accessToken = "access"),
+                    pushTokenRepository = ThrowingPushTokenRepository(),
+                    devicePushTokenProvider = FakeDevicePushTokenProvider { "fid-1" },
+                    errorReporter = errorReporter,
+                )
+
+            synchronizer.onTokenRotated("fid-1")
+
+            assertEquals(listOf(IllegalStateException::class.java.name), errorReporter.recordedTypes)
+            assertEquals("push_token_rotated", errorReporter.failures.single()["stage"])
+        }
+
     private fun synchronizer(
         authRepository: FakeAuthRepository,
         pushTokenRepository: PushTokenRepository,
         deviceToken: String?,
-    ) = PushTokenSynchronizer(
+        errorReporter: ErrorReporter = RecordingErrorReporter(),
+    ) = synchronizer(
         authRepository = authRepository,
-        devicePushTokenProvider = DevicePushTokenProvider { deviceToken },
         pushTokenRepository = pushTokenRepository,
-        errorReporter = RecordingErrorReporter(),
+        devicePushTokenProvider = FakeDevicePushTokenProvider { deviceToken },
+        errorReporter = errorReporter,
     )
 
+    private fun synchronizer(
+        authRepository: FakeAuthRepository,
+        pushTokenRepository: PushTokenRepository,
+        devicePushTokenProvider: DevicePushTokenProvider,
+        errorReporter: ErrorReporter = RecordingErrorReporter(),
+    ) = PushTokenSynchronizer(
+        authRepository = authRepository,
+        devicePushTokenProvider = devicePushTokenProvider,
+        pushTokenRepository = pushTokenRepository,
+        errorReporter = errorReporter,
+    )
+
+    /** 등록·해제 두 경로가 같은 값을 본다. 던지게 만들려면 [token] 이 던지면 된다. */
+    private class FakeDevicePushTokenProvider(
+        private val token: () -> String?,
+    ) : DevicePushTokenProvider {
+        override suspend fun currentToken(): String? = token()
+
+        override suspend fun existingToken(): String? = token()
+    }
+
+    // recordFailure 는 문구 유출을 막으려 예외를 redact 한 사본으로 바꾸고 원래 타입은
+    // "error_type" 속성으로 옮긴다. 그래서 단언은 예외 인스턴스가 아니라 이 속성으로 한다.
     private class RecordingErrorReporter : ErrorReporter {
-        val failures = mutableListOf<Throwable>()
+        val failures = mutableListOf<Map<String, String>>()
+
+        val recordedTypes: List<String?>
+            get() = failures.map { it["error_type"] }
 
         override fun writeFailure(
             throwable: Throwable,
             attributes: Map<String, String>,
         ) {
-            failures += throwable
+            failures += attributes
         }
+    }
+
+    private class ThrowingPushTokenRepository : PushTokenRepository {
+        override suspend fun register(token: String): Result<Unit> = throw IllegalStateException("boom")
+
+        override suspend fun unregister(token: String): Result<Unit> = throw IllegalStateException("boom")
     }
 
     private class RecordingPushTokenRepository : PushTokenRepository {

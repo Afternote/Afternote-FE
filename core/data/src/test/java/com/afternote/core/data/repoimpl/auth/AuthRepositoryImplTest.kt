@@ -7,6 +7,7 @@ import com.afternote.core.datastore.LocalStoreRegistry
 import com.afternote.core.datastore.StoreScope
 import com.afternote.core.datastore.TokenDataSource
 import com.afternote.core.domain.error.CoreAuthFailure
+import com.afternote.core.domain.push.DevicePushTokenProvider
 import com.afternote.core.domain.repository.push.PushTokenRepository
 import com.afternote.core.network.dto.LoginDto
 import com.afternote.core.network.dto.LoginRequestDto
@@ -64,6 +65,7 @@ class AuthRepositoryImplTest {
         tokenApiService: TokenApiService = FakeTokenApiService(),
         pushTokenRepository: FakePushTokenRepository = FakePushTokenRepository(),
         deviceToken: String? = "device-token",
+        devicePushTokenProvider: DevicePushTokenProvider = RecordingDevicePushTokenProvider(deviceToken),
     ) = AuthRepositoryImpl(
         tokenDataSource = tokenDataSource,
         authApiService = authApiService,
@@ -71,7 +73,7 @@ class AuthRepositoryImplTest {
         expiryTracker = tracker,
         localStoreRegistry = localStoreRegistry,
         pushTokenRepository = pushTokenRepository,
-        devicePushTokenProvider = { deviceToken },
+        devicePushTokenProvider = devicePushTokenProvider,
     )
 
     @Test
@@ -351,6 +353,30 @@ class AuthRepositoryImplTest {
     }
 
     @Test
+    fun `logout - 해제하려고 FCM 등록 시퀀스를 강제하지는 않는다`() {
+        // currentToken() 을 쓰면 지우기 직전에 기기를 FCM 에 다시 등록하고, 그 회전 통보가 아직
+        // 살아 있는 세션을 타고 재등록으로 돌아와 이 DELETE 와 경합한다 (#1498 리뷰).
+        val provider = RecordingDevicePushTokenProvider("device-token")
+        val pushTokenRepository = FakePushTokenRepository()
+        val repository = repository(pushTokenRepository = pushTokenRepository, devicePushTokenProvider = provider)
+
+        runBlocking { repository.logout() }
+
+        assertEquals(listOf("device-token"), pushTokenRepository.unregistered)
+        assertEquals(0, provider.currentTokenCalls)
+        assertEquals(1, provider.existingTokenCalls)
+    }
+
+    @Test
+    fun `logout - 기기 토큰 조회가 던져도 로그아웃은 성공한다`() {
+        val repository = repository(devicePushTokenProvider = ThrowingDevicePushTokenProvider())
+
+        val result = runBlocking { repository.logout() }
+
+        assertTrue(result.isSuccess)
+    }
+
+    @Test
     fun `logout - 기기 토큰을 못 얻으면 해제를 건너뛴다`() {
         val pushTokenRepository = FakePushTokenRepository()
         val repository = repository(pushTokenRepository = pushTokenRepository, deviceToken = null)
@@ -436,6 +462,29 @@ private class InMemoryPreferencesDataStore : DataStore<Preferences> {
         state.value = transformed
         return transformed
     }
+}
+
+private class RecordingDevicePushTokenProvider(
+    private val token: String?,
+) : DevicePushTokenProvider {
+    var currentTokenCalls = 0
+    var existingTokenCalls = 0
+
+    override suspend fun currentToken(): String? {
+        currentTokenCalls++
+        return token
+    }
+
+    override suspend fun existingToken(): String? {
+        existingTokenCalls++
+        return token
+    }
+}
+
+private class ThrowingDevicePushTokenProvider : DevicePushTokenProvider {
+    override suspend fun currentToken(): String? = throw IllegalStateException("API disabled")
+
+    override suspend fun existingToken(): String? = throw IllegalStateException("API disabled")
 }
 
 private class FakePushTokenRepository(

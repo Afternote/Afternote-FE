@@ -152,10 +152,15 @@ internal class AuthRepositoryImpl
         /**
          * 이 기기 토큰을 서버에서 지운다. 토큰 조회·해제 어느 쪽이 실패해도 삼킨다 —
          * 로그아웃이 네트워크 상태에 인질로 잡히면 안 된다.
+         *
+         * 조회는 [DevicePushTokenProvider.existingToken] 이다. 등록 시퀀스를 강제하는
+         * `currentToken()` 을 쓰면 지우기 직전에 기기를 FCM 에 다시 등록하고, 그 회전 통보가
+         * 아직 살아 있는 세션(해제가 세션 정리보다 먼저다)을 타고 재등록으로 돌아와 이 `DELETE`
+         * 와 경합한다.
          */
         private suspend fun unregisterDevicePushToken() {
             runCatchingCancellable {
-                devicePushTokenProvider.currentToken()?.let { token ->
+                devicePushTokenProvider.existingToken()?.let { token ->
                     pushTokenRepository.unregister(token)
                 }
             }
