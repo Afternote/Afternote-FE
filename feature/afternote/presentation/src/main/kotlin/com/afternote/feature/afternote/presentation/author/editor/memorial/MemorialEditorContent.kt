@@ -33,6 +33,7 @@ fun MemorialEditorContent(
     onMessageAddClick: () -> Unit,
     onThumbnailBytesReady: (ByteArray?) -> Unit,
     onThumbnailExtractionFailed: (Throwable) -> Unit,
+    thumbnailRetryToken: Int,
     modifier: Modifier = Modifier,
 ) {
     MemorialContent(
@@ -70,6 +71,7 @@ fun MemorialEditorContent(
                 onAddVideoClick = onVideoAddClick,
                 onThumbnailBytesReady = onThumbnailBytesReady,
                 onThumbnailExtractionFailed = onThumbnailExtractionFailed,
+                thumbnailRetryToken = thumbnailRetryToken,
             )
         },
     )

@@ -30,6 +30,7 @@ internal fun AfternoteEditorError.messageResId(): Int =
         is AfternoteEditorError.Upload -> {
             when (target) {
                 AfternoteEditorError.Upload.Target.THUMBNAIL -> R.string.afternote_editor_thumbnail_upload_failed
+                AfternoteEditorError.Upload.Target.THUMBNAIL_EXTRACT -> R.string.afternote_editor_thumbnail_extract_failed
                 AfternoteEditorError.Upload.Target.SAVE_MEDIA -> R.string.afternote_editor_save_failed_generic
             }
         }

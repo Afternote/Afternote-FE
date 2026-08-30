@@ -110,6 +110,7 @@ fun AfternoteEditorBody(
     onNavigateToSelectReceiver: () -> Unit,
     onThumbnailBytesReady: (ByteArray?) -> Unit,
     onThumbnailExtractionFailed: (Throwable) -> Unit,
+    thumbnailRetryToken: Int,
     onCaptureFailed: (Throwable) -> Unit,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
@@ -141,6 +142,7 @@ fun AfternoteEditorBody(
                 onVideoAddClick = { mediaSourceState.open(MemorialMediaTarget.VIDEO) },
                 onThumbnailBytesReady = onThumbnailBytesReady,
                 onThumbnailExtractionFailed = onThumbnailExtractionFailed,
+                thumbnailRetryToken = thumbnailRetryToken,
             )
         },
         modifier = modifier,
@@ -278,6 +280,7 @@ internal fun AfternoteTypeContent(
     onVideoAddClick: () -> Unit,
     onThumbnailBytesReady: (ByteArray?) -> Unit,
     onThumbnailExtractionFailed: (Throwable) -> Unit,
+    thumbnailRetryToken: Int,
 ) {
     when (form.selectedType) {
         AfternoteType.MEMORIAL -> {
@@ -302,6 +305,7 @@ internal fun AfternoteTypeContent(
                 onVideoAddClick = onVideoAddClick,
                 onThumbnailBytesReady = onThumbnailBytesReady,
                 onThumbnailExtractionFailed = onThumbnailExtractionFailed,
+                thumbnailRetryToken = thumbnailRetryToken,
             )
         }
 
