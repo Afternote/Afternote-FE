@@ -5,4 +5,6 @@
     <string name="fcm_notification_fallback_title" translatable="false">AFTERNOTE</string>
     <string name="notification_permission_denied_message">알림이 꺼져 있어 새로운 소식을 받을 수 없어요</string>
     <string name="notification_permission_denied_action">설정</string>
+    <string name="force_update_message">새로운 버전이 나왔어요.\n업데이트 후 이용해 주세요.</string>
+    <string name="force_update_confirm">업데이트하러 가기</string>
 </resources>
