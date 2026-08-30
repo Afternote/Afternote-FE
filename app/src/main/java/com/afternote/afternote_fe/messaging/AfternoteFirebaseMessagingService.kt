@@ -20,7 +20,7 @@ import com.afternote.core.common.R as CommonR
 @AndroidEntryPoint
 class AfternoteFirebaseMessagingService : FirebaseMessagingService() {
     @Inject
-    lateinit var pushTokenSynchronizer: PushTokenSynchronizer
+    lateinit var pushTargetSynchronizer: PushTargetSynchronizer
 
     override fun onCreate() {
         super.onCreate()
@@ -35,7 +35,7 @@ class AfternoteFirebaseMessagingService : FirebaseMessagingService() {
      * Firebase SDK 의 백그라운드 스레드에서 불리므로 [runBlocking] 으로 서비스가 살아 있는 동안
      * 끝낸다 — 발사만 하고 반환하면 프로세스 종료로 요청이 잘린다.
      *
-     * 이 [runBlocking] 은 `PushTokenSynchronizer` 의 뮤텍스를 기다린다. 그래도 교착이 아닌 근거는
+     * 이 [runBlocking] 은 `PushTargetSynchronizer` 의 뮤텍스를 기다린다. 그래도 교착이 아닌 근거는
      * **락을 쥔 코루틴이 FCM 을 기다리지 않는다**는 것이다. 뮤텍스 안에서 도는 것은 서버 `PUT`
      * 하나뿐이고, 등록 시퀀스(`FirebaseMessaging.register()`)는 락 밖에서 끝난다. 그래서 이 콜백을
      * 띄운 스레드가 `register()` Task 를 완료시키는 그 스레드라 하더라도, 기다리는 락은 FCM 과
@@ -44,7 +44,7 @@ class AfternoteFirebaseMessagingService : FirebaseMessagingService() {
     override fun onRegistered(installationId: String) {
         super.onRegistered(installationId)
         Log.d(TAG, "FCM installation registered")
-        runBlocking { pushTokenSynchronizer.onTokenRotated(installationId) }
+        runBlocking { pushTargetSynchronizer.onTargetIdRotated(installationId) }
     }
 
     override fun onUnregistered(installationId: String) {

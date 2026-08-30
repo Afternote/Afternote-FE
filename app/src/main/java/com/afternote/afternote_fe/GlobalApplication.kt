@@ -5,7 +5,7 @@ import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import com.afternote.afternote_fe.messaging.FcmNotificationChannel
-import com.afternote.afternote_fe.messaging.PushTokenSynchronizer
+import com.afternote.afternote_fe.messaging.PushTargetSynchronizer
 import com.afternote.core.network.di.CoilImageLoaderEntryPoint
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -30,12 +30,12 @@ class GlobalApplication :
     override fun onCreate() {
         super.onCreate()
         FcmNotificationChannel.create(this)
-        startPushTokenSync()
+        startPushTargetSync()
         // 그 밖의 기동 초기화는 startup 패키지의 Initializer 에 둔다.
     }
 
     /**
-     * FCM 토큰 등록 관찰을 시작한다 (#1493).
+     * 푸시 대상 식별자 등록 관찰을 시작한다 (#1493).
      *
      * `androidx.startup` Initializer 가 아니라 여기인 이유는 **시점**이다. `InitializationProvider`
      * 는 `Application.onCreate()` **이전**에 도는 ContentProvider 라, 그 시점에 Hilt 컴포넌트를
@@ -46,11 +46,11 @@ class GlobalApplication :
      *
      * 관찰은 앱 프로세스 수명 동안 유지돼야 해서 이 스코프는 취소하지 않는다.
      */
-    private fun startPushTokenSync() {
+    private fun startPushTargetSync() {
         val synchronizer =
             EntryPointAccessors
-                .fromApplication(this, PushTokenSyncEntryPoint::class.java)
-                .pushTokenSynchronizer()
+                .fromApplication(this, PushTargetSyncEntryPoint::class.java)
+                .pushTargetSynchronizer()
 
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             synchronizer.observeLogin()
@@ -59,7 +59,7 @@ class GlobalApplication :
 
     @EntryPoint
     @InstallIn(SingletonComponent::class)
-    internal interface PushTokenSyncEntryPoint {
-        fun pushTokenSynchronizer(): PushTokenSynchronizer
+    internal interface PushTargetSyncEntryPoint {
+        fun pushTargetSynchronizer(): PushTargetSynchronizer
     }
 }

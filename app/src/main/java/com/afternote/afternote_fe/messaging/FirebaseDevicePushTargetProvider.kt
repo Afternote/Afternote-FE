@@ -2,7 +2,7 @@ package com.afternote.afternote_fe.messaging
 
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.core.domain.push.DevicePushTokenProvider
+import com.afternote.core.domain.push.DevicePushTargetProvider
 import com.google.android.gms.tasks.Task
 import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.messaging.FirebaseMessaging
@@ -19,7 +19,7 @@ import kotlin.coroutines.resume
  * `IllegalStateException: API disabled` 로 죽는다 — 발송 식별자가 registration token 이 아니라
  * FID 이기 때문이다(0829 에뮬레이터 실측으로 확인).
  *
- * 그래서 [currentToken] 의 순서가 둘이다.
+ * 그래서 [currentTargetId] 의 순서가 둘이다.
  * 1. [FirebaseMessaging.register] 로 등록 시퀀스를 강제한다. 이걸 부르지 않으면 자동 초기화가
  *    돌 때까지 FID 가 FCM 에 붙지 않는다.
  * 2. [FirebaseInstallations.getId] 로 그 FID 를 읽는다. 콜백(`onRegistered`)만 기다리면 회전이
@@ -29,18 +29,18 @@ import kotlin.coroutines.resume
  * 로그인·로그아웃 흐름이 이것 때문에 막힐 이유가 없다.
  */
 @Singleton
-class FirebaseDevicePushTokenProvider
+class FirebaseDevicePushTargetProvider
     @Inject
     constructor(
         private val errorReporter: ErrorReporter,
-    ) : DevicePushTokenProvider {
-        override suspend fun currentToken(): String? =
+    ) : DevicePushTargetProvider {
+        override suspend fun currentTargetId(): String? =
             foldFailure(stage = STAGE_REGISTER) {
                 FirebaseMessaging.getInstance().register().awaitOrNull(stage = STAGE_REGISTER)
                 installationId()
             }
 
-        override suspend fun existingToken(): String? = foldFailure(stage = STAGE_INSTALLATION_ID) { installationId() }
+        override suspend fun existingTargetId(): String? = foldFailure(stage = STAGE_INSTALLATION_ID) { installationId() }
 
         private suspend fun installationId(): String? = FirebaseInstallations.getInstance().id.awaitOrNull(stage = STAGE_INSTALLATION_ID)
 

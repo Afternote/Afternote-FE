@@ -2,9 +2,9 @@ package com.afternote.afternote_fe.messaging
 
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.core.domain.push.DevicePushTokenProvider
+import com.afternote.core.domain.push.DevicePushTargetProvider
 import com.afternote.core.domain.repository.auth.AuthRepository
-import com.afternote.core.domain.repository.push.PushTokenRepository
+import com.afternote.core.domain.repository.push.PushTargetRepository
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -30,12 +30,12 @@ import javax.inject.Singleton
  * 다시 등록하도록 한다.
  */
 @Singleton
-class PushTokenSynchronizer
+class PushTargetSynchronizer
     @Inject
     constructor(
         private val authRepository: AuthRepository,
-        private val devicePushTokenProvider: DevicePushTokenProvider,
-        private val pushTokenRepository: PushTokenRepository,
+        private val devicePushTargetProvider: DevicePushTargetProvider,
+        private val pushTargetRepository: PushTargetRepository,
         private val errorReporter: ErrorReporter,
     ) {
         private val mutex = Mutex()
@@ -69,14 +69,14 @@ class PushTokenSynchronizer
          * FID 회전 통보를 받았을 때. 로그인 상태가 아니면 아무것도 하지 않는다.
          *
          * 부르는 쪽이 `FirebaseMessagingService.onRegistered` 의 `runBlocking` 이라 예외가 새면
-         * SDK 스레드로 나간다. 해제 경로(`AuthRepositoryImpl.unregisterDevicePushToken`)와 같이
+         * SDK 스레드로 나간다. 해제 경로(`AuthRepositoryImpl.unregisterDevicePushTarget`)와 같이
          * 여기서 접는다.
          */
-        suspend fun onTokenRotated(token: String) {
+        suspend fun onTargetIdRotated(targetId: String) {
             runCatchingCancellable {
-                if (isLoggedIn()) registerOnce(token)
+                if (isLoggedIn()) registerOnce(targetId)
             }.onFailure { error ->
-                errorReporter.recordFailure(error, mapOf("stage" to STAGE_TOKEN_ROTATED))
+                errorReporter.recordFailure(error, mapOf("stage" to STAGE_TARGET_ROTATED))
             }
         }
 
@@ -85,21 +85,21 @@ class PushTokenSynchronizer
          * (`FirebaseApp` 미초기화 등). 그 갈래를 여기서 닫아 두면 위 `collect` 는 관찰만 이어 간다.
          */
         private suspend fun registerCurrentToken() {
-            val token =
-                runCatchingCancellable { devicePushTokenProvider.currentToken() }
+            val targetId =
+                runCatchingCancellable { devicePushTargetProvider.currentTargetId() }
                     .onFailure { error ->
-                        errorReporter.recordFailure(error, mapOf("stage" to STAGE_DEVICE_TOKEN))
+                        errorReporter.recordFailure(error, mapOf("stage" to STAGE_DEVICE_ID))
                     }.getOrNull() ?: return
-            registerOnce(token)
+            registerOnce(targetId)
         }
 
         /** 같은 값을 연달아 보내지 않는다 — 서버 동시 upsert 가 500 을 내기 때문이다. */
-        private suspend fun registerOnce(token: String) {
+        private suspend fun registerOnce(targetId: String) {
             mutex.withLock {
-                if (lastRegistered == token) return@withLock
-                pushTokenRepository
-                    .register(token)
-                    .onSuccess { lastRegistered = token }
+                if (lastRegistered == targetId) return@withLock
+                pushTargetRepository
+                    .register(targetId)
+                    .onSuccess { lastRegistered = targetId }
                     .onFailure { error ->
                         errorReporter.recordFailure(error, mapOf("stage" to STAGE_REGISTER))
                     }
@@ -112,7 +112,7 @@ class PushTokenSynchronizer
             }.getOrNull() ?: false
     }
 
-private const val STAGE_REGISTER = "push_token_register"
-private const val STAGE_DEVICE_TOKEN = "push_token_device_token"
-private const val STAGE_OBSERVE_LOGIN = "push_token_observe_login"
-private const val STAGE_TOKEN_ROTATED = "push_token_rotated"
+private const val STAGE_REGISTER = "push_target_register"
+private const val STAGE_DEVICE_ID = "push_target_device_id"
+private const val STAGE_OBSERVE_LOGIN = "push_target_observe_login"
+private const val STAGE_TARGET_ROTATED = "push_target_rotated"
