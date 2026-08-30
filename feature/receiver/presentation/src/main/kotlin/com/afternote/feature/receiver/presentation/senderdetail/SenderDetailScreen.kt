@@ -47,7 +47,7 @@ import com.afternote.feature.receiver.presentation.R
  * 3. 정보 박스 4 행: 기록 / 상태 / 신청일 / 승인일.
  * 4. 하단 CTA: "열람 신청하기" (NotRequested/Pending/Rejected) 또는 "기록 열람하기" (Approved).
  *
- * "기록 열람하기" 클릭 시 ViewModel 이 글로벌 헤더에 authCode 를 복원한 뒤
+ * "기록 열람하기" 클릭 시 ViewModel 이 글로벌 헤더에 masterKey 를 복원한 뒤
  * [SenderDetailUiState.Success.shouldOpenReceiverHome] 를 true 로 갱신. 본 화면이 [LaunchedEffect] 로 받아
  * [onOpenReceiverHome] (순수 네비게이션) 호출 후 [SenderDetailViewModel.onOpenReceiverHomeConsumed] 로 reset.
  */

@@ -107,6 +107,10 @@ data class ReceivedRecordBoxListDto(
  * 지킨다. 도메인으로 옮기는 건 지금 소비하는 것뿐이고, 나머지(`receiverName`·`relation`·
  * `recordStatus`·`viewStatus`)는 목록 화면이 이 API 로 옮겨갈 때(#607) 함께 올린다.
  *
+ * `accessCode` 는 **서버가 이 응답에서 부르는 이름**이라 DTO 에서는 그대로 받는다 — 같은 값을
+ * `GET /users/receivers` 는 `authCode` 로, 헤더는 `X-Auth-Code` 로 부른다(2026-08-30 실측). 앱 안에서는
+ * 사용자에게 보이는 말인 «마스터 키» 하나로 모으므로, 이름이 갈리는 것은 이 경계까지다 (#1554).
+ *
  * **nullable 은 BE 실코드로 판정한 것만 둔다.** OpenAPI 에 `requiredMode` 표기가 없어 문서만으로는
  * 전 필드가 optional 로 보이지만(BE#269), 실제 계약은 이렇다.
  *
@@ -177,7 +181,7 @@ fun DeliveryVerificationDto.toDomain(): DeliveryVerification =
 fun ReceivedRecordBoxDto.toDomain(): ReceivedRecordBox =
     ReceivedRecordBox(
         receiverId = receiverId,
-        accessCode = accessCode,
+        masterKey = accessCode,
         senderName = senderName,
         verificationStatus = verificationStatus?.let(DeliveryVerificationStatus::fromRaw) ?: DeliveryVerificationStatus.UNKNOWN,
         requestedAt = requestedAt,

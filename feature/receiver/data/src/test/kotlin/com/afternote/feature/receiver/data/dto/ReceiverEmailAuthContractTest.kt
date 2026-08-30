@@ -17,8 +17,8 @@ import org.junit.Test
  * → `toDomain()` 을 통과시킨다 — Json 설정은 `NetworkModule.provideJson` 과 동일
  * (ignoreUnknownKeys + coerceInputValues).
  *
- * verify 성공 응답을 **accessCode 동봉·제거 두 형태 모두** 가드하는 이유: 서버가 마스터 키와 동일한
- * `accessCode` 를 응답에서 제거할 예정이라([ReceiverEmailAuthVerifyDto] 참고), 제거 배포가 언제 나가든
+ * verify 성공 응답을 **masterKey 동봉·제거 두 형태 모두** 가드하는 이유: 서버가 마스터 키와 동일한
+ * `masterKey` 를 응답에서 제거할 예정이라([ReceiverEmailAuthVerifyDto] 참고), 제거 배포가 언제 나가든
  * 파싱이 깨지지 않아야 한다 (#454).
  *
  * 에러 응답(404 code 1901 / 400 code 1902·1903)은 HTTP 4xx 라 Retrofit CallAdapter가 가로채는 경로 —
@@ -32,7 +32,7 @@ class ReceiverEmailAuthContractTest {
         }
 
     @Test
-    fun `email-verify 성공 응답(accessCode 동봉) - 잔여 키를 무시하고 도메인 모델까지 도달`() {
+    fun `email-verify 성공 응답(masterKey 동봉) - 잔여 키를 무시하고 도메인 모델까지 도달`() {
         val payload =
             """{"status":200,"code":200,"message":"성공","data":{"receiverId":3,"receiverName":"큐에이수신자","senderName":"큐에이발신자","accessCode":"123e4567-e89b-12d3-a456-426614174000"}}"""
 
@@ -44,7 +44,7 @@ class ReceiverEmailAuthContractTest {
     }
 
     @Test
-    fun `email-verify 성공 응답(accessCode 제거 후) - 디코드 성공`() {
+    fun `email-verify 성공 응답(masterKey 제거 후) - 디코드 성공`() {
         val payload =
             """{"status":200,"code":200,"message":"성공","data":{"receiverId":3,"receiverName":"큐에이수신자","senderName":"큐에이발신자"}}"""
 
