@@ -90,8 +90,20 @@ jobs:
             exit 1
           fi
 
+          owner="${GITHUB_REPOSITORY%/*}"
+          repo="${GITHUB_REPOSITORY#*/}"
+
+          # PR 메타는 이 잡에서 한 번만 조회한다. 종전에는 base 이름을 REST 로 따로 물은 뒤
+          # 같은 PR 을 GraphQL 로 다시 물었다 — 한 잡이 같은 PR 을 두 번 조회하면 PR 수 ×
+          # 잡 수만큼 곱해져 installation 한도를 태운다 (#1465). baseRefName 을 같은 쿼리에
+          # 실어 REST 왕복 하나를 없앤다. 조회 실패는 그대로 fail-closed 다.
+          pr_json=$(gh api graphql \
+            -f query='query($owner:String!,$repo:String!,$pr:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$pr){baseRefName title body closingIssuesReferences(first:20){nodes{number repository{nameWithOwner}}}}}}' \
+            -f owner="$owner" -f repo="$repo" -F pr="$PR_NUMBER" \
+            --jq '.data.repository.pullRequest')
+
           if [ -z "$BASE_REF" ]; then
-            BASE_REF=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.base.ref')
+            BASE_REF=$(jq -r '.baseRefName' <<< "$pr_json")
           fi
 
           # 스택 PR 안내 — base 가 부모 브랜치면 애초에 develop 로 머지되지 않고,
@@ -106,9 +118,6 @@ jobs:
               echo "::warning::base 가 '$BASE_REF' — 스택 PR 은 base 를 develop 로 PATCH 한 뒤 머지할 것"
               ;;
           esac
-
-          owner="${GITHUB_REPOSITORY%/*}"
-          repo="${GITHUB_REPOSITORY#*/}"
 
           # 네이티브 스택 등록 여부 — base 이름만으로는 «스택으로 묶인 PR» 과 «base 만 상위
           # 브랜치로 물린 PR» 이 구분되지 않는다. 미등록이어도 머지 순서는 지켜지므로
@@ -134,23 +143,25 @@ jobs:
             fi
           fi
 
-          pr_json=$(gh api graphql \
-            -f query='query($owner:String!,$repo:String!,$pr:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$pr){title body closingIssuesReferences(first:20){nodes{number repository{nameWithOwner}}}}}}' \
-            -f owner="$owner" -f repo="$repo" -F pr="$PR_NUMBER" \
-            --jq '.data.repository.pullRequest')
-
           # GitHub 가 close keyword 를 closingIssuesReferences 로 승격하지 못하는 경우가
           # 있으므로(#879, #880, #1176), 제목·본문을 같은 공식 패턴으로 직접 파싱한다.
           # 외부 저장소 참조는 이 저장소의 머지 순서와 무관하므로 제외한다.
-          issues=$(
+          #
+          # 번호를 그냥 늘어놓지 않고 «출처» 를 함께 낸다. closingIssuesReferences 는
+          # IssueConnection 이라 PR 이 섞일 수 없고, 거기서 온 번호는 종류가 이미 확정이다 —
+          # 그런데도 종전에는 번호마다 issues/<n> 을 한 번씩 더 물어 종류를 확인했다. 닫는
+          # 이슈가 둘이면 그것만으로 잡당 조회가 넷이고, PR 수 × 재실행 수만큼 곱해진다.
+          # 종류가 정말 불확실한 것은 본문 파싱으로만 나온 번호뿐이라 그쪽만 묻는다 (#1465).
+          refs=$(
             PR_JSON="$pr_json" node <<'NODE'
           const pr = JSON.parse(process.env.PR_JSON);
           const ownRepo = process.env.GITHUB_REPOSITORY.toLowerCase();
-          const issues = new Set(
+          const linked = new Set(
               pr.closingIssuesReferences.nodes
                   .filter(({ repository }) => repository.nameWithOwner.toLowerCase() === ownRepo)
                   .map(({ number }) => number),
           );
+          const parsed = new Set();
           const text = `${pr.title}\n\n${pr.body || ""}`;
           const regex = /\b(?:close[ds]?|fix(?:e[ds])?|resolve[ds]?)\s+(?:([\w.-]+\/[\w.-]+))?#(\d+)/gi;
           let match;
@@ -158,19 +169,32 @@ jobs:
           while ((match = regex.exec(text)) !== null) {
               const referencedRepo = (match[1] || ownRepo).toLowerCase();
               if (referencedRepo !== ownRepo) continue;
-              issues.add(Number.parseInt(match[2], 10));
+              const number = Number.parseInt(match[2], 10);
+              if (!linked.has(number)) parsed.add(number);
           }
 
-          process.stdout.write([...issues].sort((a, b) => a - b).join("\n"));
+          const ascending = (a, b) => a - b;
+          process.stdout.write(
+              [
+                  ...[...linked].sort(ascending).map((number) => `issue ${number}`),
+                  ...[...parsed].sort(ascending).map((number) => `unknown ${number}`),
+              ].join("\n"),
+          );
           NODE
           )
 
-          for n in $issues; do
-            issue_kind=$(gh api "repos/$GITHUB_REPOSITORY/issues/$n" \
-              --jq 'if has("pull_request") then "pull_request" else "issue" end')
-            if [ "$issue_kind" = "pull_request" ]; then
-              echo "::notice::#$n 은 PR 참조 — blocked_by 검사 대상에서 제외"
-              continue
+          # 파이프가 아니라 here-string 으로 먹인다 — 서브셸이 되면 fail=1 이 밖으로 나오지 않는다.
+          # 루프 안에서 gh 를 부르므로 목록은 stdin 이 아니라 fd 3 으로 먹인다.
+          while read -r kind n <&3; do
+            [ -n "$n" ] || continue
+
+            if [ "$kind" = "unknown" ]; then
+              issue_kind=$(gh api "repos/$GITHUB_REPOSITORY/issues/$n" \
+                --jq 'if has("pull_request") then "pull_request" else "issue" end')
+              if [ "$issue_kind" = "pull_request" ]; then
+                echo "::notice::#$n 은 PR 참조 — blocked_by 검사 대상에서 제외"
+                continue
+              fi
             fi
 
             open_blockers=$(gh api "repos/$GITHUB_REPOSITORY/issues/$n/dependencies/blocked_by" \
@@ -186,7 +210,7 @@ jobs:
                 fail=1
               fi
             done
-          done
+          done 3<<< "$refs"
 
           exit "$fail"
 
