@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -39,28 +38,17 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontSynthesis
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import android.graphics.Paint as AndroidPaint
-import android.graphics.Rect as AndroidRect
-import android.graphics.Typeface as AndroidTypeface
 import android.view.KeyEvent as NativeKeyEvent
 
 // ============================================================================
@@ -89,6 +77,13 @@ private fun TextFieldShort(
     modifier: Modifier = Modifier,
     placeholder: String? = null,
     suffix: @Composable (() -> Unit)? = null,
+    /**
+     * `true` 면 [suffix] 를 앞 텍스트 바로 뒤 8dp 에 붙이고 남는 폭을 오른쪽에 비운다.
+     *
+     * 기본값(`false`)은 앞 텍스트가 남는 폭을 전부 먹어 suffix 가 오른쪽 끝으로 밀리는 배치다 —
+     * `Variant7`(인증번호 받기)·`Search` 는 그쪽이 시안이고, `Variant8`(주민번호) 만 앞에 붙는다.
+     */
+    suffixFollowsText: Boolean = false,
     trailingContent: @Composable (() -> Unit)? = null,
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Default,
@@ -134,7 +129,15 @@ private fun TextFieldShort(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(
-                        modifier = Modifier.weight(1f),
+                        modifier =
+                            if (suffixFollowsText) {
+                                // 내용 폭만 차지하되(fill = false) 남는 폭을 넘지는 않게 한다.
+                                Modifier
+                                    .weight(1f, fill = false)
+                                    .width(IntrinsicSize.Max)
+                            } else {
+                                Modifier.weight(1f)
+                            },
                         contentAlignment = Alignment.CenterStart,
                     ) {
                         if (state.text.isEmpty() && placeholder != null) {
@@ -223,6 +226,7 @@ fun AfternoteTextField(
                     null
                 }
             },
+        suffixFollowsText = type is TextFieldType.Variant8,
         suffix =
             when (type) {
                 is TextFieldType.Variant7 -> {
@@ -278,52 +282,6 @@ private val Variant8BackDigitInputTransformation =
         }
     }.maxLength(1)
 
-/** 광학 중심을 재는 표본 글리프 — Variant8 뒷자리 입력은 숫자 한 자리다. */
-private const val VARIANT8_DIGIT_SAMPLE = "0"
-
-/**
- * 숫자 글리프의 **잉크 중심**이 라인박스 중심에서 얼마나 떨어져 있는지 (음수 = 위).
- *
- * [Row] 의 [Alignment.CenterVertically] 는 형제들의 *측정 높이* 중심을 맞춘다. 그런데
- * [BasicTextField] 의 높이는 라인박스(16/22sp)이고 그 중심은 descent 여백 때문에 글리프
- * 잉크 중심보다 아래에 있다. 그래서 라인박스 중심에 맞춘 하이픈·마스킹 점이 숫자보다 처져
- * 보인다 — 실측 1.14dp (#1496).
- *
- * 고정 오프셋을 박아 넣으면 폰트·사이즈가 바뀔 때 조용히 어긋나므로, 실제 폰트에서 매번 잰다.
- * 잉크 상·하단은 [AndroidPaint.getTextBounds] 가 주는 글리프 경계이고, baseline 과 라인박스
- * 높이는 같은 스타일로 측정한 [androidx.compose.ui.text.TextMeasurer] 결과를 쓴다.
- */
-@Composable
-private fun rememberDigitOpticalCenterShift(style: TextStyle): Dp {
-    val density = LocalDensity.current
-    val fontFamilyResolver = LocalFontFamilyResolver.current
-    val textMeasurer = rememberTextMeasurer()
-    return remember(density, fontFamilyResolver, textMeasurer, style) {
-        val layout = textMeasurer.measure(text = VARIANT8_DIGIT_SAMPLE, style = style)
-        val typeface =
-            fontFamilyResolver
-                .resolve(
-                    fontFamily = style.fontFamily,
-                    fontWeight = style.fontWeight ?: FontWeight.Normal,
-                    fontStyle = style.fontStyle ?: FontStyle.Normal,
-                    fontSynthesis = style.fontSynthesis ?: FontSynthesis.All,
-                ).value as AndroidTypeface
-        val paint =
-            AndroidPaint().apply {
-                this.typeface = typeface
-                textSize = with(density) { style.fontSize.toPx() }
-            }
-        val ink =
-            AndroidRect().also {
-                paint.getTextBounds(VARIANT8_DIGIT_SAMPLE, 0, VARIANT8_DIGIT_SAMPLE.length, it)
-            }
-        // getTextBounds 는 baseline 기준이라 top 이 음수다. 둘의 중점이 잉크 중심.
-        val inkCenter = layout.firstBaseline + (ink.top + ink.bottom) / 2f
-        val lineBoxCenter = layout.size.height / 2f
-        with(density) { (inkCenter - lineBoxCenter).toDp() }
-    }
-}
-
 @Composable
 private fun Variant8Suffix(
     type: TextFieldType.Variant8,
@@ -331,9 +289,6 @@ private fun Variant8Suffix(
 ) {
     val backInputContentDescription =
         stringResource(R.string.core_ui_content_description_resident_number_back_input)
-    val textStyle = AfternoteDesign.typography.textField
-    // 하이픈·점은 텍스트 라인박스가 아니라 숫자 글리프의 광학 중심에 맞춘다 (#1496).
-    val opticalCenterShift = rememberDigitOpticalCenterShift(textStyle)
 
     Row(
         modifier =
@@ -347,7 +302,6 @@ private fun Variant8Suffix(
         Box(
             modifier =
                 Modifier
-                    .offset(y = opticalCenterShift)
                     .width(14.dp)
                     .height(1.75.dp)
                     .background(
@@ -390,7 +344,7 @@ private fun Variant8Suffix(
                 ),
             onKeyboardAction = { onImeAction?.invoke() },
             inputTransformation = Variant8BackDigitInputTransformation,
-            textStyle = textStyle.copy(color = AfternoteDesign.colors.black),
+            textStyle = AfternoteDesign.typography.textField.copy(color = AfternoteDesign.colors.black),
             cursorBrush = SolidColor(AfternoteDesign.colors.black),
             interactionSource = remember { MutableInteractionSource() },
             decorator = { innerTextField ->
@@ -408,20 +362,13 @@ private fun Variant8Suffix(
         )
 
         // 3. 고정된 마스킹 점
-        Variant8MaskDots(
-            dotCount = type.dotCount,
-            modifier = Modifier.offset(y = opticalCenterShift),
-        )
+        Variant8MaskDots(dotCount = type.dotCount)
     }
 }
 
 @Composable
-private fun Variant8MaskDots(
-    dotCount: Int,
-    modifier: Modifier = Modifier,
-) {
+private fun Variant8MaskDots(dotCount: Int) {
     Row(
-        modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         repeat(dotCount) {
