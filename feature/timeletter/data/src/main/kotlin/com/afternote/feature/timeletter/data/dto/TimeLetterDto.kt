@@ -56,9 +56,9 @@ data class TimeLetterBlockDto(
     @SerialName("id") val id: Long,
     @SerialName("blockType") val blockType: TimeLetterBlockTypeDto,
     @SerialName("blockOrder") val blockOrder: Int,
-    @SerialName("textContent") val textContent: String? = null,
-    @SerialName("url") val url: String? = null,
-    @SerialName("mimeType") val mimeType: String? = null,
+    @SerialName("textContent") val textContent: String?,
+    @SerialName("url") val url: String?,
+    @SerialName("mimeType") val mimeType: String?,
 )
 
 @Serializable
@@ -88,9 +88,9 @@ data class TimeLetterDeleteRequestDto(
 @Serializable
 data class TimeLetterDto(
     @SerialName("id") val id: Long,
-    @SerialName("title") val title: String? = null,
-    @SerialName("sendAt") val sendAt: String? = null,
-    @SerialName("deliveredAt") val deliveredAt: String? = null,
+    @SerialName("title") val title: String?,
+    @SerialName("sendAt") val sendAt: String?,
+    @SerialName("deliveredAt") val deliveredAt: String?,
     @SerialName("status") val status: TimeLetterStatusDto,
     @SerialName("blocks") val blocks: List<TimeLetterBlockDto>,
     @SerialName("receiverIds") val receiverIds: List<Long>,
