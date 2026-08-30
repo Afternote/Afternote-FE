@@ -109,10 +109,13 @@ class DiaryWriteViewModel
          * 전체 URL 을 받으면 호스트를 한 번 더 붙여 403 이 된다. 그래서 받은 URL 을 기억해 두고
          * 제출 직전에 키로 바꾼다 ([toWireContent]). 미리보기는 전체 URL 이라야 뜬다 (#1016).
          *
-         * **첫 업로드 결과는 등록 payload 의 `imageUrl` 로도 실린다** (아래 `it.imageUrl == null`).
-         * 이 PR 이 첨부 대상을 이미지에서 미디어 전체로 넓히면서, 그 자리가 처음으로 음성·파일을
-         * 집을 수 있게 됐다 — 지금은 서버가 그 필드를 무시하고 응답 `imageUrl` 이 null 이라
-         * 사용자 영향이 없지만, 배선 자체는 남아 있다. 후속: #1195.
+         * **업로드 결과를 «대표 이미지» 로 따로 들지 않는다** (#1195). 종전에는 첫 업로드 URL 을
+         * 화면 상태의 `imageUrl` 로 집었는데, 조건이 «첫 번째» 뿐이라 첨부가 미디어 전체로 넓어진
+         * 뒤로는 음성을 먼저 붙이면 그 자리에 `.m4a` 가 실렸다. 게다가 그 값을 **읽는 곳이 없었다** —
+         * `DiaryCreateRequest` 계약은 `[title, content, isDraft, todayMood, receiverIds]` 뿐이고
+         * 화면도 그 필드를 그리지 않는다. 데일리질문은 같은 이유로 이미 상태에서 걷어 뒀다.
+         *
+         * 본문에 남는 이미지의 출처는 이 필드가 아니라 `content` 의 `img` 태그다 (#549).
          */
         suspend fun uploadMedia(uriString: String): String? {
             // 실패 문구의 수명은 «다음 업로드 시작까지» 다 — 화면에 걷는 수단이 따로 없고,
@@ -123,10 +126,7 @@ class DiaryWriteViewModel
                 .onSuccess { uploaded ->
                     // 제출 직전 fileKey 로 바꿀 대상이다 (#1016).
                     uploadedImageUrls += uploaded.fileUrl
-                    _uiState.update {
-                        val withUrl = if (it.imageUrl == null) it.copy(imageUrl = uploaded.fileUrl) else it
-                        withUrl.copy(isUploadingImage = false)
-                    }
+                    _uiState.update { it.copy(isUploadingImage = false) }
                 }.onFailure { e ->
                     // 첨부가 빠진 채 저장이 이어질 수 있는 자리라 남긴다 (#964).
                     errorReporter.recordMindRecordFailure(MindRecordFailureStage.MEDIA_UPLOAD, e)
@@ -258,7 +258,6 @@ class DiaryWriteViewModel
                                 // 표시 전용 값이다 — 서버가 날짜를 주면 그걸 보여 주고, 안 주면
                                 // 화면에 이미 떠 있던 값을 유지한다. 고르는 수단은 없다 (#1008).
                                 date = draft.toUi()?.date ?: it.date,
-                                imageUrl = draft.imageUrl,
                                 isDraftLoading = false,
                                 draftLoaded = true,
                             )

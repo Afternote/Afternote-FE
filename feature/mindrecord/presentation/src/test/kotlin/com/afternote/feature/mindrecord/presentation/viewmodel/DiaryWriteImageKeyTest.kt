@@ -56,6 +56,58 @@ class DiaryWriteImageKeyTest {
     }
 
     @Test
+    fun `업로드는 미리보기 URL 을 돌려주고 진행 플래그를 내린다`() {
+        // 종전에는 «첫 업로드» 를 화면 상태의 imageUrl 로도 집었다. 조건이 순서뿐이라 첨부가
+        // 미디어 전체로 넓어진 뒤에는 음성을 먼저 붙이면 그 자리에 `.m4a` 가 실렸다 (#1195).
+        val viewModel = viewModel()
+
+        val previewUrl = runBlocking { viewModel.uploadMedia("content://picked") }
+
+        assertEquals("https://cdn.example.net/mindrecords/staging/13/a.png", previewUrl)
+        assertEquals(false, viewModel.uiState.value.isUploadingImage)
+    }
+
+    @Test
+    fun `화면 상태에 대표 이미지 필드가 없다`() {
+        // **구조로만 지킬 수 있는 자리다.** 그 필드는 읽는 곳이 0 이었다 — 되살려도 화면도 payload 도
+        // 달라지지 않으니 동작 테스트로는 잡히지 않는다(실제로 되살려 보고 확인했다). 그래서
+        // 「필드가 없다」 자체를 계약으로 고정한다.
+        //
+        // 다시 필요해지면 이 단언을 지우는 것이 곧 «대표 이미지 개념을 다시 도입한다» 는 선언이 된다.
+        // 그때는 종류 판정(MIME·확장자) 없이 «첫 번째» 로 집지 않아야 한다 (#1195).
+        // data class 의 toString 이 프로퍼티 목록을 그대로 드러낸다 — reflect 의존 없이 형태를 본다.
+        val shape = DiaryWriteUiState().toString()
+
+        assertEquals(false, shape.contains("imageUrl="))
+    }
+
+    @Test
+    fun `제출 payload 는 서버 계약 필드만 담는다`() {
+        // 서버 `DiaryCreateRequest` 에 `imageUrl` 이 없다 — 그게 이 PR 의 근거다. 대표 이미지가
+        // payload 로 새어 나가면 여기서 갈린다 (#1195).
+        //
+        // (필드 목록을 여기 나열하지 않는다. 초안에 `date` 를 빠뜨렸는데 서버가 그 사이 추가한
+        //  것이었다 — 목록은 이 테스트가 지키는 것도 아니면서 낡을 뿐이다.)
+        var sent: DiaryCreatePayload? = null
+        val viewModel = viewModel(onCreate = { sent = it })
+
+        runBlocking { viewModel.uploadMedia("content://picked") }
+        viewModel.onTitleChanged("제목")
+        viewModel.onContentChanged("<p>본문</p>")
+        viewModel.onMoodSelected(TodayMood.HAPPY)
+        viewModel.submit()
+
+        val payload = requireNotNull(sent)
+        assertEquals("제목", payload.title)
+        assertEquals("<p>본문</p>", payload.content)
+        assertEquals(TodayMood.HAPPY, payload.todayMood)
+        assertEquals(emptyList<Long>(), payload.receiverIds)
+        // 값 확인만으로는 **초과 필드**를 못 본다 — 누군가 payload 에 `imageUrl` 을 더하면 위 네
+        // 단언은 그대로 통과한다. 형태로 막는다 (#1195 리뷰). 옆 테스트와 같은 방식이다.
+        assertEquals(false, payload.toString().contains("imageUrl="))
+    }
+
+    @Test
     fun `이미 저장된 영구 URL 은 건드리지 않는다`() {
         // 서버가 이미 permanent 로 옮긴 이미지다. 키로 바꾸면 다시 옮기려다 실패한다.
         var sent: String? = null
@@ -70,7 +122,7 @@ class DiaryWriteImageKeyTest {
         assertEquals(storedHtml, sent)
     }
 
-    private fun viewModel(onCreate: (DiaryCreatePayload) -> Unit): DiaryWriteViewModel =
+    private fun viewModel(onCreate: (DiaryCreatePayload) -> Unit = {}): DiaryWriteViewModel =
         DiaryWriteViewModel(
             savedStateHandle = SavedStateHandle(emptyMap()),
             repository = RecordingDiaryRepository(onCreate),

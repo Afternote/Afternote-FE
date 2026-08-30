@@ -567,7 +567,8 @@ class TimeLetterMindRecordCompletionAndroidTest {
         assertEquals("<p>임시 본문</p>", loaded.content)
         assertEquals(TodayMood.SOSO, loaded.mood)
         assertEquals(draftDate, loaded.date)
-        assertEquals("https://afternote.test/draft.jpg", loaded.imageUrl)
+        // 프리필은 «대표 이미지» 를 상태로 들지 않는다 — 읽는 곳이 없고 계약에도 없다 (#1195).
+        // 본문 이미지는 content 의 img 태그로 이어진다.
         composeRule.onNodeWithText("이어 쓸 일기").assertIsDisplayed()
 
         composeRule.runOnIdle {
