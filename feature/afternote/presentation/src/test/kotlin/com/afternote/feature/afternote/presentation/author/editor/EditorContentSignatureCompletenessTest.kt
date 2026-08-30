@@ -174,4 +174,35 @@ class EditorContentSignatureCompletenessTest {
             ),
         )
     }
+
+    /**
+     * 서버 원본 두 칸은 prefill 이 채우고 그 뒤 변하지 않으므로 지금은 지문에 넣어도 결과가 같다.
+     * 이 카나리는 그 우연이 아니라 「사용자 입력만 센다」는 계약을 고정한다 — 저장 성공 후 서버 값
+     * 새로고침처럼 원본만 갱신되는 경로가 생기면, 제외가 없는 순간 손대지 않은 폼이 «변경됨» 이 된다.
+     */
+    @Test
+    fun `prefill 이 채운 서버 원본은 지문에서 제외된다`() {
+        val state = newState()
+        val serverVideo = "https://cdn.example/afternotes/video.mp4"
+        val onlyDisplayed =
+            editorContentSignature(
+                EditorFormState(typeForm = AfternoteTypeForm.Memorial(videoUrl = serverVideo)),
+                state,
+            )
+        assertEquals(
+            "서버 원본은 prefill 이 채운 값이라 사용자 입력이 아니다",
+            onlyDisplayed,
+            editorContentSignature(
+                EditorFormState(
+                    typeForm =
+                        AfternoteTypeForm.Memorial(
+                            videoUrl = serverVideo,
+                            serverVideoUrl = serverVideo,
+                            serverThumbnailUrl = "https://cdn.example/afternotes/thumb.jpg",
+                        ),
+                ),
+                state,
+            ),
+        )
+    }
 }
