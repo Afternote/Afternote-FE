@@ -2,13 +2,16 @@ package com.afternote.afternote_fe.test
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.testing.FakeAuthRepository
+import com.afternote.core.domain.testing.FakePasskeyRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserPushSetting
 import com.afternote.feature.afternote.domain.AfternoteType
+import java.io.IOException
 
 fun afternoteEditorSavedStateHandle(
     initialType: AfternoteType,
@@ -62,6 +65,34 @@ fun appTestUserRepository(
         onUpdateMyPushSettings = null
         onGetConnectedAccounts = { defaultConnectedAccounts(this.profile.email) }
     }
+
+/**
+ * 계측에서는 패스키 로그인을 시도하지 않는다 (#764).
+ *
+ * `LoginEntry` 는 화면 진입만으로 `startPasskeyLogin()` 을 부르므로, 갈아끼우지 않으면 로그인 화면을
+ * 지나는 모든 계측이 `auth/passkey/authenticate/options` 를 실서버로 호출하고 성공하면 기기의
+ * Credential Manager 선택기까지 띄운다 — `TestNotificationPermissionStoreModule` 이 막아 둔
+ * 시스템 다이얼로그와 같은 부류의 위험이다. 옵션 발급을 닫으면 `passkeyRequestJson` 이 서지 않아
+ * 선택기 호출 자체가 일어나지 않는다.
+ *
+ * `FakePasskeyRepository.strict()` 를 쓰지 않는 이유 — 그쪽은 닫힌 경로에서 예외를 던지는데
+ * `PasskeyLoginUseCase.requestOptions()` 도 `LoginViewModel.startPasskeyLogin()` 도 호출을
+ * `runCatching` 으로 감싸지 않는다. 던지면 `viewModelScope.launch` 를 뚫고 나가 앱이 죽는다.
+ * 그래서 `Result.failure` 로 닫는다.
+ *
+ * 실패 사유가 [CoreAuthFailure.NetworkUnavailable] 인 것도 우연이 아니다 —
+ * `startPasskeyLogin()` 이 리포팅을 건너뛰는 유일한 갈래라, 이걸로 닫아야
+ * `AppAndReceiverCompletionAndroidTest` 의 `fakeErrorReporter.failures.isEmpty()` 가 성립한다.
+ */
+fun appTestPasskeyRepository(): FakePasskeyRepository =
+    FakePasskeyRepository(
+        onAuthenticationOptions = {
+            Result.failure(CoreAuthFailure.NetworkUnavailable(IOException("androidTest: passkey disabled")))
+        },
+        onAuthenticate = {
+            Result.failure(CoreAuthFailure.NetworkUnavailable(IOException("androidTest: passkey disabled")))
+        },
+    )
 
 class FakeErrorReporter : ErrorReporter {
     val failures = mutableListOf<Pair<Throwable, Map<String, String>>>()

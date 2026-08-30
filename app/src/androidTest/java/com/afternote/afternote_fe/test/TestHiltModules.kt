@@ -4,10 +4,12 @@ import com.afternote.afternote_fe.notification.NotificationPermissionRequestStor
 import com.afternote.afternote_fe.notification.di.NotificationPermissionStoreModule
 import com.afternote.afternote_fe.reporting.ErrorReportingModule
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.data.di.CorePasskeyRepositoryModule
 import com.afternote.core.data.di.CoreUserRepositoryModule
 import com.afternote.core.domain.repository.UserProfileCacheRepository
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
+import com.afternote.core.domain.repository.auth.PasskeyRepository
 import com.afternote.core.domain.testing.FakeUserProfileCacheRepository
 import com.afternote.feature.mindrecord.data.di.MindRecordRepositoryModule
 import com.afternote.feature.mindrecord.data.repositoryimpl.MindRecordReceiverRepositoryImpl
@@ -42,6 +44,29 @@ object TestCoreUserRepositoryModule {
     @Provides
     @Singleton
     fun provideUserProfileCacheRepository(): UserProfileCacheRepository = FakeUserProfileCacheRepository()
+}
+
+@Module
+@TestInstallIn(
+    components = [SingletonComponent::class],
+    replaces = [CorePasskeyRepositoryModule::class],
+)
+object TestCorePasskeyRepositoryModule {
+    /**
+     * 계측에서는 패스키 로그인을 시도하지 않는다 (#764).
+     *
+     * 갈아끼우지 않으면 로그인 화면을 지나는 계측(`AppOnboardingCanaryTest`·
+     * `AccessibilitySmokeAndroidTest`·`AppAndReceiverCompletionAndroidTest`)이 화면 진입만으로
+     * 실 Retrofit 을 지나 `auth/passkey/authenticate/options` 를 호출하고, 성공하면 기기의
+     * Credential Manager 선택기가 테스트 UI 를 덮는다 — [TestNotificationPermissionStoreModule]
+     * 이 막아 둔 시스템 다이얼로그와 같은 부류의 flake 다.
+     *
+     * 닫는 방식과 실패 사유 선택의 근거는 [appTestPasskeyRepository] 에 적었다.
+     * 패스키 경로 자체의 판정은 단위 테스트(`LoginViewModelPasskeyTest` 등)가 맡는다.
+     */
+    @Provides
+    @Singleton
+    fun providePasskeyRepository(): PasskeyRepository = appTestPasskeyRepository()
 }
 
 @Module
