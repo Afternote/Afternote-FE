@@ -58,6 +58,7 @@ internal fun buildOnRegisterClick(
     {
         // 폼 스냅샷은 한 번만 읽는다 — 필드마다 다시 읽으면 조립 도중 갱신이 끼어 서로 다른 시점의 값이 섞인다.
         val form = state.currentForm()
+        val displayedVideo = form.displayedMemorialVideo
         val payload =
             SaveAfternotePayloadBuilder.build(
                 form = form,
@@ -74,8 +75,8 @@ internal fun buildOnRegisterClick(
             selectedReceiverIds = form.afternoteEditReceivers.map { it.id },
             memorialMedia =
                 SaveAfternoteMemorialMedia(
-                    memorialVideoUrl = form.memorialVideoUrl,
-                    memorialThumbnailUrl = form.memorialThumbnailUrl,
+                    memorialVideoUrl = displayedVideo?.url,
+                    memorialThumbnailUrl = displayedVideo?.thumbnailUrl,
                     memorialPhotoUrl = form.memorialPhotoUrl,
                     pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
                 ),

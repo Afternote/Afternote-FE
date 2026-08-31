@@ -26,6 +26,7 @@ import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteM
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
+import com.afternote.feature.afternote.presentation.author.editor.state.MemorialVideoAttachment
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -236,9 +237,14 @@ class AfternoteAuthorImplementedCoverageTest {
 
         val restored = implementedCoverageViewModel(implementedCoverageRepository(), handle).currentForm()
         assertEquals(AfternoteType.MEMORIAL, restored.selectedType)
-        assertEquals("content://videos/farewell", restored.memorialVideoUrl)
+        assertEquals(
+            MemorialVideoAttachment(
+                url = "content://videos/farewell",
+                thumbnailUrl = "https://cdn.test/thumbnail.jpg",
+            ),
+            restored.displayedMemorialVideo,
+        )
         assertEquals("content://photos/portrait", restored.pickedMemorialPhotoUri)
-        assertEquals("https://cdn.test/thumbnail.jpg", restored.memorialThumbnailUrl)
         assertEquals(
             listOf(Song("91", "첫 번째 노래", "가수 A", "https://cdn.test/cover.jpg")),
             restored.memorialPlaylistSongs,

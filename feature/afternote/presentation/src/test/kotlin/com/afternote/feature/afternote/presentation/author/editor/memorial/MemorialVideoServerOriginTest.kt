@@ -3,6 +3,7 @@ package com.afternote.feature.afternote.presentation.author.editor.memorial
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorContentPrefill
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
+import com.afternote.feature.afternote.presentation.author.editor.state.MemorialVideoAttachment
 import com.afternote.feature.afternote.presentation.author.editor.state.withMemorialThumbnail
 import com.afternote.feature.afternote.presentation.author.editor.state.withMemorialVideo
 import org.junit.Assert.assertEquals
@@ -25,6 +26,7 @@ class MemorialVideoServerOriginTest {
     private val serverVideo = "https://cdn.test/farewell.mp4"
     private val serverThumbnail = "https://cdn.test/farewell-thumb.jpg"
     private val localVideo = "content://videos/replacement"
+    private val serverAttachment = MemorialVideoAttachment(url = serverVideo, thumbnailUrl = serverThumbnail)
 
     private fun prefilledEditForm(): EditorFormState =
         EditorFormState(
@@ -43,9 +45,10 @@ class MemorialVideoServerOriginTest {
 
     @Test
     fun `수정 진입 prefill 은 서버 원본을 따로 기억한다`() {
-        val form = prefilledEditForm().memorial()
+        val state = prefilledEditForm()
+        val form = state.memorial()
 
-        assertEquals(serverVideo, form.displayVideo()?.url)
+        assertEquals(serverAttachment, state.displayedMemorialVideo)
         assertEquals(serverVideo, form.serverVideo?.url)
         assertEquals(serverThumbnail, form.serverVideo?.thumbnailUrl)
         assertNull("수정 진입만으로는 고른 영상이 없다", form.pickedVideo)
@@ -53,11 +56,11 @@ class MemorialVideoServerOriginTest {
 
     @Test
     fun `로컬 영상으로 교체해도 서버 원본은 남는다`() {
-        val replaced = prefilledEditForm().withMemorialVideo(localVideo).memorial()
+        val state = prefilledEditForm().withMemorialVideo(localVideo)
+        val replaced = state.memorial()
 
-        assertEquals(localVideo, replaced.displayVideo()?.url)
         // 교체한 영상의 썸네일은 아직 없다 — 원본 썸네일을 물려주면 다른 영상의 그림이 붙는다.
-        assertNull(replaced.displayVideo()?.thumbnailUrl)
+        assertEquals(MemorialVideoAttachment(url = localVideo), state.displayedMemorialVideo)
         assertEquals(serverVideo, replaced.serverVideo?.url)
     }
 
@@ -67,12 +70,10 @@ class MemorialVideoServerOriginTest {
             prefilledEditForm()
                 .withMemorialVideo(localVideo)
                 .withMemorialVideo(null)
-                .memorial()
 
         // 종전에는 여기서 영상 칸이 null 이 되어 폼이 빈 슬롯을 보여줬다. 저장하면 서버 영상이 그대로
         // 남아 재진입 시 되살아났다 — 폼이 서버 상태를 두고 거짓말을 한 자리다.
-        assertEquals(serverVideo, removed.displayVideo()?.url)
-        assertEquals(serverThumbnail, removed.displayVideo()?.thumbnailUrl)
+        assertEquals(serverAttachment, removed.displayedMemorialVideo)
     }
 
     @Test
@@ -92,9 +93,8 @@ class MemorialVideoServerOriginTest {
             EditorFormState(typeForm = AfternoteTypeForm.Memorial())
                 .withMemorialVideo(localVideo)
                 .withMemorialVideo(null)
-                .memorial()
 
-        assertNull(removed.displayVideo())
+        assertNull(removed.displayedMemorialVideo)
     }
 
     @Test
@@ -106,9 +106,8 @@ class MemorialVideoServerOriginTest {
                 .withMemorialVideo(localVideo)
                 .withMemorialVideo(null)
                 .withMemorialThumbnail("https://cdn.test/late-thumb.jpg")
-                .memorial()
 
-        assertNull(afterLateThumbnail.pickedVideo)
-        assertNull(afterLateThumbnail.displayVideo())
+        assertNull(afterLateThumbnail.pickedMemorialVideo)
+        assertNull(afterLateThumbnail.displayedMemorialVideo)
     }
 }

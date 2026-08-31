@@ -33,8 +33,7 @@ data class EditorFormState(
     val pickedMemorialVideo: MemorialVideoAttachment? get() = memorialForm?.pickedVideo
 
     /** 화면이 그리고 저장이 싣는 영상 — 고른 것이 있으면 그것, 없으면 서버에 저장된 것. */
-    val memorialVideoUrl: String? get() = memorialForm?.displayVideo()?.url
-    val memorialThumbnailUrl: String? get() = memorialForm?.displayVideo()?.thumbnailUrl
+    val displayedMemorialVideo: MemorialVideoAttachment? get() = memorialForm?.displayVideo()
     val memorialPhotoUrl: String? get() = memorialForm?.photoUrl
     val memorialPlaylistSongs: List<Song> get() = memorialForm?.playlistSongs.orEmpty()
 

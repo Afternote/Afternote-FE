@@ -281,11 +281,12 @@ internal fun AfternoteTypeContent(
 ) {
     when (form.selectedType) {
         AfternoteType.MEMORIAL -> {
+            val displayedVideo = form.displayedMemorialVideo
             MemorialEditorContent(
                 displayMemorialPhotoUri = form.displayMemorialPhotoUri(),
                 playlistAlbumCovers = form.displayAlbumCovers(),
-                memorialVideoUrl = form.memorialVideoUrl,
-                memorialThumbnailUrl = form.memorialThumbnailUrl,
+                memorialVideoUrl = displayedVideo?.url,
+                memorialThumbnailUrl = displayedVideo?.thumbnailUrl,
                 editorMessages = state.editorMessages,
                 onMessageRegisterClick = state::registerEditorMessage,
                 onMessageDeleteClick = state::removeEditorMessage,
