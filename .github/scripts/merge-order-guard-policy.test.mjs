@@ -246,7 +246,7 @@ test("ordinary PR guard stays non-stale while merge queue performs the live verd
 
 test("close notifier executes only trusted default-branch policy", () => {
     assert.match(stackNotify, /^\s{2}pull_request_target:\n\s{4}types: \[closed, reopened\]$/m);
-    assert.match(stackNotify, /github\.event\.pull_request\.merged == false/);
+    assert.doesNotMatch(stackNotify, /github\.event\.pull_request\.merged == false/);
     assert.match(stackNotify, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
     assert.match(stackNotify, /persist-credentials: false/);
     assert.match(stackNotify, /^permissions: \{\}$/m);
@@ -261,18 +261,20 @@ test("declares the repository code owner for GitHub automation and policy change
     assert.match(codeowners, /^\/\.github\/ @1hyok$/m);
 });
 
-test("closing an unmerged middle member warns every upper PR once and reopen resolves it", () => {
+test("live CLOSED warns upper PRs while OPEN or MERGED resolves the same bot comment", () => {
     assert.match(stackNotify, /issues: write/);
     assert.match(stackNotify, /live_state=\$\(jq -r '\.state'/);
-    assert.match(stackNotify, /"\$live_state" != "CLOSED"/);
+    assert.match(stackNotify, /CLOSED\)[\s\S]*notice_state="active"/);
+    assert.match(stackNotify, /OPEN\)[\s\S]*notice_state="resolved"/);
+    assert.match(stackNotify, /MERGED\)[\s\S]*notice_state="resolved"/);
     assert.match(stackNotify, /merge-order-stack-integrity\.mjs open-above <<< "\$closed_pr_json"/);
     assert.match(stackNotify, /stack-integrity:closed-unmerged-\$CLOSED_PR/);
     assert.match(stackNotify, /issues\/\$target\/comments/);
-    assert.match(stackNotify, /PR_ACTION" = "reopened"/);
     assert.match(stackNotify, /--method PATCH/);
     assert.match(stackNotify, /스택 연결 조치 안내 해소/);
     assert.match(stackNotify, /gh stack unstack \$stack_number/);
     assert.match(stackNotify, /gh stack link --base develop/);
+    assert.match(stackNotify, /unstack\/relink 자체에는 Actions 이벤트가 없어/);
     assert.doesNotMatch(stackNotify, /^\s+gh stack (unstack|link)/m);
 });
 

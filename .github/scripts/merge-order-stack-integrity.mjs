@@ -171,8 +171,8 @@ export function closedUnmergedBlockerNumbers(pullRequest) {
 }
 
 export function openPullRequestNumbersAboveCurrent(pullRequest) {
-    const { current, currentPosition, entries } = validatePullRequestStack(pullRequest);
-    if (currentPosition === null || current.state === "MERGED") return [];
+    const { currentPosition, entries } = validatePullRequestStack(pullRequest);
+    if (currentPosition === null) return [];
 
     return entries
         .filter(

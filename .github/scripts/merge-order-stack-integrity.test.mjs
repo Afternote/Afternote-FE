@@ -130,7 +130,7 @@ test("재오픈된 현재 PR도 위쪽 열린 PR을 반환해 stale red check를
     assert.deepEqual(openPullRequestNumbersAboveCurrent(value), [1557]);
 });
 
-test("병합된 현재 PR은 위쪽 PR 갱신 대상을 만들지 않는다", () => {
+test("병합된 현재 PR도 기존 안내를 해소할 위쪽 PR을 반환한다", () => {
     const value = pullRequest({
         currentNumber: 1537,
         currentPosition: 1,
@@ -139,7 +139,7 @@ test("병합된 현재 PR은 위쪽 PR 갱신 대상을 만들지 않는다", ()
         entries: [entry(1, 1537, "MERGED", MERGED_AT), entry(2, 1557)],
     });
 
-    assert.deepEqual(openPullRequestNumbersAboveCurrent(value), []);
+    assert.deepEqual(openPullRequestNumbersAboveCurrent(value), [1557]);
 });
 
 test("CLI는 stdin JSON을 받아 하위 blocker와 위쪽 open PR을 한 줄에 하나씩 출력한다", () => {
