@@ -1,6 +1,11 @@
 <resources>
     <string name="home_tab_greeting">안녕하세요,\n%1$s님</string>
     <string name="home_tab_tagline">오늘도 당신의 하루를 차분히 기록해보세요.</string>
+    <!-- 타임레터 NEXT STEP — 2026-08-09 디자이너(류하늬) 확정 문구 (#700). 정본 4327:99103. -->
+    <string name="home_tab_timeletter_next_step_section_title">타임레터</string>
+    <string name="home_tab_timeletter_next_step_body">내 자식들의 입학식, 졸업식에 남겨 줄\n편지를 작성하셨나요?</string>
+    <string name="home_tab_timeletter_next_step_cta">타임레터 입력하러가기</string>
+
     <string name="home_tab_next_step_section_title">AFTER NOTE NEXT STEP</string>
     <string name="home_tab_next_step_body">가족들의 \u2018주거래 은행\u2019 정보를\n입력하신 건 확인하셨나요?</string>
     <string name="home_tab_next_step_cta">애프터노트 입력하러가기</string>

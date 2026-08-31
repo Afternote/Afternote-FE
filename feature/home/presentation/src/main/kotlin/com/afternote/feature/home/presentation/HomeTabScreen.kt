@@ -32,8 +32,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.mindrecord.presentation.hometab.homeTabMindRecordMemoriesSection
-import com.afternote.feature.mindrecord.presentation.hometab.homeTabMindRecordQuestionAndCategories
-import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
+import com.afternote.feature.mindrecord.presentation.hometab.homeTabMindRecordTodayQuestion
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -60,7 +59,6 @@ sealed interface HomeTabUiState {
     data class Success(
         val userName: String,
         val isRecipientDesignated: Boolean,
-        val categoryCounts: Map<MindRecordCategory, Int>,
         val isRefreshing: Boolean = false,
         /** 오늘의 질문 본문. 조회 실패 시 null — 카드가 중립 문구를 표시한다. */
         val todayQuestionContent: String? = null,
@@ -85,7 +83,8 @@ interface HomeTabActions {
 
     fun onNextStepClick()
 
-    fun onRecordCategoryClick(category: MindRecordCategory)
+    /** 타임레터 NEXT STEP 카드 — 2026-08-09 확정 문구의 목적지 (#700). */
+    fun onTimeLetterNextStepClick()
 
     fun onWeeklyImageClick()
 
@@ -105,7 +104,7 @@ private object HomeTabActionsNoop : HomeTabActions {
 
     override fun onNextStepClick() {}
 
-    override fun onRecordCategoryClick(category: MindRecordCategory) {}
+    override fun onTimeLetterNextStepClick() {}
 
     override fun onWeeklyImageClick() {}
 
@@ -147,8 +146,6 @@ fun HomeTabScreen(
                         // 조회 전이다 — 지정 여부를 결과로 확정하지 않는다 (#698).
                         recipientBadgeState = RecipientDesignationBadgeState.Unknown,
                         // 조회 전에는 아는 값이 없다 — 0 을 채워 넣지 않는다 (#700).
-                        categoryCounts = emptyMap(),
-                        categoryCountsLoading = true,
                         todayDateText = todayDateText,
                         todayQuestionContent = null,
                         isQuestionLoading = true,
@@ -167,8 +164,6 @@ fun HomeTabScreen(
                             } else {
                                 RecipientDesignationBadgeState.Incomplete(onClick = actions::onRecipientChipClick)
                             },
-                        categoryCounts = uiState.categoryCounts,
-                        categoryCountsLoading = false,
                         todayDateText = todayDateText,
                         todayQuestionContent = uiState.todayQuestionContent,
                         isQuestionLoading = false,
@@ -217,8 +212,6 @@ private fun HomeTabScrollContent(
      * 약속이 되고, 「널+폴백 대신 값으로 명시」(#934) 와도 어긋난다 (#698 리뷰).
      */
     recipientBadgeState: RecipientDesignationBadgeState,
-    categoryCounts: Map<MindRecordCategory, Int>,
-    categoryCountsLoading: Boolean,
     todayDateText: String,
     todayQuestionContent: String?,
     isQuestionLoading: Boolean,
@@ -251,15 +244,24 @@ private fun HomeTabScrollContent(
             Spacer(Modifier.height(32.dp))
         }
 
-        homeTabMindRecordQuestionAndCategories(
+        homeTabMindRecordTodayQuestion(
             dateText = todayDateText,
             questionText = todayQuestionContent,
             isQuestionLoading = isQuestionLoading,
-            categoryCounts = categoryCounts,
             onAnswerClick = actions::onAnswerClick,
-            onRecordCategoryClick = actions::onRecordCategoryClick,
-            isCategoryCountLoading = categoryCountsLoading,
         )
+
+        // 정본(4327:99103)의 순서는 TODAY'S QUESTION → 타임레터 → AFTER NOTE NEXT STEP 이다.
+        // 문구는 2026-08-09 디자이너 확정분 (#700).
+        item {
+            NextStepCard(
+                sectionTitle = stringResource(R.string.home_tab_timeletter_next_step_section_title),
+                body = stringResource(R.string.home_tab_timeletter_next_step_body),
+                cta = stringResource(R.string.home_tab_timeletter_next_step_cta),
+                onClick = actions::onTimeLetterNextStepClick,
+            )
+            Spacer(modifier = Modifier.height(40.dp))
+        }
 
         item {
             AfternoteSectionHeader(title = stringResource(R.string.home_tab_next_step_section_title))
@@ -306,6 +308,44 @@ private fun HomeTabScrollContent(
         homeTabMindRecordMemoriesSection(
             onMemoriesSectionClick = actions::onMemoriesSectionClick,
         )
+    }
+}
+
+/**
+ * NEXT STEP 카드 한 장. 타임레터·애프터노트가 같은 모양을 쓰므로 문구와 목적지만 받는다.
+ */
+@Composable
+private fun NextStepCard(
+    sectionTitle: String,
+    body: String,
+    cta: String,
+    onClick: () -> Unit,
+) {
+    AfternoteSectionHeader(title = sectionTitle)
+    Spacer(modifier = Modifier.height(12.dp))
+    AfternoteOutlinedCard(onClick = onClick) {
+        Column {
+            Text(
+                text = body,
+                style = AfternoteDesign.typography.inter,
+                color = AfternoteDesign.colors.gray8,
+            )
+            Spacer(modifier = Modifier.height(18.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    text = cta,
+                    style = AfternoteDesign.typography.captionLargeR,
+                    color = AfternoteDesign.colors.gray6,
+                )
+                RightArrowIcon(
+                    modifier = Modifier.size(width = 4.dp, height = 7.dp),
+                    tint = AfternoteDesign.colors.gray6,
+                )
+            }
+        }
     }
 }
 

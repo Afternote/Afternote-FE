@@ -3,7 +3,6 @@ package com.afternote.feature.home.presentation.usecase
 data class HomeSummary(
     val userName: String,
     val isRecipientDesignated: Boolean,
-    val diaryCategoryCount: Int,
     /**
      * 오늘의 질문 **본문 문자열**. 조회 실패 시 null — UI 는 중립 문구를 표시한다.
      *
