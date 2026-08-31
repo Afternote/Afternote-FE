@@ -48,14 +48,14 @@ class NotificationColdStartAndroidTest {
     fun coldPendingIntentLaunch_enqueuesInitialNotificationEntry() {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         val source = NotificationEntrySource.FCM
-        val occurrenceToken = "cold-start-1"
+        val occurrenceId = "cold-start-1"
         activityMonitor = instrumentation.addMonitor(MainActivity::class.java.name, null, false)
 
         val pendingIntent =
             NotificationPendingIntentFactory.create(
                 context = context,
                 source = source.contractValue,
-                occurrenceToken = occurrenceToken,
+                occurrenceId = occurrenceId,
             )
 
         assertNotNull(pendingIntent)
@@ -77,7 +77,7 @@ class NotificationColdStartAndroidTest {
         }
 
         assertEquals(
-            NotificationEntryRequest(source = source, occurrenceToken = occurrenceToken),
+            NotificationEntryRequest(source = source, occurrenceId = occurrenceId),
             pendingEntry,
         )
     }
