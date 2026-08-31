@@ -96,14 +96,14 @@ fun MemorialVideoThumbnail(
             contentAlignment = Alignment.Center,
         ) {
             Image(
-                painter = painterResource(R.drawable.feature_afternote_ic_video_play),
-                contentDescription = stringResource(R.string.content_description_video_play),
+                painter = painterResource(R.drawable.afternote_ic_video_play),
+                contentDescription = stringResource(R.string.afternote_content_description_video_play),
                 modifier = Modifier.size(20.dp),
             )
         }
 
         Text(
-            text = stringResource(R.string.feature_afternote_memorial_video_overlay_label),
+            text = stringResource(R.string.afternote_memorial_video_overlay_label),
             style =
                 AfternoteDesign.typography.bodySmallR.copy(
                     color = Color.White.copy(alpha = 0.9f),

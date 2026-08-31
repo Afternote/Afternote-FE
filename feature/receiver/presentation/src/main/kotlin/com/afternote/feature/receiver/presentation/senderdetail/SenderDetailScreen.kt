@@ -179,6 +179,15 @@ private fun SuccessBody(
 
         Text(
             text = displayName,
+            // 시안 실측(정본 페이지 「정리 Screen Design」, Figma REST): fontSize 32 / lineHeight 32px = 100%.
+            // 신청 전 https://www.figma.com/design/UP9ZR186jHvRBicjA2SOea/?node-id=4327-74206
+            // 승인 후 https://www.figma.com/design/UP9ZR186jHvRBicjA2SOea/?node-id=4327-74250
+            // 두 노드가 든 화면 프레임(4327:74200 · 4327:74244)은 레이어명이 「현재 수신인 목록」이지만
+            // 복붙 잔재고, 내용은 이 화면이 맞다 — 원형 프로필 134 아래 이름, 그 아래 정보 박스 4행.
+            //
+            // bodyLargeB 는 18/24(133%) 라 fontSize 만 덮으면 행간 24sp 가 그대로 상속돼 글자(32sp)
+            // 보다 작아진다 — 이름이 두 줄로 접히면 줄이 겹친다. 그래서 lineHeight 를 함께 적는다.
+            // 대조 완료 — 다시 재지 않아도 된다 (#1444 · #1486).
             style =
                 AfternoteDesign.typography.bodyLargeB.copy(fontSize = 32.sp, lineHeight = 32.sp),
             color = AfternoteDesign.colors.gray9,

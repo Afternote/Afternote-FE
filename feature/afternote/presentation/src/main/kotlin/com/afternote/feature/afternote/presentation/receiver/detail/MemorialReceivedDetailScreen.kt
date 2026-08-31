@@ -75,7 +75,7 @@ fun MemorialReceivedDetailScreen(
     memorialThumbnailUrl: String? = null,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
-    profileImageResId ?: R.drawable.receiver_img_default_profile_deceased
+    profileImageResId ?: R.drawable.afternote_receiver_img_default_profile_deceased
     val onVideoClick = rememberReceivedMemorialVideoClickHandler(snackbarHostState)
 
     Scaffold(
@@ -175,11 +175,11 @@ private fun rememberReceivedMemorialVideoClickHandler(snackbarHostState: Snackba
                 videoUrl = videoUrl,
                 startActivity = context::startActivity,
                 onRejected = {
-                    val message = resources.getString(R.string.receiver_memorial_video_invalid_url)
+                    val message = resources.getString(R.string.afternote_receiver_memorial_video_invalid_url)
                     scope.launch { snackbarHostState.showSnackbar(message) }
                 },
                 onUnavailable = {
-                    val message = resources.getString(R.string.receiver_memorial_video_no_app)
+                    val message = resources.getString(R.string.afternote_receiver_memorial_video_no_app)
                     scope.launch { snackbarHostState.showSnackbar(message) }
                 },
             )
@@ -218,7 +218,7 @@ private fun ReceiverVideoSection(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.receiver_ic_play_arrow),
+                    painter = painterResource(R.drawable.afternote_receiver_ic_play_arrow),
                     // 영상이 없을 때만 그리는 플레이스홀더다. clickable 이 없어 재생 액션이 없으므로
                     // 라벨을 붙이면 없는 어포던스를 알린다. 맥락은 위 ReceiverSectionHeader 가 읽어 준다.
                     contentDescription = null,
