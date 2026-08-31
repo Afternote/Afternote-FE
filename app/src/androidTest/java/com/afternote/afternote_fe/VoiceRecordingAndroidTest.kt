@@ -30,7 +30,8 @@ class VoiceRecordingAndroidTest {
 
     @Before
     fun grantMicrophonePermission() {
-        InstrumentationRegistry.getInstrumentation()
+        InstrumentationRegistry
+            .getInstrumentation()
             .uiAutomation
             .grantRuntimePermission(context.packageName, Manifest.permission.RECORD_AUDIO)
     }
