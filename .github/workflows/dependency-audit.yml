@@ -82,7 +82,6 @@ jobs:
           run_report core-domain-runtime :core:domain:dependencies --configuration runtimeClasspath
           run_report afternote-domain-runtime :feature:afternote:domain:dependencies --configuration runtimeClasspath
           run_report mindrecord-domain-runtime :feature:mindrecord:domain:dependencies --configuration runtimeClasspath
-          run_report onboarding-domain-runtime :feature:onboarding:domain:dependencies --configuration runtimeClasspath
           run_report receiver-domain-runtime :feature:receiver:domain:dependencies --configuration runtimeClasspath
           run_report setting-domain-runtime :feature:setting:domain:dependencies --configuration runtimeClasspath
           run_report timeletter-domain-runtime :feature:timeletter:domain:dependencies --configuration runtimeClasspath
@@ -105,7 +104,7 @@ jobs:
           ./gradlew assembleDebug testDebugUnitTest \
             :core:model:test :core:domain:test \
             :feature:afternote:domain:test :feature:mindrecord:domain:test \
-            :feature:onboarding:domain:test :feature:receiver:domain:test \
+            :feature:receiver:domain:test \
             :feature:setting:domain:test :feature:timeletter:domain:test \
             :konsist:test :build-logic:test \
             --continue --parallel --console=plain \
@@ -127,7 +126,6 @@ jobs:
             --resolved-report "$REPORT_DIR/resolved/core-domain-runtime.txt" \
             --resolved-report "$REPORT_DIR/resolved/afternote-domain-runtime.txt" \
             --resolved-report "$REPORT_DIR/resolved/mindrecord-domain-runtime.txt" \
-            --resolved-report "$REPORT_DIR/resolved/onboarding-domain-runtime.txt" \
             --resolved-report "$REPORT_DIR/resolved/receiver-domain-runtime.txt" \
             --resolved-report "$REPORT_DIR/resolved/setting-domain-runtime.txt" \
             --resolved-report "$REPORT_DIR/resolved/timeletter-domain-runtime.txt" \

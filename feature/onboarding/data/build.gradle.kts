@@ -8,6 +8,5 @@ android {
 }
 
 dependencies {
-    implementation(projects.feature.onboarding.domain)
     implementation(projects.core.network)
 }
