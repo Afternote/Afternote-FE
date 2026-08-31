@@ -13,6 +13,11 @@ import com.android.tools.screenshot.PreviewTest
 @Composable
 internal fun weeklySummaryGridScreenshot() {
     AfternoteTheme {
-        WeeklySummaryGrid(modifier = Modifier.padding(16.dp))
+        WeeklySummaryGrid(
+            modifier = Modifier.padding(16.dp),
+            onImageClick = {},
+            onCountCardClick = {},
+            onRecentRecordClick = {},
+        )
     }
 }

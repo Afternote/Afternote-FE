@@ -367,7 +367,10 @@ class TimeLetterMindRecordCompletionAndroidTest {
 
         composeRule.setContent {
             AfternoteTheme {
-                DailyQuestionAnswerListScreen(viewModel = activeViewModel)
+                DailyQuestionAnswerListScreen(
+                    viewModel = activeViewModel,
+                    onEditClick = {},
+                )
             }
         }
 
@@ -427,7 +430,10 @@ class TimeLetterMindRecordCompletionAndroidTest {
             val activeWriteViewModel = writeViewModel
             AfternoteTheme {
                 if (activeWriteViewModel == null) {
-                    DailyQuestionAnswerListScreen(viewModel = listViewModel)
+                    DailyQuestionAnswerListScreen(
+                        viewModel = listViewModel,
+                        onEditClick = {},
+                    )
                 } else {
                     DailyQuestionWriteScreen(
                         viewModel = activeWriteViewModel,
@@ -436,6 +442,8 @@ class TimeLetterMindRecordCompletionAndroidTest {
                             writeViewModel = null
                             listViewModel.refreshOnReturn()
                         },
+                        onBackClick = {},
+                        onDraftListClick = {},
                     )
                 }
             }
@@ -545,11 +553,15 @@ class TimeLetterMindRecordCompletionAndroidTest {
                                     errorReporter = FakeErrorReporter(),
                                 )
                         },
+                        onBackClick = {},
+                        onDailyQuestionDraftClick = {},
                     )
                 } else {
                     DiaryWriteScreen(
                         viewModel = activeWriteViewModel,
                         onSubmitSuccess = { submitSuccessCalls += 1 },
+                        onBackClick = {},
+                        onDraftListClick = {},
                     )
                 }
             }
