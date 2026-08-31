@@ -1,6 +1,7 @@
 package com.afternote.feature.mindrecord.presentation.util
 
 import androidx.core.text.HtmlCompat
+import java.net.URI
 
 /**
  * HTML 직렬화된 본문에서 태그를 제거해 리스트 카드에 노출할 plain text 로 변환.
@@ -111,3 +112,87 @@ private val HTML_MEDIA_TAG = Regex("""<(img|video|audio|iframe|embed)\b""", Rege
 
 /** 공백으로 렌더되는 엔티티. 나머지는 가시 문자로 본다. */
 private val HTML_SPACE_ENTITIES = setOf("&nbsp;", "&#160;", "&ensp;", "&emsp;", "&thinsp;")
+
+/**
+ * 본문 링크로 쓸 수 있는 URL 인지 (#722).
+ *
+ * 종전에는 임의 문자열도 그대로 `href` 가 됐다. 스킴을 http/https 로 제한하고 호스트가
+ * 있는지까지 본다 — `javascript:` 같은 스킴이 본문에 들어갈 자리를 없앤다.
+ */
+fun String.isSupportedLinkUrl(): Boolean {
+    val trimmed = trim()
+    if (trimmed.isEmpty() || trimmed.any { it.isWhitespace() }) return false
+    val parsed = runCatching { URI(trimmed) }.getOrNull() ?: return false
+    val scheme = parsed.scheme?.lowercase() ?: return false
+    if (scheme != "http" && scheme != "https") return false
+    return !parsed.host.isNullOrBlank()
+}
+
+/**
+ * HTML 속성·본문에 넣기 전 이스케이프 (#722).
+ *
+ * 검증을 통과한 URL 이라도 따옴표나 꺾쇠가 섞이면 `a` 태그를 깨고 나올 수 있다.
+ */
+fun String.escapeHtml(): String =
+    buildString(length) {
+        this@escapeHtml.forEach { ch ->
+            when (ch) {
+                '&' -> append("&amp;")
+                '<' -> append("&lt;")
+                '>' -> append("&gt;")
+                '"' -> append("&quot;")
+                '\'' -> append("&#39;")
+                else -> append(ch)
+            }
+        }
+    }
+
+/**
+ * 상세 화면 본문 블록 (#759).
+ *
+ * 시안은 본문을 «문단 → 이미지 → 문단» 처럼 **섞어서** 보여준다. 본문은 HTML 조각이고
+ * 이미지는 그 안의 `img` 태그이므로, 태그를 기준으로 잘라 순서대로 그린다.
+ */
+sealed interface RecordContentBlock {
+    data class Text(
+        val text: String,
+    ) : RecordContentBlock
+
+    data class Image(
+        val url: String,
+    ) : RecordContentBlock
+}
+
+/**
+ * 본문 HTML 을 [RecordContentBlock] 목록으로 자른다.
+ *
+ * 리치 에디터가 `<img>` 를 렌더하지 못해(#731) 에디터를 그대로 재사용할 수 없다. 대신
+ * 이미지 태그를 경계로 잘라 텍스트는 태그를 벗겨 그리고 이미지는 따로 그린다.
+ *
+ * 빈 텍스트 조각은 버린다 — 이미지 앞뒤의 빈 문단이 그대로 빈 줄이 되면 안 된다.
+ */
+fun String.toRecordContentBlocks(): List<RecordContentBlock> {
+    val blocks = mutableListOf<RecordContentBlock>()
+    var cursor = 0
+    HTML_IMG_TAG.findAll(this).forEach { match ->
+        appendTextBlock(blocks, substring(cursor, match.range.first))
+        match.groupValues[1]
+            .trim()
+            .takeIf { it.isNotEmpty() }
+            ?.let { blocks += RecordContentBlock.Image(it) }
+        cursor = match.range.last + 1
+    }
+    appendTextBlock(blocks, substring(cursor))
+    return blocks
+}
+
+private fun appendTextBlock(
+    blocks: MutableList<RecordContentBlock>,
+    rawHtml: String,
+) {
+    if (rawHtml.isHtmlBlank()) return
+    val text = rawHtml.htmlToPlainText()
+    if (text.isNotBlank()) blocks += RecordContentBlock.Text(text)
+}
+
+private val HTML_IMG_TAG = Regex("""<img\b[^>]*?\bsrc\s*=\s*["']([^"']*)["'][^>]*>""", RegexOption.IGNORE_CASE)

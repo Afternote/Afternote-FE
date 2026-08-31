@@ -36,6 +36,7 @@ import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
+import com.afternote.feature.mindrecord.presentation.util.isSupportedLinkUrl
 
 /**
  * 키보드 툴바의 링크 버튼에서 호출되는 "링크 추가하기" 바텀시트.
@@ -82,6 +83,9 @@ private fun LinkSheetContent(
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // core 정본은 TextFieldState 를 들고 있다 — 입력값 판정은 그 상태에서 읽는다 (#634·#722).
+    val url = urlState.text.toString()
+
     Column(
         modifier =
             modifier
@@ -107,7 +111,9 @@ private fun LinkSheetContent(
                 color = AfternoteDesign.colors.gray6,
             )
 
-            ConfirmPill(onClick = onConfirm)
+            // 형식이 맞을 때만 완료가 눌린다. 종전에는 입력값과 무관하게 항상 활성이라
+            // 임의 문자열이 그대로 본문 링크가 됐다 (#722).
+            ConfirmPill(onClick = onConfirm, enabled = url.isSupportedLinkUrl())
         }
 
         // core 정본을 쓴다. 종전에는 흰 배경 + gray2 indicator + 8dp 코너를 M3 프리미티브로
@@ -118,24 +124,38 @@ private fun LinkSheetContent(
             keyboardType = KeyboardType.Uri,
             modifier = Modifier.fillMaxWidth(),
         )
+
+        // 왜 완료가 안 눌리는지 알려 준다 — 회색 버튼만으로는 고장과 구분되지 않는다.
+        if (url.isNotBlank() && !url.isSupportedLinkUrl()) {
+            Text(
+                text = stringResource(R.string.mindrecord_link_sheet_invalid),
+                style = AfternoteDesign.typography.captionLargeR,
+                color = AfternoteDesign.colors.gray6,
+            )
+        }
     }
 }
 
 @Composable
-private fun ConfirmPill(onClick: () -> Unit) {
+private fun ConfirmPill(
+    onClick: () -> Unit,
+    enabled: Boolean,
+) {
     Box(
         modifier =
             Modifier
                 .clip(CircleShape)
-                .background(AfternoteDesign.colors.gray2)
-                .border(BorderStroke(1.dp, AfternoteDesign.colors.gray4), CircleShape)
-                .clickable(onClick = onClick)
+                .background(if (enabled) AfternoteDesign.colors.gray2 else AfternoteDesign.colors.gray1)
+                .border(
+                    BorderStroke(1.dp, if (enabled) AfternoteDesign.colors.gray4 else AfternoteDesign.colors.gray3),
+                    CircleShape,
+                ).clickable(enabled = enabled, onClick = onClick)
                 .padding(horizontal = 15.dp, vertical = 9.dp),
     ) {
         Text(
             text = stringResource(R.string.mindrecord_link_sheet_confirm),
             style = AfternoteDesign.typography.captionLargeB,
-            color = AfternoteDesign.colors.gray9,
+            color = if (enabled) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray4,
         )
     }
 }

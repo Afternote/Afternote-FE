@@ -115,6 +115,20 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
                 navController.navigate(MindRecordRoute.DraftListRoute)
             }
 
+            override fun onOpenRecordDetail(
+                recordId: Long,
+                isDiary: Boolean,
+                yearMonth: String?,
+            ) {
+                navController.navigate(
+                    MindRecordRoute.RecordDetailRoute(
+                        recordId = recordId,
+                        isDiary = isDiary,
+                        yearMonth = yearMonth,
+                    ),
+                )
+            }
+
             override fun onEditDailyQuestion(answerId: Long) {
                 navController.navigate(MindRecordRoute.DailyQuestionWriteRoute(answerId = answerId))
             }
@@ -385,10 +399,6 @@ fun rememberHomeTabActions(
             }
 
             override fun onWeeklyCountClick() {
-                appState.navigateToBottomBarRoute(Route.MindRecord)
-            }
-
-            override fun onWeeklyRecentRecordClick() {
                 appState.navigateToBottomBarRoute(Route.MindRecord)
             }
 

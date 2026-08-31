@@ -37,6 +37,7 @@ dependencies {
     testImplementation(testFixtures(projects.core.domain))
     testImplementation(testFixtures(projects.feature.mindrecord.domain))
 
+    // 캘린더 날짜 셀 상호작용을 JVM 에서 실제로 눌러 확인한다 (#724).
     // 첨부 파일명 해석은 ContentResolver 를 타므로 Robolectric 으로 검증한다 (#731).
     testImplementation(libs.androidx.test.core.ktx)
     // 컴파일된 리소스로 문구를 검증한다 — aapt2 의 앞뒤 공백 제거는 소스 XML 만 봐서는 잡히지 않는다 (#732).

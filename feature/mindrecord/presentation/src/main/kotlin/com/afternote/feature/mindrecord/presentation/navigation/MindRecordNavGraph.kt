@@ -2,6 +2,7 @@ package com.afternote.feature.mindrecord.presentation.navigation
 
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import com.afternote.core.ui.Route
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.screen.memoryspace.MemorySpaceScreen
@@ -10,6 +11,7 @@ import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestion
 import com.afternote.feature.mindrecord.presentation.screen.sender.DiaryWriteScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DraftListScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.HomeScreen
+import com.afternote.feature.mindrecord.presentation.screen.sender.RecordDetailScreen
 import java.time.YearMonth
 
 /**
@@ -21,6 +23,15 @@ import java.time.YearMonth
 fun NavGraphBuilder.mindRecordNavGraph(actions: MindRecordNavActions) {
     composable<Route.MindRecord> {
         HomeScreen(
+            onRecordClick = { recordId, isDiary, yearMonth ->
+                // 목록이 보고 있던 달을 그대로 넘긴다. 이번 달로 고정하면 지난달 기록이
+                // 상세에서 조회되지 않아 통째로 열리지 않는다 (#759 리뷰).
+                actions.onOpenRecordDetail(
+                    recordId = recordId,
+                    isDiary = isDiary,
+                    yearMonth = yearMonth.toString(),
+                )
+            },
             onWriteClick = { category ->
                 when (category) {
                     MindRecordCategoryUi.DailyQuestion -> actions.onWriteDailyQuestion()
@@ -58,6 +69,14 @@ fun NavGraphBuilder.mindRecordNavGraph(actions: MindRecordNavActions) {
             onSubmitSuccess = actions::popBack,
             onBackClick = actions::popBack,
             onDraftListClick = actions::onNavigateToDraftList,
+        )
+    }
+    composable<MindRecordRoute.RecordDetailRoute> { entry ->
+        RecordDetailScreen(
+            isDiary = entry.toRoute<MindRecordRoute.RecordDetailRoute>().isDiary,
+            // develop 에서 들어온 이 화면(#759)도 «한 칸 뒤로» 다 — 걷어낸 onWriteBack 대신
+            // 같은 명령에 붙인다 (#1311).
+            onBackClick = actions::popBack,
         )
     }
     composable<MindRecordRoute.DraftListRoute> {

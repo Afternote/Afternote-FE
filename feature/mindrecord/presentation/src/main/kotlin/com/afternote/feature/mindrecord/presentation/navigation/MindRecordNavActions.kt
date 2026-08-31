@@ -29,6 +29,13 @@ interface MindRecordNavActions {
 
     fun onNavigateToDraftList()
 
+    /** 목록 항목 탭 — 저장된 기록 본문을 여는 상세 화면 (#759). */
+    fun onOpenRecordDetail(
+        recordId: Long,
+        isDiary: Boolean,
+        yearMonth: String?,
+    )
+
     /** 목록의 "수정하기" — 정식 데일리질문 답변을 프리필한 작성 화면으로 연다 (#582). */
     fun onEditDailyQuestion(answerId: Long)
 

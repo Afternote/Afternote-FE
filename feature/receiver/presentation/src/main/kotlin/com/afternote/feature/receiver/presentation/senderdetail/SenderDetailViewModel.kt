@@ -9,6 +9,7 @@ import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureSt
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
+import com.afternote.feature.receiver.domain.model.ReceivedRecordBox
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverRepository
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
@@ -152,6 +153,37 @@ class SenderDetailViewModel
                 }
         }
 
+        /**
+         * 열람 승인일을 받아 온다 (#612).
+         *
+         * `delivery-verification/status` 응답에는 승인 일시가 없다 — 그 값을 주는 건 `record-boxes` 뿐이라
+         * 화면이 오래 «승인 기록이 없습니다» 로 비어 있었다. 서버는 같은 이메일에 등록된 기록함을 모두
+         * 내려주므로 지금 보고 있는 발신자의 칸은 [ReceivedRecordBox.accessCode] 로 골라낸다.
+         *
+         * **이건 서버가 고칠 때까지의 우회다 — BE#96.** 한 줄을 표시하려고 목록 API 를 통째로 왕복하고
+         * 있다. `status` 응답이 `approvedAt` 을 내려주기 시작하면 이 함수와 호출부, 골라내는 코드가
+         * 함께 사라진다.
+         *
+         * **승인 상태에서만 부른다.** 서버가 `approvedAt` 을 APPROVED 일 때만 채우므로, 그 밖의 상태에서는
+         * 확실히 null 인 값을 받으려고 왕복을 한 번 더 하는 셈이다.
+         *
+         * 조회가 실패해도 화면을 실패로 떨어뜨리지 않는다 — 승인일은 정보 박스의 한 줄이고, 상태·신청일은
+         * 이미 받아 둔 응답으로 그릴 수 있다. 실패는 조용히 삼키지 않고 텔레메트리에 남긴다.
+         */
+        private suspend fun resolveApprovedAt(
+            status: DeliveryVerificationStatus,
+            authCode: String,
+        ): String? {
+            if (status != DeliveryVerificationStatus.APPROVED) return null
+            return receiverAuthRepository
+                .getReceivedRecordBoxes()
+                .onFailure { e ->
+                    errorReporter.recordAfternoteFailure(AfternoteFailureStage.SENDER_STATUS_LOAD, e)
+                }.getOrNull()
+                ?.firstOrNull { it.accessCode == authCode }
+                ?.approvedAt
+        }
+
         private suspend fun resolveState(sender: SenderEntry): SenderDetailUiState {
             val displayName = sender.name
             val authCode = sender.authCode
@@ -170,7 +202,10 @@ class SenderDetailViewModel
             return statusResult.fold(
                 onSuccess = { verification ->
                     senderRegistry.updateVerificationStatus(sender.id, verification.status)
-                    verification.toSuccessState(displayName)
+                    verification.toSuccessState(
+                        displayName = displayName,
+                        approvedAt = resolveApprovedAt(verification.status, authCode),
+                    )
                 },
                 onFailure = { e ->
                     errorReporter.recordAfternoteFailure(AfternoteFailureStage.SENDER_STATUS_LOAD, e)
@@ -180,13 +215,15 @@ class SenderDetailViewModel
         }
     }
 
-private fun DeliveryVerification.toSuccessState(displayName: String): SenderDetailUiState.Success =
+private fun DeliveryVerification.toSuccessState(
+    displayName: String,
+    approvedAt: String?,
+): SenderDetailUiState.Success =
     SenderDetailUiState.Success(
         displayName = displayName,
         verification = status.toUiState(),
         requestedAt = formatDate(createdAt),
-        // TODO(#215): DeliveryVerification 응답에 approvedAt 필드 추가 후 채움. 백엔드 미지원이라 null 유지.
-        approvedAt = null,
+        approvedAt = formatDate(approvedAt),
     )
 
 private fun DeliveryVerificationStatus.toUiState(): SenderVerificationState =
