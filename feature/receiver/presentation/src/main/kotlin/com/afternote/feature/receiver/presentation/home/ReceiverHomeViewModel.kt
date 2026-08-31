@@ -237,7 +237,9 @@ private fun ReceiverMindRecords.toHomeSummary(): MindRecordSummary =
 
 private fun List<AfterNoteListItem>.toAfternoteIcons(): List<AfternoteSourceIcon> =
     asSequence()
-        .mapNotNull { it.type }
+        // `type` 은 non-null 이라 `mapNotNull` 이 걸러 낼 것이 없다 (#1332 · #1452).
+        // 남겨 두면 「종류를 모르는 항목이 섞여 들어온다」는 없는 사정을 읽게 한다.
+        .map { it.type }
         .distinct()
         .take(MAX_AFTERNOTE_ICONS)
         .map { it.toSourceIcon() }

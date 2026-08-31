@@ -1,7 +1,7 @@
 package com.afternote.feature.home.presentation
 
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.testing.FakeUserProfileRepository
+import com.afternote.core.domain.testing.FakeUserProfileCacheRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.model.user.User
@@ -248,7 +248,7 @@ class HomeTabViewModelTest {
 private class Fixture {
     val server = FakeHomeRepositories()
     val profile =
-        FakeUserProfileRepository.strict().apply {
+        FakeUserProfileCacheRepository.strict().apply {
             onGetCachedUserName = { cachedUserName }
             onSaveUserName = { name -> cachedUserName = name }
         }
@@ -265,7 +265,7 @@ private class Fixture {
                     // 실패가 홈 전체를 깨뜨리지 않는다는 계약도 함께 태운다 (#562).
                     getWeeklyRecordCount = GetWeeklyRecordCountUseCase(FailingWeeklyReportRepository),
                 ),
-            userProfileRepository = profile,
+            userProfileCacheRepository = profile,
             errorReporter = reporter,
         )
 }

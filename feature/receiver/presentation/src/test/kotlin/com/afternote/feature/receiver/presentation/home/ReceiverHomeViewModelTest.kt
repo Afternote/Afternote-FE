@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -157,6 +158,36 @@ class ReceiverHomeViewModelTest {
             advanceUntilIdle()
 
             assertEquals(1, fixture.receiver.getReceivedAfterNotesCalls)
+            assertTrue(viewModel.uiState.value is ReceiverHomeUiState.Success)
+        }
+
+    @Test
+    fun `init 로드가 즉시 끝나도 첫 resume 은 재조회하지 않는다`() =
+        runTest(dispatcher) {
+            // `viewModelScope` 는 `Dispatchers.Main` 을 탄다 — 창을 만들려면 Main 자체가
+            // 즉시 실행돼야 하므로 이 테스트에서만 Unconfined 로 바꾼다(tearDown 이 되돌린다).
+            Dispatchers.setMain(UnconfinedTestDispatcher(dispatcher.scheduler))
+
+            // **가드가 무엇으로 서 있는지 가르는 테스트다** (#1374 리뷰).
+            //
+            // 다른 테스트는 `advanceUntilIdle()` 로 init 로드를 끝낸 뒤 resume 을 부른다. 그러면
+            // `loadJob` 이 이미 완료라 「진행 중이면 건너뛴다」 가드로도 통과할 수 있다.
+            //
+            // 실제 화면의 창은 그것보다 좁다 — 저장소가 즉시 응답하면 init 로드가 **중단 없이**
+            // 끝나고, 그 직후 첫 ON_RESUME 이 도착한다. 그 순간 `loadJob` 은 이미 비활성이므로
+            // **`isFirstResume` 만이 두 번째 요청을 막는다.** Unconfined 로 그 창을 그대로 만든다.
+            val fixture = Fixture()
+            fixture.receiver.onGetReceivedAfterNotes = { Result.success(afterNotes(totalCount = 5)) }
+            fixture.mindRecord.result = Result.success(mindRecords(dailyQuestionCount = 1, diaryCount = 1))
+            fixture.timeLetter.onGetReceivedTimeLetters = { timeLetters(totalCount = 1) }
+
+            val viewModel = fixture.viewModel()
+            // init 로드가 여기까지 이미 끝나 있다 — advanceUntilIdle 을 부르지 않는다.
+            assertEquals(1, fixture.receiver.getReceivedAfterNotesCalls)
+
+            viewModel.refreshOnReturn()
+
+            assertEquals("첫 resume 이 두 번째 요청을 만들었다", 1, fixture.receiver.getReceivedAfterNotesCalls)
             assertTrue(viewModel.uiState.value is ReceiverHomeUiState.Success)
         }
 
