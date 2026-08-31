@@ -25,6 +25,30 @@ test("core 가 없으면 rate 폴백을 읽는다", () => {
     assert.equal(quota.remaining, 10);
 });
 
+test("graphql 한도는 core 나 최상위 rate 로 폴백하지 않고 따로 읽는다", () => {
+    const payload = {
+        resources: {
+            core: { limit: 15000, remaining: 14000, reset: NOW + 600 },
+            graphql: { limit: 5000, remaining: 25, reset: NOW + 300 },
+        },
+        rate: { limit: 15000, remaining: 14000, reset: NOW + 600 },
+    };
+
+    assert.deepEqual(parseRateLimit(payload, "graphql"), {
+        remaining: 25,
+        limit: 5000,
+        resetAt: NOW + 300,
+    });
+    assert.throws(
+        () => parseRateLimit({ rate: payload.rate }, "graphql"),
+        /graphql 한도를 읽지 못했습니다/,
+    );
+});
+
+test("알 수 없는 API 자원은 core 로 조용히 접지 않는다", () => {
+    assert.throws(() => parseRateLimit({}, "search"), /지원하지 않는 GitHub API 자원/);
+});
+
 test("한도를 못 읽으면 조용히 통과시키지 않는다", () => {
     // 조회 실패를 «여유 있음» 으로 접으면 이 게이트가 통째로 무력해진다.
     assert.throws(() => parseRateLimit({}), /core 한도를 읽지 못했습니다/);
@@ -74,6 +98,7 @@ test("요약에 남은 호출과 리셋까지 남은 시간이 드러난다", ()
     assert.match(summary, /남은 호출: \*\*4200\*\* \/ 15000/);
     assert.match(summary, /사용 10800/);
     assert.match(summary, /2분 5초/);
+    assert.match(summary, /GitHub API 한도 \(core\)/);
 });
 
 // 스크립트가 default branch 사본으로 도는 게이트. 판정 자체를 하는 자리라 PR 사본을 믿지 않는다.
@@ -100,6 +125,17 @@ test("게이트 워크플로가 quota 확인과 실패 분류를 모두 건다",
             /if: failure\(\)[^\n]*\n(?:.*\n)*?\s+(?:run: )?node \.github\/scripts\/ensure-api-quota\.mjs classify/,
             `${name} 의 분류가 failure() 에 걸려 있지 않다`,
         );
+    }
+});
+
+test("GraphQL 을 사용하는 리뷰 적체 가드는 core 와 graphql 을 모두 예산·분류한다", async () => {
+    const source = await workflow("review-debt-guard.yml");
+    for (const resource of ["core", "graphql"]) {
+        assert.match(
+            source,
+            new RegExp(`ensure-api-quota\\.mjs ensure --resource ${resource} --max-wait 115`),
+        );
+        assert.match(source, new RegExp(`ensure-api-quota\\.mjs classify --resource ${resource}`));
     }
 });
 
