@@ -27,14 +27,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.modifierextention.FadingEdgeDirection
 import com.afternote.core.ui.modifierextention.horizontalFadingEdge
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 
@@ -52,7 +50,7 @@ import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 @Composable
 fun MemorialPlaylist(
     modifier: Modifier = Modifier,
-    label: String = "추억 플레이리스트",
+    label: String = stringResource(R.string.afternote_editor_playlist_screen_title),
     songCount: Int = 0,
     albumCovers: List<AlbumCover> = emptyList(),
     onCardClick: (() -> Unit)? = null,
@@ -104,7 +102,7 @@ private fun MemorialPlaylistCardContent(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.feature_afternote_ic_playlist_header),
+                    painter = painterResource(R.drawable.afternote_ic_playlist_header),
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
                     tint = AfternoteDesign.colors.gray6,
@@ -135,7 +133,7 @@ private fun MemorialPlaylistCardContent(
         )
         Spacer(modifier = Modifier.size(24.dp))
         Text(
-            text = "현재 ${songCount}개의 노래가 담겨 있습니다.",
+            text = stringResource(R.string.afternote_detail_playlist_song_count, songCount),
             style =
                 AfternoteDesign.typography.bodySmallR.copy(
                     color = AfternoteDesign.colors.black,
@@ -213,56 +211,15 @@ private fun MemorialPlaylistAlbumCoverBox(album: AlbumCover) {
     if (!album.imageUrl.isNullOrBlank()) {
         AsyncImage(
             model = album.imageUrl,
-            contentDescription = stringResource(R.string.content_description_album_cover),
+            contentDescription = stringResource(R.string.afternote_content_description_album_cover),
             modifier = modifier,
             contentScale = ContentScale.Crop,
-            error = painterResource(R.drawable.feature_afternote_img_placeholder_1),
+            error = painterResource(R.drawable.afternote_img_placeholder_1),
         )
     } else {
         // 둥글기는 공유 modifier 의 clip(8.dp) 이 이미 처리 — background 에 shape 중복 지정 불필요.
         Box(
             modifier = modifier.background(color = AfternoteDesign.colors.gray3),
         )
-    }
-}
-
-private fun memorialPlaylistPreviewAlbumCovers(): List<AlbumCover> =
-    listOf(
-        AlbumCover(),
-        AlbumCover(),
-        AlbumCover(),
-        AlbumCover(),
-    )
-
-@Preview(showBackground = true, name = "Action (arrow)")
-@Composable
-private fun MemorialPlaylistActionPreview() {
-    AfternoteTheme {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-        ) {
-            MemorialPlaylist(
-                songCount = 16,
-                albumCovers = memorialPlaylistPreviewAlbumCovers(),
-                onCardClick = {},
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "No action")
-@Composable
-private fun MemorialPlaylistNoActionPreview() {
-    AfternoteTheme {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-        ) {
-            MemorialPlaylist(
-                songCount = 4,
-                albumCovers = memorialPlaylistPreviewAlbumCovers(),
-            )
-        }
     }
 }

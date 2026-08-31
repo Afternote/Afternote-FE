@@ -7,6 +7,8 @@ import com.afternote.core.datastore.LocalStoreRegistry
 import com.afternote.core.datastore.StoreScope
 import com.afternote.core.datastore.TokenDataSource
 import com.afternote.core.domain.error.CoreAuthFailure
+import com.afternote.core.domain.push.DevicePushTargetProvider
+import com.afternote.core.domain.repository.push.PushTargetRepository
 import com.afternote.core.network.dto.LoginDto
 import com.afternote.core.network.dto.LoginRequestDto
 import com.afternote.core.network.dto.LogoutRequestDto
@@ -61,12 +63,17 @@ class AuthRepositoryImplTest {
     private fun repository(
         authApiService: AuthApiService = FakeAuthApiService(),
         tokenApiService: TokenApiService = FakeTokenApiService(),
+        pushTargetRepository: FakePushTargetRepository = FakePushTargetRepository(),
+        deviceTargetId: String? = "device-token",
+        devicePushTargetProvider: DevicePushTargetProvider = RecordingDevicePushTargetProvider(deviceTargetId),
     ) = AuthRepositoryImpl(
         tokenDataSource = tokenDataSource,
         authApiService = authApiService,
         tokenApiService = tokenApiService,
         expiryTracker = tracker,
         localStoreRegistry = localStoreRegistry,
+        pushTargetRepository = pushTargetRepository,
+        devicePushTargetProvider = devicePushTargetProvider,
     )
 
     @Test
@@ -333,6 +340,63 @@ class AuthRepositoryImplTest {
 
         assertTrue(result.exceptionOrNull() is CoreAuthFailure.NetworkUnavailable)
     }
+
+    @Test
+    fun `logout - 이 기기 푸시 대상 식별자를 해제한다`() {
+        val pushTargetRepository = FakePushTargetRepository()
+        val repository = repository(pushTargetRepository = pushTargetRepository, deviceTargetId = "device-token")
+
+        val result = runBlocking { repository.logout() }
+
+        assertTrue(result.isSuccess)
+        assertEquals(listOf("device-token"), pushTargetRepository.unregistered)
+    }
+
+    @Test
+    fun `logout - 해제하려고 FCM 등록 시퀀스를 강제하지는 않는다`() {
+        // currentTargetId() 을 쓰면 지우기 직전에 기기를 FCM 에 다시 등록하고, 그 회전 통보가 아직
+        // 살아 있는 세션을 타고 재등록으로 돌아와 이 DELETE 와 경합한다 (#1498 리뷰).
+        val provider = RecordingDevicePushTargetProvider("device-token")
+        val pushTargetRepository = FakePushTargetRepository()
+        val repository = repository(pushTargetRepository = pushTargetRepository, devicePushTargetProvider = provider)
+
+        runBlocking { repository.logout() }
+
+        assertEquals(listOf("device-token"), pushTargetRepository.unregistered)
+        assertEquals(0, provider.currentTargetIdCalls)
+        assertEquals(1, provider.existingTargetIdCalls)
+    }
+
+    @Test
+    fun `logout - 기기 식별자 조회가 던져도 로그아웃은 성공한다`() {
+        val repository = repository(devicePushTargetProvider = ThrowingDevicePushTargetProvider())
+
+        val result = runBlocking { repository.logout() }
+
+        assertTrue(result.isSuccess)
+    }
+
+    @Test
+    fun `logout - 기기 식별자를 못 얻으면 해제를 건너뛴다`() {
+        val pushTargetRepository = FakePushTargetRepository()
+        val repository = repository(pushTargetRepository = pushTargetRepository, deviceTargetId = null)
+
+        val result = runBlocking { repository.logout() }
+
+        assertTrue(result.isSuccess)
+        assertTrue(pushTargetRepository.unregistered.isEmpty())
+    }
+
+    @Test
+    fun `logout - 푸시 대상 해제가 실패해도 로그아웃은 끝난다`() {
+        val pushTargetRepository = FakePushTargetRepository(failing = true)
+        val repository = repository(pushTargetRepository = pushTargetRepository, deviceTargetId = "device-token")
+
+        val result = runBlocking { repository.logout() }
+
+        assertTrue(result.isSuccess)
+        assertNull(runBlocking { tokenDataSource.getAccessToken() })
+    }
 }
 
 private fun <T> success(data: T) = BaseResponse(status = 200, code = 200, message = "성공", data = data)
@@ -397,5 +461,42 @@ private class InMemoryPreferencesDataStore : DataStore<Preferences> {
         val transformed = transform(state.value)
         state.value = transformed
         return transformed
+    }
+}
+
+private class RecordingDevicePushTargetProvider(
+    private val targetId: String?,
+) : DevicePushTargetProvider {
+    var currentTargetIdCalls = 0
+    var existingTargetIdCalls = 0
+
+    override suspend fun currentTargetId(): String? {
+        currentTargetIdCalls++
+        return targetId
+    }
+
+    override suspend fun existingTargetId(): String? {
+        existingTargetIdCalls++
+        return targetId
+    }
+}
+
+private class ThrowingDevicePushTargetProvider : DevicePushTargetProvider {
+    override suspend fun currentTargetId(): String? = throw IllegalStateException("API disabled")
+
+    override suspend fun existingTargetId(): String? = throw IllegalStateException("API disabled")
+}
+
+private class FakePushTargetRepository(
+    private val failing: Boolean = false,
+) : PushTargetRepository {
+    val unregistered = mutableListOf<String>()
+
+    override suspend fun register(targetId: String): Result<Unit> =
+        if (failing) Result.failure(IllegalStateException("등록 실패")) else Result.success(Unit)
+
+    override suspend fun unregister(targetId: String): Result<Unit> {
+        unregistered += targetId
+        return if (failing) Result.failure(IllegalStateException("해제 실패")) else Result.success(Unit)
     }
 }

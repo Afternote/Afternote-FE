@@ -3,8 +3,11 @@ package com.afternote.core.data.repoimpl
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.model.user.Receiver
+import com.afternote.core.network.dto.DeletePushTokenRequestDto
+import com.afternote.core.network.dto.PushTokenDto
 import com.afternote.core.network.dto.ReceiverDetailDto
 import com.afternote.core.network.dto.ReceiverListDto
+import com.afternote.core.network.dto.RegisterPushTokenRequestDto
 import com.afternote.core.network.dto.SocialAccountLinkRequestDto
 import com.afternote.core.network.dto.UserConnectedAccountDto
 import com.afternote.core.network.dto.UserCreateReceiverDto
@@ -22,14 +25,16 @@ import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.core.network.service.UserApiService
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
+import java.net.UnknownHostException
 
 class UserRepositoryImplTest {
     private val calls = mutableListOf<String>()
@@ -42,6 +47,7 @@ class UserRepositoryImplTest {
         onCreateReceiver: suspend (UserCreateReceiverRequestDto) -> BaseResponse<UserCreateReceiverDto> = {
             TODO("이 테스트 미사용")
         },
+        authRepository: FakeAuthRepository = receiverAuthRepository(loggedIn = true),
     ) = UserRepositoryImpl(
         userApiService =
             FakeUserApiService(
@@ -53,7 +59,7 @@ class UserRepositoryImplTest {
                 onCreateReceiver = onCreateReceiver,
             ),
         authRepository =
-            FakeAuthRepository.strict(loggedIn = true).apply {
+            authRepository.apply {
                 onClearSession = {
                     calls += "clearSession"
                     clearSessionResult
@@ -157,6 +163,142 @@ class UserRepositoryImplTest {
     }
 
     @Test
+    fun `receiverListFlow - 조회가 실패해도 예외로 새지 않고 빈 목록을 낸다`() {
+        val repository = repository(onGetReceivers = { throw UnknownHostException("Unable to resolve host") })
+
+        val emitted = runBlocking { repository.receiverListFlow.first() }
+
+        assertEquals(emptyList<Receiver>(), emitted)
+    }
+
+    /**
+     * 이 flow 는 예외를 삼켜 화면을 살리므로, 삼킨 뒤의 리포터 기록이 이 실패 경로의 유일한 신호다.
+     * logcat 은 실기에서 회수되지 않는다 — 기록이 빠지면 이 경로는 무음으로 재발한다.
+     */
+    @Test
+    fun `receiverListFlow - 삼킨 조회 실패는 리포터에 단계와 함께 남는다`() {
+        val repository = repository(onGetReceivers = { throw UnknownHostException("Unable to resolve host") })
+
+        runBlocking { repository.receiverListFlow.first() }
+
+        val (reported, attributes) = errorReporter.writtenFailures.single()
+        assertEquals(UnknownHostException::class.java.name, reported.message)
+        assertEquals(
+            mapOf(
+                "stage" to "receiver_list",
+                "error_type" to UnknownHostException::class.java.name,
+            ),
+            attributes,
+        )
+    }
+
+    @Test
+    fun `receiverListFlow - 세션 만료도 흐름을 끊지 않는다`() {
+        val repository =
+            repository(
+                onGetReceivers = {
+                    throw ApiException(
+                        status = 401,
+                        code = 401,
+                        serverMessage = "인증되지 않은 요청입니다.",
+                        fallbackMessage = "인증되지 않은 요청입니다.",
+                    )
+                },
+            )
+
+        val emitted = runBlocking { repository.receiverListFlow.first() }
+
+        assertEquals(emptyList<Receiver>(), emitted)
+    }
+
+    @Test
+    fun `receiverListFlow - 로그아웃 중에는 서버를 호출하지 않는다`() {
+        var requestCount = 0
+        val authRepository = receiverAuthRepository(loggedIn = false)
+        val repository =
+            repository(
+                authRepository = authRepository,
+                onGetReceivers = {
+                    requestCount += 1
+                    dataResponse(listOf(receiverDto("호출되면 안 됨")))
+                },
+            )
+
+        val directResult = runBlocking { repository.getReceivers() }
+        val flowResult = runBlocking { repository.receiverListFlow.first() }
+
+        assertEquals(emptyList<Receiver>(), directResult)
+        assertEquals(emptyList<Receiver>(), flowResult)
+        assertEquals(0, requestCount)
+    }
+
+    @Test
+    fun `receiverListFlow - 로그아웃 뒤 새 세션의 첫 실패에는 이전 계정 목록을 내지 않는다`() =
+        runBlocking {
+            var requestCount = 0
+            val authRepository = receiverAuthRepository(loggedIn = true)
+            val repository =
+                repository(
+                    authRepository = authRepository,
+                    onGetReceivers = {
+                        requestCount += 1
+                        if (requestCount == 1) {
+                            dataResponse(listOf(receiverDto("이전 계정 수신인")))
+                        } else {
+                            throw UnknownHostException("새 세션 첫 조회 실패")
+                        }
+                    },
+                )
+            val emissions = Channel<List<Receiver>>(capacity = Channel.UNLIMITED)
+            val collector =
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    repository.receiverListFlow.collect { emissions.send(it) }
+                }
+
+            try {
+                assertEquals(
+                    listOf("이전 계정 수신인"),
+                    withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.map { it.name },
+                )
+
+                authRepository.loggedIn = false
+                assertEquals(
+                    emptyList<Receiver>(),
+                    withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() },
+                )
+                assertEquals(1, requestCount)
+
+                authRepository.loggedIn = true
+                assertEquals(
+                    emptyList<Receiver>(),
+                    withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() },
+                )
+                assertEquals(2, requestCount)
+            } finally {
+                collector.cancelAndJoin()
+            }
+        }
+
+    @Test
+    fun `receiverListFlow - 한 번 실패해도 다음 구독은 목록을 다시 조회한다`() {
+        var requestCount = 0
+        val repository =
+            repository(
+                onGetReceivers = {
+                    requestCount += 1
+                    if (requestCount == 1) throw UnknownHostException("Unable to resolve host")
+                    dataResponse(listOf(receiverDto("복구 후 목록")))
+                },
+            )
+
+        val failed = runBlocking { repository.receiverListFlow.first() }
+        val recovered = runBlocking { repository.receiverListFlow.first() }
+
+        assertEquals(emptyList<Receiver>(), failed)
+        assertEquals("복구 후 목록", recovered.single().name)
+    }
+
+    @Test
     fun `createReceiver - 성공하면 구독 중인 목록을 다시 조회한다`() =
         runBlocking {
             var requestCount = 0
@@ -168,24 +310,127 @@ class UserRepositoryImplTest {
                     },
                     onCreateReceiver = { dataResponse(UserCreateReceiverDto(receiverId = 2L, authCode = "AUTH-2")) },
                 )
-            val emissions = mutableListOf<List<Receiver>>()
+            val emissions = Channel<List<Receiver>>(capacity = Channel.UNLIMITED)
             val collector =
                 launch(start = CoroutineStart.UNDISPATCHED) {
-                    repository.receiverListFlow.take(2).toList(emissions)
+                    repository.receiverListFlow.collect { emissions.send(it) }
                 }
 
-            repository.createReceiver(
-                name = "새 수신자",
-                relation = "친구",
-                phone = null,
-                email = null,
-                message = null,
-            )
-            collector.join()
-
-            assertEquals(listOf("조회 1", "조회 2"), emissions.map { it.single().name })
-            assertEquals(2, requestCount)
+            try {
+                assertEquals("조회 1", withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.single().name)
+                repository.createReceiver(
+                    name = "새 수신자",
+                    relation = "친구",
+                    phone = null,
+                    email = null,
+                    message = null,
+                )
+                assertEquals("조회 2", withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.single().name)
+                assertEquals(2, requestCount)
+            } finally {
+                collector.cancelAndJoin()
+            }
         }
+
+    /**
+     * 크래시를 막자고 «보고 있던 목록» 을 지우면 안 된다. 첫 조회 실패는 아직 아무것도 못 본 상태라
+     * 빈 목록이 맞지만(위 테스트들), 두 번째부터의 실패는 화면에 떠 있던 수신인을 0명으로 바꾼다.
+     */
+    @Test
+    fun `receiverListFlow - 갱신이 실패해도 마지막으로 성공한 목록을 유지한다`() =
+        runBlocking {
+            var requestCount = 0
+            val repository =
+                repository(
+                    onGetReceivers = {
+                        requestCount += 1
+                        if (requestCount == 1) {
+                            dataResponse(listOf(receiverDto("계정 A")))
+                        } else {
+                            throw UnknownHostException("Unable to resolve host")
+                        }
+                    },
+                    onCreateReceiver = { dataResponse(UserCreateReceiverDto(receiverId = 2L, authCode = "AUTH-2")) },
+                )
+            val emissions = Channel<List<Receiver>>(capacity = Channel.UNLIMITED)
+            val collector =
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    repository.receiverListFlow.collect { emissions.send(it) }
+                }
+
+            try {
+                val first = withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }
+                repository.createReceiver(
+                    name = "새 수신자",
+                    relation = "친구",
+                    phone = null,
+                    email = null,
+                    message = null,
+                )
+                val fallback = withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }
+
+                assertEquals(listOf("계정 A"), first.map { it.name })
+                assertEquals(listOf("계정 A"), fallback.map { it.name })
+                assertEquals(2, requestCount)
+            } finally {
+                collector.cancelAndJoin()
+            }
+        }
+
+    @Test
+    fun `receiverListFlow - 같은 세션이어도 401이면 마지막 목록을 폐기한다`() =
+        runBlocking {
+            var requestCount = 0
+            val repository =
+                repository(
+                    onGetReceivers = {
+                        requestCount += 1
+                        if (requestCount == 1) {
+                            dataResponse(listOf(receiverDto("인증이 끝난 계정의 수신인")))
+                        } else {
+                            throw ApiException(
+                                status = 401,
+                                code = 401,
+                                serverMessage = "인증되지 않은 요청입니다.",
+                                fallbackMessage = "인증되지 않은 요청입니다.",
+                            )
+                        }
+                    },
+                    onCreateReceiver = { dataResponse(UserCreateReceiverDto(receiverId = 2L, authCode = "AUTH-2")) },
+                )
+            val emissions = Channel<List<Receiver>>(capacity = Channel.UNLIMITED)
+            val collector =
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    repository.receiverListFlow.collect { emissions.send(it) }
+                }
+
+            try {
+                val first = withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }
+                repository.createReceiver(
+                    name = "새 수신자",
+                    relation = "친구",
+                    phone = null,
+                    email = null,
+                    message = null,
+                )
+                val afterUnauthorized = withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }
+
+                assertEquals(listOf("인증이 끝난 계정의 수신인"), first.map { it.name })
+                assertEquals(emptyList<Receiver>(), afterUnauthorized)
+                assertEquals(2, requestCount)
+            } finally {
+                collector.cancelAndJoin()
+            }
+        }
+
+    private fun receiverAuthRepository(loggedIn: Boolean): FakeAuthRepository =
+        FakeAuthRepository.strict(loggedIn = loggedIn).apply {
+            onIsLoggedIn = { loggedInState }
+        }
+
+    private companion object {
+        const val TEST_TIMEOUT_MILLIS = 2_000L
+    }
 }
 
 private class RecordingErrorReporter : ErrorReporter {
@@ -223,6 +468,10 @@ private class FakeUserApiService(
     override suspend fun createReceiver(request: UserCreateReceiverRequestDto): BaseResponse<UserCreateReceiverDto> =
         onCreateReceiver(request)
 
+    override suspend fun registerPushToken(request: RegisterPushTokenRequestDto): BaseResponse<PushTokenDto> = TODO("이 테스트 미사용")
+
+    override suspend fun deletePushToken(request: DeletePushTokenRequestDto): BaseResponse<Unit> = TODO("이 테스트 미사용")
+
     override suspend fun getReceiverDetail(receiverId: Long): BaseResponse<ReceiverDetailDto> = TODO("이 테스트 미사용")
 
     override suspend fun updateReceiver(
@@ -238,8 +487,6 @@ private class FakeUserApiService(
     override suspend fun getMyProfile(): BaseResponse<UserDto> = TODO("이 테스트 미사용")
 
     override suspend fun updateMyProfile(request: UserUpdateProfileRequestDto): BaseResponse<UserDto> = TODO("이 테스트 미사용")
-
-    override suspend fun logActivity(): BaseResponse<Unit> = TODO("이 테스트 미사용")
 
     override suspend fun getMyPushSettings(): BaseResponse<UserPushSettingDto> = TODO("이 테스트 미사용")
 

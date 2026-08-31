@@ -20,12 +20,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteFieldContainer
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.receiver.presentation.R
 import com.afternote.feature.receiver.presentation.deliveryverification.DocumentSlotState
 
 /**
@@ -131,32 +129,6 @@ private fun AttachIconButton(
             contentDescription = stringResource(R.string.receiver_verify_document_input_label),
             tint = AfternoteDesign.colors.white,
             modifier = Modifier.size(19.dp),
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun DocumentSlotCardEmptyPreview() {
-    AfternoteTheme {
-        DocumentSlotCard(
-            title = "사망진단서 업로드",
-            slot = DocumentSlotState(),
-            onPickClick = {},
-            modifier = Modifier.padding(20.dp),
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun DocumentSlotCardFilledPreview() {
-    AfternoteTheme {
-        DocumentSlotCard(
-            title = "사망진단서 업로드",
-            slot = DocumentSlotState(displayName = "사망진단서.jpeg", fileUrl = "https://example.com/x"),
-            onPickClick = {},
-            modifier = Modifier.padding(20.dp),
         )
     }
 }

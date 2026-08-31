@@ -8,15 +8,16 @@ Afternote-FE 의 공용 Composable·UI 헬퍼 모듈.
 
 자주 마주치는 케이스 → 사용할 헬퍼.
 
-### Lifecycle-aware 일회성 이벤트 collect
-**🚫 raw `LaunchedEffect + repeatOnLifecycle` 직접 사용 X**
-**✅ [`ObserveAsEvents(flow, onEvent)`](src/main/kotlin/com/afternote/core/ui/ObserveAsEvents.kt)**
+### VM 이 화면에 알릴 일이 생겼을 때 (스낵바·화면 닫기 등)
+**🚫 `Channel`/`MutableSharedFlow` + 화면에서 collect 하는 이벤트 스트림 X**
+**✅ UiState 의 nullable 필드로 흡수 + 소비 콜백**
 
 ```kotlin
-ObserveAsEvents(viewModel.events) { event -> /* 처리 */ }
+// VM: _uiState.update { it.copy(deleteResult = …) } / fun onDeleteResultConsumed()
+LaunchedEffect(uiState.deleteResult) { … ; viewModel.onDeleteResultConsumed() }
 ```
 
-> ⚠ 일회성 이벤트 자체가 [Google discourage 패턴](https://developer.android.com/topic/architecture/ui-layer/events) — Channel/SharedFlow 신규 도입 회피, UiState 의 nullable 필드 + Shown 콜백으로 흡수. `ObserveAsEvents` 는 부득이한 케이스 전용.
+> [Google 가이드](https://developer.android.com/topic/architecture/ui-layer/events) — «ViewModel 이벤트는 항상 UI state 갱신으로 이어져야 한다». producer(VM)가 consumer(UI)보다 오래 사는 순간 Channel/SharedFlow 는 전달을 보장하지 못한다(구성 변경·프로세스 사망·분할 화면). 이 레포는 #228 에서 이 방식을 정본으로 정했고, 선례는 `AfternoteDetailUiState.Success.deleteResult` 다.
 
 ### 단순 둥근 배경 컨테이너
 **🚫 Material3 `Card` 사용 X** (앱 컨벤션)
@@ -40,7 +41,7 @@ Column(
 - **Card / Section**: [`AfternoteOutlinedCard`](src/main/kotlin/com/afternote/core/ui/AfternoteOutlinedCard.kt) / [`AfternoteSectionHeader`](src/main/kotlin/com/afternote/core/ui/AfternoteSectionHeader.kt)
 - **Profile**: [`ProfileImage`](src/main/kotlin/com/afternote/core/ui/ProfileImage.kt) / [`ProfileImagePicker`](src/main/kotlin/com/afternote/core/ui/ProfileImage.kt)
 - **Calendar**: [`BottomSheetCalendar`](src/main/kotlin/com/afternote/core/ui/calendar/BottomSheetCalendar.kt)
-- **Checkbox / Radio**: [`AfternoteCircularCheckbox`](src/main/kotlin/com/afternote/core/ui/button/AfternoteCircularCheckbox.kt) / [`CustomRadioButton`](src/main/kotlin/com/afternote/core/ui/button/CustomRadioButton.kt)
+- **Checkbox / Radio**: [`AfternoteCircularCheckbox`](src/main/kotlin/com/afternote/core/ui/button/AfternoteCircularCheckbox.kt) / [`AfternoteRadioGroup`](src/main/kotlin/com/afternote/core/ui/button/AfternoteRadioGroup.kt) (`selectedValue: T?` + `onSelect(T)` 단일 선택 계약)
 - **FAB**: [`AfternoteFloatingActionButton`](src/main/kotlin/com/afternote/core/ui/button/FAB/AfternoteFloatingActionButton.kt) / [`PenFloatingActionButton`](src/main/kotlin/com/afternote/core/ui/button/FAB/PenFloatingActionButton.kt)
 - **Icon**: [`CloseIcon`](src/main/kotlin/com/afternote/core/ui/icon/CloseIcon.kt) / [`RightArrowIcon`](src/main/kotlin/com/afternote/core/ui/icon/RightArrowIcon.kt)
 - **Badge**: [`RecipientDesignationBadge`](src/main/kotlin/com/afternote/core/ui/badge/RecipientDesignationBadge.kt) / [`CircularCheckboxOutlineChip`](src/main/kotlin/com/afternote/core/ui/badge/CircularCheckboxOutlineChip.kt)
@@ -71,7 +72,7 @@ core/ui/
 ├── icon/          공용 아이콘
 ├── scaffold/      단계형 화면 Scaffold·진행 인디케이터
 ├── modifierextention/  공용 Modifier 확장
-└── (root)         Card / TextField / Profile / ObserveAsEvents / Route 등
+└── (root)         Card / TextField / Profile / Route 등
 ```
 
 ## 추가 시 약속
@@ -87,6 +88,7 @@ core/ui/
 |---|---|
 | `Material3 Card` 단순 컨테이너 | `Column + clip/background/padding` (위 참조) |
 | `Color(0xFF...)` 하드코드 | `AfternoteDesign.colors.*` 토큰 |
+| 라디오 인디케이터를 단품으로 조합해 선택 상태 직접 관리 | `AfternoteRadioGroup(selectedValue, onSelect)`로 단일 선택 구조화 |
 | ViewModel 에 `Context` 주입 (string resource 용) | UiState 에 sealed error / `@StringRes Int?` 노출 → UI 가 `stringResource` 변환 |
 | ViewModel 에 `Channel<Event>` / `SharedFlow<Event>` | UiState 의 nullable 필드 + `onXxxShown()` 콜백 |
 | Repository 우회해 ViewModel 이 `DataSource` / cache 직접 주입 | Repository 만 진입점, cache 는 Repository 내부 책임 |

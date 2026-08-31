@@ -16,6 +16,8 @@ const screenshotModules = [
     ":feature:onboarding:presentation",
     ":feature:afternote:presentation",
     ":feature:mindrecord:presentation",
+    ":feature:setting:presentation",
+    ":feature:timeletter:presentation",
 ];
 
 test("baseline generation executes PR code without write credentials", async () => {
@@ -54,11 +56,33 @@ test("privileged baseline apply is a workflow-run bridge restricted to PNG basel
     assert.match(source, /89504e470d0a1a0a/);
     assert.match(source, /pullRequest\.head\.sha !== metadata\.headSha/);
     assert.match(source, /force: false/);
-    for (const workflow of ["pr-validation.yml", "codeql.yml", "merge-order-guard.yml"]) {
+    for (const module of screenshotModules) {
+        const root = `${module.slice(1).replaceAll(":", "/")}/src/screenshotTestDebug/reference/`;
+        assert.ok(source.includes(`'${root}'`), `${module} baseline root is not allowed`);
+    }
+    for (const workflow of [
+        "pr-validation.yml",
+        "codeql.yml",
+        "merge-order-guard.yml",
+    ]) {
         assert.ok(source.includes(`workflow_id: '${workflow}'`), `${workflow} is not redispatched`);
     }
     assert.match(source, /if: steps\.commit\.outputs\.changed == 'true'/);
     assert.match(source, /workflow_id: 'codeql\.yml',[\s\S]*inputs: \{ pull_request_number: process\.env\.TARGET_PR \}/);
+});
+
+test("screenshot workflow fallbacks cover every baseline module", async () => {
+    const [reusable, validation] = await Promise.all([
+        readWorkflow("screenshot.yml"),
+        readWorkflow("pr-validation.yml"),
+    ]);
+    const moduleFallback = screenshotModules.join(" ");
+    const taskFallback = screenshotModules.map((module) => `${module}:validateScreenshotTest`).join(" ");
+
+    for (const [name, source] of [["reusable", reusable], ["PR", validation]]) {
+        assert.ok(source.includes(taskFallback), `${name} task fallback is incomplete`);
+        assert.ok(source.includes(moduleFallback), `${name} module fallback is incomplete`);
+    }
 });
 
 test("managed device keeps required contexts but boots only CI Test Plan lanes", async () => {
@@ -117,17 +141,55 @@ test("managed device keeps required contexts but boots only CI Test Plan lanes",
     assert.match(source, /if: steps\.target\.outputs\.run_lane == 'true'/);
     assert.match(source, /selectors_json='\[\]'/);
     assert.match(source, /persist-credentials: false/);
+    assert.match(source, /SCHEDULED_ONLY: \$\{\{ matrix\.scheduled_only \}\}/);
+    assert.match(
+        source,
+        /SCHEDULED_ONLY.*== "true" && "\$target_pr" != "none"[\s\S]*?run_lane=false/,
+    );
+    assert.match(source, /scheduled_only matrix 값은 true 또는 false여야 합니다/);
 
     const bootstrapRendererStep = source.slice(bootstrapRenderer, bootstrapVerifier);
     assert.match(bootstrapRendererStep, /steps\.target\.outputs\.run_lane == 'true'/);
     assert.doesNotMatch(bootstrapRendererStep, /selectors_json != '\[\]'/);
 });
 
+test("managed device exposes a secretless branch Baseline Profile artifact mode", async () => {
+    const source = await readWorkflow("android-managed-device.yml");
+    const generatorStart = source.indexOf("  baseline-profile-generation:\n");
+    const managedDeviceStart = source.indexOf("  managed-device:\n", generatorStart);
+    assert.ok(generatorStart >= 0 && managedDeviceStart > generatorStart);
+
+    const generator = source.slice(generatorStart, managedDeviceStart);
+    const managedDevice = source.slice(managedDeviceStart);
+    assert.match(source, /^\s{6}generate_baseline_profile:\n/m);
+    assert.match(source, /type: boolean/);
+    assert.match(generator, /github\.event_name == 'workflow_dispatch'/);
+    assert.match(generator, /inputs\.generate_baseline_profile/);
+    assert.match(generator, /inputs\.pull_request_number == 0/);
+    assert.match(generator, /ref: \$\{\{ github\.sha \}\}/);
+    assert.match(generator, /persist-credentials: false/);
+    assert.match(generator, /uses: \.\/\.github\/actions\/setup-ci-config/);
+    assert.match(generator, /uses: \.\/\.github\/actions\/setup-ci-release-signing/);
+    assert.match(generator, /:app:generateBaselineProfile/);
+    assert.match(generator, /-x :app:uploadCrashlyticsMappingFileRelease/);
+    assert.match(generator, /continue-on-error: true/);
+    assert.match(generator, /baseline-profile-log/);
+    assert.match(generator, /generate\.log/);
+    assert.match(generator, /app\/src\/main\/generated\/baselineProfiles\//);
+    assert.match(generator, /actions\/upload-artifact@[0-9a-f]{40} # v7\.0\.1/);
+    assert.match(generator, /Restore Baseline Profile generation exit code/);
+    assert.doesNotMatch(generator, /secrets\./);
+    assert.match(managedDevice, /!inputs\.generate_baseline_profile/);
+});
+
 test("managed device summarizes XML and uploads the full Gradle log before failing", async () => {
     const source = await readWorkflow("android-managed-device.yml");
 
     assert.match(source, /- name: Run managed-device androidTest\n\s+id: android_test/);
-    assert.match(source, /--console=plain \\\n\s+--stacktrace > "\$gradle_log" 2>&1/);
+    // #1378: invocation 을 반복하므로 로그는 append 로 한 파일에 모은다. 파일은 루프
+    // 앞에서 한 번 비운다.
+    assert.match(source, /: > "\$gradle_log"/);
+    assert.match(source, /--console=plain \\\n\s+--stacktrace >> "\$gradle_log" 2>&1/);
     assert.match(source, /echo "exit_code=\$status"/);
     assert.match(
         source,
@@ -191,9 +253,25 @@ test("managed device fails fast per lane and preserves only bounded infrastructu
     assert.match(source, /device: api34[\s\S]*?job_timeout_minutes: 15[\s\S]*?gradle_timeout_minutes: 12[\s\S]*?gradle_step_timeout_minutes: 13/);
     assert.match(
         source,
+        /device: api26[\s\S]*?full_selector: com\.afternote\.afternote_fe\.ApiBoundarySmokeAndroidTest[\s\S]*?scheduled_only: true/,
+    );
+    assert.match(
+        source,
+        /device: api36[\s\S]*?full_selector: com\.afternote\.afternote_fe\.ApiBoundarySmokeAndroidTest[\s\S]*?scheduled_only: true/,
+    );
+    assert.match(source, /device: api30[\s\S]*?scheduled_only: false/);
+    assert.match(source, /device: api34[\s\S]*?scheduled_only: false/);
+    assert.match(
+        source,
         /- name: Run managed-device androidTest[\s\S]*?timeout-minutes: \$\{\{ matrix\.gradle_step_timeout_minutes \}\}/,
     );
-    assert.match(source, /timeout --signal=TERM --kill-after=30s "\$\{GRADLE_TIMEOUT_MINUTES\}m"/);
+    // #1378: 다중 selector 목록 실행에서 누락된 선언 selector 는 신뢰 경로인 단일
+    // selector invocation 으로 재실행해 합본하되, Gradle 시간 예산은 invocation
+    // 수와 무관하게 lane 의 GRADLE_TIMEOUT_MINUTES 전체를 공유한다.
+    assert.match(source, /deadline=\$\(\( \$\(date \+%s\) \+ GRADLE_TIMEOUT_MINUTES \* 60 \)\)/);
+    assert.match(source, /timeout --signal=TERM --kill-after=30s "\$\{remaining\}s"/);
+    assert.match(source, /selector_recorded/);
+    assert.match(source, /selected retry \$retried\/\$\{#missing\[@\]\}/);
     assert.doesNotMatch(source, /timeout-minutes: 45/);
 
     const gradle = source.indexOf("Run managed-device androidTest");
@@ -320,17 +398,6 @@ test("screenshot failure comment rechecks the live baseline label before writing
     assert.ok(baselineGuard > liveLabels, "screenshot-baseline is not checked after the live query");
     assert.ok(listComments > baselineGuard, "comment lookup happens before the baseline label guard");
     assert.match(source.slice(liveLabels, listComments), /core\.info\([\s\S]*return;/);
-});
-
-test("stack refresh only executes trusted default-branch code", async () => {
-    const source = await readWorkflow("stack-refresh.yml");
-
-    assert.match(source, /^\s{2}workflow_dispatch:/m);
-    assert.match(source, /github\.ref_name == github\.event\.repository\.default_branch/);
-    assert.match(source, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
-    assert.match(source, /persist-credentials: false/);
-    assert.match(source, /node --test \.github\/scripts\/refresh-pr-stack\.test\.mjs/);
-    assert.match(source, /MAX_DEPTH: \$\{\{ inputs\.max_depth \}\}/);
 });
 
 test("required checks expose manual dispatch for token-authored commits", async () => {

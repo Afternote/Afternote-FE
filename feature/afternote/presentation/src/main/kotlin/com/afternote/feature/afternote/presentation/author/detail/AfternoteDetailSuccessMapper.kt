@@ -47,12 +47,8 @@ internal fun Detail.toAccountDetailContent(
         afternoteEditReceivers = toReceiverUiModels(),
     )
 
-internal fun Detail.toMemorialDetailContent(
-    content: DetailContent.Memorial,
-    authorDisplayName: String,
-): MemorialDetailContent =
+internal fun Detail.toMemorialDetailContent(content: DetailContent.Memorial): MemorialDetailContent =
     MemorialDetailContent(
-        userName = authorDisplayName,
         finalWriteDate = finalWriteDate,
         profileImageUri = content.memorial.media.photoUrl,
         afternoteEditReceivers = toReceiverUiModels(),
@@ -106,7 +102,7 @@ sealed interface DetailContentUiModel {
     }
 }
 
-internal fun Detail.toDetailContentUiModel(authorDisplayName: String): DetailContentUiModel =
+internal fun Detail.toDetailContentUiModel(): DetailContentUiModel =
     when (val content = content) {
         is DetailContent.Gallery -> {
             DetailContentUiModel.Gallery(toGalleryDetailContent(content))
@@ -134,7 +130,7 @@ internal fun Detail.toDetailContentUiModel(authorDisplayName: String): DetailCon
         }
 
         is DetailContent.Memorial -> {
-            DetailContentUiModel.Memorial(toMemorialDetailContent(content, authorDisplayName))
+            DetailContentUiModel.Memorial(toMemorialDetailContent(content))
         }
 
         // ESTATE 는 디자인 확정 전 placeholder. 백엔드도 미지원이라 일반적으로 도달하지 않음.

@@ -17,7 +17,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -37,12 +36,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.CaptionLabeledTextField
 import com.afternote.core.ui.button.PlusBadgeButton
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.EditorSectionLabel
 
@@ -143,7 +140,7 @@ private fun RegisteredEditorMessageItem(
                 modifier = Modifier.weight(1f),
             )
             Icon(
-                painter = painterResource(R.drawable.feature_afternote_ic_dropdown_vector),
+                painter = painterResource(R.drawable.afternote_ic_dropdown_vector),
                 contentDescription = null,
                 tint = AfternoteDesign.colors.gray8,
                 modifier = Modifier.rotate(if (message.isBodyVisible) 180f else 0f),
@@ -274,31 +271,4 @@ private fun EditorMessageContentField(
             }
         },
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun EditorMessageSectionPreview() {
-    AfternoteTheme {
-        EditorMessageSection(
-            messages =
-                listOf(
-                    LeaveMessageEditorItem(
-                        titleState = rememberTextFieldState("남긴말1"),
-                        contentState =
-                            rememberTextFieldState(
-                                "언젠가 이 글을 읽을 당신에게 남기고 싶은 말입니다.\n늘 행복하길 바랍니다.",
-                            ),
-                        initialState = LeaveMessageEditorItemState.REGISTERED_EXPANDED,
-                    ),
-                    LeaveMessageEditorItem(
-                        titleState = rememberTextFieldState(),
-                        contentState = rememberTextFieldState(),
-                    ),
-                ),
-            onRegisterClick = {},
-            onDeleteClick = {},
-            onAddClick = {},
-        )
-    }
 }

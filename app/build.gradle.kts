@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.firebase.app.distribution)
     alias(libs.plugins.firebase.crashlytics)
     id("afternote.kover")
+    alias(libs.plugins.androidx.baselineprofile)
 }
 
 val localProperties = Properties()
@@ -42,8 +43,15 @@ android {
     testOptions {
         animationsDisabled = true
         execution = "ANDROIDX_TEST_ORCHESTRATOR"
+        // Robolectric 이 병합된 매니페스트·리소스를 읽어야 NavHost 를 실제 컴포지션으로 띄울 수 있다 (#1601).
+        unitTests.isIncludeAndroidResources = true
         managedDevices {
             localDevices {
+                create("pixel2Api26") {
+                    device = "Pixel 2"
+                    apiLevel = 26
+                    systemImageSource = "aosp"
+                }
                 create("pixel2Api30") {
                     device = "Pixel 2"
                     apiLevel = 30
@@ -52,6 +60,11 @@ android {
                 create("pixel2Api34") {
                     device = "Pixel 2"
                     apiLevel = 34
+                    systemImageSource = "aosp"
+                }
+                create("pixel2Api36") {
+                    device = "Pixel 2"
+                    apiLevel = 36
                     systemImageSource = "aosp"
                 }
             }
@@ -193,6 +206,15 @@ android {
     }
 }
 
+baselineProfile {
+    // 생성은 주간/manual workflow가 소유한다. 일반 release 빌드가 에뮬레이터를 암묵적으로
+    // 띄우지 않으며, 검토 가능한 단일 profile을 source에 저장해 패키징한다.
+    automaticGenerationDuringBuild = false
+    mergeIntoMain = true
+    saveInSrc = true
+    dexLayoutOptimization = true
+}
+
 dependencies {
     implementation(libs.coil.compose)
     implementation(libs.androidx.hilt.navigation.compose)
@@ -202,6 +224,7 @@ dependencies {
     implementation(libs.androidx.startup.runtime)
     // DailyNotificationInitializer 가 WorkManagerInitializer 를 선행 의존으로 지정한다.
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.profileinstaller)
 
     // 카카오 OAuth redirect Activity(`com.kakao.sdk.auth.AuthCodeHandlerActivity`)를
     // app 매니페스트에서 직접 참조하므로 컴파일 classpath에 노출 필요.
@@ -222,6 +245,10 @@ dependencies {
     implementation(projects.core.ui)
     implementation(projects.core.model)
     implementation(projects.core.data)
+    // 알림 권한을 물어본 사실을 기기 수명 저장소에 남긴다 (#1454).
+    // 저장소 창구는 core:datastore 의 LocalStoreRegistry 이고, 스키마(타입드 접근자)는 각 모듈이 갖는다.
+    implementation(projects.core.datastore)
+    implementation(libs.androidx.datastore.preferences)
     implementation(projects.core.domain)
 
     // Feature — presentation
@@ -243,6 +270,17 @@ dependencies {
     implementation(projects.feature.timeletter.data)
     implementation(projects.feature.onboarding.data)
 
+    testImplementation(libs.coroutines.test)
+    testImplementation(testFixtures(projects.core.domain))
+
+    // Nav2 백스택 회귀 기준 (#1601) — 에뮬레이터 없이 NavHost 를 실제 컴포지션으로 띄워
+    // 탭 상태 복원·인증 스택 경계·flow-scoped ViewModel 수명을 잰다. 대상(AppState·
+    // AppNavigationActions)이 app 모듈에만 있어 피처 모듈 Robolectric 설정을 재사용할 수 없다.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+
+    baselineProfile(project(":baselineprofile"))
+
     // Managed-device androidTest — 실제 서버·OAuth 대신 Hilt fake를 주입하고 Compose semantics를 검증한다.
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
@@ -256,10 +294,13 @@ dependencies {
     androidTestImplementation(projects.core.data)
     androidTestImplementation(testFixtures(projects.core.domain))
     androidTestImplementation(projects.feature.afternote.domain)
+    androidTestImplementation(testFixtures(projects.feature.afternote.domain))
     androidTestImplementation(projects.feature.mindrecord.domain)
     androidTestImplementation(testFixtures(projects.feature.mindrecord.domain))
     androidTestImplementation(projects.feature.receiver.domain)
+    androidTestImplementation(testFixtures(projects.feature.receiver.domain))
     androidTestImplementation(projects.feature.timeletter.domain)
+    androidTestImplementation(testFixtures(projects.feature.timeletter.domain))
     kspAndroidTest(libs.hilt.compiler)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     androidTestUtil(libs.androidx.test.orchestrator)

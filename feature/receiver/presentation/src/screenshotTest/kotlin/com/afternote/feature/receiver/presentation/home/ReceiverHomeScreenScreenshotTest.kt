@@ -9,6 +9,14 @@ import com.afternote.feature.receiver.presentation.home.model.ReceiverHomeUiStat
 import com.afternote.feature.receiver.presentation.home.model.SenderMessage
 import com.android.tools.screenshot.PreviewTest
 
+/** baseline 은 화면 픽셀만 본다 — 외부 라우팅은 눌리지 않으므로 빈 액션으로 채운다. */
+private val noopActions =
+    ReceiverHomeActions(
+        onNavigateToMindRecord = {},
+        onNavigateToTimeLetter = {},
+        onNavigateToAfternote = {},
+    )
+
 /**
  * [ReceiverHomeScreen] 의 시각 회귀 baseline — Loading + Success + 부분 실패 세 케이스.
  *
@@ -22,7 +30,7 @@ internal fun receiverHomeScreenLoadingScreenshot() {
         ReceiverHomeScreen(
             uiState = ReceiverHomeUiState.Loading,
             onEvent = {},
-            actions = ReceiverHomeActions.Noop,
+            actions = noopActions,
         )
     }
 }
@@ -54,7 +62,7 @@ internal fun receiverHomeScreenSuccessScreenshot() {
                         ),
                 ),
             onEvent = {},
-            actions = ReceiverHomeActions.Noop,
+            actions = noopActions,
         )
     }
 }
@@ -75,7 +83,7 @@ internal fun receiverHomeScreenPartialFailureScreenshot() {
                     afternoteIcons = emptyList(),
                 ),
             onEvent = {},
-            actions = ReceiverHomeActions.Noop,
+            actions = noopActions,
         )
     }
 }

@@ -8,10 +8,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
  * 홈 등에서 쓰는 «제목 + 가로 구분선» 한 줄 헤더입니다.
@@ -37,13 +35,5 @@ fun AfternoteSectionHeader(
             modifier = Modifier.weight(1f),
             color = AfternoteDesign.colors.gray3,
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun AfternoteSectionHeaderPreview() {
-    AfternoteTheme {
-        AfternoteSectionHeader(title = "NEXT STEP")
     }
 }

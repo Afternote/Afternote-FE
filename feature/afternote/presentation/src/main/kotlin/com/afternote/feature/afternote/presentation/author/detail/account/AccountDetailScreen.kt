@@ -27,25 +27,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailState
-import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailUiState
-import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel
-import com.afternote.feature.afternote.presentation.author.detail.DetailContentUiModel
 import com.afternote.feature.afternote.presentation.author.detail.rememberAfternoteDetailState
-import com.afternote.feature.afternote.presentation.author.navigation.DeleteInProgressOverlay
-import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent
-import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadErrorContent
-import com.afternote.feature.afternote.presentation.author.navigation.ObserveDeleteResult
-import com.afternote.feature.afternote.presentation.author.navigation.rememberDeleteFailedHandler
 import com.afternote.feature.afternote.presentation.shared.detail.AfternoteDetailServiceHeader
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.DetailInfoRow
@@ -54,86 +41,6 @@ import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMe
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodsSection
 import com.afternote.feature.afternote.presentation.shared.model.AfternoteServiceDisplay
-import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
-import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
-
-/**
- * 소셜 네트워크 상세 Stateful Route.
- *
- * Now in Android 가이드의 Route + Screen 분리 패턴을 따른다.
- * - 상세/작성자/삭제 상태는 공용 [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel] 에서 관리한다
- *   (상세 목적지마다 별도의 백스택 엔트리이므로 VM 인스턴스는 화면마다 갈리지만 클래스는 동일).
- *   초기 상세 로드는 ViewModel 의 `init` 과 네비게이션 인자(`itemId`)로만 트리거한다.
- * - UI 는 [AccountDetailScreen] (Stateless) 에 위임한다.
- * - [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailUiState.Success.contentUiModel] 이 소셜이 아니면 [DesignPendingDetailContent] 로 폴백한다.
- */
-@Composable
-internal fun AccountDetailRoute(
-    onBack: () -> Unit,
-    onNavigateToEditor: (itemId: Long) -> Unit,
-    viewModel: AfternoteDetailViewModel = hiltViewModel(),
-) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    ObserveDeleteResult(
-        deleteResult = (uiState as? AfternoteDetailUiState.Success)?.deleteResult,
-        onConsumed = viewModel::onDeleteResultConsumed,
-        onDeleteSucceeded = onBack,
-        onDeleteFailed = rememberDeleteFailedHandler(snackbarHostState),
-    )
-
-    when (val state = uiState) {
-        AfternoteDetailUiState.Loading -> {
-            LoadingBody()
-        }
-
-        is AfternoteDetailUiState.Error -> {
-            DetailLoadErrorContent(
-                messageRes = state.messageRes,
-                onBackClick = onBack,
-            )
-        }
-
-        is AfternoteDetailUiState.Success -> {
-            when (val model = state.contentUiModel) {
-                is DetailContentUiModel.SocialNetwork -> {
-                    Box {
-                        AccountDetailScreen(
-                            content = model.content,
-                            snackbarHostState = snackbarHostState,
-                            onBackClick = onBack,
-                            onEditClick = { onNavigateToEditor(state.detailId) },
-                            onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
-                        )
-                        if (state.isDeleting) {
-                            DeleteInProgressOverlay()
-                        }
-                    }
-                }
-
-                is DetailContentUiModel.Business -> {
-                    Box {
-                        AccountDetailScreen(
-                            content = model.content,
-                            snackbarHostState = snackbarHostState,
-                            onBackClick = onBack,
-                            onEditClick = { onNavigateToEditor(state.detailId) },
-                            onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
-                        )
-                        if (state.isDeleting) {
-                            DeleteInProgressOverlay()
-                        }
-                    }
-                }
-
-                else -> {
-                    DesignPendingDetailContent(onBackClick = onBack)
-                }
-            }
-        }
-    }
-}
 
 /**
  * 소셜 네트워크·비즈니스 애프터노트 공용 상세 화면.
@@ -145,8 +52,8 @@ fun AccountDetailScreen(
     content: AccountDetailContent = AccountDetailContent(),
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     isEditable: Boolean = true,
-    onEditClick: () -> Unit = {},
-    onDeleteConfirm: () -> Unit = {},
+    onEditClick: () -> Unit,
+    onDeleteConfirm: () -> Unit,
     state: AfternoteDetailState = rememberAfternoteDetailState(),
 ) {
     if (isEditable && state.showDeleteDialog) {
@@ -166,15 +73,15 @@ fun AccountDetailScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             DetailTopBar(
-                title = stringResource(R.string.feature_afternote_detail_title),
+                title = stringResource(R.string.afternote_detail_title),
                 onBackClick = onBackClick,
                 actions = {
                     if (isEditable) {
                         Box {
                             IconButton(onClick = state::toggleDropdownMenu) {
                                 Icon(
-                                    painter = painterResource(R.drawable.feature_afternote_ic_detail_edit),
-                                    contentDescription = stringResource(R.string.feature_afternote_detail_edit),
+                                    painter = painterResource(R.drawable.afternote_ic_detail_edit),
+                                    contentDescription = stringResource(R.string.afternote_detail_edit),
                                     modifier = Modifier.size(16.dp),
                                 )
                             }
@@ -248,13 +155,13 @@ private fun AccountSection(
 
     DetailSection(
         iconResId = com.afternote.core.ui.R.drawable.core_ui_user,
-        label = stringResource(R.string.feature_afternote_detail_section_account),
+        label = stringResource(R.string.afternote_detail_section_account),
         modifier = modifier,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             DetailInfoRow(
                 iconResId = com.afternote.core.ui.R.drawable.core_ui_user,
-                label = stringResource(R.string.feature_afternote_detail_label_id),
+                label = stringResource(R.string.afternote_detail_label_id),
                 value = accountId,
             )
             HorizontalDivider(
@@ -262,21 +169,21 @@ private fun AccountSection(
                 thickness = 1.dp,
             )
             DetailInfoRow(
-                iconResId = R.drawable.feature_afternote_ic_lock,
-                label = stringResource(R.string.feature_afternote_detail_label_password),
+                iconResId = R.drawable.afternote_ic_lock,
+                label = stringResource(R.string.afternote_detail_label_password),
                 value =
                     if (passwordVisible) {
                         password
                     } else {
-                        stringResource(R.string.feature_afternote_detail_password_mask)
+                        stringResource(R.string.afternote_detail_password_mask)
                     },
                 trailingContent = {
                     Text(
                         text =
                             if (passwordVisible) {
-                                stringResource(R.string.feature_afternote_detail_password_hide)
+                                stringResource(R.string.afternote_detail_password_hide)
                             } else {
-                                stringResource(R.string.feature_afternote_detail_password_show)
+                                stringResource(R.string.afternote_detail_password_show)
                             },
                         style = AfternoteDesign.typography.captionLargeR,
                         color = AfternoteDesign.colors.b1,
@@ -292,63 +199,3 @@ private fun AccountSection(
 }
 
 // endregion
-
-/**
- * Android Studio @Preview 전용 고정 데이터.
- */
-private val PreviewAccountInstaContent =
-    AccountDetailContent(
-        serviceName = "인스타그램",
-        accountId = "qwerty123",
-        password = "qwerty123",
-        processingMethods = listOf("게시물 내리기", "추모 게시물 올리기", "추모 계정으로 전환하기"),
-        // 시안이 블록 2개 상태를 규격으로 두므로 프리뷰(스크린샷 baseline)도 제목 있는 블록과 없는 블록을 함께 담는다.
-        messageBlocks =
-            listOf(
-                MessageBlockUiModel(
-                    title = "가족에게",
-                    body = "이 계정에는 우리 가족 여행 사진이 많아.\n계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
-                ),
-                MessageBlockUiModel(body = "비밀번호는 주기적으로 바뀌니 메모 앱도 함께 확인해 줘."),
-            ),
-        finalWriteDate = "2025.11.26",
-        afternoteEditReceivers =
-            listOf(
-                ReceiverUiModel(
-                    id = "1",
-                    name = "황규운",
-                    label = "친구",
-                ),
-            ),
-    )
-
-@Preview(showBackground = true)
-@Composable
-private fun AccountDetailScreenPreview() {
-    AfternoteTheme {
-        AccountDetailScreen(
-            content = PreviewAccountInstaContent,
-            onBackClick = {},
-            onEditClick = {},
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun AccountDetailScreenWithDropdownPreview() {
-    AfternoteTheme {
-        val stateWithDropdown =
-            remember {
-                AfternoteDetailState().apply {
-                    toggleDropdownMenu()
-                }
-            }
-        AccountDetailScreen(
-            content = PreviewAccountInstaContent,
-            onBackClick = {},
-            onEditClick = {},
-            state = stateWithDropdown,
-        )
-    }
-}

@@ -1,0 +1,20 @@
+<!--
+    카카오 심볼(말풍선) 단독 벡터 — 로그인 버튼 아이콘용.
+    경로 데이터는 설정 화면의 ic_kakao_logo.xml(feature/setting) 원 배지에서 심볼 패스만 가져왔고,
+    56 뷰포트 기준 심볼 bbox(x 14~42, y 15.469~41.741)를 group translate 로 28×28 뷰포트 중앙에 놓았다.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp"
+    android:height="20dp"
+    android:viewportWidth="28"
+    android:viewportHeight="28">
+    <group
+        android:translateX="-14"
+        android:translateY="-14.605">
+        <path
+            android:fillAlpha="0.902"
+            android:fillColor="#212121"
+            android:fillType="evenOdd"
+            android:pathData="M28,15.469C20.673,15.469 14,21.358 14,26.34C14,30.074 16.424,33.367 20.115,35.324L18.562,41.027C18.424,41.532 18.998,41.933 19.438,41.643L26.247,37.124C26.821,37.18 27.406,37.212 28,37.212C35.731,37.212 42,32.345 42,26.34C42,21.358 35.731,15.469 28,15.469Z" />
+    </group>
+</vector>
