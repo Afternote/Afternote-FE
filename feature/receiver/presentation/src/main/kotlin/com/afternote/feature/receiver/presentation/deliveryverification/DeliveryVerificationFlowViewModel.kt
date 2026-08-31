@@ -23,7 +23,7 @@ import javax.inject.Inject
  *   자식이 직접 의존하지 않고 flow VM 통해 결정
  *
  * 후속(2차 PR 이후) 으로 옮길 책임:
- * - `authCode`·`ReceiverIdentity` 등 누적 흐름 상태 보유
+ * - `masterKey`·`ReceiverIdentity` 등 누적 흐름 상태 보유
  * - [com.afternote.feature.receiver.presentation.recordsbox.SenderRegistry.attachIdentity] 호출 시점 위임
  * - [IdentityVerificationRepository] 자체의 흡수·싱글톤 제거
  */

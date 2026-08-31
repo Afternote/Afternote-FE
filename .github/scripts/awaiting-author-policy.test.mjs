@@ -7,12 +7,23 @@ import { judgeAwaitingAuthor } from "./label-awaiting-author-prs.mjs";
 const guard = await readFile(new URL("../workflows/review-debt-guard.yml", import.meta.url), "utf8");
 const reconcile = await readFile(new URL("../workflows/conflict-label.yml", import.meta.url), "utf8");
 const script = await readFile(new URL("./label-awaiting-author-prs.mjs", import.meta.url), "utf8");
+const authorDebtCheck = await readFile(new URL("./check-author-debt.mjs", import.meta.url), "utf8");
 
-test("가드는 작성자 무조치를 여전히 «빚 아님» 으로 흘려보낸다", () => {
-    // 이 라벨이 존재하는 이유 자체다. 가드가 작성자 무조치까지 빚으로 세도록 바뀌면
-    // 같은 PR 이 두 경로에서 이중으로 처벌된다 — 리뷰어가 새 PR 을 못 열고, 작성자에게도
-    // 라벨이 붙는다. 그때는 이 리컨사일러를 없애거나 기준을 다시 나눠야 한다.
-    assert.match(guard, /변경요청 미반영, 공은 작성자에게/);
+test("가드는 작성자 무조치를 공통 판정 CLI 로 검사한다", () => {
+    // 라벨은 주기 리컨사일 결과라 입장 시점에 스테일할 수 있다. 가드는 live PR 목록을 읽는
+    // CLI 를 호출하고, CLI 는 라벨 리컨사일러와 같은 judgeAwaitingAuthor 를 재사용해야 한다.
+    assert.match(guard, /node \.github\/scripts\/check-author-debt\.mjs/);
+    assert.match(guard, /AUTHOR_DEBT_FILE="\$author_debt_file"/);
+    assert.match(authorDebtCheck, /findAuthorDebts/);
+    assert.match(script, /export function findAuthorDebts/);
+});
+
+test("리뷰어 빚과 작성자 빚은 한 번의 안내와 종료로 합친다", () => {
+    // 두 경로가 각각 댓글·close 를 수행하면 같은 opened 이벤트에서 중복 코멘트와 경합이
+    // 생긴다. 두 TSV 를 모두 만든 뒤 한 번만 최종 결정을 내려야 한다.
+    assert.match(guard, /\[ ! -s "\$debt_file" \] && \[ ! -s "\$author_debt_file" \]/);
+    assert.equal((guard.match(/gh pr close/g) ?? []).length, 1);
+    assert.equal((guard.match(/> \/tmp\/debt-comment\.md/g) ?? []).length, 1);
 });
 
 test("두 판정은 «PR 전체의 최신 결정 리뷰» 라는 같은 축을 쓴다", () => {
@@ -72,7 +83,12 @@ test("두 판정 모두 draft·봇·fork 를 대상에서 뺀다", () => {
                 headRepository: { nameWithOwner: "Afternote/Afternote-FE" },
                 reviews: {
                     nodes: [
-                        { state: "CHANGES_REQUESTED", submittedAt: "2026-08-29T00:00:00Z", author: { login: "r" } },
+                        {
+                            state: "CHANGES_REQUESTED",
+                            submittedAt: "2026-08-29T00:00:00Z",
+                            authorCanPushToRepository: true,
+                            author: { login: "r" },
+                        },
                     ],
                 },
                 commits: { nodes: [] },

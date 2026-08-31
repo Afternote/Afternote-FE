@@ -25,7 +25,7 @@ fun EmptyListBody(modifier: Modifier = Modifier) {
                 .padding(start = 20.dp, top = 24.dp),
     ) {
         Icon(
-            painter = painterResource(R.drawable.feature_afternote_ic_empty_logo),
+            painter = painterResource(R.drawable.afternote_ic_empty_logo),
             contentDescription = null,
             modifier =
                 Modifier
@@ -34,7 +34,7 @@ fun EmptyListBody(modifier: Modifier = Modifier) {
         )
         Spacer(modifier = Modifier.height(32.dp))
         Text(
-            text = stringResource(R.string.feature_afternote_empty_list_body),
+            text = stringResource(R.string.afternote_empty_list_body),
             style = AfternoteDesign.typography.bodyLargeR,
             color = AfternoteDesign.colors.gray8,
         )

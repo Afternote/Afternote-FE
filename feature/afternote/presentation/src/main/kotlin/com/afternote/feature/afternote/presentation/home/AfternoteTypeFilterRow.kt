@@ -109,7 +109,7 @@ fun AfternoteTypeFilterRow(
         // 오른쪽 끝의 스크롤 가능 힌트. 최종 시안(4163:21839)에도 별도 reaction 이 없어 장식으로만 둔다.
         if (canScrollRight) {
             ArrowIcon(
-                iconRes = R.drawable.feature_afternote_ic_arrow_right_tab,
+                iconRes = R.drawable.afternote_ic_arrow_right_tab,
                 contentDescription = null,
                 modifier =
                     Modifier

@@ -112,8 +112,8 @@ internal fun MemorialMediaSourceBottomSheet(
         MemorialMediaSourceOption(
             iconRes =
                 when (target) {
-                    MemorialMediaTarget.PHOTO -> R.drawable.feature_afternote_ic_camera
-                    MemorialMediaTarget.VIDEO -> R.drawable.feature_afternote_ic_videocam
+                    MemorialMediaTarget.PHOTO -> R.drawable.afternote_ic_camera
+                    MemorialMediaTarget.VIDEO -> R.drawable.afternote_ic_videocam
                 },
             label =
                 when (target) {
@@ -124,7 +124,7 @@ internal fun MemorialMediaSourceBottomSheet(
         )
         if (onRemove != null) {
             MemorialMediaSourceOption(
-                iconRes = R.drawable.feature_afternote_ic_trash,
+                iconRes = R.drawable.afternote_ic_trash,
                 label =
                     when (target) {
                         MemorialMediaTarget.PHOTO -> stringResource(R.string.afternote_editor_media_source_remove_photo)

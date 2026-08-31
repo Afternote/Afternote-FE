@@ -102,7 +102,7 @@ private fun MemorialPlaylistCardContent(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.feature_afternote_ic_playlist_header),
+                    painter = painterResource(R.drawable.afternote_ic_playlist_header),
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
                     tint = AfternoteDesign.colors.gray6,
@@ -211,10 +211,10 @@ private fun MemorialPlaylistAlbumCoverBox(album: AlbumCover) {
     if (!album.imageUrl.isNullOrBlank()) {
         AsyncImage(
             model = album.imageUrl,
-            contentDescription = stringResource(R.string.content_description_album_cover),
+            contentDescription = stringResource(R.string.afternote_content_description_album_cover),
             modifier = modifier,
             contentScale = ContentScale.Crop,
-            error = painterResource(R.drawable.feature_afternote_img_placeholder_1),
+            error = painterResource(R.drawable.afternote_img_placeholder_1),
         )
     } else {
         // 둥글기는 공유 modifier 의 clip(8.dp) 이 이미 처리 — background 에 shape 중복 지정 불필요.

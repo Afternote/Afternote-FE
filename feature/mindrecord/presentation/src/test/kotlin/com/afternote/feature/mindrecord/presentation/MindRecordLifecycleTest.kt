@@ -25,6 +25,7 @@ import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDailyQuestion
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDay
+import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeMindRecordReceiverRepository
@@ -83,11 +84,11 @@ class MindRecordLifecycleTest {
                     DiaryList(listOf(previousPublished), 1, TodayMood.SOSO),
             )
         val repository = scriptedDiaryRepository(diaryLists)
-        val viewModel = DiaryListViewModel(repository)
+        val viewModel = DiaryListViewModel(repository, MindRecordChangeTracker())
 
         composeRule.setContent {
             AfternoteTheme {
-                DiaryScreen(viewModel = viewModel)
+                DiaryScreen(viewModel = viewModel, onItemClick = { _, _ -> })
             }
         }
 
@@ -211,7 +212,7 @@ class MindRecordLifecycleTest {
         val repository = FakeWeeklyReportRepository()
         repository.results.addLast(Result.failure(IllegalStateException("weekly offline")))
         val userRepository = privateProfileRepository("테스트 사용자")
-        val viewModel = WeeklyReportViewModel(repository, userRepository)
+        val viewModel = WeeklyReportViewModel(repository, userRepository, MindRecordChangeTracker())
 
         composeRule.setContent {
             AfternoteTheme {

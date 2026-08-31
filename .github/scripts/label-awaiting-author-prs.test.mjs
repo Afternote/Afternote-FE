@@ -7,6 +7,9 @@ import {
     countAuthorFixes,
     countAuthorResponses,
     ensureLabelExists,
+    fetchOpenPullRequests,
+    fetchOpenPullRequestsByAuthor,
+    findAuthorDebts,
     judgeAwaitingAuthor,
     latestDecision,
     planAwaitingAuthorLabels,
@@ -56,23 +59,42 @@ function pullRequest(overrides = {}) {
         author: { login: "author" },
         headRepository: { nameWithOwner: REPO },
         labels: { nodes: [] },
-        reviews: { nodes: [] },
-        commits: { nodes: [] },
-        comments: { nodes: [] },
+        reviews: { pageInfo: { hasPreviousPage: false }, nodes: [] },
+        commits: { pageInfo: { hasPreviousPage: false }, nodes: [] },
+        comments: { pageInfo: { hasPreviousPage: false }, nodes: [] },
         ...overrides,
     };
 }
 
-function changesRequested(at = "2026-08-29T00:00:00Z", reviewer = "reviewer") {
-    return { state: "CHANGES_REQUESTED", submittedAt: at, author: { login: reviewer } };
+function changesRequested(
+    at = "2026-08-29T00:00:00Z",
+    reviewer = "reviewer",
+    authorCanPushToRepository = true,
+) {
+    return {
+        state: "CHANGES_REQUESTED",
+        submittedAt: at,
+        authorCanPushToRepository,
+        author: { login: reviewer },
+    };
 }
 
 test("최신 결정 리뷰는 리뷰어별로 묶지 않고 PR 전체에서 하나만 고른다", () => {
     // 팀에서 한 사람이 더 늦은 판정을 내리면 그것이 PR 의 현재 상태다. 더 오래된 다른
     // 리뷰어의 변경요청을 다시 살리면 승인된 PR 에까지 라벨이 붙는다.
     const decision = latestDecision([
-        { state: "CHANGES_REQUESTED", submittedAt: "2026-08-01T00:00:00Z", author: { login: "a" } },
-        { state: "APPROVED", submittedAt: "2026-08-05T00:00:00Z", author: { login: "b" } },
+        {
+            state: "CHANGES_REQUESTED",
+            submittedAt: "2026-08-01T00:00:00Z",
+            authorCanPushToRepository: true,
+            author: { login: "a" },
+        },
+        {
+            state: "APPROVED",
+            submittedAt: "2026-08-05T00:00:00Z",
+            authorCanPushToRepository: true,
+            author: { login: "b" },
+        },
     ]);
     assert.equal(decision.state, "APPROVED");
 
@@ -93,13 +115,222 @@ test("변경요청 뒤 작성자가 아무것도 하지 않으면 대상이다",
     assert.equal(verdict.decidedAt, "2026-08-29T00:00:00Z");
 });
 
+test("쓰기 권한이 없는 외부인의 변경요청은 작성자 빚을 만들지 못한다", () => {
+    const verdict = judgeAwaitingAuthor(
+        pullRequest({
+            reviews: {
+                nodes: [changesRequested("2026-08-29T00:00:00Z", "outsider", false)],
+            },
+        }),
+        { repository: REPO },
+    );
+
+    assert.equal(verdict.awaiting, false);
+    assert.equal(verdict.reason, "결정 리뷰 없음");
+});
+
+test("쓰기 권한이 없는 외부인의 승인은 팀 변경요청을 지우지 못한다", () => {
+    const verdict = judgeAwaitingAuthor(
+        pullRequest({
+            reviews: {
+                nodes: [
+                    changesRequested("2026-08-28T00:00:00Z", "team-reviewer"),
+                    {
+                        state: "APPROVED",
+                        submittedAt: "2026-08-29T00:00:00Z",
+                        authorCanPushToRepository: false,
+                        author: { login: "outsider" },
+                    },
+                ],
+            },
+        }),
+        { repository: REPO },
+    );
+
+    assert.equal(verdict.awaiting, true);
+    assert.equal(verdict.reviewer, "team-reviewer");
+    assert.equal(verdict.decidedAt, "2026-08-28T00:00:00Z");
+});
+
+test("작성자 빚은 같은 작성자의 다른 열린 PR 중 현재 무조치인 것만 고른다", () => {
+    const debts = findAuthorDebts({
+        repository: REPO,
+        author: "AuThOr",
+        currentPullRequestNumber: "20",
+        pullRequests: [
+            // 현재 PR 자체는 아직 변경요청 상태여도 명시적으로 제외한다.
+            pullRequest({ number: 20, reviews: { nodes: [changesRequested()] } }),
+            // login 대소문자가 달라도 같은 작성자다.
+            pullRequest({
+                number: 21,
+                title: "fix(core): 기존 지적 반영",
+                author: { login: "AUTHOR" },
+                createdAt: "2026-08-17T10:00:00Z",
+                reviews: { nodes: [changesRequested("2026-08-29T00:00:00Z", "reviewer-1")] },
+            }),
+            // 작성자가 이미 조치한 PR 은 입장 빚이 아니다.
+            pullRequest({
+                number: 22,
+                reviews: { nodes: [changesRequested()] },
+                commits: { nodes: [commit({ date: "2026-08-29T12:00:00Z" })] },
+            }),
+            // 다른 작성자의 무조치 PR 은 이 작성자를 막지 않는다.
+            pullRequest({
+                number: 23,
+                author: { login: "someone-else" },
+                reviews: { nodes: [changesRequested()] },
+            }),
+        ],
+    });
+
+    assert.deepEqual(debts, [
+        {
+            number: 21,
+            createdDate: "2026-08-17",
+            reviewer: "reviewer-1",
+            title: "fix(core): 기존 지적 반영",
+        },
+    ]);
+});
+
+test("작성자 빚 판정은 현재 PR 번호가 없거나 잘못되면 통과시키지 않는다", () => {
+    assert.throws(
+        () => findAuthorDebts({ pullRequests: [], repository: REPO, author: "author" }),
+        /양의 정수/,
+    );
+});
+
+test("입장 게이트 조회는 GraphQL search 에서 같은 작성자의 열린 PR 만 페이지 처리한다", async () => {
+    const cursors = [];
+    const api = async (apiPath, options) => {
+        assert.equal(apiPath, "/graphql");
+        assert.match(options.body.query, /search\(query: \$searchQuery/);
+        assert.equal(
+            options.body.variables.searchQuery,
+            "repo:Afternote/Afternote-FE is:pr is:open author:AuThOr",
+        );
+
+        const cursor = options.body.variables.cursor;
+        cursors.push(cursor);
+        return {
+            data: {
+                search: {
+                    pageInfo:
+                        cursor === null
+                            ? { hasNextPage: true, endCursor: "next" }
+                            : { hasNextPage: false, endCursor: null },
+                    nodes: [pullRequest({ number: cursor === null ? 30 : 31 })],
+                },
+            },
+        };
+    };
+
+    const pullRequests = await fetchOpenPullRequestsByAuthor(api, REPO, "AuThOr");
+
+    assert.deepEqual(cursors, [null, "next"]);
+    assert.deepEqual(pullRequests.map((pullRequest) => pullRequest.number), [30, 31]);
+});
+
+test("입장 게이트 조회는 불완전한 search 결과를 빈 목록으로 접지 않는다", async () => {
+    await assert.rejects(
+        fetchOpenPullRequestsByAuthor(
+            async () => ({ data: { search: { pageInfo: { hasNextPage: false }, nodes: [{}] } } }),
+            REPO,
+            "author",
+        ),
+        /검색 결과가 불완전합니다/,
+    );
+});
+
+test("두 GraphQL 조회는 결정 리뷰 권한과 하위 connection 절단 여부를 함께 요청한다", async () => {
+    const queries = [];
+    const api = async (_apiPath, options) => {
+        queries.push(options.body.query);
+        if (options.body.variables.searchQuery) {
+            return {
+                data: {
+                    search: {
+                        pageInfo: { hasNextPage: false, endCursor: null },
+                        nodes: [],
+                    },
+                },
+            };
+        }
+        return {
+            data: {
+                repository: {
+                    pullRequests: {
+                        pageInfo: { hasNextPage: false, endCursor: null },
+                        nodes: [],
+                    },
+                },
+            },
+        };
+    };
+
+    await fetchOpenPullRequests(api, REPO);
+    await fetchOpenPullRequestsByAuthor(api, REPO, "author");
+
+    assert.equal(queries.length, 2);
+    for (const query of queries) {
+        assert.match(query, /authorCanPushToRepository/);
+        for (const connection of ["reviews", "commits", "comments"]) {
+            assert.match(
+                query,
+                new RegExp(`${connection}\\(last: 50\\) \\{\\s+pageInfo \\{ hasPreviousPage \\}`),
+            );
+        }
+    }
+});
+
+test("입장 게이트 조회는 잘린·누락된 하위 connection으로 판정하지 않는다", async () => {
+    const cases = [
+        [
+            "reviews",
+            { pageInfo: { hasPreviousPage: true }, nodes: [changesRequested()] },
+            /reviews 최근 50건이 완전하지 않습니다/,
+        ],
+        ["commits", { pageInfo: {}, nodes: [] }, /commits 최근 50건이 완전하지 않습니다/],
+        ["comments", { pageInfo: { hasPreviousPage: false } }, /comments 응답이 불완전합니다/],
+    ];
+
+    for (const [connection, value, expected] of cases) {
+        const candidate = pullRequest({ number: 40 });
+        candidate[connection] = value;
+
+        await assert.rejects(
+            fetchOpenPullRequestsByAuthor(
+                async () => ({
+                    data: {
+                        search: {
+                            pageInfo: { hasNextPage: false, endCursor: null },
+                            nodes: [candidate],
+                        },
+                    },
+                }),
+                REPO,
+                "author",
+            ),
+            expected,
+        );
+    }
+});
+
 test("최신 판정이 승인이면 대상이 아니다", () => {
     // 승인 뒤 작성자가 손보는 것은 작성자 몫이지만, 그것은 «머지 가능한 상태» 이지
     // «지적을 방치한 상태» 가 아니다.
     const verdict = judgeAwaitingAuthor(
         pullRequest({
             reviews: {
-                nodes: [changesRequested("2026-08-01T00:00:00Z"), { state: "APPROVED", submittedAt: "2026-08-02T00:00:00Z", author: { login: "reviewer" } }],
+                nodes: [
+                    changesRequested("2026-08-01T00:00:00Z"),
+                    {
+                        state: "APPROVED",
+                        submittedAt: "2026-08-02T00:00:00Z",
+                        authorCanPushToRepository: true,
+                        author: { login: "reviewer" },
+                    },
+                ],
             },
         }),
         { repository: REPO },

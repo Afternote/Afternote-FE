@@ -28,6 +28,7 @@ dependencies {
     testImplementation(testFixtures(projects.core.domain))
     testImplementation(testFixtures(projects.feature.mindrecord.domain))
 
+    // 자리표시자가 화면에 도달하는지는 실제로 그려 봐야 확인된다 (#562).
     // 로딩 중 배지가 «미완료» 로 확정되지 않는지는 실제로 그려 봐야 확인된다 (#698).
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.compose.ui.test.junit4)

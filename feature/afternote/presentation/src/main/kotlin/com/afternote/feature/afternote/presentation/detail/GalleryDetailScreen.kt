@@ -81,15 +81,15 @@ fun GalleryDetailScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             DetailTopBar(
-                title = stringResource(R.string.feature_afternote_detail_title),
+                title = stringResource(R.string.afternote_detail_title),
                 onBackClick = onBackClick,
                 actions = {
                     if (isEditable) {
                         Box {
                             IconButton(onClick = state::toggleDropdownMenu) {
                                 Icon(
-                                    painter = painterResource(R.drawable.feature_afternote_ic_detail_edit),
-                                    contentDescription = stringResource(R.string.feature_afternote_detail_edit),
+                                    painter = painterResource(R.drawable.afternote_ic_detail_edit),
+                                    contentDescription = stringResource(R.string.afternote_detail_edit),
                                     modifier = Modifier.size(16.dp),
                                 )
                             }

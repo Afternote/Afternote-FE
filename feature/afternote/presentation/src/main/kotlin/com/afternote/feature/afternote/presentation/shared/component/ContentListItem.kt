@@ -76,7 +76,7 @@ fun AfternoteListItem(
         Spacer(Modifier.weight(1f))
 
         Icon(
-            painter = painterResource(R.drawable.feature_afternote_right_arrow),
+            painter = painterResource(R.drawable.afternote_right_arrow),
             contentDescription = null,
             tint = AfternoteDesign.colors.gray5,
             modifier =

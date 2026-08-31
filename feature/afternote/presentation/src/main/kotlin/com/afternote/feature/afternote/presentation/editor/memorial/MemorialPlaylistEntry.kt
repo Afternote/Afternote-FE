@@ -88,8 +88,8 @@ fun MemorialPlaylistEntry(
         topBarActions = {
             IconButton(onClick = { isEditMode = !isEditMode }) {
                 Icon(
-                    painter = painterResource(R.drawable.feature_afternote_ic_detail_edit),
-                    contentDescription = stringResource(R.string.feature_afternote_detail_edit),
+                    painter = painterResource(R.drawable.afternote_ic_detail_edit),
+                    contentDescription = stringResource(R.string.afternote_detail_edit),
                     modifier = Modifier.size(13.dp),
                 )
             }

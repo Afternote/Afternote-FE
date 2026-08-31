@@ -129,7 +129,7 @@ private fun AlbumCoverBox(albumImageUrl: String?) {
     } else {
         AsyncImage(
             model = albumImageUrl,
-            contentDescription = stringResource(R.string.content_description_album_cover),
+            contentDescription = stringResource(R.string.afternote_content_description_album_cover),
             modifier = modifier,
             contentScale = ContentScale.Crop,
             // 로드 실패 폴백 = URL 없음과 동일한 gray8 (더미 placeholder 이미지 대신 통일).

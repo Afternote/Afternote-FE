@@ -118,7 +118,7 @@ class ReceiverMemorialPlaylistViewModel
                                     current
                                 } else {
                                     ReceiverMemorialPlaylistUiState.Error(
-                                        messageRes = R.string.receiver_memorial_playlist_load_error,
+                                        messageRes = R.string.afternote_receiver_memorial_playlist_load_error,
                                     )
                                 }
                             }

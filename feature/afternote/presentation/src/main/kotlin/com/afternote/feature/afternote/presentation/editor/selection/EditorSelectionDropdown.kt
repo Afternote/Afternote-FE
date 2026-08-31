@@ -123,7 +123,7 @@ fun <T> EditorSelectionDropdown(
 
                 if (enabled) {
                     Icon(
-                        painter = painterResource(R.drawable.feature_afternote_ic_dropdown_vector),
+                        painter = painterResource(R.drawable.afternote_ic_dropdown_vector),
                         contentDescription = stringResource(R.string.afternote_editor_content_description_dropdown),
                         tint = AfternoteDesign.colors.gray8,
                     )

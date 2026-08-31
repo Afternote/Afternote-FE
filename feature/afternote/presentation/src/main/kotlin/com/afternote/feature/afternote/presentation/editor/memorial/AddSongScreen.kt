@@ -66,7 +66,7 @@ fun AddSongScreen(
                     )
                 },
                 initialSelectedSongKeys = emptySet(),
-                actionLabel = stringResource(R.string.add_button),
+                actionLabel = stringResource(R.string.afternote_add_button),
                 onAction = { selectedKeys ->
                     onSongsAdded(uiState.songs.filter { it.selectionKey in selectedKeys }.map(::toSong))
                 },

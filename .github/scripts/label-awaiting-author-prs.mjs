@@ -2,11 +2,11 @@
 
 // 변경요청을 받은 뒤 작성자가 아무 조치도 하지 않은 PR 에 라벨을 붙인다 (#1552).
 //
-// `review-debt-guard.yml` 은 설계상 **리뷰어의 빚**만 잡는다 — "재요청이 없거나 최신 변경요청
-// 뒤 새 커밋이 없으면 빚이 아니다"(#1136). 공이 작성자에게 있는 PR 로 리뷰어를 벌하지 않는
-// 것은 맞지만, 그 결과 **작성자 무조치는 어느 게이트에서도 신호가 나지 않는다.** 가드는 이미
-// 이 상태를 식별하고 «변경요청 미반영, 공은 작성자에게» 로 로그에 찍은 뒤 버린다. 없던 판정을
-// 새로 만드는 것이 아니라 버려지는 판정을 라벨로 남긴다.
+// `review-debt-guard.yml` 은 리뷰어의 빚과 작성자의 빚을 서로 다른 입장 조건으로 다룬다.
+// 리뷰어 빚 판정에서는 "재요청이 없거나 최신 변경요청 뒤 작성자 조치가 없으면 리뷰어 빚이
+// 아니다"(#1136)를 유지한다. 대신 `check-author-debt.mjs` 가 이 파일의 같은 판정을 재사용해,
+// 공이 작성자에게 남은 자기 PR 이 있으면 새 PR 을 닫는다. 라벨 리컨사일러는 현재 상태를 열린
+// PR 목록에서 바로 볼 수 있게 만드는 관찰 가능성 경로이고, check CLI 는 새 PR 입장 게이트다.
 //
 // 8/30 실측: 열린 non-draft 29건 중 최신 판정이 CHANGES_REQUESTED 인 9건이 9건 모두 작성자
 // 무조치였고, 그중 #440 은 49일 · #767·#771 은 22일째였다. 오래 열려 있을수록 develop 이
@@ -48,13 +48,16 @@ query($owner: String!, $name: String!, $cursor: String, $pageSize: Int!) {
                 headRepository { nameWithOwner }
                 labels(first: 50) { nodes { name } }
                 reviews(last: 50) {
+                    pageInfo { hasPreviousPage }
                     nodes {
                         state
                         submittedAt
+                        authorCanPushToRepository
                         author { login }
                     }
                 }
                 commits(last: 50) {
+                    pageInfo { hasPreviousPage }
                     nodes {
                         commit {
                             committedDate
@@ -65,6 +68,52 @@ query($owner: String!, $name: String!, $cursor: String, $pageSize: Int!) {
                     }
                 }
                 comments(last: 50) {
+                    pageInfo { hasPreviousPage }
+                    nodes {
+                        createdAt
+                        author { login }
+                    }
+                }
+            }
+        }
+    }
+}`;
+
+const OPEN_PULL_REQUESTS_BY_AUTHOR_QUERY = `
+query($searchQuery: String!, $cursor: String, $pageSize: Int!) {
+    search(query: $searchQuery, type: ISSUE, first: $pageSize, after: $cursor) {
+        pageInfo { hasNextPage endCursor }
+        nodes {
+            ... on PullRequest {
+                number
+                title
+                isDraft
+                createdAt
+                author { login }
+                headRepository { nameWithOwner }
+                labels(first: 50) { nodes { name } }
+                reviews(last: 50) {
+                    pageInfo { hasPreviousPage }
+                    nodes {
+                        state
+                        submittedAt
+                        authorCanPushToRepository
+                        author { login }
+                    }
+                }
+                commits(last: 50) {
+                    pageInfo { hasPreviousPage }
+                    nodes {
+                        commit {
+                            committedDate
+                            changedFilesIfAvailable
+                            parents(first: 2) { totalCount }
+                            author { email user { login } }
+                        }
+                    }
+                }
+                comments(last: 50) {
+                    pageInfo { hasPreviousPage }
                     nodes {
                         createdAt
                         author { login }
@@ -82,12 +131,14 @@ function sameLogin(a, b) {
 /**
  * PR 전체에서 «최신 결정 리뷰» 를 고른다.
  *
- * 리뷰어별로 묶지 않는다. 팀에서 한 사람이 더 늦은 판정을 내렸다면 그것이 PR 의 현재 상태이고,
- * 더 오래된 다른 리뷰어의 변경요청을 다시 살리지 않는다 — 가드의 `sort_by(.t) | last` 와 같다.
+ * 쓰기 권한이 있는 팀원의 판정만 인정하고 리뷰어별로 묶지 않는다. 외부인의 변경요청으로 팀원의
+ * 새 PR 을 막거나, 외부인의 승인으로 팀 변경요청을 지울 수 없다. 팀에서 한 사람이 더 늦은 판정을
+ * 내렸다면 그것이 PR 의 현재 상태이고, 더 오래된 다른 팀원의 변경요청을 다시 살리지 않는다.
  */
 export function latestDecision(reviews) {
     const decisions = (reviews ?? [])
         .filter((review) => review?.state === "APPROVED" || review?.state === "CHANGES_REQUESTED")
+        .filter((review) => review?.authorCanPushToRepository === true)
         .filter((review) => typeof review.submittedAt === "string")
         .sort((a, b) => (a.submittedAt < b.submittedAt ? -1 : a.submittedAt > b.submittedAt ? 1 : 0));
 
@@ -232,6 +283,52 @@ export function judgeAwaitingAuthor(pullRequest, { repository } = {}) {
 }
 
 /**
+ * 새 PR 작성자가 먼저 처리해야 할 다른 열린 PR 을 고른다.
+ *
+ * 열린 PR 목록은 호출자가 한 번 live 조회해 넘긴다. 현재 PR 은 이벤트 직후 그 목록에 이미
+ * 포함되므로 번호로 명시적으로 제외한다. 작성자 login 은 GitHub 의 대소문자 비구분 규약에
+ * 맞춰 비교하고, 실제 무조치 여부는 라벨이 아니라 `judgeAwaitingAuthor` 로 매번 다시 판정한다.
+ */
+export function findAuthorDebts({ pullRequests, repository, author, currentPullRequestNumber }) {
+    if (!Array.isArray(pullRequests)) {
+        throw new TypeError("pullRequests 배열이 필요합니다.");
+    }
+    if (typeof author !== "string" || author.trim() === "") {
+        throw new TypeError("author 가 필요합니다.");
+    }
+
+    const currentNumber = Number(currentPullRequestNumber);
+    if (!Number.isSafeInteger(currentNumber) || currentNumber <= 0) {
+        throw new TypeError("currentPullRequestNumber 는 양의 정수여야 합니다.");
+    }
+
+    const debts = [];
+    for (const pullRequest of pullRequests) {
+        if (Number(pullRequest?.number) === currentNumber) {
+            continue;
+        }
+        if (!sameLogin(pullRequest?.author?.login, author)) {
+            continue;
+        }
+
+        const verdict = judgeAwaitingAuthor(pullRequest, { repository });
+        if (!verdict.awaiting) {
+            continue;
+        }
+
+        debts.push({
+            number: pullRequest.number,
+            createdDate:
+                typeof pullRequest.createdAt === "string" ? pullRequest.createdAt.slice(0, 10) : "",
+            reviewer: verdict.reviewer ?? "",
+            title: pullRequest.title ?? "",
+        });
+    }
+
+    return debts;
+}
+
+/**
  * 라벨을 붙일 PR 과 뗄 PR 을 한 번에 계산한다.
  *
  * 매 실행이 현재 집합을 다시 세우고 차이만 쓴다. 조치가 들어오면 다음 실행에서 라벨이 떨어지므로
@@ -294,9 +391,13 @@ export function renderSummary({ plan, dryRun, label = DEFAULT_LABEL }) {
     return lines.join("\n");
 }
 
-function createApi(token) {
+export function createApi(token, { fetchImpl = globalThis.fetch } = {}) {
+    if (typeof fetchImpl !== "function") {
+        throw new TypeError("fetch 구현이 필요합니다.");
+    }
+
     return async function api(apiPath, { method = "GET", body, allowNotFound = false } = {}) {
-        const response = await fetch(`https://api.github.com${apiPath}`, {
+        const response = await fetchImpl(`https://api.github.com${apiPath}`, {
             method,
             headers: {
                 accept: "application/vnd.github+json",
@@ -331,6 +432,10 @@ async function graphql(api, query, variables) {
 
 export async function fetchOpenPullRequests(api, repository) {
     const [owner, name] = repository.split("/");
+    if (!owner || !name || repository.split("/").length !== 2) {
+        throw new TypeError("repository 는 owner/name 형식이어야 합니다.");
+    }
+
     const pullRequests = [];
     let cursor = null;
 
@@ -343,13 +448,85 @@ export async function fetchOpenPullRequests(api, repository) {
         });
         const page = data?.repository?.pullRequests;
         if (!page) {
-            break;
+            throw new Error("GraphQL 응답에 열린 PR 목록이 없습니다.");
+        }
+        if (!Array.isArray(page.nodes)) {
+            throw new Error("GraphQL 열린 PR nodes 가 배열이 아닙니다.");
         }
         pullRequests.push(...(page.nodes ?? []).filter(Boolean));
         if (!page.pageInfo?.hasNextPage) {
             break;
         }
         cursor = page.pageInfo.endCursor;
+        if (!cursor) {
+            throw new Error("GraphQL 다음 페이지 cursor 가 없습니다.");
+        }
+    }
+
+    return pullRequests;
+}
+
+/**
+ * 입장 게이트용으로 한 작성자의 열린 PR 만 조회한다.
+ *
+ * 라벨 리컨사일러는 전체 열린 PR 이 필요하지만, 새 PR 입장마다 그 전체의 하위 리뷰·커밋·
+ * 코멘트를 다시 읽을 필요는 없다. GitHub search 로 작성자를 서버에서 먼저 제한한다.
+ */
+export async function fetchOpenPullRequestsByAuthor(api, repository, author) {
+    const [owner, name] = repository.split("/");
+    if (!owner || !name || repository.split("/").length !== 2) {
+        throw new TypeError("repository 는 owner/name 형식이어야 합니다.");
+    }
+    if (typeof author !== "string" || author.trim() === "") {
+        throw new TypeError("author 가 필요합니다.");
+    }
+
+    const pullRequests = [];
+    let cursor = null;
+
+    for (;;) {
+        const data = await graphql(api, OPEN_PULL_REQUESTS_BY_AUTHOR_QUERY, {
+            searchQuery: `repo:${owner}/${name} is:pr is:open author:${author}`,
+            cursor,
+            pageSize: PULL_REQUEST_PAGE_SIZE,
+        });
+        const page = data?.search;
+        if (!page) {
+            throw new Error("GraphQL 응답에 작성자의 열린 PR 검색 결과가 없습니다.");
+        }
+        if (!Array.isArray(page.nodes)) {
+            throw new Error("GraphQL 작성자 PR nodes 가 배열이 아닙니다.");
+        }
+
+        for (const pullRequest of page.nodes) {
+            if (!pullRequest || !Number.isSafeInteger(pullRequest.number)) {
+                throw new Error("GraphQL 작성자 PR 검색 결과가 불완전합니다.");
+            }
+
+            // `last: 50` 앞에 더 많은 항목이 있으면 최신 결정 시각 이후의 작성자 이메일·응답을
+            // 완전하게 판정할 수 없다. 라벨은 다음 리컨사일에서 복구할 수 있지만, 입장 가드가
+            // 불완전한 근거로 PR 을 닫는 것은 되돌리기 비용이 있으므로 판정 자체를 중단한다.
+            for (const connectionName of ["reviews", "commits", "comments"]) {
+                const connection = pullRequest[connectionName];
+                if (!connection || !Array.isArray(connection.nodes)) {
+                    throw new Error(`GraphQL 작성자 PR ${connectionName} 응답이 불완전합니다.`);
+                }
+                if (connection.pageInfo?.hasPreviousPage !== false) {
+                    throw new Error(
+                        `GraphQL 작성자 PR ${connectionName} 최근 50건이 완전하지 않습니다.`,
+                    );
+                }
+            }
+            pullRequests.push(pullRequest);
+        }
+
+        if (!page.pageInfo?.hasNextPage) {
+            break;
+        }
+        cursor = page.pageInfo.endCursor;
+        if (!cursor) {
+            throw new Error("GraphQL 작성자 PR 다음 페이지 cursor 가 없습니다.");
+        }
     }
 
     return pullRequests;
