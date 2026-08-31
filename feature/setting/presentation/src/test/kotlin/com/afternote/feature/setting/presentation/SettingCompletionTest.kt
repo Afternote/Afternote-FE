@@ -1,6 +1,17 @@
 package com.afternote.feature.setting.presentation
 
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasScrollToNodeAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.common.reporting.ErrorReporter
@@ -39,7 +50,10 @@ import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionDto
 import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionUpdateRequestDto
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.core.network.service.UserApiService
+import com.afternote.core.ui.UiText
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.setting.presentation.screen.ReceiverEditScreen
+import com.afternote.feature.setting.presentation.screen.ReceiverRegisterScreen
 import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsViewModel
 import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionError
 import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionViewModel
@@ -77,6 +91,7 @@ import com.afternote.core.domain.testing.FakeUserRepository.PushUpdateCall as Co
 import com.afternote.core.domain.testing.FakeUserRepository.ReceiverCreateCall as CompletionReceiverRegistrationCall
 import com.afternote.core.domain.testing.FakeUserRepository.ReceiverMessageCall as CompletionReceiverMessageCall
 import com.afternote.core.domain.testing.FakeUserRepository.ReceiverUpdateCall as CompletionReceiverEditCall
+import com.afternote.feature.setting.presentation.R as SettingR
 
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -303,7 +318,7 @@ class SettingCompletionTest {
 
         firstGate.complete(Result.failure(IllegalStateException("temporary failure")))
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.uiState.value.errorMessage == "수신자 등록에 실패했습니다."
+            viewModel.uiState.value.errorMessage == UiText.Resource(SettingR.string.receiver_register_failed)
         }
         assertFalse(viewModel.uiState.value.isLoading)
 
@@ -383,7 +398,7 @@ class SettingCompletionTest {
 
         firstBasicGate.complete(Result.failure(IllegalStateException("basic update failed")))
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.uiState.value.errorMessage == "수신자 수정에 실패했습니다."
+            viewModel.uiState.value.errorMessage == UiText.Resource(SettingR.string.receiver_edit_failed)
         }
         assertFalse(viewModel.uiState.value.isSaving)
         assertTrue(repository.receiverMessageCalls.isEmpty())
@@ -399,7 +414,7 @@ class SettingCompletionTest {
         retryMessageGate.complete(Result.failure(IllegalStateException("message update failed")))
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.errorMessage ==
-                "기본 정보는 수정됐지만 마지막 인사말 수정에 실패했습니다."
+                UiText.Resource(SettingR.string.receiver_message_update_partial_failed)
         }
         assertEquals(listOf(expectedMessageCall), repository.receiverMessageCalls)
 
@@ -423,6 +438,68 @@ class SettingCompletionTest {
         )
         assertEquals(listOf(expectedMessageCall, expectedMessageCall), repository.receiverMessageCalls)
         assertEquals(null, viewModel.uiState.value.errorMessage)
+    }
+
+    @Test
+    fun receiverEdit_blankPhoneWiring_disablesSaveAndShowsRequiredMessage() {
+        val scenario =
+            CompletionUserScenario().apply {
+                receiverDetail = COMPLETION_DEFAULT_RECEIVER_DETAIL.copy(phone = null)
+            }
+        val repository = scenario.repository
+        val viewModel =
+            ReceiverEditViewModel(
+                savedStateHandle = SavedStateHandle(mapOf("receiverId" to RECEIVER_ID)),
+                userRepository = repository,
+            )
+
+        composeRule.setContent {
+            AfternoteTheme {
+                ReceiverEditScreen(
+                    onBackClick = {},
+                    onEditSuccess = {},
+                    viewModel = viewModel,
+                )
+            }
+        }
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            viewModel.uiState.value.receiver == scenario.receiverDetail
+        }
+
+        composeRule.onNodeWithText("연락처를 입력해주세요.").assertIsDisplayed()
+        composeRule.onNodeWithText("수정").assertIsNotEnabled()
+        assertTrue(repository.receiverUpdateCalls.isEmpty())
+    }
+
+    @Test
+    fun receiverRegister_blankPhoneWiring_allowsSubmitWithoutPhone() {
+        val repository = FakeUserRepository(receivers = emptyList())
+        val viewModel = ReceiverRegisterViewModel(repository)
+
+        composeRule.setContent {
+            AfternoteTheme {
+                ReceiverRegisterScreen(
+                    onBackClick = {},
+                    onRegisterSuccess = {},
+                    viewModel = viewModel,
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("이름을 입력하세요").performTextInput("김수신")
+        composeRule.onNodeWithText("관계를 선택하세요").performClick()
+        composeRule.onNodeWithText("어머니").performClick()
+        composeRule.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("afternote@email.com"))
+        composeRule.onNodeWithText("afternote@email.com").performTextInput("receiver@afternote.local")
+
+        composeRule.onAllNodesWithText("연락처를 입력해주세요.").assertCountEquals(0)
+        composeRule.onNodeWithText("등록").assertIsEnabled()
+
+        composeRule.onNodeWithText("등록").performClick()
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            repository.receiverCreateCalls.size == 1
+        }
+        assertEquals(null, repository.receiverCreateCalls.single().phone)
     }
 
     @Test
@@ -660,6 +737,8 @@ private class CompletionUserScenario {
     var deliveryConditions =
         ReceiverDeliveryConditions(receiverId = 77L, conditions = completionDefaultDeliveryConditions())
 
+    var receiverDetail: ReceiverDetail = COMPLETION_DEFAULT_RECEIVER_DETAIL
+
     val completedPushUpdates: Int
         get() = synchronized(this) { pushUpdateCompletions }
 
@@ -690,8 +769,8 @@ private class CompletionUserScenario {
                 takeGate(deliveryUpdateGates, "updateReceiverDeliveryConditions").await().getOrThrow()
             }
             onGetReceiverDetail = { receiverId ->
-                assertEquals(COMPLETION_DEFAULT_RECEIVER_DETAIL.receiverId, receiverId)
-                COMPLETION_DEFAULT_RECEIVER_DETAIL
+                assertEquals(this@CompletionUserScenario.receiverDetail.receiverId, receiverId)
+                this@CompletionUserScenario.receiverDetail
             }
             onUpdateReceiver = { _, _, _, _, _ ->
                 takeGate(receiverUpdateGates, "updateReceiver").await().getOrThrow()
