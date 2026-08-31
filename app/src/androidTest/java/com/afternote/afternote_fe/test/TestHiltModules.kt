@@ -70,12 +70,18 @@ object TestMindRecordRepositoryModule {
      * (#936 · #1022 · #1030 의 androidTest 컴파일 파손 원인). 요청한 주차가 `requestedDates` 에
      * 남아 「열지 않은 탭은 부르지 않는다」(#736) 를 횟수로 단언할 수 있다.
      *
-     * 큐가 비면 **터뜨린다**(정본 fixture 의 기본). 조용히 실패나 빈 리포트를 돌려주면 요청 횟수가
-     * 어긋난 것을 놓친다 — 홈에 닿는 테스트는 자기가 기대하는 응답을 명시적으로 큐에 넣는다.
+     * **`fallback` 을 준다 — 큐가 비어도 터뜨리지 않는다.** 정본 fixture 의 기본은 「큐가 비면 실패」
+     * 이고 화면 단위 테스트는 그게 맞다. 그런데 앱 전체를 띄우는 계측은 **홈을 지나가기만 해도** 이
+     * 저장소를 부르고, 그 횟수는 화면 전환·`ON_RESUME` 에 따라 달라져 `@Before` 에서 미리 셀 수 없다.
+     * 큐만 두면 두 번째 호출에서 터져 **홈이 못 뜨고, 실패는 「인사말이 안 보인다」 같은 엉뚱한
+     * 자리에서 나타난다** — 실제로 `mode: full` 계측에서 그렇게 나왔다 (#562 · #1288).
+     *
+     * **세는 단언은 그대로다.** `fallback` 을 줘도 `requestedDates` 는 계속 쌓이므로 「열지 않은 탭은
+     * 부르지 않는다」(#736) 를 횟수로 단언할 수 있고, 특정 응답이 필요한 테스트는 종전대로 큐에 넣는다.
      */
     @Provides
     @Singleton
-    fun provideWeeklyReportRepository(): WeeklyReportRepository = FakeWeeklyReportRepository()
+    fun provideWeeklyReportRepository(): WeeklyReportRepository = FakeWeeklyReportRepository(fallback = Result.success(emptyWeeklyReport()))
 }
 
 @Module
