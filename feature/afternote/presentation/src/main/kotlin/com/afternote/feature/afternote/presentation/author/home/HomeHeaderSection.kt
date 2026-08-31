@@ -15,13 +15,11 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteOutlinedCard
 import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 
 /**
@@ -56,7 +54,7 @@ internal fun HomeHeaderSection(
                 .padding(horizontal = 25.dp),
     ) {
         Text(
-            text = "애프터노트",
+            text = stringResource(R.string.afternote_home_title),
             style = AfternoteDesign.typography.h1,
             color = AfternoteDesign.colors.gray9,
         )
@@ -86,7 +84,7 @@ private fun NextStepCard(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        AfternoteSectionHeader(title = "NEXT STEP")
+        AfternoteSectionHeader(title = stringResource(R.string.afternote_home_next_step_section_title))
         AfternoteOutlinedCard(
             onClick = onClick,
             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 20.dp),
@@ -107,20 +105,5 @@ private fun NextStepCard(
                 )
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun HomeHeaderSectionPreview() {
-    AfternoteTheme {
-        HomeHeaderSection(
-            description = stringResource(R.string.afternote_home_header_description),
-            nextStep =
-                NextStep(
-                    text = "가족들의 '주거래 은행' 정보를\n입력하신 건 확인하셨나요?",
-                    onClick = {},
-                ),
-        )
     }
 }

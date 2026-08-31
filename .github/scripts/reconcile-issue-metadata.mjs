@@ -57,6 +57,23 @@ export const ASSIGNEE_BY_MODULE = Object.freeze({
 
 export const GUARD_COMMENT_MARKER = "<!-- issue-metadata-guard:v1 -->";
 
+// #1407: bug 이슈는 조직 이슈 필드 Priority 로 심각도를 지정해야 한다. Issue Form 은 필드 값을
+// 자동 부착하지 못하므로 빈 값을 안내 코멘트로 알린다.
+//
+// #1534: 비어 있다고 이슈를 닫지는 않는다. Priority 는 이슈의 내용이 아니라 분류 메타데이터고,
+// 그것이 비었다는 이유로 실재하는 결함 보고가 닫히면 「열린 이슈 목록 = 지금 할 일」 쪽이 거짓이
+// 된다 — 할 일은 그대로인데 목록에서만 사라진다. 판정 불가 메타데이터(작업 유형·주 담당 모듈)로
+// 닫는 경로는 그대로다. 그쪽은 담당자도 라벨도 정할 수 없는 상태라 성격이 다르다.
+export const PRIORITY_FIELD_NAME = "Priority";
+export const PRIORITY_COMMENT_MARKER = "<!-- issue-metadata-guard:priority:v1 -->";
+
+export const PRIORITY_OPTION_GUIDE = Object.freeze([
+    "Urgent: 치명 — 크래시·데이터 소실·보안 무력화·핵심 경로 차단·가짜 성공",
+    "High: 심각 — 실패·틀린 값의 정상 위장, 핵심 기능 무동작",
+    "Medium: 불편 — 우회로가 있는 오동작·틀린 표시, 핵심 흐름은 유지",
+    "Low: 경미 — 문구·정렬·마감 품질 흠, 기능 영향 없음",
+]);
+
 function unique(values) {
     return [...new Set(values)];
 }
@@ -169,6 +186,27 @@ export function inspectIssue(issue) {
     };
 }
 
+export function priorityFieldState(issue) {
+    const values = issue.issue_field_values;
+    if (!Array.isArray(values)) {
+        return { status: "unknown" };
+    }
+    const set = values.some((value) => value?.issue_field_name === PRIORITY_FIELD_NAME &&
+        value?.single_select_option?.name);
+    return { status: set ? "set" : "missing" };
+}
+
+export function renderPriorityComment() {
+    return [
+        PRIORITY_COMMENT_MARKER,
+        "bug 이슈는 사이드바 Fields > Priority 로 심각도를 지정해야 합니다. 판정 기준:",
+        "",
+        ...PRIORITY_OPTION_GUIDE.map((line) => `- ${line}`),
+        "",
+        "값이 비어 있어도 이슈를 닫지는 않습니다. 이 안내는 이슈당 한 번만 답니다.",
+    ].join("\n");
+}
+
 export function renderInvalidComment(repository, reasons) {
     return [
         GUARD_COMMENT_MARKER,
@@ -202,6 +240,30 @@ async function assertReconciled(api, repository, issueNumber, expected) {
         inspection.expectedAssignee !== expected.expectedAssignee) {
         throw new Error(`Issue #${issueNumber} metadata postcondition failed`);
     }
+}
+
+async function reconcilePriorityField(api, repository, issue) {
+    let state = priorityFieldState(issue);
+    if (state.status === "unknown") {
+        // 이벤트 페이로드에는 issue_field_values 가 없을 수 있다. 단건 재조회로 보강한다.
+        state = priorityFieldState(await api(`/repos/${repository}/issues/${issue.number}`));
+    }
+    if (state.status === "unknown") {
+        throw new Error(`Issue #${issue.number}: API 응답에 issue_field_values 가 없습니다 — ` +
+            "토큰의 이슈 필드 지원 여부를 확인해야 합니다");
+    }
+    if (state.status === "set") {
+        return { status: "set" };
+    }
+
+    const comments = await listIssueComments(api, repository, issue.number);
+    if (!comments.some((comment) => comment.body?.includes(PRIORITY_COMMENT_MARKER))) {
+        await api(`/repos/${repository}/issues/${issue.number}/comments`, {
+            method: "POST",
+            body: { body: renderPriorityComment() },
+        });
+    }
+    return { status: "reminded" };
 }
 
 export async function reconcileIssue(api, repository, issue) {
@@ -241,13 +303,20 @@ export async function reconcileIssue(api, repository, issue) {
         });
     }
     await assertReconciled(api, repository, issue.number, inspection);
-    return {
+    const priority = inspection.typeKey === "bug"
+        ? await reconcilePriorityField(api, repository, issue)
+        : null;
+    const result = {
         number: issue.number,
         action: inspection.needsUpdate ? "corrected" : "unchanged",
         label: inspection.expectedLabel,
         areaLabel: inspection.expectedAreaLabel,
         assignee: inspection.expectedAssignee,
     };
+    if (priority) {
+        result.priority = priority.status;
+    }
+    return result;
 }
 
 function createApi(token) {

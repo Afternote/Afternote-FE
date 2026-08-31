@@ -11,6 +11,7 @@ import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.presentation.R
+import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -98,6 +99,7 @@ class ReceiverLoadFailureTest {
                             if (shouldFail) throw IOException("offline") else emptyList()
                         },
                     draftLoader = MindRecordDraftLoader(NoopDiaryRepository, NoopDailyQuestionRepository),
+                    errorReporter = RecordingErrorReporter(),
                 )
             advanceUntilIdle()
             assertNotNull(viewModel.uiState.value.receiverLoadError)
@@ -137,6 +139,7 @@ class ReceiverLoadFailureTest {
                             }
                         },
                     draftLoader = MindRecordDraftLoader(NoopDiaryRepository, NoopDailyQuestionRepository),
+                    errorReporter = RecordingErrorReporter(),
                 )
             advanceUntilIdle()
             assertNotNull(viewModel.uiState.value.receiverLoadError)
@@ -161,6 +164,7 @@ class ReceiverLoadFailureTest {
             photoUploadRepository = FakePhotoUploadRepository.strict(),
             userRepository = userRepository { failure?.let { throw it } ?: emptyList() },
             draftLoader = MindRecordDraftLoader(NoopDiaryRepository, NoopDailyQuestionRepository),
+            errorReporter = RecordingErrorReporter(),
         )
 
     /** UserRepository 는 표면이 넓다 — 이 시나리오가 타는 호출만 답한다. */

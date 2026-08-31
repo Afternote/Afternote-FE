@@ -13,7 +13,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -21,14 +20,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.icon.ArrowIcon
 import com.afternote.core.ui.modifierextention.FadingEdgeDirection
 import com.afternote.core.ui.modifierextention.bottomBorder
 import com.afternote.core.ui.modifierextention.horizontalFadingEdge
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.util.TYPE_FILTER_TABS
@@ -112,7 +109,7 @@ fun AfternoteTypeFilterRow(
         // 오른쪽 끝의 스크롤 가능 힌트. 최종 시안(4163:21839)에도 별도 reaction 이 없어 장식으로만 둔다.
         if (canScrollRight) {
             ArrowIcon(
-                iconRes = R.drawable.feature_afternote_ic_arrow_right_tab,
+                iconRes = R.drawable.afternote_ic_arrow_right_tab,
                 contentDescription = null,
                 modifier =
                     Modifier
@@ -168,17 +165,5 @@ private fun TypeFilterItem(
                         .align(Alignment.BottomCenter),
             )
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun AfternoteTypeFilterRowPreview() {
-    AfternoteTheme {
-        var selectedTab by remember { mutableStateOf<AfternoteType?>(null) }
-        AfternoteTypeFilterRow(
-            onTabSelected = { selectedTab = it },
-            selectedTab = selectedTab,
-        )
     }
 }

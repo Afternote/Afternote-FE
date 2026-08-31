@@ -23,17 +23,22 @@ data class BaseResponse<T>(
     val data: T? = null,
 )
 
+/**
+ * 봉투 계약상 성공 대역.
+ *
+ * `status` 에는 BE 가 HTTP 상태를 그대로 실어 보낸다 — 성공은 `ApiResponse.success` 의
+ * `HttpStatus.OK.value()`, 실패는 `ErrorCode.getHttpStatus().value()`. 별도 도메인 코드가 아니라
+ * HTTP 상태 코드이므로 성공 판정도 HTTP 의미론과 같은 2xx 대역으로 한다. `ApiErrorCallAdapterFactory`
+ * 가 HTTP 201·202·204 를 성공으로 통과시키는 것과 기준을 맞춘 것이며, 200 한 점으로 좁히면 BE 가
+ * 201·204 를 쓰기 시작할 때 성공 응답이 봉투 단계에서 조용히 실패로 뒤집힌다.
+ */
+private val BaseResponse<*>.isSuccess: Boolean
+    get() = status in 200..299
+
 fun <T : Any> BaseResponse<T>.requireData(): T {
-    if (status != 200) {
-        throw ApiException(
-            status = status,
-            code = code,
-            serverMessage = message,
-            fallbackMessage = "알 수 없는 서버 에러가 발생했습니다.",
-        )
-    }
+    throwIfEnvelopeFailed(fallbackMessage = "알 수 없는 서버 에러가 발생했습니다.")
     return data ?: throw ApiException(
-        // 봉투는 성공(200)이라 했는데 payload 가 비었다 — 계약 위반이므로 status 는 그대로 200 으로 남긴다.
+        // 봉투는 성공(2xx)이라 했는데 payload 가 비었다 — 계약 위반이므로 status 는 봉투 값 그대로 남긴다.
         status = status,
         code = code,
         serverMessage = null,
@@ -45,7 +50,7 @@ fun <T : Any> BaseResponse<T>.requireData(): T {
  * 서버가 응답을 마쳤지만 HTTP 또는 공통 응답 봉투 계약이 실패했을 때 throw 되는 예외.
  *
  * HTTP 400..599는 Retrofit CallAdapter가 만들고, HTTP 2xx 응답 뒤에는 [requireData]·[requireStatus]가
- * 봉투의 `status != 200` 또는 필수 `data` 누락을 이 타입으로 올린다. 모두 서버 응답을 받은 뒤의
+ * 봉투 `status` 가 성공 대역(2xx) 밖이거나 필수 `data` 가 누락된 경우를 이 타입으로 올린다. 모두 서버 응답을 받은 뒤의
  * 내용 실패이므로 전송 계층 실패인 `IOException`과 타입 계층을 공유하지 않는다.
  *
  * @property status HTTP 400..599 경로에서는 HTTP 상태, 2xx 본문 검증 경로에서는
@@ -67,12 +72,24 @@ class ApiException(
 ) : RuntimeException(serverMessage ?: fallbackMessage)
 
 fun BaseResponse<*>.requireStatus() {
-    if (status != 200) {
+    throwIfEnvelopeFailed(fallbackMessage = "요청에 실패했습니다.")
+}
+
+/**
+ * 봉투가 실패를 말하면([isSuccess] 가 false) [ApiException] 으로 올린다.
+ *
+ * [fallbackMessage] 를 인자로 받는 이유 — 이 문구는 서버가 `message` 를 주지 않았을 때만
+ * [Throwable.message] 로 쓰이는 진단 문구이고(사용자 직접 노출 X), 실패가 payload 를 요구한
+ * 호출([requireData])에서 왔는지 성공 여부만 보는 호출([requireStatus])에서 왔는지를 가르는
+ * 단서다. 하나로 합치면 그 구분이 사라지므로 호출처가 각자의 문구를 넘긴다.
+ */
+private fun BaseResponse<*>.throwIfEnvelopeFailed(fallbackMessage: String) {
+    if (!isSuccess) {
         throw ApiException(
             status = status,
             code = code,
             serverMessage = message,
-            fallbackMessage = "요청에 실패했습니다.",
+            fallbackMessage = fallbackMessage,
         )
     }
 }

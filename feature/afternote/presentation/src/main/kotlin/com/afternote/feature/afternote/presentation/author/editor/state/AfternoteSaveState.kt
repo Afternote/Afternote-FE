@@ -12,14 +12,11 @@ enum class AfternoteValidationError(
     TITLE_REQUIRED(R.string.afternote_validation_title_required),
     ACCOUNT_CREDENTIALS_REQUIRED(R.string.afternote_validation_account_credentials_required),
 
-    /** 처리 방법 1개 이상 필요 (계정·갤러리 폼 공통). */
-    PROCESSING_METHODS_REQUIRED(R.string.afternote_validation_processing_methods_required),
+    /** 둘 이상의 필수 입력이 동시에 비어 있어 특정 필드 하나로 안내를 좁힐 수 없음. */
+    MULTIPLE_REQUIRED_FIELDS(R.string.afternote_validation_multiple_required_fields),
 
     /** ESTATE 등 디자인 미확정으로 placeholder 만 노출되는 카테고리에서 저장 시도 시. */
     UNIMPLEMENTED_TYPE(R.string.afternote_validation_unimplemented_category),
-
-    /** 수신자 최소 1명 필요 (모든 카테고리). API 400/475와 동일 메시지. */
-    RECEIVERS_REQUIRED(R.string.afternote_validation_receivers_required),
 
     /**
      * 남기실 말씀에 제목만 쓰고 본문을 비운 블록이 있을 때. 서버가 본문을 필수로 검증해
@@ -32,7 +29,7 @@ enum class AfternoteValidationError(
  * 에디터에서 UI가 소비할 단일 오류 상태.
  *
  * nullable [AfternoteEditorUiState.error]의 `null`은 오류가 없는 정상 상태이고, 값이 있을 때만
- * 오류 종류에 맞는 안내를 노출한다. 화면 표현은 디자인 확정 전까지 기존 Snackbar를 유지한다.
+ * 오류 종류에 맞는 안내를 노출한다. 검증 오류는 확인 팝업, 네트워크·서버·업로드 오류는 Snackbar로 표시한다.
  */
 sealed interface AfternoteEditorError {
     data class Validation(
@@ -42,6 +39,14 @@ sealed interface AfternoteEditorError {
     data object Network : AfternoteEditorError
 
     data object Server : AfternoteEditorError
+
+    /**
+     * 수신자 선택 화면이 돌려준 수신자를 폼에 반영하지 못함 (#1405).
+     *
+     * 에디터의 수신자 목록 로드가 실패하면 id 에 대응하는 이름·관계를 찾을 수 없어 선택이 버려진다.
+     * 저장 실패가 아니라 «고른 것이 반영되지 않았다» 는 사실을 알리는 신호다 — 사용자가 다시 고를 수 있어야 한다.
+     */
+    data object ReceiverSelectionUnavailable : AfternoteEditorError
 
     data class Upload(
         val target: Target,

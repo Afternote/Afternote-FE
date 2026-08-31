@@ -12,12 +12,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.afternote.core.ui.button.PlusBadgeButton
-import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
  * 단순 표시 전용 프로필 이미지. URI 없으면 placeholder 로 fallback.
@@ -98,23 +96,5 @@ private fun ProfileImageContent(
             contentDescription = contentDescription,
             modifier = modifier,
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ProfileImagePickerPreview() {
-    AfternoteTheme {
-        ProfileImagePicker(
-            onPickClick = {},
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ProfileImagePreview() {
-    AfternoteTheme {
-        ProfileImage()
     }
 }

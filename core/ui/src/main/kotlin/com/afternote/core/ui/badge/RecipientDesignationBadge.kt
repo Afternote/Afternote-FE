@@ -10,13 +10,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.modifierextention.shimmerLoadingPlaceholder
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
  * 수신인 지정 칩의 유효한 상태만 표현한다.
@@ -94,24 +92,6 @@ fun RecipientDesignationBadge(
                 modifier = modifier,
             )
         }
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "수신인 지정 완료")
-@Composable
-private fun RecipientDesignationBadgeCompletePreview() {
-    AfternoteTheme {
-        RecipientDesignationBadge(state = RecipientDesignationBadgeState.Completed)
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "수신인 지정 미완료")
-@Composable
-private fun RecipientDesignationBadgeIncompletePreview() {
-    AfternoteTheme {
-        RecipientDesignationBadge(
-            state = RecipientDesignationBadgeState.Incomplete(onClick = {}),
-        )
     }
 }
 

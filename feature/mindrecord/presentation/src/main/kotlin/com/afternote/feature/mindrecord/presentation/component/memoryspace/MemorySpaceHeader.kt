@@ -124,19 +124,28 @@ private fun BackPill(onBackClick: () -> Unit) {
     }
 }
 
+/**
+ * 두 문구 모두 `inter` 토큰(13sp / 21sp)을 그대로 쓰거나 `fontSize` 만 덮고 있었다.
+ *
+ * `copy(fontSize = …)` 는 **lineHeight 를 원 토큰 값 그대로 남긴다.** 부제는 9sp 글자에
+ * 21sp 행간이 붙어 행간 배율이 233% 였다 (#1487). 제목은 덮지도 않아 13/21 이었다.
+ *
+ * 시안(정리 Screen Design › 홈 › 기억공간)은 둘 다 150% 다 — 제목 11/16.5, 부제 9/13.5.
+ * 그래서 `fontSize` 를 덮을 때는 `lineHeight` 를 **같이** 덮는다.
+ */
 @Composable
 private fun HeaderTitle() {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = stringResource(R.string.mindrecord_memory_space_title),
-            style = AfternoteDesign.typography.inter,
+            style = AfternoteDesign.typography.inter.copy(fontSize = 11.sp, lineHeight = 16.5.sp),
             color = AfternoteDesign.colors.gray6,
             textAlign = TextAlign.Center,
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = stringResource(R.string.mindrecord_memory_space_subtitle),
-            style = AfternoteDesign.typography.inter.copy(fontSize = 9.sp),
+            style = AfternoteDesign.typography.inter.copy(fontSize = 9.sp, lineHeight = 13.5.sp),
             color = AfternoteDesign.colors.gray5,
             // Column 의 CenterHorizontally 는 Text 상자를 가운데 놓을 뿐이고, 접힌 줄을
             // 서로 가운데로 맞추는 것은 textAlign 이다 — 없으면 둘째 줄이 왼쪽에 붙는다.

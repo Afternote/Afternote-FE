@@ -47,10 +47,12 @@ test("GitHub pagination and rename payloads include both old and new paths", () 
     );
 });
 
-test("explicit and convention JVM plugins are excluded from Android lint task selection", () => {
+test("JVM and Android test plugins are excluded from Android lint task selection", () => {
     assert.equal(isAndroidModuleBuild('plugins { id("java-library") }'), false);
     assert.equal(isAndroidModuleBuild('plugins { id("afternote.jvm.library") }'), false);
     assert.equal(isAndroidModuleBuild('plugins { id("afternote.jvm.domain") }'), false);
+    assert.equal(isAndroidModuleBuild('plugins { id("com.android.test") }'), false);
+    assert.equal(isAndroidModuleBuild('plugins { alias(libs.plugins.android.test) }'), false);
     assert.equal(isAndroidModuleBuild('plugins { id("afternote.android.library") }'), true);
 
     const mixedModules = [module(":app"), module(":core:model", { android: false })];
@@ -123,6 +125,25 @@ test("unit-test-only changes do not run consumer modules or screenshots", () => 
     assert.equal(impact.codeqlJavaKotlin, false);
 });
 
+test("konsist guard changes run the guard they touch", () => {
+    // :konsist 는 src/main 이 없어 프로덕션 소스 분기를 못 타고, kover 도 없어 coverageModules
+    // 에서도 걸러진다. 이 두 조건이 겹쳐 unitTestTasks 가 통째로 비면 unit_test_required 가
+    // false 로 내려가 Unit Test job 자체가 skip 된다 — 가드를 고친 PR 이 가드를 안 돌린다(#1521).
+    const impact = resolvePrImpact(
+        ["konsist/src/test/kotlin/com/afternote/konsist/LayerDependencyKonsistTest.kt"],
+        modules,
+        dependencies,
+    );
+
+    assert.deepEqual(impact.unitTestTasks, [":konsist:test"]);
+    assert.deepEqual(impact.coverageModules, []);
+    assert.deepEqual(impact.ktlintTasks, [":konsist:ktlintCheck"]);
+    assert.deepEqual(impact.androidLintTasks, []);
+    assert.deepEqual(impact.screenshotTasks, []);
+    assert.equal(impact.codeqlJavaKotlin, false);
+    assert.equal(impact.repositoryQualityFull, false);
+});
+
 test("impact-policy workflow changes fail closed to every lane", () => {
     const impact = resolvePrImpact(
         [".github/workflows/pr-validation.yml", ".github/scripts/pr-gate-policy.test.mjs"],
@@ -136,6 +157,20 @@ test("impact-policy workflow changes fail closed to every lane", () => {
     assert.ok(impact.ktlintTasks.length > 0);
     assert.ok(impact.unitTestTasks.length > 0);
     assert.ok(impact.screenshotTasks.length > 0);
+});
+
+test("expected-failure list changes fail closed to every lane", () => {
+    for (const policyPath of [
+        ".github/ci-expected-failures.json",
+        ".github/ci-expected-failures.init.gradle",
+        ".github/scripts/ci-expected-failures.mjs",
+    ]) {
+        const impact = resolvePrImpact([policyPath], modules, dependencies);
+
+        assert.equal(impact.repositoryQualityFull, true, `${policyPath} must force full validation`);
+        assert.ok(impact.unitTestTasks.length > 0);
+        assert.ok(impact.screenshotTasks.length > 0);
+    }
 });
 
 test("documentation-only changes have no heavy impact", () => {

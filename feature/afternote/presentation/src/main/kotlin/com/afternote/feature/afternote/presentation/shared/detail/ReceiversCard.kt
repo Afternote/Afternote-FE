@@ -10,10 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.ReceiverAvatar
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
@@ -77,27 +75,5 @@ private fun ReceiverDetailItem(
                     ),
             )
         }
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFFF5F5F5)
-@Composable
-private fun ReceiversCardPreview() {
-    AfternoteTheme {
-        ReceiversCard(
-            receivers =
-                listOf(
-                    ReceiverUiModel(
-                        id = "1",
-                        name = "김지은",
-                        label = "친구",
-                    ),
-                    ReceiverUiModel(
-                        id = "2",
-                        name = "김혜성",
-                        label = "친구",
-                    ),
-                ),
-        )
     }
 }

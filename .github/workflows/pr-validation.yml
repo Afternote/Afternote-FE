@@ -14,6 +14,12 @@ on:
   # 본문 CI Test Plan을 바꾸면 이전 green check를 재사용하지 않고 다시 검증한다.
   pull_request:
     types: [opened, synchronize, reopened, edited]
+  # merge queue 는 큐 ref 에서 required check 를 다시 요구한다. merge group 에는 PR 이
+  # 없어 pull_request_number 가 0 으로 떨어지고, develop push 가 이미 쓰는 전량 검증
+  # 경로를 그대로 탄다. PR 본문을 재료로 쓰는 CI Test Plan · linked Issue 게이트는
+  # repository-quality 안에서 pull_request_number > 0 조건으로 스스로 비활성된다.
+  merge_group:
+    types: [checks_requested]
   # GITHUB_TOKEN 으로 PR 브랜치에 baseline/stack merge commit 을 올리면 pull_request
   # 이벤트가 다시 발생하지 않는다. 권한 있는 bridge 가 같은 SHA 에 필수 검증을 붙일 때 쓴다.
   workflow_dispatch:
@@ -38,7 +44,7 @@ jobs:
     name: Repository Quality
     uses: ./.github/workflows/repository-quality.yml
     with:
-      pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number }}
+      pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number || 0 }}
 
   static-analysis:
     name: Static Analysis
@@ -46,7 +52,7 @@ jobs:
     if: ${{ !cancelled() }}
     uses: ./.github/workflows/lint.yml
     with:
-      pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number }}
+      pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number || 0 }}
       run_ktlint: ${{ needs.repository-quality.result != 'success' || needs.repository-quality.outputs.ktlint_required != 'false' }}
       ktlint_tasks: ${{ needs.repository-quality.result == 'success' && needs.repository-quality.outputs.ktlint_tasks || 'ktlintCheck :build-logic:ktlintCheck' }}
       run_android_lint: ${{ needs.repository-quality.result != 'success' || needs.repository-quality.outputs.android_lint_required != 'false' }}
@@ -59,7 +65,7 @@ jobs:
     if: ${{ !cancelled() }}
     uses: ./.github/workflows/unit-test.yml
     with:
-      pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number }}
+      pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number || 0 }}
       run_validation: ${{ needs.repository-quality.result != 'success' || needs.repository-quality.outputs.unit_test_required != 'false' }}
       run_node_tests: ${{ needs.repository-quality.result != 'success' || needs.repository-quality.outputs.run_node_tests != 'false' }}
       gradle_tasks: ${{ needs.repository-quality.result == 'success' && needs.repository-quality.outputs.unit_test_tasks || ':koverXmlReportCi :koverHtmlReportCi :konsist:test :build-logic:test :app:compileDebugAndroidTestKotlin' }}
@@ -71,7 +77,7 @@ jobs:
     if: ${{ !cancelled() }}
     uses: ./.github/workflows/screenshot.yml
     with:
-      pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number }}
+      pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number || 0 }}
       run_validation: ${{ needs.repository-quality.result != 'success' || needs.repository-quality.outputs.screenshot_required != 'false' }}
-      gradle_tasks: ${{ needs.repository-quality.result == 'success' && needs.repository-quality.outputs.screenshot_tasks || ':core:ui:validateScreenshotTest :feature:home:presentation:validateScreenshotTest :feature:receiver:presentation:validateScreenshotTest :feature:onboarding:presentation:validateScreenshotTest :feature:afternote:presentation:validateScreenshotTest :feature:mindrecord:presentation:validateScreenshotTest' }}
-      screenshot_modules: ${{ needs.repository-quality.result == 'success' && needs.repository-quality.outputs.screenshot_modules || ':core:ui :feature:home:presentation :feature:receiver:presentation :feature:onboarding:presentation :feature:afternote:presentation :feature:mindrecord:presentation' }}
+      gradle_tasks: ${{ needs.repository-quality.result == 'success' && needs.repository-quality.outputs.screenshot_tasks || ':core:ui:validateScreenshotTest :feature:home:presentation:validateScreenshotTest :feature:receiver:presentation:validateScreenshotTest :feature:onboarding:presentation:validateScreenshotTest :feature:afternote:presentation:validateScreenshotTest :feature:mindrecord:presentation:validateScreenshotTest :feature:setting:presentation:validateScreenshotTest :feature:timeletter:presentation:validateScreenshotTest' }}
+      screenshot_modules: ${{ needs.repository-quality.result == 'success' && needs.repository-quality.outputs.screenshot_modules || ':core:ui :feature:home:presentation :feature:receiver:presentation :feature:onboarding:presentation :feature:afternote:presentation :feature:mindrecord:presentation :feature:setting:presentation :feature:timeletter:presentation' }}

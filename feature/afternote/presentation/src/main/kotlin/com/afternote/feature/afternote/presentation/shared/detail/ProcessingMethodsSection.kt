@@ -8,12 +8,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
 import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.core.ui.R as CoreUiR
 
@@ -31,7 +29,7 @@ fun ProcessingMethodsSection(
 ) {
     DetailSection(
         iconResId = CoreUiR.drawable.core_ui_settings,
-        label = stringResource(R.string.feature_afternote_detail_section_processing),
+        label = stringResource(R.string.afternote_detail_section_processing),
         modifier = modifier,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(17.dp)) {
@@ -52,15 +50,5 @@ fun ProcessingMethodsSection(
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ProcessingMethodsSectionPreview() {
-    AfternoteTheme {
-        ProcessingMethodsSection(
-            methods = listOf("계정 삭제", "게시물 유지", "메모리얼 계정 전환"),
-        )
     }
 }
