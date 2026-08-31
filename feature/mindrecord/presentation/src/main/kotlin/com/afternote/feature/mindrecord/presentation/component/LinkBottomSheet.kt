@@ -36,23 +36,29 @@ import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
-import com.afternote.feature.mindrecord.presentation.util.isSupportedLinkUrl
 
 /**
  * 키보드 툴바의 링크 버튼에서 호출되는 "링크 추가하기" 바텀시트.
  *
  * Figma 노드 533:16183 (link variant) — 헤더(드래그 핸들 + 제목 + 완료 버튼) + URL 입력 필드.
  * 완료 시 [onConfirm] 으로 입력된 URL 을 전달한다 (호출부에서 에디터에 삽입).
+ *
+ * @param onConfirm 입력한 URL 을 받아 **본문에 넣었으면 true**, 넣을 수 없어 거절했으면 false 를
+ *   돌려준다. 거절이면 시트를 닫지 않고 사유를 띄운다 — 방금 적은 값을 잃지 않고 고칠 수 있게 하기
+ *   위해서다. 사용자가 입력을 고치면 안내는 스스로 걷힌다 (#1067).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LinkBottomSheet(
     onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit,
+    onConfirm: (String) -> Boolean,
     modifier: Modifier = Modifier,
 ) {
     // core 정본이 `TextFieldState` 를 받는다. 상태 소유자가 이 로컬 하나뿐이라 국소 변경이다 (#634).
     val urlState = rememberTextFieldState()
+    // 거절 안내는 **거절된 그 입력에만** 붙는다. 사용자가 한 글자라도 고치면 걷힌다 (#1067 리뷰).
+    var rejectedInput by remember { mutableStateOf<String?>(null) }
+    val currentInput = urlState.text.toString()
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -71,7 +77,8 @@ fun LinkBottomSheet(
     ) {
         LinkSheetContent(
             urlState = urlState,
-            onConfirm = { onConfirm(urlState.text.toString()) },
+            onConfirm = { if (!onConfirm(currentInput)) rejectedInput = currentInput },
+            isError = rejectedInput != null && rejectedInput == currentInput,
             modifier = modifier,
         )
     }
@@ -82,10 +89,8 @@ private fun LinkSheetContent(
     urlState: TextFieldState,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
+    isError: Boolean = false,
 ) {
-    // core 정본은 TextFieldState 를 들고 있다 — 입력값 판정은 그 상태에서 읽는다 (#634·#722).
-    val url = urlState.text.toString()
-
     Column(
         modifier =
             modifier
@@ -111,9 +116,7 @@ private fun LinkSheetContent(
                 color = AfternoteDesign.colors.gray6,
             )
 
-            // 형식이 맞을 때만 완료가 눌린다. 종전에는 입력값과 무관하게 항상 활성이라
-            // 임의 문자열이 그대로 본문 링크가 됐다 (#722).
-            ConfirmPill(onClick = onConfirm, enabled = url.isSupportedLinkUrl())
+            ConfirmPill(onClick = onConfirm)
         }
 
         // core 정본을 쓴다. 종전에는 흰 배경 + gray2 indicator + 8dp 코너를 M3 프리미티브로
@@ -122,40 +125,38 @@ private fun LinkSheetContent(
             state = urlState,
             placeholder = stringResource(R.string.mindrecord_link_sheet_placeholder),
             keyboardType = KeyboardType.Uri,
+            // 안내 문구만 띄우면 시선이 입력란으로 가지 않는다 — core 정본이 보더를 error 색으로 바꾼다.
+            isError = isError,
             modifier = Modifier.fillMaxWidth(),
         )
 
-        // 왜 완료가 안 눌리는지 알려 준다 — 회색 버튼만으로는 고장과 구분되지 않는다.
-        if (url.isNotBlank() && !url.isSupportedLinkUrl()) {
+        // 거절을 조용히 넘기면 «완료를 눌렀는데 안 들어갔다» 만 남는다 — 사유를 적어 고칠 수 있게 한다 (#1067).
+        // 문구 스타일은 로그인 화면의 입력 오류 안내와 같게 둔다 (`LoginScreen` 선례).
+        if (isError) {
             Text(
                 text = stringResource(R.string.mindrecord_link_sheet_invalid),
-                style = AfternoteDesign.typography.captionLargeR,
-                color = AfternoteDesign.colors.gray6,
+                style = AfternoteDesign.typography.captionLargeB,
+                color = AfternoteDesign.colors.error,
             )
         }
     }
 }
 
 @Composable
-private fun ConfirmPill(
-    onClick: () -> Unit,
-    enabled: Boolean,
-) {
+private fun ConfirmPill(onClick: () -> Unit) {
     Box(
         modifier =
             Modifier
                 .clip(CircleShape)
-                .background(if (enabled) AfternoteDesign.colors.gray2 else AfternoteDesign.colors.gray1)
-                .border(
-                    BorderStroke(1.dp, if (enabled) AfternoteDesign.colors.gray4 else AfternoteDesign.colors.gray3),
-                    CircleShape,
-                ).clickable(enabled = enabled, onClick = onClick)
+                .background(AfternoteDesign.colors.gray2)
+                .border(BorderStroke(1.dp, AfternoteDesign.colors.gray4), CircleShape)
+                .clickable(onClick = onClick)
                 .padding(horizontal = 15.dp, vertical = 9.dp),
     ) {
         Text(
             text = stringResource(R.string.mindrecord_link_sheet_confirm),
             style = AfternoteDesign.typography.captionLargeB,
-            color = if (enabled) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray4,
+            color = AfternoteDesign.colors.gray9,
         )
     }
 }
@@ -167,6 +168,19 @@ private fun LinkBottomSheetPreview() {
         LinkSheetContent(
             urlState = rememberTextFieldState(),
             onConfirm = {},
+        )
+    }
+}
+
+// 거절 상태는 시안에 없어 스스로 정한 화면이라, 그림이 유일한 기록이 된다 (#1067 리뷰).
+@Preview(showBackground = true, name = "링크 시트 — 넣을 수 없는 주소")
+@Composable
+private fun LinkBottomSheetErrorPreview() {
+    AfternoteTheme {
+        LinkSheetContent(
+            urlState = rememberTextFieldState(initialText = "javascript:alert(1)"),
+            onConfirm = {},
+            isError = true,
         )
     }
 }
