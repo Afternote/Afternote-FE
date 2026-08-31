@@ -6,6 +6,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -138,7 +139,9 @@ class NotificationNavigationAndroidTest {
 
     private fun openTimeLetterTab() {
         val timeLetterLabel = context.getString(CoreUiR.string.core_ui_nav_item_timeletter)
-        composeRule.onNodeWithText(timeLetterLabel).performClick()
+        // 하단 탭만 고른다 — 홈 섹션 헤더에도 «타임레터» 가 있어 텍스트만으로는 두 개다
+        // (#700 이 시안 확정 문구로 그 섹션을 추가했다). 탭은 눌리고 헤더는 안 눌린다.
+        composeRule.onNode(hasText(timeLetterLabel) and hasClickAction()).performClick()
         composeRule.onNode(selectedBottomBarMatcher(CoreUiR.string.core_ui_nav_item_timeletter)).assertIsSelected()
     }
 
