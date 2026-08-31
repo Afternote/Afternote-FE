@@ -100,4 +100,11 @@
     <string name="onboarding_profile_headline">애프터노트에서의\n프로필을 설정해주세요</string>
     <string name="onboarding_profile_name_placeholder">이름을 지정해주세요</string>
     <string name="onboarding_profile_complete">회원가입 완료</string>
+    <!-- 약관 상세. 본문(onboarding_terms_detail_section_N)은 리소스였는데 제목만 코드에 남아 있었다. -->
+    <string name="onboarding_terms_detail_section_1_title">1. 서비스 이용약관</string>
+    <string name="onboarding_terms_detail_section_2_title">2. 개인정보 수집 및 이용 동의</string>
+    <string name="onboarding_terms_detail_section_3_title">3. 기록 및 콘텐츠 저장에 대한 안내</string>
+    <string name="onboarding_terms_detail_section_4_title">4. 계정 및 데이터 관리</string>
+    <string name="onboarding_terms_detail_section_5_title">5. 서비스 변경 및 종료</string>
+    <string name="onboarding_terms_detail_section_6_title">6. 동의 철회</string>
 </resources>

@@ -30,11 +30,10 @@ class MemorialDetailScreenInteractionTest {
             AfternoteTheme {
                 MemorialDetailScreen(
                     onBackClick = {},
-                    content =
-                        MemorialDetailContent(
-                            userName = "서영",
-                            memorialVideoUrl = videoUrl,
-                        ),
+                    onEditClick = {},
+                    onDeleteConfirm = {},
+                    content = MemorialDetailContent(memorialVideoUrl = videoUrl),
+                    userName = "서영",
                     onVideoClick = { clickedUrl = it },
                 )
             }
@@ -55,8 +54,11 @@ class MemorialDetailScreenInteractionTest {
             AfternoteTheme {
                 MemorialDetailScreen(
                     onBackClick = {},
+                    onEditClick = {},
+                    onDeleteConfirm = {},
                     onVideoClick = {},
-                    content = MemorialDetailContent(userName = "서영"),
+                    content = MemorialDetailContent(),
+                    userName = "서영",
                 )
             }
         }
@@ -70,8 +72,11 @@ class MemorialDetailScreenInteractionTest {
             AfternoteTheme {
                 MemorialDetailScreen(
                     onBackClick = {},
+                    onEditClick = {},
+                    onDeleteConfirm = {},
                     onVideoClick = {},
-                    content = MemorialDetailContent(userName = "서영"),
+                    content = MemorialDetailContent(),
+                    userName = "서영",
                 )
             }
         }

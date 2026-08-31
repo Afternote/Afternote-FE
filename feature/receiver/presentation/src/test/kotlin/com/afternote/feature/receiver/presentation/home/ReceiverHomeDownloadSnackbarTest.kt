@@ -17,7 +17,6 @@ import org.robolectric.annotation.GraphicsMode
 /** 이 테스트의 관심 밖인 외부 라우팅을 채우는 no-op 묶음. */
 private val noopActions =
     ReceiverHomeActions(
-        onSettingClick = {},
         onNavigateToMindRecord = {},
         onNavigateToTimeLetter = {},
         onNavigateToAfternote = {},

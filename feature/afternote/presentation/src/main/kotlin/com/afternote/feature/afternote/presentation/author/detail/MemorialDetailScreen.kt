@@ -44,14 +44,12 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.modifierextention.FadingEdgeDirection
 import com.afternote.core.ui.modifierextention.horizontalFadingEdge
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
@@ -68,7 +66,6 @@ internal const val MEMORIAL_VIDEO_CARD_TEST_TAG = "memorialVideoCard"
  */
 @Immutable
 data class MemorialDetailContent(
-    val userName: String = "",
     val finalWriteDate: String = "",
     val profileImageUri: String? = null,
     val albumCovers: List<AlbumCover> = emptyList(),
@@ -88,10 +85,11 @@ fun MemorialDetailScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
     content: MemorialDetailContent = MemorialDetailContent(),
+    userName: String = "",
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     isEditable: Boolean = true,
-    onEditClick: () -> Unit = {},
-    onDeleteConfirm: () -> Unit = {},
+    onEditClick: () -> Unit,
+    onDeleteConfirm: () -> Unit,
     onVideoClick: (String) -> Unit,
     state: AfternoteDetailState = rememberAfternoteDetailState(),
 ) {
@@ -141,6 +139,7 @@ fun MemorialDetailScreen(
         MemorialDetailScrollContent(
             content = content,
             categoryLabel = memorialCategoryLabel,
+            userName = userName,
             onVideoClick = onVideoClick,
             modifier =
                 Modifier
@@ -154,6 +153,7 @@ fun MemorialDetailScreen(
 private fun MemorialDetailScrollContent(
     content: MemorialDetailContent,
     categoryLabel: String,
+    userName: String,
     onVideoClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -165,7 +165,7 @@ private fun MemorialDetailScrollContent(
                 .padding(horizontal = 20.dp),
     ) {
         Spacer(modifier = Modifier.height(24.dp))
-        TitleSection(categoryLabel = categoryLabel, userName = content.userName)
+        TitleSection(categoryLabel = categoryLabel, userName = userName)
         Spacer(modifier = Modifier.height(24.dp))
         CardSection(content = content, onVideoClick = onVideoClick)
         Spacer(modifier = Modifier.height(24.dp))
@@ -297,7 +297,7 @@ private fun VideoCard(
         content = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "장례식에 남길 영상",
+                    text = stringResource(R.string.afternote_editor_funeral_video_label),
                     style =
                         AfternoteDesign.typography.textField.copy(
                             fontWeight = FontWeight.Medium,
@@ -328,7 +328,8 @@ private fun VideoThumbnail(thumbnailUrl: String?) {
         if (!thumbnailUrl.isNullOrBlank()) {
             AsyncImage(
                 model = thumbnailUrl,
-                contentDescription = "장례식에 남길 영상 썸네일",
+                contentDescription =
+                    stringResource(R.string.afternote_content_description_memorial_video_thumbnail),
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
             )
@@ -354,7 +355,7 @@ private fun VideoThumbnail(thumbnailUrl: String?) {
         // 재생 아이콘
         Image(
             painter = painterResource(R.drawable.feature_afternote_ic_playback),
-            contentDescription = "영상 재생",
+            contentDescription = stringResource(R.string.content_description_video_play),
             modifier =
                 Modifier
                     .align(Alignment.Center)
@@ -380,7 +381,7 @@ private fun PlaylistCard(
         content = {
             Column {
                 Text(
-                    text = "추억 플레이리스트",
+                    text = stringResource(R.string.afternote_editor_playlist_screen_title),
                     style =
                         AfternoteDesign.typography.textField.copy(
                             fontWeight = FontWeight.Medium,
@@ -393,7 +394,7 @@ private fun PlaylistCard(
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "현재 ${songCount}개의 노래가 담겨 있습니다.",
+                    text = stringResource(R.string.afternote_detail_playlist_song_count, songCount),
                     style =
                         AfternoteDesign.typography.bodySmallR.copy(
                             color = AfternoteDesign.colors.black,
@@ -474,66 +475,6 @@ private fun AlbumCoverItem(album: AlbumCover) {
                         color = AfternoteDesign.colors.gray3,
                         shape = RoundedCornerShape(8.dp),
                     ),
-        )
-    }
-}
-
-private fun memorialDetailPreviewAlbumCovers(): List<AlbumCover> =
-    listOf(
-        AlbumCover(),
-        AlbumCover(),
-        AlbumCover(),
-        AlbumCover(),
-    )
-
-@Preview(
-    showBackground = true,
-    device = "spec:width=390dp,height=844dp,dpi=420,isRound=false",
-)
-@Composable
-private fun MemorialDetailScreenPreview() {
-    AfternoteTheme {
-        MemorialDetailScreen(
-            content =
-                MemorialDetailContent(
-                    userName = "서영",
-                    finalWriteDate = "2025.11.26",
-                    songCount = 16,
-                    albumCovers = memorialDetailPreviewAlbumCovers(),
-                ),
-            onBackClick = {},
-            onEditClick = {},
-            onVideoClick = {},
-        )
-    }
-}
-
-@Preview(
-    showBackground = true,
-    device = "spec:width=390dp,height=844dp,dpi=420,isRound=false",
-    name = "Memorial Guideline Detail - Delete Dialog",
-)
-@Composable
-private fun MemorialDetailScreenDeleteDialogPreview() {
-    AfternoteTheme {
-        val stateWithDialog =
-            remember {
-                AfternoteDetailState().apply {
-                    showDeleteDialog()
-                }
-            }
-        MemorialDetailScreen(
-            content =
-                MemorialDetailContent(
-                    userName = "서영",
-                    finalWriteDate = "2025.11.26",
-                    songCount = 16,
-                    albumCovers = memorialDetailPreviewAlbumCovers(),
-                ),
-            onBackClick = {},
-            onEditClick = {},
-            onVideoClick = {},
-            state = stateWithDialog,
         )
     }
 }

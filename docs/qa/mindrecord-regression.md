@@ -75,7 +75,7 @@
 ## 4. 수신자 열람
 
 - [자동] 전달 조건 미충족이 서버 원문 대신 도메인 문구가 된다 — `ReceiverDeadEndTest`(3건) ·
-  `MindRecordReceiverFailureMapperTest`(5건)
+  `MindRecordReceiverRepositoryImplTest`(6건)
 - [자동] 목록에서 탭한 항목의 본문 시트가 제목·본문·기분을 보여준다 — `ReceiverRecordDetailTest`(6건)
 - [수동] `delivery-verification` 이 APPROVED 인 계정으로 실제 진입 — 자동 테스트가 덮지 못하는 유일한 경로다
 

@@ -44,7 +44,12 @@ class DailyQuestionListViewModel
             load()
         }
 
-        /** 마지막으로 성공한 조회 시점의 데이터 버전. 아직 성공한 적이 없으면 null. */
+        /**
+         * 마지막으로 **완전히** 성공한 조회 시점의 데이터 버전. 아직 없으면 null.
+         *
+         * today 나 목록 중 하나라도 못 받아 온 로드는 여기 기록하지 않는다 — 기록하면
+         * 못 받아 온 채로 복귀 재조회가 막힌다.
+         */
         private var loadedVersion: Long? = null
 
         /**
@@ -105,7 +110,8 @@ class DailyQuestionListViewModel
                     // 목록에서 빠진 채 고정된다 (#736 리뷰).
                     val versionAtLoadStart = changeTracker.version
 
-                    val today = repository.getToday().getOrNull()
+                    val todayResult = repository.getToday()
+                    val today = todayResult.getOrNull()
                     val listResult = repository.getList()
                     // 새 로드가 이 Job 을 취소했다면 상태는 그쪽이 결정하므로 여기서 멈춘다.
                     // repository 는 `runCatchingCancellable` 로 취소를 다시 던지므로 대개 여기 오기 전에
@@ -128,7 +134,17 @@ class DailyQuestionListViewModel
                             }
                         }
                     } else {
-                        loadedVersion = versionAtLoadStart
+                        // **today 실패는 «본 적 있다» 로 기록하지 않는다** (#736 리뷰).
+                        //
+                        // today 는 실패해도 화면을 막지 않는다 — 배너만 빠지고 답변 목록은 그대로
+                        // 쓸 수 있다. 그러나 그때 버전까지 찍어 두면 복귀할 때마다 «본 버전과 같다» 로
+                        // 재조회를 건너뛰어, **배너가 사라진 채 VM 수명 내내 고정된다.** 서버가
+                        // 회복돼도 돌아오지 않는다.
+                        //
+                        // 그래서 today 가 실패한 로드는 미완으로 두어 다음 복귀가 다시 부르게 한다.
+                        // #736 이 줄이려는 것은 «달라진 게 없는데 또 부르는» 요청이지, 아직 못 받아
+                        // 온 것을 다시 받아 오는 요청이 아니다.
+                        loadedVersion = versionAtLoadStart.takeIf { todayResult.isSuccess }
                         internalState.update {
                             // 목록을 새로 받아 왔으면 옛 삭제 실패 안내도 걷는다. 남겨 두면
                             // «새로 받아 왔는데 실패 안내는 그대로» 가 되어 #716 이 고치려는

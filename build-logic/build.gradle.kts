@@ -101,6 +101,10 @@ gradlePlugin {
             id = "afternote.android.lint"
             implementationClass = "AndroidLintConventionPlugin"
         }
+        register("jvmLint") {
+            id = "afternote.jvm.lint"
+            implementationClass = "JvmLintConventionPlugin"
+        }
         register("androidDatastore") {
             id = "afternote.android.datastore"
             implementationClass = "AndroidDatastoreConventionPlugin"

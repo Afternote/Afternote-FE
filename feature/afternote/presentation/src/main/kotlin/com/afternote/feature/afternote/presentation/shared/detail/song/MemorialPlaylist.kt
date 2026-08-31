@@ -50,7 +50,7 @@ import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 @Composable
 fun MemorialPlaylist(
     modifier: Modifier = Modifier,
-    label: String = "추억 플레이리스트",
+    label: String = stringResource(R.string.afternote_editor_playlist_screen_title),
     songCount: Int = 0,
     albumCovers: List<AlbumCover> = emptyList(),
     onCardClick: (() -> Unit)? = null,
@@ -133,7 +133,7 @@ private fun MemorialPlaylistCardContent(
         )
         Spacer(modifier = Modifier.size(24.dp))
         Text(
-            text = "현재 ${songCount}개의 노래가 담겨 있습니다.",
+            text = stringResource(R.string.afternote_detail_playlist_song_count, songCount),
             style =
                 AfternoteDesign.typography.bodySmallR.copy(
                     color = AfternoteDesign.colors.black,

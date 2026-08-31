@@ -151,6 +151,73 @@ class MindRecordFailureRecoveryTest {
             )
             uploading.join()
         }
+
+    @Test
+    fun `today 만 실패한 로드는 복귀 재조회를 막지 않는다`() =
+        runTest(dispatcher) {
+            // today 는 실패해도 화면을 막지 않는다 — 배너만 빠진다. 그래서 실패를 삼키고
+            // «본 버전» 까지 찍어 두면, 복귀할 때마다 재조회를 건너뛰어 **서버가 회복돼도
+            // 배너가 돌아오지 않는다**. 그 고정 상태를 본다 (#736 리뷰).
+            val repository = FlakyTodayRepository()
+            val viewModel = DailyQuestionListViewModel(repository = repository, changeTracker = MindRecordChangeTracker())
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            advanceUntilIdle()
+
+            assertEquals("진입 시 today 1회", 1, repository.todayCalls)
+            assertNull(
+                "today 가 실패했으니 배너는 비어 있다",
+                (viewModel.uiState.value as DailyQuestionListUiState.Success).todayQuestion,
+            )
+
+            // 데이터는 그대로다 — 버전이 오르지 않으므로 «달라진 게 없으면 안 부른다» 규칙과
+            // 정면으로 부딪히는 조건이다. 그래도 아직 못 받아 온 것은 다시 받아 와야 한다.
+            repository.succeeds = true
+            viewModel.refreshOnReturn()
+            advanceUntilIdle()
+
+            assertEquals("복귀 시 다시 부른다", 2, repository.todayCalls)
+            assertNotNull(
+                "서버가 회복되면 배너가 돌아온다",
+                (viewModel.uiState.value as DailyQuestionListUiState.Success).todayQuestion,
+            )
+
+            // 이제는 완전히 성공했으니 #736 의 «달라진 게 없으면 안 부른다» 가 다시 걸린다.
+            viewModel.refreshOnReturn()
+            advanceUntilIdle()
+            assertEquals("성공한 뒤에는 복귀해도 더 부르지 않는다", 2, repository.todayCalls)
+        }
+}
+
+/** today 만 실패시키는 fake — 목록은 항상 성공한다. */
+private class FlakyTodayRepository : DailyQuestionRepository {
+    var succeeds = false
+    var todayCalls = 0
+        private set
+
+    override suspend fun getList(
+        date: String?,
+        draftOnly: Boolean?,
+    ): Result<List<DailyQuestion>> = Result.success(emptyList())
+
+    override suspend fun getToday(): Result<TodayDailyQuestion> {
+        todayCalls++
+        return if (succeeds) {
+            Result.success(
+                TodayDailyQuestion(questionId = 1L, day = 1, content = "질문", isAnswered = false, isDraft = false),
+            )
+        } else {
+            Result.failure(IllegalStateException("today 실패"))
+        }
+    }
+
+    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> = Result.success(1L)
+
+    override suspend fun update(
+        id: Long,
+        payload: DailyQuestionUpdatePayload,
+    ): Result<Long> = Result.success(1L)
+
+    override suspend fun delete(id: Long): Result<Unit> = Result.success(Unit)
 }
 
 /** 첫 삭제는 실패하고, [succeedsNext] 를 켜면 성공한다. */

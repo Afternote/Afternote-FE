@@ -1,6 +1,7 @@
 package com.afternote.feature.receiver.domain.repository
 
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
+import com.afternote.feature.receiver.domain.model.ReceivedRecordBox
 import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
 import com.afternote.feature.receiver.domain.model.ReceiverEmailAuthResult
 import com.afternote.feature.receiver.domain.model.ReceiverIdentity
@@ -66,4 +67,13 @@ interface ReceiverAuthRepository {
     suspend fun getDeliveryVerificationStatus(): Result<DeliveryVerification>
 
     suspend fun getSenderMessage(): Result<SenderMessageInfo>
+
+    /**
+     * 저장된 마스터 키로 받은 기록함 목록을 받는다.
+     *
+     * 서버의 권한 근거가 키가 아니라 **그 키가 가리키는 수신자의 이메일**이라, 같은 이메일로 등록된
+     * 다른 발신자의 칸까지 함께 온다. 특정 발신자의 칸이 필요하면 호출부가
+     * [ReceivedRecordBox.accessCode] 로 골라야 한다.
+     */
+    suspend fun getReceivedRecordBoxes(): Result<List<ReceivedRecordBox>>
 }

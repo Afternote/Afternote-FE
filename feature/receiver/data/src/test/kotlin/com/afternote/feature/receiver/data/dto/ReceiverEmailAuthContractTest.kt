@@ -15,7 +15,7 @@ import org.junit.Test
  * (필드 구성·타입은 Swagger 와 BE 소스로 확정, 이슈 #407 본문).
  * 프로덕션 경로(`ReceiverAuthRepositoryImpl`)와 동일하게 Json 디코드 → `requireData()`/`requireStatus()`
  * → `toDomain()` 을 통과시킨다 — Json 설정은 `NetworkModule.provideJson` 과 동일
- * (ignoreUnknownKeys + coerceInputValues).
+ * (ignoreUnknownKeys).
  *
  * verify 성공 응답을 **accessCode 동봉·제거 두 형태 모두** 가드하는 이유: 서버가 마스터 키와 동일한
  * `accessCode` 를 응답에서 제거할 예정이라([ReceiverEmailAuthVerifyDto] 참고), 제거 배포가 언제 나가든
@@ -28,7 +28,6 @@ class ReceiverEmailAuthContractTest {
     private val json =
         Json {
             ignoreUnknownKeys = true
-            coerceInputValues = true
         }
 
     @Test
