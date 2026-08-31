@@ -2,9 +2,7 @@ package com.afternote.core.network.model
 
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -34,11 +32,18 @@ class BaseResponseSuccessRangeTest {
     }
 
     @Test
-    fun `성공 대역 경계 - 200 과 299 는 성공, 199 와 300 은 실패`() {
-        assertTrue(envelope(200).isSuccess)
-        assertTrue(envelope(299).isSuccess)
-        assertFalse(envelope(199).isSuccess)
-        assertFalse(envelope(300).isSuccess)
+    fun `성공 대역 경계 - 200 과 299 는 통과하고 199 와 300 은 실패한다`() {
+        envelope(200).requireStatus()
+        envelope(299).requireStatus()
+
+        listOf(199, 300).forEach { status ->
+            val exception =
+                assertThrows(ApiException::class.java) {
+                    envelope(status).requireStatus()
+                }
+
+            assertEquals(status, exception.status)
+        }
     }
 
     @Test

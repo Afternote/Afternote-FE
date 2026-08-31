@@ -32,7 +32,7 @@ data class BaseResponse<T>(
  * 가 HTTP 201·202·204 를 성공으로 통과시키는 것과 기준을 맞춘 것이며, 200 한 점으로 좁히면 BE 가
  * 201·204 를 쓰기 시작할 때 성공 응답이 봉투 단계에서 조용히 실패로 뒤집힌다.
  */
-val BaseResponse<*>.isSuccess: Boolean
+private val BaseResponse<*>.isSuccess: Boolean
     get() = status in 200..299
 
 fun <T : Any> BaseResponse<T>.requireData(): T {
