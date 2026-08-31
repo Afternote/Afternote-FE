@@ -122,7 +122,6 @@ class ReceiverAuthRepositoryImpl
                 api
                     .getReceivedRecordBoxes()
                     .requireData()
-                    .recordBoxes
-                    .map { it.toDomain(errorReporter) }
+                    .toDomain(errorReporter)
             }
     }

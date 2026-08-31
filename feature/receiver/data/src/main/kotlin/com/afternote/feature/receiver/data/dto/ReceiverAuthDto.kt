@@ -97,9 +97,11 @@ data class DeliveryVerificationDto(
  * 키를 빼거나 이름을 바꿔도 «기록함 0건» 으로 조용히 성공해 계약 누락이 은폐된다.
  */
 @Serializable
-data class ReceivedRecordBoxListDto(
-    @SerialName("recordBoxes") val recordBoxes: List<ReceivedRecordBoxDto>,
-)
+class ReceivedRecordBoxListDto private constructor(
+    @SerialName("recordBoxes") private val recordBoxes: List<ReceivedRecordBoxDto>,
+) {
+    internal fun toDomain(errorReporter: ErrorReporter): List<ReceivedRecordBox> = recordBoxes.map { it.toDomain(errorReporter) }
+}
 
 /**
  * 받은 기록함 한 칸.
@@ -125,7 +127,7 @@ data class ReceivedRecordBoxListDto(
  * - `approvedAt` — 승인 상태에서만 채워진다.
  */
 @Serializable
-data class ReceivedRecordBoxDto(
+private data class ReceivedRecordBoxDto(
     @SerialName("receiverId") val receiverId: Long,
     @SerialName("accessCode") val accessCode: String,
     @SerialName("senderName") val senderName: String,
@@ -150,7 +152,7 @@ private const val VERIFICATION_STATUS_STAGE = "verification_status_mapping"
 private const val UNKNOWN_STATUS_KEY = "unknown_status"
 
 /** 서버가 도메인에 없는 상태 문자열을 보냈음을 알리는 non-fatal 신호. */
-internal class VerificationStatusMappingFailure : RuntimeException()
+private class VerificationStatusMappingFailure : RuntimeException()
 
 /**
  * 서버 상태 문자열을 도메인 값으로 옮긴다. **모르는 값이면 화면은 그대로 두고 텔레메트리에 남긴다** (#1554).
@@ -220,7 +222,7 @@ fun DeliveryVerificationDto.toDomain(errorReporter: ErrorReporter): DeliveryVeri
         createdAt = createdAt,
     )
 
-fun ReceivedRecordBoxDto.toDomain(errorReporter: ErrorReporter): ReceivedRecordBox =
+private fun ReceivedRecordBoxDto.toDomain(errorReporter: ErrorReporter): ReceivedRecordBox =
     ReceivedRecordBox(
         receiverId = receiverId,
         masterKey = accessCode,

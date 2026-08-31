@@ -39,9 +39,9 @@ class ReceivedRecordBoxContractTest {
             |"verificationStatus":"APPROVED","requestedAt":"2026-06-21T03:07:26","approvedAt":"2026-07-29T16:00:10"}]}}
             """.trimMargin().replace("\n", "")
 
-        val boxes = json.decodeFromString<BaseResponse<ReceivedRecordBoxListDto>>(payload).requireData().recordBoxes
+        val boxes = json.decodeFromString<BaseResponse<ReceivedRecordBoxListDto>>(payload).requireData().toDomain(reporter)
 
-        val box = boxes.single().toDomain(reporter)
+        val box = boxes.single()
         assertEquals(4L, box.receiverId)
         assertEquals("59c04a15-1f4a-4b2e-9a0c-2f4e8d7b6c31", box.masterKey)
         assertEquals("김혜성", box.senderName)
@@ -64,9 +64,8 @@ class ReceivedRecordBoxContractTest {
             json
                 .decodeFromString<BaseResponse<ReceivedRecordBoxListDto>>(payload)
                 .requireData()
-                .recordBoxes
-                .single()
                 .toDomain(reporter)
+                .single()
 
         assertEquals(DeliveryVerificationStatus.PENDING, box.verificationStatus)
         assertNull(box.approvedAt)
@@ -84,13 +83,13 @@ class ReceivedRecordBoxContractTest {
             json
                 .decodeFromString<BaseResponse<ReceivedRecordBoxListDto>>(payload)
                 .requireData()
-                .recordBoxes
-                .single()
                 .toDomain(reporter)
+                .single()
 
         assertEquals(DeliveryVerificationStatus.UNKNOWN, box.verificationStatus)
         assertNull(box.requestedAt)
         assertNull(box.approvedAt)
+        assertTrue(reporter.failures.isEmpty())
     }
 
     @Test
@@ -109,8 +108,7 @@ class ReceivedRecordBoxContractTest {
             json
                 .decodeFromString<BaseResponse<ReceivedRecordBoxListDto>>(payload)
                 .requireData()
-                .recordBoxes
-                .map { it.toDomain(reporter) }
+                .toDomain(reporter)
 
         assertEquals(2, boxes.size)
         val mine = boxes.first { it.masterKey == "bbbbbbbb-0000-4000-8000-000000000002" }
@@ -122,7 +120,7 @@ class ReceivedRecordBoxContractTest {
     fun `기록함이 하나도 없으면 빈 목록이다`() {
         val payload = """{"status":200,"code":200,"data":{"recordBoxes":[]}}"""
 
-        val boxes = json.decodeFromString<BaseResponse<ReceivedRecordBoxListDto>>(payload).requireData().recordBoxes
+        val boxes = json.decodeFromString<BaseResponse<ReceivedRecordBoxListDto>>(payload).requireData().toDomain(reporter)
 
         assertTrue(boxes.isEmpty())
     }
@@ -150,9 +148,8 @@ class ReceivedRecordBoxContractTest {
             json
                 .decodeFromString<BaseResponse<ReceivedRecordBoxListDto>>(payload)
                 .requireData()
-                .recordBoxes
-                .single()
                 .toDomain(reporter)
+                .single()
 
         assertEquals(DeliveryVerificationStatus.APPROVED, box.verificationStatus)
         assertEquals("2026-08-25T18:43:47.696636", box.requestedAt)
@@ -173,7 +170,10 @@ class ReceivedRecordBoxContractTest {
 
             val failure =
                 runCatching {
-                    json.decodeFromString<BaseResponse<ReceivedRecordBoxListDto>>(payload).requireData().recordBoxes
+                    json
+                        .decodeFromString<BaseResponse<ReceivedRecordBoxListDto>>(payload)
+                        .requireData()
+                        .toDomain(reporter)
                 }.exceptionOrNull()
 
             assertNotNull("$missing 누락이 조용히 통과했다", failure)
@@ -191,7 +191,10 @@ class ReceivedRecordBoxContractTest {
 
             val failure =
                 runCatching {
-                    json.decodeFromString<BaseResponse<ReceivedRecordBoxListDto>>(payload).requireData().recordBoxes
+                    json
+                        .decodeFromString<BaseResponse<ReceivedRecordBoxListDto>>(payload)
+                        .requireData()
+                        .toDomain(reporter)
                 }.exceptionOrNull()
 
             assertNotNull("$nulled 의 null 이 조용히 통과했다", failure)

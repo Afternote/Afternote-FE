@@ -108,24 +108,6 @@ class ReceiverAuthDtoMapperTest {
         assertEquals("EXPIRED", failure.attributes["unknown_status"])
     }
 
-    /** 열람 신청 전에는 서버가 이 필드를 채우지 않는다 — 정상 경로라 기록하지 않는다. */
-    @Test
-    fun `ReceivedRecordBoxDto toDomain - status 가 null 이면 기록하지 않는다`() {
-        val box =
-            ReceivedRecordBoxDto(
-                receiverId = 9L,
-                accessCode = "code",
-                senderName = "이영희",
-                receiverName = "김지은",
-                recordStatus = "STORED",
-                viewStatus = "REQUESTABLE",
-                verificationStatus = null,
-            ).toDomain(reporter)
-
-        assertEquals(DeliveryVerificationStatus.UNKNOWN, box.verificationStatus)
-        assertEquals(emptyList<RecordingErrorReporter.Failure>(), reporter.failures)
-    }
-
     @Test
     fun `DeliveryVerificationDto toDomain - 나머지 필드 전달`() {
         val result = response(status = "REJECTED").toDomain(reporter)
