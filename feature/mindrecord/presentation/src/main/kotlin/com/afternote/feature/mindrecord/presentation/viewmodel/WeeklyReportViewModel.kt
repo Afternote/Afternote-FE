@@ -13,6 +13,7 @@ import com.afternote.feature.mindrecord.domain.model.WeeklyReportDailyQuestion
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDay
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportEmotion
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
+import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
 import com.afternote.feature.mindrecord.presentation.model.DayBackground
@@ -45,11 +46,18 @@ class WeeklyReportViewModel
     constructor(
         private val repository: WeeklyReportRepository,
         private val userRepository: UserRepository,
+        private val changeTracker: MindRecordChangeTracker,
     ) : ViewModel() {
         private val weekOptions: List<WeekOption> =
             buildWeekOptions(today = LocalDate.now())
 
         private val internalState = MutableStateFlow(InternalState())
+
+        /** 마지막으로 성공한 조회 시점의 데이터 버전 (#736). */
+        private var loadedVersion: Long? = null
+
+        /** 이 ViewModel 이 ON_RESUME 을 한 번이라도 받았는지 — init 로드와의 중복을 가른다. */
+        private var hasSeenFirstResume: Boolean = false
         private var loadJob: Job? = null
 
         val uiState: StateFlow<WeeklyReportUiState> =
@@ -93,11 +101,15 @@ class WeeklyReportViewModel
          * 소관이다. 보고 있던 주를 그대로 다시 불러 상태를 갱신한다 (#725).
          */
         fun retryEmotionAnalysis() {
-            // 재조회 정책(로딩·실패 유지·중복 가드)이 한 곳에만 있도록 위임한다.
-            // 다만 이쪽은 **사용자가 누른** 갱신이라 진행 표시를 낸다 — BE#117 전까지는
-            // 재조회가 같은 FAILED 를 돌려주는 것이 기본 경로이고, 그러면 데이터가 같아
-            // StateFlow 가 방출조차 하지 않아 눌러도 픽셀이 안 바뀐다.
-            refreshOnReturn(showsLoading = true)
+            // refreshOnReturn 에 위임하지 않는다 — 그쪽의 «데이터가 안 바뀌었으면 안 부른다»
+            // 가드(#736)에 걸려 조회가 아예 안 나간다. 분석 실패는 조회 자체는 성공한
+            // 상태(Loaded)라 changeTracker 버전이 그대로이기 때문이다.
+            //
+            // 이쪽은 **사용자가 누른** 갱신이라 진행 표시를 낸다 — BE#117 전까지는 재조회가
+            // 같은 FAILED 를 돌려주는 것이 기본 경로이고, 그러면 데이터가 같아 StateFlow 가
+            // 방출조차 하지 않아 눌러도 픽셀이 안 바뀐다.
+            if (loadJob?.isActive == true) return
+            load(targetMonday(), showsLoading = true, keepsStateOnFailure = true)
         }
 
         /**
@@ -107,18 +119,47 @@ class WeeklyReportViewModel
          * 화면을 유지한다. 보고 있던 주를 그대로 다시 조회한다.
          */
         fun refreshOnReturn(showsLoading: Boolean = false) {
-            // 진입 직후의 ON_RESUME 은 init 로드와 겹친다 — 진행 중이면 건너뛴다.
+            // **이 ViewModel 이 받는 첫 ON_RESUME 은 init 로드가 이미 덮는다.**
+            //
+            // 이 상태를 화면의 rememberSaveable 로 두면 프로세스 사망 뒤 되살아난 «지나갔음»
+            // 플래그가 새 ViewModel 의 init 과 겹친다 — 저장 상태는 복원되는데 ViewModel 은
+            // 새로 만들어지기 때문이다. 그러면 이 PR 이 막으려는 같은 주차 GET 이 다시 두 번
+            // 나간다. 그래서 ViewModel 수명에 묶는다 (#736 리뷰).
+            //
+            // Job 가드만으로는 부족하다 — 즉시 끝나는 응답(캐시·즉시 실패)에서는 init 로드가
+            // 이미 끝나 있어 그냥 통과한다.
+            if (!hasSeenFirstResume) {
+                hasSeenFirstResume = true
+                return
+            }
             if (loadJob?.isActive == true) return
-            // 실패 상태면 **실패한 주**를 다시 시도한다. 이번 주로 되돌아가면 사용자가
-            // 보려던 주차가 유실돼, 나갔다 들어와도 복구되지 않는다 (#723).
-            val current =
-                when (val phase = internalState.value.loadPhase) {
-                    is LoadPhase.Loaded -> phase.monday
-                    is LoadPhase.Failed -> phase.monday
-                    LoadPhase.Loading -> weekOptions.first().monday
-                }
-            load(current, showsLoading = showsLoading, keepsStateOnFailure = true)
+            // 성공해서 보고 있는 화면이라면, 데이터가 바뀌었을 때만 다시 부른다 (#736).
+            // 실패 상태는 이 가드에 걸리지 않는다 — 실패한 주차를 다시 시도해야 한다 (#723).
+            //
+            // **분석 대기도 통과시킨다.** changeTracker 는 일기·데일리질문의 쓰기 성공에서만
+            // 올라가는데, 감정 분석 완료는 서버가 비동기로 채우는 상태라 그 카운터가 모른다.
+            // 폴링(8회 × 8초 ≈ 1분)이 소진된 뒤 대기가 남아 있으면 복귀 갱신이 유일한 복구
+            // 경로인데, 그것까지 막으면 «분석 중» 이 앱 재시작까지 화면에 굳는다 — PENDING
+            // 에는 재시도 버튼도 없다(카드는 FAILED 전용).
+            val phase = internalState.value.loadPhase
+            val awaitsAnalysis =
+                // emotionAnalysis 가 null 이면 서버가 상태를 안 준 것(#725 UNKNOWN 경로)이라
+                // «분석 대기» 로 치지 않는다 — 기다릴 근거가 없다.
+                phase is LoadPhase.Loaded && phase.report.emotionAnalysis?.status == EmotionAnalysisStatus.PENDING
+            if (phase is LoadPhase.Loaded && !awaitsAnalysis && loadedVersion == changeTracker.version) return
+            load(targetMonday(), showsLoading = showsLoading, keepsStateOnFailure = true)
         }
+
+        /**
+         * 다시 부를 주. 실패 상태면 **실패한 주**를 그대로 다시 시도한다 — 이번 주로
+         * 되돌아가면 사용자가 보려던 주차가 유실돼 나갔다 들어와도 복구되지 않는다 (#723).
+         */
+        private fun targetMonday(): LocalDate =
+            when (val phase = internalState.value.loadPhase) {
+                is LoadPhase.Loaded -> phase.monday
+                is LoadPhase.Failed -> phase.monday
+                LoadPhase.Loading -> weekOptions.first().monday
+            }
 
         private fun load(
             monday: LocalDate,
@@ -130,6 +171,13 @@ class WeeklyReportViewModel
                 viewModelScope.launch {
                     // 실패했을 때 되돌아갈 화면을 **로딩으로 덮기 전에** 잡아 둔다 (#723).
                     val previousLoaded = internalState.value.loadPhase.lastLoadedOrNull()
+                    // **조회를 시작하기 직전**의 버전을 잡아 둔다.
+                    //
+                    // 끝난 시점에 읽으면 조회와 겹친 쓰기를 통째로 삼킨다 — GET 이 서버
+                    // snapshot 을 읽은 뒤 응답이 오는 사이에 쓰기가 성공하면, 이 결과에는
+                    // 그 변경이 없는데도 증가한 최신 버전을 «내가 본 버전» 으로 기록한다.
+                    // 그러면 복귀 시 두 값이 같아 재조회를 건너뛴다 (#736 리뷰).
+                    val versionAtLoadStart = changeTracker.version
                     if (showsLoading) {
                         internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
                     }
@@ -152,6 +200,7 @@ class WeeklyReportViewModel
                     ensureActive()
                     result
                         .onSuccess { (report, profile) ->
+                            loadedVersion = versionAtLoadStart
                             internalState.update {
                                 it.copy(loadPhase = LoadPhase.Loaded(monday, report, profile.name))
                             }
