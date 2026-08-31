@@ -99,11 +99,7 @@ fun rememberOnboardingNavActions(navController: NavController): OnboardingNavAct
 fun rememberMindRecordNavActions(navController: NavController): MindRecordNavActions =
     remember(navController) {
         object : MindRecordNavActions {
-            override fun onMemorySpaceBack() {
-                navController.popBackStack()
-            }
-
-            override fun onReceiverMindRecordBack() {
+            override fun popBack() {
                 navController.popBackStack()
             }
 
@@ -115,20 +111,22 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
                 navController.navigate(MindRecordRoute.DiaryWriteRoute())
             }
 
-            override fun onWriteBack() {
-                navController.popBackStack()
-            }
-
-            override fun onWriteSubmitSuccess() {
-                navController.popBackStack()
-            }
-
             override fun onNavigateToDraftList() {
                 navController.navigate(MindRecordRoute.DraftListRoute)
             }
 
-            override fun onDraftListBack() {
-                navController.popBackStack()
+            override fun onOpenRecordDetail(
+                recordId: Long,
+                isDiary: Boolean,
+                yearMonth: String?,
+            ) {
+                navController.navigate(
+                    MindRecordRoute.RecordDetailRoute(
+                        recordId = recordId,
+                        isDiary = isDiary,
+                        yearMonth = yearMonth,
+                    ),
+                )
             }
 
             override fun onEditDailyQuestion(answerId: Long) {
@@ -401,10 +399,6 @@ fun rememberHomeTabActions(
             }
 
             override fun onWeeklyCountClick() {
-                appState.navigateToBottomBarRoute(Route.MindRecord)
-            }
-
-            override fun onWeeklyRecentRecordClick() {
                 appState.navigateToBottomBarRoute(Route.MindRecord)
             }
 

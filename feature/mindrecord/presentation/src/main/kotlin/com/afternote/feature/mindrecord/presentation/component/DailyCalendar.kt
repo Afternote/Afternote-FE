@@ -40,6 +40,10 @@ fun DailyCalendar(
     modifier: Modifier = Modifier,
     answeredDays: Set<Int> = emptySet(),
     emotionByDay: Map<Int, String> = emptyMap(),
+    /** 사용자가 고른 날(같은 달의 일자). 없으면 선택 없음 (#724). */
+    selectedDay: Int? = null,
+    /** 날짜 셀 탭. null 이면 셀이 클릭 대상이 아니다. */
+    onDayClick: ((Int) -> Unit)? = null,
 ) {
     val days = buildDays(year, month, answeredDays, emotionByDay)
 
@@ -118,7 +122,15 @@ fun DailyCalendar(
                         Row(modifier = Modifier.fillMaxWidth()) {
                             week.forEach { dayModel ->
                                 Box(modifier = Modifier.weight(1f)) {
-                                    DayCell(model = dayModel, type = type)
+                                    DayCell(
+                                        model = dayModel,
+                                        type = type,
+                                        isSelected = dayModel.day != null && dayModel.day == selectedDay,
+                                        onClick =
+                                            onDayClick?.let { click ->
+                                                dayModel.day?.let { day -> { click(day) } }
+                                            },
+                                    )
                                 }
                             }
                             // 마지막 주가 7개 미만이면 빈 셀로 채우기

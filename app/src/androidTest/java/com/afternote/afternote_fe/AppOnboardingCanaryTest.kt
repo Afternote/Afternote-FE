@@ -15,12 +15,15 @@ import androidx.compose.ui.test.waitUntilAtLeastOneExists
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
+import com.afternote.afternote_fe.test.emptyWeeklyReport
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.Session
+import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeWeeklyReportRepository
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Assert.assertEquals
@@ -42,10 +45,14 @@ class AppOnboardingCanaryTest {
     lateinit var authRepository: AuthRepository
 
     @Inject
+    lateinit var weeklyReportRepository: WeeklyReportRepository
+
+    @Inject
     lateinit var userRepository: UserRepository
 
     private val fakeAuth get() = authRepository as FakeAuthRepository
     private val fakeUser get() = userRepository as FakeUserRepository
+    private val fakeWeeklyReport get() = weeklyReportRepository as FakeWeeklyReportRepository
 
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
@@ -64,6 +71,12 @@ class AppOnboardingCanaryTest {
     @Before
     fun inject() {
         hiltRule.inject()
+        // 홈이 진입 시 주간 기록 수를 부른다 (#562). 정본 fake 는 큐가 비면 터뜨리므로,
+        // 주간 수에 관심이 없는 이 테스트도 기대하는 응답을 명시적으로 넣는다 — 조용히 접으면
+        // 요청 횟수가 어긋난 것을 놓친다.
+        (weeklyReportRepository as FakeWeeklyReportRepository).results.addLast(
+            Result.success(emptyWeeklyReport()),
+        )
     }
 
     @Test
@@ -123,6 +136,9 @@ class AppOnboardingCanaryTest {
         )
         assertEquals(2, fakeAuth.attemptedEmailLogins.size)
         assertEquals(1, fakeAuth.saveSessionCalls)
+        assertEquals(0, fakeAuth.rotateTokenCalls)
+        assertEquals(1, fakeWeeklyReport.requestedDates.size)
+        // `logActivityCalls` 단언은 걷는다 — #1413 이 활동 ping 자체를 제거해 develop 에 그 API 가 없다.
     }
 
     @Test

@@ -10,8 +10,13 @@ import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DiaryList
 import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
+import com.afternote.feature.mindrecord.domain.model.WeeklyReport
+import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
+import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
+import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
+import com.afternote.feature.mindrecord.domain.usecase.GetWeeklyRecordCountUseCase
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -256,6 +261,9 @@ private class Fixture {
                     userRepository = server.userRepository,
                     diaryRepository = server.diaryRepository,
                     dailyQuestionRepository = server.dailyQuestionRepository,
+                    // 주간 기록 수는 이 테스트의 관심사가 아니다 — 실패로 고정해 보조 호출
+                    // 실패가 홈 전체를 깨뜨리지 않는다는 계약도 함께 태운다 (#562).
+                    getWeeklyRecordCount = GetWeeklyRecordCountUseCase(FailingWeeklyReportRepository),
                 ),
             userProfileRepository = profile,
             errorReporter = reporter,
@@ -406,3 +414,11 @@ private val TEST_RECEIVER =
         relation = "가족",
         authCode = "auth-code",
     )
+
+/**
+ * 주간 기록 수는 이 테스트의 관심사가 아니다 — 실패로 고정해, 보조 호출 하나가 실패해도
+ * 홈 전체가 깨지지 않는다는 계약도 함께 태운다 (#562).
+ */
+private object FailingWeeklyReportRepository : WeeklyReportRepository {
+    override suspend fun getWeeklyReport(date: String): Result<WeeklyReport> = Result.failure(IllegalStateException("조회 안 함"))
+}

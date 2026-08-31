@@ -11,6 +11,7 @@
 // 명령:
 //   ensure  [--min N] [--max-wait S]  게이트 실행 전. 남은 quota 를 기록하고, 부족하면 리셋까지 기다린다
 //   classify                          게이트 실패 후. 그 실패가 한도 소진이었는지 판정해 표시한다
+//   report                            주기 관측. core·graphql 남은 quota 를 찍고 바닥에 가까우면 실패한다
 
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -33,6 +34,62 @@ export function parseRateLimit(payload) {
         // reset 은 epoch 초다. 없으면 «지금» 으로 두어 대기 계산이 0 이 되게 한다.
         resetAt: typeof core.reset === "number" ? core.reset : 0,
     };
+}
+
+// 주기 관측이 «경고» 와 «위험» 을 가르는 경계. 절대값이 아니라 한도 대비 비율로 잡는다 —
+// installation 한도(15,000)와 GITHUB_TOKEN 한도(1,000)가 자리마다 다르고, 어느 쪽이 걸려도
+// 같은 판정이 나와야 한다.
+const PROBE_WARN_RATIO = 0.25;
+const PROBE_FAIL_RATIO = 0.1;
+
+// 주기 관측은 core 만 보면 반쪽이다 — 이 저장소의 게이트는 REST 와 GraphQL 을 함께 쓴다.
+const PROBE_RESOURCES = ["core", "graphql"];
+
+export function parseAllRateLimits(payload) {
+    return PROBE_RESOURCES.flatMap((name) => {
+        const resource = payload?.resources?.[name];
+        if (!resource || typeof resource.remaining !== "number" || typeof resource.limit !== "number") {
+            return [];
+        }
+        return [
+            {
+                name,
+                remaining: resource.remaining,
+                limit: resource.limit,
+                resetAt: typeof resource.reset === "number" ? resource.reset : 0,
+            },
+        ];
+    });
+}
+
+/**
+ * 주기 관측의 판정. 가장 나쁜 자원 하나가 전체 판정을 정한다 — 하나만 말라도 게이트는 죽는다.
+ *
+ * - ok       여유가 있다.
+ * - warn     줄어드는 것이 보인다. 요약과 annotation 으로 남기되 run 은 초록으로 둔다.
+ * - critical 곧 저장소 전체의 게이트가 빨개진다. run 자체를 빨갛게 만들어 눈에 띄게 한다.
+ */
+export function evaluateProbe(quotas, { warnRatio = PROBE_WARN_RATIO, failRatio = PROBE_FAIL_RATIO } = {}) {
+    if (quotas.length === 0) {
+        // 조회는 됐는데 아는 자원이 하나도 없다 — 응답 형식이 바뀐 것이다. 조용히 초록으로
+        // 두면 이 관측이 통째로 무력해진다.
+        throw new Error("rate_limit 응답에서 관측할 자원을 하나도 읽지 못했습니다.");
+    }
+    const ratioOf = (quota) => (quota.limit > 0 ? quota.remaining / quota.limit : 0);
+    const critical = quotas.filter((quota) => ratioOf(quota) < failRatio);
+    const warning = quotas.filter((quota) => ratioOf(quota) < warnRatio && !critical.includes(quota));
+    if (critical.length > 0) return { level: "critical", offenders: critical };
+    if (warning.length > 0) return { level: "warn", offenders: warning };
+    return { level: "ok", offenders: [] };
+}
+
+export function formatProbeSummary(quotas, { nowSeconds }) {
+    const rows = quotas.map((quota) => {
+        const resetInSeconds = Math.max(0, quota.resetAt - nowSeconds);
+        const percent = quota.limit > 0 ? Math.round((quota.remaining / quota.limit) * 100) : 0;
+        return `| ${quota.name} | ${quota.remaining} / ${quota.limit} | ${percent}% | ${Math.floor(resetInSeconds / 60)}분 ${resetInSeconds % 60}초 |`;
+    });
+    return ["### GitHub API 한도 관측", "", "| 자원 | 남은 호출 | 비율 | 리셋까지 |", "| --- | --- | --- | --- |", ...rows, ""].join("\n");
 }
 
 /**
@@ -68,12 +125,17 @@ export function formatSummary(quota, { nowSeconds }) {
     ].join("\n");
 }
 
-function readRateLimit() {
+function readRateLimitPayload() {
+    // rate_limit 엔드포인트 자체는 한도를 소비하지 않는다 — 관측이 문제를 키우지 않는다.
     const result = spawnSync("gh", ["api", "rate_limit"], { encoding: "utf8" });
     if (result.status !== 0) {
         throw new Error(`rate_limit 조회에 실패했습니다: ${(result.stderr || "").trim()}`);
     }
-    return parseRateLimit(JSON.parse(result.stdout));
+    return JSON.parse(result.stdout);
+}
+
+function readRateLimit() {
+    return parseRateLimit(readRateLimitPayload());
 }
 
 function appendSummary(text) {
@@ -164,6 +226,34 @@ function classify() {
     return 0;
 }
 
+function report() {
+    // 주기 관측 (#1465). 소진된 뒤에야 «모든 PR 이 같은 자리에서 빨갛다» 로 알아채던 것을,
+    // 바닥나기 전에 볼 수 있는 자리로 옮긴다.
+    const quotas = parseAllRateLimits(readRateLimitPayload());
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    appendSummary(formatProbeSummary(quotas, { nowSeconds }));
+    for (const quota of quotas) {
+        console.log(`${quota.name}: 남은 ${quota.remaining}/${quota.limit}`);
+    }
+
+    const verdict = evaluateProbe(quotas);
+    const describe = (quota) => `${quota.name} ${quota.remaining}/${quota.limit}`;
+    if (verdict.level === "ok") {
+        return 0;
+    }
+    const detail = verdict.offenders.map(describe).join(", ");
+    if (verdict.level === "warn") {
+        console.log(`::warning::GitHub API 한도가 줄고 있습니다 (${detail}). 게이트가 빨개지기 전에 무엇이 태우는지 확인하세요.`);
+        return 0;
+    }
+    // 여기서 초록으로 두면 관측이 아무것도 바꾸지 않는다. run 을 빨갛게 만들어 목록에서 보이게 한다.
+    console.log(
+        `::error::GitHub API 한도가 바닥나고 있습니다 (${detail}). ` +
+            "이대로면 저장소 전체의 게이트가 코드와 무관하게 실패합니다.",
+    );
+    return 1;
+}
+
 function main(argv) {
     const command = argv.find((token) => !token.startsWith("--")) ?? "ensure";
     switch (command) {
@@ -171,6 +261,8 @@ function main(argv) {
             return ensure(argv);
         case "classify":
             return classify();
+        case "report":
+            return report();
         default:
             console.log(`::error::알 수 없는 명령입니다: ${command}`);
             return 1;

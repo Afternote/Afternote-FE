@@ -64,6 +64,8 @@ sealed interface HomeTabUiState {
         val isRefreshing: Boolean = false,
         /** 오늘의 질문 본문. 조회 실패 시 null — 카드가 중립 문구를 표시한다. */
         val todayQuestionContent: String? = null,
+        /** 이번 주 기록 수. 조회 실패 시 null — 그리드가 «–» 를 표시한다 (#562). */
+        val weeklyRecordCount: Int? = null,
     ) : HomeTabUiState {
         override val showsRefreshIndicator: Boolean get() = isRefreshing
     }
@@ -89,8 +91,6 @@ interface HomeTabActions {
 
     fun onWeeklyCountClick()
 
-    fun onWeeklyRecentRecordClick()
-
     fun onMemoriesSectionClick()
 
     fun onSettingClick()
@@ -110,8 +110,6 @@ private object HomeTabActionsNoop : HomeTabActions {
     override fun onWeeklyImageClick() {}
 
     override fun onWeeklyCountClick() {}
-
-    override fun onWeeklyRecentRecordClick() {}
 
     override fun onMemoriesSectionClick() {}
 
@@ -154,6 +152,8 @@ fun HomeTabScreen(
                         todayDateText = todayDateText,
                         todayQuestionContent = null,
                         isQuestionLoading = true,
+                        // 조회 전이다 — 0 을 넣으면 «이번 주 기록 없음» 을 확정한다 (#562).
+                        weeklyRecordCount = null,
                         actions = actions,
                     )
                 }
@@ -172,6 +172,7 @@ fun HomeTabScreen(
                         todayDateText = todayDateText,
                         todayQuestionContent = uiState.todayQuestionContent,
                         isQuestionLoading = false,
+                        weeklyRecordCount = uiState.weeklyRecordCount,
                         actions = actions,
                     )
                 }
@@ -221,6 +222,8 @@ private fun HomeTabScrollContent(
     todayDateText: String,
     todayQuestionContent: String?,
     isQuestionLoading: Boolean,
+    /** null 이면 아직 모름 — 그리드가 «–» 를 그린다 (#562). */
+    weeklyRecordCount: Int?,
     actions: HomeTabActions,
 ) {
     LazyColumn(
@@ -291,9 +294,11 @@ private fun HomeTabScrollContent(
 
         item {
             WeeklySummaryGrid(
+                // base 가 비워 둔 자리(#207 리뷰)에 실값을 붙인다 — 조회 실패는 null 로 남아
+                // 대시로 그려진다 (#562).
+                recordedCount = weeklyRecordCount,
                 onImageClick = actions::onWeeklyImageClick,
                 onCountCardClick = actions::onWeeklyCountClick,
-                onRecentRecordClick = actions::onWeeklyRecentRecordClick,
             )
             Spacer(modifier = Modifier.height(40.dp))
         }
