@@ -78,6 +78,14 @@ internal object AfternoteKonsistScope {
     /** 캐시를 타지 않고 지금의 [scanRoots] 를 다시 읽는다. 재발 가드([ScanScopeKonsistTest])가 쓴다. */
     fun scanFresh(): KoScope = Konsist.scopeFromExternalDirectories(scanRoots().map { it.path })
 
+    /** 실제 Kotlin 파서로 작은 회귀 fixture를 읽는다. Konsist 진입점은 이 객체 하나로 유지한다. */
+    fun scanExternalDirectories(directories: List<File>): KoScope {
+        check(directories.isNotEmpty() && directories.all(File::isDirectory)) {
+            "Konsist fixture 디렉터리가 없거나 비어 있다: ${directories.joinToString()}"
+        }
+        return Konsist.scopeFromExternalDirectories(directories.map { it.path })
+    }
+
     private fun settingsText(): String = File(projectRoot, SETTINGS_FILE).readText()
 
     private fun String.isTestSourceSet(): Boolean = substringAfter(':').lowercase().contains(TEST_NAME_IN_PATH)
