@@ -155,7 +155,12 @@ private fun TypeFilterItem(
                         if (isSelected) {
                             AfternoteDesign.colors.gray7
                         } else {
-                            AfternoteDesign.colors.gray4
+                            // 시안(4327:43064 의 `tab btn` 컴포넌트)의 비선택 탭은 #A0A0A0 이고,
+                            // gray5(#9E9E9E)와 채널 차가 2/255 라 육안으로 구분되지 않는다.
+                            // 종전 gray4(#BDBDBD)는 시안보다 밝아 대비가 1.80:1 까지 떨어져 있었다 (#1636).
+                            // gray5 로도 WCAG AA 4.5:1 은 못 넘는다(2.57:1) — 그 축은 팔레트에
+                            // 중간값이 없어 디자이너 결정이 필요하고 #1636 이 계속 추적한다.
+                            AfternoteDesign.colors.gray5
                         },
                 ),
             modifier =
