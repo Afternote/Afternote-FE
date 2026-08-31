@@ -18,6 +18,7 @@ class ReceivedSocialNetworkCredentialsMappingTest {
     private fun detail(credentials: ReceivedAccountCredentials?) =
         ReceivedAfternoteDetail(
             serviceName = "인스타그램",
+            senderName = "홍길동",
             type = AfternoteType.SOCIAL_NETWORK,
             credentials = credentials,
         )

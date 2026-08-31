@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.receiver.detail
+package com.afternote.core.common.media
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
@@ -11,7 +11,7 @@ import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
-class ReceivedMemorialVideoLauncherTest {
+class MemorialVideoLauncherTest {
     @Test
     fun `http와 https URL은 ACTION_VIEW로 직접 실행한다`() {
         val urls =
@@ -24,7 +24,7 @@ class ReceivedMemorialVideoLauncherTest {
         var unavailableCount = 0
 
         urls.forEach { url ->
-            launchReceivedMemorialVideo(
+            launchMemorialVideo(
                 videoUrl = url,
                 startActivity = { startedIntents += it },
                 onRejected = { rejectedCount += 1 },
@@ -40,6 +40,8 @@ class ReceivedMemorialVideoLauncherTest {
 
     @Test
     fun `http와 https가 아닌 URL이나 잘못된 URL은 실행하지 않고 거부로 안내한다`() {
+        // 두 판의 거부 목록 합집합이다. 승격 전에는 이 목록이 갈려 있어, 한쪽에만 있는
+        // 스킴(intent:·tel:)이 다른 쪽에서 회귀해도 아무도 몰랐다 (#1436).
         val rejectedUrls =
             listOf(
                 "",
@@ -56,7 +58,7 @@ class ReceivedMemorialVideoLauncherTest {
         var unavailableCount = 0
 
         rejectedUrls.forEach { url ->
-            launchReceivedMemorialVideo(
+            launchMemorialVideo(
                 videoUrl = url,
                 startActivity = { startedCount += 1 },
                 onRejected = { rejectedCount += 1 },
@@ -82,7 +84,7 @@ class ReceivedMemorialVideoLauncherTest {
         var unavailableCount = 0
 
         failures.forEach { failure ->
-            launchReceivedMemorialVideo(
+            launchMemorialVideo(
                 videoUrl = "https://cdn.example.com/memorial.mp4",
                 startActivity = { throw failure },
                 onRejected = { rejectedCount += 1 },

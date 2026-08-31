@@ -1,11 +1,9 @@
-package com.afternote.feature.afternote.presentation.author.navigation
+package com.afternote.feature.afternote.presentation.author.editor.receiver.select
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.feature.afternote.presentation.author.editor.receiver.select.SelectReceiverScreen
-import com.afternote.feature.afternote.presentation.author.editor.receiver.select.SelectReceiverViewModel
 
 /**
  * 수신자 선택 화면 진입점 (#540).
