@@ -63,7 +63,7 @@ class ReceiverAfternoteListChromeTest {
         composeRule.setContent { AfternoteTheme { ReceiverListBody() } }
 
         composeRule
-            .onNodeWithText(string(R.string.receiver_afternote_list_header_description))
+            .onNodeWithText(string(R.string.afternote_receiver_afternote_list_header_description))
             .assertIsDisplayed()
     }
 
@@ -86,7 +86,7 @@ class ReceiverAfternoteListChromeTest {
             selectedType = null,
             onTypeSelected = {},
             onListItemClick = { _, _ -> },
-            headerDescription = stringResource(R.string.receiver_afternote_list_header_description),
+            headerDescription = stringResource(R.string.afternote_receiver_afternote_list_header_description),
             nextStep = null,
         )
     }
@@ -99,7 +99,7 @@ class ReceiverAfternoteListChromeTest {
             selectedType = null,
             onTypeSelected = {},
             onListItemClick = { _, _ -> },
-            headerDescription = stringResource(R.string.receiver_afternote_list_header_description),
+            headerDescription = stringResource(R.string.afternote_receiver_afternote_list_header_description),
             nextStep = null,
         )
     }
@@ -113,7 +113,7 @@ class ReceiverAfternoteListChromeTest {
                         id = 1L,
                         serviceName = "인스타그램",
                         date = "2026.07.29",
-                        iconResId = R.drawable.feature_afternote_img_insta_pattern,
+                        iconResId = R.drawable.afternote_img_insta_pattern,
                         type = AfternoteType.SOCIAL_NETWORK,
                     ),
                 ),

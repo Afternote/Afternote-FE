@@ -197,7 +197,7 @@ fun MemorialVideoUpload(
                             contentDescription = null,
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop,
-                            error = painterResource(R.drawable.feature_afternote_img_placeholder_1),
+                            error = painterResource(R.drawable.afternote_img_placeholder_1),
                         )
                     }
 
@@ -211,8 +211,8 @@ fun MemorialVideoUpload(
                     }
                 }
                 Image(
-                    painter = painterResource(R.drawable.feature_afternote_ic_playback),
-                    contentDescription = stringResource(R.string.content_description_video_play),
+                    painter = painterResource(R.drawable.afternote_ic_playback),
+                    contentDescription = stringResource(R.string.afternote_content_description_video_play),
                     modifier =
                         Modifier
                             .align(Alignment.Center)
