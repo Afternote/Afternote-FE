@@ -14,10 +14,10 @@ import com.android.tools.screenshot.PreviewTest
 internal fun weeklySummaryGridScreenshot() {
     AfternoteTheme {
         WeeklySummaryGrid(
+            recordedCount = 3,
             modifier = Modifier.padding(16.dp),
-            onImageClick = {},
             onCountCardClick = {},
-            onRecentRecordClick = {},
+            onImageClick = {},
         )
     }
 }

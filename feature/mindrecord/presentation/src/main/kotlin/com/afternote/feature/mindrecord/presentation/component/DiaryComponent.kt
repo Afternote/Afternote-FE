@@ -50,6 +50,8 @@ private val DateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
 fun DiaryComponent(
     diary: DailyDiary,
     modifier: Modifier = Modifier,
+    /** 카드 전체 탭 — 저장된 기록 본문을 여는 상세 화면으로 간다 (#759). */
+    onClick: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -61,7 +63,7 @@ fun DiaryComponent(
                 containerColor = AfternoteDesign.colors.white,
             ),
         border = BorderStroke(1.dp, color = AfternoteDesign.colors.gray2),
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick),
         shape = RoundedCornerShape(6.dp),
     ) {
         Row(
@@ -169,6 +171,7 @@ private fun DiaryComponentPreview() {
                     emotion = "😊",
                     imageUrl = "https://example.com/image.jpg",
                 ),
+            onClick = {},
             onDelete = {},
             onEdit = {},
         )
@@ -187,6 +190,7 @@ private fun DiaryComponentNoImagePreview() {
                     date = LocalDate.now(),
                     emotion = "😊",
                 ),
+            onClick = {},
             onDelete = {},
             onEdit = {},
         )

@@ -42,7 +42,12 @@ class RecordActionAffordanceTest {
     fun `핸들러가 없으면 더보기를 그리지 않는다`() {
         composeRule.setContent {
             AfternoteTheme {
-                DailyQuestionListCard(answer = answer, onEdit = null, onDelete = null)
+                DailyQuestionListCard(
+                    answer = answer,
+                    onEdit = null,
+                    onDelete = null,
+                    onClick = {},
+                )
             }
         }
 
@@ -55,7 +60,12 @@ class RecordActionAffordanceTest {
     fun `핸들러가 있으면 더보기를 그린다`() {
         composeRule.setContent {
             AfternoteTheme {
-                DailyQuestionListCard(answer = answer, onEdit = {}, onDelete = {})
+                DailyQuestionListCard(
+                    answer = answer,
+                    onEdit = {},
+                    onDelete = {},
+                    onClick = {},
+                )
             }
         }
 

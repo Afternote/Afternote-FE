@@ -23,12 +23,14 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
@@ -44,11 +46,13 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.TextStyleState
 import com.afternote.feature.mindrecord.presentation.model.TextStyleType
+import com.afternote.feature.mindrecord.presentation.util.escapeHtml
 import com.afternote.feature.mindrecord.presentation.util.mediaDisplayName
 import com.afternote.feature.mindrecord.presentation.util.mediaImageSize
 import com.afternote.feature.mindrecord.presentation.util.toUploadedFileKey
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import com.mohamedrejeb.richeditor.ui.BasicRichTextEditor
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -127,10 +131,18 @@ fun WriteTextField(
     var showTextStyleToolbar by remember { mutableStateOf(false) }
     var sheet: KeyboardSheet by remember { mutableStateOf(KeyboardSheet.None) }
     val imeVisible = WindowInsets.isImeVisible
+    // 지연 판정 시점에도 최신 값을 읽어야 한다 — 람다가 진입 시점 값에 고정되면 안 된다.
+    val keyboardShown by rememberUpdatedState(imeVisible)
     val editorFocusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
 
+    // 키보드가 내려가면 패널도 닫는다. 다만 T 로 막 켜서 키보드를 올리는 중인 프레임에는
+    // 아직 imeVisible=false 라 그때 끄면 토글이 헛돈다 — 켜는 순간은 건너뛴다 (#722).
     LaunchedEffect(imeVisible) {
-        if (!imeVisible) showTextStyleToolbar = false
+        if (imeVisible || !showTextStyleToolbar) return@LaunchedEffect
+        // 키보드가 올라올 시간을 준 뒤에도 여전히 없으면 그때 닫는다.
+        delay(KEYBOARD_SETTLE_MS)
+        if (!keyboardShown) showTextStyleToolbar = false
     }
 
     fun keepEditorFocus(action: () -> Unit) {
@@ -285,7 +297,18 @@ fun WriteTextField(
 
         BottomToolbar(
             modifier = Modifier.imePadding(),
-            onTextStyleClick = { showTextStyleToolbar = !showTextStyleToolbar },
+            onTextStyleClick = {
+                // 키보드가 없으면 패널이 렌더되지 않으므로 포커스와 키보드를 먼저 되살린다.
+                // 종전에는 T 를 눌러도 토글만 뒤집혔다가 imeVisible=false 라 즉시 초기화돼
+                // 아무 일도 일어나지 않았다 (#722).
+                if (showTextStyleToolbar) {
+                    showTextStyleToolbar = false
+                } else {
+                    showTextStyleToolbar = true
+                    runCatching { editorFocusRequester.requestFocus() }
+                    keyboardController?.show()
+                }
+            },
             onAlignChange = { align ->
                 keepEditorFocus { state.addParagraphStyle(ParagraphStyle(textAlign = align)) }
             },
@@ -324,8 +347,11 @@ fun WriteTextField(
             LinkBottomSheet(
                 onDismiss = { sheet = KeyboardSheet.None },
                 onConfirm = { url ->
+                    // 검증을 통과한 값이라도 속성에 넣기 전에 이스케이프한다 — 따옴표나
+                    // 꺾쇠가 섞이면 a 태그를 깨고 나올 수 있다 (#722).
+                    val safeUrl = url.trim().escapeHtml()
                     keepEditorFocus {
-                        state.setHtml(state.toHtml() + "<a href=\"$url\">$url</a>")
+                        state.setHtml(state.toHtml() + "<a href=\"$safeUrl\">$safeUrl</a>")
                     }
                     sheet = KeyboardSheet.None
                 },
@@ -369,6 +395,9 @@ private fun WriteTextFieldPreview() {
         )
     }
 }
+
+/** T 로 키보드를 올릴 때 IME 가 올라오기를 기다리는 시간 (#722). */
+private const val KEYBOARD_SETTLE_MS = 300L
 
 /** 에디터 본문 이미지의 가로 기준 크기(px). 높이는 원본 비율로 계산한다 (#731). */
 private const val MEDIA_IMAGE_WIDTH_PX = 320
