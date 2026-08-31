@@ -7,6 +7,8 @@ import { join } from "node:path";
 import test from "node:test";
 
 const guard = await readFile(new URL("../workflows/merge-order-guard.yml", import.meta.url), "utf8");
+const stackNotify = await readFile(new URL("../workflows/stack-integrity-notify.yml", import.meta.url), "utf8");
+const codeowners = await readFile(new URL("../CODEOWNERS", import.meta.url), "utf8");
 
 function issueParser() {
     const match = /refs=\$\(\n\s+PR_JSON="\$pr_json" node <<'NODE'\n([\s\S]*?)\n[ \t]*NODE\n\s+\)/.exec(guard);
@@ -215,48 +217,78 @@ test("refresh passes large open-PR payloads through a file instead of one enviro
     assert.doesNotMatch(guard, /PRS_JSON=/);
 });
 
-function stackRegistrationBlock() {
-    const match = /# 조회 자체는 `if` 조건에 두어[\s\S]*?\n {10}fi\n/.exec(guard);
-    assert.ok(match, "stack registration warning block must stay extractable for policy tests");
-    return match[0];
-}
-
-test("stack registration is inspected through stackEntry, not the base branch name alone", () => {
-    const block = stackRegistrationBlock();
-
-    assert.match(block, /pullRequest\(number:\$pr\)\{stackEntry\{position\}\}/);
-    // base 이름 판정(stacked)과 등록 판정을 겹쳐 둔다 — 트렁크 base 인 PR 은 조회하지 않는다.
-    assert.match(block, /if \[ "\$stacked" -eq 1 \]; then/);
+test("merge-group guard queries complete native-stack membership and fails closed", () => {
+    assert.match(
+        guard,
+        /pullRequest\(number:\$pr\)\{number state mergedAt stackEntry\{position\} stack\{number size entries\(first:100\)/,
+    );
+    assert.match(
+        guard,
+        /if \[ "\$EVENT_NAME" = "merge_group" \][\s\S]*node \.github\/scripts\/merge-order-stack-integrity\.mjs blockers <<< "\$stack_pr_json"/,
+    );
+    assert.match(guard, /echo "::error::네이티브 스택 #\$stack_number/);
+    assert.match(guard, /done 4<<< "\$stack_blockers"/);
 });
 
-test("an unregistered stack PR is only warned about, never failed", () => {
-    const block = stackRegistrationBlock();
-
-    // CI 가 고칠 수 없는 신호다 — gh stack 링크는 대화형 Ctrl+B 뿐이라 error 로 올리면
-    // #1059 가 걷어낸 «수명 내내 red» 가 되돌아온다.
-    assert.match(block, /echo "::warning::네이티브 스택 미등록/);
-    assert.doesNotMatch(block, /::error::/);
-    assert.doesNotMatch(block, /fail=1/);
+test("ordinary PR guard stays non-stale while merge queue performs the live verdict", () => {
+    assert.match(guard, /^\s{4}types: \[opened, reopened, synchronize, edited\]$/m);
+    assert.doesNotMatch(guard, /statuses: write/);
+    const start = guard.indexOf('if [ "$EVENT_NAME" = "merge_group" ]');
+    const end = guard.indexOf("          # GitHub 가 close keyword", start);
+    assert.ok(start >= 0 && end > start, "merge-group-only stack verdict must stay extractable");
+    const stackVerdict = guard.slice(start, end);
+    assert.match(stackVerdict, /merge-order-stack-integrity\.mjs blockers/);
+    assert.doesNotMatch(guard.slice(0, start), /stack_blockers=/);
+    assert.match(guard, /네이티브 스택 미등록/);
+    assert.match(guard, /if stack_entry=\$\(gh api graphql/);
+    assert.match(guard, /else\n\s+echo "::warning::스택 등록 여부를 조회하지 못했다/);
 });
 
-test("a failed registration lookup degrades to a warning instead of killing the blocked_by verdict", () => {
-    const block = stackRegistrationBlock();
+test("close notifier executes only trusted default-branch policy", () => {
+    assert.match(stackNotify, /^\s{2}pull_request_target:\n\s{4}types: \[closed, reopened\]$/m);
+    assert.match(stackNotify, /github\.event\.pull_request\.merged == false/);
+    assert.match(stackNotify, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
+    assert.match(stackNotify, /persist-credentials: false/);
+    assert.match(stackNotify, /^permissions: \{\}$/m);
+    assert.match(stackNotify, /group: stack-integrity-notify-\$\{\{ github\.repository_id \}\}-\$\{\{ github\.event\.pull_request\.number \}\}/);
+    assert.match(stackNotify, /cancel-in-progress: false/);
+    assert.doesNotMatch(stackNotify, /github\.event\.pull_request\.head\.(sha|ref)/);
+    assert.doesNotMatch(stackNotify, /statuses: write|contents: write|actions: write/);
+    assert.doesNotMatch(stackNotify, /actions\/checkout[\s\S]*github\.event\.pull_request\.head/);
+});
 
-    // 조회를 `if` 조건에 두면 set -e 가 스크립트를 끊지 않는다.
-    assert.match(block, /if stack_entry=\$\(gh api graphql/);
-    assert.match(block, /else\n\s+echo "::warning::스택 등록 여부를 조회하지 못했다/);
+test("declares the repository code owner for GitHub automation and policy changes", () => {
+    assert.match(codeowners, /^\/\.github\/ @1hyok$/m);
+});
+
+test("closing an unmerged middle member warns every upper PR once and reopen resolves it", () => {
+    assert.match(stackNotify, /issues: write/);
+    assert.match(stackNotify, /live_state=\$\(jq -r '\.state'/);
+    assert.match(stackNotify, /"\$live_state" != "CLOSED"/);
+    assert.match(stackNotify, /merge-order-stack-integrity\.mjs open-above <<< "\$closed_pr_json"/);
+    assert.match(stackNotify, /stack-integrity:closed-unmerged-\$CLOSED_PR/);
+    assert.match(stackNotify, /issues\/\$target\/comments/);
+    assert.match(stackNotify, /PR_ACTION" = "reopened"/);
+    assert.match(stackNotify, /--method PATCH/);
+    assert.match(stackNotify, /스택 연결 조치 안내 해소/);
+    assert.match(stackNotify, /gh stack unstack \$stack_number/);
+    assert.match(stackNotify, /gh stack link --base develop/);
+    assert.doesNotMatch(stackNotify, /^\s+gh stack (unstack|link)/m);
 });
 
 test("API failures remain fail-closed", () => {
     assert.match(guard, /set -euo pipefail/);
     assert.doesNotMatch(guard, /issue_kind=\$\(gh api[^\n]*\|\|\s*true/);
     assert.doesNotMatch(guard, /open_blockers=\$\(gh api[^\n]*\|\|\s*true/);
+    assert.doesNotMatch(guard, /stack_pr_json=\$\(gh api[^\n]*\|\|\s*true/);
+    assert.match(stackNotify, /set -euo pipefail/);
+    assert.doesNotMatch(stackNotify, /closed_pr_json=\$\(gh api[^\n]*\|\|\s*true/);
 });
 
 test("merge queue groups still produce the guard context", () => {
     // guard 가 merge group 에서 빠지면 required context 가 비어 큐가 멈춘다.
     assert.match(guard, /^\s{2}merge_group:\n\s{4}types: \[checks_requested\]$/m);
-    assert.match(guard, /^\s+github\.event_name == 'merge_group'$/m);
+    assert.match(guard, /github\.event_name == 'merge_group'/);
     assert.match(guard, /MERGE_GROUP_HEAD_REF: \$\{\{ github\.event\.merge_group\.head_ref \}\}/);
     assert.match(guard, /MERGE_GROUP_BASE_REF: \$\{\{ github\.event\.merge_group\.base_ref \}\}/);
 });
