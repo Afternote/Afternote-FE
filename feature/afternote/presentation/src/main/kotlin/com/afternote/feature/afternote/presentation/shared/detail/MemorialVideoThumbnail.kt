@@ -16,10 +16,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -78,8 +80,8 @@ fun MemorialVideoThumbnail(
                             Brush.verticalGradient(
                                 colors =
                                     listOf(
-                                        AfternoteDesign.colors.black.copy(alpha = 0.4f),
-                                        AfternoteDesign.colors.black.copy(alpha = 0.5f),
+                                        Color.Black.copy(alpha = 0.4f),
+                                        Color.Black.copy(alpha = 0.5f),
                                     ),
                             ),
                     ),
@@ -90,7 +92,7 @@ fun MemorialVideoThumbnail(
                 Modifier
                     .align(Alignment.Center)
                     .size(48.dp)
-                    .background(color = AfternoteDesign.colors.iconBk, shape = CircleShape),
+                    .background(color = Color.Black.copy(alpha = 0.6f), shape = CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Image(
@@ -104,13 +106,14 @@ fun MemorialVideoThumbnail(
             text = stringResource(R.string.feature_afternote_memorial_video_overlay_label),
             style =
                 AfternoteDesign.typography.bodySmallR.copy(
-                    color = AfternoteDesign.colors.white.copy(alpha = 0.9f),
+                    color = Color.White.copy(alpha = 0.9f),
                 ),
             modifier =
                 Modifier
                     .align(Alignment.BottomStart)
                     .padding(16.dp)
-                    .testTag(MEMORIAL_VIDEO_OVERLAY_LABEL_TEST_TAG),
+                    .testTag(MEMORIAL_VIDEO_OVERLAY_LABEL_TEST_TAG)
+                    .clearAndSetSemantics {},
         )
     }
 }

@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.presentation.shared.detail
 
-import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -40,7 +39,28 @@ class MemorialVideoThumbnailTest {
 
         composeRule
             .onNodeWithTag(MEMORIAL_VIDEO_OVERLAY_LABEL_TEST_TAG, useUnmergedTree = true)
-            .assertTextEquals("추모 영상")
+            .assertExists()
+    }
+
+    @Test
+    fun `장식 라벨을 카드 접근성 설명에 합치지 않는다`() {
+        composeRule.setContent {
+            AfternoteTheme {
+                MemorialDetailScreen(
+                    onBackClick = {},
+                    onEditClick = {},
+                    onDeleteConfirm = {},
+                    onVideoClick = {},
+                    content =
+                        MemorialDetailContent(
+                            memorialVideoUrl = "https://cdn.example.com/memorial.mp4",
+                        ),
+                    userName = "서영",
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("추모 영상").assertDoesNotExist()
     }
 
     @Test
@@ -88,7 +108,7 @@ class MemorialVideoThumbnailTest {
 
         composeRule
             .onNodeWithTag(MEMORIAL_VIDEO_OVERLAY_LABEL_TEST_TAG, useUnmergedTree = true)
-            .assertTextEquals("추모 영상")
+            .assertExists()
     }
 
     @Test
@@ -108,6 +128,6 @@ class MemorialVideoThumbnailTest {
 
         composeRule
             .onNodeWithTag(MEMORIAL_VIDEO_OVERLAY_LABEL_TEST_TAG, useUnmergedTree = true)
-            .assertTextEquals("추모 영상")
+            .assertExists()
     }
 }
