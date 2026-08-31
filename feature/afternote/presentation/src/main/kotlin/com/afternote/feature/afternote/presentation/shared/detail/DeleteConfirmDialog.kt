@@ -12,14 +12,14 @@ fun DeleteConfirmDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    val title = stringResource(R.string.feature_afternote_dialog_delete_title)
-    val body = stringResource(R.string.feature_afternote_dialog_delete_body, serviceName)
+    val title = stringResource(R.string.afternote_dialog_delete_title)
+    val body = stringResource(R.string.afternote_dialog_delete_body, serviceName)
     Popup(
         type = PopupType.Variant2,
         message = "$title\n\n$body",
         onConfirm = onConfirm,
         onDismiss = onDismiss,
-        dismissText = stringResource(R.string.feature_afternote_dialog_delete_cancel),
-        confirmText = stringResource(R.string.feature_afternote_dialog_delete_confirm),
+        dismissText = stringResource(R.string.afternote_dialog_delete_cancel),
+        confirmText = stringResource(R.string.afternote_dialog_delete_confirm),
     )
 }

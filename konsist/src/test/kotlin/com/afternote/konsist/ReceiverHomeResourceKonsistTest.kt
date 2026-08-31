@@ -1,6 +1,5 @@
 package com.afternote.konsist
 
-import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.ext.list.withPackage
 import com.lemonappdev.konsist.api.verify.assertFalse
 import org.junit.Test
@@ -18,8 +17,7 @@ import org.junit.Test
 class ReceiverHomeResourceKonsistTest {
     @Test
     fun `수신자 홈은 다른 feature 의 R 을 참조하지 않는다`() {
-        Konsist
-            .scopeFromProject()
+        AfternoteKonsistScope
             .files
             .withPackage("com.afternote.feature.receiver.presentation.home..")
             .assertFalse { file ->

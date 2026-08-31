@@ -86,15 +86,15 @@ internal fun MemorialMediaSourceBottomSheet(
                 MediaSheetItem(
                     iconRes =
                         when (target) {
-                            MemorialMediaTarget.PHOTO -> R.drawable.feature_afternote_ic_camera
-                            MemorialMediaTarget.VIDEO -> R.drawable.feature_afternote_ic_videocam
+                            MemorialMediaTarget.PHOTO -> R.drawable.afternote_ic_camera
+                            MemorialMediaTarget.VIDEO -> R.drawable.afternote_ic_videocam
                         },
                     label = captureLabel,
                     onClick = onCapture,
                 ),
                 onRemove?.let { remove ->
                     MediaSheetItem(
-                        iconRes = R.drawable.feature_afternote_ic_trash,
+                        iconRes = R.drawable.afternote_ic_trash,
                         label = removeLabel,
                         onClick = remove,
                         // 되돌릴 수 없는 파괴적 동작임을 색으로 가른다 — 추가 갈래(갤러리·촬영)와 같은 회색이면

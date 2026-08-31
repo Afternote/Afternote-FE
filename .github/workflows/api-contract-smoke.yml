@@ -71,11 +71,15 @@ jobs:
       - name: Set up CI-only app configuration
         uses: ./.github/actions/setup-ci-config
 
+      # unit test 를 돌리는 자리는 예외 없이 기대 실패 제외 init script 를 탄다 — 지금은
+      # `--tests` 필터가 한 클래스로 좁혀 두어 실질 효과가 없지만, 이 규약에 구멍을 하나
+      # 두면 다음 워크플로가 또 샌다 (#1653).
       - name: Run Retrofit wire contract smoke
         run: >-
           ./gradlew :core:network:testDebugUnitTest
           --tests '*ApiWireContractSmokeTest'
           --stacktrace
+          --init-script .github/ci-expected-failures.init.gradle
 
       - name: Upload failure reports
         if: failure()

@@ -42,7 +42,7 @@ class AfternoteHomeEmptyCopyTest {
     fun `전체 목록 0건이면 애프터노트 등록 안내 문구를 보여준다`() {
         composeRule.setContent { AfternoteTheme { EmptyListBody() } }
 
-        composeRule.onNodeWithText(string(R.string.feature_afternote_empty_list_body)).assertExists()
+        composeRule.onNodeWithText(string(R.string.afternote_empty_list_body)).assertExists()
         composeRule.onNodeWithText(string(R.string.afternote_home_filtered_empty)).assertDoesNotExist()
     }
 
@@ -51,7 +51,7 @@ class AfternoteHomeEmptyCopyTest {
         composeRule.setContent { AfternoteTheme { FilteredEmptyContent() } }
 
         composeRule.onNodeWithText(string(R.string.afternote_home_filtered_empty)).assertExists()
-        composeRule.onNodeWithText(string(R.string.feature_afternote_empty_list_body)).assertDoesNotExist()
+        composeRule.onNodeWithText(string(R.string.afternote_empty_list_body)).assertDoesNotExist()
     }
 
     private fun string(resId: Int): String = composeRule.activity.getString(resId)

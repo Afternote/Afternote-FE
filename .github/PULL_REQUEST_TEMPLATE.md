@@ -6,6 +6,12 @@
 - 
 -
 
+### Production visibility
+- [ ] `src/main`·`src/debug`·`src/release` 공개 범위는 프로덕션 사용처만으로 정했고, 테스트 직접 접근을 이유로 넓히지 않았습니다.
+- [ ] 새로 만들거나 수정한 선언은 같은 파일 `private` → 같은 모듈 `internal` → 다른 모듈 `public` 순으로 최소 범위를 확인했습니다.
+- [ ] 테스트 seam이 필요하면 공개 프로덕션 API 대신 공개 동작·test fixture·테스트 소스셋을 사용했습니다.
+- [ ] explicit API warning/strict 진단과 visibility Konsist 결과를 확인하고, 예외라면 생성 코드·프레임워크 근거를 변경 근처에 남겼습니다.
+
 ## 🧪 CI Test Plan
 <!--
 일반 CI는 변경 파일과 역의존 모듈만 자동으로 검사합니다.

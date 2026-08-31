@@ -14,7 +14,6 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.SELE
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteNavActions
 import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceivedAfternoteRoute
 import com.afternote.feature.home.presentation.HomeTabActions
-import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavActions
@@ -99,11 +98,7 @@ fun rememberOnboardingNavActions(navController: NavController): OnboardingNavAct
 fun rememberMindRecordNavActions(navController: NavController): MindRecordNavActions =
     remember(navController) {
         object : MindRecordNavActions {
-            override fun onMemorySpaceBack() {
-                navController.popBackStack()
-            }
-
-            override fun onReceiverMindRecordBack() {
+            override fun popBack() {
                 navController.popBackStack()
             }
 
@@ -115,20 +110,22 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
                 navController.navigate(MindRecordRoute.DiaryWriteRoute())
             }
 
-            override fun onWriteBack() {
-                navController.popBackStack()
-            }
-
-            override fun onWriteSubmitSuccess() {
-                navController.popBackStack()
-            }
-
             override fun onNavigateToDraftList() {
                 navController.navigate(MindRecordRoute.DraftListRoute)
             }
 
-            override fun onDraftListBack() {
-                navController.popBackStack()
+            override fun onOpenRecordDetail(
+                recordId: Long,
+                isDiary: Boolean,
+                yearMonth: String?,
+            ) {
+                navController.navigate(
+                    MindRecordRoute.RecordDetailRoute(
+                        recordId = recordId,
+                        isDiary = isDiary,
+                        yearMonth = yearMonth,
+                    ),
+                )
             }
 
             override fun onEditDailyQuestion(answerId: Long) {
@@ -391,8 +388,9 @@ fun rememberHomeTabActions(
                 appState.navigateToBottomBarRoute(Route.Afternote)
             }
 
-            override fun onRecordCategoryClick(category: MindRecordCategory) {
-                appState.navController.navigate(Route.MindRecord)
+            // 카드 문구가 «타임레터 입력하러가기» 라 타임레터 탭으로 보낸다 (#700, 2026-08-09 확정).
+            override fun onTimeLetterNextStepClick() {
+                appState.navigateToBottomBarRoute(Route.TimeLetter)
             }
 
             // TODO: 카드별 destination 디자인 확정 후 분기. 우선 마음의 기록 탭으로 임시 연결.
@@ -401,10 +399,6 @@ fun rememberHomeTabActions(
             }
 
             override fun onWeeklyCountClick() {
-                appState.navigateToBottomBarRoute(Route.MindRecord)
-            }
-
-            override fun onWeeklyRecentRecordClick() {
                 appState.navigateToBottomBarRoute(Route.MindRecord)
             }
 
@@ -515,7 +509,7 @@ fun rememberAfternoteNavActions(
  * 수신자 서브그래프에 넘길 그래프 내부 [ReceiverNavActions] 구현체.
  *
  * 본인 확인 캐시 분기(Intro→MasterKey)는 nested 그래프 진입 후 `DeliveryVerificationFlowViewModel` 에서
- * 자동 처리되므로(#220) 본 actions 는 순수 네비게이션만 수행한다. authCode 같은 Repository 사이드이펙트는
+ * 자동 처리되므로(#220) 본 actions 는 순수 네비게이션만 수행한다. masterKey 같은 Repository 사이드이펙트는
  * 각 화면 ViewModel 에서 처리.
  */
 @Composable
