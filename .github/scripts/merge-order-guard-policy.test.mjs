@@ -267,6 +267,7 @@ test("live CLOSED warns upper PRs while OPEN or MERGED resolves the same bot com
     assert.match(stackNotify, /CLOSED\)[\s\S]*notice_state="active"/);
     assert.match(stackNotify, /OPEN\)[\s\S]*notice_state="resolved"/);
     assert.match(stackNotify, /MERGED\)[\s\S]*notice_state="resolved"/);
+    assert.doesNotMatch(stackNotify, /PR_ACTION/);
     assert.match(stackNotify, /merge-order-stack-integrity\.mjs open-above <<< "\$closed_pr_json"/);
     assert.match(stackNotify, /stack-integrity:closed-unmerged-\$CLOSED_PR/);
     assert.match(stackNotify, /issues\/\$target\/comments/);
