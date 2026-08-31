@@ -19,6 +19,15 @@ buildscript {
             add("classpath", "org.jdom:jdom2:2.0.6.1") {
                 because("GHSA-2363-cqg2-863c — 2.0.6.1 미만 취약 — #985")
             }
+            // 보안 하한이 아니라 카탈로그 정렬(#1656). AGP 9.3.2 의 analytics-library·sdklib·repository 와
+            // KGP 2.4.10 의 kotlin-compiler-runner 가 플러그인 클래스패스에 coroutines 1.9.0(과 그 BOM)을
+            // 얹는다 — 누가 강제로 내리는 게 아니라 이 클래스패스에 버전 카탈로그가 닿지 않아서다. 모듈
+            // 클래스패스는 이미 카탈로그대로 1.11.0 이라, 여기만 끌어올려 「선언 = 해석」을 한 의도로 맞춘다.
+            // require 시맨틱이라 AGP 가 나중에 더 높은 버전을 선언하면 그쪽이 이긴다.
+            // libs.versions.toml 의 kotlinxCoroutines 와 값을 맞춰 유지할 것.
+            add("classpath", "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0") {
+                because("카탈로그 선언(1.11.0)과 AGP·KGP 전이 1.9.0 의 불일치 — #1656")
+            }
         }
         // netty 는 grpc-netty 가 끌어오는 모듈이 10개가 넘고 서로 같은 버전이어야 해 BOM 으로 정렬한다
         // (GHSA-558v-64gr-wgg4 등 33건, #975~#980). 이 BOM 을 아래 본문의 allprojects 하한에 platform()
@@ -191,7 +200,6 @@ dependencies {
     kover(project(":feature:mindrecord:domain"))
     kover(project(":feature:mindrecord:presentation"))
     kover(project(":feature:onboarding:data"))
-    kover(project(":feature:onboarding:domain"))
     kover(project(":feature:onboarding:presentation"))
     kover(project(":feature:receiver:data"))
     kover(project(":feature:receiver:domain"))

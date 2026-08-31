@@ -50,6 +50,8 @@ private val DateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
 fun DailyQuestionListCard(
     answer: DailyQuestion,
     modifier: Modifier = Modifier,
+    /** 카드 전체 탭 — 저장된 기록 본문을 여는 상세 화면으로 간다 (#759). */
+    onClick: () -> Unit = {},
     onEdit: () -> Unit = {},
     onDelete: () -> Unit = {},
 ) {
@@ -60,7 +62,7 @@ fun DailyQuestionListCard(
             ),
         border = BorderStroke(1.dp, color = AfternoteDesign.colors.gray2),
         shape = CardShape,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick),
     ) {
         if (answer.imageUrl != null) {
             ThumbnailCardContent(answer = answer, onEdit = onEdit, onDelete = onDelete)

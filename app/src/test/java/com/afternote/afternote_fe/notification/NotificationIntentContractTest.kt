@@ -11,7 +11,7 @@ class NotificationIntentContractTest {
             NotificationIntentContract.resolve(
                 isNotificationEntry = false,
                 rawSource = "fcm",
-                occurrenceToken = "occurrence-1",
+                occurrenceId = "occurrence-1",
             )
 
         assertNull(request)
@@ -24,7 +24,7 @@ class NotificationIntentContractTest {
                 NotificationIntentContract.resolve(
                     isNotificationEntry = true,
                     rawSource = rawSource,
-                    occurrenceToken = "occurrence-1",
+                    occurrenceId = "occurrence-1",
                 )
 
             assertNull(request)
@@ -33,12 +33,12 @@ class NotificationIntentContractTest {
 
     @Test
     fun `occurrence token이 없거나 비어 있으면 거부한다`() {
-        listOf(null, "", " ").forEach { occurrenceToken ->
+        listOf(null, "", " ").forEach { occurrenceId ->
             val request =
                 NotificationIntentContract.resolve(
                     isNotificationEntry = true,
                     rawSource = "daily",
-                    occurrenceToken = occurrenceToken,
+                    occurrenceId = occurrenceId,
                 )
 
             assertNull(request)
@@ -52,11 +52,11 @@ class NotificationIntentContractTest {
                 NotificationIntentContract.resolve(
                     isNotificationEntry = true,
                     rawSource = source.contractValue,
-                    occurrenceToken = "occurrence-${source.contractValue}",
+                    occurrenceId = "occurrence-${source.contractValue}",
                 )
 
             assertEquals(source, request?.source)
-            assertEquals("occurrence-${source.contractValue}", request?.occurrenceToken)
+            assertEquals("occurrence-${source.contractValue}", request?.occurrenceId)
         }
     }
 }
