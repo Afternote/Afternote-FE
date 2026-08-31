@@ -54,10 +54,11 @@ import com.afternote.feature.afternote.presentation.R as AfternoteR
  * 테스트가 닿지 못하는 구간 — **실제 NavHost 를 지나 소비 route 로 돌아오는 값**이다.
  *
  * 경로는 세 모듈에 걸쳐 있다.
- * 1. `core:ui` 공용 화면이 선택된 수신자 id 를 완료 콜백으로 내보내고,
- * 2. app 모듈의 `popBackWithSelectedReceiver` 가 그 id 를 **직전 back stack entry**(에디터)의
- *    `SavedStateHandle` 에 `SELECTED_RECEIVER_ID_KEY` 로 쓰고 pop 하며,
- * 3. `feature:afternote` 에디터가 복귀 시 그 id 를 이름·관계로 해석해 폼에 넣는다.
+ * 1. `core:ui` 공용 화면이 선택된 수신자 id 목록을 완료 콜백으로 내보내고,
+ * 2. app 모듈의 `popBackWithSelectedReceivers(List<Long>)` 가 그 목록을
+ *    **직전 back stack entry**(에디터)의 `SavedStateHandle` 에
+ *    `SELECTED_RECEIVER_IDS_KEY` (`LongArray`)로 쓰고 pop 하며,
+ * 3. `feature:afternote` 에디터가 복귀 시 그 id 목록을 이름·관계로 해석해 폼에 넣는다.
  *
  * 어느 한 마디만 어긋나도 «다른 수신자가 지정되는» 회귀가 되는데, 각 모듈의 단위 테스트는
  * 자기 마디까지만 본다. 그래서 이 계약은 계측 테스트로만 단언할 수 있다.
@@ -123,10 +124,10 @@ class ReceiverSelectionResultAndroidTest {
     }
 
     /**
-     * 완료가 돌려주는 것은 **고른 그 한 명의 id** 다.
+     * 완료가 돌려주는 것은 **고른 수신자 id 목록**이다.
      *
-     * 목록 순서(index)나 목록 전체가 아니라 id 하나가 건너가는지를, 고르지 않은 수신자가 폼에
-     * 들어오지 않는 것으로 판정한다.
+     * 목록 순서(index)나 표시된 수신자 목록 전체가 아니라 고른 id 목록이 건너가는지를,
+     * 고르지 않은 수신자가 폼에 들어오지 않는 것으로 판정한다.
      */
     @Test
     fun afternoteEditorNavHost_receiverSelectConfirmAddsOnlyTheChosenReceiverToEditorForm() {
