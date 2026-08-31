@@ -7,7 +7,6 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import com.afternote.core.ui.loading.LoadingBody
-import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadErrorContent
 import com.afternote.feature.afternote.presentation.author.navigation.afternoteComposable
 import com.afternote.feature.afternote.presentation.receiver.afternotelist.ReceiverAfternoteHomeEntry
 import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailRoute
@@ -15,6 +14,7 @@ import com.afternote.feature.afternote.presentation.receiver.navigation.model.Re
 import com.afternote.feature.afternote.presentation.receiver.playlist.MemorialPlaylistScreen
 import com.afternote.feature.afternote.presentation.receiver.playlist.ReceiverMemorialPlaylistUiState
 import com.afternote.feature.afternote.presentation.receiver.playlist.ReceiverMemorialPlaylistViewModel
+import com.afternote.feature.afternote.presentation.shared.detail.DetailLoadErrorContent
 
 /**
  * 수신 애프터노트 목록·상세·추억 플레이리스트를 루트 NavHost 에 등록한다.

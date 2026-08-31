@@ -317,14 +317,16 @@ class AfternoteEditorViewModel
          * 수정 진입은 상세 응답 prefill 이 지정 수신자를 채우므로 이 목록을 쓰지 않는다.
          */
         fun refreshAuthorReceivers() {
-            viewModelScope.launch {
-                runCatchingCancellable { userRepository.getReceivers() }
-                    .onSuccess { receivers ->
-                        internalState.update { it.copy(authorReceivers = receivers.toAfternoteEditorReceivers()) }
-                    }.onFailure { e ->
-                        errorReporter.recordAfternoteFailure(AfternoteFailureStage.AUTHOR_RECEIVER_LOAD, e)
-                    }
-            }
+            viewModelScope.launch { loadAuthorReceivers() }
+        }
+
+        private suspend fun loadAuthorReceivers() {
+            runCatchingCancellable { userRepository.getReceivers() }
+                .onSuccess { receivers ->
+                    internalState.update { it.copy(authorReceivers = receivers.toAfternoteEditorReceivers()) }
+                }.onFailure { e ->
+                    errorReporter.recordAfternoteFailure(AfternoteFailureStage.AUTHOR_RECEIVER_LOAD, e)
+                }
         }
 
         fun uploadMemorialThumbnail(jpegBytes: ByteArray?) {
@@ -561,8 +563,23 @@ class AfternoteEditorViewModel
             }
         }
 
-        /** 수신자 선택 결과(id)를 폼에 넣기 위해 [refreshAuthorReceivers] 로 받아 둔 목록에서 이름·관계를 찾는다. */
-        fun getReceiverById(id: Long): AfternoteEditorReceiver? = internalState.value.authorReceivers.find { it.id == id }
+        /**
+         * 수신자 선택 화면이 돌려준 id 를 폼에 넣을 수 있는 값으로 해석한다.
+         *
+         * [refreshAuthorReceivers] 로 받아 둔 목록에 없으면 — 그 로드가 실패했다는 뜻이므로 — 한 번 더 받아 보고,
+         * 그래도 못 찾으면 [AfternoteEditorError.ReceiverSelectionUnavailable] 을 세워 화면이 알리게 한다.
+         * 이 신호가 없으면 사용자가 고른 수신자가 아무 표시 없이 사라진다 (#1405).
+         */
+        suspend fun resolveSelectedReceiver(id: Long): AfternoteEditorReceiver? {
+            findReceiverById(id)?.let { return it }
+            loadAuthorReceivers()
+            return findReceiverById(id) ?: run {
+                internalState.update { it.withError(AfternoteEditorError.ReceiverSelectionUnavailable) }
+                null
+            }
+        }
+
+        private fun findReceiverById(id: Long): AfternoteEditorReceiver? = internalState.value.authorReceivers.find { it.id == id }
 
         // region Internal state shaping
 

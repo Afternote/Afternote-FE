@@ -5,10 +5,10 @@ import com.afternote.afternote_fe.notification.di.NotificationPermissionStoreMod
 import com.afternote.afternote_fe.reporting.ErrorReportingModule
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.data.di.CoreUserRepositoryModule
-import com.afternote.core.domain.repository.UserProfileRepository
+import com.afternote.core.domain.repository.UserProfileCacheRepository
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
-import com.afternote.core.domain.testing.FakeUserProfileRepository
+import com.afternote.core.domain.testing.FakeUserProfileCacheRepository
 import com.afternote.feature.mindrecord.data.di.MindRecordRepositoryModule
 import com.afternote.feature.mindrecord.data.repositoryimpl.MindRecordReceiverRepositoryImpl
 import com.afternote.feature.mindrecord.data.repositoryimpl.WeeklyReportRepositoryImpl
@@ -41,7 +41,7 @@ object TestCoreUserRepositoryModule {
 
     @Provides
     @Singleton
-    fun provideUserProfileRepository(): UserProfileRepository = FakeUserProfileRepository()
+    fun provideUserProfileCacheRepository(): UserProfileCacheRepository = FakeUserProfileCacheRepository()
 }
 
 @Module

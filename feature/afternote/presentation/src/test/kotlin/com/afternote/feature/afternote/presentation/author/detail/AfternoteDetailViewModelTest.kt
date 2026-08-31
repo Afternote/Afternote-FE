@@ -2,6 +2,7 @@ package com.afternote.feature.afternote.presentation.author.detail
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.domain.testing.FakeUserProfileRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
@@ -9,6 +10,7 @@ import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.presentation.author.NoopAuthorErrorReporter
+import com.afternote.feature.afternote.presentation.author.afternoteAuthorUserProfileRepository
 import com.afternote.feature.afternote.presentation.author.afternoteAuthorUserRepository
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -208,6 +210,83 @@ class AfternoteDetailViewModelTest {
         }
 
     @Test
+    fun `캐시된 이름은 원격 응답을 기다리지 않고 제목에 실린다`() =
+        runTest {
+            // 원격만 쓰면 왕복이 끝나야 이름 세그먼트가 채워져, 진입마다 제목이 눈앞에서 다시 쓰인다.
+            val profileGate = CompletableDeferred<Unit>()
+            val userRepository =
+                afternoteAuthorUserRepository().apply {
+                    onGetMyProfile = {
+                        profileGate.await()
+                        profile.copy(name = "서버 이름")
+                    }
+                }
+            val userProfileRepository = afternoteAuthorUserProfileRepository(cachedUserName = "캐시 이름")
+            val viewModel =
+                viewModel(
+                    FakeAfternoteRepository.strict().apply {
+                        onGetDetail = { Result.success(detail(serviceName = "Instagram")) }
+                    },
+                    userRepository = userRepository,
+                    userProfileRepository = userProfileRepository,
+                )
+            val states = recordStates(viewModel)
+
+            // 원격이 아직 오지 않은 시점에 이미 이름이 실려 있다.
+            assertEquals("캐시 이름", states.last().authorDisplayNameOrNull())
+
+            profileGate.complete(Unit)
+
+            // 원격 값이 정본이라 캐시를 덮고, 다음 진입을 위해 캐시도 최신화한다.
+            assertEquals("서버 이름", states.last().authorDisplayNameOrNull())
+            assertEquals(listOf("서버 이름"), userProfileRepository.savedUserNames.toList())
+        }
+
+    @Test
+    fun `캐시 조회가 실패해도 원격 이름으로 채운다`() =
+        runTest {
+            val userProfileRepository =
+                afternoteAuthorUserProfileRepository().apply {
+                    onGetCachedUserName = { throw IOException("DataStore 읽기 실패") }
+                }
+            val userRepository = afternoteAuthorUserRepository()
+            val viewModel =
+                viewModel(
+                    FakeAfternoteRepository.strict().apply {
+                        onGetDetail = { Result.success(detail(serviceName = "Instagram")) }
+                    },
+                    userRepository = userRepository,
+                    userProfileRepository = userProfileRepository,
+                )
+            val states = recordStates(viewModel)
+
+            assertEquals(userRepository.profile.name, states.last().authorDisplayNameOrNull())
+        }
+
+    @Test
+    fun `캐시 저장이 실패해도 화면은 이름을 유지한다`() =
+        runTest {
+            // 저장은 «다음 진입» 을 위한 것이라, 실패해도 지금 보고 있는 화면을 흔들면 안 된다.
+            val userProfileRepository =
+                afternoteAuthorUserProfileRepository().apply {
+                    onSaveUserName = { throw IOException("DataStore 쓰기 실패") }
+                }
+            val userRepository = afternoteAuthorUserRepository()
+            val viewModel =
+                viewModel(
+                    FakeAfternoteRepository.strict().apply {
+                        onGetDetail = { Result.success(detail(serviceName = "Instagram")) }
+                    },
+                    userRepository = userRepository,
+                    userProfileRepository = userProfileRepository,
+                )
+            val states = recordStates(viewModel)
+
+            assertEquals(userRepository.profile.name, states.last().authorDisplayNameOrNull())
+            assertTrue(states.last() is AfternoteDetailUiState.Success)
+        }
+
+    @Test
     fun `재진입 갱신이 미소비 삭제 결과를 지우지 않는다`() =
         runTest {
             // 삭제 결과는 UI 가 LaunchedEffect 로 한 번 읽고 소비하는 신호다. 그 사이에 도착한 갱신이
@@ -227,13 +306,105 @@ class AfternoteDetailViewModelTest {
             val viewModel = viewModel(repository)
             val states = recordStates(viewModel)
 
-            viewModel.deleteAfternote(73L)
+            viewModel.deleteAfternote()
             viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
             viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME
 
             val last = states.last() as AfternoteDetailUiState.Success
             assertEquals("Threads", states.last().serviceNameOrNull())
             assertEquals(AfternoteDetailDeleteResult.Succeeded(73L), last.deleteResult)
+        }
+
+    @Test
+    fun `실패 화면에서 재시도하면 로딩을 띄우고 상세를 다시 조회한다`() =
+        runTest {
+            val gate = CompletableDeferred<Unit>()
+            var invocation = 0
+            val repository =
+                FakeAfternoteRepository.strict().apply {
+                    onGetDetail = {
+                        invocation += 1
+                        if (invocation == 1) {
+                            Result.failure(IOException("offline"))
+                        } else {
+                            gate.await()
+                            Result.success(detail(serviceName = "Instagram"))
+                        }
+                    }
+                }
+            val viewModel = viewModel(repository)
+            val states = recordStates(viewModel)
+
+            assertTrue(states.last() is AfternoteDetailUiState.Error)
+
+            viewModel.retry()
+
+            // 응답이 오기 전 — 사용자가 누른 동작이므로 기다림을 표시한다(자동 갱신과 갈리는 지점).
+            assertTrue(states.last() is AfternoteDetailUiState.Loading)
+
+            gate.complete(Unit)
+
+            assertEquals("Instagram", states.last().serviceNameOrNull())
+        }
+
+    @Test
+    fun `재시도가 자른 갱신은 그 응답으로 새 화면을 덮지 않는다`() =
+        runTest {
+            // 자동 갱신이 값을 받아 든 «뒤» 재시도가 그 로드를 자르는 창 — 여기서 옛 응답이 새 화면을
+            // 덮으면 사용자가 재시도로 얻은 결과가 조용히 사라진다.
+            lateinit var viewModelRef: AfternoteDetailViewModel
+            var invocation = 0
+            val repository =
+                FakeAfternoteRepository.strict().apply {
+                    onGetDetail = {
+                        invocation += 1
+                        when (invocation) {
+                            1 -> {
+                                Result.success(detail(serviceName = "Instagram"))
+                            }
+
+                            2 -> {
+                                viewModelRef.retry()
+                                Result.success(detail(serviceName = "Stale"))
+                            }
+
+                            else -> {
+                                Result.success(detail(serviceName = "Retry"))
+                            }
+                        }
+                    }
+                }
+            val viewModel = viewModel(repository)
+            viewModelRef = viewModel
+            val states = recordStates(viewModel)
+
+            viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
+            viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME — 이 로드가 재시도에 잘린다
+
+            assertEquals("Retry", states.last().serviceNameOrNull())
+        }
+
+    @Test
+    fun `상세를 보고 있지 않으면 삭제 요청을 보내지 않는다`() =
+        runTest {
+            // 상태 갱신은 updateSuccess 가 알아서 no-op 이지만 서버 호출은 아니다 — 막지 않으면
+            // 노트는 지워지는데 화면은 아무것도 모른다(진행 표시·결과 안내·pop 전부 없음).
+            val deletedIds = mutableListOf<Long>()
+            val repository =
+                FakeAfternoteRepository.strict().apply {
+                    onGetDetail = { Result.failure(IOException("offline")) }
+                    onDelete = { id ->
+                        deletedIds += id
+                        Result.success(Unit)
+                    }
+                }
+            val viewModel = viewModel(repository)
+            val states = recordStates(viewModel)
+
+            viewModel.deleteAfternote()
+
+            assertTrue(states.last() is AfternoteDetailUiState.Error)
+            assertEquals(emptyList<Long>(), deletedIds)
         }
 
     private fun TestScope.recordStates(viewModel: AfternoteDetailViewModel): List<AfternoteDetailUiState> {
@@ -248,11 +419,13 @@ class AfternoteDetailViewModelTest {
         repository: FakeAfternoteRepository,
         errorReporter: ErrorReporter = NoopAuthorErrorReporter,
         userRepository: FakeUserRepository = afternoteAuthorUserRepository(),
+        userProfileRepository: FakeUserProfileRepository = afternoteAuthorUserProfileRepository(),
     ): AfternoteDetailViewModel =
         AfternoteDetailViewModel(
             savedStateHandle = SavedStateHandle(mapOf("itemId" to 73L)),
             afternoteRepository = repository,
             userRepository = userRepository,
+            userProfileRepository = userProfileRepository,
             errorReporter = errorReporter,
         )
 }

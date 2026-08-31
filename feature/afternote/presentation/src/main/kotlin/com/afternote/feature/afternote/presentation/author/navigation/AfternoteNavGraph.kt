@@ -10,10 +10,16 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.navigation
 import com.afternote.core.ui.Route
 import com.afternote.feature.afternote.presentation.AfternoteHostViewModel
+import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailNavigation
+import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorNavigation
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.AddSongViewModel
+import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.AfternoteAddSongNavigation
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.MemorialPlaylistEntry
+import com.afternote.feature.afternote.presentation.author.editor.receiver.select.AfternoteSelectReceiverNavigation
+import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeNavigation
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
+import com.afternote.feature.afternote.presentation.shared.fingerprint.AfternoteFingerprintLoginNavigation
 
 /**
  * Afternote 피처의 네비게이션 그래프.

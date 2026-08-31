@@ -472,7 +472,7 @@ private fun AuthorDetailForDelete(
                 content = account.content,
                 snackbarHostState = snackbarHostState,
                 onEditClick = {},
-                onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
+                onDeleteConfirm = viewModel::deleteAfternote,
             )
         }
     }
@@ -486,6 +486,7 @@ private fun detailViewModel(
         savedStateHandle = SavedStateHandle(mapOf("itemId" to itemId)),
         afternoteRepository = repository,
         userRepository = afternoteAuthorUserRepository(),
+        userProfileRepository = afternoteAuthorUserProfileRepository(),
         errorReporter = NoopAuthorErrorReporter,
     )
 

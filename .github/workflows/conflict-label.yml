@@ -7,6 +7,10 @@ name: PR Label Reconcile
 #
 # 같은 자리에서 이슈 쪽 라벨도 맞춘다 (#1532) — base 가 기본 브랜치가 아닌 PR 은 이슈의
 # Development 칸에 뜨지 않아, 이슈만 보면 아무도 손대지 않은 것으로 읽힌다.
+#
+# 변경요청 뒤 작성자가 아무 조치도 하지 않은 PR 에도 라벨을 붙인다 (#1552). `review-debt-guard`
+# 는 리뷰어의 빚만 잡고 그 상태를 «공은 작성자에게» 로 흘려보내므로, 그쪽 축은 어디서도 신호가
+# 나지 않았다. 붙이기와 떼기를 한 번의 차이 계산으로 처리해 스테일 라벨이 남지 않게 한다.
 on:
   push:
     branches: [develop]
@@ -55,7 +59,9 @@ jobs:
           node --test \
             .github/scripts/label-conflicting-prs.test.mjs \
             .github/scripts/label-android-test-plan.test.mjs \
-            .github/scripts/label-issues-with-open-prs.test.mjs
+            .github/scripts/label-issues-with-open-prs.test.mjs \
+            .github/scripts/label-awaiting-author-prs.test.mjs \
+            .github/scripts/awaiting-author-policy.test.mjs
 
       - name: Reconcile pull request labels
         env:
@@ -69,4 +75,5 @@ jobs:
           node .github/scripts/label-conflicting-prs.mjs || failures=1
           node .github/scripts/label-android-test-prs.mjs || failures=1
           node .github/scripts/label-issues-with-open-prs.mjs || failures=1
+          node .github/scripts/label-awaiting-author-prs.mjs || failures=1
           exit "$failures"

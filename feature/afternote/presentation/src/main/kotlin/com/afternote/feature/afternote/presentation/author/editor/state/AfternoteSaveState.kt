@@ -40,6 +40,14 @@ sealed interface AfternoteEditorError {
 
     data object Server : AfternoteEditorError
 
+    /**
+     * 수신자 선택 화면이 돌려준 수신자를 폼에 반영하지 못함 (#1405).
+     *
+     * 에디터의 수신자 목록 로드가 실패하면 id 에 대응하는 이름·관계를 찾을 수 없어 선택이 버려진다.
+     * 저장 실패가 아니라 «고른 것이 반영되지 않았다» 는 사실을 알리는 신호다 — 사용자가 다시 고를 수 있어야 한다.
+     */
+    data object ReceiverSelectionUnavailable : AfternoteEditorError
+
     data class Upload(
         val target: Target,
     ) : AfternoteEditorError {
