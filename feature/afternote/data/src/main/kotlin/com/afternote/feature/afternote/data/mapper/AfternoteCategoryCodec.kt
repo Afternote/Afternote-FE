@@ -32,6 +32,3 @@ fun afternoteTypeFromServerCategory(value: String): AfternoteType? {
     if (normalized == LEGACY_MEMORIAL_CATEGORY) return AfternoteType.MEMORIAL
     return serverCategoryByType.entries.firstOrNull { it.value == normalized }?.key
 }
-
-/** 서버 `category` → [AfternoteType]. 대응이 없으면 [AfternoteType.SOCIAL_NETWORK] 로 폴백한다. */
-fun categoryToAfternoteType(category: String): AfternoteType = afternoteTypeFromServerCategory(category) ?: AfternoteType.SOCIAL_NETWORK

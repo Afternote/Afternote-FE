@@ -38,7 +38,26 @@ class ReceivedAfternoteDetailMapperTest {
     @Test
     fun `toDomain - category 를 해석할 수 없으면 실패다 - 임의의 종류로 메우지 않는다`() {
         assertThrows(IllegalArgumentException::class.java) {
-            ReceivedAfternoteDetailDto(id = 1L, serviceName = "제목", category = null, processingMethods = null).toDomain()
+            ReceivedAfternoteDetailDto(
+                id = 1L,
+                serviceName = "제목",
+                senderName = "홍길동",
+                category = null,
+                processingMethods = null,
+            ).toDomain()
+        }
+    }
+
+    @Test
+    fun `toDomain - 알 수 없는 ESTATE category 는 IllegalArgumentException 이다`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            ReceivedAfternoteDetailDto(
+                id = 1L,
+                serviceName = "제목",
+                senderName = "홍길동",
+                category = "ESTATE",
+                processingMethods = null,
+            ).toDomain()
         }
     }
 
@@ -48,6 +67,7 @@ class ReceivedAfternoteDetailMapperTest {
             ReceivedAfternoteDetailDto(
                 id = 1L,
                 serviceName = "제목",
+                senderName = "홍길동",
                 category = "SOCIAL",
                 createdAt = null,
                 processingMethods = null,
@@ -61,6 +81,7 @@ class ReceivedAfternoteDetailMapperTest {
             ReceivedAfternoteDetailDto(
                 id = 1L,
                 serviceName = "제목",
+                senderName = "홍길동",
                 category = "SOCIAL",
                 playlist = null,
                 processingMethods = null,
@@ -74,6 +95,7 @@ class ReceivedAfternoteDetailMapperTest {
             ReceivedAfternoteDetailDto(
                 id = 1L,
                 serviceName = "제목",
+                senderName = "홍길동",
                 category = "SOCIAL",
                 processingMethods = null,
                 playlist =
@@ -97,6 +119,7 @@ class ReceivedAfternoteDetailMapperTest {
             ReceivedAfternoteDetailDto(
                 id = 1L,
                 serviceName = "제목",
+                senderName = "홍길동",
                 category = "SOCIAL",
                 processingMethods = null,
                 credentials = ReceivedCredentialsDto(id = "u", password = "p"),

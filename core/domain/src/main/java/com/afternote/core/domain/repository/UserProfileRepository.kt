@@ -1,22 +1,13 @@
 package com.afternote.core.domain.repository
 
-import kotlinx.coroutines.flow.Flow
-
 /**
- * 사용자 프로필 로컬 캐시 도메인 진입점.
+ * [UserProfileCacheRepository] 의 옛 이름 (#1433).
  *
- * 홈 진입 시 GET /users/me 응답이 도착하기 전 placeholder 로 즉시 노출하기 위한
- * 로컬 캐시 (사용자 이름·패스키 등록 여부 등). 서버 CRUD 는 [UserRepository] 가 담당한다.
- *
- * ViewModel 은 datastore DataSource 를 직접 참조하지 않고 본 인터페이스를 통해서만 접근한다
- * (UI → Domain → Data 단일 진입점).
+ * 이름이 서버 프로필 계약처럼 읽혀 [MyProfileRepository] 와 구분이 서지 않았다. 개명은 끝났고
+ * 이 별칭은 `feature:home` 소비자 이관까지만 남는 과도기다 — 담당 모듈이 갈려 한 PR 로 못 옮긴다.
  */
-interface UserProfileRepository {
-    fun isPasskeyRegisteredFlow(): Flow<Boolean>
-
-    suspend fun savePasskeyRegistered(registered: Boolean)
-
-    suspend fun getCachedUserName(): String?
-
-    suspend fun saveUserName(name: String)
-}
+@Deprecated(
+    message = "실체가 로컬 캐시임을 드러내는 UserProfileCacheRepository 로 옮겨 주세요.",
+    replaceWith = ReplaceWith("UserProfileCacheRepository"),
+)
+typealias UserProfileRepository = UserProfileCacheRepository

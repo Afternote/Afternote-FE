@@ -3,4 +3,6 @@
     <string name="fcm_notification_channel_id" translatable="false">afternote_fcm</string>
     <string name="fcm_notification_channel_name">애프터노트 알림</string>
     <string name="fcm_notification_fallback_title" translatable="false">AFTERNOTE</string>
+    <string name="notification_permission_denied_message">알림이 꺼져 있어 새로운 소식을 받을 수 없어요</string>
+    <string name="notification_permission_denied_action">설정</string>
 </resources>

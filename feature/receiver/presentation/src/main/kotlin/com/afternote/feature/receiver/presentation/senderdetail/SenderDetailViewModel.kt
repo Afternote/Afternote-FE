@@ -9,12 +9,14 @@ import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureSt
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
+import com.afternote.feature.receiver.domain.model.ReceivedRecordBox
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverRepository
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
 import com.afternote.feature.receiver.presentation.recordsbox.SenderEntry
 import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -47,8 +49,37 @@ class SenderDetailViewModel
         private val _uiState = MutableStateFlow<SenderDetailUiState>(SenderDetailUiState.Loading)
         val uiState: StateFlow<SenderDetailUiState> = _uiState.asStateFlow()
 
+        /** 진행 중인 상태 조회 — 첫 진입 이후의 ON_RESUME 이 실행 중인 로드와 겹치면 건너뛰기 위한 가드. */
+        private var loadJob: Job? = null
+
+        /**
+         * 다음 [refreshOnReturn] 이 첫 ON_RESUME(진입 자체)인지. 첫 resume 은 init 로드와 같은
+         * 진입이므로 갱신하지 않는다 — Job 가드만으로는 init 로드가 빨리 끝난 뒤 도착한 첫
+         * resume 이 순차 재조회를 건다. VM 필드인 이유는
+         * [com.afternote.feature.receiver.presentation.detail.ReceivedAfternoteDetailViewModel] 과
+         * 동일 — 프로세스 사망 후 복원에서도 init 로드와 수명이 일치한다.
+         */
+        private var isFirstResume = true
+
         init {
             load()
+        }
+
+        /**
+         * 열람 신청 흐름 등 다른 화면에서 복귀했을 때의 자동 갱신 (#701) — 신청 직후 돌아온 화면이
+         * 옛 상태(예: "신청 전")를 그대로 보여주지 않게 한다.
+         *
+         * 최초 진입 로드와 두 가지가 다르다 — 로딩을 방출하지 않고, 상태 조회가 실패해도 보고 있던
+         * 정보 박스를 유지한다. 첫 ON_RESUME(진입 자체)은 [isFirstResume] 로 스킵하고, 그 이후의
+         * resume 이 실행 중인 로드와 겹치면 진행 중인 Job 으로 건너뛴다.
+         */
+        fun refreshOnReturn() {
+            if (isFirstResume) {
+                isFirstResume = false
+                return
+            }
+            if (loadJob?.isActive == true) return
+            load(showsLoading = false, keepsStateOnFailure = true)
         }
 
         /**
@@ -83,16 +114,74 @@ class SenderDetailViewModel
             }
         }
 
-        private fun load() {
+        private fun load(
+            showsLoading: Boolean = true,
+            keepsStateOnFailure: Boolean = false,
+        ) {
+            loadJob?.cancel()
             val sender = senderRegistry.findById(senderId)
             if (sender == null) {
                 _uiState.value = SenderDetailUiState.SenderNotFound
                 return
             }
-            _uiState.value = SenderDetailUiState.Loading
-            viewModelScope.launch {
-                _uiState.value = resolveState(sender)
+            if (showsLoading) {
+                _uiState.value = SenderDetailUiState.Loading
             }
+            loadJob =
+                viewModelScope.launch {
+                    val resolved = resolveState(sender)
+                    _uiState.update { current ->
+                        when {
+                            // 자동 갱신의 조회 실패: 잘 보고 있던 정보 박스를 에러로 대체하지 않는다.
+                            keepsStateOnFailure &&
+                                resolved is SenderDetailUiState.StatusLoadFailed &&
+                                current is SenderDetailUiState.Success -> {
+                                current
+                            }
+
+                            // 갱신이 화면을 교체해도 미소비 네비게이션 신호는 잃지 않는다 — "기록 열람하기"
+                            // 클릭과 갱신 완료가 겹치면 새 Success 의 기본값 false 가 이동을 삼킨다.
+                            resolved is SenderDetailUiState.Success && current is SenderDetailUiState.Success -> {
+                                resolved.copy(shouldOpenReceiverHome = current.shouldOpenReceiverHome)
+                            }
+
+                            else -> {
+                                resolved
+                            }
+                        }
+                    }
+                }
+        }
+
+        /**
+         * 열람 승인일을 받아 온다 (#612).
+         *
+         * `delivery-verification/status` 응답에는 승인 일시가 없다 — 그 값을 주는 건 `record-boxes` 뿐이라
+         * 화면이 오래 «승인 기록이 없습니다» 로 비어 있었다. 서버는 같은 이메일에 등록된 기록함을 모두
+         * 내려주므로 지금 보고 있는 발신자의 칸은 [ReceivedRecordBox.accessCode] 로 골라낸다.
+         *
+         * **이건 서버가 고칠 때까지의 우회다 — BE#96.** 한 줄을 표시하려고 목록 API 를 통째로 왕복하고
+         * 있다. `status` 응답이 `approvedAt` 을 내려주기 시작하면 이 함수와 호출부, 골라내는 코드가
+         * 함께 사라진다.
+         *
+         * **승인 상태에서만 부른다.** 서버가 `approvedAt` 을 APPROVED 일 때만 채우므로, 그 밖의 상태에서는
+         * 확실히 null 인 값을 받으려고 왕복을 한 번 더 하는 셈이다.
+         *
+         * 조회가 실패해도 화면을 실패로 떨어뜨리지 않는다 — 승인일은 정보 박스의 한 줄이고, 상태·신청일은
+         * 이미 받아 둔 응답으로 그릴 수 있다. 실패는 조용히 삼키지 않고 텔레메트리에 남긴다.
+         */
+        private suspend fun resolveApprovedAt(
+            status: DeliveryVerificationStatus,
+            authCode: String,
+        ): String? {
+            if (status != DeliveryVerificationStatus.APPROVED) return null
+            return receiverAuthRepository
+                .getReceivedRecordBoxes()
+                .onFailure { e ->
+                    errorReporter.recordAfternoteFailure(AfternoteFailureStage.SENDER_STATUS_LOAD, e)
+                }.getOrNull()
+                ?.firstOrNull { it.accessCode == authCode }
+                ?.approvedAt
         }
 
         private suspend fun resolveState(sender: SenderEntry): SenderDetailUiState {
@@ -113,7 +202,10 @@ class SenderDetailViewModel
             return statusResult.fold(
                 onSuccess = { verification ->
                     senderRegistry.updateVerificationStatus(sender.id, verification.status)
-                    verification.toSuccessState(displayName)
+                    verification.toSuccessState(
+                        displayName = displayName,
+                        approvedAt = resolveApprovedAt(verification.status, authCode),
+                    )
                 },
                 onFailure = { e ->
                     errorReporter.recordAfternoteFailure(AfternoteFailureStage.SENDER_STATUS_LOAD, e)
@@ -123,13 +215,15 @@ class SenderDetailViewModel
         }
     }
 
-private fun DeliveryVerification.toSuccessState(displayName: String): SenderDetailUiState.Success =
+private fun DeliveryVerification.toSuccessState(
+    displayName: String,
+    approvedAt: String?,
+): SenderDetailUiState.Success =
     SenderDetailUiState.Success(
         displayName = displayName,
         verification = status.toUiState(),
         requestedAt = formatDate(createdAt),
-        // TODO(#215): DeliveryVerification 응답에 approvedAt 필드 추가 후 채움. 백엔드 미지원이라 null 유지.
-        approvedAt = null,
+        approvedAt = formatDate(approvedAt),
     )
 
 private fun DeliveryVerificationStatus.toUiState(): SenderVerificationState =

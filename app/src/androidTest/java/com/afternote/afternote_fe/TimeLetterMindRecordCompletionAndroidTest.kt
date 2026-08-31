@@ -50,6 +50,7 @@ import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDailyQuestion
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDay
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportEmotion
+import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeWeeklyReportRepository
@@ -363,11 +364,11 @@ class TimeLetterMindRecordCompletionAndroidTest {
                     pending?.await() ?: Result.success(emptyList())
                 }
             }
-        var activeViewModel by mutableStateOf(DailyQuestionListViewModel(emptyRepository))
+        var activeViewModel by mutableStateOf(DailyQuestionListViewModel(emptyRepository, MindRecordChangeTracker()))
 
         composeRule.setContent {
             AfternoteTheme {
-                DailyQuestionAnswerListScreen(viewModel = activeViewModel)
+                DailyQuestionAnswerListScreen(viewModel = activeViewModel, onItemClick = { _, _ -> })
             }
         }
 
@@ -391,7 +392,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
             FakeDailyQuestionRepository(today = completionToday()).apply {
                 onGetList = { _, _ -> listResults.removeFirst() }
             }
-        val retryViewModel = DailyQuestionListViewModel(retryRepository)
+        val retryViewModel = DailyQuestionListViewModel(retryRepository, MindRecordChangeTracker())
         composeRule.runOnIdle { activeViewModel = retryViewModel }
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
             retryViewModel.uiState.value is DailyQuestionListUiState.Error
@@ -418,8 +419,12 @@ class TimeLetterMindRecordCompletionAndroidTest {
 
     @Test
     fun dailyQuestionWrite_successRefreshesExistingListWithCreatedAnswer() {
-        val repository = FakeDailyQuestionRepository(today = completionToday())
-        val listViewModel = DailyQuestionListViewModel(repository)
+        // 프로덕션에서는 data 계층이 쓰기 성공에 notifyChanged() 를 부르고, 목록이 그 버전을
+        // 보고 재조회한다 (#736). fake 가 그 배선을 흉내 내지 않으면 «작성하고 돌아왔는데
+        // 목록이 그대로»(#520) 를 잡는 이 테스트가 조용히 침묵한다 (#966 리뷰).
+        val changeTracker = MindRecordChangeTracker()
+        val repository = FakeDailyQuestionRepository(today = completionToday(), changeTracker = changeTracker)
+        val listViewModel = DailyQuestionListViewModel(repository, changeTracker)
         var writeViewModel by mutableStateOf<DailyQuestionWriteViewModel?>(null)
         var submitSuccessCalls = 0
 
@@ -427,7 +432,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
             val activeWriteViewModel = writeViewModel
             AfternoteTheme {
                 if (activeWriteViewModel == null) {
-                    DailyQuestionAnswerListScreen(viewModel = listViewModel)
+                    DailyQuestionAnswerListScreen(viewModel = listViewModel, onItemClick = { _, _ -> })
                 } else {
                     DailyQuestionWriteScreen(
                         viewModel = activeWriteViewModel,
@@ -567,7 +572,8 @@ class TimeLetterMindRecordCompletionAndroidTest {
         assertEquals("<p>임시 본문</p>", loaded.content)
         assertEquals(TodayMood.SOSO, loaded.mood)
         assertEquals(draftDate, loaded.date)
-        assertEquals("https://afternote.test/draft.jpg", loaded.imageUrl)
+        // 프리필은 «대표 이미지» 를 상태로 들지 않는다 — 읽는 곳이 없고 계약에도 없다 (#1195).
+        // 본문 이미지는 content 의 img 태그로 이어진다.
         composeRule.onNodeWithText("이어 쓸 일기").assertIsDisplayed()
 
         composeRule.runOnIdle {
@@ -663,7 +669,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
                 profile = User("주간 사용자", "weekly@afternote.local", null, null),
                 receivers = emptyList(),
             )
-        val viewModel = WeeklyReportViewModel(repository, userRepository)
+        val viewModel = WeeklyReportViewModel(repository, userRepository, MindRecordChangeTracker())
 
         composeRule.setContent {
             AfternoteTheme {

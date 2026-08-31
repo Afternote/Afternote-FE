@@ -19,8 +19,11 @@ import com.afternote.core.model.user.ReceiverDetail
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserPushSetting
+import com.afternote.core.network.dto.DeletePushTokenRequestDto
+import com.afternote.core.network.dto.PushTokenDto
 import com.afternote.core.network.dto.ReceiverDetailDto
 import com.afternote.core.network.dto.ReceiverListDto
+import com.afternote.core.network.dto.RegisterPushTokenRequestDto
 import com.afternote.core.network.dto.SocialAccountLinkRequestDto
 import com.afternote.core.network.dto.UserConnectedAccountDto
 import com.afternote.core.network.dto.UserCreateReceiverDto
@@ -779,6 +782,10 @@ private class CompletionGatedWithdrawalUserApi(
             synchronized(this) { deleteGates.addLast(gate) }
         }
 
+    override suspend fun registerPushToken(request: RegisterPushTokenRequestDto): BaseResponse<PushTokenDto> = TODO("이 테스트 미사용")
+
+    override suspend fun deletePushToken(request: DeletePushTokenRequestDto): BaseResponse<Unit> = TODO("이 테스트 미사용")
+
     override suspend fun getMyProfile(): BaseResponse<UserDto> =
         BaseResponse(
             status = 200,
@@ -827,8 +834,6 @@ private class CompletionGatedWithdrawalUserApi(
 
     override suspend fun updateMyProfile(request: UserUpdateProfileRequestDto): BaseResponse<UserDto> =
         completionUnexpected("updateMyProfile")
-
-    override suspend fun logActivity(): BaseResponse<Unit> = completionUnexpected("logActivity")
 
     override suspend fun getMyPushSettings(): BaseResponse<UserPushSettingDto> = completionUnexpected("getMyPushSettings")
 

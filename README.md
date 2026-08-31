@@ -14,7 +14,9 @@ konsist/      아키텍처 규칙 테스트
 
 | 문서 | 내용 |
 |---|---|
+| [docs/security/actions-supply-chain.md](docs/security/actions-supply-chain.md) | Actions SHA 고정 · 허용 목록 정책 (조직 수준 감사) |
 | [docs/release/distribution.md](docs/release/distribution.md) | 비개발자 APK 배포 (Firebase App Distribution) |
+| [docs/play-release.md](docs/play-release.md) | Google Play 내부 테스트 트랙 배포 · versionCode 정책 |
 | [docs/testing/screenshot.md](docs/testing/screenshot.md) | Compose Preview 스크린샷 baseline (Docker) |
 | [docs/qa/status.md](docs/qa/status.md) | QA 현황 · 회차 기록 · 커버리지 |
 | [docs/qa/assumptions.md](docs/qa/assumptions.md) | 시안 · 명세에 없어 판단으로 정한 것 |
@@ -136,6 +138,7 @@ keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-sh
 - 기본·통합 브랜치는 `develop`, Firebase 일반 배포 기준 브랜치는 `main`이다. 일반 변경은 `develop`을 향하고, 릴리스 PR만 `develop`에서 `main`으로 올린다.
 - 작업 브랜치는 변경 성격을 나타내는 lowercase prefix와 `/`를 사용한다. 예: `feat/123`, `fix/123-login`, `docs/readme-refresh`. 언더스코어 사용 규칙은 없다.
 - 서로 의존하는 변경은 부모 작업 브랜치를 base로 둔 스택 PR을 사용할 수 있다. 부모가 머지되면 base를 `develop`로 이관하고 [머지 순서 가드](.github/workflows/merge-order-guard.yml)를 통과시킨다.
+- 스택 PR의 base 갱신은 `PUT /repos/{owner}/{repo}/pulls/{number}/update-branch`로 하지 못한다. 네이티브 스택 멤버는 base가 `develop`인 밑단까지 포함해 이 엔드포인트가 `403 Updating a stacked PR's branch via this endpoint is not supported`로 거절한다. base를 로컬에서 머지하고 평범하게 push하면 통하며, 이 경로는 기존 커밋 SHA를 유지해 리뷰어의 파일 조회 상태와 이미 받은 CI 결과를 살린다. `rebase` 뒤 강제 push는 SHA를 전부 갈아치우므로 둘 다 잃는다.
 - `develop`·`main`의 삭제와 강제 push는 금지된다. 머지 조건의 최종 정본은 GitHub의 [활성 ruleset](https://github.com/Afternote/Afternote-FE/rules)과 PR의 Required 상태다.
 
 ## 커밋
@@ -157,7 +160,7 @@ PR Validation은 rename의 이전·현재 경로를 포함한 전체 변경 파�
 
 Kover는 임의의 절대 커버리지 목표를 강제하지 않는다. 정확한 `develop` 기준선과 변경 모듈의 line·branch 비율을 비교해 후퇴를 먼저 warning으로 수집하며, 정책 파일의 mode를 별도 검토로 `enforce`로 바꿀 수 있다.
 
-[`Base Freshness`](.github/workflows/base-freshness.yml)는 현재 base가 PR head의 조상인지 GitHub API로 다시 확인하고, base가 전진하면 같은 head의 과거 green 상태를 실패로 갱신한다. publisher 실행을 직렬화하고 status 기록 뒤에도 live base/head를 재확인하지만 API 조회와 ref 갱신 자체는 원자적이지 않다. 따라서 병합 후 활성 ruleset에 정확한 `Base Freshness` context를 required로 등록하고 `Require branches to be up to date before merging`도 함께 활성화해야 이동 순간까지 GitHub가 원자적으로 막는다.
+`develop` 병합은 merge queue를 통과한다. 큐가 현재 base 위에 merge group을 만들어 required check를 다시 실행하므로, 낡은 base에서 green을 받은 PR이 그대로 들어갈 수 없다. merge group에는 pull request가 없어 변경 범위를 좁히지 못하므로 검증은 전량으로 돈다 — PR 단계에서 건너뛴 lane도 큐에서는 실행된다. base 최신성을 별도 status로 감시하고 `Require branches to be up to date before merging`으로 강제하던 방식은 큐가 대체했다.
 
 `CI Test Plan`의 `none`은 두 필수 Managed Device check를 에뮬레이터 없이 성공 처리한다. `selected`는 선언한 `path`, fully-qualified `Class#method`, `api30` 또는 `api34`만 실행하고 JUnit XML의 실제 성공 결과까지 확인한다. `full`은 테스트 하네스·Gradle·릴리스 경계 변경에서 전체 API 30 회귀와 API 34 접근성 smoke를 실행한다.
 
