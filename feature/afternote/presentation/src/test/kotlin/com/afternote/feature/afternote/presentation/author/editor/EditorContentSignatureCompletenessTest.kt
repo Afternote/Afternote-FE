@@ -166,7 +166,7 @@ class EditorContentSignatureCompletenessTest {
                 EditorFormState(
                     typeForm =
                         AfternoteTypeForm.Memorial(
-                            video = EditableMemorialVideo.fromSelection(picked),
+                            video = EditableMemorialVideo.empty().withSelection(picked.url),
                         ),
                 ),
                 state,
@@ -181,9 +181,10 @@ class EditorContentSignatureCompletenessTest {
                     typeForm =
                         AfternoteTypeForm.Memorial(
                             video =
-                                EditableMemorialVideo.fromSelection(
-                                    picked.copy(thumbnailUrl = "https://cdn.test/thumb.jpg"),
-                                ),
+                                EditableMemorialVideo
+                                    .empty()
+                                    .withSelection(picked.url)
+                                    .withSelectionThumbnail("https://cdn.test/thumb.jpg"),
                         ),
                 ),
                 state,

@@ -20,6 +20,18 @@ class EditableMemorialVideoTest {
             thumbnailUrl = "https://cdn.test/replacement-thumb.jpg",
         )
 
+    private fun selected(attachment: MemorialVideoAttachment): EditableMemorialVideo =
+        EditableMemorialVideo
+            .empty()
+            .withSelection(attachment.url)
+            .withSelectionThumbnail(attachment.thumbnailUrl)
+
+    private fun persistedAndPending(): EditableMemorialVideo =
+        EditableMemorialVideo
+            .fromPersisted(persisted)
+            .withSelection(pending.url)
+            .withSelectionThumbnail(pending.thumbnailUrl)
+
     @Test
     fun `네 가지 상태는 표시 영상과 저장 입력을 스스로 결정한다`() {
         data class Case(
@@ -48,14 +60,14 @@ class EditableMemorialVideoTest {
                 ),
                 Case(
                     name = "새 선택만",
-                    subject = EditableMemorialVideo.fromSelection(pending),
+                    subject = selected(pending),
                     displayed = pending,
                     canDiscardSelection = true,
                     mediaInput = MediaInput.Local(pending.url),
                 ),
                 Case(
                     name = "서버 원본과 새 선택 모두",
-                    subject = EditableMemorialVideo.restore(persisted = persisted, pending = pending),
+                    subject = persistedAndPending(),
                     displayed = pending,
                     canDiscardSelection = true,
                     mediaInput = MediaInput.Local(pending.url),
@@ -76,9 +88,7 @@ class EditableMemorialVideoTest {
     @Test
     fun `새 선택을 제거하면 보존한 서버 원본으로 돌아간다`() {
         val restored =
-            EditableMemorialVideo
-                .restore(persisted = persisted, pending = pending)
-                .withSelection(null)
+            persistedAndPending().withSelection(null)
 
         assertEquals(persisted, restored.displayed)
         assertFalse(restored.canDiscardSelection)
@@ -93,7 +103,8 @@ class EditableMemorialVideoTest {
         assertEquals(
             MediaInput.Local(remoteShapedSelection),
             EditableMemorialVideo
-                .fromSelection(MemorialVideoAttachment(url = remoteShapedSelection))
+                .empty()
+                .withSelection(remoteShapedSelection)
                 .toMediaInput(),
         )
         assertEquals(
@@ -107,9 +118,7 @@ class EditableMemorialVideoTest {
     @Test
     fun `새 영상을 고르면 이전 교체분 썸네일은 물려주지 않는다`() {
         val selected =
-            EditableMemorialVideo
-                .restore(persisted = persisted, pending = pending)
-                .withSelection("content://videos/another")
+            persistedAndPending().withSelection("content://videos/another")
 
         assertEquals(MemorialVideoAttachment(url = "content://videos/another"), selected.displayed)
         assertEquals(MediaInput.Local("content://videos/another"), selected.toMediaInput())
@@ -137,9 +146,7 @@ class EditableMemorialVideoTest {
     @Test
     fun `사용자 입력 조각은 서버 원본과 자동 파생 썸네일을 제외한다`() {
         val userEntered =
-            EditableMemorialVideo
-                .restore(persisted = persisted, pending = pending)
-                .userEnteredPart()
+            persistedAndPending().userEnteredPart()
 
         assertEquals(MemorialVideoAttachment(url = pending.url), userEntered.displayed)
         assertTrue(userEntered.canDiscardSelection)

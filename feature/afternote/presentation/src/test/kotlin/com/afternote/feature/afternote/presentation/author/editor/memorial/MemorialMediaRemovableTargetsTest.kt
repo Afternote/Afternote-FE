@@ -27,10 +27,9 @@ class MemorialMediaRemovableTargetsTest {
                     pickedPhotoUri = pickedPhotoUri,
                     photoUrl = photoUrl,
                     video =
-                        EditableMemorialVideo.restore(
-                            pending = MemorialVideoAttachment.ofOrNull(pendingVideoUrl),
-                            persisted = MemorialVideoAttachment.ofOrNull(persistedVideoUrl),
-                        ),
+                        EditableMemorialVideo
+                            .fromPersisted(MemorialVideoAttachment.ofOrNull(persistedVideoUrl))
+                            .withSelection(pendingVideoUrl),
                 ),
         )
 

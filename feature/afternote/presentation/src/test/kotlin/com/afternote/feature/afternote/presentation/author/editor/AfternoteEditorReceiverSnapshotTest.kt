@@ -41,50 +41,7 @@ class AfternoteEditorReceiverSnapshotTest {
     }
 
     @Test
-    fun `develop 단일 영상 스키마는 URI 출처에 맞는 편집 상태로 복원한다`() {
-        val remoteUrl = "https://cdn.test/farewell.mp4"
-        val remoteThumbnail = "https://cdn.test/farewell-thumb.jpg"
-        val remoteForm =
-            restoreMemorialSnapshot(
-                """
-                {
-                  "type":"MEMORIAL",
-                  "memorialVideoUrl":"$remoteUrl",
-                  "memorialThumbnailUrl":"$remoteThumbnail"
-                }
-                """.trimIndent(),
-            )
-
-        assertEquals(
-            MemorialVideoAttachment(url = remoteUrl, thumbnailUrl = remoteThumbnail),
-            remoteForm.displayedMemorialVideo,
-        )
-        assertEquals(MediaInput.Remote(remoteUrl), remoteForm.memorialVideo?.toMediaInput())
-        assertFalse(remoteForm.canDiscardMemorialVideoSelection)
-
-        val localUrl = "content://videos/draft"
-        val localThumbnail = "https://cdn.test/draft-thumb.jpg"
-        val localForm =
-            restoreMemorialSnapshot(
-                """
-                {
-                  "type":"MEMORIAL",
-                  "memorialVideoUrl":"$localUrl",
-                  "memorialThumbnailUrl":"$localThumbnail"
-                }
-                """.trimIndent(),
-            )
-
-        assertEquals(
-            MemorialVideoAttachment(url = localUrl, thumbnailUrl = localThumbnail),
-            localForm.displayedMemorialVideo,
-        )
-        assertEquals(MediaInput.Local(localUrl), localForm.memorialVideo?.toMediaInput())
-        assertTrue(localForm.canDiscardMemorialVideoSelection)
-    }
-
-    @Test
-    fun `picked 와 server 동시 스키마 복원 뒤 pending 제거는 persisted 로 돌아간다`() {
+    fun `v4 영상 편집 상태는 왕복 후 새 선택 제거 시 서버 원본으로 돌아간다`() {
         val persisted =
             MemorialVideoAttachment(
                 url = "https://cdn.test/farewell.mp4",
@@ -103,13 +60,15 @@ class AfternoteEditorReceiverSnapshotTest {
                         """
                         {
                           "type":"MEMORIAL",
-                          "pickedMemorialVideo":{
-                            "url":"${pending.url}",
-                            "thumbnailUrl":"${pending.thumbnailUrl}"
-                          },
-                          "serverMemorialVideo":{
-                            "url":"${persisted.url}",
-                            "thumbnailUrl":"${persisted.thumbnailUrl}"
+                          "memorialVideo":{
+                            "persisted":{
+                              "url":"${persisted.url}",
+                              "thumbnailUrl":"${persisted.thumbnailUrl}"
+                            },
+                            "pending":{
+                              "url":"${pending.url}",
+                              "thumbnailUrl":"${pending.thumbnailUrl}"
+                            }
                           }
                         }
                         """.trimIndent(),
@@ -121,6 +80,9 @@ class AfternoteEditorReceiverSnapshotTest {
         assertTrue(viewModel.currentForm().canDiscardMemorialVideoSelection)
 
         viewModel.setMemorialThumbnail("https://cdn.test/round-trip-thumb.jpg")
+        val roundTrippedRaw = requireNotNull(savedStateHandle.get<String>(SNAPSHOT_KEY))
+        assertTrue(roundTrippedRaw.contains("\"memorialVideo\""))
+
         val restoredViewModel = viewModel(savedStateHandle)
         val roundTripped = restoredViewModel.currentForm()
         assertEquals(
@@ -136,16 +98,6 @@ class AfternoteEditorReceiverSnapshotTest {
         assertEquals(MediaInput.Remote(persisted.url), restoredViewModel.currentForm().memorialVideo?.toMediaInput())
         assertFalse(restoredViewModel.currentForm().canDiscardMemorialVideoSelection)
     }
-
-    private fun restoreMemorialSnapshot(raw: String) =
-        viewModel(
-            SavedStateHandle(
-                mapOf(
-                    "initialType" to AfternoteType.MEMORIAL,
-                    SNAPSHOT_KEY to raw,
-                ),
-            ),
-        ).currentForm()
 
     private fun viewModel(savedStateHandle: SavedStateHandle): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
@@ -168,6 +120,6 @@ class AfternoteEditorReceiverSnapshotTest {
         ) { _, method, _ -> error("${T::class.java.simpleName}.${method.name} 호출은 이 테스트에서 예상하지 않았습니다") } as T
 
     private companion object {
-        const val SNAPSHOT_KEY = "editor_form_snapshot_v3"
+        const val SNAPSHOT_KEY = "editor_form_snapshot_v4"
     }
 }

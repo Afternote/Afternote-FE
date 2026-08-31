@@ -62,12 +62,6 @@ internal class EditableMemorialVideo private constructor(
         internal fun fromPersisted(persisted: MemorialVideoAttachment?): EditableMemorialVideo =
             EditableMemorialVideo(persisted = persisted)
 
-        internal fun fromSelection(pending: MemorialVideoAttachment?): EditableMemorialVideo = EditableMemorialVideo(pending = pending)
-
-        /** 이전 스냅샷의 두 축을 새 캡슐화 모델로 옮기는 복원 경계. */
-        internal fun restore(
-            persisted: MemorialVideoAttachment?,
-            pending: MemorialVideoAttachment?,
-        ): EditableMemorialVideo = EditableMemorialVideo(persisted = persisted, pending = pending)
+        private fun fromSelection(pending: MemorialVideoAttachment?): EditableMemorialVideo = EditableMemorialVideo(pending = pending)
     }
 }

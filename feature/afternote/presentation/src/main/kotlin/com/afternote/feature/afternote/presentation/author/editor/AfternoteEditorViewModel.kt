@@ -28,7 +28,6 @@ import com.afternote.feature.afternote.presentation.author.editor.state.Afternot
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
-import com.afternote.feature.afternote.presentation.author.editor.state.MemorialVideoAttachment
 import com.afternote.feature.afternote.presentation.author.editor.state.withMemorialPhoto
 import com.afternote.feature.afternote.presentation.author.editor.state.withMemorialPlaylistSongs
 import com.afternote.feature.afternote.presentation.author.editor.state.withMemorialThumbnail
@@ -58,7 +57,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
-private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v3"
+private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v4"
 private const val INITIALIZED_ACTION_TEMPLATE_TYPE_KEY = "initialized_action_template_type"
 
 private const val TAG = "AfternoteEditorViewModel"
@@ -88,12 +87,6 @@ private data class EditorFormSnapshot(
     val processingMethods: List<ProcessingMethodSnap> = emptyList(),
     val pickedMemorialPhotoUri: String? = null,
     val memorialVideo: EditableMemorialVideo? = null,
-    // PR #1565의 이전 로컬 스냅샷 호환 필드. 새 스냅샷은 위 객체 하나만 기록한다.
-    val pickedMemorialVideo: MemorialVideoAttachment? = null,
-    val serverMemorialVideo: MemorialVideoAttachment? = null,
-    // v3 구형 스냅샷 호환 필드. 새 코드는 위 두 필드를 우선하지만 같은 key를 쓰던 develop 값도 복원한다.
-    val memorialVideoUrl: String? = null,
-    val memorialThumbnailUrl: String? = null,
     val memorialPhotoUrl: String? = null,
     val memorialPlaylistSongs: List<Song> = emptyList(),
 ) {
@@ -125,7 +118,7 @@ private data class EditorFormSnapshot(
             AfternoteType.MEMORIAL -> {
                 AfternoteTypeForm.Memorial(
                     pickedPhotoUri = pickedMemorialPhotoUri,
-                    video = restoredMemorialVideo(),
+                    video = memorialVideo ?: EditableMemorialVideo.empty(),
                     photoUrl = memorialPhotoUrl,
                     playlistSongs = memorialPlaylistSongs,
                 )
@@ -137,26 +130,9 @@ private data class EditorFormSnapshot(
         }
     }
 
-    private fun restoredMemorialVideo(): EditableMemorialVideo {
-        memorialVideo?.let { return it }
-        if (pickedMemorialVideo != null || serverMemorialVideo != null) {
-            return EditableMemorialVideo.restore(
-                persisted = serverMemorialVideo,
-                pending = pickedMemorialVideo,
-            )
-        }
-        val legacy = MemorialVideoAttachment.ofOrNull(memorialVideoUrl, memorialThumbnailUrl)
-        return if (legacy?.url?.isLocalContentUri() == true) {
-            EditableMemorialVideo.fromSelection(legacy)
-        } else {
-            EditableMemorialVideo.fromPersisted(legacy)
-        }
-    }
-
     companion object {
-        fun from(form: EditorFormState): EditorFormSnapshot {
-            val video = form.memorialVideo
-            return EditorFormSnapshot(
+        fun from(form: EditorFormState): EditorFormSnapshot =
+            EditorFormSnapshot(
                 type = form.selectedType,
                 selectedService = form.selectedService.orEmpty(),
                 receivers =
@@ -165,13 +141,10 @@ private data class EditorFormSnapshot(
                     },
                 processingMethods = form.processingMethods.map { ProcessingMethodSnap(it.localId, it.text) },
                 pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
-                memorialVideo = video,
-                memorialVideoUrl = video?.displayed?.url,
-                memorialThumbnailUrl = video?.displayed?.thumbnailUrl,
+                memorialVideo = form.memorialVideo,
                 memorialPhotoUrl = form.memorialPhotoUrl,
                 memorialPlaylistSongs = form.memorialPlaylistSongs,
             )
-        }
     }
 }
 

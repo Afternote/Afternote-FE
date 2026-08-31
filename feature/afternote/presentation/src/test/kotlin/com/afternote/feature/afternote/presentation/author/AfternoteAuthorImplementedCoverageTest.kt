@@ -169,13 +169,10 @@ class AfternoteAuthorImplementedCoverageTest {
                 memorialMedia =
                     SaveAfternoteMemorialMedia(
                         memorialVideo =
-                            EditableMemorialVideo.fromSelection(
-                                pending =
-                                    MemorialVideoAttachment(
-                                        url = "content://videos/farewell",
-                                        thumbnailUrl = "https://cdn.test/thumbnail.jpg",
-                                    ),
-                            ),
+                            EditableMemorialVideo
+                                .empty()
+                                .withSelection("content://videos/farewell")
+                                .withSelectionThumbnail("https://cdn.test/thumbnail.jpg"),
                         memorialPhotoUrl = "https://cdn.test/old-photo.jpg",
                         pickedMemorialPhotoUri = "content://photos/new-portrait",
                     ),
