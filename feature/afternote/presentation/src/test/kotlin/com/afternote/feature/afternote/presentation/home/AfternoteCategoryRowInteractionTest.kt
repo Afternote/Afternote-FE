@@ -3,6 +3,8 @@ package com.afternote.feature.afternote.presentation.home
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -49,5 +51,24 @@ class AfternoteCategoryRowInteractionTest {
         composeRule.onNodeWithText(socialNetwork).performClick()
 
         composeRule.runOnIdle { assertEquals(AfternoteType.SOCIAL_NETWORK, selectedTab) }
+    }
+
+    @Test
+    fun `카테고리 탭 행은 선택 그룹 semantics를 노출한다`() {
+        composeRule.setContent {
+            AfternoteTheme {
+                AfternoteTypeFilterRow(
+                    onTabSelected = {},
+                    modifier = Modifier.width(100.dp),
+                )
+            }
+        }
+
+        composeRule
+            .onNode(
+                SemanticsMatcher.keyIsDefined(
+                    SemanticsProperties.SelectableGroup,
+                ),
+            ).assertExists()
     }
 }
