@@ -406,6 +406,14 @@ fun rememberHomeTabActions(
                 appState.navController.navigate(Route.MemorySpace)
             }
 
+            override fun onMemoriesRecordDetailClick(recordId: Long) {
+                // 카드가 싣는 것은 가장 최근 **데일리질문 답변** 한 건이라 `isDiary = false` 다.
+                // 카드가 나중에 일기까지 포함하게 되면 종류를 함께 넘겨야 한다 (#793).
+                appState.navController.navigate(
+                    MindRecordRoute.RecordDetailRoute(recordId = recordId, isDiary = false),
+                )
+            }
+
             override fun onSettingClick() {
                 appState.navController.navigate(Route.Setting)
             }
