@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Home tab -->
-    <string name="mindrecord_home_tab_memories_section_title">MEMORIES</string>
+    <!-- 정본 세 홈 프레임(4327:99020·99103·99186)이 모두 이 라벨이다 (#700). -->
+    <string name="mindrecord_home_tab_memories_section_title">TIME LETTERS MEMORIES</string>
     <string name="mindrecord_home_tab_memories_section_click_label">기억 공간으로 이동</string>
     <string name="mindrecord_total_label">TOTAL</string>
     <string name="mindrecord_record_category_accessibility">%1$s 카테고리, 총 %2$s개</string>

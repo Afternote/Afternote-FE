@@ -1,15 +1,13 @@
 package com.afternote.afternote_fe
 
-import android.app.ActivityOptions
 import android.content.Intent
-import android.os.Build
-import android.os.Bundle
 import android.os.SystemClock
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -22,6 +20,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
 import androidx.test.runner.lifecycle.Stage
 import com.afternote.afternote_fe.notification.NotificationEntrySource
+import com.afternote.afternote_fe.test.backgroundActivityStartOptions
 import com.afternote.core.common.notification.NotificationPendingIntentFactory
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.testing.FakeAuthRepository
@@ -168,7 +167,9 @@ class NotificationNavigationAndroidTest {
 
     private fun openTimeLetterTab() {
         val timeLetterLabel = context.getString(CoreUiR.string.core_ui_nav_item_timeletter)
-        composeRule.onNodeWithText(timeLetterLabel).performClick()
+        // 하단 탭만 고른다 — 홈 섹션 헤더에도 «타임레터» 가 있어 텍스트만으로는 두 개다
+        // (#700 이 시안 확정 문구로 그 섹션을 추가했다). 탭은 눌리고 헤더는 안 눌린다.
+        composeRule.onNode(hasText(timeLetterLabel) and hasClickAction()).performClick()
         composeRule.onNode(selectedBottomBarMatcher(CoreUiR.string.core_ui_nav_item_timeletter)).assertIsSelected()
     }
 
@@ -186,23 +187,6 @@ class NotificationNavigationAndroidTest {
         assertNotNull(pendingIntent)
         pendingIntent?.send(context, 0, null, null, null, null, backgroundActivityStartOptions())
     }
-
-    /**
-     * 실제 알림 탭은 시스템(SystemUI)이 content [android.app.PendingIntent]를 보내므로 background
-     * activity start 가 허용된다. 이 테스트는 앱 프로세스가 스스로 보내기 때문에 Android 14의 BAL
-     * hardening 에 막힌다 — 앱이 백그라운드일 때만(`Background activity launch blocked`). 보내는 쪽
-     * 권한을 시스템과 같게 명시해 프로덕션 진입과 같은 조건으로 맞춘다.
-     */
-    private fun backgroundActivityStartOptions(): Bundle? =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            ActivityOptions
-                .makeBasic()
-                .setPendingIntentBackgroundActivityStartMode(
-                    ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED,
-                ).toBundle()
-        } else {
-            null
-        }
 
     private fun awaitNotificationIntent(
         source: NotificationEntrySource,

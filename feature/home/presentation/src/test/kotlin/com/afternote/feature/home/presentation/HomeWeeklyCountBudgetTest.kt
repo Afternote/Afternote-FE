@@ -7,13 +7,9 @@ import com.afternote.feature.home.presentation.usecase.GetHomeSummaryUseCase
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
-import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
-import com.afternote.feature.mindrecord.domain.model.DiaryList
-import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
-import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import com.afternote.feature.mindrecord.domain.usecase.GetWeeklyRecordCountUseCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -63,7 +59,6 @@ class HomeWeeklyCountBudgetTest {
     private fun useCase(weeklyDelayMillis: Long): GetHomeSummaryUseCase =
         GetHomeSummaryUseCase(
             userRepository = StubUserRepository,
-            diaryRepository = StubDiaryRepository,
             dailyQuestionRepository = StubDailyQuestionRepository,
             getWeeklyRecordCount = GetWeeklyRecordCountUseCase(SlowWeeklyReportRepository(weeklyDelayMillis)),
         )
@@ -100,22 +95,6 @@ private val StubUserRepository: UserRepository =
             else -> error("Unexpected call: ${method.name}")
         }
     } as UserRepository
-
-private object StubDiaryRepository : DiaryRepository {
-    override suspend fun getList(
-        yearMonth: String,
-        draftOnly: Boolean?,
-    ): Result<DiaryList> = Result.success(DiaryList(diaries = emptyList(), monthDiaryCount = 0, weeklyDominantMood = null))
-
-    override suspend fun create(payload: DiaryCreatePayload): Result<Unit> = error("호출되면 안 됨")
-
-    override suspend fun update(
-        id: Long,
-        payload: DiaryUpdatePayload,
-    ): Result<Unit> = error("호출되면 안 됨")
-
-    override suspend fun delete(id: Long): Result<Unit> = error("호출되면 안 됨")
-}
 
 private object StubDailyQuestionRepository : DailyQuestionRepository {
     override suspend fun getList(

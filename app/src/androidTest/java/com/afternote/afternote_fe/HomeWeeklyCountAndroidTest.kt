@@ -11,15 +11,18 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.HiltTestActivity
 import com.afternote.afternote_fe.test.appTestUserRepository
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.testing.FakeUserProfileCacheRepository
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.home.presentation.HomeTabScreen
 import com.afternote.feature.home.presentation.HomeTabUiState
 import com.afternote.feature.home.presentation.HomeTabViewModel
@@ -27,14 +30,15 @@ import com.afternote.feature.home.presentation.usecase.GetHomeSummaryUseCase
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
-import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
 import com.afternote.feature.mindrecord.domain.usecase.GetWeeklyRecordCountUseCase
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import com.afternote.feature.home.presentation.R as HomeR
 
 /**
  * 실제 홈 경로가 주간 기록 수를 그리드까지 **전달하는지** (#562).
@@ -106,6 +110,35 @@ class HomeWeeklyCountAndroidTest {
      * 상태가 Success 가 될 때까지 기다린다. 화면 단언보다 먼저 두는 이유는, 조회가 끝나기 전에
      * 스크롤하면 주간 카드가 아직 목록에 없어 스크롤 자체가 실패하기 때문이다.
      */
+    @Test
+    fun homeScreen_timeLetterCtaClickRoutesToTimeLetter() {
+        // 액션을 직접 호출하는 테스트는 화면 CTA 가 다른 액션에 연결돼도 통과한다.
+        // 실제로 스크롤·클릭해서 목적지까지 본다 (#700 리뷰).
+        val viewModel = homeViewModel(dailyQuestionAmount = 1, diaryAmount = 1)
+        var routedToTimeLetter = false
+
+        composeRule.setContent {
+            AfternoteTheme {
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                HomeTabScreen(
+                    uiState = uiState,
+                    actions = RecordingHomeTabActions { routedToTimeLetter = true },
+                    todayDateText = "2026.04.10",
+                )
+            }
+        }
+
+        awaitSuccess(viewModel)
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val cta = context.getString(HomeR.string.home_tab_timeletter_next_step_cta)
+        composeRule.onNode(hasScrollToNodeAction()).performScrollToNode(hasText(cta))
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText(cta).performClick()
+        composeRule.waitForIdle()
+
+        assertTrue("타임레터 CTA 가 타임레터 액션으로 연결돼야 한다", routedToTimeLetter)
+    }
+
     private fun awaitSuccess(viewModel: HomeTabViewModel) {
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
             viewModel.uiState.value is HomeTabUiState.Success
@@ -133,7 +166,6 @@ class HomeWeeklyCountAndroidTest {
             getHomeSummary =
                 GetHomeSummaryUseCase(
                     userRepository = appTestUserRepository(),
-                    diaryRepository = FakeDiaryRepository(),
                     dailyQuestionRepository = FakeDailyQuestionRepository(),
                     getWeeklyRecordCount =
                         GetWeeklyRecordCountUseCase(
@@ -179,4 +211,27 @@ private class FakeWeeklyReportRepository(
             ),
         )
     }
+}
+
+/** 타임레터 CTA 만 관찰하는 no-op 액션. 모듈의 Noop 이 private 이라 여기서 만든다. */
+private class RecordingHomeTabActions(
+    private val onTimeLetter: () -> Unit,
+) : HomeTabActions {
+    override fun onRecipientChipClick() = Unit
+
+    override fun onAnswerClick() = Unit
+
+    override fun onNextStepClick() = Unit
+
+    override fun onTimeLetterNextStepClick() = onTimeLetter()
+
+    override fun onWeeklyImageClick() = Unit
+
+    override fun onWeeklyCountClick() = Unit
+
+    override fun onMemoriesSectionClick() = Unit
+
+    override fun onSettingClick() = Unit
+
+    override fun onRetryLoad() = Unit
 }

@@ -28,19 +28,14 @@ class GetHomeSummaryUseCase
     @Inject
     constructor(
         private val userRepository: UserRepository,
-        private val diaryRepository: DiaryRepository,
         private val dailyQuestionRepository: DailyQuestionRepository,
         private val getWeeklyRecordCount: GetWeeklyRecordCountUseCase,
     ) {
         suspend operator fun invoke(): Result<HomeSummary> =
             runCatchingCancellable {
                 coroutineScope {
-                    val thisMonth = YearMonth.now().toString() // yyyy-MM
                     val profileDeferred = async { userRepository.getMyProfile() }
                     val receiversDeferred = async { userRepository.getReceivers() }
-                    // 백엔드가 `yearMonth` 를 필수 쿼리로 요구하므로 이번 달로 호출.
-                    // 결과적으로 카운트는 "이번 달 작성된 일기 수" 의미가 됨.
-                    val diaryDeferred = async { diaryRepository.getList(yearMonth = thisMonth) }
                     val todayQuestionDeferred = async { dailyQuestionRepository.getToday() }
                     // 예산을 **async 안에서** 건다. 밖에서 걸면 `await()` 만 끊기고 이 async 는
                     // 여전히 coroutineScope 의 자식이라, scope 가 그 자식을 끝까지 기다린다 —
@@ -50,7 +45,6 @@ class GetHomeSummaryUseCase
 
                     val profile = profileDeferred.await()
                     val receivers = receiversDeferred.await()
-                    val diaryCount = diaryDeferred.await().getOrNull()?.monthDiaryCount ?: 0
                     val todayQuestionContent = todayQuestionDeferred.await().getOrNull()?.content
                     // 실패를 0 으로 접지 않는다 — «기록이 없음» 과 «못 불러옴» 은 다르다 (#562).
                     //
@@ -66,7 +60,6 @@ class GetHomeSummaryUseCase
                     HomeSummary(
                         userName = profile.name,
                         isRecipientDesignated = receivers.isNotEmpty(),
-                        diaryCategoryCount = diaryCount,
                         todayQuestionContent = todayQuestionContent,
                         weeklyRecordCount = weeklyRecordCount,
                     )
