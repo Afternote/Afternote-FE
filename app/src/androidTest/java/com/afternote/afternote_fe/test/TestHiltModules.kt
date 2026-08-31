@@ -131,6 +131,10 @@ object TestMindRecordRepositoryModule {
  * `FileMetadataRepository` 는 `ContentResolver` 만 쓰는 로컬 구현이라 그대로 둔다 — 네트워크가
  * 아닌 것까지 갈아끼우면 계측이 프로덕션과 달라지는 자리만 늘어난다.
  *
+ * 두 fake 는 일부러 `strict()` 를 쓰지 않는다. 앱 전체 계측에서 관심 밖 탭이 합성돼도 무인자
+ * 기본값의 빈 목록 성공으로 닫기 위해서다. 기본 생성자 정책이 strict 로 바뀌면 이 바인딩도
+ * 함께 재검토해야 한다.
+ *
  * api service 두 개를 다시 제공하지 않는 이유는 [TimeLetterModule] 밖에 소비자가 없어서다.
  */
 @Module
