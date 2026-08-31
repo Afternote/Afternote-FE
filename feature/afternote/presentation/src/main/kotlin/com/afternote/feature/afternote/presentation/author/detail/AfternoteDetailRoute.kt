@@ -1,7 +1,5 @@
-package com.afternote.feature.afternote.presentation.author.navigation
+package com.afternote.feature.afternote.presentation.author.detail
 
-import android.content.ActivityNotFoundException
-import android.content.Intent
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -33,97 +31,20 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.common.media.launchMemorialVideo
 import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailDeleteResult
-import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailUiState
-import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel
-import com.afternote.feature.afternote.presentation.author.detail.DetailContentUiModel
-import com.afternote.feature.afternote.presentation.author.detail.GalleryDetailScreen
-import com.afternote.feature.afternote.presentation.author.detail.MemorialDetailScreen
 import com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailScreen
+import com.afternote.feature.afternote.presentation.shared.detail.DesignPendingDetailContent
+import com.afternote.feature.afternote.presentation.shared.detail.DetailLoadErrorContent
 import kotlinx.coroutines.launch
-
-@Composable
-fun DesignPendingDetailContent(onBackClick: () -> Unit) {
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        containerColor = Color.Transparent,
-        topBar = {
-            DetailTopBar(title = "", onBackClick = onBackClick)
-        },
-    ) { paddingValues ->
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(text = stringResource(R.string.design_pending))
-        }
-    }
-}
-
-/**
- * 상세 데이터 로드 실패 화면.
- *
- * [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailUiState.Error] 계약대로
- * [messageRes] 를 [stringResource] 로 변환해 표시한다 (없으면 [R.string.afternote_detail_load_error] 폴백).
- * 예외 원문은 받지 않는다 — 서버 5xx 본문·역직렬화 예외 메시지에 내부 SQL·응답 원문 발췌가 섞여 오기 때문.
- *
- * 표시 방식 통일(#446) 결론이 나오면 이 컴포저블의 본문 표현만 교체한다 — Route 의 Error 분기 배선은 유지.
- * [DesignPendingDetailContent] 는 ESTATE 등 아직 구현되지 않은 상세 타입의 폴백으로만 유지한다.
- *
- * @param messageRes 앱에 박힌 문자열 리소스 ID(`R.string.*`). `@StringRes` 는 이 Int 가 임의 정수가 아니라
- *   string 리소스 id 임을 Lint 에 알리는 표식이며, [stringResource] 로 실제 텍스트로 변환한다.
- * @param onRetryClick 재조회 진입점. `null` 이면 재시도 버튼을 그리지 않는다 — 잘못된 항목 ID 처럼
- *   같은 요청을 다시 보내도 결과가 달라지지 않는 실패에 쓴다.
- */
-@Composable
-fun DetailLoadErrorContent(
-    @StringRes messageRes: Int?,
-    onBackClick: () -> Unit,
-    onRetryClick: (() -> Unit)? = null,
-) {
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        containerColor = Color.Transparent,
-        topBar = {
-            DetailTopBar(title = "", onBackClick = onBackClick)
-        },
-    ) { paddingValues ->
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-            contentAlignment = Alignment.Center,
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(text = stringResource(messageRes ?: R.string.afternote_detail_load_error))
-                if (onRetryClick != null) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    TextButton(onClick = onRetryClick) {
-                        Text(
-                            text = stringResource(R.string.afternote_detail_retry),
-                            style = AfternoteDesign.typography.captionLargeB,
-                            color = AfternoteDesign.colors.gray9,
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
 
 /**
  * 삭제 진행([com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailUiState.Success.isDeleting])
@@ -255,6 +176,7 @@ internal fun AfternoteDetailNavigation(
             DetailLoadErrorContent(
                 messageRes = state.messageRes,
                 onBackClick = onNavigateBack,
+                onRetryClick = viewModel::retry,
             )
         }
 
@@ -277,7 +199,7 @@ private fun AfternoteDetailSuccessContent(
     snackbarHostState: SnackbarHostState,
     onBackClick: () -> Unit,
     onNavigateToEditor: (itemId: Long, type: AfternoteType) -> Unit,
-    onDeleteConfirm: (itemId: Long) -> Unit,
+    onDeleteConfirm: () -> Unit,
     onVideoClick: (String) -> Unit,
 ) {
     Box {
@@ -290,7 +212,7 @@ private fun AfternoteDetailSuccessContent(
                     onEditClick = {
                         onNavigateToEditor(state.detailId, model.type)
                     },
-                    onDeleteConfirm = { onDeleteConfirm(state.detailId) },
+                    onDeleteConfirm = onDeleteConfirm,
                 )
             }
 
@@ -302,7 +224,7 @@ private fun AfternoteDetailSuccessContent(
                     onEditClick = {
                         onNavigateToEditor(state.detailId, model.type)
                     },
-                    onDeleteConfirm = { onDeleteConfirm(state.detailId) },
+                    onDeleteConfirm = onDeleteConfirm,
                 )
             }
 
@@ -314,7 +236,7 @@ private fun AfternoteDetailSuccessContent(
                     onEditClick = {
                         onNavigateToEditor(state.detailId, model.type)
                     },
-                    onDeleteConfirm = { onDeleteConfirm(state.detailId) },
+                    onDeleteConfirm = onDeleteConfirm,
                 )
             }
 
@@ -327,7 +249,7 @@ private fun AfternoteDetailSuccessContent(
                     onEditClick = {
                         onNavigateToEditor(state.detailId, model.type)
                     },
-                    onDeleteConfirm = { onDeleteConfirm(state.detailId) },
+                    onDeleteConfirm = onDeleteConfirm,
                     onVideoClick = onVideoClick,
                 )
             }
@@ -353,6 +275,14 @@ private fun rememberMemorialVideoClickHandler(snackbarHostState: SnackbarHostSta
             launchMemorialVideo(
                 videoUrl = videoUrl,
                 startActivity = context::startActivity,
+                // 원인이 다르면 문구도 달라야 한다 — 둘을 한 문장으로 덮으면 스킴이 막힌
+                // 상황에 «재생할 앱이 없습니다» 라는 거짓 안내가 나간다.
+                onRejected = {
+                    val message = resources.getString(R.string.feature_afternote_memorial_video_invalid_url)
+                    scope.launch {
+                        snackbarHostState.showSnackbar(message = message)
+                    }
+                },
                 onUnavailable = {
                     val message = resources.getString(R.string.feature_afternote_memorial_video_no_app)
                     scope.launch {
@@ -361,50 +291,5 @@ private fun rememberMemorialVideoClickHandler(snackbarHostState: SnackbarHostSta
                 },
             )
         }
-    }
-}
-
-/**
- * 서버가 준 추모 영상 URL을 외부 재생 앱으로 연다.
- *
- * Android 11+ 패키지 가시성에서는 외부 앱 사전 조회가 실제 처리 가능한 앱이 있어도 실패할 수 있다.
- * 따라서 http/https URL만 선별한 뒤 실행을 직접 시도하고, OS가 명시적으로 거부한 경우에만
- * [onUnavailable] 로 폴백한다.
- */
-internal fun launchMemorialVideo(
-    videoUrl: String,
-    startActivity: (Intent) -> Unit,
-    onUnavailable: () -> Unit,
-) {
-    val uri =
-        try {
-            videoUrl
-                .takeUnless { it.isBlank() || it.any(Char::isWhitespace) }
-                ?.toUri()
-                ?.takeIf {
-                    val scheme = it.scheme
-                    (
-                        scheme.equals("http", ignoreCase = true) ||
-                            scheme.equals("https", ignoreCase = true)
-                    ) &&
-                        !it.host.isNullOrBlank()
-                }
-        } catch (_: IllegalArgumentException) {
-            null
-        }
-
-    if (uri == null) {
-        onUnavailable()
-        return
-    }
-
-    try {
-        startActivity(Intent(Intent.ACTION_VIEW, uri))
-    } catch (_: ActivityNotFoundException) {
-        onUnavailable()
-    } catch (_: SecurityException) {
-        onUnavailable()
-    } catch (_: IllegalArgumentException) {
-        onUnavailable()
     }
 }
