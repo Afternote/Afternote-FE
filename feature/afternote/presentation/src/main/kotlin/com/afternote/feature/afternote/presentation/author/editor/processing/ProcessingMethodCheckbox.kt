@@ -89,7 +89,7 @@ fun ProcessingMethodCheckbox(
 
         Box {
             Image(
-                painter = painterResource(R.drawable.feature_afternote_ic_more_horizontal_1),
+                painter = painterResource(R.drawable.afternote_ic_more_horizontal_1),
                 contentDescription = stringResource(R.string.afternote_editor_content_description_more),
                 modifier =
                     Modifier

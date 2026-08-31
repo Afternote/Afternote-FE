@@ -134,7 +134,7 @@ private fun AfternoteEditorReceiverItem(
         // 더보기 아이콘 + 드롭다운 메뉴
         Box {
             Image(
-                painter = painterResource(R.drawable.feature_afternote_ic_more_horizontal_1),
+                painter = painterResource(R.drawable.afternote_ic_more_horizontal_1),
                 contentDescription = stringResource(R.string.afternote_editor_content_description_more),
                 modifier =
                     Modifier

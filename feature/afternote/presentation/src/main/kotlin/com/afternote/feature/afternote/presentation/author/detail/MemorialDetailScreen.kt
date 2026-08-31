@@ -113,15 +113,15 @@ fun MemorialDetailScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             DetailTopBar(
-                title = stringResource(R.string.feature_afternote_detail_title),
+                title = stringResource(R.string.afternote_detail_title),
                 onBackClick = onBackClick,
                 actions = {
                     if (isEditable) {
                         Box {
                             IconButton(onClick = state::toggleDropdownMenu) {
                                 Icon(
-                                    painter = painterResource(R.drawable.feature_afternote_ic_detail_edit),
-                                    contentDescription = stringResource(R.string.feature_afternote_detail_edit),
+                                    painter = painterResource(R.drawable.afternote_ic_detail_edit),
+                                    contentDescription = stringResource(R.string.afternote_detail_edit),
                                     modifier = Modifier.size(16.dp),
                                 )
                             }
@@ -187,9 +187,9 @@ private fun TitleSection(
     // "…에 대한 님의 기록" 렌더를 막는다.
     val titleSuffix =
         if (userName.isBlank()) {
-            stringResource(R.string.feature_afternote_memorial_detail_title_suffix_no_name)
+            stringResource(R.string.afternote_memorial_detail_title_suffix_no_name)
         } else {
-            stringResource(R.string.feature_afternote_memorial_detail_title_suffix, userName)
+            stringResource(R.string.afternote_memorial_detail_title_suffix, userName)
         }
     Text(
         text =
@@ -238,7 +238,7 @@ private fun SharingNotice() {
                     ),
             )
             Text(
-                text = stringResource(R.string.feature_afternote_memorial_detail_sharing_notice),
+                text = stringResource(R.string.afternote_memorial_detail_sharing_notice),
                 style =
                     AfternoteDesign.typography.bodySmallR.copy(
                         color = AfternoteDesign.colors.gray6,
@@ -358,8 +358,8 @@ private fun VideoThumbnail(thumbnailUrl: String?) {
 
         // 재생 아이콘
         Image(
-            painter = painterResource(R.drawable.feature_afternote_ic_playback),
-            contentDescription = stringResource(R.string.content_description_video_play),
+            painter = painterResource(R.drawable.afternote_ic_playback),
+            contentDescription = stringResource(R.string.afternote_content_description_video_play),
             modifier =
                 Modifier
                     .align(Alignment.Center)

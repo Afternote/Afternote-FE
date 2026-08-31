@@ -46,7 +46,7 @@ private const val ACTION_MENU_SHADOW_ALPHA = 0.15f
  * Material3 [androidx.compose.material3.DropdownMenu] 는 그림자·항목 최소 높이(48dp)·컨테이너
  * 색이 가이드라인 값으로 강제돼 있어 시안(흰 배경·8dp 라운드)을 맞추려면 우회가 지저분해진다.
  * 그래서 `androidx.compose.ui.window.Popup` 위에 직접 쌓는다. 대신 등장 페이드·스케일
- * 애니메이션은 없다 — 필요하면 [AfternoteActionMenuCard] 를 `AnimatedVisibility` 로 감싼다.
+ * 애니메이션은 없다.
  *
  * **dismiss 계약**: 항목을 누르면 [onDismissRequest] 를 **먼저** 부르고 그다음
  * [ActionMenuItem.onClick] 을 부른다. 항목 콜백이 다이얼로그를 띄우는 흔한 경우에
@@ -87,16 +87,9 @@ fun AfternoteActionMenu(
     }
 }
 
-/**
- * 팝업 껍데기를 뺀 카드 본체 — 그림자·둥글기·배경·항목 배치.
- *
- * [AfternoteActionMenu] 의 기본 위치 정책이 맞지 않아 호출부가 자기 `Popup`(예: 앵커 기준
- * `alignment`) 을 직접 쓰는 경우, 시각 계약만 여기서 가져다 쓴다.
- * 이 경로에는 [AfternoteActionMenu] 의 자동 dismiss 가 걸리지 않는다 — 팝업을 소유한
- * 호출부가 닫는다.
- */
+/** 팝업 내부 카드의 그림자·둥글기·배경·항목 배치를 구현한다. */
 @Composable
-fun AfternoteActionMenuCard(
+private fun AfternoteActionMenuCard(
     items: List<ActionMenuItem>,
     modifier: Modifier = Modifier,
     width: Dp = Dp.Unspecified,

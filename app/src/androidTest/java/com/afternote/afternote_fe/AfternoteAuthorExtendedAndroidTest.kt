@@ -115,7 +115,7 @@ class AfternoteAuthorExtendedAndroidTest {
         listFlows[null] = flowOf(PagingData.empty())
         composeRule.onNodeWithText("전체").performClick()
         composeRule
-            .onNodeWithText(copy(AfternoteR.string.feature_afternote_empty_list_body))
+            .onNodeWithText(copy(AfternoteR.string.afternote_empty_list_body))
             .assertIsDisplayed()
         assertEquals(
             listOf(null, AfternoteType.SOCIAL_NETWORK, null),

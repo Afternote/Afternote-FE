@@ -37,10 +37,10 @@ class ReceiverAuthRepositoryImpl
     constructor(
         private val api: ReceiverAuthApiService,
     ) : ReceiverAuthRepository {
-        override suspend fun verifyMasterKey(authCode: String): Result<ReceiverIdentity> =
+        override suspend fun verifyMasterKey(masterKey: String): Result<ReceiverIdentity> =
             runCatchingCancellable {
                 try {
-                    api.verifyMasterKey(ReceiverAuthVerifyRequestDto(authCode)).requireData().toDomain()
+                    api.verifyMasterKey(ReceiverAuthVerifyRequestDto(masterKey)).requireData().toDomain()
                 } catch (e: ApiException) {
                     throw e.toReceiverServerFailure()
                 }

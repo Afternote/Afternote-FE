@@ -84,7 +84,7 @@ internal fun EditorServiceSelectionField(
                 overflow = TextOverflow.Ellipsis,
             )
             Icon(
-                painter = painterResource(R.drawable.feature_afternote_ic_dropdown_vector),
+                painter = painterResource(R.drawable.afternote_ic_dropdown_vector),
                 contentDescription = null,
                 tint = AfternoteDesign.colors.gray8,
             )

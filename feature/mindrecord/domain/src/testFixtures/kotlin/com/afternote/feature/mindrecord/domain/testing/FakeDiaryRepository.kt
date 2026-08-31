@@ -5,6 +5,7 @@ import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DiaryList
 import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
+import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 
 /**
  * [DiaryRepository] fake 정본. 규약은 [FakeDailyQuestionRepository] 와 같다 —
@@ -19,6 +20,11 @@ class FakeDiaryRepository(
     var onCreate: (suspend (DiaryCreatePayload) -> Result<Unit>)? = null,
     var onUpdate: (suspend (Long, DiaryUpdatePayload) -> Result<Unit>)? = null,
     var onDelete: (suspend (Long) -> Result<Unit>)? = null,
+    /**
+     * 쓰기 성공을 알릴 변경 추적기 — 프로덕션에서는 data 계층이 이 자리에서 부른다.
+     * fake 가 흉내 내지 않으면 목록 재조회 가드(#736)가 갱신을 건너뛴다 (#966 리뷰).
+     */
+    private val changeTracker: MindRecordChangeTracker? = null,
 ) : DiaryRepository {
     val diaries: MutableList<Diary> = initialDiaries.toMutableList()
 
@@ -51,6 +57,7 @@ class FakeDiaryRepository(
     override suspend fun create(payload: DiaryCreatePayload): Result<Unit> {
         createdPayloads += payload
         onCreate?.let { return it(payload) }
+        changeTracker?.notifyChanged()
         return Result.success(Unit)
     }
 
@@ -73,6 +80,7 @@ class FakeDiaryRepository(
                 diary
             }
         }
+        changeTracker?.notifyChanged()
         return Result.success(Unit)
     }
 
@@ -80,6 +88,7 @@ class FakeDiaryRepository(
         deletedIds += id
         onDelete?.let { return it(id) }
         diaries.removeAll { it.diaryId == id }
+        changeTracker?.notifyChanged()
         return Result.success(Unit)
     }
 

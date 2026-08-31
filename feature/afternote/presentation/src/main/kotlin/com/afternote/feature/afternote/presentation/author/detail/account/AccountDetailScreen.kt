@@ -74,15 +74,15 @@ fun AccountDetailScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             DetailTopBar(
-                title = stringResource(R.string.feature_afternote_detail_title),
+                title = stringResource(R.string.afternote_detail_title),
                 onBackClick = onBackClick,
                 actions = {
                     if (isEditable) {
                         Box {
                             IconButton(onClick = state::toggleDropdownMenu) {
                                 Icon(
-                                    painter = painterResource(R.drawable.feature_afternote_ic_detail_edit),
-                                    contentDescription = stringResource(R.string.feature_afternote_detail_edit),
+                                    painter = painterResource(R.drawable.afternote_ic_detail_edit),
+                                    contentDescription = stringResource(R.string.afternote_detail_edit),
                                     modifier = Modifier.size(16.dp),
                                 )
                             }
@@ -159,13 +159,13 @@ private fun AccountSection(
 
     DetailSection(
         iconResId = com.afternote.core.ui.R.drawable.core_ui_user,
-        label = stringResource(R.string.feature_afternote_detail_section_account),
+        label = stringResource(R.string.afternote_detail_section_account),
         modifier = modifier,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             DetailInfoRow(
                 iconResId = com.afternote.core.ui.R.drawable.core_ui_user,
-                label = stringResource(R.string.feature_afternote_detail_label_id),
+                label = stringResource(R.string.afternote_detail_label_id),
                 value = accountId,
             )
             HorizontalDivider(
@@ -173,21 +173,21 @@ private fun AccountSection(
                 thickness = 1.dp,
             )
             DetailInfoRow(
-                iconResId = R.drawable.feature_afternote_ic_lock,
-                label = stringResource(R.string.feature_afternote_detail_label_password),
+                iconResId = R.drawable.afternote_ic_lock,
+                label = stringResource(R.string.afternote_detail_label_password),
                 value =
                     if (passwordVisible) {
                         password
                     } else {
-                        stringResource(R.string.feature_afternote_detail_password_mask)
+                        stringResource(R.string.afternote_detail_password_mask)
                     },
                 trailingContent = {
                     Text(
                         text =
                             if (passwordVisible) {
-                                stringResource(R.string.feature_afternote_detail_password_hide)
+                                stringResource(R.string.afternote_detail_password_hide)
                             } else {
-                                stringResource(R.string.feature_afternote_detail_password_show)
+                                stringResource(R.string.afternote_detail_password_show)
                             },
                         style = AfternoteDesign.typography.captionLargeR,
                         color = AfternoteDesign.colors.b1,
