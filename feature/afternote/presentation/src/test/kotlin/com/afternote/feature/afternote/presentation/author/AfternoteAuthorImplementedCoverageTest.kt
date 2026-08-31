@@ -26,6 +26,7 @@ import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteM
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
+import com.afternote.feature.afternote.presentation.author.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.author.editor.state.MemorialVideoAttachment
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -167,8 +168,14 @@ class AfternoteAuthorImplementedCoverageTest {
                 selectedReceiverIds = listOf(7L),
                 memorialMedia =
                     SaveAfternoteMemorialMedia(
-                        memorialVideoUrl = "content://videos/farewell",
-                        memorialThumbnailUrl = "https://cdn.test/thumbnail.jpg",
+                        memorialVideo =
+                            EditableMemorialVideo.fromSelection(
+                                pending =
+                                    MemorialVideoAttachment(
+                                        url = "content://videos/farewell",
+                                        thumbnailUrl = "https://cdn.test/thumbnail.jpg",
+                                    ),
+                            ),
                         memorialPhotoUrl = "https://cdn.test/old-photo.jpg",
                         pickedMemorialPhotoUri = "content://photos/new-portrait",
                     ),

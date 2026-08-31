@@ -5,6 +5,7 @@ import androidx.navigation.NavBackStackEntry
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
+import com.afternote.feature.afternote.presentation.author.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.author.navigation.model.SELECTED_RECEIVER_ID_KEY
 
 // 에디터 조립부가 쓰는 순수 헬퍼들이다. Route 파일에는 조립만 남긴다 (#1514).
@@ -58,7 +59,6 @@ internal fun buildOnRegisterClick(
     {
         // 폼 스냅샷은 한 번만 읽는다 — 필드마다 다시 읽으면 조립 도중 갱신이 끼어 서로 다른 시점의 값이 섞인다.
         val form = state.currentForm()
-        val displayedVideo = form.displayedMemorialVideo
         val payload =
             SaveAfternotePayloadBuilder.build(
                 form = form,
@@ -75,8 +75,7 @@ internal fun buildOnRegisterClick(
             selectedReceiverIds = form.afternoteEditReceivers.map { it.id },
             memorialMedia =
                 SaveAfternoteMemorialMedia(
-                    memorialVideoUrl = displayedVideo?.url,
-                    memorialThumbnailUrl = displayedVideo?.thumbnailUrl,
+                    memorialVideo = form.memorialVideo ?: EditableMemorialVideo.empty(),
                     memorialPhotoUrl = form.memorialPhotoUrl,
                     pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
                 ),

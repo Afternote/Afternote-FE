@@ -5,6 +5,7 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
+import com.afternote.feature.afternote.presentation.author.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.author.editor.state.MemorialVideoAttachment
 import org.junit.Assert.assertEquals
@@ -162,7 +163,12 @@ class EditorContentSignatureCompletenessTest {
         val pristine = editorContentSignature(EditorFormState(typeForm = AfternoteTypeForm.Memorial()), state)
         val withVideo =
             editorContentSignature(
-                EditorFormState(typeForm = AfternoteTypeForm.Memorial(pickedVideo = picked)),
+                EditorFormState(
+                    typeForm =
+                        AfternoteTypeForm.Memorial(
+                            video = EditableMemorialVideo.fromSelection(picked),
+                        ),
+                ),
                 state,
             )
 
@@ -174,7 +180,10 @@ class EditorContentSignatureCompletenessTest {
                 EditorFormState(
                     typeForm =
                         AfternoteTypeForm.Memorial(
-                            pickedVideo = picked.copy(thumbnailUrl = "https://cdn.test/thumb.jpg"),
+                            video =
+                                EditableMemorialVideo.fromSelection(
+                                    picked.copy(thumbnailUrl = "https://cdn.test/thumb.jpg"),
+                                ),
                         ),
                 ),
                 state,
@@ -199,10 +208,12 @@ class EditorContentSignatureCompletenessTest {
                 EditorFormState(
                     typeForm =
                         AfternoteTypeForm.Memorial(
-                            serverVideo =
-                                MemorialVideoAttachment(
-                                    url = "https://cdn.test/farewell.mp4",
-                                    thumbnailUrl = "https://cdn.test/farewell-thumb.jpg",
+                            video =
+                                EditableMemorialVideo.fromPersisted(
+                                    MemorialVideoAttachment(
+                                        url = "https://cdn.test/farewell.mp4",
+                                        thumbnailUrl = "https://cdn.test/farewell-thumb.jpg",
+                                    ),
                                 ),
                         ),
                 ),

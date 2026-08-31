@@ -5,10 +5,13 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
+import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
+import com.afternote.feature.afternote.presentation.author.editor.state.MemorialVideoAttachment
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,6 +39,113 @@ class AfternoteEditorReceiverSnapshotTest {
                 .id
         assertEquals(Long.MAX_VALUE, restoredId)
     }
+
+    @Test
+    fun `develop 단일 영상 스키마는 URI 출처에 맞는 편집 상태로 복원한다`() {
+        val remoteUrl = "https://cdn.test/farewell.mp4"
+        val remoteThumbnail = "https://cdn.test/farewell-thumb.jpg"
+        val remoteForm =
+            restoreMemorialSnapshot(
+                """
+                {
+                  "type":"MEMORIAL",
+                  "memorialVideoUrl":"$remoteUrl",
+                  "memorialThumbnailUrl":"$remoteThumbnail"
+                }
+                """.trimIndent(),
+            )
+
+        assertEquals(
+            MemorialVideoAttachment(url = remoteUrl, thumbnailUrl = remoteThumbnail),
+            remoteForm.displayedMemorialVideo,
+        )
+        assertEquals(MediaInput.Remote(remoteUrl), remoteForm.memorialVideo?.toMediaInput())
+        assertFalse(remoteForm.canDiscardMemorialVideoSelection)
+
+        val localUrl = "content://videos/draft"
+        val localThumbnail = "https://cdn.test/draft-thumb.jpg"
+        val localForm =
+            restoreMemorialSnapshot(
+                """
+                {
+                  "type":"MEMORIAL",
+                  "memorialVideoUrl":"$localUrl",
+                  "memorialThumbnailUrl":"$localThumbnail"
+                }
+                """.trimIndent(),
+            )
+
+        assertEquals(
+            MemorialVideoAttachment(url = localUrl, thumbnailUrl = localThumbnail),
+            localForm.displayedMemorialVideo,
+        )
+        assertEquals(MediaInput.Local(localUrl), localForm.memorialVideo?.toMediaInput())
+        assertTrue(localForm.canDiscardMemorialVideoSelection)
+    }
+
+    @Test
+    fun `picked 와 server 동시 스키마 복원 뒤 pending 제거는 persisted 로 돌아간다`() {
+        val persisted =
+            MemorialVideoAttachment(
+                url = "https://cdn.test/farewell.mp4",
+                thumbnailUrl = "https://cdn.test/farewell-thumb.jpg",
+            )
+        val pending =
+            MemorialVideoAttachment(
+                url = "content://videos/replacement",
+                thumbnailUrl = "https://cdn.test/replacement-thumb.jpg",
+            )
+        val savedStateHandle =
+            SavedStateHandle(
+                mapOf(
+                    "initialType" to AfternoteType.MEMORIAL,
+                    SNAPSHOT_KEY to
+                        """
+                        {
+                          "type":"MEMORIAL",
+                          "pickedMemorialVideo":{
+                            "url":"${pending.url}",
+                            "thumbnailUrl":"${pending.thumbnailUrl}"
+                          },
+                          "serverMemorialVideo":{
+                            "url":"${persisted.url}",
+                            "thumbnailUrl":"${persisted.thumbnailUrl}"
+                          }
+                        }
+                        """.trimIndent(),
+                ),
+            )
+        val viewModel = viewModel(savedStateHandle)
+
+        assertEquals(pending, viewModel.currentForm().displayedMemorialVideo)
+        assertTrue(viewModel.currentForm().canDiscardMemorialVideoSelection)
+
+        viewModel.setMemorialThumbnail("https://cdn.test/round-trip-thumb.jpg")
+        val restoredViewModel = viewModel(savedStateHandle)
+        val roundTripped = restoredViewModel.currentForm()
+        assertEquals(
+            pending.copy(thumbnailUrl = "https://cdn.test/round-trip-thumb.jpg"),
+            roundTripped.displayedMemorialVideo,
+        )
+        assertEquals(MediaInput.Local(pending.url), roundTripped.memorialVideo?.toMediaInput())
+        assertTrue(roundTripped.canDiscardMemorialVideoSelection)
+
+        restoredViewModel.setMemorialVideo(null)
+
+        assertEquals(persisted, restoredViewModel.currentForm().displayedMemorialVideo)
+        assertEquals(MediaInput.Remote(persisted.url), restoredViewModel.currentForm().memorialVideo?.toMediaInput())
+        assertFalse(restoredViewModel.currentForm().canDiscardMemorialVideoSelection)
+    }
+
+    private fun restoreMemorialSnapshot(raw: String) =
+        viewModel(
+            SavedStateHandle(
+                mapOf(
+                    "initialType" to AfternoteType.MEMORIAL,
+                    SNAPSHOT_KEY to raw,
+                ),
+            ),
+        ).currentForm()
 
     private fun viewModel(savedStateHandle: SavedStateHandle): AfternoteEditorViewModel =
         AfternoteEditorViewModel(

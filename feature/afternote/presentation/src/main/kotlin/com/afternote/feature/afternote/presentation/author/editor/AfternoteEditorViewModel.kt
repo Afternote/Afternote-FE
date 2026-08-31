@@ -26,6 +26,7 @@ import com.afternote.feature.afternote.presentation.author.editor.state.Afternot
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorErrorEvent
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
+import com.afternote.feature.afternote.presentation.author.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.author.editor.state.MemorialVideoAttachment
 import com.afternote.feature.afternote.presentation.author.editor.state.withMemorialPhoto
@@ -86,8 +87,13 @@ private data class EditorFormSnapshot(
     val receivers: List<ReceiverSnap> = emptyList(),
     val processingMethods: List<ProcessingMethodSnap> = emptyList(),
     val pickedMemorialPhotoUri: String? = null,
+    val memorialVideo: EditableMemorialVideo? = null,
+    // PR #1565의 이전 로컬 스냅샷 호환 필드. 새 스냅샷은 위 객체 하나만 기록한다.
     val pickedMemorialVideo: MemorialVideoAttachment? = null,
     val serverMemorialVideo: MemorialVideoAttachment? = null,
+    // v3 구형 스냅샷 호환 필드. 새 코드는 위 두 필드를 우선하지만 같은 key를 쓰던 develop 값도 복원한다.
+    val memorialVideoUrl: String? = null,
+    val memorialThumbnailUrl: String? = null,
     val memorialPhotoUrl: String? = null,
     val memorialPlaylistSongs: List<Song> = emptyList(),
 ) {
@@ -119,8 +125,7 @@ private data class EditorFormSnapshot(
             AfternoteType.MEMORIAL -> {
                 AfternoteTypeForm.Memorial(
                     pickedPhotoUri = pickedMemorialPhotoUri,
-                    pickedVideo = pickedMemorialVideo,
-                    serverVideo = serverMemorialVideo,
+                    video = restoredMemorialVideo(),
                     photoUrl = memorialPhotoUrl,
                     playlistSongs = memorialPlaylistSongs,
                 )
@@ -132,9 +137,26 @@ private data class EditorFormSnapshot(
         }
     }
 
+    private fun restoredMemorialVideo(): EditableMemorialVideo {
+        memorialVideo?.let { return it }
+        if (pickedMemorialVideo != null || serverMemorialVideo != null) {
+            return EditableMemorialVideo.restore(
+                persisted = serverMemorialVideo,
+                pending = pickedMemorialVideo,
+            )
+        }
+        val legacy = MemorialVideoAttachment.ofOrNull(memorialVideoUrl, memorialThumbnailUrl)
+        return if (legacy?.url?.isLocalContentUri() == true) {
+            EditableMemorialVideo.fromSelection(legacy)
+        } else {
+            EditableMemorialVideo.fromPersisted(legacy)
+        }
+    }
+
     companion object {
-        fun from(form: EditorFormState): EditorFormSnapshot =
-            EditorFormSnapshot(
+        fun from(form: EditorFormState): EditorFormSnapshot {
+            val video = form.memorialVideo
+            return EditorFormSnapshot(
                 type = form.selectedType,
                 selectedService = form.selectedService.orEmpty(),
                 receivers =
@@ -143,11 +165,13 @@ private data class EditorFormSnapshot(
                     },
                 processingMethods = form.processingMethods.map { ProcessingMethodSnap(it.localId, it.text) },
                 pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
-                pickedMemorialVideo = form.memorialForm?.pickedVideo,
-                serverMemorialVideo = form.memorialForm?.serverVideo,
+                memorialVideo = video,
+                memorialVideoUrl = video?.displayed?.url,
+                memorialThumbnailUrl = video?.displayed?.thumbnailUrl,
                 memorialPhotoUrl = form.memorialPhotoUrl,
                 memorialPlaylistSongs = form.memorialPlaylistSongs,
             )
+        }
     }
 }
 
@@ -371,7 +395,7 @@ class AfternoteEditorViewModel
             errorReporter.recordAfternoteFailure(AfternoteFailureStage.MEMORIAL_CAPTURE_LAUNCH, throwable)
         }
 
-        fun saveAfternote(
+        internal fun saveAfternote(
             payload: RegisterAfternotePayload,
             selectedReceiverIds: List<Long>,
             memorialMedia: SaveAfternoteMemorialMedia,
@@ -452,12 +476,6 @@ class AfternoteEditorViewModel
                 }
             }
 
-        // 영상: 로컬 pick(content://) 인지 원격 prefill URL 인지를 진입 경계에서 한 번 확정해 MediaInput 으로 넘긴다.
-        private fun videoMediaInput(url: String?): MediaInput {
-            if (url.isNullOrBlank()) return MediaInput.None
-            return if (url.isLocalContentUri()) MediaInput.Local(url) else MediaInput.Remote(url)
-        }
-
         // 영정 사진: 새로 고른 로컬 픽 우선 → 없으면 기존 원격 → 둘 다 없으면 없음.
         private fun photoMediaInput(
             picked: String?,
@@ -479,7 +497,7 @@ class AfternoteEditorViewModel
         ): Result<SaveAfternoteCommand> {
             val resolved =
                 resolveMemorialMediaForSave(
-                    video = videoMediaInput(memorialMedia.memorialVideoUrl),
+                    video = memorialMedia.memorialVideo.toMediaInput(),
                     photo =
                         photoMediaInput(
                             picked = memorialMedia.pickedMemorialPhotoUri,
@@ -498,7 +516,7 @@ class AfternoteEditorViewModel
                             memorialMedia =
                                 MemorialMediaUrls(
                                     memorialVideoUrl = resolved.resolvedVideoUrl,
-                                    memorialThumbnailUrl = memorialMedia.memorialThumbnailUrl,
+                                    memorialThumbnailUrl = memorialMedia.memorialVideo.displayed?.thumbnailUrl,
                                     memorialPhotoUrl = resolved.resolvedMemorialPhotoUrl,
                                 ),
                         )
@@ -511,7 +529,7 @@ class AfternoteEditorViewModel
                             selectedReceiverIds = selectedReceiverIds,
                             playlistSongs = playlistSongs,
                             memorialVideoUrl = resolved.resolvedVideoUrl,
-                            memorialThumbnailUrl = memorialMedia.memorialThumbnailUrl,
+                            memorialThumbnailUrl = memorialMedia.memorialVideo.displayed?.thumbnailUrl,
                             memorialPhotoUrl = resolved.resolvedMemorialPhotoUrl,
                         )
                     SaveAfternoteCommand.Create(input = createInput)

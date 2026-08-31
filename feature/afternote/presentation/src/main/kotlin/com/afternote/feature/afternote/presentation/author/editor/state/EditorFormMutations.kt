@@ -38,18 +38,18 @@ internal fun EditorFormState.withMemorialPhoto(uri: String?): EditorFormState = 
  * 영상의 그림이 붙는다.
  *
  * `null`(삭제)은 **이 폼에서 새로 붙인 영상만** 걷어낸다. 서버에 저장된 영상은 수정 계약으로 지울 수
- * 없어(빈 필드 = 기존 값 유지), 폼에서 없앤 척하면 저장 뒤 되살아난다(#1406). 서버 원본은 다른 칸에
- * 그대로 있으므로 표시가 저절로 그쪽으로 돌아간다.
+ * 없어(빈 필드 = 기존 값 유지), 폼에서 없앤 척하면 저장 뒤 되살아난다(#1406). 편집 값이 서버 원본을
+ * 함께 보존하므로 교체분을 걷으면 표시가 저절로 원본으로 돌아간다.
  */
 internal fun EditorFormState.withMemorialVideo(url: String?): EditorFormState =
-    mapMemorial { form -> form.copy(pickedVideo = MemorialVideoAttachment.ofOrNull(url)) }
+    mapMemorial { form -> form.copy(video = form.video.withSelection(url)) }
 
 /**
  * 고른 영상에서 뽑아 올린 썸네일을 붙인다. 영상이 없으면 아무 일도 하지 않는다 — 썸네일만 남는
  * 상태를 만들 수 없으므로, 삭제한 뒤 늦게 도착한 업로드 결과는 조용히 버려진다.
  */
 internal fun EditorFormState.withMemorialThumbnail(url: String?): EditorFormState =
-    mapMemorial { form -> form.copy(pickedVideo = form.pickedVideo?.copy(thumbnailUrl = url)) }
+    mapMemorial { form -> form.copy(video = form.video.withSelectionThumbnail(url)) }
 
 internal fun EditorFormState.withMemorialPlaylistSongs(songs: List<Song>): EditorFormState = mapMemorial { it.copy(playlistSongs = songs) }
 

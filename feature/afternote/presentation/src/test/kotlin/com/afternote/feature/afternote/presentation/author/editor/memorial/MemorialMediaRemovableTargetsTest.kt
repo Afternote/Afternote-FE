@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial
 
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
+import com.afternote.feature.afternote.presentation.author.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.author.editor.state.MemorialVideoAttachment
 import org.junit.Assert.assertEquals
@@ -17,16 +18,19 @@ class MemorialMediaRemovableTargetsTest {
     private fun memorialForm(
         pickedPhotoUri: String? = null,
         photoUrl: String? = null,
-        pickedVideoUrl: String? = null,
-        serverVideoUrl: String? = null,
+        pendingVideoUrl: String? = null,
+        persistedVideoUrl: String? = null,
     ): EditorFormState =
         EditorFormState(
             typeForm =
                 AfternoteTypeForm.Memorial(
                     pickedPhotoUri = pickedPhotoUri,
                     photoUrl = photoUrl,
-                    pickedVideo = MemorialVideoAttachment.ofOrNull(pickedVideoUrl),
-                    serverVideo = MemorialVideoAttachment.ofOrNull(serverVideoUrl),
+                    video =
+                        EditableMemorialVideo.restore(
+                            pending = MemorialVideoAttachment.ofOrNull(pendingVideoUrl),
+                            persisted = MemorialVideoAttachment.ofOrNull(persistedVideoUrl),
+                        ),
                 ),
         )
 
@@ -43,13 +47,13 @@ class MemorialMediaRemovableTargetsTest {
         )
         assertEquals(
             setOf(MemorialMediaTarget.VIDEO),
-            memorialForm(pickedVideoUrl = "content://videos/new").removableMemorialMediaTargets(),
+            memorialForm(pendingVideoUrl = "content://videos/new").removableMemorialMediaTargets(),
         )
         assertEquals(
             setOf(MemorialMediaTarget.PHOTO, MemorialMediaTarget.VIDEO),
             memorialForm(
                 pickedPhotoUri = "content://photos/new",
-                pickedVideoUrl = "content://videos/new",
+                pendingVideoUrl = "content://videos/new",
             ).removableMemorialMediaTargets(),
         )
     }
@@ -61,7 +65,7 @@ class MemorialMediaRemovableTargetsTest {
             emptySet<MemorialMediaTarget>(),
             memorialForm(
                 photoUrl = "https://cdn.test/portrait.jpg",
-                serverVideoUrl = "https://cdn.test/farewell.mp4",
+                persistedVideoUrl = "https://cdn.test/farewell.mp4",
             ).removableMemorialMediaTargets(),
         )
     }

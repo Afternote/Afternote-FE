@@ -47,14 +47,14 @@ internal enum class MemorialMediaTarget {
  * 해석하므로, 폼만 비워 두면 저장 후 서버 미디어가 되살아나는 거짓 삭제가 된다.
  * 그래서 실제로 지울 수 있는 것만 지우게 한다. 서버 미디어 삭제는 BE 계약 확장 후 후속.
  *
- * 두 축 모두 `picked` 칸이 곧 로컬 첨부다 — 픽·촬영으로만 채워지고, 지우면 표시가 서버 값으로
- * 되돌아간다. 그래서 판정에 URL 스킴을 보지 않는다(#1406 이전에는 영상 축만 한 칸을 겸해
- * [isLocalContentUri] 로 추론했고, 서버 영상을 로컬로 교체하면 그 추론이 가드를 통과시켰다).
+ * 사진은 `picked` 칸을 확인하지만, 영상 UI는 편집 값에 "새 선택을 걷어낼 수 있는가"만 묻는다. 그래서
+ * 이 단에서는 서버 원본인지 새 선택인지도, URL 스킴도 판정하지 않는다(#1406 이전에는 영상 한 칸이
+ * 두 출처를 겸해 [isLocalContentUri]로 추론했고, 로컬 영상으로 덮는 순간 서버 원본을 잃었다).
  */
 internal fun EditorFormState.removableMemorialMediaTargets(): Set<MemorialMediaTarget> =
     buildSet {
         if (!pickedMemorialPhotoUri.isNullOrBlank()) add(MemorialMediaTarget.PHOTO)
-        if (pickedMemorialVideo != null) add(MemorialMediaTarget.VIDEO)
+        if (canDiscardMemorialVideoSelection) add(MemorialMediaTarget.VIDEO)
     }
 
 /**
