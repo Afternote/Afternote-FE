@@ -200,8 +200,9 @@ class DailyQuestionWriteViewModel
             }
         }
 
-        /** 이번 작성 중 업로드한 이미지의 원본 URL. 제출 시 fileKey 로 바꿀 대상이다 (#549). */
-        private val uploadedImageUrls = mutableSetOf<String>()
+        // 이번 작성에서 업로드한 `fileUrl` → 서버가 준 `fileKey`. 키를 URL 에서 역산하지 않는다 —
+        // presigned 응답이 준 값을 그대로 들고 있다가 제출 직전에 치환한다 (toWireContent, #1125).
+        private val uploadedFileKeysByUrl = mutableMapOf<String, String>()
 
         fun onAnswerChanged(text: String) {
             _uiState.update { it.copy(answer = text) }
@@ -215,7 +216,7 @@ class DailyQuestionWriteViewModel
          * 실어 보냈지만, 그 필드는 계약에 없어 서버가 통째로 무시했다 (#549).
          *
          * 다만 **저장 시 나가는 값은 이 URL 이 아니다.** 서버는 본문의 `img src` 에서 fileKey
-         * 를 기대하므로, 여기서 받은 URL 을 [uploadedImageUrls] 에 기억해 뒀다가 제출 직전에
+         * 를 기대하므로, 여기서 받은 URL 을 [uploadedFileKeysByUrl] 에 기억해 뒀다가 제출 직전에
          * 키 형태로 바꾼다 ([toWireContent]). 미리보기는 전체 URL 이라야 뜬다.
          */
         suspend fun uploadMedia(uriString: String): String? {
@@ -227,7 +228,7 @@ class DailyQuestionWriteViewModel
                 .onSuccess { uploaded ->
                     // 계약에 imageUrl 이 없어 상태로 들지 않는다 — 본문 img 로 들어가고,
                     // 제출 직전 fileKey 로 바뀔 수 있게 기억만 해 둔다 (#549).
-                    uploadedImageUrls += uploaded.fileUrl
+                    uploadedFileKeysByUrl[uploaded.fileUrl] = uploaded.fileKey
                     _uiState.update { it.copy(isUploadingImage = false) }
                 }.onFailure { e ->
                     // 첨부가 빠진 채 저장이 이어질 수 있는 자리라 남긴다 (#964).
@@ -296,7 +297,7 @@ class DailyQuestionWriteViewModel
                             id = state.draftId,
                             payload =
                                 DailyQuestionUpdatePayload(
-                                    content = state.answer.toWireContent(uploadedImageUrls),
+                                    content = state.answer.toWireContent(uploadedFileKeysByUrl),
                                     isDraft = isDraft,
                                     questionId = questionId,
                                 ),
@@ -304,7 +305,7 @@ class DailyQuestionWriteViewModel
                     } else {
                         repository.create(
                             DailyQuestionCreatePayload(
-                                content = state.answer.toWireContent(uploadedImageUrls),
+                                content = state.answer.toWireContent(uploadedFileKeysByUrl),
                                 isDraft = isDraft,
                                 // 생성 경로는 questionId 가 반드시 있다 — 위 가드가 null 을 걸렀다.
                                 questionId = requireNotNull(questionId),
@@ -328,7 +329,7 @@ class DailyQuestionWriteViewModel
                         // 제출이 성공하면 staging 키는 이미 permanent 로 옮겨졌다. 남겨 두면
                         // 같은 ViewModel 로 두 번 제출될 때(예: 임시저장 뒤 화면에 머무는 흐름)
                         // 이미 옮겨진 파일을 다시 옮기려다 실패한다 (#549).
-                        uploadedImageUrls.clear()
+                        uploadedFileKeysByUrl.clear()
                     }.onFailure { e ->
                         // 저장이 upsert 라 실패가 기존 임시저장 상태와도 얽힌다 (#964·#1018).
                         errorReporter.recordMindRecordFailure(MindRecordFailureStage.DAILY_QUESTION_SUBMIT, e)

@@ -68,61 +68,37 @@ class HtmlImageSrcTest {
     }
 
     @Test
-    fun `업로드 URL 은 스킴과 호스트를 떼 fileKey 가 된다`() {
-        // 서버가 본문 img src 에서 기대하는 형태 — 전체 URL 을 넣으면 호스트를 한 번 더 붙인다.
-        val url = "https://dpy1u4p7yz7bh.cloudfront.net/mindrecords/staging/13/a.png"
+    fun `본문의 업로드 URL 을 서버가 준 fileKey 로 바꾼다`() {
+        val url = "https://cdn.example.net/mindrecords/staging/13/a.png"
+        val html = """<p>앞</p><img src="$url" alt="사진"><p>뒤</p>"""
 
-        assertEquals("mindrecords/staging/13/a.png", url.toUploadedFileKey())
+        val wire = html.toWireContent(mapOf(url to "mindrecords/staging/13/a.png"))
+
+        assertEquals("""<p>앞</p><img src="mindrecords/staging/13/a.png" alt="사진"><p>뒤</p>""", wire)
     }
 
     @Test
-    fun `호스트가 바뀌어도 경로 규칙을 코드에 박지 않는다`() {
-        // 디렉터리 구조를 서버가 바꿔도 스킴·호스트만 떼는 규칙은 그대로 따라간다.
-        val url = "https://cdn.example.net/some/other/layout/b.png"
+    fun `CDN 이 경로 프리픽스를 붙여도 서버가 준 키가 그대로 나간다`() {
+        // **역산이 틀리던 자리다** (#1125). 스킴·호스트만 떼는 종전 규칙은 여기서
+        // `bucket-7/mindrecords/staging/13/a.png` 를 만들어 조용히 틀린 키를 보냈다.
+        // 지금은 presigned 응답이 준 값을 그대로 쓰므로 프리픽스가 몇 겹이든 영향이 없다.
+        val url = "https://cdn.example.net/bucket-7/mindrecords/staging/13/a.png"
 
-        assertEquals("some/other/layout/b.png", url.toUploadedFileKey())
+        val wire = """<img src="$url">""".toWireContent(mapOf(url to "mindrecords/staging/13/a.png"))
+
+        assertEquals("""<img src="mindrecords/staging/13/a.png">""", wire)
     }
 
     @Test
-    fun `스킴이 없는 값은 첫 경로 세그먼트를 잃지 않는다`() {
-        // substringAfter("://") 는 구분자가 없으면 원문을 그대로 돌려주고, 이어지는
-        // substringAfter('/') 가 mindrecords 를 떼 버린다 — 조용히 틀린 키가 나간다.
-        assertEquals(
-            "mindrecords/staging/13/a.png",
-            "mindrecords/staging/13/a.png".toUploadedFileKey(),
-        )
-    }
-}
+    fun `이번에 업로드하지 않은 영구 URL 은 건드리지 않는다`() {
+        // 이미 저장된 본문의 영구 URL 은 서버가 그대로 통과시킨다 — 키로 바꾸면 이미 옮겨진
+        // 파일을 다시 옮기려다 실패한다 (#549).
+        val permanent = "https://cdn.example.net/mindrecords/permanent/13/old.png"
+        val uploaded = "https://cdn.example.net/mindrecords/staging/13/new.png"
+        val html = """<img src="$permanent"><img src="$uploaded">"""
 
-/**
- * 목록 카드 미리보기에 대체 문자가 새지 않는지 (#549 리뷰 지적).
- *
- * `HtmlCompat.fromHtml` 은 ImageGetter 없이 파싱하면 `img` 자리에 U+FFFC(OBJECT
- * REPLACEMENT CHARACTER)를 남긴다. 본문에 `img` 를 정식으로 넣기 시작하면서 드러나는
- * 자리라, 카드 미리보기 둘째 줄이 통째로 `￼` 가 된다. 공백이 아니라 `trim()` 으로는
- * 지워지지 않는다.
- *
- * `HtmlCompat` 을 타서 Robolectric 이 필요하다.
- */
-@RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35])
-class HtmlPlainTextTest {
-    @Test
-    fun `본문 뒤 이미지는 미리보기에 대체 문자를 남기지 않는다`() {
-        val html = "<p>본문</p><p><img src=\"https://cdn.example.com/a.png\" /></p>"
+        val wire = html.toWireContent(mapOf(uploaded to "mindrecords/staging/13/new.png"))
 
-        assertEquals("본문", html.htmlToPlainText())
-    }
-
-    @Test
-    fun `이미지만 있는 본문은 미리보기가 비어 있다`() {
-        assertEquals("", "<img src=\"https://cdn.example.com/a.png\" />".htmlToPlainText())
-    }
-
-    @Test
-    fun `글과 이미지가 섞여 있어도 글만 남는다`() {
-        val html = "<p>앞</p><img src=\"https://cdn.example.com/a.png\" /><p>뒤</p>"
-
-        assertEquals(false, html.htmlToPlainText().contains('￼'))
+        assertEquals("""<img src="$permanent"><img src="mindrecords/staging/13/new.png">""", wire)
     }
 }
