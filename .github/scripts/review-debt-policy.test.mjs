@@ -87,8 +87,27 @@ test("an empty commit is not a fix", () => {
     assert.match(guard, /repos\/\$REPO\/commits\/\$sha/);
     assert.match(guard, /\(\.files \/\/ \[\]\) \| length/);
     assert.match(guard, /\[ "\$changed" -gt 0 \] \|\| continue/);
-    // 조회 실패를 «빈 커밋» 으로 접으면 조회 장애가 빚을 통째로 지운다. 반영으로 센다.
-    assert.match(guard, /\'\'\|\*\[!0-9\]\*\) changed=1/);
+    // 조회 실패나 깨진 응답을 반영·미반영 어느 쪽으로도 접지 않는다. 근거가 완전하지
+    // 않으면 가드를 실패시켜 사람의 정상 PR 을 닫는 오탐을 막는다.
+    assert.doesNotMatch(guard, /changed=1/);
+    assert.match(guard, /변경 파일 조회에 실패했다/);
+    assert.match(guard, /변경 파일 수가 올바르지 않다/);
+});
+
+test("review evidence API failures stop the guard before it can close a pull request", () => {
+    // 리뷰·커밋·댓글을 못 읽은 상태는 «응답 없음» 이 아니다. 각 근거 조회가 실패하면
+    // 즉시 종료하고, `|| true` 나 stderr 폐기로 빈 결과를 만들어서는 안 된다.
+    for (const message of [
+        "리뷰 조회에 실패했다",
+        "커밋 조회에 실패했다",
+        "변경 파일 조회에 실패했다",
+        "작성자 일반 응답 조회에 실패했다",
+        "작성자 리뷰 응답 조회에 실패했다",
+    ]) {
+        assert.match(guard, new RegExp(message));
+    }
+    assert.doesNotMatch(guard, /gh api[^\n]*(?:\n[^\n]*){0,4}\|\| true/);
+    assert.doesNotMatch(guard, /gh api[^\n]*2>\/dev\/null/);
 });
 
 test("a fix delivered by a merge commit still counts as a response", () => {
