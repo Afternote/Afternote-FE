@@ -176,6 +176,11 @@
     <string name="mindrecord_toolbar_draft_count">임시저장 %d</string>
     <string name="mindrecord_toolbar_draft_label">임시저장</string>
     <string name="mindrecord_toolbar_text_settings">텍스트 설정</string>
+    <!-- 작성 툴바 서식 토글 — 글자(B·I·U·S)가 유일한 라벨이라 스크린리더용 이름을 따로 둔다 (#1179). -->
+    <string name="mindrecord_toolbar_bold_cd">굵게</string>
+    <string name="mindrecord_toolbar_italic_cd">기울임</string>
+    <string name="mindrecord_toolbar_underline_cd">밑줄</string>
+    <string name="mindrecord_toolbar_strikethrough_cd">취소선</string>
     <string name="mindrecord_toolbar_style_title">제목</string>
     <string name="mindrecord_toolbar_style_header">머릿말</string>
     <string name="mindrecord_toolbar_style_subheader">부머릿말</string>

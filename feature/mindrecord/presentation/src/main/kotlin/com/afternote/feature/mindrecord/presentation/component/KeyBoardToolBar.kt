@@ -13,6 +13,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -25,6 +28,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -99,7 +105,7 @@ fun BottomToolbar(
                 text = stringResource(R.string.mindrecord_toolbar_draft_label),
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray6,
-                modifier = Modifier.clickable(onClick = onSaveDraftClick),
+                modifier = Modifier.clickable(role = Role.Button, onClick = onSaveDraftClick),
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(
@@ -108,7 +114,7 @@ fun BottomToolbar(
                 text = draftCount?.toString() ?: UNKNOWN_DRAFT_COUNT,
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray4,
-                modifier = Modifier.clickable(onClick = onDraftCountClick),
+                modifier = Modifier.clickable(role = Role.Button, onClick = onDraftCountClick),
             )
         }
     }
@@ -217,7 +223,7 @@ private fun CloseButton(onClick: () -> Unit) {
                 .size(20.dp)
                 .clip(CircleShape)
                 .background(AfternoteDesign.colors.gray2)
-                .clickable(onClick = onClick),
+                .clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
@@ -238,7 +244,7 @@ private fun IconActionButton(
         modifier =
             Modifier
                 .size(24.dp)
-                .clickable(onClick = onClick),
+                .clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
         content = content,
     )
@@ -251,9 +257,9 @@ private fun AlignPill(
 ) {
     val items =
         listOf(
-            TextAlign.Start to R.drawable.mindrecord_align_left,
-            TextAlign.Center to R.drawable.mindrecord_align_center,
-            TextAlign.End to R.drawable.mindrecord_align_right,
+            Triple(TextAlign.Start, R.drawable.mindrecord_align_left, R.string.mindrecord_toolbar_align_left_cd),
+            Triple(TextAlign.Center, R.drawable.mindrecord_align_center, R.string.mindrecord_toolbar_align_center_cd),
+            Triple(TextAlign.End, R.drawable.mindrecord_align_right, R.string.mindrecord_toolbar_align_right_cd),
         )
     Row(
         modifier =
@@ -261,14 +267,21 @@ private fun AlignPill(
                 .height(44.dp)
                 .clip(CircleShape)
                 .background(AfternoteDesign.colors.gray2)
-                .padding(horizontal = 6.dp),
+                .padding(horizontal = 6.dp)
+                // 셋 중 하나를 고르는 그룹이다 — 이게 없으면 스크린리더가 「N 개 중 M 번째」를
+                // 읽어 주지 못한다 (#1179 · core:ui `AfternoteRadioGroup` 과 같은 관용구).
+                .selectableGroup(),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        items.forEach { (align, iconRes) ->
+        items.forEach { (align, iconRes, labelRes) ->
             PillIconSlot(
                 selected = selected == align,
                 onClick = { onAlignChange(align) },
+                singleChoice = true,
+                // 아이콘이 유일한 라벨이라 `contentDescription = null` 이면 이름 없는 버튼이 된다
+                // (스캐너 실측: 이름 누락 3건). 이미 있던 문자열을 여기서도 쓴다.
+                label = stringResource(labelRes),
             ) {
                 Icon(
                     painter = painterResource(iconRes),
@@ -299,7 +312,12 @@ private fun StylePill(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        PillIconSlot(selected = styleState.isBold, onClick = onBoldClick) {
+        PillIconSlot(
+            selected = styleState.isBold,
+            onClick = onBoldClick,
+            label = stringResource(R.string.mindrecord_toolbar_bold_cd),
+            singleChoice = false,
+        ) {
             Text(
                 text = "B",
                 fontWeight = FontWeight.Bold,
@@ -307,7 +325,12 @@ private fun StylePill(
                 style = AfternoteDesign.typography.bodyLargeB,
             )
         }
-        PillIconSlot(selected = styleState.isItalic, onClick = onItalicClick) {
+        PillIconSlot(
+            selected = styleState.isItalic,
+            onClick = onItalicClick,
+            label = stringResource(R.string.mindrecord_toolbar_italic_cd),
+            singleChoice = false,
+        ) {
             Text(
                 text = "I",
                 fontStyle = FontStyle.Italic,
@@ -315,7 +338,12 @@ private fun StylePill(
                 style = AfternoteDesign.typography.bodyLargeR,
             )
         }
-        PillIconSlot(selected = styleState.isUnderline, onClick = onUnderlineClick) {
+        PillIconSlot(
+            selected = styleState.isUnderline,
+            onClick = onUnderlineClick,
+            label = stringResource(R.string.mindrecord_toolbar_underline_cd),
+            singleChoice = false,
+        ) {
             Text(
                 text = "U",
                 textDecoration = TextDecoration.Underline,
@@ -323,7 +351,12 @@ private fun StylePill(
                 style = AfternoteDesign.typography.bodyLargeR,
             )
         }
-        PillIconSlot(selected = styleState.isStrikethrough, onClick = onStrikethroughClick) {
+        PillIconSlot(
+            selected = styleState.isStrikethrough,
+            onClick = onStrikethroughClick,
+            label = stringResource(R.string.mindrecord_toolbar_strikethrough_cd),
+            singleChoice = false,
+        ) {
             Text(
                 text = "S",
                 textDecoration = TextDecoration.LineThrough,
@@ -338,6 +371,8 @@ private fun StylePill(
 private fun PillIconSlot(
     selected: Boolean,
     onClick: () -> Unit,
+    label: String,
+    singleChoice: Boolean,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val size = if (selected) 33.6.dp else 28.dp
@@ -353,7 +388,15 @@ private fun PillIconSlot(
                     it
                 }
             }.clip(CircleShape)
-            .clickable(onClick = onClick)
+            .then(
+                // **정렬은 «셋 중 하나», 서식은 «각각 켜고 끄기»** 라 semantics 가 다르다 (#1179).
+                // 종전에는 둘 다 맨 `clickable` 이라 역할도 상태도 실리지 않았다.
+                if (singleChoice) {
+                    Modifier.selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+                } else {
+                    Modifier.toggleable(value = selected, role = Role.Checkbox, onValueChange = { onClick() })
+                },
+            ).semantics { contentDescription = label }
     Box(
         modifier = baseModifier,
         contentAlignment = Alignment.Center,
@@ -390,7 +433,9 @@ private fun HeaderTypeRow(
             Modifier
                 .fillMaxWidth()
                 .height(42.dp)
-                .padding(vertical = 6.dp),
+                .padding(vertical = 6.dp)
+                // 넷이 한 묶음의 상호배타 선택이다 (#1179).
+                .selectableGroup(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         items.forEachIndexed { index, item ->
@@ -425,7 +470,8 @@ private fun HeaderTypeSegment(
     Box(
         modifier =
             modifier
-                .clickable(onClick = onClick)
+                // 넷 중 하나를 고르는 자리다 — 버튼이 아니라 선택이라 상태가 실려야 한다 (#1179).
+                .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
                 .padding(horizontal = 4.dp, vertical = 2.dp),
         contentAlignment = Alignment.Center,
     ) {

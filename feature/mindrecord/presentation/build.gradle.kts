@@ -41,6 +41,8 @@ dependencies {
 
     testImplementation(libs.coroutines.test)
     testImplementation(testFixtures(projects.core.domain))
+    // 터치 타깃 스캐너 — #1167 이 세운 공통 판정 기준을 그대로 쓴다 (#1179).
+    testImplementation(testFixtures(projects.core.ui))
     testImplementation(testFixtures(projects.feature.mindrecord.domain))
 
     // 캘린더 날짜 셀 상호작용을 JVM 에서 실제로 눌러 확인한다 (#724).

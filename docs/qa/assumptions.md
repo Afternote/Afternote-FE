@@ -503,3 +503,33 @@ navigate 대상 한 줄.
 
 이 PR 은 home 몫(+ 그 생성자 파라미터명 변경이 강제한 `HomeWeeklyCountAndroidTest` 1곳)만 옮기고
 별칭은 남긴다. 걷는 것은 afternote 이관 뒤의 후속이다.
+
+## #1179 — 「48dp 미만 11곳」이 실측에서 0건이었다
+
+이슈가 든 11곳은 **후보**였고, 본문이 「스캐너로 렌더 후 노드 bounds 를 재서 확정한 뒤 착수한다」
+고 못 박아 뒀다. #1167 의 스캐너로 재 보니 **크기 미달은 0건**이다.
+
+    더보기 메뉴   touch=48.0dp×48.0dp   layout=20.0dp×20.0dp
+    임시저장      touch=48.0dp×48.0dp   layout= 2.0dp×17.5dp
+    링크·T       touch=48.0dp×48.0dp   layout=24.0dp×24.0dp
+
+`layout` 은 작아도 **시스템 최소 터치 타깃 확장**이 붙어 `touch`(실제 hit-test 영역)는 전부 48dp
+이상이다. 스캐너가 크기 판정에 쓰는 값도 `touch` 다.
+
+**그래서 `minimumInteractiveComponentSize` 를 붙이지 않았다.** 붙였다면 이미 48dp 인 hit 영역은
+그대로인 채 **레이아웃 footprint 만 48dp 로 밀려** 시안과 어긋났을 것이다 — 고칠 것이 없는 자리에
+회귀를 만드는 셈이다.
+
+대신 같은 스캐너가 드러낸 **다른 계약 위반**을 고쳤다(이름 3·Role 16). 중첩 클릭 3건은 공용
+스캐너의 예외를 넓힐지 카드를 재구성할지가 이 모듈 혼자 정할 문제가 아니라 #1669 로 뗐다.
+
+### 정렬과 서식의 semantics 를 다르게 준 근거
+
+종전에는 둘 다 맨 `clickable` 이었다.
+
+- 정렬 3종 — 셋 중 **하나**를 고른다 → `selectable` + `Role.RadioButton` + `selectableGroup`
+- 서식 B·I·U·S — 서로 **독립**인 켜기/끄기 → `toggleable` + `Role.Checkbox`
+- 스타일 4종(제목·머릿말·부머릿말·본문) — 넷 중 하나 → 정렬과 같은 처방
+
+한 헬퍼(`PillIconSlot`)를 정렬과 서식이 공유하고 있어 `singleChoice` 로 갈랐다. 같은 모양이라도
+스크린리더가 읽는 말이 달라야 한다.
