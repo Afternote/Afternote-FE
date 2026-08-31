@@ -132,9 +132,9 @@ private fun HomeSummary.toHomeTabSuccess(): HomeTabUiState.Success =
         userName = userName,
         isRecipientDesignated = isRecipientDesignated,
         todayQuestionContent = todayQuestionContent,
+        weeklyRecordCount = weeklyRecordCount,
         // **실제로 값을 아는 카테고리만 담는다.** 종전에는 enum 전체를 돌며 데일리질문·주간
-        // 리포트에 0 을 박아 넣었다. 지금은 화면이 일기 카드만 그려 안 보일 뿐, 카드가 늘면
-        // 그 0 이 그대로 «기록 0건» 으로 노출된다 — 목업이면 눈에 띄지만 0 은 그럴듯한
-        // 거짓이라 사용자가 그대로 믿는다 (#700).
+        // 리포트에 0 을 박아 넣었다. 화면이 일기 카드만 그려 안 보일 뿐, 카드가 늘면 그 0 이
+        // 그대로 «기록 0건» 으로 노출된다 — 0 은 그럴듯한 거짓이라 사용자가 믿는다 (#700).
         categoryCounts = mapOf(MindRecordCategory.DIARY to diaryCategoryCount),
     )

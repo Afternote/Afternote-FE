@@ -35,6 +35,7 @@ import com.afternote.afternote_fe.navigation.rememberHomeTabActions
 import com.afternote.afternote_fe.navigation.rememberReceiverNavActions
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
+import com.afternote.afternote_fe.test.emptyWeeklyReport
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.repository.UserProfileCacheRepository
@@ -49,7 +50,9 @@ import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfte
 import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel
 import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
+import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeMindRecordReceiverRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeWeeklyReportRepository
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import com.afternote.feature.receiver.domain.error.ReceiverRejectionReason
@@ -115,6 +118,9 @@ class AppAndReceiverCompletionAndroidTest {
     lateinit var authRepository: AuthRepository
 
     @Inject
+    lateinit var weeklyReportRepository: WeeklyReportRepository
+
+    @Inject
     lateinit var errorReporter: ErrorReporter
 
     @Inject
@@ -122,6 +128,7 @@ class AppAndReceiverCompletionAndroidTest {
 
     private val fakeAuth get() = authRepository as FakeAuthRepository
     private val fakeErrorReporter get() = errorReporter as FakeErrorReporter
+    private val fakeWeeklyReport get() = weeklyReportRepository as FakeWeeklyReportRepository
 
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
@@ -140,6 +147,12 @@ class AppAndReceiverCompletionAndroidTest {
     @Before
     fun inject() {
         hiltRule.inject()
+        // 홈이 진입 시 주간 기록 수를 부른다 (#562). 정본 fake 는 큐가 비면 터뜨리므로,
+        // 주간 수에 관심이 없는 이 테스트도 기대하는 응답을 명시적으로 넣는다 — 조용히 접으면
+        // 요청 횟수가 어긋난 것을 놓친다.
+        (weeklyReportRepository as FakeWeeklyReportRepository).results.addLast(
+            Result.success(emptyWeeklyReport()),
+        )
     }
 
     @Test
@@ -206,6 +219,8 @@ class AppAndReceiverCompletionAndroidTest {
             fakeAuth.attemptedEmailLogins,
         )
         assertEquals(1, fakeAuth.saveSessionCalls)
+        assertEquals(0, fakeAuth.rotateTokenCalls)
+        assertEquals(1, fakeWeeklyReport.requestedDates.size)
         assertTrue(fakeErrorReporter.failures.isEmpty())
     }
 
