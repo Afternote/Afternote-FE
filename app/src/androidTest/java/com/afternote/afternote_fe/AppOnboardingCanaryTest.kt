@@ -127,7 +127,11 @@ class AppOnboardingCanaryTest {
             CoreUiR.string.core_ui_nav_item_timeletter,
             CoreUiR.string.core_ui_nav_item_note,
         ).forEach { labelRes ->
-            composeRule.onNodeWithText(context.getString(labelRes)).assertIsDisplayed()
+            // 하단 탭만 고른다 — 홈 섹션 헤더에도 «타임레터» 가 있어 텍스트만으로는 두 개다
+            // (#700 이 시안 확정 문구로 그 섹션을 추가했다). 탭은 눌리고 헤더는 안 눌린다.
+            composeRule
+                .onNode(hasText(context.getString(labelRes)) and hasClickAction())
+                .assertIsDisplayed()
         }
 
         assertEquals(

@@ -14,7 +14,6 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.SELE
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteNavActions
 import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceivedAfternoteRoute
 import com.afternote.feature.home.presentation.HomeTabActions
-import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavActions
@@ -389,8 +388,9 @@ fun rememberHomeTabActions(
                 appState.navigateToBottomBarRoute(Route.Afternote)
             }
 
-            override fun onRecordCategoryClick(category: MindRecordCategory) {
-                appState.navController.navigate(Route.MindRecord)
+            // 카드 문구가 «타임레터 입력하러가기» 라 타임레터 탭으로 보낸다 (#700, 2026-08-09 확정).
+            override fun onTimeLetterNextStepClick() {
+                appState.navigateToBottomBarRoute(Route.TimeLetter)
             }
 
             // TODO: 카드별 destination 디자인 확정 후 분기. 우선 마음의 기록 탭으로 임시 연결.

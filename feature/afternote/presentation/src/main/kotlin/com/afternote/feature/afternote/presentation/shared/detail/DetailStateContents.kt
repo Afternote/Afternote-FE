@@ -39,7 +39,7 @@ fun DesignPendingDetailContent(onBackClick: () -> Unit) {
                     .padding(paddingValues),
             contentAlignment = Alignment.Center,
         ) {
-            Text(text = stringResource(R.string.design_pending))
+            Text(text = stringResource(R.string.afternote_design_pending))
         }
     }
 }

@@ -278,13 +278,13 @@ private fun rememberMemorialVideoClickHandler(snackbarHostState: SnackbarHostSta
                 // 원인이 다르면 문구도 달라야 한다 — 둘을 한 문장으로 덮으면 스킴이 막힌
                 // 상황에 «재생할 앱이 없습니다» 라는 거짓 안내가 나간다.
                 onRejected = {
-                    val message = resources.getString(R.string.feature_afternote_memorial_video_invalid_url)
+                    val message = resources.getString(R.string.afternote_memorial_video_invalid_url)
                     scope.launch {
                         snackbarHostState.showSnackbar(message = message)
                     }
                 },
                 onUnavailable = {
-                    val message = resources.getString(R.string.feature_afternote_memorial_video_no_app)
+                    val message = resources.getString(R.string.afternote_memorial_video_no_app)
                     scope.launch {
                         snackbarHostState.showSnackbar(message = message)
                     }

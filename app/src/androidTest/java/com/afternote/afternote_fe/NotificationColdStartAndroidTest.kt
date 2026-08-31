@@ -7,6 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.afternote.afternote_fe.notification.NotificationEntryRequest
 import com.afternote.afternote_fe.notification.NotificationEntrySource
+import com.afternote.afternote_fe.test.backgroundActivityStartOptions
 import com.afternote.core.common.notification.NotificationPendingIntentFactory
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -59,7 +60,7 @@ class NotificationColdStartAndroidTest {
             )
 
         assertNotNull(pendingIntent)
-        pendingIntent?.send()
+        pendingIntent?.send(context, 0, null, null, null, null, backgroundActivityStartOptions())
         launchedActivity =
             activityMonitor?.let { monitor ->
                 instrumentation.waitForMonitorWithTimeout(monitor, ACTIVITY_START_TIMEOUT_MILLIS)

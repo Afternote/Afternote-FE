@@ -128,7 +128,7 @@ fun SongSearchSection(
         verticalArrangement = Arrangement.spacedBy(7.dp),
     ) {
         Text(
-            text = stringResource(R.string.song_search_label),
+            text = stringResource(R.string.afternote_song_search_label),
             style =
                 AfternoteDesign.typography.bodyBase.copy(
                     color = AfternoteDesign.colors.gray9,
@@ -138,7 +138,7 @@ fun SongSearchSection(
         AfternoteTextField(
             state = searchFieldState,
             type = TextFieldType.Search,
-            placeholder = stringResource(R.string.song_search_placeholder),
+            placeholder = stringResource(R.string.afternote_song_search_placeholder),
             imeAction = ImeAction.Search,
         )
     }
