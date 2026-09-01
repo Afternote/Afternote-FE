@@ -80,4 +80,23 @@ class MemoriesReadAgainTest {
         assertEquals("카드 본문이 섹션 목적지로 가지 않았다", 1, sectionClicks)
         assertEquals("카드 본문이 상세까지 태웠다", 0, readAgainClicks)
     }
+
+    @Test
+    fun `기록이 0건이면 다시 읽기 버튼을 그리지 않는다`() {
+        // 문구가 「**그날의** 기록 다시 읽기」다 — 열 기록이 없는데 버튼을 남기면 그 약속을
+        // 지킬 목적지가 없다. 다른 곳으로 보내는 대신 버튼을 안 그린다 (#793 리뷰).
+        val interactionSource = MutableInteractionSource()
+        composeRule.setContent {
+            AfternoteTheme {
+                MemoriesSectionContent(
+                    onMemoriesSectionClick = {},
+                    onReadAgainClick = null,
+                    clickLabel = "추억 공간 열기",
+                    interactionSource = interactionSource,
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("그날의 기록 다시 읽기").assertDoesNotExist()
+    }
 }

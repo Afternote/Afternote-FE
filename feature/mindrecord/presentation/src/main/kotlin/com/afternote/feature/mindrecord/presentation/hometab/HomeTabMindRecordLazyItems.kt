@@ -99,9 +99,9 @@ private fun HomeTabMindRecordMemoriesItem(
     MemoriesSectionContent(
         onMemoriesSectionClick = onMemoriesSectionClick,
         // 「그날의 기록 다시 읽기」는 **카드가 가리키는 그 기록**으로 간다 (#793).
-        // 0건이면 열 기록이 없으므로 카드와 같은 곳(추억 공간)으로 보낸다 — 빈 상세를
-        // 여는 대신, 기록을 볼 수 있는 자리로 데려간다.
-        onReadAgainClick = { recordId?.let(onRecordDetailClick) ?: onMemoriesSectionClick() },
+        // 0건이면 `null` 이라 버튼 자체가 안 그려진다 — 다른 곳으로 보내면 문구가 약속한
+        // 「그날의 기록」이 아니게 된다 (리뷰 지적).
+        onReadAgainClick = recordId?.let { id -> { onRecordDetailClick(id) } },
         question = uiState.question,
         // 본문은 에디터가 HTML 로 직렬화해 저장한다 — 카드에는 태그를 걷어 낸 미리보기만.
         answer = uiState.answer?.htmlToPlainText()?.takeIf { it.isNotBlank() },
@@ -114,7 +114,7 @@ private fun HomeTabMindRecordMemoriesItem(
 @Composable
 internal fun MemoriesSectionContent(
     onMemoriesSectionClick: () -> Unit,
-    onReadAgainClick: () -> Unit,
+    onReadAgainClick: (() -> Unit)?,
     clickLabel: String,
     interactionSource: MutableInteractionSource,
     question: String? = null,
