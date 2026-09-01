@@ -73,8 +73,33 @@ private val HTML_IMG_SRC = Regex("""<img\b[^>]*?\bsrc\s*=\s*["']([^"']*)["']""",
  *
  * @param uploadedFileKeysByUrl 이번 작성에서 업로드한 `fileUrl` → 서버가 준 `fileKey` 대응.
  */
-fun String.toWireContent(uploadedFileKeysByUrl: Map<String, String>): String =
-    uploadedFileKeysByUrl.entries.fold(this) { content, (url, fileKey) -> content.replace(url, fileKey) }
+fun String.toWireContent(uploadedFileKeysByUrl: Map<String, String>): String {
+    if (uploadedFileKeysByUrl.isEmpty()) return this
+    return MEDIA_REFERENCE.replace(this) { match ->
+        val (attribute, quote, rawValue) = match.destructured
+        // **속성값을 되돌린 뒤 맞춘다.** 리치 에디터가 직렬화하면서 `&` 를 `&amp;` 로 바꾸므로,
+        // 원문 URL 로 그대로 찾으면 쿼리가 둘 이상인 주소(`?x=1&y=2`)를 놓친다 — 그러면 전체 URL 이
+        // 그대로 서버로 나가 #549 의 이중 호스트·403 이 재발한다 (#1125 리뷰, 실측 확인).
+        val fileKey = uploadedFileKeysByUrl[rawValue.unescapeHtmlAttribute()]
+        if (fileKey == null) match.value else "$attribute=$quote$fileKey$quote"
+    }
+}
+
+/** `src`·`href` 속성 하나. 따옴표는 " 와 ' 둘 다 받는다. */
+private val MEDIA_REFERENCE = Regex("""\b(src|href)\s*=\s*(["'])(.*?)\2""", RegexOption.IGNORE_CASE)
+
+/**
+ * 속성값에 들어간 엔티티를 원문으로 되돌린다 — [escapeHtml] 이 만드는 집합의 역이다.
+ *
+ * `&amp;` 를 **마지막에** 되돌린다. 먼저 되돌리면 `&amp;lt;` 가 `&lt;` 를 거쳐 `<` 로 두 번
+ * 풀린다.
+ */
+private fun String.unescapeHtmlAttribute(): String =
+    replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&#39;", "'")
+        .replace("&amp;", "&")
 
 /**
  * 태그만 있고 보이는 글자가 없으면 비었다고 본다.

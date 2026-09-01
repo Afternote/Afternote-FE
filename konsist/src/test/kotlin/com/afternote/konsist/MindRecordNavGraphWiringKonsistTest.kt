@@ -47,8 +47,20 @@ class MindRecordNavGraphWiringKonsistTest {
 
         val bindings = SUBMIT_SUCCESS.findAll(source).map { it.groupValues[1].trim() }.toList()
 
-        check(bindings.isNotEmpty()) {
-            "$NAV_GRAPH_PATH 에서 onSubmitSuccess 매핑을 찾지 못했다 — 화면이 빠졌거나 표기가 바뀌었다."
+        // **개수까지 못 박는다.** `isNotEmpty()` 면 두 줄 중 하나가 통째로 지워져도 남은 한 줄
+        // 때문에 통과한다 — 두 화면의 콜백이 `= {}` 디폴트라 인자를 지워도 컴파일은 되고, 그
+        // 화면의 «제출 후 이동» 만 조용히 사라진다 (#1562 리뷰).
+        check(bindings.size == WRITE_SCREEN_COUNT) {
+            "onSubmitSuccess 매핑이 ${bindings.size}건이다 — 데일리질문·일기 두 화면이라 $WRITE_SCREEN_COUNT 건이어야 한다.\n" +
+                "화면이 늘거나 줄었으면 WRITE_SCREEN_COUNT 와 아래 화면별 단언을 함께 고칠 것."
+        }
+
+        // 화면별로도 본다 — 개수만 맞고 자리가 뒤바뀌는 경우를 가른다.
+        WRITE_SCREENS.forEach { screen ->
+            val screenBinding = screenBinding(source, screen)
+            check(screenBinding == EXPECTED_BINDING) {
+                "$screen 의 onSubmitSuccess 가 «$EXPECTED_BINDING» 이 아니라 «$screenBinding» 이다 (#1562)."
+            }
         }
         check(bindings.all { it == EXPECTED_BINDING }) {
             buildString {
@@ -62,6 +74,36 @@ class MindRecordNavGraphWiringKonsistTest {
         }
     }
 
+    /** `<screen>(` 부터 그 호출의 닫는 괄호까지에서 `onSubmitSuccess` 바인딩을 뽑는다. */
+    private fun screenBinding(
+        source: String,
+        screen: String,
+    ): String? {
+        val start = source.indexOf("$screen(").takeIf { it >= 0 } ?: return null
+        var depth = 0
+        var end = start
+        for (i in start until source.length) {
+            when (source[i]) {
+                '(' -> {
+                    depth++
+                }
+
+                ')' -> {
+                    depth--
+                    if (depth == 0) {
+                        end = i
+                        break
+                    }
+                }
+            }
+        }
+        return SUBMIT_SUCCESS
+            .find(source.substring(start, end))
+            ?.groupValues
+            ?.get(1)
+            ?.trim()
+    }
+
     // 다른 가드와 같은 관례 — konsist 가 주는 projectPath 를 OS 구분자·선행 슬래시 없이 맞춘다.
     private fun KoFileDeclaration.normalizedProjectPath(): String = projectPath.replace('\\', '/').trimStart('/')
 
@@ -70,6 +112,10 @@ class MindRecordNavGraphWiringKonsistTest {
             "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/" +
                 "presentation/navigation/MindRecordNavGraph.kt"
         const val EXPECTED_BINDING = "actions::popBack"
+
+        /** 제출 성공 경로를 갖는 작성 화면. 늘어나면 여기와 위 단언을 함께 고친다. */
+        val WRITE_SCREENS = listOf("DailyQuestionWriteScreen", "DiaryWriteScreen")
+        val WRITE_SCREEN_COUNT = WRITE_SCREENS.size
 
         val SUBMIT_SUCCESS = Regex("""onSubmitSuccess\s*=\s*([^,\n]+)""")
     }
