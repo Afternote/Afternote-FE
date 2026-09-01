@@ -2,7 +2,6 @@ package com.afternote.feature.afternote.presentation.author.editor.memorial
 
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -38,21 +37,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import coil3.compose.AsyncImage
-import coil3.compose.AsyncImagePainter
 import com.afternote.core.ui.button.PlusBadgeButton
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.editor.isLocalContentUri
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 
-private const val TAG = "MemorialVideoUpload"
 internal const val MEMORIAL_VIDEO_ADD_TEST_TAG = "memorialVideoAdd"
 
 /**
@@ -75,8 +71,8 @@ fun MemorialVideoUpload(
     videoUrl: String? = null,
     thumbnailUrl: String? = null,
     onAddVideoClick: () -> Unit,
-    onThumbnailBytesReady: (ByteArray?) -> Unit = {},
-    onThumbnailExtractionFailed: (Throwable) -> Unit = {},
+    onThumbnailBytesReady: (ByteArray?) -> Unit,
+    onThumbnailExtractionFailed: (Throwable) -> Unit,
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     val hasVideo = !videoUrl.isNullOrBlank()
@@ -96,7 +92,7 @@ fun MemorialVideoUpload(
             onThumbnailBytesReady(null)
             return@LaunchedEffect
         }
-        if (!videoUrl.startsWith("content://")) {
+        if (!videoUrl.isLocalContentUri()) {
             thumbnailBitmap = null
             onThumbnailBytesReady(null)
             return@LaunchedEffect
@@ -201,14 +197,7 @@ fun MemorialVideoUpload(
                             contentDescription = null,
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop,
-                            error = painterResource(R.drawable.feature_afternote_img_placeholder_1),
-                            onError = { state: AsyncImagePainter.State.Error ->
-                                Log.e(
-                                    TAG,
-                                    "Coil load failed: url=$thumbnailUrl",
-                                    state.result.throwable,
-                                )
-                            },
+                            error = painterResource(R.drawable.afternote_img_placeholder_1),
                         )
                     }
 
@@ -222,36 +211,14 @@ fun MemorialVideoUpload(
                     }
                 }
                 Image(
-                    painter = painterResource(R.drawable.feature_afternote_ic_playback),
-                    contentDescription = stringResource(R.string.content_description_video_play),
+                    painter = painterResource(R.drawable.afternote_ic_playback),
+                    contentDescription = stringResource(R.string.afternote_content_description_video_play),
                     modifier =
                         Modifier
                             .align(Alignment.Center)
                             .size(32.dp),
                 )
             }
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun MemorialVideoUploadPreview() {
-    AfternoteTheme {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-        ) {
-            // 영상 없음
-            MemorialVideoUpload(
-                onAddVideoClick = {},
-            )
-
-            // 영상 있음 (실기기에서 선택 시 썸네일 표시)
-            MemorialVideoUpload(
-                videoUrl = "test",
-                onAddVideoClick = {},
-            )
         }
     }
 }

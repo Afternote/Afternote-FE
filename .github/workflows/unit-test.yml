@@ -51,9 +51,12 @@ jobs:
     name: Run Unit Tests
     if: inputs.run_validation
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Clone repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Resolve pull request context
         id: pull-request
@@ -113,7 +116,7 @@ jobs:
 
       - name: Set up JDK 21
         if: inputs.gradle_tasks != ''
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -130,13 +133,16 @@ jobs:
         if: inputs.gradle_tasks != ''
         uses: ./.github/actions/setup-ci-config
 
+      # develop 에 의도적으로 남긴 red 게이트(.github/ci-expected-failures.json)는 여기서
+      # 제외하고, 아래 probe 단계가 XPASS(게이트 테스트가 통과하기 시작)를 감시한다.
       - name: Run affected unit tests, androidTest compile guard, and Kover reports
         if: inputs.gradle_tasks != ''
         env:
           GRADLE_TASKS: ${{ inputs.gradle_tasks }}
         run: |
           read -r -a tasks <<< "$GRADLE_TASKS"
-          ./gradlew "${tasks[@]}" --continue --parallel --build-cache
+          ./gradlew "${tasks[@]}" --continue --parallel --build-cache \
+            --init-script .github/ci-expected-failures.init.gradle
 
       - name: Upload Kover coverage reports
         id: kover-artifact
@@ -148,7 +154,8 @@ jobs:
             build/reports/kover/
             **/build/reports/kover/
           if-no-files-found: error
-          retention-days: 14
+          # 표준 보관 기간 7일 — 리포트·디버깅용 artifact 는 이 값 하나로 통일한다 (#1400).
+          retention-days: 7
 
       - name: Summarize changed-module coverage
         if: inputs.pull_request_number > 0 && contains(inputs.gradle_tasks, 'kover')
@@ -157,7 +164,16 @@ jobs:
           KOVER_HEAD_SHA: ${{ steps.pull-request.outputs.head-sha }}
           KOVER_ARTIFACT_URL: ${{ steps.kover-artifact.outputs.artifact-url }}
           KOVER_COVERAGE_MODULES: ${{ inputs.coverage_modules }}
+          KOVER_POLICY_PATH: .github/kover-coverage-policy.json
         run: node .github/scripts/render-kover-summary.mjs
+
+      # 기대 실패 게이트만 다시 돌려 XPASS 를 감시한다 — 통과하기 시작하면 목록 제거를
+      # 요구하며 job 을 실패시킨다. 게이트 해제는 담당 구현 머지 + 목록 정리로만 가능하다.
+      - name: Probe expected-failure unit gates (XPASS check)
+        if: inputs.gradle_tasks != ''
+        env:
+          GRADLE_TASKS: ${{ inputs.gradle_tasks }}
+        run: node .github/scripts/ci-expected-failures.mjs probe-unit "$GRADLE_TASKS"
 
       # 실패한 테스트의 HTML/XML 리포트를 PR artifact 로 보존 — CI 로그에서 stack trace 추적이 빠름.
       - name: Upload test reports on failure
@@ -170,4 +186,5 @@ jobs:
             **/build/test-results/testDebugUnitTest
             **/build/reports/tests/test
             **/build/test-results/test
+          # 표준 보관 기간 7일 — 리포트·디버깅용 artifact 는 이 값 하나로 통일한다 (#1400).
           retention-days: 7

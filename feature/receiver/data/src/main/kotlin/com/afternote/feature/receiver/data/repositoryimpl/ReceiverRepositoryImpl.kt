@@ -3,9 +3,10 @@ package com.afternote.feature.receiver.data.repositoryimpl
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
-import com.afternote.feature.receiver.data.local.ReceiverAuthCodeDataSource
+import com.afternote.feature.receiver.data.local.ReceiverMasterKeyDataSource
 import com.afternote.feature.receiver.data.mapper.response.toDomain
 import com.afternote.feature.receiver.data.mapper.toDomainResult
 import com.afternote.feature.receiver.data.paging.ReceiverAfternotePagingSource
@@ -25,7 +26,7 @@ import javax.inject.Singleton
 private const val PAGE_SIZE = 50
 
 /**
- * 인증 코드는 [ReceiverAuthCodeDataSource]에서 읽고·쓰고·지우며, REST 요청에는 ReceiverAuthInterceptor가
+ * 인증 코드는 [ReceiverMasterKeyDataSource]에서 읽고·쓰고·지우며, REST 요청에는 ReceiverAuthInterceptor가
  * `X-Auth-Code` 헤더를 자동 부착한다. 아직 별도 기능 repository로 이관되지 않은 export 항목은
  * 폴백 값을 반환한다.
  */
@@ -33,22 +34,23 @@ private const val PAGE_SIZE = 50
 class ReceiverRepositoryImpl
     @Inject
     constructor(
-        private val authCodeDataSource: ReceiverAuthCodeDataSource,
+        private val masterKeyDataSource: ReceiverMasterKeyDataSource,
         private val api: ReceiverAfternoteApiService,
         private val receiverAuthRepository: ReceiverAuthRepository,
+        private val errorReporter: ErrorReporter,
     ) : ReceiverRepository {
-        override val authCodeFlow: Flow<String?> = authCodeDataSource.savedCodeFlow
+        override val masterKeyFlow: Flow<String?> = masterKeyDataSource.savedCodeFlow
 
-        override suspend fun currentAuthCode(): String? = authCodeFlow.first()
+        override suspend fun currentMasterKey(): String? = masterKeyFlow.first()
 
-        override suspend fun saveAuthCode(code: String) {
-            authCodeDataSource.saveCode(code)
+        override suspend fun saveMasterKey(code: String) {
+            masterKeyDataSource.saveCode(code)
         }
 
         override fun getPagedReceivedAfternotes(): Flow<PagingData<AfterNoteListItem>> =
             Pager(
                 config = PagingConfig(pageSize = PAGE_SIZE),
-                pagingSourceFactory = { ReceiverAfternotePagingSource(api) },
+                pagingSourceFactory = { ReceiverAfternotePagingSource(api, errorReporter) },
             ).flow
 
         override suspend fun getReceivedAfterNotes(): Result<AfterNotesListResult> =
@@ -56,7 +58,7 @@ class ReceiverRepositoryImpl
                 api
                     .getReceiverAfternotes()
                     .requireData()
-                    .toDomainResult()
+                    .toDomainResult(errorReporter)
             }
 
         override suspend fun getReceivedAfternoteDetail(afternoteId: Long): Result<ReceivedAfternoteDetail> =

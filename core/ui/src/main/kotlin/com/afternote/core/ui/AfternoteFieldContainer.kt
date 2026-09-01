@@ -8,15 +8,13 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
  * 입력 필드 / 슬롯 카드 등 디자인 시스템의 시각 컨테이너 단위.
@@ -62,7 +60,7 @@ fun AfternoteFieldContainer(
                 .border(1.dp, borderColor, RoundedCornerShape(8.dp))
                 .then(
                     if (onClick != null) {
-                        Modifier.clickable(enabled = enabled, onClick = onClick)
+                        Modifier.clickable(enabled = enabled, role = Role.Button, onClick = onClick)
                     } else {
                         Modifier
                     },
@@ -70,22 +68,4 @@ fun AfternoteFieldContainer(
         verticalAlignment = verticalAlignment,
         content = content,
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun AfternoteFieldContainerPreview() {
-    AfternoteTheme {
-        AfternoteFieldContainer(
-            modifier =
-                Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-        ) {
-            Text(
-                text = "Sample Field Container Content",
-                style = AfternoteDesign.typography.bodyLargeR,
-            )
-        }
-    }
 }

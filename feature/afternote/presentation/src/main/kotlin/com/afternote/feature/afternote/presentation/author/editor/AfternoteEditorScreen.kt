@@ -21,13 +21,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import com.afternote.core.ui.modifierextention.addFocusCleaner
 import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.editor.processing.CustomServiceDialog
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
@@ -39,13 +39,13 @@ import com.afternote.feature.afternote.presentation.author.editor.state.remember
  * 피그마 디자인 기반:
  * - 헤더 (뒤로가기, 타이틀, 등록 버튼)
  * - 종류 선택 드롭다운
- * - 서비스명 선택 드롭다운
+ * - 검색 가능한 서비스명 선택 바텀시트
  * - 계정 정보 입력 (아이디, 비밀번호)
  * - 계정 처리 방법 선택 (라디오 버튼)
  * - 처리 방법 리스트 (체크박스)
  * - 남기실 말씀 (동적 텍스트 입력 목록)
  *
- * 추모 곡 목록은 [EditorFormState]의 추모 전용 폼에 동기화된 스냅샷으로 표시한다.
+ * 추억 플레이리스트 곡 목록은 [EditorFormState]의 추억 노트 전용 폼에 동기화된 스냅샷으로 표시한다.
  */
 @Composable
 fun AfternoteEditorScreen(
@@ -54,10 +54,14 @@ fun AfternoteEditorScreen(
     onRegisterClick: () -> Unit,
     snackbarMessage: String?,
     onSnackbarMessageConsumed: () -> Unit,
+    // 스낵바 쌍과 같은 이유로 기본값을 주지 않는다: 새 진입 경로가 검증 팝업 배선을 빠뜨리면
+    // 조용히 팝업 없는 에디터가 되는 대신 컴파일 단계에서 걸리게 한다.
+    validationMessage: String?,
+    onValidationMessageConsumed: () -> Unit,
     content: @Composable (SnackbarHostState) -> Unit,
     modifier: Modifier = Modifier,
     state: AfternoteEditorState = rememberAfternoteEditorState(),
-    isPrefillLoading: Boolean = false,
+    shouldDeferBaselineCapture: Boolean = false,
     snackbarMessageKey: Any? = snackbarMessage,
 ) {
     val focusManager = LocalFocusManager.current
@@ -79,12 +83,12 @@ fun AfternoteEditorScreen(
 
     // 작성 도중 이탈 가드: 진입 시점 스냅샷 대비 변경이 있으면 뒤로가기 시 이탈 확인 팝업을 띄운다.
     // '내용 존재'가 아니라 '변경' 기준인 이유는 수정 모드(prefill)에서 무변경 이탈에도 매번 경고하게
-    // 되어서다. 스냅샷은 프리필 적용 완료
-    // (isPrefillLoading=false 전환) 후 1회 캡처하고, 하위 화면 왕복·프로세스 복원에도 유지되도록 saveable 로 둔다.
+    // 되어서다. 스냅샷은 서버 프리필과 신규 작성 기본값 적용이 모두 끝난 후 1회 캡처하고,
+    // 하위 화면 왕복·프로세스 복원에도 유지되도록 saveable 로 둔다.
     var showExitConfirm by rememberSaveable { mutableStateOf(false) }
     var baselineContentSignature by rememberSaveable { mutableStateOf<String?>(null) }
-    LaunchedEffect(isPrefillLoading) {
-        if (!isPrefillLoading && baselineContentSignature == null) {
+    LaunchedEffect(shouldDeferBaselineCapture) {
+        if (!shouldDeferBaselineCapture && baselineContentSignature == null) {
             baselineContentSignature = editorContentSignature(form, state)
         }
     }
@@ -120,12 +124,14 @@ fun AfternoteEditorScreen(
                         style = AfternoteDesign.typography.bodySmallB,
                         color = AfternoteDesign.colors.gray9,
                         modifier =
-                            Modifier.clickable(
-                                onClick = {
-                                    focusManager.clearFocus()
-                                    onRegisterClick()
-                                },
-                            ),
+                            Modifier
+                                .clickable(
+                                    role = Role.Button,
+                                    onClick = {
+                                        focusManager.clearFocus()
+                                        onRegisterClick()
+                                    },
+                                ),
                     )
                 },
             )
@@ -140,14 +146,6 @@ fun AfternoteEditorScreen(
         ) {
             content(snackbarHostState)
 
-            if (state.isCustomServiceDialogVisible) {
-                CustomServiceDialog(
-                    serviceNameState = state.customServiceNameState,
-                    onDismiss = state::dismissCustomServiceDialog,
-                    onAddClick = state::onAddCustomService,
-                )
-            }
-
             if (showExitConfirm) {
                 Popup(
                     type = PopupType.Variant2,
@@ -159,6 +157,15 @@ fun AfternoteEditorScreen(
                     onDismiss = { showExitConfirm = false },
                     confirmText = stringResource(R.string.afternote_editor_exit_confirm_confirm),
                     dismissText = stringResource(R.string.afternote_editor_exit_confirm_cancel),
+                )
+            }
+
+            if (validationMessage != null) {
+                Popup(
+                    type = PopupType.Default,
+                    message = validationMessage,
+                    onConfirm = onValidationMessageConsumed,
+                    onDismiss = onValidationMessageConsumed,
                 )
             }
         }

@@ -7,12 +7,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.receiver.presentation.R
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_HEADER_SPACING
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_TOTAL_STEPS
 import com.afternote.feature.receiver.presentation.deliveryverification.component.ReceiverVerifyStep
@@ -20,9 +18,9 @@ import com.afternote.feature.receiver.presentation.deliveryverification.componen
 /**
  * 수신자 본인 확인 안내(design 2) — 진행 인디케이터 1/3 + 안내 문구 + "인증 시작하기" CTA.
  *
- * 발신자 상세의 "열람 신청하기" 진입 시 본인 확인 캐시
+ * 발신자 상세의 "열람 신청하기" 진입 시 해당 발신자의 본인 확인 캐시
  * ([com.afternote.feature.receiver.domain.repository.IdentityVerificationRepository.isVerified]) 가
- * false 인 경우만 노출된다 — 캐시 hit 시 NavGraph 가 마스터 키 단계로 바로 보낸다.
+ * false 인 경우만 노출된다 — 캐시 hit 시 NavGraph 가 마스터 키 단계로 바로 보낸다 (#597 발신자별 격리).
  * 다음 단계의 인증번호 발송·검증은 실 API(`receiver-auth/email` 계열) 호출 (#407).
  */
 @Composable
@@ -54,17 +52,6 @@ fun IdentityVerificationIntroScreen(
             style = AfternoteDesign.typography.bodySmallB,
             color = AfternoteDesign.colors.gray5,
             modifier = Modifier.fillMaxWidth(),
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun IdentityVerificationIntroScreenPreview() {
-    AfternoteTheme {
-        IdentityVerificationIntroScreen(
-            onBackClick = {},
-            onStartClick = {},
         )
     }
 }

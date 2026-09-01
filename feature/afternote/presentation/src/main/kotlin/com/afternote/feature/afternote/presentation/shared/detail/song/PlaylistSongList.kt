@@ -14,15 +14,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.TextFieldType
@@ -47,7 +44,7 @@ import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDis
  *
  * @param songs 표시할 노래 목록 (호출부가 이미 필터링한 최종 목록 — 리스트는 그대로 그린다)
  * @param onSongClick 노래 행 클릭 콜백 (null이면 비클릭)
- * @param isSelected 각 행의 선택 상태 판정 (null이면 라디오 없음 = 비선택 모드; 예: view-only 열람)
+ * @param isSelected 각 행의 선택 상태 판정 (null이면 체크박스 없음 = 비선택 모드; 예: view-only 열람)
  * @param header 첫 아이템으로 그릴 헤더 (검색창·"총 N곡" 등). 필수 — 현재 모든 호출부가 헤더를 가진다.
  */
 @Composable
@@ -131,7 +128,7 @@ fun SongSearchSection(
         verticalArrangement = Arrangement.spacedBy(7.dp),
     ) {
         Text(
-            text = stringResource(R.string.song_search_label),
+            text = stringResource(R.string.afternote_song_search_label),
             style =
                 AfternoteDesign.typography.bodyBase.copy(
                     color = AfternoteDesign.colors.gray9,
@@ -141,35 +138,10 @@ fun SongSearchSection(
         AfternoteTextField(
             state = searchFieldState,
             type = TextFieldType.Search,
-            placeholder = stringResource(R.string.song_search_placeholder),
+            placeholder = stringResource(R.string.afternote_song_search_placeholder),
             imeAction = ImeAction.Search,
         )
     }
-}
-
-// endregion
-
-// region ── Previews ──
-
-@Preview(showBackground = true, name = "PlaylistSongList 단독")
-@Composable
-private fun PlaylistSongListPreview() {
-    val songs =
-        (1..5).map { i ->
-            PlaylistSongDisplay(selectionKey = "preview:$i", title = "노래 제목 $i", artist = "가수 이름")
-        }
-    var query by remember { mutableStateOf("") }
-    // 리스트는 필터·검색을 소유하지 않으므로 호출부가 최종 목록을 넘기고 헤더도 주입한다 —
-    // 실제 AddSong 호출부와 같은 패턴 시연(서버 검색 결과를 그대로 넘김).
-    PlaylistSongList(
-        songs = songs,
-        header = {
-            SongSearchSection(
-                searchQuery = query,
-                onSearchQueryChange = { query = it },
-            )
-        },
-    )
 }
 
 // endregion

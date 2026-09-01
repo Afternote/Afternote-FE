@@ -1,8 +1,10 @@
 package com.afternote.feature.receiver.presentation.home
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -15,6 +17,14 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+
+/** 이 테스트의 관심 밖인 외부 라우팅을 채우는 no-op 묶음. */
+private val noopActions =
+    ReceiverHomeActions(
+        onNavigateToMindRecord = {},
+        onNavigateToTimeLetter = {},
+        onNavigateToAfternote = {},
+    )
 
 /**
  * 수신자 홈 헤더가 수신자가 실제로 할 수 있는 액션만 두는지 (#613, 시안 4327:73626).
@@ -41,7 +51,7 @@ class ReceiverHomeHeaderTest {
                 ReceiverHomeScreen(
                     uiState = ReceiverHomeUiState.Loading,
                     onEvent = {},
-                    actions = ReceiverHomeActions(),
+                    actions = noopActions,
                 )
             }
         }
@@ -51,19 +61,39 @@ class ReceiverHomeHeaderTest {
     }
 
     @Test
-    fun `설정 아이콘은 이름이 있고 눌린다`() {
-        var settingClicks = 0
+    fun `설정 아이콘을 그리지 않는다`() {
+        // 톱니는 **회원 설정 화면**을 그대로 열었고, 그 화면의 유일한 항목이 「로그아웃」이다.
+        // 수신자는 로그인한 적이 없는 사용자(X-Auth-Code 기반)라 지울 세션이 없다 (#613).
+        //
+        // 「이름이 있고 눌린다」를 단언하던 자리를 뒤집는다 — 진입점 자체가 없어야 한다.
         composeRule.setContent {
             AfternoteTheme {
                 ReceiverHomeScreen(
                     uiState = ReceiverHomeUiState.Loading,
                     onEvent = {},
-                    actions = ReceiverHomeActions(onSettingClick = { settingClicks += 1 }),
+                    actions = noopActions,
                 )
             }
         }
 
         val setting = composeRule.activity.getString(R.string.core_ui_home_top_bar_setting)
-        composeRule.onNodeWithContentDescription(setting).assertIsDisplayed().assertHasClickAction()
+        composeRule.onNodeWithContentDescription(setting).assertDoesNotExist()
+    }
+
+    @Test
+    fun `헤더에 누를 수 있는 액션이 하나도 없다`() {
+        // 개별 아이콘을 이름으로 확인하는 것과 별개로, 「헤더에 회원 액션이 새로 생기지 않는다」를
+        // 통째로 고정한다 — 새 아이콘이 추가되면 이름을 모르니 위 두 단언은 그대로 통과한다.
+        composeRule.setContent {
+            AfternoteTheme {
+                ReceiverHomeScreen(
+                    uiState = ReceiverHomeUiState.Loading,
+                    onEvent = {},
+                    actions = noopActions,
+                )
+            }
+        }
+
+        composeRule.onAllNodes(hasClickAction()).assertCountEquals(0)
     }
 }

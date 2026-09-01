@@ -15,7 +15,7 @@
     <string name="onboarding_login_button">로그인</string>
     <string name="onboarding_login_signup_simple">간편 회원가입하기</string>
     <string name="onboarding_login_kakao">카카오 로그인</string>
-    <string name="onboarding_login_google">Google 계정으로 로그인</string>
+    <string name="onboarding_login_google">Google 로그인</string>
     <string name="onboarding_login_find_account">아이디/비밀번호 찾기</string>
     <string name="onboarding_login_failed">로그인 실패</string>
     <string name="onboarding_login_invalid_credentials">아이디 또는 비밀번호가 일치하지 않습니다.</string>
@@ -42,7 +42,6 @@
     <string name="onboarding_find_account_code_mismatch">인증번호가 틀렸습니다.\n다시 확인 후 입력해 주세요.</string>
     <string name="onboarding_find_account_next">다음</string>
     <string name="onboarding_find_account_failed">요청에 실패했습니다.</string>
-    <string name="onboarding_content_description_google_login">구글 로그인</string>
 
     <string name="onboarding_step_description">회원가입 진행도 4단계 중 %1$d단계</string>
 
@@ -101,4 +100,11 @@
     <string name="onboarding_profile_headline">애프터노트에서의\n프로필을 설정해주세요</string>
     <string name="onboarding_profile_name_placeholder">이름을 지정해주세요</string>
     <string name="onboarding_profile_complete">회원가입 완료</string>
+    <!-- 약관 상세. 본문(onboarding_terms_detail_section_N)은 리소스였는데 제목만 코드에 남아 있었다. -->
+    <string name="onboarding_terms_detail_section_1_title">1. 서비스 이용약관</string>
+    <string name="onboarding_terms_detail_section_2_title">2. 개인정보 수집 및 이용 동의</string>
+    <string name="onboarding_terms_detail_section_3_title">3. 기록 및 콘텐츠 저장에 대한 안내</string>
+    <string name="onboarding_terms_detail_section_4_title">4. 계정 및 데이터 관리</string>
+    <string name="onboarding_terms_detail_section_5_title">5. 서비스 변경 및 종료</string>
+    <string name="onboarding_terms_detail_section_6_title">6. 동의 철회</string>
 </resources>

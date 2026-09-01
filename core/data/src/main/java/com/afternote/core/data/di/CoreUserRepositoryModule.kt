@@ -1,9 +1,11 @@
 package com.afternote.core.data.di
 
-import com.afternote.core.data.repoimpl.UserProfileRepositoryImpl
+import com.afternote.core.data.repoimpl.UserProfileCacheRepositoryImpl
 import com.afternote.core.data.repoimpl.UserRepositoryImpl
 import com.afternote.core.data.repoimpl.auth.AuthRepositoryImpl
-import com.afternote.core.domain.repository.UserProfileRepository
+import com.afternote.core.domain.repository.MyProfileRepository
+import com.afternote.core.domain.repository.UserProfileCacheRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import dagger.Binds
@@ -34,7 +36,16 @@ abstract class CoreUserRepositoryModule {
     @Singleton
     internal abstract fun bindUserRepository(impl: UserRepositoryImpl): UserRepository
 
+    // 책임별 좁은 계약 2종 (#1282). `UserRepositoryImpl` 을 다시 요청하면 바인딩마다 별도
+    // 인스턴스가 생기므로(클래스가 아니라 위 @Binds 가 @Singleton), 이미 싱글턴인
+    // [bindUserRepository] 바인딩을 경유해 전부 같은 인스턴스로 위임한다.
+    @Binds
+    internal abstract fun bindUserReceiverRepository(impl: UserRepository): UserReceiverRepository
+
+    @Binds
+    internal abstract fun bindMyProfileRepository(impl: UserRepository): MyProfileRepository
+
     @Binds
     @Singleton
-    internal abstract fun bindUserProfileRepository(impl: UserProfileRepositoryImpl): UserProfileRepository
+    internal abstract fun bindUserProfileCacheRepository(impl: UserProfileCacheRepositoryImpl): UserProfileCacheRepository
 }

@@ -3,14 +3,14 @@ package com.afternote.feature.receiver.presentation.deliveryverification
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.feature.afternote.presentation.R
+import com.afternote.core.ui.UiText
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import com.afternote.feature.afternote.presentation.reporting.shouldReportInReceiverFlow
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverDeliveryDocumentUploadRepository
-import com.afternote.feature.receiver.presentation.error.ErrorPayload
-import com.afternote.feature.receiver.presentation.error.toErrorPayload
+import com.afternote.feature.receiver.presentation.R
+import com.afternote.feature.receiver.presentation.error.toReceiverErrorUiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -65,7 +65,7 @@ class DocumentUploadViewModel
                         errorReporter.recordAfternoteFailure(AfternoteFailureStage.DOCUMENT_UPLOAD, throwable)
                         updateSlot(slot) { previous }
                         _uiState.update {
-                            it.copy(error = ErrorPayload.Res(R.string.receiver_verify_document_upload_failed))
+                            it.copy(error = UiText.Resource(R.string.receiver_verify_document_upload_failed))
                         }
                     }
             }
@@ -73,7 +73,7 @@ class DocumentUploadViewModel
 
         /** picker 가 돌려준 Uri 에서 바이트 추출이 실패한 경우 — 업로드 요청 전이므로 슬롯은 건드리지 않는다 (#740). */
         fun onDocumentReadFailed() {
-            _uiState.update { it.copy(error = ErrorPayload.Res(R.string.receiver_verify_document_read_failed)) }
+            _uiState.update { it.copy(error = UiText.Resource(R.string.receiver_verify_document_read_failed)) }
         }
 
         fun submit() {
@@ -82,7 +82,7 @@ class DocumentUploadViewModel
             // 업로드 중에도 도달할 수 있고, 그대로 보내면 진행 중 파일이 신청에서 빠진다 (#711).
             if (state.deathCertificate.isUploading || state.familyRelationCertificate.isUploading) {
                 _uiState.update {
-                    it.copy(error = ErrorPayload.Res(R.string.receiver_verify_document_upload_in_progress))
+                    it.copy(error = UiText.Resource(R.string.receiver_verify_document_upload_in_progress))
                 }
                 return
             }
@@ -90,7 +90,7 @@ class DocumentUploadViewModel
             val famRelUrl = state.familyRelationCertificate.fileUrl
             if ((deathUrl == null && famRelUrl == null) || state.isSubmitting) {
                 _uiState.update {
-                    it.copy(error = ErrorPayload.Res(R.string.receiver_verify_documents_required))
+                    it.copy(error = UiText.Resource(R.string.receiver_verify_documents_required))
                 }
                 return
             }
@@ -110,7 +110,7 @@ class DocumentUploadViewModel
                         _uiState.update {
                             it.copy(
                                 isSubmitting = false,
-                                error = throwable.toErrorPayload(R.string.receiver_verify_submit_failed),
+                                error = throwable.toReceiverErrorUiText(R.string.receiver_verify_submit_failed),
                             )
                         }
                     }

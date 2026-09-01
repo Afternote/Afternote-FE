@@ -11,7 +11,7 @@ permissions:
   actions: write
   contents: write
   issues: write
-  pull-requests: read
+  pull-requests: write
 
 concurrency:
   group: screenshot-baseline-apply-${{ github.event.workflow_run.id }}
@@ -107,6 +107,8 @@ jobs:
               'feature/onboarding/presentation/src/screenshotTestDebug/reference/',
               'feature/afternote/presentation/src/screenshotTestDebug/reference/',
               'feature/mindrecord/presentation/src/screenshotTestDebug/reference/',
+              'feature/setting/presentation/src/screenshotTestDebug/reference/',
+              'feature/timeletter/presentation/src/screenshotTestDebug/reference/',
             ];
             const artifact = path.resolve(process.env.ARTIFACT_DIR);
             const filesPath = path.join(artifact, 'files.json');

@@ -1,21 +1,14 @@
 package com.afternote.core.ui.icon
 
 import androidx.annotation.DrawableRes
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
-import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
  * Material Icons 기반 오른쪽 화살표 (RTL에서 자동 반전).
@@ -56,20 +49,4 @@ fun ArrowIcon(
         modifier = modifier,
         tint = tint,
     )
-}
-
-@Preview(showBackground = true, name = "Material arrow")
-@Composable
-private fun RightArrowIconMaterialPreview() {
-    AfternoteTheme {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            RightArrowIcon(
-                modifier = Modifier.size(12.dp),
-                tint = AfternoteDesign.colors.gray9,
-            )
-        }
-    }
 }

@@ -22,9 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
@@ -62,8 +60,8 @@ fun GalleryDetailScreen(
     content: GalleryDetailContent = GalleryDetailContent(),
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     isEditable: Boolean = true,
-    onEditClick: () -> Unit = {},
-    onDeleteConfirm: () -> Unit = {},
+    onEditClick: () -> Unit,
+    onDeleteConfirm: () -> Unit,
     state: AfternoteDetailState = rememberAfternoteDetailState(),
 ) {
     if (isEditable && state.showDeleteDialog) {
@@ -83,15 +81,15 @@ fun GalleryDetailScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             DetailTopBar(
-                title = stringResource(R.string.feature_afternote_detail_title),
+                title = stringResource(R.string.afternote_detail_title),
                 onBackClick = onBackClick,
                 actions = {
                     if (isEditable) {
                         Box {
                             IconButton(onClick = state::toggleDropdownMenu) {
                                 Icon(
-                                    painter = painterResource(R.drawable.feature_afternote_ic_detail_edit),
-                                    contentDescription = stringResource(R.string.feature_afternote_detail_edit),
+                                    painter = painterResource(R.drawable.afternote_ic_detail_edit),
+                                    contentDescription = stringResource(R.string.afternote_detail_edit),
                                     modifier = Modifier.size(16.dp),
                                 )
                             }
@@ -151,27 +149,3 @@ private fun GalleryDetailScrollContent(
 }
 
 // endregion
-
-internal val GALLERY_PREVIEW_CONTENT =
-    GalleryDetailContent(
-        serviceName = "갤러리",
-        finalWriteDate = "2025.11.26",
-        processingMethods = listOf("'엽사' 폴더 박선호에게 전송", "'흑역사' 폴더 삭제"),
-        afternoteEditReceivers =
-            listOf(
-                ReceiverUiModel(id = "1", name = "김지은", label = "친구"),
-                ReceiverUiModel(id = "2", name = "김혜성", label = "친구"),
-            ),
-    )
-
-@Preview(showBackground = true)
-@Composable
-private fun GalleryDetailScreenPreview() {
-    AfternoteTheme {
-        GalleryDetailScreen(
-            content = GALLERY_PREVIEW_CONTENT,
-            onBackClick = {},
-            onEditClick = {},
-        )
-    }
-}
