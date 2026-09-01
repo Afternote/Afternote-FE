@@ -50,9 +50,10 @@ private val DateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
 fun DailyQuestionListCard(
     answer: DailyQuestion,
     modifier: Modifier = Modifier,
-    /** 카드 전체 탭 — 저장된 기록 본문을 여는 상세 화면으로 간다 (#759). */
     /**
-     * 카드 전체 탭. **`null` 이면 클릭 자체를 붙이지 않는다** (#1540 리뷰).
+     * 카드 전체 탭 — 저장된 기록 본문을 여는 상세 화면으로 간다 (#759).
+     *
+     * **`null` 이면 클릭 자체를 붙이지 않는다** (#1540 리뷰).
      *
      * no-op 을 넘기면 `Role.Button` 이 그대로 실려 스크린리더가 「버튼」으로 읽는데 눌러도
      * 아무 일이 없다 — 읽기 전용으로 쓰는 자리(주간 리포트 HISTORY)가 그랬다.
