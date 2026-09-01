@@ -540,7 +540,7 @@ class TimeLetterWriteViewModel
         }
     }
 
-internal fun formatSendAt(
+private fun formatSendAt(
     date: String,
     hour: Int,
     minute: Int,

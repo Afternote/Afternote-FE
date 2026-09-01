@@ -204,6 +204,7 @@ class TimeLetterLifecycleTest {
                     onBackClick = {},
                     onOpenDraft = { openedDraftId = it },
                     viewModel = activeViewModel,
+                    onRefreshConsumed = {},
                 )
             }
         }
@@ -267,6 +268,10 @@ class TimeLetterLifecycleTest {
             repository.replaceDraftLetters(TimeLetterList(emptyList(), totalCount = 0))
             refreshRequested = true
         }
+        // v2 rule 은 StandardTestDispatcher 라 LaunchedEffect(refreshRequested) 가 트리거한
+        // viewModelScope 코루틴을 waitUntil 폴링만으로는 못 잡는다 — 한 번 명시적으로 idle 해
+        // 재조합·이펙트를 먼저 흘려보낸다.
+        composeRule.waitForIdle()
 
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
             repository.temporaryListCalls == 2 &&

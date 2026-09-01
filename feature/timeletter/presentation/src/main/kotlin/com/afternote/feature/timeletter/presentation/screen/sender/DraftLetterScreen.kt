@@ -42,7 +42,7 @@ fun DraftLetterScreen(
     modifier: Modifier = Modifier,
     viewModel: DraftLetterViewModel = hiltViewModel(),
     refreshRequested: Boolean = false,
-    onRefreshConsumed: () -> Unit = {},
+    onRefreshConsumed: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }

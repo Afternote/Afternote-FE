@@ -29,36 +29,42 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import java.time.ZoneId
+import java.util.TimeZone
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
 class TimeLetterWriteViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
+    private lateinit var originalTimeZone: TimeZone
 
     @Before
     fun setUp() {
         Dispatchers.setMain(dispatcher)
+        originalTimeZone = TimeZone.getDefault()
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Seoul"))
     }
 
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+        TimeZone.setDefault(originalTimeZone)
     }
 
     @Test
-    fun `예약 발송 시각은 UTC 오프셋을 포함한다`() {
-        assertEquals(
-            "2026-08-29T19:30:00+09:00",
-            formatSendAt(
-                date = "2026-08-29",
-                hour = 19,
-                minute = 30,
-                zoneId = ZoneId.of("Asia/Seoul"),
-            ),
-        )
-    }
+    fun `예약 발송 시각은 UTC 오프셋을 포함해 생성 경계까지 전달된다`() =
+        runTest {
+            val repository = FakeTimeLetterRepository()
+            val viewModel = viewModel(repository)
+            viewModel.setRecipients(listOf(1L))
+            viewModel.setSendAt("2026-08-29")
+            viewModel.setSendTime(hour = 19, minute = 30)
+
+            viewModel.saveDraft(title = "제목", textContents = emptyMap())
+            advanceUntilIdle()
+
+            assertEquals("2026-08-29T19:30:00+09:00", repository.createCalls.single().sendAt)
+        }
 
     @Test
     fun `수신자 없는 임시저장 - 생성 API를 호출하지 않고 필수 안내를 표시`() =
