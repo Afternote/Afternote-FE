@@ -58,9 +58,10 @@ class RecordListMonthTest {
         }
 
         // 목록은 캘린더가 먼저 오는 LazyColumn 이라 기록 카드가 화면 밖에서 시작할 수 있다.
-        // 스크롤 위치에 기대면 캘린더 높이가 조금만 달라져도 「노드가 없다」로 깨진다 —
-        // 이 테스트가 보려는 것은 «누르면 무엇이 넘어가는가» 이므로 항목까지 스크롤해 놓고 누른다.
-        composeRule.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("지난달 기록"))
+        // 스크롤 위치에 기대면 캘린더 높이가 조금만 달라져도 「노드가 없다」로 깨진다 (#1700).
+        composeRule
+            .onNode(hasScrollToNodeAction())
+            .performScrollToNode(hasText("지난달 기록"))
         composeRule.onAllNodesWithText("지난달 기록")[0].performClick()
 
         assertEquals(11L to lastMonth, clicked)

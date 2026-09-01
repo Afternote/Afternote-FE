@@ -509,7 +509,7 @@ fun rememberAfternoteNavActions(
  * 수신자 서브그래프에 넘길 그래프 내부 [ReceiverNavActions] 구현체.
  *
  * 본인 확인 캐시 분기(Intro→MasterKey)는 nested 그래프 진입 후 `DeliveryVerificationFlowViewModel` 에서
- * 자동 처리되므로(#220) 본 actions 는 순수 네비게이션만 수행한다. authCode 같은 Repository 사이드이펙트는
+ * 자동 처리되므로(#220) 본 actions 는 순수 네비게이션만 수행한다. masterKey 같은 Repository 사이드이펙트는
  * 각 화면 ViewModel 에서 처리.
  */
 @Composable
