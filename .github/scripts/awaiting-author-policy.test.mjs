@@ -66,6 +66,15 @@ test("두 판정 모두 커밋과 함께 작성자의 응답을 본다", () => {
     assert.match(script, /fixes > 0 \|\| responses > 0/);
 });
 
+test("두 판정 모두 변경요청 뒤 작성자의 PR 본문 편집을 조치로 본다", () => {
+    // CI Test Plan 처럼 PR 본문 자체가 리뷰 대상인 지적은 새 커밋 없이 해결된다. 일반
+    // updatedAt 이 아니라 편집자와 편집 시각이 남는 userContentEdits 를 사용해야 한다.
+    assert.match(guard, /userContentEdits/);
+    assert.match(script, /userContentEdits\(last: 50\)/);
+    assert.match(script, /export function countAuthorBodyEdits/);
+    assert.match(script, /bodyEdits > 0/);
+});
+
 test("두 판정 모두 draft·봇·fork 를 대상에서 뺀다", () => {
     assert.match(guard, /\[ "\$HEAD_REPO" != "\$REPO" \]/);
     assert.match(guard, /select\(\.draft == false\)/);

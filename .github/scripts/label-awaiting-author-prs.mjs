@@ -17,8 +17,8 @@
 // 차이만 쓰므로 붙이기와 떼기가 갈라질 수 없다. 호출도 PR 수만큼 곱해지지 않는다 (#1465).
 //
 // 판정 기준은 `review-debt-guard.yml` 과 같아야 한다. 한쪽만 바뀌면 가드가 «작성자 몫» 이라고
-// 판단한 PR 에 라벨이 없거나, 반대로 리뷰어 몫인 PR 에 라벨이 붙는다. 두 판정이 공유하는
-// 술어는 `awaiting-author-policy.test.mjs` 가 잠근다.
+// 판단한 PR 에 라벨이 없거나, 반대로 리뷰어 몫인 PR 에 라벨이 붙는다. 커밋·응답·본문 편집을
+// 포함해 두 판정이 공유하는 술어는 `awaiting-author-policy.test.mjs` 가 잠근다.
 
 import path from "node:path";
 import process from "node:process";
@@ -28,8 +28,9 @@ export const DEFAULT_LABEL = "awaiting-author";
 
 const LABEL_COLOR = "FBCA04";
 const LABEL_DESCRIPTION = "변경요청 뒤 작성자 조치 없음 — 공은 작성자에게 있다";
-// 25건 × (리뷰·커밋·코멘트 100) 를 한 번에 물으면 GraphQL 이 시간 안에 못 돌려 504 를 낸다
-// (8/30 실측). 페이지를 잘게 끊고, 하위 컬렉션도 «판정 이후» 를 덮을 만큼만 가져온다. 셋 다
+// 25건 × (리뷰·커밋·코멘트·본문 편집 100) 를 한 번에 물으면 GraphQL 이 시간 안에 못 돌려
+// 504 를 낸다
+// (8/30 실측). 페이지를 잘게 끊고, 하위 컬렉션도 «판정 이후» 를 덮을 만큼만 가져온다. 모두
 // `last` 인 것은 필요한 쪽이 최근이기 때문이다 — 판정은 최신 결정 리뷰이고, 반영·응답은 그
 // 시각 이후만 센다. `first` 로 앞부분을 가져오면 정작 볼 구간이 잘린다.
 const PULL_REQUEST_PAGE_SIZE = 10;
@@ -72,6 +73,13 @@ query($owner: String!, $name: String!, $cursor: String, $pageSize: Int!) {
                     nodes {
                         createdAt
                         author { login }
+                    }
+                }
+                userContentEdits(last: 50) {
+                    pageInfo { hasPreviousPage }
+                    nodes {
+                        editedAt
+                        editor { login }
                     }
                 }
             }
@@ -117,6 +125,13 @@ query($searchQuery: String!, $cursor: String, $pageSize: Int!) {
                     nodes {
                         createdAt
                         author { login }
+                    }
+                }
+                userContentEdits(last: 50) {
+                    pageInfo { hasPreviousPage }
+                    nodes {
+                        editedAt
+                        editor { login }
                     }
                 }
             }
@@ -201,7 +216,8 @@ export function countAuthorFixes({ commits, author, since }) {
  * 파일이 실제로 바뀌고 응답 코멘트도 2건 달린 채 빚에서 빠져 있었다 (#1450).
  *
  * 라인 코멘트는 따로 조회하지 않는다. 작성자가 라인 코멘트를 남기면 그 코멘트를 담은 리뷰가
- * 함께 제출되므로 `reviews` 에서 잡힌다.
+ * 함께 제출되므로 `reviews` 에서 잡힌다. PR 본문 편집은 별도 이력이므로 아래
+ * `countAuthorBodyEdits` 에서 센다.
  */
 export function countAuthorResponses({ comments, reviews, author, since }) {
     const issueComments = (comments ?? []).filter(
@@ -219,6 +235,23 @@ export function countAuthorResponses({ comments, reviews, author, since }) {
     ).length;
 
     return issueComments + authorReviews;
+}
+
+/**
+ * 판정 시각 이후 PR 작성자가 직접 고친 본문 편집 수를 센다.
+ *
+ * PR 본문의 CI Test Plan 같이 커밋 밖에 있는 리뷰 지적은 본문 편집만으로 반영될 수 있다.
+ * `updatedAt` 은 라벨·리뷰어 등 다른 메타데이터 변경도 섞이므로 쓰지 않고, GitHub 가 남기는
+ * `userContentEdits` 의 실제 편집자와 시각만 본다. 리뷰어의 대리 편집이나 편집자 정보가 사라진
+ * 기록은 작성자 조치로 추정하지 않는다.
+ */
+export function countAuthorBodyEdits({ userContentEdits, author, since }) {
+    return (userContentEdits ?? []).filter(
+        (edit) =>
+            sameLogin(edit?.editor?.login, author) &&
+            typeof edit?.editedAt === "string" &&
+            edit.editedAt > since,
+    ).length;
 }
 
 /**
@@ -265,11 +298,16 @@ export function judgeAwaitingAuthor(pullRequest, { repository } = {}) {
         author,
         since,
     });
+    const bodyEdits = countAuthorBodyEdits({
+        userContentEdits: pullRequest?.userContentEdits?.nodes,
+        author,
+        since,
+    });
 
-    if (fixes > 0 || responses > 0) {
+    if (fixes > 0 || responses > 0 || bodyEdits > 0) {
         return {
             awaiting: false,
-            reason: `작성자 조치 있음(${fixes}커밋 · 응답 ${responses}건)`,
+            reason: `작성자 조치 있음(${fixes}커밋 · 응답 ${responses}건 · 본문 편집 ${bodyEdits}건)`,
             decidedAt: since,
         };
     }
@@ -503,10 +541,11 @@ export async function fetchOpenPullRequestsByAuthor(api, repository, author) {
                 throw new Error("GraphQL 작성자 PR 검색 결과가 불완전합니다.");
             }
 
-            // `last: 50` 앞에 더 많은 항목이 있으면 최신 결정 시각 이후의 작성자 이메일·응답을
-            // 완전하게 판정할 수 없다. 라벨은 다음 리컨사일에서 복구할 수 있지만, 입장 가드가
-            // 불완전한 근거로 PR 을 닫는 것은 되돌리기 비용이 있으므로 판정 자체를 중단한다.
-            for (const connectionName of ["reviews", "commits", "comments"]) {
+            // `last: 50` 앞에 더 많은 항목이 있으면 최신 결정 시각 이후의 작성자 이메일·응답·
+            // 본문 편집을 완전하게 판정할 수 없다. 라벨은 다음 리컨사일에서 복구할 수 있지만,
+            // 입장 가드가 불완전한 근거로 PR 을 닫는 것은 되돌리기 비용이 있으므로 판정 자체를
+            // 중단한다.
+            for (const connectionName of ["reviews", "commits", "comments", "userContentEdits"]) {
                 const connection = pullRequest[connectionName];
                 if (!connection || !Array.isArray(connection.nodes)) {
                     throw new Error(`GraphQL 작성자 PR ${connectionName} 응답이 불완전합니다.`);

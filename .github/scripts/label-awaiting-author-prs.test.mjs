@@ -4,6 +4,7 @@ import test from "node:test";
 import {
     DEFAULT_LABEL,
     applyPlan,
+    countAuthorBodyEdits,
     countAuthorFixes,
     countAuthorResponses,
     ensureLabelExists,
@@ -62,6 +63,7 @@ function pullRequest(overrides = {}) {
         reviews: { pageInfo: { hasPreviousPage: false }, nodes: [] },
         commits: { pageInfo: { hasPreviousPage: false }, nodes: [] },
         comments: { pageInfo: { hasPreviousPage: false }, nodes: [] },
+        userContentEdits: { pageInfo: { hasPreviousPage: false }, nodes: [] },
         ...overrides,
     };
 }
@@ -274,7 +276,7 @@ test("두 GraphQL 조회는 결정 리뷰 권한과 하위 connection 절단 여
     assert.equal(queries.length, 2);
     for (const query of queries) {
         assert.match(query, /authorCanPushToRepository/);
-        for (const connection of ["reviews", "commits", "comments"]) {
+        for (const connection of ["reviews", "commits", "comments", "userContentEdits"]) {
             assert.match(
                 query,
                 new RegExp(`${connection}\\(last: 50\\) \\{\\s+pageInfo \\{ hasPreviousPage \\}`),
@@ -292,6 +294,11 @@ test("입장 게이트 조회는 잘린·누락된 하위 connection으로 판�
         ],
         ["commits", { pageInfo: {}, nodes: [] }, /commits 최근 50건이 완전하지 않습니다/],
         ["comments", { pageInfo: { hasPreviousPage: false } }, /comments 응답이 불완전합니다/],
+        [
+            "userContentEdits",
+            { pageInfo: { hasPreviousPage: true }, nodes: [] },
+            /userContentEdits 최근 50건이 완전하지 않습니다/,
+        ],
     ];
 
     for (const [connection, value, expected] of cases) {
@@ -332,10 +339,66 @@ test("최신 판정이 승인이면 대상이 아니다", () => {
                     },
                 ],
             },
+            userContentEdits: {
+                nodes: [
+                    {
+                        editedAt: "2026-08-03T00:00:00Z",
+                        editor: { login: "author" },
+                    },
+                ],
+            },
         }),
         { repository: REPO },
     );
     assert.equal(verdict.awaiting, false);
+    assert.equal(verdict.reason, "최신 판정이 변경요청이 아님");
+});
+
+test("변경요청 뒤 작성자가 PR 본문을 고치면 조치로 센다", () => {
+    const verdict = judgeAwaitingAuthor(
+        pullRequest({
+            reviews: { nodes: [changesRequested("2026-08-29T00:00:00Z")] },
+            userContentEdits: {
+                nodes: [
+                    {
+                        editedAt: "2026-08-29T00:00:01Z",
+                        editor: { login: "AUTHOR" },
+                    },
+                ],
+            },
+        }),
+        { repository: REPO },
+    );
+
+    assert.equal(verdict.awaiting, false);
+    assert.match(verdict.reason, /본문 편집 1건/);
+});
+
+test("판정 전·다른 사람·편집자 없는 본문 편집은 작성자 조치가 아니다", () => {
+    const edits = [
+        { editedAt: "2026-08-28T23:59:59Z", editor: { login: "author" } },
+        { editedAt: "2026-08-29T00:00:00Z", editor: { login: "author" } },
+        { editedAt: "2026-08-29T00:00:01Z", editor: { login: "reviewer" } },
+        { editedAt: "2026-08-29T00:00:02Z", editor: null },
+    ];
+
+    assert.equal(
+        countAuthorBodyEdits({
+            userContentEdits: edits,
+            author: "author",
+            since: "2026-08-29T00:00:00Z",
+        }),
+        0,
+    );
+
+    const verdict = judgeAwaitingAuthor(
+        pullRequest({
+            reviews: { nodes: [changesRequested("2026-08-29T00:00:00Z")] },
+            userContentEdits: { nodes: edits },
+        }),
+        { repository: REPO },
+    );
+    assert.equal(verdict.awaiting, true);
 });
 
 test("리뷰어가 미는 빈 CI 재트리거 커밋은 작성자 조치가 아니다", () => {
