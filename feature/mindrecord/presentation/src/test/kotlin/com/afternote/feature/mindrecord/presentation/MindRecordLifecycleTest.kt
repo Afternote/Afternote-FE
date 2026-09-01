@@ -40,6 +40,7 @@ import com.afternote.feature.mindrecord.presentation.screen.sender.DraftListScre
 import com.afternote.feature.mindrecord.presentation.screen.sender.WeeklyReportScreen
 import com.afternote.feature.mindrecord.presentation.usecase.DeleteMindRecordDraftsUseCase
 import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
+import com.afternote.feature.mindrecord.presentation.usecase.ObserveWeeklyReportUseCase
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftListUiState
@@ -212,7 +213,7 @@ class MindRecordLifecycleTest {
         val repository = FakeWeeklyReportRepository()
         repository.results.addLast(Result.failure(IllegalStateException("weekly offline")))
         val userRepository = privateProfileRepository("테스트 사용자")
-        val viewModel = WeeklyReportViewModel(repository, userRepository, MindRecordChangeTracker())
+        val viewModel = WeeklyReportViewModel(ObserveWeeklyReportUseCase(repository, userRepository), MindRecordChangeTracker())
 
         composeRule.setContent {
             AfternoteTheme {

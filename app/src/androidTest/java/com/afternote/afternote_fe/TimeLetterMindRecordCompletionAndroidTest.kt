@@ -62,6 +62,7 @@ import com.afternote.feature.mindrecord.presentation.screen.sender.DraftListScre
 import com.afternote.feature.mindrecord.presentation.screen.sender.WeeklyReportScreen
 import com.afternote.feature.mindrecord.presentation.usecase.DeleteMindRecordDraftsUseCase
 import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
+import com.afternote.feature.mindrecord.presentation.usecase.ObserveWeeklyReportUseCase
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionWriteViewModel
@@ -669,7 +670,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
                 profile = User("주간 사용자", "weekly@afternote.local", null, null),
                 receivers = emptyList(),
             )
-        val viewModel = WeeklyReportViewModel(repository, userRepository, MindRecordChangeTracker())
+        val viewModel = WeeklyReportViewModel(ObserveWeeklyReportUseCase(repository, userRepository), MindRecordChangeTracker())
 
         composeRule.setContent {
             AfternoteTheme {
