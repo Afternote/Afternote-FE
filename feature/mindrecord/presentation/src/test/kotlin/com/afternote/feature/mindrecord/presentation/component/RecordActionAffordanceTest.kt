@@ -1,12 +1,17 @@
 package com.afternote.feature.mindrecord.presentation.component
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -72,6 +77,33 @@ class RecordActionAffordanceTest {
         composeRule
             .onNodeWithContentDescription(moreMenuLabel())
             .assertIsDisplayed()
+    }
+
+    @Test
+    fun `onClick 이 없으면 카드에 클릭 semantics 를 붙이지 않는다`() {
+        // no-op 을 넘기면 `Role.Button` 이 그대로 실려 스크린리더가 「버튼」으로 읽는데 눌러도
+        // 아무 일이 없다 — 주간 리포트 HISTORY 가 그 상태였다 (#1540 리뷰).
+        composeRule.setContent {
+            AfternoteTheme {
+                DailyQuestionListCard(answer = answer, onClick = null, onEdit = null, onDelete = null)
+            }
+        }
+
+        composeRule.onAllNodes(hasClickAction()).assertCountEquals(0)
+    }
+
+    @Test
+    fun `onClick 이 있으면 카드가 눌린다`() {
+        var clicks = 0
+        composeRule.setContent {
+            AfternoteTheme {
+                DailyQuestionListCard(answer = answer, onClick = { clicks += 1 }, onEdit = null, onDelete = null)
+            }
+        }
+
+        composeRule.onAllNodes(hasClickAction()).assertCountEquals(1)
+        composeRule.onNodeWithText(answer.title).performClick()
+        assertEquals("카드 탭이 전달되지 않았다", 1, clicks)
     }
 
     private fun moreMenuLabel(): String = composeRule.activity.getString(R.string.mindrecord_more_menu_cd)

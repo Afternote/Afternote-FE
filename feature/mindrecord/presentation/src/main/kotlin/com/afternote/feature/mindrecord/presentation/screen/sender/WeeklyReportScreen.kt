@@ -152,11 +152,14 @@ private fun WeeklyReportContent(
                 state.dailyQuestions.forEach { dailyQuestion ->
                     // 주간 리포트는 읽기 전용 요약이다 — 편집·삭제는 데일리질문 목록의 몫이라
                     // 여기서는 «더보기» 를 그리지 않는다 (#1540).
+                    // 주간 리포트는 **읽기 전용 요약**이다 — 편집·삭제도, 카드 탭도 없다.
+                    // 셋 다 `null` 이라 클릭 semantics 자체가 안 붙는다: no-op 을 넘기면
+                    // 스크린리더가 「버튼」으로 읽는데 눌러도 아무 일이 없다 (#1540 리뷰).
                     DailyQuestionListCard(
                         answer = dailyQuestion,
+                        onClick = null,
                         onEdit = null,
                         onDelete = null,
-                        onClick = {},
                     )
                 }
             }
