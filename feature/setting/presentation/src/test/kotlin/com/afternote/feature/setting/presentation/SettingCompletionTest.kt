@@ -3,11 +3,12 @@ package com.afternote.feature.setting.presentation
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.SavedStateHandle
@@ -360,9 +361,11 @@ class SettingCompletionTest {
             .onNode(hasText("관계를 선택하세요") and hasClickAction())
             .performClick()
         composeRule.onNodeWithText("어머니").performClick()
+        // 이메일 필드(6행 중 5번째, index 4)는 테스트 뷰포트 밖이라 LazyColumn이 아직 구성하지 않는다 —
+        // performScrollTo()는 이미 구성된 노드만 찾을 수 있어 인덱스로 직접 스크롤한다.
+        composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(4)
         composeRule
             .onNodeWithText("afternote@email.com")
-            .performScrollTo()
             .performTextInput("invalid-email")
         composeRule.onNode(registerButton).assertIsNotEnabled()
 

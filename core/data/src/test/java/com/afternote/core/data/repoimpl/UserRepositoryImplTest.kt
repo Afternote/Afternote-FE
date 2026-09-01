@@ -342,7 +342,7 @@ class UserRepositoryImplTest {
                         status = 400,
                         code = 400,
                         serverMessage = "올바른 이메일 형식이 아닙니다.",
-                        message = "올바른 이메일 형식이 아닙니다.",
+                        fallbackMessage = "올바른 이메일 형식이 아닙니다.",
                     )
                 },
             )
@@ -370,7 +370,7 @@ class UserRepositoryImplTest {
                 status = 500,
                 code = 500,
                 serverMessage = "internal database failure",
-                message = "internal database failure",
+                fallbackMessage = "internal database failure",
             )
         val repository = repository(onCreateReceiver = { throw serverFailure })
 
