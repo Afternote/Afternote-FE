@@ -1,9 +1,12 @@
 package com.afternote.feature.mindrecord.presentation.screen.sender
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.hasScrollToNodeAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.model.DailyDiary
 import org.junit.Assert.assertEquals
@@ -54,6 +57,10 @@ class RecordListMonthTest {
             }
         }
 
+        // 목록은 캘린더가 먼저 오는 LazyColumn 이라 기록 카드가 화면 밖에서 시작할 수 있다.
+        // 스크롤 위치에 기대면 캘린더 높이가 조금만 달라져도 「노드가 없다」로 깨진다 —
+        // 이 테스트가 보려는 것은 «누르면 무엇이 넘어가는가» 이므로 항목까지 스크롤해 놓고 누른다.
+        composeRule.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("지난달 기록"))
         composeRule.onAllNodesWithText("지난달 기록")[0].performClick()
 
         assertEquals(11L to lastMonth, clicked)
