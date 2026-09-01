@@ -35,29 +35,26 @@ private const val TAG = "AfternoteEditorState"
 class AfternoteEditorState(
     val idState: TextFieldState,
     val passwordState: TextFieldState,
-    val customServiceNameState: TextFieldState,
+    val serviceSearchQueryState: TextFieldState,
     private val getCurrentForm: () -> EditorFormState,
     private val setType: (AfternoteType) -> Unit,
     private val setService: (String) -> Unit,
-    private val addReceiverIfAbsent: (receiverId: String, name: String, label: String) -> Unit,
+    private val addReceiverIfAbsent: (receiverId: Long, name: String, label: String) -> Unit,
     private val applyPrefill: (EditorFormPrefill) -> Unit,
     val setMemorialPhoto: (String?) -> Unit,
     val setMemorialVideo: (String?) -> Unit,
     val setMemorialThumbnail: (String?) -> Unit,
-    val deleteReceiver: (receiverId: String) -> Unit,
+    val deleteReceiver: (receiverId: Long) -> Unit,
     val replaceReceiversIfEmpty: (List<AfternoteEditorReceiver>) -> Unit,
     val addProcessingMethod: (text: String) -> Unit,
     val deleteProcessingMethod: (localId: Int) -> Unit,
     val editProcessingMethod: (localId: Int, newText: String) -> Unit,
     val editorMessages: SnapshotStateList<LeaveMessageEditorItem> = mutableStateListOf(),
 ) {
-    var isCustomServiceDialogVisible by mutableStateOf(false)
+    var isServiceSelectionSheetVisible by mutableStateOf(false)
         private set
 
     var typeDropdownExpanded by mutableStateOf(false)
-        private set
-
-    var serviceDropdownExpanded by mutableStateOf(false)
         private set
 
     /** 이벤트 처리에 사용할 최신 폼. 화면 표시는 수집된 `uiState.form`을 사용한다. */
@@ -67,33 +64,23 @@ class AfternoteEditorState(
         typeDropdownExpanded = expanded
     }
 
-    fun onServiceDropdownExpandedChange(expanded: Boolean) {
-        serviceDropdownExpanded = expanded
+    fun onTypeSelected(type: AfternoteType) {
+        dismissServiceSelectionSheet()
+        setType(type)
     }
 
-    fun onTypeSelected(type: AfternoteType) = setType(type)
+    fun openServiceSelectionSheet() {
+        isServiceSelectionSheetVisible = true
+    }
+
+    fun dismissServiceSelectionSheet() {
+        isServiceSelectionSheetVisible = false
+        serviceSearchQueryState.edit { replace(0, length, "") }
+    }
 
     fun onServiceSelected(service: String) {
-        if (getCurrentForm().isCustomAddOption(service)) {
-            isCustomServiceDialogVisible = true
-        } else {
-            setService(service)
-        }
-    }
-
-    fun dismissCustomServiceDialog() {
-        isCustomServiceDialogVisible = false
-        customServiceNameState.edit { replace(0, length, "") }
-    }
-
-    fun onAddCustomService() {
-        val serviceName =
-            customServiceNameState.text
-                .toString()
-                .trim()
-        if (serviceName.isEmpty()) return
-        setService(serviceName)
-        dismissCustomServiceDialog()
+        setService(service)
+        dismissServiceSelectionSheet()
     }
 
     fun addReceiverById(
@@ -101,7 +88,7 @@ class AfternoteEditorState(
         name: String,
         relation: String,
     ) {
-        addReceiverIfAbsent(receiverId.toString(), name, relation)
+        addReceiverIfAbsent(receiverId, name, relation)
     }
 
     fun addEditorMessage() {
@@ -236,10 +223,10 @@ fun rememberAfternoteEditorState(
     setService: (String) -> Unit,
     setMemorialPhoto: (String?) -> Unit,
     setMemorialVideo: (String?) -> Unit,
-    addReceiverIfAbsent: (receiverId: String, name: String, label: String) -> Unit,
+    addReceiverIfAbsent: (receiverId: Long, name: String, label: String) -> Unit,
     applyPrefill: (EditorFormPrefill) -> Unit,
     setMemorialThumbnail: (String?) -> Unit,
-    deleteReceiver: (receiverId: String) -> Unit,
+    deleteReceiver: (receiverId: Long) -> Unit,
     replaceReceiversIfEmpty: (List<AfternoteEditorReceiver>) -> Unit,
     addProcessingMethod: (text: String) -> Unit,
     deleteProcessingMethod: (localId: Int) -> Unit,
@@ -247,17 +234,17 @@ fun rememberAfternoteEditorState(
 ): AfternoteEditorState {
     val idState = rememberTextFieldState()
     val passwordState = rememberTextFieldState()
-    val customServiceNameState = rememberTextFieldState()
+    val serviceSearchQueryState = rememberTextFieldState()
     val editorMessages =
         rememberSaveable(saver = editorMessagesSaver) {
             mutableStateListOf()
         }
 
-    return remember(idState, passwordState, customServiceNameState, editorMessages) {
+    return remember(idState, passwordState, serviceSearchQueryState, editorMessages) {
         AfternoteEditorState(
             idState = idState,
             passwordState = passwordState,
-            customServiceNameState = customServiceNameState,
+            serviceSearchQueryState = serviceSearchQueryState,
             getCurrentForm = getCurrentForm,
             setType = setType,
             setService = setService,

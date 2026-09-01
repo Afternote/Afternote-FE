@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
@@ -20,11 +19,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.icon.AfternoteSourceIcon
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.receiver.presentation.R
 
 private const val MAX_VISIBLE_ICONS = 4
@@ -48,8 +45,8 @@ fun AfternoteSection(
         description = stringResource(R.string.receiver_home_afternote_section_desc),
         countLine =
             rememberCountLine(
-                prefix = "${countText(totalCount)}개",
-                suffix = "의 애프터노트가 있습니다.",
+                prefix = stringResource(R.string.receiver_home_afternote_count_prefix, countText(totalCount)),
+                suffix = stringResource(R.string.receiver_home_afternote_count_suffix),
             ),
         buttonText = stringResource(R.string.receiver_home_afternote_section_button),
         onButtonClick = onGoClick,
@@ -114,25 +111,6 @@ private fun ExtraCountChip(count: Int) {
             text = stringResource(R.string.receiver_home_afternote_extra_count, count),
             style = AfternoteDesign.typography.captionLargeB,
             color = AfternoteDesign.colors.white,
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun AfternoteSectionPreview() {
-    AfternoteTheme {
-        AfternoteSection(
-            totalCount = 10,
-            icons =
-                listOf(
-                    AfternoteSourceIcon.SocialNetwork,
-                    AfternoteSourceIcon.GalleryAndFiles,
-                    AfternoteSourceIcon.Memorial,
-                    AfternoteSourceIcon.Other,
-                ),
-            onGoClick = {},
-            modifier = Modifier.padding(20.dp),
         )
     }
 }

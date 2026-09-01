@@ -7,12 +7,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.receiver.presentation.R
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_HEADER_SPACING
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_TOTAL_STEPS
 import com.afternote.feature.receiver.presentation.deliveryverification.component.ReceiverVerifyStep
@@ -53,13 +51,5 @@ fun DeliveryVerificationCompleteScreen(
             color = AfternoteDesign.colors.gray5,
             modifier = Modifier.fillMaxWidth(),
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun DeliveryVerificationCompletePreview() {
-    AfternoteTheme {
-        DeliveryVerificationCompleteScreen(onBackToRecords = {})
     }
 }

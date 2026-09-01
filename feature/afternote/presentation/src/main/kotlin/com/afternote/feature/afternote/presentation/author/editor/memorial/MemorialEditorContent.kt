@@ -1,15 +1,11 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial
 
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
 import com.afternote.feature.afternote.presentation.author.editor.message.LeaveMessageEditorItem
 import com.afternote.feature.afternote.presentation.author.editor.receiver.RecipientDesignationSection
-import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
 import com.afternote.feature.afternote.presentation.shared.MemorialContent
 import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
@@ -77,39 +73,4 @@ fun MemorialEditorContent(
             )
         },
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun MemorialEditorContentPreview() {
-    AfternoteTheme {
-        MemorialEditorContent(
-            displayMemorialPhotoUri = null,
-            playlistAlbumCovers = emptyList(),
-            memorialVideoUrl = null,
-            memorialThumbnailUrl = null,
-            editorMessages =
-                listOf(
-                    LeaveMessageEditorItem(
-                        titleState = rememberTextFieldState("가족들에게"),
-                        contentState = rememberTextFieldState("항상 고마워요."),
-                    ),
-                ),
-            recipientSection =
-                AfternoteEditorReceiverSection(
-                    afternoteEditReceivers =
-                        listOf(
-                            AfternoteEditorReceiver(id = "1", name = "홍길동", label = "가족"),
-                        ),
-                ),
-            onSongAddClick = {},
-            onPhotoAddClick = {},
-            onVideoAddClick = {},
-            onMessageRegisterClick = {},
-            onMessageDeleteClick = {},
-            onMessageAddClick = {},
-            onThumbnailBytesReady = {},
-            onThumbnailExtractionFailed = {},
-        )
-    }
 }

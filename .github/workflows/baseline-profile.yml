@@ -1,0 +1,145 @@
+name: Baseline Profile
+
+# PR에서는 커밋된 profile의 정적 계약과 release AAB 패키징만 검증한다. 에뮬레이터 생성은
+# default branch의 주간/수동 실행만 수행해 profile freshness를 확인하고 PR runner 비용을 제한한다.
+on:
+  pull_request:
+    paths:
+      - 'app/build.gradle.kts'
+      - 'app/src/main/generated/baselineProfiles/**'
+      - 'baselineprofile/**'
+      - 'gradle/libs.versions.toml'
+      - 'settings.gradle.kts'
+      - '.github/scripts/baseline-profile-policy.test.mjs'
+      - '.github/workflows/baseline-profile.yml'
+  schedule:
+    - cron: '43 18 * * 6'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: baseline-profile-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Generate and verify Baseline Profile
+    if: >-
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.head.repo.full_name == github.repository) ||
+      (github.event_name != 'pull_request' &&
+       github.ref_name == github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Clone tested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle and validate wrapper
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          cache-provider: basic
+          cache-read-only: true
+          validate-wrappers: true
+
+      - name: Set up CI-only app configuration
+        uses: ./.github/actions/setup-ci-config
+
+      - name: Set up one-run release signing
+        uses: ./.github/actions/setup-ci-release-signing
+
+      - name: Validate committed Baseline Profile
+        run: |
+          set -euo pipefail
+          profile='app/src/main/generated/baselineProfiles/baseline-prof.txt'
+          startup_profile='app/src/main/generated/baselineProfiles/startup-prof.txt'
+          test -s "$profile"
+          test -s "$startup_profile"
+          grep -Eq '^L[^[:space:]]+;$' "$profile"
+          rule_count="$(grep -cve '^[[:space:]]*$' "$profile")"
+          if (( rule_count < 100 )); then
+            echo "::error::Committed Baseline Profile has only ${rule_count} rules."
+            exit 1
+          fi
+          if ! cmp -s "$profile" "$startup_profile"; then
+            echo '::error::Startup Profile must match the collected Baseline Profile.'
+            exit 1
+          fi
+
+      - name: Enable and verify KVM access
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          runner_user="$(id -un)"
+          echo "KERNEL==\"kvm\", OWNER=\"${runner_user}\", GROUP=\"kvm\", MODE=\"0660\", OPTIONS+=\"static_node=kvm\"" \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm --settle
+          test -c /dev/kvm
+          test -r /dev/kvm
+          test -w /dev/kvm
+          "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" emulator
+          "${ANDROID_HOME}/emulator/emulator" -accel-check
+
+      - name: Generate Baseline Profile on API 34
+        if: github.event_name != 'pull_request'
+        run: >-
+          ./gradlew :app:generateBaselineProfile
+          -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect
+          --no-daemon
+          --stacktrace
+
+      - name: Verify generated profile is committed
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          profile_dir='app/src/main/generated/baselineProfiles'
+          git diff --exit-code -- "$profile_dir"
+          if [[ -n "$(git status --porcelain --untracked-files=all -- "$profile_dir")" ]]; then
+            echo '::error::Generated Baseline Profile has uncommitted files.'
+            exit 1
+          fi
+
+      - name: Build release AAB without implicit profile generation
+        run: >-
+          ./gradlew :app:bundleRelease
+          -Pandroid.baselineProfile.automaticGenerationDuringBuild=false
+          -x :app:uploadCrashlyticsMappingFileRelease
+          --no-daemon
+          --stacktrace
+
+      - name: Verify release AAB packages the compiled profile
+        run: |
+          set -euo pipefail
+          bundle='app/build/outputs/bundle/release/app-release.aab'
+          entry='BUNDLE-METADATA/com.android.tools.build.profiles/baseline.prof'
+          test -s "$bundle"
+          unzip -Z1 "$bundle" | grep -Fx "$entry"
+          profile_bytes="$(unzip -p "$bundle" "$entry" | wc -c | tr -d '[:space:]')"
+          if ! [[ "$profile_bytes" =~ ^[1-9][0-9]*$ ]]; then
+            echo '::error::The packaged binary Baseline Profile is empty.'
+            exit 1
+          fi
+          echo "Packaged binary Baseline Profile: ${profile_bytes} bytes" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove private release outputs
+        if: always()
+        run: |
+          rm -f \
+            app/build/outputs/bundle/release/app-release.aab \
+            app/google-services.json \
+            local.properties \
+            "$AFTERNOTE_CI_RELEASE_KEYSTORE" \
+            "$AFTERNOTE_CI_RELEASE_STORE_PASSWORD_FILE" \
+            "$AFTERNOTE_CI_RELEASE_KEY_PASSWORD_FILE"

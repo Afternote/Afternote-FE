@@ -4,7 +4,7 @@ import android.content.Context
 import coil3.ImageLoader
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import com.afternote.core.network.BuildConfig
-import com.afternote.core.network.interceptor.ApiErrorInterceptor
+import com.afternote.core.network.calladapter.ApiErrorCallAdapterFactory
 import com.afternote.core.network.interceptor.AuthInterceptor
 import com.afternote.core.network.interceptor.FeatureNetworkInterceptor
 import com.afternote.core.network.interceptor.OptionalDebugNetworkInterceptor
@@ -98,8 +98,9 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
     fun provideJson(): Json =
         Json {
             ignoreUnknownKeys = true // dto로 정의되지 않은 키가 있어도 크래시 나지 않게 함
-            coerceInputValues =
-                true // 응답 json으로 유효하지 않은 필드 값이 오더라도 대응되는 dto 변수의 디폴트 값이 있다면 그 값으로 치환
+            // coerceInputValues 는 두지 않는다. non-null 프로퍼티에 null 이 와도 기본값이 있으면 조용히
+            // 치환해 계약 위반을 삼킨다 — 이 팀 기준은 «제외하더라도 세어서 보고» 다(#1010).
+            // 응답 DTO 에 보정형 기본값을 새로 두는 것은 ResponseDtoContractKonsistTest 가 막는다.
             // useAlternativeNames 는 기본 true — DTO 프로퍼티에 @JsonNames("대체키") 를 달면
             // 서버가 같은 필드를 다른 키로 내려줘도(명세·실서버 불일치, 키 리네임 과도기) 한 프로퍼티로 파싱된다.
             // 디코딩 전용이라 요청 직렬화 출력 키는 항상 @SerialName 을 따름. 사용 예: mindrecord DailyQuestionListItem
@@ -122,8 +123,8 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
     /**
      * 모든 클라이언트의 공통 뿌리. 파생은 [OkHttpClient.newBuilder] 로 — 설정값만이 아니라
      * ConnectionPool · Dispatcher · 스레드풀을 실제로 공유한다.
-     * 인터셉터는 여기 두지 않는다: 로깅은 각 클라이언트가 마지막에 달아야(최종 요청 관찰,
-     * 4xx 본문이 ApiException 으로 변환되기 전에 로깅) 하는데, base 에 두면 파생 시 맨 앞으로 밀린다.
+     * 인터셉터는 여기 두지 않는다: 로깅은 각 클라이언트가 마지막에 달아야 최종 요청·응답을 관찰하는데,
+     * base 에 두면 파생 시 맨 앞으로 밀린다.
      */
     @Provides
     @Singleton
@@ -138,11 +139,9 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
     fun provideRefreshOkHttpClient(
         @Named("BaseClient") baseClient: OkHttpClient,
         loggingInterceptor: HttpLoggingInterceptor,
-        apiErrorInterceptor: ApiErrorInterceptor,
     ): OkHttpClient =
         baseClient
             .newBuilder()
-            .addInterceptor(apiErrorInterceptor)
             .addInterceptor(loggingInterceptor)
             .build()
 
@@ -156,11 +155,8 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
         loggingInterceptor: HttpLoggingInterceptor,
         authInterceptor: AuthInterceptor,
         tokenAuthenticator: TokenAuthenticator,
-        apiErrorInterceptor: ApiErrorInterceptor,
     ): OkHttpClient {
         val builder = baseClient.newBuilder()
-        // 가장 외곽(응답 마지막) — 4xx/5xx 본문의 message 를 파싱해 ApiException 으로 변환
-        builder.addInterceptor(apiErrorInterceptor)
         // 디버그 전용(피처 모듈) 인터셉터: 네트워크로 나가기 전에 가짜 응답을 반환할 수 있음
         debugInterceptors.forEach { builder.addInterceptor(it) }
         // 피처 모듈이 제공하는 프로덕션 인터셉터(예: 수신자 X-Auth-Code 자동 부착)
@@ -226,12 +222,15 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
     fun provideRetrofit(
         @Named("MainClient") okHttpClient: OkHttpClient,
         json: Json,
+        apiErrorCallAdapterFactory: ApiErrorCallAdapterFactory,
     ): Retrofit =
         Retrofit
             .Builder()
             .baseUrl(BuildConfig.BASE_URL)
             // 느린 것이 확인된 경로만 여유 있는 파생 클라이언트로 태운다 (#1122).
             .callFactory(SlowEndpointCallFactory(okHttpClient))
+            // HTTP 응답을 받은 뒤 400..599 본문을 ApiException 으로 변환한다.
+            .addCallAdapterFactory(apiErrorCallAdapterFactory)
             // json과 코틀린의 dto 데이터 클래스 타입 간 번역기
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()

@@ -28,7 +28,6 @@ android {
 }
 
 dependencies {
-    implementation(projects.feature.onboarding.domain)
     implementation(projects.core.common)
     implementation(projects.core.domain)
     implementation(projects.core.model)
@@ -48,6 +47,7 @@ dependencies {
     // 레이아웃 폭 배분은 픽셀이 아니라 노드 bounds 라, 스크린샷 대신 Compose 로 직접 잰다.
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(testFixtures(projects.core.ui))
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     // Compose Preview Screenshot Testing (#330)

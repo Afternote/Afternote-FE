@@ -1,6 +1,20 @@
 plugins {
     `kotlin-dsl`
     `kotlin-dsl-precompiled-script-plugins`
+    alias(libs.plugins.ktlint)
+}
+
+// build-logic 자체도 누락된 visibility·반환 타입을 inventory 하되, 기존 경고를 한 번에 실패로
+// 바꾸지는 않는다. 정리 후 strict 로 승격한다.
+kotlin {
+    explicitApiWarning()
+}
+
+ktlint {
+    version.set(libs.versions.ktlint)
+    filter {
+        exclude { it.file.path.contains("build/") }
+    }
 }
 
 dependencies {
@@ -77,6 +91,14 @@ gradlePlugin {
             id = "afternote.android.domain"
             implementationClass = "AndroidDomainConventionPlugin"
         }
+        register("jvmLibrary") {
+            id = "afternote.jvm.library"
+            implementationClass = "JvmLibraryConventionPlugin"
+        }
+        register("jvmDomain") {
+            id = "afternote.jvm.domain"
+            implementationClass = "JvmDomainConventionPlugin"
+        }
         register("androidApplication") {
             id = "afternote.android.application"
             implementationClass = "AndroidApplicationConventionPlugin"
@@ -84,6 +106,10 @@ gradlePlugin {
         register("androidLint") {
             id = "afternote.android.lint"
             implementationClass = "AndroidLintConventionPlugin"
+        }
+        register("jvmLint") {
+            id = "afternote.jvm.lint"
+            implementationClass = "JvmLintConventionPlugin"
         }
         register("androidDatastore") {
             id = "afternote.android.datastore"

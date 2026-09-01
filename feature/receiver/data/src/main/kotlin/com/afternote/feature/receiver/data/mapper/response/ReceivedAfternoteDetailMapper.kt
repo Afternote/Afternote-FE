@@ -21,7 +21,7 @@ fun ReceivedAfternoteDetailDto.toDomain(): ReceivedAfternoteDetail =
             requireNotNull(category?.let(::afternoteTypeFromServerCategory)) {
                 "해석할 수 없는 애프터노트 종류다: id=$id category=$category"
             },
-        processingMethods = processingMethods,
+        processingMethods = processingMethods.orEmpty(),
         leaveMessageBlocks = leaveMessage.toLeaveMessageBlocks(),
         playlist = playlist?.toDomain(),
         credentials = credentials?.toDomain(),

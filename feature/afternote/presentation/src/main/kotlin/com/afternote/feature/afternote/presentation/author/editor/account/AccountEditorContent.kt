@@ -3,17 +3,13 @@ package com.afternote.feature.afternote.presentation.author.editor.account
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.CaptionLabeledTextField
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.EditorSectionLabel
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
@@ -21,7 +17,6 @@ import com.afternote.feature.afternote.presentation.author.editor.message.LeaveM
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.receiver.RecipientDesignationSection
-import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
 
 /**
@@ -55,13 +50,13 @@ fun AccountEditorContent(
             )
 
             CaptionLabeledTextField(
-                label = stringResource(R.string.feature_afternote_detail_label_id),
+                label = stringResource(R.string.afternote_detail_label_id),
                 state = accountSection.idState,
                 placeholder = stringResource(R.string.afternote_editor_account_id_placeholder),
             )
 
             CaptionLabeledTextField(
-                label = stringResource(R.string.feature_afternote_detail_label_password),
+                label = stringResource(R.string.afternote_detail_label_password),
                 state = accountSection.passwordState,
                 placeholder = stringResource(R.string.afternote_editor_account_password_placeholder),
                 keyboardType = KeyboardType.Password,
@@ -69,10 +64,13 @@ fun AccountEditorContent(
         }
 
         // 수신자 지정 섹션
-        // 위치 근거 = 비즈니스 시안(Figma 700:38735): 계정 정보 다음·처리 방법 리스트 앞.
+        // 위치 근거 = 비즈니스 시안 정본(Figma 4327:70468): 계정 정보 다음·처리 방법 리스트 앞.
         // 소셜 시안엔 아직 수신자 섹션이 없어 같은 폼을 쓰는 비즈니스가 유일한 위치 근거다.
-        // '정보 처리 방법' 라디오 존폐가 확정되면 라디오와 이 섹션의 상대 순서만 조정하면 되고,
-        // '처리 방법 리스트 앞'은 불변. 저장 검증이 수신자 1인 이상을 요구하므로 UI 를 노출한다.
+        // '정보 처리 방법' 라디오 3택은 폐지로 확정됐다 (#494). 정본 프레임의 TEXT 노드 전수에
+        // 라디오 문구가 0건이고, 순서는 종류 → 서비스명 → 계정 정보 → 수신자 추가 →
+        // 처리 방법 리스트 → 남기실 말씀이다. 이 순서는 AccountEditorSectionOrderTest 가 고정한다.
+        // 저장 검증이 수신자 1인 이상을 요구하므로 UI 를 노출하되, 라벨의 필수 점은 붙이지 않는다 —
+        // 정본 시안에 필수 마크가 없다.
         RecipientDesignationSection(section = recipientSection)
 
         // 처리 방법 리스트 섹션
@@ -85,51 +83,5 @@ fun AccountEditorContent(
             onDeleteClick = onMessageDeleteClick,
             onAddClick = onMessageAddClick,
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun AccountEditorContentPreview() {
-    AfternoteTheme {
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-        ) {
-            // 첫 번째 옵션 선택됨 (파란 테두리), 나머지는 선택 안 됨 (테두리 없음) 상태를 한 화면에 표시
-            AccountEditorContent(
-                editorMessages =
-                    listOf(
-                        LeaveMessageEditorItem(
-                            titleState = rememberTextFieldState("남긴말1"),
-                        ),
-                        LeaveMessageEditorItem(),
-                    ),
-                onMessageRegisterClick = {},
-                onMessageDeleteClick = {},
-                onMessageAddClick = {},
-                accountSection =
-                    AccountSection(
-                        idState = rememberTextFieldState(),
-                        passwordState = rememberTextFieldState(),
-                    ),
-                recipientSection =
-                    AfternoteEditorReceiverSection(
-                        afternoteEditReceivers =
-                            listOf(
-                                AfternoteEditorReceiver(id = "1", name = "홍길동", label = "가족"),
-                            ),
-                    ),
-                processingMethodSection =
-                    ProcessingMethodSection(
-                        items = emptyList(),
-                        onItemDeleteClick = {},
-                        onItemAdded = {},
-                        onItemEdited = { _, _ -> },
-                    ),
-            )
-        }
     }
 }

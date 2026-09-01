@@ -1,5 +1,6 @@
 package com.afternote.feature.receiver.data.repositoryimpl
 
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.requireData
@@ -10,9 +11,10 @@ import com.afternote.feature.receiver.data.dto.ReceiverAuthPresignedUrlRequestDt
 import com.afternote.feature.receiver.data.dto.ReceiverAuthVerifyRequestDto
 import com.afternote.feature.receiver.data.dto.ReceiverEmailAuthVerifyRequestDto
 import com.afternote.feature.receiver.data.dto.toDomain
-import com.afternote.feature.receiver.data.error.toServerRejection
+import com.afternote.feature.receiver.data.error.toReceiverServerFailure
 import com.afternote.feature.receiver.data.service.ReceiverAuthApiService
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
+import com.afternote.feature.receiver.domain.model.ReceivedRecordBox
 import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
 import com.afternote.feature.receiver.domain.model.ReceiverEmailAuthResult
 import com.afternote.feature.receiver.domain.model.ReceiverIdentity
@@ -35,13 +37,14 @@ class ReceiverAuthRepositoryImpl
     @Inject
     constructor(
         private val api: ReceiverAuthApiService,
+        private val errorReporter: ErrorReporter,
     ) : ReceiverAuthRepository {
-        override suspend fun verifyMasterKey(authCode: String): Result<ReceiverIdentity> =
+        override suspend fun verifyMasterKey(masterKey: String): Result<ReceiverIdentity> =
             runCatchingCancellable {
                 try {
-                    api.verifyMasterKey(ReceiverAuthVerifyRequestDto(authCode)).requireData().toDomain()
+                    api.verifyMasterKey(ReceiverAuthVerifyRequestDto(masterKey)).requireData().toDomain()
                 } catch (e: ApiException) {
-                    throw e.toServerRejection()
+                    throw e.toReceiverServerFailure()
                 }
             }
 
@@ -50,7 +53,7 @@ class ReceiverAuthRepositoryImpl
                 try {
                     api.sendEmailAuthCode(ReceiverAuthCodeEmailSendRequestDto(email)).requireStatus()
                 } catch (e: ApiException) {
-                    throw e.toServerRejection()
+                    throw e.toReceiverServerFailure()
                 }
             }
 
@@ -66,13 +69,23 @@ class ReceiverAuthRepositoryImpl
                         ).requireData()
                         .toDomain()
                 } catch (e: ApiException) {
-                    throw e.toServerRejection()
+                    throw e.toReceiverServerFailure()
                 }
             }
 
-        override suspend fun getPresignedUrl(extension: String): Result<ReceiverAuthPresignedUrl> =
+        override suspend fun getPresignedUrl(
+            extension: String,
+            contentLength: Long,
+        ): Result<ReceiverAuthPresignedUrl> =
             runCatchingCancellable {
-                api.getPresignedUrl(ReceiverAuthPresignedUrlRequestDto(extension)).requireData().toDomain()
+                api
+                    .getPresignedUrl(
+                        ReceiverAuthPresignedUrlRequestDto(
+                            extension = extension,
+                            contentLength = contentLength,
+                        ),
+                    ).requireData()
+                    .toDomain()
             }
 
         override suspend fun submitDeliveryVerification(
@@ -88,19 +101,27 @@ class ReceiverAuthRepositoryImpl
                                 familyRelationCertificateUrl = familyRelationCertificateUrl,
                             ),
                         ).requireData()
-                        .toDomain()
+                        .toDomain(errorReporter)
                 } catch (e: ApiException) {
-                    throw e.toServerRejection()
+                    throw e.toReceiverServerFailure()
                 }
             }
 
         override suspend fun getDeliveryVerificationStatus(): Result<DeliveryVerification> =
             runCatchingCancellable {
-                api.getDeliveryVerificationStatus().requireData().toDomain()
+                api.getDeliveryVerificationStatus().requireData().toDomain(errorReporter)
             }
 
         override suspend fun getSenderMessage(): Result<SenderMessageInfo> =
             runCatchingCancellable {
                 api.getSenderMessage().requireData().toDomain()
+            }
+
+        override suspend fun getReceivedRecordBoxes(): Result<List<ReceivedRecordBox>> =
+            runCatchingCancellable {
+                api
+                    .getReceivedRecordBoxes()
+                    .requireData()
+                    .toDomain(errorReporter)
             }
     }

@@ -107,9 +107,9 @@ fun NavGraphBuilder.settingNavGraph(
         composable<SettingRoute.RecipientListRoute> {
             val route = it.toRoute<SettingRoute.RecipientListRoute>()
             val viewModel: ReceiverListViewModel = hiltViewModel()
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val receivers by viewModel.receivers.collectAsStateWithLifecycle()
             ReceiverListScreen(
-                uiState = uiState,
+                receivers = receivers,
                 onBackClick = actions::onRecipientListBack,
                 onConfirmClick = { receiver ->
                     if (route.selectForDeliveryConditions) {
@@ -118,7 +118,6 @@ fun NavGraphBuilder.settingNavGraph(
                         actions.onRecipientListBack()
                     }
                 },
-                onRetry = viewModel::retry,
             )
         }
 

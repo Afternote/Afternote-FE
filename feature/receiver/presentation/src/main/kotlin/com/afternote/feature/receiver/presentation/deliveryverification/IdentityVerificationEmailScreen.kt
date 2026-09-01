@@ -18,20 +18,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.TextFieldType
+import com.afternote.core.ui.asString
 import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.receiver.presentation.R
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_HEADER_SPACING
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_TOTAL_STEPS
 import com.afternote.feature.receiver.presentation.deliveryverification.component.ReceiverVerifyStep
-import com.afternote.feature.receiver.presentation.error.asDisplayText
 
 /**
  * 본인 확인 이메일 인증(designs 3·4) — 이메일 + 인증번호 입력 화면 (이슈 #215).
@@ -41,9 +39,13 @@ import com.afternote.feature.receiver.presentation.error.asDisplayText
  *
  * 인증번호 발송·검증은 실 API(`receiver-auth/email` 계열) — 서버 거절 안내 문구(이메일 미등록 등) 는
  * 스낵바로 노출된다 (#407).
+ *
+ * `senderId` 는 [MasterKeyScreen] 과 같은 규약으로 parent backStackEntry 의
+ * [DeliveryVerificationFlowViewModel] 에서 받아 검증 성공 시점의 발신자별 캐시 기록에 쓴다 (#597).
  */
 @Composable
 fun IdentityVerificationEmailScreen(
+    senderId: String,
     onBackClick: () -> Unit,
     onVerified: () -> Unit,
     modifier: Modifier = Modifier,
@@ -69,7 +71,7 @@ fun IdentityVerificationEmailScreen(
     }
 
     val errorMessage =
-        uiState.error?.asDisplayText()
+        uiState.error?.asString()
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
             snackbarHostState.showSnackbar(errorMessage)
@@ -84,7 +86,7 @@ fun IdentityVerificationEmailScreen(
         snackbarHostState = snackbarHostState,
         onBackClick = onBackClick,
         onRequestCode = viewModel::requestVerificationCode,
-        onVerifyAndProceed = viewModel::verifyAndProceed,
+        onVerifyAndProceed = { viewModel.verifyAndProceed(senderId) },
         modifier = modifier,
     )
 }
@@ -176,42 +178,5 @@ internal fun IdentityVerificationEmailScreenContent(
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun IdentityVerificationEmailEmptyPreview() {
-    AfternoteTheme {
-        IdentityVerificationEmailScreenContent(
-            uiState = IdentityVerificationUiState(),
-            emailState = rememberTextFieldState(),
-            codeState = rememberTextFieldState(),
-            snackbarHostState = remember { SnackbarHostState() },
-            onBackClick = {},
-            onRequestCode = {},
-            onVerifyAndProceed = {},
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun IdentityVerificationEmailSentPreview() {
-    AfternoteTheme {
-        IdentityVerificationEmailScreenContent(
-            uiState =
-                IdentityVerificationUiState(
-                    email = "user@example.com",
-                    isEmailFormatValid = true,
-                    isVerificationSent = true,
-                ),
-            emailState = rememberTextFieldState("user@example.com"),
-            codeState = rememberTextFieldState(),
-            snackbarHostState = remember { SnackbarHostState() },
-            onBackClick = {},
-            onRequestCode = {},
-            onVerifyAndProceed = {},
-        )
     }
 }

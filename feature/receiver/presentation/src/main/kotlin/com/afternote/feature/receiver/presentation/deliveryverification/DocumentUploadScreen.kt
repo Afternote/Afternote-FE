@@ -5,19 +5,14 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -28,32 +23,28 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.core.ui.modifierextention.dropShadow
+import com.afternote.core.ui.asString
 import com.afternote.core.ui.scaffold.FlowStepScaffold
+import com.afternote.core.ui.sheet.MediaSelectBottomSheet
+import com.afternote.core.ui.sheet.MediaSheetItem
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.receiver.presentation.R
 import com.afternote.feature.receiver.presentation.deliveryverification.component.DocumentSlotCard
-import com.afternote.feature.receiver.presentation.deliveryverification.component.DocumentSourceBottomSheet
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_HEADER_SPACING
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_TOTAL_STEPS
 import com.afternote.feature.receiver.presentation.deliveryverification.component.ReceiverVerifyStep
-import com.afternote.feature.receiver.presentation.error.asDisplayText
+import com.afternote.core.ui.R as CoreUiR
 
 /**
  * 증빙 서류 업로드 화면(designs 6·7·8) — 사망진단서 + 가족관계증명서 첨부 후 열람 신청 제출 (이슈 #215).
@@ -120,9 +111,9 @@ fun DocumentUploadScreen(
         }
     }
 
-    // sealed ErrorPayload 분기 — 타입 자체가 "Res / Text 중 하나" 강제, 우선순위 로직 불필요.
+    // VM 은 리소스 또는 표시 가능한 동적 문구를 UiText 하나로 운반하므로 별도 우선순위 분기가 필요 없다.
     val errorMessage =
-        uiState.error?.asDisplayText()
+        uiState.error?.asString()
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
             snackbarHostState.showSnackbar(errorMessage)
@@ -142,28 +133,35 @@ fun DocumentUploadScreen(
 
     // 디자인 7 — 슬롯 클릭 시 떠오르는 미디어 소스 선택 시트. "이미지 추가" / "파일 추가" 둘 중 하나 선택.
     sheetSlot?.let { slot ->
-        ModalBottomSheet(
-            onDismissRequest = { sheetSlot = null },
+        MediaSelectBottomSheet(
+            onDismiss = { sheetSlot = null },
+            items =
+                listOf(
+                    MediaSheetItem(
+                        iconRes = CoreUiR.drawable.core_ui_ic_image,
+                        label = stringResource(CoreUiR.string.core_ui_media_sheet_image),
+                        onClick = {
+                            sheetSlot = null
+                            pendingSlot.value = slot
+                            imagePickerLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                            )
+                        },
+                    ),
+                    MediaSheetItem(
+                        iconRes = CoreUiR.drawable.core_ui_ic_file,
+                        label = stringResource(CoreUiR.string.core_ui_media_sheet_file),
+                        onClick = {
+                            sheetSlot = null
+                            pendingSlot.value = slot
+                            filePickerLauncher.launch("*/*")
+                        },
+                    ),
+                ),
+            // 측정 전 첫 프레임엔 높이가 없다 — 그때만 시트가 내용에 맞춰 줄어든다.
+            modifier = if (sheetHeight != null) Modifier.height(sheetHeight) else Modifier,
             sheetState = sheetState,
-            containerColor = AfternoteDesign.colors.gray1,
-            dragHandle = null,
-        ) {
-            DocumentSourceBottomSheet(
-                onPickImage = {
-                    sheetSlot = null
-                    pendingSlot.value = slot
-                    imagePickerLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
-                    )
-                },
-                onPickFile = {
-                    sheetSlot = null
-                    pendingSlot.value = slot
-                    filePickerLauncher.launch("*/*")
-                },
-                sheetHeight = sheetHeight,
-            )
-        }
+        )
     }
 }
 
@@ -244,80 +242,6 @@ internal fun DocumentUploadScreenContent(
                         onFamilyFieldBottomChanged(coords.boundsInWindow().bottom.toInt())
                     },
             )
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun DocumentUploadEmptyPreview() {
-    AfternoteTheme {
-        DocumentUploadScreenContent(
-            uiState = DocumentUploadUiState(),
-            snackbarHostState = remember { SnackbarHostState() },
-            onBackClick = {},
-            onSlotClick = {},
-            onFamilyFieldBottomChanged = {},
-            onSubmitClick = {},
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun DocumentUploadFilledPreview() {
-    AfternoteTheme {
-        DocumentUploadScreenContent(
-            uiState =
-                DocumentUploadUiState(
-                    deathCertificate =
-                        DocumentSlotState(displayName = "사망진단서.jpeg", fileUrl = "https://x"),
-                    familyRelationCertificate =
-                        DocumentSlotState(displayName = "가족관계증명서.pdf", fileUrl = "https://y"),
-                ),
-            snackbarHostState = remember { SnackbarHostState() },
-            onBackClick = {},
-            onSlotClick = {},
-            onFamilyFieldBottomChanged = {},
-            onSubmitClick = {},
-        )
-    }
-}
-
-@Preview(showBackground = true, heightDp = 780)
-@Composable
-private fun DocumentUploadWithSheetOpenPreview() {
-    AfternoteTheme {
-        Box(modifier = Modifier.fillMaxSize()) {
-            DocumentUploadScreenContent(
-                uiState = DocumentUploadUiState(),
-                snackbarHostState = remember { SnackbarHostState() },
-                onBackClick = {},
-                onSlotClick = {},
-                onFamilyFieldBottomChanged = {},
-                onSubmitClick = {},
-            )
-            Box(
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .dropShadow(
-                            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-                            color = Color.Black.copy(alpha = 0.08f),
-                            blur = 16.dp,
-                            offsetY = (-4).dp,
-                            offsetX = 0.dp,
-                            spread = 0.dp,
-                        ).clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-                        .background(AfternoteDesign.colors.gray1),
-            ) {
-                DocumentSourceBottomSheet(
-                    onPickImage = {},
-                    onPickFile = {},
-                    sheetHeight = 360.dp,
-                )
-            }
         }
     }
 }

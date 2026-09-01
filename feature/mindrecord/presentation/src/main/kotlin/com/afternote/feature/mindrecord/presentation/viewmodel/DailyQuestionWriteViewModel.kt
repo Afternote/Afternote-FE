@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
@@ -12,6 +13,8 @@ import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
+import com.afternote.feature.mindrecord.presentation.reporting.MindRecordFailureStage
+import com.afternote.feature.mindrecord.presentation.reporting.recordMindRecordFailure
 import com.afternote.feature.mindrecord.presentation.util.isHtmlBlank
 import com.afternote.feature.mindrecord.presentation.util.toWireContent
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,6 +34,7 @@ class DailyQuestionWriteViewModel
         private val repository: DailyQuestionRepository,
         private val photoUploadRepository: PhotoUploadRepository,
         private val draftLoader: MindRecordDraftLoader,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(DailyQuestionWriteUiState())
         val uiState: StateFlow<DailyQuestionWriteUiState> = _uiState.asStateFlow()
@@ -131,6 +135,14 @@ class DailyQuestionWriteViewModel
         }
 
         /**
+         * 이어쓰기 조회 재시도. 실패 동안은 저장이 막히므로(`canSubmit`) 화면을 벗어나지 않고
+         * 풀 수단이 있어야 한다 — 없으면 사용자가 쓴 답변을 들고 갇힌다 (#1018 리뷰).
+         */
+        fun retryResumeDraft() {
+            viewModelScope.launch { resumeDraft() }
+        }
+
+        /**
          * today 응답이 draft 존재를 알려주면 당일 임시저장 레코드를 찾아 이어쓰기 상태로 프리필한다.
          * 없으면 아무것도 하지 않고 신규 작성으로 폴백.
          *
@@ -147,17 +159,29 @@ class DailyQuestionWriteViewModel
          * 화면 값이 비어 있을 때만 draft 로 채우고, `draftId` 는 화면 입력과 겹치지 않아 항상 채운다
          * (없으면 재제출이 POST 로 나가 이어쓰기가 안 된다).
          */
+
         private suspend fun resumeDraft() {
-            _uiState.update { it.copy(isResumingDraft = true) }
-            val draft =
-                repository
-                    .getList(date = LocalDate.now().toString(), draftOnly = true)
-                    .getOrNull()
-                    ?.firstOrNull { it.isDraft }
-                    ?: run {
-                        _uiState.update { it.copy(isResumingDraft = false) }
-                        return
-                    }
+            _uiState.update { it.copy(isResumingDraft = true, draftResumeError = null) }
+            val listResult = repository.getList(date = LocalDate.now().toString(), draftOnly = true)
+            // **여기까지 왔다는 것은 서버가 «임시저장이 있다»(today.isDraft) 고 이미 말한 것이다.**
+            // 그러므로 조회 실패든 빈 목록이든 «임시저장 없음» 이 아니라 «있는 걸 못 찾았다» 다.
+            //
+            // 빈 목록이 정상 경로처럼 보이지만 아니다 — /today 는 서버의 LocalDate.now() 로
+            // 레코드를 고르는데 이 목록 요청은 **기기의** LocalDate.now() 를 날짜 필터로 보낸다.
+            // 날짜 경계나 시간대가 어긋나면 실제 draft 가 있어도 200 빈 목록이 온다. 그때 잠금을
+            // 풀면 questionId 가 있는 POST 가 같은 서버 레코드를 upsert 해, 사용자가 보지 못한
+            // 기존 본문을 덮는다 (#1018 리뷰).
+            val draft = listResult.getOrNull()?.firstOrNull { it.isDraft }
+            if (draft == null) {
+                _uiState.update {
+                    it.copy(
+                        isResumingDraft = false,
+                        draftResumeError =
+                            UiText.Resource(R.string.mindrecord_error_daily_question_draft_load_failed),
+                    )
+                }
+                return
+            }
             _uiState.update {
                 // 빈 에디터는 `<p></p>` 를 내보내므로 `isBlank()` 로는 "비어 있음" 을 판정할 수
                 // 없다. 태그를 걷어 낸 본문으로 판단해야 사용자가 아무것도 안 쓴 상태에서
@@ -205,7 +229,9 @@ class DailyQuestionWriteViewModel
                     // 제출 직전 fileKey 로 바뀔 수 있게 기억만 해 둔다 (#549).
                     uploadedImageUrls += uploaded.fileUrl
                     _uiState.update { it.copy(isUploadingImage = false) }
-                }.onFailure {
+                }.onFailure { e ->
+                    // 첨부가 빠진 채 저장이 이어질 수 있는 자리라 남긴다 (#964).
+                    errorReporter.recordMindRecordFailure(MindRecordFailureStage.MEDIA_UPLOAD, e)
                     // null 로 흡수하면 사용자는 이미지가 붙은 줄 알고 저장한다 (#716).
                     _uiState.update {
                         it.copy(
@@ -238,7 +264,10 @@ class DailyQuestionWriteViewModel
                 return
             }
 
-            if (state.answer.isBlank()) {
+            // 태그만 남은 `<p></p>` 도 «비었다» 로 본다 — `isBlank()` 는 false 라 여기를 통과해
+            // 빈 답변이 create 되거나 이어쓰던 draft 가 빈 본문으로 update 됐다. 저장 요청뿐
+            // 아니라 화면 이탈도 함께 막는다 (#722 · #1018 리뷰).
+            if (state.answer.isHtmlBlank()) {
                 failSubmit(R.string.mindrecord_error_daily_question_answer_required)
                 return
             }
@@ -301,6 +330,8 @@ class DailyQuestionWriteViewModel
                         // 이미 옮겨진 파일을 다시 옮기려다 실패한다 (#549).
                         uploadedImageUrls.clear()
                     }.onFailure { e ->
+                        // 저장이 upsert 라 실패가 기존 임시저장 상태와도 얽힌다 (#964·#1018).
+                        errorReporter.recordMindRecordFailure(MindRecordFailureStage.DAILY_QUESTION_SUBMIT, e)
                         _uiState.update {
                             it.copy(
                                 submitState =

@@ -28,7 +28,7 @@ fun ProcessingMethodListSection(
     ) {
         EditorSectionLabel(
             text = stringResource(R.string.afternote_editor_label_process_method_list),
-            isRequired = true,
+            isRequired = false,
         )
         ProcessingMethodList(
             items = section.items,

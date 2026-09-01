@@ -2,19 +2,14 @@ package com.afternote.feature.setting.presentation.viewmodel
 
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeUserRepository
-import com.afternote.core.model.user.Receiver
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -183,32 +178,6 @@ class SettingErrorStateViewModelTest {
                 viewModel.uiState.value,
             )
             assertEquals(ProfileEditEvent.UpdateFailure, event.await())
-        }
-
-    @Test
-    fun `수신자 목록은 예외와 정상 빈 목록을 서로 다른 상태로 표현한다`() =
-        runTest(dispatcher) {
-            var subscriptions = 0
-            val repository =
-                FakeUserRepository.strict().apply {
-                    onReceiverListFlow = {
-                        flow {
-                            subscriptions += 1
-                            if (subscriptions == 1) error("offline")
-                            emit(emptyList<Receiver>())
-                        }
-                    }
-                }
-            val viewModel = ReceiverListViewModel(repository)
-            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
-
-            advanceUntilIdle()
-            assertEquals(ReceiverListUiState.Error, viewModel.uiState.value)
-
-            viewModel.retry()
-            advanceUntilIdle()
-
-            assertEquals(ReceiverListUiState.Success(emptyList()), viewModel.uiState.value)
         }
 
     private companion object {

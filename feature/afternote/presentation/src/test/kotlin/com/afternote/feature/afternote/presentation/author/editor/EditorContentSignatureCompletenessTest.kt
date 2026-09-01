@@ -21,18 +21,15 @@ import org.junit.Test
  * [AfternoteTypeForm.pristineFor] 의 exhaustive `when` 이 컴파일 단계에서 누락을 잡는다 — 양쪽에 카나리만 둔다.
  */
 class EditorContentSignatureCompletenessTest {
-    /**
-     * 다이얼로그 전용 휘발 입력 — dismissCustomServiceDialog 가 비우고 다이얼로그가 자체 back 을 소비하므로
-     * 지문에서 제외한다. 여기 올리려면 같은 성질(닫힐 때 소거되는 입력)이어야 한다.
-     */
-    private val dialogTransientStates =
-        setOf("customServiceNameState")
+    /** 서비스 시트를 닫거나 선택하면 비우는 검색 query라 이탈 지문에서 제외한다. */
+    private val transientUiStates =
+        setOf("serviceSearchQueryState")
 
     private fun newState(): AfternoteEditorState =
         AfternoteEditorState(
             idState = TextFieldState(),
             passwordState = TextFieldState(),
-            customServiceNameState = TextFieldState(),
+            serviceSearchQueryState = TextFieldState(),
             getCurrentForm = { EditorFormState() },
             setType = {},
             setService = {},
@@ -64,12 +61,12 @@ class EditorContentSignatureCompletenessTest {
             val before = editorContentSignature(form, state)
             (getter.invoke(state) as TextFieldState).edit { replace(0, length, "완전성테스트입력") }
             val after = editorContentSignature(form, state)
-            if (name in dialogTransientStates) {
-                assertEquals("다이얼로그 휘발 입력 '$name' 은 지문에서 제외돼야 한다", before, after)
+            if (name in transientUiStates) {
+                assertEquals("휘발 UI 입력 '$name' 은 지문에서 제외돼야 한다", before, after)
             } else {
                 assertNotEquals(
                     "'$name' 입력이 지문에 반영되지 않는다 — editorContentSignature 에 추가하거나 " +
-                        "dialogTransientStates 에 사유와 함께 올릴 것",
+                        "transientUiStates 에 사유와 함께 올릴 것",
                     before,
                     after,
                 )
@@ -97,7 +94,7 @@ class EditorContentSignatureCompletenessTest {
         val after =
             editorContentSignature(
                 EditorFormState(
-                    afternoteEditReceivers = listOf(AfternoteEditorReceiver(id = "1", name = "김수신", label = "딸")),
+                    afternoteEditReceivers = listOf(AfternoteEditorReceiver(id = 1L, name = "김수신", label = "딸")),
                 ),
                 state,
             )
