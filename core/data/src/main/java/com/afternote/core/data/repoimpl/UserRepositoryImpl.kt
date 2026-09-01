@@ -284,7 +284,7 @@ class UserRepositoryImpl
         }
     }
 
-internal suspend inline fun <T> mapReceiverRequestFailure(request: suspend () -> T): T =
+private suspend inline fun <T> mapReceiverRequestFailure(request: suspend () -> T): T =
     try {
         request()
     } catch (error: ApiException) {
