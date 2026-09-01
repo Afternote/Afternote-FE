@@ -19,6 +19,7 @@ import com.afternote.feature.mindrecord.presentation.mapper.toUi
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.mindrecord.presentation.reporting.MindRecordFailureStage
 import com.afternote.feature.mindrecord.presentation.reporting.recordMindRecordFailure
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import com.afternote.feature.mindrecord.presentation.util.toWireContent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -46,7 +47,7 @@ class DiaryWriteViewModel
         private val repository: DiaryRepository,
         private val photoUploadRepository: PhotoUploadRepository,
         private val userRepository: UserRepository,
-        private val draftLoader: MindRecordDraftLoader,
+        private val draftLoader: LoadMindRecordDraftsUseCase,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val route = savedStateHandle.toRoute<MindRecordRoute.DiaryWriteRoute>()

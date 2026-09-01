@@ -8,6 +8,7 @@ import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
 import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -284,7 +285,7 @@ class DailyQuestionWriteViewModelTest {
 
 /** 툴바 카운트는 이 테스트의 관심사가 아니다 — 0건으로 고정한다 (#769). */
 internal fun noopDraftLoader() =
-    MindRecordDraftLoader(
+    LoadMindRecordDraftsUseCase(
         diaryRepository =
             FakeDiaryRepository.strict().apply {
                 onGetList = { _, _ ->

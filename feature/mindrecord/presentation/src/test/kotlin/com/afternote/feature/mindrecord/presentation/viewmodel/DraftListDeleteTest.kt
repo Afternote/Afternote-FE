@@ -9,6 +9,8 @@ import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
 import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
+import com.afternote.feature.mindrecord.presentation.usecase.DeleteMindRecordDraftsUseCase
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -118,15 +120,18 @@ class DraftListDeleteTest {
         errorReporter: RecordingErrorReporter = RecordingErrorReporter(),
     ): DraftListViewModel =
         DraftListViewModel(
-            // #769 가 목록 조회를 loader 로 뽑아낸 뒤 생성자가 3개로 늘었다. 같은 두
-            // 저장소를 넘겨 종전과 같은 조회 경로를 그대로 태운다.
-            loader =
-                MindRecordDraftLoader(
+            // 조회와 삭제가 각각 UseCase 로 갈렸다 (#1693). 같은 두 저장소를 양쪽에 넘겨
+            // 종전과 같은 경로를 그대로 태운다.
+            loadDrafts =
+                LoadMindRecordDraftsUseCase(
                     diaryRepository = emptyDiaryDrafts(),
                     dailyQuestionRepository = dailyQuestionRepository,
                 ),
-            diaryRepository = emptyDiaryDrafts(),
-            dailyQuestionRepository = dailyQuestionRepository,
+            deleteDrafts =
+                DeleteMindRecordDraftsUseCase(
+                    diaryRepository = emptyDiaryDrafts(),
+                    dailyQuestionRepository = dailyQuestionRepository,
+                ),
             errorReporter = errorReporter,
         )
 

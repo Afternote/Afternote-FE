@@ -60,6 +60,8 @@ import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestion
 import com.afternote.feature.mindrecord.presentation.screen.sender.DiaryWriteScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DraftListScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.WeeklyReportScreen
+import com.afternote.feature.mindrecord.presentation.usecase.DeleteMindRecordDraftsUseCase
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionWriteViewModel
@@ -67,7 +69,6 @@ import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryWriteViewMod
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftListViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.MemorySpaceUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.MemorySpaceViewModel
-import com.afternote.feature.mindrecord.presentation.viewmodel.MindRecordDraftLoader
 import com.afternote.feature.mindrecord.presentation.viewmodel.SubmitState
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportViewModel
@@ -459,7 +460,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
                     savedStateHandle = SavedStateHandle(emptyMap()),
                     repository = repository,
                     photoUploadRepository = FakePhotoUploadRepository.strict(),
-                    draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
+                    draftLoader = LoadMindRecordDraftsUseCase(FakeDiaryRepository(), repository),
                     errorReporter = FakeErrorReporter(),
                 )
         }
@@ -515,9 +516,8 @@ class TimeLetterMindRecordCompletionAndroidTest {
         val draftDailyQuestionRepository = FakeDailyQuestionRepository(today = completionToday())
         val draftListViewModel =
             DraftListViewModel(
-                loader = MindRecordDraftLoader(repository, draftDailyQuestionRepository),
-                diaryRepository = repository,
-                dailyQuestionRepository = draftDailyQuestionRepository,
+                loadDrafts = LoadMindRecordDraftsUseCase(repository, draftDailyQuestionRepository),
+                deleteDrafts = DeleteMindRecordDraftsUseCase(repository, draftDailyQuestionRepository),
                 errorReporter = FakeErrorReporter(),
             )
         var routedArguments: Pair<Long, String>? = null
@@ -546,7 +546,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
                                     photoUploadRepository = FakePhotoUploadRepository.strict(),
                                     userRepository = appTestUserRepository(),
                                     draftLoader =
-                                        MindRecordDraftLoader(repository, draftDailyQuestionRepository),
+                                        LoadMindRecordDraftsUseCase(repository, draftDailyQuestionRepository),
                                     errorReporter = FakeErrorReporter(),
                                 )
                         },
