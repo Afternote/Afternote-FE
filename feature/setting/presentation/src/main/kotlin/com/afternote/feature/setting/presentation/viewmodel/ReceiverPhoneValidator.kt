@@ -24,7 +24,4 @@ internal fun String.validateReceiverPhone(isRequired: Boolean): ReceiverPhoneVal
     }
 }
 
-internal fun String.isValidReceiverPhone(isRequired: Boolean = false): Boolean =
-    validateReceiverPhone(isRequired) == ReceiverPhoneValidation.VALID
-
 internal fun String.isValidReceiverEmail(): Boolean = EMAIL_REGEX.matches(trim())

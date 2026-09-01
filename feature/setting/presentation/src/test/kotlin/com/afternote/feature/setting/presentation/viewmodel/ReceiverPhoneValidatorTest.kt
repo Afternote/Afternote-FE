@@ -7,31 +7,29 @@ import org.junit.Test
 
 class ReceiverPhoneValidatorTest {
     @Test
-    fun `empty phone is valid for registration because it is optional`() {
+    fun `empty phone is valid when not required`() {
         assertEquals(ReceiverPhoneValidation.VALID, "".validateReceiverPhone(isRequired = false))
-        assertTrue("".isValidReceiverPhone(isRequired = false))
     }
 
     @Test
-    fun `empty phone is required for edit and blocks submission`() {
+    fun `empty phone is rejected as required when required`() {
         assertEquals(ReceiverPhoneValidation.REQUIRED, "".validateReceiverPhone(isRequired = true))
-        assertFalse("".isValidReceiverPhone(isRequired = true))
     }
 
     @Test
     fun `valid mobile phone with or without hyphens is accepted`() {
-        assertTrue("01012345678".isValidReceiverPhone())
-        assertTrue("010-1234-5678".isValidReceiverPhone())
-        assertTrue("011-123-4567".isValidReceiverPhone())
+        assertEquals(ReceiverPhoneValidation.VALID, "01012345678".validateReceiverPhone(isRequired = true))
+        assertEquals(ReceiverPhoneValidation.VALID, "010-1234-5678".validateReceiverPhone(isRequired = true))
+        assertEquals(ReceiverPhoneValidation.VALID, "011-123-4567".validateReceiverPhone(isRequired = true))
     }
 
     @Test
     fun `invalid prefix or length is rejected`() {
-        assertFalse("02012345678".isValidReceiverPhone())
-        assertFalse("0101234567".isValidReceiverPhone())
-        assertFalse("010123456789".isValidReceiverPhone())
-        assertFalse("abc01012345678".isValidReceiverPhone())
-        assertFalse("010--1234-5678".isValidReceiverPhone())
+        assertEquals(ReceiverPhoneValidation.INVALID, "02012345678".validateReceiverPhone(isRequired = true))
+        assertEquals(ReceiverPhoneValidation.INVALID, "0101234567".validateReceiverPhone(isRequired = true))
+        assertEquals(ReceiverPhoneValidation.INVALID, "010123456789".validateReceiverPhone(isRequired = true))
+        assertEquals(ReceiverPhoneValidation.INVALID, "abc01012345678".validateReceiverPhone(isRequired = true))
+        assertEquals(ReceiverPhoneValidation.INVALID, "010--1234-5678".validateReceiverPhone(isRequired = true))
     }
 
     @Test
