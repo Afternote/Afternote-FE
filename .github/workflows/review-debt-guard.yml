@@ -9,8 +9,9 @@
 # 리뷰어 빚의 기준은 «나에게 걸린 리뷰 요청» 이 아니라 «아무도 응답하지 않은 열린
 # PR» 이다(#1148). 다만 한번 변경요청을 남긴 뒤에는 작성자가 그 리뷰어에게 명시적으로
 # 재요청해야만 공이 돌아온다. 수정 커밋만으로 리뷰 의무를 만들지는 않는다(#1136).
-# 작성자 빚은 같은 작성자의 다른 열린 PR 이 최신 변경요청 뒤 실질 커밋·응답 없이
-# 남은 상태다. 라벨 갱신 시점에 기대지 않고 새 PR 을 열 때 현재 상태를 다시 계산한다(#1679).
+# 작성자 빚은 같은 작성자의 다른 열린 PR 이 최신 변경요청 뒤 실질 커밋·응답·작성자
+# 본문 편집 없이 남은 상태다. 라벨 갱신 시점에 기대지 않고 새 PR 을 열 때 현재 상태를
+# 다시 계산한다(#1679, #1700).
 name: review-debt-guard
 
 on:
@@ -115,6 +116,8 @@ jobs:
             echo "::error::열린 PR 조회에 실패했다 — 근거 없이 PR 을 닫지 않는다. 재실행할 것"
             exit 1
           fi
+          repo_owner=${REPO%%/*}
+          repo_name=${REPO#*/}
 
           # 같은 작성자의 다른 PR 에 공이 남아 있는지도 실시간으로 다시 계산한다. 기존
           # `awaiting-author` 라벨만 보면 리컨사일 주기와 이 실행이 엇갈릴 때 방금 붙거나
@@ -148,9 +151,9 @@ jobs:
           #
           # 그래서 빚은 두 종류다. (1) 아무도 판정을 내리지 않은 PR,
           # (2) PR 전체의 최신 판정이 변경요청이고, 그 리뷰어에게 재요청이 걸렸으며,
-          # 그 판정 뒤 작성자가 반영 커밋을 올린 PR. 재요청이 없거나 최신 변경요청 뒤
-          # 새 커밋이 없으면 빚이 아니다. 반영 여부는 병합 커밋(parents 2개 이상)을
-          # 뺀 실질 커밋으로만 센다.
+          # 그 판정 뒤 작성자가 반영 커밋·응답·PR 본문 편집을 남긴 PR. 재요청이 없거나
+          # 최신 변경요청 뒤 작성자 조치가 없으면 빚이 아니다. 반영 커밋은 병합 커밋
+          # (parents 2개 이상)을 뺀 실질 커밋으로만 센다.
           debt_file=$(mktemp)
           reviews_file=$(mktemp)
           while IFS=$'\t' read -r pn created pr_author requested_reviewers title; do
@@ -271,10 +274,42 @@ jobs:
               exit 1
             fi
 
+            # PR 본문은 커밋 없이도 CI 계약·설명을 고치는 변경 표면이다(#771). REST 의
+            # updated_at 은 댓글·라벨까지 섞이고 GraphQL lastEditedAt 은 마지막 편집자만
+            # 남기므로, 영속 편집 이력에서 «최신 변경요청 뒤 작성자가 직접 고친 본문»만 센다.
+            # 최근 50건보다 많은 편집 이력이 있으면 필요한 구간이 잘렸을 수 있으므로
+            # 근거 없이 작성자·리뷰어 어느 쪽으로도 공을 넘기지 않고 가드를 실패시킨다.
+            # shellcheck disable=SC2016 # GraphQL 변수는 gh가 -F 값으로 바인딩한다.
+            if ! edits_json=$(gh api graphql \
+              -F owner="$repo_owner" \
+              -F name="$repo_name" \
+              -F number="$pn" \
+              -f query='query($owner:String!,$name:String!,$number:Int!){repository(owner:$owner,name:$name){pullRequest(number:$number){userContentEdits(last:50){pageInfo{hasPreviousPage} nodes{editedAt editor{login}}}}}}'); then
+              echo "::error::PR #$pn 본문 편집 이력 조회에 실패했다 — 근거 없이 PR 을 닫지 않는다"
+              exit 1
+            fi
+            if ! body_edits=$(jq -er \
+              --arg author "$pr_author" \
+              --arg cutoff "$blocked_at" '
+                .data.repository.pullRequest.userContentEdits as $edits
+                | if ($edits.pageInfo.hasPreviousPage != false) then
+                    error("최근 50건보다 많은 본문 편집 이력")
+                  else
+                    [
+                      $edits.nodes[]
+                      | select(((.editor.login // "") | ascii_downcase) == ($author | ascii_downcase))
+                      | select(.editedAt > $cutoff)
+                    ] | length
+                  end
+              ' <<< "$edits_json"); then
+              echo "::error::PR #$pn 본문 편집 이력이 불완전하다 — 근거 없이 PR 을 닫지 않는다"
+              exit 1
+            fi
+
             responses=$(( ${said:-0} + ${answered:-0} ))
 
-            if [ "${fixed:-0}" -gt 0 ] || [ "$responses" -gt 0 ]; then
-              echo "#$pn — @$blocked_by 재리뷰 요청 뒤 변경요청 반영(${fixed}커밋 · 응답 ${responses}건), 아직 미응답"
+            if [ "${fixed:-0}" -gt 0 ] || [ "$responses" -gt 0 ] || [ "$body_edits" -gt 0 ]; then
+              echo "#$pn — @$blocked_by 재리뷰 요청 뒤 변경요청 반영(${fixed}커밋 · 응답 ${responses}건 · 본문 편집 ${body_edits}건), 아직 미응답"
               printf '%s\t%s\t%s\n' "$pn" "$created" "$title" >> "$debt_file"
             else
               echo "#$pn — 변경요청 미반영, 공은 작성자에게"
@@ -322,8 +357,8 @@ jobs:
             fi
             echo "이 저장소는 팀 리뷰 응답 또는 자기 PR 의 변경요청 대응을 기다리는 PR 이 1건이라도 남아 있으면 새 PR 을 열 수 없습니다 (#1136, #1679)."
             echo
-            echo "각 PR 에 필요한 리뷰는 **한 건**입니다 — 누구든 먼저 판정을 내면 그 PR 은 모두의 목록에서 빠집니다. 승인 뒤 변경을 다시 볼 의무는 없고, **변경요청도 작성자가 같은 리뷰어에게 재요청한 뒤 반영 커밋을 올린 경우에만** 다시 리뷰어의 몫이 됩니다."
-            echo "자기 PR 이 **최신 변경요청 뒤 실질 커밋이나 응답 없이** 남아 있으면 작성자의 몫입니다. 조치를 남기면 다음 검사에서 작성자 빚이 해소됩니다."
+            echo "각 PR 에 필요한 리뷰는 **한 건**입니다 — 누구든 먼저 판정을 내면 그 PR 은 모두의 목록에서 빠집니다. 승인 뒤 변경을 다시 볼 의무는 없고, **변경요청도 작성자가 같은 리뷰어에게 재요청한 뒤 실질 커밋·응답·본문 편집을 남긴 경우에만** 다시 리뷰어의 몫이 됩니다."
+            echo "자기 PR 이 **최신 변경요청 뒤 실질 커밋·응답·작성자 본문 편집 없이** 남아 있으면 작성자의 몫입니다. 조치를 남기면 다음 검사에서 작성자 빚이 해소됩니다."
             echo
             echo "### 되살리는 법"
             echo
