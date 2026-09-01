@@ -40,8 +40,15 @@ class ReceiverRegisterViewModel
                 _uiState.update { it.copy(errorMessage = UiText.Resource(messageRes)) }
                 return
             }
-            if (!phone.orEmpty().isValidReceiverPhone()) {
-                _uiState.update { it.copy(errorMessage = UiText.Resource(R.string.receiver_phone_invalid)) }
+            val phoneValidation = phone.orEmpty().validateReceiverPhone(isRequired = true)
+            if (phoneValidation != ReceiverPhoneValidation.VALID) {
+                val messageRes =
+                    if (phoneValidation == ReceiverPhoneValidation.REQUIRED) {
+                        R.string.receiver_phone_required
+                    } else {
+                        R.string.receiver_phone_invalid
+                    }
+                _uiState.update { it.copy(errorMessage = UiText.Resource(messageRes)) }
                 return
             }
             val normalizedEmail = email.orEmpty().trim()

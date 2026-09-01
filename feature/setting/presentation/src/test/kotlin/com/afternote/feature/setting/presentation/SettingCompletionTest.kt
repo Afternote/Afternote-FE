@@ -1,15 +1,11 @@
 package com.afternote.feature.setting.presentation
 
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.SavedStateHandle
@@ -297,7 +293,7 @@ class SettingCompletionTest {
             CompletionReceiverRegistrationCall(
                 name = "김수신",
                 relation = "가족",
-                phone = null,
+                phone = "01012345678",
                 email = "receiver@afternote.local",
                 message = null,
             )
@@ -306,7 +302,7 @@ class SettingCompletionTest {
             viewModel.register(
                 name = expectedCall.name,
                 relation = expectedCall.relation,
-                phone = "   ",
+                phone = expectedCall.phone,
                 email = expectedCall.email,
                 message = "",
             )
@@ -326,7 +322,7 @@ class SettingCompletionTest {
             viewModel.register(
                 name = expectedCall.name,
                 relation = expectedCall.relation,
-                phone = "   ",
+                phone = expectedCall.phone,
                 email = expectedCall.email,
                 message = "",
             )
@@ -472,7 +468,7 @@ class SettingCompletionTest {
     }
 
     @Test
-    fun receiverRegister_blankPhoneWiring_allowsSubmitWithoutPhone() {
+    fun receiverRegister_blankPhoneWiring_disablesSubmitAndShowsRequiredMessage() {
         val repository = FakeUserRepository(receivers = emptyList())
         val viewModel = ReceiverRegisterViewModel(repository)
 
@@ -487,19 +483,12 @@ class SettingCompletionTest {
         }
 
         composeRule.onNodeWithText("이름을 입력하세요").performTextInput("김수신")
-        composeRule.onNodeWithText("관계를 선택하세요").performClick()
-        composeRule.onNodeWithText("어머니").performClick()
         composeRule.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("afternote@email.com"))
         composeRule.onNodeWithText("afternote@email.com").performTextInput("receiver@afternote.local")
 
-        composeRule.onAllNodesWithText("연락처를 입력해주세요.").assertCountEquals(0)
-        composeRule.onNodeWithText("등록").assertIsEnabled()
-
-        composeRule.onNodeWithText("등록").performClick()
-        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            repository.receiverCreateCalls.size == 1
-        }
-        assertEquals(null, repository.receiverCreateCalls.single().phone)
+        composeRule.onNodeWithText("연락처를 입력해주세요.").assertIsDisplayed()
+        composeRule.onNodeWithText("등록").assertIsNotEnabled()
+        assertTrue(repository.receiverCreateCalls.isEmpty())
     }
 
     @Test

@@ -81,7 +81,7 @@ fun ReceiverRegisterScreen(
     ReceiverRegisterContent(
         title = "수신자 등록",
         actionText = "등록",
-        isPhoneRequired = false,
+        isPhoneRequired = true,
         isLoading = uiState.isLoading,
         errorMessage = uiState.errorMessage,
         onBackClick = onBackClick,
@@ -366,7 +366,7 @@ private fun ReceiverRegisterContentPreview() {
         ReceiverRegisterContent(
             title = "수신자 등록",
             actionText = "등록",
-            isPhoneRequired = false,
+            isPhoneRequired = true,
             isLoading = false,
             errorMessage = null,
             onBackClick = {},

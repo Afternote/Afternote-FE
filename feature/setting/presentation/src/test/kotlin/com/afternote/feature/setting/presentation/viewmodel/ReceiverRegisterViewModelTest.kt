@@ -56,12 +56,34 @@ class ReceiverRegisterViewModelTest {
     }
 
     @Test
-    fun `server rejected message is mapped to dynamic UI text`() {
+    fun `blank phone is rejected as required before repository call`() {
+        val viewModel = ReceiverRegisterViewModel(repository())
+
+        viewModel.register("홍길동", "딸", null, "receiver@example.com", null)
+
+        assertEquals(UiText.Resource(R.string.receiver_phone_required), viewModel.uiState.value.errorMessage)
+        assertEquals(0, createCalls.get())
+        assertFalse(viewModel.uiState.value.isLoading)
+    }
+
+    @Test
+    fun `invalid phone is rejected before repository call`() {
+        val viewModel = ReceiverRegisterViewModel(repository())
+
+        viewModel.register("홍길동", "딸", "123", "receiver@example.com", null)
+
+        assertEquals(UiText.Resource(R.string.receiver_phone_invalid), viewModel.uiState.value.errorMessage)
+        assertEquals(0, createCalls.get())
+        assertFalse(viewModel.uiState.value.isLoading)
+    }
+
+    @Test
+    fun `server rejected message is not shown verbatim to the user`() {
         val serverMessage = "수신자 이메일은 필수입니다."
         val error = ReceiverRequestRejectedException(serverMessage, Exception("origin"))
 
         assertEquals(
-            UiText.Dynamic(serverMessage),
+            UiText.Resource(R.string.receiver_request_rejected),
             error.toReceiverFailureMessage(R.string.receiver_register_failed),
         )
     }
