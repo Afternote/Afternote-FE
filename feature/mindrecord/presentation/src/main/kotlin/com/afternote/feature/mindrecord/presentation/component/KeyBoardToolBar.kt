@@ -48,12 +48,23 @@ fun BottomToolbar(
     onTextStyleClick: () -> Unit,
     onAlignChange: (TextAlign) -> Unit,
     modifier: Modifier = Modifier,
+    /**
+     * 지금 문단의 정렬. 이 바의 정렬 3종은 «셋 중 하나» 라 **누가 켜져 있는지**가 semantics 의
+     * 일부다 — 값이 없으면 스크린리더는 셋 다 똑같이 「버튼」으로만 읽는다 (#1179).
+     */
+    textAlign: TextAlign = TextAlign.Start,
     onLinkClick: () -> Unit = {},
     onSaveDraftClick: () -> Unit = {},
     onDraftCountClick: () -> Unit = {},
     /** 임시저장 개수. `null` 은 아직 모름(조회 중·실패) — 0 으로 단정하지 않는다. */
     draftCount: Int? = null,
 ) {
+    val textSettingsLabel = stringResource(R.string.mindrecord_toolbar_text_settings)
+    val draftCountLabel =
+        draftCount
+            ?.let { stringResource(R.string.mindrecord_toolbar_draft_list_cd, it) }
+            ?: stringResource(R.string.mindrecord_toolbar_draft_list_unknown_cd)
+
     Row(
         modifier =
             modifier
@@ -70,7 +81,12 @@ fun BottomToolbar(
         }
         Spacer(modifier = Modifier.width(8.dp))
 
-        IconButton(onClick = onTextStyleClick) {
+        IconButton(
+            onClick = onTextStyleClick,
+            // 「T」 는 눈으로 볼 때만 뜻이 통하는 기호다. 낭독되면 「T, 버튼」 — 무엇을 여는
+            // 버튼인지 알 수 없다. 패널 제목으로 이미 쓰는 문구를 이름으로 준다 (#1179 리뷰).
+            modifier = Modifier.semantics { contentDescription = textSettingsLabel },
+        ) {
             Text(
                 text = "T",
                 style = AfternoteDesign.typography.bodyLargeB,
@@ -79,23 +95,26 @@ fun BottomToolbar(
         }
         Spacer(modifier = Modifier.width(8.dp))
 
-        IconButton(onClick = { onAlignChange(TextAlign.Start) }) {
-            Icon(
-                painter = painterResource(R.drawable.mindrecord_align_left),
-                contentDescription = stringResource(R.string.mindrecord_toolbar_align_left_cd),
-            )
-        }
-        IconButton(onClick = { onAlignChange(TextAlign.Center) }) {
-            Icon(
-                painter = painterResource(R.drawable.mindrecord_align_center),
-                contentDescription = stringResource(R.string.mindrecord_toolbar_align_center_cd),
-            )
-        }
-        IconButton(onClick = { onAlignChange(TextAlign.End) }) {
-            Icon(
-                painter = painterResource(R.drawable.mindrecord_align_right),
-                contentDescription = stringResource(R.string.mindrecord_toolbar_align_right_cd),
-            )
+        // 스타일 패널의 정렬 pill 과 **같은 셋 중 하나** 선택이다. 종전에는 이쪽만 맨
+        // `IconButton` 이라 역할도 선택 상태도 안 실렸다 — 작성 화면에 늘 보이는 건 이쪽이다 (#1179 리뷰).
+        Row(modifier = Modifier.selectableGroup(), verticalAlignment = Alignment.CenterVertically) {
+            ALIGN_ITEMS.forEach { (align, resources) ->
+                val (iconRes, labelRes) = resources
+                IconButton(
+                    onClick = { onAlignChange(align) },
+                    modifier =
+                        Modifier.selectable(
+                            selected = textAlign == align,
+                            role = Role.RadioButton,
+                            onClick = { onAlignChange(align) },
+                        ),
+                ) {
+                    Icon(
+                        painter = painterResource(iconRes),
+                        contentDescription = stringResource(labelRes),
+                    )
+                }
+            }
         }
 
         Spacer(modifier = Modifier.weight(1f))
@@ -114,7 +133,12 @@ fun BottomToolbar(
                 text = draftCount?.toString() ?: UNKNOWN_DRAFT_COUNT,
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray4,
-                modifier = Modifier.clickable(role = Role.Button, onClick = onDraftCountClick),
+                modifier =
+                    Modifier
+                        .clickable(role = Role.Button, onClick = onDraftCountClick)
+                        // 숫자만 낭독하면 「1, 버튼」 이라 무엇의 1 인지, 눌러서 어디로 가는지 알 수 없다.
+                        // 수량 미확인('–')도 마찬가지라 그 경우까지 문구로 갈라 준다 (#1179 리뷰).
+                        .semantics { contentDescription = draftCountLabel },
             )
         }
     }
@@ -185,7 +209,14 @@ fun TextStyleToolbar(
                     )
                 }
 
-                IconActionButton(onClick = onTypeClick) {
+                // 이 「T」 는 아직 어디에도 연결돼 있지 않다(`onTypeClick` 기본값이 `{}` 이고
+                // 호출부가 넘기지 않는다). 그래도 클릭 semantics 는 실려 있어 낭독되므로,
+                // 「T, 버튼」 으로 남겨 두는 대신 아래 글자 종류 행이 하는 일로 이름을 붙였다.
+                // 무엇을 여는 버튼인지 시안으로 확정되지 않은 자리다 — docs/qa/assumptions.md 참조.
+                IconActionButton(
+                    onClick = onTypeClick,
+                    label = stringResource(R.string.mindrecord_toolbar_text_type_cd),
+                ) {
                     Text(
                         text = "T",
                         style = AfternoteDesign.typography.bodyLargeB,
@@ -238,13 +269,17 @@ private fun CloseButton(onClick: () -> Unit) {
 @Composable
 private fun IconActionButton(
     onClick: () -> Unit,
+    label: String? = null,
     content: @Composable BoxScope.() -> Unit,
 ) {
     Box(
         modifier =
             Modifier
                 .size(24.dp)
-                .clickable(role = Role.Button, onClick = onClick),
+                .clickable(role = Role.Button, onClick = onClick)
+                // 자식이 기호 하나뿐인 슬롯은 그 기호가 그대로 이름이 된다(「T, 버튼」).
+                // 목적을 말하는 라벨이 있으면 그것으로 덮는다 (#1179 리뷰).
+                .then(if (label == null) Modifier else Modifier.semantics { contentDescription = label }),
         contentAlignment = Alignment.Center,
         content = content,
     )
@@ -255,12 +290,6 @@ private fun AlignPill(
     selected: TextAlign,
     onAlignChange: (TextAlign) -> Unit,
 ) {
-    val items =
-        listOf(
-            Triple(TextAlign.Start, R.drawable.mindrecord_align_left, R.string.mindrecord_toolbar_align_left_cd),
-            Triple(TextAlign.Center, R.drawable.mindrecord_align_center, R.string.mindrecord_toolbar_align_center_cd),
-            Triple(TextAlign.End, R.drawable.mindrecord_align_right, R.string.mindrecord_toolbar_align_right_cd),
-        )
     Row(
         modifier =
             Modifier
@@ -274,7 +303,8 @@ private fun AlignPill(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        items.forEach { (align, iconRes, labelRes) ->
+        ALIGN_ITEMS.forEach { (align, resources) ->
+            val (iconRes, labelRes) = resources
             PillIconSlot(
                 selected = selected == align,
                 onClick = { onAlignChange(align) },
@@ -510,3 +540,14 @@ private data class HeaderTypeItem(
 
 /** 임시저장 개수를 아직 모를 때 자리 표시 — `DraftDateFormatter` 의 미지정 표기와 같은 문자다. */
 private const val UNKNOWN_DRAFT_COUNT = "\u2013"
+
+/**
+ * 정렬 3종의 값·아이콘·라벨. 하단 바와 스타일 패널이 **같은 표**를 읽는다 — 갈라 두면 한쪽만
+ * 라벨이 바뀌어도 스크린리더가 두 툴바를 다르게 읽는다 (#1179 리뷰).
+ */
+private val ALIGN_ITEMS =
+    listOf(
+        TextAlign.Start to (R.drawable.mindrecord_align_left to R.string.mindrecord_toolbar_align_left_cd),
+        TextAlign.Center to (R.drawable.mindrecord_align_center to R.string.mindrecord_toolbar_align_center_cd),
+        TextAlign.End to (R.drawable.mindrecord_align_right to R.string.mindrecord_toolbar_align_right_cd),
+    )

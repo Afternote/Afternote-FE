@@ -287,6 +287,8 @@ fun WriteTextField(
         BottomToolbar(
             modifier = Modifier.imePadding(),
             onTextStyleClick = { showTextStyleToolbar = !showTextStyleToolbar },
+            // 스타일 패널과 같은 값을 본다 — 두 툴바의 정렬 선택 상태가 갈리면 안 된다 (#1179).
+            textAlign = styleState.textAlign,
             onAlignChange = { align ->
                 keepEditorFocus { state.addParagraphStyle(ParagraphStyle(textAlign = align)) }
             },
