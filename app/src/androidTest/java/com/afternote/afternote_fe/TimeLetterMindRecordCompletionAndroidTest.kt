@@ -364,7 +364,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
                     pending?.await() ?: Result.success(emptyList())
                 }
             }
-        var activeViewModel by mutableStateOf(DailyQuestionListViewModel(emptyRepository, MindRecordChangeTracker()))
+        var activeViewModel by mutableStateOf(DailyQuestionListViewModel(emptyRepository, MindRecordChangeTracker(), FakeErrorReporter()))
 
         composeRule.setContent {
             AfternoteTheme {
@@ -392,7 +392,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
             FakeDailyQuestionRepository(today = completionToday()).apply {
                 onGetList = { _, _ -> listResults.removeFirst() }
             }
-        val retryViewModel = DailyQuestionListViewModel(retryRepository, MindRecordChangeTracker())
+        val retryViewModel = DailyQuestionListViewModel(retryRepository, MindRecordChangeTracker(), FakeErrorReporter())
         composeRule.runOnIdle { activeViewModel = retryViewModel }
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
             retryViewModel.uiState.value is DailyQuestionListUiState.Error
@@ -424,7 +424,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
         // 목록이 그대로»(#520) 를 잡는 이 테스트가 조용히 침묵한다 (#966 리뷰).
         val changeTracker = MindRecordChangeTracker()
         val repository = FakeDailyQuestionRepository(today = completionToday(), changeTracker = changeTracker)
-        val listViewModel = DailyQuestionListViewModel(repository, changeTracker)
+        val listViewModel = DailyQuestionListViewModel(repository, changeTracker, FakeErrorReporter())
         var writeViewModel by mutableStateOf<DailyQuestionWriteViewModel?>(null)
         var submitSuccessCalls = 0
 
@@ -627,7 +627,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
                     )
                 },
             )
-        val viewModel = MemorySpaceViewModel(diaryRepository, FakeDailyQuestionRepository())
+        val viewModel = MemorySpaceViewModel(diaryRepository, FakeDailyQuestionRepository(), FakeErrorReporter())
         var backCalls = 0
 
         composeRule.setContent {

@@ -84,7 +84,7 @@ class MindRecordLifecycleTest {
                     DiaryList(listOf(previousPublished), 1, TodayMood.SOSO),
             )
         val repository = scriptedDiaryRepository(diaryLists)
-        val viewModel = DiaryListViewModel(repository, MindRecordChangeTracker())
+        val viewModel = DiaryListViewModel(repository, MindRecordChangeTracker(), RecordingErrorReporter())
 
         composeRule.setContent {
             AfternoteTheme {

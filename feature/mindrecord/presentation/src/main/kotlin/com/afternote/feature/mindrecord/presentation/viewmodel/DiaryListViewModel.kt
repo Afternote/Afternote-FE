@@ -2,12 +2,15 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DiaryList
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
+import com.afternote.feature.mindrecord.presentation.reporting.MindRecordFailureStage
+import com.afternote.feature.mindrecord.presentation.reporting.recordMindRecordFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.ensureActive
@@ -27,6 +30,7 @@ class DiaryListViewModel
     constructor(
         private val repository: DiaryRepository,
         private val changeTracker: MindRecordChangeTracker,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val internalState = MutableStateFlow(InternalState())
         private var loadJob: Job? = null
@@ -87,8 +91,11 @@ class DiaryListViewModel
                         // 목록이 통째 교체되며 LazyColumn 스크롤이 맨 위로 돌아간다.
                         // 다만 재조회가 실패하면 삭제한 항목이 그대로 남아 보이므로 에러는 드러낸다.
                         load(internalState.value.yearMonth, showsLoading = false)
-                    }.onFailure {
+                    }.onFailure { throwable ->
                         // 실패를 무시하면 항목이 그대로 남은 채 아무 안내도 없어 고장처럼 보인다 (#716).
+                        // 되돌릴 수 없는 동작이라 콘솔에도 남긴다 — 화면만 알리고 끝내면
+                        // 나중에 「왜 안 지워졌나」를 물을 곳이 없다 (#964).
+                        errorReporter.recordMindRecordFailure(MindRecordFailureStage.RECORD_DELETE, throwable)
                         internalState.update {
                             it.copy(deleteError = UiText.Resource(R.string.mindrecord_error_delete_failed))
                         }
@@ -138,6 +145,10 @@ class DiaryListViewModel
                                 if (keepsStateOnFailure && current.loadPhase is LoadPhase.Loaded) {
                                     current
                                 } else {
+                                    // **사용자가 오류 화면을 마주한 경우에만** 올린다. 위 분기(재진입
+                                    // 갱신 실패)는 보고 있던 목록을 그대로 두므로 승격하지 않는다 —
+                                    // 화면 이탈이 잦아 전부 올리면 한도를 잡음으로 채운다 (#964).
+                                    errorReporter.recordMindRecordFailure(MindRecordFailureStage.RECORD_LIST_LOAD, e)
                                     current.copy(
                                         loadPhase =
                                             LoadPhase.Failed(
