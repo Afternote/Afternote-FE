@@ -9,6 +9,17 @@ data class AccountRegistration(
 )
 
 /**
+ * 아이디 찾기 성공 결과.
+ *
+ * @property email 가입 이메일. 이 앱은 이메일과 별개인 아이디를 두지 않아(로그인 = 이메일 + 비밀번호)
+ *   찾은 "아이디" 가 곧 이 값이다.
+ */
+data class FoundAccount(
+    val name: String,
+    val email: String,
+)
+
+/**
  * 로그인 성공 결과.
  */
 sealed class Session {
@@ -23,7 +34,8 @@ sealed class Session {
     data class SocialSession(
         override val accessToken: String,
         override val refreshToken: String,
-        val isNewUser: Boolean?,
+        /** 이번 로그인으로 가입된 신규 사용자인지. 온보딩 진입 여부를 가른다(#993). */
+        val isNewUser: Boolean,
     ) : Session()
 }
 

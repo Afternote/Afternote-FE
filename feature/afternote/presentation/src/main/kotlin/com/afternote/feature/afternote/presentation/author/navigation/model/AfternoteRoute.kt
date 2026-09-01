@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.navigation.model
 
+import com.afternote.feature.afternote.domain.AfternoteType
 import kotlinx.serialization.Serializable
 
 sealed interface AfternoteRoute {
@@ -8,22 +9,23 @@ sealed interface AfternoteRoute {
 
     @Serializable
     data class DetailRoute(
-        val itemId: String = "",
+        val itemId: Long,
     ) : AfternoteRoute
 
+    /** Editor·MemorialPlaylist·AddSong이 공유하는 flow 범위와 생성/수정 인자. */
     @Serializable
-    data class GalleryDetailRoute(
-        val itemId: String = "",
+    data class EditorFlowRoute(
+        val itemId: Long? = null,
+        val initialType: AfternoteType,
     ) : AfternoteRoute
 
+    /** [EditorFlowRoute]의 시작 화면. flow 인자는 부모 route가 소유한다. */
     @Serializable
-    data class EditorRoute(
-        val itemId: String? = null,
-        val initialCategory: String? = null,
-    ) : AfternoteRoute
+    data object EditorRoute : AfternoteRoute
 
+    /** [EditorRoute] 위에 쌓이는 수신자 선택 화면 (#540). 선택 결과는 SavedStateHandle 로 반환한다. */
     @Serializable
-    data object FingerprintLoginRoute : AfternoteRoute
+    data object SelectReceiverRoute : AfternoteRoute
 
     @Serializable
     data object AddSongRoute : AfternoteRoute
@@ -32,7 +34,5 @@ sealed interface AfternoteRoute {
     data object MemorialPlaylistRoute : AfternoteRoute
 
     @Serializable
-    data class MemorialGuidelineDetailRoute(
-        val itemId: String = "",
-    ) : AfternoteRoute
+    data object FingerprintLoginRoute : AfternoteRoute
 }

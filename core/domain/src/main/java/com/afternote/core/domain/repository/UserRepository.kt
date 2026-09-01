@@ -1,65 +1,27 @@
 package com.afternote.core.domain.repository
 
-import com.afternote.core.model.delivery.DeliveryConditionItem
-import com.afternote.core.model.delivery.ReceiverDeliveryConditions
-import com.afternote.core.model.user.DeliveryCondition
-import com.afternote.core.model.user.DeliveryConditionType
-import com.afternote.core.model.user.Receiver
-import com.afternote.core.model.user.ReceiverCreated
-import com.afternote.core.model.user.ReceiverDetail
-import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserPushSetting
-import kotlinx.coroutines.flow.Flow
 
-interface UserRepository {
-    val receiverListFlow: Flow<List<Receiver>>
-
-    // 수신자 목록 조회
-    suspend fun getReceivers(): List<Receiver>
-
-    // 수신자 등록
-    suspend fun createReceiver(
-        name: String,
-        relation: String,
-        phone: String?,
-        email: String?,
-        message: String?,
-    ): ReceiverCreated
-
-    // 수신자 상세 조회
-    suspend fun getReceiverDetail(receiverId: Long): ReceiverDetail
-
-    // 수신자 정보 수정
-    suspend fun updateReceiver(
-        receiverId: Long,
-        name: String,
-        phone: String,
-        relation: String,
-        email: String,
-    ): Receiver
-
-    // 수신자 메시지 수정
-    suspend fun updateReceiverMessage(
-        receiverId: Long,
-        message: String,
-    )
-
-    // 내 프로필 조회
-    suspend fun getMyProfile(): User
-
-    // 프로필 수정
-    suspend fun updateMyProfile(
-        name: String?,
-        phone: String?,
-        profileImageUrl: String?,
-    ): User
-
+/**
+ * 사용자 도메인 통합 계약 — 전환기 전용 (#1282).
+ *
+ * 수신자·프로필 멤버는 책임별 좁은 계약 2종으로 이동했고, 이 인터페이스는 그 합집합에 아직
+ * 이동하지 않은 계정·푸시 설정 멤버를 더한 것이다. 기존 소비자가 좁은 계약으로 이관되는 동안만
+ * 남으며, 전 소비자 이관 후 제거한다. 새 코드는 이 인터페이스가 아니라 필요한 좁은 계약만 주입받는다.
+ *
+ * - [UserReceiverRepository] — 사용자 계정에 등록된 수신자 목록·CRUD·메시지·전달조건
+ * - [MyProfileRepository] — 서버 정본 프로필 조회·수정
+ *
+ * 아래 계정·푸시 설정 6멤버는 **core 에 좁은 계약을 신설하지 않는다.** main 소스 소비자가
+ * `feature:setting` 뿐이라 core 에 계약을 세웠다가 다시 내리면 같은 멤버를 두 번 옮기게 된다.
+ * `feature:setting` 으로 곧장 내리는 몫은 #1429 다.
+ */
+interface UserRepository :
+    UserReceiverRepository,
+    MyProfileRepository {
     // 회원 탈퇴
     suspend fun deleteAccount()
-
-    // 활동 기록(ping) — 앱 실행/로그인 확정 시 미사용(INACTIVITY) 전달조건 타이머를 리셋
-    suspend fun logActivity()
 
     // 푸시 알림 설정 조회
     suspend fun getMyPushSettings(): UserPushSetting
@@ -82,23 +44,4 @@ interface UserRepository {
 
     // 소셜 계정 연결 해제
     suspend fun unlinkConnectedAccount(provider: String): UserConnectedAccount
-
-    // 전달 조건 조회
-    suspend fun getDeliveryCondition(): DeliveryCondition
-
-    // 전달 조건 수정
-    suspend fun updateDeliveryCondition(
-        conditionType: DeliveryConditionType,
-        inactivityPeriodDays: Int?,
-        specificDate: String?,
-    ): DeliveryCondition
-
-    // 수신자별 전달조건 조회 (콘텐츠별)
-    suspend fun getReceiverDeliveryConditions(receiverId: Long): ReceiverDeliveryConditions
-
-    // 수신자별 전달조건 설정/변경 (보낸 conditions 로 저장)
-    suspend fun updateReceiverDeliveryConditions(
-        receiverId: Long,
-        conditions: List<DeliveryConditionItem>,
-    ): ReceiverDeliveryConditions
 }

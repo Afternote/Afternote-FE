@@ -30,3 +30,27 @@ internal fun onboardingProfileScreenInitialScreenshot() {
         )
     }
 }
+
+/**
+ * 제출 진행 중 — 완료 버튼이 스피너로 바뀌고 비활성 스타일로 잠긴다.
+ *
+ * 이름이 채워져 있어도 잠기는지가 이 baseline 의 요점이다. 잠금이 풀리면 연타·IME 로
+ * 회원가입이 중복 호출된다.
+ */
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+internal fun onboardingProfileScreenSubmittingScreenshot() {
+    AfternoteTheme {
+        OnboardingProfileScreen(
+            initialName = "애프터노트",
+            displayImageUri = null,
+            snackbarHostState = remember { SnackbarHostState() },
+            onNameChange = {},
+            onProfileImagePick = {},
+            onBackClick = {},
+            onCompleteClick = {},
+            isSubmitting = true,
+        )
+    }
+}

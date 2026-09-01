@@ -1,81 +1,110 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="welcome_logo_description">Afternote 로고</string>
-    <string name="welcome_title">나의 만약이, 남겨진 이들의\n막막함이 되지 않도록</string>
-    <string name="welcome_brand_name">애프터노트</string>
-    <string name="welcome_description">애프터노트는 당신의 디지털 세상을\n미리 정리해 가장 소중한 사람들에게\n안전하고 따뜻한 다리를 제공합니다.</string>
-    <string name="welcome_start">시작하기</string>
-    <string name="welcome_check_records">전달 받은 기록 확인하기</string>
-    <string name="welcome_already_signed_up">이미 가입하셨나요?\u0020\u0020</string>
-    <string name="welcome_login">로그인하기</string>
+    <string name="onboarding_welcome_logo_description">Afternote 로고</string>
+    <string name="onboarding_welcome_title">나의 만약이, 남겨진 이들의\n막막함이 되지 않도록</string>
+    <string name="onboarding_welcome_brand_name">애프터노트</string>
+    <string name="onboarding_welcome_description">애프터노트는 당신의 디지털 세상을\n미리 정리해 가장 소중한 사람들에게\n안전하고 따뜻한 다리를 제공합니다.</string>
+    <string name="onboarding_welcome_start">시작하기</string>
+    <string name="onboarding_welcome_check_records">전달 받은 기록 확인하기</string>
+    <string name="onboarding_welcome_already_signed_up">이미 가입하셨나요?\u0020\u0020</string>
+    <string name="onboarding_welcome_login">로그인하기</string>
 
-    <string name="login_top_bar_title">로그인</string>
-    <string name="login_email_label">아이디 (이메일)</string>
-    <string name="login_password_label">비밀번호</string>
-    <string name="login_button">로그인</string>
-    <string name="login_signup_simple">간편 회원가입하기</string>
-    <string name="login_kakao">카카오 로그인</string>
-    <string name="login_google">Google 계정으로 로그인</string>
-    <string name="login_find_account">아이디/비밀번호 찾기</string>
-    <string name="login_find_account_message">아이디/비밀번호 찾기의 경우,\n고객센터로 문의 바랍니다.</string>
-    <string name="login_failed">로그인 실패</string>
-    <string name="login_kakao_failed">카카오 로그인에 실패했습니다.</string>
-    <string name="login_google_failed">구글 로그인에 실패했습니다.</string>
-    <string name="login_google_no_credentials">기기에 Google 계정이 없어요.\n설정 &gt; 계정에서 Google 계정을 추가해 주세요.</string>
-    <string name="login_screen_unavailable">로그인 화면을 띄울 수 없습니다.</string>
-    <string name="content_description_google_login">구글 로그인</string>
+    <string name="onboarding_login_top_bar_title">로그인</string>
+    <string name="onboarding_login_email_label">아이디 (이메일)</string>
+    <string name="onboarding_login_password_label">비밀번호</string>
+    <string name="onboarding_login_button">로그인</string>
+    <string name="onboarding_login_signup_simple">간편 회원가입하기</string>
+    <string name="onboarding_login_kakao">카카오 로그인</string>
+    <string name="onboarding_login_google">Google 로그인</string>
+    <string name="onboarding_login_find_account">아이디/비밀번호 찾기</string>
+    <string name="onboarding_login_failed">로그인 실패</string>
+    <string name="onboarding_login_invalid_credentials">아이디 또는 비밀번호가 일치하지 않습니다.</string>
+    <!-- 시안 부재 잠정 문구 — 소셜 거절(1208·1209)은 시안에 표시 정의가 없어 자체 문구로 둔다 -->
+    <string name="onboarding_login_social_rejected">소셜 로그인이 거절되었습니다. 다시 시도해 주세요.</string>
+    <!-- 로그인·회원가입·아이디 찾기가 공유하는 전송 실패 문구 (Throwable.toDisplayMessage) -->
+    <string name="onboarding_network_error">네트워크 연결을 확인해주세요.</string>
+    <string name="onboarding_login_kakao_failed">카카오 로그인에 실패했습니다.</string>
+    <string name="onboarding_login_google_failed">구글 로그인에 실패했습니다.</string>
+    <string name="onboarding_login_google_no_credentials">기기에 Google 계정이 없어요.\n설정 &gt; 계정에서 Google 계정을 추가해 주세요.</string>
+    <string name="onboarding_login_screen_unavailable">로그인 화면을 띄울 수 없습니다.</string>
+
+    <string name="onboarding_find_id_title">아이디 찾기</string>
+    <string name="onboarding_find_account_verify_email_title">이메일 인증하기</string>
+    <string name="onboarding_find_account_verify_email_description">가입 시 사용한 이메일을 입력해 주세요</string>
+    <string name="onboarding_find_account_email_placeholder">이메일 주소</string>
+    <string name="onboarding_find_account_code_placeholder">인증 번호</string>
+    <string name="onboarding_find_account_code_request">인증번호 받기</string>
+    <string name="onboarding_find_account_code_requesting">전송 중…</string>
+    <string name="onboarding_find_account_code_resend">재전송</string>
+    <string name="onboarding_find_account_code_resend_cooldown">재전송 (%1$ds)</string>
+    <string name="onboarding_find_account_code_confirm">확인</string>
+    <string name="onboarding_find_account_code_sent">인증번호가 전송되었습니다.\n수신 된 인증번호를 입력해 주세요.</string>
+    <string name="onboarding_find_account_code_mismatch">인증번호가 틀렸습니다.\n다시 확인 후 입력해 주세요.</string>
+    <string name="onboarding_find_account_next">다음</string>
+    <string name="onboarding_find_account_failed">요청에 실패했습니다.</string>
 
     <string name="onboarding_step_description">회원가입 진행도 4단계 중 %1$d단계</string>
 
-    <string name="signup_title">회원가입</string>
-    <string name="signup_email_placeholder">이메일 주소</string>
-    <string name="signup_password_placeholder">비밀번호</string>
-    <string name="signup_verification_code_placeholder">인증번호</string>
-    <string name="signup_verification_sent">인증번호가 전송되었습니다.\n수신 된 인증번호를 입력해 주세요.</string>
-    <string name="signup_verification_sent_with_timer">인증번호가 전송되었습니다. 남은 시간 %1$d:%2$02d</string>
-    <string name="signup_verification_expired">인증번호가 만료되었어요. 다시 받기를 눌러주세요.</string>
-    <string name="signup_verification_request">인증번호 받기</string>
-    <string name="signup_verification_requesting">전송 중…</string>
-    <string name="signup_verification_resend">재전송</string>
-    <string name="signup_verification_resend_cooldown">재전송 (%1$ds)</string>
-    <string name="signup_next">다음</string>
-    <string name="signup_resident_number_label">주민등록번호</string>
-    <string name="signup_resident_number_placeholder">주민등록번호</string>
-    <string name="signup_resident_number_back_placeholder">0</string>
-    <string name="signup_password_input_label">비밀번호 입력</string>
-    <string name="signup_password_confirm_placeholder">비밀번호 확인</string>
-    <string name="signup_password_rule_combination">8 ~ 16자의 영문 대소문자, 숫자, 특수문자를 조합하여 설정해 주세요.</string>
-    <string name="signup_password_rule_reuse">이전에 사용한 적 없는 비밀번호가 안전합니다.</string>
-    <string name="signup_failed">회원가입 실패</string>
-    <string name="signup_name_required">이름을 입력해주세요</string>
+    <string name="onboarding_signup_title">회원가입</string>
+    <string name="onboarding_signup_email_placeholder">이메일 주소</string>
+    <string name="onboarding_signup_password_placeholder">비밀번호</string>
+    <string name="onboarding_signup_verification_code_placeholder">인증번호</string>
+    <string name="onboarding_signup_verification_sent">인증번호가 전송되었습니다.\n수신 된 인증번호를 입력해 주세요.</string>
+    <string name="onboarding_signup_verification_mismatch">인증번호가 틀렸습니다.\n다시 확인 후 입력해 주세요.</string>
+    <string name="onboarding_signup_verification_request">인증번호 받기</string>
+    <string name="onboarding_signup_verification_requesting">전송 중…</string>
+    <string name="onboarding_signup_verification_resend">재전송</string>
+    <string name="onboarding_signup_verification_resend_cooldown">재전송 (%1$ds)</string>
+    <string name="onboarding_signup_next">다음</string>
+    <string name="onboarding_signup_resident_number_label">주민등록번호</string>
+    <string name="onboarding_signup_resident_number_placeholder">주민등록번호</string>
+    <string name="onboarding_signup_resident_number_back_placeholder">0</string>
+    <string name="onboarding_signup_password_input_label">비밀번호 입력</string>
+    <string name="onboarding_signup_password_confirm_placeholder">비밀번호 확인</string>
+    <string name="onboarding_signup_password_rule_combination">8 ~ 16자의 영문 대소문자, 숫자, 특수문자를 조합하여 설정해 주세요.</string>
+    <string name="onboarding_signup_password_rule_reuse">이전에 사용한 적 없는 비밀번호가 안전합니다.</string>
+    <string name="onboarding_signup_failed">회원가입 실패</string>
+    <string name="onboarding_signup_code_send_failed">인증번호를 보내지 못했어요. 잠시 후 다시 시도해주세요.</string>
+    <!-- 시안 미정의 잠정 문구 — 서버 code 1200 을 클라가 자체 문구로 안내한다(서버 message 미사용) -->
+    <string name="onboarding_signup_email_already_registered">이미 가입된 이메일이에요.</string>
+    <string name="onboarding_signup_email_verify_failed">이메일 인증에 실패했어요. 잠시 후 다시 시도해주세요.</string>
+    <string name="onboarding_signup_auto_login_failed">자동 로그인에 실패했어요. 로그인 화면에서 다시 시도해주세요.</string>
+    <string name="onboarding_signup_name_required">이름을 입력해주세요</string>
 
-    <string name="terms_welcome">환영합니다!</string>
-    <string name="terms_description">애프터노트와 함께\n당신의 마지막을 준비하세요.</string>
-    <string name="terms_agree_all">약관에 전체동의</string>
-    <string name="terms_service">애프터노트 서비스 이용 약관 (필수)</string>
-    <string name="terms_privacy">개인정보 수집 및 이용 동의서 (필수)</string>
-    <string name="terms_marketing">E-mail 및 SMS 광고성 정보 수신동의 (선택)</string>
-    <string name="terms_marketing_description">다양한 프로모션 소식을 전해드립니다.</string>
+    <string name="onboarding_terms_welcome">환영합니다!</string>
+    <string name="onboarding_terms_description">애프터노트와 함께\n당신의 마지막을 준비하세요.</string>
+    <string name="onboarding_terms_agree_all">약관에 전체동의</string>
+    <string name="onboarding_terms_service">애프터노트 서비스 이용 약관 (필수)</string>
+    <string name="onboarding_terms_privacy">개인정보 수집 및 이용 동의서 (필수)</string>
+    <string name="onboarding_terms_marketing">E-mail 및 SMS 광고성 정보 수신동의 (선택)</string>
+    <string name="onboarding_terms_marketing_description">다양한 프로모션 소식을 전해드립니다.</string>
 
-    <string name="terms_detail_intro">"애프터노트는 사용자의 기록을 안전하게 보관하고, 사용자의 의도에 따라 전달될 수 있도록 설계된 서비스입니다.\n\n서비스 이용을 위해 아래 약관 및 정책에 대한 동의가 필요합니다."</string>
+    <string name="onboarding_terms_detail_intro">"애프터노트는 사용자의 기록을 안전하게 보관하고, 사용자의 의도에 따라 전달될 수 있도록 설계된 서비스입니다.\n\n서비스 이용을 위해 아래 약관 및 정책에 대한 동의가 필요합니다."</string>
 
-    <string name="terms_detail_section_1">"애프터노트는 사용자가 자신의 생각, 기록, 메시지 및 디지털 자산을 저장하고 관리할 수 있도록 제공되는 개인 기록 관리 서비스입니다.\n사용자는 본 서비스를 통해 다음 기능을 이용할 수 있습니다.\n• 개인 기록 작성 및 저장\n• 특정 시점 또는 조건에 따른 메시지 전달 설정\n• 디지털 자산의 보관 및 관리\n• 지정된 수신인에게 기록 전달 설정\n사용자는 자신의 계정을 통해 작성한 모든 콘텐츠에 대한 권리를 보유하며, 애프터노트는 서비스 제공 목적 외 해당 콘텐츠를 사용하지 않습니다.\n단, 다음의 경우 서비스 이용이 제한될 수 있습니다.\n• 타인의 권리를 침해하는 콘텐츠를 작성한 경우\n• 불법적인 목적을 위해 서비스를 이용하는 경우\n• 서비스 운영을 방해하는 행위를 하는 경우"</string>
+    <string name="onboarding_terms_detail_section_1">"애프터노트는 사용자가 자신의 생각, 기록, 메시지 및 디지털 자산을 저장하고 관리할 수 있도록 제공되는 개인 기록 관리 서비스입니다.\n사용자는 본 서비스를 통해 다음 기능을 이용할 수 있습니다.\n• 개인 기록 작성 및 저장\n• 특정 시점 또는 조건에 따른 메시지 전달 설정\n• 디지털 자산의 보관 및 관리\n• 지정된 수신인에게 기록 전달 설정\n사용자는 자신의 계정을 통해 작성한 모든 콘텐츠에 대한 권리를 보유하며, 애프터노트는 서비스 제공 목적 외 해당 콘텐츠를 사용하지 않습니다.\n단, 다음의 경우 서비스 이용이 제한될 수 있습니다.\n• 타인의 권리를 침해하는 콘텐츠를 작성한 경우\n• 불법적인 목적을 위해 서비스를 이용하는 경우\n• 서비스 운영을 방해하는 행위를 하는 경우"</string>
 
-    <string name="terms_detail_section_2">"애프터노트는 서비스 제공을 위해 최소한의 개인정보를 수집합니다.\n수집 항목\n• 필수: 이메일 주소, 비밀번호\n• 선택: 프로필 정보, 메시지 수신인 정보\n수집 목적\n• 계정 생성 및 사용자 식별\n• 서비스 안정성 및 보안 유지\n보관 기간\n• 계정 삭제 시까지 보관\n• 단, 관련 법령에 따라 일정 기간 보관이 필요한 경우 해당 기간 동안 보관"</string>
+    <string name="onboarding_terms_detail_section_2">"애프터노트는 서비스 제공을 위해 최소한의 개인정보를 수집합니다.\n수집 항목\n• 필수: 이메일 주소, 비밀번호\n• 선택: 프로필 정보, 메시지 수신인 정보\n수집 목적\n• 계정 생성 및 사용자 식별\n• 기록 저장 및 관리\n• 메시지 전달 기능 제공\n• 서비스 안정성 및 보안 유지\n보관 기간\n• 계정 삭제 시까지 보관\n• 단, 관련 법령에 따라 일정 기간 보관이 필요한 경우 해당 기간 동안 보관"</string>
 
-    <string name="terms_detail_section_3">"사용자가 작성한 기록 및 메시지는 사용자의 계정에 안전하게 저장됩니다.\n애프터노트는 다음 원칙을 따릅니다.\n• 사용자의 명시적인 설정 없이 기록을 외부에 공개하지 않습니다.\n• 사용자가 지정한 전달 조건에 따라 기록이 전달됩니다.\n• 사용자는 언제든지 기록을 수정하거나 삭제할 수 있습니다.\n애프터노트는 사용자의 기록을 안전하게 보관합니다."</string>
+    <string name="onboarding_terms_detail_section_3">"사용자가 작성한 기록 및 메시지는 사용자의 계정에 안전하게 저장됩니다.\n애프터노트는 다음 원칙을 따릅니다.\n• 사용자의 명시적인 설정 없이 기록을 외부에 공개하지 않습니다.\n• 사용자가 지정한 전달 조건에 따라 기록이 전달됩니다.\n• 사용자는 언제든지 기록을 수정하거나 삭제할 수 있습니다.\n애프터노트는 사용자의 기록을 안전하게 보관합니다."</string>
 
-    <string name="terms_detail_section_4">"사용자는 자신의 계정 정보에 대한 책임을 가지며, 계정 보안을 위해 비밀번호를 안전하게 관리해야 합니다.\n사용자는 언제든지 다음을 요청할 수 있습니다.\n• 계정 삭제\n• 기록 삭제\n• 개인정보 수정\n계정 삭제 시 관련 데이터는 복구할 수 없습니다."</string>
+    <string name="onboarding_terms_detail_section_4">"사용자는 자신의 계정 정보에 대한 책임을 가지며, 계정 보안을 위해 비밀번호를 안전하게 관리해야 합니다.\n사용자는 언제든지 다음을 요청할 수 있습니다.\n• 계정 삭제\n• 기록 삭제\n• 개인정보 수정\n계정 삭제 시 관련 데이터는 복구할 수 없습니다."</string>
 
-    <string name="terms_detail_section_5">"애프터노트는 서비스 품질 향상을 위해 기능을 변경하거나 업데이트할 수 있습니다.\n중대한 변경 사항이 있을 경우 사전에 안내드립니다."</string>
+    <string name="onboarding_terms_detail_section_5">"애프터노트는 서비스 품질 향상을 위해 기능을 변경하거나 업데이트할 수 있습니다.\n중대한 변경 사항이 있을 경우 사전에 안내드립니다."</string>
 
-    <string name="terms_detail_section_6">"사용자는 언제든지 동의를 철회할 수 있으며, 동의 철회 시 서비스 이용이 제한될 수 있습니다."</string>
+    <string name="onboarding_terms_detail_section_6">"사용자는 언제든지 동의를 철회할 수 있으며, 동의 철회 시 서비스 이용이 제한될 수 있습니다."</string>
 
-    <string name="terms_view_detail">전체보기</string>
-    <string name="terms_next">프로필 설정하러가기</string>
+    <string name="onboarding_terms_view_detail">전체보기</string>
+    <string name="onboarding_terms_next">프로필 설정하러가기</string>
 
-    <string name="profile_top_bar_title">프로필 설정</string>
-    <string name="profile_headline">애프터노트에서의\n프로필을 설정해주세요</string>
-    <string name="profile_name_placeholder">이름을 지정해주세요</string>
-    <string name="profile_complete">회원가입 완료</string>
+    <string name="onboarding_profile_top_bar_title">프로필 설정</string>
+    <string name="onboarding_profile_headline">애프터노트에서의\n프로필을 설정해주세요</string>
+    <string name="onboarding_profile_name_placeholder">이름을 지정해주세요</string>
+    <string name="onboarding_profile_complete">회원가입 완료</string>
+    <!-- 약관 상세. 본문(onboarding_terms_detail_section_N)은 리소스였는데 제목만 코드에 남아 있었다. -->
+    <string name="onboarding_terms_detail_section_1_title">1. 서비스 이용약관</string>
+    <string name="onboarding_terms_detail_section_2_title">2. 개인정보 수집 및 이용 동의</string>
+    <string name="onboarding_terms_detail_section_3_title">3. 기록 및 콘텐츠 저장에 대한 안내</string>
+    <string name="onboarding_terms_detail_section_4_title">4. 계정 및 데이터 관리</string>
+    <string name="onboarding_terms_detail_section_5_title">5. 서비스 변경 및 종료</string>
+    <string name="onboarding_terms_detail_section_6_title">6. 동의 철회</string>
 </resources>

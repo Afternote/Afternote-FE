@@ -23,7 +23,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,7 +31,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.ProfileImagePicker
@@ -40,7 +38,6 @@ import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.modifierextention.addFocusCleaner
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,10 +47,11 @@ fun OnboardingProfileScreen(
     displayImageUri: Uri?,
     snackbarHostState: SnackbarHostState,
     onNameChange: (String) -> Unit,
-    onProfileImagePick: (Uri?) -> Unit,
+    onProfileImagePick: (Uri) -> Unit,
     onBackClick: () -> Unit,
     onCompleteClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isSubmitting: Boolean = false,
 ) {
     val focusManager = LocalFocusManager.current
     val nameState = rememberTextFieldState(initialName)
@@ -65,14 +63,14 @@ fun OnboardingProfileScreen(
     val photoPickerLauncher =
         rememberLauncherForActivityResult(
             contract = PickVisualMedia(),
-            onResult = onProfileImagePick,
+            onResult = { uri -> handleProfileImagePickerResult(uri, onProfileImagePick) },
         )
 
     Scaffold(
         modifier = modifier,
         topBar = {
             DetailTopBar(
-                title = stringResource(R.string.profile_top_bar_title),
+                title = stringResource(R.string.onboarding_profile_top_bar_title),
                 onBackClick = {
                     focusManager.clearFocus()
                     onBackClick()
@@ -99,7 +97,7 @@ fun OnboardingProfileScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    text = stringResource(R.string.profile_headline),
+                    text = stringResource(R.string.onboarding_profile_headline),
                     modifier = Modifier.fillMaxWidth(),
                     style = AfternoteDesign.typography.h1,
                     color = AfternoteDesign.colors.black,
@@ -120,41 +118,37 @@ fun OnboardingProfileScreen(
                         .trim()
                         .isNotEmpty()
 
+                // 제출 중에는 버튼과 IME 두 경로 모두 잠근다. 한쪽만 막으면 다른 쪽으로 중복 제출된다.
+                val isCompleteEnabled = isNameProvided && !isSubmitting
+
                 AfternoteTextField(
                     state = nameState,
-                    placeholder = stringResource(R.string.profile_name_placeholder),
+                    placeholder = stringResource(R.string.onboarding_profile_name_placeholder),
                     imeAction = ImeAction.Done,
                     onImeAction = {
                         focusManager.clearFocus()
-                        if (isNameProvided) onCompleteClick()
+                        if (isCompleteEnabled) onCompleteClick()
                     },
                 )
 
                 AfternoteButton(
-                    text = stringResource(R.string.profile_complete),
+                    text = stringResource(R.string.onboarding_profile_complete),
                     onClick = {
                         focusManager.clearFocus()
-                        onCompleteClick()
+                        if (isCompleteEnabled) onCompleteClick()
                     },
-                    type = if (isNameProvided) AfternoteButtonType.Default else AfternoteButtonType.Un,
+                    type = if (isCompleteEnabled) AfternoteButtonType.Default else AfternoteButtonType.Un,
+                    isLoading = isSubmitting,
                 )
             }
         }
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-private fun OnboardingProfileScreenPreview() {
-    AfternoteTheme {
-        OnboardingProfileScreen(
-            initialName = "Afternote",
-            displayImageUri = null,
-            snackbarHostState = remember { SnackbarHostState() },
-            onNameChange = {},
-            onProfileImagePick = {},
-            onBackClick = {},
-            onCompleteClick = {},
-        )
-    }
+/** 포토 피커 취소 결과(null)는 선택 변경이 아니므로 기존 프로필 이미지를 그대로 둔다. */
+internal fun handleProfileImagePickerResult(
+    uri: Uri?,
+    onProfileImagePick: (Uri) -> Unit,
+) {
+    uri?.let(onProfileImagePick)
 }

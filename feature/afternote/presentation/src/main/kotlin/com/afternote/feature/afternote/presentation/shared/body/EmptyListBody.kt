@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
@@ -26,7 +25,7 @@ fun EmptyListBody(modifier: Modifier = Modifier) {
                 .padding(start = 20.dp, top = 24.dp),
     ) {
         Icon(
-            painter = painterResource(R.drawable.feature_afternote_ic_empty_logo),
+            painter = painterResource(R.drawable.afternote_ic_empty_logo),
             contentDescription = null,
             modifier =
                 Modifier
@@ -35,16 +34,10 @@ fun EmptyListBody(modifier: Modifier = Modifier) {
         )
         Spacer(modifier = Modifier.height(32.dp))
         Text(
-            text = stringResource(R.string.feature_afternote_empty_list_body),
+            text = stringResource(R.string.afternote_empty_list_body),
             style = AfternoteDesign.typography.bodyLargeR,
             color = AfternoteDesign.colors.gray8,
         )
         Spacer(Modifier.weight(1f))
     }
-}
-
-@Preview
-@Composable
-private fun EmptyListBodyPreview() {
-    EmptyListBody()
 }

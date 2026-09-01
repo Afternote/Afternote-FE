@@ -1,19 +1,18 @@
 package com.afternote.feature.afternote.presentation.author.editor.model
-import com.afternote.feature.afternote.domain.model.author.ProcessingMethod
+
+import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 
 /**
  * Payload passed when the user taps "등록" on the afternote edit screen.
  * Used to build a new [com.afternote.feature.afternote.domain.model.author.ListItem] for create/update requests.
  *
- * @param atmosphere Memorial(PLAYLIST) only: "남기고 싶은 당부" text sent as playlist.atmosphere in PATCH.
+ * @param messageBlocks "남기실 말씀" 블록들. 편집 중인 빈 블록이 섞여 있을 수 있어, 도메인으로 옮길 때 걸러진다.
  */
 data class RegisterAfternotePayload(
     val serviceName: String,
     val date: String,
     val accountId: String = "",
     val password: String = "",
-    val message: String = "",
-    val processingMethods: List<ProcessingMethod> = emptyList(),
-    val galleryProcessingMethods: List<ProcessingMethod> = emptyList(),
-    val atmosphere: String = "",
+    val messageBlocks: List<EditorMessageTextBlock> = emptyList(),
+    val processingMethods: List<String> = emptyList(),
 )

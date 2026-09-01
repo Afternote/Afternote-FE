@@ -3,13 +3,14 @@ package com.afternote.feature.timeletter.data.repositoryImpl
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
 import com.afternote.feature.timeletter.data.api.TimeLetterApiService
-import com.afternote.feature.timeletter.data.dto.TimeLetterCreateRequest
-import com.afternote.feature.timeletter.data.dto.TimeLetterDeleteRequest
-import com.afternote.feature.timeletter.data.dto.TimeLetterUpdateRequest
+import com.afternote.feature.timeletter.data.dto.TimeLetterCreateRequestDto
+import com.afternote.feature.timeletter.data.dto.TimeLetterDeleteRequestDto
+import com.afternote.feature.timeletter.data.dto.TimeLetterUpdateRequestDto
 import com.afternote.feature.timeletter.data.mapper.toDomain
 import com.afternote.feature.timeletter.data.mapper.toDto
 import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetter
+import com.afternote.feature.timeletter.domain.model.TimeLetterDeliveryMode
 import com.afternote.feature.timeletter.domain.model.TimeLetterList
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
@@ -42,17 +43,19 @@ class TimeLetterRepositoryImpl
             title: String?,
             blocks: List<NewTimeLetterBlock>,
             sendAt: String?,
+            deliveryMode: TimeLetterDeliveryMode,
             status: TimeLetterStatus,
-            receiverIds: List<Long>?,
+            receiverIds: List<Long>,
         ): TimeLetter =
             timeLetterApiService
                 .createTimeLetter(
-                    TimeLetterCreateRequest(
+                    TimeLetterCreateRequestDto(
                         title = title,
                         sendAt = sendAt,
+                        deliveryMode = deliveryMode.toDto(),
                         status = status.toDto(),
                         blocks = blocks.map { it.toDto() },
-                        receiverIds = receiverIds ?: emptyList(),
+                        receiverIds = receiverIds,
                     ),
                 ).requireData()
                 .toDomain()
@@ -62,15 +65,17 @@ class TimeLetterRepositoryImpl
             title: String?,
             blocks: List<NewTimeLetterBlock>,
             sendAt: String?,
+            deliveryMode: TimeLetterDeliveryMode?,
             status: TimeLetterStatus?,
         ): TimeLetter =
             timeLetterApiService
                 .updateTimeLetter(
                     timeLetterId = timeLetterId,
                     request =
-                        TimeLetterUpdateRequest(
+                        TimeLetterUpdateRequestDto(
                             title = title,
                             sendAt = sendAt,
+                            deliveryMode = deliveryMode?.toDto(),
                             status = status?.toDto(),
                             blocks = blocks.map { it.toDto() },
                         ),
@@ -79,7 +84,7 @@ class TimeLetterRepositoryImpl
 
         override suspend fun deleteTimeLetters(timeLetterIds: List<Long>) {
             timeLetterApiService
-                .deleteTimeLetters(TimeLetterDeleteRequest(timeLetterIds = timeLetterIds))
+                .deleteTimeLetters(TimeLetterDeleteRequestDto(timeLetterIds = timeLetterIds))
                 .requireStatus()
         }
 

@@ -1,6 +1,6 @@
 package com.afternote.core.network.interceptor
 
-import android.util.Log
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.network.token.TokenReissuer
 import kotlinx.coroutines.runBlocking
@@ -8,6 +8,7 @@ import okhttp3.Authenticator
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.Route
+import java.io.IOException
 import javax.inject.Inject
 
 class TokenAuthenticator
@@ -15,6 +16,7 @@ class TokenAuthenticator
     constructor(
         private val authRepository: dagger.Lazy<AuthRepository>,
         private val tokenReissuer: TokenReissuer,
+        private val errorReporter: ErrorReporter,
     ) : Authenticator {
         @Suppress("ReturnCount")
         override fun authenticate(
@@ -22,7 +24,7 @@ class TokenAuthenticator
             response: Response,
         ): Request? {
             if (response.responseCount >= 3) {
-                Log.e("TokenAuthenticator", "❌ 무한 루프 방지: 재시도 횟수 3회 이상. 세션 만료 처리")
+                errorReporter.recordAuthContractViolation(AUTH_STAGE_RETRY_LIMIT)
                 runBlocking { authRepository.get().clearSession() }
                 return null
             }
@@ -34,12 +36,14 @@ class TokenAuthenticator
                     if (it.startsWith("Bearer ", ignoreCase = true)) it.substring(7) else it
                 }
             if (oldAccessToken == null) {
-                Log.e("TokenAuthenticator", "❌ 인증 실패: 직전 요청이 애초에 토큰을 포함하지 않았음")
+                errorReporter.recordAuthContractViolation(AUTH_STAGE_MISSING_AUTH_HEADER)
                 return null
             }
 
             // 회전은 선제 갱신 경로(AuthInterceptor)와 공유하는 단일 락(TokenReissuer) 경유 (#408) —
-            // 앞선 다른 경로/스레드가 이미 회전했으면 TokenAlreadyChanged 로 새 토큰만 받아 재시도
+            // 앞선 다른 경로/스레드가 이미 회전했으면 TokenAlreadyChanged 로 새 토큰만 받아 재시도.
+            // 인증 거절의 세션 정리는 락 안에서 끝난다 (#1126) — 여기서 정리하면 락이 풀린 뒤
+            // 정리가 끝나기까지가 대기자의 중복 재발급이 빠져나가는 창이 된다.
             return when (val outcome = tokenReissuer.reissue(expectedAccessToken = oldAccessToken)) {
                 is TokenReissuer.Outcome.TokenAlreadyChanged -> {
                     originalRequest.withBearer(outcome.accessToken)
@@ -47,7 +51,7 @@ class TokenAuthenticator
 
                 is TokenReissuer.Outcome.Rotated -> {
                     if (outcome.accessToken == oldAccessToken) {
-                        Log.e("TokenAuthenticator", "❌ 리이슈 실패: 서버가 이전과 동일한 토큰을 반환함")
+                        errorReporter.recordAuthContractViolation(AUTH_STAGE_SAME_TOKEN)
                         runBlocking { authRepository.get().clearSession() }
                         null
                     } else {
@@ -55,14 +59,28 @@ class TokenAuthenticator
                     }
                 }
 
-                TokenReissuer.Outcome.Failed -> {
-                    Log.e("TokenAuthenticator", "❌ 리이슈 실패: 세션 만료. 로그아웃 처리 진행")
-                    runBlocking { authRepository.get().clearSession() }
+                is TokenReissuer.Outcome.AuthenticationRejected -> {
                     null
+                }
+
+                is TokenReissuer.Outcome.Failure -> {
+                    throw TokenReissueFailureException(outcome.exception)
                 }
             }
         }
     }
+
+private fun ErrorReporter.recordAuthContractViolation(authStage: String) {
+    recordFailure(
+        throwable = IllegalStateException("Token authenticator contract violation"),
+        attributes = mapOf(KEY_AUTH_STAGE to authStage),
+    )
+}
+
+/** 재발급의 기술 원문을 UI 에 노출하지 않고 현재 요청만 실패시키는 예외. */
+internal class TokenReissueFailureException(
+    cause: Throwable,
+) : IOException(null, cause)
 
 /** 액세스 토큰만 갈아 끼운 재시도용 요청 사본 (OkHttp 공식 recipes 의 인증 예제 형태). */
 private fun Request.withBearer(accessToken: String) =
@@ -78,3 +96,8 @@ private fun Request.withBearer(accessToken: String) =
  */
 private val Response.responseCount: Int
     get() = generateSequence(this) { it.priorResponse }.count()
+
+private const val KEY_AUTH_STAGE = "auth_stage"
+private const val AUTH_STAGE_RETRY_LIMIT = "retry_limit"
+private const val AUTH_STAGE_MISSING_AUTH_HEADER = "missing_auth_header"
+private const val AUTH_STAGE_SAME_TOKEN = "same_token"

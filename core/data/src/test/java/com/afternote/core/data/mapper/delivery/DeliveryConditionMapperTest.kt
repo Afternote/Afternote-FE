@@ -6,7 +6,7 @@ import com.afternote.core.model.delivery.DeliveryConditionType
 import com.afternote.core.model.delivery.DeliveryContentType
 import com.afternote.core.model.delivery.InactivityPeriod
 import com.afternote.core.network.dto.delivery.ConditionStateDto
-import com.afternote.core.network.dto.delivery.DeliveryConditionItemResponse
+import com.afternote.core.network.dto.delivery.DeliveryConditionItemDto
 import com.afternote.core.network.dto.delivery.DeliveryConditionTypeDto
 import com.afternote.core.network.dto.delivery.DeliveryContentTypeDto
 import com.afternote.core.network.dto.delivery.InactivityPeriodDto
@@ -67,9 +67,9 @@ class DeliveryConditionMapperTest {
     }
 
     @Test
-    fun `DeliveryConditionItemResponse toDomain - 필드 보존 + INACTIVITY 기간 매핑`() {
+    fun `DeliveryConditionItemDto toDomain - 필드 보존 + INACTIVITY 기간 매핑`() {
         val dto =
-            DeliveryConditionItemResponse(
+            DeliveryConditionItemDto(
                 contentType = DeliveryContentTypeDto.AFTERNOTE,
                 conditionType = DeliveryConditionTypeDto.INACTIVITY,
                 inactivityPeriod = InactivityPeriodDto.ONE_YEAR,

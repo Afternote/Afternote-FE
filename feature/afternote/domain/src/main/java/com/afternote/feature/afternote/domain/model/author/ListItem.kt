@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.domain.model.author
 
-import com.afternote.feature.afternote.domain.AfternoteServiceType
+import com.afternote.feature.afternote.domain.AfternoteType
 
 /**
  * 애프터노트 아이템 도메인 모델
@@ -11,10 +11,10 @@ import com.afternote.feature.afternote.domain.AfternoteServiceType
  * @param type 서비스 타입 (필터링용)
  */
 data class ListItem(
-    val id: String,
+    val id: Long,
     val serviceName: String,
     val date: String,
-    val type: AfternoteServiceType,
+    val type: AfternoteType,
     val account: Account = Account(),
     val processing: ItemProcessing = ItemProcessing(),
 )

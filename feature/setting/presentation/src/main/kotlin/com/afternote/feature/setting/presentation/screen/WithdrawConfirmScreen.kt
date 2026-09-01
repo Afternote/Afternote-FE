@@ -14,17 +14,14 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteTextField
@@ -33,11 +30,11 @@ import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.Red
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
+import com.afternote.feature.setting.presentation.viewmodel.WithdrawUiState
 
 private const val WITHDRAW_CONFIRM_TEXT = "탈퇴하겠습니다"
 
@@ -53,22 +50,33 @@ fun WithdrawConfirmScreen(
     val userEmail = (uiState as? SettingUiState.Success)?.email.orEmpty()
     val textState = rememberTextFieldState()
     var showError by remember { mutableStateOf(false) }
-    var showCompletionDialog by remember { mutableStateOf(false) }
-    val withdrawCompleted by viewModel.withdrawCompleted.collectAsStateWithLifecycle()
-    val currentOnWithdrawSuccess by rememberUpdatedState(onWithdrawSuccess)
+    val withdrawUiState by viewModel.withdrawUiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(withdrawCompleted) {
-        if (withdrawCompleted) currentOnWithdrawSuccess()
-    }
+    when (withdrawUiState) {
+        WithdrawUiState.Success -> {
+            Popup(
+                type = PopupType.Default,
+                message = stringResource(R.string.withdraw_complete_message),
+                confirmText = stringResource(R.string.withdraw_complete_button),
+                onConfirm = onWithdrawSuccess,
+                onDismiss = onWithdrawSuccess,
+            )
+        }
 
-    if (showCompletionDialog) {
-        Popup(
-            type = PopupType.Default,
-            message = stringResource(R.string.withdraw_complete_message),
-            confirmText = stringResource(R.string.withdraw_complete_button),
-            onConfirm = viewModel::deleteAccount,
-            onDismiss = {},
-        )
+        WithdrawUiState.Error -> {
+            Popup(
+                type = PopupType.Variant2,
+                message = stringResource(R.string.withdraw_failed_message),
+                confirmText = stringResource(R.string.withdraw_retry_button),
+                dismissText = stringResource(R.string.withdraw_close_button),
+                onConfirm = viewModel::deleteAccount,
+                onDismiss = viewModel::dismissWithdrawError,
+            )
+        }
+
+        WithdrawUiState.Idle,
+        WithdrawUiState.Loading,
+        -> {}
     }
 
     Scaffold(
@@ -107,7 +115,7 @@ fun WithdrawConfirmScreen(
                 Text(
                     text = stringResource(R.string.withdraw_confirm_error),
                     style = AfternoteDesign.typography.captionLargeR,
-                    color = Red,
+                    color = AfternoteDesign.colors.error,
                 )
             }
             Spacer(Modifier.weight(1f))
@@ -115,11 +123,13 @@ fun WithdrawConfirmScreen(
                 onBackClick = onBackClick,
                 onWithdrawClick = {
                     if (textState.text.toString() == WITHDRAW_CONFIRM_TEXT) {
-                        showCompletionDialog = true
+                        showError = false
+                        viewModel.deleteAccount()
                     } else {
                         showError = true
                     }
                 },
+                isLoading = withdrawUiState == WithdrawUiState.Loading,
             )
             Spacer(Modifier.height(24.dp))
         }
@@ -167,6 +177,7 @@ private fun WithdrawAccountSection(
 private fun WithdrawConfirmBottomButtons(
     onBackClick: () -> Unit,
     onWithdrawClick: () -> Unit,
+    isLoading: Boolean,
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -182,6 +193,7 @@ private fun WithdrawConfirmBottomButtons(
             text = stringResource(R.string.withdraw_confirm_button),
             onClick = onWithdrawClick,
             type = AfternoteButtonType.Default,
+            isLoading = isLoading,
             modifier = Modifier.fillMaxWidth(),
         )
     }

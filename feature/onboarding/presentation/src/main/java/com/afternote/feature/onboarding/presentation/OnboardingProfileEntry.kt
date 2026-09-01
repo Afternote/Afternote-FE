@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.asString
 import com.afternote.feature.onboarding.presentation.signup.SignUpUiState
 import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel
 import kotlinx.coroutines.launch
@@ -33,8 +34,7 @@ fun OnboardingProfileEntry(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
-    val signupFailedMessage = stringResource(R.string.signup_failed)
-    val nameRequiredMessage = stringResource(R.string.signup_name_required)
+    val nameRequiredMessage = stringResource(R.string.onboarding_signup_name_required)
 
     val showSnackbar: (String) -> Unit = { message ->
         coroutineScope.launch {
@@ -57,10 +57,11 @@ fun OnboardingProfileEntry(
             viewModel.onNameRequiredConsumed()
         }
     }
-    val pendingErrorMessage = uiState.errorMessage
+    // VM 이 UiText 로 폴백까지 확정해 두므로 빈 문구가 도달하지 않는다.
+    val pendingErrorMessage = uiState.errorMessage?.asString()
     LaunchedEffect(pendingErrorMessage) {
         if (pendingErrorMessage != null) {
-            showSnackbar(pendingErrorMessage.ifBlank { signupFailedMessage })
+            showSnackbar(pendingErrorMessage)
             viewModel.onErrorConsumed()
         }
     }
@@ -71,9 +72,10 @@ fun OnboardingProfileEntry(
         displayImageUri = uiState.profileImageUri?.toUri(),
         snackbarHostState = snackbarHostState,
         onNameChange = viewModel::updateName,
-        onProfileImagePick = { uri -> viewModel.onProfileImagePicked(uri?.toString()) },
+        onProfileImagePick = { uri -> viewModel.onProfileImagePicked(uri.toString()) },
         onCompleteClick = viewModel::submitSignUp,
         onBackClick = onBackClick,
         modifier = modifier,
+        isSubmitting = uiState.isLoading,
     )
 }

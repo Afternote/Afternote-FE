@@ -1,27 +1,33 @@
 package com.afternote.feature.afternote.data.repositoryimpl.author
 
-import android.util.Log
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
-import com.afternote.feature.afternote.data.mapper.response.toDetailDomain
+import com.afternote.feature.afternote.data.mapper.toBusinessRequest
+import com.afternote.feature.afternote.data.mapper.toDomain
 import com.afternote.feature.afternote.data.mapper.toRequest
+import com.afternote.feature.afternote.data.mapper.toServerCategory
+import com.afternote.feature.afternote.data.mapper.toSocialRequest
 import com.afternote.feature.afternote.data.paging.AfternotePagingSource
 import com.afternote.feature.afternote.data.service.AfternoteApiService
+import com.afternote.feature.afternote.domain.AfternoteType
+import com.afternote.feature.afternote.domain.error.AfternoteFailure
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
+import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
-import com.afternote.feature.afternote.domain.model.author.CreatePlaylistPayload
-import com.afternote.feature.afternote.domain.model.author.CreateSocialPayload
+import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import java.io.IOException
 import javax.inject.Inject
 
 private const val PAGE_SIZE = 10
@@ -35,47 +41,63 @@ class AfternoteRepositoryImpl
         private val invalidationTrigger = MutableStateFlow(0L)
 
         @OptIn(ExperimentalCoroutinesApi::class)
-        override fun getPagedAfternotes(category: String?): Flow<PagingData<ListItem>> =
-            invalidationTrigger.flatMapLatest {
+        override fun getPagedAfternotes(type: AfternoteType?): Flow<PagingData<ListItem>> {
+            val category = type?.toServerCategory()
+            // 서버 enum 에 없는 종류(ESTATE, #491)는 보내면 400 이라 요청 자체를 만들지 않는다.
+            // BUSINESS 는 Afternote-BE 78ee857 부터 정식 값이라 여기서 걸리지 않는다 (#1048).
+            if (type != null && category == null) return flowOf(PagingData.empty())
+
+            return invalidationTrigger.flatMapLatest {
                 Pager(
                     config = PagingConfig(pageSize = PAGE_SIZE),
                     pagingSourceFactory = { AfternotePagingSource(api, category) },
                 ).flow
             }
+        }
 
         override suspend fun getDetail(id: Long): Result<Detail> =
-            safeCall {
-                api.getAfternoteDetail(afternoteId = id).requireData().toDetailDomain()
+            runCatchingCancellable {
+                api.getAfternoteDetail(afternoteId = id).requireData().toDomain()
             }
 
-        override suspend fun createSocial(payload: CreateSocialPayload): Result<Long> =
-            safeCall(errorMapper = ::mapAuthoringFailure) {
-                api.createAfternoteSocial(payload.toRequest()).requireData().afternoteId
-            }.onSuccess { invalidatePagedAfternotes() }
+        override suspend fun createSocial(payload: CreateAccountPayload): Result<Long> =
+            runCatchingCancellable {
+                api.createAfternoteAccount(payload.toSocialRequest()).requireData().afternoteId
+            }.mapAuthoringFailure()
+                .onSuccess { invalidatePagedAfternotes() }
+
+        override suspend fun createBusiness(payload: CreateAccountPayload): Result<Long> =
+            runCatchingCancellable {
+                api.createAfternoteAccount(payload.toBusinessRequest()).requireData().afternoteId
+            }.mapAuthoringFailure()
+                .onSuccess { invalidatePagedAfternotes() }
 
         override suspend fun createGallery(payload: CreateGalleryPayload): Result<Long> =
-            safeCall(errorMapper = ::mapAuthoringFailure) {
+            runCatchingCancellable {
                 api.createAfternoteGallery(payload.toRequest()).requireData().afternoteId
-            }.onSuccess { invalidatePagedAfternotes() }
+            }.mapAuthoringFailure()
+                .onSuccess { invalidatePagedAfternotes() }
 
-        override suspend fun createPlaylist(payload: CreatePlaylistPayload): Result<Long> =
-            safeCall(errorMapper = ::mapAuthoringFailure) {
+        override suspend fun createMemorial(payload: CreateMemorialPayload): Result<Long> =
+            runCatchingCancellable {
                 api.createAfternotePlaylist(payload.toRequest()).requireData().afternoteId
-            }.onSuccess { invalidatePagedAfternotes() }
+            }.mapAuthoringFailure()
+                .onSuccess { invalidatePagedAfternotes() }
 
         override suspend fun update(
             id: Long,
             payload: AfternoteUpdatePayload,
         ): Result<Long> =
-            safeCall(errorMapper = ::mapAuthoringFailure) {
+            runCatchingCancellable {
                 api
                     .updateAfternote(afternoteId = id, request = payload.toRequest())
                     .requireData()
                     .afternoteId
-            }.onSuccess { invalidatePagedAfternotes() }
+            }.mapAuthoringFailure()
+                .onSuccess { invalidatePagedAfternotes() }
 
         override suspend fun delete(id: Long): Result<Unit> =
-            safeCall {
+            runCatchingCancellable {
                 api.deleteAfternote(afternoteId = id).requireStatus()
             }.onSuccess { invalidatePagedAfternotes() }
 
@@ -84,19 +106,18 @@ class AfternoteRepositoryImpl
         }
     }
 
-private suspend inline fun <T> safeCall(
-    crossinline errorMapper: (Throwable) -> Throwable = { it },
-    crossinline block: suspend () -> T,
-): Result<T> =
-    try {
-        Result.success(block())
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Exception) {
-        e.logRepositoryFailure()
-        Result.failure(errorMapper(e))
+/**
+ * 저장 API 실패를 presentation 이 네트워크·서버 오류로 타입 분기할 수 있는 도메인 예외로 옮긴다
+ * (`mapLoginFailure` 와 같은 자리·같은 이유 — 유일한 호출부인 이 파일 안에 둔다).
+ *
+ * 서버가 응답하며 거절한 실패는 원본 그대로 흘려보낸다 — 저장 경로에서 화면 처리가 달라지는
+ * 서버 사유는 현재 없다.
+ *
+ * 취소는 여기 오지 않는다 — 호출부가 전부 `runCatchingCancellable`(#661) 이라
+ * `CancellationException` 이 [Result] 에 담긴 채로 도달하지 않는다.
+ */
+private fun <T> Result<T>.mapAuthoringFailure(): Result<T> =
+    when (val exception = exceptionOrNull()) {
+        is IOException -> Result.failure(AfternoteFailure.NetworkUnavailable(exception))
+        else -> this
     }
-
-private fun Exception.logRepositoryFailure() {
-    Log.e("AfternoteRepository", message ?: "Unknown Error", this)
-}

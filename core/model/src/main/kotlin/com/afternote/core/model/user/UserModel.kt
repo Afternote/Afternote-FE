@@ -7,10 +7,6 @@ data class User(
     val profileImageUrl: String?,
 )
 
-data class ReceiverList(
-    val receivers: List<Receiver>,
-)
-
 data class Receiver(
     val receiverId: Long,
     val name: String,
@@ -54,17 +50,3 @@ data class UserConnectedAccount(
     val kakaoEmail: String?,
     val appleEmail: String?,
 )
-
-data class DeliveryCondition(
-    val conditionType: DeliveryConditionType,
-    val inactivityPeriodDays: Int?,
-    val specificDate: String?,
-    val conditionFulfilled: Boolean,
-    val conditionMet: Boolean,
-)
-
-enum class DeliveryConditionType {
-    NONE,
-    INACTIVITY,
-    SPECIFIC_DATE,
-}

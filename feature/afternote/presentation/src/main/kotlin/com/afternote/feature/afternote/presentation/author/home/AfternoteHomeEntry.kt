@@ -10,17 +10,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
-import com.afternote.feature.afternote.domain.AfternoteServiceType
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
-
-data class AfternoteHomeEntryActions(
-    val navigateToDetail: (String) -> Unit = {},
-    val navigateToGalleryDetail: (String) -> Unit = {},
-    val navigateToMemorialGuidelineDetail: (String) -> Unit = {},
-    val navigateToAdd: (AfternoteCategory) -> Unit = {},
-    val onSettingClick: () -> Unit = {},
-)
 
 /**
  * 애프터노트 목록 Entry.
@@ -31,10 +22,12 @@ data class AfternoteHomeEntryActions(
  */
 @Composable
 fun AfternoteHomeEntry(
+    navigateToDetail: (Long) -> Unit,
+    navigateToAdd: (AfternoteType) -> Unit,
+    onSettingClick: () -> Unit,
     viewModel: AfternoteHomeViewModel = hiltViewModel(),
-    actions: AfternoteHomeEntryActions = AfternoteHomeEntryActions(),
 ) {
-    val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
+    val selectedType by viewModel.selectedType.collectAsStateWithLifecycle()
     val items = viewModel.pagedAfternotes.collectAsLazyPagingItems()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -48,22 +41,27 @@ fun AfternoteHomeEntry(
 
     AfternoteHomeScreen(
         items = items,
-        selectedCategory = selectedCategory,
+        selectedType = selectedType,
         snackbarHostState = snackbarHostState,
-        onCategorySelected = viewModel::selectTab,
+        onTypeSelected = viewModel::selectTab,
         onListItemClick = { id, type ->
             when (type) {
-                AfternoteServiceType.GALLERY_AND_FILES -> actions.navigateToGalleryDetail(id)
+                AfternoteType.SOCIAL_NETWORK,
+                AfternoteType.BUSINESS,
+                AfternoteType.GALLERY_AND_FILES,
+                AfternoteType.MEMORIAL,
+                -> navigateToDetail(id)
 
-                AfternoteServiceType.MEMORIAL -> actions.navigateToMemorialGuidelineDetail(id)
-
-                AfternoteServiceType.SOCIAL_NETWORK -> actions.navigateToDetail(id)
-
-                // BUSINESS · ESTATE 는 placeholder 카테고리. 서버 미지원이라 리스트에 노출되지 않으므로 도달 시 무시.
-                AfternoteServiceType.BUSINESS, AfternoteServiceType.ESTATE -> Unit
+                // ESTATE 는 placeholder 카테고리. 서버 미지원이라 리스트에 노출되지 않으므로 도달 시 무시.
+                AfternoteType.ESTATE -> Unit
             }
         },
-        onFabClick = { actions.navigateToAdd(selectedCategory) },
-        onSettingClick = actions.onSettingClick,
+        // NEXT STEP 카드는 시안·컴포넌트가 다 있으나 «다음에 무엇을 하라» 를 만드는 원천이
+        // 서버에도 ViewModel 에도 없다. 여기서 null 을 넘기면 카드가 뜨지 않는다 — 종전에는
+        // InfiniteListBody 의 `= {}` 디폴트가 이 공백을 «탭해도 반응 없는 카드» 로 덮고 있었다 (#777).
+        nextStep = null,
+        onFabClick = { navigateToAdd(selectedType ?: AfternoteType.SOCIAL_NETWORK) },
+        onSettingClick = onSettingClick,
+        headerDescription = stringResource(R.string.afternote_home_header_description),
     )
 }

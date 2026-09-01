@@ -1,8 +1,33 @@
 # Afternote-FE
 
+애프터노트 안드로이드 앱 — Kotlin · Jetpack Compose · Hilt 멀티모듈.
+
+```
+app/          진입점 · 네비게이션 · androidTest
+core/         common · data · datastore · domain · model · network · ui
+feature/      afternote · mindrecord · onboarding · receiver · setting · timeletter
+              (각 data · domain · presentation) + home/presentation · timeletter/res
+konsist/      아키텍처 규칙 테스트
+```
+
+## 문서
+
+| 문서 | 내용 |
+|---|---|
+| [docs/security/actions-supply-chain.md](docs/security/actions-supply-chain.md) | Actions SHA 고정 · 허용 목록 정책 (조직 수준 감사) |
+| [docs/release/distribution.md](docs/release/distribution.md) | 비개발자 APK 배포 (Firebase App Distribution) |
+| [docs/play-release.md](docs/play-release.md) | Google Play 내부 테스트 트랙 배포 · versionCode 정책 |
+| [docs/testing/screenshot.md](docs/testing/screenshot.md) | Compose Preview 스크린샷 baseline (Docker) |
+| [docs/qa/status.md](docs/qa/status.md) | QA 현황 · 회차 기록 · 커버리지 |
+| [docs/qa/assumptions.md](docs/qa/assumptions.md) | 시안 · 명세에 없어 판단으로 정한 것 |
+| [docs/qa/evidence/README.md](docs/qa/evidence/README.md) | 커밋별 런타임 QA 증거 · 기록 규약 |
+| [docs/qa/device-baseline.md](docs/qa/device-baseline.md) | 에뮬레이터 화면 프로파일 · 기기 기준 |
+
+---
+
 # 🚀 신규 팀원 빌드 셋업
 
-`local.properties` 는 `.gitignore` 에 등록되어 있어 **git 으로 받아지지 않는다**. clone 직후 다음 두 키를 루트 `local.properties` 에 직접 채워야 카카오·구글 로그인이 정상 동작한다.
+`local.properties` 는 `.gitignore` 에 등록되어 있어 **git 으로 받아지지 않는다**. 로컬 개발에서는 clone 직후 다음 두 키를 루트 `local.properties` 에 채우는 방식을 권장한다. 빌드는 같은 이름의 환경변수도 지원하며, 둘 다 있으면 `local.properties` 값이 우선한다. 추가로 아래 **공유 debug keystore** 섹션까지 마치면 카카오 키 해시를 본인 머신용으로 따로 등록할 필요가 없다.
 
 ## 필요 키
 
@@ -10,6 +35,10 @@
 |---|---|---|
 | `KAKAO_NATIVE_APP_KEY` | 카카오 SDK 초기화 (`KakaoSdk.init`) + 카카오 로그인 콜백 intent-filter 의 `kakao{NATIVE_APP_KEY}` scheme | [Kakao Developers](https://developers.kakao.com) → 내 애플리케이션 → 앱 키 → **네이티브 앱 키** |
 | `GOOGLE_WEB_CLIENT_ID` | Google 로그인 시 `CredentialManager.requestGoogleIdToken(serverClientId = ...)` 의 server client id (백엔드가 ID Token 의 `aud` 를 검증할 수 있도록 *Web* client ID 사용) | [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials → OAuth 2.0 Client IDs → **Web application** 타입 |
+
+## `google-services.json`
+
+`app/google-services.json` 도 `.gitignore` 대상이라 clone 으로 받아지지 않는다. Firebase Console → 프로젝트 설정 → 일반 → Android 앱 `com.afternote.afternote_fe` 카드에서 직접 내려받아 `app/google-services.json` 에 둔다. 콘솔 접근 권한이 없으면 Firebase 프로젝트 관리자에게 멤버 초대를 요청한다.
 
 ## `local.properties` 양식
 
@@ -20,222 +49,129 @@ KAKAO_NATIVE_APP_KEY=<카카오 네이티브 앱 키>
 GOOGLE_WEB_CLIENT_ID=<구글 OAuth web client id>.apps.googleusercontent.com
 ```
 
+파일을 만들지 않는 환경에서는 같은 이름의 `KAKAO_NATIVE_APP_KEY`·`GOOGLE_WEB_CLIENT_ID` 환경변수를 사용해도 된다.
+
 ## 키 수령 채널
 
-신규 팀원은 위 두 키를 **Slack DM 으로 1hyok 에게 요청**. (직접 발급 권한이 있는 경우 위 콘솔에서 직접 조회 가능.)
+신규 팀원은 **`Afternote Debug Build Config` 1Password 항목 관리자에게 요청**해 공유 링크를 받는다. 요청·전달은 Slack·카톡 등 편한 채널로 하면 된다 — 링크에 **수신자 이메일 제한과 만료**가 걸려 있어 지정 주소 밖으로 새도 열리지 않는다. 링크 하나에 아래 셋업에 필요한 값이 모두 들어 있다.
+
+| `local.properties` 키 | 공유 링크의 필드 |
+|---|---|
+| `KAKAO_NATIVE_APP_KEY` | `kakao_native_app_key` |
+| `GOOGLE_WEB_CLIENT_ID` | `google_web_client_id` |
+| `DEBUG_STORE_PASSWORD` | `debug_store_password` |
+| `DEBUG_KEY_ALIAS` | `debug_key_alias` |
+| `DEBUG_KEY_PASSWORD` | `debug_key_password` |
+| (공유 debug keystore 파일) | `debug_store_file_b64` |
+
+(직접 발급 권한이 있으면 위 콘솔에서 두 키를 직접 조회해도 된다.)
+
+<details>
+<summary>배포자용 — 링크 발급 방법</summary>
+
+```bash
+op item share "Afternote Debug Build Config" --emails <요청자 메일> --expires-in 3d
+```
+
+`--emails` 를 빼면 **링크를 아는 누구나** 열 수 있으니 반드시 붙인다. 1회만 열리게 하려면 `--view-once` 를 추가. 항목 값을 고친 뒤에는 링크를 **다시 발급해야** 반영된다.
+
+아이템 공유는 **필드 단위 선택이 안 되고 항목 전체가 나간다.** 배포에는 반드시 위 전용 항목을 쓰고, 다른 자격이 섞인 항목은 공유하지 않는다.
+</details>
 
 ## 누락 시 증상
 
-두 키가 비어 있으면 빌드는 통과하지만 다음이 깨진다:
+**release 빌드는 두 키 중 하나라도 비어 있으면 실패한다** — 가드 태스크 `checkKakaoNativeAppKeyForRelease` / `checkGoogleWebClientIdForRelease` 가 `preReleaseBuild` 앞에서 차단한다 (빈 키로 배포된 APK 의 소셜 로그인 전면 불능 재발 방지, #535). release variant 를 조립하는 라이프사이클 태스크(`build`·`assemble`·`bundleRelease`·`lintRelease`, `build-leaf.sh` 의 `:모듈:build` 포함)도 동일하게 실패한다. `check` 는 `preReleaseBuild` 를 타지 않아 영향받지 않는다.
+
+debug 빌드는 빈 값으로도 통과하지만(로컬 개발 편의) 다음이 깨진다:
 
 - `KakaoSdk.init("")` → SDK 초기화 실패 (앱 내 안내: `KAKAO_NATIVE_APP_KEY를 확인해주세요.`)
-- `AndroidManifest.xml` 의 `android:scheme="kakao${KAKAO_NATIVE_APP_KEY}"` 가 빈 scheme 으로 등록 → 카카오 로그인 콜백 intent-filter 매칭 안 됨
+- `AndroidManifest.xml` 의 `android:scheme="kakao${KAKAO_NATIVE_APP_KEY}"` 가 `kakao` 로 등록 → 정상 `kakao{KEY}` 콜백과 불일치
 - `requestGoogleIdToken(serverClientId = "")` → Credential Manager 가 invalid request 로 실패
 
-# 📦 비개발자 APK 배포 (Firebase App Distribution)
+## 공유 debug keystore
 
-디자이너·PM·QA·외부 베타테스터에게 release APK 를 자동 배포하는 흐름. Firebase 프로젝트 `afternote-b4d3c` + 테스터 그룹 `afternote` 사용.
+debug 빌드는 기본적으로 머신마다 다른 `~/.android/debug.keystore` 로 서명되어, 카카오 로그인 키 해시를 팀원 머신별로 콘솔에 등록해야 한다. 팀 공유 debug keystore 를 배치하면 전 머신이 동일 키 해시로 서명되어 콘솔 등록이 keystore 1개로 끝난다. (미배치 시에도 빌드는 정상 — 기본 debug keystore 폴백 — 대신 본인 머신 키 해시를 직접 등록해야 카카오 로그인이 동작한다.)
 
-## 셋업 (1hyok 만 1회 — 신규 인계자도 동일)
-
-1. **Release keystore 생성** (분실 시 앱 업데이트 영구 불가 → 1Password / iCloud 등 2곳 이상 백업 필수)
+1. **keystore 수령·배치** — 위 1Password 공유 링크의 `debug_store_file_b64` 값을 복사한 뒤 홈 디렉토리에 복원한다. (공유 링크에는 파일 첨부가 실리지 않아 keystore 를 base64 텍스트로 전달한다.)
 
     ```bash
-    keytool -genkeypair -v \
-      -keystore ~/afternote-release.jks \
-      -keyalg RSA -keysize 4096 -validity 10000 \
-      -alias afternote-release
+    pbpaste | base64 -d > ~/afternote-debug-shared.jks
     ```
 
-2. **`local.properties` 끝에 4개 키 추가** (signing config 가 읽음)
+2. **`local.properties` 끝에 4개 키 추가** (경로는 `~` 없이 **절대경로** — Gradle `file()` 은 `~` 를 확장하지 않는다)
 
     ```properties
-    RELEASE_STORE_FILE=/Users/<you>/afternote-release.jks
-    RELEASE_STORE_PASSWORD=<keystore 비밀번호>
-    RELEASE_KEY_ALIAS=afternote-release
-    RELEASE_KEY_PASSWORD=<key 비밀번호>
+    DEBUG_STORE_FILE=/Users/<you>/afternote-debug-shared.jks
+    DEBUG_STORE_PASSWORD=<공유 링크의 debug_store_password>
+    DEBUG_KEY_ALIAS=afternote-debug-shared
+    DEBUG_KEY_PASSWORD=<공유 링크의 debug_key_password>
     ```
 
-3. **`google-services.json` 배치** — Firebase Console → 프로젝트 설정 → 일반 → Android 앱 `com.afternote.afternote_fe` 카드에서 다운로드 → `app/google-services.json`
+3. **적용 확인** — `./gradlew :app:signingReport` 출력의 `Variant: debug` 에서 `Store:` 가 공유 keystore 경로를 가리키는지 확인
 
-4. **Firebase CLI 설치 + 인증** (자동 업로드용)
-
-    ```bash
-    npm install -g firebase-tools
-    firebase login
-    ```
-
-5. **콘솔에 신규 keystore SHA 등록** (배포 받은 사람의 카카오/구글 로그인 동작 위해)
-   - Release SHA-1 추출: `keytool -list -v -keystore ~/afternote-release.jks -alias afternote-release | grep SHA1`
-   - 카카오 키 해시 추출: `keytool -exportcert -alias afternote-release -keystore ~/afternote-release.jks | openssl sha1 -binary | openssl base64`
-   - **Kakao Developers** → 앱 → 플랫폼 키 → Android → 키 해시 추가
-   - **Firebase Console** → 프로젝트 설정 → Android 앱 → SHA 인증서 지문 추가
-
-## 배포 (매 회)
-
-### 자동 — `main` push 시 (기본 경로)
-
-`develop` → `main` 머지가 push 되면 GitHub Actions 워크플로 [`release-distribution.yml`](.github/workflows/release-distribution.yml) 가 자동 실행 → APK 빌드 → Firebase App Distribution 업로드 → 테스터 그룹 `afternote` 전원에게 자동 이메일 발송. 운영 정책 *"main 머지된 상태만 배포"* 와 일치.
-
-CI 가 사용하는 GitHub Secrets (Settings → Secrets and variables → Actions):
-
-| 키 | 용도 |
-|---|---|
-| `RELEASE_STORE_FILE_B64` | release keystore 파일 (`~/afternote-release.jks`) 의 base64 인코딩 |
-| `RELEASE_STORE_PASSWORD` | keystore 비밀번호 |
-| `RELEASE_KEY_ALIAS` | key alias (`afternote-release`) |
-| `RELEASE_KEY_PASSWORD` | key 비밀번호 |
-| `FIREBASE_SERVICE_ACCOUNT_JSON` | App Distribution Admin 권한 부여된 service account JSON 원문 |
-| `KAKAO_NATIVE_APP_KEY` · `GOOGLE_WEB_CLIENT_ID` · `GOOGLE_SERVICES_JSON_B64` | `local.properties` 키 (`lint.yml` 과 공유) |
-
-> base64 인코딩: `base64 -i ~/afternote-release.jks | pbcopy` (macOS)
-
-### 수동 — 1hyok 머신 (fallback / 긴급 시)
+공유 keystore 의 카카오 키 해시 추출 명령 (Kakao Developers → 앱 → 플랫폼 → Android → 키 해시 등록·재확인용):
 
 ```bash
-./gradlew assembleRelease appDistributionUploadRelease
+keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-shared.jks | openssl sha1 -binary | openssl base64
 ```
 
-→ 동일하게 APK 빌드 + Firebase 업로드. CI 장애 시 또는 main 머지 없이 임시 배포 필요할 때 사용.
+---
 
-> 같은 `versionCode` 로 재업로드하면 기존 release 갱신. 새 release 만들려면 `app/build.gradle.kts` 의 `versionCode` 증가.
+# 💻 코딩 및 패키지 컨벤션
 
-## 테스터 관리
+## Kotlin·Compose
 
-- 추가/제거: Firebase Console → App Distribution → 테스터 및 그룹 → `afternote` 그룹 편집
-- 신규 테스터는 첫 초대 이메일에서 **App Tester** 앱 설치 안내를 받음 → 이후 빌드는 자동 알림
+- 포맷과 정적 분석은 PR의 Ktlint·Android Lint 필수 검사와 현재 설정을 따른다.
+- `feature/*/presentation`은 **기능(화면) 폴더**를 기본 단위로 한다. `screen/`·`viewmodel/`·`component/`로 먼저 쪼개지 않는다.
+- 깊이 제한, `shared/` 판정 기준, `*UiState` 위치와 이관 절차는 [presentation 패키지 구조 규칙](docs/convention/presentation-package-structure.md)을 따른다.
+- 공용 Composable과 UI 헬퍼는 새로 만들기 전에 [`core/ui` 카탈로그](core/ui/README.md)를 확인한다.
 
-# 📸 Compose Preview Screenshot Testing (docker baseline)
+## Android 리소스
 
-`Compose Preview Screenshot Testing` 의 anti-aliasing / font hinting / scale 등 host 환경 의존 렌더링 차이로 CI rendered PNG 를 baseline 으로 교체하는 ping-pong 이 발생해 왔다 (PR [#302](https://github.com/Afternote/Afternote-FE/pull/302) / [#322](https://github.com/Afternote/Afternote-FE/pull/322)). 본 리포의 `Dockerfile.screenshot` + `.github/workflows/screenshot.yml` 의 container 단계가 baseline 생성·검증을 동일 환경에서 수행해 환경 차이 root fix.
+- 리소스를 가진 `core/*`·`feature/*` 모듈은 `lower_snake_case`와 모듈별 prefix를 사용한다. `core/*`는 `core_<모듈>_`, `feature/*`는 `<기능>_` 형식이다.
+- 적용된 모듈은 `android.resourcePrefix`와 Android Lint가 위반을 막는다. 모듈별 prefix와 예외는 [리소스 네이밍 규칙](docs/convention/resource-naming.md)이 정본이다.
 
-## 사전 준비
+# 🦥 Git·Issue·PR 흐름
 
-- Docker Desktop 설치 (로컬 macOS · Linux 모두 동일)
+## 브랜치와 머지
 
-## 로컬 baseline 갱신 (의도된 시각 변경 시)
+- 기본·통합 브랜치는 `develop`, Firebase 일반 배포 기준 브랜치는 `main`이다. 일반 변경은 `develop`을 향하고, 릴리스 PR만 `develop`에서 `main`으로 올린다.
+- 작업 브랜치는 변경 성격을 나타내는 lowercase prefix와 `/`를 사용한다. 예: `feat/123`, `fix/123-login`, `docs/readme-refresh`. 언더스코어 사용 규칙은 없다.
+- 서로 의존하는 변경은 부모 작업 브랜치를 base로 둔 스택 PR을 사용할 수 있다. 부모가 머지되면 base를 `develop`로 이관하고 [머지 순서 가드](.github/workflows/merge-order-guard.yml)를 통과시킨다.
+- 스택 PR의 base 갱신은 `PUT /repos/{owner}/{repo}/pulls/{number}/update-branch`로 하지 못한다. 네이티브 스택 멤버는 base가 `develop`인 밑단까지 포함해 이 엔드포인트가 `403 Updating a stacked PR's branch via this endpoint is not supported`로 거절한다. base를 로컬에서 머지하고 평범하게 push하면 통하며, 이 경로는 기존 커밋 SHA를 유지해 리뷰어의 파일 조회 상태와 이미 받은 CI 결과를 살린다. `rebase` 뒤 강제 push는 SHA를 전부 갈아치우므로 둘 다 잃는다.
+- `develop`·`main`의 삭제와 강제 push는 금지된다. 머지 조건의 최종 정본은 GitHub의 [활성 ruleset](https://github.com/Afternote/Afternote-FE/rules)과 PR의 Required 상태다.
 
-```bash
-docker build -t afternote-screenshot:latest -f Dockerfile.screenshot .
-docker run --rm -v "$PWD":/workspace -w /workspace afternote-screenshot:latest \
-  ./gradlew :core:ui:updateScreenshotTest \
-            :app:updateScreenshotTest \
-            :feature:onboarding:presentation:updateScreenshotTest \
-            :feature:afternote:presentation:updateScreenshotTest
-```
+## 커밋
 
-→ 변경된 PNG 가 각 모듈 `src/screenshotTestDebug/reference/...` 에 갱신. `git add` 후 commit.
+- 저장소 이력과 이슈 자동화의 type에 맞춘 lowercase Conventional Commit 형식을 사용한다: `<type>(<선택 scope>): <설명>`.
+- 주요 type은 `feat`, `fix`, `chore`, `refactor`, `test`, `ci`, `build`, `docs`다.
+- 예: `fix(auth): 로그인 실패 안내를 복구한다`, `docs(readme): 기여 절차를 갱신한다`.
+- 대문자 `[FEAT]`나 이모지는 요구하지 않는다.
 
-## 로컬 baseline 검증 (CI 실패 재현)
+## Issue와 PR
 
-```bash
-docker run --rm -v "$PWD":/workspace -w /workspace afternote-screenshot:latest \
-  ./gradlew :core:ui:validateScreenshotTest \
-            :app:validateScreenshotTest \
-            :feature:onboarding:presentation:validateScreenshotTest \
-            :feature:afternote:presentation:validateScreenshotTest
-```
+- Issue는 [현재 Issue form](.github/ISSUE_TEMPLATE/issue.yml)을 사용하고, 같은 작업의 기존 Issue가 있으면 새로 만들지 않고 재사용한다.
+- PR은 [현재 PR 템플릿](.github/PULL_REQUEST_TEMPLATE.md)을 그대로 채운다. 본문에 같은 저장소의 실제 Issue를 `Refs #N`으로 연결해야 Repository Quality 검사를 통과한다.
+- 여러 PR이 같은 Issue를 공유할 수 있다. 그 Issue의 작업을 최종 완료하는 PR에서만 `Closes #N`·`Fixes #N`·`Resolves #N`을 사용한다.
+- `CI Test Plan`에는 Android 계측 테스트를 `none`·`selected`·`full`로 선언하고 선택 이유를 변경 경계 기준으로 남긴다.
+- 필수 검사는 머지 순서 가드, Ktlint, Android Lint, Unit Test, Screenshot, Repository Quality, CodeQL(Java/Kotlin·Actions)다. JavaScript/TypeScript CodeQL도 저장소 자동화 스크립트를 분석한다. 이름이나 구성이 바뀌면 README 목록보다 활성 ruleset과 [PR 검증 진입점](.github/workflows/pr-validation.yml)을 우선한다.
 
-→ baseline 과 docker 환경에서 새로 그린 PNG 비교. 실패 시 `build/outputs/screenshotTest-results/preview/debug/diffs/` 에서 diff PNG 확인.
+PR Validation은 rename의 이전·현재 경로를 포함한 전체 변경 파일을 기준으로 Ktlint는 직접 변경 모듈, Android Lint·단위 테스트·Kover는 역의존 모듈, Compose screenshot은 영향받는 baseline 모듈만 실행한다. Gradle 전역 설정·build-logic·영향도 계산기 자체가 바뀌거나 분류가 실패하면 전체 검증으로 닫히며, `develop`·`main` push도 전체 검증을 유지한다.
 
-## 호스트 직접 실행은 더 이상 권장하지 않음
+Kover는 임의의 절대 커버리지 목표를 강제하지 않는다. 정확한 `develop` 기준선과 변경 모듈의 line·branch 비율을 비교해 후퇴를 먼저 warning으로 수집하며, 정책 파일의 mode를 별도 검토로 `enforce`로 바꿀 수 있다.
 
-`./gradlew :<module>:updateScreenshotTest` 를 host 에서 직접 실행하면 macOS / Linux / JDK 마이너 버전 / 폰트 캐시 차이로 CI 와 baseline 이 어긋난다. docker 환경 통일이 root fix.
+`develop` 병합은 merge queue를 통과한다. 큐가 현재 base 위에 merge group을 만들어 required check를 다시 실행하므로, 낡은 base에서 green을 받은 PR이 그대로 들어갈 수 없다. merge group에는 pull request가 없어 변경 범위를 좁히지 못하므로 검증은 전량으로 돈다 — PR 단계에서 건너뛴 lane도 큐에서는 실행된다. base 최신성을 별도 status로 감시하고 `Require branches to be up to date before merging`으로 강제하던 방식은 큐가 대체했다.
 
-# 🤖 (옵션) Claude Code 워크플로 참고
+`CI Test Plan`의 `none`은 두 필수 Managed Device check를 에뮬레이터 없이 성공 처리한다. `selected`는 선언한 `path`, fully-qualified `Class#method`, `api30` 또는 `api34`만 실행하고 JUnit XML의 실제 성공 결과까지 확인한다. `full`은 테스트 하네스·Gradle·릴리스 경계 변경에서 전체 API 30 회귀와 API 34 접근성 smoke를 실행한다.
 
-`docs/claude/` 에 **1hyok** 이 본 repo 에서 [Claude Code](https://claude.com/claude-code) 를 쓰면서 누적한 hook · `CLAUDE.md` 샘플 · 메모리 템플릿이 있다. **강제 아니고 참고용**.
+정기·기본 브랜치 수동 검증은 PR critical path 밖에서 minSdk API 26과 targetSdk API 36 경계 smoke도 실행한다. 문서 링크는 PR에서 로컬 경로·heading anchor를 검사하고 외부 URL은 주간 실행으로 분리하며, release AAB/R8 preflight는 `develop`에서 주 2회 조기 검증한다.
 
-본인 Claude Code 워크플로에 도입하고 싶으면:
+## 코드 리뷰
 
-```bash
-./scripts/install-claude-hooks.sh
-```
-
-→ `docs/claude/hooks/*.sh` 를 자기 `.claude/hooks/` 로 symlink (기존 파일 있으면 skip — 덮어쓰기 0). hook 등록·`CLAUDE.md` 일부 가져가기·메모리 도입 등 자세한 가이드는 [`docs/claude/README.md`](docs/claude/README.md) 참고.
-
-본인 `.claude/` 는 `.gitignore` 그대로라 본 폴더와 무관 — 어느 쪽도 다른 쪽을 강제하지 않는다.
-
-# 💻 코딩 컨벤션
-
-> **네이밍 컨벤션**
->
-- 네이밍 항목 순서는 android-style-guide를 준수한다.
-- 단, Layout을 제외한 네이밍은 CamelCase를 사용한다.
-    - 예시) `android:id="@+id/tvPostNovelTitle"`
-    - 자세한 정보는 아래 링크를 참고하였다.
-
-[](https://github.com/PRNDcompany/android-style-guide/blob/main/Resource.md)
-
-- Coding Style은 객체지향 생활 체조 원칙을 준수한다.
-    - 자세한 정보는 아래 링크를 참고하였다.
-
-[[Java] 객체지향 생활 체조 원칙 9가지 (from 소트웍스 앤솔러지)](https://jamie95.tistory.com/99)
-
-# 🦥 깃 전략 및 컨벤션
-
-> **브랜치 전략**
->
-- GitHub Flow를 사용한다.
-    - 수시로 코드가 변하는 앱잼의 특성을 고려하였다.
-    - 브랜치 이름은 다음과 같이 언더바를 사용한다.
-        - 예시) `feat/post_novel`
-    - 자세한 정보는 아래 링크를 참고하였다.
-
-[[GIT] 📈 깃 브랜치 전략 정리 - Github Flow / Git Flow](https://inpa.tistory.com/entry/GIT-⚡️-github-flow-git-flow-📈-브랜치-전략)
-
-> **Commit 컨벤션**
->
-- 사용할 커밋 타입은 다음과 같다.
-    - 🍯 [FEAT] 새로운 기능 추가
-    - ♻️ [REFACTOR] 코드 리팩토링
-    - 🔨 [FIX] 버그 수정
-    - 🚧 [BUILD] 빌드 업무 수정, 패키지 매니저 수정
-- 커밋 메시지 예시는 다음과 같다.
-    - 예시) `feat: color system 구성`
-- 커밋 메시지는 한글로 작성하고, 이슈 번호는 별도로 표기하지 않는다.
-
-> **Issue 컨벤션**
->
-- 제목 예시는 다음과 같다.
-    - 예시) `feat: library view 구현`
-
-```kotlin
-## ⚔️ Kind (Required)    <!-- 이슈 종류를 선택해주세요 -->
-`FEATURE` `BUG`
-
-## 📜 Overview (Required)    <!-- 이슈에 대해 간략하게 설명해주세요 -->
-
-> **✔️ To do**    <!-- 진행할 작업에 대해 적어주세요 -->
-> - [ ] color system 구성 _(예시)_
-
-## 📍 Note (Optional) <!-- 특이사항을 적어주세요 -->
-```
-
-> **PR 컨벤션**
->
-- 제목 예시는 다음과 같다.
-    - 예시) `feat: bottomNavigation color system 적용`
-
-```kotlin
-## 📌𝘐𝘴𝘴𝘶𝘦𝘴
-- closed #
-
-## 📎𝘞𝘰𝘳𝘬 𝘋𝘦𝘴𝘤𝘳𝘪𝘱𝘵𝘪𝘰𝘯
-- 
-- 
-
-## 📷𝘚𝘤𝘳𝘦𝘦𝘯𝘴𝘩𝘰𝘵
-
-## 💬𝘛𝘰 𝘙𝘦𝘷𝘪𝘦𝘸𝘦𝘳𝘴
-```
-
-> **Code Review 컨벤션 및 추가정보**
->
-- Merge는 리뷰 인원 2명의 승인을 받는다.
-- 리뷰 인원으로 할당받은 사람은 12시간 이내에 코드리뷰를 완료한다.
-- RCA룰을 통해 Prefix를 적고, 코드 리뷰 반영의 우선순위를 표시한다.
-    - R (Request Changes) : 적극적으로 반영을 고려해주세요.
-    - C (Comment) : 웬만하면 반영해주세요.
-    - A (Approve) : 반영해도 좋고, 넘어가도 좋습니다. 사소한 의견입니다.
-        - 예시) `R: @Data 어노테이션 사용은 지양해야 할 것 같습니다. 참고자료 별첨합니다.`
+- Draft가 아닌 내부 팀원 PR이 열리거나 리뷰 가능 상태가 되면 [자동 요청 workflow](.github/workflows/review-request-all.yml)가 작성자를 제외한 팀원에게 리뷰를 요청한다. 요청 인원 수와 필수 승인 수는 같은 뜻이 아니다.
+- 현재 `develop`·`main` 머지에는 **승인 1건**이 필요하다. `main`은 모든 리뷰 스레드 해결도 필요하다.
+- 리뷰 결과는 GitHub의 `APPROVED`·`CHANGES_REQUESTED`·일반 코멘트로 표현한다. 별도 RCA prefix나 12시간 SLA는 두지 않는다.
+- [리뷰 적체 가드](.github/workflows/review-debt-guard.yml)는 응답을 기다리는 다른 PR이 남았거나 자기 PR의 최신 변경요청 뒤 아무 조치도 하지 않은 팀원의 새 PR을 닫을 수 있다. 각 PR은 팀원 한 명이 먼저 유효한 판정을 내리면 최초 미응답 목록에서 빠지고, 작성자가 실질 커밋이나 응답을 남기면 작성자 대기 목록에서 빠진다.
+- `awaiting-author` 라벨은 변경요청 뒤 작성자 무조치 상태를 보여 주는 표식이다. 새 PR 가드는 라벨 갱신 시점에 의존하지 않고 같은 판정을 현재 열린 PR에 다시 적용한다.
+- 쓰기 권한이 있는 리뷰어별 최신 `APPROVED`·`CHANGES_REQUESTED` 가운데 PR 전체에서 가장 늦은 판정을 최종 판정으로 사용한다. 가장 늦은 판정이 승인이면 더 오래된 변경 요청은 자동 해제되고, 승인 뒤에 새 변경 요청이 오면 다시 차단된다.
+- 긴급 PR은 근거가 있을 때만 `review-debt-exempt` 라벨로 적체 가드를 우회한다.

@@ -11,20 +11,40 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteOutlinedCard
 import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.presentation.R
 
+/**
+ * NEXT STEP 카드에 필요한 값 묶음.
+ *
+ * 문구와 동작을 함께 받아 «카드는 떴는데 눌러도 아무 일 없는» 상태를 만들 수 없게 한다.
+ * 카드를 띄우지 않는 화면(수신자 애프터노트 목록)은 null 을 넘긴다 (#777).
+ */
+@Immutable
+data class NextStep(
+    val text: String,
+    val onClick: () -> Unit,
+)
+
+/**
+ * 애프터노트 목록 상단 헤더.
+ *
+ * @param description 제목 아래 한 줄. 이 목록은 작성자와 수신자가 같은 화면을 공유하므로 기본값을
+ *   두지 않는다 — 발신자 문구("남길 기록을 정리해 보세요")가 수신자에게 그대로 새던 것이 #620 이다.
+ *   [nextStep] 이 디폴트를 걷은 것(#777)과 같은 이유다.
+ */
 @Composable
 internal fun HomeHeaderSection(
-    nextStepText: String,
-    onNextStepClick: () -> Unit,
+    description: String,
+    nextStep: NextStep?,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -34,21 +54,23 @@ internal fun HomeHeaderSection(
                 .padding(horizontal = 25.dp),
     ) {
         Text(
-            text = "애프터노트",
+            text = stringResource(R.string.afternote_home_title),
             style = AfternoteDesign.typography.h1,
             color = AfternoteDesign.colors.gray9,
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "애프터 노트 설명",
+            text = description,
             style = AfternoteDesign.typography.captionLargeR,
             color = AfternoteDesign.colors.black.copy(alpha = 89f / 255f),
         )
-        Spacer(modifier = Modifier.height(16.dp))
-        NextStepCard(
-            text = nextStepText,
-            onClick = onNextStepClick,
-        )
+        if (nextStep != null) {
+            Spacer(modifier = Modifier.height(16.dp))
+            NextStepCard(
+                text = nextStep.text,
+                onClick = nextStep.onClick,
+            )
+        }
     }
 }
 
@@ -62,7 +84,7 @@ private fun NextStepCard(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        AfternoteSectionHeader(title = "NEXT STEP")
+        AfternoteSectionHeader(title = stringResource(R.string.afternote_home_next_step_section_title))
         AfternoteOutlinedCard(
             onClick = onClick,
             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 20.dp),
@@ -83,16 +105,5 @@ private fun NextStepCard(
                 )
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun HomeHeaderSectionPreview() {
-    AfternoteTheme {
-        HomeHeaderSection(
-            nextStepText = "가족들의 '주거래 은행' 정보를\n입력하신 건 확인하셨나요?",
-            onNextStepClick = {},
-        )
     }
 }

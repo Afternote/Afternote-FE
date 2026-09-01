@@ -26,6 +26,7 @@ fun NavGraphBuilder.timeLetterNavGraph(
     navigation<Route.TimeLetter>(startDestination = TimeLetterRoute.TimeLetterHomeRoute) {
         composable<TimeLetterRoute.TimeLetterHomeRoute> {
             TimeletterScreen(
+                onSettingClick = actions::onSettingClick,
                 onWriteClick = actions::onNavigateToWrite,
                 onEditClick = actions::onNavigateToEdit,
                 onLetterClick = actions::onNavigateToDetail,
@@ -57,7 +58,12 @@ fun NavGraphBuilder.timeLetterNavGraph(
                 onDraftClick = { title, textContents -> viewModel.saveDraft(title, textContents) },
                 onNavigateToDraft = actions::onNavigateToDraft,
                 onErrorShown = { viewModel.clearError() },
-                onRecipientClick = actions::onNavigateToRecipient,
+                onRecipientClick = { title, textContents ->
+                    viewModel.updateDraftContent(title, textContents)
+                    actions.onNavigateToRecipient()
+                },
+                onTitleChanged = viewModel::updateDraftTitle,
+                onTextContentChanged = viewModel::updateDraftTextContent,
                 onDateSelected = { viewModel.setSendAt(it) },
                 onTimeSelected = { h, m -> viewModel.setSendTime(h, m) },
                 onAddImageBlock = { uri -> viewModel.addImageBlock(uri) },
@@ -69,6 +75,11 @@ fun NavGraphBuilder.timeLetterNavGraph(
                 onAlignCenterClick = { viewModel.setTextAlign(TextAlign.Center) },
                 onAlignLeftClick = { viewModel.setTextAlign(TextAlign.Start) },
                 onAlignRightClick = { viewModel.setTextAlign(TextAlign.End) },
+                onFreePlanLimitConfirm = {
+                    // TODO: 구독 화면 및 관련 플로우 구현 시 구독 화면 이동으로 변경
+                    viewModel.dismissFreePlanLimitPopup()
+                },
+                onFreePlanLimitDismiss = { viewModel.dismissFreePlanLimitPopup() },
             )
         }
 

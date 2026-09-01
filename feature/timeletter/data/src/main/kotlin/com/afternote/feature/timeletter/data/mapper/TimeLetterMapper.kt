@@ -1,15 +1,17 @@
 package com.afternote.feature.timeletter.data.mapper
 
-import com.afternote.feature.timeletter.data.dto.TimeLetterBlockRequest
-import com.afternote.feature.timeletter.data.dto.TimeLetterBlockResponseDto
+import com.afternote.feature.timeletter.data.dto.TimeLetterBlockDto
+import com.afternote.feature.timeletter.data.dto.TimeLetterBlockRequestDto
 import com.afternote.feature.timeletter.data.dto.TimeLetterBlockTypeDto
-import com.afternote.feature.timeletter.data.dto.TimeLetterListResponseDto
-import com.afternote.feature.timeletter.data.dto.TimeLetterResponseDto
+import com.afternote.feature.timeletter.data.dto.TimeLetterDeliveryModeDto
+import com.afternote.feature.timeletter.data.dto.TimeLetterDto
+import com.afternote.feature.timeletter.data.dto.TimeLetterListDto
 import com.afternote.feature.timeletter.data.dto.TimeLetterStatusDto
 import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlockType
+import com.afternote.feature.timeletter.domain.model.TimeLetterDeliveryMode
 import com.afternote.feature.timeletter.domain.model.TimeLetterList
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 
@@ -27,6 +29,12 @@ fun TimeLetterStatus.toDto(): TimeLetterStatusDto =
         TimeLetterStatus.SENT -> TimeLetterStatusDto.SENT
     }
 
+fun TimeLetterDeliveryMode.toDto(): TimeLetterDeliveryModeDto =
+    when (this) {
+        TimeLetterDeliveryMode.DATE -> TimeLetterDeliveryModeDto.DATE
+        TimeLetterDeliveryMode.POST_DEATH -> TimeLetterDeliveryModeDto.POST_DEATH
+    }
+
 fun TimeLetterBlockTypeDto.toDomain(): TimeLetterBlockType =
     when (this) {
         TimeLetterBlockTypeDto.TEXT -> TimeLetterBlockType.TEXT
@@ -36,7 +44,7 @@ fun TimeLetterBlockTypeDto.toDomain(): TimeLetterBlockType =
         TimeLetterBlockTypeDto.LINK -> TimeLetterBlockType.LINK
     }
 
-fun TimeLetterBlockResponseDto.toDomain(): TimeLetterBlock =
+fun TimeLetterBlockDto.toDomain(): TimeLetterBlock =
     TimeLetterBlock(
         id = id,
         blockType = blockType.toDomain(),
@@ -46,7 +54,7 @@ fun TimeLetterBlockResponseDto.toDomain(): TimeLetterBlock =
         mimeType = mimeType,
     )
 
-fun TimeLetterResponseDto.toDomain(): TimeLetter =
+fun TimeLetterDto.toDomain(): TimeLetter =
     TimeLetter(
         id = id,
         title = title,
@@ -57,14 +65,14 @@ fun TimeLetterResponseDto.toDomain(): TimeLetter =
         receiverIds = receiverIds,
     )
 
-fun TimeLetterListResponseDto.toDomain(): TimeLetterList =
+fun TimeLetterListDto.toDomain(): TimeLetterList =
     TimeLetterList(
         timeLetters = timeLetters.map { it.toDomain() },
         totalCount = totalCount,
     )
 
-fun NewTimeLetterBlock.toDto(): TimeLetterBlockRequest =
-    TimeLetterBlockRequest(
+fun NewTimeLetterBlock.toDto(): TimeLetterBlockRequestDto =
+    TimeLetterBlockRequestDto(
         blockType =
             when (blockType) {
                 TimeLetterBlockType.TEXT -> TimeLetterBlockTypeDto.TEXT

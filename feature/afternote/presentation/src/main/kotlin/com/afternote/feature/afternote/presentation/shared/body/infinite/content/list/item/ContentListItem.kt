@@ -21,11 +21,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.presentation.R
 
 /**
@@ -36,7 +33,7 @@ import com.afternote.feature.afternote.presentation.R
 fun AfternoteListItem(
     uiModel: ListItemUiModel,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = {},
+    onClick: () -> Unit,
 ) {
     Row(
         modifier =
@@ -79,30 +76,13 @@ fun AfternoteListItem(
         Spacer(Modifier.weight(1f))
 
         Icon(
-            painter = painterResource(R.drawable.feature_afternote_right_arrow),
+            painter = painterResource(R.drawable.afternote_right_arrow),
             contentDescription = null,
             tint = AfternoteDesign.colors.gray5,
             modifier =
                 Modifier.size(
                     width = 7.dp,
                     height = 13.dp,
-                ),
-        )
-    }
-}
-
-@Preview
-@Composable
-private fun AfternoteListItemPreview() {
-    AfternoteTheme {
-        AfternoteListItem(
-            uiModel =
-                ListItemUiModel(
-                    id = "1",
-                    serviceName = "인스타그램",
-                    date = "2023.11.24",
-                    iconResId = R.drawable.feature_afternote_img_insta_pattern,
-                    type = AfternoteServiceType.SOCIAL_NETWORK,
                 ),
         )
     }

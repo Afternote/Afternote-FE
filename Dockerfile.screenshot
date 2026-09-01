@@ -5,23 +5,32 @@
 # 본 이미지에서 baseline 생성·검증을 동일하게 수행해 환경 차이 root fix.
 #
 # 빌드:
-#   docker build -t afternote-screenshot:latest -f Dockerfile.screenshot .
+#   docker build --platform linux/amd64 -t afternote-screenshot:latest -f Dockerfile.screenshot .
 #
 # 로컬 baseline 갱신:
-#   docker run --rm -v "$PWD":/workspace -w /workspace afternote-screenshot:latest \
+#   docker run --rm --platform linux/amd64 -v "$PWD":/workspace -w /workspace afternote-screenshot:latest \
 #     ./gradlew :core:ui:updateScreenshotTest \
-#               :app:updateScreenshotTest \
+#               :feature:home:presentation:updateScreenshotTest \
+#               :feature:receiver:presentation:updateScreenshotTest \
 #               :feature:onboarding:presentation:updateScreenshotTest \
-#               :feature:afternote:presentation:updateScreenshotTest
+#               :feature:afternote:presentation:updateScreenshotTest \
+#               :feature:mindrecord:presentation:updateScreenshotTest \
+#               :feature:setting:presentation:updateScreenshotTest \
+#               :feature:timeletter:presentation:updateScreenshotTest \
+#               --rerun
 #
 # 로컬 baseline 검증:
-#   docker run --rm -v "$PWD":/workspace -w /workspace afternote-screenshot:latest \
+#   docker run --rm --platform linux/amd64 -v "$PWD":/workspace -w /workspace afternote-screenshot:latest \
 #     ./gradlew :core:ui:validateScreenshotTest \
-#               :app:validateScreenshotTest \
+#               :feature:home:presentation:validateScreenshotTest \
+#               :feature:receiver:presentation:validateScreenshotTest \
 #               :feature:onboarding:presentation:validateScreenshotTest \
-#               :feature:afternote:presentation:validateScreenshotTest
+#               :feature:afternote:presentation:validateScreenshotTest \
+#               :feature:mindrecord:presentation:validateScreenshotTest \
+#               :feature:setting:presentation:validateScreenshotTest \
+#               :feature:timeletter:presentation:validateScreenshotTest
 
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
     ANDROID_HOME=/opt/android-sdk \

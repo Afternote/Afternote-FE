@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.data.repositoryimpl.author
 
-import com.afternote.feature.afternote.data.dto.MusicTrack
+import com.afternote.core.common.result.runCatchingCancellable
+import com.afternote.feature.afternote.data.dto.MusicTrackDto
 import com.afternote.feature.afternote.data.service.MusicApiService
 import com.afternote.feature.afternote.domain.model.author.playlist.SearchedSong
 import com.afternote.feature.afternote.domain.repository.author.MusicSearchRepository
@@ -18,17 +19,15 @@ class MusicSearchRepositoryImpl
         override suspend fun search(keyword: String): Result<List<SearchedSong>> {
             val trimmed = keyword.trim()
             if (trimmed.isEmpty()) return Result.success(emptyList())
-            return runCatching {
-                val response = api.search(keyword = trimmed)
-                val tracks = response.tracks
-                tracks.mapIndexed { index, dto -> dto.toPlaylistSongDisplay(index) }
+            return runCatchingCancellable {
+                api.search(keyword = trimmed).tracks.mapIndexed { index, dto -> dto.toSearchedSong(index) }
             }
         }
 
-        private fun MusicTrack.toPlaylistSongDisplay(index: Int): SearchedSong {
-            val id = "$artist|$title|$index"
+        private fun MusicTrackDto.toSearchedSong(index: Int): SearchedSong {
+            val selectionKey = "search:$artist|$title|$index"
             return SearchedSong(
-                id = id,
+                selectionKey = selectionKey,
                 title = title,
                 artist = artist,
                 albumImageUrl = albumImageUrl,

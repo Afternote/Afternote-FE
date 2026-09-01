@@ -15,7 +15,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,12 +24,10 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
 
 @Composable
@@ -58,8 +55,8 @@ fun SignUpPasswordScreen(
     }
 
     FlowStepScaffold(
-        topBarTitle = stringResource(R.string.signup_title),
-        actionButtonText = stringResource(R.string.signup_next),
+        topBarTitle = stringResource(R.string.onboarding_signup_title),
+        actionButtonText = stringResource(R.string.onboarding_signup_next),
         onBackClick = onBackClick,
         onActionClick = onNextClick,
         modifier = modifier,
@@ -78,7 +75,7 @@ fun SignUpPasswordScreen(
                         .padding(top = 43.dp),
             ) {
                 SignUpInputLabel(
-                    text = stringResource(R.string.signup_password_input_label),
+                    text = stringResource(R.string.onboarding_signup_password_input_label),
                 )
 
                 Spacer(modifier = Modifier.height(17.dp))
@@ -86,7 +83,7 @@ fun SignUpPasswordScreen(
                 // 비밀번호 입력
                 AfternoteTextField(
                     state = passwordState,
-                    placeholder = stringResource(R.string.signup_password_placeholder),
+                    placeholder = stringResource(R.string.onboarding_signup_password_placeholder),
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Next,
                 )
@@ -96,7 +93,7 @@ fun SignUpPasswordScreen(
                 // 비밀번호 확인
                 AfternoteTextField(
                     state = passwordConfirmState,
-                    placeholder = stringResource(R.string.signup_password_confirm_placeholder),
+                    placeholder = stringResource(R.string.onboarding_signup_password_confirm_placeholder),
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done,
                     onImeAction = {
@@ -109,12 +106,12 @@ fun SignUpPasswordScreen(
 
                 // 안내 문구
                 PasswordRuleItem(
-                    text = stringResource(R.string.signup_password_rule_combination),
+                    text = stringResource(R.string.onboarding_signup_password_rule_combination),
                     isSatisfied = isPasswordRuleSatisfied,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 PasswordRuleItem(
-                    text = stringResource(R.string.signup_password_rule_reuse),
+                    text = stringResource(R.string.onboarding_signup_password_rule_reuse),
                 )
             }
         },
@@ -151,24 +148,6 @@ private fun PasswordRuleItem(
             text = text,
             style = AfternoteDesign.typography.captionLargeB,
             color = color,
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SignUpPasswordScreenPreview() {
-    AfternoteTheme {
-        SignUpPasswordScreen(
-            initialPassword = "",
-            initialPasswordConfirm = "",
-            isPasswordRuleSatisfied = false,
-            isNextEnabled = false,
-            snackbarHostState = remember { SnackbarHostState() },
-            onPasswordChange = {},
-            onPasswordConfirmChange = {},
-            onNextClick = {},
-            onBackClick = {},
         )
     }
 }

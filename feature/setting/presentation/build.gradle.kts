@@ -1,29 +1,23 @@
-import java.util.Properties
-
 plugins {
     id("afternote.android.library.compose")
     id("afternote.android.hilt")
     id("afternote.android.navigation")
+    alias(libs.plugins.compose.screenshot)
+    id("afternote.kover")
 }
 
-val localProperties = Properties()
-val localPropertiesFile = rootProject.file("local.properties")
-if (localPropertiesFile.exists()) {
-    localPropertiesFile.inputStream().use { localProperties.load(it) }
-}
+val googleWebClientId = socialLoginKey("GOOGLE_WEB_CLIENT_ID")
 
 android {
     namespace = "com.afternote.feature.setting.presentation"
+    experimentalProperties["android.experimental.enableScreenshotTest"] = true
+    testOptions.unitTests.isIncludeAndroidResources = true
 
     buildFeatures {
         buildConfig = true
     }
 
     defaultConfig {
-        val googleWebClientId =
-            localProperties.getProperty("GOOGLE_WEB_CLIENT_ID")
-                ?: System.getenv("GOOGLE_WEB_CLIENT_ID")
-                ?: ""
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
     }
 }
@@ -44,4 +38,16 @@ dependencies {
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
+
+    testImplementation(libs.coroutines.test)
+    testImplementation(testFixtures(projects.core.domain))
+    testImplementation(projects.core.network)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.androidx.test.core.ktx)
+    testImplementation(libs.robolectric)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    screenshotTestImplementation(libs.screenshot.validation.api)
+    screenshotTestImplementation(libs.androidx.compose.ui.tooling)
 }

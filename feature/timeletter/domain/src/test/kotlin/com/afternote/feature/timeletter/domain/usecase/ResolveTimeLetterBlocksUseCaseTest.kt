@@ -1,6 +1,7 @@
 package com.afternote.feature.timeletter.domain.usecase
 
-import com.afternote.core.domain.repository.PhotoUploadRepository
+import com.afternote.core.domain.model.UploadedFile
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.feature.timeletter.domain.model.BlockInput
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlockType
 import kotlinx.coroutines.runBlocking
@@ -12,7 +13,15 @@ class ResolveTimeLetterBlocksUseCaseTest {
     @Test
     fun `local media is uploaded and uses remote url`() =
         runBlocking {
-            val repository = FakePhotoUploadRepository(Result.success("https://cdn/image.jpg"))
+            val repository =
+                photoUploadRepository(
+                    Result.success(
+                        UploadedFile(
+                            fileUrl = "https://cdn/image.jpg",
+                            fileKey = "timeletters/9/stored.jpg",
+                        ),
+                    ),
+                )
             val useCase = ResolveTimeLetterBlocksUseCase(repository)
 
             val blocks =
@@ -34,7 +43,7 @@ class ResolveTimeLetterBlocksUseCaseTest {
     @Test
     fun `remote media is preserved without upload`() =
         runBlocking {
-            val repository = FakePhotoUploadRepository(Result.success("unused"))
+            val repository = photoUploadRepository(Result.success(UNUSED_UPLOAD))
             val useCase = ResolveTimeLetterBlocksUseCase(repository)
 
             val blocks =
@@ -55,7 +64,7 @@ class ResolveTimeLetterBlocksUseCaseTest {
     @Test
     fun `blank text is removed and block order remains contiguous`() =
         runBlocking {
-            val useCase = ResolveTimeLetterBlocksUseCase(FakePhotoUploadRepository(Result.success("unused")))
+            val useCase = ResolveTimeLetterBlocksUseCase(photoUploadRepository(Result.success(UNUSED_UPLOAD)))
 
             val blocks =
                 useCase(
@@ -73,7 +82,15 @@ class ResolveTimeLetterBlocksUseCaseTest {
     @Test
     fun `image audio and file local media are all uploaded`() =
         runBlocking {
-            val repository = FakePhotoUploadRepository(Result.success("https://cdn/uploaded"))
+            val repository =
+                photoUploadRepository(
+                    Result.success(
+                        UploadedFile(
+                            fileUrl = "https://cdn/uploaded",
+                            fileKey = "timeletters/9/uploaded",
+                        ),
+                    ),
+                )
             val useCase = ResolveTimeLetterBlocksUseCase(repository)
 
             useCase(
@@ -90,7 +107,7 @@ class ResolveTimeLetterBlocksUseCaseTest {
     @Test
     fun `upload failure stops block conversion`() {
         val error = IllegalStateException("upload failed")
-        val useCase = ResolveTimeLetterBlocksUseCase(FakePhotoUploadRepository(Result.failure(error)))
+        val useCase = ResolveTimeLetterBlocksUseCase(photoUploadRepository(Result.failure(error)))
 
         val result =
             runCatching {
@@ -108,7 +125,7 @@ class ResolveTimeLetterBlocksUseCaseTest {
 
     @Test
     fun `unsupported local media type is rejected before upload`() {
-        val repository = FakePhotoUploadRepository(Result.success("unused"))
+        val repository = photoUploadRepository(Result.success(UNUSED_UPLOAD))
         val useCase = ResolveTimeLetterBlocksUseCase(repository)
 
         val result =
@@ -126,17 +143,9 @@ class ResolveTimeLetterBlocksUseCaseTest {
         assertTrue(repository.uploads.isEmpty())
     }
 
-    private class FakePhotoUploadRepository(
-        private val result: Result<String>,
-    ) : PhotoUploadRepository {
-        val uploads = mutableListOf<Pair<String, String>>()
-
-        override suspend fun upload(
-            uriString: String,
-            directory: String,
-        ): Result<String> {
-            uploads += uriString to directory
-            return result
-        }
-    }
+    private fun photoUploadRepository(result: Result<UploadedFile>): FakePhotoUploadRepository =
+        FakePhotoUploadRepository(onUpload = { _, _ -> result })
 }
+
+/** 업로드가 일어나면 안 되는 시나리오용 — 값 자체엔 의미가 없다. */
+private val UNUSED_UPLOAD = UploadedFile(fileUrl = "unused", fileKey = "unused")

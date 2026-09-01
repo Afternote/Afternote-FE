@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item
 
 import androidx.compose.runtime.Immutable
-import com.afternote.feature.afternote.domain.AfternoteServiceType
+import com.afternote.feature.afternote.domain.AfternoteType
 
 /**
  * Display model for a single row in the shared 애프터노트 list (writer main and receiver list).
@@ -11,9 +11,9 @@ import com.afternote.feature.afternote.domain.AfternoteServiceType
  */
 @Immutable
 data class ListItemUiModel(
-    val id: String,
+    val id: Long,
     val serviceName: String,
     val date: String,
     val iconResId: Int,
-    val type: AfternoteServiceType,
+    val type: AfternoteType,
 )

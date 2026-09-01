@@ -2,9 +2,9 @@ package com.afternote.feature.setting.presentation.screen
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,11 +14,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -35,18 +35,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterEvent
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterViewModel
 import com.afternote.core.ui.R as CoreR
 
-private val relationOptions = listOf("어머니", "아버지", "아들", "딸", "직접 추가하기")
+private const val CUSTOM_RELATION_OPTION = "직접 추가하기"
+private val relationOptions = listOf("어머니", "아버지", "아들", "딸", CUSTOM_RELATION_OPTION)
 
 @Composable
 fun ReceiverRegisterScreen(
@@ -56,13 +60,6 @@ fun ReceiverRegisterScreen(
     viewModel: ReceiverRegisterViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val nameState = rememberTextFieldState()
-    val phoneState = rememberTextFieldState()
-    val emailState = rememberTextFieldState()
-    var selectedRelation by remember { mutableStateOf<String?>(null) }
-    var relationExpanded by remember { mutableStateOf(false) }
-
-    val isFormValid = nameState.text.isNotBlank() && selectedRelation != null
     val currentOnRegisterSuccess by rememberUpdatedState(onRegisterSuccess)
 
     LaunchedEffect(Unit) {
@@ -73,24 +70,76 @@ fun ReceiverRegisterScreen(
         }
     }
 
+    ReceiverRegisterContent(
+        title = "수신자 등록",
+        actionText = "등록",
+        isLoading = uiState.isLoading,
+        errorMessage = uiState.errorMessage,
+        onBackClick = onBackClick,
+        onRegister = viewModel::register,
+        modifier = modifier,
+    )
+}
+
+@Composable
+internal fun ReceiverRegisterContent(
+    title: String,
+    actionText: String,
+    isLoading: Boolean,
+    errorMessage: String?,
+    onBackClick: () -> Unit,
+    onRegister: (name: String, relation: String, phone: String, email: String, message: String) -> Unit,
+    modifier: Modifier = Modifier,
+    initialName: String = "",
+    initialRelation: String = "",
+    initialPhone: String = "",
+    initialEmail: String = "",
+    initialMessage: String = "",
+) {
+    val isPresetRelation = initialRelation in relationOptions
+    val nameState = rememberTextFieldState(initialText = initialName)
+    val phoneState = rememberTextFieldState(initialText = initialPhone)
+    val emailState = rememberTextFieldState(initialText = initialEmail)
+    val messageState = rememberTextFieldState(initialText = initialMessage)
+    val customRelationState = rememberTextFieldState(initialText = initialRelation.takeUnless { isPresetRelation }.orEmpty())
+    var selectedRelation by
+        remember(initialRelation) {
+            mutableStateOf(
+                when {
+                    initialRelation.isBlank() -> null
+                    isPresetRelation -> initialRelation
+                    else -> CUSTOM_RELATION_OPTION
+                },
+            )
+        }
+    var relationExpanded by remember { mutableStateOf(false) }
+
+    val relation =
+        when (selectedRelation) {
+            CUSTOM_RELATION_OPTION -> customRelationState.text.toString().trim()
+            else -> selectedRelation.orEmpty()
+        }
+    val isFormValid = nameState.text.isNotBlank() && relation.isNotBlank()
+
     Scaffold(
         modifier = modifier,
         containerColor = Color.Transparent,
         topBar = {
             DetailTopBar(
-                title = "수신자 등록",
+                title = title,
                 onBackClick = onBackClick,
                 actions = {
                     TextButton(
                         onClick = {
-                            viewModel.register(
-                                name = nameState.text.toString(),
-                                relation = selectedRelation!!,
-                                phone = phoneState.text.toString(),
-                                email = emailState.text.toString(),
+                            onRegister(
+                                nameState.text.toString(),
+                                relation,
+                                phoneState.text.toString(),
+                                emailState.text.toString(),
+                                messageState.text.toString(),
                             )
                         },
-                        enabled = isFormValid && !uiState.isLoading,
+                        enabled = isFormValid && !isLoading,
                         colors =
                             ButtonDefaults.textButtonColors(
                                 contentColor = AfternoteDesign.colors.gray9,
@@ -98,7 +147,7 @@ fun ReceiverRegisterScreen(
                             ),
                     ) {
                         Text(
-                            text = "등록",
+                            text = actionText,
                             style = AfternoteDesign.typography.bodyLargeB,
                         )
                     }
@@ -154,32 +203,40 @@ fun ReceiverRegisterScreen(
             item {
                 Spacer(modifier = Modifier.height(24.dp))
                 Text("관계", modifier = Modifier.fillMaxWidth())
-                val shape = RoundedCornerShape(8.dp)
                 Box(modifier = Modifier.fillMaxWidth()) {
-                    Row(
+                    Column(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
-                                .background(AfternoteDesign.colors.white, shape)
-                                .border(1.dp, AfternoteDesign.colors.gray2, shape)
                                 .clickable { relationExpanded = true }
-                                .padding(horizontal = 24.dp, vertical = 13.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                                .padding(top = 13.dp),
                     ) {
-                        Text(
-                            text = selectedRelation ?: "관계를 선택하세요",
-                            style = AfternoteDesign.typography.textField,
-                            color = if (selectedRelation != null) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray4,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Icon(
-                            painter = painterResource(CoreR.drawable.core_ui_arrowdown),
-                            contentDescription = null,
-                            modifier =
-                                Modifier
-                                    .size(18.dp)
-                                    .rotate(if (relationExpanded) 180f else 0f),
-                            tint = AfternoteDesign.colors.gray6,
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = selectedRelation ?: "관계를 선택하세요",
+                                style = AfternoteDesign.typography.bodyBase,
+                                color =
+                                    if (selectedRelation == null) {
+                                        AfternoteDesign.colors.gray4
+                                    } else {
+                                        AfternoteDesign.colors.gray9
+                                    },
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            Icon(
+                                painter = painterResource(CoreR.drawable.core_ui_arrowdown),
+                                contentDescription = null,
+                                modifier =
+                                    Modifier
+                                        .size(18.dp)
+                                        .rotate(if (relationExpanded) 180f else 0f),
+                                tint = AfternoteDesign.colors.gray6,
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        HorizontalDivider(
+                            thickness = 0.8.dp,
+                            color = AfternoteDesign.colors.gray3,
                         )
                     }
                     DropdownMenu(
@@ -207,6 +264,13 @@ fun ReceiverRegisterScreen(
                         }
                     }
                 }
+                if (selectedRelation == CUSTOM_RELATION_OPTION) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    AfternoteTextField(
+                        state = customRelationState,
+                        placeholder = stringResource(R.string.receiver_custom_relation_placeholder),
+                    )
+                }
             }
             item {
                 Spacer(modifier = Modifier.height(24.dp))
@@ -216,6 +280,43 @@ fun ReceiverRegisterScreen(
                     placeholder = "afternote@email.com",
                 )
             }
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = stringResource(R.string.receiver_last_greeting_label),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                AfternoteTextField(
+                    state = messageState,
+                    placeholder = stringResource(R.string.receiver_last_greeting_placeholder),
+                )
+            }
+            if (errorMessage != null) {
+                item {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = errorMessage,
+                        modifier = Modifier.fillMaxWidth(),
+                        style = AfternoteDesign.typography.captionLargeR,
+                        color = AfternoteDesign.colors.error,
+                    )
+                }
+            }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ReceiverRegisterContentPreview() {
+    AfternoteTheme {
+        ReceiverRegisterContent(
+            title = "수신자 등록",
+            actionText = "등록",
+            isLoading = false,
+            errorMessage = null,
+            onBackClick = {},
+            onRegister = { _, _, _, _, _ -> },
+        )
     }
 }

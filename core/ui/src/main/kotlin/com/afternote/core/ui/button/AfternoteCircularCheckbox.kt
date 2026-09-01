@@ -10,8 +10,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -28,12 +26,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 
 enum class CheckboxState {
     Default,
@@ -116,29 +112,6 @@ fun AfternoteCircularCheckbox(
                         height = size * 0.4f,
                     ),
             )
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun AfternoteCircularCheckboxPreview() {
-    AfternoteTheme {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            AfternoteCircularCheckbox(
-                state = CheckboxState.Default,
-                size = 20.dp,
-            ) {}
-            Spacer(modifier = Modifier.height(16.dp))
-            AfternoteCircularCheckbox(
-                state = CheckboxState.Variant2,
-                size = 20.dp,
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            AfternoteCircularCheckbox(
-                state = CheckboxState.None,
-                size = 20.dp,
-            ) {}
         }
     }
 }

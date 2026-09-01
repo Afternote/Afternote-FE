@@ -20,14 +20,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.PlusBadgeButton
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
-import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverCallbacks
 import com.afternote.feature.afternote.presentation.shared.ReceiverAvatar
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 
@@ -43,7 +41,8 @@ import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMe
 fun AfternoteEditorReceiverList(
     modifier: Modifier = Modifier,
     afternoteEditReceivers: List<AfternoteEditorReceiver>,
-    events: AfternoteEditorReceiverCallbacks = AfternoteEditorReceiverCallbacks(),
+    onAddClick: () -> Unit,
+    onItemDeleteClick: (Long) -> Unit,
     state: AfternoteEditorReceiverListState = rememberAfternoteEditorReceiverListState(),
 ) {
     val focusManager = LocalFocusManager.current
@@ -73,8 +72,7 @@ fun AfternoteEditorReceiverList(
                 onDismissDropdown = {
                     state.expandedStates[receiver.id] = false
                 },
-                showEditItem = false,
-                onDeleteClick = { events.onItemDeleteClick(receiver.id) },
+                onDeleteClick = { onItemDeleteClick(receiver.id) },
             )
         }
 
@@ -82,7 +80,7 @@ fun AfternoteEditorReceiverList(
             contentDescription = stringResource(R.string.afternote_editor_content_description_add),
             onClick = {
                 state.toggleTextField()
-                events.onAddClick()
+                onAddClick()
             },
         )
     }
@@ -102,10 +100,9 @@ private fun AfternoteEditorReceiverItem(
     modifier: Modifier = Modifier,
     receiver: AfternoteEditorReceiver,
     expanded: Boolean = false,
-    onMoreClick: () -> Unit = {},
-    onDismissDropdown: () -> Unit = {},
-    showEditItem: Boolean = true,
-    onDeleteClick: () -> Unit = {},
+    onMoreClick: () -> Unit,
+    onDismissDropdown: () -> Unit,
+    onDeleteClick: () -> Unit,
 ) {
     Row(
         modifier =
@@ -136,33 +133,19 @@ private fun AfternoteEditorReceiverItem(
         // 더보기 아이콘 + 드롭다운 메뉴
         Box {
             Image(
-                painter = painterResource(R.drawable.feature_afternote_ic_more_horizontal_1),
+                painter = painterResource(R.drawable.afternote_ic_more_horizontal_1),
                 contentDescription = stringResource(R.string.afternote_editor_content_description_more),
                 modifier =
                     Modifier
-                        .clickable(onClick = onMoreClick),
+                        .clickable(role = Role.Button, onClick = onMoreClick),
             )
             EditDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = onDismissDropdown,
                 onDeleteClick = onDeleteClick,
-                showEditItem = showEditItem,
+                // 수신자 행 메뉴엔 편집이 없다 — null 이 편집 항목 자체를 숨긴다.
+                onEditClick = null,
             )
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun AfternoteEditorReceiverListPreview() {
-    AfternoteTheme {
-        AfternoteEditorReceiverList(
-            afternoteEditReceivers =
-                listOf(
-                    AfternoteEditorReceiver(id = "1", name = "홍길동", label = "가족"),
-                    AfternoteEditorReceiver(id = "2", name = "김철수", label = "친구"),
-                    AfternoteEditorReceiver(id = "3", name = "이영희", label = "동료"),
-                ),
-        )
     }
 }

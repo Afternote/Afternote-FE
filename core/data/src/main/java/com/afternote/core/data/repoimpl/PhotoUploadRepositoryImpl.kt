@@ -4,6 +4,8 @@ import android.content.Context
 import android.webkit.MimeTypeMap
 import androidx.core.net.toUri
 import com.afternote.core.common.di.IoDispatcher
+import com.afternote.core.common.result.runCatchingCancellable
+import com.afternote.core.domain.model.UploadedFile
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.network.dto.PresignedUrlRequestDto
 import com.afternote.core.network.model.requireData
@@ -18,7 +20,6 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Named
-import kotlin.coroutines.cancellation.CancellationException
 
 private const val DEFAULT_EXTENSION = "jpg"
 private const val DEFAULT_CONTENT_TYPE = "image/jpeg"
@@ -62,7 +63,7 @@ private fun resolveExtension(mime: String?): String {
     return resolved?.takeIf { it in ALLOWED_EXTENSIONS } ?: DEFAULT_EXTENSION
 }
 
-class PhotoUploadRepositoryImpl
+internal class PhotoUploadRepositoryImpl
     @Inject
     constructor(
         @param:ApplicationContext private val context: Context,
@@ -73,22 +74,15 @@ class PhotoUploadRepositoryImpl
         override suspend fun upload(
             uriString: String,
             directory: String,
-        ): Result<String> =
-            try {
+        ): Result<UploadedFile> =
+            runCatchingCancellable {
                 val uri = uriString.toUri()
                 val mime = context.contentResolver.getType(uri)
                 val extension = resolveExtension(mime)
                 android.util.Log.d("PhotoUpload", "mime=$mime → extension=$extension")
 
-                val presigned =
-                    imageApi
-                        .getPresignedUrl(
-                            PresignedUrlRequestDto(
-                                directory = directory,
-                                extension = extension,
-                            ),
-                        ).requireData()
-
+                // presigned 요청에 파일 크기가 필수라, 임시 파일을 **먼저** 만들어 크기를
+                // 확정한 뒤 요청한다. 순서가 뒤집히면 크기를 모른 채 요청이 나가 400 이 된다 (#950).
                 val tempFile =
                     withContext(ioDispatcher) {
                         val file = File.createTempFile("photo_upload_", ".$extension", context.cacheDir)
@@ -96,6 +90,21 @@ class PhotoUploadRepositoryImpl
                             file.outputStream().use { output -> input.copyTo(output) }
                         } ?: throw IllegalStateException("Could not read image from URI")
                         file
+                    }
+
+                val presigned =
+                    try {
+                        imageApi
+                            .getPresignedUrl(
+                                PresignedUrlRequestDto(
+                                    directory = directory,
+                                    extension = extension,
+                                    contentLength = tempFile.length(),
+                                ),
+                            ).requireData()
+                    } catch (e: Throwable) {
+                        tempFile.delete()
+                        throw e
                     }
 
                 try {
@@ -119,13 +128,9 @@ class PhotoUploadRepositoryImpl
                             }
                     }
 
-                    Result.success(presigned.fileUrl)
+                    UploadedFile(fileUrl = presigned.fileUrl, fileKey = presigned.fileKey)
                 } finally {
                     tempFile.delete()
                 }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Result.failure(e)
             }
     }

@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor.processing.model
+
 import androidx.compose.runtime.Immutable
 
 /**
@@ -6,6 +7,8 @@ import androidx.compose.runtime.Immutable
  */
 @Immutable
 data class ProcessingMethodSection(
-    val items: List<ProcessingMethodItem> = emptyList(),
-    val callbacks: ProcessingMethodCallbacks = ProcessingMethodCallbacks(),
+    val items: List<ProcessingMethodItem>,
+    val onItemDeleteClick: (localId: Int) -> Unit,
+    val onItemAdded: (text: String) -> Unit,
+    val onItemEdited: (localId: Int, newText: String) -> Unit,
 )

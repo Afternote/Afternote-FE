@@ -5,11 +5,11 @@ import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.map
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
-import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
-import com.afternote.feature.afternote.presentation.shared.util.getIconResForServiceName
+import com.afternote.feature.afternote.presentation.shared.util.getIconResForService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -30,25 +30,23 @@ class AfternoteHomeViewModel
     constructor(
         private val afternoteRepository: AfternoteRepository,
     ) : ViewModel() {
-        private val _selectedCategory = MutableStateFlow(AfternoteCategory.ALL)
-        val selectedCategory: StateFlow<AfternoteCategory> = _selectedCategory.asStateFlow()
+        /** 선택된 종류 필터. `null` 은 전체다. */
+        private val _selectedType = MutableStateFlow<AfternoteType?>(null)
+        val selectedType: StateFlow<AfternoteType?> = _selectedType.asStateFlow()
 
         @OptIn(ExperimentalCoroutinesApi::class)
         val pagedAfternotes: Flow<PagingData<ListItemUiModel>> =
-            _selectedCategory
-                .flatMapLatest { category ->
+            _selectedType
+                .flatMapLatest { type ->
                     afternoteRepository
-                        .getPagedAfternotes(category.toCategoryParam())
+                        .getPagedAfternotes(type)
                         .map { pagingData -> pagingData.map { it.toUiModel() } }
                 }.cachedIn(viewModelScope)
 
-        fun selectTab(tab: AfternoteCategory) {
-            if (_selectedCategory.value == tab) return
-            _selectedCategory.value = tab
+        fun selectTab(tab: AfternoteType?) {
+            if (_selectedType.value == tab) return
+            _selectedType.value = tab
         }
-
-        /** AfternoteCategory → API category 파라미터 변환. ALL이면 null. */
-        private fun AfternoteCategory.toCategoryParam(): String? = navKey
     }
 
 private fun ListItem.toUiModel(): ListItemUiModel =
@@ -56,6 +54,6 @@ private fun ListItem.toUiModel(): ListItemUiModel =
         id = id,
         serviceName = serviceName,
         date = date,
-        iconResId = getIconResForServiceName(serviceName),
+        iconResId = getIconResForService(serviceName, type),
         type = type,
     )

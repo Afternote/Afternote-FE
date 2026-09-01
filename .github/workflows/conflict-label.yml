@@ -1,0 +1,79 @@
+name: PR Label Reconcile
+
+# 충돌 PR 은 `pull_request` 워크플로가 트리거되지 않는다 (#1028) — GitHub 이 base 와 head 를
+# 합친 `refs/pull/<N>/merge` 를 만들지 못하기 때문이다. 충돌 감지는 develop push 와 주기 실행이
+# 맡는다. 충돌 해소 뒤 PR Validation 이 요청되면 default branch 에서 즉시 다시 판정해 라벨을 뗀다.
+# 같은 default-branch 실행에서 CI Test Plan이 selected/full인 PR의 `android-test`도 복구한다.
+#
+# 같은 자리에서 이슈 쪽 라벨도 맞춘다 (#1532) — base 가 기본 브랜치가 아닌 PR 은 이슈의
+# Development 칸에 뜨지 않아, 이슈만 보면 아무도 손대지 않은 것으로 읽힌다.
+#
+# 변경요청 뒤 작성자가 아무 조치도 하지 않은 PR 에도 라벨을 붙인다 (#1552). `review-debt-guard`
+# 는 리뷰어의 빚만 잡고 그 상태를 «공은 작성자에게» 로 흘려보내므로, 그쪽 축은 어디서도 신호가
+# 나지 않았다. 붙이기와 떼기를 한 번의 차이 계산으로 처리해 스테일 라벨이 남지 않게 한다.
+on:
+  push:
+    branches: [develop]
+  workflow_run:
+    workflows: ["PR Validation"]
+    types: [requested]
+  schedule:
+    # 보조 경로. develop push 로 대부분 잡히지만, mergeable 이 끝내 UNKNOWN 이라 보류된 PR 은
+    # 다음 주기에 확정된다. 정각 부하를 피해 매시 23분.
+    - cron: '23 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "라벨·코멘트를 쓰지 않고 계획만 출력"
+        required: false
+        default: false
+        type: boolean
+
+# 실행이 겹치면 같은 PR 에 코멘트가 두 번 달릴 수 있다. 취소하지 않고 줄을 세운다.
+concurrency:
+  group: pr-label-reconcile
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  label:
+    if: github.event_name != 'workflow_dispatch' || github.ref_name == github.event.repository.default_branch
+    name: Reconcile pull request labels
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: write
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Run script tests
+        run: |
+          node --test \
+            .github/scripts/label-conflicting-prs.test.mjs \
+            .github/scripts/label-android-test-plan.test.mjs \
+            .github/scripts/label-issues-with-open-prs.test.mjs \
+            .github/scripts/label-awaiting-author-prs.test.mjs \
+            .github/scripts/awaiting-author-policy.test.mjs
+
+      - name: Reconcile pull request labels
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          ANDROID_TEST_REDISPATCH_HEAD_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.event == 'workflow_dispatch' && github.event.workflow_run.head_sha || '' }}
+          DRY_RUN: ${{ inputs.dry_run == true && 'true' || 'false' }}
+        run: |
+          failures=0
+          node .github/scripts/label-conflicting-prs.mjs || failures=1
+          node .github/scripts/label-android-test-prs.mjs || failures=1
+          node .github/scripts/label-issues-with-open-prs.mjs || failures=1
+          node .github/scripts/label-awaiting-author-prs.mjs || failures=1
+          exit "$failures"

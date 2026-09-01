@@ -4,7 +4,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.BasicTextField
@@ -28,28 +27,16 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
 import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
-
-/**
- * Callbacks for processing method checkbox dropdown (more, dismiss, edit, delete).
- */
-data class ProcessingMethodCheckboxCallbacks(
-    val onMoreClick: () -> Unit = {},
-    val onDismissDropdown: () -> Unit = {},
-    val onEditClick: () -> Unit = {},
-    val onDeleteClick: () -> Unit = {},
-    val onEditConfirmed: (String) -> Unit = {},
-)
 
 @Composable
 private fun processingMethodTextStyle(): TextStyle =
@@ -68,7 +55,11 @@ fun ProcessingMethodCheckbox(
     item: ProcessingMethodItem,
     expanded: Boolean = false,
     isEditing: Boolean = false,
-    callbacks: ProcessingMethodCheckboxCallbacks = ProcessingMethodCheckboxCallbacks(),
+    onMoreClick: () -> Unit,
+    onDismissDropdown: () -> Unit,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onEditConfirmed: (String) -> Unit,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -84,7 +75,7 @@ fun ProcessingMethodCheckbox(
         if (isEditing) {
             InlineEditTextField(
                 initialText = item.text,
-                onConfirm = callbacks.onEditConfirmed,
+                onConfirm = onEditConfirmed,
                 modifier = Modifier.weight(1f),
             )
         } else {
@@ -97,17 +88,17 @@ fun ProcessingMethodCheckbox(
 
         Box {
             Image(
-                painter = painterResource(R.drawable.feature_afternote_ic_more_horizontal_1),
+                painter = painterResource(R.drawable.afternote_ic_more_horizontal_1),
                 contentDescription = stringResource(R.string.afternote_editor_content_description_more),
                 modifier =
                     Modifier
-                        .clickable(onClick = callbacks.onMoreClick),
+                        .clickable(role = Role.Button, onClick = onMoreClick),
             )
             EditDropdownMenu(
                 expanded = expanded,
-                onDismissRequest = callbacks.onDismissDropdown,
-                onDeleteClick = callbacks.onDeleteClick,
-                onEditClick = callbacks.onEditClick,
+                onDismissRequest = onDismissDropdown,
+                onDeleteClick = onDeleteClick,
+                onEditClick = onEditClick,
             )
         }
     }
@@ -168,37 +159,7 @@ private fun InlineEditTextField(
 
     LaunchedEffect(Unit) {
         // Wait one frame for DropdownMenu dismiss to settle before requesting focus
-        @Suppress("UNUSED_VARIABLE")
-        val frame = withFrameNanos { it }
+        withFrameNanos { }
         focusRequester.requestFocus()
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ProcessingMethodCheckboxPreview() {
-    AfternoteTheme {
-        Column {
-            ProcessingMethodCheckbox(
-                item = ProcessingMethodItem("1", "게시물 내리기"),
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "편집 모드")
-@Composable
-private fun ProcessingMethodCheckboxEditingPreview() {
-    AfternoteTheme {
-        Column {
-            ProcessingMethodCheckbox(
-                item = ProcessingMethodItem("1", "게시물 내리기"),
-                isEditing = true,
-                callbacks =
-                    ProcessingMethodCheckboxCallbacks(
-                        onEditConfirmed = {},
-                    ),
-            )
-        }
     }
 }

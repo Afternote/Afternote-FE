@@ -1,8 +1,10 @@
 package com.afternote.feature.afternote.presentation.shared.detail.song
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -15,23 +17,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
 /**
  * 세 화면 공통 껍데기: 투명 배경 Scaffold + DetailTopBar (뒤로가기 시 포커스 해제).
  * [content] 슬롯에 각 모드의 본문(리스트 / 선택 본문)을 넣는다.
+ *
+ * @param topBarActions [DetailTopBar] 우측 액션 슬롯 (예: 관리 화면의 편집 모드 토글 연필)
  */
 @Composable
-internal fun SongPlaylistScaffold(
+fun SongPlaylistScaffold(
     title: String,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    topBarActions: @Composable RowScope.() -> Unit = {},
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
@@ -45,6 +48,7 @@ internal fun SongPlaylistScaffold(
                     focusManager.clearFocus()
                     onBackClick()
                 },
+                actions = topBarActions,
             )
         },
         content = content,
@@ -52,7 +56,26 @@ internal fun SongPlaylistScaffold(
 }
 
 /**
- * selectable·management 공통 본문: 선택 상태(selectedSongIds)를 소유하고 라디오 목록 + 선택 시
+ * 플레이리스트 화면 계열 공용 부유 액션 배치 슬롯.
+ *
+ * 시안 실측(목록 2672:16318): FAB 는 end 22/bottom 72 — 하단 액션 바(사이드 20/bottom 54)와
+ * 다른 오프셋을 쓴다. 바 값을 재사용하지 말 것. [SelectableSongListBody] 내부와 목록 모드처럼
+ * 리스트를 직접 조립하는 호출부가 같은 오프셋을 공유하도록 여기 한 곳에만 둔다.
+ */
+@Composable
+internal fun BoxScope.SongPlaylistFloatingActionSlot(content: @Composable () -> Unit) {
+    Box(
+        modifier =
+            Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 22.dp, bottom = 72.dp),
+    ) {
+        content()
+    }
+}
+
+/**
+ * selectable·management 공통 본문: 선택 상태(selectedSongKeys)를 소유하고 체크박스 목록 + 선택 시
  * 하단에 [AfternoteButton] 액션을 그린다. 두 모드의 차이는 [header] 와 액션 파라미터뿐이다.
  *
  * 액션은 항상 "실행 → 선택 초기화 → 화면 유지"라 동작이 같아, 클릭 시 본문이 콜백을 부른 뒤 선택을
@@ -61,38 +84,40 @@ internal fun SongPlaylistScaffold(
  *
  * @param header 목록 첫 아이템 헤더 (검색창 / "총 N곡")
  * @param actionLabel 하단 버튼 라벨 (dual-action 이면 왼쪽 라벨)
- * @param onAction 버튼(또는 dual 왼쪽) 클릭 — 현재 선택된 id 집합을 받는다
+ * @param onAction 버튼(또는 dual 왼쪽) 클릭 — 현재 선택된 키 집합을 받는다
  * @param secondaryActionLabel dual-action 오른쪽 라벨 (null 이면 단일 버튼)
- * @param onSecondaryAction dual-action 오른쪽 클릭 — 현재 선택된 id 집합을 받는다
+ * @param onSecondaryAction dual-action 오른쪽 클릭 — 현재 선택된 키 집합을 받는다
+ * @param floatingActionButton 선택이 비었을 때만 우하단에 노출되는 부유 액션(선택 중엔 하단 액션 버튼이 대신 노출)
  */
 @Composable
 internal fun SelectableSongListBody(
     songs: List<PlaylistSongDisplay>,
     header: @Composable () -> Unit,
-    initialSelectedSongIds: Set<String>,
+    initialSelectedSongKeys: Set<String>,
     actionLabel: String,
-    onAction: (selectedIds: Set<String>) -> Unit,
+    onAction: (selectedKeys: Set<String>) -> Unit,
     modifier: Modifier = Modifier,
     secondaryActionLabel: String? = null,
-    onSecondaryAction: ((selectedIds: Set<String>) -> Unit)? = null,
+    onSecondaryAction: ((selectedKeys: Set<String>) -> Unit)? = null,
+    floatingActionButton: (@Composable () -> Unit)? = null,
 ) {
-    var selectedSongIds by remember { mutableStateOf(initialSelectedSongIds) }
+    var selectedSongKeys by remember { mutableStateOf(initialSelectedSongKeys) }
     Box(modifier = modifier) {
         PlaylistSongList(
             modifier = Modifier.fillMaxSize(),
             songs = songs,
             onSongClick = { song ->
-                selectedSongIds =
-                    if (song.id in selectedSongIds) {
-                        selectedSongIds - song.id
+                selectedSongKeys =
+                    if (song.selectionKey in selectedSongKeys) {
+                        selectedSongKeys - song.selectionKey
                     } else {
-                        selectedSongIds + song.id
+                        selectedSongKeys + song.selectionKey
                     }
             },
-            isSelected = { song -> song.id in selectedSongIds },
+            isSelected = { song -> song.selectionKey in selectedSongKeys },
             header = header,
         )
-        if (selectedSongIds.isNotEmpty()) {
+        if (selectedSongKeys.isNotEmpty()) {
             Row(
                 modifier =
                     Modifier
@@ -102,8 +127,8 @@ internal fun SelectableSongListBody(
                 AfternoteButton(
                     text = actionLabel,
                     onClick = {
-                        onAction(selectedSongIds)
-                        selectedSongIds = emptySet()
+                        onAction(selectedSongKeys)
+                        selectedSongKeys = emptySet()
                     },
                     type =
                         if (onSecondaryAction != null) {
@@ -115,58 +140,15 @@ internal fun SelectableSongListBody(
                     onSecondaryClick =
                         onSecondaryAction?.let { secondary ->
                             {
-                                secondary(selectedSongIds)
-                                selectedSongIds = emptySet()
+                                secondary(selectedSongKeys)
+                                selectedSongKeys = emptySet()
                             }
                         },
                 )
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SelectableSongListBodySingleActionPreview() {
-    val songs =
-        remember {
-            listOf(
-                PlaylistSongDisplay(id = "1", title = "보고싶다", artist = "김범수"),
-                PlaylistSongDisplay(id = "2", title = "사랑했나봐", artist = "윤도현"),
-                PlaylistSongDisplay(id = "3", title = "나의 옛날이야기", artist = "김광석"),
-            )
+        if (floatingActionButton != null && selectedSongKeys.isEmpty()) {
+            SongPlaylistFloatingActionSlot { floatingActionButton() }
         }
-    AfternoteTheme {
-        SelectableSongListBody(
-            songs = songs,
-            header = {},
-            initialSelectedSongIds = setOf("1"),
-            actionLabel = "추가하기",
-            onAction = {},
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SelectableSongListBodyDualActionPreview() {
-    val songs =
-        remember {
-            listOf(
-                PlaylistSongDisplay(id = "1", title = "보고싶다", artist = "김범수"),
-                PlaylistSongDisplay(id = "2", title = "사랑했나봐", artist = "윤도현"),
-                PlaylistSongDisplay(id = "3", title = "나의 옛날이야기", artist = "김광석"),
-            )
-        }
-    AfternoteTheme {
-        SelectableSongListBody(
-            songs = songs,
-            header = {},
-            initialSelectedSongIds = setOf("1", "2"),
-            actionLabel = "전체 삭제",
-            onAction = {},
-            secondaryActionLabel = "선택 삭제",
-            onSecondaryAction = {},
-        )
     }
 }

@@ -28,14 +28,13 @@ fun ProcessingMethodListSection(
     ) {
         EditorSectionLabel(
             text = stringResource(R.string.afternote_editor_label_process_method_list),
-            isRequired = true,
+            isRequired = false,
         )
         ProcessingMethodList(
             items = section.items,
-            onItemAdded = section.callbacks.onItemAdded,
-            onItemDeleteClick = section.callbacks.onItemDeleteClick,
-            onItemEdited = section.callbacks.onItemEdited,
-            onTextFieldVisibilityChanged = section.callbacks.onTextFieldVisibilityChanged,
+            onItemAdded = section.onItemAdded,
+            onItemDeleteClick = section.onItemDeleteClick,
+            onItemEdited = section.onItemEdited,
         )
     }
 }

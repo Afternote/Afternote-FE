@@ -1,8 +1,10 @@
 package com.afternote.feature.afternote.presentation.author.editor.model
 
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 
 /**
  * ViewModel/Mapper가 [com.afternote.feature.afternote.domain.model.author.Detail] 등에서 조립해
@@ -10,52 +12,60 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.mod
  * 분기·enum 해석·메시지 파싱은 여기 이전 단계에서 끝난다.
  */
 data class EditorFormPrefill(
-    val loadedItemId: String,
-    val serviceName: String,
-    val category: EditorCategory,
-    val accountId: String,
+    val content: EditorContentPrefill,
+    /** 서버 상세 응답의 공통 `leaveMessage` 필드. 지원 타입과 무관하게 수정 시 보존한다. */
+    val leaveMessageBlocks: List<EditorMessageTextBlock>,
+    /**
+     * 이 애프터노트에 지정된 수신자 (#566). 신규 작성 경로가 폼에 넣는
+     * `AfternoteSaveState.authorReceivers`(= 작성자가 등록한 수신자 **전체**) 와 다른 값이다.
+     */
+    val receivers: List<AfternoteEditorReceiver>,
+) {
+    val type: AfternoteType get() = content.type
+}
+
+/** 수정할 애프터노트 종류에 실제로 존재하는 입력만 담는다. */
+sealed interface EditorContentPrefill {
+    val type: AfternoteType
+
+    data class SocialNetwork(
+        val serviceName: String,
+        val credentials: EditorCredentialsPrefill,
+        val processingMethods: List<ProcessingMethodItem>,
+    ) : EditorContentPrefill {
+        override val type: AfternoteType = AfternoteType.SOCIAL_NETWORK
+    }
+
+    data class Business(
+        val serviceName: String,
+        val credentials: EditorCredentialsPrefill,
+        val processingMethods: List<ProcessingMethodItem>,
+    ) : EditorContentPrefill {
+        override val type: AfternoteType = AfternoteType.BUSINESS
+    }
+
+    data class Gallery(
+        val serviceName: String,
+        val processingMethods: List<ProcessingMethodItem>,
+    ) : EditorContentPrefill {
+        override val type: AfternoteType = AfternoteType.GALLERY_AND_FILES
+    }
+
+    data class Memorial(
+        val videoUrl: String?,
+        val thumbnailUrl: String?,
+        val photoUrl: String?,
+        val playlistSongs: List<Song>,
+    ) : EditorContentPrefill {
+        override val type: AfternoteType = AfternoteType.MEMORIAL
+    }
+
+    data object Estate : EditorContentPrefill {
+        override val type: AfternoteType = AfternoteType.ESTATE
+    }
+}
+
+data class EditorCredentialsPrefill(
+    val id: String,
     val password: String,
-    val messageBlocks: List<EditorMessageTextBlock>,
-    val socialProcessingMethods: List<ProcessingMethodItem>,
-    val galleryProcessingMethods: List<ProcessingMethodItem>,
-    /** null이면 당부/직접입력 필드는 기존 값 유지 */
-    val lastWishUpdate: LastWishPrefill?,
-    val funeralVideoUrl: String?,
-    val funeralThumbnailUrl: String?,
-    val memorialPhotoUrl: String?,
-    val memorialPlaylistSongs: List<Song> = emptyList(),
-)
-
-/** "남기고 싶은 당부" UI 반영용 (이미 API 문자열과 기본 문구 매칭이 끝난 상태). */
-data class LastWishPrefill(
-    val selectedKey: String?,
-    val customText: String,
-)
-
-/**
- * Preview·테스트용 중간 표현. [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorFormMapper.editorFormPrefillFromLoadParams]로
- * [EditorFormPrefill]로 변환한다.
- */
-data class LoadFromExistingParams(
-    val itemId: String,
-    val serviceName: String,
-    val categoryDisplayString: String,
-    val account: LoadFromExistingAccountParams = LoadFromExistingAccountParams(),
-    val processing: LoadFromExistingProcessingParams = LoadFromExistingProcessingParams(),
-    val atmosphere: String? = null,
-    val memorialVideoUrl: String? = null,
-    val memorialThumbnailUrl: String? = null,
-    val memorialPhotoUrl: String? = null,
-    val memorialSongs: List<Song> = emptyList(),
-)
-
-data class LoadFromExistingAccountParams(
-    val id: String = "",
-    val password: String = "",
-)
-
-data class LoadFromExistingProcessingParams(
-    val message: String = "",
-    val socialMethods: List<ProcessingMethodItem> = emptyList(),
-    val galleryMethods: List<ProcessingMethodItem> = emptyList(),
 )

@@ -17,6 +17,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
@@ -25,6 +27,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import com.afternote.core.ui.R
 import com.afternote.core.ui.ViewModeSwitcher
 import com.afternote.core.ui.button.FAB.AfternoteFloatingActionButton
@@ -34,15 +38,21 @@ import com.afternote.core.ui.topbar.TitleTopBar
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListViewModel
+import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportViewModel
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.launch
+import java.time.YearMonth
 import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    dailyQuestionViewModel: DailyQuestionListViewModel = hiltViewModel(),
-    diaryViewModel: DiaryListViewModel = hiltViewModel(),
     onWriteClick: (MindRecordCategoryUi) -> Unit = {},
+    // 목록 항목 탭 → 상세(열람) 화면. (기록 ID, 일기 여부, 목록이 보고 있던 달) (#759).
+    onRecordClick: (Long, Boolean, YearMonth) -> Unit = { _, _, _ -> },
+    // 목록의 «수정하기» → 프리필한 작성 화면 (#582).
+    onEditDailyQuestion: (Long) -> Unit = {},
+    onEditDiary: (Long, YearMonth) -> Unit = { _, _ -> },
 ) {
     // Figma 2757:16116 — 마음의 기록 탭은 데일리 질문 / 일기 / 주간리포트 3개
     val categories =
@@ -54,29 +64,35 @@ fun HomeScreen(
             )
         }
 
-    var isListView by remember { mutableStateOf(true) }
-    var selectedIndex by remember { mutableIntStateOf(0) }
-    val selectedCategory = categories[selectedIndex]
-
+    // 선택 상태의 단일 출처는 pager 다. 종전에는 selectedIndex 로 애니메이션을 시작하면서
+    // pagerState.currentPage 를 다시 selectedIndex 에 기록해, 0↔2 전환 중 거쳐 가는 1번
+    // 페이지가 선택값을 덮어써 가운데 탭(일기)에 멈췄다 (#722).
+    //
+    // 탭 클릭은 pager 에게 "거기로 가라" 고만 말하고, 화면이 읽는 값은 pager 의
+    // settledPage 하나뿐이다 — 스크롤 도중의 중간 페이지가 선택으로 굳지 않는다.
     val pagerState = rememberPagerState { categories.size }
-    LaunchedEffect(selectedIndex) {
-        pagerState.animateScrollToPage(selectedIndex)
-    }
-    LaunchedEffect(pagerState.currentPage) {
-        selectedIndex = pagerState.currentPage
-    }
+    val selectedIndex = pagerState.settledPage
+    val selectedCategory = categories[selectedIndex]
+    val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
-        snapshotFlow { selectedIndex }
-            .drop(1)
-            .collect { index ->
-                when (categories[index]) {
-                    MindRecordCategoryUi.DailyQuestion -> dailyQuestionViewModel.refresh()
-                    MindRecordCategoryUi.Diary -> diaryViewModel.refresh()
-                    else -> Unit
-                }
-            }
-    }
+    // 탭마다 따로 기억한다. 종전에는 한 값을 두 탭이 공유했는데 의미가 서로 반대였다 —
+    // 데일리질문은 false 를 캘린더로, 일기는 같은 false 를 2열 그리드로 썼다. 그래서 탭을
+    // 오가면 아이콘은 그대로인데 표시가 뒤바뀐 것처럼 보였다 (#724).
+    var dailyQuestionListView by rememberSaveable { mutableStateOf(true) }
+    var diaryListView by rememberSaveable { mutableStateOf(true) }
+    val isListView =
+        when (selectedCategory) {
+            MindRecordCategoryUi.DailyQuestion -> dailyQuestionListView
+            else -> diaryListView
+        }
+
+    // 탭 VM 은 **여기서 만들지 않는다.** 호이스팅하면 선택하지 않은 탭의 `init` 조회까지
+    // 진입 즉시 나간다 — 마음의 기록 첫 진입 한 번에 요청이 7건 나간 가장 큰 원인이었다.
+    // 특히 주간리포트는 서버가 같은 주차의 반복 GET 에도 Gemini 를 다시 호출하므로
+    // (Afternote-BE#118), 열지도 않은 탭의 프리페치가 모델 호출 비용으로 이어진다 (#736).
+    //
+    // 대신 각 화면이 스스로 `ON_RESUME` 갱신을 건다 — 탭에 들어가야 컴포즈되므로
+    // 그 시점이 곧 "처음 필요한 시점" 이다.
 
     Scaffold(
         modifier = modifier,
@@ -84,12 +100,22 @@ fun HomeScreen(
             TitleTopBar(
                 title = stringResource(MindRecordR.string.mindrecord_home_title),
                 actions = {
-                    ViewModeSwitcher(
-                        isListView = isListView,
-                        image1 = R.drawable.core_ui_list,
-                        image2 = R.drawable.core_ui_calendar,
-                        onViewChange = { isListView = it },
-                    )
+                    // 주간리포트는 리스트/캘린더 두 보기가 없다 — 스위치를 눌러도 화면이
+                    // 바뀌지 않으니 아예 노출하지 않는다. 컨트롤과 동작을 맞춘다 (#723).
+                    // 같은 이유로 아래 FAB 도 이 탭에서 숨긴다.
+                    if (selectedCategory != MindRecordCategoryUi.WeeklyReport) {
+                        ViewModeSwitcher(
+                            isListView = isListView,
+                            image1 = R.drawable.core_ui_list,
+                            image2 = R.drawable.core_ui_calendar,
+                            onViewChange = { listView ->
+                                when (selectedCategory) {
+                                    MindRecordCategoryUi.DailyQuestion -> dailyQuestionListView = listView
+                                    else -> diaryListView = listView
+                                }
+                            },
+                        )
+                    }
                 },
             )
         },
@@ -100,6 +126,7 @@ fun HomeScreen(
                 )
             }
         },
+        containerColor = Color.Transparent,
     ) { paddingValues ->
         Column(
             modifier =
@@ -109,6 +136,8 @@ fun HomeScreen(
         ) {
             PrimaryScrollableTabRow(
                 selectedTabIndex = selectedIndex,
+                // 지정하지 않으면 M3 baseline surface(#FEF7FF)가 나와 시안 배경(#FAFAFA)과 어긋난다.
+                containerColor = Color.Transparent,
                 edgePadding = 0.dp,
                 divider = {},
                 indicator = {
@@ -119,14 +148,18 @@ fun HomeScreen(
                                 matchContentSize = false,
                             ),
                         width = 80.dp,
-                        color = Color(0xFF1F1F1F),
+                        color = AfternoteDesign.colors.gray9,
                     )
                 },
             ) {
                 categories.forEachIndexed { index, category ->
                     Tab(
                         selected = selectedIndex == index,
-                        onClick = { selectedIndex = index },
+                        // scrollToPage 는 중간 페이지를 거치지 않는다. animate 로 넘기면
+                        // 0 → 2 이동이 1번을 지나며 그 화면이 컴포즈되고, hiltViewModel() 이
+                        // VM 을 만들며 init 조회가 나간다 — 바로 아래 단(#736)이 «열지도 않은
+                        // 탭의 조회를 없앤다» 로 줄여 둔 요청이 탭 이동마다 되살아난다.
+                        onClick = { scope.launch { pagerState.scrollToPage(index) } },
                         text = {
                             Text(
                                 text = stringResource(category.titleRes),
@@ -139,11 +172,29 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            HorizontalPager(state = pagerState) { _ ->
-                when (selectedCategory) {
-                    MindRecordCategoryUi.DailyQuestion -> DailyQuestionAnswerListScreen(isListView = isListView)
-                    MindRecordCategoryUi.Diary -> DiaryScreen(isListView = isListView)
-                    else -> WeeklyReportScreen()
+            // page 인자를 실제로 쓴다 — 종전에는 무시하고 전역 selectedCategory 만 렌더해
+            // 스와이프 중에도 같은 화면이 보였다 (#722).
+            HorizontalPager(state = pagerState) { page ->
+                when (categories[page]) {
+                    MindRecordCategoryUi.DailyQuestion -> {
+                        DailyQuestionAnswerListScreen(
+                            isListView = dailyQuestionListView,
+                            onItemClick = { id, yearMonth -> onRecordClick(id, false, yearMonth) },
+                            onEditClick = onEditDailyQuestion,
+                        )
+                    }
+
+                    MindRecordCategoryUi.Diary -> {
+                        DiaryScreen(
+                            isListView = diaryListView,
+                            onItemClick = { id, yearMonth -> onRecordClick(id, true, yearMonth) },
+                            onEditClick = onEditDiary,
+                        )
+                    }
+
+                    else -> {
+                        WeeklyReportScreen()
+                    }
                 }
             }
         }
