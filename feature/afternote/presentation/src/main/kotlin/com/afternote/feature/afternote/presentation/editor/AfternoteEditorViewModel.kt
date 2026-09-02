@@ -152,7 +152,7 @@ private data class EditorFormSnapshot(
  * 애프터노트 생성/수정 ViewModel.
  *
  * **SSOT:** 일반 폼은 [internalState]의 [EditorFormState], Compose 텍스트 입력은
- * [com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState]가 소유한다.
+ * [com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorState]가 소유한다.
  * 추억 플레이리스트 화면과 곡 추가 화면은 같은 flow-scoped ViewModel의 폼을 사용한다.
  *
  * **경계:** Compose UI 객체(`TextFieldState`·`SnapshotStateList`·파사드)를 들지 않고 Retrofit 타입도 알지 않는다 —
