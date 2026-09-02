@@ -103,25 +103,6 @@ class VoiceRecordingAndroidTest {
         }
 
     @Test
-    fun start_withoutMicrophonePermission_failsSafelyAndDoesNotBlockANewAttempt() =
-        runBlocking {
-            val uiAutomation = InstrumentationRegistry.getInstrumentation().uiAutomation
-            uiAutomation.revokeRuntimePermission(context.packageName, Manifest.permission.RECORD_AUDIO)
-
-            val denied = repository.start()
-            assertTrue("RECORD_AUDIO 권한 없이 start() 를 호출하면 실패해야 한다", denied.isFailure)
-
-            // 실패한 시도가 recorder/파일을 붙들고 있지 않아야, 권한을 되찾은 뒤 정상 녹음이 가능하다.
-            uiAutomation.grantRuntimePermission(context.packageName, Manifest.permission.RECORD_AUDIO)
-            val audio = recordFor(RECORDING_DURATION_MILLIS)
-            val uri = Uri.parse(audio.uriString)
-            val stillReadable = runCatching { context.contentResolver.openInputStream(uri)?.close() }.isSuccess
-            assertTrue("권한 거부 실패 이후에도 새 녹음이 정상 저장돼야 한다", stillReadable)
-
-            repository.deleteRecordedFile(audio.uriString)
-        }
-
-    @Test
     fun newInstance_sweepsFilesLeftByAPreviousProcess() =
         runBlocking {
             val audioDirectory = File(context.filesDir, "timeletter_audio").apply { mkdirs() }

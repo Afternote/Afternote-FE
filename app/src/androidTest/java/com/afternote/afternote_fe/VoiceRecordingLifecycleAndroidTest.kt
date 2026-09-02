@@ -171,6 +171,9 @@ class VoiceRecordingLifecycleAndroidTest {
     }
 
     private companion object {
-        const val TIMEOUT = 5_000L
+        // 이 클래스는 매 테스트마다 실제 Activity+Compose+Hilt 콜드스타트를 거친다 (CI 에뮬레이터에서
+        // ~50초). 그 위에 얹히는 비동기 정리(discard/state 반영)까지 5초는 마진이 부족해 종종
+        // 초과했다 — 로직이 아니라 여유 시간 문제라 20초로 늘린다.
+        const val TIMEOUT = 20_000L
     }
 }
