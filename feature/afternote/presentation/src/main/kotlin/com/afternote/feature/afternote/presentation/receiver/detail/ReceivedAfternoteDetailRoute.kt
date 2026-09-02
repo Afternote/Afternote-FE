@@ -7,8 +7,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.loading.LoadingBody
-import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent
-import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadErrorContent
+import com.afternote.feature.afternote.presentation.shared.detail.DesignPendingDetailContent
+import com.afternote.feature.afternote.presentation.shared.detail.DetailLoadErrorContent
 
 /**
  * 수신 애프터노트 상세 Stateful Route.

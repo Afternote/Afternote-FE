@@ -11,7 +11,7 @@ import org.junit.Test
  * (`afternote.kro.kr/v3/api-docs`) 실측: `DeliveryVerificationRequestDto` 스키마에서 required 제거,
  * 두 필드 모두 nullable, description "두 서류 중 하나 이상 필수".
  *
- * Json 설정은 `NetworkModule.provideJson` 과 동일 (ignoreUnknownKeys + coerceInputValues).
+ * Json 설정은 `NetworkModule.provideJson` 과 동일 (ignoreUnknownKeys).
  * `encodeDefaults` 미설정(기본 false) + DTO 의 `= null` default 조합이라, 제출하지 않은 슬롯은
  * 페이로드에서 **키 자체가 생략**된다 — null 을 명시 전송하지 않아도 서버가 미제출로 해석하는
  * 형태를 이 테스트가 고정한다.
@@ -20,7 +20,6 @@ class DeliveryVerificationContractTest {
     private val json =
         Json {
             ignoreUnknownKeys = true
-            coerceInputValues = true
         }
 
     @Test

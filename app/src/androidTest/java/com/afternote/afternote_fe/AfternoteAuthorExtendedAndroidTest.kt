@@ -24,8 +24,8 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
-import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeEntry
-import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeViewModel
+import com.afternote.feature.afternote.presentation.home.AfternoteHomeEntry
+import com.afternote.feature.afternote.presentation.home.AfternoteHomeViewModel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -115,7 +115,7 @@ class AfternoteAuthorExtendedAndroidTest {
         listFlows[null] = flowOf(PagingData.empty())
         composeRule.onNodeWithText("전체").performClick()
         composeRule
-            .onNodeWithText(copy(AfternoteR.string.feature_afternote_empty_list_body))
+            .onNodeWithText(copy(AfternoteR.string.afternote_empty_list_body))
             .assertIsDisplayed()
         assertEquals(
             listOf(null, AfternoteType.SOCIAL_NETWORK, null),

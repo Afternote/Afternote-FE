@@ -29,7 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.common.util.KoreanConsonantUtil
 import com.afternote.core.ui.AfternoteTextField
@@ -42,7 +41,6 @@ import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
 import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import kotlinx.coroutines.launch
 
@@ -235,25 +233,6 @@ private fun ReceiverSelectRow(
             state = if (selected) CheckboxState.Default else CheckboxState.None,
             onClick = onToggle,
             size = 20.dp,
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ReceiverSelectScreenPreview() {
-    AfternoteTheme {
-        ReceiverSelectScreen(
-            receivers =
-                listOf(
-                    ReceiverSelectItem(id = 1L, name = "김혜성", relation = "아들"),
-                    ReceiverSelectItem(id = 2L, name = "박경민", relation = "친구"),
-                    ReceiverSelectItem(id = 3L, name = "이영희", relation = "연인"),
-                ),
-            selectedReceiverId = 1L,
-            onReceiverToggle = {},
-            onBackClick = {},
-            onConfirmClick = {},
         )
     }
 }

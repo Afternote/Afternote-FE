@@ -1,8 +1,5 @@
 package com.afternote.feature.afternote.presentation.receiver.detail
 
-import android.content.ActivityNotFoundException
-import android.content.Intent
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -29,17 +26,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
-import coil3.compose.AsyncImage
+import com.afternote.core.common.media.launchMemorialVideo
 import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.bottombar.BottomBar
 import com.afternote.core.ui.bottombar.BottomNavTab
@@ -50,8 +44,9 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.MemorialContent
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
+import com.afternote.feature.afternote.presentation.shared.detail.MemorialPlaylist
+import com.afternote.feature.afternote.presentation.shared.detail.MemorialVideoThumbnail
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
-import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
 import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
 import kotlinx.coroutines.launch
@@ -80,7 +75,7 @@ fun MemorialReceivedDetailScreen(
     memorialThumbnailUrl: String? = null,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
-    profileImageResId ?: R.drawable.receiver_img_default_profile_deceased
+    profileImageResId ?: R.drawable.afternote_receiver_img_default_profile_deceased
     val onVideoClick = rememberReceivedMemorialVideoClickHandler(snackbarHostState)
 
     Scaffold(
@@ -176,15 +171,15 @@ private fun rememberReceivedMemorialVideoClickHandler(snackbarHostState: Snackba
     val scope = rememberCoroutineScope()
     return remember(context, resources, scope, snackbarHostState) {
         { videoUrl ->
-            launchReceivedMemorialVideo(
+            launchMemorialVideo(
                 videoUrl = videoUrl,
                 startActivity = context::startActivity,
                 onRejected = {
-                    val message = resources.getString(R.string.receiver_memorial_video_invalid_url)
+                    val message = resources.getString(R.string.afternote_receiver_memorial_video_invalid_url)
                     scope.launch { snackbarHostState.showSnackbar(message) }
                 },
                 onUnavailable = {
-                    val message = resources.getString(R.string.receiver_memorial_video_no_app)
+                    val message = resources.getString(R.string.afternote_receiver_memorial_video_no_app)
                     scope.launch { snackbarHostState.showSnackbar(message) }
                 },
             )
@@ -210,7 +205,7 @@ private fun ReceiverVideoSection(
                         .clip(RoundedCornerShape(12.dp))
                         .clickable { onVideoClick(memorialVideoUrl) },
             ) {
-                ReceiverMemorialVideoThumbnail(thumbnailUrl = memorialThumbnailUrl)
+                MemorialVideoThumbnail(thumbnailUrl = memorialThumbnailUrl)
             }
         } else {
             Box(
@@ -223,7 +218,7 @@ private fun ReceiverVideoSection(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.receiver_ic_play_arrow),
+                    painter = painterResource(R.drawable.afternote_receiver_ic_play_arrow),
                     // 영상이 없을 때만 그리는 플레이스홀더다. clickable 이 없어 재생 액션이 없으므로
                     // 라벨을 붙이면 없는 어포던스를 알린다. 맥락은 위 ReceiverSectionHeader 가 읽어 준다.
                     contentDescription = null,
@@ -238,107 +233,6 @@ private fun ReceiverVideoSection(
                 )
             }
         }
-    }
-}
-
-/**
- * 서버가 준 추모 영상 URL을 외부 재생 앱으로 연다.
- *
- * 수신자 화면은 발신자가 저장한 값을 여는 쪽인데 서버는 비관리 URL 을 원문 그대로 반환하므로,
- * http/https 가 아닌 스킴은 실행하지 않는다 (#1394 — 발신자발 위험 스킴 차단). 불합격 URL 은
- * [onRejected] 로 알린다.
- * Android 11+ 패키지 가시성에서는 외부 앱 사전 조회가 실제 처리 가능한 앱이 있어도 실패할 수
- * 있다. 따라서 http/https URL만 선별한 뒤 실행을 직접 시도하고, OS가 명시적으로 거부한 경우에만
- * [onUnavailable] 로 폴백한다.
- *
- * 두 콜백을 나눈 이유는 **원인이 다르면 안내도 달라야 하기 때문**이다. 하나로 합치면 URL 이 막힌
- * 경우에도 «재생할 앱이 없습니다» 가 나가는데, 그건 앱 유무와 무관한 거짓이다.
- *
- * 작성자 쪽 상세의 `launchMemorialVideo`(PR #1336, develop 머지됨)와 같은 패턴이나 — 그쪽은
- * afternote 모듈 `internal` 이라 공유 없이 이식했다 — 콜백 분리는 이 판에만 있어 본문이 갈라져
- * 있다. `core:common` 승격(#1436)은 이 시그니처를 계약으로 삼고, 승격 시 작성자 판도 같이
- * 갈라야 한다.
- */
-internal fun launchReceivedMemorialVideo(
-    videoUrl: String,
-    startActivity: (Intent) -> Unit,
-    onRejected: () -> Unit,
-    onUnavailable: () -> Unit,
-) {
-    val uri =
-        try {
-            videoUrl
-                .takeUnless { it.isBlank() || it.any(Char::isWhitespace) }
-                ?.toUri()
-                ?.takeIf {
-                    val scheme = it.scheme
-                    (
-                        scheme.equals("http", ignoreCase = true) ||
-                            scheme.equals("https", ignoreCase = true)
-                    ) &&
-                        !it.host.isNullOrBlank()
-                }
-        } catch (_: IllegalArgumentException) {
-            null
-        }
-
-    if (uri == null) {
-        onRejected()
-        return
-    }
-
-    try {
-        startActivity(Intent(Intent.ACTION_VIEW, uri))
-    } catch (_: ActivityNotFoundException) {
-        onUnavailable()
-    } catch (_: SecurityException) {
-        onUnavailable()
-    } catch (_: IllegalArgumentException) {
-        onUnavailable()
-    }
-}
-
-@Composable
-private fun ReceiverMemorialVideoThumbnail(thumbnailUrl: String?) {
-    Box(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(183.dp)
-                .clip(RoundedCornerShape(16.dp)),
-    ) {
-        if (!thumbnailUrl.isNullOrBlank()) {
-            AsyncImage(
-                model = thumbnailUrl,
-                contentDescription =
-                    stringResource(R.string.afternote_content_description_memorial_video_thumbnail),
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-            )
-        }
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(
-                        brush =
-                            Brush.verticalGradient(
-                                colors =
-                                    listOf(
-                                        AfternoteDesign.colors.gray6.copy(alpha = 153f / 255f),
-                                        AfternoteDesign.colors.gray9.copy(alpha = 153f / 255f),
-                                    ),
-                            ),
-                    ),
-        )
-        Image(
-            painter = painterResource(R.drawable.feature_afternote_ic_playback),
-            contentDescription = stringResource(R.string.content_description_video_play),
-            modifier =
-                Modifier
-                    .align(Alignment.Center)
-                    .size(32.dp),
-        )
     }
 }
 
