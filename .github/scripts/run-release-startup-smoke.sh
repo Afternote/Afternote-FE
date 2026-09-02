@@ -93,14 +93,25 @@ list_avds | grep -qx "${avd_name}" || {
     > "${emulator_log}" 2>&1 &
 emulator_pid=$!
 
+# 조기 중단은 «부팅이 실제로 불가능한» 표시에만 건다. 에뮬레이터는 정상 부팅 중에도 무해한
+# ERROR 줄을 남기므로 ERROR 전체를 실패로 읽으면 앱을 설치하기도 전에 죽는다 (#1769).
+# 그 밖의 이상은 부팅 데드라인이 잡는다 — 늦게 잡되 틀리지 않는 쪽이 낫다.
+fatal_boot_line() {
+    grep -m1 -E '^(PANIC:|ERROR +\| Unknown AVD name|ERROR +\| x86_64 emulation currently requires)' \
+        "${emulator_log}" || true
+}
+
 boot_deadline=$(( $(date +%s) + boot_timeout_seconds ))
 until [[ "$("${adb}" -s "${serial}" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; do
-    if grep -qE '^(FATAL|ERROR)' "${emulator_log}"; then
+    fatal_line="$(fatal_boot_line)"
+    if [[ -n "${fatal_line}" ]]; then
+        # 걸린 줄을 먼저 남긴다 — 꼬리 30줄에는 원인이 안 들어 있는 경우가 많다.
+        echo "부팅 중단 표시: ${fatal_line}"
         tail -n 30 "${emulator_log}"
-        fail "에뮬레이터가 기동하지 못했습니다."
+        fail "에뮬레이터가 기동하지 못했습니다: ${fatal_line}"
     fi
     if (( $(date +%s) > boot_deadline )); then
-        tail -n 30 "${emulator_log}"
+        tail -n 60 "${emulator_log}"
         fail "에뮬레이터 부팅이 ${boot_timeout_seconds}초 안에 끝나지 않았습니다."
     fi
     sleep 5
