@@ -14,7 +14,7 @@ class EditableMemorialVideoTest {
             url = "https://cdn.test/farewell.mp4",
             thumbnailUrl = "https://cdn.test/farewell-thumb.jpg",
         )
-    private val pending =
+    private val selection =
         MemorialVideoAttachment(
             url = "content://videos/replacement",
             thumbnailUrl = "https://cdn.test/replacement-thumb.jpg",
@@ -26,11 +26,11 @@ class EditableMemorialVideoTest {
             .withSelection(attachment.url)
             .withSelectionThumbnail(attachment.thumbnailUrl)
 
-    private fun persistedAndPending(): EditableMemorialVideo =
+    private fun persistedAndSelection(): EditableMemorialVideo =
         EditableMemorialVideo
             .fromPersisted(persisted)
-            .withSelection(pending.url)
-            .withSelectionThumbnail(pending.thumbnailUrl)
+            .withSelection(selection.url)
+            .withSelectionThumbnail(selection.thumbnailUrl)
 
     @Test
     fun `네 가지 상태는 표시 영상과 저장 입력을 스스로 결정한다`() {
@@ -60,17 +60,17 @@ class EditableMemorialVideoTest {
                 ),
                 Case(
                     name = "새 선택만",
-                    subject = selected(pending),
-                    displayed = pending,
+                    subject = selected(selection),
+                    displayed = selection,
                     canDiscardSelection = true,
-                    mediaInput = MediaInput.Local(pending.url),
+                    mediaInput = MediaInput.Local(selection.url),
                 ),
                 Case(
                     name = "서버 원본과 새 선택 모두",
-                    subject = persistedAndPending(),
-                    displayed = pending,
+                    subject = persistedAndSelection(),
+                    displayed = selection,
                     canDiscardSelection = true,
-                    mediaInput = MediaInput.Local(pending.url),
+                    mediaInput = MediaInput.Local(selection.url),
                 ),
             )
 
@@ -88,7 +88,7 @@ class EditableMemorialVideoTest {
     @Test
     fun `새 선택을 제거하면 보존한 서버 원본으로 돌아간다`() {
         val restored =
-            persistedAndPending().withSelection(null)
+            persistedAndSelection().withSelection(null)
 
         assertEquals(persisted, restored.displayed)
         assertFalse(restored.canDiscardSelection)
@@ -118,7 +118,7 @@ class EditableMemorialVideoTest {
     @Test
     fun `새 영상을 고르면 이전 교체분 썸네일은 물려주지 않는다`() {
         val selected =
-            persistedAndPending().withSelection("content://videos/another")
+            persistedAndSelection().withSelection("content://videos/another")
 
         assertEquals(MemorialVideoAttachment(url = "content://videos/another"), selected.displayed)
         assertEquals(MediaInput.Local("content://videos/another"), selected.toMediaInput())
@@ -130,7 +130,7 @@ class EditableMemorialVideoTest {
         val withThumbnail =
             EditableMemorialVideo
                 .fromPersisted(persisted)
-                .withSelection(pending.url)
+                .withSelection(selection.url)
                 .withSelectionThumbnail("https://cdn.test/new-thumb.jpg")
 
         assertEquals("https://cdn.test/new-thumb.jpg", withThumbnail.displayed?.thumbnailUrl)
@@ -146,9 +146,9 @@ class EditableMemorialVideoTest {
     @Test
     fun `사용자 입력 조각은 서버 원본과 자동 파생 썸네일을 제외한다`() {
         val userEntered =
-            persistedAndPending().userEnteredPart()
+            persistedAndSelection().userEnteredPart()
 
-        assertEquals(MemorialVideoAttachment(url = pending.url), userEntered.displayed)
+        assertEquals(MemorialVideoAttachment(url = selection.url), userEntered.displayed)
         assertTrue(userEntered.canDiscardSelection)
         assertNull(userEntered.withSelection(null).displayed)
     }

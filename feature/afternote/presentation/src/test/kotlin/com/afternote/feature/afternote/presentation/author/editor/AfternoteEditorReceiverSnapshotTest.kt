@@ -47,7 +47,7 @@ class AfternoteEditorReceiverSnapshotTest {
                 url = "https://cdn.test/farewell.mp4",
                 thumbnailUrl = "https://cdn.test/farewell-thumb.jpg",
             )
-        val pending =
+        val selection =
             MemorialVideoAttachment(
                 url = "content://videos/replacement",
                 thumbnailUrl = "https://cdn.test/replacement-thumb.jpg",
@@ -65,9 +65,9 @@ class AfternoteEditorReceiverSnapshotTest {
                               "url":"${persisted.url}",
                               "thumbnailUrl":"${persisted.thumbnailUrl}"
                             },
-                            "pending":{
-                              "url":"${pending.url}",
-                              "thumbnailUrl":"${pending.thumbnailUrl}"
+                            "selection":{
+                              "url":"${selection.url}",
+                              "thumbnailUrl":"${selection.thumbnailUrl}"
                             }
                           }
                         }
@@ -76,7 +76,7 @@ class AfternoteEditorReceiverSnapshotTest {
             )
         val viewModel = viewModel(savedStateHandle)
 
-        assertEquals(pending, viewModel.currentForm().displayedMemorialVideo)
+        assertEquals(selection, viewModel.currentForm().displayedMemorialVideo)
         assertTrue(viewModel.currentForm().canDiscardMemorialVideoSelection)
 
         viewModel.setMemorialThumbnail("https://cdn.test/round-trip-thumb.jpg")
@@ -86,10 +86,10 @@ class AfternoteEditorReceiverSnapshotTest {
         val restoredViewModel = viewModel(savedStateHandle)
         val roundTripped = restoredViewModel.currentForm()
         assertEquals(
-            pending.copy(thumbnailUrl = "https://cdn.test/round-trip-thumb.jpg"),
+            selection.copy(thumbnailUrl = "https://cdn.test/round-trip-thumb.jpg"),
             roundTripped.displayedMemorialVideo,
         )
-        assertEquals(MediaInput.Local(pending.url), roundTripped.memorialVideo?.toMediaInput())
+        assertEquals(MediaInput.Local(selection.url), roundTripped.memorialVideo?.toMediaInput())
         assertTrue(roundTripped.canDiscardMemorialVideoSelection)
 
         restoredViewModel.setMemorialVideo(null)
