@@ -44,8 +44,10 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.TextStyleState
 import com.afternote.feature.mindrecord.presentation.model.TextStyleType
+import com.afternote.feature.mindrecord.presentation.util.escapeHtml
 import com.afternote.feature.mindrecord.presentation.util.mediaDisplayName
 import com.afternote.feature.mindrecord.presentation.util.mediaImageSize
+import com.afternote.feature.mindrecord.presentation.util.toBodyLinkHrefOrNull
 import com.afternote.feature.mindrecord.presentation.util.toUploadedFileKey
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import com.mohamedrejeb.richeditor.ui.BasicRichTextEditor
@@ -177,10 +179,14 @@ fun WriteTextField(
                     // 않는다. 다만 고정값을 박으면 세로 사진이 본문에 4:3 으로 박제되므로
                     // 원본 비율로 높이를 계산한다 (#731 리뷰).
                     val (imageWidth, imageHeight) = context.mediaImageSize(uri, MEDIA_IMAGE_WIDTH_PX)
-                    "<img src=\"$fileKey\" alt=\"$displayName\" width=\"$imageWidth\" " +
+                    // `displayName` 은 파일을 넘긴 앱(content provider)이 정하는 값이라 따옴표가
+                    // 들어올 수 있다. 이스케이프하지 않으면 `alt` 가 그 자리에서 닫히고 뒤따르는
+                    // `width`/`height` 가 값으로 먹혀 **이미지가 저장된 본문에서 사라진다** (#1067 리뷰).
+                    "<img src=\"$fileKey\" alt=\"${displayName.escapeHtml()}\" width=\"$imageWidth\" " +
                         "height=\"$imageHeight\" />"
                 } else {
-                    "<a href=\"$fileKey\">$displayName</a>"
+                    // 링크 텍스트도 같은 출처다 — 이름 속 태그가 마크업으로 살아난다.
+                    "<a href=\"$fileKey\">${displayName.escapeHtml()}</a>"
                 }
             keepEditorFocus { state.setHtml(state.toHtml() + html) }
             attachments += displayName
@@ -318,11 +324,25 @@ fun WriteTextField(
         KeyboardSheet.LinkAdd -> {
             LinkBottomSheet(
                 onDismiss = { sheet = KeyboardSheet.None },
+                // 검증 없이 이어붙이면 `javascript:` 가 그대로 저장되고, 따옴표 하나로 속성이 닫힌다.
+                // 본문은 수신자가 나중에 열람하는 값이라 저장되는 순간 남에게 실린다 (#1067).
+                //
+                // 거절(false)은 시트가 받아 사유를 띄운다 — 조용히 무시하면 사용자는 «완료를 눌렀는데
+                // 안 들어갔다» 만 본다. 안내를 걷는 시점(입력을 고치는 순간)도 입력 상태를 가진 시트가
+                // 안다 (#1067 리뷰).
                 onConfirm = { url ->
-                    keepEditorFocus {
-                        state.setHtml(state.toHtml() + "<a href=\"$url\">$url</a>")
+                    val href = url.toBodyLinkHrefOrNull()
+                    if (href == null) {
+                        false
+                    } else {
+                        keepEditorFocus {
+                            // 링크 텍스트는 사용자가 적은 원문을 보여 준다 — punycode 로 바뀐 호스트를
+                            // 보여 주면 자기가 넣은 주소를 못 알아본다. 표시용도 이스케이프한다.
+                            state.setHtml(state.toHtml() + "<a href=\"$href\">${url.trim().escapeHtml()}</a>")
+                        }
+                        sheet = KeyboardSheet.None
+                        true
                     }
-                    sheet = KeyboardSheet.None
                 },
             )
         }
