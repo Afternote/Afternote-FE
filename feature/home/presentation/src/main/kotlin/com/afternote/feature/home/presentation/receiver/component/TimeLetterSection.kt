@@ -1,9 +1,9 @@
-package com.afternote.feature.receiver.presentation.home.component
+package com.afternote.feature.home.presentation.receiver.component
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import com.afternote.feature.receiver.presentation.R
+import com.afternote.feature.home.presentation.R
 
 /** 타임레터 섹션 — 단순 카드. */
 @Composable

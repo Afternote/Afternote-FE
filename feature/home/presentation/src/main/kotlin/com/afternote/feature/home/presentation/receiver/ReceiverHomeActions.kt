@@ -1,4 +1,4 @@
-package com.afternote.feature.receiver.presentation.home
+package com.afternote.feature.home.presentation.receiver
 
 /**
  * 수신자 홈에서 외부 라우팅으로 빠지는 액션 묶음.

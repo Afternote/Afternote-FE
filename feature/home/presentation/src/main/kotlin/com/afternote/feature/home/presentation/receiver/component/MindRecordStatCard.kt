@@ -1,4 +1,4 @@
-package com.afternote.feature.receiver.presentation.home.component
+package com.afternote.feature.home.presentation.receiver.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,7 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.feature.receiver.presentation.R
+import com.afternote.feature.home.presentation.R
 
 /**
  * 마음의 기록 섹션 안에 들어가는 작은 통계 카드: 아이콘 → 라벨 → TOTAL → 카운트 (수직 정렬).

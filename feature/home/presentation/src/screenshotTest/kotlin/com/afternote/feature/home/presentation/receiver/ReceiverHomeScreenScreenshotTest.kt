@@ -1,12 +1,12 @@
-package com.afternote.feature.receiver.presentation.home
+package com.afternote.feature.home.presentation.receiver
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.icon.AfternoteSourceIcon
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.receiver.presentation.home.model.MindRecordSummary
-import com.afternote.feature.receiver.presentation.home.model.ReceiverHomeUiState
-import com.afternote.feature.receiver.presentation.home.model.SenderMessage
+import com.afternote.feature.home.presentation.receiver.model.MindRecordSummary
+import com.afternote.feature.home.presentation.receiver.model.ReceiverHomeUiState
+import com.afternote.feature.home.presentation.receiver.model.SenderMessage
 import com.android.tools.screenshot.PreviewTest
 
 /** baseline 은 화면 픽셀만 본다 — 외부 라우팅은 눌리지 않으므로 빈 액션으로 채운다. */

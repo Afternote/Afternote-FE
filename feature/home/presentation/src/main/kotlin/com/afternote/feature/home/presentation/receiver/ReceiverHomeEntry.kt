@@ -1,4 +1,4 @@
-package com.afternote.feature.receiver.presentation.home
+package com.afternote.feature.home.presentation.receiver
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue

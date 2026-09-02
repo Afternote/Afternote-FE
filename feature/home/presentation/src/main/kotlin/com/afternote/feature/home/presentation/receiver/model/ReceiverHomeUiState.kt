@@ -1,4 +1,4 @@
-package com.afternote.feature.receiver.presentation.home.model
+package com.afternote.feature.home.presentation.receiver.model
 
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable

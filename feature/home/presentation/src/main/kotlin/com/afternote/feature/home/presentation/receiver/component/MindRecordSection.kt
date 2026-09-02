@@ -1,4 +1,4 @@
-package com.afternote.feature.receiver.presentation.home.component
+package com.afternote.feature.home.presentation.receiver.component
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -9,8 +9,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.afternote.feature.receiver.presentation.R
-import com.afternote.feature.receiver.presentation.home.model.MindRecordSummary
+import com.afternote.feature.home.presentation.R
+import com.afternote.feature.home.presentation.receiver.model.MindRecordSummary
 import com.afternote.core.ui.R as CoreUiR
 
 /**

@@ -1,4 +1,4 @@
-package com.afternote.feature.receiver.presentation.home
+package com.afternote.feature.home.presentation.receiver
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -6,15 +6,15 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.ui.icon.AfternoteSourceIcon
 import com.afternote.feature.afternote.domain.AfternoteType
+import com.afternote.feature.home.presentation.R
+import com.afternote.feature.home.presentation.receiver.model.MindRecordSummary
+import com.afternote.feature.home.presentation.receiver.model.ReceiverDownloadState
+import com.afternote.feature.home.presentation.receiver.model.ReceiverHomeUiState
+import com.afternote.feature.home.presentation.receiver.model.SenderMessage
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
 import com.afternote.feature.receiver.domain.model.AfterNoteListItem
 import com.afternote.feature.receiver.domain.repository.ReceiverRepository
-import com.afternote.feature.receiver.presentation.R
-import com.afternote.feature.receiver.presentation.home.model.MindRecordSummary
-import com.afternote.feature.receiver.presentation.home.model.ReceiverDownloadState
-import com.afternote.feature.receiver.presentation.home.model.ReceiverHomeUiState
-import com.afternote.feature.receiver.presentation.home.model.SenderMessage
 import com.afternote.feature.receiver.presentation.reporting.ReceiverFailureStage
 import com.afternote.feature.receiver.presentation.reporting.recordReceiverFailure
 import com.afternote.feature.timeletter.domain.repository.ReceiverTimeLetterRepository

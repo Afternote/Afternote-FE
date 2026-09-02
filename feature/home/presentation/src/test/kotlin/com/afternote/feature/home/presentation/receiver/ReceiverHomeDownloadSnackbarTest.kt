@@ -1,12 +1,12 @@
-package com.afternote.feature.receiver.presentation.home
+package com.afternote.feature.home.presentation.receiver
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.receiver.presentation.R
-import com.afternote.feature.receiver.presentation.home.model.ReceiverDownloadState
-import com.afternote.feature.receiver.presentation.home.model.ReceiverHomeUiState
+import com.afternote.feature.home.presentation.R
+import com.afternote.feature.home.presentation.receiver.model.ReceiverDownloadState
+import com.afternote.feature.home.presentation.receiver.model.ReceiverHomeUiState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

@@ -1,4 +1,4 @@
-package com.afternote.feature.receiver.presentation.home
+package com.afternote.feature.home.presentation.receiver
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,13 +31,13 @@ import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.HomeTopBar
-import com.afternote.feature.receiver.presentation.R
-import com.afternote.feature.receiver.presentation.home.component.AfternoteSection
-import com.afternote.feature.receiver.presentation.home.component.MindRecordSection
-import com.afternote.feature.receiver.presentation.home.component.SenderMessageHeroCard
-import com.afternote.feature.receiver.presentation.home.component.TimeLetterSection
-import com.afternote.feature.receiver.presentation.home.model.ReceiverDownloadState
-import com.afternote.feature.receiver.presentation.home.model.ReceiverHomeUiState
+import com.afternote.feature.home.presentation.R
+import com.afternote.feature.home.presentation.receiver.component.AfternoteSection
+import com.afternote.feature.home.presentation.receiver.component.MindRecordSection
+import com.afternote.feature.home.presentation.receiver.component.SenderMessageHeroCard
+import com.afternote.feature.home.presentation.receiver.component.TimeLetterSection
+import com.afternote.feature.home.presentation.receiver.model.ReceiverDownloadState
+import com.afternote.feature.home.presentation.receiver.model.ReceiverHomeUiState
 
 /**
  * 수신자 홈 화면 — 한 마디 + 마음의 기록·타임레터·애프터노트 카드 + 모든 기록 내려받기 버튼.

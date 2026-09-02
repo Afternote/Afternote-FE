@@ -1,4 +1,4 @@
-package com.afternote.feature.receiver.presentation.home.component
+package com.afternote.feature.home.presentation.receiver.component
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertCountEquals
@@ -7,7 +7,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.receiver.presentation.home.model.MindRecordSummary
+import com.afternote.feature.home.presentation.receiver.model.MindRecordSummary
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
