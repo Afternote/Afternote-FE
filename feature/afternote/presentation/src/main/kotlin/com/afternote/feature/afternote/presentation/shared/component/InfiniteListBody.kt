@@ -22,6 +22,7 @@ fun InfiniteListBody(
     headerDescription: String,
     nextStep: NextStep?,
     modifier: Modifier = Modifier,
+    onDraftListClick: (() -> Unit)? = null,
 ) {
     Column(
         modifier = modifier,
@@ -31,6 +32,7 @@ fun InfiniteListBody(
         HomeHeaderSection(
             description = headerDescription,
             nextStep = nextStep,
+            onDraftListClick = onDraftListClick,
         )
         AfternoteListContent(
             items = items,

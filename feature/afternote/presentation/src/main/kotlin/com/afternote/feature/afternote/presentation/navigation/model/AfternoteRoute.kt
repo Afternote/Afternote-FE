@@ -7,6 +7,10 @@ sealed interface AfternoteRoute {
     @Serializable
     data object AfternoteHomeRoute : AfternoteRoute
 
+    /** 임시저장 목록 (#808). 항목을 고르면 상세가 아니라 에디터로 이어쓴다. */
+    @Serializable
+    data object DraftListRoute : AfternoteRoute
+
     @Serializable
     data class DetailRoute(
         val itemId: Long,

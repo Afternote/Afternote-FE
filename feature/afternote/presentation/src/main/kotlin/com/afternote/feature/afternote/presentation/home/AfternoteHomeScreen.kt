@@ -44,6 +44,7 @@ fun AfternoteHomeScreen(
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onFabClick: (() -> Unit)? = null,
     onSettingClick: (() -> Unit)? = null,
+    onDraftListClick: (() -> Unit)? = null,
 ) {
     val refreshState = items.loadState.refresh
     val isInitialLoading = refreshState is LoadState.Loading && items.itemCount == 0
@@ -99,6 +100,7 @@ fun AfternoteHomeScreen(
                         onTypeSelected = onTypeSelected,
                         onListItemClick = onListItemClick,
                         headerDescription = headerDescription,
+                        onDraftListClick = onDraftListClick,
                     )
                 }
 

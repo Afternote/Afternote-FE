@@ -436,6 +436,10 @@ fun rememberAfternoteNavActions(
                 appState.navController.popBackStack()
             }
 
+            override fun navigateToDraftList() {
+                appState.navController.navigate(AfternoteRoute.DraftListRoute)
+            }
+
             override fun navigateToAfternoteDetail(itemId: Long) {
                 appState.navController.navigate(AfternoteRoute.DetailRoute(itemId = itemId))
             }

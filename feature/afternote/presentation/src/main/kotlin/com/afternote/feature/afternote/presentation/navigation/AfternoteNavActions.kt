@@ -19,6 +19,9 @@ interface AfternoteNavActions {
 
     fun navigateToAfternoteDetail(itemId: Long)
 
+    /** 홈 → 임시저장 목록 (#808). 이어쓸 항목을 고르는 화면이라 상세와 다른 destination 이다. */
+    fun navigateToDraftList()
+
     fun navigateToNewEditor(initialType: AfternoteType)
 
     fun navigateToEditorForEdit(

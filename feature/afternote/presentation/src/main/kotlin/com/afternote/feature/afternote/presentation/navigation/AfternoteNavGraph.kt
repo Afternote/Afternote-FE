@@ -11,6 +11,7 @@ import androidx.navigation.navigation
 import com.afternote.core.ui.Route
 import com.afternote.feature.afternote.presentation.AfternoteHostViewModel
 import com.afternote.feature.afternote.presentation.detail.AfternoteDetailNavigation
+import com.afternote.feature.afternote.presentation.draft.AfternoteDraftListNavigation
 import com.afternote.feature.afternote.presentation.editor.AfternoteEditorNavigation
 import com.afternote.feature.afternote.presentation.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.editor.memorial.AddSongViewModel
@@ -47,6 +48,14 @@ fun NavGraphBuilder.afternoteNavGraph(
                 onNavigateToDetail = actions::navigateToAfternoteDetail,
                 onNavigateToNewEditor = actions::navigateToNewEditor,
                 onNavigateToSetting = actions::navigateToSetting,
+                onNavigateToDraftList = actions::navigateToDraftList,
+            )
+        }
+
+        afternoteComposable<AfternoteRoute.DraftListRoute> {
+            AfternoteDraftListNavigation(
+                onNavigateBack = actions::popBack,
+                onNavigateToEditorForEdit = actions::navigateToEditorForEdit,
             )
         }
 

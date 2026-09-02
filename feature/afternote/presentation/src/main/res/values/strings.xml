@@ -22,6 +22,9 @@
     <string name="afternote_home_retry">다시 시도</string>
     <!-- 카테고리 필터 결과 0건 안내. 문구는 #567 디자인 승인 게이트 해제(2026-08-28)로 확정. -->
     <string name="afternote_home_filtered_empty">이 카테고리에 등록된 애프터노트가 없어요.\n아래 연필 버튼을 눌러 애프터노트를 등록해 보세요.</string>
+    <string name="afternote_draft_list_title">임시 저장된 애프터노트</string>
+    <string name="afternote_home_draft_entry">임시저장</string>
+    <string name="afternote_home_draft_entry_description">이어서 작성할 임시저장 목록</string>
     <string name="afternote_home_header_description">소중한 사람에게 남길 기록을 미리 정리해 보세요.</string>
     <string name="afternote_category_all">전체</string>
     <string name="afternote_category_social_network">소셜네트워크</string>
