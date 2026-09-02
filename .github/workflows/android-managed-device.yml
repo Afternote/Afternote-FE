@@ -2,7 +2,7 @@ name: Android Managed Device Test
 
 # 모든 same-repository PR 에 기존 두 required context를 만들되, CI Test Plan이 none이면 에뮬레이터를
 # 만들지 않는다. selected는 선언한 FQCN#method와 lane만, full은 API 30 전체와 API 34 smoke를 실행한다.
-# minSdk API 28과 targetSdk API 36 경계 smoke는 scheduled_only라 정기/default-branch 수동 실행에서만
+# minSdk API 26과 targetSdk API 36 경계 smoke는 scheduled_only라 정기/default-branch 수동 실행에서만
 # 에뮬레이터를 띄우고 PR full 또는 복구 dispatch 비용을 늘리지 않는다.
 # PR head SHA와 default branch에서 staging한 parser/verifier를 함께 검증한다. fork PR은 실행하지 않는다.
 # 라벨 조정기의 자동 dispatch 도 PR head branch ref 에 생성하고 이벤트 SHA 를 현재 PR HEAD 와 다시
@@ -191,14 +191,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: Pixel 2 API 28 minSdk smoke
-            task: pixel2Api28DebugAndroidTest
-            device: api28
+          - name: Pixel 2 API 26 minSdk smoke
+            task: pixel2Api26DebugAndroidTest
+            device: api26
             job_timeout_minutes: 20
             gradle_timeout_minutes: 16
             gradle_step_timeout_minutes: 17
             full_selector: com.afternote.afternote_fe.ApiBoundarySmokeAndroidTest
-            artifact: min-sdk-api28
+            artifact: min-sdk-api26
             scheduled_only: true
           - name: Pixel 2 API 30 androidTest
             task: pixel2Api30DebugAndroidTest

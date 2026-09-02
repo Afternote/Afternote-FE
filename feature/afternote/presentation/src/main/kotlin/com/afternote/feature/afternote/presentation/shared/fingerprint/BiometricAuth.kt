@@ -69,7 +69,7 @@ suspend fun FragmentActivity.authenticateBiometric(
 
             when (biometricManager.canAuthenticate(authenticators)) {
                 BiometricManager.BIOMETRIC_SUCCESS -> {
-                    // API 28~29 에서는 DEVICE_CREDENTIAL 허용자와 CryptoObject 를 함께 쓸 수 없다.
+                    // API 26~29 에서는 DEVICE_CREDENTIAL 허용자와 CryptoObject 를 함께 쓸 수 없다.
                     // 이때는 관문 없이 인증하고, 성공 확정은 cipher 부재로 통과시킨다.
                     val cryptoObject = if (isBiometricCryptoSupported) createBiometricCryptoObject() else null
 

@@ -44,7 +44,7 @@ class ApiBoundarySmokeAndroidTest {
 
     @Test
     fun coldStart_rendersWelcomeWithinSupportedApiRange() {
-        assertTrue("Unexpected API ${Build.VERSION.SDK_INT}", Build.VERSION.SDK_INT in 28..36)
+        assertTrue("Unexpected API ${Build.VERSION.SDK_INT}", Build.VERSION.SDK_INT in 26..36)
         composeRule
             .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_start))
             .assertIsDisplayed()

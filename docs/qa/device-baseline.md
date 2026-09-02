@@ -182,25 +182,24 @@ FE 가 확인할 항목이 아니라 **출시 전에 정해야 하는 결정**�
 
 ### 최저 API 스모크
 
-`minSdk = 28` 을 지원한다고 선언하고 있으므로, 그 경계에서 한 번은 확인한다. `SDK_INT` 분기가
+`minSdk = 26` 을 지원한다고 선언하고 있으므로, 그 경계에서 한 번은 확인한다. `SDK_INT` 분기가
 없으니 매 PR 검증은 필요 없다.
 
-**이미지는 `google_apis` 쪽을 쓴다.** 2026-09-02 구글 저장소 실측 기준, API 28 의 ABI 는 이렇다.
+**이미지는 `google_apis` 쪽을 쓴다.** 2026-08-25 구글 저장소 실측 기준, API 26 의 ABI 는 이렇다.
 
-| 이미지 | API 28 의 ABI |
+| 이미지 | API 26 의 ABI |
 |---|---|
-| `system-images;android-28;google_apis` | **arm64-v8a**, x86, x86_64 |
-| `system-images;android-28;google_apis_playstore` | **arm64-v8a**, x86, x86_64 |
+| `system-images;android-26;google_apis` | **arm64-v8a**, x86, x86_64 |
+| `system-images;android-26;google_apis_playstore` | x86 만 (arm64 는 API 28부터) |
 
-API 28 부터는 Play Store 이미지에도 arm64 가 있어 Apple Silicon 에서 둘 다 네이티브로 돈다
-(minSdk 26 시절 Play Store 이미지가 x86 뿐이라 Rosetta 로 느려지던 제약은 사라졌다).
-그래도 기본은 `google_apis` 로 둔다 — Google Play Services 가 들어 있어 FCM 검증까지 되고,
-Play Store 앱이 필요한 검증(카카오톡 설치 등)은 어차피 실기기 몫이기 때문이다.
+Apple Silicon 에서 Play Store 이미지를 고르면 x86 뿐이라 Rosetta 에뮬레이션으로 느려진다.
+`google_apis` 는 arm64 네이티브로 돌고 Google Play Services 도 들어 있어 FCM 검증까지 된다
+(Play Store 앱만 없다 — 카카오톡 설치가 필요한 검증은 어차피 실기기 몫이다).
 
 ```bash
-sdkmanager --install "system-images;android-28;google_apis;arm64-v8a"
-avdmanager create avd -n Afternote_QA_API28 -k "system-images;android-28;google_apis;arm64-v8a"
+sdkmanager --install "system-images;android-26;google_apis;arm64-v8a"
+avdmanager create avd -n Afternote_QA_API26 -k "system-images;android-26;google_apis;arm64-v8a"
 ```
 
-- [ ] API 28 에뮬레이터에 설치·기동
+- [ ] API 26 에뮬레이터에 설치·기동
 - [ ] 로그인 → 홈 진입까지 종단 1회

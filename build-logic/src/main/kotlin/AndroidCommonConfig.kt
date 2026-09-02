@@ -33,7 +33,7 @@ private fun CommonExtension.configureDefaultConfig(project: Project) {
     when (this) {
         is ApplicationExtension -> {
             defaultConfig {
-                minSdk = 28
+                minSdk = 26
                 testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
             }
             compileOptions {
@@ -44,7 +44,7 @@ private fun CommonExtension.configureDefaultConfig(project: Project) {
 
         is LibraryExtension -> {
             defaultConfig {
-                minSdk = 28
+                minSdk = 26
                 testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
                 // consumer-rules.pro 가 있는 모듈만 등록 — 없는 모듈(domain·res 등)엔 빈 파일을 강요하지 않음
                 if (project.file("consumer-rules.pro").exists()) {
