@@ -16,7 +16,7 @@ import java.util.UUID
 import javax.inject.Inject
 import kotlin.coroutines.EmptyCoroutineContext
 
-class VoiceRecorderRepositoryImpl
+internal class VoiceRecorderRepositoryImpl
     @Inject
     constructor(
         @param:ApplicationContext private val context: Context,
@@ -27,6 +27,14 @@ class VoiceRecorderRepositoryImpl
         private var outputFile: File? = null
         private val retainedFiles = linkedSetOf<File>()
         private var startedAtMillis: Long = 0L
+
+        init {
+            // 이전 프로세스가 등록/삭제 없이 죽으면 filesDir 에 원본이 남는다. 새 인스턴스가
+            // 생성될 때(=새 프로세스) 그 시점까지 아무도 추적하지 않는 파일은 전부 고아다 (#440 리뷰).
+            ioDispatcher.dispatch(EmptyCoroutineContext) {
+                synchronized(recorderLock) { sweepOrphanedFilesLocked() }
+            }
+        }
 
         override suspend fun start(): Result<Unit> =
             withContext(ioDispatcher) {
@@ -128,6 +136,14 @@ class VoiceRecorderRepositoryImpl
 
         private fun discardInternal() {
             releaseRecorder()?.delete()
+        }
+
+        private fun sweepOrphanedFilesLocked() {
+            val directory = File(context.filesDir, AUDIO_DIRECTORY)
+            val currentFile = outputFile
+            directory.listFiles()?.forEach { file ->
+                if (file != currentFile) file.delete()
+            }
         }
 
         private fun releaseRecorder(): File? {

@@ -41,9 +41,13 @@ enum class TimeLetterWriteError {
 sealed interface VoiceRecordingState {
     data object Idle : VoiceRecordingState
 
+    data object Starting : VoiceRecordingState
+
     data class Recording(
         val elapsedMillis: Long,
     ) : VoiceRecordingState
+
+    data object Stopping : VoiceRecordingState
 
     data class Recorded(
         val audio: RecordedAudio,

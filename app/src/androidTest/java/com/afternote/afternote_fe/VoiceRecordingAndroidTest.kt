@@ -7,8 +7,9 @@ import android.os.SystemClock
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.afternote.feature.timeletter.data.repositoryImpl.VoiceRecorderRepositoryImpl
+import com.afternote.feature.timeletter.data.testing.createVoiceRecorderRepositoryForTesting
 import com.afternote.feature.timeletter.domain.model.RecordedAudio
+import com.afternote.feature.timeletter.domain.repository.VoiceRecorderRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -17,16 +18,19 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.File
 
 /**
  * `VoiceRecorderRepositoryImpl` 이 실제 `MediaRecorder → filesDir → FileProvider` 경계를
  * 실행하는지 검증한다. 기존 `FakeVoiceRecorderRepository` 는 `start`/`stop` 호출을 항상
  * 실패시키도록 되어 있어, fake 로만 짠 테스트는 이 경계를 한 번도 타지 않는다 (#437 리뷰).
+ * 구현은 이 모듈 밖에서 internal 이라 `createVoiceRecorderRepositoryForTesting` 로 공개
+ * 계약(`VoiceRecorderRepository`)만 얻는다 (#440 리뷰).
  */
 @RunWith(AndroidJUnit4::class)
 class VoiceRecordingAndroidTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
-    private val repository = VoiceRecorderRepositoryImpl(context, Dispatchers.IO)
+    private val repository: VoiceRecorderRepository = createVoiceRecorderRepositoryForTesting(context, Dispatchers.IO)
 
     @Before
     fun grantMicrophonePermission() {
@@ -96,6 +100,40 @@ class VoiceRecordingAndroidTest {
                     runCatching { context.contentResolver.openInputStream(uri)?.close() }.isFailure
                 }
             assertTrue("release() 이후에도 retain 된 파일이 정리되지 않았다", deleted)
+        }
+
+    @Test
+    fun start_withoutMicrophonePermission_failsSafelyAndDoesNotBlockANewAttempt() =
+        runBlocking {
+            val uiAutomation = InstrumentationRegistry.getInstrumentation().uiAutomation
+            uiAutomation.revokeRuntimePermission(context.packageName, Manifest.permission.RECORD_AUDIO)
+
+            val denied = repository.start()
+            assertTrue("RECORD_AUDIO 권한 없이 start() 를 호출하면 실패해야 한다", denied.isFailure)
+
+            // 실패한 시도가 recorder/파일을 붙들고 있지 않아야, 권한을 되찾은 뒤 정상 녹음이 가능하다.
+            uiAutomation.grantRuntimePermission(context.packageName, Manifest.permission.RECORD_AUDIO)
+            val audio = recordFor(RECORDING_DURATION_MILLIS)
+            val uri = Uri.parse(audio.uriString)
+            val stillReadable = runCatching { context.contentResolver.openInputStream(uri)?.close() }.isSuccess
+            assertTrue("권한 거부 실패 이후에도 새 녹음이 정상 저장돼야 한다", stillReadable)
+
+            repository.deleteRecordedFile(audio.uriString)
+        }
+
+    @Test
+    fun newInstance_sweepsFilesLeftByAPreviousProcess() =
+        runBlocking {
+            val audioDirectory = File(context.filesDir, "timeletter_audio").apply { mkdirs() }
+            val orphan = File(audioDirectory, "orphan-from-previous-process.m4a")
+            orphan.writeBytes(byteArrayOf(1, 2, 3))
+            assertTrue(orphan.exists())
+
+            // 이전 프로세스가 등록/삭제 없이 죽어 filesDir 에 파일이 남은 상황을 흉내 낸다.
+            createVoiceRecorderRepositoryForTesting(context, Dispatchers.IO)
+
+            val swept = awaitCondition(timeoutMillis = RELEASE_TIMEOUT_MILLIS) { !orphan.exists() }
+            assertTrue("새 인스턴스가 생성되면 이전 프로세스가 남긴 고아 파일을 정리해야 한다", swept)
         }
 
     private suspend fun recordFor(durationMillis: Long): RecordedAudio {

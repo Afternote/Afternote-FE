@@ -211,7 +211,10 @@ fun TimeLetterWriteScreen(
     }
 
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
-        if (uiState.voiceRecordingState is VoiceRecordingState.Recording) {
+        if (
+            uiState.voiceRecordingState is VoiceRecordingState.Starting ||
+            uiState.voiceRecordingState is VoiceRecordingState.Recording
+        ) {
             onDiscardVoiceRecording()
         }
     }
@@ -362,7 +365,7 @@ fun TimeLetterWriteScreen(
                 },
                 onFileClick = {
                     showMediaSheet = false
-                    fileLauncher.launch("*/*")
+                    fileLauncher.launch("application/pdf")
                 },
                 onLinkClick = {
                     showMediaSheet = false
@@ -734,6 +737,10 @@ private fun VoiceRecorderBottomSheet(
                 ) {
                     Text(stringResource(R.string.timeletter_voice_recording_pick_file))
                 }
+            }
+
+            VoiceRecordingState.Starting, VoiceRecordingState.Stopping -> {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
             }
 
             is VoiceRecordingState.Recording -> {

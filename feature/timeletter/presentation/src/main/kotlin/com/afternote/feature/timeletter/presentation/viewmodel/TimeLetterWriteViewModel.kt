@@ -60,6 +60,13 @@ class TimeLetterWriteViewModel
         private var recordingTimerJob: Job? = null
         private var isCheckingRegisterLimit: Boolean = false
 
+        /**
+         * 화면이 닫힌 뒤 도착하는 start()/stop() 완료를 걸러낸다. discard/retry/openVoiceRecorder
+         * 로 현재 녹음 시도를 포기할 때마다 증가시켜, 그 이전에 시작된 start()/stop() 이 나중에
+         * 성공하더라도 UI 를 되살리지 않고 즉시 파일을 정리하게 한다 (#440 리뷰).
+         */
+        private var recorderGeneration = 0
+
         init {
             viewModelScope.launch {
                 receiverNameMap =
@@ -226,6 +233,7 @@ class TimeLetterWriteViewModel
         }
 
         fun openVoiceRecorder() {
+            recorderGeneration++
             _uiState.update {
                 it.copy(
                     showVoiceRecorder = true,
@@ -235,38 +243,61 @@ class TimeLetterWriteViewModel
         }
 
         fun startVoiceRecording() {
+            if (_uiState.value.voiceRecordingState !is VoiceRecordingState.Idle) return
+            val generation = recorderGeneration
+            _uiState.update { it.copy(voiceRecordingState = VoiceRecordingState.Starting) }
             viewModelScope.launch {
                 voiceRecorderRepository
                     .start()
                     .onSuccess {
-                        _uiState.update { state ->
-                            state.copy(voiceRecordingState = VoiceRecordingState.Recording(0L))
+                        if (generation == recorderGeneration) {
+                            _uiState.update { state ->
+                                state.copy(voiceRecordingState = VoiceRecordingState.Recording(0L))
+                            }
+                            startRecordingTimer()
+                        } else {
+                            // 화면이 이미 닫혀 이 시도를 포기한 뒤 뒤늦게 성공한 경우다.
+                            // UI 는 되살리지 않고 방금 시작된 녹음을 바로 회수한다.
+                            voiceRecorderRepository.discard()
                         }
-                        startRecordingTimer()
                     }.onFailure {
-                        _uiState.update { state ->
-                            state.copy(error = TimeLetterWriteError.VOICE_RECORDING_START_FAILED)
+                        if (generation == recorderGeneration) {
+                            _uiState.update { state ->
+                                state.copy(
+                                    voiceRecordingState = VoiceRecordingState.Idle,
+                                    error = TimeLetterWriteError.VOICE_RECORDING_START_FAILED,
+                                )
+                            }
                         }
                     }
             }
         }
 
         fun stopVoiceRecording() {
+            if (_uiState.value.voiceRecordingState !is VoiceRecordingState.Recording) return
+            val generation = recorderGeneration
             recordingTimerJob?.cancel()
             recordingTimerJob = null
+            _uiState.update { it.copy(voiceRecordingState = VoiceRecordingState.Stopping) }
             viewModelScope.launch {
                 voiceRecorderRepository
                     .stop()
                     .onSuccess { audio ->
-                        _uiState.update { state ->
-                            state.copy(voiceRecordingState = VoiceRecordingState.Recorded(audio))
+                        if (generation == recorderGeneration) {
+                            _uiState.update { state ->
+                                state.copy(voiceRecordingState = VoiceRecordingState.Recorded(audio))
+                            }
+                        } else {
+                            voiceRecorderRepository.deleteRecordedFile(audio.uriString)
                         }
                     }.onFailure {
-                        _uiState.update { state ->
-                            state.copy(
-                                voiceRecordingState = VoiceRecordingState.Idle,
-                                error = TimeLetterWriteError.VOICE_RECORDING_STOP_FAILED,
-                            )
+                        if (generation == recorderGeneration) {
+                            _uiState.update { state ->
+                                state.copy(
+                                    voiceRecordingState = VoiceRecordingState.Idle,
+                                    error = TimeLetterWriteError.VOICE_RECORDING_STOP_FAILED,
+                                )
+                            }
                         }
                     }
             }
@@ -293,6 +324,7 @@ class TimeLetterWriteViewModel
         }
 
         fun discardVoiceRecording() {
+            recorderGeneration++
             recordingTimerJob?.cancel()
             recordingTimerJob = null
             viewModelScope.launch {
@@ -307,6 +339,7 @@ class TimeLetterWriteViewModel
         }
 
         fun retryVoiceRecording() {
+            recorderGeneration++
             recordingTimerJob?.cancel()
             recordingTimerJob = null
             viewModelScope.launch {
