@@ -48,13 +48,13 @@ class FcmNotificationContentResolverTest {
 
     @Test
     fun `message id가 있으면 occurrence token으로 보존한다`() {
-        assertEquals("message-1", FcmNotificationIdentity.occurrenceToken("message-1"))
+        assertEquals("message-1", FcmNotificationIdentity.occurrenceId("message-1"))
     }
 
     @Test
     fun `message id가 없거나 blank이면 매 발생마다 고유 token을 만든다`() {
-        val missing = FcmNotificationIdentity.occurrenceToken(null)
-        val blank = FcmNotificationIdentity.occurrenceToken(" ")
+        val missing = FcmNotificationIdentity.occurrenceId(null)
+        val blank = FcmNotificationIdentity.occurrenceId(" ")
 
         assertTrue(missing.isNotBlank())
         assertTrue(blank.isNotBlank())
