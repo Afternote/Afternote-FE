@@ -75,6 +75,7 @@ class AfternoteAuthorExtendedAndroidTest {
                     navigateToDetail = detailRoutes::add,
                     navigateToAdd = addRoutes::add,
                     onSettingClick = {},
+                    onDraftListClick = {},
                     viewModel = viewModel,
                 )
             }
