@@ -41,6 +41,8 @@ dependencies {
 
     testImplementation(libs.coroutines.test)
     testImplementation(testFixtures(projects.core.domain))
+    // 클릭 타깃 접근성 스캐너 (#1167). 기록 카드의 중첩 클릭 계약을 여기서 지킨다 (#1669).
+    testImplementation(testFixtures(projects.core.ui))
     testImplementation(testFixtures(projects.feature.mindrecord.domain))
 
     // 캘린더 날짜 셀 상호작용을 JVM 에서 실제로 눌러 확인한다 (#724).

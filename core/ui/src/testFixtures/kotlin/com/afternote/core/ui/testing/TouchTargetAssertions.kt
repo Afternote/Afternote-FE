@@ -87,6 +87,10 @@ fun SemanticsNodeInteractionsProvider.scanEnabledClickTargets(): List<EnabledCli
                 role == Role.Button &&
                 name.isNotBlank() &&
                 clickAncestors.all { it.isEditableFocusTarget() }
+        val isNamedTrailingActionInClickableListRow =
+            name.isNotBlank() &&
+                role != null &&
+                clickAncestors.singleOrNull()?.let { node.isTrailingAccessoryOf(it) } == true
 
         EnabledClickTarget(
             index = index,
@@ -99,7 +103,10 @@ fun SemanticsNodeInteractionsProvider.scanEnabledClickTargets(): List<EnabledCli
             toggleableState = node.config.getOrNull(SemanticsProperties.ToggleableState),
             selected = node.config.getOrNull(SemanticsProperties.Selected),
             isEditableText = node.isEditableFocusTarget(),
-            hasClickAncestor = clickAncestors.isNotEmpty() && !isNamedTextFieldTrailingButton,
+            hasClickAncestor =
+                clickAncestors.isNotEmpty() &&
+                    !isNamedTextFieldTrailingButton &&
+                    !isNamedTrailingActionInClickableListRow,
         )
     }
 }
@@ -154,6 +161,36 @@ private fun SemanticsNode.hasEnabledClickAction(): Boolean =
 private fun SemanticsNode.isEditableFocusTarget(): Boolean =
     config.getOrNull(SemanticsProperties.EditableText) != null &&
         config.getOrNull(SemanticsActions.RequestFocus)?.action != null
+
+/**
+ * 이 노드가 [container] 의 **끝단 보조 액션**인가 (#1669).
+ *
+ * 「눌러서 이동하는 목록 행 + 그 끝의 오버플로 메뉴」는 Android 목록의 정본 형태이고
+ * (Material3 `ListItem` 의 `trailingContent`), TalkBack 은 unmerged tree 에서 행과 버튼을
+ * 각각 별개 노드로 짚어 준다. 그래서 중첩 그 자체는 결함이 아니다.
+ *
+ * 결함이 되는 것은 **어느 쪽을 누르는지 모호할 때**다. 그 모호함을 세 축으로 가른다 —
+ * 행 모양(가로가 세로보다 길다), 보조 크기(행 너비의 1/4 이하), 끝단 위치(중심이 뒷절반).
+ * 이름과 Role 은 호출부에서 따로 본다. 셋 다 만족해야 «행의 끝에 달린 작은 액션» 이고,
+ * 반반으로 갈린 두 클릭 영역이나 정사각 상자 안의 정사각 버튼은 여기 들어오지 못한다.
+ */
+private fun SemanticsNode.isTrailingAccessoryOf(container: SemanticsNode): Boolean {
+    val own = boundsInRoot
+    val outer = container.boundsInRoot
+    if (outer.width <= 0f || outer.height <= 0f) return false
+
+    val containerIsRow = outer.width > outer.height
+    val isAccessorySized = own.width <= outer.width / MAX_TRAILING_ACCESSORY_WIDTH_RATIO
+    val sitsInTrailingHalf = own.center.x >= outer.center.x
+
+    return containerIsRow && isAccessorySized && sitsInTrailingHalf
+}
+
+/**
+ * 끝단 보조가 차지해도 되는 행 너비의 역수. 1/4 을 넘으면 «행에 달린 작은 액션» 이 아니라
+ * 행을 나눠 갖는 두 번째 영역이라, 어느 쪽을 눌렀는지 모호해진다.
+ */
+private const val MAX_TRAILING_ACCESSORY_WIDTH_RATIO = 4
 
 private fun SemanticsNode.accessibleName(): String {
     val ownDescriptions = config.getOrNull(SemanticsProperties.ContentDescription).orEmpty()

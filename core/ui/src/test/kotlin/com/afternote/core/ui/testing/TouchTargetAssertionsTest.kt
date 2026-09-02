@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -74,7 +75,7 @@ class TouchTargetAssertionsTest {
     }
 
     @Test
-    fun `named button nested in editable click is the only automatic nested exception`() {
+    fun `named button nested in editable click is an automatic nested exception`() {
         composeRule.setContent {
             Column(Modifier.padding(64.dp)) {
                 Box(
@@ -114,6 +115,99 @@ class TouchTargetAssertionsTest {
 
         assertFalse(targets.single { it.name == "Clear" }.hasClickAncestor)
         assertTrue(targets.single { it.name == "Inner" }.hasClickAncestor)
+    }
+
+    /**
+     * #1669 — 「눌러서 이동하는 목록 행 + 끝단 오버플로 메뉴」는 중첩이어도 결함이 아니다.
+     *
+     * 같은 행 안이라도 끝단에 있지 않으면(«Leading») 예외에 들지 않는다. 위치가 판정에
+     * 실제로 쓰이는지를 함께 못박는다 — 크기만 보면 아무 데나 붙은 작은 버튼이 통과한다.
+     */
+    @Test
+    fun `named trailing accessory in a clickable row is a nested exception`() {
+        composeRule.setContent {
+            Column(Modifier.padding(16.dp)) {
+                Box(
+                    Modifier
+                        .size(width = 320.dp, height = 72.dp)
+                        .clickable(role = Role.Button, onClick = {})
+                        .semantics { contentDescription = "Row" },
+                ) {
+                    Box(
+                        Modifier
+                            .align(Alignment.CenterEnd)
+                            .size(20.dp)
+                            .clickable(role = Role.Button, onClick = {})
+                            .semantics { contentDescription = "Overflow" },
+                    )
+                    Box(
+                        Modifier
+                            .align(Alignment.CenterStart)
+                            .size(20.dp)
+                            .clickable(role = Role.Button, onClick = {})
+                            .semantics { contentDescription = "Leading" },
+                    )
+                }
+            }
+        }
+
+        val targets = composeRule.scanEnabledClickTargets()
+
+        assertFalse(targets.single { it.name == "Overflow" }.hasClickAncestor)
+        assertTrue(targets.single { it.name == "Leading" }.hasClickAncestor)
+    }
+
+    /**
+     * 예외가 «작은 끝단 액션» 을 정확히 가리키는지 — 행을 반으로 나눠 갖는 두 번째 영역은
+     * 어느 쪽을 눌렀는지 모호하므로 그대로 위반이어야 한다.
+     */
+    @Test
+    fun `a trailing half of a row is not an accessory`() {
+        composeRule.setContent {
+            Column(Modifier.padding(16.dp)) {
+                Box(
+                    Modifier
+                        .size(width = 320.dp, height = 72.dp)
+                        .clickable(role = Role.Button, onClick = {})
+                        .semantics { contentDescription = "Row" },
+                ) {
+                    Box(
+                        Modifier
+                            .align(Alignment.CenterEnd)
+                            .size(width = 160.dp, height = 72.dp)
+                            .clickable(role = Role.Button, onClick = {})
+                            .semantics { contentDescription = "Half" },
+                    )
+                }
+            }
+        }
+
+        assertTrue(composeRule.scanEnabledClickTargets().single { it.name == "Half" }.hasClickAncestor)
+    }
+
+    /** 이름이나 Role 이 없으면 위치·크기가 맞아도 예외가 아니다 — 그 둘이 별개로 읽히는 근거다. */
+    @Test
+    fun `an unnamed trailing accessory stays a nested violation`() {
+        composeRule.setContent {
+            Column(Modifier.padding(16.dp)) {
+                Box(
+                    Modifier
+                        .size(width = 320.dp, height = 72.dp)
+                        .clickable(role = Role.Button, onClick = {})
+                        .semantics { contentDescription = "Row" },
+                ) {
+                    Box(
+                        Modifier
+                            .testTag("nameless")
+                            .align(Alignment.CenterEnd)
+                            .size(20.dp)
+                            .clickable(role = Role.Button, onClick = {}),
+                    )
+                }
+            }
+        }
+
+        assertTrue(composeRule.scanEnabledClickTargets().single { it.testTag == "nameless" }.hasClickAncestor)
     }
 
     @Test
