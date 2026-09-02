@@ -25,16 +25,17 @@ data class EditorFormState(
     val processingMethods: List<ProcessingMethodItem>
         get() = (typeForm as? AfternoteTypeForm.WithServiceAndProcessingMethods)?.processingMethods.orEmpty()
 
-    val memorialForm: AfternoteTypeForm.Memorial? get() = typeForm as? AfternoteTypeForm.Memorial
+    internal val memorialForm: AfternoteTypeForm.Memorial? get() = typeForm as? AfternoteTypeForm.Memorial
 
     val pickedMemorialPhotoUri: String? get() = memorialForm?.pickedPhotoUri
 
-    /** 이 폼에서 새로 고른 영상. 서버 원본보다 먼저 표시되고, 삭제하면 서버 원본으로 돌아간다. */
-    val pickedMemorialVideo: MemorialVideoAttachment? get() = memorialForm?.pickedVideo
+    /** 서버 기준값과 이번 폼의 미저장 교체분을 함께 가진 영상 편집 상태. */
+    internal val memorialVideo: EditableMemorialVideo? get() = memorialForm?.video
 
-    /** 화면이 그리고 저장이 싣는 영상 — 고른 것이 있으면 그것, 없으면 서버에 저장된 것. */
-    val memorialVideoUrl: String? get() = memorialForm?.displayVideo()?.url
-    val memorialThumbnailUrl: String? get() = memorialForm?.displayVideo()?.thumbnailUrl
+    internal val displayedMemorialVideo: MemorialVideoAttachment? get() = memorialVideo?.displayed
+
+    /** 시트에 영상 삭제 항목을 내놓을지 — 표시된 층이 있으면 출처와 무관하게 지울 수 있다(#1597). */
+    internal val canRemoveMemorialVideo: Boolean get() = memorialVideo?.canRemove == true
     val memorialPhotoUrl: String? get() = memorialForm?.photoUrl
     val memorialPlaylistSongs: List<Song> get() = memorialForm?.playlistSongs.orEmpty()
 

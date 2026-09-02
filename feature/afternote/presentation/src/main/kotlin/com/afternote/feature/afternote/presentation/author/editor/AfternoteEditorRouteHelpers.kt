@@ -5,6 +5,7 @@ import androidx.navigation.NavBackStackEntry
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
+import com.afternote.feature.afternote.presentation.author.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.author.navigation.model.SELECTED_RECEIVER_ID_KEY
 
 // 에디터 조립부가 쓰는 순수 헬퍼들이다. Route 파일에는 조립만 남긴다 (#1514).
@@ -74,8 +75,7 @@ internal fun buildOnRegisterClick(
             selectedReceiverIds = form.afternoteEditReceivers.map { it.id },
             memorialMedia =
                 SaveAfternoteMemorialMedia(
-                    memorialVideoUrl = form.memorialVideoUrl,
-                    memorialThumbnailUrl = form.memorialThumbnailUrl,
+                    memorialVideo = form.memorialVideo ?: EditableMemorialVideo.empty(),
                     memorialPhotoUrl = form.memorialPhotoUrl,
                     pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
                 ),

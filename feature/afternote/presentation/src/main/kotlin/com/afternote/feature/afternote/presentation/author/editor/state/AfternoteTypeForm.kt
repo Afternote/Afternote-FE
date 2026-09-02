@@ -78,16 +78,15 @@ sealed interface AfternoteTypeForm {
     }
 
     /**
-     * 미디어 두 축을 같은 모양으로 든다 — `picked`(이 폼에서 고른 것) + 서버에 저장된 것.
+     * 카테고리 전용 필드. 영상의 서버 기준값·미저장 교체분은 [EditableMemorialVideo]가 감춘다.
      *
-     * 어느 칸에 들었는지가 곧 출처다. 삭제는 현재 표시된 층을 비워, `picked` 였으면 서버 값으로
-     * 돌아가고 서버 값이었으면 PATCH `null` 로 이어진다. 종전 영상 축은 한 칸이 둘을 겸해 출처를 URL
-     * 스킴으로 추론했고, 로컬로 덮이는 순간 서버 값을 잃어 거짓 삭제가 났다(#1406, #1597).
+     * 삭제는 현재 표시된 층을 걷어, 교체분이었으면 서버 값으로 돌아가고 서버 값이었으면 PATCH `null`
+     * 로 이어진다(#1406, #1597). 사진은 `pickedPhotoUri`·`photoUrl` 두 칸이 같은 규칙을 따른다.
      */
-    data class Memorial(
+    @ConsistentCopyVisibility
+    data class Memorial internal constructor(
         val pickedPhotoUri: String? = null,
-        val pickedVideo: MemorialVideoAttachment? = null,
-        val serverVideo: MemorialVideoAttachment? = null,
+        internal val video: EditableMemorialVideo = EditableMemorialVideo.empty(),
         val photoUrl: String? = null,
         val playlistSongs: List<Song> = emptyList(),
     ) : AfternoteTypeForm {
@@ -95,18 +94,13 @@ sealed interface AfternoteTypeForm {
 
         fun displayPhotoUri(): String? = pickedPhotoUri ?: photoUrl
 
-        /** 이 폼에서 고른 영상이 있으면 그것, 없으면 서버에 저장된 것. */
-        fun displayVideo(): MemorialVideoAttachment? = pickedVideo ?: serverVideo
-
         /**
-         * 미디어 URL은 수정 진입 기준선과 비교해야 서버 원본 삭제도 미저장 변경으로 잡힌다. 썸네일만
-         * 영상에서 자동 파생되는 값이라 [MemorialVideoAttachment.userEnteredPart] 로 양쪽에서 걷어낸다.
+         * 미디어는 수정 진입 기준선과 비교해야 서버 원본 삭제도 미저장 변경으로 잡힌다. 영상은
+         * [EditableMemorialVideo.userEnteredPart]가 자동 파생 썸네일만 걷어낸다.
          */
         override fun enteredContentOrNull(): String? =
-            copy(
-                pickedVideo = pickedVideo?.userEnteredPart(),
-                serverVideo = serverVideo?.userEnteredPart(),
-            ).takeUnless { it == PRISTINE }
+            copy(video = video.userEnteredPart())
+                .takeUnless { it == PRISTINE }
                 ?.toString()
 
         private companion object {
@@ -148,10 +142,12 @@ sealed interface AfternoteTypeForm {
 
                 is EditorContentPrefill.Memorial -> {
                     Memorial(
-                        serverVideo =
-                            MemorialVideoAttachment.ofOrNull(
-                                url = content.videoUrl,
-                                thumbnailUrl = content.thumbnailUrl,
+                        video =
+                            EditableMemorialVideo.fromPersisted(
+                                MemorialVideoAttachment.ofOrNull(
+                                    url = content.videoUrl,
+                                    thumbnailUrl = content.thumbnailUrl,
+                                ),
                             ),
                         photoUrl = content.photoUrl,
                         playlistSongs = content.playlistSongs,

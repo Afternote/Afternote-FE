@@ -58,8 +58,7 @@ class AfternoteEditorMemorialMediaRemoveTest {
 
         viewModel.setMemorialVideo(null)
 
-        assertNull(viewModel.currentForm().memorialVideoUrl)
-        assertNull(viewModel.currentForm().memorialThumbnailUrl)
+        assertNull(viewModel.currentForm().displayedMemorialVideo)
     }
 
     @Test
@@ -95,13 +94,13 @@ class AfternoteEditorMemorialMediaRemoveTest {
 
         viewModel.setMemorialVideo(null)
 
-        assertEquals("https://cdn.test/farewell.mp4", viewModel.currentForm().memorialVideoUrl)
-        assertEquals("https://cdn.test/server-thumbnail.jpg", viewModel.currentForm().memorialThumbnailUrl)
+        assertEquals("https://cdn.test/farewell.mp4", viewModel.currentForm().displayedMemorialVideo?.url)
+        assertEquals("https://cdn.test/server-thumbnail.jpg", viewModel.currentForm().displayedMemorialVideo?.thumbnailUrl)
 
         viewModel.setMemorialVideo(null)
 
-        assertNull(viewModel.currentForm().memorialVideoUrl)
-        assertNull(viewModel.currentForm().memorialThumbnailUrl)
+        assertNull(viewModel.currentForm().displayedMemorialVideo?.url)
+        assertNull(viewModel.currentForm().displayedMemorialVideo?.thumbnailUrl)
     }
 
     @Test
@@ -121,8 +120,8 @@ class AfternoteEditorMemorialMediaRemoveTest {
         assertNull(viewModel.currentForm().pickedMemorialPhotoUri)
         assertNull(viewModel.currentForm().memorialPhotoUrl)
         assertNull(viewModel.currentForm().displayMemorialPhotoUri())
-        assertNull(viewModel.currentForm().memorialVideoUrl)
-        assertNull(viewModel.currentForm().memorialThumbnailUrl)
+        assertNull(viewModel.currentForm().displayedMemorialVideo?.url)
+        assertNull(viewModel.currentForm().displayedMemorialVideo?.thumbnailUrl)
     }
 
     @Test
@@ -142,8 +141,7 @@ class AfternoteEditorMemorialMediaRemoveTest {
 
         val restored = viewModel(handle).currentForm()
 
-        assertNull(restored.memorialVideoUrl)
-        assertNull(restored.memorialThumbnailUrl)
+        assertNull(restored.displayedMemorialVideo)
         assertNull(restored.pickedMemorialPhotoUri)
         assertNull(restored.memorialPhotoUrl)
         assertNull(restored.displayMemorialPhotoUri())

@@ -45,6 +45,16 @@ jobs:
         with:
           persist-credentials: false
 
+      # 한도가 바닥인 채로 들어가면 이 분류 job 이 코드와 무관하게 빨개지고, fail-closed 라
+      # 무거운 분석 세 개가 전부 따라 돈다. 남은 quota 를 요약에 남기고, 부족하면 리셋까지
+      # 기다린다 (#1465). quota 스텝은 게이트가 아니라 관측·대기라 PR 사본으로 돌려도
+      # 통과시킬 수 있는 판정이 없다 — 이 job 은 이미 PR 사본의 분류 스크립트를 실행한다.
+      - name: Ensure GitHub API quota
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # 이 job 의 timeout 이 3분이라 기다릴 수 있는 창이 좁다.
+        run: node .github/scripts/ensure-api-quota.mjs ensure --max-wait 60
+
       - name: Resolve language impact
         id: path-scope
         env:
@@ -102,6 +112,13 @@ jobs:
           env -u GH_TOKEN -u GITHUB_TOKEN \
             node .github/scripts/resolve-pr-impact.mjs "$files_json" \
             | grep '^codeql_' >> "$GITHUB_OUTPUT"
+
+      # 실패가 «분류가 사실을 확인하고 거절함» 인지 «한도 소진» 인지 가른다 (#1465).
+      - name: Classify a failed gate as rate limit exhaustion
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node .github/scripts/ensure-api-quota.mjs classify
 
   analyze-actions:
     name: Analyze (actions)

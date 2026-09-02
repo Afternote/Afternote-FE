@@ -54,19 +54,16 @@ internal fun EditorFormState.withMemorialPhoto(uri: String?): EditorFormState =
  */
 internal fun EditorFormState.withMemorialVideo(url: String?): EditorFormState =
     mapMemorial { form ->
-        when {
-            url != null -> form.copy(pickedVideo = MemorialVideoAttachment.ofOrNull(url))
-            form.pickedVideo != null -> form.copy(pickedVideo = null)
-            else -> form.copy(serverVideo = null)
-        }
+        form.copy(video = url?.let(form.video::withSelection) ?: form.video.removeDisplayed())
     }
 
 /**
  * 고른 영상에서 뽑아 올린 썸네일을 붙인다. 영상이 없으면 아무 일도 하지 않는다 — 썸네일만 남는
  * 상태를 만들 수 없으므로, 삭제한 뒤 늦게 도착한 업로드 결과는 조용히 버려진다.
+ * `null`은 붙일 썸네일이 없다는 뜻이라 폼을 바꾸지 않는다.
  */
 internal fun EditorFormState.withMemorialThumbnail(url: String?): EditorFormState =
-    mapMemorial { form -> form.copy(pickedVideo = form.pickedVideo?.copy(thumbnailUrl = url)) }
+    url?.let { thumbnail -> mapMemorial { form -> form.copy(video = form.video.withSelectionThumbnail(thumbnail)) } } ?: this
 
 internal fun EditorFormState.withMemorialPlaylistSongs(songs: List<Song>): EditorFormState = mapMemorial { it.copy(playlistSongs = songs) }
 

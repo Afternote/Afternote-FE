@@ -1,17 +1,17 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
-/** 저장 시 추억 노트 미디어 필드 (로컬 URI / 기존 URL 혼재). */
-data class SaveAfternoteMemorialMedia(
-    val memorialVideoUrl: String? = null,
-    val memorialThumbnailUrl: String? = null,
+import com.afternote.feature.afternote.presentation.author.editor.state.EditableMemorialVideo
+
+/** 저장 시 추억 노트 미디어 필드. 영상의 출처와 기준값은 [memorialVideo]가 보존한다. */
+internal data class SaveAfternoteMemorialMedia(
+    val memorialVideo: EditableMemorialVideo = EditableMemorialVideo.empty(),
     val memorialPhotoUrl: String? = null,
     val pickedMemorialPhotoUri: String? = null,
 )
 
 /**
- * 이 폼 세션에서 새로 붙인 로컬 첨부(`content://` URI)인지 — 원격 prefill URL 과 가르는 단일 기준.
- *
- * 저장 분류(`AfternoteEditorViewModel.videoMediaInput`)와 썸네일 추출(`MemorialVideoUpload`)이 같은
- * 판정을 써야 하므로 한 곳에 둔다. 삭제 노출은 #1597부터 출처가 아니라 슬롯의 표시값 존재 여부를 본다.
+ * Android가 직접 열 수 있는 로컬 첨부 URI인지. 영상의 저장 출처 판정은 [EditableMemorialVideo]가
+ * 담당하고, 이 함수는 [com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialVideoUpload]의
+ * 프레임 추출 가능 여부와 같은 key를 썼던 구 v3 스냅샷의 일회성 출처 이관에만 사용한다.
  */
 internal fun String.isLocalContentUri(): Boolean = startsWith("content://")

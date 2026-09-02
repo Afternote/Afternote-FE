@@ -5,6 +5,7 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
+import com.afternote.feature.afternote.presentation.author.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.author.editor.state.MemorialVideoAttachment
 import org.junit.Assert.assertEquals
@@ -162,7 +163,12 @@ class EditorContentSignatureCompletenessTest {
         val pristine = editorContentSignature(EditorFormState(typeForm = AfternoteTypeForm.Memorial()), state)
         val withVideo =
             editorContentSignature(
-                EditorFormState(typeForm = AfternoteTypeForm.Memorial(pickedVideo = picked)),
+                EditorFormState(
+                    typeForm =
+                        AfternoteTypeForm.Memorial(
+                            video = EditableMemorialVideo.empty().withSelection(picked.url),
+                        ),
+                ),
                 state,
             )
 
@@ -174,7 +180,11 @@ class EditorContentSignatureCompletenessTest {
                 EditorFormState(
                     typeForm =
                         AfternoteTypeForm.Memorial(
-                            pickedVideo = picked.copy(thumbnailUrl = "https://cdn.test/thumb.jpg"),
+                            video =
+                                EditableMemorialVideo
+                                    .empty()
+                                    .withSelection(picked.url)
+                                    .withSelectionThumbnail("https://cdn.test/thumb.jpg"),
                         ),
                 ),
                 state,
@@ -182,6 +192,12 @@ class EditorContentSignatureCompletenessTest {
         )
     }
 
+    /**
+     * #1561 은 「prefill 이 채운 서버 원본은 지문에서 제외된다」 는 카나리로 «사용자 입력만 센다» 를 잠갔다.
+     * #1597 이 서버 원본 삭제를 열면서 그 존재 자체가 사용자가 바꿀 수 있는 사실이 됐으므로 지문은 수정
+     * 진입 기준선과 비교해 서버 원본을 포함한다. 저장 성공 후 서버 값만 새로고침하는 경로가 생기면 그때
+     * 기준선을 다시 잡아야 한다 — 제외로 되돌리면 서버 삭제가 이탈 경고 없이 사라진다.
+     */
     @Test
     fun `서버 영상 삭제는 지문에 반영되고 서버 썸네일만 달라지면 제외된다`() {
         val state = newState()
@@ -192,7 +208,7 @@ class EditorContentSignatureCompletenessTest {
             )
         val withServerVideo =
             editorContentSignature(
-                EditorFormState(typeForm = AfternoteTypeForm.Memorial(serverVideo = serverVideo)),
+                EditorFormState(typeForm = AfternoteTypeForm.Memorial(video = EditableMemorialVideo.fromPersisted(serverVideo))),
                 state,
             )
 
@@ -208,7 +224,10 @@ class EditorContentSignatureCompletenessTest {
                 EditorFormState(
                     typeForm =
                         AfternoteTypeForm.Memorial(
-                            serverVideo = serverVideo.copy(thumbnailUrl = "https://cdn.test/another-thumb.jpg"),
+                            video =
+                                EditableMemorialVideo.fromPersisted(
+                                    serverVideo.copy(thumbnailUrl = "https://cdn.test/another-thumb.jpg"),
+                                ),
                         ),
                 ),
                 state,

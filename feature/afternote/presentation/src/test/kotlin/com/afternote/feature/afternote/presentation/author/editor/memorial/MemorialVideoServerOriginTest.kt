@@ -1,12 +1,16 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial
 
+import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorContentPrefill
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
+import com.afternote.feature.afternote.presentation.author.editor.state.MemorialVideoAttachment
 import com.afternote.feature.afternote.presentation.author.editor.state.withMemorialThumbnail
 import com.afternote.feature.afternote.presentation.author.editor.state.withMemorialVideo
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -17,14 +21,16 @@ import org.junit.Test
  * 통과시켰다 — 그걸 지우면 폼은 비지만 저장 뒤 서버 영상이 그대로 남는다(수정 계약이 삭제를
  * 표현하지 못한다).
  *
- * 지금은 두 칸이 갈려 있어(`pickedVideo`·`serverVideo`) 삭제가 고른 것만 걷어내고 표시는 서버
- * 원본으로 저절로 돌아간다. 지울 수 없는 것을 지운 척하지 않는 쪽이, 사후 전달이라 되돌릴 기회가
- * 제한적인 이 도메인에서 안전하다.
+ * 지금은 하나의 편집 값 객체가 서버 원본(`persisted`)과 이번 세션의 교체분(`selection`)을 함께
+ * 기억한다. 삭제가 교체분만 걷어내면 표시는 서버 원본으로 저절로 돌아간다. 서버 원본까지 지우는
+ * 두 번째 삭제는 #1597 이 열었다 — BE 가 명시적 `null` 을 삭제로 읽으므로 폼이 지운 척만 하는
+ * 상태가 없다.
  */
 class MemorialVideoServerOriginTest {
     private val serverVideo = "https://cdn.test/farewell.mp4"
     private val serverThumbnail = "https://cdn.test/farewell-thumb.jpg"
     private val localVideo = "content://videos/replacement"
+    private val serverAttachment = MemorialVideoAttachment(url = serverVideo, thumbnailUrl = serverThumbnail)
 
     private fun prefilledEditForm(): EditorFormState =
         EditorFormState(
@@ -39,26 +45,21 @@ class MemorialVideoServerOriginTest {
                 ),
         )
 
-    private fun EditorFormState.memorial(): AfternoteTypeForm.Memorial = typeForm as AfternoteTypeForm.Memorial
-
     @Test
     fun `수정 진입 prefill 은 서버 원본을 따로 기억한다`() {
-        val form = prefilledEditForm().memorial()
+        val state = prefilledEditForm()
 
-        assertEquals(serverVideo, form.displayVideo()?.url)
-        assertEquals(serverVideo, form.serverVideo?.url)
-        assertEquals(serverThumbnail, form.serverVideo?.thumbnailUrl)
-        assertNull("수정 진입만으로는 고른 영상이 없다", form.pickedVideo)
+        assertEquals(serverAttachment, state.displayedMemorialVideo)
+        assertEquals(MediaInput.Remote(serverVideo), state.memorialVideo?.toMediaInput())
     }
 
     @Test
     fun `로컬 영상으로 교체해도 서버 원본은 남는다`() {
-        val replaced = prefilledEditForm().withMemorialVideo(localVideo).memorial()
+        val state = prefilledEditForm().withMemorialVideo(localVideo)
 
-        assertEquals(localVideo, replaced.displayVideo()?.url)
         // 교체한 영상의 썸네일은 아직 없다 — 원본 썸네일을 물려주면 다른 영상의 그림이 붙는다.
-        assertNull(replaced.displayVideo()?.thumbnailUrl)
-        assertEquals(serverVideo, replaced.serverVideo?.url)
+        assertEquals(MemorialVideoAttachment(url = localVideo), state.displayedMemorialVideo)
+        assertEquals(MediaInput.Local(localVideo), state.memorialVideo?.toMediaInput())
     }
 
     @Test
@@ -67,12 +68,10 @@ class MemorialVideoServerOriginTest {
             prefilledEditForm()
                 .withMemorialVideo(localVideo)
                 .withMemorialVideo(null)
-                .memorial()
 
         // 종전에는 여기서 영상 칸이 null 이 되어 폼이 빈 슬롯을 보여줬다. 저장하면 서버 영상이 그대로
         // 남아 재진입 시 되살아났다 — 폼이 서버 상태를 두고 거짓말을 한 자리다.
-        assertEquals(serverVideo, removed.displayVideo()?.url)
-        assertEquals(serverThumbnail, removed.displayVideo()?.thumbnailUrl)
+        assertEquals(serverAttachment, removed.displayedMemorialVideo)
     }
 
     @Test
@@ -96,9 +95,8 @@ class MemorialVideoServerOriginTest {
             EditorFormState(typeForm = AfternoteTypeForm.Memorial())
                 .withMemorialVideo(localVideo)
                 .withMemorialVideo(null)
-                .memorial()
 
-        assertNull(removed.displayVideo())
+        assertNull(removed.displayedMemorialVideo)
     }
 
     @Test
@@ -110,9 +108,8 @@ class MemorialVideoServerOriginTest {
                 .withMemorialVideo(localVideo)
                 .withMemorialVideo(null)
                 .withMemorialThumbnail("https://cdn.test/late-thumb.jpg")
-                .memorial()
 
-        assertNull(afterLateThumbnail.pickedVideo)
-        assertNull(afterLateThumbnail.displayVideo())
+        assertFalse(afterLateThumbnail.canRemoveMemorialVideo)
+        assertNull(afterLateThumbnail.displayedMemorialVideo)
     }
 }
