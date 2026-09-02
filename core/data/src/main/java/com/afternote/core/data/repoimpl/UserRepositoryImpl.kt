@@ -4,6 +4,7 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.data.mapper.delivery.toRequestDto
 import com.afternote.core.data.mapper.user.toDomain
+import com.afternote.core.domain.error.ReceiverRequestRejectedException
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.model.delivery.DeliveryConditionItem
@@ -114,17 +115,19 @@ class UserRepositoryImpl
             message: String?,
         ): ReceiverCreated {
             val result =
-                userApiService
-                    .createReceiver(
-                        UserCreateReceiverRequestDto(
-                            name = name,
-                            relation = relation,
-                            phone = phone,
-                            email = email,
-                            message = message,
-                        ),
-                    ).requireData()
-                    .toDomain()
+                mapReceiverRequestFailure {
+                    userApiService
+                        .createReceiver(
+                            UserCreateReceiverRequestDto(
+                                name = name,
+                                relation = relation,
+                                phone = phone,
+                                email = email,
+                                message = message,
+                            ),
+                        ).requireData()
+                        .toDomain()
+                }
             receiverRefreshRevision.update { it + 1 }
             return result
         }
@@ -142,28 +145,32 @@ class UserRepositoryImpl
             relation: String,
             email: String,
         ): Receiver =
-            userApiService
-                .updateReceiver(
-                    receiverId = receiverId,
-                    request =
-                        UserPatchReceiverRequestDto(
-                            name = name,
-                            phone = phone,
-                            relation = relation,
-                            email = email,
-                        ),
-                ).requireData()
-                .toDomain()
+            mapReceiverRequestFailure {
+                userApiService
+                    .updateReceiver(
+                        receiverId = receiverId,
+                        request =
+                            UserPatchReceiverRequestDto(
+                                name = name,
+                                phone = phone,
+                                relation = relation,
+                                email = email,
+                            ),
+                    ).requireData()
+                    .toDomain()
+            }
 
         override suspend fun updateReceiverMessage(
             receiverId: Long,
             message: String,
         ) {
-            userApiService
-                .updateReceiverMessage(
-                    receiverId = receiverId,
-                    request = UserUpdateReceiverMessageRequestDto(message = message),
-                ).requireStatus()
+            mapReceiverRequestFailure {
+                userApiService
+                    .updateReceiverMessage(
+                        receiverId = receiverId,
+                        request = UserUpdateReceiverMessageRequestDto(message = message),
+                    ).requireStatus()
+            }
         }
 
         override suspend fun getMyProfile(): User =
@@ -275,6 +282,17 @@ class UserRepositoryImpl
         private companion object {
             const val UNAUTHORIZED_STATUS = 401
         }
+    }
+
+private suspend inline fun <T> mapReceiverRequestFailure(request: suspend () -> T): T =
+    try {
+        request()
+    } catch (error: ApiException) {
+        val serverMessage = error.serverMessage
+        if (error.status in setOf(400, 409) && !serverMessage.isNullOrBlank()) {
+            throw ReceiverRequestRejectedException(serverMessage, error)
+        }
+        throw error
     }
 
 private const val KEY_ACCOUNT_STAGE = "account_stage"

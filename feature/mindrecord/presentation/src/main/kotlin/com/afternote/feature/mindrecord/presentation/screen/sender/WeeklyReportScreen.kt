@@ -23,6 +23,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.asString
@@ -44,6 +46,15 @@ fun WeeklyReportScreen(
     viewModel: WeeklyReportViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // 갱신을 이 화면이 직접 건다. HomeScreen 이 VM 을 호이스팅해 대신 걸어 주면, 탭에
+    // 들어가지 않아도 VM 이 만들어져 `init` 조회가 미리 나간다 (#736).
+    //
+    // 첫 ON_RESUME 을 건너뛰는 판단은 ViewModel 이 한다 — 화면 저장 상태에 두면 프로세스
+    // 사망 뒤 «지나갔음» 만 복원돼 새 ViewModel 의 init 과 겹친다 (#736 리뷰).
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshOnReturn()
+    }
 
     when (val state = uiState) {
         WeeklyReportUiState.Loading -> {

@@ -14,10 +14,10 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.PROFILE_ICON_TEST_TAG
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeScreen
-import com.afternote.feature.afternote.presentation.shared.body.EmptyListBody
-import com.afternote.feature.afternote.presentation.shared.body.infinite.InfiniteListBody
-import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
+import com.afternote.feature.afternote.presentation.home.AfternoteHomeScreen
+import com.afternote.feature.afternote.presentation.shared.component.EmptyListBody
+import com.afternote.feature.afternote.presentation.shared.component.InfiniteListBody
+import com.afternote.feature.afternote.presentation.shared.component.ListItemUiModel
 import kotlinx.coroutines.flow.flowOf
 import org.junit.Rule
 import org.junit.Test
@@ -64,7 +64,7 @@ class ReceiverAfternoteListChromeTest {
         composeRule.setContent { AfternoteTheme { ReceiverListBody() } }
 
         composeRule
-            .onNodeWithText(string(R.string.receiver_afternote_list_header_description))
+            .onNodeWithText(string(R.string.afternote_receiver_afternote_list_header_description))
             .assertIsDisplayed()
     }
 
@@ -97,7 +97,7 @@ class ReceiverAfternoteListChromeTest {
     /**
      * 0건 본문 문구도 수신자 관점인지.
      *
-     * 종전에는 [EmptyListBody] 가 `feature_afternote_empty_list_body` 를 직접 박아 두어, 수신자가 전달받은
+     * 종전에는 [EmptyListBody] 가 `afternote_empty_list_body` 를 직접 박아 두어, 수신자가 전달받은
      * 애프터노트 0건으로 이 본문에 닿으면 «아래 연필 버튼을 눌러 애프터노트를 등록해 보세요» 를 읽었다.
      * 그 연필 버튼은 수신자 화면에 없다 — `onFabClick` 을 넘기지 않으므로 [AfternoteHomeScreen] 이
      * FAB 자체를 그리지 않는다(아래 «작성 FAB 이 없다» 가 그 전제를 따로 고정한다). 못 누르는 버튼을
@@ -117,7 +117,7 @@ class ReceiverAfternoteListChromeTest {
         composeRule.setContent { AfternoteTheme { ReceiverEmptyBody() } }
 
         composeRule
-            .onNodeWithText(string(R.string.feature_afternote_empty_list_body))
+            .onNodeWithText(string(R.string.afternote_empty_list_body))
             .assertDoesNotExist()
     }
 
@@ -146,7 +146,7 @@ class ReceiverAfternoteListChromeTest {
             selectedType = null,
             onTypeSelected = {},
             onListItemClick = { _, _ -> },
-            headerDescription = stringResource(R.string.receiver_afternote_list_header_description),
+            headerDescription = stringResource(R.string.afternote_receiver_afternote_list_header_description),
             nextStep = null,
             // 수신자 0건 시안이 아직 없어 헤더를 올리지 않는다 — 근거는 ReceiverAfternoteHomeEntry 주석 (#1175).
             showsHeaderOnEmptyList = false,
@@ -168,7 +168,7 @@ class ReceiverAfternoteListChromeTest {
             selectedType = null,
             onTypeSelected = {},
             onListItemClick = { _, _ -> },
-            headerDescription = stringResource(R.string.receiver_afternote_list_header_description),
+            headerDescription = stringResource(R.string.afternote_receiver_afternote_list_header_description),
             nextStep = null,
         )
     }
@@ -182,7 +182,7 @@ class ReceiverAfternoteListChromeTest {
                         id = 1L,
                         serviceName = "인스타그램",
                         date = "2026.07.29",
-                        iconResId = R.drawable.feature_afternote_img_insta_pattern,
+                        iconResId = R.drawable.afternote_img_insta_pattern,
                         type = AfternoteType.SOCIAL_NETWORK,
                     ),
                 ),
