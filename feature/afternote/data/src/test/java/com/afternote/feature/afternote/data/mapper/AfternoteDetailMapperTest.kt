@@ -20,7 +20,7 @@ import org.junit.Test
  * [AfternoteDetailDto.toDomain] 회귀 가드 (작성자 상세).
  * 핵심 경계: 공통 필드와 타입별 [DetailContent] 분리, 부분·부재 credentials 의 빈 값 강등,
  * receivers null→emptyList, receiver 필드 null→"", processingMethods null→emptyList,
- * memorialVideo null→video/thumbnail null.
+ * memorialVideo null→video/thumbnail null, playlist 부재(곡 없는 임시저장)→곡 0개·미디어 없음.
  */
 class AfternoteDetailMapperTest {
     @Test
@@ -271,20 +271,22 @@ class AfternoteDetailMapperTest {
     }
 
     @Test
-    fun `toDomain - playlist 타입에 playlist가 없으면 오류`() {
-        val exception =
-            assertThrows(IllegalArgumentException::class.java) {
-                AfternoteDetailDto(
-                    isDraft = false,
-                    receivers = emptyList(),
-                    afternoteId = 1L,
-                    category = "PLAYLIST",
-                    title = "t",
-                    updatedAt = UPDATED_AT,
-                ).toDomain()
-            }
+    fun `toDomain - 곡을 안 담은 임시저장 playlist 는 playlist 부재를 곡 0개·미디어 없음으로 낮춘다`() {
+        val result =
+            AfternoteDetailDto(
+                isDraft = true,
+                receivers = emptyList(),
+                afternoteId = 1L,
+                category = "PLAYLIST",
+                title = "t",
+                updatedAt = UPDATED_AT,
+            ).toDomain()
 
-        assertEquals("playlist is required for MEMORIAL detail", exception.message)
+        val memorial = result.content as DetailContent.Memorial
+        assertTrue(memorial.songs.isEmpty())
+        assertNull(memorial.media.photoUrl)
+        assertNull(memorial.media.videoUrl)
+        assertNull(memorial.media.thumbnailUrl)
     }
 
     @Test

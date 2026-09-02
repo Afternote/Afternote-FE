@@ -59,13 +59,27 @@ private fun AfternoteDetailDto.toDetailContent(type: AfternoteType): DetailConte
         }
 
         AfternoteType.MEMORIAL -> {
-            requireNotNull(memorial) { "playlist is required for MEMORIAL detail" }.toMemorialContent()
+            memorial?.toMemorialContent() ?: EMPTY_MEMORIAL_CONTENT
         }
 
         AfternoteType.ESTATE -> {
             DetailContent.Estate
         }
     }
+
+/**
+ * 곡도 미디어도 아직 안 담은 추억 노트.
+ *
+ * 서버 임시저장(`isDraft=true`)은 카테고리별 필수값 검증을 건너뛰어(`AfternoteValidator`), 곡을 한 곡도 안 담은
+ * PLAYLIST 는 `playlist` 자체가 안 온다. 여기서 던지면 그 임시저장은 이어쓰기 이전에 조회부터 실패해 영영 안 열린다.
+ * 발행 완료는 서버가 최소 1곡을 강제하므로(`requirePublishedPlaylist`) 이 폴백이 발행 상세에서 발동할 일은 없다 —
+ * 계정 정보와 같은 이유로, 빠진 값은 던지지 않고 빈 값으로 낮춘다.
+ */
+private val EMPTY_MEMORIAL_CONTENT =
+    DetailContent.Memorial(
+        songs = emptyList(),
+        media = MemorialMedia(photoUrl = null, videoUrl = null, thumbnailUrl = null),
+    )
 
 // 던지면 그 상세가 영영 안 열리므로 빠진 값은 빈 문자열로 낮춘다.
 private fun AfternoteDetailDto.toPublishedCredentials() =
