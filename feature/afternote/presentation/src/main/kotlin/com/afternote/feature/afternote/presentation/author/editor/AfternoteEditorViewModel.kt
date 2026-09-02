@@ -219,7 +219,12 @@ class AfternoteEditorViewModel
 
         fun setMemorialPhoto(uri: String?) = mutateForm { it.withMemorialPhoto(uri) }
 
-        fun setMemorialVideo(url: String?) = mutateForm { it.withMemorialVideo(url) }
+        fun setMemorialVideo(url: String?) {
+            // 영상이 갈리면 이전 영상의 썸네일 실패도 함께 무효다 — 남은 바이트로 재시도하면 다른
+            // 영상의 그림이 붙는다.
+            pendingThumbnailBytes = null
+            mutateForm { it.withMemorialVideo(url) }
+        }
 
         fun setMemorialThumbnail(dataUrl: String?) = mutateForm { it.withMemorialThumbnail(dataUrl) }
 
@@ -327,35 +332,78 @@ class AfternoteEditorViewModel
                 }
         }
 
+        /**
+         * 업로드에 실패한 프레임 바이트. 스낵바의 «다시 시도» 와 저장 직전 재업로드가 이것을 다시 올린다.
+         *
+         * 폼·UI 상태에 싣지 않는다 — 프로세스 재생성 번들에 수백 KB 를 얹지 않기 위해서다. 복원 뒤에는
+         * 화면이 같은 영상에서 프레임을 다시 뽑아 [uploadMemorialThumbnail] 로 들어온다.
+         */
+        private var pendingThumbnailBytes: ByteArray? = null
+
         fun uploadMemorialThumbnail(jpegBytes: ByteArray?) {
             if (jpegBytes == null) return
+            pendingThumbnailBytes = jpegBytes
             viewModelScope.launch {
                 memorialThumbnailUploadRepository
                     .uploadThumbnail(jpegBytes)
                     .onSuccess { url ->
                         Log.d(TAG, "uploadMemorialThumbnail: success, url=$url")
+                        pendingThumbnailBytes = null
                         internalState.update { it.copy(pendingThumbnailUrl = url) }
                     }.onFailure { e ->
                         errorReporter.recordAfternoteFailure(AfternoteFailureStage.MEMORIAL_THUMBNAIL_UPLOAD, e)
                         internalState.update {
-                            it.withError(
-                                AfternoteEditorError.Upload(
-                                    AfternoteEditorError.Upload.Target.THUMBNAIL,
-                                ),
-                            )
+                            it.withError(AfternoteEditorError.Upload(AfternoteEditorError.Upload.Target.THUMBNAIL))
                         }
                     }
             }
         }
 
         /**
-         * 선택한 영상에서 썸네일 프레임을 뽑지 못한 실패를 기록한다.
+         * 선택한 영상에서 썸네일 프레임을 뽑지 못한 실패.
          *
-         * 로컬 디코딩이라 [uploadMemorialThumbnail] 경로를 타지 않고, 사용자에게도 썸네일 자리가
-         * 비어 보일 뿐 오류로 알려주지 않아 UI 가 넘겨주지 않으면 콘솔에 흔적이 남지 않는다.
+         * 로컬 디코딩이라 [uploadMemorialThumbnail] 경로를 타지 않는다. 종전에는 기록만 하고 화면에는
+         * 아무 신호도 없어, 사용자는 썸네일 자리가 빈 이유도 되돌릴 방법도 알 수 없었다.
          */
         fun onMemorialThumbnailExtractionFailed(throwable: Throwable) {
             errorReporter.recordAfternoteFailure(AfternoteFailureStage.MEMORIAL_THUMBNAIL_EXTRACT, throwable)
+            // 뽑지 못했으니 재업로드할 바이트가 없다 — 재시도는 추출부터 다시 돌아야 한다.
+            pendingThumbnailBytes = null
+            internalState.update {
+                it.withError(AfternoteEditorError.Upload(AfternoteEditorError.Upload.Target.THUMBNAIL_EXTRACT))
+            }
+        }
+
+        /**
+         * 영상 재선택 없이 썸네일만 다시 만든다 (#1550).
+         *
+         * 손에 바이트가 있으면(업로드 실패) 그대로 다시 올리고, 없으면(추출 실패) 토큰을 올려 화면이
+         * 프레임 추출부터 다시 돌게 한다. 어느 쪽이든 사용자가 고른 영상은 그대로 둔다.
+         */
+        fun retryMemorialThumbnail() {
+            val bytes = pendingThumbnailBytes
+            if (bytes != null) {
+                uploadMemorialThumbnail(bytes)
+                return
+            }
+            internalState.update { it.copy(memorialThumbnailRetryToken = it.memorialThumbnailRetryToken + 1) }
+        }
+
+        /**
+         * 저장 직전, 업로드에 실패해 남아 있는 썸네일 바이트를 한 번 더 업로드 시도한다.
+         *
+         * 영상 자체는 저장 시점에 업로드하는데(`resolveMemorialMediaForSave`) 썸네일만 선택 시점
+         * 업로드라 비대칭이었다. 실패해도 저장은 막지 않는다 — 썸네일 때문에 장례식 영상 저장을
+         * 버리게 하는 편이 더 나쁘다.
+         */
+        private suspend fun recoverPendingThumbnailOrNull(): String? {
+            val bytes = pendingThumbnailBytes ?: return null
+            return memorialThumbnailUploadRepository
+                .uploadThumbnail(bytes)
+                .onSuccess { pendingThumbnailBytes = null }
+                .onFailure { e ->
+                    errorReporter.recordAfternoteFailure(AfternoteFailureStage.MEMORIAL_THUMBNAIL_UPLOAD, e)
+                }.getOrNull()
         }
 
         /**
@@ -400,13 +448,25 @@ class AfternoteEditorViewModel
                 internalState.update {
                     it.copy(isSaving = true, errorEvent = null)
                 }
+                // 썸네일 URL 이 비어 있고 업로드에 실패한 바이트가 남아 있으면, payload 를 만들기 전에 그
+                // 바이트를 한 번 더 업로드해 본다. 여기서 놓치면 썸네일 없는 영상이 그대로 확정되고,
+                // 재편집으로 들어와도 원격 URL 이라 프레임을 다시 뽑지 않는다 (#1550). 실패해도 저장은
+                // 그대로 진행한다.
+                val memorialMediaForSave =
+                    if (memorialMedia.memorialVideo.displayed?.thumbnailUrl != null) {
+                        memorialMedia
+                    } else {
+                        recoverPendingThumbnailOrNull()
+                            ?.let { url -> memorialMedia.copy(memorialVideo = memorialMedia.memorialVideo.withSelectionThumbnail(url)) }
+                            ?: memorialMedia
+                    }
                 buildSaveCommand(
                     editingId = editingId,
                     typeForSave = typeForSave,
                     payload = payload,
                     selectedReceiverIds = selectedReceiverIds,
                     playlistSongs = playlistSongs,
-                    memorialMedia = memorialMedia,
+                    memorialMedia = memorialMediaForSave,
                 ).fold(
                     onSuccess = { command ->
                         executeSaveCommand(command).fold(
@@ -590,6 +650,7 @@ class AfternoteEditorViewModel
             val errorOccurrence: Long = 0L,
             val pendingSaveSuccessId: Long? = null,
             val pendingThumbnailUrl: String? = null,
+            val memorialThumbnailRetryToken: Int = 0,
             val pendingPrefill: EditorFormPrefill? = null,
         )
 
@@ -603,6 +664,7 @@ class AfternoteEditorViewModel
                 errorEvent = errorEvent,
                 pendingSaveSuccessId = pendingSaveSuccessId,
                 pendingThumbnailUrl = pendingThumbnailUrl,
+                memorialThumbnailRetryToken = memorialThumbnailRetryToken,
                 pendingPrefill = pendingPrefill,
             )
 

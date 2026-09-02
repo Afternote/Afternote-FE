@@ -62,6 +62,7 @@ internal const val MEMORIAL_VIDEO_ADD_TEST_TAG = "memorialVideoAdd"
  *
  * @param thumbnailUrl When set (e.g. from API when loading for edit), shown as thumbnail instead of extracting from video.
  * @param onThumbnailExtractionFailed 로컬 영상에서 썸네일 프레임을 뽑지 못했을 때 호출된다.
+ * @param thumbnailRetryToken 값이 바뀌면 같은 영상에서 프레임 추출을 다시 시도한다.
  *   화면에는 썸네일 자리가 비는 것 외에 아무 표시도 하지 않으므로, 호출처가 개발자 텔레메트리로 남긴다.
  */
 @Composable
@@ -73,6 +74,7 @@ fun MemorialVideoUpload(
     onAddVideoClick: () -> Unit,
     onThumbnailBytesReady: (ByteArray?) -> Unit,
     onThumbnailExtractionFailed: (Throwable) -> Unit,
+    thumbnailRetryToken: Int,
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     val hasVideo = !videoUrl.isNullOrBlank()
@@ -84,9 +86,11 @@ fun MemorialVideoUpload(
             stringResource(R.string.afternote_editor_funeral_video_cd_add)
         }
     val context = LocalContext.current
-    var thumbnailBitmap by remember(videoUrl) { mutableStateOf<ImageBitmap?>(null) }
+    var thumbnailBitmap by remember(videoUrl, thumbnailRetryToken) { mutableStateOf<ImageBitmap?>(null) }
 
-    LaunchedEffect(videoUrl) {
+    // 같은 영상이라도 [thumbnailRetryToken] 이 바뀌면 추출을 다시 돈다 — 추출 실패의 유일한 복구
+    // 경로가 «영상을 처음부터 다시 고르기» 였던 것을 푼다 (#1550).
+    LaunchedEffect(videoUrl, thumbnailRetryToken) {
         if (videoUrl.isNullOrBlank()) {
             thumbnailBitmap = null
             onThumbnailBytesReady(null)

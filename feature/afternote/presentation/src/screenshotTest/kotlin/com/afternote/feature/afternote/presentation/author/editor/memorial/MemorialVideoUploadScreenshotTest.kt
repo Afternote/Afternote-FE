@@ -21,6 +21,7 @@ internal fun memorialVideoUploadEmptyScreenshot() {
             onAddVideoClick = {},
             onThumbnailBytesReady = {},
             onThumbnailExtractionFailed = {},
+            thumbnailRetryToken = 0,
         )
     }
 }
