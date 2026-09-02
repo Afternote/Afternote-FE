@@ -8,11 +8,11 @@ import androidx.navigation.NavController
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.AfternoteType
-import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavActions
-import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
-import com.afternote.feature.afternote.presentation.author.navigation.model.SELECTED_RECEIVER_ID_KEY
+import com.afternote.feature.afternote.presentation.navigation.AfternoteNavActions
+import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
+import com.afternote.feature.afternote.presentation.navigation.model.SELECTED_RECEIVER_ID_KEY
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteNavActions
-import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceivedAfternoteRoute
+import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
 import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
