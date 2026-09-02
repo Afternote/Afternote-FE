@@ -14,6 +14,7 @@ import com.afternote.feature.afternote.domain.model.author.ListItem
 internal class AfternotePagingSource(
     private val api: AfternoteApiService,
     private val category: String?,
+    private val draftOnly: Boolean,
 ) : PagingSource<Int, ListItem>() {
     override fun getRefreshKey(state: PagingState<Int, ListItem>): Int? =
         state.anchorPosition?.let { anchorPosition ->
@@ -30,6 +31,7 @@ internal class AfternotePagingSource(
                         category = category,
                         pageNumber = pageNumber,
                         size = params.loadSize,
+                        draftOnly = draftOnly.takeIf { it },
                     ).requireData()
 
             LoadResult.Page(

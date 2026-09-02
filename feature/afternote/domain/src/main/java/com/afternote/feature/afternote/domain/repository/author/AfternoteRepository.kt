@@ -21,6 +21,12 @@ interface AfternoteRepository {
      */
     fun getPagedAfternotes(type: AfternoteType?): Flow<PagingData<ListItem>>
 
+    /**
+     * 임시저장만 담은 목록. 서버는 발행분과 임시저장을 한 요청에 섞어 주지 않아
+     * (`draftOnly` 미전송 = 발행분만) 목록도 화면도 따로 선다.
+     */
+    fun getPagedDrafts(type: AfternoteType?): Flow<PagingData<ListItem>>
+
     /** 발행 완료 상세 — 상세 화면용. 임시저장 id 를 넘기면 필수값 부재로 실패한다([getDraftDetail] 을 쓸 것). */
     suspend fun getDetail(id: Long): Result<Detail>
 

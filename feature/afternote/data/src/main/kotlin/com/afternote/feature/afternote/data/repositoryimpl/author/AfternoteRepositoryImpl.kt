@@ -42,8 +42,15 @@ class AfternoteRepositoryImpl
     ) : AfternoteRepository {
         private val invalidationTrigger = MutableStateFlow(0L)
 
+        override fun getPagedAfternotes(type: AfternoteType?): Flow<PagingData<ListItem>> = pagedAfternotes(type, draftOnly = false)
+
+        override fun getPagedDrafts(type: AfternoteType?): Flow<PagingData<ListItem>> = pagedAfternotes(type, draftOnly = true)
+
         @OptIn(ExperimentalCoroutinesApi::class)
-        override fun getPagedAfternotes(type: AfternoteType?): Flow<PagingData<ListItem>> {
+        private fun pagedAfternotes(
+            type: AfternoteType?,
+            draftOnly: Boolean,
+        ): Flow<PagingData<ListItem>> {
             val category = type?.toServerCategory()
             // 서버 enum 에 없는 종류(ESTATE, #491)는 보내면 400 이라 요청 자체를 만들지 않는다.
             // BUSINESS 는 Afternote-BE 78ee857 부터 정식 값이라 여기서 걸리지 않는다 (#1048).
@@ -52,7 +59,7 @@ class AfternoteRepositoryImpl
             return invalidationTrigger.flatMapLatest {
                 Pager(
                     config = PagingConfig(pageSize = PAGE_SIZE),
-                    pagingSourceFactory = { AfternotePagingSource(api, category) },
+                    pagingSourceFactory = { AfternotePagingSource(api, category, draftOnly) },
                 ).flow
             }
         }
