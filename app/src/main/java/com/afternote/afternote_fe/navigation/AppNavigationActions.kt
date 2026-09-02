@@ -73,31 +73,6 @@ fun rememberOnboardingNavActions(navController: NavController): OnboardingNavAct
                 navController.navigate(OnboardingRoute.FindIdRoute)
             }
 
-            override fun navigateToFindPassword() {
-                navController.navigate(OnboardingRoute.FindPasswordRoute)
-            }
-
-            override fun proceedToFindPasswordReset() {
-                navController.navigate(OnboardingRoute.FindPasswordResetRoute)
-            }
-
-            override fun replaceFindPasswordWithComplete() {
-                navController.navigate(OnboardingRoute.FindPasswordCompleteRoute) {
-                    // 인증·변경 두 화면을 비운다 — 비밀번호는 바뀌었고 인증번호는 서버가 소비해서
-                    // 뒤로가기로 돌아가 봐야 유효하지 않은 입력만 남는다.
-                    popUpTo<OnboardingRoute.FindPasswordRoute> { inclusive = true }
-                }
-            }
-
-            override fun replaceFindPasswordWithLogin() {
-                navController.navigate(OnboardingRoute.LoginRoute) {
-                    // 스택에 남아 있던 Login 까지 비우고 새로 띄운다 — 없으면 popUpTo 는 무해한 no-op 이라
-                    // 어느 경로로 들어왔든 로그인 화면 하나로 수렴한다.
-                    popUpTo<OnboardingRoute.LoginRoute> { inclusive = true }
-                    launchSingleTop = true
-                }
-            }
-
             override fun proceedToSignUpResidentNumber() {
                 navController.navigate(OnboardingRoute.SignUpResidentNumberRoute)
             }

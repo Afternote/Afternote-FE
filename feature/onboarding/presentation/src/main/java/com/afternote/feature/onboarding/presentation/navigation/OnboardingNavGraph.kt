@@ -21,11 +21,6 @@ import com.afternote.feature.onboarding.presentation.WelcomeScreen
 import com.afternote.feature.onboarding.presentation.findaccount.FindIdScreen
 import com.afternote.feature.onboarding.presentation.findaccount.FindIdUiState
 import com.afternote.feature.onboarding.presentation.findaccount.FindIdViewModel
-import com.afternote.feature.onboarding.presentation.findaccount.FindPasswordCompleteScreen
-import com.afternote.feature.onboarding.presentation.findaccount.FindPasswordResetScreen
-import com.afternote.feature.onboarding.presentation.findaccount.FindPasswordScreen
-import com.afternote.feature.onboarding.presentation.findaccount.FindPasswordUiState
-import com.afternote.feature.onboarding.presentation.findaccount.FindPasswordViewModel
 import com.afternote.feature.onboarding.presentation.login.LoginEntry
 import com.afternote.feature.onboarding.presentation.signup.SignUpPasswordScreen
 import com.afternote.feature.onboarding.presentation.signup.SignUpResidentNumberScreen
@@ -63,7 +58,7 @@ fun NavGraphBuilder.onboardingNavGraph(
                 onLoginSuccess = actions::replaceOnboardingWithHome,
                 onNewUserOnboarding = actions::replaceLoginWithWelcome,
                 onSignUpClick = actions::replaceLoginWithSignUp,
-                onFindAccountClick = actions::navigateToFindPassword,
+                onFindAccountClick = actions::navigateToFindId,
                 onBackClick = actions::popBack,
             )
         }
@@ -98,62 +93,6 @@ fun NavGraphBuilder.onboardingNavGraph(
                 onNextClick = {},
                 onBackClick = actions::popBack,
             )
-        }
-
-        // ── 비밀번호 찾기 (이메일 인증 → 비밀번호 변경 → 완료) ──
-        composable<OnboardingRoute.FindPasswordRoute> {
-            val viewModel = graphScopedFindPasswordViewModel(graphScopedParentEntry)
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-            val snackbarHostState = rememberFindPasswordEventHost(viewModel, uiState)
-
-            FindPasswordScreen(
-                initialEmail = uiState.email,
-                initialCertificateCode = uiState.certificateCode,
-                isSendingCode = uiState.isSendingCode,
-                isVerificationSent = uiState.isVerificationSent,
-                isSendCodeEnabled = uiState.isSendCodeEnabled,
-                isNextEnabled = uiState.isVerificationNextEnabled,
-                resendCooldownSeconds = uiState.resendCooldownSeconds,
-                isSocialAccountBlocked = uiState.isSocialAccountBlocked,
-                snackbarHostState = snackbarHostState,
-                onEmailChange = viewModel::updateEmail,
-                onCertificateCodeChange = viewModel::updateCertificateCode,
-                onRequestCode = viewModel::requestVerificationCode,
-                onSocialAccountBlockedConfirm = viewModel::onSocialAccountBlockedConsumed,
-                onNextClick = actions::proceedToFindPasswordReset,
-                onBackClick = actions::popBack,
-            )
-        }
-
-        composable<OnboardingRoute.FindPasswordResetRoute> {
-            val viewModel = graphScopedFindPasswordViewModel(graphScopedParentEntry)
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-            val snackbarHostState = rememberFindPasswordEventHost(viewModel, uiState)
-
-            // 재설정 성공은 UiState 신호로 받아 완료 화면으로 교체하고, 소비 즉시 흐름 상태를 버린다
-            // (평문 비밀번호를 그래프 수명만큼 들고 있지 않기 위해서다).
-            LaunchedEffect(uiState.isPasswordChanged) {
-                if (uiState.isPasswordChanged) {
-                    actions.replaceFindPasswordWithComplete()
-                    viewModel.onPasswordResetConsumed()
-                }
-            }
-
-            FindPasswordResetScreen(
-                initialPassword = uiState.newPassword,
-                initialPasswordConfirm = uiState.newPasswordConfirm,
-                isPasswordRuleSatisfied = uiState.isPasswordRuleSatisfied,
-                isNextEnabled = uiState.isResetEnabled,
-                snackbarHostState = snackbarHostState,
-                onPasswordChange = viewModel::updateNewPassword,
-                onPasswordConfirmChange = viewModel::updateNewPasswordConfirm,
-                onNextClick = viewModel::submitNewPassword,
-                onBackClick = actions::popBack,
-            )
-        }
-
-        composable<OnboardingRoute.FindPasswordCompleteRoute> {
-            FindPasswordCompleteScreen(onLoginClick = actions::replaceFindPasswordWithLogin)
         }
 
         // ── SignUp Step 1: 이메일 & 인증번호 ──
@@ -300,46 +239,6 @@ private fun graphScopedFindIdViewModel(graphScopedParentEntry: () -> NavBackStac
 private fun rememberFindIdEventHost(
     viewModel: FindIdViewModel,
     uiState: FindIdUiState,
-): SnackbarHostState {
-    val snackbarHostState = remember { SnackbarHostState() }
-    // VM 이 UiText 로 폴백까지 확정해 두므로 빈 문구가 도달하지 않는다.
-    val pendingErrorMessage = uiState.errorMessage?.asString()
-
-    LaunchedEffect(pendingErrorMessage) {
-        if (pendingErrorMessage != null) {
-            snackbarHostState.showSnackbar(
-                message = pendingErrorMessage,
-                duration = SnackbarDuration.Short,
-            )
-            viewModel.onErrorConsumed()
-        }
-    }
-    return snackbarHostState
-}
-
-/**
- * `Route.Onboarding` 그래프 스코프에 묶인 [FindPasswordViewModel]을 가져옵니다.
- *
- * 비밀번호 찾기 세 화면이 같은 인스턴스를 공유한다 — 인증 화면이 받은
- * [FindPasswordUiState.certificateCode] 를 비밀번호 변경 화면이 그대로 제출해야 해서다.
- * 조회 방식·수명은 [graphScopedFindIdViewModel] 과 동일하다.
- */
-@Composable
-private fun graphScopedFindPasswordViewModel(graphScopedParentEntry: () -> NavBackStackEntry): FindPasswordViewModel {
-    val parentEntry = remember { graphScopedParentEntry() }
-    return hiltViewModel(parentEntry)
-}
-
-/**
- * 비밀번호 찾기 화면들의 Snackbar 호스트 + 단발성 에러 신호 처리.
- *
- * 소셜 가입 계정 차단은 시안상 팝업이라 여기서 다루지 않고
- * ([FindPasswordUiState.isSocialAccountBlocked]), 그 외 실패만 snackbar 로 노출한다.
- */
-@Composable
-private fun rememberFindPasswordEventHost(
-    viewModel: FindPasswordViewModel,
-    uiState: FindPasswordUiState,
 ): SnackbarHostState {
     val snackbarHostState = remember { SnackbarHostState() }
     // VM 이 UiText 로 폴백까지 확정해 두므로 빈 문구가 도달하지 않는다.

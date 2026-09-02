@@ -80,37 +80,6 @@ class AppOnboardingCanaryTest {
             ).assertIsDisplayed()
     }
 
-    /**
-     * 로그인의 "아이디/비밀번호 찾기" 진입 대상 회귀 가드 (#457).
-     *
-     * 이 링크는 아이디 찾기 인증 화면으로 가고 있었는데, 그 흐름의 종착지인 결과 화면(#474)이
-     * not planned 로 닫히면서 「확인」 뒤에 갈 곳이 없어졌다. 완결되는 비밀번호 찾기로 돌린 것이
-     * 이 PR 이고, 되돌아가면 사용자가 다시 막다른 화면에 놓인다. 배선은 app 모듈의
-     * NavActions 와 onboarding 그래프에 나뉘어 있어 JVM 테스트로는 이어 붙여 볼 수 없다.
-     */
-    @Test
-    fun findAccountLink_opensPasswordResetFlow() {
-        composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_start))
-            .performClick()
-
-        composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.onboarding_login_find_account))
-            .assertIsDisplayed()
-            .performClick()
-
-        val passwordFindTitle = context.getString(OnboardingR.string.onboarding_find_password_title)
-        composeRule.waitUntilAtLeastOneExists(hasText(passwordFindTitle), timeoutMillis = 5_000)
-        composeRule.onNodeWithText(passwordFindTitle).assertIsDisplayed()
-        composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.onboarding_find_account_verify_email_title))
-            .assertIsDisplayed()
-        // 아이디 찾기 갈래로 새지 않았는지 — 두 흐름이 같은 문구를 쓰므로 상단 제목으로만 갈린다.
-        composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.onboarding_find_id_title))
-            .assertDoesNotExist()
-    }
-
     @Test
     fun emailLogin_networkFailureThenRetry_entersHomeOnce() {
         val emailLoginResults = ArrayDeque<Result<Session.DefaultSession>>()
