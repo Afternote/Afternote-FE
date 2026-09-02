@@ -2,7 +2,8 @@ package com.afternote.feature.afternote.domain.model.author
 
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
-import com.afternote.feature.afternote.domain.model.author.playlist.MemorialDetail
+import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
+import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 
 /**
  * 발행 완료된 애프터노트 상세 도메인 모델.
@@ -42,8 +43,10 @@ sealed interface DetailContent {
         override val type: AfternoteType = AfternoteType.GALLERY_AND_FILES
     }
 
+    /** 추억 노트 — 곡 목록과 사진·영상. 형제 종류와 같이 종류별 데이터를 필드로 직접 든다. */
     data class Memorial(
-        val memorial: MemorialDetail,
+        val songs: List<DetailSong>,
+        val media: MemorialMedia,
     ) : DetailContent {
         override val type: AfternoteType = AfternoteType.MEMORIAL
     }
