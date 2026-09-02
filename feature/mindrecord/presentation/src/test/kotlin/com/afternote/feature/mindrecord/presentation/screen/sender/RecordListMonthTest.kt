@@ -1,9 +1,12 @@
 package com.afternote.feature.mindrecord.presentation.screen.sender
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.hasScrollToNodeAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.model.DailyDiary
 import org.junit.Assert.assertEquals
@@ -52,6 +55,9 @@ class RecordListMonthTest {
             }
         }
 
+        composeRule
+            .onNode(hasScrollToNodeAction())
+            .performScrollToNode(hasText("지난달 기록"))
         composeRule.onAllNodesWithText("지난달 기록")[0].performClick()
 
         assertEquals(11L to lastMonth, clicked)

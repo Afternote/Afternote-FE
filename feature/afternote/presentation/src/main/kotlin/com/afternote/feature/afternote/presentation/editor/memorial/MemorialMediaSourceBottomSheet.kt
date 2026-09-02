@@ -28,19 +28,14 @@ internal enum class MemorialMediaTarget {
  * 해석하므로, 폼만 비워 두면 저장 후 서버 미디어가 되살아나는 거짓 삭제가 된다.
  * 그래서 실제로 지울 수 있는 것만 지우게 한다. 서버 미디어 삭제는 BE 계약 확장 후 후속.
  *
- * - 사진: [EditorFormState.pickedMemorialPhotoUri] 는 픽·촬영으로만 채워지는 로컬 전용 필드라
- *   값이 있으면 곧 로컬 첨부다. 지우면 표시가 서버 사진([EditorFormState.memorialPhotoUrl])으로
- *   돌아간다.
- * - 영상: [EditorFormState.memorialVideoUrl] 은 로컬 픽과 원격 prefill 이 한 필드를 공유하므로
- *   [isLocalContentUri] 로 가른다 — `AfternoteEditorViewModel.videoMediaInput` 과 같은 기준.
- *
- * 알려진 구멍(#1406): 수정 모드에서 서버 영상을 로컬 영상으로 교체하면 원격 URL 이 덮여 이 가드가
- * 못 가른다 — 그 로컬 영상을 지우면 폼은 비지만 저장 후 서버 영상이 남는 거짓 삭제가 된다.
+ * 사진은 `picked` 칸을 확인하지만, 영상 UI는 편집 값에 "새 선택을 걷어낼 수 있는가"만 묻는다. 그래서
+ * 이 단에서는 서버 원본인지 새 선택인지도, URL 스킴도 판정하지 않는다(#1406 이전에는 영상 한 칸이
+ * 두 출처를 겸해 [isLocalContentUri]로 추론했고, 로컬 영상으로 덮는 순간 서버 원본을 잃었다).
  */
 internal fun EditorFormState.removableMemorialMediaTargets(): Set<MemorialMediaTarget> =
     buildSet {
         if (!pickedMemorialPhotoUri.isNullOrBlank()) add(MemorialMediaTarget.PHOTO)
-        if (memorialVideoUrl?.isLocalContentUri() == true) add(MemorialMediaTarget.VIDEO)
+        if (canDiscardMemorialVideoSelection) add(MemorialMediaTarget.VIDEO)
     }
 
 /**

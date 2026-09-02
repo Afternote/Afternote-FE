@@ -5,10 +5,13 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
+import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
+import com.afternote.feature.afternote.presentation.editor.state.MemorialVideoAttachment
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,6 +40,65 @@ class AfternoteEditorReceiverSnapshotTest {
         assertEquals(Long.MAX_VALUE, restoredId)
     }
 
+    @Test
+    fun `v4 영상 편집 상태는 왕복 후 새 선택 제거 시 서버 원본으로 돌아간다`() {
+        val persisted =
+            MemorialVideoAttachment(
+                url = "https://cdn.test/farewell.mp4",
+                thumbnailUrl = "https://cdn.test/farewell-thumb.jpg",
+            )
+        val selection =
+            MemorialVideoAttachment(
+                url = "content://videos/replacement",
+                thumbnailUrl = "https://cdn.test/replacement-thumb.jpg",
+            )
+        val savedStateHandle =
+            SavedStateHandle(
+                mapOf(
+                    "initialType" to AfternoteType.MEMORIAL,
+                    SNAPSHOT_KEY to
+                        """
+                        {
+                          "type":"MEMORIAL",
+                          "memorialVideo":{
+                            "persisted":{
+                              "url":"${persisted.url}",
+                              "thumbnailUrl":"${persisted.thumbnailUrl}"
+                            },
+                            "selection":{
+                              "url":"${selection.url}",
+                              "thumbnailUrl":"${selection.thumbnailUrl}"
+                            }
+                          }
+                        }
+                        """.trimIndent(),
+                ),
+            )
+        val viewModel = viewModel(savedStateHandle)
+
+        assertEquals(selection, viewModel.currentForm().displayedMemorialVideo)
+        assertTrue(viewModel.currentForm().canDiscardMemorialVideoSelection)
+
+        viewModel.setMemorialThumbnail("https://cdn.test/round-trip-thumb.jpg")
+        val roundTrippedRaw = requireNotNull(savedStateHandle.get<String>(SNAPSHOT_KEY))
+        assertTrue(roundTrippedRaw.contains("\"memorialVideo\""))
+
+        val restoredViewModel = viewModel(savedStateHandle)
+        val roundTripped = restoredViewModel.currentForm()
+        assertEquals(
+            selection.copy(thumbnailUrl = "https://cdn.test/round-trip-thumb.jpg"),
+            roundTripped.displayedMemorialVideo,
+        )
+        assertEquals(MediaInput.Local(selection.url), roundTripped.memorialVideo?.toMediaInput())
+        assertTrue(roundTripped.canDiscardMemorialVideoSelection)
+
+        restoredViewModel.setMemorialVideo(null)
+
+        assertEquals(persisted, restoredViewModel.currentForm().displayedMemorialVideo)
+        assertEquals(MediaInput.Remote(persisted.url), restoredViewModel.currentForm().memorialVideo?.toMediaInput())
+        assertFalse(restoredViewModel.currentForm().canDiscardMemorialVideoSelection)
+    }
+
     private fun viewModel(savedStateHandle: SavedStateHandle): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
             savedStateHandle = savedStateHandle,
@@ -58,6 +120,6 @@ class AfternoteEditorReceiverSnapshotTest {
         ) { _, method, _ -> error("${T::class.java.simpleName}.${method.name} 호출은 이 테스트에서 예상하지 않았습니다") } as T
 
     private companion object {
-        const val SNAPSHOT_KEY = "editor_form_snapshot_v3"
+        const val SNAPSHOT_KEY = "editor_form_snapshot_v4"
     }
 }

@@ -5,6 +5,7 @@ import androidx.navigation.NavBackStackEntry
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorState
+import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.navigation.model.SELECTED_RECEIVER_ID_KEY
 
 // 에디터 조립부가 쓰는 순수 헬퍼들이다. Route 파일에는 조립만 남긴다 (#1514).
@@ -29,10 +30,27 @@ internal fun AfternoteEditorError.messageResId(): Int =
         is AfternoteEditorError.Upload -> {
             when (target) {
                 AfternoteEditorError.Upload.Target.THUMBNAIL -> R.string.afternote_editor_thumbnail_upload_failed
+                AfternoteEditorError.Upload.Target.THUMBNAIL_EXTRACT -> R.string.afternote_editor_thumbnail_extract_failed
                 AfternoteEditorError.Upload.Target.SAVE_MEDIA -> R.string.afternote_editor_save_failed_generic
             }
         }
     }
+
+/**
+ * 이 오류의 스낵바에 «다시 시도» 액션을 거는지 — 추모 영상 썸네일 실패 두 갈래에만 건다 (#1550).
+ *
+ * 판정은 지금 뜨는 오류 자체로 한다. «재시도 가능» 을 별도 불리언으로 들고 있으면 그 스낵바가 닫힌
+ * 뒤에도 상태가 남아, 다음에 뜨는 무관한 스낵바(저장 실패 등)에 썸네일 재시도가 붙는다.
+ */
+internal fun AfternoteEditorError.offersMemorialThumbnailRetry(): Boolean =
+    this is AfternoteEditorError.Upload &&
+        when (target) {
+            AfternoteEditorError.Upload.Target.THUMBNAIL,
+            AfternoteEditorError.Upload.Target.THUMBNAIL_EXTRACT,
+            -> true
+
+            AfternoteEditorError.Upload.Target.SAVE_MEDIA -> false
+        }
 
 /**
  * 수신자 선택 화면이 남긴 id 를 폼에 반영한다.
@@ -74,8 +92,7 @@ internal fun buildOnRegisterClick(
             selectedReceiverIds = form.afternoteEditReceivers.map { it.id },
             memorialMedia =
                 SaveAfternoteMemorialMedia(
-                    memorialVideoUrl = form.memorialVideoUrl,
-                    memorialThumbnailUrl = form.memorialThumbnailUrl,
+                    memorialVideo = form.memorialVideo ?: EditableMemorialVideo.empty(),
                     memorialPhotoUrl = form.memorialPhotoUrl,
                     pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
                 ),

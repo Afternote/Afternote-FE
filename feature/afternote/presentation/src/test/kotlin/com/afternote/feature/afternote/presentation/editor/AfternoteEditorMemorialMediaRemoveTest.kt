@@ -56,8 +56,7 @@ class AfternoteEditorMemorialMediaRemoveTest {
 
         viewModel.setMemorialVideo(null)
 
-        assertNull(viewModel.currentForm().memorialVideoUrl)
-        assertNull(viewModel.currentForm().memorialThumbnailUrl)
+        assertNull(viewModel.currentForm().displayedMemorialVideo)
     }
 
     @Test
@@ -97,8 +96,7 @@ class AfternoteEditorMemorialMediaRemoveTest {
 
         val restored = viewModel(handle).currentForm()
 
-        assertNull(restored.memorialVideoUrl)
-        assertNull(restored.memorialThumbnailUrl)
+        assertNull(restored.displayedMemorialVideo)
         assertNull(restored.pickedMemorialPhotoUri)
     }
 

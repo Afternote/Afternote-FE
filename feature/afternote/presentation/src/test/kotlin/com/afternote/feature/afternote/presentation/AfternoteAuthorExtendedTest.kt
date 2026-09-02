@@ -413,6 +413,7 @@ private fun AuthorEditorForUpdate(
                 onNavigateToSelectReceiver = {},
                 onThumbnailBytesReady = {},
                 onThumbnailExtractionFailed = {},
+                thumbnailRetryToken = 0,
                 onCaptureFailed = {},
                 snackbarHostState = editorSnackbarHostState,
                 isPrefillLoading = uiState.isPrefillLoading,

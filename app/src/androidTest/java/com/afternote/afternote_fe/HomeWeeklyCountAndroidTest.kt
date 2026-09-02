@@ -20,7 +20,7 @@ import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.HiltTestActivity
 import com.afternote.afternote_fe.test.appTestUserRepository
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.testing.FakeUserProfileRepository
+import com.afternote.core.domain.testing.FakeUserProfileCacheRepository
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.home.presentation.HomeTabScreen
@@ -172,7 +172,7 @@ class HomeWeeklyCountAndroidTest {
                             FakeWeeklyReportRepository(dailyQuestionAmount, diaryAmount, weeklyFailure),
                         ),
                 ),
-            userProfileRepository = FakeUserProfileRepository(),
+            userProfileCacheRepository = FakeUserProfileCacheRepository(),
             errorReporter = SilentErrorReporter,
         )
 

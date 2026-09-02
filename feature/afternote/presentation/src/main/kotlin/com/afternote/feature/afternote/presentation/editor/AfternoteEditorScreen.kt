@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,6 +35,16 @@ import com.afternote.feature.afternote.presentation.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.editor.state.rememberAfternoteEditorState
 
 /**
+ * 스낵바 한 줄에 붙이는 되돌림 액션.
+ *
+ * 실패를 알리기만 하고 끝내면 사용자가 되돌릴 방법이 없는 경우가 있다 — 썸네일이 그렇다(#1550).
+ */
+data class EditorSnackbarAction(
+    val label: String,
+    val onPerform: () -> Unit,
+)
+
+/**
  * 애프터노트 수정/작성 화면
  *
  * 피그마 디자인 기반:
@@ -47,6 +58,7 @@ import com.afternote.feature.afternote.presentation.editor.state.rememberAfterno
  *
  * 추억 플레이리스트 곡 목록은 [EditorFormState]의 추억 노트 전용 폼에 동기화된 스냅샷으로 표시한다.
  */
+
 @Composable
 fun AfternoteEditorScreen(
     form: EditorFormState,
@@ -61,6 +73,7 @@ fun AfternoteEditorScreen(
     content: @Composable (SnackbarHostState) -> Unit,
     modifier: Modifier = Modifier,
     state: AfternoteEditorState = rememberAfternoteEditorState(),
+    snackbarAction: EditorSnackbarAction? = null,
     shouldDeferBaselineCapture: Boolean = false,
     snackbarMessageKey: Any? = snackbarMessage,
 ) {
@@ -70,10 +83,15 @@ fun AfternoteEditorScreen(
     LaunchedEffect(snackbarMessageKey) {
         snackbarMessage?.let { message ->
             try {
-                snackbarHostState.showSnackbar(
-                    message = message,
-                    withDismissAction = true,
-                )
+                val result =
+                    snackbarHostState.showSnackbar(
+                        message = message,
+                        actionLabel = snackbarAction?.label,
+                        withDismissAction = true,
+                    )
+                if (result == SnackbarResult.ActionPerformed) {
+                    snackbarAction?.onPerform?.invoke()
+                }
             } finally {
                 // dismiss 뿐 아니라 화면 이탈로 취소돼도 소비해야, 복귀 시 이미 고친 오류의 stale 안내가 재표출되지 않는다.
                 onSnackbarMessageConsumed()

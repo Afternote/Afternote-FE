@@ -29,6 +29,7 @@ internal fun memorialEditorContentScreenshot() {
             onMessageAddClick = {},
             onThumbnailBytesReady = {},
             onThumbnailExtractionFailed = {},
+            thumbnailRetryToken = 0,
             modifier = Modifier.padding(20.dp),
         )
     }

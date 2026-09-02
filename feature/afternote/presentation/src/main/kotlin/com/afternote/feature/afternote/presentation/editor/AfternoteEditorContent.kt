@@ -110,6 +110,7 @@ fun AfternoteEditorBody(
     onNavigateToSelectReceiver: () -> Unit,
     onThumbnailBytesReady: (ByteArray?) -> Unit,
     onThumbnailExtractionFailed: (Throwable) -> Unit,
+    thumbnailRetryToken: Int,
     onCaptureFailed: (Throwable) -> Unit,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
@@ -141,6 +142,7 @@ fun AfternoteEditorBody(
                 onVideoAddClick = { mediaSourceState.open(MemorialMediaTarget.VIDEO) },
                 onThumbnailBytesReady = onThumbnailBytesReady,
                 onThumbnailExtractionFailed = onThumbnailExtractionFailed,
+                thumbnailRetryToken = thumbnailRetryToken,
             )
         },
         modifier = modifier,
@@ -278,14 +280,16 @@ internal fun AfternoteTypeContent(
     onVideoAddClick: () -> Unit,
     onThumbnailBytesReady: (ByteArray?) -> Unit,
     onThumbnailExtractionFailed: (Throwable) -> Unit,
+    thumbnailRetryToken: Int,
 ) {
     when (form.selectedType) {
         AfternoteType.MEMORIAL -> {
+            val displayedVideo = form.displayedMemorialVideo
             MemorialEditorContent(
                 displayMemorialPhotoUri = form.displayMemorialPhotoUri(),
                 playlistAlbumCovers = form.displayAlbumCovers(),
-                memorialVideoUrl = form.memorialVideoUrl,
-                memorialThumbnailUrl = form.memorialThumbnailUrl,
+                memorialVideoUrl = displayedVideo?.url,
+                memorialThumbnailUrl = displayedVideo?.thumbnailUrl,
                 editorMessages = state.editorMessages,
                 onMessageRegisterClick = state::registerEditorMessage,
                 onMessageDeleteClick = state::removeEditorMessage,
@@ -301,6 +305,7 @@ internal fun AfternoteTypeContent(
                 onVideoAddClick = onVideoAddClick,
                 onThumbnailBytesReady = onThumbnailBytesReady,
                 onThumbnailExtractionFailed = onThumbnailExtractionFailed,
+                thumbnailRetryToken = thumbnailRetryToken,
             )
         }
 

@@ -5,7 +5,9 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.editor.receiver.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteTypeForm
+import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.editor.state.EditorFormState
+import com.afternote.feature.afternote.presentation.editor.state.MemorialVideoAttachment
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
@@ -157,19 +159,65 @@ class EditorContentSignatureCompletenessTest {
     @Test
     fun `자동 파생 썸네일은 지문에서 제외되고 영상 자체는 반영된다`() {
         val state = newState()
+        val picked = MemorialVideoAttachment(url = "content://video")
         val pristine = editorContentSignature(EditorFormState(typeForm = AfternoteTypeForm.Memorial()), state)
-        assertEquals(
-            "썸네일은 영상에서 파생된 값이라 사용자 입력이 아니다",
-            pristine,
+        val withVideo =
             editorContentSignature(
-                EditorFormState(typeForm = AfternoteTypeForm.Memorial(thumbnailUrl = "data:image/png;base64,x")),
+                EditorFormState(
+                    typeForm =
+                        AfternoteTypeForm.Memorial(
+                            video = EditableMemorialVideo.empty().withSelection(picked.url),
+                        ),
+                ),
+                state,
+            )
+
+        assertNotEquals("고른 영상 자체는 사용자 입력이다", pristine, withVideo)
+        assertEquals(
+            "썸네일은 영상에서 파생된 값이라 사용자 입력이 아니다 — 복원 뒤 재추출로 URL 이 바뀌어도 지문은 그대로여야 한다",
+            withVideo,
+            editorContentSignature(
+                EditorFormState(
+                    typeForm =
+                        AfternoteTypeForm.Memorial(
+                            video =
+                                EditableMemorialVideo
+                                    .empty()
+                                    .withSelection(picked.url)
+                                    .withSelectionThumbnail("https://cdn.test/thumb.jpg"),
+                        ),
+                ),
                 state,
             ),
         )
-        assertNotEquals(
+    }
+
+    /**
+     * 서버 원본은 prefill 이 채우고 그 뒤 변하지 않으므로 지금은 지문에 넣어도 결과가 같다.
+     * 이 카나리는 그 우연이 아니라 「사용자 입력만 센다」는 계약을 고정한다 — 저장 성공 후 서버 값
+     * 새로고침처럼 원본만 갱신되는 경로가 생기면, 제외가 없는 순간 손대지 않은 폼이 «변경됨» 이 된다.
+     */
+    @Test
+    fun `prefill 이 채운 서버 원본은 지문에서 제외된다`() {
+        val state = newState()
+        val pristine = editorContentSignature(EditorFormState(typeForm = AfternoteTypeForm.Memorial()), state)
+
+        assertEquals(
+            "서버 원본은 prefill 이 채운 값이라 사용자 입력이 아니다",
             pristine,
             editorContentSignature(
-                EditorFormState(typeForm = AfternoteTypeForm.Memorial(videoUrl = "content://video")),
+                EditorFormState(
+                    typeForm =
+                        AfternoteTypeForm.Memorial(
+                            video =
+                                EditableMemorialVideo.fromPersisted(
+                                    MemorialVideoAttachment(
+                                        url = "https://cdn.test/farewell.mp4",
+                                        thumbnailUrl = "https://cdn.test/farewell-thumb.jpg",
+                                    ),
+                                ),
+                        ),
+                ),
                 state,
             ),
         )

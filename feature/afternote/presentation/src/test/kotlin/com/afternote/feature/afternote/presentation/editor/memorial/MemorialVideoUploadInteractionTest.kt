@@ -29,6 +29,7 @@ class MemorialVideoUploadInteractionTest {
                     onAddVideoClick = { addClicks += 1 },
                     onThumbnailBytesReady = {},
                     onThumbnailExtractionFailed = {},
+                    thumbnailRetryToken = 0,
                 )
             }
         }

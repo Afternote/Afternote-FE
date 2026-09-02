@@ -30,6 +30,7 @@ function pullRequest(overrides = {}) {
         reviews: { pageInfo: { hasPreviousPage: false }, nodes: [changesRequested()] },
         commits: { pageInfo: { hasPreviousPage: false }, nodes: [] },
         comments: { pageInfo: { hasPreviousPage: false }, nodes: [] },
+        userContentEdits: { pageInfo: { hasPreviousPage: false }, nodes: [] },
         ...overrides,
     };
 }
