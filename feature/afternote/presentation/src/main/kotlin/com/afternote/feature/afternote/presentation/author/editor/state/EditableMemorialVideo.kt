@@ -25,11 +25,14 @@ internal data class EditableMemorialVideo private constructor(
     /** 현재 화면에서 사용자의 새 선택을 걷어내는 동작을 제공할 수 있는지. */
     internal val canDiscardSelection: Boolean get() = selection != null
 
-    /** 새 선택으로 교체한다. `null`이면 교체분만 걷어내고 서버 기준값으로 돌아간다. */
-    internal fun withSelection(url: String?): EditableMemorialVideo = copy(selection = MemorialVideoAttachment.ofOrNull(url))
+    /** 새 선택으로 교체한다. 이전 교체분의 썸네일은 물려주지 않는다. 빈 문자열은 [MemorialVideoAttachment.ofOrNull] 규칙대로 첨부 없음이다. */
+    internal fun withSelection(url: String): EditableMemorialVideo = copy(selection = MemorialVideoAttachment.ofOrNull(url))
+
+    /** 이번 편집에서 고른 영상만 걷어낸다. 서버 기준값은 남아 표시가 그리로 돌아간다. */
+    internal fun discardSelection(): EditableMemorialVideo = copy(selection = null)
 
     /** 미저장 교체분에서 파생된 썸네일만 갱신한다. 교체분이 사라졌다면 늦은 결과를 버린다. */
-    internal fun withSelectionThumbnail(url: String?): EditableMemorialVideo =
+    internal fun withSelectionThumbnail(url: String): EditableMemorialVideo =
         selection?.let { copy(selection = it.copy(thumbnailUrl = url)) } ?: this
 
     /** 이탈 가드에는 이번 폼에서 직접 고른 영상만 싣고 자동 파생 썸네일은 제외한다. */

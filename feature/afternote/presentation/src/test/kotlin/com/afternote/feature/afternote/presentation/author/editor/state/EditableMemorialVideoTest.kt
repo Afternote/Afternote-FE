@@ -24,13 +24,13 @@ class EditableMemorialVideoTest {
         EditableMemorialVideo
             .empty()
             .withSelection(attachment.url)
-            .withSelectionThumbnail(attachment.thumbnailUrl)
+            .let { video -> attachment.thumbnailUrl?.let(video::withSelectionThumbnail) ?: video }
 
     private fun persistedAndSelection(): EditableMemorialVideo =
         EditableMemorialVideo
             .fromPersisted(persisted)
             .withSelection(selection.url)
-            .withSelectionThumbnail(selection.thumbnailUrl)
+            .let { video -> selection.thumbnailUrl?.let(video::withSelectionThumbnail) ?: video }
 
     @Test
     fun `네 가지 상태는 표시 영상과 저장 입력을 스스로 결정한다`() {
@@ -88,7 +88,7 @@ class EditableMemorialVideoTest {
     @Test
     fun `새 선택을 제거하면 보존한 서버 원본으로 돌아간다`() {
         val restored =
-            persistedAndSelection().withSelection(null)
+            persistedAndSelection().discardSelection()
 
         assertEquals(persisted, restored.displayed)
         assertFalse(restored.canDiscardSelection)
@@ -122,7 +122,7 @@ class EditableMemorialVideoTest {
 
         assertEquals(MemorialVideoAttachment(url = "content://videos/another"), selected.displayed)
         assertEquals(MediaInput.Local("content://videos/another"), selected.toMediaInput())
-        assertEquals(persisted, selected.withSelection(null).displayed)
+        assertEquals(persisted, selected.discardSelection().displayed)
     }
 
     @Test
@@ -150,6 +150,6 @@ class EditableMemorialVideoTest {
 
         assertEquals(MemorialVideoAttachment(url = selection.url), userEntered.displayed)
         assertTrue(userEntered.canDiscardSelection)
-        assertNull(userEntered.withSelection(null).displayed)
+        assertNull(userEntered.discardSelection().displayed)
     }
 }

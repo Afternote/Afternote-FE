@@ -18,7 +18,7 @@ class MemorialMediaRemovableTargetsTest {
     private fun memorialForm(
         pickedPhotoUri: String? = null,
         photoUrl: String? = null,
-        pendingVideoUrl: String? = null,
+        selectedVideoUrl: String? = null,
         persistedVideoUrl: String? = null,
     ): EditorFormState =
         EditorFormState(
@@ -29,7 +29,7 @@ class MemorialMediaRemovableTargetsTest {
                     video =
                         EditableMemorialVideo
                             .fromPersisted(MemorialVideoAttachment.ofOrNull(persistedVideoUrl))
-                            .withSelection(pendingVideoUrl),
+                            .let { video -> selectedVideoUrl?.let(video::withSelection) ?: video },
                 ),
         )
 
@@ -46,13 +46,13 @@ class MemorialMediaRemovableTargetsTest {
         )
         assertEquals(
             setOf(MemorialMediaTarget.VIDEO),
-            memorialForm(pendingVideoUrl = "content://videos/new").removableMemorialMediaTargets(),
+            memorialForm(selectedVideoUrl = "content://videos/new").removableMemorialMediaTargets(),
         )
         assertEquals(
             setOf(MemorialMediaTarget.PHOTO, MemorialMediaTarget.VIDEO),
             memorialForm(
                 pickedPhotoUri = "content://photos/new",
-                pendingVideoUrl = "content://videos/new",
+                selectedVideoUrl = "content://videos/new",
             ).removableMemorialMediaTargets(),
         )
     }
