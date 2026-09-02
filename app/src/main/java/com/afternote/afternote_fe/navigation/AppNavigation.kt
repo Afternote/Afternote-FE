@@ -27,8 +27,8 @@ import com.afternote.afternote_fe.notification.NotificationPermissionEffect
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomBar
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.feature.afternote.presentation.author.navigation.afternoteNavGraph
-import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
+import com.afternote.feature.afternote.presentation.navigation.afternoteNavGraph
+import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.receiver.navigation.receivedAfternoteNavGraph
 import com.afternote.feature.home.presentation.HomeTabScreen
 import com.afternote.feature.home.presentation.HomeTabViewModel
