@@ -240,6 +240,9 @@
     <!-- 수정 진입 prefill 조회 실패 (#705). 저장이 막힌다는 사실까지 말한다 — 이 상태에서 저장하면
          서버가 빈 폼 값으로 기존 기록을 덮기 때문이다. -->
     <string name="afternote_editor_prefill_load_failed">기존 내용을 불러오지 못했습니다.\n불러오기 전에는 저장할 수 없어요.</string>
+    <!-- 위와 저장을 막는 이유는 같지만 사실이 다르다 (#705). 조회가 아직 진행 중일 때는 실패했다고
+         말하지 않는다 — 곧 도착하므로 기다리면 저장할 수 있다. -->
+    <string name="afternote_editor_prefill_not_ready">기존 내용을 불러오는 중입니다.\n잠시 후 다시 시도해 주세요.</string>
     <string name="afternote_editor_prefill_retry">다시 불러오기</string>
     <string name="afternote_editor_thumbnail_upload_failed">영정사진 업로드에 실패했습니다.</string>
     <string name="afternote_editor_exit_confirm_message">작성 중인 내용이 사라집니다.\n정말 나가시겠어요?</string>

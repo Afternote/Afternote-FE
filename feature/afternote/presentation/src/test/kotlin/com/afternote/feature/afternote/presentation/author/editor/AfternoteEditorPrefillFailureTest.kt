@@ -30,6 +30,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -202,8 +203,25 @@ class AfternoteEditorPrefillFailureTest {
                 "느린 상세 GET 을 앞질러 저장하면 기존 기록이 빈 폼으로 덮인다",
                 neverCompleting.updateCalls.isEmpty(),
             )
-            assertEquals(AfternoteEditorError.PrefillUnavailable, viewModel.uiState.value.error)
+            assertEquals(
+                "아직 읽는 중인 사용자에게 «불러오지 못했습니다» 라고 말하면 사실과 다르다",
+                AfternoteEditorError.PrefillNotReady,
+                viewModel.uiState.value.error,
+            )
         }
+
+    @Test
+    fun `읽는 중과 실패는 서로 다른 문구로 갈린다`() {
+        assertEquals(
+            R.string.afternote_editor_prefill_not_ready,
+            AfternoteEditorError.PrefillNotReady.messageResId(),
+        )
+        assertNotEquals(
+            "저장을 막는 이유가 같아도 사용자에게 할 말이 다르다",
+            AfternoteEditorError.PrefillUnavailable.messageResId(),
+            AfternoteEditorError.PrefillNotReady.messageResId(),
+        )
+    }
 
     @Test
     fun `prefill 진행 중에는 등록 버튼이 잠긴다`() {
