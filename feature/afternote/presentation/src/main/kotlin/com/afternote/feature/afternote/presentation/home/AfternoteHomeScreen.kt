@@ -1,6 +1,10 @@
 package com.afternote.feature.afternote.presentation.home
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -28,6 +32,10 @@ import com.afternote.feature.afternote.presentation.shared.component.ListItemUiM
  * 관점이 갈리는 조각만 호출부가 채운다.
  *
  * @param headerDescription 상단 헤더 한 줄. 기본값을 두지 않는 이유는 [HomeHeaderSection] KDoc 참조 (#620).
+ * @param showsHeaderOnEmptyList 목록이 0건이고 카테고리 필터도 없을 때 헤더(제목·설명·NEXT STEP 슬롯)를
+ *   그릴지. 작성자 시안(`애프터노트_목록X` 4327:66762)은 0건에서도 헤더를 그대로 두므로 작성자는 `true` 다.
+ *   수신자 빈 상태 시안은 확인된 바 없어 종전 렌더(헤더 없음)를 유지한다 — 기본값을 두지 않는 이유는
+ *   [HomeHeaderSection] KDoc 과 같다(#620·#777): 관점이 갈리는 조각은 호출부가 매번 명시한다 (#1175).
  * @param onSettingClick 설정 진입. `null`(기본)이면 탑바의 회원 액션(프로필·설정)을 그리지 않는다 —
  *   수신자는 로그인 사용자가 아니라 두 아이콘 모두 향할 곳이 없다.
  */
@@ -40,6 +48,7 @@ fun AfternoteHomeScreen(
     onListItemClick: (id: Long, type: AfternoteType) -> Unit,
     headerDescription: String,
     nextStep: NextStep?,
+    showsHeaderOnEmptyList: Boolean,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onFabClick: (() -> Unit)? = null,
@@ -103,7 +112,15 @@ fun AfternoteHomeScreen(
                 }
 
                 else -> {
-                    EmptyListBody(modifier = bodyModifier)
+                    if (showsHeaderOnEmptyList) {
+                        EmptyHomeBody(
+                            headerDescription = headerDescription,
+                            nextStep = nextStep,
+                            modifier = bodyModifier,
+                        )
+                    } else {
+                        EmptyListBody(modifier = bodyModifier)
+                    }
                 }
             }
         }
