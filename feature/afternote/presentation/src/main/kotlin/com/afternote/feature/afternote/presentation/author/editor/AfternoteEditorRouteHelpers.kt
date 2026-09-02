@@ -37,6 +37,22 @@ internal fun AfternoteEditorError.messageResId(): Int =
     }
 
 /**
+ * 이 오류의 스낵바에 «다시 시도» 액션을 거는지 — 추모 영상 썸네일 실패 두 갈래에만 건다 (#1550).
+ *
+ * 판정은 지금 뜨는 오류 자체로 한다. «재시도 가능» 을 별도 불리언으로 들고 있으면 그 스낵바가 닫힌
+ * 뒤에도 상태가 남아, 다음에 뜨는 무관한 스낵바(저장 실패 등)에 썸네일 재시도가 붙는다.
+ */
+internal fun AfternoteEditorError.offersMemorialThumbnailRetry(): Boolean =
+    this is AfternoteEditorError.Upload &&
+        when (target) {
+            AfternoteEditorError.Upload.Target.THUMBNAIL,
+            AfternoteEditorError.Upload.Target.THUMBNAIL_EXTRACT,
+            -> true
+
+            AfternoteEditorError.Upload.Target.SAVE_MEDIA -> false
+        }
+
+/**
  * 수신자 선택 화면이 남긴 id 를 폼에 반영한다.
  *
  * 목록 로드 실패로 id 를 해석할 수 없으면 [AfternoteEditorViewModel.resolveSelectedReceiver] 가 재조회 후

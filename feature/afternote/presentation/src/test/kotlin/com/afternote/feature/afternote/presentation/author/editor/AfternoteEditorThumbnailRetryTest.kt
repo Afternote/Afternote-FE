@@ -21,9 +21,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -64,7 +62,6 @@ class AfternoteEditorThumbnailRetryTest {
             viewModel.uploadMemorialThumbnail(JPEG_BYTES)
             advanceUntilIdle()
 
-            assertTrue(viewModel.uiState.value.canRetryMemorialThumbnail)
             assertEquals(
                 AfternoteEditorError.Upload(AfternoteEditorError.Upload.Target.THUMBNAIL),
                 viewModel.uiState.value.error,
@@ -86,7 +83,6 @@ class AfternoteEditorThumbnailRetryTest {
 
             assertEquals("두 번째 시도까지 두 번 올린다", 2, uploads.attempts)
             assertEquals(UPLOADED_URL, viewModel.uiState.value.pendingThumbnailUrl)
-            assertFalse(viewModel.uiState.value.canRetryMemorialThumbnail)
             // 고른 영상은 그대로다 — 되돌리려고 영상을 다시 고르게 하지 않는다.
             assertEquals(LOCAL_VIDEO, viewModel.currentForm().displayedMemorialVideo?.url)
         }
@@ -101,7 +97,6 @@ class AfternoteEditorThumbnailRetryTest {
             viewModel.onMemorialThumbnailExtractionFailed(IllegalStateException("no frame"))
             advanceUntilIdle()
 
-            assertTrue(viewModel.uiState.value.canRetryMemorialThumbnail)
             assertEquals(
                 AfternoteEditorError.Upload(AfternoteEditorError.Upload.Target.THUMBNAIL_EXTRACT),
                 viewModel.uiState.value.error,
@@ -124,7 +119,6 @@ class AfternoteEditorThumbnailRetryTest {
             // 토큰이 바뀌면 화면이 같은 영상에서 프레임 추출을 다시 발화한다.
             assertEquals(before + 1, viewModel.uiState.value.memorialThumbnailRetryToken)
             assertEquals("올릴 바이트가 없으니 업로드는 부르지 않는다", 0, uploads.attempts)
-            assertFalse(viewModel.uiState.value.canRetryMemorialThumbnail)
         }
 
     @Test

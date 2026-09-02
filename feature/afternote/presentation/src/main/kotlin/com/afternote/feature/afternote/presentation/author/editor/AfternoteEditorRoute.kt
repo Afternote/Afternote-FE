@@ -129,8 +129,9 @@ internal fun AfternoteEditorNavigation(
             )
         }
     // 썸네일 실패는 알리는 것으로 끝내지 않는다 — 영상 재선택 없이 되돌릴 액션을 같은 스낵바에 건다.
+    // 어느 오류에 거는지는 오류 자체가 말한다 ([offersMemorialThumbnailRetry]).
     val thumbnailRetryAction =
-        if (uiState.canRetryMemorialThumbnail && snackbarMessage != null) {
+        if (errorEvent?.error?.offersMemorialThumbnailRetry() == true) {
             EditorSnackbarAction(
                 label = stringResource(R.string.afternote_editor_thumbnail_retry),
                 onPerform = editViewModel::retryMemorialThumbnail,

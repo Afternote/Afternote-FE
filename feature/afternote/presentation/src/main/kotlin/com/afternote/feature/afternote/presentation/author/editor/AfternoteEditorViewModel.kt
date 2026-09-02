@@ -223,7 +223,6 @@ class AfternoteEditorViewModel
             // 영상이 갈리면 이전 영상의 썸네일 실패도 함께 무효다 — 남은 바이트로 재시도하면 다른
             // 영상의 그림이 붙는다.
             pendingThumbnailBytes = null
-            internalState.update { it.copy(canRetryMemorialThumbnail = false) }
             mutateForm { it.withMemorialVideo(url) }
         }
 
@@ -350,19 +349,11 @@ class AfternoteEditorViewModel
                     .onSuccess { url ->
                         Log.d(TAG, "uploadMemorialThumbnail: success, url=$url")
                         pendingThumbnailBytes = null
-                        internalState.update {
-                            it.copy(pendingThumbnailUrl = url, canRetryMemorialThumbnail = false)
-                        }
+                        internalState.update { it.copy(pendingThumbnailUrl = url) }
                     }.onFailure { e ->
                         errorReporter.recordAfternoteFailure(AfternoteFailureStage.MEMORIAL_THUMBNAIL_UPLOAD, e)
                         internalState.update {
-                            it
-                                .copy(canRetryMemorialThumbnail = true)
-                                .withError(
-                                    AfternoteEditorError.Upload(
-                                        AfternoteEditorError.Upload.Target.THUMBNAIL,
-                                    ),
-                                )
+                            it.withError(AfternoteEditorError.Upload(AfternoteEditorError.Upload.Target.THUMBNAIL))
                         }
                     }
             }
@@ -379,13 +370,7 @@ class AfternoteEditorViewModel
             // 뽑지 못했으니 재업로드할 바이트가 없다 — 재시도는 추출부터 다시 돌아야 한다.
             pendingThumbnailBytes = null
             internalState.update {
-                it
-                    .copy(canRetryMemorialThumbnail = true)
-                    .withError(
-                        AfternoteEditorError.Upload(
-                            AfternoteEditorError.Upload.Target.THUMBNAIL_EXTRACT,
-                        ),
-                    )
+                it.withError(AfternoteEditorError.Upload(AfternoteEditorError.Upload.Target.THUMBNAIL_EXTRACT))
             }
         }
 
@@ -401,16 +386,11 @@ class AfternoteEditorViewModel
                 uploadMemorialThumbnail(bytes)
                 return
             }
-            internalState.update {
-                it.copy(
-                    canRetryMemorialThumbnail = false,
-                    memorialThumbnailRetryToken = it.memorialThumbnailRetryToken + 1,
-                )
-            }
+            internalState.update { it.copy(memorialThumbnailRetryToken = it.memorialThumbnailRetryToken + 1) }
         }
 
         /**
-         * 저장 직전 미해결 썸네일을 한 번 더 태운다.
+         * 저장 직전, 업로드에 실패해 남아 있는 썸네일 바이트를 한 번 더 업로드 시도한다.
          *
          * 영상 자체는 저장 시점에 업로드하는데(`resolveMemorialMediaForSave`) 썸네일만 선택 시점
          * 업로드라 비대칭이었다. 실패해도 저장은 막지 않는다 — 썸네일 때문에 장례식 영상 저장을
@@ -668,7 +648,6 @@ class AfternoteEditorViewModel
             val errorOccurrence: Long = 0L,
             val pendingSaveSuccessId: Long? = null,
             val pendingThumbnailUrl: String? = null,
-            val canRetryMemorialThumbnail: Boolean = false,
             val memorialThumbnailRetryToken: Int = 0,
             val pendingPrefill: EditorFormPrefill? = null,
         )
@@ -683,7 +662,6 @@ class AfternoteEditorViewModel
                 errorEvent = errorEvent,
                 pendingSaveSuccessId = pendingSaveSuccessId,
                 pendingThumbnailUrl = pendingThumbnailUrl,
-                canRetryMemorialThumbnail = canRetryMemorialThumbnail,
                 memorialThumbnailRetryToken = memorialThumbnailRetryToken,
                 pendingPrefill = pendingPrefill,
             )

@@ -101,14 +101,12 @@ data class AfternoteEditorUiState(
     /** 장례식에 남길 영상 썸네일 업로드 완료 신호 — UI 파사드가 form 에 url 적용 후 `onThumbnailUploadedConsumed` 로 reset. */
     val pendingThumbnailUrl: String? = null,
     /**
-     * 썸네일이 실패한 채 남아 있다 — UI 는 오류 스낵바에 «다시 시도» 액션을 건다.
+     * 추출부터 다시 돌리기 위한 키. 바뀌면 UI 가 프레임 추출을 재발화한다 (#1550).
      *
-     * 실패를 한 번 알리고 끝내면 되돌릴 방법이 없다. 추출은 `LaunchedEffect(videoUrl)` 키라 같은 영상이
-     * 폼에 있는 한 다시 돌지 않고, 저장하면 썸네일 없는 영상이 확정되며, 재편집으로 들어와도 원격
-     * URL 이라 추출을 건너뛴다 — 영상을 처음부터 다시 고르는 것 말고는 복구 경로가 없었다(#1550).
+     * 추출은 `LaunchedEffect(videoUrl)` 키라 같은 영상이 폼에 있는 한 다시 돌지 않고, 저장하면 썸네일
+     * 없는 영상이 확정되며, 재편집으로 들어와도 원격 URL 이라 추출을 건너뛴다 — 이 키가 없으면 추출
+     * 실패의 복구 경로는 영상을 처음부터 다시 고르는 것뿐이다.
      */
-    val canRetryMemorialThumbnail: Boolean = false,
-    /** 추출부터 다시 돌리기 위한 키. 바뀌면 UI 가 프레임 추출을 재발화한다. */
     val memorialThumbnailRetryToken: Int = 0,
     /** 수정 모드 prefill 데이터 — UI 파사드가 form 에 적용 후 `onPrefillApplied` 로 reset (skeleton 종료 동시). */
     val pendingPrefill: EditorFormPrefill? = null,
