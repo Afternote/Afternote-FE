@@ -98,13 +98,13 @@ private fun EditDropdownMenuItems(
     ) {
         if (onEditClick != null) {
             CustomDropdownItem(
-                text = stringResource(R.string.feature_afternote_menu_edit),
+                text = stringResource(R.string.afternote_menu_edit),
                 onClick = onEditClick,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
         CustomDropdownItem(
-            text = stringResource(R.string.feature_afternote_menu_delete_record),
+            text = stringResource(R.string.afternote_menu_delete_record),
             onClick = onDeleteClick,
             modifier = Modifier.fillMaxWidth(),
         )
