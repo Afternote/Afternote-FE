@@ -308,19 +308,19 @@ class ProductionVisibilityKonsistTest {
 
         val ISSUE_1673_AFTERNOTE =
             setOf(
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/detail/AfternoteDetailRoute.kt::function DeleteInProgressOverlay [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/detail/MemorialDetailScreen.kt::property MEMORIAL_VIDEO_CARD_TEST_TAG [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/AfternoteEditorContent.kt::function EditorContent [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/AfternoteEditorScreen.kt::function editorContentSignature [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/AfternoteEditorViewModel.kt::function toAfternoteEditorError [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/mapper/EditorReceiverMapping.kt::function toAfternoteEditorReceiver [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/memorial/MemorialVideoUpload.kt::property MEMORIAL_VIDEO_ADD_TEST_TAG [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/selection/EditorServiceSelectionSheet.kt::function EditorServiceSelectionSheetContent [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/selection/EditorServiceSelectionSheet.kt::function filterEditorServiceOptions [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/selection/EditorServiceSelectionSheet.kt::function serviceSelectionSheetTitleResOrNull [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/editor/state/AfternoteEditorState.kt::property editorMessagesSaver [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/home/AfternoteTypeFilterRow.kt::property AFTERNOTE_CATEGORY_MORE_INDICATOR_TEST_TAG [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/author/navigation/AfternoteNavGraphTheme.kt::function AfternoteLightTheme [implicit-public]",
+                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/detail/AfternoteDetailRoute.kt::function DeleteInProgressOverlay [internal]",
+                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/detail/MemorialDetailScreen.kt::property MEMORIAL_VIDEO_CARD_TEST_TAG [internal]",
+                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/AfternoteEditorContent.kt::function EditorContent [internal]",
+                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/AfternoteEditorScreen.kt::function editorContentSignature [internal]",
+                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/AfternoteEditorViewModel.kt::function toAfternoteEditorError [internal]",
+                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/mapper/EditorReceiverMapping.kt::function toAfternoteEditorReceiver [internal]",
+                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/memorial/MemorialVideoUpload.kt::property MEMORIAL_VIDEO_ADD_TEST_TAG [internal]",
+                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/selection/EditorServiceSelectionSheet.kt::function EditorServiceSelectionSheetContent [internal]",
+                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/selection/EditorServiceSelectionSheet.kt::function filterEditorServiceOptions [internal]",
+                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/selection/EditorServiceSelectionSheet.kt::function serviceSelectionSheetTitleResOrNull [internal]",
+                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/state/AfternoteEditorState.kt::property editorMessagesSaver [internal]",
+                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/home/AfternoteTypeFilterRow.kt::property AFTERNOTE_CATEGORY_MORE_INDICATOR_TEST_TAG [internal]",
+                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/navigation/AfternoteNavGraphTheme.kt::function AfternoteLightTheme [implicit-public]",
                 "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/receiver/afternotelist/ReceiverAfternoteHomeViewModel.kt::function toUiModel [internal]",
                 "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/shared/util/AfternoteDisplayRes.kt::function getIconResForType [implicit-public]",
             )
@@ -396,7 +396,7 @@ class ProductionVisibilityKonsistTest {
                     "ListItem.kt::class Account [implicit-public]" to
                     "ListItem.account가 노출하는 도메인 타입",
                 "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/" +
-                    "presentation/author/editor/memorial/MemorialMediaSourceState.kt::class MemorialMediaSourceState [internal]" to
+                    "presentation/editor/memorial/MemorialMediaSourceState.kt::class MemorialMediaSourceState [internal]" to
                     "다른 프로덕션 파일이 반환값을 타입 추론으로 소비",
                 "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/terms/" +
                     "OnboardingTermsScreen.kt::class TermsType [implicit-public]" to

@@ -48,8 +48,8 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.MemorialContent
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
+import com.afternote.feature.afternote.presentation.shared.detail.MemorialPlaylist
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
-import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
 import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
 import kotlinx.coroutines.launch

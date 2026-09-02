@@ -9,7 +9,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeScreen
+import com.afternote.feature.afternote.presentation.home.AfternoteHomeScreen
 import com.afternote.core.ui.R as CoreUiR
 
 /**

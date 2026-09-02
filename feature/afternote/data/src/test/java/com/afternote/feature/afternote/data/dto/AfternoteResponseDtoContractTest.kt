@@ -78,7 +78,7 @@ class AfternoteResponseDtoContractTest {
         val request =
             CreateMemorialPayload(
                 title = "추억 노트",
-                memorial = MemorialWritePayload(),
+                memorial = MemorialWritePayload(memorialPhotoUrl = null, songs = emptyList(), memorialVideo = null),
             ).toRequest()
 
         val playlist =
@@ -97,7 +97,7 @@ class AfternoteResponseDtoContractTest {
             AfternoteUpdatePayload(
                 type = AfternoteType.MEMORIAL,
                 title = "추억 노트",
-                memorial = MemorialWritePayload(),
+                memorial = MemorialWritePayload(memorialPhotoUrl = null, songs = emptyList(), memorialVideo = null),
             ).toRequest()
 
         val encoded = json.encodeToJsonElement(AfternoteUpdateRequestDto.serializer(), request).jsonObject
