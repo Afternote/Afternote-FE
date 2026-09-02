@@ -6,12 +6,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.component.EmptyListBody
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -71,6 +74,7 @@ class AfternoteHomeEmptyHeaderTest {
                     headerDescription = stringRes(R.string.afternote_home_header_description),
                     nextStep = NextStep(text = NEXT_STEP_TEXT, onClick = { tapped = true }),
                     emptyListDescription = stringRes(R.string.afternote_empty_list_body),
+                    onTypeSelected = {},
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -102,6 +106,50 @@ class AfternoteHomeEmptyHeaderTest {
         composeRule.onNodeWithText(string(R.string.afternote_empty_list_body)).assertExists()
         composeRule.onNodeWithText(string(R.string.afternote_home_title)).assertDoesNotExist()
         composeRule.onNodeWithText(string(R.string.afternote_home_header_description)).assertDoesNotExist()
+        composeRule.onNodeWithText(string(R.string.afternote_category_all)).assertDoesNotExist()
+    }
+
+    /**
+     * 시안 `애프터노트_목록X` 는 0건에서도 헤더 아래에 카테고리 필터 행을 둔다. 행이 없으면 첫 진입
+     * 사용자는 카테고리라는 축이 있다는 것 자체를 볼 수 없다 (#1175 후속).
+     */
+    @Test
+    fun `무필터 0건 본문에도 카테고리 필터 행을 그린다`() {
+        composeRule.setContent { AfternoteTheme { AuthorEmptyBody() } }
+
+        composeRule.onNodeWithText(string(R.string.afternote_category_all)).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.afternote_category_social_network)).assertIsDisplayed()
+    }
+
+    /** 이 본문은 «0건이고 필터도 없음» 분기에서만 그려진다 — 선택 탭은 정의상 «전체»여야 한다. */
+    @Test
+    fun `무필터 0건 본문은 전체 탭을 선택 상태로 그린다`() {
+        composeRule.setContent { AfternoteTheme { AuthorEmptyBody() } }
+
+        composeRule.onNodeWithText(string(R.string.afternote_category_all)).assertIsSelected()
+    }
+
+    /**
+     * 0건 상태에서 카테고리를 고르면 호출부가 `selectedType` 을 채워 목록 경로로 넘어간다.
+     * 탭이 전달되지 않으면 필터 행이 «눌러도 아무 일 없는» 장식이 되어 막다른 상태가 된다.
+     */
+    @Test
+    fun `무필터 0건 본문에서 카테고리를 고르면 호출부로 전달된다`() {
+        var selected: AfternoteType? = null
+        var called = false
+        composeRule.setContent {
+            AfternoteTheme {
+                AuthorEmptyBody(onTypeSelected = {
+                    selected = it
+                    called = true
+                })
+            }
+        }
+
+        composeRule.onNodeWithText(string(R.string.afternote_category_social_network)).performClick()
+
+        assertTrue("카테고리 탭이 호출부로 전달되지 않았다", called)
+        assertEquals(AfternoteType.SOCIAL_NETWORK, selected)
     }
 
     private fun string(resId: Int): String = composeRule.activity.getString(resId)
@@ -111,11 +159,12 @@ class AfternoteHomeEmptyHeaderTest {
 
     /** [AfternoteHomeScreen] 이 작성자 호출부(`showsHeaderOnEmptyList = true`)에서 그리는 빈 본문. */
     @Composable
-    private fun AuthorEmptyBody() {
+    private fun AuthorEmptyBody(onTypeSelected: (AfternoteType?) -> Unit = {}) {
         EmptyHomeBody(
             headerDescription = stringRes(R.string.afternote_home_header_description),
             nextStep = null,
             emptyListDescription = stringRes(R.string.afternote_empty_list_body),
+            onTypeSelected = onTypeSelected,
             modifier = Modifier.fillMaxSize(),
         )
     }

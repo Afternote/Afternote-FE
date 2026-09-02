@@ -32,9 +32,10 @@ import com.afternote.feature.afternote.presentation.shared.component.ListItemUiM
  * 관점이 갈리는 조각만 호출부가 채운다.
  *
  * @param headerDescription 상단 헤더 한 줄. 기본값을 두지 않는 이유는 [HomeHeaderSection] KDoc 참조 (#620).
- * @param showsHeaderOnEmptyList 목록이 0건이고 카테고리 필터도 없을 때 헤더(제목·설명·NEXT STEP 슬롯)를
- *   그릴지. 작성자 시안(`애프터노트_목록X` 4327:66762)은 0건에서도 헤더를 그대로 두므로 작성자는 `true` 다.
- *   수신자는 `false` — 시안이 «헤더 없음» 이어서가 아니라 **수신자 0건 시안이 아예 없어서**다. 2026-08-31
+ * @param showsHeaderOnEmptyList 목록이 0건이고 카테고리 필터도 없을 때 화면 상단(제목·설명·NEXT STEP
+ *   슬롯 **과 카테고리 필터 행**)을 그릴지. 작성자 시안(`애프터노트_목록X` 4327:66762)은 0건에서도 이
+ *   상단을 그대로 두므로 작성자는 `true` 다.
+ *   수신자는 `false` — 시안이 «상단 없음» 이어서가 아니라 **수신자 0건 시안이 아예 없어서**다. 2026-08-31
  *   에 정본 페이지(`4327:43064`) TEXT 노드 6482개를 전수 조회했고, 수신자 구역(4327:73596)의 빈 상태는
  *   「받은 기록함」(4327:74361) 하나뿐이다 — 그건 + FAB 을 가진 다른 화면이라 이 목록의 근거가 못 된다.
  *   기본값을 두지 않는 이유는 [HomeHeaderSection] KDoc 과 같다(#620·#777): 관점이 갈리는 조각은 호출부가
@@ -124,6 +125,7 @@ fun AfternoteHomeScreen(
                             headerDescription = headerDescription,
                             nextStep = nextStep,
                             emptyListDescription = emptyListDescription,
+                            onTypeSelected = onTypeSelected,
                             modifier = bodyModifier,
                         )
                     } else {
