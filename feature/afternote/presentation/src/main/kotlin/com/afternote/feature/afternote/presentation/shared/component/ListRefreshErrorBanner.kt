@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.paging.LoadState
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
 
@@ -61,17 +60,3 @@ fun ListRefreshErrorBanner(
         }
     }
 }
-
-/**
- * 목록을 유지한 채 새로고침 실패만 알려야 하는 상태인지 (#705).
- *
- * 보여 줄 것이 전무하면([itemCount] 0) 전면 오류([ErrorListBody])가 맡으므로 배너는 그리지 않는다 —
- * 두 표시가 겹치면 같은 실패를 두 번 말하게 된다.
- *
- * 판정을 배너 옆에 둔다 — 「언제 그리는가」 와 「무엇을 그리는가」 가 갈리면 호출부마다 기준이
- * 어긋난다. 화면 파일에 두면 그 파일 안에서만 쓰여 visibility 가드(#1678)에도 걸린다.
- */
-internal fun shouldShowRefreshErrorBanner(
-    refreshState: LoadState,
-    itemCount: Int,
-): Boolean = refreshState is LoadState.Error && itemCount > 0

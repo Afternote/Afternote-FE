@@ -27,7 +27,6 @@ import com.afternote.feature.afternote.presentation.shared.component.ErrorListBo
 import com.afternote.feature.afternote.presentation.shared.component.InfiniteListBody
 import com.afternote.feature.afternote.presentation.shared.component.ListItemUiModel
 import com.afternote.feature.afternote.presentation.shared.component.ListRefreshErrorBanner
-import com.afternote.feature.afternote.presentation.shared.component.shouldShowRefreshErrorBanner
 
 /**
  * 애프터노트 목록 화면. 작성자(발신자)와 수신자가 같은 목록·카드·필터를 쓰므로 한 화면을 공유하고,
@@ -136,3 +135,17 @@ fun AfternoteHomeScreen(
         }
     }
 }
+
+/**
+ * 목록을 유지한 채 새로고침 실패만 알려야 하는 상태인지 (#705).
+ *
+ * 보여 줄 것이 전무하면([itemCount] 0) 전면 오류([ErrorListBody])가 맡으므로 배너는 그리지 않는다 —
+ * 두 표시가 겹치면 같은 실패를 두 번 말하게 된다.
+ *
+ * 이 파일 안에서만 쓰므로 private 다. 테스트가 부르려고 넓히지 않는다(#1678) — 세 갈래는
+ * [AfternoteHomeScreen] 을 그려서 확인한다.
+ */
+private fun shouldShowRefreshErrorBanner(
+    refreshState: LoadState,
+    itemCount: Int,
+): Boolean = refreshState is LoadState.Error && itemCount > 0

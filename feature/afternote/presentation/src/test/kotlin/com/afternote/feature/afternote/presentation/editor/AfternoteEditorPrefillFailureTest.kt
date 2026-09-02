@@ -223,6 +223,47 @@ class AfternoteEditorPrefillFailureTest {
         )
     }
 
+    /**
+     * `retryPrefill` 의 널 가지를 잠근다.
+     *
+     * 신규 작성 진입은 itemId 가 없어 prefill 자체가 돌지 않고, 화면도 실패 상태에서만 재시도 버튼을
+     * 그리므로 이 호출은 실제로는 도달하지 않는다. 그래도 함수가 public 이라 밖에서 부를 수 있고,
+     * 조기 반환을 지우면 조회가 나가거나 강제 언랩이 필요해진다 — 그 회귀를 여기서 잡는다.
+     */
+    @Test
+    fun `신규 작성 진입에서 재시도를 불러도 상세 조회가 나가지 않는다`() =
+        runTest(dispatcher) {
+            val repository =
+                FakeAfternoteRepository.strict().apply {
+                    onGetDetail = { error("신규 작성에는 읽어 올 기존 기록이 없습니다") }
+                }
+            val viewModel =
+                AfternoteEditorViewModel(
+                    savedStateHandle =
+                        afternoteEditorSavedStateHandle(initialType = AfternoteType.SOCIAL_NETWORK, itemId = null),
+                    userRepository = unusedProxy<UserRepository>(),
+                    afternoteRepository = repository,
+                    memorialThumbnailUploadRepository =
+                        MemorialThumbnailUploadRepository { error("썸네일 업로드가 호출되면 안 됩니다") },
+                    resolveMemorialMediaForSave =
+                        ResolveMemorialMediaForSaveUseCase(
+                            MemorialMediaUploadRepository { input, _ ->
+                                if (input == MediaInput.None) Result.success(null) else error("미디어 업로드가 호출되면 안 됩니다")
+                            },
+                        ),
+                    errorReporter = RecordingErrorReporter(),
+                )
+            backgroundScope.launch { viewModel.uiState.collect {} }
+            runCurrent()
+            assertFalse("전제: 신규 작성은 prefill 을 돌리지 않는다", viewModel.uiState.value.isPrefillLoading)
+
+            viewModel.retryPrefill()
+            runCurrent()
+
+            assertFalse("재시도가 신규 작성에서 skeleton 을 세우면 안 된다", viewModel.uiState.value.isPrefillLoading)
+            assertFalse("실패 상태로도 넘어가면 안 된다", viewModel.uiState.value.isPrefillFailed)
+        }
+
     @Test
     fun `prefill 진행 중에는 등록 버튼이 잠긴다`() {
         assertFalse(
