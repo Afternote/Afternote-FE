@@ -70,9 +70,12 @@ private fun AfternoteDetailDto.toDetailContent(type: AfternoteType): DetailConte
 /**
  * 곡도 미디어도 아직 안 담은 추억 노트.
  *
- * 서버 임시저장(`isDraft=true`)은 카테고리별 필수값 검증을 건너뛰어(`AfternoteValidator`), 곡을 한 곡도 안 담은
- * PLAYLIST 는 `playlist` 자체가 안 온다. 여기서 던지면 그 임시저장은 이어쓰기 이전에 조회부터 실패해 영영 안 열린다.
- * 발행 완료는 서버가 최소 1곡을 강제하므로(`requirePublishedPlaylist`) 이 폴백이 발행 상세에서 발동할 일은 없다 —
+ * 서버 상세는 임시저장을 걸러 내지 않고(`AfternoteService.getDetailAfternote` 는 소유자만 본다) 응답 형태로만
+ * 가른다(`AfternotedetailResponse.of` 의 `Draft` 분기). 임시저장(`isDraft=true`)은 카테고리별 필수값 검증을
+ * 건너뛰므로(`AfternoteValidator`) 곡을 한 곡도 안 담은 PLAYLIST 는 `playlist` 자체가 안 온다 — #808 이
+ * `draftOnly=true` 목록과 이어쓰기를 붙이면 그런 임시저장이 이 분기로 들어오고, 여기서 던지면 이어쓰기 이전에
+ * 조회부터 실패한다. 발행 상세는 서버가 응답을 조립하면서 최소 1곡을 강제하므로
+ * (`AfternotedetailResponse.requirePublishedPlaylist`) 이 폴백이 발행분을 빈 추모 노트로 위장할 일은 없다 —
  * 계정 정보와 같은 이유로, 빠진 값은 던지지 않고 빈 값으로 낮춘다.
  */
 private val EMPTY_MEMORIAL_CONTENT =
