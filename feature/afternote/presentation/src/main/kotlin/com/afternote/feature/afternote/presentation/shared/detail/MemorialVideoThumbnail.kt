@@ -27,9 +27,6 @@ import coil3.compose.AsyncImage
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
 
-/** 썸네일 좌하단 오버레이 라벨의 테스트 태그. */
-const val MEMORIAL_VIDEO_OVERLAY_LABEL_TEST_TAG = "memorialVideoOverlayLabel"
-
 /**
  * 추모 영상 썸네일 — 썸네일 이미지 + 어두운 그라디언트 + 중앙 재생 버튼 + 좌하단 오버레이 라벨.
  *
