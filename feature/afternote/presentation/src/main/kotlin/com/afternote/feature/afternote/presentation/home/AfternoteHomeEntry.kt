@@ -25,7 +25,6 @@ fun AfternoteHomeEntry(
     navigateToDetail: (Long) -> Unit,
     navigateToAdd: (AfternoteType) -> Unit,
     onSettingClick: () -> Unit,
-    onDraftListClick: () -> Unit,
     viewModel: AfternoteHomeViewModel = hiltViewModel(),
 ) {
     val selectedType by viewModel.selectedType.collectAsStateWithLifecycle()
@@ -63,7 +62,6 @@ fun AfternoteHomeEntry(
         nextStep = null,
         onFabClick = { navigateToAdd(selectedType ?: AfternoteType.SOCIAL_NETWORK) },
         onSettingClick = onSettingClick,
-        onDraftListClick = onDraftListClick,
         headerDescription = stringResource(R.string.afternote_home_header_description),
     )
 }
