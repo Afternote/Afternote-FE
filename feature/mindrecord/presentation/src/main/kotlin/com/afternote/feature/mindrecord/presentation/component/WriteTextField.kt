@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -39,6 +40,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.sheet.MediaSelectBottomSheet
+import com.afternote.core.ui.sheet.MediaSheetItem
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
@@ -52,6 +55,7 @@ import com.afternote.feature.mindrecord.presentation.util.toUploadedFileKey
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import com.mohamedrejeb.richeditor.ui.BasicRichTextEditor
 import kotlinx.coroutines.launch
+import com.afternote.core.ui.R as CoreUiR
 
 /**
  * HTML 직렬화 가능한 리치 텍스트 입력 영역.
@@ -66,7 +70,7 @@ import kotlinx.coroutines.launch
  * - 사용자 입력이 발생하면 [onValueChange] 로 직렬화된 HTML 문자열을 emit 한다.
  *   서버 페이로드의 `content` 필드에 그대로 실어 보내면 된다.
  */
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun WriteTextField(
     modifier: Modifier = Modifier,
@@ -303,21 +307,42 @@ fun WriteTextField(
         }
 
         KeyboardSheet.MediaSelect -> {
+            // core:ui 정본을 쓴다. 종전에는 같은 시트를 모듈마다 다시 적어 4벌이었고,
+            // 그 사본들이 시안(4327:72281) 지오메트리에서 조금씩 어긋나 있었다 (#642 · #1615).
             MediaSelectBottomSheet(
                 onDismiss = { sheet = KeyboardSheet.None },
-                onImageClick = {
-                    sheet = KeyboardSheet.None
-                    imageLauncher.launch("image/*")
-                },
-                onVoiceClick = {
-                    sheet = KeyboardSheet.None
-                    voiceLauncher.launch("audio/*")
-                },
-                onFileClick = {
-                    sheet = KeyboardSheet.None
-                    fileLauncher.launch("*/*")
-                },
-                onLinkClick = { sheet = KeyboardSheet.LinkAdd },
+                items =
+                    listOf(
+                        MediaSheetItem(
+                            iconRes = CoreUiR.drawable.core_ui_ic_image,
+                            label = stringResource(CoreUiR.string.core_ui_media_sheet_image),
+                            onClick = {
+                                sheet = KeyboardSheet.None
+                                imageLauncher.launch("image/*")
+                            },
+                        ),
+                        MediaSheetItem(
+                            iconRes = CoreUiR.drawable.core_ui_ic_mic,
+                            label = stringResource(CoreUiR.string.core_ui_media_sheet_voice),
+                            onClick = {
+                                sheet = KeyboardSheet.None
+                                voiceLauncher.launch("audio/*")
+                            },
+                        ),
+                        MediaSheetItem(
+                            iconRes = CoreUiR.drawable.core_ui_ic_file,
+                            label = stringResource(CoreUiR.string.core_ui_media_sheet_file),
+                            onClick = {
+                                sheet = KeyboardSheet.None
+                                fileLauncher.launch("*/*")
+                            },
+                        ),
+                        MediaSheetItem(
+                            iconRes = CoreUiR.drawable.core_ui_ic_link,
+                            label = stringResource(CoreUiR.string.core_ui_media_sheet_link),
+                            onClick = { sheet = KeyboardSheet.LinkAdd },
+                        ),
+                    ),
             )
         }
 
