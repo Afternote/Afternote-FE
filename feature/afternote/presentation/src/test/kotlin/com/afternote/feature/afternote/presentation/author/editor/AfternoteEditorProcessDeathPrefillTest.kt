@@ -108,7 +108,7 @@ class AfternoteEditorProcessDeathPrefillTest {
                     mapOf(
                         "initialType" to AfternoteType.GALLERY_AND_FILES,
                         "itemId" to EDIT_ID,
-                        "editor_form_snapshot_v3" to restoredSnapshot(),
+                        "editor_form_snapshot_v4" to restoredSnapshot(),
                     ),
                 ),
             userRepository = FakeUserRepository.strict(),
