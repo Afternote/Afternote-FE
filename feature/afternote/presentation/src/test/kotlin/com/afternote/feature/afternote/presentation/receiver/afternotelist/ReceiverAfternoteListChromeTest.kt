@@ -87,11 +87,53 @@ class ReceiverAfternoteListChromeTest {
      */
     @Test
     fun `수신자 0건 목록 본문은 발신자 헤더를 물려받지 않는다`() {
-        composeRule.setContent { AfternoteTheme { EmptyListBody() } }
+        composeRule.setContent { AfternoteTheme { ReceiverEmptyBody() } }
 
         composeRule.onNodeWithText(string(R.string.afternote_home_title)).assertDoesNotExist()
         composeRule.onNodeWithText(string(R.string.afternote_home_header_description)).assertDoesNotExist()
         composeRule.onNodeWithText(string(R.string.afternote_home_next_step_section_title)).assertDoesNotExist()
+    }
+
+    /**
+     * 0건 본문 문구도 수신자 관점인지.
+     *
+     * 종전에는 [EmptyListBody] 가 `afternote_empty_list_body` 를 직접 박아 두어, 수신자가 전달받은
+     * 애프터노트 0건으로 이 본문에 닿으면 «아래 연필 버튼을 눌러 애프터노트를 등록해 보세요» 를 읽었다.
+     * 그 연필 버튼은 수신자 화면에 없다 — `onFabClick` 을 넘기지 않으므로 [AfternoteHomeScreen] 이
+     * FAB 자체를 그리지 않는다(아래 «작성 FAB 이 없다» 가 그 전제를 따로 고정한다). 못 누르는 버튼을
+     * 누르라고 시키던 것이라 #620 과 같은 부류의 누수다.
+     */
+    @Test
+    fun `수신자 0건 본문은 수신자 관점 문구를 보여준다`() {
+        composeRule.setContent { AfternoteTheme { ReceiverEmptyBody() } }
+
+        composeRule
+            .onNodeWithText(string(R.string.afternote_receiver_list_empty_body))
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `수신자 0건 본문은 발신자 작성 유도 문구를 쓰지 않는다`() {
+        composeRule.setContent { AfternoteTheme { ReceiverEmptyBody() } }
+
+        composeRule
+            .onNodeWithText(string(R.string.afternote_empty_list_body))
+            .assertDoesNotExist()
+    }
+
+    /**
+     * 0건 문구를 수신자용으로 가른 이유의 전제 — 수신자 화면에는 누를 FAB 이 없다.
+     *
+     * FAB 은 상단바와 마찬가지로 `Scaffold` 가 본문 분기와 무관하게 그리므로 화면째 띄워 본다. 없음 단언은
+     * 로딩 순번(클래스 KDoc 참조)에 걸리지 않는다 — 어느 본문이 그려지든 결과가 같다.
+     */
+    @Test
+    fun `수신자 목록에는 작성 FAB 이 없다`() {
+        composeRule.setContent { AfternoteTheme { ReceiverListScreen() } }
+
+        composeRule
+            .onNodeWithContentDescription(string(CoreUiR.string.core_ui_fab_content_description_add))
+            .assertDoesNotExist()
     }
 
     private fun string(resId: Int): String = composeRule.activity.getString(resId)
@@ -106,9 +148,16 @@ class ReceiverAfternoteListChromeTest {
             onListItemClick = { _, _ -> },
             headerDescription = stringResource(R.string.afternote_receiver_afternote_list_header_description),
             nextStep = null,
-            // 0건 헤더는 작성자 시안(4327:66762)에서만 확인된 처분이라 수신자는 종전 렌더를 유지한다 (#1175).
+            // 수신자 0건 시안이 아직 없어 헤더를 올리지 않는다 — 근거는 ReceiverAfternoteHomeEntry 주석 (#1175).
             showsHeaderOnEmptyList = false,
+            emptyListDescription = stringResource(R.string.afternote_receiver_list_empty_body),
         )
+    }
+
+    /** 화면이 0건(카테고리 필터 없음) 상태에서 그리는 본문. `showsHeaderOnEmptyList = false` 쪽 가지다. */
+    @Composable
+    private fun ReceiverEmptyBody() {
+        EmptyListBody(description = stringResource(R.string.afternote_receiver_list_empty_body))
     }
 
     /** 화면이 목록 상태에서 그리는 본문. 헤더는 loadState 가 아니라 넘겨받은 문구만 보므로 수집을 기다리지 않는다. */
