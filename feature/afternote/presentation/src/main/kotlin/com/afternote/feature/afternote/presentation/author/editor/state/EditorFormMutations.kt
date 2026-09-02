@@ -33,10 +33,26 @@ internal fun EditorFormState.withService(service: String): EditorFormState = map
 
 internal fun EditorFormState.withMemorialPhoto(uri: String?): EditorFormState = mapMemorial { it.copy(pickedPhotoUri = uri) }
 
-/** 영상이 바뀌면 그 영상에서 뽑은 썸네일은 무효가 되므로 함께 비운다. */
-internal fun EditorFormState.withMemorialVideo(url: String?): EditorFormState = mapMemorial { it.copy(videoUrl = url, thumbnailUrl = null) }
+/**
+ * 영상 첨부는 통째로 갈린다 — 새 영상에는 썸네일이 아직 없고, 이전 영상의 썸네일을 물려주면 다른
+ * 영상의 그림이 붙는다.
+ *
+ * `null`(삭제)은 **이 폼에서 새로 붙인 영상만** 걷어낸다. 서버에 저장된 영상은 수정 계약으로 지울 수
+ * 없어(빈 필드 = 기존 값 유지), 폼에서 없앤 척하면 저장 뒤 되살아난다(#1406). 편집 값이 서버 원본을
+ * 함께 보존하므로 교체분을 걷으면 표시가 저절로 원본으로 돌아간다.
+ */
+internal fun EditorFormState.withMemorialVideo(url: String?): EditorFormState =
+    mapMemorial { form ->
+        form.copy(video = url?.let(form.video::withSelection) ?: form.video.discardSelection())
+    }
 
-internal fun EditorFormState.withMemorialThumbnail(dataUrl: String?): EditorFormState = mapMemorial { it.copy(thumbnailUrl = dataUrl) }
+/**
+ * 고른 영상에서 뽑아 올린 썸네일을 붙인다. 영상이 없으면 아무 일도 하지 않는다 — 썸네일만 남는
+ * 상태를 만들 수 없으므로, 삭제한 뒤 늦게 도착한 업로드 결과는 조용히 버려진다.
+ * `null`은 붙일 썸네일이 없다는 뜻이라 폼을 바꾸지 않는다.
+ */
+internal fun EditorFormState.withMemorialThumbnail(url: String?): EditorFormState =
+    url?.let { thumbnail -> mapMemorial { form -> form.copy(video = form.video.withSelectionThumbnail(thumbnail)) } } ?: this
 
 internal fun EditorFormState.withMemorialPlaylistSongs(songs: List<Song>): EditorFormState = mapMemorial { it.copy(playlistSongs = songs) }
 

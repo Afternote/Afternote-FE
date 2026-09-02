@@ -25,11 +25,15 @@ data class EditorFormState(
     val processingMethods: List<ProcessingMethodItem>
         get() = (typeForm as? AfternoteTypeForm.WithServiceAndProcessingMethods)?.processingMethods.orEmpty()
 
-    val memorialForm: AfternoteTypeForm.Memorial? get() = typeForm as? AfternoteTypeForm.Memorial
+    internal val memorialForm: AfternoteTypeForm.Memorial? get() = typeForm as? AfternoteTypeForm.Memorial
 
     val pickedMemorialPhotoUri: String? get() = memorialForm?.pickedPhotoUri
-    val memorialVideoUrl: String? get() = memorialForm?.videoUrl
-    val memorialThumbnailUrl: String? get() = memorialForm?.thumbnailUrl
+
+    /** 서버 기준값과 이번 폼의 미저장 교체분을 함께 가진 영상 편집 상태. */
+    internal val memorialVideo: EditableMemorialVideo? get() = memorialForm?.video
+
+    internal val displayedMemorialVideo: MemorialVideoAttachment? get() = memorialVideo?.displayed
+    internal val canDiscardMemorialVideoSelection: Boolean get() = memorialVideo?.canDiscardSelection == true
     val memorialPhotoUrl: String? get() = memorialForm?.photoUrl
     val memorialPlaylistSongs: List<Song> get() = memorialForm?.playlistSongs.orEmpty()
 

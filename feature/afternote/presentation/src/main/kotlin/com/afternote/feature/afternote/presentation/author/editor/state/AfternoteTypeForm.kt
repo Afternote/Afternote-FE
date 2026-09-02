@@ -77,10 +77,11 @@ sealed interface AfternoteTypeForm {
         }
     }
 
-    data class Memorial(
+    /** 카테고리 전용 필드. 영상의 서버 기준값·미저장 교체분은 [EditableMemorialVideo]가 감춘다. */
+    @ConsistentCopyVisibility
+    data class Memorial internal constructor(
         val pickedPhotoUri: String? = null,
-        val videoUrl: String? = null,
-        val thumbnailUrl: String? = null,
+        internal val video: EditableMemorialVideo = EditableMemorialVideo.empty(),
         val photoUrl: String? = null,
         val playlistSongs: List<Song> = emptyList(),
     ) : AfternoteTypeForm {
@@ -88,8 +89,10 @@ sealed interface AfternoteTypeForm {
 
         fun displayPhotoUri(): String? = pickedPhotoUri ?: photoUrl
 
-        /** 썸네일은 영상에서 자동 파생된 값이라 사용자 입력이 아니다 — pristine 판정 전에 지운다. */
-        override fun enteredContentOrNull(): String? = copy(thumbnailUrl = null).takeUnless { it == PRISTINE }?.toString()
+        override fun enteredContentOrNull(): String? =
+            copy(video = video.userEnteredPart())
+                .takeUnless { it == PRISTINE }
+                ?.toString()
 
         private companion object {
             val PRISTINE = Memorial()
@@ -130,8 +133,13 @@ sealed interface AfternoteTypeForm {
 
                 is EditorContentPrefill.Memorial -> {
                     Memorial(
-                        videoUrl = content.videoUrl,
-                        thumbnailUrl = content.thumbnailUrl,
+                        video =
+                            EditableMemorialVideo.fromPersisted(
+                                MemorialVideoAttachment.ofOrNull(
+                                    url = content.videoUrl,
+                                    thumbnailUrl = content.thumbnailUrl,
+                                ),
+                            ),
                         photoUrl = content.photoUrl,
                         playlistSongs = content.playlistSongs,
                     )
