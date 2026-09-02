@@ -158,6 +158,7 @@ class EditorTouchTargetTest {
                 AfternoteEditorScreen(
                     form = EditorFormState(),
                     onBackClick = { backClicks++ },
+                    onSaveDraftClick = {},
                     onRegisterClick = { registerClicks++ },
                     snackbarMessage = null,
                     onSnackbarMessageConsumed = {},

@@ -460,6 +460,19 @@ fun rememberAfternoteNavActions(
                 )
             }
 
+            override fun navigateToEditorForResume(
+                itemId: Long,
+                initialType: AfternoteType,
+            ) {
+                appState.navController.navigate(
+                    AfternoteRoute.EditorFlowRoute(
+                        itemId = itemId,
+                        initialType = initialType,
+                        isDraft = true,
+                    ),
+                )
+            }
+
             override fun navigateToMemorialPlaylist() {
                 appState.navController.navigate(AfternoteRoute.MemorialPlaylistRoute)
             }

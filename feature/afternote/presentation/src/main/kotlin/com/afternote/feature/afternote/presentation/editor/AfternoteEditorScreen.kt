@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.modifierextention.addFocusCleaner
 import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
@@ -64,6 +65,7 @@ fun AfternoteEditorScreen(
     form: EditorFormState,
     onBackClick: () -> Unit,
     onRegisterClick: () -> Unit,
+    onSaveDraftClick: () -> Unit,
     snackbarMessage: String?,
     onSnackbarMessageConsumed: () -> Unit,
     // 스낵바 쌍과 같은 이유로 기본값을 주지 않는다: 새 진입 경로가 검증 팝업 배선을 빠뜨리면
@@ -137,6 +139,22 @@ fun AfternoteEditorScreen(
                 title = stringResource(R.string.afternote_editor_screen_title),
                 onBackClick = onBackAttempt,
                 actions = {
+                    // 임시저장은 정식 등록과 나란히 둔다 — 마음의 기록·타임레터 작성 화면이 「등록」 옆·아래에
+                    // 「임시저장」을 두는 것과 같은 배치다(애프터노트 구역엔 시안이 없어 그 관례를 따랐다, #808).
+                    Text(
+                        text = stringResource(R.string.afternote_editor_save_draft),
+                        style = AfternoteDesign.typography.bodySmallR,
+                        color = AfternoteDesign.colors.gray7,
+                        modifier =
+                            Modifier
+                                .clickable(
+                                    role = Role.Button,
+                                    onClick = {
+                                        focusManager.clearFocus()
+                                        onSaveDraftClick()
+                                    },
+                                ).padding(end = 12.dp),
+                    )
                     Text(
                         text = stringResource(R.string.afternote_editor_submit),
                         style = AfternoteDesign.typography.bodySmallB,

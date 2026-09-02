@@ -29,6 +29,12 @@ interface AfternoteNavActions {
         initialType: AfternoteType,
     )
 
+    /** 임시저장 목록 → 에디터 이어쓰기 (#808). 프리필을 임시저장 계약으로 읽는다는 점만 [navigateToEditorForEdit] 와 다르다. */
+    fun navigateToEditorForResume(
+        itemId: Long,
+        initialType: AfternoteType,
+    )
+
     fun navigateToMemorialPlaylist()
 
     /** 에디터 수신자 `+` → 수신자 선택 화면(#540). 에디터 위에 push 된다. */

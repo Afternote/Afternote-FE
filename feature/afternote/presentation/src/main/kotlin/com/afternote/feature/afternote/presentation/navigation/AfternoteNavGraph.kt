@@ -55,7 +55,7 @@ fun NavGraphBuilder.afternoteNavGraph(
         afternoteComposable<AfternoteRoute.DraftListRoute> {
             AfternoteDraftListNavigation(
                 onNavigateBack = actions::popBack,
-                onNavigateToEditorForEdit = actions::navigateToEditorForEdit,
+                onNavigateToEditorForEdit = actions::navigateToEditorForResume,
             )
         }
 
