@@ -1,6 +1,5 @@
 package com.afternote.konsist
 
-import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.declaration.KoFileDeclaration
 import org.junit.Test
 
@@ -82,9 +81,7 @@ class SingleSelectionRadioKonsistTest {
             .map { it.normalizedProjectPath() }
 
     private fun guardedFiles(): List<KoFileDeclaration> =
-        Konsist
-            .scopeFromProject()
-            .files
+        AfternoteKonsistScope.files
             .filter { file ->
                 val path = file.normalizedProjectPath()
                 GUARDED_MODULE_PREFIXES.any { path.startsWith(it) } && !path.startsWith(DECLARATION_PACKAGE_PREFIX)
