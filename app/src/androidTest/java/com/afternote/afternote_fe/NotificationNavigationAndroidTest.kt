@@ -97,7 +97,7 @@ class NotificationNavigationAndroidTest {
     }
 
     @Test
-    fun warmNotificationWhileLoggedIn_movesToDestinationWithoutRecreatingActivity() {
+    fun warmNotificationWhileLoggedIn_isReceivedWithoutRecreatingActivity() {
         fakeAuth.loggedIn = true
 
         val greeting = context.getString(HomeR.string.home_tab_greeting, "테스트 사용자")
@@ -107,11 +107,12 @@ class NotificationNavigationAndroidTest {
 
         awaitNotificationIntent(NotificationEntrySource.FCM, "logged-in-1", NotificationDestination.HOME)
         assertSame(activityUnderTest, resumedMainActivity())
-        awaitSelectedBottomBarTab(CoreUiR.string.core_ui_nav_item_home)
+        // 목적지 이동 결선은 #1795 가 Nav3 루트에 붙인다 — 지금은 보던 탭에 머문다.
+        awaitSelectedBottomBarTab(CoreUiR.string.core_ui_nav_item_timeletter)
     }
 
     @Test
-    fun backgroundNotification_resumesSameActivityAndMovesToDestination() {
+    fun backgroundNotification_resumesSameActivityAndKeepsCurrentScreen() {
         fakeAuth.loggedIn = true
 
         val greeting = context.getString(HomeR.string.home_tab_greeting, "테스트 사용자")
@@ -132,7 +133,8 @@ class NotificationNavigationAndroidTest {
             NotificationDestination.AFTERNOTE,
         )
         assertSame(activityUnderTest, resumedMainActivity())
-        awaitSelectedBottomBarTab(CoreUiR.string.core_ui_nav_item_note)
+        // 목적지 이동 결선은 #1795 가 붙인다 — 지금은 보던 홈 탭에 머문다.
+        awaitSelectedBottomBarTab(CoreUiR.string.core_ui_nav_item_home)
     }
 
     @Test
