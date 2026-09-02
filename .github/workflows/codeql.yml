@@ -247,7 +247,6 @@ jobs:
           :core:domain:classes
           :feature:afternote:domain:classes
           :feature:mindrecord:domain:classes
-          :feature:onboarding:domain:classes
           :feature:receiver:domain:classes
           :feature:setting:domain:classes
           :feature:timeletter:domain:classes

@@ -19,12 +19,17 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.asString
@@ -47,8 +52,15 @@ import androidx.compose.foundation.lazy.staggeredgrid.items as gridItems
 
 private val PreviewYearMonth = YearMonth.of(2026, 7)
 
+/**
+ * @param onItemClick 카드를 눌렀을 때 상세로 보낼 기록 ID 와 **보고 있는 달**. 달을 함께
+ *   싣지 않으면 상세가 이번 달 목록에서 그 기록을 찾다 실패한다 — 목록은 달을 바꿀 수
+ *   있으므로 지난달 기록이 통째로 열리지 않는다 (#759 리뷰). 기본값을 두지 않는다 —
+ *   기본값이 있으면 호출부에서 빠뜨려도 컴파일이 되고, 카드가 눌리지 않는 채로 나간다 (#759).
+ */
 @Composable
 fun DiaryScreen(
+    onItemClick: (Long, YearMonth) -> Unit,
     modifier: Modifier = Modifier,
     isListView: Boolean = true,
     /**
@@ -58,6 +70,12 @@ fun DiaryScreen(
     onEditClick: (Long, YearMonth) -> Unit = { _, _ -> },
     viewModel: DiaryListViewModel = hiltViewModel(),
 ) {
+    // 갱신을 이 화면이 직접 건다. HomeScreen 이 VM 을 호이스팅해 대신 걸어 주면, 탭에
+    // 들어가지 않아도 VM 이 만들어져 `init` 조회가 미리 나간다 (#736).
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshOnReturn()
+    }
+
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     when (val state = uiState) {
@@ -94,6 +112,7 @@ fun DiaryScreen(
                     yearMonth = state.yearMonth,
                     monthDiaryCount = state.monthDiaryCount,
                     weeklyMoodEmoji = state.weeklyDominantMood?.toEmoji(),
+                    onItemClick = onItemClick,
                     onEdit = onEditClick,
                     onDelete = viewModel::delete,
                     onYearMonthChanged = viewModel::selectYearMonth,
@@ -114,19 +133,16 @@ internal fun DiaryListContent(
     modifier: Modifier = Modifier,
     monthDiaryCount: Int = 0,
     weeklyMoodEmoji: String? = null,
-    /** «수정하기» — 기록 ID 와 이 화면이 보고 있는 달. 달은 여기서만 알 수 있다. */
+    /** 항목 탭 — 저장된 기록 본문을 여는 상세 화면 (#759). */
+    onItemClick: (Long, YearMonth) -> Unit = { _, _ -> },
+    /** «수정하기» — 기록 ID 와 이 화면이 보고 있는 달. 달은 여기서만 알 수 있다 (#582). */
     onEdit: (Long, YearMonth) -> Unit = { _, _ -> },
     onDelete: (Long) -> Unit = {},
     onYearMonthChanged: (YearMonth) -> Unit = {},
 ) {
-    if (isListView && diaries.isEmpty()) {
-        MindRecordEmptyState(
-            modifier = modifier,
-            title = stringResource(R.string.mindrecord_diary_empty_state_title),
-            description = stringResource(R.string.mindrecord_diary_empty_state_description),
-        )
-        return
-    }
+    // 기록이 없다고 조기 반환하지 않는다. 종전에는 빈 상태가 캘린더를 통째로 대체해
+    // 월 이동 버튼까지 사라졌고, 기록이 있는 달로 돌아갈 방법이 없었다 (#724).
+    var selectedDay by remember(yearMonth) { mutableStateOf<Int?>(null) }
 
     val currentMonthDiaries =
         diaries.filter { it.date.year == yearMonth.year && it.date.monthValue == yearMonth.monthValue }
@@ -135,6 +151,11 @@ internal fun DiaryListContent(
         currentMonthDiaries
             .mapNotNull { diary -> diary.emotion?.let { diary.date.dayOfMonth to it } }
             .toMap()
+
+    // 날짜를 고르면 그 날 기록만, 안 고르면 그 달 전체를 보여준다.
+    val visibleDiaries =
+        selectedDay?.let { day -> currentMonthDiaries.filter { it.date.dayOfMonth == day } }
+            ?: currentMonthDiaries
 
     if (isListView) {
         LazyColumn(modifier = modifier) {
@@ -147,6 +168,9 @@ internal fun DiaryListContent(
                     onNextMonth = { onYearMonthChanged(yearMonth.plusMonths(1)) },
                     answeredDays = answeredDays,
                     emotionByDay = emotionByDay,
+                    selectedDay = selectedDay,
+                    // 같은 날을 다시 누르면 선택을 푼다 — 그 달 전체로 돌아올 수단이 필요하다.
+                    onDayClick = { day -> selectedDay = if (selectedDay == day) null else day },
                 )
                 Spacer(modifier = Modifier.height(10.dp))
             }
@@ -158,10 +182,20 @@ internal fun DiaryListContent(
                 Spacer(modifier = Modifier.height(10.dp))
             }
 
-            items(diaries, key = { it.id }) { diary ->
+            if (visibleDiaries.isEmpty()) {
+                item {
+                    MindRecordEmptyState(
+                        title = stringResource(R.string.mindrecord_diary_empty_state_title),
+                        description = stringResource(R.string.mindrecord_diary_empty_state_description),
+                    )
+                }
+            }
+
+            items(visibleDiaries, key = { it.id }) { diary ->
                 DiaryComponent(
                     onEdit = { onEdit(diary.id, yearMonth) },
                     diary = diary,
+                    onClick = { onItemClick(diary.id, yearMonth) },
                     modifier = Modifier.padding(vertical = 8.dp),
                     onDelete = { onDelete(diary.id) },
                 )
@@ -186,6 +220,7 @@ internal fun DiaryListContent(
                 DiaryCard(
                     onEdit = { onEdit(diary.id, yearMonth) },
                     diary = diary,
+                    onClick = { onItemClick(diary.id, yearMonth) },
                     onDelete = { onDelete(diary.id) },
                 )
             }

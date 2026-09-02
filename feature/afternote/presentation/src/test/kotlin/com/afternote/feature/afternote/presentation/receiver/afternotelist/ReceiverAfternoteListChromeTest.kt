@@ -14,10 +14,10 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.PROFILE_ICON_TEST_TAG
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeScreen
-import com.afternote.feature.afternote.presentation.shared.body.EmptyListBody
-import com.afternote.feature.afternote.presentation.shared.body.infinite.InfiniteListBody
-import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
+import com.afternote.feature.afternote.presentation.home.AfternoteHomeScreen
+import com.afternote.feature.afternote.presentation.shared.component.EmptyListBody
+import com.afternote.feature.afternote.presentation.shared.component.InfiniteListBody
+import com.afternote.feature.afternote.presentation.shared.component.ListItemUiModel
 import kotlinx.coroutines.flow.flowOf
 import org.junit.Rule
 import org.junit.Test
@@ -64,7 +64,7 @@ class ReceiverAfternoteListChromeTest {
         composeRule.setContent { AfternoteTheme { ReceiverListBody() } }
 
         composeRule
-            .onNodeWithText(string(R.string.receiver_afternote_list_header_description))
+            .onNodeWithText(string(R.string.afternote_receiver_afternote_list_header_description))
             .assertIsDisplayed()
     }
 
@@ -104,7 +104,7 @@ class ReceiverAfternoteListChromeTest {
             selectedType = null,
             onTypeSelected = {},
             onListItemClick = { _, _ -> },
-            headerDescription = stringResource(R.string.receiver_afternote_list_header_description),
+            headerDescription = stringResource(R.string.afternote_receiver_afternote_list_header_description),
             nextStep = null,
             // 0건 헤더는 작성자 시안(4327:66762)에서만 확인된 처분이라 수신자는 종전 렌더를 유지한다 (#1175).
             showsHeaderOnEmptyList = false,
@@ -119,7 +119,7 @@ class ReceiverAfternoteListChromeTest {
             selectedType = null,
             onTypeSelected = {},
             onListItemClick = { _, _ -> },
-            headerDescription = stringResource(R.string.receiver_afternote_list_header_description),
+            headerDescription = stringResource(R.string.afternote_receiver_afternote_list_header_description),
             nextStep = null,
         )
     }
@@ -133,7 +133,7 @@ class ReceiverAfternoteListChromeTest {
                         id = 1L,
                         serviceName = "인스타그램",
                         date = "2026.07.29",
-                        iconResId = R.drawable.feature_afternote_img_insta_pattern,
+                        iconResId = R.drawable.afternote_img_insta_pattern,
                         type = AfternoteType.SOCIAL_NETWORK,
                     ),
                 ),

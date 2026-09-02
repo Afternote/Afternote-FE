@@ -9,7 +9,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeScreen
+import com.afternote.feature.afternote.presentation.home.AfternoteHomeScreen
 import com.afternote.core.ui.R as CoreUiR
 
 /**
@@ -46,8 +46,8 @@ fun ReceiverAfternoteHomeEntry(
     when (listError) {
         ReceiverAfternoteListError.NotDeliverable -> {
             ReceiverAfternoteListErrorBody(
-                title = stringResource(R.string.receiver_afternote_list_not_deliverable_message),
-                description = stringResource(R.string.receiver_afternote_list_not_deliverable_description),
+                title = stringResource(R.string.afternote_receiver_afternote_list_not_deliverable_message),
+                description = stringResource(R.string.afternote_receiver_afternote_list_not_deliverable_description),
                 modifier = modifier,
             )
         }
@@ -71,7 +71,7 @@ fun ReceiverAfternoteHomeEntry(
                 selectedType = selectedTab,
                 onTypeSelected = viewModel::selectTab,
                 onListItemClick = { id, _ -> navigateToDetail(id) },
-                headerDescription = stringResource(R.string.receiver_afternote_list_header_description),
+                headerDescription = stringResource(R.string.afternote_receiver_afternote_list_header_description),
                 // NEXT STEP 은 «내가 남길 기록» 을 재촉하는 발신자용 카드다. 수신자 목록에는 없다.
                 nextStep = null,
                 // 0건 헤더는 작성자 시안(4327:66762)에서만 확인된 처분이다. 수신자 빈 상태 시안이 확인되기
