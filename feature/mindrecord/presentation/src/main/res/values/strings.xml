@@ -49,6 +49,10 @@
     <string name="mindrecord_diary_write_title">일기 기록하기</string>
     <string name="mindrecord_diary_write_title_placeholder">제목을 입력하세요.</string>
     <string name="mindrecord_diary_write_mood_label">오늘의 기분</string>
+    <!-- 기분 칩의 접근 가능한 이름. 이모지만으로는 스크린리더가 그림을 묘사할 뿐이라 낱말을 싣는다 (#1179). -->
+    <string name="mindrecord_diary_write_mood_happy">기쁨</string>
+    <string name="mindrecord_diary_write_mood_soso">보통</string>
+    <string name="mindrecord_diary_write_mood_sad">슬픔</string>
     <string name="mindrecord_write_receiver_setting">수신자 설정하기</string>
     <string name="mindrecord_write_receiver_to">%s님에게</string>
     <string name="mindrecord_write_receiver_to_multiple">%1$s님 외 %2$d명에게</string>

@@ -23,6 +23,8 @@ import com.afternote.feature.mindrecord.presentation.model.DailyDiary
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
 import com.afternote.feature.mindrecord.presentation.model.TextStyleState
 import com.afternote.feature.mindrecord.presentation.screen.receiver.ReceiverMindRecordFilterSheet
+import com.afternote.feature.mindrecord.presentation.screen.sender.DiaryWriteScreenContent
+import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryWriteUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordFilter
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -190,6 +192,7 @@ class WriteToolbarAccessibilityTest {
         ReceiverMindRecordTopBar("수신자 상단바"),
         MemoriesCard("MEMORIES 카드"),
         ReceiverMindRecordFilterSheet("수신자 필터 시트"),
+        DiaryWriteScreen("일기 작성 화면"),
     }
 
     /**
@@ -283,6 +286,13 @@ class WriteToolbarAccessibilityTest {
                                 onApply = {},
                                 onReset = {},
                             )
+                        }
+
+                        // 화면 자체는 `hiltViewModel()` 을 물지만 `DiaryWriteScreenContent` 가
+                        // 상태만 받는 seam 으로 열려 있어 그쪽을 렌더한다. 상단바 완료 버튼과
+                        // 기분 선택처럼 툴바 밖에 있는 타깃이 여기에서만 드러난다.
+                        OtherCandidate.DiaryWriteScreen -> {
+                            DiaryWriteScreenContent(uiState = DiaryWriteUiState())
                         }
                     }
                 }

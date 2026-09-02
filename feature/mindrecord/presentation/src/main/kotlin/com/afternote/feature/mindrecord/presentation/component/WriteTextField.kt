@@ -30,6 +30,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontStyle
@@ -206,6 +208,12 @@ fun WriteTextField(
             attachMedia(uri, asImage = false)
         }
 
+    // 본문 편집기의 접근 가능한 이름. 눈에 보이는 안내 문구는 아래에서 **형제 노드**로 그려서
+    // 편집기 자신의 semantics 에는 잡히지 않는다 — 그대로 두면 스크린리더가 화면의 대부분을
+    // 차지하는 이 타깃을 이름 없이 읽는다 (#1179 리뷰의 후보 전량 스캔에서 드러났다).
+    // 보이는 문구와 읽히는 이름을 같은 문자열로 묶는다.
+    val editorLabel = stringResource(R.string.mindrecord_write_field_placeholder)
+
     Column(modifier = modifier.fillMaxSize()) {
         Box(
             modifier =
@@ -221,6 +229,7 @@ fun WriteTextField(
                     Modifier
                         .fillMaxSize()
                         .focusRequester(editorFocusRequester)
+                        .semantics { contentDescription = editorLabel }
                         .padding(16.dp),
             )
             // 첨부 목록과 오류 문구는 같은 자리를 두고 다투면 안 된다 — 종전에는 정렬·패딩이
