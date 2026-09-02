@@ -70,6 +70,7 @@ class AfternoteHomeEmptyHeaderTest {
                 EmptyHomeBody(
                     headerDescription = stringRes(R.string.afternote_home_header_description),
                     nextStep = NextStep(text = NEXT_STEP_TEXT, onClick = { tapped = true }),
+                    emptyListDescription = stringRes(R.string.afternote_empty_list_body),
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -89,7 +90,14 @@ class AfternoteHomeEmptyHeaderTest {
      */
     @Test
     fun `헤더를 올리지 않은 빈 본문에는 발신자 제목도 문구도 없다`() {
-        composeRule.setContent { AfternoteTheme { EmptyListBody(modifier = Modifier.fillMaxSize()) } }
+        composeRule.setContent {
+            AfternoteTheme {
+                EmptyListBody(
+                    description = stringRes(R.string.afternote_empty_list_body),
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
 
         composeRule.onNodeWithText(string(R.string.afternote_empty_list_body)).assertExists()
         composeRule.onNodeWithText(string(R.string.afternote_home_title)).assertDoesNotExist()
@@ -107,6 +115,7 @@ class AfternoteHomeEmptyHeaderTest {
         EmptyHomeBody(
             headerDescription = stringRes(R.string.afternote_home_header_description),
             nextStep = null,
+            emptyListDescription = stringRes(R.string.afternote_empty_list_body),
             modifier = Modifier.fillMaxSize(),
         )
     }

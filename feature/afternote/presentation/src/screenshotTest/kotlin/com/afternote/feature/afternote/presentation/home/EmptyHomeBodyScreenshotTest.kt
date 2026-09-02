@@ -26,6 +26,7 @@ internal fun emptyHomeBodyScreenshot() {
         EmptyHomeBody(
             headerDescription = stringResource(R.string.afternote_home_header_description),
             nextStep = null,
+            emptyListDescription = stringResource(R.string.afternote_empty_list_body),
         )
     }
 }

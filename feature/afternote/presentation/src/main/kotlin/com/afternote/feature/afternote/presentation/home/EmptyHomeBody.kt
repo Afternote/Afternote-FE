@@ -24,6 +24,7 @@ import com.afternote.feature.afternote.presentation.shared.component.EmptyListBo
 internal fun EmptyHomeBody(
     headerDescription: String,
     nextStep: NextStep?,
+    emptyListDescription: String,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -35,6 +36,6 @@ internal fun EmptyHomeBody(
             description = headerDescription,
             nextStep = nextStep,
         )
-        EmptyListBody()
+        EmptyListBody(description = emptyListDescription)
     }
 }

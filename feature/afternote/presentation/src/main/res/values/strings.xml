@@ -174,6 +174,11 @@
          신규 키는 #1079 규약대로 afternote_ 프리픽스를 쓴다. -->
     <string name="afternote_receiver_detail_title">故 %1$s님의 애프터노트</string>
     <string name="afternote_receiver_detail_confirm">애프터노트 확인하기</string>
+    <!-- 수신 애프터노트 목록 0건 본문. 발신자용 afternote_empty_list_body 는 «아래 연필 버튼을
+         눌러» 로 끝나는데 수신자 화면에는 그 FAB 이 없다(ReceiverAfternoteHomeEntry 가 onFabClick 을
+         넘기지 않는다). 어법은 수신자 빈 상태 시안 「받은 기록함」(4327:74361)을 따른다 — 상태 한 줄 +
+         언제 보이는지 한 줄이고, 수신자가 못 하는 동작을 시키지 않는다 (#620 과 같은 부류). -->
+    <string name="afternote_receiver_list_empty_body">아직 받은 애프터노트가 없어요.\n전달된 애프터노트가 있으면 여기에 보여요.</string>
 
     <!-- 수신 애프터노트 화면 (#1461 로 :feature:receiver:presentation 에서 이관) -->
     <string name="afternote_receiver_afternote_list_header_description">고인이 사후 정리하고자 하는 데이터입니다.</string>

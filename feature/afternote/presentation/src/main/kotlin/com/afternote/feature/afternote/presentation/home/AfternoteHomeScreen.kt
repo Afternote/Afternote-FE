@@ -34,8 +34,14 @@ import com.afternote.feature.afternote.presentation.shared.component.ListItemUiM
  * @param headerDescription 상단 헤더 한 줄. 기본값을 두지 않는 이유는 [HomeHeaderSection] KDoc 참조 (#620).
  * @param showsHeaderOnEmptyList 목록이 0건이고 카테고리 필터도 없을 때 헤더(제목·설명·NEXT STEP 슬롯)를
  *   그릴지. 작성자 시안(`애프터노트_목록X` 4327:66762)은 0건에서도 헤더를 그대로 두므로 작성자는 `true` 다.
- *   수신자 빈 상태 시안은 확인된 바 없어 종전 렌더(헤더 없음)를 유지한다 — 기본값을 두지 않는 이유는
- *   [HomeHeaderSection] KDoc 과 같다(#620·#777): 관점이 갈리는 조각은 호출부가 매번 명시한다 (#1175).
+ *   수신자는 `false` — 시안이 «헤더 없음» 이어서가 아니라 **수신자 0건 시안이 아예 없어서**다. 2026-08-31
+ *   에 정본 페이지(`4327:43064`) TEXT 노드 6482개를 전수 조회했고, 수신자 구역(4327:73596)의 빈 상태는
+ *   「받은 기록함」(4327:74361) 하나뿐이다 — 그건 + FAB 을 가진 다른 화면이라 이 목록의 근거가 못 된다.
+ *   기본값을 두지 않는 이유는 [HomeHeaderSection] KDoc 과 같다(#620·#777): 관점이 갈리는 조각은 호출부가
+ *   매번 명시한다 (#1175).
+ * @param emptyListDescription 0건 본문([EmptyListBody])의 안내 문구. 기본값을 두지 않는 이유는
+ *   [EmptyListBody] KDoc 참조 — 발신자 문구는 «아래 연필 버튼을 눌러» 로 끝나는데 수신자에게는 그 FAB 이
+ *   없다 (#620).
  * @param onSettingClick 설정 진입. `null`(기본)이면 탑바의 회원 액션(프로필·설정)을 그리지 않는다 —
  *   수신자는 로그인 사용자가 아니라 두 아이콘 모두 향할 곳이 없다.
  */
@@ -49,6 +55,7 @@ fun AfternoteHomeScreen(
     headerDescription: String,
     nextStep: NextStep?,
     showsHeaderOnEmptyList: Boolean,
+    emptyListDescription: String,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onFabClick: (() -> Unit)? = null,
@@ -116,10 +123,11 @@ fun AfternoteHomeScreen(
                         EmptyHomeBody(
                             headerDescription = headerDescription,
                             nextStep = nextStep,
+                            emptyListDescription = emptyListDescription,
                             modifier = bodyModifier,
                         )
                     } else {
-                        EmptyListBody(modifier = bodyModifier)
+                        EmptyListBody(description = emptyListDescription, modifier = bodyModifier)
                     }
                 }
             }
