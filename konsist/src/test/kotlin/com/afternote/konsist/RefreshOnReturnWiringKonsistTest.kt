@@ -1,6 +1,5 @@
 package com.afternote.konsist
 
-import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.declaration.KoFileDeclaration
 import org.junit.Test
 
@@ -66,10 +65,7 @@ class RefreshOnReturnWiringKonsistTest {
     }
 
     private fun mainSourceFiles(): List<KoFileDeclaration> =
-        Konsist
-            .scopeFromProject()
-            .files
-            .filter { "/src/main/" in it.normalizedProjectPath() }
+        AfternoteKonsistScope.files.filter { "/src/main/" in it.normalizedProjectPath() }
 
     /** 클래스 이름을 «식별자로» 참조하는지 — 부분 일치(`SenderDetailViewModelFactory`)를 배제한다. */
     private fun KoFileDeclaration.references(className: String): Boolean =
