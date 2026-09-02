@@ -74,7 +74,16 @@ fun DailyCalendar(
                 )
             }
             Text(
-                text = stringResource(MindRecordR.string.mindrecord_calendar_answered_count, answeredDays.size),
+                // 같은 캘린더를 두 탭이 쓰는데 문구가 하나뿐이라, 일기 탭에서도
+                // 「N개의 답변 완료」로 읽혔다 — 일기는 답변이 아니다 (#1712).
+                text =
+                    stringResource(
+                        when (type) {
+                            MindRecordCategoryUi.DailyQuestion -> MindRecordR.string.mindrecord_calendar_answered_count
+                            else -> MindRecordR.string.mindrecord_calendar_recorded_count
+                        },
+                        answeredDays.size,
+                    ),
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.black.copy(alpha = 0.35f),
             )

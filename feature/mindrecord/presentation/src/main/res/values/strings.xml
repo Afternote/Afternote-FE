@@ -67,6 +67,8 @@
     <!-- Calendar -->
     <string name="mindrecord_calendar_year_month">%1$d년 %2$d월</string>
     <string name="mindrecord_calendar_answered_count">%d개의 답변 완료</string>
+    <string name="mindrecord_calendar_recorded_count">%d개의 기록 완료</string>
+    <string name="mindrecord_diary_list_section_header">DAILY DIARY</string>
     <string name="mindrecord_calendar_day_label_sun">일</string>
     <string name="mindrecord_calendar_day_label_mon">월</string>
     <string name="mindrecord_calendar_day_label_tue">화</string>
