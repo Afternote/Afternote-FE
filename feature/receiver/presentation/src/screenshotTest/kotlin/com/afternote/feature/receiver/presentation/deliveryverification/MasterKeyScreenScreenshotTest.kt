@@ -16,7 +16,7 @@ import com.android.tools.screenshot.PreviewTest
 internal fun masterKeyScreenEmptyScreenshot() {
     AfternoteTheme {
         MasterKeyScreenContent(
-            authCodeState = rememberTextFieldState(),
+            masterKeyState = rememberTextFieldState(),
             isSubmitting = false,
             snackbarHostState = remember { SnackbarHostState() },
             onBackClick = {},
@@ -31,7 +31,7 @@ internal fun masterKeyScreenEmptyScreenshot() {
 internal fun masterKeyScreenFilledScreenshot() {
     AfternoteTheme {
         MasterKeyScreenContent(
-            authCodeState = rememberTextFieldState("ABC-DEF-GHI"),
+            masterKeyState = rememberTextFieldState("ABC-DEF-GHI"),
             isSubmitting = false,
             snackbarHostState = remember { SnackbarHostState() },
             onBackClick = {},
@@ -51,7 +51,7 @@ internal fun masterKeyScreenFilledScreenshot() {
 internal fun masterKeyScreenFilledCompactScreenshot() {
     AfternoteTheme {
         MasterKeyScreenContent(
-            authCodeState = rememberTextFieldState("ABC-DEF-GHI"),
+            masterKeyState = rememberTextFieldState("ABC-DEF-GHI"),
             isSubmitting = false,
             snackbarHostState = remember { SnackbarHostState() },
             onBackClick = {},
@@ -71,7 +71,7 @@ internal fun masterKeyScreenFilledCompactScreenshot() {
 internal fun masterKeyScreenFilledLargeFontScreenshot() {
     AfternoteTheme {
         MasterKeyScreenContent(
-            authCodeState = rememberTextFieldState("ABC-DEF-GHI"),
+            masterKeyState = rememberTextFieldState("ABC-DEF-GHI"),
             isSubmitting = false,
             snackbarHostState = remember { SnackbarHostState() },
             onBackClick = {},

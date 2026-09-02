@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditEvent
@@ -42,6 +43,7 @@ fun ReceiverEditScreen(
         ReceiverRegisterContent(
             title = "수신자 수정",
             actionText = "수정",
+            isPhoneRequired = true,
             isLoading = uiState.isSaving,
             errorMessage = uiState.errorMessage,
             onBackClick = onBackClick,
@@ -74,7 +76,7 @@ fun ReceiverEditScreen(
                     CircularProgressIndicator(color = AfternoteDesign.colors.gray9)
                 } else {
                     Text(
-                        text = uiState.errorMessage.orEmpty(),
+                        text = uiState.errorMessage?.asString().orEmpty(),
                         style = AfternoteDesign.typography.bodyBase,
                         color = AfternoteDesign.colors.error,
                     )

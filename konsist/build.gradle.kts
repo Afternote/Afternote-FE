@@ -43,11 +43,12 @@ tasks.withType<Test>().configureEach {
     inputs
         .files(
             rootProject.fileTree(rootProject.projectDir) {
-                // konsist 가 실제로 읽는 집합에 맞춘다 — `/src/` 아래 `.kt` 다. 소스셋을 main 으로
-                // 좁히지 않는다: ReceiverHomeResource 가드는 screenshotTest 의 FQN 참조를 잡고,
-                // LayerDependency·ResponseDtoContract 는 패키지·어노테이션으로만 걸러 소스셋을
-                // 가리지 않는다. 좁히면 그만큼 가드가 다시 침묵한다.
-                include("**/src/**/*.kt")
+                // konsist 가 실제로 읽는 `/src/` 아래 `.kt`와 production visibility 분석이
+                // 프로덕션 consumer 확인에 쓰는 `.gradle.kts`를 모두 입력으로 둔다. Kotlin 파일은
+                // 소스셋을 main 으로 좁히지 않는다: ReceiverHomeResource 가드는 screenshotTest 의
+                // FQN 참조를 잡고, 다른 가드도 패키지·어노테이션으로만 걸러 소스셋을 가리지 않는다.
+                // 좁히면 그만큼 가드가 다시 침묵한다.
+                include("**/src/**/*.kt", "**/*.gradle.kts")
 
                 // konsist 는 빌드 산출물과 `.gradle` 을 자기 힘으로 걸러낸다. 여기서도 빼야
                 // 생성 소스가 입력에 섞여 매 빌드 입력이 흔들리는 것을 막는다.
@@ -59,6 +60,6 @@ tasks.withType<Test>().configureEach {
                 // konsist 자신은 이 경로를 걸러내지 못하는데, 그건 별개 결함이라 #1657 에 적어 뒀다.
                 exclude("**/.claude/**", "**/.codex/**")
             },
-        ).withPropertyName("konsistScannedSources")
+        ).withPropertyName("konsistScannedRepositoryInputs")
         .withPathSensitivity(PathSensitivity.RELATIVE)
 }

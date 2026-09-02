@@ -33,7 +33,7 @@ const val MEMORIAL_VIDEO_OVERLAY_LABEL_TEST_TAG = "memorialVideoOverlayLabel"
 /**
  * 추모 영상 썸네일 — 썸네일 이미지 + 어두운 그라디언트 + 중앙 재생 버튼 + 좌하단 오버레이 라벨.
  *
- * 발신자 상세([com.afternote.feature.afternote.presentation.author.detail.MemorialDetailScreen])와
+ * 발신자 상세([com.afternote.feature.afternote.presentation.detail.MemorialDetailScreen])와
  * 수신자 상세([com.afternote.feature.afternote.presentation.receiver.detail.MemorialReceivedDetailScreen])가
  * **같은 시안 한 장**을 그리므로 한 벌을 공유한다. 두 벌로 두면 한쪽만 고쳐 놓고 다른 쪽이 남는다 (#463).
  *

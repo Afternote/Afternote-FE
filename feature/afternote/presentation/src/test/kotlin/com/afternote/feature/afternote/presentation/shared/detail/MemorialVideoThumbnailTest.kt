@@ -5,8 +5,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.presentation.author.detail.MemorialDetailContent
-import com.afternote.feature.afternote.presentation.author.detail.MemorialDetailScreen
+import com.afternote.feature.afternote.presentation.detail.MemorialDetailContent
+import com.afternote.feature.afternote.presentation.detail.MemorialDetailScreen
 import com.afternote.feature.afternote.presentation.receiver.detail.MemorialReceivedDetailScreen
 import org.junit.Rule
 import org.junit.Test

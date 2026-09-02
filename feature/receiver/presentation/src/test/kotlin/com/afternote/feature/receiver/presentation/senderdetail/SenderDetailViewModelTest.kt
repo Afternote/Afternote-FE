@@ -124,7 +124,7 @@ private class Fixture {
     val statusResults = ArrayDeque<Result<DeliveryVerification>>()
     val receiver =
         FakeReceiverRepository.strict().apply {
-            onSaveAuthCode = {}
+            onSaveMasterKey = {}
         }
     val auth =
         FakeReceiverAuthRepository(
@@ -136,7 +136,7 @@ private class Fixture {
         val entry = registry.register("아버지")
         registry.attachIdentity(
             id = entry.id,
-            authCode = "auth-1",
+            masterKey = "auth-1",
             identity =
                 ReceiverIdentity(
                     receiverId = 1L,

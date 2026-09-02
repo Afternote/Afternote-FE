@@ -18,9 +18,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import com.afternote.core.ui.Route
-import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavActions
-import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
-import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceivedAfternoteRoute
+import com.afternote.feature.afternote.presentation.navigation.AfternoteNavActions
+import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
+import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
 import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavActions
