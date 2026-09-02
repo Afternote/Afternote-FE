@@ -4,6 +4,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.paging.LoadState
@@ -44,15 +45,15 @@ class AfternoteHomeRefreshErrorTest {
     fun `목록이 남아 있는 새로고침 실패는 배너로 알린다`() {
         composeRule.setContent { AfternoteTheme { HomeScreen(itemCount = 1, refresh = errorState) } }
 
-        composeRule.onNodeWithText(string(R.string.afternote_home_refresh_error)).assertIsDisplayed()
+        awaitText(R.string.afternote_home_refresh_error)
     }
 
     @Test
     fun `보여 줄 것이 없는 실패는 전면 오류가 맡으므로 배너를 그리지 않는다`() {
         composeRule.setContent { AfternoteTheme { HomeScreen(itemCount = 0, refresh = errorState) } }
 
+        awaitText(R.string.afternote_home_load_error)
         composeRule.onNodeWithText(string(R.string.afternote_home_refresh_error)).assertDoesNotExist()
-        composeRule.onNodeWithText(string(R.string.afternote_home_load_error)).assertIsDisplayed()
     }
 
     @Test
@@ -75,6 +76,20 @@ class AfternoteHomeRefreshErrorTest {
         composeRule.onNodeWithText(string(R.string.afternote_home_retry)).performClick()
 
         composeRule.runOnIdle { assertEquals(1, retries) }
+    }
+
+    /**
+     * 수집이 끝난 뒤를 기다린다.
+     *
+     * `collectAsLazyPagingItems` 는 첫 상태가 Loading 이고 그것을 걷는 수집이 컴포지션 이펙트에서
+     * 돈다 — 이 모듈처럼 Robolectric 클래스가 누적되면 즉시 단언은 실행 순서에 따라 갈린다.
+     */
+    private fun awaitText(resId: Int) {
+        val text = string(resId)
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithText(text).assertIsDisplayed()
     }
 
     @Composable
@@ -100,6 +115,8 @@ class AfternoteHomeRefreshErrorTest {
             headerDescription = "",
             nextStep = null,
             showsHeaderOnEmptyList = false,
+            // 발신자 진입과 같은 문구를 쓴다 — 이 테스트가 보는 것은 배너 유무이지 0건 본문이 아니다 (#1175).
+            emptyListDescription = string(R.string.afternote_empty_list_body),
         )
     }
 
