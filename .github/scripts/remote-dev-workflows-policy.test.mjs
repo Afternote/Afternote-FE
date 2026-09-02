@@ -253,7 +253,7 @@ test("managed device fails fast per lane and preserves only bounded infrastructu
     assert.match(source, /device: api34[\s\S]*?job_timeout_minutes: 15[\s\S]*?gradle_timeout_minutes: 12[\s\S]*?gradle_step_timeout_minutes: 13/);
     assert.match(
         source,
-        /device: api26[\s\S]*?full_selector: com\.afternote\.afternote_fe\.ApiBoundarySmokeAndroidTest[\s\S]*?scheduled_only: true/,
+        /device: api28[\s\S]*?full_selector: com\.afternote\.afternote_fe\.ApiBoundarySmokeAndroidTest[\s\S]*?scheduled_only: true/,
     );
     assert.match(
         source,

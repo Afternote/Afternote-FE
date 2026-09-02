@@ -205,13 +205,13 @@ class ReceiverHomeViewModel
                             .onFailure { e ->
                                 errorReporter.recordReceiverFailure(ReceiverFailureStage.RECEIVED_EXPORT_SAVE, e)
                                 updateDownload(
-                                    ReceiverDownloadState.Failed(R.string.receiver_home_download_all_save_failed),
+                                    ReceiverDownloadState.Failed(R.string.home_receiver_download_all_save_failed),
                                 )
                             }
                     }.onFailure { e ->
                         errorReporter.recordReceiverFailure(ReceiverFailureStage.RECEIVED_EXPORT_DOWNLOAD, e)
                         updateDownload(
-                            ReceiverDownloadState.Failed(R.string.receiver_home_download_all_failed),
+                            ReceiverDownloadState.Failed(R.string.home_receiver_download_all_failed),
                         )
                     }
             }

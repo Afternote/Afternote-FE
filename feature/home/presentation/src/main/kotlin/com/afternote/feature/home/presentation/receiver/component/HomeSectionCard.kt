@@ -96,4 +96,4 @@ fun rememberCountLine(
  * 두 번 적혀 한쪽만 고쳐질 자리가 된다.
  */
 @Composable
-fun countText(count: Int?): String = count?.toString() ?: stringResource(R.string.receiver_home_section_count_unavailable)
+fun countText(count: Int?): String = count?.toString() ?: stringResource(R.string.home_receiver_section_count_unavailable)

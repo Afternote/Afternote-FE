@@ -72,7 +72,7 @@ test("API boundary devices are explicit and the smoke remains valid for existing
         ),
     ]);
 
-    for (const api of [26, 36]) {
+    for (const api of [28, 36]) {
         assert.match(
             app,
             new RegExp(
@@ -84,7 +84,7 @@ test("API boundary devices are explicit and the smoke remains valid for existing
         gradleProperties,
         /^android\.experimental\.testOptions\.managedDevices\.allowOldApiLevelDevices=true$/m,
     );
-    assert.match(smoke, /Build\.VERSION\.SDK_INT in 26\.\.36/);
+    assert.match(smoke, /Build\.VERSION\.SDK_INT in 28\.\.36/);
     assert.match(smoke, /onboarding_welcome_start/);
     assert.match(smoke, /FailureArtifactRule/);
     assert.match(smoke, /captureToImage\(\)\.asAndroidBitmap\(\)/);

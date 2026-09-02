@@ -45,7 +45,7 @@ fun SenderMessageHeroCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = stringResource(R.string.receiver_home_hero_title, senderName),
+                text = stringResource(R.string.home_receiver_hero_title, senderName),
                 style = AfternoteDesign.typography.bodySmallB,
                 color = AfternoteDesign.colors.gray7,
             )

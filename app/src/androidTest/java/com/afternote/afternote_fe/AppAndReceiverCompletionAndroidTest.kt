@@ -329,10 +329,10 @@ class ReceiverRuntimeCompletionAndroidTest {
             senderMessage = Result.failure(offline),
         )
         composeRule
-            .onNodeWithText(context.getString(HomeR.string.receiver_home_error_message))
+            .onNodeWithText(context.getString(HomeR.string.home_receiver_error_message))
             .assertIsDisplayed()
         composeRule
-            .onNodeWithText(context.getString(HomeR.string.receiver_home_retry))
+            .onNodeWithText(context.getString(HomeR.string.home_receiver_retry))
             .performClick()
 
         composeRule.waitUntil(timeoutMillis = 5_000) { homeCallCounts().all { it == 2 } }
@@ -365,12 +365,12 @@ class ReceiverRuntimeCompletionAndroidTest {
         )
 
         composeRule
-            .onNodeWithText(context.getString(HomeR.string.receiver_home_sender_record_title, "이발신"))
+            .onNodeWithText(context.getString(HomeR.string.home_receiver_sender_record_title, "이발신"))
             .assertIsDisplayed()
         composeRule.onNodeWithText("언제나 응원할게").assertIsDisplayed()
         composeRule
             .onAllNodes(
-                hasText(context.getString(HomeR.string.receiver_home_section_count_unavailable)),
+                hasText(context.getString(HomeR.string.home_receiver_section_count_unavailable)),
             ).apply {
                 assertCountEquals(2)
                 this[0].performScrollTo().assertIsDisplayed()

@@ -116,7 +116,7 @@ private fun SuccessContent(
         // senderName 가 blank 면 헤더·Hero 카드 모두 안 그림 — "故 님이 남기신 기록" 같은 깨진 문구 회피.
         if (state.senderName.isNotBlank()) {
             Text(
-                text = stringResource(R.string.receiver_home_sender_record_title, state.senderName),
+                text = stringResource(R.string.home_receiver_sender_record_title, state.senderName),
                 style = AfternoteDesign.typography.h2,
                 color = AfternoteDesign.colors.gray9,
             )
@@ -142,7 +142,7 @@ private fun SuccessContent(
             onGoClick = actions.onNavigateToAfternote,
         )
         AfternoteButton(
-            text = stringResource(R.string.receiver_home_download_all_button),
+            text = stringResource(R.string.home_receiver_download_all_button),
             onClick = { onEvent(ReceiverHomeEvent.RequestDownload) },
             type = AfternoteButtonType.Default,
         )
@@ -171,7 +171,7 @@ private fun DownloadDialogHost(
     if (showDialog) {
         Popup(
             type = PopupType.Variant2,
-            message = stringResource(R.string.receiver_home_download_all_dialog_message),
+            message = stringResource(R.string.home_receiver_download_all_dialog_message),
             onConfirm = { onEvent(ReceiverHomeEvent.ConfirmDownload) },
             onDismiss = { onEvent(ReceiverHomeEvent.DismissDownload) },
             isLoading = state is ReceiverDownloadState.InProgress,
@@ -211,14 +211,14 @@ private fun ErrorState(
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = stringResource(R.string.receiver_home_error_message),
+                text = stringResource(R.string.home_receiver_error_message),
                 style = AfternoteDesign.typography.bodySmallR,
                 color = AfternoteDesign.colors.gray7,
             )
             Spacer(modifier = Modifier.height(16.dp))
             TextButton(onClick = onRetry) {
                 Text(
-                    text = stringResource(R.string.receiver_home_retry),
+                    text = stringResource(R.string.home_receiver_retry),
                     style = AfternoteDesign.typography.captionLargeB,
                     color = AfternoteDesign.colors.gray9,
                 )

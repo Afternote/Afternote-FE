@@ -47,9 +47,9 @@ android {
         unitTests.isIncludeAndroidResources = true
         managedDevices {
             localDevices {
-                create("pixel2Api26") {
+                create("pixel2Api28") {
                     device = "Pixel 2"
-                    apiLevel = 26
+                    apiLevel = 28
                     systemImageSource = "aosp"
                 }
                 create("pixel2Api30") {

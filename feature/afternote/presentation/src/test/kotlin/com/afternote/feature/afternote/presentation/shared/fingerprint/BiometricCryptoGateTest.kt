@@ -43,7 +43,7 @@ class BiometricCryptoGateTest {
 
     @Test
     fun `cipher 가 없는 폴백 경로는 검증 대상이 없어 통과시킨다`() {
-        // API 26~29 는 DEVICE_CREDENTIAL 허용자와 CryptoObject 를 함께 쓸 수 없어 cipher 가 없다.
+        // API 28~29 는 DEVICE_CREDENTIAL 허용자와 CryptoObject 를 함께 쓸 수 없어 cipher 가 없다.
         assertTrue(confirmWithCryptoOperation(null).isSuccess)
     }
 }

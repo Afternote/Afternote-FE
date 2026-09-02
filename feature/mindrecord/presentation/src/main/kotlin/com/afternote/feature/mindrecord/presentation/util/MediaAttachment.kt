@@ -82,7 +82,8 @@ fun Context.mediaImageSize(
  * 입력에서 가장 흔한 쪽이라 여기서 잡는다 (#731 리뷰).
  *
  * 회전을 못 읽으면 «안 돌아간 것» 으로 본다 — 파일 픽셀 그대로 쓰는 종전 동작이다.
- * (`ImageDecoder` 는 헤더 크기에 EXIF 를 적용해 주지만 API 28+ 라 minSdk 26 에서는 못 쓴다.)
+ * (`ImageDecoder` 는 헤더 크기에 EXIF 를 적용해 준다. minSdk 28 이 되어 이제 쓸 수 있으므로
+ * 이 수동 보정을 걷어낼 수 있다 — 별도 과제로 남긴다.)
  */
 private fun Context.isUriRotatedQuarterTurn(uri: Uri): Boolean {
     val orientation =

@@ -164,7 +164,7 @@ Kover는 임의의 절대 커버리지 목표를 강제하지 않는다. 정확�
 
 `CI Test Plan`의 `none`은 두 필수 Managed Device check를 에뮬레이터 없이 성공 처리한다. `selected`는 선언한 `path`, fully-qualified `Class#method`, `api30` 또는 `api34`만 실행하고 JUnit XML의 실제 성공 결과까지 확인한다. `full`은 테스트 하네스·Gradle·릴리스 경계 변경에서 전체 API 30 회귀와 API 34 접근성 smoke를 실행한다.
 
-정기·기본 브랜치 수동 검증은 PR critical path 밖에서 minSdk API 26과 targetSdk API 36 경계 smoke도 실행한다. 문서 링크는 PR에서 로컬 경로·heading anchor를 검사하고 외부 URL은 주간 실행으로 분리하며, release AAB/R8 preflight는 `develop`에서 주 2회 조기 검증한다.
+정기·기본 브랜치 수동 검증은 PR critical path 밖에서 minSdk API 28과 targetSdk API 36 경계 smoke도 실행한다. 문서 링크는 PR에서 로컬 경로·heading anchor를 검사하고 외부 URL은 주간 실행으로 분리하며, release AAB/R8 preflight는 `develop`에서 주 2회 조기 검증한다.
 
 ## 코드 리뷰
 

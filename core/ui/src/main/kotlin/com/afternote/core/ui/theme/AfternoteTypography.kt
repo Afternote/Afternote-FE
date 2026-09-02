@@ -46,7 +46,7 @@ private val inter =
  * 이 앱은 `values-*` 가 없는 한국어 전용이라 로케일을 고정한다. `Strategy` 는 이 축과 무관하다.
  *
  * 플랫폼이 이 설정을 받는 것은 Android 13(API 33) 부터다 — `StaticLayout.Builder.setLineBreakConfig`
- * 가 API 33 게이트 안에 있다. minSdk 26 이므로 API 26~32 기기에서는 기존 동작이 유지된다.
+ * 가 API 33 게이트 안에 있다. minSdk 28 이므로 API 28~32 기기에서는 기존 동작이 유지된다.
  */
 private val KoreanLocale = LocaleList(Locale("ko-KR"))
 

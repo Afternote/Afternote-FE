@@ -14,15 +14,15 @@ fun TimeLetterSection(
 ) {
     HomeSectionCard(
         modifier = modifier,
-        title = stringResource(R.string.receiver_home_timeletter_section_title),
-        description = stringResource(R.string.receiver_home_timeletter_section_desc),
+        title = stringResource(R.string.home_receiver_timeletter_section_title),
+        description = stringResource(R.string.home_receiver_timeletter_section_desc),
         countLine =
             rememberCountLine(
                 prefix =
-                    stringResource(R.string.receiver_home_timeletter_count_prefix, countText(totalCount)),
-                suffix = stringResource(R.string.receiver_home_timeletter_count_suffix),
+                    stringResource(R.string.home_receiver_timeletter_count_prefix, countText(totalCount)),
+                suffix = stringResource(R.string.home_receiver_timeletter_count_suffix),
             ),
-        buttonText = stringResource(R.string.receiver_home_timeletter_section_button),
+        buttonText = stringResource(R.string.home_receiver_timeletter_section_button),
         onButtonClick = onGoClick,
     )
 }

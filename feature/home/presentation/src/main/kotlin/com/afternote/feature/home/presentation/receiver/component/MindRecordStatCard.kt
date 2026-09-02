@@ -78,7 +78,7 @@ fun MindRecordStatCard(
         )
         Spacer(modifier = Modifier.height(2.dp))
         Text(
-            text = count?.toString() ?: stringResource(R.string.receiver_home_section_count_unavailable),
+            text = count?.toString() ?: stringResource(R.string.home_receiver_section_count_unavailable),
             style = AfternoteDesign.typography.h3,
             color = AfternoteDesign.colors.gray9,
         )

@@ -31,8 +31,8 @@ private val CRYPTO_CHALLENGE = "afternote-biometric-gate".toByteArray()
  *
  * > Crypto-based authentication is not supported for device credential prior to API 30.
  *
- * minSdk 는 26 이고 기기 잠금(PIN·패턴)만 등록한 사용자를 막지 않는 것이 현 정책이므로,
- * API 26~29 에서는 허용자 조합을 유지한 채 `CryptoObject` 없이 인증한다.
+ * minSdk 는 28 이고 기기 잠금(PIN·패턴)만 등록한 사용자를 막지 않는 것이 현 정책이므로,
+ * API 28~29 에서는 허용자 조합을 유지한 채 `CryptoObject` 없이 인증한다.
  */
 internal val isBiometricCryptoSupported: Boolean
     get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
@@ -56,7 +56,7 @@ internal fun createBiometricCryptoObject(): BiometricPrompt.CryptoObject? =
  * 성공 콜백만 가로채 호출한 경우에는 이 연산이 `UserNotAuthenticatedException` 으로 실패한다.
  * 즉 성패 boolean 이 아니라 암호 연산의 성사 여부가 인증의 근거가 된다.
  *
- * [cipher] 가 null 인 경로(API 26~29 폴백)는 검증할 대상이 없으므로 통과시킨다.
+ * [cipher] 가 null 인 경로(API 28~29 폴백)는 검증할 대상이 없으므로 통과시킨다.
  * 실패 원인을 호출 측이 기록할 수 있도록 예외를 삼키지 않고 [Result] 로 실어 보낸다.
  *
  * **거부는 `UserNotAuthenticatedException` 으로 오지 않는다.** API 35 실측(2026-08-26)에서
