@@ -333,7 +333,7 @@ class AfternoteEditorViewModel
         }
 
         /**
-         * 업로드에 실패한 프레임 바이트. 재시도와 저장 직전 한 번 더 태우기의 재료다.
+         * 업로드에 실패한 프레임 바이트. 스낵바의 «다시 시도» 와 저장 직전 재업로드가 이것을 다시 올린다.
          *
          * 폼·UI 상태에 싣지 않는다 — 프로세스 재생성 번들에 수백 KB 를 얹지 않기 위해서다. 복원 뒤에는
          * 화면이 같은 영상에서 프레임을 다시 뽑아 [uploadMemorialThumbnail] 로 들어온다.
@@ -448,8 +448,10 @@ class AfternoteEditorViewModel
                 internalState.update {
                     it.copy(isSaving = true, errorEvent = null)
                 }
-                // 미해결 썸네일이 남아 있으면 저장 payload 를 만들기 전에 한 번 더 태운다 — 실패해도
-                // 그대로 저장으로 넘어간다.
+                // 썸네일 URL 이 비어 있고 업로드에 실패한 바이트가 남아 있으면, payload 를 만들기 전에 그
+                // 바이트를 한 번 더 업로드해 본다. 여기서 놓치면 썸네일 없는 영상이 그대로 확정되고,
+                // 재편집으로 들어와도 원격 URL 이라 프레임을 다시 뽑지 않는다 (#1550). 실패해도 저장은
+                // 그대로 진행한다.
                 val memorialMediaForSave =
                     if (memorialMedia.memorialVideo.displayed?.thumbnailUrl != null) {
                         memorialMedia
