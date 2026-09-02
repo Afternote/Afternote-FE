@@ -27,9 +27,19 @@ internal sealed interface ReceiverAfternoteListError {
  * 실패를 화면 처리로 옮긴다. **`null` 은 «갈라 그릴 것이 없다»** — 종전 목록 화면의 일반 에러
  * 경로에 그대로 남긴다는 뜻이지, 처리하지 못했다는 뜻이 아니다.
  */
-internal fun Throwable.toListError(): ReceiverAfternoteListError? =
+internal fun Throwable.toListError(): ReceiverAfternoteListError? = (this as? ReceiverFailure)?.toListErrorOrNull()
+
+/**
+ * 루트로 좁혀 `when` 을 exhaustive 하게 만든다. 새 수신자 실패 유형이 생기면 목록 화면의 처리 여부도
+ * 함께 정해야 하므로 컴파일러가 이 소비처를 잡아야 한다.
+ */
+private fun ReceiverFailure.toListErrorOrNull(): ReceiverAfternoteListError? =
     when (this) {
         is ReceiverFailure.DeliveryConditionNotMet -> ReceiverAfternoteListError.NotDeliverable
+
         is ReceiverFailure.NetworkUnavailable -> ReceiverAfternoteListError.NetworkUnavailable
-        else -> null
+
+        is ReceiverFailure.UnexpectedServerFailure,
+        is ReceiverFailure.UserRejection,
+        -> null
     }

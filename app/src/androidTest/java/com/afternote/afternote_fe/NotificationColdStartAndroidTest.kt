@@ -7,6 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.afternote.afternote_fe.notification.NotificationEntryRequest
 import com.afternote.afternote_fe.notification.NotificationEntrySource
+import com.afternote.afternote_fe.test.backgroundActivityStartOptions
 import com.afternote.core.common.notification.NotificationPendingIntentFactory
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -48,18 +49,18 @@ class NotificationColdStartAndroidTest {
     fun coldPendingIntentLaunch_enqueuesInitialNotificationEntry() {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         val source = NotificationEntrySource.FCM
-        val occurrenceToken = "cold-start-1"
+        val occurrenceId = "cold-start-1"
         activityMonitor = instrumentation.addMonitor(MainActivity::class.java.name, null, false)
 
         val pendingIntent =
             NotificationPendingIntentFactory.create(
                 context = context,
                 source = source.contractValue,
-                occurrenceToken = occurrenceToken,
+                occurrenceId = occurrenceId,
             )
 
         assertNotNull(pendingIntent)
-        pendingIntent?.send()
+        pendingIntent?.send(context, 0, null, null, null, null, backgroundActivityStartOptions())
         launchedActivity =
             activityMonitor?.let { monitor ->
                 instrumentation.waitForMonitorWithTimeout(monitor, ACTIVITY_START_TIMEOUT_MILLIS)
@@ -77,7 +78,7 @@ class NotificationColdStartAndroidTest {
         }
 
         assertEquals(
-            NotificationEntryRequest(source = source, occurrenceToken = occurrenceToken),
+            NotificationEntryRequest(source = source, occurrenceId = occurrenceId),
             pendingEntry,
         )
     }
