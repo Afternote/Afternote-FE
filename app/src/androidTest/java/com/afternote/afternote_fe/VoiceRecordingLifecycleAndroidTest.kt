@@ -94,6 +94,10 @@ class VoiceRecordingLifecycleAndroidTest {
             viewModel.openVoiceRecorder()
             viewModel.startVoiceRecording()
         }
+        // runOnIdle 은 액션 실행 "전" idle 만 보장한다 — 이 recomposition 이 실제로 반영돼
+        // LifecycleEventEffect 의 클로저가 Starting 을 보게 된 뒤에 백그라운드로 보내야,
+        // ON_STOP 조건이 방금 반영된 상태가 아니라 그 이전 stale Idle 을 보고 건너뛰지 않는다.
+        composeRule.waitForIdle()
         composeRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
         composeRule.waitForIdle()
 
@@ -171,9 +175,6 @@ class VoiceRecordingLifecycleAndroidTest {
     }
 
     private companion object {
-        // 이 클래스는 매 테스트마다 실제 Activity+Compose+Hilt 콜드스타트를 거친다 (CI 에뮬레이터에서
-        // ~50초). 그 위에 얹히는 비동기 정리(discard/state 반영)까지 5초는 마진이 부족해 종종
-        // 초과했다 — 로직이 아니라 여유 시간 문제라 20초로 늘린다.
-        const val TIMEOUT = 20_000L
+        const val TIMEOUT = 5_000L
     }
 }
