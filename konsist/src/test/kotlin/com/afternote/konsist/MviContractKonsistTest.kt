@@ -44,7 +44,7 @@ class MviContractKonsistTest {
 
     @Test
     fun `MviViewModel 상속체는 상태 홀더를 직접 선언하지 않는다`() {
-        val violations = stateHolderDeclarations(AfternoteKonsistScope.files)
+        val violations = stateHolderDeclarations(AfternoteKonsistScope.productionFiles)
 
         check(violations.isEmpty()) {
             buildString {
@@ -202,6 +202,8 @@ class MviContractKonsistTest {
 
             class EventCarrier : ReducerEvent
 
+            data object Dismiss : ReducerEvent
+
             sealed interface SampleEvent : ReducerEvent
             """,
         )
@@ -209,30 +211,69 @@ class MviContractKonsistTest {
         val violations = openContractTypes(fixtureFiles(root))
 
         // sealed 하위 갈래는 마커가 아니라 자기 계약 타입을 구현하므로 대상이 아니다.
-        assertEquals(2, violations.size)
+        // 최상위 `data object` 는 KoObjectDeclaration 이라 classes() 에 안 들어오는데,
+        // `class EventCarrier` 와 계약상 같은 구멍이므로 함께 잡아야 한다.
+        assertEquals(3, violations.size)
         check(violations.any { it.endsWith("interface LooseIntent") }) { violations.toString() }
         check(violations.any { it.endsWith("class EventCarrier") }) { violations.toString() }
+        check(violations.any { it.endsWith("object Dismiss") }) { violations.toString() }
+    }
+
+    @Test
+    fun `규칙 A·B - 중간 추상 베이스를 낀 상속도 MviViewModel 로 본다`() {
+        val root = fixture.newFolder("indirect-parents")
+        root.writeKotlin(
+            "feature/sample/presentation/src/main/kotlin/sample/BaseFooViewModel.kt",
+            """
+            package sample
+
+            abstract class BaseFooViewModel<I, S, E>(initial: S) : MviViewModel<I, S, E>(initial)
+            """,
+        )
+        root.writeKotlin(
+            "feature/sample/presentation/src/main/kotlin/sample/FooViewModel.kt",
+            """
+            package sample
+
+            class FooViewModel : BaseFooViewModel<SampleIntent, SampleUiState, SampleEvent>(SampleUiState()) {
+                private val nav = Channel<String>()
+            }
+            """,
+        )
+
+        val files = fixtureFiles(root)
+
+        // 규칙 A — 직계만 보면 이 Channel 을 통째로 놓친다.
+        val holders = stateHolderDeclarations(files)
+        assertEquals(1, holders.size)
+        check(holders.single().endsWith("FooViewModel.nav")) { holders.toString() }
+
+        // 규칙 B — 같은 이유로 정상 MVI ViewModel 을 「미전환」으로 헛짚지 않아야 한다.
+        assertEquals(emptySet<String>(), unmigratedViewModels(files))
     }
 
     /** 규칙 B 위반 후보 — `feature/…/presentation` main 소스의 미전환 ViewModel FQN. */
-    private fun unmigratedViewModels(files: List<KoFileDeclaration>): Set<String> =
-        files
+    private fun unmigratedViewModels(files: List<KoFileDeclaration>): Set<String> {
+        val extendsMvi = mviViewModelSubclassTest(files)
+        return files
             .filter { FEATURE_PRESENTATION_MAIN.containsMatchIn(it.normalizedProjectPath()) }
             .flatMap { file ->
                 file
                     .classes()
                     .filter { it.name.endsWith(VIEW_MODEL_SUFFIX) }
                     .filterNot { it.hasAbstractModifier }
-                    .filterNot { it.extendsMviViewModel() }
+                    .filterNot(extendsMvi)
                     .map { "${file.packagee?.name}.${it.name}" }
             }.toSet()
+    }
 
     /** 규칙 A 위반 — 베이스를 상속한 ViewModel 이 직접 든 상태 홀더. */
-    private fun stateHolderDeclarations(files: List<KoFileDeclaration>): List<String> =
-        files.flatMap { file ->
+    private fun stateHolderDeclarations(files: List<KoFileDeclaration>): List<String> {
+        val extendsMvi = mviViewModelSubclassTest(files)
+        return files.flatMap { file ->
             file
                 .classes()
-                .filter { it.extendsMviViewModel() }
+                .filter(extendsMvi)
                 .flatMap { declaration ->
                     declaration
                         .properties()
@@ -240,6 +281,7 @@ class MviContractKonsistTest {
                         .map { property -> "${file.normalizedProjectPath()} — ${declaration.name}.${property.name}" }
                 }
         }
+    }
 
     /** 규칙 C 위반 — 마커를 직접 구현하는데 `sealed interface` 가 아닌 타입. */
     private fun openContractTypes(files: List<KoFileDeclaration>): List<String> =
@@ -255,10 +297,44 @@ class MviContractKonsistTest {
                     .classes()
                     .filter { it.implementsMarker() }
                     .map { "${file.normalizedProjectPath()} — class ${it.name}" }
-            openInterfaces + classes
+            // object 선언은 KoObjectDeclaration 이라 classes() 에 안 들어온다. 최상위
+            // `data object Dismiss : ReducerEvent` 는 `class EventCarrier : ReducerEvent` 와
+            // 계약상 같은 구멍이므로 선언 종류로 갈라 판정하지 않는다.
+            val objects =
+                file
+                    .objects()
+                    .filter { it.implementsMarker() }
+                    .map { "${file.normalizedProjectPath()} — object ${it.name}" }
+            openInterfaces + classes + objects
         }
 
-    private fun KoClassDeclaration.extendsMviViewModel(): Boolean = parents().any { it.markerName() == MVI_VIEW_MODEL }
+    /**
+     * 상속 사슬을 **직접 걷는다.**
+     *
+     * 중간 추상 베이스를 하나 끼우면(`class Foo : BaseFoo`, `abstract class BaseFoo : MviViewModel`)
+     * 직계 판정으로는 규칙 A 의 대상에서 빠져 상태 홀더를 놓치고, 규칙 B 는 그 정상 ViewModel 을
+     * 「미전환」으로 헛짚는다.
+     *
+     * **Konsist 의 `parents(indirectParents = true)` 로는 안 닫힌다** — 0.17.3 에서 이 스코프
+     * 구성으로는 직계와 **같은 목록**을 돌려준다. 마커를 같은 스코프에 정의해 두고 재어도 그렇다.
+     * 그래서 스캔한 파일에서 이름→선언 색인을 만들어 사슬을 직접 따라간다.
+     */
+    private fun mviViewModelSubclassTest(files: List<KoFileDeclaration>): (KoClassDeclaration) -> Boolean {
+        val byName = files.flatMap { it.classes() }.associateBy { it.name }
+
+        fun extends(
+            declaration: KoClassDeclaration,
+            seen: MutableSet<String>,
+        ): Boolean {
+            if (!seen.add(declaration.name)) return false
+            return declaration.parents().any { parent ->
+                val parentName = parent.markerName()
+                parentName == MVI_VIEW_MODEL || byName[parentName]?.let { extends(it, seen) } == true
+            }
+        }
+
+        return { extends(it, mutableSetOf()) }
+    }
 
     /** 가드마다 같은 형태로 두는 경로 정규화 — `projectPath` 는 OS 구분자와 선행 `/` 가 섞인다. */
     private fun KoFileDeclaration.normalizedProjectPath(): String = projectPath.replace('\\', '/').trimStart('/')
@@ -305,6 +381,8 @@ class MviContractKonsistTest {
         private val ISSUE_1808_HOME =
             setOf(
                 "com.afternote.feature.home.presentation.HomeTabViewModel",
+                // #1666 이 receiver.presentation.home 에서 옮겼다 — 소속 이슈도 #1803 이 아니라 여기다.
+                "com.afternote.feature.home.presentation.receiver.ReceiverHomeViewModel",
             )
 
         /** #1807 이 뺀다. */
@@ -340,6 +418,8 @@ class MviContractKonsistTest {
                 "com.afternote.feature.receiver.presentation.deliveryverification.DocumentUploadViewModel",
                 "com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationViewModel",
                 "com.afternote.feature.receiver.presentation.deliveryverification.MasterKeyViewModel",
+                // 이 스택의 base 에는 아직 여기 있다. develop 은 #1666 으로 feature/home 으로 옮겼고
+                // 그쪽 FQN 은 ISSUE_1808_HOME 에 있다 — 스택이 develop 을 들이면 이 줄을 지운다.
                 "com.afternote.feature.receiver.presentation.home.ReceiverHomeViewModel",
                 "com.afternote.feature.receiver.presentation.recordsbox.ReceivedRecordsViewModel",
                 "com.afternote.feature.receiver.presentation.recordsbox.SenderRegistrationViewModel",
@@ -394,6 +474,11 @@ class MviContractKonsistTest {
 /** `MviViewModel<A, B, C>` 처럼 타입 인자가 붙어도 이름만 남긴다. */
 private fun KoParentDeclaration.markerName(): String = name.substringBefore('<').trim()
 
+/**
+ * **직계 부모만 본다.** 간접까지 보면 `sealed interface XxxIntent : MviIntent` 의 하위 갈래
+ * (`data object Submit : XxxIntent`)가 전부 「마커를 직접 구현」으로 잡혀 규칙 C 가 자기 처방을
+ * 위반으로 신고한다 — fixture 로 확인했다.
+ */
 private fun KoParentProvider.implementsMarker(): Boolean = parents().any { it.markerName() in MVI_MARKERS }
 
 private val MVI_MARKERS = setOf("MviIntent", "ReducerEvent")
