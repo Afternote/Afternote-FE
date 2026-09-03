@@ -33,6 +33,7 @@ fun AfternoteUpdatePayload.toRequest() =
         credentials = credentials?.toDto(),
         receivers = receivers?.map { it.toDto() },
         memorial = memorial?.toDto(),
+        isDraft = isDraft,
     )
 
 /** 문자열 변환은 data 경계에서 끝낸다 — 화면·domain 은 [AfternoteType] 만 다룬다. */
@@ -53,6 +54,7 @@ fun CreateAccountPayload.toSocialRequest() =
         leaveMessage = leaveMessageBlocks.toDto(),
         credentials = credentials?.toDto(),
         receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
+        isDraft = isDraft,
     )
 
 fun CreateAccountPayload.toBusinessRequest() =
@@ -63,6 +65,7 @@ fun CreateAccountPayload.toBusinessRequest() =
         leaveMessage = leaveMessageBlocks.toDto(),
         credentials = credentials?.toDto(),
         receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
+        isDraft = isDraft,
     )
 
 fun CreateGalleryPayload.toRequest() =
@@ -72,6 +75,7 @@ fun CreateGalleryPayload.toRequest() =
         processingMethods = processingMethods,
         leaveMessage = leaveMessageBlocks.toDto(),
         receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
+        isDraft = isDraft,
     )
 
 fun CreateMemorialPayload.toRequest() =
@@ -81,6 +85,7 @@ fun CreateMemorialPayload.toRequest() =
         memorial = memorial.toDto(),
         leaveMessage = leaveMessageBlocks.toDto(),
         receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
+        isDraft = isDraft,
     )
 
 fun MemorialWritePayload.toDto() =

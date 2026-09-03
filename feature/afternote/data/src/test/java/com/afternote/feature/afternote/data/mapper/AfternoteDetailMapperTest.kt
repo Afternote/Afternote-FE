@@ -222,7 +222,7 @@ class AfternoteDetailMapperTest {
                     ),
             ).toDomain()
 
-        val memorial = (result.content as DetailContent.Memorial).memorial
+        val memorial = result.content as DetailContent.Memorial
         val media = memorial.media
         assertEquals("memorial.jpg", media.photoUrl)
         assertEquals("v.mp4", media.videoUrl)
@@ -265,13 +265,13 @@ class AfternoteDetailMapperTest {
                 memorial = AfternotePlaylistDto(songs = emptyList(), memorialVideo = null),
             ).toDomain()
 
-        val media = (result.content as DetailContent.Memorial).memorial.media
+        val media = (result.content as DetailContent.Memorial).media
         assertNull(media.videoUrl)
         assertNull(media.thumbnailUrl)
     }
 
     @Test
-    fun `toDomain - playlist 타입에 playlist가 없으면 오류`() {
+    fun `toDomain - 발행 playlist 에 playlist 가 없으면 계약 위반이라 실패한다`() {
         val exception =
             assertThrows(IllegalArgumentException::class.java) {
                 AfternoteDetailDto(
@@ -284,7 +284,7 @@ class AfternoteDetailMapperTest {
                 ).toDomain()
             }
 
-        assertEquals("playlist is required for MEMORIAL detail", exception.message)
+        assertEquals("발행 상세에 playlist 가 없다: afternoteId=1", exception.message)
     }
 
     @Test
