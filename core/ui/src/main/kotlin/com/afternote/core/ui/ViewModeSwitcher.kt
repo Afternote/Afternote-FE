@@ -38,8 +38,8 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.toggleShadow_1
 import com.afternote.core.ui.theme.toggleShadow_2
 
-internal const val VIEW_MODE_PILL_TEST_TAG = "view_mode_pill"
-internal const val VIEW_MODE_INDICATOR_TEST_TAG = "view_mode_indicator"
+private const val VIEW_MODE_PILL_TEST_TAG = "view_mode_pill"
+private const val VIEW_MODE_INDICATOR_TEST_TAG = "view_mode_indicator"
 
 @Composable
 fun ViewModeSwitcher(

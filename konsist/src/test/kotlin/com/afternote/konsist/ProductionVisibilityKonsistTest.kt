@@ -293,16 +293,13 @@ class ProductionVisibilityKonsistTest {
                 "build-logic/src/main/kotlin/VersionCode.kt::property MAX_PLAY_VERSION_CODE [implicit-public]",
             )
 
+        /**
+         * #1672 잔여분 — `PROFILE_ICON_TEST_TAG` 를 참조하는 테스트가 **다른 모듈**(feature:afternote,
+         * feature:receiver presentation)에 있어 core 안에서 닫히지 않는다. 좁히려면 그 모듈들의
+         * 테스트를 함께 고쳐야 하므로 담당 모듈 이슈로 넘긴다.
+         */
         val ISSUE_1672_CORE =
             setOf(
-                "core/data/src/main/java/com/afternote/core/data/mapper/delivery/DeliveryConditionMapper.kt::function toDto [implicit-public]",
-                "core/network/src/main/kotlin/com/afternote/core/network/di/NetworkModule.kt::class SlowEndpointCallFactory [internal]",
-                "core/network/src/main/kotlin/com/afternote/core/network/interceptor/TokenAuthenticator.kt::class TokenReissueFailureException [internal]",
-                "core/ui/src/main/kotlin/com/afternote/core/ui/ViewModeSwitcher.kt::property VIEW_MODE_INDICATOR_TEST_TAG [internal]",
-                "core/ui/src/main/kotlin/com/afternote/core/ui/ViewModeSwitcher.kt::property VIEW_MODE_PILL_TEST_TAG [internal]",
-                "core/ui/src/main/kotlin/com/afternote/core/ui/calendar/BottomSheetCalendar.kt::function DatePickerContent [implicit-public]",
-                "core/ui/src/main/kotlin/com/afternote/core/ui/popup/ErrorPopup.kt::function AfternoteErrorPopupContent [internal]",
-                "core/ui/src/main/kotlin/com/afternote/core/ui/popup/Popup.kt::function PopupContent [internal]",
                 "core/ui/src/main/kotlin/com/afternote/core/ui/topbar/HomeTopBar.kt::property PROFILE_ICON_TEST_TAG [implicit-public]",
             )
 

@@ -17,6 +17,7 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import retrofit2.HttpException
+import java.io.IOException
 import java.net.SocketTimeoutException
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
@@ -25,6 +26,10 @@ import retrofit2.Response as RetrofitResponse
 /**
  * [TokenAuthenticator] 401 사후 대응 계약 회귀 가드 (#408 에서 코디네이터 경유로 전환).
  * 자체 계약 위반은 [FakeErrorReporter] 로 보고하고, [TokenReissuer] 가 이미 분류한 결과는 중복 보고하지 않는다.
+ *
+ * 재발급 실패 시 던지는 예외의 **타입 이름** 은 계약이 아니다 — OkHttp `Authenticator` 가
+ * 요구하는 것은 `IOException` 이고, 화면이 보는 것은 «기술 원문 없이(message == null) 원인만
+ * 매달린 채 이번 요청만 실패» 다. 그래서 구현 클래스는 파일 밖으로 열지 않고 그 계약만 단언한다 (#1672).
  */
 class TokenAuthenticatorTest {
     private val tracker = AccessTokenExpiryTracker { 0L }
@@ -220,7 +225,7 @@ class TokenAuthenticatorTest {
             )
 
         val thrown =
-            assertThrows(TokenReissueFailureException::class.java) {
+            assertThrows(IOException::class.java) {
                 authenticator(repository, reporter).authenticate(null, unauthorizedResponse())
             }
 
@@ -242,7 +247,7 @@ class TokenAuthenticatorTest {
             )
 
         val thrown =
-            assertThrows(TokenReissueFailureException::class.java) {
+            assertThrows(IOException::class.java) {
                 authenticator(repository, reporter).authenticate(null, unauthorizedResponse())
             }
 

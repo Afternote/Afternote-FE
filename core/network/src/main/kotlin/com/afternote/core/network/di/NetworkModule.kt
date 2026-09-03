@@ -72,7 +72,7 @@ private fun OkHttpClient.Builder.withApiTimeouts(): OkHttpClient.Builder =
  *
  * BE 응답이 정상 범위로 돌아오면 이 팩토리째로 지운다.
  */
-internal class SlowEndpointCallFactory(
+private class SlowEndpointCallFactory(
     private val default: OkHttpClient,
 ) : Call.Factory {
     private val slow: OkHttpClient =

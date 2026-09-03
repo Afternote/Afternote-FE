@@ -18,7 +18,7 @@ import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionDto
 // Enum Mapper (DTO → Domain)
 // ========================================
 
-fun DeliveryContentTypeDto.toDomain(): DeliveryContentType =
+private fun DeliveryContentTypeDto.toDomain(): DeliveryContentType =
     when (this) {
         DeliveryContentTypeDto.TIME_LETTER -> DeliveryContentType.TIME_LETTER
         DeliveryContentTypeDto.AFTERNOTE -> DeliveryContentType.AFTERNOTE
@@ -27,20 +27,20 @@ fun DeliveryContentTypeDto.toDomain(): DeliveryContentType =
         DeliveryContentTypeDto.DEEP_THOUGHT -> DeliveryContentType.DEEP_THOUGHT
     }
 
-fun DeliveryConditionTypeDto.toDomain(): DeliveryConditionType =
+private fun DeliveryConditionTypeDto.toDomain(): DeliveryConditionType =
     when (this) {
         DeliveryConditionTypeDto.INACTIVITY -> DeliveryConditionType.INACTIVITY
         DeliveryConditionTypeDto.RECEIVER_REQUEST -> DeliveryConditionType.RECEIVER_REQUEST
     }
 
-fun InactivityPeriodDto.toDomain(): InactivityPeriod =
+private fun InactivityPeriodDto.toDomain(): InactivityPeriod =
     when (this) {
         InactivityPeriodDto.THREE_MONTHS -> InactivityPeriod.THREE_MONTHS
         InactivityPeriodDto.SIX_MONTHS -> InactivityPeriod.SIX_MONTHS
         InactivityPeriodDto.ONE_YEAR -> InactivityPeriod.ONE_YEAR
     }
 
-fun ConditionStateDto.toDomain(): ConditionState =
+private fun ConditionStateDto.toDomain(): ConditionState =
     when (this) {
         ConditionStateDto.ACTIVE -> ConditionState.ACTIVE
         ConditionStateDto.PENDING_CONFIRMATION -> ConditionState.PENDING_CONFIRMATION
@@ -52,7 +52,7 @@ fun ConditionStateDto.toDomain(): ConditionState =
 // Enum Mapper (Domain → DTO, 요청용)
 // ========================================
 
-fun DeliveryContentType.toDto(): DeliveryContentTypeDto =
+private fun DeliveryContentType.toDto(): DeliveryContentTypeDto =
     when (this) {
         DeliveryContentType.TIME_LETTER -> DeliveryContentTypeDto.TIME_LETTER
         DeliveryContentType.AFTERNOTE -> DeliveryContentTypeDto.AFTERNOTE
@@ -61,13 +61,13 @@ fun DeliveryContentType.toDto(): DeliveryContentTypeDto =
         DeliveryContentType.DEEP_THOUGHT -> DeliveryContentTypeDto.DEEP_THOUGHT
     }
 
-fun DeliveryConditionType.toDto(): DeliveryConditionTypeDto =
+private fun DeliveryConditionType.toDto(): DeliveryConditionTypeDto =
     when (this) {
         DeliveryConditionType.INACTIVITY -> DeliveryConditionTypeDto.INACTIVITY
         DeliveryConditionType.RECEIVER_REQUEST -> DeliveryConditionTypeDto.RECEIVER_REQUEST
     }
 
-fun InactivityPeriod.toDto(): InactivityPeriodDto =
+private fun InactivityPeriod.toDto(): InactivityPeriodDto =
     when (this) {
         InactivityPeriod.THREE_MONTHS -> InactivityPeriodDto.THREE_MONTHS
         InactivityPeriod.SIX_MONTHS -> InactivityPeriodDto.SIX_MONTHS
@@ -78,7 +78,7 @@ fun InactivityPeriod.toDto(): InactivityPeriodDto =
 // Response Mapper (DTO → Domain)
 // ========================================
 
-fun DeliveryConditionItemDto.toDomain(): DeliveryConditionItem =
+private fun DeliveryConditionItemDto.toDomain(): DeliveryConditionItem =
     DeliveryConditionItem(
         contentType = contentType.toDomain(),
         conditionType = conditionType.toDomain(),
