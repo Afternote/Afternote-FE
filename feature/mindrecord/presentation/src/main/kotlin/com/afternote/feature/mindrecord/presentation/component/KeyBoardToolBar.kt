@@ -30,6 +30,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
@@ -100,14 +102,16 @@ fun BottomToolbar(
         Row(modifier = Modifier.selectableGroup(), verticalAlignment = Alignment.CenterVertically) {
             ALIGN_ITEMS.forEach { (align, resources) ->
                 val (iconRes, labelRes) = resources
+                // `IconButton` 안쪽이 이미 `clickable(role = Button)` 이라 `selectable` 을 겹치면
+                // 제스처와 indication 이 두 겹이 된다 — 사각 ripple 이 원형 뒤에 비치고 D-pad
+                // 정지점도 둘이 된다. semantics 만 덮어써 계약은 같게 두고 겹침을 없앤다 (#1179 리뷰).
                 IconButton(
                     onClick = { onAlignChange(align) },
                     modifier =
-                        Modifier.selectable(
-                            selected = textAlign == align,
-                            role = Role.RadioButton,
-                            onClick = { onAlignChange(align) },
-                        ),
+                        Modifier.semantics {
+                            role = Role.RadioButton
+                            selected = textAlign.orStart() == align
+                        },
                 ) {
                     Icon(
                         painter = painterResource(iconRes),
@@ -225,7 +229,7 @@ fun TextStyleToolbar(
                 }
 
                 AlignPill(
-                    selected = styleState.textAlign,
+                    selected = styleState.textAlign.orStart(),
                     onAlignChange = onAlignChange,
                 )
 
@@ -551,3 +555,16 @@ private val ALIGN_ITEMS =
         TextAlign.Center to (R.drawable.mindrecord_align_center to R.string.mindrecord_toolbar_align_center_cd),
         TextAlign.End to (R.drawable.mindrecord_align_right to R.string.mindrecord_toolbar_align_right_cd),
     )
+
+/**
+ * 정렬 미지정을 왼쪽으로 읽는다 (#1179 리뷰).
+ *
+ * richeditor-compose 1.0.0 의 기본 문단은 `ParagraphStyle()` 이라 `textAlign` 이
+ * [TextAlign.Unspecified] 다. non-null value class 여서 elvis 로는 걸러지지 않는다 — 종전
+ * 호출부의 `?: TextAlign.Start` 는 컴파일러가 「항상 왼쪽 피연산자」라고 경고하던 죽은 코드였다.
+ *
+ * 그대로 두면 작성 화면 **첫 상태**에서 정렬 3종의 `selected` 가 모두 false 가 되어 스크린리더가
+ * 「선택 안 됨」을 셋 다 읽는다. 정규화를 **«셋 중 하나» 를 선언한 이 파일**에 두어, 어느 호출부가
+ * 무엇을 넘기든 계약이 유지되게 한다.
+ */
+internal fun TextAlign.orStart(): TextAlign = if (this == TextAlign.Unspecified) TextAlign.Start else this

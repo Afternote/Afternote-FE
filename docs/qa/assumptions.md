@@ -547,14 +547,23 @@ Figma 노드 `552:19970` 로 확인하려 했으나 데스크톱 앱에 해당 �
 「T, 버튼」 으로 읽는다. 시안이 확정되면 이 문자열
 (`mindrecord_toolbar_text_type_cd`)만 고치면 된다.
 
-## #1179 — 검증 범위에서 뺀 후보 하나
+## #1179 — 후보 전량을 스캐너로 덮었다
 
-이슈가 든 11개 후보 중 **`DiaryWriteScreen` 만 스캐너 테스트로 고정하지 못했다.** 화면 전체가
-`hiltViewModel()` 로 상태를 받아 Robolectric 단위 테스트에서 그대로 띄울 수 없다. 나머지 10곳
-(툴바 2종 + 카드·상단바·필터 시트 등 6종)은 모두 렌더해 bounds·이름·역할을 단언한다.
+이슈가 든 후보를 **하나도 빼지 않고** 스캐너 테스트로 고정했다. `DiaryWriteScreen` 은 화면
+전체가 `hiltViewModel()` 을 물어 Robolectric 에서 그대로 못 띄우지만, `DiaryWriteScreenContent`
+가 상태만 받는 seam 으로 열려 있어 그쪽을 렌더한다.
 
-`DiaryWriteScreen` 이 그리는 조각(`BottomToolbar`·`TextStyleToolbar`·카드류)은 전부 개별로
-덮여 있어, 남는 위험은 **화면이 직접 얹는 클릭 타깃**뿐이다. 이슈에 남겼다.
+**넓히자마자 그 화면에서만 위반 3종이 나왔다.** 두 툴바만 보던 동안에는 드러나지 않던 것들이다.
+
+| 위반 | 자리 | 처방 |
+|---|---|---|
+| 이름 없음 | 본문 편집기 (288×461dp) | 보이는 안내 문구와 같은 문자열을 `contentDescription` 으로 |
+| Role 없음 | 수신자 행 | `Role.Button` |
+| Role·선택 상태 없음 | 기분 칩 3종 | `selectableGroup` 안의 `Role.RadioButton`, 이름은 이모지 대신 낱말 |
+
+본문 편집기는 `DailyQuestionWriteScreen` 도 같은 컴포넌트를 쓰므로 두 화면이 함께 고쳐졌다.
+보이는 안내 문구는 `clearAndSetSemantics {}` 로 접근성 트리에서 뺐다 — 같은 문장을 두 번 읽지
+않게 하려는 것이고, material3 의 `TextField` 가 placeholder 를 다루는 방식과 같다.
 
 ## #1179 — material3 가 소유한 타깃 2건
 

@@ -112,6 +112,24 @@ class WriteToolbarAccessibilityTest {
         }
     }
 
+    /**
+     * 작성 화면 **첫 상태**. richeditor 의 기본 문단은 `textAlign` 이 `Unspecified` 라, 정규화가
+     * 없으면 정렬 3종의 `selected` 가 모두 false 가 된다 — 스크린리더가 「선택 안 됨」을 셋 다
+     * 읽어 «셋 중 하나» 계약이 처음부터 깨진다. 위 테스트는 `TextAlign.Center` 를 명시해서
+     * 이 자리를 못 잡는다 (#1179 리뷰).
+     */
+    @Test
+    fun `정렬을 고른 적 없어도 왼쪽 하나가 켜져 있다`() {
+        AlignedToolbar.entries.forEach { toolbar ->
+            renderAligned(toolbar, TextAlign.Unspecified)
+
+            val aligns = composeRule.scanEnabledClickTargets().filter { it.name in ALIGN_NAMES }
+            val selected = aligns.filter { it.selected == true }
+            assertEquals("${toolbar.label}: 첫 상태에서 켜진 정렬이 정확히 하나가 아니다: ${aligns.describe()}", 1, selected.size)
+            assertEquals("${toolbar.label}: 첫 상태의 기본 정렬이 왼쪽이 아니다", "왼쪽 정렬", selected.single().name)
+        }
+    }
+
     @Test
     fun `서식은 개별 토글이다`() {
         renderStyleToolbarOnly()
@@ -153,9 +171,11 @@ class WriteToolbarAccessibilityTest {
      * #1179 가 든 후보 중 **툴바 밖** 것들. 두 툴바만 보면 나머지의 48dp 결론이 CI 에서
      * 재현되지 않는다 (#1179 리뷰).
      *
-     * 여기서 실제로 위반 2건이 나왔고 함께 고쳤다 — 수신자 상단바의 필터 타깃은 자식이 없어
+     * 여기서 실제로 위반이 여럿 나왔고 함께 고쳤다 — 수신자 상단바의 필터 타깃은 자식이 없어
      * **이름이 통째로 비어** 있었고, 필터 시트의 정렬 칩은 색만 바뀔 뿐 선택 상태가 semantics 에
-     * 없었다. 스캐너를 안 돌렸으면 둘 다 안 보였다.
+     * 없었다. `DiaryWriteScreenContent` 까지 넓힌 뒤에는 본문 편집기의 이름 누락·수신자 행의
+     * Role 누락·기분 칩 3종의 역할과 선택 상태 누락이 더 나왔다. 스캐너를 안 돌렸으면 전부
+     * 안 보였다.
      */
     @Test
     fun `툴바 밖 후보도 48dp 이상이고 이름과 역할을 갖는다`() {

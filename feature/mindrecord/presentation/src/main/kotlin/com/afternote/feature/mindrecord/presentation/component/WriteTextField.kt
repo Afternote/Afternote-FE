@@ -30,6 +30,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.ParagraphStyle
@@ -124,7 +125,7 @@ fun WriteTextField(
             isItalic = state.currentSpanStyle.fontStyle == FontStyle.Italic,
             isUnderline = state.currentSpanStyle.textDecoration?.contains(TextDecoration.Underline) == true,
             isStrikethrough = state.currentSpanStyle.textDecoration?.contains(TextDecoration.LineThrough) == true,
-            textAlign = state.currentParagraphStyle.textAlign ?: TextAlign.Start,
+            textAlign = state.currentParagraphStyle.textAlign.orStart(),
             textStyle = currentTextStyleType(state.currentSpanStyle.fontSize.value),
         )
 
@@ -255,7 +256,10 @@ fun WriteTextField(
                 Text(
                     text = stringResource(R.string.mindrecord_write_field_placeholder),
                     color = AfternoteDesign.colors.gray4,
-                    modifier = Modifier.padding(16.dp),
+                    // 같은 문자열이 편집기의 이름으로 이미 실려 있다. 이 형제 노드를 접근성
+                    // 트리에 남기면 비어 있을 때 같은 문장을 두 번 읽는다 (#1179 리뷰).
+                    // Material 의 TextField 도 placeholder 를 필드 노드에 합치고 따로 짚지 않는다.
+                    modifier = Modifier.padding(16.dp).clearAndSetSemantics {},
                 )
             }
             Text(
