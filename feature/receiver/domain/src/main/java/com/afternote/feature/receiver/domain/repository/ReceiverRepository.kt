@@ -20,13 +20,13 @@ import kotlinx.coroutines.flow.Flow
  */
 interface ReceiverRepository {
     /** 저장된 인증 코드 스트림(없거나 공백만 있으면 null 방출). */
-    val authCodeFlow: Flow<String?>
+    val masterKeyFlow: Flow<String?>
 
     /** 단발 조회; UI 스레드에서는 코루틴 안에서 호출하세요. */
-    suspend fun currentAuthCode(): String?
+    suspend fun currentMasterKey(): String?
 
     /** 사용자가 입력·검증한 코드를 저장합니다. 제거는 로그아웃 일괄 정리(SESSION scope, #912)가 담당합니다. */
-    suspend fun saveAuthCode(code: String)
+    suspend fun saveMasterKey(code: String)
 
     /**
      * 수신 애프터노트 스트림. 서버는 페이지네이션 미지원이므로 단일 페이지로 받지만,

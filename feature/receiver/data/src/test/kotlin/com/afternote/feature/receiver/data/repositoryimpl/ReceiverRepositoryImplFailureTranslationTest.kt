@@ -8,7 +8,7 @@ import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.feature.receiver.data.dto.ReceivedAfternoteDetailDto
 import com.afternote.feature.receiver.data.dto.ReceivedAfternoteListDto
-import com.afternote.feature.receiver.data.local.ReceiverAuthCodeDataSource
+import com.afternote.feature.receiver.data.local.ReceiverMasterKeyDataSource
 import com.afternote.feature.receiver.data.service.ReceiverAfternoteApiService
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import com.afternote.feature.receiver.domain.testing.FakeReceiverAuthRepository
@@ -87,7 +87,7 @@ class ReceiverRepositoryImplFailureTranslationTest {
 
     private fun repository(api: ReceiverAfternoteApiService): ReceiverRepositoryImpl =
         ReceiverRepositoryImpl(
-            authCodeDataSource = ReceiverAuthCodeDataSource(EmptyPreferencesDataStore()),
+            masterKeyDataSource = ReceiverMasterKeyDataSource(EmptyPreferencesDataStore()),
             api = api,
             receiverAuthRepository = FakeReceiverAuthRepository(),
             errorReporter = SilentErrorReporter(),

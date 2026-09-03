@@ -13,6 +13,7 @@ import com.afternote.feature.receiver.data.dto.ReceiverAuthVerifyRequestDto
 import com.afternote.feature.receiver.data.dto.ReceiverEmailAuthVerifyDto
 import com.afternote.feature.receiver.data.dto.ReceiverEmailAuthVerifyRequestDto
 import com.afternote.feature.receiver.data.dto.ReceiverMessageDto
+import com.afternote.feature.receiver.data.reporting.RecordingErrorReporter
 import com.afternote.feature.receiver.data.service.ReceiverAuthApiService
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import com.afternote.feature.receiver.domain.error.ReceiverRejectionReason
@@ -104,7 +105,10 @@ class ReceiverAuthRepositoryImplFailureTranslationTest {
     }
 
     private fun repositoryFailingWith(failure: suspend () -> Nothing): ReceiverAuthRepository =
-        ReceiverAuthRepositoryImpl(AlwaysFailingReceiverAuthApiService(failure))
+        ReceiverAuthRepositoryImpl(
+            api = AlwaysFailingReceiverAuthApiService(failure),
+            errorReporter = RecordingErrorReporter(),
+        )
 }
 
 /**

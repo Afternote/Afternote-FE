@@ -1,5 +1,6 @@
 package com.afternote.feature.receiver.data.repositoryimpl
 
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
@@ -38,10 +39,11 @@ class ReceiverAuthRepositoryImpl
     @Inject
     constructor(
         private val api: ReceiverAuthApiService,
+        private val errorReporter: ErrorReporter,
     ) : ReceiverAuthRepository {
-        override suspend fun verifyMasterKey(authCode: String): Result<ReceiverIdentity> =
+        override suspend fun verifyMasterKey(masterKey: String): Result<ReceiverIdentity> =
             runCatchingCancellable {
-                api.verifyMasterKey(ReceiverAuthVerifyRequestDto(authCode)).requireData().toDomain()
+                api.verifyMasterKey(ReceiverAuthVerifyRequestDto(masterKey)).requireData().toDomain()
             }.mapReceiverFailure()
 
         override suspend fun sendEmailAuthCode(email: String): Result<Unit> =
@@ -88,12 +90,12 @@ class ReceiverAuthRepositoryImpl
                             familyRelationCertificateUrl = familyRelationCertificateUrl,
                         ),
                     ).requireData()
-                    .toDomain()
+                    .toDomain(errorReporter)
             }.mapReceiverFailure()
 
         override suspend fun getDeliveryVerificationStatus(): Result<DeliveryVerification> =
             runCatchingCancellable {
-                api.getDeliveryVerificationStatus().requireData().toDomain()
+                api.getDeliveryVerificationStatus().requireData().toDomain(errorReporter)
             }.mapReceiverFailure()
 
         override suspend fun getSenderMessage(): Result<SenderMessageInfo> =
@@ -106,7 +108,6 @@ class ReceiverAuthRepositoryImpl
                 api
                     .getReceivedRecordBoxes()
                     .requireData()
-                    .recordBoxes
-                    .map { it.toDomain() }
+                    .toDomain(errorReporter)
             }.mapReceiverFailure()
     }

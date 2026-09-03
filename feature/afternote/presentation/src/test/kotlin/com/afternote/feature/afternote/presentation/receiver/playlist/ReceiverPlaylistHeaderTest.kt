@@ -47,8 +47,8 @@ class ReceiverPlaylistHeaderTest {
     fun `수신자 플레이리스트에는 곡 검색 입력이 없다`() {
         renderScreen()
 
-        val searchLabel = composeRule.activity.getString(R.string.song_search_label)
-        val searchPlaceholder = composeRule.activity.getString(R.string.song_search_placeholder)
+        val searchLabel = composeRule.activity.getString(R.string.afternote_song_search_label)
+        val searchPlaceholder = composeRule.activity.getString(R.string.afternote_song_search_placeholder)
         composeRule.onNodeWithText(searchLabel).assertDoesNotExist()
         composeRule.onNodeWithText(searchPlaceholder).assertDoesNotExist()
     }
@@ -57,7 +57,7 @@ class ReceiverPlaylistHeaderTest {
     fun `수신자 플레이리스트 헤더는 곡 수를 보여준다`() {
         renderScreen()
 
-        val songCount = composeRule.activity.getString(R.string.receiver_playlist_song_count_format, songs.size)
+        val songCount = composeRule.activity.getString(R.string.afternote_receiver_playlist_song_count_format, songs.size)
         composeRule.onNodeWithText(songCount).assertIsDisplayed()
     }
 }
