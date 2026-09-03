@@ -392,6 +392,9 @@ class ProductionVisibilityKonsistTest {
                 "core/ui/src/main/kotlin/com/afternote/core/ui/button/" +
                     "AfternoteRadioGroup.kt::function AfternoteRadioGroup [implicit-public]" to
                     "core:ui README에 문서화된 공용 컴포넌트",
+                "core/ui/src/main/kotlin/com/afternote/core/ui/popup/" +
+                    "AfternoteActionMenu.kt::class ActionMenuItem [implicit-public]" to
+                    "AfternoteActionMenu 파라미터와 editDeleteActionMenuItems 반환값을 외부 feature가 타입 추론 소비",
                 "feature/afternote/domain/src/main/java/com/afternote/feature/afternote/domain/model/author/" +
                     "ListItem.kt::class Account [implicit-public]" to
                     "ListItem.account가 노출하는 도메인 타입",

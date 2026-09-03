@@ -1,11 +1,12 @@
 package com.afternote.core.ui.popup
 
-import androidx.compose.foundation.layout.Column
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.testing.EnabledClickTarget
@@ -148,12 +149,10 @@ class AfternoteActionMenuTest {
     fun `항목은 48dp 터치 타깃과 버튼 역할을 갖춘다`() {
         composeRule.setContent {
             AfternoteTheme {
-                AfternoteActionMenuCard(
-                    items =
-                        editDeleteActionMenuItems(
-                            onEditClick = {},
-                            onDeleteClick = {},
-                        ),
+                AfternoteActionMenu(
+                    expanded = true,
+                    onDismissRequest = {},
+                    items = editDeleteActionMenuItems(onEditClick = {}, onDeleteClick = {}),
                 )
             }
         }
@@ -170,21 +169,22 @@ class AfternoteActionMenuTest {
     fun `기본 너비는 가장 긴 항목에 맞고 width 를 주면 그 값으로 고정된다`() {
         // 시안 프레임(2249:14756)은 120dp 고정이지만 FE 확정값은 가변 너비다 (#643).
         // 고정 프레임이 필요한 호출부를 위해 width 파라미터가 남아 있어야 한다.
+        val width = mutableStateOf(Dp.Unspecified)
         composeRule.setContent {
             AfternoteTheme {
-                Column {
-                    AfternoteActionMenuCard(
-                        items = listOf(ActionMenuItem("수정하기") {}),
-                    )
-                    AfternoteActionMenuCard(
-                        items = listOf(ActionMenuItem("수정하기") {}),
-                        width = 120.dp,
-                    )
-                }
+                AfternoteActionMenu(
+                    expanded = true,
+                    onDismissRequest = {},
+                    items = listOf(ActionMenuItem("수정하기") {}),
+                    width = width.value,
+                )
             }
         }
 
-        val (intrinsic, fixed) = composeRule.scanEnabledClickTargets()
+        val intrinsic = composeRule.scanEnabledClickTargets().single()
+        composeRule.runOnIdle { width.value = 120.dp }
+        composeRule.waitForIdle()
+        val fixed = composeRule.scanEnabledClickTargets().single()
         assertEquals(120f, fixed.layoutWidth.value, 0.1f)
         assertTrue(
             "가변 너비는 고정 120dp 보다 좁아야 한다: ${intrinsic.layoutWidth}",
