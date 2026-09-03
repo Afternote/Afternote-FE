@@ -6,8 +6,6 @@ import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.afternote_fe.MainViewModel
-import com.afternote.core.common.notification.NotificationDestination
-import com.afternote.core.ui.Route
 
 /**
  * 알림 탭으로 도착한 진입 이벤트를 실제 화면 이동으로 옮긴다 (#1111).
@@ -42,17 +40,3 @@ internal fun NotificationEntryEffect(
         viewModel.consumeNotificationEntry(request.identityKey)
     }
 }
-
-/**
- * 알림 목적지 계약값을 앱 최상위 [Route]로 옮긴다.
- *
- * `when`이 exhaustive라 [NotificationDestination]에 값을 더하면 여기가 컴파일로 막는다 —
- * 「보내는 쪽에만 추가하고 도착지를 안 만든 목적지」가 생기지 않는다.
- */
-internal fun NotificationDestination.toRoute(): Route =
-    when (this) {
-        NotificationDestination.HOME -> Route.Home
-        NotificationDestination.MIND_RECORD -> Route.MindRecord
-        NotificationDestination.TIME_LETTER -> Route.TimeLetter
-        NotificationDestination.AFTERNOTE -> Route.Afternote
-    }
