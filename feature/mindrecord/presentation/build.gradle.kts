@@ -41,7 +41,7 @@ dependencies {
 
     testImplementation(libs.coroutines.test)
     testImplementation(testFixtures(projects.core.domain))
-    // 터치 타깃 스캐너 — #1167 이 세운 공통 판정 기준을 그대로 쓴다 (#1179).
+    // 클릭 타깃 접근성 스캐너 (#1167). 크기·이름·역할(#1179)과 중첩 클릭(#1669) 계약을 여기서 지킨다.
     testImplementation(testFixtures(projects.core.ui))
     testImplementation(testFixtures(projects.feature.mindrecord.domain))
 
