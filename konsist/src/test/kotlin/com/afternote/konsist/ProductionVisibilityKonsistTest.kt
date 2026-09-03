@@ -392,6 +392,9 @@ class ProductionVisibilityKonsistTest {
                 "core/ui/src/main/kotlin/com/afternote/core/ui/button/" +
                     "AfternoteRadioGroup.kt::function AfternoteRadioGroup [implicit-public]" to
                     "core:ui README에 문서화된 공용 컴포넌트",
+                "core/ui/src/main/kotlin/com/afternote/core/ui/popup/" +
+                    "ErrorPopup.kt::function AccessDeniedPopup [implicit-public]" to
+                    "core:ui README에 문서화된 오류 팝업 4종 중 403 갈래 (#446)",
                 "feature/afternote/domain/src/main/java/com/afternote/feature/afternote/domain/model/author/" +
                     "ListItem.kt::class Account [implicit-public]" to
                     "ListItem.account가 노출하는 도메인 타입",
