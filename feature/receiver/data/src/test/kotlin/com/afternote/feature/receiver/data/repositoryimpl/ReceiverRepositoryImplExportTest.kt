@@ -7,7 +7,7 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.feature.receiver.data.dto.ReceivedAfternoteDetailDto
 import com.afternote.feature.receiver.data.dto.ReceivedAfternoteListDto
-import com.afternote.feature.receiver.data.local.ReceiverAuthCodeDataSource
+import com.afternote.feature.receiver.data.local.ReceiverMasterKeyDataSource
 import com.afternote.feature.receiver.data.service.ReceiverAfternoteApiService
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import com.afternote.feature.receiver.domain.model.ReceivedExportBundle
@@ -21,7 +21,7 @@ import org.junit.Test
 class ReceiverRepositoryImplExportTest {
     private val repository =
         ReceiverRepositoryImpl(
-            authCodeDataSource = ReceiverAuthCodeDataSource(InMemoryPreferencesDataStore()),
+            masterKeyDataSource = ReceiverMasterKeyDataSource(InMemoryPreferencesDataStore()),
             api = UnusedReceiverAfternoteApiService,
             receiverAuthRepository = FakeReceiverAuthRepository.strict(),
             errorReporter = UnusedErrorReporter,
