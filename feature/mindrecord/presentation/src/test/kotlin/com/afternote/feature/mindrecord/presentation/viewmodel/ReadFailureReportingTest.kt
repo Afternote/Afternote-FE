@@ -16,6 +16,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -61,7 +62,7 @@ class ReadFailureReportingTest {
     fun `일기 목록이 오류 화면으로 바뀌면 기록한다`() =
         runTest(dispatcher) {
             val reporter = RecordingErrorReporter()
-            val viewModel = diaryListViewModel(failing = true, reporter = reporter)
+            val viewModel = failingDiaryListViewModel(reporter)
 
             backgroundScope.launch { viewModel.uiState.collect { } }
             advanceUntilIdle()
@@ -72,27 +73,39 @@ class ReadFailureReportingTest {
     /**
      * **이 테스트가 선을 지킨다.** 재진입 갱신 실패는 화면을 갈아치우지 않으므로 사용자에게
      * 보이지도 않는다 — 그것까지 올리면 한도가 잡음으로 찬다.
+     *
+     * `refreshOnReturn` 은 `loadedVersion == changeTracker.version` 이면 즉시 반환한다. 트래커를
+     * 새로 만들어 넘기면 첫 조회 뒤 두 값이 같아져 **재조회가 아예 안 나가고**, 심어 둔 실패가
+     * 호출조차 되지 않은 채 「기록 없음」이 통과한다 — 계측을 «전부 올리기» 로 되돌려도 초록인
+     * 공허한 테스트가 된다 (#964 리뷰). 그래서 쓰기를 한 번 알리고, **갱신이 실제로 나갔는지**를
+     * 조회 횟수로 함께 못박는다.
      */
     @Test
     fun `재진입 갱신이 실패해도 목록이 남아 있으면 기록하지 않는다`() =
         runTest(dispatcher) {
             val reporter = RecordingErrorReporter()
             val diaryRepository = FakeDiaryRepository()
+            val changeTracker = MindRecordChangeTracker()
             val viewModel =
                 DiaryListViewModel(
                     repository = diaryRepository,
-                    changeTracker = MindRecordChangeTracker(),
+                    changeTracker = changeTracker,
                     errorReporter = reporter,
                 )
             backgroundScope.launch { viewModel.uiState.collect { } }
             advanceUntilIdle()
             // 첫 조회는 성공해 목록이 떠 있다.
             assertEquals(emptyList<String>(), reporter.stages)
+            assertEquals(1, diaryRepository.listQueries.size)
 
             diaryRepository.onGetList = { _, _ -> Result.failure(IOException("갱신 실패")) }
+            // 쓰기가 있었다고 알린다 — 없으면 버전 가드가 재조회를 건너뛴다.
+            changeTracker.notifyChanged()
             viewModel.refreshOnReturn()
             advanceUntilIdle()
 
+            assertEquals("재조회가 나가지 않아 실패 자체가 없었다", 2, diaryRepository.listQueries.size)
+            assertTrue("갱신 실패가 화면을 갈아치웠다", viewModel.uiState.value is DiaryListUiState.Success)
             assertEquals("보고 있던 목록이 유지되는 실패까지 올라갔다", emptyList<String>(), reporter.stages)
         }
 
@@ -122,6 +135,29 @@ class ReadFailureReportingTest {
             val viewModel =
                 DiaryListViewModel(
                     repository = diaryRepository,
+                    changeTracker = MindRecordChangeTracker(),
+                    errorReporter = reporter,
+                )
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            advanceUntilIdle()
+
+            viewModel.delete(1L)
+            advanceUntilIdle()
+
+            assertEquals(listOf("record_delete"), reporter.stages)
+        }
+
+    /**
+     * 데일리질문 쪽도 같은 계약이다. 종전에는 이 계측을 지워도 초록이었다 —
+     * `MindRecordFailureRecoveryTest` 가 같은 경로를 돌리지만 reporter 단언이 없다 (#964 리뷰).
+     */
+    @Test
+    fun `데일리질문 삭제가 실패하면 기록한다`() =
+        runTest(dispatcher) {
+            val reporter = RecordingErrorReporter()
+            val viewModel =
+                DailyQuestionListViewModel(
+                    repository = FakeDailyQuestionRepository(onDelete = { Result.failure(IOException("삭제 실패")) }),
                     changeTracker = MindRecordChangeTracker(),
                     errorReporter = reporter,
                 )
@@ -168,15 +204,10 @@ class ReadFailureReportingTest {
             assertEquals(listOf("memory_space_load"), reporter.stages)
         }
 
-    private fun diaryListViewModel(
-        failing: Boolean,
-        reporter: RecordingErrorReporter,
-    ): DiaryListViewModel =
+    /** 조회가 처음부터 실패하는 일기 목록 VM. 성공 경로는 각 테스트가 직접 만든다. */
+    private fun failingDiaryListViewModel(reporter: RecordingErrorReporter): DiaryListViewModel =
         DiaryListViewModel(
-            repository =
-                FakeDiaryRepository(
-                    onGetList = if (failing) ({ _, _ -> Result.failure(IOException("조회 실패")) }) else null,
-                ),
+            repository = FakeDiaryRepository(onGetList = { _, _ -> Result.failure(IOException("조회 실패")) }),
             changeTracker = MindRecordChangeTracker(),
             errorReporter = reporter,
         )

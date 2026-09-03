@@ -141,14 +141,22 @@ class DiaryListViewModel
                                 it.copy(loadPhase = LoadPhase.Loaded(result), deleteError = null)
                             }
                         }.onFailure { e ->
+                            // **사용자가 오류 화면을 마주한 경우에만** 올린다. 재진입 갱신 실패는
+                            // 보고 있던 목록을 그대로 두므로 승격하지 않는다 — 화면 이탈이 잦아
+                            // 전부 올리면 한도를 잡음으로 채운다 (#964).
+                            //
+                            // 판정을 update 람다 **밖에서** 한다. `MutableStateFlow.update` 는 CAS
+                            // 재시도 때 람다를 다시 평가하므로, 안에 두면 이중 보고가 될 자리다
+                            // (지금은 쓰기가 전부 Main.immediate 라 재시도가 없다, #964 리뷰).
+                            val showsErrorScreen =
+                                !(keepsStateOnFailure && internalState.value.loadPhase is LoadPhase.Loaded)
+                            if (showsErrorScreen) {
+                                errorReporter.recordMindRecordFailure(MindRecordFailureStage.RECORD_LIST_LOAD, e)
+                            }
                             internalState.update { current ->
                                 if (keepsStateOnFailure && current.loadPhase is LoadPhase.Loaded) {
                                     current
                                 } else {
-                                    // **사용자가 오류 화면을 마주한 경우에만** 올린다. 위 분기(재진입
-                                    // 갱신 실패)는 보고 있던 목록을 그대로 두므로 승격하지 않는다 —
-                                    // 화면 이탈이 잦아 전부 올리면 한도를 잡음으로 채운다 (#964).
-                                    errorReporter.recordMindRecordFailure(MindRecordFailureStage.RECORD_LIST_LOAD, e)
                                     current.copy(
                                         loadPhase =
                                             LoadPhase.Failed(
