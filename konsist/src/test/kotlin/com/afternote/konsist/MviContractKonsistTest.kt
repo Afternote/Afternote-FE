@@ -83,7 +83,8 @@ class MviContractKonsistTest {
 
         println(
             buildString {
-                appendLine("[경고] PENDING_MVI_MIGRATION 에 이미 전환된 ViewModel 이 남아 있다 (${stale.size}건).")
+                appendLine("[경고] PENDING_MVI_MIGRATION 에 지금 소스에 없는 항목이 남아 있다 (${stale.size}건).")
+                appendLine("전환이 끝났거나(그러면 지운다), 아직 도착하지 않은 선등재다(PENDING_ARRIVAL_*).")
                 appendLine("목록에서 지워야 다음 미전환 ViewModel 이 이 자리에 숨지 않는다.")
                 appendLine("목록이 비면 규칙 B 의 예외 자체를 지운다.")
                 appendLine()
@@ -329,6 +330,17 @@ class MviContractKonsistTest {
                 "com.afternote.feature.onboarding.presentation.signup.SignUpViewModel",
             )
 
+        /**
+         * 아직 develop 에 없다. #457(PR #1624, 승인 완료)이 들여오는 네 번째 onboarding ViewModel 이라,
+         * 이 가드가 먼저 머지되면 규칙이 생기기 전에 쓰인 그 PR 이 규칙 B 로 빨개진다. 머지 순서가
+         * 어느 쪽이든 develop 이 red 가 되지 않도록 미리 등재한다 — 그때까지는 「해소된 항목」 경고로만
+         * 남는다. 전환은 #1802 후속 몫이다.
+         */
+        private val PENDING_ARRIVAL_ONBOARDING =
+            setOf(
+                "com.afternote.feature.onboarding.presentation.findaccount.FindPasswordViewModel",
+            )
+
         /** #1803 이 뺀다. */
         private val ISSUE_1803_RECEIVER =
             setOf(
@@ -378,6 +390,7 @@ class MviContractKonsistTest {
          */
         val PENDING_MVI_MIGRATION =
             ISSUE_1802_ONBOARDING +
+                PENDING_ARRIVAL_ONBOARDING +
                 ISSUE_1803_RECEIVER +
                 ISSUE_1804_AFTERNOTE +
                 ISSUE_1805_SETTING +
