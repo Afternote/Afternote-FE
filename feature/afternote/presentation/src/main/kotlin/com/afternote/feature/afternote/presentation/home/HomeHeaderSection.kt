@@ -16,6 +16,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteOutlinedCard
 import com.afternote.core.ui.AfternoteSectionHeader
@@ -75,6 +76,7 @@ internal fun HomeHeaderSection(
                         Modifier
                             .clickable(
                                 onClickLabel = stringResource(R.string.afternote_home_draft_entry_description),
+                                role = Role.Button,
                                 onClick = onDraftListClick,
                             ),
                 )

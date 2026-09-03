@@ -20,8 +20,18 @@ import kotlin.collections.mapNotNull
  *
  * 서버는 상세 응답을 `isDraft` 로 갈라 준다(`AfternotedetailResponse` 의 `oneOf`: `Draft` /
  * `Published` / `PublishedPlaylist`). 발행 완료는 서버가 응답을 조립하면서 카테고리별 필수값을
- * 강제하므로(`requirePublishedPlaylist` · `requirePublishedCredentials`) 여기서는 그 보장을 그대로
- * 타입으로 받는다 — 빠져 있으면 계약 위반이라 낮추지 않고 실패로 옮긴다.
+ * 강제한다 — `requirePublishedPlaylist`(PLAYLIST) · `requirePublishedCredentials`(SOCIAL·BUSINESS).
+ *
+ * **다만 그 강제는 아직 실서버에 없다.** BE `main` 에는 있으나 배포 브랜치 `release` 의
+ * `AfternotedetailResponse` 는 `oneOf` 분리도 두 `require*` 도 없는 평면 레코드다. 그래서 이 매퍼는
+ * 「서버가 보장하니 그대로 받는다」로 통일하지 않고, **빠졌을 때 화면이 성립하는지**로 가른다.
+ *
+ * | 값 | 없을 때 | 처방 |
+ * |---|---|---|
+ * | `memorial`(PLAYLIST 본문) | 보여줄 본문 자체가 없다 | 실패로 옮긴다 ([toDetailContent]) |
+ * | `credentials`(SOCIAL·BUSINESS) | 제목·남기실 말씀·수신자·처리방법은 그대로 성립한다 | 빈 값으로 낮춘다 ([toPublishedCredentials]) |
+ *
+ * `release` 가 BE `main` 을 따라잡으면 아래쪽도 실패로 좁힐 수 있다 — 그 판정은 #1762 에 남겼다.
  *
  * 서버 `category` 를 해석하지 못하면 상세를 만들지 않는다.
  *
@@ -120,7 +130,8 @@ private fun AfternoteDetailDto.toDetailContent(type: AfternoteType): DetailConte
         }
     }
 
-// 던지면 그 상세가 영영 안 열리므로 빠진 값은 빈 문자열로 낮춘다.
+// 던지면 그 상세가 영영 안 열리므로 빠진 값은 빈 문자열로 낮춘다 — 근거는 파일 머리 KDoc 의 표.
+// 호출부는 SOCIAL_NETWORK·BUSINESS 둘뿐이라 GALLERY 는 이 경로를 타지 않는다.
 private fun AfternoteDetailDto.toPublishedCredentials() =
     DetailCredentials(
         id = credentials?.id.orEmpty(),
