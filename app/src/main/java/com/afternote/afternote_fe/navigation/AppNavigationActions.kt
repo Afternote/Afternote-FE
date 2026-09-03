@@ -14,11 +14,11 @@ import com.afternote.feature.afternote.presentation.navigation.model.SELECTED_RE
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteNavActions
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
 import com.afternote.feature.home.presentation.HomeTabActions
+import com.afternote.feature.home.presentation.receiver.ReceiverHomeActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavActions
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingRoute
-import com.afternote.feature.receiver.presentation.home.ReceiverHomeActions
 import com.afternote.feature.receiver.presentation.navigation.ReceiverNavActions
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
 import com.afternote.feature.setting.presentation.navigation.SettingNavActions
@@ -404,6 +404,14 @@ fun rememberHomeTabActions(
 
             override fun onMemoriesSectionClick() {
                 appState.navController.navigate(Route.MemorySpace)
+            }
+
+            override fun onMemoriesRecordDetailClick(recordId: Long) {
+                // 카드가 싣는 것은 가장 최근 **데일리질문 답변** 한 건이라 `isDiary = false` 다.
+                // 카드가 나중에 일기까지 포함하게 되면 종류를 함께 넘겨야 한다 (#793).
+                appState.navController.navigate(
+                    MindRecordRoute.RecordDetailRoute(recordId = recordId, isDiary = false),
+                )
             }
 
             override fun onSettingClick() {
