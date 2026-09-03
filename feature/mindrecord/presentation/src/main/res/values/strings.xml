@@ -158,11 +158,6 @@
     <string name="mindrecord_toolbar_link_cd">링크</string>
 
     <!-- Media select bottom sheet (키보드 툴바 링크 버튼 → 미디어 메인 메뉴) -->
-    <string name="mindrecord_media_sheet_title">미디어 추가하기</string>
-    <string name="mindrecord_media_sheet_image">이미지 추가하기</string>
-    <string name="mindrecord_media_sheet_voice">음성 추가하기</string>
-    <string name="mindrecord_media_sheet_file">파일 추가하기</string>
-    <string name="mindrecord_media_sheet_link">링크 추가하기</string>
 
     <!-- Link bottom sheet (미디어 시트 → "링크 추가하기") -->
     <string name="mindrecord_link_sheet_title">링크 추가하기</string>
