@@ -114,11 +114,13 @@ class ListScreenCopyAndFabSpaceTest {
         )
     }
 
-    private fun diary() =
-        DailyDiary(
-            id = 1L,
-            title = "일기",
-            date = LocalDate.of(2026, 9, 1),
-            content = "본문",
-        )
+    private fun diary(
+        id: Long = 1L,
+        title: String = "일기",
+    ) = DailyDiary(
+        id = id,
+        title = title,
+        date = LocalDate.of(2026, 9, 1),
+        content = "본문",
+    )
 }
