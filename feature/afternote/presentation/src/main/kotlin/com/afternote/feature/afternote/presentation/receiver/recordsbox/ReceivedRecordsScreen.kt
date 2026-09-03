@@ -29,15 +29,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.core.ui.button.FAB.AfternoteFloatingActionButton
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
+import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordStatus
+import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordVerification
+import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordViewStatus
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.shared.body.ErrorListBody
+import com.afternote.feature.afternote.presentation.shared.body.LoadingListBody
 
 /**
- * 받은 기록함 — 수신자가 등록한 발신자 카드 리스트.
+ * 받은 기록함 — 서버에서 조회한 발신자별 기록함 목록.
  *
  * Welcome 의 "전달 받은 기록 확인하기" 에서 진입. 본인 확인 상태와 무관하게 진입 가능하며,
  * 발신자별 열람 신청 흐름은 발신자 상세 화면의 "열람 신청하기" 에서 시작한다 (이슈 #215).
@@ -48,28 +52,31 @@ import com.afternote.feature.afternote.presentation.R
 @Composable
 fun ReceivedRecordsScreen(
     onBackClick: () -> Unit,
-    onAddSenderClick: () -> Unit,
-    onSenderClick: (SenderEntry) -> Unit,
+    onSenderClick: (ReceivedRecordItem) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ReceivedRecordsViewModel = hiltViewModel(),
 ) {
-    val senders by viewModel.senders.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     ReceivedRecordsScreenContent(
-        senders = senders,
+        senders = uiState.senders,
         onBackClick = onBackClick,
-        onAddSenderClick = onAddSenderClick,
         onSenderClick = onSenderClick,
         modifier = modifier,
+        isLoading = uiState.isLoading,
+        hasLoadError = uiState.hasLoadError,
+        onRetry = viewModel::retry,
     )
 }
 
 @Composable
 internal fun ReceivedRecordsScreenContent(
-    senders: List<SenderEntry>,
+    senders: List<ReceivedRecordItem>,
     onBackClick: () -> Unit,
-    onAddSenderClick: () -> Unit,
-    onSenderClick: (SenderEntry) -> Unit,
+    onSenderClick: (ReceivedRecordItem) -> Unit,
     modifier: Modifier = Modifier,
+    isLoading: Boolean = false,
+    hasLoadError: Boolean = false,
+    onRetry: () -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -80,27 +87,46 @@ internal fun ReceivedRecordsScreenContent(
                 onBackClick = onBackClick,
             )
         },
-        floatingActionButton = {
-            // 시안(plus_button 48×48, 글리프 16.67dp) 정합: core/ui 기본 56dp 대신 48dp opt-in (#481).
-            AfternoteFloatingActionButton(onClick = onAddSenderClick, size = 48.dp, iconSize = 17.dp)
-        },
     ) { paddingValues ->
-        if (senders.isEmpty()) {
-            ReceivedRecordsEmptyContent(
-                modifier =
-                    Modifier
-                        .padding(paddingValues)
-                        .fillMaxSize(),
-            )
-        } else {
-            ReceivedRecordsList(
-                senders = senders,
-                onSenderClick = onSenderClick,
-                modifier =
-                    Modifier
-                        .padding(paddingValues)
-                        .fillMaxSize(),
-            )
+        when {
+            isLoading -> {
+                LoadingListBody(
+                    modifier =
+                        Modifier
+                            .padding(paddingValues)
+                            .fillMaxSize(),
+                )
+            }
+
+            hasLoadError -> {
+                ErrorListBody(
+                    onRetry = onRetry,
+                    modifier =
+                        Modifier
+                            .padding(paddingValues)
+                            .fillMaxSize(),
+                )
+            }
+
+            senders.isEmpty() -> {
+                ReceivedRecordsEmptyContent(
+                    modifier =
+                        Modifier
+                            .padding(paddingValues)
+                            .fillMaxSize(),
+                )
+            }
+
+            else -> {
+                ReceivedRecordsList(
+                    senders = senders,
+                    onSenderClick = onSenderClick,
+                    modifier =
+                        Modifier
+                            .padding(paddingValues)
+                            .fillMaxSize(),
+                )
+            }
         }
     }
 }
@@ -122,15 +148,15 @@ private fun ReceivedRecordsEmptyContent(modifier: Modifier = Modifier) {
 
 @Composable
 private fun ReceivedRecordsList(
-    senders: List<SenderEntry>,
-    onSenderClick: (SenderEntry) -> Unit,
+    senders: List<ReceivedRecordItem>,
+    onSenderClick: (ReceivedRecordItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
         modifier = modifier.padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        items(items = senders, key = { it.id }) { sender ->
+        items(items = senders, key = { it.recordBoxId }) { sender ->
             SenderCard(
                 sender = sender,
                 onClick = { onSenderClick(sender) },
@@ -141,7 +167,7 @@ private fun ReceivedRecordsList(
 
 @Composable
 private fun SenderCard(
-    sender: SenderEntry,
+    sender: ReceivedRecordItem,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -168,7 +194,7 @@ private fun SenderCard(
             modifier = Modifier.weight(1f),
         ) {
             Text(
-                text = sender.name,
+                text = sender.senderName,
                 style = AfternoteDesign.typography.bodySmallB,
                 color = AfternoteDesign.colors.gray9,
             )
@@ -188,7 +214,6 @@ private fun ReceivedRecordsScreenEmptyPreview() {
         ReceivedRecordsScreenContent(
             senders = emptyList(),
             onBackClick = {},
-            onAddSenderClick = {},
             onSenderClick = {},
         )
     }
@@ -201,14 +226,25 @@ private fun ReceivedRecordsScreenFilledPreview() {
         ReceivedRecordsScreenContent(
             senders =
                 listOf(
-                    SenderEntry(id = "1", name = "김혜성"),
-                    SenderEntry(id = "2", name = "김혜성"),
-                    SenderEntry(id = "3", name = "김혜성"),
-                    SenderEntry(id = "4", name = "김혜성"),
+                    previewRecordItem(recordBoxId = 1L),
+                    previewRecordItem(recordBoxId = 2L),
+                    previewRecordItem(recordBoxId = 3L),
+                    previewRecordItem(recordBoxId = 4L),
                 ),
             onBackClick = {},
-            onAddSenderClick = {},
             onSenderClick = {},
         )
     }
 }
+
+private fun previewRecordItem(recordBoxId: Long): ReceivedRecordItem =
+    ReceivedRecordItem(
+        recordBoxId = recordBoxId,
+        accessCode = "preview-key-$recordBoxId",
+        senderName = "김혜성",
+        receiverName = "김지은",
+        relation = "DAUGHTER",
+        recordStatus = ReceivedRecordStatus.Stored,
+        viewStatus = ReceivedRecordViewStatus.Requestable,
+        verification = ReceivedRecordVerification.NotRequested,
+    )

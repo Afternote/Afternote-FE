@@ -6,7 +6,6 @@ import androidx.compose.runtime.Immutable
  * 발신자 상세(designs 11·12) UI 상태.
  *
  * 서버-backed 카드는 `record-boxes` 응답의 발신자명·열람 상태·신청/승인 일시를 사용한다.
- * 마스터 키 입력 전 임시 카드는 SenderRegistry의 사용자 별칭을 사용한다.
  */
 sealed interface SenderDetailUiState {
     data object Loading : SenderDetailUiState
@@ -14,7 +13,7 @@ sealed interface SenderDetailUiState {
     /**
      * 정상 로드 완료.
      *
-     * @property displayName 받은 기록함의 발신자명 또는 마스터 키 입력 전 로컬 항목의 사용자 별칭.
+     * @property displayName 받은 기록함의 발신자명.
      * @property verification 열람 신청 상태 → 정보 박스 "상태" 행 + 하단 CTA 분기.
      * @property requestedAt 신청일(yyyy.MM.dd.) — 서버 기록함의 `requestedAt` 포맷팅 결과.
      *                            null이면 "신청 기록이 없습니다".

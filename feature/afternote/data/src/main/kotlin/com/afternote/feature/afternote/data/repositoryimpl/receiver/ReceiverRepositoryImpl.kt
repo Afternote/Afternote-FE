@@ -48,10 +48,6 @@ class ReceiverRepositoryImpl
             authCodeDataSource.saveCode(code)
         }
 
-        override suspend fun clearAuthCode() {
-            authCodeDataSource.clearCode()
-        }
-
         override suspend fun getReceivedRecordBoxes(): Result<List<ReceivedRecordBox>> =
             runCatchingCancellable {
                 receiverAuthApi

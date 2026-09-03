@@ -42,15 +42,14 @@ fun NavGraphBuilder.receiverNavGraph(
         receiverComposable<ReceiverRoute.ReceivedRecordsRoute> {
             ReceivedRecordsScreen(
                 onBackClick = actions::popBack,
-                onSenderClick = { sender -> actions.navigateToSenderDetail(sender.receiverId) },
+                onSenderClick = { sender -> actions.navigateToSenderDetail(sender.recordBoxId) },
             )
         }
 
         receiverComposable<ReceiverRoute.SenderDetailRoute> { backStackEntry ->
-            val receiverId = backStackEntry.toRoute<ReceiverRoute.SenderDetailRoute>().receiverId
             SenderDetailScreen(
                 onBackClick = actions::popBack,
-                onRequestVerification = { actions.navigateToDeliveryVerificationFlow(receiverId) },
+                onRequestVerification = actions::navigateToDeliveryVerificationFlow,
                 onOpenReceiverHome = actions::navigateToReceiverHome,
             )
         }

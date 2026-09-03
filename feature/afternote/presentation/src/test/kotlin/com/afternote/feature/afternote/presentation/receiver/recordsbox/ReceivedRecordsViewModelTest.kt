@@ -186,10 +186,6 @@ private class FakeReceiverRepository(
         authCode.value = code
     }
 
-    override suspend fun clearAuthCode() {
-        authCode.value = null
-    }
-
     override suspend fun getReceivedRecordBoxes(): Result<List<ReceivedRecordBox>> {
         recordBoxesCallCount += 1
         return recordBoxesResult

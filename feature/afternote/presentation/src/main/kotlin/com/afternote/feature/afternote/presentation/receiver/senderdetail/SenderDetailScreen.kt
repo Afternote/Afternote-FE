@@ -114,25 +114,12 @@ internal fun SenderDetailScreenContent(
                     )
                 }
 
-                is SenderDetailUiState.StatusLoadFailed -> {
-                    SuccessBody(
-                        displayName = uiState.displayName,
-                        verification = null,
-                        requestedAt = null,
-                        approvedAt = null,
-                        errorMessage = stringResource(R.string.receiver_sender_detail_status_load_failed),
-                        onRequestVerification = onRequestVerification,
-                        onOpenReceiverHome = onOpenReceiverHome,
-                    )
-                }
-
                 is SenderDetailUiState.Success -> {
                     SuccessBody(
                         displayName = uiState.displayName,
                         verification = uiState.verification,
                         requestedAt = uiState.requestedAt,
                         approvedAt = uiState.approvedAt,
-                        errorMessage = null,
                         onRequestVerification = onRequestVerification,
                         onOpenReceiverHome = onOpenReceiverHome,
                     )
@@ -145,10 +132,9 @@ internal fun SenderDetailScreenContent(
 @Composable
 private fun SuccessBody(
     displayName: String,
-    verification: SenderVerificationState?,
+    verification: SenderVerificationState,
     requestedAt: String?,
     approvedAt: String?,
-    errorMessage: String?,
     onRequestVerification: () -> Unit,
     onOpenReceiverHome: () -> Unit,
 ) {
@@ -185,27 +171,14 @@ private fun SuccessBody(
             approvedAt = approvedAt,
         )
 
-        if (errorMessage != null) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = errorMessage,
-                style = AfternoteDesign.typography.captionLargeR,
-                color = AfternoteDesign.colors.gray6,
-                textAlign = TextAlign.Center,
-            )
-        }
-
         Spacer(modifier = Modifier.weight(1f))
 
-        // verification 이 null(상태 조회 실패) 인 경우는 액션 분기 근거가 없으므로 버튼 비노출.
-        verification?.let {
-            VerificationActionButton(
-                state = it,
-                onRequestVerification = onRequestVerification,
-                onOpenReceiverHome = onOpenReceiverHome,
-            )
-            Spacer(modifier = Modifier.height(125.5.dp))
-        }
+        VerificationActionButton(
+            state = verification,
+            onRequestVerification = onRequestVerification,
+            onOpenReceiverHome = onOpenReceiverHome,
+        )
+        Spacer(modifier = Modifier.height(125.5.dp))
     }
 }
 

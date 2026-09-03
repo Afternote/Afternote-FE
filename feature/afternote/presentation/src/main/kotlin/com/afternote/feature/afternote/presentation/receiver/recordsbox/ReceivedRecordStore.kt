@@ -23,20 +23,27 @@ class ReceivedRecordStore
 
         fun findByRecordBoxId(recordBoxId: Long): ReceivedRecordItem? = recordBoxesById[recordBoxId]
 
-        private inline fun updateById(
-            id: String,
-            transform: (SenderEntry) -> SenderEntry,
-        ): SenderEntry? {
-            var updated: SenderEntry? = null
-            _senders.update { list ->
-                list.map { entry ->
-                    if (entry.id == id) {
-                        transform(entry).also { updated = it }
-                    } else {
-                        entry
-                    }
+        /** 조회 응답만 정본으로 사용해 이전 접근 코드의 항목이 섞이지 않게 한다. */
+        fun replaceRecordBoxes(entries: List<ReceivedRecordItem>) {
+            val entriesById = LinkedHashMap<Long, ReceivedRecordItem>(entries.size)
+            entries.forEach { entry ->
+                if (entriesById.containsKey(entry.recordBoxId)) {
+                    throw DuplicateRecordBoxIdException(entry.recordBoxId)
                 }
+                entriesById[entry.recordBoxId] = entry
             }
-            return updated
+
+            recordBoxesById = entriesById
+            _recordBoxes.value = entries
+        }
+
+        /** 접근 코드가 바뀌거나 사라지면 이전 응답 스냅샷을 제거한다. */
+        fun clear() {
+            recordBoxesById = emptyMap()
+            _recordBoxes.value = emptyList()
         }
     }
+
+internal class DuplicateRecordBoxIdException(
+    val recordBoxId: Long,
+) : RuntimeException("Duplicate recordBoxId in received record boxes: $recordBoxId")

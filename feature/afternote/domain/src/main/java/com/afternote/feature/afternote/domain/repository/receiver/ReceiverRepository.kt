@@ -26,9 +26,6 @@ interface ReceiverRepository {
     /** 사용자가 입력·검증한 코드를 저장합니다. */
     suspend fun saveAuthCode(code: String)
 
-    /** 로그아웃·계정 전환·초기화 시 저장 코드를 제거합니다. */
-    suspend fun clearAuthCode()
-
     /** 현재 접근 코드와 같은 이메일에 등록된 받은 기록함 목록을 서버에서 조회합니다. */
     suspend fun getReceivedRecordBoxes(): Result<List<ReceivedRecordBox>>
 

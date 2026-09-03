@@ -26,27 +26,21 @@ sealed interface ReceiverRoute {
      * 발신자 상세(11·12) — 카드 클릭 진입. 열람 신청 상태에 따라 3가지 표시:
      * 신청 기록 없음(열람 불가) / PENDING(승인 대기) / APPROVED(열람 가능).
      *
-     * `senderId` 는 서버 `receiverId`로 만든 받은 기록함 항목 식별자다
-     * (typed-safe routes 규약: SavedStateHandle 키 `senderId` 와 일치).
+     * `recordBoxId`는 받은 기록함 항목을 지정하는 불투명 식별자다
+     * (typed-safe routes 규약: SavedStateHandle 키 `recordBoxId`와 일치).
      */
     @Serializable
     data class SenderDetailRoute(
-        val senderId: String,
+        val recordBoxId: Long,
     ) : ReceiverRoute
 
     /**
      * 열람 신청 흐름 — 본인 확인(2·3·4) + 마스터 키(5) + 서류 업로드(6·7·8) + 완료(9) 의 *nested graph 진입점*.
      *
-     * 시작 카드의 `senderId` 는 본 graph route 에만 두어 어느 상세 화면에서 시작한 흐름인지 식별한다.
-     * 실제 API 컨텍스트는 마스터 키 검증 성공 시 저장되는 접근 코드가 담당하며, 자식 라우트에
-     * `senderId` 를 중복 전달하지 않는다.
-     *
      * 발신자 상세 "열람 신청하기" 진입점.
      */
     @Serializable
-    data class DeliveryVerificationFlowRoute(
-        val senderId: String,
-    ) : ReceiverRoute
+    data object DeliveryVerificationFlowRoute : ReceiverRoute
 
     /**
      * 본인 확인 안내 화면(design 2). 흐름 진입 시 본인 확인 캐시가 없으면 본 라우트로.

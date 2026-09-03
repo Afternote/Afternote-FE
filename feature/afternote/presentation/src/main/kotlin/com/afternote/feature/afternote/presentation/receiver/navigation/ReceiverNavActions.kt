@@ -21,15 +21,14 @@ interface ReceiverNavActions {
     fun navigateToMemorialPlaylist(afternoteId: String)
 
     /** 받은 기록함 카드 클릭 → 발신자 상세(11·12) 진입. */
-    fun navigateToSenderDetail(receiverId: Long)
+    fun navigateToSenderDetail(recordBoxId: Long)
 
     /**
      * 발신자 상세의 "열람 신청하기" → nested 열람 신청 흐름 그래프
      * ([com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceiverRoute.DeliveryVerificationFlowRoute])
-     * 진입. 본인 확인 캐시 분기는 흐름 내부(IntroRoute 의 LaunchedEffect) 에서 자동 처리되므로 호출자는
-     * receiverId 만 전달.
+     * 진입. 본인 확인 캐시 분기는 흐름 내부(IntroRoute 의 LaunchedEffect) 에서 자동 처리된다.
      */
-    fun navigateToDeliveryVerificationFlow(receiverId: Long)
+    fun navigateToDeliveryVerificationFlow()
 
     /** 본인 확인 안내(2) 의 "인증 시작하기" → 이메일 인증 화면(3·4) 진입. */
     fun navigateToIdentityVerificationEmail()
