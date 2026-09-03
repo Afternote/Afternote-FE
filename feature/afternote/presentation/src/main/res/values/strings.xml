@@ -19,6 +19,9 @@
 
     <string name="afternote_home_append_error">애프터노트 추가 목록을 불러오지 못했습니다.</string>
     <string name="afternote_home_load_error">애프터노트 목록을 불러오지 못했습니다.</string>
+    <!-- 목록은 남아 있는데 새로고침만 실패한 상태. 전면 오류(afternote_home_load_error)와 달리
+         "지금 보고 있는 목록이 최신이 아닐 수 있다"를 말한다 (#705). -->
+    <string name="afternote_home_refresh_error">목록을 새로 불러오지 못했습니다. 지금 보이는 내용이 최신이 아닐 수 있어요.</string>
     <string name="afternote_home_retry">다시 시도</string>
     <!-- 카테고리 필터 결과 0건 안내. 문구는 #567 디자인 승인 게이트 해제(2026-08-28)로 확정. -->
     <string name="afternote_home_filtered_empty">이 카테고리에 등록된 애프터노트가 없어요.\n아래 연필 버튼을 눌러 애프터노트를 등록해 보세요.</string>
@@ -123,6 +126,8 @@
     <string name="afternote_memorial_detail_title_suffix">에 대한\n%1$s님의 기록</string>
     <string name="afternote_memorial_detail_title_suffix_no_name">에 대한\n기록</string>
     <string name="afternote_memorial_detail_sharing_notice">이 추억 노트는 지정된 신뢰할 연락처에게만 공유되며,\n안전하게 보관됩니다.</string>
+    <!-- 추모 영상 썸네일 좌하단 오버레이 라벨. 섹션 헤더(장례식에 남길 영상)와 문구가 다른 것은 정본 시안 4327:72864 그대로다. -->
+    <string name="afternote_memorial_video_overlay_label">추모 영상</string>
     <string name="afternote_memorial_video_no_app">영상을 재생할 수 있는 앱이 없습니다.</string>
     <string name="afternote_memorial_video_invalid_url">영상 주소가 올바르지 않아 재생할 수 없습니다.</string>
 
@@ -152,6 +157,13 @@
     <string name="afternote_editor_save_failed_generic">저장에 실패했습니다.</string>
     <string name="afternote_editor_search_failed_generic">검색 실패</string>
     <string name="afternote_editor_receiver_selection_unavailable">수신자 목록을 불러오지 못해 선택한 수신자를 반영하지 못했습니다. 잠시 후 다시 선택해 주세요.</string>
+    <!-- 수정 진입 prefill 조회 실패 (#705). 저장이 막힌다는 사실까지 말한다 — 이 상태에서 저장하면
+         서버가 빈 폼 값으로 기존 기록을 덮기 때문이다. -->
+    <string name="afternote_editor_prefill_load_failed">기존 내용을 불러오지 못했습니다.\n불러오기 전에는 저장할 수 없어요.</string>
+    <!-- 위와 저장을 막는 이유는 같지만 사실이 다르다 (#705). 조회가 아직 진행 중일 때는 실패했다고
+         말하지 않는다 — 곧 도착하므로 기다리면 저장할 수 있다. -->
+    <string name="afternote_editor_prefill_not_ready">기존 내용을 불러오는 중입니다.\n잠시 후 다시 시도해 주세요.</string>
+    <string name="afternote_editor_prefill_retry">다시 불러오기</string>
     <string name="afternote_editor_thumbnail_upload_failed">영상 미리보기를 올리지 못했습니다.</string>
     <string name="afternote_editor_thumbnail_extract_failed">영상에서 미리보기를 만들지 못했습니다.</string>
     <string name="afternote_editor_thumbnail_retry">다시 시도</string>
