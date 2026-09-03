@@ -46,7 +46,7 @@ fun WeeklyReportReviewCard(
     modifier: Modifier = Modifier,
     selectedMonday: LocalDate? = null,
     weekOptions: List<WeekOption> = emptyList(),
-    onWeekSelect: (LocalDate) -> Unit = {},
+    onWeekSelect: (LocalDate) -> Unit,
     dateRange: String = "2025.11.10. - 2025.11.16.",
     counts: List<Pair<Int, MindRecordCategoryUi>> =
         listOf(
@@ -65,13 +65,19 @@ fun WeeklyReportReviewCard(
         modifier =
             modifier
                 .fillMaxWidth()
-                .height(200.dp)
                 .clip(RoundedCornerShape(6.dp)),
     ) {
         Column(
             modifier =
                 Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
+                    // 높이를 **못 박지 않고 최소값으로** 둔다. 종전에는 카드가 `height(200.dp)` 고정이라
+                    // 사용자가 글자 크기를 키우면 내용이 200dp 를 넘고 마지막 행(카운트 라벨)부터
+                    // 잘려 나갔다 — 실측: 폰트 배율 1.3 에서 「데일리 질문」·「일기」 아랫부분이 잘린다.
+                    // 저시력 사용자가 정확히 이 화면에서 값을 잃는 자리다 (#1718).
+                    //
+                    // 기본 배율에서는 내용이 200dp 보다 작아 시안 높이가 그대로 유지된다.
+                    .heightIn(min = CardMinHeight)
                     .drawWithCache {
                         val brush =
                             Brush.radialGradient(
@@ -214,6 +220,11 @@ private fun weekLabel(monday: LocalDate): String =
 @Composable
 private fun WeeklyReportScreenPreview() {
     AfternoteTheme {
-        WeeklyReportReviewCard()
+        WeeklyReportReviewCard(
+            onWeekSelect = {},
+        )
     }
 }
+
+/** 시안 높이(4327:99448 계열). 기본 배율에서는 내용이 이보다 작아 이 값이 그대로 카드 높이가 된다. */
+private val CardMinHeight = 200.dp

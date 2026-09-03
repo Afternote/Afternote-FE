@@ -122,9 +122,32 @@ class DiaryWriteImageKeyTest {
         assertEquals(storedHtml, sent)
     }
 
-    private fun viewModel(onCreate: (DiaryCreatePayload) -> Unit = {}): DiaryWriteViewModel =
+    @Test
+    fun `프로세스 사망으로 되살아나도 방금 올린 이미지가 fileKey 로 나간다`() {
+        // 에디터 본문은 rememberSaveable(RichTextState.Saver) 라 죽었다 살아나도 HTML 이
+        // 그대로 복원되고, 그 값이 다시 ViewModel 로 흘러든다. 대응표만 인메모리면 복원된
+        // 본문에는 전체 URL 이 남았는데 바꿀 근거가 사라진 상태가 되어, 그대로 서버로 나가
+        // 호스트가 한 번 더 붙고 403 이 된다 (#549 재발, #1125 리뷰).
+        val handle = SavedStateHandle(emptyMap())
+        val previewUrl = runBlocking { viewModel(savedStateHandle = handle).uploadMedia("content://picked") }
+
+        // 같은 SavedStateHandle 로 새 ViewModel — 프로세스 사망 뒤 복원과 같은 자리다.
+        var sent: String? = null
+        val revived = viewModel(onCreate = { sent = it.content }, savedStateHandle = handle)
+        revived.onTitleChanged("제목")
+        revived.onContentChanged("<p>본문</p><img src=\"$previewUrl\" />")
+        revived.onMoodSelected(TodayMood.HAPPY)
+        revived.submit()
+
+        assertEquals("<p>본문</p><img src=\"$UPLOADED_KEY\" />", sent)
+    }
+
+    private fun viewModel(
+        onCreate: (DiaryCreatePayload) -> Unit = {},
+        savedStateHandle: SavedStateHandle = SavedStateHandle(emptyMap()),
+    ): DiaryWriteViewModel =
         DiaryWriteViewModel(
-            savedStateHandle = SavedStateHandle(emptyMap()),
+            savedStateHandle = savedStateHandle,
             repository = RecordingDiaryRepository(onCreate),
             photoUploadRepository =
                 FakePhotoUploadRepository(

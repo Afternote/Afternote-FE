@@ -10,10 +10,10 @@ import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.navigation.AfternoteExternalActions
 import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import com.afternote.feature.home.presentation.HomeTabActions
+import com.afternote.feature.home.presentation.receiver.ReceiverHomeActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingExternalActions
-import com.afternote.feature.receiver.presentation.home.ReceiverHomeActions
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
 import com.afternote.feature.setting.presentation.navigation.SettingNavActions
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
@@ -330,6 +330,14 @@ fun rememberHomeTabActions(
 
             override fun onMemoriesSectionClick() {
                 appState.navController.navigate(Route.MemorySpace)
+            }
+
+            override fun onMemoriesRecordDetailClick(recordId: Long) {
+                // 카드가 싣는 것은 가장 최근 **데일리질문 답변** 한 건이라 `isDiary = false` 다.
+                // 카드가 나중에 일기까지 포함하게 되면 종류를 함께 넘겨야 한다 (#793).
+                appState.navController.navigate(
+                    MindRecordRoute.RecordDetailRoute(recordId = recordId, isDiary = false),
+                )
             }
 
             override fun onSettingClick() {
