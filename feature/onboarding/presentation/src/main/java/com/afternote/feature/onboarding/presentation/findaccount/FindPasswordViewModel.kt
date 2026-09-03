@@ -45,6 +45,18 @@ class FindPasswordViewModel
 
         private var cooldownJob: Job? = null
 
+        /**
+         * 진행 중인 서버 호출. 상태 플래그만으로는 연타를 막지 못한다 — `viewModelScope.launch` 가
+         * 비동기라 `isSendingCode`·`isSubmitting` 이 반영되기 전에 두 번째 호출이 같은 `false` 를
+         * 읽고 통과한다(`SignUpViewModel.signUpJob` 과 같은 판단).
+         *
+         * 두 흐름 다 인증번호를 소비하므로 중복 요청이 그냥 낭비로 끝나지 않는다 — 발송은 코드를
+         * 새로 발급해 앞서 안내한 것을 무효로 만들고, 재설정은 두 번째가 1207 로 실패해 첫 요청이
+         * 성공했는데도 "이메일 인증부터 다시" 안내가 뜬다.
+         */
+        private var sendCodeJob: Job? = null
+        private var resetJob: Job? = null
+
         fun updateEmail(value: String) =
             _uiState.update {
                 // 이메일이 바뀌면 앞선 발송 이력과 차단 판정은 더 이상 그 이메일의 것이 아니다.
@@ -62,36 +74,38 @@ class FindPasswordViewModel
          * 로컬 계정만 통과시키므로(code 1702), 코드 입력 전에 차단 팝업을 낼 수 있다.
          */
         fun requestVerificationCode() {
+            if (sendCodeJob?.isActive == true) return
             val state = _uiState.value
             if (!state.isSendCodeEnabled) return
-            viewModelScope.launch {
-                _uiState.update { it.copy(isSendingCode = true) }
-                accountRepository
-                    .sendFindCode(state.email)
-                    .onSuccess {
-                        _uiState.update { it.copy(isVerificationSent = true) }
-                        startResendCooldown()
-                    }.onFailure { error ->
-                        // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
-                        if (error is CancellationException) throw error
-                        _uiState.update { current ->
-                            if (error is CoreAuthFailure.SocialSignUpAccount) {
-                                // 사용자 입력 오류가 아니라 계정 종류의 문제다 — 시안은 팝업으로 그린다.
-                                // 계측하지 않는다: 서버가 정상적으로 가르는 분기지 장애가 아니다.
-                                //
-                                // 스낵바 신호를 함께 내린다 — 이 사유는 팝업으로 알리므로, 아직 소비되지
-                                // 않은 이전 실패 문구가 팝업과 겹쳐 뜨지 않게 한다(`FindIdViewModel.verifyCode`
-                                // 선례). `errorMessage` 를 지우는 경로가 [onErrorConsumed] 하나뿐이라
-                                // 이메일을 고쳐 재발송해도 남는다 — `current.copy` 가 그대로 물려받는다.
-                                current.copy(isSocialSignUpAccount = true, errorMessage = null)
-                            } else {
-                                errorReporter.recordAuthFailure(AuthFailureStage.FIND_ACCOUNT_CODE_SEND, error)
-                                current.copy(errorMessage = error.toDisplayMessage(R.string.onboarding_find_account_failed))
+            sendCodeJob =
+                viewModelScope.launch {
+                    _uiState.update { it.copy(isSendingCode = true) }
+                    accountRepository
+                        .sendFindCode(state.email)
+                        .onSuccess {
+                            _uiState.update { it.copy(isVerificationSent = true) }
+                            startResendCooldown()
+                        }.onFailure { error ->
+                            // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
+                            if (error is CancellationException) throw error
+                            _uiState.update { current ->
+                                if (error is CoreAuthFailure.SocialSignUpAccount) {
+                                    // 사용자 입력 오류가 아니라 계정 종류의 문제다 — 시안은 팝업으로 그린다.
+                                    // 계측하지 않는다: 서버가 정상적으로 가르는 분기지 장애가 아니다.
+                                    //
+                                    // 스낵바 신호를 함께 내린다 — 이 사유는 팝업으로 알리므로, 아직 소비되지
+                                    // 않은 이전 실패 문구가 팝업과 겹쳐 뜨지 않게 한다(`FindIdViewModel.verifyCode`
+                                    // 선례). `errorMessage` 를 지우는 경로가 [onErrorConsumed] 하나뿐이라
+                                    // 이메일을 고쳐 재발송해도 남는다 — `current.copy` 가 그대로 물려받는다.
+                                    current.copy(isSocialSignUpAccount = true, errorMessage = null)
+                                } else {
+                                    errorReporter.recordAuthFailure(AuthFailureStage.FIND_ACCOUNT_CODE_SEND, error)
+                                    current.copy(errorMessage = error.toDisplayMessage(R.string.onboarding_find_account_failed))
+                                }
                             }
                         }
-                    }
-                _uiState.update { it.copy(isSendingCode = false) }
-            }
+                    _uiState.update { it.copy(isSendingCode = false) }
+                }
         }
 
         /**
@@ -103,27 +117,29 @@ class FindPasswordViewModel
          * 인라인 에러 슬롯이 없다) 스낵바로 낸다.
          */
         fun submitNewPassword() {
+            if (resetJob?.isActive == true) return
             val state = _uiState.value
             if (!state.isResetEnabled) return
-            viewModelScope.launch {
-                _uiState.update { it.copy(isSubmitting = true) }
-                accountRepository
-                    .resetPassword(
-                        email = state.email,
-                        certificateCode = state.certificateCode,
-                        newPassword = state.newPassword,
-                        confirmPassword = state.newPasswordConfirm,
-                    ).onSuccess {
-                        _uiState.update { it.copy(isPasswordChanged = true) }
-                    }.onFailure { error ->
-                        if (error is CancellationException) throw error
-                        errorReporter.recordAuthFailure(AuthFailureStage.FIND_PASSWORD_RESET, error)
-                        _uiState.update {
-                            it.copy(errorMessage = error.toResetFailureMessage())
+            resetJob =
+                viewModelScope.launch {
+                    _uiState.update { it.copy(isSubmitting = true) }
+                    accountRepository
+                        .resetPassword(
+                            email = state.email,
+                            certificateCode = state.certificateCode,
+                            newPassword = state.newPassword,
+                            confirmPassword = state.newPasswordConfirm,
+                        ).onSuccess {
+                            _uiState.update { it.copy(isPasswordChanged = true) }
+                        }.onFailure { error ->
+                            if (error is CancellationException) throw error
+                            errorReporter.recordAuthFailure(AuthFailureStage.FIND_PASSWORD_RESET, error)
+                            _uiState.update {
+                                it.copy(errorMessage = error.toResetFailureMessage())
+                            }
                         }
-                    }
-                _uiState.update { it.copy(isSubmitting = false) }
-            }
+                    _uiState.update { it.copy(isSubmitting = false) }
+                }
         }
 
         fun onSocialAccountBlockedConsumed() = _uiState.update { it.copy(isSocialSignUpAccount = false) }
