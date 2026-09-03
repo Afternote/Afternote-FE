@@ -21,6 +21,10 @@
     <string name="onboarding_login_invalid_credentials">아이디 또는 비밀번호가 일치하지 않습니다.</string>
     <!-- 시안 부재 잠정 문구 — 소셜 거절(1208·1209)은 시안에 표시 정의가 없어 자체 문구로 둔다 -->
     <string name="onboarding_login_social_rejected">소셜 로그인이 거절되었습니다. 다시 시도해 주세요.</string>
+    <!-- 시안 부재 잠정 문구 — 소셜 가입 계정(1702)의 로그인 화면 안내는 정본 페이지에 없다(차단 팝업은
+         비밀번호 찾기 `4327:71996` 에만 있다). 그 팝업 문구를 돌려쓰지 않는다 — "비밀번호 찾기를 사용할
+         수 없습니다" 는 로그인 화면에서 틀린 안내다. -->
+    <string name="onboarding_login_social_signup_account">소셜 로그인으로 가입한 계정입니다.\n소셜 로그인을 이용해 주세요.</string>
     <!-- 로그인·회원가입·아이디 찾기가 공유하는 전송 실패 문구 (Throwable.toDisplayMessage) -->
     <string name="onboarding_network_error">네트워크 연결을 확인해주세요.</string>
     <string name="onboarding_login_kakao_failed">카카오 로그인에 실패했습니다.</string>

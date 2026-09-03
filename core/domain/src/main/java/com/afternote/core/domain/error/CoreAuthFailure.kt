@@ -47,11 +47,13 @@ sealed class CoreAuthFailure(
     /**
      * 그 이메일이 소셜 로그인으로 가입한 계정이라는 사실(서버 code 1702).
      *
-     * BE 는 계정 복구 경로에서 `password == null` 인 사용자를 이 코드로 거절한다
-     * (`AuthService.findActiveLocalUserForRecovery`) — 인증번호 발송(`auth/find/send/code`)
-     * 단계에서 이미 걸리므로, 비밀번호 찾기 화면은 코드 입력 전에 차단 안내를 낼 수 있다.
-     * [SocialLoginRejected] 와 다르다 — 그쪽은 소셜 로그인 **시도**가 거절된 것이고,
-     * 이쪽은 로컬 비밀번호가 없는 계정에 비밀번호 복구를 요청한 것이다.
+     * BE `AuthService` 는 `password == null` 인 사용자를 **세 경로**에서 이 코드로 거절한다 —
+     * 계정 복구(`findActiveLocalUserForRecovery`) · 이메일 로그인(`login`) · 비밀번호 변경
+     * (`passwordChange`). 복구는 인증번호 발송(`auth/find/send/code`) 단계에서 이미 걸리므로,
+     * 비밀번호 찾기 화면은 코드 입력 전에 차단 안내를 낼 수 있다. 온보딩 전용 사유가 아니다.
+     *
+     * [SocialLoginRejected] 와 다르다 — 그쪽은 소셜 로그인 **시도**가 거절된 것이고, 이쪽은 로컬
+     * 비밀번호가 없는 계정에 비밀번호를 요구한 것이라 안내가 "소셜로 로그인하라" 로 갈린다.
      */
     class SocialSignUpAccount(
         cause: Throwable,
