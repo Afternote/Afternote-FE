@@ -3,6 +3,7 @@ package com.afternote.feature.onboarding.presentation.findaccount
 import android.util.Patterns
 import com.afternote.core.model.FoundAccount
 import com.afternote.core.ui.UiText
+import com.afternote.core.ui.mvi.UiState
 
 /**
  * 아이디 찾기 화면 상태.
@@ -28,7 +29,7 @@ data class FindIdUiState(
     val foundAccount: FoundAccount? = null,
     val hasVerificationError: Boolean = false,
     val errorMessage: UiText? = null,
-) {
+) : UiState {
     /**
      * 이메일 형식 검사. [Patterns.EMAIL_ADDRESS] 는 컴파일된 정규식(`Pattern`) 상수라
      * `matcher(입력)` 으로 그 문자열 전용 실행기를 만든 뒤 `matches()`(**전체 일치** — 부분 검색

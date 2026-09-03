@@ -10,7 +10,7 @@ import com.afternote.feature.onboarding.presentation.LARGE_FONT_SCALE
 import com.android.tools.screenshot.PreviewTest
 
 /**
- * [FindIdScreen] 의 시각 회귀 baseline — 아이디 찾기 1단계 (이메일 인증).
+ * [FindIdContent] 의 시각 회귀 baseline — 아이디 찾기 1단계 (이메일 인증).
  *
  * 시안의 세 상태를 가드:
  * 1. 초기 진입 — 인증번호 필드에 "확인" 없음
@@ -24,21 +24,16 @@ import com.android.tools.screenshot.PreviewTest
 @Composable
 internal fun findIdScreenInitialScreenshot() {
     AfternoteTheme {
-        FindIdScreen(
-            initialEmail = "",
-            initialCertificateCode = "",
-            isSendingCode = false,
-            isVerificationSent = false,
-            isSendCodeEnabled = false,
-            isVerifyEnabled = false,
-            isNextEnabled = false,
-            resendCooldownSeconds = 0,
-            hasVerificationError = false,
+        FindIdContent(
+            state =
+                FindIdUiState(
+                    email = "",
+                    certificateCode = "",
+                    isVerificationSent = false,
+                    hasVerificationError = false,
+                ),
+            onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },
-            onEmailChange = {},
-            onCertificateCodeChange = {},
-            onRequestCode = {},
-            onVerifyCode = {},
             onNextClick = {},
             onBackClick = {},
         )
@@ -50,21 +45,16 @@ internal fun findIdScreenInitialScreenshot() {
 @Composable
 internal fun findIdScreenCodeSentScreenshot() {
     AfternoteTheme {
-        FindIdScreen(
-            initialEmail = "parkchae01@gmail.com",
-            initialCertificateCode = "",
-            isSendingCode = false,
-            isVerificationSent = true,
-            isSendCodeEnabled = true,
-            isVerifyEnabled = false,
-            isNextEnabled = false,
-            resendCooldownSeconds = 0,
-            hasVerificationError = false,
+        FindIdContent(
+            state =
+                FindIdUiState(
+                    email = "parkchae01@gmail.com",
+                    certificateCode = "",
+                    isVerificationSent = true,
+                    hasVerificationError = false,
+                ),
+            onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },
-            onEmailChange = {},
-            onCertificateCodeChange = {},
-            onRequestCode = {},
-            onVerifyCode = {},
             onNextClick = {},
             onBackClick = {},
         )
@@ -76,21 +66,16 @@ internal fun findIdScreenCodeSentScreenshot() {
 @Composable
 internal fun findIdScreenCodeMismatchScreenshot() {
     AfternoteTheme {
-        FindIdScreen(
-            initialEmail = "parkchae01@gmail.com",
-            initialCertificateCode = "123456",
-            isSendingCode = false,
-            isVerificationSent = true,
-            isSendCodeEnabled = true,
-            isVerifyEnabled = true,
-            isNextEnabled = false,
-            resendCooldownSeconds = 0,
-            hasVerificationError = true,
+        FindIdContent(
+            state =
+                FindIdUiState(
+                    email = "parkchae01@gmail.com",
+                    certificateCode = "123456",
+                    isVerificationSent = true,
+                    hasVerificationError = true,
+                ),
+            onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },
-            onEmailChange = {},
-            onCertificateCodeChange = {},
-            onRequestCode = {},
-            onVerifyCode = {},
             onNextClick = {},
             onBackClick = {},
         )
@@ -107,21 +92,16 @@ internal fun findIdScreenCodeMismatchScreenshot() {
 @Composable
 internal fun findIdScreenCodeMismatchCompactScreenshot() {
     AfternoteTheme {
-        FindIdScreen(
-            initialEmail = "parkchae01@gmail.com",
-            initialCertificateCode = "123456",
-            isSendingCode = false,
-            isVerificationSent = true,
-            isSendCodeEnabled = true,
-            isVerifyEnabled = true,
-            isNextEnabled = false,
-            resendCooldownSeconds = 0,
-            hasVerificationError = true,
+        FindIdContent(
+            state =
+                FindIdUiState(
+                    email = "parkchae01@gmail.com",
+                    certificateCode = "123456",
+                    isVerificationSent = true,
+                    hasVerificationError = true,
+                ),
+            onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },
-            onEmailChange = {},
-            onCertificateCodeChange = {},
-            onRequestCode = {},
-            onVerifyCode = {},
             onNextClick = {},
             onBackClick = {},
         )
@@ -138,21 +118,16 @@ internal fun findIdScreenCodeMismatchCompactScreenshot() {
 @Composable
 internal fun findIdScreenCodeMismatchLargeFontScreenshot() {
     AfternoteTheme {
-        FindIdScreen(
-            initialEmail = "parkchae01@gmail.com",
-            initialCertificateCode = "123456",
-            isSendingCode = false,
-            isVerificationSent = true,
-            isSendCodeEnabled = true,
-            isVerifyEnabled = true,
-            isNextEnabled = false,
-            resendCooldownSeconds = 0,
-            hasVerificationError = true,
+        FindIdContent(
+            state =
+                FindIdUiState(
+                    email = "parkchae01@gmail.com",
+                    certificateCode = "123456",
+                    isVerificationSent = true,
+                    hasVerificationError = true,
+                ),
+            onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },
-            onEmailChange = {},
-            onCertificateCodeChange = {},
-            onRequestCode = {},
-            onVerifyCode = {},
             onNextClick = {},
             onBackClick = {},
         )

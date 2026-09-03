@@ -1,25 +1,20 @@
 package com.afternote.feature.onboarding.presentation.signup
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.repository.account.AccountRepository
 import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.domain.usecase.auth.LoginUseCase
+import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.reporting.AuthFailureStage
 import com.afternote.feature.onboarding.presentation.reporting.AuthProvider
 import com.afternote.feature.onboarding.presentation.reporting.recordAuthFailure
-import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel.Companion.RESEND_COOLDOWN_SECONDS
 import com.afternote.feature.onboarding.presentation.toDisplayMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
@@ -30,12 +25,12 @@ import kotlin.time.Duration.Companion.milliseconds
  *
  * `Route.Onboarding` 그래프 스코프에 묶여 SignUp Step 1~4와 Profile 화면이 동일한 인스턴스를 공유.
  *
- * **상태 관리**: 모든 폼 필드 · 플래그 · 약관 · navigation 신호를 [SignUpUiState] 의 단일
- * `MutableStateFlow` 로 통합. UI 는 `collectAsStateWithLifecycle` 로 한 번에 구독.
+ * **상태 관리**: 모든 폼 필드 · 플래그 · 약관 · navigation 신호를 [SignUpUiState] 하나로 통합하고,
+ * 전이는 [reduce] 한 곳에서만 일어난다. 화면은 [onIntent] 하나로 들어온다 (#1802).
  *
  * **TextFieldState 정책**: TextFieldState 는 각 Screen 이 `rememberTextFieldState` 로 소유하고,
  * ViewModel 은 평범한 `String` 으로 보관. Screen 이 LaunchedEffect + snapshotFlow 로 변경 사항을
- * VM 에 push, 다른 Screen 은 VM 의 [uiState] 에서 String 으로 read.
+ * Intent 로 push, 다른 Screen 은 [uiState] 에서 String 으로 read.
  */
 @HiltViewModel
 class SignUpViewModel
@@ -44,15 +39,7 @@ class SignUpViewModel
         private val accountRepository: AccountRepository,
         private val loginUseCase: LoginUseCase,
         private val errorReporter: ErrorReporter,
-    ) : ViewModel() {
-        companion object {
-            /** "재전송" 클릭 후 다음 요청까지 강제 대기 초. 서버 비용 · SMS 발송량 보호. */
-            private const val RESEND_COOLDOWN_SECONDS = 30
-        }
-
-        private val _uiState = MutableStateFlow(SignUpUiState())
-        val uiState: StateFlow<SignUpUiState> = _uiState.asStateFlow()
-
+    ) : MviViewModel<SignUpIntent, SignUpUiState, SignUpReducerEvent>(SignUpUiState()) {
         private var cooldownJob: Job? = null
 
         /**
@@ -61,80 +48,199 @@ class SignUpViewModel
          */
         private var signUpJob: Job? = null
 
-        // ─── 입력 reducer ───
-        // 이메일이 바뀌면 앞서 받은 인증 에러는 더 이상 그 이메일의 것이 아니다.
-        fun updateEmail(value: String) = _uiState.update { it.copy(email = value, hasVerificationError = false) }
+        override fun onIntent(intent: SignUpIntent) {
+            when (intent) {
+                is SignUpIntent.UpdateEmail -> dispatch(SignUpReducerEvent.EmailChanged(intent.value))
+                is SignUpIntent.UpdateVerificationCode -> dispatch(SignUpReducerEvent.VerificationCodeChanged(intent.value))
+                is SignUpIntent.UpdateResidentFrontNumber -> dispatch(SignUpReducerEvent.ResidentFrontNumberChanged(intent.value))
+                is SignUpIntent.UpdateResidentBackNumber -> dispatch(SignUpReducerEvent.ResidentBackNumberChanged(intent.value))
+                is SignUpIntent.UpdateSignUpPassword -> dispatch(SignUpReducerEvent.SignUpPasswordChanged(intent.value))
+                is SignUpIntent.UpdateSignUpPasswordConfirm -> dispatch(SignUpReducerEvent.SignUpPasswordConfirmChanged(intent.value))
+                is SignUpIntent.UpdateName -> dispatch(SignUpReducerEvent.NameChanged(intent.value))
+                is SignUpIntent.PickProfileImage -> dispatch(SignUpReducerEvent.ProfileImagePicked(intent.uri))
+                is SignUpIntent.ToggleTermsAgreed -> dispatch(SignUpReducerEvent.TermsAgreementChanged(intent.agreed))
+                is SignUpIntent.TogglePrivacyAgreed -> dispatch(SignUpReducerEvent.PrivacyAgreementChanged(intent.agreed))
+                is SignUpIntent.ToggleMarketingAgreed -> dispatch(SignUpReducerEvent.MarketingAgreementChanged(intent.agreed))
+                is SignUpIntent.ToggleAllTerms -> dispatch(SignUpReducerEvent.AllAgreementsChanged(intent.agreed))
+                SignUpIntent.RequestVerification -> requestVerification()
+                SignUpIntent.VerifyEmailAndProceed -> verifyEmailAndProceed()
+                SignUpIntent.SubmitSignUp -> submitSignUp()
+                SignUpIntent.ConsumeSignedUp -> dispatch(SignUpReducerEvent.SignedUpConsumed)
+                SignUpIntent.ConsumeResidentNumberNavigation -> dispatch(SignUpReducerEvent.ResidentNumberNavigationConsumed)
+                SignUpIntent.ConsumeNameRequired -> dispatch(SignUpReducerEvent.NameRequiredConsumed)
+                SignUpIntent.ConsumeError -> dispatch(SignUpReducerEvent.ErrorConsumed)
+            }
+        }
 
-        // photo picker 선택은 Entry 가 Uri.toString() 으로 변환해 push — 취소(null)는 Screen 경계에서 무시한다.
-        fun onProfileImagePicked(uri: String) = _uiState.update { it.copy(profileImageUri = uri) }
+        override fun reduce(
+            state: SignUpUiState,
+            event: SignUpReducerEvent,
+        ): SignUpUiState =
+            when (event) {
+                // 이메일이 바뀌면 앞서 받은 인증 에러는 더 이상 그 이메일의 것이 아니다.
+                is SignUpReducerEvent.EmailChanged -> {
+                    state.copy(email = event.value, hasVerificationError = false)
+                }
 
-        fun updateVerificationCode(value: String) = _uiState.update { it.copy(verificationCode = value, hasVerificationError = false) }
+                is SignUpReducerEvent.VerificationCodeChanged -> {
+                    state.copy(verificationCode = event.value, hasVerificationError = false)
+                }
 
-        fun updateResidentFrontNumber(value: String) = _uiState.update { it.copy(residentFrontNumber = value) }
+                is SignUpReducerEvent.ResidentFrontNumberChanged -> {
+                    state.copy(residentFrontNumber = event.value)
+                }
 
-        fun updateResidentBackNumber(value: String) = _uiState.update { it.copy(residentBackNumber = value) }
+                is SignUpReducerEvent.ResidentBackNumberChanged -> {
+                    state.copy(residentBackNumber = event.value)
+                }
 
-        fun updateSignUpPassword(value: String) = _uiState.update { it.copy(signUpPassword = value) }
+                is SignUpReducerEvent.SignUpPasswordChanged -> {
+                    state.copy(signUpPassword = event.value)
+                }
 
-        fun updateSignUpPasswordConfirm(value: String) = _uiState.update { it.copy(signUpPasswordConfirm = value) }
+                is SignUpReducerEvent.SignUpPasswordConfirmChanged -> {
+                    state.copy(signUpPasswordConfirm = event.value)
+                }
 
-        fun updateName(value: String) = _uiState.update { it.copy(name = value) }
+                is SignUpReducerEvent.NameChanged -> {
+                    state.copy(name = event.value)
+                }
 
-        // ─── 단발성 신호 consume (UI 가 소비 후 호출) ───
-        fun onSignedUpConsumed() = _uiState.update { it.copy(isSignedUp = false) }
+                is SignUpReducerEvent.ProfileImagePicked -> {
+                    state.copy(profileImageUri = event.uri)
+                }
 
-        fun onResidentNumberNavigatedConsumed() = _uiState.update { it.copy(shouldNavigateToResidentNumber = false) }
+                is SignUpReducerEvent.TermsAgreementChanged -> {
+                    state.copy(termsState = state.termsState.copy(isTermsAgreed = event.agreed))
+                }
 
-        fun onNameRequiredConsumed() = _uiState.update { it.copy(isNameRequired = false) }
+                is SignUpReducerEvent.PrivacyAgreementChanged -> {
+                    state.copy(termsState = state.termsState.copy(isPrivacyAgreed = event.agreed))
+                }
 
-        fun onErrorConsumed() = _uiState.update { it.copy(errorMessage = null) }
+                is SignUpReducerEvent.MarketingAgreementChanged -> {
+                    state.copy(termsState = state.termsState.copy(isMarketingAgreed = event.agreed))
+                }
 
-        // ─── 약관 ───
-        fun toggleTermsAgreed(agreed: Boolean) =
-            _uiState.update {
-                it.copy(termsState = it.termsState.copy(isTermsAgreed = agreed))
+                is SignUpReducerEvent.AllAgreementsChanged -> {
+                    state.copy(
+                        termsState =
+                            state.termsState.copy(
+                                isTermsAgreed = event.agreed,
+                                isPrivacyAgreed = event.agreed,
+                                isMarketingAgreed = event.agreed,
+                            ),
+                    )
+                }
+
+                SignUpReducerEvent.CodeSendStarted -> {
+                    state.copy(isSendingCode = true)
+                }
+
+                SignUpReducerEvent.CodeSent -> {
+                    state.copy(isVerificationSent = true, hasVerificationError = false)
+                }
+
+                is SignUpReducerEvent.CodeSendFailed -> {
+                    state.copy(errorMessage = event.message)
+                }
+
+                SignUpReducerEvent.CodeSendFinished -> {
+                    state.copy(isSendingCode = false)
+                }
+
+                SignUpReducerEvent.CooldownReloaded -> {
+                    state.copy(resendCooldownSeconds = RESEND_COOLDOWN_SECONDS)
+                }
+
+                SignUpReducerEvent.CooldownTicked -> {
+                    state.copy(resendCooldownSeconds = state.resendCooldownSeconds - 1)
+                }
+
+                SignUpReducerEvent.EmailVerifyStarted -> {
+                    state.copy(isVerifyingEmail = true, hasVerificationError = false)
+                }
+
+                SignUpReducerEvent.EmailVerified -> {
+                    state.copy(shouldNavigateToResidentNumber = true)
+                }
+
+                // 스낵바 신호를 함께 내린다 — 이번 실패는 인라인으로 알리므로, 아직 소비되지 않은
+                // 이전 실패 문구가 인라인과 겹쳐 뜨지 않게 한다.
+                SignUpReducerEvent.VerificationRejected -> {
+                    state.copy(hasVerificationError = true, errorMessage = null)
+                }
+
+                is SignUpReducerEvent.EmailVerifyFailed -> {
+                    state.copy(errorMessage = event.message)
+                }
+
+                SignUpReducerEvent.EmailVerifyFinished -> {
+                    state.copy(isVerifyingEmail = false)
+                }
+
+                SignUpReducerEvent.NameRequired -> {
+                    state.copy(isNameRequired = true)
+                }
+
+                SignUpReducerEvent.SubmitStarted -> {
+                    state.copy(isLoading = true)
+                }
+
+                SignUpReducerEvent.AccountCreated -> {
+                    state.copy(isAccountCreated = true)
+                }
+
+                is SignUpReducerEvent.SubmitFailed -> {
+                    state.copy(errorMessage = event.message)
+                }
+
+                SignUpReducerEvent.SignedUp -> {
+                    state.copy(isSignedUp = true)
+                }
+
+                SignUpReducerEvent.SubmitFinished -> {
+                    state.copy(isLoading = false)
+                }
+
+                SignUpReducerEvent.SignedUpConsumed -> {
+                    state.copy(isSignedUp = false)
+                }
+
+                SignUpReducerEvent.ResidentNumberNavigationConsumed -> {
+                    state.copy(shouldNavigateToResidentNumber = false)
+                }
+
+                SignUpReducerEvent.NameRequiredConsumed -> {
+                    state.copy(isNameRequired = false)
+                }
+
+                SignUpReducerEvent.ErrorConsumed -> {
+                    state.copy(errorMessage = null)
+                }
             }
 
-        fun togglePrivacyAgreed(agreed: Boolean) =
-            _uiState.update {
-                it.copy(termsState = it.termsState.copy(isPrivacyAgreed = agreed))
-            }
-
-        fun toggleMarketingAgreed(agreed: Boolean) =
-            _uiState.update {
-                it.copy(termsState = it.termsState.copy(isMarketingAgreed = agreed))
-            }
-
-        fun toggleAllTerms(allAgreed: Boolean) =
-            _uiState.update {
-                it.copy(
-                    termsState =
-                        it.termsState.copy(
-                            isTermsAgreed = allAgreed,
-                            isPrivacyAgreed = allAgreed,
-                            isMarketingAgreed = allAgreed,
-                        ),
-                )
-            }
-
-        // ─── 액션 ───
-        fun requestVerification() {
-            val state = _uiState.value
+        private fun requestVerification() {
+            val state = currentState
             if (state.isSendingCode || state.resendCooldownSeconds > 0) return
             viewModelScope.launch {
-                _uiState.update { it.copy(isSendingCode = true) }
+                dispatch(SignUpReducerEvent.CodeSendStarted)
                 accountRepository
                     .sendEmailCode(state.email)
                     .onSuccess {
-                        _uiState.update { it.copy(isVerificationSent = true, hasVerificationError = false) }
+                        dispatch(SignUpReducerEvent.CodeSent)
                         startResendCooldown()
                     }.onFailure { error ->
                         // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
                         if (error is CancellationException) throw error
                         errorReporter.recordAuthFailure(AuthFailureStage.EMAIL_CODE_SEND, error)
-                        _uiState.update { it.copy(errorMessage = error.toDisplayMessage(R.string.onboarding_signup_code_send_failed)) }
+                        dispatch(
+                            SignUpReducerEvent.CodeSendFailed(
+                                error.toDisplayMessage(R.string.onboarding_signup_code_send_failed),
+                            ),
+                        )
                     }
-                _uiState.update { it.copy(isSendingCode = false) }
+                dispatch(SignUpReducerEvent.CodeSendFinished)
             }
         }
 
@@ -143,10 +249,10 @@ class SignUpViewModel
             cooldownJob?.cancel()
             cooldownJob =
                 viewModelScope.launch {
-                    _uiState.update { it.copy(resendCooldownSeconds = RESEND_COOLDOWN_SECONDS) }
-                    while (_uiState.value.resendCooldownSeconds > 0) {
-                        delay(1000.milliseconds)
-                        _uiState.update { it.copy(resendCooldownSeconds = it.resendCooldownSeconds - 1) }
+                    dispatch(SignUpReducerEvent.CooldownReloaded)
+                    while (currentState.resendCooldownSeconds > 0) {
+                        delay(MILLIS_PER_SECOND.milliseconds)
+                        dispatch(SignUpReducerEvent.CooldownTicked)
                     }
                 }
         }
@@ -158,34 +264,33 @@ class SignUpViewModel
          * [SignUpUiState.hasVerificationError] (인라인 문구), 그 외 실패는
          * [SignUpUiState.errorMessage] (스낵바) 로 set. 만료 판정은 서버가 한다.
          */
-        fun verifyEmailAndProceed() {
-            val state = _uiState.value
+        private fun verifyEmailAndProceed() {
+            val state = currentState
             if (state.isVerifyingEmail) return
             viewModelScope.launch {
-                _uiState.update { it.copy(isVerifyingEmail = true, hasVerificationError = false) }
+                dispatch(SignUpReducerEvent.EmailVerifyStarted)
                 accountRepository
                     .verifyEmail(
                         email = state.email,
                         certificateCode = state.verificationCode,
                     ).onSuccess {
-                        _uiState.update { it.copy(shouldNavigateToResidentNumber = true) }
+                        dispatch(SignUpReducerEvent.EmailVerified)
                     }.onFailure { error ->
                         // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
                         if (error is CancellationException) throw error
                         if (error is CoreAuthFailure.EmailVerification) {
-                            // 표시 문구는 화면의 고정 리소스 — 이 값은 인라인 표시 트리거 + 디버깅용 원문.
                             // 인증번호 불일치·만료는 정상적인 사용자 입력 오류라 리포팅하지 않는다.
-                            // 스낵바 신호를 함께 내린다 — 이번 실패는 인라인으로 알리므로,
-                            // 아직 소비되지 않은 이전 실패 문구가 인라인과 겹쳐 뜨지 않게 한다.
-                            _uiState.update { it.copy(hasVerificationError = true, errorMessage = null) }
+                            dispatch(SignUpReducerEvent.VerificationRejected)
                         } else {
                             errorReporter.recordAuthFailure(AuthFailureStage.EMAIL_VERIFY, error)
-                            _uiState.update {
-                                it.copy(errorMessage = error.toDisplayMessage(R.string.onboarding_signup_email_verify_failed))
-                            }
+                            dispatch(
+                                SignUpReducerEvent.EmailVerifyFailed(
+                                    error.toDisplayMessage(R.string.onboarding_signup_email_verify_failed),
+                                ),
+                            )
                         }
                     }
-                _uiState.update { it.copy(isVerifyingEmail = false) }
+                dispatch(SignUpReducerEvent.EmailVerifyFinished)
             }
         }
 
@@ -197,19 +302,19 @@ class SignUpViewModel
          * 가입과 자동 로그인은 따로 성공할 수 있어 재시도 지점이 다르다
          * ([SignUpUiState.isAccountCreated]).
          */
-        fun submitSignUp() {
+        private fun submitSignUp() {
             if (signUpJob?.isActive == true) return
 
-            val state = _uiState.value
+            val state = currentState
             val trimmedName = state.name.trim()
             if (trimmedName.isEmpty()) {
-                _uiState.update { it.copy(isNameRequired = true) }
+                dispatch(SignUpReducerEvent.NameRequired)
                 return
             }
 
             signUpJob =
                 viewModelScope.launch {
-                    _uiState.update { it.copy(isLoading = true) }
+                    dispatch(SignUpReducerEvent.SubmitStarted)
                     try {
                         if (!state.isAccountCreated) {
                             accountRepository
@@ -219,19 +324,23 @@ class SignUpViewModel
                                     name = trimmedName,
                                     profileUrl = state.profileImageUri,
                                 ).onSuccess {
-                                    _uiState.update { it.copy(isAccountCreated = true) }
+                                    dispatch(SignUpReducerEvent.AccountCreated)
                                 }.onFailure { error ->
                                     // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
                                     if (error is CancellationException) throw error
                                     errorReporter.recordAuthFailure(AuthFailureStage.SIGN_UP, error)
-                                    _uiState.update { it.copy(errorMessage = error.toDisplayMessage(R.string.onboarding_signup_failed)) }
+                                    dispatch(
+                                        SignUpReducerEvent.SubmitFailed(
+                                            error.toDisplayMessage(R.string.onboarding_signup_failed),
+                                        ),
+                                    )
                                     return@launch
                                 }
                         }
 
                         loginUseCase(LoginType.Email(email = state.email, password = state.signUpPassword))
                             .onSuccess {
-                                _uiState.update { it.copy(isSignedUp = true) }
+                                dispatch(SignUpReducerEvent.SignedUp)
                             }.onFailure { error ->
                                 // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
                                 if (error is CancellationException) throw error
@@ -240,16 +349,22 @@ class SignUpViewModel
                                     throwable = error,
                                     provider = AuthProvider.EMAIL,
                                 )
-                                _uiState.update {
-                                    it.copy(
-                                        errorMessage = error.toDisplayMessage(R.string.onboarding_signup_auto_login_failed),
-                                    )
-                                }
+                                dispatch(
+                                    SignUpReducerEvent.SubmitFailed(
+                                        error.toDisplayMessage(R.string.onboarding_signup_auto_login_failed),
+                                    ),
+                                )
                             }
                     } finally {
                         // 어느 갈래로 빠져나가든 버튼 잠금은 풀어야 한다.
-                        _uiState.update { it.copy(isLoading = false) }
+                        dispatch(SignUpReducerEvent.SubmitFinished)
                     }
                 }
+        }
+
+        private companion object {
+            /** "재전송" 클릭 후 다음 요청까지 강제 대기 초. 서버 비용 · SMS 발송량 보호. */
+            const val RESEND_COOLDOWN_SECONDS = 30
+            const val MILLIS_PER_SECOND = 1000L
         }
     }

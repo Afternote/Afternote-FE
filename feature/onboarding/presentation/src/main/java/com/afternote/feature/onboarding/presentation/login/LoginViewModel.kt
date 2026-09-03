@@ -1,120 +1,141 @@
 package com.afternote.feature.onboarding.presentation.login
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.domain.usecase.auth.LoginUseCase
+import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.reporting.AuthFailureStage
 import com.afternote.feature.onboarding.presentation.reporting.AuthProvider
 import com.afternote.feature.onboarding.presentation.reporting.recordAuthFailure
 import com.afternote.feature.onboarding.presentation.toDisplayMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
+/**
+ * 로그인 ViewModel.
+ *
+ * 전이는 [reduce] 한 곳이고 진입점은 [onIntent] 하나다 (#1802). 기준은 `docs/convention/mvi.md`.
+ */
 @HiltViewModel
 class LoginViewModel
     @Inject
     constructor(
         private val loginUseCase: LoginUseCase,
         private val errorReporter: ErrorReporter,
-    ) : ViewModel() {
-        private val _uiState = MutableStateFlow(LoginUiState())
-        val uiState = _uiState.asStateFlow()
-
+    ) : MviViewModel<LoginIntent, LoginUiState, LoginReducerEvent>(LoginUiState()) {
         /** 네트워크 실패 팝업의 "다시 시도하기" 가 재실행할 마지막 시도. */
         private var lastAttempt: LoginType? = null
 
-        fun updateEmail(value: String) {
-            // 입력이 바뀌면 앞선 자격 거절은 더 이상 이 입력의 판정이 아니다.
-            _uiState.update { it.copy(email = value, hasCredentialError = false) }
+        override fun onIntent(intent: LoginIntent) {
+            when (intent) {
+                is LoginIntent.UpdateEmail -> {
+                    dispatch(LoginReducerEvent.EmailChanged(intent.value))
+                }
+
+                is LoginIntent.UpdatePassword -> {
+                    dispatch(LoginReducerEvent.PasswordChanged(intent.value))
+                }
+
+                LoginIntent.SubmitEmailLogin -> {
+                    login(
+                        LoginType.Email(
+                            email = currentState.email,
+                            password = currentState.password,
+                        ),
+                    )
+                }
+
+                is LoginIntent.SubmitKakaoLogin -> {
+                    login(LoginType.Kakao(intent.oauthToken))
+                }
+
+                is LoginIntent.SubmitGoogleLogin -> {
+                    login(LoginType.Google(intent.idToken))
+                }
+
+                is LoginIntent.ReportSocialTokenFailure -> {
+                    errorReporter.recordAuthFailure(
+                        stage = AuthFailureStage.SOCIAL_TOKEN_REQUEST,
+                        throwable = intent.throwable,
+                        provider = intent.provider,
+                    )
+                }
+
+                LoginIntent.RetryLogin -> {
+                    retryLogin()
+                }
+
+                LoginIntent.DismissNetworkError -> {
+                    dispatch(LoginReducerEvent.NetworkErrorDismissed)
+                }
+
+                LoginIntent.ConsumeLoggedIn -> {
+                    dispatch(LoginReducerEvent.LoggedInConsumed)
+                }
+
+                LoginIntent.ConsumeOnboardingStart -> {
+                    dispatch(LoginReducerEvent.OnboardingStartConsumed)
+                }
+
+                LoginIntent.ConsumeError -> {
+                    dispatch(LoginReducerEvent.ErrorConsumed)
+                }
+            }
         }
 
-        fun updatePassword(value: String) {
-            _uiState.update { it.copy(password = value, hasCredentialError = false) }
-        }
+        override fun reduce(
+            state: LoginUiState,
+            event: LoginReducerEvent,
+        ): LoginUiState =
+            when (event) {
+                // 입력이 바뀌면 앞선 자격 거절은 더 이상 이 입력의 판정이 아니다.
+                is LoginReducerEvent.EmailChanged -> state.copy(email = event.value, hasCredentialError = false)
 
-        fun loginWithEmail() {
-            val state = _uiState.value
-            login(
-                LoginType.Email(
-                    email = state.email,
-                    password = state.password,
-                ),
-            )
-        }
+                is LoginReducerEvent.PasswordChanged -> state.copy(password = event.value, hasCredentialError = false)
 
-        fun loginWithKakao(oauthToken: String) {
-            login(LoginType.Kakao(oauthToken))
-        }
+                LoginReducerEvent.LoginStarted -> state.copy(isLoading = true, hasCredentialError = false)
 
-        fun loginWithGoogle(idToken: String) {
-            login(LoginType.Google(idToken))
-        }
+                LoginReducerEvent.LoggedIn -> state.copy(isLoading = false, isLoggedIn = true)
 
-        /**
-         * 소셜 SDK 에서 토큰을 받아오지 못한 실패를 기록한다.
-         *
-         * 이 단계는 서버 호출 이전이라 [login] 경로를 타지 않아, UI 가 직접 알려주지 않으면
-         * 콘솔에 아무 흔적도 남지 않는다. 사용자 취소는 오류가 아니므로 UI 가 걸러서 호출한다.
-         */
-        fun onSocialTokenRequestFailed(
-            provider: AuthProvider,
-            throwable: Throwable,
-        ) {
-            errorReporter.recordAuthFailure(
-                stage = AuthFailureStage.SOCIAL_TOKEN_REQUEST,
-                throwable = throwable,
-                provider = provider,
-            )
-        }
+                LoginReducerEvent.OnboardingRequired -> state.copy(isLoading = false, shouldStartOnboarding = true)
 
-        /** UI 가 [LoginUiState.isLoggedIn] 소비 후 reset. */
-        fun onLoggedInConsumed() {
-            _uiState.update { it.copy(isLoggedIn = false) }
-        }
+                LoginReducerEvent.CredentialRejected -> state.copy(isLoading = false, hasCredentialError = true)
 
-        /** UI 가 [LoginUiState.shouldStartOnboarding] 소비 후 reset. */
-        fun onOnboardingStartConsumed() {
-            _uiState.update { it.copy(shouldStartOnboarding = false) }
-        }
+                LoginReducerEvent.NetworkErrorRaised -> state.copy(isLoading = false, showNetworkErrorPopup = true)
 
-        /** UI 가 [LoginUiState.errorMessage] 소비 (snackbar 표시) 후 reset. */
-        fun onErrorConsumed() {
-            _uiState.update { it.copy(errorMessage = null) }
-        }
+                is LoginReducerEvent.LoginFailed -> state.copy(isLoading = false, errorMessage = event.message)
 
-        /** 네트워크 실패 팝업의 "다시 시도하기" — 마지막 시도를 같은 자격으로 재실행한다. */
-        fun retryLogin() {
-            _uiState.update { it.copy(showNetworkErrorPopup = false) }
+                LoginReducerEvent.NetworkErrorDismissed -> state.copy(showNetworkErrorPopup = false)
+
+                LoginReducerEvent.LoggedInConsumed -> state.copy(isLoggedIn = false)
+
+                LoginReducerEvent.OnboardingStartConsumed -> state.copy(shouldStartOnboarding = false)
+
+                LoginReducerEvent.ErrorConsumed -> state.copy(errorMessage = null)
+            }
+
+        /** 마지막 시도를 같은 자격으로 재실행한다. */
+        private fun retryLogin() {
+            dispatch(LoginReducerEvent.NetworkErrorDismissed)
             lastAttempt?.let(::login)
         }
 
-        fun onNetworkErrorDismissed() {
-            _uiState.update { it.copy(showNetworkErrorPopup = false) }
-        }
-
         private fun login(loginType: LoginType) {
-            if (_uiState.value.isLoading) return
+            if (currentState.isLoading) return
             lastAttempt = loginType
             viewModelScope.launch {
-                _uiState.update { it.copy(isLoading = true, hasCredentialError = false) }
-                val result = loginUseCase(loginType = loginType)
-                result
+                dispatch(LoginReducerEvent.LoginStarted)
+                loginUseCase(loginType = loginType)
                     .onSuccess { isNewUser ->
-                        _uiState.update {
-                            if (isNewUser) {
-                                it.copy(isLoading = false, shouldStartOnboarding = true)
-                            } else {
-                                it.copy(isLoading = false, isLoggedIn = true)
-                            }
+                        if (isNewUser) {
+                            dispatch(LoginReducerEvent.OnboardingRequired)
+                        } else {
+                            dispatch(LoginReducerEvent.LoggedIn)
                         }
                     }.onFailure { exception ->
                         // 화면 이탈로 스코프가 취소된 것을 장애로 기록하거나 실패 UI 로 소비하지 않는다.
@@ -130,17 +151,17 @@ class LoginViewModel
                                 provider = loginType.authProvider,
                             )
                         }
-                        _uiState.update {
-                            // 루트로 좁혀 `when` 을 exhaustive 하게 만든다 — 사유가 늘면 여기가 컴파일 에러로
-                            // 잡힌다. `else` 로 뭉개 두면 인라인·팝업으로 갈라야 할 새 사유가 조용히 문구 하나로
-                            // 흘러간다. 사유를 확인하지 못한 실패(null)는 계속 문구 매핑에 맡긴다.
+                        // 루트로 좁혀 `when` 을 exhaustive 하게 만든다 — 사유가 늘면 여기가 컴파일 에러로
+                        // 잡힌다. `else` 로 뭉개 두면 인라인·팝업으로 갈라야 할 새 사유가 조용히 문구 하나로
+                        // 흘러간다. 사유를 확인하지 못한 실패(null)는 계속 문구 매핑에 맡긴다.
+                        val event =
                             when (exception as? CoreAuthFailure) {
                                 is CoreAuthFailure.InvalidLoginCredentials -> {
-                                    it.copy(isLoading = false, hasCredentialError = true)
+                                    LoginReducerEvent.CredentialRejected
                                 }
 
                                 is CoreAuthFailure.NetworkUnavailable -> {
-                                    it.copy(isLoading = false, showNetworkErrorPopup = true)
+                                    LoginReducerEvent.NetworkErrorRaised
                                 }
 
                                 is CoreAuthFailure.EmailAlreadyRegistered,
@@ -149,10 +170,12 @@ class LoginViewModel
                                 is CoreAuthFailure.UserCancelledAuth,
                                 null,
                                 -> {
-                                    it.copy(isLoading = false, errorMessage = exception.toDisplayMessage(R.string.onboarding_login_failed))
+                                    LoginReducerEvent.LoginFailed(
+                                        exception.toDisplayMessage(R.string.onboarding_login_failed),
+                                    )
                                 }
                             }
-                        }
+                        dispatch(event)
                     }
             }
         }

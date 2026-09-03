@@ -1,10 +1,10 @@
 package com.afternote.feature.onboarding.presentation.findaccount
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.repository.account.AccountRepository
+import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.reporting.AuthFailureStage
 import com.afternote.feature.onboarding.presentation.reporting.recordAuthFailure
@@ -12,10 +12,6 @@ import com.afternote.feature.onboarding.presentation.toDisplayMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
@@ -27,6 +23,9 @@ import kotlin.time.Duration.Companion.milliseconds
  * 회원가입 플로우가 이미 같은 방식이다).
  *
  * `TextFieldState` 는 Screen 이 소유하고 VM 은 String 만 들고 있는다.
+ *
+ * 전이는 [reduce] 한 곳이고 진입점은 [onIntent] 하나다 (#1802). 기준은
+ * `docs/convention/mvi.md`.
  */
 @HiltViewModel
 class FindIdViewModel
@@ -34,37 +33,105 @@ class FindIdViewModel
     constructor(
         private val accountRepository: AccountRepository,
         private val errorReporter: ErrorReporter,
-    ) : ViewModel() {
-        private val _uiState = MutableStateFlow(FindIdUiState())
-        val uiState: StateFlow<FindIdUiState> = _uiState.asStateFlow()
-
+    ) : MviViewModel<FindIdIntent, FindIdUiState, FindIdReducerEvent>(FindIdUiState()) {
         private var cooldownJob: Job? = null
 
-        fun updateEmail(value: String) =
-            _uiState.update {
+        override fun onIntent(intent: FindIdIntent) {
+            when (intent) {
+                is FindIdIntent.UpdateEmail -> dispatch(FindIdReducerEvent.EmailChanged(intent.value))
+                is FindIdIntent.UpdateCertificateCode -> dispatch(FindIdReducerEvent.CertificateCodeChanged(intent.value))
+                FindIdIntent.RequestVerificationCode -> requestVerificationCode()
+                FindIdIntent.VerifyCode -> verifyCode()
+                FindIdIntent.ConsumeError -> dispatch(FindIdReducerEvent.ErrorConsumed)
+            }
+        }
+
+        override fun reduce(
+            state: FindIdUiState,
+            event: FindIdReducerEvent,
+        ): FindIdUiState =
+            when (event) {
                 // 이메일이 바뀌면 앞서 받은 계정·에러는 더 이상 그 이메일의 것이 아니다.
-                it.copy(email = value, foundAccount = null, hasVerificationError = false)
+                is FindIdReducerEvent.EmailChanged -> {
+                    state.copy(email = event.value, foundAccount = null, hasVerificationError = false)
+                }
+
+                is FindIdReducerEvent.CertificateCodeChanged -> {
+                    state.copy(certificateCode = event.value, hasVerificationError = false)
+                }
+
+                FindIdReducerEvent.CodeSendStarted -> {
+                    state.copy(isSendingCode = true)
+                }
+
+                FindIdReducerEvent.CodeSent -> {
+                    state.copy(isVerificationSent = true, hasVerificationError = false)
+                }
+
+                is FindIdReducerEvent.CodeSendFailed -> {
+                    state.copy(errorMessage = event.message)
+                }
+
+                FindIdReducerEvent.CodeSendFinished -> {
+                    state.copy(isSendingCode = false)
+                }
+
+                FindIdReducerEvent.CooldownReloaded -> {
+                    state.copy(resendCooldownSeconds = RESEND_COOLDOWN_SECONDS)
+                }
+
+                FindIdReducerEvent.CooldownTicked -> {
+                    state.copy(resendCooldownSeconds = state.resendCooldownSeconds - 1)
+                }
+
+                FindIdReducerEvent.VerifyStarted -> {
+                    state.copy(isVerifying = true, hasVerificationError = false)
+                }
+
+                is FindIdReducerEvent.AccountFound -> {
+                    state.copy(foundAccount = event.account)
+                }
+
+                // 스낵바 신호를 함께 내린다 — 이번 실패는 인라인으로 알리므로, 아직 소비되지 않은
+                // 이전 실패 문구가 인라인과 겹쳐 뜨지 않게 한다.
+                FindIdReducerEvent.VerificationRejected -> {
+                    state.copy(hasVerificationError = true, errorMessage = null)
+                }
+
+                is FindIdReducerEvent.VerifyFailed -> {
+                    state.copy(errorMessage = event.message)
+                }
+
+                FindIdReducerEvent.VerifyFinished -> {
+                    state.copy(isVerifying = false)
+                }
+
+                FindIdReducerEvent.ErrorConsumed -> {
+                    state.copy(errorMessage = null)
+                }
             }
 
-        fun updateCertificateCode(value: String) = _uiState.update { it.copy(certificateCode = value, hasVerificationError = false) }
-
-        fun requestVerificationCode() {
-            val state = _uiState.value
+        private fun requestVerificationCode() {
+            val state = currentState
             if (!state.isSendCodeEnabled) return
             viewModelScope.launch {
-                _uiState.update { it.copy(isSendingCode = true) }
+                dispatch(FindIdReducerEvent.CodeSendStarted)
                 accountRepository
                     .sendFindCode(state.email)
                     .onSuccess {
-                        _uiState.update { it.copy(isVerificationSent = true, hasVerificationError = false) }
+                        dispatch(FindIdReducerEvent.CodeSent)
                         startResendCooldown()
                     }.onFailure { error ->
                         // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
                         if (error is CancellationException) throw error
                         errorReporter.recordAuthFailure(AuthFailureStage.FIND_ACCOUNT_CODE_SEND, error)
-                        _uiState.update { it.copy(errorMessage = error.toDisplayMessage(R.string.onboarding_find_account_failed)) }
+                        dispatch(
+                            FindIdReducerEvent.CodeSendFailed(
+                                error.toDisplayMessage(R.string.onboarding_find_account_failed),
+                            ),
+                        )
                     }
-                _uiState.update { it.copy(isSendingCode = false) }
+                dispatch(FindIdReducerEvent.CodeSendFinished)
             }
         }
 
@@ -77,36 +144,34 @@ class FindIdViewModel
          * 필드 아래 인라인 문구이고, 그 밖의 실패는 사용자가 입력으로 고칠 수 없어 스낵바로 보낸다.
          * 갈래를 나누지 않으면 네트워크 실패에도 "인증번호가 일치하지 않습니다" 가 뜬다.
          */
-        fun verifyCode() {
-            val state = _uiState.value
+        private fun verifyCode() {
+            val state = currentState
             if (!state.isVerifyEnabled) return
             viewModelScope.launch {
-                _uiState.update { it.copy(isVerifying = true, hasVerificationError = false) }
+                dispatch(FindIdReducerEvent.VerifyStarted)
                 accountRepository
                     .findAccount(state.email, state.certificateCode)
                     .onSuccess { account ->
-                        _uiState.update { it.copy(foundAccount = account) }
+                        dispatch(FindIdReducerEvent.AccountFound(account))
                     }.onFailure { error ->
                         // 취소는 장애가 아니다 — 여기는 계측 대상이 아니지만 실패 UI 로 소비하는 것도
                         // 막아야 해서 되던진다(전수 정정은 #661).
                         if (error is CancellationException) throw error
                         // 계측하지 않는다 — 인증번호 오타는 사용자의 정상적인 입력 실수다.
                         // 자세한 사유는 AuthFailureStage.FIND_ACCOUNT_CODE_SEND KDoc.
-                        _uiState.update {
-                            if (error is CoreAuthFailure.EmailVerification) {
-                                // 스낵바 신호를 함께 내린다 — 이번 실패는 인라인으로 알리므로,
-                                // 아직 소비되지 않은 이전 실패 문구가 인라인과 겹쳐 뜨지 않게 한다.
-                                it.copy(hasVerificationError = true, errorMessage = null)
-                            } else {
-                                it.copy(errorMessage = error.toDisplayMessage(R.string.onboarding_find_account_failed))
-                            }
+                        if (error is CoreAuthFailure.EmailVerification) {
+                            dispatch(FindIdReducerEvent.VerificationRejected)
+                        } else {
+                            dispatch(
+                                FindIdReducerEvent.VerifyFailed(
+                                    error.toDisplayMessage(R.string.onboarding_find_account_failed),
+                                ),
+                            )
                         }
                     }
-                _uiState.update { it.copy(isVerifying = false) }
+                dispatch(FindIdReducerEvent.VerifyFinished)
             }
         }
-
-        fun onErrorConsumed() = _uiState.update { it.copy(errorMessage = null) }
 
         private fun startResendCooldown() {
             // 중복 방지가 아니라 last-wins 재장전 — 이전 카운트다운을 폐기하고 30초를 새로 센다.
@@ -115,10 +180,10 @@ class FindIdViewModel
             cooldownJob?.cancel()
             cooldownJob =
                 viewModelScope.launch {
-                    _uiState.update { it.copy(resendCooldownSeconds = RESEND_COOLDOWN_SECONDS) }
-                    while (_uiState.value.resendCooldownSeconds > 0) {
+                    dispatch(FindIdReducerEvent.CooldownReloaded)
+                    while (currentState.resendCooldownSeconds > 0) {
                         delay(MILLIS_PER_SECOND.milliseconds)
-                        _uiState.update { it.copy(resendCooldownSeconds = it.resendCooldownSeconds - 1) }
+                        dispatch(FindIdReducerEvent.CooldownTicked)
                     }
                 }
         }

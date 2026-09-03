@@ -1,6 +1,7 @@
 package com.afternote.feature.onboarding.presentation.login
 
 import com.afternote.core.ui.UiText
+import com.afternote.core.ui.mvi.UiState
 
 /**
  * 로그인 화면 단일 UI 상태.
@@ -32,4 +33,4 @@ data class LoginUiState(
      * UI 가 표시 후 [LoginViewModel.onErrorConsumed] 로 reset.
      */
     val errorMessage: UiText? = null,
-)
+) : UiState

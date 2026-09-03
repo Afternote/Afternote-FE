@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
@@ -18,6 +19,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.scaffold.FlowStepScaffold
@@ -27,26 +29,43 @@ import kotlinx.coroutines.flow.filter
 
 @Composable
 fun SignUpResidentNumberScreen(
-    initialFrontNumber: String,
-    initialBackNumber: String,
-    isNextEnabled: Boolean,
-    snackbarHostState: SnackbarHostState,
-    onFrontNumberChange: (String) -> Unit,
-    onBackNumberChange: (String) -> Unit,
+    viewModel: SignUpViewModel,
     onNextClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val frontNumberState = rememberTextFieldState(initialFrontNumber)
-    val backNumberState = rememberTextFieldState(initialBackNumber)
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    SignUpResidentNumberContent(
+        state = state,
+        onIntent = viewModel::onIntent,
+        snackbarHostState = rememberSignUpSnackbarHost(state, viewModel::onIntent),
+        onNextClick = onNextClick,
+        onBackClick = onBackClick,
+        modifier = modifier,
+    )
+}
+
+/** Step 2 — stateless 층. 프리뷰·screenshotTest·Robolectric 의 진입점이다. */
+@Composable
+internal fun SignUpResidentNumberContent(
+    state: SignUpUiState,
+    onIntent: (SignUpIntent) -> Unit,
+    snackbarHostState: SnackbarHostState,
+    onNextClick: () -> Unit,
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val frontNumberState = rememberTextFieldState(state.residentFrontNumber)
+    val backNumberState = rememberTextFieldState(state.residentBackNumber)
     val frontFocusRequester = remember { FocusRequester() }
     val backFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(frontNumberState) {
-        snapshotFlow { frontNumberState.text.toString() }.collect(onFrontNumberChange)
+        snapshotFlow { frontNumberState.text.toString() }.collect { onIntent(SignUpIntent.UpdateResidentFrontNumber(it)) }
     }
     LaunchedEffect(backNumberState) {
-        snapshotFlow { backNumberState.text.toString() }.collect(onBackNumberChange)
+        snapshotFlow { backNumberState.text.toString() }.collect { onIntent(SignUpIntent.UpdateResidentBackNumber(it)) }
     }
 
     // 앞자리 6자리 입력 완료 시 뒷자리로 포커스 자동 이동
@@ -67,7 +86,7 @@ fun SignUpResidentNumberScreen(
         onBackClick = onBackClick,
         onActionClick = onNextClick,
         modifier = modifier,
-        isActionEnabled = isNextEnabled,
+        isActionEnabled = state.isStep2NextEnabled,
         currentStep = SignUpStep.RESIDENT_NUMBER,
         totalSteps = SIGN_UP_TOTAL_STEPS,
         progressContentDescription = stringResource(R.string.onboarding_step_description, SignUpStep.RESIDENT_NUMBER),
@@ -98,7 +117,7 @@ fun SignUpResidentNumberScreen(
                         ),
                     placeholder = stringResource(R.string.onboarding_signup_resident_number_placeholder),
                     keyboardType = KeyboardType.Number,
-                    onImeAction = { if (isNextEnabled) onNextClick() },
+                    onImeAction = { if (state.isStep2NextEnabled) onNextClick() },
                 )
             }
         },

@@ -70,7 +70,7 @@ class LoginViewModelReportingTest {
             val reporter = FakeErrorReporter()
             val viewModel = viewModelWith(RuntimeException("서버 거절"), reporter)
 
-            viewModel.loginWithKakao("oauth-token")
+            viewModel.onIntent(LoginIntent.SubmitKakaoLogin("oauth-token"))
             advanceUntilIdle()
 
             val attributes = reporter.written.single()
@@ -84,7 +84,7 @@ class LoginViewModelReportingTest {
             val reporter = FakeErrorReporter()
             val viewModel = viewModelWith(RuntimeException("서버 거절"), reporter)
 
-            viewModel.loginWithEmail()
+            viewModel.onIntent(LoginIntent.SubmitEmailLogin)
             advanceUntilIdle()
 
             assertEquals("email", reporter.written.single()["auth_provider"])
@@ -96,7 +96,7 @@ class LoginViewModelReportingTest {
             val reporter = FakeErrorReporter()
             val viewModel = viewModelWith(RuntimeException("미사용"), reporter)
 
-            viewModel.onSocialTokenRequestFailed(AuthProvider.GOOGLE, RuntimeException("SDK 실패"))
+            viewModel.onIntent(LoginIntent.ReportSocialTokenFailure(AuthProvider.GOOGLE, RuntimeException("SDK 실패")))
 
             val attributes = reporter.written.single()
             assertEquals("social_token_request", attributes["auth_stage"])
@@ -110,7 +110,7 @@ class LoginViewModelReportingTest {
             // 화면 이탈로 스코프가 취소되면 runCatching 이 이걸 Result.failure 로 만들어 넘긴다.
             val viewModel = viewModelWith(CancellationException("스코프 취소"), reporter)
 
-            viewModel.loginWithKakao("oauth-token")
+            viewModel.onIntent(LoginIntent.SubmitKakaoLogin("oauth-token"))
             advanceUntilIdle()
 
             assertTrue("취소는 리포팅 대상이 아니다", reporter.written.isEmpty())
@@ -123,7 +123,7 @@ class LoginViewModelReportingTest {
             val reporter = FakeErrorReporter()
             val viewModel = viewModelWith(CoreAuthFailure.InvalidLoginCredentials(RuntimeException("401")), reporter)
 
-            viewModel.loginWithEmail()
+            viewModel.onIntent(LoginIntent.SubmitEmailLogin)
             advanceUntilIdle()
 
             assertTrue(reporter.written.isEmpty())

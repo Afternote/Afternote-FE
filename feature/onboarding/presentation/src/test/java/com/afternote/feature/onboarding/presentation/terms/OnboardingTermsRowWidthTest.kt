@@ -16,6 +16,8 @@ import com.afternote.core.ui.testing.assertAccessibleClickTargets
 import com.afternote.core.ui.testing.scanEnabledClickTargets
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
+import com.afternote.feature.onboarding.presentation.signup.SignUpIntent
+import com.afternote.feature.onboarding.presentation.signup.SignUpUiState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Rule
@@ -49,14 +51,12 @@ class OnboardingTermsRowWidthTest {
     ) {
         composeRule.setContent {
             AfternoteTheme {
-                OnboardingTermsScreen(
-                    termsState = TermsState(),
-                    isNextEnabled = false,
+                OnboardingTermsContent(
+                    state = SignUpUiState(),
+                    onIntent = { intent ->
+                        if (intent is SignUpIntent.ToggleAllTerms) onToggleAll(intent.agreed)
+                    },
                     snackbarHostState = remember { SnackbarHostState() },
-                    onTermsToggle = {},
-                    onPrivacyToggle = {},
-                    onMarketingToggle = {},
-                    onToggleAll = onToggleAll,
                     onViewTermsClick = onViewTermsClick,
                     onNextClick = {},
                     onBackClick = {},

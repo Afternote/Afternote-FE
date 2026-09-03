@@ -8,7 +8,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.android.tools.screenshot.PreviewTest
 
 /**
- * [LoginScreen] 의 시각 회귀 baseline — 초기 진입 (빈 입력, 비로딩).
+ * [LoginContent] 의 시각 회귀 baseline — 초기 진입 (빈 입력, 비로딩).
  *
  * 의도된 시각 변경 시 `./gradlew :feature:onboarding:presentation:updateScreenshotTest` 로 갱신.
  */
@@ -17,21 +17,15 @@ import com.android.tools.screenshot.PreviewTest
 @Composable
 internal fun loginScreenInitialScreenshot() {
     AfternoteTheme {
-        LoginScreen(
-            initialEmail = "",
-            initialPassword = "",
-            onEmailChange = {},
-            onPasswordChange = {},
-            onLoginClick = {},
+        LoginContent(
+            state = LoginUiState(),
+            onIntent = {},
             onSignUpClick = {},
             onFindAccountClick = {},
             onKakaoLoginClick = {},
             onGoogleLoginClick = {},
-            onRetryLogin = {},
-            onNetworkErrorDismiss = {},
             onBackClick = {},
             snackbarHostState = remember { SnackbarHostState() },
-            isLoading = false,
         )
     }
 }
@@ -44,21 +38,20 @@ internal fun loginScreenInitialScreenshot() {
 @Composable
 internal fun loginScreenCredentialErrorScreenshot() {
     AfternoteTheme {
-        LoginScreen(
-            initialEmail = "user@example.com",
-            initialPassword = "wrong-password",
-            onEmailChange = {},
-            onPasswordChange = {},
-            onLoginClick = {},
+        LoginContent(
+            state =
+                LoginUiState(
+                    email = "user@example.com",
+                    password = "wrong-password",
+                    hasCredentialError = true,
+                ),
+            onIntent = {},
             onSignUpClick = {},
             onFindAccountClick = {},
             onKakaoLoginClick = {},
             onGoogleLoginClick = {},
-            onRetryLogin = {},
-            onNetworkErrorDismiss = {},
             onBackClick = {},
             snackbarHostState = remember { SnackbarHostState() },
-            hasCredentialError = true,
         )
     }
 }

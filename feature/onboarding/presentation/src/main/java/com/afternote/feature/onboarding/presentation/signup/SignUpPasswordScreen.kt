@@ -15,6 +15,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,6 +26,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -32,26 +34,42 @@ import com.afternote.feature.onboarding.presentation.R
 
 @Composable
 fun SignUpPasswordScreen(
-    initialPassword: String,
-    initialPasswordConfirm: String,
-    isPasswordRuleSatisfied: Boolean,
-    isNextEnabled: Boolean,
+    viewModel: SignUpViewModel,
+    onNextClick: () -> Unit,
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    SignUpPasswordContent(
+        state = state,
+        onIntent = viewModel::onIntent,
+        snackbarHostState = rememberSignUpSnackbarHost(state, viewModel::onIntent),
+        onNextClick = onNextClick,
+        onBackClick = onBackClick,
+        modifier = modifier,
+    )
+}
+
+/** Step 3 — stateless 층. 프리뷰·screenshotTest·Robolectric 의 진입점이다. */
+@Composable
+internal fun SignUpPasswordContent(
+    state: SignUpUiState,
+    onIntent: (SignUpIntent) -> Unit,
     snackbarHostState: SnackbarHostState,
-    onPasswordChange: (String) -> Unit,
-    onPasswordConfirmChange: (String) -> Unit,
     onNextClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
-    val passwordState = rememberTextFieldState(initialPassword)
-    val passwordConfirmState = rememberTextFieldState(initialPasswordConfirm)
+    val passwordState = rememberTextFieldState(state.signUpPassword)
+    val passwordConfirmState = rememberTextFieldState(state.signUpPasswordConfirm)
 
     LaunchedEffect(passwordState) {
-        snapshotFlow { passwordState.text.toString() }.collect(onPasswordChange)
+        snapshotFlow { passwordState.text.toString() }.collect { onIntent(SignUpIntent.UpdateSignUpPassword(it)) }
     }
     LaunchedEffect(passwordConfirmState) {
-        snapshotFlow { passwordConfirmState.text.toString() }.collect(onPasswordConfirmChange)
+        snapshotFlow { passwordConfirmState.text.toString() }.collect { onIntent(SignUpIntent.UpdateSignUpPasswordConfirm(it)) }
     }
 
     FlowStepScaffold(
@@ -60,7 +78,7 @@ fun SignUpPasswordScreen(
         onBackClick = onBackClick,
         onActionClick = onNextClick,
         modifier = modifier,
-        isActionEnabled = isNextEnabled,
+        isActionEnabled = state.isStep3NextEnabled,
         currentStep = SignUpStep.PASSWORD,
         totalSteps = SIGN_UP_TOTAL_STEPS,
         progressContentDescription = stringResource(R.string.onboarding_step_description, SignUpStep.PASSWORD),
@@ -98,7 +116,7 @@ fun SignUpPasswordScreen(
                     imeAction = ImeAction.Done,
                     onImeAction = {
                         focusManager.clearFocus()
-                        if (isNextEnabled) onNextClick()
+                        if (state.isStep3NextEnabled) onNextClick()
                     },
                 )
 
@@ -107,7 +125,7 @@ fun SignUpPasswordScreen(
                 // 안내 문구
                 PasswordRuleItem(
                     text = stringResource(R.string.onboarding_signup_password_rule_combination),
-                    isSatisfied = isPasswordRuleSatisfied,
+                    isSatisfied = state.isPasswordRuleSatisfied,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 PasswordRuleItem(
