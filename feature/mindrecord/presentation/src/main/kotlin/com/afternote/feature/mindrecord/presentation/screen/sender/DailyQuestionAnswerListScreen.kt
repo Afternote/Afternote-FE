@@ -25,11 +25,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.asString
-<<<<<<< HEAD
 import com.afternote.core.ui.button.FAB.AfternoteFabContentBottomPadding
-=======
 import com.afternote.core.ui.loading.LoadingBody
->>>>>>> origin/develop
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
