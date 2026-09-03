@@ -23,8 +23,10 @@ import com.afternote.feature.timeletter.data.repositoryImpl.FileMetadataReposito
 import com.afternote.feature.timeletter.domain.repository.FileMetadataRepository
 import com.afternote.feature.timeletter.domain.repository.ReceiverTimeLetterRepository
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
+import com.afternote.feature.timeletter.domain.repository.VoiceRecorderRepository
 import com.afternote.feature.timeletter.domain.testing.FakeReceiverTimeLetterRepository
 import com.afternote.feature.timeletter.domain.testing.FakeTimeLetterRepository
+import com.afternote.feature.timeletter.domain.testing.FakeVoiceRecorderRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.components.SingletonComponent
@@ -154,6 +156,21 @@ object TestTimeLetterModule {
     @Provides
     @Singleton
     fun provideFileMetadataRepository(impl: FileMetadataRepositoryImpl): FileMetadataRepository = impl
+
+    /**
+     * 녹음도 fake 로 격리한다.
+     *
+     * 실제 구현은 `MediaRecorder` 로 마이크를 잡는다 — 앱 전체를 띄우는 계측에서 실제 녹음 장치에
+     * 붙이면 에뮬레이터 환경에 따라 흔들리고, 이 저장소를 명시적으로 다루는 테스트는
+     * [VoiceRecordingAndroidTest]·[VoiceRecordingLifecycleAndroidTest] 처럼
+     * `createVoiceRecorderRepositoryForTesting` 로 실제 구현을 직접 얻어 검증한다.
+     *
+     * `start`/`stop` 은 일부러 [FakeVoiceRecorderRepository] 의 기본대로 호출 시 터진다 — 관심 밖
+     * 화면이 실수로 녹음을 시작하면 조용히 넘어가지 않고 바로 드러나야 한다.
+     */
+    @Provides
+    @Singleton
+    fun provideVoiceRecorderRepository(): VoiceRecorderRepository = FakeVoiceRecorderRepository
 }
 
 @Module
