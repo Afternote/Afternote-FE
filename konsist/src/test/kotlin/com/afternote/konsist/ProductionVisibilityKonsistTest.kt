@@ -346,7 +346,7 @@ class ProductionVisibilityKonsistTest {
          * 부르고, 프리뷰·screenshotTest·Robolectric 이 여기로 화면을 그린다. 소비처가 같은 파일과
          * 테스트뿐이라 이 가드에 걸리지만 `private` 로 조이면 테스트가 화면을 못 그린다.
          * (`LoginContent`·`OnboardingProfileContent` 는 파일이 갈려 다른 프로덕션 파일이 부르므로 여기 없다.)
-         * 최소 visibility 판정은 receiver·afternote 의 #1819·#1817 과 같은 성격의 후속 몫이다.
+         * 최소 visibility 판정은 #1829 가 한다 — receiver·afternote 의 #1819·#1817 과 같은 성격의 후속이다.
          *
          * `handleProfileImagePickerResult` 는 파일이 `OnboardingProfileContent.kt` 로 갈리며 경로만 바뀌었다.
          */
