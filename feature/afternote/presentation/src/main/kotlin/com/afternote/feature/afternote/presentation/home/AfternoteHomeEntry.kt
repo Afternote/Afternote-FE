@@ -30,7 +30,7 @@ fun AfternoteHomeEntry(
     navigateToDetail: (Long) -> Unit,
     navigateToAdd: (AfternoteType) -> Unit,
     onSettingClick: () -> Unit,
-    onDraftListClick: () -> Unit,
+    onDraftListClick: (() -> Unit)?,
     viewModel: AfternoteHomeViewModel = hiltViewModel(),
 ) {
     val selectedType by viewModel.selectedType.collectAsStateWithLifecycle()

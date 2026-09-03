@@ -4,6 +4,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import com.afternote.core.ui.testing.assertAccessibleClickTargets
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import org.junit.Rule
@@ -35,6 +36,10 @@ class HomeDraftEntryVisibilityTest {
         composeRule
             .onNodeWithText(composeRule.activity.getString(R.string.afternote_home_draft_entry))
             .assertHasClickAction()
+
+        // 클릭 가능한 것만으로는 부족하다 — 48dp·이름·Role 계약을 공용 스캐너로 함께 잠근다.
+        // 이 진입점은 글자 한 줄이라 타깃을 넓혀 두지 않으면 여기서 깨진다.
+        composeRule.assertAccessibleClickTargets()
     }
 
     @Test
