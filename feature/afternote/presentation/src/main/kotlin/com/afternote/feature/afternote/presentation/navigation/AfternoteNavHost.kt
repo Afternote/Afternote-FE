@@ -12,6 +12,7 @@ import com.afternote.core.ui.navigation.FeatureNavDisplay
 import com.afternote.core.ui.navigation.FeatureStackBoundary
 import com.afternote.feature.afternote.presentation.AfternoteHostViewModel
 import com.afternote.feature.afternote.presentation.detail.AfternoteDetailNavigation
+import com.afternote.feature.afternote.presentation.draft.AfternoteDraftListNavigation
 import com.afternote.feature.afternote.presentation.home.AfternoteHomeNavigation
 import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.shared.fingerprint.AfternoteFingerprintLoginNavigation
@@ -69,6 +70,7 @@ public fun AfternoteNavHost(
                             onNavigateToDetail = actions::navigateToAfternoteDetail,
                             onNavigateToNewEditor = actions::navigateToNewEditor,
                             onNavigateToSetting = actions::navigateToSetting,
+                            onNavigateToDraftList = actions::navigateToDraftList,
                         )
                     }
                 }
@@ -78,6 +80,15 @@ public fun AfternoteNavHost(
                         AfternoteDetailNavigation(
                             onNavigateBack = actions::popBack,
                             onNavigateToEditor = actions::navigateToEditorForEdit,
+                        )
+                    }
+                }
+
+                entry<AfternoteRoute.DraftListRoute> {
+                    AfternoteLightTheme {
+                        AfternoteDraftListNavigation(
+                            onNavigateBack = actions::popBack,
+                            onNavigateToEditorForEdit = actions::navigateToEditorForEdit,
                         )
                     }
                 }

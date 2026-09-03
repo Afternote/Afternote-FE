@@ -66,7 +66,10 @@ fun AfternoteDraftListScreen(
             }
 
             items.itemCount == 0 -> {
-                EmptyListBody(modifier = bodyModifier)
+                EmptyListBody(
+                    description = stringResource(R.string.afternote_draft_list_empty),
+                    modifier = bodyModifier,
+                )
             }
 
             else -> {

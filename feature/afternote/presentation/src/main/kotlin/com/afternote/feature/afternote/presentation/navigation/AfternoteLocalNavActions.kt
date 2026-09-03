@@ -5,6 +5,7 @@ import androidx.navigation3.runtime.NavKey
 import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.core.ui.navigation.FeatureStackBoundary
 import com.afternote.core.ui.navigation.popOrExit
+import com.afternote.core.ui.navigation.pushSingleTop
 import com.afternote.core.ui.navigation.replaceAllWith
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.editor.AfternoteEditorViewModel
@@ -46,6 +47,8 @@ internal class AfternoteLocalNavActions(
     override fun navigateToBottomTab(tab: BottomNavTab): Unit = externalActions.navigateToBottomTab(tab)
 
     override fun navigateToSetting(): Unit = externalActions.navigateToSetting()
+
+    override fun navigateToDraftList(): Unit = backStack.pushSingleTop(AfternoteRoute.DraftListRoute)
 
     override fun onFingerprintAuthFailed(message: String): Unit = externalActions.onFingerprintAuthFailed(message)
 }

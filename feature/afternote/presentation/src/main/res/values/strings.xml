@@ -28,6 +28,9 @@
     <string name="afternote_draft_list_title">임시 저장된 애프터노트</string>
     <string name="afternote_home_draft_entry">임시저장</string>
     <string name="afternote_home_draft_entry_description">이어서 작성할 임시저장 목록</string>
+    <!-- 임시저장 목록 0건. 발신자 홈의 afternote_empty_list_body 는 «아래 연필 버튼» 을 가리키는데
+         이 화면엔 그 버튼이 없어 따로 둔다. -->
+    <string name="afternote_draft_list_empty">임시저장한 애프터노트가 없어요.\n작성 중 임시저장을 누르면 여기에 모여요.</string>
     <string name="afternote_home_header_description">소중한 사람에게 남길 기록을 미리 정리해 보세요.</string>
     <string name="afternote_category_all">전체</string>
     <string name="afternote_category_social_network">소셜네트워크</string>
