@@ -62,7 +62,7 @@ class FindPasswordViewModelTest {
         viewModel.requestVerificationCode()
 
         val state = viewModel.uiState.value
-        assertTrue(state.isSocialAccountBlocked)
+        assertTrue(state.isSocialSignUpAccount)
         assertNull(state.errorMessage)
         assertFalse(state.isVerificationSent)
         // 서버가 정상적으로 가르는 분기라 장애로 세지 않는다.
@@ -78,7 +78,7 @@ class FindPasswordViewModelTest {
         viewModel.requestVerificationCode()
 
         val state = viewModel.uiState.value
-        assertFalse(state.isSocialAccountBlocked)
+        assertFalse(state.isSocialSignUpAccount)
         assertEquals(UiText.Resource(R.string.onboarding_network_error), state.errorMessage)
         assertEquals(1, reporter.recordedCount)
     }
@@ -92,7 +92,7 @@ class FindPasswordViewModelTest {
         viewModel.updateEmail("other@example.com")
 
         val state = viewModel.uiState.value
-        assertFalse(state.isSocialAccountBlocked)
+        assertFalse(state.isSocialSignUpAccount)
         assertFalse(state.isVerificationSent)
     }
 

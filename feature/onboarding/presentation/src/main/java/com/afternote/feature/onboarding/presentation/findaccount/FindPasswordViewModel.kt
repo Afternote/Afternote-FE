@@ -48,7 +48,7 @@ class FindPasswordViewModel
         fun updateEmail(value: String) =
             _uiState.update {
                 // 이메일이 바뀌면 앞선 발송 이력과 차단 판정은 더 이상 그 이메일의 것이 아니다.
-                it.copy(email = value, isVerificationSent = false, isSocialAccountBlocked = false)
+                it.copy(email = value, isVerificationSent = false, isSocialSignUpAccount = false)
             }
 
         fun updateCertificateCode(value: String) = _uiState.update { it.copy(certificateCode = value) }
@@ -78,7 +78,7 @@ class FindPasswordViewModel
                             if (error is CoreAuthFailure.SocialSignUpAccount) {
                                 // 사용자 입력 오류가 아니라 계정 종류의 문제다 — 시안은 팝업으로 그린다.
                                 // 계측하지 않는다: 서버가 정상적으로 가르는 분기지 장애가 아니다.
-                                current.copy(isSocialAccountBlocked = true, errorMessage = null)
+                                current.copy(isSocialSignUpAccount = true, errorMessage = null)
                             } else {
                                 errorReporter.recordAuthFailure(AuthFailureStage.FIND_ACCOUNT_CODE_SEND, error)
                                 current.copy(errorMessage = error.toDisplayMessage(R.string.onboarding_find_account_failed))
@@ -121,7 +121,7 @@ class FindPasswordViewModel
             }
         }
 
-        fun onSocialAccountBlockedConsumed() = _uiState.update { it.copy(isSocialAccountBlocked = false) }
+        fun onSocialAccountBlockedConsumed() = _uiState.update { it.copy(isSocialSignUpAccount = false) }
 
         fun onErrorConsumed() = _uiState.update { it.copy(errorMessage = null) }
 
