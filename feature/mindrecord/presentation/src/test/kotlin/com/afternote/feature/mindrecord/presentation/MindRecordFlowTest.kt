@@ -58,6 +58,8 @@ class MindRecordFlowTest {
                 DiaryWriteScreen(
                     viewModel = viewModel,
                     onSubmitSuccess = { successCalls += 1 },
+                    onBackClick = {},
+                    onDraftListClick = {},
                 )
             }
         }
@@ -98,7 +100,12 @@ class MindRecordFlowTest {
         val viewModel = diaryViewModel(FakeDiaryRepository())
         composeRule.setContent {
             AfternoteTheme {
-                DiaryWriteScreen(viewModel = viewModel)
+                DiaryWriteScreen(
+                    viewModel = viewModel,
+                    onBackClick = {},
+                    onDraftListClick = {},
+                    onSubmitSuccess = {},
+                )
             }
         }
 
@@ -140,7 +147,12 @@ class MindRecordFlowTest {
         // ViewModel 사이 결선이 검증되지 않아, 계측 호출을 지워도 통과한다 (#964 리뷰).
         composeRule.setContent {
             AfternoteTheme {
-                DailyQuestionWriteScreen(viewModel = viewModel, onSubmitSuccess = { })
+                DailyQuestionWriteScreen(
+                    viewModel = viewModel,
+                    onSubmitSuccess = { },
+                    onBackClick = {},
+                    onDraftListClick = {},
+                )
             }
         }
         composeRule.waitUntil(timeoutMillis = 5_000) { !viewModel.uiState.value.isQuestionLoading }
