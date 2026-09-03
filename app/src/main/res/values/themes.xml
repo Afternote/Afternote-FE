@@ -16,7 +16,7 @@
             잠긴 동안은(#1719) 배경과 아이콘을 같은 쪽으로 맞춘다. 다크 팔레트를 되살릴 때
             AfternoteTheme 의 isDarkTheme·enableLightEdgeToEdge 와 함께 되돌린다.
         -->
+        <!-- windowLightNavigationBar 는 API 27+ 라 values-v27/ 에 둔다 (minSdk 26). -->
         <item name="android:windowLightStatusBar">true</item>
-        <item name="android:windowLightNavigationBar">true</item>
     </style>
 </resources>
