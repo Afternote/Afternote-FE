@@ -25,6 +25,14 @@ internal fun diaryWriteScreenScreenshot() {
         DiaryWriteScreenContent(
             uiState = diaryWriteScreenshotState(),
             modifier = Modifier.fillMaxSize(),
+            onBackClick = {},
+            onContentChanged = {},
+            onDraftListClick = {},
+            onMoodSelected = {},
+            onReceiverRowClick = {},
+            onSaveDraft = {},
+            onSubmit = {},
+            onTitleChanged = {},
         )
     }
 }
@@ -37,6 +45,14 @@ internal fun diaryWriteScreenCompactScreenshot() {
         DiaryWriteScreenContent(
             uiState = diaryWriteScreenshotState(),
             modifier = Modifier.fillMaxSize(),
+            onBackClick = {},
+            onContentChanged = {},
+            onDraftListClick = {},
+            onMoodSelected = {},
+            onReceiverRowClick = {},
+            onSaveDraft = {},
+            onSubmit = {},
+            onTitleChanged = {},
         )
     }
 }

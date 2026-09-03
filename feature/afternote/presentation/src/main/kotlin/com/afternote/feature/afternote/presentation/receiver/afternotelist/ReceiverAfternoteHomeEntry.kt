@@ -22,6 +22,7 @@ import com.afternote.core.ui.R as CoreUiR
  *
  * 화면을 공유해도 관점은 다르므로 발신자용 조각은 넘기지 않는다 (#620):
  * - 헤더 문구는 수신자 관점으로 덮는다 (기본값이 없어 안 넘기면 컴파일이 막는다).
+ * - 0건 본문 문구도 같은 이유로 덮는다 — 발신자 문구는 없는 FAB 을 누르라고 시킨다.
  * - NEXT STEP 카드는 넘기지 않는다 (#777 이 같은 이유로 디폴트를 걷었다).
  * - `onSettingClick`·`onFabClick` 을 넘기지 않아 회원 액션(프로필·설정)과 작성 FAB 이 그려지지 않는다 —
  *   수신자는 로그인 사용자가 아니고 남길 기록을 쓰는 주체도 아니다.
@@ -74,6 +75,15 @@ fun ReceiverAfternoteHomeEntry(
                 headerDescription = stringResource(R.string.afternote_receiver_afternote_list_header_description),
                 // NEXT STEP 은 «내가 남길 기록» 을 재촉하는 발신자용 카드다. 수신자 목록에는 없다.
                 nextStep = null,
+                // 0건 본문도 수신자 관점으로 덮는다 — 발신자 문구는 «아래 연필 버튼을 눌러» 로 끝나는데
+                // 위에서 onFabClick 을 넘기지 않아 이 화면에는 그 버튼이 없다. 못 누르는 버튼을 누르라고
+                // 시키던 것이라 #620 과 같은 부류의 누수다.
+                emptyListDescription = stringResource(R.string.afternote_receiver_list_empty_body),
+                // 헤더는 여전히 올리지 않는다. «시안이 헤더 없음» 이라서가 아니라 수신자 0건 시안이 아직
+                // 없어서다 — 2026-08-31 정본 페이지 전수 조회 결과 수신자 구역의 빈 상태는 「받은 기록함」
+                // (4327:74361) 하나뿐이고, 그건 + FAB 을 가진 다른 화면이다. 공유 화면이라 확인 안 된
+                // 변경을 태우지 않는다 (#1175).
+                showsHeaderOnEmptyList = false,
                 modifier = modifier,
             )
         }

@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.presentation.receiver.detail
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -27,16 +26,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import com.afternote.core.common.media.launchMemorialVideo
 import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.bottombar.BottomBar
@@ -49,6 +45,7 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.MemorialContent
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.MemorialPlaylist
+import com.afternote.feature.afternote.presentation.shared.detail.MemorialVideoThumbnail
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
@@ -208,7 +205,7 @@ private fun ReceiverVideoSection(
                         .clip(RoundedCornerShape(12.dp))
                         .clickable { onVideoClick(memorialVideoUrl) },
             ) {
-                ReceiverMemorialVideoThumbnail(thumbnailUrl = memorialThumbnailUrl)
+                MemorialVideoThumbnail(thumbnailUrl = memorialThumbnailUrl)
             }
         } else {
             Box(
@@ -236,50 +233,6 @@ private fun ReceiverVideoSection(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun ReceiverMemorialVideoThumbnail(thumbnailUrl: String?) {
-    Box(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(183.dp)
-                .clip(RoundedCornerShape(16.dp)),
-    ) {
-        if (!thumbnailUrl.isNullOrBlank()) {
-            AsyncImage(
-                model = thumbnailUrl,
-                contentDescription =
-                    stringResource(R.string.afternote_content_description_memorial_video_thumbnail),
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-            )
-        }
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(
-                        brush =
-                            Brush.verticalGradient(
-                                colors =
-                                    listOf(
-                                        AfternoteDesign.colors.gray6.copy(alpha = 153f / 255f),
-                                        AfternoteDesign.colors.gray9.copy(alpha = 153f / 255f),
-                                    ),
-                            ),
-                    ),
-        )
-        Image(
-            painter = painterResource(R.drawable.afternote_ic_playback),
-            contentDescription = stringResource(R.string.afternote_content_description_video_play),
-            modifier =
-                Modifier
-                    .align(Alignment.Center)
-                    .size(32.dp),
-        )
     }
 }
 
