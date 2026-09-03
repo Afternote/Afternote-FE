@@ -153,12 +153,13 @@ class EditorTouchTargetTest {
     fun `editor top back and submit expose named button callbacks`() {
         var backClicks = 0
         var registerClicks = 0
+        var saveDraftClicks = 0
         composeRule.setContent {
             AfternoteTheme {
                 AfternoteEditorScreen(
                     form = EditorFormState(),
                     onBackClick = { backClicks++ },
-                    onSaveDraftClick = {},
+                    onSaveDraftClick = { saveDraftClicks++ },
                     onRegisterClick = { registerClicks++ },
                     snackbarMessage = null,
                     onSnackbarMessageConsumed = {},
@@ -173,10 +174,43 @@ class EditorTouchTargetTest {
         val targets = composeRule.scanEnabledClickTargets()
         assertEquals(Role.Button, targets.single { it.name == "뒤로가기" }.role)
         assertEquals(Role.Button, targets.single { it.name == "등록" }.role)
+        assertEquals(Role.Button, targets.single { it.name == "임시저장" }.role)
 
         composeRule.onNodeWithContentDescription("뒤로가기").performClick()
         composeRule.onNodeWithText("등록").performClick()
+        composeRule.onNodeWithText("임시저장").performClick()
         assertEquals(1, backClicks)
         assertEquals(1, registerClicks)
+        assertEquals(1, saveDraftClicks)
+    }
+
+    /**
+     * 콜백이 없으면 버튼 자체가 없어야 한다 (#808).
+     *
+     * 저장한 임시저장을 다시 열 화면이 배선되기 전까지 `AfternoteEditorRoute` 가 `null` 을 넘긴다.
+     * 그때 버튼이 남아 있으면 «누르면 홈에서 사라지고 되찾을 길이 없는» 상태가 된다.
+     */
+    @Test
+    fun `editor top bar hides the draft action when no callback is wired`() {
+        composeRule.setContent {
+            AfternoteTheme {
+                AfternoteEditorScreen(
+                    form = EditorFormState(),
+                    onBackClick = {},
+                    onSaveDraftClick = null,
+                    onRegisterClick = {},
+                    snackbarMessage = null,
+                    onSnackbarMessageConsumed = {},
+                    validationMessage = null,
+                    onValidationMessageConsumed = {},
+                    content = {},
+                )
+            }
+        }
+
+        composeRule.assertAccessibleClickTargets()
+        val names = composeRule.scanEnabledClickTargets().map { it.name }
+        assertEquals(emptyList<String>(), names.filter { it == "임시저장" })
+        assertEquals(1, names.count { it == "등록" })
     }
 }

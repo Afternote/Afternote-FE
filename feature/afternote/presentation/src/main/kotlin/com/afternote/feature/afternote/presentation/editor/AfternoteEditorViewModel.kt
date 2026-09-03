@@ -417,9 +417,10 @@ class AfternoteEditorViewModel
         }
 
         /**
-         * @param asDraft 임시저장으로 저장한다 (#808). 서버가 카테고리별 필수값 검증을 건너뛰므로
-         *   («AfternoteValidator») 화면 검증도 같이 건너뛴다 — 임시저장은 «미완성을 그대로 보존하는» 수단이라
-         *   여기서 막으면 저장할 수 있는 것이 정식 등록과 같아져 존재 이유가 없어진다.
+         * @param asDraft 임시저장으로 저장한다 (#808). 검증을 **통째로** 건너뛰지는 않는다 — 서버가 완화하는
+         *   것은 카테고리 전략의 `credentials`·`playlist` 뿐이고 제목·남기실 말씀 본문은 그대로 400 이 난다.
+         *   그 경계는 [AfternoteEditorValidator] 의 KDoc 에 표로 있다. 통째로 건너뛰면 ESTATE 차단까지
+         *   사라져 `AfternoteEditorFormMapper` 의 `error(...)` 로 앱이 죽는다.
          */
         internal fun saveAfternote(
             payload: RegisterAfternotePayload,
@@ -436,14 +437,11 @@ class AfternoteEditorViewModel
             val playlistSongs = form.memorialPlaylistSongs
 
             val validationError =
-                if (asDraft) {
-                    null
-                } else {
-                    AfternoteEditorValidator.validate(
-                        form = form,
-                        payload = payload,
-                    )
-                }
+                AfternoteEditorValidator.validate(
+                    form = form,
+                    payload = payload,
+                    asDraft = asDraft,
+                )
             if (validationError != null) {
                 internalState.update {
                     it.withError(AfternoteEditorError.Validation(validationError))
@@ -565,9 +563,13 @@ class AfternoteEditorViewModel
                                     memorialPhotoUrl = resolved.resolvedMemorialPhotoUrl,
                                 ),
                         )
-                    // 수정에서 isDraft 는 «어느 버튼으로 저장했나» 를 그대로 말한다 — 임시저장이면 true 로 남기고,
-                    // 등록이면 false 를 명시해 발행으로 전환한다(생략하면 서버가 저장값을 유지한다).
-                    SaveAfternoteCommand.Update(id = editingId, payload = updatePayload.copy(isDraft = asDraft))
+                    // 수정에서 isDraft 는 «어느 버튼으로 저장했나» 를 말하는데, **발행 완료분을 임시저장으로
+                    // 되돌리지는 않는다.** true 를 실으면 그 애프터노트가 홈 목록(발행분만)에서 사라지고
+                    // 임시저장 목록·이어쓰기는 #1792·#1791 로 빠져 있어 되찾을 경로가 없다. 그래서 원래
+                    // 임시저장이던 것(route.isDraft)에만 true 를 싣고, 발행분에는 생략해 저장값을 유지한다.
+                    // 등록 버튼은 어느 쪽이든 false 를 명시해 발행으로 전환한다.
+                    val isDraftToSend = if (asDraft) true.takeIf { route.isDraft } else false
+                    SaveAfternoteCommand.Update(id = editingId, payload = updatePayload.copy(isDraft = isDraftToSend))
                 } else {
                     val createInput =
                         AfternoteEditorFormMapper.buildCreateInput(

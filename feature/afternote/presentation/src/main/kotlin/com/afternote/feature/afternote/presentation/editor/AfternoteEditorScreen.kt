@@ -65,7 +65,7 @@ fun AfternoteEditorScreen(
     form: EditorFormState,
     onBackClick: () -> Unit,
     onRegisterClick: () -> Unit,
-    onSaveDraftClick: () -> Unit,
+    onSaveDraftClick: (() -> Unit)?,
     snackbarMessage: String?,
     onSnackbarMessageConsumed: () -> Unit,
     // 스낵바 쌍과 같은 이유로 기본값을 주지 않는다: 새 진입 경로가 검증 팝업 배선을 빠뜨리면
@@ -141,20 +141,25 @@ fun AfternoteEditorScreen(
                 actions = {
                     // 임시저장은 정식 등록과 나란히 둔다 — 마음의 기록·타임레터 작성 화면이 「등록」 옆·아래에
                     // 「임시저장」을 두는 것과 같은 배치다(애프터노트 구역엔 시안이 없어 그 관례를 따랐다, #808).
-                    Text(
-                        text = stringResource(R.string.afternote_editor_save_draft),
-                        style = AfternoteDesign.typography.bodySmallR,
-                        color = AfternoteDesign.colors.gray7,
-                        modifier =
-                            Modifier
-                                .clickable(
-                                    role = Role.Button,
-                                    onClick = {
-                                        focusManager.clearFocus()
-                                        onSaveDraftClick()
-                                    },
-                                ).padding(end = 12.dp),
-                    )
+                    //
+                    // 콜백이 null 이면 아예 그리지 않는다 — 저장한 임시저장을 다시 볼 화면이 없는 동안
+                    // 이 버튼을 누르면 그 애프터노트가 홈 목록에서 사라진 채 되찾을 길이 없다.
+                    if (onSaveDraftClick != null) {
+                        Text(
+                            text = stringResource(R.string.afternote_editor_save_draft),
+                            style = AfternoteDesign.typography.bodySmallR,
+                            color = AfternoteDesign.colors.gray7,
+                            modifier =
+                                Modifier
+                                    .clickable(
+                                        role = Role.Button,
+                                        onClick = {
+                                            focusManager.clearFocus()
+                                            onSaveDraftClick()
+                                        },
+                                    ).padding(end = 12.dp),
+                        )
+                    }
                     Text(
                         text = stringResource(R.string.afternote_editor_submit),
                         style = AfternoteDesign.typography.bodySmallB,
