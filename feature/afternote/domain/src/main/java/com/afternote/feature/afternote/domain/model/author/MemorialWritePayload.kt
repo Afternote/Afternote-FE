@@ -17,7 +17,8 @@ data class CreateMemorialPayload(
  * 조용히 지우는 일을 타입에서 막는다. 와이어에서 그 뜻이 어떻게 표현되는지는
  * `AfternotePlaylistRequestDto` 의 KDoc 에 있다 (#1596).
  *
- * [songs] 만 규칙이 다르다 — 빈 목록은 삭제가 아니라 생략으로 나간다(#1295 결정, 남은 결함은 #1599).
+ * [songs] 도 같은 뜻이다 — 빈 목록은 「모르겠다」가 아니라 「곡이 하나도 없다」로 나가 서버 곡을
+ * 전부 지운다. 와이어 표현만 다르다: 미디어는 JSON `null`, 곡은 **빈 배열**이다 (#1599).
  */
 data class MemorialWritePayload(
     val memorialPhotoUrl: String?,

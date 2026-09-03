@@ -47,8 +47,8 @@ fun WeeklySummaryGrid(
      * `null` 은 «아직 모름» 이라 숫자 대신 대시를 그린다. 0 은 확정값이라 그대로 그린다.
      */
     recordedCount: Int?,
-    onImageClick: () -> Unit = {},
-    onCountCardClick: () -> Unit = {},
+    onImageClick: () -> Unit,
+    onCountCardClick: () -> Unit,
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val gap = 8.dp
@@ -152,6 +152,10 @@ fun WeeklySummaryGrid(
 @Composable
 private fun WeeklySummaryGridPreview() {
     AfternoteTheme {
-        WeeklySummaryGrid(recordedCount = 3)
+        WeeklySummaryGrid(
+            recordedCount = 3,
+            onCountCardClick = {},
+            onImageClick = {},
+        )
     }
 }
