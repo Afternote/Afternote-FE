@@ -1,4 +1,4 @@
-package com.afternote.feature.receiver.presentation.home
+package com.afternote.feature.home.presentation.receiver
 
 /** 수신자 홈 화면 사용자 이벤트. */
 sealed interface ReceiverHomeEvent {

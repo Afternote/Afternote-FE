@@ -1,14 +1,14 @@
-package com.afternote.feature.receiver.presentation.home
+package com.afternote.feature.home.presentation.receiver
 
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.feature.home.presentation.receiver.model.ReceiverDownloadState
+import com.afternote.feature.home.presentation.receiver.model.ReceiverHomeUiState
 import com.afternote.feature.mindrecord.domain.model.MindRecordType
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.testing.FakeMindRecordReceiverRepository
 import com.afternote.feature.receiver.domain.model.AfterNotesListResult
 import com.afternote.feature.receiver.domain.model.SenderMessageInfo
 import com.afternote.feature.receiver.domain.testing.FakeReceiverRepository
-import com.afternote.feature.receiver.presentation.home.model.ReceiverDownloadState
-import com.afternote.feature.receiver.presentation.home.model.ReceiverHomeUiState
 import com.afternote.feature.timeletter.domain.model.ReceivedTimeLetterList
 import com.afternote.feature.timeletter.domain.testing.FakeReceiverTimeLetterRepository
 import kotlinx.coroutines.Dispatchers

@@ -1,4 +1,4 @@
-package com.afternote.feature.receiver.presentation.home
+package com.afternote.feature.home.presentation.receiver
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertCountEquals
@@ -11,7 +11,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.PROFILE_ICON_TEST_TAG
-import com.afternote.feature.receiver.presentation.home.model.ReceiverHomeUiState
+import com.afternote.feature.home.presentation.receiver.model.ReceiverHomeUiState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

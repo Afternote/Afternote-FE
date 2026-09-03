@@ -14,11 +14,11 @@ import com.afternote.feature.afternote.presentation.navigation.model.SELECTED_RE
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteNavActions
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
 import com.afternote.feature.home.presentation.HomeTabActions
+import com.afternote.feature.home.presentation.receiver.ReceiverHomeActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavActions
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingRoute
-import com.afternote.feature.receiver.presentation.home.ReceiverHomeActions
 import com.afternote.feature.receiver.presentation.navigation.ReceiverNavActions
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
 import com.afternote.feature.setting.presentation.navigation.SettingNavActions

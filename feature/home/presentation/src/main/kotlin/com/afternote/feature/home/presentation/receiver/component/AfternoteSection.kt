@@ -1,4 +1,4 @@
-package com.afternote.feature.receiver.presentation.home.component
+package com.afternote.feature.home.presentation.receiver.component
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -22,7 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.icon.AfternoteSourceIcon
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.feature.receiver.presentation.R
+import com.afternote.feature.home.presentation.R
 
 private const val MAX_VISIBLE_ICONS = 4
 private val ICON_SIZE = 32.dp
@@ -41,14 +41,14 @@ fun AfternoteSection(
 ) {
     HomeSectionCard(
         modifier = modifier,
-        title = stringResource(R.string.receiver_home_afternote_section_title),
-        description = stringResource(R.string.receiver_home_afternote_section_desc),
+        title = stringResource(R.string.home_receiver_afternote_section_title),
+        description = stringResource(R.string.home_receiver_afternote_section_desc),
         countLine =
             rememberCountLine(
-                prefix = stringResource(R.string.receiver_home_afternote_count_prefix, countText(totalCount)),
-                suffix = stringResource(R.string.receiver_home_afternote_count_suffix),
+                prefix = stringResource(R.string.home_receiver_afternote_count_prefix, countText(totalCount)),
+                suffix = stringResource(R.string.home_receiver_afternote_count_suffix),
             ),
-        buttonText = stringResource(R.string.receiver_home_afternote_section_button),
+        buttonText = stringResource(R.string.home_receiver_afternote_section_button),
         onButtonClick = onGoClick,
         middleContent = {
             if (totalCount == null) return@HomeSectionCard
@@ -108,7 +108,7 @@ private fun ExtraCountChip(count: Int) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = stringResource(R.string.receiver_home_afternote_extra_count, count),
+            text = stringResource(R.string.home_receiver_afternote_extra_count, count),
             style = AfternoteDesign.typography.captionLargeB,
             color = AfternoteDesign.colors.white,
         )

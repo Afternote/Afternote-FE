@@ -1,4 +1,4 @@
-package com.afternote.feature.receiver.presentation.home.component
+package com.afternote.feature.home.presentation.receiver.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,7 +20,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.feature.receiver.presentation.R
+import com.afternote.feature.home.presentation.R
 
 /**
  * 마음의 기록·타임레터·애프터노트 카드의 공통 컨테이너.
@@ -96,4 +96,4 @@ fun rememberCountLine(
  * 두 번 적혀 한쪽만 고쳐질 자리가 된다.
  */
 @Composable
-fun countText(count: Int?): String = count?.toString() ?: stringResource(R.string.receiver_home_section_count_unavailable)
+fun countText(count: Int?): String = count?.toString() ?: stringResource(R.string.home_receiver_section_count_unavailable)

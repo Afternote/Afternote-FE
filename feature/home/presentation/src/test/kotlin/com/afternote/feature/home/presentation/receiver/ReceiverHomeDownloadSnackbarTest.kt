@@ -1,12 +1,12 @@
-package com.afternote.feature.receiver.presentation.home
+package com.afternote.feature.home.presentation.receiver
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.receiver.presentation.R
-import com.afternote.feature.receiver.presentation.home.model.ReceiverDownloadState
-import com.afternote.feature.receiver.presentation.home.model.ReceiverHomeUiState
+import com.afternote.feature.home.presentation.R
+import com.afternote.feature.home.presentation.receiver.model.ReceiverDownloadState
+import com.afternote.feature.home.presentation.receiver.model.ReceiverHomeUiState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,14 +38,14 @@ class ReceiverHomeDownloadSnackbarTest {
 
     @Test
     fun `내려받기 실패 상태는 스낵바로 표출된다`() {
-        setHomeContent(ReceiverDownloadState.Failed(R.string.receiver_home_download_all_failed))
+        setHomeContent(ReceiverDownloadState.Failed(R.string.home_receiver_download_all_failed))
 
         composeRule.onNodeWithText("모든 기록 내려받기에 실패했습니다.").assertIsDisplayed()
     }
 
     @Test
     fun `파일 저장 실패 상태도 자기 문구로 표출된다`() {
-        setHomeContent(ReceiverDownloadState.Failed(R.string.receiver_home_download_all_save_failed))
+        setHomeContent(ReceiverDownloadState.Failed(R.string.home_receiver_download_all_save_failed))
 
         composeRule.onNodeWithText("파일 저장에 실패했습니다.").assertIsDisplayed()
     }

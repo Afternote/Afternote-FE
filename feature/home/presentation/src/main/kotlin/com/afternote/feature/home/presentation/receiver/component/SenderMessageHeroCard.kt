@@ -1,4 +1,4 @@
-package com.afternote.feature.receiver.presentation.home.component
+package com.afternote.feature.home.presentation.receiver.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -19,7 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.feature.receiver.presentation.R
+import com.afternote.feature.home.presentation.R
 
 /**
  * 고인이 남긴 한 마디 + 작성일 + 본문을 보여주는 그라데이션 카드.
@@ -45,7 +45,7 @@ fun SenderMessageHeroCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = stringResource(R.string.receiver_home_hero_title, senderName),
+                text = stringResource(R.string.home_receiver_hero_title, senderName),
                 style = AfternoteDesign.typography.bodySmallB,
                 color = AfternoteDesign.colors.gray7,
             )
