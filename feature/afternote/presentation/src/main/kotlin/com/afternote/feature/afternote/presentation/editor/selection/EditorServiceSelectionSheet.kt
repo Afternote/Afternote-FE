@@ -243,7 +243,7 @@ private fun EditorServiceSelectionRow(
 }
 
 /** trim한 query의 대소문자를 무시한 부분 문자열 검색. 원본 catalog 순서는 바꾸지 않는다. */
-internal fun filterEditorServiceOptions(
+private fun filterEditorServiceOptions(
     services: List<String>,
     rawQuery: CharSequence,
 ): List<String> {
@@ -256,7 +256,7 @@ internal fun filterEditorServiceOptions(
 }
 
 @StringRes
-internal fun AfternoteType.serviceSelectionSheetTitleResOrNull(): Int? =
+private fun AfternoteType.serviceSelectionSheetTitleResOrNull(): Int? =
     when (this) {
         AfternoteType.SOCIAL_NETWORK -> R.string.afternote_editor_service_sheet_title_social
         AfternoteType.GALLERY_AND_FILES -> R.string.afternote_editor_service_sheet_title_gallery

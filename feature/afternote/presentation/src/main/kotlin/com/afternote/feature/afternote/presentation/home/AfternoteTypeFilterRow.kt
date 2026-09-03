@@ -18,7 +18,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -31,8 +30,6 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.util.TYPE_FILTER_TABS
 import com.afternote.feature.afternote.presentation.shared.util.typeLabelResFor
-
-internal const val AFTERNOTE_CATEGORY_MORE_INDICATOR_TEST_TAG = "afternoteCategoryMoreIndicator"
 
 /**
  * 종류 필터 탭 행. `null` 은 "전체" 탭이다.
@@ -121,8 +118,7 @@ fun AfternoteTypeFilterRow(
                 modifier =
                     Modifier
                         .padding(start = 8.dp)
-                        .size(16.dp)
-                        .testTag(AFTERNOTE_CATEGORY_MORE_INDICATOR_TEST_TAG),
+                        .size(16.dp),
             )
         }
     }

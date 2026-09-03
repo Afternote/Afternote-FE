@@ -1,6 +1,8 @@
 package com.afternote.feature.afternote.presentation.editor
 
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
+import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
@@ -11,6 +13,7 @@ import com.afternote.feature.afternote.domain.model.author.playlist.MemorialDeta
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 import com.afternote.feature.afternote.presentation.editor.memorial.Song
 import com.afternote.feature.afternote.presentation.editor.model.EditorContentPrefill
+import com.afternote.feature.afternote.presentation.editor.model.RegisterAfternotePayload
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -100,8 +103,11 @@ class AfternoteEditorFormPrefillTest {
 
     @Test
     fun `메모리얼 저장은 UI 선택 키를 도메인 입력에 포함하지 않는다`() {
-        val payload =
-            AfternoteEditorFormMapper.buildMemorialWritePayload(
+        val input =
+            AfternoteEditorFormMapper.buildCreateInput(
+                type = AfternoteType.MEMORIAL,
+                payload = RegisterAfternotePayload(serviceName = "추억 노트", date = "2026-08-21"),
+                selectedReceiverIds = emptyList(),
                 playlistSongs =
                     listOf(
                         Song(
@@ -115,7 +121,10 @@ class AfternoteEditorFormPrefillTest {
                             artist = "가수",
                         ),
                     ),
-            )
+                memorialVideoUrl = null,
+                memorialThumbnailUrl = null,
+                memorialPhotoUrl = null,
+            ) as CreateAfternoteInput.Memorial
 
         assertEquals(
             listOf(
@@ -130,7 +139,7 @@ class AfternoteEditorFormPrefillTest {
                     coverUrl = null,
                 ),
             ),
-            payload.songs,
+            input.payload.memorial.songs,
         )
     }
 
