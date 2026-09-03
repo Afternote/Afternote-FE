@@ -44,7 +44,6 @@ internal fun SelectReceiverScreen(
     onReceiverToggle: (Long) -> Unit,
     onRetryClick: () -> Unit,
     onConfirmClick: (Long) -> Unit,
-    onRegisterReceiverClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ReceiverSelectScreen(
@@ -68,16 +67,14 @@ internal fun SelectReceiverScreen(
                 }
 
                 uiState.receivers.isEmpty() -> {
-                    { SelectReceiverEmpty(onRegisterClick = onRegisterReceiverClick) }
+                    { SelectReceiverEmpty(onRegisterClick = null) }
                 }
 
                 else -> {
                     null
                 }
             },
-        // 빈 상태는 아래 [SelectReceiverEmpty] 가 자기 CTA 를 그리므로 목록 하단 행은 목록이
-        // 있을 때만 붙인다 — 둘 다 그리면 같은 화면에 등록 진입점이 두 개 생긴다.
-        onRegisterReceiverClick = onRegisterReceiverClick.takeIf { uiState.receivers.isNotEmpty() },
+        onRegisterReceiverClick = null,
     )
 }
 
@@ -88,7 +85,7 @@ internal fun SelectReceiverScreen(
  * 일러스트는 시안과 같은 그림인 core:ui [ProfileImage] 의 placeholder 를 기본 크기(134dp)로 쓴다.
  */
 @Composable
-private fun SelectReceiverEmpty(onRegisterClick: () -> Unit) {
+private fun SelectReceiverEmpty(onRegisterClick: (() -> Unit)?) {
     Column(
         modifier =
             Modifier
@@ -118,11 +115,14 @@ private fun SelectReceiverEmpty(onRegisterClick: () -> Unit) {
         ) {
             ProfileImage()
         }
-        Spacer(modifier = Modifier.height(56.dp))
-        AfternoteButton(
-            text = stringResource(R.string.afternote_select_receiver_register),
-            onClick = onRegisterClick,
-        )
+        // 등록 진입 배선은 #1793 이 Nav3 계약으로 붙인다 — 그때까지 눌러도 갈 곳이 없어 안 그린다.
+        if (onRegisterClick != null) {
+            Spacer(modifier = Modifier.height(56.dp))
+            AfternoteButton(
+                text = stringResource(R.string.afternote_select_receiver_register),
+                onClick = onRegisterClick,
+            )
+        }
     }
 }
 

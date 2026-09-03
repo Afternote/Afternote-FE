@@ -22,7 +22,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 internal fun AfternoteSelectReceiverNavigation(
     onPopBackStack: () -> Unit,
     onReceiverConfirmed: (Long) -> Unit,
-    onNavigateToReceiverRegister: () -> Unit,
 ) {
     val viewModel: SelectReceiverViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -38,9 +37,5 @@ internal fun AfternoteSelectReceiverNavigation(
         onReceiverToggle = viewModel::toggleReceiverSelection,
         onRetryClick = viewModel::refresh,
         onConfirmClick = onReceiverConfirmed,
-        onRegisterReceiverClick = {
-            viewModel.onReceiverRegisterStart()
-            onNavigateToReceiverRegister()
-        },
     )
 }

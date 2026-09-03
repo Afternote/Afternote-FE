@@ -470,12 +470,6 @@ fun rememberAfternoteNavActions(
                 appState.navController.navigate(AfternoteRoute.SelectReceiverRoute)
             }
 
-            override fun navigateToReceiverRegister() {
-                // 선택 화면 위로 push. 등록 성공·취소 모두 setting 이 popBackStack 으로 끝내므로
-                // 선택 화면으로 돌아오고, 그 아래 에디터 폼(EditorFlowRoute 스코프)도 그대로 남는다.
-                appState.navController.navigate(SettingRoute.RecipientRegisterRoute)
-            }
-
             override fun popBackWithSelectedReceiver(receiverId: Long) {
                 // 선택 화면이 현재 destination 이므로 previousBackStackEntry 가 에디터다.
                 // 에디터는 복귀 시 SELECTED_RECEIVER_ID_KEY 를 읽고 지운다 (AfternoteNavGraphEditor).

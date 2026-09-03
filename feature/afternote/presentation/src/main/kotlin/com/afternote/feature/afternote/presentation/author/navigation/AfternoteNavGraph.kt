@@ -76,7 +76,6 @@ fun NavGraphBuilder.afternoteNavGraph(
                 AfternoteSelectReceiverNavigation(
                     onPopBackStack = actions::popBack,
                     onReceiverConfirmed = actions::popBackWithSelectedReceiver,
-                    onNavigateToReceiverRegister = actions::navigateToReceiverRegister,
                 )
             }
 
