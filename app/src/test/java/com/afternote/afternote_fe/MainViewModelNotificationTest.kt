@@ -92,11 +92,11 @@ class MainViewModelNotificationTest {
         )
 
     private fun request(
-        occurrenceToken: String,
+        occurrenceId: String,
         source: NotificationEntrySource = NotificationEntrySource.FCM,
     ): NotificationEntryRequest =
         NotificationEntryRequest(
             source = source,
-            occurrenceToken = occurrenceToken,
+            occurrenceId = occurrenceId,
         )
 }

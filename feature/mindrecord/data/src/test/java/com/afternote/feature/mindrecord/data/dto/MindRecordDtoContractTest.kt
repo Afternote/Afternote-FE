@@ -50,7 +50,7 @@ class MindRecordDtoContractTest {
             """
             { "status": 200, "code": 200,
               "data": [{ "userDailyQuestionId": 1, "title": "t", "content": "c",
-                         "createdAt": "2026.08.23 일", "isDraft": false }] }
+                         "createdAt": "2026.08.23 일", "isDraft": false, "receivers": [] }] }
             """.trimIndent()
 
         val decoded = json.decodeFromString(BaseResponse.serializer(ListSerializerOf), body)

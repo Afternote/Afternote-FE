@@ -8,6 +8,7 @@ plugins {
 
 android {
     namespace = "com.afternote.feature.afternote.presentation"
+    resourcePrefix = "afternote_"
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
     buildFeatures {
         buildConfig = true
