@@ -146,7 +146,7 @@ fun OnboardingProfileScreen(
 }
 
 /** 포토 피커 취소 결과(null)는 선택 변경이 아니므로 기존 프로필 이미지를 그대로 둔다. */
-internal fun handleProfileImagePickerResult(
+private fun handleProfileImagePickerResult(
     uri: Uri?,
     onProfileImagePick: (Uri) -> Unit,
 ) {
