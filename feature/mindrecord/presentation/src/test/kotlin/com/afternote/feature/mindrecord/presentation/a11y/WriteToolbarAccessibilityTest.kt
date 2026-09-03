@@ -234,6 +234,9 @@ class WriteToolbarAccessibilityTest {
                             BottomToolbar(
                                 onTextStyleClick = {},
                                 onAlignChange = {},
+                                onDraftCountClick = {},
+                                onSaveDraftClick = {},
+                                onLinkClick = {},
                                 textAlign = textAlign,
                             )
                         }
@@ -241,6 +244,8 @@ class WriteToolbarAccessibilityTest {
                         AlignedToolbar.StylePanel -> {
                             TextStyleToolbar(
                                 onClose = {},
+                                onTypeClick = {},
+                                onLinkClick = {},
                                 onBoldClick = {},
                                 onItalicClick = {},
                                 onUnderlineClick = {},
@@ -265,6 +270,9 @@ class WriteToolbarAccessibilityTest {
                 BottomToolbar(
                     onTextStyleClick = {},
                     onAlignChange = {},
+                    onDraftCountClick = {},
+                    onSaveDraftClick = {},
+                    onLinkClick = {},
                     draftCount = draftCount,
                 )
             }
@@ -280,15 +288,20 @@ class WriteToolbarAccessibilityTest {
                 AfternoteTheme {
                     when (created.value) {
                         OtherCandidate.DailyQuestionListCard -> {
-                            DailyQuestionListCard(answer = SAMPLE_QUESTION)
+                            DailyQuestionListCard(
+                                answer = SAMPLE_QUESTION,
+                                onClick = {},
+                                onEdit = {},
+                                onDelete = {},
+                            )
                         }
 
                         OtherCandidate.DiaryCard -> {
-                            DiaryCard(diary = SAMPLE_DIARY)
+                            DiaryCard(diary = SAMPLE_DIARY, onClick = {}, onEdit = {}, onDelete = {})
                         }
 
                         OtherCandidate.DiaryComponent -> {
-                            DiaryComponent(diary = SAMPLE_DIARY)
+                            DiaryComponent(diary = SAMPLE_DIARY, onClick = {}, onEdit = {}, onDelete = {})
                         }
 
                         OtherCandidate.ReceiverMindRecordTopBar -> {
@@ -314,7 +327,17 @@ class WriteToolbarAccessibilityTest {
                         // 상태만 받는 seam 으로 열려 있어 그쪽을 렌더한다. 상단바 완료 버튼과
                         // 기분 선택처럼 툴바 밖에 있는 타깃이 여기에서만 드러난다.
                         OtherCandidate.DiaryWriteScreen -> {
-                            DiaryWriteScreenContent(uiState = DiaryWriteUiState())
+                            DiaryWriteScreenContent(
+                                uiState = DiaryWriteUiState(),
+                                onBackClick = {},
+                                onSubmit = {},
+                                onSaveDraft = {},
+                                onDraftListClick = {},
+                                onTitleChanged = {},
+                                onContentChanged = {},
+                                onMoodSelected = {},
+                                onReceiverRowClick = {},
+                            )
                         }
                     }
                 }
