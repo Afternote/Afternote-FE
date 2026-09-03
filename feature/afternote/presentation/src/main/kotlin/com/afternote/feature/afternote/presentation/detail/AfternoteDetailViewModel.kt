@@ -7,7 +7,7 @@ import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.MyProfileRepository
-import com.afternote.core.domain.repository.UserProfileRepository
+import com.afternote.core.domain.repository.UserProfileCacheRepository
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
@@ -28,7 +28,7 @@ import javax.inject.Inject
  *
  * - 상세 조회: GET /api/afternotes/{id}
  * - 삭제: DELETE /api/afternotes/{id}
- * - 작성자 표시명: [UserProfileRepository.getCachedUserName] 으로 즉시 채우고
+ * - 작성자 표시명: [UserProfileCacheRepository.getCachedUserName] 으로 즉시 채우고
  *   [MyProfileRepository.getMyProfile] 로 재검증한다 (네비게이션 인자로 전달하지 않음)
  * - 상세 ID: [SavedStateHandle.toRoute]로 복원한 타입 안전 [AfternoteRoute.DetailRoute]에서 조회.
  *
@@ -47,7 +47,7 @@ class AfternoteDetailViewModel
         savedStateHandle: SavedStateHandle,
         private val afternoteRepository: AfternoteRepository,
         private val myProfileRepository: MyProfileRepository,
-        private val userProfileRepository: UserProfileRepository,
+        private val userProfileRepository: UserProfileCacheRepository,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val afternoteIdFromNav: Long =
