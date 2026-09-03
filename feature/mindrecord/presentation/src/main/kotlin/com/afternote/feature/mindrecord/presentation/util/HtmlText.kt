@@ -89,7 +89,11 @@ fun String.toWireContent(uploadedFileKeysByUrl: Map<String, String>): String {
 private val MEDIA_REFERENCE = Regex("""\b(src|href)\s*=\s*(["'])(.*?)\2""", RegexOption.IGNORE_CASE)
 
 /**
- * 속성값에 들어간 엔티티를 원문으로 되돌린다 — [escapeHtml] 이 만드는 집합의 역이다.
+ * 속성값에 들어간 엔티티를 원문으로 되돌린다.
+ *
+ * [escapeHtml] 의 정확한 역은 아니다 — 그쪽은 `'` 를 일부러 건드리지 않는데(richeditor 가
+ * `&#39;` 를 `&amp;#39;` 로 굳혀 버려서다) 여기서는 `&#39;` 도 되돌린다. 리치 에디터가 내는
+ * 형태를 받아내는 쪽이라 넓게 잡아 둔다.
  *
  * `&amp;` 를 **마지막에** 되돌린다. 먼저 되돌리면 `&amp;lt;` 가 `&lt;` 를 거쳐 `<` 로 두 번
  * 풀린다.

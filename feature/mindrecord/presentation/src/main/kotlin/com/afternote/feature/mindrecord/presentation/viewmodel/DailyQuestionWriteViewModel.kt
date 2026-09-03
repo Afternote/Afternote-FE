@@ -202,7 +202,9 @@ class DailyQuestionWriteViewModel
 
         // 이번 작성에서 업로드한 `fileUrl` → 서버가 준 `fileKey`. 키를 URL 에서 역산하지 않는다 —
         // presigned 응답이 준 값을 그대로 들고 있다가 제출 직전에 치환한다 (toWireContent, #1125).
-        private val uploadedFileKeysByUrl = mutableMapOf<String, String>()
+        // SavedStateHandle 에 실어 프로세스 사망을 건너뛴다 — 에디터 본문이 살아 돌아오는데
+        // 표만 비면 전체 URL 이 그대로 서버로 간다 (#1125 리뷰).
+        private val uploadedFileKeysByUrl = UploadedFileKeys(savedStateHandle)
 
         fun onAnswerChanged(text: String) {
             _uiState.update { it.copy(answer = text) }
@@ -297,7 +299,7 @@ class DailyQuestionWriteViewModel
                             id = state.draftId,
                             payload =
                                 DailyQuestionUpdatePayload(
-                                    content = state.answer.toWireContent(uploadedFileKeysByUrl),
+                                    content = state.answer.toWireContent(uploadedFileKeysByUrl.snapshot()),
                                     isDraft = isDraft,
                                     questionId = questionId,
                                 ),
@@ -305,7 +307,7 @@ class DailyQuestionWriteViewModel
                     } else {
                         repository.create(
                             DailyQuestionCreatePayload(
-                                content = state.answer.toWireContent(uploadedFileKeysByUrl),
+                                content = state.answer.toWireContent(uploadedFileKeysByUrl.snapshot()),
                                 isDraft = isDraft,
                                 // 생성 경로는 questionId 가 반드시 있다 — 위 가드가 null 을 걸렀다.
                                 questionId = requireNotNull(questionId),

@@ -62,16 +62,6 @@ class MindRecordNavGraphWiringKonsistTest {
                 "$screen 의 onSubmitSuccess 가 «$EXPECTED_BINDING» 이 아니라 «$screenBinding» 이다 (#1562)."
             }
         }
-        check(bindings.all { it == EXPECTED_BINDING }) {
-            buildString {
-                appendLine("onSubmitSuccess 가 «한 칸 뒤로»($EXPECTED_BINDING) 가 아닌 명령에 붙었다.")
-                appendLine("이 자리는 계측이 지나가지 않아 오배선해도 전부 초록이다 (#1562).")
-                appendLine()
-                bindings.filterNot { it == EXPECTED_BINDING }.forEach { appendLine("  $it") }
-                appendLine()
-                appendLine("의도한 변경이라면 이 가드의 EXPECTED_BINDING 과 KDoc 을 함께 고칠 것.")
-            }
-        }
     }
 
     /** `<screen>(` 부터 그 호출의 닫는 괄호까지에서 `onSubmitSuccess` 바인딩을 뽑는다. */

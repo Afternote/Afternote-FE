@@ -101,7 +101,9 @@ class DiaryWriteViewModel
 
         // 이번 작성에서 업로드한 `fileUrl` → 서버가 준 `fileKey`. 키를 URL 에서 역산하지 않는다 —
         // presigned 응답이 준 값을 그대로 들고 있다가 제출 직전에 치환한다 (toWireContent, #1125).
-        private val uploadedFileKeysByUrl = mutableMapOf<String, String>()
+        // SavedStateHandle 에 실어 프로세스 사망을 건너뛴다 — 에디터 본문이 살아 돌아오는데
+        // 표만 비면 전체 URL 이 그대로 서버로 간다 (#1125 리뷰).
+        private val uploadedFileKeysByUrl = UploadedFileKeys(savedStateHandle)
 
         /**
          * 에디터에서 고른 **미디어**(사진·음성·파일)를 presigned URL 로 업로드하고 **미리보기에
@@ -176,7 +178,7 @@ class DiaryWriteViewModel
                             payload =
                                 DiaryUpdatePayload(
                                     title = state.title,
-                                    content = state.content.toWireContent(uploadedFileKeysByUrl),
+                                    content = state.content.toWireContent(uploadedFileKeysByUrl.snapshot()),
                                     isDraft = isDraft,
                                     todayMood = mood,
                                     // 생성 경로와 같은 규칙. 빈 선택을 빈 목록으로 보내면 서버가
@@ -189,7 +191,7 @@ class DiaryWriteViewModel
                         repository.create(
                             DiaryCreatePayload(
                                 title = state.title,
-                                content = state.content.toWireContent(uploadedFileKeysByUrl),
+                                content = state.content.toWireContent(uploadedFileKeysByUrl.snapshot()),
                                 isDraft = isDraft,
                                 todayMood = mood,
                                 receiverIds = state.selectedReceiverIds.toList(),
