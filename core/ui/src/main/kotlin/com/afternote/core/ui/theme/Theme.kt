@@ -49,6 +49,9 @@ fun AfternoteTheme(
      * 시안의 다크 팔레트가 확정되고 하드코딩 색이 토큰으로 옮겨지면 기본값을
      * [isSystemInDarkTheme] 으로 되돌린다. [darkColors] 와 이 파라미터는 그때를 위해 남겨
      * 둔다 — 값을 넘기면 지금도 다크로 그릴 수 있다.
+     *
+     * **되돌릴 때 `app` 의 `enableLightEdgeToEdge()` 도 같이 되돌린다.** 이 잠금만 풀면
+     * 시스템바 아이콘이 라이트로 고정된 채 배경만 다크가 되어 반대 방향으로 안 보인다.
      */
     isDarkTheme: Boolean = false,
     content: @Composable () -> Unit,

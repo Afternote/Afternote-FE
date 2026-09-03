@@ -38,13 +38,13 @@ class ThemeDarkModeLockTest {
     }
 
     @Test
-    @Config(sdk = [35], qualifiers = "night")
+    @Config(qualifiers = "night")
     fun `시스템이 다크여도 기본값은 라이트 팔레트다`() {
         assertEquals(true, resolveIsLightMode { content -> AfternoteTheme(content = content) })
     }
 
     @Test
-    @Config(sdk = [35], qualifiers = "notnight")
+    @Config(qualifiers = "notnight")
     fun `시스템이 라이트일 때도 당연히 라이트 팔레트다`() {
         assertEquals(true, resolveIsLightMode { content -> AfternoteTheme(content = content) })
     }
@@ -54,7 +54,7 @@ class ThemeDarkModeLockTest {
      * 하고, 그때 이 값을 다시 시스템에 묶는 것으로 되돌린다.
      */
     @Test
-    @Config(sdk = [35], qualifiers = "notnight")
+    @Config(qualifiers = "notnight")
     fun `명시로 넘기면 다크 팔레트를 여전히 그릴 수 있다`() {
         assertEquals(
             false,
