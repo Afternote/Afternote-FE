@@ -154,6 +154,10 @@ data class AfternoteTypography(
             lineBreak = BodyLineBreak,
             localeList = KoreanLocale,
         ),
+    /**
+     * **[bodySmallR] 과 여섯 필드가 전부 같다 — 지금은 이름만 다른 같은 값이다.** 합치지 않고
+     * 남기는 이유는 [captionLargeB] 와 같다. 상세는 그쪽 KDoc.
+     */
     val bodySmallB: TextStyle =
         TextStyle(
             fontFamily = nanumBarunGothic,
@@ -201,6 +205,26 @@ data class AfternoteTypography(
             lineBreak = BodyLineBreak,
             localeList = KoreanLocale,
         ),
+    /**
+     * **[captionLargeR] 과 여섯 필드가 전부 같다 — 지금은 이름만 다른 같은 값이다.**
+     * ([bodySmallB]/[bodySmallR] 도 마찬가지다. [bodyLargeB]/[bodyLargeR] 는 줄높이가 달라 해당 없다.)
+     *
+     * **중복을 만든 것은 이 코드가 아니라 시안이다.** 정본 페이지에서도 `CaptionLarge(B)` 와
+     * `CaptionLarge-R` 의 값이 같다. 코드가 Bold 를 쓰던 동안에만 둘이 갈려 보였고, 위 KDoc 대로
+     * 웨이트를 시안에 맞추면서 그 착시가 걷혔을 뿐이다.
+     *
+     * **그런데도 합치지 않고 남긴다.** 두 가지 때문이다.
+     *
+     * 1. 합치려면 호출부 94곳(`bodySmallB` 58 · `captionLargeB` 36)을 고쳐야 하는데 8개 모듈에
+     *    걸쳐 있고 담당자가 셋이다. 웨이트를 맞추는 이 변경의 범위를 넘는다.
+     * 2. 「값이 같으니 하나로 합친다」는 **시안이 두 이름을 계속 나눠 둘 것인지 확인한 뒤**에
+     *    내릴 판정이다. 지금 합쳤다가 시안이 다시 갈리면 94곳을 두 번 고치게 된다.
+     *
+     * 그 확인과 통합은 #1862 로 뗐다.
+     *
+     * **그때까지 둘이 조용히 갈라지지 않도록 `AfternoteTypographyPairTest` 가 동일성을 잠근다** —
+     * 한쪽만 고치면 그 테스트가 깨지므로, 갈라놓는 것도 합치는 것도 의식적인 판정이 된다.
+     */
     val captionLargeB: TextStyle =
         TextStyle(
             fontFamily = nanumBarunGothic,
