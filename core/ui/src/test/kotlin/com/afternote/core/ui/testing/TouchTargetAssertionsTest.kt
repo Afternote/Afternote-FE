@@ -158,6 +158,87 @@ class TouchTargetAssertionsTest {
     }
 
     /**
+     * #1669 — 컨테이너가 **세로로 긴** 카드여도 같은 예외를 받는다.
+     *
+     * `DiaryCard` 는 2열 staggered grid(열 폭 ≤ 176dp)에 놓이고 이미지가 붙으면 세로가 폭을
+     * 넘는다. 「가로가 세로보다 길다」를 축으로 두면 같은 «항목 + 머리 끝단 메뉴» 형태인데도
+     * 형상 때문에 예외에서 빠져 세 카드의 처방이 갈렸다.
+     */
+    @Test
+    fun `named trailing accessory in a tall card is also a nested exception`() {
+        composeRule.setContent {
+            Column(Modifier.padding(16.dp)) {
+                Box(
+                    Modifier
+                        .size(width = 176.dp, height = 300.dp)
+                        .clickable(role = Role.Button, onClick = {})
+                        .semantics { contentDescription = "Card" },
+                ) {
+                    Box(
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .size(20.dp)
+                            .clickable(role = Role.Button, onClick = {})
+                            .semantics { contentDescription = "CardOverflow" },
+                    )
+                }
+            }
+        }
+
+        assertFalse(composeRule.scanEnabledClickTargets().single { it.name == "CardOverflow" }.hasClickAncestor)
+    }
+
+    /** 폭만 좁고 세로로 긴 띠는 «작은 보조» 가 아니다 — 높이 상한이 그것을 가른다. */
+    @Test
+    fun `a tall trailing strip is not an accessory`() {
+        composeRule.setContent {
+            Column(Modifier.padding(16.dp)) {
+                Box(
+                    Modifier
+                        .size(width = 176.dp, height = 300.dp)
+                        .clickable(role = Role.Button, onClick = {})
+                        .semantics { contentDescription = "Card" },
+                ) {
+                    Box(
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .size(width = 32.dp, height = 300.dp)
+                            .clickable(role = Role.Button, onClick = {})
+                            .semantics { contentDescription = "Strip" },
+                    )
+                }
+            }
+        }
+
+        assertTrue(composeRule.scanEnabledClickTargets().single { it.name == "Strip" }.hasClickAncestor)
+    }
+
+    /** Role 이 Button 이 아니면 예외가 아니다 — `Icon` 이 심는 `Role.Image` 로는 통과하지 못한다. */
+    @Test
+    fun `a trailing accessory without the button role stays a nested violation`() {
+        composeRule.setContent {
+            Column(Modifier.padding(16.dp)) {
+                Box(
+                    Modifier
+                        .size(width = 320.dp, height = 72.dp)
+                        .clickable(role = Role.Button, onClick = {})
+                        .semantics { contentDescription = "Row" },
+                ) {
+                    Box(
+                        Modifier
+                            .align(Alignment.CenterEnd)
+                            .size(20.dp)
+                            .clickable(role = Role.Image, onClick = {})
+                            .semantics { contentDescription = "Imaged" },
+                    )
+                }
+            }
+        }
+
+        assertTrue(composeRule.scanEnabledClickTargets().single { it.name == "Imaged" }.hasClickAncestor)
+    }
+
+    /**
      * 예외가 «작은 끝단 액션» 을 정확히 가리키는지 — 행을 반으로 나눠 갖는 두 번째 영역은
      * 어느 쪽을 눌렀는지 모호하므로 그대로 위반이어야 한다.
      */

@@ -89,7 +89,11 @@ fun SemanticsNodeInteractionsProvider.scanEnabledClickTargets(): List<EnabledCli
                 clickAncestors.all { it.isEditableFocusTarget() }
         val isNamedTrailingActionInClickableListRow =
             name.isNotBlank() &&
-                role != null &&
+                // 기존 텍스트필드 예외와 같은 기준으로 좁힌다. `role != null` 로 두면
+                // `Icon(contentDescription = …)` 이 심는 `Role.Image` 만으로도 통과해,
+                // `clickable {}` 에 role 을 빠뜨린 끝단 아이콘이 «버튼으로 읽히는 액션» 인
+                // 척하게 된다 (#1669 리뷰).
+                role == Role.Button &&
                 clickAncestors.singleOrNull()?.let { node.isTrailingAccessoryOf(it) } == true
 
         EnabledClickTarget(
@@ -165,32 +169,47 @@ private fun SemanticsNode.isEditableFocusTarget(): Boolean =
 /**
  * 이 노드가 [container] 의 **끝단 보조 액션**인가 (#1669).
  *
- * 「눌러서 이동하는 목록 행 + 그 끝의 오버플로 메뉴」는 Android 목록의 정본 형태이고
- * (Material3 `ListItem` 의 `trailingContent`), TalkBack 은 unmerged tree 에서 행과 버튼을
- * 각각 별개 노드로 짚어 준다. 그래서 중첩 그 자체는 결함이 아니다.
+ * 「눌러서 이동하는 항목 + 그 끝의 오버플로 메뉴」는 Android 목록의 정본 형태이고
+ * (Material3 `ListItem` 의 `trailingContent`), 안쪽 `clickable` 이 `mergeDescendants` 로 제
+ * 병합 경계를 세워 TalkBack 이 항목과 버튼을 각각 별개로 짚는다. 그래서 중첩 그 자체는
+ * 결함이 아니다.
  *
- * 결함이 되는 것은 **어느 쪽을 누르는지 모호할 때**다. 그 모호함을 세 축으로 가른다 —
- * 행 모양(가로가 세로보다 길다), 보조 크기(행 너비의 1/4 이하), 끝단 위치(중심이 뒷절반).
- * 이름과 Role 은 호출부에서 따로 본다. 셋 다 만족해야 «행의 끝에 달린 작은 액션» 이고,
- * 반반으로 갈린 두 클릭 영역이나 정사각 상자 안의 정사각 버튼은 여기 들어오지 못한다.
+ * 결함이 되는 것은 **어느 쪽을 누르는지 모호할 때**다. 그 모호함을 «끝단의 작은 것» 두 축으로
+ * 가른다.
+ *
+ * | 축 | 조건 | 막는 것 |
+ * |---|---|---|
+ * | 끝단 | 중심이 뒷절반 | 앞쪽·가운데에 박힌 버튼 |
+ * | 보조 크기 | 너비 ≤ 1/4, 높이 ≤ 1/2 | 컨테이너를 나눠 갖는 두 번째 영역, 세로로 긴 띠 |
+ *
+ * **컨테이너 모양도, 세로 위치도 보지 않는다.** 둘 다 같은 형태를 형상 때문에 갈랐다.
+ * 「가로가 세로보다 길다」는 2열 staggered grid(열 폭 ≤ 176dp)에 놓인 `DiaryCard` 를 빼고,
+ * 「중심이 윗절반」은 그 카드가 130dp 이미지를 머리에 이고 있어 메뉴가 중간 아래로 내려가는
+ * 것을 빼 버린다. 같은 처방을 받아야 할 세 카드가 갈리므로 둘 다 걷었다 (#1669 리뷰).
+ *
+ * 남은 두 축은 위치가 아니라 **비율**이라 형상이 바뀌어도 같은 판정을 준다. 이름과
+ * [Role.Button] 은 호출부에서 따로 본다.
  */
 private fun SemanticsNode.isTrailingAccessoryOf(container: SemanticsNode): Boolean {
     val own = boundsInRoot
     val outer = container.boundsInRoot
     if (outer.width <= 0f || outer.height <= 0f) return false
 
-    val containerIsRow = outer.width > outer.height
-    val isAccessorySized = own.width <= outer.width / MAX_TRAILING_ACCESSORY_WIDTH_RATIO
+    // LTR 기준이다. 이 앱은 한국어 단일이라 `layoutDirection` 을 보지 않는다 — RTL 을 지원하게
+    // 되면 이 비교와 이 함수의 이름을 함께 뒤집어야 한다.
     val sitsInTrailingHalf = own.center.x >= outer.center.x
+    val isAccessorySized =
+        own.width <= outer.width / MAX_ACCESSORY_WIDTH_RATIO &&
+            own.height <= outer.height / MAX_ACCESSORY_HEIGHT_RATIO
 
-    return containerIsRow && isAccessorySized && sitsInTrailingHalf
+    return sitsInTrailingHalf && isAccessorySized
 }
 
-/**
- * 끝단 보조가 차지해도 되는 행 너비의 역수. 1/4 을 넘으면 «행에 달린 작은 액션» 이 아니라
- * 행을 나눠 갖는 두 번째 영역이라, 어느 쪽을 눌렀는지 모호해진다.
- */
-private const val MAX_TRAILING_ACCESSORY_WIDTH_RATIO = 4
+/** 보조가 차지해도 되는 컨테이너 너비의 역수. 1/4 을 넘으면 «달린 액션» 이 아니라 나눠 갖는 영역이다. */
+private const val MAX_ACCESSORY_WIDTH_RATIO = 4
+
+/** 같은 취지의 높이 상한. 폭만 좁고 세로로 긴 띠를 «작은 보조» 로 통과시키지 않는다. */
+private const val MAX_ACCESSORY_HEIGHT_RATIO = 2
 
 private fun SemanticsNode.accessibleName(): String {
     val ownDescriptions = config.getOrNull(SemanticsProperties.ContentDescription).orEmpty()
