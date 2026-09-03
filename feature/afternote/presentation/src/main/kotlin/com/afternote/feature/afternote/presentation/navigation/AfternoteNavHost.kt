@@ -70,7 +70,7 @@ public fun AfternoteNavHost(
                             onNavigateToDetail = actions::navigateToAfternoteDetail,
                             onNavigateToNewEditor = actions::navigateToNewEditor,
                             onNavigateToSetting = actions::navigateToSetting,
-                            onNavigateToDraftList = actions::navigateToDraftList,
+                            onNavigateToDraftList = actions::navigateToDraftList.takeIf { DRAFT_RESUME_WIRED },
                         )
                     }
                 }
@@ -106,3 +106,15 @@ public fun AfternoteNavHost(
             },
     )
 }
+
+/**
+ * 임시저장 **이어쓰기**(#1791)가 배선됐는가.
+ *
+ * `false` 인 동안 홈의 임시저장 진입점을 그리지 않는다. 목록과 라우트는 이 PR 이 다 세웠지만,
+ * 목록에서 고른 임시저장이 아직 «발행 상세» 계약(`getDetail`)으로 열린다 — 라우트에 `isDraft` 가
+ * 없어 `getDraftDetail` 로 갈리지 않기 때문이다. PLAYLIST 임시저장은 `memorial` 부재로 그대로
+ * 실패한다. 그 갈림을 #1791 이 넣으므로, 그때까지 사용자에게 깨진 경로를 열지 않는다.
+ *
+ * #1791 이 들어오면 이 상수와 사용처를 함께 지운다.
+ */
+private const val DRAFT_RESUME_WIRED = false

@@ -8,7 +8,7 @@ internal fun AfternoteHomeNavigation(
     onNavigateToDetail: (itemId: Long) -> Unit,
     onNavigateToNewEditor: (initialType: AfternoteType) -> Unit,
     onNavigateToSetting: () -> Unit,
-    onNavigateToDraftList: () -> Unit,
+    onNavigateToDraftList: (() -> Unit)?,
 ) {
     AfternoteHomeEntry(
         navigateToDetail = onNavigateToDetail,
