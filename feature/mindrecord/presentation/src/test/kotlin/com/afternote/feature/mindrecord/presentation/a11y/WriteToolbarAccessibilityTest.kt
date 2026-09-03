@@ -296,7 +296,9 @@ class WriteToolbarAccessibilityTest {
                         }
 
                         OtherCandidate.MemoriesCard -> {
-                            MemoriesCard(question = "질문", answer = "답변")
+                            // 다시 읽기 CTA 가 있는 판을 그린다 — null 이면 그 타깃 자체가 없어
+                            // 스캔이 카드 본체만 보게 된다 (#793 이 그 분기를 세웠다).
+                            MemoriesCard(question = "질문", answer = "답변", onReadAgainClick = {})
                         }
 
                         OtherCandidate.ReceiverMindRecordFilterSheet -> {

@@ -97,6 +97,8 @@ fun BottomToolbar(
         }
         Spacer(modifier = Modifier.width(8.dp))
 
+        // 정렬 아이콘 3종은 `core:ui` 승격본을 쓴다 (#1404). 이 모듈만 Material 기성 채움
+        // 패스를 쓰던 것을 시안의 스트로크 2.4 아웃라인 판으로 모았다(4327:76948).
         // 스타일 패널의 정렬 pill 과 **같은 셋 중 하나** 선택이다. 종전에는 이쪽만 맨
         // `IconButton` 이라 역할도 선택 상태도 안 실렸다 — 작성 화면에 늘 보이는 건 이쪽이다 (#1179 리뷰).
         Row(modifier = Modifier.selectableGroup(), verticalAlignment = Alignment.CenterVertically) {
@@ -551,9 +553,9 @@ private const val UNKNOWN_DRAFT_COUNT = "\u2013"
  */
 private val ALIGN_ITEMS =
     listOf(
-        TextAlign.Start to (R.drawable.mindrecord_align_left to R.string.mindrecord_toolbar_align_left_cd),
-        TextAlign.Center to (R.drawable.mindrecord_align_center to R.string.mindrecord_toolbar_align_center_cd),
-        TextAlign.End to (R.drawable.mindrecord_align_right to R.string.mindrecord_toolbar_align_right_cd),
+        TextAlign.Start to (CoreUiR.drawable.core_ui_ic_align_left to R.string.mindrecord_toolbar_align_left_cd),
+        TextAlign.Center to (CoreUiR.drawable.core_ui_ic_align_center to R.string.mindrecord_toolbar_align_center_cd),
+        TextAlign.End to (CoreUiR.drawable.core_ui_ic_align_right to R.string.mindrecord_toolbar_align_right_cd),
     )
 
 /**

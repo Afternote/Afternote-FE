@@ -12,9 +12,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.detail.song.PlaylistEmptyContent
-import com.afternote.feature.afternote.presentation.shared.detail.song.PlaylistSongList
-import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScaffold
+import com.afternote.feature.afternote.presentation.shared.detail.PlaylistEmptyContent
+import com.afternote.feature.afternote.presentation.shared.detail.PlaylistSongList
+import com.afternote.feature.afternote.presentation.shared.detail.SongPlaylistScaffold
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
 /**

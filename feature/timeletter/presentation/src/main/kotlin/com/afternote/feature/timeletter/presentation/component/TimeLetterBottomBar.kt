@@ -91,18 +91,20 @@ fun TimeLetterBottomBar(
                     ).padding(start = 6.dp, end = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // 정렬 아이콘 3종은 `core:ui` 승격본을 공유한다 — 종전에는 모듈마다 사본이 있어
+            // 같은 아이콘이 화면에 따라 다르게 렌더됐다 (#1404 · #635 의 사본 수렴 방향).
             AlignButton(
-                painter = painterResource(R.drawable.ic_align_center),
+                painter = painterResource(CoreUiR.drawable.core_ui_ic_align_center),
                 selected = textAlign == TextAlign.Center, // 상태 반영
                 onClick = onAlignCenterClick,
             )
             AlignButton(
-                painter = painterResource(R.drawable.ic_align_left),
+                painter = painterResource(CoreUiR.drawable.core_ui_ic_align_left),
                 selected = textAlign == TextAlign.Start,
                 onClick = onAlignLeftClick,
             )
             AlignButton(
-                painter = painterResource(R.drawable.ic_align_right),
+                painter = painterResource(CoreUiR.drawable.core_ui_ic_align_right),
                 selected = textAlign == TextAlign.End,
                 onClick = onAlignRightClick,
             )
