@@ -42,10 +42,10 @@ fun AfternoteDraftListEntry(
 @Composable
 internal fun AfternoteDraftListNavigation(
     onNavigateBack: () -> Unit,
-    onNavigateToEditorForEdit: (itemId: Long, initialType: AfternoteType) -> Unit,
+    onNavigateToEditorForResume: (itemId: Long, initialType: AfternoteType) -> Unit,
 ) {
     AfternoteDraftListEntry(
         onBackClick = onNavigateBack,
-        onResumeDraft = onNavigateToEditorForEdit,
+        onResumeDraft = onNavigateToEditorForResume,
     )
 }
