@@ -1,0 +1,57 @@
+package com.afternote.feature.afternote.presentation.editor.state
+
+import com.afternote.feature.afternote.domain.repository.author.MediaInput
+import kotlinx.serialization.Serializable
+
+/**
+ * 추모 영상 필드의 편집 상태 — 서버에 반영된 기준값과 이번 폼의 미저장 교체분을 한 개념으로 묶는다.
+ *
+ * 화면에 보이는 영상은 하나지만, 서버 영상 A를 로컬 영상 B로 교체한 동안에는 둘을 함께 기억해야 한다.
+ * B를 걷어내면 A로 돌아가야 하고, 현재 PATCH 계약은 `null`을 서버 영상 삭제가 아니라 기존 값 유지로
+ * 해석하기 때문이다. 이 두 값을 호출부에 따로 노출하지 않고 표시·삭제·저장 규칙을 여기서 완결한다.
+ *
+ * 생성자·`copy`·`componentN` 은 전부 private 이라 두 값은 이 클래스 밖으로 꺼낼 수 없다.
+ * [ConsistentCopyVisibility] 가 `copy` 를 생성자 가시성에 맞춘다.
+ */
+@Serializable
+@ConsistentCopyVisibility
+internal data class EditableMemorialVideo private constructor(
+    private val persisted: MemorialVideoAttachment? = null,
+    private val selection: MemorialVideoAttachment? = null,
+) {
+    /** 화면에 표시하고 payload의 영상·썸네일 한 벌로 사용할 현재 값. */
+    internal val displayed: MemorialVideoAttachment? get() = selection ?: persisted
+
+    /** 현재 화면에서 사용자의 새 선택을 걷어내는 동작을 제공할 수 있는지. */
+    internal val canDiscardSelection: Boolean get() = selection != null
+
+    /** 새 선택으로 교체한다. 이전 교체분의 썸네일은 물려주지 않는다. 빈 문자열은 [MemorialVideoAttachment.ofOrNull] 규칙대로 첨부 없음이다. */
+    internal fun withSelection(url: String): EditableMemorialVideo = copy(selection = MemorialVideoAttachment.ofOrNull(url))
+
+    /** 이번 편집에서 고른 영상만 걷어낸다. 서버 기준값은 남아 표시가 그리로 돌아간다. */
+    internal fun discardSelection(): EditableMemorialVideo = copy(selection = null)
+
+    /** 미저장 교체분에서 파생된 썸네일만 갱신한다. 교체분이 사라졌다면 늦은 결과를 버린다. */
+    internal fun withSelectionThumbnail(url: String): EditableMemorialVideo =
+        selection?.let { copy(selection = it.copy(thumbnailUrl = url)) } ?: this
+
+    /** 이탈 가드에는 이번 폼에서 직접 고른 영상만 싣고 자동 파생 썸네일은 제외한다. */
+    internal fun userEnteredPart(): EditableMemorialVideo = fromSelection(selection?.userEnteredPart())
+
+    /** 출처를 URL 모양으로 재추론하지 않고 저장 경계의 명시적인 입력 타입으로 바꾼다. */
+    internal fun toMediaInput(): MediaInput =
+        when {
+            selection != null -> MediaInput.Local(selection.url)
+            persisted != null -> MediaInput.Remote(persisted.url)
+            else -> MediaInput.None
+        }
+
+    internal companion object {
+        internal fun empty(): EditableMemorialVideo = EditableMemorialVideo()
+
+        internal fun fromPersisted(persisted: MemorialVideoAttachment?): EditableMemorialVideo =
+            EditableMemorialVideo(persisted = persisted)
+
+        private fun fromSelection(selection: MemorialVideoAttachment?): EditableMemorialVideo = EditableMemorialVideo(selection = selection)
+    }
+}
