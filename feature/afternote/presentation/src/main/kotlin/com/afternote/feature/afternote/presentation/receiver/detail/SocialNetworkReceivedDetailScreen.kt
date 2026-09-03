@@ -50,7 +50,7 @@ fun SocialNetworkReceivedDetailScreen(
         containerColor = Color.Transparent,
         topBar = {
             DetailTopBar(
-                title = stringResource(R.string.feature_afternote_detail_title),
+                title = stringResource(R.string.afternote_detail_title),
                 onBackClick = onBackClick,
             )
         },
@@ -113,12 +113,12 @@ private fun ReceivedAccountSection(
 ) {
     DetailSection(
         iconResId = com.afternote.core.ui.R.drawable.core_ui_user,
-        label = stringResource(R.string.feature_afternote_detail_section_account),
+        label = stringResource(R.string.afternote_detail_section_account),
         modifier = modifier,
     ) {
         if (credentials == null) {
             Text(
-                text = stringResource(R.string.receiver_detail_account_absent),
+                text = stringResource(R.string.afternote_receiver_detail_account_absent),
                 style = AfternoteDesign.typography.bodySmallR,
                 color = AfternoteDesign.colors.gray6,
             )
@@ -128,8 +128,8 @@ private fun ReceivedAccountSection(
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             DetailInfoRow(
                 iconResId = com.afternote.core.ui.R.drawable.core_ui_user,
-                label = stringResource(R.string.feature_afternote_detail_label_id),
-                value = credentials.accountId ?: stringResource(R.string.receiver_detail_account_value_absent),
+                label = stringResource(R.string.afternote_detail_label_id),
+                value = credentials.accountId ?: stringResource(R.string.afternote_receiver_detail_account_value_absent),
             )
             HorizontalDivider(
                 color = AfternoteDesign.colors.gray2,
@@ -148,13 +148,13 @@ private fun ReceivedPasswordRow(
     password: String?,
     modifier: Modifier = Modifier,
 ) {
-    val passwordLabel = stringResource(R.string.feature_afternote_detail_label_password)
+    val passwordLabel = stringResource(R.string.afternote_detail_label_password)
 
     if (password == null) {
         DetailInfoRow(
-            iconResId = R.drawable.feature_afternote_ic_lock,
+            iconResId = R.drawable.afternote_ic_lock,
             label = passwordLabel,
-            value = stringResource(R.string.receiver_detail_account_value_absent),
+            value = stringResource(R.string.afternote_receiver_detail_account_value_absent),
             modifier = modifier,
         )
         return
@@ -163,21 +163,21 @@ private fun ReceivedPasswordRow(
     var passwordVisible by remember { mutableStateOf(false) }
 
     DetailInfoRow(
-        iconResId = R.drawable.feature_afternote_ic_lock,
+        iconResId = R.drawable.afternote_ic_lock,
         label = passwordLabel,
         value =
             if (passwordVisible) {
                 password
             } else {
-                stringResource(R.string.feature_afternote_detail_password_mask)
+                stringResource(R.string.afternote_detail_password_mask)
             },
         modifier = modifier,
         trailingContent = {
             val toggleLabel =
                 if (passwordVisible) {
-                    stringResource(R.string.feature_afternote_detail_password_hide)
+                    stringResource(R.string.afternote_detail_password_hide)
                 } else {
-                    stringResource(R.string.feature_afternote_detail_password_show)
+                    stringResource(R.string.afternote_detail_password_show)
                 }
             Text(
                 text = toggleLabel,

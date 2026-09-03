@@ -6,7 +6,7 @@ import androidx.paging.PagingData
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
-import com.afternote.feature.receiver.data.local.ReceiverAuthCodeDataSource
+import com.afternote.feature.receiver.data.local.ReceiverMasterKeyDataSource
 import com.afternote.feature.receiver.data.mapper.response.toDomain
 import com.afternote.feature.receiver.data.mapper.toDomainResult
 import com.afternote.feature.receiver.data.paging.ReceiverAfternotePagingSource
@@ -27,7 +27,7 @@ import javax.inject.Singleton
 private const val PAGE_SIZE = 50
 
 /**
- * 인증 코드는 [ReceiverAuthCodeDataSource]에서 읽고·쓰고·지우며, REST 요청에는 ReceiverAuthInterceptor가
+ * 인증 코드는 [ReceiverMasterKeyDataSource]에서 읽고·쓰고·지우며, REST 요청에는 ReceiverAuthInterceptor가
  * `X-Auth-Code` 헤더를 자동 부착한다. 서버 계약이 없는 export 항목은 성공값을 만들지 않고
  * [ReceiverFailure.ExportNotSupported]로 닫는다.
  */
@@ -35,17 +35,17 @@ private const val PAGE_SIZE = 50
 class ReceiverRepositoryImpl
     @Inject
     constructor(
-        private val authCodeDataSource: ReceiverAuthCodeDataSource,
+        private val masterKeyDataSource: ReceiverMasterKeyDataSource,
         private val api: ReceiverAfternoteApiService,
         private val receiverAuthRepository: ReceiverAuthRepository,
         private val errorReporter: ErrorReporter,
     ) : ReceiverRepository {
-        override val authCodeFlow: Flow<String?> = authCodeDataSource.savedCodeFlow
+        override val masterKeyFlow: Flow<String?> = masterKeyDataSource.savedCodeFlow
 
-        override suspend fun currentAuthCode(): String? = authCodeFlow.first()
+        override suspend fun currentMasterKey(): String? = masterKeyFlow.first()
 
-        override suspend fun saveAuthCode(code: String) {
-            authCodeDataSource.saveCode(code)
+        override suspend fun saveMasterKey(code: String) {
+            masterKeyDataSource.saveCode(code)
         }
 
         override fun getPagedReceivedAfternotes(): Flow<PagingData<AfterNoteListItem>> =

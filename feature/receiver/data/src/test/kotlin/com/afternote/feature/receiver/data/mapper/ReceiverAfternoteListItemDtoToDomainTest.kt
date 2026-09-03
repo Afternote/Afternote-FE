@@ -4,6 +4,7 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.receiver.data.dto.ReceivedAfternoteDto
 import com.afternote.feature.receiver.data.dto.ReceivedAfternoteListDto
+import com.afternote.feature.receiver.data.reporting.RecordingErrorReporter
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -140,20 +141,4 @@ class ReceiverAfternoteListItemDtoToDomainTest {
         category = category,
         createdAt = createdAt,
     )
-}
-
-private class RecordingErrorReporter : ErrorReporter {
-    data class Failure(
-        val throwable: Throwable,
-        val attributes: Map<String, String>,
-    )
-
-    val failures = mutableListOf<Failure>()
-
-    override fun writeFailure(
-        throwable: Throwable,
-        attributes: Map<String, String>,
-    ) {
-        failures += Failure(throwable, attributes)
-    }
 }

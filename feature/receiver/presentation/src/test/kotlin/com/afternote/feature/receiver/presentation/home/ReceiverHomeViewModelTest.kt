@@ -17,6 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -196,6 +197,158 @@ class ReceiverHomeViewModelTest {
             val reported = fixture.reporter.failures.single()
             assertEquals("received_export_download", reported.attributes["receiver_stage"])
         }
+    // region 재진입 갱신 (#701)
+
+    @Test
+    fun `첫 진입 resume 은 재조회를 트리거하지 않는다`() =
+        runTest(dispatcher) {
+            val fixture = Fixture()
+            fixture.receiver.onGetReceivedAfterNotes = { Result.success(afterNotes(totalCount = 5)) }
+            fixture.mindRecord.result = Result.success(mindRecords(dailyQuestionCount = 1, diaryCount = 1))
+            fixture.timeLetter.onGetReceivedTimeLetters = { timeLetters(totalCount = 1) }
+            val viewModel = fixture.viewModel()
+            advanceUntilIdle()
+
+            // 첫 진입 화면의 ON_RESUME (init 로드는 이미 종료됨) — 재조회가 걸리면 안 된다.
+            viewModel.refreshOnReturn()
+            advanceUntilIdle()
+
+            assertEquals(1, fixture.receiver.getReceivedAfterNotesCalls)
+            assertTrue(viewModel.uiState.value is ReceiverHomeUiState.Success)
+        }
+
+    @Test
+    fun `init 로드가 즉시 끝나도 첫 resume 은 재조회하지 않는다`() =
+        runTest(dispatcher) {
+            // `viewModelScope` 는 `Dispatchers.Main` 을 탄다 — 창을 만들려면 Main 자체가
+            // 즉시 실행돼야 하므로 이 테스트에서만 Unconfined 로 바꾼다(tearDown 이 되돌린다).
+            Dispatchers.setMain(UnconfinedTestDispatcher(dispatcher.scheduler))
+
+            // **가드가 무엇으로 서 있는지 가르는 테스트다** (#1374 리뷰).
+            //
+            // 다른 테스트는 `advanceUntilIdle()` 로 init 로드를 끝낸 뒤 resume 을 부른다. 그러면
+            // `loadJob` 이 이미 완료라 「진행 중이면 건너뛴다」 가드로도 통과할 수 있다.
+            //
+            // 실제 화면의 창은 그것보다 좁다 — 저장소가 즉시 응답하면 init 로드가 **중단 없이**
+            // 끝나고, 그 직후 첫 ON_RESUME 이 도착한다. 그 순간 `loadJob` 은 이미 비활성이므로
+            // **`isFirstResume` 만이 두 번째 요청을 막는다.** Unconfined 로 그 창을 그대로 만든다.
+            val fixture = Fixture()
+            fixture.receiver.onGetReceivedAfterNotes = { Result.success(afterNotes(totalCount = 5)) }
+            fixture.mindRecord.result = Result.success(mindRecords(dailyQuestionCount = 1, diaryCount = 1))
+            fixture.timeLetter.onGetReceivedTimeLetters = { timeLetters(totalCount = 1) }
+
+            val viewModel = fixture.viewModel()
+            // init 로드가 여기까지 이미 끝나 있다 — advanceUntilIdle 을 부르지 않는다.
+            assertEquals(1, fixture.receiver.getReceivedAfterNotesCalls)
+
+            viewModel.refreshOnReturn()
+
+            assertEquals("첫 resume 이 두 번째 요청을 만들었다", 1, fixture.receiver.getReceivedAfterNotesCalls)
+            assertTrue(viewModel.uiState.value is ReceiverHomeUiState.Success)
+        }
+
+    @Test
+    fun `refreshOnReturn - 진행 중인 로드와 겹치면 건너뛴다`() =
+        runTest(dispatcher) {
+            val fixture = Fixture()
+            fixture.receiver.onGetReceivedAfterNotes = { Result.success(afterNotes(totalCount = 5)) }
+            fixture.mindRecord.result = Result.success(mindRecords(dailyQuestionCount = 1, diaryCount = 1))
+            fixture.timeLetter.onGetReceivedTimeLetters = { timeLetters(totalCount = 1) }
+
+            val viewModel = fixture.viewModel()
+            // init 로드가 아직 도는 중 — 첫 resume(스킵) 뒤 또 한 번 resume 이 와도 중복이 없어야 한다.
+            viewModel.refreshOnReturn()
+            viewModel.refreshOnReturn()
+            advanceUntilIdle()
+
+            assertEquals(1, fixture.receiver.getReceivedAfterNotesCalls)
+            assertTrue(viewModel.uiState.value is ReceiverHomeUiState.Success)
+        }
+
+    @Test
+    fun `refreshOnReturn - 복귀 시 로딩 없이 새 합계로 갱신하고 내려받기 상태를 유지한다`() =
+        runTest(dispatcher) {
+            val fixture = Fixture()
+            fixture.receiver.onGetReceivedAfterNotes = { Result.success(afterNotes(totalCount = 5)) }
+            fixture.mindRecord.result = Result.success(mindRecords(dailyQuestionCount = 1, diaryCount = 1))
+            fixture.timeLetter.onGetReceivedTimeLetters = { timeLetters(totalCount = 4) }
+            val viewModel = fixture.viewModel()
+            viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
+            advanceUntilIdle()
+            viewModel.onEvent(ReceiverHomeEvent.RequestDownload)
+            fixture.receiver.onGetReceivedAfterNotes = { Result.success(afterNotes(totalCount = 6)) }
+
+            viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME
+            // 로딩을 방출하지 않는다 — 갱신이 도는 동안에도 기존 화면을 유지한다.
+            assertEquals(5, (viewModel.uiState.value as ReceiverHomeUiState.Success).afternoteTotalCount)
+            advanceUntilIdle()
+
+            val refreshed = viewModel.uiState.value as ReceiverHomeUiState.Success
+            assertEquals(6, refreshed.afternoteTotalCount)
+            // 갱신이 화면을 교체해도 진행 중인 내려받기 다이얼로그 상태는 잃지 않는다.
+            assertEquals(ReceiverDownloadState.Confirming, refreshed.download)
+        }
+
+    @Test
+    fun `refreshOnReturn - 전체 실패는 보고 있던 화면을 유지하고 실패는 기록한다`() =
+        runTest(dispatcher) {
+            val fixture = Fixture()
+            fixture.receiver.onGetReceivedAfterNotes = { Result.success(afterNotes(totalCount = 5)) }
+            fixture.mindRecord.result = Result.success(mindRecords(dailyQuestionCount = 1, diaryCount = 1))
+            fixture.timeLetter.onGetReceivedTimeLetters = { timeLetters(totalCount = 4) }
+            val viewModel = fixture.viewModel()
+            viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
+            advanceUntilIdle()
+
+            fixture.receiver.onGetReceivedAfterNotes = { Result.failure(IllegalStateException("애프터노트 실패")) }
+            fixture.mindRecord.result = Result.failure(IllegalStateException("마음의 기록 실패"))
+            fixture.timeLetter.onGetReceivedTimeLetters = { throw IllegalStateException("타임레터 실패") }
+            fixture.receiver.onLoadSenderMessage = { Result.failure(IllegalStateException("한 마디 실패")) }
+            viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME
+            advanceUntilIdle()
+
+            // 잘 보고 있던 홈이 에러 화면으로 대체되지 않는다.
+            val state = viewModel.uiState.value as ReceiverHomeUiState.Success
+            assertEquals(5, state.afternoteTotalCount)
+            // 화면에 안 보이는 실패인 만큼 콘솔 기록은 남긴다.
+            assertEquals(
+                "receiver_home_load",
+                fixture.reporter.failures
+                    .single()
+                    .attributes["receiver_stage"],
+            )
+        }
+
+    @Test
+    fun `refreshOnReturn - 부분 실패도 완결된 기존 화면을 유지한다`() =
+        runTest(dispatcher) {
+            val fixture = Fixture()
+            fixture.receiver.onGetReceivedAfterNotes = { Result.success(afterNotes(totalCount = 5)) }
+            fixture.mindRecord.result = Result.success(mindRecords(dailyQuestionCount = 1, diaryCount = 1))
+            fixture.timeLetter.onGetReceivedTimeLetters = { timeLetters(totalCount = 4) }
+            val viewModel = fixture.viewModel()
+            viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
+            advanceUntilIdle()
+
+            // 한 소스만 실패, 나머지는 새 값으로 성공 — 실패 섹션을 null 로 꺼뜨린 부분 화면 대신
+            // 완결된 기존 화면을 유지한다.
+            fixture.receiver.onGetReceivedAfterNotes = { Result.failure(IllegalStateException("애프터노트 실패")) }
+            fixture.timeLetter.onGetReceivedTimeLetters = { timeLetters(totalCount = 9) }
+            viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value as ReceiverHomeUiState.Success
+            assertEquals(5, state.afternoteTotalCount)
+            assertEquals(4, state.timeLetterTotalCount)
+            assertEquals(
+                "receiver_home_partial_load",
+                fixture.reporter.failures
+                    .single()
+                    .attributes["receiver_stage"],
+            )
+        }
+
+    // endregion
 }
 
 private class Fixture {
