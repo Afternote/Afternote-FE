@@ -143,10 +143,14 @@ class LoginViewModel
                                     it.copy(isLoading = false, showNetworkErrorPopup = true)
                                 }
 
+                                // 뒤 둘은 로그인 경로로 오지 않는다 — 계정 복구 API(`auth/find/*`)만 내는
+                                // 사유다. 문구 매핑에 맡겨 두면 도달하더라도 안내가 비지 않는다.
                                 is CoreAuthFailure.EmailAlreadyRegistered,
                                 is CoreAuthFailure.EmailVerification,
                                 is CoreAuthFailure.SocialLoginRejected,
                                 is CoreAuthFailure.UserCancelledAuth,
+                                is CoreAuthFailure.SocialSignUpAccount,
+                                is CoreAuthFailure.PasswordUnchanged,
                                 null,
                                 -> {
                                     it.copy(isLoading = false, errorMessage = exception.toDisplayMessage(R.string.onboarding_login_failed))

@@ -77,11 +77,22 @@ public fun OnboardingNavHost(
                         onLoginSuccess = actions::replaceOnboardingWithHome,
                         onNewUserOnboarding = actions::replaceLoginWithWelcome,
                         onSignUpClick = actions::replaceLoginWithSignUp,
-                        onFindAccountClick = actions::navigateToFindId,
+                        onFindAccountClick = actions::navigateToFindPassword,
                         onBackClick = actions::popBack,
                     )
                 }
 
+                entry<OnboardingRoute.FindPasswordFlowRoute> {
+                    FindPasswordFlowHost(
+                        onExitFlow = actions::popBack,
+                        onLoginAfterReset = actions::popToLogin,
+                    )
+                }
+
+                // 아이디 찾기 — 현재 진입점이 없다. 로그인의 "아이디/비밀번호 찾기" 는 #457 로
+                // 비밀번호 찾기를 향하게 바꿨다. 이 화면의 종착지인 결과 화면(#474)이 not planned
+                // 로 닫혀 여기로 보내면 "확인" 뒤에 갈 곳이 없기 때문이다. 화면·라우트 제거는
+                // #943(카카오 단일화) 몫이라 여기서 지우지 않고 등록만 남긴다.
                 entry<OnboardingRoute.FindIdRoute> {
                     val uiState by findIdViewModel.uiState.collectAsStateWithLifecycle()
                     val snackbarHostState = rememberFindIdEventHost(findIdViewModel, uiState)
