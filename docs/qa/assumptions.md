@@ -392,6 +392,34 @@ navigate 대상 한 줄.
 `EditorFormState.currentServiceOptions` 다. 기존 값 정리(마이그레이션·삭제)가 확정되면
 보존 동작을 그 정책으로 바꾼다.
 
+## #1540 — no-op 콜백 디폴트 청소에서 드러난 배선 누락 2건
+
+디폴트를 걷어내자 **컴파일러가 실호출부 2곳을 드러냈다.** 둘 다 사용자에게 버튼이 보이는데
+눌러도 아무 일이 없던 자리다. 고친 방향과 근거를 남긴다.
+
+### 1. `TextStyleToolbar` 의 링크·«T» 버튼 (추측 아님)
+
+`WriteTextField` 가 `onLinkClick`·`onTypeClick` 을 넘기지 않아 no-op 이었다. **같은 파일의
+`BottomToolbar` 가 같은 두 버튼을 갖고 있어** 배선을 그대로 가져왔다 — 스타일 툴바가 열리면
+하단 툴바를 덮으므로 같은 두 affordance 를 유지해야 한다.
+
+| 버튼 | BottomToolbar | 이번에 TextStyleToolbar 에 붙인 것 |
+|---|---|---|
+| 링크 아이콘(`core_ui_ic_link`) | `sheet = KeyboardSheet.MediaSelect` | 동일 |
+| «T» | `showTextStyleToolbar = !showTextStyleToolbar` | 동일(= 열린 툴바를 닫는다) |
+
+### 2. 주간 리포트 HISTORY 의 «더보기» (판단이 들어감)
+
+`WeeklyReportScreen` 이 `DailyQuestionListCard(answer = …)` 만 넘겨, 수정·삭제 메뉴가 뜨는데
+둘 다 no-op 이었다.
+
+**배선하지 않고 감췄다.** 주간 리포트는 읽기 전용 요약이고 편집·삭제는 데일리질문 목록의
+몫이라고 봤다. 배선하려면 VM 삭제 경로와 편집 내비게이션이 새로 필요해 refactor 범위를
+벗어난다. #1540 이 든 처방(「`= {}` 로 죽은 버튼을 그리는 대신 nullable + UI 숨김」)과도 같다.
+
+읽기 전용이 아니라 **편집 가능이 맞다면** 이 판단이 틀린 것이므로, 그때는 `onEdit`·`onDelete`
+에 실핸들러를 넘기면 메뉴가 그대로 돌아온다(컴포넌트는 이미 nullable 로 열려 있다).
+
 ## #700 — 홈 시안 정본 (해소) + 타임레터 NEXT STEP 문구 (추측 진행)
 
 **정본은 확정됐다 — 추측이 아니다.** 파일에 페이지가 둘뿐이고(`정리 Screen Design`,
