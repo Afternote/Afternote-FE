@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -25,6 +26,11 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigationevent.DirectNavigationEventInput
+import androidx.navigationevent.NavigationEventDispatcher
+import androidx.navigationevent.NavigationEventDispatcherOwner
+import androidx.navigationevent.OnBackCompletedFallback
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import kotlinx.serialization.Serializable
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -52,6 +58,10 @@ class FeatureNavDisplayTest {
     private val atRootSignals = mutableListOf<Boolean>()
     private var exits = 0
     private var clearedEntryViewModels = 0
+    private var clearedFlowViewModels = 0
+    private val flowViewModelInstances = mutableListOf<ClearRecordingViewModel>()
+    private lateinit var parentStack: NavBackStack<NavKey>
+    private lateinit var flowStack: NavBackStack<NavKey>
 
     private val boundary =
         object : FeatureStackBoundary {
@@ -98,9 +108,165 @@ class FeatureNavDisplayTest {
         composeRule.waitForIdle()
     }
 
+    /**
+     * 시스템·제스처 back 을 실제로 태우기 위한 최소 owner.
+     *
+     * Nav3 1.1.6 의 back 핸들러는 `androidx.activity` 가 아니라 **`androidx.navigationevent`** 를 탄다
+     * (`NavDisplay` 가 `NavigationBackHandler` 를 쓴다). 그래서 `LocalOnBackPressedDispatcherOwner` 를
+     * 갈아 끼워도 콜백이 하나도 안 붙는다 — 실측으로 확인했다.
+     *
+     * [fallback] 은 «아무 핸들러도 처리하지 않았을 때» 불린다. 이 표시부가 back 을 먹었는지를
+     * 그 호출 수로 가른다.
+     */
+    private class TestNavEventOwner : NavigationEventDispatcherOwner {
+        var fallbacks = 0
+            private set
+
+        override val navigationEventDispatcher =
+            NavigationEventDispatcher(OnBackCompletedFallback { fallbacks += 1 })
+
+        val input = DirectNavigationEventInput().also { navigationEventDispatcher.addInput(it) }
+    }
+
+    private fun startWithBackDispatcher(): TestNavEventOwner {
+        val owner = TestNavEventOwner()
+        composeRule.setContent {
+            CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides owner) { TestHost() }
+        }
+        composeRule.waitForIdle()
+        return owner
+    }
+
+    /**
+     * **바닥에서의 back 은 `boundary.exit()` 로 가지 않는다.**
+     *
+     * `NavDisplay` 는 `isBackEnabled = scene.previousEntries.isNotEmpty()` 로 핸들러를 켜고
+     * (`NavDisplay.kt:558`), `SinglePaneScene.previousEntries` 는 `entries.dropLast(1)` 이다
+     * (`SinglePaneScene.kt:65`). 스택 크기 1 이면 그 목록이 비어 **핸들러 자체가 꺼지고** back 은
+     * 상위로 흘러간다. [FeatureNavDisplay] 의 `onBack` 에 있는 `else -> boundary.exit()` 갈래는
+     * 화면 안 back 버튼(`popOrExit`)으로만 도달한다.
+     */
+    @Test
+    fun `back 은 스택만 줄이고 바닥에서는 이 표시부를 지나쳐 위로 흐른다`() {
+        val owner = startWithBackDispatcher()
+        push(DetailKey(id = 1))
+        composeRule.onNodeWithText("detail1#0").assertIsDisplayed()
+
+        composeRule.runOnIdle { owner.input.backCompleted() }
+        composeRule.waitForIdle()
+        assertEquals("깊이 2 의 back 은 이 표시부가 먹어 스택을 줄인다", 1, backStack.size)
+        assertEquals("먹었으니 위로 흐르지 않는다", 0, owner.fallbacks)
+        assertEquals(0, exits)
+
+        composeRule.runOnIdle { owner.input.backCompleted() }
+        composeRule.waitForIdle()
+        assertEquals("바닥에서는 스택을 비우지 않는다", 1, backStack.size)
+        assertEquals("핸들러가 꺼져 있어 위로 흘러간다", 1, owner.fallbacks)
+        assertEquals("boundary.exit() 은 back 경로로 도달하지 않는다", 0, exits)
+    }
+
     private fun push(key: NavKey) = composeRule.runOnIdle { backStack.add(key) }
 
     private fun pop() = composeRule.runOnIdle { backStack.removeAt(backStack.lastIndex) }
+
+    /**
+     * 부모 스택의 한 entry 안에서 자식 흐름 host 를 그리는 실제 구조.
+     *
+     * 흐름 VM 은 «부모 entry 의 스토어» 위에 얹힌다 — 실코드의 `AfternoteEditorFlowHost` 가
+     * `hiltViewModel()` 을 host 몸통에서 부를 때와 같은 자리다.
+     */
+    @Composable
+    private fun NestedFlowHost() {
+        val outer = rememberNavBackStack(DetailKey(id = 0))
+        SideEffect { parentStack = outer }
+
+        FeatureNavDisplay(
+            backStack = outer,
+            boundary = boundary,
+            entryProvider =
+                entryProvider {
+                    entry<RootKey> {
+                        val owner = checkNotNull(LocalViewModelStoreOwner.current) { "entry 스코프 owner 가 없다" }
+                        val flowViewModel =
+                            ViewModelProvider(
+                                owner,
+                                viewModelFactory {
+                                    initializer { ClearRecordingViewModel { clearedFlowViewModels += 1 } }
+                                },
+                            )[ClearRecordingViewModel::class.java]
+                        SideEffect { flowViewModelInstances += flowViewModel }
+
+                        val inner = rememberNavBackStack(FlowStepKey(step = 1))
+                        SideEffect { flowStack = inner }
+                        FeatureNavDisplay(
+                            backStack = inner,
+                            boundary = boundary,
+                            entryProvider =
+                                entryProvider {
+                                    entry<FlowStepKey> { key -> BasicText("step${key.step}") }
+                                },
+                        )
+                    }
+                    entry<DetailKey> { BasicText("outside") }
+                },
+        )
+    }
+
+    /**
+     * 흐름 VM 이 **자식 화면 사이에서 같은 인스턴스**로 남는다 (#1698 이관 전 `FlowScopedViewModelLifetimeTest`).
+     *
+     * 흐름 안의 단계 이동은 자식 스택만 바꾸므로 부모 entry 의 스토어를 건드리지 않아야 한다.
+     */
+    @Test
+    fun `흐름 VM 은 자식 화면 사이에서 같은 인스턴스로 유지된다`() {
+        composeRule.setContent { NestedFlowHost() }
+        composeRule.waitForIdle()
+        composeRule.runOnIdle { parentStack.add(RootKey) }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("step1").assertIsDisplayed()
+
+        composeRule.runOnIdle { flowStack.add(FlowStepKey(step = 2)) }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("step2").assertIsDisplayed()
+
+        composeRule.runOnIdle { flowStack.removeAt(flowStack.lastIndex) }
+        composeRule.waitForIdle()
+
+        assertEquals(0, clearedFlowViewModels)
+        assertEquals(1, flowViewModelInstances.distinct().size)
+    }
+
+    /**
+     * **부모 백스택에 남아 있는 동안은 host 가 컴포지션에서 빠져도 정리되지 않는다.**
+     *
+     * Nav2 의 `NavBackStackEntry` 수명이 지키던 자리를 Nav3 에서는
+     * [rememberViewModelStoreNavEntryDecorator] 의 `onPop` 이 지킨다 — 「pop 됐고 + 컴포지션에서
+     * 빠졌을 때만」 발화한다. 이관이 가장 조용히 깨뜨릴 축이라 여기서 잠근다.
+     */
+    @Test
+    fun `부모 백스택에 남아 있으면 host 가 컴포지션에서 빠져도 흐름 VM 이 살아 있다`() {
+        composeRule.setContent { NestedFlowHost() }
+        composeRule.waitForIdle()
+        composeRule.runOnIdle { parentStack.add(RootKey) }
+        composeRule.waitForIdle()
+        val first = flowViewModelInstances.single()
+
+        // 부모가 다른 화면을 쌓으면 흐름 host 는 컴포지션에서 빠지지만 entry 는 스택에 남는다.
+        composeRule.runOnIdle { parentStack.add(DetailKey(id = 9)) }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("outside").assertIsDisplayed()
+        assertEquals("백스택에 남아 있으면 정리되지 않는다", 0, clearedFlowViewModels)
+
+        composeRule.runOnIdle { parentStack.removeAt(parentStack.lastIndex) }
+        composeRule.waitForIdle()
+        assertEquals("돌아오면 같은 인스턴스여야 한다", first, flowViewModelInstances.last())
+        assertEquals(0, clearedFlowViewModels)
+
+        // 실제로 pop 되면 그때 정리된다 — 위 단언이 «영영 안 정리됨» 을 못 박지 않게 대조군을 둔다.
+        composeRule.runOnIdle { parentStack.removeAt(parentStack.lastIndex) }
+        composeRule.waitForIdle()
+        assertEquals(1, clearedFlowViewModels)
+    }
 
     @Test
     fun `위에 화면이 쌓였다 사라져도 아래 화면의 rememberSaveable 이 남는다`() {
@@ -186,6 +352,11 @@ class FeatureNavDisplayTest {
         assertEquals(listOf<NavKey>(RootKey, DetailKey(id = 1)), composeRule.runOnIdle { backStack.toList() })
         composeRule.onNodeWithText("detail1#1").assertIsDisplayed()
     }
+
+    @Serializable
+    private data class FlowStepKey(
+        val step: Int,
+    ) : NavKey
 
     private class ClearRecordingViewModel(
         private val onCleared: () -> Unit,

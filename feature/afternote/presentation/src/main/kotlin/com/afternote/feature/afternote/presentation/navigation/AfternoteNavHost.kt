@@ -12,6 +12,7 @@ import com.afternote.core.ui.navigation.FeatureNavDisplay
 import com.afternote.core.ui.navigation.FeatureStackBoundary
 import com.afternote.feature.afternote.presentation.AfternoteHostViewModel
 import com.afternote.feature.afternote.presentation.detail.AfternoteDetailNavigation
+import com.afternote.feature.afternote.presentation.detail.AfternoteDetailViewModel
 import com.afternote.feature.afternote.presentation.home.AfternoteHomeNavigation
 import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.shared.fingerprint.AfternoteFingerprintLoginNavigation
@@ -73,11 +74,15 @@ public fun AfternoteNavHost(
                     }
                 }
 
-                entry<AfternoteRoute.DetailRoute> {
+                entry<AfternoteRoute.DetailRoute> { key ->
                     AfternoteLightTheme {
                         AfternoteDetailNavigation(
                             onNavigateBack = actions::popBack,
                             onNavigateToEditor = actions::navigateToEditorForEdit,
+                            viewModel =
+                                hiltViewModel<AfternoteDetailViewModel, AfternoteDetailViewModel.Factory>(
+                                    creationCallback = { factory -> factory.create(key) },
+                                ),
                         )
                     }
                 }

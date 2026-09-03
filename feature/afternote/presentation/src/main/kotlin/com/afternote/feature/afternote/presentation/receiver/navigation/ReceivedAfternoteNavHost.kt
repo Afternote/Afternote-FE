@@ -16,6 +16,7 @@ import com.afternote.core.ui.navigation.FeatureStackBoundary
 import com.afternote.feature.afternote.presentation.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.receiver.afternotelist.ReceiverAfternoteHomeEntry
 import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailRoute
+import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel
 import com.afternote.feature.afternote.presentation.receiver.playlist.MemorialPlaylistScreen
 import com.afternote.feature.afternote.presentation.receiver.playlist.ReceiverMemorialPlaylistUiState
 import com.afternote.feature.afternote.presentation.receiver.playlist.ReceiverMemorialPlaylistViewModel
@@ -51,12 +52,16 @@ public fun ReceivedAfternoteNavHost(
                     }
                 }
 
-                entry<ReceivedAfternoteRoute.DetailRoute> {
+                entry<ReceivedAfternoteRoute.DetailRoute> { key ->
                     AfternoteLightTheme {
                         ReceivedAfternoteDetailRoute(
                             onNavigateBack = actions::popBack,
                             onNavigateToFullList = actions::navigateToList,
                             onNavigateToPlaylist = actions::navigateToMemorialPlaylist,
+                            viewModel =
+                                hiltViewModel<ReceivedAfternoteDetailViewModel, ReceivedAfternoteDetailViewModel.Factory>(
+                                    creationCallback = { factory -> factory.create(key) },
+                                ),
                         )
                     }
                 }

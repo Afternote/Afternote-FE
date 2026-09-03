@@ -27,7 +27,17 @@ import androidx.navigation3.ui.NavDisplay
  *    [rememberViewModelStoreNavEntryDecorator] 만 넣으면 `rememberSaveable` 상태 보존이 조용히
  *    깨진다 (#959 실측 함정 2). 둘 다 넣는다.
  *
- * 바닥에서의 back 은 스택을 비우지 않고 [boundary] 로 올린다 — Nav3 는 빈 백스택을 그릴 수 없다.
+ * 바닥에서 스택을 비우지 않는 것은 Nav3 가 빈 백스택을 그릴 수 없기 때문이다. 다만 **그 자리를
+ * 지키는 것이 아래 `onBack` 의 `else` 갈래는 아니다.**
+ *
+ * `NavDisplay` 는 `isBackEnabled = scene.previousEntries.isNotEmpty()` 로 back 핸들러를 켜는데
+ * (`NavDisplay.kt:558`), `SinglePaneScene.previousEntries` 는 `entries.dropLast(1)` 이라
+ * (`SinglePaneScene.kt:65`) **스택 크기가 1 이면 핸들러 자체가 꺼진다.** 그래서 제스처·시스템 back 은
+ * 이 표시부를 그냥 지나쳐 상위(부모 `NavHost`·액티비티)로 흘러간다.
+ *
+ * `else -> boundary.exit()` 에 실제로 도달하는 것은 **화면 안 back 버튼**(`popOrExit`)뿐이다.
+ * `FeatureNavDisplayTest` 의 「back 은 스택만 줄이고 바닥에서는 이 표시부를 지나쳐 위로 흐른다」가
+ * 이 갈림을 잠근다.
  */
 @Composable
 public fun FeatureNavDisplay(
