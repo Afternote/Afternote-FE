@@ -114,3 +114,71 @@ test("release workflow is secretless, non-deploying, and uploads reports only", 
     assert.match(appBuild, /isMinifyEnabled = true/);
     assert.match(appBuild, /isShrinkResources = true/);
 });
+
+// #1754 — 빌드·서명·크기만 보던 게이트에 «그 산출물이 실제로 켜지는가» 를 더한다. R8 keep 누락
+// 부류(#1753)는 정적 검증을 전부 통과하므로, 이 단언들이 풀리면 같은 결함이 다시 배포까지 간다.
+test("release preflight starts the very artifact it verified, before cleanup", async () => {
+    const [workflow, preflight, smoke] = await Promise.all([
+        readFile(join(repositoryRoot, ".github/workflows/release-aab-preflight.yml"), "utf8"),
+        readFile(join(repositoryRoot, ".github/scripts/run-release-aab-preflight.sh"), "utf8"),
+        readFile(join(repositoryRoot, ".github/scripts/run-release-startup-smoke.sh"), "utf8"),
+    ]);
+
+    // 스모크 대상은 preflight 가 이미 만든 universal APK 다 — 다시 빌드하면 검증 대상과 배포 대상이 갈라진다.
+    assert.match(preflight, /RELEASE_SMOKE_APK_PATH/);
+    assert.match(preflight, /cp "\$\{universal_apk_path\}" "\$\{RELEASE_SMOKE_APK_PATH\}"/);
+    assert.doesNotMatch(smoke, /gradlew|bundletool|assembleRelease/);
+
+    assert.match(workflow, /run-release-startup-smoke\.sh/);
+    assert.match(workflow, /- name: Enable and verify KVM access/);
+    assert.match(workflow, /test -c \/dev\/kvm/);
+
+    // 정리 단계가 스모크 APK 를 지우고, 스모크는 그 전에 끝나야 한다.
+    const smokeIndex = workflow.indexOf("- name: Verify the release artifact starts on a device");
+    const cleanupIndex = workflow.indexOf("- name: Remove private release outputs");
+    assert.ok(smokeIndex > 0 && cleanupIndex > smokeIndex, "smoke must run before cleanup");
+    assert.match(workflow.slice(cleanupIndex), /release-startup-smoke\/universal\.apk/);
+
+    // 두 축을 모두 본다 — 크래시 뒤 시스템이 프로세스를 되살리면 pid 만으로는 통과해 버린다.
+    assert.match(smoke, /FATAL EXCEPTION/);
+    assert.match(smoke, /pidof/);
+    assert.match(smoke, /am start -W -n/);
+    assert.doesNotMatch(smoke, /\bsecrets\b/);
+});
+
+// #1769 — 부팅 판정이 넓으면 게이트가 «없는 문제» 로 주 2회 빨간불을 낸다. 거짓 경보는 결함을
+// 놓치는 것만큼 나쁘다 — 아무도 안 보게 되기 때문이다.
+test("startup smoke aborts only on unmistakably fatal emulator output", async () => {
+    const smoke = await readFile(
+        join(repositoryRoot, ".github/scripts/run-release-startup-smoke.sh"),
+        "utf8",
+    );
+
+    // 정상 부팅 중에도 나오는 ERROR 를 실패로 읽으면 안 된다.
+    assert.doesNotMatch(smoke, /\^\(FATAL\|ERROR\)/);
+
+    const guard = /grep -m1 -E '(\^\([^']+\))'/.exec(smoke);
+    assert.ok(guard, "부팅 중단 판정 패턴을 찾지 못했습니다");
+    const pattern = new RegExp(guard[1]);
+
+    // 실제 관측된 로그 표본으로 양쪽을 다 고정한다.
+    const healthy = [
+        "INFO         | Android emulator version 37.1.11.0",
+        "ERROR        | Failed to open dsp device, falling back",
+        "WARNING: cannnot unmap ptr 0x7f4d46e01000 as it is in the protected range",
+        "INFO         | Monitoring duration of emulator setup.",
+    ];
+    const fatal = [
+        "PANIC: Cannot find AVD system path. Please define ANDROID_SDK_ROOT",
+        "ERROR        | Unknown AVD name [afternote-release-smoke], use -list-avds to see valid list.",
+    ];
+    for (const line of healthy) {
+        assert.doesNotMatch(line, pattern, `정상 부팅 줄을 실패로 읽습니다: ${line}`);
+    }
+    for (const line of fatal) {
+        assert.match(line, pattern, `치명 줄을 놓칩니다: ${line}`);
+    }
+
+    // 실패했을 때 무엇이 걸렸는지 로그에 남아야 다음 실패를 진단할 수 있다.
+    assert.match(smoke, /부팅 중단 표시: \$\{fatal_line\}/);
+});
