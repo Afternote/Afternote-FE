@@ -27,11 +27,11 @@ import javax.inject.Inject
 /**
  * 발신자 상세(designs 11·12) ViewModel.
  *
- * 진입 시점에 SenderRegistry 에서 카드 식별 + authCode 를 얻고, authCode 가 있으면
- * [ReceiverRepository.saveAuthCode] 로 글로벌 헤더 컨텍스트를 교체한 뒤
+ * 진입 시점에 SenderRegistry 에서 카드 식별 + masterKey 를 얻고, masterKey 가 있으면
+ * [ReceiverRepository.saveMasterKey] 로 글로벌 헤더 컨텍스트를 교체한 뒤
  * [ReceiverAuthRepository.getDeliveryVerificationStatus] 로 상태를 받아 정보 박스 데이터를 만든다.
  *
- * authCode 가 없으면(마스터 키 미입력) 무조건 [SenderVerificationState.NotRequested] — API 호출 자체 생략.
+ * masterKey 가 없으면(마스터 키 미입력) 무조건 [SenderVerificationState.NotRequested] — API 호출 자체 생략.
  */
 @HiltViewModel
 class SenderDetailViewModel
@@ -83,17 +83,17 @@ class SenderDetailViewModel
         }
 
         /**
-         * "기록 열람하기"(디자인 12) 트리거 — 글로벌 헤더에 해당 발신자 authCode 를 복원한 뒤
+         * "기록 열람하기"(디자인 12) 트리거 — 글로벌 헤더에 해당 발신자 masterKey 를 복원한 뒤
          * [SenderDetailUiState.Success.shouldOpenReceiverHome] 플래그를 true 로 갱신.
          * UI 가 LaunchedEffect 로 수신자 홈 이동 후 [onOpenReceiverHomeConsumed] 로 reset.
          *
-         * authCode 가 없는 경우(미인증) 호출되어선 안 되지만 방어적으로 no-op.
+         * masterKey 가 없는 경우(미인증) 호출되어선 안 되지만 방어적으로 no-op.
          */
         fun openReceiverHome() {
-            val authCode = senderRegistry.findById(senderId)?.authCode
-            if (authCode.isNullOrBlank()) return
+            val masterKey = senderRegistry.findById(senderId)?.masterKey
+            if (masterKey.isNullOrBlank()) return
             viewModelScope.launch {
-                receiverRepository.saveAuthCode(authCode)
+                receiverRepository.saveMasterKey(masterKey)
                 _uiState.update { current ->
                     if (current is SenderDetailUiState.Success) {
                         current.copy(shouldOpenReceiverHome = true)
@@ -158,7 +158,7 @@ class SenderDetailViewModel
          *
          * `delivery-verification/status` 응답에는 승인 일시가 없다 — 그 값을 주는 건 `record-boxes` 뿐이라
          * 화면이 오래 «승인 기록이 없습니다» 로 비어 있었다. 서버는 같은 이메일에 등록된 기록함을 모두
-         * 내려주므로 지금 보고 있는 발신자의 칸은 [ReceivedRecordBox.accessCode] 로 골라낸다.
+         * 내려주므로 지금 보고 있는 발신자의 칸은 [ReceivedRecordBox.masterKey] 로 골라낸다.
          *
          * **이건 서버가 고칠 때까지의 우회다 — BE#96.** 한 줄을 표시하려고 목록 API 를 통째로 왕복하고
          * 있다. `status` 응답이 `approvedAt` 을 내려주기 시작하면 이 함수와 호출부, 골라내는 코드가
@@ -172,7 +172,7 @@ class SenderDetailViewModel
          */
         private suspend fun resolveApprovedAt(
             status: DeliveryVerificationStatus,
-            authCode: String,
+            masterKey: String,
         ): String? {
             if (status != DeliveryVerificationStatus.APPROVED) return null
             return receiverAuthRepository
@@ -180,15 +180,15 @@ class SenderDetailViewModel
                 .onFailure { e ->
                     errorReporter.recordAfternoteFailure(AfternoteFailureStage.SENDER_STATUS_LOAD, e)
                 }.getOrNull()
-                ?.firstOrNull { it.accessCode == authCode }
+                ?.firstOrNull { it.masterKey == masterKey }
                 ?.approvedAt
         }
 
         private suspend fun resolveState(sender: SenderEntry): SenderDetailUiState {
             val displayName = sender.name
-            val authCode = sender.authCode
+            val masterKey = sender.masterKey
 
-            if (authCode.isNullOrBlank()) {
+            if (masterKey.isNullOrBlank()) {
                 return SenderDetailUiState.Success(
                     displayName = displayName,
                     verification = SenderVerificationState.NotRequested,
@@ -197,14 +197,14 @@ class SenderDetailViewModel
                 )
             }
 
-            receiverRepository.saveAuthCode(authCode)
+            receiverRepository.saveMasterKey(masterKey)
             val statusResult = receiverAuthRepository.getDeliveryVerificationStatus()
             return statusResult.fold(
                 onSuccess = { verification ->
                     senderRegistry.updateVerificationStatus(sender.id, verification.status)
                     verification.toSuccessState(
                         displayName = displayName,
-                        approvedAt = resolveApprovedAt(verification.status, authCode),
+                        approvedAt = resolveApprovedAt(verification.status, masterKey),
                     )
                 },
                 onFailure = { e ->

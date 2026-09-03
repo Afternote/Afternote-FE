@@ -17,6 +17,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
@@ -38,20 +40,17 @@ import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionList
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportViewModel
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.launch
 import java.time.YearMonth
 import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    dailyQuestionViewModel: DailyQuestionListViewModel = hiltViewModel(),
-    diaryViewModel: DiaryListViewModel = hiltViewModel(),
-    // WeeklyReportScreen 과 같은 NavBackStackEntry 를 owner 로 쓰므로 동일 인스턴스다.
-    // 여기서 호이스팅하면 주간리포트 탭에 들어가지 않아도 VM 의 init { load(...) } 가 돌아
-    // 마음의 기록 탭 진입마다 요약 조회가 한 번 나간다. 대신 탭을 열면 스피너 없이 즉시 보이는
-    // 프리페치가 되므로 트레이드오프를 받아들인다.
-    weeklyReportViewModel: WeeklyReportViewModel = hiltViewModel(),
     onWriteClick: (MindRecordCategoryUi) -> Unit = {},
+    // 목록 항목 탭 → 상세(열람) 화면. (기록 ID, 일기 여부, 목록이 보고 있던 달) (#759).
+    onRecordClick: (Long, Boolean, YearMonth) -> Unit = { _, _, _ -> },
+    // 목록의 «수정하기» → 프리필한 작성 화면 (#582).
     onEditDailyQuestion: (Long) -> Unit = {},
     onEditDiary: (Long, YearMonth) -> Unit = { _, _ -> },
 ) {
@@ -65,52 +64,35 @@ fun HomeScreen(
             )
         }
 
-    var isListView by remember { mutableStateOf(true) }
-    var selectedIndex by remember { mutableIntStateOf(0) }
-    val selectedCategory = categories[selectedIndex]
-
+    // 선택 상태의 단일 출처는 pager 다. 종전에는 selectedIndex 로 애니메이션을 시작하면서
+    // pagerState.currentPage 를 다시 selectedIndex 에 기록해, 0↔2 전환 중 거쳐 가는 1번
+    // 페이지가 선택값을 덮어써 가운데 탭(일기)에 멈췄다 (#722).
+    //
+    // 탭 클릭은 pager 에게 "거기로 가라" 고만 말하고, 화면이 읽는 값은 pager 의
+    // settledPage 하나뿐이다 — 스크롤 도중의 중간 페이지가 선택으로 굳지 않는다.
     val pagerState = rememberPagerState { categories.size }
-    LaunchedEffect(selectedIndex) {
-        pagerState.animateScrollToPage(selectedIndex)
-    }
-    LaunchedEffect(pagerState.currentPage) {
-        selectedIndex = pagerState.currentPage
-    }
+    val selectedIndex = pagerState.settledPage
+    val selectedCategory = categories[selectedIndex]
+    val scope = rememberCoroutineScope()
 
-    // 탭 전환과 ON_RESUME 은 성격이 같은 자동 갱신이므로 대상도 같아야 한다.
-    // 한쪽에만 주간리포트가 빠지면, 일기를 쓰고 돌아와 주간리포트 탭으로 넘겼을 때
-    // 방금 쓴 일기가 주간 집계에 잡히지 않는다.
-    val refreshTab: (MindRecordCategoryUi) -> Unit = { category ->
-        when (category) {
-            MindRecordCategoryUi.DailyQuestion -> dailyQuestionViewModel.refreshOnReturn()
-            MindRecordCategoryUi.Diary -> diaryViewModel.refreshOnReturn()
-            MindRecordCategoryUi.WeeklyReport -> weeklyReportViewModel.refreshOnReturn()
+    // 탭마다 따로 기억한다. 종전에는 한 값을 두 탭이 공유했는데 의미가 서로 반대였다 —
+    // 데일리질문은 false 를 캘린더로, 일기는 같은 false 를 2열 그리드로 썼다. 그래서 탭을
+    // 오가면 아이콘은 그대로인데 표시가 뒤바뀐 것처럼 보였다 (#724).
+    var dailyQuestionListView by rememberSaveable { mutableStateOf(true) }
+    var diaryListView by rememberSaveable { mutableStateOf(true) }
+    val isListView =
+        when (selectedCategory) {
+            MindRecordCategoryUi.DailyQuestion -> dailyQuestionListView
+            else -> diaryListView
         }
-    }
 
-    LaunchedEffect(Unit) {
-        snapshotFlow { selectedIndex }
-            .drop(1)
-            .collect { index -> refreshTab(categories[index]) }
-    }
-
-    // ON_RESUME 은 작성 화면 복귀뿐 아니라 화면 off/on · 홈 버튼 후 복귀 · 권한 다이얼로그
-    // 닫기에서도 발화한다. 화면이 살아 있는 채로 발화하므로 refreshOnReturn() 을 쓴다 —
-    // 로딩을 방출하지 않아 캘린더 월·스크롤 위치가 살아남고, 실패해도 보고 있던 화면을 유지한다.
+    // 탭 VM 은 **여기서 만들지 않는다.** 호이스팅하면 선택하지 않은 탭의 `init` 조회까지
+    // 진입 즉시 나간다 — 마음의 기록 첫 진입 한 번에 요청이 7건 나간 가장 큰 원인이었다.
+    // 특히 주간리포트는 서버가 같은 주차의 반복 GET 에도 Gemini 를 다시 호출하므로
+    // (Afternote-BE#118), 열지도 않은 탭의 프리페치가 모델 호출 비용으로 이어진다 (#736).
     //
-    // 최초 진입의 중복 호출은 각 VM 이 진행 중인 로드 Job 으로 막는다. 컴포지션 쪽 플래그로
-    // 막으면 수명이 어긋난다 — rememberSaveable 은 SavedState 수명이고 막으려는 init { load() }
-    // 는 ViewModelStore 수명이라, 프로세스 사망 후 복원에서 플래그는 false 로 살아 돌아오는데
-    // VM 은 새로 만들어져 같은 조회가 두 번 나간다.
-    //
-    // selectedCategory 는 State 가 아니라 매 컴포지션 새로 계산되는 지역 val 이지만 여기서는
-    // 최신 값이 읽힌다 — LifecycleEventEffect 가 onEvent 를 rememberUpdatedState 로 감싸
-    // 옵저버에 넘기기 때문이다 (lifecycle-runtime-compose 2.11.0 LifecycleEffect.kt:66).
-    // LifecycleResumeEffect 는 effects 람다를 DisposableEffect(lifecycleOwner, scope) 안에서
-    // 직접 캡처해 진입 시점 값에 고정되므로, 이 화면에서는 쓰면 안 된다.
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        refreshTab(selectedCategory)
-    }
+    // 대신 각 화면이 스스로 `ON_RESUME` 갱신을 건다 — 탭에 들어가야 컴포즈되므로
+    // 그 시점이 곧 "처음 필요한 시점" 이다.
 
     Scaffold(
         modifier = modifier,
@@ -126,7 +108,12 @@ fun HomeScreen(
                             isListView = isListView,
                             image1 = R.drawable.core_ui_list,
                             image2 = R.drawable.core_ui_calendar,
-                            onViewChange = { isListView = it },
+                            onViewChange = { listView ->
+                                when (selectedCategory) {
+                                    MindRecordCategoryUi.DailyQuestion -> dailyQuestionListView = listView
+                                    else -> diaryListView = listView
+                                }
+                            },
                         )
                     }
                 },
@@ -168,7 +155,11 @@ fun HomeScreen(
                 categories.forEachIndexed { index, category ->
                     Tab(
                         selected = selectedIndex == index,
-                        onClick = { selectedIndex = index },
+                        // scrollToPage 는 중간 페이지를 거치지 않는다. animate 로 넘기면
+                        // 0 → 2 이동이 1번을 지나며 그 화면이 컴포즈되고, hiltViewModel() 이
+                        // VM 을 만들며 init 조회가 나간다 — 바로 아래 단(#736)이 «열지도 않은
+                        // 탭의 조회를 없앤다» 로 줄여 둔 요청이 탭 이동마다 되살아난다.
+                        onClick = { scope.launch { pagerState.scrollToPage(index) } },
                         text = {
                             Text(
                                 text = stringResource(category.titleRes),
@@ -181,18 +172,22 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            HorizontalPager(state = pagerState) { _ ->
-                when (selectedCategory) {
+            // page 인자를 실제로 쓴다 — 종전에는 무시하고 전역 selectedCategory 만 렌더해
+            // 스와이프 중에도 같은 화면이 보였다 (#722).
+            HorizontalPager(state = pagerState) { page ->
+                when (categories[page]) {
                     MindRecordCategoryUi.DailyQuestion -> {
                         DailyQuestionAnswerListScreen(
-                            isListView = isListView,
+                            isListView = dailyQuestionListView,
+                            onItemClick = { id, yearMonth -> onRecordClick(id, false, yearMonth) },
                             onEditClick = onEditDailyQuestion,
                         )
                     }
 
                     MindRecordCategoryUi.Diary -> {
                         DiaryScreen(
-                            isListView = isListView,
+                            isListView = diaryListView,
+                            onItemClick = { id, yearMonth -> onRecordClick(id, true, yearMonth) },
                             onEditClick = onEditDiary,
                         )
                     }

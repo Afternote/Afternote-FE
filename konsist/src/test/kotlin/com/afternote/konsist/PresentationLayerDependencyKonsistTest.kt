@@ -1,6 +1,5 @@
 package com.afternote.konsist
 
-import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.ext.list.withPackage
 import org.junit.Test
 
@@ -70,13 +69,12 @@ class PresentationLayerDependencyKonsistTest {
             }.toSet()
 
     /**
-     * 프로덕션 소스의 presentation 파일. `scopeFromProduction()` 이 main 소스셋만 담아,
+     * 프로덕션 소스의 presentation 파일. [AfternoteKonsistScope.productionFiles] 가 test 소스셋을 빼,
      * 테스트 소스의 조립 코드가 섞이지 않는다.
      */
     private fun presentationFiles() =
-        Konsist
-            .scopeFromProduction()
-            .files
+        AfternoteKonsistScope
+            .productionFiles
             .withPackage("com.afternote..presentation..")
 
     private companion object {
