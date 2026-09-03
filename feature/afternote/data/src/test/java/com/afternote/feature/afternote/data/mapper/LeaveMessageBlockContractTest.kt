@@ -99,7 +99,6 @@ class LeaveMessageBlockContractTest {
         val items =
             json
                 .decodeFromString<ReceivedAfternoteListDto>(response)
-                .afternotes
                 .toReceiverDomainList(NoopErrorReporter)
 
         assertEquals(listOf(1L, 2L), items.map { it.id })
