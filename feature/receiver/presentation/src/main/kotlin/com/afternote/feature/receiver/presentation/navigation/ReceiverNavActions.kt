@@ -46,7 +46,7 @@ interface ReceiverNavActions {
     fun popToReceivedRecords()
 
     /**
-     * 발신자 상세(12)의 "기록 열람하기" → 수신자 홈 진입. 발신자 컨텍스트(authCode) 복원은
+     * 발신자 상세(12)의 "기록 열람하기" → 수신자 홈 진입. 발신자 컨텍스트(masterKey) 복원은
      * `SenderDetailViewModel.openReceiverHome` 이 담당하므로 본 액션은 순수 네비게이션만 수행한다.
      */
     fun navigateToReceiverHome()

@@ -21,6 +21,8 @@ data class Diary(
      */
     val imageUrl: String? = null,
     val isDraft: Boolean = false,
+    /** 이 기록을 전달받을 수신자 이름들. 상세 화면이 "수신인 OOO" 로 보여준다 (#759). */
+    val receiverNames: List<String> = emptyList(),
 )
 
 data class DiaryList(
