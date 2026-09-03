@@ -81,7 +81,7 @@ class WeeklyCardFontScaleTest {
             CompositionLocalProvider(
                 LocalDensity provides Density(density = base.density, fontScale = fontScale),
             ) {
-                AfternoteTheme { WeeklyReportReviewCard() }
+                AfternoteTheme { WeeklyReportReviewCard(onWeekSelect = {}) }
             }
         }
     }

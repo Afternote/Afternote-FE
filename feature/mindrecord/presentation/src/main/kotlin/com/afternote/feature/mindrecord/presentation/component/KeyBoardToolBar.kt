@@ -42,9 +42,9 @@ fun BottomToolbar(
     onTextStyleClick: () -> Unit,
     onAlignChange: (TextAlign) -> Unit,
     modifier: Modifier = Modifier,
-    onLinkClick: () -> Unit = {},
-    onSaveDraftClick: () -> Unit = {},
-    onDraftCountClick: () -> Unit = {},
+    onLinkClick: () -> Unit,
+    onSaveDraftClick: () -> Unit,
+    onDraftCountClick: () -> Unit,
     /** 임시저장 개수. `null` 은 아직 모름(조회 중·실패) — 0 으로 단정하지 않는다. */
     draftCount: Int? = null,
 ) {
@@ -133,8 +133,8 @@ fun TextStyleToolbar(
     onTextStyleChange: (TextStyleType) -> Unit,
     styleState: TextStyleState,
     modifier: Modifier = Modifier,
-    onLinkClick: () -> Unit = {},
-    onTypeClick: () -> Unit = {},
+    onLinkClick: () -> Unit,
+    onTypeClick: () -> Unit,
 ) {
     Column(
         modifier =
