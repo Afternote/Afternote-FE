@@ -10,14 +10,21 @@ import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.testing.FakeUserProfileCacheRepository
 import com.afternote.feature.mindrecord.data.di.MindRecordRepositoryModule
-import com.afternote.feature.mindrecord.data.repositoryimpl.MindRecordReceiverRepositoryImpl
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeMindRecordReceiverRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeWeeklyReportRepository
+import com.afternote.feature.timeletter.data.di.TimeLetterModule
+import com.afternote.feature.timeletter.data.repositoryImpl.FileMetadataRepositoryImpl
+import com.afternote.feature.timeletter.domain.repository.FileMetadataRepository
+import com.afternote.feature.timeletter.domain.repository.ReceiverTimeLetterRepository
+import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
+import com.afternote.feature.timeletter.domain.testing.FakeReceiverTimeLetterRepository
+import com.afternote.feature.timeletter.domain.testing.FakeTimeLetterRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.components.SingletonComponent
@@ -83,7 +90,7 @@ object TestMindRecordRepositoryModule {
 
     @Provides
     @Singleton
-    fun provideMindRecordReceiverRepository(impl: MindRecordReceiverRepositoryImpl): MindRecordReceiverRepository = impl
+    fun provideMindRecordReceiverRepository(): MindRecordReceiverRepository = FakeMindRecordReceiverRepository()
 
     /**
      * 주간 리포트도 fake 로 격리한다.
@@ -108,6 +115,45 @@ object TestMindRecordRepositoryModule {
     @Provides
     @Singleton
     fun provideWeeklyReportRepository(): WeeklyReportRepository = FakeWeeklyReportRepository(fallback = Result.success(emptyWeeklyReport()))
+}
+
+/**
+ * 타임레터 탭이 dev 서버로 나가는 것을 막는다.
+ *
+ * [NotificationNavigationAndroidTest] 의 두 테스트가 하단 탭에서 타임레터를 연다. 그 화면은
+ * `TimeletterScreen` 이 `repeatOnLifecycle(STARTED)` 안에서 `TimeletterViewModel.load()` 를 부르고,
+ * 그 안에서 `TimeLetterRepository.getTimeLetters()` 가 실제 `GET /api/v1/time-letters` 를 보낸다.
+ * api30 GMD 실측에서 요청 3건이 확인됐다 — 탭 진입에 1건, 그리고 Activity 를 `CREATED` 로 내렸다
+ * 올리는 테스트가 `STARTED` 재진입으로 1건을 더 만들어 2건. 그런데도 36개 테스트가 전부 통과했다.
+ * 실패로 드러나지 않으니 dev 서버가 닫히는 03~12시(KST)에만 증상이 나오고, 그때는 원인이 코드로
+ * 보이지 않는다.
+ *
+ * `FileMetadataRepository` 는 `ContentResolver` 만 쓰는 로컬 구현이라 그대로 둔다 — 네트워크가
+ * 아닌 것까지 갈아끼우면 계측이 프로덕션과 달라지는 자리만 늘어난다.
+ *
+ * 두 fake 는 일부러 `strict()` 를 쓰지 않는다. 앱 전체 계측에서 관심 밖 탭이 합성돼도 무인자
+ * 기본값의 빈 목록 성공으로 닫기 위해서다. 기본 생성자 정책이 strict 로 바뀌면 이 바인딩도
+ * 함께 재검토해야 한다.
+ *
+ * api service 두 개를 다시 제공하지 않는 이유는 [TimeLetterModule] 밖에 소비자가 없어서다.
+ */
+@Module
+@TestInstallIn(
+    components = [SingletonComponent::class],
+    replaces = [TimeLetterModule::class],
+)
+object TestTimeLetterModule {
+    @Provides
+    @Singleton
+    fun provideTimeLetterRepository(): TimeLetterRepository = FakeTimeLetterRepository()
+
+    @Provides
+    @Singleton
+    fun provideReceiverTimeLetterRepository(): ReceiverTimeLetterRepository = FakeReceiverTimeLetterRepository()
+
+    @Provides
+    @Singleton
+    fun provideFileMetadataRepository(impl: FileMetadataRepositoryImpl): FileMetadataRepository = impl
 }
 
 @Module
