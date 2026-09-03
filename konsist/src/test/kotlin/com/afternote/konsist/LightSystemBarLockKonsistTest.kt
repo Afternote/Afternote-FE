@@ -24,7 +24,7 @@ class LightSystemBarLockKonsistTest {
         AfternoteKonsistScope
             .files
             .filter { file -> file.path.contains("/app/src/") }
-            .filterNot { file -> file.name == HELPER_FILE }
+            .filterNot { file -> file.path.endsWith("/$HELPER_FILE") }
             .assertFalse { file -> BARE_CALL.containsMatchIn(file.text) }
     }
 
