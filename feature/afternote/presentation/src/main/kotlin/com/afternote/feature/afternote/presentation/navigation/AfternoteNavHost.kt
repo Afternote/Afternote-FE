@@ -88,7 +88,8 @@ public fun AfternoteNavHost(
                     AfternoteLightTheme {
                         AfternoteDraftListNavigation(
                             onNavigateBack = actions::popBack,
-                            onNavigateToEditorForEdit = actions::navigateToEditorForEdit,
+                            // 수정이 아니라 «이어쓰기» 다 — 프리필을 draft 계약으로 읽어야 한다 (#1791).
+                            onNavigateToEditorForEdit = actions::navigateToEditorForResume,
                         )
                     }
                 }
