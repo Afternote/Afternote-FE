@@ -7,7 +7,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavBackStackEntry
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.editor.processing.AfternoteProcessingMethodDefaults
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
@@ -25,7 +24,6 @@ import com.afternote.feature.afternote.presentation.navigation.model.SELECTED_RE
  */
 @Composable
 internal fun AfternoteEditorNavigation(
-    backStackEntry: NavBackStackEntry,
     editViewModel: AfternoteEditorViewModel,
     onNavigateToMemorialPlaylist: () -> Unit,
     onNavigateToSelectReceiver: () -> Unit,
@@ -71,9 +69,9 @@ internal fun AfternoteEditorNavigation(
         }
     }
 
-    LaunchedEffect(backStackEntry) {
-        tryApplyReceiverSelectionFromSavedState(
-            backStackEntry,
+    // 선택 화면이 위에 쌓이는 동안 이 화면은 컴포지션에서 빠지므로, 복귀할 때마다 다시 돈다.
+    LaunchedEffect(Unit) {
+        tryApplyReceiverSelection(
             editViewModel,
             state,
         )

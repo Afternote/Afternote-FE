@@ -10,6 +10,7 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnai
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.presentation.editor.model.EditorContentPrefill
 import com.afternote.feature.afternote.presentation.editor.model.EditorFormPrefill
+import com.afternote.feature.afternote.presentation.editorFlowRoute
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -117,6 +118,7 @@ class AfternoteEditorMemorialMediaRemoveTest {
 
     private fun viewModel(savedStateHandle: SavedStateHandle): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
+            route = savedStateHandle.editorFlowRoute(),
             savedStateHandle = savedStateHandle,
             userRepository = repositoryProxy<UserRepository>(),
             afternoteRepository = repositoryProxy<AfternoteRepository>(),

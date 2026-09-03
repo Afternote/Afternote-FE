@@ -1,12 +1,10 @@
 package com.afternote.feature.afternote.presentation.editor
 
 import androidx.annotation.StringRes
-import androidx.navigation.NavBackStackEntry
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
-import com.afternote.feature.afternote.presentation.navigation.model.SELECTED_RECEIVER_ID_KEY
 
 // 에디터 조립부가 쓰는 순수 헬퍼들이다. Route 파일에는 조립만 남긴다 (#1514).
 
@@ -61,18 +59,16 @@ internal fun AfternoteEditorError.offersMemorialThumbnailRetry(): Boolean =
         }
 
 /**
- * 수신자 선택 화면이 남긴 id 를 폼에 반영한다.
+ * 수신자 선택 화면이 남긴 id 를 폼에 반영한다 — 결과는 흐름 공유 ViewModel 이 1회 소비로 나른다.
  *
  * 목록 로드 실패로 id 를 해석할 수 없으면 [AfternoteEditorViewModel.resolveSelectedReceiver] 가 재조회 후
  * 오류 이벤트를 세운다 — 선택이 조용히 사라지지 않는다 (#1405).
  */
-internal suspend fun tryApplyReceiverSelectionFromSavedState(
-    backStackEntry: NavBackStackEntry,
+internal suspend fun tryApplyReceiverSelection(
     viewModel: AfternoteEditorViewModel,
     state: AfternoteEditorState,
 ) {
-    val id = backStackEntry.savedStateHandle[SELECTED_RECEIVER_ID_KEY] as? Long ?: return
-    backStackEntry.savedStateHandle.remove<Long>(SELECTED_RECEIVER_ID_KEY)
+    val id = viewModel.consumeSelectedReceiverId() ?: return
     val receiver = viewModel.resolveSelectedReceiver(id) ?: return
     state.addReceiverById(id, receiver.name, receiver.label)
 }
