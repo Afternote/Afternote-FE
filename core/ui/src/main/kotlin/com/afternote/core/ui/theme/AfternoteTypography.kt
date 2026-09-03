@@ -55,6 +55,26 @@ private val BodyLineBreak = LineBreak.Paragraph.copy(wordBreak = LineBreak.WordB
 /** 제목용. [LineBreak.Heading] 은 이미 `WordBreak.Phrase` 를 포함한다. */
 private val HeadingLineBreak = LineBreak.Heading
 
+/**
+ * 앱 타이포 정본.
+ *
+ * **이름에 `B` 가 붙은 스타일이 `FontWeight.Bold` 가 아닌 것은 의도다 — 되돌리지 말 것.**
+ *
+ * 나눔바른고딕 Bold 페이스는 세로획이 가로획보다 굵어(가로/세로 0.77~0.86, Regular 은 0.92~0.93)
+ * 작은 크기에서 한글 획이 불균일하게 보인다. 시안도 `H2`·`H3`·`BodyLarge(B)`·`BodySmall(B)`·
+ * `CaptionLarge(B)`·`PrimaryButton` 을 전부 Regular 페이스로 쓴다 — 정본 페이지 TEXT 노드
+ * 1,789건 전량이 `NanumBarunGothic` 이고 `NanumBarunGothicBold` 는 0건이다.
+ *
+ * 같은 에뮬레이터에서 웨이트만 바꿔 찍은 A/B 실측:
+ *
+ * | 웨이트 | 세로획 | 가로획 | 가로/세로 |
+ * |---|---|---|---|
+ * | `Bold` | 3.82px | 3.23px | 0.85 |
+ * | `Normal` | 2.88px | 2.82px | 0.98 |
+ *
+ * Bold 폰트 파일 등록([nanumBarunGothic])은 그대로 둔다 — 마음의 기록 편집기에서 사용자가
+ * 직접 거는 볼드(`SpanStyle(fontWeight = FontWeight.Bold)`)가 그 파일을 쓴다.
+ */
 data class AfternoteTypography(
     val h1: TextStyle =
         TextStyle(
@@ -69,7 +89,7 @@ data class AfternoteTypography(
     val h2: TextStyle =
         TextStyle(
             fontFamily = nanumBarunGothic,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Normal,
             fontSize = 24.sp,
             lineHeight = 30.sp,
             letterSpacing = (-0.0025).em,
@@ -79,7 +99,7 @@ data class AfternoteTypography(
     val h3: TextStyle =
         TextStyle(
             fontFamily = nanumBarunGothic,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Normal,
             fontSize = 20.sp,
             lineHeight = 26.sp,
             letterSpacing = (-0.0025).em,
@@ -89,7 +109,7 @@ data class AfternoteTypography(
     val bodyLargeB: TextStyle =
         TextStyle(
             fontFamily = nanumBarunGothic,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Normal,
             fontSize = 18.sp,
             lineHeight = 24.sp,
             lineBreak = BodyLineBreak,
@@ -116,7 +136,7 @@ data class AfternoteTypography(
     val bodySmallB: TextStyle =
         TextStyle(
             fontFamily = nanumBarunGothic,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Normal,
             fontSize = 14.sp,
             lineHeight = 20.sp,
             lineBreak = BodyLineBreak,
@@ -134,7 +154,7 @@ data class AfternoteTypography(
     val primaryButton: TextStyle =
         TextStyle(
             fontFamily = nanumBarunGothic,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Normal,
             fontSize = 16.sp,
             lineHeight = 24.sp,
             letterSpacing = (-0.0025).em,
@@ -163,7 +183,7 @@ data class AfternoteTypography(
     val captionLargeB: TextStyle =
         TextStyle(
             fontFamily = nanumBarunGothic,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Normal,
             fontSize = 12.sp,
             lineHeight = 18.sp,
             lineBreak = BodyLineBreak,
