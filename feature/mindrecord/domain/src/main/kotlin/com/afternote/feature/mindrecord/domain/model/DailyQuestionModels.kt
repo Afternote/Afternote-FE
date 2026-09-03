@@ -6,6 +6,8 @@ data class DailyQuestion(
     val content: String,
     val createdAt: String,
     val isDraft: Boolean = false,
+    /** 이 기록을 전달받을 수신자 이름들 (#759). */
+    val receiverNames: List<String> = emptyList(),
 )
 
 data class TodayDailyQuestion(

@@ -65,4 +65,15 @@
     <string name="core_ui_receiver_select_title">수신자 선택</string>
     <string name="core_ui_receiver_select_search_placeholder">이름으로 검색하기</string>
     <string name="core_ui_receiver_select_confirm">수신자 선택 완료하기</string>
+
+    <!--
+      "미디어 추가하기" 계열 메뉴 시트 공용 문구 (#642). 시안 정본 4327:72281.
+      항목 문구는 갈래가 그 화면에만 있는 경우(갤러리에서 선택·사진 촬영 등) 호출부가 자기 리소스를
+      실어 보낸다 — 여기 있는 건 여러 모듈이 글자 단위로 같이 쓰던 것만이다.
+    -->
+    <string name="core_ui_media_sheet_title">미디어 추가하기</string>
+    <string name="core_ui_media_sheet_image">이미지 추가하기</string>
+    <string name="core_ui_media_sheet_voice">음성 추가하기</string>
+    <string name="core_ui_media_sheet_file">파일 추가하기</string>
+    <string name="core_ui_media_sheet_link">링크 추가하기</string>
 </resources>

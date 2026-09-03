@@ -87,8 +87,29 @@ test("an empty commit is not a fix", () => {
     assert.match(guard, /repos\/\$REPO\/commits\/\$sha/);
     assert.match(guard, /\(\.files \/\/ \[\]\) \| length/);
     assert.match(guard, /\[ "\$changed" -gt 0 \] \|\| continue/);
-    // 조회 실패를 «빈 커밋» 으로 접으면 조회 장애가 빚을 통째로 지운다. 반영으로 센다.
-    assert.match(guard, /\'\'\|\*\[!0-9\]\*\) changed=1/);
+    // 조회 실패나 깨진 응답을 반영·미반영 어느 쪽으로도 접지 않는다. 근거가 완전하지
+    // 않으면 가드를 실패시켜 사람의 정상 PR 을 닫는 오탐을 막는다.
+    assert.doesNotMatch(guard, /changed=1/);
+    assert.match(guard, /변경 파일 조회에 실패했다/);
+    assert.match(guard, /변경 파일 수가 올바르지 않다/);
+});
+
+test("review evidence API failures stop the guard before it can close a pull request", () => {
+    // 리뷰·커밋·댓글을 못 읽은 상태는 «응답 없음» 이 아니다. 각 근거 조회가 실패하면
+    // 즉시 종료하고, `|| true` 나 stderr 폐기로 빈 결과를 만들어서는 안 된다.
+    for (const message of [
+        "리뷰 조회에 실패했다",
+        "커밋 조회에 실패했다",
+        "변경 파일 조회에 실패했다",
+        "작성자 일반 응답 조회에 실패했다",
+        "작성자 리뷰 응답 조회에 실패했다",
+        "본문 편집 이력 조회에 실패했다",
+        "본문 편집 이력이 불완전하다",
+    ]) {
+        assert.match(guard, new RegExp(message));
+    }
+    assert.doesNotMatch(guard, /gh api[^\n]*(?:\n[^\n]*){0,4}\|\| true/);
+    assert.doesNotMatch(guard, /gh api[^\n]*2>\/dev\/null/);
 });
 
 test("a fix delivered by a merge commit still counts as a response", () => {
@@ -112,12 +133,45 @@ test("rerequests are automated so silence cannot pass the guard", () => {
     // 가드는 변경요청을 낸 리뷰어에게 요청이 다시 걸린 경우에만 빚으로 센다. 그
     // 되살리기를 작성자 손에 맡기면 아무도 걸지 않아 가드가 통째로 무력해진다 —
     // 8/29 실측에서 반영까지 끝난 7건이 전원 «빚 아님» 이었다 (#1450).
-    assert.match(requestAll, /^\s*types: \[opened, ready_for_review, reopened, synchronize\]/m);
+    assert.match(requestAll, /^\s*types: \[opened, ready_for_review, reopened, synchronize, edited\]/m);
     assert.match(requestAll, /^\s{2}rerequest:/m);
     assert.match(requestAll, /github\.event\.action == 'synchronize'/);
+    assert.match(requestAll, /github\.event\.action == 'edited'/);
+    assert.match(requestAll, /github\.event\.changes\.body != null/);
+    assert.match(
+        requestAll,
+        /github\.event\.sender\.login == github\.event\.pull_request\.user\.login/,
+    );
+    assert.match(requestAll, /github\.event\.pull_request\.state == 'open'/);
     assert.match(requestAll, /--add-reviewer "\$blocked"/);
-    // 기존 전원 요청은 반영 커밋마다 다시 돌지 않는다.
+    // 기존 전원 요청은 반영 커밋이나 본문 편집마다 다시 돌지 않는다.
     assert.match(requestAll, /github\.event\.action != 'synchronize'/);
+    assert.match(requestAll, /github\.event\.action != 'edited'/);
+});
+
+test("rerequest review lookup fails closed because body edits are one-shot events", () => {
+    assert.match(requestAll, /리뷰 조회에 실패했다 — 재리뷰 요청을 누락시키지 않도록 재실행할 것/);
+    assert.match(requestAll, /최신 리뷰 판정에 실패했다 — 재리뷰 요청을 누락시키지 않도록 재실행할 것/);
+    assert.doesNotMatch(requestAll, /gh api[^\n]*(?:\n[^\n]*){0,4}2>\/dev\/null/);
+    assert.doesNotMatch(requestAll, /gh api[^\n]*(?:\n[^\n]*){0,4}\|\| true/);
+});
+
+test("an edited event cannot be attributed to a later change request", () => {
+    assert.match(requestAll, /EVENT_AT: \$\{\{ github\.event\.pull_request\.updated_at \}\}/);
+    assert.match(requestAll, /\$action != "edited" or \.t < \$event_at/);
+    assert.match(requestAll, /본문 편집 이벤트 시각이 없다/);
+});
+
+test("author body edits are durable review evidence and fail closed when truncated", () => {
+    // updated_at 은 댓글·라벨까지 섞이고 lastEditedAt 은 마지막 편집자만 남긴다. 영속
+    // userContentEdits 에서 최신 변경요청 뒤 PR 작성자의 편집만 세어야 한다.
+    assert.match(guard, /userContentEdits\(last:50\)/);
+    assert.match(guard, /editor\{login\}/);
+    assert.match(guard, /\.editor\.login/);
+    assert.match(guard, /\.editedAt > \$cutoff/);
+    assert.match(guard, /ascii_downcase\) == \(\$author \| ascii_downcase/);
+    assert.match(guard, /pageInfo\.hasPreviousPage != false/);
+    assert.match(guard, /\[ "\$body_edits" -gt 0 \]/);
 });
 
 test("the rerequest job and the guard judge by the same latest decision", () => {

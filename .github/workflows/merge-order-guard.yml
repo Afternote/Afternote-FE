@@ -5,8 +5,8 @@
 # 실패시킨다. branch protection 에서 required check 로 지정하면 머지 버튼이
 # 실제로 잠긴다. base 가 develop/main 이 아닌 스택 PR 은 경고로만 남긴다.
 #
-# base 가 트렁크가 아닌 PR 은 네이티브 스택 등록 여부(stackEntry)도 함께 본다 — 미등록도
-# 경고로만 남긴다 (#1474).
+# 네이티브 스택의 닫힌 미병합 멤버는 merge queue synthetic SHA에서 live로 다시 검사한다.
+# 중간 멤버가 닫힌 직후의 조치 안내는 stack-integrity-notify가 상위 PR에 남긴다.
 name: merge-order-guard
 
 on:
@@ -64,9 +64,10 @@ jobs:
           fi
           node .github/scripts/ensure-api-quota.mjs ensure
 
-      - name: closing 이슈 blocked_by 검사
+      - name: 머지 큐 스택 무결성·closing 이슈 blocked_by 검사
         env:
           GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
           PR_NUMBER: ${{ github.event.pull_request.number || inputs.pull_request_number }}
           BASE_REF: ${{ github.event.pull_request.base.ref }}
           MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
@@ -90,8 +91,20 @@ jobs:
             exit 1
           fi
 
+          owner="${GITHUB_REPOSITORY%/*}"
+          repo="${GITHUB_REPOSITORY#*/}"
+
+          # PR 메타는 이 잡에서 한 번만 조회한다. 종전에는 base 이름을 REST 로 따로 물은 뒤
+          # 같은 PR 을 GraphQL 로 다시 물었다 — 한 잡이 같은 PR 을 두 번 조회하면 PR 수 ×
+          # 잡 수만큼 곱해져 installation 한도를 태운다 (#1465). baseRefName 을 같은 쿼리에
+          # 실어 REST 왕복 하나를 없앤다. 조회 실패는 그대로 fail-closed 다.
+          pr_json=$(gh api graphql \
+            -f query='query($owner:String!,$repo:String!,$pr:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$pr){baseRefName title body closingIssuesReferences(first:20){nodes{number repository{nameWithOwner}}}}}}' \
+            -f owner="$owner" -f repo="$repo" -F pr="$PR_NUMBER" \
+            --jq '.data.repository.pullRequest')
+
           if [ -z "$BASE_REF" ]; then
-            BASE_REF=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.base.ref')
+            BASE_REF=$(jq -r '.baseRefName' <<< "$pr_json")
           fi
 
           # 스택 PR 안내 — base 가 부모 브랜치면 애초에 develop 로 머지되지 않고,
@@ -107,50 +120,63 @@ jobs:
               ;;
           esac
 
-          owner="${GITHUB_REPOSITORY%/*}"
-          repo="${GITHUB_REPOSITORY#*/}"
-
-          # 네이티브 스택 등록 여부 — base 이름만으로는 «스택으로 묶인 PR» 과 «base 만 상위
-          # 브랜치로 물린 PR» 이 구분되지 않는다. 미등록이어도 머지 순서는 지켜지므로
-          # (delete_branch_on_merge 가 밑단 머지 시 base 를 develop 로 이관한다) 막지 않는다.
-          # 다만 그 이관의 근거가 스택 기능이 아니라 저장소 설정이고, 등록하지 않으면 스택 맵·
-          # 서버측 자동 rebase·gh stack merge 를 못 얻으므로 그 사실은 드러낸다 (#1474).
-          #
-          # error 로 올리지 않는 이유는 CI 가 고칠 수 없기 때문이다 — GraphQL 에 스택 뮤테이션이
-          # 없고(PullRequestStack* 은 읽기 전용), 열린 PR 을 묶는 경로는 `gh stack submit` 의
-          # 대화형 Ctrl+B 뿐이다. 막으면 #1059 가 이미 걷어낸 «수명 내내 red» 가 되돌아온다.
-          # 조회 자체는 `if` 조건에 두어 실패가 blocked_by 판정을 막지 않게 한다 — 경고 하나 때문에
-          # 머지 게이트가 죽으면 안 된다. blocked_by 쪽 조회는 그대로 fail-closed 로 남는다.
+          # 네이티브 스택 등록 여부는 PR HEAD에서 안내만 한다. 조회 실패가 기존 blocked_by
+          # 판정을 죽이지 않도록 fail-soft로 유지한다 (#1474, #1620).
           if [ "$stacked" -eq 1 ]; then
             if stack_entry=$(gh api graphql \
               -f query='query($owner:String!,$repo:String!,$pr:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$pr){stackEntry{position}}}}' \
               -f owner="$owner" -f repo="$repo" -F pr="$PR_NUMBER" \
               --jq '.data.repository.pullRequest.stackEntry'); then
               if [ -z "$stack_entry" ] || [ "$stack_entry" = "null" ]; then
-                echo "::warning::네이티브 스택 미등록 — 터미널에서 'gh stack init --base develop <밑단> <윗단>' 뒤 'gh stack submit' 에서 새 PR 을 모두 해제하고 Ctrl+B 로 링크할 것"
+                echo "::warning::네이티브 스택 미등록 — 의도한 선형 스택이면 'gh stack link --base develop <밑단 PR> <윗단 PR>' 로 연결할 것"
               fi
             else
               echo "::warning::스택 등록 여부를 조회하지 못했다 — 등록 상태를 손으로 확인할 것"
             fi
           fi
 
-          pr_json=$(gh api graphql \
-            -f query='query($owner:String!,$repo:String!,$pr:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$pr){title body closingIssuesReferences(first:20){nodes{number repository{nameWithOwner}}}}}}' \
-            -f owner="$owner" -f repo="$repo" -F pr="$PR_NUMBER" \
-            --jq '.data.repository.pullRequest')
+          # PR HEAD의 guard를 여기서 실패시키면 unstack 전용 이벤트가 없는 탓에 수리 뒤에도
+          # stale failure가 남을 수 있다. develop은 merge queue가 필수이므로 실제 병합 직전의
+          # synthetic SHA에서만 live 스택을 재검사해 닫힌 미병합 멤버를 확실히 차단한다.
+          if [ "$EVENT_NAME" = "merge_group" ]; then
+            if [ ! -f .github/scripts/merge-order-stack-integrity.mjs ]; then
+              echo "::notice::스택 무결성 스크립트가 default branch 에 아직 없어 최초 설치 검사를 건너뜁니다"
+            else
+              stack_pr_json=$(gh api graphql \
+                -f query='query($owner:String!,$repo:String!,$pr:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$pr){number state mergedAt stackEntry{position} stack{number size entries(first:100){nodes{position pullRequest{number state mergedAt}} pageInfo{hasNextPage}}}}}}' \
+                -f owner="$owner" -f repo="$repo" -F pr="$PR_NUMBER" \
+                --jq '.data.repository.pullRequest')
+              if [ "$(jq -r '.stackEntry == null' <<< "$stack_pr_json")" = "false" ]; then
+                stack_number=$(jq -r '.stack.number' <<< "$stack_pr_json")
+                stack_blockers=$(node .github/scripts/merge-order-stack-integrity.mjs blockers <<< "$stack_pr_json")
+                while read -r blocker <&4; do
+                  [ -n "$blocker" ] || continue
+                  echo "::error::네이티브 스택 #$stack_number 의 닫힌 미병합 PR #$blocker 때문에 #$PR_NUMBER를 병합할 수 없습니다 — 기존 스택을 해제하고 의도한 열린 PR 순서로 다시 연결하세요"
+                  fail=1
+                done 4<<< "$stack_blockers"
+              fi
+            fi
+          fi
 
           # GitHub 가 close keyword 를 closingIssuesReferences 로 승격하지 못하는 경우가
           # 있으므로(#879, #880, #1176), 제목·본문을 같은 공식 패턴으로 직접 파싱한다.
           # 외부 저장소 참조는 이 저장소의 머지 순서와 무관하므로 제외한다.
-          issues=$(
+          #
+          # 번호를 그냥 늘어놓지 않고 «출처» 를 함께 낸다. closingIssuesReferences 는
+          # IssueConnection 이라 PR 이 섞일 수 없고, 거기서 온 번호는 종류가 이미 확정이다 —
+          # 그런데도 종전에는 번호마다 issues/<n> 을 한 번씩 더 물어 종류를 확인했다. 닫는
+          # 이슈가 둘이면 그것만으로 잡당 조회가 넷이고, PR 수 × 재실행 수만큼 곱해진다.
+          # 종류가 정말 불확실한 것은 본문 파싱으로만 나온 번호뿐이라 그쪽만 묻는다 (#1465).
+          refs=$(
             PR_JSON="$pr_json" node <<'NODE'
           const pr = JSON.parse(process.env.PR_JSON);
           const ownRepo = process.env.GITHUB_REPOSITORY.toLowerCase();
-          const issues = new Set(
+          const linked = new Set(
               pr.closingIssuesReferences.nodes
                   .filter(({ repository }) => repository.nameWithOwner.toLowerCase() === ownRepo)
                   .map(({ number }) => number),
           );
+          const parsed = new Set();
           const text = `${pr.title}\n\n${pr.body || ""}`;
           const regex = /\b(?:close[ds]?|fix(?:e[ds])?|resolve[ds]?)\s+(?:([\w.-]+\/[\w.-]+))?#(\d+)/gi;
           let match;
@@ -158,19 +184,32 @@ jobs:
           while ((match = regex.exec(text)) !== null) {
               const referencedRepo = (match[1] || ownRepo).toLowerCase();
               if (referencedRepo !== ownRepo) continue;
-              issues.add(Number.parseInt(match[2], 10));
+              const number = Number.parseInt(match[2], 10);
+              if (!linked.has(number)) parsed.add(number);
           }
 
-          process.stdout.write([...issues].sort((a, b) => a - b).join("\n"));
+          const ascending = (a, b) => a - b;
+          process.stdout.write(
+              [
+                  ...[...linked].sort(ascending).map((number) => `issue ${number}`),
+                  ...[...parsed].sort(ascending).map((number) => `unknown ${number}`),
+              ].join("\n"),
+          );
           NODE
           )
 
-          for n in $issues; do
-            issue_kind=$(gh api "repos/$GITHUB_REPOSITORY/issues/$n" \
-              --jq 'if has("pull_request") then "pull_request" else "issue" end')
-            if [ "$issue_kind" = "pull_request" ]; then
-              echo "::notice::#$n 은 PR 참조 — blocked_by 검사 대상에서 제외"
-              continue
+          # 파이프가 아니라 here-string 으로 먹인다 — 서브셸이 되면 fail=1 이 밖으로 나오지 않는다.
+          # 루프 안에서 gh 를 부르므로 목록은 stdin 이 아니라 fd 3 으로 먹인다.
+          while read -r kind n <&3; do
+            [ -n "$n" ] || continue
+
+            if [ "$kind" = "unknown" ]; then
+              issue_kind=$(gh api "repos/$GITHUB_REPOSITORY/issues/$n" \
+                --jq 'if has("pull_request") then "pull_request" else "issue" end')
+              if [ "$issue_kind" = "pull_request" ]; then
+                echo "::notice::#$n 은 PR 참조 — blocked_by 검사 대상에서 제외"
+                continue
+              fi
             fi
 
             open_blockers=$(gh api "repos/$GITHUB_REPOSITORY/issues/$n/dependencies/blocked_by" \
@@ -186,7 +225,7 @@ jobs:
                 fail=1
               fi
             done
-          done
+          done 3<<< "$refs"
 
           exit "$fail"
 
