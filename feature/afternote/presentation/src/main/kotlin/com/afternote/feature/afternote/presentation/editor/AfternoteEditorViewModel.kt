@@ -183,6 +183,15 @@ class AfternoteEditorViewModel
             }
 
         /**
+         * 스냅샷 복원 결과. **「키가 있는가」가 아니라 「실제로 복원됐는가」를 들고 있다.**
+         *
+         * [readFormSnapshotOrDefault] 는 디코딩 실패를 삼켜 빈 기본 폼으로 떨어진다. 키 존재만 보면
+         * 「표식 있음 + 문자열 있음 + 디코딩 실패」 조합에서 가드가 참이 되어 프리필이 막히고,
+         * 빈 폼이 새 기준 스냅샷과 짝지어져 아래 KDoc 이 피하겠다고 적은 「전부 지움」 저장이 된다.
+         */
+        private val restoredForm: RestoredForm = readFormSnapshotOrDefault()
+
+        /**
          * 이 ViewModel 이 «상세 프리필이 이미 실렸던» 폼 스냅샷에서 되살아났는가 (#1732).
          *
          * 참이면 복원된 폼은 서버 값 + 사용자가 그 뒤에 고친 것을 함께 들고 있다 — 프로세스 사망
@@ -195,18 +204,23 @@ class AfternoteEditorViewModel
          * 실패를 삼키므로, 표식은 남았는데 폼 스냅샷이 없는 조합이 가능하다. 그때 프리필까지 막으면
          * 빈 폼이 기준 스냅샷과 짝지어져 「전부 지움」 저장이 된다 (#705·#1617 이 막은 그 경로다).
          *
+         * **그래서 「키가 있는가」가 아니라 「복원됐는가」([RestoredForm.fromSnapshot])를 본다.**
+         * 문자열이 남아 있어도 디코딩이 실패하면 폼은 빈 기본값이므로, 키 존재로 판정하면 위 조합을
+         * 그대로 통과시킨다 — 스키마가 바뀌는 순간(키 접미사를 올리지 않은 채) 열리는 잠복 경로다.
+         *
          * 폼과 프리필의 값 비교로 대신하지 않는다. 계정 정보·남기실 말씀은 화면이 소유해 이 폼에
          * 없으므로, 비밀번호만 고친 복원은 «폼이 같다» 로 읽혀 그 편집이 그대로 덮인다.
          */
+
         private val restoredFromSeededSnapshot: Boolean =
             route.itemId != null &&
-                savedStateHandle.contains(EDITOR_FORM_SNAPSHOT_KEY) &&
+                restoredForm.fromSnapshot &&
                 savedStateHandle.get<Long>(PREFILL_SEEDED_ITEM_ID_KEY) == route.itemId
 
         private val internalState =
             MutableStateFlow(
                 InternalState(
-                    form = readFormSnapshotOrDefault(),
+                    form = restoredForm.form,
                     originalType = route.initialType.takeIf { route.itemId != null },
                     isPrefillLoading = readEditItemId() != null,
                 ),
@@ -330,15 +344,34 @@ class AfternoteEditorViewModel
 
         private fun readEditItemId(): Long? = route.itemId
 
-        private fun readFormSnapshotOrDefault(): EditorFormState {
+        /**
+         * 저장된 폼 스냅샷을 읽는다.
+         *
+         * **복원 성공 여부를 함께 돌려준다.** 실패를 기본 폼으로 삼키기만 하면 호출부가 「빈 폼으로
+         * 떨어졌다」와 「원래 빈 폼이었다」를 못 가른다 — [restoredFromSeededSnapshot] 이 그 차이로
+         * 갈리므로 여기서 알려 줘야 한다.
+         */
+        private fun readFormSnapshotOrDefault(): RestoredForm {
             val defaultForm = EditorFormState().withType(route.initialType)
-            val raw = savedStateHandle.get<String>(EDITOR_FORM_SNAPSHOT_KEY) ?: return defaultForm
+            val raw =
+                savedStateHandle.get<String>(EDITOR_FORM_SNAPSHOT_KEY)
+                    ?: return RestoredForm(form = defaultForm, fromSnapshot = false)
             return runCatching {
-                formSnapshotJson
-                    .decodeFromString(EditorFormSnapshot.serializer(), raw)
-                    .toEditorFormState()
-            }.getOrElse { defaultForm }
+                RestoredForm(
+                    form =
+                        formSnapshotJson
+                            .decodeFromString(EditorFormSnapshot.serializer(), raw)
+                            .toEditorFormState(),
+                    fromSnapshot = true,
+                )
+            }.getOrElse { RestoredForm(form = defaultForm, fromSnapshot = false) }
         }
+
+        /** [readFormSnapshotOrDefault] 의 결과 — 폼과 «그 폼이 스냅샷에서 왔는가». */
+        private data class RestoredForm(
+            val form: EditorFormState,
+            val fromSnapshot: Boolean,
+        )
 
         /** [EditorFormSnapshot] 직렬화. 실패 시 무시한다(용량 초과 등은 [EditorFormSnapshot] KDoc 참고). */
         private fun persistFormSnapshot(form: EditorFormState) {

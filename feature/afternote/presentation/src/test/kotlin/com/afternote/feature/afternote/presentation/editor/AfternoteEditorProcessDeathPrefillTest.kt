@@ -154,6 +154,34 @@ class AfternoteEditorProcessDeathPrefillTest {
             )
         }
 
+    /**
+     * **스냅샷 문자열은 남았는데 디코딩이 실패한 복원도 프리필을 받아야 한다.**
+     *
+     * 가드가 「키가 있는가」만 보면 이 조합(표식 있음 + 문자열 있음 + 디코딩 실패)에서 참이 되어
+     * 프리필이 막힌다. 그런데 폼은 실패를 삼켜 **빈 기본값**이라, 그 빈 폼이 새 기준 스냅샷과
+     * 짝지어져 안 건드린 필드가 전부 「지움」으로 나간다 — #705·#1617 이 막은 그 사고다.
+     *
+     * 키 접미사(`_v4`)를 올리지 않은 채 스냅샷 스키마가 바뀌는 순간 열리는 잠복 경로다.
+     */
+    @Test
+    fun `스냅샷이 깨져 빈 폼으로 떨어진 복원은 프리필을 받는다`() =
+        runTest(dispatcher) {
+            val repository =
+                FakeAfternoteRepository.strict().apply {
+                    onGetDetail = { Result.success(serverDetail()) }
+                }
+            val viewModel = viewModel(repository, snapshot = "{ 이건 EditorFormSnapshot 이 아니다 }")
+            backgroundScope.launch { viewModel.uiState.collect {} }
+            runCurrent()
+
+            val prefill = viewModel.uiState.value.pendingPrefill
+            assertNotNull("빈 폼으로 떨어졌으면 프리필을 막으면 안 된다", prefill)
+            assertEquals(
+                SERVER_SERVICE,
+                (prefill?.content as EditorContentPrefill.Gallery).serviceName,
+            )
+        }
+
     private fun serverDetail() =
         Detail(
             id = EDIT_ID,
@@ -178,6 +206,7 @@ class AfternoteEditorProcessDeathPrefillTest {
     private fun viewModel(
         afternoteRepository: FakeAfternoteRepository,
         prefillSeeded: Boolean = true,
+        snapshot: String = restoredSnapshot(),
     ): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
             savedStateHandle =
@@ -185,7 +214,7 @@ class AfternoteEditorProcessDeathPrefillTest {
                     buildMap {
                         put("initialType", AfternoteType.GALLERY_AND_FILES)
                         put("itemId", EDIT_ID)
-                        put("editor_form_snapshot_v4", restoredSnapshot())
+                        put("editor_form_snapshot_v4", snapshot)
                         // 화면이 프리필을 폼에 실을 때 ViewModel 이 같은 번들에 남기는 표식.
                         if (prefillSeeded) put("editor_prefill_seeded_item_id", EDIT_ID)
                     },
