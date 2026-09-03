@@ -31,10 +31,29 @@ class BuildFingerprintTest {
         assertEquals("+a3f91c2", suffixWithCommitSha("  A3F91C2B8D4E5F60718293A4B5C6D7E8F9012345  "))
     }
 
+    /**
+     * 형식에 안 맞는 `GITHUB_SHA` 는 커밋으로 받지 않는다.
+     *
+     * **세 입력이 각각 다른 회귀를 잡는다.** 케이스당 Gradle 실행 1회가 들어 한 테스트에 묶었다.
+     *
+     * | 입력 | 무너지면 나오는 값 | 무엇이 깨진 것인가 |
+     * |---|---|---|
+     * | `not-a-sha` | — | hex 런이 없어 어떤 완화에도 안 걸린다. 기본 경로 |
+     * | `a3f91c2-dirty` | `+a3f91c2` | `matches`(완전일치)를 `containsMatchIn`/`find` 로 바꾼 것. **거짓 clean 지문** |
+     * | `a3f91c`(6자) | `+a3f91c` | `{7,40}` 하한이 무너진 것. 자릿수가 흔들린다 |
+     *
+     * 가운데가 KDoc 이 말하는 QA 증거 사고 그 자체다 — dirty 빌드가 clean 지문을 달고 나간다.
+     */
     @Test
     fun `16진수가 아닌 GITHUB_SHA 는 커밋으로 받지 않고 unknown 을 남긴다`() {
         // 접미사를 생략하면 «sha 를 못 읽었다» 와 «이 기능이 없던 빌드» 를 구분할 수 없다.
         assertEquals("+unknown", suffixWithCommitSha("not-a-sha"))
+
+        // 부분 일치로 완화하면 여기서 «+a3f91c2» 라는 거짓 clean 지문이 나온다.
+        assertEquals("+unknown", suffixWithCommitSha("a3f91c2-dirty"))
+
+        // 하한이 무너지면 여기서 «+a3f91c» 로 자릿수가 흔들린다.
+        assertEquals("+unknown", suffixWithCommitSha("a3f91c"))
     }
 
     @Test
