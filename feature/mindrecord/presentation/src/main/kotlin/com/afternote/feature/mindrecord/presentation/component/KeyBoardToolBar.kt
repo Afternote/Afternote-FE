@@ -73,21 +73,24 @@ fun BottomToolbar(
         }
         Spacer(modifier = Modifier.width(8.dp))
 
+        // 정렬 아이콘 3종은 `core:ui` 승격본을 쓴다 (#1404). 종전에는 이 모듈만 Material 기성
+        // 채움 패스를 써서 같은 아이콘이 타임레터 작성 화면과 다르게 렌더됐다 — 시안은
+        // 스트로크 2.4 아웃라인 판이다(4327:76948).
         IconButton(onClick = { onAlignChange(TextAlign.Start) }) {
             Icon(
-                painter = painterResource(R.drawable.mindrecord_align_left),
+                painter = painterResource(CoreUiR.drawable.core_ui_ic_align_left),
                 contentDescription = stringResource(R.string.mindrecord_toolbar_align_left_cd),
             )
         }
         IconButton(onClick = { onAlignChange(TextAlign.Center) }) {
             Icon(
-                painter = painterResource(R.drawable.mindrecord_align_center),
+                painter = painterResource(CoreUiR.drawable.core_ui_ic_align_center),
                 contentDescription = stringResource(R.string.mindrecord_toolbar_align_center_cd),
             )
         }
         IconButton(onClick = { onAlignChange(TextAlign.End) }) {
             Icon(
-                painter = painterResource(R.drawable.mindrecord_align_right),
+                painter = painterResource(CoreUiR.drawable.core_ui_ic_align_right),
                 contentDescription = stringResource(R.string.mindrecord_toolbar_align_right_cd),
             )
         }
@@ -251,9 +254,9 @@ private fun AlignPill(
 ) {
     val items =
         listOf(
-            TextAlign.Start to R.drawable.mindrecord_align_left,
-            TextAlign.Center to R.drawable.mindrecord_align_center,
-            TextAlign.End to R.drawable.mindrecord_align_right,
+            TextAlign.Start to CoreUiR.drawable.core_ui_ic_align_left,
+            TextAlign.Center to CoreUiR.drawable.core_ui_ic_align_center,
+            TextAlign.End to CoreUiR.drawable.core_ui_ic_align_right,
         )
     Row(
         modifier =
