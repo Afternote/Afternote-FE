@@ -78,6 +78,11 @@ class FindPasswordViewModel
                             if (error is CoreAuthFailure.SocialSignUpAccount) {
                                 // 사용자 입력 오류가 아니라 계정 종류의 문제다 — 시안은 팝업으로 그린다.
                                 // 계측하지 않는다: 서버가 정상적으로 가르는 분기지 장애가 아니다.
+                                //
+                                // 스낵바 신호를 함께 내린다 — 이 사유는 팝업으로 알리므로, 아직 소비되지
+                                // 않은 이전 실패 문구가 팝업과 겹쳐 뜨지 않게 한다(`FindIdViewModel.verifyCode`
+                                // 선례). `errorMessage` 를 지우는 경로가 [onErrorConsumed] 하나뿐이라
+                                // 이메일을 고쳐 재발송해도 남는다 — `current.copy` 가 그대로 물려받는다.
                                 current.copy(isSocialSignUpAccount = true, errorMessage = null)
                             } else {
                                 errorReporter.recordAuthFailure(AuthFailureStage.FIND_ACCOUNT_CODE_SEND, error)
