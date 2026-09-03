@@ -1,0 +1,147 @@
+# 닫힌 미병합 네이티브 스택 멤버 알림
+#
+# pull_request_target은 default branch의 workflow 정의만 실행한다. PR 코드·artifact·cache를
+# 체크아웃하거나 실행하지 않고, GitHub API 응답과 default branch 정책 스크립트만 사용한다.
+# 실제 병합 차단은 merge queue synthetic SHA에서 merge-order-guard가 live 스택을 재검사한다.
+name: stack-integrity-notify
+
+on:
+  pull_request_target:
+    types: [closed, reopened]
+
+permissions: {}
+
+jobs:
+  notify-affected-pull-requests:
+    concurrency:
+      group: stack-integrity-notify-${{ github.repository_id }}-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    steps:
+      - name: Clone stack policy from the default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+
+      - name: 닫힌 미병합 멤버 위쪽 PR에 조치 안내
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CLOSED_PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+
+          if ! [[ "$CLOSED_PR" =~ ^[1-9][0-9]*$ ]]; then
+            echo "::error::유효한 닫힌 pull request 번호가 필요합니다"
+            exit 1
+          fi
+
+          owner="${GITHUB_REPOSITORY%/*}"
+          repo="${GITHUB_REPOSITORY#*/}"
+          closed_pr_json=$(gh api graphql \
+            -f query="query(\$owner:String!,\$repo:String!,\$pr:Int!){repository(owner:\$owner,name:\$repo){pullRequest(number:\$pr){number state mergedAt headRefOid stackEntry{position} stack{number size entries(first:100){nodes{position pullRequest{number state mergedAt}} pageInfo{hasNextPage}}}}}}" \
+            -f owner="$owner" -f repo="$repo" -F pr="$CLOSED_PR" \
+            --jq '.data.repository.pullRequest')
+          live_state=$(jq -r '.state' <<< "$closed_pr_json")
+          merged_at=$(jq -r '.mergedAt // empty' <<< "$closed_pr_json")
+
+          # 이벤트는 runner 대기 중 순서가 뒤집힐 수 있으므로 payload action이 아니라 live
+          # 상태를 정본으로 삼는다. CLOSED만 active이고 OPEN/MERGED는 기존 안내를 해소한다.
+          case "$live_state" in
+            CLOSED)
+              if [ -n "$merged_at" ]; then
+                echo "::error::#$CLOSED_PR 상태와 mergedAt이 일치하지 않습니다"
+                exit 1
+              fi
+              notice_state="active"
+              ;;
+            OPEN)
+              if [ -n "$merged_at" ]; then
+                echo "::error::#$CLOSED_PR 상태와 mergedAt이 일치하지 않습니다"
+                exit 1
+              fi
+              notice_state="resolved"
+              resolution_message="#$CLOSED_PR 이 다시 열려 닫힌 미병합 멤버 경고가 해소됐습니다."
+              ;;
+            MERGED)
+              if [ -z "$merged_at" ]; then
+                echo "::error::#$CLOSED_PR 상태와 mergedAt이 일치하지 않습니다"
+                exit 1
+              fi
+              notice_state="resolved"
+              resolution_message="#$CLOSED_PR 이 머지되어 닫힌 미병합 멤버 경고가 해소됐습니다."
+              ;;
+            *)
+              echo "::error::#$CLOSED_PR 의 알 수 없는 live 상태: $live_state"
+              exit 1
+              ;;
+          esac
+
+          targets=$(node .github/scripts/merge-order-stack-integrity.mjs open-above <<< "$closed_pr_json")
+          if [ -z "$targets" ]; then
+            echo "#$CLOSED_PR 상태로 갱신할 열린 상위 스택 PR 없음"
+            exit 0
+          fi
+
+          stack_number=$(jq -r '.stack.number' <<< "$closed_pr_json")
+          marker="<!-- stack-integrity:closed-unmerged-$CLOSED_PR -->"
+          if [ "$notice_state" = "resolved" ]; then
+            desired_body=$(printf '%s\n' \
+              "$marker" \
+              '### 스택 연결 조치 안내 해소' \
+              '' \
+              "$resolution_message" \
+              '' \
+              '실제 병합 시점에는 merge queue의 live 스택 검사가 다시 확인합니다.')
+          else
+            desired_body=$(printf '%s\n' \
+              "$marker" \
+              '### 스택 연결 조치 필요' \
+              '' \
+              "#$CLOSED_PR 이 머지되지 않은 채 닫힌 시점에 네이티브 스택 #$stack_number 에 남아 이 PR의 스택 병합을 막는 것으로 감지됐습니다." \
+              '' \
+              '머지 전에 기존 스택을 해제하고, 필요한 열린 PR만 의도한 순서로 다시 연결해 주세요.' \
+              '' \
+              "\`gh stack unstack $stack_number\`" \
+              "\`gh stack link --base develop <아래 PR> <위 PR>\`" \
+              '' \
+              'unstack/relink 자체에는 Actions 이벤트가 없어 이 기록이 남을 수 있습니다. 현재 병합 가능 여부는 merge queue의 live 검사를 기준으로 확인하세요.')
+          fi
+
+          while read -r target <&3; do
+            [ -n "$target" ] || continue
+            if ! [[ "$target" =~ ^[1-9][0-9]*$ ]]; then
+              echo "::error::유효하지 않은 상위 PR 번호: $target"
+              exit 1
+            fi
+
+            existing_comment=$(
+              gh api --paginate --slurp \
+                "repos/$GITHUB_REPOSITORY/issues/$target/comments?per_page=100" |
+                jq -r --arg marker "$marker" \
+                  '[.[][] | select(.user.login == "github-actions[bot]" and ((.body // "") | startswith($marker)))] | first | .id // empty'
+            )
+            if [ -n "$existing_comment" ]; then
+              gh api --method PATCH \
+                "repos/$GITHUB_REPOSITORY/issues/comments/$existing_comment" \
+                -f body="$desired_body" >/dev/null
+              echo "#$target 의 #$CLOSED_PR 스택 안내를 현재 상태로 갱신했습니다"
+              continue
+            fi
+
+            if [ "$notice_state" = "resolved" ]; then
+              echo "#$target 에 해소할 #$CLOSED_PR 안내가 없음"
+              continue
+            fi
+
+            gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$target/comments" \
+              -f body="$desired_body" >/dev/null
+            echo "#$target 에 #$CLOSED_PR 스택 조치 안내를 남겼습니다"
+          done 3<<< "$targets"
