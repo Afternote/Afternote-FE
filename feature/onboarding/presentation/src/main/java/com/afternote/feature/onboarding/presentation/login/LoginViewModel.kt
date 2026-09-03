@@ -155,9 +155,17 @@ class LoginViewModel
                                     )
                                 }
 
-                                // `PasswordUnchanged` 만 로그인 경로로 오지 않는다 — BE 는 1206 을 비밀번호
-                                // 변경·재설정(`AuthService.passwordChange`·`findPassword`)에서만 던진다.
-                                // 문구 매핑에 맡겨 두면 도달하더라도 안내가 비지 않는다.
+                                // 로그인 경로로 실제 오는 사유는 `SocialLoginRejected`(서버 1208·1209)와, 사유를
+                                // 확인하지 못한 실패(null)뿐이다 — `AuthRepositoryImpl.mapLoginFailure` 가 만드는
+                                // 나머지 셋(1201·1202 · 1702 · 네트워크)은 위에서 이미 갈렸다.
+                                //
+                                // 아래 넷은 여기까지 오지 않는다. `EmailAlreadyRegistered`·`EmailVerification`·
+                                // `PasswordUnchanged` 는 계정 API 쪽 사유고(`AccountRepositoryImpl.mapAccountFailure`),
+                                // BE 는 1206 을 비밀번호 변경·재설정(`AuthService.passwordChange`·`findPassword`)
+                                // 에서만 던진다. `UserCancelledAuth` 는 소셜 SDK 를 부르는 `LoginEntry` 가 그 자리에서
+                                // 걸러낸다 — `LoginUseCase` 는 토큰을 받은 뒤 서버만 친다. `else` 로 뭉개지 않고
+                                // 열거해 두는 건 사유가 늘 때 컴파일러가 여기를 잡게 하려는 것이고, 도달하더라도
+                                // 문구 매핑이 받아 주므로 안내가 비지 않는다.
                                 is CoreAuthFailure.EmailAlreadyRegistered,
                                 is CoreAuthFailure.EmailVerification,
                                 is CoreAuthFailure.SocialLoginRejected,
