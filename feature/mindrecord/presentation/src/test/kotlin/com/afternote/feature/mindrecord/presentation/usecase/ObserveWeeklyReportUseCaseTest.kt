@@ -98,9 +98,10 @@ class ObserveWeeklyReportUseCaseTest {
 
             useCase.observe(thisMonday, today).toList()
 
+            // 요청 횟수와 흐른 시간이 곧 상한이다 — 상수를 따로 단언하면 프로덕션 visibility 를
+            // 테스트 때문에 넓히게 된다 (#1688·#1693 리뷰).
             assertEquals("첫 조회 1회 + 폴링 8회", 9, repository.requestedDates.size)
-            assertEquals(8, ObserveWeeklyReportUseCase.POLL_ATTEMPTS)
-            assertEquals(8_000L, ObserveWeeklyReportUseCase.POLL_INTERVAL_MILLIS)
+            assertEquals("8초 × 8회 = 64초", 64_000L, testScheduler.currentTime)
         }
 
     /**

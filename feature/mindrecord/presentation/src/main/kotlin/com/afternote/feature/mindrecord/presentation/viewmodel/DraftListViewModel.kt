@@ -92,18 +92,25 @@ class DraftListViewModel
                     errorReporter.recordMindRecordFailure(MindRecordFailureStage.DRAFT_DELETE, failure.cause)
                 }
 
-                val loaded = refreshed
+                // 재조회 결과가 없으면 **현 목록을 유지한다**. UseCase 는 targets 가 비면
+                // survivorsAfterDelete 를 부르지 않고 Deleted 를 돌리므로 `refreshed` 가 null 인
+                // 채 여기 올 수 있다 — orEmpty() 로 두면 목록이 빈 리스트로 갈린다. 지금은 위
+                // items.isEmpty() 가드가 막고 있지만 그 가드에 기대지 않는다 (#1693 리뷰).
+                val loaded = refreshed ?: (_uiState.value as? DraftListUiState.Success)?.items
                 _uiState.value =
                     when (outcome) {
                         is DeleteMindRecordDraftsUseCase.Outcome.Deleted -> {
                             DraftListUiState.Success(
                                 items = loaded.orEmpty(),
+                                // 화면은 **남은 것**만 본다 — 이미 사라진 항목의 404 까지 «실패» 로
+                                // 보이면 사용자가 다시 지울 수 없는 것을 다시 고르게 된다.
+                                // 계측은 위에서 전건을 이미 올렸다 (#1693).
                                 deleteOutcome =
-                                    if (outcome.failures.isEmpty()) {
+                                    if (outcome.remaining.isEmpty()) {
                                         DraftDeleteOutcome.AllDeleted
                                     } else {
                                         DraftDeleteOutcome.SomeFailed(
-                                            outcome.failures.mapNotNull { failure -> failure.target.toDraftItem(loaded) },
+                                            outcome.remaining.mapNotNull { failure -> failure.target.toDraftItem(loaded) },
                                         )
                                     },
                             )

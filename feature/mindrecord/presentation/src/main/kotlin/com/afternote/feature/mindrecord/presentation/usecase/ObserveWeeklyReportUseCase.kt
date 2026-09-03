@@ -99,7 +99,7 @@ class ObserveWeeklyReportUseCase
             val profileName: String,
         )
 
-        companion object {
+        private companion object {
             /** 화면에 머무는 동안만 시도하는 횟수. 무한 폴링을 막는 상한이다. */
             const val POLL_ATTEMPTS = 8
             const val POLL_INTERVAL_MILLIS = 8_000L

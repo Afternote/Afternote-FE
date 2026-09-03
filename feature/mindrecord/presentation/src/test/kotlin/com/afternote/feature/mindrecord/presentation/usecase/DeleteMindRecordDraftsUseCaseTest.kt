@@ -38,19 +38,24 @@ class DeleteMindRecordDraftsUseCaseTest {
 
             assertEquals(listOf(1L), diaryRepository.deletedIds)
             assertEquals(listOf(2L), dailyQuestionRepository.deletedIds)
-            assertEquals(Outcome.Deleted(failures = emptyList()), outcome)
+            assertEquals(Outcome.Deleted(failures = emptyList(), remaining = emptyList()), outcome)
         }
 
     /**
      * **이 UseCase 의 존재 이유.** 지우려던 것이 이미 없어서 실패한 경우(404)는 사용자가 원한
-     * 결과가 이뤄진 것이다. 그것까지 실패로 올리면 화면이 「목록은 비었는데 1개 선택」 이 된다.
+     * 결과가 이뤄진 것이다. 그것까지 «다시 고르라» 고 하면 화면이 「목록은 비었는데 1개 선택」 이 된다.
+     *
+     * 다만 **계측에서는 사라지면 안 된다.** 화면에 안 보이는 실패일수록 콘솔이 유일한 흔적이라,
+     * 대조로 걸러 내면 「왜 안 지워졌나」를 나중에 물을 곳이 없어진다 (#964·#1693 리뷰).
+     * 그래서 화면이 보는 [Outcome.Deleted.remaining] 만 비고, [Outcome.failures] 에는 남는다.
      */
     @Test
-    fun `실패했어도 재조회에서 사라졌으면 실패로 치지 않는다`() =
+    fun `재조회에서 사라진 실패는 화면에서 빠지되 계측에는 남는다`() =
         runTest {
+            val gone = IOException("이미 없음")
             val useCase =
                 DeleteMindRecordDraftsUseCase(
-                    diaryRepository = FakeDiaryRepository(onDelete = { Result.failure(IOException("이미 없음")) }),
+                    diaryRepository = FakeDiaryRepository(onDelete = { Result.failure(gone) }),
                     dailyQuestionRepository = FakeDailyQuestionRepository(),
                 )
 
@@ -61,7 +66,9 @@ class DeleteMindRecordDraftsUseCaseTest {
                     survivorsAfterDelete = { emptySet() },
                 )
 
-            assertEquals(Outcome.Deleted(failures = emptyList()), outcome)
+            assertEquals(emptyList<DeleteMindRecordDraftsUseCase.Failure>(), (outcome as Outcome.Deleted).remaining)
+            assertEquals(listOf(Target(Category.Diary, 1)), outcome.failures.map { it.target })
+            assertEquals(gone, outcome.failures.single().cause)
         }
 
     /** 반대로 **아직 남아 있는** 실패는 올려야 한다 — 그래야 다시 선택해 줄 수 있다. */
@@ -81,6 +88,7 @@ class DeleteMindRecordDraftsUseCaseTest {
             assertEquals(listOf(target), outcome.failures.map { it.target })
             assertEquals(boom, outcome.failures.single().cause)
             assertTrue(outcome is Outcome.Deleted)
+            assertEquals(listOf(target), (outcome as Outcome.Deleted).remaining.map { it.target })
         }
 
     /**
@@ -108,11 +116,13 @@ class DeleteMindRecordDraftsUseCaseTest {
                     survivorsAfterDelete = { setOf(Target(Category.Diary, 3)) },
                 )
 
+            // 화면이 보는 것은 remaining 이다 — 계측용 failures 에는 남는 것이 정상이다 (#1693 리뷰).
             assertEquals(
                 "사라진 데일리질문 3이 남아 있는 일기 3 때문에 실패로 살아남았다",
                 emptyList<Target>(),
-                outcome.failures.map { it.target },
+                (outcome as Outcome.Deleted).remaining.map { it.target },
             )
+            assertEquals(listOf(Target(Category.DailyQuestion, 3)), outcome.failures.map { it.target })
         }
 
     /**
@@ -154,7 +164,7 @@ class DeleteMindRecordDraftsUseCaseTest {
                         emptySet()
                     })
 
-            assertEquals(Outcome.Deleted(failures = emptyList()), outcome)
+            assertEquals(Outcome.Deleted(failures = emptyList(), remaining = emptyList()), outcome)
             assertEquals(emptyList<Long>(), diaryRepository.deletedIds)
             assertTrue("대상이 없는데 재조회가 나갔다", !refreshed)
         }
@@ -192,6 +202,6 @@ class DeleteMindRecordDraftsUseCaseTest {
             advanceUntilIdle()
 
             assertTrue("두 삭제가 겹치지 않았다", outcome.isCompleted)
-            assertEquals(Outcome.Deleted(failures = emptyList()), outcome.await())
+            assertEquals(Outcome.Deleted(failures = emptyList(), remaining = emptyList()), outcome.await())
         }
 }

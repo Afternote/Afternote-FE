@@ -35,7 +35,7 @@ class DeleteMindRecordDraftsUseCase
         private val dailyQuestionRepository: DailyQuestionRepository,
     ) {
         /**
-         * [targets] 를 **병렬로** 지운 뒤, 실패한 것 중 아직 남아 있는 것만 골라 돌려준다.
+         * [targets] 를 **병렬로** 지우고, 실패 전건과 그중 아직 남아 있는 것을 나눠 돌려준다.
          *
          * @param targets 지울 대상. 비어 있으면 아무 것도 하지 않고 [Outcome.Deleted] 를 돌린다.
          * @param survivorsAfterDelete 삭제 뒤 다시 조회한 목록의 키. 재조회 자체가 실패했으면
@@ -45,7 +45,7 @@ class DeleteMindRecordDraftsUseCase
             targets: List<Target>,
             survivorsAfterDelete: suspend () -> Set<Target>?,
         ): Outcome {
-            if (targets.isEmpty()) return Outcome.Deleted(failures = emptyList())
+            if (targets.isEmpty()) return Outcome.Deleted(failures = emptyList(), remaining = emptyList())
 
             // 항목별 결과를 항목과 짝지어 받는다 — 무엇이 실패했는지 알아야 다시 선택해 줄 수 있다.
             val results =
@@ -58,7 +58,10 @@ class DeleteMindRecordDraftsUseCase
                 }
 
             val survivors = survivorsAfterDelete() ?: return Outcome.Unknown(failures = failures)
-            return Outcome.Deleted(failures = failures.filter { it.target in survivors })
+            return Outcome.Deleted(
+                failures = failures,
+                remaining = failures.filter { it.target in survivors },
+            )
         }
 
         private suspend fun deleteOne(target: Target): Result<Unit> =
@@ -87,15 +90,24 @@ class DeleteMindRecordDraftsUseCase
         )
 
         sealed interface Outcome {
-            /** 모든 실패는 [Failure] 로 실려 온다. 계측은 [Outcome.Deleted] · [Outcome.Unknown] 양쪽에서 같다. */
+            /**
+             * 이번 삭제에서 난 **실패 전건**. 재조회 대조와 무관하게 그대로 싣는다.
+             *
+             * 계측이 보는 것은 이쪽이다. 「이미 사라진 항목의 404」처럼 화면에 안 보이는 실패일수록
+             * 계측이 유일한 흔적이라, 대조로 걸러 내면 콘솔에서도 사라진다 (#964·#1693).
+             */
             val failures: List<Failure>
 
             /**
-             * 삭제와 재조회가 모두 끝났다. [failures] 는 **아직 남아 있는** 실패만 담는다 —
-             * 비어 있으면 사용자가 원한 결과가 전부 이뤄졌다는 뜻이다.
+             * 삭제와 재조회가 모두 끝났다.
+             *
+             * 화면이 쓰는 것은 [remaining] 이다 — 비어 있으면 사용자가 원한 결과가 전부 이뤄졌다.
+             * [failures] 와 갈리는 이유는 위 KDoc 에 있다.
              */
             data class Deleted(
                 override val failures: List<Failure>,
+                /** [failures] 중 재조회 목록에 **아직 남아 있는** 것. 다시 선택해 줄 대상이다. */
+                val remaining: List<Failure>,
             ) : Outcome
 
             /**

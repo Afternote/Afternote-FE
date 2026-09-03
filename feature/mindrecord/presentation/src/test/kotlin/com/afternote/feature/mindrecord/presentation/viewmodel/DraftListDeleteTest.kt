@@ -90,7 +90,8 @@ class DraftListDeleteTest {
                         Result.failure(IllegalStateException("404"))
                     }
                 }
-        val viewModel = viewModel(repository)
+        val reporter = RecordingErrorReporter()
+        val viewModel = viewModel(repository, reporter)
         val target = (viewModel.uiState.value as DraftListUiState.Success).items
 
         viewModel.delete(target)
@@ -98,6 +99,9 @@ class DraftListDeleteTest {
         val state = viewModel.uiState.value as DraftListUiState.Success
         assertEquals(DraftDeleteOutcome.AllDeleted, state.deleteOutcome)
         assertTrue(state.items.isEmpty())
+        // 화면에서 빠지는 실패일수록 콘솔이 유일한 흔적이다. 재조회 대조로 계측까지 걸러 내면
+        // 「왜 안 지워졌나」를 나중에 물을 곳이 없어진다 (#964·#1693 리뷰).
+        assertEquals(listOf("draft_delete"), reporter.stages)
     }
 
     @Test
@@ -105,7 +109,8 @@ class DraftListDeleteTest {
         val repository =
             // 성공 삭제는 픽스처 기본 동작(저장소에서 제거 + success)이 그대로 맞다.
             FakeDailyQuestionRepository(initialAnswers = listOf(dailyQuestion(id = 1L)))
-        val viewModel = viewModel(repository)
+        val reporter = RecordingErrorReporter()
+        val viewModel = viewModel(repository, reporter)
         val target = (viewModel.uiState.value as DraftListUiState.Success).items
 
         viewModel.delete(target)
@@ -113,6 +118,8 @@ class DraftListDeleteTest {
         val state = viewModel.uiState.value as DraftListUiState.Success
         assertEquals(DraftDeleteOutcome.AllDeleted, state.deleteOutcome)
         assertTrue(state.items.isEmpty())
+        // 반대쪽 경계 — 성공에는 계측이 없어야 한다. 「전부 올린다」 로 되돌리면 여기가 먼저 깨진다.
+        assertEquals(emptyList<String>(), reporter.stages)
     }
 
     private fun viewModel(

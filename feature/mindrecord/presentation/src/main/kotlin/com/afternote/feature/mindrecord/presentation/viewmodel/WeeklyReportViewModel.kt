@@ -193,16 +193,15 @@ class WeeklyReportViewModel
                         result
                             .onSuccess { snapshot ->
                                 loadedVersion = versionAtLoadStart
+                                // 방출이 첫 조회든 폴링이든 [Snapshot] 이 이름을 함께 싣는다 —
+                                // 폴링은 `loaded.copy(report =)` 로 첫 조회의 이름을 그대로 들고 온다.
+                                // 그래서 여기서 갈라 «이름은 첫 조회 것» 으로 두면, ON_RESUME
+                                // 재조회(refreshOnReturn)가 방금 받은 새 이름을 버린다 — 설정에서
+                                // 이름을 바꾸고 돌아오면 주를 옮기기 전까지 옛 이름이 남는다 (#1693 리뷰).
                                 internalState.update { current ->
-                                    val phase = current.loadPhase
-                                    if (phase is LoadPhase.Loaded && phase.monday == monday) {
-                                        // 폴링 갱신 — 이름은 첫 조회 것을 그대로 둔다.
-                                        current.copy(loadPhase = phase.copy(report = snapshot.report))
-                                    } else {
-                                        current.copy(
-                                            loadPhase = LoadPhase.Loaded(monday, snapshot.report, snapshot.profileName),
-                                        )
-                                    }
+                                    current.copy(
+                                        loadPhase = LoadPhase.Loaded(monday, snapshot.report, snapshot.profileName),
+                                    )
                                 }
                             }.onFailure { e ->
                                 internalState.update { current ->
