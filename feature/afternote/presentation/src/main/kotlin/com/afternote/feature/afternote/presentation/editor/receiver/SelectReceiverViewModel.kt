@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.feature.afternote.presentation.editor.mapper.toAfternoteEditorReceivers
 import com.afternote.feature.afternote.presentation.editor.receiver.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
@@ -29,7 +29,7 @@ data class SelectReceiverUiState(
  * 애프터노트 에디터의 수신자 선택 화면 ViewModel (#540).
  *
  * 서버 `GET users/receivers` 는 액세스 토큰으로 호출자를 식별하므로 파라미터가 없다 —
- * 별도의 userId 없이 [UserRepository.getReceivers] 를 그대로 쓴다.
+ * 별도의 userId 없이 [UserReceiverRepository.getReceivers] 를 그대로 쓴다.
  *
  * 선택은 단일이다: 완료 시 에디터에는 수신자 id 하나만 SavedStateHandle 로 돌려주고
  * (`SELECTED_RECEIVER_ID_KEY`), 여러 명 지정은 화면 재진입 반복으로 한다 —
@@ -39,7 +39,7 @@ data class SelectReceiverUiState(
 class SelectReceiverViewModel
     @Inject
     constructor(
-        private val userRepository: UserRepository,
+        private val userReceiverRepository: UserReceiverRepository,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(SelectReceiverUiState())
@@ -53,7 +53,7 @@ class SelectReceiverViewModel
         fun refresh() {
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true, loadFailed = false) }
-                runCatchingCancellable { userRepository.getReceivers() }
+                runCatchingCancellable { userReceiverRepository.getReceivers() }
                     .onSuccess { receivers ->
                         _uiState.update { state ->
                             state.copy(

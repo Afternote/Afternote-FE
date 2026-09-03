@@ -138,7 +138,7 @@ class AfternoteAuthorTest {
     ): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
             savedStateHandle = savedStateHandle,
-            userRepository = afternoteAuthorUserRepository(),
+            userReceiverRepository = afternoteAuthorUserRepository(),
             afternoteRepository = repository,
             memorialThumbnailUploadRepository = MemorialThumbnailUploadRepository { Result.success("https://cdn.test/thumb.jpg") },
             resolveMemorialMediaForSave =

@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.presentation.editor
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.domain.model.author.Detail
@@ -241,7 +241,7 @@ class AfternoteEditorPrefillFailureTest {
                 AfternoteEditorViewModel(
                     savedStateHandle =
                         afternoteEditorSavedStateHandle(initialType = AfternoteType.SOCIAL_NETWORK, itemId = null),
-                    userRepository = unusedProxy<UserRepository>(),
+                    userReceiverRepository = unusedProxy<UserReceiverRepository>(),
                     afternoteRepository = repository,
                     memorialThumbnailUploadRepository =
                         MemorialThumbnailUploadRepository { error("썸네일 업로드가 호출되면 안 됩니다") },
@@ -288,7 +288,7 @@ class AfternoteEditorPrefillFailureTest {
     ): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
             savedStateHandle = editorSavedStateHandle(),
-            userRepository = unusedProxy<UserRepository>(),
+            userReceiverRepository = unusedProxy<UserReceiverRepository>(),
             afternoteRepository = repository,
             memorialThumbnailUploadRepository =
                 MemorialThumbnailUploadRepository { error("썸네일 업로드가 호출되면 안 됩니다") },
