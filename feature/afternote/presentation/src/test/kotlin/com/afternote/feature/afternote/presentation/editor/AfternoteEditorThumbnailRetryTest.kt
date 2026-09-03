@@ -8,6 +8,7 @@ import com.afternote.feature.afternote.domain.repository.author.AfternoteReposit
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
+import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -158,6 +159,7 @@ class AfternoteEditorThumbnailRetryTest {
                 ResolveMemorialMediaForSaveUseCase(
                     MemorialMediaUploadRepository { _, _ -> error("미디어 업로드가 호출되면 안 됩니다") },
                 ),
+            saveAfternoteUseCase = SaveAfternoteUseCase(repositoryProxy<AfternoteRepository>()),
             errorReporter = RecordingErrorReporter(),
         )
 
