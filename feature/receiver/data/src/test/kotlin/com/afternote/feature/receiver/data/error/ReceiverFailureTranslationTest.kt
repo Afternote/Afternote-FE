@@ -10,7 +10,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
 
-/** HTTP·BE 오류 봉투를 수신자 도메인 어휘로 번역하는 경계의 회귀 가드(#1053). */
+/**
+ * HTTP·BE 오류 봉투를 수신자 도메인 어휘로 번역하는 경계의 회귀 가드(#1053).
+ *
+ * 서버 봉투 해석기를 이름으로 부르지 않고 공개 입구인 [toReceiverFailure] 로 들어간다 — 그
+ * 해석기는 이 파일 밖에서 쓰이지 않으므로 `private` 다(#1678 가드). `ApiException` 을 넣으면
+ * 입구가 곧장 그 해석기로 내려가므로 판정 범위는 그대로다.
+ */
 class ReceiverFailureTranslationTest {
     @Test
     fun `표시 허용 5개 code 는 각각 도메인 사유로 번역한다`() {
@@ -26,7 +32,7 @@ class ReceiverFailureTranslationTest {
         cases.forEach { (status, code, expectedReason) ->
             val original = apiException(status = status, code = code, serverMessage = "사용자 안내")
 
-            val failure = original.toReceiverServerFailure()
+            val failure = original.toReceiverFailure()
 
             assertTrue("code=$code: $failure", failure is ReceiverFailure.UserRejection)
             failure as ReceiverFailure.UserRejection
@@ -39,7 +45,7 @@ class ReceiverFailureTranslationTest {
     fun `미등재 4xx 는 문구가 있으면 표시 사유 없는 사용자 거절이다`() {
         val original = apiException(status = 422, code = 4999, serverMessage = "개발자용 검증 문구")
 
-        val failure = original.toReceiverServerFailure()
+        val failure = original.toReceiverFailure()
 
         assertTrue(failure is ReceiverFailure.UserRejection)
         failure as ReceiverFailure.UserRejection
@@ -62,7 +68,7 @@ class ReceiverFailureTranslationTest {
             listOf(null, "  \n  ").forEach { serverMessage ->
                 val original = apiException(status = status, code = code, serverMessage = serverMessage)
 
-                val failure = original.toReceiverServerFailure()
+                val failure = original.toReceiverFailure()
 
                 assertTrue(
                     "code=$code serverMessage=$serverMessage: $failure",
@@ -80,7 +86,7 @@ class ReceiverFailureTranslationTest {
         listOf(null, "  \n  ").forEach { serverMessage ->
             val original = apiException(status = 422, code = 4999, serverMessage = serverMessage)
 
-            val failure = original.toReceiverServerFailure()
+            val failure = original.toReceiverFailure()
 
             assertTrue("serverMessage=$serverMessage: $failure", failure is ReceiverFailure.UnexpectedServerFailure)
             assertSame(original, failure.cause)
@@ -91,7 +97,7 @@ class ReceiverFailureTranslationTest {
     fun `등재 code 여도 5xx 봉투면 예상 밖 서버 실패다`() {
         val original = apiException(status = 500, code = 2008, serverMessage = "내부 처리 오류")
 
-        val failure = original.toReceiverServerFailure()
+        val failure = original.toReceiverFailure()
 
         assertTrue(failure is ReceiverFailure.UnexpectedServerFailure)
         assertSame(original, failure.cause)
@@ -101,7 +107,7 @@ class ReceiverFailureTranslationTest {
     fun `전달 조건 미충족 2009 는 4xx 면 문구와 무관하게 전용 사유다`() {
         val original = apiException(status = 403, code = 2009, serverMessage = "아직 전달 조건이 충족되지 않았습니다.")
 
-        val failure = original.toReceiverServerFailure()
+        val failure = original.toReceiverFailure()
 
         assertTrue(failure is ReceiverFailure.DeliveryConditionNotMet)
         assertSame(original, failure.cause)
@@ -111,7 +117,7 @@ class ReceiverFailureTranslationTest {
     fun `2009 여도 5xx 봉투면 예상 밖 서버 실패다`() {
         val original = apiException(status = 500, code = 2009, serverMessage = "내부 처리 오류")
 
-        val failure = original.toReceiverServerFailure()
+        val failure = original.toReceiverFailure()
 
         assertTrue(failure is ReceiverFailure.UnexpectedServerFailure)
         assertSame(original, failure.cause)
@@ -122,7 +128,7 @@ class ReceiverFailureTranslationTest {
         listOf(null, "  \n  ").forEach { serverMessage ->
             val original = apiException(status = 403, code = 2009, serverMessage = serverMessage)
 
-            val failure = original.toReceiverServerFailure()
+            val failure = original.toReceiverFailure()
 
             assertTrue("serverMessage=$serverMessage: $failure", failure is ReceiverFailure.DeliveryConditionNotMet)
             assertSame(original, failure.cause)

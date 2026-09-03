@@ -61,7 +61,7 @@ internal fun <T> Result<T>.mapReceiverFailure(): Result<T> {
  * **BE `ErrorCode` 번호를 아는 것은 이 계층까지다.** 도메인 실패는 status·code·message 어느 것도
  * 운반하지 않으며, presentation 은 번역된 타입과 사유만 소비한다.
  */
-internal fun ApiException.toReceiverServerFailure(): ReceiverFailure {
+private fun ApiException.toReceiverServerFailure(): ReceiverFailure {
     val registeredReason = code.toReceiverRejectionReasonOrNull()
     return when {
         status !in CLIENT_ERROR_STATUS_RANGE -> {
