@@ -422,10 +422,16 @@ class AfternoteEditorViewModel
             errorReporter.recordAfternoteFailure(AfternoteFailureStage.MEMORIAL_CAPTURE_LAUNCH, throwable)
         }
 
+        /**
+         * @param asDraft 임시저장으로 저장한다 (#808). 서버가 카테고리별 필수값 검증을 건너뛰므로
+         *   («AfternoteValidator») 화면 검증도 같이 건너뛴다 — 임시저장은 «미완성을 그대로 보존하는» 수단이라
+         *   여기서 막으면 저장할 수 있는 것이 정식 등록과 같아져 존재 이유가 없어진다.
+         */
         internal fun saveAfternote(
             payload: RegisterAfternotePayload,
             selectedReceiverIds: List<Long>,
             memorialMedia: SaveAfternoteMemorialMedia,
+            asDraft: Boolean = false,
         ) {
             val editorState = internalState.value
             if (editorState.isSaving) return
@@ -455,10 +461,14 @@ class AfternoteEditorViewModel
             val playlistSongs = form.memorialPlaylistSongs
 
             val validationError =
-                AfternoteEditorValidator.validate(
-                    form = form,
-                    payload = payload,
-                )
+                if (asDraft) {
+                    null
+                } else {
+                    AfternoteEditorValidator.validate(
+                        form = form,
+                        payload = payload,
+                    )
+                }
             if (validationError != null) {
                 internalState.update {
                     it.withError(AfternoteEditorError.Validation(validationError))
@@ -492,6 +502,7 @@ class AfternoteEditorViewModel
                     selectedReceiverIds = selectedReceiverIds,
                     playlistSongs = playlistSongs,
                     memorialMedia = memorialMediaForSave,
+                    asDraft = asDraft,
                 ).fold(
                     onSuccess = { command ->
                         executeSaveCommand(command).fold(
@@ -552,6 +563,7 @@ class AfternoteEditorViewModel
             selectedReceiverIds: List<Long>,
             playlistSongs: List<Song>,
             memorialMedia: SaveAfternoteMemorialMedia,
+            asDraft: Boolean,
         ): Result<SaveAfternoteCommand> {
             val resolved =
                 resolveMemorialMediaForSave(
@@ -578,7 +590,9 @@ class AfternoteEditorViewModel
                                     memorialPhotoUrl = resolved.resolvedMemorialPhotoUrl,
                                 ),
                         )
-                    SaveAfternoteCommand.Update(id = editingId, payload = updatePayload)
+                    // 수정에서 isDraft 는 «어느 버튼으로 저장했나» 를 그대로 말한다 — 임시저장이면 true 로 남기고,
+                    // 등록이면 false 를 명시해 발행으로 전환한다(생략하면 서버가 저장값을 유지한다).
+                    SaveAfternoteCommand.Update(id = editingId, payload = updatePayload.copy(isDraft = asDraft))
                 } else {
                     val createInput =
                         AfternoteEditorFormMapper.buildCreateInput(
@@ -590,7 +604,7 @@ class AfternoteEditorViewModel
                             memorialThumbnailUrl = memorialMedia.memorialVideo.displayed?.thumbnailUrl,
                             memorialPhotoUrl = resolved.resolvedMemorialPhotoUrl,
                         )
-                    SaveAfternoteCommand.Create(input = createInput)
+                    SaveAfternoteCommand.Create(input = AfternoteEditorFormMapper.withDraft(createInput, asDraft))
                 }
             return Result.success(command)
         }
@@ -611,8 +625,14 @@ class AfternoteEditorViewModel
          * 수정 진입 시 기존 애프터노트를 읽어 폼에 실을 prefill 을 만든다.
          *
          * 실패를 «빈 폼» 으로 흘려보내지 않는다 (#705) — 서버 수정(PATCH)은 보낸 값으로 기존 기록을
-         * 덮으므로, 못 읽은 상태의 빈 폼이 저장되면 기록이 소실된다. 그래서 실패는 [InternalState.isPrefillFailed]
-         * 로 남겨 화면이 오류·재시도를 그리고 [saveAfternote] 가 저장을 막게 한다.
+         * 덮으므로, 못 읽은 상태의 빈 폼이 저장되면 기록이 소실된다. 그래서 실패는
+         * [InternalState.isPrefillFailed] 로 남겨 화면이 오류·재시도를 그리고 [saveAfternote] 가
+         * 저장을 막게 한다.
+         *
+         * 서버 상세는 하나인데 응답 형태가 갈리므로(`AfternotedetailResponse` 의 Draft / Published*)
+         * 무엇으로 읽을지는 **여는 쪽**이 정한다 (#808) — 임시저장 목록에서 왔으면 이어쓰기 계약으로
+         * 관용해서 읽고, 상세 화면에서 왔으면 발행 보장을 그대로 받는다. 프리필 이후는 두 경로가 같은
+         * 폼을 채우고, 실패 처리도 위와 같이 공유한다.
          */
         private fun loadExistingAfternoteForEdit(afternoteId: Long) {
             // 재시도가 진행 중인 조회를 자르고 들어온다 — 자르지 않으면 두 응답이 같은 폼을 두고 경합한다.
@@ -620,10 +640,19 @@ class AfternoteEditorViewModel
             prefillJob =
                 viewModelScope.launch {
                     internalState.update { it.copy(isPrefillLoading = true, isPrefillFailed = false) }
-                    afternoteRepository
-                        .getDetail(id = afternoteId)
-                        .onSuccess { detail ->
-                            val prefill = AfternoteEditorFormMapper.buildEditorFormPrefill(detail)
+                    // 두 응답 타입이 달라 각 가지에서 폼 prefill 로 맞춘 뒤 이후 처리를 공유한다.
+                    val loaded =
+                        if (route.isDraft) {
+                            afternoteRepository
+                                .getDraftDetail(id = afternoteId)
+                                .map(AfternoteEditorFormMapper::buildEditorFormPrefill)
+                        } else {
+                            afternoteRepository
+                                .getDetail(id = afternoteId)
+                                .map(AfternoteEditorFormMapper::buildEditorFormPrefill)
+                        }
+                    loaded
+                        .onSuccess { prefill ->
                             // UI 레이어 파사드가 TextFieldState·SnapshotStateList 등 UI 상태를 갱신하도록 위임.
                             // skeleton 종료는 UI 가 prefill 적용을 마친 뒤 [onPrefillConsumed] 로 통보한다
                             // (uiState 갱신 시점에 prefill 도착했어도 UI 가 form·TextFieldState 에 반영하기 전이라
