@@ -51,7 +51,6 @@ include(":feature:mindrecord:domain")
 include(":feature:mindrecord:presentation")
 
 include(":feature:onboarding:data")
-include(":feature:onboarding:domain")
 include(":feature:onboarding:presentation")
 
 include(":feature:receiver:data")

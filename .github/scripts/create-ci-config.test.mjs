@@ -103,13 +103,13 @@ test("keeps pull request validation secretless and release credentials isolated"
         ),
     );
 
+    const pullRequestTargetWorkflows = [];
     for (const [name, workflow] of workflows) {
-        assert.doesNotMatch(
-            workflow,
-            /^\s*pull_request_target\s*:/m,
-            `${name} must not use pull_request_target`,
-        );
-        if (!/^\s*pull_request\s*:/m.test(workflow)) {
+        const usesPullRequestTarget = /^\s*pull_request_target\s*:/m.test(workflow);
+        if (usesPullRequestTarget) {
+            pullRequestTargetWorkflows.push(name);
+        }
+        if (!/^\s*pull_request\s*:/m.test(workflow) && !usesPullRequestTarget) {
             continue;
         }
 
@@ -124,6 +124,18 @@ test("keeps pull request validation secretless and release credentials isolated"
             `${name} must not depend on repository or environment secrets`,
         );
     }
+
+    // pull_request_target은 default branch 정의에 쓰기 권한을 줄 수 있어 원칙적으로 금지한다.
+    // 유일한 예외는 닫힌 스택 멤버를 알리는 이 좁은 bridge이며, PR code/artifact/cache를
+    // 실행하지 않고 default branch 정책과 API JSON만 읽는 불변식을 함께 고정한다.
+    assert.deepEqual(pullRequestTargetWorkflows, ["stack-integrity-notify.yml"]);
+    const stackNotifier = workflows.get("stack-integrity-notify.yml");
+    assert.match(stackNotifier, /^permissions: \{\}$/m);
+    assert.match(stackNotifier, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
+    assert.match(stackNotifier, /persist-credentials: false/);
+    assert.doesNotMatch(stackNotifier, /github\.event\.pull_request\.head\.(sha|ref)/);
+    assert.doesNotMatch(stackNotifier, /actions\/(download-artifact|cache)@/);
+    assert.doesNotMatch(stackNotifier, /\bsecrets(?:\.|\[)/);
 
     const actionReference = "uses: ./.github/actions/setup-ci-config";
     for (const name of [
