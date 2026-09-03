@@ -20,17 +20,14 @@ import com.afternote.feature.timeletter.domain.usecase.ResolveTimeLetterBlocksUs
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeLetterWriteScreen
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteError
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteViewModel
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import java.util.TimeZone
 
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -38,19 +35,6 @@ import java.util.TimeZone
 class TimeLetterFlowTest {
     @get:Rule
     val composeRule = createComposeRule()
-
-    private lateinit var originalTimeZone: TimeZone
-
-    @Before
-    fun setUpTimeZone() {
-        originalTimeZone = TimeZone.getDefault()
-        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Seoul"))
-    }
-
-    @After
-    fun restoreTimeZone() {
-        TimeZone.setDefault(originalTimeZone)
-    }
 
     @Test
     fun registerWithoutReceiver_isBlockedAndShownToUser() {
@@ -119,7 +103,7 @@ class TimeLetterFlowTest {
         assertEquals(repository.createCalls.first(), repository.createCalls.last())
         val call = repository.createCalls.last()
         assertEquals("가을 편지", call.title)
-        assertEquals("2026-09-03T14:35:00+09:00", call.sendAt)
+        assertEquals("2026-09-03T14:35:00", call.sendAt)
         assertEquals(TimeLetterStatus.SCHEDULED, call.status)
         assertEquals(listOf(7L), call.receiverIds)
         assertEquals("잊지 않을게", call.blocks.first().textContent)

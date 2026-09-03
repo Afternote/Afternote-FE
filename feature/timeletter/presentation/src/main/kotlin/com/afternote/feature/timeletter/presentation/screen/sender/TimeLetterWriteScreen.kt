@@ -480,7 +480,7 @@ private fun TimeLetterWriteError.message(): String =
         TimeLetterWriteError.LoadFailed -> stringResource(R.string.timeletter_write_load_failed)
         TimeLetterWriteError.RecipientRequired -> stringResource(R.string.timeletter_write_recipient_required)
         TimeLetterWriteError.SaveFailed -> stringResource(R.string.timeletter_write_save_failed)
-        is TimeLetterWriteError.ServerRejection -> message
+        TimeLetterWriteError.ServerRejection -> stringResource(R.string.timeletter_write_rejected)
     }
 
 @Composable

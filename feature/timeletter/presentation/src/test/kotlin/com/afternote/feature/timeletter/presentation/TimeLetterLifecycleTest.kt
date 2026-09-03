@@ -52,18 +52,15 @@ import com.afternote.feature.timeletter.presentation.viewmodel.TimeletterUiState
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeletterViewModel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.flowOf
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import java.util.TimeZone
 
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -71,19 +68,6 @@ import java.util.TimeZone
 class TimeLetterLifecycleTest {
     @get:Rule
     val composeRule = createComposeRule()
-
-    private lateinit var originalTimeZone: TimeZone
-
-    @Before
-    fun setUpTimeZone() {
-        originalTimeZone = TimeZone.getDefault()
-        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Seoul"))
-    }
-
-    @After
-    fun restoreTimeZone() {
-        TimeZone.setDefault(originalTimeZone)
-    }
 
     @Test
     fun senderList_loadingErrorSuccessFilterAndDeleteRetry_keepRepositoryBoundary() {
@@ -209,7 +193,7 @@ class TimeLetterLifecycleTest {
             }
         }
         composeRule.onNodeWithText("한 줄을 넘길 만큼 아주 긴 첫 임시 편지 제목", substring = true).assertIsDisplayed()
-        composeRule.onNodeWithText("발송 예정일 2026. 10. 01.").assertIsDisplayed()
+        composeRule.onNodeWithText("발송 예정일 2026.10.01.").assertIsDisplayed()
         composeRule.onNodeWithText("둘째 임시 편지").assertIsDisplayed()
         composeRule.onNode(hasText("한 줄을 넘길 만큼 아주 긴 첫 임시 편지 제목", substring = true) and hasClickAction()).performClick()
         assertEquals(31L, openedDraftId)
@@ -336,7 +320,7 @@ class TimeLetterLifecycleTest {
         val call = repository.updateCalls.single()
         assertEquals(41L, call.timeLetterId)
         assertEquals("수정 제목", call.title)
-        assertEquals("2026-09-04T15:20:00+09:00", call.sendAt)
+        assertEquals("2026-09-04T15:20:00", call.sendAt)
         assertEquals(TimeLetterDeliveryMode.DATE, call.deliveryMode)
         assertEquals(TimeLetterStatus.SCHEDULED, call.status)
         assertEquals(

@@ -28,11 +28,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @HiltViewModel
@@ -341,7 +336,7 @@ class TimeLetterWriteViewModel
                                 it.copy(
                                     error =
                                         if (error is TimeLetterServerRejectionException) {
-                                            TimeLetterWriteError.ServerRejection(error.serverMessage)
+                                            TimeLetterWriteError.ServerRejection
                                         } else {
                                             TimeLetterWriteError.SaveFailed
                                         },
@@ -394,9 +389,18 @@ class TimeLetterWriteViewModel
                             nextBlockId = (editorBlocks.maxOfOrNull { block -> block.id } ?: 0L) + 1L,
                         )
                     }
-                }.onFailure {
+                }.onFailure { error ->
                     _uiState.update { it.copy(isLoadingEditingLetter = false) }
-                    _uiState.update { it.copy(error = TimeLetterWriteError.LoadFailed) }
+                    _uiState.update {
+                        it.copy(
+                            error =
+                                if (error is TimeLetterServerRejectionException) {
+                                    TimeLetterWriteError.ServerRejection
+                                } else {
+                                    TimeLetterWriteError.LoadFailed
+                                },
+                        )
+                    }
                 }
         }
 
@@ -544,9 +548,4 @@ private fun formatSendAt(
     date: String,
     hour: Int,
     minute: Int,
-    zoneId: ZoneId = ZoneId.systemDefault(),
-): String =
-    LocalDateTime
-        .of(LocalDate.parse(date), LocalTime.of(hour, minute))
-        .atZone(zoneId)
-        .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+): String = "${date}T${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00"

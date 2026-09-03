@@ -59,7 +59,7 @@ class DraftLetterViewModel
         fun toggleSelection(id: Long) {
             val current = _uiState.value as? DraftLetterUiState.Success ?: return
             if (current.isDeleting) return
-            if (id !in current.drafts.map { it.id }) return
+            if (current.drafts.none { it.id == id }) return
             val updated = if (id in current.selectedIds) current.selectedIds - id else current.selectedIds + id
             _uiState.value = current.copy(selectedIds = updated)
         }

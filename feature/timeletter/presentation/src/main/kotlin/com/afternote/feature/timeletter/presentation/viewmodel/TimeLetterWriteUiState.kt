@@ -35,9 +35,8 @@ sealed interface TimeLetterWriteError {
 
     data object SaveFailed : TimeLetterWriteError
 
-    data class ServerRejection(
-        val message: String,
-    ) : TimeLetterWriteError
+    /** A 4xx the server explicitly rejected. Shown as a generic message — the server's own text is not user-facing. */
+    data object ServerRejection : TimeLetterWriteError
 }
 
 sealed class EditorBlock {

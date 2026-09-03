@@ -93,16 +93,13 @@ import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteEr
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteViewModel
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeletterViewModel
 import kotlinx.coroutines.CompletableDeferred
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.time.LocalDate
 import java.time.YearMonth
-import java.util.TimeZone
 
 /** #838/#839에서 기존 production Screen/ViewModel로 표현 가능한 미검증 완료 경계. */
 @RunWith(AndroidJUnit4::class)
@@ -115,19 +112,6 @@ class TimeLetterMindRecordCompletionAndroidTest {
         FailureArtifactRule {
             composeRule.onRoot().captureToImage().asAndroidBitmap()
         }
-
-    private lateinit var originalTimeZone: TimeZone
-
-    @Before
-    fun setUpTimeZone() {
-        originalTimeZone = TimeZone.getDefault()
-        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Seoul"))
-    }
-
-    @After
-    fun restoreTimeZone() {
-        TimeZone.setDefault(originalTimeZone)
-    }
 
     @Test
     fun timeLetterWrite_uiValidationAndRapidRegister_preserveInputAndCreateOnce() {
@@ -215,7 +199,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
         val call = repository.createCalls.single()
         assertEquals("오래 보존할 제목", call.title)
         assertEquals(listOf(7L), call.receiverIds)
-        assertEquals("2026-09-14T09:35:00+09:00", call.sendAt)
+        assertEquals("2026-09-14T09:35:00", call.sendAt)
         assertEquals(TimeLetterDeliveryMode.DATE, call.deliveryMode)
         assertEquals(TimeLetterStatus.SCHEDULED, call.status)
         assertEquals(
