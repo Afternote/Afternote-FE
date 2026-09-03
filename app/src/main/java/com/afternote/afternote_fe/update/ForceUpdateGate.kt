@@ -113,9 +113,11 @@ class ForceUpdateGate
  * 서버가 `updateRequired=true` 와 함께 준 주소가 Play Store 로 가지 않을 때 남기는 실패 타입.
  *
  * [ErrorReporter] 가 문구를 지우므로 콘솔에서 이 갈래를 가르는 것은 `error_type` 과
- * `stage=force_update_store_url` 이다.
+ * `stage=force_update_store_url` 이다. 그래서 이 타입의 **이름 자체가 관측 계약**이고,
+ * 타입을 내보낼 이유는 그것뿐이다 — 프로덕션 사용처가 이 파일뿐이라 `private` 로 닫고
+ * 테스트는 `error_type` 문자열로 계약을 고정한다 (#1678 가드).
  */
-internal class UnroutableStoreUrlException : RuntimeException("force update store url is not a Play Store target")
+private class UnroutableStoreUrlException : RuntimeException("force update store url is not a Play Store target")
 
 /**
  * Play Store 앱 상세로 실제로 가는 주소면 그 값을, 아니면 null 을 돌려준다.

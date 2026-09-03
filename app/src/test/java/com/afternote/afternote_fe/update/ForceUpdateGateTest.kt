@@ -96,7 +96,12 @@ class ForceUpdateGateTest {
             assertNull(gate.prompt.value)
             val reported = errorReporter.attributes.single()
             assertEquals("force_update_store_url", reported["stage"])
-            assertEquals(UnroutableStoreUrlException::class.java.name, reported["error_type"])
+            // 타입을 이름으로 부르지 않는다 — 그 타입은 이 파일 밖으로 나갈 이유가 없다(#1678).
+            // 콘솔에서 이 갈래를 가르는 것이 곧 이 문자열이라, 관측되는 값 그대로 고정한다.
+            assertEquals(
+                "com.afternote.afternote_fe.update.UnroutableStoreUrlException",
+                reported["error_type"],
+            )
         }
 
     @Test
