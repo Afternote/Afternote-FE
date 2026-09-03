@@ -26,13 +26,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
 import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.signup.SIGN_UP_TOTAL_STEPS
+import com.afternote.feature.onboarding.presentation.signup.SignUpIntent
 import com.afternote.feature.onboarding.presentation.signup.SignUpStep
+import com.afternote.feature.onboarding.presentation.signup.SignUpUiState
+import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel
+import com.afternote.feature.onboarding.presentation.signup.rememberSignUpSnackbarHost
 import com.afternote.core.common.R as CommonR
 
 enum class TermsType {
@@ -50,27 +55,51 @@ data class TermsState(
     val isAllAgreed: Boolean get() = isTermsAgreed && isPrivacyAgreed && isMarketingAgreed
 }
 
+/**
+ * 약관 동의(Step 4) — stateful 층.
+ *
+ * 약관 상세·다음 단계 이동은 네비게이션이라 콜백으로 남는다.
+ */
 @Composable
 fun OnboardingTermsScreen(
-    termsState: TermsState,
-    isNextEnabled: Boolean,
-    snackbarHostState: SnackbarHostState,
-    onTermsToggle: (Boolean) -> Unit,
-    onPrivacyToggle: (Boolean) -> Unit,
-    onMarketingToggle: (Boolean) -> Unit,
-    onToggleAll: (Boolean) -> Unit,
+    viewModel: SignUpViewModel,
     onViewTermsClick: (TermsType) -> Unit,
     onNextClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    OnboardingTermsContent(
+        state = state,
+        onIntent = viewModel::onIntent,
+        snackbarHostState = rememberSignUpSnackbarHost(state, viewModel::onIntent),
+        onViewTermsClick = onViewTermsClick,
+        onNextClick = onNextClick,
+        onBackClick = onBackClick,
+        modifier = modifier,
+    )
+}
+
+/** 약관 동의(Step 4) — stateless 층. 프리뷰·screenshotTest·Robolectric 의 진입점이다. */
+@Composable
+internal fun OnboardingTermsContent(
+    state: SignUpUiState,
+    onIntent: (SignUpIntent) -> Unit,
+    snackbarHostState: SnackbarHostState,
+    onViewTermsClick: (TermsType) -> Unit,
+    onNextClick: () -> Unit,
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val termsState = state.termsState
     FlowStepScaffold(
         topBarTitle = stringResource(R.string.onboarding_signup_title),
         actionButtonText = stringResource(R.string.onboarding_signup_next),
         onBackClick = onBackClick,
         onActionClick = onNextClick,
         modifier = modifier,
-        isActionEnabled = isNextEnabled,
+        isActionEnabled = state.isStep4NextEnabled,
         currentStep = SignUpStep.TERMS,
         totalSteps = SIGN_UP_TOTAL_STEPS,
         progressContentDescription = stringResource(R.string.onboarding_step_description, SignUpStep.TERMS),
@@ -117,7 +146,7 @@ fun OnboardingTermsScreen(
                 TermsRow(
                     title = stringResource(R.string.onboarding_terms_agree_all),
                     isChecked = termsState.isAllAgreed,
-                    onToggle = { onToggleAll(!termsState.isAllAgreed) },
+                    onToggle = { onIntent(SignUpIntent.ToggleAllTerms(!termsState.isAllAgreed)) },
                     titleStyle = AfternoteDesign.typography.bodyBase,
                 )
 
@@ -130,7 +159,7 @@ fun OnboardingTermsScreen(
                 TermsRow(
                     title = stringResource(R.string.onboarding_terms_service),
                     isChecked = termsState.isTermsAgreed,
-                    onToggle = { onTermsToggle(!termsState.isTermsAgreed) },
+                    onToggle = { onIntent(SignUpIntent.ToggleTermsAgreed(!termsState.isTermsAgreed)) },
                     titleStyle = AfternoteDesign.typography.bodySmallB,
                 ) { onViewTermsClick(TermsType.SERVICE) }
 
@@ -138,7 +167,7 @@ fun OnboardingTermsScreen(
                 TermsRow(
                     title = stringResource(R.string.onboarding_terms_privacy),
                     isChecked = termsState.isPrivacyAgreed,
-                    onToggle = { onPrivacyToggle(!termsState.isPrivacyAgreed) },
+                    onToggle = { onIntent(SignUpIntent.TogglePrivacyAgreed(!termsState.isPrivacyAgreed)) },
                     titleStyle = AfternoteDesign.typography.bodySmallB,
                 ) { onViewTermsClick(TermsType.PRIVACY) }
 
@@ -146,7 +175,7 @@ fun OnboardingTermsScreen(
                 TermsRow(
                     title = stringResource(R.string.onboarding_terms_marketing),
                     isChecked = termsState.isMarketingAgreed,
-                    onToggle = { onMarketingToggle(!termsState.isMarketingAgreed) },
+                    onToggle = { onIntent(SignUpIntent.ToggleMarketingAgreed(!termsState.isMarketingAgreed)) },
                     isOptional = true,
                     titleStyle = AfternoteDesign.typography.bodySmallB,
                 ) { onViewTermsClick(TermsType.MARKETING) }

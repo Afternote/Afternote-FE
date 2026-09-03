@@ -2,6 +2,7 @@ package com.afternote.feature.onboarding.presentation.signup
 
 import android.util.Patterns
 import com.afternote.core.ui.UiText
+import com.afternote.core.ui.mvi.UiState
 import com.afternote.feature.onboarding.presentation.terms.TermsState
 
 /**
@@ -75,7 +76,7 @@ data class SignUpUiState(
      * 정적 리소스로 내려앉는다(`Throwable.toDisplayMessage`).
      */
     val errorMessage: UiText? = null,
-) {
+) : UiState {
     val isEmailFormatValid: Boolean
         get() = email.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(email).matches()
 

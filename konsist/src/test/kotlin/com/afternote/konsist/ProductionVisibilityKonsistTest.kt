@@ -341,9 +341,23 @@ class ProductionVisibilityKonsistTest {
                 "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/WeeklyReportRecordedDays.kt::function resolveDateInWeekOrNull [internal]",
             )
 
+        /**
+         * `Content` 5건은 #1802(MVI 파일럿)이 만든 seam 이다 — `Screen`(stateful) 이 **같은 파일에서**
+         * 부르고, 프리뷰·screenshotTest·Robolectric 이 여기로 화면을 그린다. 소비처가 같은 파일과
+         * 테스트뿐이라 이 가드에 걸리지만 `private` 로 조이면 테스트가 화면을 못 그린다.
+         * (`LoginContent`·`OnboardingProfileContent` 는 파일이 갈려 다른 프로덕션 파일이 부르므로 여기 없다.)
+         * 최소 visibility 판정은 receiver·afternote 의 #1819·#1817 과 같은 성격의 후속 몫이다.
+         *
+         * `handleProfileImagePickerResult` 는 파일이 `OnboardingProfileContent.kt` 로 갈리며 경로만 바뀌었다.
+         */
         val ISSUE_1675_ONBOARDING =
             setOf(
-                "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/OnboardingProfileScreen.kt::function handleProfileImagePickerResult [internal]",
+                "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/OnboardingProfileContent.kt::function handleProfileImagePickerResult [internal]",
+                "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/findaccount/FindIdScreen.kt::function FindIdContent [internal]",
+                "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/signup/SignUpPasswordScreen.kt::function SignUpPasswordContent [internal]",
+                "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/signup/SignUpResidentNumberScreen.kt::function SignUpResidentNumberContent [internal]",
+                "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/signup/SignUpScreen.kt::function SignUpContent [internal]",
+                "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/terms/OnboardingTermsScreen.kt::function OnboardingTermsContent [internal]",
             )
 
         val ISSUE_1676_RECEIVER =
@@ -392,12 +406,6 @@ class ProductionVisibilityKonsistTest {
                 "core/ui/src/main/kotlin/com/afternote/core/ui/button/" +
                     "AfternoteRadioGroup.kt::function AfternoteRadioGroup [implicit-public]" to
                     "core:ui README에 문서화된 공용 컴포넌트",
-                "core/ui/src/main/kotlin/com/afternote/core/ui/mvi/" +
-                    "MviViewModel.kt::class MviViewModel [implicit-public]" to
-                    "MVI 베이스 계약(#1800) — 화면 전환 이슈가 상속하기 시작하면 프로덕션 참조가 생긴다",
-                "core/ui/src/main/kotlin/com/afternote/core/ui/mvi/" +
-                    "ObserveSignal.kt::function ObserveSignal [implicit-public]" to
-                    "MVI 일회성 신호 소비 관용구(#1800) — 화면 전환 이슈가 소비처를 만든다",
                 "feature/afternote/domain/src/main/java/com/afternote/feature/afternote/domain/model/author/" +
                     "ListItem.kt::class Account [implicit-public]" to
                     "ListItem.account가 노출하는 도메인 타입",

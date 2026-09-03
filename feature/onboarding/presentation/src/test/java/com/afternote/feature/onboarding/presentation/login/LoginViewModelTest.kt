@@ -65,9 +65,9 @@ class LoginViewModelTest {
         )
 
     private fun LoginViewModel.attemptEmailLogin() {
-        updateEmail("user@example.com")
-        updatePassword("pw")
-        loginWithEmail()
+        onIntent(LoginIntent.UpdateEmail("user@example.com"))
+        onIntent(LoginIntent.UpdatePassword("pw"))
+        onIntent(LoginIntent.SubmitEmailLogin)
     }
 
     @Test
@@ -95,7 +95,7 @@ class LoginViewModelTest {
             })
         viewModel.attemptEmailLogin()
 
-        viewModel.retryLogin()
+        viewModel.onIntent(LoginIntent.RetryLogin)
 
         assertEquals(2, attempts)
     }
@@ -110,7 +110,7 @@ class LoginViewModelTest {
             })
         viewModel.attemptEmailLogin()
 
-        viewModel.onNetworkErrorDismissed()
+        viewModel.onIntent(LoginIntent.DismissNetworkError)
 
         assertFalse(viewModel.uiState.value.showNetworkErrorPopup)
         assertEquals(1, attempts)
@@ -139,7 +139,7 @@ class LoginViewModelTest {
             })
         viewModel.attemptEmailLogin()
 
-        viewModel.updatePassword("new-pw")
+        viewModel.onIntent(LoginIntent.UpdatePassword("new-pw"))
 
         assertFalse(viewModel.uiState.value.hasCredentialError)
     }
@@ -182,7 +182,7 @@ class LoginViewModelTest {
         val viewModel = viewModel(onDefaultLogin = { Result.failure(Exception("실패")) })
         viewModel.attemptEmailLogin()
 
-        viewModel.onErrorConsumed()
+        viewModel.onIntent(LoginIntent.ConsumeError)
 
         assertNull(viewModel.uiState.value.errorMessage)
     }

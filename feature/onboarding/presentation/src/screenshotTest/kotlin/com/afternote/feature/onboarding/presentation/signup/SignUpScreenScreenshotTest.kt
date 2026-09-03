@@ -8,7 +8,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.android.tools.screenshot.PreviewTest
 
 /**
- * [SignUpScreen] 의 시각 회귀 baseline — 회원가입 Step 1 (이메일 + 인증번호).
+ * [SignUpContent] 의 시각 회귀 baseline — 회원가입 Step 1 (이메일 + 인증번호).
  *
  * 세 케이스로 화면 흐름의 핵심 상태를 가드:
  * 1. 초기 진입 — 빈 입력 + "인증번호 받기" 비활성
@@ -22,20 +22,10 @@ import com.android.tools.screenshot.PreviewTest
 @Composable
 internal fun signUpScreenInitialScreenshot() {
     AfternoteTheme {
-        SignUpScreen(
-            initialEmail = "",
-            initialVerificationCode = "",
-            isVerificationSent = false,
-            isSendingCode = false,
-            isEmailFormatValid = false,
-            resendCooldownSeconds = 0,
-            hasVerificationError = false,
-            isNextEnabled = false,
+        SignUpContent(
+            state = SignUpUiState(),
+            onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },
-            onEmailChange = {},
-            onVerificationCodeChange = {},
-            onRequestVerification = {},
-            onNextClick = {},
             onBackClick = {},
         )
     }
@@ -46,20 +36,15 @@ internal fun signUpScreenInitialScreenshot() {
 @Composable
 internal fun signUpScreenVerificationInProgressScreenshot() {
     AfternoteTheme {
-        SignUpScreen(
-            initialEmail = "user@example.com",
-            initialVerificationCode = "",
-            isVerificationSent = true,
-            isSendingCode = false,
-            isEmailFormatValid = true,
-            resendCooldownSeconds = 20,
-            hasVerificationError = false,
-            isNextEnabled = false,
+        SignUpContent(
+            state =
+                SignUpUiState(
+                    email = "user@example.com",
+                    isVerificationSent = true,
+                    resendCooldownSeconds = 20,
+                ),
+            onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },
-            onEmailChange = {},
-            onVerificationCodeChange = {},
-            onRequestVerification = {},
-            onNextClick = {},
             onBackClick = {},
         )
     }
@@ -70,20 +55,21 @@ internal fun signUpScreenVerificationInProgressScreenshot() {
 @Composable
 internal fun signUpScreenVerificationMismatchScreenshot() {
     AfternoteTheme {
-        SignUpScreen(
-            initialEmail = "user@example.com",
-            initialVerificationCode = "000000",
-            isVerificationSent = true,
-            isSendingCode = false,
-            isEmailFormatValid = true,
-            resendCooldownSeconds = 0,
-            hasVerificationError = true,
-            isNextEnabled = false,
+        SignUpContent(
+            state =
+                SignUpUiState(
+                    email = "user@example.com",
+                    verificationCode = "000000",
+                    isVerificationSent = true,
+                    // baseline 은 «다음» 이 비활성인 채로 잡혀 있다. isNextEnabled 가 파생값이 된
+                    // 지금 그 픽셀을 내는 상태는 검증이 아직 진행 중인 프레임이다 — 서버가 무효를
+                    // 알려 hasVerificationError 가 서고(VerificationRejected) 요청이 끝나
+                    // isVerifyingEmail 이 내려가기(EmailVerifyFinished) 전 사이다.
+                    isVerifyingEmail = true,
+                    hasVerificationError = true,
+                ),
+            onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },
-            onEmailChange = {},
-            onVerificationCodeChange = {},
-            onRequestVerification = {},
-            onNextClick = {},
             onBackClick = {},
         )
     }

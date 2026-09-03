@@ -90,6 +90,51 @@ class ObserveSignalTest {
         assertEquals(emptyList<String>(), observed)
         assertEquals(emptyList<SignalIntent>(), intents)
     }
+
+    @Test
+    fun `플래그가 올라가면 한 번 부르고 소비 Intent 를 되쏜다`() {
+        var raisedCount = 0
+        val intents = mutableListOf<SignalIntent>()
+        var raised by mutableStateOf(false)
+
+        composeRule.setContent {
+            ObserveFlag(
+                raised = raised,
+                consumed = SignalIntent.ConsumeError,
+                onIntent = { intent ->
+                    intents += intent
+                    raised = false
+                },
+                onRaised = { raisedCount++ },
+            )
+        }
+
+        composeRule.runOnIdle { raised = true }
+        composeRule.waitForIdle()
+        composeRule.runOnIdle { raised = true }
+        composeRule.waitForIdle()
+
+        assertEquals(2, raisedCount)
+        assertEquals(listOf(SignalIntent.ConsumeError, SignalIntent.ConsumeError), intents)
+    }
+
+    @Test
+    fun `플래그가 내려가 있으면 아무것도 부르지 않는다`() {
+        var raisedCount = 0
+
+        composeRule.setContent {
+            ObserveFlag(
+                raised = false,
+                consumed = SignalIntent.ConsumeError,
+                onIntent = {},
+                onRaised = { raisedCount++ },
+            )
+        }
+
+        composeRule.waitForIdle()
+
+        assertEquals(0, raisedCount)
+    }
 }
 
 private sealed interface SignalIntent : MviIntent {

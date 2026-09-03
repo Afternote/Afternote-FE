@@ -1,154 +1,44 @@
 package com.afternote.feature.onboarding.presentation
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.AfternoteTextField
-import com.afternote.core.ui.ProfileImagePicker
-import com.afternote.core.ui.button.AfternoteButton
-import com.afternote.core.ui.button.AfternoteButtonType
-import com.afternote.core.ui.modifierextention.addFocusCleaner
-import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.topbar.DetailTopBar
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.mvi.ObserveFlag
+import com.afternote.feature.onboarding.presentation.signup.SignUpIntent
+import com.afternote.feature.onboarding.presentation.signup.SignUpUiState
+import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel
+import com.afternote.feature.onboarding.presentation.signup.rememberSignUpSnackbarHost
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * 프로필 설정 — stateful 층.
+ *
+ * 그래프 스코프 [SignUpViewModel] 의 일회성 신호를 소비한다. 이름 미입력·실패 문구는 Step 화면과
+ * 같은 관용구([rememberSignUpSnackbarHost])를 쓰고, 완료 신호([SignUpUiState.isSignedUp])만
+ * 이 화면이 직접 소비한다.
+ */
 @Composable
 fun OnboardingProfileScreen(
-    initialName: String,
-    displayImageUri: Uri?,
-    snackbarHostState: SnackbarHostState,
-    onNameChange: (String) -> Unit,
-    onProfileImagePick: (Uri) -> Unit,
+    viewModel: SignUpViewModel,
+    onOnboardingComplete: () -> Unit,
     onBackClick: () -> Unit,
-    onCompleteClick: () -> Unit,
     modifier: Modifier = Modifier,
-    isSubmitting: Boolean = false,
 ) {
-    val focusManager = LocalFocusManager.current
-    val nameState = rememberTextFieldState(initialName)
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = rememberSignUpSnackbarHost(state, viewModel::onIntent)
 
-    LaunchedEffect(nameState) {
-        snapshotFlow { nameState.text.toString() }.collect(onNameChange)
-    }
+    ObserveFlag(
+        raised = state.isSignedUp,
+        consumed = SignUpIntent.ConsumeSignedUp,
+        onIntent = viewModel::onIntent,
+        onRaised = onOnboardingComplete,
+    )
 
-    val photoPickerLauncher =
-        rememberLauncherForActivityResult(
-            contract = PickVisualMedia(),
-            onResult = { uri -> handleProfileImagePickerResult(uri, onProfileImagePick) },
-        )
-
-    Scaffold(
+    OnboardingProfileContent(
+        state = state,
+        onIntent = viewModel::onIntent,
+        snackbarHostState = snackbarHostState,
+        onBackClick = onBackClick,
         modifier = modifier,
-        topBar = {
-            DetailTopBar(
-                title = stringResource(R.string.onboarding_profile_top_bar_title),
-                onBackClick = {
-                    focusManager.clearFocus()
-                    onBackClick()
-                },
-            )
-        },
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-        containerColor = Color.Transparent,
-    ) { innerPadding ->
-        Column(
-            modifier =
-                Modifier
-                    .padding(innerPadding)
-                    .consumeWindowInsets(innerPadding)
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .imePadding()
-                    .addFocusCleaner(focusManager)
-                    .padding(horizontal = 20.dp),
-        ) {
-            Spacer(modifier = Modifier.height(39.dp))
-            Column(
-                verticalArrangement = Arrangement.spacedBy(56.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    text = stringResource(R.string.onboarding_profile_headline),
-                    modifier = Modifier.fillMaxWidth(),
-                    style = AfternoteDesign.typography.h1,
-                    color = AfternoteDesign.colors.black,
-                    textAlign = TextAlign.Start,
-                )
-                ProfileImagePicker(
-                    onPickClick = {
-                        photoPickerLauncher.launch(
-                            PickVisualMediaRequest(PickVisualMedia.ImageOnly),
-                        )
-                    },
-                    displayImageUri = displayImageUri?.toString(),
-                )
-
-                val isNameProvided =
-                    nameState.text
-                        .toString()
-                        .trim()
-                        .isNotEmpty()
-
-                // 제출 중에는 버튼과 IME 두 경로 모두 잠근다. 한쪽만 막으면 다른 쪽으로 중복 제출된다.
-                val isCompleteEnabled = isNameProvided && !isSubmitting
-
-                AfternoteTextField(
-                    state = nameState,
-                    placeholder = stringResource(R.string.onboarding_profile_name_placeholder),
-                    imeAction = ImeAction.Done,
-                    onImeAction = {
-                        focusManager.clearFocus()
-                        if (isCompleteEnabled) onCompleteClick()
-                    },
-                )
-
-                AfternoteButton(
-                    text = stringResource(R.string.onboarding_profile_complete),
-                    onClick = {
-                        focusManager.clearFocus()
-                        if (isCompleteEnabled) onCompleteClick()
-                    },
-                    type = if (isCompleteEnabled) AfternoteButtonType.Default else AfternoteButtonType.Un,
-                    isLoading = isSubmitting,
-                )
-            }
-        }
-    }
-}
-
-/** 포토 피커 취소 결과(null)는 선택 변경이 아니므로 기존 프로필 이미지를 그대로 둔다. */
-internal fun handleProfileImagePickerResult(
-    uri: Uri?,
-    onProfileImagePick: (Uri) -> Unit,
-) {
-    uri?.let(onProfileImagePick)
+    )
 }
