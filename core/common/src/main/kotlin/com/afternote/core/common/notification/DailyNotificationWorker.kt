@@ -30,7 +30,7 @@ class DailyNotificationWorker(
             NotificationPendingIntentFactory.create(
                 context = applicationContext,
                 source = NOTIFICATION_SOURCE,
-                occurrenceToken = UUID.randomUUID().toString(),
+                occurrenceId = UUID.randomUUID().toString(),
                 destination = NOTIFICATION_DESTINATION,
             )
 

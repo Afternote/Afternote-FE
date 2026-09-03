@@ -1,11 +1,13 @@
 package com.afternote.afternote_fe
 
 import android.content.Intent
+import android.os.SystemClock
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -18,6 +20,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
 import androidx.test.runner.lifecycle.Stage
 import com.afternote.afternote_fe.notification.NotificationEntrySource
+import com.afternote.afternote_fe.test.backgroundActivityStartOptions
 import com.afternote.core.common.notification.NotificationDestination
 import com.afternote.core.common.notification.NotificationPendingIntentFactory
 import com.afternote.core.domain.repository.auth.AuthRepository
@@ -73,6 +76,32 @@ class NotificationNavigationAndroidTest {
             activityUnderTest.finish()
         }
         instrumentation.waitForIdleSync()
+        awaitActivityDestroyed()
+    }
+
+    /**
+     * `ActivityScenario`는 대상 Activity를 실행 Intent로 식별해서, 알림 Intent가 들어와 있는 동안의
+     * lifecycle 이벤트를 «intent 불일치»로 통째로 무시한다. 그 구간에 RESUMED가 끼면 scenario의
+     * stage는 STARTED 같은 전이 stage에 멈춰 있게 되고, steady stage(RESUMED·PAUSED·STOPPED·
+     * DESTROYED)가 아닌 채로 rule의 `close()`가 돌면 "Current state was null unexpectedly"로 죽는다.
+     * 위에서 Intent를 되돌린 뒤 DESTROYED까지 기다려, scenario가 steady stage를 관측한 상태로
+     * teardown에 넘긴다.
+     */
+    private fun awaitActivityDestroyed() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val deadline = SystemClock.uptimeMillis() + ACTIVITY_TEARDOWN_TIMEOUT_MILLIS
+        while (SystemClock.uptimeMillis() < deadline) {
+            var stage: Stage? = null
+            instrumentation.runOnMainSync {
+                stage =
+                    ActivityLifecycleMonitorRegistry
+                        .getInstance()
+                        .getLifecycleStageOf(activityUnderTest)
+            }
+            if (stage == Stage.DESTROYED) return
+            instrumentation.waitForIdleSync()
+            SystemClock.sleep(ACTIVITY_TEARDOWN_POLL_MILLIS)
+        }
     }
 
     @Test
@@ -156,30 +185,32 @@ class NotificationNavigationAndroidTest {
 
     private fun openTimeLetterTab() {
         val timeLetterLabel = context.getString(CoreUiR.string.core_ui_nav_item_timeletter)
-        composeRule.onNodeWithText(timeLetterLabel).performClick()
+        // 하단 탭만 고른다 — 홈 섹션 헤더에도 «타임레터» 가 있어 텍스트만으로는 두 개다
+        // (#700 이 시안 확정 문구로 그 섹션을 추가했다). 탭은 눌리고 헤더는 안 눌린다.
+        composeRule.onNode(hasText(timeLetterLabel) and hasClickAction()).performClick()
         composeRule.onNode(selectedBottomBarMatcher(CoreUiR.string.core_ui_nav_item_timeletter)).assertIsSelected()
     }
 
     private fun deliverWarmNotification(
         source: NotificationEntrySource,
-        occurrenceToken: String,
+        occurrenceId: String,
         destination: NotificationDestination,
     ) {
         val pendingIntent =
             NotificationPendingIntentFactory.create(
                 context = context,
                 source = source.contractValue,
-                occurrenceToken = occurrenceToken,
+                occurrenceId = occurrenceId,
                 destination = destination,
             )
 
         assertNotNull(pendingIntent)
-        pendingIntent?.send()
+        pendingIntent?.send(context, 0, null, null, null, null, backgroundActivityStartOptions())
     }
 
     private fun awaitNotificationIntent(
         source: NotificationEntrySource,
-        occurrenceToken: String,
+        occurrenceId: String,
         destination: NotificationDestination,
     ) {
         composeRule.waitUntil(timeoutMillis = 10_000) {
@@ -188,7 +219,7 @@ class NotificationNavigationAndroidTest {
             ) == source.contractValue &&
                 activityUnderTest.intent.getStringExtra(
                     NotificationPendingIntentFactory.EXTRA_NOTIFICATION_OCCURRENCE_TOKEN,
-                ) == occurrenceToken &&
+                ) == occurrenceId &&
                 activityUnderTest.intent.getStringExtra(
                     NotificationPendingIntentFactory.EXTRA_NOTIFICATION_DESTINATION,
                 ) == destination.contractValue
@@ -220,4 +251,9 @@ class NotificationNavigationAndroidTest {
     private fun selectedBottomBarMatcher(labelResource: Int): SemanticsMatcher =
         hasText(context.getString(labelResource)) and
             SemanticsMatcher.expectValue(SemanticsProperties.Selected, true)
+
+    private companion object {
+        const val ACTIVITY_TEARDOWN_TIMEOUT_MILLIS = 10_000L
+        const val ACTIVITY_TEARDOWN_POLL_MILLIS = 50L
+    }
 }

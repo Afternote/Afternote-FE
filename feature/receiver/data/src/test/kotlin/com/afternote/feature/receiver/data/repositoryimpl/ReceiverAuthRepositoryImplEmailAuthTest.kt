@@ -13,6 +13,7 @@ import com.afternote.feature.receiver.data.dto.ReceiverAuthVerifyRequestDto
 import com.afternote.feature.receiver.data.dto.ReceiverEmailAuthVerifyDto
 import com.afternote.feature.receiver.data.dto.ReceiverEmailAuthVerifyRequestDto
 import com.afternote.feature.receiver.data.dto.ReceiverMessageDto
+import com.afternote.feature.receiver.data.reporting.RecordingErrorReporter
 import com.afternote.feature.receiver.data.service.ReceiverAuthApiService
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import com.afternote.feature.receiver.domain.error.ReceiverRejectionReason
@@ -42,16 +43,18 @@ class ReceiverAuthRepositoryImplEmailAuthTest {
     fun `sendEmailAuthCode - 미등록 이메일 1901 ApiException 을 도메인 예외로 변환`() {
         val repository =
             ReceiverAuthRepositoryImpl(
-                FakeReceiverAuthApiService(
-                    onSendEmailAuthCode = {
-                        throw ApiException(
-                            status = 404,
-                            code = 1901,
-                            serverMessage = "등록된 수신자 이메일이 아닙니다.",
-                            fallbackMessage = "등록된 수신자 이메일이 아닙니다.",
-                        )
-                    },
-                ),
+                errorReporter = RecordingErrorReporter(),
+                api =
+                    FakeReceiverAuthApiService(
+                        onSendEmailAuthCode = {
+                            throw ApiException(
+                                status = 404,
+                                code = 1901,
+                                serverMessage = "등록된 수신자 이메일이 아닙니다.",
+                                fallbackMessage = "등록된 수신자 이메일이 아닙니다.",
+                            )
+                        },
+                    ),
             )
 
         val result = runBlocking { repository.sendEmailAuthCode("none@example.com") }
@@ -67,16 +70,18 @@ class ReceiverAuthRepositoryImplEmailAuthTest {
     fun `verifyEmailAuthCode - 만료·미존재 1902 ApiException 을 도메인 예외로 변환`() {
         val repository =
             ReceiverAuthRepositoryImpl(
-                FakeReceiverAuthApiService(
-                    onVerifyEmailAuthCode = {
-                        throw ApiException(
-                            status = 400,
-                            code = 1902,
-                            serverMessage = "인증번호가 만료되었거나 존재하지 않습니다. 다시 요청해주세요.",
-                            fallbackMessage = "인증번호가 만료되었거나 존재하지 않습니다. 다시 요청해주세요.",
-                        )
-                    },
-                ),
+                errorReporter = RecordingErrorReporter(),
+                api =
+                    FakeReceiverAuthApiService(
+                        onVerifyEmailAuthCode = {
+                            throw ApiException(
+                                status = 400,
+                                code = 1902,
+                                serverMessage = "인증번호가 만료되었거나 존재하지 않습니다. 다시 요청해주세요.",
+                                fallbackMessage = "인증번호가 만료되었거나 존재하지 않습니다. 다시 요청해주세요.",
+                            )
+                        },
+                    ),
             )
 
         val result = runBlocking { repository.verifyEmailAuthCode("a@b.com", "123456") }
@@ -93,7 +98,8 @@ class ReceiverAuthRepositoryImplEmailAuthTest {
         val original = IOException("timeout")
         val repository =
             ReceiverAuthRepositoryImpl(
-                FakeReceiverAuthApiService(onSendEmailAuthCode = { throw original }),
+                errorReporter = RecordingErrorReporter(),
+                api = FakeReceiverAuthApiService(onSendEmailAuthCode = { throw original }),
             )
 
         val result = runBlocking { repository.sendEmailAuthCode("a@b.com") }
@@ -106,7 +112,8 @@ class ReceiverAuthRepositoryImplEmailAuthTest {
         runBlocking {
             val repository =
                 ReceiverAuthRepositoryImpl(
-                    FakeReceiverAuthApiService(onSendEmailAuthCode = { awaitCancellation() }),
+                    errorReporter = RecordingErrorReporter(),
+                    api = FakeReceiverAuthApiService(onSendEmailAuthCode = { awaitCancellation() }),
                 )
 
             var result: Result<Unit>? = null
@@ -122,23 +129,25 @@ class ReceiverAuthRepositoryImplEmailAuthTest {
     fun `verifyEmailAuthCode - 성공 응답을 도메인 모델로 매핑`() {
         val repository =
             ReceiverAuthRepositoryImpl(
-                FakeReceiverAuthApiService(
-                    onVerifyEmailAuthCode = { body ->
-                        assertEquals("a@b.com", body.email)
-                        assertEquals("123456", body.authCode)
-                        BaseResponse(
-                            status = 200,
-                            code = 200,
-                            message = "성공",
-                            data =
-                                ReceiverEmailAuthVerifyDto(
-                                    receiverId = 3L,
-                                    receiverName = "큐에이수신자",
-                                    senderName = "큐에이발신자",
-                                ),
-                        )
-                    },
-                ),
+                errorReporter = RecordingErrorReporter(),
+                api =
+                    FakeReceiverAuthApiService(
+                        onVerifyEmailAuthCode = { body ->
+                            assertEquals("a@b.com", body.email)
+                            assertEquals("123456", body.authCode)
+                            BaseResponse(
+                                status = 200,
+                                code = 200,
+                                message = "성공",
+                                data =
+                                    ReceiverEmailAuthVerifyDto(
+                                        receiverId = 3L,
+                                        receiverName = "큐에이수신자",
+                                        senderName = "큐에이발신자",
+                                    ),
+                            )
+                        },
+                    ),
             )
 
         val result = runBlocking { repository.verifyEmailAuthCode("a@b.com", "123456") }.getOrThrow()

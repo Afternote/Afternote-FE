@@ -30,6 +30,30 @@ const dependencyPathFilters = [
   '.github/workflows/dependency-submission-upload.yml',
 ];
 
+// Settings → Actions → General → Actions permissions 의 실제 저장소 설정을 코드 쪽에
+// 미러링한다 (#1538). 이 목록 밖의 액션은 CI 가 아니라 run 시작 시점에 startup_failure 로
+// 죽고, 그 사유(«... is not allowed in Afternote/Afternote-FE»)는 job 이 만들어지지 않아
+// 로그에도 남지 않는다 — 관리자만 설정 화면에서 확인할 수 있다. 그 침묵을 막으려고
+// 아래 테스트가 diff 옆에서 먼저 red 를 낸다.
+//
+// 실측값 (GET /repos/Afternote/Afternote-FE/actions/permissions[/selected-actions]):
+//   allowed_actions: "selected", sha_pinning_required: true
+//   github_owned_allowed: true, verified_allowed: true
+const repositoryActionsPolicy = {
+    // github_owned_allowed 가 커버하는 소유자. 2026-08-30 실측으로 `github` 조직도
+    // GitHub 소유로 취급된다 — github/codeql-action 은 patterns 없이 통과한다.
+    githubOwnedOwners: ['actions', 'github'],
+    // verified_allowed 가 이 셋을 이미 덮지만 그것에 기대지 않는다. Marketplace 검증은
+    // 언제든 취소될 수 있고 그때 정지하는 것은 릴리스·스크린샷 파이프라인이다.
+    patternsAllowed: [
+        'docker/build-push-action@*',
+        'docker/setup-buildx-action@*',
+        'google-github-actions/auth@*',
+        'gradle/actions/dependency-submission@*',
+        'gradle/actions/setup-gradle@*',
+    ],
+};
+
 async function workflows() {
   const names = (await readdir(workflowDirectory)).filter((name) => name.endsWith('.yml'));
   return Promise.all(
@@ -130,6 +154,45 @@ function actionReferences(source) {
     return [...source.matchAll(/^\s*(?:-\s+)?uses:\s*(\S+)/gm)].map((match) => match[1]);
 }
 
+// GitHub 의 patterns_allowed 매칭을 그대로 흉내 낸다 — `*` 는 경로 구분자를 넘지 않는다.
+// 그래서 `gradle/actions/*@*` 같은 넓은 표현 대신 액션마다 한 줄씩 적는다.
+function matchesAllowedPattern(reference, pattern) {
+    const expression = pattern.split('*').map(escapeForRegex).join('[^/]*');
+    return new RegExp(`^${expression}$`).test(reference);
+}
+
+function isGithubOwnedAction(reference) {
+    return repositoryActionsPolicy.githubOwnedOwners.includes(reference.split('/')[0]);
+}
+
+function isAllowedByRepositoryPolicy(reference) {
+    return (
+        isLocalReference(reference) ||
+        isGithubOwnedAction(reference) ||
+        repositoryActionsPolicy.patternsAllowed.some((pattern) =>
+            matchesAllowedPattern(reference, pattern),
+        )
+    );
+}
+
+async function compositeActions() {
+    const directory = new URL('../actions/', import.meta.url);
+    const names = await readdir(directory);
+    const sources = [];
+    for (const name of names) {
+        try {
+            sources.push([
+                `.github/actions/${name}/action.yml`,
+                await readFile(new URL(`${name}/action.yml`, directory), 'utf8'),
+            ]);
+        } catch {
+            continue;
+        }
+    }
+    assert.ok(sources.length > 0, 'composite action 을 하나도 못 읽었다 — 판정이 망가졌다');
+    return sources;
+}
+
 function requiresGradleSetup(source) {
   return source.includes('./gradlew') || /uses:\s*gradle\/actions\/setup-gradle@/.test(source);
 }
@@ -169,6 +232,74 @@ test('every third-party action is pinned to an immutable commit SHA', async () =
     }
 
     assert.deepEqual(unpinned, []);
+});
+
+test('recognizes the references the repository allow list must reject', () => {
+    // 2026-08-30 실측 fixture — 아래 두 종류만 통과해야 한다: GitHub 소유 액션과
+    // patterns_allowed 에 한 줄로 적힌 액션.
+    assert.equal(
+        isAllowedByRepositoryPolicy('actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'),
+        true,
+    );
+    assert.equal(
+        isAllowedByRepositoryPolicy(
+            'github/codeql-action/init@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28',
+        ),
+        true,
+    );
+    assert.equal(
+        isAllowedByRepositoryPolicy(
+            'gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb',
+        ),
+        true,
+    );
+    assert.equal(isAllowedByRepositoryPolicy('./.github/actions/setup-ci-config'), true);
+    // 목록 밖 서드파티 — startup_failure 로 확인한 차단 대상이다.
+    assert.equal(
+        isAllowedByRepositoryPolicy('hmarr/debug-action@cd1afbd7852b7ad7b1b7a9a1b03efebd3b0a1820'),
+        false,
+    );
+    // 같은 저장소의 다른 액션이라도 목록에 없으면 막힌다 — `*` 는 `/` 를 넘지 않는다.
+    assert.equal(
+        isAllowedByRepositoryPolicy(
+            'gradle/actions/wrapper-validation@9c971963bec38e04b3d30dcc455b5382be2fdbfb',
+        ),
+        false,
+    );
+    assert.equal(
+        isAllowedByRepositoryPolicy('docker/login-action@0000000000000000000000000000000000000000'),
+        false,
+    );
+});
+
+test('every action reference is covered by the repository allow list', async () => {
+    const rejected = [];
+    for (const [name, source] of [...(await workflows()), ...(await compositeActions())]) {
+        for (const reference of actionReferences(source)) {
+            if (isAllowedByRepositoryPolicy(reference)) {
+                continue;
+            }
+            rejected.push(`${name}: ${reference}`);
+        }
+    }
+
+    assert.deepEqual(
+        rejected,
+        [],
+        '저장소 Actions 허용 목록에 없는 액션이다 — 설정을 먼저 넓히지 않으면 run 이 startup_failure 로 죽는다',
+    );
+});
+
+test('the repository allow list carries no pattern the workflows stopped using', async () => {
+    // 안 쓰는 패턴을 남겨 두면 허용 범위만 넓어지고 아무도 그것을 눈치채지 못한다.
+    const references = [...(await workflows()), ...(await compositeActions())].flatMap(
+        ([, source]) => actionReferences(source),
+    );
+    const unused = repositoryActionsPolicy.patternsAllowed.filter(
+        (pattern) => !references.some((reference) => matchesAllowedPattern(reference, pattern)),
+    );
+
+    assert.deepEqual(unused, []);
 });
 
 test('every pinned action records the release it was pinned from', async () => {

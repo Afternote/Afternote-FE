@@ -7,6 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.afternote.afternote_fe.notification.NotificationEntryRequest
 import com.afternote.afternote_fe.notification.NotificationEntrySource
+import com.afternote.afternote_fe.test.backgroundActivityStartOptions
 import com.afternote.core.common.notification.NotificationDestination
 import com.afternote.core.common.notification.NotificationPendingIntentFactory
 import dagger.hilt.android.testing.HiltAndroidRule
@@ -49,7 +50,7 @@ class NotificationColdStartAndroidTest {
     fun coldPendingIntentLaunch_enqueuesInitialNotificationEntry() {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         val source = NotificationEntrySource.FCM
-        val occurrenceToken = "cold-start-1"
+        val occurrenceId = "cold-start-1"
         // 폴백(HOME)이 아닌 목적지를 실어 cold start 경로에서 extra 가 살아남는지 본다.
         val destination = NotificationDestination.TIME_LETTER
         activityMonitor = instrumentation.addMonitor(MainActivity::class.java.name, null, false)
@@ -58,12 +59,12 @@ class NotificationColdStartAndroidTest {
             NotificationPendingIntentFactory.create(
                 context = context,
                 source = source.contractValue,
-                occurrenceToken = occurrenceToken,
+                occurrenceId = occurrenceId,
                 destination = destination,
             )
 
         assertNotNull(pendingIntent)
-        pendingIntent?.send()
+        pendingIntent?.send(context, 0, null, null, null, null, backgroundActivityStartOptions())
         launchedActivity =
             activityMonitor?.let { monitor ->
                 instrumentation.waitForMonitorWithTimeout(monitor, ACTIVITY_START_TIMEOUT_MILLIS)
@@ -83,7 +84,7 @@ class NotificationColdStartAndroidTest {
         assertEquals(
             NotificationEntryRequest(
                 source = source,
-                occurrenceToken = occurrenceToken,
+                occurrenceId = occurrenceId,
                 destination = destination,
             ),
             pendingEntry,

@@ -12,7 +12,7 @@ class NotificationIntentContractTest {
             NotificationIntentContract.resolve(
                 isNotificationEntry = false,
                 rawSource = "fcm",
-                occurrenceToken = "occurrence-1",
+                occurrenceId = "occurrence-1",
                 rawDestination = "home",
             )
 
@@ -26,7 +26,7 @@ class NotificationIntentContractTest {
                 NotificationIntentContract.resolve(
                     isNotificationEntry = true,
                     rawSource = rawSource,
-                    occurrenceToken = "occurrence-1",
+                    occurrenceId = "occurrence-1",
                     rawDestination = "home",
                 )
 
@@ -36,12 +36,12 @@ class NotificationIntentContractTest {
 
     @Test
     fun `occurrence token이 없거나 비어 있으면 거부한다`() {
-        listOf(null, "", " ").forEach { occurrenceToken ->
+        listOf(null, "", " ").forEach { occurrenceId ->
             val request =
                 NotificationIntentContract.resolve(
                     isNotificationEntry = true,
                     rawSource = "daily",
-                    occurrenceToken = occurrenceToken,
+                    occurrenceId = occurrenceId,
                     rawDestination = "home",
                 )
 
@@ -56,12 +56,12 @@ class NotificationIntentContractTest {
                 NotificationIntentContract.resolve(
                     isNotificationEntry = true,
                     rawSource = source.contractValue,
-                    occurrenceToken = "occurrence-${source.contractValue}",
+                    occurrenceId = "occurrence-${source.contractValue}",
                     rawDestination = "home",
                 )
 
             assertEquals(source, request?.source)
-            assertEquals("occurrence-${source.contractValue}", request?.occurrenceToken)
+            assertEquals("occurrence-${source.contractValue}", request?.occurrenceId)
         }
     }
 
@@ -72,7 +72,7 @@ class NotificationIntentContractTest {
                 NotificationIntentContract.resolve(
                     isNotificationEntry = true,
                     rawSource = "daily",
-                    occurrenceToken = "occurrence-1",
+                    occurrenceId = "occurrence-1",
                     rawDestination = destination.contractValue,
                 )
 
@@ -87,7 +87,7 @@ class NotificationIntentContractTest {
                 NotificationIntentContract.resolve(
                     isNotificationEntry = true,
                     rawSource = "fcm",
-                    occurrenceToken = "occurrence-1",
+                    occurrenceId = "occurrence-1",
                     rawDestination = rawDestination,
                 )
 
@@ -101,14 +101,14 @@ class NotificationIntentContractTest {
             NotificationIntentContract.resolve(
                 isNotificationEntry = true,
                 rawSource = "fcm",
-                occurrenceToken = "occurrence-1",
+                occurrenceId = "occurrence-1",
                 rawDestination = NotificationDestination.HOME.contractValue,
             )
         val toTimeLetter =
             NotificationIntentContract.resolve(
                 isNotificationEntry = true,
                 rawSource = "fcm",
-                occurrenceToken = "occurrence-1",
+                occurrenceId = "occurrence-1",
                 rawDestination = NotificationDestination.TIME_LETTER.contractValue,
             )
 
