@@ -436,10 +436,6 @@ fun rememberAfternoteNavActions(
                 appState.navController.popBackStack()
             }
 
-            override fun navigateToDraftList() {
-                appState.navController.navigate(AfternoteRoute.DraftListRoute)
-            }
-
             override fun navigateToAfternoteDetail(itemId: Long) {
                 appState.navController.navigate(AfternoteRoute.DetailRoute(itemId = itemId))
             }
@@ -456,19 +452,6 @@ fun rememberAfternoteNavActions(
                     AfternoteRoute.EditorFlowRoute(
                         itemId = itemId,
                         initialType = initialType,
-                    ),
-                )
-            }
-
-            override fun navigateToEditorForResume(
-                itemId: Long,
-                initialType: AfternoteType,
-            ) {
-                appState.navController.navigate(
-                    AfternoteRoute.EditorFlowRoute(
-                        itemId = itemId,
-                        initialType = initialType,
-                        isDraft = true,
                     ),
                 )
             }

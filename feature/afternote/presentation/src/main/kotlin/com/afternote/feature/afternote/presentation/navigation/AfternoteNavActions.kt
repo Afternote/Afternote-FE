@@ -19,18 +19,9 @@ interface AfternoteNavActions {
 
     fun navigateToAfternoteDetail(itemId: Long)
 
-    /** 홈 → 임시저장 목록 (#808). 이어쓸 항목을 고르는 화면이라 상세와 다른 destination 이다. */
-    fun navigateToDraftList()
-
     fun navigateToNewEditor(initialType: AfternoteType)
 
     fun navigateToEditorForEdit(
-        itemId: Long,
-        initialType: AfternoteType,
-    )
-
-    /** 임시저장 목록 → 에디터 이어쓰기 (#808). 프리필을 임시저장 계약으로 읽는다는 점만 [navigateToEditorForEdit] 와 다르다. */
-    fun navigateToEditorForResume(
         itemId: Long,
         initialType: AfternoteType,
     )
