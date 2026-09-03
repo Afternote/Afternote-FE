@@ -19,6 +19,14 @@
                 android:excludeFromRecents="true"
                 android:theme="@style/Theme.Afternotefe.Main" />
         <!--
+          계측 테스트 전용 빈 Activity. setContent 와 hiltViewModel() 을 함께 쓰기 위한
+          자리라 exported 하지 않고 런처에도 올리지 않는다.
+        -->
+        <activity
+                android:name="com.afternote.afternote_fe.test.HiltTestActivity"
+                android:exported="false"
+                android:theme="@style/Theme.Afternotefe.Main" />
+        <!--
           LAUNCHER intent-filter를 의도적으로 두지 않습니다.
           런처 아이콘 중복(.MainActivity와 2개) 방지 — 디버그 설정 화면은
           `adb shell am start -n com.afternote.afternote_fe/.debug.DebugSettingsActivity` 로 진입합니다. (#396)

@@ -9,8 +9,9 @@
 // 게이트가 코드와 무관하게 빨갛게 된다. 그때 재실행은 남은 quota 를 더 태울 뿐이다.
 //
 // 명령:
-//   ensure  [--min N] [--max-wait S]  게이트 실행 전. 남은 quota 를 기록하고, 부족하면 리셋까지 기다린다
-//   classify                          게이트 실패 후. 그 실패가 한도 소진이었는지 판정해 표시한다
+//   ensure  [--resource core|graphql] [--min N] [--max-wait S]
+//                                           게이트 실행 전. 해당 quota 를 기록하고, 부족하면 리셋까지 기다린다
+//   classify [--resource core|graphql]      게이트 실패 후. 그 실패가 해당 한도 소진인지 판정해 표시한다
 //   report                            주기 관측. core·graphql 남은 quota 를 찍고 바닥에 가까우면 실패한다
 
 import { spawnSync } from "node:child_process";
@@ -23,16 +24,22 @@ const DEFAULT_MIN_REMAINING = 200;
 // job timeout(대개 5분) 안에서 기다릴 수 있는 상한. 리셋이 이보다 멀면 기다리지 않고 실패한다.
 const DEFAULT_MAX_WAIT_SECONDS = 240;
 
-export function parseRateLimit(payload) {
-    const core = payload?.resources?.core ?? payload?.rate;
-    if (!core || typeof core.remaining !== "number" || typeof core.limit !== "number") {
-        throw new Error("rate_limit 응답에서 core 한도를 읽지 못했습니다.");
+export function parseRateLimit(payload, resourceName = "core") {
+    if (!PROBE_RESOURCES.includes(resourceName)) {
+        throw new TypeError(`지원하지 않는 GitHub API 자원입니다: ${resourceName}`);
+    }
+    // 최상위 rate 폴백은 REST core 의 레거시 표현이다. GraphQL 로 폴백하면 core 가
+    // 충분한데 GraphQL 만 소진된 상태를 통과시키므로, core 에만 허용한다.
+    const resource = payload?.resources?.[resourceName] ??
+        (resourceName === "core" ? payload?.rate : undefined);
+    if (!resource || typeof resource.remaining !== "number" || typeof resource.limit !== "number") {
+        throw new Error(`rate_limit 응답에서 ${resourceName} 한도를 읽지 못했습니다.`);
     }
     return {
-        remaining: core.remaining,
-        limit: core.limit,
+        remaining: resource.remaining,
+        limit: resource.limit,
         // reset 은 epoch 초다. 없으면 «지금» 으로 두어 대기 계산이 0 이 되게 한다.
-        resetAt: typeof core.reset === "number" ? core.reset : 0,
+        resetAt: typeof resource.reset === "number" ? resource.reset : 0,
     };
 }
 
@@ -111,13 +118,13 @@ export function evaluateQuota(quota, { minRemaining, maxWaitSeconds, nowSeconds 
     return { action: "exhausted", waitSeconds };
 }
 
-export function formatSummary(quota, { nowSeconds }) {
+export function formatSummary(quota, { nowSeconds, resourceName = "core" }) {
     const used = quota.limit - quota.remaining;
     const resetInSeconds = Math.max(0, quota.resetAt - nowSeconds);
     const minutes = Math.floor(resetInSeconds / 60);
     const seconds = resetInSeconds % 60;
     return [
-        "### GitHub API 한도",
+        `### GitHub API 한도 (${resourceName})`,
         "",
         `- 남은 호출: **${quota.remaining}** / ${quota.limit} (사용 ${used})`,
         `- 리셋까지: ${minutes}분 ${seconds}초`,
@@ -134,8 +141,8 @@ function readRateLimitPayload() {
     return JSON.parse(result.stdout);
 }
 
-function readRateLimit() {
-    return parseRateLimit(readRateLimitPayload());
+function readRateLimit(resourceName = "core") {
+    return parseRateLimit(readRateLimitPayload(), resourceName);
 }
 
 function appendSummary(text) {
@@ -160,14 +167,24 @@ function numericOption(argv, name, fallback) {
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
+function resourceOption(argv) {
+    const index = argv.indexOf("--resource");
+    const resourceName = index === -1 ? "core" : argv[index + 1];
+    if (!PROBE_RESOURCES.includes(resourceName)) {
+        throw new TypeError(`--resource 는 ${PROBE_RESOURCES.join(" 또는 ")} 여야 합니다.`);
+    }
+    return resourceName;
+}
+
 function ensure(argv) {
+    const resourceName = resourceOption(argv);
     const minRemaining = numericOption(argv, "--min", DEFAULT_MIN_REMAINING);
     const maxWaitSeconds = numericOption(argv, "--max-wait", DEFAULT_MAX_WAIT_SECONDS);
 
-    let quota = readRateLimit();
+    let quota = readRateLimit(resourceName);
     let nowSeconds = Math.floor(Date.now() / 1000);
-    appendSummary(formatSummary(quota, { nowSeconds }));
-    console.log(`남은 API 호출 ${quota.remaining}/${quota.limit}`);
+    appendSummary(formatSummary(quota, { nowSeconds, resourceName }));
+    console.log(`${resourceName} 남은 API 호출 ${quota.remaining}/${quota.limit}`);
 
     const decision = evaluateQuota(quota, { minRemaining, maxWaitSeconds, nowSeconds });
     if (decision.action === "proceed") {
@@ -175,22 +192,22 @@ function ensure(argv) {
     }
     if (decision.action === "exhausted") {
         console.log(
-            `::error::GitHub API 한도가 소진됐습니다 (남은 ${quota.remaining}/${quota.limit}). ` +
+            `::error::GitHub API ${resourceName} 한도가 소진됐습니다 (남은 ${quota.remaining}/${quota.limit}). ` +
                 "코드 문제가 아니라 저장소 전체에 걸린 한도이며, 재실행은 남은 quota 를 더 태웁니다. " +
                 "리셋 뒤에 다시 실행하세요.",
         );
         return 1;
     }
 
-    console.log(`::notice::API 한도가 부족해 리셋까지 ${decision.waitSeconds}초 기다립니다.`);
+    console.log(`::notice::GitHub API ${resourceName} 한도가 부족해 리셋까지 ${decision.waitSeconds}초 기다립니다.`);
     sleepSeconds(decision.waitSeconds);
 
-    quota = readRateLimit();
+    quota = readRateLimit(resourceName);
     nowSeconds = Math.floor(Date.now() / 1000);
-    appendSummary(formatSummary(quota, { nowSeconds }));
+    appendSummary(formatSummary(quota, { nowSeconds, resourceName }));
     if (quota.remaining < minRemaining) {
         console.log(
-            `::error::리셋을 기다렸는데도 API 한도가 부족합니다 (남은 ${quota.remaining}/${quota.limit}). ` +
+            `::error::리셋을 기다렸는데도 GitHub API ${resourceName} 한도가 부족합니다 (남은 ${quota.remaining}/${quota.limit}). ` +
                 "다른 워크플로가 같은 한도를 계속 쓰고 있습니다.",
         );
         return 1;
@@ -198,29 +215,30 @@ function ensure(argv) {
     return 0;
 }
 
-function classify() {
+function classify(argv) {
+    const resourceName = resourceOption(argv);
     // 게이트가 실패한 뒤에 부른다. 남은 quota 가 바닥이면 그 실패는 «가드가 사실을 확인하고
     // 거절함» 이 아니라 한도 소진이다. 로그를 파고들지 않아도 구분되게 표시한다.
     let quota;
     try {
-        quota = readRateLimit();
+        quota = readRateLimit(resourceName);
     } catch (error) {
         console.log(`::notice::한도 조회에 실패해 원인을 가르지 못했습니다: ${error.message}`);
         return 0;
     }
     const nowSeconds = Math.floor(Date.now() / 1000);
-    appendSummary(formatSummary(quota, { nowSeconds }));
+    appendSummary(formatSummary(quota, { nowSeconds, resourceName }));
 
     if (quota.remaining < DEFAULT_MIN_REMAINING) {
         const message =
-            `앞 스텝의 실패는 코드 문제가 아니라 **GitHub API 한도 소진**입니다 ` +
+            `앞 스텝의 실패는 코드 문제가 아니라 **GitHub API ${resourceName} 한도 소진**입니다 ` +
             `(남은 ${quota.remaining}/${quota.limit}). 재실행은 남은 quota 를 더 태웁니다.`;
         appendSummary(`### ⚠️ 한도 소진으로 인한 실패\n\n${message}\n`);
         console.log(`::error::${message.replaceAll("**", "")}`);
         return 0;
     }
     console.log(
-        `::notice::API 한도는 충분합니다 (남은 ${quota.remaining}/${quota.limit}) — ` +
+        `::notice::GitHub API ${resourceName} 한도는 충분합니다 (남은 ${quota.remaining}/${quota.limit}) — ` +
             "앞 스텝의 실패는 가드가 실제로 판정한 결과입니다.",
     );
     return 0;
@@ -260,7 +278,7 @@ function main(argv) {
         case "ensure":
             return ensure(argv);
         case "classify":
-            return classify();
+            return classify(argv);
         case "report":
             return report();
         default:

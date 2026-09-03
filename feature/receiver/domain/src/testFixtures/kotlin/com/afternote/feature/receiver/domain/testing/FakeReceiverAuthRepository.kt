@@ -52,9 +52,9 @@ class FakeReceiverAuthRepository(
     val getReceivedRecordBoxesCalls: Int
         get() = recordBoxesCounter.get()
 
-    override suspend fun verifyMasterKey(authCode: String): Result<ReceiverIdentity> {
-        verifiedMasterKeys += authCode
-        onVerifyMasterKey?.let { return it(authCode) }
+    override suspend fun verifyMasterKey(masterKey: String): Result<ReceiverIdentity> {
+        verifiedMasterKeys += masterKey
+        onVerifyMasterKey?.let { return it(masterKey) }
         return Result.success(identity)
     }
 
