@@ -18,20 +18,5 @@
     }
   ],
   "androidTests": [],
-  "screenshotModules": [
-    {
-      "module": ":feature:setting:presentation",
-      "issues": [
-        1360
-      ],
-      "reason": "설정 화면 screenshotTest용 Content 경계 분리 대기 — compileDebugScreenshotTestKotlin 실패"
-    },
-    {
-      "module": ":feature:timeletter:presentation",
-      "issues": [
-        1361
-      ],
-      "reason": "목록 화면 screenshotTest용 Content 경계 분리 대기 — compileDebugScreenshotTestKotlin 실패"
-    }
-  ]
+  "screenshotModules": []
 }
