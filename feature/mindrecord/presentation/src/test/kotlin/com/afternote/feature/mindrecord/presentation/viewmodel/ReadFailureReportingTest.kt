@@ -1,6 +1,8 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
+import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
@@ -126,6 +128,48 @@ class ReadFailureReportingTest {
             assertEquals(listOf("record_list_load"), reporter.stages)
         }
 
+    /**
+     * 작성 화면이 여는 조회다. 여기 실패하면 화면이 오류 문구만 남고 **쓸 수가 없다** —
+     * 목록 실패와 달리 「보고 있던 것」이 없다 (#964).
+     */
+    @Test
+    fun `작성 화면이 오늘 질문을 못 받으면 기록한다`() =
+        runTest(dispatcher) {
+            val reporter = RecordingErrorReporter()
+            val repository =
+                FakeDailyQuestionRepository().apply {
+                    onGetToday = { Result.failure(IOException("질문 조회 실패")) }
+                }
+            DailyQuestionWriteViewModel(
+                savedStateHandle = SavedStateHandle(emptyMap()),
+                repository = repository,
+                photoUploadRepository = FakePhotoUploadRepository.strict(),
+                draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
+                errorReporter = reporter,
+            )
+            advanceUntilIdle()
+
+            assertEquals(listOf("daily_question_load"), reporter.stages)
+        }
+
+    /**
+     * 추억 공간은 **부분 실패를 삼킨다** — 카드가 한 장이라도 차면 그대로 보여 준다.
+     * 그 선을 지키는 음성 단언이 없으면 「전부 올리기」로 되돌려도 초록이다 (#964 리뷰).
+     */
+    @Test
+    fun `추억 공간은 한쪽만 실패하면 기록하지 않는다`() =
+        runTest(dispatcher) {
+            val reporter = RecordingErrorReporter()
+            MemorySpaceViewModel(
+                diaryRepository = FakeDiaryRepository(onGetList = { _, _ -> Result.failure(IOException("일기 실패")) }),
+                dailyQuestionRepository = FakeDailyQuestionRepository(initialAnswers = listOf(answeredQuestion())),
+                errorReporter = reporter,
+            )
+            advanceUntilIdle()
+
+            assertEquals("부분 실패까지 올라갔다", emptyList<String>(), reporter.stages)
+        }
+
     /** 되돌릴 수 없는 동작이라 화면만 알리고 끝내면 나중에 물을 곳이 없다. */
     @Test
     fun `기록 삭제가 실패하면 기록한다`() =
@@ -188,7 +232,9 @@ class ReadFailureReportingTest {
 
     /**
      * 추억 공간은 **부분 실패를 삼킨다** — 카드가 한 장이라도 차면 그대로 보여 준다.
-     * 그러니 여기 올라오는 것은 두 출처가 모두 실패해 화면이 통째로 빈 경우뿐이다.
+     * 그러니 여기 올라오는 것은 **합친 결과가 비었고 실패 출처가 하나라도 있을 때**다.
+     * 출처는 둘이 아니라 넷이다 — 일기는 최근 3개월을 달마다 따로 조회하고(`DIARY_MONTH_WINDOW`)
+     * 데일리질문이 하나다. 그래서 일기 0건(신규 사용자)에 질문 조회 하나만 실패해도 올라온다.
      */
     @Test
     fun `추억 공간이 통째로 실패하면 기록한다`() =
@@ -203,6 +249,16 @@ class ReadFailureReportingTest {
 
             assertEquals(listOf("memory_space_load"), reporter.stages)
         }
+
+    /** 추억 공간이 「한 장은 찼다」로 볼 수 있는 최소 재료. */
+    private fun answeredQuestion() =
+        DailyQuestion(
+            dailyQuestionId = 1L,
+            title = "질문",
+            content = "답변",
+            createdAt = "2026-08-23T10:00:00",
+            isDraft = false,
+        )
 
     /** 조회가 처음부터 실패하는 일기 목록 VM. 성공 경로는 각 테스트가 직접 만든다. */
     private fun failingDiaryListViewModel(reporter: RecordingErrorReporter): DiaryListViewModel =

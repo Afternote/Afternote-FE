@@ -60,8 +60,10 @@ class MemorySpaceViewModel
                 runCatchingCancellable { collectMemories() }
                     .onSuccess { memories -> _uiState.value = MemorySpaceUiState.Success(memories) }
                     .onFailure { throwable ->
-                        // 부분 실패는 collectMemories 안에서 삼키므로, 여기 오는 것은 **두 출처가
-                        // 모두 실패해 화면이 통째로 비는** 경우뿐이다 — 승격 가치가 높다 (#964).
+                        // 부분 실패는 collectMemories 안에서 삼키므로, 여기 오는 것은 **합친 결과가
+                        // 비었고 실패 출처가 하나라도 있을 때**다 — 화면이 통째로 비는 자리라 승격
+                        // 가치가 높다. 출처는 넷이다: 일기 최근 3개월(DIARY_MONTH_WINDOW)이 달마다
+                        // 하나씩, 데일리질문이 하나 (#964 리뷰).
                         errorReporter.recordMindRecordFailure(MindRecordFailureStage.MEMORY_SPACE_LOAD, throwable)
                         _uiState.value = MemorySpaceUiState.Error(R.string.mindrecord_error_memory_space_failed)
                     }

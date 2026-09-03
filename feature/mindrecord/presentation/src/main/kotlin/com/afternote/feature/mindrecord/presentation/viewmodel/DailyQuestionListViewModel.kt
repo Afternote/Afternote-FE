@@ -132,18 +132,26 @@ class DailyQuestionListViewModel
                     if (listResult.isFailure) {
                         val message =
                             UiText.Resource(R.string.mindrecord_error_daily_question_list_failed)
+                        // 오류 화면을 마주한 경우에만 올린다 — 재진입 갱신 실패는 보고 있던
+                        // 목록을 그대로 두므로 승격하지 않는다 (#964).
+                        //
+                        // 판정을 update 람다 **밖에서** 한다. `MutableStateFlow.update` 는 CAS
+                        // 재시도 때 람다를 다시 평가하므로 안에 두면 이중 보고가 될 자리다.
+                        // 같은 파일 delete() 와 일기 쪽 DiaryListViewModel 도 이 모양이다 (#964 리뷰).
+                        val showsErrorScreen =
+                            !(keepsStateOnFailure && internalState.value.loadPhase is LoadPhase.Loaded)
+                        if (showsErrorScreen) {
+                            listResult.exceptionOrNull()?.let { throwable ->
+                                errorReporter.recordMindRecordFailure(
+                                    MindRecordFailureStage.RECORD_LIST_LOAD,
+                                    throwable,
+                                )
+                            }
+                        }
                         internalState.update { current ->
                             if (keepsStateOnFailure && current.loadPhase is LoadPhase.Loaded) {
                                 current
                             } else {
-                                // 오류 화면을 마주한 경우에만 올린다 — 재진입 갱신 실패는 보고
-                                // 있던 목록을 그대로 두므로 승격하지 않는다 (#964).
-                                listResult.exceptionOrNull()?.let { throwable ->
-                                    errorReporter.recordMindRecordFailure(
-                                        MindRecordFailureStage.RECORD_LIST_LOAD,
-                                        throwable,
-                                    )
-                                }
                                 current.copy(loadPhase = LoadPhase.Failed(message))
                             }
                         }
