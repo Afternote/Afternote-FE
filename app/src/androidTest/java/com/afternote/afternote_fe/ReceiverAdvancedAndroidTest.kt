@@ -70,7 +70,7 @@ class ReceiverAdvancedAndroidTest {
         val masterKeyResults = ArrayDeque<Result<ReceiverIdentity>>()
         val receiverRepository =
             FakeReceiverRepository.strict().apply {
-                onSaveAuthCode = { authCodeState.value = it }
+                onSaveMasterKey = { masterKeyState.value = it }
             }
         val authRepository =
             FakeReceiverAuthRepository.strict().apply {
@@ -161,9 +161,9 @@ class ReceiverAdvancedAndroidTest {
         val normalizedMasterKey = "3f2504e0-4f89-11d3-9a0c-0305e82c3301"
         val attached = checkNotNull(senderRegistryRepository.senderEntries.value.firstOrNull { it.id == sender.id })
         assertEquals(listOf(normalizedMasterKey), authRepository.verifiedMasterKeys)
-        assertEquals(listOf(normalizedMasterKey), receiverRepository.savedAuthCodes)
-        assertEquals(normalizedMasterKey, receiverRepository.authCodeState.value)
-        assertEquals(normalizedMasterKey, attached.authCode)
+        assertEquals(listOf(normalizedMasterKey), receiverRepository.savedMasterKeys)
+        assertEquals(normalizedMasterKey, receiverRepository.masterKeyState.value)
+        assertEquals(normalizedMasterKey, attached.masterKey)
         assertEquals("이발신", attached.realSenderName)
         assertEquals("가족", attached.relation)
         assertEquals(1, verifiedTransitions)

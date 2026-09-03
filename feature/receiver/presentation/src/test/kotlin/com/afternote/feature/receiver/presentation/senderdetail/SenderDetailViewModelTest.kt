@@ -130,7 +130,7 @@ private class Fixture {
                         SenderEntry(
                             id = senderId,
                             name = "아버지",
-                            authCode = "auth-1",
+                            masterKey = "auth-1",
                             realSenderName = "김발신",
                             relation = "가족",
                         ),
@@ -140,7 +140,7 @@ private class Fixture {
     val statusResults = ArrayDeque<Result<DeliveryVerification>>()
     val receiver =
         FakeReceiverRepository.strict().apply {
-            onSaveAuthCode = {}
+            onSaveMasterKey = {}
         }
     val auth =
         FakeReceiverAuthRepository(

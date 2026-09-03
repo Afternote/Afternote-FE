@@ -19,35 +19,35 @@ import org.junit.Test
 class FakeReceiverRepositoriesTest {
     @Test
     fun `인증 코드 저장은 호출 원문을 기록하고 정규화한 상태를 flow와 단발 조회에 공유한다`() {
-        val repository = FakeReceiverRepository(initialAuthCode = "  initial  ")
+        val repository = FakeReceiverRepository(initialMasterKey = "  initial  ")
 
-        assertEquals("initial", repository.authCodeState.value)
-        assertNull(FakeReceiverRepository(initialAuthCode = "   ").authCodeState.value)
+        assertEquals("initial", repository.masterKeyState.value)
+        assertNull(FakeReceiverRepository(initialMasterKey = "   ").masterKeyState.value)
 
-        runBlocking { repository.saveAuthCode("  next-code  ") }
+        runBlocking { repository.saveMasterKey("  next-code  ") }
 
-        assertEquals(listOf("  next-code  "), repository.savedAuthCodes)
-        assertEquals("next-code", repository.authCodeState.value)
-        assertEquals("next-code", runBlocking { repository.currentAuthCode() })
-        assertSame(repository.authCodeState, repository.authCodeFlow)
+        assertEquals(listOf("  next-code  "), repository.savedMasterKeys)
+        assertEquals("next-code", repository.masterKeyState.value)
+        assertEquals("next-code", runBlocking { repository.currentMasterKey() })
+        assertSame(repository.masterKeyState, repository.masterKeyFlow)
 
-        runBlocking { repository.saveAuthCode("   ") }
+        runBlocking { repository.saveMasterKey("   ") }
 
-        assertNull(repository.authCodeState.value)
+        assertNull(repository.masterKeyState.value)
     }
 
     @Test
     fun `ReceiverRepository onX는 기록 뒤 기본 메모리 변경을 대체한다`() {
         val repository =
             FakeReceiverRepository(
-                initialAuthCode = "initial",
-                onSaveAuthCode = {},
+                initialMasterKey = "initial",
+                onSaveMasterKey = {},
             )
 
-        runBlocking { repository.saveAuthCode("replacement") }
+        runBlocking { repository.saveMasterKey("replacement") }
 
-        assertEquals(listOf("replacement"), repository.savedAuthCodes)
-        assertEquals("initial", repository.authCodeState.value)
+        assertEquals(listOf("replacement"), repository.savedMasterKeys)
+        assertEquals("initial", repository.masterKeyState.value)
     }
 
     @Test
@@ -146,7 +146,7 @@ class FakeReceiverRepositoriesTest {
         val authRepository = FakeReceiverAuthRepository.strict()
 
         assertThrows(IllegalStateException::class.java) {
-            receiverRepository.authCodeFlow
+            receiverRepository.masterKeyFlow
         }
         assertThrows(IllegalStateException::class.java) {
             runBlocking { authRepository.getSenderMessage() }

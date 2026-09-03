@@ -32,7 +32,7 @@ class ReceivedRecordsViewModelTest {
     @Test
     fun `저장소가 복원한 발신자 카드를 화면 상태로 노출한다`() =
         runTest(mainDispatcher) {
-            val restored = SenderEntry(id = "sender-id", name = "아버지", authCode = "master-key")
+            val restored = SenderEntry(id = "sender-id", name = "아버지", masterKey = "master-key")
             val viewModel =
                 ReceivedRecordsViewModel(
                     SenderRegistry(FakeSenderRegistryRepository(initialSenders = listOf(restored))),

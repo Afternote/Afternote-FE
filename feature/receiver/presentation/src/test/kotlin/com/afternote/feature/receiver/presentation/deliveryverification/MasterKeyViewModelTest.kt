@@ -40,7 +40,7 @@ class MasterKeyViewModelTest {
         val viewModel = viewModel(authRepository, receiverRepository)
 
         listOf("wrong-key-0000", "1-1-1-1-1").forEach { invalidMasterKey ->
-            viewModel.submit(senderId = "sender-id", authCode = invalidMasterKey)
+            viewModel.submit(senderId = "sender-id", masterKey = invalidMasterKey)
 
             assertEquals(
                 UiText.Resource(R.string.receiver_verify_master_key_invalid_format),
@@ -50,7 +50,7 @@ class MasterKeyViewModelTest {
         }
 
         assertTrue(authRepository.verifiedMasterKeys.isEmpty())
-        assertTrue(receiverRepository.savedAuthCodes.isEmpty())
+        assertTrue(receiverRepository.savedMasterKeys.isEmpty())
     }
 
     @Test
@@ -62,10 +62,10 @@ class MasterKeyViewModelTest {
         val masterKey = "123e4567-e89b-12d3-a456-426614174000"
         val viewModel = viewModel(authRepository, receiverRepository, senderRegistry)
 
-        viewModel.submit(senderId = sender.id, authCode = "  $masterKey\n")
+        viewModel.submit(senderId = sender.id, masterKey = "  $masterKey\n")
 
         assertEquals(listOf(masterKey), authRepository.verifiedMasterKeys)
-        assertEquals(listOf(masterKey), receiverRepository.savedAuthCodes)
+        assertEquals(listOf(masterKey), receiverRepository.savedMasterKeys)
         assertEquals(
             "발신자",
             runBlocking { senderRegistry.findById(sender.id).getOrThrow()?.realSenderName },
@@ -83,11 +83,11 @@ class MasterKeyViewModelTest {
         val senderRegistry = senderRegistry(listOf(sender))
         val viewModel = viewModel(authRepository, receiverRepository, senderRegistry)
 
-        viewModel.submit(senderId = sender.id, authCode = "123E4567-E89B-12D3-A456-426614174000")
+        viewModel.submit(senderId = sender.id, masterKey = "123E4567-E89B-12D3-A456-426614174000")
 
         val normalized = "123e4567-e89b-12d3-a456-426614174000"
         assertEquals(listOf(normalized), authRepository.verifiedMasterKeys)
-        assertEquals(listOf(normalized), receiverRepository.savedAuthCodes)
+        assertEquals(listOf(normalized), receiverRepository.savedMasterKeys)
         assertTrue(viewModel.uiState.value.isVerified)
         assertEquals(null, viewModel.uiState.value.error)
     }
@@ -105,7 +105,7 @@ class MasterKeyViewModelTest {
 
         viewModel.submit(
             senderId = sender.id,
-            authCode = "123e4567-e89b-12d3-a456-426614174000",
+            masterKey = "123e4567-e89b-12d3-a456-426614174000",
         )
 
         assertFalse(viewModel.uiState.value.isVerified)
@@ -138,7 +138,7 @@ class MasterKeyViewModelTest {
 
     private fun fakeReceiverRepository(): FakeReceiverRepository =
         FakeReceiverRepository.strict().apply {
-            onSaveAuthCode = { code -> authCodeState.value = code }
+            onSaveMasterKey = { code -> masterKeyState.value = code }
         }
 
     private object NoopErrorReporter : ErrorReporter {

@@ -77,7 +77,7 @@ sealed interface ReceiverRoute {
     /**
      * 열람 신청 1단계: 마스터 키 입력(5).
      *
-     * `verify(authCode)` 응답 성공 시 ReceiverIdentity 를 (부모 라우트의) senderId 카드에 결합하고 다음 단계로.
+     * `verify(masterKey)` 응답 성공 시 ReceiverIdentity 를 (부모 라우트의) senderId 카드에 결합하고 다음 단계로.
      */
     @Serializable
     data object MasterKeyRoute : ReceiverRoute

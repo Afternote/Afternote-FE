@@ -156,14 +156,14 @@ class SenderDetailApprovedAtTest {
                             SenderEntry(
                                 id = senderId,
                                 name = "아버지",
-                                authCode = MY_AUTH_CODE,
+                                masterKey = MY_AUTH_CODE,
                                 realSenderName = "김발신",
                                 relation = "가족",
                             ),
                         ),
                 ),
             )
-        val receiver = FakeReceiverRepository.strict().apply { onSaveAuthCode = {} }
+        val receiver = FakeReceiverRepository.strict().apply { onSaveMasterKey = {} }
         val auth =
             FakeReceiverAuthRepository(
                 onGetDeliveryVerificationStatus = {
@@ -201,11 +201,11 @@ class SenderDetailApprovedAtTest {
         const val MY_AUTH_CODE = "auth-1"
 
         fun recordBox(
-            accessCode: String,
+            masterKey: String,
             approvedAt: String?,
         ) = ReceivedRecordBox(
             receiverId = 1L,
-            accessCode = accessCode,
+            masterKey = masterKey,
             senderName = "김발신",
             verificationStatus = DeliveryVerificationStatus.APPROVED,
             requestedAt = "2026-06-21T03:07:26",

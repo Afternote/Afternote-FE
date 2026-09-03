@@ -44,7 +44,7 @@ class SenderRegistryRepositoryImplTest {
                     repository
                         .attachIdentity(
                             id = first.id,
-                            authCode = "master-key-1",
+                            masterKey = "master-key-1",
                             identity =
                                 ReceiverIdentity(
                                     receiverId = 11L,
@@ -63,7 +63,7 @@ class SenderRegistryRepositoryImplTest {
                         repository
                             .attachIdentity(
                                 id = second.id,
-                                authCode = "master-key-2",
+                                masterKey = "master-key-2",
                                 identity =
                                     ReceiverIdentity(
                                         receiverId = 22L,
@@ -116,7 +116,7 @@ class SenderRegistryRepositoryImplTest {
     }
 
     @Test
-    fun `알 수 없는 저장 상태는 UNKNOWN으로 복원하고 새 필드는 무시한다`() {
+    fun `알 수 없는 저장 상태는 캐시 없음으로 낮추고 새 필드는 무시한다`() {
         val scope = newStoreScope()
         try {
             val dataStore = newFileDataStore(File(tmp.root, "future-status.preferences_pb"), scope)
@@ -144,9 +144,11 @@ class SenderRegistryRepositoryImplTest {
             assertEquals(
                 listOf(
                     SenderEntry(
+                        // 모르는 상태 이름은 «캐시 없음»(null) 이다. UNKNOWN 으로 흡수하면 화면이
+                        // 「아직 신청 안 함」으로 그려진다 (#1554 가 `fromRaw` 를 걷어낸 이유).
                         id = "sender-1",
                         name = "별칭",
-                        verificationStatus = DeliveryVerificationStatus.UNKNOWN,
+                        verificationStatus = null,
                     ),
                 ),
                 runBlocking { repository.senders.first() },

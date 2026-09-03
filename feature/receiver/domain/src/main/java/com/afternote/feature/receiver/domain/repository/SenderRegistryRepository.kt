@@ -24,7 +24,7 @@ interface SenderRegistryRepository {
     /** 마스터 키 검증 결과를 카드에 결합한다. 카드가 없으면 성공한 `null`을 반환한다. */
     suspend fun attachIdentity(
         id: String,
-        authCode: String,
+        masterKey: String,
         identity: ReceiverIdentity,
     ): Result<SenderEntry?>
 

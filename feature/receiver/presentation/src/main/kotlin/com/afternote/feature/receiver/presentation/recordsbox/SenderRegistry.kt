@@ -34,14 +34,14 @@ class SenderRegistry
         suspend fun findById(id: String): Result<SenderEntry?> = repository.findById(id)
 
         /**
-         * 마스터 키 검증 성공 직후 호출. authCode + verify 응답 정보를 카드에 결합한다. 이후
-         * "기록 열람하기"(12) 진입 시 이 authCode 를 ReceiverRepository 에 복원해 헤더 컨텍스트를 잡는다.
+         * 마스터 키 검증 성공 직후 호출. masterKey + verify 응답 정보를 카드에 결합한다. 이후
+         * "기록 열람하기"(12) 진입 시 이 masterKey 를 ReceiverRepository 에 복원해 헤더 컨텍스트를 잡는다.
          */
         suspend fun attachIdentity(
             id: String,
-            authCode: String,
+            masterKey: String,
             identity: ReceiverIdentity,
-        ): Result<SenderEntry?> = repository.attachIdentity(id = id, authCode = authCode, identity = identity)
+        ): Result<SenderEntry?> = repository.attachIdentity(id = id, masterKey = masterKey, identity = identity)
 
         /** 발신자 상세에서 최근 조회한 열람 신청 상태를 캐시. */
         suspend fun updateVerificationStatus(

@@ -21,7 +21,7 @@ class FakeSenderRegistryRepository(
     initialSenders: List<SenderEntry> = emptyList(),
     var onRegister: (suspend (name: String) -> Result<SenderEntry>)? = null,
     var onFindById: (suspend (id: String) -> Result<SenderEntry?>)? = null,
-    var onAttachIdentity: (suspend (id: String, authCode: String, identity: ReceiverIdentity) -> Result<SenderEntry?>)? = null,
+    var onAttachIdentity: (suspend (id: String, masterKey: String, identity: ReceiverIdentity) -> Result<SenderEntry?>)? = null,
     var onUpdateVerificationStatus: (suspend (id: String, status: DeliveryVerificationStatus) -> Result<SenderEntry?>)? = null,
 ) : SenderRegistryRepository {
     val senderEntries = MutableStateFlow(initialSenders.toList())
@@ -41,14 +41,14 @@ class FakeSenderRegistryRepository(
 
     override suspend fun attachIdentity(
         id: String,
-        authCode: String,
+        masterKey: String,
         identity: ReceiverIdentity,
     ): Result<SenderEntry?> {
-        onAttachIdentity?.let { return it(id, authCode, identity) }
+        onAttachIdentity?.let { return it(id, masterKey, identity) }
         return Result.success(
             updateById(id) { entry ->
                 entry.copy(
-                    authCode = authCode,
+                    masterKey = masterKey,
                     realSenderName = identity.senderName,
                     relation = identity.relation,
                 )

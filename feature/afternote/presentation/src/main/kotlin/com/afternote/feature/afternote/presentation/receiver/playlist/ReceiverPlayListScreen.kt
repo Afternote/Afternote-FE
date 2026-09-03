@@ -12,9 +12,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.detail.song.PlaylistEmptyContent
-import com.afternote.feature.afternote.presentation.shared.detail.song.PlaylistSongList
-import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScaffold
+import com.afternote.feature.afternote.presentation.shared.detail.PlaylistEmptyContent
+import com.afternote.feature.afternote.presentation.shared.detail.PlaylistSongList
+import com.afternote.feature.afternote.presentation.shared.detail.SongPlaylistScaffold
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
 /**
@@ -36,7 +36,7 @@ fun MemorialPlaylistScreen(
     senderName: String = "",
 ) {
     SongPlaylistScaffold(
-        title = stringResource(R.string.receiver_memorial_playlist_screen_title, senderName),
+        title = stringResource(R.string.afternote_receiver_memorial_playlist_screen_title, senderName),
         onBackClick = onBackClick,
         modifier = modifier,
     ) { paddingValues ->
@@ -53,7 +53,7 @@ fun MemorialPlaylistScreen(
             )
             if (songs.isEmpty()) {
                 PlaylistEmptyContent(
-                    text = stringResource(R.string.receiver_playlist_empty_message),
+                    text = stringResource(R.string.afternote_receiver_playlist_empty_message),
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -75,7 +75,7 @@ private fun ReceiverPlaylistSongCountHeader(
                 .padding(top = 8.dp),
     ) {
         Text(
-            text = stringResource(R.string.receiver_playlist_song_count_format, songCount),
+            text = stringResource(R.string.afternote_receiver_playlist_song_count_format, songCount),
             style =
                 AfternoteDesign.typography.bodySmallR.copy(
                     color = AfternoteDesign.colors.gray9,
