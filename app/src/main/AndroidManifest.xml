@@ -77,6 +77,12 @@
           현재 화면은 폰 세로 레이아웃만 지원한다. Android 16 대화면에서는 시스템이
           이 제한을 무시하므로 대화면 대응을 대신하는 선언은 아니다 (#1144).
         -->
+        <!--
+          windowSoftInputMode="adjustResize" — 키보드 inset 을 Compose 로 흘려보내는 선언이다.
+          enableEdgeToEdge() 를 쓰면 키보드가 떠도 윈도우 프레임이 줄지 않고, 그 대신 IME inset 이
+          와야 하는데 이 선언이 없으면 그마저 오지 않아 `Modifier.imePadding()` 이 어디에 붙어 있든
+          0 을 더한다 — 하단 CTA 가 키보드에 덮였다 (#1849).
+        -->
         <activity
                 android:name=".MainActivity"
                 android:exported="true"
@@ -84,6 +90,7 @@
                 android:roundIcon="@mipmap/ic_launcher_round"
                 android:screenOrientation="portrait"
                 android:theme="@style/Theme.Afternotefe.Starting"
+                android:windowSoftInputMode="adjustResize"
                 tools:ignore="DiscouragedApi,LockedOrientationActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

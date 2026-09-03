@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -30,6 +31,12 @@ import com.afternote.core.ui.topbar.DetailTopBar
  * - horizontal padding 20dp
  * - bottom 버튼 49dp 마진 (제스처 바: 49dp / 구형 네비 바: bar height + 49dp)
  * - content 영역은 [ColumnScope] — 위에서 아래로 쌓이는 일반 흐름 가정
+ *
+ * **키보드 대응**: `imePadding()` 은 Scaffold `modifier` 에 있어야 한다 (#1849).
+ * `bottomBar` 는 `WindowInsets.navigationBars` 만 계산하므로, 호출처가 [content] 안에서
+ * `imePadding()` 을 걸어도 하단 CTA 는 키보드에 덮인 채로 남는다. Scaffold 에 걸면 소비된
+ * inset 이 하위로 전파되므로 [content] 안의 `imePadding()` 은 자동으로 0 이 되어 이중 적용되지 않는다.
+ * (앱 매니페스트의 `windowSoftInputMode="adjustResize"` 와 한 쌍이다 — 그게 없으면 IME inset 자체가 오지 않는다.)
  *
  * **진행 인디케이터**:
  * - [currentStep] 과 [totalSteps] 가 모두 non-null 이면 상단에 [FlowStepProgressBar] 표시
@@ -63,7 +70,8 @@ fun FlowStepScaffold(
         modifier =
             modifier
                 .addFocusCleaner(focusManager)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .imePadding(),
         containerColor = Color.Transparent,
         topBar = {
             DetailTopBar(
