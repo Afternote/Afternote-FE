@@ -37,7 +37,7 @@ class MediaSheetMigrationTest {
 
     @Test
     fun `툴바 미디어 버튼이 core 정본 시트를 연다`() {
-        composeRule.setContent { AfternoteTheme { WriteTextField() } }
+        composeRule.setContent { AfternoteTheme { WriteTextField(onSaveDraftClick = {}, onDraftCountClick = {}) } }
         val context = composeRule.activity
 
         openMediaSheet()
@@ -62,7 +62,7 @@ class MediaSheetMigrationTest {
      */
     @Test
     fun `링크 항목은 링크 입력 시트로 이어진다`() {
-        composeRule.setContent { AfternoteTheme { WriteTextField() } }
+        composeRule.setContent { AfternoteTheme { WriteTextField(onSaveDraftClick = {}, onDraftCountClick = {}) } }
         val context = composeRule.activity
 
         openMediaSheet()

@@ -78,8 +78,8 @@ fun WriteTextField(
     modifier: Modifier = Modifier,
     value: String? = null,
     onValueChange: ((String) -> Unit)? = null,
-    onSaveDraftClick: () -> Unit = {},
-    onDraftCountClick: () -> Unit = {},
+    onSaveDraftClick: () -> Unit,
+    onDraftCountClick: () -> Unit,
     draftCount: Int? = null,
     /**
      * 갤러리에서 고른 이미지를 서버에 업로드하고 URL 을 반환하는 업로더
@@ -302,6 +302,11 @@ fun WriteTextField(
                 onTextStyleChange = { type ->
                     keepEditorFocus { state.addSpanStyle(type.toSpanStyle()) }
                 },
+                // **하단 툴바와 같은 배선이다.** 스타일 툴바가 열리면 하단 툴바를 덮으므로
+                // 같은 두 affordance(링크·«T»)를 그대로 갖는다. 종전에는 두 인자를 넘기지
+                // 않아 no-op 디폴트가 먹었고, **눌러도 아무 일이 없는 버튼 두 개**였다 (#1540).
+                onLinkClick = { sheet = KeyboardSheet.MediaSelect },
+                onTypeClick = { showTextStyleToolbar = !showTextStyleToolbar },
             )
         }
 
@@ -422,7 +427,10 @@ private fun currentTextStyleType(currentFontSize: Float): TextStyleType =
 @Composable
 private fun WriteTextFieldPreview() {
     AfternoteTheme {
-        WriteTextField()
+        WriteTextField(
+            onDraftCountClick = {},
+            onSaveDraftClick = {},
+        )
     }
 }
 

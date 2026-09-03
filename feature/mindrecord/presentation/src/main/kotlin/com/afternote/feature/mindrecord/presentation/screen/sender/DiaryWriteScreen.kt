@@ -64,9 +64,9 @@ private val WriteDateFormatter = DateTimeFormatter.ofPattern("yyyy년 M월 d일"
 @Composable
 fun DiaryWriteScreen(
     modifier: Modifier = Modifier,
-    onSubmitSuccess: () -> Unit = {},
-    onBackClick: () -> Unit = {},
-    onDraftListClick: () -> Unit = {},
+    onSubmitSuccess: () -> Unit,
+    onBackClick: () -> Unit,
+    onDraftListClick: () -> Unit,
     viewModel: DiaryWriteViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -123,14 +123,14 @@ fun DiaryWriteScreen(
 internal fun DiaryWriteScreenContent(
     uiState: DiaryWriteUiState,
     modifier: Modifier = Modifier,
-    onBackClick: () -> Unit = {},
-    onSubmit: () -> Unit = {},
-    onSaveDraft: () -> Unit = {},
-    onDraftListClick: () -> Unit = {},
-    onTitleChanged: (String) -> Unit = {},
-    onContentChanged: (String) -> Unit = {},
-    onMoodSelected: (TodayMood) -> Unit = {},
-    onReceiverRowClick: () -> Unit = {},
+    onBackClick: () -> Unit,
+    onSubmit: () -> Unit,
+    onSaveDraft: () -> Unit,
+    onDraftListClick: () -> Unit,
+    onTitleChanged: (String) -> Unit,
+    onContentChanged: (String) -> Unit,
+    onMoodSelected: (TodayMood) -> Unit,
+    onReceiverRowClick: () -> Unit,
     onMediaPicked: suspend (String) -> String? = { null },
 ) {
     Scaffold(
