@@ -49,8 +49,8 @@ import com.afternote.feature.mindrecord.presentation.model.DailyDiary
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListViewModel
-import androidx.compose.foundation.lazy.staggeredgrid.items as gridItems
 import java.time.YearMonth
+import androidx.compose.foundation.lazy.staggeredgrid.items as gridItems
 
 private val PreviewYearMonth = YearMonth.of(2026, 7)
 
