@@ -39,7 +39,7 @@ fun GalleryReceivedDetailScreen(
         containerColor = Color.Transparent,
         topBar = {
             DetailTopBar(
-                title = stringResource(R.string.feature_afternote_detail_title),
+                title = stringResource(R.string.afternote_detail_title),
                 onBackClick = onBackClick,
             )
         },

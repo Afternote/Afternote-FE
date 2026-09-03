@@ -26,12 +26,12 @@ internal enum class NotificationEntrySource(
  */
 internal data class NotificationEntryRequest(
     val source: NotificationEntrySource,
-    val occurrenceToken: String,
+    val occurrenceId: String,
 ) {
     /** 서로 다른 source가 같은 occurrence 문자열을 사용해도 소비 상태가 충돌하지 않는 내부 키. */
     val identityKey: String =
         "${source.contractValue.length}:${source.contractValue}:" +
-            "${occurrenceToken.length}:$occurrenceToken"
+            "${occurrenceId.length}:$occurrenceId"
 }
 
 /** [NotificationPendingIntentFactory]가 표시한 앱 직접 생성 알림 진입만 해석한다. */
@@ -46,7 +46,7 @@ internal object NotificationIntentContract {
                 runCatching {
                     intent.getStringExtra(EXTRA_NOTIFICATION_SOURCE)
                 }.getOrNull(),
-            occurrenceToken =
+            occurrenceId =
                 runCatching {
                     intent.getStringExtra(EXTRA_NOTIFICATION_OCCURRENCE_TOKEN)
                 }.getOrNull(),
@@ -55,7 +55,7 @@ internal object NotificationIntentContract {
     internal fun resolve(
         isNotificationEntry: Boolean,
         rawSource: String?,
-        occurrenceToken: String?,
+        occurrenceId: String?,
     ): NotificationEntryRequest? {
         if (!isNotificationEntry) return null
 
@@ -64,11 +64,11 @@ internal object NotificationIntentContract {
                 ?.takeIf(String::isNotBlank)
                 ?.let(NotificationEntrySource::fromValue)
                 ?: return null
-        val token = occurrenceToken?.takeIf(String::isNotBlank) ?: return null
+        val id = occurrenceId?.takeIf(String::isNotBlank) ?: return null
 
         return NotificationEntryRequest(
             source = source,
-            occurrenceToken = token,
+            occurrenceId = id,
         )
     }
 

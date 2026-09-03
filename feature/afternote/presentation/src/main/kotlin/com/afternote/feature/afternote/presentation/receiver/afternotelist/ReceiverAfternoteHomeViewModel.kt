@@ -7,7 +7,7 @@ import androidx.paging.cachedIn
 import androidx.paging.filter
 import androidx.paging.map
 import com.afternote.feature.afternote.domain.AfternoteType
-import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
+import com.afternote.feature.afternote.presentation.shared.component.ListItemUiModel
 import com.afternote.feature.afternote.presentation.shared.util.getIconResForService
 import com.afternote.feature.receiver.domain.model.AfterNoteListItem
 import com.afternote.feature.receiver.domain.repository.ReceiverRepository

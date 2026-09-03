@@ -71,25 +71,38 @@ data class AfternotePlaylistDto(
     @SerialName("memorialAudioUrl") val memorialAudioUrl: String? = null,
 )
 
+/**
+ * 추억 노트 플레이리스트 쓰기 바디 — 생성(POST)·수정(PATCH) 공용.
+ *
+ * **키가 나가느냐 마느냐가 곧 의미다.** BE 는 수정에서 「키 없음 = 기존 값 유지」와
+ * 「키 있고 JSON null = 삭제(DB 참조 제거 + S3 객체 회수)」를 가른다 — 판별은
+ * `PlaylistRequestDeserializer` 의 `node.has(...)`, 반영은 `AfternotePlaylist.update` 의 specified
+ * 플래그다 (Afternote-BE `72fee63` · BE#259).
+ *
+ * kotlinx.serialization 은 `encodeDefaults = false`(`NetworkModule.provideJson()` 이 켜지 않으므로
+ * 기본값)에서 **기본값과 같은 값을 키째 뺀다.** 그래서 이 클래스에서 기본값의 유무는 편의가 아니라
+ * 계약이다 — 기본값을 달아 두면 그 슬롯은 「유지」 말고는 말할 수 없게 된다 (#1596).
+ *
+ * - [memorialPhotoUrl] · [memorialVideo] · [memorialAudioUrl] 은 기본값을 두지 않는다. 폼이 비었으면 `null` 이 그대로
+ *   실려 삭제로 읽힌다. 그러므로 이 DTO 는 **폼 전체 스냅샷에서만** 만들어야 한다 — 일부만 아는
+ *   호출부가 만들면 나머지 슬롯이 조용히 지워진다.
+ * - [songs] 도 기본값을 두지 않는다. 곡은 `null` 이 아니라 **빈 배열**로 삭제를 말한다 —
+ *   `PlaylistRelationStrategy.update` 는 `songs != null` 일 때 `items` 를 통째로 갈아 끼우므로
+ *   `[]` 가 곧 전부 삭제다. 기본값 `emptyList()` 가 있던 동안은 그 배열이 키째 빠져 「유지」로
+ *   흡수됐고, 곡을 전부 뺀 저장이 서버에 반영되지 않았다 (#1599).
+ * - [atmosphere] 는 기본값을 남겨 늘 생략한다. FE 화면에 없는 값이라 삭제를 지시할 자격이 없다.
+ *
+ * 생성(POST)에서 `[]` 는 종전의 생략과 동작이 같다 — `PlaylistRelationStrategy.save` 는 0건을
+ * 순회하고 끝나고, `PlaylistValidationStrategy.requirePlaylistSongs` 는 `null` 과 `isEmpty()` 를
+ * 같이 묶어 `PLAYLIST_SONGS_REQUIRED` 로 400 을 낸다. 키가 늘 나가도 생성 경로는 그대로다.
+ */
 @Serializable
 data class AfternotePlaylistRequestDto(
     @SerialName("atmosphere") val atmosphere: String? = null,
-    @SerialName("memorialPhotoUrl") val memorialPhotoUrl: String? = null,
-    @SerialName("songs") val songs: List<AfternoteSongDto> = emptyList(),
-    @SerialName("memorialVideo") val memorialVideo: AfternoteMemorialVideoDto? = null,
-    /**
-     * 추모 음성 URL (#1118). 업로드로 발급된 afternotes 키(mp3·m4a·wav)만 서버가 받는다.
-     *
-     * **기본값을 두지 않는 것이 계약이다.** kotlinx.serialization 은 `encodeDefaults = false`
-     * (`NetworkModule.provideJson()` 이 켜지 않으므로 기본값)에서 기본값과 같은 값을 키째 뺀다.
-     * BE 는 수정에서 「키 없음 = 기존 값 유지」와 「키 있고 JSON null = 삭제」를 가르므로
-     * (`PlaylistRequestDeserializer` 의 `node.has(...)` → `AfternotePlaylist.update` 의 specified 플래그,
-     * Afternote-BE `72fee63`), 기본값을 달면 이 슬롯은 「유지」 말고는 말할 수 없게 된다.
-     * 같은 규칙을 사진·영상까지 넓히는 것은 #1596 이 맡는다.
-     *
-     * 기본값이 없으므로 이 DTO 는 **폼 전체 스냅샷에서만** 만들어야 한다 — 음성을 모르는 호출부가
-     * 만들면 서버 음성이 조용히 지워진다.
-     */
+    @SerialName("memorialPhotoUrl") val memorialPhotoUrl: String?,
+    @SerialName("songs") val songs: List<AfternoteSongDto>,
+    @SerialName("memorialVideo") val memorialVideo: AfternoteMemorialVideoDto?,
+    /** 추모 음성 URL (#1118). 업로드로 발급된 afternotes 키(mp3·m4a·wav)만 서버가 받는다. */
     @SerialName("memorialAudioUrl") val memorialAudioUrl: String?,
 )
 
