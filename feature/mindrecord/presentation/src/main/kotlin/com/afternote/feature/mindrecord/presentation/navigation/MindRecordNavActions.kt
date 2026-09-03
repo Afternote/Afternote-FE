@@ -3,28 +3,9 @@ package com.afternote.feature.mindrecord.presentation.navigation
 /**
  * NavHost 루트에서 마인드레코드 서브그래프로 넘기는 네비게이션 명령 모음.
  *
- * [com.afternote.feature.onboarding.presentation.navigation.OnboardingNavActions]·
- * [com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavActions]와 동일한
- * “actions 객체 단일 전달” 패턴이다.
+ * #924 Nav3 파일럿으로 허브 내부 이동(작성·임시저장 목록의 push/pop 7개)이 로컬 백스택으로
+ * 흡수되어, 루트 NavController 가 필요한 명령만 남았다.
  */
 interface MindRecordNavActions {
     fun onMemorySpaceBack()
-
-    fun onWriteDailyQuestion()
-
-    fun onWriteDiary()
-
-    fun onWriteBack()
-
-    fun onWriteSubmitSuccess()
-
-    fun onNavigateToDraftList()
-
-    fun onDraftListBack()
-
-    /** 임시저장 목록에서 일기 draft 를 탭 — 일기 작성 화면을 이어쓰기 모드로 연다. */
-    fun onEditDiaryDraft(
-        draftId: Long,
-        draftYearMonth: String,
-    )
 }

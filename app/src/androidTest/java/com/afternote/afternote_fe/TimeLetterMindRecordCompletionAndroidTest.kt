@@ -50,6 +50,7 @@ import com.afternote.feature.mindrecord.domain.model.WeeklyReportEmotion
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
+import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.mindrecord.presentation.screen.memoryspace.MemorySpaceScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestionAnswerListScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestionWriteScreen
@@ -477,12 +478,10 @@ class TimeLetterMindRecordCompletionAndroidTest {
                             routedArguments = draftId to draftYearMonth
                             writeViewModel =
                                 DiaryWriteViewModel(
-                                    savedStateHandle =
-                                        SavedStateHandle(
-                                            mapOf(
-                                                "draftId" to draftId,
-                                                "draftYearMonth" to draftYearMonth,
-                                            ),
+                                    route =
+                                        MindRecordRoute.DiaryWriteRoute(
+                                            draftId = draftId,
+                                            draftYearMonth = draftYearMonth,
                                         ),
                                     repository = repository,
                                     photoUploadRepository = CompletionPhotoUploadRepository,

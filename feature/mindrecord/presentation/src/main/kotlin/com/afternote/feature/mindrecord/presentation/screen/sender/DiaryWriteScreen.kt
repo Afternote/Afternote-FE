@@ -38,7 +38,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.R
 import com.afternote.core.ui.asString
@@ -58,11 +57,12 @@ private val WriteDateFormatter = DateTimeFormatter.ofPattern("yyyy년 M월 d일"
 
 @Composable
 fun DiaryWriteScreen(
+    // assisted factory VM(#924 Nav3 파일럿)이라 기본 hiltViewModel() 생성이 불가 — 호출부(NavEntry)가 주입한다.
+    viewModel: DiaryWriteViewModel,
     modifier: Modifier = Modifier,
     onSubmitSuccess: () -> Unit = {},
     onBackClick: () -> Unit = {},
     onDraftListClick: () -> Unit = {},
-    viewModel: DiaryWriteViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showPicker by remember { mutableStateOf(false) }

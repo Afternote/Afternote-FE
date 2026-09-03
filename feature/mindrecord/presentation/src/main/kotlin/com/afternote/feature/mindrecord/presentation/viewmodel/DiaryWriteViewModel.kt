@@ -1,9 +1,7 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.ui.UiText
@@ -14,6 +12,9 @@ import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,7 +23,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
-import javax.inject.Inject
 
 /**
  * 일기 작성/이어쓰기 ViewModel.
@@ -30,17 +30,24 @@ import javax.inject.Inject
  * - 신규 작성: `POST /diary` (+ 선택한 수신자 ID 를 `receiverIds` 로 함께 전송).
  * - 이어쓰기: 라우트의 `draftId` 로 해당 달 draft 목록에서 항목을 찾아 프리필하고,
  *   저장 시 `PATCH /diary/{diaryId}` 로 수정한다 (등록 시 isDraft=false 로 전환).
+ *
+ * 라우트 인자는 Nav3 로컬 스택(#924)에서 오므로 SavedStateHandle 대신 assisted 주입으로 받는다 —
+ * Nav2 의 `toRoute` 자동 채움이 없는 환경에서 인자를 타입 안전하게 전달하는 표준 경로.
  */
-@HiltViewModel
+@HiltViewModel(assistedFactory = DiaryWriteViewModel.Factory::class)
 class DiaryWriteViewModel
-    @Inject
+    @AssistedInject
     constructor(
-        savedStateHandle: SavedStateHandle,
+        @Assisted private val route: MindRecordRoute.DiaryWriteRoute,
         private val repository: DiaryRepository,
         private val photoUploadRepository: PhotoUploadRepository,
         private val userRepository: UserRepository,
     ) : ViewModel() {
-        private val route = savedStateHandle.toRoute<MindRecordRoute.DiaryWriteRoute>()
+        @AssistedFactory
+        interface Factory {
+            fun create(route: MindRecordRoute.DiaryWriteRoute): DiaryWriteViewModel
+        }
+
         private val editingDraftId: Long? = route.draftId
 
         private val _uiState = MutableStateFlow(DiaryWriteUiState())

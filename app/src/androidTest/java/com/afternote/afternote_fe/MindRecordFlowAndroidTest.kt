@@ -11,7 +11,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.waitUntilAtLeastOneExists
-import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeDiaryRepository
@@ -19,6 +18,7 @@ import com.afternote.afternote_fe.test.FakeUserRepository
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.domain.model.TodayMood
+import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.mindrecord.presentation.screen.sender.DiaryWriteScreen
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryWriteViewModel
@@ -140,13 +140,7 @@ class MindRecordFlowAndroidTest {
 
     private fun diaryViewModel(repository: FakeDiaryRepository): DiaryWriteViewModel =
         DiaryWriteViewModel(
-            savedStateHandle =
-                SavedStateHandle(
-                    mapOf(
-                        "draftId" to null,
-                        "draftYearMonth" to null,
-                    ),
-                ),
+            route = MindRecordRoute.DiaryWriteRoute(),
             repository = repository,
             photoUploadRepository = PhotoUploadRepository { _, _ -> Result.success("https://cdn.test/image.jpg") },
             userRepository = FakeUserRepository(),

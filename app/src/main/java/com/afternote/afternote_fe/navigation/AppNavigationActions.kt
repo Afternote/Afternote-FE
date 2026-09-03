@@ -16,7 +16,6 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.Afte
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceiverNavActions
 import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceiverRoute
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
-import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavActions
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingRoute
 import com.afternote.feature.setting.presentation.navigation.SettingNavActions
@@ -96,41 +95,9 @@ fun rememberOnboardingNavActions(navController: NavController): OnboardingNavAct
 fun rememberMindRecordNavActions(navController: NavController): MindRecordNavActions =
     remember(navController) {
         object : MindRecordNavActions {
+            // 허브 내부 이동(작성·임시저장 목록)은 Nav3 로컬 스택(#924)으로 흡수되어 위임 7개가 사라졌다.
             override fun onMemorySpaceBack() {
                 navController.popBackStack()
-            }
-
-            override fun onWriteDailyQuestion() {
-                navController.navigate(MindRecordRoute.DailyQuestionWriteRoute)
-            }
-
-            override fun onWriteDiary() {
-                navController.navigate(MindRecordRoute.DiaryWriteRoute())
-            }
-
-            override fun onWriteBack() {
-                navController.popBackStack()
-            }
-
-            override fun onWriteSubmitSuccess() {
-                navController.popBackStack()
-            }
-
-            override fun onNavigateToDraftList() {
-                navController.navigate(MindRecordRoute.DraftListRoute)
-            }
-
-            override fun onDraftListBack() {
-                navController.popBackStack()
-            }
-
-            override fun onEditDiaryDraft(
-                draftId: Long,
-                draftYearMonth: String,
-            ) {
-                navController.navigate(
-                    MindRecordRoute.DiaryWriteRoute(draftId = draftId, draftYearMonth = draftYearMonth),
-                )
             }
         }
     }

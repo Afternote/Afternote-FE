@@ -18,6 +18,8 @@ hilt = "2.60.1"
 hiltNavigation = "1.4.0"
 ksp = "2.3.10"
 navigation = "2.9.8"
+# Nav3 파일럿(#924 1단계) — mindrecord 허브 내부 스택 전용. lifecycle 정렬 버전은 lifecycleRuntimeKtx 와 일치 유지.
+navigation3 = "1.1.6"
 okhttp = "5.4.0"
 retrofit = "3.0.0"
 kotlinxSerializationJson = "1.11.0"
@@ -76,6 +78,9 @@ hilt-android-testing = { group = "com.google.dagger", name = "hilt-android-testi
 hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
 hilt-navigation = { group = "androidx.hilt", name = "hilt-lifecycle-viewmodel-compose", version.ref = "hiltNavigation" }
 android-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
+androidx-navigation3-runtime = { group = "androidx.navigation3", name = "navigation3-runtime", version.ref = "navigation3" }
+androidx-navigation3-ui = { group = "androidx.navigation3", name = "navigation3-ui", version.ref = "navigation3" }
+androidx-lifecycle-viewmodel-navigation3 = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-navigation3", version.ref = "lifecycleViewmodelKtx" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-converter-kotlinx-serialization = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }

@@ -20,6 +20,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -46,7 +47,14 @@ fun AppNavigation(
 ) {
     val navEntry by appState.navController.currentBackStackEntryAsState()
     val currentDestination = navEntry?.destination
-    val showBottomBar = appState.shouldShowBottomBar(currentDestination)
+
+    // 마인드레코드 허브의 Nav3 로컬 스택(#924)은 Nav2 destination 에 드러나지 않으므로,
+    // 허브가 루트 화면인지(작성 화면이 아닌지)를 그래프에서 호이스팅받아 바텀바 판정에 합성한다.
+    var isMindRecordHubAtRoot by remember { mutableStateOf(true) }
+    val isMindRecordDestination = currentDestination?.hasRoute(Route.MindRecord::class) == true
+    val showBottomBar =
+        appState.shouldShowBottomBar(currentDestination) &&
+            (!isMindRecordDestination || isMindRecordHubAtRoot)
     val currentTab = appState.getCurrentNavTab(currentDestination)
 
     NavigationDebugLogger(navEntry, currentDestination, showBottomBar, currentTab)
@@ -126,7 +134,10 @@ fun AppNavigation(
                 },
                 actions = settingNavActions,
             )
-            mindRecordNavGraph(actions = mindRecordNavActions)
+            mindRecordNavGraph(
+                actions = mindRecordNavActions,
+                onHubDepthChanged = { isMindRecordHubAtRoot = it },
+            )
             timeLetterNavGraph(
                 navController = appState.navController,
                 actions = timeLetterNavActions,
