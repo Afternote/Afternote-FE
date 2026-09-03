@@ -50,20 +50,14 @@ fun BottomToolbar(
     onTextStyleClick: () -> Unit,
     onAlignChange: (TextAlign) -> Unit,
     modifier: Modifier = Modifier,
-<<<<<<< HEAD
+    onLinkClick: () -> Unit,
+    onSaveDraftClick: () -> Unit,
+    onDraftCountClick: () -> Unit,
     /**
      * 지금 문단의 정렬. 이 바의 정렬 3종은 «셋 중 하나» 라 **누가 켜져 있는지**가 semantics 의
      * 일부다 — 값이 없으면 스크린리더는 셋 다 똑같이 「버튼」으로만 읽는다 (#1179).
      */
     textAlign: TextAlign = TextAlign.Start,
-    onLinkClick: () -> Unit = {},
-    onSaveDraftClick: () -> Unit = {},
-    onDraftCountClick: () -> Unit = {},
-=======
-    onLinkClick: () -> Unit,
-    onSaveDraftClick: () -> Unit,
-    onDraftCountClick: () -> Unit,
->>>>>>> origin/develop
     /** 임시저장 개수. `null` 은 아직 모름(조회 중·실패) — 0 으로 단정하지 않는다. */
     draftCount: Int? = null,
 ) {
