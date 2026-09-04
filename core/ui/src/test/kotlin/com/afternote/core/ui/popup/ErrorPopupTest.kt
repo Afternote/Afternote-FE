@@ -15,7 +15,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * 공통 오류 팝업 4종(시안 `3628:23827`)의 문구·액션 계약 가드 (#446).
+ * 공통 오류 팝업 3종(시안 `3628:23827`)의 문구·액션 계약 가드 (#446).
  *
  * 문구를 테스트 안에 다시 적지 않고 리소스에서 읽는 이유 — 그렇게 하면 «리소스가 이 팝업에
  * 연결돼 있는가» 가 아니라 «내가 적은 문자열이 화면에 있는가» 를 검증하게 되어, 팝업이 남의
@@ -80,26 +80,6 @@ class ErrorPopupTest {
         clickButton(R.string.core_ui_upload_error_retry)
 
         composeRule.runOnIdle { assertEquals(1, retried) }
-    }
-
-    /** 접근 권한 없음만 액션이 "확인" 이다 — 같은 자격으로 다시 보내도 결과가 같아 재시도가 오도다. */
-    @Test
-    fun `접근 권한 없음 팝업은 재시도가 아니라 확인 액션을 낸다`() {
-        var confirmed = 0
-        composeRule.setContent {
-            AfternoteTheme {
-                AccessDeniedPopup(onConfirm = { confirmed += 1 }, onDismiss = {})
-            }
-        }
-
-        assertPopupTexts(
-            titleRes = R.string.core_ui_access_denied_title,
-            descriptionRes = R.string.core_ui_access_denied_description,
-        )
-        composeRule.onNodeWithText(stringResourceValue(R.string.core_ui_network_error_retry)).assertDoesNotExist()
-        clickButton(R.string.core_ui_access_denied_confirm)
-
-        composeRule.runOnIdle { assertEquals(1, confirmed) }
     }
 
     private fun assertPopupTexts(

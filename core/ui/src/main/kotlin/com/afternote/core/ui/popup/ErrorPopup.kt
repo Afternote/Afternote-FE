@@ -28,7 +28,8 @@ private const val ICON_CONTAINER_ALPHA = 0.12f
 
 /**
  * 오류 안내 팝업 — 아이콘 원 + 제목 + 본문 + 단일 액션. 시안의 오류 팝업 4종(네트워크 연결
- * 오류·서버 오류·업로드 실패·접근 권한 없음, `3628:23827`)이 공유하는 골격이다.
+ * 오류·서버 오류·업로드 실패·접근 권한 없음, `3628:23827`)이 공유하는 골격이다. 접근 권한 없음(403)은
+ * 아직 생산자가 없어 세우지 않았다.
  *
  * [Popup] 과 별개인 이유 — 그쪽은 "메시지 + 버튼" 골격이라 아이콘·제목 슬롯이 없고,
  * [PopupType] 은 enum 이라 타입별 필수 값을 담을 수 없다.
@@ -115,31 +116,6 @@ fun UploadErrorPopup(
         description = stringResource(R.string.core_ui_upload_error_description),
         buttonText = stringResource(R.string.core_ui_upload_error_retry),
         onButtonClick = onRetry,
-        onDismiss = onDismiss,
-        modifier = modifier,
-    )
-}
-
-/**
- * 권한 부족 안내(시안 `3628:23805`). 다른 셋과 달리 액션이 "확인" 인 이유 — 같은 자격으로 다시
- * 보내도 결과가 같아 재시도가 오도이기 때문이다. 그래서 파라미터도 `onRetry` 가 아니라
- * [onConfirm] 이다.
- *
- * 로그인이 만료된 401 은 이 팝업이 아니다 — 그쪽은 재로그인이라는 할 일이 있고 "관리자에게
- * 문의" 는 문의 대상이 없다. 이 팝업은 403 전용으로 둔다.
- */
-@Composable
-fun AccessDeniedPopup(
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    AfternoteErrorPopup(
-        iconRes = R.drawable.core_ui_ic_lock,
-        title = stringResource(R.string.core_ui_access_denied_title),
-        description = stringResource(R.string.core_ui_access_denied_description),
-        buttonText = stringResource(R.string.core_ui_access_denied_confirm),
-        onButtonClick = onConfirm,
         onDismiss = onDismiss,
         modifier = modifier,
     )
