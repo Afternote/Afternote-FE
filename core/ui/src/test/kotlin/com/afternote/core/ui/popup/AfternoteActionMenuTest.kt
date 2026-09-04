@@ -1,19 +1,17 @@
 package com.afternote.core.ui.popup
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.testing.EnabledClickTarget
 import com.afternote.core.ui.testing.MinimumTouchTargetSize
 import com.afternote.core.ui.testing.scanEnabledClickTargets
 import com.afternote.core.ui.theme.AfternoteTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -166,30 +164,19 @@ class AfternoteActionMenuTest {
     }
 
     @Test
-    fun `기본 너비는 가장 긴 항목에 맞고 width 를 주면 그 값으로 고정된다`() {
-        // 시안 프레임(2249:14756)은 120dp 고정이지만 FE 확정값은 가변 너비다 (#643).
-        // 고정 프레임이 필요한 호출부를 위해 width 파라미터가 남아 있어야 한다.
-        val width = mutableStateOf(Dp.Unspecified)
-        composeRule.setContent {
-            AfternoteTheme {
-                AfternoteActionMenu(
-                    expanded = true,
-                    onDismissRequest = {},
-                    items = listOf(ActionMenuItem("수정하기") {}),
-                    width = width.value,
-                )
+    fun `빈 목록은 호출부 오류로 터뜨린다`() {
+        // 항목을 숨기는 건 리스트에서 빼는 것으로 표현하지만, 전부 빼고 메뉴를 여는 호출은 버그다.
+        assertThrows(IllegalArgumentException::class.java) {
+            composeRule.setContent {
+                AfternoteTheme {
+                    AfternoteActionMenu(
+                        expanded = false,
+                        onDismissRequest = {},
+                        items = emptyList(),
+                    )
+                }
             }
         }
-
-        val intrinsic = composeRule.scanEnabledClickTargets().single()
-        composeRule.runOnIdle { width.value = 120.dp }
-        composeRule.waitForIdle()
-        val fixed = composeRule.scanEnabledClickTargets().single()
-        assertEquals(120f, fixed.layoutWidth.value, 0.1f)
-        assertTrue(
-            "가변 너비는 고정 120dp 보다 좁아야 한다: ${intrinsic.layoutWidth}",
-            intrinsic.layoutWidth < fixed.layoutWidth,
-        )
     }
 
     private fun EnabledClickTarget.diagnosticName(): String = "«$name» 이 최소 터치 타깃보다 작다: $width×$height"

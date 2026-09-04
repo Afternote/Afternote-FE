@@ -16,7 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
@@ -52,10 +51,9 @@ private const val ACTION_MENU_SHADOW_ALPHA = 0.15f
  * [ActionMenuItem.onClick] 을 부른다. 항목 콜백이 다이얼로그를 띄우는 흔한 경우에
  * 메뉴가 뒤에 남는 것을 호출부마다 막지 않아도 되게 한다.
  *
- * @param items 위에서부터 그릴 순서 그대로. 비면 아무것도 그리지 않는다 —
- *   「항목을 숨긴다」는 판단은 호출부가 리스트에서 빼는 것으로 표현한다.
- * @param width [Dp.Unspecified] 면 가장 긴 항목 너비(`IntrinsicSize.Max`)에 맞춘다.
- *   고정 너비가 필요한 호출부만 값을 넘긴다.
+ * @param items 위에서부터 그릴 순서 그대로. **비면 호출부 오류다** (`require`) —
+ *   「항목을 숨긴다」는 판단은 호출부가 리스트에서 빼는 것으로 표현하되, 열 항목이 하나도
+ *   없는 메뉴를 여는 호출은 있어서는 안 된다. 너비는 가장 긴 항목(`IntrinsicSize.Max`)에 맞춘다.
  */
 @Composable
 fun AfternoteActionMenu(
@@ -64,9 +62,9 @@ fun AfternoteActionMenu(
     items: List<ActionMenuItem>,
     modifier: Modifier = Modifier,
     popupPositionProvider: PopupPositionProvider = rememberFixedRightPopupPositionProvider(),
-    width: Dp = Dp.Unspecified,
 ) {
-    if (!expanded || items.isEmpty()) return
+    require(items.isNotEmpty()) { "AfternoteActionMenu 는 항목이 하나 이상 있어야 한다" }
+    if (!expanded) return
 
     ComposePopup(
         popupPositionProvider = popupPositionProvider,
@@ -82,7 +80,6 @@ fun AfternoteActionMenu(
                     }
                 },
             modifier = modifier,
-            width = width,
         )
     }
 }
@@ -92,7 +89,6 @@ fun AfternoteActionMenu(
 private fun AfternoteActionMenuCard(
     items: List<ActionMenuItem>,
     modifier: Modifier = Modifier,
-    width: Dp = Dp.Unspecified,
 ) {
     Column(
         modifier =
@@ -103,13 +99,7 @@ private fun AfternoteActionMenuCard(
                     clip = true,
                     spotColor = AfternoteDesign.colors.black.copy(alpha = ACTION_MENU_SHADOW_ALPHA),
                 ).background(AfternoteDesign.colors.white)
-                .then(
-                    if (width == Dp.Unspecified) {
-                        Modifier.width(IntrinsicSize.Max)
-                    } else {
-                        Modifier.width(width)
-                    },
-                ),
+                .width(IntrinsicSize.Max),
     ) {
         items.forEach { item ->
             ActionMenuRow(item = item, modifier = Modifier.fillMaxWidth())
