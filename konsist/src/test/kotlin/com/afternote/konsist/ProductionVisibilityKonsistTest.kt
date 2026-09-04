@@ -30,7 +30,9 @@ import java.io.File
  * 3. 테스트 소스가 해당 FQN을 직접 import하거나 같은 패키지에서 이름을 참조한다.
  *
  * member·constructor의 최소 visibility는 Kotlin 의미 분석 없이는 동명이인과 생성 코드 사용을
- * 안전하게 구분할 수 없다. 그 경계는 #1671~#1677과 코드 리뷰가 담당한다.
+ * 안전하게 구분할 수 없다. 그 경계는 #1671~#1677과 코드 리뷰가 담당한다. 단 **PR 이 새로 넣은**
+ * 멤버 함수가 main 참조 없이 테스트만 참조하는 경우는 Repository Quality 의
+ * `validate-test-only-production-declarations.mjs` 가 PR diff 단위로 막는다 (#1895).
  */
 class ProductionVisibilityKonsistTest {
     @get:Rule
