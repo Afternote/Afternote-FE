@@ -11,6 +11,7 @@ import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
+import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
 import com.afternote.feature.mindrecord.presentation.usecase.ObserveWeeklyReportUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -156,7 +157,7 @@ class MindRecordRequestCountTest {
     // ── 테스트 도구 ───────────────────────────────────────────────────────────
 
     private fun TestScope.startDailyQuestion(repository: DailyQuestionRepository): DailyQuestionListViewModel {
-        val viewModel = DailyQuestionListViewModel(repository, changeTracker)
+        val viewModel = DailyQuestionListViewModel(repository, changeTracker, RecordingErrorReporter())
         backgroundScope.launch(dispatcher) { viewModel.uiState.collect { } }
         advanceUntilIdle()
         return viewModel

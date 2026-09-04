@@ -85,6 +85,9 @@ class DailyQuestionWriteViewModel
                             )
                         }
                     }.onFailure { e ->
+                        // 여기서 실패하면 화면이 오류 문구만 남고 쓸 수가 없다 — 사용자가
+                        // 「질문이 안 뜬다」로 마주하는 자리라 올린다 (#964).
+                        errorReporter.recordMindRecordFailure(MindRecordFailureStage.DAILY_QUESTION_LOAD, e)
                         _uiState.update {
                             it.copy(
                                 isQuestionLoading = false,
@@ -124,6 +127,8 @@ class DailyQuestionWriteViewModel
                         }
                         if (today.isDraft) resumeDraft()
                     }.onFailure { e ->
+                        // 신규 진입에서 오늘 질문을 못 받으면 작성 자체가 막힌다 (#964).
+                        errorReporter.recordMindRecordFailure(MindRecordFailureStage.DAILY_QUESTION_LOAD, e)
                         _uiState.update {
                             it.copy(
                                 isQuestionLoading = false,
