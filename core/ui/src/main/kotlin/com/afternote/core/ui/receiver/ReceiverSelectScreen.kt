@@ -85,8 +85,7 @@ fun ReceiverSelectScreen(
         selectedReceiverIds = selectedReceiverIds,
         onReceiverToggle = onReceiverToggle,
         onBackClick = onBackClick,
-        // 완료 버튼은 선택이 비면 비활성이지만, 콜백 자체도 빈 목록을 내보내지 않게 막는다.
-        onConfirmClick = { if (selectedReceiverIds.isNotEmpty()) onConfirmClick(selectedReceiverIds) },
+        onConfirmClick = { onConfirmClick(selectedReceiverIds) },
         modifier = modifier,
         title = title,
         searchPlaceholder = searchPlaceholder,
@@ -116,7 +115,7 @@ fun ReceiverSelectScreen(
 ) {
     ReceiverSelectScaffold(
         receivers = receivers,
-        selectedReceiverIds = remember(selectedReceiverId) { listOfNotNull(selectedReceiverId) },
+        selectedReceiverIds = listOfNotNull(selectedReceiverId),
         onReceiverToggle = onReceiverToggle,
         onBackClick = onBackClick,
         onConfirmClick = { selectedReceiverId?.let(onConfirmClick) },
