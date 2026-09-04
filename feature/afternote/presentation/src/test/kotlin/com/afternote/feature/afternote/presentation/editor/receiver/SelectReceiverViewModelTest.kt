@@ -163,9 +163,7 @@ class SelectReceiverViewModelTest {
     @Test
     fun `이미 폼에 있는 수신자는 선택 상태로 열린다`() =
         runTest {
-            val viewModel = viewModelWithReceivers()
-
-            viewModel.applyPreselection(listOf(1L, 2L))
+            val viewModel = viewModelWithReceivers(formReceiverIds = listOf(1L, 2L))
 
             assertEquals(listOf(1L, 2L), viewModel.uiState.value.selectedReceiverIds)
         }
@@ -173,9 +171,8 @@ class SelectReceiverViewModelTest {
     @Test
     fun `폼에 담겨 있던 수신자는 최초 한 번만 체크해 사용자가 푼 체크를 되살리지 않는다`() =
         runTest {
-            val viewModel = viewModelWithReceivers()
+            val viewModel = viewModelWithReceivers(formReceiverIds = listOf(1L))
 
-            viewModel.applyPreselection(listOf(1L))
             viewModel.toggleReceiverSelection(1L)
             viewModel.applyPreselection(listOf(1L))
 
@@ -185,9 +182,8 @@ class SelectReceiverViewModelTest {
     @Test
     fun `폼에 담겨 있던 수신자를 탭해도 중복으로 쌓이지 않는다`() =
         runTest {
-            val viewModel = viewModelWithReceivers()
+            val viewModel = viewModelWithReceivers(formReceiverIds = listOf(1L))
 
-            viewModel.applyPreselection(listOf(1L))
             viewModel.toggleReceiverSelection(1L)
             viewModel.toggleReceiverSelection(1L)
 
@@ -195,26 +191,15 @@ class SelectReceiverViewModelTest {
         }
 
     @Test
-    fun `목록이 먼저 와 있을 때 폼에 담겨 있던 수신자 중 목록에 없는 것은 체크되지 않는다`() =
+    fun `폼에 담겨 있던 수신자 중 목록에 없는 것은 목록이 오면 빠진다`() =
         runTest {
-            val viewModel = viewModelWithReceivers()
-
-            viewModel.applyPreselection(listOf(1L, 99L))
-
-            assertEquals(listOf(1L), viewModel.uiState.value.selectedReceiverIds)
-        }
-
-    @Test
-    fun `폼에 담겨 있던 수신자가 목록보다 먼저 들어와도 같은 결과다`() =
-        runTest {
+            // 미저장 폼을 둔 채 설정에서 수신자를 지우고 돌아온 경우 — 폼엔 남았지만 목록엔 없다.
             val gate = CompletableDeferred<List<Receiver>>()
             val repository = FakeUserRepository(onGetReceivers = { gate.await() })
             val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter)
             runCurrent()
 
             viewModel.applyPreselection(listOf(1L, 99L))
-            // 목록이 오기 전엔 체크할 행이 없으니 선택도 비어 있다 — 완료 버튼이 켜지지 않는다.
-            assertEquals(emptyList<Long>(), viewModel.uiState.value.selectedReceiverIds)
 
             gate.complete(
                 listOf(
@@ -265,7 +250,11 @@ class SelectReceiverViewModelTest {
             assertEquals(listOf(1L), viewModel.uiState.value.selectedReceiverIds)
         }
 
-    private fun viewModelWithReceivers(): SelectReceiverViewModel {
+    /**
+     * 프로덕션 순서대로 만든다 — 폼에 담겨 있던 수신자([formReceiverIds])가 화면이 뜨자마자 먼저 들어오고,
+     * 목록 응답은 그 뒤에 온다.
+     */
+    private fun viewModelWithReceivers(formReceiverIds: List<Long> = emptyList()): SelectReceiverViewModel {
         val repository =
             FakeUserRepository(
                 receivers =
@@ -275,6 +264,7 @@ class SelectReceiverViewModelTest {
                     ),
             )
         val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter)
+        if (formReceiverIds.isNotEmpty()) viewModel.applyPreselection(formReceiverIds)
         dispatcher.scheduler.runCurrent()
         return viewModel
     }
