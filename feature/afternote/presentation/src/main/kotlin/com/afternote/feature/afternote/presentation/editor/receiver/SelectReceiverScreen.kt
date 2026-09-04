@@ -23,8 +23,10 @@ import com.afternote.feature.afternote.presentation.R
 /**
  * 애프터노트 에디터의 수신자 선택 화면 (#540, 시안 3631:24820).
  *
- * 검색·초성 인덱스·단일 선택·완료 UI 는 공용 [ReceiverSelectScreen](#791) 이 그리고,
+ * 검색·초성 인덱스·복수 선택·완료 UI 는 공용 [ReceiverSelectScreen](#791) 이 그리고,
  * 여기서는 에디터 모델 매핑과 로딩·조회 실패·빈 목록 상태만 소유한다.
+ *
+ * 한 번 진입해 여러 명을 확정할 수 있다 — 완료는 선택한 id 전체를 한 번에 돌려준다 (#1426).
  */
 @Composable
 internal fun SelectReceiverScreen(
@@ -32,7 +34,7 @@ internal fun SelectReceiverScreen(
     onBackClick: () -> Unit,
     onReceiverToggle: (Long) -> Unit,
     onRetryClick: () -> Unit,
-    onConfirmClick: (Long) -> Unit,
+    onConfirmClick: (List<Long>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ReceiverSelectScreen(
@@ -40,7 +42,7 @@ internal fun SelectReceiverScreen(
             remember(uiState.receivers) {
                 uiState.receivers.map { ReceiverSelectItem(id = it.id, name = it.name, relation = it.label) }
             },
-        selectedReceiverId = uiState.selectedReceiverId,
+        selectedReceiverIds = uiState.selectedReceiverIds,
         onReceiverToggle = onReceiverToggle,
         onBackClick = onBackClick,
         onConfirmClick = onConfirmClick,
