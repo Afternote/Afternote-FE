@@ -14,17 +14,17 @@ import org.junit.Test
 class ResolveUpdateIsDraftTest {
     @Test
     fun `발행분에서 임시저장을 누르면 키를 안 싣는다 - 서버가 저장값을 유지한다`() {
-        assertNull(resolveUpdateIsDraft(asDraft = true, editingDraft = false))
+        assertNull(AfternoteEditorFormMapper.resolveUpdateIsDraft(asDraft = true, editingDraft = false))
     }
 
     @Test
     fun `임시저장을 이어쓰다 임시저장을 누르면 true 를 싣는다`() {
-        assertEquals(true, resolveUpdateIsDraft(asDraft = true, editingDraft = true))
+        assertEquals(true, AfternoteEditorFormMapper.resolveUpdateIsDraft(asDraft = true, editingDraft = true))
     }
 
     @Test
     fun `등록 버튼은 어느 경로에서든 false 를 명시해 발행으로 전환한다`() {
-        assertEquals(false, resolveUpdateIsDraft(asDraft = false, editingDraft = true))
-        assertEquals(false, resolveUpdateIsDraft(asDraft = false, editingDraft = false))
+        assertEquals(false, AfternoteEditorFormMapper.resolveUpdateIsDraft(asDraft = false, editingDraft = true))
+        assertEquals(false, AfternoteEditorFormMapper.resolveUpdateIsDraft(asDraft = false, editingDraft = false))
     }
 }

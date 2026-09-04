@@ -293,6 +293,30 @@ internal object AfternoteEditorFormMapper {
             is CreateAfternoteInput.Memorial -> CreateAfternoteInput.Memorial(input.payload.copy(isDraft = isDraft))
         }
 
+    /**
+     * 수정 요청에 실을 `isDraft` 를 정한다 (#1791).
+     *
+     * **발행 완료분을 임시저장으로 되돌리지 않는다.** 수정 화면은 상세에서도 열리고 임시저장 목록에서도
+     * 열리는데 「임시저장」 버튼은 하나다. 발행분에 `true` 를 실으면 그 애프터노트가 홈 목록(발행분만)에서
+     * 사라지고, 수신자에게 이미 닿은 기록이 조용히 초안이 된다.
+     *
+     * 서버는 **키를 생략하면 저장값을 유지**하므로, 발행분에서는 `null` 이 곧 「건드리지 않음」이다.
+     *
+     * | 무엇을 열었나 | 누른 버튼 | 실리는 값 |
+     * |---|---|---|
+     * | 임시저장 | 임시저장 | `true` — 초안으로 남긴다 |
+     * | 임시저장 | 등록 | `false` — 발행으로 전환한다 |
+     * | 발행 완료 | 임시저장 | **`null`** — 저장값 유지(강등 없음) |
+     * | 발행 완료 | 등록 | `false` — 이미 발행이라 무해하다 |
+     *
+     * @param asDraft 「임시저장」 버튼으로 저장했는가.
+     * @param editingDraft 지금 열려 있는 것이 원래 임시저장인가(`EditorFlowRoute.isDraft`).
+     */
+    fun resolveUpdateIsDraft(
+        asDraft: Boolean,
+        editingDraft: Boolean,
+    ): Boolean? = if (asDraft) true.takeIf { editingDraft } else false
+
     private fun buildAccountCreatePayload(
         payload: RegisterAfternotePayload,
         processingMethods: List<String>,
