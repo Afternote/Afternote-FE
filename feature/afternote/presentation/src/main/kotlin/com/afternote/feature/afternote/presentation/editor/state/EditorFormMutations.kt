@@ -32,16 +32,12 @@ internal fun EditorFormState.withType(type: AfternoteType): EditorFormState =
 internal fun EditorFormState.withService(service: String): EditorFormState = mapServiceForm { it.withService(service) }
 
 /**
- * 사진 선택은 `picked` 층을 교체한다. `null`(시트의 삭제)은 현재 표시된 한 층만 걷는다 — 로컬
- * 교체분이 있으면 서버 사진으로 돌아가고, 서버 사진만 있으면 서버 축을 비워 PATCH `null` 로 잇는다.
+ * 사진 선택은 `picked` 층에 그대로 실린다 — 값이면 교체, `null`(시트의 삭제)이면 교체 취소라 서버 사진이
+ * 다시 보인다. 걷을 `picked` 층이 없을 때의 `null` 만 서버 축을 비워 PATCH `null` 로 잇는다.
  */
 internal fun EditorFormState.withMemorialPhoto(uri: String?): EditorFormState =
     mapMemorial { form ->
-        when {
-            uri != null -> form.copy(pickedPhotoUri = uri)
-            form.pickedPhotoUri != null -> form.copy(pickedPhotoUri = null)
-            else -> form.copy(photoUrl = null)
-        }
+        if (uri == null && form.pickedPhotoUri == null) form.copy(photoUrl = null) else form.copy(pickedPhotoUri = uri)
     }
 
 /**
