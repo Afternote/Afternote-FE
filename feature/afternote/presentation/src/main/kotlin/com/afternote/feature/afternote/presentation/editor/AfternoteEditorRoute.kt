@@ -126,6 +126,14 @@ internal fun AfternoteEditorNavigation(
                 state = state,
             )
         }
+    val onSaveDraftClick =
+        remember(editViewModel, state) {
+            buildOnRegisterClick(
+                editViewModel = editViewModel,
+                state = state,
+                asDraft = true,
+            )
+        }
     // 썸네일 실패는 알리는 것으로 끝내지 않는다 — 영상 재선택 없이 되돌릴 액션을 같은 스낵바에 건다.
     // 어느 오류에 거는지는 오류 자체가 말한다 ([offersMemorialThumbnailRetry]).
     val thumbnailRetryAction =
@@ -141,6 +149,7 @@ internal fun AfternoteEditorNavigation(
         form = uiState.form,
         onBackClick = onPopBackStack,
         onRegisterClick = onRegisterClick,
+        onSaveDraftClick = onSaveDraftClick,
         snackbarMessage = snackbarMessage,
         snackbarAction = thumbnailRetryAction,
         onSnackbarMessageConsumed = {

@@ -50,6 +50,15 @@ internal class AfternoteLocalNavActions(
 
     override fun navigateToDraftList(): Unit = backStack.pushSingleTop(AfternoteRoute.DraftListRoute)
 
+    override fun navigateToEditorForResume(
+        itemId: Long,
+        initialType: AfternoteType,
+    ) {
+        backStack.add(
+            AfternoteRoute.EditorFlowRoute(itemId = itemId, initialType = initialType, isDraft = true),
+        )
+    }
+
     override fun onFingerprintAuthFailed(message: String): Unit = externalActions.onFingerprintAuthFailed(message)
 }
 
