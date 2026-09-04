@@ -7,9 +7,9 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -34,10 +34,11 @@ import com.afternote.core.ui.topbar.DetailTopBar
  * - bottom 버튼 49dp 마진 (제스처 바: 49dp / 구형 네비 바: bar height + 49dp)
  * - content 영역은 [ColumnScope] — 위에서 아래로 쌓이는 일반 흐름 가정
  *
- * **키보드 대응**: `imePadding()` 은 Scaffold `modifier` 에 있어야 한다 (#1849).
+ * **키보드 대응**: IME 패딩은 Scaffold `modifier` 에 있어야 한다 (#1849).
  * `bottomBar` 는 `WindowInsets.navigationBars` 만 계산하므로, 호출처가 [content] 안에서
  * `imePadding()` 을 걸어도 하단 CTA 는 키보드에 덮인 채로 남는다. Scaffold 에 걸면 소비된
  * inset 이 하위로 전파되므로 [content] 안의 `imePadding()` 은 자동으로 0 이 되어 이중 적용되지 않는다.
+ * 더하는 양은 IME 에서 내비 바를 뺀 값이다 — 루트 Scaffold 가 내비 바 몫을 이미 깔아 두기 때문이다.
  * (앱 매니페스트의 `windowSoftInputMode="adjustResize"` 와 한 쌍이다 — 그게 없으면 IME inset 자체가 오지 않는다.)
  *
  * **진행 인디케이터**:
@@ -73,7 +74,12 @@ fun FlowStepScaffold(
             modifier
                 .addFocusCleaner(focusManager)
                 .fillMaxSize()
-                .imePadding(),
+                // 루트 Scaffold(AppNavigation)가 systemBars 하단 — 내비 바 — 을 innerPadding 으로 이미 깔아 두는데,
+                // consumeWindowInsets 없이 padding 으로만 전달돼 소비로 잡히지 않는다. 그 위에서 imePadding() 을
+                // 그대로 쓰면 IME 높이(내비 바 영역 포함)를 통째로 더해 키보드 위로 내비 바 한 겹만큼 더 뜬다 —
+                // 3버튼 내비에서 48dp, 제스처에서 24dp. 내비 바 몫을 뺀 IME 만 더한다. 키보드가 없으면 ime 가
+                // 0 이라 아무것도 더하지 않는다 (#1849 리뷰 실측). FlowStepScaffold 호스트 11곳은 전부 그 루트 아래다.
+                .windowInsetsPadding(WindowInsets.ime.exclude(WindowInsets.navigationBars)),
         containerColor = Color.Transparent,
         topBar = {
             DetailTopBar(
