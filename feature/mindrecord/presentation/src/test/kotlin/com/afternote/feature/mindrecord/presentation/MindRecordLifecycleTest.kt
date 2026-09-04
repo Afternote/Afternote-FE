@@ -38,11 +38,13 @@ import com.afternote.feature.mindrecord.presentation.screen.receiver.ReceiverMin
 import com.afternote.feature.mindrecord.presentation.screen.sender.DiaryScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DraftListScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.WeeklyReportScreen
+import com.afternote.feature.mindrecord.presentation.usecase.DeleteMindRecordDraftsUseCase
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
+import com.afternote.feature.mindrecord.presentation.usecase.ObserveWeeklyReportUseCase
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftListViewModel
-import com.afternote.feature.mindrecord.presentation.viewmodel.MindRecordDraftLoader
 import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordFilter
 import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordViewModel
@@ -158,9 +160,8 @@ class MindRecordLifecycleTest {
             )
         val viewModel =
             DraftListViewModel(
-                loader = MindRecordDraftLoader(diaryRepository, dailyQuestionRepository),
-                diaryRepository = diaryRepository,
-                dailyQuestionRepository = dailyQuestionRepository,
+                loadDrafts = LoadMindRecordDraftsUseCase(diaryRepository, dailyQuestionRepository),
+                deleteDrafts = DeleteMindRecordDraftsUseCase(diaryRepository, dailyQuestionRepository),
                 errorReporter = RecordingErrorReporter(),
             )
 
@@ -221,7 +222,7 @@ class MindRecordLifecycleTest {
         val repository = FakeWeeklyReportRepository()
         repository.results.addLast(Result.failure(IllegalStateException("weekly offline")))
         val userRepository = privateProfileRepository("테스트 사용자")
-        val viewModel = WeeklyReportViewModel(repository, userRepository, MindRecordChangeTracker())
+        val viewModel = WeeklyReportViewModel(ObserveWeeklyReportUseCase(repository, userRepository), MindRecordChangeTracker())
 
         composeRule.setContent {
             AfternoteTheme {

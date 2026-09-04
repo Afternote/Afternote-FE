@@ -11,6 +11,7 @@ import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
+import com.afternote.feature.mindrecord.presentation.usecase.ObserveWeeklyReportUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -112,7 +113,7 @@ class MindRecordRequestCountTest {
     fun `주간리포트도 데이터가 그대로면 복귀에 다시 부르지 않는다`() =
         runTest(dispatcher) {
             val repository = CountingWeeklyReportRepository()
-            val viewModel = WeeklyReportViewModel(repository, userRepository(), changeTracker)
+            val viewModel = WeeklyReportViewModel(ObserveWeeklyReportUseCase(repository, userRepository()), changeTracker)
             backgroundScope.launch(dispatcher) { viewModel.uiState.collect { } }
             advanceUntilIdle()
 
@@ -130,7 +131,7 @@ class MindRecordRequestCountTest {
             // 소진된 뒤 대기가 남으면 복귀 갱신이 유일한 복구 경로인데, «데이터가 그대로면
             // 부르지 않는다» 가드가 그것까지 막으면 «분석 중» 이 앱 재시작까지 굳는다.
             val repository = CountingWeeklyReportRepository(pendingAnalysis = true)
-            val viewModel = WeeklyReportViewModel(repository, userRepository(), changeTracker)
+            val viewModel = WeeklyReportViewModel(ObserveWeeklyReportUseCase(repository, userRepository()), changeTracker)
             backgroundScope.launch(dispatcher) { viewModel.uiState.collect { } }
             advanceUntilIdle()
             advanceTimeBy(10 * 60 * 1000L)

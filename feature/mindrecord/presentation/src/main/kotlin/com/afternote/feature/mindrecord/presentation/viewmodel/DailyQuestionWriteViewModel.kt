@@ -15,6 +15,7 @@ import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.mindrecord.presentation.reporting.MindRecordFailureStage
 import com.afternote.feature.mindrecord.presentation.reporting.recordMindRecordFailure
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import com.afternote.feature.mindrecord.presentation.util.isHtmlBlank
 import com.afternote.feature.mindrecord.presentation.util.toWireContent
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,7 +34,7 @@ class DailyQuestionWriteViewModel
         savedStateHandle: SavedStateHandle,
         private val repository: DailyQuestionRepository,
         private val photoUploadRepository: PhotoUploadRepository,
-        private val draftLoader: MindRecordDraftLoader,
+        private val draftLoader: LoadMindRecordDraftsUseCase,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(DailyQuestionWriteUiState())

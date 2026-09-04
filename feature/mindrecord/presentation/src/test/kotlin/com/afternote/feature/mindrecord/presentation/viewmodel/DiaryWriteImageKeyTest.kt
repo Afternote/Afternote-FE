@@ -10,6 +10,7 @@ import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
@@ -155,7 +156,7 @@ class DiaryWriteImageKeyTest {
                     uploadedKey = UPLOADED_KEY,
                 ),
             userRepository = noReceiverUserRepository(),
-            draftLoader = MindRecordDraftLoader(RecordingDiaryRepository {}, NoDailyQuestionRepository),
+            draftLoader = LoadMindRecordDraftsUseCase(RecordingDiaryRepository {}, NoDailyQuestionRepository),
             errorReporter = RecordingErrorReporter(),
         )
 
