@@ -317,8 +317,14 @@ class WeeklyReportViewModel
                     background =
                         when (record?.emotion) {
                             TodayMood.HAPPY -> DayBackground.Green
+
                             TodayMood.SAD -> DayBackground.Pink
-                            else -> DayBackground.None
+
+                            // 보통은 배경을 주지 않는다 — 시안이 «좋음/나쁨» 두 끝만 색으로 가른다.
+                            TodayMood.SOSO -> DayBackground.None
+
+                            // 그날 기록이 없거나, 있어도 감정을 고르지 않은 날.
+                            null -> DayBackground.None
                         },
                 )
             }
