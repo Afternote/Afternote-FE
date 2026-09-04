@@ -7,7 +7,7 @@ import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiM
 /**
  * 카테고리별 수신 상세 UI 모델.
  *
- * 발신자([com.afternote.feature.afternote.presentation.author.detail.DetailContentUiModel])와 달리
+ * 발신자([com.afternote.feature.afternote.presentation.detail.DetailContentUiModel])와 달리
  * 수신자 카드·작성자 표시명을 보유하지 않는다(받은 본인이 수신자이므로).
  */
 sealed interface ReceivedDetailContentUiModel {
