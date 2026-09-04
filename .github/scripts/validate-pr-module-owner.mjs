@@ -27,8 +27,12 @@ const PLATFORM_FILES = new Set([
 // 소유자가 없는 것 — 누구나 고친다.
 const UNOWNED_PREFIXES = ["docs/"];
 const UNOWNED_FILES = new Set(["README.md", ".gitignore", ".dockerignore", ".mcp.json"]);
-// 테스트 소스셋은 남의 모듈이라도 무관하다 (0830 확정). testFixtures·screenshotTest 도 같은 쪽이다.
-const TEST_SOURCE_SET_MARKERS = ["/src/test/", "/src/androidTest/", "/src/testFixtures/", "/src/screenshotTest/"];
+// 테스트 소스셋은 남의 모듈이라도 무관하다 (0830 확정). 판정은 마커 목록이 아니라 «`/src/<이름>/` 의
+// <이름> 이 test 를 품는가» 다 — `AfternoteKonsistScope.isTestSourceSet` 과 같은 기준이라 variant 접미사
+// (`screenshotTestDebug` 의 골든 PNG 등)를 자연히 흡수한다. 마커 정확 일치는 `screenshotTestDebug/` 를
+// 프로덕션으로 읽어, core:ui 변경으로 남의 모듈 골든이 갱신되는 정상 경로를 전부 위반으로 잡았다(#1890 리뷰).
+const SOURCE_SET_SEGMENT = /\/src\/([^/]+)\//;
+const TEST_NAME_IN_SOURCE_SET = "test";
 
 export const ISSUE_ASSIGNEE_EXEMPT_LABEL = "issue-assignee-exempt";
 
@@ -50,8 +54,8 @@ export function moduleKeyOf(filePath) {
 
 /** 프로덕션 파일인가 — 테스트 소스셋은 제외, 그 밖의 모듈 파일(빌드 스크립트·리소스·매니페스트)은 포함. */
 export function isProductionPath(filePath) {
-    const p = `/${normalize(filePath)}`;
-    return !TEST_SOURCE_SET_MARKERS.some((marker) => p.includes(marker));
+    const sourceSet = SOURCE_SET_SEGMENT.exec(`/${normalize(filePath)}`)?.[1];
+    return !(sourceSet && sourceSet.toLowerCase().includes(TEST_NAME_IN_SOURCE_SET));
 }
 
 function isBotAuthor(user, login) {

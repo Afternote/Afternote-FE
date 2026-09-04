@@ -29,6 +29,9 @@ test("테스트 소스셋은 프로덕션이 아니고, 모듈의 빌드 스크�
         "app/src/androidTest/java/A.kt",
         "core/domain/src/testFixtures/kotlin/Fake.kt",
         "feature/home/presentation/src/screenshotTest/kotlin/S.kt",
+        // 골든은 variant 접미사 소스셋에 산다 — core:ui 변경이 남의 모듈 골든을 갱신하는 것은 정상 경로다.
+        "feature/setting/presentation/src/screenshotTestDebug/reference/com/afternote/feature/setting/presentation/screen/S_0.png",
+        "feature/afternote/presentation/src/screenshotTestRelease/reference/x.png",
     ]) assert.equal(isProductionPath(p), false, p);
     for (const p of [
         "feature/setting/presentation/src/main/kotlin/A.kt",
