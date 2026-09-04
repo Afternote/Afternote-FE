@@ -171,7 +171,7 @@ class SelectReceiverViewModelTest {
         }
 
     @Test
-    fun `초기 선택은 최초 한 번만 반영해 사용자가 푼 선택을 되살리지 않는다`() =
+    fun `폼에 담겨 있던 수신자는 최초 한 번만 체크해 사용자가 푼 체크를 되살리지 않는다`() =
         runTest {
             val viewModel = viewModelWithReceivers()
 
@@ -183,7 +183,7 @@ class SelectReceiverViewModelTest {
         }
 
     @Test
-    fun `초기 선택과 같은 수신자를 탭해도 중복으로 쌓이지 않는다`() =
+    fun `폼에 담겨 있던 수신자를 탭해도 중복으로 쌓이지 않는다`() =
         runTest {
             val viewModel = viewModelWithReceivers()
 
@@ -195,7 +195,7 @@ class SelectReceiverViewModelTest {
         }
 
     @Test
-    fun `목록 응답이 초기 선택보다 먼저 와 있어도 목록에 없는 초기 선택은 빠진다`() =
+    fun `목록이 먼저 와 있을 때 폼에 담겨 있던 수신자 중 목록에 없는 것은 체크되지 않는다`() =
         runTest {
             val viewModel = viewModelWithReceivers()
 
@@ -205,7 +205,7 @@ class SelectReceiverViewModelTest {
         }
 
     @Test
-    fun `초기 선택이 목록 응답보다 먼저 들어와도 같은 결과다`() =
+    fun `폼에 담겨 있던 수신자가 목록보다 먼저 들어와도 같은 결과다`() =
         runTest {
             val gate = CompletableDeferred<List<Receiver>>()
             val repository = FakeUserRepository(onGetReceivers = { gate.await() })
@@ -213,7 +213,7 @@ class SelectReceiverViewModelTest {
             runCurrent()
 
             viewModel.applyPreselection(listOf(1L, 99L))
-            // 목록이 없는 동안엔 보이는 선택도 없다 — 완료 버튼이 확인 없이 켜지지 않는다.
+            // 목록이 오기 전엔 체크할 행이 없으니 선택도 비어 있다 — 완료 버튼이 켜지지 않는다.
             assertEquals(emptyList<Long>(), viewModel.uiState.value.selectedReceiverIds)
 
             gate.complete(

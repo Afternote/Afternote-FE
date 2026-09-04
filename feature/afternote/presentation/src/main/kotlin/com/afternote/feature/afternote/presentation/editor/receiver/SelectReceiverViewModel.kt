@@ -26,8 +26,8 @@ data class SelectReceiverUiState(
     /**
      * [receivers] 중 체크된 수신자 id — 체크한 순서를 보존한다. 완료 시 이 목록이 그대로 에디터로 돌아간다.
      *
-     * [receivers] 에 없는 id 는 여기 들어오지 않는다 — 목록이 오기 전에 도착한 초기 선택은 ViewModel 이
-     * 들고 있다가 목록이 온 뒤 넣고, 재조회로 목록에서 빠진 id 는 여기서도 뺀다.
+     * [receivers] 에 없는 id 는 여기 들어오지 않는다. 화면을 열 때 에디터 폼에 담겨 있던 수신자는 목록이
+     * 도착한 뒤에 (목록에 있는 것만) 체크되고, 재조회로 목록에서 빠진 수신자는 여기서도 빠진다.
      *
      * 빈 목록이 «아무도 선택하지 않음» 이다. null 로 없음을 표현하지 않는다 (#1426).
      */
@@ -41,9 +41,9 @@ data class SelectReceiverUiState(
  * 별도의 userId 없이 [UserRepository.getReceivers] 를 그대로 쓴다.
  *
  * 선택은 복수다 (#1426): 한 번 진입해 여러 명을 고르고, 완료 시 확정된 id 전체를
- * `SELECTED_RECEIVER_IDS_KEY` 로 에디터에 돌려준다. 화면은 에디터 폼에 이미 있는 수신자를
- * 선택 상태로 열고([applyPreselection]), 돌려주는 목록이 곧 폼의 수신자 전체가 된다 —
- * 화면에서 푼 수신자는 폼에서도 빠진다.
+ * `SELECTED_RECEIVER_IDS_KEY` 로 에디터에 돌려준다. 화면은 에디터 폼에 이미 담겨 있던 수신자를
+ * 체크된 상태로 열고([applyPreselection]), 돌려주는 목록이 곧 폼의 수신자 전체가 된다 —
+ * 화면에서 체크를 푼 수신자는 폼에서도 빠진다.
  */
 @HiltViewModel
 class SelectReceiverViewModel
@@ -58,32 +58,36 @@ class SelectReceiverViewModel
         private var isPreselectionApplied = false
         private var hasLoadedReceivers = false
 
-        /** 목록이 오기 전에 도착한 초기 선택. 목록이 오면 [refresh] 가 선택에 넣고 비운다. */
-        private var preselectionAwaitingReceivers: List<Long> = emptyList()
+        /**
+         * 화면을 열 때 에디터 폼에 담겨 있던 수신자 id 중 아직 체크하지 못한 것 — 목록이 없으면 체크할 행이 없다.
+         * 목록이 도착하면 [refresh] 가 그중 목록에 있는 수신자를 체크하고 비운다.
+         */
+        private var formReceiverIdsToCheck: List<Long> = emptyList()
 
         init {
             refresh()
         }
 
         /**
-         * 에디터 폼에 이미 있는 수신자를 선택 상태로 연다 (#1426).
+         * 에디터 폼에 이미 담겨 있던 수신자를 체크된 상태로 연다 (#1426).
          *
-         * 화면 최초 진입에만 반영한다 — 재구성마다 다시 넣으면 사용자가 방금 푼 선택이 되살아난다.
-         * `init { refresh() }` 의 응답보다 먼저 올 수도 늦게 올 수도 있다. 목록이 아직 없으면 들고 있다가
-         * 목록이 온 뒤 넣고, 넣을 때는 둘 다 같은 필터([keepOnlyListed])를 거친다 — 어느 쪽이 먼저든 결과가 같다.
+         * 화면 최초 진입에만 반영한다 — 재구성마다 다시 넣으면 사용자가 방금 푼 체크가 되살아난다.
+         * 폼의 id 는 화면이 뜨자마자 오고 목록은 서버 응답이라 보통 더 늦다. 목록이 아직 없으면 들고 있다가
+         * 목록이 온 뒤 체크하고, 이미 있으면 바로 체크한다 — 어느 쪽이든 목록에 있는 수신자만 체크한다
+         * ([keepOnlyListed]).
          */
-        fun applyPreselection(receiverIds: List<Long>) {
+        fun applyPreselection(formReceiverIds: List<Long>) {
             if (isPreselectionApplied) return
             isPreselectionApplied = true
-            if (receiverIds.isEmpty()) return
+            if (formReceiverIds.isEmpty()) return
             if (!hasLoadedReceivers) {
-                preselectionAwaitingReceivers = receiverIds
+                formReceiverIdsToCheck = formReceiverIds
                 return
             }
             _uiState.update { state ->
                 state.copy(
                     selectedReceiverIds =
-                        (receiverIds + state.selectedReceiverIds).distinct().keepOnlyListed(state.receivers),
+                        (formReceiverIds + state.selectedReceiverIds).distinct().keepOnlyListed(state.receivers),
                 )
             }
         }
@@ -96,16 +100,16 @@ class SelectReceiverViewModel
                     .onSuccess { receivers ->
                         val listed = receivers.toAfternoteEditorReceivers()
                         hasLoadedReceivers = true
-                        val awaiting = preselectionAwaitingReceivers
-                        preselectionAwaitingReceivers = emptyList()
+                        val fromForm = formReceiverIdsToCheck
+                        formReceiverIdsToCheck = emptyList()
                         _uiState.update { state ->
                             state.copy(
                                 isLoading = false,
                                 receivers = listed,
-                                // 목록이 오기 전에 도착한 초기 선택을 이제 넣는다. 재조회로 목록에서 사라진
-                                // 수신자 선택은 해제한다 — 남겨 두면 완료 버튼이 이미 없는 id 를 에디터로 돌려보낸다.
+                                // 폼에 담겨 있던 수신자를 이제 체크한다(목록이 없어 미뤄 둔 것). 재조회로 목록에서
+                                // 사라진 수신자는 체크를 푼다 — 남겨 두면 완료 버튼이 이미 없는 id 를 에디터로 돌려보낸다.
                                 selectedReceiverIds =
-                                    (awaiting + state.selectedReceiverIds).distinct().keepOnlyListed(listed),
+                                    (fromForm + state.selectedReceiverIds).distinct().keepOnlyListed(listed),
                             )
                         }
                     }.onFailure { e ->

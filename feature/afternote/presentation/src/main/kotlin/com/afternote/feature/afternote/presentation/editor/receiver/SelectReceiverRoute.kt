@@ -25,7 +25,7 @@ internal fun AfternoteSelectReceiverNavigation(
     val viewModel: SelectReceiverViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // 진입 시점의 폼만 초기 선택으로 쓴다 — 재구성마다 다시 넣으면 사용자가 푼 선택이 되살아난다.
+    // 진입 시점의 폼에 담겨 있던 수신자만 체크한다 — 재구성마다 다시 넣으면 사용자가 푼 체크가 되살아난다.
     LaunchedEffect(Unit) { viewModel.applyPreselection(preselectedReceiverIds) }
 
     SelectReceiverScreen(
