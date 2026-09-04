@@ -63,6 +63,11 @@
     <string name="core_ui_receiver_select_search_placeholder">이름으로 검색하기</string>
     <string name="core_ui_receiver_select_confirm">수신자 선택 완료하기</string>
 
+    <!-- 「더보기(⋯)」 액션 팝업 메뉴 공통 문구 (#643).
+         afternote(afternote_menu_*)·mindrecord(mindrecord_record_action_*) 가 같은 값을
+         각자 갖고 있던 것을 core 정본으로 올린다. -->
+    <string name="core_ui_action_menu_edit">수정하기</string>
+    <string name="core_ui_action_menu_delete">삭제하기</string>
     <!--
       "미디어 추가하기" 계열 메뉴 시트 공용 문구 (#642). 시안 정본 4327:72281.
       항목 문구는 갈래가 그 화면에만 있는 경우(갤러리에서 선택·사진 촬영 등) 호출부가 자기 리소스를

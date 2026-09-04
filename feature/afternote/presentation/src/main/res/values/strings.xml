@@ -107,8 +107,6 @@
     <string name="afternote_dialog_delete_body">%1$s에 대한 기록을 삭제하시겠습니까?\n삭제 시, 되돌릴 수 없습니다.</string>
     <string name="afternote_dialog_delete_cancel">취소하기</string>
     <string name="afternote_dialog_delete_confirm">삭제하기</string>
-    <string name="afternote_menu_edit">수정하기</string>
-    <string name="afternote_menu_delete_record">삭제하기</string>
     <!-- 전체 목록 0건 안내. 종전 mindrecord 답변 문구 복제를 애프터노트 맥락으로 교체 — 문구는 #567 디자인 승인 게이트 해제(2026-08-28)로 확정. -->
     <string name="afternote_empty_list_body">아직 등록된 애프터노트가 없어요.\n아래 연필 버튼을 눌러 애프터노트를 등록해 보세요.</string>
     <string name="afternote_content_description_recipient_profile">프로필 사진</string>
