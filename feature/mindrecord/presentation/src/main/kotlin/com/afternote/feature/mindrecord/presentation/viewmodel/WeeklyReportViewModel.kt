@@ -1,10 +1,7 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.EmotionAnalysisStatus
 import com.afternote.feature.mindrecord.domain.model.TodayMood
@@ -12,7 +9,6 @@ import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDailyQuestion
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDay
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportEmotion
-import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
@@ -25,10 +21,6 @@ import com.afternote.feature.mindrecord.presentation.usecase.ObserveWeeklyReport
 import com.afternote.feature.mindrecord.presentation.usecase.analysisStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted

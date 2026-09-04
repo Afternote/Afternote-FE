@@ -40,10 +40,15 @@ class DeleteMindRecordDraftsUseCase
          * @param targets 지울 대상. 비어 있으면 아무 것도 하지 않고 [Outcome.Deleted] 를 돌린다.
          * @param survivorsAfterDelete 삭제 뒤 다시 조회한 목록의 키. 재조회 자체가 실패했으면
          *   `null` — 그때는 무엇이 남았는지 알 수 없어 대조할 수 없으므로 [Outcome.Unknown] 이다.
+         * @param onFailures 실패 전건을 **재조회 전에** 한 번 넘긴다. 계측이 여기 걸린다.
+         *   반환값으로만 넘기면 재조회 도중 스코프가 취소될 때(사용자가 화면을 벗어날 때)
+         *   삭제는 이미 서버에 반영됐는데 실패는 한 건도 안 남는 창이 열린다 (#1693 리뷰).
+         *   보고 주체는 여전히 호출부다 — UseCase 는 계측을 알지 않는다.
          */
         suspend fun delete(
             targets: List<Target>,
             survivorsAfterDelete: suspend () -> Set<Target>?,
+            onFailures: (List<Failure>) -> Unit = {},
         ): Outcome {
             if (targets.isEmpty()) return Outcome.Deleted(failures = emptyList(), remaining = emptyList())
 
@@ -56,6 +61,9 @@ class DeleteMindRecordDraftsUseCase
                 results.mapNotNull { (target, result) ->
                     result.exceptionOrNull()?.let { Failure(target = target, cause = it) }
                 }
+
+            // 재조회 **전에** 넘긴다 — 그 사이 취소되면 실패가 통째로 사라진다.
+            onFailures(failures)
 
             val survivors = survivorsAfterDelete() ?: return Outcome.Unknown(failures = failures)
             return Outcome.Deleted(

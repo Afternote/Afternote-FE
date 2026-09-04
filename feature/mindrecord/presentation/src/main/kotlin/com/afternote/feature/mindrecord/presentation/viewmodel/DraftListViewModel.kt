@@ -4,8 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.ui.UiText
-import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
-import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
 import com.afternote.feature.mindrecord.presentation.reporting.MindRecordFailureStage
@@ -14,9 +12,6 @@ import com.afternote.feature.mindrecord.presentation.usecase.DeleteMindRecordDra
 import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -83,14 +78,22 @@ class DraftListViewModel
                             refreshed = collectDrafts()
                             refreshed?.mapNotNullTo(mutableSetOf()) { it.toDeleteTarget() }
                         },
+                        // 되돌릴 수 없는 동작이라 실패는 콘솔에도 남겨야 한다 — 화면만 알리고
+                        // 끝내면 나중에 「왜 안 지워졌나」를 물을 곳이 없다 (#964). 화면에 안
+                        // 보이는 실패(이미 사라진 항목의 404)까지 기록한다 — 그쪽일수록 계측이
+                        // 유일한 흔적이다.
+                        //
+                        // **재조회 전에** 부르는 훅이다. 반환값으로 받아 여기서 기록하면 재조회
+                        // 도중 스코프가 취소될 때 삭제는 반영됐는데 흔적이 안 남는다 (#1693 리뷰).
+                        onFailures = { failures ->
+                            failures.forEach { failure ->
+                                errorReporter.recordMindRecordFailure(
+                                    MindRecordFailureStage.DRAFT_DELETE,
+                                    failure.cause,
+                                )
+                            }
+                        },
                     )
-
-                // 되돌릴 수 없는 동작이라 실패는 콘솔에도 남겨야 한다 — 화면만 알리고 끝내면
-                // 나중에 「왜 안 지워졌나」를 물을 곳이 없다 (#964). 화면에 안 보이는 실패
-                // (이미 사라진 항목의 404)까지 기록한다 — 그쪽일수록 계측이 유일한 흔적이다.
-                outcome.failures.forEach { failure ->
-                    errorReporter.recordMindRecordFailure(MindRecordFailureStage.DRAFT_DELETE, failure.cause)
-                }
 
                 // 재조회 결과가 없으면 **현 목록을 유지한다**. UseCase 는 targets 가 비면
                 // survivorsAfterDelete 를 부르지 않고 Deleted 를 돌리므로 `refreshed` 가 null 인
@@ -104,7 +107,7 @@ class DraftListViewModel
                                 items = loaded.orEmpty(),
                                 // 화면은 **남은 것**만 본다 — 이미 사라진 항목의 404 까지 «실패» 로
                                 // 보이면 사용자가 다시 지울 수 없는 것을 다시 고르게 된다.
-                                // 계측은 위에서 전건을 이미 올렸다 (#1693).
+                                // 계측은 onFailures 훅이 재조회 전에 전건을 이미 올렸다 (#1693).
                                 deleteOutcome =
                                     if (outcome.remaining.isEmpty()) {
                                         DraftDeleteOutcome.AllDeleted
