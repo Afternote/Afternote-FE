@@ -35,9 +35,16 @@ internal data class EditableMemorialVideo private constructor(
     /**
      * 표시된 층 하나를 걷는다. 교체분이 있으면 그것만 걷어 서버 기준값으로 돌아가고, 서버 기준값만
      * 있으면 그것을 비운다 — 저장 시 [MediaInput.None]이 명시적 `null`로 나가 서버 영상이 실제로
-     * 지워진다(#1597). 되돌아갈 서버 상태가 없는 생성 모드에서는 슬롯이 그냥 빈다.
+     * 지워진다(#1597). 되돌아갈 서버 상태가 없는 생성 모드에서는 슬롯이 그냥 빈다. 표시된 층이
+     * 없으면 걷을 것이 없어 자기 자신을 돌려준다 — [canRemove]가 시트 입구를 막고 있지만, 그 경우를
+     * 값 객체 스스로도 셈한다.
      */
-    internal fun removeDisplayed(): EditableMemorialVideo = if (selection != null) discardSelection() else copy(persisted = null)
+    internal fun removeDisplayed(): EditableMemorialVideo =
+        when {
+            selection != null -> discardSelection()
+            persisted != null -> copy(persisted = null)
+            else -> this
+        }
 
     /** 미저장 교체분에서 파생된 썸네일만 갱신한다. 교체분이 사라졌다면 늦은 결과를 버린다. */
     internal fun withSelectionThumbnail(url: String): EditableMemorialVideo =

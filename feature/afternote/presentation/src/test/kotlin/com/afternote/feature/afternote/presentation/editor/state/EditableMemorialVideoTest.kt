@@ -4,6 +4,7 @@ import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -166,6 +167,6 @@ class EditableMemorialVideoTest {
         assertNull(afterSecond.displayed)
         assertEquals(MediaInput.None, afterSecond.toMediaInput())
         assertFalse(afterSecond.canRemove)
-        assertEquals(afterSecond, afterSecond.removeDisplayed())
+        assertSame(afterSecond, afterSecond.removeDisplayed())
     }
 }
