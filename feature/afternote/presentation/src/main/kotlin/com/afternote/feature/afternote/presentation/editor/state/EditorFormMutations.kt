@@ -77,6 +77,16 @@ internal fun EditorFormState.withReceiverAddedIfAbsent(
     return copy(afternoteEditReceivers = afternoteEditReceivers + next)
 }
 
+/**
+ * 수신자 선택 화면이 확정한 목록으로 폼의 수신자를 통째로 바꾼다 (#1426).
+ *
+ * 화면은 폼의 현재 수신자를 선택 상태로 열고 «확정된 전체» 를 돌려주므로, 거기서 푼 수신자는
+ * 여기서 빠져야 한다. 빈 목록은 «수신자 없음» 이라는 값이라 그대로 반영한다 — 완료 버튼이
+ * 선택 0명에서 비활성이라 화면 경로로는 빈 목록이 오지 않는다.
+ */
+internal fun EditorFormState.withReceiversReplaced(receivers: List<AfternoteEditorReceiver>): EditorFormState =
+    copy(afternoteEditReceivers = receivers)
+
 /** 신규 작성 진입 시 기본값 채움 — 이미 사용자가 담은 수신자가 있으면 덮지 않는다. */
 internal fun EditorFormState.withReceiversReplacedIfEmpty(receivers: List<AfternoteEditorReceiver>): EditorFormState {
     if (receivers.isEmpty() || afternoteEditReceivers.isNotEmpty()) return this
