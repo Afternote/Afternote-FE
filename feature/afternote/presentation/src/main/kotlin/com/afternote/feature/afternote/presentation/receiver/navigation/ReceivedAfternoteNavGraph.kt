@@ -7,10 +7,10 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import com.afternote.core.ui.loading.LoadingBody
-import com.afternote.feature.afternote.presentation.author.navigation.afternoteComposable
+import com.afternote.feature.afternote.presentation.navigation.afternoteComposable
 import com.afternote.feature.afternote.presentation.receiver.afternotelist.ReceiverAfternoteHomeEntry
 import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailRoute
-import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceivedAfternoteRoute
+import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
 import com.afternote.feature.afternote.presentation.receiver.playlist.MemorialPlaylistScreen
 import com.afternote.feature.afternote.presentation.receiver.playlist.ReceiverMemorialPlaylistUiState
 import com.afternote.feature.afternote.presentation.receiver.playlist.ReceiverMemorialPlaylistViewModel

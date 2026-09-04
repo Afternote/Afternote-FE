@@ -26,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -132,21 +133,45 @@ private fun BackPill(onBackClick: () -> Unit) {
  *
  * 시안(정리 Screen Design › 홈 › 기억공간)은 둘 다 150% 다 — 제목 11/16.5, 부제 9/13.5.
  * 그래서 `fontSize` 를 덮을 때는 `lineHeight` 를 **같이** 덮는다.
+ *
+ * **자간과 부제 색도 시안에 맞춘다** (#1548). `inter` 토큰의 `letterSpacing` 은 `-0.006em`(좁힘)인데
+ * 시안은 두 문구 모두 **넓힘**이다 — 부호가 반대라 「MEMORY SPACE」 가 시안보다 붙어 보였다.
+ *
+ * | | 시안 tracking | em 환산 | 여기 값 |
+ * |---|---|---|---|
+ * | 제목 `4327:67831` | `+0.6145px` / 11px | +0.055864 | `0.0559.em` |
+ * | 부제 `4327:67833` | `+0.167px` / 9px | +0.018556 | `0.0186.em` |
+ *
+ * **토큰을 고치지 않고 이 자리에서만 덮는다.** `typography.inter` 는 afternote·home·mindrecord·
+ * timeletter 4개 모듈 12곳이 쓰고 담당도 갈려, 토큰을 움직이면 그 화면들이 전부 따라 움직인다 —
+ * 소비자 전수 시안 대조가 선행돼야 하는 별건이다.
  */
 @Composable
 private fun HeaderTitle() {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = stringResource(R.string.mindrecord_memory_space_title),
-            style = AfternoteDesign.typography.inter.copy(fontSize = 11.sp, lineHeight = 16.5.sp),
+            style =
+                AfternoteDesign.typography.inter.copy(
+                    fontSize = 11.sp,
+                    lineHeight = 16.5.sp,
+                    letterSpacing = 0.0559.em,
+                ),
             color = AfternoteDesign.colors.gray6,
             textAlign = TextAlign.Center,
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = stringResource(R.string.mindrecord_memory_space_subtitle),
-            style = AfternoteDesign.typography.inter.copy(fontSize = 9.sp, lineHeight = 13.5.sp),
-            color = AfternoteDesign.colors.gray5,
+            style =
+                AfternoteDesign.typography.inter.copy(
+                    fontSize = 9.sp,
+                    lineHeight = 13.5.sp,
+                    letterSpacing = 0.0186.em,
+                ),
+            // 시안(4327:67833)은 #757575 = gray6 다. 종전 gray5(#9E9E9E)는 한 단계 옅어
+            // 같은 노드 묶음 안에서 제목만 진하고 부제만 흐렸다 (#1548).
+            color = AfternoteDesign.colors.gray6,
             // Column 의 CenterHorizontally 는 Text 상자를 가운데 놓을 뿐이고, 접힌 줄을
             // 서로 가운데로 맞추는 것은 textAlign 이다 — 없으면 둘째 줄이 왼쪽에 붙는다.
             textAlign = TextAlign.Center,

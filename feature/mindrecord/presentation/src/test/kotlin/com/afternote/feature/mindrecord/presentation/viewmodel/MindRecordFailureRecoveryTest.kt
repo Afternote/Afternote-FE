@@ -14,6 +14,7 @@ import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepositor
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -57,7 +58,12 @@ class MindRecordFailureRecoveryTest {
     fun `삭제 실패 안내는 다음 삭제가 성공하면 사라진다`() =
         runTest(dispatcher) {
             val repository = FlakyDeleteRepository()
-            val viewModel = DailyQuestionListViewModel(repository = repository, changeTracker = MindRecordChangeTracker())
+            val viewModel =
+                DailyQuestionListViewModel(
+                    repository = repository,
+                    changeTracker = MindRecordChangeTracker(),
+                    errorReporter = RecordingErrorReporter(),
+                )
             // uiState 는 WhileSubscribed 라 구독자가 없으면 Loading 에 머문다.
             backgroundScope.launch { viewModel.uiState.collect { } }
             advanceUntilIdle()
@@ -85,7 +91,12 @@ class MindRecordFailureRecoveryTest {
             // 리뷰가 스크린샷으로 실증한 경로 — 삭제 재시도가 아니라 **재조회 성공**이다.
             // 기내모드 해제 → 탭 전환 → 목록 정상 재로드인데도 배너가 남아 있었다.
             val repository = FlakyDeleteRepository()
-            val viewModel = DailyQuestionListViewModel(repository = repository, changeTracker = MindRecordChangeTracker())
+            val viewModel =
+                DailyQuestionListViewModel(
+                    repository = repository,
+                    changeTracker = MindRecordChangeTracker(),
+                    errorReporter = RecordingErrorReporter(),
+                )
             backgroundScope.launch { viewModel.uiState.collect { } }
             advanceUntilIdle()
 
@@ -119,7 +130,7 @@ class MindRecordFailureRecoveryTest {
                     photoUploadRepository = FakePhotoUploadRepository(onUpload = { _, _ -> uploadGate.await() }),
                     // 툴바 카운트는 이 테스트의 관심사가 아니다 — 빈 목록으로 고정한다 (#769).
                     draftLoader =
-                        MindRecordDraftLoader(
+                        LoadMindRecordDraftsUseCase(
                             diaryRepository = EmptyDiaryRepository,
                             dailyQuestionRepository = repository,
                         ),
@@ -159,7 +170,12 @@ class MindRecordFailureRecoveryTest {
             // «본 버전» 까지 찍어 두면, 복귀할 때마다 재조회를 건너뛰어 **서버가 회복돼도
             // 배너가 돌아오지 않는다**. 그 고정 상태를 본다 (#736 리뷰).
             val repository = FlakyTodayRepository()
-            val viewModel = DailyQuestionListViewModel(repository = repository, changeTracker = MindRecordChangeTracker())
+            val viewModel =
+                DailyQuestionListViewModel(
+                    repository = repository,
+                    changeTracker = MindRecordChangeTracker(),
+                    errorReporter = RecordingErrorReporter(),
+                )
             backgroundScope.launch { viewModel.uiState.collect { } }
             advanceUntilIdle()
 
