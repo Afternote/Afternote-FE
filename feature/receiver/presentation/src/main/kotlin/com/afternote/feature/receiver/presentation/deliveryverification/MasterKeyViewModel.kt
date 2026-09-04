@@ -60,12 +60,12 @@ class MasterKeyViewModel
             if (trimmed.isEmpty() || _uiState.value.isSubmitting) return
             if (!MASTER_KEY_UUID_REGEX.matches(trimmed)) {
                 _uiState.update {
-                    it.copy(error = UiText.Resource(R.string.receiver_verify_master_key_invalid_format))
+                    it.copy(errorMessage = UiText.Resource(R.string.receiver_verify_master_key_invalid_format))
                 }
                 return
             }
 
-            _uiState.update { it.copy(isSubmitting = true, error = null) }
+            _uiState.update { it.copy(isSubmitting = true, errorMessage = null) }
             viewModelScope.launch {
                 receiverAuthRepository
                     .verifyMasterKey(trimmed)
@@ -80,7 +80,7 @@ class MasterKeyViewModel
                         _uiState.update {
                             it.copy(
                                 isSubmitting = false,
-                                error = throwable.toReceiverErrorUiText(R.string.receiver_verify_error_unknown),
+                                errorMessage = throwable.toReceiverErrorUiText(R.string.receiver_verify_error_unknown),
                             )
                         }
                     }
@@ -88,7 +88,7 @@ class MasterKeyViewModel
         }
 
         fun consumeError() {
-            _uiState.update { it.copy(error = null) }
+            _uiState.update { it.copy(errorMessage = null) }
         }
 
         fun onVerifiedConsumed() {

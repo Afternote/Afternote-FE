@@ -63,19 +63,19 @@ class IdentityVerificationViewModel
                 it.copy(
                     email = value,
                     isEmailFormatValid = EMAIL_REGEX.matches(value.trim()),
-                    error = null,
+                    errorMessage = null,
                 )
             }
         }
 
         fun onCodeChange(value: String) {
-            _uiState.update { it.copy(code = value, error = null) }
+            _uiState.update { it.copy(code = value, errorMessage = null) }
         }
 
         fun requestVerificationCode() {
             val state = _uiState.value
             if (!state.isEmailFormatValid || state.isSendingCode) return
-            _uiState.update { it.copy(isSendingCode = true, error = null) }
+            _uiState.update { it.copy(isSendingCode = true, errorMessage = null) }
             viewModelScope.launch {
                 receiverAuthRepository
                     .sendEmailAuthCode(state.email.trim())
@@ -102,7 +102,7 @@ class IdentityVerificationViewModel
         fun verifyAndProceed(senderId: String) {
             val state = _uiState.value
             if (!state.canSubmit) return
-            _uiState.update { it.copy(isVerifying = true, error = null) }
+            _uiState.update { it.copy(isVerifying = true, errorMessage = null) }
             viewModelScope.launch {
                 receiverAuthRepository
                     .verifyEmailAuthCode(email = state.email.trim(), authCode = state.code.trim())
@@ -151,7 +151,7 @@ class IdentityVerificationViewModel
             pendingRetry = if (popup == null) null else retry
             _uiState.update {
                 if (popup == null) {
-                    it.copy(error = throwable.toReceiverErrorUiText(fallbackRes))
+                    it.copy(errorMessage = throwable.toReceiverErrorUiText(fallbackRes))
                 } else {
                     it.copy(errorPopup = popup)
                 }
@@ -159,7 +159,7 @@ class IdentityVerificationViewModel
         }
 
         fun consumeError() {
-            _uiState.update { it.copy(error = null) }
+            _uiState.update { it.copy(errorMessage = null) }
         }
 
         fun onVerifiedConsumed() {

@@ -85,7 +85,7 @@ class DocumentUploadViewModel
 
         /** picker 가 돌려준 Uri 에서 바이트 추출이 실패한 경우 — 업로드 요청 전이므로 슬롯은 건드리지 않는다 (#740). */
         fun onDocumentReadFailed() {
-            _uiState.update { it.copy(error = UiText.Resource(R.string.receiver_verify_document_read_failed)) }
+            _uiState.update { it.copy(errorMessage = UiText.Resource(R.string.receiver_verify_document_read_failed)) }
         }
 
         fun submit() {
@@ -94,7 +94,7 @@ class DocumentUploadViewModel
             // 업로드 중에도 도달할 수 있고, 그대로 보내면 진행 중 파일이 신청에서 빠진다 (#711).
             if (state.deathCertificate.isUploading || state.familyRelationCertificate.isUploading) {
                 _uiState.update {
-                    it.copy(error = UiText.Resource(R.string.receiver_verify_document_upload_in_progress))
+                    it.copy(errorMessage = UiText.Resource(R.string.receiver_verify_document_upload_in_progress))
                 }
                 return
             }
@@ -102,12 +102,12 @@ class DocumentUploadViewModel
             val famRelUrl = state.familyRelationCertificate.fileUrl
             if ((deathUrl == null && famRelUrl == null) || state.isSubmitting) {
                 _uiState.update {
-                    it.copy(error = UiText.Resource(R.string.receiver_verify_documents_required))
+                    it.copy(errorMessage = UiText.Resource(R.string.receiver_verify_documents_required))
                 }
                 return
             }
             _uiState.update {
-                it.copy(isSubmitting = true, error = null)
+                it.copy(isSubmitting = true, errorMessage = null)
             }
             viewModelScope.launch {
                 receiverAuthRepository
@@ -153,7 +153,7 @@ class DocumentUploadViewModel
             pendingRetry = if (popup == null) null else retry
             _uiState.update {
                 if (popup == null) {
-                    it.copy(error = throwable.toReceiverErrorUiText(fallbackRes))
+                    it.copy(errorMessage = throwable.toReceiverErrorUiText(fallbackRes))
                 } else {
                     it.copy(errorPopup = popup)
                 }
@@ -161,7 +161,7 @@ class DocumentUploadViewModel
         }
 
         fun consumeError() {
-            _uiState.update { it.copy(error = null) }
+            _uiState.update { it.copy(errorMessage = null) }
         }
 
         fun onSubmittedConsumed() {

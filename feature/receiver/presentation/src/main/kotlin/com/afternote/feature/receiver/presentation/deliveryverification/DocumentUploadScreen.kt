@@ -116,7 +116,7 @@ fun DocumentUploadScreen(
     // 서버 작업 실패는 이 채널이 아니라 아래 공통 오류 팝업으로 간다 (#446) — 여기 남는 것은 서버가
     // 준 거절 사유와 파일 읽기 실패 같은 로컬 안내다.
     val errorMessage =
-        uiState.error?.asString()
+        uiState.errorMessage?.asString()
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
             snackbarHostState.showSnackbar(errorMessage)

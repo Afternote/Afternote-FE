@@ -50,7 +50,7 @@ class DeliveryVerificationFailurePopupTest {
 
         val state = viewModel.uiState.value
         assertEquals(ReceiverErrorPopup.UPLOAD, state.errorPopup)
-        assertNull(state.error)
+        assertNull(state.errorMessage)
     }
 
     @Test
@@ -101,7 +101,7 @@ class DeliveryVerificationFailurePopupTest {
 
         val state = viewModel.uiState.value
         assertNull(state.errorPopup)
-        assertEquals(UiText.Resource(R.string.receiver_error_verification_already_submitted), state.error)
+        assertEquals(UiText.Resource(R.string.receiver_error_verification_already_submitted), state.errorMessage)
     }
 
     @Test
@@ -169,7 +169,7 @@ class DeliveryVerificationFailurePopupTest {
 
         val state = viewModel.uiState.value
         assertNull(state.errorPopup)
-        assertEquals(UiText.Resource(R.string.receiver_error_email_not_found), state.error)
+        assertEquals(UiText.Resource(R.string.receiver_error_email_not_found), state.errorMessage)
     }
 
     private fun documentUploadViewModel(
