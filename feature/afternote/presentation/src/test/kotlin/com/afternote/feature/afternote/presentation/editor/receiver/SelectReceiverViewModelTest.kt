@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.editor.receiver
 
+import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.Receiver
@@ -54,7 +55,7 @@ class SelectReceiverViewModelTest {
                         ),
                 )
 
-            val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter)
+            val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, SavedStateHandle())
             runCurrent()
 
             val state = viewModel.uiState.value
@@ -71,7 +72,7 @@ class SelectReceiverViewModelTest {
             val gate = CompletableDeferred<List<Receiver>>()
             val repository = FakeUserRepository(onGetReceivers = { gate.await() })
 
-            val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter)
+            val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, SavedStateHandle())
             runCurrent()
 
             assertTrue(viewModel.uiState.value.isLoading)
@@ -93,7 +94,7 @@ class SelectReceiverViewModelTest {
             val reporter = RecordingErrorReporter()
             val repository = FakeUserRepository(onGetReceivers = { error("server down") })
 
-            val viewModel = SelectReceiverViewModel(repository, reporter)
+            val viewModel = SelectReceiverViewModel(repository, reporter, SavedStateHandle())
             runCurrent()
 
             val state = viewModel.uiState.value
@@ -112,7 +113,7 @@ class SelectReceiverViewModelTest {
                     onGetReceivers = { error("server down") },
                 )
 
-            val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter)
+            val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, SavedStateHandle())
             runCurrent()
             assertTrue(viewModel.uiState.value.loadFailed)
 
@@ -196,7 +197,7 @@ class SelectReceiverViewModelTest {
             // 미저장 폼을 둔 채 설정에서 수신자를 지우고 돌아온 경우 — 폼엔 남았지만 목록엔 없다.
             val gate = CompletableDeferred<List<Receiver>>()
             val repository = FakeUserRepository(onGetReceivers = { gate.await() })
-            val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter)
+            val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, SavedStateHandle())
             runCurrent()
 
             viewModel.applyPreselection(listOf(1L, 99L))
@@ -223,7 +224,7 @@ class SelectReceiverViewModelTest {
                             Receiver(2L, "박경민", "친구", "auth-2"),
                         ),
                 )
-            val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter)
+            val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, SavedStateHandle())
             runCurrent()
 
             viewModel.toggleReceiverSelection(1L)
@@ -240,7 +241,7 @@ class SelectReceiverViewModelTest {
         runTest {
             val repository =
                 FakeUserRepository(receivers = listOf(Receiver(1L, "김혜성", "아들", "auth-1")))
-            val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter)
+            val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, SavedStateHandle())
             runCurrent()
 
             viewModel.toggleReceiverSelection(1L)
@@ -248,6 +249,55 @@ class SelectReceiverViewModelTest {
             runCurrent()
 
             assertEquals(listOf(1L), viewModel.uiState.value.selectedReceiverIds)
+        }
+
+    // ── 프로세스 재생성 (#1427) ────────────────────────────────────────────────────
+
+    @Test
+    fun `프로세스가 재생성돼도 화면 내 선택은 복원된다`() =
+        runTest {
+            val savedStateHandle = SavedStateHandle()
+            val repository =
+                FakeUserRepository(
+                    receivers =
+                        listOf(
+                            Receiver(1L, "김혜성", "아들", "auth-1"),
+                            Receiver(2L, "박경민", "친구", "auth-2"),
+                        ),
+                )
+            val beforeDeath = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, savedStateHandle)
+            runCurrent()
+            beforeDeath.toggleReceiverSelection(2L)
+
+            val restored = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, savedStateHandle)
+            runCurrent()
+
+            assertEquals(listOf(2L), restored.uiState.value.selectedReceiverIds)
+        }
+
+    @Test
+    fun `프로세스가 재생성돼도 사용자가 푼 폼 수신자는 다시 체크되지 않는다`() =
+        runTest {
+            val savedStateHandle = SavedStateHandle()
+            val repository =
+                FakeUserRepository(
+                    receivers =
+                        listOf(
+                            Receiver(1L, "김혜성", "아들", "auth-1"),
+                            Receiver(2L, "박경민", "친구", "auth-2"),
+                        ),
+                )
+            val beforeDeath = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, savedStateHandle)
+            beforeDeath.applyPreselection(listOf(1L))
+            runCurrent()
+            beforeDeath.toggleReceiverSelection(1L)
+
+            // 재생성 뒤 Route 의 LaunchedEffect 가 같은 폼 수신자로 다시 부른다.
+            val restored = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, savedStateHandle)
+            restored.applyPreselection(listOf(1L))
+            runCurrent()
+
+            assertEquals(emptyList<Long>(), restored.uiState.value.selectedReceiverIds)
         }
 
     /**
@@ -263,7 +313,7 @@ class SelectReceiverViewModelTest {
                         Receiver(2L, "박경민", "친구", "auth-2"),
                     ),
             )
-        val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter)
+        val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, SavedStateHandle())
         if (formReceiverIds.isNotEmpty()) viewModel.applyPreselection(formReceiverIds)
         dispatcher.scheduler.runCurrent()
         return viewModel
