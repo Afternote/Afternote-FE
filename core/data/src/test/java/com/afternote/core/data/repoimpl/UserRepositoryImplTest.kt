@@ -50,7 +50,7 @@ class UserRepositoryImplTest {
             TODO("이 테스트 미사용")
         },
         authRepository: FakeAuthRepository = receiverAuthRepository(loggedIn = true),
-    ) = UserRepositoryImpl(
+    ) = repositoryOf(
         userApiService =
             FakeUserApiService(
                 onDeleteAccount = {
@@ -551,3 +551,17 @@ private class FakeUserApiService(
         request: ReceiverDeliveryConditionUpdateRequestDto,
     ): BaseResponse<ReceiverDeliveryConditionDto> = TODO("이 테스트 미사용")
 }
+
+/** 프로덕션 조립과 같은 모양 — 위임 대상은 Hilt 가 주입하므로 여기서는 테스트가 대신 만들어 넘긴다. */
+private fun repositoryOf(
+    userApiService: UserApiService,
+    authRepository: FakeAuthRepository,
+    errorReporter: ErrorReporter,
+): UserRepositoryImpl =
+    UserRepositoryImpl(
+        userApiService = userApiService,
+        authRepository = authRepository,
+        errorReporter = errorReporter,
+        receiverRepository = UserReceiverRepositoryImpl(userApiService, authRepository, errorReporter),
+        myProfileRepository = MyProfileRepositoryImpl(userApiService),
+    )

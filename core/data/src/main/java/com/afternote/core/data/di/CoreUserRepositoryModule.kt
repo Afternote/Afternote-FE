@@ -1,6 +1,8 @@
 package com.afternote.core.data.di
 
+import com.afternote.core.data.repoimpl.MyProfileRepositoryImpl
 import com.afternote.core.data.repoimpl.UserProfileCacheRepositoryImpl
+import com.afternote.core.data.repoimpl.UserReceiverRepositoryImpl
 import com.afternote.core.data.repoimpl.UserRepositoryImpl
 import com.afternote.core.data.repoimpl.auth.AuthRepositoryImpl
 import com.afternote.core.domain.repository.MyProfileRepository
@@ -36,17 +38,14 @@ abstract class CoreUserRepositoryModule {
     @Singleton
     internal abstract fun bindUserRepository(impl: UserRepositoryImpl): UserRepository
 
-    // 책임별 좁은 계약 2종 (#1282). 구현은 `UserReceiverRepositoryImpl`·`MyProfileRepositoryImpl` 로
-    // 갈라져 있지만 바인딩은 그 둘이 아니라 [bindUserRepository] 를 경유한다 — 두 구현을 Hilt 가 따로
-    // 만들면 `UserRepository` 로 등록한 수신자가 `UserReceiverRepository` 구독자의 목록을 갱신하지
-    // 못하고 revision 이 갈린다. `UserRepositoryImpl` 을 다시 요청해도 바인딩마다 별도 인스턴스가
-    // 생기므로(클래스가 아니라 위 @Binds 가 @Singleton), 이미 싱글턴인 그 바인딩으로 위임한다.
-    // 소비자가 전부 좁은 계약으로 이관돼 `UserRepositoryImpl` 이 사라질 때 바인딩을 좁은 구현으로 옮긴다.
+    // 책임별 좁은 계약 2종 (#1282). 상태를 가진 `UserReceiverRepositoryImpl` 은 클래스에 @Singleton 이 있어
+    // 합본 `UserRepositoryImpl` 이 생성자로 받는 인스턴스와 여기서 바인딩되는 인스턴스가 같다 — 좁은 계약으로
+    // 만든 수신자가 합본 구독자의 목록도 갱신한다. `MyProfileRepositoryImpl` 은 상태가 없어 unscoped 다.
     @Binds
-    internal abstract fun bindUserReceiverRepository(impl: UserRepository): UserReceiverRepository
+    internal abstract fun bindUserReceiverRepository(impl: UserReceiverRepositoryImpl): UserReceiverRepository
 
     @Binds
-    internal abstract fun bindMyProfileRepository(impl: UserRepository): MyProfileRepository
+    internal abstract fun bindMyProfileRepository(impl: MyProfileRepositoryImpl): MyProfileRepository
 
     @Binds
     @Singleton
