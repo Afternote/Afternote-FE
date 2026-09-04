@@ -5,7 +5,9 @@ import com.afternote.afternote_fe.notification.di.NotificationPermissionStoreMod
 import com.afternote.afternote_fe.reporting.ErrorReportingModule
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.data.di.CoreUserRepositoryModule
+import com.afternote.core.domain.repository.MyProfileRepository
 import com.afternote.core.domain.repository.UserProfileCacheRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.testing.FakeUserProfileCacheRepository
@@ -45,6 +47,16 @@ object TestCoreUserRepositoryModule {
     @Provides
     @Singleton
     fun provideUserRepository(): UserRepository = appTestUserRepository()
+
+    // 책임별 좁은 계약 2종 (#1282). 이 모듈이 `CoreUserRepositoryModule` 을 통째로 replaces 하므로
+    // 거기 있던 두 바인딩도 같이 사라진다 — 좁은 계약을 주입받는 화면(#1743 의 애프터노트 상세·에디터)이
+    // 계측 그래프에서 MissingBinding 으로 깨지지 않게 여기서 다시 잇는다.
+    // 프로덕션과 같은 모양으로 싱글턴 `UserRepository` 를 경유해, 계측이 세운 fake 한 인스턴스를 공유한다.
+    @Provides
+    fun provideUserReceiverRepository(userRepository: UserRepository): UserReceiverRepository = userRepository
+
+    @Provides
+    fun provideMyProfileRepository(userRepository: UserRepository): MyProfileRepository = userRepository
 
     @Provides
     @Singleton
