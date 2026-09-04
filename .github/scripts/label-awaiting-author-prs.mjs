@@ -139,6 +139,14 @@ query($searchQuery: String!, $cursor: String, $pageSize: Int!) {
     }
 }`;
 
+// 판정 함수가 각 connection 에서 읽는 시각 필드. reviews 는 판정 기준 시각 자체를 구하는
+// 근거라 여기 넣지 않는다.
+const ACTIVITY_TIMESTAMP_BY_CONNECTION = Object.freeze({
+    commits: (node) => node?.commit?.committedDate,
+    comments: (node) => node?.createdAt,
+    userContentEdits: (node) => node?.editedAt,
+});
+
 function sameLogin(a, b) {
     return typeof a === "string" && typeof b === "string" && a.toLowerCase() === b.toLowerCase();
 }
@@ -158,6 +166,28 @@ export function latestDecision(reviews) {
         .sort((a, b) => (a.submittedAt < b.submittedAt ? -1 : a.submittedAt > b.submittedAt ? 1 : 0));
 
     return decisions.length > 0 ? decisions[decisions.length - 1] : null;
+}
+
+/**
+ * `last: 50` 이 판정에 필요한 범위를 덮는지 본다.
+ *
+ * 판정은 최신 결정 시각 이후 항목만 세므로, 가져온 것 중 가장 오래된 항목이 그 시각보다 앞서면
+ * 그 이후는 전부 들어와 있다. `reviews` 는 그 시각 자체를 구하는 근거라 여기서 제외한다.
+ */
+export function isCoveredSinceDecision(connectionName, nodes, since) {
+    const readTimestamp = ACTIVITY_TIMESTAMP_BY_CONNECTION[connectionName];
+    if (!readTimestamp) {
+        return false;
+    }
+    // 최신 결정이 없거나 변경요청이 아니면 judgeAwaitingAuthor 가 이 connection 을 읽지 않는다.
+    if (since === null || since === undefined) {
+        return true;
+    }
+    if (!Array.isArray(nodes) || nodes.length === 0) {
+        return false;
+    }
+    const oldest = readTimestamp(nodes[0]);
+    return typeof oldest === "string" && oldest <= since;
 }
 
 /**
@@ -545,16 +575,30 @@ export async function fetchOpenPullRequestsByAuthor(api, repository, author) {
             // 본문 편집을 완전하게 판정할 수 없다. 라벨은 다음 리컨사일에서 복구할 수 있지만,
             // 입장 가드가 불완전한 근거로 PR 을 닫는 것은 되돌리기 비용이 있으므로 판정 자체를
             // 중단한다.
+            //
+            // 다만 완전성의 기준은 «전체 이력» 이 아니라 «판정이 실제로 읽는 범위» 다. 세 판정
+            // 함수는 모두 최신 결정 시각(since) 이후 항목만 세고, judgeAwaitingAuthor 는 최신
+            // 결정이 없거나 변경요청이 아니면 그 셋을 아예 부르지 않는다. `last: 50` 은 최신
+            // 50건이므로 가져온 것 중 가장 오래된 항목이 since 보다 앞서면 since 이후는 전부
+            // 확보한 것이고 판정은 완전하다 — 커밋이 몇백 건이든 상관없다. 이 구분이 없어서
+            // 커밋 403건짜리 릴리스 PR(develop → main) 하나가 그 작성자의 새 PR 을 전부 막았다
+            // (#1787). reviews 는 since 를 구하는 근거라 시각으로 대체 판정할 수 없어 그대로 둔다.
+            const decision = latestDecision(pullRequest.reviews?.nodes);
+            const since = decision?.state === "CHANGES_REQUESTED" ? decision.submittedAt : null;
             for (const connectionName of ["reviews", "commits", "comments", "userContentEdits"]) {
                 const connection = pullRequest[connectionName];
                 if (!connection || !Array.isArray(connection.nodes)) {
                     throw new Error(`GraphQL 작성자 PR ${connectionName} 응답이 불완전합니다.`);
                 }
-                if (connection.pageInfo?.hasPreviousPage !== false) {
-                    throw new Error(
-                        `GraphQL 작성자 PR ${connectionName} 최근 50건이 완전하지 않습니다.`,
-                    );
+                if (connection.pageInfo?.hasPreviousPage === false) {
+                    continue;
                 }
+                if (isCoveredSinceDecision(connectionName, connection.nodes, since)) {
+                    continue;
+                }
+                throw new Error(
+                    `GraphQL 작성자 PR ${connectionName} 최근 50건이 완전하지 않습니다.`,
+                );
             }
             pullRequests.push(pullRequest);
         }

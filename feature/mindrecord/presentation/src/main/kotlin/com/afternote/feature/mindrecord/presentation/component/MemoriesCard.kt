@@ -46,7 +46,11 @@ import com.afternote.feature.mindrecord.presentation.R
  *
  * @param question 최근 기록의 제목(데일리질문이면 질문 원문). null 이면 표시할 기록이 없다.
  * @param answer 그 기록의 본문 미리보기.
- * @param onReadAgainClick "그날의 기록 다시 읽기" 목적지. **최종 확정은 아직이다** — Figma 의
+ * @param onReadAgainClick "그날의 기록 다시 읽기" 목적지 — 카드가 가리키는 그 기록의 상세.
+ *   **`null` 이면 버튼 자체를 그리지 않는다** (#793 리뷰). 열 기록이 없는데 버튼을 남기면
+ *   문구가 약속한 「그날의 기록」이 아닌 곳으로 보내게 된다.
+ *
+ *   (옛 메모) 최종 확정은 아직이다 — Figma 의
  *   이 버튼에 프로토타입 연결이 없다. 다만 비워 두면 버튼이 클릭을 삼켜 카드 안에서 버튼만
  *   죽은 영역이 되므로, 홈 호출부는 카드 자신의 목적지(추억 공간)를 물려준다 (#793).
  */
@@ -55,7 +59,7 @@ fun MemoriesCard(
     modifier: Modifier = Modifier,
     question: String? = null,
     answer: String? = null,
-    onReadAgainClick: () -> Unit = {},
+    onReadAgainClick: (() -> Unit)?,
 ) {
     val cardShape = RoundedCornerShape(8.dp)
     val buttonShape = RoundedCornerShape(20.dp)
@@ -120,28 +124,32 @@ fun MemoriesCard(
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            Row(
-                modifier =
-                    Modifier
-                        .border(width = 1.dp, color = AfternoteDesign.colors.gray3, shape = buttonShape)
-                        .clip(buttonShape)
-                        .background(color = AfternoteDesign.colors.gray2)
-                        .clickable(role = Role.Button, onClick = onReadAgainClick)
-                        .padding(horizontal = 17.dp, vertical = 9.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(R.string.mindrecord_read_again),
-                    style = AfternoteDesign.typography.inter,
-                    color = AfternoteDesign.colors.gray7,
-                )
+            // **열 기록이 없으면 버튼을 그리지 않는다** (#793 리뷰). 문구가 「그날의 기록」을
+            // 약속하는데 0건에서 다른 곳으로 보내면 그 약속이 깨진다.
+            if (onReadAgainClick != null) {
+                Row(
+                    modifier =
+                        Modifier
+                            .border(width = 1.dp, color = AfternoteDesign.colors.gray3, shape = buttonShape)
+                            .clip(buttonShape)
+                            .background(color = AfternoteDesign.colors.gray2)
+                            .clickable(role = Role.Button, onClick = onReadAgainClick)
+                            .padding(horizontal = 17.dp, vertical = 9.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.mindrecord_read_again),
+                        style = AfternoteDesign.typography.inter,
+                        color = AfternoteDesign.colors.gray7,
+                    )
 
-                Spacer(modifier = Modifier.width(9.dp))
+                    Spacer(modifier = Modifier.width(9.dp))
 
-                RightArrowIcon(
-                    modifier = Modifier.size(width = 4.dp, height = 7.dp),
-                    tint = AfternoteDesign.colors.gray5,
-                )
+                    RightArrowIcon(
+                        modifier = Modifier.size(width = 4.dp, height = 7.dp),
+                        tint = AfternoteDesign.colors.gray5,
+                    )
+                }
             }
         }
     }
@@ -154,15 +162,16 @@ private fun MemoriesCardPreview() {
         MemoriesCard(
             question = "내 인생에서 가장 소중했던 순간은?",
             answer = "아이가 태어났을 때...",
+            onReadAgainClick = {},
         )
     }
 }
 
-/** 기록 0건 — 시안에 변형이 없어 질문·답변 줄 없이 이미지와 버튼만 남는다 (#559). */
+/** 기록 0건 — 질문·답변 줄도, 「다시 읽기」 버튼도 없다. 열 기록이 없기 때문이다 (#559 · #793). */
 @Preview(showBackground = true, name = "기록 0건")
 @Composable
 private fun MemoriesCardEmptyPreview() {
     AfternoteTheme {
-        MemoriesCard()
+        MemoriesCard(onReadAgainClick = null)
     }
 }

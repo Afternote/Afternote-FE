@@ -7,6 +7,7 @@ import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
 import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -96,7 +97,7 @@ class WriteFailureReportingTest {
                     savedStateHandle = SavedStateHandle(emptyMap()),
                     repository = repository,
                     photoUploadRepository = failingUpload(),
-                    draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
+                    draftLoader = LoadMindRecordDraftsUseCase(FakeDiaryRepository(), repository),
                     errorReporter = reporter,
                 )
             advanceUntilIdle()
@@ -133,7 +134,7 @@ class WriteFailureReportingTest {
                     savedStateHandle = SavedStateHandle(emptyMap()),
                     repository = repository,
                     photoUploadRepository = failingUpload(),
-                    draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
+                    draftLoader = LoadMindRecordDraftsUseCase(FakeDiaryRepository(), repository),
                     errorReporter = reporter,
                 )
             advanceUntilIdle()
@@ -155,7 +156,7 @@ class WriteFailureReportingTest {
             repository = repository,
             photoUploadRepository = failingUpload(),
             userRepository = emptyReceiverRepository(),
-            draftLoader = MindRecordDraftLoader(repository, FakeDailyQuestionRepository()),
+            draftLoader = LoadMindRecordDraftsUseCase(repository, FakeDailyQuestionRepository()),
             errorReporter = reporter,
         )
 

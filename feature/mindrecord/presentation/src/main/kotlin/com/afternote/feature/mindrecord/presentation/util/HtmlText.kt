@@ -45,7 +45,8 @@ fun String.firstHtmlImageSrcOrNull(): String? =
 private val HTML_IMG_SRC = Regex("""<img\b[^>]*?\bsrc\s*=\s*["']([^"']*)["']""", RegexOption.IGNORE_CASE)
 
 /**
- * 업로드 직후 받은 파일 URL 을 **서버가 본문에서 기대하는 형태**(fileKey) 로 바꾼다.
+ * 제출 직전, **이번 작성 중 업로드한** 이미지의 `src` 를 서버가 기대하는 fileKey 로 바꾼다
+ * (#549 · #1016 · #1125).
  *
  * `POST /files/presigned-url` 은 `fileKey`(`mindrecords/staging/13/uuid.png`) 와
  * `fileUrl`(그 앞에 CDN 호스트가 붙은 전체 URL) 을 함께 준다. 저장 시 서버는 본문의
@@ -58,30 +59,51 @@ private val HTML_IMG_SRC = Regex("""<img\b[^>]*?\bsrc\s*=\s*["']([^"']*)["']""",
  * 저장된 값: https://cdn.example.net/https://cdn.example.net/mindrecords/permanent/13/a.png  → 403
  * ```
  *
- * 스킴과 호스트만 떼면 fileKey 가 되므로 경로 규칙(`mindrecords/staging/...`)을 코드에
- * 박지 않는다 — 서버가 디렉터리 구조를 바꿔도 따라간다.
- *
- * 다만 이 방식은 `fileUrl == "<스킴>://<호스트>/" + fileKey` 를 가정한다. **권위 있는
- * 출처는 presigned 응답의 `fileKey` 인데 `PhotoUploadRepository.upload()` 가 `fileUrl` 만
- * 돌려주며 버린다** — CDN 이 경로 프리픽스나 쿼리스트링을 붙이면 조용히 틀린 키가 된다.
- * 반환을 넓히는 것은 `core:data` 범위라 별건으로 둔다 (#1017).
- */
-fun String.toUploadedFileKey(): String =
-    // 스킴이 없으면 substringAfter("://") 가 원문을 그대로 돌려주고, 이어지는
-    // substringAfter('/') 가 첫 경로 세그먼트를 잘라먹는다 — 조용히 틀린 키가 나간다.
-    if (contains("://")) substringAfter("://").substringAfter('/') else this
-
-/**
- * 제출 직전, **이번 작성 중 업로드한** 이미지의 `src` 만 fileKey 로 바꾼다 (#549·#1016).
+ * **서버가 준 키를 그대로 쓴다.** 종전에는 URL 에서 스킴·호스트를 떼어 키를 역산했는데,
+ * 그건 `upload()` 가 `fileUrl` 만 돌려주던 시절의 우회였다. `fileUrl == "<스킴>://<호스트>/" + fileKey`
+ * 를 가정하므로 CDN 이 경로 프리픽스를 붙이거나 쿼리스트링이 붙으면 **조용히 틀린 키가 나가고**,
+ * 증상은 #549 가 고친 「저장은 됐는데 이미지가 안 뜬다」와 같다. #1017 이 `upload()` 반환을
+ * `UploadedFile(fileUrl, fileKey)` 로 넓혀 그 가정이 필요 없어졌다 (#1125).
  *
  * 이미 저장돼 본문에 들어 있는 영구 URL 은 건드리지 않는다 — 서버가 그대로 통과시키고,
  * 키로 바꾸면 이미 옮겨진 파일을 다시 옮기려다 실패한다. 그래서 경로 패턴으로 훑지 않고
  * 이번에 받은 URL 만 정확히 치환한다.
  *
  * 데일리질문과 일기가 같은 규칙을 쓴다 — 한쪽에만 있어서 일기 본문 이미지가 깨졌다 (#1016).
+ *
+ * @param uploadedFileKeysByUrl 이번 작성에서 업로드한 `fileUrl` → 서버가 준 `fileKey` 대응.
  */
-fun String.toWireContent(uploadedImageUrls: Set<String>): String =
-    uploadedImageUrls.fold(this) { content, url -> content.replace(url, url.toUploadedFileKey()) }
+fun String.toWireContent(uploadedFileKeysByUrl: Map<String, String>): String {
+    if (uploadedFileKeysByUrl.isEmpty()) return this
+    return MEDIA_REFERENCE.replace(this) { match ->
+        val (attribute, quote, rawValue) = match.destructured
+        // **속성값을 되돌린 뒤 맞춘다.** 리치 에디터가 직렬화하면서 `&` 를 `&amp;` 로 바꾸므로,
+        // 원문 URL 로 그대로 찾으면 쿼리가 둘 이상인 주소(`?x=1&y=2`)를 놓친다 — 그러면 전체 URL 이
+        // 그대로 서버로 나가 #549 의 이중 호스트·403 이 재발한다 (#1125 리뷰, 실측 확인).
+        val fileKey = uploadedFileKeysByUrl[rawValue.unescapeHtmlAttribute()]
+        if (fileKey == null) match.value else "$attribute=$quote$fileKey$quote"
+    }
+}
+
+/** `src`·`href` 속성 하나. 따옴표는 " 와 ' 둘 다 받는다. */
+private val MEDIA_REFERENCE = Regex("""\b(src|href)\s*=\s*(["'])(.*?)\2""", RegexOption.IGNORE_CASE)
+
+/**
+ * 속성값에 들어간 엔티티를 원문으로 되돌린다.
+ *
+ * [escapeHtml] 의 정확한 역은 아니다 — 그쪽은 `'` 를 일부러 건드리지 않는데(richeditor 가
+ * `&#39;` 를 `&amp;#39;` 로 굳혀 버려서다) 여기서는 `&#39;` 도 되돌린다. 리치 에디터가 내는
+ * 형태를 받아내는 쪽이라 넓게 잡아 둔다.
+ *
+ * `&amp;` 를 **마지막에** 되돌린다. 먼저 되돌리면 `&amp;lt;` 가 `&lt;` 를 거쳐 `<` 로 두 번
+ * 풀린다.
+ */
+private fun String.unescapeHtmlAttribute(): String =
+    replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&#39;", "'")
+        .replace("&amp;", "&")
 
 /**
  * 태그만 있고 보이는 글자가 없으면 비었다고 본다.

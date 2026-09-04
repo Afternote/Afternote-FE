@@ -47,12 +47,12 @@ import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    onWriteClick: (MindRecordCategoryUi) -> Unit = {},
+    onWriteClick: (MindRecordCategoryUi) -> Unit,
     // 목록 항목 탭 → 상세(열람) 화면. (기록 ID, 일기 여부, 목록이 보고 있던 달) (#759).
-    onRecordClick: (Long, Boolean, YearMonth) -> Unit = { _, _, _ -> },
+    onRecordClick: (Long, Boolean, YearMonth) -> Unit,
     // 목록의 «수정하기» → 프리필한 작성 화면 (#582).
-    onEditDailyQuestion: (Long) -> Unit = {},
-    onEditDiary: (Long, YearMonth) -> Unit = { _, _ -> },
+    onEditDailyQuestion: (Long) -> Unit,
+    onEditDiary: (Long, YearMonth) -> Unit,
 ) {
     // Figma 2757:16116 — 마음의 기록 탭은 데일리 질문 / 일기 / 주간리포트 3개
     val categories =
@@ -205,6 +205,11 @@ fun HomeScreen(
 @Composable
 private fun HomeScreenPreview() {
     AfternoteTheme {
-        HomeScreen()
+        HomeScreen(
+            onEditDailyQuestion = {},
+            onEditDiary = { _, _ -> },
+            onRecordClick = { _, _, _ -> },
+            onWriteClick = {},
+        )
     }
 }

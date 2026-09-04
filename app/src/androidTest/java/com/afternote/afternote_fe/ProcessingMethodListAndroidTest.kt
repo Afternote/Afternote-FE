@@ -13,8 +13,8 @@ import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodList
-import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
+import com.afternote.feature.afternote.presentation.editor.processing.ProcessingMethodItem
+import com.afternote.feature.afternote.presentation.editor.processing.ProcessingMethodList
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
