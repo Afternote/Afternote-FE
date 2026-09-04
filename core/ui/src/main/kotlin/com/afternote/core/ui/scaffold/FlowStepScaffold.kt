@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
@@ -87,8 +89,17 @@ fun FlowStepScaffold(
         },
         bottomBar = {
             // 제스처 바를 쓰는 경우 화면 하단으로부터 49dp, 구형 네비게이션 바를 쓰는 경우 바로부터 49dp.
+            //
+            // `WindowInsets.navigationBars` 는 소비를 반영하지 않는 원본 inset 이다. 위 Scaffold 가
+            // `imePadding()` 으로 이미 키보드 높이(내비 바 포함)만큼 줄어든 뒤인데, 여기서 내비 바
+            // 높이를 또 더하면 3버튼 내비 기기에서 키보드가 뜬 동안 CTA 가 키보드 위 49dp 가 아니라
+            // 약 97dp 에 뜬다. 키보드가 떠 있으면 내비 바 몫은 IME inset 에 이미 들어 있으므로 뺀다 —
+            // IME 가 없을 땐 `ime` 가 0 이라 종전과 같다 (#1849 리뷰).
             val navBarHeight =
-                WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                WindowInsets.navigationBars
+                    .exclude(WindowInsets.ime)
+                    .asPaddingValues()
+                    .calculateBottomPadding()
             val bottomPadding = if (navBarHeight <= 30.dp) 49.dp else navBarHeight + 49.dp
             AfternoteButton(
                 text = actionButtonText,
