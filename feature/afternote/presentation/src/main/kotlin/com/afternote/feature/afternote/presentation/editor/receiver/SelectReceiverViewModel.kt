@@ -11,7 +11,6 @@ import com.afternote.feature.afternote.presentation.editor.mapper.toAfternoteEdi
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -55,9 +54,6 @@ class SelectReceiverViewModel
                 SelectReceiverUiState(selectedReceiverId = savedStateHandle.get<Long>(SELECTED_RECEIVER_ID_STATE_KEY)),
             )
         val uiState: StateFlow<SelectReceiverUiState> = _uiState.asStateFlow()
-
-        /** 진행 중인 조회. 늦게 시작한 조회가 이기도록 새 조회가 이전 것을 끊는다. */
-        private var loadJob: Job? = null
 
         init {
             refresh()
@@ -104,38 +100,34 @@ class SelectReceiverViewModel
         }
 
         private fun load(selectNewlyRegistered: Boolean) {
-            // 프로세스 재생성 직후엔 init 조회와 등록 복귀 조회가 함께 뜬다. 끊지 않으면 먼저 뜬
-            // init 조회가 나중에 끝나면서 방금 등록한 수신자 선택을 덮어쓴다.
-            loadJob?.cancel()
-            loadJob =
-                viewModelScope.launch {
-                    _uiState.update { it.copy(isLoading = true, loadFailed = false) }
-                    runCatchingCancellable { userRepository.getReceivers() }
-                        .onSuccess { receivers ->
-                            val newlyRegisteredId =
-                                if (selectNewlyRegistered) newlyRegisteredIdOrNull(receivers) else null
-                            if (selectNewlyRegistered) {
-                                savedStateHandle.remove<LongArray>(KNOWN_RECEIVER_IDS_STATE_KEY)
-                            }
-                            _uiState.update { state ->
-                                state.copy(
-                                    isLoading = false,
-                                    receivers = receivers.toAfternoteEditorReceivers(),
-                                    // 재조회로 목록에서 사라진 수신자를 가리키는 선택은 해제한다 —
-                                    // 남겨 두면 완료 버튼이 이미 없는 id 를 에디터로 돌려보낸다.
-                                    selectedReceiverId =
-                                        newlyRegisteredId
-                                            ?: state.selectedReceiverId?.takeIf { selected ->
-                                                receivers.any { it.receiverId == selected }
-                                            },
-                                )
-                            }
-                            persistSelection(_uiState.value.selectedReceiverId)
-                        }.onFailure { e ->
-                            errorReporter.recordAfternoteFailure(AfternoteFailureStage.RECEIVER_SELECT_LOAD, e)
-                            _uiState.update { it.copy(isLoading = false, loadFailed = true) }
+            viewModelScope.launch {
+                _uiState.update { it.copy(isLoading = true, loadFailed = false) }
+                runCatchingCancellable { userRepository.getReceivers() }
+                    .onSuccess { receivers ->
+                        val newlyRegisteredId =
+                            if (selectNewlyRegistered) newlyRegisteredIdOrNull(receivers) else null
+                        if (selectNewlyRegistered) {
+                            savedStateHandle.remove<LongArray>(KNOWN_RECEIVER_IDS_STATE_KEY)
                         }
-                }
+                        _uiState.update { state ->
+                            state.copy(
+                                isLoading = false,
+                                receivers = receivers.toAfternoteEditorReceivers(),
+                                // 재조회로 목록에서 사라진 수신자를 가리키는 선택은 해제한다 —
+                                // 남겨 두면 완료 버튼이 이미 없는 id 를 에디터로 돌려보낸다.
+                                selectedReceiverId =
+                                    newlyRegisteredId
+                                        ?: state.selectedReceiverId?.takeIf { selected ->
+                                            receivers.any { it.receiverId == selected }
+                                        },
+                            )
+                        }
+                        persistSelection(_uiState.value.selectedReceiverId)
+                    }.onFailure { e ->
+                        errorReporter.recordAfternoteFailure(AfternoteFailureStage.RECEIVER_SELECT_LOAD, e)
+                        _uiState.update { it.copy(isLoading = false, loadFailed = true) }
+                    }
+            }
         }
 
         /**
