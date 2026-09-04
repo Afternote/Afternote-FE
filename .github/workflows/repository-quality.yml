@@ -257,6 +257,11 @@ jobs:
             scripts/repository-quality.sh
           fi
 
+      # KDoc 의 [FQN] 링크가 실제 선언을 가리키는지 — 패키지 이동마다 끊긴 링크가 쌓이던 자리 (#1889).
+      # 저장소 전체를 보는 값싼 검사라 PR·push 가리지 않는다.
+      - name: Verify KDoc FQN links
+        run: node .github/scripts/verify-kdoc-links.mjs
+
       - name: Verify failing fixtures
         if: inputs.pull_request_number == 0 || steps.classify-documentation-changes.outputs.repository_quality_fixtures == 'true'
         run: scripts/test-repository-quality.sh
