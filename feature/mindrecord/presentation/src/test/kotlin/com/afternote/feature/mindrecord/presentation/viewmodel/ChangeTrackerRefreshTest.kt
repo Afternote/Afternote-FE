@@ -3,6 +3,7 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
+import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -45,7 +46,7 @@ class ChangeTrackerRefreshTest {
         runTest(dispatcher) {
             val changeTracker = MindRecordChangeTracker()
             val repository = FakeDailyQuestionRepository(changeTracker = changeTracker)
-            val viewModel = DailyQuestionListViewModel(repository, changeTracker)
+            val viewModel = DailyQuestionListViewModel(repository, changeTracker, RecordingErrorReporter())
             // uiState 는 WhileSubscribed 라 구독자가 없으면 로드가 시작되지 않는다.
             backgroundScope.launch { viewModel.uiState.collect { } }
             advanceUntilIdle()
@@ -64,7 +65,7 @@ class ChangeTrackerRefreshTest {
             // 같은 가드의 반대 방향 — 탭을 오가도 데이터가 그대로면 부르지 않는다 (#736).
             val changeTracker = MindRecordChangeTracker()
             val repository = FakeDailyQuestionRepository(changeTracker = changeTracker)
-            val viewModel = DailyQuestionListViewModel(repository, changeTracker)
+            val viewModel = DailyQuestionListViewModel(repository, changeTracker, RecordingErrorReporter())
             // uiState 는 WhileSubscribed 라 구독자가 없으면 로드가 시작되지 않는다.
             backgroundScope.launch { viewModel.uiState.collect { } }
             advanceUntilIdle()

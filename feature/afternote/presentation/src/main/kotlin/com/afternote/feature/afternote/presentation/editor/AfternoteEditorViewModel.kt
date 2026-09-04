@@ -39,6 +39,7 @@ import com.afternote.feature.afternote.presentation.editor.state.withProcessingM
 import com.afternote.feature.afternote.presentation.editor.state.withProcessingMethodsInitialized
 import com.afternote.feature.afternote.presentation.editor.state.withReceiverAddedIfAbsent
 import com.afternote.feature.afternote.presentation.editor.state.withReceiverDeleted
+import com.afternote.feature.afternote.presentation.editor.state.withReceiversReplaced
 import com.afternote.feature.afternote.presentation.editor.state.withReceiversReplacedIfEmpty
 import com.afternote.feature.afternote.presentation.editor.state.withService
 import com.afternote.feature.afternote.presentation.editor.state.withType
@@ -153,7 +154,7 @@ private data class EditorFormSnapshot(
  * 애프터노트 생성/수정 ViewModel.
  *
  * **SSOT:** 일반 폼은 [internalState]의 [EditorFormState], Compose 텍스트 입력은
- * [com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState]가 소유한다.
+ * [com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorState]가 소유한다.
  * 추억 플레이리스트 화면과 곡 추가 화면은 같은 flow-scoped ViewModel의 폼을 사용한다.
  *
  * **경계:** Compose UI 객체(`TextFieldState`·`SnapshotStateList`·파사드)를 들지 않고 Retrofit 타입도 알지 않는다 —
@@ -676,6 +677,22 @@ class AfternoteEditorViewModel
                 internalState.update { it.withError(AfternoteEditorError.ReceiverSelectionUnavailable) }
                 null
             }
+        }
+
+        /**
+         * 수신자 선택 화면이 확정한 [receiverIds] 전체를 폼에 반영한다 (#1426).
+         *
+         * 화면은 폼의 현재 수신자를 선택 상태로 열고 확정된 전체를 돌려준다 — 그래서 반영은
+         * «추가» 가 아니라 «교체» 다. 화면에서 푼 수신자는 폼에서도 빠진다.
+         *
+         * 이미 폼에 있는 id 는 표시에 필요한 이름·관계를 폼이 이미 들고 있으므로 재조회하지 않는다.
+         * 새로 들어온 id 만 [resolveSelectedReceiver] 로 해석하고, 해석 실패는 그쪽이 오류 이벤트로
+         * 알린다 — 그 id 만 빠지고 나머지 선택은 반영된다 (#1405).
+         */
+        suspend fun applySelectedReceivers(receiverIds: List<Long>) {
+            val alreadyInForm = currentForm().afternoteEditReceivers.associateBy { it.id }
+            val next = receiverIds.mapNotNull { id -> alreadyInForm[id] ?: resolveSelectedReceiver(id) }
+            mutateForm { it.withReceiversReplaced(next) }
         }
 
         private fun findReceiverById(id: Long): AfternoteEditorReceiver? = internalState.value.authorReceivers.find { it.id == id }

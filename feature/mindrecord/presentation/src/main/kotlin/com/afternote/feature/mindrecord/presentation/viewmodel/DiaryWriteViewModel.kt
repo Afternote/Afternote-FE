@@ -8,7 +8,7 @@ import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.PhotoUploadRepository
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
@@ -19,6 +19,7 @@ import com.afternote.feature.mindrecord.presentation.mapper.toUi
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.mindrecord.presentation.reporting.MindRecordFailureStage
 import com.afternote.feature.mindrecord.presentation.reporting.recordMindRecordFailure
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import com.afternote.feature.mindrecord.presentation.util.toWireContent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,8 +46,8 @@ class DiaryWriteViewModel
         savedStateHandle: SavedStateHandle,
         private val repository: DiaryRepository,
         private val photoUploadRepository: PhotoUploadRepository,
-        private val userRepository: UserRepository,
-        private val draftLoader: MindRecordDraftLoader,
+        private val userRepository: UserReceiverRepository,
+        private val draftLoader: LoadMindRecordDraftsUseCase,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val route = savedStateHandle.toRoute<MindRecordRoute.DiaryWriteRoute>()
@@ -99,8 +100,11 @@ class DiaryWriteViewModel
             }
         }
 
-        /** 이번 작성 중 업로드한 이미지의 원본 URL. 제출 시 fileKey 로 바꿀 대상이다 (#1016). */
-        private val uploadedImageUrls = mutableSetOf<String>()
+        // 이번 작성에서 업로드한 `fileUrl` → 서버가 준 `fileKey`. 키를 URL 에서 역산하지 않는다 —
+        // presigned 응답이 준 값을 그대로 들고 있다가 제출 직전에 치환한다 (toWireContent, #1125).
+        // SavedStateHandle 에 실어 프로세스 사망을 건너뛴다 — 에디터 본문이 살아 돌아오는데
+        // 표만 비면 전체 URL 이 그대로 서버로 간다 (#1125 리뷰).
+        private val uploadedFileKeysByUrl = UploadedFileKeys(savedStateHandle)
 
         /**
          * 에디터에서 고른 **미디어**(사진·음성·파일)를 presigned URL 로 업로드하고 **미리보기에
@@ -126,7 +130,7 @@ class DiaryWriteViewModel
                 .upload(uriString = uriString, directory = MIND_RECORD_UPLOAD_DIRECTORY)
                 .onSuccess { uploaded ->
                     // 제출 직전 fileKey 로 바꿀 대상이다 (#1016).
-                    uploadedImageUrls += uploaded.fileUrl
+                    uploadedFileKeysByUrl[uploaded.fileUrl] = uploaded.fileKey
                     _uiState.update { it.copy(isUploadingImage = false) }
                 }.onFailure { e ->
                     // 첨부가 빠진 채 저장이 이어질 수 있는 자리라 남긴다 (#964).
@@ -175,7 +179,7 @@ class DiaryWriteViewModel
                             payload =
                                 DiaryUpdatePayload(
                                     title = state.title,
-                                    content = state.content.toWireContent(uploadedImageUrls),
+                                    content = state.content.toWireContent(uploadedFileKeysByUrl.snapshot()),
                                     isDraft = isDraft,
                                     todayMood = mood,
                                     // 생성 경로와 같은 규칙. 빈 선택을 빈 목록으로 보내면 서버가
@@ -188,7 +192,7 @@ class DiaryWriteViewModel
                         repository.create(
                             DiaryCreatePayload(
                                 title = state.title,
-                                content = state.content.toWireContent(uploadedImageUrls),
+                                content = state.content.toWireContent(uploadedFileKeysByUrl.snapshot()),
                                 isDraft = isDraft,
                                 todayMood = mood,
                                 receiverIds = state.selectedReceiverIds.toList(),
@@ -198,7 +202,7 @@ class DiaryWriteViewModel
                 result
                     .onSuccess {
                         // 서버가 permanent 로 옮겼으니 이 URL 들은 더 이상 치환 대상이 아니다.
-                        uploadedImageUrls.clear()
+                        uploadedFileKeysByUrl.clear()
                         _uiState.update { it.copy(submitState = SubmitState.Succeeded) }
                         // 임시저장이 하나 늘었으니 툴바 숫자도 따라가야 한다 (#769).
                         if (isDraft) loadDraftCount()

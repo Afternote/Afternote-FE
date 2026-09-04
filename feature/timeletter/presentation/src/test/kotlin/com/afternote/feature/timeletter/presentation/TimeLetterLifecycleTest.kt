@@ -31,6 +31,7 @@ import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.domain.testing.FakeFileMetadataRepository
 import com.afternote.feature.timeletter.domain.testing.FakeReceiverTimeLetterRepository
 import com.afternote.feature.timeletter.domain.testing.FakeTimeLetterRepository
+import com.afternote.feature.timeletter.domain.testing.FakeVoiceRecorderRepository
 import com.afternote.feature.timeletter.domain.usecase.CreateTimeLetterUseCase
 import com.afternote.feature.timeletter.domain.usecase.ResolveTimeLetterBlocksUseCase
 import com.afternote.feature.timeletter.presentation.screen.recipient.RecipientTimeLetterDetailScreen
@@ -358,6 +359,7 @@ class TimeLetterLifecycleTest {
             timeLetterRepository = repository,
             userRepository = userRepository,
             fileMetadataRepository = FakeFileMetadataRepository.strict(),
+            voiceRecorderRepository = FakeVoiceRecorderRepository,
             savedStateHandle = SavedStateHandle(mapOf("timeLetterId" to timeLetterId)),
         )
     }
