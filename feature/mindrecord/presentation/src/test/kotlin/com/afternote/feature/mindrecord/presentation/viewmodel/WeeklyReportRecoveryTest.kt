@@ -6,6 +6,7 @@ import com.afternote.feature.mindrecord.domain.model.EmotionAnalysis
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
+import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
 import com.afternote.feature.mindrecord.presentation.usecase.ObserveWeeklyReportUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -211,7 +212,8 @@ class WeeklyReportRecoveryTest {
         repository: WeeklyReportRepository,
         userRepository: FakeUserRepository = userRepository(),
     ): WeeklyReportViewModel {
-        val viewModel = WeeklyReportViewModel(ObserveWeeklyReportUseCase(repository, userRepository), changeTracker)
+        val viewModel =
+            WeeklyReportViewModel(ObserveWeeklyReportUseCase(repository, userRepository), changeTracker, RecordingErrorReporter())
         backgroundScope.launch(dispatcher) { viewModel.uiState.collect { } }
         advanceUntilIdle()
         return viewModel
