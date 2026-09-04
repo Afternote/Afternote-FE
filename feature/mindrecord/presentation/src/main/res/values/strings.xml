@@ -54,6 +54,7 @@
     <string name="mindrecord_diary_write_mood_soso">보통</string>
     <string name="mindrecord_diary_write_mood_sad">슬픔</string>
     <string name="mindrecord_write_receiver_setting">수신자 설정하기</string>
+    <string name="mindrecord_write_date_picker_title">기록 날짜</string>
     <string name="mindrecord_write_receiver_to">%s님에게</string>
     <string name="mindrecord_write_receiver_to_multiple">%1$s님 외 %2$d명에게</string>
     <string name="mindrecord_write_receiver_sheet_title">수신자 선택</string>
@@ -203,6 +204,7 @@
     <string name="mindrecord_error_diary_list_failed">일기를 불러오지 못했습니다.</string>
     <string name="mindrecord_error_diary_submit_failed">일기 등록에 실패했습니다.</string>
     <string name="mindrecord_error_diary_draft_load_failed">임시 저장된 일기를 불러오지 못했습니다.</string>
+    <string name="mindrecord_error_diary_future_date">기록 날짜는 오늘까지만 고를 수 있습니다.</string>
     <string name="mindrecord_error_daily_question_draft_load_failed">임시저장한 답변을 불러오지 못했어요. 이대로 저장하면 이전 임시저장이 덮어써집니다.</string>
     <string name="mindrecord_error_daily_question_submit_failed">등록에 실패했습니다.</string>
     <string name="mindrecord_error_daily_question_answer_required">답변을 입력해 주세요.</string>
