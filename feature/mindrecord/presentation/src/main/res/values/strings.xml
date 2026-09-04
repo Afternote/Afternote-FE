@@ -71,6 +71,7 @@
     <!-- Calendar -->
     <string name="mindrecord_calendar_year_month">%1$d년 %2$d월</string>
     <string name="mindrecord_calendar_answered_count">%d개의 답변 완료</string>
+    <string name="mindrecord_calendar_recorded_count">%d개의 기록 완료</string>
     <string name="mindrecord_calendar_day_label_sun">일</string>
     <string name="mindrecord_calendar_day_label_mon">월</string>
     <string name="mindrecord_calendar_day_label_tue">화</string>
@@ -78,11 +79,15 @@
     <string name="mindrecord_calendar_day_label_thu">목</string>
     <string name="mindrecord_calendar_day_label_fri">금</string>
     <string name="mindrecord_calendar_day_label_sat">토</string>
+
     <!--
       "발송" 이 아니라 "기록" 이다 — 이 날짜는 과거 일기를 몰아 쓰기 위한 기록 날짜이지
       발송 시점이 아니다. 시안이 2026-08-05 에 "기록 날짜" 로 수정됐다 (#760).
     -->
     <string name="mindrecord_calendar_record_date_title">기록 날짜</string>
+
+    <!-- 일기 목록 -->
+    <string name="mindrecord_diary_list_section_header">DAILY DIARY</string>
 
     <!-- Daily question -->
     <string name="mindrecord_daily_question_default_thanks">오늘 하루, \n누구에게 가장 고마웠나요?</string>

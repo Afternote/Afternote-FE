@@ -3,6 +3,7 @@ package com.afternote.feature.mindrecord.presentation.screen.sender
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -24,6 +25,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.asString
+import com.afternote.core.ui.button.FAB.AfternoteFabContentBottomPadding
 import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -167,6 +169,9 @@ private fun DailyQuestionListContent(
     LazyColumn(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp),
+        // FAB 이 콘텐츠 위에 뜨므로 목록이 스스로 그 자리를 비운다 — 안 그러면 마지막
+        // 항목이 가려지고, 스크롤이 없을 만큼 항목이 적으면 볼 방법이 없다 (#1713).
+        contentPadding = PaddingValues(bottom = AfternoteFabContentBottomPadding),
     ) {
         // Figma 2671:15631 — 답변 목록 위의 "오늘의 추천 질문" 영역.
         item {
