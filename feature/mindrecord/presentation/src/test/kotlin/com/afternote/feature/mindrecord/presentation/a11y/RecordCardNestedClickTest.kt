@@ -149,15 +149,32 @@ class RecordCardNestedClickTest {
                 AfternoteTheme {
                     when (created.value) {
                         RecordCard.DailyQuestionListCard -> {
-                            DailyQuestionListCard(answer = SAMPLE_QUESTION, onClick = { cardClicks++ })
+                            // 메뉴 항목 콜백은 이 테스트의 관심사가 아니다 — 다만 «더보기 메뉴»
+                            // 자체가 그려져야 중첩 클릭을 볼 수 있으므로 no-op 이라도 넘긴다.
+                            DailyQuestionListCard(
+                                answer = SAMPLE_QUESTION,
+                                onClick = { cardClicks++ },
+                                onEdit = {},
+                                onDelete = {},
+                            )
                         }
 
                         RecordCard.DiaryCard -> {
-                            DiaryCard(diary = SAMPLE_DIARY, onClick = { cardClicks++ })
+                            DiaryCard(
+                                diary = SAMPLE_DIARY,
+                                onClick = { cardClicks++ },
+                                onEdit = {},
+                                onDelete = {},
+                            )
                         }
 
                         RecordCard.DiaryComponent -> {
-                            DiaryComponent(diary = SAMPLE_DIARY, onClick = { cardClicks++ })
+                            DiaryComponent(
+                                diary = SAMPLE_DIARY,
+                                onClick = { cardClicks++ },
+                                onEdit = {},
+                                onDelete = {},
+                            )
                         }
 
                         RecordCard.DiaryCardInGrid -> {
@@ -165,6 +182,8 @@ class RecordCardNestedClickTest {
                                 diary = SAMPLE_DIARY_WITH_IMAGE,
                                 modifier = Modifier.width(GRID_COLUMN_WIDTH),
                                 onClick = { cardClicks++ },
+                                onEdit = {},
+                                onDelete = {},
                             )
                         }
                     }
