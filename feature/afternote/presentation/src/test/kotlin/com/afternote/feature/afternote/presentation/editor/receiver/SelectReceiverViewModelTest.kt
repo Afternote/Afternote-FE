@@ -195,6 +195,39 @@ class SelectReceiverViewModelTest {
         }
 
     @Test
+    fun `목록 응답이 초기 선택보다 먼저 와 있어도 목록에 없는 초기 선택은 빠진다`() =
+        runTest {
+            val viewModel = viewModelWithReceivers()
+
+            viewModel.applyPreselection(listOf(1L, 99L))
+
+            assertEquals(listOf(1L), viewModel.uiState.value.selectedReceiverIds)
+        }
+
+    @Test
+    fun `초기 선택이 목록 응답보다 먼저 들어와도 같은 결과다`() =
+        runTest {
+            val gate = CompletableDeferred<List<Receiver>>()
+            val repository = FakeUserRepository(onGetReceivers = { gate.await() })
+            val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter)
+            runCurrent()
+
+            viewModel.applyPreselection(listOf(1L, 99L))
+            // 목록이 없는 동안엔 보이는 선택도 없다 — 완료 버튼이 확인 없이 켜지지 않는다.
+            assertEquals(emptyList<Long>(), viewModel.uiState.value.selectedReceiverIds)
+
+            gate.complete(
+                listOf(
+                    Receiver(1L, "김혜성", "아들", "auth-1"),
+                    Receiver(2L, "박경민", "친구", "auth-2"),
+                ),
+            )
+            runCurrent()
+
+            assertEquals(listOf(1L), viewModel.uiState.value.selectedReceiverIds)
+        }
+
+    @Test
     fun `재조회로 목록에서 사라진 수신자 선택만 해제되고 나머지는 남는다`() =
         runTest {
             val repository =
