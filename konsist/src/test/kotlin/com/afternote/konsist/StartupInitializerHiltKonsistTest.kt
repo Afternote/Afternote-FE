@@ -25,10 +25,11 @@ class StartupInitializerHiltKonsistTest {
         }
 
         val violations =
-            initializers.filter { initializer ->
-                val code = initializer.containingFile.text.withoutComments()
-                HILT_ENTRY_POINT_ACCESSORS.any { it in code }
-            }.map { "${it.containingFile.normalizedProjectPath()} — ${it.name}" }
+            initializers
+                .filter { initializer ->
+                    val code = initializer.containingFile.text.withoutComments()
+                    HILT_ENTRY_POINT_ACCESSORS.any { it in code }
+                }.map { "${it.containingFile.normalizedProjectPath()} — ${it.name}" }
 
         check(violations.isEmpty()) {
             buildString {

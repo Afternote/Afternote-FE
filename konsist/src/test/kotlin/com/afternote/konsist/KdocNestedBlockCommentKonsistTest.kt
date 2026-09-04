@@ -58,11 +58,15 @@ class KdocNestedBlockCommentKonsistTest {
                         if (depth == 2) lines += source.lineNumberAt(cursor)
                         cursor += BLOCK_OPEN.length
                     }
+
                     source.startsWith(BLOCK_CLOSE, cursor) -> {
                         depth -= 1
                         cursor += BLOCK_CLOSE.length
                     }
-                    else -> cursor += 1
+
+                    else -> {
+                        cursor += 1
+                    }
                 }
             }
             index = source.indexOf(KDOC_OPEN, maxOf(cursor, index + KDOC_OPEN.length))
