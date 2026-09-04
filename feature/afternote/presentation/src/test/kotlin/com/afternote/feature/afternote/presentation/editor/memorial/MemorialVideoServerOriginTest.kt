@@ -7,6 +7,7 @@ import com.afternote.feature.afternote.presentation.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.editor.state.MemorialVideoAttachment
 import com.afternote.feature.afternote.presentation.editor.state.withMemorialThumbnail
 import com.afternote.feature.afternote.presentation.editor.state.withMemorialVideo
+import com.afternote.feature.afternote.presentation.editor.state.withMemorialVideoRemoved
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -67,7 +68,7 @@ class MemorialVideoServerOriginTest {
         val removed =
             prefilledEditForm()
                 .withMemorialVideo(localVideo)
-                .withMemorialVideo(null)
+                .withMemorialVideoRemoved()
 
         // 종전에는 여기서 영상 칸이 null 이 되어 폼이 빈 슬롯을 보여줬다. 저장하면 서버 영상이 그대로
         // 남아 재진입 시 되살아났다 — 폼이 서버 상태를 두고 거짓말을 한 자리다.
@@ -79,7 +80,7 @@ class MemorialVideoServerOriginTest {
         val removed =
             prefilledEditForm()
                 .withMemorialVideo(localVideo)
-                .withMemorialVideo(null)
+                .withMemorialVideoRemoved()
 
         // #1561 은 여기서 삭제 항목이 «다시 감춰진다» 고 잠갔다. 그 근거는 계약 한계였다 —
         // PATCH 가 삭제를 표현하지 못하던 시절엔 서버 영상에 삭제를 열어 두면 폼만 비고 서버에는
@@ -94,7 +95,7 @@ class MemorialVideoServerOriginTest {
         val removed =
             EditorFormState(typeForm = AfternoteTypeForm.Memorial())
                 .withMemorialVideo(localVideo)
-                .withMemorialVideo(null)
+                .withMemorialVideoRemoved()
 
         assertNull(removed.displayedMemorialVideo)
     }
@@ -106,7 +107,7 @@ class MemorialVideoServerOriginTest {
         val afterLateThumbnail =
             EditorFormState(typeForm = AfternoteTypeForm.Memorial())
                 .withMemorialVideo(localVideo)
-                .withMemorialVideo(null)
+                .withMemorialVideoRemoved()
                 .withMemorialThumbnail("https://cdn.test/late-thumb.jpg")
 
         assertFalse(afterLateThumbnail.canRemoveMemorialVideo)

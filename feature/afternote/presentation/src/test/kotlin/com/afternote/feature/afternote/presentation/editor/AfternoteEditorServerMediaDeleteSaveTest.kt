@@ -67,8 +67,8 @@ class AfternoteEditorServerMediaDeleteSaveTest {
             applyLoadedPrefill(first)
             assertServerMediaAndSongs(first.currentForm())
 
-            first.setMemorialPhoto(null)
-            first.setMemorialVideo(null)
+            first.removeMemorialPhoto()
+            first.removeMemorialVideo()
             val deletedForm = first.currentForm()
 
             assertDeletedMediaAndSongs(deletedForm)
@@ -118,8 +118,8 @@ class AfternoteEditorServerMediaDeleteSaveTest {
             val viewModel = viewModel(repository)
             collectState(viewModel)
             applyLoadedPrefill(viewModel)
-            viewModel.setMemorialPhoto(null)
-            viewModel.setMemorialVideo(null)
+            viewModel.removeMemorialPhoto()
+            viewModel.removeMemorialVideo()
 
             viewModel.saveCurrentMemorialForm()
             advanceUntilIdle()

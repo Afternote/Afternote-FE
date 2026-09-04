@@ -28,9 +28,9 @@ import java.lang.reflect.Proxy
 
 /**
  * 추억 노트 미디어 슬롯의 삭제 경로 (#1114, #1597) —
- * `setMemorialPhoto(null)`/`setMemorialVideo(null)`.
+ * `removeMemorialPhoto()`/`removeMemorialVideo()`.
  *
- * 삭제는 새 세터가 아니라 기존 nullable 세터의 null 인자로 표현된다. 로컬 첨부가 서버 원본을
+ * 삭제는 세터의 null 인자가 아니라 이름 있는 연산이다(#1717). 로컬 첨부가 서버 원본을
  * 덮고 있으면 첫 삭제는 로컬 층만 비워 서버 원본으로 돌아간다. 서버 층만 남은 다음 삭제는
  * 원본도 비우며, 그 상태는 SavedState 스냅샷에 실린다.
  */
@@ -56,7 +56,7 @@ class AfternoteEditorMemorialMediaRemoveTest {
         viewModel.setMemorialVideo("content://videos/farewell")
         viewModel.setMemorialThumbnail("https://cdn.test/thumbnail.jpg")
 
-        viewModel.setMemorialVideo(null)
+        viewModel.removeMemorialVideo()
 
         assertNull(viewModel.currentForm().displayedMemorialVideo)
     }
@@ -68,13 +68,13 @@ class AfternoteEditorMemorialMediaRemoveTest {
         viewModel.setMemorialPhoto("content://photos/replacement")
         assertEquals("content://photos/replacement", viewModel.currentForm().displayMemorialPhotoUri())
 
-        viewModel.setMemorialPhoto(null)
+        viewModel.removeMemorialPhoto()
 
         assertNull(viewModel.currentForm().pickedMemorialPhotoUri)
         assertEquals("https://cdn.test/portrait.jpg", viewModel.currentForm().memorialPhotoUrl)
         assertEquals("https://cdn.test/portrait.jpg", viewModel.currentForm().displayMemorialPhotoUri())
 
-        viewModel.setMemorialPhoto(null)
+        viewModel.removeMemorialPhoto()
 
         assertNull(viewModel.currentForm().memorialPhotoUrl)
         assertNull(viewModel.currentForm().displayMemorialPhotoUri())
@@ -92,12 +92,12 @@ class AfternoteEditorMemorialMediaRemoveTest {
         viewModel.setMemorialVideo("content://videos/replacement")
         viewModel.setMemorialThumbnail("https://cdn.test/local-thumbnail.jpg")
 
-        viewModel.setMemorialVideo(null)
+        viewModel.removeMemorialVideo()
 
         assertEquals("https://cdn.test/farewell.mp4", viewModel.currentForm().displayedMemorialVideo?.url)
         assertEquals("https://cdn.test/server-thumbnail.jpg", viewModel.currentForm().displayedMemorialVideo?.thumbnailUrl)
 
-        viewModel.setMemorialVideo(null)
+        viewModel.removeMemorialVideo()
 
         assertNull(viewModel.currentForm().displayedMemorialVideo?.url)
         assertNull(viewModel.currentForm().displayedMemorialVideo?.thumbnailUrl)
@@ -114,8 +114,8 @@ class AfternoteEditorMemorialMediaRemoveTest {
             ),
         )
 
-        viewModel.setMemorialPhoto(null)
-        viewModel.setMemorialVideo(null)
+        viewModel.removeMemorialPhoto()
+        viewModel.removeMemorialVideo()
 
         assertNull(viewModel.currentForm().pickedMemorialPhotoUri)
         assertNull(viewModel.currentForm().memorialPhotoUrl)
@@ -136,8 +136,8 @@ class AfternoteEditorMemorialMediaRemoveTest {
                 playlistSongs = listOf(Song("detail:0", "노래", "가수")),
             ),
         )
-        first.setMemorialVideo(null)
-        first.setMemorialPhoto(null)
+        first.removeMemorialVideo()
+        first.removeMemorialPhoto()
 
         val restored = viewModel(handle).currentForm()
 

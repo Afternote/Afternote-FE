@@ -91,7 +91,7 @@ class AfternoteEditorReceiverSnapshotTest {
         assertEquals(MediaInput.Local(selection.url), roundTripped.memorialVideo?.toMediaInput())
         assertTrue(roundTripped.canRemoveMemorialVideo)
 
-        restoredViewModel.setMemorialVideo(null)
+        restoredViewModel.removeMemorialVideo()
 
         assertEquals(persisted, restoredViewModel.currentForm().displayedMemorialVideo)
         assertEquals(MediaInput.Remote(persisted.url), restoredViewModel.currentForm().memorialVideo?.toMediaInput())
