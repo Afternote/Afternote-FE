@@ -205,6 +205,14 @@ class AfternoteEditorViewModel
         val isEditing: Boolean get() = route.itemId != null
 
         /**
+         * 발행이 끝난 노트를 편집하는 화면인가. 여기서는 「임시저장」이 할 일이 없다 — `route.isDraft` 가
+         * false 면 `isDraft` 키를 생략해 발행 상태가 그대로라 결과가 「등록」과 같은데, 검증만 임시저장
+         * 기준으로 느슨해진다(계정 자격 필수 검사를 건너뛴 PATCH 가 나갈 수 있다). 그래서 이 화면에선
+         * 버튼을 아예 그리지 않는다 (#808 리뷰).
+         */
+        val isPublishedEdit: Boolean get() = isEditing && !route.isDraft
+
+        /**
          * 폼 SSOT 갱신의 유일한 통로. SavedState 스냅샷 직렬화도 함께 수행한다.
          * 어떤 필드를 어떻게 바꿀지는 `EditorFormMutations.kt` 의 변환 규칙이 정한다.
          */

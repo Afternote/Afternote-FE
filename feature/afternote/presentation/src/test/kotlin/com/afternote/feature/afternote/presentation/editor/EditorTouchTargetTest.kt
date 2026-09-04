@@ -185,6 +185,41 @@ class EditorTouchTargetTest {
     }
 
     /**
+     * 「임시저장」은 「등록」과 같은 게이트를 받는다 (#808 리뷰).
+     *
+     * 저장이 나가 있는 동안·prefill 을 못 읽은 동안 이 버튼만 살아 있으면, 누른 탭이 VM 의 `isSaving`
+     * 가드에 걸려 오류도 스낵바도 없이 삼켜진다. 게이트가 내려간 동안은 클릭 타깃에서 빠지고 콜백도
+     * 불리지 않아야 한다 — `enabled` 를 지우면 아래 두 단언이 함께 빨개진다.
+     */
+    @Test
+    fun `editor top bar disables the draft action together with submit`() {
+        var saveDraftClicks = 0
+        composeRule.setContent {
+            AfternoteTheme {
+                AfternoteEditorScreen(
+                    form = EditorFormState(),
+                    onBackClick = {},
+                    onSaveDraftClick = { saveDraftClicks++ },
+                    onRegisterClick = {},
+                    isSubmitEnabled = false,
+                    snackbarMessage = null,
+                    onSnackbarMessageConsumed = {},
+                    validationMessage = null,
+                    onValidationMessageConsumed = {},
+                    content = {},
+                )
+            }
+        }
+
+        composeRule.assertAccessibleClickTargets()
+        val enabledNames = composeRule.scanEnabledClickTargets().map { it.name }
+        assertEquals(emptyList<String>(), enabledNames.filter { it == "임시저장" || it == "등록" })
+
+        composeRule.onNodeWithText("임시저장").performClick()
+        assertEquals(0, saveDraftClicks)
+    }
+
+    /**
      * 콜백이 없으면 버튼 자체가 없어야 한다 (#808).
      *
      * 저장한 임시저장을 다시 열 화면이 배선되기 전까지 `AfternoteEditorRoute` 가 `null` 을 넘긴다.
