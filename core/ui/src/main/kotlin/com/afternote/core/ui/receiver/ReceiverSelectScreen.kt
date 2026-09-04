@@ -215,7 +215,14 @@ private fun ReceiverSelectList(
     }
 }
 
-/** 목록 항목 id(Long) 와 섞이지 않는 «새 수신자 등록» 행 전용 LazyColumn 키. */
+/**
+ * «새 수신자 등록» 행의 LazyColumn 키.
+ *
+ * 이 행은 앞에 오는 수신자 수만큼 index 가 밀린다 — 검색 필터가 걸릴 때, 등록 화면에서 돌아온
+ * 재조회로 목록이 늘 때. 키가 없으면 index 기반 기본 키라 밀릴 때마다 컴포지션을 버리고 새 index 에
+ * 다시 만든다. 지금은 행 안에 상태가 없어 보이는 차이는 없고, 상태나 `animateItem` 이 붙을 때를
+ * 위해 identity 를 고정해 둔다. String 인 것은 목록 항목 키(Long id) 와 겹치지 않기 위해서다.
+ */
 private const val REGISTER_ROW_KEY = "receiver_select_register_row"
 
 /**
