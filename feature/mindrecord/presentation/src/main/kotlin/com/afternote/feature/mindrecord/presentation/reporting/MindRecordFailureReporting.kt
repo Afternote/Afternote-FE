@@ -59,7 +59,8 @@ enum class MindRecordFailureStage(
  *
  * 사용자 입력 오류·사용자 취소처럼 오류가 아닌 경로는 호출부에서 걸러 넘기지 않는다.
  * 코루틴 취소는 [ErrorReporter] 가 창구에서 거르므로 호출부가 다시 막지 않아도 된다 —
- * 이 모듈의 저장소는 `runCatching` 으로 취소까지 실패로 바꿔 돌려주는 자리가 있다.
+ * 「취소는 에러가 아니다」는 **정책**이라 계측 지점이 늘어도 한 곳에서 지킨다. 호출부마다
+ * 걸러 달라고 하면 새 지점이 생길 때마다 빠진다.
  */
 fun ErrorReporter.recordMindRecordFailure(
     stage: MindRecordFailureStage,
