@@ -18,9 +18,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import com.afternote.core.ui.Route
-import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavActions
-import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
-import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceivedAfternoteRoute
+import com.afternote.feature.afternote.presentation.navigation.AfternoteNavActions
+import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
+import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
 import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavActions
@@ -141,11 +141,13 @@ internal fun NavGraphBuilder.appRouteSkeleton() {
     }
 
     // feature/mindrecord — MindRecordNavGraph.kt. 중첩 없이 루트에 직접 붙는 top-level 3종과
-    // 임시저장 목록만 옮긴다(작성 화면은 어느 테스트도 지나지 않는다).
+    // 임시저장 목록·기록 상세만 옮긴다(작성 화면은 어느 테스트도 지나지 않는다).
+    // 기록 상세는 홈 MEMORIES 의 「그날의 기록 다시 읽기」가 인자까지 싣고 도착하는 목적지다 (#793).
     stubScreen<Route.MindRecord>()
     stubScreen<Route.MemorySpace>()
     stubScreen<Route.ReceiverMindRecord>()
     stubScreen<MindRecordRoute.DraftListRoute>()
+    stubScreen<MindRecordRoute.RecordDetailRoute>()
 
     // feature/timeletter — TimeLetterNavGraph.kt. 탭 저장/복원과 predictive back 이 지나는
     // 세 화면만 옮긴다.
