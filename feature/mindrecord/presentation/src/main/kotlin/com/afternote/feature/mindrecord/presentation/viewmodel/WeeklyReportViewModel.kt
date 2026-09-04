@@ -2,6 +2,7 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.EmotionAnalysisStatus
 import com.afternote.feature.mindrecord.domain.model.TodayMood
@@ -17,6 +18,8 @@ import com.afternote.feature.mindrecord.presentation.model.DayContent
 import com.afternote.feature.mindrecord.presentation.model.DayItem
 import com.afternote.feature.mindrecord.presentation.model.EmotionKeyword
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
+import com.afternote.feature.mindrecord.presentation.reporting.MindRecordFailureStage
+import com.afternote.feature.mindrecord.presentation.reporting.recordMindRecordFailure
 import com.afternote.feature.mindrecord.presentation.usecase.ObserveWeeklyReportUseCase
 import com.afternote.feature.mindrecord.presentation.usecase.analysisStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -40,6 +43,7 @@ class WeeklyReportViewModel
     constructor(
         private val observeWeeklyReport: ObserveWeeklyReportUseCase,
         private val changeTracker: MindRecordChangeTracker,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val weekOptions: List<WeekOption> =
             buildWeekOptions(today = LocalDate.now())
@@ -196,6 +200,8 @@ class WeeklyReportViewModel
                                     )
                                 }
                             }.onFailure { e ->
+                                // 탭 전체가 오류 화면이 되는 자리다 — 무엇이 실패했는지 남긴다 (#1882).
+                                errorReporter.recordMindRecordFailure(MindRecordFailureStage.WEEKLY_REPORT_LOAD, e)
                                 internalState.update { current ->
                                     if (keepsStateOnFailure && current.loadPhase is LoadPhase.Loaded) {
                                         current
@@ -203,11 +209,10 @@ class WeeklyReportViewModel
                                         current.copy(
                                             loadPhase =
                                                 LoadPhase.Failed(
+                                                    // 예외 문구를 화면에 싣지 않는다. 원문은 바로 위
+                                                    // 계측으로 남는다 (#1339 선례, #1882).
                                                     message =
-                                                        UiText.DynamicOrResource(
-                                                            value = e.message,
-                                                            fallbackResId = R.string.mindrecord_error_weekly_report_failed,
-                                                        ),
+                                                        UiText.Resource(R.string.mindrecord_error_weekly_report_failed),
                                                     monday = monday,
                                                     previous = previousLoaded,
                                                 ),
