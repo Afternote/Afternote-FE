@@ -75,7 +75,7 @@ class IdentityVerificationViewModel
         fun requestVerificationCode() {
             val state = _uiState.value
             if (!state.isEmailFormatValid || state.isSendingCode) return
-            _uiState.update { it.copy(isSendingCode = true, error = null, errorPopup = null) }
+            _uiState.update { it.copy(isSendingCode = true, error = null) }
             viewModelScope.launch {
                 receiverAuthRepository
                     .sendEmailAuthCode(state.email.trim())
@@ -102,7 +102,7 @@ class IdentityVerificationViewModel
         fun verifyAndProceed(senderId: String) {
             val state = _uiState.value
             if (!state.canSubmit) return
-            _uiState.update { it.copy(isVerifying = true, error = null, errorPopup = null) }
+            _uiState.update { it.copy(isVerifying = true, error = null) }
             viewModelScope.launch {
                 receiverAuthRepository
                     .verifyEmailAuthCode(email = state.email.trim(), authCode = state.code.trim())

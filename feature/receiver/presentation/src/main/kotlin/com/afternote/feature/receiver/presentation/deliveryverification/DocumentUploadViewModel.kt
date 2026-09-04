@@ -107,7 +107,7 @@ class DocumentUploadViewModel
                 return
             }
             _uiState.update {
-                it.copy(isSubmitting = true, error = null, errorPopup = null)
+                it.copy(isSubmitting = true, error = null)
             }
             viewModelScope.launch {
                 receiverAuthRepository
