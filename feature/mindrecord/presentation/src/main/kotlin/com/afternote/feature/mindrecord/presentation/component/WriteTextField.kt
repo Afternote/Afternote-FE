@@ -31,6 +31,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontStyle
@@ -128,7 +131,7 @@ fun WriteTextField(
             isItalic = state.currentSpanStyle.fontStyle == FontStyle.Italic,
             isUnderline = state.currentSpanStyle.textDecoration?.contains(TextDecoration.Underline) == true,
             isStrikethrough = state.currentSpanStyle.textDecoration?.contains(TextDecoration.LineThrough) == true,
-            textAlign = state.currentParagraphStyle.textAlign ?: TextAlign.Start,
+            textAlign = state.currentParagraphStyle.textAlign.orStart(),
             textStyle = currentTextStyleType(state.currentSpanStyle.fontSize.value),
         )
 
@@ -214,6 +217,12 @@ fun WriteTextField(
             attachMedia(uri, asImage = false)
         }
 
+    // 본문 편집기의 접근 가능한 이름. 눈에 보이는 안내 문구는 아래에서 **형제 노드**로 그려서
+    // 편집기 자신의 semantics 에는 잡히지 않는다 — 그대로 두면 스크린리더가 화면의 대부분을
+    // 차지하는 이 타깃을 이름 없이 읽는다 (#1179 리뷰의 후보 전량 스캔에서 드러났다).
+    // 보이는 문구와 읽히는 이름을 같은 문자열로 묶는다.
+    val editorLabel = stringResource(R.string.mindrecord_write_field_placeholder)
+
     Column(modifier = modifier.fillMaxSize()) {
         Box(
             modifier =
@@ -229,6 +238,7 @@ fun WriteTextField(
                     Modifier
                         .fillMaxSize()
                         .focusRequester(editorFocusRequester)
+                        .semantics { contentDescription = editorLabel }
                         .padding(16.dp),
             )
             // 첨부 목록과 오류 문구는 같은 자리를 두고 다투면 안 된다 — 종전에는 정렬·패딩이
@@ -254,7 +264,10 @@ fun WriteTextField(
                 Text(
                     text = stringResource(R.string.mindrecord_write_field_placeholder),
                     color = AfternoteDesign.colors.gray4,
-                    modifier = Modifier.padding(16.dp),
+                    // 같은 문자열이 편집기의 이름으로 이미 실려 있다. 이 형제 노드를 접근성
+                    // 트리에 남기면 비어 있을 때 같은 문장을 두 번 읽는다 (#1179 리뷰).
+                    // Material 의 TextField 도 placeholder 를 필드 노드에 합치고 따로 짚지 않는다.
+                    modifier = Modifier.padding(16.dp).clearAndSetSemantics {},
                 )
             }
             Text(
@@ -300,6 +313,8 @@ fun WriteTextField(
         BottomToolbar(
             modifier = Modifier.imePadding(),
             onTextStyleClick = { showTextStyleToolbar = !showTextStyleToolbar },
+            // 스타일 패널과 같은 값을 본다 — 두 툴바의 정렬 선택 상태가 갈리면 안 된다 (#1179).
+            textAlign = styleState.textAlign,
             onAlignChange = { align ->
                 keepEditorFocus { state.addParagraphStyle(ParagraphStyle(textAlign = align)) }
             },
