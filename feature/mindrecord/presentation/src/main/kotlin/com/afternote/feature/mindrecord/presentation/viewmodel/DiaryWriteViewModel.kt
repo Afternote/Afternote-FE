@@ -8,7 +8,7 @@ import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.PhotoUploadRepository
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
@@ -46,7 +46,7 @@ class DiaryWriteViewModel
         savedStateHandle: SavedStateHandle,
         private val repository: DiaryRepository,
         private val photoUploadRepository: PhotoUploadRepository,
-        private val userRepository: UserRepository,
+        private val userRepository: UserReceiverRepository,
         private val draftLoader: LoadMindRecordDraftsUseCase,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
