@@ -1,7 +1,7 @@
 package com.afternote.feature.mindrecord.presentation.usecase
 
 import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.MyProfileRepository
 import com.afternote.feature.mindrecord.domain.model.EmotionAnalysisStatus
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
@@ -44,7 +44,7 @@ class ObserveWeeklyReportUseCase
     @Inject
     constructor(
         private val repository: WeeklyReportRepository,
-        private val userRepository: UserRepository,
+        private val userRepository: MyProfileRepository,
     ) {
         /**
          * [monday] 주의 리포트를 내보낸다.

@@ -1,6 +1,6 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.MyProfileRepository
 import com.afternote.core.model.user.User
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
@@ -217,15 +217,15 @@ class MindRecordRequestCountTest {
         }
     }
 
-    private fun userRepository(): UserRepository =
+    private fun userRepository(): MyProfileRepository =
         Proxy.newProxyInstance(
-            UserRepository::class.java.classLoader,
-            arrayOf(UserRepository::class.java),
+            MyProfileRepository::class.java.classLoader,
+            arrayOf(MyProfileRepository::class.java),
         ) { _, method, _ ->
             when (method.name) {
                 "getReceiverListFlow" -> flowOf(emptyList<Any>())
                 "getMyProfile" -> User(name = "adamtia", email = "a@b.c", phone = null, profileImageUrl = null)
                 else -> error("Unexpected user repository call: ${method.name}")
             }
-        } as UserRepository
+        } as MyProfileRepository
 }
