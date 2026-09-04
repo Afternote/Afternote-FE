@@ -193,7 +193,16 @@ private fun DownloadDialogHost(
             }
         }
 
-        else -> { }
+        ReceiverDownloadState.Idle,
+        ReceiverDownloadState.Confirming,
+        ReceiverDownloadState.InProgress,
+        -> {
+            // 이 셋은 여기서 할 일이 없다 — 위 `Popup` 이 따로 보고 있고, 소비할 결과도
+            // 아직 없다. 종전에는 `else -> { }` 였는데, 그러면 상태가 하나 늘 때 새 상태도
+            // 조용히 여기로 흘러 아무 일도 일어나지 않는다. 이 `when` 이 하는 일이 결과
+            // 소비(`ConsumeDownloadResult`)라서, 소비되지 못한 상태는 화면을 그 자리에
+            // 가둔다. 이름으로 적어 두면 상태가 늘 때 컴파일이 막는다 (#1767).
+        }
     }
 }
 
