@@ -51,8 +51,6 @@
     <string name="core_ui_receiver_select_title">수신자 선택</string>
     <string name="core_ui_receiver_select_search_placeholder">이름으로 검색하기</string>
     <string name="core_ui_receiver_select_confirm">수신자 선택 완료하기</string>
-    <!-- 목록 하단 신규 등록 진입 (#1427). 소비자가 진입 콜백을 넘길 때만 그려진다. -->
-    <string name="core_ui_receiver_select_register">새 수신자 등록</string>
 
     <!--
       "미디어 추가하기" 계열 메뉴 시트 공용 문구 (#642). 시안 정본 4327:72281.

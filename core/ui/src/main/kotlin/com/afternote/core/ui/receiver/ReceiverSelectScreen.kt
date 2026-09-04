@@ -9,13 +9,11 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,9 +27,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.afternote.core.common.util.KoreanConsonantUtil
@@ -62,9 +58,6 @@ import kotlinx.coroutines.launch
  *
  * @param listReplacement 검색 필드 아래 목록 영역을 통째로 대체할 상태 화면 —
  *   로딩·조회 실패·빈 목록처럼 소비 기능마다 다른 상태를 끼운다. null 이면 목록을 그린다.
- * @param onRegisterReceiverClick 목록 하단 «새 수신자 등록» 진입 (#1427 · #872 통일 흐름).
- *   null 이면 행 자체를 그리지 않는다 — 등록 화면으로 보낼 수 없는 소비자(설정)가 죽은 행을
- *   그리지 않게 하는 자리다. 빈 목록일 때의 진입점은 [listReplacement] 가 직접 소유한다.
  */
 @Composable
 fun ReceiverSelectScreen(
@@ -78,7 +71,6 @@ fun ReceiverSelectScreen(
     searchPlaceholder: String = stringResource(R.string.core_ui_receiver_select_search_placeholder),
     confirmText: String = stringResource(R.string.core_ui_receiver_select_confirm),
     listReplacement: (@Composable () -> Unit)? = null,
-    onRegisterReceiverClick: (() -> Unit)? = null,
 ) {
     Scaffold(
         modifier = modifier,
@@ -122,7 +114,6 @@ fun ReceiverSelectScreen(
                     searchQuery = searchState.text.toString(),
                     selectedReceiverId = selectedReceiverId,
                     onReceiverToggle = onReceiverToggle,
-                    onRegisterReceiverClick = onRegisterReceiverClick,
                 )
             }
         }
@@ -135,7 +126,6 @@ private fun ReceiverSelectList(
     searchQuery: String,
     selectedReceiverId: Long?,
     onReceiverToggle: (Long) -> Unit,
-    onRegisterReceiverClick: (() -> Unit)?,
 ) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -188,11 +178,6 @@ private fun ReceiverSelectList(
                     )
                 }
             }
-            if (onRegisterReceiverClick != null) {
-                item {
-                    ReceiverRegisterRow(onClick = onRegisterReceiverClick)
-                }
-            }
             item { Spacer(modifier = Modifier.padding(14.dp)) }
         }
         Box(
@@ -212,46 +197,6 @@ private fun ReceiverSelectList(
                 },
             )
         }
-    }
-}
-
-/**
- * 목록 하단 «새 수신자 등록» 진입 행 (#1427).
- *
- * 확정 시안(3631:24820)에 이 행이 없다 — 2026-08-06 Figma 댓글로 확정된 통일 흐름의
- * 진입점이라 좌측 정렬만 목록 행(50dp 아바타 + 10dp 간격)에 맞추고 나머지는 기존 토큰으로
- * 조립했다. 시안이 내려오면 그 값으로 맞춘다.
- */
-@Composable
-private fun ReceiverRegisterRow(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .clickable(role = Role.Button, onClick = onClick)
-                .padding(vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier.size(50.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.core_ui_add),
-                contentDescription = null,
-                tint = AfternoteDesign.colors.gray9,
-                modifier = Modifier.size(20.dp),
-            )
-        }
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(
-            text = stringResource(R.string.core_ui_receiver_select_register),
-            style = AfternoteDesign.typography.captionLargeB,
-            color = AfternoteDesign.colors.gray9,
-        )
     }
 }
 

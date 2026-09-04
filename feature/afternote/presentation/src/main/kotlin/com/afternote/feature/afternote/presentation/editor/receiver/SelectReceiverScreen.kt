@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -67,33 +65,30 @@ internal fun SelectReceiverScreen(
                 }
 
                 uiState.receivers.isEmpty() -> {
-                    { SelectReceiverEmpty(onRegisterClick = null) }
+                    { SelectReceiverEmpty() }
                 }
 
                 else -> {
                     null
                 }
             },
-        onRegisterReceiverClick = null,
     )
 }
 
 /**
  * 수신자 0건 빈 상태 (#1427, 확정 시안 4163:20979).
  *
- * 시안 치수: 제목/설명 8dp 간격 → 56dp → 일러스트(134dp) → 56dp → 버튼(44dp).
+ * 시안 치수: 제목/설명 8dp 간격 → 56dp → 일러스트(134dp).
  * 일러스트는 시안과 같은 그림인 core:ui [ProfileImage] 의 placeholder 를 기본 크기(134dp)로 쓴다.
  */
 @Composable
-private fun SelectReceiverEmpty(onRegisterClick: (() -> Unit)?) {
+private fun SelectReceiverEmpty() {
     Column(
         modifier =
             Modifier
                 .fillMaxSize()
-                // 이 화면의 목적이 CTA 도달이라 짧은 화면·큰 글꼴에서도 버튼이 잘리면 안 된다.
-                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
-                .padding(top = 40.dp, bottom = 24.dp),
+                .padding(top = 40.dp),
     ) {
         Text(
             text = stringResource(R.string.afternote_select_receiver_empty),
@@ -114,14 +109,6 @@ private fun SelectReceiverEmpty(onRegisterClick: (() -> Unit)?) {
             contentAlignment = Alignment.Center,
         ) {
             ProfileImage()
-        }
-        // 등록 진입 배선은 #1793 이 Nav3 계약으로 붙인다 — 그때까지 눌러도 갈 곳이 없어 안 그린다.
-        if (onRegisterClick != null) {
-            Spacer(modifier = Modifier.height(56.dp))
-            AfternoteButton(
-                text = stringResource(R.string.afternote_select_receiver_register),
-                onClick = onRegisterClick,
-            )
         }
     }
 }
