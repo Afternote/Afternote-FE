@@ -70,11 +70,23 @@ class AfternotePlaylistRequestWireTest {
     }
 
     /**
-     * 같은 바디 안에서 생략이 **여전히 살아 있음**을 함께 못박는다 — 위 두 건이 「값을 실었다」가
-     * 아니라 「기본값을 뗐다」로 성립한다는 증거다. FE 가 그리지 않는 슬롯은 계속 빠져야 한다.
+     * 곡은 `null` 이 아니라 **빈 배열**로 삭제를 말한다 (#1599).
      *
-     * `songs` 의 생략은 #1295 가 따로 못박은 결정이라 여기서 다시 단언하지 않는다
-     * (`AfternoteResponseDtoContractTest` 소관).
+     * BE `PlaylistRelationStrategy.update` 는 `songs != null` 일 때 `playlist.getItems().clear()` 로
+     * 통째로 갈아 끼우므로 `[]` 가 곧 전부 삭제다. 기본값 `emptyList()` 가 있던 동안은 바로 그
+     * 배열이 `encodeDefaults = false` 때문에 키째 빠져 「유지」로 흡수됐다.
+     */
+    @Test
+    fun `곡을 전부 빼면 빈 배열이 실려 전부 삭제로 나간다`() {
+        val playlist = playlistOf(emptied)
+
+        assertTrue("songs" in playlist)
+        assertTrue(playlist.getValue("songs").jsonArray.isEmpty())
+    }
+
+    /**
+     * 같은 바디 안에서 생략이 **여전히 살아 있음**을 함께 못박는다 — 위 세 건이 「값을 실었다」가
+     * 아니라 「기본값을 뗐다」로 성립한다는 증거다. FE 가 그리지 않는 슬롯은 계속 빠져야 한다.
      */
     @Test
     fun `FE 가 모델링하지 않는 슬롯은 키째 빠져 유지로 나간다`() {

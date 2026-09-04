@@ -78,6 +78,7 @@ fun AfternoteEditorScreen(
     snackbarAction: EditorSnackbarAction? = null,
     shouldDeferBaselineCapture: Boolean = false,
     snackbarMessageKey: Any? = snackbarMessage,
+    isSubmitEnabled: Boolean = true,
 ) {
     val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
@@ -160,13 +161,21 @@ fun AfternoteEditorScreen(
                                     ).padding(end = 12.dp),
                         )
                     }
+                    // 저장이 나가 있는 동안·prefill 을 못 읽은 동안은 «등록» 을 흐리고 눌리지 않게 한다 (#705).
+                    // 유휴 상태와 같은 모습이면 사용자는 응답 없는 화면으로 읽고 연타로 중복 저장을 시도한다.
                     Text(
                         text = stringResource(R.string.afternote_editor_submit),
                         style = AfternoteDesign.typography.bodySmallB,
-                        color = AfternoteDesign.colors.gray9,
+                        color =
+                            if (isSubmitEnabled) {
+                                AfternoteDesign.colors.gray9
+                            } else {
+                                AfternoteDesign.colors.gray5
+                            },
                         modifier =
                             Modifier
                                 .clickable(
+                                    enabled = isSubmitEnabled,
                                     role = Role.Button,
                                     onClick = {
                                         focusManager.clearFocus()

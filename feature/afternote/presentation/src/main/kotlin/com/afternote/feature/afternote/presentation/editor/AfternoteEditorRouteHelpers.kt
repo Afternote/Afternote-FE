@@ -27,6 +27,14 @@ internal fun AfternoteEditorError.messageResId(): Int =
             R.string.afternote_editor_receiver_selection_unavailable
         }
 
+        AfternoteEditorError.PrefillUnavailable -> {
+            R.string.afternote_editor_prefill_load_failed
+        }
+
+        AfternoteEditorError.PrefillNotReady -> {
+            R.string.afternote_editor_prefill_not_ready
+        }
+
         is AfternoteEditorError.Upload -> {
             when (target) {
                 AfternoteEditorError.Upload.Target.THUMBNAIL -> R.string.afternote_editor_thumbnail_upload_failed
@@ -105,7 +113,31 @@ internal fun buildOnRegisterClick(
         )
     }
 
+/**
+ * 이탈 확인 기준선(진입 시점 폼 스냅샷) 캡처를 미뤄야 하는지.
+ *
+ * prefill 실패도 «아직 기준선을 잡을 때가 아니다» 에 포함한다 (#705) — 실패 화면의 빈 폼을 기준선으로
+ * 잡아 두면 재시도가 성공해 폼이 채워지는 순간 «사용자가 고친 것» 으로 오인돼 뒤로가기마다 이탈 확인
+ * 팝업이 뜬다.
+ */
 internal fun shouldDeferEditorBaselineCapture(
     isPrefillLoading: Boolean,
     isProcessingMethodDefaultsInitializing: Boolean,
-): Boolean = isPrefillLoading || isProcessingMethodDefaultsInitializing
+    isPrefillFailed: Boolean = false,
+): Boolean = isPrefillLoading || isProcessingMethodDefaultsInitializing || isPrefillFailed
+
+/**
+ * 등록(저장) 액션을 열어 둘지.
+ *
+ * prefill 이 **끝나지 않은 동안에도** 잠근다 (#705) — 실패뿐 아니라 아직 읽는 중인 skeleton 상태도
+ * 폼이 기본 빈 값이라, 느린 상세 GET 을 앞질러 저장하면 수정(PATCH)이 그 빈 값으로 나가 기존
+ * 기록을 덮는다. `isPrefillLoading` 은 편집 진입에서만 true 라 신규 작성은 영향받지 않는다.
+ *
+ * ViewModel 의 [AfternoteEditorViewModel.saveAfternote] 진입 가드와 **같은 규칙을 두 겹으로** 둔다 —
+ * 화면이 막는 것은 사용자 경험이고, 저장 진입점에서 막는 것은 계약이다.
+ */
+internal fun isEditorSubmitEnabled(
+    isSaving: Boolean,
+    isPrefillFailed: Boolean,
+    isPrefillLoading: Boolean,
+): Boolean = !isSaving && !isPrefillFailed && !isPrefillLoading

@@ -48,6 +48,26 @@ sealed interface AfternoteEditorError {
      */
     data object ReceiverSelectionUnavailable : AfternoteEditorError
 
+    /**
+     * 수정 진입 prefill 조회가 **실패**했다 (#705).
+     *
+     * 저장 실패가 아니라 «기존 기록을 읽지 못했다» 는 사실이다. 이 상태에서 저장이 나가면
+     * 서버가 빈 폼 값으로 기존 기록을 덮으므로, 화면은 폼 대신 오류·재시도를 보이고 저장은 막는다.
+     */
+    data object PrefillUnavailable : AfternoteEditorError
+
+    /**
+     * 수정 진입 prefill 조회가 **아직 진행 중**이다 (#705).
+     *
+     * 저장을 막는 이유는 [PrefillUnavailable] 과 같지만 사용자에게 할 말이 다르다 — 실패가 아니라
+     * 곧 도착한다. 둘을 한 갈래로 두면 「불러오지 못했습니다」 가 아직 읽는 중인 사용자에게도 나가
+     * 사실과 다른 안내가 된다.
+     *
+     * 화면은 이 상태에서 저장 액션을 이미 잠그므로 여기까지 오는 것은 경합이나 버튼을 거치지 않은
+     * 호출뿐이다. 그래도 계약은 저장 진입점에서 지킨다.
+     */
+    data object PrefillNotReady : AfternoteEditorError
+
     data class Upload(
         val target: Target,
     ) : AfternoteEditorError {
@@ -94,6 +114,13 @@ data class AfternoteEditorUiState(
      * 신규 작성 모드(`itemId == null`)는 항상 false.
      */
     val isPrefillLoading: Boolean = false,
+    /**
+     * 수정 모드 prefill 조회가 실패해 폼을 채우지 못한 상태 (#705).
+     *
+     * true 인 동안 화면은 빈 폼이 아니라 오류·재시도를 그리고 저장을 막는다 — 빈 폼으로 저장하면
+     * 서버가 기존 기록을 그 빈 값으로 덮는다. 재시도가 성공하면 false 로 돌아간다.
+     */
+    val isPrefillFailed: Boolean = false,
     val savedId: Long? = null,
     val errorEvent: AfternoteEditorErrorEvent? = null,
     /** 저장 성공 신호 — UI 가 nav 후 `onSaveSuccessConsumed` 로 reset. */
