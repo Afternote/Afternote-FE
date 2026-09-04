@@ -84,6 +84,13 @@ enum class MindRecordFailureStage(
     MEMORY_SPACE_LOAD("memory_space_load"),
 
     /**
+     * 주간 리포트 조회. 실패하면 탭 전체가 오류 화면이 되고, 서버가 Gemini 를 다시 호출하는
+     * 자리라(Afternote-BE#118) 재시도 비용도 크다 — 무엇이 실패했는지 남지 않으면 그 비용이
+     * 어디서 새는지 알 수 없다 (#1882).
+     */
+    WEEKLY_REPORT_LOAD("weekly_report_load"),
+
+    /**
      * 수신자가 받은 기록 열람. 유가족이 «지금 못 여는» 상황이라 읽기 실패지만 승격 가치가
      * 높다 — 재현할 계정도 조건도 우리 손에 없어 실기 QA 로 잡히지 않는다.
      */

@@ -28,6 +28,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.afternote_fe.test.appTestUserRepository
@@ -82,6 +83,7 @@ import com.afternote.feature.timeletter.domain.model.TimeLetterList
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.domain.testing.FakeFileMetadataRepository
 import com.afternote.feature.timeletter.domain.testing.FakeTimeLetterRepository
+import com.afternote.feature.timeletter.domain.testing.FakeVoiceRecorderRepository
 import com.afternote.feature.timeletter.domain.usecase.CreateTimeLetterUseCase
 import com.afternote.feature.timeletter.domain.usecase.ResolveTimeLetterBlocksUseCase
 import com.afternote.feature.timeletter.presentation.screen.sender.RecipientListScreen
@@ -102,6 +104,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.time.LocalDate
 import java.time.YearMonth
+import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 
 /** #838/#839에서 기존 production Screen/ViewModel로 표현 가능한 미검증 완료 경계. */
 @RunWith(AndroidJUnit4::class)
@@ -684,7 +687,13 @@ class TimeLetterMindRecordCompletionAndroidTest {
                 profile = User("주간 사용자", "weekly@afternote.local", null, null),
                 receivers = emptyList(),
             )
-        val viewModel = WeeklyReportViewModel(ObserveWeeklyReportUseCase(repository, userRepository), MindRecordChangeTracker())
+        val errorReporter = FakeErrorReporter()
+        val viewModel =
+            WeeklyReportViewModel(
+                ObserveWeeklyReportUseCase(repository, userRepository),
+                MindRecordChangeTracker(),
+                errorReporter,
+            )
 
         composeRule.setContent {
             AfternoteTheme {
@@ -695,7 +704,17 @@ class TimeLetterMindRecordCompletionAndroidTest {
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
             viewModel.uiState.value is WeeklyReportUiState.Error
         }
-        composeRule.onNodeWithText("weekly offline").assertIsDisplayed()
+        // 종전에는 여기서 «weekly offline» — 즉 예외 원문 — 이 화면에 뜨는 것을 단언했다.
+        // 서버 오류 원문은 화면에 내지 않고 계측으로만 보낸다는 규약(#1339)과 정반대라
+        // 결함을 고정하고 있었다. 화면은 안내 문자열로, 원문은 계측으로 확인한다 (#1882).
+        val weeklyFailureCopy =
+            InstrumentationRegistry
+                .getInstrumentation()
+                .targetContext
+                .getString(MindRecordR.string.mindrecord_error_weekly_report_failed)
+        composeRule.onNodeWithText(weeklyFailureCopy).assertIsDisplayed()
+        composeRule.onNodeWithText("weekly offline").assertDoesNotExist()
+        assertEquals(listOf("weekly_report_load"), errorReporter.mindRecordStages)
         val firstMonday = LocalDate.parse(repository.requestedDates.single())
 
         repository.results.addLast(Result.success(emptyWeeklyReport()))
@@ -750,6 +769,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
             timeLetterRepository = repository,
             userRepository = userRepository,
             fileMetadataRepository = FakeFileMetadataRepository.strict(),
+            voiceRecorderRepository = FakeVoiceRecorderRepository,
             savedStateHandle = SavedStateHandle(mapOf("timeLetterId" to null)),
         )
     }

@@ -48,19 +48,17 @@ private val MIME_TO_EXTENSION =
         "image/jfif" to "jpeg",
         "video/quicktime" to "mov",
         "audio/mpeg" to "mp3",
+        "audio/mp4" to "m4a",
         "audio/x-m4a" to "m4a",
     )
 
 private fun resolveExtension(mime: String?): String {
     if (mime == null) return DEFAULT_EXTENSION
+    MIME_TO_EXTENSION[mime]
+        ?.takeIf { it in ALLOWED_EXTENSIONS }
+        ?.let { return it }
     val fromMime = MimeTypeMap.getSingleton().getExtensionFromMimeType(mime)
-    val resolved =
-        if (fromMime != null && fromMime in ALLOWED_EXTENSIONS) {
-            fromMime
-        } else {
-            MIME_TO_EXTENSION[mime] ?: fromMime
-        }
-    return resolved?.takeIf { it in ALLOWED_EXTENSIONS } ?: DEFAULT_EXTENSION
+    return fromMime?.takeIf { it in ALLOWED_EXTENSIONS } ?: DEFAULT_EXTENSION
 }
 
 internal class PhotoUploadRepositoryImpl

@@ -91,11 +91,13 @@ class DailyQuestionWriteViewModel
                         _uiState.update {
                             it.copy(
                                 isQuestionLoading = false,
+                                // 예외 문구를 화면에 싣지 않는다 — 직렬화 예외·서버 원문·영문
+                                // 스택 용어가 그대로 사용자에게 간다. 종전의 «값이 있으면 값,
+                                // 없으면 fallback» 변형은 `e.message` 가 있으면 아래 안내
+                                // 문자열을 아예 쓰지 않았다. 원문은 바로 위
+                                // `recordMindRecordFailure` 로 이미 남는다 (#1339 선례, #1882).
                                 questionLoadError =
-                                    UiText.DynamicOrResource(
-                                        value = e.message,
-                                        fallbackResId = R.string.mindrecord_error_daily_question_today_failed,
-                                    ),
+                                    UiText.Resource(R.string.mindrecord_error_daily_question_today_failed),
                             )
                         }
                     }

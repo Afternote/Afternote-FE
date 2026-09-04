@@ -1,6 +1,6 @@
 package com.afternote.feature.mindrecord.presentation.usecase
 
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.MyProfileRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.feature.mindrecord.domain.model.EmotionAnalysis
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
@@ -188,7 +188,7 @@ class ObserveWeeklyReportUseCaseTest {
             userRepository = userRepositoryNamed(name),
         )
 
-    private fun userRepositoryNamed(name: String): UserRepository = FakeUserRepository().apply { profile = profile.copy(name = name) }
+    private fun userRepositoryNamed(name: String): MyProfileRepository = FakeUserRepository().apply { profile = profile.copy(name = name) }
 
     /** 큐를 순서대로 돌려주고, 다 쓰면 마지막 응답을 계속 준다. */
     private class QueuedWeeklyReportRepository(

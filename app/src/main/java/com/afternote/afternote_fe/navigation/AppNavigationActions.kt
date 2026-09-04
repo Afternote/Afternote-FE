@@ -10,7 +10,7 @@ import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.navigation.AfternoteNavActions
 import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
-import com.afternote.feature.afternote.presentation.navigation.model.SELECTED_RECEIVER_ID_KEY
+import com.afternote.feature.afternote.presentation.navigation.model.SELECTED_RECEIVER_IDS_KEY
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteNavActions
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
 import com.afternote.feature.home.presentation.HomeTabActions
@@ -472,12 +472,13 @@ fun rememberAfternoteNavActions(
                 appState.navController.navigate(AfternoteRoute.SelectReceiverRoute)
             }
 
-            override fun popBackWithSelectedReceiver(receiverId: Long) {
+            override fun popBackWithSelectedReceivers(receiverIds: List<Long>) {
                 // 선택 화면이 현재 destination 이므로 previousBackStackEntry 가 에디터다.
-                // 에디터는 복귀 시 SELECTED_RECEIVER_ID_KEY 를 읽고 지운다 (AfternoteNavGraphEditor).
+                // 에디터는 복귀 시 SELECTED_RECEIVER_IDS_KEY 를 읽고 지운다 (AfternoteEditorRouteHelpers).
+                // Bundle 이 그대로 담을 수 있는 LongArray 로 넘긴다 (#1426).
                 appState.navController.previousBackStackEntry
                     ?.savedStateHandle
-                    ?.set(SELECTED_RECEIVER_ID_KEY, receiverId)
+                    ?.set(SELECTED_RECEIVER_IDS_KEY, receiverIds.toLongArray())
                 appState.navController.popBackStack()
             }
 

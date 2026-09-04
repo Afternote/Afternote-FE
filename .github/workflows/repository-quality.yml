@@ -225,6 +225,17 @@ jobs:
           "$GITHUB_WORKSPACE"
           "${{ steps.classify-documentation-changes.outputs.files_json }}"
 
+      # PR 이 src/main 에 새로 넣은 함수가 main 어디서도 참조되지 않으면 — 테스트만 부르거나 아무도
+      # 안 부르면 — 실패시킨다 (#1895). ProductionVisibilityKonsistTest 는 최상위 선언만 보므로
+      # 멤버 함수가 샜다(#1583 의 onReceiverRegisterStart). 면제는 PR 라벨
+      # test-only-production-exempt — issue-assignee-exempt 와 같은 자리다.
+      - name: Reject test-only production declarations
+        if: inputs.pull_request_number > 0
+        run: >-
+          node .github/scripts/validate-test-only-production-declarations.mjs
+          "${{ steps.changed-files.outputs.pull_request_json }}"
+          "${{ steps.classify-documentation-changes.outputs.files_json }}"
+
       - name: Install actionlint
         env:
           ACTIONLINT_VERSION: 1.7.12
