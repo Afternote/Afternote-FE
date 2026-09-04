@@ -51,11 +51,12 @@ internal data class EditableMemorialVideo private constructor(
         selection?.let { copy(selection = it.copy(thumbnailUrl = url)) } ?: this
 
     /**
-     * 이탈 가드 지문에 실을 조각. 서버 기준값도 남긴다 — 수정 진입 기준선과 비교해야 서버 원본 삭제가
-     * 미저장 변경으로 잡힌다(#1597). 영상에서 자동 파생되는 썸네일만 양쪽에서 걷어낸다.
+     * 두 층에서 썸네일만 뗀 사본 — 이탈 가드 지문에 실린다. 왜 썸네일을 빼는지는
+     * [MemorialVideoAttachment.withoutThumbnail], 왜 서버 기준값이 지문에 남아야 하는지는
+     * [AfternoteTypeForm.Memorial.enteredContentOrNull] 이 말한다.
      */
-    internal fun userEnteredPart(): EditableMemorialVideo =
-        copy(persisted = persisted?.userEnteredPart(), selection = selection?.userEnteredPart())
+    internal fun withoutThumbnail(): EditableMemorialVideo =
+        copy(persisted = persisted?.withoutThumbnail(), selection = selection?.withoutThumbnail())
 
     /** 출처를 URL 모양으로 재추론하지 않고 저장 경계의 명시적인 입력 타입으로 바꾼다. */
     internal fun toMediaInput(): MediaInput =

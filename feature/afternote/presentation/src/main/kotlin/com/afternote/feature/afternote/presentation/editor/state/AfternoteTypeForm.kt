@@ -95,11 +95,11 @@ sealed interface AfternoteTypeForm {
         fun displayPhotoUri(): String? = pickedPhotoUri ?: photoUrl
 
         /**
-         * 미디어는 수정 진입 기준선과 비교해야 서버 원본 삭제도 미저장 변경으로 잡힌다. 영상은
-         * [EditableMemorialVideo.userEnteredPart]가 자동 파생 썸네일만 걷어낸다.
+         * 미디어는 수정 진입 기준선과 비교해야 서버 원본 삭제도 미저장 변경으로 잡힌다(#1597). 영상은
+         * [EditableMemorialVideo.withoutThumbnail]이 자동 파생 썸네일만 걷어낸다.
          */
         override fun enteredContentOrNull(): String? =
-            copy(video = video.userEnteredPart())
+            copy(video = video.withoutThumbnail())
                 .takeUnless { it == PRISTINE }
                 ?.toString()
 

@@ -145,13 +145,13 @@ class EditableMemorialVideoTest {
     }
 
     @Test
-    fun `사용자 입력 조각은 자동 파생 썸네일만 걷어내고 서버 원본은 남긴다`() {
-        val userEntered =
-            persistedAndSelection().userEnteredPart()
+    fun `썸네일을 떼도 서버 원본과 교체분은 두 층 다 남는다`() {
+        val stripped =
+            persistedAndSelection().withoutThumbnail()
 
-        assertEquals(MemorialVideoAttachment(url = selection.url), userEntered.displayed)
+        assertEquals(MemorialVideoAttachment(url = selection.url), stripped.displayed)
         // 서버 원본도 지문에 남아야 수정 진입 기준선과 비교해 서버 원본 삭제가 변경으로 잡힌다(#1597).
-        assertEquals(MemorialVideoAttachment(url = persisted.url), userEntered.discardSelection().displayed)
+        assertEquals(MemorialVideoAttachment(url = persisted.url), stripped.discardSelection().displayed)
     }
 
     @Test
