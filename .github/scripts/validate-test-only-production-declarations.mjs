@@ -155,7 +155,9 @@ export function filesFromGitDiff(root, base, head = "HEAD") {
 }
 
 async function main(argv) {
-    const root = process.env.GITHUB_WORKSPACE || process.cwd();
+    // --local 은 개발자가 저장소 루트에서 부른다. Actions 러너에서 돌리는 테스트에도 GITHUB_WORKSPACE 가
+    // 실제 저장소로 잡혀 있으므로, 그 값은 PR 모드에서만 믿는다 (0904 CI 실측 — fixture 대신 레포를 읽었다).
+    const root = argv[0] === "--local" ? process.cwd() : process.env.GITHUB_WORKSPACE || process.cwd();
     let files;
     let pullRequest = { labels: [] };
     let revision = "";

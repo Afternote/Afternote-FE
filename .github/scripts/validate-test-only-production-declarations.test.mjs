@@ -136,7 +136,10 @@ test("--local 은 git diff 로 같은 files 배열을 만들고 리비전에 대
     const files = filesFromGitDiff(repo, "develop", "HEAD");
 
     assert.deepEqual(files.map((f) => f.filename), ["app/src/main/kotlin/a/Route.kt", "app/src/main/kotlin/a/Vm.kt"]);
-    const result = spawnSync("node", [scriptPath, "--local", "develop", "HEAD"], { cwd: repo, encoding: "utf8" });
+    // Actions 러너처럼 GITHUB_WORKSPACE 가 다른 저장소를 가리켜도 --local 은 cwd 를 본다.
+    const result = spawnSync("node", [scriptPath, "--local", "develop", "HEAD"], {
+        cwd: repo, encoding: "utf8", env: { ...process.env, GITHUB_WORKSPACE: "/nonexistent-workspace" },
+    });
     assert.equal(result.status, 1, result.stdout + result.stderr);
     assert.match(result.stdout, /::error file=app\/src\/main\/kotlin\/a\/Vm\.kt::.*onlyTestCalls — main 참조 0, 테스트만 부른다/);
     assert.match(result.stdout, /nobodyCalls — main 참조 0, 아무도 안 부른다/);
