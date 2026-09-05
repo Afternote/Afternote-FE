@@ -6,7 +6,9 @@ import com.afternote.core.datastore.LocalStoreRegistry
 import com.afternote.core.datastore.StoreScope
 import com.afternote.core.datastore.TokenDataSource
 import com.afternote.core.domain.error.CoreAuthFailure
+import com.afternote.core.domain.push.DevicePushTargetProvider
 import com.afternote.core.domain.repository.auth.AuthRepository
+import com.afternote.core.domain.repository.push.PushTargetRepository
 import com.afternote.core.model.Session
 import com.afternote.core.model.TokenBundle
 import com.afternote.core.network.dto.LoginRequestDto
@@ -32,6 +34,9 @@ internal class AuthRepositoryImpl
         private val expiryTracker: AccessTokenExpiryTracker,
         // 로그아웃·탈퇴 시 SESSION 스코프 로컬 저장소 일괄 정리 (#912).
         private val localStoreRegistry: LocalStoreRegistry,
+        // 로그아웃 때 이 기기의 푸시 대상 식별자를 서버에서 지운다 (#1493).
+        private val pushTargetRepository: PushTargetRepository,
+        private val devicePushTargetProvider: DevicePushTargetProvider,
     ) : AuthRepository {
         override suspend fun clearSession() =
             runCatchingCancellable {
@@ -129,6 +134,10 @@ internal class AuthRepositoryImpl
          */
         override suspend fun logout(): Result<Unit> =
             runCatchingCancellable {
+                // 푸시 대상 해제가 먼저다 — 이 요청도 액세스 토큰을 달고 나가므로 세션이 살아 있어야 한다.
+                // 실패해도 로그아웃은 진행한다(best-effort). 남은 등록은 서버가 다음 발송 실패로 정리한다.
+                unregisterDevicePushTarget()
+
                 val refreshToken = getRefreshToken().getOrNull()
                 if (refreshToken != null) {
                     runCatchingCancellable { authApiService.logout(LogoutRequestDto(refreshToken)) }
@@ -139,6 +148,23 @@ internal class AuthRepositoryImpl
                 localStoreRegistry.clearScope(StoreScope.SESSION)
                 expiryTracker.clear()
             }
+
+        /**
+         * 이 기기의 푸시 대상 식별자를 서버에서 지운다. 조회·해제 어느 쪽이 실패해도 삼킨다 —
+         * 로그아웃이 네트워크 상태에 인질로 잡히면 안 된다.
+         *
+         * 조회는 [DevicePushTargetProvider.existingTargetId] 이다. 등록 시퀀스를 강제하는
+         * `currentTargetId()` 을 쓰면 지우기 직전에 기기를 FCM 에 다시 등록하고, 그 회전 통보가
+         * 아직 살아 있는 세션(해제가 세션 정리보다 먼저다)을 타고 재등록으로 돌아와 이 `DELETE`
+         * 와 경합한다.
+         */
+        private suspend fun unregisterDevicePushTarget() {
+            runCatchingCancellable {
+                devicePushTargetProvider.existingTargetId()?.let { targetId ->
+                    pushTargetRepository.unregister(targetId)
+                }
+            }
+        }
 
         /**
          * 발급 응답의 [expiresInSeconds](잔여 수명 초)로 선제 reissue deadline 을 기록한다.
@@ -157,6 +183,7 @@ private const val CODE_USER_NOT_FOUND = 1201
 private const val CODE_PASSWORD_MISMATCH = 1202
 private const val CODE_SOCIAL_LOGIN_FAILED = 1208
 private const val CODE_UNSUPPORTED_SOCIAL_LOGIN = 1209
+private const val CODE_SOCIAL_SIGNUP_ACCOUNT = 1702
 
 /**
  * 로그인 실패를 도메인 예외로 옮긴다 — 가르는 신호는 서버 봉투의 `code` 뿐이고 `message` 는
@@ -177,6 +204,13 @@ private fun <T> Result<T>.mapLoginFailure(): Result<T> =
 
                 CODE_SOCIAL_LOGIN_FAILED, CODE_UNSUPPORTED_SOCIAL_LOGIN -> {
                     Result.failure(CoreAuthFailure.SocialLoginRejected(exception))
+                }
+
+                // 소셜로 가입해 로컬 비밀번호가 없는 계정에 이메일 로그인을 시도한 것(BE
+                // `AuthService.login` 이 `password == null` 을 이 코드로 거절한다). 자격 거절과 가르는
+                // 이유는 안내가 갈리기 때문이다 — 입력을 고쳐서 될 일이 아니라 로그인 수단이 틀렸다.
+                CODE_SOCIAL_SIGNUP_ACCOUNT -> {
+                    Result.failure(CoreAuthFailure.SocialSignUpAccount(exception))
                 }
 
                 else -> {

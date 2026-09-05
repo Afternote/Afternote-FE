@@ -23,14 +23,13 @@ import org.junit.Test
  * 항상 `false` 가 됐고, 그래서 모든 일기가 캘린더 점과 기록일수에서 빠졌다 — 이 파일이
  * 그 회귀를 막는다.
  *
- * Json 설정은 `NetworkModule.provideJson` 과 동일 (ignoreUnknownKeys + coerceInputValues).
+ * Json 설정은 `NetworkModule.provideJson` 과 동일 (ignoreUnknownKeys).
  */
 @OptIn(ExperimentalSerializationApi::class)
 class WeeklyReportContractTest {
     private val json =
         Json {
             ignoreUnknownKeys = true
-            coerceInputValues = true
         }
 
     // 카운트·요약·목록 키는 모두 계약이라 기본값이 없다 (#789) — 주(week) 형태만 바꿔가며

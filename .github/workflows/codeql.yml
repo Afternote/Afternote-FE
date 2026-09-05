@@ -45,6 +45,16 @@ jobs:
         with:
           persist-credentials: false
 
+      # 한도가 바닥인 채로 들어가면 이 분류 job 이 코드와 무관하게 빨개지고, fail-closed 라
+      # 무거운 분석 세 개가 전부 따라 돈다. 남은 quota 를 요약에 남기고, 부족하면 리셋까지
+      # 기다린다 (#1465). quota 스텝은 게이트가 아니라 관측·대기라 PR 사본으로 돌려도
+      # 통과시킬 수 있는 판정이 없다 — 이 job 은 이미 PR 사본의 분류 스크립트를 실행한다.
+      - name: Ensure GitHub API quota
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # 이 job 의 timeout 이 3분이라 기다릴 수 있는 창이 좁다.
+        run: node .github/scripts/ensure-api-quota.mjs ensure --max-wait 60
+
       - name: Resolve language impact
         id: path-scope
         env:
@@ -103,6 +113,13 @@ jobs:
             node .github/scripts/resolve-pr-impact.mjs "$files_json" \
             | grep '^codeql_' >> "$GITHUB_OUTPUT"
 
+      # 실패가 «분류가 사실을 확인하고 거절함» 인지 «한도 소진» 인지 가른다 (#1465).
+      - name: Classify a failed gate as rate limit exhaustion
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node .github/scripts/ensure-api-quota.mjs classify
+
   analyze-actions:
     name: Analyze (actions)
     needs: classify-changes
@@ -119,14 +136,14 @@ jobs:
           persist-credentials: false
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
         with:
           languages: actions
           build-mode: none
 
       - name: Analyze and upload CodeQL results
         id: analyze
-        uses: github/codeql-action/analyze@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
         with:
           category: /language:actions
 
@@ -156,14 +173,14 @@ jobs:
           persist-credentials: false
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
         with:
           languages: javascript-typescript
           build-mode: none
 
       - name: Analyze and upload CodeQL results
         id: analyze
-        uses: github/codeql-action/analyze@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
         with:
           category: /language:javascript-typescript
 
@@ -195,7 +212,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up JDK 21
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
         with:
           distribution: temurin
           java-version: '21'
@@ -213,14 +230,15 @@ jobs:
         uses: ./.github/actions/setup-ci-config
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
         with:
           languages: java-kotlin
           build-mode: manual
 
       # Java/Kotlin extraction observes compiler invocations, so a clean manual build is the
-      # contract. Pure JVM modules use classes; Android domains retain explicit debug compilation
-      # so a partial migration cannot silently remove them from extraction coverage.
+      # contract. Domain 모듈은 전부 순수 JVM 이라 classes 로 컴파일한다 (#1151). android 규약을
+      # 타는 domain 이 다시 생기면 그 모듈은 compileDebugKotlin 이어야 하며, 아래 정책 테스트가
+      # 빌드 스크립트를 읽어 이 목록과 대조하므로 한쪽만 바뀌면 그 자리에서 깨진다.
       # FROM-CACHE 로 넘어가면 컴파일러가 실행되지 않아 추출기가 소스를 담지 못한다.
       - name: Compile Android and pure JVM Kotlin sources
         run: >-
@@ -228,18 +246,17 @@ jobs:
           :core:model:classes
           :core:domain:classes
           :feature:afternote:domain:classes
-          :feature:mindrecord:domain:compileDebugKotlin
-          :feature:onboarding:domain:classes
-          :feature:receiver:domain:compileDebugKotlin
+          :feature:mindrecord:domain:classes
+          :feature:receiver:domain:classes
           :feature:setting:domain:classes
-          :feature:timeletter:domain:compileDebugKotlin
+          :feature:timeletter:domain:classes
           --no-configuration-cache
           --stacktrace
           --console=plain
 
       - name: Analyze and upload CodeQL results
         id: analyze
-        uses: github/codeql-action/analyze@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
         with:
           category: /language:java-kotlin
 

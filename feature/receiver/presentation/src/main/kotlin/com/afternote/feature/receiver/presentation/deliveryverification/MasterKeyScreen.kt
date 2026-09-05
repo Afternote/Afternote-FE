@@ -29,7 +29,7 @@ import com.afternote.feature.receiver.presentation.deliveryverification.componen
 /**
  * 마스터 키 입력 화면(design 5) — 진행 인디케이터 2/3 + 단일 입력 + "다음" CTA (이슈 #215).
  *
- * `verify(authCode)` 성공 시 SenderRegistry 에 authCode·신원 결합 + 글로벌 헤더 저장 → [onVerified] 로 서류 업로드 단계 진입.
+ * `verify(masterKey)` 성공 시 SenderRegistry 에 masterKey·신원 결합 + 글로벌 헤더 저장 → [onVerified] 로 서류 업로드 단계 진입.
  *
  * 메모리 정책상 ViewModel 은 TextFieldState 미보유. UI 가 `rememberTextFieldState` 로 인스턴스를 들고 있다가 submit 시점에만 값을 전달.
  */
@@ -42,7 +42,7 @@ fun MasterKeyScreen(
     viewModel: MasterKeyViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val authCodeState = rememberTextFieldState()
+    val masterKeyState = rememberTextFieldState()
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(uiState.isVerified) {
@@ -53,7 +53,7 @@ fun MasterKeyScreen(
     }
 
     val errorMessage =
-        uiState.error?.asString()
+        uiState.errorMessage?.asString()
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
             snackbarHostState.showSnackbar(errorMessage)
@@ -62,18 +62,18 @@ fun MasterKeyScreen(
     }
 
     MasterKeyScreenContent(
-        authCodeState = authCodeState,
+        masterKeyState = masterKeyState,
         isSubmitting = uiState.isSubmitting,
         snackbarHostState = snackbarHostState,
         onBackClick = onBackClick,
-        onSubmitClick = { viewModel.submit(senderId, authCodeState.text.toString()) },
+        onSubmitClick = { viewModel.submit(senderId, masterKeyState.text.toString()) },
         modifier = modifier,
     )
 }
 
 @Composable
 internal fun MasterKeyScreenContent(
-    authCodeState: TextFieldState,
+    masterKeyState: TextFieldState,
     isSubmitting: Boolean,
     snackbarHostState: SnackbarHostState,
     onBackClick: () -> Unit,
@@ -81,7 +81,7 @@ internal fun MasterKeyScreenContent(
     modifier: Modifier = Modifier,
 ) {
     val isInputFilled =
-        authCodeState.text
+        masterKeyState.text
             .toString()
             .trim()
             .isNotEmpty()
@@ -115,7 +115,7 @@ internal fun MasterKeyScreenContent(
         Spacer(modifier = Modifier.height(16.dp))
 
         AfternoteTextField(
-            state = authCodeState,
+            state = masterKeyState,
             placeholder = stringResource(R.string.receiver_verify_master_key_placeholder),
             modifier = Modifier.fillMaxWidth().imePadding(),
         )

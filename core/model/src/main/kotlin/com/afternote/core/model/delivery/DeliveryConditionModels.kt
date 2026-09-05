@@ -4,8 +4,8 @@ package com.afternote.core.model.delivery
  * 전달 대상 콘텐츠 유형. 세 도메인(타임레터·애프터노트·마인드레코드)의 콘텐츠를 아우른다.
  *
  * 이 패키지(수신자별 전달조건 도메인, 이슈 #427)는 서버가 전달조건을 유저단위 → (수신자 × 콘텐츠) 단위로
- * 재설계하며 신설된 축이다. 기존 유저단위 [com.afternote.core.model.user.DeliveryConditionType]
- * (NONE/INACTIVITY/SPECIFIC_DATE) 은 값·의미가 달라 재사용 불가(이슈 #428 에서 제거 예정)해 별도 패키지에 둔다.
+ * 재설계하며 신설된 축이다. 기존 유저단위 `DeliveryConditionType`
+ * (NONE/INACTIVITY/SPECIFIC_DATE) 은 값·의미가 달라 재사용 불가라 별도 패키지에 두었고, 그 구 타입은 이슈 #428 에서 제거됐다.
  */
 enum class DeliveryContentType {
     TIME_LETTER,
@@ -39,7 +39,7 @@ enum class ConditionState {
     /**
      * INACTIVITY 안전장치 — 미사용이 감지됐지만 곧장 전달하지 않고 "정말 부재/사망이 맞는지"
      * 확인하는 유예 대기 상태. 이 기간(문서상 7일, [DeliveryConditionItem.gracePeriodStartedAt] 부터 카운트)
-     * 에 사용자가 앱을 열면(활동 ping) 본인 생존이 확인돼 조건이 취소·리셋되고, 무반응이면 부재 확정 →
+     * 에 사용자가 앱을 열면(로그인·토큰 재발급을 서버가 활동으로 집계) 본인 생존이 확인돼 조건이 취소·리셋되고, 무반응이면 부재 확정 →
      * FULFILLED. 잠깐 앱을 안 썼을 뿐인 산 사람의 유산이 열리는 오발동을 막는 완충 단계.
      */
     PENDING_CONFIRMATION,

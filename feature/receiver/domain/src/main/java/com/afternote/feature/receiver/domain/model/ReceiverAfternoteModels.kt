@@ -11,7 +11,7 @@ data class AfterNotesListResult(
 data class AfterNoteListItem(
     val id: Long,
     val serviceName: String,
-    val type: AfternoteType?,
+    val type: AfternoteType,
     val lastUpdatedAt: String?,
 )
 
@@ -22,7 +22,7 @@ data class ReceivedExportBundle(
 data class ReceivedAfternoteDetail(
     val type: AfternoteType,
     val serviceName: String,
-    val senderName: String? = null,
+    val senderName: String,
     val createdAt: String? = null,
     val processingMethods: List<String> = emptyList(),
     val leaveMessageBlocks: List<LeaveMessageBlock> = emptyList(),
