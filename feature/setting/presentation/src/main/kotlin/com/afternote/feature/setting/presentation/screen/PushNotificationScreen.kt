@@ -24,8 +24,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.core.ui.popup.AfternoteErrorPopup
 import com.afternote.core.ui.popup.NetworkErrorPopup
+import com.afternote.core.ui.popup.ServerErrorPopup
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
@@ -70,12 +70,8 @@ fun PushNotificationScreen(
         }
 
         PushNotificationSaveFailure.SERVER -> {
-            AfternoteErrorPopup(
-                iconRes = R.drawable.ic_save_failure,
-                title = stringResource(R.string.push_notification_server_error_title),
-                description = stringResource(R.string.push_notification_server_error_description),
-                buttonText = stringResource(R.string.push_notification_save_failure_retry),
-                onButtonClick = viewModel::onSaveFailureRetry,
+            ServerErrorPopup(
+                onRetry = viewModel::onSaveFailureRetry,
                 onDismiss = viewModel::onSaveFailureDismiss,
             )
         }

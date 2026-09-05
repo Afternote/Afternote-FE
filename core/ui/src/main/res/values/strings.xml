@@ -33,6 +33,9 @@
     <string name="core_ui_network_error_title">네트워크 연결 오류</string>
     <string name="core_ui_network_error_description">인터넷 연결을 확인한 후 다시 시도해 주세요.</string>
     <string name="core_ui_network_error_retry">다시 시도하기</string>
+    <string name="core_ui_server_error_title">서버 오류</string>
+    <string name="core_ui_server_error_description">서버에 문제가 발생했습니다.\n잠시 후 다시 시도해 주세요.</string>
+    <string name="core_ui_server_error_retry">다시 시도하기</string>
     <!-- 홈 상단바 설정 액션 접근성 이름 (#613). 프로필 아이콘은 목적지가 없는 장식이라 이름을 두지 않는다. -->
     <string name="core_ui_home_top_bar_setting">설정</string>
 </resources>

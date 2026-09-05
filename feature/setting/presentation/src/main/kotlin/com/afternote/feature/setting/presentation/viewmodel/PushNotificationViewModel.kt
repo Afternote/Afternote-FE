@@ -33,6 +33,10 @@ class PushNotificationViewModel internal constructor(
     private val _uiState = MutableStateFlow(PushNotificationUiState())
     val uiState: StateFlow<PushNotificationUiState> = _uiState.asStateFlow()
 
+    // 슬롯 하나 — 서로 다른 토글이 연달아 실패해도 재시도 대상은 마지막 실패만 남긴다.
+    // 이미 실패한 토글은 위에서 이전 값으로 롤백되어 화면에 "안 켜짐"으로 보이므로,
+    // 조용히 사라지는 것은 재시도 "대상"뿐이다. 여러 실패를 동시에 재시도하는 요구가
+    // 없어 의도적으로 단순화했다 (#558 리뷰 합의).
     private var failedUpdate: PushSettingUpdate? = null
 
     init {

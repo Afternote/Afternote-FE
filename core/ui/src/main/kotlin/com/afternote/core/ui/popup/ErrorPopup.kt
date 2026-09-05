@@ -76,6 +76,27 @@ fun NetworkErrorPopup(
     )
 }
 
+/**
+ * 서버 오류 안내(시안 `3628:23827`). 문구는 이 컴포넌트가 갖고 재시도 동작만 받는다 —
+ * 서버 실패 안내는 화면과 무관하게 동일해서다.
+ */
+@Composable
+fun ServerErrorPopup(
+    onRetry: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AfternoteErrorPopup(
+        iconRes = R.drawable.core_ui_ic_server_error,
+        title = stringResource(R.string.core_ui_server_error_title),
+        description = stringResource(R.string.core_ui_server_error_description),
+        buttonText = stringResource(R.string.core_ui_server_error_retry),
+        onButtonClick = onRetry,
+        onDismiss = onDismiss,
+        modifier = modifier,
+    )
+}
+
 /** Dialog 래퍼 없이 카드 본체만 렌더링합니다. 프리뷰 및 테스트 전용. */
 @Composable
 internal fun AfternoteErrorPopupContent(
