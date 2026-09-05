@@ -22,7 +22,7 @@
     <!-- 고객지원 -->
     <string name="settings_support_faq">FAQ</string>
     <string name="faq_default_question">비밀번호를 잊어버렸어요.</string>
-    <string name="faq_default_answer">로그인 화면의 '비밀번호 찾기'를 통해 재설정할 수 있습니다.</string>
+    <string name="faq_default_answer">로그인 화면의 \'비밀번호 찾기\'를 통해 재설정할 수 있습니다.</string>
     <string name="settings_support_inquiry">고객센터</string>
     <string name="settings_support_notice">공지사항</string>
     <string name="settings_notice_empty">등록된 공지사항이 없어요.</string>

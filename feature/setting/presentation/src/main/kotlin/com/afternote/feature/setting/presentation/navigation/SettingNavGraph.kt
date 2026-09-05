@@ -14,6 +14,7 @@ import com.afternote.feature.setting.presentation.component.PinSetupStep
 import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
 import com.afternote.feature.setting.presentation.screen.ConnectedAccountsScreen
 import com.afternote.feature.setting.presentation.screen.DeliveryConditionScreen
+import com.afternote.feature.setting.presentation.screen.FaqScreen
 import com.afternote.feature.setting.presentation.screen.NoticeListScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyListScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyMakingScreen
@@ -51,7 +52,7 @@ fun NavGraphBuilder.settingNavGraph(
                 },
                 onPasskeyClick = actions::onNavigateToPasskey,
                 onAppLockClick = actions::onNavigateToAppLock,
-                onFaqClick = {},
+                onFaqClick = actions::onNavigateToFaq,
                 onInquiryClick = {},
                 onNoticeClick = actions::onNavigateToNotice,
                 onTermsClick = {},
@@ -185,6 +186,12 @@ fun NavGraphBuilder.settingNavGraph(
             NoticeListScreen(
                 notices = emptyList(),
                 onBackClick = actions::onNoticeBack,
+            )
+        }
+
+        composable<SettingRoute.FaqRoute> {
+            FaqScreen(
+                onBackClick = actions::onFaqBack,
             )
         }
     }

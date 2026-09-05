@@ -53,4 +53,7 @@ sealed interface SettingRoute {
 
     @Serializable
     data object NoticeRoute : SettingRoute
+
+    @Serializable
+    data object FaqRoute : SettingRoute
 }
