@@ -103,13 +103,13 @@ test("keeps pull request validation secretless and release credentials isolated"
         ),
     );
 
+    const pullRequestTargetWorkflows = [];
     for (const [name, workflow] of workflows) {
-        assert.doesNotMatch(
-            workflow,
-            /^\s*pull_request_target\s*:/m,
-            `${name} must not use pull_request_target`,
-        );
-        if (!/^\s*pull_request\s*:/m.test(workflow)) {
+        const usesPullRequestTarget = /^\s*pull_request_target\s*:/m.test(workflow);
+        if (usesPullRequestTarget) {
+            pullRequestTargetWorkflows.push(name);
+        }
+        if (!/^\s*pull_request\s*:/m.test(workflow) && !usesPullRequestTarget) {
             continue;
         }
 
@@ -123,6 +123,22 @@ test("keeps pull request validation secretless and release credentials isolated"
             [],
             `${name} must not depend on repository or environment secrets`,
         );
+    }
+
+    // pull_request_target은 default branch 정의에 쓰기 권한을 줄 수 있어 원칙적으로 금지한다.
+    // 예외는 PR code/artifact/cache를 실행하지 않고 default branch 정책과 API JSON만 읽는 좁은
+    // bridge 둘뿐이다 — 닫힌 스택 멤버 알림과 merge queue 방출 처리(#1892). 그 불변식을 둘 다에
+    // 함께 고정한다.
+    const narrowBridges = ["merge-queue-dequeue.yml", "stack-integrity-notify.yml"];
+    assert.deepEqual([...pullRequestTargetWorkflows].sort(), narrowBridges);
+    for (const bridgeName of narrowBridges) {
+        const bridge = workflows.get(bridgeName);
+        assert.match(bridge, /^permissions: \{\}$/m, bridgeName);
+        assert.match(bridge, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/, bridgeName);
+        assert.match(bridge, /persist-credentials: false/, bridgeName);
+        assert.doesNotMatch(bridge, /github\.event\.pull_request\.head\.(sha|ref)/, bridgeName);
+        assert.doesNotMatch(bridge, /actions\/(download-artifact|cache)@/, bridgeName);
+        assert.doesNotMatch(bridge, /\bsecrets(?:\.|\[)/, bridgeName);
     }
 
     const actionReference = "uses: ./.github/actions/setup-ci-config";

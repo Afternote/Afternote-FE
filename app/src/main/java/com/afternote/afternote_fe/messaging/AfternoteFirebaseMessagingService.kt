@@ -61,18 +61,18 @@ class AfternoteFirebaseMessagingService : FirebaseMessagingService() {
                 fallbackTitle = getString(R.string.fcm_notification_fallback_title),
             ) ?: return
 
-        val occurrenceToken = FcmNotificationIdentity.occurrenceToken(message.messageId)
+        val occurrenceId = FcmNotificationIdentity.occurrenceId(message.messageId)
 
         showNotification(
             content = content,
-            occurrenceToken = occurrenceToken,
+            occurrenceId = occurrenceId,
         )
     }
 
     @SuppressLint("MissingPermission")
     private fun showNotification(
         content: FcmNotificationContent,
-        occurrenceToken: String,
+        occurrenceId: String,
     ) {
         if (
             ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
@@ -99,13 +99,13 @@ class AfternoteFirebaseMessagingService : FirebaseMessagingService() {
                         .create(
                             context = this@AfternoteFirebaseMessagingService,
                             source = NOTIFICATION_SOURCE,
-                            occurrenceToken = occurrenceToken,
+                            occurrenceId = occurrenceId,
                         )?.let(::setContentIntent)
                 }.build()
 
         NotificationManagerCompat
             .from(this)
-            .notify(FcmNotificationIdentity.notificationTag(occurrenceToken), NOTIFICATION_ID, notification)
+            .notify(FcmNotificationIdentity.notificationTag(occurrenceId), NOTIFICATION_ID, notification)
     }
 
     private companion object {
@@ -121,13 +121,13 @@ internal data class FcmNotificationContent(
 )
 
 internal object FcmNotificationIdentity {
-    fun occurrenceToken(messageId: String?): String =
+    fun occurrenceId(messageId: String?): String =
         messageId
             ?.takeIf(String::isNotBlank)
             ?: UUID.randomUUID().toString()
 
     /** NotificationManager의 `(tag, id)` identity를 프로세스 재시작 뒤에도 occurrence별로 유지한다. */
-    fun notificationTag(occurrenceToken: String): String = "fcm:$occurrenceToken"
+    fun notificationTag(occurrenceId: String): String = "fcm:$occurrenceId"
 }
 
 internal object FcmNotificationContentResolver {
