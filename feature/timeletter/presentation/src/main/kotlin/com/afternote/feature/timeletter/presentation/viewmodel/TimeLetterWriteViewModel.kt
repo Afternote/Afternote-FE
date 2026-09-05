@@ -144,7 +144,7 @@ class TimeLetterWriteViewModel
             textContents: Map<Long, String>,
         ) {
             val state = _uiState.value
-            if (state.isSaving || state.isCheckingRegisterLimit || state.editingLoadError != null) return
+            if (state.isSaving || state.isCheckingRegisterLimit || state.editingLoadError) return
 
             if (state.recipientIds.isEmpty()) {
                 _uiState.update { it.copy(error = TimeLetterWriteError.RECIPIENT_REQUIRED) }
@@ -183,7 +183,7 @@ class TimeLetterWriteViewModel
         fun retryEditingLetter() {
             val timeLetterId = _uiState.value.editingTimeLetterId ?: return
             if (_uiState.value.isLoadingEditingLetter) return
-            _uiState.update { it.copy(isLoadingEditingLetter = true, editingLoadError = null) }
+            _uiState.update { it.copy(isLoadingEditingLetter = true, editingLoadError = false) }
             viewModelScope.launch { loadEditingTimeLetter(timeLetterId) }
         }
 
@@ -288,7 +288,7 @@ class TimeLetterWriteViewModel
             status: TimeLetterStatus,
         ) {
             val state = _uiState.value
-            if (state.isSaving || state.editingLoadError != null) return
+            if (state.isSaving || state.editingLoadError) return
             if (state.recipientIds.isEmpty()) {
                 _uiState.update { it.copy(error = TimeLetterWriteError.RECIPIENT_REQUIRED) }
                 return
@@ -371,7 +371,7 @@ class TimeLetterWriteViewModel
                         it.copy(
                             editingTimeLetterId = letter.id,
                             isLoadingEditingLetter = false,
-                            editingLoadError = null,
+                            editingLoadError = false,
                             draftTitle = letter.title.orEmpty(),
                             draftTextContents =
                                 letter.blocks
@@ -392,7 +392,7 @@ class TimeLetterWriteViewModel
                     _uiState.update {
                         it.copy(
                             isLoadingEditingLetter = false,
-                            editingLoadError = "타임레터를 불러올 수 없습니다.",
+                            editingLoadError = true,
                         )
                     }
                 }

@@ -73,7 +73,7 @@ class DraftLetterViewModelTest {
             val state = viewModel.uiState.value as DraftLetterUiState.Success
             assertEquals(listOf(1L), state.drafts.map { it.id })
             assertEquals(setOf(1L), state.selectedIds)
-            assertEquals("임시저장 레터를 삭제할 수 없습니다.", state.errorMessage)
+            assertEquals(true, state.deleteFailed)
             assertEquals(false, state.isDeleting)
         }
 }

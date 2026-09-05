@@ -10,7 +10,7 @@ sealed interface DraftLetterUiState {
         val isEditMode: Boolean = false,
         val selectedIds: Set<Long> = emptySet(),
         val isDeleting: Boolean = false,
-        val errorMessage: String? = null,
+        val deleteFailed: Boolean = false,
     ) : DraftLetterUiState
 
     data class Error(

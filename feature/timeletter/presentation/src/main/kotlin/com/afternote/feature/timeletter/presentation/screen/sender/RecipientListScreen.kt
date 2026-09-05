@@ -61,13 +61,13 @@ fun RecipientListScreen(
             RecipientListLoadingContent(onBackClick, modifier)
         }
 
-        is RecipientListUiState.Error -> {
+        RecipientListUiState.Error -> {
             Scaffold(
                 modifier = modifier,
                 topBar = { DetailTopBar(title = "수신자 목록", onBackClick = onBackClick) },
             ) { innerPadding ->
                 TimeLetterLoadErrorContent(
-                    message = state.message,
+                    message = stringResource(R.string.timeletter_recipient_list_load_failed),
                     onRetry = viewModel::retry,
                     modifier = Modifier.padding(innerPadding),
                 )

@@ -26,6 +26,7 @@ fun TimeLetterTextButton(
     modifier: Modifier = Modifier,
     isActive: Boolean = false,
     isLoading: Boolean = false,
+    enabled: Boolean = true,
 ) {
     val shape = RoundedCornerShape(6.dp)
     val backgroundColor =
@@ -41,7 +42,7 @@ fun TimeLetterTextButton(
                 .height(36.dp)
                 .clip(shape)
                 .background(color = backgroundColor, shape = shape)
-                .clickable(enabled = isActive && !isLoading, onClick = onClick)
+                .clickable(enabled = enabled && !isLoading, onClick = onClick)
                 .padding(start = 18.dp, top = 8.dp, end = 18.dp, bottom = 8.dp),
     ) {
         if (isLoading) {

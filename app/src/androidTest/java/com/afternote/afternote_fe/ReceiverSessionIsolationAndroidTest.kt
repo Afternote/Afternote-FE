@@ -31,6 +31,7 @@ import com.afternote.core.network.model.BaseResponse
 import com.afternote.core.network.service.UserApiService
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.timeletter.presentation.screen.sender.RecipientListScreen
+import com.afternote.feature.timeletter.presentation.viewmodel.RecipientListUiState
 import com.afternote.feature.timeletter.presentation.viewmodel.RecipientListViewModel
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -89,13 +90,16 @@ class ReceiverSessionIsolationAndroidTest {
         }
 
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            userApi.receiverCalls == 1 && viewModel.recipients.value.any { it.name == PREVIOUS_ACCOUNT_RECEIVER }
+            userApi.receiverCalls == 1 &&
+                (viewModel.uiState.value as? RecipientListUiState.Success)
+                    ?.recipients
+                    ?.any { it.name == PREVIOUS_ACCOUNT_RECEIVER } == true
         }
         composeRule.onNodeWithText(PREVIOUS_ACCOUNT_RECEIVER).assertIsDisplayed()
 
         composeRule.runOnIdle { authRepository.loggedIn = false }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.recipients.value.isEmpty()
+            (viewModel.uiState.value as? RecipientListUiState.Success)?.recipients?.isEmpty() == true
         }
         assertEquals(1, userApi.receiverCalls)
         composeRule.onNodeWithText(PREVIOUS_ACCOUNT_RECEIVER).assertDoesNotExist()

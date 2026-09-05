@@ -6,7 +6,7 @@ import androidx.compose.ui.text.style.TextAlign
 data class TimeLetterWriteUiState(
     val editingTimeLetterId: Long? = null,
     val isLoadingEditingLetter: Boolean = false,
-    val editingLoadError: String? = null,
+    val editingLoadError: Boolean = false,
     val draftTitle: String? = null,
     val draftTextContents: Map<Long, String> = emptyMap(),
     val recipientIds: List<Long> = emptyList(),

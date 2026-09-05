@@ -15,12 +15,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
+import com.afternote.feature.timeletter.presentation.R
 import com.afternote.feature.timeletter.presentation.component.DraftLetterItem
 import com.afternote.feature.timeletter.presentation.component.TimeLetterLoadErrorContent
 import com.afternote.feature.timeletter.presentation.component.TimeLetterTextButton
@@ -35,12 +37,13 @@ fun DraftLetterScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val errorMessage = (uiState as? DraftLetterUiState.Success)?.errorMessage
+    val deleteFailed = (uiState as? DraftLetterUiState.Success)?.deleteFailed ?: false
+    val deleteFailedMessage = stringResource(R.string.timeletter_draft_delete_failed)
 
-    LaunchedEffect(errorMessage) {
-        errorMessage ?: return@LaunchedEffect
-        snackbarHostState.showSnackbar(errorMessage)
-        viewModel.consumeErrorMessage()
+    LaunchedEffect(deleteFailed) {
+        if (!deleteFailed) return@LaunchedEffect
+        snackbarHostState.showSnackbar(deleteFailedMessage)
+        viewModel.consumeDeleteFailed()
     }
 
     DraftLetterContent(
@@ -90,8 +93,9 @@ private fun DraftLetterContent(
                                 selectedIds.isEmpty() -> "취소"
                                 else -> "삭제"
                             },
-                        isActive = !isDeleting,
+                        isActive = isEditMode && selectedIds.isNotEmpty(),
                         isLoading = isDeleting,
+                        enabled = !isDeleting,
                         onClick = onEditCompleteClick,
                     )
                 },

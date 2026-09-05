@@ -181,14 +181,14 @@ fun TimeLetterWriteScreen(
         return
     }
 
-    uiState.editingLoadError?.let { message ->
+    if (uiState.editingLoadError) {
         Scaffold(
             modifier = modifier,
             topBar = { DetailTopBar(title = "", onBackClick = onBackClick) },
             containerColor = AfternoteDesign.colors.white,
         ) { innerPadding ->
             TimeLetterLoadErrorContent(
-                message = message,
+                message = stringResource(R.string.timeletter_write_load_failed),
                 onRetry = onRetryEditingLetter,
                 modifier = Modifier.padding(innerPadding),
             )
@@ -381,6 +381,7 @@ fun TimeLetterWriteScreen(
                         },
                         isActive = !isSubmitting && uiState.sendAt != null,
                         isLoading = isSubmitting,
+                        enabled = !isSubmitting,
                     )
                 },
             )
@@ -396,7 +397,7 @@ fun TimeLetterWriteScreen(
                 onAlignRightClick = onAlignRightClick,
                 onDraftClick = { onDraftClick(titleState.text.toString(), collectTextContents()) },
                 onDraftCountClick = onNavigateToDraft,
-                isEnabled = !isSubmitting,
+                enabled = !isSubmitting,
             )
         },
         containerColor = AfternoteDesign.colors.white,

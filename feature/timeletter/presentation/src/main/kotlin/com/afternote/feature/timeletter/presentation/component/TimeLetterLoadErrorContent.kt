@@ -8,7 +8,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.feature.timeletter.presentation.R
 
 @Composable
 fun TimeLetterLoadErrorContent(
@@ -28,7 +30,7 @@ fun TimeLetterLoadErrorContent(
         )
         TextButton(onClick = onRetry) {
             Text(
-                text = "다시 시도",
+                text = stringResource(R.string.timeletter_retry),
                 style = AfternoteDesign.typography.bodyLargeB,
                 color = AfternoteDesign.colors.gray9,
             )

@@ -51,7 +51,7 @@ class DraftLetterViewModel
         fun deleteSelected() {
             val current = _uiState.value as? DraftLetterUiState.Success ?: return
             if (current.selectedIds.isEmpty() || current.isDeleting) return
-            _uiState.value = current.copy(isDeleting = true, errorMessage = null)
+            _uiState.value = current.copy(isDeleting = true, deleteFailed = false)
             viewModelScope.launch {
                 runCatching {
                     timeLetterRepository.deleteTimeLetters(current.selectedIds.toList())
@@ -64,7 +64,7 @@ class DraftLetterViewModel
                             isDeleting = false,
                         )
                 }.onFailure {
-                    _uiState.value = current.copy(isDeleting = false, errorMessage = "임시저장 레터를 삭제할 수 없습니다.")
+                    _uiState.value = current.copy(isDeleting = false, deleteFailed = true)
                 }
             }
         }
@@ -72,20 +72,20 @@ class DraftLetterViewModel
         fun deleteAll() {
             val current = _uiState.value as? DraftLetterUiState.Success ?: return
             if (current.isDeleting) return
-            _uiState.value = current.copy(isDeleting = true, errorMessage = null)
+            _uiState.value = current.copy(isDeleting = true, deleteFailed = false)
             viewModelScope.launch {
                 runCatching {
                     timeLetterRepository.deleteAllTemporary()
                 }.onSuccess {
                     _uiState.value = DraftLetterUiState.Success(drafts = emptyList())
                 }.onFailure {
-                    _uiState.value = current.copy(isDeleting = false, errorMessage = "임시저장 레터를 삭제할 수 없습니다.")
+                    _uiState.value = current.copy(isDeleting = false, deleteFailed = true)
                 }
             }
         }
 
-        fun consumeErrorMessage() {
+        fun consumeDeleteFailed() {
             val current = _uiState.value as? DraftLetterUiState.Success ?: return
-            _uiState.value = current.copy(errorMessage = null)
+            _uiState.value = current.copy(deleteFailed = false)
         }
     }
