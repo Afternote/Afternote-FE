@@ -2,10 +2,6 @@ package com.afternote.feature.afternote.presentation.editor.state
 
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertSame
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** 서버 원본과 이번 편집의 교체분을 함께 보존하는 영상 편집 값 객체의 상태 계약. */
@@ -87,16 +83,6 @@ class EditableMemorialVideoTest {
     }
 
     @Test
-    fun `새 선택을 제거하면 보존한 서버 원본으로 돌아간다`() {
-        val restored =
-            persistedAndSelection().discardSelection()
-
-        assertEquals(persisted, restored.displayed)
-        assertTrue(restored.canRemove)
-        assertEquals(MediaInput.Remote(persisted.url), restored.toMediaInput())
-    }
-
-    @Test
     fun `저장 출처는 URL 모양이 아니라 객체가 기억한 편집 상태로 결정한다`() {
         val remoteShapedSelection = "https://picker.test/new-video.mp4"
         val localShapedPersisted = "content://migrated/server-video"
@@ -123,7 +109,6 @@ class EditableMemorialVideoTest {
 
         assertEquals(MemorialVideoAttachment(url = "content://videos/another"), selected.displayed)
         assertEquals(MediaInput.Local("content://videos/another"), selected.toMediaInput())
-        assertEquals(persisted, selected.discardSelection().displayed)
     }
 
     @Test
@@ -151,22 +136,9 @@ class EditableMemorialVideoTest {
 
         assertEquals(MemorialVideoAttachment(url = selection.url), stripped.displayed)
         // 서버 원본도 지문에 남아야 수정 진입 기준선과 비교해 서버 원본 삭제가 변경으로 잡힌다(#1597).
-        assertEquals(MemorialVideoAttachment(url = persisted.url), stripped.discardSelection().displayed)
-    }
-
-    @Test
-    fun `삭제는 표시된 층을 새 선택부터 서버 원본까지 하나씩 걷는다`() {
-        val afterFirst = persistedAndSelection().removeDisplayed()
-
-        assertEquals(persisted, afterFirst.displayed)
-        assertEquals(MediaInput.Remote(persisted.url), afterFirst.toMediaInput())
-        assertTrue(afterFirst.canRemove)
-
-        val afterSecond = afterFirst.removeDisplayed()
-
-        assertNull(afterSecond.displayed)
-        assertEquals(MediaInput.None, afterSecond.toMediaInput())
-        assertFalse(afterSecond.canRemove)
-        assertSame(afterSecond, afterSecond.removeDisplayed())
+        assertEquals(
+            EditableMemorialVideo.fromPersisted(MemorialVideoAttachment(url = persisted.url)).withSelection(selection.url),
+            stripped,
+        )
     }
 }

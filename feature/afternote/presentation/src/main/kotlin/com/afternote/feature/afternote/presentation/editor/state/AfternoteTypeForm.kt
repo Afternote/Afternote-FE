@@ -80,8 +80,8 @@ sealed interface AfternoteTypeForm {
     /**
      * 카테고리 전용 필드. 영상의 서버 기준값·미저장 교체분은 [EditableMemorialVideo]가 감춘다.
      *
-     * 삭제는 현재 표시된 층을 걷어, 교체분이었으면 서버 값으로 돌아가고 서버 값이었으면 PATCH `null`
-     * 로 이어진다(#1406, #1597). 사진은 `pickedPhotoUri`·`photoUrl` 두 칸이 같은 규칙을 따른다.
+     * 시트의 삭제는 슬롯을 비운다 — 교체분과 서버 값을 함께. 비어 있는 서버 값은 저장 시 PATCH `null`
+     * 로 이어진다(#1597). 사진은 `pickedPhotoUri`·`photoUrl` 두 칸이 같은 규칙을 따른다.
      */
     @ConsistentCopyVisibility
     data class Memorial internal constructor(

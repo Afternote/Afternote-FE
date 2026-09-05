@@ -31,19 +31,15 @@ internal fun EditorFormState.withType(type: AfternoteType): EditorFormState =
 
 internal fun EditorFormState.withService(service: String): EditorFormState = mapServiceForm { it.withService(service) }
 
-/** 사진 선택은 `picked` 층에 실린다. 서버 사진은 `photoUrl` 에 남아 삭제 한 번으로 되돌아갈 자리가 된다. */
+/** 사진 선택은 `picked` 층에 실린다. 서버 사진은 `photoUrl` 에 그대로 남는다 — 저장 없이 나가면 그것이 사실이고, 이탈 가드가 기준선과 비교한다. */
 internal fun EditorFormState.withMemorialPhoto(uri: String): EditorFormState = mapMemorial { it.copy(pickedPhotoUri = uri) }
 
 /**
- * 시트의 사진 삭제(#1114). 책임은 하나다: 표시된 층을 하나 걷는다(pop). 로컬 교체분이 위에 있으면 그것만
- * 빠져 서버 사진이 다시 보이고, 서버 사진만 있으면 그것이 빠진다. 서버 삭제는 여기서 일어나지 않는다 —
- * 비어 있는 서버 층을 저장 경로가 PATCH `null` 로 읽을 뿐이다(#1597). 어느 층이 위인지는 호출부가 아니라
- * 폼이 판정한다 — 삭제 항목 하나가 두 층을 구분해 눌리지 않기 때문이다(#1717).
+ * 시트의 사진 삭제(#1114). 슬롯을 비운다 — 로컬 교체분과 서버 사진을 함께. 서버 삭제는 여기서 일어나지
+ * 않는다 — 두 칸이 빈 폼을 저장이 PATCH `null` 로 보낼 뿐이다(#1597). 저장 없이 나가면 서버 사진은
+ * 그대로다(이탈 가드).
  */
-internal fun EditorFormState.withMemorialPhotoRemoved(): EditorFormState =
-    mapMemorial { form ->
-        if (form.pickedPhotoUri != null) form.copy(pickedPhotoUri = null) else form.copy(photoUrl = null)
-    }
+internal fun EditorFormState.withMemorialPhotoRemoved(): EditorFormState = mapMemorial { it.copy(pickedPhotoUri = null, photoUrl = null) }
 
 /**
  * 영상 첨부는 통째로 갈린다 — 새 영상에는 썸네일이 아직 없고, 이전 영상의 썸네일을 물려주면 다른
@@ -53,12 +49,11 @@ internal fun EditorFormState.withMemorialVideo(url: String): EditorFormState =
     mapMemorial { form -> form.copy(video = form.video.withSelection(url)) }
 
 /**
- * 시트의 영상 삭제(#1114). 현재 표시된 한 층만 걷는다 — 고른 영상이 있으면 서버 원본으로 돌아가고,
- * 서버 영상만 있으면 서버 축을 비운다. 후자는 #1596의 명시적 `null` 직렬화와 BE 삭제 계약으로 이어져
- * 저장 뒤 다시 살아나는 거짓 삭제를 만들지 않는다(#1597). 층 판정은 [EditableMemorialVideo.removeDisplayed] 다.
+ * 시트의 영상 삭제(#1114). 슬롯을 비운다 — 교체분·서버 원본·썸네일을 함께. 서버 삭제는 저장이 한다:
+ * 빈 값 객체를 [EditableMemorialVideo.toMediaInput] 이 `MediaInput.None` 으로 내고 #1596 배선이 명시적
+ * `null` 로 실어 저장 뒤 다시 살아나는 거짓 삭제가 없다(#1597).
  */
-internal fun EditorFormState.withMemorialVideoRemoved(): EditorFormState =
-    mapMemorial { form -> form.copy(video = form.video.removeDisplayed()) }
+internal fun EditorFormState.withMemorialVideoRemoved(): EditorFormState = mapMemorial { it.copy(video = EditableMemorialVideo.empty()) }
 
 /**
  * 고른 영상에서 뽑아 올린 썸네일을 붙인다. 영상이 없으면 아무 일도 하지 않는다 — 썸네일만 남는

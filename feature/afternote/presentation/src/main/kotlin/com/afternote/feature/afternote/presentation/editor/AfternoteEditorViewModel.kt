@@ -226,7 +226,7 @@ class AfternoteEditorViewModel
 
         fun setMemorialPhoto(uri: String) = mutateForm { it.withMemorialPhoto(uri) }
 
-        /** 시트의 사진 삭제 항목. 어느 층을 걷을지는 [EditorFormState.withMemorialPhotoRemoved] 가 정한다(#1717). */
+        /** 시트의 사진 삭제 항목. 슬롯을 비운다 — 서버 삭제는 저장 시 명시적 `null` 로 나간다(#1597, #1717). */
         fun removeMemorialPhoto() = mutateForm { it.withMemorialPhotoRemoved() }
 
         fun setMemorialVideo(url: String) {

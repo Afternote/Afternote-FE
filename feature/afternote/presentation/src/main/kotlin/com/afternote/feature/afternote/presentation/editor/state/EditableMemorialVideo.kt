@@ -6,10 +6,12 @@ import kotlinx.serialization.Serializable
 /**
  * 추모 영상 필드의 편집 상태 — 서버에 반영된 기준값과 이번 폼의 미저장 교체분을 한 개념으로 묶는다.
  *
- * 화면에 보이는 영상은 하나지만, 서버 영상 A를 로컬 영상 B로 교체한 동안에는 둘을 함께 기억해야 한다.
- * B를 걷어내면 A로 돌아가야 하기 때문이다. 삭제는 표시된 층을 하나씩 걷는다 — 교체분이 있으면 그것만,
- * 서버 기준값만 있으면 그것을 비워 저장 시 명시적 `null`(BE 삭제 계약, #1596·#1597)로 잇는다.
- * 이 두 값을 호출부에 따로 노출하지 않고 표시·삭제·저장 규칙을 여기서 완결한다.
+ * 두 값을 따로 드는 이유는 저장 출처다. 교체분이 있으면 업로드([MediaInput.Local]), 서버 기준값만
+ * 있으면 유지([MediaInput.Remote]), 둘 다 없으면 명시적 `null`([MediaInput.None], BE 삭제 계약
+ * #1596·#1597)로 갈리며, 이 판정을 URL 모양으로 재추론하지 않는다(#1406). 시트의 삭제는 두 층을 함께
+ * 비운다 — 서버 영상 A 위에 로컬 B 를 골랐다가 지우면 A 로 돌아가지 않고 슬롯이 빈다. 저장 전까지 서버는
+ * 그대로이고, 저장 없이 나가면 이탈 가드가 막는다. 이 두 값을 호출부에 따로 노출하지 않고 표시·저장
+ * 규칙을 여기서 완결한다.
  *
  * 생성자·`copy`·`componentN` 은 전부 private 이라 두 값은 이 클래스 밖으로 꺼낼 수 없다.
  * [ConsistentCopyVisibility] 가 `copy` 를 생성자 가시성에 맞춘다.
@@ -28,23 +30,6 @@ internal data class EditableMemorialVideo private constructor(
 
     /** 새 선택으로 교체한다. 이전 교체분의 썸네일은 물려주지 않는다. 빈 문자열은 [MemorialVideoAttachment.ofOrNull] 규칙대로 첨부 없음이다. */
     internal fun withSelection(url: String): EditableMemorialVideo = copy(selection = MemorialVideoAttachment.ofOrNull(url))
-
-    /** 이번 편집에서 고른 영상만 걷어낸다. 서버 기준값은 남아 표시가 그리로 돌아간다. */
-    internal fun discardSelection(): EditableMemorialVideo = copy(selection = null)
-
-    /**
-     * 표시된 층 하나를 걷는다. 교체분이 있으면 그것만 걷어 서버 기준값으로 돌아가고, 서버 기준값만
-     * 있으면 그것을 비운다 — 저장 시 [MediaInput.None]이 명시적 `null`로 나가 서버 영상이 실제로
-     * 지워진다(#1597). 되돌아갈 서버 상태가 없는 생성 모드에서는 슬롯이 그냥 빈다. 표시된 층이
-     * 없으면 걷을 것이 없어 자기 자신을 돌려준다 — [canRemove]가 시트 입구를 막고 있지만, 그 경우를
-     * 값 객체 스스로도 셈한다.
-     */
-    internal fun removeDisplayed(): EditableMemorialVideo =
-        when {
-            selection != null -> discardSelection()
-            persisted != null -> copy(persisted = null)
-            else -> this
-        }
 
     /** 미저장 교체분에서 파생된 썸네일만 갱신한다. 교체분이 사라졌다면 늦은 결과를 버린다. */
     internal fun withSelectionThumbnail(url: String): EditableMemorialVideo =

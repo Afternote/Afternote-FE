@@ -11,6 +11,8 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnai
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.presentation.editor.state.MemorialVideoAttachment
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,7 +42,7 @@ class AfternoteEditorReceiverSnapshotTest {
     }
 
     @Test
-    fun `v4 영상 편집 상태는 왕복 후 새 선택 제거 시 서버 원본으로 돌아간다`() {
+    fun `v4 영상 편집 상태는 왕복 뒤에도 출처를 유지하고 삭제는 두 층을 비운다`() {
         val persisted =
             MemorialVideoAttachment(
                 url = "https://cdn.test/farewell.mp4",
@@ -93,10 +95,10 @@ class AfternoteEditorReceiverSnapshotTest {
 
         restoredViewModel.removeMemorialVideo()
 
-        assertEquals(persisted, restoredViewModel.currentForm().displayedMemorialVideo)
-        assertEquals(MediaInput.Remote(persisted.url), restoredViewModel.currentForm().memorialVideo?.toMediaInput())
-        // 서버 원본이 남아 있으니 삭제 항목은 계속 열려 있다(#1597).
-        assertTrue(restoredViewModel.currentForm().canRemoveMemorialVideo)
+        // 삭제는 교체분과 서버 원본을 함께 비운다 — 저장 시 명시적 null 로 나간다(#1597).
+        assertNull(restoredViewModel.currentForm().displayedMemorialVideo)
+        assertEquals(MediaInput.None, restoredViewModel.currentForm().memorialVideo?.toMediaInput())
+        assertFalse(restoredViewModel.currentForm().canRemoveMemorialVideo)
     }
 
     private fun viewModel(savedStateHandle: SavedStateHandle): AfternoteEditorViewModel =
