@@ -41,7 +41,7 @@ internal fun errorPopupNetworkScreenshot() {
 internal fun errorPopupServerScreenshot() {
     AfternoteTheme {
         AfternoteErrorPopupContent(
-            iconRes = R.drawable.core_ui_ic_server_error,
+            iconRes = R.drawable.core_ui_ic_server,
             title = "서버 오류",
             description = "서버에 문제가 발생했습니다.\n잠시 후 다시 시도해 주세요.",
             buttonText = "다시 시도하기",
