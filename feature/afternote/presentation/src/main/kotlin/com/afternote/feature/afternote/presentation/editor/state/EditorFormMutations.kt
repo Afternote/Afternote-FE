@@ -35,9 +35,10 @@ internal fun EditorFormState.withService(service: String): EditorFormState = map
 internal fun EditorFormState.withMemorialPhoto(uri: String): EditorFormState = mapMemorial { it.copy(pickedPhotoUri = uri) }
 
 /**
- * 시트의 사진 삭제(#1114). 표시된 층 하나만 걷는다 — 로컬 교체분이 있으면 그것만 비워 서버 사진이 다시
- * 보이고, 서버 사진만 있으면 서버 축을 비워 PATCH `null` 로 잇는다(#1597). 어느 층을 걷을지는 호출부가
- * 아니라 폼이 정한다 — 삭제 항목 하나가 두 층을 구분해 눌리지 않기 때문이다(#1717).
+ * 시트의 사진 삭제(#1114). 책임은 하나다: 표시된 층을 하나 걷는다(pop). 로컬 교체분이 위에 있으면 그것만
+ * 빠져 서버 사진이 다시 보이고, 서버 사진만 있으면 그것이 빠진다. 서버 삭제는 여기서 일어나지 않는다 —
+ * 비어 있는 서버 층을 저장 경로가 PATCH `null` 로 읽을 뿐이다(#1597). 어느 층이 위인지는 호출부가 아니라
+ * 폼이 판정한다 — 삭제 항목 하나가 두 층을 구분해 눌리지 않기 때문이다(#1717).
  */
 internal fun EditorFormState.withMemorialPhotoRemoved(): EditorFormState =
     mapMemorial { form ->
