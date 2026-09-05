@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.ui.UiText
+import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -42,7 +44,7 @@ class ReceiverEditViewModel
                         _uiState.update { it.copy(isLoading = false, receiver = receiver) }
                     }.onFailure {
                         _uiState.update {
-                            it.copy(isLoading = false, errorMessage = "수신자 정보를 불러오지 못했습니다.")
+                            it.copy(isLoading = false, errorMessage = UiText.Resource(R.string.receiver_load_failed))
                         }
                     }
             }
@@ -56,6 +58,21 @@ class ReceiverEditViewModel
             message: String,
         ) {
             if (_uiState.value.isSaving) return
+            if (!email.isValidReceiverEmail()) {
+                _uiState.update { it.copy(errorMessage = UiText.Resource(R.string.receiver_email_invalid)) }
+                return
+            }
+            val phoneValidation = phone.validateReceiverPhone(isRequired = true)
+            if (phoneValidation != ReceiverPhoneValidation.VALID) {
+                val messageRes =
+                    if (phoneValidation == ReceiverPhoneValidation.REQUIRED) {
+                        R.string.receiver_phone_required
+                    } else {
+                        R.string.receiver_phone_invalid
+                    }
+                _uiState.update { it.copy(errorMessage = UiText.Resource(messageRes)) }
+                return
+            }
 
             _uiState.update { it.copy(isSaving = true, errorMessage = null) }
             viewModelScope.launch {
@@ -64,14 +81,17 @@ class ReceiverEditViewModel
                         userRepository.updateReceiver(
                             receiverId = receiverId,
                             name = name,
-                            phone = phone,
+                            phone = phone.normalizeReceiverPhone(),
                             relation = relation,
-                            email = email,
+                            email = email.trim(),
                         )
                     }
-                if (receiverUpdateResult.isFailure) {
+                receiverUpdateResult.exceptionOrNull()?.let { error ->
                     _uiState.update {
-                        it.copy(isSaving = false, errorMessage = "수신자 수정에 실패했습니다.")
+                        it.copy(
+                            isSaving = false,
+                            errorMessage = error.toReceiverFailureMessage(R.string.receiver_edit_failed),
+                        )
                     }
                     return@launch
                 }
@@ -88,7 +108,7 @@ class ReceiverEditViewModel
                     _uiState.update {
                         it.copy(
                             isSaving = false,
-                            errorMessage = "기본 정보는 수정됐지만 마지막 인사말 수정에 실패했습니다.",
+                            errorMessage = UiText.Resource(R.string.receiver_message_update_partial_failed),
                         )
                     }
                 }

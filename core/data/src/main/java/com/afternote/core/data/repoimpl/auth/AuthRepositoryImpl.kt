@@ -183,6 +183,7 @@ private const val CODE_USER_NOT_FOUND = 1201
 private const val CODE_PASSWORD_MISMATCH = 1202
 private const val CODE_SOCIAL_LOGIN_FAILED = 1208
 private const val CODE_UNSUPPORTED_SOCIAL_LOGIN = 1209
+private const val CODE_SOCIAL_SIGNUP_ACCOUNT = 1702
 
 /**
  * 로그인 실패를 도메인 예외로 옮긴다 — 가르는 신호는 서버 봉투의 `code` 뿐이고 `message` 는
@@ -203,6 +204,13 @@ private fun <T> Result<T>.mapLoginFailure(): Result<T> =
 
                 CODE_SOCIAL_LOGIN_FAILED, CODE_UNSUPPORTED_SOCIAL_LOGIN -> {
                     Result.failure(CoreAuthFailure.SocialLoginRejected(exception))
+                }
+
+                // 소셜로 가입해 로컬 비밀번호가 없는 계정에 이메일 로그인을 시도한 것(BE
+                // `AuthService.login` 이 `password == null` 을 이 코드로 거절한다). 자격 거절과 가르는
+                // 이유는 안내가 갈리기 때문이다 — 입력을 고쳐서 될 일이 아니라 로그인 수단이 틀렸다.
+                CODE_SOCIAL_SIGNUP_ACCOUNT -> {
+                    Result.failure(CoreAuthFailure.SocialSignUpAccount(exception))
                 }
 
                 else -> {

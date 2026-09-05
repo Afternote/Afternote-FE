@@ -20,7 +20,7 @@ import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.HiltTestActivity
 import com.afternote.afternote_fe.test.appTestUserRepository
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.testing.FakeUserProfileRepository
+import com.afternote.core.domain.testing.FakeUserProfileCacheRepository
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.home.presentation.HomeTabScreen
@@ -161,20 +161,24 @@ class HomeWeeklyCountAndroidTest {
         dailyQuestionAmount: Int = 0,
         diaryAmount: Int = 0,
         weeklyFailure: Throwable? = null,
-    ): HomeTabViewModel =
-        HomeTabViewModel(
+    ): HomeTabViewModel {
+        // 같은 페이크가 두 좁은 계약을 다 구현한다 — UserRepository 가 둘을 상속한다 (#1742).
+        val userRepository = appTestUserRepository()
+        return HomeTabViewModel(
             getHomeSummary =
                 GetHomeSummaryUseCase(
-                    userRepository = appTestUserRepository(),
+                    myProfileRepository = userRepository,
+                    userReceiverRepository = userRepository,
                     dailyQuestionRepository = FakeDailyQuestionRepository(),
                     getWeeklyRecordCount =
                         GetWeeklyRecordCountUseCase(
                             FakeWeeklyReportRepository(dailyQuestionAmount, diaryAmount, weeklyFailure),
                         ),
                 ),
-            userProfileRepository = FakeUserProfileRepository(),
+            userProfileCacheRepository = FakeUserProfileCacheRepository(),
             errorReporter = SilentErrorReporter,
         )
+    }
 
     private companion object {
         const val TIMEOUT = 5_000L
@@ -230,6 +234,8 @@ private class RecordingHomeTabActions(
     override fun onWeeklyCountClick() = Unit
 
     override fun onMemoriesSectionClick() = Unit
+
+    override fun onMemoriesRecordDetailClick(recordId: Long) = Unit
 
     override fun onSettingClick() = Unit
 

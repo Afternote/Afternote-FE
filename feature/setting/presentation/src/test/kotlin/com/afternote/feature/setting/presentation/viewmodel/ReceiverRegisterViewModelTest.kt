@@ -1,26 +1,31 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
-import com.afternote.core.domain.error.ReceiverRegistrationRejected
-import com.afternote.core.domain.testing.FakeUserRepository
+import com.afternote.core.domain.error.ReceiverRequestRejectedException
+import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.model.user.ReceiverCreated
+import com.afternote.core.ui.UiText
+import com.afternote.feature.setting.presentation.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.runCurrent
-import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Before
 import org.junit.Test
+import java.lang.reflect.Proxy
+import java.util.concurrent.atomic.AtomicInteger
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ReceiverRegisterViewModelTest {
-    private val dispatcher = StandardTestDispatcher()
+    private val createCalls = AtomicInteger()
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(dispatcher)
+        createCalls.set(0)
+        Dispatchers.setMain(UnconfinedTestDispatcher())
     }
 
     @After
@@ -29,63 +34,85 @@ class ReceiverRegisterViewModelTest {
     }
 
     @Test
-    fun `등록 거절 시 서버 문구를 화면 상태로 전달한다`() =
-        runTest(dispatcher) {
-            val repository =
-                FakeUserRepository.strict().apply {
-                    onCreateReceiver = { _, _, _, _, _ ->
-                        throw ReceiverRegistrationRejected(
-                            serverMessage = "수신자 이메일은 필수입니다.",
-                            cause = IllegalStateException("server rejection"),
-                        )
-                    }
-                }
-            val viewModel = ReceiverRegisterViewModel(repository)
+    fun `invalid email is rejected before repository call`() {
+        val viewModel = ReceiverRegisterViewModel(repository())
 
-            viewModel.register(
-                name = "수신자",
-                relation = "친구",
-                phone = null,
-                email = "receiver@afternote.com",
-                message = null,
-            )
-            runCurrent()
+        viewModel.register("홍길동", "딸", "01012345678", "invalid", null)
 
-            assertEquals(
-                ReceiverRegisterUiState(
-                    isLoading = false,
-                    error = ReceiverRegisterError.ServerMessage("수신자 이메일은 필수입니다."),
-                ),
-                viewModel.uiState.value,
-            )
-        }
+        assertEquals(UiText.Resource(R.string.receiver_email_invalid), viewModel.uiState.value.errorMessage)
+        assertEquals(0, createCalls.get())
+        assertFalse(viewModel.uiState.value.isLoading)
+    }
 
     @Test
-    fun `원인을 알 수 없는 등록 실패는 일반 오류 상태로 변환한다`() =
-        runTest(dispatcher) {
-            val repository =
-                FakeUserRepository.strict().apply {
-                    onCreateReceiver = { _, _, _, _, _ ->
-                        throw IllegalStateException("unexpected failure")
-                    }
+    fun `blank email is rejected as required before repository call`() {
+        val viewModel = ReceiverRegisterViewModel(repository())
+
+        viewModel.register("홍길동", "딸", null, "", null)
+
+        assertEquals(UiText.Resource(R.string.receiver_email_required), viewModel.uiState.value.errorMessage)
+        assertEquals(0, createCalls.get())
+        assertFalse(viewModel.uiState.value.isLoading)
+    }
+
+    @Test
+    fun `blank phone is rejected as required before repository call`() {
+        val viewModel = ReceiverRegisterViewModel(repository())
+
+        viewModel.register("홍길동", "딸", null, "receiver@example.com", null)
+
+        assertEquals(UiText.Resource(R.string.receiver_phone_required), viewModel.uiState.value.errorMessage)
+        assertEquals(0, createCalls.get())
+        assertFalse(viewModel.uiState.value.isLoading)
+    }
+
+    @Test
+    fun `invalid phone is rejected before repository call`() {
+        val viewModel = ReceiverRegisterViewModel(repository())
+
+        viewModel.register("홍길동", "딸", "123", "receiver@example.com", null)
+
+        assertEquals(UiText.Resource(R.string.receiver_phone_invalid), viewModel.uiState.value.errorMessage)
+        assertEquals(0, createCalls.get())
+        assertFalse(viewModel.uiState.value.isLoading)
+    }
+
+    @Test
+    fun `server rejected message is not shown verbatim to the user`() {
+        val serverMessage = "수신자 이메일은 필수입니다."
+        val error = ReceiverRequestRejectedException(serverMessage, Exception("origin"))
+
+        assertEquals(
+            UiText.Resource(R.string.receiver_request_rejected),
+            error.toReceiverFailureMessage(R.string.receiver_register_failed),
+        )
+    }
+
+    @Test
+    fun `unexpected failure uses safe resource message`() {
+        val viewModel = ReceiverRegisterViewModel(repository(failure = Exception("internal details")))
+
+        viewModel.register("홍길동", "딸", "01012345678", "receiver@example.com", null)
+
+        assertEquals(UiText.Resource(R.string.receiver_register_failed), viewModel.uiState.value.errorMessage)
+        assertFalse(viewModel.uiState.value.isLoading)
+    }
+
+    private fun repository(failure: Throwable? = null): UserRepository =
+        Proxy.newProxyInstance(
+            UserRepository::class.java.classLoader,
+            arrayOf(UserRepository::class.java),
+        ) { _, method, _ ->
+            when (method.name) {
+                "createReceiver" -> {
+                    createCalls.incrementAndGet()
+                    failure?.let { throw it }
+                    ReceiverCreated(receiverId = 1L, authCode = "auth")
                 }
-            val viewModel = ReceiverRegisterViewModel(repository)
 
-            viewModel.register(
-                name = "수신자",
-                relation = "친구",
-                phone = null,
-                email = "receiver@afternote.com",
-                message = null,
-            )
-            runCurrent()
-
-            assertEquals(
-                ReceiverRegisterUiState(
-                    isLoading = false,
-                    error = ReceiverRegisterError.Generic,
-                ),
-                viewModel.uiState.value,
-            )
-        }
+                else -> {
+                    error("Unexpected repository call: ${method.name}")
+                }
+            }
+        } as UserRepository
 }

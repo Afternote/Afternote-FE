@@ -21,6 +21,7 @@ import com.afternote.core.model.delivery.ReceiverDeliveryConditions
 import com.afternote.core.model.user.ReceiverCreated
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
+import com.afternote.core.ui.UiText
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.setting.presentation.component.PinSetupStep
 import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
@@ -36,7 +37,6 @@ import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionVie
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditEvent
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditUiState
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditViewModel
-import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterError
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterViewModel
 import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
@@ -54,7 +54,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import com.afternote.core.domain.testing.FakeUserRepository.ReceiverCreateCall as ReceiverRegistrationCall
+import com.afternote.feature.setting.presentation.R as SettingR
 
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -154,11 +154,8 @@ class SettingAccountSecurityTest {
     }
 
     @Test
-    fun receiverRegister_blankOptionalFieldsAndFailure_preserveExactPayload() {
-        val repository =
-            settingContractUserRepository().apply {
-                onCreateReceiver = { _, _, _, _, _ -> throw IllegalStateException("offline") }
-            }
+    fun receiverRegister_blankRequiredEmail_isRejectedBeforeRepositoryCall() {
+        val repository = settingContractUserRepository()
         val viewModel = ReceiverRegisterViewModel(repository)
 
         composeRule.runOnIdle {
@@ -166,26 +163,15 @@ class SettingAccountSecurityTest {
                 name = "김수신",
                 relation = "가족",
                 phone = "   ",
-                email = "receiver@afternote.com",
+                email = "",
                 message = null,
             )
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.uiState.value.error == ReceiverRegisterError.Generic
+            viewModel.uiState.value.errorMessage == UiText.Resource(SettingR.string.receiver_email_required)
         }
 
-        assertEquals(
-            listOf(
-                ReceiverRegistrationCall(
-                    name = "김수신",
-                    relation = "가족",
-                    phone = null,
-                    email = "receiver@afternote.com",
-                    message = null,
-                ),
-            ),
-            repository.receiverCreateCalls,
-        )
+        assertTrue(repository.receiverCreateCalls.isEmpty())
         assertFalse(viewModel.uiState.value.isLoading)
     }
 

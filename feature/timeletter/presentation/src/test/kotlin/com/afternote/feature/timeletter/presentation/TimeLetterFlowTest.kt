@@ -15,6 +15,7 @@ import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.domain.testing.FakeFileMetadataRepository
 import com.afternote.feature.timeletter.domain.testing.FakeTimeLetterRepository
+import com.afternote.feature.timeletter.domain.testing.FakeVoiceRecorderRepository
 import com.afternote.feature.timeletter.domain.usecase.CreateTimeLetterUseCase
 import com.afternote.feature.timeletter.domain.usecase.ResolveTimeLetterBlocksUseCase
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeLetterWriteScreen
@@ -89,7 +90,7 @@ class TimeLetterFlowTest {
             viewModel.register("가을 편지", mapOf(0L to "잊지 않을게"))
         }
         composeRule.waitUntil(timeoutMillis = 5_000) {
-            viewModel.uiState.value.error == TimeLetterWriteError.SAVE_FAILED
+            viewModel.uiState.value.error == TimeLetterWriteError.SaveFailed
         }
         assertFalse(viewModel.uiState.value.registered)
 
@@ -152,6 +153,7 @@ class TimeLetterFlowTest {
                     fileName = "fixture",
                     mimeType = "application/pdf",
                 ),
+            voiceRecorderRepository = FakeVoiceRecorderRepository,
             savedStateHandle = SavedStateHandle(mapOf("timeLetterId" to null)),
         )
     }

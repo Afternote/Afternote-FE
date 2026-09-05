@@ -2,8 +2,10 @@ package com.afternote.feature.setting.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.domain.error.ReceiverRegistrationRejected
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.ui.UiText
+import com.afternote.feature.setting.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,24 +34,40 @@ class ReceiverRegisterViewModel
             email: String,
             message: String?,
         ) {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            if (!email.orEmpty().isValidReceiverEmail()) {
+                val messageRes =
+                    if (email.isBlank()) R.string.receiver_email_required else R.string.receiver_email_invalid
+                _uiState.update { it.copy(errorMessage = UiText.Resource(messageRes)) }
+                return
+            }
+            val phoneValidation = phone.orEmpty().validateReceiverPhone(isRequired = true)
+            if (phoneValidation != ReceiverPhoneValidation.VALID) {
+                val messageRes =
+                    if (phoneValidation == ReceiverPhoneValidation.REQUIRED) {
+                        R.string.receiver_phone_required
+                    } else {
+                        R.string.receiver_phone_invalid
+                    }
+                _uiState.update { it.copy(errorMessage = UiText.Resource(messageRes)) }
+                return
+            }
+            val normalizedEmail = email.trim()
+
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             viewModelScope.launch {
-                runCatching {
+                runCatchingCancellable {
                     userRepository.createReceiver(
                         name = name,
                         relation = relation,
-                        phone = phone?.takeIf { it.isNotBlank() },
-                        email = email.trim(),
+                        phone = phone?.takeIf { it.isNotBlank() }?.normalizeReceiverPhone(),
+                        email = normalizedEmail,
                         message = message?.takeIf { it.isNotBlank() },
                     )
                 }.onSuccess {
                     _events.send(ReceiverRegisterEvent.RegisterSuccess)
-                }.onFailure { exception ->
-                    val error =
-                        (exception as? ReceiverRegistrationRejected)
-                            ?.let { ReceiverRegisterError.ServerMessage(it.serverMessage) }
-                            ?: ReceiverRegisterError.Generic
-                    _uiState.update { it.copy(isLoading = false, error = error) }
+                }.onFailure { error ->
+                    val errorMessage = error.toReceiverFailureMessage(R.string.receiver_register_failed)
+                    _uiState.update { it.copy(isLoading = false, errorMessage = errorMessage) }
                 }
             }
         }

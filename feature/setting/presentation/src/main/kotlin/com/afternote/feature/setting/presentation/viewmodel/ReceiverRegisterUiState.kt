@@ -1,17 +1,11 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
+import com.afternote.core.ui.UiText
+
 data class ReceiverRegisterUiState(
     val isLoading: Boolean = false,
-    val error: ReceiverRegisterError? = null,
+    val errorMessage: UiText? = null,
 )
-
-sealed interface ReceiverRegisterError {
-    data class ServerMessage(
-        val value: String,
-    ) : ReceiverRegisterError
-
-    data object Generic : ReceiverRegisterError
-}
 
 sealed interface ReceiverRegisterEvent {
     data object RegisterSuccess : ReceiverRegisterEvent

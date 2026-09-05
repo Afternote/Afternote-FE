@@ -16,8 +16,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordFilter
 
 /**
@@ -33,6 +38,7 @@ fun ReceiverMindRecordTopBar(
     onFilterClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val filterLabel = stringResource(R.string.mindrecord_receiver_filter_cd)
     Row(
         modifier =
             modifier
@@ -52,11 +58,14 @@ fun ReceiverMindRecordTopBar(
         }
         Spacer(modifier = Modifier.weight(1f))
         Box(
+            // 이 타깃은 자식이 없어 **이름이 빈 문자열**이고 역할도 없었다 — 스크린리더가
+            // 「버튼」 이라고조차 못 읽는다. 스캐너 실측으로 드러났다 (#1179 리뷰).
             modifier =
                 Modifier
                     .size(24.dp)
                     .clip(CircleShape)
-                    .clickable(onClick = onFilterClick),
+                    .clickable(role = Role.Button, onClick = onFilterClick)
+                    .semantics { contentDescription = filterLabel },
         )
     }
 }
