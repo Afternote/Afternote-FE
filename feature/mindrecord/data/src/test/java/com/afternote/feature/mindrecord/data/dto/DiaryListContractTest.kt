@@ -19,13 +19,12 @@ import org.junit.Test
  * `date`(사용자가 고른 일기 날짜)와 `createdAt`(레코드 생성 시각)은 **별개 필드**다.
  * 한 프로퍼티에 묶으면 서버의 키 순서에 따라 값이 뒤바뀌므로 분리 상태를 함께 고정한다.
  *
- * Json 설정은 `NetworkModule.provideJson` 과 동일 (ignoreUnknownKeys + coerceInputValues).
+ * Json 설정은 `NetworkModule.provideJson` 과 동일 (ignoreUnknownKeys).
  */
 class DiaryListContractTest {
     private val json =
         Json {
             ignoreUnknownKeys = true
-            coerceInputValues = true
         }
 
     @Test
@@ -77,7 +76,8 @@ class DiaryListContractTest {
             {
               "status": 200, "code": 200,
               "data": { "diaries": [{ "id": 123, "date": "2026-03-21", "createdAt": "2026.03.21 토",
-                        "title": "t", "content": "c", "todayMood": "SOSO", "isDraft": true }],
+                        "title": "t", "content": "c", "todayMood": "SOSO", "isDraft": true,
+                        "receivers": [] }],
                         "monthDiaryCount": 1, "weeklyDominantMood": null }
             }
             """.trimIndent()

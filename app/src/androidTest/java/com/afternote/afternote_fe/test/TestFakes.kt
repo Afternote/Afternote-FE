@@ -9,6 +9,8 @@ import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserPushSetting
 import com.afternote.feature.afternote.domain.AfternoteType
+import com.afternote.feature.mindrecord.domain.model.EmotionAnalysis
+import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 
 fun afternoteEditorSavedStateHandle(
     initialType: AfternoteType,
@@ -90,3 +92,22 @@ private val DEFAULT_TEST_PUSH_SETTING = UserPushSetting(true, true, true)
 
 private fun defaultConnectedAccounts(email: String): UserConnectedAccount =
     UserConnectedAccount(true, false, false, false, false, email, null, null, null, null)
+
+/**
+ * 홈이 진입 시 부르는 주간 리포트의 «빈 응답» (#562).
+ *
+ * 정본 [com.afternote.feature.mindrecord.domain.testing.FakeWeeklyReportRepository] 는 큐가 비면
+ * 터뜨린다 — 조용히 빈 리포트를 돌려주면 요청 횟수가 어긋난 것을 놓치기 때문이다. 그래서 홈에
+ * 닿는 계측 테스트는 주간 수에 관심이 없더라도 **자기가 기대하는 응답을 명시적으로 큐에 넣는다.**
+ */
+fun emptyWeeklyReport(): WeeklyReport =
+    WeeklyReport(
+        dailyQuestionAmount = 0,
+        diaryAmount = 0,
+        summaryText = "",
+        week = emptyList(),
+        dailyQuestions = emptyList(),
+        emotions = emptyList(),
+        // 분석 상태는 이 테스트들의 관심사가 아니다 — 완료로 고정해 폴링이 끼어들지 않게 한다.
+        emotionAnalysis = EmotionAnalysis(total = 0, succeeded = 0, pending = 0, failed = 0),
+    )

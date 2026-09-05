@@ -78,9 +78,20 @@ data class DiaryListItemDto(
     // 저장 컬럼이 필수라 응답도 항상 채워진다. AI 가 매기는 `emotion` 과 달리 사용자가 직접
     // 고른 값이고, 한글 값이 관측된 쪽도 `emotion` 이지 이 필드가 아니다 (#591, #789).
     @SerialName("todayMood") val todayMood: TodayMoodDto,
+    // 기본값을 두지 않는다 — 키가 빠지면 false 로 접혀 임시저장이 목록에 샌다 (#789).
     @SerialName("isDraft")
     @JsonNames("draft")
     val isDraft: Boolean,
+    // 상세 화면이 "수신인 OOO" 로 보여준다. 서버가 늘 함께 내려주는데 종전에는 선언하지
+    // 않아 버려졌다 (#759).
+    @SerialName("receivers") val receivers: List<MindRecordReceiverDto>,
+)
+
+/** 기록에 지정된 수신자 요약 (OpenAPI `MindRecordReceiverSummaryResponse`). */
+@Serializable
+data class MindRecordReceiverDto(
+    @SerialName("receiverId") val receiverId: Long,
+    @SerialName("name") val name: String,
 )
 
 // `/diary` 응답의 `data` 는 객체 — `diaries` 외에 조회 대상 달의 비-임시 다이어리 수

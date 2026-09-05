@@ -9,7 +9,6 @@ import {
     LEGACY_ISSUE_MAX,
     PRIORITY_COMMENT_MARKER,
     PRIORITY_FIELD_NAME,
-    PRIORITY_GRACE_MS,
     PRIORITY_OPTION_GUIDE,
     TYPE_LABELS,
     inspectIssue,
@@ -217,21 +216,16 @@ function priorityValue(option = "High") {
     };
 }
 
-test("priorityFieldState distinguishes unknown, set, missing, and overdue", () => {
-    const now = Date.now();
+test("priorityFieldState distinguishes unknown, set, and missing", () => {
+    // 등록 시각은 더 이상 판정에 들어가지 않는다 — 유예가 끝나도 달라지는 동작이 없다 (#1534).
     assert.equal(priorityFieldState(issue()).status, "unknown");
     assert.equal(priorityFieldState(issue({
         issue_field_values: [priorityValue("Urgent")],
     })).status, "set");
     assert.equal(priorityFieldState(issue({
         issue_field_values: [{ issue_field_name: "Effort", single_select_option: { name: "High" } }],
-        created_at: new Date(now).toISOString(),
-    }), now).status, "missing");
-    assert.equal(priorityFieldState(issue({
-        issue_field_values: [],
-        created_at: new Date(now - PRIORITY_GRACE_MS - 60_000).toISOString(),
-    }), now).status, "missing-overdue");
-    assert.equal(priorityFieldState(issue({ issue_field_values: [] }), now).status, "missing");
+    })).status, "missing");
+    assert.equal(priorityFieldState(issue({ issue_field_values: [] })).status, "missing");
 });
 
 test("fresh bug issue missing priority gets exactly one reminder and stays open", async () => {
@@ -254,20 +248,45 @@ test("fresh bug issue missing priority gets exactly one reminder and stays open"
     }
 });
 
-test("bug issue past the grace period is closed as not planned", async () => {
+test("an aged bug issue missing priority still stays open", async () => {
+    // Priority 는 이슈의 내용이 아니라 분류 메타데이터다. 비었다고 결함 보고를 닫으면 할 일은
+    // 그대로인데 열린 이슈 목록에서만 사라진다 (#1534). Issue Form 이 조직 필드를 자동으로
+    // 채우지 못하므로, 닫으면 정상 등록된 이슈가 조용히 사라지는 경로가 된다.
     const original = issue({
         issue_field_values: [],
-        created_at: new Date(Date.now() - PRIORITY_GRACE_MS - 60_000).toISOString(),
+        created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
     });
     const fake = fakeApi(original);
 
     const result = await reconcileIssue(fake.api, repository, original);
+    await reconcileIssue(fake.api, repository, fake.currentIssue());
 
-    assert.equal(result.action, "closed-priority-missing");
-    assert.equal(result.priority, "closed");
+    assert.equal(result.priority, "reminded");
+    assert.notEqual(result.action, "closed-priority-missing");
+    assert.equal(fake.currentIssue().state, "open");
+    assert.equal(fake.comments().length, 1, "안내는 이슈당 한 번만 단다");
+});
+
+test("the priority reminder does not threaten an automatic close", async () => {
+    // 닫지 않게 된 뒤에도 예고 문구가 남으면 코멘트가 거짓말을 한다.
+    const original = issue({ issue_field_values: [] });
+    const fake = fakeApi(original);
+
+    await reconcileIssue(fake.api, repository, original);
+
+    assert.doesNotMatch(fake.comments()[0].body, /자동으로 닫습니다|다시 열어 주세요/);
+});
+
+test("issues invalid for metadata are still closed", async () => {
+    // 이번 변경은 Priority 경로 하나다. 작업 유형·주 담당 모듈을 판정할 수 없는 이슈는 담당자도
+    // 라벨도 정할 수 없어 성격이 다르므로 닫는 경로를 그대로 둔다.
+    const original = issue({ body: "구조화되지 않은 본문" });
+    const fake = fakeApi(original);
+
+    const result = await reconcileIssue(fake.api, repository, original);
+
+    assert.equal(result.action, "closed-invalid");
     assert.equal(fake.currentIssue().state, "closed");
-    assert.equal(fake.currentIssue().state_reason, "not_planned");
-    assert.equal(fake.comments().length, 1);
 });
 
 test("bug issue with priority set and non-bug issues pass without comments", async () => {

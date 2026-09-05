@@ -29,7 +29,6 @@ class LeaveMessageBlockContractTest {
     private val json =
         Json {
             ignoreUnknownKeys = true
-            coerceInputValues = true
         }
 
     /**
@@ -111,7 +110,7 @@ class LeaveMessageBlockContractTest {
         val detail =
             json
                 .decodeFromString<ReceivedAfternoteDetailDto>(
-                    """{"id":1,"category":"GALLERY","title":"사진첩","actions":null,"leaveMessage":[{"title":null,"body":"사진은 남겨줘"}]}""",
+                    """{"id":1,"category":"GALLERY","title":"사진첩","senderName":"이발신","actions":null,"leaveMessage":[{"title":null,"body":"사진은 남겨줘"}]}""",
                 ).toDomain()
 
         assertEquals(
@@ -163,7 +162,7 @@ class LeaveMessageBlockContractTest {
         val request =
             CreateMemorialPayload(
                 title = "추억 노트",
-                memorial = MemorialWritePayload(),
+                memorial = MemorialWritePayload(memorialPhotoUrl = null, songs = emptyList(), memorialVideo = null),
                 leaveMessageBlocks = listOf(LeaveMessageBlock(title = "가족에게", body = "노래 들으며 기억해줘")),
             ).toRequest()
 

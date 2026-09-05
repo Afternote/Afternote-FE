@@ -23,17 +23,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.afternote.afternote_fe.notification.NotificationPermissionEffect
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomBar
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.feature.afternote.presentation.author.navigation.afternoteNavGraph
-import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
+import com.afternote.feature.afternote.presentation.navigation.afternoteNavGraph
+import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.receiver.navigation.receivedAfternoteNavGraph
 import com.afternote.feature.home.presentation.HomeTabScreen
 import com.afternote.feature.home.presentation.HomeTabViewModel
+import com.afternote.feature.home.presentation.receiver.ReceiverHomeEntry
 import com.afternote.feature.mindrecord.presentation.navigation.mindRecordNavGraph
 import com.afternote.feature.onboarding.presentation.navigation.onboardingNavGraph
-import com.afternote.feature.receiver.presentation.home.ReceiverHomeEntry
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
 import com.afternote.feature.receiver.presentation.navigation.receiverNavGraph
 import com.afternote.feature.setting.presentation.navigation.settingNavGraph
@@ -66,6 +67,9 @@ fun AppNavigation(
     val receivedAfternoteNavActions = rememberReceivedAfternoteNavActions(appState)
     val receiverNavActions = rememberReceiverNavActions(appState)
     val receiverHomeActions = rememberReceiverHomeActions(appState)
+
+    // 13+ 는 런타임 권한이 없으면 알림이 한 건도 게시되지 않는다 (#1454).
+    NotificationPermissionEffect(snackbarHostState = snackbarHostState)
 
     Scaffold(
         modifier = modifier,
