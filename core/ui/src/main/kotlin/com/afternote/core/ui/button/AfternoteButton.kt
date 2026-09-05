@@ -4,7 +4,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -25,17 +25,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 
 enum class AfternoteButtonType {
     Default,
@@ -57,6 +56,8 @@ private val AfternoteButtonVerticalPadding = 13.dp
  * (예: 전체 삭제 | 선택 삭제), 생략하면 버튼 전체가 [onClick] 하나로 눌리는 기존 동작 그대로다.
  *
  * @param onSecondaryClick Variant5 dual-action 모드에서 오른쪽 절반([secondaryText]) 클릭 콜백
+ * @param isSecondaryEnabled dual-action 의 **보조 라벨만** 비활성. 선택이 0개일 때 «선택 삭제» 를
+ *   막는 자리다 (#442) — 자체 구현에는 있던 상태라 정본이 담지 않으면 수렴이 성립하지 않는다.
  * @param isLoading true 면 라벨 대신 스피너를 그리고 클릭을 막는다 (네트워크 대기 등 진행 중 표시).
  *   dual-action 모드도 로딩 중엔 단일 스피너 바로 렌더되어 양쪽 클릭이 모두 막힌다.
  *   접근성 이름은 [text] 로 유지되고, 로딩 상태는 stateDescription 으로 노출된다.
@@ -71,6 +72,7 @@ fun AfternoteButton(
     secondaryText: String? = null,
     containerColor: Color? = null,
     onSecondaryClick: (() -> Unit)? = null,
+    isSecondaryEnabled: Boolean = true,
 ) {
     // 색 테이블을 여기서 한 번만 결정해 두 렌더 경로(단일 Surface·dual-action)에 같은 값을 공급한다 —
     // dual 쪽에 Variant5 색을 재하드코딩하면 테이블 변경 시 조용히 어긋난다.
@@ -100,6 +102,7 @@ fun AfternoteButton(
                 onClick = onClick,
                 secondaryText = secondaryText,
                 onSecondaryClick = onSecondaryClick,
+                isSecondaryEnabled = isSecondaryEnabled,
                 containerColor = resolvedContainerColor,
                 contentColor = contentColor,
                 modifier = modifier,
@@ -194,6 +197,7 @@ private fun DualActionButtonSurface(
     onClick: () -> Unit,
     secondaryText: String,
     onSecondaryClick: () -> Unit,
+    isSecondaryEnabled: Boolean,
     containerColor: Color,
     contentColor: Color,
     modifier: Modifier = Modifier,
@@ -207,7 +211,11 @@ private fun DualActionButtonSurface(
         Row(verticalAlignment = Alignment.CenterVertically) {
             DualActionLabel(text = text, onClick = onClick)
             Variant5LabelDivider()
-            DualActionLabel(text = secondaryText, onClick = onSecondaryClick)
+            DualActionLabel(
+                text = secondaryText,
+                onClick = onSecondaryClick,
+                isEnabled = isSecondaryEnabled,
+            )
         }
     }
 }
@@ -217,18 +225,23 @@ private fun DualActionButtonSurface(
 private fun RowScope.DualActionLabel(
     text: String,
     onClick: () -> Unit,
+    isEnabled: Boolean = true,
 ) {
     Box(
         modifier =
             Modifier
                 .weight(1f)
-                .clickable(onClick = onClick)
+                // 절반씩 독립 클릭이라 접근성 트리에도 버튼으로 잡혀야 한다. 없으면
+                // 스크린리더가 이 영역을 눌 수 있는 요소로 읽지 않는다 (#634).
+                .clickable(role = Role.Button, enabled = isEnabled, onClick = onClick)
                 .padding(vertical = AfternoteButtonVerticalPadding),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
             style = AfternoteDesign.typography.captionLargeB,
+            // 비활성은 색으로도 드러나야 한다 — 눌리지 않는데 눌릴 것처럼 보이면 고장으로 읽힌다.
+            color = if (isEnabled) LocalContentColor.current else AfternoteDesign.colors.gray6,
         )
     }
 }
@@ -240,54 +253,6 @@ private fun Variant5LabelDivider() {
         modifier = Modifier.height(12.dp),
         color = AfternoteDesign.colors.gray2,
     )
-}
-
-@Preview(showBackground = true, name = "Default")
-@Composable
-private fun AfternoteButtonDefaultPreview() {
-    AfternoteTheme {
-        Column {
-            AfternoteButton(
-                text = "시작하기",
-                onClick = {},
-                type = AfternoteButtonType.Default,
-            )
-            AfternoteButton(
-                text = "활성",
-                onClick = {},
-                type = AfternoteButtonType.Active,
-            )
-            AfternoteButton(
-                text = "일반",
-                onClick = {},
-                type = AfternoteButtonType.Plain,
-            )
-            AfternoteButton(
-                text = "비활성",
-                onClick = {},
-                type = AfternoteButtonType.Un,
-            )
-            AfternoteButton(
-                text = "로딩",
-                onClick = {},
-                type = AfternoteButtonType.Default,
-                isLoading = true,
-            )
-            AfternoteButton(
-                text = "로그인",
-                onClick = {},
-                type = AfternoteButtonType.Variant5,
-                secondaryText = "회원가입",
-            )
-            AfternoteButton(
-                text = "전체 삭제",
-                onClick = {},
-                type = AfternoteButtonType.Variant5,
-                secondaryText = "선택 삭제",
-                onSecondaryClick = {},
-            )
-        }
-    }
 }
 
 @Composable
@@ -313,43 +278,11 @@ fun AfternoteActionButton(
             Text(
                 text = text,
                 style =
-                    AfternoteDesign.typography.bodySmallB.copy(fontSize = 13.sp),
+                    AfternoteDesign.typography.bodySmallB.copy(fontSize = 13.sp, lineHeight = 19.5.sp),
                 color = contentColor,
             )
             Spacer(modifier = Modifier.width(9.dp))
             RightArrowIcon(modifier = Modifier.size(width = 5.dp, height = 9.dp))
-        }
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFFCCCCCC)
-@Composable
-private fun AfternoteActionButtonPreview() {
-    AfternoteTheme {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            AfternoteActionButton(
-                text = "마음의 기록 남기기",
-                containerColor = AfternoteDesign.colors.accent1,
-                onClick = {},
-            )
-            AfternoteActionButton(
-                text = "마음의 기록 남기기",
-                containerColor = AfternoteDesign.colors.accent2,
-                onClick = {},
-            )
-            AfternoteActionButton(
-                text = "마음의 기록 남기기",
-                containerColor = AfternoteDesign.colors.accent5,
-                onClick = {},
-            )
-            AfternoteActionButton(
-                text = "마음의 기록 남기기",
-                containerColor = AfternoteDesign.colors.accent10,
-                onClick = {},
-            )
         }
     }
 }

@@ -34,7 +34,7 @@ fun OnboardingProfileEntry(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
-    val nameRequiredMessage = stringResource(R.string.signup_name_required)
+    val nameRequiredMessage = stringResource(R.string.onboarding_signup_name_required)
 
     val showSnackbar: (String) -> Unit = { message ->
         coroutineScope.launch {
@@ -72,7 +72,7 @@ fun OnboardingProfileEntry(
         displayImageUri = uiState.profileImageUri?.toUri(),
         snackbarHostState = snackbarHostState,
         onNameChange = viewModel::updateName,
-        onProfileImagePick = { uri -> viewModel.onProfileImagePicked(uri?.toString()) },
+        onProfileImagePick = { uri -> viewModel.onProfileImagePicked(uri.toString()) },
         onCompleteClick = viewModel::submitSignUp,
         onBackClick = onBackClick,
         modifier = modifier,

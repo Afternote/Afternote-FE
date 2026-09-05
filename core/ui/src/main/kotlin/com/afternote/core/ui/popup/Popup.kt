@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.afternote.core.ui.R
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 
@@ -33,11 +35,13 @@ fun Popup(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     confirmText: String =
-        when (type) {
-            PopupType.Default -> "확인"
-            PopupType.Variant2 -> "예"
-        },
-    dismissText: String = "아니요",
+        stringResource(
+            when (type) {
+                PopupType.Default -> R.string.core_ui_popup_confirm
+                PopupType.Variant2 -> R.string.core_ui_popup_yes
+            },
+        ),
+    dismissText: String = stringResource(R.string.core_ui_popup_no),
     isLoading: Boolean = false,
     confirmButtonColor: Color? = null,
     dismissButtonColor: Color? = null,
@@ -76,11 +80,13 @@ internal fun PopupContent(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     confirmText: String =
-        when (type) {
-            PopupType.Default -> "확인"
-            PopupType.Variant2 -> "예"
-        },
-    dismissText: String = "아니요",
+        stringResource(
+            when (type) {
+                PopupType.Default -> R.string.core_ui_popup_confirm
+                PopupType.Variant2 -> R.string.core_ui_popup_yes
+            },
+        ),
+    dismissText: String = stringResource(R.string.core_ui_popup_no),
     isLoading: Boolean = false,
     confirmButtonColor: Color? = null,
     dismissButtonColor: Color? = null,

@@ -17,14 +17,13 @@ import org.junit.Test
  * `isAnswered`/`isDraft` 는 사정이 다르다 — 종전 키(`answered`/`draft`)로 잡혀 있어
  * `getToday()` 가 항상 실패했던 이력(#548)이 있어 과도기 대비로 구 키를 함께 받는다.
  *
- * Json 설정은 `NetworkModule.provideJson` 과 동일 (ignoreUnknownKeys + coerceInputValues).
+ * Json 설정은 `NetworkModule.provideJson` 과 동일 (ignoreUnknownKeys).
  */
 @OptIn(ExperimentalSerializationApi::class)
 class TodayDailyQuestionContractTest {
     private val json =
         Json {
             ignoreUnknownKeys = true
-            coerceInputValues = true
         }
 
     private fun decode(body: String): TodayDailyQuestionDto =
@@ -81,5 +80,31 @@ class TodayDailyQuestionContractTest {
 
         assertEquals(true, dto.isAnswered)
         assertEquals(true, dto.isDraft)
+    }
+
+    @Test
+    fun `isAnswered 키가 빠지면 미답변으로 접히지 않고 실패한다`() {
+        // 기본값 `false` 를 두면 #548 같은 키 불일치가 다시 나도 "아직 답 안 함" 인
+        // 정상 응답으로 조용히 통과한다 — 오늘의 질문 카드가 계속 미답변으로 보인다 (#789).
+        assertThrows(MissingFieldException::class.java) {
+            decode(
+                """
+                { "status": 200, "code": 200,
+                  "data": { "questionId": 32, "day": 13, "content": "q", "isDraft": false } }
+                """.trimIndent(),
+            )
+        }
+    }
+
+    @Test
+    fun `isDraft 키가 빠지면 실패한다`() {
+        assertThrows(MissingFieldException::class.java) {
+            decode(
+                """
+                { "status": 200, "code": 200,
+                  "data": { "questionId": 32, "day": 13, "content": "q", "isAnswered": false } }
+                """.trimIndent(),
+            )
+        }
     }
 }

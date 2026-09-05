@@ -34,8 +34,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringArrayResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -115,6 +119,8 @@ fun DatePickerContent(
     onDateSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val previousMonthContentDescription = stringResource(R.string.core_ui_calendar_previous_month)
+    val nextMonthContentDescription = stringResource(R.string.core_ui_calendar_next_month)
     val formattedDate =
         "%d.%02d.%02d".format(
             selectedDate.year,
@@ -172,7 +178,7 @@ fun DatePickerContent(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "${currentYear}년 ${currentMonth}월",
+                        text = stringResource(R.string.core_ui_calendar_year_month, currentYear, currentMonth),
                         style = AfternoteDesign.typography.bodySmallR,
                         color = AfternoteDesign.colors.gray9,
                         modifier = Modifier.weight(1f),
@@ -183,12 +189,12 @@ fun DatePickerContent(
                                 .height(8.dp)
                                 .width(4.dp)
                                 .clipToBounds()
-                                .clickable { onPrevMonth() },
+                                .clickable(role = Role.Button) { onPrevMonth() },
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.core_ui_arrow_left),
-                            contentDescription = "이전 달",
+                            contentDescription = previousMonthContentDescription,
                             modifier = Modifier.size(24.dp),
                             tint = AfternoteDesign.colors.gray9,
                         )
@@ -200,12 +206,12 @@ fun DatePickerContent(
                                 .height(8.dp)
                                 .width(4.dp)
                                 .clipToBounds()
-                                .clickable { onNextMonth() },
+                                .clickable(role = Role.Button) { onNextMonth() },
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.core_ui_right_arrow),
-                            contentDescription = "다음 달",
+                            contentDescription = nextMonthContentDescription,
                             modifier = Modifier.size(24.dp),
                             tint = AfternoteDesign.colors.gray9,
                         )
@@ -235,7 +241,7 @@ fun CalendarGridContent(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
-        val dayLabels = listOf("일", "월", "화", "수", "목", "금", "토")
+        val dayLabels = stringArrayResource(R.array.core_ui_calendar_day_labels)
         Row(modifier = Modifier.fillMaxWidth()) {
             dayLabels.forEach { label ->
                 Text(
@@ -297,7 +303,8 @@ fun PickerDayCell(
                 .padding(4.dp)
                 .clip(CircleShape)
                 .background(bgColor)
-                .clickable(onClick = onSelect),
+                .clickable(role = Role.RadioButton, onClick = onSelect)
+                .semantics { selected = model.isSelected },
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -306,32 +313,6 @@ fun PickerDayCell(
             color = textColor,
         )
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun DatePickerContentPreview() {
-    DatePickerContent(
-        title = "발송 예정일",
-        currentYear = 2026,
-        currentMonth = 5,
-        selectedDate = LocalDate.of(2026, 5, 30),
-        onPrevMonth = {},
-        onNextMonth = {},
-        onDateSelect = {},
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun CalendarGridContentPreview() {
-    CalendarGridContent(
-        currentYear = 2026,
-        currentMonth = 5,
-        selectedDate = LocalDate.of(2026, 5, 30),
-        onDateSelect = {},
-        modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
-    )
 }
 
 fun buildPickerDays(

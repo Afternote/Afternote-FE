@@ -43,8 +43,10 @@ print_main_pr_format() {
 }
 
 case "$event_name" in
+    # develop QA 배포는 #1029 에서 없앴다. 남은 dispatch 호출자는 WIF canary(firebase-wif-canary.yml)와
+    # README 의 로컬 fallback 절차뿐이라 제목을 그 실체에 맞춘다.
     workflow_dispatch)
-        distribution_title="Afternote QA 배포"
+        distribution_title="Afternote 수동 배포"
         qa_points="$(printf '%s\n' "$qa_points" | tr ';' '\n')"
         ;;
     push)
@@ -122,6 +124,11 @@ if [[ -z "$normalized_qa_points" ]]; then
     if [[ "$event_name" == "push" ]]; then
         print_main_pr_format >&2
     fi
+    exit 1
+fi
+
+if printf '%s\n' "$normalized_qa_points" | grep -Eiq '#[0-9]+[[:space:]]*관련 동작을 재현하고 수정 후 기대 결과가 충족되는지 확인|PR[[:space:]]*#[0-9]+의 변경 흐름을 실행하고 기존 동작이 회귀하지 않는지 확인|테스터가 실행할 동작과 기대 결과를 직접 채워'; then
+    printf '::error::QA 포인트에 사전조건·행동·기대 결과가 없는 generic fallback 문구를 사용할 수 없습니다.\n' >&2
     exit 1
 fi
 

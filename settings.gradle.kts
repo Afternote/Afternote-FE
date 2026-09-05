@@ -28,16 +28,15 @@ dependencyResolutionManagement {
 rootProject.name = "afternote-fe"
 
 include(":app")
+include(":baselineprofile")
 
 // Core Modules
 include(":core:common")
 include(":core:data")
 include(":core:datastore")
-include(":core:di")
 include(":core:domain")
 include(":core:model")
 include(":core:network")
-include(":core:startup")
 include(":core:ui")
 
 // Feature Modules
@@ -45,12 +44,13 @@ include(":feature:afternote:data")
 include(":feature:afternote:domain")
 include(":feature:afternote:presentation")
 
+include(":feature:home:presentation")
+
 include(":feature:mindrecord:data")
 include(":feature:mindrecord:domain")
 include(":feature:mindrecord:presentation")
 
 include(":feature:onboarding:data")
-include(":feature:onboarding:domain")
 include(":feature:onboarding:presentation")
 
 include(":feature:receiver:data")

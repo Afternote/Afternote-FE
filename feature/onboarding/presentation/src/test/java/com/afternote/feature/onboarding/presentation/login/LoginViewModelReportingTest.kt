@@ -1,14 +1,11 @@
 package com.afternote.feature.onboarding.presentation.login
 
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.error.InvalidLoginCredentialsException
-import com.afternote.core.domain.repository.auth.AuthRepository
+import com.afternote.core.domain.error.CoreAuthFailure
+import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.usecase.auth.LoginUseCase
-import com.afternote.core.model.Session
-import com.afternote.core.model.TokenBundle
 import com.afternote.feature.onboarding.presentation.reporting.AuthProvider
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -52,47 +49,18 @@ class LoginViewModelReportingTest {
         }
     }
 
-    /** 로그인 3경로를 [failure] 로 고정한다. 나머지는 이 테스트에서 호출되지 않는다. */
-    private class FakeAuthRepository(
-        private val failure: Throwable,
-    ) : AuthRepository {
-        override val isLoggedIn: Flow<Boolean> get() = error("미사용")
-
-        override suspend fun defaultLogin(
-            email: String,
-            password: String,
-        ): Result<Session.DefaultSession> = Result.failure(failure)
-
-        override suspend fun kakaoLogin(oauthToken: String): Result<Session.SocialSession> = Result.failure(failure)
-
-        override suspend fun googleLogin(idToken: String): Result<Session.SocialSession> = Result.failure(failure)
-
-        override suspend fun saveSession(
-            accessToken: String,
-            refreshToken: String,
-        ): Result<Unit> = error("미사용")
-
-        override suspend fun updateTokens(
-            accessToken: String,
-            refreshToken: String,
-        ): Result<Unit> = error("미사용")
-
-        override suspend fun clearSession(): Result<Unit> = error("미사용")
-
-        override suspend fun getAccessToken(): Result<String?> = error("미사용")
-
-        override suspend fun getRefreshToken(): Result<String?> = error("미사용")
-
-        override suspend fun rotateToken(): Result<TokenBundle> = error("미사용")
-
-        override suspend fun logout(): Result<Unit> = error("미사용")
-    }
-
     private fun viewModelWith(
         failure: Throwable,
         reporter: ErrorReporter,
     ) = LoginViewModel(
-        loginUseCase = LoginUseCase(FakeAuthRepository(failure)),
+        loginUseCase =
+            LoginUseCase(
+                FakeAuthRepository.strict().apply {
+                    onDefaultLogin = { _, _ -> Result.failure(failure) }
+                    onKakaoLogin = { Result.failure(failure) }
+                    onGoogleLogin = { Result.failure(failure) }
+                },
+            ),
         errorReporter = reporter,
     )
 
@@ -153,7 +121,7 @@ class LoginViewModelReportingTest {
     fun `자격 거절은 기록하지 않는다 - 비밀번호 오타는 장애가 아니다`() =
         runTest(dispatcher) {
             val reporter = FakeErrorReporter()
-            val viewModel = viewModelWith(InvalidLoginCredentialsException(RuntimeException("401")), reporter)
+            val viewModel = viewModelWith(CoreAuthFailure.InvalidLoginCredentials(RuntimeException("401")), reporter)
 
             viewModel.loginWithEmail()
             advanceUntilIdle()

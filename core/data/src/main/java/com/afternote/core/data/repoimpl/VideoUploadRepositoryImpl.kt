@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.core.net.toUri
 import com.afternote.core.common.di.IoDispatcher
 import com.afternote.core.common.result.runCatchingCancellable
+import com.afternote.core.domain.model.UploadedFile
 import com.afternote.core.domain.repository.VideoUploadRepository
 import com.afternote.core.network.dto.PresignedUrlRequestDto
 import com.afternote.core.network.model.requireData
@@ -23,7 +24,7 @@ import javax.inject.Named
 /** MIME 타입에서 확장자를 못 뽑았을 때 폴백. 대부분의 안드로이드 영상이 mp4 라 합리적 디폴트. */
 private const val DEFAULT_VIDEO_EXTENSION = "mp4"
 
-class VideoUploadRepositoryImpl
+internal class VideoUploadRepositoryImpl
     @Inject
     constructor(
         @param:ApplicationContext private val context: Context,
@@ -34,20 +35,12 @@ class VideoUploadRepositoryImpl
         override suspend fun upload(
             uriString: String,
             directory: String,
-        ): Result<String> =
+        ): Result<UploadedFile> =
             runCatchingCancellable {
                 val uri = uriString.toUri()
                 val extension = videoExtensionFromUri(uri)
 
-                val presigned =
-                    imageApi
-                        .getPresignedUrl(
-                            PresignedUrlRequestDto(
-                                directory = directory,
-                                extension = extension,
-                            ),
-                        ).requireData()
-
+                // presigned 요청에 파일 크기가 필수라 임시 파일을 먼저 만든다 (#950).
                 val tempFile =
                     withContext(ioDispatcher) {
                         val file = File.createTempFile("video_upload_", ".$extension", context.cacheDir)
@@ -55,6 +48,21 @@ class VideoUploadRepositoryImpl
                             file.outputStream().use { output -> input.copyTo(output) }
                         } ?: throw IllegalStateException("Could not read video from URI")
                         file
+                    }
+
+                val presigned =
+                    try {
+                        imageApi
+                            .getPresignedUrl(
+                                PresignedUrlRequestDto(
+                                    directory = directory,
+                                    extension = extension,
+                                    contentLength = tempFile.length(),
+                                ),
+                            ).requireData()
+                    } catch (e: Throwable) {
+                        tempFile.delete()
+                        throw e
                     }
 
                 try {
@@ -78,7 +86,7 @@ class VideoUploadRepositoryImpl
                             }
                     }
 
-                    presigned.fileUrl
+                    UploadedFile(fileUrl = presigned.fileUrl, fileKey = presigned.fileKey)
                 } finally {
                     tempFile.delete()
                 }

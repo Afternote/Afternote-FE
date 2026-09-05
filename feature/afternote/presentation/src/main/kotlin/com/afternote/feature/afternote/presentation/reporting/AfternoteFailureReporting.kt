@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.presentation.reporting
 
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.feature.afternote.domain.error.ReceiverServerRejectionException
+import com.afternote.feature.receiver.domain.error.ReceiverFailure
 
 /**
  * 애프터노트 흐름에서 실패가 발생한 지점.
@@ -21,6 +21,21 @@ enum class AfternoteFailureStage(
     /** 수정 진입 시 기존 애프터노트 로드 — 여기서 깨지면 빈 폼으로 덮어쓸 위험이 있다. */
     PREFILL_LOAD("prefill_load"),
 
+    /**
+     * 신규 작성 진입 시 작성자가 등록한 수신자 목록 조회.
+     *
+     * 실패해도 화면에는 수신자 자리가 비어 보일 뿐이라 계측하지 않으면 흔적이 남지 않는다.
+     * 수신자는 선택 항목이라 저장이 막히지는 않지만, 지정하려던 사용자에게는 등록해 둔 수신자가
+     * 사라져 보이는 무음 결함이 된다.
+     */
+    AUTHOR_RECEIVER_LOAD("author_receiver_load"),
+
+    /**
+     * 수신자 선택 화면(#540)의 목록 조회 — [AUTHOR_RECEIVER_LOAD] 와 같은 `GET users/receivers` 지만
+     * 실패한 화면이 달라 키를 나눈다. 이쪽은 화면이 실패를 보여 주고 재시도를 받는다.
+     */
+    RECEIVER_SELECT_LOAD("receiver_select_load"),
+
     MEMORIAL_THUMBNAIL_UPLOAD("memorial_thumbnail_upload"),
 
     /**
@@ -31,6 +46,23 @@ enum class AfternoteFailureStage(
      * 보관 한도(최근 8건)를 잡음이 차지한다.
      */
     MEMORIAL_THUMBNAIL_EXTRACT("memorial_thumbnail_extract"),
+
+    /**
+     * 즉석 촬영 인텐트를 띄우지 못한 실패 — 결과 파일을 못 만들거나(저장공간) 받아 줄 앱이 없거나.
+     *
+     * 사용자에게는 "카메라를 사용할 수 없습니다" 한 줄만 나가 둘이 구분되지 않는다. 제보가 왔을 때
+     * 어느 쪽인지 가르려면 예외 자체가 남아 있어야 한다.
+     */
+    MEMORIAL_CAPTURE_LAUNCH("memorial_capture_launch"),
+
+    /**
+     * 애프터노트 목록(Paging) 로드 — refresh·append 를 함께 싣는다.
+     *
+     * 목록은 실패해도 이미 그려 둔 페이지가 남아 «표시만 사라지는» 무음 결함이 된다. 한 번 실패한
+     * 뒤 사용자가 재시도를 연타하면 같은 실패가 반복 기록되므로 호출부([com.afternote.feature.afternote.presentation.author.home.AfternoteHomeViewModel])
+     * 가 중복을 억제한다 — 보관 한도(최근 8건)를 한 장애가 통째로 차지하지 않게 하기 위함이다.
+     */
+    LIST_LOAD("list_load"),
 
     DETAIL_LOAD("detail_load"),
 
@@ -67,12 +99,6 @@ enum class AfternoteFailureStage(
 
     /** 발신자 상세의 열람 인증 상태 조회. */
     SENDER_STATUS_LOAD("sender_status_load"),
-
-    /** 모든 기록 내려받기 — 서버에서 묶음을 받아오는 단계. */
-    RECEIVED_EXPORT_DOWNLOAD("received_export_download"),
-
-    /** 모든 기록 내려받기 — 받아온 묶음을 기기에 저장하는 단계. */
-    RECEIVED_EXPORT_SAVE("received_export_save"),
 }
 
 /**
@@ -96,46 +122,52 @@ fun ErrorReporter.recordAfternoteFailure(
  * `Receiver` 는 타입이 아니라 적용 맥락이다 — `Throwable` 확장이라 네트워크 타임아웃처럼 수신자와
  * 무관한 예외도 들어오고, 그런 실패는 기록 대상(true)이다. 타입으로 좁히는 건 아래 제외 판정뿐이다.
  *
- * 유일한 제외 대상은 "서버가 예상하고 처리한 거절"(이메일 미등록·인증번호 만료·마스터 키 오타 등)이다 —
- * 앱이 정상 동작한 결과라 고칠 것이 없고, 무엇보다 보관 한도를 사용자 오류가 차지해 실제 장애를 밀어낸다.
- * Crashlytics 는 non-fatal 을 **최근 8건만 보관하고 초과분은 오래된 것부터 버린다** — 이 수치가 코드 곳곳의
- * "보관 한도(최근 8건)" 서술의 근거다.
+ * 제외 대상은 "서버가 예상하고 처리한 거절" 하나다 — 앱이 정상 동작한 결과라 고칠 것이 없고, 무엇보다
+ * Crashlytics 가 non-fatal 을 **최근 8건만 보관하고 초과분은 오래된 것부터 버려서**(코드 곳곳의
+ * "보관 한도(최근 8건)" 서술이 이 수치를 가리킨다) 사용자 오류가 실제 장애를 밀어낸다.
  * https://firebase.google.com/docs/crashlytics/android/customize-crash-reports
  *
- * 그 판정은 **4xx + 서버 문구** 두 조건을 모두 만족할 때만 성립하고, 나머지는 전부 기록한다.
- *
- * | | 문구 있음 | 문구 없음 |
- * |---|---|---|
- * | 4xx | 제외 | 기록 |
- * | 5xx | 기록 | 기록 |
- *
- * 문구 유무만으로 가르지 않는 이유: 이 서버는 5xx 에도 `message` 를 싣는다 — 500 응답 body 에 내부 SQL
- * 문구가 그대로 실려 온 실측(#511)이 있다. 문구만 보면 정작 잡으려던 장애가 통째로 제외된다.
- *
- * 반대로 status 만으로도 가를 수 없다: 문구 없는 4xx 는 서버가 안내한 거절이 아니라 이쪽이 잘못된 요청을
- * 보내고 있다는 신호(파라미터 누락·잘못된 id·만료 토큰)라, 제외하면 FE 버그가 묻힌다. 이 서버는 4xx·5xx
- * 가리지 않고 문구를 싣는 것으로 관측돼(400·401·500 실측), 문구가 없다는 것 자체가 정상 경로가 아니다.
- *
- * 두 조건을 모두 요구하는 건 **확실할 때만 제외**하려는 것이다 — 판정이 빗나가면 기록을 더 하는 쪽으로
- * 빗나간다. 잡음은 콘솔에 보여서 나중에 좁힐 수 있지만, 제외한 건 보이지 않아 좁힐 기회조차 없다.
- *
- * 사유 code 로 좁히지 않은 이유: 서버의 code 체계가 사용자 오류와 장애를 아직 분리하지 않는다.
+ * 사용자 거절 판정은 Data 계층이 [ReceiverFailure.UserRejection] 으로 번역했다 — FE 가 등재한 code 는
+ * code 만으로, 미등재 code 는 `4xx + 비어 있지 않은 서버 문구`로. 5xx 와 문구 없는 미등재 4xx 는
+ * [ReceiverFailure.UnexpectedServerFailure] 로 남아 기록된다. presentation 은 HTTP status·BE code·서버
+ * message 를 되짚지 않고 도메인 결과만 소비한다.
  *
  * 다른 흐름에는 쓰지 않는다. 회원가입 이메일 인증은 사용자 오류가 code 1207 하나로만 와서 호출부가
- * 타입(`EmailVerificationException`)만 보고 거른다 — 문구 유무를 따질 필요가 없다.
+ * 타입(`CoreAuthFailure.EmailVerification`)만 보고 거른다 — 문구 유무를 따질 필요가 없다.
  *
- * 화면 노출 게이트(`toErrorPayload`, DocumentUploadUiState.kt)는 이 술어를 쓰지 않는다 — 노출은
- * 사유 code allowlist 로 더 좁게 가른다. 그쪽을 넓히더라도 이 판정을 따라 넓히지 말 것.
+ * 화면 노출은 `UserRejection.reason != null` 로 더 좁다. 미등재 4xx 사용자 거절은 리포팅에서 제외되지만
+ * 서버 원문을 노출하지 않고 화면 폴백으로 내려간다. 두 판정을 하나로 합치지 말 것.
  */
-fun Throwable.shouldReportInReceiverFlow(): Boolean {
-    val isExpectedUserRejection =
-        this is ReceiverServerRejectionException &&
-            status in CLIENT_ERROR_STATUS_RANGE &&
-            !serverMessage.isNullOrBlank()
-    return !isExpectedUserRejection
-}
+fun Throwable.shouldReportInReceiverFlow(): Boolean =
+    when (this) {
+        is ReceiverFailure -> !isExpectedUserRejection()
+        else -> true
+    }
 
-/** 4xx = 요청을 보낸 쪽 문제. 이 대역 밖(5xx·그 외)은 서버 문구가 실려 와도 장애로 보고 기록한다. */
-private val CLIENT_ERROR_STATUS_RANGE = 400..499
+/**
+ * 루트로 좁혀 `when` 을 exhaustive 하게 만든다 — 수신자 실패 유형이 늘면 여기가 컴파일 에러로 잡힌다.
+ * 판정을 빼먹은 새 유형은 조용히 기록 대상이 되므로(안전한 쪽), 놓쳐도 티가 나지 않는다.
+ */
+private fun ReceiverFailure.isExpectedUserRejection(): Boolean =
+    when (this) {
+        is ReceiverFailure.UserRejection -> {
+            true
+        }
+
+        is ReceiverFailure.UnexpectedServerFailure -> {
+            false
+        }
+
+        // 서버가 예상하고 거절한 것이 아니라 서버에 닿지도 못한 실패다. 이 타입이 생기기 전에도
+        // IO 예외는 위 `else -> true` 로 기록됐으므로(#611) 기록 대상을 그대로 유지한다.
+        is ReceiverFailure.NetworkUnavailable -> {
+            false
+        }
+
+        // 서버가 사유를 확인해 거절한 4xx 다 — status·문구를 되짚을 것 없이 타입이 이미 그 사실이다.
+        is ReceiverFailure.DeliveryConditionNotMet -> {
+            true
+        }
+    }
 
 private const val KEY_AFTERNOTE_STAGE = "afternote_stage"

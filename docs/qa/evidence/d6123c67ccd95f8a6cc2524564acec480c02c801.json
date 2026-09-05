@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "d6123c67ccd95f8a6cc2524564acec480c02c801.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": "not_covered",
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "device.avd",
+      "device.serial"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "d6123c67ccd95f8a6cc2524564acec480c02c801",
+  "head_ref": "refs/pull/882/head",
+  "base_sha": "b834c1100bc5d5dcf7f34a6a28e1d108e4404ec5",
+  "base_ref": "origin/develop",
+  "recorded_at": "2026-08-22T18:58:00+00:00",
+  "result": "blocked",
+  "scenario": "미실행(빌드·설치 생략). 도달성 분석으로 차단 확정.",
+  "not_covered": [
+    {
+      "pr": 882,
+      "reason": "CustomerCenterRoute 진입점이 설정 메뉴 onInquiryClick 단 하나이고(diff 확인), 설정 메뉴는 SettingUiState.Success(getMyProfile() 성공)에서만 렌더됨. 리뷰 지적 2의 프로필 상단 고객센터 진입점(무동작) 역시 SettingProfile이 Success 분기 내부라 동일 게이트. 더미 세션+오프라인으로는 어느 진입점도 도달 불가 → 전화 다이얼·이메일 복사 동작과 무동작 진입점의 런타임 확인은 유효 서버 세션 확보 후 가능. 리뷰의 두 finding(Android Lint FAIL, #783 진입점 무동작)은 정적 근거(CI 결과·null 콜백)로 성립 유지."
+    }
+  ],
+  "device": {
+    "android": "15",
+    "is_emulator": true
+  },
+  "details": {
+    "dynamic": true,
+    "findings": [],
+    "app": {
+      "package": "com.afternote.afternote_fe",
+      "installed_for_head": null,
+      "mock": "n/a"
+    },
+    "purpose": "8/20 이후 리뷰 QA 감사 후속 — PR #882(고객센터 화면) 소급 런타임 QA 시도"
+  }
+}

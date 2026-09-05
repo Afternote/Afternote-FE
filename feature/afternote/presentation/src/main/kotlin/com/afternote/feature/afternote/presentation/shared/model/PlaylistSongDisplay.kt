@@ -7,14 +7,14 @@ import androidx.compose.runtime.Immutable
  *
  * Feature별 Song/Entity는 각자 [PlaylistSongDisplay]로 매핑하여 사용합니다.
  *
- * @param id 클릭·선택 시 구분용 (afternote: String, receiver: Int.toString() 등)
+ * @param selectionKey 클릭·선택 시 화면 안에서 곡을 구분하는 키
  * @param title 노래 제목
  * @param artist 가수명
  * @param albumImageUrl 앨범 이미지 URL (선택, 음악 검색 API 등에서 사용)
  */
 @Immutable
 data class PlaylistSongDisplay(
-    val id: String,
+    val selectionKey: String,
     val title: String,
     val artist: String,
     val albumImageUrl: String? = null,

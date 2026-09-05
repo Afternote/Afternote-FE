@@ -2,27 +2,29 @@ package com.afternote.core.data.repoimpl.account
 
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.data.mapper.auth.AuthMapper
+import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.repository.account.AccountRepository
 import com.afternote.core.model.AccountRegistration
 import com.afternote.core.model.FoundAccount
 import com.afternote.core.network.dto.EmailFindRequestDto
 import com.afternote.core.network.dto.FindSendCodeRequestDto
 import com.afternote.core.network.dto.PasswordChangeRequestDto
+import com.afternote.core.network.dto.PasswordFindRequestDto
 import com.afternote.core.network.dto.SendEmailCodeRequestDto
 import com.afternote.core.network.dto.SignUpRequestDto
 import com.afternote.core.network.dto.VerifyEmailRequestDto
+import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
 import com.afternote.core.network.service.AccountApiService
+import java.io.IOException
 import javax.inject.Inject
 
-class AccountRepositoryImpl
+internal class AccountRepositoryImpl
     @Inject
     constructor(
         private val accountApiService: AccountApiService,
     ) : AccountRepository {
-        // requireStatus() 는 형제 메서드와 맞춘 것이다 — 이것만 빠져 있어 HTTP 200 봉투 안의
-        // 실패 status 가 성공으로 통과했고, 그러면 실패를 옮길 매퍼가 볼 실패 자체가 생기지 않는다.
         override suspend fun sendEmailCode(email: String): Result<Unit> =
             runCatchingCancellable {
                 accountApiService
@@ -30,15 +32,6 @@ class AccountRepositoryImpl
                     .requireStatus()
             }.mapAccountFailure()
 
-        /**
-         * 인증번호 무효(서버 code 1207)를 `EmailVerificationException` 으로 갈라내는 일은
-         * `mapAccountFailure` 가 형제 메서드와 똑같이 처리한다 — 여기서 따로 catch 하던 것을 걷었다.
-         * 같은 판정을 두 곳에 두면 갈라지기 때문이다(실제로 blank 처리가 서로 어긋나 있었다).
-         *
-         * 1207 을 구분하는 이유: 인증번호 무효는 사용자가 재입력으로 고칠 수 있는 실패라 호출처가
-         * 인라인 에러로 보여주고, 그 외(네트워크·서버 장애)는 입력과 무관해 스낵바로 보낸다.
-         * 둘 다 같은 HTTP 400 이라 상태코드로는 안 갈리므로 서버 봉투의 `code` 가 유일한 판별 신호다.
-         */
         override suspend fun verifyEmail(
             email: String,
             certificateCode: String,
@@ -75,6 +68,24 @@ class AccountRepositoryImpl
                 AuthMapper.toFoundAccount(response.requireData())
             }.mapAccountFailure()
 
+        override suspend fun resetPassword(
+            email: String,
+            certificateCode: String,
+            newPassword: String,
+            confirmPassword: String,
+        ): Result<Unit> =
+            runCatchingCancellable {
+                accountApiService
+                    .findPassword(
+                        PasswordFindRequestDto(
+                            email = email,
+                            certificateCode = certificateCode,
+                            newPassword = newPassword,
+                            confirmPassword = confirmPassword,
+                        ),
+                    ).requireStatus()
+            }.mapAccountFailure()
+
         override suspend fun signUp(
             email: String,
             password: String,
@@ -107,4 +118,52 @@ class AccountRepositoryImpl
                         ),
                     ).requireStatus()
             }
+    }
+
+private const val CODE_INVALID_VERIFICATION = 1207
+private const val CODE_EMAIL_ALREADY_REGISTERED = 1200
+private const val CODE_NEW_PASSWORD_UNCHANGED = 1206
+private const val CODE_SOCIAL_LOGIN_USER = 1702
+
+/**
+ * 계정 API 실패를 도메인 예외로 옮긴다 — presentation 이 `core:network` 를 모른 채 타입만으로
+ * 분기하게 하는 것이 목적이다(#646).
+ *
+ * 가르는 신호는 서버 봉투의 `code` 뿐이고 `message` 는 옮기지 않는다(BE#92). 표시 문구는 각 화면이
+ * 자기 리소스로 갖는다. 취소는 다시 보지 않는다 — 호출부가 전부 `runCatchingCancellable`(#661)
+ * 이라 `CancellationException` 이 [Result] 로 도달하지 않는다.
+ */
+private fun <T> Result<T>.mapAccountFailure(): Result<T> =
+    when (val exception = exceptionOrNull()) {
+        is ApiException -> {
+            when (exception.code) {
+                CODE_INVALID_VERIFICATION -> {
+                    Result.failure(CoreAuthFailure.EmailVerification(exception))
+                }
+
+                CODE_EMAIL_ALREADY_REGISTERED -> {
+                    Result.failure(CoreAuthFailure.EmailAlreadyRegistered(exception))
+                }
+
+                CODE_NEW_PASSWORD_UNCHANGED -> {
+                    Result.failure(CoreAuthFailure.PasswordUnchanged(exception))
+                }
+
+                CODE_SOCIAL_LOGIN_USER -> {
+                    Result.failure(CoreAuthFailure.SocialSignUpAccount(exception))
+                }
+
+                else -> {
+                    this
+                }
+            }
+        }
+
+        is IOException -> {
+            Result.failure(CoreAuthFailure.NetworkUnavailable(exception))
+        }
+
+        else -> {
+            this
+        }
     }

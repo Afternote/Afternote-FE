@@ -7,7 +7,8 @@ plugins {
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.app.distribution)
     alias(libs.plugins.firebase.crashlytics)
-    alias(libs.plugins.compose.screenshot)
+    id("afternote.kover")
+    alias(libs.plugins.androidx.baselineprofile)
 }
 
 val localProperties = Properties()
@@ -16,14 +17,12 @@ if (localPropertiesFile.exists()) {
     localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
 
-// 카카오 OAuth redirect(`kakao{KEY}://oauth`) 핸들러 등록용.
-// SDK 런타임 초기화 키는 `core:startup`의 BuildConfig.KAKAO_NATIVE_APP_KEY 사용.
+// OAuth redirect(`kakao{KEY}://oauth`) 핸들러 등록용 manifestPlaceholder 와 SDK 런타임 초기화용
+// BuildConfig 가 같은 값을 쓴다 — 주입 지점이 둘이어도 키는 여기서 한 번만 읽는다.
 val kakaoKey = socialLoginKey("KAKAO_NATIVE_APP_KEY")
 
 android {
     namespace = "com.afternote.afternote_fe"
-
-    experimentalProperties["android.experimental.enableScreenshotTest"] = true
 
     buildFeatures {
         buildConfig = true
@@ -31,10 +30,45 @@ android {
 
     defaultConfig {
         applicationId = "com.afternote.afternote_fe"
-        versionCode = 1
+        versionCode = resolveAfternoteVersionCode(System.getenv(AFTERNOTE_VERSION_CODE_ENV))
         versionName = "1.0"
 
+        testInstrumentationRunner = "com.afternote.afternote_fe.test.AfternoteTestRunner"
+        testInstrumentationRunnerArguments["clearPackageData"] = "true"
+
         manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = kakaoKey
+        buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoKey\"")
+    }
+
+    testOptions {
+        animationsDisabled = true
+        execution = "ANDROIDX_TEST_ORCHESTRATOR"
+        // Robolectric 이 병합된 매니페스트·리소스를 읽어야 NavHost 를 실제 컴포지션으로 띄울 수 있다 (#1601).
+        unitTests.isIncludeAndroidResources = true
+        managedDevices {
+            localDevices {
+                create("pixel2Api26") {
+                    device = "Pixel 2"
+                    apiLevel = 26
+                    systemImageSource = "aosp"
+                }
+                create("pixel2Api30") {
+                    device = "Pixel 2"
+                    apiLevel = 30
+                    systemImageSource = "aosp"
+                }
+                create("pixel2Api34") {
+                    device = "Pixel 2"
+                    apiLevel = 34
+                    systemImageSource = "aosp"
+                }
+                create("pixel2Api36") {
+                    device = "Pixel 2"
+                    apiLevel = 36
+                    systemImageSource = "aosp"
+                }
+            }
+        }
     }
 
     signingConfigs {
@@ -149,6 +183,14 @@ android {
     }
 
     buildTypes {
+        debug {
+            // 설치된 앱이 어느 커밋으로 빌드됐는지 `adb shell dumpsys package` 한 줄로 읽히게 한다.
+            // 실기 QA 증거는 전체 커밋 sha 로 대장에 남으므로(`docs/qa/evidence/<full-head-sha>.json`),
+            // 앱이 스스로 커밋을 들고 있지 않으면 검증한 코드를 특정할 수 없다 — #1135.
+            // release `versionName` 은 사용자에게 보이므로 건드리지 않는다.
+            versionNameSuffix = resolveDebugVersionNameSuffix()
+        }
+
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -164,17 +206,25 @@ android {
     }
 }
 
-configurations.configureEach {
-    if (name == "debugScreenshotTestCompileClasspath") {
-        // Keep the renderer from loading firebase-datatransport R classes from two different versions.
-        exclude(group = "com.google.firebase", module = "firebase-datatransport")
-    }
+baselineProfile {
+    // 생성은 주간/manual workflow가 소유한다. 일반 release 빌드가 에뮬레이터를 암묵적으로
+    // 띄우지 않으며, 검토 가능한 단일 profile을 source에 저장해 패키징한다.
+    automaticGenerationDuringBuild = false
+    mergeIntoMain = true
+    saveInSrc = true
+    dexLayoutOptimization = true
 }
 
 dependencies {
     implementation(libs.coil.compose)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.core.splashscreen)
+
+    // App Startup — 기동 초기화는 app 매니페스트에 등록한 Initializer 로 실행한다.
+    implementation(libs.androidx.startup.runtime)
+    // DailyNotificationInitializer 가 WorkManagerInitializer 를 선행 의존으로 지정한다.
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.profileinstaller)
 
     // 카카오 OAuth redirect Activity(`com.kakao.sdk.auth.AuthCodeHandlerActivity`)를
     // app 매니페스트에서 직접 참조하므로 컴파일 classpath에 노출 필요.
@@ -194,32 +244,65 @@ dependencies {
     implementation(projects.core.network)
     implementation(projects.core.ui)
     implementation(projects.core.model)
-    implementation(projects.core.startup)
-    implementation(projects.core.di)
+    implementation(projects.core.data)
+    // 알림 권한을 물어본 사실을 기기 수명 저장소에 남긴다 (#1454).
+    // 저장소 창구는 core:datastore 의 LocalStoreRegistry 이고, 스키마(타입드 접근자)는 각 모듈이 갖는다.
+    implementation(projects.core.datastore)
+    implementation(libs.androidx.datastore.preferences)
     implementation(projects.core.domain)
 
     // Feature — presentation
     implementation(projects.feature.afternote.presentation)
+    implementation(projects.feature.home.presentation)
     implementation(projects.feature.mindrecord.presentation)
+    implementation(projects.feature.receiver.presentation)
     implementation(projects.feature.timeletter.presentation)
     implementation(projects.feature.onboarding.presentation)
     implementation(projects.feature.setting.presentation)
 
-    // Feature — domain (홈 요약 UseCase가 마인드레코드 도메인 Repository에, 수신자 홈이 애프터노트 도메인 Repository에 직접 의존)
-    implementation(projects.feature.mindrecord.domain)
+    // Feature — domain (AppNavigationActions 가 에디터 종류를 AfternoteType 으로 받는다)
     implementation(projects.feature.afternote.domain)
-    implementation(projects.feature.receiver.domain)
 
     // Feature — data (Hilt @Module / 바인딩이 루트 그래프에 포함되도록 app이 classpath에 둔다)
     implementation(projects.feature.afternote.data)
+    implementation(projects.feature.receiver.data)
     implementation(projects.feature.mindrecord.data)
     implementation(projects.feature.timeletter.data)
     implementation(projects.feature.onboarding.data)
 
-    // HomeTabViewModel 경합 테스트 — 가상 시간으로 viewModelScope 요청 순서를 제어한다.
     testImplementation(libs.coroutines.test)
+    testImplementation(testFixtures(projects.core.domain))
 
-    // Compose Preview Screenshot Testing (#330) — 1hyok 영역 (홈) 적용
-    screenshotTestImplementation(libs.screenshot.validation.api)
-    screenshotTestImplementation(libs.androidx.compose.ui.tooling)
+    // Nav2 백스택 회귀 기준 (#1601) — 에뮬레이터 없이 NavHost 를 실제 컴포지션으로 띄워
+    // 탭 상태 복원·인증 스택 경계·flow-scoped ViewModel 수명을 잰다. 대상(AppState·
+    // AppNavigationActions)이 app 모듈에만 있어 피처 모듈 Robolectric 설정을 재사용할 수 없다.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+
+    baselineProfile(project(":baselineprofile"))
+
+    // Managed-device androidTest — 실제 서버·OAuth 대신 Hilt fake를 주입하고 Compose semantics를 검증한다.
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4.accessibility)
+    androidTestImplementation(libs.androidx.test.core.ktx)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.navigation.testing)
+    androidTestImplementation(libs.androidx.paging.runtime)
+    androidTestImplementation(libs.hilt.android.testing)
+    androidTestImplementation(libs.coroutines.test)
+    androidTestImplementation(projects.core.data)
+    androidTestImplementation(testFixtures(projects.core.domain))
+    androidTestImplementation(projects.feature.afternote.domain)
+    androidTestImplementation(testFixtures(projects.feature.afternote.domain))
+    androidTestImplementation(projects.feature.mindrecord.domain)
+    androidTestImplementation(testFixtures(projects.feature.mindrecord.domain))
+    androidTestImplementation(projects.feature.receiver.domain)
+    androidTestImplementation(testFixtures(projects.feature.receiver.domain))
+    androidTestImplementation(projects.feature.timeletter.domain)
+    androidTestImplementation(testFixtures(projects.feature.timeletter.domain))
+    androidTestImplementation(testFixtures(projects.feature.timeletter.data))
+    kspAndroidTest(libs.hilt.compiler)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
+    androidTestUtil(libs.androidx.test.orchestrator)
 }

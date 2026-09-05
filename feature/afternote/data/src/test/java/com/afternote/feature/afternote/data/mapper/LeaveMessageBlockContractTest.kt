@@ -1,13 +1,17 @@
 package com.afternote.feature.afternote.data.mapper
 
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.data.dto.AfternoteCreateAccountRequestDto
+import com.afternote.feature.afternote.data.dto.AfternoteCreatePlaylistRequestDto
 import com.afternote.feature.afternote.data.dto.AfternoteDetailDto
 import com.afternote.feature.afternote.data.dto.LeaveMessageBlockDto
-import com.afternote.feature.afternote.data.dto.ReceivedAfternoteDetailDto
-import com.afternote.feature.afternote.data.dto.ReceivedAfternoteListDto
-import com.afternote.feature.afternote.data.mapper.response.toDetailDomain
-import com.afternote.feature.afternote.data.mapper.response.toDomain
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
+import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
+import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
+import com.afternote.feature.receiver.data.dto.ReceivedAfternoteDetailDto
+import com.afternote.feature.receiver.data.dto.ReceivedAfternoteListDto
+import com.afternote.feature.receiver.data.mapper.response.toDomain
+import com.afternote.feature.receiver.data.mapper.toReceiverDomainList
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -25,25 +29,26 @@ class LeaveMessageBlockContractTest {
     private val json =
         Json {
             ignoreUnknownKeys = true
-            coerceInputValues = true
         }
 
     /**
      * 본문은 실서버 응답 전문 그대로다 (`GET /afternotes/29`, 2026-08-07 실측).
      * 제목을 비워 보낸 블록이 `title: null` 로 돌아온다는 점이 이 케이스의 요지다.
+     *
+     * `isDraft` 는 캡처 이후 서버가 추가한 필드라 여기서만 보강했다.
      */
     @Test
     fun `작성자 상세 - leaveMessage 배열을 파싱해 블록으로 옮긴다`() {
         val response =
             """
-            {"afternoteId":29,"category":"SOCIAL","title":"509검증-배열","actions":["게시물 내리기"],
+            {"afternoteId":29,"category":"SOCIAL","title":"509검증-배열","isDraft":false,"actions":["게시물 내리기"],
              "leaveMessage":[{"title":"가족에게","body":"잘 부탁해"},{"title":null,"body":"제목 없는 블록"}],
              "credentials":{"id":"qa","password":"qa"},
              "receivers":[{"receiverId":7,"name":"QA407Receiver","relation":"DAUGHTER"}],
              "playlist":null,"updatedAt":"2026-08-07T06:21:14.553567"}
             """.trimIndent()
 
-        val detail = json.decodeFromString<AfternoteDetailDto>(response).toDetailDomain()
+        val detail = json.decodeFromString<AfternoteDetailDto>(response).toDomain()
 
         assertEquals(
             listOf(
@@ -60,8 +65,8 @@ class LeaveMessageBlockContractTest {
         val detail =
             json
                 .decodeFromString<AfternoteDetailDto>(
-                    """{"afternoteId":11,"category":"SOCIAL","title":"t","leaveMessage":[{"title":"","body":"재현용 남기실 말씀"}]}""",
-                ).toDetailDomain()
+                    """{"afternoteId":11,"category":"SOCIAL","title":"t","isDraft":false,"updatedAt":"2026-08-07T06:21:14.553567","receivers":[],"credentials":{"id":"qa","password":"qa"},"leaveMessage":[{"title":"","body":"재현용 남기실 말씀"}]}""",
+                ).toDomain()
 
         assertEquals(
             listOf(LeaveMessageBlock(title = "", body = "재현용 남기실 말씀")),
@@ -74,8 +79,8 @@ class LeaveMessageBlockContractTest {
         val detail =
             json
                 .decodeFromString<AfternoteDetailDto>(
-                    """{"afternoteId":1,"category":"SOCIAL","title":"t","leaveMessage":null}""",
-                ).toDetailDomain()
+                    """{"afternoteId":1,"category":"SOCIAL","title":"t","isDraft":false,"updatedAt":"2026-08-07T06:21:14.553567","receivers":[],"credentials":{"id":"qa","password":"qa"},"leaveMessage":null}""",
+                ).toDomain()
 
         assertTrue(detail.leaveMessageBlocks.isEmpty())
     }
@@ -91,7 +96,11 @@ class LeaveMessageBlockContractTest {
              "totalCount":2}
             """.trimIndent()
 
-        val items = json.decodeFromString<ReceivedAfternoteListDto>(response).afternotes.toReceiverDomainList()
+        val items =
+            json
+                .decodeFromString<ReceivedAfternoteListDto>(response)
+                .afternotes
+                .toReceiverDomainList(NoopErrorReporter)
 
         assertEquals(listOf(1L, 2L), items.map { it.id })
     }
@@ -101,7 +110,7 @@ class LeaveMessageBlockContractTest {
         val detail =
             json
                 .decodeFromString<ReceivedAfternoteDetailDto>(
-                    """{"id":1,"category":"GALLERY","leaveMessage":[{"title":null,"body":"사진은 남겨줘"}]}""",
+                    """{"id":1,"category":"GALLERY","title":"사진첩","senderName":"이발신","actions":null,"leaveMessage":[{"title":null,"body":"사진은 남겨줘"}]}""",
                 ).toDomain()
 
         assertEquals(
@@ -137,6 +146,8 @@ class LeaveMessageBlockContractTest {
 
         val encoded = json.encodeToString(AfternoteCreateAccountRequestDto.serializer(), request)
 
+        assertTrue(encoded.contains("\"category\":\"SOCIAL\""))
+        assertTrue(!encoded.contains("\"type\""))
         assertTrue(encoded.contains(""""leaveMessage":[{"title":"가족에게","body":"잘 부탁해"}]"""))
     }
 
@@ -144,4 +155,27 @@ class LeaveMessageBlockContractTest {
     fun `요청 직렬화 - 블록이 없으면 필드를 싣지 않는다`() {
         assertNull(emptyList<LeaveMessageBlock>().toDto())
     }
+
+    /** PLAYLIST 생성 요청만 `leaveMessage` 가 빠져 입력이 조용히 버려지던 회귀 가드 (이슈 #678). */
+    @Test
+    fun `요청 직렬화 - PLAYLIST 생성도 남기실 말씀 블록을 싣는다`() {
+        val request =
+            CreateMemorialPayload(
+                title = "추억 노트",
+                memorial = MemorialWritePayload(memorialPhotoUrl = null, songs = emptyList(), memorialVideo = null),
+                leaveMessageBlocks = listOf(LeaveMessageBlock(title = "가족에게", body = "노래 들으며 기억해줘")),
+            ).toRequest()
+
+        val encoded = json.encodeToString(AfternoteCreatePlaylistRequestDto.serializer(), request)
+
+        assertTrue(encoded.contains("\"category\":\"PLAYLIST\""))
+        assertTrue(encoded.contains(""""leaveMessage":[{"title":"가족에게","body":"노래 들으며 기억해줘"}]"""))
+    }
+}
+
+private object NoopErrorReporter : ErrorReporter {
+    override fun writeFailure(
+        throwable: Throwable,
+        attributes: Map<String, String>,
+    ) = Unit
 }

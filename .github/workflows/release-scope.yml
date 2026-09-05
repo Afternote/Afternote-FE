@@ -1,0 +1,97 @@
+# 릴리스 PR(develop -> main)의 배포 범위를 산출해 PR 본문에 채운다.
+#
+# `## 포함 이슈`·`## QA 포인트` 두 섹션은 main push 시
+# render-distribution-release-notes.sh 가 그대로 Firebase 릴리스 노트로 렌더하고,
+# 하나라도 비면 배포가 중단된다. 그 입력을 사람이 옮겨 적지 않도록 여기서 채운다.
+name: Collect Release Scope
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      pull_request_number:
+        description: "범위를 다시 산출할 릴리스 PR 번호"
+        required: true
+        type: number
+
+concurrency:
+  group: release-scope-${{ github.event.pull_request.number || inputs.pull_request_number }}
+  cancel-in-progress: true
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: write
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Clone release candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || 'develop' }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Collect release scope context
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_PR_NUMBER: ${{ github.event.pull_request.number || inputs.pull_request_number }}
+          RELEASE_SCOPE_CONTEXT_PATH: ${{ runner.temp }}/afternote-release-scope/context.json
+        run: node .github/scripts/collect-release-scope-context.mjs
+
+      - name: Render release scope
+        env:
+          RELEASE_SCOPE_CONTEXT_PATH: ${{ runner.temp }}/afternote-release-scope/context.json
+          RELEASE_SCOPE_PATH: ${{ runner.temp }}/afternote-release-scope/scope.json
+        run: |
+          node .github/scripts/render-release-scope.mjs \
+            "$RELEASE_SCOPE_CONTEXT_PATH" \
+            "$RELEASE_SCOPE_PATH"
+
+      - name: Fill release sections on the PR body
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          RELEASE_SCOPE_PATH: ${{ runner.temp }}/afternote-release-scope/scope.json
+          RELEASE_PR_NUMBER: ${{ github.event.pull_request.number || inputs.pull_request_number }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const fs = require('node:fs');
+            const scope = JSON.parse(fs.readFileSync(process.env.RELEASE_SCOPE_PATH, 'utf8'));
+            const pullNumber = Number(process.env.RELEASE_PR_NUMBER);
+
+            const { data: pullRequest } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pullNumber,
+            });
+
+            if ((pullRequest.body ?? '') !== scope.body) {
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pullNumber,
+                body: scope.body,
+              });
+            }
+
+            const summary = [
+              `## 릴리스 범위 — PR #${pullNumber}`,
+              '',
+              `- 누적 PR: ${scope.pullRequestCount}건`,
+              `- 포함 이슈: ${scope.includedIssues.length}건`,
+              `- 기준 배포: ${scope.baseline ? `[run ${scope.baseline.id}](${scope.baseline.url})` : '없음 (첫 배포)'}`,
+              scope.alreadyDistributed
+                ? '- ⚠️ 이 head 는 이미 배포된 지점이라 새로 나갈 변경이 없다.'
+                : '',
+              '',
+              scope.qaPointsDraft.length > 0
+                ? `구성 PR 본문에서 QA 포인트 ${scope.qaPointsDraft.length}건을 초안으로 넣었다. 테스터가 실행할 문장으로 다시 쓰는 것을 권한다.`
+                : '구성 PR 본문에 QA 포인트가 없어 자리만 만들어 뒀다. 배포 전에 직접 채워야 한다.',
+            ].filter(Boolean).join('\n');
+            await core.summary.addRaw(summary).write();

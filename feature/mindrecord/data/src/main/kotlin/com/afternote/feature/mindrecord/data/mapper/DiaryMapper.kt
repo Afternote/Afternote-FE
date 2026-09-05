@@ -18,9 +18,10 @@ fun DiaryListItemDto.toDomain(): Diary =
         content = content,
         date = date,
         createdAt = createdAt,
-        todayMood = todayMood?.toDomain(),
+        todayMood = todayMood.toDomain(),
         imageUrl = imageUrl,
         isDraft = isDraft,
+        receiverNames = receivers.map { it.name },
     )
 
 fun DiaryListDto.toDomain(): DiaryList =
@@ -50,7 +51,6 @@ fun DiaryCreatePayload.toRequest(): DiaryCreateRequestDto =
         content = content,
         isDraft = isDraft,
         todayMood = todayMood.toDto(),
-        imageUrl = imageUrl,
         receiverIds = receiverIds,
     )
 
@@ -60,6 +60,5 @@ fun DiaryUpdatePayload.toRequest(): DiaryUpdateRequestDto =
         content = content,
         isDraft = isDraft,
         todayMood = todayMood.toDto(),
-        date = date,
-        imageUrl = imageUrl,
+        receiverIds = receiverIds,
     )
