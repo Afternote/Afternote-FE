@@ -1,25 +1,21 @@
 package com.afternote.feature.onboarding.presentation.login
 
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.error.InvalidLoginCredentialsException
-import com.afternote.core.domain.error.NetworkUnavailableException
-import com.afternote.core.domain.error.SocialLoginRejectedException
-import com.afternote.core.domain.repository.auth.AuthRepository
+import com.afternote.core.domain.error.CoreAuthFailure
+import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.usecase.auth.LoginUseCase
 import com.afternote.core.model.Session
-import com.afternote.core.model.TokenBundle
 import com.afternote.core.ui.UiText
 import com.afternote.feature.onboarding.presentation.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -29,11 +25,12 @@ import java.net.UnknownHostException
 /**
  * [LoginViewModel] 실패 안내 계약 회귀 가드 (#628).
  *
- * 계약 — 자격 거절([InvalidLoginCredentialsException])은 인라인 상태
+ * 계약 — 자격 거절([CoreAuthFailure.InvalidLoginCredentials])은 인라인 상태
  * ([LoginUiState.hasCredentialError], 입력 변경으로 해제), 전송 계층 실패
- * ([NetworkUnavailableException])는 재시도 팝업([LoginUiState.showNetworkErrorPopup]),
- * 소셜 거절([SocialLoginRejectedException])과 그 밖의 예외는 **원문을 쓰지 않고**
- * 리소스 문구 스낵바로 고정한다. 실패 시 [LoginUiState.isLoading] 을 해제한다.
+ * ([CoreAuthFailure.NetworkUnavailable])는 재시도 팝업([LoginUiState.showNetworkErrorPopup]),
+ * 소셜 거절([CoreAuthFailure.SocialLoginRejected])·소셜 가입 계정
+ * ([CoreAuthFailure.SocialSignUpAccount])과 그 밖의 예외는 **원문을 쓰지 않고** 리소스 문구
+ * 스낵바로 고정한다. 실패 시 [LoginUiState.isLoading] 을 해제한다.
  *
  * [LoginUseCase] 는 실물 사용 — Repository Result 가 VM 상태로 번역되는 경로 전체를 가드한다.
  */
@@ -59,7 +56,13 @@ class LoginViewModelTest {
 
     private fun viewModel(onDefaultLogin: () -> Result<Session.DefaultSession>): LoginViewModel =
         LoginViewModel(
-            loginUseCase = LoginUseCase(FakeAuthRepository(onDefaultLogin)),
+            loginUseCase =
+                LoginUseCase(
+                    FakeAuthRepository.strict().apply {
+                        this.onDefaultLogin = { _, _ -> onDefaultLogin() }
+                        onSaveSession = { _, _ -> Result.success(Unit) }
+                    },
+                ),
             errorReporter = NoopErrorReporter,
         )
 
@@ -73,7 +76,7 @@ class LoginViewModelTest {
     fun `전송 계층 실패 - 재시도 팝업 상태로 표시하고 isLoading 해제`() {
         val viewModel =
             viewModel(onDefaultLogin = {
-                Result.failure(NetworkUnavailableException(UnknownHostException("Unable to resolve host")))
+                Result.failure(CoreAuthFailure.NetworkUnavailable(UnknownHostException("Unable to resolve host")))
             })
 
         viewModel.attemptEmailLogin()
@@ -90,7 +93,7 @@ class LoginViewModelTest {
         val viewModel =
             viewModel(onDefaultLogin = {
                 attempts++
-                Result.failure(NetworkUnavailableException(UnknownHostException("Unable to resolve host")))
+                Result.failure(CoreAuthFailure.NetworkUnavailable(UnknownHostException("Unable to resolve host")))
             })
         viewModel.attemptEmailLogin()
 
@@ -105,7 +108,7 @@ class LoginViewModelTest {
         val viewModel =
             viewModel(onDefaultLogin = {
                 attempts++
-                Result.failure(NetworkUnavailableException(UnknownHostException("Unable to resolve host")))
+                Result.failure(CoreAuthFailure.NetworkUnavailable(UnknownHostException("Unable to resolve host")))
             })
         viewModel.attemptEmailLogin()
 
@@ -119,7 +122,7 @@ class LoginViewModelTest {
     fun `자격 거절 - 인라인 상태로 표시하고 스낵바는 비움`() {
         val viewModel =
             viewModel(onDefaultLogin = {
-                Result.failure(InvalidLoginCredentialsException(Exception("origin")))
+                Result.failure(CoreAuthFailure.InvalidLoginCredentials(Exception("origin")))
             })
 
         viewModel.attemptEmailLogin()
@@ -134,7 +137,7 @@ class LoginViewModelTest {
     fun `자격 거절 - 입력이 바뀌면 인라인 표시 해제`() {
         val viewModel =
             viewModel(onDefaultLogin = {
-                Result.failure(InvalidLoginCredentialsException(Exception("origin")))
+                Result.failure(CoreAuthFailure.InvalidLoginCredentials(Exception("origin")))
             })
         viewModel.attemptEmailLogin()
 
@@ -147,12 +150,29 @@ class LoginViewModelTest {
     fun `소셜 거절 - 서버 문구 대신 자체 리소스 문구로 표시`() {
         val viewModel =
             viewModel(onDefaultLogin = {
-                Result.failure(SocialLoginRejectedException(Exception("origin")))
+                Result.failure(CoreAuthFailure.SocialLoginRejected(Exception("origin")))
             })
 
         viewModel.attemptEmailLogin()
 
-        assertEquals(UiText.Resource(R.string.login_social_rejected), viewModel.uiState.value.errorMessage)
+        assertEquals(UiText.Resource(R.string.onboarding_login_social_rejected), viewModel.uiState.value.errorMessage)
+    }
+
+    @Test
+    fun `소셜 가입 계정 - 자격 인라인이 아니라 로그인 화면 전용 안내로 표시`() {
+        val viewModel =
+            viewModel(onDefaultLogin = {
+                Result.failure(CoreAuthFailure.SocialSignUpAccount(Exception("1702")))
+            })
+
+        viewModel.attemptEmailLogin()
+
+        val state = viewModel.uiState.value
+        assertEquals(UiText.Resource(R.string.onboarding_login_social_signup_account), state.errorMessage)
+        // 비밀번호 찾기 쪽 차단 문구를 돌려쓰지 않는다 — 로그인 화면에서는 틀린 안내다.
+        assertNotEquals(UiText.Resource(R.string.onboarding_find_password_social_blocked), state.errorMessage)
+        assertFalse(state.hasCredentialError)
+        assertFalse(state.isLoading)
     }
 
     @Test
@@ -163,7 +183,7 @@ class LoginViewModelTest {
         viewModel.attemptEmailLogin()
 
         val state = viewModel.uiState.value
-        assertEquals(UiText.Resource(R.string.login_failed), state.errorMessage)
+        assertEquals(UiText.Resource(R.string.onboarding_login_failed), state.errorMessage)
         assertFalse(state.isLoading)
     }
 
@@ -173,7 +193,7 @@ class LoginViewModelTest {
 
         viewModel.attemptEmailLogin()
 
-        assertEquals(UiText.Resource(R.string.login_failed), viewModel.uiState.value.errorMessage)
+        assertEquals(UiText.Resource(R.string.onboarding_login_failed), viewModel.uiState.value.errorMessage)
     }
 
     @Test
@@ -185,44 +205,4 @@ class LoginViewModelTest {
 
         assertNull(viewModel.uiState.value.errorMessage)
     }
-}
-
-/**
- * [AuthRepository] 테스트 공용 가짜 — 미지정 경로 호출은 error 로 드러낸다
- * (core:data 의 FakeAuthApiService 와 같은 규칙). 로그인 성공 뒤 세션 저장까지가
- * [LoginUseCase] 경로라 [saveSession] 만 성공 고정으로 열어 둔다.
- */
-private class FakeAuthRepository(
-    private val onDefaultLogin: () -> Result<Session.DefaultSession>,
-) : AuthRepository {
-    override val isLoggedIn: Flow<Boolean> = flowOf(false)
-
-    override suspend fun saveSession(
-        accessToken: String,
-        refreshToken: String,
-    ): Result<Unit> = Result.success(Unit)
-
-    override suspend fun updateTokens(
-        accessToken: String,
-        refreshToken: String,
-    ): Result<Unit> = error("updateTokens 는 이 시나리오에서 호출되면 안 됨")
-
-    override suspend fun clearSession(): Result<Unit> = error("clearSession 은 이 시나리오에서 호출되면 안 됨")
-
-    override suspend fun getAccessToken(): Result<String?> = error("getAccessToken 은 이 시나리오에서 호출되면 안 됨")
-
-    override suspend fun getRefreshToken(): Result<String?> = error("getRefreshToken 은 이 시나리오에서 호출되면 안 됨")
-
-    override suspend fun defaultLogin(
-        email: String,
-        password: String,
-    ): Result<Session.DefaultSession> = onDefaultLogin()
-
-    override suspend fun kakaoLogin(oauthToken: String): Result<Session.SocialSession> = error("kakaoLogin 은 이 시나리오에서 호출되면 안 됨")
-
-    override suspend fun googleLogin(idToken: String): Result<Session.SocialSession> = error("googleLogin 은 이 시나리오에서 호출되면 안 됨")
-
-    override suspend fun rotateToken(): Result<TokenBundle> = error("rotateToken 은 이 시나리오에서 호출되면 안 됨")
-
-    override suspend fun logout(): Result<Unit> = error("logout 은 이 시나리오에서 호출되면 안 됨")
 }

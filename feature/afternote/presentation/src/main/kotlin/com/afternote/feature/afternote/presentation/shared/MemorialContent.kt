@@ -7,10 +7,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
  * 추억 노트 공통 세로 레이아웃(섹션 순서·간격만 담당).
@@ -49,19 +47,5 @@ fun MemorialContent(
                 Spacer(modifier = Modifier.height(trailingSpacerHeight))
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun MemorialContentPreview() {
-    AfternoteTheme {
-        MemorialContent(
-            introContent = {},
-            photoContent = {},
-            playlistContent = {},
-            recipientContent = {},
-            videoContent = {},
-        )
     }
 }

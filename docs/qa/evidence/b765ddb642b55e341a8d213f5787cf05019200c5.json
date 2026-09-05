@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "b765ddb642b55e341a8d213f5787cf05019200c5.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "details.qa_account",
+      "device.avd",
+      "device.serial",
+      "text.network_endpoint"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "b765ddb642b55e341a8d213f5787cf05019200c5",
+  "head_ref": "refactor/789-dto-defaults",
+  "base_sha": "104462fdf025a663d6009fec54eb6f23e2e3664b",
+  "base_ref": "develop",
+  "recorded_at": "2026-08-23T12:00:00+00:00",
+  "result": "pass",
+  "scenario": "PR #933 리뷰 QA — 실서버([NETWORK_ENDPOINT_REDACTED]) + 에뮬레이터. UI: 홈 TODAY'S QUESTION(엄격 isAnswered/isDraft 파싱)·기록 탭 데일리질문 목록·일기 빈 상태(diaries:[]+monthDiaryCount:0+weeklyDominantMood:null)·주간리포트(week[] emotion:null 은 NullableTodayMoodSerializer 경유, 카운트·요약·감정키워드) 전부 정상 렌더. API 실측 3건: (1) POST /diary 임시저장(date 미전송 — DiaryCreateRequestDto 에 date 필드 없음)에도 서버가 date=생성일 로 채워 반환 → 'date 는 서버가 항상 채운다' 가 draft 케이스까지 실증, 리뷰 후보 'draft date 누락 파싱 실패' REFUTED. (2) PATCH /daily-questions/24 에 앱 동일 바디(date:null·imageUrl:null 명시 포함) 전송 → 서버가 null 필드 무시, date 컬럼 보존(mind-record daily-question[].date 및 ?date= 쿼리 생존) → '명시 null 이 값을 덮는다' 시나리오 현 서버 기준 기각, 와이어 변화 자체는 사실이라 normal 지적으로 강등. (3) GET /mind-record week[] non-diary 항목이 emotion:null 을 명시적으로 포함 → emotion 키 필수화의 현 서버 정합 실증(OpenAPI required 표기와의 괴리는 잔존 리스크). 테스트 데이터 일기 9746 생성·삭제, 데일리질문 24 content 원복 완료. 빌드: 워크트리에서 :app:assembleDebug + :app:compileDebugUnitTestKotlin 통과(#911류 fake 파손 없음). 에뮬레이터 앱 1회 소실(스냅샷 복원 경합 추정) → 재설치 후 재검증.",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true
+  },
+  "details": {
+    "diff_sha256": "f9eb49915456d1e73aeba7029ca8548723b344d86cfabc7cbd3d352f0a03361a",
+    "changed_files": [
+      "feature/mindrecord/data/src/main/kotlin/com/afternote/feature/mindrecord/data/dto/DailyQuestionDto.kt",
+      "feature/mindrecord/data/src/main/kotlin/com/afternote/feature/mindrecord/data/dto/DiaryDto.kt",
+      "feature/mindrecord/data/src/main/kotlin/com/afternote/feature/mindrecord/data/dto/MindRecordDto.kt",
+      "feature/mindrecord/data/src/main/kotlin/com/afternote/feature/mindrecord/data/dto/NullableTodayMoodSerializer.kt",
+      "feature/mindrecord/data/src/main/kotlin/com/afternote/feature/mindrecord/data/dto/WeeklyReportDto.kt",
+      "feature/mindrecord/data/src/main/kotlin/com/afternote/feature/mindrecord/data/mapper/DiaryMapper.kt",
+      "feature/mindrecord/data/src/test/java/com/afternote/feature/mindrecord/data/dto/DiaryListContractTest.kt",
+      "feature/mindrecord/data/src/test/java/com/afternote/feature/mindrecord/data/dto/MindRecordDtoContractTest.kt",
+      "feature/mindrecord/data/src/test/java/com/afternote/feature/mindrecord/data/dto/TodayDailyQuestionContractTest.kt",
+      "feature/mindrecord/data/src/test/java/com/afternote/feature/mindrecord/data/dto/WeeklyReportContractTest.kt",
+      "feature/mindrecord/domain/src/main/kotlin/com/afternote/feature/mindrecord/domain/model/DiaryModels.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/mapper/MindRecordUiMapper.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/DiaryWriteViewModel.kt",
+      "feature/mindrecord/presentation/src/test/kotlin/com/afternote/feature/mindrecord/presentation/mapper/MindRecordUiMapperTest.kt"
+    ],
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe",
+      "installed_for_head": "b765ddb642b55e341a8d213f5787cf05019200c5"
+    }
+  }
+}

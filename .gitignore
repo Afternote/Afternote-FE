@@ -39,6 +39,7 @@ render.experimental.xml
 # Google Services (e.g. APIs or Firebase)
 google-services.json
 google-services.json.bak-*
+gha-creds-*.json
 
 # Android Profiling
 *.hprof
@@ -51,3 +52,5 @@ AGENTS.md
 .codex/
 .cursor/
 .artifacts/
+# Windows PowerShell cache
+Microsoft/Windows/PowerShell/ModuleAnalysisCache

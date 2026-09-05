@@ -2,17 +2,14 @@ package com.afternote.feature.onboarding.presentation.signup
 
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.repository.account.AccountRepository
-import com.afternote.core.domain.repository.auth.AuthRepository
+import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.usecase.auth.LoginUseCase
 import com.afternote.core.model.AccountRegistration
 import com.afternote.core.model.FoundAccount
 import com.afternote.core.model.Session
-import com.afternote.core.model.TokenBundle
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -55,7 +52,13 @@ class SignUpViewModelSubmitTest {
     ): SignUpViewModel =
         SignUpViewModel(
             accountRepository = accountRepository,
-            loginUseCase = LoginUseCase(FakeAuthRepository(onDefaultLogin)),
+            loginUseCase =
+                LoginUseCase(
+                    FakeAuthRepository.strict().apply {
+                        this.onDefaultLogin = { _, _ -> onDefaultLogin() }
+                        onSaveSession = { _, _ -> Result.success(Unit) }
+                    },
+                ),
             errorReporter = NoopErrorReporter,
         ).apply {
             updateEmail("user@example.com")
@@ -165,43 +168,15 @@ private class FakeAccountRepository(
         certificateCode: String,
     ): Result<FoundAccount> = error("findAccount 는 이 시나리오에서 호출되면 안 됨")
 
+    override suspend fun resetPassword(
+        email: String,
+        certificateCode: String,
+        newPassword: String,
+        confirmPassword: String,
+    ): Result<Unit> = error("resetPassword 는 이 시나리오에서 호출되면 안 됨")
+
     override suspend fun passwordChange(
         currentPassword: String,
         newPassword: String,
     ): Result<Unit> = error("passwordChange 는 이 시나리오에서 호출되면 안 됨")
-}
-
-private class FakeAuthRepository(
-    private val onDefaultLogin: () -> Result<Session.DefaultSession>,
-) : AuthRepository {
-    override val isLoggedIn: Flow<Boolean> = flowOf(false)
-
-    override suspend fun saveSession(
-        accessToken: String,
-        refreshToken: String,
-    ): Result<Unit> = Result.success(Unit)
-
-    override suspend fun updateTokens(
-        accessToken: String,
-        refreshToken: String,
-    ): Result<Unit> = error("updateTokens 는 이 시나리오에서 호출되면 안 됨")
-
-    override suspend fun clearSession(): Result<Unit> = error("clearSession 은 이 시나리오에서 호출되면 안 됨")
-
-    override suspend fun getAccessToken(): Result<String?> = error("getAccessToken 은 이 시나리오에서 호출되면 안 됨")
-
-    override suspend fun getRefreshToken(): Result<String?> = error("getRefreshToken 은 이 시나리오에서 호출되면 안 됨")
-
-    override suspend fun defaultLogin(
-        email: String,
-        password: String,
-    ): Result<Session.DefaultSession> = onDefaultLogin()
-
-    override suspend fun kakaoLogin(oauthToken: String): Result<Session.SocialSession> = error("kakaoLogin 은 이 시나리오에서 호출되면 안 됨")
-
-    override suspend fun googleLogin(idToken: String): Result<Session.SocialSession> = error("googleLogin 은 이 시나리오에서 호출되면 안 됨")
-
-    override suspend fun rotateToken(): Result<TokenBundle> = error("rotateToken 은 이 시나리오에서 호출되면 안 됨")
-
-    override suspend fun logout(): Result<Unit> = error("logout 은 이 시나리오에서 호출되면 안 됨")
 }

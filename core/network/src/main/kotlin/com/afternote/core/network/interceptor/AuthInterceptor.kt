@@ -14,9 +14,12 @@ import javax.inject.Inject
  * 부착 외에 선제 토큰 갱신(#408)을 함께 한다 — "유효한 토큰을 부착한다"는 같은 관심사다:
  * 요청 전 [AccessTokenExpiryTracker] 기준 잔여 수명이 임계값 미만이면 선제 reissue 한다.
  * 회전은 [TokenReissuer] 단일 락 경유라 401 경로(`TokenAuthenticator`)와 이중 실행되지
- * 않는다. 실패해도 기존 토큰으로 진행 — 401 사후 대응이 안전망이고, 선제 경로는 clearSession
- * 하지 않는다(일시 오류로 세션을 날리면 안 됨). reissue 요청 자체는 토큰 미부착 `RefreshClient`
- * 의 별도 Retrofit 을 타므로 재귀 없음.
+ * 않는다. 실패해도 여기서는 기존 토큰으로 진행한다 — 401 사후 대응이 안전망이고, 일시 오류로
+ * 세션을 날리면 안 되기 때문이다. 단 refresh 가 거절당한 확정 실패(`AuthenticationRejected`)의
+ * 세션 정리는 락 안에서 이미 끝나 있다 (#1126): 되돌릴 수 없는 실패라 어느 경로가 먼저 만나든
+ * 결론이 같고, 정리를 미루면 그 창으로 중복 재발급이 빠져나간다. 그 뒤 붙는 기존 토큰은 어차피
+ * 서버가 거부하고, 저장소가 비었으므로 다음 요청부터는 토큰 미부착 분기로 간다.
+ * reissue 요청 자체는 토큰 미부착 `RefreshClient` 의 별도 Retrofit 을 타므로 재귀 없음.
  *
  * deadline 의 입력값 `expiresIn` 은 BE #410(2026-06-20)으로 발급 응답(로그인·reissue)의 `data`
  * 에 실려 와, 토큰을 발급/회전하는 곳(`AuthRepositoryImpl`·[TokenReissuer])이 직접 기록한다 —
@@ -64,7 +67,7 @@ class AuthInterceptor
                     when (val outcome = tokenReissuer.reissue(expectedAccessToken = storedToken)) {
                         is TokenReissuer.Outcome.TokenAlreadyChanged -> outcome.accessToken
                         is TokenReissuer.Outcome.Rotated -> outcome.accessToken
-                        TokenReissuer.Outcome.Failed -> storedToken
+                        is TokenReissuer.Outcome.Failure -> storedToken
                     }
                 } else {
                     storedToken

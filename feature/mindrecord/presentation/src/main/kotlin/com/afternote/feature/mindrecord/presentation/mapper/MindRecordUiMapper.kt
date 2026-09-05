@@ -1,9 +1,11 @@
 package com.afternote.feature.mindrecord.presentation.mapper
 
+import android.util.Log
 import com.afternote.feature.mindrecord.domain.model.Diary
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.presentation.model.DailyDiary
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
+import com.afternote.feature.mindrecord.presentation.util.firstHtmlImageSrcOrNull
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion as DailyQuestionDomain
@@ -19,14 +21,28 @@ private val DateFormatters: List<DateTimeFormatter> =
         DateTimeFormatter.ISO_DATE_TIME,
     )
 
-fun DailyQuestionDomain.toUi(): DailyQuestion =
-    DailyQuestion(
+/**
+ * 날짜를 못 정하면 `null` 을 돌린다 — 호출부가 그 항목을 목록에서 뺀다.
+ *
+ * [Diary.toUi] 와 같은 규칙이다. 오늘 날짜로 메우면 **틀린 날짜가 정상처럼 표시되고**
+ * 실패 신호가 어디에도 남지 않아, "날짜가 이상하다" 는 제보를 받아도 재현 지점을 찾을 수
+ * 없다 (#751).
+ */
+fun DailyQuestionDomain.toUi(): DailyQuestion? {
+    val resolvedDate =
+        parseLocalDateOrNull(createdAt) ?: run {
+            Log.w(TAG, "데일리질문 날짜를 해석하지 못해 목록에서 제외한다: id=$dailyQuestionId")
+            return null
+        }
+    return DailyQuestion(
         id = dailyQuestionId,
         title = title,
-        date = parseLocalDate(createdAt),
+        date = resolvedDate,
         content = content,
-        imageUrl = imageUrl,
+        // 서버 계약에 `imageUrl` 이 없다 — 썸네일은 본문 HTML 의 첫 img 에서 뽑는다 (#549).
+        imageUrl = content.firstHtmlImageSrcOrNull(),
     )
+}
 
 /**
  * 날짜를 못 정하면 `null` 을 돌린다 — 호출부가 그 항목을 목록에서 뺀다.
@@ -45,8 +61,11 @@ fun Diary.toUi(): DailyDiary? {
         title = title,
         date = resolvedDate,
         content = content,
-        emotion = todayMood?.toEmoji(),
-        imageUrl = imageUrl,
+        emotion = todayMood.toEmoji(),
+        // 서버 계약에 `imageUrl` 이 없다 — 요청에 실어 보내도 버려지고 응답에도 키가 없어
+        // 항상 null 이다. 데일리질문과 같은 규칙으로 본문 HTML 의 첫 img 에서 뽑는다
+        // (#1024 · #549). DTO 가 값을 주는 날이 오면 그쪽을 우선한다.
+        imageUrl = imageUrl ?: content.firstHtmlImageSrcOrNull(),
     )
 }
 
@@ -57,8 +76,6 @@ fun TodayMood.toEmoji(): String =
         TodayMood.SAD -> "😢"
     }
 
-private fun parseLocalDate(raw: String): LocalDate = parseLocalDateOrNull(raw) ?: LocalDate.now()
-
 private fun parseLocalDateOrNull(raw: String?): LocalDate? {
     // "2026.05.22 금" 처럼 뒤에 요일이 붙어오는 케이스 대응 — 첫 공백 앞부분만 파싱.
     val datePart = raw?.substringBefore(' ')?.trim().orEmpty()
@@ -68,3 +85,5 @@ private fun parseLocalDateOrNull(raw: String?): LocalDate? {
     }
     return null
 }
+
+private const val TAG = "MindRecordUiMapper"

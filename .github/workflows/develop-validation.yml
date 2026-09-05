@@ -1,0 +1,69 @@
+name: Develop Validation
+
+# PR 두 개가 각자 통과해도 합쳐진 develop 조합은 깨질 수 있다. 모든 develop push 에서
+# 실제 합성 결과의 unit test 와 screenshot 을 다시 검증하고, 실패를 이슈로 전달한다.
+on:
+  push:
+    branches: [develop]
+
+# 연속 머지 중간 조합보다 마지막 조합의 결과가 중요하다. 새 push 가 오면 이전 실행을
+# 끊어 러너 사용량이 머지 횟수만큼 쌓이지 않게 한다.
+concurrency:
+  # 과거 run 재실행은 원래 SHA 를 유지한다. rerun 을 같은 group 에 넣으면 최신 검증을
+  # 취소할 수 있으므로 최초 실행끼리만 묶고, rerun 은 원 run_id 별로 격리한다.
+  group: ${{ github.run_attempt == 1 && 'develop-validation-current' || format('develop-validation-rerun-{0}', github.run_id) }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  unit-test:
+    name: Unit Test
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/unit-test.yml
+
+  screenshot:
+    name: Screenshot
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/screenshot.yml
+
+  report:
+    name: Report develop validation
+    if: always()
+    needs: [unit-test, screenshot]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Clone trusted develop revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Open or close the develop validation incident
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          VALIDATION_RESULTS: ${{ toJSON(needs) }}
+          VALIDATION_SHA: ${{ github.sha }}
+        with:
+          script: |
+            const { pathToFileURL } = await import('node:url');
+            const incidentModule = pathToFileURL(
+              `${process.env.GITHUB_WORKSPACE}/.github/scripts/develop-validation-incident.mjs`,
+            );
+            const { reconcileDevelopValidationIncident } = await import(incidentModule.href);
+
+            await reconcileDevelopValidationIncident({
+              github,
+              context,
+              core,
+              validationResults: JSON.parse(process.env.VALIDATION_RESULTS),
+              sha: process.env.VALIDATION_SHA,
+            });

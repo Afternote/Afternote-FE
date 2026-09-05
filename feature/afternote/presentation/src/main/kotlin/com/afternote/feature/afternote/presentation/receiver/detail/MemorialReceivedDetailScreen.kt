@@ -1,9 +1,5 @@
 package com.afternote.feature.afternote.presentation.receiver.detail
 
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.widget.Toast
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -21,36 +17,39 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
-import coil3.compose.AsyncImage
-import com.afternote.core.model.AlbumCover
+import com.afternote.core.common.media.launchMemorialVideo
 import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.bottombar.BottomBar
 import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.MemorialContent
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
+import com.afternote.feature.afternote.presentation.shared.detail.MemorialPlaylist
+import com.afternote.feature.afternote.presentation.shared.detail.MemorialVideoThumbnail
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
-import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
+import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
+import kotlinx.coroutines.launch
 
 /**
  * MEMORIAL(추억 노트) 카테고리의 수신자 측 상세 화면.
@@ -65,26 +64,29 @@ import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiM
 @Composable
 fun MemorialReceivedDetailScreen(
     senderName: String,
+    onNavigateToFullList: () -> Unit,
+    onNavigateToPlaylist: () -> Unit,
+    onBackClick: () -> Unit,
     messageBlocks: List<MessageBlockUiModel> = emptyList(),
-    onNavigateToFullList: () -> Unit = {},
-    onNavigateToPlaylist: () -> Unit = {},
-    onBackClick: () -> Unit = {},
     profileImageResId: Int? = null,
     albumCovers: List<AlbumCover>,
     songCount: Int = 16,
     memorialVideoUrl: String? = null,
     memorialThumbnailUrl: String? = null,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
-    profileImageResId ?: R.drawable.feature_afternote_img_default_profile_deceased
+    profileImageResId ?: R.drawable.afternote_receiver_img_default_profile_deceased
+    val onVideoClick = rememberReceivedMemorialVideoClickHandler(snackbarHostState)
 
     Scaffold(
         containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             // statusBarsPadding: 엣지투엣지로 그려 콘텐츠가 상태바 아래까지 깔리므로, 상태바 높이만큼 top 패딩
             // → 탑바가 상태바(시계·배터리) 밑에서 시작(겹침 방지). 동적 인셋이라 회전·분할화면에도 대응.
             Column(modifier = Modifier.statusBarsPadding()) {
                 DetailTopBar(
-                    title = "故 ${senderName}님의 애프터노트",
+                    title = stringResource(R.string.afternote_receiver_detail_title, senderName),
                     onBackClick = { onBackClick() },
                 )
             }
@@ -119,7 +121,6 @@ fun MemorialReceivedDetailScreen(
                     },
                     playlistContent = {
                         MemorialPlaylist(
-                            label = "추억 플레이리스트",
                             songCount = songCount,
                             albumCovers = albumCovers,
                             onCardClick = onNavigateToPlaylist,
@@ -136,6 +137,7 @@ fun MemorialReceivedDetailScreen(
                             ReceiverVideoSection(
                                 memorialVideoUrl = memorialVideoUrl,
                                 memorialThumbnailUrl = memorialThumbnailUrl,
+                                onVideoClick = onVideoClick,
                             )
                         }
                     },
@@ -145,7 +147,7 @@ fun MemorialReceivedDetailScreen(
                 Spacer(modifier = Modifier.height(70.dp))
 
                 AfternoteButton(
-                    text = "애프터노트 확인하기",
+                    text = stringResource(R.string.afternote_receiver_detail_confirm),
                     onClick = onNavigateToFullList,
                     type = AfternoteButtonType.Default,
                 )
@@ -155,14 +157,42 @@ fun MemorialReceivedDetailScreen(
     }
 }
 
-private const val LABEL_VIDEO_SECTION = "장례식에 남길 영상"
+/**
+ * 추모 영상 카드의 클릭 처리를 만든다.
+ *
+ * 실행 실패는 서버 작업 실패가 아니라 이 기기의 사정(막힌 URL·재생 앱 없음)이라 재시도 팝업(#446)이 아니라
+ * 스낵바로 알린다 — 작성자 쪽 상세(#1336)와 같은 채널이다. 원인이 다르면 문구도 다르므로 콜백 둘을 각각
+ * 다른 리소스에 붙인다 (#1391).
+ */
+@Composable
+private fun rememberReceivedMemorialVideoClickHandler(snackbarHostState: SnackbarHostState): (String) -> Unit {
+    val context = LocalContext.current
+    val resources = LocalResources.current
+    val scope = rememberCoroutineScope()
+    return remember(context, resources, scope, snackbarHostState) {
+        { videoUrl ->
+            launchMemorialVideo(
+                videoUrl = videoUrl,
+                startActivity = context::startActivity,
+                onRejected = {
+                    val message = resources.getString(R.string.afternote_receiver_memorial_video_invalid_url)
+                    scope.launch { snackbarHostState.showSnackbar(message) }
+                },
+                onUnavailable = {
+                    val message = resources.getString(R.string.afternote_receiver_memorial_video_no_app)
+                    scope.launch { snackbarHostState.showSnackbar(message) }
+                },
+            )
+        }
+    }
+}
 
 @Composable
 private fun ReceiverVideoSection(
+    onVideoClick: (String) -> Unit,
     memorialVideoUrl: String? = null,
     memorialThumbnailUrl: String? = null,
 ) {
-    val context = LocalContext.current
     Column(modifier = Modifier.fillMaxWidth()) {
         ReceiverSectionHeader()
         Spacer(modifier = Modifier.height(12.dp))
@@ -173,25 +203,9 @@ private fun ReceiverVideoSection(
                         .fillMaxWidth()
                         // clip 을 clickable 앞에: 눌림 피드백이 InfoCard 의 12dp 둥근 모서리 안에서만 그려지게 (모서리 밖 사각 번짐 방지)
                         .clip(RoundedCornerShape(12.dp))
-                        .clickable {
-                            val intent = Intent(Intent.ACTION_VIEW, memorialVideoUrl.toUri())
-                            if (context.packageManager.resolveActivity(
-                                    intent,
-                                    PackageManager.MATCH_DEFAULT_ONLY,
-                                ) != null
-                            ) {
-                                context.startActivity(intent)
-                            } else {
-                                Toast
-                                    .makeText(
-                                        context,
-                                        "영상을 재생할 수 있는 앱이 없습니다.",
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
-                            }
-                        },
+                        .clickable { onVideoClick(memorialVideoUrl) },
             ) {
-                ReceiverMemorialVideoThumbnail(thumbnailUrl = memorialThumbnailUrl)
+                MemorialVideoThumbnail(thumbnailUrl = memorialThumbnailUrl)
             }
         } else {
             Box(
@@ -204,8 +218,10 @@ private fun ReceiverVideoSection(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.feature_afternote_ic_play_arrow),
-                    contentDescription = "Play",
+                    painter = painterResource(R.drawable.afternote_receiver_ic_play_arrow),
+                    // 영상이 없을 때만 그리는 플레이스홀더다. clickable 이 없어 재생 액션이 없으므로
+                    // 라벨을 붙이면 없는 어포던스를 알린다. 맥락은 위 ReceiverSectionHeader 가 읽어 준다.
+                    contentDescription = null,
                     tint = AfternoteDesign.colors.white,
                     modifier =
                         Modifier
@@ -221,50 +237,7 @@ private fun ReceiverVideoSection(
 }
 
 @Composable
-private fun ReceiverMemorialVideoThumbnail(thumbnailUrl: String?) {
-    Box(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(183.dp)
-                .clip(RoundedCornerShape(16.dp)),
-    ) {
-        if (!thumbnailUrl.isNullOrBlank()) {
-            AsyncImage(
-                model = thumbnailUrl,
-                contentDescription = "장례식에 남길 영상 썸네일",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-            )
-        }
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(
-                        brush =
-                            Brush.verticalGradient(
-                                colors =
-                                    listOf(
-                                        AfternoteDesign.colors.gray6.copy(alpha = 153f / 255f),
-                                        AfternoteDesign.colors.gray9.copy(alpha = 153f / 255f),
-                                    ),
-                            ),
-                    ),
-        )
-        Image(
-            painter = painterResource(R.drawable.feature_afternote_ic_playback),
-            contentDescription = "영상 재생",
-            modifier =
-                Modifier
-                    .align(Alignment.Center)
-                    .size(32.dp),
-        )
-    }
-}
-
-@Composable
-private fun ReceiverSectionHeader(title: String = LABEL_VIDEO_SECTION) {
+private fun ReceiverSectionHeader(title: String = stringResource(R.string.afternote_editor_funeral_video_label)) {
     Text(
         text = title,
         style =
@@ -274,53 +247,4 @@ private fun ReceiverSectionHeader(title: String = LABEL_VIDEO_SECTION) {
             ),
         modifier = Modifier.padding(bottom = 8.dp),
     )
-}
-
-@Preview(showBackground = true, name = "No video")
-@Composable
-private fun PreviewMemorialReceivedDetail() {
-    AfternoteTheme {
-        MemorialReceivedDetailScreen(
-            senderName = "박서연",
-            messageBlocks =
-                listOf(
-                    MessageBlockUiModel(
-                        body = "이 계정에는 우리 가족 여행 사진이 많아. 계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
-                    ),
-                ),
-            // 프리뷰 대표 데이터: 실앱은 곡마다 coverUrl → 커버 로드. 프리뷰/스크린샷은 네트워크 미지원이라 회색 박스로 표시.
-            albumCovers =
-                listOf(
-                    AlbumCover(id = "1"),
-                    AlbumCover(id = "2"),
-                    AlbumCover(id = "3"),
-                ),
-            songCount = 3,
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "With video")
-@Composable
-private fun PreviewMemorialReceivedDetailWithVideo() {
-    AfternoteTheme {
-        MemorialReceivedDetailScreen(
-            senderName = "박서연",
-            messageBlocks =
-                listOf(
-                    MessageBlockUiModel(
-                        body = "이 계정에는 우리 가족 여행 사진이 많아. 계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
-                    ),
-                ),
-            albumCovers =
-                listOf(
-                    AlbumCover(id = "1"),
-                    AlbumCover(id = "2"),
-                    AlbumCover(id = "3"),
-                ),
-            songCount = 3,
-            // 영상 섹션은 URL 있을 때만 노출 — 조건부 분기 상태 확인용 프리뷰 (썸네일은 네트워크 미지원이라 회색).
-            memorialVideoUrl = "https://example.com/memorial.mp4",
-        )
-    }
 }

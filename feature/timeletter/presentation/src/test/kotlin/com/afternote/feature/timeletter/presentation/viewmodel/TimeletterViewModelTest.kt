@@ -1,12 +1,10 @@
 package com.afternote.feature.timeletter.presentation.viewmodel
 
-import com.afternote.core.domain.repository.UserRepository
-import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
+import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.feature.timeletter.domain.model.TimeLetter
-import com.afternote.feature.timeletter.domain.model.TimeLetterDeliveryMode
 import com.afternote.feature.timeletter.domain.model.TimeLetterList
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
-import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
+import com.afternote.feature.timeletter.domain.testing.FakeTimeLetterRepository
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,7 +18,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import java.lang.reflect.Proxy
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TimeletterViewModelTest {
@@ -39,22 +36,9 @@ class TimeletterViewModelTest {
         var loadCount = 0
         var deletedIds: List<Long>? = null
         val repository =
-            timeLetterRepository { methodName, args ->
-                when (methodName) {
-                    "getTimeLetters" -> {
-                        testLetters.also { loadCount += 1 }
-                    }
-
-                    "deleteTimeLetters" -> {
-                        Unit.also {
-                            deletedIds = (args?.first() as? List<*>)?.filterIsInstance<Long>()
-                        }
-                    }
-
-                    else -> {
-                        error("Unexpected repository call: $methodName")
-                    }
-                }
+            FakeTimeLetterRepository.strict().apply {
+                onGetTimeLetters = { testLetters.also { loadCount += 1 } }
+                onDeleteTimeLetters = { deletedIds = it }
             }
         val viewModel = TimeletterViewModel(repository, userRepository())
 
@@ -70,12 +54,9 @@ class TimeletterViewModelTest {
     @Test
     fun `delete failure keeps the list and exposes a consumable failure state`() {
         val repository =
-            timeLetterRepository { methodName, _ ->
-                when (methodName) {
-                    "getTimeLetters" -> testLetters
-                    "deleteTimeLetters" -> throw IllegalStateException("delete failed")
-                    else -> error("Unexpected repository call: $methodName")
-                }
+            FakeTimeLetterRepository.strict().apply {
+                onGetTimeLetters = { testLetters }
+                onDeleteTimeLetters = { throw IllegalStateException("delete failed") }
             }
         val viewModel = TimeletterViewModel(repository, userRepository())
 
@@ -118,11 +99,8 @@ class TimeletterViewModelTest {
     @Test
     fun `load failure exposes error state`() {
         val repository =
-            timeLetterRepository { methodName, _ ->
-                when (methodName) {
-                    "getTimeLetters" -> throw IllegalStateException("load failed")
-                    else -> error("Unexpected repository call: $methodName")
-                }
+            FakeTimeLetterRepository.strict().apply {
+                onGetTimeLetters = { throw IllegalStateException("load failed") }
             }
         val viewModel = TimeletterViewModel(repository, userRepository())
 
@@ -131,61 +109,24 @@ class TimeletterViewModelTest {
         assertEquals(TimeletterUiState.Error, viewModel.uiState.value)
     }
 
-    private fun timeLetterRepository(handler: (String, Array<out Any?>?) -> Any?): TimeLetterRepository =
-        Proxy.newProxyInstance(
-            TimeLetterRepository::class.java.classLoader,
-            arrayOf(TimeLetterRepository::class.java),
-        ) { _, method, args -> handler(method.name, args) } as TimeLetterRepository
-
-    private fun userRepository(): UserRepository =
-        Proxy.newProxyInstance(
-            UserRepository::class.java.classLoader,
-            arrayOf(UserRepository::class.java),
-        ) { _, method, _ ->
-            when (method.name) {
-                "getReceiverListFlow" -> flowOf(emptyList<Any>())
-                "getReceivers" -> emptyList<Any>()
-                else -> error("Unexpected user repository call: ${method.name}")
-            }
-        } as UserRepository
+    private fun userRepository(): FakeUserRepository =
+        FakeUserRepository.strict().apply {
+            onReceiverListFlow = { flowOf(emptyList()) }
+            onGetReceivers = { emptyList() }
+        }
 
     private fun overlappingDeleteAndReloadRepository(
         deleteResult: CompletableDeferred<Unit>,
         reloadResult: CompletableDeferred<TimeLetterList>,
-    ): TimeLetterRepository =
-        object : TimeLetterRepository {
-            private var loadCount = 0
-
-            override suspend fun getTimeLetters(): TimeLetterList = if (loadCount++ == 0) testLetters else reloadResult.await()
-
-            override suspend fun deleteTimeLetters(timeLetterIds: List<Long>) {
-                deleteResult.await()
+    ): FakeTimeLetterRepository {
+        var loadCount = 0
+        return FakeTimeLetterRepository.strict().apply {
+            onGetTimeLetters = {
+                if (loadCount++ == 0) testLetters else reloadResult.await()
             }
-
-            override suspend fun getTemporaryTimeLetters(): TimeLetterList = error("Unexpected call")
-
-            override suspend fun getTimeLetter(timeLetterId: Long): TimeLetter = error("Unexpected call")
-
-            override suspend fun createTimeLetter(
-                title: String?,
-                blocks: List<NewTimeLetterBlock>,
-                sendAt: String?,
-                deliveryMode: TimeLetterDeliveryMode,
-                status: TimeLetterStatus,
-                receiverIds: List<Long>,
-            ): TimeLetter = error("Unexpected call")
-
-            override suspend fun updateTimeLetter(
-                timeLetterId: Long,
-                title: String?,
-                blocks: List<NewTimeLetterBlock>,
-                sendAt: String?,
-                deliveryMode: TimeLetterDeliveryMode?,
-                status: TimeLetterStatus?,
-            ): TimeLetter = error("Unexpected call")
-
-            override suspend fun deleteAllTemporary() = error("Unexpected call")
+            onDeleteTimeLetters = { deleteResult.await() }
         }
+    }
 
     private companion object {
         val testLetters =

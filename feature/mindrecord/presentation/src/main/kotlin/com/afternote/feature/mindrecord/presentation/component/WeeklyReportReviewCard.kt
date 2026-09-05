@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
@@ -45,7 +46,7 @@ fun WeeklyReportReviewCard(
     modifier: Modifier = Modifier,
     selectedMonday: LocalDate? = null,
     weekOptions: List<WeekOption> = emptyList(),
-    onWeekSelect: (LocalDate) -> Unit = {},
+    onWeekSelect: (LocalDate) -> Unit,
     dateRange: String = "2025.11.10. - 2025.11.16.",
     counts: List<Pair<Int, MindRecordCategoryUi>> =
         listOf(
@@ -64,13 +65,19 @@ fun WeeklyReportReviewCard(
         modifier =
             modifier
                 .fillMaxWidth()
-                .height(200.dp)
                 .clip(RoundedCornerShape(6.dp)),
     ) {
         Column(
             modifier =
                 Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
+                    // 높이를 **못 박지 않고 최소값으로** 둔다. 종전에는 카드가 `height(200.dp)` 고정이라
+                    // 사용자가 글자 크기를 키우면 내용이 200dp 를 넘고 마지막 행(카운트 라벨)부터
+                    // 잘려 나갔다 — 실측: 폰트 배율 1.3 에서 「데일리 질문」·「일기」 아랫부분이 잘린다.
+                    // 저시력 사용자가 정확히 이 화면에서 값을 잃는 자리다 (#1718).
+                    //
+                    // 기본 배율에서는 내용이 200dp 보다 작아 시안 높이가 그대로 유지된다.
+                    .heightIn(min = CardMinHeight)
                     .drawWithCache {
                         val brush =
                             Brush.radialGradient(
@@ -121,13 +128,18 @@ fun WeeklyReportReviewCard(
                     )
                 }
 
+                // 시안(node 700-35071)의 열린 메뉴는 항목 5개 높이에서 잘리고 오른쪽에 세로
+                // 스크롤 표시가 있다 — 가시 항목 수보다 선택지가 많다는 표현이다. DropdownMenu
+                // 의 내용은 이미 세로 스크롤이라, 높이만 묶으면 나머지가 스크롤로 넘어간다 (#729).
                 DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
                     containerColor = Color.White,
+                    modifier = Modifier.heightIn(max = WeekMenuMaxHeight),
                 ) {
                     weekOptions.forEach { option ->
                         DropdownMenuItem(
+                            modifier = Modifier.height(WeekMenuItemHeight),
                             text = {
                                 Text(
                                     text = weekLabel(option.monday),
@@ -183,6 +195,19 @@ fun WeeklyReportReviewCard(
     }
 }
 
+/**
+ * 주차 메뉴 한 항목의 높이. Material3 `DropdownMenuItem` 의 기본 최소 높이와 같은 값을
+ * 고정으로 못 박아, 가시 항목 수([WeekMenuMaxHeight])가 항목 내용에 따라 흔들리지 않게 한다.
+ */
+private val WeekMenuItemHeight = 48.dp
+
+/**
+ * 열린 메뉴의 최대 높이 = 항목 5개 + `DropdownMenu` 내용의 위아래 여백(각 8dp).
+ *
+ * 선택지가 5개를 넘으면 여기서 잘리고 나머지는 세로 스크롤로 넘어간다 (#729).
+ */
+private val WeekMenuMaxHeight = WeekMenuItemHeight * 5 + 16.dp
+
 @Composable
 private fun weekLabel(monday: LocalDate): String =
     stringResource(
@@ -195,6 +220,11 @@ private fun weekLabel(monday: LocalDate): String =
 @Composable
 private fun WeeklyReportScreenPreview() {
     AfternoteTheme {
-        WeeklyReportReviewCard()
+        WeeklyReportReviewCard(
+            onWeekSelect = {},
+        )
     }
 }
+
+/** 시안 높이(4327:99448 계열). 기본 배율에서는 내용이 이보다 작아 이 값이 그대로 카드 높이가 된다. */
+private val CardMinHeight = 200.dp

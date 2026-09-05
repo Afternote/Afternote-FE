@@ -11,19 +11,16 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
 
 @Composable
@@ -57,27 +54,27 @@ fun SignUpScreen(
     val verificationButtonText =
         when {
             isSendingCode -> {
-                stringResource(R.string.signup_verification_requesting)
+                stringResource(R.string.onboarding_signup_verification_requesting)
             }
 
             resendCooldownSeconds > 0 -> {
-                stringResource(R.string.signup_verification_resend_cooldown, resendCooldownSeconds)
+                stringResource(R.string.onboarding_signup_verification_resend_cooldown, resendCooldownSeconds)
             }
 
             isVerificationSent -> {
-                stringResource(R.string.signup_verification_resend)
+                stringResource(R.string.onboarding_signup_verification_resend)
             }
 
             else -> {
-                stringResource(R.string.signup_verification_request)
+                stringResource(R.string.onboarding_signup_verification_request)
             }
         }
     val isVerificationButtonEnabled =
         !isSendingCode && resendCooldownSeconds == 0 && isEmailFormatValid
 
     FlowStepScaffold(
-        topBarTitle = stringResource(R.string.signup_title),
-        actionButtonText = stringResource(R.string.signup_next),
+        topBarTitle = stringResource(R.string.onboarding_signup_title),
+        actionButtonText = stringResource(R.string.onboarding_signup_next),
         onBackClick = onBackClick,
         onActionClick = onNextClick,
         modifier = modifier,
@@ -104,7 +101,7 @@ fun SignUpScreen(
                             enabled = isVerificationButtonEnabled,
                         ),
                     state = emailState,
-                    placeholder = stringResource(R.string.signup_email_placeholder),
+                    placeholder = stringResource(R.string.onboarding_signup_email_placeholder),
                     keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next,
                 )
@@ -112,7 +109,7 @@ fun SignUpScreen(
                 // 인증번호 입력
                 AfternoteTextField(
                     state = verificationCodeState,
-                    placeholder = stringResource(R.string.signup_verification_code_placeholder),
+                    placeholder = stringResource(R.string.onboarding_signup_verification_code_placeholder),
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Done,
                     onImeAction = {
@@ -123,13 +120,13 @@ fun SignUpScreen(
                 // 인증번호 불일치는 인라인 에러로, 그 외 실패는 스낵바로 나뉜다 (시안 2431-14204).
                 if (hasVerificationError) {
                     Text(
-                        text = stringResource(R.string.signup_verification_mismatch),
+                        text = stringResource(R.string.onboarding_signup_verification_mismatch),
                         style = AfternoteDesign.typography.captionLargeB,
                         color = AfternoteDesign.colors.error,
                     )
                 } else if (isVerificationSent) {
                     Text(
-                        text = stringResource(R.string.signup_verification_sent),
+                        text = stringResource(R.string.onboarding_signup_verification_sent),
                         style = AfternoteDesign.typography.captionLargeB,
                         color = AfternoteDesign.colors.b1,
                     )
@@ -137,50 +134,4 @@ fun SignUpScreen(
             }
         },
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SignUpScreenPreview() {
-    AfternoteTheme {
-        SignUpScreen(
-            initialEmail = "",
-            initialVerificationCode = "",
-            isVerificationSent = true,
-            isSendingCode = false,
-            isEmailFormatValid = false,
-            resendCooldownSeconds = 0,
-            hasVerificationError = false,
-            isNextEnabled = false,
-            snackbarHostState = remember { SnackbarHostState() },
-            onEmailChange = {},
-            onVerificationCodeChange = {},
-            onRequestVerification = {},
-            onNextClick = {},
-            onBackClick = {},
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "인증번호 불일치")
-@Composable
-private fun SignUpScreenMismatchPreview() {
-    AfternoteTheme {
-        SignUpScreen(
-            initialEmail = "user@example.com",
-            initialVerificationCode = "000000",
-            isVerificationSent = true,
-            isSendingCode = false,
-            isEmailFormatValid = true,
-            resendCooldownSeconds = 0,
-            hasVerificationError = true,
-            isNextEnabled = false,
-            snackbarHostState = remember { SnackbarHostState() },
-            onEmailChange = {},
-            onVerificationCodeChange = {},
-            onRequestVerification = {},
-            onNextClick = {},
-            onBackClick = {},
-        )
-    }
 }

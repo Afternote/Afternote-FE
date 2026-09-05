@@ -5,8 +5,9 @@ data class DailyQuestion(
     val title: String,
     val content: String,
     val createdAt: String,
-    val imageUrl: String? = null,
     val isDraft: Boolean = false,
+    /** 이 기록을 전달받을 수신자 이름들 (#759). */
+    val receiverNames: List<String> = emptyList(),
 )
 
 data class TodayDailyQuestion(
@@ -22,7 +23,6 @@ data class DailyQuestionCreatePayload(
     val content: String,
     val isDraft: Boolean,
     val questionId: Long,
-    val imageUrl: String? = null,
 )
 
 data class DailyQuestionUpdatePayload(
@@ -30,5 +30,4 @@ data class DailyQuestionUpdatePayload(
     val isDraft: Boolean? = null,
     val date: String? = null,
     val questionId: Long? = null,
-    val imageUrl: String? = null,
 )

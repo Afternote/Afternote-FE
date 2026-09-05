@@ -1,28 +1,30 @@
 package com.afternote.feature.mindrecord.data.dto
 
 import com.afternote.core.network.model.BaseResponse
+import kotlinx.serialization.MissingFieldException
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 /**
  * `GET /diary` 응답 파싱 계약 가드 (Swagger `DiaryResponse` 실측, 2026-08-03).
  *
- * 목록 항목의 필수 프로퍼티가 하나라도 비면 `MissingFieldException` 으로 그 달 일기가
- * 통째로 사라진다 — 실패의 폭이 항목 하나가 아니라 목록 전체라, 필드가 빠져도 살아남는지를
- * 여기서 고정한다.
+ * 서버가 항상 보내는 응답 키는 기본값으로 은폐하지 않는다 (#789). 키가 빠지면
+ * `MissingFieldException` 으로 **실패해야** 계약 변경이 드러나므로, 그 실패를 여기서 고정한다.
+ * 반대로 클라가 모르는 기분 **값**은 그 칸만 비우고 목록은 살린다 — 키 누락(계약 변경)과
+ * 값 확장(표기 변경)은 성격이 다르다.
  *
  * `date`(사용자가 고른 일기 날짜)와 `createdAt`(레코드 생성 시각)은 **별개 필드**다.
  * 한 프로퍼티에 묶으면 서버의 키 순서에 따라 값이 뒤바뀌므로 분리 상태를 함께 고정한다.
  *
- * Json 설정은 `NetworkModule.provideJson` 과 동일 (ignoreUnknownKeys + coerceInputValues).
+ * Json 설정은 `NetworkModule.provideJson` 과 동일 (ignoreUnknownKeys).
  */
 class DiaryListContractTest {
     private val json =
         Json {
             ignoreUnknownKeys = true
-            coerceInputValues = true
         }
 
     @Test
@@ -73,8 +75,10 @@ class DiaryListContractTest {
             """
             {
               "status": 200, "code": 200,
-              "data": { "diaries": [{ "id": 123, "date": "2026-03-21",
-                        "title": "t", "content": "c", "todayMood": "SOSO", "isDraft": true }] }
+              "data": { "diaries": [{ "id": 123, "date": "2026-03-21", "createdAt": "2026.03.21 토",
+                        "title": "t", "content": "c", "todayMood": "SOSO", "isDraft": true,
+                        "receivers": [] }],
+                        "monthDiaryCount": 1, "weeklyDominantMood": null }
             }
             """.trimIndent()
 
@@ -87,49 +91,102 @@ class DiaryListContractTest {
     }
 
     @Test
-    fun `date 가 없으면 null 로 남아 표시 단계가 createdAt 으로 폴백할 수 있다`() {
+    fun `date 가 빠지면 빈 문자열로 성공하지 않고 실패한다`() {
+        // 사용자가 고른 일기 날짜는 서버가 항상 채운다. 기본값으로 접히면 캘린더에서
+        // 그 기록이 조용히 사라지므로, 누락은 파싱 실패로 드러나야 한다 (#789).
         val body =
             """
             {
               "status": 200, "code": 200,
-              "data": { "diaries": [{ "diaryId": 1, "title": "t", "content": "c",
+              "data": { "monthDiaryCount": 1, "weeklyDominantMood": null,
+                        "diaries": [{ "diaryId": 1, "title": "t", "content": "c",
+                        "createdAt": "2026.03.21 토", "todayMood": "SAD", "isDraft": false }] }
+            }
+            """.trimIndent()
+
+        assertThrows(MissingFieldException::class.java) {
+            json.decodeFromString(BaseResponse.serializer(DiaryListDto.serializer()), body)
+        }
+    }
+
+    @Test
+    fun `isDraft 가 빠지면 임시저장 아님으로 접히지 않고 실패한다`() {
+        // `false` 로 접히면 임시저장 일기가 목록에 그대로 노출된다 (#789).
+        val body =
+            """
+            {
+              "status": 200, "code": 200,
+              "data": { "monthDiaryCount": 1, "weeklyDominantMood": null,
+                        "diaries": [{ "diaryId": 1, "title": "t", "content": "c", "date": "2026-03-21",
                         "createdAt": "2026.03.21 토", "todayMood": "SAD" }] }
             }
             """.trimIndent()
 
-        val decoded = json.decodeFromString(BaseResponse.serializer(DiaryListDto.serializer()), body)
-
-        val diary = decoded.data!!.diaries.single()
-        assertNull(diary.date)
-        assertEquals("2026.03.21 토", diary.createdAt)
+        assertThrows(MissingFieldException::class.java) {
+            json.decodeFromString(BaseResponse.serializer(DiaryListDto.serializer()), body)
+        }
     }
 
     @Test
-    fun `클라가 모르는 기분 값이 와도 그 항목만 기분이 비고 목록은 살아남는다`() {
-        // 명세 예시에 적힌 "SMILE" 은 클라 enum(HAPPY·SOSO·SAD)에 없다.
+    fun `todayMood 가 빠지면 실패한다`() {
+        // 저장 컬럼이 필수라 응답에도 항상 있다. 한글 값이 관측된 쪽은 AI 가 매기는
+        // `emotion` 이지 사용자가 고르는 이 필드가 아니다 (#591, #789).
         val body =
             """
             {
               "status": 200, "code": 200,
-              "data": { "diaries": [{ "diaryId": 1, "title": "t", "content": "c",
-                        "createdAt": "2026-03-21", "todayMood": "SMILE" }] }
+              "data": { "monthDiaryCount": 1, "weeklyDominantMood": null,
+                        "diaries": [{ "diaryId": 1, "title": "t", "content": "c", "date": "2026-03-21",
+                        "createdAt": "2026-03-21", "isDraft": false }] }
+            }
+            """.trimIndent()
+
+        assertThrows(MissingFieldException::class.java) {
+            json.decodeFromString(BaseResponse.serializer(DiaryListDto.serializer()), body)
+        }
+    }
+
+    @Test
+    fun `그 주에 기록이 없으면 오는 명시적 null 최빈 기분은 정상 파싱된다`() {
+        // 실제로 `null` 이 오는 필드라 nullable 은 유지한다 — 다만 키 자체는 계약이다 (#789).
+        val body =
+            """
+            {
+              "status": 200, "code": 200,
+              "data": { "monthDiaryCount": 0, "weeklyDominantMood": null, "diaries": [] }
             }
             """.trimIndent()
 
         val decoded = json.decodeFromString(BaseResponse.serializer(DiaryListDto.serializer()), body)
 
-        val diary = decoded.data!!.diaries.single()
-        assertEquals(1L, diary.diaryId)
-        assertNull(diary.todayMood)
+        assertNull(decoded.data!!.weeklyDominantMood)
+        assertEquals(emptyList<DiaryListItemDto>(), decoded.data!!.diaries)
     }
 
     @Test
-    fun `diaries 키가 없으면 빈 목록으로 접힌다`() {
-        // 0 건과 "키 자체가 없음" 이 같은 결과로 수렴하는 지점 — 회귀 시 여기부터 의심한다.
-        val body = """{ "status": 200, "code": 200, "data": { "monthDiaryCount": 0 } }"""
+    fun `클라가 모르는 최빈 기분 값은 그 칸만 비우고 목록은 살아남는다`() {
+        // 값 확장은 계약 누락과 다르다 — 이모지 한 칸 대신 그 달 목록 전체를 날릴 일이 아니다.
+        val body =
+            """
+            {
+              "status": 200, "code": 200,
+              "data": { "monthDiaryCount": 0, "weeklyDominantMood": "SMILE", "diaries": [] }
+            }
+            """.trimIndent()
 
         val decoded = json.decodeFromString(BaseResponse.serializer(DiaryListDto.serializer()), body)
 
-        assertEquals(emptyList<DiaryListItemDto>(), decoded.data!!.diaries)
+        assertNull(decoded.data!!.weeklyDominantMood)
+    }
+
+    @Test
+    fun `diaries 키가 없으면 빈 목록으로 접히지 않고 실패한다`() {
+        // 0 건은 `"diaries": []` 로 온다. 키 자체가 사라진 건 계약이 바뀐 것이라,
+        // 빈 목록으로 수렴시키면 "기록 없음" 화면과 구분되지 않는다 (#789).
+        val body = """{ "status": 200, "code": 200, "data": { "monthDiaryCount": 0 } }"""
+
+        assertThrows(MissingFieldException::class.java) {
+            json.decodeFromString(BaseResponse.serializer(DiaryListDto.serializer()), body)
+        }
     }
 }

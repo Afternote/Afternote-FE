@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "7c13af45330a6afff6c73128e57863e72407cfef.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": null,
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "details.qa_account",
+      "details.screenshots",
+      "device.avd",
+      "device.serial"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "7c13af45330a6afff6c73128e57863e72407cfef",
+  "head_ref": "fix/723-weekly-report-recovery (PR #965)",
+  "base_sha": "5a42cf1489be107096c4ad795c2ba697929b48be",
+  "base_ref": "refactor/547-weekly-date-parsing (PR #961)",
+  "recorded_at": "2026-08-23T14:09:44.582897+00:00",
+  "result": "pass",
+  "scenario": "PR #965(#723)+#961(#547) 리뷰 QA. 스택 head(#965, #961 포함) APK 를 실기동. (1) 주간리포트 탭에서 ViewModeSwitcher·FAB 미노출 확인 — uiautomator 덤프상 상단 액션·FAB 영역 클릭 요소 0, 데일리질문/일기 탭에서는 유지. (2) wifi·data off 후 8월 2주차 선택 → 실패 배너('8월 2주차 리포트를 불러오지 못했어요.')와 직전 8월 3주차 리포트·주차 드롭다운 동시 유지 확인. (3) 오프라인 콜드 스타트 후 주간리포트 진입 → WeeklyReportUiState.Error 화면에 주차 드롭다운·다시 시도 잔존(복구 수단 유지), 단 WeeklyReportReviewCard 가 dateRange=\"\"/counts=emptyList 로 높이 200dp 중 아래 절반이 빈 박스 — 리뷰 [normal] 4. (4) 네트워크 복구 후 다시 시도 → 8월 3주차 정상 렌더, 복구 확인. 부수 관찰: 배너에 서버 예외 원문(Unable to resolve host…) 영문 노출, '다시 시도' 좌측선 어긋남(left=48 vs 77) — 각각 리뷰 [normal] 3·5. #961 의 counts 미필터 결함은 실서버가 주 단위 스코프라 화면 재현 불가 → 임시 단위테스트로 실증(counts=3/목록=1/recordedDays=1), 리뷰 [blocking].",
+  "not_covered": [],
+  "device": {
+    "is_emulator": true
+  },
+  "details": {
+    "dynamic": true,
+    "app": {
+      "package": "com.afternote.afternote_fe"
+    },
+    "diff_sha256": "1e01114162793de0b5be59d0717f0088dc77e12c745c1be3e2ecf538e5eedd64",
+    "changed_files": [
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/sender/HomeScreen.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/sender/WeeklyReportScreen.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/WeeklyReportUiState.kt",
+      "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/WeeklyReportViewModel.kt",
+      "feature/mindrecord/presentation/src/main/res/values/strings.xml",
+      "feature/mindrecord/presentation/src/test/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/WeeklyReportRecoveryTest.kt"
+    ],
+    "reviews": [
+      "https://github.com/Afternote/Afternote-FE/pull/961#pullrequestreview-5002561443",
+      "https://github.com/Afternote/Afternote-FE/pull/965#pullrequestreview-5002567889"
+    ],
+    "redacted_artifacts": {
+      "screenshot_references": 2
+    }
+  }
+}
