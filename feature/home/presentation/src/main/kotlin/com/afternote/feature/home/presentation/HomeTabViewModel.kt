@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.core.domain.repository.UserProfileRepository
+import com.afternote.core.domain.repository.UserProfileCacheRepository
 import com.afternote.feature.home.presentation.reporting.HomeFailureStage
 import com.afternote.feature.home.presentation.reporting.recordHomeFailure
 import com.afternote.feature.home.presentation.usecase.GetHomeSummaryUseCase
@@ -23,7 +23,7 @@ class HomeTabViewModel
     @Inject
     constructor(
         private val getHomeSummary: GetHomeSummaryUseCase,
-        private val userProfileRepository: UserProfileRepository,
+        private val userProfileCacheRepository: UserProfileCacheRepository,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<HomeTabUiState>(HomeTabUiState.Loading())
@@ -93,7 +93,7 @@ class HomeTabViewModel
                         // 초기 진입 또는 에러 재시도: 캐시된 이름이 있으면 placeholder로 즉시 노출한다.
                         _uiState.value =
                             HomeTabUiState.Loading(
-                                cachedUserName = userProfileRepository.getCachedUserName(),
+                                cachedUserName = userProfileCacheRepository.getCachedUserName(),
                                 showsRefreshIndicator = showsRefreshingSpinner,
                             )
                     }
@@ -123,7 +123,7 @@ class HomeTabViewModel
          * 다음 진입의 placeholder 가 한 번 더 비는 것뿐이다.
          */
         private suspend fun cacheUserName(name: String) {
-            runCatchingCancellable { userProfileRepository.saveUserName(name) }
+            runCatchingCancellable { userProfileCacheRepository.saveUserName(name) }
         }
     }
 

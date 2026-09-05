@@ -14,6 +14,7 @@ import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepositor
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -119,7 +120,7 @@ class DailyQuestionResumeDraftTest {
                 photoUploadRepository = FakePhotoUploadRepository(uploadedUrl = "", uploadedKey = ""),
                 // 툴바 카운트는 이 테스트의 관심사가 아니다 — 같은 저장소를 넘겨 0건으로 둔다 (#769).
                 draftLoader =
-                    MindRecordDraftLoader(
+                    LoadMindRecordDraftsUseCase(
                         diaryRepository = NoDiaryDraftsRepository,
                         dailyQuestionRepository = repository,
                     ),
@@ -296,7 +297,7 @@ class DailyQuestionResumeDraftTest {
                 photoUploadRepository = FakePhotoUploadRepository(uploadedUrl = "", uploadedKey = ""),
                 // 툴바 카운트는 이 테스트의 관심사가 아니다 — 같은 저장소를 넘겨 0건으로 둔다 (#769).
                 draftLoader =
-                    MindRecordDraftLoader(
+                    LoadMindRecordDraftsUseCase(
                         diaryRepository = NoDiaryDraftsRepository,
                         dailyQuestionRepository = repository,
                     ),

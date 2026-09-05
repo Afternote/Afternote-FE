@@ -11,28 +11,37 @@ import com.android.tools.screenshot.PreviewTest
 @Preview(showBackground = true)
 @Composable
 internal fun pushNotificationAlarmOnScreenshot() {
-    PushNotificationScreenshotContent(isDeviceAlarmOn = true)
+    PushNotificationScreenshotContent(PushNotificationUiState(isLoading = false, isDeviceAlarmOn = true))
 }
 
 @PreviewTest
 @Preview(showBackground = true)
 @Composable
 internal fun pushNotificationAlarmOffScreenshot() {
-    PushNotificationScreenshotContent(isDeviceAlarmOn = false)
+    PushNotificationScreenshotContent(PushNotificationUiState(isLoading = false, isDeviceAlarmOn = false))
 }
 
 @PreviewTest
 @Preview(showBackground = true, device = COMPACT_DEVICE_SPEC)
 @Composable
 internal fun pushNotificationAlarmOffCompactScreenshot() {
-    PushNotificationScreenshotContent(isDeviceAlarmOn = false)
+    PushNotificationScreenshotContent(PushNotificationUiState(isLoading = false, isDeviceAlarmOn = false))
+}
+
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+internal fun pushNotificationLoadErrorScreenshot() {
+    PushNotificationScreenshotContent(
+        PushNotificationUiState(isLoading = false, errorMessage = "load error"),
+    )
 }
 
 @Composable
-private fun PushNotificationScreenshotContent(isDeviceAlarmOn: Boolean) {
+private fun PushNotificationScreenshotContent(uiState: PushNotificationUiState) {
     AfternoteTheme {
         PushNotificationContent(
-            uiState = PushNotificationUiState(isDeviceAlarmOn = isDeviceAlarmOn),
+            uiState = uiState,
             onBack = {},
             onDeviceAlarmClick = {},
             onNewsletterToggle = {},
@@ -41,6 +50,7 @@ private fun PushNotificationScreenshotContent(isDeviceAlarmOn: Boolean) {
             onSmsCheck = {},
             onEmailCheck = {},
             onPushCheck = {},
+            onRetry = {},
         )
     }
 }

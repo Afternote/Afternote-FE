@@ -47,8 +47,8 @@ fun WeeklySummaryGrid(
      * `null` 은 «아직 모름» 이라 숫자 대신 대시를 그린다. 0 은 확정값이라 그대로 그린다.
      */
     recordedCount: Int?,
-    onImageClick: () -> Unit = {},
-    onCountCardClick: () -> Unit = {},
+    onImageClick: () -> Unit,
+    onCountCardClick: () -> Unit,
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val gap = 8.dp
@@ -69,7 +69,11 @@ fun WeeklySummaryGrid(
                 Box(modifier = Modifier.fillMaxSize()) {
                     Image(
                         painter = painterResource(R.drawable.core_ui_img_recorded_moment),
-                        contentDescription = "recorded moment",
+                        // **장식이다 — 라벨은 바로 위에 겹쳐 그리는 «RECORDED MOMENT» 텍스트가 준다.**
+                        // 종전에는 "recorded moment" 를 하드코딩해 두어, 스크린리더가 같은 뜻을 두 번
+                        // 읽었다(이미지 라벨 + 그 텍스트). 리소스로 옮기는 대신 중복을 없앤다 (#1471).
+                        // 누를 대상은 이 이미지가 아니라 감싼 Surface 이고, 그쪽이 클릭 semantics 를 갖는다.
+                        contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize(),
                     )
@@ -112,9 +116,13 @@ fun WeeklySummaryGrid(
                         )
                         Text(
                             text = "기록된 순간들",
+                            // 시안(4327:99094)은 11 / 16.5px(150%)다. `footnoteCaption` 은 10/16 이라
+                            // fontSize 만 덮으면 행간 16sp 가 그대로 상속돼 145% 가 된다 — letterSpacing 은
+                            // 명시하면서 lineHeight 만 빠져 있었다 (#1580).
                             style =
                                 AfternoteDesign.typography.footnoteCaption.copy(
                                     fontSize = 11.sp,
+                                    lineHeight = 16.5.sp,
                                     letterSpacing = 0.005.em,
                                 ),
                             color = AfternoteDesign.colors.gray6,
@@ -144,6 +152,10 @@ fun WeeklySummaryGrid(
 @Composable
 private fun WeeklySummaryGridPreview() {
     AfternoteTheme {
-        WeeklySummaryGrid(recordedCount = 3)
+        WeeklySummaryGrid(
+            recordedCount = 3,
+            onCountCardClick = {},
+            onImageClick = {},
+        )
     }
 }

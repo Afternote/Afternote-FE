@@ -62,7 +62,6 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           AUTHOR: ${{ github.event.pull_request.user.login }}
           HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
-          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
         run: |
           # 조회 실패를 "빚 없음" 으로 오인해 통과시키지 않는다. 다만 판정 근거를
           # 얻지 못한 상태로 남의 PR 을 닫지도 않는다 — 아래에서 명시적으로 나눈다.
@@ -96,11 +95,6 @@ jobs:
             admin|maintain|write) ;;
             read|none) echo "쓰기 권한 없음($perm) — 건너뜀"; exit 0 ;;
             *) echo "::error::권한 값을 알 수 없다($perm) — 재실행할 것"; exit 1 ;;
-          esac
-
-          # 긴급 우회 라벨.
-          case ",$LABELS," in
-            *,review-debt-exempt,*) echo "review-debt-exempt 라벨 — 건너뜀"; exit 0 ;;
           esac
 
           # 빚의 기준은 «나에게 요청이 걸렸는가» 가 아니라 «아무도 응하지 않은 PR 이
@@ -367,8 +361,6 @@ jobs:
             echo '```bash'
             echo "gh pr reopen $PR_NUMBER"
             echo '```'
-            echo
-            echo "리뷰보다 이 PR 이 급하면 \`review-debt-exempt\` 라벨을 붙이고 다시 열면 통과합니다."
           } > /tmp/debt-comment.md
 
           echo "리뷰·작성자 미응답 ${count}건 — PR #$PR_NUMBER 를 닫는다"

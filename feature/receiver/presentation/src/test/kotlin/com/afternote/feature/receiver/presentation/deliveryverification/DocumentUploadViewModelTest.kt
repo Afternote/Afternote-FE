@@ -91,7 +91,7 @@ class DocumentUploadViewModelTest {
         viewModel.submit()
 
         val state = viewModel.uiState.value
-        assertEquals(UiText.Resource(R.string.receiver_verify_document_upload_in_progress), state.error)
+        assertEquals(UiText.Resource(R.string.receiver_verify_document_upload_in_progress), state.errorMessage)
         assertFalse(state.isSubmitting)
         assertTrue(auth.deliverySubmissions.isEmpty())
     }

@@ -41,7 +41,7 @@ class MasterKeyViewModelTest {
 
             assertEquals(
                 UiText.Resource(R.string.receiver_verify_master_key_invalid_format),
-                viewModel.uiState.value.error,
+                viewModel.uiState.value.errorMessage,
             )
             assertFalse(viewModel.uiState.value.isSubmitting)
         }
@@ -66,7 +66,7 @@ class MasterKeyViewModelTest {
         assertEquals("발신자", senderRegistry.findById(sender.id)?.realSenderName)
         assertTrue(viewModel.uiState.value.isVerified)
         assertFalse(viewModel.uiState.value.isSubmitting)
-        assertEquals(null, viewModel.uiState.value.error)
+        assertEquals(null, viewModel.uiState.value.errorMessage)
     }
 
     @Test
@@ -83,7 +83,7 @@ class MasterKeyViewModelTest {
         assertEquals(listOf(normalized), authRepository.verifiedMasterKeys)
         assertEquals(listOf(normalized), receiverRepository.savedMasterKeys)
         assertTrue(viewModel.uiState.value.isVerified)
-        assertEquals(null, viewModel.uiState.value.error)
+        assertEquals(null, viewModel.uiState.value.errorMessage)
     }
 
     private fun viewModel(
