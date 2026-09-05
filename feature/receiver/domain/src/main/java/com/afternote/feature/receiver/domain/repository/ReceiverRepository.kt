@@ -13,16 +13,20 @@ import kotlinx.coroutines.flow.Flow
  *
  * `X-Auth-Code` 헤더는 네트워크 계층의 ReceiverAuthInterceptor가 자동 부착하므로
  * 호출자는 인증 코드를 메서드 인자로 들고 다닐 필요가 없습니다.
+ *
+ * **실패 계약은 [ReceiverAuthRepository] 와 같다(#1053)** — 서버를 부르는 조회는 단발이든 페이징이든
+ * [com.afternote.feature.receiver.domain.error.ReceiverFailure] 로 실패를 돌려준다. 같은 서버 사유가
+ * 경로에 따라 다른 타입으로 오면 화면이 «전달 조건 미충족»·«연결 없음» 을 한 기준으로 가를 수 없다.
  */
 interface ReceiverRepository {
     /** 저장된 인증 코드 스트림(없거나 공백만 있으면 null 방출). */
-    val authCodeFlow: Flow<String?>
+    val masterKeyFlow: Flow<String?>
 
     /** 단발 조회; UI 스레드에서는 코루틴 안에서 호출하세요. */
-    suspend fun currentAuthCode(): String?
+    suspend fun currentMasterKey(): String?
 
     /** 사용자가 입력·검증한 코드를 저장합니다. 제거는 로그아웃 일괄 정리(SESSION scope, #912)가 담당합니다. */
-    suspend fun saveAuthCode(code: String)
+    suspend fun saveMasterKey(code: String)
 
     /**
      * 수신 애프터노트 스트림. 서버는 페이지네이션 미지원이므로 단일 페이지로 받지만,

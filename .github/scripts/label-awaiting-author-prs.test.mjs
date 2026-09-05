@@ -4,6 +4,7 @@ import test from "node:test";
 import {
     DEFAULT_LABEL,
     applyPlan,
+    countAuthorBodyEdits,
     countAuthorFixes,
     countAuthorResponses,
     ensureLabelExists,
@@ -62,6 +63,7 @@ function pullRequest(overrides = {}) {
         reviews: { pageInfo: { hasPreviousPage: false }, nodes: [] },
         commits: { pageInfo: { hasPreviousPage: false }, nodes: [] },
         comments: { pageInfo: { hasPreviousPage: false }, nodes: [] },
+        userContentEdits: { pageInfo: { hasPreviousPage: false }, nodes: [] },
         ...overrides,
     };
 }
@@ -274,7 +276,7 @@ test("두 GraphQL 조회는 결정 리뷰 권한과 하위 connection 절단 여
     assert.equal(queries.length, 2);
     for (const query of queries) {
         assert.match(query, /authorCanPushToRepository/);
-        for (const connection of ["reviews", "commits", "comments"]) {
+        for (const connection of ["reviews", "commits", "comments", "userContentEdits"]) {
             assert.match(
                 query,
                 new RegExp(`${connection}\\(last: 50\\) \\{\\s+pageInfo \\{ hasPreviousPage \\}`),
@@ -292,10 +294,20 @@ test("입장 게이트 조회는 잘린·누락된 하위 connection으로 판�
         ],
         ["commits", { pageInfo: {}, nodes: [] }, /commits 최근 50건이 완전하지 않습니다/],
         ["comments", { pageInfo: { hasPreviousPage: false } }, /comments 응답이 불완전합니다/],
+        [
+            "userContentEdits",
+            { pageInfo: { hasPreviousPage: true }, nodes: [] },
+            /userContentEdits 최근 50건이 완전하지 않습니다/,
+        ],
     ];
 
     for (const [connection, value, expected] of cases) {
-        const candidate = pullRequest({ number: 40 });
+        // 최신 판정이 변경요청이어야 판정이 이 connection 들을 실제로 읽는다. 그 상태에서만
+        // 「잘린 데이터로 판정하지 않는다」 가 의미를 갖는다.
+        const candidate = pullRequest({
+            number: 40,
+            reviews: { pageInfo: { hasPreviousPage: false }, nodes: [changesRequested()] },
+        });
         candidate[connection] = value;
 
         await assert.rejects(
@@ -316,6 +328,102 @@ test("입장 게이트 조회는 잘린·누락된 하위 connection으로 판�
     }
 });
 
+test("판정이 읽지 않는 connection 은 잘려 있어도 입장을 막지 않는다", async () => {
+    // 릴리스 PR(develop → main)은 커밋이 수백 건이라 commits(last: 50) 이 항상 잘린다.
+    // 그런데 리뷰 판정이 없으면 judgeAwaitingAuthor 는 커밋을 읽지도 않는다. 이 구분이 없어
+    // 커밋 403건짜리 PR 하나가 그 작성자의 새 PR 을 전부 막았다 (#1787).
+    const releasePullRequest = pullRequest({
+        number: 1778,
+        reviews: { pageInfo: { hasPreviousPage: false }, nodes: [] },
+        commits: { pageInfo: { hasPreviousPage: true }, nodes: [] },
+    });
+
+    const fetched = await fetchOpenPullRequestsByAuthor(
+        async () => ({
+            data: {
+                search: {
+                    pageInfo: { hasNextPage: false, endCursor: null },
+                    nodes: [releasePullRequest],
+                },
+            },
+        }),
+        REPO,
+        "author",
+    );
+
+    assert.equal(fetched.length, 1);
+    assert.equal(fetched[0].number, 1778);
+});
+
+test("판정 시각 이후가 최근 50건 안에 다 들어오면 잘려 있어도 완전하다", async () => {
+    // last: 50 은 최신 50건이다. 가져온 것 중 가장 오래된 커밋이 판정 시각보다 앞서면
+    // 그 이후 커밋은 전부 확보한 것이므로 판정에 공백이 없다.
+    const candidate = pullRequest({
+        number: 41,
+        reviews: {
+            pageInfo: { hasPreviousPage: false },
+            nodes: [changesRequested("2026-08-29T00:00:00Z")],
+        },
+        commits: {
+            pageInfo: { hasPreviousPage: true },
+            nodes: [
+                { commit: { committedDate: "2026-08-28T00:00:00Z" } },
+                { commit: { committedDate: "2026-08-30T00:00:00Z" } },
+            ],
+        },
+    });
+
+    const fetched = await fetchOpenPullRequestsByAuthor(
+        async () => ({
+            data: {
+                search: {
+                    pageInfo: { hasNextPage: false, endCursor: null },
+                    nodes: [candidate],
+                },
+            },
+        }),
+        REPO,
+        "author",
+    );
+
+    assert.equal(fetched.length, 1);
+});
+
+test("판정 시각 이후가 최근 50건을 넘치면 여전히 중단한다", async () => {
+    // 가장 오래된 커밋조차 판정 시각 뒤라면 그 사이에 못 본 커밋이 있을 수 있다.
+    // 이때는 불완전한 근거로 PR 을 닫지 않도록 판정을 멈춘다.
+    const candidate = pullRequest({
+        number: 42,
+        reviews: {
+            pageInfo: { hasPreviousPage: false },
+            nodes: [changesRequested("2026-08-29T00:00:00Z")],
+        },
+        commits: {
+            pageInfo: { hasPreviousPage: true },
+            nodes: [
+                { commit: { committedDate: "2026-08-30T00:00:00Z" } },
+                { commit: { committedDate: "2026-08-31T00:00:00Z" } },
+            ],
+        },
+    });
+
+    await assert.rejects(
+        fetchOpenPullRequestsByAuthor(
+            async () => ({
+                data: {
+                    search: {
+                        pageInfo: { hasNextPage: false, endCursor: null },
+                        nodes: [candidate],
+                    },
+                },
+            }),
+            REPO,
+            "author",
+        ),
+        /commits 최근 50건이 완전하지 않습니다/,
+    );
+});
+
 test("최신 판정이 승인이면 대상이 아니다", () => {
     // 승인 뒤 작성자가 손보는 것은 작성자 몫이지만, 그것은 «머지 가능한 상태» 이지
     // «지적을 방치한 상태» 가 아니다.
@@ -332,10 +440,66 @@ test("최신 판정이 승인이면 대상이 아니다", () => {
                     },
                 ],
             },
+            userContentEdits: {
+                nodes: [
+                    {
+                        editedAt: "2026-08-03T00:00:00Z",
+                        editor: { login: "author" },
+                    },
+                ],
+            },
         }),
         { repository: REPO },
     );
     assert.equal(verdict.awaiting, false);
+    assert.equal(verdict.reason, "최신 판정이 변경요청이 아님");
+});
+
+test("변경요청 뒤 작성자가 PR 본문을 고치면 조치로 센다", () => {
+    const verdict = judgeAwaitingAuthor(
+        pullRequest({
+            reviews: { nodes: [changesRequested("2026-08-29T00:00:00Z")] },
+            userContentEdits: {
+                nodes: [
+                    {
+                        editedAt: "2026-08-29T00:00:01Z",
+                        editor: { login: "AUTHOR" },
+                    },
+                ],
+            },
+        }),
+        { repository: REPO },
+    );
+
+    assert.equal(verdict.awaiting, false);
+    assert.match(verdict.reason, /본문 편집 1건/);
+});
+
+test("판정 전·다른 사람·편집자 없는 본문 편집은 작성자 조치가 아니다", () => {
+    const edits = [
+        { editedAt: "2026-08-28T23:59:59Z", editor: { login: "author" } },
+        { editedAt: "2026-08-29T00:00:00Z", editor: { login: "author" } },
+        { editedAt: "2026-08-29T00:00:01Z", editor: { login: "reviewer" } },
+        { editedAt: "2026-08-29T00:00:02Z", editor: null },
+    ];
+
+    assert.equal(
+        countAuthorBodyEdits({
+            userContentEdits: edits,
+            author: "author",
+            since: "2026-08-29T00:00:00Z",
+        }),
+        0,
+    );
+
+    const verdict = judgeAwaitingAuthor(
+        pullRequest({
+            reviews: { nodes: [changesRequested("2026-08-29T00:00:00Z")] },
+            userContentEdits: { nodes: edits },
+        }),
+        { repository: REPO },
+    );
+    assert.equal(verdict.awaiting, true);
 });
 
 test("리뷰어가 미는 빈 CI 재트리거 커밋은 작성자 조치가 아니다", () => {

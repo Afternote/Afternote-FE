@@ -3,6 +3,7 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
+import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -56,7 +57,7 @@ class LoadRaceVersionTest {
                 }
                 Result.success(emptyList())
             }
-            val viewModel = DailyQuestionListViewModel(repository, changeTracker)
+            val viewModel = DailyQuestionListViewModel(repository, changeTracker, RecordingErrorReporter())
             backgroundScope.launch { viewModel.uiState.collect { } }
             advanceUntilIdle()
 

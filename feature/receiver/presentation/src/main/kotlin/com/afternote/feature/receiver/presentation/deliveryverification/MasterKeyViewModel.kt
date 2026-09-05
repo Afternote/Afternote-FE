@@ -21,12 +21,12 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * 마스터 키 입력 화면(5) ViewModel — 발신자별 authCode 검증 (이슈 #215, #220 후속).
+ * 마스터 키 입력 화면(5) ViewModel — 발신자별 masterKey 검증 (이슈 #215, #220 후속).
  *
- * `verifyMasterKey(authCode)` 성공 시:
- * 1) [ReceiverRepository.saveAuthCode] 로 글로벌 헤더 컨텍스트에 저장 (이후 서류 업로드·신청 제출 API 가
+ * `verifyMasterKey(masterKey)` 성공 시:
+ * 1) [ReceiverRepository.saveMasterKey] 로 글로벌 헤더 컨텍스트에 저장 (이후 서류 업로드·신청 제출 API 가
  *    동일 발신자 컨텍스트로 호출되도록).
- * 2) [SenderRegistry.attachIdentity] 로 카드에 authCode + ReceiverIdentity 결합.
+ * 2) [SenderRegistry.attachIdentity] 로 카드에 masterKey + ReceiverIdentity 결합.
  * 3) [MasterKeyUiState.isVerified] 를 true 로 갱신 → UI 가 다음 단계(서류 업로드) 로 이동 후
  *    [onVerifiedConsumed] 로 소비 처리.
  *
@@ -53,24 +53,24 @@ class MasterKeyViewModel
 
         fun submit(
             senderId: String,
-            authCode: String,
+            masterKey: String,
         ) {
             // BE @Pattern 은 소문자 UUID 만 받는다 — 대소문자 무의미 값이라 대문자 입력은 거절 대신 정규화한다 (#887).
-            val trimmed = authCode.trim().lowercase()
+            val trimmed = masterKey.trim().lowercase()
             if (trimmed.isEmpty() || _uiState.value.isSubmitting) return
             if (!MASTER_KEY_UUID_REGEX.matches(trimmed)) {
                 _uiState.update {
-                    it.copy(error = UiText.Resource(R.string.receiver_verify_master_key_invalid_format))
+                    it.copy(errorMessage = UiText.Resource(R.string.receiver_verify_master_key_invalid_format))
                 }
                 return
             }
 
-            _uiState.update { it.copy(isSubmitting = true, error = null) }
+            _uiState.update { it.copy(isSubmitting = true, errorMessage = null) }
             viewModelScope.launch {
                 receiverAuthRepository
                     .verifyMasterKey(trimmed)
                     .onSuccess { identity ->
-                        receiverRepository.saveAuthCode(trimmed)
+                        receiverRepository.saveMasterKey(trimmed)
                         senderRegistry.attachIdentity(senderId, trimmed, identity)
                         _uiState.update { it.copy(isSubmitting = false, isVerified = true) }
                     }.onFailure { throwable ->
@@ -80,7 +80,7 @@ class MasterKeyViewModel
                         _uiState.update {
                             it.copy(
                                 isSubmitting = false,
-                                error = throwable.toReceiverErrorUiText(R.string.receiver_verify_error_unknown),
+                                errorMessage = throwable.toReceiverErrorUiText(R.string.receiver_verify_error_unknown),
                             )
                         }
                     }
@@ -88,7 +88,7 @@ class MasterKeyViewModel
         }
 
         fun consumeError() {
-            _uiState.update { it.copy(error = null) }
+            _uiState.update { it.copy(errorMessage = null) }
         }
 
         fun onVerifiedConsumed() {

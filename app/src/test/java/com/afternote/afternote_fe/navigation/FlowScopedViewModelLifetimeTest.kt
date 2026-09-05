@@ -9,7 +9,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavBackStackEntry
 import com.afternote.core.ui.Route
 import com.afternote.feature.afternote.domain.AfternoteType
-import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
+import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
