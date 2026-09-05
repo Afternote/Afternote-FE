@@ -23,7 +23,7 @@ import javax.inject.Inject
  *   자식이 직접 의존하지 않고 flow VM 통해 결정
  *
  * 후속(2차 PR 이후) 으로 옮길 책임:
- * - `authCode`·`ReceiverIdentity` 등 누적 흐름 상태 보유
+ * - `masterKey`·`ReceiverIdentity` 등 누적 흐름 상태 보유
  * - [com.afternote.feature.receiver.presentation.recordsbox.SenderRegistry.attachIdentity] 호출 시점 위임
  * - [IdentityVerificationRepository] 자체의 흡수·싱글톤 제거
  */
@@ -39,16 +39,17 @@ class DeliveryVerificationFlowViewModel
 
         /**
          * 본인 확인 캐시 여부 — Intro 진입 시 즉시 MasterKey 로 jump 할지 판단용.
+         * 이 흐름의 [senderId] 에 대한 인증만 본다 — 다른 발신자 인증은 이 관문을 열지 않는다 (#597).
          *
          * gate 의 Flow 를 viewModelScope 안에서 StateFlow 로 변환 (collectAsStateWithLifecycle 가 즉시 값 필요).
          *
-         * `WhileSubscribed(5_000)`: 구독자 있을 때만 upstream(DataStore) collect.
+         * `WhileSubscribed(5_000)`: 구독자 있을 때만 upstream(repository 캐시) collect.
          * 모든 구독자 사라진 후 5초 더 기다리고 멈춤 — configuration change(회전·다크모드 등) 의
-         * destroy→recreate 갭(수십 ms) 동안 DataStore 재읽기 회피용 grace. 5초 후엔 자원 해제.
+         * destroy→recreate 갭(수십 ms) 동안 upstream 재구독 회피용 grace. 5초 후엔 자원 해제.
          * (Google 공식 권장값 — Architecture guide / State production 섹션)
          */
         val isIdentityVerified: StateFlow<Boolean> =
-            identityVerificationRepository.isVerified.stateIn(
+            identityVerificationRepository.isVerified(senderId).stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000),
                 initialValue = false,

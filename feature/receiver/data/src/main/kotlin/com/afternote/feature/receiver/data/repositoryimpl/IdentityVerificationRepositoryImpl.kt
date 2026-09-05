@@ -1,65 +1,55 @@
 package com.afternote.feature.receiver.data.repositoryimpl
 
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.emptyPreferences
-import com.afternote.feature.receiver.data.di.IdentityVerificationDataStore
 import com.afternote.feature.receiver.domain.repository.IdentityVerificationRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import java.io.IOException
+import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private object IdentityVerificationKeys {
-    val VERIFIED = booleanPreferencesKey("identity_verified")
-}
-
 /**
- * [IdentityVerificationRepository] 의 DataStore Preferences 기반 구현.
+ * [IdentityVerificationRepository] 의 프로세스 수명 in-memory 구현.
  *
- * 사람 단위 1회 검증 정책 → 단일 boolean 키 (`identity_verified`).
- * process death · 앱 재시작 후에도 값 유지.
+ * 발신자별 1회 검증 정책 (#597) — 발신자 A 인증이 발신자 B 의 관문을 열지 않도록 senderId 단위로
+ * 격리해 보관한다.
+ *
+ * ## 왜 in-memory 인가 (#597 리뷰 반영)
+ *
+ * 키인 `senderId` 는 presentation 의 `SenderRegistry` 가 `UUID.randomUUID()` 로 발급하는
+ * **프로세스 수명 값**이다 (registry 자체가 in-memory stub, #215).
+ * 앱 재시작 시 같은 발신자라도 재등록으로 새 UUID 를 받으므로,
+ * - 디스크에 남긴 이전 UUID 키는 **다시는 조회되지 않고** (영속의 실효 없음),
+ * - 인증 1회마다 죽은 키가 preferences 파일에 **단조 누적**되어 읽기 비용만 키운다.
+ *
+ * 그래서 저장 수명을 키 발급처와 같은 프로세스 수명으로 맞춘다. #912 가 도입했던 DataStore
+ * (SESSION scope) 는 전역 boolean 시절의 「process death 후 유지」가 목적이었으나, 발신자별
+ * UUID 키에서는 그 유지가 도달 불가능해 디스크 비용만 남는다. 프로세스를 넘는 발신자 식별자
+ * (예: BE 발급 sender id, 또는 마스터 키의 비가역 파생값) 가 생기면 그때 영속을 되살린다.
+ *
+ * 구 릴리스가 디스크에 남긴 전역 `identity_verified` boolean · `identity_verified_<UUID>` 잔존값은
+ * 본 구현이 디스크를 아예 읽지 않으므로 구조적으로 어떤 발신자의 관문도 열 수 없다.
+ * (잔존 파일 `afternote_identity_verification` 은 SESSION scope 매니페스트 등록이 디스크에 남아 있어
+ * 다음 로그아웃 때 [com.afternote.core.datastore.LocalStoreRegistry.clearScope] 가 마저 비운다.)
+ *
+ * `@Singleton` — 열람 신청 흐름의 ViewModel 들이 같은 인스턴스를 공유해야 캐시가 의미를 갖는다.
  */
 @Singleton
 class IdentityVerificationRepositoryImpl
     @Inject
-    constructor(
-        @param:IdentityVerificationDataStore private val dataStore: DataStore<Preferences>,
-    ) : IdentityVerificationRepository {
-        override val isVerified: Flow<Boolean> =
-            // dataStore.data 가 Flow<Preferences> source — 디스크 파일 변경 감지해 새 Preferences 흘림.
-            // 왜 Flow? 디스크 값이 시간에 따라 변할 수 있고 (verify 완료 시 false → true),
-            // UI 가 그 변화를 자동 reactive 하게 받아 화면 갱신해야 해서.
-            // "한 번 읽고 끝" 이면 suspend 함수로 충분했지만 본 케이스는 시계열.
-            // 이하 .catch / .map 은 그 Flow 의 operator (변환·예외 처리).
-            dataStore.data
-                .catch { exception ->
-                    // 람다의 implicit `this` = FlowCollector<Preferences> (Flow.catch 가 람다 호출 시
-                    // 숨겨서 주입 — "lambda with receiver" 패턴). 본인 코드엔 안 적혀있지만 컴파일러가 인식.
-                    //
-                    // IOException = 디스크 손상·권한·storage 풀 등 *환경* 문제 (코드 버그 아님).
-                    //   → 빈 Preferences 흘림 → 아래 .map 이 `null ?: false` 로 폴백 → consumer 는 `false` 받음.
-                    //   앱 크래시 회피 + "verify 안 된 상태" 로 정상 작동 (사용자가 재시도 가능).
-                    // 그 외 예외 = 보통 코드 버그 → 숨기면 디버깅 불가 → 그대로 throw.
-                    // (DataStore 공식 가이드 권장 패턴 — ReceiverAuthCodeDataSource 와 동일.)
-                    if (exception is IOException) {
-                        emit(emptyPreferences())
-                    } else {
-                        throw exception
-                    }
-                }.map { preferences ->
-                    // `preferences` = typed Map<Preferences.Key<*>, ...> (immutable). subscript 접근 = Map 처럼.
-                    // SharedPreferences 레거시 이름 그대로 가져옴 — "settings UI" 어감이지만 실체는 단순 키-값 컨테이너.
-                    preferences[IdentityVerificationKeys.VERIFIED] ?: false
-                }
+    constructor() : IdentityVerificationRepository {
+        private val verifiedSenderIds = MutableStateFlow<Set<String>>(emptySet())
 
-        override suspend fun markVerified() {
-            dataStore.edit { preferences ->
-                preferences[IdentityVerificationKeys.VERIFIED] = true
-            }
+        override fun isVerified(senderId: String): Flow<Boolean> =
+            // 왜 Flow? 값이 시간에 따라 변하고 (verify 완료 시 false → true),
+            // UI 가 그 변화를 reactive 하게 받아 화면 갱신해야 해서. 단발 조회면 suspend 로 충분했지만 시계열.
+            verifiedSenderIds
+                .map { senderId in it }
+                // 다른 발신자의 markVerified 로 Set 이 바뀌어도 이 발신자의 boolean 이 그대로면 재방출하지 않는다.
+                .distinctUntilChanged()
+
+        override suspend fun markVerified(senderId: String) {
+            verifiedSenderIds.update { it + senderId }
         }
     }

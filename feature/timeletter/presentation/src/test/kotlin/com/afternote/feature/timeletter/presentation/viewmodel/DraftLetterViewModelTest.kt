@@ -1,31 +1,32 @@
 package com.afternote.feature.timeletter.presentation.viewmodel
 
+import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterDeliveryMode
 import com.afternote.feature.timeletter.domain.model.TimeLetterList
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.lang.reflect.Proxy
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class DraftLetterViewModelTest {
-    private val dispatcher = StandardTestDispatcher()
-
     @Before
     fun setUp() {
-        Dispatchers.setMain(dispatcher)
+        Dispatchers.setMain(UnconfinedTestDispatcher())
     }
 
     @After
@@ -34,95 +35,154 @@ class DraftLetterViewModelTest {
     }
 
     @Test
-    fun `조회 실패는 빈 목록이 아니라 Error 상태가 된다`() =
-        runTest(dispatcher) {
-            val viewModel = DraftLetterViewModel(FakeDraftTimeLetterRepository(loadFailure = true))
+    fun `receiver load failure keeps drafts visible`() {
+        val viewModel =
+            DraftLetterViewModel(
+                timeLetterRepository { methodName, _ ->
+                    when (methodName) {
+                        "getTemporaryTimeLetters" -> testDrafts
+                        else -> error("Unexpected repository call: $methodName")
+                    }
+                },
+                userRepository { throw IllegalStateException("receiver load failed") },
+            )
 
-            advanceUntilIdle()
+        val state = viewModel.uiState.value as DraftLetterUiState.Success
 
-            assertTrue(viewModel.uiState.value is DraftLetterUiState.Error)
-        }
-
-    @Test
-    fun `조회 실패 후 다시 시도하면 목록을 복구한다`() =
-        runTest(dispatcher) {
-            val repository = FakeDraftTimeLetterRepository(loadFailure = true)
-            val viewModel = DraftLetterViewModel(repository)
-            advanceUntilIdle()
-            repository.loadFailure = false
-
-            viewModel.loadDrafts()
-            advanceUntilIdle()
-
-            val state = viewModel.uiState.value as DraftLetterUiState.Success
-            assertEquals(listOf(1L), state.drafts.map { it.id })
-        }
-
-    @Test
-    fun `선택 삭제 실패 시 기존 목록과 선택을 유지하고 오류를 노출한다`() =
-        runTest(dispatcher) {
-            val repository = FakeDraftTimeLetterRepository(deleteFailure = true)
-            val viewModel = DraftLetterViewModel(repository)
-            advanceUntilIdle()
-            viewModel.toggleEditMode()
-            viewModel.toggleSelection(1L)
-
-            viewModel.deleteSelected()
-            advanceUntilIdle()
-
-            val state = viewModel.uiState.value as DraftLetterUiState.Success
-            assertEquals(listOf(1L), state.drafts.map { it.id })
-            assertEquals(setOf(1L), state.selectedIds)
-            assertEquals(true, state.deleteFailed)
-            assertEquals(false, state.isDeleting)
-        }
-}
-
-private class FakeDraftTimeLetterRepository(
-    var loadFailure: Boolean = false,
-    var deleteFailure: Boolean = false,
-) : TimeLetterRepository {
-    private val draft =
-        TimeLetter(
-            id = 1L,
-            title = "임시저장",
-            sendAt = null,
-            deliveredAt = null,
-            status = TimeLetterStatus.DRAFT,
-            blocks = emptyList(),
-            receiverIds = emptyList(),
-        )
-
-    override suspend fun getTemporaryTimeLetters(): TimeLetterList {
-        if (loadFailure) error("조회 실패")
-        return TimeLetterList(timeLetters = listOf(draft), totalCount = 1)
+        assertEquals(testDrafts.timeLetters, state.drafts)
+        assertTrue(state.receiverNameMap.isEmpty())
     }
 
-    override suspend fun deleteTimeLetters(timeLetterIds: List<Long>) {
-        if (deleteFailure) error("삭제 실패")
+    @Test
+    fun `duplicate delete requests are ignored while deletion is running`() {
+        val deleteResult = CompletableDeferred<Unit>()
+        var deleteCalls = 0
+        val viewModel =
+            DraftLetterViewModel(
+                object : TimeLetterRepository {
+                    override suspend fun getTemporaryTimeLetters(): TimeLetterList = testDrafts
+
+                    override suspend fun deleteAllTemporary() {
+                        deleteCalls += 1
+                        deleteResult.await()
+                    }
+
+                    override suspend fun getTimeLetters(): TimeLetterList = unexpectedCall()
+
+                    override suspend fun getTimeLetter(timeLetterId: Long): TimeLetter = unexpectedCall()
+
+                    override suspend fun createTimeLetter(
+                        title: String?,
+                        blocks: List<NewTimeLetterBlock>,
+                        sendAt: String?,
+                        deliveryMode: TimeLetterDeliveryMode,
+                        status: TimeLetterStatus,
+                        receiverIds: List<Long>,
+                    ): TimeLetter = unexpectedCall()
+
+                    override suspend fun updateTimeLetter(
+                        timeLetterId: Long,
+                        title: String?,
+                        blocks: List<NewTimeLetterBlock>,
+                        sendAt: String?,
+                        deliveryMode: TimeLetterDeliveryMode?,
+                        status: TimeLetterStatus?,
+                    ): TimeLetter = unexpectedCall()
+
+                    override suspend fun deleteTimeLetters(timeLetterIds: List<Long>) = unexpectedCall<Unit>()
+                },
+                userRepository { emptyList<Any>() },
+            )
+
+        viewModel.deleteAll()
+        viewModel.deleteAll()
+
+        assertEquals(1, deleteCalls)
+        assertTrue((viewModel.uiState.value as DraftLetterUiState.Success).isDeleting)
+
+        deleteResult.complete(Unit)
+
+        val state = viewModel.uiState.value as DraftLetterUiState.Success
+        assertTrue(state.drafts.isEmpty())
+        assertFalse(state.isDeleting)
     }
 
-    override suspend fun getTimeLetters(): TimeLetterList = error("사용하지 않음")
+    @Test
+    fun `delete failure keeps latest drafts and exposes message`() {
+        val viewModel =
+            DraftLetterViewModel(
+                timeLetterRepository { methodName, _ ->
+                    when (methodName) {
+                        "getTemporaryTimeLetters" -> testDrafts
+                        "deleteAllTemporary" -> throw IllegalStateException("delete failed")
+                        else -> error("Unexpected repository call: $methodName")
+                    }
+                },
+                userRepository { emptyList<Any>() },
+            )
 
-    override suspend fun getTimeLetter(timeLetterId: Long): TimeLetter = error("사용하지 않음")
+        viewModel.deleteAll()
 
-    override suspend fun createTimeLetter(
-        title: String?,
-        blocks: List<NewTimeLetterBlock>,
-        sendAt: String?,
-        deliveryMode: TimeLetterDeliveryMode,
-        status: TimeLetterStatus,
-        receiverIds: List<Long>,
-    ): TimeLetter = error("사용하지 않음")
+        val state = viewModel.uiState.value as DraftLetterUiState.Success
+        assertEquals(testDrafts.timeLetters, state.drafts)
+        assertFalse(state.isDeleting)
+        assertEquals(com.afternote.feature.timeletter.presentation.R.string.timeletter_draft_delete_error, state.messageRes)
+    }
 
-    override suspend fun updateTimeLetter(
-        timeLetterId: Long,
-        title: String?,
-        blocks: List<NewTimeLetterBlock>,
-        sendAt: String?,
-        deliveryMode: TimeLetterDeliveryMode?,
-        status: TimeLetterStatus?,
-    ): TimeLetter = error("사용하지 않음")
+    @Test
+    fun `delete selected is disabled when no draft is selected`() {
+        val state = DraftLetterUiState.Success(drafts = testDrafts.timeLetters)
 
-    override suspend fun deleteAllTemporary() = Unit
+        assertFalse(state.isDeleteSelectedEnabled)
+    }
+
+    @Test
+    fun `delete selected is enabled when a draft is selected`() {
+        val state =
+            DraftLetterUiState.Success(
+                drafts = testDrafts.timeLetters,
+                selectedIds = setOf(testDrafts.timeLetters.single().id),
+            )
+
+        assertTrue(state.isDeleteSelectedEnabled)
+    }
+
+    private fun timeLetterRepository(handler: (String, Array<out Any?>?) -> Any?): TimeLetterRepository =
+        Proxy.newProxyInstance(
+            TimeLetterRepository::class.java.classLoader,
+            arrayOf(TimeLetterRepository::class.java),
+        ) { _, method, args -> handler(method.name, args) } as TimeLetterRepository
+
+    private fun userRepository(getReceivers: () -> Any): UserRepository =
+        Proxy.newProxyInstance(
+            UserRepository::class.java.classLoader,
+            arrayOf(UserRepository::class.java),
+        ) { _, method, _ ->
+            when (method.name) {
+                "getReceiverListFlow" -> flowOf(emptyList<Any>())
+                "getReceivers" -> getReceivers()
+                else -> error("Unexpected user repository call: ${method.name}")
+            }
+        } as UserRepository
+
+    private fun <T> unexpectedCall(): T = error("Unexpected repository call")
+
+    private companion object {
+        val testDrafts =
+            TimeLetterList(
+                timeLetters =
+                    listOf(
+                        TimeLetter(
+                            id = 1L,
+                            title = "draft",
+                            sendAt = null,
+                            deliveredAt = null,
+                            status = TimeLetterStatus.DRAFT,
+                            blocks = emptyList(),
+                            receiverIds = listOf(1L),
+                        ),
+                    ),
+                totalCount = 1,
+            )
+    }
 }

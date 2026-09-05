@@ -57,11 +57,15 @@ export const ASSIGNEE_BY_MODULE = Object.freeze({
 
 export const GUARD_COMMENT_MARKER = "<!-- issue-metadata-guard:v1 -->";
 
-// #1407: bug 이슈는 조직 이슈 필드 Priority 로 심각도를 지정해야 한다. Issue Form 은
-// 필드 값을 자동 부착하지 못하므로, 빈 값은 안내 코멘트 후 유예를 두고 fail-closed 로 닫는다.
+// #1407: bug 이슈는 조직 이슈 필드 Priority 로 심각도를 지정해야 한다. Issue Form 은 필드 값을
+// 자동 부착하지 못하므로 빈 값을 안내 코멘트로 알린다.
+//
+// #1534: 비어 있다고 이슈를 닫지는 않는다. Priority 는 이슈의 내용이 아니라 분류 메타데이터고,
+// 그것이 비었다는 이유로 실재하는 결함 보고가 닫히면 「열린 이슈 목록 = 지금 할 일」 쪽이 거짓이
+// 된다 — 할 일은 그대로인데 목록에서만 사라진다. 판정 불가 메타데이터(작업 유형·주 담당 모듈)로
+// 닫는 경로는 그대로다. 그쪽은 담당자도 라벨도 정할 수 없는 상태라 성격이 다르다.
 export const PRIORITY_FIELD_NAME = "Priority";
 export const PRIORITY_COMMENT_MARKER = "<!-- issue-metadata-guard:priority:v1 -->";
-export const PRIORITY_GRACE_MS = 24 * 60 * 60 * 1000;
 
 export const PRIORITY_OPTION_GUIDE = Object.freeze([
     "Urgent: 치명 — 크래시·데이터 소실·보안 무력화·핵심 경로 차단·가짜 성공",
@@ -182,19 +186,14 @@ export function inspectIssue(issue) {
     };
 }
 
-export function priorityFieldState(issue, now = Date.now()) {
+export function priorityFieldState(issue) {
     const values = issue.issue_field_values;
     if (!Array.isArray(values)) {
         return { status: "unknown" };
     }
     const set = values.some((value) => value?.issue_field_name === PRIORITY_FIELD_NAME &&
         value?.single_select_option?.name);
-    if (set) {
-        return { status: "set" };
-    }
-    const createdAt = Date.parse(issue.created_at ?? "");
-    const overdue = Number.isFinite(createdAt) && now - createdAt > PRIORITY_GRACE_MS;
-    return { status: overdue ? "missing-overdue" : "missing" };
+    return { status: set ? "set" : "missing" };
 }
 
 export function renderPriorityComment() {
@@ -204,7 +203,7 @@ export function renderPriorityComment() {
         "",
         ...PRIORITY_OPTION_GUIDE.map((line) => `- ${line}`),
         "",
-        "등록 후 24시간이 지나도 비어 있으면 자동으로 닫습니다. 닫힌 뒤에는 값을 지정하고 다시 열어 주세요.",
+        "값이 비어 있어도 이슈를 닫지는 않습니다. 이 안내는 이슈당 한 번만 답니다.",
     ].join("\n");
 }
 
@@ -264,21 +263,7 @@ async function reconcilePriorityField(api, repository, issue) {
             body: { body: renderPriorityComment() },
         });
     }
-    if (state.status !== "missing-overdue") {
-        return { status: "reminded" };
-    }
-
-    if (issue.state !== "closed") {
-        await api(`/repos/${repository}/issues/${issue.number}`, {
-            method: "PATCH",
-            body: { state: "closed", state_reason: "not_planned" },
-        });
-    }
-    const latest = await api(`/repos/${repository}/issues/${issue.number}`);
-    if (latest.state !== "closed") {
-        throw new Error(`Issue #${issue.number} missing priority close postcondition failed`);
-    }
-    return { status: "closed" };
+    return { status: "reminded" };
 }
 
 export async function reconcileIssue(api, repository, issue) {
@@ -323,9 +308,7 @@ export async function reconcileIssue(api, repository, issue) {
         : null;
     const result = {
         number: issue.number,
-        action: priority?.status === "closed"
-            ? "closed-priority-missing"
-            : inspection.needsUpdate ? "corrected" : "unchanged",
+        action: inspection.needsUpdate ? "corrected" : "unchanged",
         label: inspection.expectedLabel,
         areaLabel: inspection.expectedAreaLabel,
         assignee: inspection.expectedAssignee,

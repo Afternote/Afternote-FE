@@ -25,6 +25,8 @@ import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
+import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailRoute
+import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel
 import com.afternote.feature.receiver.domain.model.ReceivedAccountCredentials
 import com.afternote.feature.receiver.domain.model.ReceivedAfternoteDetail
 import com.afternote.feature.receiver.domain.model.ReceivedExportBundle
@@ -33,8 +35,6 @@ import com.afternote.feature.receiver.domain.testing.FakeReceiverAuthRepository
 import com.afternote.feature.receiver.domain.testing.FakeReceiverRepository
 import com.afternote.feature.receiver.presentation.deliveryverification.MasterKeyScreen
 import com.afternote.feature.receiver.presentation.deliveryverification.MasterKeyViewModel
-import com.afternote.feature.receiver.presentation.detail.ReceivedAfternoteDetailRoute
-import com.afternote.feature.receiver.presentation.detail.ReceivedAfternoteDetailViewModel
 import com.afternote.feature.receiver.presentation.recordsbox.ReceivedRecordsScreen
 import com.afternote.feature.receiver.presentation.recordsbox.ReceivedRecordsViewModel
 import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistrationScreen
@@ -68,7 +68,7 @@ class ReceiverAdvancedAndroidTest {
         val masterKeyResults = ArrayDeque<Result<ReceiverIdentity>>()
         val receiverRepository =
             FakeReceiverRepository.strict().apply {
-                onSaveAuthCode = { authCodeState.value = it }
+                onSaveMasterKey = { masterKeyState.value = it }
             }
         val authRepository =
             FakeReceiverAuthRepository.strict().apply {
@@ -159,9 +159,9 @@ class ReceiverAdvancedAndroidTest {
         val normalizedMasterKey = "3f2504e0-4f89-11d3-9a0c-0305e82c3301"
         val attached = checkNotNull(senderRegistry.findById(sender.id))
         assertEquals(listOf(normalizedMasterKey), authRepository.verifiedMasterKeys)
-        assertEquals(listOf(normalizedMasterKey), receiverRepository.savedAuthCodes)
-        assertEquals(normalizedMasterKey, receiverRepository.authCodeState.value)
-        assertEquals(normalizedMasterKey, attached.authCode)
+        assertEquals(listOf(normalizedMasterKey), receiverRepository.savedMasterKeys)
+        assertEquals(normalizedMasterKey, receiverRepository.masterKeyState.value)
+        assertEquals(normalizedMasterKey, attached.masterKey)
         assertEquals("이발신", attached.realSenderName)
         assertEquals("가족", attached.relation)
         assertEquals(1, verifiedTransitions)

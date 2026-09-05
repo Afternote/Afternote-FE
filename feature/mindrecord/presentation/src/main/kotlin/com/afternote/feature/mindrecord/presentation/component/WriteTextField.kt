@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,6 +31,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontStyle
@@ -39,33 +43,43 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.sheet.MediaSelectBottomSheet
+import com.afternote.core.ui.sheet.MediaSheetItem
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.TextStyleState
 import com.afternote.feature.mindrecord.presentation.model.TextStyleType
+import com.afternote.feature.mindrecord.presentation.util.escapeHtml
 import com.afternote.feature.mindrecord.presentation.util.mediaDisplayName
 import com.afternote.feature.mindrecord.presentation.util.mediaImageSize
-import com.afternote.feature.mindrecord.presentation.util.toUploadedFileKey
+import com.afternote.feature.mindrecord.presentation.util.toBodyLinkHrefOrNull
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import com.mohamedrejeb.richeditor.ui.BasicRichTextEditor
 import kotlinx.coroutines.launch
+import com.afternote.core.ui.R as CoreUiR
 
 /**
  * HTML 직렬화 가능한 리치 텍스트 입력 영역.
  *
- * - 외부에서 받은 [value] 는 초기 시드 HTML 로만 사용된다 (이후 외부 업데이트는 무시).
+ * - 외부에서 받은 [value] 는 **비어 있지 않은 값으로 바뀔 때마다** 에디터에 실린다. 화면이
+ *   먼저 뜨고 값이 나중에 도착하는 경로(이어쓰기·수정 프리필)가 있어서다. 에디터가 이미 들고
+ *   있는 HTML 과 같으면 다시 쓰지 않으므로 사용자가 방금 친 글자는 되돌아가지 않는다.
+ *
+ *   **null·빈 문자열은 무시한다** — 지우는 신호가 아니라 «아직 안 왔다» 로 본다. 그래서
+ *   `<p>A</p>` 뒤에 `""` 가 와도 에디터에는 A 가 남는다. 이 컴포넌트로 본문을 비우는 경로는
+ *   없고, 있다면 재생성이 맞다 (#1018).
  * - 사용자 입력이 발생하면 [onValueChange] 로 직렬화된 HTML 문자열을 emit 한다.
  *   서버 페이로드의 `content` 필드에 그대로 실어 보내면 된다.
  */
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun WriteTextField(
     modifier: Modifier = Modifier,
     value: String? = null,
     onValueChange: ((String) -> Unit)? = null,
-    onSaveDraftClick: () -> Unit = {},
-    onDraftCountClick: () -> Unit = {},
+    onSaveDraftClick: () -> Unit,
+    onDraftCountClick: () -> Unit,
     draftCount: Int? = null,
     /**
      * 갤러리에서 고른 이미지를 서버에 업로드하고 URL 을 반환하는 업로더
@@ -73,6 +87,9 @@ fun WriteTextField(
      *
      * **null 을 넘기지 않는다.** 업로더가 없으면 로컬 `content://` URI 가 본문과 저장 데이터에
      * 그대로 들어가는데, 그 주소는 다른 기기·수신자에게 아무 의미가 없다 (#731).
+     *
+     * **돌려주는 값은 업로드된 전체 URL 이다** — 그대로 본문 `src`·`href` 에 들어가고, 서버가
+     * 기대하는 `fileKey` 로 바꾸는 것은 제출 직전 `toWireContent` 한 곳뿐이다 (#1125).
      */
     onImagePicked: (suspend (uriString: String) -> String?)? = null,
     /**
@@ -114,7 +131,7 @@ fun WriteTextField(
             isItalic = state.currentSpanStyle.fontStyle == FontStyle.Italic,
             isUnderline = state.currentSpanStyle.textDecoration?.contains(TextDecoration.Underline) == true,
             isStrikethrough = state.currentSpanStyle.textDecoration?.contains(TextDecoration.LineThrough) == true,
-            textAlign = state.currentParagraphStyle.textAlign ?: TextAlign.Start,
+            textAlign = state.currentParagraphStyle.textAlign.orStart(),
             textStyle = currentTextStyleType(state.currentSpanStyle.fontSize.value),
         )
 
@@ -160,21 +177,27 @@ fun WriteTextField(
                 mediaError = MediaErrorMessage(R.string.mindrecord_write_media_upload_failed, displayName)
                 return@launch
             }
-            // 본문에 넣는 값은 업로드 URL 이 아니라 **fileKey** 다. 서버가 본문의 미디어
-            // 참조를 훑어 staging → permanent 로 옮기고 전체 URL 로 재작성하는데, 전체 URL 을
-            // 넣으면 그 앞에 호스트를 한 번 더 붙여 접근 불가한 주소가 저장된다 (#549·#731).
-            // `img src` 와 `a href` 에 같은 규칙이 적용되는 것을 실서버로 확인했다.
-            val fileKey = uploadedUrl.toUploadedFileKey()
+            // **에디터에는 업로드 URL 을 넣는다.** 서버에 나가는 값은 fileKey 여야 하지만
+            // (전체 URL 을 보내면 그 앞에 호스트를 한 번 더 붙여 접근 불가한 주소가 저장된다 —
+            // #549·#731 실서버 실측), 그 변환은 제출 직전 `toWireContent` 한 곳에서 한다.
+            //
+            // 종전에는 여기서 URL 의 스킴·호스트를 떼어 키를 역산했다. 변환 지점이 둘이 되고,
+            // CDN 이 경로 프리픽스를 붙이면 조용히 틀린 키가 됐다. 이제 ViewModel 이 presigned
+            // 응답의 `fileKey` 를 URL 과 짝지어 들고 있다가 제출 때 그대로 치환한다 (#1125).
             val html =
                 if (asImage) {
                     // 크기를 비워 두면 직렬화 때 width="0" height="0" 이 붙어 어디서도 보이지
                     // 않는다. 다만 고정값을 박으면 세로 사진이 본문에 4:3 으로 박제되므로
                     // 원본 비율로 높이를 계산한다 (#731 리뷰).
                     val (imageWidth, imageHeight) = context.mediaImageSize(uri, MEDIA_IMAGE_WIDTH_PX)
-                    "<img src=\"$fileKey\" alt=\"$displayName\" width=\"$imageWidth\" " +
+                    // `displayName` 은 파일을 넘긴 앱(content provider)이 정하는 값이라 따옴표가
+                    // 들어올 수 있다. 이스케이프하지 않으면 `alt` 가 그 자리에서 닫히고 뒤따르는
+                    // `width`/`height` 가 값으로 먹혀 **이미지가 저장된 본문에서 사라진다** (#1067 리뷰).
+                    "<img src=\"$uploadedUrl\" alt=\"${displayName.escapeHtml()}\" width=\"$imageWidth\" " +
                         "height=\"$imageHeight\" />"
                 } else {
-                    "<a href=\"$fileKey\">$displayName</a>"
+                    // 링크 텍스트도 같은 출처다 — 이름 속 태그가 마크업으로 살아난다.
+                    "<a href=\"$uploadedUrl\">${displayName.escapeHtml()}</a>"
                 }
             keepEditorFocus { state.setHtml(state.toHtml() + html) }
             attachments += displayName
@@ -194,6 +217,12 @@ fun WriteTextField(
             attachMedia(uri, asImage = false)
         }
 
+    // 본문 편집기의 접근 가능한 이름. 눈에 보이는 안내 문구는 아래에서 **형제 노드**로 그려서
+    // 편집기 자신의 semantics 에는 잡히지 않는다 — 그대로 두면 스크린리더가 화면의 대부분을
+    // 차지하는 이 타깃을 이름 없이 읽는다 (#1179 리뷰의 후보 전량 스캔에서 드러났다).
+    // 보이는 문구와 읽히는 이름을 같은 문자열로 묶는다.
+    val editorLabel = stringResource(R.string.mindrecord_write_field_placeholder)
+
     Column(modifier = modifier.fillMaxSize()) {
         Box(
             modifier =
@@ -209,6 +238,7 @@ fun WriteTextField(
                     Modifier
                         .fillMaxSize()
                         .focusRequester(editorFocusRequester)
+                        .semantics { contentDescription = editorLabel }
                         .padding(16.dp),
             )
             // 첨부 목록과 오류 문구는 같은 자리를 두고 다투면 안 된다 — 종전에는 정렬·패딩이
@@ -234,7 +264,10 @@ fun WriteTextField(
                 Text(
                     text = stringResource(R.string.mindrecord_write_field_placeholder),
                     color = AfternoteDesign.colors.gray4,
-                    modifier = Modifier.padding(16.dp),
+                    // 같은 문자열이 편집기의 이름으로 이미 실려 있다. 이 형제 노드를 접근성
+                    // 트리에 남기면 비어 있을 때 같은 문장을 두 번 읽는다 (#1179 리뷰).
+                    // Material 의 TextField 도 placeholder 를 필드 노드에 합치고 따로 짚지 않는다.
+                    modifier = Modifier.padding(16.dp).clearAndSetSemantics {},
                 )
             }
             Text(
@@ -269,12 +302,19 @@ fun WriteTextField(
                 onTextStyleChange = { type ->
                     keepEditorFocus { state.addSpanStyle(type.toSpanStyle()) }
                 },
+                // **하단 툴바와 같은 배선이다.** 스타일 툴바가 열리면 하단 툴바를 덮으므로
+                // 같은 두 affordance(링크·«T»)를 그대로 갖는다. 종전에는 두 인자를 넘기지
+                // 않아 no-op 디폴트가 먹었고, **눌러도 아무 일이 없는 버튼 두 개**였다 (#1540).
+                onLinkClick = { sheet = KeyboardSheet.MediaSelect },
+                onTypeClick = { showTextStyleToolbar = !showTextStyleToolbar },
             )
         }
 
         BottomToolbar(
             modifier = Modifier.imePadding(),
             onTextStyleClick = { showTextStyleToolbar = !showTextStyleToolbar },
+            // 스타일 패널과 같은 값을 본다 — 두 툴바의 정렬 선택 상태가 갈리면 안 된다 (#1179).
+            textAlign = styleState.textAlign,
             onAlignChange = { align ->
                 keepEditorFocus { state.addParagraphStyle(ParagraphStyle(textAlign = align)) }
             },
@@ -291,32 +331,67 @@ fun WriteTextField(
         }
 
         KeyboardSheet.MediaSelect -> {
+            // core:ui 정본을 쓴다. 종전에는 같은 시트를 모듈마다 다시 적어 4벌이었고,
+            // 그 사본들이 시안(4327:72281) 지오메트리에서 조금씩 어긋나 있었다 (#642 · #1615).
             MediaSelectBottomSheet(
                 onDismiss = { sheet = KeyboardSheet.None },
-                onImageClick = {
-                    sheet = KeyboardSheet.None
-                    imageLauncher.launch("image/*")
-                },
-                onVoiceClick = {
-                    sheet = KeyboardSheet.None
-                    voiceLauncher.launch("audio/*")
-                },
-                onFileClick = {
-                    sheet = KeyboardSheet.None
-                    fileLauncher.launch("*/*")
-                },
-                onLinkClick = { sheet = KeyboardSheet.LinkAdd },
+                items =
+                    listOf(
+                        MediaSheetItem(
+                            iconRes = CoreUiR.drawable.core_ui_ic_image,
+                            label = stringResource(CoreUiR.string.core_ui_media_sheet_image),
+                            onClick = {
+                                sheet = KeyboardSheet.None
+                                imageLauncher.launch("image/*")
+                            },
+                        ),
+                        MediaSheetItem(
+                            iconRes = CoreUiR.drawable.core_ui_ic_mic,
+                            label = stringResource(CoreUiR.string.core_ui_media_sheet_voice),
+                            onClick = {
+                                sheet = KeyboardSheet.None
+                                voiceLauncher.launch("audio/*")
+                            },
+                        ),
+                        MediaSheetItem(
+                            iconRes = CoreUiR.drawable.core_ui_ic_file,
+                            label = stringResource(CoreUiR.string.core_ui_media_sheet_file),
+                            onClick = {
+                                sheet = KeyboardSheet.None
+                                fileLauncher.launch("*/*")
+                            },
+                        ),
+                        MediaSheetItem(
+                            iconRes = CoreUiR.drawable.core_ui_ic_link,
+                            label = stringResource(CoreUiR.string.core_ui_media_sheet_link),
+                            onClick = { sheet = KeyboardSheet.LinkAdd },
+                        ),
+                    ),
             )
         }
 
         KeyboardSheet.LinkAdd -> {
             LinkBottomSheet(
                 onDismiss = { sheet = KeyboardSheet.None },
+                // 검증 없이 이어붙이면 `javascript:` 가 그대로 저장되고, 따옴표 하나로 속성이 닫힌다.
+                // 본문은 수신자가 나중에 열람하는 값이라 저장되는 순간 남에게 실린다 (#1067).
+                //
+                // 거절(false)은 시트가 받아 사유를 띄운다 — 조용히 무시하면 사용자는 «완료를 눌렀는데
+                // 안 들어갔다» 만 본다. 안내를 걷는 시점(입력을 고치는 순간)도 입력 상태를 가진 시트가
+                // 안다 (#1067 리뷰).
                 onConfirm = { url ->
-                    keepEditorFocus {
-                        state.setHtml(state.toHtml() + "<a href=\"$url\">$url</a>")
+                    val href = url.toBodyLinkHrefOrNull()
+                    if (href == null) {
+                        false
+                    } else {
+                        keepEditorFocus {
+                            // 링크 텍스트는 사용자가 적은 원문을 보여 준다 — punycode 로 바뀐 호스트를
+                            // 보여 주면 자기가 넣은 주소를 못 알아본다. 표시용도 이스케이프한다.
+                            state.setHtml(state.toHtml() + "<a href=\"$href\">${url.trim().escapeHtml()}</a>")
+                        }
+                        sheet = KeyboardSheet.None
+                        true
                     }
-                    sheet = KeyboardSheet.None
                 },
             )
         }
@@ -352,7 +427,10 @@ private fun currentTextStyleType(currentFontSize: Float): TextStyleType =
 @Composable
 private fun WriteTextFieldPreview() {
     AfternoteTheme {
-        WriteTextField()
+        WriteTextField(
+            onDraftCountClick = {},
+            onSaveDraftClick = {},
+        )
     }
 }
 

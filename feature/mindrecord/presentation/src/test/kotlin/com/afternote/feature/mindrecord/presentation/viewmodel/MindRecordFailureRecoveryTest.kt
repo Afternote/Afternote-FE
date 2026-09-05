@@ -12,6 +12,9 @@ import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
+import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
+import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -55,7 +58,12 @@ class MindRecordFailureRecoveryTest {
     fun `삭제 실패 안내는 다음 삭제가 성공하면 사라진다`() =
         runTest(dispatcher) {
             val repository = FlakyDeleteRepository()
-            val viewModel = DailyQuestionListViewModel(repository = repository)
+            val viewModel =
+                DailyQuestionListViewModel(
+                    repository = repository,
+                    changeTracker = MindRecordChangeTracker(),
+                    errorReporter = RecordingErrorReporter(),
+                )
             // uiState 는 WhileSubscribed 라 구독자가 없으면 Loading 에 머문다.
             backgroundScope.launch { viewModel.uiState.collect { } }
             advanceUntilIdle()
@@ -83,7 +91,12 @@ class MindRecordFailureRecoveryTest {
             // 리뷰가 스크린샷으로 실증한 경로 — 삭제 재시도가 아니라 **재조회 성공**이다.
             // 기내모드 해제 → 탭 전환 → 목록 정상 재로드인데도 배너가 남아 있었다.
             val repository = FlakyDeleteRepository()
-            val viewModel = DailyQuestionListViewModel(repository = repository)
+            val viewModel =
+                DailyQuestionListViewModel(
+                    repository = repository,
+                    changeTracker = MindRecordChangeTracker(),
+                    errorReporter = RecordingErrorReporter(),
+                )
             backgroundScope.launch { viewModel.uiState.collect { } }
             advanceUntilIdle()
 
@@ -117,10 +130,11 @@ class MindRecordFailureRecoveryTest {
                     photoUploadRepository = FakePhotoUploadRepository(onUpload = { _, _ -> uploadGate.await() }),
                     // 툴바 카운트는 이 테스트의 관심사가 아니다 — 빈 목록으로 고정한다 (#769).
                     draftLoader =
-                        MindRecordDraftLoader(
+                        LoadMindRecordDraftsUseCase(
                             diaryRepository = EmptyDiaryRepository,
                             dailyQuestionRepository = repository,
                         ),
+                    errorReporter = RecordingErrorReporter(),
                 )
             advanceUntilIdle()
 
@@ -148,6 +162,78 @@ class MindRecordFailureRecoveryTest {
             )
             uploading.join()
         }
+
+    @Test
+    fun `today 만 실패한 로드는 복귀 재조회를 막지 않는다`() =
+        runTest(dispatcher) {
+            // today 는 실패해도 화면을 막지 않는다 — 배너만 빠진다. 그래서 실패를 삼키고
+            // «본 버전» 까지 찍어 두면, 복귀할 때마다 재조회를 건너뛰어 **서버가 회복돼도
+            // 배너가 돌아오지 않는다**. 그 고정 상태를 본다 (#736 리뷰).
+            val repository = FlakyTodayRepository()
+            val viewModel =
+                DailyQuestionListViewModel(
+                    repository = repository,
+                    changeTracker = MindRecordChangeTracker(),
+                    errorReporter = RecordingErrorReporter(),
+                )
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            advanceUntilIdle()
+
+            assertEquals("진입 시 today 1회", 1, repository.todayCalls)
+            assertNull(
+                "today 가 실패했으니 배너는 비어 있다",
+                (viewModel.uiState.value as DailyQuestionListUiState.Success).todayQuestion,
+            )
+
+            // 데이터는 그대로다 — 버전이 오르지 않으므로 «달라진 게 없으면 안 부른다» 규칙과
+            // 정면으로 부딪히는 조건이다. 그래도 아직 못 받아 온 것은 다시 받아 와야 한다.
+            repository.succeeds = true
+            viewModel.refreshOnReturn()
+            advanceUntilIdle()
+
+            assertEquals("복귀 시 다시 부른다", 2, repository.todayCalls)
+            assertNotNull(
+                "서버가 회복되면 배너가 돌아온다",
+                (viewModel.uiState.value as DailyQuestionListUiState.Success).todayQuestion,
+            )
+
+            // 이제는 완전히 성공했으니 #736 의 «달라진 게 없으면 안 부른다» 가 다시 걸린다.
+            viewModel.refreshOnReturn()
+            advanceUntilIdle()
+            assertEquals("성공한 뒤에는 복귀해도 더 부르지 않는다", 2, repository.todayCalls)
+        }
+}
+
+/** today 만 실패시키는 fake — 목록은 항상 성공한다. */
+private class FlakyTodayRepository : DailyQuestionRepository {
+    var succeeds = false
+    var todayCalls = 0
+        private set
+
+    override suspend fun getList(
+        date: String?,
+        draftOnly: Boolean?,
+    ): Result<List<DailyQuestion>> = Result.success(emptyList())
+
+    override suspend fun getToday(): Result<TodayDailyQuestion> {
+        todayCalls++
+        return if (succeeds) {
+            Result.success(
+                TodayDailyQuestion(questionId = 1L, day = 1, content = "질문", isAnswered = false, isDraft = false),
+            )
+        } else {
+            Result.failure(IllegalStateException("today 실패"))
+        }
+    }
+
+    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> = Result.success(1L)
+
+    override suspend fun update(
+        id: Long,
+        payload: DailyQuestionUpdatePayload,
+    ): Result<Long> = Result.success(1L)
+
+    override suspend fun delete(id: Long): Result<Unit> = Result.success(Unit)
 }
 
 /** 첫 삭제는 실패하고, [succeedsNext] 를 켜면 성공한다. */

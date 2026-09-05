@@ -30,9 +30,52 @@
     -->
     <string name="core_ui_recipient_designation_unknown">수신인 지정 여부 확인 중</string>
 
+    <!--
+      공통 오류 팝업 3종(시안 `3628:23827`). 버튼 문구가 셋이 같은 "다시 시도하기" 라도 팝업마다
+      키를 따로 둔다 — 하나로 합치면 한 팝업의 액션만 바꿀 때(예: 서버 오류만 "확인" 으로) 나머지
+      팝업 문구까지 끌려간다. 네트워크 3종이 세운 규약을 나머지도 그대로 따른다.
+    -->
     <string name="core_ui_network_error_title">네트워크 연결 오류</string>
     <string name="core_ui_network_error_description">인터넷 연결을 확인한 후 다시 시도해 주세요.</string>
     <string name="core_ui_network_error_retry">다시 시도하기</string>
+    <string name="core_ui_server_error_title">서버 오류</string>
+    <string name="core_ui_server_error_description">서버에 문제가 발생했습니다.\n잠시 후 다시 시도해 주세요.</string>
+    <string name="core_ui_server_error_retry">다시 시도하기</string>
+    <string name="core_ui_upload_error_title">업로드 실패</string>
+    <string name="core_ui_upload_error_description">파일 업로드에 실패했습니다.\n다시 시도해 주세요.</string>
+    <string name="core_ui_upload_error_retry">다시 시도하기</string>
     <!-- 홈 상단바 설정 액션 접근성 이름 (#613). 프로필 아이콘은 목적지가 없는 장식이라 이름을 두지 않는다. -->
     <string name="core_ui_home_top_bar_setting">설정</string>
+    <!-- 바텀시트 캘린더. 요일은 순서·개수가 고정된 집합이라 개별 키 7개 대신 배열로 둔다
+         (호출부에서 listOf 로 다시 조립하면 순서가 어긋날 여지가 생긴다). -->
+    <string name="core_ui_calendar_year_month">%1$d년 %2$d월</string>
+    <string-array name="core_ui_calendar_day_labels">
+        <item>일</item>
+        <item>월</item>
+        <item>화</item>
+        <item>수</item>
+        <item>목</item>
+        <item>금</item>
+        <item>토</item>
+    </string-array>
+    <!-- 수신자 선택 화면 공용 문구 (#791). 소비자가 달리 쓰려면 파라미터로 덮는다. -->
+    <string name="core_ui_receiver_select_title">수신자 선택</string>
+    <string name="core_ui_receiver_select_search_placeholder">이름으로 검색하기</string>
+    <string name="core_ui_receiver_select_confirm">수신자 선택 완료하기</string>
+
+    <!-- 「더보기(⋯)」 액션 팝업 메뉴 공통 문구 (#643).
+         afternote(afternote_menu_*)·mindrecord(mindrecord_record_action_*) 가 같은 값을
+         각자 갖고 있던 것을 core 정본으로 올린다. -->
+    <string name="core_ui_action_menu_edit">수정하기</string>
+    <string name="core_ui_action_menu_delete">삭제하기</string>
+    <!--
+      "미디어 추가하기" 계열 메뉴 시트 공용 문구 (#642). 시안 정본 4327:72281.
+      항목 문구는 갈래가 그 화면에만 있는 경우(갤러리에서 선택·사진 촬영 등) 호출부가 자기 리소스를
+      실어 보낸다 — 여기 있는 건 여러 모듈이 글자 단위로 같이 쓰던 것만이다.
+    -->
+    <string name="core_ui_media_sheet_title">미디어 추가하기</string>
+    <string name="core_ui_media_sheet_image">이미지 추가하기</string>
+    <string name="core_ui_media_sheet_voice">음성 추가하기</string>
+    <string name="core_ui_media_sheet_file">파일 추가하기</string>
+    <string name="core_ui_media_sheet_link">링크 추가하기</string>
 </resources>

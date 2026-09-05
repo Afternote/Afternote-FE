@@ -7,6 +7,8 @@ import com.afternote.feature.mindrecord.domain.model.DiaryList
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
+import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -59,7 +61,8 @@ class DailyQuestionWriteViewModelTest {
                 SavedStateHandle(emptyMap()),
                 repository,
                 FakePhotoUploadRepository.strict(),
-                noopDraftLoader(),
+                noopLoadDraftsUseCase(),
+                RecordingErrorReporter(),
             )
 
         viewModel.onAnswerChanged("사용자가 방금 입력한 답변")
@@ -84,7 +87,8 @@ class DailyQuestionWriteViewModelTest {
                 SavedStateHandle(emptyMap()),
                 repository,
                 FakePhotoUploadRepository.strict(),
-                noopDraftLoader(),
+                noopLoadDraftsUseCase(),
+                RecordingErrorReporter(),
             )
 
         assertEquals("이어쓸 본문", viewModel.uiState.value.answer)
@@ -114,7 +118,8 @@ class DailyQuestionWriteViewModelTest {
                     uploadedUrl = "https://cdn/just-picked.jpg",
                     uploadedKey = "mindrecords/1/just-picked.jpg",
                 ),
-                noopDraftLoader(),
+                noopLoadDraftsUseCase(),
+                RecordingErrorReporter(),
             )
 
         viewModel.onAnswerChanged("사용자가 방금 입력한 답변")
@@ -142,7 +147,8 @@ class DailyQuestionWriteViewModelTest {
                     uploadedUrl = "https://cdn/picked.jpg",
                     uploadedKey = "mindrecords/staging/13/picked.jpg",
                 ),
-                noopDraftLoader(),
+                noopLoadDraftsUseCase(),
+                RecordingErrorReporter(),
             )
 
         val url = runBlocking { viewModel.uploadMedia("content://picked") }
@@ -167,7 +173,8 @@ class DailyQuestionWriteViewModelTest {
                 SavedStateHandle(emptyMap()),
                 repository,
                 FakePhotoUploadRepository.strict(),
-                noopDraftLoader(),
+                noopLoadDraftsUseCase(),
+                RecordingErrorReporter(),
             )
 
         assertEquals(html, viewModel.uiState.value.answer)
@@ -185,7 +192,8 @@ class DailyQuestionWriteViewModelTest {
                 SavedStateHandle(emptyMap()),
                 repository,
                 FakePhotoUploadRepository.strict(),
-                noopDraftLoader(),
+                noopLoadDraftsUseCase(),
+                RecordingErrorReporter(),
             )
 
         viewModel.onAnswerChanged("답변")
@@ -235,7 +243,8 @@ class DailyQuestionWriteViewModelTest {
                     uploadedUrl = "https://cdn.example.net/mindrecords/staging/13/a.png",
                     uploadedKey = "mindrecords/staging/13/a.png",
                 ),
-                noopDraftLoader(),
+                noopLoadDraftsUseCase(),
+                RecordingErrorReporter(),
             )
 
         val previewUrl = runBlocking { viewModel.uploadMedia("content://picked") }
@@ -263,7 +272,8 @@ class DailyQuestionWriteViewModelTest {
                 SavedStateHandle(emptyMap()),
                 repository,
                 FakePhotoUploadRepository.strict(),
-                noopDraftLoader(),
+                noopLoadDraftsUseCase(),
+                RecordingErrorReporter(),
             )
 
         viewModel.onAnswerChanged("<p>수정</p><img src=\"$permanent\" />")
@@ -274,8 +284,8 @@ class DailyQuestionWriteViewModelTest {
 }
 
 /** 툴바 카운트는 이 테스트의 관심사가 아니다 — 0건으로 고정한다 (#769). */
-internal fun noopDraftLoader() =
-    MindRecordDraftLoader(
+internal fun noopLoadDraftsUseCase() =
+    LoadMindRecordDraftsUseCase(
         diaryRepository =
             FakeDiaryRepository.strict().apply {
                 onGetList = { _, _ ->
