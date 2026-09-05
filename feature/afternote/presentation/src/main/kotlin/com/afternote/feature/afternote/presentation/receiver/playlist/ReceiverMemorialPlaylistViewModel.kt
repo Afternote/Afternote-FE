@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceivedAfternoteRoute
+import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
@@ -48,7 +48,7 @@ class ReceiverMemorialPlaylistViewModel
          * 다음 [refreshOnReturn] 이 첫 ON_RESUME(진입 자체)인지. 첫 resume 은 init 로드와 같은
          * 진입이므로 갱신하지 않는다 — Job 가드만으로는 init 로드가 (특히 실패로) 빨리 끝난 뒤
          * 도착한 첫 resume 이 순차 재조회를 걸어, 에러 화면과 재시도가 건너뛰어진다.
-         * VM 필드인 이유는 [com.afternote.feature.receiver.presentation.detail.ReceivedAfternoteDetailViewModel]
+         * VM 필드인 이유는 [com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel]
          * 과 동일 — 프로세스 사망 후 복원에서도 init 로드와 수명이 일치한다.
          */
         private var isFirstResume = true

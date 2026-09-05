@@ -2,6 +2,7 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
@@ -9,6 +10,8 @@ import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepositor
 import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
+import com.afternote.feature.mindrecord.presentation.reporting.MindRecordFailureStage
+import com.afternote.feature.mindrecord.presentation.reporting.recordMindRecordFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.ensureActive
@@ -27,6 +30,7 @@ class DailyQuestionListViewModel
     constructor(
         private val repository: DailyQuestionRepository,
         private val changeTracker: MindRecordChangeTracker,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val internalState = MutableStateFlow(InternalState())
         private var loadJob: Job? = null
@@ -82,7 +86,9 @@ class DailyQuestionListViewModel
                         load()
                     }
                     // 실패를 무시하면 항목이 그대로 남은 채 아무 안내도 없어 고장처럼 보인다 (#716).
-                    .onFailure {
+                    .onFailure { throwable ->
+                        // 되돌릴 수 없는 동작이라 콘솔에도 남긴다 (#964).
+                        errorReporter.recordMindRecordFailure(MindRecordFailureStage.RECORD_DELETE, throwable)
                         internalState.update {
                             it.copy(deleteError = UiText.Resource(R.string.mindrecord_error_delete_failed))
                         }
@@ -126,6 +132,22 @@ class DailyQuestionListViewModel
                     if (listResult.isFailure) {
                         val message =
                             UiText.Resource(R.string.mindrecord_error_daily_question_list_failed)
+                        // 오류 화면을 마주한 경우에만 올린다 — 재진입 갱신 실패는 보고 있던
+                        // 목록을 그대로 두므로 승격하지 않는다 (#964).
+                        //
+                        // 판정을 update 람다 **밖에서** 한다. `MutableStateFlow.update` 는 CAS
+                        // 재시도 때 람다를 다시 평가하므로 안에 두면 이중 보고가 될 자리다.
+                        // 같은 파일 delete() 와 일기 쪽 DiaryListViewModel 도 이 모양이다 (#964 리뷰).
+                        val showsErrorScreen =
+                            !(keepsStateOnFailure && internalState.value.loadPhase is LoadPhase.Loaded)
+                        if (showsErrorScreen) {
+                            listResult.exceptionOrNull()?.let { throwable ->
+                                errorReporter.recordMindRecordFailure(
+                                    MindRecordFailureStage.RECORD_LIST_LOAD,
+                                    throwable,
+                                )
+                            }
+                        }
                         internalState.update { current ->
                             if (keepsStateOnFailure && current.loadPhase is LoadPhase.Loaded) {
                                 current
