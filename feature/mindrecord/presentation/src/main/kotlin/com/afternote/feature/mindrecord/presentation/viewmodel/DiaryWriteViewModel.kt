@@ -1,5 +1,6 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -7,7 +8,7 @@ import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.PhotoUploadRepository
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
@@ -18,6 +19,7 @@ import com.afternote.feature.mindrecord.presentation.mapper.toUi
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.mindrecord.presentation.reporting.MindRecordFailureStage
 import com.afternote.feature.mindrecord.presentation.reporting.recordMindRecordFailure
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import com.afternote.feature.mindrecord.presentation.util.toWireContent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,8 +46,8 @@ class DiaryWriteViewModel
         savedStateHandle: SavedStateHandle,
         private val repository: DiaryRepository,
         private val photoUploadRepository: PhotoUploadRepository,
-        private val userRepository: UserRepository,
-        private val draftLoader: MindRecordDraftLoader,
+        private val userRepository: UserReceiverRepository,
+        private val draftLoader: LoadMindRecordDraftsUseCase,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val route = savedStateHandle.toRoute<MindRecordRoute.DiaryWriteRoute>()
@@ -98,8 +100,11 @@ class DiaryWriteViewModel
             }
         }
 
-        /** 이번 작성 중 업로드한 이미지의 원본 URL. 제출 시 fileKey 로 바꿀 대상이다 (#1016). */
-        private val uploadedImageUrls = mutableSetOf<String>()
+        // 이번 작성에서 업로드한 `fileUrl` → 서버가 준 `fileKey`. 키를 URL 에서 역산하지 않는다 —
+        // presigned 응답이 준 값을 그대로 들고 있다가 제출 직전에 치환한다 (toWireContent, #1125).
+        // SavedStateHandle 에 실어 프로세스 사망을 건너뛴다 — 에디터 본문이 살아 돌아오는데
+        // 표만 비면 전체 URL 이 그대로 서버로 간다 (#1125 리뷰).
+        private val uploadedFileKeysByUrl = UploadedFileKeys(savedStateHandle)
 
         /**
          * 에디터에서 고른 **미디어**(사진·음성·파일)를 presigned URL 로 업로드하고 **미리보기에
@@ -125,7 +130,7 @@ class DiaryWriteViewModel
                 .upload(uriString = uriString, directory = MIND_RECORD_UPLOAD_DIRECTORY)
                 .onSuccess { uploaded ->
                     // 제출 직전 fileKey 로 바꿀 대상이다 (#1016).
-                    uploadedImageUrls += uploaded.fileUrl
+                    uploadedFileKeysByUrl[uploaded.fileUrl] = uploaded.fileKey
                     _uiState.update { it.copy(isUploadingImage = false) }
                 }.onFailure { e ->
                     // 첨부가 빠진 채 저장이 이어질 수 있는 자리라 남긴다 (#964).
@@ -143,7 +148,26 @@ class DiaryWriteViewModel
 
         fun submit(isDraft: Boolean = false) {
             val state = _uiState.value
-            if (!state.canSubmit) return
+            // 임시저장과 정식 등록의 조건을 가른다. 무엇이 막고 있는지도 알린다 —
+            // 종전에는 사유 없이 return 해 버튼이 고장 난 것처럼 보였다 (#722).
+            if (isDraft) {
+                val missing = state.missingForDraft()
+                if (missing != null) {
+                    failSubmit(missing)
+                    return
+                }
+                if (!state.canSaveDraft) return
+            } else {
+                val missing = state.missingForSubmit()
+                if (missing != null) {
+                    failSubmit(missing)
+                    return
+                }
+                if (!state.canSubmit) return
+            }
+            // 고르지 않은 기분을 지어내지 않는다. 지어내면 그것이 사용자 데이터가 되고
+            // (이어쓰기로 열면 «그냥그래» 가 이미 선택돼 보인다) 주간리포트 집계와 감정
+            // 분석 입력에도 그대로 들어간다. 위 가드가 미선택을 이미 막는다.
             val mood = state.mood ?: return
 
             viewModelScope.launch {
@@ -155,7 +179,7 @@ class DiaryWriteViewModel
                             payload =
                                 DiaryUpdatePayload(
                                     title = state.title,
-                                    content = state.content.toWireContent(uploadedImageUrls),
+                                    content = state.content.toWireContent(uploadedFileKeysByUrl.snapshot()),
                                     isDraft = isDraft,
                                     todayMood = mood,
                                     // 생성 경로와 같은 규칙. 빈 선택을 빈 목록으로 보내면 서버가
@@ -168,7 +192,7 @@ class DiaryWriteViewModel
                         repository.create(
                             DiaryCreatePayload(
                                 title = state.title,
-                                content = state.content.toWireContent(uploadedImageUrls),
+                                content = state.content.toWireContent(uploadedFileKeysByUrl.snapshot()),
                                 isDraft = isDraft,
                                 todayMood = mood,
                                 receiverIds = state.selectedReceiverIds.toList(),
@@ -178,7 +202,7 @@ class DiaryWriteViewModel
                 result
                     .onSuccess {
                         // 서버가 permanent 로 옮겼으니 이 URL 들은 더 이상 치환 대상이 아니다.
-                        uploadedImageUrls.clear()
+                        uploadedFileKeysByUrl.clear()
                         _uiState.update { it.copy(submitState = SubmitState.Succeeded) }
                         // 임시저장이 하나 늘었으니 툴바 숫자도 따라가야 한다 (#769).
                         if (isDraft) loadDraftCount()
@@ -200,6 +224,15 @@ class DiaryWriteViewModel
 
         fun consumeSubmitResult() {
             _uiState.update { it.copy(submitState = SubmitState.Idle) }
+        }
+
+        // 실패해도 수신자 행이 "수신자 설정하기" 로 남을 뿐 작성 자체는 가능 — 에러는 조용히 무시.
+        private fun failSubmit(
+            @StringRes messageRes: Int,
+        ) {
+            _uiState.update {
+                it.copy(submitState = SubmitState.Failed(UiText.Resource(messageRes)))
+            }
         }
 
         /**

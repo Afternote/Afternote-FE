@@ -96,7 +96,7 @@ class ResolveTimeLetterBlocksUseCaseTest {
             useCase(
                 listOf(
                     BlockInput.Media("content://image", "image/png", TimeLetterBlockType.IMAGE),
-                    BlockInput.Media("content://audio", "audio/mpeg", TimeLetterBlockType.AUDIO),
+                    BlockInput.Media("content://audio", "audio/mp4", TimeLetterBlockType.AUDIO),
                     BlockInput.Media("content://file", "application/pdf", TimeLetterBlockType.FILE),
                 ),
             )

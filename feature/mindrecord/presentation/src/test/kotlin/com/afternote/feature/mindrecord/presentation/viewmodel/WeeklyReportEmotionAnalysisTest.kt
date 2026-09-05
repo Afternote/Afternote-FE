@@ -7,6 +7,9 @@ import com.afternote.feature.mindrecord.domain.model.EmotionAnalysisStatus
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportEmotion
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
+import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
+import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
+import com.afternote.feature.mindrecord.presentation.usecase.ObserveWeeklyReportUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -35,6 +38,7 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class WeeklyReportEmotionAnalysisTest {
     private val dispatcher = StandardTestDispatcher()
+    private val changeTracker = MindRecordChangeTracker()
 
     @Before
     fun setUp() {
@@ -219,7 +223,7 @@ class WeeklyReportEmotionAnalysisTest {
                     return Result.success(report)
                 }
             }
-        return WeeklyReportViewModel(repository, userRepository())
+        return WeeklyReportViewModel(ObserveWeeklyReportUseCase(repository, userRepository()), changeTracker, RecordingErrorReporter())
     }
 
     private fun userRepository(): FakeUserRepository =

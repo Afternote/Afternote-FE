@@ -178,7 +178,23 @@ bash .github/scripts/render-distribution-release-notes.sh /tmp/afternote-release
 
 → 동일하게 APK 빌드 + Firebase 업로드. CI 장애 시에만 사용한다.
 
-> 일반 로컬·Firebase 빌드는 기본 `versionCode` 1을 유지한다. Play용 다른 값을 빌드할 때는 `AFTERNOTE_VERSION_CODE` 환경변수로 주입할 수 있지만 현재 값을 자동 산출·주입하거나 Play에 배포하는 workflow는 없다. `app/build.gradle.kts`를 직접 수정하지 말고, 업로드 전 이전 Play 산출물보다 큰 값을 확인하는 절차는 [Play release runbook](../play-release.md)을 따른다.
+> 일반 로컬·Firebase 빌드는 기본 `versionCode` 1을 유지한다. 이 채널은 Firebase App Distribution이 versionCode로 빌드를 구분하지 않으므로 값을 올릴 이유가 없다. `app/build.gradle.kts`를 직접 수정하지 말고, Play용 값이 필요하면 `AFTERNOTE_VERSION_CODE` 환경변수로 주입한다. Play 내부 테스트 트랙 배포는 [`release-play-internal.yml`](../../.github/workflows/release-play-internal.yml)이 run마다 단조 증가하는 값을 산출해 빌드 전에 Play의 현재 최댓값과 대조한다 — 정책과 사전 준비는 [Play release runbook](../play-release.md)에 있다.
+
+### Play 내부 테스트 트랙과의 경계
+
+두 채널은 목적도 산출물도 자격도 다르다. 한쪽 절차를 다른 쪽에 적용하지 않는다.
+
+| | Firebase App Distribution | Play 내부 테스트 트랙 |
+|---|---|---|
+| 목적 | 개발·기획·디자인·QA 내부 확인 | 출시 전 Play 설치 경로 검증 |
+| 산출물 | release APK | release AAB |
+| 트리거 | `main` push 자동 | `main`에서 수동 실행 + environment 승인 |
+| workflow | [`release-distribution.yml`](../../.github/workflows/release-distribution.yml) | [`release-play-internal.yml`](../../.github/workflows/release-play-internal.yml) |
+| versionCode | `1` 고정 | run마다 단조 증가 |
+| 자격 | `release-distribution` environment | `play-internal` environment (별도 service account) |
+| 롤백 | 이전 빌드를 다시 배포 | 릴리스 중단 후 더 큰 versionCode로 재배포 |
+
+Play 출시 이후에도 Firebase는 기존 QA 채널로 유지한다. 설치 인증서가 다르면 두 채널의 앱은 서로 위에 업데이트되지 않으므로, 테스터가 채널을 옮길 때는 삭제 후 재설치가 필요하다.
 
 ## 테스터 관리
 

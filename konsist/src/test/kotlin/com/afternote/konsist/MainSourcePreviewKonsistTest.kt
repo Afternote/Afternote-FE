@@ -1,6 +1,5 @@
 package com.afternote.konsist
 
-import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.declaration.KoFileDeclaration
 import org.junit.Test
 
@@ -50,8 +49,7 @@ class MainSourcePreviewKonsistTest {
     }
 
     private fun guardedFiles(): List<KoFileDeclaration> =
-        Konsist
-            .scopeFromProject()
+        AfternoteKonsistScope
             .files
             .filter { file ->
                 val path = file.normalizedProjectPath()
