@@ -29,13 +29,21 @@ data class TimeLetterWriteUiState(
     val showFreePlanLimitPopup: Boolean = false,
 )
 
-enum class TimeLetterWriteError {
-    SEND_DATE_REQUIRED,
-    LOAD_FAILED,
-    RECIPIENT_REQUIRED,
-    SAVE_FAILED,
-    VOICE_RECORDING_START_FAILED,
-    VOICE_RECORDING_STOP_FAILED,
+sealed interface TimeLetterWriteError {
+    data object SendDateRequired : TimeLetterWriteError
+
+    data object LoadFailed : TimeLetterWriteError
+
+    data object RecipientRequired : TimeLetterWriteError
+
+    data object SaveFailed : TimeLetterWriteError
+
+    /** A 4xx the server explicitly rejected. Shown as a generic message — the server's own text is not user-facing. */
+    data object ServerRejection : TimeLetterWriteError
+
+    data object VoiceRecordingStartFailed : TimeLetterWriteError
+
+    data object VoiceRecordingStopFailed : TimeLetterWriteError
 }
 
 sealed interface VoiceRecordingState {

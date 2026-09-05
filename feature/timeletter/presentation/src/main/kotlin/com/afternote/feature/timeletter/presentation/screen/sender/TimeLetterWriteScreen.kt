@@ -596,16 +596,15 @@ internal fun collectTextBlockContents(
 
 @Composable
 private fun TimeLetterWriteError.message(): String =
-    stringResource(
-        when (this) {
-            TimeLetterWriteError.SEND_DATE_REQUIRED -> R.string.timeletter_write_send_date_required
-            TimeLetterWriteError.LOAD_FAILED -> R.string.timeletter_write_load_failed
-            TimeLetterWriteError.RECIPIENT_REQUIRED -> R.string.timeletter_write_recipient_required
-            TimeLetterWriteError.SAVE_FAILED -> R.string.timeletter_write_save_failed
-            TimeLetterWriteError.VOICE_RECORDING_START_FAILED -> R.string.timeletter_voice_recording_start_error
-            TimeLetterWriteError.VOICE_RECORDING_STOP_FAILED -> R.string.timeletter_voice_recording_stop_error
-        },
-    )
+    when (this) {
+        TimeLetterWriteError.SendDateRequired -> stringResource(R.string.timeletter_write_send_date_required)
+        TimeLetterWriteError.LoadFailed -> stringResource(R.string.timeletter_write_load_failed)
+        TimeLetterWriteError.RecipientRequired -> stringResource(R.string.timeletter_write_recipient_required)
+        TimeLetterWriteError.SaveFailed -> stringResource(R.string.timeletter_write_save_failed)
+        TimeLetterWriteError.ServerRejection -> stringResource(R.string.timeletter_write_rejected)
+        TimeLetterWriteError.VoiceRecordingStartFailed -> stringResource(R.string.timeletter_voice_recording_start_error)
+        TimeLetterWriteError.VoiceRecordingStopFailed -> stringResource(R.string.timeletter_voice_recording_stop_error)
+    }
 
 @Composable
 private fun TextBlockItem(
