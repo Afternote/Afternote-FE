@@ -59,7 +59,9 @@ fun TimeLetterDto.toDomain(): TimeLetter =
         id = id,
         title = title,
         sendAt = sendAt,
-        deliveredAt = deliveredAt,
+        // TimeLetterDto엔 deliveredAt이 없다(발신 응답 계약에 없는 필드, #790) — 도메인 필드는
+        // ReceivedTimeLetter 쪽과 모델을 맞추기 위해 남겨두고 항상 null로 채운다.
+        deliveredAt = null,
         status = status.toDomain(),
         blocks = blocks.map { it.toDomain() },
         receiverIds = receiverIds,

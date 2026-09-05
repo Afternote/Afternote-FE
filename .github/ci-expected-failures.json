@@ -1,22 +1,6 @@
 {
   "schemaVersion": 1,
-  "unitTests": [
-    {
-      "task": ":feature:timeletter:data:testDebugUnitTest",
-      "className": "com.afternote.feature.timeletter.data.dto.TimeLetterDtoContractTest",
-      "tests": [
-        "발신 응답의 명시적 null과 빈 배열은 정상 파싱된다",
-        "발신 응답에는 존재하지 않는 deliveredAt 없이 정상 파싱된다",
-        "수신 응답의 기본값 제거 대상 키가 빠지면 실패한다",
-        "수신 응답의 조건부 null과 공개 전 빈 blocks는 정상 파싱된다"
-      ],
-      "issues": [
-        790,
-        873
-      ],
-      "reason": "타임레터 DTO 누락 키 계약 게이트 — 구현 머지 전까지 의도된 실패"
-    }
-  ],
+  "unitTests": [],
   "androidTests": [],
   "screenshotModules": []
 }
