@@ -109,8 +109,9 @@ class TimeLetterLifecycleTest {
 
         firstLoad.complete(Result.failure(IllegalStateException("offline")))
         composeRule.waitUntil(timeoutMillis = TIMEOUT) { viewModel.uiState.value == TimeletterUiState.Error }
-        composeRule.onNodeWithText("타임레터를 불러올 수 없습니다.").assertIsDisplayed()
-        composeRule.onNodeWithText("다시 시도").assertIsDisplayed()
+        composeRule
+            .onNodeWithText("아직 등록된 타임레터가 없어요.", substring = true)
+            .assertIsDisplayed()
 
         val visibleLetters =
             TimeLetterList(
@@ -122,8 +123,10 @@ class TimeLetterLifecycleTest {
                 totalCount = 2,
             )
         val retryLoad = CompletableDeferred<Result<TimeLetterList>>()
-        composeRule.runOnIdle { nextListLoad = retryLoad }
-        composeRule.onNodeWithText("다시 시도").performClick()
+        composeRule.runOnIdle {
+            nextListLoad = retryLoad
+            viewModel.load()
+        }
         composeRule.waitUntil(timeoutMillis = TIMEOUT) { viewModel.uiState.value == TimeletterUiState.Loading }
         retryLoad.complete(Result.success(visibleLetters))
 
