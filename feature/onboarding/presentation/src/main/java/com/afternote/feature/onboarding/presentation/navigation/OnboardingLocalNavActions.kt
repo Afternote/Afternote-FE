@@ -4,6 +4,7 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import com.afternote.core.ui.navigation.FeatureStackBoundary
 import com.afternote.core.ui.navigation.popOrExit
+import com.afternote.core.ui.navigation.popUpTo
 import com.afternote.core.ui.navigation.pushSingleTop
 import com.afternote.core.ui.navigation.replaceAllWith
 
@@ -36,6 +37,11 @@ internal class OnboardingLocalNavActions(
     override fun navigateToLogin(): Unit = backStack.pushSingleTop(OnboardingRoute.LoginRoute)
 
     override fun navigateToFindId(): Unit = backStack.pushSingleTop(OnboardingRoute.FindIdRoute)
+
+    override fun navigateToFindPassword(): Unit = backStack.pushSingleTop(OnboardingRoute.FindPasswordFlowRoute)
+
+    /** 완료 화면의 "로그인" — 로그인 위를 걷어낸다. 로그인이 없는 경로면 로그인 하나만 남긴다. */
+    override fun popToLogin(): Unit = backStack.popUpTo(OnboardingRoute.LoginRoute)
 
     override fun proceedToSignUpResidentNumber(): Unit = backStack.pushSingleTop(OnboardingRoute.SignUpResidentNumberRoute)
 

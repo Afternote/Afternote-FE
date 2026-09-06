@@ -43,4 +43,14 @@ interface OnboardingNavActions {
 
     /** 로그인 → 아이디 찾기. */
     fun navigateToFindId()
+
+    /** 로그인의 "아이디/비밀번호 찾기" → 비밀번호 찾기 흐름 진입 (#457 · #1789). */
+    fun navigateToFindPassword()
+
+    /**
+     * 비밀번호 찾기 완료의 "로그인" → 어느 경로로 들어왔든 로그인 화면 하나로 수렴한다.
+     *
+     * Nav2 의 `popUpTo<LoginRoute> { inclusive = true }` + navigate 자리다.
+     */
+    fun popToLogin()
 }
