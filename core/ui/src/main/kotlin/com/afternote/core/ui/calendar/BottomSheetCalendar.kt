@@ -108,8 +108,13 @@ fun BottomSheetCalendar(
     }
 }
 
+/**
+ * ModalBottomSheet 래퍼 없이 달력 본체만 렌더링하는 [BottomSheetCalendar] 내부 구현.
+ *
+ * 파일 밖으로 열지 않는다 — 공개 계약은 [BottomSheetCalendar] 하나다 (#1672).
+ */
 @Composable
-fun DatePickerContent(
+private fun DatePickerContent(
     title: String,
     currentYear: Int,
     currentMonth: Int,
