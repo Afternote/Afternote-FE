@@ -3,6 +3,12 @@ package com.afternote.feature.afternote.presentation.editor
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
+import com.afternote.feature.afternote.domain.model.author.Detail
+import com.afternote.feature.afternote.domain.model.author.DetailContent
+import com.afternote.feature.afternote.domain.model.author.DetailCredentials
+import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
+import com.afternote.feature.afternote.domain.model.author.playlist.MemorialDetail
+import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 import com.afternote.feature.afternote.presentation.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteTypeForm
@@ -94,6 +100,10 @@ class EditorLeaveMessageBlocksTest {
                 selectedReceiverIds = emptyList(),
                 playlistSongs = emptyList(),
                 memorialMedia = MemorialMediaUrls(),
+                // 여기서 보는 것은 블록을 *어떻게 빚는가* 다. 말씀이 없던 노트를 기준으로 삼아
+                // 「달라졌다」가 확실하게 성립하게 두고, 빚어진 모양만 본다 — 안 건드린 필드를 빼는
+                // 축은 AfternoteEditorPartialUpdateTest 가 따로 고정한다 (#1617).
+                baseline = emptyBaseline(AfternoteType.SOCIAL_NETWORK),
             )
 
         assertEquals(
@@ -131,6 +141,9 @@ class EditorLeaveMessageBlocksTest {
                 selectedReceiverIds = emptyList(),
                 playlistSongs = emptyList(),
                 memorialMedia = MemorialMediaUrls(),
+                // 여기서 보는 것은 블록을 *어떻게 빚는가* 다. 말씀이 없던 노트를 기준으로 삼아
+                // 「달라졌다」가 확실하게 성립하게 두고, 빚어진 모양만 본다 (#1617).
+                baseline = emptyBaseline(AfternoteType.MEMORIAL),
             )
 
         assertEquals(
@@ -169,5 +182,32 @@ class EditorLeaveMessageBlocksTest {
             serviceName = "인스타그램",
             date = "2026.08.07",
             messageBlocks = blocks.toList(),
+        )
+
+    /** 말씀도 내용도 없던 노트 — 폼에 무엇이 들어 있든 「달라졌다」가 성립하는 기준. */
+    private fun emptyBaseline(type: AfternoteType) =
+        AfternoteEditorFormMapper.buildUpdateBaseline(
+            Detail(
+                id = 1L,
+                serviceName = "",
+                timestamps = DetailTimestamps(updatedAt = "2026-08-30"),
+                receivers = emptyList(),
+                leaveMessageBlocks = emptyList(),
+                content =
+                    when (type) {
+                        AfternoteType.MEMORIAL -> {
+                            DetailContent.Memorial(
+                                memorial = MemorialDetail(emptyList(), MemorialMedia(null, null, null)),
+                            )
+                        }
+
+                        else -> {
+                            DetailContent.SocialNetwork(
+                                credentials = DetailCredentials(id = "", password = ""),
+                                processingMethods = emptyList(),
+                            )
+                        }
+                    },
+            ),
         )
 }

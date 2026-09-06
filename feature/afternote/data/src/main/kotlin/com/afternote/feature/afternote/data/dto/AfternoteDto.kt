@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.data.dto
 
+import com.afternote.feature.afternote.domain.model.author.FieldPatch
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
@@ -36,15 +37,32 @@ data class AfternoteCreateAccountRequestDto(
     @SerialName("receivers") val receivers: List<AfternoteReceiverRefDto> = emptyList(),
 )
 
+/**
+ * 애프터노트 수정(PATCH) 요청 바디 — **부분 갱신이다.**
+ *
+ * `null` 인 슬롯은 `encodeDefaults = false` 덕분에 **키째 빠지고**, 서버는 그것을 「기존 값 유지」로
+ * 읽는다 (Afternote-BE `bbff47c` · BE#200·#201). 그러므로 여기서 기본값 `null` 은 편의가 아니라
+ * 계약이다 — 사용자가 만지지 않은 필드를 이 DTO 에 채우면 그 순간 낡은 값이 남의 변경을 덮는다
+ * (#1617).
+ *
+ * [title] 에도 기본값을 둔다. 제목은 늘 폼에 떠 있어 「안 바꿨다」를 말할 수단이 필요하다 —
+ * 서버도 `title` 생략을 계약으로 못박아 뒀다(`updateAfternote_OmitCategoryAndTitle_Success`).
+ *
+ * [category] 만 늘 실린다. 값을 바꾸는 필드가 아니라 **대상 확인용 단언**이라 lost update 축에
+ * 참여하지 않는다 — 서버는 저장값과 다르면 400 을 내고 같으면 아무것도 바꾸지 않는다.
+ *
+ * 빈 컬렉션은 생략이 아니라 **삭제**다. `[]` 를 실으면 서버가 관계를 통째로 갈아 끼운다
+ * (`actions`·`leaveMessage`·`receivers`, 그리고 `playlist.songs` — #1599).
+ */
 @Serializable
 data class AfternoteUpdateRequestDto(
     @SerialName("category") val category: String,
-    @SerialName("title") val title: String,
+    @SerialName("title") val title: String? = null,
     @SerialName("actions") val processingMethods: List<String>? = null,
     @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
     @SerialName("credentials") val credentials: AfternoteCredentialsDto? = null,
     @SerialName("receivers") val receivers: List<AfternoteReceiverRefDto>? = null,
-    @SerialName("playlist") val memorial: AfternotePlaylistRequestDto? = null,
+    @SerialName("playlist") val memorial: AfternotePlaylistPatchRequestDto? = null,
 )
 
 @Serializable
@@ -102,6 +120,39 @@ data class AfternotePlaylistRequestDto(
     @SerialName("memorialPhotoUrl") val memorialPhotoUrl: String?,
     @SerialName("songs") val songs: List<AfternoteSongDto>,
     @SerialName("memorialVideo") val memorialVideo: AfternoteMemorialVideoDto?,
+)
+
+/**
+ * 추억 노트 플레이리스트 **수정(PATCH) 전용** 바디 — 만진 슬롯만 말한다 (#1617).
+ *
+ * [AfternotePlaylistRequestDto] 와 나눠 둔 이유가 계약 그 자체다. 생성은 「이 노트가 가져야 할
+ * 상태」를 통째로 말해야 해서 슬롯에 기본값을 두지 않는다(그래서 항상 직렬화된다). 수정은 반대다 —
+ * **만지지 않은 슬롯은 키째 빠져야** 서버가 기존 값을 유지한다.
+ *
+ * 한 DTO 로 겸하면 둘 중 하나가 반드시 깨진다. 실제로 그랬다: 수정에서 생성용 DTO 를 쓰는 동안,
+ * 곡만 바꾼 저장이 `{"memorialPhotoUrl":null,"memorialVideo":null}` 을 함께 실어 **그 사이 다른
+ * 기기가 올린 영정사진·추모 영상을 지웠다.** 기본값이 없는 슬롯은 `encodeDefaults = false` 로도
+ * 생략되지 않고, `null` 이면 곧 삭제 지시이기 때문이다.
+ *
+ * 슬롯별 표현이 다른 것은 서버가 그렇게 읽기 때문이다:
+ * - [memorialPhotoUrl]·[memorialVideo] — `PlaylistRequestDeserializer` 가 `node.has(...)` 로 키
+ *   유무를 보고 `AfternotePlaylist.update` 가 그 플래그로 유지/삭제를 가른다. 3상태가 필요해
+ *   [FieldPatch] 를 쓴다. 기본값 [FieldPatch.Unchanged] 가 곧 「키 생략」이다.
+ * - [songs] — `PlaylistRelationStrategy.update` 가 `songs != null` 일 때만 `items` 를 통째로 갈아
+ *   끼운다. `null`(안 건드림)과 `[]`(전부 삭제)로 두 뜻이 다 나오므로 [FieldPatch] 가 필요 없다.
+ * - `atmosphere`·`memorialAudioUrl` — FE 화면에 없는 값이라 삭제를 지시할 자격이 없다. 슬롯 자체를
+ *   두지 않아 영영 생략된다.
+ */
+@Serializable
+data class AfternotePlaylistPatchRequestDto(
+    @SerialName("memorialPhotoUrl")
+    @Serializable(with = FieldPatchSerializer::class)
+    val memorialPhotoUrl: FieldPatch<String?> = FieldPatch.Unchanged,
+    @SerialName("songs")
+    val songs: List<AfternoteSongDto>? = null,
+    @SerialName("memorialVideo")
+    @Serializable(with = FieldPatchSerializer::class)
+    val memorialVideo: FieldPatch<AfternoteMemorialVideoDto?> = FieldPatch.Unchanged,
 )
 
 @Serializable

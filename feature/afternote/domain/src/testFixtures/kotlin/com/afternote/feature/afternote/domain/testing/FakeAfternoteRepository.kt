@@ -12,7 +12,9 @@ import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.DetailReceiver
+import com.afternote.feature.afternote.domain.model.author.FieldPatch
 import com.afternote.feature.afternote.domain.model.author.ListItem
+import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialDetail
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
@@ -155,9 +157,13 @@ class FakeAfternoteRepository(
     }
 }
 
+/**
+ * 수정은 **부분 갱신**이라 `null` 슬롯은 「안 건드림」이다 — 서버와 같이 기존 값을 남긴다 (#1617).
+ * 여기서 덮어써 버리면 페이로드가 필드를 뺐는지 여부를 테스트가 구분하지 못한다.
+ */
 private fun ListItem.updatedWith(payload: AfternoteUpdatePayload): ListItem =
     copy(
-        serviceName = payload.title,
+        serviceName = payload.title ?: serviceName,
         type = payload.type,
         account = account.updatedWith(payload.credentials),
     )
@@ -174,13 +180,13 @@ private fun Account.updatedWith(credentials: AfternoteAccountCredentials?): Acco
 
 private fun Detail.updatedWith(payload: AfternoteUpdatePayload): Detail =
     copy(
-        serviceName = payload.title,
+        serviceName = payload.title ?: serviceName,
         receivers =
             payload.receivers?.map { ref ->
                 receivers.firstOrNull { it.receiverId == ref.receiverId }
                     ?: DetailReceiver(receiverId = ref.receiverId, name = "", relation = "")
             } ?: receivers,
-        leaveMessageBlocks = payload.leaveMessageBlocks,
+        leaveMessageBlocks = payload.leaveMessageBlocks ?: leaveMessageBlocks,
         content = content.updatedWith(payload),
     )
 
@@ -217,13 +223,20 @@ private fun DetailContent.updatedWith(payload: AfternoteUpdatePayload): DetailCo
                     if (memorial == null) {
                         previous ?: MemorialDetail(emptyList(), MemorialMedia(null, null, null))
                     } else {
+                        // 서버와 같이 **슬롯별로** 반영한다 — 만지지 않은 슬롯(FieldPatch.Unchanged·songs null)은
+                        // 기존 값을 남긴다. 여기서 통째로 갈아 끼우면 부분 PATCH 의 결함이 테스트에 안 잡힌다 (#1617).
+                        val previousMedia = previous?.media
+                        val video = memorial.memorialVideo.resolve(previousMedia?.toVideoPayload())
                         MemorialDetail(
-                            songs = memorial.songs.map { DetailSong(it.title, it.artist, it.coverUrl) },
+                            songs =
+                                memorial.songs
+                                    ?.map { DetailSong(it.title, it.artist, it.coverUrl) }
+                                    ?: previous?.songs.orEmpty(),
                             media =
                                 MemorialMedia(
-                                    photoUrl = memorial.memorialPhotoUrl,
-                                    videoUrl = memorial.memorialVideo?.videoUrl,
-                                    thumbnailUrl = memorial.memorialVideo?.thumbnailUrl,
+                                    photoUrl = memorial.memorialPhotoUrl.resolve(previousMedia?.photoUrl),
+                                    videoUrl = video?.videoUrl,
+                                    thumbnailUrl = video?.thumbnailUrl,
                                 ),
                         )
                     },
@@ -240,3 +253,13 @@ private fun AfternoteAccountCredentials?.toDetailCredentials(previous: DetailCre
         id = this?.id ?: previous?.id.orEmpty(),
         password = this?.password ?: previous?.password.orEmpty(),
     )
+
+/** 만지지 않은 슬롯은 기존 값을 남긴다 — 서버 `AfternotePlaylist.update` 의 specified 플래그와 같은 규칙. */
+private fun <T> FieldPatch<T>.resolve(previous: T): T =
+    when (this) {
+        is FieldPatch.Unchanged -> previous
+        is FieldPatch.Set -> value
+    }
+
+private fun MemorialMedia.toVideoPayload(): MemorialVideoPayload? =
+    videoUrl?.let { MemorialVideoPayload(videoUrl = it, thumbnailUrl = thumbnailUrl) }

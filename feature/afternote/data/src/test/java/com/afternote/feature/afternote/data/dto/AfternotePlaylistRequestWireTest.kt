@@ -4,9 +4,10 @@ import com.afternote.core.network.di.NetworkModule
 import com.afternote.feature.afternote.data.mapper.toRequest
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
+import com.afternote.feature.afternote.domain.model.author.FieldPatch
+import com.afternote.feature.afternote.domain.model.author.MemorialPatchPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
-import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonArray
@@ -28,7 +29,7 @@ import org.junit.Test
 class AfternotePlaylistRequestWireTest {
     private val json = NetworkModule.provideJson()
 
-    private fun updateBody(memorial: MemorialWritePayload?) =
+    private fun updateBody(memorial: MemorialPatchPayload?) =
         json
             .encodeToJsonElement(
                 AfternoteUpdatePayload(
@@ -38,20 +39,33 @@ class AfternotePlaylistRequestWireTest {
                 ).toRequest(),
             ).jsonObject
 
-    private fun playlistOf(memorial: MemorialWritePayload) = updateBody(memorial).getValue("playlist").jsonObject
+    private fun playlistOf(memorial: MemorialPatchPayload) = updateBody(memorial).getValue("playlist").jsonObject
 
     private val filled =
-        MemorialWritePayload(
-            memorialPhotoUrl = "https://cdn.test/afternotes/photo.jpg",
+        MemorialPatchPayload(
+            memorialPhotoUrl = FieldPatch.Set("https://cdn.test/afternotes/photo.jpg"),
             songs = listOf(MemorialSongPayload(title = "곡", artist = "가수", coverUrl = null)),
             memorialVideo =
-                MemorialVideoPayload(
-                    videoUrl = "https://cdn.test/afternotes/video.mp4",
-                    thumbnailUrl = "https://cdn.test/afternotes/thumb.jpg",
+                FieldPatch.Set(
+                    MemorialVideoPayload(
+                        videoUrl = "https://cdn.test/afternotes/video.mp4",
+                        thumbnailUrl = "https://cdn.test/afternotes/thumb.jpg",
+                    ),
                 ),
         )
 
-    private val emptied = MemorialWritePayload(memorialPhotoUrl = null, songs = emptyList(), memorialVideo = null)
+    /**
+     * 사용자가 사진·영상·곡을 **모두 비운** 저장. 셋 다 「만졌고 비웠다」이므로 세 슬롯이 다 실린다.
+     *
+     * 만지지 않은 슬롯이 여기 섞이면 안 된다는 것이 #1617 의 축이고, 그쪽은
+     * [AfternoteUpdatePartialPatchWireTest] 가 JSON 문자열째 고정한다.
+     */
+    private val emptied =
+        MemorialPatchPayload(
+            memorialPhotoUrl = FieldPatch.Set(null),
+            songs = emptyList(),
+            memorialVideo = FieldPatch.Set(null),
+        )
 
     /** 발행된 PLAYLIST PATCH 검증을 통과하도록 기존 곡을 함께 싣는 실제 서버 미디어 삭제 스냅샷. */
     private val deletedServerMedia =

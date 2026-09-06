@@ -14,7 +14,16 @@ fun List<LeaveMessageBlockDto>?.toLeaveMessageBlocks(): List<LeaveMessageBlock> 
             LeaveMessageBlock(title = dto.title, body = body)
         }.orEmpty()
 
-/** 도메인 → 요청. 남길 말씀이 없으면 빈 배열 대신 필드 자체를 빼도록 null 로 접는다. */
+/** 도메인 → 생성 요청. 남길 말씀이 없으면 빈 배열 대신 필드 자체를 빼도록 null 로 접는다. */
 fun List<LeaveMessageBlock>.toDto(): List<LeaveMessageBlockDto>? =
     map { LeaveMessageBlockDto(title = it.title, body = it.body) }
         .takeIf { it.isNotEmpty() }
+
+/**
+ * 도메인 → 수정 요청. **[toDto] 처럼 빈 배열을 null 로 접지 않는다** (#1617).
+ *
+ * 수정은 부분 갱신이라 `null`(안 건드림 → 키 생략)과 `[]`(전부 삭제)가 서로 다른 지시다.
+ * 접어 버리면 마지막 말씀을 전부 지운 저장이 「유지」로 흡수돼 서버에 반영되지 않는다.
+ */
+fun List<LeaveMessageBlock>?.toPatchDto(): List<LeaveMessageBlockDto>? =
+    this?.map { LeaveMessageBlockDto(title = it.title, body = it.body) }
