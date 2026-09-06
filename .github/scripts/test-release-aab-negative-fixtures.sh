@@ -116,7 +116,8 @@ unzip -p "${positive_bundle}" base/resources.pb > "${mutation_root}/base/resourc
 printf 'tampered' >> "${mutation_root}/base/resources.pb"
 (
     cd "${mutation_root}"
-    zip -q -u "${signature_bundle}" base/resources.pb
+    # Replace regardless of ZIP's two-second timestamp granularity on fast runners.
+    zip -q "${signature_bundle}" base/resources.pb
 )
 set +e
 signature_output="$("${signature_root}/scripts/verify-play-release-bundle.sh" --skip-build 2>&1)"
