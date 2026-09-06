@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.home
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -43,14 +44,20 @@ internal const val AFTERNOTE_CATEGORY_MORE_INDICATOR_TEST_TAG = "afternoteCatego
  * 같은 관용구다.
  *
  * 노출 대상은 [TYPE_FILTER_TABS] 가 정한다.
+ *
+ * @param scrollState 가로 스크롤 위치. 탭 5개의 폭 합이 기본 화면 폭을 넘어 이 행은 실제로 스크롤된다
+ *   (fading edge 와 오른쪽 화살표 힌트가 있는 이유). 그래서 **이 행을 여러 본문에서 그리는 화면은 이
+ *   상태를 자기 쪽으로 끌어올려 넘겨야 한다** — 여기서만 `remember` 하면 본문 분기가 바뀌는 순간
+ *   서브트리가 폐기돼 위치가 0 으로 돌아가고, 오른쪽으로 밀어 고른 끝 탭이 전환 후 화면 밖으로 나간다
+ *   (#1635). 기본값은 이 행을 한 자리에서만 그리는 프리뷰·단위 테스트용이다.
  */
 @Composable
 fun AfternoteTypeFilterRow(
     onTabSelected: (AfternoteType?) -> Unit,
     modifier: Modifier = Modifier,
     selectedTab: AfternoteType? = null,
+    scrollState: ScrollState = rememberScrollState(),
 ) {
-    val scrollState = rememberScrollState()
     val canScrollRight by remember {
         derivedStateOf { scrollState.canScrollForward }
     }

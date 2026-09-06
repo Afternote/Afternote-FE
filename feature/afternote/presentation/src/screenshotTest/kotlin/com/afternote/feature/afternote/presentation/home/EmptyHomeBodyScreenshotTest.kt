@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.home
 
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,6 +33,8 @@ internal fun emptyHomeBodyScreenshot() {
             nextStep = null,
             emptyListDescription = stringResource(R.string.afternote_empty_list_body),
             onTypeSelected = {},
+            // 화면은 이 상태를 `when` 위에서 만들어 넘긴다 (#1635). 골든이 보는 렌더는 종전과 같다.
+            filterRowScrollState = rememberScrollState(),
         )
     }
 }

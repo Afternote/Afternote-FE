@@ -6,6 +6,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
@@ -24,50 +27,70 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * #1634 — 카테고리 필터를 건 채 조회가 실패한 상태에서 빠져나갈 수단이 남는지.
+ * #1635 ① — 카테고리 전환 중에도 상단(헤더·카테고리 필터 행)이 남고 본문만 로딩이 되는지.
  *
- * 종전에는 이 상태가 전면 에러([com.afternote.feature.afternote.presentation.shared.component.ErrorListBody])로
- * 덮여 카테고리 행이 사라졌고, 화면에 남는 조작은 «다시 시도» 하나뿐이었다. 서버가 계속 실패하는 동안
- * 사용자는 자기가 고른 카테고리에 갇혀 다른 카테고리로도 「전체」로도 나갈 수 없었다.
+ * 종전에는 전환이 만든 새 Paging 세대의 첫 상태(`refresh = Loading`)에서 0건이면 첫 진입과 똑같이
+ * 판정돼 화면이 통째로 [com.afternote.core.ui.loading.LoadingBody] 로 덮였다. 그 동안 화면에는
+ * **조작할 것이 하나도 없고**, 방금 탭한 카테고리가 어디로 갔는지도 보이지 않는다.
  *
- * 어떤 상태에서 이 본문이 선택되는지(분기 순서)는 `AfternoteHomeBodyStateTest` 가 따로 고정한다 —
- * 화면째 띄우면 Paging 첫 상태(Loading)를 걷는 이펙트가 Robolectric 실행 순번에 걸린다
+ * 어떤 상태에서 이 본문이 선택되는지(전환·재시도 ↔ 첫 진입)는 `AfternoteHomeBodyStateTest` 가 따로
+ * 고정한다 — 화면째 띄우면 Paging 첫 상태를 걷는 이펙트가 Robolectric 실행 순번에 걸린다
  * ([AfternoteHomeBodyState] KDoc).
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
-class AfternoteHomeFilteredErrorTest {
+class AfternoteHomeReloadingTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     @Test
-    fun `필터 조회 실패 본문에도 카테고리 행이 남는다`() {
-        composeRule.setContent { AfternoteTheme { AuthorFilteredErrorBody() } }
+    fun `전환 중 로딩 본문에도 헤더와 카테고리 행이 남는다`() {
+        composeRule.setContent { AfternoteTheme { AuthorReloadingBody() } }
 
+        composeRule.onNodeWithText(string(R.string.afternote_home_title)).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.afternote_home_header_description)).assertIsDisplayed()
         composeRule.onNodeWithText(string(R.string.afternote_category_all)).assertIsDisplayed()
         composeRule.onNodeWithText(string(R.string.afternote_category_business)).assertIsDisplayed()
     }
 
-    /** 실패해도 고른 카테고리는 그대로다 — 어디서 실패했는지 모르면 어디로 나갈지도 못 고른다. */
+    /** 본문은 로딩으로 바뀐다 — 상단만 남기고 데이터 영역은 여전히 «불러오는 중» 이어야 한다. */
     @Test
-    fun `필터 조회 실패 본문은 고른 카테고리를 선택 상태로 유지한다`() {
-        composeRule.setContent { AfternoteTheme { AuthorFilteredErrorBody() } }
+    fun `전환 중 로딩 본문은 데이터 영역에 로딩 표시를 그린다`() {
+        composeRule.setContent { AfternoteTheme { AuthorReloadingBody() } }
+
+        composeRule
+            .onNode(SemanticsMatcher.expectValue(SemanticsProperties.ProgressBarRangeInfo, ProgressBarRangeInfo.Indeterminate))
+            .assertExists()
+    }
+
+    /** 방금 탭한 카테고리가 로딩 중에도 선택 상태로 보여야 «어디로 가는 중인지» 를 알 수 있다. */
+    @Test
+    fun `전환 중 로딩 본문은 방금 고른 카테고리를 선택 상태로 그린다`() {
+        composeRule.setContent { AfternoteTheme { AuthorReloadingBody() } }
 
         composeRule.onNodeWithText(string(R.string.afternote_category_business)).assertIsSelected()
         composeRule.onNodeWithText(string(R.string.afternote_category_all)).assertIsNotSelected()
     }
 
+    /** 「전체」로 돌아오는 전환도 이 본문을 지난다 — 그때 선택 탭은 「전체」다. */
+    @Test
+    fun `전체로 돌아오는 전환 중에는 전체 탭이 선택 상태다`() {
+        composeRule.setContent { AfternoteTheme { AuthorReloadingBody(selectedType = null) } }
+
+        composeRule.onNodeWithText(string(R.string.afternote_category_all)).assertIsSelected()
+    }
+
     /**
-     * 막다른 상태를 여는 실제 수단 — 「전체」 탭이 호출부까지 전달돼야 새 조회가 걸린다
-     * ([AfternoteHomeViewModel.selectTab] 이 `selectedType` 을 바꾸면 Paging 흐름이 다시 시작된다).
+     * 남긴 행이 «눌러도 아무 일 없는» 장식이면 로딩이 길어질 때 그 자체가 막다른 상태가 된다
+     * (#620·#777 과 같은 규칙). 응답을 기다리는 동안에도 다른 카테고리로 갈아탈 수 있어야 한다.
      */
     @Test
-    fun `필터 조회 실패 본문에서 전체를 고르면 호출부로 전달된다`() {
+    fun `전환 중에도 다른 카테고리를 고르면 호출부로 전달된다`() {
         var called = false
         var selected: AfternoteType? = AfternoteType.BUSINESS
         composeRule.setContent {
             AfternoteTheme {
-                AuthorFilteredErrorBody(onTypeSelected = {
+                AuthorReloadingBody(onTypeSelected = {
                     called = true
                     selected = it
                 })
@@ -76,36 +99,22 @@ class AfternoteHomeFilteredErrorTest {
 
         composeRule.onNodeWithText(string(R.string.afternote_category_all)).performClick()
 
-        assertTrue("「전체」 탭이 호출부로 전달되지 않았다", called)
+        assertTrue("카테고리 탭이 호출부로 전달되지 않았다", called)
         assertEquals(null, selected)
     }
 
-    @Test
-    fun `필터 조회 실패 본문은 실패 문구와 재시도를 그대로 보여준다`() {
-        var retried = false
-        composeRule.setContent {
-            AfternoteTheme { AuthorFilteredErrorBody(onRetry = { retried = true }) }
-        }
-
-        composeRule.onNodeWithText(string(R.string.afternote_home_load_error)).assertIsDisplayed()
-        composeRule.onNodeWithText(string(R.string.afternote_home_retry)).assertIsDisplayed().performClick()
-
-        assertTrue("재시도가 호출부로 전달되지 않았다", retried)
-    }
-
     /**
-     * 실패를 «0건» 으로 위장하지 않는다.
+     * #1633 이 갈라 둔 0건 문구 두 종(#567)이 로딩 상태로 새지 않는다.
      *
-     * 카테고리 행을 살리려고 이 상태를 목록 경로로 흘리면 `afternote_home_filtered_empty`
-     * («이 카테고리에 등록된 애프터노트가 없어요»)가 떠서, 서버 응답을 못 받은 것을 «없다» 고 단정하고
-     * 재시도 수단까지 사라진다 — 무음 실패(#705)와 같은 부류다. 그 «정리» 가 들어오면 여기가 빨개진다.
+     * 아직 응답이 오지 않은 것을 «없다» 고 단정하면 무음 실패(#705)와 같은 부류가 된다.
      */
     @Test
-    fun `필터 조회 실패를 0건 문구로 덮지 않는다`() {
-        composeRule.setContent { AfternoteTheme { AuthorFilteredErrorBody() } }
+    fun `전환 중 로딩 본문은 0건 문구를 쓰지 않는다`() {
+        composeRule.setContent { AfternoteTheme { AuthorReloadingBody() } }
 
         composeRule.onNodeWithText(string(R.string.afternote_home_filtered_empty)).assertDoesNotExist()
         composeRule.onNodeWithText(string(R.string.afternote_empty_list_body)).assertDoesNotExist()
+        composeRule.onNodeWithText(string(R.string.afternote_home_load_error)).assertDoesNotExist()
     }
 
     /**
@@ -113,15 +122,14 @@ class AfternoteHomeFilteredErrorTest {
      * 이 본문이 그리는 헤더 문구는 호출부가 넘긴 것뿐이다.
      */
     @Test
-    fun `수신자 호출부의 필터 실패 본문에는 발신자 문구가 없다`() {
+    fun `수신자 호출부의 전환 중 로딩 본문에는 발신자 문구가 없다`() {
         composeRule.setContent {
             AfternoteTheme {
-                FilteredErrorBody(
+                ReloadingBody(
                     headerDescription = stringRes(R.string.afternote_receiver_afternote_list_header_description),
                     nextStep = null,
                     selectedType = AfternoteType.BUSINESS,
                     onTypeSelected = {},
-                    onRetry = {},
                     filterRowScrollState = rememberScrollState(),
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -140,18 +148,17 @@ class AfternoteHomeFilteredErrorTest {
     @Composable
     private fun stringRes(resId: Int): String = stringResource(resId)
 
-    /** [AfternoteHomeScreen] 이 «필터가 걸린 조회 실패» 에서 그리는 본문. 작성자 호출부 구성이다. */
+    /** [AfternoteHomeScreen] 이 «상단을 보고 있던 중의 로드» 에서 그리는 본문. 작성자 호출부 구성이다. */
     @Composable
-    private fun AuthorFilteredErrorBody(
+    private fun AuthorReloadingBody(
+        selectedType: AfternoteType? = AfternoteType.BUSINESS,
         onTypeSelected: (AfternoteType?) -> Unit = {},
-        onRetry: () -> Unit = {},
     ) {
-        FilteredErrorBody(
+        ReloadingBody(
             headerDescription = stringRes(R.string.afternote_home_header_description),
             nextStep = null,
-            selectedType = AfternoteType.BUSINESS,
+            selectedType = selectedType,
             onTypeSelected = onTypeSelected,
-            onRetry = onRetry,
             filterRowScrollState = rememberScrollState(),
             modifier = Modifier.fillMaxSize(),
         )
