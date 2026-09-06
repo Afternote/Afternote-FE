@@ -124,13 +124,14 @@ class ReceiverSelectionResultAndroidTest {
     }
 
     /**
-     * 완료가 돌려주는 것은 **고른 수신자 id 목록**이다.
+     * 완료가 돌려주는 것은 **그 시점에 체크된 수신자 id 전체**다 (#1426).
      *
-     * 목록 순서(index)나 표시된 수신자 목록 전체가 아니라 고른 id 목록이 건너가는지를,
-     * 고르지 않은 수신자가 폼에 들어오지 않는 것으로 판정한다.
+     * 화면은 폼에 이미 담겨 있던 수신자를 체크된 채로 열고(완료는 처음부터 활성), 완료는 체크된 id
+     * 목록을 폼 수신자 전체로 되돌린다. 폼에 있던 사람은 남고, 고른 사람은 더해지고, 고르지 않은
+     * 사람은 따라 들어오지 않는 것으로 판정한다.
      */
     @Test
-    fun afternoteEditorNavHost_receiverSelectConfirmAddsOnlyTheChosenReceiverToEditorForm() {
+    fun afternoteEditorNavHost_receiverSelectOpensWithFormReceiverCheckedAndConfirmAddsOnlyTheChosen() {
         receiverSource.receivers = listOf(KIM)
         openNewSocialEditor()
         waitForEditorReceiver(KIM.name)
@@ -139,7 +140,9 @@ class ReceiverSelectionResultAndroidTest {
         receiverSource.receivers = listOf(KIM, PARK, LEE)
         openReceiverSelect()
         composeRule.onNodeWithText(copy(CoreUiR.string.core_ui_receiver_select_title)).assertIsDisplayed()
-        composeRule.onNodeWithText(confirmText).assertIsNotEnabled()
+        waitForSelectRow(PARK.name)
+        // 폼에 있던 김혜성이 체크된 채로 열리므로 완료는 고르기 전부터 활성이다.
+        composeRule.onNodeWithText(confirmText).assertIsEnabled()
         composeRule.onNodeWithText(PARK.name).performClick()
         composeRule.onNodeWithText(confirmText).assertIsEnabled().performClick()
 
@@ -150,6 +153,32 @@ class ReceiverSelectionResultAndroidTest {
         // 이미 지정돼 있던 수신자는 유지되고, 고르지 않은 수신자는 따라 들어오지 않는다.
         composeRule.onNodeWithText(KIM.name).performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText(LEE.name).assertDoesNotExist()
+    }
+
+    /**
+     * 화면에서 체크를 푼 수신자는 폼에서도 빠진다 — 완료는 «추가» 가 아니라 «교체» 다 (#1426).
+     *
+     * 체크가 0명이면 완료가 잠기므로, 이 화면으로 폼을 전부 비우는 경로는 없다는 것도 함께 고정한다.
+     * 교체는 폼 상태 한 번의 쓰기라, 새로 고른 사람이 에디터에 뜬 시점엔 푼 사람도 이미 빠져 있다.
+     */
+    @Test
+    fun afternoteEditorNavHost_receiverSelectUncheckingFormReceiverRemovesItFromEditorOnConfirm() {
+        receiverSource.receivers = listOf(KIM)
+        openNewSocialEditor()
+        waitForEditorReceiver(KIM.name)
+
+        receiverSource.receivers = listOf(KIM, PARK)
+        openReceiverSelect()
+        waitForSelectRow(PARK.name)
+        composeRule.onNodeWithText(KIM.name).performClick()
+        composeRule.onNodeWithText(confirmText).assertIsNotEnabled()
+        composeRule.onNodeWithText(PARK.name).performClick()
+        composeRule.onNodeWithText(confirmText).assertIsEnabled().performClick()
+
+        waitForRoute<AfternoteRoute.EditorRoute>("에디터")
+        waitForEditorAddButtons()
+        waitForEditorReceiver(PARK.name)
+        composeRule.onNodeWithText(KIM.name).assertDoesNotExist()
     }
 
     /** 취소(뒤로가기)는 화면 안에서 고른 값을 버리고 소비 화면의 기존 지정을 그대로 둔다. */
@@ -299,6 +328,13 @@ class ReceiverSelectionResultAndroidTest {
     }
 
     private fun waitForEditorReceiver(name: String) {
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            composeRule.onAllNodesWithText(name).fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    /** 선택 화면의 목록 응답이 도착해 행이 그려진 것을 확정한다 — 그 뒤에야 체크·완료 상태를 단언할 수 있다. */
+    private fun waitForSelectRow(name: String) {
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             composeRule.onAllNodesWithText(name).fetchSemanticsNodes().isNotEmpty()
         }

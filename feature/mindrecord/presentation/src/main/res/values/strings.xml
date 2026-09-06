@@ -49,7 +49,12 @@
     <string name="mindrecord_diary_write_title">일기 기록하기</string>
     <string name="mindrecord_diary_write_title_placeholder">제목을 입력하세요.</string>
     <string name="mindrecord_diary_write_mood_label">오늘의 기분</string>
+    <!-- 기분 칩의 접근 가능한 이름. 이모지만으로는 스크린리더가 그림을 묘사할 뿐이라 낱말을 싣는다 (#1179). -->
+    <string name="mindrecord_diary_write_mood_happy">기쁨</string>
+    <string name="mindrecord_diary_write_mood_soso">보통</string>
+    <string name="mindrecord_diary_write_mood_sad">슬픔</string>
     <string name="mindrecord_write_receiver_setting">수신자 설정하기</string>
+    <string name="mindrecord_write_date_picker_title">기록 날짜</string>
     <string name="mindrecord_write_receiver_to">%s님에게</string>
     <string name="mindrecord_write_receiver_to_multiple">%1$s님 외 %2$d명에게</string>
     <string name="mindrecord_write_receiver_sheet_title">수신자 선택</string>
@@ -67,6 +72,7 @@
     <!-- Calendar -->
     <string name="mindrecord_calendar_year_month">%1$d년 %2$d월</string>
     <string name="mindrecord_calendar_answered_count">%d개의 답변 완료</string>
+    <string name="mindrecord_calendar_recorded_count">%d개의 기록 완료</string>
     <string name="mindrecord_calendar_day_label_sun">일</string>
     <string name="mindrecord_calendar_day_label_mon">월</string>
     <string name="mindrecord_calendar_day_label_tue">화</string>
@@ -74,11 +80,15 @@
     <string name="mindrecord_calendar_day_label_thu">목</string>
     <string name="mindrecord_calendar_day_label_fri">금</string>
     <string name="mindrecord_calendar_day_label_sat">토</string>
+
     <!--
       "발송" 이 아니라 "기록" 이다 — 이 날짜는 과거 일기를 몰아 쓰기 위한 기록 날짜이지
       발송 시점이 아니다. 시안이 2026-08-05 에 "기록 날짜" 로 수정됐다 (#760).
     -->
     <string name="mindrecord_calendar_record_date_title">기록 날짜</string>
+
+    <!-- 일기 목록 -->
+    <string name="mindrecord_diary_list_section_header">DAILY DIARY</string>
 
     <!-- Daily question -->
     <string name="mindrecord_daily_question_default_thanks">오늘 하루, \n누구에게 가장 고마웠나요?</string>
@@ -165,6 +175,16 @@
     <string name="mindrecord_toolbar_draft_count">임시저장 %d</string>
     <string name="mindrecord_toolbar_draft_label">임시저장</string>
     <string name="mindrecord_toolbar_text_settings">텍스트 설정</string>
+    <string name="mindrecord_toolbar_draft_list_cd">임시저장 목록 %1$d개</string>
+    <string name="mindrecord_toolbar_draft_list_unknown_cd">임시저장 목록, 수량 미확인</string>
+    <string name="mindrecord_toolbar_text_type_cd">글자 종류</string>
+    <string name="mindrecord_receiver_filter_cd">기록 필터</string>
+    <string name="mindrecord_receiver_filter_drag_handle_cd">필터 시트 크기 조절</string>
+    <!-- 작성 툴바 서식 토글 — 글자(B·I·U·S)가 유일한 라벨이라 스크린리더용 이름을 따로 둔다 (#1179). -->
+    <string name="mindrecord_toolbar_bold_cd">굵게</string>
+    <string name="mindrecord_toolbar_italic_cd">기울임</string>
+    <string name="mindrecord_toolbar_underline_cd">밑줄</string>
+    <string name="mindrecord_toolbar_strikethrough_cd">취소선</string>
     <string name="mindrecord_toolbar_style_title">제목</string>
     <string name="mindrecord_toolbar_style_header">머릿말</string>
     <string name="mindrecord_toolbar_style_subheader">부머릿말</string>
@@ -184,6 +204,7 @@
     <string name="mindrecord_error_diary_list_failed">일기를 불러오지 못했습니다.</string>
     <string name="mindrecord_error_diary_submit_failed">일기 등록에 실패했습니다.</string>
     <string name="mindrecord_error_diary_draft_load_failed">임시 저장된 일기를 불러오지 못했습니다.</string>
+    <string name="mindrecord_error_diary_future_date">기록 날짜는 오늘까지만 고를 수 있습니다.</string>
     <string name="mindrecord_error_daily_question_draft_load_failed">임시저장한 답변을 불러오지 못했어요. 이대로 저장하면 이전 임시저장이 덮어써집니다.</string>
     <string name="mindrecord_error_daily_question_submit_failed">등록에 실패했습니다.</string>
     <string name="mindrecord_error_daily_question_answer_required">답변을 입력해 주세요.</string>

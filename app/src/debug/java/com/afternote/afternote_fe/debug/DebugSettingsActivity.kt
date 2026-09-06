@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.afternote.afternote_fe.EXTRA_DEBUG_START_TIMELETTER
 import com.afternote.afternote_fe.MainActivity
+import com.afternote.afternote_fe.enableLightEdgeToEdge
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
@@ -30,7 +30,7 @@ import dagger.hilt.android.AndroidEntryPoint
 class DebugSettingsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableLightEdgeToEdge()
         setContent {
             Surface(
                 modifier = Modifier.fillMaxSize(),

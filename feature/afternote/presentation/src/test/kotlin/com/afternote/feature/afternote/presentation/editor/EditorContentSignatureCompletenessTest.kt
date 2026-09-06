@@ -36,7 +36,9 @@ class EditorContentSignatureCompletenessTest {
             setType = {},
             setService = {},
             setMemorialPhoto = {},
+            removeMemorialPhoto = {},
             setMemorialVideo = {},
+            removeMemorialVideo = {},
             addReceiverIfAbsent = { _, _, _ -> },
             applyPrefill = {},
             setMemorialThumbnail = {},
@@ -193,28 +195,40 @@ class EditorContentSignatureCompletenessTest {
     }
 
     /**
-     * 서버 원본은 prefill 이 채우고 그 뒤 변하지 않으므로 지금은 지문에 넣어도 결과가 같다.
-     * 이 카나리는 그 우연이 아니라 「사용자 입력만 센다」는 계약을 고정한다 — 저장 성공 후 서버 값
-     * 새로고침처럼 원본만 갱신되는 경로가 생기면, 제외가 없는 순간 손대지 않은 폼이 «변경됨» 이 된다.
+     * #1561 은 「prefill 이 채운 서버 원본은 지문에서 제외된다」 는 카나리로 «사용자 입력만 센다» 를 잠갔다.
+     * #1597 이 서버 원본 삭제를 열면서 그 존재 자체가 사용자가 바꿀 수 있는 사실이 됐으므로 지문은 수정
+     * 진입 기준선과 비교해 서버 원본을 포함한다. 저장 성공 후 서버 값만 새로고침하는 경로가 생기면 그때
+     * 기준선을 다시 잡아야 한다 — 제외로 되돌리면 서버 삭제가 이탈 경고 없이 사라진다.
      */
     @Test
-    fun `prefill 이 채운 서버 원본은 지문에서 제외된다`() {
+    fun `서버 영상 삭제는 지문에 반영되고 서버 썸네일만 달라지면 제외된다`() {
         val state = newState()
-        val pristine = editorContentSignature(EditorFormState(typeForm = AfternoteTypeForm.Memorial()), state)
+        val serverVideo =
+            MemorialVideoAttachment(
+                url = "https://cdn.test/farewell.mp4",
+                thumbnailUrl = "https://cdn.test/farewell-thumb.jpg",
+            )
+        val withServerVideo =
+            editorContentSignature(
+                EditorFormState(typeForm = AfternoteTypeForm.Memorial(video = EditableMemorialVideo.fromPersisted(serverVideo))),
+                state,
+            )
 
+        assertNotEquals(
+            "서버 원본 삭제는 저장하지 않고 이탈할 때 경고해야 한다",
+            withServerVideo,
+            editorContentSignature(EditorFormState(typeForm = AfternoteTypeForm.Memorial()), state),
+        )
         assertEquals(
-            "서버 원본은 prefill 이 채운 값이라 사용자 입력이 아니다",
-            pristine,
+            "서버 썸네일은 영상에서 파생된 값이라 지문에서 제외한다",
+            withServerVideo,
             editorContentSignature(
                 EditorFormState(
                     typeForm =
                         AfternoteTypeForm.Memorial(
                             video =
                                 EditableMemorialVideo.fromPersisted(
-                                    MemorialVideoAttachment(
-                                        url = "https://cdn.test/farewell.mp4",
-                                        thumbnailUrl = "https://cdn.test/farewell-thumb.jpg",
-                                    ),
+                                    serverVideo.copy(thumbnailUrl = "https://cdn.test/another-thumb.jpg"),
                                 ),
                         ),
                 ),

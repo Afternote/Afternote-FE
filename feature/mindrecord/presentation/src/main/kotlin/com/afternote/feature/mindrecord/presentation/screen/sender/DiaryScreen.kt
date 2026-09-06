@@ -3,6 +3,7 @@ package com.afternote.feature.mindrecord.presentation.screen.sender
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,6 +33,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.asString
+import com.afternote.core.ui.button.FAB.AfternoteFabContentBottomPadding
 import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -158,7 +160,12 @@ internal fun DiaryListContent(
             ?: currentMonthDiaries
 
     if (isListView) {
-        LazyColumn(modifier = modifier) {
+        LazyColumn(
+            modifier = modifier,
+            // FAB 이 콘텐츠 위에 뜨므로 목록이 스스로 그 자리를 비운다 — 안 그러면 마지막
+            // 항목이 가려지고, 스크롤이 없을 만큼 항목이 적으면 볼 방법이 없다 (#1713).
+            contentPadding = PaddingValues(bottom = AfternoteFabContentBottomPadding),
+        ) {
             item {
                 DailyCalendar(
                     year = yearMonth.year,
@@ -178,7 +185,8 @@ internal fun DiaryListContent(
             item {
                 // core 정본을 쓴다. 종전에는 같은 구조를 인라인으로 다시 적어, 색이
                 // black.copy(0.4f)·M3 baseline divider 로 토큰에서 벗어나 있었다 (#634).
-                AfternoteSectionHeader(title = "DAILY ANSWER")
+                // 일기 목록인데 데일리질문 헤더가 붙어 있었고, 문자열도 코드 리터럴이었다 (#1712).
+                AfternoteSectionHeader(title = stringResource(R.string.mindrecord_diary_list_section_header))
                 Spacer(modifier = Modifier.height(10.dp))
             }
 
@@ -204,6 +212,9 @@ internal fun DiaryListContent(
     } else {
         // Figma 2671:16732 — 일기 카드 형: 리포트 카드 + 2열 masonry 그리드
         LazyVerticalStaggeredGrid(
+            // FAB 이 콘텐츠 위에 뜨므로 목록이 스스로 그 자리를 비운다 — 안 그러면 마지막
+            // 항목이 가려지고, 스크롤이 없을 만큼 항목이 적으면 볼 방법이 없다 (#1713).
+            contentPadding = PaddingValues(bottom = AfternoteFabContentBottomPadding),
             modifier = modifier,
             columns = StaggeredGridCells.Fixed(2),
             verticalItemSpacing = 8.dp,

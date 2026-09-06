@@ -8,7 +8,7 @@ import com.afternote.feature.afternote.presentation.editor.receiver.AfternoteEdi
 
 /**
  * ViewModel/Mapper가 [com.afternote.feature.afternote.domain.model.author.Detail] 등에서 조립해
- * [com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState.applyFormPrefill]에 넘기는 값 묶음.
+ * [com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorState.applyFormPrefill]에 넘기는 값 묶음.
  * 분기·enum 해석·메시지 파싱은 여기 이전 단계에서 끝난다.
  */
 data class EditorFormPrefill(

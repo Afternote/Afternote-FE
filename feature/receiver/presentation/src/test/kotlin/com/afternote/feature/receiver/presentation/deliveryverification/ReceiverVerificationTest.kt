@@ -15,6 +15,7 @@ import com.afternote.feature.receiver.domain.model.ReceiverEmailAuthResult
 import com.afternote.feature.receiver.domain.testing.FakeIdentityVerificationRepository
 import com.afternote.feature.receiver.domain.testing.FakeReceiverAuthRepository
 import com.afternote.feature.receiver.domain.testing.FakeReceiverDeliveryDocumentUploadRepository
+import com.afternote.feature.receiver.domain.usecase.SubmitDeliveryVerificationUseCase
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -134,7 +135,8 @@ class ReceiverVerificationTest {
                     )
                 }
             }
-        val viewModel = DocumentUploadViewModel(upload, auth, NoopErrorReporter)
+        val viewModel =
+            DocumentUploadViewModel(upload, SubmitDeliveryVerificationUseCase(auth), NoopErrorReporter)
         composeRule.setContent { AfternoteTheme {} }
 
         composeRule.runOnIdle {

@@ -3,8 +3,12 @@ package com.afternote.feature.timeletter.presentation.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.core.domain.testing.FakeUserRepository
+import com.afternote.feature.timeletter.domain.model.TimeLetter
+import com.afternote.feature.timeletter.domain.model.TimeLetterList
+import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.domain.testing.FakeFileMetadataRepository
 import com.afternote.feature.timeletter.domain.testing.FakeTimeLetterRepository
+import com.afternote.feature.timeletter.domain.testing.FakeVoiceRecorderRepository
 import com.afternote.feature.timeletter.domain.usecase.CreateTimeLetterUseCase
 import com.afternote.feature.timeletter.domain.usecase.ResolveTimeLetterBlocksUseCase
 import kotlinx.coroutines.CancellationException
@@ -20,6 +24,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -52,7 +57,7 @@ class TimeLetterWriteViewModelTest {
             advanceUntilIdle()
 
             assertEquals(0, repository.createCalls.size)
-            assertEquals(TimeLetterWriteError.RECIPIENT_REQUIRED, viewModel.uiState.value.error)
+            assertEquals(TimeLetterWriteError.RecipientRequired, viewModel.uiState.value.error)
             assertFalse(viewModel.uiState.value.savedAsDraft)
         }
 
@@ -68,7 +73,7 @@ class TimeLetterWriteViewModelTest {
 
             assertEquals(0, repository.getTimeLettersCalls)
             assertEquals(0, repository.createCalls.size)
-            assertEquals(TimeLetterWriteError.RECIPIENT_REQUIRED, viewModel.uiState.value.error)
+            assertEquals(TimeLetterWriteError.RecipientRequired, viewModel.uiState.value.error)
             assertFalse(viewModel.uiState.value.registered)
         }
 
@@ -86,7 +91,7 @@ class TimeLetterWriteViewModelTest {
             advanceUntilIdle()
 
             assertEquals(1, repository.createCalls.size)
-            assertEquals(TimeLetterWriteError.SAVE_FAILED, viewModel.uiState.value.error)
+            assertEquals(TimeLetterWriteError.SaveFailed, viewModel.uiState.value.error)
             assertFalse(viewModel.uiState.value.savedAsDraft)
         }
 
@@ -141,7 +146,52 @@ class TimeLetterWriteViewModelTest {
             assertFalse(viewModel.uiState.value.savedAsDraft)
         }
 
-    private fun viewModel(repository: FakeTimeLetterRepository): TimeLetterWriteViewModel {
+    @Test
+    fun `draft edit checks the free plan limit before scheduling`() =
+        runTest {
+            val editingLetter = testEditingLetter(status = TimeLetterStatus.DRAFT)
+            val repository =
+                FakeTimeLetterRepository(
+                    registeredLetters = TimeLetterList(emptyList(), totalCount = 3),
+                    details = mapOf(editingLetter.id to editingLetter),
+                )
+            val viewModel = viewModel(repository, editingLetter.id)
+            advanceUntilIdle()
+
+            viewModel.register(title = "title", textContents = emptyMap())
+            advanceUntilIdle()
+
+            assertEquals(1, repository.getTimeLettersCalls)
+            assertEquals(0, repository.updateCalls.size)
+            assertTrue(viewModel.uiState.value.showFreePlanLimitPopup)
+            assertFalse(viewModel.uiState.value.registered)
+        }
+
+    @Test
+    fun `scheduled edit does not check the free plan limit again`() =
+        runTest {
+            val editingLetter = testEditingLetter(status = TimeLetterStatus.SCHEDULED)
+            val repository =
+                FakeTimeLetterRepository(
+                    registeredLetters = TimeLetterList(emptyList(), totalCount = 3),
+                    details = mapOf(editingLetter.id to editingLetter),
+                )
+            val viewModel = viewModel(repository, editingLetter.id)
+            advanceUntilIdle()
+
+            viewModel.register(title = "title", textContents = emptyMap())
+            advanceUntilIdle()
+
+            assertEquals(0, repository.getTimeLettersCalls)
+            assertEquals(1, repository.updateCalls.size)
+            assertFalse(viewModel.uiState.value.showFreePlanLimitPopup)
+            assertTrue(viewModel.uiState.value.registered)
+        }
+
+    private fun viewModel(
+        repository: FakeTimeLetterRepository,
+        editingTimeLetterId: Long? = null,
+    ): TimeLetterWriteViewModel {
         val resolveUseCase = ResolveTimeLetterBlocksUseCase(FakePhotoUploadRepository.strict())
         return TimeLetterWriteViewModel(
             createTimeLetterUseCase = CreateTimeLetterUseCase(repository, resolveUseCase),
@@ -153,7 +203,19 @@ class TimeLetterWriteViewModelTest {
                     onGetReceivers = { emptyList() }
                 },
             fileMetadataRepository = FakeFileMetadataRepository.strict(),
-            savedStateHandle = SavedStateHandle(mapOf("timeLetterId" to null)),
+            voiceRecorderRepository = FakeVoiceRecorderRepository,
+            savedStateHandle = SavedStateHandle(mapOf("timeLetterId" to editingTimeLetterId)),
         )
     }
+
+    private fun testEditingLetter(status: TimeLetterStatus): TimeLetter =
+        TimeLetter(
+            id = 10L,
+            title = "existing title",
+            sendAt = "2026-08-29T19:30:00",
+            deliveredAt = null,
+            status = status,
+            blocks = emptyList(),
+            receiverIds = listOf(1L),
+        )
 }
