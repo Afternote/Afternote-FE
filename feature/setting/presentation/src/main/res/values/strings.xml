@@ -132,6 +132,7 @@
 
     <!-- 패스키 목록 -->
     <string name="passkey_list_header">패스키 목록</string>
+    <string name="passkey_list_retry">다시 시도</string>
 
 
     <!-- 정보 처리 방법 섹션 -->
@@ -165,4 +166,8 @@
     <string name="receiver_request_rejected">입력하신 내용을 확인해 주세요.</string>
     <string name="receiver_message_update_partial_failed">기본 정보는 수정됐지만 마지막 인사말 수정에 실패했습니다.</string>
     <string name="receiver_load_failed">수신자 정보를 불러오지 못했습니다.</string>
+    <string name="setting_passkey_options_error">패스키 등록 정보를 불러오지 못했습니다.</string>
+    <string name="setting_passkey_registration_error">패스키 등록에 실패했습니다. 다시 시도해 주세요.</string>
+    <string name="setting_passkey_list_error">패스키 목록을 불러올 수 없습니다.</string>
+    <string name="setting_passkey_registration_complete">패스키 생성이 완료되었습니다</string>
 </resources>

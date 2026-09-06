@@ -14,10 +14,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.feature.setting.domain.Passkey
 import com.afternote.feature.setting.presentation.R
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
+
+private val passkeyCreatedAtFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm")
+
+private fun formatCreatedAt(raw: String): String =
+    runCatching { OffsetDateTime.parse(raw).format(passkeyCreatedAtFormatter) }
+        .recoverCatching { LocalDateTime.parse(raw).format(passkeyCreatedAtFormatter) }
+        .getOrDefault(raw)
 
 @Composable
-fun PasskeyListItem(modifier: Modifier = Modifier) {
+internal fun PasskeyListItem(
+    passkey: Passkey,
+    modifier: Modifier = Modifier,
+) {
     Row(
         modifier =
             modifier
@@ -25,11 +39,11 @@ fun PasskeyListItem(modifier: Modifier = Modifier) {
                 .padding(horizontal = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Image(painterResource(R.drawable.ic_apple_login), contentDescription = "패스키기본")
+        Image(painterResource(R.drawable.ic_fingerprint), contentDescription = "패스키")
         Spacer(modifier = Modifier.weight(1f))
         Column {
-            Text("이름")
-            Text("생성일시")
+            Text(passkey.displayName)
+            Text(formatCreatedAt(passkey.createdAt))
         }
         Spacer(modifier = Modifier.weight(1f))
         Box {
@@ -42,5 +56,7 @@ fun PasskeyListItem(modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 private fun PasskeyListItemPrev() {
-    PasskeyListItem()
+    PasskeyListItem(
+        passkey = Passkey(id = 1L, displayName = "아이폰 15 Pro", createdAt = "2026-07-28T10:15:30"),
+    )
 }

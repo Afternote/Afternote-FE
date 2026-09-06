@@ -10,14 +10,20 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.ContextCompat
+import androidx.credentials.CredentialManager
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.afternote.core.ui.UiText
+import com.afternote.core.ui.asString
 import com.afternote.core.ui.findActivity
 import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
+import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.viewmodel.PassKeyViewModel
+import com.afternote.feature.setting.presentation.viewmodel.PasskeyRegistrationResult
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
@@ -33,7 +39,7 @@ private sealed interface BiometricResult {
 }
 
 @Composable
-fun PassKeyMakingScreen(
+internal fun PassKeyMakingScreen(
     onBackClick: () -> Unit,
     onPasswordAuthClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -42,6 +48,7 @@ fun PassKeyMakingScreen(
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity<FragmentActivity>() }
     val coroutineScope = rememberCoroutineScope()
+    val credentialManager = remember(context) { CredentialManager.create(context) }
     val isBiometricAvailable =
         remember {
             BiometricManager
@@ -50,12 +57,12 @@ fun PassKeyMakingScreen(
         }
     var showCompletionDialog by remember { mutableStateOf(false) }
     var isAuthenticating by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var errorMessage by remember { mutableStateOf<UiText?>(null) }
 
     if (showCompletionDialog) {
         Popup(
             type = PopupType.Default,
-            message = "패스키 생성이 완료되었습니다",
+            message = stringResource(R.string.setting_passkey_registration_complete),
             onConfirm = {
                 showCompletionDialog = false
                 onBackClick()
@@ -67,7 +74,7 @@ fun PassKeyMakingScreen(
     errorMessage?.let { msg ->
         Popup(
             type = PopupType.Default,
-            message = msg,
+            message = msg.asString(),
             onConfirm = { errorMessage = null },
             onDismiss = { errorMessage = null },
         )
@@ -82,8 +89,14 @@ fun PassKeyMakingScreen(
                     try {
                         when (val result = authenticate(activity)) {
                             BiometricResult.Success -> {
-                                viewModel.savePasskeyRegistered()
-                                showCompletionDialog = true
+                                when (
+                                    val registration =
+                                        registerPasskeyWithCredentialManager(activity, credentialManager, viewModel)
+                                ) {
+                                    PasskeyRegistrationResult.Success -> showCompletionDialog = true
+                                    PasskeyRegistrationResult.Canceled -> Unit
+                                    is PasskeyRegistrationResult.Error -> errorMessage = registration.message
+                                }
                             }
 
                             BiometricResult.Canceled -> {
@@ -91,7 +104,7 @@ fun PassKeyMakingScreen(
                             }
 
                             is BiometricResult.Error -> {
-                                errorMessage = result.message
+                                errorMessage = UiText.Dynamic(result.message)
                             }
                         }
                     } finally {

@@ -269,6 +269,7 @@ dependencies {
     implementation(projects.feature.mindrecord.data)
     implementation(projects.feature.timeletter.data)
     implementation(projects.feature.onboarding.data)
+    implementation(projects.feature.setting.data)
 
     testImplementation(libs.coroutines.test)
     testImplementation(testFixtures(projects.core.domain))
@@ -302,6 +303,8 @@ dependencies {
     androidTestImplementation(projects.feature.timeletter.domain)
     androidTestImplementation(testFixtures(projects.feature.timeletter.domain))
     androidTestImplementation(testFixtures(projects.feature.timeletter.data))
+    androidTestImplementation(testFixtures(projects.feature.setting.data))
+    androidTestImplementation(projects.feature.setting.domain)
     kspAndroidTest(libs.hilt.compiler)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     androidTestUtil(libs.androidx.test.orchestrator)
