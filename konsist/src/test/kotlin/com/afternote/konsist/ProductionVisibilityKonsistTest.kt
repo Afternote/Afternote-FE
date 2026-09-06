@@ -407,6 +407,9 @@ class ProductionVisibilityKonsistTest {
                 "app/src/main/java/com/afternote/afternote_fe/notification/" +
                     "NotificationIntentContract.kt::class NotificationEntrySource [internal]" to
                     "NotificationEntryRequest.source의 내부 계약 타입",
+                "core/common/src/main/kotlin/com/afternote/core/common/deeplink/" +
+                    "AfternoteAppLinkParser.kt::object AfternoteAppLinkParser [implicit-public]" to
+                    "App Link·FCM data.link 가 공유하는 URI 계약 진입점 — intent 수신 배선(#924)이 붙기 전까지 소비처가 테스트뿐",
                 "core/ui/src/main/kotlin/com/afternote/core/ui/button/" +
                     "AfternoteRadioGroup.kt::function AfternoteRadioGroup [implicit-public]" to
                     "core:ui README에 문서화된 공용 컴포넌트",
