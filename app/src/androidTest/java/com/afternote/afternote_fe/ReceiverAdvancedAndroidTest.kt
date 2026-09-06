@@ -27,6 +27,7 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailRoute
 import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel
+import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
 import com.afternote.feature.receiver.domain.model.ReceivedAccountCredentials
 import com.afternote.feature.receiver.domain.model.ReceivedAfternoteDetail
 import com.afternote.feature.receiver.domain.model.ReceivedExportBundle
@@ -178,7 +179,7 @@ class ReceiverAdvancedAndroidTest {
         detailResults.addLast(Result.success(receivedSocialDetail()))
         val viewModel =
             ReceivedAfternoteDetailViewModel(
-                savedStateHandle = SavedStateHandle(mapOf("afternoteId" to 91L)),
+                route = ReceivedAfternoteRoute.DetailRoute(afternoteId = 91L),
                 receiverRepository = repository,
                 errorReporter = FakeErrorReporter(),
             )

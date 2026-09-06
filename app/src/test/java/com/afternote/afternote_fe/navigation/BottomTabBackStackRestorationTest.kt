@@ -86,30 +86,24 @@ class BottomTabBackStackRestorationTest {
     }
 
     @Test
-    fun `애프터노트 탭만은 재진입 때 저장된 스택 대신 지문 관문으로 돌아간다`() {
+    fun `애프터노트 탭만은 재진입 때 저장된 화면 상태를 복원하지 않는다`() {
         start()
 
         composeRule.runOnIdle { harness.appState.navigateToBottomBarRoute(Route.Afternote) }
-        assertEquals(
-            "FingerprintLoginRoute",
-            composeRule.runOnIdle { harness.navController.currentRouteName() },
-        )
-
-        composeRule.runOnIdle { harness.afternoteActions.replaceFingerprintLoginWithAfternoteHome() }
-        composeRule.runOnIdle { harness.afternoteActions.navigateToAfternoteDetail(itemId = 7L) }
-        assertEquals(
-            "DetailRoute",
-            composeRule.runOnIdle { harness.navController.currentRouteName() },
-        )
+        composeRule.onNodeWithText("Afternote#0").performClick()
+        composeRule.onNodeWithText("Afternote#1").assertExists()
 
         composeRule.runOnIdle { harness.appState.navigateToBottomBarRoute(Route.Home) }
         composeRule.runOnIdle { harness.appState.navigateToBottomBarRoute(Route.Afternote) }
 
-        // restoreState = false 라 상세·홈이 복원되지 않고 인증 관문이 다시 선다.
+        // restoreState = false — 저장된 화면 상태가 복원되지 않고 host 가 새로 선다. 그래서
+        // 로컬 스택도 시작 화면(지문 관문)부터 다시 쌓인다. 그 시작점 자체는
+        // AfternoteLocalNavActionsTest 가 본다.
         assertEquals(
-            listOf("NavHostRoot", "Home", "Afternote", "FingerprintLoginRoute"),
+            listOf("NavHostRoot", "Home", "Afternote"),
             composeRule.runOnIdle { harness.navController.backStackRouteNames() },
         )
+        composeRule.onNodeWithText("Afternote#0").assertExists()
     }
 
     @Test

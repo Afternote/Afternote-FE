@@ -12,12 +12,17 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * 인증 전후 백스택 경계 회귀 기준 (#1601).
+ * 인증 전후 **루트** 백스택 경계 회귀 기준 (#1601).
  *
- * 이 앱의 인증 게이트는 세 겹이다 — 로그인(`MainViewModel.startRoute`) · 지문
- * (`AfternoteNavGraph` 의 `startDestination`) · 수신자 본인 확인(`ReceiverNavGraph` 의 nested flow).
- * 각 게이트를 통과한 뒤 **뒤로가기로 게이트에 돌아갈 수 없는지**를 `popUpTo` 조합의 결과인
- * 백스택 모양으로 못박는다.
+ * 이 앱의 인증 게이트는 세 겹이다 — 로그인(`MainViewModel.startRoute`) · 지문(애프터노트 로컬
+ * 스택의 시작 화면) · 수신자 본인 확인(열람 신청 흐름). Navigation 3 이관(#1698) 뒤 뒤의 두
+ * 게이트는 피처 로컬 스택 안에 있으므로, 그 경계는 각 피처의 `*LocalNavActions` 테스트가 본다:
+ *
+ * - 지문 관문 → `AfternoteLocalNavActionsTest`
+ * - 열람 신청 단계 소거 → `DeliveryVerificationFlowLocalNavActionsTest`
+ * - 로그인 화면 교체·소셜 신규 가입 분기 → `OnboardingLocalNavActionsTest`
+ *
+ * 여기 남는 것은 **루트가 소유한 경계**뿐이다 — 온보딩↔홈 전환과 로그아웃·탈퇴.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -38,23 +43,28 @@ class AuthBoundaryBackStackTest {
     private fun routes(): List<String> = composeRule.runOnIdle { harness.navController.backStackRouteNames() }
 
     @Test
-    fun `로그인 성공은 온보딩 스택을 전부 비우고 홈만 남긴다`() {
+    fun `로그인 성공은 온보딩을 루트에서 비우고 홈만 남긴다`() {
         start(Route.Onboarding)
 
-        composeRule.runOnIdle { harness.onboardingActions.navigateToLogin() }
-        composeRule.runOnIdle { harness.onboardingActions.navigateToSignUp() }
-        composeRule.runOnIdle { harness.onboardingActions.proceedToSignUpResidentNumber() }
+        composeRule.runOnIdle { harness.onboardingExternalActions.replaceOnboardingWithHome() }
 
-        composeRule.runOnIdle { harness.onboardingActions.replaceOnboardingWithHome() }
-
-        // popUpTo(0) { inclusive } — 온보딩 그래프 엔트리까지 사라진다.
+        // popUpTo(0) { inclusive } — 온보딩 host destination 까지 사라진다.
         assertEquals(listOf("NavHostRoot", "Home"), routes())
-        // 홈에서 뒤로가기는 앱을 벗어난다(=pop 실패). 로그인 화면으로 되돌아가지 않는다.
+        // 홈에서 뒤로가기는 앱을 벗어난다(=pop 실패). 온보딩으로 되돌아가지 않는다.
         assertEquals(false, composeRule.runOnIdle { harness.navController.popBackStack() })
     }
 
     @Test
-    fun `로그아웃은 인증 이후 스택을 전부 비우고 온보딩 시작 화면만 남긴다`() {
+    fun `온보딩 Welcome 의 받은 기록 확인은 수신자 흐름을 새로 쌓는다`() {
+        start(Route.Onboarding)
+
+        composeRule.runOnIdle { harness.onboardingExternalActions.navigateToReceivedRecords() }
+
+        assertEquals(listOf("NavHostRoot", "Onboarding", "Receiver"), routes())
+    }
+
+    @Test
+    fun `로그아웃은 인증 이후 스택을 전부 비우고 온보딩만 남긴다`() {
         start(Route.Home)
 
         composeRule.runOnIdle { harness.homeActions.onSettingClick() }
@@ -62,7 +72,7 @@ class AuthBoundaryBackStackTest {
 
         composeRule.runOnIdle { harness.settingActions.onLogoutSuccess() }
 
-        assertEquals(listOf("NavHostRoot", "Onboarding", "WelcomeRoute"), routes())
+        assertEquals(listOf("NavHostRoot", "Onboarding"), routes())
         assertEquals(false, composeRule.runOnIdle { harness.navController.popBackStack() })
     }
 
@@ -76,110 +86,22 @@ class AuthBoundaryBackStackTest {
 
         composeRule.runOnIdle { harness.settingActions.onWithdrawSuccess() }
 
-        assertEquals(listOf("NavHostRoot", "Onboarding", "WelcomeRoute"), routes())
+        assertEquals(listOf("NavHostRoot", "Onboarding"), routes())
         assertEquals(false, composeRule.runOnIdle { harness.navController.popBackStack() })
     }
 
     @Test
-    fun `로그인 화면 교체 이동은 로그인을 백스택에 남기지 않는다`() {
-        start(Route.Onboarding)
-
-        composeRule.runOnIdle { harness.onboardingActions.navigateToLogin() }
-        composeRule.runOnIdle { harness.onboardingActions.replaceLoginWithSignUp() }
-
-        assertEquals(
-            listOf("NavHostRoot", "Onboarding", "WelcomeRoute", "SignUpRoute"),
-            routes(),
-        )
-        // 가입 화면에서 뒤로가기는 로그인이 아니라 Welcome 으로 간다.
-        composeRule.runOnIdle { harness.onboardingActions.popBack() }
-        assertEquals("WelcomeRoute", composeRule.runOnIdle { harness.navController.currentRouteName() })
-    }
-
-    @Test
-    fun `소셜 신규 가입 분기는 Welcome 을 새로 세우고 로그인을 남기지 않는다`() {
-        start(Route.Onboarding)
-
-        composeRule.runOnIdle { harness.onboardingActions.navigateToLogin() }
-        composeRule.runOnIdle { harness.onboardingActions.replaceLoginWithWelcome() }
-
-        assertEquals(listOf("NavHostRoot", "Onboarding", "WelcomeRoute"), routes())
-        assertEquals(false, composeRule.runOnIdle { harness.navController.popBackStack() })
-    }
-
-    @Test
-    fun `지문 관문은 인증 성공 뒤 백스택에서 사라진다`() {
+    fun `이관된 그래프는 루트에 host destination 한 칸만 쌓는다`() {
         start(Route.Home)
 
         composeRule.runOnIdle { harness.appState.navigateToBottomBarRoute(Route.Afternote) }
-        assertEquals(
-            listOf("NavHostRoot", "Home", "Afternote", "FingerprintLoginRoute"),
-            routes(),
-        )
 
-        composeRule.runOnIdle { harness.afternoteActions.replaceFingerprintLoginWithAfternoteHome() }
+        // Nav2 시절엔 [Afternote, FingerprintLoginRoute] 두 칸이었다. 이관 뒤 그래프 안쪽 화면은
+        // 로컬 스택에 있으므로 루트는 host 한 칸만 본다 — #1702 가 루트를 바꿀 때 이 모양을 받는다.
+        assertEquals(listOf("NavHostRoot", "Home", "Afternote"), routes())
 
-        assertEquals(
-            listOf("NavHostRoot", "Home", "Afternote", "AfternoteHomeRoute"),
-            routes(),
-        )
-        // 애프터노트 홈에서 뒤로가기는 지문 관문이 아니라 홈 탭으로 나간다.
-        composeRule.runOnIdle { harness.afternoteActions.popBack() }
+        // 로컬 스택 바닥에서의 back 은 boundary 로 올라와 이 한 칸을 pop 한다.
+        assertEquals(true, composeRule.runOnIdle { harness.navController.popBackStack() })
         assertEquals("Home", composeRule.runOnIdle { harness.navController.currentRouteName() })
-    }
-
-    @Test
-    fun `수신자 열람 신청은 소비한 본인확인 단계를 즉시 백스택에서 지운다`() {
-        start(Route.Receiver)
-
-        composeRule.runOnIdle { harness.receiverActions.navigateToSenderDetail(SENDER_ID) }
-        composeRule.runOnIdle { harness.receiverActions.navigateToDeliveryVerificationFlow(SENDER_ID) }
-        composeRule.runOnIdle { harness.receiverActions.navigateToIdentityVerificationEmail() }
-
-        composeRule.runOnIdle { harness.receiverActions.proceedToMasterKey() }
-        assertEquals(
-            listOf(
-                "NavHostRoot",
-                "Receiver",
-                "ReceivedRecordsRoute",
-                "SenderDetailRoute",
-                "DeliveryVerificationFlowRoute",
-                "MasterKeyRoute",
-            ),
-            routes(),
-        )
-
-        composeRule.runOnIdle { harness.receiverActions.proceedToDocumentUpload() }
-        assertEquals(
-            listOf(
-                "NavHostRoot",
-                "Receiver",
-                "ReceivedRecordsRoute",
-                "SenderDetailRoute",
-                "DeliveryVerificationFlowRoute",
-                "DocumentUploadRoute",
-            ),
-            routes(),
-        )
-
-        composeRule.runOnIdle { harness.receiverActions.proceedToDeliveryVerificationComplete() }
-        assertEquals(
-            listOf(
-                "NavHostRoot",
-                "Receiver",
-                "ReceivedRecordsRoute",
-                "SenderDetailRoute",
-                "DeliveryVerificationFlowRoute",
-                "DeliveryVerificationCompleteRoute",
-            ),
-            routes(),
-        )
-
-        composeRule.runOnIdle { harness.receiverActions.popToReceivedRecords() }
-        assertEquals(listOf("NavHostRoot", "Receiver", "ReceivedRecordsRoute"), routes())
-    }
-
-    private companion object {
-        const val SENDER_ID = "sender-1601"
     }
 }

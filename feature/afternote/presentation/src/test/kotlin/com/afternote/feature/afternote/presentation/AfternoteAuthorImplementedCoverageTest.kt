@@ -281,6 +281,7 @@ private fun implementedCoverageViewModel(
     photoInputs: MutableList<MediaInput> = mutableListOf(),
 ): AfternoteEditorViewModel =
     AfternoteEditorViewModel(
+        route = savedStateHandle.editorFlowRoute(),
         savedStateHandle = savedStateHandle,
         userRepository = afternoteAuthorUserRepository(),
         afternoteRepository = repository,

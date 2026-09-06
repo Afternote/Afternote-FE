@@ -9,6 +9,20 @@ import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserPushSetting
 import com.afternote.feature.afternote.domain.AfternoteType
+import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
+
+/**
+ * 이관 전 route 인자를 나르던 [SavedStateHandle] 에서 Nav3 진입 키를 만든다.
+ *
+ * 에디터 ViewModel 은 route 를 assisted 로 받고([AfternoteRoute.EditorFlowRoute]) 폼 스냅샷은 계속
+ * [SavedStateHandle] 에 넣는다 — 두 벌로 쪼개면 테스트마다 같은 값을 두 번 적어야 해서, 기존
+ * 핸들 픽스처에서 키를 파생한다.
+ */
+internal fun SavedStateHandle.editorFlowRoute(): AfternoteRoute.EditorFlowRoute =
+    AfternoteRoute.EditorFlowRoute(
+        itemId = get<Long>("itemId"),
+        initialType = requireNotNull(get<AfternoteType>("initialType")) { "initialType 이 없는 에디터 핸들" },
+    )
 
 internal fun afternoteEditorSavedStateHandle(
     initialType: AfternoteType,

@@ -26,19 +26,6 @@ interface AfternoteNavActions {
         initialType: AfternoteType,
     )
 
-    fun navigateToMemorialPlaylist()
-
-    /** 에디터 수신자 `+` → 수신자 선택 화면(#540). 에디터 위에 push 된다. */
-    fun navigateToSelectReceiver()
-
-    /**
-     * 수신자 선택 완료 → 확정한 [receiverIds] 전체를 이전 엔트리(에디터)의 SavedStateHandle 에
-     * `SELECTED_RECEIVER_IDS_KEY`([LongArray])로 쓰고 pop. 에디터가 복귀 시 읽어 폼에 반영한다 (#1426).
-     */
-    fun popBackWithSelectedReceivers(receiverIds: List<Long>)
-
-    fun navigateToAddSong()
-
     /** 지문 인증 성공 → Afternote 홈으로 진입하며 지문 로그인 화면 자체를 stack 에서 제거 (replace). */
     fun replaceFingerprintLoginWithAfternoteHome()
 

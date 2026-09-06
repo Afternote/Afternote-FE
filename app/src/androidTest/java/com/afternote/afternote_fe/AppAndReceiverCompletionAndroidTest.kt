@@ -32,7 +32,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.navigation.AppState
 import com.afternote.afternote_fe.navigation.rememberAfternoteAppState
 import com.afternote.afternote_fe.navigation.rememberHomeTabActions
-import com.afternote.afternote_fe.navigation.rememberReceiverNavActions
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.afternote_fe.test.emptyWeeklyReport
@@ -48,6 +47,7 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailRoute
 import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel
+import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
 import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.home.presentation.receiver.ReceiverHomeActions
 import com.afternote.feature.home.presentation.receiver.ReceiverHomeEvent
@@ -604,60 +604,9 @@ class ReceiverRuntimeCompletionAndroidTest {
         assertEquals(3, uploadRepository.uploadCalls.size)
     }
 
-    @Test
-    fun receiverVerificationActions_removeConsumedStepsAndCompletionReturnsToRecords() {
-        var actions: ReceiverNavActions? = null
-        composeRule.setContent {
-            val appState = rememberAfternoteAppState()
-            val receiverActions = rememberReceiverNavActions(appState)
-            SideEffect { actions = receiverActions }
-            AfternoteTheme {
-                NavHost(
-                    navController = appState.navController,
-                    startDestination = ReceiverRoute.ReceivedRecordsRoute,
-                ) {
-                    composable<ReceiverRoute.ReceivedRecordsRoute> { Text("records") }
-                    composable<ReceiverRoute.SenderDetailRoute> { Text("sender detail") }
-                    navigation<ReceiverRoute.DeliveryVerificationFlowRoute>(
-                        startDestination = ReceiverRoute.IdentityVerificationIntroRoute,
-                    ) {
-                        composable<ReceiverRoute.IdentityVerificationIntroRoute> { Text("identity intro") }
-                        composable<ReceiverRoute.IdentityVerificationEmailRoute> { Text("identity email") }
-                        composable<ReceiverRoute.MasterKeyRoute> { Text("master key") }
-                        composable<ReceiverRoute.DocumentUploadRoute> { Text("documents") }
-                        composable<ReceiverRoute.DeliveryVerificationCompleteRoute> { Text("complete") }
-                    }
-                }
-            }
-        }
-        composeRule.onNodeWithText("records").assertIsDisplayed()
-
-        val receiverActions = checkNotNull(actions)
-        composeRule.runOnIdle { receiverActions.navigateToSenderDetail("sender-7") }
-        composeRule.onNodeWithText("sender detail").assertIsDisplayed()
-        composeRule.runOnIdle { receiverActions.navigateToDeliveryVerificationFlow("sender-7") }
-        composeRule.onNodeWithText("identity intro").assertIsDisplayed()
-        composeRule.runOnIdle { receiverActions.navigateToIdentityVerificationEmail() }
-        composeRule.onNodeWithText("identity email").assertIsDisplayed()
-        composeRule.runOnIdle { receiverActions.proceedToMasterKey() }
-        composeRule.onNodeWithText("master key").assertIsDisplayed()
-        composeRule.runOnIdle { receiverActions.popBack() }
-        composeRule.onNodeWithText("sender detail").assertIsDisplayed()
-        composeRule.onNodeWithText("identity email").assertDoesNotExist()
-
-        composeRule.runOnIdle { receiverActions.navigateToDeliveryVerificationFlow("sender-7") }
-        composeRule.runOnIdle { receiverActions.navigateToIdentityVerificationEmail() }
-        composeRule.runOnIdle { receiverActions.proceedToMasterKey() }
-        composeRule.runOnIdle { receiverActions.proceedToDocumentUpload() }
-        composeRule.onNodeWithText("documents").assertIsDisplayed()
-        composeRule.runOnIdle { receiverActions.proceedToDeliveryVerificationComplete() }
-        composeRule.onNodeWithText("complete").assertIsDisplayed()
-        composeRule.runOnIdle { receiverActions.popToReceivedRecords() }
-
-        composeRule.onNodeWithText("records").assertIsDisplayed()
-        composeRule.onNodeWithText("complete").assertDoesNotExist()
-        composeRule.onNodeWithText("sender detail").assertDoesNotExist()
-    }
+    // 열람 신청 단계 소거·완료 복귀는 Navigation 3 이관(#1698) 뒤 수신자 로컬 스택 안으로
+    // 들어갔다. 회귀 기준은 기기 없이 도는 JVM 테스트로 옮겼다 —
+    // DeliveryVerificationFlowLocalNavActionsTest · ReceiverLocalNavActionsTest.
 
     @Test
     fun homeActions_routeImplementedEntryPointsToExactDestinations() {
@@ -731,7 +680,7 @@ class ReceiverRuntimeCompletionAndroidTest {
         )
         val viewModel =
             ReceivedAfternoteDetailViewModel(
-                savedStateHandle = SavedStateHandle(mapOf("afternoteId" to 202L)),
+                route = ReceivedAfternoteRoute.DetailRoute(afternoteId = 202L),
                 receiverRepository = repository,
                 errorReporter = FakeErrorReporter(),
             )
@@ -781,7 +730,7 @@ class ReceiverRuntimeCompletionAndroidTest {
         )
         val viewModel =
             ReceivedAfternoteDetailViewModel(
-                savedStateHandle = SavedStateHandle(mapOf("afternoteId" to 303L)),
+                route = ReceivedAfternoteRoute.DetailRoute(afternoteId = 303L),
                 receiverRepository = repository,
                 errorReporter = FakeErrorReporter(),
             )

@@ -10,7 +10,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomNavTab
-import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
 
 // 컴포즈 엔진은 커스텀 클래스에 대해 변경 여부를 확신할 수 없어 리컴포지션 스킵 불가
@@ -20,9 +19,21 @@ import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
 class AppState(
     val navController: NavHostController,
 ) {
-    fun shouldShowBottomBar(currentDestination: NavDestination?): Boolean =
-        bottomBarRoutes.any { route ->
-            currentDestination?.hasRoute(route) == true
+    /**
+     * @param isAfternoteStackAtRoot 애프터노트 로컬 Nav3 스택이 바닥(지문 관문 또는 홈)인지.
+     *   그 그래프는 이제 Nav2 destination 이 [Route.Afternote] 하나뿐이라 destination 만으로는
+     *   상세·에디터가 쌓였는지 알 수 없다 — 깊이를 아는 host 가 올려 준다 (#1698).
+     */
+    fun shouldShowBottomBar(
+        currentDestination: NavDestination?,
+        isAfternoteStackAtRoot: Boolean,
+    ): Boolean =
+        if (currentDestination?.hasRoute(Route.Afternote::class) == true) {
+            isAfternoteStackAtRoot
+        } else {
+            bottomBarRoutes.any { route ->
+                currentDestination?.hasRoute(route) == true
+            }
         }
 
     fun getCurrentNavTab(currentDestination: NavDestination?): BottomNavTab =
@@ -40,16 +51,14 @@ class AppState(
         } ?: BottomNavTab.HOME
 
     // 바텀바를 보여줄 화면 목록
-    // 여기에 없는 화면(상세, 에디터 등)에서는 바텀바가 숨겨짐
+    // 여기에 없는 화면(상세, 에디터 등)에서는 바텀바가 숨겨짐.
+    // 애프터노트는 로컬 스택 깊이로 판정하므로 이 목록이 아니라 shouldShowBottomBar 가 직접 다룬다.
     private val bottomBarRoutes =
         setOf(
             Route.Home::class,
             Route.MindRecord::class,
             Route.TimeLetter::class,
             TimeLetterRoute.TimeLetterHomeRoute::class,
-            Route.Afternote::class,
-            AfternoteRoute.AfternoteHomeRoute::class,
-            AfternoteRoute.FingerprintLoginRoute::class,
         )
 
     fun navigateToBottomBarRoute(route: Route) {

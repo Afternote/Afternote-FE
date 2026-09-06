@@ -144,7 +144,10 @@ internal fun ObserveDeleteResult(
 internal fun AfternoteDetailNavigation(
     onNavigateBack: () -> Unit,
     onNavigateToEditor: (itemId: Long, type: AfternoteType) -> Unit,
-    viewModel: AfternoteDetailViewModel = hiltViewModel(),
+    // **기본값을 두지 않는다.** 이 VM 은 @AssistedInject 라 인자 없는 hiltViewModel() 로 만들면
+    // Hilt 가 «no creation callback was provided in CreationExtras» 로 던진다. 기본값이 있으면
+    // host 가 안 넘겨도 컴파일이 통과해 상세 진입에서야 죽으므로, 넘기도록 강제한다.
+    viewModel: AfternoteDetailViewModel,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }

@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.receiver.navigation
 
+import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
 /**
@@ -14,7 +15,7 @@ import kotlinx.serialization.Serializable
  * 수신자 흐름의 나머지(받은 기록함·발신자 상세·열람 신청)는 여전히
  * [com.afternote.core.ui.Route.Receiver] 그래프가 갖는다 — 세 피처 공통 진입 인프라이기 때문이다.
  */
-sealed interface ReceivedAfternoteRoute {
+sealed interface ReceivedAfternoteRoute : NavKey {
     /** 수신한 애프터노트 페이지드 목록. */
     @Serializable
     data object ListRoute : ReceivedAfternoteRoute

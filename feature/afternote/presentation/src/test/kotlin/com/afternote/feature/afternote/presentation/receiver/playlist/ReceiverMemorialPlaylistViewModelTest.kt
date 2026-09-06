@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
 import com.afternote.feature.receiver.domain.model.ReceivedAfternoteDetail
 import com.afternote.feature.receiver.domain.model.ReceivedPlaylistDetail
 import com.afternote.feature.receiver.domain.model.ReceivedPlaylistSong
@@ -193,7 +194,7 @@ class ReceiverMemorialPlaylistViewModelTest {
         errorReporter: ErrorReporter = RecordingErrorReporter(),
     ): ReceiverMemorialPlaylistViewModel =
         ReceiverMemorialPlaylistViewModel(
-            savedStateHandle = SavedStateHandle(mapOf("afternoteId" to afternoteId)),
+            route = ReceivedAfternoteRoute.MemorialPlaylistRoute(afternoteId = afternoteId),
             receiverRepository = repository,
             errorReporter = errorReporter,
         )
