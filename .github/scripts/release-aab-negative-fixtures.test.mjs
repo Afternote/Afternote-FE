@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { chmod, copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, copyFile, mkdir, mkdtemp, readFile, rm, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
@@ -40,6 +40,10 @@ async function runFixtures(context, mutateVerifier = (source) => source) {
         "base/resources.pb", "base/dex/classes.dex"]) {
         await writeFile(join(root, "archive", entry), "fixture contents\n");
     }
+    // The signature fixture must replace an entry even when its source mtime is not newer.
+    // ZIP stores timestamps in two-second ticks; fast runners can otherwise skip the mutation.
+    const archiveTime = new Date(Date.now() + 60_000);
+    await utimes(join(root, "archive/base/resources.pb"), archiveTime, archiveTime);
     const archive = spawnSync("zip", ["-q", "-r", join(root, bundleRelative), "."],
         { cwd: join(root, "archive"), encoding: "utf8" });
     assert.equal(archive.status, 0, archive.stderr);
