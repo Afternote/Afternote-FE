@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -28,6 +29,7 @@ class PushNotificationViewModel
 
         /** 진행 중인 조회 — 첫 진입 이후의 ON_RESUME 이 실행 중인 로드와 겹치면 건너뛰기 위한 가드. */
         private var loadJob: Job? = null
+        private var pendingUpdates = 0
 
         /**
          * 다음 [refreshOnReturn] 이 첫 ON_RESUME(진입 자체)인지. 첫 resume 은 init 로드와 같은
@@ -46,23 +48,23 @@ class PushNotificationViewModel
                 isFirstResume = false
                 return
             }
-            if (loadJob?.isActive == true) return
-            refresh()
+            if (loadJob?.isActive == true || pendingUpdates > 0) return
+            refresh(isAutomatic = true)
         }
 
-        fun refresh() {
+        private fun refresh(isAutomatic: Boolean = false) {
             val deviceAlarmOn = NotificationManagerCompat.from(context).areNotificationsEnabled()
             Log.d(TAG, "refresh: deviceAlarmOn=$deviceAlarmOn")
             _uiState.update { it.copy(isDeviceAlarmOn = deviceAlarmOn) }
-            loadPushSettings()
+            loadPushSettings(isAutomatic)
         }
 
-        private fun loadPushSettings() {
+        private fun loadPushSettings(isAutomatic: Boolean) {
             loadJob =
                 viewModelScope.launch {
                     Log.d(TAG, "loadPushSettings: start")
-                    _uiState.update { it.copy(isLoading = true) }
-                    runCatching { userRepository.getMyPushSettings() }
+                    if (!isAutomatic) _uiState.update { it.copy(isLoading = true) }
+                    runCatchingCancellable { userRepository.getMyPushSettings() }
                         .onSuccess { setting ->
                             Log.d(TAG, "loadPushSettings: success=$setting")
                             _uiState.update {
@@ -87,9 +89,10 @@ class PushNotificationViewModel
         fun onPushChecked(checked: Boolean) = _uiState.update { it.copy(isPushChecked = checked) }
 
         fun onNewsletterToggle(on: Boolean) {
+            loadJob?.cancel()
             _uiState.update { it.copy(isNewsletterOn = on) }
-            viewModelScope.launch {
-                runCatching { userRepository.updateMyPushSettings(timeLetter = on, mindRecord = null, afterNote = null) }
+            updatePushSettings {
+                runCatchingCancellable { userRepository.updateMyPushSettings(timeLetter = on, mindRecord = null, afterNote = null) }
                     .onSuccess { Log.d(TAG, "onNewsletterToggle: success, on=$on") }
                     .onFailure { e ->
                         Log.e(TAG, "onNewsletterToggle: failed, on=$on", e)
@@ -99,9 +102,10 @@ class PushNotificationViewModel
         }
 
         fun onMindRecordToggle(on: Boolean) {
+            loadJob?.cancel()
             _uiState.update { it.copy(isMindRecordOn = on) }
-            viewModelScope.launch {
-                runCatching { userRepository.updateMyPushSettings(timeLetter = null, mindRecord = on, afterNote = null) }
+            updatePushSettings {
+                runCatchingCancellable { userRepository.updateMyPushSettings(timeLetter = null, mindRecord = on, afterNote = null) }
                     .onSuccess { Log.d(TAG, "onMindRecordToggle: success, on=$on") }
                     .onFailure { e ->
                         Log.e(TAG, "onMindRecordToggle: failed, on=$on", e)
@@ -111,9 +115,10 @@ class PushNotificationViewModel
         }
 
         fun onAfternoteToggle(on: Boolean) {
+            loadJob?.cancel()
             _uiState.update { it.copy(isAfternoteOn = on) }
-            viewModelScope.launch {
-                runCatching { userRepository.updateMyPushSettings(timeLetter = null, mindRecord = null, afterNote = on) }
+            updatePushSettings {
+                runCatchingCancellable { userRepository.updateMyPushSettings(timeLetter = null, mindRecord = null, afterNote = on) }
                     .onSuccess { Log.d(TAG, "onAfternoteToggle: success, on=$on") }
                     .onFailure { e ->
                         Log.e(TAG, "onAfternoteToggle: failed, on=$on", e)
@@ -122,7 +127,18 @@ class PushNotificationViewModel
             }
         }
 
-        companion object {
+        private fun updatePushSettings(update: suspend () -> Unit) {
+            pendingUpdates++
+            viewModelScope.launch {
+                try {
+                    update()
+                } finally {
+                    pendingUpdates--
+                }
+            }
+        }
+
+        private companion object {
             private const val TAG = "PushNotificationVM"
         }
     }

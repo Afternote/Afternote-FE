@@ -48,6 +48,9 @@ class DeliveryConditionViewModel
          */
         private var isFirstResume = true
 
+        private var conditionEditRevision = 0
+        private var savedConditionRevision = 0
+
         init {
             loadDeliveryConditions()
         }
@@ -58,14 +61,14 @@ class DeliveryConditionViewModel
                 isFirstResume = false
                 return
             }
-            if (loadJob?.isActive == true) return
-            loadDeliveryConditions()
+            if (loadJob?.isActive == true || _uiState.value.isSaving) return
+            loadDeliveryConditions(isAutomatic = true)
         }
 
-        fun loadDeliveryConditions() {
+        private fun loadDeliveryConditions(isAutomatic: Boolean = false) {
             loadJob =
                 viewModelScope.launch {
-                    _uiState.update { it.copy(isLoading = true) }
+                    if (!isAutomatic) _uiState.update { it.copy(isLoading = true) }
                     runCatchingCancellable { userRepository.getReceiverDeliveryConditions(receiverId) }
                         .onSuccess { response ->
                             val representative =
@@ -76,18 +79,32 @@ class DeliveryConditionViewModel
                                 it.copy(
                                     isLoading = false,
                                     isInitialized = true,
-                                    conditionType = representative?.conditionType ?: DeliveryConditionType.INACTIVITY,
-                                    inactivityPeriod = representative?.inactivityPeriod ?: InactivityPeriod.ONE_YEAR,
+                                    conditionType =
+                                        if (conditionEditRevision != savedConditionRevision) {
+                                            it.conditionType
+                                        } else {
+                                            representative?.conditionType ?: DeliveryConditionType.INACTIVITY
+                                        },
+                                    inactivityPeriod =
+                                        if (conditionEditRevision != savedConditionRevision) {
+                                            it.inactivityPeriod
+                                        } else {
+                                            representative?.inactivityPeriod ?: InactivityPeriod.ONE_YEAR
+                                        },
                                     conditions = response.conditions,
+                                    error = it.error.takeUnless { error -> error == DeliveryConditionError.LOAD_FAILED },
                                 )
                             }
                         }.onFailure {
-                            _uiState.update { it.copy(isLoading = false, error = DeliveryConditionError.LOAD_FAILED) }
+                            if (!isAutomatic || !_uiState.value.isInitialized) {
+                                _uiState.update { it.copy(isLoading = false, error = DeliveryConditionError.LOAD_FAILED) }
+                            }
                         }
                 }
         }
 
         fun onConditionTypeSelected(index: Int) {
+            conditionEditRevision++
             val conditionType =
                 if (index == 1) DeliveryConditionType.RECEIVER_REQUEST else DeliveryConditionType.INACTIVITY
             _uiState.update { it.copy(conditionType = conditionType) }
@@ -96,6 +113,8 @@ class DeliveryConditionViewModel
         fun onSave() {
             val state = _uiState.value
             if (!state.isInitialized || state.isSaving) return
+            loadJob?.cancel()
+            val savingRevision = conditionEditRevision
 
             val hasTimeLetterCondition =
                 state.conditions.any { it.contentType == DeliveryContentType.TIME_LETTER }
@@ -128,12 +147,13 @@ class DeliveryConditionViewModel
                         }
                     }
 
+            _uiState.update { it.copy(isSaving = true) }
             viewModelScope.launch {
-                _uiState.update { it.copy(isSaving = true) }
                 runCatchingCancellable {
                     userRepository.updateReceiverDeliveryConditions(receiverId, updatedConditions)
                 }.onSuccess { response ->
-                    _uiState.update { it.copy(isSaving = false, conditions = response.conditions) }
+                    savedConditionRevision = savingRevision
+                    _uiState.update { it.copy(isSaving = false, conditions = response.conditions, error = null) }
                     _saveSuccess.send(Unit)
                 }.onFailure {
                     _uiState.update { it.copy(isSaving = false, error = DeliveryConditionError.SAVE_FAILED) }

@@ -2,6 +2,7 @@ package com.afternote.feature.setting.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -45,14 +46,14 @@ class ProfileEditViewModel
                 isFirstResume = false
                 return
             }
-            if (loadJob?.isActive == true) return
-            loadProfile()
+            if (loadJob?.isActive == true || (_uiState.value as? ProfileEditUiState.Success)?.isUpdating == true) return
+            loadProfile(keepsStateOnFailure = true)
         }
 
-        fun loadProfile() {
+        private fun loadProfile(keepsStateOnFailure: Boolean = false) {
             loadJob =
                 viewModelScope.launch {
-                    runCatching { userRepository.getMyProfile() }
+                    runCatchingCancellable { userRepository.getMyProfile() }
                         .onSuccess { user ->
                             _uiState.value =
                                 ProfileEditUiState.Success(
@@ -61,7 +62,9 @@ class ProfileEditViewModel
                                     email = user.email,
                                 )
                         }.onFailure {
-                            _uiState.value = ProfileEditUiState.Error
+                            if (!keepsStateOnFailure || _uiState.value !is ProfileEditUiState.Success) {
+                                _uiState.value = ProfileEditUiState.Error
+                            }
                         }
                 }
         }
@@ -71,9 +74,11 @@ class ProfileEditViewModel
             phone: String,
         ) {
             val current = _uiState.value as? ProfileEditUiState.Success ?: return
+            if (current.isUpdating) return
+            loadJob?.cancel()
             _uiState.update { current.copy(isUpdating = true) }
             viewModelScope.launch {
-                runCatching {
+                runCatchingCancellable {
                     userRepository.updateMyProfile(
                         name = name.takeIf { it.isNotBlank() },
                         phone = phone.takeIf { it.isNotBlank() },

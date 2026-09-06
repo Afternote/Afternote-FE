@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
@@ -22,7 +23,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -123,6 +127,21 @@ private fun ProfileEditForm(
     val nameState = rememberTextFieldState(initialText = state.name)
     val phoneState = rememberTextFieldState(initialText = state.phone)
     val emailState = rememberTextFieldState(initialText = state.email)
+    var previousName by rememberSaveable { mutableStateOf(state.name) }
+    var previousPhone by rememberSaveable { mutableStateOf(state.phone) }
+
+    LaunchedEffect(state.name, state.phone, state.email) {
+        // 서버 값과 같던 필드만 갱신해 작성 중인 입력과 커서를 보존한다.
+        if (nameState.text.toString() == previousName && previousName != state.name) {
+            nameState.setTextAndPlaceCursorAtEnd(state.name)
+        }
+        if (phoneState.text.toString() == previousPhone && previousPhone != state.phone) {
+            phoneState.setTextAndPlaceCursorAtEnd(state.phone)
+        }
+        if (emailState.text.toString() != state.email) emailState.setTextAndPlaceCursorAtEnd(state.email)
+        previousName = state.name
+        previousPhone = state.phone
+    }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),

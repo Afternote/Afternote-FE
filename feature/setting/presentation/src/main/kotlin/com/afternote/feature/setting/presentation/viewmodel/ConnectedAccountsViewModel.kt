@@ -2,6 +2,7 @@ package com.afternote.feature.setting.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.feature.setting.presentation.R
@@ -29,6 +30,7 @@ class ConnectedAccountsViewModel
 
         /** 진행 중인 조회 — 첫 진입 이후의 ON_RESUME 이 실행 중인 로드와 겹치면 건너뛰기 위한 가드. */
         private var loadJob: Job? = null
+        private var accountUpdateJob: Job? = null
 
         /**
          * 다음 [refreshOnReturn] 이 첫 ON_RESUME(진입 자체)인지. 첫 resume 은 init 로드와 같은
@@ -47,18 +49,20 @@ class ConnectedAccountsViewModel
                 isFirstResume = false
                 return
             }
-            if (loadJob?.isActive == true) return
-            loadConnectedAccounts()
+            if (loadJob?.isActive == true || accountUpdateJob?.isActive == true) return
+            loadConnectedAccounts(keepsStateOnFailure = true)
         }
 
-        fun loadConnectedAccounts() {
+        private fun loadConnectedAccounts(keepsStateOnFailure: Boolean = false) {
             loadJob =
                 viewModelScope.launch {
-                    runCatching { userRepository.getConnectedAccounts() }
+                    runCatchingCancellable { userRepository.getConnectedAccounts() }
                         .onSuccess { accounts ->
-                            _uiState.update { it.copy(isLoading = false, accounts = accounts.toStateList()) }
+                            _uiState.update { it.copy(isLoading = false, accounts = accounts.toStateList(), errorMessage = null) }
                         }.onFailure {
-                            _uiState.update { it.copy(isLoading = false, errorMessage = "계정 정보를 불러올 수 없습니다.") }
+                            if (!keepsStateOnFailure || _uiState.value.accounts.isEmpty()) {
+                                _uiState.update { it.copy(isLoading = false, errorMessage = "계정 정보를 불러올 수 없습니다.") }
+                            }
                         }
                 }
         }
@@ -82,19 +86,32 @@ class ConnectedAccountsViewModel
             provider: String,
             accessToken: String,
         ) {
-            viewModelScope.launch {
-                runCatching { userRepository.linkConnectedAccount(provider, accessToken) }
-                    .onSuccess { accounts -> _uiState.update { it.copy(accounts = accounts.toStateList()) } }
-                    .onFailure { _uiState.update { it.copy(errorMessage = "계정 연결에 실패했습니다.") } }
+            updateConnectedAccounts(errorMessage = "계정 연결에 실패했습니다.") {
+                userRepository.linkConnectedAccount(provider, accessToken)
             }
         }
 
         private fun unlink(provider: String) {
-            viewModelScope.launch {
-                runCatching { userRepository.unlinkConnectedAccount(provider) }
-                    .onSuccess { accounts -> _uiState.update { it.copy(accounts = accounts.toStateList()) } }
-                    .onFailure { _uiState.update { it.copy(errorMessage = "계정 연결 해제에 실패했습니다.") } }
+            updateConnectedAccounts(errorMessage = "계정 연결 해제에 실패했습니다.") {
+                userRepository.unlinkConnectedAccount(provider)
             }
+        }
+
+        private fun updateConnectedAccounts(
+            errorMessage: String,
+            update: suspend () -> UserConnectedAccount,
+        ) {
+            if (accountUpdateJob?.isActive == true) return
+            loadJob?.cancel()
+            accountUpdateJob =
+                viewModelScope.launch {
+                    runCatchingCancellable { update() }
+                        .onSuccess { accounts ->
+                            _uiState.update { it.copy(isLoading = false, accounts = accounts.toStateList(), errorMessage = null) }
+                        }.onFailure {
+                            _uiState.update { it.copy(isLoading = false, errorMessage = errorMessage) }
+                        }
+                }
         }
 
         private fun UserConnectedAccount.toStateList(): List<SocialAccountState> =
