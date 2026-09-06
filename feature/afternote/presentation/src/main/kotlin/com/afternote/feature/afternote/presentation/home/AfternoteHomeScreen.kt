@@ -166,7 +166,8 @@ fun AfternoteHomeScreen(
  * 두 표시가 겹치면 같은 실패를 두 번 말하게 된다.
  *
  * 이 파일 안에서만 쓰므로 private 다. 테스트가 부르려고 넓히지 않는다(#1678) — 세 갈래는
- * [AfternoteHomeScreen] 을 그려서 확인한다.
+ * [AfternoteHomeScreen] 을 그려서 확인한다. 그 가드는 `app` 의
+ * `AfternoteHomeRefreshBannerAndroidTest` 다. JVM 이 아니라 계측인 이유는 그 KDoc 참조 (#1790).
  */
 private fun shouldShowRefreshErrorBanner(
     refreshState: LoadState,
