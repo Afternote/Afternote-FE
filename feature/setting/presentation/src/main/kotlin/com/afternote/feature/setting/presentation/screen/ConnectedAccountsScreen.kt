@@ -98,6 +98,7 @@ fun ConnectedAccountsScreen(
         snackbarHostState = snackbarHostState,
         onBack = onBack,
         onToggle = viewModel::onToggle,
+        onRetry = viewModel::retryLoadConnectedAccounts,
         modifier = modifier,
     )
 }

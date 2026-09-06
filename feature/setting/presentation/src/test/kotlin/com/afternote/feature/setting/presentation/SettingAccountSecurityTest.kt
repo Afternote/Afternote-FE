@@ -124,10 +124,9 @@ class SettingAccountSecurityTest {
 
         linkRepository.onLinkConnectedAccount = { _, _ -> throw IllegalStateException("oauth rejected") }
         composeRule.runOnIdle { linkViewModel.link(provider = "google", accessToken = "google-token") }
-        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            linkViewModel.uiState.value.errorMessage == "계정 연결에 실패했습니다."
-        }
+        val linkFailure = awaitEvent(linkViewModel.events)
 
+        assertEquals(ConnectedAccountsEvent.ShowError("계정 연결에 실패했습니다."), linkFailure)
         assertEquals(
             listOf(ConnectedAccountLinkCall(provider = "google", accessToken = "google-token")),
             linkRepository.connectedLinkCalls,
@@ -145,12 +144,10 @@ class SettingAccountSecurityTest {
 
         assertTrue(unlinkRepository.connectedUnlinkCalls.isEmpty())
         composeRule.runOnIdle { unlinkViewModel.onToggle(provider = "google", enabled = false) }
-        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            unlinkRepository.connectedUnlinkCalls.size == 1
-        }
+        val unlinkFailure = awaitEvent(unlinkViewModel.events)
 
         assertEquals(listOf("google"), unlinkRepository.connectedUnlinkCalls)
-        assertEquals("계정 연결 해제에 실패했습니다.", unlinkViewModel.uiState.value.errorMessage)
+        assertEquals(ConnectedAccountsEvent.ShowError("계정 연결 해제에 실패했습니다."), unlinkFailure)
     }
 
     @Test

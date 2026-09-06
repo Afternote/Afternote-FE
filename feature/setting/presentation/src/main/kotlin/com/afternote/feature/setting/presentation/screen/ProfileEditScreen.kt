@@ -19,11 +19,14 @@ import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -31,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -43,6 +47,7 @@ import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
+import com.afternote.feature.setting.presentation.component.SettingLoadErrorContent
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditEvent
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditUiState
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditViewModel
@@ -56,6 +61,8 @@ fun ProfileEditScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentOnBackClick by rememberUpdatedState(onBackClick)
+    val snackbarHostState = remember { SnackbarHostState() }
+    val updateErrorMessage = stringResource(R.string.setting_profile_update_error)
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refreshOnReturn()
@@ -65,7 +72,7 @@ fun ProfileEditScreen(
         viewModel.events.collect { event ->
             when (event) {
                 ProfileEditEvent.UpdateSuccess -> currentOnBackClick()
-                ProfileEditEvent.UpdateFailure -> Unit
+                ProfileEditEvent.UpdateFailure -> snackbarHostState.showSnackbar(updateErrorMessage)
             }
         }
     }
@@ -79,6 +86,7 @@ fun ProfileEditScreen(
         },
         modifier = modifier,
         containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         when (val state = uiState) {
             is ProfileEditUiState.Loading -> {
@@ -103,15 +111,11 @@ fun ProfileEditScreen(
             }
 
             is ProfileEditUiState.Error -> {
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(text = "프로필을 불러올 수 없습니다.")
-                }
+                SettingLoadErrorContent(
+                    message = stringResource(R.string.setting_profile_load_error),
+                    onRetry = viewModel::retryLoadProfile,
+                    modifier = Modifier.padding(innerPadding),
+                )
             }
         }
     }

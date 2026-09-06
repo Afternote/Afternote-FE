@@ -1,9 +1,11 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
+import com.afternote.core.ui.UiText
+
 data class ConnectedAccountsUiState(
     val isLoading: Boolean = false,
     val accounts: List<SocialAccountState> = emptyList(),
-    val errorMessage: String? = null,
+    val errorMessage: UiText? = null,
 )
 
 sealed interface ConnectedAccountsEvent {

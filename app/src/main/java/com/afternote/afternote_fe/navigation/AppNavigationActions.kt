@@ -279,6 +279,14 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 appState.navController.popBackStack()
             }
 
+            override fun onNavigateToPushNotification() {
+                appState.navController.navigate(SettingRoute.PushNotificationRoute)
+            }
+
+            override fun onPushNotificationBack() {
+                appState.navController.popBackStack()
+            }
+
             override fun onNavigateToRecipientList() {
                 appState.navController.navigate(SettingRoute.RecipientListRoute())
             }

@@ -11,7 +11,9 @@ import com.afternote.core.model.delivery.InactivityPeriod
 import com.afternote.core.model.delivery.ReceiverDeliveryConditions
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
+import com.afternote.core.model.user.UserMarketingConsent
 import com.afternote.core.model.user.UserPushSetting
+import com.afternote.feature.setting.presentation.NoOpErrorReporter
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -483,7 +485,11 @@ class SettingReentryViewModelTest {
         DeliveryConditionViewModel(SavedStateHandle(mapOf("receiverId" to 42L)), repository)
 
     private fun pushViewModel(repository: FakeUserRepository) =
-        PushNotificationViewModel(ApplicationProvider.getApplicationContext(), repository)
+        PushNotificationViewModel(
+            ApplicationProvider.getApplicationContext(),
+            repository.apply { onGetMyMarketingConsents = { UserMarketingConsent(true, true, false) } },
+            NoOpErrorReporter,
+        )
 
     private fun user() = User("이름", "user@example.com", "01012345678", null)
 

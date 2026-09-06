@@ -50,9 +50,15 @@ class ProfileEditViewModel
             loadProfile(keepsStateOnFailure = true)
         }
 
+        fun retryLoadProfile() {
+            loadProfile()
+        }
+
         private fun loadProfile(keepsStateOnFailure: Boolean = false) {
+            if (loadJob?.isActive == true || (_uiState.value as? ProfileEditUiState.Success)?.isUpdating == true) return
             loadJob =
                 viewModelScope.launch {
+                    if (!keepsStateOnFailure) _uiState.value = ProfileEditUiState.Loading
                     runCatchingCancellable { userRepository.getMyProfile() }
                         .onSuccess { user ->
                             _uiState.value =

@@ -2,10 +2,12 @@ package com.afternote.feature.setting.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -52,6 +54,7 @@ class SettingViewModel
 
         private val _logoutCompleted = MutableStateFlow(false)
         val logoutCompleted = _logoutCompleted.asStateFlow()
+        private var loadJob: Job? = null
 
         init {
             loadProfile()
@@ -60,18 +63,21 @@ class SettingViewModel
         fun refresh() = loadProfile()
 
         private fun loadProfile() {
-            viewModelScope.launch {
-                runCatching { userRepository.getMyProfile() }
-                    .onSuccess { profile ->
-                        _uiState.value =
-                            SettingUiState.Success(
-                                name = profile.name,
-                                email = profile.email,
-                            )
-                    }.onFailure {
-                        _uiState.value = SettingUiState.Error("프로필을 불러올 수 없습니다.")
-                    }
-            }
+            if (loadJob?.isActive == true) return
+            loadJob =
+                viewModelScope.launch {
+                    _uiState.value = SettingUiState.Loading
+                    runCatchingCancellable { userRepository.getMyProfile() }
+                        .onSuccess { profile ->
+                            _uiState.value =
+                                SettingUiState.Success(
+                                    name = profile.name,
+                                    email = profile.email,
+                                )
+                        }.onFailure {
+                            _uiState.value = SettingUiState.Error("프로필을 불러올 수 없습니다.")
+                        }
+                }
         }
 
         fun logout() {
