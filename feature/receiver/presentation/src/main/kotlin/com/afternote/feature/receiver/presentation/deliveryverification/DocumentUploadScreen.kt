@@ -44,6 +44,7 @@ import com.afternote.feature.receiver.presentation.deliveryverification.componen
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_HEADER_SPACING
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_TOTAL_STEPS
 import com.afternote.feature.receiver.presentation.deliveryverification.component.ReceiverVerifyStep
+import com.afternote.feature.receiver.presentation.error.ReceiverErrorPopupHost
 import com.afternote.core.ui.R as CoreUiR
 
 /**
@@ -112,8 +113,10 @@ fun DocumentUploadScreen(
     }
 
     // VM 은 리소스 또는 표시 가능한 동적 문구를 UiText 하나로 운반하므로 별도 우선순위 분기가 필요 없다.
+    // 서버 작업 실패는 이 채널이 아니라 아래 공통 오류 팝업으로 간다 (#446) — 여기 남는 것은 서버가
+    // 준 거절 사유와 파일 읽기 실패 같은 로컬 안내다.
     val errorMessage =
-        uiState.error?.asString()
+        uiState.errorMessage?.asString()
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
             snackbarHostState.showSnackbar(errorMessage)
@@ -129,6 +132,12 @@ fun DocumentUploadScreen(
         onFamilyFieldBottomChanged = { familyFieldBottomPx = it },
         onSubmitClick = viewModel::submit,
         modifier = modifier,
+    )
+
+    ReceiverErrorPopupHost(
+        popup = uiState.errorPopup,
+        onRetry = viewModel::retryFailedRequest,
+        onDismiss = viewModel::onErrorPopupDismissed,
     )
 
     // 디자인 7 — 슬롯 클릭 시 떠오르는 미디어 소스 선택 시트. "이미지 추가" / "파일 추가" 둘 중 하나 선택.

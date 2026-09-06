@@ -210,17 +210,22 @@ fun AfternoteTextField(
         outputTransformation = outputTransformation,
         focusRequester = focusRequester,
         isError = isError,
+        // else 로 닫지 않는다 — 타입이 늘면 후행 아이콘 여부를 여기서 정하도록 컴파일 에러로 잡는다.
         trailingContent =
             when (type) {
                 TextFieldType.Search -> {
                     { SearchIcon() }
                 }
 
-                else -> {
+                TextFieldType.Basic,
+                is TextFieldType.Variant7,
+                is TextFieldType.Variant8,
+                -> {
                     null
                 }
             },
         suffixFollowsText = type is TextFieldType.Variant8,
+        // 위와 같은 이유로 else 를 두지 않는다.
         suffix =
             when (type) {
                 is TextFieldType.Variant7 -> {
@@ -231,7 +236,9 @@ fun AfternoteTextField(
                     { Variant8Suffix(type = type, onImeAction = onImeAction) }
                 }
 
-                else -> {
+                TextFieldType.Basic,
+                TextFieldType.Search,
+                -> {
                     null
                 }
             },

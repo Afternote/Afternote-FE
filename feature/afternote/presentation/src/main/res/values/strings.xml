@@ -64,8 +64,9 @@
     <!-- 수신자 선택 화면 (#540, 시안 3631:24820) -->
     <string name="afternote_select_receiver_load_failed">수신자 목록을 불러오지 못했습니다.</string>
     <string name="afternote_select_receiver_retry">다시 시도</string>
-    <!-- 이 화면의 빈 상태는 시안 정의가 없어 FE 잠정안. -->
-    <string name="afternote_select_receiver_empty">등록된 수신자가 없습니다.\n설정에서 수신자를 먼저 등록해 주세요.</string>
+    <!-- 빈 상태 2종은 확정 시안 4163:20979 기준 (#1427). 이전 «설정에서 등록해 주세요» 는 FE 잠정안이었다. -->
+    <string name="afternote_select_receiver_empty">등록된 수신자가 없습니다.</string>
+    <string name="afternote_select_receiver_empty_description">수신자를 등록하고 쉽게 관리해 보세요.</string>
 
     <string name="afternote_editor_message_field_title">제목</string>
     <string name="afternote_editor_message_field_body">내용</string>
@@ -106,8 +107,6 @@
     <string name="afternote_dialog_delete_body">%1$s에 대한 기록을 삭제하시겠습니까?\n삭제 시, 되돌릴 수 없습니다.</string>
     <string name="afternote_dialog_delete_cancel">취소하기</string>
     <string name="afternote_dialog_delete_confirm">삭제하기</string>
-    <string name="afternote_menu_edit">수정하기</string>
-    <string name="afternote_menu_delete_record">삭제하기</string>
     <!-- 전체 목록 0건 안내. 종전 mindrecord 답변 문구 복제를 애프터노트 맥락으로 교체 — 문구는 #567 디자인 승인 게이트 해제(2026-08-28)로 확정. -->
     <string name="afternote_empty_list_body">아직 등록된 애프터노트가 없어요.\n아래 연필 버튼을 눌러 애프터노트를 등록해 보세요.</string>
     <string name="afternote_content_description_recipient_profile">프로필 사진</string>

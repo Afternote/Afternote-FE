@@ -15,6 +15,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -27,8 +28,9 @@ import java.net.UnknownHostException
  * 계약 — 자격 거절([CoreAuthFailure.InvalidLoginCredentials])은 인라인 상태
  * ([LoginUiState.hasCredentialError], 입력 변경으로 해제), 전송 계층 실패
  * ([CoreAuthFailure.NetworkUnavailable])는 재시도 팝업([LoginUiState.showNetworkErrorPopup]),
- * 소셜 거절([CoreAuthFailure.SocialLoginRejected])과 그 밖의 예외는 **원문을 쓰지 않고**
- * 리소스 문구 스낵바로 고정한다. 실패 시 [LoginUiState.isLoading] 을 해제한다.
+ * 소셜 거절([CoreAuthFailure.SocialLoginRejected])·소셜 가입 계정
+ * ([CoreAuthFailure.SocialSignUpAccount])과 그 밖의 예외는 **원문을 쓰지 않고** 리소스 문구
+ * 스낵바로 고정한다. 실패 시 [LoginUiState.isLoading] 을 해제한다.
  *
  * [LoginUseCase] 는 실물 사용 — Repository Result 가 VM 상태로 번역되는 경로 전체를 가드한다.
  */
@@ -154,6 +156,23 @@ class LoginViewModelTest {
         viewModel.attemptEmailLogin()
 
         assertEquals(UiText.Resource(R.string.onboarding_login_social_rejected), viewModel.uiState.value.errorMessage)
+    }
+
+    @Test
+    fun `소셜 가입 계정 - 자격 인라인이 아니라 로그인 화면 전용 안내로 표시`() {
+        val viewModel =
+            viewModel(onDefaultLogin = {
+                Result.failure(CoreAuthFailure.SocialSignUpAccount(Exception("1702")))
+            })
+
+        viewModel.attemptEmailLogin()
+
+        val state = viewModel.uiState.value
+        assertEquals(UiText.Resource(R.string.onboarding_login_social_signup_account), state.errorMessage)
+        // 비밀번호 찾기 쪽 차단 문구를 돌려쓰지 않는다 — 로그인 화면에서는 틀린 안내다.
+        assertNotEquals(UiText.Resource(R.string.onboarding_find_password_social_blocked), state.errorMessage)
+        assertFalse(state.hasCredentialError)
+        assertFalse(state.isLoading)
     }
 
     @Test

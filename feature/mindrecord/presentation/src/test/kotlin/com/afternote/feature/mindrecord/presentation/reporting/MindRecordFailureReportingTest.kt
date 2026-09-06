@@ -46,8 +46,8 @@ class MindRecordFailureReportingTest {
 
     @Test
     fun `코루틴 취소는 기록하지 않는다`() {
-        // 이 모듈의 저장소는 runCatching 으로 취소까지 실패로 바꿔 돌려준다 — 화면 이탈이
-        // 잦은 목록에서 그 취소가 전부 기록되면 보관 한도(최근 8건)를 잡음이 채운다.
+        // 「취소는 에러가 아니다」를 창구에서 지킨다. 화면 이탈이 잦은 목록에서 취소가 전부
+        // 기록되면 보관 한도(최근 8건)를 잡음이 채운다 — 호출부가 하나라도 빠뜨리면 그렇게 된다.
         reporter.recordMindRecordFailure(MindRecordFailureStage.DRAFT_LIST_LOAD, CancellationException("화면 이탈"))
 
         assertTrue("취소가 기록됐다", reporter.failures.isEmpty())

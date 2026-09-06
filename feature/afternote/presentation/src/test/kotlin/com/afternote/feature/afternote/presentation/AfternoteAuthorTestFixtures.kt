@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.presentation
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.testing.FakeUserProfileRepository
+import com.afternote.core.domain.testing.FakeUserProfileCacheRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.model.user.User
@@ -41,11 +41,11 @@ internal fun afternoteAuthorUserRepository(): FakeUserRepository =
     }
 
 /**
- * 작성자 흐름이 쓰는 [FakeUserProfileRepository] — 이름 캐시 두 멤버만 열어 둔다.
+ * 작성자 흐름이 쓰는 [FakeUserProfileCacheRepository] — 이름 캐시 두 멤버만 열어 둔다.
  * 패스키 멤버까지 열면 상세·에디터가 건드리지 않는 계약이 조용히 통과한다.
  */
-internal fun afternoteAuthorUserProfileRepository(cachedUserName: String? = null): FakeUserProfileRepository =
-    FakeUserProfileRepository.strict().also {
+internal fun afternoteAuthorUserProfileRepository(cachedUserName: String? = null): FakeUserProfileCacheRepository =
+    FakeUserProfileCacheRepository.strict().also {
         it.cachedUserName = cachedUserName
         it.onGetCachedUserName = null
         it.onSaveUserName = null

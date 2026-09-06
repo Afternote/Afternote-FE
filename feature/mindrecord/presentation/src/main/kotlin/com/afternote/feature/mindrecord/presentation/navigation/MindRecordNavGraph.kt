@@ -19,6 +19,18 @@ import java.time.YearMonth
  *
  * [Route.MindRecord]는 바텀 탭의 기록 허브이고, [Route.MemorySpace]는 홈 MEMORIES 등에서
  * 직접 진입하는 몰입형 화면으로 IA상 분리되어 있지만, 소속 모듈·`composable` 정의는 여기서만 관리한다.
+ *
+ * ### 이 매핑을 무엇이 지키나 (#1562)
+ *
+ * 매핑이 전부 `() -> Unit` 이라 **서로 바꿔 붙여도 컴파일이 통과한다** — #1311 이 이름을 `popBack`
+ * 하나로 합치면서 이름이 오배선을 드러내던 방어가 사라졌다. 두 층이 나눠 지킨다.
+ *
+ * - `onBackClick` 5줄 — `MindRecordBackStackAndroidTest` 가 각 화면의 뒤로가기를 **실제로 눌러**
+ *   `routeOf()` 로 복귀 route 를 대조한다.
+ * - `onSubmitSuccess` 2줄 — 제출 성공 경로라 계측이 지나가지 않는다(서버 제출을 태워야 해 비용이
+ *   값을 넘는다). 대신 `MindRecordNavGraphWiringKonsistTest` 가 **이 소스의 매핑 자체**를 본다.
+ *
+ * 즉 계측은 「그 명령이 무엇을 하나」를, konsist 는 「어느 명령에 붙었나」를 본다.
  */
 fun NavGraphBuilder.mindRecordNavGraph(actions: MindRecordNavActions) {
     composable<Route.MindRecord> {

@@ -32,9 +32,9 @@ import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRo
 import com.afternote.feature.afternote.presentation.receiver.navigation.receivedAfternoteNavGraph
 import com.afternote.feature.home.presentation.HomeTabScreen
 import com.afternote.feature.home.presentation.HomeTabViewModel
+import com.afternote.feature.home.presentation.receiver.ReceiverHomeEntry
 import com.afternote.feature.mindrecord.presentation.navigation.mindRecordNavGraph
 import com.afternote.feature.onboarding.presentation.navigation.onboardingNavGraph
-import com.afternote.feature.receiver.presentation.home.ReceiverHomeEntry
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
 import com.afternote.feature.receiver.presentation.navigation.receiverNavGraph
 import com.afternote.feature.setting.presentation.navigation.settingNavGraph

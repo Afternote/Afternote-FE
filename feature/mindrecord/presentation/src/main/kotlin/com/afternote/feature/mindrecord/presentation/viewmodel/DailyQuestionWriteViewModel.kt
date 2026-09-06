@@ -15,6 +15,7 @@ import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.mindrecord.presentation.reporting.MindRecordFailureStage
 import com.afternote.feature.mindrecord.presentation.reporting.recordMindRecordFailure
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import com.afternote.feature.mindrecord.presentation.util.isHtmlBlank
 import com.afternote.feature.mindrecord.presentation.util.toWireContent
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,7 +34,7 @@ class DailyQuestionWriteViewModel
         savedStateHandle: SavedStateHandle,
         private val repository: DailyQuestionRepository,
         private val photoUploadRepository: PhotoUploadRepository,
-        private val draftLoader: MindRecordDraftLoader,
+        private val draftLoader: LoadMindRecordDraftsUseCase,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(DailyQuestionWriteUiState())
@@ -84,14 +85,19 @@ class DailyQuestionWriteViewModel
                             )
                         }
                     }.onFailure { e ->
+                        // 여기서 실패하면 화면이 오류 문구만 남고 쓸 수가 없다 — 사용자가
+                        // 「질문이 안 뜬다」로 마주하는 자리라 올린다 (#964).
+                        errorReporter.recordMindRecordFailure(MindRecordFailureStage.DAILY_QUESTION_LOAD, e)
                         _uiState.update {
                             it.copy(
                                 isQuestionLoading = false,
+                                // 예외 문구를 화면에 싣지 않는다 — 직렬화 예외·서버 원문·영문
+                                // 스택 용어가 그대로 사용자에게 간다. 종전의 «값이 있으면 값,
+                                // 없으면 fallback» 변형은 `e.message` 가 있으면 아래 안내
+                                // 문자열을 아예 쓰지 않았다. 원문은 바로 위
+                                // `recordMindRecordFailure` 로 이미 남는다 (#1339 선례, #1882).
                                 questionLoadError =
-                                    UiText.DynamicOrResource(
-                                        value = e.message,
-                                        fallbackResId = R.string.mindrecord_error_daily_question_today_failed,
-                                    ),
+                                    UiText.Resource(R.string.mindrecord_error_daily_question_today_failed),
                             )
                         }
                     }
@@ -123,6 +129,8 @@ class DailyQuestionWriteViewModel
                         }
                         if (today.isDraft) resumeDraft()
                     }.onFailure { e ->
+                        // 신규 진입에서 오늘 질문을 못 받으면 작성 자체가 막힌다 (#964).
+                        errorReporter.recordMindRecordFailure(MindRecordFailureStage.DAILY_QUESTION_LOAD, e)
                         _uiState.update {
                             it.copy(
                                 isQuestionLoading = false,
@@ -200,8 +208,11 @@ class DailyQuestionWriteViewModel
             }
         }
 
-        /** 이번 작성 중 업로드한 이미지의 원본 URL. 제출 시 fileKey 로 바꿀 대상이다 (#549). */
-        private val uploadedImageUrls = mutableSetOf<String>()
+        // 이번 작성에서 업로드한 `fileUrl` → 서버가 준 `fileKey`. 키를 URL 에서 역산하지 않는다 —
+        // presigned 응답이 준 값을 그대로 들고 있다가 제출 직전에 치환한다 (toWireContent, #1125).
+        // SavedStateHandle 에 실어 프로세스 사망을 건너뛴다 — 에디터 본문이 살아 돌아오는데
+        // 표만 비면 전체 URL 이 그대로 서버로 간다 (#1125 리뷰).
+        private val uploadedFileKeysByUrl = UploadedFileKeys(savedStateHandle)
 
         fun onAnswerChanged(text: String) {
             _uiState.update { it.copy(answer = text) }
@@ -215,7 +226,7 @@ class DailyQuestionWriteViewModel
          * 실어 보냈지만, 그 필드는 계약에 없어 서버가 통째로 무시했다 (#549).
          *
          * 다만 **저장 시 나가는 값은 이 URL 이 아니다.** 서버는 본문의 `img src` 에서 fileKey
-         * 를 기대하므로, 여기서 받은 URL 을 [uploadedImageUrls] 에 기억해 뒀다가 제출 직전에
+         * 를 기대하므로, 여기서 받은 URL 을 [uploadedFileKeysByUrl] 에 기억해 뒀다가 제출 직전에
          * 키 형태로 바꾼다 ([toWireContent]). 미리보기는 전체 URL 이라야 뜬다.
          */
         suspend fun uploadMedia(uriString: String): String? {
@@ -227,7 +238,7 @@ class DailyQuestionWriteViewModel
                 .onSuccess { uploaded ->
                     // 계약에 imageUrl 이 없어 상태로 들지 않는다 — 본문 img 로 들어가고,
                     // 제출 직전 fileKey 로 바뀔 수 있게 기억만 해 둔다 (#549).
-                    uploadedImageUrls += uploaded.fileUrl
+                    uploadedFileKeysByUrl[uploaded.fileUrl] = uploaded.fileKey
                     _uiState.update { it.copy(isUploadingImage = false) }
                 }.onFailure { e ->
                     // 첨부가 빠진 채 저장이 이어질 수 있는 자리라 남긴다 (#964).
@@ -296,7 +307,7 @@ class DailyQuestionWriteViewModel
                             id = state.draftId,
                             payload =
                                 DailyQuestionUpdatePayload(
-                                    content = state.answer.toWireContent(uploadedImageUrls),
+                                    content = state.answer.toWireContent(uploadedFileKeysByUrl.snapshot()),
                                     isDraft = isDraft,
                                     questionId = questionId,
                                 ),
@@ -304,7 +315,7 @@ class DailyQuestionWriteViewModel
                     } else {
                         repository.create(
                             DailyQuestionCreatePayload(
-                                content = state.answer.toWireContent(uploadedImageUrls),
+                                content = state.answer.toWireContent(uploadedFileKeysByUrl.snapshot()),
                                 isDraft = isDraft,
                                 // 생성 경로는 questionId 가 반드시 있다 — 위 가드가 null 을 걸렀다.
                                 questionId = requireNotNull(questionId),
@@ -328,7 +339,7 @@ class DailyQuestionWriteViewModel
                         // 제출이 성공하면 staging 키는 이미 permanent 로 옮겨졌다. 남겨 두면
                         // 같은 ViewModel 로 두 번 제출될 때(예: 임시저장 뒤 화면에 머무는 흐름)
                         // 이미 옮겨진 파일을 다시 옮기려다 실패한다 (#549).
-                        uploadedImageUrls.clear()
+                        uploadedFileKeysByUrl.clear()
                     }.onFailure { e ->
                         // 저장이 upsert 라 실패가 기존 임시저장 상태와도 얽힌다 (#964·#1018).
                         errorReporter.recordMindRecordFailure(MindRecordFailureStage.DAILY_QUESTION_SUBMIT, e)
