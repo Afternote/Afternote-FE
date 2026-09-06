@@ -27,7 +27,7 @@ import javax.inject.Inject
  *   `receiver-auth/after-notes/{afternoteId}` 경로 — 실제 경로는 data 모듈의 `ReceiverAfternoteApiService`).
  * - 상세 ID: [SavedStateHandle] 의 `afternoteId` (수신자 라우트 인자명).
  *
- * 발신자 [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel] 과
+ * 발신자 [com.afternote.feature.afternote.presentation.detail.AfternoteDetailViewModel] 과
  * 동일한 단일 [ReceivedAfternoteDetailUiState] + StateFlow 패턴을 따른다. 다만 받은 입장이라
  * 수정·삭제·작성자 표시명·수신자 목록은 보유하지 않는다.
  */

@@ -3,11 +3,11 @@ package com.afternote.feature.afternote.presentation.detail
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.presentation.R
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -15,6 +15,10 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
+/**
+ * 영상 카드는 제목 라벨을 품은 단일 Button 으로 화면 semantics 에 실린다.
+ * 카드를 집는 기준도 그 공개 semantics 다 — 테스트 전용 tag 를 두지 않는다 (#1673).
+ */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
 class MemorialDetailScreenInteractionTest {
@@ -40,7 +44,7 @@ class MemorialDetailScreenInteractionTest {
         }
 
         composeRule
-            .onNodeWithTag(MEMORIAL_VIDEO_CARD_TEST_TAG)
+            .onNodeWithText(videoCardLabel())
             .performScrollTo()
             .assertHasClickAction()
             .performClick()
@@ -63,7 +67,7 @@ class MemorialDetailScreenInteractionTest {
             }
         }
 
-        composeRule.onNodeWithTag(MEMORIAL_VIDEO_CARD_TEST_TAG).assertDoesNotExist()
+        composeRule.onNodeWithText(videoCardLabel()).assertDoesNotExist()
     }
 
     @Test
@@ -87,4 +91,6 @@ class MemorialDetailScreenInteractionTest {
             .performScrollTo()
             .assertExists()
     }
+
+    private fun videoCardLabel(): String = composeRule.activity.getString(R.string.afternote_editor_funeral_video_label)
 }

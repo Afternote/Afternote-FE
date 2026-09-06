@@ -13,6 +13,10 @@ import kotlinx.coroutines.flow.Flow
  *
  * `X-Auth-Code` 헤더는 네트워크 계층의 ReceiverAuthInterceptor가 자동 부착하므로
  * 호출자는 인증 코드를 메서드 인자로 들고 다닐 필요가 없습니다.
+ *
+ * **실패 계약은 [ReceiverAuthRepository] 와 같다(#1053)** — 서버를 부르는 조회는 단발이든 페이징이든
+ * [com.afternote.feature.receiver.domain.error.ReceiverFailure] 로 실패를 돌려준다. 같은 서버 사유가
+ * 경로에 따라 다른 타입으로 오면 화면이 «전달 조건 미충족»·«연결 없음» 을 한 기준으로 가를 수 없다.
  */
 interface ReceiverRepository {
     /** 저장된 인증 코드 스트림(없거나 공백만 있으면 null 방출). */
@@ -34,8 +38,10 @@ interface ReceiverRepository {
 
     suspend fun getReceivedAfternoteDetail(afternoteId: Long): Result<ReceivedAfternoteDetail>
 
+    /** 서버 export 계약 도입 전에는 [com.afternote.feature.receiver.domain.error.ReceiverFailure.ExportNotSupported]. */
     suspend fun downloadReceivedExport(): Result<ReceivedExportBundle>
 
+    /** export 저장 구현 도입 전에는 [com.afternote.feature.receiver.domain.error.ReceiverFailure.ExportNotSupported]. */
     suspend fun saveReceivedExportToFile(bundle: ReceivedExportBundle): Result<Unit>
 
     suspend fun loadSenderMessage(): Result<SenderMessageInfo?>

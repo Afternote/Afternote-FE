@@ -1,10 +1,8 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.EmotionAnalysisStatus
 import com.afternote.feature.mindrecord.domain.model.TodayMood
@@ -12,7 +10,6 @@ import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDailyQuestion
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDay
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportEmotion
-import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
@@ -21,12 +18,12 @@ import com.afternote.feature.mindrecord.presentation.model.DayContent
 import com.afternote.feature.mindrecord.presentation.model.DayItem
 import com.afternote.feature.mindrecord.presentation.model.EmotionKeyword
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
+import com.afternote.feature.mindrecord.presentation.reporting.MindRecordFailureStage
+import com.afternote.feature.mindrecord.presentation.reporting.recordMindRecordFailure
+import com.afternote.feature.mindrecord.presentation.usecase.ObserveWeeklyReportUseCase
+import com.afternote.feature.mindrecord.presentation.usecase.analysisStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -44,9 +41,9 @@ import javax.inject.Inject
 class WeeklyReportViewModel
     @Inject
     constructor(
-        private val repository: WeeklyReportRepository,
-        private val userRepository: UserRepository,
+        private val observeWeeklyReport: ObserveWeeklyReportUseCase,
         private val changeTracker: MindRecordChangeTracker,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val weekOptions: List<WeekOption> =
             buildWeekOptions(today = LocalDate.now())
@@ -181,96 +178,50 @@ class WeeklyReportViewModel
                     if (showsLoading) {
                         internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
                     }
-                    val result =
-                        runCatchingCancellable {
-                            coroutineScope {
-                                val reportDeferred =
-                                    async {
-                                        repository
-                                            .getWeeklyReport(date = monday.format(API_DATE_FORMATTER))
-                                            .getOrThrow()
-                                    }
-                                val profileDeferred = async { userRepository.getMyProfile() }
-                                reportDeferred.await() to profileDeferred.await()
-                            }
-                        }
-                    // 새 로드가 이 Job 을 취소했다면 상태는 그쪽이 결정하므로 여기서 멈춘다.
-                    // `runCatchingCancellable` 이 취소를 다시 던지므로 위에서 이미 빠져나가지만,
-                    // `await()` 사이에 취소가 들어온 경우를 위해 남겨 둔다.
-                    ensureActive()
-                    result
-                        .onSuccess { (report, profile) ->
-                            loadedVersion = versionAtLoadStart
-                            internalState.update {
-                                it.copy(loadPhase = LoadPhase.Loaded(monday, report, profile.name))
-                            }
-                            awaitEmotionAnalysis(monday, report.analysisStatus)
-                        }.onFailure { e ->
-                            internalState.update { current ->
-                                if (keepsStateOnFailure && current.loadPhase is LoadPhase.Loaded) {
-                                    current
-                                } else {
+                    // 조회·폴링 정책은 [ObserveWeeklyReportUseCase] 가 갖는다. 여기 남는 것은
+                    // 「그 결과를 화면의 어떤 상태로 보일까」 뿐이다 (#1693).
+                    //
+                    // 첫 방출은 리포트·프로필 병렬 조회 결과이고, 이번 주에 분석이 진행 중이면
+                    // 갱신된 리포트가 이어서 온다. 새 로드가 이 Job 을 취소하면 수집도 함께
+                    // 끊기므로 «다른 주로 옮겨갔는데 옛 응답이 덮어쓰는» 일이 없다.
+                    observeWeeklyReport.observe(monday).collect { result ->
+                        ensureActive()
+                        result
+                            .onSuccess { snapshot ->
+                                loadedVersion = versionAtLoadStart
+                                // 방출이 첫 조회든 폴링이든 [Snapshot] 이 이름을 함께 싣는다 —
+                                // 폴링은 `loaded.copy(report =)` 로 첫 조회의 이름을 그대로 들고 온다.
+                                // 그래서 여기서 갈라 «이름은 첫 조회 것» 으로 두면, ON_RESUME
+                                // 재조회(refreshOnReturn)가 방금 받은 새 이름을 버린다 — 설정에서
+                                // 이름을 바꾸고 돌아오면 주를 옮기기 전까지 옛 이름이 남는다 (#1693 리뷰).
+                                internalState.update { current ->
                                     current.copy(
-                                        loadPhase =
-                                            LoadPhase.Failed(
-                                                message =
-                                                    UiText.DynamicOrResource(
-                                                        value = e.message,
-                                                        fallbackResId = R.string.mindrecord_error_weekly_report_failed,
-                                                    ),
-                                                monday = monday,
-                                                previous = previousLoaded,
-                                            ),
+                                        loadPhase = LoadPhase.Loaded(monday, snapshot.report, snapshot.profileName),
                                     )
                                 }
+                            }.onFailure { e ->
+                                // 탭 전체가 오류 화면이 되는 자리다 — 무엇이 실패했는지 남긴다 (#1882).
+                                errorReporter.recordMindRecordFailure(MindRecordFailureStage.WEEKLY_REPORT_LOAD, e)
+                                internalState.update { current ->
+                                    if (keepsStateOnFailure && current.loadPhase is LoadPhase.Loaded) {
+                                        current
+                                    } else {
+                                        current.copy(
+                                            loadPhase =
+                                                LoadPhase.Failed(
+                                                    // 예외 문구를 화면에 싣지 않는다. 원문은 바로 위
+                                                    // 계측으로 남는다 (#1339 선례, #1882).
+                                                    message =
+                                                        UiText.Resource(R.string.mindrecord_error_weekly_report_failed),
+                                                    monday = monday,
+                                                    previous = previousLoaded,
+                                                ),
+                                        )
+                                    }
+                                }
                             }
-                        }
-                }
-        }
-
-        /**
-         * 감정 분석이 끝나기를 화면에 머무른 채 기다린다.
-         *
-         * 분석은 저장 직후 비동기로 돌고 완료 신호를 주는 채널이 없어서, 탭에 머무르는 동안
-         * 결과가 반영되려면 제한된 재조회가 필요하다 (#725). 무한 폴링은 하지 않는다 —
-         * [EMOTION_ANALYSIS_POLL_ATTEMPTS] 회만 시도하고, 그 뒤에는 화면 이탈·복귀
-         * ([refreshOnReturn])나 사용자의 재시도에 맡긴다.
-         *
-         * 이 로직은 [load] 의 코루틴 안에서 돈다. 사용자가 다른 주를 고르면 그 `loadJob`
-         * 취소가 이 대기까지 함께 끊는다.
-         */
-        private suspend fun awaitEmotionAnalysis(
-            monday: LocalDate,
-            initialStatus: EmotionAnalysisStatus,
-        ) {
-            // 폴링 근거는 "저장 직후 비동기 분석" 이라 이번 주에만 성립한다. 지난 주를
-            // 골라 보는 동안 8초마다 조회가 나갈 이유가 없다.
-            if (monday != LocalDate.now().with(DayOfWeek.MONDAY)) return
-
-            var status = initialStatus
-            repeat(EMOTION_ANALYSIS_POLL_ATTEMPTS) {
-                if (status != EmotionAnalysisStatus.PENDING) return
-                delay(EMOTION_ANALYSIS_POLL_INTERVAL_MILLIS)
-                val report =
-                    repository
-                        .getWeeklyReport(date = monday.format(API_DATE_FORMATTER))
-                        .getOrNull()
-                currentCoroutineContext().ensureActive()
-                // 한 번 실패했다고 남은 시도를 전부 버리지 않는다 — PENDING 화면에는
-                // 재시도 수단이 없어(카드는 FAILED 전용) 화면에 머무는 동안 복구할 길이
-                // 사라진다. 이번 시도만 소모하고 다음 간격을 기다린다.
-                if (report == null) return@repeat
-                status = report.analysisStatus
-                internalState.update { current ->
-                    val phase = current.loadPhase
-                    // 그 사이 다른 주로 옮겨갔으면 덮어쓰지 않는다.
-                    if (phase is LoadPhase.Loaded && phase.monday == monday) {
-                        current.copy(loadPhase = phase.copy(report = report))
-                    } else {
-                        current
                     }
                 }
-            }
         }
 
         private fun buildWeekOptions(
@@ -317,8 +268,14 @@ class WeeklyReportViewModel
                     background =
                         when (record?.emotion) {
                             TodayMood.HAPPY -> DayBackground.Green
+
                             TodayMood.SAD -> DayBackground.Pink
-                            else -> DayBackground.None
+
+                            // 보통은 배경을 주지 않는다 — 시안이 «좋음/나쁨» 두 끝만 색으로 가른다.
+                            TodayMood.SOSO -> DayBackground.None
+
+                            // 그날 기록이 없거나, 있어도 감정을 고르지 않은 날.
+                            null -> DayBackground.None
                         },
                 )
             }
@@ -466,7 +423,3 @@ class WeeklyReportViewModel
                 )
         }
     }
-
-/** 서버가 진행 상태를 주지 않았으면 «모른다» — 0 건으로 확정하지 않는다 (#725). */
-private val WeeklyReport.analysisStatus: EmotionAnalysisStatus
-    get() = emotionAnalysis?.status ?: EmotionAnalysisStatus.UNKNOWN

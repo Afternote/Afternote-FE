@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
@@ -39,6 +38,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.asString
+import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
@@ -63,7 +63,7 @@ import androidx.compose.foundation.lazy.grid.items as gridItems
 fun ReceiverMindRecordScreen(
     modifier: Modifier = Modifier,
     viewModel: ReceiverMindRecordViewModel = hiltViewModel(),
-    onBackClick: () -> Unit = {},
+    onBackClick: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var filterSheetVisible by remember { mutableStateOf(false) }
@@ -94,7 +94,7 @@ fun ReceiverMindRecordScreen(
         Box(modifier = Modifier.padding(paddingValues)) {
             when (val state = uiState) {
                 ReceiverMindRecordUiState.Loading -> {
-                    LoadingBox()
+                    LoadingBody()
                 }
 
                 is ReceiverMindRecordUiState.Error -> {
@@ -233,13 +233,6 @@ private fun DiaryGrid(
         gridItems(records, key = { it.id }) { record ->
             ReceiverDiaryGridCard(record = record, onClick = { onClick(record.id) })
         }
-    }
-}
-
-@Composable
-private fun LoadingBox() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
     }
 }
 

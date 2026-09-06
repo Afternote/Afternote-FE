@@ -64,6 +64,11 @@ fun NavGraphBuilder.onboardingNavGraph(
         }
 
         // ── 아이디 찾기 (인증 → 결과) ──
+        //
+        // 현재 진입점이 없다. 로그인의 "아이디/비밀번호 찾기" 는 #457 로 비밀번호 찾기를 향하게
+        // 바꿨다 — 이 화면의 종착지인 결과 화면(#474)이 not planned 로 닫혀 여기로 보내면
+        // "확인" 뒤에 갈 곳이 없기 때문이다. 화면·라우트 제거는 #943(카카오 단일화) 몫이라
+        // 여기서 지우지 않고, 그때까지 등록만 남긴다.
         composable<OnboardingRoute.FindIdRoute> {
             val viewModel = graphScopedFindIdViewModel(graphScopedParentEntry)
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()

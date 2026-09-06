@@ -51,10 +51,14 @@ class RecordListMonthTest {
                             ),
                         ),
                     onItemClick = { id, month -> clicked = id to month },
+                    onDelete = {},
+                    onEdit = { _, _ -> },
                 )
             }
         }
 
+        // 목록은 캘린더가 먼저 오는 LazyColumn 이라 기록 카드가 화면 밖에서 시작할 수 있다.
+        // 스크롤 위치에 기대면 캘린더 높이가 조금만 달라져도 「노드가 없다」로 깨진다 (#1700).
         composeRule
             .onNode(hasScrollToNodeAction())
             .performScrollToNode(hasText("지난달 기록"))

@@ -59,7 +59,7 @@ enum class AfternoteFailureStage(
      * 애프터노트 목록(Paging) 로드 — refresh·append 를 함께 싣는다.
      *
      * 목록은 실패해도 이미 그려 둔 페이지가 남아 «표시만 사라지는» 무음 결함이 된다. 한 번 실패한
-     * 뒤 사용자가 재시도를 연타하면 같은 실패가 반복 기록되므로 호출부([com.afternote.feature.afternote.presentation.author.home.AfternoteHomeViewModel])
+     * 뒤 사용자가 재시도를 연타하면 같은 실패가 반복 기록되므로 호출부([com.afternote.feature.afternote.presentation.home.AfternoteHomeViewModel])
      * 가 중복을 억제한다 — 보관 한도(최근 8건)를 한 장애가 통째로 차지하지 않게 하기 위함이다.
      */
     LIST_LOAD("list_load"),
@@ -166,6 +166,11 @@ private fun ReceiverFailure.isExpectedUserRejection(): Boolean =
 
         // 서버가 사유를 확인해 거절한 4xx 다 — status·문구를 되짚을 것 없이 타입이 이미 그 사실이다.
         is ReceiverFailure.DeliveryConditionNotMet -> {
+            true
+        }
+
+        // 서버 계약 미도착이라 매 시도가 같은 값으로 쌓인다. 장애가 아니므로 기록하지 않는다 (#589).
+        is ReceiverFailure.ExportNotSupported -> {
             true
         }
     }

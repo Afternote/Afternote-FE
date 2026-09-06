@@ -11,7 +11,7 @@ internal data class SaveAfternoteMemorialMedia(
 
 /**
  * Android가 직접 열 수 있는 로컬 첨부 URI인지. 영상의 저장 출처 판정은 [EditableMemorialVideo]가
- * 담당하고, 이 함수는 [com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialVideoUpload]의
+ * 담당하고, 이 함수는 [com.afternote.feature.afternote.presentation.editor.memorial.MemorialVideoUpload]의
  * 프레임 추출 가능 여부와 같은 key를 썼던 구 v3 스냅샷의 일회성 출처 이관에만 사용한다.
  */
 internal fun String.isLocalContentUri(): Boolean = startsWith("content://")

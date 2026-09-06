@@ -122,10 +122,44 @@ class MindRecordDtoContractTest {
                     isDraft = false,
                     todayMood = TodayMoodDto.SOSO,
                     receiverIds = emptyList(),
+                    date = "2026-08-01",
                 ),
             )
 
         assertEquals(true, encoded.contains("\"receiverIds\":[]"))
+    }
+
+    @Test
+    fun `생성은 기록일을 항상 싣고 수정은 생략할 수 있다`() {
+        // 서버는 생성에서 미전송이면 오늘로 채우고, 수정에서 생략이면 기존 값을 유지한다
+        // (Afternote-BE#244, PR #262). 그 차이가 타입에 그대로 드러나야 한다 (#1008).
+        val created =
+            json.encodeToString(
+                DiaryCreateRequestDto.serializer(),
+                DiaryCreateRequestDto(
+                    title = "t",
+                    content = "c",
+                    isDraft = false,
+                    todayMood = TodayMoodDto.SOSO,
+                    receiverIds = emptyList(),
+                    date = "2026-08-01",
+                ),
+            )
+        assertEquals(true, created.contains("\"date\":\"2026-08-01\""))
+
+        val omitted =
+            json.encodeToString(
+                DiaryUpdateRequestDto.serializer(),
+                DiaryUpdateRequestDto(
+                    title = "t",
+                    content = "c",
+                    isDraft = false,
+                    todayMood = TodayMoodDto.SOSO,
+                    receiverIds = null,
+                    date = null,
+                ),
+            )
+        assertEquals(false, omitted.contains("\"date\""))
     }
 
     @Test
