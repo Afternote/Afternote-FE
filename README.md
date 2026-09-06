@@ -115,6 +115,18 @@ debug 빌드는 기본적으로 머신마다 다른 `~/.android/debug.keystore` 
 keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-shared.jks | openssl sha1 -binary | openssl base64
 ```
 
+## 코딩 에이전트 도구 (선택)
+
+코딩 에이전트 설정은 저장소가 공유하지 않는다 — 사람마다 쓰는 도구와 구성이 다르고, 저장소 파일이 각자 머신에서 실행되는 것을 정하면 리뷰가 그것까지 책임져야 한다. `.claude/`·`CLAUDE.md`·`AGENTS.md`·`.codex/`·`.mcp.json` 은 모두 `.gitignore` 대상이며 각자 자기 환경에 등록한다.
+
+에뮬레이터·실기기를 에이전트로 제어하려면 아래 MCP 서버를 한 번 등록한다. (`-s user` 는 이 머신의 모든 프로젝트에 적용한다.)
+
+```bash
+claude mcp add mobile -s user -- npx -y claude-in-mobile@3.8.1
+```
+
+등록 확인은 `claude mcp list` 로 한다. 기기 제어를 쓰지 않으면 등록하지 않아도 된다.
+
 ---
 
 # 💻 코딩 및 패키지 컨벤션
