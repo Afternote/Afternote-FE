@@ -56,15 +56,59 @@ strict_status=0
 verification_output="$(jarsigner -verify -strict "${bundle_path}" 2>&1)" || strict_status=$?
 verify_jarsigner_result "${strict_status}" "${verification_output}"
 
-if command -v shasum >/dev/null 2>&1; then
-    bundle_sha256="$(shasum -a 256 "${bundle_path}" | awk '{print $1}')"
-elif command -v sha256sum >/dev/null 2>&1; then
-    bundle_sha256="$(sha256sum "${bundle_path}" | awk '{print $1}')"
+sha256_file() {
+    if command -v shasum >/dev/null 2>&1; then
+        shasum -a 256 "$1" | awk '{print $1}'
+    elif command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$1" | awk '{print $1}'
+    else
+        echo "SHA-256 계산 도구(shasum 또는 sha256sum)가 없습니다." >&2
+        return 1
+    fi
+}
+
+# 미주입 로컬 빌드도 Gradle 과 같은 기본값으로 대조한다. 값을 중복 선언하면 Gradle 의
+# 기본값이 바뀌었을 때 올바른 AAB 를 거절하므로 원본 상수를 읽되, 읽기 실패는 허용하지 않는다.
+if [[ "${AFTERNOTE_VERSION_CODE+x}" == "x" ]]; then
+    expected_version_code="$(printf '%s' "${AFTERNOTE_VERSION_CODE}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
 else
-    echo "SHA-256 계산 도구(shasum 또는 sha256sum)가 없습니다." >&2
+    expected_version_code="$(sed -n 's/^const val DEFAULT_AFTERNOTE_VERSION_CODE = \([0-9_]*\)$/\1/p' \
+        "${repo_root}/build-logic/src/main/kotlin/VersionCode.kt" | tr -d '_')"
+fi
+if [[ ! "${expected_version_code}" =~ ^[1-9][0-9]*$ ]] ||
+    [[ ${#expected_version_code} -gt 10 ]] || [[ "${expected_version_code}" -gt 2100000000 ]]; then
+    echo "AFTERNOTE_VERSION_CODE 또는 Gradle 기본값은 1 이상 2100000000 이하의 10진 정수여야 합니다." >&2
     exit 1
 fi
 
+# preflight 가 검증한 jar 를 재사용할 수 있다. 로컬/Play CI 에 jar 가 없으면 같은 고정
+# 버전을 일회용 경로에 받고, 제공된 jar 도 실행 직전에 정본 SHA-256 과 대조한다.
+readonly bundletool_version="1.18.3"
+readonly bundletool_sha256="a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29"
+bundletool_jar="${BUNDLETOOL_JAR:-}"
+if [[ -z "${bundletool_jar}" ]]; then
+    bundletool_dir="$(mktemp -d "${TMPDIR:-/tmp}/afternote-bundletool.XXXXXX")"
+    trap 'rm -rf "${bundletool_dir}"' EXIT
+    bundletool_jar="${bundletool_dir}/bundletool-all-${bundletool_version}.jar"
+    curl --fail --location --silent --show-error \
+        --output "${bundletool_jar}" \
+        "https://github.com/google/bundletool/releases/download/${bundletool_version}/bundletool-all-${bundletool_version}.jar"
+fi
+if [[ ! -s "${bundletool_jar}" ]] || [[ "$(sha256_file "${bundletool_jar}")" != "${bundletool_sha256}" ]]; then
+    echo "bundletool SHA-256 불일치 또는 파일 누락: ${bundletool_jar}" >&2
+    exit 1
+fi
+if ! manifest_version_code="$(java -jar "${bundletool_jar}" dump manifest \
+    --bundle="${bundle_path}" --module=base --xpath=/manifest/@android:versionCode)"; then
+    echo "bundletool 로 AAB manifest versionCode를 읽지 못했습니다." >&2
+    exit 1
+fi
+if [[ ! "${manifest_version_code}" =~ ^[1-9][0-9]*$ ]] || [[ "${manifest_version_code}" != "${expected_version_code}" ]]; then
+    echo "AAB manifest versionCode(${manifest_version_code})가 기대값(${expected_version_code})과 다릅니다." >&2
+    exit 1
+fi
+
+bundle_sha256="$(sha256_file "${bundle_path}")"
 signer_sha256="$(
     keytool -printcert -jarfile "${bundle_path}" |
         awk -F': ' '/SHA256:/{print $2; exit}'
@@ -77,6 +121,7 @@ fi
 bundle_size="$(wc -c < "${bundle_path}" | tr -d '[:space:]')"
 
 printf 'AAB: %s\n' "${bundle_path}"
+printf 'versionCode: %s\n' "${manifest_version_code}"
 printf '크기(bytes): %s\n' "${bundle_size}"
 printf 'AAB SHA-256: %s\n' "${bundle_sha256}"
 printf '서명 인증서 SHA-256: %s\n' "${signer_sha256}"
