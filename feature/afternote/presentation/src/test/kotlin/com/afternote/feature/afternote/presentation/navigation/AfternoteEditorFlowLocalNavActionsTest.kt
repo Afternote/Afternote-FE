@@ -16,13 +16,13 @@ import org.junit.Test
 class AfternoteEditorFlowLocalNavActionsTest {
     private var exits = 0
     private var savedHome = 0
-    private val selectedReceivers = mutableListOf<Long>()
+    private val confirmedReceivers = mutableListOf<List<Long>>()
     private val flowStack = NavBackStack<NavKey>(AfternoteRoute.EditorRoute)
     private val actions =
         AfternoteEditorFlowLocalNavActions(
             flowStack = flowStack,
             boundary = FeatureStackBoundary { exits += 1 },
-            onReceiverSelected = { selectedReceivers += it },
+            onReceiversSelected = { confirmedReceivers += it },
             onSaveSuccessNavigateHome = { savedHome += 1 },
         )
 
@@ -40,13 +40,14 @@ class AfternoteEditorFlowLocalNavActionsTest {
     }
 
     @Test
-    fun `수신자 선택은 결과를 공유 ViewModel 에 넘기고 에디터로 돌아온다`() {
+    fun `수신자 선택은 확정한 전체 목록을 공유 ViewModel 에 넘기고 에디터로 돌아온다`() {
         actions.navigateToSelectReceiver()
         assertEquals(listOf("EditorRoute", "SelectReceiverRoute"), stack())
 
-        actions.popBackWithSelectedReceiver(receiverId = 7L)
+        // 확정은 «추가분» 이 아니라 폼 수신자 전체다 — 한 번의 쓰기로 넘어가야 교체가 성립한다 (#1426).
+        actions.popBackWithSelectedReceivers(receiverIds = listOf(7L, 9L))
 
-        assertEquals(listOf(7L), selectedReceivers)
+        assertEquals(listOf(listOf(7L, 9L)), confirmedReceivers)
         assertEquals(listOf("EditorRoute"), stack())
     }
 

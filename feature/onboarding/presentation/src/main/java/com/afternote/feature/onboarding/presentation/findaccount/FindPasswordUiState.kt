@@ -19,7 +19,7 @@ import com.afternote.feature.onboarding.presentation.OnboardingPasswordRule
  *
  * @property resendCooldownSeconds "재전송" 잠금의 남은 초 — 발송 성공마다 30초로 재잠금되는
  *   클라이언트 측 연타 방지이며 **인증번호 유효시간과 무관**하다(만료 판정은 서버 몫).
- * @property isSocialAccountBlocked 소셜 가입 계정(서버 code 1702)이라 이 흐름을 쓸 수 없다는 사실.
+ * @property isSocialSignUpAccount 소셜 가입 계정(서버 code 1702)이라 이 흐름을 쓸 수 없다는 사실.
  *   시안상 스낵바가 아니라 차단 팝업으로 표시한다.
  * @property isPasswordChanged 재설정 성공 — 완료 화면으로 넘기는 단발성 신호. 소비 후
  *   [FindPasswordViewModel.onPasswordResetConsumed] 로 흐름 상태 전체가 초기화된다.
@@ -31,7 +31,7 @@ data class FindPasswordUiState(
     val isSendingCode: Boolean = false,
     val isVerificationSent: Boolean = false,
     val resendCooldownSeconds: Int = 0,
-    val isSocialAccountBlocked: Boolean = false,
+    val isSocialSignUpAccount: Boolean = false,
     val newPassword: String = "",
     val newPasswordConfirm: String = "",
     val isSubmitting: Boolean = false,

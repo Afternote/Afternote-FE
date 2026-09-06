@@ -31,8 +31,19 @@ public fun NavBackStack<NavKey>.replaceAllWith(key: NavKey) {
 /**
  * [key] 를 남기고 그 위를 모두 걷어낸다 — Nav2 의 `popUpTo(inclusive = false)` + `launchSingleTop` 자리.
  *
- * 스택에 [key] 가 없으면(외부에서 곧장 들어온 진입 등) 그 키 하나만 남긴다 — `popUpTo` 가
- * 무시되고 push 만 일어나던 Nav2 동작과 결과가 같다.
+ * 스택에 [key] 가 없으면(외부에서 곧장 들어온 진입 등) **[replaceAllWith] 로 그 키 하나만 남긴다.**
+ *
+ * **이건 Nav2 와 결과가 다르다** — Nav2 는 `popUpTo` 대상이 없으면 그것을 무시하고 위에 push 만 해서
+ * 기존 스택이 남는다.
+ *
+ * | | 결과 스택 |
+ * |---|---|
+ * | Nav2 `popUpTo(없는 키) + navigate` | `[… 기존 …, key]` |
+ * | 이 구현 | `[key]` |
+ *
+ * 「목록이 없는 진입에서도 목록 하나만 남긴다」를 의도한 것이다 — 알림·딥링크로 상세에 곧장 들어온
+ * 뒤 목록으로 올라가면 그 목록이 바닥이어야 back 이 흐름을 빠져나간다. 다만 **Nav2 동등성이 아니라
+ * 의도적인 이탈**이므로, 이 프리미티브를 새로 쓸 때는 그 차이를 전제로 골라야 한다.
  */
 public fun NavBackStack<NavKey>.popUpTo(key: NavKey) {
     val index = indexOf(key)

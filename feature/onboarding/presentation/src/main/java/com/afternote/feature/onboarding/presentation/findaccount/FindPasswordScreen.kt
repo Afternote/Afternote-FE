@@ -34,8 +34,8 @@ private val HeaderSpacing = 8.dp
  * 않는다 — 시안도 그렇게 그려져 있다. "다음" 은 자릿수만 보고 열리고, 코드의 진위는 비밀번호
  * 변경 화면의 제출이 판정한다.
  *
- * @param isSocialAccountBlocked 소셜 가입 계정이라 이 흐름을 쓸 수 없음(서버 code 1702).
- *   시안 `2383:16667` 의 차단 팝업으로 표시한다.
+ * @param showSocialAccountBlockedPopup 차단 팝업(시안 `2383:16667`)을 띄울지 — 소셜로 가입해
+ *   로컬 비밀번호가 없는 계정이라 이 흐름을 쓸 수 없다는 안내다(서버 code 1702).
  */
 @Composable
 fun FindPasswordScreen(
@@ -46,7 +46,7 @@ fun FindPasswordScreen(
     isSendCodeEnabled: Boolean,
     isNextEnabled: Boolean,
     resendCooldownSeconds: Int,
-    isSocialAccountBlocked: Boolean,
+    showSocialAccountBlockedPopup: Boolean,
     snackbarHostState: SnackbarHostState,
     onEmailChange: (String) -> Unit,
     onCertificateCodeChange: (String) -> Unit,
@@ -149,7 +149,7 @@ fun FindPasswordScreen(
         }
     }
 
-    if (isSocialAccountBlocked) {
+    if (showSocialAccountBlockedPopup) {
         // 확인 외의 선택지가 없는 안내다 — 바깥 탭·뒤로가기도 같은 소비로 닫는다.
         Popup(
             type = PopupType.Default,

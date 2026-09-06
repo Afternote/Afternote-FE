@@ -26,7 +26,7 @@ import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRo
  * 공유하고, 흐름을 벗어나면 정리된다. 이관 전과 같은 수명이다.
  *
  * 수신자 선택 결과는 Nav2 의 «이전 엔트리 SavedStateHandle» 대신 이 공유 ViewModel 이 나른다
- * ([AfternoteEditorViewModel.onReceiverSelected]) — 저장 위치가 같은 `SavedStateHandle` 이라
+ * ([AfternoteEditorViewModel.onReceiversSelected]) — 저장 위치가 같은 `SavedStateHandle` 이라
  * 프로세스 재생성 성질도 그대로다.
  *
  * @param key 흐름 진입 키(`itemId`·`initialType`). 흐름 ViewModel 에 assisted 로 주입된다.
@@ -50,7 +50,7 @@ internal fun AfternoteEditorFlowHost(
             AfternoteEditorFlowLocalNavActions(
                 flowStack = flowStack,
                 boundary = boundary,
-                onReceiverSelected = editorViewModel::onReceiverSelected,
+                onReceiversSelected = editorViewModel::onReceiversSelected,
                 onSaveSuccessNavigateHome = onSaveSuccessNavigateHome,
             )
         }
@@ -71,9 +71,13 @@ internal fun AfternoteEditorFlowHost(
                 }
 
                 entry<AfternoteRoute.SelectReceiverRoute> {
+                    // 폼에 이미 있는 수신자를 선택 상태로 열어 준다 — 선택 화면은 «추가분» 이 아니라
+                    // 확정된 수신자 전체를 돌려주므로, 여는 시점의 폼이 곧 초기 선택이다 (#1426).
+                    val editorUiState by editorViewModel.uiState.collectAsStateWithLifecycle()
                     AfternoteSelectReceiverNavigation(
+                        preselectedReceiverIds = editorUiState.form.afternoteEditReceivers.map { it.id },
                         onPopBackStack = actions::popBack,
-                        onReceiverConfirmed = actions::popBackWithSelectedReceiver,
+                        onReceiversConfirmed = actions::popBackWithSelectedReceivers,
                     )
                 }
 
@@ -110,8 +114,8 @@ internal interface AfternoteEditorFlowNavActions {
 
     fun navigateToAddSong()
 
-    /** 수신자 선택 완료 — 고른 id 를 공유 ViewModel 에 남기고 에디터로 돌아간다. */
-    fun popBackWithSelectedReceiver(receiverId: Long)
+    /** 수신자 선택 완료 — 확정한 id 전체를 공유 ViewModel 에 남기고 에디터로 돌아간다 (#1426). */
+    fun popBackWithSelectedReceivers(receiverIds: List<Long>)
 
     /** 저장 성공 — 흐름을 통째로 닫고 애프터노트 홈으로. */
     fun popToAfternoteHome()

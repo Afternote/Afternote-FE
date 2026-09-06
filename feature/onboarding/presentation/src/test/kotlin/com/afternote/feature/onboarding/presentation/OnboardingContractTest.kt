@@ -122,7 +122,7 @@ class OnboardingContractTest {
                     isSendCodeEnabled = true,
                     isNextEnabled = email.contains('@') && code.length == 6,
                     resendCooldownSeconds = 0,
-                    isSocialAccountBlocked = false,
+                    showSocialAccountBlockedPopup = false,
                     snackbarHostState = remember { SnackbarHostState() },
                     onEmailChange = { email = it },
                     onCertificateCodeChange = { code = it },

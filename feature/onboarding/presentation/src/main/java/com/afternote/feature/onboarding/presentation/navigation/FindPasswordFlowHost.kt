@@ -62,7 +62,7 @@ internal fun FindPasswordFlowHost(
                         isSendCodeEnabled = uiState.isSendCodeEnabled,
                         isNextEnabled = uiState.isVerificationNextEnabled,
                         resendCooldownSeconds = uiState.resendCooldownSeconds,
-                        isSocialAccountBlocked = uiState.isSocialAccountBlocked,
+                        showSocialAccountBlockedPopup = uiState.isSocialSignUpAccount,
                         snackbarHostState = snackbarHostState,
                         onEmailChange = viewModel::updateEmail,
                         onCertificateCodeChange = viewModel::updateCertificateCode,

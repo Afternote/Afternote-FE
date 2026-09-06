@@ -10,7 +10,9 @@ import com.afternote.feature.onboarding.presentation.R
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -62,7 +64,7 @@ class FindPasswordViewModelTest {
         viewModel.requestVerificationCode()
 
         val state = viewModel.uiState.value
-        assertTrue(state.isSocialAccountBlocked)
+        assertTrue(state.isSocialSignUpAccount)
         assertNull(state.errorMessage)
         assertFalse(state.isVerificationSent)
         // 서버가 정상적으로 가르는 분기라 장애로 세지 않는다.
@@ -78,7 +80,7 @@ class FindPasswordViewModelTest {
         viewModel.requestVerificationCode()
 
         val state = viewModel.uiState.value
-        assertFalse(state.isSocialAccountBlocked)
+        assertFalse(state.isSocialSignUpAccount)
         assertEquals(UiText.Resource(R.string.onboarding_network_error), state.errorMessage)
         assertEquals(1, reporter.recordedCount)
     }
@@ -92,7 +94,7 @@ class FindPasswordViewModelTest {
         viewModel.updateEmail("other@example.com")
 
         val state = viewModel.uiState.value
-        assertFalse(state.isSocialAccountBlocked)
+        assertFalse(state.isSocialSignUpAccount)
         assertFalse(state.isVerificationSent)
     }
 
@@ -160,6 +162,53 @@ class FindPasswordViewModelTest {
             assertTrue(viewModel.uiState.value.isPasswordChanged)
             assertFalse(viewModel.uiState.value.isSubmitting)
             assertEquals(1, repository.resetPasswordCallCount)
+        }
+
+    /**
+     * 바로 위 테스트와 **다른 창**을 본다 — 저쪽은 `isSubmitting` 이 상태에 반영된 뒤의 재호출이라
+     * `isResetEnabled` 하나로 막히지만, 이쪽은 반영 전이다.
+     *
+     * 실기기의 `Dispatchers.Main` 은 `launch` 본문을 다음 루프에 돌리므로 빠른 두 탭이 모두
+     * `isSubmitting = false` 를 읽고 통과할 수 있다. [StandardTestDispatcher] 가 그 창을 그대로
+     * 재현한다 — 상태 플래그만으로는 여기서 못 막고 진행 중인 Job 을 봐야 한다.
+     *
+     * 이 흐름에서 요청이 두 번 나가면 낭비로 끝나지 않는다. 서버가 인증번호를 검증하며 지우므로
+     * 두 번째가 1207 로 실패해, 첫 요청이 성공했는데도 "이메일 인증부터 다시" 안내가 뜬다.
+     */
+    @Test
+    fun `제출 연타는 상태가 반영되기 전에도 재설정을 한 번만 부른다`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeAccountRepository(onResetPassword = { Result.success(Unit) })
+            val viewModel = readyToSubmit(repository)
+
+            viewModel.submitNewPassword()
+            viewModel.submitNewPassword()
+            advanceUntilIdle()
+
+            assertEquals(1, repository.resetPasswordCallCount)
+        }
+
+    /** 발송도 같은 창을 갖는다 — 중복 발송은 앞서 안내한 인증번호를 무효로 만든다. */
+    @Test
+    fun `인증번호 발송 연타는 상태가 반영되기 전에도 요청을 한 번만 낸다`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            var sendCalls = 0
+            val repository =
+                FakeAccountRepository(
+                    onSendFindCode = {
+                        sendCalls++
+                        Result.success(Unit)
+                    },
+                )
+            val viewModel = viewModel(repository).apply { updateEmail(EMAIL) }
+
+            viewModel.requestVerificationCode()
+            viewModel.requestVerificationCode()
+            advanceUntilIdle()
+
+            assertEquals(1, sendCalls)
         }
 
     @Test
