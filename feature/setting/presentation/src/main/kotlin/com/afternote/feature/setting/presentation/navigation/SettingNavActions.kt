@@ -65,6 +65,10 @@ interface SettingNavActions {
 
     fun onNoticeBack()
 
+    fun onNavigateToFaq()
+
+    fun onFaqBack()
+
     fun onNavigateToInquiry()
 
     fun onInquiryBack()

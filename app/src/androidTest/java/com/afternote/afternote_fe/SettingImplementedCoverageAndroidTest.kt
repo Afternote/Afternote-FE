@@ -12,6 +12,7 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -142,6 +143,27 @@ class SettingImplementedCoverageAndroidTest {
         composeRule
             .onNodeWithText("안전한 탈퇴 진행을 위해 아래 문장을 입력해 주세요.")
             .assertIsDisplayed()
+    }
+
+    @Test
+    fun actualSettingNavHost_faqRowNavigatesToFaqScreenAndBackReturnsHome() {
+        waitForSettingHomeContent()
+        composeRule
+            .onNode(hasScrollAction())
+            .performScrollToNode(hasText("FAQ"))
+        composeRule
+            .onNodeWithText("FAQ")
+            .performClick()
+
+        waitForRoute<SettingRoute.FaqRoute>()
+        composeRule
+            .onNodeWithText("비밀번호를 잊어버렸어요.")
+            .assertIsDisplayed()
+
+        composeRule
+            .onNodeWithContentDescription("뒤로가기")
+            .performClick()
+        waitForRoute<SettingRoute.SettingHomeRoute>()
     }
 
     private fun openWithdrawGuide() {
