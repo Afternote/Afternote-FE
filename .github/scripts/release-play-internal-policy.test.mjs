@@ -99,6 +99,37 @@ test("업로드되는 AAB 는 attest 와 digest 재확인을 통과한 그 파�
     );
 });
 
+test("서명 검증기가 빌드와 attest 사이에서 실제로 불린다", () => {
+    // 스텝 이름만 잠그면 run 을 echo 로 바꿔도 통과한다. 부르는 명령과 자리를 함께 박는다.
+    // attest 뒤로 밀리면 attestation 이 «검증되지 않은 파일» 에 붙으므로 순서가 계약이다.
+    const build = indexOf("./gradlew :app:bundleRelease");
+    const verifyBundle = indexOf("run: bash scripts/verify-play-release-bundle.sh --skip-build");
+    const attest = indexOf("actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6");
+
+    assert.ok(build < verifyBundle, "검증은 서명이 끝난 AAB 에 대고 한다");
+    assert.ok(verifyBundle < attest, "attest 는 검증을 통과한 파일에만 붙는다");
+});
+
+test("attestation 은 이 commit·이 ref·GitHub 호스티드 러너로만 검증된다", () => {
+    // release-distribution 경로가 이미 같은 세 플래그를 잠근다. Play 경로만 비어 있었다.
+    // 이 셋이 빠지면 같은 워크플로가 다른 commit 에서 만든 attestation 도 통과한다.
+    assert.match(workflow, /--repo "\$GITHUB_REPOSITORY"/);
+    assert.match(workflow, /--source-digest "\$GITHUB_SHA"/);
+    assert.match(workflow, /--source-ref "\$GITHUB_REF"/);
+    assert.match(workflow, /--deny-self-hosted-runners/);
+});
+
+test("PLAY_PACKAGE_NAME 은 비었는지가 아니라 applicationId 와 같은지로 판정된다", () => {
+    const guard = indexOf("- name: Verify Play publishing configuration is set");
+    const build = indexOf("./gradlew :app:bundleRelease");
+    const guardStep = workflow.slice(guard, indexOf("- name: Set up JDK 21"));
+
+    assert.match(guardStep, /app\/build\.gradle\.kts/, "applicationId 를 코드에서 읽어 온다");
+    assert.match(guardStep, /"\$PLAY_PACKAGE_NAME" != "\$application_id"/);
+    assert.match(guardStep, /applicationId 를 읽지 못했다/, "읽기 실패도 fail-closed 다");
+    assert.ok(guard < build, "대조는 40분 빌드 전에 끝난다");
+});
+
 test("Play 토큰은 빌드 단계로 내려오지 않고 업로드 직전에 다시 발급된다", () => {
     const buildStep = workflow.slice(
         indexOf("- name: Build the signed release AAB"),
@@ -134,11 +165,19 @@ test("AAB 와 R8 mapping 은 Actions artifact 로 게시되지 않고 러너에�
     assert.doesNotMatch(workflow, /actions\/upload-artifact/);
     assert.doesNotMatch(workflow, /actions\/download-artifact/);
 
-    const cleanup = workflow.slice(indexOf("- name: Remove private release outputs"));
-    assert.match(cleanup, /app\/build\/outputs\/bundle\/release\/app-release\.aab/);
-    assert.match(cleanup, /app\/build\/outputs\/mapping\/release\/mapping\.txt/);
-    assert.equal((workflow.match(/if: always\(\)/g) ?? []).length, 2);
-    assert.match(workflow, /uses: \.\/\.github\/actions\/cleanup-release-config/);
+    // 개수만 세면 always 를 떼어 다른 스텝에 붙여도 통과한다. 두 정리 스텝 각각의 슬라이스 안에서 본다.
+    const outputsCleanup = workflow.slice(
+        indexOf("- name: Remove private release outputs"),
+        indexOf("- name: Remove release build configuration"),
+    );
+    const configCleanup = workflow.slice(indexOf("- name: Remove release build configuration"));
+
+    assert.match(outputsCleanup, /if: always\(\)/, "실패·취소에도 산출물을 지운다");
+    assert.match(outputsCleanup, /app\/build\/outputs\/bundle\/release\/app-release\.aab/);
+    assert.match(outputsCleanup, /app\/build\/outputs\/mapping\/release\/mapping\.txt/);
+
+    assert.match(configCleanup, /if: always\(\)/, "실패·취소에도 keystore 설정을 지운다");
+    assert.match(configCleanup, /uses: \.\/\.github\/actions\/cleanup-release-config/);
 });
 
 test("같은 앱에 두 run 이 겹치지 않고 중도 취소되지도 않는다", () => {
