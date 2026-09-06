@@ -47,12 +47,12 @@ import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    onWriteClick: (MindRecordCategoryUi) -> Unit = {},
+    onWriteClick: (MindRecordCategoryUi) -> Unit,
     // 목록 항목 탭 → 상세(열람) 화면. (기록 ID, 일기 여부, 목록이 보고 있던 달) (#759).
-    onRecordClick: (Long, Boolean, YearMonth) -> Unit = { _, _, _ -> },
+    onRecordClick: (Long, Boolean, YearMonth) -> Unit,
     // 목록의 «수정하기» → 프리필한 작성 화면 (#582).
-    onEditDailyQuestion: (Long) -> Unit = {},
-    onEditDiary: (Long, YearMonth) -> Unit = { _, _ -> },
+    onEditDailyQuestion: (Long) -> Unit,
+    onEditDiary: (Long, YearMonth) -> Unit,
 ) {
     // Figma 2757:16116 — 마음의 기록 탭은 데일리 질문 / 일기 / 주간리포트 3개
     val categories =
@@ -80,11 +80,6 @@ fun HomeScreen(
     // 오가면 아이콘은 그대로인데 표시가 뒤바뀐 것처럼 보였다 (#724).
     var dailyQuestionListView by rememberSaveable { mutableStateOf(true) }
     var diaryListView by rememberSaveable { mutableStateOf(true) }
-    val isListView =
-        when (selectedCategory) {
-            MindRecordCategoryUi.DailyQuestion -> dailyQuestionListView
-            else -> diaryListView
-        }
 
     // 탭 VM 은 **여기서 만들지 않는다.** 호이스팅하면 선택하지 않은 탭의 `init` 조회까지
     // 진입 즉시 나간다 — 마음의 기록 첫 진입 한 번에 요청이 7건 나간 가장 큰 원인이었다.
@@ -100,20 +95,38 @@ fun HomeScreen(
             TitleTopBar(
                 title = stringResource(MindRecordR.string.mindrecord_home_title),
                 actions = {
-                    // 주간리포트는 리스트/캘린더 두 보기가 없다 — 스위치를 눌러도 화면이
-                    // 바뀌지 않으니 아예 노출하지 않는다. 컨트롤과 동작을 맞춘다 (#723).
-                    // 같은 이유로 아래 FAB 도 이 탭에서 숨긴다.
-                    if (selectedCategory != MindRecordCategoryUi.WeeklyReport) {
+                    // 보기 상태를 탭마다 따로 기억하므로(#724) «어느 탭의 상태를 읽고 쓰는가» 가
+                    // 갈린다. 종전에는 읽기와 쓰기가 서로 다른 `when` 에 있었고 둘 다 `else` 로
+                    // 일기 상태를 가리켜, 주간리포트가 일기의 보기 상태를 빌려 쓰고 있었다 —
+                    // 탭이 하나 늘면 그 빌림이 새 탭으로 조용히 이어진다. 한 `when` 으로 합쳐
+                    // 탭이 늘면 컴파일이 막게 한다 (#1765).
+                    //
+                    // 스위처 호출은 한 자리로 남긴다. 갈래마다 따로 부르면 탭을 옮길 때 컴포지션
+                    // 자리가 바뀌어 `animateDpAsState` 가 새로 시작되고, 표시가 미끄러지지 않고 튄다.
+                    val viewMode =
+                        when (selectedCategory) {
+                            MindRecordCategoryUi.DailyQuestion -> {
+                                ViewModeBinding(dailyQuestionListView) { dailyQuestionListView = it }
+                            }
+
+                            MindRecordCategoryUi.Diary -> {
+                                ViewModeBinding(diaryListView) { diaryListView = it }
+                            }
+
+                            // 주간리포트는 리스트/캘린더 두 보기가 없다 — 스위치를 눌러도 화면이
+                            // 바뀌지 않으니 아예 노출하지 않는다. 컨트롤과 동작을 맞춘다 (#723).
+                            // 같은 이유로 아래 FAB 도 이 탭에서 숨긴다.
+                            MindRecordCategoryUi.WeeklyReport -> {
+                                null
+                            }
+                        }
+
+                    if (viewMode != null) {
                         ViewModeSwitcher(
-                            isListView = isListView,
+                            isListView = viewMode.isListView,
                             image1 = R.drawable.core_ui_list,
                             image2 = R.drawable.core_ui_calendar,
-                            onViewChange = { listView ->
-                                when (selectedCategory) {
-                                    MindRecordCategoryUi.DailyQuestion -> dailyQuestionListView = listView
-                                    else -> diaryListView = listView
-                                }
-                            },
+                            onViewChange = viewMode.onViewChange,
                         )
                     }
                 },
@@ -192,7 +205,7 @@ fun HomeScreen(
                         )
                     }
 
-                    else -> {
+                    MindRecordCategoryUi.WeeklyReport -> {
                         WeeklyReportScreen()
                     }
                 }
@@ -205,6 +218,22 @@ fun HomeScreen(
 @Composable
 private fun HomeScreenPreview() {
     AfternoteTheme {
-        HomeScreen()
+        HomeScreen(
+            onEditDailyQuestion = {},
+            onEditDiary = { _, _ -> },
+            onRecordClick = { _, _, _ -> },
+            onWriteClick = {},
+        )
     }
 }
+
+/**
+ * 보기 전환 스위처가 읽고 쓸 탭별 상태 한 쌍.
+ *
+ * 탭마다 상태를 따로 기억하지만(#724) 스위처 자체는 한 자리에서만 부르기 위한 묶음이다 —
+ * 갈래마다 스위처를 따로 부르면 탭 이동이 컴포지션 자리를 바꿔 표시 애니메이션이 새로 시작된다.
+ */
+private class ViewModeBinding(
+    val isListView: Boolean,
+    val onViewChange: (Boolean) -> Unit,
+)

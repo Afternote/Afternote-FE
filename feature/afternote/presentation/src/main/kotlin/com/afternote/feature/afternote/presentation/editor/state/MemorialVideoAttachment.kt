@@ -19,12 +19,11 @@ data class MemorialVideoAttachment(
     val thumbnailUrl: String? = null,
 ) {
     /**
-     * 사용자 입력 판정에 실을 부분. 썸네일은 영상에서 자동 파생돼 나중에 채워지는 값이라 뺀다.
-     *
-     * 프로세스 재생성 복원 뒤 같은 로컬 영상에서 썸네일을 다시 뽑아 올리면 **다른 URL** 이 붙는다.
-     * 빼지 않으면 사용자가 손도 대지 않은 폼이 「변경됨」 으로 판정돼 이탈 팝업이 뜬다.
+     * 썸네일을 뗀 사본 — 이탈 가드 지문에 실린다. 썸네일은 영상에서 자동 파생돼 나중에 채워지는 값이라
+     * 지문에서 뺀다. 프로세스 재생성 복원 뒤 같은 로컬 영상에서 썸네일을 다시 뽑아 올리면 **다른 URL** 이
+     * 붙는데, 빼지 않으면 사용자가 손도 대지 않은 폼이 「변경됨」 으로 판정돼 이탈 팝업이 뜬다.
      */
-    fun userEnteredPart(): MemorialVideoAttachment = copy(thumbnailUrl = null)
+    fun withoutThumbnail(): MemorialVideoAttachment = copy(thumbnailUrl = null)
 
     companion object {
         /** 빈 문자열은 첨부 없음으로 본다 — 값 객체가 존재하면 재생할 영상이 있다는 뜻이어야 한다. */
