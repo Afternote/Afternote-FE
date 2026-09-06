@@ -11,11 +11,12 @@ import com.afternote.core.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -30,8 +31,14 @@ class PushNotificationViewModel
         private val _uiState = MutableStateFlow(PushNotificationUiState())
         val uiState: StateFlow<PushNotificationUiState> = _uiState.asStateFlow()
 
-        private val _events = Channel<PushNotificationEvent>(Channel.BUFFERED)
-        val events = _events.receiveAsFlow()
+        // 화면이 없는 동안의 안내는 다음 진입에 재생하지 않는다.
+        private val _events =
+            MutableSharedFlow<PushNotificationEvent>(
+                replay = 0,
+                extraBufferCapacity = 1,
+                onBufferOverflow = BufferOverflow.DROP_OLDEST,
+            )
+        val events = _events.asSharedFlow()
 
         init {
             refreshDeviceAlarmStatus()
@@ -94,7 +101,7 @@ class PushNotificationViewModel
                     .onFailure { e ->
                         errorReporter.recordFailure(e, mapOf(KEY_STAGE to STAGE_SMS_CONSENT))
                         _uiState.update { it.copy(isSmsChecked = !checked) }
-                        _events.send(PushNotificationEvent.MarketingConsentSaveFailed)
+                        _events.tryEmit(PushNotificationEvent.MarketingConsentSaveFailed)
                     }
             }
         }
@@ -107,7 +114,7 @@ class PushNotificationViewModel
                     .onFailure { e ->
                         errorReporter.recordFailure(e, mapOf(KEY_STAGE to STAGE_EMAIL_CONSENT))
                         _uiState.update { it.copy(isEmailChecked = !checked) }
-                        _events.send(PushNotificationEvent.MarketingConsentSaveFailed)
+                        _events.tryEmit(PushNotificationEvent.MarketingConsentSaveFailed)
                     }
             }
         }
@@ -120,7 +127,7 @@ class PushNotificationViewModel
                     .onFailure { e ->
                         errorReporter.recordFailure(e, mapOf(KEY_STAGE to STAGE_PUSH_CONSENT))
                         _uiState.update { it.copy(isPushChecked = !checked) }
-                        _events.send(PushNotificationEvent.MarketingConsentSaveFailed)
+                        _events.tryEmit(PushNotificationEvent.MarketingConsentSaveFailed)
                     }
             }
         }

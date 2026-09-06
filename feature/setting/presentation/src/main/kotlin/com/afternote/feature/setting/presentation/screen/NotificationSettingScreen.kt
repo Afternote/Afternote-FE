@@ -36,7 +36,9 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.afternote.core.ui.findActivity
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
@@ -56,6 +58,7 @@ fun NotificationSettingScreen(
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity<Activity>() }
     val snackbarHostState = remember { SnackbarHostState() }
+    val lifecycleOwner = LocalLifecycleOwner.current
     val marketingConsentSaveFailedMessage = stringResource(R.string.marketing_consent_save_failed)
     val openNotificationSettings = {
         val intent =
@@ -83,11 +86,13 @@ fun NotificationSettingScreen(
         viewModel.refreshDeviceAlarmStatus()
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.events.collect { event ->
-            when (event) {
-                PushNotificationEvent.MarketingConsentSaveFailed -> {
-                    snackbarHostState.showSnackbar(marketingConsentSaveFailedMessage)
+    LaunchedEffect(viewModel, lifecycleOwner, marketingConsentSaveFailedMessage) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewModel.events.collect { event ->
+                when (event) {
+                    PushNotificationEvent.MarketingConsentSaveFailed -> {
+                        snackbarHostState.showSnackbar(marketingConsentSaveFailedMessage)
+                    }
                 }
             }
         }
