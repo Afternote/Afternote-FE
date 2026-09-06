@@ -115,6 +115,18 @@ debug 빌드는 기본적으로 머신마다 다른 `~/.android/debug.keystore` 
 keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-shared.jks | openssl sha1 -binary | openssl base64
 ```
 
+## 코딩 에이전트 도구 (선택)
+
+코딩 에이전트 설정은 저장소가 공유하지 않는다 — 사람마다 쓰는 도구와 구성이 다르고, 저장소 파일이 각자 머신에서 실행되는 것을 정하면 리뷰가 그것까지 책임져야 한다. `.claude/`·`CLAUDE.md`·`AGENTS.md`·`.codex/`·`.mcp.json` 은 모두 `.gitignore` 대상이며 각자 자기 환경에 등록한다.
+
+에뮬레이터·실기기를 에이전트로 제어하려면 아래 MCP 서버를 한 번 등록한다. (`-s user` 는 이 머신의 모든 프로젝트에 적용한다.)
+
+```bash
+claude mcp add mobile -s user -- npx -y claude-in-mobile@3.8.1
+```
+
+등록 확인은 `claude mcp list` 로 한다. 기기 제어를 쓰지 않으면 등록하지 않아도 된다.
+
 ---
 
 # 💻 코딩 및 패키지 컨벤션
@@ -169,10 +181,10 @@ Kover는 임의의 절대 커버리지 목표를 강제하지 않는다. 정확�
 
 ## 코드 리뷰
 
-- Draft가 아닌 내부 팀원 PR이 열리거나 리뷰 가능 상태가 되면 [자동 요청 workflow](.github/workflows/review-request-all.yml)가 작성자를 제외한 팀원에게 리뷰를 요청한다. 요청 인원 수와 필수 승인 수는 같은 뜻이 아니다.
+- Draft가 아닌 내부 팀원 PR이 열리거나 리뷰 가능 상태가 되면 [자동 요청 workflow](.github/workflows/review-request-all.yml)가 작성자를 제외한 리뷰 담당 팀원(`TEAM`)에게 리뷰를 요청한다. 요청 인원 수와 필수 승인 수는 같은 뜻이 아니다.
 - 현재 `develop`·`main` 머지에는 **승인 1건**이 필요하다. `main`은 모든 리뷰 스레드 해결도 필요하다.
 - 리뷰 결과는 GitHub의 `APPROVED`·`CHANGES_REQUESTED`·일반 코멘트로 표현한다. 별도 RCA prefix나 12시간 SLA는 두지 않는다.
-- [리뷰 적체 가드](.github/workflows/review-debt-guard.yml)는 응답을 기다리는 다른 PR이 남았거나 자기 PR의 최신 변경요청 뒤 아무 조치도 하지 않은 팀원의 새 PR을 닫을 수 있다. 각 PR은 팀원 한 명이 먼저 유효한 판정을 내리면 최초 미응답 목록에서 빠지고, 작성자가 실질 커밋이나 응답을 남기면 작성자 대기 목록에서 빠진다.
-- `awaiting-author` 라벨은 변경요청 뒤 작성자 무조치 상태를 보여 주는 표식이다. 새 PR 가드는 라벨 갱신 시점에 의존하지 않고 같은 판정을 현재 열린 PR에 다시 적용한다.
+- [리뷰 적체 가드](.github/workflows/review-debt-guard.yml)는 응답을 기다리는 다른 PR이 남았거나 자기 PR의 최신 변경요청 뒤 아무 조치도 하지 않은 팀원의 새 PR을 닫을 수 있다. 아래 면제 목록에 있는 작성자는 대상이 아니다. 각 PR은 팀원 한 명이 먼저 유효한 판정을 내리면 최초 미응답 목록에서 빠지고, 작성자가 실질 커밋이나 응답을 남기면 작성자 대기 목록에서 빠진다.
+- `awaiting-author` 라벨은 리뷰 게이트 적용 대상 중 변경요청 뒤 작성자 무조치 상태인 PR을 보여 준다. 면제 작성자에게는 붙이지 않으며, 이미 붙은 라벨도 리컨사일러가 제거한다. 새 PR 가드는 라벨 갱신 시점에 의존하지 않고 같은 판정을 현재 열린 PR에 다시 적용한다.
 - 쓰기 권한이 있는 리뷰어별 최신 `APPROVED`·`CHANGES_REQUESTED` 가운데 PR 전체에서 가장 늦은 판정을 최종 판정으로 사용한다. 가장 늦은 판정이 승인이면 더 오래된 변경 요청은 자동 해제되고, 승인 뒤에 새 변경 요청이 오면 다시 차단된다.
-- 긴급 PR은 근거가 있을 때만 `review-debt-exempt` 라벨로 적체 가드를 우회한다.
+- 적체 가드에는 라벨 우회가 없다. 가드와 `awaiting-author` 라벨이 함께 쓰는 면제 목록은 [review-debt-guard.yml](.github/workflows/review-debt-guard.yml)의 `REVIEW_GATE_EXEMPT_AUTHORS`이며, 지금은 `koongmai`가 거기에 있다. 면제받은 사람은 리뷰 지적 반영 여부와 무관하게 새 PR을 열 수 있고 남의 PR을 리뷰할 의무가 없다. 그래서 자동 요청 대상에서도 빠지고, 그가 낸 변경요청은 다른 팀원의 빚으로 세지 않는다. 머지 게이트는 면제와 무관하다. `develop` 승인 1건과 필수 체크는 그대로 요구된다.

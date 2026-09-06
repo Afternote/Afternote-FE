@@ -283,17 +283,8 @@ class ProductionVisibilityKonsistTest {
     }
 
     private companion object {
-        val ISSUE_1671_PLATFORM =
-            setOf(
-                "app/src/main/java/com/afternote/afternote_fe/messaging/AfternoteFirebaseMessagingService.kt::class FcmNotificationContent [internal]",
-                "app/src/main/java/com/afternote/afternote_fe/messaging/AfternoteFirebaseMessagingService.kt::object FcmNotificationContentResolver [internal]",
-                "app/src/main/java/com/afternote/afternote_fe/messaging/AfternoteFirebaseMessagingService.kt::object FcmNotificationIdentity [internal]",
-                "build-logic/src/main/kotlin/BuildFingerprint.kt::function debugVersionNameSuffix [implicit-public]",
-                "build-logic/src/main/kotlin/BuildFingerprint.kt::function shortCommitSha [implicit-public]",
-                "build-logic/src/main/kotlin/BuildFingerprint.kt::property UNKNOWN_COMMIT_MARKER [implicit-public]",
-                "build-logic/src/main/kotlin/VersionCode.kt::property DEFAULT_AFTERNOTE_VERSION_CODE [implicit-public]",
-                "build-logic/src/main/kotlin/VersionCode.kt::property MAX_PLAY_VERSION_CODE [implicit-public]",
-            )
+        /** #1671 이 8건을 전부 `private` 로 줄였다. 형제 이슈들이 각자 자기 목록을 비우는 중이라 자리는 남긴다. */
+        val ISSUE_1671_PLATFORM = emptySet<String>()
 
         /**
          * #1672 잔여분 — `PROFILE_ICON_TEST_TAG` 를 참조하는 테스트가 **다른 모듈**(feature:afternote,
@@ -305,23 +296,17 @@ class ProductionVisibilityKonsistTest {
                 "core/ui/src/main/kotlin/com/afternote/core/ui/topbar/HomeTopBar.kt::property PROFILE_ICON_TEST_TAG [implicit-public]",
             )
 
+        /**
+         * 남은 항목은 MVI 전환(#1804)이 다시 열 화면 seam 이라 #1817 이 그 뒤에 판정한다.
+         * #1673 의 나머지(mapper·test tag·Saver·목록 매퍼)는 해소돼 목록에서 빠졌다.
+         */
         val ISSUE_1673_AFTERNOTE =
             setOf(
                 "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/detail/AfternoteDetailRoute.kt::function DeleteInProgressOverlay [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/detail/MemorialDetailScreen.kt::property MEMORIAL_VIDEO_CARD_TEST_TAG [internal]",
                 "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/AfternoteEditorContent.kt::function EditorContent [internal]",
                 "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/AfternoteEditorScreen.kt::function editorContentSignature [internal]",
                 "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/AfternoteEditorViewModel.kt::function toAfternoteEditorError [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/mapper/EditorReceiverMapping.kt::function toAfternoteEditorReceiver [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/memorial/MemorialVideoUpload.kt::property MEMORIAL_VIDEO_ADD_TEST_TAG [internal]",
                 "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/selection/EditorServiceSelectionSheet.kt::function EditorServiceSelectionSheetContent [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/selection/EditorServiceSelectionSheet.kt::function filterEditorServiceOptions [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/selection/EditorServiceSelectionSheet.kt::function serviceSelectionSheetTitleResOrNull [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/state/AfternoteEditorState.kt::property editorMessagesSaver [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/home/AfternoteTypeFilterRow.kt::property AFTERNOTE_CATEGORY_MORE_INDICATOR_TEST_TAG [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/navigation/AfternoteNavGraphTheme.kt::function AfternoteLightTheme [implicit-public]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/receiver/afternotelist/ReceiverAfternoteHomeViewModel.kt::function toUiModel [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/shared/util/AfternoteDisplayRes.kt::function getIconResForType [implicit-public]",
             )
 
         val ISSUE_1674_MINDRECORD =
@@ -340,10 +325,8 @@ class ProductionVisibilityKonsistTest {
                 "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/WeeklyReportRecordedDays.kt::function resolveDateInWeekOrNull [internal]",
             )
 
-        val ISSUE_1675_ONBOARDING =
-            setOf(
-                "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/OnboardingProfileScreen.kt::function handleProfileImagePickerResult [internal]",
-            )
+        /** #1675 해소. 프로필 이미지 선택 결과 helper 는 private 이고 테스트는 화면 동작으로 본다. */
+        val ISSUE_1675_ONBOARDING = emptySet<String>()
 
         val ISSUE_1676_RECEIVER =
             setOf(

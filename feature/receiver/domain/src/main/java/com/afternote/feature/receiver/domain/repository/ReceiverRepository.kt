@@ -38,8 +38,10 @@ interface ReceiverRepository {
 
     suspend fun getReceivedAfternoteDetail(afternoteId: Long): Result<ReceivedAfternoteDetail>
 
+    /** 서버 export 계약 도입 전에는 [com.afternote.feature.receiver.domain.error.ReceiverFailure.ExportNotSupported]. */
     suspend fun downloadReceivedExport(): Result<ReceivedExportBundle>
 
+    /** export 저장 구현 도입 전에는 [com.afternote.feature.receiver.domain.error.ReceiverFailure.ExportNotSupported]. */
     suspend fun saveReceivedExportToFile(bundle: ReceivedExportBundle): Result<Unit>
 
     suspend fun loadSenderMessage(): Result<SenderMessageInfo?>
