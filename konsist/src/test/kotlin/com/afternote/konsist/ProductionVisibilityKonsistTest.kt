@@ -283,17 +283,8 @@ class ProductionVisibilityKonsistTest {
     }
 
     private companion object {
-        val ISSUE_1671_PLATFORM =
-            setOf(
-                "app/src/main/java/com/afternote/afternote_fe/messaging/AfternoteFirebaseMessagingService.kt::class FcmNotificationContent [internal]",
-                "app/src/main/java/com/afternote/afternote_fe/messaging/AfternoteFirebaseMessagingService.kt::object FcmNotificationContentResolver [internal]",
-                "app/src/main/java/com/afternote/afternote_fe/messaging/AfternoteFirebaseMessagingService.kt::object FcmNotificationIdentity [internal]",
-                "build-logic/src/main/kotlin/BuildFingerprint.kt::function debugVersionNameSuffix [implicit-public]",
-                "build-logic/src/main/kotlin/BuildFingerprint.kt::function shortCommitSha [implicit-public]",
-                "build-logic/src/main/kotlin/BuildFingerprint.kt::property UNKNOWN_COMMIT_MARKER [implicit-public]",
-                "build-logic/src/main/kotlin/VersionCode.kt::property DEFAULT_AFTERNOTE_VERSION_CODE [implicit-public]",
-                "build-logic/src/main/kotlin/VersionCode.kt::property MAX_PLAY_VERSION_CODE [implicit-public]",
-            )
+        /** #1671 이 8건을 전부 `private` 로 줄였다. 형제 이슈들이 각자 자기 목록을 비우는 중이라 자리는 남긴다. */
+        val ISSUE_1671_PLATFORM = emptySet<String>()
 
         val ISSUE_1672_CORE =
             setOf(
