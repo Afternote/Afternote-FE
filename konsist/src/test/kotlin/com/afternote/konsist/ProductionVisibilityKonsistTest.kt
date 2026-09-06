@@ -410,6 +410,12 @@ class ProductionVisibilityKonsistTest {
                 "core/ui/src/main/kotlin/com/afternote/core/ui/button/" +
                     "AfternoteRadioGroup.kt::function AfternoteRadioGroup [implicit-public]" to
                     "core:ui README에 문서화된 공용 컴포넌트",
+                "core/ui/src/main/kotlin/com/afternote/core/ui/mvi/" +
+                    "MviViewModel.kt::class MviViewModel [implicit-public]" to
+                    "MVI 베이스 계약(#1800) — 화면 전환 이슈가 상속하기 시작하면 프로덕션 참조가 생긴다",
+                "core/ui/src/main/kotlin/com/afternote/core/ui/mvi/" +
+                    "ObserveSignal.kt::function ObserveSignal [implicit-public]" to
+                    "MVI 일회성 신호 소비 관용구(#1800) — 화면 전환 이슈가 소비처를 만든다",
                 "core/ui/src/main/kotlin/com/afternote/core/ui/popup/" +
                     "AfternoteActionMenu.kt::class ActionMenuItem [implicit-public]" to
                     "AfternoteActionMenu 파라미터와 editDeleteActionMenuItems 반환값을 외부 feature가 타입 추론 소비",
