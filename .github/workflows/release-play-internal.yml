@@ -188,9 +188,11 @@ jobs:
           echo "path=$bundle_path" >> "$GITHUB_OUTPUT"
           node .github/scripts/verify-release-attestation.mjs digest "$bundle_path" "$GITHUB_OUTPUT"
 
-      # 서명·필수 bundle 항목·mapping 존재를 확인한다. 잘못 서명된 AAB 가 Play 까지 가서
-      # 거절당하는 대신 여기서 멈춘다.
+      # 서명·필수 항목·mapping·주입된 versionCode 를 attest 전에 확인한다.
+      # 검증기가 preflight 와 같은 버전·SHA256 의 bundletool 로 manifest 를 읽는다.
       - name: Verify the AAB signature and contents
+        env:
+          AFTERNOTE_VERSION_CODE: ${{ steps.version_code.outputs.version_code }}
         run: bash scripts/verify-play-release-bundle.sh --skip-build
 
       - name: Attest the exact signed AAB

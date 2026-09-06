@@ -26,7 +26,7 @@ function response(status, body) {
  * 실제 Play 서버 대신 이 fake 가 edit 수명주기를 그대로 흉내낸다. 각 라우트가 무엇을 돌려줄지
  * 테스트가 정하고, 호출 순서는 calls 로 확인한다.
  */
-function fakePlay({ bundles = [], tracks = [], failAt, uploadVersionCode } = {}) {
+function fakePlay({ bundles = [], tracks = [], failAt, failDelete = false, uploadVersionCode } = {}) {
     const calls = [];
     const state = { committed: false, deleted: false };
 
@@ -41,6 +41,9 @@ function fakePlay({ bundles = [], tracks = [], failAt, uploadVersionCode } = {})
             return response(200, { id: "edit-1" });
         }
         if (route.startsWith("DELETE ")) {
+            if (failDelete) {
+                return response(503, { error: { message: "cleanup unavailable" } });
+            }
             state.deleted = true;
             return response(204, "");
         }
@@ -140,9 +143,13 @@ test("게시는 edit → upload → internal track → commit 순서로만 진�
     assert.equal(play.state.deleted, false);
 
     const uploadIndex = play.calls.findIndex((call) => call.includes("uploadType=media"));
+    const bundlesIndex = play.calls.findIndex((call) => call.endsWith("/bundles"));
+    const tracksIndex = play.calls.findIndex((call) => call.endsWith("/tracks"));
     const trackIndex = play.calls.findIndex((call) => call.startsWith("PUT "));
     const commitIndex = play.calls.findIndex((call) => call.endsWith(":commit"));
     assert.ok(uploadIndex > 0);
+    assert.ok(bundlesIndex > 0 && bundlesIndex < uploadIndex);
+    assert.ok(tracksIndex > 0 && tracksIndex < uploadIndex);
     assert.ok(uploadIndex < trackIndex);
     assert.ok(trackIndex < commitIndex);
 });
@@ -157,11 +164,76 @@ test("같은 versionCode 재업로드는 업로드 전에 막힌다", async () =
                 releaseNotes: "note",
                 log: silent,
             }),
-        /이미 Play 에 올라가 있다/,
+        /현재 최대 versionCode 202 보다 커야/,
     );
 
     assert.ok(!play.calls.some((call) => call.includes("uploadType=media")), "업로드까지 가면 안 된다");
     assert.equal(play.state.deleted, true);
+});
+
+for (const [name, metadata] of [
+    ["더 큰 bundle", { bundles: [{ versionCode: 203 }] }],
+    ["같은 track 값", { tracks: [{ track: "internal", releases: [{ versionCodes: ["202"] }] }] }],
+    ["다른 track 의 더 큰 값", {
+        bundles: [{ versionCode: 100 }],
+        tracks: [
+            { track: "internal", releases: [{ versionCodes: ["101"] }] },
+            { track: "production", releases: [{ versionCodes: ["203"] }] },
+        ],
+    }],
+]) {
+    test(`업로드 직전 ${name} 이 있으면 AAB 전송 전에 멈추고 edit 를 정리한다`, async () => {
+        const play = fakePlay({ ...metadata, uploadVersionCode: 202 });
+        await assert.rejects(
+            () => publishInternalBundle(play.client, {
+                bundle: Buffer.from("aab"), versionCode: 202, releaseNotes: "note", log: silent,
+            }),
+            /현재 최대 versionCode 20[23] 보다 커야/,
+        );
+        assert.ok(!play.calls.some((call) => call.includes("uploadType=media")));
+        assert.equal(play.state.committed, false);
+        assert.equal(play.state.deleted, true);
+    });
+}
+
+test("업로드 직전 tracks 조회가 실패하면 전송하지 않고 edit 를 정리한다", async () => {
+    const play = fakePlay({ failAt: "/tracks", uploadVersionCode: 202 });
+    await assert.rejects(
+        () => publishInternalBundle(play.client, {
+            bundle: Buffer.from("aab"), versionCode: 202, releaseNotes: "note", log: silent,
+        }),
+        /GET .*\/tracks 실패 \(403\)/,
+    );
+    assert.ok(!play.calls.some((call) => call.includes("uploadType=media")));
+    assert.equal(play.state.deleted, true);
+});
+
+test("업로드 직전 두 목록의 최댓값보다 크면 게시한다", async () => {
+    const play = fakePlay({
+        bundles: [{ versionCode: 200 }],
+        tracks: [{ track: "production", releases: [{ versionCodes: ["201"] }] }],
+        uploadVersionCode: 202,
+    });
+    await publishInternalBundle(play.client, {
+        bundle: Buffer.from("aab"), versionCode: 202, releaseNotes: "note", log: silent,
+    });
+    assert.equal(play.state.committed, true);
+    assert.equal(play.state.deleted, false);
+});
+
+test("정리 실패는 경고를 남기고 원래 게시 오류를 보존한다", async () => {
+    const play = fakePlay({ failAt: ":commit", failDelete: true, uploadVersionCode: 202 });
+    const logs = [];
+    await assert.rejects(
+        () => publishInternalBundle(play.client, {
+            bundle: Buffer.from("aab"), versionCode: 202, releaseNotes: "note", log: (line) => logs.push(line),
+        }),
+        /:commit 실패 \(403\)/,
+    );
+    assert.ok(play.calls.some((call) => call.startsWith("DELETE ")));
+    assert.equal(play.state.deleted, false);
+    assert.equal(logs.length, 1);
+    assert.match(logs[0], /::warning::미완료 edit edit-1 정리 실패: .*\(503\)/);
 });
 
 test("업로드된 versionCode 가 빌드한 값과 다르면 track 을 건드리지 않는다", async () => {
