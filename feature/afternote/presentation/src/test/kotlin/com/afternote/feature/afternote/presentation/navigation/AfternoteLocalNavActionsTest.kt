@@ -74,6 +74,33 @@ class AfternoteLocalNavActionsTest {
     }
 
     @Test
+    fun `홈에서 임시저장 목록으로 이동하고 뒤로가기로 홈에 돌아온다`() {
+        actions.replaceFingerprintLoginWithAfternoteHome()
+
+        actions.navigateToDraftList()
+        assertEquals(listOf("AfternoteHomeRoute", "DraftListRoute"), stack())
+
+        actions.popBack()
+        assertEquals(listOf("AfternoteHomeRoute"), stack())
+    }
+
+    @Test
+    fun `임시저장 목록에서 고른 항목은 에디터 흐름으로 이어진다`() {
+        actions.replaceFingerprintLoginWithAfternoteHome()
+        actions.navigateToDraftList()
+
+        actions.navigateToEditorForEdit(itemId = 31L, initialType = AfternoteType.SOCIAL_NETWORK)
+
+        assertEquals(
+            listOf("AfternoteHomeRoute", "DraftListRoute", "EditorFlowRoute"),
+            stack(),
+        )
+        // 이어쓰기를 그만두면 목록으로 돌아온다.
+        actions.popBack()
+        assertEquals(listOf("AfternoteHomeRoute", "DraftListRoute"), stack())
+    }
+
+    @Test
     fun `저장 성공은 홈 위 화면들을 걷어내고 홈만 남긴다`() {
         actions.replaceFingerprintLoginWithAfternoteHome()
         actions.navigateToAfternoteDetail(itemId = 7L)

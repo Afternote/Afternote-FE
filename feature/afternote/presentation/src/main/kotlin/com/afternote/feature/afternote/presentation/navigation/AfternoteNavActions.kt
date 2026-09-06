@@ -41,4 +41,7 @@ interface AfternoteNavActions {
 
     /** Afternote 홈 TopBar 설정 기어 → 설정 화면(Route.Setting) 진입. */
     fun navigateToSetting()
+
+    /** 홈 헤더의 "임시저장" → 임시저장 목록 진입 (#1762 · #1792). */
+    fun navigateToDraftList()
 }

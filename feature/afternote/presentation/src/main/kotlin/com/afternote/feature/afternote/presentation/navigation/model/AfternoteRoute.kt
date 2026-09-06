@@ -36,4 +36,8 @@ sealed interface AfternoteRoute : NavKey {
 
     @Serializable
     data object FingerprintLoginRoute : AfternoteRoute
+
+    /** 임시저장 목록 (#1762). 홈에서 진입해 항목을 고르면 에디터로 이어진다. */
+    @Serializable
+    data object DraftListRoute : AfternoteRoute
 }

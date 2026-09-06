@@ -76,11 +76,11 @@ internal object AfternoteEditorFormMapper {
 
             is DetailContent.Memorial -> {
                 EditorContentPrefill.Memorial(
-                    videoUrl = memorial.media.videoUrl,
-                    thumbnailUrl = memorial.media.thumbnailUrl,
-                    photoUrl = memorial.media.photoUrl,
+                    videoUrl = media.videoUrl,
+                    thumbnailUrl = media.thumbnailUrl,
+                    photoUrl = media.photoUrl,
                     playlistSongs =
-                        memorial.songs.mapIndexed { index, song ->
+                        songs.mapIndexed { index, song ->
                             Song(
                                 selectionKey = "detail:$index",
                                 title = song.title,
