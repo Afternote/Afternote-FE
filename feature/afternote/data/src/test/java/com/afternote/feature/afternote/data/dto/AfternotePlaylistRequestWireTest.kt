@@ -53,6 +53,14 @@ class AfternotePlaylistRequestWireTest {
 
     private val emptied = MemorialWritePayload(memorialPhotoUrl = null, songs = emptyList(), memorialVideo = null)
 
+    /** 발행된 PLAYLIST PATCH 검증을 통과하도록 기존 곡을 함께 싣는 실제 서버 미디어 삭제 스냅샷. */
+    private val deletedServerMedia =
+        MemorialWritePayload(
+            memorialPhotoUrl = null,
+            songs = listOf(MemorialSongPayload(title = "기존 곡", artist = "기존 가수", coverUrl = null)),
+            memorialVideo = null,
+        )
+
     @Test
     fun `영정사진이 비면 키를 남긴 채 null 이 실려 삭제로 나간다`() {
         val playlist = playlistOf(emptied)
@@ -67,6 +75,22 @@ class AfternotePlaylistRequestWireTest {
 
         assertTrue("memorialVideo" in playlist)
         assertEquals(JsonNull, playlist.getValue("memorialVideo"))
+    }
+
+    @Test
+    fun `서버 미디어 삭제 저장은 두 null 과 기존 곡을 한 playlist 에 싣는다`() {
+        val playlist = playlistOf(deletedServerMedia)
+
+        assertEquals(JsonNull, playlist.getValue("memorialPhotoUrl"))
+        assertEquals(JsonNull, playlist.getValue("memorialVideo"))
+        val song =
+            playlist
+                .getValue("songs")
+                .jsonArray
+                .single()
+                .jsonObject
+        assertEquals("기존 곡", song.getValue("title").jsonPrimitive.content)
+        assertEquals("기존 가수", song.getValue("artist").jsonPrimitive.content)
     }
 
     /**
