@@ -7,15 +7,19 @@ package com.afternote.feature.onboarding.presentation
  * (`onboarding_signup_password_rule_combination`)를 쓴다 — 시안 `2383:16789` 의 안내 2줄이
  * 회원가입 시안과 글자까지 동일하다. 두 화면이 각자 정규식을 들면 한쪽만 고쳐질 자리라 여기 모은다.
  *
- * **서버 규칙과 완전히 같지는 않다.** BE `PasswordValidation.REGEX` 는
- * `^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,15}$` 로 최대 15자이고
- * 특수문자를 8종으로 한정한다. 이쪽이 16자·전체 특수문자를 허용하므로 서버가 400 으로
- * 되돌릴 수 있는 입력이 통과한다. 문구("8 ~ 16자")가 시안 정본이라 클라를 시안에 맞춰 두고,
- * 규칙 통일은 BE 와 별도로 합의할 항목이다(회원가입도 같은 상태 — #457 에서 기존 동작 유지).
+ * **서버 규칙과 같다 (#1628).** BE `PasswordValidation.REGEX` 를 그대로 옮겼다 — 영문·숫자·허용
+ * 특수문자(`@ $ ! % * # ? &`)를 각각 하나 이상 포함하고, 전체 문자는 그 ASCII 허용 목록 안에서만
+ * 8~15자여야 한다. 서버는 이 상수 하나를 `SignupRequest`·`PasswordChangeRequest`·`PasswordFindRequest`
+ * 세 곳에 `@Pattern` 으로 걸고 컨트롤러 진입 전에 거절하므로, 클라가 더 넓으면 사용자는 조건 충족
+ * 표시를 다 받고 제출에서 400 을 맞는다.
+ *
+ * Android 정규식의 `\d` 는 Unicode 숫자까지 포함해 전각 `１`·아라비아-인도 `١` 을 통과시킨다.
+ * 서버 JVM 의 기본 판정과 갈리지 않도록 숫자를 `[0-9]` 로 명시한다.
  */
 internal object OnboardingPasswordRule {
-    /** 8~16자, 영문 대소문자 + 숫자 + 특수문자 각 1개 이상. */
-    private val REGEX = Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,16}$")
+    /** 8~15자, 영문·숫자·허용 특수문자 8종 각 1개 이상, 그 밖의 문자는 금지. */
+    private val REGEX =
+        Regex("^(?=.*[A-Za-z])(?=.*[0-9])(?=.*[@$!%*#?&])[A-Za-z0-9@$!%*#?&]{8,15}$")
 
     fun isSatisfied(password: String): Boolean = REGEX.matches(password)
 }
