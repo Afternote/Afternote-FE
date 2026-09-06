@@ -80,7 +80,7 @@ fun TimeLetterBlockItem(
                         letter.receiverIds
                             .mapNotNull { receiverNameMap[it] }
                             .joinToString(", ")
-                            .ifEmpty { "${letter.receiverIds.size}명" }
+                            .ifEmpty { "수신자 정보 없음" }
                     Text(
                         text = "수신인  $receiverText",
                         style = AfternoteDesign.typography.footnoteCaption,
@@ -92,7 +92,7 @@ fun TimeLetterBlockItem(
                         style = AfternoteDesign.typography.footnoteCaption,
                         color = AfternoteDesign.colors.gray6,
                     )
-                    Spacer(modifier = Modifier.width(43.dp))
+                    Spacer(modifier = Modifier.width(19.dp))
                     Box {
                         Image(
                             painterResource(com.afternote.feature.timeletter.presentation.R.drawable.setting),
