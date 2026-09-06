@@ -31,7 +31,6 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -48,8 +47,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
-
-internal const val MEMORIAL_VIDEO_ADD_TEST_TAG = "memorialVideoAdd"
 
 /**
  * 장례식에 남길 영상 추가 컴포넌트
@@ -153,7 +150,6 @@ fun MemorialVideoUpload(
                         .fillMaxWidth()
                         .height(80.dp)
                         .background(color = AfternoteDesign.colors.white, shape = RoundedCornerShape(size = 16.dp))
-                        .testTag(MEMORIAL_VIDEO_ADD_TEST_TAG)
                         .semantics { contentDescription = addContentDescription }
                         .clickable(onClick = onAddVideoClick),
             ) {

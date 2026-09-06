@@ -308,23 +308,17 @@ class ProductionVisibilityKonsistTest {
                 "core/ui/src/main/kotlin/com/afternote/core/ui/topbar/HomeTopBar.kt::property PROFILE_ICON_TEST_TAG [implicit-public]",
             )
 
+        /**
+         * 남은 항목은 MVI 전환(#1804)이 다시 열 화면 seam 이라 #1817 이 그 뒤에 판정한다.
+         * #1673 의 나머지(mapper·test tag·Saver·목록 매퍼)는 해소돼 목록에서 빠졌다.
+         */
         val ISSUE_1673_AFTERNOTE =
             setOf(
                 "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/detail/AfternoteDetailRoute.kt::function DeleteInProgressOverlay [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/detail/MemorialDetailScreen.kt::property MEMORIAL_VIDEO_CARD_TEST_TAG [internal]",
                 "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/AfternoteEditorContent.kt::function EditorContent [internal]",
                 "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/AfternoteEditorScreen.kt::function editorContentSignature [internal]",
                 "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/AfternoteEditorViewModel.kt::function toAfternoteEditorError [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/mapper/EditorReceiverMapping.kt::function toAfternoteEditorReceiver [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/memorial/MemorialVideoUpload.kt::property MEMORIAL_VIDEO_ADD_TEST_TAG [internal]",
                 "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/selection/EditorServiceSelectionSheet.kt::function EditorServiceSelectionSheetContent [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/selection/EditorServiceSelectionSheet.kt::function filterEditorServiceOptions [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/selection/EditorServiceSelectionSheet.kt::function serviceSelectionSheetTitleResOrNull [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/state/AfternoteEditorState.kt::property editorMessagesSaver [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/home/AfternoteTypeFilterRow.kt::property AFTERNOTE_CATEGORY_MORE_INDICATOR_TEST_TAG [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/navigation/AfternoteNavGraphTheme.kt::function AfternoteLightTheme [implicit-public]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/receiver/afternotelist/ReceiverAfternoteHomeViewModel.kt::function toUiModel [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/shared/util/AfternoteDisplayRes.kt::function getIconResForType [implicit-public]",
             )
 
         val ISSUE_1674_MINDRECORD =
