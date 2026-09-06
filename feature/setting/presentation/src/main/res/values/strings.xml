@@ -40,6 +40,7 @@
     <string name="customer_center_one_to_one_description">24시간 접수 · 영업일 1일 내 답변</string>
     <string name="customer_center_email_inquiry">이메일 문의</string>
     <string name="customer_center_email_address">help@afternote.app</string>
+    <string name="setting_customer_center_phone_unavailable">전화 앱을 열 수 없어요. 이메일로 문의해 주세요.</string>
     <string name="customer_center_email_copied">이메일 주소가 복사되었습니다.</string>
     <string name="customer_center_recipient_section">유족·수신자 안내</string>
     <string name="customer_center_recipient_inquiry">유족·수신자 전용 문의</string>

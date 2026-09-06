@@ -38,17 +38,17 @@ import com.afternote.feature.setting.presentation.R
 import kotlinx.coroutines.launch
 
 @Composable
-fun CustomerCenterScreen(
+internal fun CustomerCenterScreen(
     onBackClick: () -> Unit,
-    onPhoneInquiryClick: () -> Unit,
+    onPhoneInquiryClick: () -> Boolean,
     onOneToOneInquiryClick: () -> Unit,
     onEmailInquiryClick: () -> Unit,
-    onRecipientInquiryClick: () -> Unit,
     onFaqClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+    val phoneUnavailableMessage = stringResource(R.string.setting_customer_center_phone_unavailable)
     val emailCopiedMessage = stringResource(R.string.customer_center_email_copied)
 
     Scaffold(
@@ -83,7 +83,11 @@ fun CustomerCenterScreen(
                 CustomerCenterMenuItem(
                     title = stringResource(R.string.customer_center_phone_inquiry),
                     description = stringResource(R.string.customer_center_phone_number),
-                    onClick = onPhoneInquiryClick,
+                    onClick = {
+                        if (!onPhoneInquiryClick()) {
+                            coroutineScope.launch { snackbarHostState.showSnackbar(phoneUnavailableMessage) }
+                        }
+                    },
                 )
             }
             item {
@@ -112,7 +116,7 @@ fun CustomerCenterScreen(
             item {
                 CustomerCenterMenuItem(
                     title = stringResource(R.string.customer_center_recipient_inquiry),
-                    onClick = onRecipientInquiryClick,
+                    onClick = {},
                     enabled = false,
                 )
             }
@@ -249,10 +253,9 @@ private fun CustomerCenterScreenPreview() {
     AfternoteTheme {
         CustomerCenterScreen(
             onBackClick = {},
-            onPhoneInquiryClick = {},
+            onPhoneInquiryClick = { true },
             onOneToOneInquiryClick = {},
             onEmailInquiryClick = {},
-            onRecipientInquiryClick = {},
             onFaqClick = {},
         )
     }

@@ -1,5 +1,6 @@
 package com.afternote.feature.setting.presentation.navigation
 
+import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -206,19 +207,19 @@ fun NavGraphBuilder.settingNavGraph(
                 onPhoneInquiryClick = { context.openDialer(phoneUri) },
                 onOneToOneInquiryClick = {},
                 onEmailInquiryClick = { context.copyToClipboard(emailAddress) },
-                onRecipientInquiryClick = {},
                 onFaqClick = {},
             )
         }
     }
 }
 
-private fun Context.openDialer(phoneUri: String) {
-    val intent = Intent(Intent.ACTION_DIAL, Uri.parse(phoneUri))
-    if (intent.resolveActivity(packageManager) != null) {
-        startActivity(intent)
+private fun Context.openDialer(phoneUri: String): Boolean =
+    try {
+        startActivity(Intent(Intent.ACTION_DIAL, Uri.parse(phoneUri)))
+        true
+    } catch (_: ActivityNotFoundException) {
+        false
     }
-}
 
 private fun Context.copyToClipboard(text: String) {
     val clipboardManager = getSystemService(ClipboardManager::class.java)

@@ -11,7 +11,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
-import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.captureToImage
@@ -225,7 +224,7 @@ class SettingImplementedCoverageAndroidTest {
     }
 
     @Test
-    fun actualCustomerCenterScreen_unimplementedMenuItemsHaveNoClickAction() {
+    fun actualCustomerCenterScreen_unimplementedMenuItemsAreDisabled() {
         waitForSettingHomeContent()
         composeRule.onAllNodes(hasText("고객센터")).run {
             assertCountEquals(2)
@@ -233,9 +232,9 @@ class SettingImplementedCoverageAndroidTest {
         }
         waitForRoute<SettingRoute.CustomerCenterRoute>()
 
-        composeRule.onNodeWithText("1:1 문의").assertHasNoClickAction()
-        composeRule.onNodeWithText("유족·수신자 전용 문의").performScrollTo().assertHasNoClickAction()
-        composeRule.onNodeWithText("자주 묻는 질문").performScrollTo().assertHasNoClickAction()
+        composeRule.onNodeWithText("1:1 문의").assertIsNotEnabled()
+        composeRule.onNodeWithText("유족·수신자 전용 문의").performScrollTo().assertIsNotEnabled()
+        composeRule.onNodeWithText("자주 묻는 질문").performScrollTo().assertIsNotEnabled()
     }
 
     private fun openWithdrawGuide() {
