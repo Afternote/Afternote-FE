@@ -6,7 +6,6 @@ import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.feature.setting.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,40 +26,19 @@ class ConnectedAccountsViewModel
         private val _events = Channel<ConnectedAccountsEvent>(Channel.BUFFERED)
         val events = _events.receiveAsFlow()
 
-        /** 진행 중인 조회 — 첫 진입 이후의 ON_RESUME 이 실행 중인 로드와 겹치면 건너뛰기 위한 가드. */
-        private var loadJob: Job? = null
-
-        /**
-         * 다음 [refreshOnReturn] 이 첫 ON_RESUME(진입 자체)인지. 첫 resume 은 init 로드와 같은
-         * 진입이므로 갱신하지 않는다 — VM 필드인 이유는 ReceiverHomeViewModel 의 refreshOnReturn 과
-         * 동일, 프로세스 사망 후 복원에서도 init 로드와 수명이 일치한다.
-         */
-        private var isFirstResume = true
-
         init {
             loadConnectedAccounts()
         }
 
-        /** 다른 화면에서 복귀했을 때의 자동 갱신 (#701). 첫 진입은 건너뛰고, 로드가 겹치면 건너뛴다. */
-        fun refreshOnReturn() {
-            if (isFirstResume) {
-                isFirstResume = false
-                return
+        private fun loadConnectedAccounts() {
+            viewModelScope.launch {
+                runCatching { userRepository.getConnectedAccounts() }
+                    .onSuccess { accounts ->
+                        _uiState.update { it.copy(isLoading = false, accounts = accounts.toStateList()) }
+                    }.onFailure {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = "계정 정보를 불러올 수 없습니다.") }
+                    }
             }
-            if (loadJob?.isActive == true) return
-            loadConnectedAccounts()
-        }
-
-        fun loadConnectedAccounts() {
-            loadJob =
-                viewModelScope.launch {
-                    runCatching { userRepository.getConnectedAccounts() }
-                        .onSuccess { accounts ->
-                            _uiState.update { it.copy(isLoading = false, accounts = accounts.toStateList()) }
-                        }.onFailure {
-                            _uiState.update { it.copy(isLoading = false, errorMessage = "계정 정보를 불러올 수 없습니다.") }
-                        }
-                }
         }
 
         fun onToggle(
