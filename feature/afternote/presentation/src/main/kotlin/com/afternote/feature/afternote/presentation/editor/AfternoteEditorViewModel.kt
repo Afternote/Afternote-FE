@@ -29,9 +29,11 @@ import com.afternote.feature.afternote.presentation.editor.state.AfternoteTypeFo
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.editor.state.withMemorialPhoto
+import com.afternote.feature.afternote.presentation.editor.state.withMemorialPhotoRemoved
 import com.afternote.feature.afternote.presentation.editor.state.withMemorialPlaylistSongs
 import com.afternote.feature.afternote.presentation.editor.state.withMemorialThumbnail
 import com.afternote.feature.afternote.presentation.editor.state.withMemorialVideo
+import com.afternote.feature.afternote.presentation.editor.state.withMemorialVideoRemoved
 import com.afternote.feature.afternote.presentation.editor.state.withPrefillApplied
 import com.afternote.feature.afternote.presentation.editor.state.withProcessingMethodAdded
 import com.afternote.feature.afternote.presentation.editor.state.withProcessingMethodDeleted
@@ -223,16 +225,25 @@ class AfternoteEditorViewModel
 
         fun setService(service: String) = mutateForm { it.withService(service) }
 
-        fun setMemorialPhoto(uri: String?) = mutateForm { it.withMemorialPhoto(uri) }
+        fun setMemorialPhoto(uri: String) = mutateForm { it.withMemorialPhoto(uri) }
 
-        fun setMemorialVideo(url: String?) {
+        /** 시트의 사진 삭제 항목. 슬롯을 비운다 — 서버 삭제는 저장 시 명시적 `null` 로 나간다(#1597, #1717). */
+        fun removeMemorialPhoto() = mutateForm { it.withMemorialPhotoRemoved() }
+
+        fun setMemorialVideo(url: String) {
             // 영상이 갈리면 이전 영상의 썸네일 실패도 함께 무효다 — 남은 바이트로 재시도하면 다른
             // 영상의 그림이 붙는다.
             pendingThumbnailBytes = null
             mutateForm { it.withMemorialVideo(url) }
         }
 
-        fun setMemorialThumbnail(dataUrl: String?) = mutateForm { it.withMemorialThumbnail(dataUrl) }
+        /** 시트의 영상 삭제 항목. 표시된 영상이 사라지므로 그 영상의 썸네일 재시도 바이트도 함께 버린다. */
+        fun removeMemorialVideo() {
+            pendingThumbnailBytes = null
+            mutateForm { it.withMemorialVideoRemoved() }
+        }
+
+        fun setMemorialThumbnail(dataUrl: String) = mutateForm { it.withMemorialThumbnail(dataUrl) }
 
         fun addMemorialPlaylistSongs(songs: List<Song>) {
             if (songs.isEmpty()) return

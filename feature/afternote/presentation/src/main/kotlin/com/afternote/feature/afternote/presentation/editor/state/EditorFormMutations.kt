@@ -31,28 +31,36 @@ internal fun EditorFormState.withType(type: AfternoteType): EditorFormState =
 
 internal fun EditorFormState.withService(service: String): EditorFormState = mapServiceForm { it.withService(service) }
 
-internal fun EditorFormState.withMemorialPhoto(uri: String?): EditorFormState = mapMemorial { it.copy(pickedPhotoUri = uri) }
+/** 사진 선택은 `picked` 층에 실린다. 서버 사진은 `photoUrl` 에 그대로 남는다 — 저장 없이 나가면 그것이 사실이고, 이탈 가드가 기준선과 비교한다. */
+internal fun EditorFormState.withMemorialPhoto(uri: String): EditorFormState = mapMemorial { it.copy(pickedPhotoUri = uri) }
+
+/**
+ * 시트의 사진 삭제(#1114). 슬롯을 비운다 — 로컬 교체분과 서버 사진을 함께. 서버 삭제는 여기서 일어나지
+ * 않는다 — 두 칸이 빈 폼을 저장이 PATCH `null` 로 보낼 뿐이다(#1597). 저장 없이 나가면 서버 사진은
+ * 그대로다(이탈 가드).
+ */
+internal fun EditorFormState.withMemorialPhotoRemoved(): EditorFormState = mapMemorial { it.copy(pickedPhotoUri = null, photoUrl = null) }
 
 /**
  * 영상 첨부는 통째로 갈린다 — 새 영상에는 썸네일이 아직 없고, 이전 영상의 썸네일을 물려주면 다른
  * 영상의 그림이 붙는다.
- *
- * `null`(삭제)은 **이 폼에서 새로 붙인 영상만** 걷어낸다. 서버에 저장된 영상은 수정 계약으로 지울 수
- * 없어(빈 필드 = 기존 값 유지), 폼에서 없앤 척하면 저장 뒤 되살아난다(#1406). 편집 값이 서버 원본을
- * 함께 보존하므로 교체분을 걷으면 표시가 저절로 원본으로 돌아간다.
  */
-internal fun EditorFormState.withMemorialVideo(url: String?): EditorFormState =
-    mapMemorial { form ->
-        form.copy(video = url?.let(form.video::withSelection) ?: form.video.discardSelection())
-    }
+internal fun EditorFormState.withMemorialVideo(url: String): EditorFormState =
+    mapMemorial { form -> form.copy(video = form.video.withSelection(url)) }
+
+/**
+ * 시트의 영상 삭제(#1114). 슬롯을 비운다 — 교체분·서버 원본·썸네일을 함께. 서버 삭제는 저장이 한다:
+ * 빈 값 객체를 [EditableMemorialVideo.toMediaInput] 이 `MediaInput.None` 으로 내고 #1596 배선이 명시적
+ * `null` 로 실어 저장 뒤 다시 살아나는 거짓 삭제가 없다(#1597).
+ */
+internal fun EditorFormState.withMemorialVideoRemoved(): EditorFormState = mapMemorial { it.copy(video = EditableMemorialVideo.empty()) }
 
 /**
  * 고른 영상에서 뽑아 올린 썸네일을 붙인다. 영상이 없으면 아무 일도 하지 않는다 — 썸네일만 남는
  * 상태를 만들 수 없으므로, 삭제한 뒤 늦게 도착한 업로드 결과는 조용히 버려진다.
- * `null`은 붙일 썸네일이 없다는 뜻이라 폼을 바꾸지 않는다.
  */
-internal fun EditorFormState.withMemorialThumbnail(url: String?): EditorFormState =
-    url?.let { thumbnail -> mapMemorial { form -> form.copy(video = form.video.withSelectionThumbnail(thumbnail)) } } ?: this
+internal fun EditorFormState.withMemorialThumbnail(url: String): EditorFormState =
+    mapMemorial { form -> form.copy(video = form.video.withSelectionThumbnail(url)) }
 
 internal fun EditorFormState.withMemorialPlaylistSongs(songs: List<Song>): EditorFormState = mapMemorial { it.copy(playlistSongs = songs) }
 

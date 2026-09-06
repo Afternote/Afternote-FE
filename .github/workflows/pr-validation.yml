@@ -22,6 +22,12 @@ on:
     types: [checks_requested]
   # GITHUB_TOKEN 으로 PR 브랜치에 baseline/stack merge commit 을 올리면 pull_request
   # 이벤트가 다시 발생하지 않는다. 권한 있는 bridge 가 같은 SHA 에 필수 검증을 붙일 때 쓴다.
+  #
+  # type: number 는 dispatch 입력의 «검증» 만 한다 — 런타임 값은 여전히 문자열이다.
+  # 그 문자열을 아래 reusable workflow 의 number 입력에 그대로 꽂으면 워크플로가
+  # 시작조차 못 하고 «evaluate reusable workflow inputs ... Unexpected value '1840'»
+  # 로 죽는다. job 이 0개라 로그도 check-run annotation 도 남지 않아 gh 로는 사유가
+  # 보이지 않는다. 그래서 각 with: 는 fromJSON 으로 수를 되살려 넘긴다 (#1850).
   workflow_dispatch:
     inputs:
       pull_request_number:
@@ -44,7 +50,7 @@ jobs:
     name: Repository Quality
     uses: ./.github/workflows/repository-quality.yml
     with:
-      pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number || 0 }}
+      pull_request_number: ${{ fromJSON(inputs.pull_request_number || '0') || github.event.pull_request.number || 0 }}
 
   static-analysis:
     name: Static Analysis
@@ -52,7 +58,7 @@ jobs:
     if: ${{ !cancelled() }}
     uses: ./.github/workflows/lint.yml
     with:
-      pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number || 0 }}
+      pull_request_number: ${{ fromJSON(inputs.pull_request_number || '0') || github.event.pull_request.number || 0 }}
       run_ktlint: ${{ needs.repository-quality.result != 'success' || needs.repository-quality.outputs.ktlint_required != 'false' }}
       ktlint_tasks: ${{ needs.repository-quality.result == 'success' && needs.repository-quality.outputs.ktlint_tasks || 'ktlintCheck :build-logic:ktlintCheck' }}
       run_android_lint: ${{ needs.repository-quality.result != 'success' || needs.repository-quality.outputs.android_lint_required != 'false' }}
@@ -65,7 +71,7 @@ jobs:
     if: ${{ !cancelled() }}
     uses: ./.github/workflows/unit-test.yml
     with:
-      pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number || 0 }}
+      pull_request_number: ${{ fromJSON(inputs.pull_request_number || '0') || github.event.pull_request.number || 0 }}
       run_validation: ${{ needs.repository-quality.result != 'success' || needs.repository-quality.outputs.unit_test_required != 'false' }}
       run_node_tests: ${{ needs.repository-quality.result != 'success' || needs.repository-quality.outputs.run_node_tests != 'false' }}
       gradle_tasks: ${{ needs.repository-quality.result == 'success' && needs.repository-quality.outputs.unit_test_tasks || ':koverXmlReportCi :koverHtmlReportCi :konsist:test :build-logic:test :app:compileDebugAndroidTestKotlin' }}
@@ -77,7 +83,7 @@ jobs:
     if: ${{ !cancelled() }}
     uses: ./.github/workflows/screenshot.yml
     with:
-      pull_request_number: ${{ inputs.pull_request_number || github.event.pull_request.number || 0 }}
+      pull_request_number: ${{ fromJSON(inputs.pull_request_number || '0') || github.event.pull_request.number || 0 }}
       run_validation: ${{ needs.repository-quality.result != 'success' || needs.repository-quality.outputs.screenshot_required != 'false' }}
       gradle_tasks: ${{ needs.repository-quality.result == 'success' && needs.repository-quality.outputs.screenshot_tasks || ':core:ui:validateScreenshotTest :feature:home:presentation:validateScreenshotTest :feature:receiver:presentation:validateScreenshotTest :feature:onboarding:presentation:validateScreenshotTest :feature:afternote:presentation:validateScreenshotTest :feature:mindrecord:presentation:validateScreenshotTest :feature:setting:presentation:validateScreenshotTest :feature:timeletter:presentation:validateScreenshotTest' }}
       screenshot_modules: ${{ needs.repository-quality.result == 'success' && needs.repository-quality.outputs.screenshot_modules || ':core:ui :feature:home:presentation :feature:receiver:presentation :feature:onboarding:presentation :feature:afternote:presentation :feature:mindrecord:presentation :feature:setting:presentation :feature:timeletter:presentation' }}
