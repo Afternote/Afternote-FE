@@ -19,6 +19,7 @@ class JvmLibraryConventionPlugin : Plugin<Project> {
                 targetCompatibility = JavaVersion.VERSION_17
             }
             extensions.configure<KotlinJvmProjectExtension> {
+                configureProductionExplicitApi(path)
                 compilerOptions {
                     jvmTarget.set(JvmTarget.JVM_17)
                 }

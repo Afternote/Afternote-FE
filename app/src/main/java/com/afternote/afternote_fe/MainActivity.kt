@@ -1,14 +1,15 @@
 package com.afternote.afternote_fe
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.afternote_fe.navigation.AppNavigation
+import com.afternote.afternote_fe.notification.NotificationIntentContract
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.theme.AfternoteTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -22,7 +23,9 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableLightEdgeToEdge()
+
+        enqueueNotificationIntent(intent)
 
         if (BuildConfig.DEBUG && intent.getBooleanExtra(EXTRA_DEBUG_START_TIMELETTER, false)) {
             setContent {
@@ -46,5 +49,17 @@ class MainActivity : FragmentActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        enqueueNotificationIntent(intent)
+    }
+
+    private fun enqueueNotificationIntent(intent: Intent) {
+        NotificationIntentContract
+            .fromIntent(intent)
+            ?.let(viewModel::enqueueNotificationEntry)
     }
 }

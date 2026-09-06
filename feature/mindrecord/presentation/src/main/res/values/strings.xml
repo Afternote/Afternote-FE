@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Home tab -->
-    <string name="mindrecord_home_tab_memories_section_title">MEMORIES</string>
+    <!-- 정본 세 홈 프레임(4327:99020·99103·99186)이 모두 이 라벨이다 (#700). -->
+    <string name="mindrecord_home_tab_memories_section_title">TIME LETTERS MEMORIES</string>
     <string name="mindrecord_home_tab_memories_section_click_label">기억 공간으로 이동</string>
     <string name="mindrecord_total_label">TOTAL</string>
     <string name="mindrecord_record_category_accessibility">%1$s 카테고리, 총 %2$s개</string>
@@ -48,7 +49,12 @@
     <string name="mindrecord_diary_write_title">일기 기록하기</string>
     <string name="mindrecord_diary_write_title_placeholder">제목을 입력하세요.</string>
     <string name="mindrecord_diary_write_mood_label">오늘의 기분</string>
+    <!-- 기분 칩의 접근 가능한 이름. 이모지만으로는 스크린리더가 그림을 묘사할 뿐이라 낱말을 싣는다 (#1179). -->
+    <string name="mindrecord_diary_write_mood_happy">기쁨</string>
+    <string name="mindrecord_diary_write_mood_soso">보통</string>
+    <string name="mindrecord_diary_write_mood_sad">슬픔</string>
     <string name="mindrecord_write_receiver_setting">수신자 설정하기</string>
+    <string name="mindrecord_write_date_picker_title">기록 날짜</string>
     <string name="mindrecord_write_receiver_to">%s님에게</string>
     <string name="mindrecord_write_receiver_to_multiple">%1$s님 외 %2$d명에게</string>
     <string name="mindrecord_write_receiver_sheet_title">수신자 선택</string>
@@ -66,6 +72,7 @@
     <!-- Calendar -->
     <string name="mindrecord_calendar_year_month">%1$d년 %2$d월</string>
     <string name="mindrecord_calendar_answered_count">%d개의 답변 완료</string>
+    <string name="mindrecord_calendar_recorded_count">%d개의 기록 완료</string>
     <string name="mindrecord_calendar_day_label_sun">일</string>
     <string name="mindrecord_calendar_day_label_mon">월</string>
     <string name="mindrecord_calendar_day_label_tue">화</string>
@@ -73,25 +80,25 @@
     <string name="mindrecord_calendar_day_label_thu">목</string>
     <string name="mindrecord_calendar_day_label_fri">금</string>
     <string name="mindrecord_calendar_day_label_sat">토</string>
+
     <!--
       "발송" 이 아니라 "기록" 이다 — 이 날짜는 과거 일기를 몰아 쓰기 위한 기록 날짜이지
       발송 시점이 아니다. 시안이 2026-08-05 에 "기록 날짜" 로 수정됐다 (#760).
     -->
     <string name="mindrecord_calendar_record_date_title">기록 날짜</string>
 
+    <!-- 일기 목록 -->
+    <string name="mindrecord_diary_list_section_header">DAILY DIARY</string>
+
     <!-- Daily question -->
     <string name="mindrecord_daily_question_default_thanks">오늘 하루, \n누구에게 가장 고마웠나요?</string>
     <string name="mindrecord_daily_question_go_answer">답변하러가기</string>
 
     <!-- Weekly report -->
-    <string name="mindrecord_weekly_report_title">주간 리포트</string>
-    <string name="mindrecord_weekly_report_subtitle">이번 주 나의 기록들을 확인해 보세요.</string>
     <string name="mindrecord_weekly_report_total_record">총 기록</string>
     <string name="mindrecord_weekly_report_this_week">이번 주</string>
     <string name="mindrecord_weekly_report_this_month">이번 달</string>
     <string name="mindrecord_weekly_report_avg_mood_weekly">주간 평균 기분</string>
-    <string name="mindrecord_weekly_report_avg_emotion_weekly">주간 평균 감정</string>
-    <string name="mindrecord_weekly_report_avg_mood_good">😊 좋음</string>
     <string name="mindrecord_weekly_report_label_format">%1$d월 %2$d주차 리포트</string>
     <string name="mindrecord_weekly_report_label_fallback">11월 2주차 리포트</string>
     <!--
@@ -103,8 +110,6 @@
     <string name="mindrecord_weekly_report_summary_preview">이번 주는 차분히 마음을 정리한 한 주였어요.</string>
 
     <!-- Insight card -->
-    <string name="mindrecord_insight_card_default_body">이번주는 가족과 함께하는 시간을 가장 많이 기록하셨네요. 일상의 소중함을 느끼는 한주였던 것 같아요.</string>
-    <string name="mindrecord_insight_card_footer">매일 꾸준히 기록하는 습관이 정말 멋져요!</string>
 
     <!-- Emotion keyword card -->
     <string name="mindrecord_emotion_card_title">나의 감정 키워드</string>
@@ -157,22 +162,29 @@
     <string name="mindrecord_toolbar_link_cd">링크</string>
 
     <!-- Media select bottom sheet (키보드 툴바 링크 버튼 → 미디어 메인 메뉴) -->
-    <string name="mindrecord_media_sheet_title">미디어 추가하기</string>
-    <string name="mindrecord_media_sheet_image">이미지 추가하기</string>
-    <string name="mindrecord_media_sheet_voice">음성 추가하기</string>
-    <string name="mindrecord_media_sheet_file">파일 추가하기</string>
-    <string name="mindrecord_media_sheet_link">링크 추가하기</string>
 
     <!-- Link bottom sheet (미디어 시트 → "링크 추가하기") -->
     <string name="mindrecord_link_sheet_title">링크 추가하기</string>
     <string name="mindrecord_link_sheet_confirm">완료</string>
     <string name="mindrecord_link_sheet_placeholder">URL을 입력하세요.</string>
+    <!-- 링크 거절 안내. http/https 만 본문에 넣는다 (#1067). -->
+    <string name="mindrecord_link_sheet_invalid">http 또는 https 로 시작하는 주소만 넣을 수 있어요.</string>
     <string name="mindrecord_toolbar_align_left_cd">왼쪽 정렬</string>
     <string name="mindrecord_toolbar_align_center_cd">가운데 정렬</string>
     <string name="mindrecord_toolbar_align_right_cd">오른쪽 정렬</string>
     <string name="mindrecord_toolbar_draft_count">임시저장 %d</string>
     <string name="mindrecord_toolbar_draft_label">임시저장</string>
     <string name="mindrecord_toolbar_text_settings">텍스트 설정</string>
+    <string name="mindrecord_toolbar_draft_list_cd">임시저장 목록 %1$d개</string>
+    <string name="mindrecord_toolbar_draft_list_unknown_cd">임시저장 목록, 수량 미확인</string>
+    <string name="mindrecord_toolbar_text_type_cd">글자 종류</string>
+    <string name="mindrecord_receiver_filter_cd">기록 필터</string>
+    <string name="mindrecord_receiver_filter_drag_handle_cd">필터 시트 크기 조절</string>
+    <!-- 작성 툴바 서식 토글 — 글자(B·I·U·S)가 유일한 라벨이라 스크린리더용 이름을 따로 둔다 (#1179). -->
+    <string name="mindrecord_toolbar_bold_cd">굵게</string>
+    <string name="mindrecord_toolbar_italic_cd">기울임</string>
+    <string name="mindrecord_toolbar_underline_cd">밑줄</string>
+    <string name="mindrecord_toolbar_strikethrough_cd">취소선</string>
     <string name="mindrecord_toolbar_style_title">제목</string>
     <string name="mindrecord_toolbar_style_header">머릿말</string>
     <string name="mindrecord_toolbar_style_subheader">부머릿말</string>
@@ -192,6 +204,8 @@
     <string name="mindrecord_error_diary_list_failed">일기를 불러오지 못했습니다.</string>
     <string name="mindrecord_error_diary_submit_failed">일기 등록에 실패했습니다.</string>
     <string name="mindrecord_error_diary_draft_load_failed">임시 저장된 일기를 불러오지 못했습니다.</string>
+    <string name="mindrecord_error_diary_future_date">기록 날짜는 오늘까지만 고를 수 있습니다.</string>
+    <string name="mindrecord_error_daily_question_draft_load_failed">임시저장한 답변을 불러오지 못했어요. 이대로 저장하면 이전 임시저장이 덮어써집니다.</string>
     <string name="mindrecord_error_daily_question_submit_failed">등록에 실패했습니다.</string>
     <string name="mindrecord_error_daily_question_answer_required">답변을 입력해 주세요.</string>
     <string name="mindrecord_error_daily_question_missing">오늘의 질문을 불러오지 못해 저장할 수 없습니다. 잠시 후 다시 시도해 주세요.</string>
@@ -212,10 +226,23 @@
     <string name="mindrecord_write_loading_draft">임시저장한 내용을 불러오는 중이에요…</string>
     <string name="mindrecord_error_image_uploading">이미지를 올리는 중이에요. 잠시 뒤 저장해 주세요.</string>
     <string name="mindrecord_error_delete_failed">삭제하지 못했어요. 다시 시도해 주세요.</string>
+    <!-- 링크 입력 검증 (#722) -->
+    <!-- 작성 검증 안내 (#722) -->
+    <string name="mindrecord_write_diary_missing_title">제목을 입력해 주세요.</string>
+    <string name="mindrecord_write_diary_missing_content">본문을 입력해 주세요.</string>
+    <string name="mindrecord_write_diary_missing_mood">오늘의 기분을 골라 주세요.</string>
+    <string name="mindrecord_write_draft_empty">임시저장할 내용이 없어요.</string>
     <!-- 수신자 열람 실패 (#614) — 서버 원문 대신 도메인 문구 -->
     <string name="mindrecord_receiver_delivery_not_ready">아직 열람할 수 있는 기록이 없어요.\n작성자가 전달 시점을 정하면 이곳에서 볼 수 있어요.</string>
     <string name="mindrecord_receiver_load_failed">마음의 기록을 불러오지 못했어요.</string>
     <string name="mindrecord_receiver_title">마음의 기록</string>
+    <!-- 기록 상세 화면 (#759) -->
+    <string name="mindrecord_detail_receiver">수신인</string>
+    <string name="mindrecord_detail_mood">오늘의 기분</string>
+    <string name="mindrecord_detail_not_found">기록을 찾을 수 없어요. 목록에서 다시 열어 주세요.</string>
+    <string name="mindrecord_detail_load_failed">기록을 불러오지 못했어요.</string>
+    <string name="mindrecord_detail_title_daily_question">데일리 질문</string>
+    <string name="mindrecord_detail_title_diary">일기</string>
     <!-- 카테고리 카드 기록 수를 아직 모를 때. en dash — 수신자 홈·주간 요약과 같은 표기 (#700·#952·#562). -->
     <string name="mindrecord_home_category_count_unavailable">–</string>
     <!-- 수신인 조회 실패 — «등록된 수신인 없음» 과 구분해야 한다 (#1019). -->

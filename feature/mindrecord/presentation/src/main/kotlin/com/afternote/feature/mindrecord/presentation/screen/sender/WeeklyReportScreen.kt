@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -23,9 +22,12 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.asString
+import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.domain.model.EmotionAnalysisStatus
@@ -45,9 +47,18 @@ fun WeeklyReportScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    // 갱신을 이 화면이 직접 건다. HomeScreen 이 VM 을 호이스팅해 대신 걸어 주면, 탭에
+    // 들어가지 않아도 VM 이 만들어져 `init` 조회가 미리 나간다 (#736).
+    //
+    // 첫 ON_RESUME 을 건너뛰는 판단은 ViewModel 이 한다 — 화면 저장 상태에 두면 프로세스
+    // 사망 뒤 «지나갔음» 만 복원돼 새 ViewModel 의 init 과 겹친다 (#736 리뷰).
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshOnReturn()
+    }
+
     when (val state = uiState) {
         WeeklyReportUiState.Loading -> {
-            LoadingBox(modifier)
+            LoadingBody(modifier)
         }
 
         is WeeklyReportUiState.Error -> {
@@ -139,7 +150,17 @@ private fun WeeklyReportContent(
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 AfternoteSectionHeader(title = "HISTORY")
                 state.dailyQuestions.forEach { dailyQuestion ->
-                    DailyQuestionListCard(answer = dailyQuestion)
+                    // 주간 리포트는 읽기 전용 요약이다 — 편집·삭제는 데일리질문 목록의 몫이라
+                    // 여기서는 «더보기» 를 그리지 않는다 (#1540).
+                    // 주간 리포트는 **읽기 전용 요약**이다 — 편집·삭제도, 카드 탭도 없다.
+                    // 셋 다 `null` 이라 클릭 semantics 자체가 안 붙는다: no-op 을 넘기면
+                    // 스크린리더가 「버튼」으로 읽는데 눌러도 아무 일이 없다 (#1540 리뷰).
+                    DailyQuestionListCard(
+                        answer = dailyQuestion,
+                        onClick = null,
+                        onEdit = null,
+                        onDelete = null,
+                    )
                 }
             }
         }
@@ -194,13 +215,6 @@ internal fun recordedSummaryHighlights(
     val daysStart = sentence.indexOf(daysText, startIndex = searchFrom).takeIf { it >= 0 && daysText.isNotEmpty() }
     if (daysStart != null) ranges += daysStart until (daysStart + daysText.length)
     return ranges
-}
-
-@Composable
-private fun LoadingBox(modifier: Modifier = Modifier) {
-    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
-    }
 }
 
 @Composable
@@ -327,7 +341,7 @@ internal fun emotionCardDescription(state: WeeklyReportUiState.Success): String 
             }
         }
 
-        else -> {
+        EmotionAnalysisStatus.NOTHING_TO_ANALYZE, EmotionAnalysisStatus.COMPLETED -> {
             if (state.emotionKeywords.isNotEmpty()) {
                 state.summaryText
             } else {

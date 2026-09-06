@@ -4,6 +4,7 @@ import com.android.build.api.dsl.LibraryExtension
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 
 internal fun Project.configureAndroidCommon(extension: CommonExtension) {
     // core-ktx 1.19 / lifecycle 2.11 이 android-37 컴파일을 요구한다 (targetSdk 는 36 유지).
@@ -11,11 +12,14 @@ internal fun Project.configureAndroidCommon(extension: CommonExtension) {
 
     extension.configureDefaultConfig(this)
 
-    extensions
-        .findByType(org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension::class.java)
-        ?.compilerOptions {
+    checkNotNull(extensions.findByType(KotlinAndroidProjectExtension::class.java)) {
+        "$path 에 Kotlin Android extension 이 없어 explicit API 정책을 적용할 수 없습니다."
+    }.apply {
+        configureProductionExplicitApi(path)
+        compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
         }
+    }
 
     afterNoteDependencies {
         implementation("androidx-core-ktx")

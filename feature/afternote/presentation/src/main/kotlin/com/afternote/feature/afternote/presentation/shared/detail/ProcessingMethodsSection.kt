@@ -29,7 +29,7 @@ fun ProcessingMethodsSection(
 ) {
     DetailSection(
         iconResId = CoreUiR.drawable.core_ui_settings,
-        label = stringResource(R.string.feature_afternote_detail_section_processing),
+        label = stringResource(R.string.afternote_detail_section_processing),
         modifier = modifier,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(17.dp)) {

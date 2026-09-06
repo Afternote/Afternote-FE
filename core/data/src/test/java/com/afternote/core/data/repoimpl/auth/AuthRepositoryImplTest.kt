@@ -7,10 +7,11 @@ import com.afternote.core.datastore.LocalStoreRegistry
 import com.afternote.core.datastore.StoreScope
 import com.afternote.core.datastore.TokenDataSource
 import com.afternote.core.domain.error.CoreAuthFailure
+import com.afternote.core.domain.push.DevicePushTargetProvider
+import com.afternote.core.domain.repository.push.PushTargetRepository
 import com.afternote.core.network.dto.LoginDto
 import com.afternote.core.network.dto.LoginRequestDto
 import com.afternote.core.network.dto.LogoutRequestDto
-import com.afternote.core.network.dto.PasskeyDto
 import com.afternote.core.network.dto.ReissueDto
 import com.afternote.core.network.dto.ReissueRequestDto
 import com.afternote.core.network.dto.SocialLoginRequestDto
@@ -22,7 +23,6 @@ import com.afternote.core.network.token.AccessTokenExpiryTracker
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.JsonElement
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -35,8 +35,9 @@ import kotlin.coroutines.cancellation.CancellationException
  * [AuthRepositoryImpl] 의 선제 reissue deadline 관리 계약 회귀 가드 (#408, PR #411 리뷰 반영).
  * 로그인 경로의 실패 매핑 계약(#628)도 함께 가드한다 — 전송 계층 IO 실패 →
  * [CoreAuthFailure.NetworkUnavailable], 자격 거절(1201·1202) → [CoreAuthFailure.InvalidLoginCredentials],
- * 소셜 거절(1208·1209) → [CoreAuthFailure.SocialLoginRejected], 그 밖의 서버 실패는 치환하지 않아
- * 소비처에서 일반 문구로 내려앉는다. 서버 `message` 는 판정에 쓰지 않는다(BE#92).
+ * 소셜 거절(1208·1209) → [CoreAuthFailure.SocialLoginRejected], 소셜 가입 계정(1702) →
+ * [CoreAuthFailure.SocialSignUpAccount], 그 밖의 서버 실패는 치환하지 않아 소비처에서 일반 문구로
+ * 내려앉는다. 서버 `message` 는 판정에 쓰지 않는다(BE#92).
  *
  * 계약 — 발급(로그인) 응답의 `expiresIn` 은 기록하고, 생략(null)이면 이전 토큰 기준 stale
  * deadline 이 새 세션에 적용되지 않게 비우며(`TokenReissuer` 회전 경로와 같은 규칙),
@@ -63,12 +64,17 @@ class AuthRepositoryImplTest {
     private fun repository(
         authApiService: AuthApiService = FakeAuthApiService(),
         tokenApiService: TokenApiService = FakeTokenApiService(),
+        pushTargetRepository: FakePushTargetRepository = FakePushTargetRepository(),
+        deviceTargetId: String? = "device-token",
+        devicePushTargetProvider: DevicePushTargetProvider = RecordingDevicePushTargetProvider(deviceTargetId),
     ) = AuthRepositoryImpl(
         tokenDataSource = tokenDataSource,
         authApiService = authApiService,
         tokenApiService = tokenApiService,
         expiryTracker = tracker,
         localStoreRegistry = localStoreRegistry,
+        pushTargetRepository = pushTargetRepository,
+        devicePushTargetProvider = devicePushTargetProvider,
     )
 
     @Test
@@ -224,6 +230,29 @@ class AuthRepositoryImplTest {
     }
 
     @Test
+    fun `defaultLogin - 소셜 가입 계정(1702)은 SocialSignUpAccount 로 치환 (자격 거절과 가름)`() {
+        val repository =
+            repository(
+                FakeAuthApiService(
+                    onLogin = {
+                        throw ApiException(
+                            status = 400,
+                            code = 1702,
+                            serverMessage = "소셜 로그인으로 가입한 계정입니다. 소셜 로그인을 이용해주세요.",
+                            fallbackMessage = "소셜 로그인으로 가입한 계정입니다. 소셜 로그인을 이용해주세요.",
+                        )
+                    },
+                ),
+            )
+
+        val result = runBlocking { repository.defaultLogin("social@example.com", "pw") }
+
+        val exception = result.exceptionOrNull()
+        assertTrue(exception is CoreAuthFailure.SocialSignUpAccount)
+        assertTrue(exception?.cause is ApiException)
+    }
+
+    @Test
     fun `defaultLogin - allowlist 밖 코드는 치환하지 않음 (5xx 내부 문구가 표시 경로로 못 감)`() {
         val internalMessage = "ERROR: duplicate key value violates unique constraint"
         val repository =
@@ -335,6 +364,63 @@ class AuthRepositoryImplTest {
 
         assertTrue(result.exceptionOrNull() is CoreAuthFailure.NetworkUnavailable)
     }
+
+    @Test
+    fun `logout - 이 기기 푸시 대상 식별자를 해제한다`() {
+        val pushTargetRepository = FakePushTargetRepository()
+        val repository = repository(pushTargetRepository = pushTargetRepository, deviceTargetId = "device-token")
+
+        val result = runBlocking { repository.logout() }
+
+        assertTrue(result.isSuccess)
+        assertEquals(listOf("device-token"), pushTargetRepository.unregistered)
+    }
+
+    @Test
+    fun `logout - 해제하려고 FCM 등록 시퀀스를 강제하지는 않는다`() {
+        // currentTargetId() 을 쓰면 지우기 직전에 기기를 FCM 에 다시 등록하고, 그 회전 통보가 아직
+        // 살아 있는 세션을 타고 재등록으로 돌아와 이 DELETE 와 경합한다 (#1498 리뷰).
+        val provider = RecordingDevicePushTargetProvider("device-token")
+        val pushTargetRepository = FakePushTargetRepository()
+        val repository = repository(pushTargetRepository = pushTargetRepository, devicePushTargetProvider = provider)
+
+        runBlocking { repository.logout() }
+
+        assertEquals(listOf("device-token"), pushTargetRepository.unregistered)
+        assertEquals(0, provider.currentTargetIdCalls)
+        assertEquals(1, provider.existingTargetIdCalls)
+    }
+
+    @Test
+    fun `logout - 기기 식별자 조회가 던져도 로그아웃은 성공한다`() {
+        val repository = repository(devicePushTargetProvider = ThrowingDevicePushTargetProvider())
+
+        val result = runBlocking { repository.logout() }
+
+        assertTrue(result.isSuccess)
+    }
+
+    @Test
+    fun `logout - 기기 식별자를 못 얻으면 해제를 건너뛴다`() {
+        val pushTargetRepository = FakePushTargetRepository()
+        val repository = repository(pushTargetRepository = pushTargetRepository, deviceTargetId = null)
+
+        val result = runBlocking { repository.logout() }
+
+        assertTrue(result.isSuccess)
+        assertTrue(pushTargetRepository.unregistered.isEmpty())
+    }
+
+    @Test
+    fun `logout - 푸시 대상 해제가 실패해도 로그아웃은 끝난다`() {
+        val pushTargetRepository = FakePushTargetRepository(failing = true)
+        val repository = repository(pushTargetRepository = pushTargetRepository, deviceTargetId = "device-token")
+
+        val result = runBlocking { repository.logout() }
+
+        assertTrue(result.isSuccess)
+        assertNull(runBlocking { tokenDataSource.getAccessToken() })
+    }
 }
 
 private fun <T> success(data: T) = BaseResponse(status = 200, code = 200, message = "성공", data = data)
@@ -362,10 +448,6 @@ private class FakeAuthApiService(
         logoutRequests += body
         return onLogout()
     }
-
-    override suspend fun getPasskeyRegisterOptions(): BaseResponse<JsonElement> = error("getPasskeyRegisterOptions 는 이 시나리오에서 호출되면 안 됨")
-
-    override suspend fun registerPasskey(credential: JsonElement): BaseResponse<PasskeyDto> = error("registerPasskey 는 이 시나리오에서 호출되면 안 됨")
 }
 
 private class FakeTokenApiService(
@@ -403,5 +485,42 @@ private class InMemoryPreferencesDataStore : DataStore<Preferences> {
         val transformed = transform(state.value)
         state.value = transformed
         return transformed
+    }
+}
+
+private class RecordingDevicePushTargetProvider(
+    private val targetId: String?,
+) : DevicePushTargetProvider {
+    var currentTargetIdCalls = 0
+    var existingTargetIdCalls = 0
+
+    override suspend fun currentTargetId(): String? {
+        currentTargetIdCalls++
+        return targetId
+    }
+
+    override suspend fun existingTargetId(): String? {
+        existingTargetIdCalls++
+        return targetId
+    }
+}
+
+private class ThrowingDevicePushTargetProvider : DevicePushTargetProvider {
+    override suspend fun currentTargetId(): String? = throw IllegalStateException("API disabled")
+
+    override suspend fun existingTargetId(): String? = throw IllegalStateException("API disabled")
+}
+
+private class FakePushTargetRepository(
+    private val failing: Boolean = false,
+) : PushTargetRepository {
+    val unregistered = mutableListOf<String>()
+
+    override suspend fun register(targetId: String): Result<Unit> =
+        if (failing) Result.failure(IllegalStateException("등록 실패")) else Result.success(Unit)
+
+    override suspend fun unregister(targetId: String): Result<Unit> {
+        unregistered += targetId
+        return if (failing) Result.failure(IllegalStateException("해제 실패")) else Result.success(Unit)
     }
 }

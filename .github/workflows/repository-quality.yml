@@ -88,6 +88,26 @@ jobs:
       codeql_actions: ${{ steps.classify-documentation-changes.outputs.codeql_actions }}
       codeql_java_kotlin: ${{ steps.classify-documentation-changes.outputs.codeql_java_kotlin }}
     steps:
+      - name: Clone repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # 한도가 바닥인 채로 들어가면 이 required check 가 코드와 무관하게 빨개진다. 남은 quota 를
+      # 요약에 남기고, 부족하면 리셋까지 기다린다 — 즉시 실패시키면 사람이 재실행을 걸고 그
+      # 재실행이 남은 quota 를 더 태운다 (#1465).
+      #
+      # merge-order-guard 와 달리 PR 사본으로 돌린다. 이 job 은 이미 PR 사본의 분류·검증
+      # 스크립트를 실행하므로 새로 열리는 신뢰 경계가 없고, quota 스텝은 게이트가 아니라
+      # 관측·대기라 PR 이 그것을 무력화해도 통과시킬 수 있는 판정이 없다.
+      - name: Ensure GitHub API quota
+        if: inputs.pull_request_number > 0
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # 이 job 의 timeout 이 3분이라 기다릴 수 있는 창이 좁다. 그보다 먼 리셋은 기다리지
+        # 않고 «한도 소진» 으로 명시하고 끝낸다.
+        run: node .github/scripts/ensure-api-quota.mjs ensure --max-wait 60
+
       # GitHub 의 server-side paths 평가는 유한한 diff 앞부분만 보므로, 그 경계를 넘는 PR 을
       # 그대로 허용하면 뒤쪽 dependency 파일이 graph/review workflow 를 우회할 수 있다.
       # 공식 문서의 상충하는 300/3,000 한도 중 보수적인 300을 fail-closed 경계로 쓴다.
@@ -132,17 +152,27 @@ jobs:
           fi
 
           if (( CHANGED_FILES > MAX_PATH_FILTER_FILES )); then
-            echo "::error::PR 변경 파일 ${CHANGED_FILES}개가 paths 안전 경계 ${MAX_PATH_FILTER_FILES}개를 초과했습니다. PR을 분리하세요."
-            exit 1
+            # 릴리스 PR(develop → main)만 면제한다. 이 가드가 막으려는 것은 «paths 필터를
+            # 우회한 의존성 변경이 검토 없이 들어오는 것» 인데, 릴리스 PR 의 모든 변경은
+            # 이미 develop base PR 로 한 번씩 들어오면서 300 이하에서 필터와
+            # dependency-review 를 통과했다. 릴리스는 새 코드를 만들지 않고 검증된 develop
+            # 을 main 으로 옮기는 머지다. 그리고 「PR 을 분리하세요」 가 유일하게 성립하지
+            # 않는 PR 이기도 하다 — 쪼개면 그건 릴리스가 아니다 (#1559).
+            #
+            # 크기가 아니라 «릴리스 PR 인가» 로 가른다. 크기를 기준으로 열면 가드가
+            # 무의미해진다.
+            base_ref="$(jq -r '.base.ref' "$pull_request_file")"
+            head_ref="$(jq -r '.head.ref' "$pull_request_file")"
+            if [ "$base_ref" = "main" ] && [ "$head_ref" = "develop" ]; then
+              echo "::notice::릴리스 PR(develop → main)이라 paths 경계 ${MAX_PATH_FILTER_FILES}개 검사를 건너뜁니다 (변경 ${CHANGED_FILES}개). 구성 변경은 각 develop base PR 에서 이미 필터를 거쳤습니다."
+            else
+              echo "::error::PR 변경 파일 ${CHANGED_FILES}개가 paths 안전 경계 ${MAX_PATH_FILTER_FILES}개를 초과했습니다. PR을 분리하세요."
+              exit 1
+            fi
           fi
 
           printf 'count=%s\n' "$CHANGED_FILES" >> "$GITHUB_OUTPUT"
           printf 'pull_request_json=%s\n' "$pull_request_file" >> "$GITHUB_OUTPUT"
-
-      - name: Clone repo
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
 
       # 최상위 paths 필터는 required check 자체를 만들지 않아 영구 pending 이 될 수 있다.
       # 모든 파일 페이지와 GitHub 의 changed_files 총수를 대조한 뒤 direct module과 역방향
@@ -178,12 +208,32 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: node .github/scripts/validate-pr-issue-link.mjs "${{ steps.changed-files.outputs.pull_request_json }}"
 
+      # 이슈 담당 대조(위)는 «어느 이슈로 열었나» 를, 이 스텝은 «어느 모듈 파일을 바꿨나» 를 본다.
+      # 둘 다 같은 지도(ASSIGNEE_BY_MODULE)를 쓰고 같은 라벨(issue-assignee-exempt)로 면제된다 (#1889).
+      - name: Require module owner
+        if: inputs.pull_request_number > 0
+        env:
+          PULL_REQUEST_JSON: ${{ steps.changed-files.outputs.pull_request_json }}
+          FILES_JSON: ${{ steps.classify-documentation-changes.outputs.files_json }}
+        run: node .github/scripts/validate-pr-module-owner.mjs "$PULL_REQUEST_JSON" "$FILES_JSON"
+
       - name: Validate CI Test Plan
         if: inputs.pull_request_number > 0
         run: >-
           node .github/scripts/validate-pr-ci-test-plan.mjs
           "${{ steps.changed-files.outputs.pull_request_json }}"
           "$GITHUB_WORKSPACE"
+          "${{ steps.classify-documentation-changes.outputs.files_json }}"
+
+      # PR 이 src/main 에 새로 넣은 함수가 main 어디서도 참조되지 않으면 — 테스트만 부르거나 아무도
+      # 안 부르면 — 실패시킨다 (#1895). ProductionVisibilityKonsistTest 는 최상위 선언만 보므로
+      # 멤버 함수가 샜다(#1583 의 onReceiverRegisterStart). 면제는 PR 라벨
+      # test-only-production-exempt — issue-assignee-exempt 와 같은 자리다.
+      - name: Reject test-only production declarations
+        if: inputs.pull_request_number > 0
+        run: >-
+          node .github/scripts/validate-test-only-production-declarations.mjs
+          "${{ steps.changed-files.outputs.pull_request_json }}"
           "${{ steps.classify-documentation-changes.outputs.files_json }}"
 
       - name: Install actionlint
@@ -218,6 +268,19 @@ jobs:
             scripts/repository-quality.sh
           fi
 
+      # KDoc 의 [FQN] 링크가 실제 선언을 가리키는지 — 패키지 이동마다 끊긴 링크가 쌓이던 자리 (#1889).
+      # 저장소 전체를 보는 값싼 검사라 PR·push 가리지 않는다.
+      - name: Verify KDoc FQN links
+        run: node .github/scripts/verify-kdoc-links.mjs
+
       - name: Verify failing fixtures
         if: inputs.pull_request_number == 0 || steps.classify-documentation-changes.outputs.repository_quality_fixtures == 'true'
         run: scripts/test-repository-quality.sh
+
+      # 실패가 «검사가 사실을 확인하고 거절함» 인지 «한도 소진» 인지 가른다. 구분이 없으면
+      # 빨간 required check 를 보고도 원인을 로그까지 들어가야 안다 (#1465).
+      - name: Classify a failed gate as rate limit exhaustion
+        if: failure() && inputs.pull_request_number > 0
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node .github/scripts/ensure-api-quota.mjs classify

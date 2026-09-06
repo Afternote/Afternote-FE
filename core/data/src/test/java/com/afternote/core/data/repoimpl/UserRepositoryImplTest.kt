@@ -1,16 +1,16 @@
 package com.afternote.core.data.repoimpl
 
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.domain.repository.UserReceiverRepository
+import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.model.user.Receiver
-import com.afternote.core.network.dto.LoginDto
-import com.afternote.core.network.dto.LoginRequestDto
-import com.afternote.core.network.dto.LogoutRequestDto
-import com.afternote.core.network.dto.PasskeyDto
+import com.afternote.core.network.dto.DeletePushTokenRequestDto
+import com.afternote.core.network.dto.PushTokenDto
 import com.afternote.core.network.dto.ReceiverDetailDto
 import com.afternote.core.network.dto.ReceiverListDto
+import com.afternote.core.network.dto.RegisterPushTokenRequestDto
 import com.afternote.core.network.dto.SocialAccountLinkRequestDto
-import com.afternote.core.network.dto.SocialLoginRequestDto
 import com.afternote.core.network.dto.UserConnectedAccountDto
 import com.afternote.core.network.dto.UserCreateReceiverDto
 import com.afternote.core.network.dto.UserCreateReceiverRequestDto
@@ -25,7 +25,6 @@ import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionDto
 import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionUpdateRequestDto
 import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.BaseResponse
-import com.afternote.core.network.service.AuthApiService
 import com.afternote.core.network.service.UserApiService
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.cancelAndJoin
@@ -34,7 +33,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import kotlinx.serialization.json.JsonElement
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
@@ -52,7 +50,7 @@ class UserRepositoryImplTest {
             TODO("이 테스트 미사용")
         },
         authRepository: FakeAuthRepository = receiverAuthRepository(loggedIn = true),
-    ) = UserRepositoryImpl(
+    ) = repositoryOf(
         userApiService =
             FakeUserApiService(
                 onDeleteAccount = {
@@ -62,7 +60,6 @@ class UserRepositoryImplTest {
                 onGetReceivers = onGetReceivers,
                 onCreateReceiver = onCreateReceiver,
             ),
-        authApiService = FakeAuthApiService(),
         authRepository =
             authRepository.apply {
                 onClearSession = {
@@ -327,11 +324,51 @@ class UserRepositoryImplTest {
                     name = "새 수신자",
                     relation = "친구",
                     phone = null,
-                    email = null,
+                    email = "receiver@example.com",
                     message = null,
                 )
                 assertEquals("조회 2", withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.single().name)
                 assertEquals(2, requestCount)
+            } finally {
+                collector.cancelAndJoin()
+            }
+        }
+
+    /**
+     * 수신자 구현이 [UserRepositoryImpl] 밖으로 나갔어도 좁은 계약과 합본 계약은 **같은 인스턴스**를
+     * 봐야 한다 (#1282). 여기서 갈리면 `UserReceiverRepository` 로 등록한 수신자가
+     * `UserRepository` 구독자의 목록을 갱신하지 못하고 화면이 방금 만든 수신인을 놓친다.
+     */
+    @Test
+    fun `좁은 계약과 합본 계약은 같은 수신자 갱신 상태를 본다`() =
+        runBlocking {
+            var requestCount = 0
+            val repository =
+                repository(
+                    onGetReceivers = {
+                        requestCount += 1
+                        dataResponse(listOf(receiverDto("조회 $requestCount")))
+                    },
+                    onCreateReceiver = { dataResponse(UserCreateReceiverDto(receiverId = 2L, authCode = "AUTH-2")) },
+                )
+            val narrowContract: UserReceiverRepository = repository
+            val mergedContract: UserRepository = repository
+            val emissions = Channel<List<Receiver>>(capacity = Channel.UNLIMITED)
+            val collector =
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    mergedContract.receiverListFlow.collect { emissions.send(it) }
+                }
+
+            try {
+                assertEquals("조회 1", withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.single().name)
+                narrowContract.createReceiver(
+                    name = "새 수신자",
+                    relation = "친구",
+                    phone = null,
+                    email = "receiver@example.com",
+                    message = null,
+                )
+                assertEquals("조회 2", withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.single().name)
             } finally {
                 collector.cancelAndJoin()
             }
@@ -369,7 +406,7 @@ class UserRepositoryImplTest {
                     name = "새 수신자",
                     relation = "친구",
                     phone = null,
-                    email = null,
+                    email = "receiver@example.com",
                     message = null,
                 )
                 val fallback = withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }
@@ -415,7 +452,7 @@ class UserRepositoryImplTest {
                     name = "새 수신자",
                     relation = "친구",
                     phone = null,
-                    email = null,
+                    email = "receiver@example.com",
                     message = null,
                 )
                 val afterUnauthorized = withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }
@@ -473,9 +510,11 @@ private class FakeUserApiService(
     override suspend fun createReceiver(request: UserCreateReceiverRequestDto): BaseResponse<UserCreateReceiverDto> =
         onCreateReceiver(request)
 
-    override suspend fun getReceiverDetail(receiverId: Long): BaseResponse<ReceiverDetailDto> = TODO("이 테스트 미사용")
+    override suspend fun registerPushToken(request: RegisterPushTokenRequestDto): BaseResponse<PushTokenDto> = TODO("이 테스트 미사용")
 
-    override suspend fun getPasskeys(): BaseResponse<List<PasskeyDto>> = TODO("이 테스트 미사용")
+    override suspend fun deletePushToken(request: DeletePushTokenRequestDto): BaseResponse<Unit> = TODO("이 테스트 미사용")
+
+    override suspend fun getReceiverDetail(receiverId: Long): BaseResponse<ReceiverDetailDto> = TODO("이 테스트 미사용")
 
     override suspend fun updateReceiver(
         receiverId: Long,
@@ -490,8 +529,6 @@ private class FakeUserApiService(
     override suspend fun getMyProfile(): BaseResponse<UserDto> = TODO("이 테스트 미사용")
 
     override suspend fun updateMyProfile(request: UserUpdateProfileRequestDto): BaseResponse<UserDto> = TODO("이 테스트 미사용")
-
-    override suspend fun logActivity(): BaseResponse<Unit> = TODO("이 테스트 미사용")
 
     override suspend fun getMyPushSettings(): BaseResponse<UserPushSettingDto> = TODO("이 테스트 미사용")
 
@@ -515,14 +552,16 @@ private class FakeUserApiService(
     ): BaseResponse<ReceiverDeliveryConditionDto> = TODO("이 테스트 미사용")
 }
 
-private class FakeAuthApiService : AuthApiService {
-    override suspend fun login(body: LoginRequestDto): BaseResponse<LoginDto.DefaultLoginDto> = TODO("이 테스트 미사용")
-
-    override suspend fun socialLogin(body: SocialLoginRequestDto): BaseResponse<LoginDto.SocialLoginDto> = TODO("이 테스트 미사용")
-
-    override suspend fun logout(body: LogoutRequestDto): BaseResponse<Unit> = TODO("이 테스트 미사용")
-
-    override suspend fun getPasskeyRegisterOptions(): BaseResponse<JsonElement> = TODO("이 테스트 미사용")
-
-    override suspend fun registerPasskey(credential: JsonElement): BaseResponse<PasskeyDto> = TODO("이 테스트 미사용")
-}
+/** 프로덕션 조립과 같은 모양 — 위임 대상은 Hilt 가 주입하므로 여기서는 테스트가 대신 만들어 넘긴다. */
+private fun repositoryOf(
+    userApiService: UserApiService,
+    authRepository: FakeAuthRepository,
+    errorReporter: ErrorReporter,
+): UserRepositoryImpl =
+    UserRepositoryImpl(
+        userApiService = userApiService,
+        authRepository = authRepository,
+        errorReporter = errorReporter,
+        receiverRepository = UserReceiverRepositoryImpl(userApiService, authRepository, errorReporter),
+        myProfileRepository = MyProfileRepositoryImpl(userApiService),
+    )

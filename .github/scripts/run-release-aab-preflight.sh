@@ -88,6 +88,13 @@ unzip -p "${apks_path}" universal.apk > "${universal_apk_path}"
     exit 1
 }
 
+# 기동 스모크는 «배포될 그 산출물» 을 그대로 받아야 한다 — 다시 빌드하면 검증 대상과 배포 대상이
+# 갈라진다. 여기서 만든 universal APK 를 요청받은 경로로 넘기고, 지우는 책임은 워크플로에 있다.
+if [[ -n "${RELEASE_SMOKE_APK_PATH:-}" ]]; then
+    mkdir -p "$(dirname -- "${RELEASE_SMOKE_APK_PATH}")"
+    cp "${universal_apk_path}" "${RELEASE_SMOKE_APK_PATH}"
+fi
+
 aab_sha256="$(sha256_file "${bundle_path}")"
 aab_size_bytes="$(wc -c < "${bundle_path}" | tr -d '[:space:]')"
 mapping_sha256="$(sha256_file "${mapping_path}")"

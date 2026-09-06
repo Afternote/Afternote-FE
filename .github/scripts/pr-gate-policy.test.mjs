@@ -117,12 +117,65 @@ test("stale runs are cancelled per pull request", async () => {
 });
 
 test("token-authored commits preserve the pull request context on manual dispatch", async () => {
+    // workflow_dispatch 의 type: number 는 입력을 «검증» 할 뿐 런타임 값은 문자열로 온다.
+    // 그 문자열이 reusable workflow 의 number 입력에 그대로 들어가면 run 이 job 0개로
+    // 죽어 로그도 annotation 도 남지 않는다 — 브리지가 8/27~9/3 동안 33건 연속 실패한
+    // 원인이다 (#1850). fromJSON 없이 raw 로 되돌리면 그 침묵하는 실패가 그대로 돌아온다.
     const entry = await readWorkflow(ENTRY_WORKFLOW);
 
     assert.match(entry, /^\s{2}workflow_dispatch:\n\s{4}inputs:\n\s{6}pull_request_number:/m);
     assert.equal(
-        (entry.match(/pull_request_number: \$\{\{ inputs\.pull_request_number \|\| github\.event\.pull_request\.number \}\}/g) ?? []).length,
+        (
+            entry.match(
+                /pull_request_number: \$\{\{ fromJSON\(inputs\.pull_request_number \|\| '0'\) \|\| github\.event\.pull_request\.number \|\| 0 \}\}/g,
+            ) ?? []
+        ).length,
         VALIDATION_WORKFLOWS.length,
+    );
+    assert.equal(
+        (entry.match(/pull_request_number: \$\{\{ inputs\.pull_request_number/g) ?? []).length,
+        0,
+        "dispatch 입력을 number 로 되살리지 않고 reusable workflow 에 넘기면 startup failure 다",
+    );
+});
+
+test("merge queue groups revalidate every required context", async () => {
+    // 큐 항목이 required context 를 만들지 못하면 영구 pending 후 큐에서 방출된다.
+    const entry = await readWorkflow(ENTRY_WORKFLOW);
+    const managedDevice = await readWorkflow("android-managed-device.yml");
+
+    for (const source of [entry, managedDevice]) {
+        assert.match(source, /^\s{2}merge_group:\n\s{4}types: \[checks_requested\]$/m);
+    }
+    assert.match(managedDevice, /^\s+github\.event_name == 'merge_group'$/m);
+});
+
+test("merge group validation falls back to the full suite without a pull request", async () => {
+    // merge group 에는 PR 이 없다. 번호가 빈 문자열이면 number 입력 자체가 깨지고,
+    // 0 으로 닫으면 develop push 와 같은 전량 검증 경로를 그대로 탄다.
+    const entry = await readWorkflow(ENTRY_WORKFLOW);
+    const repositoryQuality = await readWorkflow("repository-quality.yml");
+
+    assert.equal(
+        (entry.match(/\|\| github\.event\.pull_request\.number \|\| 0 \}\}/g) ?? []).length,
+        VALIDATION_WORKFLOWS.length,
+    );
+    for (const gate of ["Require linked Issue", "Require module owner", "Validate CI Test Plan", "Reject test-only production declarations"]) {
+        assert.match(
+            repositoryQuality,
+            new RegExp(`- name: ${gate}\\n\\s+if: inputs\\.pull_request_number > 0`),
+            `${gate} must stay inert without a pull request`,
+        );
+    }
+});
+
+test("scheduled-only device lanes stay out of the merge queue", async () => {
+    // 경계 lane 까지 큐에서 돌면 required 가 아닌 job 이 처리량만 깎는다.
+    const managedDevice = await readWorkflow("android-managed-device.yml");
+
+    assert.match(
+        managedDevice,
+        /\[\[ "\$SCHEDULED_ONLY" == "true" && "\$EVENT_NAME" == "merge_group" \]\]/,
     );
 });
 
@@ -203,6 +256,11 @@ test("repository quality owns fail-closed paginated impact classification and PR
     );
     assert.match(repositoryQuality, /pull_request_json=%s\\n' "\$pull_request_file"/);
     assert.doesNotMatch(unitTest, /Validate CI Test Plan/);
+    // #1895 — 새 프로덕션 함수의 main 참조 게이트는 PR files API 의 patch 로 판정하므로 files_json 을 받는다.
+    assert.match(
+        repositoryQuality,
+        /validate-test-only-production-declarations\.mjs\n\s+"\$\{\{ steps\.changed-files\.outputs\.pull_request_json \}\}"\n\s+"\$\{\{ steps\.classify-documentation-changes\.outputs\.files_json \}\}"/,
+    );
 });
 
 test("editing CI Test Plan retriggers every required validation context", async () => {

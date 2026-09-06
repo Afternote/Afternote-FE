@@ -1,6 +1,5 @@
 package com.afternote.konsist
 
-import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.ext.list.withPackage
 import com.lemonappdev.konsist.api.verify.assertFalse
 import org.junit.Test
@@ -19,7 +18,7 @@ import org.junit.Test
  * `domain → core:network` 같은 위반까지 막는다.
  */
 class LayerDependencyKonsistTest {
-    private fun domainFiles() = Konsist.scopeFromProject().files.withPackage("com.afternote..domain..")
+    private fun domainFiles() = AfternoteKonsistScope.files.withPackage("com.afternote..domain..")
 
     @Test
     fun `domain 은 data 와 presentation 레이어에 의존하지 않는다`() {

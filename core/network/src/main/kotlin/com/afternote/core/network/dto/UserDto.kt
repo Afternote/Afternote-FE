@@ -12,7 +12,7 @@ data class UserCreateReceiverRequestDto(
     @SerialName("name") val name: String,
     @SerialName("relation") val relation: String,
     @SerialName("phone") val phone: String? = null,
-    @SerialName("email") val email: String? = null,
+    @SerialName("email") val email: String,
     @SerialName("message") val message: String? = null,
 )
 
@@ -105,13 +105,6 @@ data class UserPushSettingDto(
 )
 
 @Serializable
-data class PasskeyDto(
-    @SerialName("id") val id: Long,
-    @SerialName("displayName") val displayName: String,
-    @SerialName("createdAt") val createdAt: String,
-)
-
-@Serializable
 data class UserConnectedAccountDto(
     @SerialName("local") val local: Boolean,
     @SerialName("google") val google: Boolean,
@@ -123,29 +116,4 @@ data class UserConnectedAccountDto(
     @SerialName("naverEmail") val naverEmail: String? = null,
     @SerialName("kakaoEmail") val kakaoEmail: String? = null,
     @SerialName("appleEmail") val appleEmail: String? = null,
-)
-
-// --- GET/POST/DELETE /users/connected-accounts (소셜 계정 연동) ---
-
-/**
- * GET 응답은 provider 별 boolean + email, POST/DELETE 응답은 boolean 만 — email 은 null 로 내려올 수 있어 모두 optional.
- */
-@Serializable
-data class ConnectedAccountsDto(
-    val local: Boolean,
-    val google: Boolean,
-    val naver: Boolean,
-    val kakao: Boolean,
-    val apple: Boolean,
-    val localEmail: String? = null,
-    val googleEmail: String? = null,
-    val naverEmail: String? = null,
-    val kakaoEmail: String? = null,
-    val appleEmail: String? = null,
-)
-
-/** POST /users/connected-accounts/{provider} 요청 body. 소셜 SDK 로 받은 access token 을 전달. */
-@Serializable
-data class ConnectAccountRequestDto(
-    val accessToken: String,
 )

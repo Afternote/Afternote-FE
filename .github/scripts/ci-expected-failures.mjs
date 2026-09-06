@@ -8,6 +8,7 @@
 //   partition-screenshot "<tasks>"        기대 실패 모듈 lane 을 분리해 GITHUB_OUTPUT 형식으로 출력
 //   probe-unit "<tasks>"                  실행 범위에 걸린 기대 실패 unit test 만 다시 돌려 XPASS 감시
 //   report-screenshot "<ran>" "<xpassed>" screenshot 기대 실패 lane 실행 결과를 판정
+//   report-android "<결과 디렉터리>" "<device>"  androidTest 실행 결과 XML 을 목록과 대조해 판정
 
 import { spawnSync } from "node:child_process";
 import fs from "node:fs/promises";
@@ -17,7 +18,10 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 export const CONFIG_RELATIVE_PATH = ".github/ci-expected-failures.json";
 
-const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+// 레포에서는 스크립트 위치로 루트를 잡는다. managed-device 워크플로는 이 파일을
+// default branch 사본으로 staging 해 쓰므로(신뢰 경계) 그때만 목록 루트를 env 로 준다.
+const repositoryRoot = process.env.EXPECTED_FAILURES_ROOT
+    ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 function requireNonEmptyString(value, name) {
     if (typeof value !== "string" || value.trim() === "") {
@@ -42,6 +46,27 @@ export function validateExpectedFailuresConfig(config) {
         }
         entry.tests.forEach((testName, testIndex) =>
             requireNonEmptyString(testName, `${label}.tests[${testIndex}]`));
+        validateIssues(entry, label);
+    }
+    for (const [index, entry] of (config.androidTests ?? []).entries()) {
+        const label = `androidTests[${index}]`;
+        requireNonEmptyString(entry?.className, `${label}.className`);
+        if (!/^[\w.]+$/.test(entry.className)) {
+            throw new Error(`${label}.className 은 FQCN 이어야 합니다: ${entry.className}`);
+        }
+        if (!Array.isArray(entry?.tests) || entry.tests.length === 0) {
+            throw new Error(`${label}.tests 는 비어 있지 않은 배열이어야 합니다.`);
+        }
+        entry.tests.forEach((testName, testIndex) =>
+            requireNonEmptyString(testName, `${label}.tests[${testIndex}]`));
+        // device 는 선택 — 생략하면 모든 managed device lane 에서 기대 실패로 본다.
+        if (entry.devices !== undefined) {
+            if (!Array.isArray(entry.devices) || entry.devices.length === 0) {
+                throw new Error(`${label}.devices 는 비어 있지 않은 배열이어야 합니다.`);
+            }
+            entry.devices.forEach((device, deviceIndex) =>
+                requireNonEmptyString(device, `${label}.devices[${deviceIndex}]`));
+        }
         validateIssues(entry, label);
     }
     for (const [index, entry] of (config.screenshotModules ?? []).entries()) {
@@ -142,6 +167,101 @@ export function reportScreenshotProbes(ranTasksString, xpassedTasksString, confi
     return { lines, failed };
 }
 
+// androidTest 는 unit test 와 달리 개별 재실행 비용이 에뮬레이터 부팅을 포함해 크다.
+// 그래서 「다시 돌려 XPASS 를 본다」가 아니라 이미 나온 결과 XML 을 목록과 대조한다.
+// 판정은 세 갈래다.
+//   목록에 있고 실패     기대 실패 — 흡수한다(notice).
+//   목록에 없고 실패     새 회귀 — red.
+//   목록에 있고 통과     XPASS — 목록에서 지우라고 요구하며 red(#790·#873 운용과 동일).
+// 목록에 있는데 아예 실행되지 않은 항목은 침묵한다 — lane·selector 가 그 테스트를
+// 고르지 않았을 뿐이고, 실행 안 된 것을 근거로 게이트를 해제하지 않는다.
+export function evaluateAndroidTestResults(testcases, config, device) {
+    const applies = (entry) =>
+        entry.devices === undefined || entry.devices.includes(device);
+    const expected = new Map();
+    for (const entry of config.androidTests ?? []) {
+        if (!applies(entry)) continue;
+        for (const testName of entry.tests) {
+            expected.set(`${entry.className}#${testName}`, entry);
+        }
+    }
+
+    const absorbed = [];
+    const unexpected = [];
+    const xpassed = [];
+    for (const testcase of testcases) {
+        const selector = `${testcase.className}#${testcase.name}`;
+        const entry = expected.get(selector);
+        const isFailure = testcase.status === "failure" || testcase.status === "error";
+        if (entry === undefined) {
+            if (isFailure) unexpected.push(selector);
+            continue;
+        }
+        if (isFailure) {
+            absorbed.push({ selector, entry });
+        } else if (testcase.status === "passed") {
+            xpassed.push({ selector, entry });
+        }
+    }
+
+    const lines = [];
+    for (const { selector, entry } of absorbed) {
+        lines.push(
+            `::notice::기대 실패 게이트 유지: ${selector} — ${entry.reason} (${issueReferences(entry.issues)})`,
+        );
+    }
+    for (const { selector, entry } of xpassed) {
+        lines.push(
+            `::error::기대 실패로 등록된 androidTest 가 통과합니다 — ${CONFIG_RELATIVE_PATH} 에서 ${selector} 를 제거하세요 (${issueReferences(entry.issues)}).`,
+        );
+    }
+    for (const selector of unexpected) {
+        lines.push(
+            `::error::기대 실패 목록에 없는 androidTest 실패: ${selector} — 수복하거나 추적 이슈와 함께 ${CONFIG_RELATIVE_PATH} 에 등재하세요.`,
+        );
+    }
+    return {
+        lines,
+        absorbed: absorbed.map(({ selector }) => selector),
+        unexpected,
+        xpassed: xpassed.map(({ selector }) => selector),
+        failed: unexpected.length > 0 || xpassed.length > 0,
+    };
+}
+
+async function reportAndroidMain(resultsRoot, device, root) {
+    const config = await loadExpectedFailures(root);
+    // XML 파서는 renderer 가 이미 소유하고 있다. 같은 판정을 두 벌 두지 않으려고
+    // 명령이 불릴 때만 동적으로 끌어 쓴다 — 다른 명령들은 이 의존이 없다.
+    const renderer = await import(
+        pathToFileURL(path.join(path.dirname(fileURLToPath(import.meta.url)), "render-android-test-results.mjs")).href
+    );
+    const files = await renderer.collectXmlFiles(resultsRoot);
+    const testcases = [];
+    for (const file of files) {
+        const xml = await fs.readFile(file, "utf8");
+        testcases.push(...renderer.parseAndroidTestXml(xml, { file }).testcases);
+    }
+    if (files.length === 0) {
+        // 실행 증거가 없으면 판정하지 않는다 — 「실패 0건」 으로 오인해 통과시키지 않기 위해
+        // 호출 측(워크플로)이 Gradle 종료 코드를 그대로 복원하도록 침묵한다.
+        console.log("androidTest 결과 XML 이 없어 기대 실패 판정을 건너뜁니다.");
+        return;
+    }
+
+    const verdict = evaluateAndroidTestResults(testcases, config, device);
+    verdict.lines.forEach((line) => console.log(line));
+    if (process.env.GITHUB_OUTPUT) {
+        await fs.appendFile(
+            process.env.GITHUB_OUTPUT,
+            `absorbed=${verdict.absorbed.length}\nunexpected=${verdict.unexpected.length}\nxpassed=${verdict.xpassed.length}\n`,
+        );
+    }
+    if (verdict.failed) {
+        process.exitCode = 1;
+    }
+}
+
 function runGradle(args, root) {
     return spawnSync(path.join(root, "gradlew"), args, {
         cwd: root,
@@ -192,6 +312,13 @@ async function main() {
         }
         case "probe-unit":
             await probeUnitMain(rest[0], repositoryRoot);
+            return;
+        case "report-android":
+            await reportAndroidMain(
+                requireNonEmptyString(rest[0], "결과 디렉터리"),
+                requireNonEmptyString(rest[1], "device"),
+                repositoryRoot,
+            );
             return;
         case "report-screenshot": {
             const config = await loadExpectedFailures();

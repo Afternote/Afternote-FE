@@ -18,18 +18,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.model.user.Passkey
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
+import com.afternote.feature.setting.domain.Passkey
 import com.afternote.feature.setting.presentation.R
-import com.afternote.feature.setting.presentation.component.PasskeyGuideContent
 import com.afternote.feature.setting.presentation.component.PasskeyListItem
 
 @Composable
-fun PassKeyListScreen(
+internal fun PassKeyListScreen(
     passkeys: List<Passkey>,
     isLoading: Boolean,
     errorMessage: String?,
@@ -38,6 +37,10 @@ fun PassKeyListScreen(
     onRetryClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    if (!isLoading && errorMessage == null && passkeys.isEmpty()) {
+        PassKeyScreen(onBackClick = onBackClick, onRegisterClick = onRegisterClick, modifier = modifier)
+        return
+    }
     Scaffold(
         modifier = modifier,
         containerColor = Color.Transparent,
@@ -63,30 +66,6 @@ fun PassKeyListScreen(
                             .padding(innerPadding)
                             .padding(horizontal = 20.dp),
                 )
-            }
-
-            passkeys.isEmpty() -> {
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
-                            .padding(horizontal = 20.dp),
-                ) {
-                    PasskeyGuideContent(
-                        title = stringResource(id = R.string.passkey_section_title),
-                        description = stringResource(id = R.string.passkey_description),
-                    )
-                    AfternoteButton(
-                        modifier =
-                            Modifier
-                                .align(Alignment.BottomCenter)
-                                .padding(bottom = 63.dp),
-                        text = stringResource(id = R.string.passkey_register),
-                        onClick = onRegisterClick,
-                        type = AfternoteButtonType.Default,
-                    )
-                }
             }
 
             else -> {

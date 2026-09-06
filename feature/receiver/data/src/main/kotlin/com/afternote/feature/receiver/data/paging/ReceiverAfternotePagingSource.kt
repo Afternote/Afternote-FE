@@ -2,6 +2,7 @@ package com.afternote.feature.receiver.data.paging
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
 import com.afternote.feature.receiver.data.error.toReceiverFailure
@@ -18,6 +19,7 @@ import com.afternote.feature.receiver.domain.model.AfterNoteListItem
  */
 internal class ReceiverAfternotePagingSource(
     private val api: ReceiverAfternoteApiService,
+    private val errorReporter: ErrorReporter,
 ) : PagingSource<Int, AfterNoteListItem>() {
     override fun getRefreshKey(state: PagingState<Int, AfterNoteListItem>): Int? = null
 
@@ -27,7 +29,7 @@ internal class ReceiverAfternotePagingSource(
         runCatchingCancellable<LoadResult<Int, AfterNoteListItem>> {
             val response = api.getReceiverAfternotes().requireData()
             LoadResult.Page(
-                data = response.afternotes.toReceiverDomainList(),
+                data = response.toReceiverDomainList(errorReporter),
                 prevKey = null,
                 nextKey = null,
             )

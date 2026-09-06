@@ -605,6 +605,119 @@ async function queryOsv(packages, fetchImpl, offline) {
     return { findings, errors };
 }
 
+// querybatch 는 취약점 id 만 돌려준다. «정식 패치판이 나왔는가» 는 권고의 fixed 이벤트와 그
+// 좌표가 실제로 배포한 버전 목록을 대조해야만 알 수 있어 상세 조회가 따로 필요하다.
+//
+// 이 조회가 없으면 감사는 «패치 버전이 프리릴리스뿐이라 대응을 보류한» 권고를 영영 깨우지
+// 못한다. fingerprint 가 보는 것은 해석 버전과 취약점 목록뿐이라, 정식판 출시는 그 둘 중
+// 어느 것도 바꾸지 않기 때문이다 — #986 을 닫으면서 남은 구멍으로 명시해 둔 자리다.
+async function fetchAdvisory(id, fetchImpl) {
+    const response = await fetchImpl(`https://api.osv.dev/v1/vulns/${encodeURIComponent(id)}`, {
+        headers: { "User-Agent": "Afternote-dependency-audit" },
+        signal: AbortSignal.timeout(30_000),
+    });
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+    }
+    return response.json();
+}
+
+// 권고 하나가 여러 갈래를 동시에 고칠 수 있다(1.x 는 1.5 에서, 2.x 는 2.3 에서). 우리에게
+// 의미 있는 fixed 는 «지금 쓰는 버전보다 위» 중 가장 낮은 것이다 — 그게 이 저장소가 실제로
+// 올라가야 할 지점이다. 그런 갈래가 없으면(이미 최상위 갈래에 있으면) 가장 높은 fixed 로
+// 떨어뜨려 판정 자체가 사라지지 않게 한다.
+export function firstPatchedVersion(advisory, coordinate, currentVersion) {
+    const fixes = [];
+    for (const affected of advisory?.affected ?? []) {
+        if (affected.package?.ecosystem !== "Maven" || affected.package?.name !== coordinate) {
+            continue;
+        }
+        for (const range of affected.ranges ?? []) {
+            for (const event of range.events ?? []) {
+                if (event.fixed) {
+                    fixes.push(event.fixed);
+                }
+            }
+        }
+    }
+    if (fixes.length === 0) {
+        return null;
+    }
+    const sorted = unique(fixes).sort(compareVersions);
+    return sorted.find((version) => compareVersions(version, currentVersion) > 0) ?? sorted.at(-1);
+}
+
+// fixed 가 프리릴리스면(2.4.20-Beta1) 그 권고를 해소하는 «정식» 릴리스는 아직 없을 수 있다.
+// 판정은 좌표가 실제로 배포한 목록에서 fixed 이상인 stable 중 가장 낮은 것을 찾는 것이다 —
+// 없으면 null 이고, 그게 «프로덕션 툴체인을 베타로 올리지 않으면 못 고친다» 는 뜻이다.
+export function stableReleaseAtOrAbove(versions, target) {
+    if (!target) {
+        return null;
+    }
+    return (versions ?? [])
+        .filter((version) => channelOf(version) === "stable" && compareVersions(version, target) >= 0)
+        .sort(compareVersions)
+        .at(0) ?? null;
+}
+
+async function annotateAdvisories(findings, fetchImpl, offline) {
+    const errors = [];
+    if (offline || findings.length === 0) {
+        return { findings, errors };
+    }
+
+    const advisories = new Map();
+    for (const id of unique(findings.flatMap((finding) => finding.vulnerabilities.map((item) => item.id)))) {
+        try {
+            advisories.set(id, await fetchAdvisory(id, fetchImpl));
+        } catch (error) {
+            errors.push(`권고 상세 조회 실패: ${id} (${error instanceof Error ? error.message : String(error)})`);
+        }
+    }
+
+    const releases = new Map();
+    for (const coordinate of unique(findings.map((finding) => finding.coordinate))) {
+        const result = await fetchCoordinateFile({ coordinate }, "maven-metadata.xml", fetchImpl);
+        if (!result.text) {
+            errors.push(`릴리스 목록 미확인: ${coordinate}`);
+            continue;
+        }
+        releases.set(
+            coordinate,
+            [...result.text.matchAll(/<version>([^<]+)<\/version>/g)].map((match) => decodeXml(match[1].trim())),
+        );
+    }
+
+    const annotated = findings.map((finding) => {
+        const versions = releases.get(finding.coordinate) ?? [];
+        const vulnerabilities = finding.vulnerabilities.map((item) => {
+            const advisory = advisories.get(item.id);
+            if (!advisory) {
+                return { ...item, firstPatched: null, firstPatchedStable: null };
+            }
+            const firstPatched = firstPatchedVersion(advisory, finding.coordinate, finding.version);
+            return {
+                ...item,
+                severity: advisory.database_specific?.severity ?? null,
+                firstPatched,
+                firstPatchedStable: stableReleaseAtOrAbove(versions, firstPatched),
+            };
+        });
+        // 한 좌표에 권고가 여럿이면 «전부를 넘기는» 한 버전이어야 올릴 수 있다. 하나라도
+        // 정식 패치판이 없으면 그 좌표는 아직 정식으로 해소되지 않는다.
+        const stableFixVersion = vulnerabilities.every((item) => item.firstPatchedStable)
+            ? vulnerabilities.map((item) => item.firstPatchedStable).sort(compareVersions).at(-1)
+            : null;
+        return {
+            ...finding,
+            vulnerabilities,
+            latestStable: latestVersion(versions, "stable"),
+            stableFixVersion,
+        };
+    });
+    return { findings: annotated, errors };
+}
+
 function directEntries(catalog, usage) {
     const entries = [];
     for (const [alias, references] of Object.entries(usage.libraries)) {
@@ -752,8 +865,18 @@ export function renderSummary(audit) {
         lines.push("OSV 발견 없음");
     } else {
         for (const finding of audit.vulnerabilities) {
+            // 정식 패치판 유무를 함께 적는다. «권고는 떴는데 올릴 정식판이 없다» 와 «올릴 수
+            // 있는데 안 올렸다» 는 대응이 정반대라, id 만으로는 요약을 읽고 판단할 수 없다.
+            const patch = finding.stableFixVersion
+                ? `정식 패치판 \`${finding.stableFixVersion}\``
+                : finding.vulnerabilities?.some((item) => item.firstPatched)
+                    ? `정식 패치판 없음 (최초 패치 ${finding.vulnerabilities
+                          .map((item) => item.firstPatched)
+                          .filter(Boolean)
+                          .join(", ")})`
+                    : "패치 버전 미확인";
             lines.push(
-                `- \`${finding.coordinate}:${finding.version}\`: ${finding.vulnerabilities.map((item) => item.id).join(", ")}`,
+                `- \`${finding.coordinate}:${finding.version}\`: ${finding.vulnerabilities.map((item) => item.id).join(", ")} — ${patch}`,
             );
         }
     }
@@ -867,6 +990,7 @@ async function main() {
         sources: entry.sources,
     }));
     const osv = await queryOsv(osvPackages, fetch, options.offline);
+    const advisories = await annotateAdvisories(osv.findings, fetch, options.offline);
     const compatibility = await readJsonIfPresent(options.compatibilityStatus);
     let resolutionStatus = {};
     if (options.resolutionStatus) {
@@ -897,6 +1021,7 @@ async function main() {
             .map(([name, exitCode]) => `Gradle 의존성 해석 실패: ${name} (exit ${exitCode})`),
         ...metadataGaps.map((entry) => `Maven metadata 미확인: ${entry.alias} (${entry.coordinate})`),
         ...osv.errors.map((error) => `OSV 조회 실패: ${error}`),
+        ...advisories.errors,
         ...boms
             .filter((bom) => Object.keys(bom.managed).length === 0)
             .map((bom) => `BOM POM 미확인: ${bom.entry.alias}`),
@@ -912,7 +1037,7 @@ async function main() {
                 : null,
         entries,
         resolvedDependencies,
-        vulnerabilities: osv.findings,
+        vulnerabilities: advisories.findings,
         consistencyFindings: consistencyFindings(entries, resolvedDependencies, catalog),
         compatibility,
         resolutionStatus,

@@ -43,6 +43,8 @@ android {
     testOptions {
         animationsDisabled = true
         execution = "ANDROIDX_TEST_ORCHESTRATOR"
+        // Robolectric 이 병합된 매니페스트·리소스를 읽어야 NavHost 를 실제 컴포지션으로 띄울 수 있다 (#1601).
+        unitTests.isIncludeAndroidResources = true
         managedDevices {
             localDevices {
                 create("pixel2Api26") {
@@ -243,6 +245,10 @@ dependencies {
     implementation(projects.core.ui)
     implementation(projects.core.model)
     implementation(projects.core.data)
+    // 알림 권한을 물어본 사실을 기기 수명 저장소에 남긴다 (#1454).
+    // 저장소 창구는 core:datastore 의 LocalStoreRegistry 이고, 스키마(타입드 접근자)는 각 모듈이 갖는다.
+    implementation(projects.core.datastore)
+    implementation(libs.androidx.datastore.preferences)
     implementation(projects.core.domain)
 
     // Feature — presentation
@@ -263,6 +269,16 @@ dependencies {
     implementation(projects.feature.mindrecord.data)
     implementation(projects.feature.timeletter.data)
     implementation(projects.feature.onboarding.data)
+    implementation(projects.feature.setting.data)
+
+    testImplementation(libs.coroutines.test)
+    testImplementation(testFixtures(projects.core.domain))
+
+    // Nav2 백스택 회귀 기준 (#1601) — 에뮬레이터 없이 NavHost 를 실제 컴포지션으로 띄워
+    // 탭 상태 복원·인증 스택 경계·flow-scoped ViewModel 수명을 잰다. 대상(AppState·
+    // AppNavigationActions)이 app 모듈에만 있어 피처 모듈 Robolectric 설정을 재사용할 수 없다.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
 
     baselineProfile(project(":baselineprofile"))
 
@@ -286,6 +302,9 @@ dependencies {
     androidTestImplementation(testFixtures(projects.feature.receiver.domain))
     androidTestImplementation(projects.feature.timeletter.domain)
     androidTestImplementation(testFixtures(projects.feature.timeletter.domain))
+    androidTestImplementation(testFixtures(projects.feature.timeletter.data))
+    androidTestImplementation(testFixtures(projects.feature.setting.data))
+    androidTestImplementation(projects.feature.setting.domain)
     kspAndroidTest(libs.hilt.compiler)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     androidTestUtil(libs.androidx.test.orchestrator)

@@ -70,6 +70,26 @@ function runEvidence(audit) {
     ].filter(Boolean);
 }
 
+// 권고가 떴다는 사실만으로는 무엇을 해야 하는지가 정해지지 않는다. 올릴 정식판이 있는지가
+// 대응을 가른다 — 있으면 카탈로그 한 줄이고, 없으면 프로덕션 툴체인을 프리릴리스로 올릴지를
+// 따로 판단해야 한다. 그 갈림을 본문에 적어 두어야 읽는 사람이 매번 다시 조사하지 않는다.
+function patchAvailability(finding, stableFix) {
+    if (stableFix) {
+        return [
+            `정식 패치판 \`${stableFix}\` 이 배포돼 있습니다 — 카탈로그를 이 버전 이상으로 올리면 해소됩니다.`,
+        ];
+    }
+    if (finding.firstPatched.length > 0) {
+        return [
+            `이 권고를 해소하는 최초 패치 버전은 ${finding.firstPatched.map((version) => `\`${version}\``).join(", ")} 이고, **아직 정식(stable) 릴리스가 없습니다**` +
+                `${finding.latestStable ? ` (현재 정식 최신 \`${finding.latestStable}\`)` : ""}.`,
+            "",
+            "프리릴리스 툴체인 채택의 회귀 위험과 이 권고의 실제 공격면을 견줘 판단해야 합니다. 보류로 판단해 이 이슈를 닫아 두면, 정식 패치판이 배포되는 순간 감사가 자동으로 다시 엽니다.",
+        ];
+    }
+    return ["영향 범위와 수정 버전을 확인하고 안전한 버전으로 올려야 합니다."];
+}
+
 function vulnerabilityFindings(audit) {
     const grouped = new Map();
     for (const finding of audit.vulnerabilities ?? []) {
@@ -78,16 +98,26 @@ function vulnerabilityFindings(audit) {
             versions: [],
             aliases: [],
             vulnerabilities: [],
+            firstPatched: [],
+            stableFixVersions: [],
         };
         current.versions.push(finding.version);
         current.aliases.push(...(finding.aliases ?? []));
         current.vulnerabilities.push(...finding.vulnerabilities.map((item) => item.id));
+        current.firstPatched.push(...finding.vulnerabilities.map((item) => item.firstPatched).filter(Boolean));
+        current.stableFixVersions.push(finding.stableFixVersion ?? null);
+        current.latestStable = finding.latestStable ?? current.latestStable ?? null;
         grouped.set(finding.coordinate, current);
     }
     return [...grouped.values()].map((finding) => {
         finding.versions = unique(finding.versions).sort();
         finding.aliases = unique(finding.aliases).sort();
         finding.vulnerabilities = unique(finding.vulnerabilities).sort();
+        finding.firstPatched = unique(finding.firstPatched).sort();
+        // 해석 버전이 여럿이면 그 전부를 넘기는 버전이라야 «정식으로 고칠 수 있다» 가 된다.
+        const stableFix = finding.stableFixVersions.every(Boolean)
+            ? unique(finding.stableFixVersions).sort().at(-1)
+            : null;
         const displayName = COORDINATE_DISPLAY_NAMES[finding.coordinate] ??
             finding.aliases[0] ??
             finding.coordinate;
@@ -98,7 +128,7 @@ function vulnerabilityFindings(audit) {
                 (id) => `- [${id}](https://osv.dev/vulnerability/${encodeURIComponent(id)})`,
             ),
             "",
-            "영향 범위와 수정 버전을 확인하고 안전한 버전으로 올려야 합니다.",
+            ...patchAvailability(finding, stableFix),
             "",
             ...runEvidence(audit),
         ].join("\n");
@@ -109,10 +139,15 @@ function vulnerabilityFindings(audit) {
             issueType: "Bug",
             overview: evidence,
         };
+        // stableFix 는 «있을 때만» 넣는다. 없을 때의 직렬화 결과가 이 필드를 도입하기 전과
+        // 같아야, 정식 패치판이 없어 보류해 둔 이슈가 이 변경 자체로 깨어나지 않는다.
+        // 반대로 정식판이 나오는 순간 키가 생겨 fingerprint 가 바뀌고, 닫아 둔 이슈가
+        // 자동으로 다시 열린다 — #986 을 닫으며 남겨 둔 구멍이 이 한 줄로 닫힌다.
         result.fingerprint = fingerprint({
             key: result.key,
             versions: finding.versions,
             vulnerabilities: finding.vulnerabilities,
+            ...(stableFix ? { stableFix } : {}),
         });
         return result;
     });

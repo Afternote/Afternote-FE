@@ -22,6 +22,109 @@
 - Play App Signing 등록 상태
 - Automatic integrity protection 메뉴와 opt-in 제공 여부
 
+## 내부 테스트 트랙 자동 배포
+
+[`release-play-internal.yml`](../.github/workflows/release-play-internal.yml)이 `main`에서 수동 실행 + `play-internal` environment 승인을 받아 signed AAB를 Play **내부 테스트 트랙에만** 올린다. production·open·closed 트랙으로 승격하는 단계는 워크플로에도 업로드 스크립트에도 없다. 승격은 Play Console에서 사람이 한다.
+
+Firebase App Distribution 경로([`release-distribution.yml`](../.github/workflows/release-distribution.yml))와 별개다. 그쪽은 `main` push마다 자동으로 APK를 QA 그룹에 뿌리고, 이쪽은 사람이 눌러야 움직이는 AAB 경로다. 둘은 함께 돌지 않으며 서로의 자격도 공유하지 않는다.
+
+### versionCode 정책
+
+| 빌드 | versionCode | 산출 주체 |
+|---|---|---|
+| 로컬·CI 검증·Firebase App Distribution | `1` (고정) | `build-logic/src/main/kotlin/VersionCode.kt`의 기본값 |
+| Play 내부 테스트 트랙 | `run_number * 100 + run_attempt` | [`resolve-play-version-code.mjs`](../.github/scripts/resolve-play-version-code.mjs) |
+
+- Play로 나가는 경로가 이 워크플로 하나뿐이라 `run_number`만으로 단조 증가가 보장된다. 재실행은 `run_attempt`가 올라가 같은 run에서도 값이 겹치지 않는다.
+- 업로드 **전에** Play가 알고 있는 최대 versionCode(업로드된 bundle + 모든 트랙의 release)를 조회해, 산출값이 그보다 크지 않으면 빌드 전에 멈춘다.
+- 같은 versionCode 재업로드는 bundle 목록 대조로 업로드 전에 막고, Play가 돌려준 versionCode가 빌드한 값과 다르면 트랙을 건드리지 않는다.
+- `app/build.gradle.kts`의 versionCode를 손으로 올리지 않는다. 로컬에서 Play용 값이 필요하면 `AFTERNOTE_VERSION_CODE` 환경변수로 주입한다.
+
+### 자동화 사전 준비
+
+워크플로가 참조하는 설정은 전부 사람이 웹 UI에서 만들어야 한다. 하나라도 비어 있으면 첫 스텝이 누락된 이름을 출력하고 빌드 전에 실패한다.
+
+**1. Play Console — 앱 등록** (`play.google.com/console`)
+
+1. 개발자 계정 생성(1회 등록비). 조직 계정은 D-U-N-S 번호가 필요하다.
+2. **모든 앱 → 앱 만들기**: 앱 이름 `Afternote`, 기본 언어 한국어, 유형 `앱`, 무료.
+3. **정책 및 프로그램 → 앱 콘텐츠**의 필수 선언(개인정보처리방침 URL, 광고, 콘텐츠 등급, 타겟층, 데이터 보안)을 모두 채운다. 내부 테스트도 이게 비면 릴리스를 만들 수 없다.
+4. **테스트 및 출시 → 테스트 → 내부 테스트 → 테스터**에서 테스터 이메일 목록을 만든다.
+
+**2. Play Console — 첫 AAB 수동 업로드**
+
+Android Publisher API는 **Console에서 최소 한 번 수동 업로드된 앱**에만 업로드를 허용한다. 첫 AAB는 `./scripts/verify-play-release-bundle.sh`로 만든 산출물을 **테스트 및 출시 → 내부 테스트 → 새 버전 만들기**에서 직접 올린다.
+
+- 이때 `AFTERNOTE_VERSION_CODE` 없이 빌드해 versionCode `1`을 쓴다. 워크플로가 만드는 첫 값은 `101`이라 단조 증가 조건을 자동으로 만족한다.
+- 이 업로드에서 Play App Signing 방식이 확정된다. 아래 「Play App Signing 키 결정」을 먼저 읽고 되돌릴 수 없는 선택을 한다.
+
+**3. Google Cloud — API와 서비스 계정** (`console.cloud.google.com`)
+
+1. **API 및 서비스 → 라이브러리**에서 `Google Play Android Developer API`를 사용 설정한다.
+2. **IAM 및 관리자 → 서비스 계정 → 서비스 계정 만들기**: 이름 예 `play-internal-publisher`. **프로젝트 IAM 역할은 주지 않는다** — Play 권한은 Play Console에서 별도로 준다.
+3. Firebase 배포용 서비스 계정을 재사용하지 않는다. 두 채널의 자격을 분리해 두는 것이 이 이슈의 요구사항이다.
+4. **IAM 및 관리자 → Workload Identity 제휴**에서 기존 provider를 재사용하되, 새 서비스 계정에 `roles/iam.workloadIdentityUser`를 부여하면서 principal을 이 저장소로 한정한다.
+
+**4. Play Console — 서비스 계정에 최소 권한 부여**
+
+**설정 → API 액세스**에서 위 Google Cloud 프로젝트를 연결한 뒤, **사용자 및 권한 → 사용자 초대**로 서비스 계정 이메일을 추가한다.
+
+- 앱 범위: `Afternote` 하나만 선택한다(계정 전체 권한을 주지 않는다).
+- 체크할 권한: **앱 정보 보기**, **테스트 트랙에 출시**.
+- 해제할 권한: **프로덕션 트랙에 출시**, 재무·주문 관리, 사용자 관리.
+
+**5. GitHub — environment와 자격**
+
+**Settings → Environments → New environment**로 `play-internal`을 만든다.
+
+| 설정 | 위치 | 값 |
+|---|---|---|
+| Required reviewers | play-internal → Deployment protection rules | 배포 담당자(최소 1명) |
+| Deployment branches | play-internal → Deployment branches and tags | `Selected branches` → `main` |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER` | play-internal → Environment secrets | `projects/<번호>/locations/global/workloadIdentityPools/<pool>/providers/<provider>` |
+| `GCP_PLAY_SERVICE_ACCOUNT` | play-internal → Environment secrets | `play-internal-publisher@<프로젝트>.iam.gserviceaccount.com` |
+| `RELEASE_STORE_FILE_B64` | play-internal → Environment secrets | upload key keystore의 base64 |
+| `RELEASE_STORE_PASSWORD` | play-internal → Environment secrets | keystore 비밀번호 |
+| `RELEASE_KEY_ALIAS` | play-internal → Environment secrets | key alias |
+| `RELEASE_KEY_PASSWORD` | play-internal → Environment secrets | key 비밀번호 |
+| `PLAY_PACKAGE_NAME` | play-internal → Environment variables | `com.afternote.afternote_fe` |
+
+`KAKAO_NATIVE_APP_KEY`·`GOOGLE_WEB_CLIENT_ID`·`GOOGLE_SERVICES_JSON_B64`는 이미 저장소 secret으로 있어 그대로 쓴다. keystore·비밀번호·서비스 계정 값은 담당자가 직접 입력하며 저장소나 문서에 넣지 않는다.
+
+### 실행
+
+**Actions → Release Play Internal Track → Run workflow**에서 브랜치 `main`을 선택해 실행한다. environment 승인자가 승인해야 job이 시작된다.
+
+워크플로가 하는 일:
+
+1. `main`이 아니면 거부하고, 필요한 secret·variable이 비면 이름을 출력하고 멈춘다.
+2. WIF로 조회용 단기 토큰을 받아 Play의 현재 최대 versionCode를 읽는다(edit는 commit 없이 되돌린다).
+3. 단조 증가 versionCode를 확정한다. 중복이면 여기서 끝난다 — AAB를 만들지 않는다.
+4. 확정된 versionCode로 signed AAB를 빌드하고, 서명·필수 항목·R8 mapping을 검증한다.
+5. AAB에 SLSA provenance를 붙이고 이 워크플로·이 commit으로 검증한다.
+6. 업로드 직전에 토큰을 새로 받고 digest를 다시 확인한 뒤, edit 생성 → bundle 업로드 → internal 트랙 갱신 → commit 순으로 게시한다.
+7. run summary에 track·versionCode·source SHA·AAB digest·attestation·Play edit id를 남긴다.
+
+### 실패 모드
+
+| 상황 | 어디서 멈추는가 |
+|---|---|
+| Play Console·서비스 계정 준비 전 | 첫 스텝. 누락된 secret·variable 이름을 출력한다 |
+| `main` 이외의 ref | keystore를 풀기 전 |
+| versionCode 중복·역행 | 빌드 전 |
+| 잘못 서명된 AAB | `scripts/verify-play-release-bundle.sh` |
+| 권한 부족·API commit 실패 | 업로드 스텝. 미완료 edit를 삭제한 뒤 원인을 그대로 올린다 |
+
+어느 단계에서 실패하든 열린 edit는 정리되고, AAB·mapping·keystore는 러너에서 삭제된다. Actions artifact로는 게시되지 않는다.
+
+### 롤백
+
+Play는 이미 게시된 versionCode를 되돌리지 않는다.
+
+1. Play Console **내부 테스트 → 출시 관리**에서 문제 릴리스를 중단(halt)한다.
+2. 수정본은 **더 큰 versionCode**로 다시 배포한다. 이 워크플로를 다시 실행하면 값이 자동으로 올라간다.
+3. Firebase App Distribution은 별개 채널이라 영향을 받지 않는다. 테스터에게 급히 검증본을 줘야 하면 그쪽 경로를 쓴다.
+
 ## AAB 빌드와 로컬 검증
 
 루트에서 다음 명령을 실행한다.
@@ -82,8 +185,10 @@ Play App Signing은 설치되는 APK에 사용하는 app signing key와 Play에 
 
 ## 첫 내부 테스트 릴리스
 
-1. versionCode가 Play에 올린 모든 이전 산출물보다 큰지 확인한다.
-2. AAB 검증 스크립트의 경로·AAB SHA-256·서명 인증서 SHA-256을 릴리스 기록에 남긴다.
+첫 1회는 Console 수동 업로드다(API가 요구한다). 그 뒤부터는 위 「내부 테스트 트랙 자동 배포」가 이 절차를 대신한다.
+
+1. versionCode가 Play에 올린 모든 이전 산출물보다 큰지 확인한다. 자동 배포에서는 워크플로가 Play를 조회해 빌드 전에 판정한다.
+2. AAB 검증 스크립트의 경로·AAB SHA-256·서명 인증서 SHA-256을 릴리스 기록에 남긴다. 자동 배포에서는 run summary가 이 기록이다.
 3. Play Console에서 내부 테스트 트랙을 만들고 Play App Signing 방식을 확정한다.
 4. AAB를 업로드한다.
 5. Play Console의 app signing certificate를 다음 제공자에 등록한다.

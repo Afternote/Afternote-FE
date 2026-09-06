@@ -156,6 +156,7 @@ jobs:
         with:
           name: screenshot-test-results
           path: ${{ steps.screenshot-paths.outputs.list }}
+          # 표준 보관 기간 7일 — 리포트·디버깅용 artifact 는 이 값 하나로 통일한다 (#1400).
           retention-days: 7
 
       # 실패 시 PR 에 artifact URL + 조치 가이드 자동 코멘트.

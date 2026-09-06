@@ -63,14 +63,12 @@ test("privileged baseline apply is a workflow-run bridge restricted to PNG basel
     for (const workflow of [
         "pr-validation.yml",
         "codeql.yml",
-        "base-freshness-probe.yml",
         "merge-order-guard.yml",
     ]) {
         assert.ok(source.includes(`workflow_id: '${workflow}'`), `${workflow} is not redispatched`);
     }
     assert.match(source, /if: steps\.commit\.outputs\.changed == 'true'/);
     assert.match(source, /workflow_id: 'codeql\.yml',[\s\S]*inputs: \{ pull_request_number: process\.env\.TARGET_PR \}/);
-    assert.match(source, /workflow_id: 'base-freshness-probe\.yml',[\s\S]*inputs: \{ pull_request_number: process\.env\.TARGET_PR \}/);
 });
 
 test("screenshot workflow fallbacks cover every baseline module", async () => {
@@ -400,17 +398,6 @@ test("screenshot failure comment rechecks the live baseline label before writing
     assert.ok(baselineGuard > liveLabels, "screenshot-baseline is not checked after the live query");
     assert.ok(listComments > baselineGuard, "comment lookup happens before the baseline label guard");
     assert.match(source.slice(liveLabels, listComments), /core\.info\([\s\S]*return;/);
-});
-
-test("stack refresh only executes trusted default-branch code", async () => {
-    const source = await readWorkflow("stack-refresh.yml");
-
-    assert.match(source, /^\s{2}workflow_dispatch:/m);
-    assert.match(source, /github\.ref_name == github\.event\.repository\.default_branch/);
-    assert.match(source, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
-    assert.match(source, /persist-credentials: false/);
-    assert.match(source, /node --test \.github\/scripts\/refresh-pr-stack\.test\.mjs/);
-    assert.match(source, /MAX_DEPTH: \$\{\{ inputs\.max_depth \}\}/);
 });
 
 test("required checks expose manual dispatch for token-authored commits", async () => {

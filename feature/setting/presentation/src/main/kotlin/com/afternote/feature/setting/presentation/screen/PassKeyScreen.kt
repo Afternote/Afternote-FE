@@ -18,7 +18,7 @@ import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.PasskeyGuideContent
 
 @Composable
-fun PassKeyScreen(
+internal fun PassKeyScreen(
     onBackClick: () -> Unit,
     onRegisterClick: () -> Unit,
     modifier: Modifier = Modifier,

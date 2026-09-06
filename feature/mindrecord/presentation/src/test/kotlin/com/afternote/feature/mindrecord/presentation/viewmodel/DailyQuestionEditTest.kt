@@ -11,6 +11,8 @@ import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
+import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -157,10 +159,11 @@ class DailyQuestionEditTest {
             // 툴바 카운트는 이 시나리오의 관심사가 아니다 — **다른** 저장소를 넘긴다.
             // 같은 fake 를 넘기면 카운트 조회의 draftOnly=true 가 프리필 조회 기록에 섞여
             // «어느 목록을 봤는가» 단언이 무너진다 (#769·#770).
-            MindRecordDraftLoader(
+            LoadMindRecordDraftsUseCase(
                 diaryRepository = EditTestEmptyDiaryRepository,
                 dailyQuestionRepository = EditTestEmptyDailyQuestionRepository,
             ),
+            RecordingErrorReporter(),
         )
     }
 

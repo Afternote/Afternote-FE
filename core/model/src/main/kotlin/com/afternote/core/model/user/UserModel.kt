@@ -32,12 +32,6 @@ data class ReceiverCreated(
     val authCode: String,
 )
 
-data class Passkey(
-    val id: Long,
-    val displayName: String,
-    val createdAt: String,
-)
-
 data class UserPushSetting(
     val timeLetter: Boolean,
     val mindRecord: Boolean,

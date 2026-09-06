@@ -29,6 +29,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
@@ -45,7 +47,7 @@ import com.afternote.feature.receiver.presentation.R
  * 3. 정보 박스 4 행: 기록 / 상태 / 신청일 / 승인일.
  * 4. 하단 CTA: "열람 신청하기" (NotRequested/Pending/Rejected) 또는 "기록 열람하기" (Approved).
  *
- * "기록 열람하기" 클릭 시 ViewModel 이 글로벌 헤더에 authCode 를 복원한 뒤
+ * "기록 열람하기" 클릭 시 ViewModel 이 글로벌 헤더에 masterKey 를 복원한 뒤
  * [SenderDetailUiState.Success.shouldOpenReceiverHome] 를 true 로 갱신. 본 화면이 [LaunchedEffect] 로 받아
  * [onOpenReceiverHome] (순수 네비게이션) 호출 후 [SenderDetailViewModel.onOpenReceiverHomeConsumed] 로 reset.
  */
@@ -59,6 +61,14 @@ fun SenderDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val shouldOpenReceiverHome = (uiState as? SenderDetailUiState.Success)?.shouldOpenReceiverHome == true
+
+    // 열람 신청 흐름에서 복귀하면 상태를 다시 조회한다 — 신청 직후 돌아온 화면이 "신청 전" 을
+    // 그대로 보여주지 않게 한다 (#701). 로딩을 방출하지 않는 refreshOnReturn() 을 쓴다.
+    // 첫 진입의 ON_RESUME 스킵(진입은 init 로드가 담당)과 실행 중 로드와의 중복 차단은
+    // VM 이 판단한다.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshOnReturn()
+    }
 
     LaunchedEffect(shouldOpenReceiverHome) {
         if (shouldOpenReceiverHome) {
@@ -169,8 +179,17 @@ private fun SuccessBody(
 
         Text(
             text = displayName,
+            // 시안 실측(정본 페이지 「정리 Screen Design」, Figma REST): fontSize 32 / lineHeight 32px = 100%.
+            // 신청 전 https://www.figma.com/design/UP9ZR186jHvRBicjA2SOea/?node-id=4327-74206
+            // 승인 후 https://www.figma.com/design/UP9ZR186jHvRBicjA2SOea/?node-id=4327-74250
+            // 두 노드가 든 화면 프레임(4327:74200 · 4327:74244)은 레이어명이 「현재 수신인 목록」이지만
+            // 복붙 잔재고, 내용은 이 화면이 맞다 — 원형 프로필 134 아래 이름, 그 아래 정보 박스 4행.
+            //
+            // bodyLargeB 는 18/24(133%) 라 fontSize 만 덮으면 행간 24sp 가 그대로 상속돼 글자(32sp)
+            // 보다 작아진다 — 이름이 두 줄로 접히면 줄이 겹친다. 그래서 lineHeight 를 함께 적는다.
+            // 대조 완료 — 다시 재지 않아도 된다 (#1444 · #1486).
             style =
-                AfternoteDesign.typography.bodyLargeB.copy(fontSize = 32.sp),
+                AfternoteDesign.typography.bodyLargeB.copy(fontSize = 32.sp, lineHeight = 32.sp),
             color = AfternoteDesign.colors.gray9,
             textAlign = TextAlign.Center,
         )

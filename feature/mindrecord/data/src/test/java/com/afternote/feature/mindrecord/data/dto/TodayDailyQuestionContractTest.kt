@@ -17,14 +17,13 @@ import org.junit.Test
  * `isAnswered`/`isDraft` 는 사정이 다르다 — 종전 키(`answered`/`draft`)로 잡혀 있어
  * `getToday()` 가 항상 실패했던 이력(#548)이 있어 과도기 대비로 구 키를 함께 받는다.
  *
- * Json 설정은 `NetworkModule.provideJson` 과 동일 (ignoreUnknownKeys + coerceInputValues).
+ * Json 설정은 `NetworkModule.provideJson` 과 동일 (ignoreUnknownKeys).
  */
 @OptIn(ExperimentalSerializationApi::class)
 class TodayDailyQuestionContractTest {
     private val json =
         Json {
             ignoreUnknownKeys = true
-            coerceInputValues = true
         }
 
     private fun decode(body: String): TodayDailyQuestionDto =

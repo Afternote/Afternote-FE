@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.model.user.Passkey
+import com.afternote.feature.setting.domain.Passkey
 import com.afternote.feature.setting.presentation.R
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -28,7 +28,7 @@ private fun formatCreatedAt(raw: String): String =
         .getOrDefault(raw)
 
 @Composable
-fun PasskeyListItem(
+internal fun PasskeyListItem(
     passkey: Passkey,
     modifier: Modifier = Modifier,
 ) {

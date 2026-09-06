@@ -103,13 +103,13 @@ test("keeps pull request validation secretless and release credentials isolated"
         ),
     );
 
+    const pullRequestTargetWorkflows = [];
     for (const [name, workflow] of workflows) {
-        assert.doesNotMatch(
-            workflow,
-            /^\s*pull_request_target\s*:/m,
-            `${name} must not use pull_request_target`,
-        );
-        if (!/^\s*pull_request\s*:/m.test(workflow)) {
+        const usesPullRequestTarget = /^\s*pull_request_target\s*:/m.test(workflow);
+        if (usesPullRequestTarget) {
+            pullRequestTargetWorkflows.push(name);
+        }
+        if (!/^\s*pull_request\s*:/m.test(workflow) && !usesPullRequestTarget) {
             continue;
         }
 
@@ -125,6 +125,22 @@ test("keeps pull request validation secretless and release credentials isolated"
         );
     }
 
+    // pull_request_target은 default branch 정의에 쓰기 권한을 줄 수 있어 원칙적으로 금지한다.
+    // 예외는 PR code/artifact/cache를 실행하지 않고 default branch 정책과 API JSON만 읽는 좁은
+    // bridge 둘뿐이다 — 닫힌 스택 멤버 알림과 merge queue 방출 처리(#1892). 그 불변식을 둘 다에
+    // 함께 고정한다.
+    const narrowBridges = ["merge-queue-dequeue.yml", "stack-integrity-notify.yml"];
+    assert.deepEqual([...pullRequestTargetWorkflows].sort(), narrowBridges);
+    for (const bridgeName of narrowBridges) {
+        const bridge = workflows.get(bridgeName);
+        assert.match(bridge, /^permissions: \{\}$/m, bridgeName);
+        assert.match(bridge, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/, bridgeName);
+        assert.match(bridge, /persist-credentials: false/, bridgeName);
+        assert.doesNotMatch(bridge, /github\.event\.pull_request\.head\.(sha|ref)/, bridgeName);
+        assert.doesNotMatch(bridge, /actions\/(download-artifact|cache)@/, bridgeName);
+        assert.doesNotMatch(bridge, /\bsecrets(?:\.|\[)/, bridgeName);
+    }
+
     const actionReference = "uses: ./.github/actions/setup-ci-config";
     for (const name of [
         "lint.yml",
@@ -137,12 +153,15 @@ test("keeps pull request validation secretless and release credentials isolated"
 
     const releaseWorkflow = workflows.get("release-distribution.yml");
     assert.doesNotMatch(releaseWorkflow, /\.\/\.github\/actions\/setup-ci-config/);
+    // Firebase 인증은 장기 JSON 키에서 WIF 로 옮겼다 (#850) — 릴리스 경로가 Google 자격을
+    // 다룬다는 사실은 그대로고, 그 자격이 저장된 비밀이 아니라 단기 토큰으로 바뀌었다.
     for (const secretName of [
         "GOOGLE_SERVICES_JSON_B64",
         "KAKAO_NATIVE_APP_KEY",
         "GOOGLE_WEB_CLIENT_ID",
         "RELEASE_STORE_FILE_B64",
-        "FIREBASE_SERVICE_ACCOUNT_JSON",
+        "GCP_WORKLOAD_IDENTITY_PROVIDER",
+        "GCP_FIREBASE_SERVICE_ACCOUNT",
     ]) {
         assert.match(releaseWorkflow, new RegExp(`secrets\\.${secretName}`));
     }

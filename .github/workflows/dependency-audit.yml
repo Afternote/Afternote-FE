@@ -35,7 +35,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up JDK 21
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -81,12 +81,18 @@ jobs:
           run_report core-model-runtime :core:model:dependencies --configuration runtimeClasspath
           run_report core-domain-runtime :core:domain:dependencies --configuration runtimeClasspath
           run_report afternote-domain-runtime :feature:afternote:domain:dependencies --configuration runtimeClasspath
-          run_report mindrecord-domain-runtime :feature:mindrecord:domain:dependencies --configuration debugRuntimeClasspath
-          run_report onboarding-domain-runtime :feature:onboarding:domain:dependencies --configuration runtimeClasspath
-          run_report receiver-domain-runtime :feature:receiver:domain:dependencies --configuration debugRuntimeClasspath
+          run_report mindrecord-domain-runtime :feature:mindrecord:domain:dependencies --configuration runtimeClasspath
+          run_report receiver-domain-runtime :feature:receiver:domain:dependencies --configuration runtimeClasspath
           run_report setting-domain-runtime :feature:setting:domain:dependencies --configuration runtimeClasspath
-          run_report timeletter-domain-runtime :feature:timeletter:domain:dependencies --configuration debugRuntimeClasspath
+          run_report timeletter-domain-runtime :feature:timeletter:domain:dependencies --configuration runtimeClasspath
 
+      # init script 는 develop 에 의도적으로 남긴 red 게이트(.github/ci-expected-failures.json)를
+      # 제외한다. 없으면 `testDebugUnitTest` 가 그 테스트를 그대로 돌려 이 감사만 상시 red 가
+      # 되고, 매주 「호환성 검증 실패」 이슈가 새로 열린다 — 실제 SDK·JDK 경계 회귀가 같은
+      # 빨간 X 에 묻힌다 (#1653). 제외는 목록에 오른 테스트에 한정되므로 목록 밖 실패는 그대로
+      # 이 게이트를 깬다. XPASS 감시(probe-unit)는 여기 붙이지 않는다 — 게이트 해제를 강제하는
+      # probe 는 unit-test.yml 이 모든 develop push 와 full 범위 PR 에서 이미 돌리고 있어,
+      # 주 1회 실행에 같은 신호를 하나 더 두면 해제를 앞당기지 못한 채 red 만 늘어난다.
       - name: Run current SDK and JVM compatibility gate
         id: compatibility
         continue-on-error: true
@@ -97,11 +103,12 @@ jobs:
           set +e
           ./gradlew assembleDebug testDebugUnitTest \
             :core:model:test :core:domain:test \
-            :feature:afternote:domain:test :feature:mindrecord:domain:testDebugUnitTest \
-            :feature:onboarding:domain:test :feature:receiver:domain:testDebugUnitTest \
-            :feature:setting:domain:test :feature:timeletter:domain:testDebugUnitTest \
+            :feature:afternote:domain:test :feature:mindrecord:domain:test \
+            :feature:receiver:domain:test \
+            :feature:setting:domain:test :feature:timeletter:domain:test \
             :konsist:test :build-logic:test \
-            --continue --parallel --console=plain > "$REPORT_DIR/compatibility.log" 2>&1
+            --continue --parallel --console=plain \
+            --init-script .github/ci-expected-failures.init.gradle > "$REPORT_DIR/compatibility.log" 2>&1
           status=$?
           set -e
           printf '{"exitCode":%s}\n' "$status" > "$REPORT_DIR/compatibility-status.json"
@@ -119,7 +126,6 @@ jobs:
             --resolved-report "$REPORT_DIR/resolved/core-domain-runtime.txt" \
             --resolved-report "$REPORT_DIR/resolved/afternote-domain-runtime.txt" \
             --resolved-report "$REPORT_DIR/resolved/mindrecord-domain-runtime.txt" \
-            --resolved-report "$REPORT_DIR/resolved/onboarding-domain-runtime.txt" \
             --resolved-report "$REPORT_DIR/resolved/receiver-domain-runtime.txt" \
             --resolved-report "$REPORT_DIR/resolved/setting-domain-runtime.txt" \
             --resolved-report "$REPORT_DIR/resolved/timeletter-domain-runtime.txt" \
@@ -143,6 +149,8 @@ jobs:
         with:
           name: android-dependency-audit
           path: ${{ env.REPORT_DIR }}
+          # 예외: 주간 감사 증거 — 스케줄 주기가 7일이라 표준 7일이면 다음 실행 시점에 직전 회차가
+          # 만료돼 회차 간 비교가 끊긴다. 한 회차가 겹치도록 14일로 둔다 (#1400).
           retention-days: 14
 
       - name: Fail when current compatibility gate failed

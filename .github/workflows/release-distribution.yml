@@ -69,7 +69,7 @@ jobs:
           cat "$RELEASE_NOTES_FILE" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Set up JDK 21
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -88,7 +88,7 @@ jobs:
           require: >-
             KAKAO_NATIVE_APP_KEY GOOGLE_WEB_CLIENT_ID GOOGLE_SERVICES_JSON_B64
             RELEASE_STORE_FILE_B64 RELEASE_STORE_PASSWORD RELEASE_KEY_ALIAS
-            RELEASE_KEY_PASSWORD FIREBASE_SERVICE_ACCOUNT_JSON
+            RELEASE_KEY_PASSWORD
           kakao-native-app-key: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
           google-web-client-id: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
           google-services-json-b64: ${{ secrets.GOOGLE_SERVICES_JSON_B64 }}
@@ -96,12 +96,13 @@ jobs:
           release-store-password: ${{ secrets.RELEASE_STORE_PASSWORD }}
           release-key-alias: ${{ secrets.RELEASE_KEY_ALIAS }}
           release-key-password: ${{ secrets.RELEASE_KEY_PASSWORD }}
-          firebase-service-account-json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           compose-local-properties: 'true'
 
       # 빌드와 업로드를 갈라 놓은 이유는 그 사이에 attest 할 «파일 하나» 를 확정하기 위해서다.
       # digest 는 signing 이 끝난 바로 그 APK 에서 뜨고, 이후 단계는 전부 이 값을 기준으로 판정한다.
-      # 이 step 에는 Firebase credential 을 주지 않는다 — 업로드 step 까지 노출을 미룬다 (#851).
+      # 이 step 에는 Google 자격이 없다. WIF 전환(#850) 이후로는 파이프라인 어디에도 장기 키가
+      # 없고, 업로드 직전에 발급되는 단기 credential 만 존재한다 (#851 의 «노출을 미룬다» 가
+      # «애초에 저장하지 않는다» 로 바뀌었다).
       - name: Build signed release APK
         id: release_apk
         env:
@@ -150,8 +151,32 @@ jobs:
           node .github/scripts/verify-release-attestation.mjs \
             verify "$RELEASE_APK_PATH" "$EXPECTED_SHA256" "$verification_file"
 
+      - name: Verify WIF configuration is set
+        env:
+          GCP_FIREBASE_SERVICE_ACCOUNT: ${{ secrets.GCP_FIREBASE_SERVICE_ACCOUNT }}
+          GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+        run: |
+          missing=""
+          [ -z "$GCP_WORKLOAD_IDENTITY_PROVIDER" ] && missing="$missing GCP_WORKLOAD_IDENTITY_PROVIDER"
+          [ -z "$GCP_FIREBASE_SERVICE_ACCOUNT" ] && missing="$missing GCP_FIREBASE_SERVICE_ACCOUNT"
+          if [ -n "$missing" ]; then
+            echo "::error::필수 WIF 설정 누락:$missing"
+            exit 1
+          fi
+
+      # v3 immutable SHA. 이 단계 전에는 Google Cloud WIF credential 이 발급되지 않는다.
+      # 토큰 수명이 짧으므로 빌드·attestation 이 끝난 업로드 직전에 발급한다 (#850).
+      - name: Authenticate to Google Cloud with WIF
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_FIREBASE_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+
       # Firebase App Distribution Gradle plugin 이 GOOGLE_APPLICATION_CREDENTIALS 환경변수로
-      # service account JSON 경로를 인식. plugin DSL 의 serviceCredentialsFile 미지정 시 fallback.
+      # credential 파일 경로를 인식한다. 그 값은 위 auth 액션이 export_environment_variables 로
+      # 내보내는 단기 credential 이다 — 워크플로가 손으로 지정하지 않는다.
       # 참고: https://firebase.google.com/docs/app-distribution/android/distribute-gradle
       #
       # --artifactPath 로 이미 attest 된 파일만 올린다. 인자를 빼면 plugin 이 assemble 을 다시
@@ -160,7 +185,6 @@ jobs:
         env:
           ATTESTATION_URL: ${{ steps.provenance.outputs.attestation-url }}
           EXPECTED_SHA256: ${{ steps.release_apk.outputs.sha256 }}
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.release_config.outputs.firebase-credentials-path }}
           GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
           KAKAO_NATIVE_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
           RELEASE_APK_PATH: ${{ steps.release_apk.outputs.path }}
@@ -188,4 +212,3 @@ jobs:
         uses: ./.github/actions/cleanup-release-config
         with:
           keystore-path: ${{ steps.release_config.outputs.keystore-path }}
-          firebase-credentials-path: ${{ steps.release_config.outputs.firebase-credentials-path }}

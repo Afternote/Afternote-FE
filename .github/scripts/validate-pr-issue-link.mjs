@@ -2,7 +2,12 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+// 같은 저장소 Issue 를 가리키는 모든 참조 — closing 키워드와 비closing(Refs·Part of·Related to) 모두.
 const ISSUE_REFERENCE_RE = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?|refs?|references?|part\s+of|related\s+to)\s*:?[ \t]+(?:(?:([\w.-]+)\/([\w.-]+))?#(\d+)|https:\/\/github\.com\/([\w.-]+)\/([\w.-]+)\/issues\/(\d+))/gi;
+// GitHub 가 머지 시 Issue 를 자동으로 닫는 키워드만. 대표 Issue 는 이 형태로만 연결할 수 있다 (#1748).
+// 키워드와 번호 사이에 콜론이나 다른 낱말이 끼면 GitHub 도 auto-close 하지 않으므로 여기서도 인정하지 않는다.
+// merge-order-guard.yml 이 closing 이슈를 뽑는 패턴과 같은 모양이다 — 두 가드가 같은 Issue 를 봐야 한다.
+const CLOSING_REFERENCE_RE = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+(?:(?:([\w.-]+)\/([\w.-]+))?#(\d+)|https:\/\/github\.com\/([\w.-]+)\/([\w.-]+)\/issues\/(\d+))/gi;
 const TITLE_ISSUE_REFERENCE_RE = /\(#([1-9]\d*)\)/g;
 
 function visibleMarkdown(text) {
@@ -20,15 +25,15 @@ function requiredString(value, name) {
     return value.trim();
 }
 
-export function extractSameRepositoryIssueNumbers(text, repository) {
+function extractIssueNumbers(text, repository, pattern) {
     const [expectedOwner, expectedName] = requiredString(repository, "repository").split("/");
     if (!expectedOwner || !expectedName) {
         throw new Error(`repository 형식이 owner/name 이 아닙니다: ${repository}`);
     }
 
     const issueNumbers = new Set();
-    ISSUE_REFERENCE_RE.lastIndex = 0;
-    for (const match of visibleMarkdown(text).matchAll(ISSUE_REFERENCE_RE)) {
+    pattern.lastIndex = 0;
+    for (const match of visibleMarkdown(text).matchAll(pattern)) {
         const owner = match[1] ?? match[4] ?? expectedOwner;
         const name = match[2] ?? match[5] ?? expectedName;
         const issueNumber = Number(match[3] ?? match[6]);
@@ -40,6 +45,14 @@ export function extractSameRepositoryIssueNumbers(text, repository) {
         }
     }
     return [...issueNumbers];
+}
+
+export function extractSameRepositoryIssueNumbers(text, repository) {
+    return extractIssueNumbers(text, repository, ISSUE_REFERENCE_RE);
+}
+
+export function extractClosingIssueNumbers(text, repository) {
+    return extractIssueNumbers(text, repository, CLOSING_REFERENCE_RE);
 }
 
 export function extractTitleIssueNumber(title) {
@@ -70,7 +83,7 @@ function isBotAuthor(user, login) {
 const ISSUE_ASSIGNEE_EXEMPT_LABEL = "issue-assignee-exempt";
 
 // 다른 담당자의 모듈이 develop 을 깨뜨렸을 때처럼 어사인 이관을 기다릴 수 없는
-// 긴급 PR 은 라벨 하나로 담당자 대조만 면제한다 — review-debt-exempt 와 같은 규약.
+// 긴급 PR 은 라벨 하나로 담당자 대조만 면제한다.
 // Issue 연결 요건 자체는 면제하지 않는다.
 export function hasIssueAssigneeExemptLabel(pullRequest) {
     return (pullRequest?.labels ?? [])
@@ -98,13 +111,27 @@ export async function validatePullRequestIssueLink({ pullRequest, repository, lo
     const references = extractSameRepositoryIssueNumbers(pullRequest.body, repository);
     if (references.length === 0) {
         throw new Error(
-            `PR #${pullRequestNumber}에 같은 저장소의 Issue 참조가 없습니다. 관련 기존 Issue를 재사용하고 Refs #N을 추가하세요.`,
+            `PR #${pullRequestNumber}에 같은 저장소의 Issue 참조가 없습니다. 관련 기존 Issue를 재사용하고 Closes #N을 추가하세요.`,
         );
     }
     if (!references.includes(titleIssueNumber)) {
         throw new Error(
-            `PR #${pullRequestNumber} 제목의 대표 Issue #${titleIssueNumber}를 본문에서도 Closes #${titleIssueNumber} 또는 Refs #${titleIssueNumber}로 연결하세요.`,
+            `PR #${pullRequestNumber} 제목의 대표 Issue #${titleIssueNumber}를 본문에서도 Closes #${titleIssueNumber}로 연결하세요.`,
         );
+    }
+
+    // 대표 Issue 는 이 PR 이 끝내는 Issue 다. Refs 로 걸 수 있게 두면 두 가지 도피로가 열린다 —
+    // 열린 blocked_by 가 있는 Issue 를 merge-order-guard 밖에서 머지하고 Issue 는 손으로 닫는 것,
+    // Issue 의 일부만 하고 남는 몫을 본문 산문에만 남기는 것 (#1748). 일부만 한다면 그 몫을 새 Issue 로
+    // 분리해 대표 Issue 로 삼는다. 봇 PR 은 사람이 나중에 링크를 붙이는 구조라 종전대로 Refs 를 허용한다.
+    const botAuthor = isBotAuthor(pullRequest.user, author);
+    if (!botAuthor) {
+        const closingReferences = extractClosingIssueNumbers(pullRequest.body, repository);
+        if (!closingReferences.includes(titleIssueNumber)) {
+            throw new Error(
+                `PR #${pullRequestNumber} 제목의 대표 Issue #${titleIssueNumber}를 본문에서도 Closes #${titleIssueNumber}로 연결하세요(Fixes/Resolves 도 됩니다). Refs 로는 대표 Issue를 걸 수 없습니다 — 이 PR이 Issue의 일부만 하면 그 몫을 새 Issue로 분리해 대표 Issue로 삼고, 대표 Issue에 열린 blocked_by가 있으면 선행 PR 위에 스택하거나 관계를 정리하세요. 함께 건드리지만 닫지 않는 Issue는 Refs #M 으로 덧붙입니다.`,
+            );
+        }
     }
 
     const issues = [];
@@ -138,7 +165,7 @@ export async function validatePullRequestIssueLink({ pullRequest, repository, lo
         );
     }
 
-    if (!isBotAuthor(pullRequest.user, author) && !hasIssueAssigneeExemptLabel(pullRequest)) {
+    if (!botAuthor && !hasIssueAssigneeExemptLabel(pullRequest)) {
         const assignees = issueAssigneeLogins(issuesByNumber.get(titleIssueNumber));
         if (assignees.length === 0) {
             throw new Error(

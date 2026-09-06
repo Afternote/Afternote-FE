@@ -1,8 +1,10 @@
 package com.afternote.core.network.service
 
-import com.afternote.core.network.dto.PasskeyDto
+import com.afternote.core.network.dto.DeletePushTokenRequestDto
+import com.afternote.core.network.dto.PushTokenDto
 import com.afternote.core.network.dto.ReceiverDetailDto
 import com.afternote.core.network.dto.ReceiverListDto
+import com.afternote.core.network.dto.RegisterPushTokenRequestDto
 import com.afternote.core.network.dto.SocialAccountLinkRequestDto
 import com.afternote.core.network.dto.UserConnectedAccountDto
 import com.afternote.core.network.dto.UserCreateReceiverDto
@@ -20,6 +22,7 @@ import com.afternote.core.network.model.BaseResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.HTTP
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
@@ -70,20 +73,31 @@ interface UserApiService {
     @DELETE("users/me")
     suspend fun deleteAccount(): BaseResponse<Unit>
 
-    // 등록된 패스키 목록 조회
-    @GET("users/passkeys")
-    suspend fun getPasskeys(): BaseResponse<List<PasskeyDto>>
+    // 활동 기록(ping) 은 두지 않는다 — 서버가 로그인·토큰 재발급 처리에서 마지막 활동 시각을 직접 갱신하므로
+    // (Afternote-BE#137) 클라이언트가 POST users/me/activity 를 더 부르면 같은 값을 두 번 쓰는 중복 왕복이 된다.
+    // 엔드포인트는 서버 재량으로 남아 있을 뿐이니 다시 배선하지 말 것 (이슈 #1413, 원 신설분 #429).
 
     /**
-     * 활동 기록(ping) — 서버에 "이 사용자가 방금 활동했다" 는 **사실만** 알리는 무바디 신호.
+     * FCM 기기 토큰 등록 — 로그인 확정·토큰 갱신 시 서버에 올린다 (#1493).
      *
-     * 요청·응답 바디 없음(누구인지는 액세스 토큰으로 서버가 식별). 서버는 이를 받아 그 사용자의
-     * "마지막 활동 시각" 을 갱신한다. 사후 전달의 INACTIVITY(장기 미사용 → 사망 추정 → 자동 전달)
-     * 판정 기준이 이 시각이므로, 앱 실행/로그인 확정 시 1회 호출해 "아직 활동 중" 으로 미사용 타이머를
-     * 리셋한다. 사용자가 앱을 오래 안 열면 ping 이 끊겨 시각이 굳고 → 미사용 기간이 쌓여 조건 충족 (이슈 #429).
+     * 서버가 이 토큰을 알아야 푸시가 기기에 도달한다. 같은 토큰 재전송은 upsert 라 멱등이며,
+     * 로그인 확정·`onNewToken` 마다 불러도 안전하다.
      */
-    @POST("users/me/activity")
-    suspend fun logActivity(): BaseResponse<Unit>
+    @PUT("users/push-tokens")
+    suspend fun registerPushToken(
+        @Body request: RegisterPushTokenRequestDto,
+    ): BaseResponse<PushTokenDto>
+
+    /**
+     * FCM 기기 토큰 해제 — 로그아웃 시 이 기기로 더는 푸시가 가지 않게 한다 (#1493).
+     *
+     * 어떤 토큰을 지울지 본문으로 지정해야 해서 `@HTTP(hasBody = true)` 를 쓴다. 없는 토큰도 200 이다.
+     * (회원 탈퇴는 서버가 `AccountWithdrawalService` 에서 전량 정리하므로 앱이 부르지 않는다.)
+     */
+    @HTTP(method = "DELETE", path = "users/push-tokens", hasBody = true)
+    suspend fun deletePushToken(
+        @Body request: DeletePushTokenRequestDto,
+    ): BaseResponse<Unit>
 
     // 푸시 알림 설정 조회
     @GET("users/push-settings")

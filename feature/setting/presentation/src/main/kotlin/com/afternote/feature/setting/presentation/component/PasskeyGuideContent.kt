@@ -23,7 +23,7 @@ import com.afternote.feature.setting.presentation.R
  * (빈 상태)가 문구만 다르고 레이아웃이 같아 공유한다. 문구는 호출부가 각자의 문자열 리소스로 전달.
  */
 @Composable
-fun PasskeyGuideContent(
+internal fun PasskeyGuideContent(
     title: String,
     description: String,
     modifier: Modifier = Modifier,

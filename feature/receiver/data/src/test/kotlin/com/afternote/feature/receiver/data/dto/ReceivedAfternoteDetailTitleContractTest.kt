@@ -20,14 +20,13 @@ import org.junit.Test
  *
  * 이 가드가 지키는 것은 그 계약이 깨졌을 때의 **실패 방향**이다. 예전처럼 `String? = null` 이면
  * 키가 빠져도 파싱이 조용히 통과하고 화면이 제목 없이 열려, 서버 결함이 «제목이 비어 보이는»
- * 정상 화면으로 위장된다. Json 설정은 `NetworkModule.provideJson` 과 동일 —
- * `coerceInputValues` 는 **기본값이 있어야** 동작하므로 이 필드를 구해 주지 않는다.
+ * 정상 화면으로 위장된다. Json 설정은 `NetworkModule.provideJson` 과 동일 — 전역
+ * `coerceInputValues` 를 걷어냈으므로(#1494) 기본값 유무와 무관하게 `null` 은 실패로 남는다.
  */
 class ReceivedAfternoteDetailTitleContractTest {
     private val json =
         Json {
             ignoreUnknownKeys = true
-            coerceInputValues = true
         }
 
     @Test
@@ -49,7 +48,7 @@ class ReceivedAfternoteDetailTitleContractTest {
     }
 
     @Test
-    fun `제목이 명시적 null 인 응답 - coerceInputValues 가 구해 주지 않는다`() {
+    fun `제목이 명시적 null 인 응답 - 기본값으로 접히지 않고 실패한다`() {
         val payload =
             """{"status":200,"code":200,"message":"성공","data":{"id":1,"category":"SOCIAL","title":null}}"""
 

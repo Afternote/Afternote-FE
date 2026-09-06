@@ -168,6 +168,13 @@ private class FakeAccountRepository(
         certificateCode: String,
     ): Result<FoundAccount> = error("findAccount 는 이 시나리오에서 호출되면 안 됨")
 
+    override suspend fun resetPassword(
+        email: String,
+        certificateCode: String,
+        newPassword: String,
+        confirmPassword: String,
+    ): Result<Unit> = error("resetPassword 는 이 시나리오에서 호출되면 안 됨")
+
     override suspend fun passwordChange(
         currentPassword: String,
         newPassword: String,

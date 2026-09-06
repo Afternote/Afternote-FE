@@ -25,10 +25,16 @@ enum class AfternoteFailureStage(
      * 신규 작성 진입 시 작성자가 등록한 수신자 목록 조회.
      *
      * 실패해도 화면에는 수신자 자리가 비어 보일 뿐이라 계측하지 않으면 흔적이 남지 않는다.
-     * 수신자는 저장 필수값(서버 코드 475)이므로, 여기서 조용히 실패하면 사용자는 원인을 알 수 없는
-     * 검증 오류만 만나게 된다.
+     * 수신자는 선택 항목이라 저장이 막히지는 않지만, 지정하려던 사용자에게는 등록해 둔 수신자가
+     * 사라져 보이는 무음 결함이 된다.
      */
     AUTHOR_RECEIVER_LOAD("author_receiver_load"),
+
+    /**
+     * 수신자 선택 화면(#540)의 목록 조회 — [AUTHOR_RECEIVER_LOAD] 와 같은 `GET users/receivers` 지만
+     * 실패한 화면이 달라 키를 나눈다. 이쪽은 화면이 실패를 보여 주고 재시도를 받는다.
+     */
+    RECEIVER_SELECT_LOAD("receiver_select_load"),
 
     MEMORIAL_THUMBNAIL_UPLOAD("memorial_thumbnail_upload"),
 
@@ -48,6 +54,15 @@ enum class AfternoteFailureStage(
      * 어느 쪽인지 가르려면 예외 자체가 남아 있어야 한다.
      */
     MEMORIAL_CAPTURE_LAUNCH("memorial_capture_launch"),
+
+    /**
+     * 애프터노트 목록(Paging) 로드 — refresh·append 를 함께 싣는다.
+     *
+     * 목록은 실패해도 이미 그려 둔 페이지가 남아 «표시만 사라지는» 무음 결함이 된다. 한 번 실패한
+     * 뒤 사용자가 재시도를 연타하면 같은 실패가 반복 기록되므로 호출부([com.afternote.feature.afternote.presentation.home.AfternoteHomeViewModel])
+     * 가 중복을 억제한다 — 보관 한도(최근 8건)를 한 장애가 통째로 차지하지 않게 하기 위함이다.
+     */
+    LIST_LOAD("list_load"),
 
     DETAIL_LOAD("detail_load"),
 
@@ -112,18 +127,16 @@ fun ErrorReporter.recordAfternoteFailure(
  * "보관 한도(최근 8건)" 서술이 이 수치를 가리킨다) 사용자 오류가 실제 장애를 밀어낸다.
  * https://firebase.google.com/docs/crashlytics/android/customize-crash-reports
  *
- * 제외는 **4xx + 서버 문구** 둘 다일 때만 성립한다. 문구만 보면 5xx 장애가 통째로 빠지고(이 서버는 5xx 에도
- * `message` 를 싣는다 — 500 body 에 내부 SQL 이 실려 온 실측 #511), status 만 보면 문구 없는 4xx —
- * 파라미터 누락·만료 토큰 같은 FE 버그 신호 — 가 묻힌다. 판정이 빗나갈 땐 기록을 더 하는 쪽으로 빗나가야
- * 한다: 잡음은 콘솔에 보여 나중에 좁힐 수 있지만, 제외한 건 보이지 않아 좁힐 기회조차 없다.
- *
- * 사유 code 로 좁히지 않은 이유 — 서버의 code 체계가 사용자 오류와 장애를 아직 분리하지 않는다.
+ * 사용자 거절 판정은 Data 계층이 [ReceiverFailure.UserRejection] 으로 번역했다 — FE 가 등재한 code 는
+ * code 만으로, 미등재 code 는 `4xx + 비어 있지 않은 서버 문구`로. 5xx 와 문구 없는 미등재 4xx 는
+ * [ReceiverFailure.UnexpectedServerFailure] 로 남아 기록된다. presentation 은 HTTP status·BE code·서버
+ * message 를 되짚지 않고 도메인 결과만 소비한다.
  *
  * 다른 흐름에는 쓰지 않는다. 회원가입 이메일 인증은 사용자 오류가 code 1207 하나로만 와서 호출부가
  * 타입(`CoreAuthFailure.EmailVerification`)만 보고 거른다 — 문구 유무를 따질 필요가 없다.
  *
- * 화면 노출 게이트(`toErrorPayload`, DocumentUploadUiState.kt)는 이 술어를 쓰지 않는다 — 노출은
- * 사유 code allowlist 로 더 좁게 가른다. 그쪽을 넓히더라도 이 판정을 따라 넓히지 말 것.
+ * 화면 노출은 `UserRejection.reason != null` 로 더 좁다. 미등재 4xx 사용자 거절은 리포팅에서 제외되지만
+ * 서버 원문을 노출하지 않고 화면 폴백으로 내려간다. 두 판정을 하나로 합치지 말 것.
  */
 fun Throwable.shouldReportInReceiverFlow(): Boolean =
     when (this) {
@@ -137,8 +150,12 @@ fun Throwable.shouldReportInReceiverFlow(): Boolean =
  */
 private fun ReceiverFailure.isExpectedUserRejection(): Boolean =
     when (this) {
-        is ReceiverFailure.ServerRejection -> {
-            status in CLIENT_ERROR_STATUS_RANGE && !serverMessage.isNullOrBlank()
+        is ReceiverFailure.UserRejection -> {
+            true
+        }
+
+        is ReceiverFailure.UnexpectedServerFailure -> {
+            false
         }
 
         // 서버가 예상하고 거절한 것이 아니라 서버에 닿지도 못한 실패다. 이 타입이 생기기 전에도
@@ -152,8 +169,5 @@ private fun ReceiverFailure.isExpectedUserRejection(): Boolean =
             true
         }
     }
-
-/** 4xx = 요청을 보낸 쪽 문제. 이 대역 밖(5xx·그 외)은 서버 문구가 실려 와도 장애로 보고 기록한다. */
-private val CLIENT_ERROR_STATUS_RANGE = 400..499
 
 private const val KEY_AFTERNOTE_STAGE = "afternote_stage"

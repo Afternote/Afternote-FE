@@ -30,6 +30,7 @@ import com.afternote.feature.receiver.presentation.R
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_HEADER_SPACING
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_TOTAL_STEPS
 import com.afternote.feature.receiver.presentation.deliveryverification.component.ReceiverVerifyStep
+import com.afternote.feature.receiver.presentation.error.ReceiverErrorPopupHost
 
 /**
  * 본인 확인 이메일 인증(designs 3·4) — 이메일 + 인증번호 입력 화면 (이슈 #215).
@@ -38,10 +39,15 @@ import com.afternote.feature.receiver.presentation.deliveryverification.componen
  * 강조 안내 텍스트가 나타난다.
  *
  * 인증번호 발송·검증은 실 API(`receiver-auth/email` 계열) — 서버 거절 안내 문구(이메일 미등록 등) 는
- * 스낵바로 노출된다 (#407).
+ * 스낵바로 노출된다 (#407). 서버·네트워크 실패는 스낵바가 아니라 공통 오류 팝업이 맡는다 (#446) —
+ * 사용자가 할 일이 재시도뿐이라 스스로 사라지는 안내로는 그 액션을 줄 자리가 없다.
+ *
+ * `senderId` 는 [MasterKeyScreen] 과 같은 규약으로 parent backStackEntry 의
+ * [DeliveryVerificationFlowViewModel] 에서 받아 검증 성공 시점의 발신자별 캐시 기록에 쓴다 (#597).
  */
 @Composable
 fun IdentityVerificationEmailScreen(
+    senderId: String,
     onBackClick: () -> Unit,
     onVerified: () -> Unit,
     modifier: Modifier = Modifier,
@@ -67,7 +73,7 @@ fun IdentityVerificationEmailScreen(
     }
 
     val errorMessage =
-        uiState.error?.asString()
+        uiState.errorMessage?.asString()
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
             snackbarHostState.showSnackbar(errorMessage)
@@ -82,8 +88,14 @@ fun IdentityVerificationEmailScreen(
         snackbarHostState = snackbarHostState,
         onBackClick = onBackClick,
         onRequestCode = viewModel::requestVerificationCode,
-        onVerifyAndProceed = viewModel::verifyAndProceed,
+        onVerifyAndProceed = { viewModel.verifyAndProceed(senderId) },
         modifier = modifier,
+    )
+
+    ReceiverErrorPopupHost(
+        popup = uiState.errorPopup,
+        onRetry = viewModel::retryFailedRequest,
+        onDismiss = viewModel::onErrorPopupDismissed,
     )
 }
 

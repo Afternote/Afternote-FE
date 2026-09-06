@@ -6,12 +6,13 @@ import {
     AREA_LABEL_BY_MODULE,
     ASSIGNEE_BY_MODULE,
     GUARD_COMMENT_MARKER,
+    HANDOVER_BY_MODULE,
     LEGACY_ISSUE_MAX,
     PRIORITY_COMMENT_MARKER,
     PRIORITY_FIELD_NAME,
-    PRIORITY_GRACE_MS,
     PRIORITY_OPTION_GUIDE,
     TYPE_LABELS,
+    assigneeForIssue,
     inspectIssue,
     priorityFieldState,
     readFormSection,
@@ -90,14 +91,73 @@ test("reads exact issue-form sections with CRLF input", () => {
     assert.equal(readFormSection(body, "주 담당 모듈"), "setting — 선택한 주 담당 모듈");
 });
 
+// 이관 경계 위의 번호. 지도는 앞으로의 담당을 말하므로 경계를 넘긴 이슈로 대조한다.
+const AFTER_HANDOVER = Math.max(
+    LEGACY_ISSUE_MAX,
+    ...Object.values(HANDOVER_BY_MODULE).map((handover) => handover.fromIssue),
+) + 1;
+
 test("maps every primary module to the repository owner table", () => {
     for (const [module, assignee] of Object.entries(ASSIGNEE_BY_MODULE)) {
-        const inspection = inspectIssue(issue({ body: formBody("enhancement", module) }));
+        const inspection = inspectIssue(issue({
+            number: AFTER_HANDOVER,
+            body: formBody("enhancement", module),
+        }));
         assert.equal(inspection.status, "valid", module);
         assert.equal(inspection.expectedAssignee, assignee, module);
         assert.equal(inspection.expectedLabel, "enhancement", module);
         assert.equal(inspection.expectedAreaLabel, AREA_LABEL_BY_MODULE[module], module);
     }
+});
+
+test("a module handover leaves issues opened before the decision with the previous assignee", () => {
+    // #1910: 온보딩은 이 결정 전에 열린 이슈를 옮기지 않는다. 옮기면 그 이슈로 열어 둔 PR 이
+    // validate-pr-issue-link 에서 작성자와 담당자가 다르다는 이유로 빨개진다.
+    for (const [module, handover] of Object.entries(HANDOVER_BY_MODULE)) {
+        assert.ok(ASSIGNEE_BY_MODULE[module], `${module} 이 지도에 없다`);
+        assert.notEqual(handover.before, ASSIGNEE_BY_MODULE[module], module);
+        assert.ok(handover.fromIssue > LEGACY_ISSUE_MAX, `${module} 경계가 legacy 스킵 안에 있다`);
+
+        assert.equal(
+            assigneeForIssue(module, handover.fromIssue - 1),
+            handover.before,
+            module,
+        );
+        assert.equal(
+            assigneeForIssue(module, handover.fromIssue),
+            ASSIGNEE_BY_MODULE[module],
+            module,
+        );
+        // 경계는 이슈 하나가 아니라 판정 전체를 통과해야 한다.
+        assert.equal(
+            inspectIssue(issue({
+                number: handover.fromIssue - 1,
+                body: formBody("enhancement", module),
+            })).expectedAssignee,
+            handover.before,
+            module,
+        );
+    }
+});
+
+test("a module without a handover entry moves its open issues right away", () => {
+    // 설정은 경계를 두지 않는다. 이미 열려 있는 이슈도 다음 리컨사일에서 새 담당자로 옮겨진다.
+    assert.equal(HANDOVER_BY_MODULE.setting, undefined);
+    assert.equal(assigneeForIssue("setting", LEGACY_ISSUE_MAX + 1), ASSIGNEE_BY_MODULE.setting);
+    const inspection = inspectIssue(issue({
+        number: LEGACY_ISSUE_MAX + 1,
+        body: formBody("enhancement", "setting"),
+        assignees: [{ login: "koongmai" }],
+    }));
+    assert.equal(inspection.needsUpdate, true);
+    assert.deepEqual(inspection.assignees, [ASSIGNEE_BY_MODULE.setting]);
+});
+
+test("an unknown issue number fails the handover judgement instead of guessing", () => {
+    // 경계 판정을 못 하면 어느 쪽으로도 접지 않는다. 접으면 옛 이슈가 조용히 새 담당자에게 간다.
+    const module = Object.keys(HANDOVER_BY_MODULE)[0];
+    assert.throws(() => assigneeForIssue(module, undefined), /이슈 번호/);
+    assert.throws(() => assigneeForIssue(module, "1910번"), /이슈 번호/);
 });
 
 test("maps every work type to exactly one classification label", () => {
@@ -217,21 +277,16 @@ function priorityValue(option = "High") {
     };
 }
 
-test("priorityFieldState distinguishes unknown, set, missing, and overdue", () => {
-    const now = Date.now();
+test("priorityFieldState distinguishes unknown, set, and missing", () => {
+    // 등록 시각은 더 이상 판정에 들어가지 않는다 — 유예가 끝나도 달라지는 동작이 없다 (#1534).
     assert.equal(priorityFieldState(issue()).status, "unknown");
     assert.equal(priorityFieldState(issue({
         issue_field_values: [priorityValue("Urgent")],
     })).status, "set");
     assert.equal(priorityFieldState(issue({
         issue_field_values: [{ issue_field_name: "Effort", single_select_option: { name: "High" } }],
-        created_at: new Date(now).toISOString(),
-    }), now).status, "missing");
-    assert.equal(priorityFieldState(issue({
-        issue_field_values: [],
-        created_at: new Date(now - PRIORITY_GRACE_MS - 60_000).toISOString(),
-    }), now).status, "missing-overdue");
-    assert.equal(priorityFieldState(issue({ issue_field_values: [] }), now).status, "missing");
+    })).status, "missing");
+    assert.equal(priorityFieldState(issue({ issue_field_values: [] })).status, "missing");
 });
 
 test("fresh bug issue missing priority gets exactly one reminder and stays open", async () => {
@@ -254,20 +309,45 @@ test("fresh bug issue missing priority gets exactly one reminder and stays open"
     }
 });
 
-test("bug issue past the grace period is closed as not planned", async () => {
+test("an aged bug issue missing priority still stays open", async () => {
+    // Priority 는 이슈의 내용이 아니라 분류 메타데이터다. 비었다고 결함 보고를 닫으면 할 일은
+    // 그대로인데 열린 이슈 목록에서만 사라진다 (#1534). Issue Form 이 조직 필드를 자동으로
+    // 채우지 못하므로, 닫으면 정상 등록된 이슈가 조용히 사라지는 경로가 된다.
     const original = issue({
         issue_field_values: [],
-        created_at: new Date(Date.now() - PRIORITY_GRACE_MS - 60_000).toISOString(),
+        created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
     });
     const fake = fakeApi(original);
 
     const result = await reconcileIssue(fake.api, repository, original);
+    await reconcileIssue(fake.api, repository, fake.currentIssue());
 
-    assert.equal(result.action, "closed-priority-missing");
-    assert.equal(result.priority, "closed");
+    assert.equal(result.priority, "reminded");
+    assert.notEqual(result.action, "closed-priority-missing");
+    assert.equal(fake.currentIssue().state, "open");
+    assert.equal(fake.comments().length, 1, "안내는 이슈당 한 번만 단다");
+});
+
+test("the priority reminder does not threaten an automatic close", async () => {
+    // 닫지 않게 된 뒤에도 예고 문구가 남으면 코멘트가 거짓말을 한다.
+    const original = issue({ issue_field_values: [] });
+    const fake = fakeApi(original);
+
+    await reconcileIssue(fake.api, repository, original);
+
+    assert.doesNotMatch(fake.comments()[0].body, /자동으로 닫습니다|다시 열어 주세요/);
+});
+
+test("issues invalid for metadata are still closed", async () => {
+    // 이번 변경은 Priority 경로 하나다. 작업 유형·주 담당 모듈을 판정할 수 없는 이슈는 담당자도
+    // 라벨도 정할 수 없어 성격이 다르므로 닫는 경로를 그대로 둔다.
+    const original = issue({ body: "구조화되지 않은 본문" });
+    const fake = fakeApi(original);
+
+    const result = await reconcileIssue(fake.api, repository, original);
+
+    assert.equal(result.action, "closed-invalid");
     assert.equal(fake.currentIssue().state, "closed");
-    assert.equal(fake.currentIssue().state_reason, "not_planned");
-    assert.equal(fake.comments().length, 1);
 });
 
 test("bug issue with priority set and non-bug issues pass without comments", async () => {

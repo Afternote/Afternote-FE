@@ -36,6 +36,10 @@ on:
         type: boolean
   pull_request:
     types: [opened, reopened, edited, synchronize]
+  # merge queue 는 큐 ref 에서 두 required lane 을 다시 요구한다. merge group 에는 PR 이
+  # 없어 CI Test Plan 을 읽을 수 없으므로 default branch 실행과 같은 full 로 판정한다.
+  merge_group:
+    types: [checks_requested]
   schedule:
     - cron: "17 18 * * 2,5"
 
@@ -67,7 +71,7 @@ jobs:
         run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
 
       - name: Set up JDK
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
         with:
           distribution: temurin
           java-version: "21"
@@ -149,6 +153,7 @@ jobs:
         with:
           name: baseline-profile-${{ github.sha }}-${{ github.run_id }}
           if-no-files-found: warn
+          # 표준 보관 기간 7일 — 리포트·디버깅용 artifact 는 이 값 하나로 통일한다 (#1400).
           retention-days: 7
           path: |
             app/src/main/generated/baselineProfiles/
@@ -177,7 +182,8 @@ jobs:
          github.ref_name == github.event.repository.default_branch) ||
         inputs.pull_request_number > 0)) ||
       (github.event_name == 'pull_request' &&
-       github.event.pull_request.head.repo.full_name == github.repository)
+       github.event.pull_request.head.repo.full_name == github.repository) ||
+      github.event_name == 'merge_group'
     name: ${{ matrix.name }}
     runs-on: ubuntu-latest
     timeout-minutes: ${{ matrix.job_timeout_minutes }}
@@ -265,6 +271,23 @@ jobs:
               # selected 실행 증거 검증은 계속 위 trusted verifier가 소유한다.
               renderer=bootstrap
             fi
+            # 파일 존재가 아니라 report-android 명령의 존재로 가른다. 이 파일은 unit·screenshot
+            # 게이트용으로 이미 default branch 에 있어서, 존재만 보면 도입 PR 이 명령 없는
+            # 옛 사본을 실행해 스스로 red 가 된다.
+            if [[ -f .github/scripts/ci-expected-failures.mjs && -f .github/ci-expected-failures.json ]] &&
+               grep -q '"report-android"' .github/scripts/ci-expected-failures.mjs; then
+              install -m 0644 \
+                .github/scripts/ci-expected-failures.mjs \
+                "$policy_dir/ci-expected-failures.mjs"
+              install -D -m 0644 \
+                .github/ci-expected-failures.json \
+                "$policy_dir/root/.github/ci-expected-failures.json"
+              expected_failures=trusted
+            else
+              # 도입 PR 에서는 default branch 에 아직 없다. 목록이 없으면 모든 실패가
+              # 그대로 red 이므로 게이트가 느슨해지는 방향의 공백이 아니다.
+              expected_failures=unavailable
+            fi
             if [[ -f .github/scripts/classify-android-managed-device-failure.mjs ]]; then
               install -m 0644 \
                 .github/scripts/classify-android-managed-device-failure.mjs \
@@ -275,8 +298,8 @@ jobs:
               # tested revision의 권한 없는 classifier를 신뢰 경계 밖에서 실행하지 않는다.
               classifier=unavailable
             fi
-            printf 'renderer=%s\nclassifier=%s\nsource=trusted\n' \
-              "$renderer" "$classifier" >> "$GITHUB_OUTPUT"
+            printf 'renderer=%s\nclassifier=%s\nexpected_failures=%s\nsource=trusted\n' \
+              "$renderer" "$classifier" "$expected_failures" >> "$GITHUB_OUTPUT"
           elif [[ ! -e .github/scripts/ci-test-plan.mjs &&
                   ! -e .github/scripts/resolve-android-test-plan.mjs &&
                   ! -e .github/scripts/resolve-pr-impact.mjs &&
@@ -288,6 +311,7 @@ jobs:
             printf '%s\n' \
               renderer=bootstrap \
               classifier=unavailable \
+              expected_failures=unavailable \
               source=bootstrap >> "$GITHUB_OUTPUT"
           else
             echo "::error::Android test policy가 부분 설치된 상태입니다"
@@ -407,8 +431,11 @@ jobs:
             echo "::error::scheduled_only matrix 값은 true 또는 false여야 합니다"
             exit 1
           fi
-          if [[ "$SCHEDULED_ONLY" == "true" && "$target_pr" != "none" ]]; then
+          if [[ "$SCHEDULED_ONLY" == "true" && "$target_pr" != "none" ]] ||
+             [[ "$SCHEDULED_ONLY" == "true" && "$EVENT_NAME" == "merge_group" ]]; then
             # API 경계 lane은 default branch의 정기/일반 수동 실행만 허용한다.
+            # merge group 도 target_pr 이 none 이지만 required 인 API 30·34 만 돌리면
+            # 되므로 경계 lane 을 큐에서 함께 뺀다.
             run_lane=false
           elif [[ "$mode" == "full" ]]; then
             run_lane=true
@@ -522,7 +549,7 @@ jobs:
 
       - name: Set up JDK
         if: steps.target.outputs.run_lane == 'true'
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
         with:
           distribution: temurin
           java-version: "21"
@@ -824,6 +851,7 @@ jobs:
         with:
           name: android-managed-device-retry-${{ matrix.device }}-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: error
+          # 예외: job 간 전송용 — 소비하는 job 이 같은 run 안에서 끝나므로 1일이면 족하다 (#1400).
           retention-days: 1
           path: ${{ runner.temp }}/android-test-diagnostics/retry.json
 
@@ -833,6 +861,7 @@ jobs:
         with:
           name: android-managed-device-${{ matrix.artifact }}-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: warn
+          # 표준 보관 기간 7일 — 리포트·디버깅용 artifact 는 이 값 하나로 통일한다 (#1400).
           retention-days: 7
           path: |
             app/build/reports/androidTests/managedDevice/
@@ -843,6 +872,28 @@ jobs:
             ${{ runner.temp }}/android-test-diagnostics/
             ${{ runner.temp }}/android-test-selected-verification.log
 
+      # default branch 의 full 실행은 어떤 required check 도 건드리지 않아, 여기서 깨진
+      # androidTest 는 게이트에도 목록에도 잡히지 않고 아무도 통보받지 못했다(#1439).
+      # 실행 결과 XML 을 기대 실패 목록과 대조해 «의도된 red» 와 «새 회귀» 를 가른다.
+      - name: Evaluate androidTest expected failures
+        id: expected_failures
+        if: >-
+          always() &&
+          steps.policy.outputs.expected_failures == 'trusted' &&
+          steps.target.outputs.run_lane == 'true'
+        env:
+          DEVICE: ${{ matrix.device }}
+          EXPECTED_FAILURES_ROOT: ${{ runner.temp }}/android-test-policy/root
+        run: |
+          set +e
+          node "$RUNNER_TEMP/android-test-policy/ci-expected-failures.mjs" \
+            report-android \
+            app/build/outputs/androidTest-results/managedDevice \
+            "$DEVICE"
+          status=$?
+          set -e
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+
       # XML 요약과 artifact 업로드를 끝낸 뒤에만 red로 만든다. Gradle이 실패했다면 원래
       # 종료 코드를 우선 복원하고, Gradle 성공 뒤 result verifier만 실패한 경우 그 코드를 쓴다.
       - name: Restore managed-device androidTest exit code
@@ -850,6 +901,10 @@ jobs:
         env:
           ANDROID_TEST_EXIT_CODE: ${{ steps.android_test.outputs.exit_code }}
           ANDROID_TEST_OUTCOME: ${{ steps.android_test.outcome }}
+          EXPECTED_ABSORBED: ${{ steps.expected_failures.outputs.absorbed }}
+          EXPECTED_FAILURES_EXIT_CODE: ${{ steps.expected_failures.outputs.exit_code }}
+          EXPECTED_UNEXPECTED: ${{ steps.expected_failures.outputs.unexpected }}
+          EXPECTED_XPASSED: ${{ steps.expected_failures.outputs.xpassed }}
           RESULT_RENDERER_EXIT_CODE: ${{ steps.android_test_results.outputs.exit_code }}
           SELECTED_VERIFIER_EXIT_CODE: ${{ steps.selected_android_test.outputs.exit_code }}
         run: |
@@ -857,9 +912,22 @@ jobs:
             echo "Managed-device Gradle step did not complete: $ANDROID_TEST_OUTCOME"
             exit 124
           fi
+          # 목록 밖 실패나 XPASS 는 그 자체로 red 다 — Gradle 이 통과했더라도.
+          if [[ -n "$EXPECTED_FAILURES_EXIT_CODE" && "$EXPECTED_FAILURES_EXIT_CODE" != "0" ]]; then
+            echo "Expected-failure evaluation failed (unexpected=$EXPECTED_UNEXPECTED xpassed=$EXPECTED_XPASSED)."
+            exit "$EXPECTED_FAILURES_EXIT_CODE"
+          fi
           if [[ -n "$ANDROID_TEST_EXIT_CODE" && "$ANDROID_TEST_EXIT_CODE" != "0" ]]; then
-            echo "Restoring managed-device Gradle exit code: $ANDROID_TEST_EXIT_CODE"
-            exit "$ANDROID_TEST_EXIT_CODE"
+            # 기대 실패가 실제로 잡혔고 목록 밖 실패·XPASS 가 0 일 때만 흡수한다.
+            # 실패가 하나도 안 잡힌 채 Gradle 만 죽은 것은 인프라 실패이므로 그대로 red 다.
+            if [[ "${EXPECTED_ABSORBED:-0}" != "0" &&
+                  "${EXPECTED_UNEXPECTED:-0}" == "0" &&
+                  "${EXPECTED_XPASSED:-0}" == "0" ]]; then
+              echo "Gradle exit $ANDROID_TEST_EXIT_CODE 는 기대 실패 $EXPECTED_ABSORBED 건으로만 설명된다 — 흡수한다."
+            else
+              echo "Restoring managed-device Gradle exit code: $ANDROID_TEST_EXIT_CODE"
+              exit "$ANDROID_TEST_EXIT_CODE"
+            fi
           fi
           if [[ -n "$SELECTED_VERIFIER_EXIT_CODE" && "$SELECTED_VERIFIER_EXIT_CODE" != "0" ]]; then
             echo "Selected androidTest result verification failed."

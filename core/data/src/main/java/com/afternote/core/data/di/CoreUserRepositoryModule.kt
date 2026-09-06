@@ -1,9 +1,13 @@
 package com.afternote.core.data.di
 
-import com.afternote.core.data.repoimpl.UserProfileRepositoryImpl
+import com.afternote.core.data.repoimpl.MyProfileRepositoryImpl
+import com.afternote.core.data.repoimpl.UserProfileCacheRepositoryImpl
+import com.afternote.core.data.repoimpl.UserReceiverRepositoryImpl
 import com.afternote.core.data.repoimpl.UserRepositoryImpl
 import com.afternote.core.data.repoimpl.auth.AuthRepositoryImpl
-import com.afternote.core.domain.repository.UserProfileRepository
+import com.afternote.core.domain.repository.MyProfileRepository
+import com.afternote.core.domain.repository.UserProfileCacheRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import dagger.Binds
@@ -34,7 +38,16 @@ abstract class CoreUserRepositoryModule {
     @Singleton
     internal abstract fun bindUserRepository(impl: UserRepositoryImpl): UserRepository
 
+    // 책임별 좁은 계약 2종 (#1282). 상태를 가진 `UserReceiverRepositoryImpl` 은 클래스에 @Singleton 이 있어
+    // 합본 `UserRepositoryImpl` 이 생성자로 받는 인스턴스와 여기서 바인딩되는 인스턴스가 같다 — 좁은 계약으로
+    // 만든 수신자가 합본 구독자의 목록도 갱신한다. `MyProfileRepositoryImpl` 은 상태가 없어 unscoped 다.
+    @Binds
+    internal abstract fun bindUserReceiverRepository(impl: UserReceiverRepositoryImpl): UserReceiverRepository
+
+    @Binds
+    internal abstract fun bindMyProfileRepository(impl: MyProfileRepositoryImpl): MyProfileRepository
+
     @Binds
     @Singleton
-    internal abstract fun bindUserProfileRepository(impl: UserProfileRepositoryImpl): UserProfileRepository
+    internal abstract fun bindUserProfileCacheRepository(impl: UserProfileCacheRepositoryImpl): UserProfileCacheRepository
 }

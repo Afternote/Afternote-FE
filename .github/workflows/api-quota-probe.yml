@@ -1,0 +1,41 @@
+# GitHub API 한도 주기 관측 (#1465)
+#
+# installation 한도가 소진되면 저장소 전체의 게이트가 코드와 무관하게 빨개진다. 8/29 에
+# 그 일이 났을 때 알아챈 유일한 신호가 «열린 모든 PR 이 같은 자리에서 빨갛다» 였다 —
+# 소진되기 전에 남은 quota 를 볼 수 있는 자리가 없었다.
+#
+# 한 시간마다 찍어 시계열로 남기고, 바닥에 가까워지면 이 run 자체를 빨갛게 만들어 Actions
+# 목록에서 보이게 한다. rate_limit 엔드포인트는 한도를 소비하지 않으므로 관측이 문제를
+# 키우지는 않는다.
+name: API Quota Probe
+
+on:
+  schedule:
+    - cron: '7 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 관측은 최신 한 장이면 된다. dispatch 와 schedule 이 겹치면 뒤엣것만 남긴다.
+concurrency:
+  group: api-quota-probe
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    name: Probe GitHub API quota
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # 필요한 건 .github/scripts 뿐이다.
+      - name: Clone quota script
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+
+      - name: Report remaining API quota
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node .github/scripts/ensure-api-quota.mjs report

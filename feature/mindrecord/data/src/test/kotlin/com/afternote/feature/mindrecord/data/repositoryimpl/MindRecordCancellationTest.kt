@@ -11,6 +11,7 @@ import com.afternote.feature.mindrecord.data.dto.DiaryCreateRequestDto
 import com.afternote.feature.mindrecord.data.dto.DiaryListDto
 import com.afternote.feature.mindrecord.data.dto.DiaryUpdateRequestDto
 import com.afternote.feature.mindrecord.data.dto.TodayDailyQuestionDto
+import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
@@ -34,7 +35,7 @@ class MindRecordCancellationTest {
     @Test
     fun `일기 조회 취소는 Result 로 돌아오지 않는다`() =
         runTest {
-            val repository = DiaryRepositoryImpl(NeverReturningDiaryApi())
+            val repository = DiaryRepositoryImpl(NeverReturningDiaryApi(), MindRecordChangeTracker())
             var returned: Result<*>? = null
 
             val job =
@@ -50,7 +51,7 @@ class MindRecordCancellationTest {
     @Test
     fun `데일리질문 조회 취소는 Result 로 돌아오지 않는다`() =
         runTest {
-            val repository = DailyQuestionRepositoryImpl(NeverReturningDailyQuestionApi())
+            val repository = DailyQuestionRepositoryImpl(NeverReturningDailyQuestionApi(), MindRecordChangeTracker())
             var returned: Result<*>? = null
 
             val job =

@@ -1,13 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample backup rules file; uncomment and customize as necessary.
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   API 31 미만 기기의 Auto Backup 규칙이다. API 31 이상은 data_extraction_rules.xml 이 대신한다.
    See https://developer.android.com/guide/topics/data/autobackup
-   for details.
-   Note: This file is ignored for devices older than API 31
-   See https://developer.android.com/about/versions/12/backup-restore
 -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <!-- 타임레터 음성 녹음 임시 원본은 서버 업로드 전 사용자 육성이라 클라우드에 남기지 않는다 (#440 리뷰). -->
+    <exclude domain="file" path="timeletter_audio/" />
 </full-backup-content>
