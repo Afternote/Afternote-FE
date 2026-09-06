@@ -1,11 +1,13 @@
 package com.afternote.feature.home.presentation.receiver
 
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.feature.home.presentation.R
 import com.afternote.feature.home.presentation.receiver.model.ReceiverDownloadState
 import com.afternote.feature.home.presentation.receiver.model.ReceiverHomeUiState
 import com.afternote.feature.mindrecord.domain.model.MindRecordType
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.testing.FakeMindRecordReceiverRepository
+import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import com.afternote.feature.receiver.domain.model.AfterNotesListResult
 import com.afternote.feature.receiver.domain.model.SenderMessageInfo
 import com.afternote.feature.receiver.domain.testing.FakeReceiverRepository
@@ -141,6 +143,60 @@ class ReceiverHomeViewModelTest {
             assertNull(reported.attributes["receiver_failed_sources"])
         }
 
+    @Test
+    fun `내려받기 확인 - 미지원 실패 상태로 귀결되고 파일 저장과 오류 보고를 하지 않음`() =
+        runTest(dispatcher) {
+            val fixture = Fixture()
+            fixture.timeLetter.onGetReceivedTimeLetters = { timeLetters(totalCount = 0) }
+            fixture.receiver.onDownloadReceivedExport = {
+                Result.failure(ReceiverFailure.ExportNotSupported())
+            }
+            val viewModel = fixture.viewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(ReceiverHomeEvent.RequestDownload)
+            assertEquals(
+                ReceiverDownloadState.Confirming,
+                (viewModel.uiState.value as ReceiverHomeUiState.Success).download,
+            )
+
+            viewModel.onEvent(ReceiverHomeEvent.ConfirmDownload)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value as ReceiverHomeUiState.Success
+            assertEquals(
+                ReceiverDownloadState.Failed(R.string.home_receiver_download_all_failed),
+                state.download,
+            )
+            assertEquals(1, fixture.receiver.downloadCalls)
+            assertTrue(fixture.receiver.savedBundles.isEmpty())
+            assertTrue(fixture.reporter.failures.isEmpty())
+        }
+
+    @Test
+    fun `내려받기 확인 - 일반 실패는 내려받기 단계 오류로 보고`() =
+        runTest(dispatcher) {
+            val fixture = Fixture()
+            fixture.timeLetter.onGetReceivedTimeLetters = { timeLetters(totalCount = 0) }
+            fixture.receiver.onDownloadReceivedExport = {
+                Result.failure(IllegalStateException("내려받기 실패"))
+            }
+            val viewModel = fixture.viewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(ReceiverHomeEvent.RequestDownload)
+            viewModel.onEvent(ReceiverHomeEvent.ConfirmDownload)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value as ReceiverHomeUiState.Success
+            assertEquals(
+                ReceiverDownloadState.Failed(R.string.home_receiver_download_all_failed),
+                state.download,
+            )
+            assertTrue(fixture.receiver.savedBundles.isEmpty())
+            val reported = fixture.reporter.failures.single()
+            assertEquals("received_export_download", reported.attributes["receiver_stage"])
+        }
     // region 재진입 갱신 (#701)
 
     @Test

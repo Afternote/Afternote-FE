@@ -49,6 +49,9 @@ internal fun Throwable.toReceiverErrorPopupOrNull(uploadPath: Boolean = false): 
 
         is ReceiverFailure.DeliveryConditionNotMet -> null
 
+        // 미지원 기능은 재시도로 해결되지 않으므로 기존 실패 문구로 안내한다.
+        is ReceiverFailure.ExportNotSupported -> null
+
         // Data 계층이 번역하지 못한 실패(로컬 예외 등). 사유를 모르는 채 재시도 이상을 안내할
         // 근거가 없으므로 서버 쪽 갈래로 보낸다.
         null -> serverSide
