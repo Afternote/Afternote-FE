@@ -17,19 +17,19 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * [ReceiverRepository] fake 정본 (#1030, #1042).
  *
- * [authCodeState] 에 값을 넣으면 [authCodeFlow] 구독자와 [currentAuthCode] 가 같은 값을 본다.
+ * [masterKeyState] 에 값을 넣으면 [masterKeyFlow] 구독자와 [currentMasterKey] 가 같은 값을 본다.
  * 저장소 기본 동작으로 표현하기 어려운 실패·경합·응답 순서는 `onX` 로 갈아끼운다.
  */
 class FakeReceiverRepository(
-    initialAuthCode: String? = null,
+    initialMasterKey: String? = null,
     var afterNotes: AfterNotesListResult = EMPTY_AFTER_NOTES,
     details: Map<Long, ReceivedAfternoteDetail> = emptyMap(),
     var exportBundle: ReceivedExportBundle = ReceivedExportBundle(),
     var senderMessage: SenderMessageInfo? = null,
     var pagedAfterNotes: Flow<PagingData<AfterNoteListItem>> = flowOf(PagingData.empty()),
-    var onAuthCodeFlow: (() -> Flow<String?>)? = null,
-    var onCurrentAuthCode: (suspend () -> String?)? = null,
-    var onSaveAuthCode: (suspend (String) -> Unit)? = null,
+    var onMasterKeyFlow: (() -> Flow<String?>)? = null,
+    var onCurrentMasterKey: (suspend () -> String?)? = null,
+    var onSaveMasterKey: (suspend (String) -> Unit)? = null,
     var onGetPagedReceivedAfternotes: (() -> Flow<PagingData<AfterNoteListItem>>)? = null,
     var onGetReceivedAfterNotes: (suspend () -> Result<AfterNotesListResult>)? = null,
     var onGetReceivedAfternoteDetail: (suspend (Long) -> Result<ReceivedAfternoteDetail>)? = null,
@@ -38,25 +38,25 @@ class FakeReceiverRepository(
     var onLoadSenderMessage: (suspend () -> Result<SenderMessageInfo?>)? = null,
 ) : ReceiverRepository {
     /** 테스트가 직접 값을 밀어 넣는 수신자 인증 코드 상태. */
-    val authCodeState = MutableStateFlow(initialAuthCode?.trim()?.takeIf(String::isNotEmpty))
+    val masterKeyState = MutableStateFlow(initialMasterKey?.trim()?.takeIf(String::isNotEmpty))
     val details = ConcurrentHashMap(details)
 
-    val savedAuthCodes = CopyOnWriteArrayList<String>()
+    val savedMasterKeys = CopyOnWriteArrayList<String>()
     val requestedDetailIds = CopyOnWriteArrayList<Long>()
     val savedBundles = CopyOnWriteArrayList<ReceivedExportBundle>()
 
-    private val authCodeFlowCounter = AtomicInteger()
-    private val currentAuthCodeCounter = AtomicInteger()
+    private val masterKeyFlowCounter = AtomicInteger()
+    private val currentMasterKeyCounter = AtomicInteger()
     private val pagedAfterNotesCounter = AtomicInteger()
     private val afterNotesCounter = AtomicInteger()
     private val downloadCounter = AtomicInteger()
     private val senderMessageCounter = AtomicInteger()
 
-    val authCodeFlowCalls: Int
-        get() = authCodeFlowCounter.get()
+    val masterKeyFlowCalls: Int
+        get() = masterKeyFlowCounter.get()
 
-    val currentAuthCodeCalls: Int
-        get() = currentAuthCodeCounter.get()
+    val currentMasterKeyCalls: Int
+        get() = currentMasterKeyCounter.get()
 
     val getPagedReceivedAfternotesCalls: Int
         get() = pagedAfterNotesCounter.get()
@@ -70,25 +70,25 @@ class FakeReceiverRepository(
     val loadSenderMessageCalls: Int
         get() = senderMessageCounter.get()
 
-    override val authCodeFlow: Flow<String?>
+    override val masterKeyFlow: Flow<String?>
         get() {
-            authCodeFlowCounter.incrementAndGet()
-            return onAuthCodeFlow?.invoke() ?: authCodeState
+            masterKeyFlowCounter.incrementAndGet()
+            return onMasterKeyFlow?.invoke() ?: masterKeyState
         }
 
-    override suspend fun currentAuthCode(): String? {
-        currentAuthCodeCounter.incrementAndGet()
-        onCurrentAuthCode?.let { return it() }
-        return authCodeState.value
+    override suspend fun currentMasterKey(): String? {
+        currentMasterKeyCounter.incrementAndGet()
+        onCurrentMasterKey?.let { return it() }
+        return masterKeyState.value
     }
 
-    override suspend fun saveAuthCode(code: String) {
-        savedAuthCodes += code
-        onSaveAuthCode?.let {
+    override suspend fun saveMasterKey(code: String) {
+        savedMasterKeys += code
+        onSaveMasterKey?.let {
             it(code)
             return
         }
-        authCodeState.value = code.trim().takeIf(String::isNotEmpty)
+        masterKeyState.value = code.trim().takeIf(String::isNotEmpty)
     }
 
     override fun getPagedReceivedAfternotes(): Flow<PagingData<AfterNoteListItem>> {
@@ -133,13 +133,13 @@ class FakeReceiverRepository(
     companion object {
         private val EMPTY_AFTER_NOTES = AfterNotesListResult(items = emptyList(), totalCount = 0)
 
-        /** 모든 계약 경로를 닫되 [authCodeState] 자체는 테스트가 준비 상태로 쓸 수 있다. */
-        fun strict(initialAuthCode: String? = null): FakeReceiverRepository =
+        /** 모든 계약 경로를 닫되 [masterKeyState] 자체는 테스트가 준비 상태로 쓸 수 있다. */
+        fun strict(initialMasterKey: String? = null): FakeReceiverRepository =
             FakeReceiverRepository(
-                initialAuthCode = initialAuthCode,
-                onAuthCodeFlow = { unexpectedCall("ReceiverRepository.authCodeFlow") },
-                onCurrentAuthCode = { unexpectedCall("ReceiverRepository.currentAuthCode") },
-                onSaveAuthCode = { unexpectedCall("ReceiverRepository.saveAuthCode") },
+                initialMasterKey = initialMasterKey,
+                onMasterKeyFlow = { unexpectedCall("ReceiverRepository.authCodeFlow") },
+                onCurrentMasterKey = { unexpectedCall("ReceiverRepository.currentAuthCode") },
+                onSaveMasterKey = { unexpectedCall("ReceiverRepository.saveAuthCode") },
                 onGetPagedReceivedAfternotes = {
                     unexpectedCall("ReceiverRepository.getPagedReceivedAfternotes")
                 },

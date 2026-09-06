@@ -35,9 +35,10 @@ import com.afternote.afternote_fe.navigation.rememberHomeTabActions
 import com.afternote.afternote_fe.navigation.rememberReceiverNavActions
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
+import com.afternote.afternote_fe.test.emptyWeeklyReport
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.CoreAuthFailure
-import com.afternote.core.domain.repository.UserProfileRepository
+import com.afternote.core.domain.repository.UserProfileCacheRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.model.Session
@@ -45,11 +46,21 @@ import com.afternote.core.ui.Route
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
+import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailRoute
+import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel
 import com.afternote.feature.home.presentation.HomeTabActions
+import com.afternote.feature.home.presentation.receiver.ReceiverHomeActions
+import com.afternote.feature.home.presentation.receiver.ReceiverHomeEvent
+import com.afternote.feature.home.presentation.receiver.ReceiverHomeScreen
+import com.afternote.feature.home.presentation.receiver.ReceiverHomeViewModel
+import com.afternote.feature.home.presentation.receiver.model.ReceiverHomeUiState
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
+import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeMindRecordReceiverRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeWeeklyReportRepository
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
+import com.afternote.feature.receiver.domain.error.ReceiverRejectionReason
 import com.afternote.feature.receiver.domain.model.AfterNoteListItem
 import com.afternote.feature.receiver.domain.model.AfterNotesListResult
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
@@ -68,13 +79,6 @@ import com.afternote.feature.receiver.presentation.deliveryverification.Document
 import com.afternote.feature.receiver.presentation.deliveryverification.DocumentUploadViewModel
 import com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationEmailScreen
 import com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationViewModel
-import com.afternote.feature.receiver.presentation.detail.ReceivedAfternoteDetailRoute
-import com.afternote.feature.receiver.presentation.detail.ReceivedAfternoteDetailViewModel
-import com.afternote.feature.receiver.presentation.home.ReceiverHomeActions
-import com.afternote.feature.receiver.presentation.home.ReceiverHomeEvent
-import com.afternote.feature.receiver.presentation.home.ReceiverHomeScreen
-import com.afternote.feature.receiver.presentation.home.ReceiverHomeViewModel
-import com.afternote.feature.receiver.presentation.home.model.ReceiverHomeUiState
 import com.afternote.feature.receiver.presentation.navigation.ReceiverNavActions
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
 import com.afternote.feature.timeletter.domain.model.ReceivedTimeLetterList
@@ -98,6 +102,14 @@ import com.afternote.feature.home.presentation.R as HomeR
 import com.afternote.feature.onboarding.presentation.R as OnboardingR
 import com.afternote.feature.receiver.presentation.R as ReceiverR
 
+/** 이 테스트의 관심 밖인 외부 라우팅을 채우는 no-op 묶음. */
+private val noopActions =
+    ReceiverHomeActions(
+        onNavigateToMindRecord = {},
+        onNavigateToTimeLetter = {},
+        onNavigateToAfternote = {},
+    )
+
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
 @OptIn(ExperimentalTestApi::class)
@@ -106,13 +118,17 @@ class AppAndReceiverCompletionAndroidTest {
     lateinit var authRepository: AuthRepository
 
     @Inject
+    lateinit var weeklyReportRepository: WeeklyReportRepository
+
+    @Inject
     lateinit var errorReporter: ErrorReporter
 
     @Inject
-    lateinit var userProfileRepository: UserProfileRepository
+    lateinit var userProfileRepository: UserProfileCacheRepository
 
     private val fakeAuth get() = authRepository as FakeAuthRepository
     private val fakeErrorReporter get() = errorReporter as FakeErrorReporter
+    private val fakeWeeklyReport get() = weeklyReportRepository as FakeWeeklyReportRepository
 
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
@@ -131,6 +147,12 @@ class AppAndReceiverCompletionAndroidTest {
     @Before
     fun inject() {
         hiltRule.inject()
+        // 홈이 진입 시 주간 기록 수를 부른다 (#562). 정본 fake 는 큐가 비면 터뜨리므로,
+        // 주간 수에 관심이 없는 이 테스트도 기대하는 응답을 명시적으로 넣는다 — 조용히 접으면
+        // 요청 횟수가 어긋난 것을 놓친다.
+        (weeklyReportRepository as FakeWeeklyReportRepository).results.addLast(
+            Result.success(emptyWeeklyReport()),
+        )
     }
 
     @Test
@@ -180,7 +202,7 @@ class AppAndReceiverCompletionAndroidTest {
                     SemanticsMatcher.expectValue(SemanticsProperties.Selected, false),
             ).performClick()
         val fingerprintTitle =
-            context.getString(AfternoteFeatureR.string.feature_afternote_fingerprint_login_title)
+            context.getString(AfternoteFeatureR.string.afternote_fingerprint_login_title)
         composeRule.waitUntilAtLeastOneExists(hasText(fingerprintTitle), timeoutMillis = 5_000)
         composeRule.onNodeWithText(fingerprintTitle).assertIsDisplayed()
         composeRule
@@ -197,6 +219,8 @@ class AppAndReceiverCompletionAndroidTest {
             fakeAuth.attemptedEmailLogins,
         )
         assertEquals(1, fakeAuth.saveSessionCalls)
+        assertEquals(0, fakeAuth.rotateTokenCalls)
+        assertEquals(1, fakeWeeklyReport.requestedDates.size)
         assertTrue(fakeErrorReporter.failures.isEmpty())
     }
 
@@ -287,7 +311,7 @@ class ReceiverRuntimeCompletionAndroidTest {
                 ReceiverHomeScreen(
                     uiState = uiState,
                     onEvent = viewModel::onEvent,
-                    actions = ReceiverHomeActions.Noop,
+                    actions = noopActions,
                 )
             }
         }
@@ -305,10 +329,10 @@ class ReceiverRuntimeCompletionAndroidTest {
             senderMessage = Result.failure(offline),
         )
         composeRule
-            .onNodeWithText(context.getString(ReceiverR.string.receiver_home_error_message))
+            .onNodeWithText(context.getString(HomeR.string.home_receiver_error_message))
             .assertIsDisplayed()
         composeRule
-            .onNodeWithText(context.getString(ReceiverR.string.receiver_home_retry))
+            .onNodeWithText(context.getString(HomeR.string.home_receiver_retry))
             .performClick()
 
         composeRule.waitUntil(timeoutMillis = 5_000) { homeCallCounts().all { it == 2 } }
@@ -341,12 +365,12 @@ class ReceiverRuntimeCompletionAndroidTest {
         )
 
         composeRule
-            .onNodeWithText(context.getString(ReceiverR.string.receiver_home_sender_record_title, "이발신"))
+            .onNodeWithText(context.getString(HomeR.string.home_receiver_sender_record_title, "이발신"))
             .assertIsDisplayed()
         composeRule.onNodeWithText("언제나 응원할게").assertIsDisplayed()
         composeRule
             .onAllNodes(
-                hasText(context.getString(ReceiverR.string.receiver_home_section_count_unavailable)),
+                hasText(context.getString(HomeR.string.home_receiver_section_count_unavailable)),
             ).apply {
                 assertCountEquals(2)
                 this[0].performScrollTo().assertIsDisplayed()
@@ -377,10 +401,8 @@ class ReceiverRuntimeCompletionAndroidTest {
             }
         verifyEmailResults.addLast(
             Result.failure(
-                ReceiverFailure.ServerRejection(
-                    status = 400,
-                    serverMessage = "인증번호가 만료되었습니다. 다시 발급해 주세요.",
-                    serverCode = 1902,
+                ReceiverFailure.UserRejection(
+                    reason = ReceiverRejectionReason.RECEIVER_EMAIL_AUTH_CODE_NOT_FOUND,
                     cause = CAUSE,
                 ),
             ),
@@ -401,6 +423,7 @@ class ReceiverRuntimeCompletionAndroidTest {
         composeRule.setContent {
             AfternoteTheme {
                 IdentityVerificationEmailScreen(
+                    senderId = "sender-1",
                     onBackClick = {},
                     onVerified = { verifiedTransitions += 1 },
                     viewModel = viewModel,
@@ -421,7 +444,7 @@ class ReceiverRuntimeCompletionAndroidTest {
             .onNodeWithText(context.getString(ReceiverR.string.receiver_verify_next_button))
             .performClick()
         composeRule
-            .onNodeWithText("인증번호가 만료되었습니다. 다시 발급해 주세요.")
+            .onNodeWithText("인증번호가 만료되었거나 존재하지 않습니다. 다시 요청해주세요.")
             .assertIsDisplayed()
 
         composeRule
@@ -447,7 +470,7 @@ class ReceiverRuntimeCompletionAndroidTest {
             ),
             authRepository.verifiedEmailCodes,
         )
-        assertEquals(1, identityRepository.markVerifiedCallCount)
+        assertEquals(listOf("sender-1"), identityRepository.markVerifiedSenderIds)
         assertEquals(1, verifiedTransitions)
         assertTrue(reporter.failures.isEmpty())
     }
@@ -655,6 +678,7 @@ class ReceiverRuntimeCompletionAndroidTest {
                     composable<Route.Home> { Text("home route") }
                     composable<Route.Afternote> { Text("afternote route") }
                     composable<Route.MindRecord> { Text("mind record route") }
+                    composable<Route.TimeLetter> { Text("time letter route") }
                     composable<Route.MemorySpace> { Text("memory space route") }
                     composable<Route.Setting> { Text("setting route") }
                 }
@@ -665,8 +689,18 @@ class ReceiverRuntimeCompletionAndroidTest {
         val homeActions = checkNotNull(actions)
         composeRule.runOnIdle { homeActions.onNextStepClick() }
         composeRule.onNodeWithText("afternote route").assertIsDisplayed()
-        composeRule.runOnIdle { homeActions.onRecordCategoryClick(MindRecordCategory.DIARY) }
+        // 카테고리 카드는 시안에 없어 사라졌지만(#700) 주간 이미지·카운트는 여전히
+        // Route.MindRecord 로 간다 — 살아 있는 진입점이라 가드를 그쪽으로 옮긴다 (리뷰 지적).
+        composeRule.runOnIdle { homeActions.onWeeklyImageClick() }
         composeRule.onNodeWithText("mind record route").assertIsDisplayed()
+        composeRule.runOnIdle { checkNotNull(appState).navController.popBackStack() }
+        composeRule.runOnIdle { homeActions.onWeeklyCountClick() }
+        composeRule.onNodeWithText("mind record route").assertIsDisplayed()
+        composeRule.runOnIdle { checkNotNull(appState).navController.popBackStack() }
+
+        // 2026-08-09 확정된 타임레터 NEXT STEP 카드의 목적지 (#700).
+        composeRule.runOnIdle { homeActions.onTimeLetterNextStepClick() }
+        composeRule.onNodeWithText("time letter route").assertIsDisplayed()
 
         composeRule.runOnIdle { checkNotNull(appState).navController.popBackStack() }
         composeRule.runOnIdle { homeActions.onMemoriesSectionClick() }

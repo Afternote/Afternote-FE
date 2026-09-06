@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="setting_receiver_search_placeholder">이름으로 검색하기</string>
     <!-- 설정 공통 -->
     <string name="settings_title">설정</string>
     <!-- 섹션 헤더 -->
@@ -175,4 +174,13 @@
     <string name="receiver_last_greeting_label">마지막 인사말</string>
     <string name="receiver_last_greeting_placeholder">마지막 인사말을 입력해주세요</string>
     <string name="receiver_custom_relation_placeholder">관계를 직접 입력해주세요</string>
+    <string name="receiver_phone_required">연락처를 입력해주세요.</string>
+    <string name="receiver_phone_invalid">올바른 연락처를 입력해주세요.</string>
+    <string name="receiver_email_invalid">올바른 이메일 주소를 입력해주세요.</string>
+    <string name="receiver_email_required">이메일 주소를 입력해주세요.</string>
+    <string name="receiver_register_failed">수신자 등록에 실패했습니다. 잠시 후 다시 시도해주세요.</string>
+    <string name="receiver_edit_failed">수신자 수정에 실패했습니다. 잠시 후 다시 시도해주세요.</string>
+    <string name="receiver_request_rejected">입력하신 내용을 확인해 주세요.</string>
+    <string name="receiver_message_update_partial_failed">기본 정보는 수정됐지만 마지막 인사말 수정에 실패했습니다.</string>
+    <string name="receiver_load_failed">수신자 정보를 불러오지 못했습니다.</string>
 </resources>

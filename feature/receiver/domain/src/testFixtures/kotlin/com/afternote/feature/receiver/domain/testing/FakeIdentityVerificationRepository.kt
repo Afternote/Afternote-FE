@@ -3,43 +3,44 @@ package com.afternote.feature.receiver.domain.testing
 import com.afternote.feature.receiver.domain.repository.IdentityVerificationRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * [IdentityVerificationRepository] fake 정본.
  *
- * 기본 동작은 [verificationState]에 본인 확인 여부를 보관하며, 특수 시나리오만
- * [onIsVerified]·[onMarkVerified]로 갈아끼운다 (#1030, #1042).
+ * 기본 동작은 [verifiedSenderIds]에 발신자별 본인 확인 여부를 보관하며(#597 발신자별 격리),
+ * 특수 시나리오만 [onIsVerified]·[onMarkVerified]로 갈아끼운다 (#1030, #1042).
  */
 class FakeIdentityVerificationRepository(
-    initialVerified: Boolean = false,
-    var onIsVerified: (() -> Flow<Boolean>)? = null,
-    var onMarkVerified: (suspend () -> Unit)? = null,
+    initialVerifiedSenderIds: Set<String> = emptySet(),
+    var onIsVerified: ((senderId: String) -> Flow<Boolean>)? = null,
+    var onMarkVerified: (suspend (senderId: String) -> Unit)? = null,
 ) : IdentityVerificationRepository {
-    val verificationState = MutableStateFlow(initialVerified)
+    val verifiedSenderIds = MutableStateFlow(initialVerifiedSenderIds)
 
-    private val isVerifiedAccessCounter = AtomicInteger()
     private val markVerifiedCallCounter = AtomicInteger()
-
-    val isVerifiedAccessCount: Int
-        get() = isVerifiedAccessCounter.get()
+    private val markVerifiedSenderIdsRecord = CopyOnWriteArrayList<String>()
 
     val markVerifiedCallCount: Int
         get() = markVerifiedCallCounter.get()
 
-    override val isVerified: Flow<Boolean>
-        get() {
-            isVerifiedAccessCounter.incrementAndGet()
-            return onIsVerified?.invoke() ?: verificationState
-        }
+    /** [markVerified] 가 받은 senderId 호출 순서 기록 — "맞는 발신자에 기록했나" 단언용. */
+    val markVerifiedSenderIds: List<String>
+        get() = markVerifiedSenderIdsRecord.toList()
 
-    override suspend fun markVerified() {
+    override fun isVerified(senderId: String): Flow<Boolean> = onIsVerified?.invoke(senderId) ?: verifiedSenderIds.map { senderId in it }
+
+    override suspend fun markVerified(senderId: String) {
         markVerifiedCallCounter.incrementAndGet()
+        markVerifiedSenderIdsRecord.add(senderId)
         onMarkVerified?.let {
-            it()
+            it(senderId)
             return
         }
-        verificationState.value = true
+        verifiedSenderIds.update { it + senderId }
     }
 
     companion object {

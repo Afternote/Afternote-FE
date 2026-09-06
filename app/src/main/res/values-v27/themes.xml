@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+        `android:windowLightNavigationBar` 는 API 27 부터다. minSdk 26 이라 기본 values/ 에 두면
+        `:app:lintDebug` 가 NewApi 로 죽는다 (#1873).
+
+        내용은 values/ 의 같은 스타일과 한 쌍이다 — 앱이 라이트로 잠긴 동안 스플래시의 밝은 배경
+        (#FAFAFA) 위에 흰 시스템바 아이콘이 얹히지 않게 한다. 다크 팔레트를 되살릴 때
+        AfternoteTheme 의 isDarkTheme·enableLightEdgeToEdge·values/themes.xml 과 함께 되돌린다.
+    -->
+    <style name="Theme.Afternotefe.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.Afternotefe.Main</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>

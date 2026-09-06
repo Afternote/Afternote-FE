@@ -1,8 +1,13 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
+
+import { inspectModules } from "./resolve-pr-impact.mjs";
 
 const workflowUrl = new URL("../workflows/codeql.yml", import.meta.url);
+const repoRoot = path.resolve(fileURLToPath(new URL("../..", import.meta.url)));
 
 function jobBlock(source, jobName, nextJobName) {
     const start = source.indexOf(`  ${jobName}:`);
@@ -74,27 +79,19 @@ test("CodeQL preserves all required context names and skips only an unaffected l
 test("CodeQL compiles every domain module with the task for its current platform", async () => {
     const source = await readFile(workflowUrl, "utf8");
     const kotlin = jobBlock(source, "analyze-java-kotlin");
-    const jvmModules = [
-        ":core:model",
-        ":core:domain",
-        ":feature:afternote:domain",
-        ":feature:onboarding:domain",
-        ":feature:setting:domain",
-    ];
-    const androidModules = [
-        ":feature:mindrecord:domain",
-        ":feature:receiver:domain",
-        ":feature:timeletter:domain",
-    ];
+    // 모듈 목록을 여기 손으로 적으면 규약 마이그레이션 때 워크플로와 갈린다. 실제로 #1151 이
+    // domain 3모듈을 JVM 으로 옮겼을 때 codeql.yml 은 그대로여서 «task not found» 로 죽었다.
+    // 빌드 스크립트에서 판정해, 규약이 바뀌면 워크플로도 따라오도록 강제한다.
+    const modules = await inspectModules(repoRoot);
+    const domainModules = modules.filter(
+        ({ projectPath }) => projectPath.endsWith(":domain") || projectPath === ":core:model",
+    );
+    assert.ok(domainModules.length > 0, "domain 모듈을 하나도 못 찾았다 — 판정이 망가졌다");
 
     assert.match(kotlin, /\.\/gradlew compileDebugSources/);
-    jvmModules.forEach((projectPath) => {
-        assert.ok(kotlin.includes(`${projectPath}:classes`), `${projectPath} classes task is missing`);
-    });
-    androidModules.forEach((projectPath) => {
-        assert.ok(
-            kotlin.includes(`${projectPath}:compileDebugKotlin`),
-            `${projectPath} compileDebugKotlin task is missing`,
-        );
+    domainModules.forEach(({ projectPath, android }) => {
+        // android 규약을 타면 classes 만으로는 Kotlin 컴파일러가 안 돌아 추출에서 빠진다.
+        const task = android ? `${projectPath}:compileDebugKotlin` : `${projectPath}:classes`;
+        assert.ok(kotlin.includes(task), `${task} is missing from the CodeQL build`);
     });
 });

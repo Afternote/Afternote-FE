@@ -1,17 +1,17 @@
 package com.afternote.feature.home.presentation
 
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.testing.FakeUserProfileRepository
+import com.afternote.core.domain.testing.FakeUserProfileCacheRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.model.user.User
 import com.afternote.feature.home.presentation.usecase.GetHomeSummaryUseCase
-import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
-import com.afternote.feature.mindrecord.domain.model.DiaryList
-import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
+import com.afternote.feature.mindrecord.domain.model.WeeklyReport
+import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
+import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
-import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
+import com.afternote.feature.mindrecord.domain.usecase.GetWeeklyRecordCountUseCase
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -58,7 +58,6 @@ class HomeTabViewModelTest {
             fixture.server.enqueueRequest().completeSuccess(
                 userName = "효기",
                 isRecipientDesignated = true,
-                diaryCount = 4,
                 questionContent = "오늘 가장 고마웠던 일은?",
             )
 
@@ -69,7 +68,6 @@ class HomeTabViewModelTest {
                 successState(
                     userName = "효기",
                     isRecipientDesignated = true,
-                    diaryCount = 4,
                     questionContent = "오늘 가장 고마웠던 일은?",
                 ),
                 viewModel.uiState.value,
@@ -77,7 +75,6 @@ class HomeTabViewModelTest {
             assertEquals(listOf("효기"), fixture.profile.savedUserNames)
             assertEquals(1, fixture.server.userRepository.profileCalls)
             assertEquals(1, fixture.server.userRepository.receiverCalls)
-            assertEquals(1, fixture.server.diaryRepository.listQueries.size)
             assertEquals(1, fixture.server.dailyQuestionRepository.getTodayCalls)
         }
 
@@ -97,7 +94,6 @@ class HomeTabViewModelTest {
                 successState(
                     userName = "효기",
                     isRecipientDesignated = false,
-                    diaryCount = 0,
                     questionContent = null,
                 ),
                 viewModel.uiState.value,
@@ -243,7 +239,7 @@ class HomeTabViewModelTest {
 private class Fixture {
     val server = FakeHomeRepositories()
     val profile =
-        FakeUserProfileRepository.strict().apply {
+        FakeUserProfileCacheRepository.strict().apply {
             onGetCachedUserName = { cachedUserName }
             onSaveUserName = { name -> cachedUserName = name }
         }
@@ -253,11 +249,16 @@ private class Fixture {
         HomeTabViewModel(
             getHomeSummary =
                 GetHomeSummaryUseCase(
-                    userRepository = server.userRepository,
-                    diaryRepository = server.diaryRepository,
+                    // 같은 페이크가 두 좁은 계약을 다 구현한다 — UserRepository 가 둘을
+                    // 상속하므로, 이 테스트가 쥔 완료 시점 제어가 그대로 유지된다 (#1742).
+                    myProfileRepository = server.userRepository,
+                    userReceiverRepository = server.userRepository,
                     dailyQuestionRepository = server.dailyQuestionRepository,
+                    // 주간 기록 수는 이 테스트의 관심사가 아니다 — 실패로 고정해 보조 호출
+                    // 실패가 홈 전체를 깨뜨리지 않는다는 계약도 함께 태운다 (#562).
+                    getWeeklyRecordCount = GetWeeklyRecordCountUseCase(FailingWeeklyReportRepository),
                 ),
-            userProfileRepository = profile,
+            userProfileCacheRepository = profile,
             errorReporter = reporter,
         )
 }
@@ -272,12 +273,6 @@ private class FakeHomeRepositories {
             onGetMyProfile = { profiles.takeNext("getMyProfile").await() }
         }
 
-    private val diaryResults = ArrayDeque<CompletableDeferred<Result<DiaryList>>>()
-    val diaryRepository =
-        FakeDiaryRepository.strict().apply {
-            onGetList = { _, _ -> diaryResults.takeNext("DiaryRepository.getList").await() }
-        }
-
     /** 완료 시점을 테스트가 쥐고 있어야 병렬 조회의 경합 순서를 만들 수 있다. */
     private val questionResults = ArrayDeque<CompletableDeferred<Result<TodayDailyQuestion>>>()
 
@@ -290,26 +285,22 @@ private class FakeHomeRepositories {
         PendingHomeRequest().also { request ->
             profiles.addLast(request.profile)
             receivers.addLast(request.receivers)
-            diaryResults.addLast(request.diary)
             questionResults.addLast(request.question)
         }
 }
 
-/** 네 병렬 조회를 한 요청 단위로 묶어 테스트가 완료 순서를 직접 정한다. */
+/** 병렬 조회를 한 요청 단위로 묶어 테스트가 완료 순서를 직접 정한다. */
 private class PendingHomeRequest {
     val profile = CompletableDeferred<User>()
     val receivers = CompletableDeferred<List<Receiver>>()
-    val diary = CompletableDeferred<Result<DiaryList>>()
     val question = CompletableDeferred<Result<TodayDailyQuestion>>()
 
     fun completeSuccess(
         userName: String,
         isRecipientDesignated: Boolean = false,
-        diaryCount: Int = 0,
         questionContent: String = "오늘의 질문",
     ) {
         completeRequired(userName, isRecipientDesignated)
-        diary.complete(Result.success(diaryList(diaryCount)))
         question.complete(Result.success(todayQuestion(questionContent)))
     }
 
@@ -318,14 +309,12 @@ private class PendingHomeRequest {
         isRecipientDesignated: Boolean,
     ) {
         completeRequired(userName, isRecipientDesignated)
-        diary.complete(Result.failure(IllegalStateException("일기 조회 실패")))
         question.complete(Result.failure(IllegalStateException("오늘의 질문 조회 실패")))
     }
 
     fun failProfile(failure: Throwable) {
         profile.completeExceptionally(failure)
         receivers.complete(emptyList())
-        diary.complete(Result.success(diaryList()))
         question.complete(Result.success(todayQuestion("미사용")))
     }
 
@@ -364,15 +353,11 @@ private fun <T> ArrayDeque<T>.takeNext(method: String): T =
 private fun successState(
     userName: String,
     isRecipientDesignated: Boolean = false,
-    diaryCount: Int = 0,
     questionContent: String? = "오늘의 질문",
 ): HomeTabUiState.Success =
     HomeTabUiState.Success(
         userName = userName,
         isRecipientDesignated = isRecipientDesignated,
-        // 값을 아는 카테고리만 담는다 — 데일리질문·주간 리포트는 아직 카드를 그리지 않고,
-        // 0 을 넣어 두면 카드가 늘 때 그대로 «기록 0건» 이 된다 (#700).
-        categoryCounts = mapOf(MindRecordCategory.DIARY to diaryCount),
         todayQuestionContent = questionContent,
     )
 
@@ -382,13 +367,6 @@ private fun testUser(name: String): User =
         email = "user@example.com",
         phone = null,
         profileImageUrl = null,
-    )
-
-private fun diaryList(count: Int = 0): DiaryList =
-    DiaryList(
-        diaries = emptyList(),
-        monthDiaryCount = count,
-        weeklyDominantMood = null,
     )
 
 private fun todayQuestion(content: String): TodayDailyQuestion =
@@ -406,3 +384,11 @@ private val TEST_RECEIVER =
         relation = "가족",
         authCode = "auth-code",
     )
+
+/**
+ * 주간 기록 수는 이 테스트의 관심사가 아니다 — 실패로 고정해, 보조 호출 하나가 실패해도
+ * 홈 전체가 깨지지 않는다는 계약도 함께 태운다 (#562).
+ */
+private object FailingWeeklyReportRepository : WeeklyReportRepository {
+    override suspend fun getWeeklyReport(date: String): Result<WeeklyReport> = Result.failure(IllegalStateException("조회 안 함"))
+}

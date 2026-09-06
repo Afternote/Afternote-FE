@@ -53,7 +53,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up JDK 21
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
         with:
           distribution: temurin
           java-version: '21'
@@ -71,11 +71,15 @@ jobs:
       - name: Set up CI-only app configuration
         uses: ./.github/actions/setup-ci-config
 
+      # unit test 를 돌리는 자리는 예외 없이 기대 실패 제외 init script 를 탄다 — 지금은
+      # `--tests` 필터가 한 클래스로 좁혀 두어 실질 효과가 없지만, 이 규약에 구멍을 하나
+      # 두면 다음 워크플로가 또 샌다 (#1653).
       - name: Run Retrofit wire contract smoke
         run: >-
           ./gradlew :core:network:testDebugUnitTest
           --tests '*ApiWireContractSmokeTest'
           --stacktrace
+          --init-script .github/ci-expected-failures.init.gradle
 
       - name: Upload failure reports
         if: failure()
@@ -83,6 +87,7 @@ jobs:
         with:
           name: api-wire-contract-reports-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: warn
+          # 표준 보관 기간 7일 — 리포트·디버깅용 artifact 는 이 값 하나로 통일한다 (#1400).
           retention-days: 7
           path: |
             core/network/build/reports/tests/testDebugUnitTest/

@@ -12,8 +12,8 @@
 # 리뷰를 제출하는 순간 그 리뷰어의 요청을 떼어 내는데, 가드는 그 리뷰어에게
 # 요청이 다시 걸린 경우에만 빚으로 센다. 되살리는 일이 작성자 손에 맡겨져 있어
 # 8/29 실측에서 반영까지 끝난 PR 7건이 전원 «빚 아님» 이었고, 그중 하나는
-# dependabot 이 작성자라 되살릴 주체 자체가 없었다. 반영 커밋이 올라오면
-# 재요청도 자동으로 건다.
+# dependabot 이 작성자라 되살릴 주체 자체가 없었다. 반영 커밋이 올라오거나
+# 작성자가 PR 본문을 고치면 재요청도 자동으로 건다.
 #
 # 옛 Review Assign(.github/workflows/PRassign.yml)을 대체한다. 그쪽은 develop
 # 에서 파일만 지워졌을 뿐 워크플로 등록이 살아 있어, 파일이 남은 옛 브랜치에서
@@ -23,7 +23,7 @@ name: review-request-all
 
 on:
   pull_request:
-    types: [opened, ready_for_review, reopened, synchronize]
+    types: [opened, ready_for_review, reopened, synchronize, edited]
 
 permissions:
   pull-requests: write
@@ -32,7 +32,11 @@ jobs:
   request:
     # draft 에는 걸지 않는다. 리뷰할 수 없는 PR 로 남의 미처리 건수를 늘리면
     # review-debt-guard 가 그 사람의 새 PR 을 닫아 버린다.
-    if: github.event.pull_request.draft == false && github.event.action != 'synchronize'
+    if: >-
+      github.event.pull_request.state == 'open' &&
+      github.event.pull_request.draft == false &&
+      github.event.action != 'synchronize' &&
+      github.event.action != 'edited'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -43,7 +47,10 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           AUTHOR: ${{ github.event.pull_request.user.login }}
           ASSOCIATION: ${{ github.event.pull_request.author_association }}
-          TEAM: 1hyok koongmai Sadturtleman
+          # 리뷰 의무가 있는 팀원만 적는다. koongmai 는 남의 PR 을 리뷰할 의무가 없어
+          # 빠져 있다 (#1910). 자기 PR 에는 나머지 둘에게 그대로 요청이 걸리고,
+          # 스스로 리뷰하는 것도 막히지 않는다. 빠진 것은 자동 요청뿐이다.
+          TEAM: 1hyok Sadturtleman
         run: |
           set -euo pipefail
 
@@ -79,13 +86,25 @@ jobs:
           echo "리뷰 요청: $targets"
           gh pr edit "$PR_NUMBER" --repo "$REPO" --add-reviewer "$targets"
 
-  # 변경요청 뒤 반영 커밋이 올라오면 그 리뷰어에게 다시 요청을 건다(#1450).
+  # 변경요청 뒤 반영 커밋이 올라오거나 작성자가 PR 본문을 고치면 그 리뷰어에게
+  # 다시 요청을 건다(#1450, #1700). `edited` 전체를 받되 제목 수정·관리자 대리 수정은
+  # 작성자 조치가 아니므로 body 변경과 sender=author 를 함께 요구한다.
   #
   # 판정 기준은 review-debt-guard 와 같아야 한다 — 여기서 거는 요청이 곧 그쪽의
   # 빚 성립 조건이므로, 한쪽만 «PR 전체의 최신 판정» 을 보면 자동 재요청이 빚으로
   # 이어지지 않거나 이미 승인된 PR 을 되살린다.
   rerequest:
-    if: github.event.pull_request.draft == false && github.event.action == 'synchronize'
+    if: >-
+      github.event.pull_request.state == 'open' &&
+      github.event.pull_request.draft == false &&
+      (
+        github.event.action == 'synchronize' ||
+        (
+          github.event.action == 'edited' &&
+          github.event.changes.body != null &&
+          github.event.sender.login == github.event.pull_request.user.login
+        )
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -96,6 +115,8 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           AUTHOR: ${{ github.event.pull_request.user.login }}
           HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          ACTION: ${{ github.event.action }}
+          EVENT_AT: ${{ github.event.pull_request.updated_at }}
         run: |
           set -euo pipefail
 
@@ -113,18 +134,35 @@ jobs:
             echo "fork PR($HEAD_REPO) — 토큰이 read-only 라 건너뜀"
             exit 0
           fi
+          if [ "$ACTION" = "edited" ] && [ -z "$EVENT_AT" ]; then
+            echo "::error::본문 편집 이벤트 시각이 없다 — 과거 편집을 최신 변경요청에 귀속하지 않도록 재실행할 것"
+            exit 1
+          fi
 
           # PR 전체의 최신 판정만 본다. 승인 뒤 올라온 커밋은 재요청 대상이 아니다.
           # --paginate 는 페이지마다 jq 를 돌리므로 정렬은 모아서 한 번에 한다.
-          blocked=$( { gh api "repos/$REPO/pulls/$PR_NUMBER/reviews" --paginate \
+          if ! decisions=$(gh api "repos/$REPO/pulls/$PR_NUMBER/reviews" --paginate \
             --jq '.[] | select(.state == "APPROVED" or .state == "CHANGES_REQUESTED")
-                      | {u: .user.login, s: .state, t: .submitted_at}' 2>/dev/null || true; } \
-            | jq -rs 'sort_by(.t) | last // empty | select(.s == "CHANGES_REQUESTED") | .u')
+                      | {u: .user.login, s: .state, t: .submitted_at}'); then
+            echo "::error::리뷰 조회에 실패했다 — 재리뷰 요청을 누락시키지 않도록 재실행할 것"
+            exit 1
+          fi
+          if ! blocked=$(printf '%s\n' "$decisions" \
+            | jq -rs --arg action "$ACTION" --arg event_at "$EVENT_AT" '
+                sort_by(.t) | last // empty
+                | select(.s == "CHANGES_REQUESTED")
+                | select($action != "edited" or .t < $event_at)
+                | [.u, .t] | @tsv
+              '); then
+            echo "::error::최신 리뷰 판정에 실패했다 — 재리뷰 요청을 누락시키지 않도록 재실행할 것"
+            exit 1
+          fi
 
           if [ -z "$blocked" ]; then
             echo "최신 판정이 변경요청이 아님 — 재요청할 대상 없음"
             exit 0
           fi
+          IFS=$'\t' read -r blocked blocked_at <<< "$blocked"
 
           # 자기 자신은 리뷰어가 될 수 없다(422). 작성자가 자기 PR 에 변경요청을 낼
           # 수는 없지만, 소유권이 옮겨진 PR 에서 그렇게 보일 수 있다.
@@ -142,5 +180,5 @@ jobs:
             *" $blocked_lc "*) echo "@$blocked 요청이 이미 걸려 있음 — 건너뜀"; exit 0 ;;
           esac
 
-          echo "변경요청 뒤 반영 커밋 — @$blocked 에게 재리뷰 요청"
+          echo "변경요청($blocked_at) 뒤 작성자 조치($ACTION) — @$blocked 에게 재리뷰 요청"
           gh pr edit "$PR_NUMBER" --repo "$REPO" --add-reviewer "$blocked"

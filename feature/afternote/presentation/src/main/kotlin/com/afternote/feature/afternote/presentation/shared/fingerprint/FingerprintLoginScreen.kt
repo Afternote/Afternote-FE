@@ -27,7 +27,7 @@ fun FingerprintLoginScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            DetailTopBar(title = stringResource(R.string.feature_afternote_fingerprint_login_title))
+            DetailTopBar(title = stringResource(R.string.afternote_fingerprint_login_title))
         },
         containerColor = Color.Transparent,
     ) { paddingValues ->

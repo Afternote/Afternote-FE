@@ -40,7 +40,7 @@ fun FingerprintAuthContent(
         Spacer(Modifier.weight(0.35f))
         // 안내 텍스트
         Text(
-            text = stringResource(R.string.biometric_prompt_subtitle),
+            text = stringResource(R.string.afternote_biometric_prompt_subtitle),
             style =
                 AfternoteDesign.typography.bodyBase,
         )
@@ -49,8 +49,8 @@ fun FingerprintAuthContent(
 
         // 지문 아이콘
         Image(
-            painter = painterResource(R.drawable.feature_afternote_ic_fingerprint),
-            contentDescription = stringResource(R.string.biometric_prompt_title),
+            painter = painterResource(R.drawable.afternote_ic_fingerprint),
+            contentDescription = stringResource(R.string.afternote_biometric_prompt_title),
             modifier = Modifier.size(100.dp, 114.dp),
         )
 
@@ -58,7 +58,7 @@ fun FingerprintAuthContent(
 
         // 지문 인증 버튼
         AfternoteButton(
-            text = stringResource(R.string.feature_afternote_fingerprint_auth_button),
+            text = stringResource(R.string.afternote_fingerprint_auth_button),
             onClick = onFingerprintAuthClick,
             type = AfternoteButtonType.Default,
         )

@@ -4,11 +4,18 @@
 # 이 워크플로는 PR 의 closing 이슈에 아직 열린 blocked_by 가 있으면 check 를
 # 실패시킨다. branch protection 에서 required check 로 지정하면 머지 버튼이
 # 실제로 잠긴다. base 가 develop/main 이 아닌 스택 PR 은 경고로만 남긴다.
+#
+# 네이티브 스택의 닫힌 미병합 멤버는 merge queue synthetic SHA에서 live로 다시 검사한다.
+# 중간 멤버가 닫힌 직후의 조치 안내는 stack-integrity-notify가 상위 PR에 남긴다.
 name: merge-order-guard
 
 on:
   pull_request:
     types: [opened, reopened, synchronize, edited]
+  # merge queue 는 큐 ref 에서 guard context 를 다시 요구한다. 큐 ref
+  # (gh-readonly-queue/<base>/pr-<N>-<sha>) 에서 PR 번호를 파싱해 같은 검사를 돌린다.
+  merge_group:
+    types: [checks_requested]
   issues:
     types: [closed, reopened]
   # GITHUB_TOKEN 이 만든 baseline/stack merge commit 에도 최신 SHA 기준 guard 를 붙인다.
@@ -20,33 +27,84 @@ on:
         type: number
 
 permissions:
+  contents: read
   issues: read
   pull-requests: read
 
 jobs:
   guard:
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    if: >-
+      github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: closing 이슈 blocked_by 검사
+      # 게이트 스크립트는 **default branch 사본**으로 돌린다. PR 사본을 체크아웃하면 PR 이
+      # 자기를 검사하는 가드를 고쳐 통과시킬 수 있다. 필요한 건 .github/scripts 뿐이라
+      # sparse-checkout 으로 좁힌다.
+      - name: Clone gate scripts from the default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+
+      # 한도가 바닥인 채로 들어가면 게이트가 코드와 무관하게 빨개진다. 남은 quota 를 요약에
+      # 남기고, 부족하면 리셋까지 기다린다 — 즉시 실패시키면 사람이 재실행을 걸고 그 재실행이
+      # 남은 quota 를 더 태운다 (#1465).
+      - name: Ensure GitHub API quota
         env:
           GH_TOKEN: ${{ github.token }}
+        run: |
+          # default branch 사본에 이 스크립트가 아직 없는 동안(= 스크립트를 심는 이 PR 자신)에는
+          # 건너뛴다. 머지 뒤에는 항상 존재하므로 이 경로는 부트스트랩 한 번에만 쓰인다.
+          if [ ! -f .github/scripts/ensure-api-quota.mjs ]; then
+            echo "::notice::quota 스크립트가 default branch 에 아직 없습니다 — 건너뜁니다"
+            exit 0
+          fi
+          node .github/scripts/ensure-api-quota.mjs ensure
+
+      - name: 머지 큐 스택 무결성·closing 이슈 blocked_by 검사
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
           PR_NUMBER: ${{ github.event.pull_request.number || inputs.pull_request_number }}
           BASE_REF: ${{ github.event.pull_request.base.ref }}
+          MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
+          MERGE_GROUP_BASE_REF: ${{ github.event.merge_group.base_ref }}
         run: |
           # gh api 실패가 빈 목록으로 위장돼 가드가 초록으로 새는 것 방지(fail-closed)
           set -euo pipefail
 
           fail=0
 
+          # merge group 은 PR payload 없이 큐 ref 만 준다. 큐에 여러 PR 이 묶여도 ref 는
+          # 마지막 PR 번호를 담고, 앞선 PR 들은 이미 같은 검사를 통과해 큐에 들어왔다.
+          if [ -z "${PR_NUMBER:-}" ] && [ -n "${MERGE_GROUP_HEAD_REF:-}" ]; then
+            queue_tail="${MERGE_GROUP_HEAD_REF##*/pr-}"
+            PR_NUMBER="${queue_tail%%-*}"
+            BASE_REF="${MERGE_GROUP_BASE_REF#refs/heads/}"
+          fi
+
           if ! [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
             echo "::error::유효한 pull_request_number 가 필요합니다"
             exit 1
           fi
 
+          owner="${GITHUB_REPOSITORY%/*}"
+          repo="${GITHUB_REPOSITORY#*/}"
+
+          # PR 메타는 이 잡에서 한 번만 조회한다. 종전에는 base 이름을 REST 로 따로 물은 뒤
+          # 같은 PR 을 GraphQL 로 다시 물었다 — 한 잡이 같은 PR 을 두 번 조회하면 PR 수 ×
+          # 잡 수만큼 곱해져 installation 한도를 태운다 (#1465). baseRefName 을 같은 쿼리에
+          # 실어 REST 왕복 하나를 없앤다. 조회 실패는 그대로 fail-closed 다.
+          pr_json=$(gh api graphql \
+            -f query='query($owner:String!,$repo:String!,$pr:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$pr){baseRefName title body closingIssuesReferences(first:20){nodes{number repository{nameWithOwner}}}}}}' \
+            -f owner="$owner" -f repo="$repo" -F pr="$PR_NUMBER" \
+            --jq '.data.repository.pullRequest')
+
           if [ -z "$BASE_REF" ]; then
-            BASE_REF=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.base.ref')
+            BASE_REF=$(jq -r '.baseRefName' <<< "$pr_json")
           fi
 
           # 스택 PR 안내 — base 가 부모 브랜치면 애초에 develop 로 머지되지 않고,
@@ -62,25 +120,63 @@ jobs:
               ;;
           esac
 
-          owner="${GITHUB_REPOSITORY%/*}"
-          repo="${GITHUB_REPOSITORY#*/}"
-          pr_json=$(gh api graphql \
-            -f query='query($owner:String!,$repo:String!,$pr:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$pr){title body closingIssuesReferences(first:20){nodes{number repository{nameWithOwner}}}}}}' \
-            -f owner="$owner" -f repo="$repo" -F pr="$PR_NUMBER" \
-            --jq '.data.repository.pullRequest')
+          # 네이티브 스택 등록 여부는 PR HEAD에서 안내만 한다. 조회 실패가 기존 blocked_by
+          # 판정을 죽이지 않도록 fail-soft로 유지한다 (#1474, #1620).
+          if [ "$stacked" -eq 1 ]; then
+            if stack_entry=$(gh api graphql \
+              -f query='query($owner:String!,$repo:String!,$pr:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$pr){stackEntry{position}}}}' \
+              -f owner="$owner" -f repo="$repo" -F pr="$PR_NUMBER" \
+              --jq '.data.repository.pullRequest.stackEntry'); then
+              if [ -z "$stack_entry" ] || [ "$stack_entry" = "null" ]; then
+                echo "::warning::네이티브 스택 미등록 — 의도한 선형 스택이면 'gh stack link --base develop <밑단 PR> <윗단 PR>' 로 연결할 것"
+              fi
+            else
+              echo "::warning::스택 등록 여부를 조회하지 못했다 — 등록 상태를 손으로 확인할 것"
+            fi
+          fi
+
+          # PR HEAD의 guard를 여기서 실패시키면 unstack 전용 이벤트가 없는 탓에 수리 뒤에도
+          # stale failure가 남을 수 있다. develop은 merge queue가 필수이므로 실제 병합 직전의
+          # synthetic SHA에서만 live 스택을 재검사해 닫힌 미병합 멤버를 확실히 차단한다.
+          if [ "$EVENT_NAME" = "merge_group" ]; then
+            if [ ! -f .github/scripts/merge-order-stack-integrity.mjs ]; then
+              echo "::notice::스택 무결성 스크립트가 default branch 에 아직 없어 최초 설치 검사를 건너뜁니다"
+            else
+              stack_pr_json=$(gh api graphql \
+                -f query='query($owner:String!,$repo:String!,$pr:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$pr){number state mergedAt stackEntry{position} stack{number size entries(first:100){nodes{position pullRequest{number state mergedAt}} pageInfo{hasNextPage}}}}}}' \
+                -f owner="$owner" -f repo="$repo" -F pr="$PR_NUMBER" \
+                --jq '.data.repository.pullRequest')
+              if [ "$(jq -r '.stackEntry == null' <<< "$stack_pr_json")" = "false" ]; then
+                stack_number=$(jq -r '.stack.number' <<< "$stack_pr_json")
+                stack_blockers=$(node .github/scripts/merge-order-stack-integrity.mjs blockers <<< "$stack_pr_json")
+                while read -r blocker <&4; do
+                  [ -n "$blocker" ] || continue
+                  echo "::error::네이티브 스택 #$stack_number 의 닫힌 미병합 PR #$blocker 때문에 #$PR_NUMBER를 병합할 수 없습니다 — 기존 스택을 해제하고 의도한 열린 PR 순서로 다시 연결하세요"
+                  fail=1
+                done 4<<< "$stack_blockers"
+              fi
+            fi
+          fi
 
           # GitHub 가 close keyword 를 closingIssuesReferences 로 승격하지 못하는 경우가
           # 있으므로(#879, #880, #1176), 제목·본문을 같은 공식 패턴으로 직접 파싱한다.
           # 외부 저장소 참조는 이 저장소의 머지 순서와 무관하므로 제외한다.
-          issues=$(
+          #
+          # 번호를 그냥 늘어놓지 않고 «출처» 를 함께 낸다. closingIssuesReferences 는
+          # IssueConnection 이라 PR 이 섞일 수 없고, 거기서 온 번호는 종류가 이미 확정이다 —
+          # 그런데도 종전에는 번호마다 issues/<n> 을 한 번씩 더 물어 종류를 확인했다. 닫는
+          # 이슈가 둘이면 그것만으로 잡당 조회가 넷이고, PR 수 × 재실행 수만큼 곱해진다.
+          # 종류가 정말 불확실한 것은 본문 파싱으로만 나온 번호뿐이라 그쪽만 묻는다 (#1465).
+          refs=$(
             PR_JSON="$pr_json" node <<'NODE'
           const pr = JSON.parse(process.env.PR_JSON);
           const ownRepo = process.env.GITHUB_REPOSITORY.toLowerCase();
-          const issues = new Set(
+          const linked = new Set(
               pr.closingIssuesReferences.nodes
                   .filter(({ repository }) => repository.nameWithOwner.toLowerCase() === ownRepo)
                   .map(({ number }) => number),
           );
+          const parsed = new Set();
           const text = `${pr.title}\n\n${pr.body || ""}`;
           const regex = /\b(?:close[ds]?|fix(?:e[ds])?|resolve[ds]?)\s+(?:([\w.-]+\/[\w.-]+))?#(\d+)/gi;
           let match;
@@ -88,19 +184,32 @@ jobs:
           while ((match = regex.exec(text)) !== null) {
               const referencedRepo = (match[1] || ownRepo).toLowerCase();
               if (referencedRepo !== ownRepo) continue;
-              issues.add(Number.parseInt(match[2], 10));
+              const number = Number.parseInt(match[2], 10);
+              if (!linked.has(number)) parsed.add(number);
           }
 
-          process.stdout.write([...issues].sort((a, b) => a - b).join("\n"));
+          const ascending = (a, b) => a - b;
+          process.stdout.write(
+              [
+                  ...[...linked].sort(ascending).map((number) => `issue ${number}`),
+                  ...[...parsed].sort(ascending).map((number) => `unknown ${number}`),
+              ].join("\n"),
+          );
           NODE
           )
 
-          for n in $issues; do
-            issue_kind=$(gh api "repos/$GITHUB_REPOSITORY/issues/$n" \
-              --jq 'if has("pull_request") then "pull_request" else "issue" end')
-            if [ "$issue_kind" = "pull_request" ]; then
-              echo "::notice::#$n 은 PR 참조 — blocked_by 검사 대상에서 제외"
-              continue
+          # 파이프가 아니라 here-string 으로 먹인다 — 서브셸이 되면 fail=1 이 밖으로 나오지 않는다.
+          # 루프 안에서 gh 를 부르므로 목록은 stdin 이 아니라 fd 3 으로 먹인다.
+          while read -r kind n <&3; do
+            [ -n "$n" ] || continue
+
+            if [ "$kind" = "unknown" ]; then
+              issue_kind=$(gh api "repos/$GITHUB_REPOSITORY/issues/$n" \
+                --jq 'if has("pull_request") then "pull_request" else "issue" end')
+              if [ "$issue_kind" = "pull_request" ]; then
+                echo "::notice::#$n 은 PR 참조 — blocked_by 검사 대상에서 제외"
+                continue
+              fi
             fi
 
             open_blockers=$(gh api "repos/$GITHUB_REPOSITORY/issues/$n/dependencies/blocked_by" \
@@ -116,11 +225,26 @@ jobs:
                 fail=1
               fi
             done
-          done
+          done 3<<< "$refs"
 
           exit "$fail"
 
   # blocker 이슈가 닫히면(=선행 PR 머지) 기다리던 PR 의 guard 를 재실행해 초록으로 갱신한다.
+
+      # 실패가 «가드가 사실을 확인하고 거절함» 인지 «한도 소진» 인지 가른다. 구분이 없으면
+      # 빨간 체크를 보고도 원인을 로그까지 들어가야 안다 (#1465).
+      - name: Classify a failed gate as rate limit exhaustion
+        if: failure()
+        run: |
+          # default branch 사본에 이 스크립트가 아직 없는 동안(= 스크립트를 심는 이 PR 자신)에는
+          # 건너뛴다. 머지 뒤에는 항상 존재하므로 이 경로는 부트스트랩 한 번에만 쓰인다.
+          if [ ! -f .github/scripts/ensure-api-quota.mjs ]; then
+            echo "::notice::quota 스크립트가 default branch 에 아직 없습니다 — 건너뜁니다"
+            exit 0
+          fi
+          node .github/scripts/ensure-api-quota.mjs classify
+        env:
+          GH_TOKEN: ${{ github.token }}
   refresh:
     if: github.event_name == 'issues'
     permissions:

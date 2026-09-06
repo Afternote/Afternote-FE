@@ -67,7 +67,8 @@ sealed interface ReceiverRoute {
      * 본인 확인 이메일 인증 화면(designs 3·4). 인증 시작하기 → 진입.
      *
      * 인증 성공 시 [com.afternote.feature.receiver.domain.repository.IdentityVerificationRepository]
-     * 캐시가 켜져 이후 동일 사용자(폰)에서는 마스터 키로 직진. DataStore 영구 저장이라 앱 재시작 후에도 유지.
+     * 캐시가 해당 발신자에 대해 켜져 같은 발신자 재진입 시 마스터 키로 직진 (#597 — 발신자별 격리,
+     * 다른 발신자 흐름에서는 다시 인증). 캐시는 프로세스 수명 — 앱 재시작 후에는 다시 인증한다.
      */
     @Serializable
     data object IdentityVerificationEmailRoute : ReceiverRoute
@@ -75,7 +76,7 @@ sealed interface ReceiverRoute {
     /**
      * 열람 신청 1단계: 마스터 키 입력(5).
      *
-     * `verify(authCode)` 응답 성공 시 ReceiverIdentity 를 (부모 라우트의) senderId 카드에 결합하고 다음 단계로.
+     * `verify(masterKey)` 응답 성공 시 ReceiverIdentity 를 (부모 라우트의) senderId 카드에 결합하고 다음 단계로.
      */
     @Serializable
     data object MasterKeyRoute : ReceiverRoute
@@ -92,24 +93,4 @@ sealed interface ReceiverRoute {
      */
     @Serializable
     data object DeliveryVerificationCompleteRoute : ReceiverRoute
-
-    /** 수신한 애프터노트 페이지드 목록. */
-    @Serializable
-    data object AfternoteListRoute : ReceiverRoute
-
-    /** 수신 애프터노트 상세. */
-    @Serializable
-    data class AfternoteDetailRoute(
-        val afternoteId: Long,
-    ) : ReceiverRoute
-
-    /**
-     * 수신 추억 플레이리스트 — 추억 상세
-     * ([com.afternote.feature.receiver.presentation.detail.MemorialReceivedDetailScreen]) 의
-     * "추억 플레이리스트" 카드 클릭 진입.
-     */
-    @Serializable
-    data class MemorialPlaylistRoute(
-        val afternoteId: Long,
-    ) : ReceiverRoute
 }

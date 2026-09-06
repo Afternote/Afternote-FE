@@ -52,3 +52,5 @@ AGENTS.md
 .codex/
 .cursor/
 .artifacts/
+# Windows PowerShell cache
+Microsoft/Windows/PowerShell/ModuleAnalysisCache

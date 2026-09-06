@@ -1,7 +1,7 @@
 [versions]
 agp = "9.3.2"
 biometric = "1.1.0"
-exifinterface = "1.4.1"
+exifinterface = "1.4.2"
 coreKtx = "1.19.0"
 fragmentKtx = "1.8.9"
 junit = "4.13.2"
@@ -35,6 +35,8 @@ coilNetworkOkhttp = "3.5.0"
 coilCompose = "3.5.0"
 work = "2.11.2"
 composeWheelPicker = "1.0.0-rc02"
+# 루트 build.gradle.kts 의 buildscript 블록은 카탈로그 accessor 를 못 써 같은 값을 리터럴로 둔다 — AGP·KGP
+# 가 플러그인 클래스패스에 얹는 1.9.0 을 이 값으로 정렬한다(#1656). 올릴 때 그쪽도 함께 고칠 것.
 kotlinxCoroutines = "1.11.0"
 splashscreen = "1.2.0"
 startupRuntime = "1.2.0"

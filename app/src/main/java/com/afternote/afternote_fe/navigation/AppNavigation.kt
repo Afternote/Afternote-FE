@@ -23,16 +23,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.afternote.afternote_fe.notification.NotificationPermissionEffect
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomBar
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.feature.afternote.presentation.author.navigation.afternoteNavGraph
-import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
+import com.afternote.feature.afternote.presentation.navigation.afternoteNavGraph
+import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
+import com.afternote.feature.afternote.presentation.receiver.navigation.receivedAfternoteNavGraph
 import com.afternote.feature.home.presentation.HomeTabScreen
 import com.afternote.feature.home.presentation.HomeTabViewModel
+import com.afternote.feature.home.presentation.receiver.ReceiverHomeEntry
 import com.afternote.feature.mindrecord.presentation.navigation.mindRecordNavGraph
 import com.afternote.feature.onboarding.presentation.navigation.onboardingNavGraph
-import com.afternote.feature.receiver.presentation.home.ReceiverHomeEntry
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
 import com.afternote.feature.receiver.presentation.navigation.receiverNavGraph
 import com.afternote.feature.setting.presentation.navigation.settingNavGraph
@@ -62,8 +64,12 @@ fun AppNavigation(
                 snackbarHostState.showSnackbar(message)
             }
         }
+    val receivedAfternoteNavActions = rememberReceivedAfternoteNavActions(appState)
     val receiverNavActions = rememberReceiverNavActions(appState)
     val receiverHomeActions = rememberReceiverHomeActions(appState)
+
+    // 13+ 는 런타임 권한이 없으면 알림이 한 건도 게시되지 않는다 (#1454).
+    NotificationPermissionEffect(snackbarHostState = snackbarHostState)
 
     Scaffold(
         modifier = modifier,
@@ -139,6 +145,9 @@ fun AppNavigation(
                 },
                 actions = afternoteNavActions,
             )
+            // 수신 애프터노트 화면은 애프터노트 피처가 갖는다 (#1461). Route.Afternote 그래프는
+            // 발신자용 지문 관문을 시작점으로 삼으므로 그 안에 중첩하지 않고 루트에 직접 등록한다.
+            receivedAfternoteNavGraph(actions = receivedAfternoteNavActions)
             receiverNavGraph(
                 homeContent = { ReceiverHomeEntry(actions = receiverHomeActions) },
                 actions = receiverNavActions,

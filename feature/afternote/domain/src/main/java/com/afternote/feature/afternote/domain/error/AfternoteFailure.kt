@@ -13,11 +13,6 @@ sealed class AfternoteFailure(
     message: String?,
     cause: Throwable?,
 ) : Exception(message, cause) {
-    /** 저장(생성/수정) API 가 거절한 검증 실패. 화면은 [kind] 로 입력 항목별 안내를 고른다. */
-    class AuthoringValidation(
-        val kind: AfternoteAuthoringValidationKind,
-    ) : AfternoteFailure("afternote authoring validation: ${kind.name}", null)
-
     /**
      * 추억 노트 미디어(장례식에 남길 영상·영정사진)를 저장 페이로드에 실을 URL 로 해석하지 못한 실패.
      *
@@ -43,10 +38,4 @@ sealed class AfternoteFailure(
     class NetworkUnavailable(
         cause: Throwable,
     ) : AfternoteFailure("network unavailable", cause)
-}
-
-/** 저장 API 가 거절한 검증 사유. */
-enum class AfternoteAuthoringValidationKind {
-    /** 서버 코드 475 — 수신자 최소 1명 필요. */
-    RECEIVERS_REQUIRED,
 }

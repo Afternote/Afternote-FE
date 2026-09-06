@@ -247,11 +247,6 @@ jobs:
             });
             await github.rest.actions.createWorkflowDispatch({
               ...common,
-              workflow_id: 'base-freshness-probe.yml',
-              inputs: { pull_request_number: process.env.TARGET_PR },
-            });
-            await github.rest.actions.createWorkflowDispatch({
-              ...common,
               workflow_id: 'merge-order-guard.yml',
               inputs: { pull_request_number: process.env.TARGET_PR },
             });

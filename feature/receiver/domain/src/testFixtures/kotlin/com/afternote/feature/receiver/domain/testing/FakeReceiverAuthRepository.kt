@@ -2,6 +2,7 @@ package com.afternote.feature.receiver.domain.testing
 
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
+import com.afternote.feature.receiver.domain.model.ReceivedRecordBox
 import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
 import com.afternote.feature.receiver.domain.model.ReceiverEmailAuthResult
 import com.afternote.feature.receiver.domain.model.ReceiverIdentity
@@ -22,6 +23,7 @@ class FakeReceiverAuthRepository(
     var presignedUrl: ReceiverAuthPresignedUrl = DEFAULT_PRESIGNED_URL,
     var deliveryVerification: DeliveryVerification = DEFAULT_DELIVERY_VERIFICATION,
     var senderMessage: SenderMessageInfo = DEFAULT_SENDER_MESSAGE,
+    var recordBoxes: List<ReceivedRecordBox> = emptyList(),
     var onVerifyMasterKey: (suspend (String) -> Result<ReceiverIdentity>)? = null,
     var onSendEmailAuthCode: (suspend (String) -> Result<Unit>)? = null,
     var onVerifyEmailAuthCode: (suspend (String, String) -> Result<ReceiverEmailAuthResult>)? = null,
@@ -29,6 +31,7 @@ class FakeReceiverAuthRepository(
     var onSubmitDeliveryVerification: (suspend (String?, String?) -> Result<DeliveryVerification>)? = null,
     var onGetDeliveryVerificationStatus: (suspend () -> Result<DeliveryVerification>)? = null,
     var onGetSenderMessage: (suspend () -> Result<SenderMessageInfo>)? = null,
+    var onGetReceivedRecordBoxes: (suspend () -> Result<List<ReceivedRecordBox>>)? = null,
 ) : ReceiverAuthRepository {
     val verifiedMasterKeys = CopyOnWriteArrayList<String>()
     val sentEmails = CopyOnWriteArrayList<String>()
@@ -38,6 +41,7 @@ class FakeReceiverAuthRepository(
 
     private val deliveryVerificationStatusCounter = AtomicInteger()
     private val senderMessageCounter = AtomicInteger()
+    private val recordBoxesCounter = AtomicInteger()
 
     val getDeliveryVerificationStatusCalls: Int
         get() = deliveryVerificationStatusCounter.get()
@@ -45,9 +49,12 @@ class FakeReceiverAuthRepository(
     val getSenderMessageCalls: Int
         get() = senderMessageCounter.get()
 
-    override suspend fun verifyMasterKey(authCode: String): Result<ReceiverIdentity> {
-        verifiedMasterKeys += authCode
-        onVerifyMasterKey?.let { return it(authCode) }
+    val getReceivedRecordBoxesCalls: Int
+        get() = recordBoxesCounter.get()
+
+    override suspend fun verifyMasterKey(masterKey: String): Result<ReceiverIdentity> {
+        verifiedMasterKeys += masterKey
+        onVerifyMasterKey?.let { return it(masterKey) }
         return Result.success(identity)
     }
 
@@ -104,6 +111,12 @@ class FakeReceiverAuthRepository(
         return Result.success(senderMessage)
     }
 
+    override suspend fun getReceivedRecordBoxes(): Result<List<ReceivedRecordBox>> {
+        recordBoxesCounter.incrementAndGet()
+        onGetReceivedRecordBoxes?.let { return it() }
+        return Result.success(recordBoxes)
+    }
+
     companion object {
         private val DEFAULT_IDENTITY =
             ReceiverIdentity(
@@ -156,6 +169,7 @@ class FakeReceiverAuthRepository(
                     unexpectedCall("ReceiverAuthRepository.getDeliveryVerificationStatus")
                 },
                 onGetSenderMessage = { unexpectedCall("ReceiverAuthRepository.getSenderMessage") },
+                onGetReceivedRecordBoxes = { unexpectedCall("ReceiverAuthRepository.getReceivedRecordBoxes") },
             )
     }
 }

@@ -13,13 +13,6 @@ package com.afternote.feature.receiver.presentation.navigation
 interface ReceiverNavActions {
     fun popBack()
 
-    fun navigateToAfternoteList()
-
-    fun navigateToReceivedAfternoteDetail(afternoteId: Long)
-
-    /** 추억 상세의 "추억 플레이리스트" 카드 → 추억 플레이리스트 화면 진입 (#274). */
-    fun navigateToMemorialPlaylist(afternoteId: Long)
-
     /** 받은 기록함의 FAB → 발신자 등록 화면(이슈 #215, 디자인 15·16) 진입. */
     fun navigateToSenderRegistration()
 
@@ -53,7 +46,7 @@ interface ReceiverNavActions {
     fun popToReceivedRecords()
 
     /**
-     * 발신자 상세(12)의 "기록 열람하기" → 수신자 홈 진입. 발신자 컨텍스트(authCode) 복원은
+     * 발신자 상세(12)의 "기록 열람하기" → 수신자 홈 진입. 발신자 컨텍스트(masterKey) 복원은
      * `SenderDetailViewModel.openReceiverHome` 이 담당하므로 본 액션은 순수 네비게이션만 수행한다.
      */
     fun navigateToReceiverHome()

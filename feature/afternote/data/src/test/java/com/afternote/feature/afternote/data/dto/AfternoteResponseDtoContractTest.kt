@@ -4,11 +4,15 @@ import com.afternote.feature.afternote.data.mapper.toRequest
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
+import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.MissingFieldException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
@@ -20,7 +24,6 @@ class AfternoteResponseDtoContractTest {
     private val json =
         Json {
             ignoreUnknownKeys = true
-            coerceInputValues = true
         }
 
     @Test
@@ -74,12 +77,18 @@ class AfternoteResponseDtoContractTest {
         assertMissingKey<MusicSearchResponseDto>(body = "{}", key = "tracks")
     }
 
+    /**
+     * 생성에서 빈 배열은 종전의 생략과 **동작이 같다** — `PlaylistRelationStrategy.save` 는 0건을
+     * 순회하고 끝나고, `PlaylistValidationStrategy.requirePlaylistSongs` 는 `null` 과 `isEmpty()` 를
+     * 같이 묶어 `PLAYLIST_SONGS_REQUIRED` 로 400 을 낸다. 그래서 수정 쪽 계약(#1599)을 위해 기본값을
+     * 떼도 생성 경로는 그대로다 — 달라지는 것은 키가 늘 나간다는 것뿐이고, 그것을 여기서 고정한다.
+     */
     @Test
-    fun `빈 playlist 생성 요청은 songs를 보내지 않는다`() {
+    fun `빈 playlist 생성 요청도 songs를 빈 배열로 싣는다`() {
         val request =
             CreateMemorialPayload(
                 title = "추억 노트",
-                memorial = MemorialWritePayload(),
+                memorial = MemorialWritePayload(memorialPhotoUrl = null, songs = emptyList(), memorialVideo = null),
             ).toRequest()
 
         val playlist =
@@ -89,23 +98,63 @@ class AfternoteResponseDtoContractTest {
                 .getValue("playlist")
                 .jsonObject
 
-        assertFalse(playlist.containsKey("songs"))
+        assertTrue(playlist.containsKey("songs"))
+        assertTrue(playlist.getValue("songs").jsonArray.isEmpty())
     }
 
+    /**
+     * 곡을 전부 뺀 수정은 **빈 배열로 삭제를 말한다** (#1599).
+     *
+     * BE `PlaylistRelationStrategy.update` 는 `songs != null` 일 때만 `items` 를 갈아 끼우므로,
+     * 키가 빠지면 「유지」로 흡수돼 서버 곡이 그대로 남는다. 기본값 `emptyList()` 가 있던 동안
+     * `encodeDefaults = false` 가 정확히 그 키를 뺐고, 곡을 전부 뺀 저장이 반영되지 않았다.
+     */
     @Test
-    fun `빈 playlist 수정 요청은 playlist는 보내되 songs는 보내지 않는다`() {
+    fun `곡을 전부 뺀 수정 요청은 songs를 빈 배열로 실어 전부 삭제를 말한다`() {
         val request =
             AfternoteUpdatePayload(
                 type = AfternoteType.MEMORIAL,
                 title = "추억 노트",
-                memorial = MemorialWritePayload(),
+                memorial = MemorialWritePayload(memorialPhotoUrl = null, songs = emptyList(), memorialVideo = null),
             ).toRequest()
 
         val encoded = json.encodeToJsonElement(AfternoteUpdateRequestDto.serializer(), request).jsonObject
         val playlist = encoded.getValue("playlist").jsonObject
 
         assertTrue(encoded.containsKey("playlist"))
-        assertFalse(playlist.containsKey("songs"))
+        assertTrue(playlist.containsKey("songs"))
+        assertTrue(playlist.getValue("songs").jsonArray.isEmpty())
+    }
+
+    /** 곡이 있을 때의 바디는 종전 그대로다 — 이번 변경은 빈 목록의 표현만 바꾼다 (#1599). */
+    @Test
+    fun `곡이 있는 수정 요청의 songs는 종전과 같은 키와 값으로 실린다`() {
+        val request =
+            AfternoteUpdatePayload(
+                type = AfternoteType.MEMORIAL,
+                title = "추억 노트",
+                memorial =
+                    MemorialWritePayload(
+                        memorialPhotoUrl = null,
+                        songs = listOf(MemorialSongPayload(title = "곡", artist = "가수", coverUrl = null)),
+                        memorialVideo = null,
+                    ),
+            ).toRequest()
+
+        val song =
+            json
+                .encodeToJsonElement(AfternoteUpdateRequestDto.serializer(), request)
+                .jsonObject
+                .getValue("playlist")
+                .jsonObject
+                .getValue("songs")
+                .jsonArray
+                .single()
+                .jsonObject
+
+        assertEquals("곡", song.getValue("title").jsonPrimitive.content)
+        assertEquals("가수", song.getValue("artist").jsonPrimitive.content)
+        assertFalse(song.containsKey("coverUrl"))
     }
 
     private inline fun <reified T> assertMissingKey(

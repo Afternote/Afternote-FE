@@ -8,6 +8,7 @@ plugins {
 
 android {
     namespace = "com.afternote.feature.afternote.presentation"
+    resourcePrefix = "afternote_"
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
     buildFeatures {
         buildConfig = true
@@ -46,6 +47,8 @@ dependencies {
     testImplementation(libs.coroutines.test)
     testImplementation(testFixtures(projects.core.domain))
     testImplementation(testFixtures(projects.feature.afternote.domain))
+    // 수신 애프터노트 화면 테스트가 FakeReceiverRepository 로 상세 조회를 세운다 (#1461).
+    testImplementation(testFixtures(projects.feature.receiver.domain))
     testImplementation(libs.robolectric)
 
     // 렌더는 같아도 클릭 전달·접근성 semantics 가 달라지는 컨트롤 회귀를 실제 Compose 트리로 검사한다 (#1168).

@@ -10,25 +10,13 @@
         "수신 응답의 기본값 제거 대상 키가 빠지면 실패한다",
         "수신 응답의 조건부 null과 공개 전 빈 blocks는 정상 파싱된다"
       ],
-      "issues": [790, 873],
+      "issues": [
+        790,
+        873
+      ],
       "reason": "타임레터 DTO 누락 키 계약 게이트 — 구현 머지 전까지 의도된 실패"
     }
   ],
-  "screenshotModules": [
-    {
-      "module": ":feature:mindrecord:presentation",
-      "issues": [1359],
-      "reason": "작성 화면 screenshotTest용 Content 경계 분리 대기 — compileDebugScreenshotTestKotlin 실패"
-    },
-    {
-      "module": ":feature:setting:presentation",
-      "issues": [1360],
-      "reason": "설정 화면 screenshotTest용 Content 경계 분리 대기 — compileDebugScreenshotTestKotlin 실패"
-    },
-    {
-      "module": ":feature:timeletter:presentation",
-      "issues": [1361],
-      "reason": "목록 화면 screenshotTest용 Content 경계 분리 대기 — compileDebugScreenshotTestKotlin 실패"
-    }
-  ]
+  "androidTests": [],
+  "screenshotModules": []
 }
