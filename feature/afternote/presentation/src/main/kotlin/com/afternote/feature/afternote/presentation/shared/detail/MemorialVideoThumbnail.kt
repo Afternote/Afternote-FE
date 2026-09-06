@@ -45,10 +45,10 @@ import com.afternote.feature.afternote.presentation.R
  * 상자에만 상한을 걸면 시안에 없는 숫자를 하나 더 만들면서 주변과 어긋난다. 상한이 필요해지는
  * 시점은 화면 전체의 최대 폭을 정할 때다.
  */
-private const val MEMORIAL_VIDEO_ASPECT_RATIO = 350f / 183f
+internal const val MEMORIAL_VIDEO_ASPECT_RATIO = 350f / 183f
 
 /** 추모 영상 상자의 모서리 반경 — 시안 [node 4327:72864](https://www.figma.com/design/UP9ZR186jHvRBicjA2SOea/?node-id=4327-72864) 실측 6dp. */
-private val MemorialVideoCornerRadius = 6.dp
+internal val MemorialVideoCornerRadius = 6.dp
 
 /**
  * 추모 영상 썸네일 — 썸네일 이미지 + 어두운 그라디언트 + 중앙 재생 버튼.
