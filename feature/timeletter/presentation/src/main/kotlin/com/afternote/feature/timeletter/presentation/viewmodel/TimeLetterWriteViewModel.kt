@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
+import com.afternote.feature.timeletter.domain.error.TimeLetterServerRejectionException
 import com.afternote.feature.timeletter.domain.model.BlockInput
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlockType
@@ -59,6 +60,7 @@ class TimeLetterWriteViewModel
         private var receiverNameMap: Map<Long, String> = emptyMap()
         private var recordingTimerJob: Job? = null
         private var isCheckingRegisterLimit: Boolean = false
+        private var originalEditingStatus: TimeLetterStatus? = null
 
         /**
          * 화면이 닫힌 뒤 도착하는 start()/stop() 완료를 걸러낸다. discard/retry/openVoiceRecorder
@@ -157,22 +159,22 @@ class TimeLetterWriteViewModel
             if (state.isSaving || isCheckingRegisterLimit) return
 
             if (state.recipientIds.isEmpty()) {
-                _uiState.update { it.copy(error = TimeLetterWriteError.RECIPIENT_REQUIRED) }
+                _uiState.update { it.copy(error = TimeLetterWriteError.RecipientRequired) }
                 return
             }
             if (state.sendAt == null) {
-                _uiState.update { it.copy(error = TimeLetterWriteError.SEND_DATE_REQUIRED) }
+                _uiState.update { it.copy(error = TimeLetterWriteError.SendDateRequired) }
                 return
             }
             isCheckingRegisterLimit = true
             viewModelScope.launch {
                 try {
-                    if (state.editingTimeLetterId == null) {
+                    if (originalEditingStatus != TimeLetterStatus.SCHEDULED) {
                         val registeredCount =
                             runCatchingCancellable { timeLetterRepository.getTimeLetters().totalCount }
                                 .getOrElse {
                                     _uiState.update { current ->
-                                        current.copy(error = TimeLetterWriteError.LOAD_FAILED)
+                                        current.copy(error = TimeLetterWriteError.LoadFailed)
                                     }
                                     return@launch
                                 }
@@ -265,7 +267,7 @@ class TimeLetterWriteViewModel
                             _uiState.update { state ->
                                 state.copy(
                                     voiceRecordingState = VoiceRecordingState.Idle,
-                                    error = TimeLetterWriteError.VOICE_RECORDING_START_FAILED,
+                                    error = TimeLetterWriteError.VoiceRecordingStartFailed,
                                 )
                             }
                         }
@@ -295,7 +297,7 @@ class TimeLetterWriteViewModel
                             _uiState.update { state ->
                                 state.copy(
                                     voiceRecordingState = VoiceRecordingState.Idle,
-                                    error = TimeLetterWriteError.VOICE_RECORDING_STOP_FAILED,
+                                    error = TimeLetterWriteError.VoiceRecordingStopFailed,
                                 )
                             }
                         }
@@ -435,7 +437,7 @@ class TimeLetterWriteViewModel
             val state = _uiState.value
             if (state.isSaving) return
             if (state.recipientIds.isEmpty()) {
-                _uiState.update { it.copy(error = TimeLetterWriteError.RECIPIENT_REQUIRED) }
+                _uiState.update { it.copy(error = TimeLetterWriteError.RecipientRequired) }
                 return
             }
 
@@ -444,9 +446,11 @@ class TimeLetterWriteViewModel
                 try {
                     val sendAt =
                         state.sendAt?.let { date ->
-                            "${date}T${
-                                state.sendHour.toString().padStart(2, '0')
-                            }:${state.sendMinute.toString().padStart(2, '0')}:00"
+                            formatSendAt(
+                                date = date,
+                                hour = state.sendHour,
+                                minute = state.sendMinute,
+                            )
                         }
                     val saveResult =
                         if (state.editingTimeLetterId == null) {
@@ -485,8 +489,17 @@ class TimeLetterWriteViewModel
                             } else {
                                 _uiState.update { it.copy(registered = true) }
                             }
-                        }.onFailure {
-                            _uiState.update { it.copy(error = TimeLetterWriteError.SAVE_FAILED) }
+                        }.onFailure { error ->
+                            _uiState.update {
+                                it.copy(
+                                    error =
+                                        if (error is TimeLetterServerRejectionException) {
+                                            TimeLetterWriteError.ServerRejection
+                                        } else {
+                                            TimeLetterWriteError.SaveFailed
+                                        },
+                                )
+                            }
                         }
                 } finally {
                     _uiState.update { it.copy(isSaving = false) }
@@ -497,6 +510,7 @@ class TimeLetterWriteViewModel
         private suspend fun loadEditingTimeLetter(timeLetterId: Long) {
             runCatchingCancellable { timeLetterRepository.getTimeLetter(timeLetterId) }
                 .onSuccess { letter ->
+                    originalEditingStatus = letter.status
                     val editorBlocks = letter.toEditorBlocks()
                     val sendAtDate = letter.sendAt?.take(10)
                     val sendHour =
@@ -533,9 +547,18 @@ class TimeLetterWriteViewModel
                             nextBlockId = (editorBlocks.maxOfOrNull { block -> block.id } ?: 0L) + 1L,
                         )
                     }
-                }.onFailure {
+                }.onFailure { error ->
                     _uiState.update { it.copy(isLoadingEditingLetter = false) }
-                    _uiState.update { it.copy(error = TimeLetterWriteError.LOAD_FAILED) }
+                    _uiState.update {
+                        it.copy(
+                            error =
+                                if (error is TimeLetterServerRejectionException) {
+                                    TimeLetterWriteError.ServerRejection
+                                } else {
+                                    TimeLetterWriteError.LoadFailed
+                                },
+                        )
+                    }
                 }
         }
 
@@ -685,3 +708,9 @@ class TimeLetterWriteViewModel
             const val FREE_PLAN_REGISTER_LIMIT = 3
         }
     }
+
+private fun formatSendAt(
+    date: String,
+    hour: Int,
+    minute: Int,
+): String = "${date}T${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00"

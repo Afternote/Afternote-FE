@@ -1,17 +1,21 @@
 package com.afternote.feature.setting.presentation
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
-import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.data.repoimpl.UserRepositoryImpl
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.delivery.ConditionState
@@ -26,26 +30,6 @@ import com.afternote.core.model.user.ReceiverDetail
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserPushSetting
-import com.afternote.core.network.dto.DeletePushTokenRequestDto
-import com.afternote.core.network.dto.PushTokenDto
-import com.afternote.core.network.dto.ReceiverDetailDto
-import com.afternote.core.network.dto.ReceiverListDto
-import com.afternote.core.network.dto.RegisterPushTokenRequestDto
-import com.afternote.core.network.dto.SocialAccountLinkRequestDto
-import com.afternote.core.network.dto.UserConnectedAccountDto
-import com.afternote.core.network.dto.UserCreateReceiverDto
-import com.afternote.core.network.dto.UserCreateReceiverRequestDto
-import com.afternote.core.network.dto.UserDto
-import com.afternote.core.network.dto.UserPatchReceiverDto
-import com.afternote.core.network.dto.UserPatchReceiverRequestDto
-import com.afternote.core.network.dto.UserPushSettingDto
-import com.afternote.core.network.dto.UserUpdateProfileRequestDto
-import com.afternote.core.network.dto.UserUpdatePushSettingRequestDto
-import com.afternote.core.network.dto.UserUpdateReceiverMessageRequestDto
-import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionDto
-import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionUpdateRequestDto
-import com.afternote.core.network.model.BaseResponse
-import com.afternote.core.network.service.UserApiService
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.setting.presentation.screen.ReceiverEditScreen
@@ -341,6 +325,41 @@ class SettingCompletionTest {
     }
 
     @Test
+    fun receiverRegistration_requiresValidEmailBeforeEnablingRegister() {
+        val viewModel = ReceiverRegisterViewModel(FakeUserRepository.strict())
+        composeRule.setContent {
+            AfternoteTheme {
+                ReceiverRegisterScreen(
+                    onBackClick = {},
+                    onRegisterSuccess = {},
+                    viewModel = viewModel,
+                )
+            }
+        }
+        val registerButton = hasText("등록") and hasClickAction()
+
+        composeRule.onNode(registerButton).assertIsNotEnabled()
+        composeRule.onNodeWithText("이름을 입력하세요").performTextInput("김수신")
+        composeRule.onNodeWithText("연락처를 지정해주세요").performTextInput("01012345678")
+        composeRule
+            .onNode(hasText("관계를 선택하세요") and hasClickAction())
+            .performClick()
+        composeRule.onNodeWithText("어머니").performClick()
+        // 이메일 필드(6행 중 5번째, index 4)는 테스트 뷰포트 밖이라 LazyColumn이 아직 구성하지 않는다 —
+        // performScrollTo()는 이미 구성된 노드만 찾을 수 있어 인덱스로 직접 스크롤한다.
+        composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(4)
+        composeRule
+            .onNodeWithText("afternote@email.com")
+            .performTextInput("invalid-email")
+        composeRule.onNode(registerButton).assertIsNotEnabled()
+
+        composeRule.onNodeWithText("invalid-email").performTextClearance()
+        composeRule.onNodeWithText("afternote@email.com").performTextInput("receiver@afternote.com")
+
+        composeRule.onNode(registerButton).assertIsEnabled()
+    }
+
+    @Test
     fun receiverEdit_serialFailurePartialFailureThenRetry_sendsExactPayloadOncePerAttempt() {
         setHarnessContent()
         val scenario = CompletionUserScenario()
@@ -566,14 +585,26 @@ class SettingCompletionTest {
     }
 
     @Test
-    fun withdrawal_failureThenRetry_cleansSessionExactlyOnceAfterServerSuccess() {
+    fun withdrawal_failureThenRetry_reportsErrorThenSuccess() {
         setHarnessContent()
-        val calls = CompletionCallLedger()
-        val userApi = CompletionGatedWithdrawalUserApi(calls)
-        val firstGate = userApi.enqueueDelete()
-        val retryGate = userApi.enqueueDelete()
-        val authRepository = completionStatefulWithdrawalAuthRepository(calls)
-        val repository = UserRepositoryImpl(userApi, authRepository, NoopErrorReporter)
+        val firstGate = CompletableDeferred<Unit>()
+        val retryGate = CompletableDeferred<Unit>()
+        val deleteGates = ArrayDeque(listOf(firstGate, retryGate))
+        val authRepository =
+            FakeAuthRepository
+                .strict(loggedIn = true, accessToken = "access", refreshToken = "refresh")
+                .apply {
+                    onIsLoggedIn = { loggedInState }
+                    onGetAccessToken = null
+                    onGetRefreshToken = null
+                }
+        // 탈퇴 성공 뒤 세션을 정확히 한 번, 서버 호출 뒤에 정리하는 것은 저장소 구현의 계약이라
+        // :core:data `UserRepositoryImplTest` 의 deleteAccount 계열이 고정한다. 여기서는 화면 상태 전이만 본다.
+        val repository =
+            FakeUserRepository.strict().apply {
+                onGetMyProfile = { COMPLETION_DEFAULT_USER }
+                onDeleteAccount = { deleteGates.removeFirst().await() }
+            }
         val viewModel = SettingViewModel(authRepository, repository)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value is SettingUiState.Success
@@ -581,38 +612,25 @@ class SettingCompletionTest {
 
         composeRule.runOnIdle { viewModel.deleteAccount() }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            userApi.deleteCalls == 1
+            repository.deleteAccountCalls == 1
         }
-        assertEquals(0, authRepository.clearSessionCalls)
+        assertEquals(WithdrawUiState.Loading, viewModel.withdrawUiState.value)
 
-        firstGate.complete(BaseResponse(status = 503, code = 503, message = "retry"))
-        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            userApi.completedDeleteCalls == 1
-        }
+        firstGate.completeExceptionally(IllegalStateException("서버가 503 으로 거절했다"))
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.withdrawUiState.value == WithdrawUiState.Error
         }
-        assertEquals(0, authRepository.clearSessionCalls)
-        assertTrue(runBlocking { authRepository.isLoggedIn.first() })
 
         composeRule.runOnIdle { viewModel.deleteAccount() }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            userApi.deleteCalls == 2
+            repository.deleteAccountCalls == 2
         }
-        assertEquals(0, authRepository.clearSessionCalls)
 
-        retryGate.complete(BaseResponse(status = 200, code = 200))
+        retryGate.complete(Unit)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.withdrawUiState.value == WithdrawUiState.Success
         }
-
-        assertEquals(2, userApi.completedDeleteCalls)
-        assertEquals(1, authRepository.clearSessionCalls)
-        assertFalse(runBlocking { authRepository.isLoggedIn.first() })
-        assertEquals(
-            listOf("deleteAccount#1", "deleteAccount#2", "clearSession"),
-            calls.snapshot(),
-        )
+        assertEquals(2, repository.deleteAccountCalls)
     }
 
     private fun setHarnessContent() {
@@ -628,13 +646,6 @@ class SettingCompletionTest {
         const val TIMEOUT_MILLIS = 5_000L
         const val RECEIVER_ID = 77L
     }
-}
-
-private object NoopErrorReporter : ErrorReporter {
-    override fun writeFailure(
-        throwable: Throwable,
-        attributes: Map<String, String>,
-    ) = Unit
 }
 
 private val COMPLETION_DEFAULT_USER =
@@ -821,129 +832,3 @@ private class CompletionUserScenario {
         method: String,
     ): T = synchronized(this) { gates.pollFirst() ?: error("$method gate was not prepared") }
 }
-
-private class CompletionCallLedger {
-    private val calls = mutableListOf<String>()
-
-    fun record(call: String) {
-        synchronized(this) { calls += call }
-    }
-
-    fun snapshot(): List<String> = synchronized(this) { calls.toList() }
-}
-
-private class CompletionGatedWithdrawalUserApi(
-    private val calls: CompletionCallLedger,
-) : UserApiService {
-    private val deleteGates = ArrayDeque<CompletableDeferred<BaseResponse<Unit>>>()
-    private var startedDeletes = 0
-    private var completedDeletes = 0
-
-    val deleteCalls: Int
-        get() = synchronized(this) { startedDeletes }
-
-    val completedDeleteCalls: Int
-        get() = synchronized(this) { completedDeletes }
-
-    fun enqueueDelete(): CompletableDeferred<BaseResponse<Unit>> =
-        CompletableDeferred<BaseResponse<Unit>>().also { gate ->
-            synchronized(this) { deleteGates.addLast(gate) }
-        }
-
-    override suspend fun registerPushToken(request: RegisterPushTokenRequestDto): BaseResponse<PushTokenDto> = TODO("이 테스트 미사용")
-
-    override suspend fun deletePushToken(request: DeletePushTokenRequestDto): BaseResponse<Unit> = TODO("이 테스트 미사용")
-
-    override suspend fun getMyProfile(): BaseResponse<UserDto> =
-        BaseResponse(
-            status = 200,
-            code = 200,
-            data =
-                UserDto(
-                    name = COMPLETION_DEFAULT_USER.name,
-                    email = COMPLETION_DEFAULT_USER.email,
-                    phone = COMPLETION_DEFAULT_USER.phone,
-                    profileImageUrl = COMPLETION_DEFAULT_USER.profileImageUrl,
-                ),
-        )
-
-    override suspend fun deleteAccount(): BaseResponse<Unit> {
-        val callNumber: Int
-        val gate: CompletableDeferred<BaseResponse<Unit>>
-        synchronized(this) {
-            startedDeletes += 1
-            callNumber = startedDeletes
-            gate = deleteGates.pollFirst() ?: error("deleteAccount gate was not prepared")
-        }
-        calls.record("deleteAccount#$callNumber")
-        return try {
-            gate.await()
-        } finally {
-            synchronized(this) { completedDeletes += 1 }
-        }
-    }
-
-    override suspend fun getReceivers(): BaseResponse<List<ReceiverListDto>> = completionUnexpected("getReceivers")
-
-    override suspend fun createReceiver(request: UserCreateReceiverRequestDto): BaseResponse<UserCreateReceiverDto> =
-        completionUnexpected("createReceiver")
-
-    override suspend fun getReceiverDetail(receiverId: Long): BaseResponse<ReceiverDetailDto> = completionUnexpected("getReceiverDetail")
-
-    override suspend fun updateReceiver(
-        receiverId: Long,
-        request: UserPatchReceiverRequestDto,
-    ): BaseResponse<UserPatchReceiverDto> = completionUnexpected("updateReceiver")
-
-    override suspend fun updateReceiverMessage(
-        receiverId: Long,
-        request: UserUpdateReceiverMessageRequestDto,
-    ): BaseResponse<Unit> = completionUnexpected("updateReceiverMessage")
-
-    override suspend fun updateMyProfile(request: UserUpdateProfileRequestDto): BaseResponse<UserDto> =
-        completionUnexpected("updateMyProfile")
-
-    override suspend fun getMyPushSettings(): BaseResponse<UserPushSettingDto> = completionUnexpected("getMyPushSettings")
-
-    override suspend fun updateMyPushSettings(request: UserUpdatePushSettingRequestDto): BaseResponse<UserPushSettingDto> =
-        completionUnexpected("updateMyPushSettings")
-
-    override suspend fun getConnectedAccounts(): BaseResponse<UserConnectedAccountDto> = completionUnexpected("getConnectedAccounts")
-
-    override suspend fun linkConnectedAccount(
-        provider: String,
-        request: SocialAccountLinkRequestDto,
-    ): BaseResponse<UserConnectedAccountDto> = completionUnexpected("linkConnectedAccount")
-
-    override suspend fun unlinkConnectedAccount(provider: String): BaseResponse<UserConnectedAccountDto> =
-        completionUnexpected("unlinkConnectedAccount")
-
-    override suspend fun getReceiverDeliveryConditions(receiverId: Long): BaseResponse<ReceiverDeliveryConditionDto> =
-        completionUnexpected("getReceiverDeliveryConditions")
-
-    override suspend fun updateReceiverDeliveryConditions(
-        receiverId: Long,
-        request: ReceiverDeliveryConditionUpdateRequestDto,
-    ): BaseResponse<ReceiverDeliveryConditionDto> = completionUnexpected("updateReceiverDeliveryConditions")
-}
-
-private fun completionStatefulWithdrawalAuthRepository(calls: CompletionCallLedger): FakeAuthRepository =
-    FakeAuthRepository
-        .strict(
-            loggedIn = true,
-            accessToken = "access",
-            refreshToken = "refresh",
-        ).apply {
-            onIsLoggedIn = { loggedInState }
-            onGetAccessToken = null
-            onGetRefreshToken = null
-            onClearSession = {
-                calls.record("clearSession")
-                accessToken = null
-                refreshToken = null
-                loggedIn = false
-                Result.success(Unit)
-            }
-        }
-
-private fun <T> completionUnexpected(method: String): T = error("$method must not be called by this test")

@@ -31,23 +31,23 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * `UserRepositoryImpl` 안의 `mapReceiverRequestFailure` 는 `private` 이라 이 파일에서 직접 호출할 수
- * 없다 — 그 helper 를 공유하는 공개 계약([UserRepositoryImpl.createReceiver])을 통해 같은 회귀를 고정한다.
+ * `UserReceiverRepositoryImpl` 옆의 `mapReceiverRequestFailure` 는 `private` 이라 이 파일에서 직접 호출할 수
+ * 없다 — 그 helper 를 공유하는 공개 계약([UserReceiverRepositoryImpl.createReceiver])을 통해 같은 회귀를 고정한다.
  */
 class ReceiverRequestFailureTest {
     private fun repositoryThrowingOnCreate(apiError: ApiException) =
-        UserRepositoryImpl(
+        UserReceiverRepositoryImpl(
             userApiService = CreateReceiverThrowingApiService(onCreateReceiver = { throw apiError }),
             authRepository = FakeAuthRepository(loggedIn = false),
             errorReporter = NoOpErrorReporter,
         )
 
-    private suspend fun createReceiver(repository: UserRepositoryImpl) =
+    private suspend fun createReceiver(repository: UserReceiverRepositoryImpl) =
         repository.createReceiver(
             name = "친구",
             relation = "친구",
             phone = null,
-            email = null,
+            email = "friend@example.com",
             message = null,
         )
 

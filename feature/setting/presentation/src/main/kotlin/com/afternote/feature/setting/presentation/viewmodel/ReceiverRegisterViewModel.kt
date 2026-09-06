@@ -31,12 +31,12 @@ class ReceiverRegisterViewModel
             name: String,
             relation: String,
             phone: String?,
-            email: String?,
+            email: String,
             message: String?,
         ) {
-            if (!email.orEmpty().isValidReceiverEmail()) {
+            if (!email.isValidReceiverEmail()) {
                 val messageRes =
-                    if (email.isNullOrBlank()) R.string.receiver_email_required else R.string.receiver_email_invalid
+                    if (email.isBlank()) R.string.receiver_email_required else R.string.receiver_email_invalid
                 _uiState.update { it.copy(errorMessage = UiText.Resource(messageRes)) }
                 return
             }
@@ -51,7 +51,7 @@ class ReceiverRegisterViewModel
                 _uiState.update { it.copy(errorMessage = UiText.Resource(messageRes)) }
                 return
             }
-            val normalizedEmail = email.orEmpty().trim()
+            val normalizedEmail = email.trim()
 
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             viewModelScope.launch {

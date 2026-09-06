@@ -124,8 +124,8 @@ fun AfternoteEditorBody(
             snackbarHostState = snackbarHostState,
             onPhotoSelected = state.setMemorialPhoto,
             onVideoSelected = state.setMemorialVideo,
-            onPhotoRemoved = { state.setMemorialPhoto(null) },
-            onVideoRemoved = { state.setMemorialVideo(null) },
+            onPhotoRemoved = state.removeMemorialPhoto,
+            onVideoRemoved = state.removeMemorialVideo,
             onCaptureFailed = onCaptureFailed,
         )
 

@@ -6,11 +6,13 @@ import {
     AREA_LABEL_BY_MODULE,
     ASSIGNEE_BY_MODULE,
     GUARD_COMMENT_MARKER,
+    HANDOVER_BY_MODULE,
     LEGACY_ISSUE_MAX,
     PRIORITY_COMMENT_MARKER,
     PRIORITY_FIELD_NAME,
     PRIORITY_OPTION_GUIDE,
     TYPE_LABELS,
+    assigneeForIssue,
     inspectIssue,
     priorityFieldState,
     readFormSection,
@@ -89,14 +91,73 @@ test("reads exact issue-form sections with CRLF input", () => {
     assert.equal(readFormSection(body, "주 담당 모듈"), "setting — 선택한 주 담당 모듈");
 });
 
+// 이관 경계 위의 번호. 지도는 앞으로의 담당을 말하므로 경계를 넘긴 이슈로 대조한다.
+const AFTER_HANDOVER = Math.max(
+    LEGACY_ISSUE_MAX,
+    ...Object.values(HANDOVER_BY_MODULE).map((handover) => handover.fromIssue),
+) + 1;
+
 test("maps every primary module to the repository owner table", () => {
     for (const [module, assignee] of Object.entries(ASSIGNEE_BY_MODULE)) {
-        const inspection = inspectIssue(issue({ body: formBody("enhancement", module) }));
+        const inspection = inspectIssue(issue({
+            number: AFTER_HANDOVER,
+            body: formBody("enhancement", module),
+        }));
         assert.equal(inspection.status, "valid", module);
         assert.equal(inspection.expectedAssignee, assignee, module);
         assert.equal(inspection.expectedLabel, "enhancement", module);
         assert.equal(inspection.expectedAreaLabel, AREA_LABEL_BY_MODULE[module], module);
     }
+});
+
+test("a module handover leaves issues opened before the decision with the previous assignee", () => {
+    // #1910: 온보딩은 이 결정 전에 열린 이슈를 옮기지 않는다. 옮기면 그 이슈로 열어 둔 PR 이
+    // validate-pr-issue-link 에서 작성자와 담당자가 다르다는 이유로 빨개진다.
+    for (const [module, handover] of Object.entries(HANDOVER_BY_MODULE)) {
+        assert.ok(ASSIGNEE_BY_MODULE[module], `${module} 이 지도에 없다`);
+        assert.notEqual(handover.before, ASSIGNEE_BY_MODULE[module], module);
+        assert.ok(handover.fromIssue > LEGACY_ISSUE_MAX, `${module} 경계가 legacy 스킵 안에 있다`);
+
+        assert.equal(
+            assigneeForIssue(module, handover.fromIssue - 1),
+            handover.before,
+            module,
+        );
+        assert.equal(
+            assigneeForIssue(module, handover.fromIssue),
+            ASSIGNEE_BY_MODULE[module],
+            module,
+        );
+        // 경계는 이슈 하나가 아니라 판정 전체를 통과해야 한다.
+        assert.equal(
+            inspectIssue(issue({
+                number: handover.fromIssue - 1,
+                body: formBody("enhancement", module),
+            })).expectedAssignee,
+            handover.before,
+            module,
+        );
+    }
+});
+
+test("a module without a handover entry moves its open issues right away", () => {
+    // 설정은 경계를 두지 않는다. 이미 열려 있는 이슈도 다음 리컨사일에서 새 담당자로 옮겨진다.
+    assert.equal(HANDOVER_BY_MODULE.setting, undefined);
+    assert.equal(assigneeForIssue("setting", LEGACY_ISSUE_MAX + 1), ASSIGNEE_BY_MODULE.setting);
+    const inspection = inspectIssue(issue({
+        number: LEGACY_ISSUE_MAX + 1,
+        body: formBody("enhancement", "setting"),
+        assignees: [{ login: "koongmai" }],
+    }));
+    assert.equal(inspection.needsUpdate, true);
+    assert.deepEqual(inspection.assignees, [ASSIGNEE_BY_MODULE.setting]);
+});
+
+test("an unknown issue number fails the handover judgement instead of guessing", () => {
+    // 경계 판정을 못 하면 어느 쪽으로도 접지 않는다. 접으면 옛 이슈가 조용히 새 담당자에게 간다.
+    const module = Object.keys(HANDOVER_BY_MODULE)[0];
+    assert.throws(() => assigneeForIssue(module, undefined), /이슈 번호/);
+    assert.throws(() => assigneeForIssue(module, "1910번"), /이슈 번호/);
 });
 
 test("maps every work type to exactly one classification label", () => {
