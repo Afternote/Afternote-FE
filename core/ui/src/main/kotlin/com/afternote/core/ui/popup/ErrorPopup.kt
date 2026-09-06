@@ -28,7 +28,8 @@ private const val ICON_CONTAINER_ALPHA = 0.12f
 
 /**
  * 오류 안내 팝업 — 아이콘 원 + 제목 + 본문 + 단일 액션. 시안의 오류 팝업 4종(네트워크 연결
- * 오류·서버 오류·업로드 실패·접근 권한 없음, `3628:23827`)이 공유하는 골격이다.
+ * 오류·서버 오류·업로드 실패·접근 권한 없음, `3628:23827`)이 공유하는 골격이다. 접근 권한 없음(403)은
+ * 아직 생산자가 없어 세우지 않았다.
  *
  * [Popup] 과 별개인 이유 — 그쪽은 "메시지 + 버튼" 골격이라 아이콘·제목 슬롯이 없고,
  * [PopupType] 은 enum 이라 타입별 필수 값을 담을 수 없다.
@@ -70,6 +71,50 @@ fun NetworkErrorPopup(
         title = stringResource(R.string.core_ui_network_error_title),
         description = stringResource(R.string.core_ui_network_error_description),
         buttonText = stringResource(R.string.core_ui_network_error_retry),
+        onButtonClick = onRetry,
+        onDismiss = onDismiss,
+        modifier = modifier,
+    )
+}
+
+/**
+ * 서버가 응답했지만 요청을 처리하지 못한 실패 안내(시안 `3628:23785`). 5xx 처럼 사용자가 고칠 수
+ * 없는 장애가 대상이라 액션은 재시도 하나다 — 서버가 준 거절 문구는 이쪽이 아니라 호출처가
+ * 자기 문구로 안내한다.
+ */
+@Composable
+fun ServerErrorPopup(
+    onRetry: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AfternoteErrorPopup(
+        iconRes = R.drawable.core_ui_ic_server,
+        title = stringResource(R.string.core_ui_server_error_title),
+        description = stringResource(R.string.core_ui_server_error_description),
+        buttonText = stringResource(R.string.core_ui_server_error_retry),
+        onButtonClick = onRetry,
+        onDismiss = onDismiss,
+        modifier = modifier,
+    )
+}
+
+/**
+ * 파일 업로드 실패 안내(시안 `3628:23795`). [ServerErrorPopup] 과 갈라 둔 이유 — 사용자가 방금 고른
+ * 파일이 올라가지 못했다는 사실이 "서버에 문제가 발생했다" 보다 구체적이고, 재시도의 대상도
+ * 화면 전체가 아니라 그 첨부 하나다.
+ */
+@Composable
+fun UploadErrorPopup(
+    onRetry: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AfternoteErrorPopup(
+        iconRes = R.drawable.core_ui_ic_upload_cloud,
+        title = stringResource(R.string.core_ui_upload_error_title),
+        description = stringResource(R.string.core_ui_upload_error_description),
+        buttonText = stringResource(R.string.core_ui_upload_error_retry),
         onButtonClick = onRetry,
         onDismiss = onDismiss,
         modifier = modifier,

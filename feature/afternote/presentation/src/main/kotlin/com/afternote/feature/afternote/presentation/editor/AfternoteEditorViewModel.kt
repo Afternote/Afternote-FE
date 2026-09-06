@@ -29,9 +29,11 @@ import com.afternote.feature.afternote.presentation.editor.state.AfternoteTypeFo
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.editor.state.withMemorialPhoto
+import com.afternote.feature.afternote.presentation.editor.state.withMemorialPhotoRemoved
 import com.afternote.feature.afternote.presentation.editor.state.withMemorialPlaylistSongs
 import com.afternote.feature.afternote.presentation.editor.state.withMemorialThumbnail
 import com.afternote.feature.afternote.presentation.editor.state.withMemorialVideo
+import com.afternote.feature.afternote.presentation.editor.state.withMemorialVideoRemoved
 import com.afternote.feature.afternote.presentation.editor.state.withPrefillApplied
 import com.afternote.feature.afternote.presentation.editor.state.withProcessingMethodAdded
 import com.afternote.feature.afternote.presentation.editor.state.withProcessingMethodDeleted
@@ -39,6 +41,7 @@ import com.afternote.feature.afternote.presentation.editor.state.withProcessingM
 import com.afternote.feature.afternote.presentation.editor.state.withProcessingMethodsInitialized
 import com.afternote.feature.afternote.presentation.editor.state.withReceiverAddedIfAbsent
 import com.afternote.feature.afternote.presentation.editor.state.withReceiverDeleted
+import com.afternote.feature.afternote.presentation.editor.state.withReceiversReplaced
 import com.afternote.feature.afternote.presentation.editor.state.withReceiversReplacedIfEmpty
 import com.afternote.feature.afternote.presentation.editor.state.withService
 import com.afternote.feature.afternote.presentation.editor.state.withType
@@ -153,7 +156,7 @@ private data class EditorFormSnapshot(
  * 애프터노트 생성/수정 ViewModel.
  *
  * **SSOT:** 일반 폼은 [internalState]의 [EditorFormState], Compose 텍스트 입력은
- * [com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState]가 소유한다.
+ * [com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorState]가 소유한다.
  * 추억 플레이리스트 화면과 곡 추가 화면은 같은 flow-scoped ViewModel의 폼을 사용한다.
  *
  * **경계:** Compose UI 객체(`TextFieldState`·`SnapshotStateList`·파사드)를 들지 않고 Retrofit 타입도 알지 않는다 —
@@ -222,16 +225,25 @@ class AfternoteEditorViewModel
 
         fun setService(service: String) = mutateForm { it.withService(service) }
 
-        fun setMemorialPhoto(uri: String?) = mutateForm { it.withMemorialPhoto(uri) }
+        fun setMemorialPhoto(uri: String) = mutateForm { it.withMemorialPhoto(uri) }
 
-        fun setMemorialVideo(url: String?) {
+        /** 시트의 사진 삭제 항목. 슬롯을 비운다 — 서버 삭제는 저장 시 명시적 `null` 로 나간다(#1597, #1717). */
+        fun removeMemorialPhoto() = mutateForm { it.withMemorialPhotoRemoved() }
+
+        fun setMemorialVideo(url: String) {
             // 영상이 갈리면 이전 영상의 썸네일 실패도 함께 무효다 — 남은 바이트로 재시도하면 다른
             // 영상의 그림이 붙는다.
             pendingThumbnailBytes = null
             mutateForm { it.withMemorialVideo(url) }
         }
 
-        fun setMemorialThumbnail(dataUrl: String?) = mutateForm { it.withMemorialThumbnail(dataUrl) }
+        /** 시트의 영상 삭제 항목. 표시된 영상이 사라지므로 그 영상의 썸네일 재시도 바이트도 함께 버린다. */
+        fun removeMemorialVideo() {
+            pendingThumbnailBytes = null
+            mutateForm { it.withMemorialVideoRemoved() }
+        }
+
+        fun setMemorialThumbnail(dataUrl: String) = mutateForm { it.withMemorialThumbnail(dataUrl) }
 
         fun addMemorialPlaylistSongs(songs: List<Song>) {
             if (songs.isEmpty()) return
@@ -676,6 +688,22 @@ class AfternoteEditorViewModel
                 internalState.update { it.withError(AfternoteEditorError.ReceiverSelectionUnavailable) }
                 null
             }
+        }
+
+        /**
+         * 수신자 선택 화면이 확정한 [receiverIds] 전체를 폼에 반영한다 (#1426).
+         *
+         * 화면은 폼의 현재 수신자를 선택 상태로 열고 확정된 전체를 돌려준다 — 그래서 반영은
+         * «추가» 가 아니라 «교체» 다. 화면에서 푼 수신자는 폼에서도 빠진다.
+         *
+         * 이미 폼에 있는 id 는 표시에 필요한 이름·관계를 폼이 이미 들고 있으므로 재조회하지 않는다.
+         * 새로 들어온 id 만 [resolveSelectedReceiver] 로 해석하고, 해석 실패는 그쪽이 오류 이벤트로
+         * 알린다 — 그 id 만 빠지고 나머지 선택은 반영된다 (#1405).
+         */
+        suspend fun applySelectedReceivers(receiverIds: List<Long>) {
+            val alreadyInForm = currentForm().afternoteEditReceivers.associateBy { it.id }
+            val next = receiverIds.mapNotNull { id -> alreadyInForm[id] ?: resolveSelectedReceiver(id) }
+            mutateForm { it.withReceiversReplaced(next) }
         }
 
         private fun findReceiverById(id: Long): AfternoteEditorReceiver? = internalState.value.authorReceivers.find { it.id == id }

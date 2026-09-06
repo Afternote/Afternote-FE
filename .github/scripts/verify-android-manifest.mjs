@@ -11,6 +11,7 @@ export const ALLOWED_PERMISSIONS = new Set([
   'android.permission.INTERNET',
   'android.permission.POST_NOTIFICATIONS',
   'android.permission.RECEIVE_BOOT_COMPLETED',
+  'android.permission.RECORD_AUDIO',
   'android.permission.USE_BIOMETRIC',
   'android.permission.USE_FINGERPRINT',
   'android.permission.WAKE_LOCK',
