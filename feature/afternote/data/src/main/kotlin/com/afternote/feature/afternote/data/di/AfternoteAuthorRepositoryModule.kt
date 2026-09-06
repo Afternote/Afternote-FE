@@ -1,10 +1,12 @@
 package com.afternote.feature.afternote.data.di
 
 import com.afternote.feature.afternote.data.repositoryimpl.author.AfternoteRepositoryImpl
+import com.afternote.feature.afternote.data.repositoryimpl.author.MemorialAudioUploadRepositoryImpl
 import com.afternote.feature.afternote.data.repositoryimpl.author.MemorialMediaUploadRepositoryImpl
 import com.afternote.feature.afternote.data.repositoryimpl.author.MemorialThumbnailUploadRepositoryImpl
 import com.afternote.feature.afternote.data.repositoryimpl.author.MusicSearchRepositoryImpl
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
+import com.afternote.feature.afternote.domain.repository.author.MemorialAudioUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MusicSearchRepository
@@ -36,4 +38,9 @@ interface AfternoteAuthorRepositoryModule {
     @Binds
     @Singleton
     fun bindMemorialMediaUploadRepository(impl: MemorialMediaUploadRepositoryImpl): MemorialMediaUploadRepository
+
+    @Suppress("unused")
+    @Binds
+    @Singleton
+    fun bindMemorialAudioUploadRepository(impl: MemorialAudioUploadRepositoryImpl): MemorialAudioUploadRepository
 }

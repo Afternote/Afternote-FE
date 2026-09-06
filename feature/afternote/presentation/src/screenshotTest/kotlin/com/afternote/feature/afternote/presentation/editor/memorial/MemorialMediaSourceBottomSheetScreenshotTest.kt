@@ -35,6 +35,21 @@ internal fun memorialMediaSourceBottomSheetVideoScreenshot() {
     }
 }
 
+/** 추모 음성 슬롯 (#1118) — 갤러리 대신 «파일에서 선택», 촬영 대신 «음성 녹음» 으로 갈린다. */
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+internal fun memorialMediaSourceBottomSheetAudioScreenshot() {
+    AfternoteTheme {
+        MemorialMediaSourceBottomSheet(
+            target = MemorialMediaTarget.AUDIO,
+            onPickFromGallery = {},
+            onCapture = {},
+            onRemove = null,
+        )
+    }
+}
+
 /** 첨부가 있는 슬롯 — 삭제 항목이 파괴적 동작 색(error)으로 더해진다 (#1114). */
 @PreviewTest
 @Preview(showBackground = true)

@@ -241,6 +241,8 @@ class AfternoteEditorServerMediaDeleteSaveTest {
                                     photoUrl = "https://cdn.test/portrait.jpg",
                                     videoUrl = "https://cdn.test/farewell.mp4",
                                     thumbnailUrl = "https://cdn.test/thumbnail.jpg",
+                                    // 이 테스트가 보는 것은 사진·영상 삭제 경로다. 음성은 이 스냅샷의 관심 밖이라 비운다 (#1118).
+                                    audioUrl = null,
                                 ),
                         ),
                 ),

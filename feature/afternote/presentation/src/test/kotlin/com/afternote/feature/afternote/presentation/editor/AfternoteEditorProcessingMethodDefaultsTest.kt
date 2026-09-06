@@ -84,6 +84,7 @@ class AfternoteEditorProcessingMethodDefaultsTest {
                 memorialVideoUrl = null,
                 memorialThumbnailUrl = null,
                 memorialPhotoUrl = null,
+                memorialAudioUrl = null,
             ) as CreateAfternoteInput.Gallery
 
         assertTrue(input.payload.processingMethods.isEmpty())

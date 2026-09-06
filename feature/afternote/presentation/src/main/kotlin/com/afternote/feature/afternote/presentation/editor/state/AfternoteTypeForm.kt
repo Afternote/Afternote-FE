@@ -88,6 +88,11 @@ sealed interface AfternoteTypeForm {
         val pickedPhotoUri: String? = null,
         internal val video: EditableMemorialVideo = EditableMemorialVideo.empty(),
         val photoUrl: String? = null,
+        /**
+         * 추모 음성 (#1118). 영상과 같은 규칙 — 로컬 픽(`content://`)과 수정 진입 prefill 의 원격 URL 이
+         * 한 필드를 공유하고, 저장 시 `isLocalContentUri()` 로 가른다.
+         */
+        val audioUrl: String? = null,
         val playlistSongs: List<Song> = emptyList(),
     ) : AfternoteTypeForm {
         override val type = AfternoteType.MEMORIAL
@@ -150,6 +155,7 @@ sealed interface AfternoteTypeForm {
                                 ),
                             ),
                         photoUrl = content.photoUrl,
+                        audioUrl = content.audioUrl,
                         playlistSongs = content.playlistSongs,
                     )
                 }

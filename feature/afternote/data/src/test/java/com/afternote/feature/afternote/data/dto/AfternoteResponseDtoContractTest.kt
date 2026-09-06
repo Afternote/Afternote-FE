@@ -88,7 +88,13 @@ class AfternoteResponseDtoContractTest {
         val request =
             CreateMemorialPayload(
                 title = "추억 노트",
-                memorial = MemorialWritePayload(memorialPhotoUrl = null, songs = emptyList(), memorialVideo = null),
+                memorial =
+                    MemorialWritePayload(
+                        memorialPhotoUrl = null,
+                        songs = emptyList(),
+                        memorialVideo = null,
+                        memorialAudioUrl = null,
+                    ),
             ).toRequest()
 
         val playlist =
@@ -115,7 +121,13 @@ class AfternoteResponseDtoContractTest {
             AfternoteUpdatePayload(
                 type = AfternoteType.MEMORIAL,
                 title = "추억 노트",
-                memorial = MemorialWritePayload(memorialPhotoUrl = null, songs = emptyList(), memorialVideo = null),
+                memorial =
+                    MemorialWritePayload(
+                        memorialPhotoUrl = null,
+                        songs = emptyList(),
+                        memorialVideo = null,
+                        memorialAudioUrl = null,
+                    ),
             ).toRequest()
 
         val encoded = json.encodeToJsonElement(AfternoteUpdateRequestDto.serializer(), request).jsonObject
@@ -138,6 +150,7 @@ class AfternoteResponseDtoContractTest {
                         memorialPhotoUrl = null,
                         songs = listOf(MemorialSongPayload(title = "곡", artist = "가수", coverUrl = null)),
                         memorialVideo = null,
+                        memorialAudioUrl = null,
                     ),
             ).toRequest()
 

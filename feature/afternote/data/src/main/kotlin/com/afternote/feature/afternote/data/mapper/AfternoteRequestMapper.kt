@@ -88,6 +88,7 @@ fun MemorialWritePayload.toDto() =
         memorialPhotoUrl = memorialPhotoUrl,
         songs = songs.map { it.toDto() },
         memorialVideo = memorialVideo?.toDto(),
+        memorialAudioUrl = memorialAudioUrl,
     )
 
 fun MemorialSongPayload.toDto() =

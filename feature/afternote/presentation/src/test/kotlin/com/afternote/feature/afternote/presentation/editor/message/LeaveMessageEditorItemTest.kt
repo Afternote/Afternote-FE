@@ -162,6 +162,8 @@ class LeaveMessageEditorItemTest {
             removeMemorialPhoto = {},
             setMemorialVideo = {},
             removeMemorialVideo = {},
+            setMemorialAudio = {},
+            removeMemorialAudio = {},
             addReceiverIfAbsent = { _, _, _ -> },
             applyPrefill = {},
             setMemorialThumbnail = {},

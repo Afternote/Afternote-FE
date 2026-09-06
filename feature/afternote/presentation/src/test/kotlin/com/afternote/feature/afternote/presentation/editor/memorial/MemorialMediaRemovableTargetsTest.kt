@@ -19,6 +19,7 @@ class MemorialMediaRemovableTargetsTest {
         photoUrl: String? = null,
         selectedVideoUrl: String? = null,
         persistedVideoUrl: String? = null,
+        audioUrl: String? = null,
     ): EditorFormState =
         EditorFormState(
             typeForm =
@@ -29,6 +30,7 @@ class MemorialMediaRemovableTargetsTest {
                         EditableMemorialVideo
                             .fromPersisted(MemorialVideoAttachment.ofOrNull(persistedVideoUrl))
                             .let { video -> selectedVideoUrl?.let(video::withSelection) ?: video },
+                    audioUrl = audioUrl,
                 ),
         )
 
@@ -48,10 +50,15 @@ class MemorialMediaRemovableTargetsTest {
             memorialForm(selectedVideoUrl = "content://videos/new").removableMemorialMediaTargets(),
         )
         assertEquals(
-            setOf(MemorialMediaTarget.PHOTO, MemorialMediaTarget.VIDEO),
+            setOf(MemorialMediaTarget.AUDIO),
+            memorialForm(audioUrl = "content://audio/new").removableMemorialMediaTargets(),
+        )
+        assertEquals(
+            setOf(MemorialMediaTarget.PHOTO, MemorialMediaTarget.VIDEO, MemorialMediaTarget.AUDIO),
             memorialForm(
                 pickedPhotoUri = "content://photos/new",
                 selectedVideoUrl = "content://videos/new",
+                audioUrl = "content://audio/new",
             ).removableMemorialMediaTargets(),
         )
     }
@@ -76,6 +83,16 @@ class MemorialMediaRemovableTargetsTest {
                 pickedPhotoUri = "content://photos/replacement",
                 photoUrl = "https://cdn.test/portrait.jpg",
             ).removableMemorialMediaTargets(),
+        )
+    }
+
+    @Test
+    fun `서버 음성은 삭제 대상이다 - 요청에 JSON null 이 실려 실제로 지워진다`() {
+        // 사진·영상과 갈리는 지점 (#1118). 음성 필드는 요청 DTO 에 기본값이 없어 폼이 비면
+        // 명시적 null 이 실리고, BE 가 그것을 삭제로 읽는다 — 거짓 삭제가 아니다.
+        assertEquals(
+            setOf(MemorialMediaTarget.AUDIO),
+            memorialForm(audioUrl = "https://cdn.test/last-words.m4a").removableMemorialMediaTargets(),
         )
     }
 

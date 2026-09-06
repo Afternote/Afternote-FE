@@ -49,9 +49,16 @@ class AfternotePlaylistRequestWireTest {
                     videoUrl = "https://cdn.test/afternotes/video.mp4",
                     thumbnailUrl = "https://cdn.test/afternotes/thumb.jpg",
                 ),
+            memorialAudioUrl = "https://cdn.test/afternotes/voice.m4a",
         )
 
-    private val emptied = MemorialWritePayload(memorialPhotoUrl = null, songs = emptyList(), memorialVideo = null)
+    private val emptied =
+        MemorialWritePayload(
+            memorialPhotoUrl = null,
+            songs = emptyList(),
+            memorialVideo = null,
+            memorialAudioUrl = null,
+        )
 
     /** 발행된 PLAYLIST PATCH 검증을 통과하도록 기존 곡을 함께 싣는 실제 서버 미디어 삭제 스냅샷. */
     private val deletedServerMedia =
@@ -59,6 +66,7 @@ class AfternotePlaylistRequestWireTest {
             memorialPhotoUrl = null,
             songs = listOf(MemorialSongPayload(title = "기존 곡", artist = "기존 가수", coverUrl = null)),
             memorialVideo = null,
+            memorialAudioUrl = null,
         )
 
     @Test
@@ -75,6 +83,15 @@ class AfternotePlaylistRequestWireTest {
 
         assertTrue("memorialVideo" in playlist)
         assertEquals(JsonNull, playlist.getValue("memorialVideo"))
+    }
+
+    @Test
+    fun `추모 음성이 비면 키를 남긴 채 null 이 실려 삭제로 나간다`() {
+        // 음성도 사진·영상과 같은 규칙으로 편입됐다 (#1118). DTO 에 기본값이 없어 키가 늘 실린다.
+        val playlist = playlistOf(emptied)
+
+        assertTrue("memorialAudioUrl" in playlist)
+        assertEquals(JsonNull, playlist.getValue("memorialAudioUrl"))
     }
 
     @Test
@@ -109,7 +126,7 @@ class AfternotePlaylistRequestWireTest {
     }
 
     /**
-     * 같은 바디 안에서 생략이 **여전히 살아 있음**을 함께 못박는다 — 위 세 건이 「값을 실었다」가
+     * 같은 바디 안에서 생략이 **여전히 살아 있음**을 함께 못박는다 — 위 네 건이 「값을 실었다」가
      * 아니라 「기본값을 뗐다」로 성립한다는 증거다. FE 가 그리지 않는 슬롯은 계속 빠져야 한다.
      */
     @Test
@@ -117,7 +134,6 @@ class AfternotePlaylistRequestWireTest {
         val playlist = playlistOf(emptied)
 
         assertFalse("atmosphere" in playlist)
-        assertFalse("memorialAudioUrl" in playlist)
     }
 
     @Test
@@ -138,6 +154,10 @@ class AfternotePlaylistRequestWireTest {
                 .single()
                 .jsonObject
         assertEquals("곡", song.getValue("title").jsonPrimitive.content)
+        assertEquals(
+            "https://cdn.test/afternotes/voice.m4a",
+            playlist.getValue("memorialAudioUrl").jsonPrimitive.content,
+        )
     }
 
     /** 추억 노트가 아닌 수정은 플레이리스트를 **말하지 않는다** — 키가 나가면 남의 미디어를 지운다. */

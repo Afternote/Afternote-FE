@@ -24,6 +24,8 @@ data class MemorialWritePayload(
     val memorialPhotoUrl: String?,
     val songs: List<MemorialSongPayload>,
     val memorialVideo: MemorialVideoPayload?,
+    /** 추모 음성 URL (#1118). 서버 `playlist.memorialAudioUrl` — 추억 노트당 1개, mp3·m4a·wav. */
+    val memorialAudioUrl: String?,
 )
 
 data class MemorialVideoPayload(

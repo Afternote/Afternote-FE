@@ -62,6 +62,17 @@ internal fun EditorFormState.withMemorialVideoRemoved(): EditorFormState = mapMe
 internal fun EditorFormState.withMemorialThumbnail(url: String): EditorFormState =
     mapMemorial { form -> form.copy(video = form.video.withSelectionThumbnail(url)) }
 
+/** 추모 음성 첨부·교체·삭제 (#1118). 영상과 달리 파생 값이 없어 필드 하나만 바뀐다. */
+internal fun EditorFormState.withMemorialAudio(url: String): EditorFormState = mapMemorial { it.copy(audioUrl = url) }
+
+/**
+ * 추모 음성을 걷는다 (#1118).
+ *
+ * 요청 DTO 의 `memorialAudioUrl` 에 기본값이 없어 폼이 비면 JSON null 이 그대로 실리고 BE 가
+ * 그것을 삭제로 읽는다. 사진·영상과 달리 로컬 선택 칸이 따로 없어 한 칸만 비우면 된다.
+ */
+internal fun EditorFormState.withMemorialAudioRemoved(): EditorFormState = mapMemorial { it.copy(audioUrl = null) }
+
 internal fun EditorFormState.withMemorialPlaylistSongs(songs: List<Song>): EditorFormState = mapMemorial { it.copy(playlistSongs = songs) }
 
 /**

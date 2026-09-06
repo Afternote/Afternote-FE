@@ -41,6 +41,8 @@ internal fun AfternoteEditorNavigation(
             removeMemorialPhoto = editViewModel::removeMemorialPhoto,
             setMemorialVideo = editViewModel::setMemorialVideo,
             removeMemorialVideo = editViewModel::removeMemorialVideo,
+            setMemorialAudio = editViewModel::setMemorialAudio,
+            removeMemorialAudio = editViewModel::removeMemorialAudio,
             addReceiverIfAbsent = editViewModel::addReceiverIfAbsent,
             applyPrefill = editViewModel::applyPrefill,
             setMemorialThumbnail = editViewModel::setMemorialThumbnail,

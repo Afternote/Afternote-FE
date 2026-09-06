@@ -18,6 +18,9 @@ internal enum class MemorialMediaTarget {
 
     /** 장례식에 남길 영상 — 갤러리 영상 선택 / 영상 촬영. */
     VIDEO,
+
+    /** 추모 음성 — 파일(SAF)에서 선택 / 즉석 녹음 (#1118). */
+    AUDIO,
 }
 
 /**
@@ -27,15 +30,20 @@ internal enum class MemorialMediaTarget {
  * 삭제 시도」로 구분한다(`PlaylistRequestDeserializer`, Afternote-BE `72fee63`). #1596이 폼의
  * `null` 을 요청에 명시적으로 싣기 때문에 서버 값도 거짓 삭제 없이 지울 수 있다.
  *
- * 삭제는 슬롯을 비운다 — 새 선택과 서버 원본을 함께 걷고, 저장 시 `null` 을 보낸다. 노출 판정은 출처가
- * 아니라 표시값이 있는지만
- * 본다 — 서버 원본인지 새 선택인지, URL 스킴도 이 단에서는 판정하지 않는다(#1406 이전에는 영상 한
- * 칸이 두 출처를 겸해 [isLocalContentUri]로 추론했고, 로컬 영상으로 덮는 순간 서버 원본을 잃었다).
+ * 삭제는 슬롯을 비운다. 새 선택과 서버 원본을 함께 걷고, 저장 시 `null` 을 보낸다. 노출 판정은
+ * 출처가 아니라 표시값이 있는지만 본다. 서버 원본인지 새 선택인지, URL 스킴도 이 단에서는 판정하지
+ * 않는다(#1406 이전에는 영상 한 칸이 두 출처를 겸해 [isLocalContentUri]로 추론했고, 로컬 영상으로
+ * 덮는 순간 서버 원본을 잃었다).
+ *
+ * 음성은 로컬 선택 칸이 따로 없어 표시값 한 칸이 곧 판정이다 (#1118). 요청 DTO 의
+ * `memorialAudioUrl` 에 기본값을 두지 않아 폼이 비면 JSON null 이 그대로 실리고, BE 가 그것을
+ * 삭제로 읽는다(`PlaylistRequestDeserializer` → `AfternotePlaylist.update`, Afternote-BE `72fee63`).
  */
 internal fun EditorFormState.removableMemorialMediaTargets(): Set<MemorialMediaTarget> =
     buildSet {
         if (!displayMemorialPhotoUri().isNullOrBlank()) add(MemorialMediaTarget.PHOTO)
         if (canRemoveMemorialVideo) add(MemorialMediaTarget.VIDEO)
+        if (!memorialAudioUrl.isNullOrBlank()) add(MemorialMediaTarget.AUDIO)
     }
 
 /**
@@ -63,19 +71,35 @@ internal fun MemorialMediaSourceBottomSheet(
         when (target) {
             MemorialMediaTarget.PHOTO -> stringResource(R.string.afternote_editor_media_source_take_photo)
             MemorialMediaTarget.VIDEO -> stringResource(R.string.afternote_editor_media_source_take_video)
+            MemorialMediaTarget.AUDIO -> stringResource(R.string.afternote_editor_media_source_record_audio)
         }
     val removeLabel =
         when (target) {
             MemorialMediaTarget.PHOTO -> stringResource(R.string.afternote_editor_media_source_remove_photo)
             MemorialMediaTarget.VIDEO -> stringResource(R.string.afternote_editor_media_source_remove_video)
+            MemorialMediaTarget.AUDIO -> stringResource(R.string.afternote_editor_media_source_remove_audio)
         }
 
     MediaSelectSheetContent(
         items =
             listOfNotNull(
                 MediaSheetItem(
-                    iconRes = CoreUiR.drawable.core_ui_ic_image,
-                    label = stringResource(R.string.afternote_editor_media_source_gallery),
+                    // 음성은 갤러리(사진 선택기)의 대상이 아니라 문서 선택기로 고른다 — 아이콘·문구도 그에 맞춘다.
+                    iconRes =
+                        when (target) {
+                            MemorialMediaTarget.PHOTO, MemorialMediaTarget.VIDEO -> CoreUiR.drawable.core_ui_ic_image
+                            MemorialMediaTarget.AUDIO -> CoreUiR.drawable.core_ui_ic_file
+                        },
+                    label =
+                        when (target) {
+                            MemorialMediaTarget.PHOTO, MemorialMediaTarget.VIDEO -> {
+                                stringResource(R.string.afternote_editor_media_source_gallery)
+                            }
+
+                            MemorialMediaTarget.AUDIO -> {
+                                stringResource(R.string.afternote_editor_media_source_pick_audio)
+                            }
+                        },
                     onClick = onPickFromGallery,
                 ),
                 MediaSheetItem(
@@ -83,6 +107,7 @@ internal fun MemorialMediaSourceBottomSheet(
                         when (target) {
                             MemorialMediaTarget.PHOTO -> R.drawable.afternote_ic_camera
                             MemorialMediaTarget.VIDEO -> R.drawable.afternote_ic_videocam
+                            MemorialMediaTarget.AUDIO -> CoreUiR.drawable.core_ui_ic_mic
                         },
                     label = captureLabel,
                     onClick = onCapture,

@@ -356,6 +356,8 @@ private fun AuthorEditorForUpdate(
             removeMemorialPhoto = viewModel::removeMemorialPhoto,
             setMemorialVideo = viewModel::setMemorialVideo,
             removeMemorialVideo = viewModel::removeMemorialVideo,
+            setMemorialAudio = viewModel::setMemorialAudio,
+            removeMemorialAudio = viewModel::removeMemorialAudio,
             addReceiverIfAbsent = viewModel::addReceiverIfAbsent,
             applyPrefill = viewModel::applyPrefill,
             setMemorialThumbnail = viewModel::setMemorialThumbnail,
@@ -523,6 +525,7 @@ private fun editorViewModel(
                                     when (kind) {
                                         MediaKind.VIDEO -> "https://cdn.test/video.mp4"
                                         MediaKind.PHOTO -> "https://cdn.test/photo.jpg"
+                                        MediaKind.AUDIO -> "https://cdn.test/audio.m4a"
                                     }
                                 }
 

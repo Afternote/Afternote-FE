@@ -102,6 +102,7 @@ internal fun buildOnRegisterClick(
                     memorialVideo = form.memorialVideo ?: EditableMemorialVideo.empty(),
                     memorialPhotoUrl = form.memorialPhotoUrl,
                     pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
+                    memorialAudioUrl = form.memorialAudioUrl,
                 ),
         )
     }

@@ -94,6 +94,7 @@ private fun AfternotePlaylistDto.toDomain() =
                 photoUrl = memorialPhotoUrl,
                 videoUrl = memorialVideo?.videoUrl,
                 thumbnailUrl = memorialVideo?.thumbnailUrl,
+                audioUrl = memorialAudioUrl,
             ),
     )
 

@@ -22,12 +22,14 @@ fun MemorialEditorContent(
     memorialVideoUrl: String?,
     // null = 썸네일 추출 전/실패. 기본값은 두지 않는다 — 호출자가 "없음"을 명시적으로 선언해야 한다.
     memorialThumbnailUrl: String?,
+    memorialAudioUrl: String?,
     editorMessages: List<LeaveMessageEditorItem>,
     // 섹션·콜백엔 기본값을 두지 않는다 — no-op 디폴트가 미배선을 은폐한 전례(#466·#777) 재발 방지.
     recipientSection: AfternoteEditorReceiverSection,
     onSongAddClick: () -> Unit,
     onPhotoAddClick: () -> Unit,
     onVideoAddClick: () -> Unit,
+    onAudioAddClick: () -> Unit,
     onMessageRegisterClick: (LeaveMessageEditorItem) -> Unit,
     onMessageDeleteClick: (LeaveMessageEditorItem) -> Unit,
     onMessageAddClick: () -> Unit,
@@ -72,6 +74,14 @@ fun MemorialEditorContent(
                 onThumbnailBytesReady = onThumbnailBytesReady,
                 onThumbnailExtractionFailed = onThumbnailExtractionFailed,
                 thumbnailRetryToken = thumbnailRetryToken,
+            )
+        },
+        // 음성은 영상 바로 뒤에 둔다 (#1118) — 시안이 없어 FE 확정이고, 둘 다 "남기고 가는 기록"이라
+        // 사진·플레이리스트보다 서로 가까운 것이 읽기 좋다.
+        audioContent = {
+            MemorialAudioUpload(
+                audioUrl = memorialAudioUrl,
+                onAddAudioClick = onAudioAddClick,
             )
         },
     )
