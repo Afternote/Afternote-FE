@@ -291,7 +291,6 @@ class ProductionVisibilityKonsistTest {
                 "build-logic/src/main/kotlin/BuildFingerprint.kt::function debugVersionNameSuffix [implicit-public]",
                 "build-logic/src/main/kotlin/BuildFingerprint.kt::function shortCommitSha [implicit-public]",
                 "build-logic/src/main/kotlin/BuildFingerprint.kt::property UNKNOWN_COMMIT_MARKER [implicit-public]",
-                "build-logic/src/main/kotlin/VersionCode.kt::property DEFAULT_AFTERNOTE_VERSION_CODE [implicit-public]",
                 "build-logic/src/main/kotlin/VersionCode.kt::property MAX_PLAY_VERSION_CODE [implicit-public]",
             )
 
@@ -407,6 +406,9 @@ class ProductionVisibilityKonsistTest {
                 "app/src/main/java/com/afternote/afternote_fe/notification/" +
                     "NotificationIntentContract.kt::class NotificationEntrySource [internal]" to
                     "NotificationEntryRequest.source의 내부 계약 타입",
+                "app/src/main/java/com/afternote/afternote_fe/update/" +
+                    "ForceUpdateGate.kt::class ForceUpdatePrompt [implicit-public]" to
+                    "ForceUpdateGate.prompt 가 노출하고 MainActivity 가 타입 추론으로 소비",
                 "core/ui/src/main/kotlin/com/afternote/core/ui/button/" +
                     "AfternoteRadioGroup.kt::function AfternoteRadioGroup [implicit-public]" to
                     "core:ui README에 문서화된 공용 컴포넌트",

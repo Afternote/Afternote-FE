@@ -6,6 +6,7 @@ import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import com.afternote.afternote_fe.messaging.FcmNotificationChannel
 import com.afternote.afternote_fe.messaging.PushTargetSynchronizer
+import com.afternote.afternote_fe.update.ForceUpdateGate
 import com.afternote.core.network.di.CoilImageLoaderEntryPoint
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.android.HiltAndroidApp
@@ -27,6 +28,14 @@ class GlobalApplication :
     @Inject
     lateinit var pushTargetSynchronizer: PushTargetSynchronizer
 
+    /**
+     * 강제 업데이트 관문 (#1539).
+     *
+     * [pushTargetSynchronizer] 와 같은 이유로 여기 있다 — 아래 [startForceUpdateCheck] 주석 참고.
+     */
+    @Inject
+    lateinit var forceUpdateGate: ForceUpdateGate
+
     /** Hilt 가 만든 [ImageLoader] 를 Coil 앱 전역 싱글톤으로 등록 — 모든 AsyncImage 가 명시적 imageLoader 없이 이걸 사용. */
     override fun newImageLoader(context: PlatformContext): ImageLoader =
         EntryPointAccessors
@@ -37,6 +46,7 @@ class GlobalApplication :
         super.onCreate()
         FcmNotificationChannel.create(this)
         startPushTargetSync()
+        startForceUpdateCheck()
         // 그 밖의 기동 초기화는 startup 패키지의 Initializer 에 둔다.
     }
 
@@ -55,6 +65,23 @@ class GlobalApplication :
     private fun startPushTargetSync() {
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             pushTargetSynchronizer.observeLogin()
+        }
+    }
+
+    /**
+     * 서버에 «이 버전을 아직 써도 되는가» 를 프로세스 기동마다 한 번 물어본다 (#1539).
+     *
+     * `androidx.startup` Initializer 가 아닌 이유는 [startPushTargetSync] 와 같다 —
+     * `InitializationProvider` 는 `Application.onCreate()` 이전에 도는 ContentProvider 라
+     * 그 시점의 Hilt 접근이 계기 테스트를 전멸시킨다.
+     *
+     * 화면 진입을 기다리게 하지 않는다. 결과가 오면 [ForceUpdateGate.prompt] 가 바뀌고
+     * [MainActivity] 가 그 위에 팝업을 얹을 뿐이라, 응답이 늦거나 영영 오지 않아도
+     * 사용자는 평소대로 앱을 쓴다.
+     */
+    private fun startForceUpdateCheck() {
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            forceUpdateGate.refresh()
         }
     }
 }
