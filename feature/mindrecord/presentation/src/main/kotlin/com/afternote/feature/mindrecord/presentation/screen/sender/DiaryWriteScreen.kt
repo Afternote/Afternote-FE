@@ -47,6 +47,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.R
 import com.afternote.core.ui.asString
+import com.afternote.core.ui.calendar.BottomSheetCalendar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
@@ -71,6 +72,7 @@ fun DiaryWriteScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showReceiverSheet by remember { mutableStateOf(false) }
+    var showDateSheet by remember { mutableStateOf(false) }
     val currentOnSubmitSuccess by rememberUpdatedState(onSubmitSuccess)
 
     LaunchedEffect(uiState.submitState) {
@@ -91,6 +93,7 @@ fun DiaryWriteScreen(
         onContentChanged = viewModel::onContentChanged,
         onMoodSelected = viewModel::onMoodSelected,
         onReceiverRowClick = { showReceiverSheet = true },
+        onDateRowClick = { showDateSheet = true },
         onMediaPicked = viewModel::uploadMedia,
     )
 
@@ -104,6 +107,20 @@ fun DiaryWriteScreen(
             onRetry = viewModel::loadReceivers,
             onToggle = viewModel::onReceiverToggled,
             onDismiss = { showReceiverSheet = false },
+        )
+    }
+
+    if (showDateSheet) {
+        BottomSheetCalendar(
+            title = stringResource(MindRecordR.string.mindrecord_write_date_picker_title),
+            initialDate = uiState.date,
+            // 미래 날짜는 서버가 400(code 2101)으로 거절한다. 시트는 core:ui 공용이라
+            // 달력에서 막지 못하므로 ViewModel 이 받아서 사유와 함께 되돌린다 (#1008).
+            onDateSelect = {
+                viewModel.onDateSelected(it)
+                showDateSheet = false
+            },
+            onDismiss = { showDateSheet = false },
         )
     }
 }
@@ -131,6 +148,7 @@ internal fun DiaryWriteScreenContent(
     onContentChanged: (String) -> Unit,
     onMoodSelected: (TodayMood) -> Unit,
     onReceiverRowClick: () -> Unit,
+    onDateRowClick: () -> Unit,
     onMediaPicked: suspend (String) -> String? = { null },
 ) {
     Scaffold(
@@ -243,15 +261,15 @@ internal fun DiaryWriteScreenContent(
             }
 
             // Figma 2671:17922 — 날짜 선택 행 ("yyyy년 M월 d일" + 아래 화살표)
-            // **표시 전용이다.** 서버는 생성·수정 어느 쪽에서도 date 를 받지 않고 기록 날짜를
-            // 요청 시각으로 정한다 (실측 2026-08-25: POST·PATCH 에 date 를 실어도 저장분은
-            // 오늘, Swagger 스키마에도 필드가 없다). 고를 수 있게 두면 사용자는 고른 날짜로
-            // 남았다고 믿는데 실제로는 오늘로 저장된다 — 고르지 못하게 해 거짓을 없앤다 (#1008).
             //
-            // BE 가 date 를 수용하면 이 자리에 피커를 되돌린다. 이어쓰기 프리필이 채워 주는
-            // 원래 날짜를 보여 주는 역할은 그대로다.
+            // 서버가 2026-08-29 부터 생성·수정 양쪽에서 `date` 를 받는다 (Afternote-BE#244, PR #262).
+            // 그 전까지는 고른 날짜가 요청에 실리지 않아 «고를 수 있지만 반영되지 않는» 상태였고,
+            // #1121 이 그 동안 이 행을 표시 전용으로 잠가 뒀다. 계약이 왔으므로 시안대로 되돌린다 (#1008).
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable(role = Role.Button, onClick = onDateRowClick),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -259,6 +277,12 @@ internal fun DiaryWriteScreenContent(
                     text = uiState.date.format(WriteDateFormatter),
                     style = AfternoteDesign.typography.captionLargeR,
                     color = AfternoteDesign.colors.gray9,
+                )
+                Icon(
+                    painter = painterResource(R.drawable.core_ui_arrowdown),
+                    contentDescription = null,
+                    tint = AfternoteDesign.colors.gray9,
+                    modifier = Modifier.size(16.dp),
                 )
             }
 
@@ -330,6 +354,7 @@ internal fun DiaryWriteScreenContent(
 
             val errorMessage =
                 (uiState.submitState as? SubmitState.Failed)?.message?.asString()
+                    ?: uiState.dateError?.asString()
                     ?: uiState.draftLoadError?.asString()
             if (errorMessage != null) {
                 Text(
