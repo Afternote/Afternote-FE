@@ -65,6 +65,10 @@ interface SettingNavActions {
 
     fun onNoticeBack()
 
+    fun onNavigateToCustomerCenter()
+
+    fun onCustomerCenterBack()
+
     fun onNavigateToFaq()
 
     fun onFaqBack()

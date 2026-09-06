@@ -1,5 +1,10 @@
 package com.afternote.afternote_fe
 
+import android.app.Activity
+import android.app.Instrumentation
+import android.content.ClipboardManager
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.setContent
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.semantics.Role
@@ -22,7 +27,11 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.testing.TestNavHostController
 import androidx.navigation.toRoute
+import androidx.test.espresso.intent.Intents
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasData
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.afternote.afternote_fe.navigation.AppNavigation
 import com.afternote.afternote_fe.navigation.AppState
 import com.afternote.afternote_fe.test.FailureArtifactRule
@@ -31,6 +40,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
+import org.hamcrest.Matchers.allOf
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
@@ -146,6 +156,86 @@ class SettingImplementedCoverageAndroidTest {
     }
 
     @Test
+    fun actualSettingNavHost_customerCenterProfileShortcutAndMenuBothNavigateAndBack() {
+        waitForSettingHomeContent()
+        composeRule.onAllNodes(hasText("고객센터")).run {
+            assertCountEquals(2)
+            get(0).performClick()
+        }
+        waitForRoute<SettingRoute.CustomerCenterRoute>()
+        composeRule.onNodeWithText("고객센터").assertIsDisplayed()
+        composeRule
+            .onNodeWithContentDescription("뒤로가기")
+            .performClick()
+
+        waitForRoute<SettingRoute.SettingHomeRoute>()
+        waitForSettingHomeContent()
+        composeRule.onAllNodes(hasText("고객센터")).run {
+            assertCountEquals(2)
+            get(1).performScrollTo().performClick()
+        }
+        waitForRoute<SettingRoute.CustomerCenterRoute>()
+        composeRule
+            .onNodeWithContentDescription("뒤로가기")
+            .performClick()
+        waitForRoute<SettingRoute.SettingHomeRoute>()
+    }
+
+    @Test
+    fun actualCustomerCenterScreen_phoneClickFiresDialIntentAndEmailClickCopiesAddressWithSnackbar() {
+        waitForSettingHomeContent()
+        composeRule.onAllNodes(hasText("고객센터")).run {
+            assertCountEquals(2)
+            get(1).performScrollTo().performClick()
+        }
+        waitForRoute<SettingRoute.CustomerCenterRoute>()
+
+        Intents.init()
+        try {
+            Intents
+                .intending(hasAction(Intent.ACTION_DIAL))
+                .respondWith(Instrumentation.ActivityResult(Activity.RESULT_OK, null))
+            composeRule.onNodeWithText("전화 문의").performClick()
+            Intents.intended(
+                allOf(
+                    hasAction(Intent.ACTION_DIAL),
+                    hasData(Uri.parse("tel:15880000")),
+                ),
+            )
+        } finally {
+            Intents.release()
+        }
+
+        composeRule.onNodeWithText("이메일 문의").performClick()
+        composeRule.onNodeWithText("이메일 주소가 복사되었습니다.").assertIsDisplayed()
+
+        val clipboardManager =
+            InstrumentationRegistry
+                .getInstrumentation()
+                .targetContext
+                .getSystemService(ClipboardManager::class.java)
+        assertEquals(
+            "help@afternote.app",
+            clipboardManager.primaryClip
+                ?.getItemAt(0)
+                ?.text
+                .toString(),
+        )
+    }
+
+    @Test
+    fun actualCustomerCenterScreen_recipientInquiryIsDisabled() {
+        waitForSettingHomeContent()
+        composeRule.onAllNodes(hasText("고객센터")).run {
+            assertCountEquals(2)
+            get(1).performScrollTo().performClick()
+        }
+        waitForRoute<SettingRoute.CustomerCenterRoute>()
+
+        composeRule.onNodeWithText("유족·수신자 전용 문의").performScrollTo().assertIsNotEnabled()
+    }
+
+    @Test
     fun actualSettingNavHost_faqRowNavigatesToFaqScreenAndBackReturnsHome() {
         waitForSettingHomeContent()
         composeRule
@@ -164,6 +254,24 @@ class SettingImplementedCoverageAndroidTest {
             .onNodeWithContentDescription("뒤로가기")
             .performClick()
         waitForRoute<SettingRoute.SettingHomeRoute>()
+    }
+
+    @Test
+    fun actualCustomerCenterScreen_inquiryAndFaqMenusNavigateAndReturnToHub() {
+        waitForSettingHomeContent()
+        composeRule.onAllNodes(hasText("고객센터"))[0].performClick()
+        waitForRoute<SettingRoute.CustomerCenterRoute>()
+
+        composeRule.onNodeWithText("1:1 문의").performClick()
+        waitForRoute<SettingRoute.InquiryListRoute>()
+        composeRule.onNodeWithContentDescription("뒤로가기").performClick()
+        waitForRoute<SettingRoute.CustomerCenterRoute>()
+
+        composeRule.onNodeWithText("자주 묻는 질문").performScrollTo().performClick()
+        waitForRoute<SettingRoute.FaqRoute>()
+        composeRule.onNodeWithText("비밀번호를 잊어버렸어요.").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("뒤로가기").performClick()
+        waitForRoute<SettingRoute.CustomerCenterRoute>()
     }
 
     private fun openWithdrawGuide() {

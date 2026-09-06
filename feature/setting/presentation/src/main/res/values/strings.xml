@@ -54,6 +54,25 @@
     <string name="settings_support_terms">이용약관</string>
     <string name="settings_support_privacy">개인정보 취급방침</string>
     <string name="settings_support_service_info">애프터노트 서비스 안내</string>
+    <!-- 고객센터 -->
+    <string name="customer_center_title">고객센터</string>
+    <string name="customer_center_business_hours_label">상담 운영시간</string>
+    <string name="customer_center_business_hours">평일 10:00 - 18:00</string>
+    <string name="customer_center_business_hours_note">주말·공휴일 휴무 · 점심 시간: 12:00 - 13:00</string>
+    <string name="customer_center_inquiry_channel">문의 채널</string>
+    <string name="customer_center_phone_inquiry">전화 문의</string>
+    <string name="customer_center_phone_number">1588-0000</string>
+    <string name="customer_center_phone_uri" translatable="false">tel:15880000</string>
+    <string name="customer_center_one_to_one_inquiry">1:1 문의</string>
+    <string name="customer_center_one_to_one_description">24시간 접수 · 영업일 1일 내 답변</string>
+    <string name="customer_center_email_inquiry">이메일 문의</string>
+    <string name="customer_center_email_address">help@afternote.app</string>
+    <string name="setting_customer_center_phone_unavailable">전화 앱을 열 수 없어요. 이메일로 문의해 주세요.</string>
+    <string name="customer_center_email_copied">이메일 주소가 복사되었습니다.</string>
+    <string name="customer_center_recipient_section">유족·수신자 안내</string>
+    <string name="customer_center_recipient_inquiry">유족·수신자 전용 문의</string>
+    <string name="customer_center_faq">자주 묻는 질문</string>
+    <string name="customer_center_device_info_notice">기기 정보는 문의 시 자동 첨부됩니다.</string>
     <!-- 로그아웃 -->
     <string name="settings_logout">로그아웃</string>
     <string name="settings_logout_dialog_message">애프터노트를 로그아웃하시겠습니까?</string>

@@ -74,6 +74,7 @@ javax-inject = { group = "javax.inject", name = "javax.inject", version.ref = "j
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+androidx-espresso-intents = { group = "androidx.test.espresso", name = "espresso-intents", version.ref = "espressoCore" }
 androidx-test-core-ktx = { group = "androidx.test", name = "core-ktx", version.ref = "androidxTest" }
 androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "androidxTest" }
 androidx-test-orchestrator = { group = "androidx.test", name = "orchestrator", version.ref = "androidxTestOrchestrator" }

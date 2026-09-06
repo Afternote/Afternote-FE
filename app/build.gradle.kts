@@ -287,6 +287,7 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4.accessibility)
     androidTestImplementation(libs.androidx.test.core.ktx)
     androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.espresso.intents)
     androidTestImplementation(libs.androidx.navigation.testing)
     androidTestImplementation(libs.androidx.paging.runtime)
     androidTestImplementation(libs.hilt.android.testing)

@@ -1,7 +1,15 @@
 package com.afternote.feature.setting.presentation.navigation
 
+import android.content.ActivityNotFoundException
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
@@ -13,6 +21,7 @@ import com.afternote.core.ui.Route
 import com.afternote.feature.setting.presentation.component.PinSetupStep
 import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
 import com.afternote.feature.setting.presentation.screen.ConnectedAccountsScreen
+import com.afternote.feature.setting.presentation.screen.CustomerCenterScreen
 import com.afternote.feature.setting.presentation.screen.DeliveryConditionScreen
 import com.afternote.feature.setting.presentation.screen.FaqScreen
 import com.afternote.feature.setting.presentation.screen.InquiryDetailScreen
@@ -34,6 +43,7 @@ import com.afternote.feature.setting.presentation.screen.WithdrawGuideScreen
 import com.afternote.feature.setting.presentation.viewmodel.PassKeyViewModel
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverListViewModel
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
+import com.afternote.feature.setting.presentation.R as SettingR
 
 fun NavGraphBuilder.settingNavGraph(
     graphScopedParentEntry: () -> NavBackStackEntry,
@@ -56,7 +66,7 @@ fun NavGraphBuilder.settingNavGraph(
                 onPasskeyClick = actions::onNavigateToPasskey,
                 onAppLockClick = actions::onNavigateToAppLock,
                 onFaqClick = actions::onNavigateToFaq,
-                onInquiryClick = actions::onNavigateToInquiry,
+                onInquiryClick = actions::onNavigateToCustomerCenter,
                 onNoticeClick = actions::onNavigateToNotice,
                 onTermsClick = {},
                 onPrivacyClick = {},
@@ -192,6 +202,19 @@ fun NavGraphBuilder.settingNavGraph(
             )
         }
 
+        composable<SettingRoute.CustomerCenterRoute> {
+            val context = LocalContext.current
+            val phoneUri = stringResource(SettingR.string.customer_center_phone_uri)
+            val emailAddress = stringResource(SettingR.string.customer_center_email_address)
+            CustomerCenterScreen(
+                onBackClick = actions::onCustomerCenterBack,
+                onPhoneInquiryClick = { context.openDialer(phoneUri) },
+                onOneToOneInquiryClick = actions::onNavigateToInquiry,
+                onEmailInquiryClick = { context.copyToClipboard(emailAddress) },
+                onFaqClick = actions::onNavigateToFaq,
+            )
+        }
+
         composable<SettingRoute.FaqRoute> {
             FaqScreen(
                 onBackClick = actions::onFaqBack,
@@ -220,4 +243,17 @@ fun NavGraphBuilder.settingNavGraph(
             )
         }
     }
+}
+
+private fun Context.openDialer(phoneUri: String): Boolean =
+    try {
+        startActivity(Intent(Intent.ACTION_DIAL, Uri.parse(phoneUri)))
+        true
+    } catch (_: ActivityNotFoundException) {
+        false
+    }
+
+private fun Context.copyToClipboard(text: String) {
+    val clipboardManager = getSystemService(ClipboardManager::class.java)
+    clipboardManager.setPrimaryClip(ClipData.newPlainText("email", text))
 }
