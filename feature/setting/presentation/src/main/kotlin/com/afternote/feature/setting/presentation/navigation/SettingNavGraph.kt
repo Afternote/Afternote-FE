@@ -18,7 +18,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import com.afternote.core.ui.Route
-import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.PinSetupStep
 import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
 import com.afternote.feature.setting.presentation.screen.ConnectedAccountsScreen
@@ -44,6 +43,7 @@ import com.afternote.feature.setting.presentation.screen.WithdrawGuideScreen
 import com.afternote.feature.setting.presentation.viewmodel.PassKeyViewModel
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverListViewModel
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
+import com.afternote.feature.setting.presentation.R as SettingR
 
 fun NavGraphBuilder.settingNavGraph(
     graphScopedParentEntry: () -> NavBackStackEntry,
@@ -204,8 +204,8 @@ fun NavGraphBuilder.settingNavGraph(
 
         composable<SettingRoute.CustomerCenterRoute> {
             val context = LocalContext.current
-            val phoneUri = stringResource(R.string.customer_center_phone_uri)
-            val emailAddress = stringResource(R.string.customer_center_email_address)
+            val phoneUri = stringResource(SettingR.string.customer_center_phone_uri)
+            val emailAddress = stringResource(SettingR.string.customer_center_email_address)
             CustomerCenterScreen(
                 onBackClick = actions::onCustomerCenterBack,
                 onPhoneInquiryClick = { context.openDialer(phoneUri) },
