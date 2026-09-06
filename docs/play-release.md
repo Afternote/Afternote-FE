@@ -41,7 +41,7 @@
 
 저장소 쪽은 자격이 필요 없는 부분까지 끝내 두었다. 아래 "자동화 사전 준비" 5번의 environment 와 보호 규칙, 변수는 서 있고 남은 것은 값이 있어야 넣는 secret 여섯 개뿐이다.
 
-첫 AAB 를 미리 만들어 두는 것은 안 된다. release keystore 가 있어야 하는데 그 자격은 배포 담당자만 갖고 있고(`local.properties` 의 `RELEASE_*` 네 키), 없으면 `:app:bundleRelease` 가 `checkReleaseSigningForRelease` 에서 멈춘다.
+Play에 처음 올릴 AAB에는 담당자가 보관한 upload key가 필요하다(`local.properties`의 `RELEASE_*` 네 키). 이 값이 없는 일반 로컬 빌드는 `checkReleaseSigningForRelease`에서 멈춘다. 다만 아래 [Release AAB Preflight](#release-aab-preflight)는 CI 전용 설정과 일회용 서명으로 release AAB를 검증하므로, Play 계정 설정이나 팀 keystore 인계를 기다리지 않고 실행할 수 있다. 이 검증용 AAB는 Play에 업로드하지 않는다.
 
 ### 앱이 생긴 뒤 다시 볼 것
 
@@ -49,6 +49,45 @@ Play Console의 **Test and release > App integrity** 에서 두 항목을 확인
 
 - Play App Signing 등록 상태
 - Automatic integrity protection 메뉴와 opt-in 제공 여부
+
+## Release AAB Preflight
+
+[`release-aab-preflight.yml`](../.github/workflows/release-aab-preflight.yml)의 **Build and verify release AAB** job은 R8 minify·resource shrinking을 적용한 release 빌드가 패키징되고 기동하는지 확인한다. Play·Firebase 자격이나 보호 environment를 사용하지 않으며 배포 단계도 없다.
+
+### 실행 조건과 확인 범위
+
+| 진입점 | 검사 대상 |
+|---|---|
+| PR | 같은 저장소의 `develop` → `main` PR. 다른 head 브랜치와 fork PR은 이 job을 건너뛴다. checkout은 PR merge ref다. |
+| 예약 | 매주 화·금 03:37 KST (`37 18 * * 1,4` UTC). 기본 브랜치(현재 `develop`)의 최신 commit을 검사한다. |
+| 수동 | **Actions → Release AAB Preflight → Run workflow**에서 선택한 ref |
+
+1. [`setup-ci-config`](../.github/actions/setup-ci-config/action.yml)가 실서비스 값이 없는 CI placeholder를 만들고, [`setup-ci-release-signing`](../.github/actions/setup-ci-release-signing/action.yml)이 한 번의 run에만 쓸 keystore와 CI 전용 서명 설정을 만든다. 팀 release keystore가 없어도 이 경로로 검증할 수 있다.
+2. [`run-release-aab-preflight.sh`](../.github/scripts/run-release-aab-preflight.sh)가 release AAB를 빌드하고, 필수 bundle 항목·JAR 서명·비어 있지 않은 R8 mapping과 manifest의 versionCode를 검증한다. Crashlytics mapping 업로드는 제외한다.
+3. 버전과 SHA-256이 고정된 bundletool로 universal APK를 생성하고, 다운로드 예상 크기와 APK 파일 크기를 계산한다.
+4. [`run-release-startup-smoke.sh`](../.github/scripts/run-release-startup-smoke.sh)가 그 APK를 다시 빌드하지 않고 Android 34 에뮬레이터에 `adb`로 설치·실행한다. 실행 뒤 20초 시점에 logcat의 `FATAL EXCEPTION`과 앱 프로세스 생존 여부를 검사한다.
+5. [`test-release-aab-negative-fixtures.sh`](../.github/scripts/test-release-aab-negative-fixtures.sh)가 잘못된 R8 규칙·빈 AAB·누락된 R8 mapping·누락된 bundle 항목·서명 변조의 음성 fixture를 거부하는지 확인한다.
+
+CI placeholder와 일회용 서명을 쓰므로, 이 검사는 실서비스 로그인·Play에서 설치한 앱의 업데이트·Play 보호 기능 검증을 대신하지 않는다. 실제 키를 쓰는 [로컬 AAB 검증](#aab-빌드와-로컬-검증)과 [첫 내부 테스트 릴리스](#첫-내부-테스트-릴리스)는 별도다.
+
+### 보고서와 실패 판단
+
+run summary의 **Release AAB preflight**에는 source SHA, AAB·서명 인증서·R8 mapping의 SHA-256과 크기가 나온다. **Release startup smoke: PASS/FAIL** 및 job의 최종 결과도 함께 확인한다. 크기 보고서는 기동 검사 전에 생성되므로 보고서가 있다는 것만으로 전체 통과는 아니다.
+
+성공한 run의 `release-aab-preflight-report` artifact에는 `release-aab-preflight.json`과 `release-aab-preflight.md`만 90일 보관한다. AAB·APK set·universal APK·R8 mapping·keystore는 artifact에 포함하지 않는다.
+
+| 보고서 항목 | 읽는 법 |
+|---|---|
+| `AAB archive` | AAB ZIP 파일 크기 |
+| `Estimated download (min/max)` | bundletool이 APK set에서 계산한 최소·최대 다운로드 예상 크기. 기기별 Play 실측값은 아니다. |
+| `Installable universal APK` | 생성한 universal APK 파일 크기. 설치 후 저장공간 사용량은 아니다. |
+| `Baseline`·`Change from baseline` | 직전 성공 preflight run의 공개 보고서와 비교한다. source SHA를 대조하며, 같은 브랜치나 특정 배포본만을 기준으로 고르는 것은 아니다. |
+| `⚠️`·`policy.meaningfulIncrease` | 어느 지표든 **5% 이상 또는 1 MiB(1,048,576 bytes) 이상 증가**하면 경고한다. 두 조건을 모두 충족할 필요는 없고, 이 경고 자체로 job이 실패하지 않는다. |
+| `baseline unavailable` | 이전 성공 run이나 보고서가 없어 비교를 수행하지 않았다. 크기 회귀가 없다는 뜻이 아니다. 현재 값으로 첫 기준을 남긴다. |
+
+크기 경고가 있으면 baseline/source SHA와 증가한 지표를 확인하고, 추가된 리소스·의존성·R8 설정으로 설명되는지 릴리스 PR에서 검토한다. baseline API 조회나 다운로드 자체가 실패하면 **Restore the previous public size report**에서 멈추므로, `baseline unavailable`과 구분한다.
+
+job이 실패하면 해당 step 로그를 먼저 확인한다. 서명·필수 항목·mapping 오류는 빌드/검증 단계, bundletool checksum·APK 생성 오류는 bundletool 단계, KVM·AVD 부팅·앱 크래시는 기동 단계에서 구분한다. 기동 실패는 summary에 진단이 있는 경우 함께 보고, 음성 fixture 실패는 검증기가 잘못된 산출물을 통과시킨 것인지 로그의 예상 실패 원인과 대조한다. 수정 후 preflight 전체를 다시 실행한다.
 
 ## 내부 테스트 트랙 자동 배포
 
@@ -63,14 +102,22 @@ Firebase App Distribution 경로([`release-distribution.yml`](../.github/workflo
 | 로컬·CI 검증·Firebase App Distribution | `1` (고정) | `build-logic/src/main/kotlin/VersionCode.kt`의 기본값 |
 | Play 내부 테스트 트랙 | `run_number * 100 + run_attempt` | [`resolve-play-version-code.mjs`](../.github/scripts/resolve-play-version-code.mjs) |
 
-- Play로 나가는 경로가 이 워크플로 하나뿐이라 `run_number`만으로 단조 증가가 보장된다. 재실행은 `run_attempt`가 올라가 같은 run에서도 값이 겹치지 않는다.
+- 워크플로는 `run_number`와 `run_attempt`로 후보 versionCode를 만든다. 같은 run의 재실행은 `run_attempt`가 올라가지만, 오래된 run을 재실행하거나 Console에서 더 큰 값을 올렸다면 Play 최댓값 비교에서 거부될 수 있다.
 - 업로드 **전에** Play가 알고 있는 최대 versionCode(업로드된 bundle + 모든 트랙의 release)를 조회해, 산출값이 그보다 크지 않으면 빌드 전에 멈춘다.
-- 같은 versionCode 재업로드는 bundle 목록 대조로 업로드 전에 막고, Play가 돌려준 versionCode가 빌드한 값과 다르면 트랙을 건드리지 않는다.
+- 빌드가 끝난 뒤에도 업로드 직전의 새 edit에서 bundle과 모든 트랙의 최댓값을 다시 조회한다. 후보가 그보다 크지 않으면 업로드하지 않는다. Play가 업로드 응답으로 돌려준 versionCode가 기대값과 달라도 트랙을 건드리지 않는다.
+- AAB 검증 단계는 pinned bundletool로 manifest의 실제 versionCode를 읽어 `AFTERNOTE_VERSION_CODE`와 대조한다. 워크플로는 resolver의 값을 빌드와 검증 모두에 전달하므로, 환경변수 주입이 빠진 AAB도 게시 전에 거부한다.
 - `app/build.gradle.kts`의 versionCode를 손으로 올리지 않는다. 로컬에서 Play용 값이 필요하면 `AFTERNOTE_VERSION_CODE` 환경변수로 주입한다.
 
 ### 자동화 사전 준비
 
-워크플로가 참조하는 설정은 전부 사람이 웹 UI에서 만들어야 한다. 하나라도 비어 있으면 첫 스텝이 누락된 이름을 출력하고 빌드 전에 실패한다.
+워크플로가 참조하는 설정은 사람이 웹 UI에서 준비한다. 누락 검사는 아래 두 단계로 나뉘며, 모두 빌드 전에 값 대신 누락된 이름만 출력하고 실패한다. 첫 검사의 통과만으로 서명·앱 설정이 준비됐다는 뜻은 아니다.
+
+| 검사 단계 | 누락을 확인하는 값 |
+|---|---|
+| `Verify Play publishing configuration is set` | `GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_PLAY_SERVICE_ACCOUNT`, `PLAY_PACKAGE_NAME` |
+| `Set up release build configuration` → [`setup-release-config`](../.github/actions/setup-release-config/action.yml)의 `Verify required secrets are set` | `RELEASE_STORE_FILE_B64`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD`와 앱 설정 `KAKAO_NATIVE_APP_KEY`, `GOOGLE_WEB_CLIENT_ID`, `GOOGLE_SERVICES_JSON_B64` |
+
+두 번째 검사는 JDK·Gradle 설정 뒤에 실행된다. 값이 비어 있지 않은지 보는 검사이므로, 실제 Play 접근 권한이나 서명 파일의 유효성은 뒤의 인증·API 조회·빌드·AAB 검증에서 확인한다.
 
 **1. Play Console — 앱 등록** (`play.google.com/console`)
 
@@ -137,21 +184,32 @@ environment 와 보호 규칙, 변수는 2026-09-06 에 만들어 두었다. 남
 
 워크플로가 하는 일:
 
-1. `main`이 아니면 거부하고, 필요한 secret·variable이 비면 이름을 출력하고 멈춘다.
-2. WIF로 조회용 단기 토큰을 받아 Play의 현재 최대 versionCode를 읽는다(edit는 commit 없이 되돌린다).
-3. 단조 증가 versionCode를 확정한다. 중복이면 여기서 끝난다 — AAB를 만들지 않는다.
-4. 확정된 versionCode로 signed AAB를 빌드하고, 서명·필수 항목·R8 mapping을 검증한다.
-5. AAB에 SLSA provenance를 붙이고 이 워크플로·이 commit으로 검증한다.
-6. 업로드 직전에 토큰을 새로 받고 digest를 다시 확인한 뒤, edit 생성 → bundle 업로드 → internal 트랙 갱신 → commit 순으로 게시한다.
-7. run summary에 track·versionCode·source SHA·AAB digest·attestation·Play edit id를 남긴다.
+1. `main`이 아니면 거부한다. Play 연결값 3개를 먼저 검사하고, JDK·Gradle 설정 뒤 `setup-release-config`에서 서명값 4개와 앱 설정 3개를 검사·복원한다.
+2. WIF로 조회용 단기 토큰을 받아 Play의 현재 최대 versionCode를 읽는다. 조회 edit는 commit하지 않고 삭제를 시도한다.
+3. 단조 증가 versionCode를 확정한다. 현재 최댓값보다 크지 않으면 AAB를 만들기 전에 멈춘다.
+4. source commit에 연결된 PR 중 `main`에 병합된 가장 최근 PR의 본문을 읽어 Play 릴리스 노트를 만든다. 생성한 문구는 run summary에도 남긴다.
+5. 확정된 versionCode로 signed AAB를 빌드하고, 서명·필수 항목·R8 mapping·manifest의 실제 versionCode를 검증한다.
+6. AAB에 SLSA provenance를 붙이고 이 워크플로·이 commit으로 검증한다.
+7. 업로드 직전에 토큰을 새로 받고 digest를 다시 확인한다. 이어 새 edit에서 Play의 최신 versionCode 최댓값을 재검사한다. 통과하면 bundle 업로드 → internal 트랙 갱신 → commit 순으로 게시하며, 생성한 릴리스 노트를 함께 전달한다.
+8. run summary에 track·versionCode·source SHA·AAB digest·attestation·Play edit id를 남긴다.
+
+### Play 릴리스 노트
+
+[`play-internal-track.mjs`](../.github/scripts/play-internal-track.mjs)는 선택한 main PR **본문 전체**에서 `#N` 형식의 양의 이슈 번호를 추출한다. `## 포함 이슈` 섹션이나 `Closes` 문구로 범위를 제한하지 않으며, 본문 등장 순서를 유지하면서 각 번호의 첫 등장만 남겨 중복을 제거한다.
+
+Play의 **What's new**에는 `ko-KR` 한 언어로 내부 테스트 versionCode, source ref·짧은 SHA, 추출한 이슈 목록이 들어간다. 스크립트는 JavaScript 문자열 길이 기준 **최대 500 UTF-16 code units**로 제한하고, 초과하면 499 code units 뒤에 `…`를 붙인다. 이는 화면에서 보이는 글자 수와 다를 수 있다.
+
+연결된 main PR이 없거나 본문에 이슈 번호가 없으면 versionCode·source 정보만 남긴다. Play 경로는 `QA 포인트`를 읽거나 필수로 요구하지 않는다. Firebase 배포에서 요구하는 두 섹션은 [Firebase 릴리스 노트 규칙](release/distribution.md#배포-매-회)을 따른다.
 
 ### 실패 모드
 
 | 상황 | 어디서 멈추는가 |
 |---|---|
-| Play Console·서비스 계정 준비 전 | 첫 스텝. 누락된 secret·variable 이름을 출력한다 |
+| Play 연결값 3개 누락 | `Verify Play publishing configuration is set` |
+| 서명값 4개·앱 설정 3개 중 누락 | `Set up release build configuration`의 필수 secret 검사 |
 | `main` 이외의 ref | keystore를 풀기 전 |
-| versionCode 중복·역행 | 빌드 전 |
+| versionCode 중복·역행 | 빌드 전, 그리고 업로드 직전 새 edit에서 다시 검사 |
+| AAB manifest의 versionCode가 기대값과 다름 | AAB 검증 단계. Play 업로드 전 |
 | 잘못 서명된 AAB | `scripts/verify-play-release-bundle.sh` |
 | 권한 부족·API commit 실패 | 업로드 스텝. 미완료 edit를 삭제한 뒤 원인을 그대로 올린다 |
 
@@ -162,12 +220,12 @@ environment 와 보호 규칙, 변수는 2026-09-06 에 만들어 두었다. 남
 Play는 이미 게시된 versionCode를 되돌리지 않는다.
 
 1. Play Console **내부 테스트 → 출시 관리**에서 문제 릴리스를 중단(halt)한다.
-2. 수정본은 **더 큰 versionCode**로 다시 배포한다. 이 워크플로를 다시 실행하면 값이 자동으로 올라간다.
+2. 수정본은 **더 큰 versionCode**로 다시 배포한다. 새 run의 후보값도 Play 최댓값보다 커야 하며, 오래된 run 재실행은 거부될 수 있다.
 3. Firebase App Distribution은 별개 채널이라 영향을 받지 않는다. 테스터에게 급히 검증본을 줘야 하면 그쪽 경로를 쓴다.
 
 ## AAB 빌드와 로컬 검증
 
-루트에서 다음 명령을 실행한다.
+루트에서 담당자의 서명·앱 설정을 준비한 뒤 다음 명령을 실행한다. 팀 keystore가 없으면 위 [Release AAB Preflight](#release-aab-preflight)를 사용한다.
 
 ~~~bash
 ./scripts/verify-play-release-bundle.sh
@@ -176,14 +234,23 @@ Play는 이미 게시된 versionCode를 되돌리지 않는다.
 스크립트는 다음을 수행한다.
 
 1. :app:bundleRelease를 실행하되 로컬 검증 중 Crashlytics mapping 업로드는 제외한다.
-2. app-release.aab의 필수 bundle 항목과 JAR 서명을 `jarsigner -verify -strict`로 확인한다. 자가서명 또는 인증서 체인 미검증 경고(exit 4)만 허용한다. 같은 exit 4를 공유하는 서명 인증서 만료·유효 시작 전, TSA 만료, JDK에서 비활성화된 알고리즘은 진단 문구로 거부하고, 알 수 없는 새 exit 4 원인도 fail-closed한다. 서명 뒤 unsigned entry가 추가되면 exit 20으로 실패한다.
-3. R8 mapping 파일 존재 여부를 확인한다.
-4. AAB와 서명 인증서의 SHA-256을 출력한다.
+2. app-release.aab의 필수 bundle 항목과 비어 있지 않은 R8 mapping 파일이 있는지 확인한다.
+3. JAR 서명을 `jarsigner -verify -strict`로 확인한다. 자가서명 또는 인증서 체인 미검증 경고(exit 4)만 허용한다. 같은 exit 4를 공유하는 서명 인증서 만료·유효 시작 전, TSA 만료, JDK에서 비활성화된 알고리즘은 진단 문구로 거부하고, 알 수 없는 새 exit 4 원인도 fail-closed한다. 서명 뒤 unsigned entry가 추가되면 exit 20으로 실패한다.
+4. pinned bundletool `1.18.3`으로 AAB manifest의 실제 versionCode를 읽고 기대값과 대조한다. 기대값은 `AFTERNOTE_VERSION_CODE`이며, 미설정이면 `build-logic/src/main/kotlin/VersionCode.kt`의 기본값(현재 `1`)을 읽는다. 명시한 값이 비어 있거나 유효한 범위의 정수가 아니면 실패한다.
+5. AAB와 서명 인증서의 SHA-256을 출력한다.
+
+`BUNDLETOOL_JAR`가 지정돼 있으면 그 파일의 SHA-256이 고정된 값과 일치하는지 다시 확인해 사용한다. 지정되지 않았으면 임시 디렉터리에 같은 버전을 다운로드·검증하고 종료 시 정리한다. Java와 SHA-256 계산 도구가 필요하며, 자동 다운로드에는 `curl`과 네트워크도 필요하다.
 
 이미 bundleRelease를 실행한 뒤 산출물만 다시 확인하려면 다음을 사용한다.
 
 ~~~bash
 ./scripts/verify-play-release-bundle.sh --skip-build
+~~~
+
+Play용 versionCode를 주입해 만든 AAB는 `--skip-build`에서도 같은 기대값을 전달해야 한다. 예를 들어 `101`로 빌드했다면 다음과 같이 검사한다.
+
+~~~bash
+AFTERNOTE_VERSION_CODE=101 ./scripts/verify-play-release-bundle.sh --skip-build
 ~~~
 
 산출물:
