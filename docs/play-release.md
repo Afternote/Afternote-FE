@@ -39,7 +39,9 @@
 | 앱 등록 | 위 둘이 끝난 뒤 계정 소유자 또는 앱 생성 권한을 받은 사람 | 앱 이름·기본 언어·유형은 아래 사전 준비 1번 참고 |
 | 서비스 계정에 Play 권한 부여 | 계정 소유자 | 초대받은 FE 계정은 "사용자 및 권한" 과 API 액세스 경로가 열리지 않는다 |
 
-FE 쪽에서 계정과 무관하게 미리 할 수 있는 일도 지금은 없다. 첫 AAB 를 만들려면 release keystore 가 필요한데 그 자격은 배포 담당자만 갖고 있고(`local.properties` 의 `RELEASE_*` 네 키), 없으면 `:app:bundleRelease` 가 `checkReleaseSigningForRelease` 에서 멈춘다.
+저장소 쪽은 자격이 필요 없는 부분까지 끝내 두었다. 아래 "자동화 사전 준비" 5번의 environment 와 보호 규칙, 변수는 서 있고 남은 것은 값이 있어야 넣는 secret 여섯 개뿐이다.
+
+첫 AAB 를 미리 만들어 두는 것은 안 된다. release keystore 가 있어야 하는데 그 자격은 배포 담당자만 갖고 있고(`local.properties` 의 `RELEASE_*` 네 키), 없으면 `:app:bundleRelease` 가 `checkReleaseSigningForRelease` 에서 멈춘다.
 
 ### 앱이 생긴 뒤 다시 볼 것
 
@@ -101,7 +103,19 @@ Android Publisher API는 **Console에서 최소 한 번 수동 업로드된 앱*
 
 **5. GitHub — environment와 자격**
 
-**Settings → Environments → New environment**로 `play-internal`을 만든다.
+environment 와 보호 규칙, 변수는 2026-09-06 에 만들어 두었다. 남은 것은 secret 여섯 개이고, GitHub API 가 기존 값을 돌려주지 않으므로 `release-distribution` 에 같은 이름이 있어도 복사할 수 없다. 값을 쥔 사람이 직접 넣어야 한다.
+
+| 항목 | 상태 |
+|---|---|
+| environment `play-internal` | 생성됨 |
+| Required reviewers | `1hyok` |
+| Deployment branches | `main` 하나 |
+| `PLAY_PACKAGE_NAME` | `com.afternote.afternote_fe` 로 설정됨 |
+| secret 6종 | 미등록 |
+
+승인 규칙에 한 가지 주의가 있다. `prevent self review` 는 꺼져 있어서 워크플로를 실행한 사람이 자기 배포를 스스로 승인할 수 있다(`release-distribution` 도 같다). 승인을 남이 눌러 주는 관문으로 기대하지 말 것. 필요하면 승인자를 한 명 더 지정하거나 그 설정을 켠다.
+
+아래는 그 설정을 손으로 다시 만들거나 확인할 때의 원본이다. **Settings → Environments** 에서 본다.
 
 | 설정 | 위치 | 값 |
 |---|---|---|
@@ -119,7 +133,7 @@ Android Publisher API는 **Console에서 최소 한 번 수동 업로드된 앱*
 
 ### 실행
 
-**Actions → Release Play Internal Track → Run workflow**에서 브랜치 `main`을 선택해 실행한다. environment 승인자가 승인해야 job이 시작된다.
+**Actions → Release Play Internal Track → Run workflow**에서 브랜치 `main`을 선택해 실행한다. environment 승인자가 승인해야 job이 시작된다. 지금 승인자는 한 명이고 self review 가 막혀 있지 않으므로, 그 승인은 남의 확인이 아니라 실행자의 두 번째 확인이다.
 
 워크플로가 하는 일:
 
