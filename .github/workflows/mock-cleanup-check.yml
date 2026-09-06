@@ -1,11 +1,28 @@
 name: Mock Cleanup Check
 
+# main 에 들어가기 **전에** 막는다.
+#
+# #684 는 이 워크플로를 push(main) 으로 옮겼고, 그때 근거는 「이 레포의 main 은 PR 이 아니라
+# 직접 push 로 갱신되어 왔다」였다 — 당시엔 사실이었다. 그 전제가 낡았다. 최근 main 갱신은
+# 전부 PR 머지다 (#1778 · #1558 · #1273 · #1025 · #916). push 로만 두면 2026-08-23 처럼
+# 이미 main 이 그 커밋을 가진 뒤에 red 를 내는 사후 경보가 된다 (#1877).
+#
+# push(main) 은 남긴다 — 룰셋을 우회한 직접 push 가 들어오면 그때도 잡아야 한다.
+#
+# base 를 develop 으로 넓히는 것은 여전히 오답이다. develop 에는 진행 중 마커가 상주할 수
+# 있고, 그러면 전 PR 이 상시 red 가 된다 (#684).
 on:
+  pull_request:
+    branches: [main]
   push:
     branches: [main]
 
 permissions:
   contents: read
+
+concurrency:
+  group: mock-cleanup-check-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   mock-cleanup:
@@ -20,12 +37,13 @@ jobs:
 
       - name: Check for MOCK_CLEANUP markers
         run: |
+          # --exclude-dir 은 경로가 아니라 디렉터리 «이름» glob 을 받는다 (#684).
           MATCHES=$(grep -rn "MOCK_CLEANUP" --include="*.kt" \
             --exclude-dir="debug" \
             --exclude-dir="test" \
             --exclude-dir="androidTest" || true)
           if [ -n "$MATCHES" ]; then
-            echo "::warning::⚠️ MOCK_CLEANUP 마커가 발견되었습니다. 목업 코드가 프로덕션에 남아있을 수 있습니다:"
+            echo "::error::MOCK_CLEANUP 마커가 프로덕션 소스에 남아 있습니다. main 에 들어가기 전에 걷어내세요:"
             echo "$MATCHES"
             exit 1
           fi
