@@ -28,6 +28,7 @@ fun PushNotificationScreen(
         onNewsletterToggle = viewModel::onNewsletterToggle,
         onMindRecordToggle = viewModel::onMindRecordToggle,
         onAfternoteToggle = viewModel::onAfternoteToggle,
+        onRetry = viewModel::retryLoadPushSettings,
     )
 
     when (uiState.saveFailure) {

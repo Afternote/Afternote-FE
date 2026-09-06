@@ -9,9 +9,12 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.error.PushSettingFailure
 import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.ui.UiText
+import com.afternote.feature.setting.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,6 +48,7 @@ class PushNotificationViewModel
         // 이미 실패한 토글은 위에서 이전 값으로 롤백되어 화면에 "안 켜짐"으로 보이므로,
         // 조용히 사라지는 것은 재시도 "대상"뿐이다. 여러 실패를 동시에 재시도하는 요구가
         // 없어 의도적으로 단순화했다 (#558 리뷰 합의).
+        private var loadJob: Job? = null
         private var failedUpdate: PushSettingUpdate? = null
 
         init {
@@ -59,26 +63,35 @@ class PushNotificationViewModel
             _uiState.update { it.copy(isDeviceAlarmOn = deviceAlarmOn) }
         }
 
+        fun retryLoadPushSettings() {
+            loadPushSettings()
+        }
+
         private fun loadPushSettings() {
-            viewModelScope.launch {
-                Log.d(TAG, "loadPushSettings: start")
-                _uiState.update { it.copy(isLoading = true) }
-                runCatchingCancellable { userRepository.getMyPushSettings() }
-                    .onSuccess { setting ->
-                        Log.d(TAG, "loadPushSettings: success=$setting")
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                isNewsletterOn = setting.timeLetter,
-                                isMindRecordOn = setting.mindRecord,
-                                isAfternoteOn = setting.afterNote,
-                            )
+            if (loadJob?.isActive == true) return
+            loadJob =
+                viewModelScope.launch {
+                    Log.d(TAG, "loadPushSettings: start")
+                    _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+                    runCatchingCancellable { userRepository.getMyPushSettings() }
+                        .onSuccess { setting ->
+                            Log.d(TAG, "loadPushSettings: success=$setting")
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    errorMessage = null,
+                                    isNewsletterOn = setting.timeLetter,
+                                    isMindRecordOn = setting.mindRecord,
+                                    isAfternoteOn = setting.afterNote,
+                                )
+                            }
+                        }.onFailure { e ->
+                            Log.e(TAG, "loadPushSettings: failed", e)
+                            _uiState.update {
+                                it.copy(isLoading = false, errorMessage = UiText.Resource(R.string.setting_push_load_error))
+                            }
                         }
-                    }.onFailure { e ->
-                        Log.e(TAG, "loadPushSettings: failed", e)
-                        _uiState.update { it.copy(isLoading = false) }
-                    }
-            }
+                }
         }
 
         private fun loadMarketingConsents() {

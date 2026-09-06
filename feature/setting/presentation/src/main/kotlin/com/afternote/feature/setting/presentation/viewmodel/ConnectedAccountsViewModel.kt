@@ -2,10 +2,13 @@ package com.afternote.feature.setting.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.user.UserConnectedAccount
+import com.afternote.core.ui.UiText
 import com.afternote.feature.setting.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,20 +28,36 @@ class ConnectedAccountsViewModel
 
         private val _events = Channel<ConnectedAccountsEvent>(Channel.BUFFERED)
         val events = _events.receiveAsFlow()
+        private var loadJob: Job? = null
+        private var mutationJob: Job? = null
 
         init {
             loadConnectedAccounts()
         }
 
+        fun retryLoadConnectedAccounts() {
+            loadConnectedAccounts()
+        }
+
         private fun loadConnectedAccounts() {
-            viewModelScope.launch {
-                runCatching { userRepository.getConnectedAccounts() }
-                    .onSuccess { accounts ->
-                        _uiState.update { it.copy(isLoading = false, accounts = accounts.toStateList()) }
-                    }.onFailure {
-                        _uiState.update { it.copy(isLoading = false, errorMessage = "계정 정보를 불러올 수 없습니다.") }
-                    }
-            }
+            if (loadJob?.isActive == true) return
+            loadJob =
+                viewModelScope.launch {
+                    _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+                    runCatchingCancellable { userRepository.getConnectedAccounts() }
+                        .onSuccess { accounts ->
+                            _uiState.update {
+                                it.copy(isLoading = false, accounts = accounts.toStateList(), errorMessage = null)
+                            }
+                        }.onFailure {
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    errorMessage = UiText.Resource(R.string.setting_connected_accounts_load_error),
+                                )
+                            }
+                        }
+                }
         }
 
         fun onToggle(
@@ -60,19 +79,23 @@ class ConnectedAccountsViewModel
             provider: String,
             accessToken: String,
         ) {
-            viewModelScope.launch {
-                runCatching { userRepository.linkConnectedAccount(provider, accessToken) }
-                    .onSuccess { accounts -> _uiState.update { it.copy(accounts = accounts.toStateList()) } }
-                    .onFailure { _uiState.update { it.copy(errorMessage = "계정 연결에 실패했습니다.") } }
-            }
+            if (mutationJob?.isActive == true) return
+            mutationJob =
+                viewModelScope.launch {
+                    runCatchingCancellable { userRepository.linkConnectedAccount(provider, accessToken) }
+                        .onSuccess { accounts -> _uiState.update { it.copy(accounts = accounts.toStateList()) } }
+                        .onFailure { _events.send(ConnectedAccountsEvent.ShowError("계정 연결에 실패했습니다.")) }
+                }
         }
 
         private fun unlink(provider: String) {
-            viewModelScope.launch {
-                runCatching { userRepository.unlinkConnectedAccount(provider) }
-                    .onSuccess { accounts -> _uiState.update { it.copy(accounts = accounts.toStateList()) } }
-                    .onFailure { _uiState.update { it.copy(errorMessage = "계정 연결 해제에 실패했습니다.") } }
-            }
+            if (mutationJob?.isActive == true) return
+            mutationJob =
+                viewModelScope.launch {
+                    runCatchingCancellable { userRepository.unlinkConnectedAccount(provider) }
+                        .onSuccess { accounts -> _uiState.update { it.copy(accounts = accounts.toStateList()) } }
+                        .onFailure { _events.send(ConnectedAccountsEvent.ShowError("계정 연결 해제에 실패했습니다.")) }
+                }
         }
 
         private fun UserConnectedAccount.toStateList(): List<SocialAccountState> =

@@ -33,6 +33,7 @@ private fun ConnectedAccountsScreenScreenshotContent() {
             snackbarHostState = remember { SnackbarHostState() },
             onBack = {},
             onToggle = { _, _ -> },
+            onRetry = {},
         )
     }
 }
