@@ -28,33 +28,52 @@ class ConnectedAccountsViewModel
 
         private val _events = Channel<ConnectedAccountsEvent>(Channel.BUFFERED)
         val events = _events.receiveAsFlow()
+
+        /** 진행 중인 조회 — 첫 진입 이후의 ON_RESUME 이 실행 중인 로드와 겹치면 건너뛰기 위한 가드. */
         private var loadJob: Job? = null
-        private var mutationJob: Job? = null
+        private var accountUpdateJob: Job? = null
+
+        /**
+         * 다음 [refreshOnReturn] 이 첫 ON_RESUME(진입 자체)인지. 첫 resume 은 init 로드와 같은
+         * 진입이므로 갱신하지 않는다 — VM 필드인 이유는 ReceiverHomeViewModel 의 refreshOnReturn 과
+         * 동일, 프로세스 사망 후 복원에서도 init 로드와 수명이 일치한다.
+         */
+        private var isFirstResume = true
 
         init {
             loadConnectedAccounts()
+        }
+
+        /** 다른 화면에서 복귀했을 때의 자동 갱신 (#701). 첫 진입은 건너뛰고, 로드가 겹치면 건너뛴다. */
+        fun refreshOnReturn() {
+            if (isFirstResume) {
+                isFirstResume = false
+                return
+            }
+            if (loadJob?.isActive == true || accountUpdateJob?.isActive == true) return
+            loadConnectedAccounts(keepsStateOnFailure = true)
         }
 
         fun retryLoadConnectedAccounts() {
             loadConnectedAccounts()
         }
 
-        private fun loadConnectedAccounts() {
-            if (loadJob?.isActive == true) return
+        private fun loadConnectedAccounts(keepsStateOnFailure: Boolean = false) {
+            if (loadJob?.isActive == true || accountUpdateJob?.isActive == true) return
             loadJob =
                 viewModelScope.launch {
-                    _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+                    if (!keepsStateOnFailure) _uiState.update { it.copy(isLoading = true, errorMessage = null) }
                     runCatchingCancellable { userRepository.getConnectedAccounts() }
                         .onSuccess { accounts ->
-                            _uiState.update {
-                                it.copy(isLoading = false, accounts = accounts.toStateList(), errorMessage = null)
-                            }
+                            _uiState.update { it.copy(isLoading = false, accounts = accounts.toStateList(), errorMessage = null) }
                         }.onFailure {
-                            _uiState.update {
-                                it.copy(
-                                    isLoading = false,
-                                    errorMessage = UiText.Resource(R.string.setting_connected_accounts_load_error),
-                                )
+                            if (!keepsStateOnFailure || _uiState.value.accounts.isEmpty()) {
+                                _uiState.update {
+                                    it.copy(
+                                        isLoading = false,
+                                        errorMessage = UiText.Resource(R.string.setting_connected_accounts_load_error),
+                                    )
+                                }
                             }
                         }
                 }
@@ -79,22 +98,32 @@ class ConnectedAccountsViewModel
             provider: String,
             accessToken: String,
         ) {
-            if (mutationJob?.isActive == true) return
-            mutationJob =
-                viewModelScope.launch {
-                    runCatchingCancellable { userRepository.linkConnectedAccount(provider, accessToken) }
-                        .onSuccess { accounts -> _uiState.update { it.copy(accounts = accounts.toStateList()) } }
-                        .onFailure { _events.send(ConnectedAccountsEvent.ShowError("계정 연결에 실패했습니다.")) }
-                }
+            updateConnectedAccounts(errorMessage = "계정 연결에 실패했습니다.") {
+                userRepository.linkConnectedAccount(provider, accessToken)
+            }
         }
 
         private fun unlink(provider: String) {
-            if (mutationJob?.isActive == true) return
-            mutationJob =
+            updateConnectedAccounts(errorMessage = "계정 연결 해제에 실패했습니다.") {
+                userRepository.unlinkConnectedAccount(provider)
+            }
+        }
+
+        private fun updateConnectedAccounts(
+            errorMessage: String,
+            update: suspend () -> UserConnectedAccount,
+        ) {
+            if (accountUpdateJob?.isActive == true) return
+            loadJob?.cancel()
+            accountUpdateJob =
                 viewModelScope.launch {
-                    runCatchingCancellable { userRepository.unlinkConnectedAccount(provider) }
-                        .onSuccess { accounts -> _uiState.update { it.copy(accounts = accounts.toStateList()) } }
-                        .onFailure { _events.send(ConnectedAccountsEvent.ShowError("계정 연결 해제에 실패했습니다.")) }
+                    runCatchingCancellable { update() }
+                        .onSuccess { accounts ->
+                            _uiState.update { it.copy(isLoading = false, accounts = accounts.toStateList(), errorMessage = null) }
+                        }.onFailure {
+                            _uiState.update { it.copy(isLoading = false) }
+                            _events.send(ConnectedAccountsEvent.ShowError(errorMessage))
+                        }
                 }
         }
 

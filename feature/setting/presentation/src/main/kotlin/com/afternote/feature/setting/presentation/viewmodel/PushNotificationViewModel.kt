@@ -48,13 +48,26 @@ class PushNotificationViewModel
         // 이미 실패한 토글은 위에서 이전 값으로 롤백되어 화면에 "안 켜짐"으로 보이므로,
         // 조용히 사라지는 것은 재시도 "대상"뿐이다. 여러 실패를 동시에 재시도하는 요구가
         // 없어 의도적으로 단순화했다 (#558 리뷰 합의).
-        private var loadJob: Job? = null
         private var failedUpdate: PushSettingUpdate? = null
+
+        private var loadJob: Job? = null
+        private var hasLoadedPushSettings = false
+        private var isFirstResume = true
 
         init {
             refreshDeviceAlarmStatus()
             loadPushSettings()
             loadMarketingConsents()
+        }
+
+        /** 최초 진입은 건너뛰고, 복귀 조회는 이미 표시된 설정을 유지한다. */
+        fun refreshOnReturn() {
+            refreshDeviceAlarmStatus()
+            if (isFirstResume) {
+                isFirstResume = false
+                return
+            }
+            loadPushSettings(keepsStateOnFailure = true)
         }
 
         fun refreshDeviceAlarmStatus() {
@@ -67,14 +80,16 @@ class PushNotificationViewModel
             loadPushSettings()
         }
 
-        private fun loadPushSettings() {
+        private fun loadPushSettings(keepsStateOnFailure: Boolean = false) {
             if (loadJob?.isActive == true) return
+            if (_uiState.value.run { isNewsletterUpdating || isMindRecordUpdating || isAfternoteUpdating }) return
             loadJob =
                 viewModelScope.launch {
                     Log.d(TAG, "loadPushSettings: start")
-                    _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+                    if (!keepsStateOnFailure) _uiState.update { it.copy(isLoading = true, errorMessage = null) }
                     runCatchingCancellable { userRepository.getMyPushSettings() }
                         .onSuccess { setting ->
+                            hasLoadedPushSettings = true
                             Log.d(TAG, "loadPushSettings: success=$setting")
                             _uiState.update {
                                 it.copy(
@@ -87,8 +102,10 @@ class PushNotificationViewModel
                             }
                         }.onFailure { e ->
                             Log.e(TAG, "loadPushSettings: failed", e)
-                            _uiState.update {
-                                it.copy(isLoading = false, errorMessage = UiText.Resource(R.string.setting_push_load_error))
+                            if (!keepsStateOnFailure || !hasLoadedPushSettings) {
+                                _uiState.update {
+                                    it.copy(isLoading = false, errorMessage = UiText.Resource(R.string.setting_push_load_error))
+                                }
                             }
                         }
                 }
@@ -178,9 +195,10 @@ class PushNotificationViewModel
 
         private fun updatePushSetting(update: PushSettingUpdate) {
             if (_uiState.value.isUpdating(update.setting)) return
+            loadJob?.cancel()
             val previousValue = _uiState.value.valueOf(update.setting)
             _uiState.update {
-                it.withValue(update.setting, update.on).withUpdating(update.setting, updating = true)
+                it.copy(isLoading = false).withValue(update.setting, update.on).withUpdating(update.setting, updating = true)
             }
             viewModelScope.launch {
                 runCatchingCancellable {
@@ -203,7 +221,7 @@ class PushNotificationViewModel
             }
         }
 
-        companion object {
+        private companion object {
             private const val TAG = "PushNotificationVM"
             private const val KEY_STAGE = "stage"
             private const val STAGE_SMS_CONSENT = "sms_consent_update"
