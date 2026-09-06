@@ -626,8 +626,12 @@ jobs:
               return 124
             fi
             set +e
+            # Cold D8 dex merging exceeded the default 2 GiB heap (#785).
+            # Keep the budget local to GMD and leave room for Kotlin and the emulator.
             timeout --signal=TERM --kill-after=30s "${remaining}s" \
               ./gradlew "$DEVICE_TASK" "${test_arguments[@]}" \
+              '-Dorg.gradle.jvmargs=-Xmx4096m -Dfile.encoding=UTF-8' \
+              --max-workers=2 \
               -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect \
               --console=plain \
               --stacktrace >> "$gradle_log" 2>&1
