@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteUiState
 import org.junit.Assert.assertEquals
@@ -53,5 +54,21 @@ class TimeLetterWriteScreenTest {
         composeRule.runOnIdle {
             assertEquals("existing title", titleState.text.toString())
         }
+    }
+
+    @Test
+    fun `voice recorder keeps audio file picker available`() {
+        composeRule.setContent {
+            AfternoteTheme {
+                TimeLetterWriteScreen(
+                    uiState = TimeLetterWriteUiState(showVoiceRecorder = true),
+                    titleState = TextFieldState(),
+                )
+            }
+        }
+
+        composeRule
+            .onNodeWithText("기기에서 음성 파일 선택")
+            .assertExists()
     }
 }

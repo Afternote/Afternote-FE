@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -44,6 +43,7 @@ import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
 import com.afternote.core.ui.button.CheckboxState
+import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
@@ -69,11 +69,11 @@ private const val DELETED_TOAST_DURATION_MS = 2_000L
 @Composable
 fun DraftListScreen(
     modifier: Modifier = Modifier,
-    onBackClick: () -> Unit = {},
+    onBackClick: () -> Unit,
     /** 일기 draft 탭 → 이어쓰기. (draftId, 해당 달 `yyyy-MM`) 전달. */
-    onDiaryDraftClick: (Long, String) -> Unit = { _, _ -> },
+    onDiaryDraftClick: (Long, String) -> Unit,
     /** 데일리질문 draft 탭 → 이어쓰기. 당일이 지난 draft 는 이 경로로만 열 수 있다 (#770). */
-    onDailyQuestionDraftClick: (Long) -> Unit = {},
+    onDailyQuestionDraftClick: (Long) -> Unit,
     viewModel: DraftListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -162,9 +162,7 @@ fun DraftListScreen(
         Box(modifier = Modifier.padding(paddingValues)) {
             when (val state = uiState) {
                 DraftListUiState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
+                    LoadingBody()
                 }
 
                 is DraftListUiState.Error -> {
@@ -314,7 +312,7 @@ private fun DraftRow(
     selectionMode: Boolean,
     selected: Boolean,
     onToggleSelect: () -> Unit,
-    onClick: () -> Unit = {},
+    onClick: () -> Unit,
 ) {
     Row(
         modifier =
@@ -446,6 +444,7 @@ private fun DraftRowPreview() {
                 selectionMode = true,
                 selected = true,
                 onToggleSelect = {},
+                onClick = {},
             )
             AfternoteButton(
                 text = "전체 삭제",

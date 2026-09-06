@@ -9,6 +9,7 @@ import com.afternote.core.model.FoundAccount
 import com.afternote.core.network.dto.EmailFindRequestDto
 import com.afternote.core.network.dto.FindSendCodeRequestDto
 import com.afternote.core.network.dto.PasswordChangeRequestDto
+import com.afternote.core.network.dto.PasswordFindRequestDto
 import com.afternote.core.network.dto.SendEmailCodeRequestDto
 import com.afternote.core.network.dto.SignUpRequestDto
 import com.afternote.core.network.dto.VerifyEmailRequestDto
@@ -67,6 +68,24 @@ internal class AccountRepositoryImpl
                 AuthMapper.toFoundAccount(response.requireData())
             }.mapAccountFailure()
 
+        override suspend fun resetPassword(
+            email: String,
+            certificateCode: String,
+            newPassword: String,
+            confirmPassword: String,
+        ): Result<Unit> =
+            runCatchingCancellable {
+                accountApiService
+                    .findPassword(
+                        PasswordFindRequestDto(
+                            email = email,
+                            certificateCode = certificateCode,
+                            newPassword = newPassword,
+                            confirmPassword = confirmPassword,
+                        ),
+                    ).requireStatus()
+            }.mapAccountFailure()
+
         override suspend fun signUp(
             email: String,
             password: String,
@@ -103,6 +122,8 @@ internal class AccountRepositoryImpl
 
 private const val CODE_INVALID_VERIFICATION = 1207
 private const val CODE_EMAIL_ALREADY_REGISTERED = 1200
+private const val CODE_NEW_PASSWORD_UNCHANGED = 1206
+private const val CODE_SOCIAL_LOGIN_USER = 1702
 
 /**
  * 계정 API 실패를 도메인 예외로 옮긴다 — presentation 이 `core:network` 를 모른 채 타입만으로
@@ -122,6 +143,14 @@ private fun <T> Result<T>.mapAccountFailure(): Result<T> =
 
                 CODE_EMAIL_ALREADY_REGISTERED -> {
                     Result.failure(CoreAuthFailure.EmailAlreadyRegistered(exception))
+                }
+
+                CODE_NEW_PASSWORD_UNCHANGED -> {
+                    Result.failure(CoreAuthFailure.PasswordUnchanged(exception))
+                }
+
+                CODE_SOCIAL_LOGIN_USER -> {
+                    Result.failure(CoreAuthFailure.SocialSignUpAccount(exception))
                 }
 
                 else -> {

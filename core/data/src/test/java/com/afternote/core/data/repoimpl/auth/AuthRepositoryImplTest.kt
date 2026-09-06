@@ -35,8 +35,9 @@ import kotlin.coroutines.cancellation.CancellationException
  * [AuthRepositoryImpl] 의 선제 reissue deadline 관리 계약 회귀 가드 (#408, PR #411 리뷰 반영).
  * 로그인 경로의 실패 매핑 계약(#628)도 함께 가드한다 — 전송 계층 IO 실패 →
  * [CoreAuthFailure.NetworkUnavailable], 자격 거절(1201·1202) → [CoreAuthFailure.InvalidLoginCredentials],
- * 소셜 거절(1208·1209) → [CoreAuthFailure.SocialLoginRejected], 그 밖의 서버 실패는 치환하지 않아
- * 소비처에서 일반 문구로 내려앉는다. 서버 `message` 는 판정에 쓰지 않는다(BE#92).
+ * 소셜 거절(1208·1209) → [CoreAuthFailure.SocialLoginRejected], 소셜 가입 계정(1702) →
+ * [CoreAuthFailure.SocialSignUpAccount], 그 밖의 서버 실패는 치환하지 않아 소비처에서 일반 문구로
+ * 내려앉는다. 서버 `message` 는 판정에 쓰지 않는다(BE#92).
  *
  * 계약 — 발급(로그인) 응답의 `expiresIn` 은 기록하고, 생략(null)이면 이전 토큰 기준 stale
  * deadline 이 새 세션에 적용되지 않게 비우며(`TokenReissuer` 회전 경로와 같은 규칙),
@@ -225,6 +226,29 @@ class AuthRepositoryImplTest {
 
         val exception = result.exceptionOrNull()
         assertTrue(exception is CoreAuthFailure.InvalidLoginCredentials)
+        assertTrue(exception?.cause is ApiException)
+    }
+
+    @Test
+    fun `defaultLogin - 소셜 가입 계정(1702)은 SocialSignUpAccount 로 치환 (자격 거절과 가름)`() {
+        val repository =
+            repository(
+                FakeAuthApiService(
+                    onLogin = {
+                        throw ApiException(
+                            status = 400,
+                            code = 1702,
+                            serverMessage = "소셜 로그인으로 가입한 계정입니다. 소셜 로그인을 이용해주세요.",
+                            fallbackMessage = "소셜 로그인으로 가입한 계정입니다. 소셜 로그인을 이용해주세요.",
+                        )
+                    },
+                ),
+            )
+
+        val result = runBlocking { repository.defaultLogin("social@example.com", "pw") }
+
+        val exception = result.exceptionOrNull()
+        assertTrue(exception is CoreAuthFailure.SocialSignUpAccount)
         assertTrue(exception?.cause is ApiException)
     }
 

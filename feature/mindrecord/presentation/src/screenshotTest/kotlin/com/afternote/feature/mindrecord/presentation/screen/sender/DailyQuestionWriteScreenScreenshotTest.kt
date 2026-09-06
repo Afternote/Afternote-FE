@@ -25,6 +25,12 @@ internal fun dailyQuestionWriteScreenScreenshot() {
             uiState = dailyQuestionWriteScreenshotState(),
             date = SCREENSHOT_DATE,
             modifier = Modifier.fillMaxSize(),
+            onAnswerChanged = {},
+            onBackClick = {},
+            onDraftListClick = {},
+            onRetryResumeDraft = {},
+            onSaveDraft = {},
+            onSubmit = {},
         )
     }
 }
@@ -38,6 +44,12 @@ internal fun dailyQuestionWriteScreenCompactScreenshot() {
             uiState = dailyQuestionWriteScreenshotState(),
             date = SCREENSHOT_DATE,
             modifier = Modifier.fillMaxSize(),
+            onAnswerChanged = {},
+            onBackClick = {},
+            onDraftListClick = {},
+            onRetryResumeDraft = {},
+            onSaveDraft = {},
+            onSubmit = {},
         )
     }
 }

@@ -1,5 +1,6 @@
 package com.afternote.feature.receiver.presentation.deliveryverification
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
@@ -9,6 +10,7 @@ import com.afternote.feature.afternote.presentation.reporting.shouldReportInRece
 import com.afternote.feature.receiver.domain.repository.IdentityVerificationRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import com.afternote.feature.receiver.presentation.R
+import com.afternote.feature.receiver.presentation.error.toReceiverErrorPopupOrNull
 import com.afternote.feature.receiver.presentation.error.toReceiverErrorUiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,24 +51,31 @@ class IdentityVerificationViewModel
         private val _uiState = MutableStateFlow(IdentityVerificationUiState())
         val uiState: StateFlow<IdentityVerificationUiState> = _uiState.asStateFlow()
 
+        /**
+         * 팝업의 "다시 시도하기" 가 되돌릴 마지막 시도 (#446). 인증번호 발송과 코드 검증 중 **어느
+         * 쪽이 실패했는지** 를 담는다 — 하나로 뭉뚱그리면 코드 검증이 서버 오류로 실패했을 때
+         * 재시도가 엉뚱하게 인증번호를 다시 보낸다.
+         */
+        private var pendingRetry: (() -> Unit)? = null
+
         fun onEmailChange(value: String) {
             _uiState.update {
                 it.copy(
                     email = value,
                     isEmailFormatValid = EMAIL_REGEX.matches(value.trim()),
-                    error = null,
+                    errorMessage = null,
                 )
             }
         }
 
         fun onCodeChange(value: String) {
-            _uiState.update { it.copy(code = value, error = null) }
+            _uiState.update { it.copy(code = value, errorMessage = null) }
         }
 
         fun requestVerificationCode() {
             val state = _uiState.value
             if (!state.isEmailFormatValid || state.isSendingCode) return
-            _uiState.update { it.copy(isSendingCode = true, error = null) }
+            _uiState.update { it.copy(isSendingCode = true, errorMessage = null) }
             viewModelScope.launch {
                 receiverAuthRepository
                     .sendEmailAuthCode(state.email.trim())
@@ -84,12 +93,8 @@ class IdentityVerificationViewModel
                                 throwable,
                             )
                         }
-                        _uiState.update {
-                            it.copy(
-                                isSendingCode = false,
-                                error = throwable.toReceiverErrorUiText(R.string.receiver_verify_code_send_failed),
-                            )
-                        }
+                        _uiState.update { it.copy(isSendingCode = false) }
+                        showFailure(throwable, R.string.receiver_verify_code_send_failed, ::requestVerificationCode)
                     }
             }
         }
@@ -97,7 +102,7 @@ class IdentityVerificationViewModel
         fun verifyAndProceed(senderId: String) {
             val state = _uiState.value
             if (!state.canSubmit) return
-            _uiState.update { it.copy(isVerifying = true, error = null) }
+            _uiState.update { it.copy(isVerifying = true, errorMessage = null) }
             viewModelScope.launch {
                 receiverAuthRepository
                     .verifyEmailAuthCode(email = state.email.trim(), authCode = state.code.trim())
@@ -111,18 +116,50 @@ class IdentityVerificationViewModel
                                 throwable,
                             )
                         }
-                        _uiState.update {
-                            it.copy(
-                                isVerifying = false,
-                                error = throwable.toReceiverErrorUiText(R.string.receiver_verify_code_verify_failed),
-                            )
+                        _uiState.update { it.copy(isVerifying = false) }
+                        showFailure(throwable, R.string.receiver_verify_code_verify_failed) {
+                            verifyAndProceed(senderId)
                         }
                     }
             }
         }
 
+        /** 팝업의 "다시 시도하기" — 팝업을 닫고 실패한 그 요청을 그대로 다시 보낸다 (#446). */
+        fun retryFailedRequest() {
+            val retry = pendingRetry
+            _uiState.update { it.copy(errorPopup = null) }
+            pendingRetry = null
+            retry?.invoke()
+        }
+
+        /** 팝업의 닫기 — 재시도 없이 입력 화면으로 돌아간다. */
+        fun onErrorPopupDismissed() {
+            _uiState.update { it.copy(errorPopup = null) }
+            pendingRetry = null
+        }
+
+        /**
+         * 실패를 팝업(서버 작업 실패)과 스낵바(서버가 준 거절 사유) 중 한쪽으로만 보낸다 — 둘 다
+         * 세우면 모달 뒤에서 스낵바가 혼자 떴다 사라진다.
+         */
+        private fun showFailure(
+            throwable: Throwable,
+            @StringRes fallbackRes: Int,
+            retry: () -> Unit,
+        ) {
+            val popup = throwable.toReceiverErrorPopupOrNull()
+            pendingRetry = if (popup == null) null else retry
+            _uiState.update {
+                if (popup == null) {
+                    it.copy(errorMessage = throwable.toReceiverErrorUiText(fallbackRes))
+                } else {
+                    it.copy(errorPopup = popup)
+                }
+            }
+        }
+
         fun consumeError() {
-            _uiState.update { it.copy(error = null) }
+            _uiState.update { it.copy(errorMessage = null) }
         }
 
         fun onVerifiedConsumed() {
