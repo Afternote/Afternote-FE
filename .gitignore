@@ -54,3 +54,6 @@ AGENTS.md
 .cursor/
 .artifacts/
 .mcp.json
+
+# Windows PowerShell cache
+Microsoft/Windows/PowerShell/ModuleAnalysisCache

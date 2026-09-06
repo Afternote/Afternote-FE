@@ -13,7 +13,6 @@ import com.afternote.feature.afternote.presentation.editor.processing.AfternoteP
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.editor.state.rememberAfternoteEditorState
-import com.afternote.feature.afternote.presentation.navigation.model.SELECTED_RECEIVER_ID_KEY
 
 /**
  * 작성자 에디터 화면: type-safe editor flow + 단방향 이벤트.
@@ -39,7 +38,9 @@ internal fun AfternoteEditorNavigation(
             setType = editViewModel::setType,
             setService = editViewModel::setService,
             setMemorialPhoto = editViewModel::setMemorialPhoto,
+            removeMemorialPhoto = editViewModel::removeMemorialPhoto,
             setMemorialVideo = editViewModel::setMemorialVideo,
+            removeMemorialVideo = editViewModel::removeMemorialVideo,
             addReceiverIfAbsent = editViewModel::addReceiverIfAbsent,
             applyPrefill = editViewModel::applyPrefill,
             setMemorialThumbnail = editViewModel::setMemorialThumbnail,
@@ -75,7 +76,6 @@ internal fun AfternoteEditorNavigation(
         tryApplyReceiverSelectionFromSavedState(
             backStackEntry,
             editViewModel,
-            state,
         )
     }
 
@@ -153,19 +153,25 @@ internal fun AfternoteEditorNavigation(
             errorEvent?.let(editViewModel::onErrorConsumed)
         },
         content = { snackbarHostState ->
-            AfternoteEditorBody(
-                state = state,
-                form = uiState.form,
-                onNavigateToMemorialPlaylist = onNavigateToMemorialPlaylist,
-                onNavigateToSelectReceiver = onNavigateToSelectReceiver,
-                onThumbnailBytesReady = editViewModel::uploadMemorialThumbnail,
-                onThumbnailExtractionFailed = editViewModel::onMemorialThumbnailExtractionFailed,
-                thumbnailRetryToken = uiState.memorialThumbnailRetryToken,
-                onCaptureFailed = editViewModel::onMemorialCaptureLaunchFailed,
-                snackbarHostState = snackbarHostState,
-                isPrefillLoading = uiState.isPrefillLoading,
-                isTypeSelectionEnabled = !editViewModel.isEditing,
-            )
+            // prefill 을 못 읽었으면 폼을 세우지 않는다 (#705) — 빈 폼으로 저장되면 서버가 기존 기록을
+            // 그 빈 값으로 덮는다. 이 갈래에서는 사유와 재시도만 노출하고 «등록» 도 함께 잠근다.
+            if (uiState.isPrefillFailed) {
+                EditorPrefillErrorBody(onRetry = editViewModel::retryPrefill)
+            } else {
+                AfternoteEditorBody(
+                    state = state,
+                    form = uiState.form,
+                    onNavigateToMemorialPlaylist = onNavigateToMemorialPlaylist,
+                    onNavigateToSelectReceiver = onNavigateToSelectReceiver,
+                    onThumbnailBytesReady = editViewModel::uploadMemorialThumbnail,
+                    onThumbnailExtractionFailed = editViewModel::onMemorialThumbnailExtractionFailed,
+                    thumbnailRetryToken = uiState.memorialThumbnailRetryToken,
+                    onCaptureFailed = editViewModel::onMemorialCaptureLaunchFailed,
+                    snackbarHostState = snackbarHostState,
+                    isPrefillLoading = uiState.isPrefillLoading,
+                    isTypeSelectionEnabled = !editViewModel.isEditing,
+                )
+            }
         },
         state = state,
         // body skeleton과 별개로, 추천 처리 방법 기본값이 들어오기 전 빈 폼을 이탈 기준선으로 잡지 않는다.
@@ -173,7 +179,16 @@ internal fun AfternoteEditorNavigation(
             shouldDeferEditorBaselineCapture(
                 isPrefillLoading = uiState.isPrefillLoading,
                 isProcessingMethodDefaultsInitializing = isProcessingMethodDefaultsInitializing.value,
+                isPrefillFailed = uiState.isPrefillFailed,
             ),
         snackbarMessageKey = errorEvent,
+        // 저장 왕복 중과 prefill 실패 중에는 «등록» 을 잠근다 (#705) — 진행 상태를 화면에 실어
+        // 유휴처럼 보이지 않게 하고, 읽지 못한 기록을 빈 폼으로 덮는 저장을 아예 시작하지 않는다.
+        isSubmitEnabled =
+            isEditorSubmitEnabled(
+                isSaving = uiState.isSaving,
+                isPrefillFailed = uiState.isPrefillFailed,
+                isPrefillLoading = uiState.isPrefillLoading,
+            ),
     )
 }

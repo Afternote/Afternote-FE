@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.presentation.detail
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
@@ -49,12 +47,14 @@ import coil3.compose.AsyncImage
 import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.modifierextention.FadingEdgeDirection
 import com.afternote.core.ui.modifierextention.horizontalFadingEdge
+import com.afternote.core.ui.popup.AfternoteActionMenu
+import com.afternote.core.ui.popup.editDeleteActionMenuItems
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
-import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
+import com.afternote.feature.afternote.presentation.shared.detail.MemorialVideoThumbnail
 import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
 import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
@@ -78,7 +78,7 @@ data class MemorialDetailContent(
 /**
  * 추억 노트 애프터노트 상세 화면 (Stateless).
  *
- * [com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailScreen] 과 동일한 Scaffold·TopBar·드롭다운 배치·스크롤 modifier 패턴을 따른다.
+ * [com.afternote.feature.afternote.presentation.detail.account.AccountDetailScreen] 과 동일한 Scaffold·TopBar·드롭다운 배치·스크롤 modifier 패턴을 따른다.
  */
 @Composable
 fun MemorialDetailScreen(
@@ -124,11 +124,14 @@ fun MemorialDetailScreen(
                                     modifier = Modifier.size(16.dp),
                                 )
                             }
-                            EditDropdownMenu(
+                            AfternoteActionMenu(
                                 expanded = state.showDropdownMenu,
                                 onDismissRequest = state::hideDropdownMenu,
-                                onDeleteClick = { state.showDeleteDialog() },
-                                onEditClick = onEditClick,
+                                items =
+                                    editDeleteActionMenuItems(
+                                        onEditClick = onEditClick,
+                                        onDeleteClick = { state.showDeleteDialog() },
+                                    ),
                             )
                         }
                     }
@@ -274,10 +277,13 @@ private fun PhotoCard(
 }
 
 /**
- * 장례식에 남길 영상 카드 — 피그마 node 4813:15198 기준.
+ * 장례식에 남길 영상 카드 — 정본 시안
+ * [node 4327:72859](https://www.figma.com/design/UP9ZR186jHvRBicjA2SOea/?node-id=4327-72859) 기준.
  *
- * InfoCard(AfternoteDesign.colors.gray2) 안에 제목 + 썸네일(dark gradient overlay + 재생 아이콘) 구조.
+ * InfoCard(AfternoteDesign.colors.gray2) 안에 제목 + 썸네일([MemorialVideoThumbnail]) 구조.
  * 영상 URL이 없으면 카드를 표시하지 않는다.
+ *
+ * 종전 KDoc 이 근거로 든 node 4813:15198 은 2026-08-23 파일 재편으로 사라져 조회되지 않는다 (#463).
  */
 @Composable
 private fun VideoCard(
@@ -304,64 +310,10 @@ private fun VideoCard(
                             color = AfternoteDesign.colors.gray9,
                         ),
                 )
-                VideoThumbnail(thumbnailUrl = thumbnailUrl)
+                MemorialVideoThumbnail(thumbnailUrl = thumbnailUrl)
             }
         },
     )
-}
-
-/**
- * 영상 썸네일 + 다크 그라데이션 오버레이 + 재생 아이콘.
- *
- * 피그마 기준: 높이 183dp, 16dp radius, gradient 0x99757575 → 0x99222222, 재생 아이콘 32dp 중앙.
- */
-@Composable
-private fun VideoThumbnail(thumbnailUrl: String?) {
-    Box(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(183.dp)
-                .clip(RoundedCornerShape(16.dp)),
-    ) {
-        // 썸네일 이미지
-        if (!thumbnailUrl.isNullOrBlank()) {
-            AsyncImage(
-                model = thumbnailUrl,
-                contentDescription =
-                    stringResource(R.string.afternote_content_description_memorial_video_thumbnail),
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-            )
-        }
-
-        // 다크 그라데이션 오버레이
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(
-                        brush =
-                            Brush.verticalGradient(
-                                colors =
-                                    listOf(
-                                        AfternoteDesign.colors.gray6.copy(alpha = 153f / 255f),
-                                        AfternoteDesign.colors.gray9.copy(alpha = 153f / 255f),
-                                    ),
-                            ),
-                    ),
-        )
-
-        // 재생 아이콘
-        Image(
-            painter = painterResource(R.drawable.afternote_ic_playback),
-            contentDescription = stringResource(R.string.afternote_content_description_video_play),
-            modifier =
-                Modifier
-                    .align(Alignment.Center)
-                    .size(32.dp),
-        )
-    }
 }
 
 /**

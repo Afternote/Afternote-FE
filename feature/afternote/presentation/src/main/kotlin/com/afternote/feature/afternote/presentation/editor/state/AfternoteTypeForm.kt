@@ -14,7 +14,7 @@ import com.afternote.feature.afternote.presentation.editor.processing.Processing
 sealed interface AfternoteTypeForm {
     val type: AfternoteType
 
-    /** 이탈 가드 지문에 실을 조각. 사용자가 이 카테고리에 실제로 넣은 값이 없으면 `null`. */
+    /** 이탈 가드 지문에 실을 조각. 수정 진입 기준선을 포함해 비교할 카테고리 상태가 없으면 `null`. */
     fun enteredContentOrNull(): String?
 
     sealed interface WithServiceAndProcessingMethods : AfternoteTypeForm {
@@ -77,7 +77,12 @@ sealed interface AfternoteTypeForm {
         }
     }
 
-    /** 카테고리 전용 필드. 영상의 서버 기준값·미저장 교체분은 [EditableMemorialVideo]가 감춘다. */
+    /**
+     * 카테고리 전용 필드. 영상의 서버 기준값·미저장 교체분은 [EditableMemorialVideo]가 감춘다.
+     *
+     * 시트의 삭제는 슬롯을 비운다 — 교체분과 서버 값을 함께. 비어 있는 서버 값은 저장 시 PATCH `null`
+     * 로 이어진다(#1597). 사진은 `pickedPhotoUri`·`photoUrl` 두 칸이 같은 규칙을 따른다.
+     */
     @ConsistentCopyVisibility
     data class Memorial internal constructor(
         val pickedPhotoUri: String? = null,
@@ -89,8 +94,12 @@ sealed interface AfternoteTypeForm {
 
         fun displayPhotoUri(): String? = pickedPhotoUri ?: photoUrl
 
+        /**
+         * 미디어는 수정 진입 기준선과 비교해야 서버 원본 삭제도 미저장 변경으로 잡힌다(#1597). 영상은
+         * [EditableMemorialVideo.withoutThumbnail]이 자동 파생 썸네일만 걷어낸다.
+         */
         override fun enteredContentOrNull(): String? =
-            copy(video = video.userEnteredPart())
+            copy(video = video.withoutThumbnail())
                 .takeUnless { it == PRISTINE }
                 ?.toString()
 

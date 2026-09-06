@@ -6,7 +6,7 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
-import com.afternote.feature.afternote.presentation.navigation.model.SELECTED_RECEIVER_ID_KEY
+import com.afternote.feature.afternote.presentation.navigation.model.SELECTED_RECEIVER_IDS_KEY
 
 // 에디터 조립부가 쓰는 순수 헬퍼들이다. Route 파일에는 조립만 남긴다 (#1514).
 
@@ -25,6 +25,14 @@ internal fun AfternoteEditorError.messageResId(): Int =
 
         AfternoteEditorError.ReceiverSelectionUnavailable -> {
             R.string.afternote_editor_receiver_selection_unavailable
+        }
+
+        AfternoteEditorError.PrefillUnavailable -> {
+            R.string.afternote_editor_prefill_load_failed
+        }
+
+        AfternoteEditorError.PrefillNotReady -> {
+            R.string.afternote_editor_prefill_not_ready
         }
 
         is AfternoteEditorError.Upload -> {
@@ -53,20 +61,19 @@ internal fun AfternoteEditorError.offersMemorialThumbnailRetry(): Boolean =
         }
 
 /**
- * 수신자 선택 화면이 남긴 id 를 폼에 반영한다.
+ * 수신자 선택 화면이 남긴 id 전체를 폼에 반영한다 (#1426).
  *
- * 목록 로드 실패로 id 를 해석할 수 없으면 [AfternoteEditorViewModel.resolveSelectedReceiver] 가 재조회 후
- * 오류 이벤트를 세운다 — 선택이 조용히 사라지지 않는다 (#1405).
+ * 반환 채널은 [LongArray] 다 — 키가 없으면 선택 화면을 거치지 않은 복귀라 아무것도 하지 않는다.
+ * 값이 있으면 그게 곧 확정된 수신자 전체이므로 반영은 [AfternoteEditorViewModel.applySelectedReceivers]
+ * 에 맡긴다(«추가» 가 아니라 «교체» 인 이유는 그 KDoc 참고).
  */
 internal suspend fun tryApplyReceiverSelectionFromSavedState(
     backStackEntry: NavBackStackEntry,
     viewModel: AfternoteEditorViewModel,
-    state: AfternoteEditorState,
 ) {
-    val id = backStackEntry.savedStateHandle[SELECTED_RECEIVER_ID_KEY] as? Long ?: return
-    backStackEntry.savedStateHandle.remove<Long>(SELECTED_RECEIVER_ID_KEY)
-    val receiver = viewModel.resolveSelectedReceiver(id) ?: return
-    state.addReceiverById(id, receiver.name, receiver.label)
+    val selectedIds =
+        backStackEntry.savedStateHandle.remove<LongArray>(SELECTED_RECEIVER_IDS_KEY)?.toList() ?: return
+    viewModel.applySelectedReceivers(selectedIds)
 }
 
 internal fun buildOnRegisterClick(
@@ -99,7 +106,31 @@ internal fun buildOnRegisterClick(
         )
     }
 
+/**
+ * 이탈 확인 기준선(진입 시점 폼 스냅샷) 캡처를 미뤄야 하는지.
+ *
+ * prefill 실패도 «아직 기준선을 잡을 때가 아니다» 에 포함한다 (#705) — 실패 화면의 빈 폼을 기준선으로
+ * 잡아 두면 재시도가 성공해 폼이 채워지는 순간 «사용자가 고친 것» 으로 오인돼 뒤로가기마다 이탈 확인
+ * 팝업이 뜬다.
+ */
 internal fun shouldDeferEditorBaselineCapture(
     isPrefillLoading: Boolean,
     isProcessingMethodDefaultsInitializing: Boolean,
-): Boolean = isPrefillLoading || isProcessingMethodDefaultsInitializing
+    isPrefillFailed: Boolean = false,
+): Boolean = isPrefillLoading || isProcessingMethodDefaultsInitializing || isPrefillFailed
+
+/**
+ * 등록(저장) 액션을 열어 둘지.
+ *
+ * prefill 이 **끝나지 않은 동안에도** 잠근다 (#705) — 실패뿐 아니라 아직 읽는 중인 skeleton 상태도
+ * 폼이 기본 빈 값이라, 느린 상세 GET 을 앞질러 저장하면 수정(PATCH)이 그 빈 값으로 나가 기존
+ * 기록을 덮는다. `isPrefillLoading` 은 편집 진입에서만 true 라 신규 작성은 영향받지 않는다.
+ *
+ * ViewModel 의 [AfternoteEditorViewModel.saveAfternote] 진입 가드와 **같은 규칙을 두 겹으로** 둔다 —
+ * 화면이 막는 것은 사용자 경험이고, 저장 진입점에서 막는 것은 계약이다.
+ */
+internal fun isEditorSubmitEnabled(
+    isSaving: Boolean,
+    isPrefillFailed: Boolean,
+    isPrefillLoading: Boolean,
+): Boolean = !isSaving && !isPrefillFailed && !isPrefillLoading

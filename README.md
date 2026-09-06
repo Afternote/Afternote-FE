@@ -164,6 +164,7 @@ claude mcp add mobile -s user -- npx -y claude-in-mobile@3.8.1
 
 - Issue는 [현재 Issue form](.github/ISSUE_TEMPLATE/issue.yml)을 사용하고, 같은 작업의 기존 Issue가 있으면 새로 만들지 않고 재사용한다.
 - PR은 [현재 PR 템플릿](.github/PULL_REQUEST_TEMPLATE.md)을 그대로 채운다. 본문에 같은 저장소의 실제 Issue를 `Refs #N`으로 연결해야 Repository Quality 검사를 통과한다.
+- `src/main`에 새로 넣은 Kotlin 함수는 main 어딘가에서 참조되어야 한다. 테스트만 부르거나 아무도 부르지 않으면 Repository Quality가 실패한다. 후속 PR이 곧 소비하는 공개 계약이면 PR 라벨 `test-only-production-exempt`로 경고로 낮추고 본문에 소비처를 적는다.
 - 여러 PR이 같은 Issue를 공유할 수 있다. 그 Issue의 작업을 최종 완료하는 PR에서만 `Closes #N`·`Fixes #N`·`Resolves #N`을 사용한다.
 - `CI Test Plan`에는 Android 계측 테스트를 `none`·`selected`·`full`로 선언하고 선택 이유를 변경 경계 기준으로 남긴다.
 - 필수 검사는 머지 순서 가드, Ktlint, Android Lint, Unit Test, Screenshot, Repository Quality, CodeQL(Java/Kotlin·Actions)다. JavaScript/TypeScript CodeQL도 저장소 자동화 스크립트를 분석한다. 이름이나 구성이 바뀌면 README 목록보다 활성 ruleset과 [PR 검증 진입점](.github/workflows/pr-validation.yml)을 우선한다.
