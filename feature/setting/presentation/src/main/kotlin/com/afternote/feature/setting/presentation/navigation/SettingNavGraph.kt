@@ -23,6 +23,7 @@ import com.afternote.feature.setting.presentation.screen.ProfileEditScreen
 import com.afternote.feature.setting.presentation.screen.PushNotificationScreen
 import com.afternote.feature.setting.presentation.screen.ReceiverEditScreen
 import com.afternote.feature.setting.presentation.screen.ReceiverListScreen
+import com.afternote.feature.setting.presentation.screen.ReceiverManageScreen
 import com.afternote.feature.setting.presentation.screen.ReceiverRegisterScreen
 import com.afternote.feature.setting.presentation.screen.SettingScreen
 import com.afternote.feature.setting.presentation.screen.WithdrawConfirmScreen
@@ -108,17 +109,21 @@ fun NavGraphBuilder.settingNavGraph(
             val route = it.toRoute<SettingRoute.RecipientListRoute>()
             val viewModel: ReceiverListViewModel = hiltViewModel()
             val receivers by viewModel.receivers.collectAsStateWithLifecycle()
-            ReceiverListScreen(
-                receivers = receivers,
-                onBackClick = actions::onRecipientListBack,
-                onConfirmClick = { receiver ->
-                    if (route.selectForDeliveryConditions) {
+            if (route.selectForDeliveryConditions) {
+                ReceiverListScreen(
+                    receivers = receivers,
+                    onBackClick = actions::onRecipientListBack,
+                    onConfirmClick = { receiver ->
                         actions.onNavigateToAfterDelivery(receiver.receiverId)
-                    } else {
-                        actions.onRecipientListBack()
-                    }
-                },
-            )
+                    },
+                )
+            } else {
+                ReceiverManageScreen(
+                    receivers = receivers,
+                    onBackClick = actions::onRecipientListBack,
+                    onReceiverClick = actions::onNavigateToRecipientEdit,
+                )
+            }
         }
 
         composable<SettingRoute.RecipientRegisterRoute> {

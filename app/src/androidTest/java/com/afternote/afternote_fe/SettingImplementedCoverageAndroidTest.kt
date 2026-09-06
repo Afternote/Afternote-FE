@@ -73,7 +73,7 @@ class SettingImplementedCoverageAndroidTest {
     }
 
     @Test
-    fun actualSettingNavHost_receiverSelectionPreservesNormalBackAndExactDeliveryReceiverId() {
+    fun actualSettingNavHost_receiverManageListRowNavigatesToEditWithExactReceiverId() {
         waitForRoute<SettingRoute.SettingHomeRoute>()
         waitForSettingHomeContent()
         composeRule.onAllNodes(hasText("수신자 목록")).run {
@@ -81,12 +81,16 @@ class SettingImplementedCoverageAndroidTest {
             get(1).performScrollTo().performClick()
         }
         composeRule.onNodeWithText("김수신").assertIsDisplayed()
-        composeRule.onAllNodes(checkboxMatcher).run {
-            assertCountEquals(1)
-            get(0).performClick()
-        }
-        composeRule.onNodeWithText("수신자 선택 완료하기").performClick()
+        composeRule.onAllNodes(checkboxMatcher).assertCountEquals(0)
 
+        composeRule.onNodeWithText("김수신").performClick()
+
+        val editRoute = waitForRoute<SettingRoute.RecipientEditRoute>()
+        assertEquals(RECEIVER_ID, editRoute.receiverId)
+    }
+
+    @Test
+    fun actualSettingNavHost_deliveryConditionReceiverSelectionPreservesExactReceiverId() {
         waitForRoute<SettingRoute.SettingHomeRoute>()
         waitForSettingHomeContent()
         composeRule
