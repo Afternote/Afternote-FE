@@ -16,6 +16,7 @@ import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.delivery.ConditionState
@@ -29,6 +30,7 @@ import com.afternote.core.model.user.ReceiverCreated
 import com.afternote.core.model.user.ReceiverDetail
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
+import com.afternote.core.model.user.UserMarketingConsent
 import com.afternote.core.model.user.UserPushSetting
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -123,6 +125,7 @@ class SettingCompletionTest {
             PushNotificationViewModel(
                 context = ApplicationProvider.getApplicationContext(),
                 userRepository = repository,
+                errorReporter = NoOpErrorReporter,
             )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             !viewModel.uiState.value.isLoading
@@ -663,6 +666,13 @@ private val COMPLETION_DEFAULT_PUSH_SETTING =
         afterNote = true,
     )
 
+private val COMPLETION_DEFAULT_MARKETING_CONSENT =
+    UserMarketingConsent(
+        sms = true,
+        email = true,
+        push = false,
+    )
+
 private val COMPLETION_DEFAULT_RECEIVER_DETAIL =
     ReceiverDetail(
         receiverId = 77L,
@@ -758,6 +768,14 @@ private class CompletionUserScenario {
                     synchronized(this@CompletionUserScenario) { pushUpdateCompletions += 1 }
                 }
             }
+            onGetMyMarketingConsents = { COMPLETION_DEFAULT_MARKETING_CONSENT }
+            onUpdateMyMarketingConsents = { sms, email, push ->
+                COMPLETION_DEFAULT_MARKETING_CONSENT.copy(
+                    sms = sms ?: COMPLETION_DEFAULT_MARKETING_CONSENT.sms,
+                    email = email ?: COMPLETION_DEFAULT_MARKETING_CONSENT.email,
+                    push = push ?: COMPLETION_DEFAULT_MARKETING_CONSENT.push,
+                )
+            }
             onCreateReceiver = { _, _, _, _, _ ->
                 takeGate(receiverCreateGates, "createReceiver").await().getOrThrow()
             }
@@ -831,4 +849,11 @@ private class CompletionUserScenario {
         gates: ArrayDeque<T>,
         method: String,
     ): T = synchronized(this) { gates.pollFirst() ?: error("$method gate was not prepared") }
+}
+
+internal object NoOpErrorReporter : ErrorReporter {
+    override fun writeFailure(
+        throwable: Throwable,
+        attributes: Map<String, String>,
+    ) = Unit
 }
