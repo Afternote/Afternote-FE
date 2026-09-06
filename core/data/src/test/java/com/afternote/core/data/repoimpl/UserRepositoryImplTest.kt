@@ -324,7 +324,7 @@ class UserRepositoryImplTest {
                     name = "새 수신자",
                     relation = "친구",
                     phone = null,
-                    email = null,
+                    email = "receiver@example.com",
                     message = null,
                 )
                 assertEquals("조회 2", withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.single().name)
@@ -365,7 +365,7 @@ class UserRepositoryImplTest {
                     name = "새 수신자",
                     relation = "친구",
                     phone = null,
-                    email = null,
+                    email = "receiver@example.com",
                     message = null,
                 )
                 assertEquals("조회 2", withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.single().name)
@@ -406,7 +406,7 @@ class UserRepositoryImplTest {
                     name = "새 수신자",
                     relation = "친구",
                     phone = null,
-                    email = null,
+                    email = "receiver@example.com",
                     message = null,
                 )
                 val fallback = withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }
@@ -452,7 +452,7 @@ class UserRepositoryImplTest {
                     name = "새 수신자",
                     relation = "친구",
                     phone = null,
-                    email = null,
+                    email = "receiver@example.com",
                     message = null,
                 )
                 val afterUnauthorized = withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }
