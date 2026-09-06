@@ -64,8 +64,13 @@ fun AfternoteHomeScreen(
     onSettingClick: (() -> Unit)? = null,
 ) {
     val refreshState = items.loadState.refresh
-    val isInitialLoading = refreshState is LoadState.Loading && items.itemCount == 0
     val isRefreshing = refreshState is LoadState.Loading && items.itemCount > 0
+    val bodyState =
+        afternoteHomeBodyState(
+            refreshState = refreshState,
+            itemCount = items.itemCount,
+            selectedType = selectedType,
+        )
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -93,22 +98,30 @@ fun AfternoteHomeScreen(
                     .padding(paddingValues),
         ) {
             val bodyModifier = Modifier.fillMaxSize()
-            when {
-                isInitialLoading -> {
+            when (bodyState) {
+                AfternoteHomeBodyState.InitialLoading -> {
                     LoadingBody(modifier = bodyModifier)
                 }
 
-                // 전면 에러는 보여줄 데이터가 전무할 때만. 목록이 있는 상태의 refresh 실패는
-                // Paging 이 기존 페이지를 유지하므로(itemCount > 0) 아래 분기가 목록을 그대로 보여준다.
-                refreshState is LoadState.Error && items.itemCount == 0 -> {
+                AfternoteHomeBodyState.Error -> {
                     ErrorListBody(
                         onRetry = items::retry,
                         modifier = bodyModifier,
                     )
                 }
 
-                // 카테고리 필터 0건도 이 경로에 남겨 카테고리 행을 유지한다(막다른 상태 방지).
-                items.itemCount > 0 || selectedType != null -> {
+                is AfternoteHomeBodyState.FilteredError -> {
+                    FilteredErrorBody(
+                        headerDescription = headerDescription,
+                        nextStep = nextStep,
+                        selectedType = bodyState.selectedType,
+                        onTypeSelected = onTypeSelected,
+                        onRetry = items::retry,
+                        modifier = bodyModifier,
+                    )
+                }
+
+                AfternoteHomeBodyState.List -> {
                     Column(modifier = bodyModifier) {
                         // 목록은 살아 있고 새로고침만 실패한 상태. 종전에는 이 갈래가 실패를 통째로
                         // 삼켜 «당겨도 아무 일도 없는» 화면이 됐다 (#705).
@@ -128,7 +141,7 @@ fun AfternoteHomeScreen(
                     }
                 }
 
-                else -> {
+                AfternoteHomeBodyState.Empty -> {
                     if (showsHeaderOnEmptyList) {
                         EmptyHomeBody(
                             headerDescription = headerDescription,
