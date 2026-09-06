@@ -5,13 +5,17 @@ import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -21,9 +25,13 @@ class PushNotificationViewModel
     constructor(
         @ApplicationContext private val context: Context,
         private val userRepository: UserRepository,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(PushNotificationUiState())
         val uiState: StateFlow<PushNotificationUiState> = _uiState.asStateFlow()
+
+        private val _events = Channel<PushNotificationEvent>(Channel.BUFFERED)
+        val events = _events.receiveAsFlow()
 
         init {
             refreshDeviceAlarmStatus()
@@ -81,11 +89,12 @@ class PushNotificationViewModel
         fun onSmsChecked(checked: Boolean) {
             _uiState.update { it.copy(isSmsChecked = checked) }
             viewModelScope.launch {
-                runCatching { userRepository.updateMyMarketingConsents(sms = checked, email = null, push = null) }
+                runCatchingCancellable { userRepository.updateMyMarketingConsents(sms = checked, email = null, push = null) }
                     .onSuccess { Log.d(TAG, "onSmsChecked: success, checked=$checked") }
                     .onFailure { e ->
-                        Log.e(TAG, "onSmsChecked: failed, checked=$checked", e)
+                        errorReporter.recordFailure(e, mapOf(KEY_STAGE to STAGE_SMS_CONSENT))
                         _uiState.update { it.copy(isSmsChecked = !checked) }
+                        _events.send(PushNotificationEvent.MarketingConsentSaveFailed)
                     }
             }
         }
@@ -93,11 +102,12 @@ class PushNotificationViewModel
         fun onEmailChecked(checked: Boolean) {
             _uiState.update { it.copy(isEmailChecked = checked) }
             viewModelScope.launch {
-                runCatching { userRepository.updateMyMarketingConsents(sms = null, email = checked, push = null) }
+                runCatchingCancellable { userRepository.updateMyMarketingConsents(sms = null, email = checked, push = null) }
                     .onSuccess { Log.d(TAG, "onEmailChecked: success, checked=$checked") }
                     .onFailure { e ->
-                        Log.e(TAG, "onEmailChecked: failed, checked=$checked", e)
+                        errorReporter.recordFailure(e, mapOf(KEY_STAGE to STAGE_EMAIL_CONSENT))
                         _uiState.update { it.copy(isEmailChecked = !checked) }
+                        _events.send(PushNotificationEvent.MarketingConsentSaveFailed)
                     }
             }
         }
@@ -105,11 +115,12 @@ class PushNotificationViewModel
         fun onPushChecked(checked: Boolean) {
             _uiState.update { it.copy(isPushChecked = checked) }
             viewModelScope.launch {
-                runCatching { userRepository.updateMyMarketingConsents(sms = null, email = null, push = checked) }
+                runCatchingCancellable { userRepository.updateMyMarketingConsents(sms = null, email = null, push = checked) }
                     .onSuccess { Log.d(TAG, "onPushChecked: success, checked=$checked") }
                     .onFailure { e ->
-                        Log.e(TAG, "onPushChecked: failed, checked=$checked", e)
+                        errorReporter.recordFailure(e, mapOf(KEY_STAGE to STAGE_PUSH_CONSENT))
                         _uiState.update { it.copy(isPushChecked = !checked) }
+                        _events.send(PushNotificationEvent.MarketingConsentSaveFailed)
                     }
             }
         }
@@ -152,5 +163,9 @@ class PushNotificationViewModel
 
         companion object {
             private const val TAG = "PushNotificationVM"
+            private const val KEY_STAGE = "stage"
+            private const val STAGE_SMS_CONSENT = "sms_consent_update"
+            private const val STAGE_EMAIL_CONSENT = "email_consent_update"
+            private const val STAGE_PUSH_CONSENT = "push_consent_update"
         }
     }

@@ -10,6 +10,7 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.delivery.ConditionState
@@ -118,6 +119,7 @@ class SettingCompletionTest {
             PushNotificationViewModel(
                 context = ApplicationProvider.getApplicationContext(),
                 userRepository = repository,
+                errorReporter = NoOpErrorReporter,
             )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             !viewModel.uiState.value.isLoading
@@ -806,4 +808,11 @@ private class CompletionUserScenario {
         gates: ArrayDeque<T>,
         method: String,
     ): T = synchronized(this) { gates.pollFirst() ?: error("$method gate was not prepared") }
+}
+
+internal object NoOpErrorReporter : ErrorReporter {
+    override fun writeFailure(
+        throwable: Throwable,
+        attributes: Map<String, String>,
+    ) = Unit
 }

@@ -12,3 +12,7 @@ data class PushNotificationUiState(
     val isMindRecordOn: Boolean = false,
     val isAfternoteOn: Boolean = false,
 )
+
+sealed interface PushNotificationEvent {
+    data object MarketingConsentSaveFailed : PushNotificationEvent
+}

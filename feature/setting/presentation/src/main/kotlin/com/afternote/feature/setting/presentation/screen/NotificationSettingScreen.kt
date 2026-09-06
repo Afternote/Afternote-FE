@@ -18,8 +18,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -40,6 +43,7 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.DeviceAlarmOffSection
 import com.afternote.feature.setting.presentation.component.SettingMenuItem
+import com.afternote.feature.setting.presentation.viewmodel.PushNotificationEvent
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel
 
 @Composable
@@ -51,6 +55,8 @@ fun NotificationSettingScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity<Activity>() }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val marketingConsentSaveFailedMessage = stringResource(R.string.marketing_consent_save_failed)
     val openNotificationSettings = {
         val intent =
             Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
@@ -77,6 +83,16 @@ fun NotificationSettingScreen(
         viewModel.refreshDeviceAlarmStatus()
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                PushNotificationEvent.MarketingConsentSaveFailed -> {
+                    snackbarHostState.showSnackbar(marketingConsentSaveFailedMessage)
+                }
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             DetailTopBar(
@@ -84,6 +100,7 @@ fun NotificationSettingScreen(
                 onBackClick = onBack,
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = Color.Transparent,
     ) { padding ->
         Column(

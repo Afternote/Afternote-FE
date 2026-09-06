@@ -99,6 +99,7 @@ class SettingFlowTest {
             PushNotificationViewModel(
                 context = ApplicationProvider.getApplicationContext(),
                 userRepository = user,
+                errorReporter = NoOpErrorReporter,
             )
         composeRule.setContent { AfternoteTheme {} }
         composeRule.waitUntil(timeoutMillis = 5_000) { !viewModel.uiState.value.isLoading }
