@@ -83,7 +83,7 @@ function isBotAuthor(user, login) {
 const ISSUE_ASSIGNEE_EXEMPT_LABEL = "issue-assignee-exempt";
 
 // 다른 담당자의 모듈이 develop 을 깨뜨렸을 때처럼 어사인 이관을 기다릴 수 없는
-// 긴급 PR 은 라벨 하나로 담당자 대조만 면제한다 — review-debt-exempt 와 같은 규약.
+// 긴급 PR 은 라벨 하나로 담당자 대조만 면제한다.
 // Issue 연결 요건 자체는 면제하지 않는다.
 export function hasIssueAssigneeExemptLabel(pullRequest) {
     return (pullRequest?.labels ?? [])

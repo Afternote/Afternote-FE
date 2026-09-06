@@ -32,10 +32,10 @@ interface AfternoteNavActions {
     fun navigateToSelectReceiver()
 
     /**
-     * 수신자 선택 완료 → 선택한 [receiverId] 를 이전 엔트리(에디터)의 SavedStateHandle 에
-     * `SELECTED_RECEIVER_ID_KEY`([Long])로 쓰고 pop. 에디터가 복귀 시 읽어 폼에 반영한다.
+     * 수신자 선택 완료 → 확정한 [receiverIds] 전체를 이전 엔트리(에디터)의 SavedStateHandle 에
+     * `SELECTED_RECEIVER_IDS_KEY`([LongArray])로 쓰고 pop. 에디터가 복귀 시 읽어 폼에 반영한다 (#1426).
      */
-    fun popBackWithSelectedReceiver(receiverId: Long)
+    fun popBackWithSelectedReceivers(receiverIds: List<Long>)
 
     fun navigateToAddSong()
 

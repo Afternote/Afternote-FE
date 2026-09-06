@@ -125,9 +125,9 @@ fun AfternoteEditorBody(
             onPhotoSelected = state.setMemorialPhoto,
             onVideoSelected = state.setMemorialVideo,
             onAudioSelected = state.setMemorialAudio,
-            onPhotoRemoved = { state.setMemorialPhoto(null) },
-            onVideoRemoved = { state.setMemorialVideo(null) },
-            onAudioRemoved = { state.setMemorialAudio(null) },
+            onPhotoRemoved = state.removeMemorialPhoto,
+            onVideoRemoved = state.removeMemorialVideo,
+            onAudioRemoved = state.removeMemorialAudio,
             onCaptureFailed = onCaptureFailed,
         )
 
