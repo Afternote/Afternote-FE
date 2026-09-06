@@ -34,7 +34,7 @@ class ReceiverRegisterViewModel
             email: String,
             message: String?,
         ) {
-            if (!email.orEmpty().isValidReceiverEmail()) {
+            if (!email.isValidReceiverEmail()) {
                 val messageRes =
                     if (email.isBlank()) R.string.receiver_email_required else R.string.receiver_email_invalid
                 _uiState.update { it.copy(errorMessage = UiText.Resource(messageRes)) }
