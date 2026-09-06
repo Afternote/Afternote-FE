@@ -404,6 +404,9 @@ class ProductionVisibilityKonsistTest {
          */
         val INTENTIONAL_PRODUCTION_CONTRACTS =
             mapOf(
+                "app/src/main/java/com/afternote/afternote_fe/navigation/" +
+                    "NotificationDestinationRoute.kt::function toRoute [internal]" to
+                    "알림 목적지→Route 매핑. 소비자인 앱 루트 결선은 Navigation 3 루트 전환 뒤 #1795 가 붙인다",
                 "app/src/main/java/com/afternote/afternote_fe/notification/" +
                     "NotificationIntentContract.kt::class NotificationEntrySource [internal]" to
                     "NotificationEntryRequest.source의 내부 계약 타입",

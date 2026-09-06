@@ -8,6 +8,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.afternote.afternote_fe.R
+import com.afternote.core.common.notification.NotificationDestination
 import com.afternote.core.common.notification.NotificationPendingIntentFactory
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
@@ -94,12 +95,16 @@ class AfternoteFirebaseMessagingService : FirebaseMessagingService() {
                         setContentText(body)
                         setStyle(NotificationCompat.BigTextStyle().bigText(body))
                     }
-                    // BE 목적지 계약 전에는 FCM data를 화면 이동 payload로 연결하지 않는다.
+                    // 목적지 data 키 계약(Afternote/Afternote-BE#261)이 서기 전까지 FCM 은 홈을
+                    // 명시한다. 키를 추측해 두면 BE 가 다른 이름을 고르는 순간 조용히 죽는 분기가
+                    // 남는다 — 계약이 확정되면 여기서 data 를 읽어 NotificationDestination 으로
+                    // 옮긴다.
                     NotificationPendingIntentFactory
                         .create(
                             context = this@AfternoteFirebaseMessagingService,
                             source = NOTIFICATION_SOURCE,
                             occurrenceId = occurrenceId,
+                            destination = NotificationDestination.HOME,
                         )?.let(::setContentIntent)
                 }.build()
 
