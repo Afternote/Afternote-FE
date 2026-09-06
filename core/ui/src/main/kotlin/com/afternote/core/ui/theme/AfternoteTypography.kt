@@ -186,16 +186,6 @@ data class AfternoteTypography(
             lineBreak = BodyLineBreak,
             localeList = KoreanLocale,
         ),
-    val secondaryButton: TextStyle =
-        TextStyle(
-            fontFamily = nanumBarunGothic,
-            fontWeight = FontWeight.Normal,
-            fontSize = 22.sp,
-            lineHeight = 20.sp,
-            letterSpacing = (-0.0025).em,
-            lineBreak = BodyLineBreak,
-            localeList = KoreanLocale,
-        ),
     val footnoteCaption: TextStyle =
         TextStyle(
             fontFamily = nanumBarunGothic,
