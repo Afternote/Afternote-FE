@@ -10,12 +10,12 @@ import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.error.AfternoteFailure
-import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.SaveAfternoteCommand
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
+import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.editor.mapper.toAfternoteEditorReceivers
 import com.afternote.feature.afternote.presentation.editor.memorial.Song
 import com.afternote.feature.afternote.presentation.editor.model.EditorFormPrefill
@@ -171,6 +171,8 @@ class AfternoteEditorViewModel
         private val afternoteRepository: AfternoteRepository,
         private val memorialThumbnailUploadRepository: MemorialThumbnailUploadRepository,
         private val resolveMemorialMediaForSave: ResolveMemorialMediaForSaveUseCase,
+        // 이 클래스에 동명의 `saveAfternote(...)` 진입점이 이미 있어 `UseCase` 접미사를 남긴다.
+        private val saveAfternoteUseCase: SaveAfternoteUseCase,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val route = savedStateHandle.toRoute<AfternoteRoute.EditorFlowRoute>()
@@ -505,7 +507,7 @@ class AfternoteEditorViewModel
                     memorialMedia = memorialMediaForSave,
                 ).fold(
                     onSuccess = { command ->
-                        executeSaveCommand(command).fold(
+                        saveAfternoteUseCase(command).fold(
                             onSuccess = { id ->
                                 internalState.update {
                                     it.copy(
@@ -522,28 +524,6 @@ class AfternoteEditorViewModel
                 )
             }
         }
-
-        /**
-         * [SaveAfternoteCommand] 분기에 따라 [AfternoteRepository] 의 적합한 메서드를 직접 호출한다.
-         *
-         * 과거에는 별도 `SaveAfternoteUseCase` 로 분리돼 있었으나, 단일 Repository 내 메서드 라우팅
-         * 외에 비즈니스 로직이 없어 *약한 UseCase* (`#246`) 로 판단해 ViewModel 로 흡수.
-         */
-        private suspend fun executeSaveCommand(command: SaveAfternoteCommand): Result<Long> =
-            when (command) {
-                is SaveAfternoteCommand.Create -> {
-                    when (val input = command.input) {
-                        is CreateAfternoteInput.Social -> afternoteRepository.createSocial(input.payload)
-                        is CreateAfternoteInput.Business -> afternoteRepository.createBusiness(input.payload)
-                        is CreateAfternoteInput.Gallery -> afternoteRepository.createGallery(input.payload)
-                        is CreateAfternoteInput.Memorial -> afternoteRepository.createMemorial(input.payload)
-                    }
-                }
-
-                is SaveAfternoteCommand.Update -> {
-                    afternoteRepository.update(command.id, command.payload)
-                }
-            }
 
         // 영정 사진: 새로 고른 로컬 픽 우선 → 없으면 기존 원격 → 둘 다 없으면 없음.
         private fun photoMediaInput(

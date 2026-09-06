@@ -14,6 +14,7 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUpl
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
+import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.afternoteEditorSavedStateHandle
 import com.afternote.feature.afternote.presentation.editor.model.RegisterAfternotePayload
@@ -251,6 +252,7 @@ class AfternoteEditorPrefillFailureTest {
                                 if (input == MediaInput.None) Result.success(null) else error("미디어 업로드가 호출되면 안 됩니다")
                             },
                         ),
+                    saveAfternoteUseCase = SaveAfternoteUseCase(repository),
                     errorReporter = RecordingErrorReporter(),
                 )
             backgroundScope.launch { viewModel.uiState.collect {} }
@@ -303,6 +305,7 @@ class AfternoteEditorPrefillFailureTest {
                         }
                     },
                 ),
+            saveAfternoteUseCase = SaveAfternoteUseCase(repository),
             errorReporter = errorReporter,
         )
 

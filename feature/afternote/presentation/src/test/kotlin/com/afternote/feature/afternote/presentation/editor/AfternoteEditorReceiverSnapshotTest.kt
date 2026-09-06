@@ -9,6 +9,7 @@ import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
+import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.editor.state.MemorialVideoAttachment
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -112,6 +113,7 @@ class AfternoteEditorReceiverSnapshotTest {
                 ResolveMemorialMediaForSaveUseCase(
                     MemorialMediaUploadRepository { _, _ -> error("미디어 저장이 호출되면 안 됩니다") },
                 ),
+            saveAfternoteUseCase = SaveAfternoteUseCase(repositoryProxy<AfternoteRepository>()),
             errorReporter = repositoryProxy<ErrorReporter>(),
         )
 
