@@ -356,6 +356,22 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
             override fun onNoticeBack() {
                 appState.navController.popBackStack()
             }
+
+            override fun onNavigateToInquiry() {
+                appState.navController.navigate(SettingRoute.InquiryListRoute)
+            }
+
+            override fun onInquiryBack() {
+                appState.navController.popBackStack()
+            }
+
+            override fun onNavigateToInquiryDetail(inquiryId: Long) {
+                appState.navController.navigate(SettingRoute.InquiryDetailRoute(inquiryId))
+            }
+
+            override fun onNavigateToInquiryWrite() {
+                appState.navController.navigate(SettingRoute.InquiryWriteRoute)
+            }
         }
     }
 
