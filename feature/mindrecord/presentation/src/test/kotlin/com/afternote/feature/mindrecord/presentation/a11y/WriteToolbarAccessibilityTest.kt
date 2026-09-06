@@ -337,6 +337,7 @@ class WriteToolbarAccessibilityTest {
                                 onContentChanged = {},
                                 onMoodSelected = {},
                                 onReceiverRowClick = {},
+                                onDateRowClick = {},
                             )
                         }
                     }

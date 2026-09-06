@@ -17,8 +17,7 @@ import org.junit.Test
  * [DeliveryConditionMapper] enum·응답 매핑 회귀 가드 (이슈 #427).
  *
  * 서버 enum 추가/누락 시 `when` 분기 누락이 도메인에 조용히 반영되는 사고를 막는다.
- * 검증 방식은 [com.afternote.core.data.mapper.user.UserMapperTest] 와 동일 — DTO/Domain 의
- * 동일 이름 상수를 `valueOf` 로 독립 조회해 매퍼 결과와 대조(자기검증 아님).
+ * 검증 방식은 DTO/Domain 의 동일 이름 상수를 `valueOf` 로 독립 조회해 매퍼 결과와 대조하는 것이다(자기검증 아님).
  */
 class DeliveryConditionMapperTest {
     @Test
