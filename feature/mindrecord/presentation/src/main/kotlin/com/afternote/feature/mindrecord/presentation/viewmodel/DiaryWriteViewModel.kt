@@ -86,6 +86,22 @@ class DiaryWriteViewModel
             _uiState.update { it.copy(content = value) }
         }
 
+        /**
+         * 날짜 행에서 고른 기록일을 싣는다 (#1008).
+         *
+         * **미래 날짜는 받지 않는다.** 서버가 400(code 2101)으로 거절하므로, 상태에 넣으면
+         * 사용자는 저장을 눌러 봐야 실패를 안다. 고르는 순간 사유와 함께 막는다.
+         */
+        fun onDateSelected(date: LocalDate) {
+            if (date.isAfter(LocalDate.now())) {
+                _uiState.update {
+                    it.copy(dateError = UiText.Resource(R.string.mindrecord_error_diary_future_date))
+                }
+                return
+            }
+            _uiState.update { it.copy(date = date, isDateChosen = true, dateError = null) }
+        }
+
         fun onMoodSelected(mood: TodayMood) {
             _uiState.update { it.copy(mood = mood) }
         }
@@ -186,6 +202,9 @@ class DiaryWriteViewModel
                                     // 전체 해제로 읽어, 수신자를 건드리지 않은 편집이 기존 지정을
                                     // 지운다 — 목록 응답에 수신자가 없어 되살릴 수도 없다.
                                     receiverIds = state.selectedReceiverIds.toList().takeIf { it.isNotEmpty() },
+                                    // 화면 값이 서버에서 왔거나 사용자가 고른 것일 때만 싣는다.
+                                    // 그 밖에는 키를 생략해 서버가 기존 기록일을 유지한다 (#1008).
+                                    date = state.date.takeIf { state.isDateChosen },
                                 ),
                         )
                     } else {
@@ -196,6 +215,7 @@ class DiaryWriteViewModel
                                 isDraft = isDraft,
                                 todayMood = mood,
                                 receiverIds = state.selectedReceiverIds.toList(),
+                                date = state.date,
                             ),
                         )
                     }
@@ -288,9 +308,11 @@ class DiaryWriteViewModel
                                 title = draft.title,
                                 content = draft.content,
                                 mood = draft.todayMood,
-                                // 표시 전용 값이다 — 서버가 날짜를 주면 그걸 보여 주고, 안 주면
-                                // 화면에 이미 떠 있던 값을 유지한다. 고르는 수단은 없다 (#1008).
+                                // 서버가 준 기록일을 그대로 보여 주고, 그때부터 수정 요청에도 싣는다.
+                                // 프리필이 날짜를 못 주면 화면 값(오늘)을 유지하되 `isDateChosen` 은
+                                // false 로 남겨, 수정이 기존 기록일을 오늘로 밀지 않게 한다 (#1008).
                                 date = draft.toUi()?.date ?: it.date,
+                                isDateChosen = draft.toUi()?.date != null || it.isDateChosen,
                                 isDraftLoading = false,
                                 draftLoaded = true,
                             )
