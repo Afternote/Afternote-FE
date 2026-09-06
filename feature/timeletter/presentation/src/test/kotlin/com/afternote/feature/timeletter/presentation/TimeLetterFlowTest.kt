@@ -73,7 +73,6 @@ class TimeLetterFlowTest {
                 id = 1L,
                 title = call.title,
                 sendAt = call.sendAt,
-                deliveredAt = null,
                 status = call.status,
                 blocks = emptyList(),
                 receiverIds = call.receiverIds,

@@ -406,7 +406,6 @@ private fun timeLetter(
         id = id,
         title = title,
         sendAt = sendAt,
-        deliveredAt = null,
         status = status,
         blocks = blocks,
         receiverIds = receiverIds,

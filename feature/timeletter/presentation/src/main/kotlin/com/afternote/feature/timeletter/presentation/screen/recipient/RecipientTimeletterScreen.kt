@@ -228,7 +228,6 @@ private fun ReceivedTimeLetter.toTimeLetter() =
         id = id,
         title = title,
         sendAt = deliveredAt,
-        deliveredAt = deliveredAt,
         status = status,
         blocks = blocks,
         receiverIds = listOf(id),
