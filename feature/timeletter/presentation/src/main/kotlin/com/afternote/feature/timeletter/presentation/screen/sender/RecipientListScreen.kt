@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,6 +42,8 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.timeletter.presentation.R
 import com.afternote.feature.timeletter.presentation.component.RecipientListItem
+import com.afternote.feature.timeletter.presentation.component.TimeLetterLoadErrorContent
+import com.afternote.feature.timeletter.presentation.viewmodel.RecipientListUiState
 import com.afternote.feature.timeletter.presentation.viewmodel.RecipientListViewModel
 import kotlinx.coroutines.launch
 
@@ -52,14 +55,53 @@ fun RecipientListScreen(
     allowEmptyConfirm: Boolean = false,
     viewModel: RecipientListViewModel = hiltViewModel(),
 ) {
-    val recipients by viewModel.recipients.collectAsStateWithLifecycle()
-    RecipientListContent(
-        recipients = recipients,
-        onBackClick = onBackClick,
-        onConfirmClick = onConfirmClick,
-        allowEmptyConfirm = allowEmptyConfirm,
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    when (val state = uiState) {
+        RecipientListUiState.Loading -> {
+            RecipientListLoadingContent(onBackClick, modifier)
+        }
+
+        RecipientListUiState.Error -> {
+            Scaffold(
+                modifier = modifier,
+                topBar = { DetailTopBar(title = "수신자 목록", onBackClick = onBackClick) },
+            ) { innerPadding ->
+                TimeLetterLoadErrorContent(
+                    message = stringResource(R.string.timeletter_recipient_list_load_failed),
+                    onRetry = viewModel::retry,
+                    modifier = Modifier.padding(innerPadding),
+                )
+            }
+        }
+
+        is RecipientListUiState.Success -> {
+            RecipientListContent(
+                recipients = state.recipients,
+                onBackClick = onBackClick,
+                onConfirmClick = onConfirmClick,
+                allowEmptyConfirm = allowEmptyConfirm,
+                modifier = modifier,
+            )
+        }
+    }
+}
+
+@Composable
+private fun RecipientListLoadingContent(
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Scaffold(
         modifier = modifier,
-    )
+        topBar = { DetailTopBar(title = "수신자 목록", onBackClick = onBackClick) },
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier.fillMaxSize().padding(innerPadding),
+            contentAlignment = Alignment.Center,
+        ) {
+            CircularProgressIndicator()
+        }
+    }
 }
 
 @Composable

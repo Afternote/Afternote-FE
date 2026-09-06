@@ -63,6 +63,7 @@ fun NavGraphBuilder.timeLetterNavGraph(
                 onDraftClick = { title, textContents -> viewModel.saveDraft(title, textContents) },
                 onNavigateToDraft = actions::onNavigateToDraft,
                 onErrorShown = { viewModel.clearError() },
+                onRetryEditingLetter = viewModel::retryEditingLetter,
                 onRecipientClick = { title, textContents ->
                     viewModel.updateDraftContent(title, textContents)
                     actions.onNavigateToRecipient()

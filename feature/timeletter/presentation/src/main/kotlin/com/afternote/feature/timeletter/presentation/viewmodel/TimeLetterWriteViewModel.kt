@@ -52,6 +52,7 @@ class TimeLetterWriteViewModel
         private val _uiState =
             MutableStateFlow(
                 TimeLetterWriteUiState(
+                    editingTimeLetterId = editingTimeLetterId,
                     isLoadingEditingLetter = editingTimeLetterId != null,
                 ),
             )
@@ -75,8 +76,11 @@ class TimeLetterWriteViewModel
                     runCatchingCancellable { userRepository.getReceivers() }
                         .getOrElse { emptyList() }
                         .associate { it.receiverId to it.name }
-                editingTimeLetterId?.let { loadEditingTimeLetter(it) }
+                _uiState.update { state ->
+                    state.copy(recipientNames = state.recipientIds.mapNotNull { receiverNameMap[it] })
+                }
             }
+            editingTimeLetterId?.let { id -> viewModelScope.launch { loadEditingTimeLetter(id) } }
             loadDraftCount()
             observeRecipientResult()
         }
@@ -156,7 +160,7 @@ class TimeLetterWriteViewModel
             textContents: Map<Long, String>,
         ) {
             val state = _uiState.value
-            if (state.isSaving || isCheckingRegisterLimit) return
+            if (state.isSaving || state.isCheckingRegisterLimit || state.editingLoadError) return
 
             if (state.recipientIds.isEmpty()) {
                 _uiState.update { it.copy(error = TimeLetterWriteError.RecipientRequired) }
@@ -166,7 +170,7 @@ class TimeLetterWriteViewModel
                 _uiState.update { it.copy(error = TimeLetterWriteError.SendDateRequired) }
                 return
             }
-            isCheckingRegisterLimit = true
+            _uiState.update { it.copy(isCheckingRegisterLimit = true) }
             viewModelScope.launch {
                 try {
                     if (originalEditingStatus != TimeLetterStatus.SCHEDULED) {
@@ -187,9 +191,16 @@ class TimeLetterWriteViewModel
 
                     save(title = title, textContents = textContents, status = TimeLetterStatus.SCHEDULED)
                 } finally {
-                    isCheckingRegisterLimit = false
+                    _uiState.update { it.copy(isCheckingRegisterLimit = false) }
                 }
             }
+        }
+
+        fun retryEditingLetter() {
+            val timeLetterId = _uiState.value.editingTimeLetterId ?: return
+            if (_uiState.value.isLoadingEditingLetter) return
+            _uiState.update { it.copy(isLoadingEditingLetter = true, editingLoadError = false) }
+            viewModelScope.launch { loadEditingTimeLetter(timeLetterId) }
         }
 
         fun clearError() {
@@ -435,14 +446,14 @@ class TimeLetterWriteViewModel
             status: TimeLetterStatus,
         ) {
             val state = _uiState.value
-            if (state.isSaving) return
+            if (state.isSaving || state.editingLoadError) return
             if (state.recipientIds.isEmpty()) {
                 _uiState.update { it.copy(error = TimeLetterWriteError.RecipientRequired) }
                 return
             }
 
+            _uiState.update { it.copy(isSaving = true) }
             viewModelScope.launch {
-                _uiState.update { it.copy(isSaving = true) }
                 try {
                     val sendAt =
                         state.sendAt?.let { date ->
@@ -531,6 +542,7 @@ class TimeLetterWriteViewModel
                         it.copy(
                             editingTimeLetterId = letter.id,
                             isLoadingEditingLetter = false,
+                            editingLoadError = false,
                             draftTitle = letter.title.orEmpty(),
                             draftTextContents =
                                 letter.blocks
@@ -548,16 +560,22 @@ class TimeLetterWriteViewModel
                         )
                     }
                 }.onFailure { error ->
-                    _uiState.update { it.copy(isLoadingEditingLetter = false) }
-                    _uiState.update {
-                        it.copy(
-                            error =
-                                if (error is TimeLetterServerRejectionException) {
-                                    TimeLetterWriteError.ServerRejection
-                                } else {
-                                    TimeLetterWriteError.LoadFailed
-                                },
-                        )
+                    if (error is TimeLetterServerRejectionException) {
+                        // 명시적 거절(예: 삭제된 타임레터)은 재시도해도 같은 결과라 스낵바로 안내하고 끝낸다.
+                        _uiState.update {
+                            it.copy(
+                                isLoadingEditingLetter = false,
+                                error = TimeLetterWriteError.ServerRejection,
+                            )
+                        }
+                    } else {
+                        // 네트워크 등 일시적 실패는 재시도가 의미 있어 전체 화면 재시도 UI로 안내한다.
+                        _uiState.update {
+                            it.copy(
+                                isLoadingEditingLetter = false,
+                                editingLoadError = true,
+                            )
+                        }
                     }
                 }
         }

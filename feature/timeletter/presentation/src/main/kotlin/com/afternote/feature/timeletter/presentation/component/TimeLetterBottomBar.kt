@@ -40,6 +40,7 @@ fun TimeLetterBottomBar(
     onDraftClick: () -> Unit,
     onDraftCountClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     Row(
         modifier =
@@ -54,7 +55,7 @@ fun TimeLetterBottomBar(
             modifier =
                 Modifier
                     .size(24.dp)
-                    .clickable(onClick = onMediaAddClick),
+                    .clickable(enabled = enabled, onClick = onMediaAddClick),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -71,7 +72,7 @@ fun TimeLetterBottomBar(
             modifier =
                 Modifier
                     .size(24.dp)
-                    .clickable(onClick = onTextStyleClick),
+                    .clickable(enabled = enabled, onClick = onTextStyleClick),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -99,22 +100,25 @@ fun TimeLetterBottomBar(
                 painter = painterResource(CoreUiR.drawable.core_ui_ic_align_center),
                 selected = textAlign == TextAlign.Center, // 상태 반영
                 onClick = onAlignCenterClick,
+                enabled = enabled,
             )
             AlignButton(
                 painter = painterResource(CoreUiR.drawable.core_ui_ic_align_left),
                 selected = textAlign == TextAlign.Start,
                 onClick = onAlignLeftClick,
+                enabled = enabled,
             )
             AlignButton(
                 painter = painterResource(CoreUiR.drawable.core_ui_ic_align_right),
                 selected = textAlign == TextAlign.End,
                 onClick = onAlignRightClick,
+                enabled = enabled,
             )
         }
 
         Spacer(modifier = Modifier.weight(1f))
 
-        TextButton(onClick = onDraftClick) {
+        TextButton(onClick = onDraftClick, enabled = enabled) {
             Text(
                 text = "임시저장",
                 style = AfternoteDesign.typography.captionLargeR,
@@ -126,6 +130,7 @@ fun TimeLetterBottomBar(
                 Modifier
                     .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                     .clickable(
+                        enabled = enabled,
                         onClickLabel = "임시저장 목록 열기",
                         role = Role.Button,
                         onClick = onDraftCountClick,

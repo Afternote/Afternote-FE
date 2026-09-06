@@ -12,6 +12,7 @@ import com.afternote.afternote_fe.test.appTestUserRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.timeletter.presentation.screen.sender.RecipientListScreen
+import com.afternote.feature.timeletter.presentation.viewmodel.RecipientListUiState
 import com.afternote.feature.timeletter.presentation.viewmodel.RecipientListViewModel
 import org.junit.Rule
 import org.junit.Test
@@ -52,13 +53,15 @@ class ReceiverSessionIsolationAndroidTest {
         }
 
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.recipients.value.any { it.name == PREVIOUS_ACCOUNT_RECEIVER }
+            (viewModel.uiState.value as? RecipientListUiState.Success)
+                ?.recipients
+                ?.any { it.name == PREVIOUS_ACCOUNT_RECEIVER } == true
         }
         composeRule.onNodeWithText(PREVIOUS_ACCOUNT_RECEIVER).assertIsDisplayed()
 
         composeRule.runOnIdle { repository.receiverState.value = emptyList() }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.recipients.value.isEmpty()
+            (viewModel.uiState.value as? RecipientListUiState.Success)?.recipients?.isEmpty() == true
         }
 
         composeRule.onNodeWithText("수신인 목록").assertIsDisplayed()
