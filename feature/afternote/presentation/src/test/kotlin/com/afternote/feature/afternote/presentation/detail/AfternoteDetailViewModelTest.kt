@@ -161,7 +161,7 @@ class AfternoteDetailViewModelTest {
             // 상세와 표시명은 출처가 다른 두 요청이라 도착 순서가 뒤집힌다. 이름이 늦는 쪽이 실제 경로 —
             // 그때 이미 그려진 Success 에 이름이 실려야 제목의 이름 세그먼트가 뒤늦게라도 채워진다.
             val profileGate = CompletableDeferred<Unit>()
-            val userRepository =
+            val myProfileRepository =
                 afternoteAuthorUserRepository().apply {
                     onGetMyProfile = {
                         profileGate.await()
@@ -172,7 +172,7 @@ class AfternoteDetailViewModelTest {
                 FakeAfternoteRepository.strict().apply {
                     onGetDetail = { Result.success(detail(serviceName = "Instagram")) }
                 }
-            val viewModel = viewModel(repository, userRepository = userRepository)
+            val viewModel = viewModel(repository, myProfileRepository = myProfileRepository)
             val states = recordStates(viewModel)
 
             // 이름이 도착하기 전 — 화면은 이미 상세를 그리고 있고 이름 자리는 비어 있다.
@@ -180,7 +180,7 @@ class AfternoteDetailViewModelTest {
 
             profileGate.complete(Unit)
 
-            assertEquals(userRepository.profile.name, states.last().authorDisplayNameOrNull())
+            assertEquals(myProfileRepository.profile.name, states.last().authorDisplayNameOrNull())
         }
 
     @Test
@@ -197,8 +197,8 @@ class AfternoteDetailViewModelTest {
                 FakeAfternoteRepository.strict().apply {
                     onGetDetail = { results.removeFirst() }
                 }
-            val userRepository = afternoteAuthorUserRepository()
-            val viewModel = viewModel(repository, userRepository = userRepository)
+            val myProfileRepository = afternoteAuthorUserRepository()
+            val viewModel = viewModel(repository, myProfileRepository = myProfileRepository)
             val states = recordStates(viewModel)
 
             viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
@@ -206,7 +206,7 @@ class AfternoteDetailViewModelTest {
 
             // 갱신이 만든 새 Success 도 이름을 들고 있어야 제목이 «…에 대한 기록» 으로 되돌아가지 않는다.
             assertEquals("Threads", states.last().serviceNameOrNull())
-            assertEquals(userRepository.profile.name, states.last().authorDisplayNameOrNull())
+            assertEquals(myProfileRepository.profile.name, states.last().authorDisplayNameOrNull())
         }
 
     @Test
@@ -214,7 +214,7 @@ class AfternoteDetailViewModelTest {
         runTest {
             // 원격만 쓰면 왕복이 끝나야 이름 세그먼트가 채워져, 진입마다 제목이 눈앞에서 다시 쓰인다.
             val profileGate = CompletableDeferred<Unit>()
-            val userRepository =
+            val myProfileRepository =
                 afternoteAuthorUserRepository().apply {
                     onGetMyProfile = {
                         profileGate.await()
@@ -227,7 +227,7 @@ class AfternoteDetailViewModelTest {
                     FakeAfternoteRepository.strict().apply {
                         onGetDetail = { Result.success(detail(serviceName = "Instagram")) }
                     },
-                    userRepository = userRepository,
+                    myProfileRepository = myProfileRepository,
                     userProfileRepository = userProfileRepository,
                 )
             val states = recordStates(viewModel)
@@ -249,18 +249,18 @@ class AfternoteDetailViewModelTest {
                 afternoteAuthorUserProfileRepository().apply {
                     onGetCachedUserName = { throw IOException("DataStore 읽기 실패") }
                 }
-            val userRepository = afternoteAuthorUserRepository()
+            val myProfileRepository = afternoteAuthorUserRepository()
             val viewModel =
                 viewModel(
                     FakeAfternoteRepository.strict().apply {
                         onGetDetail = { Result.success(detail(serviceName = "Instagram")) }
                     },
-                    userRepository = userRepository,
+                    myProfileRepository = myProfileRepository,
                     userProfileRepository = userProfileRepository,
                 )
             val states = recordStates(viewModel)
 
-            assertEquals(userRepository.profile.name, states.last().authorDisplayNameOrNull())
+            assertEquals(myProfileRepository.profile.name, states.last().authorDisplayNameOrNull())
         }
 
     @Test
@@ -271,18 +271,18 @@ class AfternoteDetailViewModelTest {
                 afternoteAuthorUserProfileRepository().apply {
                     onSaveUserName = { throw IOException("DataStore 쓰기 실패") }
                 }
-            val userRepository = afternoteAuthorUserRepository()
+            val myProfileRepository = afternoteAuthorUserRepository()
             val viewModel =
                 viewModel(
                     FakeAfternoteRepository.strict().apply {
                         onGetDetail = { Result.success(detail(serviceName = "Instagram")) }
                     },
-                    userRepository = userRepository,
+                    myProfileRepository = myProfileRepository,
                     userProfileRepository = userProfileRepository,
                 )
             val states = recordStates(viewModel)
 
-            assertEquals(userRepository.profile.name, states.last().authorDisplayNameOrNull())
+            assertEquals(myProfileRepository.profile.name, states.last().authorDisplayNameOrNull())
             assertTrue(states.last() is AfternoteDetailUiState.Success)
         }
 
@@ -418,13 +418,13 @@ class AfternoteDetailViewModelTest {
     private fun viewModel(
         repository: FakeAfternoteRepository,
         errorReporter: ErrorReporter = NoopAuthorErrorReporter,
-        userRepository: FakeUserRepository = afternoteAuthorUserRepository(),
+        myProfileRepository: FakeUserRepository = afternoteAuthorUserRepository(),
         userProfileRepository: FakeUserProfileCacheRepository = afternoteAuthorUserProfileRepository(),
     ): AfternoteDetailViewModel =
         AfternoteDetailViewModel(
             savedStateHandle = SavedStateHandle(mapOf("itemId" to 73L)),
             afternoteRepository = repository,
-            userRepository = userRepository,
+            myProfileRepository = myProfileRepository,
             userProfileRepository = userProfileRepository,
             errorReporter = errorReporter,
         )

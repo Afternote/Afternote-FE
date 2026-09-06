@@ -21,7 +21,13 @@ internal fun afternoteEditorSavedStateHandle(
         },
     )
 
-/** app androidTest 공용 helper가 열어 두던 UserRepository 경계만 그대로 허용한다. */
+/**
+ * app androidTest 공용 helper가 열어 두던 UserRepository 경계만 그대로 허용한다.
+ *
+ * 상세는 프로필만, 에디터·수신자 선택은 수신자만 주입받지만(#1743) 이 fake 는 아직 합본이다 —
+ * 좁은 fixture `FakeUserReceiverRepository`·`FakeMyProfileRepository` 는 #1738 이 만든다.
+ * 합본이 두 좁은 계약을 모두 구현하므로 그때까지는 이대로 넘긴다.
+ */
 internal fun afternoteAuthorUserRepository(): FakeUserRepository =
     FakeUserRepository.strict().apply {
         profile = TEST_USER

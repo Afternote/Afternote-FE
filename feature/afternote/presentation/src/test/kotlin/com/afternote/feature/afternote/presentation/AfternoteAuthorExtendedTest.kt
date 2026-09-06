@@ -488,7 +488,7 @@ private fun detailViewModel(
     AfternoteDetailViewModel(
         savedStateHandle = SavedStateHandle(mapOf("itemId" to itemId)),
         afternoteRepository = repository,
-        userRepository = afternoteAuthorUserRepository(),
+        myProfileRepository = afternoteAuthorUserRepository(),
         userProfileRepository = afternoteAuthorUserProfileRepository(),
         errorReporter = NoopAuthorErrorReporter,
     )
@@ -503,7 +503,7 @@ private fun editorViewModel(
                 initialType = AfternoteType.SOCIAL_NETWORK,
                 itemId = itemId,
             ),
-        userRepository = afternoteAuthorUserRepository(),
+        userReceiverRepository = afternoteAuthorUserRepository(),
         afternoteRepository = repository,
         memorialThumbnailUploadRepository =
             MemorialThumbnailUploadRepository {
