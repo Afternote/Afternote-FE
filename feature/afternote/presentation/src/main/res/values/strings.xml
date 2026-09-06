@@ -140,6 +140,7 @@
     <!-- Afternote editor (author) — UI strings -->
     <string name="afternote_editor_screen_title">애프터노트 작성하기</string>
     <string name="afternote_editor_submit">등록</string>
+    <string name="afternote_editor_save_draft">임시저장</string>
     <string name="afternote_editor_service_sheet_title_social">소셜 네트워크 서비스 선택</string>
     <string name="afternote_editor_service_sheet_title_gallery">갤러리 및 파일 서비스 선택</string>
     <string name="afternote_editor_service_sheet_title_business">비즈니스 서비스 선택</string>

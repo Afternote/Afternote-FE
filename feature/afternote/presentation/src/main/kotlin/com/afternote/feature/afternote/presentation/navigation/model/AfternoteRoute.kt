@@ -17,6 +17,11 @@ sealed interface AfternoteRoute {
     data class EditorFlowRoute(
         val itemId: Long? = null,
         val initialType: AfternoteType,
+        /**
+         * 이어쓰기로 들어왔는지 (#808). 서버 상세는 하나인데 응답 형태가 갈리므로
+         * (`AfternotedetailResponse` 의 Draft / Published*) 무엇으로 읽을지를 여는 쪽이 정한다.
+         */
+        val isDraft: Boolean = false,
     ) : AfternoteRoute
 
     /** [EditorFlowRoute]의 시작 화면. flow 인자는 부모 route가 소유한다. */

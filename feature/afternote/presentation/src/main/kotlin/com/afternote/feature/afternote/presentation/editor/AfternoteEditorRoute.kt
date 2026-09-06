@@ -128,6 +128,22 @@ internal fun AfternoteEditorNavigation(
                 state = state,
             )
         }
+    val saveDraft =
+        remember(editViewModel, state) {
+            buildOnRegisterClick(
+                editViewModel = editViewModel,
+                state = state,
+                asDraft = true,
+            )
+        }
+    // 임시저장 저장 경로는 다 세웠지만 **결과를 볼 화면이 아직 없다** — 저장하면 홈 목록(발행분만)에서
+    // 사라지고, 임시저장 목록(#1792)·이어쓰기 진입(#1791)은 다른 PR 로 빠져 있다. 그때까지 버튼을
+    // 그리지 않아 «누르면 사라지는» 상태를 만들지 않는다. 두 배선이 들어오면 이 게이트를 지운다.
+    //
+    // 발행이 끝난 노트의 편집 화면에서도 그리지 않는다 — 결과가 「등록」과 같은데 검증만 느슨해지는
+    // 자리라 버튼이 할 일이 없다 ([AfternoteEditorViewModel.isPublishedEdit]). 신규 작성과 임시저장
+    // 이어쓰기에서만 뜬다.
+    val onSaveDraftClick = saveDraft.takeIf { DRAFT_ENTRY_WIRED && !editViewModel.isPublishedEdit }
     // 썸네일 실패는 알리는 것으로 끝내지 않는다 — 영상 재선택 없이 되돌릴 액션을 같은 스낵바에 건다.
     // 어느 오류에 거는지는 오류 자체가 말한다 ([offersMemorialThumbnailRetry]).
     val thumbnailRetryAction =
@@ -143,6 +159,7 @@ internal fun AfternoteEditorNavigation(
         form = uiState.form,
         onBackClick = onPopBackStack,
         onRegisterClick = onRegisterClick,
+        onSaveDraftClick = onSaveDraftClick,
         snackbarMessage = snackbarMessage,
         snackbarAction = thumbnailRetryAction,
         onSnackbarMessageConsumed = {
@@ -192,3 +209,12 @@ internal fun AfternoteEditorNavigation(
             ),
     )
 }
+
+/**
+ * 임시저장 진입점(목록 #1792 · 이어쓰기 #1791)이 배선됐는가.
+ *
+ * `false` 인 동안 에디터 상단바의 「임시저장」 버튼을 그리지 않는다. 저장 자체는 동작하지만 저장된
+ * 것을 다시 열 화면이 없어, 누르는 순간 그 애프터노트가 어디에서도 안 보이기 때문이다.
+ * 두 PR 이 들어오면 이 상수와 사용처를 함께 지운다.
+ */
+private const val DRAFT_ENTRY_WIRED = false

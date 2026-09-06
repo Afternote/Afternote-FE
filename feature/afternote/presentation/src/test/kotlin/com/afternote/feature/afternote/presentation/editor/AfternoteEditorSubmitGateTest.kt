@@ -61,6 +61,7 @@ class AfternoteEditorSubmitGateTest {
                     form = EditorFormState(),
                     onBackClick = {},
                     onRegisterClick = onRegisterClick,
+                    onSaveDraftClick = {},
                     snackbarMessage = null,
                     onSnackbarMessageConsumed = {},
                     validationMessage = null,

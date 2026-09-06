@@ -11,6 +11,7 @@ import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
+import com.afternote.feature.afternote.domain.model.author.DraftDetail
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
@@ -47,6 +48,86 @@ internal object AfternoteEditorFormMapper {
                         label = receiver.relation,
                     )
                 },
+        )
+
+    /**
+     * 임시저장 상세 → 에디터 프리필 (#808).
+     *
+     * 발행 상세와 달리 종류별 값이 **아직 안 담긴 채로** 온다 — 그 «없음» 은 빈 입력칸이 되어야 하지
+     * 실패가 아니다. [DraftDetail] 이 평평한 대신 종류를 필드로 들고 있어, 여기서 그 종류에 실제로
+     * 존재하는 입력만 골라 담는다(발행 경로가 [DetailContent] 로 하는 일과 같다).
+     */
+    fun buildEditorFormPrefill(draft: DraftDetail): EditorFormPrefill =
+        EditorFormPrefill(
+            content = draft.toEditorContentPrefill(),
+            leaveMessageBlocks = draft.leaveMessageBlocks.map(LeaveMessageBlock::toEditorBlock),
+            receivers =
+                draft.receivers.map { receiver ->
+                    AfternoteEditorReceiver(
+                        id = receiver.receiverId,
+                        name = receiver.name,
+                        label = receiver.relation,
+                    )
+                },
+        )
+
+    private fun DraftDetail.toEditorContentPrefill(): EditorContentPrefill =
+        when (type) {
+            AfternoteType.SOCIAL_NETWORK -> {
+                EditorContentPrefill.SocialNetwork(
+                    serviceName = serviceName,
+                    credentials = credentials.toEditorCredentialsPrefill(),
+                    processingMethods = processingMethods.toProcessingMethodItems(),
+                )
+            }
+
+            AfternoteType.BUSINESS -> {
+                EditorContentPrefill.Business(
+                    serviceName = serviceName,
+                    credentials = credentials.toEditorCredentialsPrefill(),
+                    processingMethods = processingMethods.toProcessingMethodItems(),
+                )
+            }
+
+            AfternoteType.GALLERY_AND_FILES -> {
+                EditorContentPrefill.Gallery(
+                    serviceName = serviceName,
+                    processingMethods = processingMethods.toProcessingMethodItems(),
+                )
+            }
+
+            AfternoteType.MEMORIAL -> {
+                EditorContentPrefill.Memorial(
+                    videoUrl = media.videoUrl,
+                    thumbnailUrl = media.thumbnailUrl,
+                    photoUrl = media.photoUrl,
+                    playlistSongs =
+                        songs.mapIndexed { index, song ->
+                            Song(
+                                selectionKey = "draft:$index",
+                                title = song.title,
+                                artist = song.artist,
+                                albumCoverUrl = song.coverUrl,
+                            )
+                        },
+                )
+            }
+
+            AfternoteType.ESTATE -> {
+                EditorContentPrefill.Estate
+            }
+        }
+
+    /**
+     * 발행·임시저장 공용. 발행 상세는 서버가 non-blank 를 보장하므로 `orEmpty()` 가 무효타이고,
+     * 계정 정보를 아직 안 쓴 임시저장(null)만 빈 입력칸으로 연다 — 「없음」과 「빈 문자열」의 구분은 폼에 없다.
+     *
+     * 널 허용 수신자 하나로 합친 이유는 JVM 소거다 — non-null 판과 시그니처가 같아 공존할 수 없다.
+     */
+    private fun DetailCredentials?.toEditorCredentialsPrefill() =
+        EditorCredentialsPrefill(
+            id = this?.id.orEmpty(),
+            password = this?.password.orEmpty(),
         )
 
     private fun DetailContent.toEditorContentPrefill(serviceName: String): EditorContentPrefill =
@@ -95,12 +176,6 @@ internal object AfternoteEditorFormMapper {
                 EditorContentPrefill.Estate
             }
         }
-
-    private fun DetailCredentials.toEditorCredentialsPrefill() =
-        EditorCredentialsPrefill(
-            id = id,
-            password = password,
-        )
 
     private fun List<String>.toProcessingMethodItems(): List<ProcessingMethodItem> =
         mapIndexed { index, text ->
@@ -200,6 +275,23 @@ internal object AfternoteEditorFormMapper {
             }
         }
     }
+
+    /**
+     * 만들어 둔 생성 입력에 임시저장 여부만 얹는다 (#808).
+     *
+     * 종류별 빌더마다 인자를 늘리지 않는 이유는 그 값이 «무엇을 담았나» 가 아니라 «어느 버튼으로 저장하나» 라서다 —
+     * 폼 내용과 무관하고, 저장 순간에만 정해진다.
+     */
+    fun withDraft(
+        input: CreateAfternoteInput,
+        isDraft: Boolean,
+    ): CreateAfternoteInput =
+        when (input) {
+            is CreateAfternoteInput.Social -> CreateAfternoteInput.Social(input.payload.copy(isDraft = isDraft))
+            is CreateAfternoteInput.Business -> CreateAfternoteInput.Business(input.payload.copy(isDraft = isDraft))
+            is CreateAfternoteInput.Gallery -> CreateAfternoteInput.Gallery(input.payload.copy(isDraft = isDraft))
+            is CreateAfternoteInput.Memorial -> CreateAfternoteInput.Memorial(input.payload.copy(isDraft = isDraft))
+        }
 
     private fun buildAccountCreatePayload(
         payload: RegisterAfternotePayload,

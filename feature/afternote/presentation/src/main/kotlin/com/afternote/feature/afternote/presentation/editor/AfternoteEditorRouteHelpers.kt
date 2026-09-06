@@ -76,9 +76,14 @@ internal suspend fun tryApplyReceiverSelectionFromSavedState(
     viewModel.applySelectedReceivers(selectedIds)
 }
 
+/**
+ * @param asDraft 임시저장 버튼으로 저장한다 (#808). 조립 과정은 정식 등록과 한 줄도 다르지 않다 —
+ *   임시저장은 «덜 담은 폼을 그대로» 보내는 것이지 다른 것을 보내는 게 아니다.
+ */
 internal fun buildOnRegisterClick(
     editViewModel: AfternoteEditorViewModel,
     state: AfternoteEditorState,
+    asDraft: Boolean = false,
 ): () -> Unit =
     {
         // 폼 스냅샷은 한 번만 읽는다 — 필드마다 다시 읽으면 조립 도중 갱신이 끼어 서로 다른 시점의 값이 섞인다.
@@ -103,6 +108,7 @@ internal fun buildOnRegisterClick(
                     memorialPhotoUrl = form.memorialPhotoUrl,
                     pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
                 ),
+            asDraft = asDraft,
         )
     }
 
