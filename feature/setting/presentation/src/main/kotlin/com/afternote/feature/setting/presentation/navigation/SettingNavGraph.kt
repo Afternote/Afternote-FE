@@ -11,7 +11,6 @@ import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import com.afternote.core.ui.Route
 import com.afternote.feature.setting.presentation.component.PinSetupStep
-import com.afternote.feature.setting.presentation.model.sampleInquiries
 import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
 import com.afternote.feature.setting.presentation.screen.ConnectedAccountsScreen
 import com.afternote.feature.setting.presentation.screen.DeliveryConditionScreen
@@ -194,23 +193,22 @@ fun NavGraphBuilder.settingNavGraph(
 
         composable<SettingRoute.InquiryListRoute> {
             InquiryListScreen(
-                inquiries = sampleInquiries,
+                inquiries = emptyList(),
                 onBackClick = actions::onInquiryBack,
                 onInquiryClick = actions::onNavigateToInquiryDetail,
                 onNewInquiryClick = actions::onNavigateToInquiryWrite,
             )
         }
 
-        composable<SettingRoute.InquiryDetailRoute> { backStackEntry ->
-            val id = backStackEntry.toRoute<SettingRoute.InquiryDetailRoute>().inquiryId
-            val inquiry = sampleInquiries.firstOrNull { it.id == id } ?: return@composable
-            InquiryDetailScreen(inquiry = inquiry, onBackClick = actions::onInquiryBack)
+        composable<SettingRoute.InquiryDetailRoute> {
+            // 문의 조회 API 가 아직 없다 (Afternote-BE#246). 실제 데이터 소스가 연결되기 전까지는
+            // 지어낸 문의를 보여주는 대신 "찾을 수 없음" 상태를 그린다.
+            InquiryDetailScreen(inquiry = null, onBackClick = actions::onInquiryBack)
         }
 
         composable<SettingRoute.InquiryWriteRoute> {
             InquiryWriteScreen(
                 onBackClick = actions::onInquiryBack,
-                onSubmitClick = actions::onInquirySubmitted,
             )
         }
     }

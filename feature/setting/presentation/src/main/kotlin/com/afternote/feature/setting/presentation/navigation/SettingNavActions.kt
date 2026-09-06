@@ -72,6 +72,4 @@ interface SettingNavActions {
     fun onNavigateToInquiryDetail(inquiryId: Long)
 
     fun onNavigateToInquiryWrite()
-
-    fun onInquirySubmitted()
 }

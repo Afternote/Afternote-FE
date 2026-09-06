@@ -372,10 +372,6 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
             override fun onNavigateToInquiryWrite() {
                 appState.navController.navigate(SettingRoute.InquiryWriteRoute)
             }
-
-            override fun onInquirySubmitted() {
-                appState.navController.popBackStack()
-            }
         }
     }
 

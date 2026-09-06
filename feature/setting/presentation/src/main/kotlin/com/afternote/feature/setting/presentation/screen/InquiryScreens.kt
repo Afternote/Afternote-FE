@@ -28,12 +28,15 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -53,7 +56,7 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.model.InquiryStatus
 import com.afternote.feature.setting.presentation.model.InquiryUiModel
-import com.afternote.feature.setting.presentation.model.sampleInquiries
+import kotlinx.coroutines.launch
 
 @Composable
 fun InquiryListScreen(
@@ -75,15 +78,35 @@ fun InquiryListScreen(
         },
         containerColor = AfternoteDesign.colors.gray1,
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            item { Spacer(Modifier.height(2.dp)) }
-            items(inquiries, key = { it.id }) { inquiry ->
-                InquiryListItem(inquiry, onClick = { onInquiryClick(inquiry.id) })
+        if (inquiries.isEmpty()) {
+            InquiryEmptyState(modifier = Modifier.fillMaxSize().padding(padding))
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                item { Spacer(Modifier.height(2.dp)) }
+                items(inquiries, key = { it.id }) { inquiry ->
+                    InquiryListItem(inquiry, onClick = { onInquiryClick(inquiry.id) })
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun InquiryEmptyState(
+    modifier: Modifier = Modifier,
+    message: String = stringResource(R.string.inquiry_list_empty),
+) {
+    Box(
+        modifier = modifier.padding(horizontal = 20.dp).padding(top = 24.dp),
+    ) {
+        Text(
+            text = message,
+            style = AfternoteDesign.typography.bodyLargeR,
+            color = AfternoteDesign.colors.gray8,
+        )
     }
 }
 
@@ -138,7 +161,7 @@ private fun InquiryListItem(
 
 @Composable
 fun InquiryDetailScreen(
-    inquiry: InquiryUiModel,
+    inquiry: InquiryUiModel?,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -147,6 +170,13 @@ fun InquiryDetailScreen(
         topBar = { InquiryTopBar(onBackClick) },
         containerColor = AfternoteDesign.colors.gray1,
     ) { padding ->
+        if (inquiry == null) {
+            InquiryEmptyState(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                message = stringResource(R.string.inquiry_detail_not_found),
+            )
+            return@Scaffold
+        }
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
             Column(Modifier.padding(horizontal = 20.dp, vertical = 24.dp)) {
                 Text(inquiry.date, style = AfternoteDesign.typography.footnoteCaption, color = AfternoteDesign.colors.gray8)
@@ -185,7 +215,6 @@ fun InquiryDetailScreen(
 @Composable
 fun InquiryWriteScreen(
     onBackClick: () -> Unit,
-    onSubmitClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var type by rememberSaveable { mutableStateOf("\ud0c0\uc784\ub808\ud130") }
@@ -203,6 +232,9 @@ fun InquiryWriteScreen(
             ({ picker.launch("image/*") })
         }
     val canSubmit = title.isNotBlank() && content.isNotBlank()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    val submitNotSupportedMessage = stringResource(R.string.inquiry_submit_not_supported)
 
     Scaffold(
         modifier = modifier.imePadding(),
@@ -210,11 +242,16 @@ fun InquiryWriteScreen(
         bottomBar = {
             AfternoteButton(
                 text = stringResource(R.string.inquiry_submit),
-                onClick = onSubmitClick,
+                onClick = {
+                    // \uc811\uc218 API \uac00 \uc544\uc9c1 \uc5c6\ub2e4 (Afternote-BE#246). \uc811\uc218\ub41c \uac83\ucc98\ub7fc \ub4a4\ub85c \uac00\uc9c0 \uc54a\uace0
+                    // \uc544\uc9c1 \uc9c0\uc6d0\ud558\uc9c0 \uc54a\ub294 \uae30\ub2a5\uc784\uc744 \uadf8\ub300\ub85c \uc54c\ub9b0\ub2e4 \u2014 \uc131\uacf5\ud55c \ucc99 \ub2eb\uc9c0 \uc54a\ub294\ub2e4 (#1629 \uc640 \ub3d9\uc77c\ud55c \uc6d0\uce59).
+                    coroutineScope.launch { snackbarHostState.showSnackbar(submitNotSupportedMessage) }
+                },
                 type = if (canSubmit) AfternoteButtonType.Default else AfternoteButtonType.Un,
                 modifier = Modifier.navigationBarsPadding().padding(horizontal = 20.dp, vertical = 16.dp),
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = AfternoteDesign.colors.gray1,
     ) { padding ->
         Column(
@@ -341,6 +378,19 @@ private fun InquiryListScreenPreview() {
     }
 }
 
+@Preview(name = "Inquiry list - empty", showBackground = true)
+@Composable
+private fun InquiryListScreenEmptyPreview() {
+    AfternoteTheme {
+        InquiryListScreen(
+            inquiries = emptyList(),
+            onBackClick = {},
+            onInquiryClick = {},
+            onNewInquiryClick = {},
+        )
+    }
+}
+
 @Preview(name = "Inquiry detail - answered", showBackground = true)
 @Composable
 private fun InquiryDetailScreenPreview() {
@@ -352,13 +402,40 @@ private fun InquiryDetailScreenPreview() {
     }
 }
 
+// 프리뷰 전용 표본 데이터 — 프로덕션 라우트(SettingNavGraph)에서는 사용하지 않는다.
+private val sampleInquiries =
+    listOf(
+        InquiryUiModel(
+            id = 1L,
+            status = InquiryStatus.ANSWERED,
+            date = "2025.08.09.",
+            title = "타임레터 발송일 변경이 안 돼요",
+            content =
+                "타임레터를 작성한 뒤 발송일을 변경하려고 하는데 날짜를 선택해도 기존 날짜로 계속 표시됩니다. " +
+                    "앱을 종료했다가 다시 실행해도 동일하고, 수정 버튼을 눌러 저장해도 변경사항이 반영되지 않아요.\n" +
+                    "현재 발송 예정일은 8월 20일로 설정되어 있고, 9월 15일로 변경하려고 합니다. 확인 부탁드립니다.",
+            answer =
+                "안녕하세요 애프터노트입니다.\n\n타임레터 발신인은 마이페이지에서 변경하실 수 있습니다.\n" +
+                    "마이페이지 > 타임레터 관리에서 변경을 원하시는 타임레터를 선택한 후, 발송예정일을 변경해 주세요.\n" +
+                    "변경된 날짜는 저장 후 정상적으로 반영됩니다.\n\n" +
+                    "추가로 이용에 어려움이 있으실 경우 언제든지 문의해 주세요.\n\n감사합니다.",
+        ),
+        InquiryUiModel(
+            id = 2L,
+            status = InquiryStatus.RECEIVED,
+            date = "2025.08.09.",
+            title = "타임레터 발송일 변경이 안 돼요",
+            content = "발송 예약일은 마이페이지에서 변경이 가능한지 문의드립니다.",
+            answer = null,
+        ),
+    )
+
 @Preview(name = "Inquiry write", showBackground = true)
 @Composable
 private fun InquiryWriteScreenPreview() {
     AfternoteTheme {
         InquiryWriteScreen(
             onBackClick = {},
-            onSubmitClick = {},
         )
     }
 }
