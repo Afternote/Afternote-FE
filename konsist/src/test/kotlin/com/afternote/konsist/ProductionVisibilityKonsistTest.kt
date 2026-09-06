@@ -343,10 +343,8 @@ class ProductionVisibilityKonsistTest {
                 "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/WeeklyReportRecordedDays.kt::function resolveDateInWeekOrNull [internal]",
             )
 
-        val ISSUE_1675_ONBOARDING =
-            setOf(
-                "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/OnboardingProfileScreen.kt::function handleProfileImagePickerResult [internal]",
-            )
+        /** #1675 해소. 프로필 이미지 선택 결과 helper 는 private 이고 테스트는 화면 동작으로 본다. */
+        val ISSUE_1675_ONBOARDING = emptySet<String>()
 
         val ISSUE_1676_RECEIVER =
             setOf(
