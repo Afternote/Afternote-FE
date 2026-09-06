@@ -244,7 +244,7 @@ Play App Signing은 설치되는 APK에 사용하는 app signing key와 Play에 
 2. AAB 검증 스크립트의 경로·AAB SHA-256·서명 인증서 SHA-256을 릴리스 기록에 남긴다. 자동 배포에서는 run summary가 이 기록이다.
 3. Play Console에서 내부 테스트 트랙을 만들고 Play App Signing 방식을 적용한다(기본안, 위 「Play App Signing 키 결정」).
 4. AAB를 업로드한다.
-5. Play Console의 app signing certificate를 다음 제공자에 등록한다.
+5. Play Console의 app signing certificate를 다음 제공자에 **추가** 등록한다. 기존 값을 지우지 않는다 — 기본안에서는 Play 인증서와 Firebase APK 를 서명한 팀 release 인증서가 서로 다르므로 둘 다 등록돼 있어야 한다. 기존 등록을 새 값으로 바꾸면 Firebase QA 채널의 카카오·구글 로그인이 그날로 깨진다.
    - Kakao Developers Android key hash
    - Firebase Android 앱 SHA 인증서 지문
    - Google API/OAuth 설정 중 package name과 인증서 지문을 검증하는 항목
