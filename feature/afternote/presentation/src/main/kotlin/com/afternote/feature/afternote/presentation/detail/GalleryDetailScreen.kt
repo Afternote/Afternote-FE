@@ -23,12 +23,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.popup.AfternoteActionMenu
+import com.afternote.core.ui.popup.editDeleteActionMenuItems
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.detail.AfternoteDetailServiceHeader
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
-import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodsSection
 import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
@@ -51,7 +52,7 @@ data class GalleryDetailContent(
 /**
  * 갤러리 애프터노트 상세 화면 (Stateless).
  *
- * [com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailScreen] 과 동일한 Scaffold·TopBar·드롭다운·스크롤 modifier 패턴을 따른다.
+ * [com.afternote.feature.afternote.presentation.detail.account.AccountDetailScreen] 과 동일한 Scaffold·TopBar·드롭다운·스크롤 modifier 패턴을 따른다.
  */
 @Composable
 fun GalleryDetailScreen(
@@ -93,11 +94,14 @@ fun GalleryDetailScreen(
                                     modifier = Modifier.size(16.dp),
                                 )
                             }
-                            EditDropdownMenu(
+                            AfternoteActionMenu(
                                 expanded = state.showDropdownMenu,
                                 onDismissRequest = state::hideDropdownMenu,
-                                onDeleteClick = { state.showDeleteDialog() },
-                                onEditClick = onEditClick,
+                                items =
+                                    editDeleteActionMenuItems(
+                                        onEditClick = onEditClick,
+                                        onDeleteClick = { state.showDeleteDialog() },
+                                    ),
                             )
                         }
                     }

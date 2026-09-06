@@ -49,6 +49,11 @@ import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailRoute
 import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel
 import com.afternote.feature.home.presentation.HomeTabActions
+import com.afternote.feature.home.presentation.receiver.ReceiverHomeActions
+import com.afternote.feature.home.presentation.receiver.ReceiverHomeEvent
+import com.afternote.feature.home.presentation.receiver.ReceiverHomeScreen
+import com.afternote.feature.home.presentation.receiver.ReceiverHomeViewModel
+import com.afternote.feature.home.presentation.receiver.model.ReceiverHomeUiState
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeMindRecordReceiverRepository
@@ -74,11 +79,6 @@ import com.afternote.feature.receiver.presentation.deliveryverification.Document
 import com.afternote.feature.receiver.presentation.deliveryverification.DocumentUploadViewModel
 import com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationEmailScreen
 import com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationViewModel
-import com.afternote.feature.receiver.presentation.home.ReceiverHomeActions
-import com.afternote.feature.receiver.presentation.home.ReceiverHomeEvent
-import com.afternote.feature.receiver.presentation.home.ReceiverHomeScreen
-import com.afternote.feature.receiver.presentation.home.ReceiverHomeViewModel
-import com.afternote.feature.receiver.presentation.home.model.ReceiverHomeUiState
 import com.afternote.feature.receiver.presentation.navigation.ReceiverNavActions
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
 import com.afternote.feature.timeletter.domain.model.ReceivedTimeLetterList
@@ -329,10 +329,10 @@ class ReceiverRuntimeCompletionAndroidTest {
             senderMessage = Result.failure(offline),
         )
         composeRule
-            .onNodeWithText(context.getString(ReceiverR.string.receiver_home_error_message))
+            .onNodeWithText(context.getString(HomeR.string.home_receiver_error_message))
             .assertIsDisplayed()
         composeRule
-            .onNodeWithText(context.getString(ReceiverR.string.receiver_home_retry))
+            .onNodeWithText(context.getString(HomeR.string.home_receiver_retry))
             .performClick()
 
         composeRule.waitUntil(timeoutMillis = 5_000) { homeCallCounts().all { it == 2 } }
@@ -365,12 +365,12 @@ class ReceiverRuntimeCompletionAndroidTest {
         )
 
         composeRule
-            .onNodeWithText(context.getString(ReceiverR.string.receiver_home_sender_record_title, "이발신"))
+            .onNodeWithText(context.getString(HomeR.string.home_receiver_sender_record_title, "이발신"))
             .assertIsDisplayed()
         composeRule.onNodeWithText("언제나 응원할게").assertIsDisplayed()
         composeRule
             .onAllNodes(
-                hasText(context.getString(ReceiverR.string.receiver_home_section_count_unavailable)),
+                hasText(context.getString(HomeR.string.home_receiver_section_count_unavailable)),
             ).apply {
                 assertCountEquals(2)
                 this[0].performScrollTo().assertIsDisplayed()
