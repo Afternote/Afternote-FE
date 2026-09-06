@@ -67,7 +67,8 @@ class ReceiverRequestFailureTest {
 
             assertTrue(result is ReceiverRequestRejectedException)
             val domainError = result as ReceiverRequestRejectedException
-            assertEquals("수신자 이메일은 필수입니다.", domainError.userMessage)
+            // 서버 원문은 접근자가 아니라 진단용 message 로만 남는다 — 화면 문구는 소비처가 타입만 보고 고른다.
+            assertEquals("수신자 이메일은 필수입니다.", domainError.message)
             assertSame(apiError, domainError.cause)
         }
 
