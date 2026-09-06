@@ -59,7 +59,7 @@ enum class AfternoteFailureStage(
      * 애프터노트 목록(Paging) 로드 — refresh·append 를 함께 싣는다.
      *
      * 목록은 실패해도 이미 그려 둔 페이지가 남아 «표시만 사라지는» 무음 결함이 된다. 한 번 실패한
-     * 뒤 사용자가 재시도를 연타하면 같은 실패가 반복 기록되므로 호출부([com.afternote.feature.afternote.presentation.author.home.AfternoteHomeViewModel])
+     * 뒤 사용자가 재시도를 연타하면 같은 실패가 반복 기록되므로 호출부([com.afternote.feature.afternote.presentation.home.AfternoteHomeViewModel])
      * 가 중복을 억제한다 — 보관 한도(최근 8건)를 한 장애가 통째로 차지하지 않게 하기 위함이다.
      */
     LIST_LOAD("list_load"),

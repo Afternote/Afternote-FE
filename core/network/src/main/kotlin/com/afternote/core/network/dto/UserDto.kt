@@ -12,7 +12,7 @@ data class UserCreateReceiverRequestDto(
     @SerialName("name") val name: String,
     @SerialName("relation") val relation: String,
     @SerialName("phone") val phone: String? = null,
-    @SerialName("email") val email: String? = null,
+    @SerialName("email") val email: String,
     @SerialName("message") val message: String? = null,
 )
 

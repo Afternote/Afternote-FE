@@ -1,6 +1,7 @@
 package com.afternote.feature.home.presentation
 
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.MyProfileRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.model.user.User
 import com.afternote.feature.home.presentation.usecase.GetHomeSummaryUseCase
@@ -58,7 +59,8 @@ class HomeWeeklyCountBudgetTest {
 
     private fun useCase(weeklyDelayMillis: Long): GetHomeSummaryUseCase =
         GetHomeSummaryUseCase(
-            userRepository = StubUserRepository,
+            myProfileRepository = StubMyProfileRepository,
+            userReceiverRepository = StubUserReceiverRepository,
             dailyQuestionRepository = StubDailyQuestionRepository,
             getWeeklyRecordCount = GetWeeklyRecordCountUseCase(SlowWeeklyReportRepository(weeklyDelayMillis)),
         )
@@ -83,18 +85,29 @@ private class SlowWeeklyReportRepository(
     }
 }
 
-/** UserRepository 는 표면이 넓다 — 이 시나리오가 타는 호출만 답한다. */
-private val StubUserRepository: UserRepository =
+// 두 계약 다 이 시나리오가 타는 호출 하나씩만 답한다. 프록시가 무는 표면이 곧 계약 크기라,
+// 다른 멤버가 호출되면 `error` 로 떨어진다 (#1741·#1742).
+private val StubMyProfileRepository: MyProfileRepository =
     Proxy.newProxyInstance(
-        UserRepository::class.java.classLoader,
-        arrayOf(UserRepository::class.java),
+        MyProfileRepository::class.java.classLoader,
+        arrayOf(MyProfileRepository::class.java),
     ) { _, method, _ ->
         when (method.name) {
             "getMyProfile" -> User(name = "효기", email = "user@example.com", phone = null, profileImageUrl = null)
+            else -> error("Unexpected call: ${method.name}")
+        }
+    } as MyProfileRepository
+
+private val StubUserReceiverRepository: UserReceiverRepository =
+    Proxy.newProxyInstance(
+        UserReceiverRepository::class.java.classLoader,
+        arrayOf(UserReceiverRepository::class.java),
+    ) { _, method, _ ->
+        when (method.name) {
             "getReceivers" -> emptyList<Receiver>()
             else -> error("Unexpected call: ${method.name}")
         }
-    } as UserRepository
+    } as UserReceiverRepository
 
 private object StubDailyQuestionRepository : DailyQuestionRepository {
     override suspend fun getList(

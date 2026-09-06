@@ -152,6 +152,7 @@ keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-sh
 
 - Issue는 [현재 Issue form](.github/ISSUE_TEMPLATE/issue.yml)을 사용하고, 같은 작업의 기존 Issue가 있으면 새로 만들지 않고 재사용한다.
 - PR은 [현재 PR 템플릿](.github/PULL_REQUEST_TEMPLATE.md)을 그대로 채운다. 본문에 같은 저장소의 실제 Issue를 `Refs #N`으로 연결해야 Repository Quality 검사를 통과한다.
+- `src/main`에 새로 넣은 Kotlin 함수는 main 어딘가에서 참조되어야 한다. 테스트만 부르거나 아무도 부르지 않으면 Repository Quality가 실패한다. 후속 PR이 곧 소비하는 공개 계약이면 PR 라벨 `test-only-production-exempt`로 경고로 낮추고 본문에 소비처를 적는다.
 - 여러 PR이 같은 Issue를 공유할 수 있다. 그 Issue의 작업을 최종 완료하는 PR에서만 `Closes #N`·`Fixes #N`·`Resolves #N`을 사용한다.
 - `CI Test Plan`에는 Android 계측 테스트를 `none`·`selected`·`full`로 선언하고 선택 이유를 변경 경계 기준으로 남긴다.
 - 필수 검사는 머지 순서 가드, Ktlint, Android Lint, Unit Test, Screenshot, Repository Quality, CodeQL(Java/Kotlin·Actions)다. JavaScript/TypeScript CodeQL도 저장소 자동화 스크립트를 분석한다. 이름이나 구성이 바뀌면 README 목록보다 활성 ruleset과 [PR 검증 진입점](.github/workflows/pr-validation.yml)을 우선한다.
@@ -168,10 +169,10 @@ Kover는 임의의 절대 커버리지 목표를 강제하지 않는다. 정확�
 
 ## 코드 리뷰
 
-- Draft가 아닌 내부 팀원 PR이 열리거나 리뷰 가능 상태가 되면 [자동 요청 workflow](.github/workflows/review-request-all.yml)가 작성자를 제외한 팀원에게 리뷰를 요청한다. 요청 인원 수와 필수 승인 수는 같은 뜻이 아니다.
+- Draft가 아닌 내부 팀원 PR이 열리거나 리뷰 가능 상태가 되면 [자동 요청 workflow](.github/workflows/review-request-all.yml)가 작성자를 제외한 리뷰 담당 팀원(`TEAM`)에게 리뷰를 요청한다. 요청 인원 수와 필수 승인 수는 같은 뜻이 아니다.
 - 현재 `develop`·`main` 머지에는 **승인 1건**이 필요하다. `main`은 모든 리뷰 스레드 해결도 필요하다.
 - 리뷰 결과는 GitHub의 `APPROVED`·`CHANGES_REQUESTED`·일반 코멘트로 표현한다. 별도 RCA prefix나 12시간 SLA는 두지 않는다.
-- [리뷰 적체 가드](.github/workflows/review-debt-guard.yml)는 응답을 기다리는 다른 PR이 남았거나 자기 PR의 최신 변경요청 뒤 아무 조치도 하지 않은 팀원의 새 PR을 닫을 수 있다. 각 PR은 팀원 한 명이 먼저 유효한 판정을 내리면 최초 미응답 목록에서 빠지고, 작성자가 실질 커밋이나 응답을 남기면 작성자 대기 목록에서 빠진다.
-- `awaiting-author` 라벨은 변경요청 뒤 작성자 무조치 상태를 보여 주는 표식이다. 새 PR 가드는 라벨 갱신 시점에 의존하지 않고 같은 판정을 현재 열린 PR에 다시 적용한다.
+- [리뷰 적체 가드](.github/workflows/review-debt-guard.yml)는 응답을 기다리는 다른 PR이 남았거나 자기 PR의 최신 변경요청 뒤 아무 조치도 하지 않은 팀원의 새 PR을 닫을 수 있다. 아래 면제 목록에 있는 작성자는 대상이 아니다. 각 PR은 팀원 한 명이 먼저 유효한 판정을 내리면 최초 미응답 목록에서 빠지고, 작성자가 실질 커밋이나 응답을 남기면 작성자 대기 목록에서 빠진다.
+- `awaiting-author` 라벨은 리뷰 게이트 적용 대상 중 변경요청 뒤 작성자 무조치 상태인 PR을 보여 준다. 면제 작성자에게는 붙이지 않으며, 이미 붙은 라벨도 리컨사일러가 제거한다. 새 PR 가드는 라벨 갱신 시점에 의존하지 않고 같은 판정을 현재 열린 PR에 다시 적용한다.
 - 쓰기 권한이 있는 리뷰어별 최신 `APPROVED`·`CHANGES_REQUESTED` 가운데 PR 전체에서 가장 늦은 판정을 최종 판정으로 사용한다. 가장 늦은 판정이 승인이면 더 오래된 변경 요청은 자동 해제되고, 승인 뒤에 새 변경 요청이 오면 다시 차단된다.
-- 긴급 PR은 근거가 있을 때만 `review-debt-exempt` 라벨로 적체 가드를 우회한다.
+- 적체 가드에는 라벨 우회가 없다. 가드와 `awaiting-author` 라벨이 함께 쓰는 면제 목록은 [review-debt-guard.yml](.github/workflows/review-debt-guard.yml)의 `REVIEW_GATE_EXEMPT_AUTHORS`이며, 지금은 `koongmai`가 거기에 있다. 면제받은 사람은 리뷰 지적 반영 여부와 무관하게 새 PR을 열 수 있고 남의 PR을 리뷰할 의무가 없다. 그래서 자동 요청 대상에서도 빠지고, 그가 낸 변경요청은 다른 팀원의 빚으로 세지 않는다. 머지 게이트는 면제와 무관하다. `develop` 승인 1건과 필수 체크는 그대로 요구된다.

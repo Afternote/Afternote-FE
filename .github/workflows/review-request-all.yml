@@ -47,7 +47,10 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           AUTHOR: ${{ github.event.pull_request.user.login }}
           ASSOCIATION: ${{ github.event.pull_request.author_association }}
-          TEAM: 1hyok koongmai Sadturtleman
+          # 리뷰 의무가 있는 팀원만 적는다. koongmai 는 남의 PR 을 리뷰할 의무가 없어
+          # 빠져 있다 (#1910). 자기 PR 에는 나머지 둘에게 그대로 요청이 걸리고,
+          # 스스로 리뷰하는 것도 막히지 않는다. 빠진 것은 자동 요청뿐이다.
+          TEAM: 1hyok Sadturtleman
         run: |
           set -euo pipefail
 

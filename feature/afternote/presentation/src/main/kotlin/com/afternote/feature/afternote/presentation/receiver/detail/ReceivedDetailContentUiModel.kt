@@ -7,7 +7,7 @@ import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiM
 /**
  * 카테고리별 수신 상세 UI 모델.
  *
- * 발신자([com.afternote.feature.afternote.presentation.author.detail.DetailContentUiModel])와 달리
+ * 발신자([com.afternote.feature.afternote.presentation.detail.DetailContentUiModel])와 달리
  * 수신자 카드·작성자 표시명을 보유하지 않는다(받은 본인이 수신자이므로).
  */
 sealed interface ReceivedDetailContentUiModel {
@@ -69,7 +69,7 @@ data class ReceivedGalleryDetailContent(
  *
  * @property albumCovers 플레이리스트 카드에 가로 스크롤로 표시할 커버 목록(표시 데이터).
  * @property songCount "현재 N개의 노래가 담겨 있습니다" 안내용 전체 곡 수(메타데이터). `albumCovers.size` 와
- *   **독립** — [com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist] 가 둘을 별도
+ *   **독립** — [com.afternote.feature.afternote.presentation.shared.detail.MemorialPlaylist] 가 둘을 별도
  *   파라미터로 받아, 커버를 일부만 넘겨도 전체 개수를 정확히 표시한다. 현재 mapper 는 전체 곡을 커버로 넘겨 값이 같다.
  */
 @Immutable
