@@ -11,7 +11,6 @@ import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.DetailReceiver
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
 import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
-import com.afternote.feature.afternote.domain.model.author.playlist.MemorialDetail
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 import kotlin.collections.mapNotNull
 
@@ -60,9 +59,7 @@ private fun AfternoteDetailDto.toDetailContent(type: AfternoteType): DetailConte
         }
 
         AfternoteType.MEMORIAL -> {
-            DetailContent.Memorial(
-                memorial = requireNotNull(memorial) { "playlist is required for MEMORIAL detail" }.toDomain(),
-            )
+            requireNotNull(memorial) { "playlist is required for MEMORIAL detail" }.toMemorialContent()
         }
 
         AfternoteType.ESTATE -> {
@@ -86,8 +83,8 @@ private fun AfternoteDetailDto.toTimestamps(): DetailTimestamps =
         updatedAt = formatDateFromServer(updatedAt),
     )
 
-private fun AfternotePlaylistDto.toDomain() =
-    MemorialDetail(
+private fun AfternotePlaylistDto.toMemorialContent() =
+    DetailContent.Memorial(
         songs = songs.map { it.toDomain() },
         media =
             MemorialMedia(
