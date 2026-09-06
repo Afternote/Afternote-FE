@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { ASSIGNEE_BY_MODULE } from "./reconcile-issue-metadata.mjs";
+import { ASSIGNEE_BY_MODULE, HANDOVER_BY_MODULE } from "./reconcile-issue-metadata.mjs";
 import {
     formatViolations,
     isProductionPath,
@@ -10,7 +10,13 @@ import {
     validatePullRequestModuleOwner,
 } from "./validate-pr-module-owner.mjs";
 
-const pr = (login, labels = [], type = "User") => ({ number: 1, user: { login, type }, labels: labels.map((name) => ({ name })) });
+// 기본 이슈 번호는 모든 이관 경계 위다. 경계 아래 판정은 아래 전용 테스트가 따로 본다.
+const pr = (login, labels = [], type = "User", issueNumber = 9999) => ({
+    number: 1,
+    title: `fix(scope): 요약 (#${issueNumber})`,
+    user: { login, type },
+    labels: labels.map((name) => ({ name })),
+});
 
 test("경로가 모듈 키로 갈린다 — feature·core·platform·소유자 없음", () => {
     assert.equal(moduleKeyOf("feature/mindrecord/presentation/src/main/kotlin/A.kt"), "mindrecord");
@@ -98,7 +104,7 @@ test("담당자 비교는 대소문자를 가리지 않는다", () => {
 
 test("지도는 reconcile-issue-metadata 하나다 — 이 스크립트에 담당 표를 다시 적지 않는다", async () => {
     const source = await readFile(new URL("./validate-pr-module-owner.mjs", import.meta.url), "utf8");
-    assert.match(source, /import \{ ASSIGNEE_BY_MODULE \} from "\.\/reconcile-issue-metadata\.mjs"/);
+    assert.match(source, /import \{ assigneeForIssue \} from "\.\/reconcile-issue-metadata\.mjs"/);
     for (const login of new Set(Object.values(ASSIGNEE_BY_MODULE))) {
         assert.doesNotMatch(source, new RegExp(`"${login}"`), `담당자 ${login} 가 스크립트에 하드코딩됐다`);
     }
@@ -112,4 +118,43 @@ test("Repository Quality 가 이 검증기를 링크 게이트 뒤에 PR 전용�
     assert.ok(owner > linked, "링크 게이트 뒤에 와야 한다 — 이슈 담당 대조가 먼저다");
     assert.match(workflow, /- name: Require module owner\n\s+if: inputs\.pull_request_number > 0/);
     assert.match(workflow, /validate-pr-module-owner\.mjs "\$PULL_REQUEST_JSON" "\$FILES_JSON"/);
+});
+
+test("이관 경계 아래 이슈로 연 PR 은 옛 담당자 기준으로 판정한다 (#1910)", () => {
+    // 경로만 보는 가드가 지도값만 읽으면, 이관 전에 열린 이슈로 진행 중인 PR 이 남의 모듈을
+    // 건드린 것으로 잡힌다. 이슈 담당 대조는 통과시키는데 이쪽만 막는 상태가 된다.
+    for (const [module, handover] of Object.entries(HANDOVER_BY_MODULE)) {
+        const path = `feature/${module}/presentation/src/main/kotlin/A.kt`;
+        assert.equal(moduleKeyOf(path), module);
+
+        const before = validatePullRequestModuleOwner({
+            pullRequest: pr(handover.before, [], "User", handover.fromIssue - 1),
+            changedPaths: [path],
+        });
+        assert.deepEqual(before.violations, [], `${module} 경계 아래는 옛 담당자 몫이다`);
+
+        const after = validatePullRequestModuleOwner({
+            pullRequest: pr(handover.before, [], "User", handover.fromIssue),
+            changedPaths: [path],
+        });
+        assert.deepEqual(
+            after.violations,
+            [{ path, module, owner: ASSIGNEE_BY_MODULE[module] }],
+            `${module} 경계 위는 새 담당자 몫이다`,
+        );
+    }
+});
+
+test("대표 이슈 번호를 못 읽으면 대조를 건너뛴다 — 제목 게이트가 앞에서 막는다", () => {
+    const result = validatePullRequestModuleOwner({
+        pullRequest: {
+            number: 1,
+            title: "fix(core): 제목이 대표 이슈로 끝나지 않는다",
+            user: { login: "Sadturtleman", type: "User" },
+            labels: [],
+        },
+        changedPaths: ["core/ui/src/main/kotlin/Theme.kt"],
+    });
+    assert.equal(result.skipped, "대표 이슈 번호 없음");
+    assert.deepEqual(result.violations, []);
 });

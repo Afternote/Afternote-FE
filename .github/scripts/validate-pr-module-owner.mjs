@@ -13,9 +13,9 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
-import { ASSIGNEE_BY_MODULE } from "./reconcile-issue-metadata.mjs";
+import { assigneeForIssue } from "./reconcile-issue-metadata.mjs";
 import { changedPathsFromGithubFiles } from "./resolve-pr-impact.mjs";
-import { hasIssueAssigneeExemptLabel } from "./validate-pr-issue-link.mjs";
+import { extractTitleIssueNumber, hasIssueAssigneeExemptLabel } from "./validate-pr-issue-link.mjs";
 
 // 경로 → 모듈 키. `feature/<x>/` 는 x, `core/` 는 core, 나머지 저장소 운영 경로는 platform.
 // 수신자 홈은 #1724 가 `feature/home/…/receiver/` 로 옮겨 경로가 곧 담당이다 — 예외 표가 없다.
@@ -66,11 +66,22 @@ function isBotAuthor(user, login) {
 /**
  * @returns {{ skipped?: string, violations: Array<{ path: string, module: string, owner: string }> }}
  */
-export function validatePullRequestModuleOwner({ pullRequest, changedPaths, owners = ASSIGNEE_BY_MODULE }) {
+export function validatePullRequestModuleOwner({ pullRequest, changedPaths, resolveOwner = assigneeForIssue }) {
     const login = String(pullRequest?.user?.login ?? "");
     if (!login) throw new Error("pull_request.user.login 값이 없습니다.");
     if (isBotAuthor(pullRequest.user, login)) return { skipped: "봇 작성자", violations: [] };
     if (hasIssueAssigneeExemptLabel(pullRequest)) return { skipped: `${ISSUE_ASSIGNEE_EXEMPT_LABEL} 라벨`, violations: [] };
+
+    // 담당은 모듈만으로 정해지지 않는다. 이관에는 소급 경계가 있어서 결정 전에 열린 이슈는 옛
+    // 담당자가 계속 맡는다 (#1910). 경로만 보면 그 경계를 표현할 자리가 없으므로 대표 이슈 번호를
+    // 함께 넘긴다. 이슈 담당 대조와 이 경로 대조가 같은 지도를 다르게 읽으면, 한쪽은 통과시키고
+    // 다른 쪽은 막는 상태가 생긴다.
+    const issueNumber = extractTitleIssueNumber(pullRequest.title);
+    if (issueNumber === null) {
+        // 제목 규칙은 같은 job 의 앞 스텝(validate-pr-issue-link)이 이미 막는다. 경계를 판정할 수
+        // 없는 채로 남의 모듈이라고 단정하지 않고, 그쪽 실패에 맡긴다.
+        return { skipped: "대표 이슈 번호 없음", violations: [] };
+    }
 
     const violations = [];
     for (const raw of changedPaths) {
@@ -78,7 +89,7 @@ export function validatePullRequestModuleOwner({ pullRequest, changedPaths, owne
         if (!isProductionPath(filePath)) continue;
         const module = moduleKeyOf(filePath);
         if (!module) continue;
-        const owner = owners[module];
+        const owner = resolveOwner(module, issueNumber);
         if (!owner) continue; // 지도에 없는 모듈은 판정하지 않는다 — 지도 갱신은 reconcile 쪽 일이다.
         if (owner.toLowerCase() !== login.toLowerCase()) violations.push({ path: filePath, module, owner });
     }
