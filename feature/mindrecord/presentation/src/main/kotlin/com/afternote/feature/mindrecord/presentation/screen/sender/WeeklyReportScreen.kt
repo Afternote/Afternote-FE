@@ -341,7 +341,7 @@ internal fun emotionCardDescription(state: WeeklyReportUiState.Success): String 
             }
         }
 
-        else -> {
+        EmotionAnalysisStatus.NOTHING_TO_ANALYZE, EmotionAnalysisStatus.COMPLETED -> {
             if (state.emotionKeywords.isNotEmpty()) {
                 state.summaryText
             } else {

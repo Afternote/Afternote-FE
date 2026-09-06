@@ -1,5 +1,6 @@
 package com.afternote.feature.mindrecord.presentation
 
+import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
@@ -7,6 +8,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.User
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -38,11 +40,13 @@ import com.afternote.feature.mindrecord.presentation.screen.receiver.ReceiverMin
 import com.afternote.feature.mindrecord.presentation.screen.sender.DiaryScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DraftListScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.WeeklyReportScreen
+import com.afternote.feature.mindrecord.presentation.usecase.DeleteMindRecordDraftsUseCase
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
+import com.afternote.feature.mindrecord.presentation.usecase.ObserveWeeklyReportUseCase
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftListViewModel
-import com.afternote.feature.mindrecord.presentation.viewmodel.MindRecordDraftLoader
 import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordFilter
 import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordViewModel
@@ -84,7 +88,7 @@ class MindRecordLifecycleTest {
                     DiaryList(listOf(previousPublished), 1, TodayMood.SOSO),
             )
         val repository = scriptedDiaryRepository(diaryLists)
-        val viewModel = DiaryListViewModel(repository, MindRecordChangeTracker())
+        val viewModel = DiaryListViewModel(repository, MindRecordChangeTracker(), RecordingErrorReporter())
 
         composeRule.setContent {
             AfternoteTheme {
@@ -158,9 +162,8 @@ class MindRecordLifecycleTest {
             )
         val viewModel =
             DraftListViewModel(
-                loader = MindRecordDraftLoader(diaryRepository, dailyQuestionRepository),
-                diaryRepository = diaryRepository,
-                dailyQuestionRepository = dailyQuestionRepository,
+                loadDrafts = LoadMindRecordDraftsUseCase(diaryRepository, dailyQuestionRepository),
+                deleteDrafts = DeleteMindRecordDraftsUseCase(diaryRepository, dailyQuestionRepository),
                 errorReporter = RecordingErrorReporter(),
             )
 
@@ -221,7 +224,12 @@ class MindRecordLifecycleTest {
         val repository = FakeWeeklyReportRepository()
         repository.results.addLast(Result.failure(IllegalStateException("weekly offline")))
         val userRepository = privateProfileRepository("테스트 사용자")
-        val viewModel = WeeklyReportViewModel(repository, userRepository, MindRecordChangeTracker())
+        val viewModel =
+            WeeklyReportViewModel(
+                ObserveWeeklyReportUseCase(repository, userRepository),
+                MindRecordChangeTracker(),
+                RecordingErrorReporter(),
+            )
 
         composeRule.setContent {
             AfternoteTheme {
@@ -229,7 +237,16 @@ class MindRecordLifecycleTest {
             }
         }
 
-        composeRule.onNodeWithText("weekly offline").assertIsDisplayed()
+        // 이 자리는 종전에 `"weekly offline"`— 즉 **예외 원문**— 이 화면에 뜨는 것을 단언했다.
+        // 그게 이 테스트의 관심사(재조회 뒤 주차 인덱스가 밀리지 않는가)가 아니었을 뿐 아니라,
+        // 서버 오류 원문을 화면에 내지 않는다는 저장소 규약(#1339)과 정반대라 결함을 고정하고
+        // 있었다. 오류 화면에 들어섰다는 사실은 안내 문자열로 확인한다 (#1882).
+        val failureCopy =
+            ApplicationProvider
+                .getApplicationContext<Context>()
+                .getString(R.string.mindrecord_error_weekly_report_failed)
+        composeRule.onNodeWithText(failureCopy).assertIsDisplayed()
+        composeRule.onNodeWithText("weekly offline").assertDoesNotExist()
         assertEquals(1, repository.requestedDates.size)
         val requestedMonday = LocalDate.parse(repository.requestedDates.single())
         val wednesday = requestedMonday.plusDays(2)

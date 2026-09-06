@@ -59,18 +59,18 @@ internal fun AfternoteEditorError.offersMemorialThumbnailRetry(): Boolean =
         }
 
 /**
- * 수신자 선택 화면이 남긴 id 를 폼에 반영한다 — 결과는 흐름 공유 ViewModel 이 1회 소비로 나른다.
+ * 수신자 선택 화면이 남긴 id 전체를 폼에 반영한다 (#1426).
  *
- * 목록 로드 실패로 id 를 해석할 수 없으면 [AfternoteEditorViewModel.resolveSelectedReceiver] 가 재조회 후
- * 오류 이벤트를 세운다 — 선택이 조용히 사라지지 않는다 (#1405).
+ * 결과는 흐름 공유 ViewModel 이 1회 소비로 나른다 (#1698) — Nav2 의 «이전 엔트리 SavedStateHandle»
+ * 자리다. 소비할 값이 없으면 선택 화면을 거치지 않은 복귀라 아무것도 하지 않는다. 값이 있으면 그게
+ * 곧 확정된 수신자 전체이므로 반영은 [AfternoteEditorViewModel.applySelectedReceivers] 에 맡긴다
+ * («추가» 가 아니라 «교체» 인 이유는 그 KDoc 참고).
  */
 internal suspend fun tryApplyReceiverSelection(
     viewModel: AfternoteEditorViewModel,
-    state: AfternoteEditorState,
 ) {
-    val id = viewModel.consumeSelectedReceiverId() ?: return
-    val receiver = viewModel.resolveSelectedReceiver(id) ?: return
-    state.addReceiverById(id, receiver.name, receiver.label)
+    val selectedIds = viewModel.consumeSelectedReceiverIds() ?: return
+    viewModel.applySelectedReceivers(selectedIds)
 }
 
 internal fun buildOnRegisterClick(

@@ -12,7 +12,6 @@ import com.afternote.feature.afternote.presentation.editor.processing.AfternoteP
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.editor.state.rememberAfternoteEditorState
-import com.afternote.feature.afternote.presentation.navigation.model.SELECTED_RECEIVER_ID_KEY
 
 /**
  * 작성자 에디터 화면: type-safe editor flow + 단방향 이벤트.
@@ -37,7 +36,9 @@ internal fun AfternoteEditorNavigation(
             setType = editViewModel::setType,
             setService = editViewModel::setService,
             setMemorialPhoto = editViewModel::setMemorialPhoto,
+            removeMemorialPhoto = editViewModel::removeMemorialPhoto,
             setMemorialVideo = editViewModel::setMemorialVideo,
+            removeMemorialVideo = editViewModel::removeMemorialVideo,
             addReceiverIfAbsent = editViewModel::addReceiverIfAbsent,
             applyPrefill = editViewModel::applyPrefill,
             setMemorialThumbnail = editViewModel::setMemorialThumbnail,
@@ -73,7 +74,6 @@ internal fun AfternoteEditorNavigation(
     LaunchedEffect(Unit) {
         tryApplyReceiverSelection(
             editViewModel,
-            state,
         )
     }
 

@@ -59,7 +59,7 @@ internal class AfternoteLocalNavActions(
 internal class AfternoteEditorFlowLocalNavActions(
     private val flowStack: NavBackStack<NavKey>,
     private val boundary: FeatureStackBoundary,
-    private val onReceiverSelected: (Long) -> Unit,
+    private val onReceiversSelected: (List<Long>) -> Unit,
     private val onSaveSuccessNavigateHome: () -> Unit,
 ) : AfternoteEditorFlowNavActions {
     override fun popBack(): Unit = flowStack.popOrExit(boundary)
@@ -76,8 +76,8 @@ internal class AfternoteEditorFlowLocalNavActions(
         flowStack.add(AfternoteRoute.AddSongRoute)
     }
 
-    override fun popBackWithSelectedReceiver(receiverId: Long) {
-        onReceiverSelected(receiverId)
+    override fun popBackWithSelectedReceivers(receiverIds: List<Long>) {
+        onReceiversSelected(receiverIds)
         popBack()
     }
 

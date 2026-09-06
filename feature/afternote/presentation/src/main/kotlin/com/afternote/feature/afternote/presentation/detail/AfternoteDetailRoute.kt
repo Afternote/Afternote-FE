@@ -47,8 +47,7 @@ import com.afternote.feature.afternote.presentation.shared.detail.DetailLoadErro
 import kotlinx.coroutines.launch
 
 /**
- * 삭제 진행([com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailUiState.Success.isDeleting])
- * 동안 상세 화면 위에 겹쳐 그리는 오버레이.
+ * 삭제 진행([AfternoteDetailUiState.Success.isDeleting]) 동안 상세 화면 위에 겹쳐 그리는 오버레이.
  *
  * 반투명 스크림 + 중앙 진행 인디케이터. 중복 delete 호출은 ViewModel 이 이미 가드하므로
  * 여기서는 시각 표시와 입력 차단만 담당한다.
@@ -109,13 +108,12 @@ internal fun rememberDeleteFailedHandler(snackbarHostState: SnackbarHostState): 
 /**
  * 상세 화면 삭제 결과 ([AfternoteDetailDeleteResult]) 공용 처리 헬퍼.
  *
- * UiState 의 nullable 신호([com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailUiState.Success.deleteResult])를
- * [LaunchedEffect] 로 감지해
+ * UiState 의 nullable 신호([AfternoteDetailUiState.Success.deleteResult])를 [LaunchedEffect] 로 감지해
  * - [AfternoteDetailDeleteResult.Succeeded] → [onDeleteSucceeded] (보통 호출처가 pop 콜백을 전달)
  * - [AfternoteDetailDeleteResult.Failed] → [onDeleteFailed] (에러 UI는 화면별 Snackbar/Dialog 책임.
  *   보통 [rememberDeleteFailedHandler] 를 전달한다. 무음 삼킴 방지를 위해 필수 파라미터.)
  *
- * 처리 후 [onConsumed] 콜백으로 ViewModel 의 [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel.onDeleteResultConsumed]
+ * 처리 후 [onConsumed] 콜백으로 ViewModel 의 [AfternoteDetailViewModel.onDeleteResultConsumed]
  * 호출 → state reset (재합성 시 중복 처리 방지).
  */
 @Composable
