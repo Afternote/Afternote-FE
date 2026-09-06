@@ -160,7 +160,7 @@ test("merge group validation falls back to the full suite without a pull request
         (entry.match(/\|\| github\.event\.pull_request\.number \|\| 0 \}\}/g) ?? []).length,
         VALIDATION_WORKFLOWS.length,
     );
-    for (const gate of ["Require linked Issue", "Validate CI Test Plan", "Reject test-only production declarations"]) {
+    for (const gate of ["Require linked Issue", "Require module owner", "Validate CI Test Plan", "Reject test-only production declarations"]) {
         assert.match(
             repositoryQuality,
             new RegExp(`- name: ${gate}\\n\\s+if: inputs\\.pull_request_number > 0`),
