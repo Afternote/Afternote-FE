@@ -17,11 +17,16 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface AfternoteApiService {
+    /**
+     * 서버는 [draftOnly] 미전송을 `false` 로 읽어 **발행 완료만** 준다. 임시저장 목록은 `true` 로 따로 받는다 —
+     * 한 요청에 섞어 주는 모드가 없다(BE `AfternoteService.getAfternotes`).
+     */
     @GET("afternotes")
     suspend fun getAfternotes(
         @Query("category") category: String?,
         @Query("page") pageNumber: Int?,
         @Query("size") size: Int?,
+        @Query("draftOnly") draftOnly: Boolean? = null,
     ): BaseResponse<AfternotePageDto>
 
     @GET("afternotes/{afternoteId}")

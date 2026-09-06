@@ -101,6 +101,7 @@ private class FakeAfternoteApiService(
         category: String?,
         pageNumber: Int?,
         size: Int?,
+        draftOnly: Boolean?,
     ): BaseResponse<AfternotePageDto> = error("호출되지 않는다")
 
     override suspend fun getAfternoteDetail(afternoteId: Long): BaseResponse<AfternoteDetailDto> = onGetDetail()

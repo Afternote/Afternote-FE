@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.home
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,6 +16,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteOutlinedCard
 import com.afternote.core.ui.AfternoteSectionHeader
@@ -55,6 +57,7 @@ internal fun HomeHeaderSection(
     description: String,
     nextStep: NextStep?,
     modifier: Modifier = Modifier,
+    onDraftListClick: (() -> Unit)? = null,
 ) {
     Column(
         modifier =
@@ -62,11 +65,32 @@ internal fun HomeHeaderSection(
                 .fillMaxWidth()
                 .padding(horizontal = 25.dp),
     ) {
-        Text(
-            text = stringResource(R.string.afternote_home_title),
-            style = AfternoteDesign.typography.h1,
-            color = AfternoteDesign.colors.gray9,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.afternote_home_title),
+                style = AfternoteDesign.typography.h1,
+                color = AfternoteDesign.colors.gray9,
+                modifier = Modifier.weight(1f),
+            )
+            // 임시저장은 작성자에게만 있다 — 같은 화면을 쓰는 수신자 목록은 null 로 안 그린다(#620 과 같은 이유).
+            if (onDraftListClick != null) {
+                Text(
+                    text = stringResource(R.string.afternote_home_draft_entry),
+                    style = AfternoteDesign.typography.bodySmallR,
+                    color = AfternoteDesign.colors.gray7,
+                    modifier =
+                        Modifier
+                            .clickable(
+                                onClickLabel = stringResource(R.string.afternote_home_draft_entry_description),
+                                role = Role.Button,
+                                onClick = onDraftListClick,
+                            ),
+                )
+            }
+        }
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = description,

@@ -8,6 +8,7 @@ import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
 import com.afternote.feature.afternote.data.mapper.toBusinessRequest
 import com.afternote.feature.afternote.data.mapper.toDomain
+import com.afternote.feature.afternote.data.mapper.toDraftDomain
 import com.afternote.feature.afternote.data.mapper.toRequest
 import com.afternote.feature.afternote.data.mapper.toServerCategory
 import com.afternote.feature.afternote.data.mapper.toSocialRequest
@@ -20,6 +21,7 @@ import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
+import com.afternote.feature.afternote.domain.model.author.DraftDetail
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -40,8 +42,15 @@ class AfternoteRepositoryImpl
     ) : AfternoteRepository {
         private val invalidationTrigger = MutableStateFlow(0L)
 
+        override fun getPagedAfternotes(type: AfternoteType?): Flow<PagingData<ListItem>> = pagedAfternotes(type, draftOnly = false)
+
+        override fun getPagedDrafts(type: AfternoteType?): Flow<PagingData<ListItem>> = pagedAfternotes(type, draftOnly = true)
+
         @OptIn(ExperimentalCoroutinesApi::class)
-        override fun getPagedAfternotes(type: AfternoteType?): Flow<PagingData<ListItem>> {
+        private fun pagedAfternotes(
+            type: AfternoteType?,
+            draftOnly: Boolean,
+        ): Flow<PagingData<ListItem>> {
             val category = type?.toServerCategory()
             // 서버 enum 에 없는 종류(ESTATE, #491)는 보내면 400 이라 요청 자체를 만들지 않는다.
             // BUSINESS 는 Afternote-BE 78ee857 부터 정식 값이라 여기서 걸리지 않는다 (#1048).
@@ -50,7 +59,7 @@ class AfternoteRepositoryImpl
             return invalidationTrigger.flatMapLatest {
                 Pager(
                     config = PagingConfig(pageSize = PAGE_SIZE),
-                    pagingSourceFactory = { AfternotePagingSource(api, category) },
+                    pagingSourceFactory = { AfternotePagingSource(api, category, draftOnly) },
                 ).flow
             }
         }
@@ -58,6 +67,11 @@ class AfternoteRepositoryImpl
         override suspend fun getDetail(id: Long): Result<Detail> =
             runCatchingCancellable {
                 api.getAfternoteDetail(afternoteId = id).requireData().toDomain()
+            }
+
+        override suspend fun getDraftDetail(id: Long): Result<DraftDetail> =
+            runCatchingCancellable {
+                api.getAfternoteDetail(afternoteId = id).requireData().toDraftDomain()
             }
 
         override suspend fun createSocial(payload: CreateAccountPayload): Result<Long> =
