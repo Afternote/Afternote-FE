@@ -10,37 +10,26 @@ import com.android.tools.screenshot.PreviewTest
 @PreviewTest
 @Preview(showBackground = true)
 @Composable
-internal fun pushNotificationAlarmOnScreenshot() {
-    PushNotificationScreenshotContent(isDeviceAlarmOn = true)
-}
-
-@PreviewTest
-@Preview(showBackground = true)
-@Composable
-internal fun pushNotificationAlarmOffScreenshot() {
-    PushNotificationScreenshotContent(isDeviceAlarmOn = false)
+internal fun pushNotificationScreenshot() {
+    PushNotificationScreenshotContent()
 }
 
 @PreviewTest
 @Preview(showBackground = true, device = COMPACT_DEVICE_SPEC)
 @Composable
-internal fun pushNotificationAlarmOffCompactScreenshot() {
-    PushNotificationScreenshotContent(isDeviceAlarmOn = false)
+internal fun pushNotificationCompactScreenshot() {
+    PushNotificationScreenshotContent()
 }
 
 @Composable
-private fun PushNotificationScreenshotContent(isDeviceAlarmOn: Boolean) {
+private fun PushNotificationScreenshotContent() {
     AfternoteTheme {
         PushNotificationContent(
-            uiState = PushNotificationUiState(isDeviceAlarmOn = isDeviceAlarmOn),
+            uiState = PushNotificationUiState(isAfternoteOn = true),
             onBack = {},
-            onDeviceAlarmClick = {},
             onNewsletterToggle = {},
             onMindRecordToggle = {},
             onAfternoteToggle = {},
-            onSmsCheck = {},
-            onEmailCheck = {},
-            onPushCheck = {},
         )
     }
 }

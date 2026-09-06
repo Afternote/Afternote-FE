@@ -21,3 +21,7 @@ enum class PushNotificationSaveFailure {
     NETWORK,
     SERVER,
 }
+
+sealed interface PushNotificationEvent {
+    data object MarketingConsentSaveFailed : PushNotificationEvent
+}

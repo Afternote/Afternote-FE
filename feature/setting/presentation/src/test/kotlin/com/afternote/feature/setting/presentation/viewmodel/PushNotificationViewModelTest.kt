@@ -1,8 +1,10 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
+import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.domain.error.PushSettingFailure
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.UserPushSetting
+import com.afternote.feature.setting.presentation.NoOpErrorReporter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -17,9 +19,14 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import java.io.IOException
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35])
 class PushNotificationViewModelTest {
     private val dispatcher = StandardTestDispatcher()
 
@@ -182,7 +189,11 @@ class PushNotificationViewModelTest {
                     )
                 }
             }
-        return PushNotificationViewModel(userRepository = repository, deviceAlarmOn = true)
+        return PushNotificationViewModel(
+            context = ApplicationProvider.getApplicationContext(),
+            userRepository = repository,
+            errorReporter = NoOpErrorReporter,
+        )
     }
 }
 
