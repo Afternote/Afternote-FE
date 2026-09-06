@@ -68,4 +68,12 @@ interface SettingNavActions {
     fun onNavigateToFaq()
 
     fun onFaqBack()
+
+    fun onNavigateToInquiry()
+
+    fun onInquiryBack()
+
+    fun onNavigateToInquiryDetail(inquiryId: Long)
+
+    fun onNavigateToInquiryWrite()
 }

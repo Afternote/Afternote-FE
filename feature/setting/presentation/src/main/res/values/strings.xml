@@ -24,6 +24,31 @@
     <string name="faq_default_question">비밀번호를 잊어버렸어요.</string>
     <string name="faq_default_answer">로그인 화면의 \'비밀번호 찾기\'를 통해 재설정할 수 있습니다.</string>
     <string name="settings_support_inquiry">고객센터</string>
+    <string name="setting_inquiry_title_bar">1:1 문의</string>
+    <string name="setting_inquiry_new">새 문의 접수하기</string>
+    <string name="setting_inquiry_received">접수 중</string>
+    <string name="setting_inquiry_answered">답변 완료</string>
+    <string name="setting_inquiry_answer">답변</string>
+    <string name="setting_inquiry_type">문의 유형</string>
+    <string name="setting_inquiry_title">제목</string>
+    <string name="setting_inquiry_content">내용</string>
+    <string name="setting_inquiry_title_text_field">제목을 입력해 주세요.</string>
+    <string name="setting_inquiry_content_text_field">내용을 입력해 주세요.</string>
+    <string name="setting_inquiry_add_screenshot">스크린샷 추가하기 (%1$d/%2$d장)</string>
+    <string name="setting_inquiry_submit">문의 접수하기</string>
+    <string name="setting_inquiry_list_empty">등록된 문의가 없어요.</string>
+    <string name="setting_inquiry_detail_not_found">문의 내역을 찾을 수 없어요.</string>
+    <string name="setting_inquiry_submit_not_supported">문의 접수 기능은 아직 준비 중이에요. 조금만 기다려 주세요.</string>
+    <string name="setting_inquiry_attachment_limit">스크린샷은 최대 %1$d장까지 첨부할 수 있어요.</string>
+    <string name="setting_inquiry_attachment_unavailable">선택한 사진을 계속 불러올 수 없어요. 다른 사진을 선택해 주세요.</string>
+    <string name="setting_inquiry_attachment">첨부한 스크린샷 %1$d</string>
+    <string name="setting_inquiry_remove_attachment">스크린샷 %1$d 삭제</string>
+    <string-array name="setting_inquiry_types">
+        <item>타임레터</item>
+        <item>마음 기록</item>
+        <item>애프터노트</item>
+        <item>기타</item>
+    </string-array>
     <string name="settings_support_notice">공지사항</string>
     <string name="settings_notice_empty">등록된 공지사항이 없어요.</string>
     <string name="settings_support_terms">이용약관</string>
