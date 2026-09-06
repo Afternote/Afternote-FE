@@ -71,12 +71,14 @@ internal fun PushNotificationContent(
                     }
 
                     else -> {
-                        PushToggleSection(
-                            uiState = uiState,
-                            onNewsletterToggle = onNewsletterToggle,
-                            onMindRecordToggle = onMindRecordToggle,
-                            onAfternoteToggle = onAfternoteToggle,
-                        )
+                        Column {
+                            PushToggleSection(
+                                uiState = uiState,
+                                onNewsletterToggle = onNewsletterToggle,
+                                onMindRecordToggle = onMindRecordToggle,
+                                onAfternoteToggle = onAfternoteToggle,
+                            )
+                        }
                     }
                 }
             }
