@@ -71,8 +71,31 @@ class MasterKeyViewModel
                     .verifyMasterKey(trimmed)
                     .onSuccess { identity ->
                         receiverRepository.saveMasterKey(trimmed)
-                        senderRegistry.attachIdentity(senderId, trimmed, identity)
-                        _uiState.update { it.copy(isSubmitting = false, isVerified = true) }
+                        senderRegistry
+                            .attachIdentity(senderId, trimmed, identity)
+                            .fold(
+                                onSuccess = { sender ->
+                                    _uiState.update {
+                                        if (sender == null) {
+                                            it.copy(
+                                                isSubmitting = false,
+                                                error = UiText.Resource(R.string.receiver_verify_error_unknown),
+                                            )
+                                        } else {
+                                            it.copy(isSubmitting = false, isVerified = true)
+                                        }
+                                    }
+                                },
+                                onFailure = { throwable ->
+                                    errorReporter.recordAfternoteFailure(AfternoteFailureStage.MASTER_KEY_VERIFY, throwable)
+                                    _uiState.update {
+                                        it.copy(
+                                            isSubmitting = false,
+                                            error = UiText.Resource(R.string.receiver_verify_error_unknown),
+                                        )
+                                    }
+                                },
+                            )
                     }.onFailure { throwable ->
                         if (throwable.shouldReportInReceiverFlow()) {
                             errorReporter.recordAfternoteFailure(AfternoteFailureStage.MASTER_KEY_VERIFY, throwable)

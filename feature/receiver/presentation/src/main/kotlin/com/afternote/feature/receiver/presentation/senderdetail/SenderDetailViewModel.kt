@@ -90,9 +90,14 @@ class SenderDetailViewModel
          * masterKey 가 없는 경우(미인증) 호출되어선 안 되지만 방어적으로 no-op.
          */
         fun openReceiverHome() {
-            val masterKey = senderRegistry.findById(senderId)?.masterKey
-            if (masterKey.isNullOrBlank()) return
             viewModelScope.launch {
+                val masterKey =
+                    senderRegistry
+                        .findById(senderId)
+                        .onFailure { errorReporter.recordAfternoteFailure(AfternoteFailureStage.SENDER_STATUS_LOAD, it) }
+                        .getOrNull()
+                        ?.masterKey
+                if (masterKey.isNullOrBlank()) return@launch
                 receiverRepository.saveMasterKey(masterKey)
                 _uiState.update { current ->
                     if (current is SenderDetailUiState.Success) {
@@ -119,17 +124,23 @@ class SenderDetailViewModel
             keepsStateOnFailure: Boolean = false,
         ) {
             loadJob?.cancel()
-            val sender = senderRegistry.findById(senderId)
-            if (sender == null) {
-                _uiState.value = SenderDetailUiState.SenderNotFound
-                return
-            }
             if (showsLoading) {
                 _uiState.value = SenderDetailUiState.Loading
             }
             loadJob =
                 viewModelScope.launch {
-                    val resolved = resolveState(sender)
+                    val sender =
+                        senderRegistry
+                            .findById(senderId)
+                            .onFailure {
+                                errorReporter.recordAfternoteFailure(AfternoteFailureStage.SENDER_STATUS_LOAD, it)
+                            }.getOrNull()
+                    val resolved =
+                        if (sender == null) {
+                            SenderDetailUiState.SenderNotFound
+                        } else {
+                            resolveState(sender)
+                        }
                     _uiState.update { current ->
                         when {
                             // 자동 갱신의 조회 실패: 잘 보고 있던 정보 박스를 에러로 대체하지 않는다.
@@ -201,7 +212,11 @@ class SenderDetailViewModel
             val statusResult = receiverAuthRepository.getDeliveryVerificationStatus()
             return statusResult.fold(
                 onSuccess = { verification ->
-                    senderRegistry.updateVerificationStatus(sender.id, verification.status)
+                    senderRegistry
+                        .updateVerificationStatus(sender.id, verification.status)
+                        .onFailure {
+                            errorReporter.recordAfternoteFailure(AfternoteFailureStage.SENDER_STATUS_LOAD, it)
+                        }
                     verification.toSuccessState(
                         displayName = displayName,
                         approvedAt = resolveApprovedAt(verification.status, masterKey),

@@ -35,8 +35,9 @@ class SenderRegistrationViewModel
             val trimmed = name.trim()
             if (trimmed.isEmpty()) return
             viewModelScope.launch {
-                senderRegistry.register(trimmed)
-                _uiState.update { it.copy(isRegistered = true) }
+                senderRegistry
+                    .register(trimmed)
+                    .onSuccess { _uiState.update { it.copy(isRegistered = true) } }
             }
         }
 

@@ -33,6 +33,7 @@ import com.afternote.feature.receiver.domain.model.ReceivedExportBundle
 import com.afternote.feature.receiver.domain.model.ReceiverIdentity
 import com.afternote.feature.receiver.domain.testing.FakeReceiverAuthRepository
 import com.afternote.feature.receiver.domain.testing.FakeReceiverRepository
+import com.afternote.feature.receiver.domain.testing.FakeSenderRegistryRepository
 import com.afternote.feature.receiver.presentation.deliveryverification.MasterKeyScreen
 import com.afternote.feature.receiver.presentation.deliveryverification.MasterKeyViewModel
 import com.afternote.feature.receiver.presentation.recordsbox.ReceivedRecordsScreen
@@ -62,7 +63,8 @@ class ReceiverAdvancedAndroidTest {
 
     @Test
     fun senderRegistration_recordsEntryAndMasterKey_shareExactReceiverContext() {
-        val senderRegistry = SenderRegistry()
+        val senderRegistryRepository = FakeSenderRegistryRepository()
+        val senderRegistry = SenderRegistry(senderRegistryRepository)
         val registrationViewModel = SenderRegistrationViewModel(senderRegistry)
         val recordsViewModel = ReceivedRecordsViewModel(senderRegistry)
         val masterKeyResults = ArrayDeque<Result<ReceiverIdentity>>()
@@ -141,7 +143,7 @@ class ReceiverAdvancedAndroidTest {
 
         composeRule.onNodeWithText("받은 기록함").assertIsDisplayed()
         composeRule.onNodeWithText("가족 별칭").assertIsDisplayed().performClick()
-        val sender = senderRegistry.senders.value.single()
+        val sender = senderRegistryRepository.senderEntries.value.single()
         assertEquals(1, registeredTransitions)
         assertEquals("가족 별칭", sender.name)
         assertEquals(sender.id, selectedSenderId)
@@ -157,7 +159,7 @@ class ReceiverAdvancedAndroidTest {
         composeRule.waitUntil(timeoutMillis = 5_000) { verifiedTransitions == 1 }
 
         val normalizedMasterKey = "3f2504e0-4f89-11d3-9a0c-0305e82c3301"
-        val attached = checkNotNull(senderRegistry.findById(sender.id))
+        val attached = checkNotNull(senderRegistryRepository.senderEntries.value.firstOrNull { it.id == sender.id })
         assertEquals(listOf(normalizedMasterKey), authRepository.verifiedMasterKeys)
         assertEquals(listOf(normalizedMasterKey), receiverRepository.savedMasterKeys)
         assertEquals(normalizedMasterKey, receiverRepository.masterKeyState.value)

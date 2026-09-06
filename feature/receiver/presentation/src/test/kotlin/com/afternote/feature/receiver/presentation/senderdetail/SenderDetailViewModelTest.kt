@@ -4,9 +4,10 @@ import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
-import com.afternote.feature.receiver.domain.model.ReceiverIdentity
+import com.afternote.feature.receiver.domain.model.SenderEntry
 import com.afternote.feature.receiver.domain.testing.FakeReceiverAuthRepository
 import com.afternote.feature.receiver.domain.testing.FakeReceiverRepository
+import com.afternote.feature.receiver.domain.testing.FakeSenderRegistryRepository
 import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -120,7 +121,22 @@ class SenderDetailViewModelTest {
 }
 
 private class Fixture {
-    val registry = SenderRegistry()
+    val senderId = "sender-id"
+    val registry =
+        SenderRegistry(
+            FakeSenderRegistryRepository(
+                initialSenders =
+                    listOf(
+                        SenderEntry(
+                            id = senderId,
+                            name = "아버지",
+                            masterKey = "auth-1",
+                            realSenderName = "김발신",
+                            relation = "가족",
+                        ),
+                    ),
+            ),
+        )
     val statusResults = ArrayDeque<Result<DeliveryVerification>>()
     val receiver =
         FakeReceiverRepository.strict().apply {
@@ -130,23 +146,6 @@ private class Fixture {
         FakeReceiverAuthRepository(
             onGetDeliveryVerificationStatus = { statusResults.removeFirst() },
         )
-    val senderId: String
-
-    init {
-        val entry = registry.register("아버지")
-        registry.attachIdentity(
-            id = entry.id,
-            masterKey = "auth-1",
-            identity =
-                ReceiverIdentity(
-                    receiverId = 1L,
-                    receiverName = "김수신",
-                    senderName = "김발신",
-                    relation = "가족",
-                ),
-        )
-        senderId = entry.id
-    }
 
     fun viewModel(): SenderDetailViewModel =
         SenderDetailViewModel(

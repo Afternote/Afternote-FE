@@ -5,9 +5,10 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
 import com.afternote.feature.receiver.domain.model.ReceivedRecordBox
-import com.afternote.feature.receiver.domain.model.ReceiverIdentity
+import com.afternote.feature.receiver.domain.model.SenderEntry
 import com.afternote.feature.receiver.domain.testing.FakeReceiverAuthRepository
 import com.afternote.feature.receiver.domain.testing.FakeReceiverRepository
+import com.afternote.feature.receiver.domain.testing.FakeSenderRegistryRepository
 import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -146,7 +147,22 @@ class SenderDetailApprovedAtTest {
     private class Fixture(
         status: DeliveryVerificationStatus,
     ) {
-        val registry = SenderRegistry()
+        private val senderId = "sender-id"
+        val registry =
+            SenderRegistry(
+                FakeSenderRegistryRepository(
+                    initialSenders =
+                        listOf(
+                            SenderEntry(
+                                id = senderId,
+                                name = "아버지",
+                                masterKey = MY_AUTH_CODE,
+                                realSenderName = "김발신",
+                                relation = "가족",
+                            ),
+                        ),
+                ),
+            )
         val receiver = FakeReceiverRepository.strict().apply { onSaveMasterKey = {} }
         val auth =
             FakeReceiverAuthRepository(
@@ -163,23 +179,6 @@ class SenderDetailApprovedAtTest {
                     )
                 },
             )
-        private val senderId: String
-
-        init {
-            val entry = registry.register("아버지")
-            registry.attachIdentity(
-                id = entry.id,
-                masterKey = MY_AUTH_CODE,
-                identity =
-                    ReceiverIdentity(
-                        receiverId = 1L,
-                        receiverName = "김수신",
-                        senderName = "김발신",
-                        relation = "가족",
-                    ),
-            )
-            senderId = entry.id
-        }
 
         fun viewModel(): SenderDetailViewModel =
             SenderDetailViewModel(
