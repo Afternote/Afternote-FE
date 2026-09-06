@@ -17,9 +17,9 @@ import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
 import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
 import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestionWriteScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DiaryWriteScreen
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryWriteViewModel
-import com.afternote.feature.mindrecord.presentation.viewmodel.MindRecordDraftLoader
 import com.afternote.feature.mindrecord.presentation.viewmodel.SubmitState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -140,7 +140,7 @@ class MindRecordFlowTest {
                         uploadedUrl = "https://cdn.test/question.jpg",
                         uploadedKey = "mindrecords/1/question.jpg",
                     ),
-                draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
+                draftLoader = LoadMindRecordDraftsUseCase(FakeDiaryRepository(), repository),
                 errorReporter = reporter,
             )
         // 실제 작성 화면을 띄운다 — 빈 테마만 compose 하고 submit() 을 직접 부르면 화면과
@@ -200,7 +200,7 @@ class MindRecordFlowTest {
                     uploadedKey = "mindrecords/1/image.jpg",
                 ),
             userRepository = mindRecordFlowUserRepository(),
-            draftLoader = MindRecordDraftLoader(repository, FakeDailyQuestionRepository()),
+            draftLoader = LoadMindRecordDraftsUseCase(repository, FakeDailyQuestionRepository()),
             errorReporter = reporter,
         )
 }

@@ -2,6 +2,7 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.Diary
@@ -10,6 +11,8 @@ import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
 import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryItem
+import com.afternote.feature.mindrecord.presentation.reporting.MindRecordFailureStage
+import com.afternote.feature.mindrecord.presentation.reporting.recordMindRecordFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -40,6 +43,7 @@ class MemorySpaceViewModel
     constructor(
         private val diaryRepository: DiaryRepository,
         private val dailyQuestionRepository: DailyQuestionRepository,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<MemorySpaceUiState>(MemorySpaceUiState.Loading)
         val uiState: StateFlow<MemorySpaceUiState> = _uiState.asStateFlow()
@@ -55,7 +59,12 @@ class MemorySpaceViewModel
                 _uiState.value = MemorySpaceUiState.Loading
                 runCatchingCancellable { collectMemories() }
                     .onSuccess { memories -> _uiState.value = MemorySpaceUiState.Success(memories) }
-                    .onFailure {
+                    .onFailure { throwable ->
+                        // 부분 실패는 collectMemories 안에서 삼키므로, 여기 오는 것은 **합친 결과가
+                        // 비었고 실패 출처가 하나라도 있을 때**다 — 화면이 통째로 비는 자리라 승격
+                        // 가치가 높다. 출처는 넷이다: 일기 최근 3개월(DIARY_MONTH_WINDOW)이 달마다
+                        // 하나씩, 데일리질문이 하나 (#964 리뷰).
+                        errorReporter.recordMindRecordFailure(MindRecordFailureStage.MEMORY_SPACE_LOAD, throwable)
                         _uiState.value = MemorySpaceUiState.Error(R.string.mindrecord_error_memory_space_failed)
                     }
             }

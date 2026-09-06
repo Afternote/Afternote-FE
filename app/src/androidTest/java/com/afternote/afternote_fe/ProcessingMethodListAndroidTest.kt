@@ -22,7 +22,7 @@ import org.junit.runner.RunWith
 /**
  * 처리 방법 입력 칸 여닫힘 실기 검증 (이슈 #777).
  *
- * [com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListState]
+ * [com.afternote.feature.afternote.presentation.editor.processing.ProcessingMethodListState]
  * 단위 테스트는 «닫는 경로가 있다» 까지만 말한다. 그 경로에 AddItemTextField 의 신호가 실제로
  * 닿는지는 상호작용을 거쳐야 드러나므로 여기서 본다 — 종전에는 그 신호가
  * `ProcessingMethodSection.onTextFieldVisibilityChanged = {}` 로 나가 사라졌고, 항목만 추가되고

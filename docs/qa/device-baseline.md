@@ -6,7 +6,7 @@
 
 2026-08-25에 조사한 에뮬레이터 QA 증거 24건(schema 1 23건 + legacy 1건, 현재
 `docs/qa/evidence/<full-head-sha>.json`으로 이관)은 전부 같은 기기였다 — android-35 /
-1080×2400 @420dpi, 전부 에뮬레이터, 실기기 0건. 8/27 이관한 전체 34건의 원본 스키마 분포는
+1080×2400 @420dpi, 전부 에뮬레이터, 실기기 0건이었다(2026-09-04 에 실기기 2건이 더해져 36건 — 아래 «실기기 1대» 절). 8/27 이관한 전체 34건의 원본 스키마 분포는
 schema 1 32건 + schema 2 1건 + legacy 1건이다.
 
 문제는 그 기기가 표준도 아니었다는 점이다. 당시 QA AVD에 `wm size 1080x2340` +
@@ -156,13 +156,21 @@ adb -s <serial> shell dumpsys package com.afternote.afternote_fe | grep lastUpda
 
 ### 실기기 1대
 
-현재 실기기 검증은 0건이다(`docs/qa/assumptions.md` 에도 "실기기 종단 확인을 하지 못했다"고 남아
-있다). 에뮬레이터와 결과가 갈리는 영역만 종단으로 본다.
+실기기 검증은 2건이다 — 2026-09-04 갤럭시 S25(SM-S931N, Android 16)에서 **debug 빌드**
+`a23e50fa3040a1025811f79cffd26c2e47b11323`(에뮬레이터로 못 보는 축만 골라 종단)과 **App Distribution
+release 배포본** `f5ad611b23a32c6db2de4795bd9cee9fb32aacf0`(minify 산출물 화면 순회). 증거는
+`docs/qa/evidence/<sha>.json`. 에뮬레이터와 결과가 갈리는 영역만 종단으로 본다.
 
-- [ ] 카카오 로그인 — 카카오톡 앱이 설치된 기기에서의 앱 간 전환
-- [ ] 생체인증 — 실제 지문/얼굴 등록 상태에서 `USE_BIOMETRIC`
-- [ ] FCM 푸시 수신 — 백그라운드·종료 상태 각각
-- [ ] 사진·동영상 업로드 — 실제 카메라롤 파일 크기
+- [x] 카카오 로그인 — 카카오톡 앱이 설치된 기기에서의 앱 간 전환. `f5ad611b` release 배포본에서 앱-투-앱
+      성공. **debug 로는 판정하지 않는다** — 콘솔 미등록 키 해시라 카카오톡이 조용히 웹 로그인으로
+      폴백해 앱 결함처럼 보인다(#1871).
+- [x] 생체인증 — 실제 지문 등록 상태에서 `USE_BIOMETRIC`. `a23e50fa` 에서 하드웨어 Keystore(TEE)에
+      `afternote_biometric_gate` 키가 생성되고 auth-per-use 연산이 성사됐다. 지문 등록·삭제 뒤
+      `KeyPermanentlyInvalidatedException` 복구 경로는 미실측.
+- [ ] FCM 푸시 수신 — 백그라운드·종료 상태 각각. 두 기록 모두 `not_covered` — 삼성 절전 정책 아래
+      며칠 단위 관찰이 필요해 출시 전 1회 스모크로는 닫히지 않는다.
+- [x] 사진·동영상 업로드 — 실제 카메라롤 파일 크기. `a23e50fa` 에서 8160×6120·14 MB 사진으로 서버
+      상한 10 MiB 를 실측(#1868). 동영상은 미실측.
 
 ### 대화면 배포 여부 (기획 결정 사항)
 

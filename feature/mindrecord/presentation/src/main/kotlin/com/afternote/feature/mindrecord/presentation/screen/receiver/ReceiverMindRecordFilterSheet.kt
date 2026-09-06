@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -29,9 +31,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordFilter
 import com.afternote.feature.mindrecord.presentation.viewmodel.SortOrder
 
@@ -59,6 +66,8 @@ fun ReceiverMindRecordFilterSheet(
     var fromText by remember { mutableStateOf(current.fromDate.orEmpty()) }
     var toText by remember { mutableStateOf(current.toDate.orEmpty()) }
 
+    val dragHandleLabel = stringResource(R.string.mindrecord_receiver_filter_drag_handle_cd)
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = Color.White,
@@ -71,7 +80,11 @@ fun ReceiverMindRecordFilterSheet(
                         .width(40.dp)
                         .height(4.dp)
                         .clip(CircleShape)
-                        .background(AfternoteDesign.colors.gray2),
+                        .background(AfternoteDesign.colors.gray2)
+                        // material3 는 dragHandle 슬롯에 시트 접기·펴기 클릭 액션을 얹는다. 기본
+                        // `BottomSheetDefaults.DragHandle` 대신 자체 Box 를 넣으면서 그 이름이
+                        // 통째로 비었다 — 스캐너 실측으로 드러났다 (#1179 리뷰).
+                        .semantics { contentDescription = dragHandleLabel },
             )
         },
     ) {
@@ -129,7 +142,8 @@ private fun SortSection(
     Column {
         Text(text = "정렬", style = AfternoteDesign.typography.bodySmallB, color = AfternoteDesign.colors.gray9)
         Spacer(modifier = Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        // 둘 중 하나를 고르는 그룹이다 — 없으면 스크린리더가 「N 개 중 M 번째」를 못 읽는다 (#1179).
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.selectableGroup()) {
             SortOrder.entries.forEach { order ->
                 SortChip(
                     label = order.label,
@@ -158,7 +172,8 @@ private fun SortChip(
                 .clip(RoundedCornerShape(50))
                 .border(1.dp, AfternoteDesign.colors.gray2, RoundedCornerShape(50))
                 .background(bg)
-                .clickable(onClick = onClick)
+                // 색만 바뀌던 칩이라 **선택 상태가 semantics 에 없었다** — 눈으로만 구분됐다 (#1179).
+                .selectable(selected = isSelected, role = Role.RadioButton, onClick = onClick)
                 .padding(horizontal = 14.dp, vertical = 6.dp),
     )
 }
@@ -256,7 +271,7 @@ private fun ActionRow(
                 Modifier
                     .clip(RoundedCornerShape(6.dp))
                     .border(1.dp, AfternoteDesign.colors.gray2, RoundedCornerShape(6.dp))
-                    .clickable(onClick = onReset)
+                    .clickable(role = Role.Button, onClick = onReset)
                     .padding(horizontal = 20.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -271,7 +286,7 @@ private fun ActionRow(
                     .weight(1f)
                     .clip(RoundedCornerShape(6.dp))
                     .background(AfternoteDesign.colors.gray9)
-                    .clickable(onClick = onApply)
+                    .clickable(role = Role.Button, onClick = onApply)
                     .padding(vertical = 12.dp),
             contentAlignment = Alignment.Center,
         ) {

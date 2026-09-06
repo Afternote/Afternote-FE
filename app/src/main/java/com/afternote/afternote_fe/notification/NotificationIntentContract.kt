@@ -52,7 +52,11 @@ internal object NotificationIntentContract {
                 }.getOrNull(),
         )
 
-    internal fun resolve(
+    /**
+     * Intent 에서 꺼낸 원시 값만 받아 판정한다. `Intent` 를 직접 읽지 않는 덕에 «무엇을 거부하는가»
+     * 가 Android API 접근과 섞이지 않는다. 밖에서는 [fromIntent] 하나로만 들어온다.
+     */
+    private fun resolve(
         isNotificationEntry: Boolean,
         rawSource: String?,
         occurrenceId: String?,

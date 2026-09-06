@@ -6,6 +6,8 @@ import com.afternote.feature.mindrecord.domain.model.EmotionAnalysis
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
+import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
+import com.afternote.feature.mindrecord.presentation.usecase.ObserveWeeklyReportUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -176,8 +178,42 @@ class WeeklyReportRecoveryTest {
             emotionAnalysis = EmotionAnalysis(total = 0, succeeded = 0, pending = 0, failed = 0),
         )
 
-    private fun TestScope.start(repository: WeeklyReportRepository): WeeklyReportViewModel {
-        val viewModel = WeeklyReportViewModel(repository, userRepository(), changeTracker)
+    @Test
+    fun `재진입 갱신은 그 사이 바뀐 프로필 이름을 반영한다`() =
+        runTest(dispatcher) {
+            // 종전에는 이미 Loaded 이고 같은 주면 `copy(report =)` 로만 갱신해, 방금 받아 온
+            // 이름을 버렸다. 설정에서 이름을 바꾸고 돌아와도 주를 옮기기 전까지 옛 이름이
+            // 남는다 — 폴링 방출은 첫 조회의 이름을 그대로 싣고 오므로 갈라 둘 이유가 없다 (#1693 리뷰).
+            var name = "옛이름"
+            val userRepository =
+                FakeUserRepository.strict().apply {
+                    onReceiverListFlow = { flowOf(emptyList()) }
+                    onGetMyProfile = { User(name = name, email = "a@b.c", phone = null, profileImageUrl = null) }
+                }
+            val repository = ScriptedRepository(mapOf(thisMonday to Result.success(report())))
+            val viewModel = start(repository, userRepository)
+
+            assertEquals("옛이름", (viewModel.uiState.value as WeeklyReportUiState.Success).userName)
+
+            // 화면에 들어온 첫 ON_RESUME 은 init 조회가 덮으므로 건너뛴다 (#736 리뷰).
+            viewModel.refreshOnReturn()
+            advanceUntilIdle()
+
+            // 설정에서 이름을 바꾸고 돌아왔다.
+            name = "새이름"
+            changeTracker.notifyChanged()
+            viewModel.refreshOnReturn()
+            advanceUntilIdle()
+
+            assertEquals("새이름", (viewModel.uiState.value as WeeklyReportUiState.Success).userName)
+        }
+
+    private fun TestScope.start(
+        repository: WeeklyReportRepository,
+        userRepository: FakeUserRepository = userRepository(),
+    ): WeeklyReportViewModel {
+        val viewModel =
+            WeeklyReportViewModel(ObserveWeeklyReportUseCase(repository, userRepository), changeTracker, RecordingErrorReporter())
         backgroundScope.launch(dispatcher) { viewModel.uiState.collect { } }
         advanceUntilIdle()
         return viewModel

@@ -13,6 +13,6 @@ data class MasterKeyUiState(
      *
      * 표시 가능한 서버 message 와 클라이언트 fallback 을 [UiText] 하나로 운반한다. [isVerified] 와 같은 소비형 필드다.
      */
-    val error: UiText? = null,
+    val errorMessage: UiText? = null,
     val isVerified: Boolean = false,
 )
