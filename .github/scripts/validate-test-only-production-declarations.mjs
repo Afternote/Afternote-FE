@@ -26,13 +26,38 @@ const FUN_DECL_RE =
     /^\+\s*(?:@\w+(?:\([^)]*\))?\s+)*(?:(?:public|internal|protected)\s+)?(?:(?:suspend|inline|infix|tailrec|open|actual|expect)\s+)*fun\s+(?:<[^>]+>\s+)?(?:[\w.<>?*, ]+\.)?(\w+)\s*\(/;
 // private 은 파일 안, override 는 인터페이스, operator 는 연산자 문법, abstract 는 구현체를 거쳐 불린다.
 const SKIP_DECL_RE = /^\+[^\n]*\b(?:private|override|operator|abstract)\b[^\n]*\bfun\b/;
+// Dagger 가 호출자를 생성하므로 소스 참조는 원리적으로 0건이다. 모듈을 interface 로 쓰면 abstract
+// 키워드가 없어 위 SKIP_DECL_RE 에 걸리지 않는다 (#1906).
+const DI_BINDING_RE = /^@(?:Binds|Provides)\b/;
+const ANNOTATION_ONLY_RE = /^@\w+(?:\([^)]*\))?$/;
 
 export function addedFunctionNames(patch) {
     const names = [];
+    // 애노테이션은 선언보다 앞줄에 온다. 그 줄들을 지나는 동안 «지금 DI 바인딩을 읽는 중» 을 들고 간다.
+    let diBinding = false;
     for (const line of String(patch ?? "").split("\n")) {
-        if (!line.startsWith("+") || line.startsWith("+++") || SKIP_DECL_RE.test(line)) continue;
+        if (line.startsWith("+++") || line.startsWith("---") || line.startsWith("@@")) {
+            diBinding = false;
+            continue;
+        }
+        if (line.startsWith("-")) continue;
+        const body = line.slice(1).trim();
+        if (body === "") continue;
+        if (DI_BINDING_RE.test(body)) {
+            diBinding = true;
+            // 애노테이션과 선언이 한 줄이면 아래 선언 처리로 내려가 그 자리에서 상태를 닫는다.
+            if (!/\bfun\b/.test(body)) continue;
+        }
+        // 다른 애노테이션(@Singleton·@Suppress…)은 사이에 끼어도 바인딩 판정을 끊지 않는다.
+        if (ANNOTATION_ONLY_RE.test(body)) continue;
         const match = FUN_DECL_RE.exec(line);
-        if (match) names.push(match[1]);
+        if (match) {
+            const sameLineBinding = /@(?:Binds|Provides)\b/.test(line.slice(0, line.indexOf("fun")));
+            if (line.startsWith("+") && !SKIP_DECL_RE.test(line) && !diBinding && !sameLineBinding) {
+                names.push(match[1]);
+            }
+        }
+        diBinding = false;
     }
     return names;
 }
@@ -68,7 +93,8 @@ const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 // git grep 은 POSIX ERE 다 — \b·\s 는 GNU 확장이라 플랫폼에 따라 글자로 읽힌다.
 export function referencePattern(name) {
     const escaped = escapeRegExp(name);
-    return `(^|[^[:alnum:]_])${escaped}[[:space:]]*\\(|::${escaped}([^[:alnum:]_]|$)`;
+    // 인자가 후행 람다뿐인 호출은 `이름 {` 이라 `(` 만 세면 0건이 된다 — Compose 소비가 전부 이 꼴이다 (#1906).
+    return `(^|[^[:alnum:]_])${escaped}[[:space:]]*[({]|::${escaped}([^[:alnum:]_]|$)`;
 }
 
 function gitGrepCount(root, revision, pattern, pathspecs) {
@@ -99,7 +125,7 @@ async function ownFileText(root, revision, filename) {
 
 async function ownFileReferences(root, revision, filename, name) {
     const escaped = escapeRegExp(name);
-    const use = new RegExp(`(^|[^\\w])${escaped}\\s*\\(|::${escaped}\\b`);
+    const use = new RegExp(`(^|[^\\w])${escaped}\\s*[({]|::${escaped}\\b`);
     const declaration = new RegExp(`\\bfun\\s+(?:<[^>]+>\\s+)?(?:[\\w.<>?*, ]+\\.)?${escaped}\\s*\\(`);
     return (await ownFileText(root, revision, filename))
         .split("\n")
