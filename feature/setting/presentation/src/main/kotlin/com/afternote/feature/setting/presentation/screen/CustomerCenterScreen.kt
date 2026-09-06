@@ -95,7 +95,6 @@ internal fun CustomerCenterScreen(
                     title = stringResource(R.string.customer_center_one_to_one_inquiry),
                     description = stringResource(R.string.customer_center_one_to_one_description),
                     onClick = onOneToOneInquiryClick,
-                    enabled = false,
                 )
             }
             item {
@@ -124,7 +123,6 @@ internal fun CustomerCenterScreen(
                 CustomerCenterMenuItem(
                     title = stringResource(R.string.customer_center_faq),
                     onClick = onFaqClick,
-                    enabled = false,
                 )
             }
             item {

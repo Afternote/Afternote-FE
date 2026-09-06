@@ -224,7 +224,7 @@ class SettingImplementedCoverageAndroidTest {
     }
 
     @Test
-    fun actualCustomerCenterScreen_unimplementedMenuItemsAreDisabled() {
+    fun actualCustomerCenterScreen_recipientInquiryIsDisabled() {
         waitForSettingHomeContent()
         composeRule.onAllNodes(hasText("고객센터")).run {
             assertCountEquals(2)
@@ -232,9 +232,46 @@ class SettingImplementedCoverageAndroidTest {
         }
         waitForRoute<SettingRoute.CustomerCenterRoute>()
 
-        composeRule.onNodeWithText("1:1 문의").assertIsNotEnabled()
         composeRule.onNodeWithText("유족·수신자 전용 문의").performScrollTo().assertIsNotEnabled()
-        composeRule.onNodeWithText("자주 묻는 질문").performScrollTo().assertIsNotEnabled()
+    }
+
+    @Test
+    fun actualSettingNavHost_faqRowNavigatesToFaqScreenAndBackReturnsHome() {
+        waitForSettingHomeContent()
+        composeRule
+            .onNode(hasScrollAction())
+            .performScrollToNode(hasText("FAQ"))
+        composeRule
+            .onNodeWithText("FAQ")
+            .performClick()
+
+        waitForRoute<SettingRoute.FaqRoute>()
+        composeRule
+            .onNodeWithText("비밀번호를 잊어버렸어요.")
+            .assertIsDisplayed()
+
+        composeRule
+            .onNodeWithContentDescription("뒤로가기")
+            .performClick()
+        waitForRoute<SettingRoute.SettingHomeRoute>()
+    }
+
+    @Test
+    fun actualCustomerCenterScreen_inquiryAndFaqMenusNavigateAndReturnToHub() {
+        waitForSettingHomeContent()
+        composeRule.onAllNodes(hasText("고객센터"))[0].performClick()
+        waitForRoute<SettingRoute.CustomerCenterRoute>()
+
+        composeRule.onNodeWithText("1:1 문의").performClick()
+        waitForRoute<SettingRoute.InquiryListRoute>()
+        composeRule.onNodeWithContentDescription("뒤로가기").performClick()
+        waitForRoute<SettingRoute.CustomerCenterRoute>()
+
+        composeRule.onNodeWithText("자주 묻는 질문").performScrollTo().performClick()
+        waitForRoute<SettingRoute.FaqRoute>()
+        composeRule.onNodeWithText("비밀번호를 잊어버렸어요.").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("뒤로가기").performClick()
+        waitForRoute<SettingRoute.CustomerCenterRoute>()
     }
 
     private fun openWithdrawGuide() {

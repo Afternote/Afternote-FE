@@ -24,6 +24,10 @@ import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
 import com.afternote.feature.setting.presentation.screen.ConnectedAccountsScreen
 import com.afternote.feature.setting.presentation.screen.CustomerCenterScreen
 import com.afternote.feature.setting.presentation.screen.DeliveryConditionScreen
+import com.afternote.feature.setting.presentation.screen.FaqScreen
+import com.afternote.feature.setting.presentation.screen.InquiryDetailScreen
+import com.afternote.feature.setting.presentation.screen.InquiryListScreen
+import com.afternote.feature.setting.presentation.screen.InquiryWriteScreen
 import com.afternote.feature.setting.presentation.screen.NoticeListScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyListScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyMakingScreen
@@ -61,7 +65,7 @@ fun NavGraphBuilder.settingNavGraph(
                 },
                 onPasskeyClick = actions::onNavigateToPasskey,
                 onAppLockClick = actions::onNavigateToAppLock,
-                onFaqClick = {},
+                onFaqClick = actions::onNavigateToFaq,
                 onInquiryClick = actions::onNavigateToCustomerCenter,
                 onNoticeClick = actions::onNavigateToNotice,
                 onTermsClick = {},
@@ -205,9 +209,37 @@ fun NavGraphBuilder.settingNavGraph(
             CustomerCenterScreen(
                 onBackClick = actions::onCustomerCenterBack,
                 onPhoneInquiryClick = { context.openDialer(phoneUri) },
-                onOneToOneInquiryClick = {},
+                onOneToOneInquiryClick = actions::onNavigateToInquiry,
                 onEmailInquiryClick = { context.copyToClipboard(emailAddress) },
-                onFaqClick = {},
+                onFaqClick = actions::onNavigateToFaq,
+            )
+        }
+
+        composable<SettingRoute.FaqRoute> {
+            FaqScreen(
+                onBackClick = actions::onFaqBack,
+            )
+        }
+
+        composable<SettingRoute.InquiryListRoute> {
+            InquiryListScreen(
+                inquiries = emptyList(),
+                onBackClick = actions::onInquiryBack,
+                onInquiryClick = actions::onNavigateToInquiryDetail,
+                onNewInquiryClick = actions::onNavigateToInquiryWrite,
+            )
+        }
+
+        composable<SettingRoute.InquiryDetailRoute> {
+            // TODO(Afternote-BE#246): 조회 계약이 생기면
+            // it.toRoute<SettingRoute.InquiryDetailRoute>().inquiryId 로 해당 문의를 조회한다.
+            // 현재는 실제 데이터 소스가 없어 "찾을 수 없음" 상태를 그린다.
+            InquiryDetailScreen(inquiry = null, onBackClick = actions::onInquiryBack)
+        }
+
+        composable<SettingRoute.InquiryWriteRoute> {
+            InquiryWriteScreen(
+                onBackClick = actions::onInquiryBack,
             )
         }
     }

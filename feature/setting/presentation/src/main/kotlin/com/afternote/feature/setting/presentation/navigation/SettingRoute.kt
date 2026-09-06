@@ -56,4 +56,18 @@ sealed interface SettingRoute {
 
     @Serializable
     data object CustomerCenterRoute : SettingRoute
+
+    @Serializable
+    data object FaqRoute : SettingRoute
+
+    @Serializable
+    data object InquiryListRoute : SettingRoute
+
+    @Serializable
+    data class InquiryDetailRoute(
+        val inquiryId: Long,
+    ) : SettingRoute
+
+    @Serializable
+    data object InquiryWriteRoute : SettingRoute
 }
