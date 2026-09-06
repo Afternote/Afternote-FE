@@ -20,6 +20,7 @@
 // 판단한 PR 에 라벨이 없거나, 반대로 리뷰어 몫인 PR 에 라벨이 붙는다. 커밋·응답·본문 편집을
 // 포함해 두 판정이 공유하는 술어는 `awaiting-author-policy.test.mjs` 가 잠근다.
 
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
@@ -402,7 +403,7 @@ export function findAuthorDebts({ pullRequests, repository, author, currentPullR
  * 매 실행이 현재 집합을 다시 세우고 차이만 쓴다. 조치가 들어오면 다음 실행에서 라벨이 떨어지므로
  * 스테일 라벨이 남지 않는다.
  */
-export function planAwaitingAuthorLabels({ pullRequests, repository, label = DEFAULT_LABEL }) {
+export function planAwaitingAuthorLabels({ pullRequests, repository, label = DEFAULT_LABEL, exemptAuthors = [] }) {
     const toLabel = [];
     const toUnlabel = [];
     const unchanged = [];
@@ -410,7 +411,10 @@ export function planAwaitingAuthorLabels({ pullRequests, repository, label = DEF
     for (const pullRequest of pullRequests ?? []) {
         const labels = (pullRequest?.labels?.nodes ?? []).map((node) => node?.name);
         const labeled = labels.includes(label);
-        const verdict = judgeAwaitingAuthor(pullRequest, { repository });
+        const exempt = exemptAuthors.some((login) => sameLogin(login, pullRequest?.author?.login));
+        const verdict = exempt
+            ? { awaiting: false, reason: "리뷰 게이트 면제 작성자" }
+            : judgeAwaitingAuthor(pullRequest, { repository });
         const entry = {
             number: pullRequest.number,
             title: pullRequest.title,
@@ -666,6 +670,25 @@ export async function applyPlan(api, repository, plan, { dryRun = false, label =
     return failures;
 }
 
+/** 가드의 한 줄 환경변수 선언을 읽는다. 형식이 달라지면 빈 면제 목록으로 숨기지 않는다. */
+export function parseReviewGateExemptAuthors(workflow) {
+    const lines = workflow.split(/\r?\n/);
+    const declarations = lines.flatMap((line, index) => {
+        const match = /^([ \t]+)REVIEW_GATE_EXEMPT_AUTHORS:[ \t]*(.*)$/.exec(line);
+        return match ? [{ index, indent: match[1].length, value: match[2].trim() }] : [];
+    });
+    if (declarations.length !== 1) {
+        throw new Error("REVIEW_GATE_EXEMPT_AUTHORS 선언이 정확히 한 개 필요합니다.");
+    }
+    const { index, indent, value } = declarations[0];
+    const nextLine = lines.slice(index + 1).find((line) => line.trim() && !line.trimStart().startsWith("#"));
+    const continued = nextLine && /^[ \t]*/.exec(nextLine)[0].length > indent;
+    if (continued || !/^[a-zA-Z0-9-]+(?:[ \t]+[a-zA-Z0-9-]+)*$/.test(value)) {
+        throw new Error("REVIEW_GATE_EXEMPT_AUTHORS는 인용·주석 없는 한 줄의 공백 구분 로그인 목록이어야 합니다.");
+    }
+    return value.split(/\s+/).map((login) => login.toLowerCase());
+}
+
 async function main() {
     const token = process.env.GITHUB_TOKEN;
     const repository = process.env.GITHUB_REPOSITORY;
@@ -677,8 +700,13 @@ async function main() {
     const dryRun = process.env.DRY_RUN === "true";
     const api = createApi(token);
 
+    // 전체 checkout을 쓰는 라벨 CLI에서만 읽는다. 가드의 scripts-only checkout에서도
+    // 상태 판정 함수를 import할 수 있어야 한다. 면제 목록의 정본은 기존 가드 선언이다.
+    const exemptAuthors = parseReviewGateExemptAuthors(
+        await readFile(new URL("../workflows/review-debt-guard.yml", import.meta.url), "utf8"),
+    );
     const pullRequests = await fetchOpenPullRequests(api, repository);
-    const plan = planAwaitingAuthorLabels({ pullRequests, repository, label });
+    const plan = planAwaitingAuthorLabels({ pullRequests, repository, label, exemptAuthors });
 
     if (!dryRun && plan.toLabel.length > 0) {
         await ensureLabelExists(api, repository, label);
