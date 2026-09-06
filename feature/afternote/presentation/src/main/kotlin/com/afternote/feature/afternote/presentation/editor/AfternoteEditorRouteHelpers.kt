@@ -66,9 +66,7 @@ internal fun AfternoteEditorError.offersMemorialThumbnailRetry(): Boolean =
  * 곧 확정된 수신자 전체이므로 반영은 [AfternoteEditorViewModel.applySelectedReceivers] 에 맡긴다
  * («추가» 가 아니라 «교체» 인 이유는 그 KDoc 참고).
  */
-internal suspend fun tryApplyReceiverSelection(
-    viewModel: AfternoteEditorViewModel,
-) {
+internal suspend fun tryApplyReceiverSelection(viewModel: AfternoteEditorViewModel) {
     val selectedIds = viewModel.consumeSelectedReceiverIds() ?: return
     viewModel.applySelectedReceivers(selectedIds)
 }
