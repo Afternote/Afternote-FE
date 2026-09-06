@@ -12,9 +12,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.credentials.CredentialManager
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.domain.error.CoreAuthFailure
-import com.afternote.core.ui.ReloadOnReentryEffect
 import com.afternote.core.ui.findActivity
 import com.afternote.feature.setting.presentation.BuildConfig
 import com.afternote.feature.setting.presentation.R
@@ -38,7 +39,9 @@ fun ConnectedAccountsScreen(
     val kakaoAccountLinkFailedMessage = stringResource(R.string.kakao_account_link_failed)
     val googleAccountLinkFailedMessage = stringResource(R.string.google_account_link_failed)
 
-    ReloadOnReentryEffect { viewModel.loadConnectedAccounts() }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshOnReturn()
+    }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->

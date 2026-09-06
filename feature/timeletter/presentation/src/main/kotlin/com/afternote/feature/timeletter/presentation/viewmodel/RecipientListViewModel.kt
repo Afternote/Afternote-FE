@@ -31,7 +31,26 @@ class RecipientListViewModel
                     initialValue = emptyList(),
                 )
 
+        /**
+         * 다음 [refreshOnReturn] 이 첫 ON_RESUME(진입 자체)인지. 첫 resume 은 [recipients] 의 최초
+         * 구독과 같은 진입이므로 갱신하지 않는다 — VM 필드인 이유는 ReceiverHomeViewModel 의
+         * refreshOnReturn 과 동일, 프로세스 사망 후 복원에서도 최초 구독과 수명이 일치한다.
+         */
+        private var isFirstResume = true
+
         fun refresh() {
             refreshRequests.value++
+        }
+
+        /**
+         * 다른 화면에서 복귀했을 때의 자동 갱신 (#701). 첫 진입은 건너뛴다 — `flatMapLatest` 가
+         * 겹치는 구독을 알아서 취소하므로 별도의 진행 중 로드 가드는 필요 없다.
+         */
+        fun refreshOnReturn() {
+            if (isFirstResume) {
+                isFirstResume = false
+                return
+            }
+            refresh()
         }
     }

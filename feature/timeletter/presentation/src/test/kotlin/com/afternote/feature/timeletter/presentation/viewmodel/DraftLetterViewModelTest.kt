@@ -147,6 +147,36 @@ class DraftLetterViewModelTest {
         assertTrue(state.isDeleteSelectedEnabled)
     }
 
+    @Test
+    fun `refreshOnReturn - 첫 ON_RESUME(진입 자체)은 건너뛰고 그 다음 재진입부터 다시 조회한다`() {
+        var loadCalls = 0
+        val viewModel =
+            DraftLetterViewModel(
+                timeLetterRepository { methodName, _ ->
+                    when (methodName) {
+                        "getTemporaryTimeLetters" -> {
+                            loadCalls += 1
+                            testDrafts
+                        }
+
+                        else -> {
+                            error("Unexpected repository call: $methodName")
+                        }
+                    }
+                },
+                userRepository { emptyList<Any>() },
+            )
+        val callsAfterInit = loadCalls
+
+        // 첫 ON_RESUME은 최초 진입 자체다 — init 로드와 중복 조회하지 않는다.
+        viewModel.refreshOnReturn()
+        assertEquals(callsAfterInit, loadCalls)
+
+        // 다른 화면에 갔다가 돌아온 두 번째 ON_RESUME부터 다시 조회한다.
+        viewModel.refreshOnReturn()
+        assertEquals(callsAfterInit + 1, loadCalls)
+    }
+
     private fun timeLetterRepository(handler: (String, Array<out Any?>?) -> Any?): TimeLetterRepository =
         Proxy.newProxyInstance(
             TimeLetterRepository::class.java.classLoader,

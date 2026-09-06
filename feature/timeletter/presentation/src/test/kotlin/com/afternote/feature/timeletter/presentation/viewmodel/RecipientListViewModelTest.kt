@@ -58,4 +58,27 @@ class RecipientListViewModelTest {
                     .name,
             )
         }
+
+    @Test
+    fun `refreshOnReturn - 첫 ON_RESUME(진입 자체)은 건너뛰고 그 다음 재진입부터 다시 구독한다`() =
+        runTest {
+            val repository =
+                FakeUserRepository(
+                    receivers = listOf(Receiver(1L, "첫 수신자", "친구", "auth-1")),
+                )
+            val viewModel = RecipientListViewModel(repository)
+            backgroundScope.launch { viewModel.recipients.collect() }
+            advanceUntilIdle()
+            val callsAfterInit = repository.receiverListFlowCalls
+
+            // 첫 ON_RESUME은 최초 진입 자체다 — init 구독과 중복 조회하지 않는다.
+            viewModel.refreshOnReturn()
+            advanceUntilIdle()
+            assertEquals(callsAfterInit, repository.receiverListFlowCalls)
+
+            // 다른 화면에 갔다가 돌아온 두 번째 ON_RESUME부터 다시 구독한다.
+            viewModel.refreshOnReturn()
+            advanceUntilIdle()
+            assertEquals(callsAfterInit + 1, repository.receiverListFlowCalls)
+        }
 }
