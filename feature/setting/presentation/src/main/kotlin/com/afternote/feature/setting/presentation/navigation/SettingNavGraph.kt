@@ -201,8 +201,9 @@ fun NavGraphBuilder.settingNavGraph(
         }
 
         composable<SettingRoute.InquiryDetailRoute> {
-            // 문의 조회 API 가 아직 없다 (Afternote-BE#246). 실제 데이터 소스가 연결되기 전까지는
-            // 지어낸 문의를 보여주는 대신 "찾을 수 없음" 상태를 그린다.
+            // TODO(Afternote-BE#246): 조회 계약이 생기면
+            // it.toRoute<SettingRoute.InquiryDetailRoute>().inquiryId 로 해당 문의를 조회한다.
+            // 현재는 실제 데이터 소스가 없어 "찾을 수 없음" 상태를 그린다.
             InquiryDetailScreen(inquiry = null, onBackClick = actions::onInquiryBack)
         }
 

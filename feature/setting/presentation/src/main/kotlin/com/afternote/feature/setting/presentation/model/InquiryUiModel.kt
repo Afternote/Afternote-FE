@@ -1,8 +1,8 @@
 package com.afternote.feature.setting.presentation.model
 
-enum class InquiryStatus { RECEIVED, ANSWERED }
+internal enum class InquiryStatus { RECEIVED, ANSWERED }
 
-data class InquiryUiModel(
+internal data class InquiryUiModel(
     val id: Long,
     val status: InquiryStatus,
     val date: String,
