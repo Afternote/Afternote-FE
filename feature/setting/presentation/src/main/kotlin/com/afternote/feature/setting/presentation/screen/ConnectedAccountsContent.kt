@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
@@ -61,7 +62,7 @@ internal fun ConnectedAccountsContent(
 
             uiState.errorMessage != null -> {
                 SettingLoadErrorContent(
-                    message = stringResource(R.string.setting_connected_accounts_load_error),
+                    message = uiState.errorMessage.asString(),
                     onRetry = onRetry,
                     modifier = Modifier.padding(paddingValues),
                 )

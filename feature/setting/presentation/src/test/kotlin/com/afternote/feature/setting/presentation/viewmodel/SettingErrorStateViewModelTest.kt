@@ -4,6 +4,8 @@ import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
+import com.afternote.core.ui.UiText
+import com.afternote.feature.setting.presentation.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -98,7 +100,7 @@ class SettingErrorStateViewModelTest {
             val viewModel = ConnectedAccountsViewModel(repository)
 
             advanceUntilIdle()
-            assertTrue(viewModel.uiState.value.errorMessage != null)
+            assertEquals(UiText.Resource(R.string.setting_connected_accounts_load_error), viewModel.uiState.value.errorMessage)
             assertTrue(
                 viewModel.uiState.value.accounts
                     .isEmpty(),

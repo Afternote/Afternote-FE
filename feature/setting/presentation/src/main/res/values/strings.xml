@@ -7,7 +7,6 @@
     <string name="setting_profile_update_error">프로필 수정에 실패했습니다.</string>
     <string name="setting_connected_accounts_load_error">계정 정보를 불러올 수 없습니다.</string>
     <string name="setting_push_load_error">푸시 알림 설정을 불러올 수 없습니다.</string>
-    <string name="setting_receivers_load_error">수신자 목록을 불러올 수 없습니다.</string>
     <!-- 섹션 헤더 -->
     <string name="settings_section_account">계정</string>
     <string name="settings_section_recipient">수신자 관리</string>

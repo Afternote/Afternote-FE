@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.user.UserConnectedAccount
+import com.afternote.core.ui.UiText
 import com.afternote.feature.setting.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -49,7 +50,12 @@ class ConnectedAccountsViewModel
                                 it.copy(isLoading = false, accounts = accounts.toStateList(), errorMessage = null)
                             }
                         }.onFailure {
-                            _uiState.update { it.copy(isLoading = false, errorMessage = "계정 정보를 불러올 수 없습니다.") }
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    errorMessage = UiText.Resource(R.string.setting_connected_accounts_load_error),
+                                )
+                            }
                         }
                 }
         }

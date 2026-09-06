@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.UserPushSetting
+import com.afternote.core.ui.UiText
+import com.afternote.feature.setting.presentation.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -15,7 +17,6 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -63,7 +64,7 @@ class PushNotificationErrorViewModelTest {
             advanceUntilIdle()
 
             assertFalse(viewModel.uiState.value.isLoading)
-            assertNotNull(viewModel.uiState.value.errorMessage)
+            assertEquals(UiText.Resource(R.string.setting_push_load_error), viewModel.uiState.value.errorMessage)
 
             viewModel.retryLoadPushSettings()
             advanceUntilIdle()
