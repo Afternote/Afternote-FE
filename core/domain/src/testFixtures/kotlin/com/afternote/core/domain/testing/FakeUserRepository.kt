@@ -56,7 +56,7 @@ class FakeUserRepository private constructor(
         deliveryConditions: Map<Long, ReceiverDeliveryConditions> = emptyMap(),
         onReceiverListFlow: (() -> Flow<List<Receiver>>)? = null,
         onGetReceivers: (suspend () -> List<Receiver>)? = null,
-        onCreateReceiver: (suspend (String, String, String?, String?, String?) -> ReceiverCreated)? = null,
+        onCreateReceiver: (suspend (String, String, String?, String, String?) -> ReceiverCreated)? = null,
         onGetReceiverDetail: (suspend (Long) -> ReceiverDetail)? = null,
         onUpdateReceiver: (suspend (Long, String, String, String, String) -> Receiver)? = null,
         onUpdateReceiverMessage: (suspend (Long, String) -> Unit)? = null,
@@ -134,7 +134,7 @@ class FakeUserRepository private constructor(
             receiverFake.onGetReceivers = value
         }
 
-    var onCreateReceiver: (suspend (String, String, String?, String?, String?) -> ReceiverCreated)?
+    var onCreateReceiver: (suspend (String, String, String?, String, String?) -> ReceiverCreated)?
         get() = receiverFake.onCreateReceiver
         set(value) {
             receiverFake.onCreateReceiver = value
@@ -307,7 +307,7 @@ class FakeUserRepository private constructor(
         val name: String,
         val relation: String,
         val phone: String?,
-        val email: String?,
+        val email: String,
         val message: String?,
     )
 

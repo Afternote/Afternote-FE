@@ -49,7 +49,7 @@ class ReceiverRequestFailureTest {
             name = "친구",
             relation = "친구",
             phone = null,
-            email = null,
+            email = "friend@example.com",
             message = null,
         )
 
