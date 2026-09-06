@@ -350,9 +350,6 @@ class ProductionVisibilityKonsistTest {
 
         val ISSUE_1676_RECEIVER =
             setOf(
-                "feature/receiver/data/src/main/kotlin/com/afternote/feature/receiver/data/mapper/ReceiverAfternoteListItemDtoToDomain.kt::class ReceiverListDecodingFailure [internal]",
-                "feature/receiver/data/src/main/kotlin/com/afternote/feature/receiver/data/mapper/ReceiverAfternoteListItemDtoToDomain.kt::class ReceiverListMappingFailure [internal]",
-                "feature/receiver/data/src/main/kotlin/com/afternote/feature/receiver/data/mapper/ReceiverAfternoteListItemDtoToDomain.kt::function toDomainOrNull [implicit-public]",
                 "feature/receiver/presentation/src/main/kotlin/com/afternote/feature/receiver/presentation/deliveryverification/DocumentUploadScreen.kt::function DocumentUploadScreenContent [internal]",
                 "feature/receiver/presentation/src/main/kotlin/com/afternote/feature/receiver/presentation/deliveryverification/IdentityVerificationEmailScreen.kt::function IdentityVerificationEmailScreenContent [internal]",
                 "feature/receiver/presentation/src/main/kotlin/com/afternote/feature/receiver/presentation/deliveryverification/MasterKeyScreen.kt::function MasterKeyScreenContent [internal]",
