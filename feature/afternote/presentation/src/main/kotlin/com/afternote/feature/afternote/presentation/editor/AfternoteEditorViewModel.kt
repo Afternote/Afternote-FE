@@ -63,6 +63,7 @@ import javax.inject.Inject
 
 private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v4"
 private const val INITIALIZED_ACTION_TEMPLATE_TYPE_KEY = "initialized_action_template_type"
+private const val PREFILL_SEEDED_ITEM_ID_KEY = "editor_prefill_seeded_item_id"
 
 private const val TAG = "AfternoteEditorViewModel"
 
@@ -184,10 +185,45 @@ class AfternoteEditorViewModel
                 encodeDefaults = true
             }
 
+        /**
+         * 스냅샷 복원 결과. **「키가 있는가」가 아니라 「실제로 복원됐는가」를 들고 있다.**
+         *
+         * [readFormSnapshotOrDefault] 는 디코딩 실패를 삼켜 빈 기본 폼으로 떨어진다. 키 존재만 보면
+         * 「표식 있음 + 문자열 있음 + 디코딩 실패」 조합에서 가드가 참이 되어 프리필이 막히고,
+         * 빈 폼이 새 기준 스냅샷과 짝지어져 아래 KDoc 이 피하겠다고 적은 「전부 지움」 저장이 된다.
+         */
+        private val restoredForm: RestoredForm = readFormSnapshotOrDefault()
+
+        /**
+         * 이 ViewModel 이 «상세 프리필이 이미 실렸던» 폼 스냅샷에서 되살아났는가 (#1732).
+         *
+         * 참이면 복원된 폼은 서버 값 + 사용자가 그 뒤에 고친 것을 함께 들고 있다 — 프로세스 사망
+         * 복원은 [EDITOR_FORM_SNAPSHOT_KEY] 의 폼뿐 아니라 화면이 가진 계정 정보·남기실 말씀
+         * 입력까지 (`rememberTextFieldState`·`rememberSaveable`) 같은 번들로 되살리기 때문이다.
+         * 그 위에 [loadExistingAfternoteForEdit] 의 재조회 프리필을 다시 실으면 남는 건 서버 값뿐이라,
+         * 사용자가 쓴 편집이 아무 안내 없이 사라진다.
+         *
+         * 두 조건을 함께 본다. 표식만으로는 부족하다 — [persistFormSnapshot] 은 번들 용량 초과 같은
+         * 실패를 삼키므로, 표식은 남았는데 폼 스냅샷이 없는 조합이 가능하다. 그때 프리필까지 막으면
+         * 빈 폼이 기준 스냅샷과 짝지어져 「전부 지움」 저장이 된다 (#705·#1617 이 막은 그 경로다).
+         *
+         * **그래서 「키가 있는가」가 아니라 「복원됐는가」([RestoredForm.fromSnapshot])를 본다.**
+         * 문자열이 남아 있어도 디코딩이 실패하면 폼은 빈 기본값이므로, 키 존재로 판정하면 위 조합을
+         * 그대로 통과시킨다 — 스키마가 바뀌는 순간(키 접미사를 올리지 않은 채) 열리는 잠복 경로다.
+         *
+         * 폼과 프리필의 값 비교로 대신하지 않는다. 계정 정보·남기실 말씀은 화면이 소유해 이 폼에
+         * 없으므로, 비밀번호만 고친 복원은 «폼이 같다» 로 읽혀 그 편집이 그대로 덮인다.
+         */
+
+        private val restoredFromSeededSnapshot: Boolean =
+            route.itemId != null &&
+                restoredForm.fromSnapshot &&
+                savedStateHandle.get<Long>(PREFILL_SEEDED_ITEM_ID_KEY) == route.itemId
+
         private val internalState =
             MutableStateFlow(
                 InternalState(
-                    form = readFormSnapshotOrDefault(),
+                    form = restoredForm.form,
                     originalType = route.initialType.takeIf { route.itemId != null },
                     isPrefillLoading = readEditItemId() != null,
                 ),
@@ -275,7 +311,16 @@ class AfternoteEditorViewModel
 
         fun replaceReceiversIfEmpty(receivers: List<AfternoteEditorReceiver>) = mutateForm { it.withReceiversReplacedIfEmpty(receivers) }
 
-        fun applyPrefill(prefill: EditorFormPrefill) = mutateForm { it.withPrefillApplied(prefill) }
+        /**
+         * 상세 프리필을 폼에 싣는다. 화면이 계정 정보·남기실 말씀까지 실은 뒤 [onPrefillConsumed] 로 통보한다.
+         *
+         * 폼 스냅샷과 같은 번들에 «프리필이 실렸다» 표식을 남긴다 — 프로세스 사망 뒤 재조회가
+         * 이 표식을 보고 복원된 편집을 덮지 않는다 ([restoredFromSeededSnapshot], #1732).
+         */
+        fun applyPrefill(prefill: EditorFormPrefill) {
+            readEditItemId()?.let { savedStateHandle[PREFILL_SEEDED_ITEM_ID_KEY] = it }
+            mutateForm { it.withPrefillApplied(prefill) }
+        }
 
         /**
          * 신규 작성 화면의 카테고리 추천 처리 방법을 최초 한 번만 채운다.
@@ -311,15 +356,34 @@ class AfternoteEditorViewModel
 
         private fun readEditItemId(): Long? = route.itemId
 
-        private fun readFormSnapshotOrDefault(): EditorFormState {
+        /**
+         * 저장된 폼 스냅샷을 읽는다.
+         *
+         * **복원 성공 여부를 함께 돌려준다.** 실패를 기본 폼으로 삼키기만 하면 호출부가 「빈 폼으로
+         * 떨어졌다」와 「원래 빈 폼이었다」를 못 가른다 — [restoredFromSeededSnapshot] 이 그 차이로
+         * 갈리므로 여기서 알려 줘야 한다.
+         */
+        private fun readFormSnapshotOrDefault(): RestoredForm {
             val defaultForm = EditorFormState().withType(route.initialType)
-            val raw = savedStateHandle.get<String>(EDITOR_FORM_SNAPSHOT_KEY) ?: return defaultForm
+            val raw =
+                savedStateHandle.get<String>(EDITOR_FORM_SNAPSHOT_KEY)
+                    ?: return RestoredForm(form = defaultForm, fromSnapshot = false)
             return runCatching {
-                formSnapshotJson
-                    .decodeFromString(EditorFormSnapshot.serializer(), raw)
-                    .toEditorFormState()
-            }.getOrElse { defaultForm }
+                RestoredForm(
+                    form =
+                        formSnapshotJson
+                            .decodeFromString(EditorFormSnapshot.serializer(), raw)
+                            .toEditorFormState(),
+                    fromSnapshot = true,
+                )
+            }.getOrElse { RestoredForm(form = defaultForm, fromSnapshot = false) }
         }
+
+        /** [readFormSnapshotOrDefault] 의 결과 — 폼과 «그 폼이 스냅샷에서 왔는가». */
+        private data class RestoredForm(
+            val form: EditorFormState,
+            val fromSnapshot: Boolean,
+        )
 
         /** [EditorFormSnapshot] 직렬화. 실패 시 무시한다(용량 초과 등은 [EditorFormSnapshot] KDoc 참고). */
         private fun persistFormSnapshot(form: EditorFormState) {
@@ -654,10 +718,17 @@ class AfternoteEditorViewModel
                             // skeleton 종료는 UI 가 prefill 적용을 마친 뒤 [onPrefillConsumed] 로 통보한다
                             // (uiState 갱신 시점에 prefill 도착했어도 UI 가 form·TextFieldState 에 반영하기 전이라
                             //  여기서 끄면 skeleton 사라짐 → 빈 폼 → prefill 깜빡임 발생).
+                            //
+                            // 복원된 편집이 있으면 프리필을 싣지 않는다 (#1732). 조회 자체는 그대로 돈다 —
+                            // 기준 스냅샷([InternalState.updateBaseline])이 없으면 저장이 막히고, 카테고리도
+                            // 서버가 아는 값이어야 한다. 막는 것은 «폼에 덮어쓰기» 하나다.
                             internalState.update {
                                 it.copy(
                                     originalType = prefill.type,
-                                    pendingPrefill = prefill,
+                                    pendingPrefill = if (restoredFromSeededSnapshot) null else prefill,
+                                    // 프리필을 싣지 않으면 UI 의 [onPrefillConsumed] 도 오지 않는다 —
+                                    // 그 경로에서는 skeleton 을 여기서 직접 걷는다.
+                                    isPrefillLoading = it.isPrefillLoading && !restoredFromSeededSnapshot,
                                     // 화면에 뿌릴 prefill 과 별개로, 가공 전 원본을 저장 때 견줄 기준으로 남긴다.
                                     // 이 값은 폼 변경을 따라가지 않는다 — 따라가면 비교할 대상이 사라진다 (#1617).
                                     updateBaseline = AfternoteEditorFormMapper.buildUpdateBaseline(detail),
