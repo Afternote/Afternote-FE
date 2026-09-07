@@ -72,7 +72,7 @@ sha256_file() {
 if [[ "${AFTERNOTE_VERSION_CODE+x}" == "x" ]]; then
     expected_version_code="$(printf '%s' "${AFTERNOTE_VERSION_CODE}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
 else
-    expected_version_code="$(sed -n 's/^const val DEFAULT_AFTERNOTE_VERSION_CODE = \([0-9_]*\)$/\1/p' \
+    expected_version_code="$(sed -nE 's/^(private )?const val DEFAULT_AFTERNOTE_VERSION_CODE = ([0-9_]+)$/\2/p' \
         "${repo_root}/build-logic/src/main/kotlin/VersionCode.kt" | tr -d '_')"
 fi
 if [[ ! "${expected_version_code}" =~ ^[1-9][0-9]*$ ]] ||

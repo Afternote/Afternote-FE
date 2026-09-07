@@ -61,7 +61,7 @@ object NotificationPendingIntentFactory {
         )
     }
 
-    internal fun notificationAction(
+    private fun notificationAction(
         source: String,
         occurrenceId: String,
     ): String {

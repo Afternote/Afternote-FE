@@ -62,7 +62,8 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           AUTHOR: ${{ github.event.pull_request.user.login }}
           HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
-          # PR 을 여는 시점의 제약을 두지 않기로 한 작성자 (#1910). 공백으로 구분한다.
+          # PR 제한·awaiting-author 라벨의 공통 면제 목록 (#1910, #1934).
+          # 라벨러도 이 선언을 읽는다. 인용·주석 없는 한 줄에서 공백으로 구분한다.
           REVIEW_GATE_EXEMPT_AUTHORS: koongmai
         run: |
           # 조회 실패를 "빚 없음" 으로 오인해 통과시키지 않는다. 다만 판정 근거를

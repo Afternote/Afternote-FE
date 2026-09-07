@@ -106,6 +106,26 @@ test("versionCode 미설정은 Gradle 기본값을 읽고 명시된 잘못된 �
     assert.equal(trimmed.status, 0, trimmed.stderr);
 });
 
+test("Gradle 기본 상수의 private 여부는 값 추출에 영향을 주지 않는다", async () => {
+    for (const visibility of ["", "private "]) {
+        const result = await runVerifier({ expected: null, actual: "1234",
+            policy: `${visibility}const val DEFAULT_AFTERNOTE_VERSION_CODE = 1_234\n` });
+        assert.equal(result.status, 0, result.stderr);
+        assert.match(result.stdout, /versionCode: 1234/);
+    }
+});
+
+test("Gradle 기본값 누락·중복·잘못된 값은 manifest 조회 전에 거부한다", async () => {
+    const declaration = "private const val DEFAULT_AFTERNOTE_VERSION_CODE = 7\n";
+    for (const policy of ["", declaration.repeat(2), declaration.replace("= 7", "= 0"),
+        declaration.replace("= 7", "= 2100000001"), declaration.replace("= 7", "= otherValue")]) {
+        const result = await runVerifier({ expected: null, actual: "7", policy });
+        assert.notEqual(result.status, 0, policy);
+        assert.match(result.stderr, /Gradle 기본값/);
+        assert.equal(result.javaCalls, "", policy);
+    }
+});
+
 test("bundletool SHA256 불일치는 Java 실행 전에 거부한다", async () => {
     const result = await runVerifier({ jarSha: "0".repeat(64) });
     assert.notEqual(result.status, 0);
