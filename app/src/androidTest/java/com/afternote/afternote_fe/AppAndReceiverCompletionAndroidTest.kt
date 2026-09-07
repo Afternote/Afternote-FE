@@ -74,6 +74,7 @@ import com.afternote.feature.receiver.domain.testing.FakeIdentityVerificationRep
 import com.afternote.feature.receiver.domain.testing.FakeReceiverAuthRepository
 import com.afternote.feature.receiver.domain.testing.FakeReceiverDeliveryDocumentUploadRepository
 import com.afternote.feature.receiver.domain.testing.FakeReceiverRepository
+import com.afternote.feature.receiver.domain.usecase.SubmitDeliveryVerificationUseCase
 import com.afternote.feature.receiver.presentation.deliveryverification.DocumentSlot
 import com.afternote.feature.receiver.presentation.deliveryverification.DocumentUploadScreen
 import com.afternote.feature.receiver.presentation.deliveryverification.DocumentUploadViewModel
@@ -489,7 +490,7 @@ class ReceiverRuntimeCompletionAndroidTest {
         val viewModel =
             DocumentUploadViewModel(
                 uploadRepository,
-                authRepository,
+                SubmitDeliveryVerificationUseCase(authRepository),
                 FakeErrorReporter(),
             )
         composeRule.setContent { AfternoteTheme {} }
@@ -546,7 +547,7 @@ class ReceiverRuntimeCompletionAndroidTest {
         val viewModel =
             DocumentUploadViewModel(
                 uploadRepository,
-                FakeReceiverAuthRepository.strict(),
+                SubmitDeliveryVerificationUseCase(FakeReceiverAuthRepository.strict()),
                 FakeErrorReporter(),
             )
         composeRule.setContent {

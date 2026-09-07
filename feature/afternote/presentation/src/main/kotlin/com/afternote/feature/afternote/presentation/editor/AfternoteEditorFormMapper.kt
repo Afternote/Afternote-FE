@@ -110,7 +110,7 @@ internal object AfternoteEditorFormMapper {
             )
         }
 
-    fun buildMemorialWritePayload(
+    private fun buildMemorialWritePayload(
         playlistSongs: List<Song>,
         memorialPhotoUrl: String? = null,
         memorialVideoUrl: String? = null,

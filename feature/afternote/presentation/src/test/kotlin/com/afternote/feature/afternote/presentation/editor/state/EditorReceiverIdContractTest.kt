@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.presentation.editor.state
 
 import com.afternote.core.model.user.Receiver
-import com.afternote.feature.afternote.presentation.editor.mapper.toAfternoteEditorReceiver
+import com.afternote.feature.afternote.presentation.editor.mapper.toAfternoteEditorReceivers
 import com.afternote.feature.afternote.presentation.editor.receiver.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.editor.receiver.AfternoteEditorReceiverListState
 import org.junit.Assert.assertEquals
@@ -14,7 +14,7 @@ class EditorReceiverIdContractTest {
     fun `등록 수신자의 Long id 를 문자열 변환 없이 에디터 모델로 옮긴다`() {
         val receiver = Receiver(Long.MAX_VALUE, "김수신", "딸", "auth-code")
 
-        assertEquals(Long.MAX_VALUE, receiver.toAfternoteEditorReceiver().id)
+        assertEquals(Long.MAX_VALUE, listOf(receiver).toAfternoteEditorReceivers().single().id)
     }
 
     @Test
