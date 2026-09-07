@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 /**
  * 수신 애프터노트 화면의 라우트.
  *
- * 발신자 라우트([com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute])
+ * 발신자 라우트([com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute])
  * 와 한 sealed 계층에 두지 않는다 — 그쪽은 지문 관문을 시작점으로 삼는
  * [com.afternote.core.ui.Route.Afternote] 그래프에 묶여 있고, 수신자는 로그인 사용자가 아니라
  * 그 관문을 지나지 않는다. 그래서 이 라우트들은 그래프 중첩 없이 루트 NavHost 에 직접 등록한다

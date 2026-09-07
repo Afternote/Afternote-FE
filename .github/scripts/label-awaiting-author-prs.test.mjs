@@ -13,6 +13,7 @@ import {
     findAuthorDebts,
     judgeAwaitingAuthor,
     latestDecision,
+    parseReviewGateExemptAuthors,
     planAwaitingAuthorLabels,
     renderSummary,
 } from "./label-awaiting-author-prs.mjs";
@@ -21,6 +22,48 @@ const REPO = "Afternote/Afternote-FE";
 
 /** 테스트 출력이 CI 로그에서 실제 조작처럼 보이지 않도록 삼킨다. */
 const silent = { log() {} };
+
+test("게이트 면제 목록은 공백을 나누고 로그인 대소문자를 정규화한다", () => {
+    const workflow = [
+        "jobs:",
+        "  check:",
+        "    env:",
+        "      REPO: Afternote/Afternote-FE",
+        "      REVIEW_GATE_EXEMPT_AUTHORS:   KoOnGmAi   Example-User  ",
+        "    run: echo check",
+    ].join("\r\n");
+
+    assert.deepEqual(parseReviewGateExemptAuthors(workflow), ["koongmai", "example-user"]);
+});
+
+test("게이트 면제 목록이 없거나 두 번 선언되면 빈 목록으로 넘기지 않는다", () => {
+    for (const workflow of [
+        "env:\n  REPO: Afternote/Afternote-FE\n",
+        "# REVIEW_GATE_EXEMPT_AUTHORS: koongmai\n",
+        "env:\n  REVIEW_GATE_EXEMPT_AUTHORS: koongmai\n  REVIEW_GATE_EXEMPT_AUTHORS: other\n",
+    ]) {
+        assert.throws(() => parseReviewGateExemptAuthors(workflow), undefined, workflow);
+    }
+});
+
+test("게이트 면제 목록은 따옴표·주석·배열·여러 줄과 잘못된 로그인 형식을 거부한다", () => {
+    for (const value of [
+        "",
+        '"koongmai"',
+        "'koongmai'",
+        "koongmai # comment",
+        "[koongmai]",
+        "|\n    koongmai",
+        ">\n    koongmai",
+        "\n    koongmai",
+        "koongmai\n    other",
+        "koongmai,other",
+        "invalid_login",
+    ]) {
+        const workflow = `env:\n  REVIEW_GATE_EXEMPT_AUTHORS: ${value}\n`;
+        assert.throws(() => parseReviewGateExemptAuthors(workflow), undefined, value);
+    }
+});
 
 function fakeApi({ responses = {}, failOn = null } = {}) {
     const calls = [];
@@ -115,6 +158,48 @@ test("변경요청 뒤 작성자가 아무것도 하지 않으면 대상이다",
     assert.equal(verdict.awaiting, true);
     assert.equal(verdict.reviewer, "reviewer");
     assert.equal(verdict.decidedAt, "2026-08-29T00:00:00Z");
+});
+
+test("리뷰 게이트 면제 작성자는 대소문자와 무관하게 무조치 라벨 대상에서 빠진다", () => {
+    for (const login of ["koongmai", "KoOnGmAi"]) {
+        const plan = planAwaitingAuthorLabels({
+            repository: REPO,
+            exemptAuthors: ["koongmai"],
+            pullRequests: [pullRequest({
+                author: { login },
+                reviews: { nodes: [changesRequested()] },
+            })],
+        });
+
+        assert.deepEqual(plan.toLabel, [], login);
+        assert.equal(plan.unchanged[0].reason, "리뷰 게이트 면제 작성자");
+    }
+});
+
+test("면제 계정과 일부만 같은 작성자는 여전히 무조치 라벨 대상이다", () => {
+    const plan = planAwaitingAuthorLabels({
+        repository: REPO,
+        exemptAuthors: ["koongmai"],
+        pullRequests: [pullRequest({
+            author: { login: "koongmai-other" },
+            reviews: { nodes: [changesRequested()] },
+        })],
+    });
+
+    assert.deepEqual(plan.toLabel.map((entry) => entry.number), [1]);
+});
+
+test("변경요청 리뷰어가 면제 계정이어도 다른 작성자의 무조치 라벨은 유지한다", () => {
+    const plan = planAwaitingAuthorLabels({
+        repository: REPO,
+        exemptAuthors: ["koongmai"],
+        pullRequests: [pullRequest({
+            reviews: { nodes: [changesRequested("2026-08-29T00:00:00Z", "koongmai")] },
+        })],
+    });
+
+    assert.deepEqual(plan.toLabel.map((entry) => entry.number), [1]);
+    assert.equal(plan.toLabel[0].reviewer, "koongmai");
 });
 
 test("쓰기 권한이 없는 외부인의 변경요청은 작성자 빚을 만들지 못한다", () => {
@@ -644,6 +729,52 @@ test("계획은 붙일 것과 뗄 것을 한 번에 낸다", () => {
     assert.deepEqual(plan.toLabel.map((entry) => entry.number), [10]);
     assert.deepEqual(plan.toUnlabel.map((entry) => entry.number), [11]);
     assert.deepEqual(plan.unchanged.map((entry) => entry.number), [12, 13]);
+});
+
+test("면제 작성자의 기존 라벨을 제거하고 다음 리컨사일에서도 다시 붙이지 않는다", () => {
+    const pullRequests = [
+        pullRequest({
+            number: 40,
+            author: { login: "KoOnGmAi" },
+            labels: { nodes: [{ name: DEFAULT_LABEL }] },
+            reviews: { nodes: [changesRequested()] },
+        }),
+        pullRequest({
+            number: 41,
+            author: { login: "koongmai" },
+            reviews: { nodes: [changesRequested()] },
+        }),
+        pullRequest({
+            number: 42,
+            labels: { nodes: [{ name: DEFAULT_LABEL }] },
+            reviews: { nodes: [changesRequested()] },
+        }),
+        pullRequest({ number: 43, reviews: { nodes: [changesRequested()] } }),
+    ];
+
+    const plan = planAwaitingAuthorLabels({ repository: REPO, pullRequests, exemptAuthors: ["koongmai"] });
+
+    assert.deepEqual(plan.toUnlabel.map((entry) => entry.number), [40]);
+    assert.equal(plan.toUnlabel[0].reason, "리뷰 게이트 면제 작성자");
+    assert.deepEqual(plan.toLabel.map((entry) => entry.number), [43]);
+    assert.deepEqual(plan.unchanged.map((entry) => entry.number), [41, 42]);
+
+    // 첫 계획을 적용한 다음에도 면제 작성자의 무조치 상태는 그대로 남아 있다.
+    pullRequests[0].labels.nodes = [];
+    pullRequests[3].labels.nodes = [{ name: DEFAULT_LABEL }];
+    const nextPlan = planAwaitingAuthorLabels({ repository: REPO, pullRequests, exemptAuthors: ["koongmai"] });
+
+    assert.deepEqual(nextPlan.toLabel, []);
+    assert.deepEqual(nextPlan.toUnlabel, []);
+    assert.deepEqual(
+        nextPlan.unchanged.map(({ number, labeled }) => ({ number, labeled })),
+        [
+            { number: 40, labeled: false },
+            { number: 41, labeled: false },
+            { number: 42, labeled: true },
+            { number: 43, labeled: true },
+        ],
+    );
 });
 
 test("적용은 실패한 PR 만 보고하고 나머지를 계속 처리한다", async () => {

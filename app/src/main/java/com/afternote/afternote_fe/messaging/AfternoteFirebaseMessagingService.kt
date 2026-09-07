@@ -120,12 +120,12 @@ class AfternoteFirebaseMessagingService : FirebaseMessagingService() {
     }
 }
 
-internal data class FcmNotificationContent(
+private data class FcmNotificationContent(
     val title: String,
     val body: String?,
 )
 
-internal object FcmNotificationIdentity {
+private object FcmNotificationIdentity {
     fun occurrenceId(messageId: String?): String =
         messageId
             ?.takeIf(String::isNotBlank)
@@ -135,7 +135,7 @@ internal object FcmNotificationIdentity {
     fun notificationTag(occurrenceId: String): String = "fcm:$occurrenceId"
 }
 
-internal object FcmNotificationContentResolver {
+private object FcmNotificationContentResolver {
     fun resolve(
         notificationTitle: String?,
         notificationBody: String?,

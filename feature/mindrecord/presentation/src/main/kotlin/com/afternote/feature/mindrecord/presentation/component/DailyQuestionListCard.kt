@@ -50,10 +50,17 @@ private val DateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
 fun DailyQuestionListCard(
     answer: DailyQuestion,
     modifier: Modifier = Modifier,
-    /** 카드 전체 탭 — 저장된 기록 본문을 여는 상세 화면으로 간다 (#759). */
-    onClick: () -> Unit = {},
-    onEdit: () -> Unit = {},
-    onDelete: () -> Unit = {},
+    /**
+     * 카드 전체 탭 — 저장된 기록 본문을 여는 상세 화면으로 간다 (#759).
+     *
+     * **`null` 이면 클릭 자체를 붙이지 않는다** (#1540 리뷰).
+     *
+     * no-op 을 넘기면 `Role.Button` 이 그대로 실려 스크린리더가 「버튼」으로 읽는데 눌러도
+     * 아무 일이 없다 — 읽기 전용으로 쓰는 자리(주간 리포트 HISTORY)가 그랬다.
+     */
+    onClick: (() -> Unit)?,
+    onEdit: (() -> Unit)?,
+    onDelete: (() -> Unit)?,
 ) {
     OutlinedCard(
         colors =
@@ -62,7 +69,10 @@ fun DailyQuestionListCard(
             ),
         border = BorderStroke(1.dp, color = AfternoteDesign.colors.gray2),
         shape = CardShape,
-        modifier = modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier),
     ) {
         if (answer.imageUrl != null) {
             ThumbnailCardContent(answer = answer, onEdit = onEdit, onDelete = onDelete)
@@ -76,8 +86,8 @@ fun DailyQuestionListCard(
 @Composable
 private fun TextCardContent(
     answer: DailyQuestion,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
+    onEdit: (() -> Unit)?,
+    onDelete: (() -> Unit)?,
 ) {
     Column(
         modifier = Modifier.padding(16.dp),
@@ -106,8 +116,8 @@ private fun TextCardContent(
 @Composable
 private fun ThumbnailCardContent(
     answer: DailyQuestion,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
+    onEdit: (() -> Unit)?,
+    onDelete: (() -> Unit)?,
 ) {
     Row(
         modifier = Modifier.padding(12.dp),
@@ -149,8 +159,8 @@ private fun ThumbnailCardContent(
 @Composable
 private fun CardHeaderRow(
     date: LocalDate,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
+    onEdit: (() -> Unit)?,
+    onDelete: (() -> Unit)?,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
 
@@ -172,28 +182,35 @@ private fun CardHeaderRow(
             )
         }
 
-        Box {
-            Icon(
-                painter = painterResource(R.drawable.mindrecord_horizontal),
-                tint = AfternoteDesign.colors.gray5,
-                contentDescription = stringResource(R.string.mindrecord_more_menu_cd),
-                modifier =
-                    Modifier
-                        .size(20.dp)
-                        .clickable(role = Role.Button) { menuExpanded = true },
-            )
-            if (menuExpanded) {
-                RecordActionPopup(
-                    onDismiss = { menuExpanded = false },
-                    onDelete = {
-                        menuExpanded = false
-                        onDelete()
-                    },
-                    onEdit = {
-                        menuExpanded = false
-                        onEdit()
-                    },
+        // **핸들러가 없으면 «더보기» 자체를 그리지 않는다** (#1540).
+        //
+        // 종전에는 `= {}` 디폴트라, 핸들러를 안 넘긴 화면(주간 리포트 HISTORY)에서도 메뉴가
+        // 뜨고 «수정»·«삭제» 를 눌러도 아무 일이 없었다. 눌러도 아무 일 없는 버튼을 그리는
+        // 대신 없는 상호작용은 보여 주지 않는다.
+        if (onEdit != null && onDelete != null) {
+            Box {
+                Icon(
+                    painter = painterResource(R.drawable.mindrecord_horizontal),
+                    tint = AfternoteDesign.colors.gray5,
+                    contentDescription = stringResource(R.string.mindrecord_more_menu_cd),
+                    modifier =
+                        Modifier
+                            .size(20.dp)
+                            .clickable(role = Role.Button) { menuExpanded = true },
                 )
+                if (menuExpanded) {
+                    RecordActionPopup(
+                        onDismiss = { menuExpanded = false },
+                        onDelete = {
+                            menuExpanded = false
+                            onDelete()
+                        },
+                        onEdit = {
+                            menuExpanded = false
+                            onEdit()
+                        },
+                    )
+                }
             }
         }
     }
@@ -210,6 +227,9 @@ private fun DailyQuestionCardPreview() {
                     content = "아무 말 없이 그저 나의 곁을 지켜주는 아내가 고맙다.",
                     date = LocalDate.now(),
                 ),
+            onClick = {},
+            onDelete = {},
+            onEdit = {},
         )
     }
 }
@@ -226,6 +246,9 @@ private fun DailyQuestionCardWithImagePreview() {
                     date = LocalDate.now(),
                     imageUrl = "https://example.com/image.jpg",
                 ),
+            onClick = {},
+            onDelete = {},
+            onEdit = {},
         )
     }
 }

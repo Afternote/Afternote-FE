@@ -65,7 +65,7 @@ internal object NotificationIntentContract {
      * 이미 확인된 알림의 부가 정보라, 계약 밖 값이 와도 탭 자체는 살리고 [FALLBACK_DESTINATION]
      * 으로 떨어뜨린다 — 알림을 눌렀는데 아무 일도 안 일어나는 편이 더 나쁘다.
      */
-    internal fun resolve(
+    private fun resolve(
         isNotificationEntry: Boolean,
         rawSource: String?,
         occurrenceId: String?,
@@ -90,7 +90,7 @@ internal object NotificationIntentContract {
     }
 
     /** 목적지 키가 없거나 계약 밖 값일 때 여는 화면. */
-    internal val FALLBACK_DESTINATION = NotificationDestination.HOME
+    private val FALLBACK_DESTINATION = NotificationDestination.HOME
 
     private const val EXTRA_NOTIFICATION_ENTRY =
         NotificationPendingIntentFactory.EXTRA_NOTIFICATION_ENTRY

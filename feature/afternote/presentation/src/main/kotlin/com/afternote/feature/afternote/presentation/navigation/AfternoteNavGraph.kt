@@ -72,10 +72,15 @@ fun NavGraphBuilder.afternoteNavGraph(
                 )
             }
 
-            afternoteComposable<AfternoteRoute.SelectReceiverRoute> {
+            afternoteComposable<AfternoteRoute.SelectReceiverRoute> { backStackEntry ->
+                // 폼에 이미 있는 수신자를 선택 상태로 열어 준다 — 선택 화면은 «추가분» 이 아니라
+                // 확정된 수신자 전체를 돌려주므로, 여는 시점의 폼이 곧 초기 선택이다 (#1426).
+                val editorViewModel = backStackEntry.editorFlowViewModel(editorFlowParentEntry)
+                val editorUiState by editorViewModel.uiState.collectAsStateWithLifecycle()
                 AfternoteSelectReceiverNavigation(
+                    preselectedReceiverIds = editorUiState.form.afternoteEditReceivers.map { it.id },
                     onPopBackStack = actions::popBack,
-                    onReceiverConfirmed = actions::popBackWithSelectedReceiver,
+                    onReceiversConfirmed = actions::popBackWithSelectedReceivers,
                 )
             }
 
