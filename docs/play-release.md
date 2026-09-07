@@ -211,9 +211,11 @@ Play의 **What's new**에는 `ko-KR` 한 언어로 내부 테스트 versionCode,
 | versionCode 중복·역행 | 빌드 전, 그리고 업로드 직전 새 edit에서 다시 검사 |
 | AAB manifest의 versionCode가 기대값과 다름 | AAB 검증 단계. Play 업로드 전 |
 | 잘못 서명된 AAB | `scripts/verify-play-release-bundle.sh` |
-| 권한 부족·API commit 실패 | 업로드 스텝. 미완료 edit를 삭제한 뒤 원인을 그대로 올린다 |
+| API 조회·업로드·트랙 갱신·commit 오류 | 원래 오류를 보고하고, edit id를 받은 경우 삭제를 시도한다. 삭제 실패는 별도 경고다. |
 
-어느 단계에서 실패하든 열린 edit는 정리되고, AAB·mapping·keystore는 러너에서 삭제된다. Actions artifact로는 게시되지 않는다.
+edit 정리는 조회의 `finally`와 게시 실패의 `catch`에서 수행하는 삭제 시도다. API의 삭제 실패, SIGTERM·실행 취소·timeout·러너 강제 종료에서는 정리를 보장하지 않는다. 취소나 commit 응답 유실 뒤에는 Play Console의 실제 트랙과 versionCode를 확인한 뒤 재실행한다.
+
+AAB·mapping·keystore·빌드 설정은 `if: always()` 정리 단계에서 러너로부터 삭제를 시도하며, Actions artifact로 게시하는 단계는 없다. 러너가 강제 종료되면 이 정리 단계도 실행을 보장하지 않는다.
 
 ### 롤백
 

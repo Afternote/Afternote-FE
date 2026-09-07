@@ -108,6 +108,27 @@ test("서명 검증기가 빌드와 attest 사이에서 실제로 불린다", ()
 
     assert.ok(build < verifyBundle, "검증은 서명이 끝난 AAB 에 대고 한다");
     assert.ok(verifyBundle < attest, "attest 는 검증을 통과한 파일에만 붙는다");
+    const verificationStep = workflow.slice(
+        indexOf("- name: Verify the AAB signature and contents"),
+        indexOf("- name: Attest the exact signed AAB"),
+    );
+    assert.match(
+        verificationStep,
+        /AFTERNOTE_VERSION_CODE: \$\{\{ steps\.version_code\.outputs\.version_code \}\}/,
+        "manifest 검증에도 빌드와 같은 주입값이 필요하다",
+    );
+});
+
+test("로컬·Play 검증과 preflight 는 같은 bundletool 버전과 SHA256 을 고정한다", async () => {
+    const [verifier, preflight] = await Promise.all([
+        readFile(new URL("../../scripts/verify-play-release-bundle.sh", import.meta.url), "utf8"),
+        readFile(new URL("../workflows/release-aab-preflight.yml", import.meta.url), "utf8"),
+    ]);
+    const version = /^readonly bundletool_version="([0-9.]+)"$/m.exec(verifier)?.[1];
+    const sha256 = /^readonly bundletool_sha256="([0-9a-f]{64})"$/m.exec(verifier)?.[1];
+    assert.ok(version && sha256, "로컬 검증기도 버전과 digest 를 상수로 고정해야 한다");
+    assert.equal(version, /BUNDLETOOL_VERSION: "([0-9.]+)"/.exec(preflight)?.[1]);
+    assert.equal(sha256, /BUNDLETOOL_SHA256: ([0-9a-f]{64})/.exec(preflight)?.[1]);
 });
 
 test("attestation 은 이 commit·이 ref·GitHub 호스티드 러너로만 검증된다", () => {

@@ -14,7 +14,7 @@ async function executable(path, source) {
     await chmod(path, 0o755);
 }
 
-// Run the actual fixture suite and verifier against a tiny ZIP. Only Gradle and JDK commands
+// Run the actual fixture suite and verifier against a tiny ZIP. Gradle/JDK/bundletool commands
 // are doubles: ordinary PRs need no Android build or signing key to prove fixture coverage.
 async function runFixtures(context, mutateVerifier = (source) => source) {
     const root = await mkdtemp(join(tmpdir(), "afternote-fixture-policy-"));
@@ -62,6 +62,20 @@ fi
 echo 'jar verified.'
 `);
     await executable(join(root, "bin/keytool"), "#!/usr/bin/env bash\necho 'SHA256: AA:BB'\n");
+    // A bypassed guard can reach manifest verification. Keep that path deterministic and
+    // offline so a download failure cannot masquerade as rejection of a broken verifier.
+    const bundletool = join(root, "bundletool.jar");
+    await writeFile(bundletool, "fixture bundletool\n");
+    await executable(join(root, "bin/shasum"), `#!/usr/bin/env bash
+echo 'a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29'
+`);
+    await executable(join(root, "bin/java"), `#!/usr/bin/env bash
+set -euo pipefail
+[[ "$1" == -jar && "$2" == "$BUNDLETOOL_JAR" && "$3" == dump && "$4" == manifest ]]
+[[ "$5" == --bundle=* && "$6" == --module=base && "$7" == --xpath=/manifest/@android:versionCode ]]
+echo 1
+`);
+    await executable(join(root, "bin/curl"), "#!/usr/bin/env bash\necho 'Unexpected download in fixture test' >&2\nexit 90\n");
     const trace = join(root, "trace");
     await writeFile(trace, "");
     const result = spawnSync("bash", [".github/scripts/test-release-aab-negative-fixtures.sh"], {
@@ -69,7 +83,8 @@ echo 'jar verified.'
         encoding: "utf8",
         timeout: 20_000,
         env: { ...process.env, PATH: `${join(root, "bin")}:${process.env.PATH}`,
-            TMPDIR: join(root, "tmp"), FIXTURE_TRACE: trace },
+            TMPDIR: join(root, "tmp"), FIXTURE_TRACE: trace,
+            AFTERNOTE_VERSION_CODE: "1", BUNDLETOOL_JAR: bundletool },
     });
     assert.equal(result.error, undefined);
     assert.equal(await readFile(join(root, "app/proguard-rules.pro"), "utf8"), "# original rules\n");
