@@ -1,9 +1,7 @@
 package com.afternote.feature.afternote.presentation.receiver.playlist
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
@@ -11,6 +9,9 @@ import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureSt
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 import com.afternote.feature.receiver.domain.repository.ReceiverRepository
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +19,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * 수신자 추억 플레이리스트 화면 ViewModel.
@@ -26,16 +26,16 @@ import javax.inject.Inject
  * 라우트의 afternoteId로 상세를 조회하여 playlist.songs를 [PlaylistSongDisplay]로 표시합니다.
  * `X-Auth-Code` 헤더는 ReceiverAuthInterceptor가 자동 부착합니다.
  */
-@HiltViewModel
+@HiltViewModel(assistedFactory = ReceiverMemorialPlaylistViewModel.Factory::class)
 class ReceiverMemorialPlaylistViewModel
-    @Inject
+    @AssistedInject
     constructor(
-        savedStateHandle: SavedStateHandle,
+        @Assisted private val route: ReceivedAfternoteRoute.MemorialPlaylistRoute,
         private val receiverRepository: ReceiverRepository,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val afternoteIdFromNav: Long =
-            savedStateHandle.toRoute<ReceivedAfternoteRoute.MemorialPlaylistRoute>().afternoteId
+            route.afternoteId
 
         private val _uiState =
             MutableStateFlow<ReceiverMemorialPlaylistUiState>(ReceiverMemorialPlaylistUiState.Loading)
@@ -124,5 +124,10 @@ class ReceiverMemorialPlaylistViewModel
                             }
                         }
                 }
+        }
+
+        @AssistedFactory
+        interface Factory {
+            fun create(route: ReceivedAfternoteRoute.MemorialPlaylistRoute): ReceiverMemorialPlaylistViewModel
         }
     }

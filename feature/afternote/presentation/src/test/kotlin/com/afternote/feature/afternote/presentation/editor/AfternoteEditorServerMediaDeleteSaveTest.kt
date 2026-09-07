@@ -19,6 +19,7 @@ import com.afternote.feature.afternote.presentation.afternoteEditorSavedStateHan
 import com.afternote.feature.afternote.presentation.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.editor.state.EditorFormState
+import com.afternote.feature.afternote.presentation.editorFlowRoute
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -187,13 +188,15 @@ class AfternoteEditorServerMediaDeleteSaveTest {
         assertEquals(listOf("배경음악"), form.memorialPlaylistSongs.map { it.title })
     }
 
-    private fun viewModel(repository: FakeAfternoteRepository): AfternoteEditorViewModel =
-        AfternoteEditorViewModel(
-            savedStateHandle =
-                afternoteEditorSavedStateHandle(
-                    initialType = AfternoteType.MEMORIAL,
-                    itemId = AFTERNOTE_ID,
-                ),
+    private fun viewModel(repository: FakeAfternoteRepository): AfternoteEditorViewModel {
+        val savedStateHandle =
+            afternoteEditorSavedStateHandle(
+                initialType = AfternoteType.MEMORIAL,
+                itemId = AFTERNOTE_ID,
+            )
+        return AfternoteEditorViewModel(
+            route = savedStateHandle.editorFlowRoute(),
+            savedStateHandle = savedStateHandle,
             userRepository = afternoteAuthorUserRepository(),
             afternoteRepository = repository,
             memorialThumbnailUploadRepository =
@@ -210,6 +213,7 @@ class AfternoteEditorServerMediaDeleteSaveTest {
                 ),
             errorReporter = NoopAuthorErrorReporter,
         )
+    }
 
     private fun validMemorialPayload(): RegisterAfternotePayload =
         RegisterAfternotePayload(
