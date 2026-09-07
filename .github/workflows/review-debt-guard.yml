@@ -62,7 +62,9 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           AUTHOR: ${{ github.event.pull_request.user.login }}
           HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
-          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          # PR 제한·awaiting-author 라벨의 공통 면제 목록 (#1910, #1934).
+          # 라벨러도 이 선언을 읽는다. 인용·주석 없는 한 줄에서 공백으로 구분한다.
+          REVIEW_GATE_EXEMPT_AUTHORS: koongmai
         run: |
           # 조회 실패를 "빚 없음" 으로 오인해 통과시키지 않는다. 다만 판정 근거를
           # 얻지 못한 상태로 남의 PR 을 닫지도 않는다 — 아래에서 명시적으로 나눈다.
@@ -98,9 +100,18 @@ jobs:
             *) echo "::error::권한 값을 알 수 없다($perm) — 재실행할 것"; exit 1 ;;
           esac
 
-          # 긴급 우회 라벨.
-          case ",$LABELS," in
-            *,review-debt-exempt,*) echo "review-debt-exempt 라벨 — 건너뜀"; exit 0 ;;
+          # 이 가드 자체를 면제받은 작성자 (#1910). 팀이 koongmai 에게는 PR 을 여는 시점의
+          # 제약을 두지 않고 머지 시점 제약만 남기기로 했다. 리뷰 지적을 반영했는지와 무관하게
+          # 새 PR 을 열 수 있고, 남의 PR 을 리뷰할 의무도 없어 review-request-all 의 TEAM 에서도
+          # 빠져 있다. 머지 게이트는 그대로다. develop 은 여전히 승인 1건과 필수 체크를 요구하고,
+          # 그 요건은 이 가드가 아니라 required-approval·required-checks 룰셋이 건다.
+          #
+          # 면제는 "빚 계산" 앞에 둔다. 뒤에 두면 면제받은 사람의 PR 때문에 조회가 실패했을 때
+          # 가드가 그를 대신해 죽는다. GitHub 로그인은 대소문자를 가리지 않으므로 낮춰 비교한다.
+          author_lc=$(printf '%s' "$AUTHOR" | tr '[:upper:]' '[:lower:]')
+          exempt_lc=$(printf '%s' "$REVIEW_GATE_EXEMPT_AUTHORS" | tr '[:upper:]' '[:lower:]')
+          case " $exempt_lc " in
+            *" $author_lc "*) echo "리뷰 게이트 면제 작성자($AUTHOR) — 건너뜀"; exit 0 ;;
           esac
 
           # 빚의 기준은 «나에게 요청이 걸렸는가» 가 아니라 «아무도 응하지 않은 PR 이
@@ -194,6 +205,18 @@ jobs:
               continue
             fi
             IFS=$'\t' read -r blocked_by blocked_at <<< "$blocked"
+
+            # 면제 리뷰어가 낸 변경요청은 팀의 빚으로 돌아오지 않는다 (#1910). 면제된 사람은
+            # 리뷰할 의무가 없으므로, 그가 자발적으로 낸 변경요청 뒤 침묵하면 그 침묵의 대가를
+            # 나머지 팀원이 "새 PR 을 못 연다" 로 치르게 된다. 여기서 세지 않아도 그 PR 이
+            # 그냥 머지되지는 않는다. 승인 1건이 머지 게이트에 그대로 남아 있다.
+            # jq 의 최신 판정은 이미 소문자로 내려온다.
+            case " $exempt_lc " in
+              *" $blocked_by "*)
+                echo "#$pn — 면제 리뷰어 @$blocked_by 의 변경요청, 팀 빚 아님"
+                continue
+                ;;
+            esac
 
             # 반영을 비병합 커밋으로만 세면 병합으로 반영한 PR 을 놓친다. base 를
             # 끌어와 충돌을 풀며 지적을 반영하면 그 뒤 커밋이 전부 parents 2개라
@@ -367,8 +390,6 @@ jobs:
             echo '```bash'
             echo "gh pr reopen $PR_NUMBER"
             echo '```'
-            echo
-            echo "리뷰보다 이 PR 이 급하면 \`review-debt-exempt\` 라벨을 붙이고 다시 열면 통과합니다."
           } > /tmp/debt-comment.md
 
           echo "리뷰·작성자 미응답 ${count}건 — PR #$PR_NUMBER 를 닫는다"

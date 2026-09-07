@@ -26,7 +26,7 @@ val kakaoKey = socialLoginKey("KAKAO_NATIVE_APP_KEY")
 // 로컬·Firebase 빌드는 서버 latestVersionCode 와 같은 축에 있지 않고 서명도 Play 것과 달라,
 // 스토어로 보내도 그 위에 업데이트가 얹히지 않는다(docs/play-release.md).
 val afternoteVersionCode = resolveAfternoteVersionCode(System.getenv(AFTERNOTE_VERSION_CODE_ENV))
-val storeDistributedBuild = afternoteVersionCode != DEFAULT_AFTERNOTE_VERSION_CODE
+val storeDistributedBuild = afternoteVersionCode != resolveAfternoteVersionCode(null)
 
 android {
     namespace = "com.afternote.afternote_fe"
@@ -309,6 +309,7 @@ dependencies {
     androidTestImplementation(testFixtures(projects.feature.receiver.domain))
     androidTestImplementation(projects.feature.timeletter.domain)
     androidTestImplementation(testFixtures(projects.feature.timeletter.domain))
+    androidTestImplementation(testFixtures(projects.feature.timeletter.data))
     kspAndroidTest(libs.hilt.compiler)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     androidTestUtil(libs.androidx.test.orchestrator)

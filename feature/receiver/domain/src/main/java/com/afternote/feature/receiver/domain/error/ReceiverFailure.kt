@@ -1,8 +1,9 @@
 package com.afternote.feature.receiver.domain.error
 
 /**
- * 수신자 흐름(본인 확인 이메일 인증·마스터 키 검증·전달 자격 심사)의 실패 중 **사유가 확인된 것**의
- * 도메인 루트. Retrofit·`BaseResponse` 같은 인프라 디테일은 Data 계층이 해석한 뒤 이 계열로 통일한다.
+ * 수신자 흐름(본인 확인 이메일 인증·마스터 키 검증·전달 자격 심사·기록 내보내기)의 알려진 실패를
+ * 나타내는 도메인 루트. Retrofit·`BaseResponse` 같은 인프라 디테일은 Data 계층이 해석한 뒤 이 계열로
+ * 통일한다.
  *
  * 소비처는 이 루트로 좁힌 뒤 `when` 으로 가른다 — 실패 유형이 늘면 컴파일러가 소비처를 잡아준다.
  * 서버 응답과 네트워크 실패는 Data 계층이 이 계열로 번역한다. 그 밖의 로컬 실패는 원본 그대로
@@ -12,14 +13,12 @@ package com.afternote.feature.receiver.domain.error
  *   갖는다. non-null 로 좁혀 하위 타입이 빠뜨릴 수 없게 했다: 비우면 `Exception` 이
  *   `cause.toString()`(`java.net.UnknownHostException: Unable to resolve host ...` 같은 영문 기술
  *   원문)을 message 로 앉힌다.
- * @param cause 이 실패를 만든 인프라 예외. non-null 인 건 이 계열이 전부 그런 예외를 옮겨
- *   만들어져 원인 없는 실패가 존재하지 않아서다. 버리면 원 호출 지점의 stack trace 가 끊겨
- *   Crashlytics 에서 «어디서 난 실패인지» 를 잃는다. (`CoreAuthFailure` 루트가 nullable 인 건
- *   사용자 취소처럼 예외에서 유래하지 않는 갈래를 갖기 때문이고, 이 계열엔 그런 갈래가 없다.)
+ * @param cause 이 실패를 만든 인프라 예외. 서버·네트워크 실패는 원 호출 지점의 stack trace 가 끊기지
+ *   않도록 반드시 보존한다. [ExportNotSupported]처럼 예외에서 유래하지 않은 기능 상태만 `null`이다.
  */
 sealed class ReceiverFailure(
     message: String,
-    cause: Throwable,
+    cause: Throwable?,
 ) : Exception(message, cause) {
     /**
      * 서버가 예상하고 처리한 사용자 거절.
@@ -77,6 +76,19 @@ sealed class ReceiverFailure(
     class DeliveryConditionNotMet(
         cause: Throwable,
     ) : ReceiverFailure("delivery condition not met", cause)
+
+    /**
+     * 서버 export 계약이 아직 도착하지 않아 받은 기록 내보내기를 수행할 수 없다는 **기능 상태**.
+     *
+     * 사용자 잘못도 서버 장애도 아니라 «아직 만들지 않았다» 이므로, 인프라 예외에서 유래하지 않아
+     * `cause` 가 없는 유일한 갈래다. 운영 장애로 기록하지 않는다 — 매 시도가 텔레메트리에 쌓이면
+     * 실제 장애를 밀어낸다.
+     *
+     * 이 타입은 «성공을 만들어 내지 않기» 위해 존재한다. 스텁이 `Result.success` 를 돌려주던 동안
+     * 사용자에게는 백업이 끝난 것처럼 보였다(#589). 서버 엔드포인트(Afternote-BE#90)가 도착하면
+     * 이 갈래는 실제 구현으로 대체되어 사라진다.
+     */
+    class ExportNotSupported : ReceiverFailure("received export is not supported", null)
 }
 
 /** 화면에 별도 안내가 필요한 수신자 거절 사유. 서버 code 와 문구는 Data 계층이 이 어휘로 번역한다. */

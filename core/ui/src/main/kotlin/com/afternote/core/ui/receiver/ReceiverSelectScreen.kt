@@ -28,6 +28,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.afternote.core.common.util.KoreanConsonantUtil
@@ -45,12 +47,18 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import kotlinx.coroutines.launch
 
 /**
- * 수신자 선택 공용 화면 (#791, 시안 3631:24820).
+ * 수신자 선택 공용 화면 (#791, 시안 3631:24820) — 복수 선택.
  *
- * 검색 필드 + 초성 인덱스(ㄱ~ㅎ) + 단일 선택 목록 + 하단 완료 버튼 조립.
+ * 검색 필드 + 초성 인덱스(ㄱ~ㅎ) + 선택 목록 + 하단 완료 버튼 조립.
  * 데이터 조회·ViewModel·내비게이션은 소비 기능이 소유하고, 이 화면은
- * 목록·현재 선택·콜백을 받는다. 선택/해제 규칙(같은 항목 재탭 시 해제 등)은
+ * 목록·현재 선택·콜백을 받는다. 선택/해제 규칙(재탭 시 해제 등)은
  * 소비자가 [onReceiverToggle] 에서 결정한다.
+ *
+ * [selectedReceiverIds] 가 비면 «아무도 선택하지 않음» 이다 — 완료 버튼이 비활성이고
+ * [onConfirmClick] 도 나가지 않는다. null 로 «없음» 을 표현하지 않는다 (#1426).
+ *
+ * 단일 선택 소비자(설정 수신자 목록)는 아래의 `selectedReceiverId` 오버로드를 그대로 쓴다 —
+ * 복수화(#1426)는 새 오버로드를 더한 것이지 기존 계약을 바꾼 게 아니다.
  *
  * 문구 3종은 시안(3631:24820) 기준 공용 기본값을 쓴다 — 작성 플로우(애프터노트·타임레터·
  * 마음의 기록)는 모두 같은 문구라 그대로 두면 된다. 설정만 "수신자 목록" 으로 [title] 을
@@ -58,6 +66,39 @@ import kotlinx.coroutines.launch
  *
  * @param listReplacement 검색 필드 아래 목록 영역을 통째로 대체할 상태 화면 —
  *   로딩·조회 실패·빈 목록처럼 소비 기능마다 다른 상태를 끼운다. null 이면 목록을 그린다.
+ */
+@Composable
+fun ReceiverSelectScreen(
+    receivers: List<ReceiverSelectItem>,
+    selectedReceiverIds: List<Long>,
+    onReceiverToggle: (Long) -> Unit,
+    onBackClick: () -> Unit,
+    onConfirmClick: (List<Long>) -> Unit,
+    modifier: Modifier = Modifier,
+    title: String = stringResource(R.string.core_ui_receiver_select_title),
+    searchPlaceholder: String = stringResource(R.string.core_ui_receiver_select_search_placeholder),
+    confirmText: String = stringResource(R.string.core_ui_receiver_select_confirm),
+    listReplacement: (@Composable () -> Unit)? = null,
+) {
+    ReceiverSelectScaffold(
+        receivers = receivers,
+        selectedReceiverIds = selectedReceiverIds,
+        onReceiverToggle = onReceiverToggle,
+        onBackClick = onBackClick,
+        onConfirmClick = { onConfirmClick(selectedReceiverIds) },
+        modifier = modifier,
+        title = title,
+        searchPlaceholder = searchPlaceholder,
+        confirmText = confirmText,
+        listReplacement = listReplacement,
+    )
+}
+
+/**
+ * 수신자 선택 공용 화면 — 단일 선택 오버로드.
+ *
+ * 설정 수신자 목록처럼 한 명만 돌려주는 소비 경로가 쓴다. 복수 오버로드에 [selectedReceiverId]
+ * 를 담아 위임할 뿐이라, 그림과 완료 버튼 활성 조건은 두 모드가 같은 구현을 공유한다.
  */
 @Composable
 fun ReceiverSelectScreen(
@@ -72,6 +113,33 @@ fun ReceiverSelectScreen(
     confirmText: String = stringResource(R.string.core_ui_receiver_select_confirm),
     listReplacement: (@Composable () -> Unit)? = null,
 ) {
+    ReceiverSelectScaffold(
+        receivers = receivers,
+        selectedReceiverIds = listOfNotNull(selectedReceiverId),
+        onReceiverToggle = onReceiverToggle,
+        onBackClick = onBackClick,
+        onConfirmClick = { selectedReceiverId?.let(onConfirmClick) },
+        modifier = modifier,
+        title = title,
+        searchPlaceholder = searchPlaceholder,
+        confirmText = confirmText,
+        listReplacement = listReplacement,
+    )
+}
+
+@Composable
+private fun ReceiverSelectScaffold(
+    receivers: List<ReceiverSelectItem>,
+    selectedReceiverIds: List<Long>,
+    onReceiverToggle: (Long) -> Unit,
+    onBackClick: () -> Unit,
+    onConfirmClick: () -> Unit,
+    modifier: Modifier,
+    title: String,
+    searchPlaceholder: String,
+    confirmText: String,
+    listReplacement: (@Composable () -> Unit)?,
+) {
     Scaffold(
         modifier = modifier,
         containerColor = Color.Transparent,
@@ -84,8 +152,13 @@ fun ReceiverSelectScreen(
         bottomBar = {
             AfternoteButton(
                 text = confirmText,
-                onClick = { selectedReceiverId?.let(onConfirmClick) },
-                type = if (selectedReceiverId != null) AfternoteButtonType.Default else AfternoteButtonType.Un,
+                onClick = onConfirmClick,
+                type =
+                    if (selectedReceiverIds.isNotEmpty()) {
+                        AfternoteButtonType.Default
+                    } else {
+                        AfternoteButtonType.Un
+                    },
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
             )
         },
@@ -112,7 +185,7 @@ fun ReceiverSelectScreen(
                 ReceiverSelectList(
                     receivers = receivers,
                     searchQuery = searchState.text.toString(),
-                    selectedReceiverId = selectedReceiverId,
+                    selectedReceiverIds = selectedReceiverIds,
                     onReceiverToggle = onReceiverToggle,
                 )
             }
@@ -124,7 +197,7 @@ fun ReceiverSelectScreen(
 private fun ReceiverSelectList(
     receivers: List<ReceiverSelectItem>,
     searchQuery: String,
-    selectedReceiverId: Long?,
+    selectedReceiverIds: List<Long>,
     onReceiverToggle: (Long) -> Unit,
 ) {
     val listState = rememberLazyListState()
@@ -173,7 +246,7 @@ private fun ReceiverSelectList(
                 items(items, key = { it.id }) { receiver ->
                     ReceiverSelectRow(
                         receiver = receiver,
-                        selected = receiver.id == selectedReceiverId,
+                        isSelected = receiver.id in selectedReceiverIds,
                         onToggle = { onReceiverToggle(receiver.id) },
                     )
                 }
@@ -203,7 +276,7 @@ private fun ReceiverSelectList(
 @Composable
 private fun ReceiverSelectRow(
     receiver: ReceiverSelectItem,
-    selected: Boolean,
+    isSelected: Boolean,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -212,6 +285,9 @@ private fun ReceiverSelectRow(
             modifier
                 .fillMaxWidth()
                 .clickable(onClick = onToggle)
+                // 체크 아이콘엔 contentDescription 이 없어 «선택됨» 을 읽을 다른 통로가 없다.
+                // 복수 선택에서는 어느 행이 선택돼 있는지가 화면의 핵심 정보라 행에 노출한다 (#1426).
+                .semantics { selected = isSelected }
                 .padding(top = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -230,7 +306,7 @@ private fun ReceiverSelectRow(
             )
         }
         AfternoteCircularCheckbox(
-            state = if (selected) CheckboxState.Default else CheckboxState.None,
+            state = if (isSelected) CheckboxState.Default else CheckboxState.None,
             onClick = onToggle,
             size = 20.dp,
         )

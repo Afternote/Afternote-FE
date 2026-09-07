@@ -19,7 +19,7 @@ import com.afternote.feature.afternote.presentation.shared.detail.DetailLoadErro
  * [onNavigateToPlaylist] 로 위임한다 (#274).
  *
  * 하단 "애프터노트 확인하기" 는 [onNavigateToFullList] 로 위임한다 — 수신자가 이 발신자에게서
- * 받은 애프터노트 전체 목록([com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceivedAfternoteRoute.ListRoute])
+ * 받은 애프터노트 전체 목록([com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute.ListRoute])
  * 이 목적지다. 파라미터 이름이 가리키는 "전체 목록" 이 수신자 흐름에 그것 하나뿐이다 (#777).
  *
  * 조회 실패는 [DetailLoadErrorContent] 로 간다 — 발신 상세와 같은 실패 화면이며 재조회 액션을 준다.

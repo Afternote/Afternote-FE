@@ -32,7 +32,13 @@ class WriteTextFieldReseedTest {
     fun `나중에 도착한 본문이 에디터에 실린다`() {
         var content by mutableStateOf<String?>(null)
         composeRule.setContent {
-            AfternoteTheme { WriteTextField(value = content) }
+            AfternoteTheme {
+                WriteTextField(
+                    value = content,
+                    onDraftCountClick = {},
+                    onSaveDraftClick = {},
+                )
+            }
         }
 
         composeRule.runOnIdle { content = "<p>서버에서 도착한 임시저장 본문</p>" }
@@ -48,7 +54,12 @@ class WriteTextFieldReseedTest {
         var changes = 0
         composeRule.setContent {
             AfternoteTheme {
-                WriteTextField(value = content, onValueChange = { changes += 1 })
+                WriteTextField(
+                    value = content,
+                    onValueChange = { changes += 1 },
+                    onDraftCountClick = {},
+                    onSaveDraftClick = {},
+                )
             }
         }
         composeRule.waitForIdle()

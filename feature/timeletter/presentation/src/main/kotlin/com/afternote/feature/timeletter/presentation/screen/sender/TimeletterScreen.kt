@@ -1,11 +1,5 @@
 package com.afternote.feature.timeletter.presentation.screen.sender
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -14,9 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -24,15 +16,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import com.afternote.core.ui.button.FAB.PenFloatingActionButton
 import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
-import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterList
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.presentation.R
-import com.afternote.feature.timeletter.presentation.component.EmptyTimeLetterContent
 import com.afternote.feature.timeletter.presentation.component.TimeLetterContent
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeletterUiState
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeletterViewModel
@@ -86,43 +75,19 @@ fun TimeletterScreen(
         }
     }
 
-    Scaffold(
+    TimeletterScreenContent(
+        uiState = uiState,
+        viewMode = viewMode,
+        onViewModeChange = { viewMode = it },
+        snackbarHostState = snackbarHostState,
+        onLetterClick = onLetterClick,
+        onSettingClick = onSettingClick,
+        onWriteClick = onWriteClick,
+        onEditClick = onEditClick,
+        onFilterRecipientClick = onFilterRecipientClick,
+        onDeleteClick = { pendingDeleteId = it },
         modifier = modifier,
-        containerColor = Color.Transparent,
-        topBar = { HomeTopBar(onSettingClick = onSettingClick) },
-        floatingActionButton = { PenFloatingActionButton(onClick = onWriteClick) },
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-    ) { paddingValues ->
-        when (val state = uiState) {
-            is TimeletterUiState.Loading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize().padding(paddingValues),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-
-            is TimeletterUiState.Error -> {
-                EmptyTimeLetterContent(modifier = Modifier.padding(paddingValues))
-            }
-
-            is TimeletterUiState.Success -> {
-                TimeLetterContent(
-                    letters = state.letters,
-                    receiverNameMap = state.receiverNameMap,
-                    viewMode = viewMode,
-                    onViewModeChange = { viewMode = it },
-                    selectedFilterReceiverIds = state.selectedFilterReceiverIds,
-                    onFilterClick = onFilterRecipientClick,
-                    onLetterClick = onLetterClick,
-                    onEditClick = onEditClick,
-                    onDeleteClick = { pendingDeleteId = it },
-                    modifier = Modifier.padding(paddingValues),
-                )
-            }
-        }
-    }
+    )
 }
 
 private val previewLetters =
