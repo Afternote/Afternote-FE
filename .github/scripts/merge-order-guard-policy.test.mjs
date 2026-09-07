@@ -433,3 +433,13 @@ gh() { echo "$*"; [[ "$*" != *pull_request_number=101* ]]; }
     assert.match(result.stdout, /pull_request_number=101/);
     assert.match(result.stdout, /pull_request_number=102/);
 });
+
+test("old PR workflows trigger a trusted default-branch refresh without dispatch loops or PR checkout", async () => {
+    const refresh = await readFile(new URL("../workflows/refresh-merge-order-policy.yml", import.meta.url), "utf8");
+    assert.match(refresh, /workflow_run:\n\s+workflows: \[merge-order-guard\]\n\s+types: \[completed\]/);
+    assert.match(refresh, /github.event.workflow_run.event == 'pull_request'/);
+    assert.match(refresh, /^permissions: \{\}$/m);
+    assert.match(refresh, /select\(\.headRefOid == \$sha\)/);
+    assert.match(refresh, /gh workflow run merge-order-guard.yml --ref "\$DEFAULT_BRANCH"/);
+    assert.doesNotMatch(refresh, /uses:.*checkout|checks: write|contents: write|pull_request_target/);
+});
