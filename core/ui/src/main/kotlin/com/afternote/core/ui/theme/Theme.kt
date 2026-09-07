@@ -78,7 +78,7 @@ fun AfternoteTheme(
 // Typography: MaterialTheme.typography.* → AfternoteDesign.typography.* (see AfternoteTypography in AfternoteTypography.kt)
 // e.g. headlineLarge→h1, headlineMedium→h2, headlineSmall→h3, bodyLarge→bodyLargeB, bodyMedium→bodyLargeR,
 // titleMedium→bodyBase, bodySmall→bodySmallR, titleSmall→bodySmallB, labelLarge→primaryButton,
-// inter→secondaryButton, labelSmall→footnoteCaption, displayLarge→captionLargeB,
+// labelSmall→footnoteCaption, displayLarge→captionLargeB,
 // displayMedium→captionLargeR, displaySmall→mono
 object AfternoteDesign {
     val colors: AfternoteColors
