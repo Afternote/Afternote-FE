@@ -72,15 +72,17 @@ internal class UserRepositoryImpl
             mindRecord: Boolean?,
             afterNote: Boolean?,
         ): UserPushSetting =
-            userApiService
-                .updateMyPushSettings(
-                    UserUpdatePushSettingRequestDto(
-                        timeLetter = timeLetter,
-                        mindRecord = mindRecord,
-                        afterNote = afterNote,
-                    ),
-                ).requireData()
-                .toDomain()
+            mapPushSettingFailure {
+                userApiService
+                    .updateMyPushSettings(
+                        UserUpdatePushSettingRequestDto(
+                            timeLetter = timeLetter,
+                            mindRecord = mindRecord,
+                            afterNote = afterNote,
+                        ),
+                    ).requireData()
+                    .toDomain()
+            }
 
         override suspend fun getMyMarketingConsents(): UserMarketingConsent =
             userApiService

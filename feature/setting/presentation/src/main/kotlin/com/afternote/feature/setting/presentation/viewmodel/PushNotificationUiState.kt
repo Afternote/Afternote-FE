@@ -11,7 +11,16 @@ data class PushNotificationUiState(
     val isNewsletterOn: Boolean = false,
     val isMindRecordOn: Boolean = false,
     val isAfternoteOn: Boolean = false,
+    val isNewsletterUpdating: Boolean = false,
+    val isMindRecordUpdating: Boolean = false,
+    val isAfternoteUpdating: Boolean = false,
+    val saveFailure: PushNotificationSaveFailure? = null,
 )
+
+enum class PushNotificationSaveFailure {
+    NETWORK,
+    SERVER,
+}
 
 sealed interface PushNotificationEvent {
     data object MarketingConsentSaveFailed : PushNotificationEvent

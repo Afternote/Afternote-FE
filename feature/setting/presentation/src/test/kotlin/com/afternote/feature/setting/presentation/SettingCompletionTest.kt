@@ -171,6 +171,7 @@ class SettingCompletionTest {
 
         assertTrue(viewModel.uiState.value.isMindRecordOn)
         assertFalse(viewModel.uiState.value.isNewsletterOn)
+        assertTrue(viewModel.uiState.value.saveFailure != null)
 
         composeRule.runOnIdle {
             viewModel.onAfternoteToggle(false)
