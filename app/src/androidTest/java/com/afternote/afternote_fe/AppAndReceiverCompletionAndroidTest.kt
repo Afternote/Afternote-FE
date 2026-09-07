@@ -54,6 +54,7 @@ import com.afternote.feature.home.presentation.receiver.ReceiverHomeEvent
 import com.afternote.feature.home.presentation.receiver.ReceiverHomeScreen
 import com.afternote.feature.home.presentation.receiver.ReceiverHomeViewModel
 import com.afternote.feature.home.presentation.receiver.model.ReceiverHomeUiState
+import com.afternote.feature.home.presentation.usecase.GetReceiverHomeSummaryUseCase
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeMindRecordReceiverRepository
@@ -300,9 +301,13 @@ class ReceiverRuntimeCompletionAndroidTest {
         val reporter = FakeErrorReporter()
         val viewModel =
             ReceiverHomeViewModel(
+                getReceiverHomeSummary =
+                    GetReceiverHomeSummaryUseCase(
+                        receiverRepository = repository,
+                        mindRecordReceiverRepository = mindRecordRepository,
+                        receiverTimeLetterRepository = timeLetterRepository,
+                    ),
                 receiverRepository = repository,
-                mindRecordReceiverRepository = mindRecordRepository,
-                receiverTimeLetterRepository = timeLetterRepository,
                 errorReporter = reporter,
             )
 
