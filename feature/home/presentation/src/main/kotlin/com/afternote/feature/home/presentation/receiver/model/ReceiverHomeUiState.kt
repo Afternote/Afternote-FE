@@ -56,7 +56,42 @@ sealed interface ReceiverDownloadState {
 
     data object Done : ReceiverDownloadState
 
+    /**
+     * 재시도로 풀릴 수 있는 실패 — 공통 오류 팝업으로 안내한다 (#446 · #1737).
+     *
+     * 「다시 시도하기」 는 처음부터가 아니라 **실패한 그 단계**를 다시 건다. 그 단계를
+     * 상태에 담지 않는 이유는 재시도가 화면의 결정이 아니라서다 — 무엇을 다시 걸지는
+     * ViewModel 이 마지막 시도로 들고 있고, 화면은 갈래만 보고 팝업을 고른다.
+     */
+    data class FailedWithRetry(
+        val popup: ReceiverDownloadErrorPopup,
+    ) : ReceiverDownloadState
+
+    /**
+     * 재시도해도 같은 결과인 실패 — 팝업 대신 기존 안내를 유지한다.
+     *
+     * 미구현 내보내기([com.afternote.feature.receiver.domain.error.ReceiverFailure.ExportNotSupported],
+     * #1726)가 여기 온다. 「다시 시도하기」 를 주면 같은 실패를 반복하게 만든다.
+     */
     data class Failed(
         @param:StringRes val messageRes: Int,
     ) : ReceiverDownloadState
+}
+
+/**
+ * 내려받기 실패를 그릴 공통 오류 팝업의 갈래 (#446).
+ *
+ * 수신자 화면의 `ReceiverErrorPopup` 과 같은 모델이지만 그쪽은 receiver 모듈 안에 갇혀 있고
+ * (`internal`), 갈래도 다르다 — 이쪽은 업로드가 아니라 **내려받은 파일을 로컬에 저장**하는
+ * 단계가 따로 있다.
+ */
+enum class ReceiverDownloadErrorPopup {
+    /** 서버에 닿지도 못한 실패 — 안내는 "연결을 확인하라". */
+    NETWORK,
+
+    /** 서버가 응답했지만 내려주지 못한 실패 — 안내는 "잠시 후 다시". */
+    SERVER,
+
+    /** 내려받은 뒤 파일로 저장하지 못한 실패 — 서버 문제가 아니므로 갈라 둔다. */
+    SAVE,
 }

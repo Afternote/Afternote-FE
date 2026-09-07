@@ -153,10 +153,13 @@ private fun SuccessContent(
 /**
  * 내려받기 확인 팝업 + 결과 처리.
  *
- * 실패 안내는 잠정 Snackbar 다 — 서버 작업 실패의 정본은 #446 공통 에러 팝업이라 컴포넌트가
- * 나오면 그쪽으로 재정렬된다 (#1391, #713 전례). `showSnackbar` 는 표출이 끝날 때까지 suspend
- * 하므로 소비 이벤트는 표출 뒤에 보낸다 — 표출 중에는 [state] 가 Failed 로 유지돼 effect 가
- * 재시작되지 않고, 소비로 Idle 이 되면 이미 완료된 effect 만 정리된다 (#664 AddSongScreen 컨벤션).
+ * 재시도로 풀릴 수 있는 실패는 #446 공통 오류 팝업으로 안내한다 (#1737). 「다시 시도하기」 는
+ * 실패한 그 단계를 다시 걸고, 그 판단은 ViewModel 이 한다.
+ *
+ * 재시도해도 같은 실패(미구현 내보내기, #1726)만 Snackbar 로 남는다. `showSnackbar` 는 표출이
+ * 끝날 때까지 suspend 하므로 소비 이벤트는 표출 뒤에 보낸다 — 표출 중에는 [state] 가 Failed 로
+ * 유지돼 effect 가 재시작되지 않고, 소비로 Idle 이 되면 이미 완료된 effect 만 정리된다
+ * (#664 AddSongScreen 컨벤션).
  */
 @Composable
 private fun DownloadDialogHost(
@@ -179,6 +182,14 @@ private fun DownloadDialogHost(
     }
 
     when (state) {
+        is ReceiverDownloadState.FailedWithRetry -> {
+            ReceiverDownloadErrorPopupHost(
+                popup = state.popup,
+                onRetry = { onEvent(ReceiverHomeEvent.RetryDownload) },
+                onDismiss = { onEvent(ReceiverHomeEvent.ConsumeDownloadResult) },
+            )
+        }
+
         is ReceiverDownloadState.Failed -> {
             val message = stringResource(state.messageRes)
             LaunchedEffect(state) {
