@@ -108,6 +108,7 @@
     <string name="push_alarm">푸시 알림</string>
     <string name="marketing_guide_1">서비스의 중요 안내사항 및 수신인 관련 정보는 위 수신 여부와 관계없이 발송됩니다.</string>
     <string name="marketing_guide_2">문자, 이메일, 푸시 메세지 수신을 선택하면 광고성 정보 수신에 자동 동의 처리됩니다.</string>
+    <string name="marketing_consent_save_failed">저장에 실패했어요. 다시 시도해 주세요.</string>
     <string name="marketing_guide_3">앱 푸시 알림은 애프터노트 앱 로그인 › 설정 › 푸시 알림 설정에서 알림을 끌 수 있습니다.</string>
 
 
