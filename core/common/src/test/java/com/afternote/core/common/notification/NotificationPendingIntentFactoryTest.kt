@@ -72,10 +72,20 @@ class NotificationPendingIntentFactoryTest {
     @Test
     fun `빈 identity 구성요소는 거부한다`() {
         assertThrows(IllegalArgumentException::class.java) {
-            NotificationPendingIntentFactory.create(context, source = " ", occurrenceId = "token")
+            NotificationPendingIntentFactory.create(
+                context,
+                source = " ",
+                occurrenceId = "token",
+                destination = NotificationDestination.HOME,
+            )
         }
         assertThrows(IllegalArgumentException::class.java) {
-            NotificationPendingIntentFactory.create(context, source = "fcm", occurrenceId = "")
+            NotificationPendingIntentFactory.create(
+                context,
+                source = "fcm",
+                occurrenceId = "",
+                destination = NotificationDestination.HOME,
+            )
         }
     }
 
@@ -90,6 +100,10 @@ class NotificationPendingIntentFactoryTest {
             intent.getStringExtra(NotificationPendingIntentFactory.EXTRA_NOTIFICATION_OCCURRENCE_TOKEN),
         )
         assertEquals(
+            NotificationDestination.HOME.contractValue,
+            intent.getStringExtra(NotificationPendingIntentFactory.EXTRA_NOTIFICATION_DESTINATION),
+        )
+        assertEquals(
             Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP,
             intent.flags,
         )
@@ -100,6 +114,11 @@ class NotificationPendingIntentFactoryTest {
         occurrenceId: String,
     ): PendingIntent =
         requireNotNull(
-            NotificationPendingIntentFactory.create(context, source = source, occurrenceId = occurrenceId),
+            NotificationPendingIntentFactory.create(
+                context,
+                source = source,
+                occurrenceId = occurrenceId,
+                destination = NotificationDestination.HOME,
+            ),
         ) { "런처 Intent 가 없어 PendingIntent 를 만들지 못했습니다" }
 }
