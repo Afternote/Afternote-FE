@@ -4,7 +4,6 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.ui.icon.AfternoteSourceIcon
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.home.presentation.R
@@ -14,19 +13,18 @@ import com.afternote.feature.home.presentation.receiver.model.ReceiverDownloadEr
 import com.afternote.feature.home.presentation.receiver.model.ReceiverDownloadState
 import com.afternote.feature.home.presentation.receiver.model.ReceiverHomeUiState
 import com.afternote.feature.home.presentation.receiver.model.SenderMessage
+import com.afternote.feature.home.presentation.usecase.GetReceiverHomeSummaryUseCase
+import com.afternote.feature.home.presentation.usecase.ReceiverHomeSummary
+import com.afternote.feature.home.presentation.usecase.ReceiverHomeSummaryResult
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
-import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import com.afternote.feature.receiver.domain.model.AfterNoteListItem
 import com.afternote.feature.receiver.domain.model.ReceivedExportBundle
 import com.afternote.feature.receiver.domain.repository.ReceiverRepository
 import com.afternote.feature.receiver.presentation.reporting.ReceiverFailureStage
 import com.afternote.feature.receiver.presentation.reporting.recordReceiverFailure
-import com.afternote.feature.timeletter.domain.repository.ReceiverTimeLetterRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,9 +42,9 @@ import javax.inject.Inject
 class ReceiverHomeViewModel
     @Inject
     constructor(
+        private val getReceiverHomeSummary: GetReceiverHomeSummaryUseCase,
+        // 내려받기는 홈 집계와 다른 축이다 — 조회가 아니라 사용자가 누른 명령이라 UseCase 밖에 둔다.
         private val receiverRepository: ReceiverRepository,
-        private val mindRecordReceiverRepository: MindRecordReceiverRepository,
-        private val receiverTimeLetterRepository: ReceiverTimeLetterRepository,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<ReceiverHomeUiState>(ReceiverHomeUiState.Loading)
@@ -129,91 +127,74 @@ class ReceiverHomeViewModel
         }
 
         private suspend fun loadHomeInternal(keepsStateOnFailure: Boolean) {
-            coroutineScope {
-                val afternotes = async { receiverRepository.getReceivedAfterNotes() }
-                val mindRecords = async { mindRecordReceiverRepository.getAll() }
-                val timeLetters =
-                    async {
-                        runCatchingCancellable {
-                            receiverTimeLetterRepository.getReceivedTimeLetters()
-                        }
-                    }
-                val message = async { receiverRepository.loadSenderMessage() }
-                val afternotesRes = afternotes.await()
-                val mindRecordsRes = mindRecords.await()
-                val timeLettersRes = timeLetters.await()
-                val messageRes = message.await()
-
-                val failedSources =
-                    buildList {
-                        if (afternotesRes.isFailure) add("afternotes")
-                        if (mindRecordsRes.isFailure) add("mind_records")
-                        if (timeLettersRes.isFailure) add("time_letters")
-                        if (messageRes.isFailure) add("sender_message")
-                    }
-                val firstFailure =
-                    afternotesRes.exceptionOrNull()
-                        ?: mindRecordsRes.exceptionOrNull()
-                        ?: timeLettersRes.exceptionOrNull()
-                        ?: messageRes.exceptionOrNull()
-
-                if (firstFailure != null) {
-                    // 모든 호출이 실패한 경우만 Error. 일부 실패는 fallback 으로 진행.
-                    if (failedSources.size == HOME_REQUEST_COUNT) {
-                        // 화면을 유지하는 자동 갱신 실패도 기록한다 — 콘솔이 유일한 관측 지점이다.
-                        errorReporter.recordReceiverFailure(ReceiverFailureStage.RECEIVER_HOME_LOAD, firstFailure)
-                        _uiState.update { current ->
-                            if (keepsStateOnFailure && current is ReceiverHomeUiState.Success) {
-                                // 자동 갱신 실패: 잘 보고 있던 홈을 에러 화면으로 대체하지 않는다.
-                                current
-                            } else {
-                                ReceiverHomeUiState.Error(firstFailure)
-                            }
-                        }
-                        return@coroutineScope
-                    }
-                    // 일부 실패는 0·빈 값으로 덮여 화면에도 콘솔에도 흔적이 남지 않던 구간 — 여기서만 기록한다.
+            when (val result = getReceiverHomeSummary()) {
+                is ReceiverHomeSummaryResult.AllFailed -> {
+                    // 화면을 유지하는 자동 갱신 실패도 기록한다 — 콘솔이 유일한 관측 지점이다.
                     errorReporter.recordReceiverFailure(
-                        stage = ReceiverFailureStage.RECEIVER_HOME_PARTIAL_LOAD,
-                        throwable = firstFailure,
-                        failedSources = failedSources,
+                        ReceiverFailureStage.RECEIVER_HOME_LOAD,
+                        result.failure.firstCause,
                     )
-                    if (keepsStateOnFailure && _uiState.value is ReceiverHomeUiState.Success) {
-                        // 자동 갱신의 부분 실패: 성공한 소스만 반영하면 실패한 섹션이 null 로 꺼져
-                        // 잘 보이던 카운트가 이유 없이 사라진다 — 완결된 기존 화면을 그대로 둔다.
-                        return@coroutineScope
+                    _uiState.update { current ->
+                        if (keepsStateOnFailure && current is ReceiverHomeUiState.Success) {
+                            // 자동 갱신 실패: 잘 보고 있던 홈을 에러 화면으로 대체하지 않는다.
+                            current
+                        } else {
+                            ReceiverHomeUiState.Error(result.failure.firstCause)
+                        }
                     }
                 }
 
-                val afternotesResult = afternotesRes.getOrNull()
-                val mindRecordsSummary = mindRecordsRes.getOrNull()?.toHomeSummary()
-                val timeLettersCount = timeLettersRes.getOrNull()?.totalCount
-                val senderMessageInfo = messageRes.getOrNull()
-                // senderName / senderMessage 둘 다 blank 가드 — sender 가 이름·메시지 미입력 케이스 대응.
-                // ".orEmpty()" 만으로는 공백("  ") 통과해 "故 님이 남기신 기록" / "님의 한 마디" UI 깨짐.
-                val senderName = senderMessageInfo?.senderName?.takeIf { it.isNotBlank() }.orEmpty()
-                val senderMessageBody = senderMessageInfo?.message?.takeIf { it.isNotBlank() }
-
-                _uiState.update { current ->
-                    ReceiverHomeUiState.Success(
-                        senderName = senderName,
-                        senderMessage =
-                            senderMessageBody?.let {
-                                // orEmpty(): null 이면 "" — createdAt 미제공(구버전 서버) 시 날짜 슬롯만 비워 보이게.
-                                // senderMessageInfo 에 ?. 가 없어도 안전: senderMessageBody(= info?.message?…) 가
-                                // non-null 인 이 블록에선 안전 호출 체인의 대우로 info 도 non-null 이 보장되고,
-                                // K2 가 이를 smart cast 한다 (Kotlin 2.0+ "Local variables and further scopes").
-                                // ?. 를 붙이면 "여기서 null 일 수 있다" 는 거짓 신호가 되어 생략.
-                                SenderMessage(date = senderMessageInfo.createdAt.orEmpty(), body = it)
-                            },
-                        mindRecord = mindRecordsSummary,
-                        timeLetterTotalCount = timeLettersCount,
-                        afternoteTotalCount = afternotesResult?.totalCount,
-                        afternoteIcons = afternotesResult?.items.orEmpty().toAfternoteIcons(),
-                        // 자동 갱신이 화면을 교체해도 진행 중인 내려받기 다이얼로그·진행 상태는 잃지 않는다.
-                        download = (current as? ReceiverHomeUiState.Success)?.download ?: ReceiverDownloadState.Idle,
-                    )
+                is ReceiverHomeSummaryResult.Loaded -> {
+                    val failure = result.failure
+                    if (failure != null) {
+                        // 부분 실패는 0·빈 값으로 덮여 화면에도 콘솔에도 흔적이 남지 않던 구간 —
+                        // 여기서만 기록한다.
+                        errorReporter.recordReceiverFailure(
+                            stage = ReceiverFailureStage.RECEIVER_HOME_PARTIAL_LOAD,
+                            throwable = failure.firstCause,
+                            failedSources = failure.failedSources,
+                        )
+                        if (keepsStateOnFailure && _uiState.value is ReceiverHomeUiState.Success) {
+                            // 자동 갱신의 부분 실패: 성공한 소스만 반영하면 실패한 섹션이 null 로
+                            // 꺼져 잘 보이던 카운트가 이유 없이 사라진다 — 완결된 기존 화면을 둔다.
+                            return
+                        }
+                    }
+                    showSummary(result.summary)
                 }
+            }
+        }
+
+        private fun showSummary(summary: ReceiverHomeSummary) {
+            val senderMessageInfo = summary.senderMessage
+            // senderName / senderMessage 둘 다 blank 가드 — sender 가 이름·메시지 미입력 케이스 대응.
+            // ".orEmpty()" 만으로는 공백("  ") 통과해 "故 님이 남기신 기록" / "님의 한 마디" UI 깨짐.
+            val senderName = senderMessageInfo?.senderName?.takeIf { it.isNotBlank() }.orEmpty()
+            val senderMessageBody = senderMessageInfo?.message?.takeIf { it.isNotBlank() }
+
+            _uiState.update { current ->
+                ReceiverHomeUiState.Success(
+                    senderName = senderName,
+                    senderMessage =
+                        senderMessageBody?.let {
+                            // orEmpty(): null 이면 "" — createdAt 미제공(구버전 서버) 시 날짜 슬롯만 비워 보이게.
+                            // senderMessageInfo 에 ?. 가 없어도 안전: senderMessageBody(= info?.message?…) 가
+                            // non-null 인 이 블록에선 안전 호출 체인의 대우로 info 도 non-null 이 보장되고,
+                            // K2 가 이를 smart cast 한다 (Kotlin 2.0+ "Local variables and further scopes").
+                            // ?. 를 붙이면 "여기서 null 일 수 있다" 는 거짓 신호가 되어 생략.
+                            SenderMessage(date = senderMessageInfo.createdAt.orEmpty(), body = it)
+                        },
+                    mindRecord = summary.mindRecords?.toHomeSummary(),
+                    timeLetterTotalCount = summary.timeLetterTotalCount,
+                    afternoteTotalCount = summary.afternotes?.totalCount,
+                    afternoteIcons =
+                        summary.afternotes
+                            ?.items
+                            .orEmpty()
+                            .toAfternoteIcons(),
+                    // 자동 갱신이 화면을 교체해도 진행 중인 내려받기 다이얼로그·진행 상태는 잃지 않는다.
+                    download = (current as? ReceiverHomeUiState.Success)?.download ?: ReceiverDownloadState.Idle,
+                )
             }
         }
 
@@ -276,9 +257,6 @@ class ReceiverHomeViewModel
             }
         }
     }
-
-/** [ReceiverHomeViewModel] 이 홈 한 화면을 그리려고 병렬로 던지는 요청 수 — 전부 실패해야 Error 로 떨어진다. */
-private const val HOME_REQUEST_COUNT = 4
 
 private const val MAX_AFTERNOTE_ICONS = 4
 
