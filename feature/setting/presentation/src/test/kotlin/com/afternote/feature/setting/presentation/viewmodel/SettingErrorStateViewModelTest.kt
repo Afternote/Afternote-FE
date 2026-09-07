@@ -6,6 +6,7 @@ import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.ui.UiText
 import com.afternote.feature.setting.presentation.R
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -14,6 +15,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -57,6 +59,31 @@ class SettingErrorStateViewModelTest {
             advanceUntilIdle()
 
             assertEquals(SettingUiState.Success(testUser.name, testUser.email), viewModel.uiState.value)
+        }
+
+    @Test
+    fun `설정 갱신 중에는 기존 프로필을 유지한다`() =
+        runTest(dispatcher) {
+            val refreshResult = CompletableDeferred<User>()
+            var attempts = 0
+            val repository =
+                FakeUserRepository.strict().apply {
+                    onGetMyProfile = {
+                        if (attempts++ == 0) testUser else refreshResult.await()
+                    }
+                }
+            val viewModel = SettingViewModel(FakeAuthRepository.strict(), repository)
+            advanceUntilIdle()
+            val previous = viewModel.uiState.value
+
+            viewModel.refresh()
+            runCurrent()
+            assertEquals(previous, viewModel.uiState.value)
+
+            val updated = testUser.copy(name = "새 이름")
+            refreshResult.complete(updated)
+            advanceUntilIdle()
+            assertEquals(SettingUiState.Success(updated.name, updated.email), viewModel.uiState.value)
         }
 
     @Test

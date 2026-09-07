@@ -66,7 +66,9 @@ class SettingViewModel
             if (loadJob?.isActive == true) return
             loadJob =
                 viewModelScope.launch {
-                    _uiState.value = SettingUiState.Loading
+                    if (_uiState.value !is SettingUiState.Success) {
+                        _uiState.value = SettingUiState.Loading
+                    }
                     runCatchingCancellable { userRepository.getMyProfile() }
                         .onSuccess { profile ->
                             _uiState.value =
