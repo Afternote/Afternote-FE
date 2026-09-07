@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -45,7 +46,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
@@ -56,6 +56,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.icon.CloseIcon
@@ -134,7 +135,14 @@ private fun InquiryListItem(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     shape = RoundedCornerShape(18.dp),
-                    color = if (inquiry.status == InquiryStatus.ANSWERED) Color(0xFFDCEDE3) else AfternoteDesign.colors.gray2,
+                    color =
+                        if (inquiry.status ==
+                            InquiryStatus.ANSWERED
+                        ) {
+                            AfternoteDesign.colors.successContainer
+                        } else {
+                            AfternoteDesign.colors.gray2
+                        },
                 ) {
                     Text(
                         text =
@@ -228,7 +236,7 @@ internal fun InquiryWriteScreen(
 ) {
     val inquiryTypes = stringArrayResource(R.array.setting_inquiry_types).toList()
     var type by rememberSaveable { mutableStateOf(inquiryTypes.first()) }
-    var title by rememberSaveable { mutableStateOf("") }
+    val title = rememberTextFieldState()
     var content by rememberSaveable { mutableStateOf("") }
     var attachments by rememberSaveable { mutableStateOf(arrayListOf<String>()) }
     val context = LocalContext.current
@@ -268,7 +276,7 @@ internal fun InquiryWriteScreen(
                 }
             ({ picker.launch(arrayOf("image/*")) })
         }
-    val canSubmit = title.isNotBlank() && content.isNotBlank()
+    val canSubmit = title.text.isNotBlank() && content.isNotBlank()
 
     Scaffold(
         modifier = modifier.imePadding(),
@@ -278,7 +286,9 @@ internal fun InquiryWriteScreen(
                 text = stringResource(R.string.setting_inquiry_submit),
                 onClick = {
                     // Afternote-BE#246: 접수 계약이 생길 때까지 작성 내용을 남기고 미지원을 알린다.
-                    coroutineScope.launch { snackbarHostState.showSnackbar(submitNotSupportedMessage) }
+                    if (canSubmit) {
+                        coroutineScope.launch { snackbarHostState.showSnackbar(submitNotSupportedMessage) }
+                    }
                 },
                 type = if (canSubmit) AfternoteButtonType.Default else AfternoteButtonType.Un,
                 modifier = Modifier.navigationBarsPadding().padding(horizontal = 20.dp, vertical = 16.dp),
@@ -297,18 +307,10 @@ internal fun InquiryWriteScreen(
             InquiryTypeDropdown(type, options = inquiryTypes, onSelected = { type = it })
             Spacer(Modifier.height(22.dp))
             InquiryFieldLabel(stringResource(R.string.setting_inquiry_title))
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
+            AfternoteTextField(
+                state = title,
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = {
-                    Text(
-                        text = stringResource(R.string.setting_inquiry_title_text_field),
-                        color = AfternoteDesign.colors.gray4,
-                    )
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(8.dp),
+                placeholder = stringResource(R.string.setting_inquiry_title_text_field),
             )
             Spacer(Modifier.height(18.dp))
             InquiryFieldLabel(stringResource(R.string.setting_inquiry_content))

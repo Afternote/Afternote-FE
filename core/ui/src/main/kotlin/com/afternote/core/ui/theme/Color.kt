@@ -81,6 +81,7 @@ internal fun lightColors() =
         accent10 = Accent10,
         error = Error,
         requiredMark = RequiredMark,
+        successContainer = Color(0xFFDCEDE3),
         isLightMode = true,
     )
 
@@ -111,6 +112,7 @@ internal fun darkColors() =
         accent10 = Accent10,
         error = Error,
         requiredMark = RequiredMark,
+        successContainer = Color(0xFF284536),
         isLightMode = false,
     )
 
@@ -145,6 +147,7 @@ class AfternoteColors(
     accent10: Color,
     error: Color,
     requiredMark: Color,
+    successContainer: Color,
     isLightMode: Boolean,
 ) {
     var white by mutableStateOf(white)
@@ -197,6 +200,8 @@ class AfternoteColors(
         private set
     var requiredMark by mutableStateOf(requiredMark)
         private set
+    var successContainer by mutableStateOf(successContainer)
+        private set
     var isLightMode by mutableStateOf(isLightMode)
         private set
 
@@ -226,6 +231,7 @@ class AfternoteColors(
         accent10: Color = this.accent10,
         error: Color = this.error,
         requiredMark: Color = this.requiredMark,
+        successContainer: Color = this.successContainer,
         isLightMode: Boolean = this.isLightMode,
     ) = AfternoteColors(
         white = white,
@@ -253,6 +259,7 @@ class AfternoteColors(
         accent10 = accent10,
         error = error,
         requiredMark = requiredMark,
+        successContainer = successContainer,
         isLightMode = isLightMode,
     )
 
@@ -282,6 +289,7 @@ class AfternoteColors(
         this.accent10 = other.accent10
         this.error = other.error
         this.requiredMark = other.requiredMark
+        this.successContainer = other.successContainer
         this.isLightMode = other.isLightMode
     }
 }
