@@ -34,7 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -58,8 +57,6 @@ import com.afternote.feature.afternote.presentation.shared.detail.MemorialVideoT
 import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
 import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
-
-internal const val MEMORIAL_VIDEO_CARD_TEST_TAG = "memorialVideoCard"
 
 /**
  * 추억 노트 상세 표시 데이터.
@@ -298,8 +295,7 @@ private fun VideoCard(
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .clickable(role = Role.Button) { onClick(videoUrl) }
-                .testTag(MEMORIAL_VIDEO_CARD_TEST_TAG),
+                .clickable(role = Role.Button) { onClick(videoUrl) },
         content = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
