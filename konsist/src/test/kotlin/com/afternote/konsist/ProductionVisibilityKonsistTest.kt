@@ -309,20 +309,18 @@ class ProductionVisibilityKonsistTest {
                 "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/selection/EditorServiceSelectionSheet.kt::function EditorServiceSelectionSheetContent [internal]",
             )
 
+        /**
+         * 남은 항목은 MVI 전환(#1807)이 다시 열 Content seam 이라 #1818 이 그 뒤에 판정한다.
+         * #1674 의 나머지(매퍼 2건·화면 helper 3건·요약 helper 2건·주간 날짜 복원)는 해소돼
+         * 목록에서 빠졌다 — 같은 계약은 공개 소유자(매퍼 진입점·ViewModel 상태·화면)로 본다.
+         */
         val ISSUE_1674_MINDRECORD =
             setOf(
-                "feature/mindrecord/data/src/main/kotlin/com/afternote/feature/mindrecord/data/mapper/WeeklyReportMapper.kt::function toDomainOrNull [implicit-public]",
                 "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/hometab/HomeTabMindRecordLazyItems.kt::function MemoriesSectionContent [internal]",
                 "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/memoryspace/MemorySpaceScreen.kt::function MemorySpaceContent [internal]",
-                "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/receiver/ReceiverMindRecordScreen.kt::function findOpenedRecord [internal]",
                 "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/sender/DailyQuestionWriteScreen.kt::function DailyQuestionWriteScreenContent [internal]",
                 "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/sender/DiaryScreen.kt::function DiaryListContent [internal]",
                 "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/sender/DiaryWriteScreen.kt::function DiaryWriteScreenContent [internal]",
-                "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/sender/WeeklyReportScreen.kt::function emotionCardDescription [internal]",
-                "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/sender/WeeklyReportScreen.kt::function recordedSummaryHighlights [internal]",
-                "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/ReceiverMindRecordViewModel.kt::function toDomainMessage [internal]",
-                "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/RecordDetailViewModel.kt::function firstImageUrl [internal]",
-                "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/WeeklyReportRecordedDays.kt::function resolveDateInWeekOrNull [internal]",
             )
 
         /** #1675 해소. 프로필 이미지 선택 결과 helper 는 private 이고 테스트는 화면 동작으로 본다. */
