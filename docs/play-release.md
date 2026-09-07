@@ -15,9 +15,37 @@
 
 ### Play Console 확인 상태
 
-2026-08-05 기준, 현재 팀에서 확인 가능한 Google 계정은 Play Console 접속 시 `/console/signup`의 개발자 계정 생성 화면으로 이동한다. 따라서 아직 앱 등록과 Play App Signing 등록이 없으며, Automatic integrity protection 제공 대상인지도 판정할 수 없다.
+2026-09-06 기준, 개발자 계정이 개설됐고 FE 계정도 초대를 받아 콘솔에 들어간다. 다만 계정 설정이 아직 끝나지 않아 앱을 만들 수 없다. 아래는 그날 콘솔을 직접 열어 확인한 것이다.
 
-개발자 계정 생성·팀 초대와 앱 등록을 마친 뒤, Play Console의 **Test and release > App integrity**에서 다음 두 항목을 다시 확인한다.
+| 확인한 것 | 상태 | 확인 경로 |
+|---|---|---|
+| 개발자 계정 | 개인 계정으로 존재. 계정 ID `7986315520990588977` | `play.google.com/console` 접속 시 개발자 계정 선택 화면 |
+| 신원 확인 | Google 심사 중. 문서는 업로드됨, 완료 시 계정 소유자에게 메일 | 홈의 "개발자 계정 설정 완료" 카드 |
+| 연락처 전화번호 인증 | 미완료 | 홈 카드 → `account/phone-verification-issue-details` |
+| 앱 등록 | 불가. "앱 만들기" 버튼이 잠겨 있다 | 홈의 "첫 번째 앱 만들기" |
+| 패키지 이름 등록 | 불가 | 좌측 "Android 개발자 인증" |
+| 초대받은 FE 계정 권한 | 제한됨 | "사용자 및 권한" 이 "권한이 필요함" 으로 막힘 |
+
+잠긴 사유는 하나로 모인다. 앱 만들기 버튼의 안내가 "새 앱을 만들려면 계정 확인을 완료하세요" 이고, 패키지 이름 등록도 "먼저 홈페이지에서 처리되지 않은 인증을 완료해야 합니다" 라고 같은 곳을 가리킨다.
+
+그래서 아래 "자동화 사전 준비" 는 1번(앱 등록)부터 대기 상태이고, 2~5번은 전부 1번에 매달려 있다.
+
+### 지금 막혀 있는 것과 푸는 사람
+
+| 막힌 것 | 푸는 주체 | 비고 |
+|---|---|---|
+| 신원 확인 | Google 심사 | 기다리는 것 말고 할 수 있는 일이 없다. 며칠 소요 안내 |
+| 연락처 전화번호 인증 | 개발자 계정 소유자 | 초대받은 계정에는 버튼이 비활성이다. 안내 문구가 "계정 소유자만 연락처 전화번호를 인증할 수 있습니다" |
+| 앱 등록 | 위 둘이 끝난 뒤 계정 소유자 또는 앱 생성 권한을 받은 사람 | 앱 이름·기본 언어·유형은 아래 사전 준비 1번 참고 |
+| 서비스 계정에 Play 권한 부여 | 계정 소유자 | 초대받은 FE 계정은 "사용자 및 권한" 과 API 액세스 경로가 열리지 않는다 |
+
+저장소 쪽은 자격이 필요 없는 부분까지 끝내 두었다. 아래 "자동화 사전 준비" 5번의 environment 와 보호 규칙, 변수는 서 있고 남은 것은 값이 있어야 넣는 secret 여섯 개뿐이다.
+
+첫 AAB 를 미리 만들어 두는 것은 안 된다. release keystore 가 있어야 하는데 그 자격은 배포 담당자만 갖고 있고(`local.properties` 의 `RELEASE_*` 네 키), 없으면 `:app:bundleRelease` 가 `checkReleaseSigningForRelease` 에서 멈춘다.
+
+### 앱이 생긴 뒤 다시 볼 것
+
+Play Console의 **Test and release > App integrity** 에서 두 항목을 확인하고 이 절을 갱신한다. 그 페이지는 앱 단위라 앱 등록 전에는 열리지 않으므로, 지금은 판정 자체가 불가능하다.
 
 - Play App Signing 등록 상태
 - Automatic integrity protection 메뉴와 opt-in 제공 여부
@@ -56,7 +84,7 @@ Firebase App Distribution 경로([`release-distribution.yml`](../.github/workflo
 Android Publisher API는 **Console에서 최소 한 번 수동 업로드된 앱**에만 업로드를 허용한다. 첫 AAB는 `./scripts/verify-play-release-bundle.sh`로 만든 산출물을 **테스트 및 출시 → 내부 테스트 → 새 버전 만들기**에서 직접 올린다.
 
 - 이때 `AFTERNOTE_VERSION_CODE` 없이 빌드해 versionCode `1`을 쓴다. 워크플로가 만드는 첫 값은 `101`이라 단조 증가 조건을 자동으로 만족한다.
-- 이 업로드에서 Play App Signing 방식이 확정된다. 아래 「Play App Signing 키 결정」을 먼저 읽고 되돌릴 수 없는 선택을 한다.
+- 이 업로드에서 Play App Signing 방식이 확정된다. 방식은 아래 「Play App Signing 키 결정」에서 기본안으로 확정해 두었으니, 업로드 전에 그 절을 읽고 화면에서 같은 쪽을 고른다.
 
 **3. Google Cloud — API와 서비스 계정** (`console.cloud.google.com`)
 
@@ -75,7 +103,19 @@ Android Publisher API는 **Console에서 최소 한 번 수동 업로드된 앱*
 
 **5. GitHub — environment와 자격**
 
-**Settings → Environments → New environment**로 `play-internal`을 만든다.
+environment 와 보호 규칙, 변수는 2026-09-06 에 만들어 두었다. 남은 것은 secret 여섯 개이고, GitHub API 가 기존 값을 돌려주지 않으므로 `release-distribution` 에 같은 이름이 있어도 복사할 수 없다. 값을 쥔 사람이 직접 넣어야 한다.
+
+| 항목 | 상태 |
+|---|---|
+| environment `play-internal` | 생성됨 |
+| Required reviewers | `1hyok` |
+| Deployment branches | `main` 하나 |
+| `PLAY_PACKAGE_NAME` | `com.afternote.afternote_fe` 로 설정됨 |
+| secret 6종 | 미등록 |
+
+승인 규칙에 한 가지 주의가 있다. `prevent self review` 는 꺼져 있어서 워크플로를 실행한 사람이 자기 배포를 스스로 승인할 수 있다(`release-distribution` 도 같다). 승인을 남이 눌러 주는 관문으로 기대하지 말 것. 필요하면 승인자를 한 명 더 지정하거나 그 설정을 켠다.
+
+아래는 그 설정을 손으로 다시 만들거나 확인할 때의 원본이다. **Settings → Environments** 에서 본다.
 
 | 설정 | 위치 | 값 |
 |---|---|---|
@@ -93,7 +133,7 @@ Android Publisher API는 **Console에서 최소 한 번 수동 업로드된 앱*
 
 ### 실행
 
-**Actions → Release Play Internal Track → Run workflow**에서 브랜치 `main`을 선택해 실행한다. environment 승인자가 승인해야 job이 시작된다.
+**Actions → Release Play Internal Track → Run workflow**에서 브랜치 `main`을 선택해 실행한다. environment 승인자가 승인해야 job이 시작된다. 지금 승인자는 한 명이고 self review 가 막혀 있지 않으므로, 그 승인은 남의 확인이 아니라 실행자의 두 번째 확인이다.
 
 워크플로가 하는 일:
 
@@ -166,6 +206,19 @@ Play App Signing은 설치되는 APK에 사용하는 app signing key와 Play에 
 
 첫 Play 등록 전 아래 두 방식 중 하나를 확정한다. 등록 화면에서 선택한 뒤에는 app signing key 사본을 다시 내려받을 수 없으므로 추측으로 진행하지 않는다.
 
+### 결정: 기본안으로 간다 (2026-09-06)
+
+첫 업로드에서 이 선택이 확정되므로 업로드하는 사람이 그 자리에서 고르지 않도록 미리 박아 둔다.
+
+근거는 대안의 조건이 성립하지 않는다는 것이다. 대안은 같은 applicationId 의 Firebase APK 와 Play APK 를 서로 업데이트해야 한다는 요구가 확정된 경우에만 고르는데, 그 요구는 확정된 적이 없다. 오히려 두 채널을 목적으로 갈라 두는 쪽이 이미 문서에 두 번 적혀 있다.
+
+- 이 문서 위의 채널 표: Firebase APK 배포는 Google Play 출시 뒤에도 내부 QA 용도로만 사용한다.
+- [비개발자 APK 배포](release/distribution.md): Firebase App Distribution 은 디자이너·PM·QA·외부 베타테스터 채널이다.
+
+대가는 하나다. Firebase APK 를 쓰던 사람이 Play 내부 테스트 트랙으로 옮길 때 한 번은 기존 앱을 지우고 다시 깔아야 한다. 일회성이고, QA 채널을 계속 쓸 사람에게는 영향이 없다. 그 대신 production app signing key 가 Google 인프라 밖에 존재한 적이 없어서, 팀 keystore 가 새더라도 Play 에서 upload key 를 reset 하면 앱을 잃지 않는다.
+
+이 결정을 뒤집으려면 첫 업로드 전이어야 한다. 업로드 뒤에는 Play 의 key upgrade 절차 말고는 방법이 없다.
+
 ### 기본안: Play와 Firebase를 별도 설치 채널로 유지
 
 1. Google Play가 app signing key를 생성한다.
@@ -189,9 +242,9 @@ Play App Signing은 설치되는 APK에 사용하는 app signing key와 Play에 
 
 1. versionCode가 Play에 올린 모든 이전 산출물보다 큰지 확인한다. 자동 배포에서는 워크플로가 Play를 조회해 빌드 전에 판정한다.
 2. AAB 검증 스크립트의 경로·AAB SHA-256·서명 인증서 SHA-256을 릴리스 기록에 남긴다. 자동 배포에서는 run summary가 이 기록이다.
-3. Play Console에서 내부 테스트 트랙을 만들고 Play App Signing 방식을 확정한다.
+3. Play Console에서 내부 테스트 트랙을 만들고 Play App Signing 방식을 적용한다(기본안, 위 「Play App Signing 키 결정」).
 4. AAB를 업로드한다.
-5. Play Console의 app signing certificate를 다음 제공자에 등록한다.
+5. Play Console의 app signing certificate를 다음 제공자에 **추가** 등록한다. 기존 값을 지우지 않는다 — 기본안에서는 Play 인증서와 Firebase APK 를 서명한 팀 release 인증서가 서로 다르므로 둘 다 등록돼 있어야 한다. 기존 등록을 새 값으로 바꾸면 Firebase QA 채널의 카카오·구글 로그인이 그날로 깨진다.
    - Kakao Developers Android key hash
    - Firebase Android 앱 SHA 인증서 지문
    - Google API/OAuth 설정 중 package name과 인증서 지문을 검증하는 항목
