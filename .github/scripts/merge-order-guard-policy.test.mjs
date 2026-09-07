@@ -156,7 +156,7 @@ test("closing a blocker refreshes PRs found only through unlinked close keywords
     const heads = collectRefreshHeads(
         [
             {
-                headRefName: "linked",
+                number: 101,
                 title: "fix: linked",
                 body: "",
                 closingIssuesReferences: {
@@ -166,13 +166,13 @@ test("closing a blocker refreshes PRs found only through unlinked close keywords
                 },
             },
             {
-                headRefName: "text-only",
+                number: 102,
                 title: "fix: text only",
                 body: "Closes #1176",
                 closingIssuesReferences: { nodes: [] },
             },
             {
-                headRefName: "foreign",
+                number: 103,
                 title: "fix: foreign",
                 body: "Closes other/repo#1176",
                 closingIssuesReferences: {
@@ -180,7 +180,7 @@ test("closing a blocker refreshes PRs found only through unlinked close keywords
                 },
             },
             {
-                headRefName: "mention-only",
+                number: 104,
                 title: "docs: mention #1176",
                 body: "Related to #1176",
                 closingIssuesReferences: { nodes: [] },
@@ -189,13 +189,13 @@ test("closing a blocker refreshes PRs found only through unlinked close keywords
         [1176],
     );
 
-    assert.deepEqual(heads, ["linked", "text-only"]);
+    assert.deepEqual(heads, ["101", "102"]);
 });
 
 test("refresh queries every open PR page with the same repository-aware closing data", () => {
     assert.match(guard, /gh api graphql --paginate --slurp/);
     assert.match(guard, /pullRequests\(states:OPEN,first:100,after:\$endCursor\)/);
-    assert.match(guard, /nodes\{headRefName title body closingIssuesReferences/);
+    assert.match(guard, /nodes\{number title body closingIssuesReferences/);
     assert.match(guard, /pageInfo\{hasNextPage endCursor\}/);
 });
 
@@ -203,7 +203,7 @@ test("refresh passes large open-PR payloads through a file instead of one enviro
     const heads = collectRefreshHeads(
         [
             {
-                headRefName: "large-body",
+                number: 105,
                 title: "fix: large body",
                 body: `Closes #1176\n${"x".repeat(160 * 1024)}`,
                 closingIssuesReferences: { nodes: [] },
@@ -212,7 +212,7 @@ test("refresh passes large open-PR payloads through a file instead of one enviro
         [1176],
     );
 
-    assert.deepEqual(heads, ["large-body"]);
+    assert.deepEqual(heads, ["105"]);
     assert.match(guard, /> "\$prs_file"/);
     assert.doesNotMatch(guard, /PRS_JSON=/);
 });
@@ -319,4 +319,117 @@ printf '%s %s' "$PR_NUMBER" "$BASE_REF"`,
 
     assert.equal(result.status, 0, result.stderr);
     assert.equal(result.stdout, "1477 develop");
+});
+
+function shellStep(name) {
+    const start = guard.indexOf(`      - name: ${name}\n`);
+    assert.ok(start >= 0, name);
+    const run = guard.indexOf("        run: |\n", start) + "        run: |\n".length;
+    const lines = guard.slice(run).split("\n");
+    const body = [];
+    for (const line of lines) {
+        if (line && !line.startsWith("          ")) break;
+        body.push(line.slice(10));
+    }
+    return body.join("\n");
+}
+
+function runGuard({ base = "feature/parent", blockers = [], apiFailure = false, event = "pull_request" } = {}) {
+    const script = shellStep("머지 큐 스택 무결성·closing 이슈 blocked_by 검사");
+    const fake = `gh() {
+        if [[ "$*" == *stackEntry* ]]; then printf '%s' '{"stackEntry":null}';
+        elif [[ "$*" == *graphql* ]]; then printf '%s' "$FIXTURE_PR";
+        elif [[ "$*" == *dependencies/blocked_by* ]]; then
+            [ "$FIXTURE_API_FAILURE" != "true" ] || return 42
+            printf '%s' "$FIXTURE_OPEN_BLOCKERS"
+        else echo "Unexpected gh call: $*" >&2; return 99; fi
+    }
+`;
+    return spawnSync("bash", ["-c", fake + script], {
+        encoding: "utf8",
+        env: { ...process.env, EVENT_NAME: event, PR_NUMBER: "1930", BASE_REF: base,
+            GITHUB_REPOSITORY: "Afternote/Afternote-FE", FIXTURE_API_FAILURE: String(apiFailure),
+            FIXTURE_OPEN_BLOCKERS: blockers.filter((b) => b.state === "open").map((b) => b.number).join("\n"),
+            FIXTURE_PR: JSON.stringify({ baseRefName: base, title: "fix: guard", body: "",
+                closingIssuesReferences: { nodes: [{ number: 1920, repository: { nameWithOwner: "Afternote/Afternote-FE" } }] } }) },
+    });
+}
+
+for (const base of ["develop", "main", "feature/parent"]) {
+    test(`open blockers fail the executable guard for ${base}`, () => {
+        const result = runGuard({ base, blockers: [{ number: 708, state: "open" }] });
+        assert.equal(result.status, 1, result.stderr);
+        assert.match(result.stdout, /::error::#1920.*#708/);
+    });
+    test(`closed or absent blockers pass the executable guard for ${base}`, () => {
+        for (const blockers of [[], [{ number: 708, state: "closed" }]]) {
+            const result = runGuard({ base, blockers });
+            assert.equal(result.status, 0, result.stderr);
+            assert.doesNotMatch(result.stdout, /::error::/);
+        }
+    });
+}
+
+test("dependency API failure cannot become a green stacked guard", () => {
+    const result = runGuard({ apiFailure: true });
+    assert.equal(result.status, 42, result.stderr);
+});
+
+test("merge queue still fails on an open issue blocker", () => {
+    const result = runGuard({ event: "merge_group", base: "develop", blockers: [{ number: 708, state: "open" }] });
+    assert.equal(result.status, 1, result.stderr);
+});
+
+test("blocker changes dispatch current default-branch policy instead of rerunning old workflow code", () => {
+    assert.match(guard, /gh workflow run merge-order-guard.yml --ref "\$DEFAULT_BRANCH" -f pull_request_number="\$pr"/);
+    assert.doesNotMatch(guard, /gh run rerun/);
+    assert.match(guard, /github.ref_name == github.event.repository.default_branch/);
+    assert.match(guard, /needs.guard.outputs.target_sha/);
+});
+
+test("dispatch publication refuses changed or closed HEAD and publishes failure on the captured HEAD", () => {
+    const script = shellStep("Publish trusted guard verdict on the captured PR HEAD");
+    const directory = mkdtempSync(join(tmpdir(), "merge-order-publish-"));
+    try {
+        for (const [state, head, result, expected] of [
+            ["OPEN", "original", "failure", "failure"],
+            ["OPEN", "original", "success", "success"],
+            ["OPEN", "original", "cancelled", "failure"],
+            ["OPEN", "changed", "success", null],
+            ["CLOSED", "original", "success", null],
+        ]) {
+            const run = spawnSync("bash", ["-c", `gh() {
+                if [ "$1" = "pr" ]; then printf '%s' "$FIXTURE_CURRENT";
+                elif [ "$1" = "api" ]; then cat "$RUNNER_TEMP/guard-check.json" >&2;
+                else return 99; fi
+            }
+` + script], { encoding: "utf8", env: { ...process.env,
+                RUNNER_TEMP: directory, PR_NUMBER: "1930", TARGET_SHA: "original", GUARD_RESULT: result,
+                GITHUB_SERVER_URL: "https://github.com", GITHUB_REPOSITORY: "Afternote/Afternote-FE", GITHUB_RUN_ID: "123",
+                FIXTURE_CURRENT: JSON.stringify({ state, headRefOid: head }) } });
+            assert.equal(run.status, 0, run.stderr);
+            if (expected === null) assert.equal(run.stderr, "");
+            else {
+                const check = JSON.parse(run.stderr);
+                assert.equal(check.name, "guard");
+                assert.equal(check.head_sha, "original");
+                assert.equal(check.conclusion, expected);
+            }
+        }
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
+
+test("one failed refresh dispatch does not prevent the remaining PRs from refreshing", () => {
+    const start = guard.indexOf("          dispatch_failed=0");
+    assert.ok(start >= 0);
+    const script = guard.slice(start).split("\n").map((line) => line.slice(10)).join("\n");
+    const result = spawnSync("bash", ["-c", `set -euo pipefail
+heads="101 102"
+DEFAULT_BRANCH=develop
+gh() { echo "$*"; [[ "$*" != *pull_request_number=101* ]]; }
+` + script], { encoding: "utf8" });
+    assert.equal(result.status, 1, result.stderr);
+    assert.match(result.stdout, /pull_request_number=101/);
+    assert.match(result.stdout, /pull_request_number=102/);
 });
