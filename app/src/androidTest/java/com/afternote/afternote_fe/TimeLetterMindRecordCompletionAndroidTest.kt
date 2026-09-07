@@ -62,6 +62,7 @@ import com.afternote.feature.mindrecord.presentation.screen.sender.DiaryWriteScr
 import com.afternote.feature.mindrecord.presentation.screen.sender.DraftListScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.WeeklyReportScreen
 import com.afternote.feature.mindrecord.presentation.usecase.DeleteMindRecordDraftsUseCase
+import com.afternote.feature.mindrecord.presentation.usecase.GetMemorySpaceUseCase
 import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import com.afternote.feature.mindrecord.presentation.usecase.ObserveWeeklyReportUseCase
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListUiState
@@ -645,7 +646,11 @@ class TimeLetterMindRecordCompletionAndroidTest {
                     )
                 },
             )
-        val viewModel = MemorySpaceViewModel(diaryRepository, FakeDailyQuestionRepository(), FakeErrorReporter())
+        val viewModel =
+            MemorySpaceViewModel(
+                getMemorySpace = GetMemorySpaceUseCase(diaryRepository, FakeDailyQuestionRepository()),
+                errorReporter = FakeErrorReporter(),
+            )
         var backCalls = 0
 
         composeRule.setContent {
