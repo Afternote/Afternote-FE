@@ -9,7 +9,7 @@ import javax.inject.Inject
 
 const val CI_COMMIT_SHA_ENV = "GITHUB_SHA"
 const val SHORT_COMMIT_SHA_LENGTH = 7
-const val UNKNOWN_COMMIT_MARKER = "unknown"
+private const val UNKNOWN_COMMIT_MARKER = "unknown"
 
 /**
  * debug `versionName` 에 붙일 빌드 지문을 만든다 — `1.0+a3f91c2` · `1.0+a3f91c2-dirty` · `1.0+unknown`.
@@ -23,7 +23,7 @@ const val UNKNOWN_COMMIT_MARKER = "unknown"
  * [UNKNOWN_COMMIT_MARKER] 를 남기는 것도 같은 이유다 — 접미사 없는 `1.0` 은 "sha 를 못 읽었다"와
  * "이 기능이 없던 빌드"를 구분해 주지 않아, 없는 근거를 만들 여지를 남긴다.
  */
-fun debugVersionNameSuffix(
+private fun debugVersionNameSuffix(
     rawCommitSha: String?,
     hasUncommittedChanges: Boolean,
 ): String {
@@ -37,7 +37,7 @@ fun debugVersionNameSuffix(
  * 입력이 두 갈래라 정규화가 필요하다 — CI 의 `GITHUB_SHA` 도 로컬 `git rev-parse HEAD` 도 40자다.
  * QA 대장 파일명(`docs/qa/evidence/<full-head-sha>.json`)과 대조하려면 자릿수가 일정해야 한다.
  */
-fun shortCommitSha(rawCommitSha: String?): String? {
+private fun shortCommitSha(rawCommitSha: String?): String? {
     val value = rawCommitSha?.trim()?.lowercase() ?: return null
     if (!value.matches(Regex("[0-9a-f]{$SHORT_COMMIT_SHA_LENGTH,40}"))) return null
     return value.take(SHORT_COMMIT_SHA_LENGTH)

@@ -10,6 +10,6 @@ import com.afternote.core.ui.theme.AfternoteTheme
  * `entry<T>` 는 reified 확장으로 이미 제공되므로 테마만 남긴다.
  */
 @Composable
-fun AfternoteLightTheme(content: @Composable () -> Unit) {
+internal fun AfternoteLightTheme(content: @Composable () -> Unit) {
     AfternoteTheme(content = content)
 }

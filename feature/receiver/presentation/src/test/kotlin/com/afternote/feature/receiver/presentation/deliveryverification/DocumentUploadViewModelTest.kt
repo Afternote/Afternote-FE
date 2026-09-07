@@ -6,6 +6,7 @@ import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
 import com.afternote.feature.receiver.domain.testing.FakeReceiverAuthRepository
 import com.afternote.feature.receiver.domain.testing.FakeReceiverDeliveryDocumentUploadRepository
+import com.afternote.feature.receiver.domain.usecase.SubmitDeliveryVerificationUseCase
 import com.afternote.feature.receiver.presentation.R
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -54,7 +55,7 @@ class DocumentUploadViewModelTest {
     ): DocumentUploadViewModel =
         DocumentUploadViewModel(
             uploadRepository = uploads,
-            receiverAuthRepository = auth,
+            submitDeliveryVerification = SubmitDeliveryVerificationUseCase(auth),
             errorReporter = NoopErrorReporter,
         )
 
@@ -93,6 +94,20 @@ class DocumentUploadViewModelTest {
         val state = viewModel.uiState.value
         assertEquals(UiText.Resource(R.string.receiver_verify_document_upload_in_progress), state.errorMessage)
         assertFalse(state.isSubmitting)
+        assertTrue(auth.deliverySubmissions.isEmpty())
+    }
+
+    @Test
+    fun `첨부 하나도 없이 submit - 서류 누락 안내로 거절되고 신청 API 미호출 (#1701)`() {
+        val auth = FakeReceiverAuthRepository.strict()
+        val viewModel = viewModel(FakeReceiverDeliveryDocumentUploadRepository.strict(), auth)
+
+        viewModel.submit()
+
+        val state = viewModel.uiState.value
+        assertEquals(UiText.Resource(R.string.receiver_verify_documents_required), state.errorMessage)
+        assertFalse(state.isSubmitting)
+        assertFalse(state.isSubmitted)
         assertTrue(auth.deliverySubmissions.isEmpty())
     }
 
