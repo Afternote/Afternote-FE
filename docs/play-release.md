@@ -84,7 +84,7 @@ Firebase App Distribution 경로([`release-distribution.yml`](../.github/workflo
 Android Publisher API는 **Console에서 최소 한 번 수동 업로드된 앱**에만 업로드를 허용한다. 첫 AAB는 `./scripts/verify-play-release-bundle.sh`로 만든 산출물을 **테스트 및 출시 → 내부 테스트 → 새 버전 만들기**에서 직접 올린다.
 
 - 이때 `AFTERNOTE_VERSION_CODE` 없이 빌드해 versionCode `1`을 쓴다. 워크플로가 만드는 첫 값은 `101`이라 단조 증가 조건을 자동으로 만족한다.
-- 이 업로드에서 Play App Signing 방식이 확정된다. 아래 「Play App Signing 키 결정」을 먼저 읽고 되돌릴 수 없는 선택을 한다.
+- 이 업로드에서 Play App Signing 방식이 확정된다. 방식은 아래 「Play App Signing 키 결정」에서 기본안으로 확정해 두었으니, 업로드 전에 그 절을 읽고 화면에서 같은 쪽을 고른다.
 
 **3. Google Cloud — API와 서비스 계정** (`console.cloud.google.com`)
 
@@ -206,6 +206,19 @@ Play App Signing은 설치되는 APK에 사용하는 app signing key와 Play에 
 
 첫 Play 등록 전 아래 두 방식 중 하나를 확정한다. 등록 화면에서 선택한 뒤에는 app signing key 사본을 다시 내려받을 수 없으므로 추측으로 진행하지 않는다.
 
+### 결정: 기본안으로 간다 (2026-09-06)
+
+첫 업로드에서 이 선택이 확정되므로 업로드하는 사람이 그 자리에서 고르지 않도록 미리 박아 둔다.
+
+근거는 대안의 조건이 성립하지 않는다는 것이다. 대안은 같은 applicationId 의 Firebase APK 와 Play APK 를 서로 업데이트해야 한다는 요구가 확정된 경우에만 고르는데, 그 요구는 확정된 적이 없다. 오히려 두 채널을 목적으로 갈라 두는 쪽이 이미 문서에 두 번 적혀 있다.
+
+- 이 문서 위의 채널 표: Firebase APK 배포는 Google Play 출시 뒤에도 내부 QA 용도로만 사용한다.
+- [비개발자 APK 배포](release/distribution.md): Firebase App Distribution 은 디자이너·PM·QA·외부 베타테스터 채널이다.
+
+대가는 하나다. Firebase APK 를 쓰던 사람이 Play 내부 테스트 트랙으로 옮길 때 한 번은 기존 앱을 지우고 다시 깔아야 한다. 일회성이고, QA 채널을 계속 쓸 사람에게는 영향이 없다. 그 대신 production app signing key 가 Google 인프라 밖에 존재한 적이 없어서, 팀 keystore 가 새더라도 Play 에서 upload key 를 reset 하면 앱을 잃지 않는다.
+
+이 결정을 뒤집으려면 첫 업로드 전이어야 한다. 업로드 뒤에는 Play 의 key upgrade 절차 말고는 방법이 없다.
+
 ### 기본안: Play와 Firebase를 별도 설치 채널로 유지
 
 1. Google Play가 app signing key를 생성한다.
@@ -229,9 +242,9 @@ Play App Signing은 설치되는 APK에 사용하는 app signing key와 Play에 
 
 1. versionCode가 Play에 올린 모든 이전 산출물보다 큰지 확인한다. 자동 배포에서는 워크플로가 Play를 조회해 빌드 전에 판정한다.
 2. AAB 검증 스크립트의 경로·AAB SHA-256·서명 인증서 SHA-256을 릴리스 기록에 남긴다. 자동 배포에서는 run summary가 이 기록이다.
-3. Play Console에서 내부 테스트 트랙을 만들고 Play App Signing 방식을 확정한다.
+3. Play Console에서 내부 테스트 트랙을 만들고 Play App Signing 방식을 적용한다(기본안, 위 「Play App Signing 키 결정」).
 4. AAB를 업로드한다.
-5. Play Console의 app signing certificate를 다음 제공자에 등록한다.
+5. Play Console의 app signing certificate를 다음 제공자에 **추가** 등록한다. 기존 값을 지우지 않는다 — 기본안에서는 Play 인증서와 Firebase APK 를 서명한 팀 release 인증서가 서로 다르므로 둘 다 등록돼 있어야 한다. 기존 등록을 새 값으로 바꾸면 Firebase QA 채널의 카카오·구글 로그인이 그날로 깨진다.
    - Kakao Developers Android key hash
    - Firebase Android 앱 SHA 인증서 지문
    - Google API/OAuth 설정 중 package name과 인증서 지문을 검증하는 항목
