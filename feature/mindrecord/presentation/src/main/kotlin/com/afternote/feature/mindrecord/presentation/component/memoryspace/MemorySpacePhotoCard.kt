@@ -43,8 +43,10 @@ import coil3.compose.AsyncImage
 import com.afternote.core.ui.modifierextention.shimmerLoadingPlaceholder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.domain.model.MindRecordType
 import com.afternote.feature.mindrecord.presentation.model.memoryspace.CardTransform
 import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryItem
+import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryRecordId
 import com.afternote.core.ui.R as CoreUiR
 
 @Composable
@@ -192,7 +194,15 @@ private fun PressedOverlay(
 private fun MemorySpacePhotoCardPreview() {
     AfternoteTheme {
         MemorySpacePhotoCard(
-            memory = MemoryItem(1L, "https://picsum.photos/400/600?random=1", "기억 1", "2024.11.11", "미리보기", listOf("태그")),
+            memory =
+                MemoryItem(
+                    MemoryRecordId(MindRecordType.DIARY, 1L),
+                    "https://picsum.photos/400/600?random=1",
+                    "기억 1",
+                    "2024.11.11",
+                    "미리보기",
+                    listOf("태그"),
+                ),
             transform =
                 CardTransform(
                     offsetX = 0.dp,

@@ -20,6 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -35,12 +37,14 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.domain.model.MindRecordType
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.component.memoryspace.MemoryDetailOverlay
 import com.afternote.feature.mindrecord.presentation.component.memoryspace.MemorySpaceCardField
 import com.afternote.feature.mindrecord.presentation.component.memoryspace.MemorySpaceGridBackground
 import com.afternote.feature.mindrecord.presentation.component.memoryspace.MemorySpaceHeader
 import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryItem
+import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryRecordId
 import com.afternote.feature.mindrecord.presentation.viewmodel.MemorySpaceUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.MemorySpaceViewModel
 
@@ -96,7 +100,12 @@ internal fun MemorySpaceContent(
     statusText: String? = null,
     onRetryClick: (() -> Unit)? = null,
 ) {
-    var selectedMemoryId: Long? by rememberSaveable { mutableStateOf(null) }
+    // 카드 선택은 종류까지 함께 든다 — 두 출처의 숫자 ID 가 겹쳐 숫자만으로는 엉뚱한
+    // 기록이 열린다 (#1693). 종전처럼 프로세스 사망 뒤에도 열려 있던 카드가 복원되도록
+    // 저장 형식은 Saver 로 준다.
+    var selectedMemoryId: MemoryRecordId? by rememberSaveable(stateSaver = MemoryRecordIdSaver) {
+        mutableStateOf(null)
+    }
     val selectedMemory = selectedMemoryId?.let { id -> memories.firstOrNull { it.id == id } }
 
     LaunchedEffect(memories, selectedMemoryId) {
@@ -205,7 +214,7 @@ private fun MemorySpaceScreenPreview() {
             memories =
                 listOf(
                     MemoryItem(
-                        1L,
+                        MemoryRecordId(MindRecordType.DIARY, 1L),
                         "https://picsum.photos/400/600?random=1",
                         "기억 1",
                         "2024.11.11",
@@ -213,7 +222,7 @@ private fun MemorySpaceScreenPreview() {
                         listOf("태그"),
                     ),
                     MemoryItem(
-                        2L,
+                        MemoryRecordId(MindRecordType.DAILY_QUESTION, 2L),
                         "https://picsum.photos/400/600?random=2",
                         "기억 2",
                         "2024.11.12",
@@ -221,7 +230,7 @@ private fun MemorySpaceScreenPreview() {
                         emptyList(),
                     ),
                     MemoryItem(
-                        3L,
+                        MemoryRecordId(MindRecordType.DIARY, 3L),
                         "https://picsum.photos/400/600?random=3",
                         "기억 3",
                         "2024.11.13",
@@ -229,7 +238,7 @@ private fun MemorySpaceScreenPreview() {
                         emptyList(),
                     ),
                     MemoryItem(
-                        4L,
+                        MemoryRecordId(MindRecordType.DAILY_QUESTION, 4L),
                         "https://picsum.photos/400/600?random=4",
                         "기억 4",
                         "2024.11.14",
@@ -268,3 +277,21 @@ private fun MemorySpaceScreenErrorPreview() {
         )
     }
 }
+
+/**
+ * [MemoryRecordId] 를 `rememberSaveable` 이 담을 수 있는 형태로 옮긴다 (#1693).
+ *
+ * 종전에는 선택 상태가 `Long?` 이라 그대로 저장됐다. 종류를 함께 들면서 저장 형식이 필요해졌는데,
+ * 화면 하나의 선택 상태를 위해 모델에 Parcelize 를 물리지는 않는다 — 저장 형식은 이 화면의 사정이다.
+ */
+private val MemoryRecordIdSaver: Saver<MemoryRecordId?, Any> =
+    listSaver(
+        save = { id -> if (id == null) emptyList() else listOf(id.type.name, id.value) },
+        restore = { saved ->
+            if (saved.isEmpty()) {
+                null
+            } else {
+                MemoryRecordId(type = MindRecordType.valueOf(saved[0] as String), value = saved[1] as Long)
+            }
+        },
+    )

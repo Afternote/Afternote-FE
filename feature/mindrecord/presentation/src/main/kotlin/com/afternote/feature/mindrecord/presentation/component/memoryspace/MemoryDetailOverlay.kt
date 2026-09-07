@@ -37,7 +37,9 @@ import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.modifierextention.shimmerLoadingPlaceholder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.domain.model.MindRecordType
 import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryItem
+import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryRecordId
 import com.afternote.feature.mindrecord.presentation.util.htmlToPlainText
 
 @Composable
@@ -183,7 +185,7 @@ private fun MemoryDetailOverlayPreview() {
         MemoryDetailOverlay(
             memory =
                 MemoryItem(
-                    id = 1,
+                    id = MemoryRecordId(MindRecordType.DIARY, 1L),
                     imageUrl = "https://picsum.photos/400/600?random=1",
                     title = "오늘의 기억",
                     date = "2024.11.11",

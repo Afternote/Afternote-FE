@@ -23,13 +23,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.domain.model.MindRecordType
 import com.afternote.feature.mindrecord.presentation.model.memoryspace.CardTransform
 import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryItem
+import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryRecordId
 
 @Composable
 fun MemorySpaceCardField(
     memories: List<MemoryItem>,
-    onMemoryClick: (Long) -> Unit,
+    onMemoryClick: (MemoryRecordId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var touchPosition by remember { mutableStateOf<Offset?>(null) }
@@ -149,10 +151,38 @@ private fun MemorySpaceCardFieldPreview() {
         MemorySpaceCardField(
             memories =
                 listOf(
-                    MemoryItem(1L, "https://picsum.photos/400/600?random=1", "기억 1", "2024.11.11", "내용 1", listOf("태그1")),
-                    MemoryItem(2L, "https://picsum.photos/400/600?random=2", "기억 2", "2024.11.12", "내용 2", listOf("태그2")),
-                    MemoryItem(3L, "https://picsum.photos/400/600?random=3", "기억 3", "2024.11.13", "내용 3", listOf("태그3")),
-                    MemoryItem(4L, "https://picsum.photos/400/600?random=4", "기억 4", "2024.11.14", "내용 4", listOf("태그4")),
+                    MemoryItem(
+                        MemoryRecordId(MindRecordType.DIARY, 1L),
+                        "https://picsum.photos/400/600?random=1",
+                        "기억 1",
+                        "2024.11.11",
+                        "내용 1",
+                        listOf("태그1"),
+                    ),
+                    MemoryItem(
+                        MemoryRecordId(MindRecordType.DAILY_QUESTION, 2L),
+                        "https://picsum.photos/400/600?random=2",
+                        "기억 2",
+                        "2024.11.12",
+                        "내용 2",
+                        listOf("태그2"),
+                    ),
+                    MemoryItem(
+                        MemoryRecordId(MindRecordType.DIARY, 3L),
+                        "https://picsum.photos/400/600?random=3",
+                        "기억 3",
+                        "2024.11.13",
+                        "내용 3",
+                        listOf("태그3"),
+                    ),
+                    MemoryItem(
+                        MemoryRecordId(MindRecordType.DAILY_QUESTION, 4L),
+                        "https://picsum.photos/400/600?random=4",
+                        "기억 4",
+                        "2024.11.14",
+                        "내용 4",
+                        listOf("태그4"),
+                    ),
                 ),
             onMemoryClick = {},
         )
