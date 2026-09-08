@@ -3,6 +3,7 @@ package com.afternote.afternote_fe
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.afternote_fe.notification.NotificationEntryRequest
 import com.afternote.afternote_fe.notification.NotificationEntrySource
+import com.afternote.core.common.notification.NotificationDestination
 import com.afternote.core.domain.testing.FakeAuthRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -94,9 +95,11 @@ class MainViewModelNotificationTest {
     private fun request(
         occurrenceId: String,
         source: NotificationEntrySource = NotificationEntrySource.FCM,
+        destination: NotificationDestination = NotificationDestination.HOME,
     ): NotificationEntryRequest =
         NotificationEntryRequest(
             source = source,
             occurrenceId = occurrenceId,
+            destination = destination,
         )
 }

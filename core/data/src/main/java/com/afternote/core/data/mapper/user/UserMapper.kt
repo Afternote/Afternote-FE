@@ -5,12 +5,14 @@ import com.afternote.core.model.user.ReceiverCreated
 import com.afternote.core.model.user.ReceiverDetail
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
+import com.afternote.core.model.user.UserMarketingConsent
 import com.afternote.core.model.user.UserPushSetting
 import com.afternote.core.network.dto.ReceiverDetailDto
 import com.afternote.core.network.dto.ReceiverListDto
 import com.afternote.core.network.dto.UserConnectedAccountDto
 import com.afternote.core.network.dto.UserCreateReceiverDto
 import com.afternote.core.network.dto.UserDto
+import com.afternote.core.network.dto.UserMarketingConsentDto
 import com.afternote.core.network.dto.UserPatchReceiverDto
 import com.afternote.core.network.dto.UserPushSettingDto
 
@@ -71,6 +73,13 @@ fun UserPushSettingDto.toDomain(): UserPushSetting =
         timeLetter = timeLetter,
         mindRecord = mindRecord,
         afterNote = afterNote,
+    )
+
+fun UserMarketingConsentDto.toDomain(): UserMarketingConsent =
+    UserMarketingConsent(
+        sms = sms,
+        email = email,
+        push = push,
     )
 
 fun UserConnectedAccountDto.toDomain(): UserConnectedAccount =

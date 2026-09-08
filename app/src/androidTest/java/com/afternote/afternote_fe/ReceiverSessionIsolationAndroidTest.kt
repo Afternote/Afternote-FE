@@ -8,39 +8,23 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
-import com.afternote.afternote_fe.test.FakeErrorReporter
-import com.afternote.core.data.repoimpl.UserRepositoryImpl
-import com.afternote.core.domain.testing.FakeAuthRepository
-import com.afternote.core.network.dto.DeletePushTokenRequestDto
-import com.afternote.core.network.dto.PushTokenDto
-import com.afternote.core.network.dto.ReceiverDetailDto
-import com.afternote.core.network.dto.ReceiverListDto
-import com.afternote.core.network.dto.RegisterPushTokenRequestDto
-import com.afternote.core.network.dto.SocialAccountLinkRequestDto
-import com.afternote.core.network.dto.UserConnectedAccountDto
-import com.afternote.core.network.dto.UserCreateReceiverDto
-import com.afternote.core.network.dto.UserCreateReceiverRequestDto
-import com.afternote.core.network.dto.UserDto
-import com.afternote.core.network.dto.UserPatchReceiverDto
-import com.afternote.core.network.dto.UserPatchReceiverRequestDto
-import com.afternote.core.network.dto.UserPushSettingDto
-import com.afternote.core.network.dto.UserUpdateProfileRequestDto
-import com.afternote.core.network.dto.UserUpdatePushSettingRequestDto
-import com.afternote.core.network.dto.UserUpdateReceiverMessageRequestDto
-import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionDto
-import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionUpdateRequestDto
-import com.afternote.core.network.model.ApiException
-import com.afternote.core.network.model.BaseResponse
-import com.afternote.core.network.service.UserApiService
+import com.afternote.afternote_fe.test.appTestUserRepository
+import com.afternote.core.model.user.Receiver
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.timeletter.presentation.screen.sender.RecipientListScreen
 import com.afternote.feature.timeletter.presentation.viewmodel.RecipientListViewModel
-import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.ArrayDeque
 
+/**
+ * 수신인 목록 화면은 저장소가 내는 목록을 그대로 따른다 — 세션이 바뀌어 목록이 비면 이전 계정의
+ * 식별자가 화면에 남지 않고 화면도 살아 있어야 한다.
+ *
+ * «로그아웃·새 세션의 401 을 예외로 흘리지 않고 빈 목록으로 낮춘다» 는 판정은 저장소 구현의 계약이라
+ * `:core:data` 단위 테스트(`UserRepositoryImplTest` 의 receiverListFlow 계열)가 고정한다. 여기서는
+ * 그 결과를 fake 로 흉내 내 화면 쪽 경계만 본다.
+ */
 @RunWith(AndroidJUnit4::class)
 class ReceiverSessionIsolationAndroidTest {
     @get:Rule(order = 0)
@@ -53,32 +37,8 @@ class ReceiverSessionIsolationAndroidTest {
         }
 
     @Test
-    fun recipientList_newSession401_keepsScreenAliveWithoutPreviousReceiverIdentity() {
-        val authRepository =
-            FakeAuthRepository.strict(loggedIn = true).apply {
-                onIsLoggedIn = { loggedInState }
-            }
-        val userApi = SessionReceiverUserApi()
-        userApi.enqueueReceivers(
-            Result.success(
-                BaseResponse(
-                    status = 200,
-                    code = 200,
-                    data = listOf(receiverDto(PREVIOUS_ACCOUNT_RECEIVER)),
-                ),
-            ),
-        )
-        userApi.enqueueReceivers(
-            Result.failure(
-                ApiException(
-                    status = 401,
-                    code = 401,
-                    serverMessage = "인증되지 않은 요청입니다.",
-                    fallbackMessage = "인증되지 않은 요청입니다.",
-                ),
-            ),
-        )
-        val repository = UserRepositoryImpl(userApi, authRepository, FakeErrorReporter())
+    fun recipientList_receiverListEmptiesOnSessionChange_keepsScreenAliveWithoutPreviousReceiverIdentity() {
+        val repository = appTestUserRepository(receivers = listOf(previousAccountReceiver()))
         val viewModel = RecipientListViewModel(repository)
 
         composeRule.setContent {
@@ -92,112 +52,23 @@ class ReceiverSessionIsolationAndroidTest {
         }
 
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            userApi.receiverCalls == 1 && viewModel.recipients.value.any { it.name == PREVIOUS_ACCOUNT_RECEIVER }
+            viewModel.recipients.value.any { it.name == PREVIOUS_ACCOUNT_RECEIVER }
         }
         composeRule.onNodeWithText(PREVIOUS_ACCOUNT_RECEIVER).assertIsDisplayed()
 
-        composeRule.runOnIdle { authRepository.loggedIn = false }
+        composeRule.runOnIdle { repository.receiverState.value = emptyList() }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.recipients.value.isEmpty()
         }
-        assertEquals(1, userApi.receiverCalls)
-        composeRule.onNodeWithText(PREVIOUS_ACCOUNT_RECEIVER).assertDoesNotExist()
 
-        composeRule.runOnIdle { authRepository.loggedIn = true }
-        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            userApi.receiverCalls == 2
-        }
-
-        // 401을 예외로 방출했다면 이 시점 전에 테스트 프로세스가 죽는다. 실제 화면이 남고 이전 계정의
-        // 식별자가 다시 나타나지 않는지를 함께 확인해 «크래시 방지 + 세션 격리» 경계를 고정한다.
         composeRule.onNodeWithText("수신인 목록").assertIsDisplayed()
         composeRule.onNodeWithText(PREVIOUS_ACCOUNT_RECEIVER).assertDoesNotExist()
-        assertEquals(2, userApi.receiverCalls)
     }
 
     private companion object {
         const val PREVIOUS_ACCOUNT_RECEIVER = "이전 계정 수신인"
         const val TIMEOUT_MILLIS = 5_000L
+
+        fun previousAccountReceiver() = Receiver(91L, PREVIOUS_ACCOUNT_RECEIVER, "가족", "previous-account-auth")
     }
 }
-
-private fun receiverDto(name: String) =
-    ReceiverListDto(
-        receiverId = 91L,
-        name = name,
-        relation = "가족",
-        authCode = "previous-account-auth",
-    )
-
-private class SessionReceiverUserApi : UserApiService {
-    private val receiverResults = ArrayDeque<Result<BaseResponse<List<ReceiverListDto>>>>()
-
-    @Volatile
-    var receiverCalls: Int = 0
-        private set
-
-    fun enqueueReceivers(result: Result<BaseResponse<List<ReceiverListDto>>>) {
-        synchronized(this) { receiverResults.addLast(result) }
-    }
-
-    override suspend fun registerPushToken(request: RegisterPushTokenRequestDto): BaseResponse<PushTokenDto> = TODO("이 테스트 미사용")
-
-    override suspend fun deletePushToken(request: DeletePushTokenRequestDto): BaseResponse<Unit> = TODO("이 테스트 미사용")
-
-    override suspend fun getReceivers(): BaseResponse<List<ReceiverListDto>> {
-        val result =
-            synchronized(this) {
-                receiverCalls += 1
-                receiverResults.pollFirst() ?: error("getReceivers result was not prepared")
-            }
-        return result.getOrThrow()
-    }
-
-    override suspend fun createReceiver(request: UserCreateReceiverRequestDto): BaseResponse<UserCreateReceiverDto> =
-        receiverSessionUnexpected("createReceiver")
-
-    override suspend fun getReceiverDetail(receiverId: Long): BaseResponse<ReceiverDetailDto> =
-        receiverSessionUnexpected("getReceiverDetail")
-
-    override suspend fun updateReceiver(
-        receiverId: Long,
-        request: UserPatchReceiverRequestDto,
-    ): BaseResponse<UserPatchReceiverDto> = receiverSessionUnexpected("updateReceiver")
-
-    override suspend fun updateReceiverMessage(
-        receiverId: Long,
-        request: UserUpdateReceiverMessageRequestDto,
-    ): BaseResponse<Unit> = receiverSessionUnexpected("updateReceiverMessage")
-
-    override suspend fun getMyProfile(): BaseResponse<UserDto> = receiverSessionUnexpected("getMyProfile")
-
-    override suspend fun updateMyProfile(request: UserUpdateProfileRequestDto): BaseResponse<UserDto> =
-        receiverSessionUnexpected("updateMyProfile")
-
-    override suspend fun deleteAccount(): BaseResponse<Unit> = receiverSessionUnexpected("deleteAccount")
-
-    override suspend fun getMyPushSettings(): BaseResponse<UserPushSettingDto> = receiverSessionUnexpected("getMyPushSettings")
-
-    override suspend fun updateMyPushSettings(request: UserUpdatePushSettingRequestDto): BaseResponse<UserPushSettingDto> =
-        receiverSessionUnexpected("updateMyPushSettings")
-
-    override suspend fun getConnectedAccounts(): BaseResponse<UserConnectedAccountDto> = receiverSessionUnexpected("getConnectedAccounts")
-
-    override suspend fun linkConnectedAccount(
-        provider: String,
-        request: SocialAccountLinkRequestDto,
-    ): BaseResponse<UserConnectedAccountDto> = receiverSessionUnexpected("linkConnectedAccount")
-
-    override suspend fun unlinkConnectedAccount(provider: String): BaseResponse<UserConnectedAccountDto> =
-        receiverSessionUnexpected("unlinkConnectedAccount")
-
-    override suspend fun getReceiverDeliveryConditions(receiverId: Long): BaseResponse<ReceiverDeliveryConditionDto> =
-        receiverSessionUnexpected("getReceiverDeliveryConditions")
-
-    override suspend fun updateReceiverDeliveryConditions(
-        receiverId: Long,
-        request: ReceiverDeliveryConditionUpdateRequestDto,
-    ): BaseResponse<ReceiverDeliveryConditionDto> = receiverSessionUnexpected("updateReceiverDeliveryConditions")
-}
-
-private fun <T> receiverSessionUnexpected(method: String): T = error("$method must not be called by this test")

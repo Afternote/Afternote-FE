@@ -84,3 +84,19 @@ strict가 그대로 적용된다.
 
 전환 PR에서는 warning 개수만 줄이는 것이 아니라 각 선언의 실제 프로덕션 사용처를 확인한다.
 테스트가 직접 참조하던 선언은 공개 범위를 명시하는 대신 테스트를 공개 동작 기준으로 옮긴다.
+
+## 프로덕션은 테스트에 맞추지 않는다
+
+생성자 시그니처·visibility·DI 조립 방식은 프로덕션의 요구로만 정한다. «테스트가 이렇게 쓰고 있어서» 는
+근거가 아니다 — 설계 판단에 그 문장이 나오면 프로덕션을 올바른 모양으로 바꾸고 테스트를 따라오게 한다.
+못 따라오는 테스트는 그 층에 맞게 다시 쓴다: 같은 모듈이면 구현을 조립하고, 다른 모듈이면 `testFixtures`
+의 Fake 나 Hilt 그래프를 쓴다. PR 본문·KDoc 에 «테스트가 … 라서 그대로 둔다» 류 문장이 나오면 설계가
+틀린 신호다.
+
+`PresentationLayerDependencyKonsistTest` 가 다른 모듈의 `test`·`androidTest`·`testFixtures` 소스가
+`core.data.repoimpl`·`core.datastore` 를 import 하는 것을 막는다(#1898). PR #1595 첫 리비전이
+`app` androidTest·`feature:setting` 테스트의 직접 조립을 이유로 `UserRepositoryImpl` 을 public·수동
+조립으로 남겼던 것이 이 규칙의 발단이다. 테스트만 참조하는 새 main 함수는
+`validate-test-only-production-declarations.mjs`(#1895)가, 모듈 안에서 테스트 때문에 넓어진 visibility 는
+위 `ProductionVisibilityKonsistTest` 가 막는다.
+

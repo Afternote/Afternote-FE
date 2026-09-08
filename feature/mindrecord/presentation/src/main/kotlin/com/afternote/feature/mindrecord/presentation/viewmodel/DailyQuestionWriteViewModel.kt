@@ -15,6 +15,7 @@ import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.mindrecord.presentation.reporting.MindRecordFailureStage
 import com.afternote.feature.mindrecord.presentation.reporting.recordMindRecordFailure
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import com.afternote.feature.mindrecord.presentation.util.isHtmlBlank
 import com.afternote.feature.mindrecord.presentation.util.toWireContent
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,7 +34,7 @@ class DailyQuestionWriteViewModel
         savedStateHandle: SavedStateHandle,
         private val repository: DailyQuestionRepository,
         private val photoUploadRepository: PhotoUploadRepository,
-        private val draftLoader: MindRecordDraftLoader,
+        private val draftLoader: LoadMindRecordDraftsUseCase,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(DailyQuestionWriteUiState())
@@ -84,14 +85,19 @@ class DailyQuestionWriteViewModel
                             )
                         }
                     }.onFailure { e ->
+                        // 여기서 실패하면 화면이 오류 문구만 남고 쓸 수가 없다 — 사용자가
+                        // 「질문이 안 뜬다」로 마주하는 자리라 올린다 (#964).
+                        errorReporter.recordMindRecordFailure(MindRecordFailureStage.DAILY_QUESTION_LOAD, e)
                         _uiState.update {
                             it.copy(
                                 isQuestionLoading = false,
+                                // 예외 문구를 화면에 싣지 않는다 — 직렬화 예외·서버 원문·영문
+                                // 스택 용어가 그대로 사용자에게 간다. 종전의 «값이 있으면 값,
+                                // 없으면 fallback» 변형은 `e.message` 가 있으면 아래 안내
+                                // 문자열을 아예 쓰지 않았다. 원문은 바로 위
+                                // `recordMindRecordFailure` 로 이미 남는다 (#1339 선례, #1882).
                                 questionLoadError =
-                                    UiText.DynamicOrResource(
-                                        value = e.message,
-                                        fallbackResId = R.string.mindrecord_error_daily_question_today_failed,
-                                    ),
+                                    UiText.Resource(R.string.mindrecord_error_daily_question_today_failed),
                             )
                         }
                     }
@@ -123,6 +129,8 @@ class DailyQuestionWriteViewModel
                         }
                         if (today.isDraft) resumeDraft()
                     }.onFailure { e ->
+                        // 신규 진입에서 오늘 질문을 못 받으면 작성 자체가 막힌다 (#964).
+                        errorReporter.recordMindRecordFailure(MindRecordFailureStage.DAILY_QUESTION_LOAD, e)
                         _uiState.update {
                             it.copy(
                                 isQuestionLoading = false,
