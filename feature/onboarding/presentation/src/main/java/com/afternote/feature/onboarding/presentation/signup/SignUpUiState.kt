@@ -1,7 +1,7 @@
 package com.afternote.feature.onboarding.presentation.signup
 
 import android.util.Patterns
-import com.afternote.core.ui.UiText
+import com.afternote.feature.onboarding.presentation.OnboardingFailure
 import com.afternote.feature.onboarding.presentation.OnboardingPasswordRule
 import com.afternote.feature.onboarding.presentation.terms.TermsState
 
@@ -15,10 +15,11 @@ import com.afternote.feature.onboarding.presentation.terms.TermsState
  * 로 갱신. 단발성 navigation/error 신호는 UI 가 소비 후 [SignUpViewModel] 의 `onXxxConsumed()`
  * 콜백 호출로 reset.
  *
- * 폼 룰 (const + regex) 은 본 data class 의 companion 으로 묶어 ViewModel + UI 양쪽에서
- * `SignUpUiState.RESIDENT_REGISTRATION_FRONT_DIGIT_COUNT` 식으로 참조.
+ * 폼 상수는 본 data class 의 companion 으로 묶어 ViewModel + UI 양쪽에서
+ * `SignUpUiState.RESIDENT_REGISTRATION_FRONT_DIGIT_COUNT` 식으로 참조한다. 새 비밀번호 규칙은
+ * 다른 온보딩 흐름에서도 재사용할 수 있도록 [OnboardingPasswordRule]에 둔다.
  */
-data class SignUpUiState(
+internal data class SignUpUiState(
     /** Step 1 입력값 — 이메일. */
     val email: String = "",
     /** Step 1 입력값 — 인증번호. */
@@ -62,20 +63,8 @@ data class SignUpUiState(
     val shouldNavigateToResidentNumber: Boolean = false,
     /** 이름 미입력 — UI 가 명시적 메시지 표시. */
     val isNameRequired: Boolean = false,
-    /**
-     * 인증번호 무효(서버 code 1207) — 시안(2431:14204)상 인증번호 필드 아래 인라인 문구로
-     * 표시(스낵바 아님). 만료 판정은 서버가 한다.
-     *
-     * 표시 문구는 화면의 고정 리소스라 서버 문구를 담지 않고 발생 여부만 든다.
-     */
-    val hasVerificationError: Boolean = false,
-    /**
-     * 인증번호 무효 외 실패(네트워크 등) — snackbar 로 노출할 문구.
-     *
-     * 예외 `message` 원문을 담지 않는다 — 사유를 확인해 준 타입만 각자의 문구를 갖고 나머지는
-     * 정적 리소스로 내려앉는다(`Throwable.toDisplayMessage`).
-     */
-    val errorMessage: UiText? = null,
+    /** 실패 한 건의 사유. 화면이 인라인 또는 스낵바로 표시한다. */
+    val failure: OnboardingFailure? = null,
 ) {
     val isEmailFormatValid: Boolean
         get() = email.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(email).matches()

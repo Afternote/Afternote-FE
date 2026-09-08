@@ -7,6 +7,7 @@ import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.repository.account.AccountRepository
 import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.domain.usecase.auth.LoginUseCase
+import com.afternote.feature.onboarding.presentation.OnboardingFailure
 import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.reporting.AuthFailureStage
 import com.afternote.feature.onboarding.presentation.reporting.AuthProvider
@@ -38,7 +39,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * VM 에 push, 다른 Screen 은 VM 의 [uiState] 에서 String 으로 read.
  */
 @HiltViewModel
-class SignUpViewModel
+internal class SignUpViewModel
     @Inject
     constructor(
         private val accountRepository: AccountRepository,
@@ -63,12 +64,15 @@ class SignUpViewModel
 
         // ─── 입력 reducer ───
         // 이메일이 바뀌면 앞서 받은 인증 에러는 더 이상 그 이메일의 것이 아니다.
-        fun updateEmail(value: String) = _uiState.update { it.copy(email = value, hasVerificationError = false) }
+        fun updateEmail(value: String) = _uiState.update { it.copy(email = value, failure = it.failure.takeIf { _ -> it.email == value }) }
 
         // photo picker 선택은 Entry 가 Uri.toString() 으로 변환해 push — 취소(null)는 Screen 경계에서 무시한다.
         fun onProfileImagePicked(uri: String) = _uiState.update { it.copy(profileImageUri = uri) }
 
-        fun updateVerificationCode(value: String) = _uiState.update { it.copy(verificationCode = value, hasVerificationError = false) }
+        fun updateVerificationCode(value: String) =
+            _uiState.update {
+                it.copy(verificationCode = value, failure = it.failure.takeIf { _ -> it.verificationCode == value })
+            }
 
         fun updateResidentFrontNumber(value: String) = _uiState.update { it.copy(residentFrontNumber = value) }
 
@@ -87,7 +91,10 @@ class SignUpViewModel
 
         fun onNameRequiredConsumed() = _uiState.update { it.copy(isNameRequired = false) }
 
-        fun onErrorConsumed() = _uiState.update { it.copy(errorMessage = null) }
+        fun onErrorConsumed() =
+            _uiState.update {
+                it.copy(failure = it.failure.takeUnless { failure -> failure is OnboardingFailure.RequestFailed })
+            }
 
         // ─── 약관 ───
         fun toggleTermsAgreed(agreed: Boolean) =
@@ -126,13 +133,20 @@ class SignUpViewModel
                 accountRepository
                     .sendEmailCode(state.email)
                     .onSuccess {
-                        _uiState.update { it.copy(isVerificationSent = true, hasVerificationError = false) }
+                        _uiState.update { it.copy(isVerificationSent = true, failure = null) }
                         startResendCooldown()
                     }.onFailure { error ->
                         // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
                         if (error is CancellationException) throw error
                         errorReporter.recordAuthFailure(AuthFailureStage.EMAIL_CODE_SEND, error)
-                        _uiState.update { it.copy(errorMessage = error.toDisplayMessage(R.string.onboarding_signup_code_send_failed)) }
+                        _uiState.update {
+                            it.copy(
+                                failure =
+                                    OnboardingFailure.RequestFailed(
+                                        error.toDisplayMessage(R.string.onboarding_signup_code_send_failed),
+                                    ),
+                            )
+                        }
                     }
                 _uiState.update { it.copy(isSendingCode = false) }
             }
@@ -155,14 +169,13 @@ class SignUpViewModel
          * Step 1 "다음" 클릭 시점에 호출.
          * 이메일/인증번호를 서버에 검증해 성공 시 [SignUpUiState.shouldNavigateToResidentNumber] = true,
          * 인증번호 무효([CoreAuthFailure.EmailVerification] — 불일치/만료/미존재)는
-         * [SignUpUiState.hasVerificationError] (인라인 문구), 그 외 실패는
-         * [SignUpUiState.errorMessage] (스낵바) 로 set. 만료 판정은 서버가 한다.
+         * [SignUpUiState.failure]에 사유를 기록하고 화면이 표시 채널을 고른다. 만료 판정은 서버가 한다.
          */
         fun verifyEmailAndProceed() {
             val state = _uiState.value
             if (state.isVerifyingEmail) return
             viewModelScope.launch {
-                _uiState.update { it.copy(isVerifyingEmail = true, hasVerificationError = false) }
+                _uiState.update { it.copy(isVerifyingEmail = true, failure = null) }
                 accountRepository
                     .verifyEmail(
                         email = state.email,
@@ -175,13 +188,16 @@ class SignUpViewModel
                         if (error is CoreAuthFailure.EmailVerification) {
                             // 표시 문구는 화면의 고정 리소스 — 이 값은 인라인 표시 트리거 + 디버깅용 원문.
                             // 인증번호 불일치·만료는 정상적인 사용자 입력 오류라 리포팅하지 않는다.
-                            // 스낵바 신호를 함께 내린다 — 이번 실패는 인라인으로 알리므로,
-                            // 아직 소비되지 않은 이전 실패 문구가 인라인과 겹쳐 뜨지 않게 한다.
-                            _uiState.update { it.copy(hasVerificationError = true, errorMessage = null) }
+                            _uiState.update { it.copy(failure = OnboardingFailure.VerificationRejected) }
                         } else {
                             errorReporter.recordAuthFailure(AuthFailureStage.EMAIL_VERIFY, error)
                             _uiState.update {
-                                it.copy(errorMessage = error.toDisplayMessage(R.string.onboarding_signup_email_verify_failed))
+                                it.copy(
+                                    failure =
+                                        OnboardingFailure.RequestFailed(
+                                            error.toDisplayMessage(R.string.onboarding_signup_email_verify_failed),
+                                        ),
+                                )
                             }
                         }
                     }
@@ -224,7 +240,14 @@ class SignUpViewModel
                                     // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
                                     if (error is CancellationException) throw error
                                     errorReporter.recordAuthFailure(AuthFailureStage.SIGN_UP, error)
-                                    _uiState.update { it.copy(errorMessage = error.toDisplayMessage(R.string.onboarding_signup_failed)) }
+                                    _uiState.update {
+                                        it.copy(
+                                            failure =
+                                                OnboardingFailure.RequestFailed(
+                                                    error.toDisplayMessage(R.string.onboarding_signup_failed),
+                                                ),
+                                        )
+                                    }
                                     return@launch
                                 }
                         }
@@ -242,7 +265,10 @@ class SignUpViewModel
                                 )
                                 _uiState.update {
                                     it.copy(
-                                        errorMessage = error.toDisplayMessage(R.string.onboarding_signup_auto_login_failed),
+                                        failure =
+                                            OnboardingFailure.RequestFailed(
+                                                error.toDisplayMessage(R.string.onboarding_signup_auto_login_failed),
+                                            ),
                                     )
                                 }
                             }

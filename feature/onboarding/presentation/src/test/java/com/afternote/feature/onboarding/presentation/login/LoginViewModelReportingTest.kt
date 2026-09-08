@@ -4,7 +4,10 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.usecase.auth.LoginUseCase
+import com.afternote.feature.onboarding.presentation.OnboardingFailure
 import com.afternote.feature.onboarding.presentation.reporting.AuthProvider
+import com.afternote.feature.onboarding.presentation.snackbarMessage
+import com.afternote.feature.onboarding.presentation.toDisplay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -114,7 +117,12 @@ class LoginViewModelReportingTest {
             advanceUntilIdle()
 
             assertTrue("취소는 리포팅 대상이 아니다", reporter.written.isEmpty())
-            assertNull("취소를 실패 문구로 띄우면 안 된다", viewModel.uiState.value.errorMessage)
+            assertNull(
+                "취소를 실패 문구로 띄우면 안 된다",
+                viewModel.uiState.value.failure
+                    .toDisplay()
+                    .snackbarMessage,
+            )
         }
 
     @Test

@@ -28,7 +28,7 @@ class FakeUserReceiverRepository(
     deliveryConditions: Map<Long, ReceiverDeliveryConditions> = emptyMap(),
     var onReceiverListFlow: (() -> Flow<List<Receiver>>)? = null,
     var onGetReceivers: (suspend () -> List<Receiver>)? = null,
-    var onCreateReceiver: (suspend (String, String, String?, String?, String?) -> ReceiverCreated)? = null,
+    var onCreateReceiver: (suspend (String, String, String?, String, String?) -> ReceiverCreated)? = null,
     var onGetReceiverDetail: (suspend (Long) -> ReceiverDetail)? = null,
     var onUpdateReceiver: (suspend (Long, String, String, String, String) -> Receiver)? = null,
     var onUpdateReceiverMessage: (suspend (Long, String) -> Unit)? = null,
@@ -74,7 +74,7 @@ class FakeUserReceiverRepository(
         name: String,
         relation: String,
         phone: String?,
-        email: String?,
+        email: String,
         message: String?,
     ): ReceiverCreated {
         receiverCreateCalls += FakeUserRepository.ReceiverCreateCall(name, relation, phone, email, message)

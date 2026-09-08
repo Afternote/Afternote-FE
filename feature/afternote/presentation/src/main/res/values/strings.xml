@@ -125,8 +125,6 @@
     <string name="afternote_memorial_detail_title_suffix">에 대한\n%1$s님의 기록</string>
     <string name="afternote_memorial_detail_title_suffix_no_name">에 대한\n기록</string>
     <string name="afternote_memorial_detail_sharing_notice">이 추억 노트는 지정된 신뢰할 연락처에게만 공유되며,\n안전하게 보관됩니다.</string>
-    <!-- 추모 영상 썸네일 좌하단 오버레이 라벨. 섹션 헤더(장례식에 남길 영상)와 문구가 다른 것은 정본 시안 4327:72864 그대로다. -->
-    <string name="afternote_memorial_video_overlay_label">추모 영상</string>
     <string name="afternote_memorial_video_no_app">영상을 재생할 수 있는 앱이 없습니다.</string>
     <string name="afternote_memorial_video_invalid_url">영상 주소가 올바르지 않아 재생할 수 없습니다.</string>
 

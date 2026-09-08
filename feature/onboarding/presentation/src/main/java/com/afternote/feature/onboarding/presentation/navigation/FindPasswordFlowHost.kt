@@ -13,11 +13,14 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import com.afternote.core.ui.asString
 import com.afternote.core.ui.navigation.FeatureNavDisplay
 import com.afternote.core.ui.navigation.FeatureStackBoundary
+import com.afternote.feature.onboarding.presentation.OnboardingFailureDisplay
 import com.afternote.feature.onboarding.presentation.findaccount.FindPasswordCompleteScreen
 import com.afternote.feature.onboarding.presentation.findaccount.FindPasswordResetScreen
 import com.afternote.feature.onboarding.presentation.findaccount.FindPasswordScreen
 import com.afternote.feature.onboarding.presentation.findaccount.FindPasswordUiState
 import com.afternote.feature.onboarding.presentation.findaccount.FindPasswordViewModel
+import com.afternote.feature.onboarding.presentation.snackbarMessage
+import com.afternote.feature.onboarding.presentation.toDisplay
 
 /**
  * 비밀번호 찾기(이메일 인증 → 새 비밀번호 → 완료)의 **흐름 전용 로컬 스택** (#457 · #1789).
@@ -62,7 +65,7 @@ internal fun FindPasswordFlowHost(
                         isSendCodeEnabled = uiState.isSendCodeEnabled,
                         isNextEnabled = uiState.isVerificationNextEnabled,
                         resendCooldownSeconds = uiState.resendCooldownSeconds,
-                        showSocialAccountBlockedPopup = uiState.isSocialSignUpAccount,
+                        showSocialAccountBlockedPopup = (uiState.failure.toDisplay() == OnboardingFailureDisplay.SocialAccountPopup),
                         snackbarHostState = snackbarHostState,
                         onEmailChange = viewModel::updateEmail,
                         onCertificateCodeChange = viewModel::updateCertificateCode,
@@ -116,11 +119,15 @@ private fun rememberFindPasswordEventHost(
         }
     }
 
-    val pendingErrorMessage = uiState.errorMessage?.asString()
-    LaunchedEffect(pendingErrorMessage) {
-        if (pendingErrorMessage != null) {
+    val snackbarMessage =
+        uiState.failure
+            .toDisplay()
+            .snackbarMessage
+            ?.asString()
+    LaunchedEffect(snackbarMessage) {
+        if (snackbarMessage != null) {
             snackbarHostState.showSnackbar(
-                message = pendingErrorMessage,
+                message = snackbarMessage,
                 duration = SnackbarDuration.Short,
             )
             viewModel.onErrorConsumed()
