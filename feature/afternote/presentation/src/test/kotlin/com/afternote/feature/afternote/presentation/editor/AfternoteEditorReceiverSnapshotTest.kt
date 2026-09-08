@@ -10,6 +10,7 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUpl
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.presentation.editor.state.MemorialVideoAttachment
+import com.afternote.feature.afternote.presentation.editorFlowRoute
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -103,6 +104,7 @@ class AfternoteEditorReceiverSnapshotTest {
 
     private fun viewModel(savedStateHandle: SavedStateHandle): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
+            route = savedStateHandle.editorFlowRoute(),
             savedStateHandle = savedStateHandle,
             userRepository = repositoryProxy<UserRepository>(),
             afternoteRepository = repositoryProxy<AfternoteRepository>(),
