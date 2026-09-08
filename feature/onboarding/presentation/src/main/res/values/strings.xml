@@ -21,6 +21,10 @@
     <string name="onboarding_login_invalid_credentials">아이디 또는 비밀번호가 일치하지 않습니다.</string>
     <!-- 시안 부재 잠정 문구 — 소셜 거절(1208·1209)은 시안에 표시 정의가 없어 자체 문구로 둔다 -->
     <string name="onboarding_login_social_rejected">소셜 로그인이 거절되었습니다. 다시 시도해 주세요.</string>
+    <!-- 시안 부재 잠정 문구 — 소셜 가입 계정(1702)의 로그인 화면 안내는 정본 페이지에 없다(차단 팝업은
+         비밀번호 찾기 `4327:71996` 에만 있다). 그 팝업 문구를 돌려쓰지 않는다 — "비밀번호 찾기를 사용할
+         수 없습니다" 는 로그인 화면에서 틀린 안내다. -->
+    <string name="onboarding_login_social_signup_account">소셜 로그인으로 가입한 계정입니다.\n소셜 로그인을 이용해 주세요.</string>
     <!-- 로그인·회원가입·아이디 찾기가 공유하는 전송 실패 문구 (Throwable.toDisplayMessage) -->
     <string name="onboarding_network_error">네트워크 연결을 확인해주세요.</string>
     <string name="onboarding_login_kakao_failed">카카오 로그인에 실패했습니다.</string>
@@ -43,6 +47,19 @@
     <string name="onboarding_find_account_next">다음</string>
     <string name="onboarding_find_account_failed">요청에 실패했습니다.</string>
 
+    <!-- 비밀번호 찾기 (#457) — 이메일 인증 화면은 위 onboarding_find_account_* 문구를 아이디 찾기와 공유한다. -->
+    <string name="onboarding_find_password_title">비밀번호 찾기</string>
+    <string name="onboarding_find_password_reset_title">비밀번호 변경</string>
+    <string name="onboarding_find_password_reset_description">비밀번호를 변경해 주세요.</string>
+    <string name="onboarding_find_password_complete_message">비밀번호가 변경되었습니다.\n변경된 비밀번호로 로그인해 주세요.</string>
+    <string name="onboarding_find_password_complete_login">로그인</string>
+    <string name="onboarding_find_password_social_blocked">소셜 로그인 계정은 비밀번호 찾기를\n사용 하실 수 없습니다.</string>
+    <!-- 시안 미정의 잠정 문구 — 최종 제출 시점의 인증번호 만료·불일치(1207)는 화면에 상태가 없어 스낵바로 안내한다 -->
+    <string name="onboarding_find_password_code_expired">인증번호가 만료되었거나 올바르지 않습니다.\n이메일 인증부터 다시 진행해 주세요.</string>
+    <!-- 시안 미정의 잠정 문구 — 서버 code 1206(새 비밀번호가 기존과 동일). 클라는 기존 비밀번호를 몰라 사전 판정이 불가하다 -->
+    <string name="onboarding_find_password_unchanged">지금 쓰고 있는 비밀번호입니다. 다른 비밀번호를 입력해 주세요.</string>
+    <string name="onboarding_find_password_failed">비밀번호를 변경하지 못했어요. 잠시 후 다시 시도해주세요.</string>
+
     <string name="onboarding_step_description">회원가입 진행도 4단계 중 %1$d단계</string>
 
     <string name="onboarding_signup_title">회원가입</string>
@@ -61,7 +78,7 @@
     <string name="onboarding_signup_resident_number_back_placeholder">0</string>
     <string name="onboarding_signup_password_input_label">비밀번호 입력</string>
     <string name="onboarding_signup_password_confirm_placeholder">비밀번호 확인</string>
-    <string name="onboarding_signup_password_rule_combination">8 ~ 16자의 영문 대소문자, 숫자, 특수문자를 조합하여 설정해 주세요.</string>
+    <string name="onboarding_signup_password_rule_combination">8 ~ 15자의 영문, 숫자, 특수문자(@, $, !, %, *, #, ?, &amp;)를 각각 1자 이상 사용해 주세요.</string>
     <string name="onboarding_signup_password_rule_reuse">이전에 사용한 적 없는 비밀번호가 안전합니다.</string>
     <string name="onboarding_signup_failed">회원가입 실패</string>
     <string name="onboarding_signup_code_send_failed">인증번호를 보내지 못했어요. 잠시 후 다시 시도해주세요.</string>

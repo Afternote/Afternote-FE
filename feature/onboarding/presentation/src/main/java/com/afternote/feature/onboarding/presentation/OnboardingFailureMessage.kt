@@ -42,6 +42,14 @@ private fun CoreAuthFailure.displayMessageResOrNull(): Int? =
 
         is CoreAuthFailure.SocialLoginRejected -> R.string.onboarding_login_social_rejected
 
+        is CoreAuthFailure.PasswordUnchanged -> R.string.onboarding_find_password_unchanged
+
+        // 시안(`2383:16667`)은 이 사유를 차단 팝업으로 그린다. 그 표시는 화면이 하고, 여기 문구는
+        // 팝업이 없는 자리(비밀번호 변경 제출)로 같은 사유가 흘러왔을 때의 스낵바 몫이다.
+        // 로그인 화면은 이 매핑을 타지 않는다 — 같은 사유라도 안내가 "비밀번호 찾기를 쓸 수 없다" 가
+        // 아니라 "소셜로 로그인하라" 여서 `LoginViewModel` 이 자기 문구로 가른다.
+        is CoreAuthFailure.SocialSignUpAccount -> R.string.onboarding_find_password_social_blocked
+
         // 셋 다 이 함수 밖에서 갈리므로 전용 문구를 갖지 않는다 — 자격 거절·인증번호 무효는 화면이
         // 입력 필드 인라인으로, 인증 취소는 소비처가 무시한다. `else` 가 아니라 열거해 두는 건
         // 사유가 새로 늘 때 컴파일러가 여기를 잡게 하려는 것이다.

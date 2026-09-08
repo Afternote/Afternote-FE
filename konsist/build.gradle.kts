@@ -50,6 +50,11 @@ tasks.withType<Test>().configureEach {
                 // 좁히면 그만큼 가드가 다시 침묵한다.
                 include("**/src/**/*.kt", "**/*.gradle.kts")
 
+                // 정렬 아이콘 가드(AlignIconSharedAssetKonsistTest)는 `.kt` 가 아니라 **드로어블 벡터**를
+                // 읽는다. 그 가드가 막으려는 변경이 곧 「모듈에 사본 xml 을 되살리는 것」이라, 이 include
+                // 가 없으면 정확히 그 변경에서만 태스크가 `UP-TO-DATE` 로 침묵한다 — 실측으로 확인했다.
+                include("**/src/**/res/drawable*/**/*.xml")
+
                 // konsist 는 빌드 산출물과 `.gradle` 을 자기 힘으로 걸러낸다. 여기서도 빼야
                 // 생성 소스가 입력에 섞여 매 빌드 입력이 흔들리는 것을 막는다.
                 exclude("**/build/**", "**/.gradle/**", "**/.git/**")

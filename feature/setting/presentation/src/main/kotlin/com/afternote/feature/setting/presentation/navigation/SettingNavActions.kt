@@ -27,6 +27,10 @@ interface SettingNavActions {
 
     fun onNotificationBack()
 
+    fun onNavigateToPushNotification()
+
+    fun onPushNotificationBack()
+
     fun onNavigateToRecipientList()
 
     fun onNavigateToRecipientListForDeliveryConditions()

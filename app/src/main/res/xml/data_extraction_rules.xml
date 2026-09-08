@@ -1,19 +1,14 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   API 31 이상 기기의 클라우드 백업·기기 간 전송 규칙이다.
    See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
 -->
 <data-extraction-rules>
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <!-- 타임레터 음성 녹음 임시 원본은 서버 업로드 전 사용자 육성이라 클라우드에 남기지 않는다 (#440 리뷰). -->
+        <exclude domain="file" path="timeletter_audio/" />
     </cloud-backup>
-    <!--
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <exclude domain="file" path="timeletter_audio/" />
     </device-transfer>
-    -->
 </data-extraction-rules>
