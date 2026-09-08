@@ -21,12 +21,14 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUpl
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
+import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.editor.AfternoteEditorIntent
 import com.afternote.feature.afternote.presentation.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.editor.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.editor.memorial.Song
 import com.afternote.feature.afternote.presentation.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.editor.model.RegisterAfternotePayload
+import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialPhoto
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.editor.state.MemorialVideoAttachment
 import org.junit.Assert.assertEquals
@@ -181,8 +183,11 @@ class AfternoteAuthorImplementedCoverageTest {
                                     .empty()
                                     .withSelection("content://videos/farewell")
                                     .withSelectionThumbnail("https://cdn.test/thumbnail.jpg"),
-                            memorialPhotoUrl = "https://cdn.test/old-photo.jpg",
-                            pickedMemorialPhotoUri = "content://photos/new-portrait",
+                            memorialPhoto =
+                                EditableMemorialPhoto
+                                    .fromPersisted(
+                                        "https://cdn.test/old-photo.jpg",
+                                    ).withSelection("content://photos/new-portrait"),
                             memorialAudioUrl = "content://audio/last-words",
                         ),
                 ),
@@ -265,7 +270,7 @@ class AfternoteAuthorImplementedCoverageTest {
             ),
             restored.displayedMemorialVideo,
         )
-        assertEquals("content://photos/portrait", restored.pickedMemorialPhotoUri)
+        assertEquals("content://photos/portrait", restored.memorialPhoto?.toSnapshot()?.selection)
         assertEquals(
             listOf(Song("91", "첫 번째 노래", "가수 A", "https://cdn.test/cover.jpg")),
             restored.memorialPlaylistSongs,
@@ -301,7 +306,7 @@ private fun implementedCoverageViewModel(
     AfternoteEditorViewModel(
         route = savedStateHandle.editorFlowRoute(),
         savedStateHandle = savedStateHandle,
-        userRepository = afternoteAuthorUserRepository(),
+        userReceiverRepository = afternoteAuthorUserReceiverRepository(),
         afternoteRepository = repository,
         memorialThumbnailUploadRepository =
             MemorialThumbnailUploadRepository {
@@ -337,5 +342,6 @@ private fun implementedCoverageViewModel(
                         )
                     },
             ),
+        saveAfternoteUseCase = SaveAfternoteUseCase(repository),
         errorReporter = NoopAuthorErrorReporter,
     )

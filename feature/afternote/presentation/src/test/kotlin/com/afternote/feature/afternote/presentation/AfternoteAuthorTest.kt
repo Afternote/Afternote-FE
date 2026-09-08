@@ -13,6 +13,7 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUpl
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
+import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.editor.AfternoteEditorIntent
 import com.afternote.feature.afternote.presentation.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.editor.SaveAfternoteMemorialMedia
@@ -142,7 +143,7 @@ class AfternoteAuthorTest {
         AfternoteEditorViewModel(
             route = savedStateHandle.editorFlowRoute(),
             savedStateHandle = savedStateHandle,
-            userRepository = afternoteAuthorUserRepository(),
+            userReceiverRepository = afternoteAuthorUserReceiverRepository(),
             afternoteRepository = repository,
             memorialThumbnailUploadRepository = MemorialThumbnailUploadRepository { Result.success("https://cdn.test/thumb.jpg") },
             resolveMemorialMediaForSave =
@@ -170,6 +171,7 @@ class AfternoteAuthorTest {
                             )
                         },
                 ),
+            saveAfternoteUseCase = SaveAfternoteUseCase(repository),
             errorReporter = NoopAuthorErrorReporter,
         )
 }

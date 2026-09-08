@@ -13,6 +13,7 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.editor.receiver.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteTypeForm
+import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialPhoto
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.editor.state.MemorialVideoAttachment
@@ -181,5 +182,12 @@ class EditorContentSignatureCompletenessTest {
     private fun memorial(
         video: EditableMemorialVideo = EditableMemorialVideo.empty(),
         photo: String? = null,
-    ) = EditorFormState(typeForm = AfternoteTypeForm.Memorial(video = video, pickedPhotoUri = photo))
+    ) = EditorFormState(
+        typeForm =
+            AfternoteTypeForm.Memorial(
+                video = video,
+                photo =
+                    photo?.let { EditableMemorialPhoto.empty().withSelection(it) } ?: EditableMemorialPhoto.empty(),
+            ),
+    )
 }

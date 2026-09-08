@@ -8,8 +8,9 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUpl
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
+import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.NoopAuthorErrorReporter
-import com.afternote.feature.afternote.presentation.afternoteAuthorUserRepository
+import com.afternote.feature.afternote.presentation.afternoteAuthorUserReceiverRepository
 import com.afternote.feature.afternote.presentation.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
@@ -71,13 +72,14 @@ class AfternoteEditorErrorTest {
             AfternoteEditorViewModel(
                 route = AfternoteRoute.EditorFlowRoute(initialType = AfternoteType.SOCIAL_NETWORK),
                 savedStateHandle = SavedStateHandle(),
-                userRepository = afternoteAuthorUserRepository(),
+                userReceiverRepository = afternoteAuthorUserReceiverRepository(),
                 afternoteRepository = repository,
                 memorialThumbnailUploadRepository = MemorialThumbnailUploadRepository { error("unused") },
                 resolveMemorialMediaForSave =
                     ResolveMemorialMediaForSaveUseCase(
                         MemorialMediaUploadRepository { _, _ -> Result.success(null) },
                     ),
+                saveAfternoteUseCase = SaveAfternoteUseCase(repository),
                 errorReporter = NoopAuthorErrorReporter,
             )
         viewModel.onIntent(

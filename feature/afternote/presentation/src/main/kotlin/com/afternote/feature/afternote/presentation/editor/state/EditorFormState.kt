@@ -27,7 +27,7 @@ data class EditorFormState(
 
     internal val memorialForm: AfternoteTypeForm.Memorial? get() = typeForm as? AfternoteTypeForm.Memorial
 
-    val pickedMemorialPhotoUri: String? get() = memorialForm?.pickedPhotoUri
+    internal val memorialPhoto: EditableMemorialPhoto? get() = memorialForm?.photo
 
     /** 서버 기준값과 이번 폼의 미저장 교체분을 함께 가진 영상 편집 상태. */
     internal val memorialVideo: EditableMemorialVideo? get() = memorialForm?.video
@@ -36,7 +36,6 @@ data class EditorFormState(
 
     /** 시트에 영상 삭제 항목을 내놓을지 — 표시된 층이 있으면 출처와 무관하게 지울 수 있다(#1597). */
     internal val canRemoveMemorialVideo: Boolean get() = memorialVideo?.canRemove == true
-    val memorialPhotoUrl: String? get() = memorialForm?.photoUrl
     val memorialAudioUrl: String? get() = memorialForm?.audioUrl
     val memorialPlaylistSongs: List<Song> get() = memorialForm?.playlistSongs.orEmpty()
 

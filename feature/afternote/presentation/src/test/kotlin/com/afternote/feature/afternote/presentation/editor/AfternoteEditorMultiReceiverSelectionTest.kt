@@ -2,13 +2,14 @@ package com.afternote.feature.afternote.presentation.editor
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.testing.FakeUserRepository
+import com.afternote.core.domain.testing.FakeUserReceiverRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
+import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import kotlinx.coroutines.CompletableDeferred
@@ -229,7 +230,7 @@ class AfternoteEditorMultiReceiverSelectionTest {
             val previousLookup = CompletableDeferred<List<Receiver>>()
             var calls = 0
             val repository =
-                FakeUserRepository.strict().apply {
+                FakeUserReceiverRepository.strict().apply {
                     onGetReceivers = {
                         if (calls++ == 0) {
                             withContext(NonCancellable) { previousLookup.await() }
@@ -267,17 +268,17 @@ class AfternoteEditorMultiReceiverSelectionTest {
             assertNull(viewModel.uiState.value.error)
         }
 
-    private fun repositoryWith(vararg receivers: Receiver): FakeUserRepository =
-        FakeUserRepository.strict().apply { onGetReceivers = { receivers.toList() } }
+    private fun repositoryWith(vararg receivers: Receiver): FakeUserReceiverRepository =
+        FakeUserReceiverRepository.strict().apply { onGetReceivers = { receivers.toList() } }
 
     private fun viewModel(
-        userRepository: FakeUserRepository,
+        userRepository: FakeUserReceiverRepository,
         savedStateHandle: SavedStateHandle = SavedStateHandle(),
     ): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
             route = AfternoteRoute.EditorFlowRoute(initialType = AfternoteType.SOCIAL_NETWORK),
             savedStateHandle = savedStateHandle,
-            userRepository = userRepository,
+            userReceiverRepository = userRepository,
             afternoteRepository = unusedProxy<AfternoteRepository>(),
             memorialThumbnailUploadRepository =
                 MemorialThumbnailUploadRepository { error("썸네일 업로드가 호출되면 안 됩니다") },
@@ -285,6 +286,7 @@ class AfternoteEditorMultiReceiverSelectionTest {
                 ResolveMemorialMediaForSaveUseCase(
                     MemorialMediaUploadRepository { _, _ -> error("미디어 저장이 호출되면 안 됩니다") },
                 ),
+            saveAfternoteUseCase = SaveAfternoteUseCase(unusedProxy<AfternoteRepository>()),
             errorReporter = NoopErrorReporter,
         )
 

@@ -40,7 +40,7 @@ internal enum class MemorialMediaTarget {
  */
 internal fun EditorFormState.removableMemorialMediaTargets(): Set<MemorialMediaTarget> =
     buildSet {
-        if (!displayMemorialPhotoUri().isNullOrBlank()) add(MemorialMediaTarget.PHOTO)
+        if (memorialPhoto?.canRemove == true) add(MemorialMediaTarget.PHOTO)
         if (canRemoveMemorialVideo) add(MemorialMediaTarget.VIDEO)
         if (!memorialAudioUrl.isNullOrBlank()) add(MemorialMediaTarget.AUDIO)
     }
