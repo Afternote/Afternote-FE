@@ -1,9 +1,7 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.delivery.ConditionState
@@ -12,6 +10,9 @@ import com.afternote.core.model.delivery.DeliveryConditionType
 import com.afternote.core.model.delivery.DeliveryContentType
 import com.afternote.core.model.delivery.InactivityPeriod
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,16 +21,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
-@HiltViewModel
-class DeliveryConditionViewModel
-    @Inject
+@HiltViewModel(assistedFactory = DeliveryConditionViewModel.Factory::class)
+internal class DeliveryConditionViewModel
+    @AssistedInject
     constructor(
-        savedStateHandle: SavedStateHandle,
+        @Assisted route: SettingRoute.AfterDeliveryRoute,
         private val userRepository: UserRepository,
     ) : ViewModel() {
-        private val receiverId = savedStateHandle.toRoute<SettingRoute.AfterDeliveryRoute>().receiverId
+        private val receiverId = route.receiverId
 
         private val _uiState = MutableStateFlow(DeliveryConditionUiState())
         val uiState: StateFlow<DeliveryConditionUiState> = _uiState.asStateFlow()
@@ -129,4 +129,9 @@ class DeliveryConditionViewModel
                 gracePeriodStartedAt = null,
                 fulfilledAt = null,
             )
+
+        @AssistedFactory
+        interface Factory {
+            fun create(route: SettingRoute.AfterDeliveryRoute): DeliveryConditionViewModel
+        }
     }

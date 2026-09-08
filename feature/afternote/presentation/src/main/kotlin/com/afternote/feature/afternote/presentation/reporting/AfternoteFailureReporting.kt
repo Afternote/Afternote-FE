@@ -168,6 +168,11 @@ private fun ReceiverFailure.isExpectedUserRejection(): Boolean =
         is ReceiverFailure.DeliveryConditionNotMet -> {
             true
         }
+
+        // 서버 계약 미도착이라 매 시도가 같은 값으로 쌓인다. 장애가 아니므로 기록하지 않는다 (#589).
+        is ReceiverFailure.ExportNotSupported -> {
+            true
+        }
     }
 
 private const val KEY_AFTERNOTE_STAGE = "afternote_stage"
