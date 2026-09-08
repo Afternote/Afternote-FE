@@ -9,6 +9,9 @@ import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
 import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
+import com.afternote.feature.mindrecord.presentation.usecase.DeleteMindRecordDraftsUseCase
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -88,7 +91,8 @@ class DraftListDeleteTest {
                         Result.failure(IllegalStateException("404"))
                     }
                 }
-        val viewModel = viewModel(repository)
+        val reporter = RecordingErrorReporter()
+        val viewModel = viewModel(repository, reporter)
         val target = (viewModel.uiState.value as DraftListUiState.Success).items
 
         viewModel.delete(target)
@@ -96,6 +100,41 @@ class DraftListDeleteTest {
         val state = viewModel.uiState.value as DraftListUiState.Success
         assertEquals(DraftDeleteOutcome.AllDeleted, state.deleteOutcome)
         assertTrue(state.items.isEmpty())
+        // 화면에서 빠지는 실패일수록 콘솔이 유일한 흔적이다. 재조회 대조로 계측까지 걸러 내면
+        // 「왜 안 지워졌나」를 나중에 물을 곳이 없어진다 (#964·#1693 리뷰).
+        assertEquals(listOf("draft_delete"), reporter.stages)
+    }
+
+    /**
+     * 재조회 도중 스코프가 취소되는 창. 삭제는 이미 서버에 반영됐으므로 **그 실패는 남아야
+     * 한다** — 반환값으로 받아 기록하면 이 경로에서 흔적이 통째로 사라진다 (#1693 리뷰).
+     */
+    @Test
+    fun `재조회 도중 취소돼도 삭제 실패는 기록된다`() {
+        var listCalls = 0
+        val repository =
+            FakeDailyQuestionRepository(
+                initialAnswers = listOf(dailyQuestion(id = 1L)),
+                onDelete = { Result.failure(IllegalStateException("서버 거절")) },
+            ).apply {
+                // 첫 조회(초기 로드)는 통과시키고, 삭제 뒤 재조회에서 취소를 흉내 낸다 —
+                // 사용자가 화면을 벗어난 자리다.
+                onGetList = { _, _ ->
+                    listCalls += 1
+                    if (listCalls == 1) {
+                        Result.success(listOf(dailyQuestion(id = 1L)))
+                    } else {
+                        throw CancellationException("화면 이탈")
+                    }
+                }
+            }
+        val reporter = RecordingErrorReporter()
+        val viewModel = viewModel(repository, reporter)
+        val target = (viewModel.uiState.value as DraftListUiState.Success).items
+
+        runCatching { viewModel.delete(target) }
+
+        assertEquals("재조회 취소로 삭제 실패의 흔적이 사라졌다", listOf("draft_delete"), reporter.stages)
     }
 
     @Test
@@ -103,7 +142,8 @@ class DraftListDeleteTest {
         val repository =
             // 성공 삭제는 픽스처 기본 동작(저장소에서 제거 + success)이 그대로 맞다.
             FakeDailyQuestionRepository(initialAnswers = listOf(dailyQuestion(id = 1L)))
-        val viewModel = viewModel(repository)
+        val reporter = RecordingErrorReporter()
+        val viewModel = viewModel(repository, reporter)
         val target = (viewModel.uiState.value as DraftListUiState.Success).items
 
         viewModel.delete(target)
@@ -111,6 +151,8 @@ class DraftListDeleteTest {
         val state = viewModel.uiState.value as DraftListUiState.Success
         assertEquals(DraftDeleteOutcome.AllDeleted, state.deleteOutcome)
         assertTrue(state.items.isEmpty())
+        // 반대쪽 경계 — 성공에는 계측이 없어야 한다. 「전부 올린다」 로 되돌리면 여기가 먼저 깨진다.
+        assertEquals(emptyList<String>(), reporter.stages)
     }
 
     private fun viewModel(
@@ -118,15 +160,18 @@ class DraftListDeleteTest {
         errorReporter: RecordingErrorReporter = RecordingErrorReporter(),
     ): DraftListViewModel =
         DraftListViewModel(
-            // #769 가 목록 조회를 loader 로 뽑아낸 뒤 생성자가 3개로 늘었다. 같은 두
-            // 저장소를 넘겨 종전과 같은 조회 경로를 그대로 태운다.
-            loader =
-                MindRecordDraftLoader(
+            // 조회와 삭제가 각각 UseCase 로 갈렸다 (#1693). 같은 두 저장소를 양쪽에 넘겨
+            // 종전과 같은 경로를 그대로 태운다.
+            loadDrafts =
+                LoadMindRecordDraftsUseCase(
                     diaryRepository = emptyDiaryDrafts(),
                     dailyQuestionRepository = dailyQuestionRepository,
                 ),
-            diaryRepository = emptyDiaryDrafts(),
-            dailyQuestionRepository = dailyQuestionRepository,
+            deleteDrafts =
+                DeleteMindRecordDraftsUseCase(
+                    diaryRepository = emptyDiaryDrafts(),
+                    dailyQuestionRepository = dailyQuestionRepository,
+                ),
             errorReporter = errorReporter,
         )
 

@@ -2,6 +2,7 @@ package com.afternote.feature.receiver.presentation.deliveryverification
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.feature.receiver.domain.testing.FakeIdentityVerificationRepository
+import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -71,7 +72,7 @@ class DeliveryVerificationFlowViewModelTest {
         repository: FakeIdentityVerificationRepository,
     ): DeliveryVerificationFlowViewModel =
         DeliveryVerificationFlowViewModel(
-            savedStateHandle = SavedStateHandle(mapOf("senderId" to senderId)),
+            route = ReceiverRoute.DeliveryVerificationFlowRoute(senderId = senderId),
             identityVerificationRepository = repository,
         )
 }

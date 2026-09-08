@@ -7,6 +7,7 @@ import com.afternote.core.model.delivery.DeliveryConditionType
 import com.afternote.core.model.delivery.DeliveryContentType
 import com.afternote.core.model.delivery.InactivityPeriod
 import com.afternote.core.model.user.Receiver
+import com.afternote.core.model.user.User
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -156,5 +157,42 @@ class FakeCoreRepositoriesTest {
         assertEquals(listOf(condition), returned.conditions)
         assertEquals(listOf(condition), reloaded.conditions)
         assertEquals(listOf(condition), repository.deliveryConditions.getValue(7L).conditions)
+    }
+
+    /**
+     * 합본 fake 가 책임별 fake 에 위임해도(#1282) 생성 이후에 갈아끼운 `onX` 와 상태 쓰기가
+     * 그대로 먹혀야 한다 — 소비자 다수가 `strict()` 로 만든 뒤 필요한 멤버만 열어 쓴다.
+     */
+    @Test
+    fun `합본 fake 의 생성 후 onX 교체와 상태 쓰기는 위임 대상에 그대로 닿는다`() {
+        val repository = FakeUserRepository.strict()
+
+        repository.onGetReceivers = null
+        repository.onGetMyProfile = null
+        repository.receiverState.value = listOf(Receiver(9L, "나중 수신자", "가족", "auth-9"))
+        repository.profile = User("나중 사용자", "later@afternote.local", null, null)
+
+        assertEquals(listOf(Receiver(9L, "나중 수신자", "가족", "auth-9")), runBlocking { repository.getReceivers() })
+        assertEquals("나중 사용자", runBlocking { repository.getMyProfile() }.name)
+        assertEquals(1, repository.getReceiversCalls)
+        assertEquals(1, repository.getProfileCalls)
+    }
+
+    /** 좁은 fake 는 합본을 거치지 않고 곧장 쓸 수 있어야 한다 (#1282). */
+    @Test
+    fun `좁은 fake 는 자기 책임 상태만 갖고 단독으로 동작한다`() {
+        val receiverRepository = FakeUserReceiverRepository(receivers = listOf(Receiver(3L, "수신자", "가족", "auth-3")))
+        val profileRepository = FakeMyProfileRepository()
+
+        val receivers = runBlocking { receiverRepository.getReceivers() }
+        val updated = runBlocking { profileRepository.updateMyProfile("바뀐 이름", null, null) }
+
+        assertEquals(listOf(Receiver(3L, "수신자", "가족", "auth-3")), receivers)
+        assertEquals(1, receiverRepository.getReceiversCalls)
+        assertEquals("바뀐 이름", updated.name)
+        assertEquals(
+            listOf(FakeUserRepository.ProfileUpdateCall("바뀐 이름", null, null)),
+            profileRepository.profileUpdateCalls.toList(),
+        )
     }
 }

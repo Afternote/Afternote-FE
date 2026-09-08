@@ -35,7 +35,7 @@ data class NextStep(
 )
 
 /**
- * 헤더 위 여백. 목록 상태([com.afternote.feature.afternote.presentation.shared.body.infinite.InfiniteListBody])와
+ * 헤더 위 여백. 목록 상태([com.afternote.feature.afternote.presentation.shared.component.InfiniteListBody])와
  * 빈 목록 상태([EmptyHomeBody])가 헤더를 **같은 자리**에 두도록 한 곳에서 정의한다 (#1175).
  */
 internal val HomeBodyTopSpacing = 8.dp
