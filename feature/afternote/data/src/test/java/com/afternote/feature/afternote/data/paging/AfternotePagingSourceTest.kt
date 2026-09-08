@@ -26,7 +26,7 @@ class AfternotePagingSourceTest {
         runBlocking {
             val api = RecordingApi()
 
-            AfternotePagingSource(api, category = null, draftOnly = false).load(refresh())
+            AfternotePagingSource(api, category = null, draftOnly = false, pageSize = 10).load(refresh())
 
             assertEquals(false, api.lastDraftOnly)
         }
@@ -36,7 +36,7 @@ class AfternotePagingSourceTest {
         runBlocking {
             val api = RecordingApi()
 
-            AfternotePagingSource(api, category = "PLAYLIST", draftOnly = true).load(refresh())
+            AfternotePagingSource(api, category = "PLAYLIST", draftOnly = true, pageSize = 10).load(refresh())
 
             assertEquals(true, api.lastDraftOnly)
             assertEquals("PLAYLIST", api.lastCategory)
@@ -47,7 +47,7 @@ class AfternotePagingSourceTest {
         runBlocking {
             val api = RecordingApi(isDraft = true)
 
-            val page = AfternotePagingSource(api, category = null, draftOnly = true).load(refresh())
+            val page = AfternotePagingSource(api, category = null, draftOnly = true, pageSize = 10).load(refresh())
 
             val items = (page as PagingSource.LoadResult.Page).data
             assertTrue(items.single().isDraft)
