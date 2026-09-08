@@ -222,8 +222,7 @@ class EditorTouchTargetTest {
     /**
      * 콜백이 없으면 버튼 자체가 없어야 한다 (#808).
      *
-     * 저장한 임시저장을 다시 열 화면이 배선되기 전까지 `AfternoteEditorRoute` 가 `null` 을 넘긴다.
-     * 그때 버튼이 남아 있으면 «누르면 홈에서 사라지고 되찾을 길이 없는» 상태가 된다.
+     * 발행분 수정에서는 `AfternoteEditorRoute` 가 `null` 을 넘겨 등록 액션만 제공한다.
      */
     @Test
     fun `editor top bar hides the draft action when no callback is wired`() {

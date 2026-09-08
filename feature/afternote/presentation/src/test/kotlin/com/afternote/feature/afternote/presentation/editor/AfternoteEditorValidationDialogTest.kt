@@ -34,7 +34,6 @@ class AfternoteEditorValidationDialogTest {
                 AfternoteEditorScreen(
                     form = EditorFormState(),
                     onBackClick = {},
-                    onSaveDraftClick = {},
                     onRegisterClick = {},
                     snackbarMessage = null,
                     onSnackbarMessageConsumed = {},

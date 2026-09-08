@@ -303,10 +303,6 @@ class ProductionVisibilityKonsistTest {
         val ISSUE_1673_AFTERNOTE =
             setOf(
                 "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/detail/AfternoteDetailRoute.kt::function DeleteInProgressOverlay [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/AfternoteEditorContent.kt::function EditorContent [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/AfternoteEditorScreen.kt::function editorContentSignature [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/AfternoteEditorViewModel.kt::function toAfternoteEditorError [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/selection/EditorServiceSelectionSheet.kt::function EditorServiceSelectionSheetContent [internal]",
             )
 
         val ISSUE_1674_MINDRECORD =

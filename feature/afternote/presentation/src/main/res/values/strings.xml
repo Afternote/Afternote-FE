@@ -131,7 +131,6 @@
     <!-- Afternote editor (author) — UI strings -->
     <string name="afternote_editor_screen_title">애프터노트 작성하기</string>
     <string name="afternote_editor_submit">등록</string>
-    <string name="afternote_editor_save_draft">임시저장</string>
     <string name="afternote_editor_service_sheet_title_social">소셜 네트워크 서비스 선택</string>
     <string name="afternote_editor_service_sheet_title_gallery">갤러리 및 파일 서비스 선택</string>
     <string name="afternote_editor_service_sheet_title_business">비즈니스 서비스 선택</string>
@@ -213,4 +212,5 @@
     <string name="afternote_home_draft_entry">임시저장</string>
     <string name="afternote_home_draft_entry_description">이어서 작성할 임시저장 목록</string>
     <string name="afternote_draft_list_empty_body">아직 임시저장한 애프터노트가 없어요.\n작성 중에 임시저장하면 여기에 보여요.</string>
+    <string name="afternote_editor_save_draft">임시저장</string>
 </resources>

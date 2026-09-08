@@ -65,7 +65,7 @@ fun AfternoteEditorScreen(
     form: EditorFormState,
     onBackClick: () -> Unit,
     onRegisterClick: () -> Unit,
-    onSaveDraftClick: (() -> Unit)?,
+    onSaveDraftClick: (() -> Unit)? = null,
     snackbarMessage: String?,
     onSnackbarMessageConsumed: () -> Unit,
     // 스낵바 쌍과 같은 이유로 기본값을 주지 않는다: 새 진입 경로가 검증 팝업 배선을 빠뜨리면
@@ -143,8 +143,7 @@ fun AfternoteEditorScreen(
                     // 임시저장은 정식 등록과 나란히 둔다 — 마음의 기록·타임레터 작성 화면이 「등록」 옆·아래에
                     // 「임시저장」을 두는 것과 같은 배치다(애프터노트 구역엔 시안이 없어 그 관례를 따랐다, #808).
                     //
-                    // 콜백이 null 이면 아예 그리지 않는다 — 저장한 임시저장을 다시 볼 화면이 없는 동안
-                    // 이 버튼을 누르면 그 애프터노트가 홈 목록에서 사라진 채 되찾을 길이 없다.
+                    // 발행분 수정처럼 임시저장이 없는 경로에서는 콜백이 null 이므로 버튼을 그리지 않는다.
                     //
                     // 「등록」과 같은 게이트를 받는다 — 저장이 나가 있는 동안·prefill 을 못 읽은 동안 눌리면
                     // VM 의 `isSaving` 가드에 걸려 오류도 스낵바도 없이 삼켜진다. 등록만 흐리고 이 버튼을
@@ -248,7 +247,7 @@ private const val NO_ENTERED_CONTENT = "\u0003"
  * 카테고리 전용 입력은 판별자 없이 "넣은 값" 으로만 싣는다 — 구경은 되돌리는 비용이 탭 한 번이라
  * 잃을 것이 없고, 값을 넣은 카테고리를 떠나면 그 값은 전환 시점에 이미 폐기되므로 지문이 달라진다.
  */
-internal fun editorContentSignature(
+private fun editorContentSignature(
     form: EditorFormState,
     state: AfternoteEditorState,
 ): String {

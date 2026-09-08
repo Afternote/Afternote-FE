@@ -128,9 +128,9 @@ internal fun EditorServiceSelectionSheet(
     }
 }
 
-/** Popup 윈도 밖에서도 Preview·Robolectric 검증이 가능한 시트 본문. */
+/** 서비스 선택 시트의 검색 입력과 목록. */
 @Composable
-internal fun EditorServiceSelectionSheetContent(
+private fun EditorServiceSelectionSheetContent(
     title: String,
     type: AfternoteType,
     services: List<String>,
