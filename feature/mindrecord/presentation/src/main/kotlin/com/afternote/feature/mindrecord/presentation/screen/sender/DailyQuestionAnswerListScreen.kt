@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -25,6 +24,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.asString
+import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
@@ -50,7 +50,7 @@ fun DailyQuestionAnswerListScreen(
     onItemClick: (Long, YearMonth) -> Unit,
     modifier: Modifier = Modifier,
     isListView: Boolean = true,
-    onEditClick: (Long) -> Unit = {},
+    onEditClick: (Long) -> Unit,
     viewModel: DailyQuestionListViewModel = hiltViewModel(),
 ) {
     // 갱신을 이 화면이 직접 건다. HomeScreen 이 VM 을 호이스팅해 대신 걸어 주면, 탭에
@@ -74,7 +74,7 @@ fun DailyQuestionAnswerListScreen(
 
     when (val state = uiState) {
         DailyQuestionListUiState.Loading -> {
-            LoadingBox(modifier)
+            LoadingBody(modifier)
         }
 
         is DailyQuestionListUiState.Error -> {
@@ -121,10 +121,10 @@ private fun DailyQuestionListContent(
     modifier: Modifier = Modifier,
     todayQuestion: TodayQuestionUi? = null,
     /** 항목 탭 — 저장된 기록 본문을 여는 상세 화면 (#759). */
-    onItemClick: (Long, YearMonth) -> Unit = { _, _ -> },
+    onItemClick: (Long, YearMonth) -> Unit,
     /** «수정하기» — 정식 답변을 프리필한 작성 화면으로 (#582). */
-    onEdit: (Long) -> Unit = {},
-    onDelete: (Long) -> Unit = {},
+    onEdit: (Long) -> Unit,
+    onDelete: (Long) -> Unit,
 ) {
     var yearMonth by remember { mutableStateOf(YearMonth.now()) }
     val onYearMonthChanged: (YearMonth) -> Unit = { yearMonth = it }
@@ -211,13 +211,6 @@ private fun DailyQuestionListContent(
     }
 }
 
-@Composable
-private fun LoadingBox(modifier: Modifier = Modifier) {
-    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
-    }
-}
-
 @Preview(showBackground = true)
 @Composable
 private fun DailyQuestionAnswerListScreenPreviewFalse() {
@@ -226,6 +219,9 @@ private fun DailyQuestionAnswerListScreenPreviewFalse() {
             modifier = Modifier,
             isListView = false,
             answers = emptyList(),
+            onDelete = {},
+            onEdit = {},
+            onItemClick = { _, _ -> },
         )
     }
 }
@@ -238,6 +234,9 @@ private fun DailyQuestionAnswerListScreenPreviewTrue() {
             modifier = Modifier,
             isListView = true,
             answers = emptyList(),
+            onDelete = {},
+            onEdit = {},
+            onItemClick = { _, _ -> },
         )
     }
 }

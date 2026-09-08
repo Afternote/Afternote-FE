@@ -7,12 +7,11 @@ import androidx.paging.cachedIn
 import androidx.paging.map
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.AfternoteType
-import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import com.afternote.feature.afternote.presentation.shared.component.ListItemUiModel
-import com.afternote.feature.afternote.presentation.shared.util.getIconResForService
+import com.afternote.feature.afternote.presentation.shared.component.toUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -79,12 +78,3 @@ class AfternoteHomeViewModel
             lastReportedFailureType = null
         }
     }
-
-private fun ListItem.toUiModel(): ListItemUiModel =
-    ListItemUiModel(
-        id = id,
-        serviceName = serviceName,
-        date = date,
-        iconResId = getIconResForService(serviceName, type),
-        type = type,
-    )

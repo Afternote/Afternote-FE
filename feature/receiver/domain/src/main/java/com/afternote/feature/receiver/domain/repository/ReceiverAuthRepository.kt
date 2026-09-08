@@ -16,6 +16,12 @@ import com.afternote.feature.receiver.domain.model.SenderMessageInfo
  * 인증 코드 저장은 `ReceiverRepository.saveMasterKey` 를 사용하며,
  * 저장된 코드는 `ReceiverAuthInterceptor` 가 `X-Auth-Code` 헤더로 자동 부착한다.
  * (둘 다 feature:afternote 쪽이라 이 모듈에서 KDoc 링크로 참조할 수 없다 — 의존 방향이 반대.)
+ *
+ * **실패 계약 — 메서드별 예외가 아니라 인터페이스 전체의 규약이다(#1053).** 서버가 응답하며 거절한
+ * 실패와 서버에 닿지 못한 실패는 전부 [com.afternote.feature.receiver.domain.error.ReceiverFailure] 로
+ * 온다. HTTP status·BE `ErrorCode` 번호·서버 문구는 Data 계층 밖으로 나오지 않으므로 소비처는 타입과
+ * 사유만 본다. 매핑·검증 같은 로컬 실패는 도메인 어휘가 없어 원본 타입 그대로 오고, 그 몫이 소비처의
+ * «루트가 아닌 Throwable» 폴백 갈래다.
  */
 interface ReceiverAuthRepository {
     /**

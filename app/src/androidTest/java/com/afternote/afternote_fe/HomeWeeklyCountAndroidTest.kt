@@ -231,6 +231,8 @@ private class RecordingHomeTabActions(
 
     override fun onMemoriesSectionClick() = Unit
 
+    override fun onMemoriesRecordDetailClick(recordId: Long) = Unit
+
     override fun onSettingClick() = Unit
 
     override fun onRetryLoad() = Unit

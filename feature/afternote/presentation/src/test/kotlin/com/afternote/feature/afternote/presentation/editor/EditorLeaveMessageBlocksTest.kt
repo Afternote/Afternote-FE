@@ -7,7 +7,6 @@ import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
-import com.afternote.feature.afternote.domain.model.author.playlist.MemorialDetail
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 import com.afternote.feature.afternote.presentation.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.editor.model.RegisterAfternotePayload
@@ -197,7 +196,8 @@ class EditorLeaveMessageBlocksTest {
                     when (type) {
                         AfternoteType.MEMORIAL -> {
                             DetailContent.Memorial(
-                                memorial = MemorialDetail(emptyList(), MemorialMedia(null, null, null)),
+                                songs = emptyList(),
+                                media = MemorialMedia(null, null, null),
                             )
                         }
 

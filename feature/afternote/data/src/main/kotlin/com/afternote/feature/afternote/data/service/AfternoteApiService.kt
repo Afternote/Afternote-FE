@@ -17,11 +17,16 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface AfternoteApiService {
+    /**
+     * [draftOnly]를 `false`로 보내면 발행 완료만, `true`로 보내면 임시저장만 조회한다 —
+     * 한 요청에 섞어 주는 모드가 없다(BE `AfternoteService.getAfternotes`).
+     */
     @GET("afternotes")
     suspend fun getAfternotes(
         @Query("category") category: String?,
         @Query("page") pageNumber: Int?,
         @Query("size") size: Int?,
+        @Query("draftOnly") draftOnly: Boolean = false,
     ): BaseResponse<AfternotePageDto>
 
     @GET("afternotes/{afternoteId}")

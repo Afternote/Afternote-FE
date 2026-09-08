@@ -7,7 +7,6 @@ import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
-import com.afternote.feature.afternote.domain.model.author.playlist.MemorialDetail
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 import com.afternote.feature.afternote.presentation.editor.memorial.Song
 import com.afternote.feature.afternote.presentation.editor.model.EditorContentPrefill
@@ -69,22 +68,19 @@ class AfternoteEditorFormPrefillTest {
                     leaveMessageBlocks = listOf(LeaveMessageBlock(title = "가족에게", body = "잘 지내")),
                     content =
                         DetailContent.Memorial(
-                            memorial =
-                                MemorialDetail(
-                                    songs =
-                                        listOf(
-                                            DetailSong(
-                                                title = "노래",
-                                                artist = "가수",
-                                                coverUrl = "cover",
-                                            ),
-                                        ),
-                                    media =
-                                        MemorialMedia(
-                                            photoUrl = "photo",
-                                            videoUrl = "video",
-                                            thumbnailUrl = "thumbnail",
-                                        ),
+                            songs =
+                                listOf(
+                                    DetailSong(
+                                        title = "노래",
+                                        artist = "가수",
+                                        coverUrl = "cover",
+                                    ),
+                                ),
+                            media =
+                                MemorialMedia(
+                                    photoUrl = "photo",
+                                    videoUrl = "video",
+                                    thumbnailUrl = "thumbnail",
                                 ),
                         ),
                 ),
