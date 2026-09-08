@@ -5,6 +5,7 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.editor.receiver.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteTypeForm
+import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialPhoto
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.editor.state.MemorialVideoAttachment
@@ -113,7 +114,9 @@ class EditorContentSignatureCompletenessTest {
         val before = editorContentSignature(EditorFormState(typeForm = AfternoteTypeForm.Memorial()), state)
         val after =
             editorContentSignature(
-                EditorFormState(typeForm = AfternoteTypeForm.Memorial(pickedPhotoUri = "content://photo")),
+                EditorFormState(
+                    typeForm = AfternoteTypeForm.Memorial(photo = EditableMemorialPhoto.empty().withSelection("content://photo")),
+                ),
                 state,
             )
         assertNotEquals(before, after)

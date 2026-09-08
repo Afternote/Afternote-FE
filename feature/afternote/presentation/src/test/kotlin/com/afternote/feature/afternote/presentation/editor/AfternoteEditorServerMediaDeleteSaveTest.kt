@@ -18,6 +18,7 @@ import com.afternote.feature.afternote.presentation.NoopAuthorErrorReporter
 import com.afternote.feature.afternote.presentation.afternoteAuthorUserReceiverRepository
 import com.afternote.feature.afternote.presentation.afternoteEditorSavedStateHandle
 import com.afternote.feature.afternote.presentation.editor.model.RegisterAfternotePayload
+import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialPhoto
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.editorFlowRoute
@@ -236,13 +237,12 @@ class AfternoteEditorServerMediaDeleteSaveTest {
     private fun EditorFormState.fullMemorialMediaForSave(): SaveAfternoteMemorialMedia =
         SaveAfternoteMemorialMedia(
             memorialVideo = memorialVideo ?: EditableMemorialVideo.empty(),
-            memorialPhotoUrl = memorialPhotoUrl,
-            pickedMemorialPhotoUri = pickedMemorialPhotoUri,
+            memorialPhoto = memorialPhoto ?: EditableMemorialPhoto.empty(),
             memorialAudioUrl = memorialAudioUrl,
         )
 
     private fun assertServerMediaAndSongs(form: EditorFormState) {
-        assertEquals("https://cdn.test/portrait.jpg", form.memorialPhotoUrl)
+        assertEquals("https://cdn.test/portrait.jpg", form.memorialPhoto?.toSnapshot()?.persisted)
         assertEquals("https://cdn.test/farewell.mp4", form.displayedMemorialVideo?.url)
         assertEquals("https://cdn.test/thumbnail.jpg", form.displayedMemorialVideo?.thumbnailUrl)
         assertEquals(listOf("배경음악"), form.memorialPlaylistSongs.map { it.title })
@@ -250,8 +250,8 @@ class AfternoteEditorServerMediaDeleteSaveTest {
     }
 
     private fun assertDeletedMediaAndSongs(form: EditorFormState) {
-        assertNull(form.pickedMemorialPhotoUri)
-        assertNull(form.memorialPhotoUrl)
+        assertNull(form.memorialPhoto?.toSnapshot()?.selection)
+        assertNull(form.memorialPhoto?.toSnapshot()?.persisted)
         assertNull(form.displayMemorialPhotoUri())
         assertNull(form.displayedMemorialVideo?.url)
         assertNull(form.displayedMemorialVideo?.thumbnailUrl)

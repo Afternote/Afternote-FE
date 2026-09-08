@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorState
+import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialPhoto
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
 
 // 에디터 조립부가 쓰는 순수 헬퍼들이다. Route 파일에는 조립만 남긴다 (#1514).
@@ -95,8 +96,7 @@ internal fun buildOnRegisterClick(
             memorialMedia =
                 SaveAfternoteMemorialMedia(
                     memorialVideo = form.memorialVideo ?: EditableMemorialVideo.empty(),
-                    memorialPhotoUrl = form.memorialPhotoUrl,
-                    pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
+                    memorialPhoto = form.memorialPhoto ?: EditableMemorialPhoto.empty(),
                     memorialAudioUrl = form.memorialAudioUrl,
                 ),
         )

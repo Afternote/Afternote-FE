@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.presentation.editor.memorial
 
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteTypeForm
+import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialPhoto
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.editor.state.MemorialVideoAttachment
@@ -24,8 +25,7 @@ class MemorialMediaRemovableTargetsTest {
         EditorFormState(
             typeForm =
                 AfternoteTypeForm.Memorial(
-                    pickedPhotoUri = pickedPhotoUri,
-                    photoUrl = photoUrl,
+                    photo = EditableMemorialPhoto.fromSnapshot(photoUrl, pickedPhotoUri),
                     video =
                         EditableMemorialVideo
                             .fromPersisted(MemorialVideoAttachment.ofOrNull(persistedVideoUrl))

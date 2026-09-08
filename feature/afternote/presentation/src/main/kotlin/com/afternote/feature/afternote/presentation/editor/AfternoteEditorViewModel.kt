@@ -25,6 +25,7 @@ import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditor
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorErrorEvent
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorUiState
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteTypeForm
+import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialPhoto
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.editor.state.withMemorialAudio
@@ -87,6 +88,7 @@ private data class ProcessingMethodSnap(
 /**
  * [SavedStateHandle]에 JSON으로 넣는 폼 스냅샷. 번들 전체 크기는 대략 500KB~1MB를 넘기지 않도록 설계해야 하며,
  * 그렇지 않으면 [android.os.TransactionTooLargeException]이 날 수 있다. 큰 Base64/data URL은 폼에 넣지 말고 URL·URI 문자열만 저장한다.
+ * 사진 값 객체는 기존 `pickedMemorialPhotoUri`·`memorialPhotoUrl` 두 키로 변환하므로 v4 JSON 호환성을 유지한다.
  */
 @Serializable
 private data class EditorFormSnapshot(
@@ -127,9 +129,8 @@ private data class EditorFormSnapshot(
 
             AfternoteType.MEMORIAL -> {
                 AfternoteTypeForm.Memorial(
-                    pickedPhotoUri = pickedMemorialPhotoUri,
+                    photo = EditableMemorialPhoto.fromSnapshot(memorialPhotoUrl, pickedMemorialPhotoUri),
                     video = memorialVideo ?: EditableMemorialVideo.empty(),
-                    photoUrl = memorialPhotoUrl,
                     audioUrl = memorialAudioUrl,
                     playlistSongs = memorialPlaylistSongs,
                 )
@@ -151,9 +152,9 @@ private data class EditorFormSnapshot(
                         ReceiverSnap(id = it.id, name = it.name, label = it.label)
                     },
                 processingMethods = form.processingMethods.map { ProcessingMethodSnap(it.localId, it.text) },
-                pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
+                pickedMemorialPhotoUri = form.memorialPhoto?.toSnapshot()?.selection,
                 memorialVideo = form.memorialVideo,
-                memorialPhotoUrl = form.memorialPhotoUrl,
+                memorialPhotoUrl = form.memorialPhoto?.toSnapshot()?.persisted,
                 memorialAudioUrl = form.memorialAudioUrl,
                 memorialPlaylistSongs = form.memorialPlaylistSongs,
             )
@@ -616,17 +617,6 @@ class AfternoteEditorViewModel
             return if (url.isLocalContentUri()) MediaInput.Local(url) else MediaInput.Remote(url)
         }
 
-        // 영정 사진: 새로 고른 로컬 픽 우선 → 없으면 기존 원격 → 둘 다 없으면 없음.
-        private fun photoMediaInput(
-            picked: String?,
-            existing: String?,
-        ): MediaInput =
-            when {
-                !picked.isNullOrBlank() -> MediaInput.Local(picked)
-                !existing.isNullOrBlank() -> MediaInput.Remote(existing)
-                else -> MediaInput.None
-            }
-
         private suspend fun buildSaveCommand(
             editingId: Long?,
             typeForSave: AfternoteType,
@@ -639,11 +629,7 @@ class AfternoteEditorViewModel
             val resolved =
                 resolveMemorialMediaForSave(
                     video = memorialMedia.memorialVideo.toMediaInput(),
-                    photo =
-                        photoMediaInput(
-                            picked = memorialMedia.pickedMemorialPhotoUri,
-                            existing = memorialMedia.memorialPhotoUrl,
-                        ),
+                    photo = memorialMedia.memorialPhoto.toMediaInput(),
                     audio = singleFieldMediaInput(memorialMedia.memorialAudioUrl),
                 ).getOrElse { return Result.failure(it) }
 
