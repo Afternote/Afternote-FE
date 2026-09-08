@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.home
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -36,6 +37,7 @@ internal fun FilteredErrorBody(
     selectedType: AfternoteType,
     onTypeSelected: (AfternoteType?) -> Unit,
     onRetry: () -> Unit,
+    filterRowScrollState: ScrollState,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -53,6 +55,7 @@ internal fun FilteredErrorBody(
             AfternoteTypeFilterRow(
                 onTabSelected = onTypeSelected,
                 selectedTab = selectedType,
+                scrollState = filterRowScrollState,
             )
             ErrorListBody(
                 onRetry = onRetry,
