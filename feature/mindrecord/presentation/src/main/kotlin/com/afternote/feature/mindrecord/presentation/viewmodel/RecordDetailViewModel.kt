@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
@@ -11,6 +12,8 @@ import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.mapper.toEmoji
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
+import com.afternote.feature.mindrecord.presentation.reporting.MindRecordFailureStage
+import com.afternote.feature.mindrecord.presentation.reporting.recordMindRecordFailure
 import com.afternote.feature.mindrecord.presentation.util.RecordContentBlock
 import com.afternote.feature.mindrecord.presentation.util.toRecordContentBlocks
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -38,6 +41,7 @@ class RecordDetailViewModel
         savedStateHandle: SavedStateHandle,
         private val diaryRepository: DiaryRepository,
         private val dailyQuestionRepository: DailyQuestionRepository,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val route = savedStateHandle.toRoute<MindRecordRoute.RecordDetailRoute>()
 
@@ -69,7 +73,7 @@ class RecordDetailViewModel
                                 blocks = blocks,
                                 mood = diary.todayMood?.toEmoji(),
                             )
-                    }.onFailure { failWithLoadError() }
+                    }.onFailure { failWithLoadError(it) }
             }
         }
 
@@ -97,11 +101,16 @@ class RecordDetailViewModel
                                 // 데일리질문에는 오늘의 기분이 없다 — 시안에도 그 줄이 없다.
                                 mood = null,
                             )
-                    }.onFailure { failWithLoadError() }
+                    }.onFailure { failWithLoadError(it) }
             }
         }
 
-        private fun failWithLoadError() {
+        /**
+         * 「내가 쓴 기록이 안 열린다」 는 자리다. 읽기지만 사용자 데이터에 닿지 못한 실패라
+         * 콘솔에 남긴다 — 재현 조건(그 계정의 그 기록)이 우리 손에 없다 (#964).
+         */
+        private fun failWithLoadError(throwable: Throwable) {
+            errorReporter.recordMindRecordFailure(MindRecordFailureStage.RECORD_DETAIL_LOAD, throwable)
             _uiState.value =
                 RecordDetailUiState.Error(UiText.Resource(R.string.mindrecord_detail_load_failed))
         }

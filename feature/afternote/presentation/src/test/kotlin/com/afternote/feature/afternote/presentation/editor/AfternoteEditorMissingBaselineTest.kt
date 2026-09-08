@@ -14,6 +14,7 @@ import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMedi
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
+import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -140,6 +141,7 @@ class AfternoteEditorMissingBaselineTest {
 
     private fun viewModel(afternoteRepository: FakeAfternoteRepository): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
+            route = AfternoteRoute.EditorFlowRoute(itemId = EDIT_ID, initialType = AfternoteType.GALLERY_AND_FILES),
             savedStateHandle =
                 SavedStateHandle(
                     mapOf(

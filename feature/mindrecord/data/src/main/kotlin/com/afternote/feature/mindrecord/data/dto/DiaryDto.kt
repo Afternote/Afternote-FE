@@ -30,6 +30,12 @@ data class DiaryCreateRequestDto(
     // 생성 API 에서 `null` 과 빈 목록은 모두 "수신자 없음" 으로 정규화되고, 작성 UI 는 항상
     // 목록을 갖고 있다. 빈 목록을 그대로 보내면 되므로 nullable 로 낮추지 않는다 (#789).
     @SerialName("receiverIds") val receiverIds: List<Long>,
+    /**
+     * 기록일 `yyyy-MM-dd`. 미전송이면 서버가 오늘(Asia/Seoul)로 채우고, **미래 날짜는
+     * 400(code 2101)** 이다 (`Afternote-BE#244`, PR #262). 작성 화면이 항상 값을 갖고
+     * 있어 nullable 로 낮추지 않는다 (#1008).
+     */
+    @SerialName("date") val date: String,
 )
 
 @Serializable
@@ -40,6 +46,8 @@ data class DiaryUpdateRequestDto(
     @SerialName("todayMood") val todayMood: TodayMoodDto,
     /** null 이면 기존 수신자 유지, 빈 목록이면 전체 해제 (서버 규칙). */
     @SerialName("receiverIds") val receiverIds: List<Long>? = null,
+    /** 기록일 `yyyy-MM-dd`. **null 이면 기존 기록일 유지** (서버 규칙). 미래 날짜는 400(code 2101). */
+    @SerialName("date") val date: String? = null,
 )
 
 /**

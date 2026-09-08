@@ -59,6 +59,7 @@ import com.afternote.feature.afternote.presentation.editor.SaveAfternotePayloadB
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.editor.state.rememberAfternoteEditorState
+import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import kotlinx.coroutines.launch
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -361,7 +362,9 @@ private fun AuthorEditorForUpdate(
             setType = viewModel::setType,
             setService = viewModel::setService,
             setMemorialPhoto = viewModel::setMemorialPhoto,
+            removeMemorialPhoto = viewModel::removeMemorialPhoto,
             setMemorialVideo = viewModel::setMemorialVideo,
+            removeMemorialVideo = viewModel::removeMemorialVideo,
             addReceiverIfAbsent = viewModel::addReceiverIfAbsent,
             applyPrefill = viewModel::applyPrefill,
             setMemorialThumbnail = viewModel::setMemorialThumbnail,
@@ -492,7 +495,7 @@ private fun detailViewModel(
     itemId: Long,
 ): AfternoteDetailViewModel =
     AfternoteDetailViewModel(
-        savedStateHandle = SavedStateHandle(mapOf("itemId" to itemId)),
+        route = AfternoteRoute.DetailRoute(itemId = itemId),
         afternoteRepository = repository,
         userRepository = afternoteAuthorUserRepository(),
         userProfileRepository = afternoteAuthorUserProfileRepository(),
@@ -504,6 +507,11 @@ private fun editorViewModel(
     itemId: Long,
 ): AfternoteEditorViewModel =
     AfternoteEditorViewModel(
+        route =
+            AfternoteRoute.EditorFlowRoute(
+                itemId = itemId,
+                initialType = AfternoteType.SOCIAL_NETWORK,
+            ),
         savedStateHandle =
             afternoteEditorSavedStateHandle(
                 initialType = AfternoteType.SOCIAL_NETWORK,

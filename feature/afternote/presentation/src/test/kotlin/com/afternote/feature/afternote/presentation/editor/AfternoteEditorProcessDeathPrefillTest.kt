@@ -12,6 +12,7 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnai
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.presentation.editor.model.EditorContentPrefill
+import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -103,6 +104,7 @@ class AfternoteEditorProcessDeathPrefillTest {
 
     private fun viewModel(afternoteRepository: FakeAfternoteRepository): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
+            route = AfternoteRoute.EditorFlowRoute(itemId = EDIT_ID, initialType = AfternoteType.GALLERY_AND_FILES),
             savedStateHandle =
                 SavedStateHandle(
                     mapOf(

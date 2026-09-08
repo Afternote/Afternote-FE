@@ -31,7 +31,7 @@ import kotlin.collections.mapNotNull
  * | `playlist`(PLAYLIST 본문) | 보여줄 본문 자체가 없다 | 실패로 옮긴다 ([toDetailContent]) |
  * | `credentials`(SOCIAL·BUSINESS) | 제목·남기실 말씀·수신자·처리방법은 그대로 성립한다 | 빈 값으로 낮춘다 ([toPublishedCredentials]) |
  *
- * `release` 가 BE `main` 을 따라잡으면 아래쪽도 실패로 좁힐 수 있다 — 그 판정은 #1762 에 남겼다.
+ * `release` 가 BE `main` 을 따라잡으면 아래쪽도 실패로 좁힐 수 있다 — 그 계약·배포 대조는 #1959 에 분리했다.
  *
  * 서버 `category` 를 해석하지 못하면 상세를 만들지 않는다.
  *

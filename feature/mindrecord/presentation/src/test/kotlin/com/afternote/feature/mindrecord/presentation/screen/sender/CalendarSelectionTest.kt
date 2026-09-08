@@ -88,6 +88,8 @@ class CalendarSelectionTest {
         }
 
         composeRule.onNodeWithText("2026년 8월").assertIsDisplayed()
-        composeRule.onNodeWithText("0개의 답변 완료").assertIsDisplayed()
+        // 일기 탭이므로 「기록」이다 — 종전에는 두 탭이 문구를 공유해 여기서도 「답변」이었고,
+        // 이 단언이 그 오문을 기대값으로 굳히고 있었다 (#1712).
+        composeRule.onNodeWithText("0개의 기록 완료").assertIsDisplayed()
     }
 }

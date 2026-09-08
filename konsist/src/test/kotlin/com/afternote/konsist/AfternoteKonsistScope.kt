@@ -75,6 +75,9 @@ internal object AfternoteKonsistScope {
     /** [productionFiles] 와 같은 기준을 임의의 스코프에 적용한다. 재발 가드가 새로 읽은 스코프에 쓴다. */
     fun productionFilesOf(target: KoScope): List<KoFileDeclaration> = target.files.filterNot { it.sourceSetName.isTestSourceSet() }
 
+    /** 테스트 소스셋(test·androidTest·testFixtures·screenshotTest…)의 파일 — [productionFiles] 의 여집합. */
+    val testFiles: List<KoFileDeclaration> get() = scope.files.filter { it.sourceSetName.isTestSourceSet() }
+
     /** 캐시를 타지 않고 지금의 [scanRoots] 를 다시 읽는다. 재발 가드([ScanScopeKonsistTest])가 쓴다. */
     fun scanFresh(): KoScope = Konsist.scopeFromExternalDirectories(scanRoots().map { it.path })
 

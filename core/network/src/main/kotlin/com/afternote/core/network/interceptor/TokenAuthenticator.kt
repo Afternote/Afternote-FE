@@ -78,7 +78,7 @@ private fun ErrorReporter.recordAuthContractViolation(authStage: String) {
 }
 
 /** 재발급의 기술 원문을 UI 에 노출하지 않고 현재 요청만 실패시키는 예외. */
-internal class TokenReissueFailureException(
+private class TokenReissueFailureException(
     cause: Throwable,
 ) : IOException(null, cause)
 
