@@ -184,3 +184,45 @@ test("the rerequest job and the guard judge by the same latest decision", () => 
     // 봇·fork 는 토큰이 read-only 라 요청을 걸 수 없다.
     assert.match(requestAll, /\[ "\$HEAD_REPO" != "\$REPO" \]/);
 });
+
+function spaceSeparatedEnv(workflow, name) {
+    const match = new RegExp(`^\\s*${name}: ([^\\n#]+)$`, "m").exec(workflow);
+    assert.ok(match, `${name} 환경변수를 찾지 못했다`);
+    return match[1].trim().split(/\s+/).filter(Boolean).map((login) => login.toLowerCase());
+}
+
+test("the gate exemption is judged before any debt is counted", () => {
+    // 면제를 빚 계산 뒤에 두면, 면제받은 사람의 PR 때문에 조회가 실패했을 때 가드가 그를
+    // 대신해 죽는다. 봇·fork·권한 판정과 같은 자리, 열린 PR 을 훑기 전에 둔다 (#1910).
+    const exemptAt = guard.indexOf("리뷰 게이트 면제 작성자");
+    const sweepAt = guard.indexOf("if ! open_prs=$(gh api");
+    assert.ok(exemptAt > 0, "면제 경로가 없다");
+    assert.ok(sweepAt > exemptAt, "면제가 빚 계산 뒤에 있다");
+    assert.match(guard, /리뷰 게이트 면제 작성자\(\$AUTHOR\)[^\n]*exit 0/);
+});
+
+test("exempt logins are matched case-insensitively", () => {
+    // GitHub 로그인은 대소문자를 가리지 않는다. 그대로 비교하면 웹훅이 Koongmai 를 내리는
+    // 순간 면제가 조용히 풀리고, 그 사람의 PR 이 닫힌다.
+    assert.match(guard, /author_lc=\$\(printf '%s' "\$AUTHOR" \| tr '\[:upper:\]' '\[:lower:\]'\)/);
+    assert.match(guard, /exempt_lc=\$\(printf '%s' "\$REVIEW_GATE_EXEMPT_AUTHORS" \| tr '\[:upper:\]' '\[:lower:\]'\)/);
+});
+
+test("a change request from an exempt reviewer is not charged to the rest of the team", () => {
+    // 면제된 사람은 리뷰할 의무가 없다. 그가 자발적으로 낸 변경요청 뒤 침묵하면 그 침묵의
+    // 대가를 나머지 팀원이 "새 PR 을 못 연다" 로 치른다. 그래도 그 PR 이 그냥 머지되지는
+    // 않는다. 승인 1건은 required-approval 룰셋이 계속 요구한다.
+    assert.match(guard, /case " \$exempt_lc " in\n\s*\*" \$blocked_by "\*\)/);
+    assert.match(guard, /면제 리뷰어 @\$blocked_by/);
+});
+
+test("nobody is exempt from the gate while still on the automatic review roster", () => {
+    // 리뷰 의무가 없는 사람에게 요청만 계속 걸면, 그 요청은 아무도 응답하지 않는 알림으로
+    // 쌓이고 두 워크플로가 서로 다른 팀 명단을 갖게 된다.
+    const exempt = spaceSeparatedEnv(guard, "REVIEW_GATE_EXEMPT_AUTHORS");
+    const team = spaceSeparatedEnv(requestAll, "TEAM");
+    for (const login of exempt) {
+        assert.ok(!team.includes(login), `${login} 이 면제이면서 자동 요청 대상이다`);
+    }
+    assert.ok(team.length > 0, "자동 요청 대상이 비었다");
+});

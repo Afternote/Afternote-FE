@@ -39,6 +39,10 @@ private fun ReceiverFailure.toListErrorOrNull(): ReceiverAfternoteListError? =
 
         is ReceiverFailure.NetworkUnavailable -> ReceiverAfternoteListError.NetworkUnavailable
 
+        // ExportNotSupported 는 내려받기 경로의 기능 상태라 이 목록 화면에는 도달하지 않는다.
+        // 그래도 `null` 로 명시해 둔다 — 갈래가 늘 때 컴파일러가 이 소비처를 다시 잡게 하려면
+        // `else` 로 덮어서는 안 된다 (#589).
+        is ReceiverFailure.ExportNotSupported,
         is ReceiverFailure.UnexpectedServerFailure,
         is ReceiverFailure.UserRejection,
         -> null

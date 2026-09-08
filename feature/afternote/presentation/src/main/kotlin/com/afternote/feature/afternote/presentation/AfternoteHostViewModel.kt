@@ -13,7 +13,7 @@ import javax.inject.Inject
  * [com.afternote.core.ui.Route.Afternote] 서브그래프 스코프의 상태 정본.
  *
  * 에디터 flow 상태는 flow-scoped
- * [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel]이 담당한다.
+ * [com.afternote.feature.afternote.presentation.editor.AfternoteEditorViewModel]이 담당한다.
  * 본 ViewModel은 Afternote 그래프 전체에서 공유하는 사용자 상태만 보유한다.
  */
 @HiltViewModel

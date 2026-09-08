@@ -28,6 +28,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.popup.AfternoteActionMenu
+import com.afternote.core.ui.popup.editDeleteActionMenuItems
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
@@ -37,7 +39,6 @@ import com.afternote.feature.afternote.presentation.shared.detail.AfternoteDetai
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.DetailInfoRow
 import com.afternote.feature.afternote.presentation.shared.detail.DetailSection
-import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodsSection
 import com.afternote.feature.afternote.presentation.shared.model.AfternoteServiceDisplay
@@ -85,11 +86,14 @@ fun AccountDetailScreen(
                                     modifier = Modifier.size(16.dp),
                                 )
                             }
-                            EditDropdownMenu(
+                            AfternoteActionMenu(
                                 expanded = state.showDropdownMenu,
                                 onDismissRequest = state::hideDropdownMenu,
-                                onDeleteClick = { state.showDeleteDialog() },
-                                onEditClick = onEditClick,
+                                items =
+                                    editDeleteActionMenuItems(
+                                        onEditClick = onEditClick,
+                                        onDeleteClick = { state.showDeleteDialog() },
+                                    ),
                             )
                         }
                     }
