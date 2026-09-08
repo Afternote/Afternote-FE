@@ -294,6 +294,10 @@ class SettingImplementedCoverageAndroidTest {
 
         composeRule.onNodeWithText("1:1 문의").performClick()
         waitForText("새 문의 접수하기")
+        composeRule.onNodeWithText("새 문의 접수하기").performClick()
+        waitForText("제목을 입력해 주세요.")
+        composeRule.onNodeWithContentDescription("뒤로가기").performClick()
+        waitForText("새 문의 접수하기")
         composeRule.onNodeWithContentDescription("뒤로가기").performClick()
         waitForText("전화 문의")
 
