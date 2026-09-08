@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.presentation.draft
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -57,30 +56,28 @@ internal fun AfternoteDraftListScreen(
             Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-        Box(modifier = bodyModifier) {
-            when {
-                isInitialLoading -> {
-                    LoadingBody(modifier = Modifier.fillMaxSize())
-                }
+        when {
+            isInitialLoading -> {
+                LoadingBody(modifier = bodyModifier)
+            }
 
-                refreshState is LoadState.Error -> {
-                    ErrorListBody(onRetry = items::retry, modifier = Modifier.fillMaxSize())
-                }
+            refreshState is LoadState.Error -> {
+                ErrorListBody(onRetry = items::retry, modifier = bodyModifier)
+            }
 
-                items.itemCount == 0 -> {
-                    EmptyListBody(
-                        description = stringResource(R.string.afternote_draft_list_empty_body),
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                }
+            items.itemCount == 0 -> {
+                EmptyListBody(
+                    description = stringResource(R.string.afternote_draft_list_empty_body),
+                    modifier = bodyModifier,
+                )
+            }
 
-                else -> {
-                    AfternoteList(
-                        items = items,
-                        onItemClick = onDraftClick,
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                }
+            else -> {
+                AfternoteList(
+                    items = items,
+                    onItemClick = onDraftClick,
+                    modifier = bodyModifier,
+                )
             }
         }
     }
