@@ -58,9 +58,9 @@ class AfternoteEditorThumbnailRetryTest {
         runTest(dispatcher) {
             val viewModel = viewModel(uploads = ThumbnailUploads(failures = 1))
             observeUiState(viewModel)
-            viewModel.setMemorialVideo(LOCAL_VIDEO)
+            viewModel.onIntent(AfternoteEditorIntent.SetMemorialVideo(LOCAL_VIDEO))
 
-            viewModel.uploadMemorialThumbnail(JPEG_BYTES)
+            viewModel.onIntent(AfternoteEditorIntent.UploadMemorialThumbnail(JPEG_BYTES))
             advanceUntilIdle()
 
             assertEquals(
@@ -75,17 +75,21 @@ class AfternoteEditorThumbnailRetryTest {
             val uploads = ThumbnailUploads(failures = 1)
             val viewModel = viewModel(uploads)
             observeUiState(viewModel)
-            viewModel.setMemorialVideo(LOCAL_VIDEO)
-            viewModel.uploadMemorialThumbnail(JPEG_BYTES)
+            viewModel.onIntent(AfternoteEditorIntent.SetMemorialVideo(LOCAL_VIDEO))
+            viewModel.onIntent(AfternoteEditorIntent.UploadMemorialThumbnail(JPEG_BYTES))
             advanceUntilIdle()
 
-            viewModel.retryMemorialThumbnail()
+            viewModel.onIntent(AfternoteEditorIntent.RetryMemorialThumbnail)
             advanceUntilIdle()
 
             assertEquals("두 번째 시도까지 두 번 올린다", 2, uploads.attempts)
             assertEquals(UPLOADED_URL, viewModel.uiState.value.pendingThumbnailUrl)
             // 고른 영상은 그대로다 — 되돌리려고 영상을 다시 고르게 하지 않는다.
-            assertEquals(LOCAL_VIDEO, viewModel.currentForm().displayedMemorialVideo?.url)
+            assertEquals(
+                LOCAL_VIDEO,
+                viewModel.uiState.value.form.displayedMemorialVideo
+                    ?.url,
+            )
         }
 
     @Test
@@ -93,9 +97,9 @@ class AfternoteEditorThumbnailRetryTest {
         runTest(dispatcher) {
             val viewModel = viewModel()
             observeUiState(viewModel)
-            viewModel.setMemorialVideo(LOCAL_VIDEO)
+            viewModel.onIntent(AfternoteEditorIntent.SetMemorialVideo(LOCAL_VIDEO))
 
-            viewModel.onMemorialThumbnailExtractionFailed(IllegalStateException("no frame"))
+            viewModel.onIntent(AfternoteEditorIntent.MemorialThumbnailExtractionFailed(IllegalStateException("no frame")))
             advanceUntilIdle()
 
             assertEquals(
@@ -110,11 +114,11 @@ class AfternoteEditorThumbnailRetryTest {
             val uploads = ThumbnailUploads()
             val viewModel = viewModel(uploads)
             observeUiState(viewModel)
-            viewModel.setMemorialVideo(LOCAL_VIDEO)
-            viewModel.onMemorialThumbnailExtractionFailed(IllegalStateException("no frame"))
+            viewModel.onIntent(AfternoteEditorIntent.SetMemorialVideo(LOCAL_VIDEO))
+            viewModel.onIntent(AfternoteEditorIntent.MemorialThumbnailExtractionFailed(IllegalStateException("no frame")))
             val before = viewModel.uiState.value.memorialThumbnailRetryToken
 
-            viewModel.retryMemorialThumbnail()
+            viewModel.onIntent(AfternoteEditorIntent.RetryMemorialThumbnail)
             advanceUntilIdle()
 
             // 토큰이 바뀌면 화면이 같은 영상에서 프레임 추출을 다시 발화한다.
@@ -128,12 +132,12 @@ class AfternoteEditorThumbnailRetryTest {
             val uploads = ThumbnailUploads(failures = 1)
             val viewModel = viewModel(uploads)
             observeUiState(viewModel)
-            viewModel.setMemorialVideo(LOCAL_VIDEO)
-            viewModel.uploadMemorialThumbnail(JPEG_BYTES)
+            viewModel.onIntent(AfternoteEditorIntent.SetMemorialVideo(LOCAL_VIDEO))
+            viewModel.onIntent(AfternoteEditorIntent.UploadMemorialThumbnail(JPEG_BYTES))
             advanceUntilIdle()
 
-            viewModel.setMemorialVideo("content://videos/another")
-            viewModel.retryMemorialThumbnail()
+            viewModel.onIntent(AfternoteEditorIntent.SetMemorialVideo("content://videos/another"))
+            viewModel.onIntent(AfternoteEditorIntent.RetryMemorialThumbnail)
             advanceUntilIdle()
 
             // 남은 바이트로 다시 올리면 다른 영상의 그림이 붙는다.

@@ -61,8 +61,12 @@ class AfternoteEditorReceiverSelectionRecoveryTest {
             backgroundScope.launch { viewModel.uiState.collect {} }
             runCurrent()
 
-            val resolved = viewModel.resolveSelectedReceiver(RECEIVER_ID)
+            viewModel.onIntent(AfternoteEditorIntent.ReceiversSelected(listOf(RECEIVER_ID)))
+            viewModel.onIntent(AfternoteEditorIntent.ApplyPendingReceiverSelection)
             runCurrent()
+            val resolved =
+                viewModel.uiState.value.form.afternoteEditReceivers
+                    .singleOrNull()
 
             assertNull("해석하지 못한 선택은 폼에 넣을 값이 없다", resolved)
             assertEquals(
@@ -79,8 +83,12 @@ class AfternoteEditorReceiverSelectionRecoveryTest {
             backgroundScope.launch { viewModel.uiState.collect {} }
             runCurrent()
 
-            val resolved = viewModel.resolveSelectedReceiver(RECEIVER_ID)
+            viewModel.onIntent(AfternoteEditorIntent.ReceiversSelected(listOf(RECEIVER_ID)))
+            viewModel.onIntent(AfternoteEditorIntent.ApplyPendingReceiverSelection)
             runCurrent()
+            val resolved =
+                viewModel.uiState.value.form.afternoteEditReceivers
+                    .singleOrNull()
 
             assertEquals("김수신", resolved?.name)
             assertEquals("딸", resolved?.label)
@@ -93,11 +101,15 @@ class AfternoteEditorReceiverSelectionRecoveryTest {
             val repository = repositoryWith { listOf(RECEIVER) }
             val viewModel = viewModel(repository)
             backgroundScope.launch { viewModel.uiState.collect {} }
-            viewModel.refreshAuthorReceivers()
+            viewModel.onIntent(AfternoteEditorIntent.RefreshAuthorReceivers)
             runCurrent()
 
-            val resolved = viewModel.resolveSelectedReceiver(RECEIVER_ID)
+            viewModel.onIntent(AfternoteEditorIntent.ReceiversSelected(listOf(RECEIVER_ID)))
+            viewModel.onIntent(AfternoteEditorIntent.ApplyPendingReceiverSelection)
             runCurrent()
+            val resolved =
+                viewModel.uiState.value.form.afternoteEditReceivers
+                    .singleOrNull()
 
             assertEquals(RECEIVER_ID, resolved?.id)
             assertEquals("캐시 적중이면 추가 조회가 없어야 한다", 1, repository.getReceiversCalls)

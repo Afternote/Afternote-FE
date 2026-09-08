@@ -90,10 +90,12 @@ class AfternoteEditorPrefillFailureTest {
             backgroundScope.launch { viewModel.uiState.collect {} }
             runCurrent()
 
-            viewModel.saveAfternote(
-                payload = SAVE_PAYLOAD,
-                selectedReceiverIds = listOf(7L),
-                memorialMedia = SaveAfternoteMemorialMedia(),
+            viewModel.onIntent(
+                AfternoteEditorIntent.Save(
+                    payload = SAVE_PAYLOAD,
+                    selectedReceiverIds = listOf(7L),
+                    memorialMedia = SaveAfternoteMemorialMedia(),
+                ),
             )
             runCurrent()
 
@@ -117,7 +119,7 @@ class AfternoteEditorPrefillFailureTest {
             assertTrue(viewModel.uiState.value.isPrefillFailed)
 
             shouldFail = false
-            viewModel.retryPrefill()
+            viewModel.onIntent(AfternoteEditorIntent.RetryPrefill)
             runCurrent()
 
             val state = viewModel.uiState.value
@@ -142,17 +144,19 @@ class AfternoteEditorPrefillFailureTest {
             runCurrent()
 
             shouldFail = false
-            viewModel.retryPrefill()
+            viewModel.onIntent(AfternoteEditorIntent.RetryPrefill)
             runCurrent()
             // 화면이 pendingPrefill 을 폼·TextFieldState 에 실은 뒤 통보하는 단계. 이걸 거쳐야
             // isPrefillLoading 이 내려간다 — 저장 가드가 «읽는 중» 도 막으므로 (#705) 여기서
             // 생략하면 폼이 아직 비어 있는 상태의 저장이 되어 정상 경로가 아니다.
-            viewModel.onPrefillConsumed()
+            viewModel.onIntent(AfternoteEditorIntent.ConsumePrefill)
             runCurrent()
-            viewModel.saveAfternote(
-                payload = SAVE_PAYLOAD,
-                selectedReceiverIds = listOf(7L),
-                memorialMedia = SaveAfternoteMemorialMedia(),
+            viewModel.onIntent(
+                AfternoteEditorIntent.Save(
+                    payload = SAVE_PAYLOAD,
+                    selectedReceiverIds = listOf(7L),
+                    memorialMedia = SaveAfternoteMemorialMedia(),
+                ),
             )
             runCurrent()
 
@@ -194,10 +198,12 @@ class AfternoteEditorPrefillFailureTest {
             assertTrue("전제: 아직 prefill 을 읽는 중이어야 한다", viewModel.uiState.value.isPrefillLoading)
             assertFalse("이 경로는 실패가 아니다", viewModel.uiState.value.isPrefillFailed)
 
-            viewModel.saveAfternote(
-                payload = SAVE_PAYLOAD,
-                selectedReceiverIds = listOf(7L),
-                memorialMedia = SaveAfternoteMemorialMedia(),
+            viewModel.onIntent(
+                AfternoteEditorIntent.Save(
+                    payload = SAVE_PAYLOAD,
+                    selectedReceiverIds = listOf(7L),
+                    memorialMedia = SaveAfternoteMemorialMedia(),
+                ),
             )
             runCurrent()
 
@@ -260,7 +266,7 @@ class AfternoteEditorPrefillFailureTest {
             runCurrent()
             assertFalse("전제: 신규 작성은 prefill 을 돌리지 않는다", viewModel.uiState.value.isPrefillLoading)
 
-            viewModel.retryPrefill()
+            viewModel.onIntent(AfternoteEditorIntent.RetryPrefill)
             runCurrent()
 
             assertFalse("재시도가 신규 작성에서 skeleton 을 세우면 안 된다", viewModel.uiState.value.isPrefillLoading)

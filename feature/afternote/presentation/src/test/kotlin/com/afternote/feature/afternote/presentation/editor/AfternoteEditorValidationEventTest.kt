@@ -59,7 +59,7 @@ class AfternoteEditorValidationEventTest {
             val first = requireNotNull(viewModel.uiState.value.errorEvent)
 
             // 소비(null)와 다음 동일 오류를 UI 수집기가 각각 관찰하지 못하고 합쳐도, 새 occurrence로 구분돼야 한다.
-            viewModel.onErrorConsumed(first)
+            viewModel.onIntent(AfternoteEditorIntent.ConsumeError(first))
             viewModel.saveInvalidSocialAfternote()
             runCurrent()
             val second = requireNotNull(viewModel.uiState.value.errorEvent)
@@ -77,27 +77,29 @@ class AfternoteEditorValidationEventTest {
             assertEquals(second.error, third.error)
             assertNotEquals("소비 전 같은 오류도 저장 시도마다 별도 UI 이벤트여야 한다", second, third)
 
-            viewModel.onErrorConsumed(second)
+            viewModel.onIntent(AfternoteEditorIntent.ConsumeError(second))
             runCurrent()
             assertEquals("이전 Snackbar의 종료가 최신 이벤트를 지우면 안 된다", third, viewModel.uiState.value.errorEvent)
 
-            viewModel.onErrorConsumed(third)
+            viewModel.onIntent(AfternoteEditorIntent.ConsumeError(third))
             runCurrent()
             assertNull(viewModel.uiState.value.errorEvent)
         }
 
     private fun AfternoteEditorViewModel.saveInvalidSocialAfternote() {
-        saveAfternote(
-            payload =
-                RegisterAfternotePayload(
-                    serviceName = "",
-                    date = "2026.08.27",
-                    accountId = "account",
-                    password = "password",
-                    processingMethods = listOf("계정 삭제"),
-                ),
-            selectedReceiverIds = listOf(1L),
-            memorialMedia = SaveAfternoteMemorialMedia(),
+        onIntent(
+            AfternoteEditorIntent.Save(
+                payload =
+                    RegisterAfternotePayload(
+                        serviceName = "",
+                        date = "2026.08.27",
+                        accountId = "account",
+                        password = "password",
+                        processingMethods = listOf("계정 삭제"),
+                    ),
+                selectedReceiverIds = listOf(1L),
+                memorialMedia = SaveAfternoteMemorialMedia(),
+            ),
         )
     }
 

@@ -58,19 +58,6 @@ internal fun AfternoteEditorError.offersMemorialThumbnailRetry(): Boolean =
             AfternoteEditorError.Upload.Target.SAVE_MEDIA -> false
         }
 
-/**
- * 수신자 선택 화면이 남긴 id 전체를 폼에 반영한다 (#1426).
- *
- * 결과는 흐름 공유 ViewModel 이 1회 소비로 나른다 (#1698) — Nav2 의 «이전 엔트리 SavedStateHandle»
- * 자리다. 소비할 값이 없으면 선택 화면을 거치지 않은 복귀라 아무것도 하지 않는다. 값이 있으면 그게
- * 곧 확정된 수신자 전체이므로 반영은 [AfternoteEditorViewModel.applySelectedReceivers] 에 맡긴다
- * («추가» 가 아니라 «교체» 인 이유는 그 KDoc 참고).
- */
-internal suspend fun tryApplyReceiverSelection(viewModel: AfternoteEditorViewModel) {
-    val selectedIds = viewModel.consumeSelectedReceiverIds() ?: return
-    viewModel.applySelectedReceivers(selectedIds)
-}
-
 internal fun buildOnRegisterClick(
     editViewModel: AfternoteEditorViewModel,
     state: AfternoteEditorState,
@@ -89,16 +76,18 @@ internal fun buildOnRegisterClick(
                     state.passwordState.text
                         .toString(),
             )
-        editViewModel.saveAfternote(
-            payload = payload,
-            selectedReceiverIds = form.afternoteEditReceivers.map { it.id },
-            memorialMedia =
-                SaveAfternoteMemorialMedia(
-                    memorialVideo = form.memorialVideo ?: EditableMemorialVideo.empty(),
-                    memorialPhotoUrl = form.memorialPhotoUrl,
-                    pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
-                    memorialAudioUrl = form.memorialAudioUrl,
-                ),
+        editViewModel.onIntent(
+            AfternoteEditorIntent.Save(
+                payload = payload,
+                selectedReceiverIds = form.afternoteEditReceivers.map { it.id },
+                memorialMedia =
+                    SaveAfternoteMemorialMedia(
+                        memorialVideo = form.memorialVideo ?: EditableMemorialVideo.empty(),
+                        memorialPhotoUrl = form.memorialPhotoUrl,
+                        pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
+                        memorialAudioUrl = form.memorialAudioUrl,
+                    ),
+            ),
         )
     }
 
@@ -122,7 +111,7 @@ internal fun shouldDeferEditorBaselineCapture(
  * 폼이 기본 빈 값이라, 느린 상세 GET 을 앞질러 저장하면 수정(PATCH)이 그 빈 값으로 나가 기존
  * 기록을 덮는다. `isPrefillLoading` 은 편집 진입에서만 true 라 신규 작성은 영향받지 않는다.
  *
- * ViewModel 의 [AfternoteEditorViewModel.saveAfternote] 진입 가드와 **같은 규칙을 두 겹으로** 둔다 —
+ * ViewModel 의 [AfternoteEditorIntent.Save] 진입 가드와 **같은 규칙을 두 겹으로** 둔다 —
  * 화면이 막는 것은 사용자 경험이고, 저장 진입점에서 막는 것은 계약이다.
  */
 internal fun isEditorSubmitEnabled(

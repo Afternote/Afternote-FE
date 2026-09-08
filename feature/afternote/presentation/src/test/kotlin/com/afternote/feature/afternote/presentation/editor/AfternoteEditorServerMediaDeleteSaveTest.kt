@@ -66,17 +66,19 @@ class AfternoteEditorServerMediaDeleteSaveTest {
             val first = viewModel(repository)
             collectState(first)
             applyLoadedPrefill(first)
-            assertServerMediaAndSongs(first.currentForm())
+            assertServerMediaAndSongs(first.uiState.value.form)
 
-            first.removeMemorialPhoto()
-            first.removeMemorialVideo()
-            val deletedForm = first.currentForm()
+            first.onIntent(AfternoteEditorIntent.RemoveMemorialPhoto)
+            first.onIntent(AfternoteEditorIntent.RemoveMemorialVideo)
+            val deletedForm = first.uiState.value.form
 
             assertDeletedMediaAndSongs(deletedForm)
-            first.saveAfternote(
-                payload = validMemorialPayload(),
-                selectedReceiverIds = emptyList(),
-                memorialMedia = deletedForm.fullMemorialMediaForSave(),
+            first.onIntent(
+                AfternoteEditorIntent.Save(
+                    payload = validMemorialPayload(),
+                    selectedReceiverIds = emptyList(),
+                    memorialMedia = deletedForm.fullMemorialMediaForSave(),
+                ),
             )
             advanceUntilIdle()
 
@@ -98,7 +100,7 @@ class AfternoteEditorServerMediaDeleteSaveTest {
             collectState(reentered)
             applyLoadedPrefill(reentered)
 
-            assertDeletedMediaAndSongs(reentered.currentForm())
+            assertDeletedMediaAndSongs(reentered.uiState.value.form)
         }
 
     @Test
@@ -118,15 +120,15 @@ class AfternoteEditorServerMediaDeleteSaveTest {
             val viewModel = viewModel(repository)
             collectState(viewModel)
             applyLoadedPrefill(viewModel)
-            viewModel.removeMemorialPhoto()
-            viewModel.removeMemorialVideo()
+            viewModel.onIntent(AfternoteEditorIntent.RemoveMemorialPhoto)
+            viewModel.onIntent(AfternoteEditorIntent.RemoveMemorialVideo)
 
             viewModel.saveCurrentMemorialForm()
             advanceUntilIdle()
 
             assertNotNull(viewModel.uiState.value.error)
             assertNull(viewModel.uiState.value.savedId)
-            assertDeletedMediaAndSongs(viewModel.currentForm())
+            assertDeletedMediaAndSongs(viewModel.uiState.value.form)
 
             viewModel.saveCurrentMemorialForm()
             advanceUntilIdle()
@@ -150,7 +152,7 @@ class AfternoteEditorServerMediaDeleteSaveTest {
             collectState(first)
             applyLoadedPrefill(first)
 
-            first.removeMemorialAudio()
+            first.onIntent(AfternoteEditorIntent.RemoveMemorialAudio)
             first.saveCurrentMemorialForm()
             advanceUntilIdle()
 
@@ -173,7 +175,7 @@ class AfternoteEditorServerMediaDeleteSaveTest {
             val reentered = viewModel(repository)
             collectState(reentered)
             applyLoadedPrefill(reentered)
-            assertNull(reentered.currentForm().memorialAudioUrl)
+            assertNull(reentered.uiState.value.form.memorialAudioUrl)
         }
 
     @Test
@@ -184,7 +186,7 @@ class AfternoteEditorServerMediaDeleteSaveTest {
             val first = viewModel(repository, savedState)
             collectState(first)
             applyLoadedPrefill(first)
-            first.removeMemorialAudio()
+            first.onIntent(AfternoteEditorIntent.RemoveMemorialAudio)
 
             val restoredState = SavedStateHandle(savedState.keys().associateWith { savedState.get<Any?>(it) })
             val restored = viewModel(repository, restoredState)
@@ -193,7 +195,7 @@ class AfternoteEditorServerMediaDeleteSaveTest {
 
             assertNull(restored.uiState.value.pendingPrefill)
             assertFalse(restored.uiState.value.isPrefillLoading)
-            assertNull(restored.currentForm().memorialAudioUrl)
+            assertNull(restored.uiState.value.form.memorialAudioUrl)
             restored.saveCurrentMemorialForm()
             advanceUntilIdle()
 
@@ -218,17 +220,19 @@ class AfternoteEditorServerMediaDeleteSaveTest {
     private fun TestScope.applyLoadedPrefill(viewModel: AfternoteEditorViewModel) {
         advanceUntilIdle()
         val prefill = requireNotNull(viewModel.uiState.value.pendingPrefill)
-        viewModel.applyPrefill(prefill)
-        viewModel.onPrefillConsumed()
+        viewModel.onIntent(AfternoteEditorIntent.ApplyPrefill(prefill))
+        viewModel.onIntent(AfternoteEditorIntent.ConsumePrefill)
         advanceUntilIdle()
     }
 
     private fun AfternoteEditorViewModel.saveCurrentMemorialForm() {
-        val form = currentForm()
-        saveAfternote(
-            payload = validMemorialPayload(),
-            selectedReceiverIds = emptyList(),
-            memorialMedia = form.fullMemorialMediaForSave(),
+        val form = uiState.value.form
+        onIntent(
+            AfternoteEditorIntent.Save(
+                payload = validMemorialPayload(),
+                selectedReceiverIds = emptyList(),
+                memorialMedia = form.fullMemorialMediaForSave(),
+            ),
         )
     }
 
