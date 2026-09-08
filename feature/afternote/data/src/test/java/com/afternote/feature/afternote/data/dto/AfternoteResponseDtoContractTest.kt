@@ -4,6 +4,7 @@ import com.afternote.feature.afternote.data.mapper.toRequest
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
+import com.afternote.feature.afternote.domain.model.author.MemorialPatchPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -88,6 +89,7 @@ class AfternoteResponseDtoContractTest {
         val request =
             CreateMemorialPayload(
                 title = "추억 노트",
+                // 생성은 「이 노트가 가져야 할 상태」를 통째로 말하므로 전체 스냅샷 타입 그대로다.
                 memorial = MemorialWritePayload(memorialPhotoUrl = null, songs = emptyList(), memorialVideo = null),
             ).toRequest()
 
@@ -115,7 +117,8 @@ class AfternoteResponseDtoContractTest {
             AfternoteUpdatePayload(
                 type = AfternoteType.MEMORIAL,
                 title = "추억 노트",
-                memorial = MemorialWritePayload(memorialPhotoUrl = null, songs = emptyList(), memorialVideo = null),
+                // 곡을 전부 뺀 것만 말한다 — 미디어 슬롯은 만지지 않았으므로 키가 나가면 안 된다 (#1617).
+                memorial = MemorialPatchPayload(songs = emptyList()),
             ).toRequest()
 
         val encoded = json.encodeToJsonElement(AfternoteUpdateRequestDto.serializer(), request).jsonObject
@@ -134,10 +137,8 @@ class AfternoteResponseDtoContractTest {
                 type = AfternoteType.MEMORIAL,
                 title = "추억 노트",
                 memorial =
-                    MemorialWritePayload(
-                        memorialPhotoUrl = null,
+                    MemorialPatchPayload(
                         songs = listOf(MemorialSongPayload(title = "곡", artist = "가수", coverUrl = null)),
-                        memorialVideo = null,
                     ),
             ).toRequest()
 

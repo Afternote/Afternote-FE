@@ -48,7 +48,7 @@ class AfternoteDraftDetailMapperTest {
                 category = "PLAYLIST",
                 title = "t",
                 updatedAt = UPDATED_AT,
-                memorial =
+                playlist =
                     AfternotePlaylistDto(
                         memorialPhotoUrl = "photo",
                         songs = listOf(AfternoteSongDto(title = "곡", artist = "가수", coverUrl = "cover")),

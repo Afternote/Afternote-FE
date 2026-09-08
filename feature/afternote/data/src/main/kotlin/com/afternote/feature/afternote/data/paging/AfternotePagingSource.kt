@@ -31,7 +31,7 @@ internal class AfternotePagingSource(
                         category = category,
                         pageNumber = pageNumber,
                         size = params.loadSize,
-                        draftOnly = draftOnly.takeIf { it },
+                        draftOnly = draftOnly,
                     ).requireData()
 
             LoadResult.Page(
