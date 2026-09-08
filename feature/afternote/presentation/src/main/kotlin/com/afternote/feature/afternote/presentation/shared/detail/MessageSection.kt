@@ -32,15 +32,15 @@ fun MessageSection(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         DetailSectionHeader(
-            iconResId = R.drawable.feature_afternote_ic_leave_message_header,
-            label = stringResource(R.string.feature_afternote_detail_section_message),
+            iconResId = R.drawable.afternote_ic_leave_message_header,
+            label = stringResource(R.string.afternote_detail_section_message),
         )
 
         if (blocks.isEmpty()) {
             DetailCard {
                 MessageBlockRow {
                     Text(
-                        text = stringResource(R.string.feature_afternote_detail_no_message),
+                        text = stringResource(R.string.afternote_detail_no_message),
                         style = AfternoteDesign.typography.bodySmallR,
                         color = AfternoteDesign.colors.gray5,
                     )
@@ -76,7 +76,7 @@ private fun MessageBlockRow(content: @Composable () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(15.dp),
     ) {
         Icon(
-            painter = painterResource(R.drawable.feature_afternote_ic_leave_message_card),
+            painter = painterResource(R.drawable.afternote_ic_leave_message_card),
             contentDescription = null,
             tint = AfternoteDesign.colors.gray4,
             modifier = Modifier.size(15.dp),

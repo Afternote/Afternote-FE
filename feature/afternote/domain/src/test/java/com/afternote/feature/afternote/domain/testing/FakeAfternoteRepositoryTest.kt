@@ -144,7 +144,11 @@ class FakeAfternoteRepositoryTest {
         val repository = FakeAfternoteRepository.strict()
         val accountPayload = CreateAccountPayload(title = "계정", processingMethods = emptyList())
         val galleryPayload = CreateGalleryPayload(title = "사진", processingMethods = emptyList())
-        val memorialPayload = CreateMemorialPayload(title = "추억", memorial = MemorialWritePayload())
+        val memorialPayload =
+            CreateMemorialPayload(
+                title = "추억",
+                memorial = MemorialWritePayload(memorialPhotoUrl = null, songs = emptyList(), memorialVideo = null),
+            )
         val updatePayload = AfternoteUpdatePayload(type = AfternoteType.ESTATE, title = "유산")
 
         assertUnexpected { repository.getPagedAfternotes(null) }

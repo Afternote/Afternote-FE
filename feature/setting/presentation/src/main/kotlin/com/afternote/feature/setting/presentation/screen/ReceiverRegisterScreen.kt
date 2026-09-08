@@ -36,17 +36,25 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.PhoneNumberInputTransformation
+import com.afternote.core.ui.PhoneNumberVisualTransformation
+import com.afternote.core.ui.UiText
+import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
+import com.afternote.feature.setting.presentation.viewmodel.ReceiverPhoneValidation
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterEvent
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterViewModel
+import com.afternote.feature.setting.presentation.viewmodel.isValidReceiverEmail
+import com.afternote.feature.setting.presentation.viewmodel.validateReceiverPhone
 import com.afternote.core.ui.R as CoreR
 
 private const val CUSTOM_RELATION_OPTION = "직접 추가하기"
@@ -73,6 +81,7 @@ fun ReceiverRegisterScreen(
     ReceiverRegisterContent(
         title = "수신자 등록",
         actionText = "등록",
+        isPhoneRequired = true,
         isLoading = uiState.isLoading,
         errorMessage = uiState.errorMessage,
         onBackClick = onBackClick,
@@ -85,8 +94,9 @@ fun ReceiverRegisterScreen(
 internal fun ReceiverRegisterContent(
     title: String,
     actionText: String,
+    isPhoneRequired: Boolean,
     isLoading: Boolean,
-    errorMessage: String?,
+    errorMessage: UiText?,
     onBackClick: () -> Unit,
     onRegister: (name: String, relation: String, phone: String, email: String, message: String) -> Unit,
     modifier: Modifier = Modifier,
@@ -98,7 +108,7 @@ internal fun ReceiverRegisterContent(
 ) {
     val isPresetRelation = initialRelation in relationOptions
     val nameState = rememberTextFieldState(initialText = initialName)
-    val phoneState = rememberTextFieldState(initialText = initialPhone)
+    val phoneState = rememberTextFieldState(initialText = initialPhone.filter(Char::isDigit))
     val emailState = rememberTextFieldState(initialText = initialEmail)
     val messageState = rememberTextFieldState(initialText = initialMessage)
     val customRelationState = rememberTextFieldState(initialText = initialRelation.takeUnless { isPresetRelation }.orEmpty())
@@ -119,7 +129,15 @@ internal fun ReceiverRegisterContent(
             CUSTOM_RELATION_OPTION -> customRelationState.text.toString().trim()
             else -> selectedRelation.orEmpty()
         }
-    val isFormValid = nameState.text.isNotBlank() && relation.isNotBlank()
+    val phone = phoneState.text.toString()
+    val phoneValidation = phone.validateReceiverPhone(isRequired = isPhoneRequired)
+    val email = emailState.text.toString()
+    val isEmailValid = email.isValidReceiverEmail()
+    val isFormValid =
+        nameState.text.isNotBlank() &&
+            relation.isNotBlank() &&
+            isEmailValid &&
+            phoneValidation == ReceiverPhoneValidation.VALID
 
     Scaffold(
         modifier = modifier,
@@ -134,8 +152,8 @@ internal fun ReceiverRegisterContent(
                             onRegister(
                                 nameState.text.toString(),
                                 relation,
-                                phoneState.text.toString(),
-                                emailState.text.toString(),
+                                phone,
+                                email,
                                 messageState.text.toString(),
                             )
                         },
@@ -198,7 +216,26 @@ internal fun ReceiverRegisterContent(
                 AfternoteTextField(
                     state = phoneState,
                     placeholder = "연락처를 지정해주세요",
+                    keyboardType = KeyboardType.Phone,
+                    inputTransformation = PhoneNumberInputTransformation,
+                    outputTransformation = PhoneNumberVisualTransformation,
                 )
+                if (phoneValidation != ReceiverPhoneValidation.VALID) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text =
+                            stringResource(
+                                if (phoneValidation == ReceiverPhoneValidation.REQUIRED) {
+                                    R.string.receiver_phone_required
+                                } else {
+                                    R.string.receiver_phone_invalid
+                                },
+                            ),
+                        modifier = Modifier.fillMaxWidth(),
+                        style = AfternoteDesign.typography.captionLargeR,
+                        color = AfternoteDesign.colors.error,
+                    )
+                }
             }
             item {
                 Spacer(modifier = Modifier.height(24.dp))
@@ -279,6 +316,22 @@ internal fun ReceiverRegisterContent(
                     state = emailState,
                     placeholder = "afternote@email.com",
                 )
+                if (!isEmailValid) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text =
+                            stringResource(
+                                if (email.isBlank()) {
+                                    R.string.receiver_email_required
+                                } else {
+                                    R.string.receiver_email_invalid
+                                },
+                            ),
+                        modifier = Modifier.fillMaxWidth(),
+                        style = AfternoteDesign.typography.captionLargeR,
+                        color = AfternoteDesign.colors.error,
+                    )
+                }
             }
             item {
                 Spacer(modifier = Modifier.height(24.dp))
@@ -295,7 +348,7 @@ internal fun ReceiverRegisterContent(
                 item {
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = errorMessage,
+                        text = errorMessage.asString(),
                         modifier = Modifier.fillMaxWidth(),
                         style = AfternoteDesign.typography.captionLargeR,
                         color = AfternoteDesign.colors.error,
@@ -313,6 +366,7 @@ private fun ReceiverRegisterContentPreview() {
         ReceiverRegisterContent(
             title = "수신자 등록",
             actionText = "등록",
+            isPhoneRequired = true,
             isLoading = false,
             errorMessage = null,
             onBackClick = {},

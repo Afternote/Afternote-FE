@@ -21,6 +21,13 @@ if (localPropertiesFile.exists()) {
 // BuildConfig 가 같은 값을 쓴다 — 주입 지점이 둘이어도 키는 여기서 한 번만 읽는다.
 val kakaoKey = socialLoginKey("KAKAO_NATIVE_APP_KEY")
 
+// 강제 업데이트 관문(#1539)이 「이 설치본을 스토어가 갱신할 수 있는가」를 판정하는 근거.
+// 릴리스 워크플로가 versionCode 를 주입한 산출물에서만 true 다 — 기본값을 그대로 단
+// 로컬·Firebase 빌드는 서버 latestVersionCode 와 같은 축에 있지 않고 서명도 Play 것과 달라,
+// 스토어로 보내도 그 위에 업데이트가 얹히지 않는다(docs/play-release.md).
+val afternoteVersionCode = resolveAfternoteVersionCode(System.getenv(AFTERNOTE_VERSION_CODE_ENV))
+val storeDistributedBuild = afternoteVersionCode != resolveAfternoteVersionCode(null)
+
 android {
     namespace = "com.afternote.afternote_fe"
 
@@ -30,7 +37,7 @@ android {
 
     defaultConfig {
         applicationId = "com.afternote.afternote_fe"
-        versionCode = resolveAfternoteVersionCode(System.getenv(AFTERNOTE_VERSION_CODE_ENV))
+        versionCode = afternoteVersionCode
         versionName = "1.0"
 
         testInstrumentationRunner = "com.afternote.afternote_fe.test.AfternoteTestRunner"
@@ -38,11 +45,14 @@ android {
 
         manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = kakaoKey
         buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoKey\"")
+        buildConfigField("boolean", "STORE_DISTRIBUTED_BUILD", storeDistributedBuild.toString())
     }
 
     testOptions {
         animationsDisabled = true
         execution = "ANDROIDX_TEST_ORCHESTRATOR"
+        // Robolectric 이 병합된 매니페스트·리소스를 읽어야 NavHost 를 실제 컴포지션으로 띄울 수 있다 (#1601).
+        unitTests.isIncludeAndroidResources = true
         managedDevices {
             localDevices {
                 create("pixel2Api26") {
@@ -271,6 +281,12 @@ dependencies {
     testImplementation(libs.coroutines.test)
     testImplementation(testFixtures(projects.core.domain))
 
+    // Nav2 백스택 회귀 기준 (#1601) — 에뮬레이터 없이 NavHost 를 실제 컴포지션으로 띄워
+    // 탭 상태 복원·인증 스택 경계·flow-scoped ViewModel 수명을 잰다. 대상(AppState·
+    // AppNavigationActions)이 app 모듈에만 있어 피처 모듈 Robolectric 설정을 재사용할 수 없다.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+
     baselineProfile(project(":baselineprofile"))
 
     // Managed-device androidTest — 실제 서버·OAuth 대신 Hilt fake를 주입하고 Compose semantics를 검증한다.
@@ -293,6 +309,7 @@ dependencies {
     androidTestImplementation(testFixtures(projects.feature.receiver.domain))
     androidTestImplementation(projects.feature.timeletter.domain)
     androidTestImplementation(testFixtures(projects.feature.timeletter.domain))
+    androidTestImplementation(testFixtures(projects.feature.timeletter.data))
     kspAndroidTest(libs.hilt.compiler)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     androidTestUtil(libs.androidx.test.orchestrator)

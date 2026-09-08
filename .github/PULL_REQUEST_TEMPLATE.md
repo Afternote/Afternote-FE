@@ -1,6 +1,6 @@
 ## 📌𝘐𝘴𝘴𝘶𝘦𝘴
-<!-- PR 제목 끝에 대표 Issue 하나를 `(#N)` 형식으로 적고 아래에도 같은 번호를 연결하세요. 관련된 기존 Issue를 재사용하세요. 관련 Issue가 없을 때만 새로 만들고, 여러 PR이 같은 Issue를 공유해도 됩니다. 이 Issue의 작업을 최종 완료하는 PR에서만 Closes/Fixes/Resolves로 바꾸세요. 대표 Issue에는 PR 작성자가 담당자로 지정돼 있어야 합니다. -->
-- Refs #
+<!-- PR 제목 끝에 대표 Issue 하나를 `(#N)` 형식으로 적고 아래에 같은 번호를 Closes 로 연결하세요. 대표 Issue는 이 PR이 끝내는 Issue입니다 — Refs 로는 걸 수 없습니다. Issue의 일부만 하는 PR이면 그 몫을 새 Issue(sub-issue)로 분리해 그것을 대표 Issue로 삼으세요. 대표 Issue에 열린 blocked_by가 있으면 merge-order-guard가 막습니다 — 선행 PR 위에 스택하거나 관계를 정리하세요. 함께 건드리지만 닫지 않는 Issue는 `Refs #M` 으로 덧붙이세요. 대표 Issue에는 PR 작성자가 담당자로 지정돼 있어야 합니다. -->
+- Closes #
 
 ## 📎𝘞𝘰𝘳𝘬 𝘋𝘦𝘴𝘤𝘳𝘪𝘱𝘵𝘪𝘰𝘯
 - 

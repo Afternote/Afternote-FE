@@ -3,7 +3,6 @@ package com.afternote.feature.home.presentation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import com.android.tools.screenshot.PreviewTest
 
 /**
@@ -34,11 +33,6 @@ internal fun homeTabScreenSuccessScreenshot() {
                 HomeTabUiState.Success(
                     userName = "일혁",
                     isRecipientDesignated = false,
-                    categoryCounts =
-                        mapOf(
-                            MindRecordCategory.DAILY_QUESTION to 10,
-                            MindRecordCategory.DIARY to 8,
-                        ),
                     todayQuestionContent = "오늘 내가 배운\n가장 작은 교훈은 무엇인가요?",
                 ),
             todayDateText = "2026.04.10",

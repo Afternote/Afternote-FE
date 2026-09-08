@@ -1,10 +1,20 @@
 package com.afternote.feature.timeletter.presentation.screen.sender
 
+import android.Manifest
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.media.AudioAttributes
+import android.media.MediaPlayer
 import android.net.Uri
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
@@ -33,6 +43,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -55,12 +66,17 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import coil3.compose.AsyncImage
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.calendar.BottomSheetCalendar
@@ -69,6 +85,7 @@ import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
+import com.afternote.feature.timeletter.domain.model.RecordedAudio
 import com.afternote.feature.timeletter.presentation.R
 import com.afternote.feature.timeletter.presentation.component.MediaBottomSheetContent
 import com.afternote.feature.timeletter.presentation.component.RecipientCard
@@ -80,9 +97,22 @@ import com.afternote.feature.timeletter.presentation.component.TimeWheelPicker
 import com.afternote.feature.timeletter.presentation.viewmodel.EditorBlock
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteError
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteUiState
+import com.afternote.feature.timeletter.presentation.viewmodel.VoiceRecordingState
 import java.time.LocalDate
 import java.time.LocalTime
 import com.afternote.core.ui.R as CoreUiR
+
+private enum class MicrophonePermissionError {
+    Denied,
+    PermanentlyDenied,
+}
+
+private tailrec fun Context.findActivity(): Activity? =
+    when (this) {
+        is Activity -> this
+        is ContextWrapper -> baseContext.findActivity()
+        else -> null
+    }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -110,14 +140,26 @@ fun TimeLetterWriteScreen(
     onAlignCenterClick: () -> Unit = {},
     onAlignLeftClick: () -> Unit = {},
     onAlignRightClick: () -> Unit = {},
+    onOpenVoiceRecorder: () -> Unit = {},
+    onStartVoiceRecording: () -> Unit = {},
+    onStopVoiceRecording: () -> Unit = {},
+    onRegisterVoiceRecording: () -> Unit = {},
+    onRetryVoiceRecording: () -> Unit = {},
+    onDiscardVoiceRecording: () -> Unit = {},
     onFreePlanLimitConfirm: () -> Unit = {},
     onFreePlanLimitDismiss: () -> Unit = {},
 ) {
+    val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val sheetState = rememberModalBottomSheetState()
     var showMediaSheet by remember { mutableStateOf(false) }
     var showLinkDialog by remember { mutableStateOf(false) }
     var linkUrlInput by remember { mutableStateOf("") }
+    var microphonePermissionErrorType by remember { mutableStateOf<MicrophonePermissionError?>(null) }
+    val microphonePermissionError = stringResource(R.string.timeletter_voice_recording_permission_error)
+    val microphonePermissionSettings = stringResource(R.string.timeletter_voice_recording_permission_settings)
+    val settingsActionLabel = stringResource(R.string.timeletter_voice_recording_permission_settings_action)
+    val errorMessage = uiState.error?.message()
 
     val textBlockStates =
         remember(uiState.editingTimeLetterId) { androidx.compose.runtime.mutableStateMapOf<Long, TextFieldState>() }
@@ -137,16 +179,71 @@ fun TimeLetterWriteScreen(
         rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
             uri?.let { onAddAudioBlock(it) }
         }
+    val recordAudioPermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) {
+                onStartVoiceRecording()
+            } else {
+                microphonePermissionErrorType =
+                    if (
+                        context.findActivity()?.let { activity ->
+                            ActivityCompat.shouldShowRequestPermissionRationale(
+                                activity,
+                                Manifest.permission.RECORD_AUDIO,
+                            )
+                        } == false
+                    ) {
+                        MicrophonePermissionError.PermanentlyDenied
+                    } else {
+                        MicrophonePermissionError.Denied
+                    }
+            }
+        }
     val fileLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
             uri?.let { onAddFileBlock(it) }
         }
 
-    val errorMessage = uiState.error?.message()
     LaunchedEffect(uiState.error) {
-        val message = errorMessage ?: return@LaunchedEffect
-        snackbarHostState.showSnackbar(message)
+        val msg = errorMessage ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(msg)
         onErrorShown()
+    }
+
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        if (
+            uiState.voiceRecordingState is VoiceRecordingState.Starting ||
+            uiState.voiceRecordingState is VoiceRecordingState.Recording
+        ) {
+            onDiscardVoiceRecording()
+        }
+    }
+
+    LaunchedEffect(microphonePermissionErrorType) {
+        val errorType = microphonePermissionErrorType ?: return@LaunchedEffect
+        val result =
+            snackbarHostState.showSnackbar(
+                message =
+                    when (errorType) {
+                        MicrophonePermissionError.Denied -> microphonePermissionError
+                        MicrophonePermissionError.PermanentlyDenied -> microphonePermissionSettings
+                    },
+                actionLabel =
+                    if (errorType == MicrophonePermissionError.PermanentlyDenied) {
+                        settingsActionLabel
+                    } else {
+                        null
+                    },
+            )
+        if (result == SnackbarResult.ActionPerformed) {
+            context.startActivity(
+                Intent(
+                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.fromParts("package", context.packageName, null),
+                ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+        }
+        microphonePermissionErrorType = null
     }
 
     val currentOnTitleChanged by rememberUpdatedState(onTitleChanged)
@@ -264,7 +361,7 @@ fun TimeLetterWriteScreen(
                 },
                 onVoiceClick = {
                     showMediaSheet = false
-                    audioLauncher.launch("audio/*")
+                    onOpenVoiceRecorder()
                 },
                 onFileClick = {
                     showMediaSheet = false
@@ -277,6 +374,30 @@ fun TimeLetterWriteScreen(
                 },
             )
         }
+    }
+
+    if (uiState.showVoiceRecorder) {
+        VoiceRecorderBottomSheet(
+            state = uiState.voiceRecordingState,
+            onDismiss = onDiscardVoiceRecording,
+            onStart = {
+                if (
+                    ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+                    PackageManager.PERMISSION_GRANTED
+                ) {
+                    onStartVoiceRecording()
+                } else {
+                    recordAudioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                }
+            },
+            onPickAudioFile = {
+                onDiscardVoiceRecording()
+                audioLauncher.launch("audio/*")
+            },
+            onStop = onStopVoiceRecording,
+            onRegister = onRegisterVoiceRecording,
+            onRetry = onRetryVoiceRecording,
+        )
     }
 
     if (showLinkDialog) {
@@ -475,14 +596,15 @@ internal fun collectTextBlockContents(
 
 @Composable
 private fun TimeLetterWriteError.message(): String =
-    stringResource(
-        when (this) {
-            TimeLetterWriteError.SEND_DATE_REQUIRED -> R.string.timeletter_write_send_date_required
-            TimeLetterWriteError.LOAD_FAILED -> R.string.timeletter_write_load_failed
-            TimeLetterWriteError.RECIPIENT_REQUIRED -> R.string.timeletter_write_recipient_required
-            TimeLetterWriteError.SAVE_FAILED -> R.string.timeletter_write_save_failed
-        },
-    )
+    when (this) {
+        TimeLetterWriteError.SendDateRequired -> stringResource(R.string.timeletter_write_send_date_required)
+        TimeLetterWriteError.LoadFailed -> stringResource(R.string.timeletter_write_load_failed)
+        TimeLetterWriteError.RecipientRequired -> stringResource(R.string.timeletter_write_recipient_required)
+        TimeLetterWriteError.SaveFailed -> stringResource(R.string.timeletter_write_save_failed)
+        TimeLetterWriteError.ServerRejection -> stringResource(R.string.timeletter_write_rejected)
+        TimeLetterWriteError.VoiceRecordingStartFailed -> stringResource(R.string.timeletter_voice_recording_start_error)
+        TimeLetterWriteError.VoiceRecordingStopFailed -> stringResource(R.string.timeletter_voice_recording_stop_error)
+    }
 
 @Composable
 private fun TextBlockItem(
@@ -567,6 +689,204 @@ private fun ImageBlockItem(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun VoiceRecorderBottomSheet(
+    state: VoiceRecordingState,
+    onDismiss: () -> Unit,
+    onStart: () -> Unit,
+    onPickAudioFile: () -> Unit,
+    onStop: () -> Unit,
+    onRegister: () -> Unit,
+    onRetry: () -> Unit,
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+    ) {
+        Text(
+            text = stringResource(R.string.timeletter_voice_recording_title),
+            style = AfternoteDesign.typography.h3,
+            color = AfternoteDesign.colors.gray9,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+
+        when (state) {
+            VoiceRecordingState.Idle -> {
+                Text(
+                    text = stringResource(R.string.timeletter_voice_recording_instruction),
+                    style = AfternoteDesign.typography.bodyBase,
+                    color = AfternoteDesign.colors.gray7,
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                AfternoteButton(
+                    text = stringResource(R.string.timeletter_voice_recording_start),
+                    onClick = onStart,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp),
+                )
+                TextButton(
+                    onClick = onPickAudioFile,
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                ) {
+                    Text(stringResource(R.string.timeletter_voice_recording_pick_file))
+                }
+            }
+
+            VoiceRecordingState.Starting, VoiceRecordingState.Stopping -> {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            }
+
+            is VoiceRecordingState.Recording -> {
+                Text(
+                    text = formatRecordingDuration(state.elapsedMillis),
+                    style = AfternoteDesign.typography.h2,
+                    color = AfternoteDesign.colors.gray9,
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                AfternoteButton(
+                    text = stringResource(R.string.timeletter_voice_recording_stop),
+                    onClick = onStop,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp),
+                )
+            }
+
+            is VoiceRecordingState.Recorded -> {
+                RecordedVoiceControls(
+                    state = state,
+                    onRegister = onRegister,
+                    onRetry = onRetry,
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+    }
+}
+
+@Composable
+private fun ColumnScope.RecordedVoiceControls(
+    state: VoiceRecordingState.Recorded,
+    onRegister: () -> Unit,
+    onRetry: () -> Unit,
+) {
+    val context = LocalContext.current
+    var isPlaying by remember(state.audio.uriString) { mutableStateOf(false) }
+    var isPlayerReady by remember(state.audio.uriString) { mutableStateOf(false) }
+    var playbackFailed by remember(state.audio.uriString) { mutableStateOf(false) }
+    val player = remember(state.audio.uriString) { MediaPlayer() }
+
+    DisposableEffect(player, state.audio.uriString) {
+        player.setAudioAttributes(
+            AudioAttributes
+                .Builder()
+                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .build(),
+        )
+        player.setOnPreparedListener {
+            isPlayerReady = true
+            playbackFailed = false
+        }
+        player.setOnCompletionListener { isPlaying = false }
+        player.setOnErrorListener { _, _, _ ->
+            isPlaying = false
+            isPlayerReady = false
+            playbackFailed = true
+            true
+        }
+        runCatching {
+            player.setDataSource(context, Uri.parse(state.audio.uriString))
+            player.prepareAsync()
+        }.onFailure {
+            playbackFailed = true
+        }
+
+        onDispose { player.release() }
+    }
+
+    Text(
+        text =
+            stringResource(
+                R.string.timeletter_voice_recording_duration,
+                formatRecordingDuration(state.audio.durationMillis),
+            ),
+        style = AfternoteDesign.typography.bodyBase,
+        color = AfternoteDesign.colors.gray7,
+        modifier = Modifier.fillMaxWidth(),
+        textAlign = TextAlign.Center,
+    )
+    Spacer(modifier = Modifier.height(16.dp))
+    TextButton(
+        onClick = {
+            runCatching {
+                if (player.isPlaying) {
+                    player.pause()
+                    isPlaying = false
+                } else {
+                    player.start()
+                    isPlaying = true
+                }
+            }.onFailure {
+                isPlaying = false
+                playbackFailed = true
+            }
+        },
+        enabled = isPlayerReady,
+        modifier = Modifier.align(Alignment.CenterHorizontally),
+    ) {
+        Text(
+            stringResource(
+                if (isPlaying) {
+                    R.string.timeletter_voice_recording_pause
+                } else {
+                    R.string.timeletter_voice_recording_play
+                },
+            ),
+        )
+    }
+    if (playbackFailed) {
+        Text(
+            text = stringResource(R.string.timeletter_voice_recording_playback_error),
+            style = AfternoteDesign.typography.bodyBase,
+            color = AfternoteDesign.colors.gray7,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+        )
+    }
+    Spacer(modifier = Modifier.height(16.dp))
+    TextButton(
+        onClick = onRetry,
+        modifier = Modifier.align(Alignment.CenterHorizontally),
+    ) {
+        Text(stringResource(R.string.timeletter_voice_recording_retry))
+    }
+    AfternoteButton(
+        text = stringResource(R.string.timeletter_voice_recording_register),
+        onClick = onRegister,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp),
+    )
+}
+
+private fun formatRecordingDuration(durationMillis: Long): String {
+    val totalSeconds = durationMillis / 1_000L
+    val minutes = totalSeconds / 60L
+    val seconds = totalSeconds % 60L
+    return "%02d:%02d".format(minutes, seconds)
+}
+
 @Composable
 private fun MediaBlockChip(
     iconRes: Int,
@@ -617,5 +937,62 @@ private fun MediaBlockChip(
 private fun TimeLetterWriteScreenPreview() {
     AfternoteTheme {
         TimeLetterWriteScreen()
+    }
+}
+
+@Preview(name = "Voice recorder - idle", showBackground = true)
+@Composable
+private fun VoiceRecorderBottomSheetIdlePreview() {
+    AfternoteTheme {
+        VoiceRecorderBottomSheet(
+            state = VoiceRecordingState.Idle,
+            onDismiss = {},
+            onStart = {},
+            onPickAudioFile = {},
+            onStop = {},
+            onRegister = {},
+            onRetry = {},
+        )
+    }
+}
+
+@Preview(name = "Voice recorder - recording", showBackground = true)
+@Composable
+private fun VoiceRecorderBottomSheetRecordingPreview() {
+    AfternoteTheme {
+        VoiceRecorderBottomSheet(
+            state = VoiceRecordingState.Recording(elapsedMillis = 65_000L),
+            onDismiss = {},
+            onStart = {},
+            onPickAudioFile = {},
+            onStop = {},
+            onRegister = {},
+            onRetry = {},
+        )
+    }
+}
+
+@Preview(name = "Voice recorder - recorded", showBackground = true)
+@Composable
+private fun VoiceRecorderBottomSheetRecordedPreview() {
+    AfternoteTheme {
+        VoiceRecorderBottomSheet(
+            state =
+                VoiceRecordingState.Recorded(
+                    audio =
+                        RecordedAudio(
+                            uriString = "content://preview/voice.m4a",
+                            fileName = "voice.m4a",
+                            mimeType = "audio/mp4",
+                            durationMillis = 65_000L,
+                        ),
+                ),
+            onDismiss = {},
+            onStart = {},
+            onPickAudioFile = {},
+            onStop = {},
+            onRegister = {},
+            onRetry = {},
+        )
     }
 }

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
 
 import {
@@ -301,4 +302,61 @@ test("scopes the closed-issue lookup to the tracking label but lists open issues
         listings.some((call) => call.path.includes("state=open") && !call.path.includes("labels=")),
         "라벨 도입 전에 만들어진 열린 이슈도 계속 찾아야 한다",
     );
+});
+
+function kgpAudit({ firstPatchedStable = null, stableFixVersion = null } = {}) {
+    return audit({
+        vulnerabilities: [
+            {
+                coordinate: "org.jetbrains.kotlin:kotlin-gradle-plugin",
+                version: "2.4.10",
+                aliases: ["kotlin-gradlePlugin"],
+                latestStable: stableFixVersion ?? "2.4.10",
+                stableFixVersion,
+                vulnerabilities: [
+                    { id: "GHSA-r937-wjx7-w2jp", firstPatched: "2.4.20-Beta1", firstPatchedStable },
+                ],
+            },
+        ],
+    });
+}
+
+test("keeps the fingerprint stable while the only patched releases are prereleases", () => {
+    // 이 필드를 도입한 것만으로 fingerprint 가 흔들리면, 정식판이 없어 «대응 보류» 로 닫아 둔
+    // 이슈가 아무 상황 변화 없이 다시 열린다 (#1191 이 세운 보류 존중이 무너진다).
+    // 정식 패치판이 없을 때의 해시는 이 필드가 없던 시절과 같아야 한다.
+    const [finding] = selectActionableFindings(kgpAudit());
+    const legacy = createHash("sha256")
+        .update(
+            JSON.stringify({
+                key: "security:org.jetbrains.kotlin:kotlin-gradle-plugin",
+                versions: ["2.4.10"],
+                vulnerabilities: ["GHSA-r937-wjx7-w2jp"],
+            }),
+        )
+        .digest("hex")
+        .slice(0, 16);
+    assert.equal(finding.fingerprint, legacy);
+});
+
+test("changes the fingerprint the moment a stable patched release appears", () => {
+    // #986 을 닫으며 «정식판 출시 자체는 자동으로 감지되지 않는다» 를 남은 구멍으로 적어 뒀다.
+    // 이 단언이 그 구멍이 닫혀 있음을 고정한다 — 해시가 바뀌어야 닫힌 이슈가 다시 열린다.
+    const held = selectActionableFindings(kgpAudit())[0];
+    const released = selectActionableFindings(
+        kgpAudit({ firstPatchedStable: "2.4.20", stableFixVersion: "2.4.20" }),
+    )[0];
+    assert.notEqual(held.fingerprint, released.fingerprint);
+});
+
+test("tells the reader whether there is a stable version to move to", () => {
+    const held = renderIssueBody(selectActionableFindings(kgpAudit())[0]);
+    assert.match(held, /최초 패치 버전은 `2\.4\.20-Beta1`/);
+    assert.match(held, /아직 정식\(stable\) 릴리스가 없습니다/);
+    assert.match(held, /현재 정식 최신 `2\.4\.10`/);
+
+    const released = renderIssueBody(
+        selectActionableFindings(kgpAudit({ firstPatchedStable: "2.4.20", stableFixVersion: "2.4.20" }))[0],
+    );
+    assert.match(released, /정식 패치판 `2\.4\.20` 이 배포돼 있습니다/);
 });

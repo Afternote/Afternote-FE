@@ -8,7 +8,7 @@ package com.afternote.feature.receiver.domain.repository
  * 호출한다 (도메인 레이어가 안드로이드 API 에 의존하지 않도록).
  *
  * 업로드 + presigned URL 요청은 모두 `receiver-auth/` 인증 컨텍스트가 필요하므로, 호출 시점에
- * [ReceiverRepository.saveAuthCode] 로 해당 발신자의 authCode 가 세팅돼 있어야 한다 (인터셉터가 헤더 부착).
+ * [ReceiverRepository.saveMasterKey] 로 해당 발신자의 masterKey 가 세팅돼 있어야 한다 (인터셉터가 헤더 부착).
  */
 interface ReceiverDeliveryDocumentUploadRepository {
     /**

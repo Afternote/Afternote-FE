@@ -1,6 +1,5 @@
 package com.afternote.konsist
 
-import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.ext.list.withPackage
 import com.lemonappdev.konsist.api.verify.assertFalse
 import org.junit.Test
@@ -18,10 +17,9 @@ import org.junit.Test
 class ReceiverHomeResourceKonsistTest {
     @Test
     fun `수신자 홈은 다른 feature 의 R 을 참조하지 않는다`() {
-        Konsist
-            .scopeFromProject()
+        AfternoteKonsistScope
             .files
-            .withPackage("com.afternote.feature.receiver.presentation.home..")
+            .withPackage("com.afternote.feature.home.presentation.receiver..")
             .assertFalse { file ->
                 file.imports.any { import -> FOREIGN_FEATURE_RESOURCE.matches(import.name) } ||
                     // import 만 보면 FQN 참조가 그대로 빠져나간다 — 이 패키지의 screenshotTest 가
@@ -32,12 +30,12 @@ class ReceiverHomeResourceKonsistTest {
     }
 
     private companion object {
-        /** 수신자 자신이 아닌 feature 의 `R` (또는 그 하위 참조). */
+        /** 수신자 홈이 사는 `home` 모듈이 아닌 feature 의 `R` (또는 그 하위 참조). #1462 로 모듈이 바뀌었다. */
         val FOREIGN_FEATURE_RESOURCE =
-            Regex("""^com\.afternote\.feature\.(?!receiver\.)[a-z]+\.presentation\.R(\..*)?$""")
+            Regex("""^com\.afternote\.feature\.(?!home\.)[a-z]+\.presentation\.R(\..*)?$""")
 
         /** 같은 참조를 본문 어디서든 — FQN 으로 쓴 자리를 잡는다. 주석·문자열 오탐은 감수한다. */
         val FOREIGN_FEATURE_RESOURCE_REFERENCE =
-            Regex("""com\.afternote\.feature\.(?!receiver\.)[a-z]+\.presentation\.R\.""")
+            Regex("""com\.afternote\.feature\.(?!home\.)[a-z]+\.presentation\.R\.""")
     }
 }

@@ -17,7 +17,7 @@ import com.afternote.core.ui.R as CoreUiR
 fun ReceiverAvatar(modifier: Modifier = Modifier) {
     Image(
         painter = painterResource(CoreUiR.drawable.core_ui_ic_profile_placeholder),
-        contentDescription = stringResource(R.string.feature_afternote_content_description_recipient_profile),
+        contentDescription = stringResource(R.string.afternote_content_description_recipient_profile),
         modifier =
             modifier
                 .size(50.dp)

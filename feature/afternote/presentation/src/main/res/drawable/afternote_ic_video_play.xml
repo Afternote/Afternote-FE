@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  추모 영상 썸네일 중앙 재생 삼각형.
+
+  정본 시안 node 4327:72867 (Icon 20×20) 안의 Vector 실측 — 11.67×15, 좌상단 (5, 2.5), 흰색 채움.
+  기존 afternote_ic_playback 은 파란 원(#328BFF) + 흰 외곽선 삼각형이라 시안과 다르다.
+  원 배경은 컴포저블(48dp, iconBk)이 그리므로 여기에는 삼각형만 둔다.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp"
+    android:height="20dp"
+    android:viewportWidth="20"
+    android:viewportHeight="20">
+    <path
+        android:pathData="M5,2.5L16.67,10L5,17.5Z"
+        android:fillColor="#FFFFFFFF" />
+</vector>

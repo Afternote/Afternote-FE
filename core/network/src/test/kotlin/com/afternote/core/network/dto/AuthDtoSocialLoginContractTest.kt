@@ -26,7 +26,6 @@ class AuthDtoSocialLoginContractTest {
     private val json =
         Json {
             ignoreUnknownKeys = true
-            coerceInputValues = true
         }
 
     private fun payload(newUserField: String) =
@@ -64,8 +63,9 @@ class AuthDtoSocialLoginContractTest {
     }
 
     @Test
-    fun `isNewUser 가 null - coerceInputValues 로 흡수되지 않고 실패한다`() {
-        // 기본값이 없어야 coerce 대상에서 빠진다. 기본값을 되살리면 이 테스트가 먼저 깨진다.
+    fun `isNewUser 가 null 이면 흡수하지 않고 실패한다`() {
+        // 전역 coerceInputValues 를 걷어냈으므로(#1494) 기본값 유무와 무관하게 null 은 실패한다.
+        // 이 단언은 그 «null 을 조용히 삼키지 않는다» 를 고정한다.
         assertThrows(SerializationException::class.java) {
             json.decodeFromString<BaseResponse<LoginDto.SocialLoginDto>>(payload(""","isNewUser":null"""))
         }

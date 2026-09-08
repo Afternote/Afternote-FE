@@ -47,14 +47,15 @@ GalleryDetailScreen(onBackClick = {}, onEditClick = {})
 - **상호작용이 진짜 선택적이다** → `= {}` 로 "눌러도 아무 일 없는 버튼"을 그리는 대신, 상호작용 UI 자체를 접는다:
 
 ```kotlin
-// nullable 핸들러 + UI 숨김 (EditDropdownMenu, #1388)
-fun EditDropdownMenu(
+// nullable 핸들러 + UI 숨김 (editDeleteActionMenuItems, #1388)
+fun editDeleteActionMenuItems(
     onDeleteClick: () -> Unit,
     onEditClick: (() -> Unit)?,        // null = 편집 항목을 그리지 않는다
-) {
+): List<ActionMenuItem> = buildList {
     if (onEditClick != null) {
-        CustomDropdownItem(text = "수정", onClick = onEditClick)
+        add(ActionMenuItem(label = "수정", onClick = onEditClick))
     }
+    add(ActionMenuItem(label = "삭제", onClick = onDeleteClick))
 }
 ```
 

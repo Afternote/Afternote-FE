@@ -3,6 +3,7 @@ package com.afternote.feature.receiver.data.service
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.feature.receiver.data.dto.DeliveryVerificationDto
 import com.afternote.feature.receiver.data.dto.DeliveryVerificationRequestDto
+import com.afternote.feature.receiver.data.dto.ReceivedRecordBoxListDto
 import com.afternote.feature.receiver.data.dto.ReceiverAuthCodeEmailSendRequestDto
 import com.afternote.feature.receiver.data.dto.ReceiverAuthPresignedUrlDto
 import com.afternote.feature.receiver.data.dto.ReceiverAuthPresignedUrlRequestDto
@@ -56,4 +57,11 @@ interface ReceiverAuthApiService {
 
     @GET("receiver-auth/message")
     suspend fun getSenderMessage(): BaseResponse<ReceiverMessageDto>
+
+    /**
+     * 받은 기록함 목록. 서버가 `X-Auth-Code` 를 **이메일로 확장**해 같은 이메일에 등록된 기록함을
+     * 전부 내려주므로, 응답에는 다른 발신자의 칸도 함께 들어 있다.
+     */
+    @GET("receiver-auth/record-boxes")
+    suspend fun getReceivedRecordBoxes(): BaseResponse<ReceivedRecordBoxListDto>
 }

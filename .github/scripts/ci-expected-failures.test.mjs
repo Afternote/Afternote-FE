@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import test from "node:test";
 
 import {
@@ -35,6 +35,34 @@ const sampleConfig = {
         { module: ":feature:setting:presentation", issues: [1360], reason: "Content 경계 분리 대기" },
     ],
 };
+
+const workflowDirectory = new URL("../workflows/", import.meta.url);
+const INIT_SCRIPT_FLAG = "--init-script .github/ci-expected-failures.init.gradle";
+
+// 주석은 왜 그렇게 했는지를 적어 두는 자리라 태스크 이름과 플래그가 그대로 등장한다.
+// 정책은 실제로 실행되는 줄에만 걸어야 한다.
+function withoutComments(source) {
+    return source
+        .split("\n")
+        .filter((line) => !/^\s*#/.test(line))
+        .join("\n");
+}
+
+// 플래그는 «같은 스텝» 에 걸려 있어야 한다 — 파일 전체에서 문자열만 찾으면 다른 스텝에
+// 걸린 플래그로 통과한다.
+function steps(source) {
+    return withoutComments(source).split(/^ {6}- (?=\w[\w-]*:)/m);
+}
+
+// Gradle 태스크 토큰만 본다. 토큰 전체를 대조해야 `--tests` 같은 플래그나
+// `testRuntimeClasspath` 같은 configuration 이름에 오탐하지 않는다.
+const UNIT_TEST_TASK =
+    /^(?:(?::[\w-]+)*:(?:test|testDebugUnitTest|koverXmlReportCi|koverHtmlReportCi)|testDebugUnitTest)$/;
+
+function runsUnitTests(step) {
+    return step.includes("./gradlew")
+        && step.split(/[\s'"\\]+/).some((token) => UNIT_TEST_TASK.test(token));
+}
 
 const androidCase = (name, status) => ({
     className: "com.afternote.afternote_fe.SampleAndroidTest",
@@ -153,6 +181,32 @@ test("init script 는 같은 목록을 읽어 실패를 fail-closed 로 제외�
     assert.match(initScript, /throw new GradleException/);
     assert.match(initScript, /excludeTestsMatching/);
     assert.match(initScript, /probe-unit/);
+});
+
+test("gradlew 로 unit test 를 돌리는 워크플로 스텝은 모두 제외 init script 를 건다", async () => {
+    // #1653: dependency-audit.yml 하나가 이 규약에서 빠져 있어, develop 에 상존하는 의도된
+    // 실패가 주간 감사만 깨뜨리고 매주 같은 이슈를 새로 열었다. 규약을 탄 워크플로 목록을
+    // 손으로 적어 두면 다음 워크플로가 또 샌다 — 워크플로 전량을 훑어 «unit test 태스크를
+    // 돌리는데 플래그가 없는» 스텝을 직접 찾는다.
+    const names = (await readdir(workflowDirectory)).filter((name) => name.endsWith(".yml"));
+    const offenders = [];
+    let detected = 0;
+
+    for (const name of names) {
+        const source = await readFile(new URL(name, workflowDirectory), "utf8");
+        for (const step of steps(source)) {
+            if (!runsUnitTests(step)) continue;
+            detected += 1;
+            if (!step.includes(INIT_SCRIPT_FLAG)) {
+                offenders.push(`${name} (${step.split("\n")[0].trim()})`);
+            }
+        }
+    }
+
+    assert.deepEqual(offenders, [], `제외 init script 가 없는 unit test 스텝: ${offenders.join(", ")}`);
+    // 태스크 토큰 판정이 무너지면 검사 대상 0건으로도 통과한다 — 탐지 자체를 단언한다.
+    // 태스크를 변수로 넘기는 unit-test.yml 은 여기서 잡히지 않고 아래 전용 테스트가 잡는다.
+    assert.ok(detected >= 3, `unit test 스텝 탐지가 무너졌습니다: ${detected}건`);
 });
 
 test("unit test job 은 제외 init script 와 XPASS probe 를 함께 건다", async () => {

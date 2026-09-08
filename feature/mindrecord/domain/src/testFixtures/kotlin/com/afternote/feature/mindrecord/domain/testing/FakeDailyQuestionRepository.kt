@@ -5,6 +5,7 @@ import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
+import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 
 /**
  * [DailyQuestionRepository] fake 정본.
@@ -27,6 +28,15 @@ class FakeDailyQuestionRepository(
     var onCreate: (suspend (DailyQuestionCreatePayload) -> Result<Long>)? = null,
     var onUpdate: (suspend (Long, DailyQuestionUpdatePayload) -> Result<Long>)? = null,
     var onDelete: (suspend (Long) -> Result<Unit>)? = null,
+    /**
+     * 쓰기 성공을 알릴 변경 추적기. **프로덕션에서는 data 계층(`DailyQuestionRepositoryImpl`)이
+     * 이 자리에서 `notifyChanged()` 를 부른다** — fake 가 그걸 흉내 내지 않으면 목록 화면의
+     * 재조회 가드(#736)가 «데이터가 안 바뀌었다» 로 보고 갱신을 건너뛴다. 그러면 «작성하고
+     * 돌아왔는데 목록이 그대로»(#520) 를 잡는 테스트가 조용히 침묵한다 (#966 리뷰).
+     *
+     * 재조회를 보지 않는 시나리오는 넘기지 않아도 된다.
+     */
+    private val changeTracker: MindRecordChangeTracker? = null,
 ) : DailyQuestionRepository {
     /** 메모리 저장소. 테스트가 직접 들여다보거나 조작해도 된다. */
     val answers: MutableList<DailyQuestion> = initialAnswers.toMutableList()
@@ -82,6 +92,7 @@ class FakeDailyQuestionRepository(
                 isDraft = payload.isDraft,
             )
         today = today.copy(isAnswered = !payload.isDraft, isDraft = payload.isDraft)
+        changeTracker?.notifyChanged()
         return Result.success(id)
     }
 
@@ -101,6 +112,7 @@ class FakeDailyQuestionRepository(
                 answer
             }
         }
+        changeTracker?.notifyChanged()
         return Result.success(id)
     }
 
@@ -108,6 +120,7 @@ class FakeDailyQuestionRepository(
         deletedIds += id
         onDelete?.let { return it(id) }
         answers.removeAll { it.dailyQuestionId == id }
+        changeTracker?.notifyChanged()
         return Result.success(Unit)
     }
 

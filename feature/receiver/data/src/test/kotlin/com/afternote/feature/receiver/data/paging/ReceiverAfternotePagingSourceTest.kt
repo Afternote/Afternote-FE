@@ -8,6 +8,7 @@ import com.afternote.feature.receiver.data.dto.ReceivedAfternoteDto
 import com.afternote.feature.receiver.data.dto.ReceivedAfternoteListDto
 import com.afternote.feature.receiver.data.mapper.ReceiverListDecodingFailure
 import com.afternote.feature.receiver.data.mapper.ReceiverListMappingFailure
+import com.afternote.feature.receiver.data.reporting.RecordingErrorReporter
 import com.afternote.feature.receiver.data.service.ReceiverAfternoteApiService
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import com.afternote.feature.receiver.domain.error.ReceiverRejectionReason
@@ -37,7 +38,6 @@ class ReceiverAfternotePagingSourceTest {
     private val json =
         Json {
             ignoreUnknownKeys = true
-            coerceInputValues = true
         }
 
     /**
@@ -223,22 +223,6 @@ class ReceiverAfternotePagingSourceTest {
                 serverMessage = "아직 전달 조건이 충족되지 않았습니다.",
                 fallbackMessage = "아직 전달 조건이 충족되지 않았습니다.",
             )
-    }
-}
-
-private class RecordingErrorReporter : ErrorReporter {
-    data class Failure(
-        val throwable: Throwable,
-        val attributes: Map<String, String>,
-    )
-
-    val failures = mutableListOf<Failure>()
-
-    override fun writeFailure(
-        throwable: Throwable,
-        attributes: Map<String, String>,
-    ) {
-        failures += Failure(throwable, attributes)
     }
 }
 

@@ -1,9 +1,48 @@
 <resources>
     <string name="home_tab_greeting">안녕하세요,\n%1$s님</string>
     <string name="home_tab_tagline">오늘도 당신의 하루를 차분히 기록해보세요.</string>
+    <!-- 타임레터 NEXT STEP — 2026-08-09 디자이너(류하늬) 확정 문구 (#700). 정본 4327:99103. -->
+    <string name="home_tab_timeletter_next_step_section_title">타임레터</string>
+    <string name="home_tab_timeletter_next_step_body">내 자식들의 입학식, 졸업식에 남겨 줄\n편지를 작성하셨나요?</string>
+    <string name="home_tab_timeletter_next_step_cta">타임레터 입력하러가기</string>
+
     <string name="home_tab_next_step_section_title">AFTER NOTE NEXT STEP</string>
     <string name="home_tab_next_step_body">가족들의 \u2018주거래 은행\u2019 정보를\n입력하신 건 확인하셨나요?</string>
     <string name="home_tab_next_step_cta">애프터노트 입력하러가기</string>
     <string name="home_tab_error_message">정보를 불러오지 못했습니다.</string>
     <string name="home_tab_retry">다시 시도</string>
+    <!-- 이번 주 기록 수를 아직 모를 때. en dash — 수신자 홈과 같은 표기다 (#562·#952). -->
+    <string name="home_tab_weekly_count_unavailable">–</string>
+
+    <!-- 수신자 홈. feature:receiver 에서 화면과 함께 옮겨왔다 (#1462).
+         이름은 그대로 둔다 — 순수 이동이라 참조부 diff 를 늘리지 않는다. -->
+    <string name="home_receiver_sender_record_title">故 %1$s님이 남기신 기록</string>
+    <string name="home_receiver_hero_title">%1$s님의 한 마디</string>
+    <string name="home_receiver_mindrecord_total_label">TOTAL</string>
+    <string name="home_receiver_mindrecord_daily_question">데일리 질문</string>
+    <string name="home_receiver_mindrecord_diary">일기</string>
+    <string name="home_receiver_afternote_extra_count">+%1$d</string>
+    <string name="home_receiver_mindrecord_section_title">마음의 기록</string>
+    <string name="home_receiver_mindrecord_section_desc">고인의 일상적인 생각과 감정, 일기들입니다.</string>
+    <string name="home_receiver_mindrecord_section_button">마음의 기록 확인하러 가기</string>
+    <string name="home_receiver_timeletter_section_title">타임레터</string>
+    <string name="home_receiver_timeletter_section_desc">고인이 특별한 날에\n수신자님에게 작성한 편지입니다.</string>
+    <string name="home_receiver_timeletter_section_button">라이프 이벤트 레터 확인하러 가기</string>
+    <string name="home_receiver_afternote_section_title">애프터노트</string>
+    <string name="home_receiver_afternote_section_desc">고인이 사후 정리하고자 하는 데이터입니다.</string>
+    <string name="home_receiver_afternote_section_button">애프터노트 확인하러 가기</string>
+    <string name="home_receiver_section_count_unavailable">–</string>
+    <string name="home_receiver_download_all_button">모든 기록 내려받기</string>
+    <string name="home_receiver_download_all_dialog_message">모든 기록을 내려받으시겠습니까?</string>
+    <string name="home_receiver_download_all_failed">모든 기록 내려받기에 실패했습니다.</string>
+    <string name="home_receiver_download_all_save_failed">파일 저장에 실패했습니다.</string>
+    <!-- 홈 탭과 문안이 같지만 모듈 분리로 사본을 둔다 — 발신자 홈(home_tab_*)과 독립 수정 가능해야 한다. -->
+    <string name="home_receiver_error_message">정보를 불러오지 못했습니다.</string>
+    <string name="home_receiver_retry">다시 시도</string>
+    <string name="home_receiver_mindrecord_count_prefix">"%1$s개 "</string>
+    <string name="home_receiver_mindrecord_count_suffix">마음의 기록이 있습니다.</string>
+    <string name="home_receiver_timeletter_count_prefix">"%1$s개 "</string>
+    <string name="home_receiver_timeletter_count_suffix">라이프 이벤트 레터가 있습니다.</string>
+    <string name="home_receiver_afternote_count_prefix">%1$s개</string>
+    <string name="home_receiver_afternote_count_suffix">의 애프터노트가 있습니다.</string>
 </resources>

@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.core.domain.repository.UserProfileRepository
+import com.afternote.core.domain.repository.UserProfileCacheRepository
 import com.afternote.feature.home.presentation.reporting.HomeFailureStage
 import com.afternote.feature.home.presentation.reporting.recordHomeFailure
 import com.afternote.feature.home.presentation.usecase.GetHomeSummaryUseCase
@@ -23,7 +23,7 @@ class HomeTabViewModel
     @Inject
     constructor(
         private val getHomeSummary: GetHomeSummaryUseCase,
-        private val userProfileRepository: UserProfileRepository,
+        private val userProfileCacheRepository: UserProfileCacheRepository,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<HomeTabUiState>(HomeTabUiState.Loading())
@@ -93,7 +93,7 @@ class HomeTabViewModel
                         // 초기 진입 또는 에러 재시도: 캐시된 이름이 있으면 placeholder로 즉시 노출한다.
                         _uiState.value =
                             HomeTabUiState.Loading(
-                                cachedUserName = userProfileRepository.getCachedUserName(),
+                                cachedUserName = userProfileCacheRepository.getCachedUserName(),
                                 showsRefreshIndicator = showsRefreshingSpinner,
                             )
                     }
@@ -123,7 +123,7 @@ class HomeTabViewModel
          * 다음 진입의 placeholder 가 한 번 더 비는 것뿐이다.
          */
         private suspend fun cacheUserName(name: String) {
-            runCatchingCancellable { userProfileRepository.saveUserName(name) }
+            runCatchingCancellable { userProfileCacheRepository.saveUserName(name) }
         }
     }
 
@@ -132,9 +132,5 @@ private fun HomeSummary.toHomeTabSuccess(): HomeTabUiState.Success =
         userName = userName,
         isRecipientDesignated = isRecipientDesignated,
         todayQuestionContent = todayQuestionContent,
-        // **실제로 값을 아는 카테고리만 담는다.** 종전에는 enum 전체를 돌며 데일리질문·주간
-        // 리포트에 0 을 박아 넣었다. 지금은 화면이 일기 카드만 그려 안 보일 뿐, 카드가 늘면
-        // 그 0 이 그대로 «기록 0건» 으로 노출된다 — 목업이면 눈에 띄지만 0 은 그럴듯한
-        // 거짓이라 사용자가 그대로 믿는다 (#700).
-        categoryCounts = mapOf(MindRecordCategory.DIARY to diaryCategoryCount),
+        weeklyRecordCount = weeklyRecordCount,
     )

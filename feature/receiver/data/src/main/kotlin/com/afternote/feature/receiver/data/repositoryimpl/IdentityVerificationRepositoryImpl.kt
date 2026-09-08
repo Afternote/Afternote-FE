@@ -26,7 +26,7 @@ import javax.inject.Singleton
  * 그래서 저장 수명을 키 발급처와 같은 프로세스 수명으로 맞춘다. #912 가 도입했던 DataStore
  * (SESSION scope) 는 전역 boolean 시절의 「process death 후 유지」가 목적이었으나, 발신자별
  * UUID 키에서는 그 유지가 도달 불가능해 디스크 비용만 남는다. 프로세스를 넘는 발신자 식별자
- * (예: BE 발급 sender id, 또는 마스터 키 authCode 의 비가역 파생값) 가 생기면 그때 영속을 되살린다.
+ * (예: BE 발급 sender id, 또는 마스터 키의 비가역 파생값) 가 생기면 그때 영속을 되살린다.
  *
  * 구 릴리스가 디스크에 남긴 전역 `identity_verified` boolean · `identity_verified_<UUID>` 잔존값은
  * 본 구현이 디스크를 아예 읽지 않으므로 구조적으로 어떤 발신자의 관문도 열 수 없다.

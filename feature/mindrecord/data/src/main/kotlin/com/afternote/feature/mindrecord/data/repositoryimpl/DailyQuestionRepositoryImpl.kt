@@ -11,12 +11,14 @@ import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
+import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import javax.inject.Inject
 
 class DailyQuestionRepositoryImpl
     @Inject
     constructor(
         private val api: DailyQuestionApiService,
+        private val changeTracker: MindRecordChangeTracker,
     ) : DailyQuestionRepository {
         override suspend fun getList(
             date: String?,
@@ -40,7 +42,7 @@ class DailyQuestionRepositoryImpl
                     .createDailyQuestion(payload.toRequest())
                     .requireData()
                     .userDailyQuestionId
-            }
+            }.onSuccess { changeTracker.notifyChanged() }
 
         override suspend fun update(
             id: Long,
@@ -51,10 +53,10 @@ class DailyQuestionRepositoryImpl
                     .updateDailyQuestion(userDailyQuestionId = id, request = payload.toRequest())
                     .requireData()
                     .userDailyQuestionId
-            }
+            }.onSuccess { changeTracker.notifyChanged() }
 
         override suspend fun delete(id: Long): Result<Unit> =
             runCatchingCancellable {
                 api.deleteDailyQuestion(userDailyQuestionId = id).requireStatus()
-            }
+            }.onSuccess { changeTracker.notifyChanged() }
     }

@@ -25,7 +25,19 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 
 /**
- * 커스텀 라디오 버튼 컴포넌트
+ * 커스텀 라디오 버튼 컴포넌트 — **신규 사용 금지, [AfternoteRadioGroup] 을 쓰세요.**
+ *
+ * 이 컴포저블은 `selected`/`onClick` 만 받는 **단품**이라 라디오의 본질인 단일 선택을 구조로
+ * 강제하지 못합니다. 선택값의 소유권이 호출부에 남아, `Set` 토글 상태에 물리면 "라디오
+ * 비주얼인데 복수 선택" 이라는 오용이 컴파일 타임에 걸리지 않습니다 (#648 실사고). 접근성도
+ * 마찬가지로 호출부 책임이라 `Modifier.selectableGroup` 이 빠지면 스크린리더가 상호배타
+ * 관계를 읽지 못합니다.
+ *
+ * 대신 선택값 하나를 소유하는 [AfternoteRadioGroup] (`selectedValue: T?` + `onSelect(T)`)
+ * 을 쓰면 단일 선택·그룹 semantics·48dp 상호작용 경계가 컴포넌트 안에서 닫힙니다.
+ *
+ * 남아 있는 잔여 사용처는 `SingleSelectionRadioKonsistTest` 의 허용 목록이 정본이며,
+ * 이관 완료 시 이 선언을 삭제합니다 (#649).
  *
  * 체크 표시(인디케이터)와 윤곽선 간 간격이 전체 크기의 12분의 1이 되도록 자동 계산됩니다.
  * [onClick]이 있으면 바깥에 [Modifier.minimumInteractiveComponentSize]와
@@ -38,6 +50,11 @@ import com.afternote.core.ui.theme.AfternoteDesign
  * @param selectedColor 선택된 색상 (기본값: AfternoteDesign.colors.gray9)
  * @param unselectedColor 선택 안 된 색상 (기본값: AfternoteDesign.colors.gray4)
  */
+@Deprecated(
+    message =
+        "단품 라디오는 단일 선택을 구조로 강제하지 못한다. " +
+            "선택값 하나를 소유하는 AfternoteRadioGroup(options, selectedValue, onSelect) 로 옮겨라 (#649).",
+)
 @Composable
 fun CustomRadioButton(
     selected: Boolean,

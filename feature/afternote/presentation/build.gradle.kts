@@ -1,13 +1,14 @@
 plugins {
     id("afternote.android.library.compose")
     id("afternote.android.hilt")
-    kotlin("plugin.serialization")
+    id("afternote.android.navigation")
     alias(libs.plugins.compose.screenshot)
     id("afternote.kover")
 }
 
 android {
     namespace = "com.afternote.feature.afternote.presentation"
+    resourcePrefix = "afternote_"
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
     buildFeatures {
         buildConfig = true
@@ -31,12 +32,10 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     implementation(libs.coil.compose)
     implementation(libs.androidx.activity.compose)
-    implementation(libs.android.navigation.compose)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.hilt.navigation)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
-    implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.androidx.paging.runtime)

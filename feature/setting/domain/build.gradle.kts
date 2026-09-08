@@ -10,6 +10,9 @@ java {
     targetCompatibility = JavaVersion.VERSION_11
 }
 kotlin {
+    // Java 11 고정 때문에 공통 JVM 규약을 쓰지 못하는 기존 예외다. strict 전환 전까지 동일한
+    // explicit API warning inventory 를 유지한다.
+    explicitApiWarning()
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
     }

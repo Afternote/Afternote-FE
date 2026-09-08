@@ -10,6 +10,10 @@ const productionWorkflow = await readFile(
   new URL("../workflows/release-distribution.yml", import.meta.url),
   "utf8",
 );
+const releaseConfigAction = await readFile(
+  new URL("../actions/setup-release-config/action.yml", import.meta.url),
+  "utf8",
+);
 
 test("no workflow carries a long-lived service account JSON", () => {
   // canary 가 성공한 뒤 프로덕션도 WIF 로 전환했다 (#850). 이제 파이프라인 어디에도 장기 키가
@@ -17,6 +21,11 @@ test("no workflow carries a long-lived service account JSON", () => {
   // 되돌리는 것이 «의도된 롤백» 의 표시다.
   assert.doesNotMatch(canaryWorkflow, /FIREBASE_SERVICE_ACCOUNT_JSON/);
   assert.doesNotMatch(productionWorkflow, /FIREBASE_SERVICE_ACCOUNT_JSON/);
+  // 워크플로가 안 넘겨도 composite action 이 입력을 들고 있으면 경로가 살아 있는 것이다.
+  // 2026-08-30 실배포 성공 후 그 롤백 경로까지 걷었다 — 입력·env·ADC 파일 생성·output 전부.
+  assert.doesNotMatch(releaseConfigAction, /FIREBASE_SERVICE_ACCOUNT_JSON/);
+  assert.doesNotMatch(releaseConfigAction, /firebase-service-account-json/);
+  assert.doesNotMatch(releaseConfigAction, /firebase-credentials-path/);
   // 자격 파일 경로를 워크플로가 손으로 지정하면 auth 액션이 export 한 단기 credential 대신
   // 낡은 경로를 물 수 있다. 경로는 액션이 정하게 둔다.
   assert.doesNotMatch(productionWorkflow, /GOOGLE_APPLICATION_CREDENTIALS:/);

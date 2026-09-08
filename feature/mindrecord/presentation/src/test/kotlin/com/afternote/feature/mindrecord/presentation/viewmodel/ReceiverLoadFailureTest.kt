@@ -12,6 +12,7 @@ import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepositor
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -98,7 +99,7 @@ class ReceiverLoadFailureTest {
                         userRepository {
                             if (shouldFail) throw IOException("offline") else emptyList()
                         },
-                    draftLoader = MindRecordDraftLoader(NoopDiaryRepository, NoopDailyQuestionRepository),
+                    draftLoader = LoadMindRecordDraftsUseCase(NoopDiaryRepository, NoopDailyQuestionRepository),
                     errorReporter = RecordingErrorReporter(),
                 )
             advanceUntilIdle()
@@ -138,7 +139,7 @@ class ReceiverLoadFailureTest {
                                 emptyList()
                             }
                         },
-                    draftLoader = MindRecordDraftLoader(NoopDiaryRepository, NoopDailyQuestionRepository),
+                    draftLoader = LoadMindRecordDraftsUseCase(NoopDiaryRepository, NoopDailyQuestionRepository),
                     errorReporter = RecordingErrorReporter(),
                 )
             advanceUntilIdle()
@@ -163,7 +164,7 @@ class ReceiverLoadFailureTest {
             repository = NoopDiaryRepository,
             photoUploadRepository = FakePhotoUploadRepository.strict(),
             userRepository = userRepository { failure?.let { throw it } ?: emptyList() },
-            draftLoader = MindRecordDraftLoader(NoopDiaryRepository, NoopDailyQuestionRepository),
+            draftLoader = LoadMindRecordDraftsUseCase(NoopDiaryRepository, NoopDailyQuestionRepository),
             errorReporter = RecordingErrorReporter(),
         )
 

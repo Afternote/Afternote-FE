@@ -44,17 +44,17 @@ class SenderRegistry
         fun findById(id: String): SenderEntry? = _senders.value.firstOrNull { it.id == id }
 
         /**
-         * 마스터 키 검증 성공 직후 호출. authCode + verify 응답 정보를 카드에 결합한다. 이후
-         * "기록 열람하기"(12) 진입 시 이 authCode 를 ReceiverRepository 에 복원해 헤더 컨텍스트를 잡는다.
+         * 마스터 키 검증 성공 직후 호출. masterKey + verify 응답 정보를 카드에 결합한다. 이후
+         * "기록 열람하기"(12) 진입 시 이 masterKey 를 ReceiverRepository 에 복원해 헤더 컨텍스트를 잡는다.
          */
         fun attachIdentity(
             id: String,
-            authCode: String,
+            masterKey: String,
             identity: ReceiverIdentity,
         ): SenderEntry? =
             updateById(id) { entry ->
                 entry.copy(
-                    authCode = authCode,
+                    masterKey = masterKey,
                     realSenderName = identity.senderName,
                     relation = identity.relation,
                 )

@@ -71,10 +71,6 @@
       "line": null,
       "branch": null
     },
-    "feature/onboarding/domain": {
-      "line": null,
-      "branch": null
-    },
     "feature/onboarding/presentation": {
       "line": { "missed": 1154, "covered": 270 },
       "branch": { "missed": 709, "covered": 71 }

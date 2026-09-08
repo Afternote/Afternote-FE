@@ -1,6 +1,9 @@
 package com.afternote.feature.mindrecord.presentation.component
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDp
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,6 +53,11 @@ fun DailyQuestionBanner(
     modifier: Modifier = Modifier,
     dayNumber: Int? = null,
 ) {
+    // 본문 퇴장·간격 축소·화살표 회전이 같은 길이로 함께 움직이도록 값을 맞춘다 (#722).
+    val transition = updateTransition(targetState = expanded, label = "bannerExpand")
+    val contentSpacing by transition.animateDp(label = "spacing") { open -> if (open) 8.dp else 0.dp }
+    val arrowRotation by transition.animateFloat(label = "arrow") { open -> if (open) 180f else 0f }
+
     Column(
         modifier =
             modifier
@@ -64,7 +73,9 @@ fun DailyQuestionBanner(
                     onDrawBehind { drawRect(brush) }
                 }.clickable(role = Role.Button, onClick = onToggle)
                 .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        // 간격도 같은 전환에 태운다. 종전에는 본문만 AnimatedVisibility 였고 간격과 화살표
+        // 회전은 즉시 바뀌어, 접기 동작이 한 흐름으로 이어지지 않고 끊겨 보였다 (#722).
+        verticalArrangement = Arrangement.spacedBy(contentSpacing),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -102,7 +113,7 @@ fun DailyQuestionBanner(
                 modifier =
                     Modifier
                         .size(16.dp)
-                        .rotate(if (expanded) 180f else 0f),
+                        .rotate(arrowRotation),
             )
         }
 

@@ -22,7 +22,6 @@ class DiaryUpdateRequestTest {
     private val json =
         Json {
             ignoreUnknownKeys = true
-            coerceInputValues = true
         }
 
     private fun bodyOf(receiverIds: List<Long>?) =

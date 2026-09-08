@@ -55,11 +55,11 @@ data class DailyQuestionWriteUiState(
     val canSubmit: Boolean
         get() =
             // `isNotBlank()` 가 아니라 [isHtmlBlank] 다. 에디터는 아무것도 입력하지 않아도
-            // `<p></p>` 를 내보내므로 문자열 공백 판정으로는 «화면이 비었는지» 를 알 수 없다 —
+            // `<p></p>`·`<br>` 를 내보내므로 문자열 공백 판정으로는 «화면이 비었는지» 를 알 수 없다 —
             // 그 값으로 저장이 열리면 빈 답변이 새로 생기거나, 이어쓰던 draft 본문이 빈
-            // HTML 로 PATCH 돼 덮인다 (#1018 리뷰). 같은 판정을
-            // [DailyQuestionWriteViewModel.submit] 도 쓴다 — 하단 툴바 임시저장이
-            // `enabled` 없는 clickable 이라 이 조건을 우회하기 때문이다.
+            // HTML 로 PATCH 돼 덮인다. 실제로 빈 답변이 저장되고 작성 화면이 pop 됐다
+            // (#722 · #1018 리뷰). 같은 판정을 [DailyQuestionWriteViewModel.submit] 도 쓴다 —
+            // 하단 툴바 임시저장이 `enabled` 없는 clickable 이라 이 조건을 우회하기 때문이다.
             !answer.isHtmlBlank() &&
                 // 수정·이어쓰기 모드는 오늘 질문을 부르지 않아 questionId 가 없다 — 대상 레코드가
                 // 있으면 PATCH 로 나가므로 질문 조회를 기다릴 이유가 없다 (#582·#770).

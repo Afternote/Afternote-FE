@@ -30,6 +30,12 @@ data class DiaryCreateRequestDto(
     // 생성 API 에서 `null` 과 빈 목록은 모두 "수신자 없음" 으로 정규화되고, 작성 UI 는 항상
     // 목록을 갖고 있다. 빈 목록을 그대로 보내면 되므로 nullable 로 낮추지 않는다 (#789).
     @SerialName("receiverIds") val receiverIds: List<Long>,
+    /**
+     * 기록일 `yyyy-MM-dd`. 미전송이면 서버가 오늘(Asia/Seoul)로 채우고, **미래 날짜는
+     * 400(code 2101)** 이다 (`Afternote-BE#244`, PR #262). 작성 화면이 항상 값을 갖고
+     * 있어 nullable 로 낮추지 않는다 (#1008).
+     */
+    @SerialName("date") val date: String,
 )
 
 @Serializable
@@ -40,6 +46,8 @@ data class DiaryUpdateRequestDto(
     @SerialName("todayMood") val todayMood: TodayMoodDto,
     /** null 이면 기존 수신자 유지, 빈 목록이면 전체 해제 (서버 규칙). */
     @SerialName("receiverIds") val receiverIds: List<Long>? = null,
+    /** 기록일 `yyyy-MM-dd`. **null 이면 기존 기록일 유지** (서버 규칙). 미래 날짜는 400(code 2101). */
+    @SerialName("date") val date: String? = null,
 )
 
 /**
@@ -78,9 +86,20 @@ data class DiaryListItemDto(
     // 저장 컬럼이 필수라 응답도 항상 채워진다. AI 가 매기는 `emotion` 과 달리 사용자가 직접
     // 고른 값이고, 한글 값이 관측된 쪽도 `emotion` 이지 이 필드가 아니다 (#591, #789).
     @SerialName("todayMood") val todayMood: TodayMoodDto,
+    // 기본값을 두지 않는다 — 키가 빠지면 false 로 접혀 임시저장이 목록에 샌다 (#789).
     @SerialName("isDraft")
     @JsonNames("draft")
     val isDraft: Boolean,
+    // 상세 화면이 "수신인 OOO" 로 보여준다. 서버가 늘 함께 내려주는데 종전에는 선언하지
+    // 않아 버려졌다 (#759).
+    @SerialName("receivers") val receivers: List<MindRecordReceiverDto>,
+)
+
+/** 기록에 지정된 수신자 요약 (OpenAPI `MindRecordReceiverSummaryResponse`). */
+@Serializable
+data class MindRecordReceiverDto(
+    @SerialName("receiverId") val receiverId: Long,
+    @SerialName("name") val name: String,
 )
 
 // `/diary` 응답의 `data` 는 객체 — `diaries` 외에 조회 대상 달의 비-임시 다이어리 수

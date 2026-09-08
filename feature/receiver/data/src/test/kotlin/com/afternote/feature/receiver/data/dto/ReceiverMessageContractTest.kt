@@ -14,13 +14,12 @@ import org.junit.Test
  * BE `LocalDateTime` 직렬화라 타임존 표기 없는 마이크로초 포함 형태로 온다 (BE 커밋 5af499c8).
  * 프로덕션 경로(`ReceiverAuthRepositoryImpl.getSenderMessage`)와 동일하게
  * Json 디코드 → `requireData()` → `toDomain()` 을 통과시킨다 — Json 설정은
- * `NetworkModule.provideJson` 과 동일 (ignoreUnknownKeys + coerceInputValues).
+ * `NetworkModule.provideJson` 과 동일 (ignoreUnknownKeys).
  */
 class ReceiverMessageContractTest {
     private val json =
         Json {
             ignoreUnknownKeys = true
-            coerceInputValues = true
         }
 
     @Test

@@ -1,5 +1,6 @@
 package com.afternote.feature.receiver.presentation.navigation.model
 
+import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
 /**
@@ -7,8 +8,11 @@ import kotlinx.serialization.Serializable
  *
  * 온보딩 Welcome 의 "전달 받은 기록 확인하기" 콜백이 [com.afternote.core.ui.Route.Receiver]
  * (= startDestination [ReceivedRecordsRoute]) 로 진입한다.
+ *
+ * [NavKey] 는 로컬 Navigation 3 스택에 실릴 수 있다는 표식이다 — `@Serializable` 과 함께
+ * 있어야 프로세스 재생성 뒤 스택이 복원된다 (#1698).
  */
-sealed interface ReceiverRoute {
+sealed interface ReceiverRoute : NavKey {
     /** 수신자 대시보드 — 발신자 한 마디 + 마음의 기록·타임레터·애프터노트 섹션 카드. */
     @Serializable
     data object HomeRoute : ReceiverRoute
@@ -76,7 +80,7 @@ sealed interface ReceiverRoute {
     /**
      * 열람 신청 1단계: 마스터 키 입력(5).
      *
-     * `verify(authCode)` 응답 성공 시 ReceiverIdentity 를 (부모 라우트의) senderId 카드에 결합하고 다음 단계로.
+     * `verify(masterKey)` 응답 성공 시 ReceiverIdentity 를 (부모 라우트의) senderId 카드에 결합하고 다음 단계로.
      */
     @Serializable
     data object MasterKeyRoute : ReceiverRoute

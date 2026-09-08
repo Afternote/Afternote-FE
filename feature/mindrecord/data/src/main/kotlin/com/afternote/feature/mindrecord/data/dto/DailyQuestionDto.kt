@@ -48,9 +48,12 @@ data class DailyQuestionListItemDto(
     //
     // 기본값 `false` 는 두지 않는다 — 서버가 항상 보내는 키라, 빠졌을 때 "임시저장 아님" 으로
     // 접히면 임시저장 글이 목록에 그대로 노출된다. 계약 누락은 파싱 실패로 드러나야 한다 (#789).
+    // 기본값을 두지 않는다 — 키가 빠지면 false 로 접혀 임시저장이 목록에 샌다 (#789).
     @SerialName("isDraft")
     @JsonNames("draft")
     val isDraft: Boolean,
+    // 상세 화면의 "수신인 OOO" 표시용 (#759).
+    @SerialName("receivers") val receivers: List<MindRecordReceiverDto>,
 )
 
 @Serializable

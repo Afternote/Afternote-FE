@@ -27,6 +27,7 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailRoute
 import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel
+import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
 import com.afternote.feature.receiver.domain.model.ReceivedAccountCredentials
 import com.afternote.feature.receiver.domain.model.ReceivedAfternoteDetail
 import com.afternote.feature.receiver.domain.model.ReceivedExportBundle
@@ -68,7 +69,7 @@ class ReceiverAdvancedAndroidTest {
         val masterKeyResults = ArrayDeque<Result<ReceiverIdentity>>()
         val receiverRepository =
             FakeReceiverRepository.strict().apply {
-                onSaveAuthCode = { authCodeState.value = it }
+                onSaveMasterKey = { masterKeyState.value = it }
             }
         val authRepository =
             FakeReceiverAuthRepository.strict().apply {
@@ -159,9 +160,9 @@ class ReceiverAdvancedAndroidTest {
         val normalizedMasterKey = "3f2504e0-4f89-11d3-9a0c-0305e82c3301"
         val attached = checkNotNull(senderRegistry.findById(sender.id))
         assertEquals(listOf(normalizedMasterKey), authRepository.verifiedMasterKeys)
-        assertEquals(listOf(normalizedMasterKey), receiverRepository.savedAuthCodes)
-        assertEquals(normalizedMasterKey, receiverRepository.authCodeState.value)
-        assertEquals(normalizedMasterKey, attached.authCode)
+        assertEquals(listOf(normalizedMasterKey), receiverRepository.savedMasterKeys)
+        assertEquals(normalizedMasterKey, receiverRepository.masterKeyState.value)
+        assertEquals(normalizedMasterKey, attached.masterKey)
         assertEquals("이발신", attached.realSenderName)
         assertEquals("가족", attached.relation)
         assertEquals(1, verifiedTransitions)
@@ -178,7 +179,7 @@ class ReceiverAdvancedAndroidTest {
         detailResults.addLast(Result.success(receivedSocialDetail()))
         val viewModel =
             ReceivedAfternoteDetailViewModel(
-                savedStateHandle = SavedStateHandle(mapOf("afternoteId" to 91L)),
+                route = ReceivedAfternoteRoute.DetailRoute(afternoteId = 91L),
                 receiverRepository = repository,
                 errorReporter = FakeErrorReporter(),
             )

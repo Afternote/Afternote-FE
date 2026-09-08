@@ -17,7 +17,7 @@ import java.io.IOException
  * 수신자가 할 수 있는 일이 없다.
  *
  * 화면은 **도메인 예외 타입만** 본다. 어떤 서버 코드가 그 타입이 되는지는 data 계층의
- * `mapReceiverFailure` 가 알고, 그쪽 계약은 `MindRecordReceiverFailureMapperTest` 가 잡는다.
+ * `mapReceiverFailure` 가 알고, 그쪽 계약은 `MindRecordReceiverRepositoryImplTest` 가 잡는다.
  */
 class ReceiverDeadEndTest {
     @Test

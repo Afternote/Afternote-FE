@@ -10,6 +10,8 @@ import {
     parseResolvedDependencies,
     parseVersionCatalog,
     renderSummary,
+    firstPatchedVersion,
+    stableReleaseAtOrAbove,
 } from "./collect-dependency-audit.mjs";
 
 const catalogText = `
@@ -179,4 +181,88 @@ test("renders a compact CI summary", () => {
     });
     assert.match(summary, /okhttp/);
     assert.match(summary, /현재 호환성 검사: 통과/);
+});
+
+// GHSA-r937-wjx7-w2jp 의 실제 OSV 응답 모양이다 (2026-08-31 실측).
+const kotlinAdvisory = {
+    id: "GHSA-r937-wjx7-w2jp",
+    database_specific: { severity: "MODERATE" },
+    affected: [
+        {
+            package: { name: "org.jetbrains.kotlin:kotlin-gradle-plugin", ecosystem: "Maven" },
+            ranges: [{ type: "ECOSYSTEM", events: [{ introduced: "0" }, { fixed: "2.4.20-Beta1" }] }],
+        },
+    ],
+};
+
+test("reads the first patched version for the coordinate the advisory actually names", () => {
+    assert.equal(
+        firstPatchedVersion(kotlinAdvisory, "org.jetbrains.kotlin:kotlin-gradle-plugin", "2.4.10"),
+        "2.4.20-Beta1",
+    );
+    // 같은 권고가 다른 좌표도 담을 수 있다. 우리 좌표가 아닌 갈래를 읽으면 엉뚱한 버전으로 올린다.
+    assert.equal(firstPatchedVersion(kotlinAdvisory, "org.jetbrains.kotlin:kotlin-stdlib", "2.4.10"), null);
+});
+
+test("picks the fix for the branch the project is actually on", () => {
+    const advisory = {
+        affected: [
+            {
+                package: { name: "org.example:lib", ecosystem: "Maven" },
+                ranges: [
+                    { events: [{ introduced: "0" }, { fixed: "1.5.0" }] },
+                    { events: [{ introduced: "2.0.0" }, { fixed: "2.3.0" }] },
+                ],
+            },
+        ],
+    };
+    // 2.x 를 쓰는데 1.5.0 을 권하면 다운그레이드다.
+    assert.equal(firstPatchedVersion(advisory, "org.example:lib", "2.1.0"), "2.3.0");
+    assert.equal(firstPatchedVersion(advisory, "org.example:lib", "1.2.0"), "1.5.0");
+});
+
+test("reports no stable fix while every patched release is still a prerelease", () => {
+    // #986 의 상태 그대로다 — fixed 는 2.4.20-Beta1 인데 정식은 2.4.10 까지밖에 없다.
+    const released = ["2.4.0", "2.4.10", "2.4.20-Beta1", "2.4.20-Beta2", "2.4.20-RC", "2.4.20-RC2"];
+    assert.equal(stableReleaseAtOrAbove(released, "2.4.20-Beta1"), null);
+    // 정식이 나오면 바로 그 버전을 집는다. 이 전환이 보류해 둔 이슈를 깨우는 신호다.
+    assert.equal(stableReleaseAtOrAbove([...released, "2.4.20"], "2.4.20-Beta1"), "2.4.20");
+    // 이미 지나간 권고라면 현재 정식 중 가장 낮은 해소 버전을 집는다.
+    assert.equal(stableReleaseAtOrAbove([...released, "2.4.20", "2.4.21"], "2.4.20-Beta1"), "2.4.20");
+});
+
+test("summarizes whether a security finding has a stable version to move to", () => {
+    const base = {
+        generatedAt: "2026-08-21T00:00:00.000Z",
+        commitSha: "abc123",
+        entries: [],
+        consistencyFindings: [],
+        compatibility: { exitCode: 0 },
+        coverage: { usedEntries: 1, resolvedPackages: 1, metadataGaps: 0, gaps: [] },
+    };
+    const held = renderSummary({
+        ...base,
+        vulnerabilities: [
+            {
+                coordinate: "org.jetbrains.kotlin:kotlin-gradle-plugin",
+                version: "2.4.10",
+                vulnerabilities: [{ id: "GHSA-r937-wjx7-w2jp", firstPatched: "2.4.20-Beta1", firstPatchedStable: null }],
+                stableFixVersion: null,
+            },
+        ],
+    });
+    assert.match(held, /정식 패치판 없음 \(최초 패치 2\.4\.20-Beta1\)/);
+
+    const fixed = renderSummary({
+        ...base,
+        vulnerabilities: [
+            {
+                coordinate: "org.jetbrains.kotlin:kotlin-gradle-plugin",
+                version: "2.4.10",
+                vulnerabilities: [{ id: "GHSA-r937-wjx7-w2jp", firstPatched: "2.4.20-Beta1", firstPatchedStable: "2.4.20" }],
+                stableFixVersion: "2.4.20",
+            },
+        ],
+    });
+    assert.match(fixed, /정식 패치판 `2\.4\.20`/);
 });

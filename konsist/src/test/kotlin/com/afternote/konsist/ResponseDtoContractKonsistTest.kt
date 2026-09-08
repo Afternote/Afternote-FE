@@ -1,6 +1,5 @@
 package com.afternote.konsist
 
-import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.declaration.KoClassDeclaration
 import com.lemonappdev.konsist.api.ext.list.withPackage
 import org.junit.Test
@@ -16,9 +15,11 @@ import org.junit.Test
  * - `hasNext = false` → 페이지네이션이 조용히 멈춤
  * - `diaries = emptyList()` → 목록 소실이 "기록 없음" 으로 보임
  *
- * `coerceInputValues` 는 **기본값이 있어야** 동작하므로, 기본값을 두는 순간 "키 누락" 과
- * "서버가 보낸 잘못된 값" 이 같은 결과로 수렴한다. 둘은 성격이 다르다 —
- * 키 누락은 계약이 바뀐 것이라 실패해야 드러나고, 값 확장은 관대해도 된다(전용 직렬화기).
+ * 기본값을 두는 순간 "키 누락" 과 "서버가 보낸 정상 빈 값" 이 같은 결과로 수렴한다. 둘은 성격이
+ * 다르다 — 키 누락은 계약이 바뀐 것이라 실패해야 드러나고, 값 확장은 관대해도 된다(전용 직렬화기).
+ *
+ * 전역 `coerceInputValues` 는 #1494 에서 걷어냈다. 그래서 이제 `null` 이 온 경우는 기본값 유무와
+ * 무관하게 실패하고, 이 가드가 막는 것은 **키 누락**이 기본값으로 성공해 버리는 쪽이다.
  *
  * ### 검사 대상
  * `..dto..` 패키지의 `@Serializable data class` 중 **이름에 `Request` 가 없는 것**(= 응답).
@@ -86,8 +87,8 @@ class ResponseDtoContractKonsistTest {
             }.toSet()
 
     private fun responseDtoClasses(): List<KoClassDeclaration> =
-        Konsist
-            .scopeFromProject()
+        AfternoteKonsistScope
+            .scope
             .classes()
             .withPackage("com.afternote..dto..")
             .filter { it.hasDataModifier }
@@ -101,34 +102,15 @@ class ResponseDtoContractKonsistTest {
         const val REQUEST_DTO = "Request"
 
         /**
-         * #789 — mindrecord (2건). #933 이 26건을 해소한 뒤 #573 이 머지되며 남은 잔여다.
-         * BE `DailyQuestionAnswerResponse` record 에 두 키가 다 있어 서버는 항상 보낸다.
+         * 남은 잔여는 timeletter 1건뿐이다 — #790 이 추적하고, `ci-expected-failures.json` 에
+         * 의도된 실패로 등록돼 있다. mindrecord 2건(#789)·afternote 11건(#957)은 해소돼 빠졌다.
+         *
+         * 서버는 이 키를 `null` 로 보내지 않는다(BE `ReceivedTimeLetterResponse` 가 미공개 구간에
+         * `List.of()` 를 채운다). 그래서 `coerceInputValues` 없이도 파싱이 깨지지 않는다 — 이
+         * 기본값이 실제로 가리는 것은 «키 자체가 빠지는» 경우다.
          */
-        private val MINDRECORD =
-            setOf(
-                "DailyQuestionAnswerResponseDto.content",
-                "DailyQuestionAnswerResponseDto.isDraft",
-            )
-
-        /** #957 — afternote (11건). `AfternoteDetailDto.createdAt` 은 #676 에서 해소(BE 응답에 없는 필드라 삭제). */
-        private val AFTERNOTE =
-            setOf(
-                "AfternoteDetailDto.updatedAt",
-                "AfternotePlaylistDto.songs",
-                "AfternotePageDto.content",
-                "AfternotePageDto.page",
-                "AfternotePageDto.size",
-                "AfternotePageDto.hasNext",
-                "ReceivedAfternoteListDto.afternotes",
-                "ReceivedAfternoteListDto.totalCount",
-                "ReceivedAfternoteDetailDto.processingMethods",
-                "ReceivedPlaylistDto.songs",
-                "MusicSearchResponseDto.tracks",
-            )
-
-        /** #790 — timeletter (1건) */
         private val TIMELETTER = setOf("ReceivedTimeLetterDto.blocks")
 
-        val KNOWN_COERCING_DEFAULTS = MINDRECORD + AFTERNOTE + TIMELETTER
+        val KNOWN_COERCING_DEFAULTS = TIMELETTER
     }
 }
