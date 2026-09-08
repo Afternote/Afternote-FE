@@ -5,9 +5,11 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.UserMarketingConsent
 import com.afternote.core.model.user.UserPushSetting
+import com.afternote.feature.setting.presentation.viewmodel.PushNotificationIntent
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -49,18 +51,24 @@ class MarketingConsentFailureTest {
                     onUpdateMyMarketingConsents = { _, _, _ -> error("unavailable") }
                 }
             val viewModel = viewModel(repository, reporter)
+            viewModel.onIntent(PushNotificationIntent.MarketingFeedbackActive(true))
             val events = mutableListOf<PushNotificationEvent>()
-            backgroundScope.launch(dispatcher) { viewModel.events.collect { events += it } }
+            backgroundScope.launch(dispatcher) {
+                viewModel.uiState.mapNotNull { it.pendingEvent }.collect {
+                    events += it
+                    viewModel.onIntent(PushNotificationIntent.ConsumeMarketingFailure)
+                }
+            }
             advanceUntilIdle()
             runCurrent()
 
-            viewModel.onSmsChecked(false)
+            viewModel.onIntent(PushNotificationIntent.SmsChecked(false))
             advanceUntilIdle()
             assertTrue(viewModel.uiState.value.isSmsChecked)
-            viewModel.onEmailChecked(false)
+            viewModel.onIntent(PushNotificationIntent.EmailChecked(false))
             advanceUntilIdle()
             assertTrue(viewModel.uiState.value.isEmailChecked)
-            viewModel.onPushChecked(false)
+            viewModel.onIntent(PushNotificationIntent.PushChecked(false))
             advanceUntilIdle()
             runCurrent()
             assertTrue(viewModel.uiState.value.isPushChecked)
@@ -82,14 +90,20 @@ class MarketingConsentFailureTest {
                     onUpdateMyMarketingConsents = { _, _, _ -> throw CancellationException("screen left") }
                 }
             val viewModel = viewModel(repository, reporter)
+            viewModel.onIntent(PushNotificationIntent.MarketingFeedbackActive(true))
             val events = mutableListOf<PushNotificationEvent>()
-            backgroundScope.launch(dispatcher) { viewModel.events.collect { events += it } }
+            backgroundScope.launch(dispatcher) {
+                viewModel.uiState.mapNotNull { it.pendingEvent }.collect {
+                    events += it
+                    viewModel.onIntent(PushNotificationIntent.ConsumeMarketingFailure)
+                }
+            }
             advanceUntilIdle()
             runCurrent()
 
-            viewModel.onSmsChecked(false)
-            viewModel.onEmailChecked(false)
-            viewModel.onPushChecked(false)
+            viewModel.onIntent(PushNotificationIntent.SmsChecked(false))
+            viewModel.onIntent(PushNotificationIntent.EmailChecked(false))
+            viewModel.onIntent(PushNotificationIntent.PushChecked(false))
             advanceUntilIdle()
             runCurrent()
 
@@ -102,7 +116,7 @@ class MarketingConsentFailureTest {
         }
 
     @Test
-    fun `구독이 끝난 동안의 실패 안내는 다음 구독에 재생하지 않는다`() =
+    fun `화면이 비활성인 동안의 실패 안내는 다음 진입에 재생하지 않는다`() =
         runTest(dispatcher) {
             val viewModel =
                 viewModel(
@@ -111,20 +125,35 @@ class MarketingConsentFailureTest {
                     },
                     RecordingReporter(),
                 )
+            viewModel.onIntent(PushNotificationIntent.MarketingFeedbackActive(true))
             val events = mutableListOf<PushNotificationEvent>()
-            val firstCollector = backgroundScope.launch(dispatcher) { viewModel.events.collect { events += it } }
+            val firstCollector =
+                backgroundScope.launch(dispatcher) {
+                    viewModel.uiState.mapNotNull { it.pendingEvent }.collect {
+                        events +=
+                            it
+                        ; viewModel.onIntent(PushNotificationIntent.ConsumeMarketingFailure)
+                    }
+                }
             advanceUntilIdle()
             runCurrent()
+            viewModel.onIntent(PushNotificationIntent.MarketingFeedbackActive(false))
             firstCollector.cancel()
             runCurrent()
 
-            viewModel.onSmsChecked(false)
+            viewModel.onIntent(PushNotificationIntent.SmsChecked(false))
             advanceUntilIdle()
-            backgroundScope.launch(dispatcher) { viewModel.events.collect { events += it } }
+            viewModel.onIntent(PushNotificationIntent.MarketingFeedbackActive(true))
+            backgroundScope.launch(dispatcher) {
+                viewModel.uiState.mapNotNull { it.pendingEvent }.collect {
+                    events += it
+                    viewModel.onIntent(PushNotificationIntent.ConsumeMarketingFailure)
+                }
+            }
             runCurrent()
             assertTrue(events.isEmpty())
 
-            viewModel.onEmailChecked(false)
+            viewModel.onIntent(PushNotificationIntent.EmailChecked(false))
             advanceUntilIdle()
             runCurrent()
             assertEquals(listOf(PushNotificationEvent.MarketingConsentSaveFailed), events)

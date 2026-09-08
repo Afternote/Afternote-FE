@@ -6,11 +6,14 @@ import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.ui.UiText
 import com.afternote.feature.setting.presentation.R
+import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsIntent
+import com.afternote.feature.setting.presentation.viewmodel.ProfileEditIntent
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -53,12 +56,12 @@ class SettingErrorStateViewModelTest {
             val viewModel = SettingViewModel(FakeAuthRepository.strict(), repository)
 
             advanceUntilIdle()
-            assertTrue(viewModel.uiState.value is SettingUiState.Error)
+            assertTrue(viewModel.uiState.value.profile is SettingProfileState.Error)
 
-            viewModel.refresh()
+            viewModel.onIntent(SettingIntent.Refresh)
             advanceUntilIdle()
 
-            assertEquals(SettingUiState.Success(testUser.name, testUser.email), viewModel.uiState.value)
+            assertEquals(SettingProfileState.Success(testUser.name, testUser.email), viewModel.uiState.value.profile)
         }
 
     @Test
@@ -76,14 +79,14 @@ class SettingErrorStateViewModelTest {
             advanceUntilIdle()
             val previous = viewModel.uiState.value
 
-            viewModel.refresh()
+            viewModel.onIntent(SettingIntent.Refresh)
             runCurrent()
             assertEquals(previous, viewModel.uiState.value)
 
             val updated = testUser.copy(name = "새 이름")
             refreshResult.complete(updated)
             advanceUntilIdle()
-            assertEquals(SettingUiState.Success(updated.name, updated.email), viewModel.uiState.value)
+            assertEquals(SettingProfileState.Success(updated.name, updated.email), viewModel.uiState.value.profile)
         }
 
     @Test
@@ -103,7 +106,7 @@ class SettingErrorStateViewModelTest {
             advanceUntilIdle()
             assertEquals(ProfileEditUiState.Error, viewModel.uiState.value)
 
-            viewModel.retryLoadProfile()
+            viewModel.onIntent(ProfileEditIntent.RetryLoad)
             advanceUntilIdle()
 
             assertEquals(
@@ -133,7 +136,7 @@ class SettingErrorStateViewModelTest {
                     .isEmpty(),
             )
 
-            viewModel.retryLoadConnectedAccounts()
+            viewModel.onIntent(ConnectedAccountsIntent.RetryLoad)
             advanceUntilIdle()
 
             assertEquals(null, viewModel.uiState.value.errorMessage)
@@ -151,9 +154,9 @@ class SettingErrorStateViewModelTest {
             val viewModel = ConnectedAccountsViewModel(repository)
             advanceUntilIdle()
             val accountsBeforeMutation = viewModel.uiState.value.accounts
-            val event = async { viewModel.events.first() }
+            val event = async { viewModel.uiState.mapNotNull { it.pendingEvent }.first() }
 
-            viewModel.link("google", "token")
+            viewModel.onIntent(ConnectedAccountsIntent.Link("google", "token"))
             advanceUntilIdle()
 
             assertEquals(accountsBeforeMutation, viewModel.uiState.value.accounts)
@@ -175,9 +178,9 @@ class SettingErrorStateViewModelTest {
             val viewModel = ConnectedAccountsViewModel(repository)
             advanceUntilIdle()
             val accountsBeforeMutation = viewModel.uiState.value.accounts
-            val event = async { viewModel.events.first() }
+            val event = async { viewModel.uiState.mapNotNull { it.pendingEvent }.first() }
 
-            viewModel.onToggle(provider = "google", enabled = false)
+            viewModel.onIntent(ConnectedAccountsIntent.Toggle(provider = "google", enabled = false))
             advanceUntilIdle()
 
             assertEquals(accountsBeforeMutation, viewModel.uiState.value.accounts)
@@ -197,13 +200,18 @@ class SettingErrorStateViewModelTest {
                 }
             val viewModel = ProfileEditViewModel(repository)
             advanceUntilIdle()
-            val event = async { viewModel.events.first() }
+            val event = async { viewModel.uiState.mapNotNull { (it as? ProfileEditUiState.Success)?.pendingEvent }.first() }
 
-            viewModel.updateProfile("새 이름", "01000000000")
+            viewModel.onIntent(ProfileEditIntent.UpdateProfile("새 이름", "01000000000"))
             advanceUntilIdle()
 
             assertEquals(
-                ProfileEditUiState.Success(testUser.name, testUser.phone.orEmpty(), testUser.email),
+                ProfileEditUiState.Success(
+                    testUser.name,
+                    testUser.phone.orEmpty(),
+                    testUser.email,
+                    pendingEvent = ProfileEditEvent.UpdateFailure,
+                ),
                 viewModel.uiState.value,
             )
             assertEquals(ProfileEditEvent.UpdateFailure, event.await())

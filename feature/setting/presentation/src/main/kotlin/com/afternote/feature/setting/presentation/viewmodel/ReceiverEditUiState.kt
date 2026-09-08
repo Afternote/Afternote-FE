@@ -2,14 +2,16 @@ package com.afternote.feature.setting.presentation.viewmodel
 
 import com.afternote.core.model.user.ReceiverDetail
 import com.afternote.core.ui.UiText
+import com.afternote.core.ui.mvi.UiState
 
-data class ReceiverEditUiState(
+internal data class ReceiverEditUiState(
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
     val receiver: ReceiverDetail? = null,
     val errorMessage: UiText? = null,
-)
+    val pendingEvent: ReceiverEditEvent? = null,
+) : UiState
 
-sealed interface ReceiverEditEvent {
+internal sealed interface ReceiverEditEvent {
     data object EditSuccess : ReceiverEditEvent
 }

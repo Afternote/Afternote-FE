@@ -1,8 +1,9 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
 import com.afternote.core.ui.UiText
+import com.afternote.core.ui.mvi.UiState
 
-data class PushNotificationUiState(
+internal data class PushNotificationUiState(
     val isLoading: Boolean = true,
     val errorMessage: UiText? = null,
     val isDeviceAlarmOn: Boolean = false,
@@ -18,13 +19,16 @@ data class PushNotificationUiState(
     val isMindRecordUpdating: Boolean = false,
     val isAfternoteUpdating: Boolean = false,
     val saveFailure: PushNotificationSaveFailure? = null,
-)
+    val failedUpdate: PushSettingUpdate? = null,
+    val isMarketingFeedbackActive: Boolean = false,
+    val pendingEvent: PushNotificationEvent? = null,
+) : UiState
 
-enum class PushNotificationSaveFailure {
+internal enum class PushNotificationSaveFailure {
     NETWORK,
     SERVER,
 }
 
-sealed interface PushNotificationEvent {
+internal sealed interface PushNotificationEvent {
     data object MarketingConsentSaveFailed : PushNotificationEvent
 }
