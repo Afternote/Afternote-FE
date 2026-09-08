@@ -2,6 +2,7 @@ package com.afternote.afternote_fe.notification
 
 import android.app.Application
 import android.content.Intent
+import com.afternote.core.common.notification.NotificationDestination
 import com.afternote.core.common.notification.NotificationPendingIntentFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -72,6 +73,7 @@ class NotificationIntentContractTest {
                 context = RuntimeEnvironment.getApplication(),
                 source = NotificationEntrySource.DAILY.contractValue,
                 occurrenceId = "occurrence-1",
+                destination = NotificationDestination.HOME,
             )
         assertNotNull("런처 Intent 를 찾지 못해 PendingIntent 가 만들어지지 않았다", pendingIntent)
 
@@ -91,4 +93,66 @@ class NotificationIntentContractTest {
             source?.let { putExtra(NotificationPendingIntentFactory.EXTRA_NOTIFICATION_SOURCE, it) }
             occurrenceId?.let { putExtra(NotificationPendingIntentFactory.EXTRA_NOTIFICATION_OCCURRENCE_TOKEN, it) }
         }
+
+    @Test
+    fun `계약에 있는 목적지는 그대로 보존한다`() {
+        NotificationDestination.entries.forEach { destination ->
+            val request =
+                resolveIntent(
+                    isNotificationEntry = true,
+                    rawSource = "daily",
+                    occurrenceId = "occurrence-1",
+                    rawDestination = destination.contractValue,
+                )
+
+            assertEquals(destination, request?.destination)
+        }
+    }
+
+    @Test
+    fun `목적지가 없거나 해석되지 않아도 알림 자체는 살리고 홈으로 폴백한다`() {
+        listOf(null, "", "   ", "unknown", "HOME", "afternote_home").forEach { rawDestination ->
+            val request =
+                resolveIntent(
+                    isNotificationEntry = true,
+                    rawSource = "fcm",
+                    occurrenceId = "occurrence-1",
+                    rawDestination = rawDestination,
+                )
+
+            assertEquals(NotificationDestination.HOME, request?.destination)
+        }
+    }
+
+    @Test
+    fun `목적지는 소비 identity에 들어가지 않는다`() {
+        val toHome =
+            resolveIntent(
+                isNotificationEntry = true,
+                rawSource = "fcm",
+                occurrenceId = "occurrence-1",
+                rawDestination = NotificationDestination.HOME.contractValue,
+            )
+        val toTimeLetter =
+            resolveIntent(
+                isNotificationEntry = true,
+                rawSource = "fcm",
+                occurrenceId = "occurrence-1",
+                rawDestination = NotificationDestination.TIME_LETTER.contractValue,
+            )
+
+        assertEquals(toHome?.identityKey, toTimeLetter?.identityKey)
+    }
+
+    private fun resolveIntent(
+        isNotificationEntry: Boolean,
+        rawSource: String?,
+        occurrenceId: String?,
+        rawDestination: String?,
+    ): NotificationEntryRequest? =
+        NotificationIntentContract.fromIntent(
+            notificationIntent(isNotificationEntry, rawSource, occurrenceId).apply {
+                rawDestination?.let { putExtra(NotificationPendingIntentFactory.EXTRA_NOTIFICATION_DESTINATION, it) }
+            },
+        )
 }

@@ -6,7 +6,6 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
-import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.domain.testing.FakeUserRepository.ConnectedAccountLinkCall
@@ -25,6 +24,7 @@ import com.afternote.core.ui.UiText
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.setting.domain.Passkey
 import com.afternote.feature.setting.presentation.component.PinSetupStep
+import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyListScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyScreen
@@ -32,18 +32,23 @@ import com.afternote.feature.setting.presentation.screen.ProfileEditScreen
 import com.afternote.feature.setting.presentation.screen.WithdrawConfirmScreen
 import com.afternote.feature.setting.presentation.viewmodel.AppLockSetupViewModel
 import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsEvent
+import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsIntent
 import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsViewModel
 import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionError
+import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionIntent
 import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionViewModel
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditEvent
+import com.afternote.feature.setting.presentation.viewmodel.ProfileEditIntent
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditUiState
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditViewModel
+import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterIntent
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterViewModel
 import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
 import com.afternote.feature.setting.presentation.viewmodel.WithdrawUiState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
@@ -86,7 +91,7 @@ class SettingAccountSecurityTest {
         }
 
         composeRule.onNodeWithText("프로필을 불러올 수 없습니다.").assertIsDisplayed()
-        composeRule.runOnIdle { loadFailureViewModel.updateProfile("새 이름", "01012345678") }
+        composeRule.runOnIdle { loadFailureViewModel.onIntent(ProfileEditIntent.UpdateProfile("새 이름", "01012345678")) }
         assertTrue(loadFailureRepository.profileUpdateCalls.isEmpty())
 
         val updateFailureRepository = settingContractUserRepository()
@@ -96,8 +101,8 @@ class SettingAccountSecurityTest {
         }
         updateFailureRepository.onUpdateMyProfile = { _, _, _ -> throw IllegalStateException("offline") }
 
-        composeRule.runOnIdle { updateFailureViewModel.updateProfile("   ", "") }
-        val event = awaitEvent(updateFailureViewModel.events)
+        composeRule.runOnIdle { updateFailureViewModel.onIntent(ProfileEditIntent.UpdateProfile("   ", "")) }
+        val event = awaitEvent(updateFailureViewModel.uiState.mapNotNull { (it as? ProfileEditUiState.Success)?.pendingEvent })
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             (updateFailureViewModel.uiState.value as? ProfileEditUiState.Success)?.isUpdating == false
         }
@@ -117,14 +122,14 @@ class SettingAccountSecurityTest {
             !linkViewModel.uiState.value.isLoading
         }
 
-        composeRule.runOnIdle { linkViewModel.onToggle(provider = "google", enabled = true) }
-        val request = awaitEvent(linkViewModel.events)
+        composeRule.runOnIdle { linkViewModel.onIntent(ConnectedAccountsIntent.Toggle(provider = "google", enabled = true)) }
+        val request = awaitEvent(linkViewModel.uiState.mapNotNull { it.pendingEvent })
 
         assertEquals(ConnectedAccountsEvent.RequestLink("google"), request)
         assertTrue(linkRepository.connectedLinkCalls.isEmpty())
 
         linkRepository.onLinkConnectedAccount = { _, _ -> throw IllegalStateException("oauth rejected") }
-        composeRule.runOnIdle { linkViewModel.link(provider = "google", accessToken = "google-token") }
+        composeRule.runOnIdle { linkViewModel.onIntent(ConnectedAccountsIntent.Link(provider = "google", accessToken = "google-token")) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             linkViewModel.uiState.value.errorMessage == "계정 연결에 실패했습니다."
         }
@@ -145,7 +150,7 @@ class SettingAccountSecurityTest {
         }
 
         assertTrue(unlinkRepository.connectedUnlinkCalls.isEmpty())
-        composeRule.runOnIdle { unlinkViewModel.onToggle(provider = "google", enabled = false) }
+        composeRule.runOnIdle { unlinkViewModel.onIntent(ConnectedAccountsIntent.Toggle(provider = "google", enabled = false)) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             unlinkRepository.connectedUnlinkCalls.size == 1
         }
@@ -160,12 +165,14 @@ class SettingAccountSecurityTest {
         val viewModel = ReceiverRegisterViewModel(repository)
 
         composeRule.runOnIdle {
-            viewModel.register(
-                name = "김수신",
-                relation = "가족",
-                phone = "   ",
-                email = "",
-                message = null,
+            viewModel.onIntent(
+                ReceiverRegisterIntent.Register(
+                    name = "김수신",
+                    relation = "가족",
+                    phone = "   ",
+                    email = "",
+                    message = null,
+                ),
             )
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
@@ -203,7 +210,7 @@ class SettingAccountSecurityTest {
             }
         val viewModel =
             DeliveryConditionViewModel(
-                savedStateHandle = SavedStateHandle(mapOf("receiverId" to RECEIVER_ID)),
+                route = SettingRoute.AfterDeliveryRoute(RECEIVER_ID),
                 userRepository = repository,
             )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
@@ -211,8 +218,8 @@ class SettingAccountSecurityTest {
         }
 
         composeRule.runOnIdle {
-            viewModel.onConditionTypeSelected(index = 1)
-            viewModel.onSave()
+            viewModel.onIntent(DeliveryConditionIntent.SelectConditionType(index = 1))
+            viewModel.onIntent(DeliveryConditionIntent.Save)
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.error == DeliveryConditionError.SAVE_FAILED

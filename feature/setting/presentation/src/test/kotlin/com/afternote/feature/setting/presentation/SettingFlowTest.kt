@@ -11,6 +11,7 @@ import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.setting.presentation.screen.SettingScreen
+import com.afternote.feature.setting.presentation.viewmodel.PushNotificationIntent
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
 import org.junit.Assert.assertEquals
@@ -99,11 +100,12 @@ class SettingFlowTest {
             PushNotificationViewModel(
                 context = ApplicationProvider.getApplicationContext(),
                 userRepository = user,
+                errorReporter = NoOpErrorReporter,
             )
         composeRule.setContent { AfternoteTheme {} }
         composeRule.waitUntil(timeoutMillis = 5_000) { !viewModel.uiState.value.isLoading }
 
-        composeRule.runOnIdle { viewModel.onNewsletterToggle(false) }
+        composeRule.runOnIdle { viewModel.onIntent(PushNotificationIntent.NewsletterToggle(false)) }
         composeRule.waitUntil(timeoutMillis = 5_000) {
             viewModel.uiState.value.isNewsletterOn
         }
@@ -168,5 +170,7 @@ private fun settingFlowUserRepository(): FakeUserRepository =
         onDeleteAccount = null
         onGetMyPushSettings = null
         onUpdateMyPushSettings = null
+        onGetMyMarketingConsents = null
+        onUpdateMyMarketingConsents = null
         onGetConnectedAccounts = null
     }

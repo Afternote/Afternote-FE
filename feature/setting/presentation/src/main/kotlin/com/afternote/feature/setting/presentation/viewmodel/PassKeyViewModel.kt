@@ -1,14 +1,17 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
 import androidx.credentials.exceptions.CreateCredentialCancellationException
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserProfileCacheRepository
 import com.afternote.core.ui.UiText
+import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.setting.domain.PasskeyRepository
 import com.afternote.feature.setting.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -29,9 +32,74 @@ internal class PassKeyViewModel
         private val userProfileCacheRepository: UserProfileCacheRepository,
         private val passkeyRepository: PasskeyRepository,
         private val errorReporter: ErrorReporter,
-    ) : ViewModel() {
+    ) : MviViewModel<PassKeyIntent, PassKeyUiState, PassKeyReducerEvent>(PassKeyUiState()) {
+        private var registrationJob: Job? = null
+
+        override fun onIntent(intent: PassKeyIntent) {
+            when (intent) {
+                is PassKeyIntent.Register -> {
+                    register(intent.createCredential)
+                }
+
+                PassKeyIntent.CancelRegistration -> {
+                    registrationJob?.cancel()
+                    dispatch(PassKeyReducerEvent.Canceled)
+                }
+
+                is PassKeyIntent.ConsumeResult -> {
+                    dispatch(PassKeyReducerEvent.Consumed(intent.result))
+                }
+            }
+        }
+
+        override fun reduce(
+            state: PassKeyUiState,
+            event: PassKeyReducerEvent,
+        ): PassKeyUiState =
+            when (event) {
+                PassKeyReducerEvent.Started -> {
+                    state.copy(isRegistering = true, result = null, registrationId = state.registrationId + 1)
+                }
+
+                is PassKeyReducerEvent.Finished -> {
+                    if (state.registrationId ==
+                        event.registrationId
+                    ) {
+                        state.copy(isRegistering = false, result = event.result)
+                    } else {
+                        state
+                    }
+                }
+
+                is PassKeyReducerEvent.Stopped -> {
+                    if (state.registrationId == event.registrationId) state.copy(isRegistering = false) else state
+                }
+
+                PassKeyReducerEvent.Canceled -> {
+                    state.copy(isRegistering = false, result = null, registrationId = state.registrationId + 1)
+                }
+
+                is PassKeyReducerEvent.Consumed -> {
+                    if (state.result == event.result) state.copy(result = null) else state
+                }
+            }
+
+        private fun register(createCredential: suspend (String) -> String) {
+            if (currentState.isRegistering || currentState.result != null) return
+            dispatch(PassKeyReducerEvent.Started)
+            val registrationId = currentState.registrationId
+            registrationJob =
+                viewModelScope.launch {
+                    try {
+                        dispatch(PassKeyReducerEvent.Finished(registrationId, registerPasskey(createCredential)))
+                    } finally {
+                        dispatch(PassKeyReducerEvent.Stopped(registrationId))
+                    }
+                }
+        }
+
         /** Activity를 가진 화면이 플랫폼 요청을 실행한다. 서버 등록이 성공한 뒤에만 완료를 반환한다. */
-        suspend fun registerPasskey(createCredential: suspend (optionsJson: String) -> String): PasskeyRegistrationResult {
+        private suspend fun registerPasskey(createCredential: suspend (optionsJson: String) -> String): PasskeyRegistrationResult {
             var stage = STAGE_OPTIONS
             return try {
                 val options = passkeyRepository.getRegistrationOptions()

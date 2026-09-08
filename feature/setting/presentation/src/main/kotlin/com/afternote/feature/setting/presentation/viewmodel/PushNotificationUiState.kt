@@ -1,6 +1,8 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
-data class PushNotificationUiState(
+import com.afternote.core.ui.mvi.UiState
+
+internal data class PushNotificationUiState(
     val isLoading: Boolean = false,
     val isDeviceAlarmOn: Boolean = false,
     // 마케팅 알림 (기기 알림 꺼졌을 때)
@@ -11,4 +13,20 @@ data class PushNotificationUiState(
     val isNewsletterOn: Boolean = false,
     val isMindRecordOn: Boolean = false,
     val isAfternoteOn: Boolean = false,
-)
+    val isNewsletterUpdating: Boolean = false,
+    val isMindRecordUpdating: Boolean = false,
+    val isAfternoteUpdating: Boolean = false,
+    val saveFailure: PushNotificationSaveFailure? = null,
+    val failedUpdate: PushSettingUpdate? = null,
+    val isMarketingFeedbackActive: Boolean = false,
+    val pendingEvent: PushNotificationEvent? = null,
+) : UiState
+
+internal enum class PushNotificationSaveFailure {
+    NETWORK,
+    SERVER,
+}
+
+internal sealed interface PushNotificationEvent {
+    data object MarketingConsentSaveFailed : PushNotificationEvent
+}

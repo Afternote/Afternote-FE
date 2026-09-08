@@ -1,37 +1,34 @@
 package com.afternote.feature.setting.presentation.screen
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditEvent
+import com.afternote.core.ui.mvi.ObserveSignal
+import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditIntent
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditViewModel
 
 @Composable
-fun ReceiverEditScreen(
+internal fun ReceiverEditScreen(
     onBackClick: () -> Unit,
     onEditSuccess: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ReceiverEditViewModel = hiltViewModel(),
+    viewModel: ReceiverEditViewModel,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val currentOnEditSuccess by rememberUpdatedState(onEditSuccess)
 
-    LaunchedEffect(Unit) {
-        viewModel.events.collect { event ->
-            when (event) {
-                ReceiverEditEvent.EditSuccess -> currentOnEditSuccess()
-            }
-        }
-    }
+    ObserveSignal(
+        signal = uiState.pendingEvent,
+        consumed = ReceiverEditIntent.ConsumeSuccess,
+        onIntent = viewModel::onIntent,
+    ) { onEditSuccess() }
 
     ReceiverEditContent(
         uiState = uiState,
         onBackClick = onBackClick,
-        onRegister = viewModel::update,
+        onRegister = { name, relation, phone, email, message ->
+            viewModel.onIntent(ReceiverEditIntent.Update(name, relation, phone, email, message))
+        },
         modifier = modifier,
     )
 }

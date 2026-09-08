@@ -8,10 +8,11 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.feature.setting.presentation.component.PinSetupStep
+import com.afternote.feature.setting.presentation.viewmodel.AppLockSetupIntent
 import com.afternote.feature.setting.presentation.viewmodel.AppLockSetupViewModel
 
 @Composable
-fun AppLockSetupScreen(
+internal fun AppLockSetupScreen(
     step: PinSetupStep,
     onPinComplete: (pin: String) -> Unit,
     onBack: () -> Unit,
@@ -24,15 +25,15 @@ fun AppLockSetupScreen(
     LaunchedEffect(uiState.isComplete) {
         if (uiState.isComplete) {
             currentOnPinComplete(uiState.pin)
-            viewModel.resetPin()
+            viewModel.onIntent(AppLockSetupIntent.ResetPin)
         }
     }
 
     AppLockSetupContent(
         step = step,
         passwordLength = uiState.pin.length,
-        onDigitClick = viewModel::onDigitInput,
-        onDeleteClick = viewModel::onDelete,
+        onDigitClick = { viewModel.onIntent(AppLockSetupIntent.DigitInput(it)) },
+        onDeleteClick = { viewModel.onIntent(AppLockSetupIntent.Delete) },
         onConfirmClick = { currentOnPinComplete(uiState.pin) },
         onBack = onBack,
         modifier = modifier,

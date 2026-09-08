@@ -10,8 +10,8 @@ import com.afternote.feature.setting.presentation.R
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.async
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -53,18 +53,19 @@ class PasskeyViewModelTest {
                 server.await()
             }
             val viewModel = PassKeyViewModel(cache, repository, reporter)
-            val registration =
-                async {
-                    viewModel.registerPasskey { options ->
-                        assertEquals("server-options", options)
-                        "platform-credential"
-                    }
-                }
+            viewModel.onIntent(
+                PassKeyIntent.Register { options ->
+                    assertEquals("server-options", options)
+                    "platform-credential"
+                },
+            )
             runCurrent()
-            assertFalse(registration.isCompleted)
+            assertTrue(viewModel.uiState.value.isRegistering)
+            assertEquals(null, viewModel.uiState.value.result)
             assertTrue(cache.savedPasskeyValues.isEmpty())
             server.complete(PASSKEY)
-            assertSame(PasskeyRegistrationResult.Success, registration.await())
+            runCurrent()
+            assertSame(PasskeyRegistrationResult.Success, viewModel.uiState.value.result)
             assertEquals(listOf(true), cache.savedPasskeyValues)
             assertTrue(reporter.stages.isEmpty())
         }
@@ -74,7 +75,7 @@ class PasskeyViewModelTest {
         runTest(dispatcher) {
             repository.options = { throw IOException("private server response") }
             val result =
-                PassKeyViewModel(cache, repository, reporter).registerPasskey {
+                register(PassKeyViewModel(cache, repository, reporter)) {
                     error("Credential Manager must not run after options failure")
                 }
             assertEquals(
@@ -90,7 +91,7 @@ class PasskeyViewModelTest {
     fun registration_unexpectedCredentialResponseIsReportedWithoutRegistering() =
         runTest(dispatcher) {
             val result =
-                PassKeyViewModel(cache, repository, reporter).registerPasskey {
+                register(PassKeyViewModel(cache, repository, reporter)) {
                     error("Unexpected credential response")
                 }
             assertEquals(
@@ -106,7 +107,7 @@ class PasskeyViewModelTest {
     fun registration_nativeCancellationIsQuietAndDoesNotRegister() =
         runTest(dispatcher) {
             val result =
-                PassKeyViewModel(cache, repository, reporter).registerPasskey {
+                register(PassKeyViewModel(cache, repository, reporter)) {
                     throw CreateCredentialCancellationException()
                 }
             assertSame(PasskeyRegistrationResult.Canceled, result)
@@ -120,12 +121,11 @@ class PasskeyViewModelTest {
         runTest(dispatcher) {
             val cancellation = CancellationException("screen left")
             repository.options = { throw cancellation }
-            try {
-                PassKeyViewModel(cache, repository, reporter).registerPasskey { "unused" }
-                error("Cancellation must propagate")
-            } catch (failure: CancellationException) {
-                assertSame(cancellation, failure)
-            }
+            val viewModel = PassKeyViewModel(cache, repository, reporter)
+            viewModel.onIntent(PassKeyIntent.Register { "unused" })
+            runCurrent()
+            assertFalse(viewModel.uiState.value.isRegistering)
+            assertEquals(null, viewModel.uiState.value.result)
             assertTrue(reporter.stages.isEmpty())
             assertTrue(cache.savedPasskeyValues.isEmpty())
         }
@@ -134,7 +134,7 @@ class PasskeyViewModelTest {
     fun registration_serverFailureIsReportedWithoutSavingSuccess() =
         runTest(dispatcher) {
             repository.register = { throw IOException("server rejected credential") }
-            val result = PassKeyViewModel(cache, repository, reporter).registerPasskey { "credential" }
+            val result = register(PassKeyViewModel(cache, repository, reporter)) { "credential" }
             assertTrue(result is PasskeyRegistrationResult.Error)
             assertEquals(listOf("passkey_register"), reporter.stages)
             assertTrue(cache.savedPasskeyValues.isEmpty())
@@ -144,7 +144,7 @@ class PasskeyViewModelTest {
     fun registration_cacheFailureKeepsServerSuccessAndReportsOnlyCacheStage() =
         runTest(dispatcher) {
             cache.onSavePasskeyRegistered = { throw IOException("disk") }
-            val result = PassKeyViewModel(cache, repository, reporter).registerPasskey { "credential" }
+            val result = register(PassKeyViewModel(cache, repository, reporter)) { "credential" }
             assertSame(PasskeyRegistrationResult.Success, result)
             assertEquals(listOf("credential"), repository.credentials)
             assertEquals(listOf("passkey_registration_cache"), reporter.stages)
@@ -155,19 +155,19 @@ class PasskeyViewModelTest {
         runTest(dispatcher) {
             repository.list = { throw IOException("offline") }
             val viewModel = PassKeyListViewModel(repository, reporter)
-            viewModel.refresh()
+            viewModel.onIntent(PassKeyListIntent.Refresh)
             advanceUntilIdle()
             assertFalse(viewModel.uiState.value.isLoading)
             assertEquals(UiText.Resource(R.string.setting_passkey_list_error), viewModel.uiState.value.errorMessage)
             assertEquals(listOf("passkey_list"), reporter.stages)
 
             repository.list = { emptyList() }
-            viewModel.refresh()
+            viewModel.onIntent(PassKeyListIntent.Refresh)
             advanceUntilIdle()
             assertEquals(PassKeyListUiState(), viewModel.uiState.value)
 
             repository.list = { listOf(PASSKEY) }
-            viewModel.refresh()
+            viewModel.onIntent(PassKeyListIntent.Refresh)
             advanceUntilIdle()
             assertEquals(listOf(PASSKEY), viewModel.uiState.value.passkeys)
         }
@@ -182,15 +182,55 @@ class PasskeyViewModelTest {
                 gate.await()
             }
             val viewModel = PassKeyListViewModel(repository, reporter)
-            viewModel.refresh()
+            viewModel.onIntent(PassKeyListIntent.Refresh)
             runCurrent()
-            viewModel.refresh()
+            viewModel.onIntent(PassKeyListIntent.Refresh)
             runCurrent()
             assertEquals(1, calls)
             gate.complete(listOf(PASSKEY))
             advanceUntilIdle()
             assertEquals(listOf(PASSKEY), viewModel.uiState.value.passkeys)
         }
+
+    @Test
+    fun registration_cancelThenRetryIgnoresPreviousCompletionAndBlocksDuplicateSubmission() =
+        runTest(dispatcher) {
+            val first = CompletableDeferred<String>()
+            val second = CompletableDeferred<String>()
+            val viewModel = PassKeyViewModel(cache, repository, reporter)
+            viewModel.onIntent(PassKeyIntent.Register { first.await() })
+            runCurrent()
+            viewModel.onIntent(PassKeyIntent.CancelRegistration)
+            viewModel.onIntent(PassKeyIntent.Register { second.await() })
+            viewModel.onIntent(PassKeyIntent.Register { error("duplicate platform request") })
+            runCurrent()
+            assertTrue(viewModel.uiState.value.isRegistering)
+            first.complete("stale")
+            runCurrent()
+            assertTrue(repository.credentials.isEmpty())
+            second.complete("new")
+            runCurrent()
+            assertEquals(listOf("new"), repository.credentials)
+            assertSame(PasskeyRegistrationResult.Success, viewModel.uiState.value.result)
+            viewModel.onIntent(PassKeyIntent.Register { error("success must be consumed first") })
+            runCurrent()
+            assertEquals(listOf("new"), repository.credentials)
+            viewModel.onIntent(PassKeyIntent.ConsumeResult(PasskeyRegistrationResult.Success))
+            assertEquals(null, viewModel.uiState.value.result)
+            viewModel.onIntent(PassKeyIntent.Register { "again" })
+            runCurrent()
+            assertSame(PasskeyRegistrationResult.Success, viewModel.uiState.value.result)
+            assertEquals(listOf("new", "again"), repository.credentials)
+        }
+
+    private fun TestScope.register(
+        viewModel: PassKeyViewModel,
+        createCredential: suspend (String) -> String,
+    ): PasskeyRegistrationResult? {
+        viewModel.onIntent(PassKeyIntent.Register(createCredential))
+        runCurrent()
+        return viewModel.uiState.value.result
+    }
 }
 
 private class PasskeyScenario : PasskeyRepository {

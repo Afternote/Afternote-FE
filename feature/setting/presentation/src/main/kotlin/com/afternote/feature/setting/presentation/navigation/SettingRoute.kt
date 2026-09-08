@@ -1,8 +1,10 @@
 package com.afternote.feature.setting.presentation.navigation
 
+import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
-sealed interface SettingRoute {
+@Serializable
+internal sealed interface SettingRoute : NavKey {
     @Serializable
     data object SettingHomeRoute : SettingRoute
 
@@ -25,6 +27,9 @@ sealed interface SettingRoute {
     data class RecipientListRoute(
         val selectForDeliveryConditions: Boolean = false,
     ) : SettingRoute
+
+    @Serializable
+    data object PushNotificationRoute : SettingRoute
 
     @Serializable
     data object RecipientRegisterRoute : SettingRoute

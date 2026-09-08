@@ -1,27 +1,26 @@
 package com.afternote.feature.setting.presentation.screen
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.credentials.CredentialManager
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.core.ui.UiText
 import com.afternote.core.ui.asString
+import com.afternote.core.ui.mvi.ObserveSignal
 import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
+import com.afternote.feature.setting.presentation.viewmodel.AppLockSetupIntent
 import com.afternote.feature.setting.presentation.viewmodel.AppLockSetupViewModel
+import com.afternote.feature.setting.presentation.viewmodel.PassKeyIntent
 import com.afternote.feature.setting.presentation.viewmodel.PassKeyViewModel
 import com.afternote.feature.setting.presentation.viewmodel.PasskeyRegistrationResult
-import kotlinx.coroutines.launch
 
 @Composable
 internal fun PassKeyPasswordScreen(
@@ -35,47 +34,53 @@ internal fun PassKeyPasswordScreen(
     val currentOnPinComplete by rememberUpdatedState(onPinComplete)
     val context = LocalContext.current
     val credentialManager = remember(context) { CredentialManager.create(context) }
-    val scope = rememberCoroutineScope()
-    var isRegistering by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<UiText?>(null) }
-
+    val registrationState by passKeyViewModel.uiState.collectAsStateWithLifecycle()
+    val isRegistering = registrationState.isRegistering
+    DisposableEffect(passKeyViewModel, viewModel) {
+        onDispose {
+            passKeyViewModel.onIntent(PassKeyIntent.CancelRegistration)
+            viewModel.onIntent(AppLockSetupIntent.ResetPin)
+        }
+    }
+    val result = registrationState.result
+    ObserveSignal(
+        signal = result.takeUnless { it is PasskeyRegistrationResult.Error },
+        consumed = PassKeyIntent.ConsumeResult(result ?: PasskeyRegistrationResult.Canceled),
+        onIntent = passKeyViewModel::onIntent,
+    ) { completed ->
+        val pin = uiState.pin
+        viewModel.onIntent(AppLockSetupIntent.ResetPin)
+        if (completed == PasskeyRegistrationResult.Success) currentOnPinComplete(pin)
+    }
+    LaunchedEffect(result) {
+        if (result is PasskeyRegistrationResult.Error) viewModel.onIntent(AppLockSetupIntent.ResetPin)
+    }
     val register: () -> Unit = {
-        if (uiState.isComplete && !isRegistering) {
-            isRegistering = true
-            val pin = uiState.pin
-            scope.launch {
-                try {
-                    when (
-                        val result = registerPasskeyWithCredentialManager(context, credentialManager, passKeyViewModel)
-                    ) {
-                        PasskeyRegistrationResult.Success -> currentOnPinComplete(pin)
-                        PasskeyRegistrationResult.Canceled -> Unit
-                        is PasskeyRegistrationResult.Error -> errorMessage = result.message
-                    }
-                } finally {
-                    viewModel.resetPin()
-                    isRegistering = false
-                }
-            }
+        if (uiState.isComplete && !isRegistering && result == null) {
+            passKeyViewModel.onIntent(
+                PassKeyIntent.Register { options ->
+                    createPasskeyCredential(context, credentialManager, options)
+                },
+            )
         }
     }
     LaunchedEffect(uiState.isComplete) {
         if (uiState.isComplete) register()
     }
 
-    errorMessage?.let { message ->
+    (result as? PasskeyRegistrationResult.Error)?.let { failure ->
         Popup(
             type = PopupType.Default,
-            message = message.asString(),
-            onConfirm = { errorMessage = null },
-            onDismiss = { errorMessage = null },
+            message = failure.message.asString(),
+            onConfirm = { passKeyViewModel.onIntent(PassKeyIntent.ConsumeResult(failure)) },
+            onDismiss = { passKeyViewModel.onIntent(PassKeyIntent.ConsumeResult(failure)) },
         )
     }
 
     PassKeyPasswordContent(
         passwordLength = uiState.pin.length,
-        onDigitClick = { if (!isRegistering) viewModel.onDigitInput(it) },
-        onDeleteClick = { if (!isRegistering) viewModel.onDelete() },
+        onDigitClick = { if (!isRegistering) viewModel.onIntent(AppLockSetupIntent.DigitInput(it)) },
+        onDeleteClick = { if (!isRegistering) viewModel.onIntent(AppLockSetupIntent.Delete) },
         onConfirmClick = register,
         onBack = onBack,
         modifier = modifier,

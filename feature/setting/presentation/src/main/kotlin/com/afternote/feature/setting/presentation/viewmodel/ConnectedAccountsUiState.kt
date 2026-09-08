@@ -1,12 +1,15 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
-data class ConnectedAccountsUiState(
+import com.afternote.core.ui.mvi.UiState
+
+internal data class ConnectedAccountsUiState(
     val isLoading: Boolean = false,
     val accounts: List<SocialAccountState> = emptyList(),
     val errorMessage: String? = null,
-)
+    val pendingEvent: ConnectedAccountsEvent? = null,
+) : UiState
 
-sealed interface ConnectedAccountsEvent {
+internal sealed interface ConnectedAccountsEvent {
     data class RequestLink(
         val provider: String,
     ) : ConnectedAccountsEvent

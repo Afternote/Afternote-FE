@@ -7,16 +7,14 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.navigation.compose.ComposeNavigator
-import androidx.navigation.testing.TestNavHostController
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.navigation.AppNavigation
-import com.afternote.afternote_fe.navigation.AppState
+import com.afternote.afternote_fe.navigation.rememberAfternoteAppState
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.setting.data.PasskeyTestScenario
 import com.afternote.feature.setting.domain.Passkey
-import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Assert.assertEquals
@@ -40,19 +38,13 @@ class PasskeyRegistrationAndroidTest {
     @Inject
     lateinit var scenario: PasskeyTestScenario
 
-    private lateinit var navController: TestNavHostController
-
     @Before
     fun setUp() {
         hiltRule.inject()
         composeRule.activityRule.scenario.onActivity { activity ->
-            navController =
-                TestNavHostController(activity).apply {
-                    navigatorProvider.addNavigator(ComposeNavigator())
-                }
             activity.setContent {
                 AfternoteTheme {
-                    AppNavigation(startDestination = Route.Setting, appState = AppState(navController))
+                    AppNavigation(startDestination = Route.Setting(), appState = rememberAfternoteAppState())
                 }
             }
         }
@@ -61,13 +53,13 @@ class PasskeyRegistrationAndroidTest {
     @Test
     fun passkeyList_queriesServerWithoutLocalFlagAndRefreshesOnReturn() {
         scenario.passkeys = listOf(Passkey(7L, "Server passkey", "2026-09-06T10:00:00"))
-        navigate(SettingRoute.PasskeyRoute)
+        openPasskeys()
         waitForText("Server passkey")
         composeRule.onNodeWithText("Server passkey").assertIsDisplayed()
 
-        navigate(SettingRoute.PasskeyPasswordRoute)
+        composeRule.runOnIdle { composeRule.activity.onBackPressedDispatcher.onBackPressed() }
         scenario.passkeys = listOf(Passkey(8L, "New server passkey", "2026-09-06T11:00:00"))
-        composeRule.runOnIdle { navController.popBackStack() }
+        openPasskeys()
         waitForText("New server passkey")
         composeRule.onNodeWithText("Server passkey").assertDoesNotExist()
         assertTrue(scenario.listCalls.get() >= 2)
@@ -76,7 +68,7 @@ class PasskeyRegistrationAndroidTest {
     @Test
     fun passkeyList_failureShowsRetryAndNeverPretendsThereAreNoPasskeys() {
         scenario.listFails = true
-        navigate(SettingRoute.PasskeyRoute)
+        openPasskeys()
         waitForText("패스키 목록을 불러올 수 없습니다.")
         composeRule.onNodeWithText("패스키 등록").assertDoesNotExist()
 
@@ -96,7 +88,7 @@ class PasskeyRegistrationAndroidTest {
         assumeFalse(hasPlayServices)
         assumeFalse(Build.VERSION.SDK_INT < 28)
 
-        navigate(SettingRoute.PasskeyPasswordRoute)
+        openPasskeyPassword()
         listOf("1", "2", "3", "4").forEach { composeRule.onNodeWithText(it).performClick() }
         waitForText("패스키 등록에 실패했습니다. 다시 시도해 주세요.")
         composeRule.onNodeWithText("패스키 등록에 실패했습니다. 다시 시도해 주세요.").assertIsDisplayed()
@@ -105,8 +97,31 @@ class PasskeyRegistrationAndroidTest {
         composeRule.onNodeWithText("패스키 생성이 완료되었습니다").assertDoesNotExist()
     }
 
-    private fun navigate(route: Any) {
-        composeRule.runOnIdle { navController.navigate(route) }
+    @Test
+    fun passkeyList_existingEntryRefreshesAfterRegistrationScreenReturns() {
+        scenario.passkeys = emptyList()
+        openPasskeys()
+        waitForText("패스키 등록")
+        composeRule.onNodeWithText("패스키 등록").performClick()
+        waitForText("비밀번호로 인증하기")
+        scenario.passkeys = listOf(Passkey(9L, "Registered on return", "2026-09-08T10:00:00"))
+        composeRule.runOnIdle { composeRule.activity.onBackPressedDispatcher.onBackPressed() }
+        waitForText("Registered on return")
+        assertEquals(2, scenario.listCalls.get())
+    }
+
+    private fun openPasskeys() {
+        waitForText("패스키 관리")
+        composeRule.onNodeWithText("패스키 관리").performScrollTo().performClick()
+    }
+
+    private fun openPasskeyPassword() {
+        openPasskeys()
+        waitForText("패스키 등록")
+        composeRule.onNodeWithText("패스키 등록").performClick()
+        waitForText("비밀번호로 인증하기")
+        composeRule.onNodeWithText("비밀번호로 인증하기").performClick()
+        waitForText("비밀번호를 입력해주세요")
     }
 
     private fun waitForText(text: String) {
