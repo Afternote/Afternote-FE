@@ -17,11 +17,11 @@ import com.afternote.feature.afternote.presentation.shared.component.AfternoteLi
 
 /**
  * @param filterRowScrollState 카테고리 필터 행의 가로 스크롤 위치. 화면이 `when` 위에서 만들어 여기로
- *   꿰는 값이다 — 근거는 [com.afternote.feature.afternote.presentation.author.home.AfternoteTypeFilterRow]
+ *   꿰는 값이다 — 근거는 [com.afternote.feature.afternote.presentation.home.AfternoteTypeFilterRow]
  *   KDoc (#1635). 기본값을 두지 않는 이유는 [AfternoteListContent] 의 같은 파라미터와 같다.
  */
 @Composable
-fun InfiniteListBody(
+internal fun InfiniteListBody(
     items: LazyPagingItems<ListItemUiModel>,
     selectedType: AfternoteType?,
     onTypeSelected: (AfternoteType?) -> Unit,

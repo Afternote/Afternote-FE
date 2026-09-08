@@ -74,7 +74,19 @@ fun DailyCalendar(
                 )
             }
             Text(
-                text = stringResource(MindRecordR.string.mindrecord_calendar_answered_count, answeredDays.size),
+                // 같은 캘린더를 두 탭이 쓰는데 문구가 하나뿐이라, 일기 탭에서도
+                // 「N개의 답변 완료」로 읽혔다 — 일기는 답변이 아니다 (#1712).
+                text =
+                    stringResource(
+                        // 캘린더를 쓰는 것은 두 탭뿐이지만 sealed 를 열거해 둔다 — else 로 두면
+                        // 새 카테고리가 조용히 「기록 완료」로 떨어진다 (#1712 리뷰).
+                        when (type) {
+                            MindRecordCategoryUi.DailyQuestion -> MindRecordR.string.mindrecord_calendar_answered_count
+                            MindRecordCategoryUi.Diary -> MindRecordR.string.mindrecord_calendar_recorded_count
+                            MindRecordCategoryUi.WeeklyReport -> MindRecordR.string.mindrecord_calendar_recorded_count
+                        },
+                        answeredDays.size,
+                    ),
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.black.copy(alpha = 0.35f),
             )

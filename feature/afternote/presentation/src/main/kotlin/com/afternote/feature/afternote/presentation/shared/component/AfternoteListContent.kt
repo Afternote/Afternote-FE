@@ -25,7 +25,7 @@ import com.afternote.feature.afternote.presentation.shared.component.AfternoteLi
  *   컴파일이 통과하면 행이 조용히 자기 위치를 다시 들고 그 회귀가 렌더에 드러나지 않는다.
  */
 @Composable
-fun AfternoteListContent(
+internal fun AfternoteListContent(
     items: LazyPagingItems<ListItemUiModel>,
     selectedType: AfternoteType?,
     onTypeSelected: (AfternoteType?) -> Unit,

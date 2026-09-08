@@ -1,5 +1,6 @@
 package com.afternote.feature.timeletter.data.repositoryImpl
 
+import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
 import com.afternote.feature.timeletter.data.api.TimeLetterApiService
@@ -8,6 +9,7 @@ import com.afternote.feature.timeletter.data.dto.TimeLetterDeleteRequestDto
 import com.afternote.feature.timeletter.data.dto.TimeLetterUpdateRequestDto
 import com.afternote.feature.timeletter.data.mapper.toDomain
 import com.afternote.feature.timeletter.data.mapper.toDto
+import com.afternote.feature.timeletter.domain.error.TimeLetterServerRejectionException
 import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterDeliveryMode
@@ -34,10 +36,12 @@ class TimeLetterRepositoryImpl
                 .toDomain()
 
         override suspend fun getTimeLetter(timeLetterId: Long): TimeLetter =
-            timeLetterApiService
-                .getTimeLetter(timeLetterId)
-                .requireData()
-                .toDomain()
+            mapTimeLetterRequest {
+                timeLetterApiService
+                    .getTimeLetter(timeLetterId)
+                    .requireData()
+                    .toDomain()
+            }
 
         override suspend fun createTimeLetter(
             title: String?,
@@ -47,18 +51,20 @@ class TimeLetterRepositoryImpl
             status: TimeLetterStatus,
             receiverIds: List<Long>,
         ): TimeLetter =
-            timeLetterApiService
-                .createTimeLetter(
-                    TimeLetterCreateRequestDto(
-                        title = title,
-                        sendAt = sendAt,
-                        deliveryMode = deliveryMode.toDto(),
-                        status = status.toDto(),
-                        blocks = blocks.map { it.toDto() },
-                        receiverIds = receiverIds,
-                    ),
-                ).requireData()
-                .toDomain()
+            mapTimeLetterRequest {
+                timeLetterApiService
+                    .createTimeLetter(
+                        TimeLetterCreateRequestDto(
+                            title = title,
+                            sendAt = sendAt,
+                            deliveryMode = deliveryMode.toDto(),
+                            status = status.toDto(),
+                            blocks = blocks.map { it.toDto() },
+                            receiverIds = receiverIds,
+                        ),
+                    ).requireData()
+                    .toDomain()
+            }
 
         override suspend fun updateTimeLetter(
             timeLetterId: Long,
@@ -68,19 +74,21 @@ class TimeLetterRepositoryImpl
             deliveryMode: TimeLetterDeliveryMode?,
             status: TimeLetterStatus?,
         ): TimeLetter =
-            timeLetterApiService
-                .updateTimeLetter(
-                    timeLetterId = timeLetterId,
-                    request =
-                        TimeLetterUpdateRequestDto(
-                            title = title,
-                            sendAt = sendAt,
-                            deliveryMode = deliveryMode?.toDto(),
-                            status = status?.toDto(),
-                            blocks = blocks.map { it.toDto() },
-                        ),
-                ).requireData()
-                .toDomain()
+            mapTimeLetterRequest {
+                timeLetterApiService
+                    .updateTimeLetter(
+                        timeLetterId = timeLetterId,
+                        request =
+                            TimeLetterUpdateRequestDto(
+                                title = title,
+                                sendAt = sendAt,
+                                deliveryMode = deliveryMode?.toDto(),
+                                status = status?.toDto(),
+                                blocks = blocks.map { it.toDto() },
+                            ),
+                    ).requireData()
+                    .toDomain()
+            }
 
         override suspend fun deleteTimeLetters(timeLetterIds: List<Long>) {
             timeLetterApiService
@@ -93,4 +101,15 @@ class TimeLetterRepositoryImpl
                 .deleteAllTemporary()
                 .requireStatus()
         }
+
+        private suspend inline fun <T> mapTimeLetterRequest(crossinline request: suspend () -> T): T =
+            try {
+                request()
+            } catch (error: ApiException) {
+                val serverMessage = error.serverMessage?.takeIf { it.isNotBlank() }
+                if (error.status in 400..499 && serverMessage != null) {
+                    throw TimeLetterServerRejectionException(error.status, serverMessage, error)
+                }
+                throw error
+            }
     }

@@ -51,9 +51,9 @@ fun DiaryComponent(
     diary: DailyDiary,
     modifier: Modifier = Modifier,
     /** 카드 전체 탭 — 저장된 기록 본문을 여는 상세 화면으로 간다 (#759). */
-    onClick: () -> Unit = {},
-    onEdit: () -> Unit = {},
-    onDelete: () -> Unit = {},
+    onClick: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
 
@@ -171,6 +171,9 @@ private fun DiaryComponentPreview() {
                     emotion = "😊",
                     imageUrl = "https://example.com/image.jpg",
                 ),
+            onClick = {},
+            onDelete = {},
+            onEdit = {},
         )
     }
 }
@@ -187,6 +190,9 @@ private fun DiaryComponentNoImagePreview() {
                     date = LocalDate.now(),
                     emotion = "😊",
                 ),
+            onClick = {},
+            onDelete = {},
+            onEdit = {},
         )
     }
 }

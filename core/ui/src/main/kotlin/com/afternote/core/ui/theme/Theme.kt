@@ -38,8 +38,22 @@ fun AfternoteTheme(
     colors: AfternoteColors = lightColors(),
     darkColors: AfternoteColors = darkColors(),
     typography: AfternoteTypography = AfternoteTypography(),
-    // 시스템 설정이 다크 모드인지 확인
-    isDarkTheme: Boolean = isSystemInDarkTheme(),
+    /**
+     * 다크 팔레트를 물릴지. **기본값은 라이트 고정이다** (#1719).
+     *
+     * 배선만 있고 화면이 안 맞춰진 중간 상태가 양쪽 끝보다 나빴다 — 실측에서 「마음의 기록」
+     * 헤더가 검정 배경에 검정 글자로 거의 보이지 않았고, 주간 요약 카드는 배경만 밝은 채로
+     * 남아 라벨이 저대비로 흐려졌다. 토큰을 쓰지 않고 색을 박은 자리가 반전을 따라가지
+     * 못해서다(`feature/mindrecord/presentation` main 에만 29곳).
+     *
+     * 시안의 다크 팔레트가 확정되고 하드코딩 색이 토큰으로 옮겨지면 기본값을
+     * [isSystemInDarkTheme] 으로 되돌린다. [darkColors] 와 이 파라미터는 그때를 위해 남겨
+     * 둔다 — 값을 넘기면 지금도 다크로 그릴 수 있다.
+     *
+     * **되돌릴 때 `app` 의 `enableLightEdgeToEdge()` 도 같이 되돌린다.** 이 잠금만 풀면
+     * 시스템바 아이콘이 라이트로 고정된 채 배경만 다크가 되어 반대 방향으로 안 보인다.
+     */
+    isDarkTheme: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val currentColor = if (isDarkTheme) darkColors else colors
@@ -64,7 +78,7 @@ fun AfternoteTheme(
 // Typography: MaterialTheme.typography.* → AfternoteDesign.typography.* (see AfternoteTypography in AfternoteTypography.kt)
 // e.g. headlineLarge→h1, headlineMedium→h2, headlineSmall→h3, bodyLarge→bodyLargeB, bodyMedium→bodyLargeR,
 // titleMedium→bodyBase, bodySmall→bodySmallR, titleSmall→bodySmallB, labelLarge→primaryButton,
-// inter→secondaryButton, labelSmall→footnoteCaption, displayLarge→captionLargeB,
+// labelSmall→footnoteCaption, displayLarge→captionLargeB,
 // displayMedium→captionLargeR, displaySmall→mono
 object AfternoteDesign {
     val colors: AfternoteColors
