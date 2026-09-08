@@ -7,6 +7,7 @@ import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.domain.usecase.auth.LoginUseCase
 import com.afternote.core.ui.UiText
+import com.afternote.feature.onboarding.presentation.OnboardingFailure
 import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.reporting.AuthFailureStage
 import com.afternote.feature.onboarding.presentation.reporting.AuthProvider
@@ -21,7 +22,7 @@ import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
 @HiltViewModel
-class LoginViewModel
+internal class LoginViewModel
     @Inject
     constructor(
         private val loginUseCase: LoginUseCase,
@@ -35,11 +36,11 @@ class LoginViewModel
 
         fun updateEmail(value: String) {
             // 입력이 바뀌면 앞선 자격 거절은 더 이상 이 입력의 판정이 아니다.
-            _uiState.update { it.copy(email = value, hasCredentialError = false) }
+            _uiState.update { it.copy(email = value, failure = it.failure.takeIf { _ -> it.email == value }) }
         }
 
         fun updatePassword(value: String) {
-            _uiState.update { it.copy(password = value, hasCredentialError = false) }
+            _uiState.update { it.copy(password = value, failure = it.failure.takeIf { _ -> it.password == value }) }
         }
 
         fun loginWithEmail() {
@@ -87,26 +88,26 @@ class LoginViewModel
             _uiState.update { it.copy(shouldStartOnboarding = false) }
         }
 
-        /** UI 가 [LoginUiState.errorMessage] 소비 (snackbar 표시) 후 reset. */
+        /** UI 가 [LoginUiState.failure] 소비 (snackbar 표시) 후 reset. */
         fun onErrorConsumed() {
-            _uiState.update { it.copy(errorMessage = null) }
+            _uiState.update { it.copy(failure = it.failure.takeUnless { failure -> failure is OnboardingFailure.RequestFailed }) }
         }
 
         /** 네트워크 실패 팝업의 "다시 시도하기" — 마지막 시도를 같은 자격으로 재실행한다. */
         fun retryLogin() {
-            _uiState.update { it.copy(showNetworkErrorPopup = false) }
+            _uiState.update { it.copy(failure = null) }
             lastAttempt?.let(::login)
         }
 
         fun onNetworkErrorDismissed() {
-            _uiState.update { it.copy(showNetworkErrorPopup = false) }
+            _uiState.update { it.copy(failure = it.failure.takeUnless { failure -> failure == OnboardingFailure.LoginNetworkUnavailable }) }
         }
 
         private fun login(loginType: LoginType) {
             if (_uiState.value.isLoading) return
             lastAttempt = loginType
             viewModelScope.launch {
-                _uiState.update { it.copy(isLoading = true, hasCredentialError = false) }
+                _uiState.update { it.copy(isLoading = true, failure = null) }
                 val result = loginUseCase(loginType = loginType)
                 result
                     .onSuccess { isNewUser ->
@@ -137,11 +138,11 @@ class LoginViewModel
                             // 흘러간다. 사유를 확인하지 못한 실패(null)는 계속 문구 매핑에 맡긴다.
                             when (exception as? CoreAuthFailure) {
                                 is CoreAuthFailure.InvalidLoginCredentials -> {
-                                    it.copy(isLoading = false, hasCredentialError = true)
+                                    it.copy(isLoading = false, failure = OnboardingFailure.CredentialsRejected)
                                 }
 
                                 is CoreAuthFailure.NetworkUnavailable -> {
-                                    it.copy(isLoading = false, showNetworkErrorPopup = true)
+                                    it.copy(isLoading = false, failure = OnboardingFailure.LoginNetworkUnavailable)
                                 }
 
                                 // 소셜로 가입해 로컬 비밀번호가 없는 계정(서버 1702 — BE `AuthService.login`).
@@ -151,7 +152,10 @@ class LoginViewModel
                                 is CoreAuthFailure.SocialSignUpAccount -> {
                                     it.copy(
                                         isLoading = false,
-                                        errorMessage = UiText.Resource(R.string.onboarding_login_social_signup_account),
+                                        failure =
+                                            OnboardingFailure.RequestFailed(
+                                                UiText.Resource(R.string.onboarding_login_social_signup_account),
+                                            ),
                                     )
                                 }
 
@@ -173,7 +177,13 @@ class LoginViewModel
                                 is CoreAuthFailure.PasswordUnchanged,
                                 null,
                                 -> {
-                                    it.copy(isLoading = false, errorMessage = exception.toDisplayMessage(R.string.onboarding_login_failed))
+                                    it.copy(
+                                        isLoading = false,
+                                        failure =
+                                            OnboardingFailure.RequestFailed(
+                                                exception.toDisplayMessage(R.string.onboarding_login_failed),
+                                            ),
+                                    )
                                 }
                             }
                         }

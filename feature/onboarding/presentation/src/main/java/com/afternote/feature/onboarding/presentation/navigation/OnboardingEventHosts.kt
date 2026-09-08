@@ -14,12 +14,13 @@ import com.afternote.feature.onboarding.presentation.findaccount.FindIdUiState
 import com.afternote.feature.onboarding.presentation.findaccount.FindIdViewModel
 import com.afternote.feature.onboarding.presentation.signup.SignUpUiState
 import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel
+import com.afternote.feature.onboarding.presentation.snackbarMessage
+import com.afternote.feature.onboarding.presentation.toDisplay
 
 /**
  * 아이디 찾기 화면의 Snackbar 호스트 + 단발성 에러 신호 처리.
  *
- * 인증번호 불일치는 시안상 인라인 문구라 여기서 다루지 않고([FindIdUiState.hasVerificationError]),
- * 그 외 실패([FindIdUiState.errorMessage])만 snackbar 로 노출한다.
+ * [FindIdUiState.failure]의 공통 표시 결정 중 스낵바 몫만 소비한다.
  */
 @Composable
 internal fun rememberFindIdEventHost(
@@ -28,12 +29,16 @@ internal fun rememberFindIdEventHost(
 ): SnackbarHostState {
     val snackbarHostState = remember { SnackbarHostState() }
     // VM 이 UiText 로 폴백까지 확정해 두므로 빈 문구가 도달하지 않는다.
-    val pendingErrorMessage = uiState.errorMessage?.asString()
+    val snackbarMessage =
+        uiState.failure
+            .toDisplay()
+            .snackbarMessage
+            ?.asString()
 
-    LaunchedEffect(pendingErrorMessage) {
-        if (pendingErrorMessage != null) {
+    LaunchedEffect(snackbarMessage) {
+        if (snackbarMessage != null) {
             snackbarHostState.showSnackbar(
-                message = pendingErrorMessage,
+                message = snackbarMessage,
                 duration = SnackbarDuration.Short,
             )
             viewModel.onErrorConsumed()
@@ -45,7 +50,7 @@ internal fun rememberFindIdEventHost(
 /**
  * SignUp Step 화면 공통의 Snackbar 호스트 + UI state 단발성 신호 처리.
  *
- * 각 Step entry 에서 호출해 [SignUpUiState.errorMessage] / [SignUpUiState.isNameRequired]
+ * 각 Step entry 에서 호출해 [SignUpUiState.failure] / [SignUpUiState.isNameRequired]
  * 를 일관되게 snackbar 로 노출하고, Step 1 의 경우 [onNavigateToResidentNumber] 콜백으로
  * [SignUpUiState.shouldNavigateToResidentNumber] = true 시점에 네비게이트한다.
  *
@@ -79,11 +84,15 @@ internal fun rememberSignUpEventHost(
         }
     }
 
-    val pendingErrorMessage = uiState.errorMessage?.asString()
-    LaunchedEffect(pendingErrorMessage) {
-        if (pendingErrorMessage != null) {
+    val snackbarMessage =
+        uiState.failure
+            .toDisplay()
+            .snackbarMessage
+            ?.asString()
+    LaunchedEffect(snackbarMessage) {
+        if (snackbarMessage != null) {
             snackbarHostState.showSnackbar(
-                message = pendingErrorMessage,
+                message = snackbarMessage,
                 duration = SnackbarDuration.Short,
             )
             viewModel.onErrorConsumed()
