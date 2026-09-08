@@ -18,17 +18,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import com.afternote.core.ui.Route
-import com.afternote.feature.afternote.presentation.navigation.AfternoteNavActions
-import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
-import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
 import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
-import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavActions
-import com.afternote.feature.onboarding.presentation.navigation.OnboardingRoute
-import com.afternote.feature.receiver.presentation.navigation.ReceiverNavActions
-import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
-import com.afternote.feature.setting.presentation.navigation.SettingNavActions
-import com.afternote.feature.setting.presentation.navigation.SettingRoute
+import com.afternote.feature.onboarding.presentation.navigation.OnboardingExternalActions
+import com.afternote.feature.setting.presentation.navigation.SettingExternalActions
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterNavActions
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
 
@@ -46,11 +39,9 @@ import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
  */
 internal class NavBackStackHarness(
     val appState: AppState,
-    val onboardingActions: OnboardingNavActions,
-    val settingActions: SettingNavActions,
+    val onboardingExternalActions: OnboardingExternalActions,
+    val settingActions: SettingExternalActions,
     val timeLetterActions: TimeLetterNavActions,
-    val afternoteActions: AfternoteNavActions,
-    val receiverActions: ReceiverNavActions,
     val homeActions: HomeTabActions,
     /** predictive back 제스처를 프로그램으로 흘려 넣기 위한 호스트 dispatcher. */
     val backDispatcher: OnBackPressedDispatcher,
@@ -69,11 +60,9 @@ internal fun SkeletonAppNavigation(
     onReady: (NavBackStackHarness) -> Unit,
 ) {
     val appState = rememberAfternoteAppState()
-    val onboardingActions = rememberOnboardingNavActions(appState.navController)
-    val settingActions = rememberSettingNavActions(appState)
+    val onboardingExternalActions = rememberOnboardingExternalActions(appState)
+    val settingActions = rememberSettingExternalActions(appState)
     val timeLetterActions = rememberTimeLetterNavActions(appState.navController)
-    val afternoteActions = rememberAfternoteNavActions(appState) { }
-    val receiverActions = rememberReceiverNavActions(appState)
     val homeActions = rememberHomeTabActions(appState, onRetryLoad = { })
     val backDispatcher =
         checkNotNull(LocalOnBackPressedDispatcherOwner.current) {
@@ -84,11 +73,9 @@ internal fun SkeletonAppNavigation(
         onReady(
             NavBackStackHarness(
                 appState = appState,
-                onboardingActions = onboardingActions,
+                onboardingExternalActions = onboardingExternalActions,
                 settingActions = settingActions,
                 timeLetterActions = timeLetterActions,
-                afternoteActions = afternoteActions,
-                receiverActions = receiverActions,
                 homeActions = homeActions,
                 backDispatcher = backDispatcher,
             ),
@@ -117,28 +104,20 @@ internal fun SkeletonAppNavigation(
  */
 @Suppress("LongMethod")
 internal fun NavGraphBuilder.appRouteSkeleton() {
-    // feature/onboarding — OnboardingNavGraph.kt
-    navigation<Route.Onboarding>(startDestination = OnboardingRoute.WelcomeRoute) {
-        stubScreen<OnboardingRoute.WelcomeRoute>()
-        stubScreen<OnboardingRoute.LoginRoute>()
-        stubScreen<OnboardingRoute.FindIdRoute>()
-        stubScreen<OnboardingRoute.SignUpRoute>()
-        stubScreen<OnboardingRoute.SignUpResidentNumberRoute>()
-        stubScreen<OnboardingRoute.SignUpPasswordRoute>()
-        stubScreen<OnboardingRoute.TermsRoute>()
-        stubScreen<OnboardingRoute.TermsDetailRoute>()
-        stubScreen<OnboardingRoute.ProfileRoute>()
-    }
+    // ── Navigation 3 로컬 스택을 가진 그래프 (#1698) — 루트엔 host destination 하나씩이다.
+    // 그래프 «안쪽» 백스택 모양은 각 피처의 *LocalNavActions 테스트가 본다. 여기서 재현할 것은
+    // 루트가 보는 모양뿐이다.
+    stubScreen<Route.Onboarding>()
+    // 애프터노트만 stateful — 탭 재진입에서 저장된 상태가 복원되지 «않는» 것이 판정 대상이다.
+    stubScreen<Route.Afternote>(stateful = true)
+    stubScreen<Route.ReceivedAfternote>()
+    stubScreen<Route.Receiver>()
 
     // app — AppNavigation.kt 가 직접 등록하는 홈 탭
     stubScreen<Route.Home>(stateful = true)
 
-    // feature/setting — SettingNavGraph.kt. 로그아웃·탈퇴 경계가 지나는 화면만 옮긴다.
-    navigation<Route.Setting>(startDestination = SettingRoute.SettingHomeRoute) {
-        stubScreen<SettingRoute.SettingHomeRoute>()
-        stubScreen<SettingRoute.WithdrawGuideRoute>()
-        stubScreen<SettingRoute.WithdrawConfirmRoute>()
-    }
+    // Settings owns a local stack; the shell only registers its host.
+    stubScreen<Route.Setting>()
 
     // feature/mindrecord — MindRecordNavGraph.kt. 중첩 없이 루트에 직접 붙는 top-level 3종과
     // 임시저장 목록·기록 상세만 옮긴다(작성 화면은 어느 테스트도 지나지 않는다).
@@ -155,41 +134,6 @@ internal fun NavGraphBuilder.appRouteSkeleton() {
         stubScreen<TimeLetterRoute.TimeLetterHomeRoute>()
         stubScreen<TimeLetterRoute.TimeLetterDraftRoute>(stateful = true)
         stubScreen<TimeLetterRoute.TimeLetterRecipientRoute>()
-    }
-
-    // feature/afternote(author) — AfternoteNavGraph.kt. startDestination 이 지문 관문이다.
-    navigation<Route.Afternote>(startDestination = AfternoteRoute.FingerprintLoginRoute) {
-        stubScreen<AfternoteRoute.AfternoteHomeRoute>()
-        stubScreen<AfternoteRoute.DetailRoute>()
-        navigation<AfternoteRoute.EditorFlowRoute>(startDestination = AfternoteRoute.EditorRoute) {
-            stubScreen<AfternoteRoute.EditorRoute>()
-            stubScreen<AfternoteRoute.SelectReceiverRoute>()
-            stubScreen<AfternoteRoute.MemorialPlaylistRoute>()
-            stubScreen<AfternoteRoute.AddSongRoute>()
-        }
-        stubScreen<AfternoteRoute.FingerprintLoginRoute>()
-    }
-
-    // feature/afternote(receiver) — ReceivedAfternoteNavGraph.kt 는 Route.Afternote 그래프가
-    // 아니라 루트에 직접 등록된다(그 그래프의 시작점이 발신자용 지문 관문이라서). 목록·상세만 옮긴다.
-    stubScreen<ReceivedAfternoteRoute.ListRoute>()
-    stubScreen<ReceivedAfternoteRoute.DetailRoute>()
-
-    // feature/receiver — ReceiverNavGraph.kt
-    navigation<Route.Receiver>(startDestination = ReceiverRoute.ReceivedRecordsRoute) {
-        stubScreen<ReceiverRoute.ReceivedRecordsRoute>()
-        stubScreen<ReceiverRoute.SenderRegistrationRoute>()
-        stubScreen<ReceiverRoute.SenderDetailRoute>()
-        navigation<ReceiverRoute.DeliveryVerificationFlowRoute>(
-            startDestination = ReceiverRoute.IdentityVerificationIntroRoute,
-        ) {
-            stubScreen<ReceiverRoute.IdentityVerificationIntroRoute>()
-            stubScreen<ReceiverRoute.IdentityVerificationEmailRoute>()
-            stubScreen<ReceiverRoute.MasterKeyRoute>()
-            stubScreen<ReceiverRoute.DocumentUploadRoute>()
-            stubScreen<ReceiverRoute.DeliveryVerificationCompleteRoute>()
-        }
-        stubScreen<ReceiverRoute.HomeRoute>()
     }
 }
 

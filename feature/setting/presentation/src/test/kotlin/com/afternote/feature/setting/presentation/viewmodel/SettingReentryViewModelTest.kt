@@ -1,6 +1,5 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.delivery.ConditionState
@@ -14,6 +13,10 @@ import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserMarketingConsent
 import com.afternote.core.model.user.UserPushSetting
 import com.afternote.feature.setting.presentation.NoOpErrorReporter
+import com.afternote.feature.setting.presentation.navigation.SettingRoute
+import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsIntent
+import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionIntent
+import com.afternote.feature.setting.presentation.viewmodel.ProfileEditIntent
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -63,8 +66,8 @@ class SettingReentryViewModelTest {
                     }
                 }
             val viewModel = ConnectedAccountsViewModel(repository)
-            viewModel.refreshOnReturn()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(ConnectedAccountsIntent.RefreshOnReturn)
+            viewModel.onIntent(ConnectedAccountsIntent.RefreshOnReturn)
             runCurrent()
             assertEquals(1, calls)
             response.complete(accounts())
@@ -72,8 +75,8 @@ class SettingReentryViewModelTest {
             val previous = viewModel.uiState.value
 
             response = CompletableDeferred()
-            viewModel.refreshOnReturn()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(ConnectedAccountsIntent.RefreshOnReturn)
+            viewModel.onIntent(ConnectedAccountsIntent.RefreshOnReturn)
             runCurrent()
             assertEquals(2, calls)
             assertEquals(previous, viewModel.uiState.value)
@@ -93,10 +96,10 @@ class SettingReentryViewModelTest {
             val repository = FakeUserRepository.strict().apply { onGetConnectedAccounts = { accounts() } }
             val viewModel = ConnectedAccountsViewModel(repository)
             runCurrent()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(ConnectedAccountsIntent.RefreshOnReturn)
             val previous = viewModel.uiState.value
             repository.onGetConnectedAccounts = { error("offline") }
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(ConnectedAccountsIntent.RefreshOnReturn)
             runCurrent()
             assertEquals(previous, viewModel.uiState.value)
         }
@@ -109,8 +112,8 @@ class SettingReentryViewModelTest {
             runCurrent()
             assertNotNull(viewModel.uiState.value.errorMessage)
             repository.onGetConnectedAccounts = { accounts() }
-            viewModel.refreshOnReturn()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(ConnectedAccountsIntent.RefreshOnReturn)
+            viewModel.onIntent(ConnectedAccountsIntent.RefreshOnReturn)
             runCurrent()
             assertNull(viewModel.uiState.value.errorMessage)
             assertEquals(4, viewModel.uiState.value.accounts.size)
@@ -129,11 +132,11 @@ class SettingReentryViewModelTest {
                 }
             val viewModel = ConnectedAccountsViewModel(repository)
             runCurrent()
-            viewModel.refreshOnReturn()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(ConnectedAccountsIntent.RefreshOnReturn)
+            viewModel.onIntent(ConnectedAccountsIntent.RefreshOnReturn)
             runCurrent()
-            viewModel.link("google", "token")
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(ConnectedAccountsIntent.Link("google", "token"))
+            viewModel.onIntent(ConnectedAccountsIntent.RefreshOnReturn)
             runCurrent()
             assertEquals(2, reads)
             linked.complete(accounts(google = true))
@@ -161,11 +164,11 @@ class SettingReentryViewModelTest {
                 }
             val viewModel = ConnectedAccountsViewModel(repository)
             runCurrent()
-            viewModel.refreshOnReturn()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(ConnectedAccountsIntent.RefreshOnReturn)
+            viewModel.onIntent(ConnectedAccountsIntent.RefreshOnReturn)
             runCurrent()
-            viewModel.onToggle("google", false)
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(ConnectedAccountsIntent.Toggle("google", false))
+            viewModel.onIntent(ConnectedAccountsIntent.RefreshOnReturn)
             runCurrent()
             assertEquals(2, reads)
             unlinked.complete(accounts())
@@ -192,16 +195,16 @@ class SettingReentryViewModelTest {
                     }
                 }
             val viewModel = deliveryViewModel(repository)
-            viewModel.refreshOnReturn()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(DeliveryConditionIntent.RefreshOnReturn)
+            viewModel.onIntent(DeliveryConditionIntent.RefreshOnReturn)
             runCurrent()
             assertEquals(1, calls)
             response.complete(delivery())
             runCurrent()
             val previous = viewModel.uiState.value
             response = CompletableDeferred()
-            viewModel.refreshOnReturn()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(DeliveryConditionIntent.RefreshOnReturn)
+            viewModel.onIntent(DeliveryConditionIntent.RefreshOnReturn)
             runCurrent()
             assertEquals(2, calls)
             assertEquals(previous, viewModel.uiState.value)
@@ -222,10 +225,10 @@ class SettingReentryViewModelTest {
                 }
             val viewModel = deliveryViewModel(repository)
             runCurrent()
-            viewModel.refreshOnReturn()
-            viewModel.onConditionTypeSelected(1)
+            viewModel.onIntent(DeliveryConditionIntent.RefreshOnReturn)
+            viewModel.onIntent(DeliveryConditionIntent.SelectConditionType(1))
             repository.onGetReceiverDeliveryConditions = { response.await() }
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(DeliveryConditionIntent.RefreshOnReturn)
             runCurrent()
             assertEquals(DeliveryConditionType.RECEIVER_REQUEST, viewModel.uiState.value.conditionType)
             val refreshed =
@@ -238,7 +241,7 @@ class SettingReentryViewModelTest {
             response.complete(refreshed)
             runCurrent()
             assertEquals(DeliveryConditionType.RECEIVER_REQUEST, viewModel.uiState.value.conditionType)
-            viewModel.onSave()
+            viewModel.onIntent(DeliveryConditionIntent.Save)
             runCurrent()
             val saved = repository.deliveryUpdateCalls.single().conditions
             assertEquals(DeliveryConditionType.RECEIVER_REQUEST, saved.first().conditionType)
@@ -253,11 +256,11 @@ class SettingReentryViewModelTest {
             val repository = FakeUserRepository.strict().apply { onGetReceiverDeliveryConditions = { delivery() } }
             val viewModel = deliveryViewModel(repository)
             runCurrent()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(DeliveryConditionIntent.RefreshOnReturn)
             repository.onGetReceiverDeliveryConditions = { response.await() }
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(DeliveryConditionIntent.RefreshOnReturn)
             runCurrent()
-            viewModel.onConditionTypeSelected(1)
+            viewModel.onIntent(DeliveryConditionIntent.SelectConditionType(1))
             response.complete(delivery())
             runCurrent()
             assertEquals(DeliveryConditionType.RECEIVER_REQUEST, viewModel.uiState.value.conditionType)
@@ -270,14 +273,14 @@ class SettingReentryViewModelTest {
             val viewModel = deliveryViewModel(repository)
             runCurrent()
             assertEquals(DeliveryConditionError.LOAD_FAILED, viewModel.uiState.value.error)
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(DeliveryConditionIntent.RefreshOnReturn)
             repository.onGetReceiverDeliveryConditions = { delivery() }
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(DeliveryConditionIntent.RefreshOnReturn)
             runCurrent()
             assertNull(viewModel.uiState.value.error)
             val previous = viewModel.uiState.value
             repository.onGetReceiverDeliveryConditions = { error("offline") }
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(DeliveryConditionIntent.RefreshOnReturn)
             runCurrent()
             assertEquals(previous, viewModel.uiState.value)
         }
@@ -295,13 +298,13 @@ class SettingReentryViewModelTest {
                 }
             val viewModel = deliveryViewModel(repository)
             runCurrent()
-            viewModel.refreshOnReturn()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(DeliveryConditionIntent.RefreshOnReturn)
+            viewModel.onIntent(DeliveryConditionIntent.RefreshOnReturn)
             runCurrent()
-            viewModel.onConditionTypeSelected(1)
-            viewModel.onSave()
-            viewModel.onSave()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(DeliveryConditionIntent.SelectConditionType(1))
+            viewModel.onIntent(DeliveryConditionIntent.Save)
+            viewModel.onIntent(DeliveryConditionIntent.Save)
+            viewModel.onIntent(DeliveryConditionIntent.RefreshOnReturn)
             runCurrent()
             assertEquals(1, repository.deliveryUpdateCalls.size)
             assertEquals(2, reads)
@@ -330,16 +333,16 @@ class SettingReentryViewModelTest {
                     }
                 }
             val viewModel = ProfileEditViewModel(repository)
-            viewModel.refreshOnReturn()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(ProfileEditIntent.RefreshOnReturn)
+            viewModel.onIntent(ProfileEditIntent.RefreshOnReturn)
             runCurrent()
             assertEquals(1, calls)
             response.complete(user())
             runCurrent()
             val previous = viewModel.uiState.value
             response = CompletableDeferred()
-            viewModel.refreshOnReturn()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(ProfileEditIntent.RefreshOnReturn)
+            viewModel.onIntent(ProfileEditIntent.RefreshOnReturn)
             runCurrent()
             assertEquals(2, calls)
             assertEquals(previous, viewModel.uiState.value)
@@ -354,10 +357,10 @@ class SettingReentryViewModelTest {
             val repository = FakeUserRepository.strict().apply { onGetMyProfile = { user() } }
             val viewModel = ProfileEditViewModel(repository)
             runCurrent()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(ProfileEditIntent.RefreshOnReturn)
             val previous = viewModel.uiState.value
             repository.onGetMyProfile = { error("offline") }
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(ProfileEditIntent.RefreshOnReturn)
             runCurrent()
             assertEquals(previous, viewModel.uiState.value)
         }
@@ -370,8 +373,8 @@ class SettingReentryViewModelTest {
             runCurrent()
             assertEquals(ProfileEditUiState.Error, viewModel.uiState.value)
             repository.onGetMyProfile = { user() }
-            viewModel.refreshOnReturn()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(ProfileEditIntent.RefreshOnReturn)
+            viewModel.onIntent(ProfileEditIntent.RefreshOnReturn)
             runCurrent()
             assertTrue(viewModel.uiState.value is ProfileEditUiState.Success)
         }
@@ -389,12 +392,12 @@ class SettingReentryViewModelTest {
                 }
             val viewModel = ProfileEditViewModel(repository)
             runCurrent()
-            viewModel.refreshOnReturn()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(ProfileEditIntent.RefreshOnReturn)
+            viewModel.onIntent(ProfileEditIntent.RefreshOnReturn)
             runCurrent()
-            viewModel.updateProfile("작성한 이름", "01012345678")
-            viewModel.updateProfile("중복", "01000000000")
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(ProfileEditIntent.UpdateProfile("작성한 이름", "01012345678"))
+            viewModel.onIntent(ProfileEditIntent.UpdateProfile("중복", "01000000000"))
+            viewModel.onIntent(ProfileEditIntent.RefreshOnReturn)
             runCurrent()
             assertEquals(2, reads)
             assertEquals(1, repository.profileUpdateCalls.size)
@@ -419,16 +422,16 @@ class SettingReentryViewModelTest {
                     }
                 }
             val viewModel = pushViewModel(repository)
-            viewModel.refreshOnReturn()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(PushNotificationIntent.RefreshOnReturn)
+            viewModel.onIntent(PushNotificationIntent.RefreshOnReturn)
             runCurrent()
             assertEquals(1, calls)
             response.complete(UserPushSetting(false, false, false))
             runCurrent()
             val previous = viewModel.uiState.value
             response = CompletableDeferred()
-            viewModel.refreshOnReturn()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(PushNotificationIntent.RefreshOnReturn)
+            viewModel.onIntent(PushNotificationIntent.RefreshOnReturn)
             runCurrent()
             assertEquals(2, calls)
             assertEquals(previous, viewModel.uiState.value)
@@ -446,10 +449,10 @@ class SettingReentryViewModelTest {
             val repository = FakeUserRepository.strict().apply { onGetMyPushSettings = { UserPushSetting(true, true, true) } }
             val viewModel = pushViewModel(repository)
             runCurrent()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(PushNotificationIntent.RefreshOnReturn)
             val previous = viewModel.uiState.value
             repository.onGetMyPushSettings = { error("offline") }
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(PushNotificationIntent.RefreshOnReturn)
             runCurrent()
             assertEquals(previous, viewModel.uiState.value)
         }
@@ -467,11 +470,11 @@ class SettingReentryViewModelTest {
                 }
             val viewModel = pushViewModel(repository)
             runCurrent()
-            viewModel.refreshOnReturn()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(PushNotificationIntent.RefreshOnReturn)
+            viewModel.onIntent(PushNotificationIntent.RefreshOnReturn)
             runCurrent()
-            viewModel.onNewsletterToggle(true)
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(PushNotificationIntent.NewsletterToggle(true))
+            viewModel.onIntent(PushNotificationIntent.RefreshOnReturn)
             runCurrent()
             assertEquals(2, reads)
             saved.complete(UserPushSetting(true, false, false))
@@ -482,7 +485,7 @@ class SettingReentryViewModelTest {
         }
 
     private fun deliveryViewModel(repository: FakeUserRepository) =
-        DeliveryConditionViewModel(SavedStateHandle(mapOf("receiverId" to 42L)), repository)
+        DeliveryConditionViewModel(SettingRoute.AfterDeliveryRoute(receiverId = 42L), repository)
 
     private fun pushViewModel(repository: FakeUserRepository) =
         PushNotificationViewModel(

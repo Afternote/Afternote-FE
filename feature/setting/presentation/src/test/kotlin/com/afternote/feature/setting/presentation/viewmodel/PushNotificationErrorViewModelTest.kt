@@ -68,7 +68,7 @@ class PushNotificationErrorViewModelTest {
             assertFalse(viewModel.uiState.value.isLoading)
             assertEquals(UiText.Resource(R.string.setting_push_load_error), viewModel.uiState.value.errorMessage)
 
-            viewModel.retryLoadPushSettings()
+            viewModel.onIntent(PushNotificationIntent.RetryLoad)
             advanceUntilIdle()
 
             with(viewModel.uiState.value) {

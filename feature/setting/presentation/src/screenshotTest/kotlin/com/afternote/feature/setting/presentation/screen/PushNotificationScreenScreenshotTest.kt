@@ -47,3 +47,10 @@ private fun PushNotificationScreenshotContent(
         )
     }
 }
+
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+internal fun pushNotificationLoadingScreenshot() {
+    PushNotificationScreenshotContent(PushNotificationUiState(isLoading = true))
+}

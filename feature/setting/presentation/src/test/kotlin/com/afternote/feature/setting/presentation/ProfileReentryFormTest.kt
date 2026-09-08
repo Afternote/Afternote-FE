@@ -11,6 +11,7 @@ import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.User
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.setting.presentation.screen.ProfileEditScreen
+import com.afternote.feature.setting.presentation.viewmodel.ProfileEditIntent
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditUiState
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditViewModel
 import org.junit.Assert.assertTrue
@@ -40,7 +41,7 @@ class ProfileReentryFormTest {
 
         composeRule.runOnIdle {
             repository.onGetMyProfile = { User("서버 이름", "after@example.com", "01033334444", null) }
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(ProfileEditIntent.RefreshOnReturn)
         }
         composeRule.waitUntil(timeoutMillis = 5_000) {
             (viewModel.uiState.value as? ProfileEditUiState.Success)?.name == "서버 이름"
@@ -71,7 +72,7 @@ class ProfileReentryFormTest {
                 calls++
                 error("offline")
             }
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(ProfileEditIntent.RefreshOnReturn)
         }
         composeRule.waitUntil(timeoutMillis = 5_000) { calls == 2 }
 

@@ -1,88 +1,112 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.ui.mvi.MviViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ProfileEditViewModel
+internal class ProfileEditViewModel
     @Inject
     constructor(
         private val userRepository: UserRepository,
-    ) : ViewModel() {
-        private val _uiState = MutableStateFlow<ProfileEditUiState>(ProfileEditUiState.Loading)
-        val uiState = _uiState.asStateFlow()
-
-        private val _events = Channel<ProfileEditEvent>(Channel.BUFFERED)
-        val events = _events.receiveAsFlow()
-
-        /** 진행 중인 조회 — 첫 진입 이후의 ON_RESUME 이 실행 중인 로드와 겹치면 건너뛰기 위한 가드. */
+    ) : MviViewModel<ProfileEditIntent, ProfileEditUiState, ProfileEditReducerEvent>(ProfileEditUiState.Loading) {
         private var loadJob: Job? = null
 
-        /**
-         * 다음 [refreshOnReturn] 이 첫 ON_RESUME(진입 자체)인지. 첫 resume 은 init 로드와 같은
-         * 진입이므로 갱신하지 않는다 — VM 필드인 이유는 ReceiverHomeViewModel 의 refreshOnReturn 과
-         * 동일, 프로세스 사망 후 복원에서도 init 로드와 수명이 일치한다.
-         */
         private var isFirstResume = true
+
+        override fun onIntent(intent: ProfileEditIntent) {
+            when (intent) {
+                ProfileEditIntent.RefreshOnReturn -> refreshOnReturn()
+                ProfileEditIntent.RetryLoad -> loadProfile()
+                is ProfileEditIntent.UpdateProfile -> updateProfile(intent.name, intent.phone)
+                is ProfileEditIntent.ConsumeEvent -> dispatch(ProfileEditReducerEvent.EventConsumed(intent.event))
+            }
+        }
+
+        override fun reduce(
+            state: ProfileEditUiState,
+            event: ProfileEditReducerEvent,
+        ): ProfileEditUiState =
+            when (event) {
+                ProfileEditReducerEvent.Loading -> {
+                    ProfileEditUiState.Loading
+                }
+
+                is ProfileEditReducerEvent.Loaded -> {
+                    ProfileEditUiState.Success(
+                        event.name,
+                        event.phone,
+                        event.email,
+                        pendingEvent = (state as? ProfileEditUiState.Success)?.pendingEvent,
+                    )
+                }
+
+                ProfileEditReducerEvent.LoadFailed -> {
+                    ProfileEditUiState.Error
+                }
+
+                ProfileEditReducerEvent.Updating -> {
+                    if (state is ProfileEditUiState.Success) state.copy(isUpdating = true, pendingEvent = null) else state
+                }
+
+                is ProfileEditReducerEvent.UpdateFinished -> {
+                    if (state is ProfileEditUiState.Success) state.copy(isUpdating = false, pendingEvent = event.event) else state
+                }
+
+                is ProfileEditReducerEvent.EventConsumed -> {
+                    if (state is ProfileEditUiState.Success && state.pendingEvent == event.event) state.copy(pendingEvent = null) else state
+                }
+            }
+
+        private fun refreshOnReturn() {
+            if (isFirstResume) {
+                isFirstResume = false
+                return
+            }
+            loadProfile(keepsStateOnFailure = true)
+        }
 
         init {
             loadProfile()
         }
 
-        /** 다른 화면에서 복귀했을 때의 자동 갱신 (#701). 첫 진입은 건너뛰고, 로드가 겹치면 건너뛴다. */
-        fun refreshOnReturn() {
-            if (isFirstResume) {
-                isFirstResume = false
-                return
-            }
-            if (loadJob?.isActive == true || (_uiState.value as? ProfileEditUiState.Success)?.isUpdating == true) return
-            loadProfile(keepsStateOnFailure = true)
-        }
-
-        fun retryLoadProfile() {
-            loadProfile()
-        }
-
         private fun loadProfile(keepsStateOnFailure: Boolean = false) {
-            if (loadJob?.isActive == true || (_uiState.value as? ProfileEditUiState.Success)?.isUpdating == true) return
+            if (loadJob?.isActive == true || (currentState as? ProfileEditUiState.Success)?.isUpdating == true) return
             loadJob =
                 viewModelScope.launch {
-                    if (!keepsStateOnFailure) _uiState.value = ProfileEditUiState.Loading
+                    if (!keepsStateOnFailure) dispatch(ProfileEditReducerEvent.Loading)
                     runCatchingCancellable { userRepository.getMyProfile() }
                         .onSuccess { user ->
-                            _uiState.value =
-                                ProfileEditUiState.Success(
+                            dispatch(
+                                ProfileEditReducerEvent.Loaded(
                                     name = user.name,
                                     phone = user.phone.orEmpty(),
                                     email = user.email,
-                                )
+                                ),
+                            )
                         }.onFailure {
-                            if (!keepsStateOnFailure || _uiState.value !is ProfileEditUiState.Success) {
-                                _uiState.value = ProfileEditUiState.Error
+                            if (!keepsStateOnFailure ||
+                                currentState !is ProfileEditUiState.Success
+                            ) {
+                                dispatch(ProfileEditReducerEvent.LoadFailed)
                             }
                         }
                 }
         }
 
-        fun updateProfile(
+        private fun updateProfile(
             name: String,
             phone: String,
         ) {
-            val current = _uiState.value as? ProfileEditUiState.Success ?: return
-            if (current.isUpdating) return
+            val current = currentState as? ProfileEditUiState.Success ?: return
+            if (current.isUpdating || current.pendingEvent == ProfileEditEvent.UpdateSuccess) return
             loadJob?.cancel()
-            _uiState.update { current.copy(isUpdating = true) }
+            dispatch(ProfileEditReducerEvent.Updating)
             viewModelScope.launch {
                 runCatchingCancellable {
                     userRepository.updateMyProfile(
@@ -91,10 +115,9 @@ class ProfileEditViewModel
                         profileImageUrl = null,
                     )
                 }.onSuccess {
-                    _events.send(ProfileEditEvent.UpdateSuccess)
+                    dispatch(ProfileEditReducerEvent.UpdateFinished(ProfileEditEvent.UpdateSuccess))
                 }.onFailure {
-                    _uiState.update { current.copy(isUpdating = false) }
-                    _events.send(ProfileEditEvent.UpdateFailure)
+                    dispatch(ProfileEditReducerEvent.UpdateFinished(ProfileEditEvent.UpdateFailure))
                 }
             }
         }

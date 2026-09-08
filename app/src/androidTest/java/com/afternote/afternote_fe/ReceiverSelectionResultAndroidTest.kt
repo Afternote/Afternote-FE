@@ -13,12 +13,12 @@ import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.testing.TestNavHostController
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -31,8 +31,6 @@ import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.domain.AfternoteType
-import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import kotlinx.coroutines.CompletableDeferred
@@ -76,8 +74,12 @@ import com.afternote.feature.afternote.presentation.R as AfternoteR
  *
  * **진입 경로 주의.** [Route.Afternote] 의 시작 화면은 지문 로그인이고, 계측에 주입되는
  * `FakeUserProfileCacheRepository` 가 패스키 미등록(false)을 내야 홈으로 자동 통과한다.
- * 그 fake 기본값이 바뀌면 세 테스트가 모두 홈 대기에서 멈추므로, 실패 메시지에 현재 destination 을
- * 실어 원인이 드러나게 했다([waitForRoute]).
+ * 그 fake 기본값이 바뀌면 세 테스트가 모두 홈 대기에서 멈추므로, 실패 메시지에 현재 "추가" 노드
+ * 개수를 실어 어느 화면에 멈췄는지 드러나게 했다([waitForAddButtons]).
+ *
+ * **화면 판정이 라우트가 아닌 이유.** Navigation 3 이관(#1698) 뒤 애프터노트 화면들은 피처 로컬
+ * 스택에 있고 루트 destination 은 [Route.Afternote] 하나로 고정된다. 그래서 이 테스트의 화면
+ * 판정은 전부 UI 앵커다 — 원래 배리어 규약이 권하던 방식과 같다.
  */
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
@@ -146,7 +148,6 @@ class ReceiverSelectionResultAndroidTest {
         composeRule.onNodeWithText(PARK.name).performClick()
         composeRule.onNodeWithText(confirmText).assertIsEnabled().performClick()
 
-        waitForRoute<AfternoteRoute.EditorRoute>("에디터")
         // 선택 화면에도 세 사람이 모두 떠 있으므로, 에디터가 조립된 뒤에야 이름으로 판정할 수 있다.
         waitForEditorAddButtons()
         waitForEditorReceiver(PARK.name)
@@ -175,7 +176,6 @@ class ReceiverSelectionResultAndroidTest {
         composeRule.onNodeWithText(PARK.name).performClick()
         composeRule.onNodeWithText(confirmText).assertIsEnabled().performClick()
 
-        waitForRoute<AfternoteRoute.EditorRoute>("에디터")
         waitForEditorAddButtons()
         waitForEditorReceiver(PARK.name)
         composeRule.onNodeWithText(KIM.name).assertDoesNotExist()
@@ -199,7 +199,6 @@ class ReceiverSelectionResultAndroidTest {
             .onNodeWithContentDescription(copy(CoreUiR.string.core_ui_content_description_back))
             .performClick()
 
-        waitForRoute<AfternoteRoute.EditorRoute>("에디터")
         waitForEditorAddButtons()
         releaseGatedLoad(gate)
 
@@ -239,7 +238,6 @@ class ReceiverSelectionResultAndroidTest {
         composeRule
             .onNodeWithContentDescription(copy(CoreUiR.string.core_ui_content_description_back))
             .performClick()
-        waitForRoute<AfternoteRoute.EditorRoute>("에디터")
         waitForEditorAddButtons()
 
         receiverSource.failing = true
@@ -270,14 +268,23 @@ class ReceiverSelectionResultAndroidTest {
     private val loadFailedText: String
         get() = copy(AfternoteR.string.afternote_select_receiver_load_failed)
 
+    /**
+     * 애프터노트 홈의 연필 FAB 으로 계정 카테고리 에디터를 연다.
+     *
+     * 이관(#1698) 전에는 루트 `NavController` 로 `EditorFlowRoute` 에 곧장 뛰어들었지만, 그
+     * 라우트는 이제 애프터노트 로컬 스택 안에 있어 루트에서 보이지 않는다. 대신 실제 진입점을
+     * 지난다 — 홈의 FAB 은 선택된 카테고리가 없을 때 계정(`SOCIAL_NETWORK`)으로 열고, 이 테스트는
+     * 카테고리를 고르지 않으므로 그 기본값이 곧 목적지다.
+     *
+     * 홈에서 "추가" 설명을 가진 노드는 이 FAB 하나뿐이고 에디터에는 [EDITOR_ADD_BUTTON_COUNT] 개라,
+     * 개수만으로 두 화면을 구분할 수 있다.
+     */
     private fun openNewSocialEditor() {
-        waitForRoute<AfternoteRoute.AfternoteHomeRoute>("애프터노트 홈(지문 로그인 자동 통과)")
-        composeRule.runOnIdle {
-            navController.navigate(
-                AfternoteRoute.EditorFlowRoute(initialType = AfternoteType.SOCIAL_NETWORK),
-            )
-        }
-        waitForRoute<AfternoteRoute.EditorRoute>("에디터")
+        waitForAddButtons(HOME_FAB_COUNT, "애프터노트 홈(지문 로그인 자동 통과)")
+        composeRule
+            .onAllNodesWithContentDescription(addDescription)
+            .onFirst()
+            .performClick()
         waitForEditorAddButtons()
     }
 
@@ -294,19 +301,47 @@ class ReceiverSelectionResultAndroidTest {
             assertCountEquals(EDITOR_ADD_BUTTON_COUNT)
             get(0).performScrollTo().performClick()
         }
-        waitForRoute<AfternoteRoute.SelectReceiverRoute>("수신자 선택 화면")
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            composeRule
+                .onAllNodesWithText(copy(CoreUiR.string.core_ui_receiver_select_title))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
     }
 
     /**
      * 에디터가 조립됐음을 확정한다. "추가" 설명이 붙은 버튼은 에디터에만 있고 선택 화면엔 없어,
      * 수신자 이름과 달리 두 화면을 구분하는 앵커가 된다.
      */
-    private fun waitForEditorAddButtons() {
-        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            composeRule
-                .onAllNodesWithContentDescription(addDescription)
-                .fetchSemanticsNodes()
-                .size == EDITOR_ADD_BUTTON_COUNT
+    private fun waitForEditorAddButtons() = waitForAddButtons(EDITOR_ADD_BUTTON_COUNT, "에디터")
+
+    /**
+     * "추가" 설명을 가진 노드가 [count] 개가 될 때까지 기다린다.
+     *
+     * 실패 시 현재 개수를 남긴다 — 「10초 뒤 조건 미충족」만으론 어느 화면에 멈췄는지 안 드러난다.
+     * 이관 뒤 루트 destination 은 그래프 host 하나로 고정이라 더는 단서가 되지 못한다.
+     */
+    private fun waitForAddButtons(
+        count: Int,
+        description: String,
+    ) {
+        try {
+            composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+                composeRule
+                    .onAllNodesWithContentDescription(addDescription)
+                    .fetchSemanticsNodes()
+                    .size == count
+            }
+        } catch (e: ComposeTimeoutException) {
+            val actual =
+                composeRule
+                    .onAllNodesWithContentDescription(addDescription)
+                    .fetchSemanticsNodes()
+                    .size
+            throw AssertionError(
+                "$description 으로 이동하지 못했습니다. \"추가\" 노드 기대=$count 실제=$actual",
+                e,
+            )
         }
     }
 
@@ -337,20 +372,6 @@ class ReceiverSelectionResultAndroidTest {
     private fun waitForSelectRow(name: String) {
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             composeRule.onAllNodesWithText(name).fetchSemanticsNodes().isNotEmpty()
-        }
-    }
-
-    /** 실패 시 현재 destination 을 함께 남긴다 — 「10초 뒤 조건 미충족」만으론 원인이 안 드러난다. */
-    private inline fun <reified T : Any> waitForRoute(description: String) {
-        try {
-            composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-                navController.currentDestination?.hasRoute<T>() == true
-            }
-        } catch (e: ComposeTimeoutException) {
-            throw AssertionError(
-                "$description 으로 이동하지 못했습니다. 현재 destination=${navController.currentDestination?.route}",
-                e,
-            )
         }
     }
 
@@ -416,6 +437,9 @@ class ReceiverSelectionResultAndroidTest {
 
         /** 계정 카테고리 에디터의 "추가" 버튼 — 수신자 지정 + 처리 방법 리스트. */
         const val EDITOR_ADD_BUTTON_COUNT = 2
+
+        /** 애프터노트 홈의 "추가" 노드 — 연필 FAB 하나뿐이다. */
+        const val HOME_FAB_COUNT = 1
 
         val KIM = Receiver(receiverId = 7L, name = "김수신", relation = "가족", authCode = "fake-auth-7")
         val PARK = Receiver(receiverId = 11L, name = "박친구", relation = "친구", authCode = "fake-auth-11")

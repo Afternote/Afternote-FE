@@ -24,11 +24,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,12 +44,13 @@ import com.afternote.core.ui.PhoneNumberInputTransformation
 import com.afternote.core.ui.PhoneNumberVisualTransformation
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.asString
+import com.afternote.core.ui.mvi.ObserveSignal
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverPhoneValidation
-import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterEvent
+import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterIntent
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterViewModel
 import com.afternote.feature.setting.presentation.viewmodel.isValidReceiverEmail
 import com.afternote.feature.setting.presentation.viewmodel.validateReceiverPhone
@@ -61,22 +60,19 @@ private const val CUSTOM_RELATION_OPTION = "직접 추가하기"
 private val relationOptions = listOf("어머니", "아버지", "아들", "딸", CUSTOM_RELATION_OPTION)
 
 @Composable
-fun ReceiverRegisterScreen(
+internal fun ReceiverRegisterScreen(
     onBackClick: () -> Unit,
     onRegisterSuccess: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ReceiverRegisterViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val currentOnRegisterSuccess by rememberUpdatedState(onRegisterSuccess)
 
-    LaunchedEffect(Unit) {
-        viewModel.events.collect { event ->
-            when (event) {
-                ReceiverRegisterEvent.RegisterSuccess -> currentOnRegisterSuccess()
-            }
-        }
-    }
+    ObserveSignal(
+        signal = uiState.pendingEvent,
+        consumed = ReceiverRegisterIntent.ConsumeSuccess,
+        onIntent = viewModel::onIntent,
+    ) { onRegisterSuccess() }
 
     ReceiverRegisterContent(
         title = "수신자 등록",
@@ -85,7 +81,9 @@ fun ReceiverRegisterScreen(
         isLoading = uiState.isLoading,
         errorMessage = uiState.errorMessage,
         onBackClick = onBackClick,
-        onRegister = viewModel::register,
+        onRegister = { name, relation, phone, email, message ->
+            viewModel.onIntent(ReceiverRegisterIntent.Register(name, relation, phone, email, message))
+        },
         modifier = modifier,
     )
 }

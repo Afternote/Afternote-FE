@@ -4,8 +4,11 @@ import com.afternote.core.model.delivery.DeliveryConditionItem
 import com.afternote.core.model.delivery.DeliveryConditionType
 import com.afternote.core.model.delivery.DeliveryContentType
 import com.afternote.core.model.delivery.InactivityPeriod
+import com.afternote.core.ui.mvi.UiState
 
-data class DeliveryConditionUiState(
+internal data class DeliveryConditionUiState(
+    val conditionEditRevision: Int = 0,
+    val savedConditionRevision: Int = 0,
     val isLoading: Boolean = false,
     val isInitialized: Boolean = false,
     val conditionType: DeliveryConditionType = DeliveryConditionType.INACTIVITY,
@@ -13,7 +16,8 @@ data class DeliveryConditionUiState(
     val conditions: List<DeliveryConditionItem> = emptyList(),
     val error: DeliveryConditionError? = null,
     val isSaving: Boolean = false,
-)
+    val pendingEvent: Unit? = null,
+) : UiState
 
 enum class DeliveryConditionError {
     LOAD_FAILED,
