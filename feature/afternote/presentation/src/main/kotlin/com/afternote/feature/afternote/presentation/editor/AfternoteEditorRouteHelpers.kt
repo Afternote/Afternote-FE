@@ -1,12 +1,10 @@
 package com.afternote.feature.afternote.presentation.editor
 
 import androidx.annotation.StringRes
-import androidx.navigation.NavBackStackEntry
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
-import com.afternote.feature.afternote.presentation.navigation.model.SELECTED_RECEIVER_ID_KEY
 
 // 에디터 조립부가 쓰는 순수 헬퍼들이다. Route 파일에는 조립만 남긴다 (#1514).
 
@@ -61,20 +59,16 @@ internal fun AfternoteEditorError.offersMemorialThumbnailRetry(): Boolean =
         }
 
 /**
- * 수신자 선택 화면이 남긴 id 를 폼에 반영한다.
+ * 수신자 선택 화면이 남긴 id 전체를 폼에 반영한다 (#1426).
  *
- * 목록 로드 실패로 id 를 해석할 수 없으면 [AfternoteEditorViewModel.resolveSelectedReceiver] 가 재조회 후
- * 오류 이벤트를 세운다 — 선택이 조용히 사라지지 않는다 (#1405).
+ * 결과는 흐름 공유 ViewModel 이 1회 소비로 나른다 (#1698) — Nav2 의 «이전 엔트리 SavedStateHandle»
+ * 자리다. 소비할 값이 없으면 선택 화면을 거치지 않은 복귀라 아무것도 하지 않는다. 값이 있으면 그게
+ * 곧 확정된 수신자 전체이므로 반영은 [AfternoteEditorViewModel.applySelectedReceivers] 에 맡긴다
+ * («추가» 가 아니라 «교체» 인 이유는 그 KDoc 참고).
  */
-internal suspend fun tryApplyReceiverSelectionFromSavedState(
-    backStackEntry: NavBackStackEntry,
-    viewModel: AfternoteEditorViewModel,
-    state: AfternoteEditorState,
-) {
-    val id = backStackEntry.savedStateHandle[SELECTED_RECEIVER_ID_KEY] as? Long ?: return
-    backStackEntry.savedStateHandle.remove<Long>(SELECTED_RECEIVER_ID_KEY)
-    val receiver = viewModel.resolveSelectedReceiver(id) ?: return
-    state.addReceiverById(id, receiver.name, receiver.label)
+internal suspend fun tryApplyReceiverSelection(viewModel: AfternoteEditorViewModel) {
+    val selectedIds = viewModel.consumeSelectedReceiverIds() ?: return
+    viewModel.applySelectedReceivers(selectedIds)
 }
 
 /**
@@ -108,6 +102,7 @@ internal fun buildOnRegisterClick(
                     memorialVideo = form.memorialVideo ?: EditableMemorialVideo.empty(),
                     memorialPhotoUrl = form.memorialPhotoUrl,
                     pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
+                    memorialAudioUrl = form.memorialAudioUrl,
                 ),
             asDraft = asDraft,
         )

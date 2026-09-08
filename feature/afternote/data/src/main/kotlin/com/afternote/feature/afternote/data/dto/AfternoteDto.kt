@@ -94,6 +94,8 @@ data class AfternotePlaylistDto(
     @SerialName("memorialPhotoUrl") val memorialPhotoUrl: String? = null,
     @SerialName("songs") val songs: List<AfternoteSongDto>,
     @SerialName("memorialVideo") val memorialVideo: AfternoteMemorialVideoDto? = null,
+    // 추모 음성 (#1118). 서버 응답에서 nullable — 미첨부면 null 로 온다.
+    @SerialName("memorialAudioUrl") val memorialAudioUrl: String? = null,
 )
 
 /**
@@ -108,7 +110,7 @@ data class AfternotePlaylistDto(
  * 기본값)에서 **기본값과 같은 값을 키째 뺀다.** 그래서 이 클래스에서 기본값의 유무는 편의가 아니라
  * 계약이다 — 기본값을 달아 두면 그 슬롯은 「유지」 말고는 말할 수 없게 된다 (#1596).
  *
- * - [memorialPhotoUrl] · [memorialVideo] 는 기본값을 두지 않는다. 폼이 비었으면 `null` 이 그대로
+ * - [memorialPhotoUrl] · [memorialVideo] · [memorialAudioUrl] 은 기본값을 두지 않는다. 폼이 비었으면 `null` 이 그대로
  *   실려 삭제로 읽힌다. 그러므로 이 DTO 는 **폼 전체 스냅샷에서만** 만들어야 한다 — 일부만 아는
  *   호출부가 만들면 나머지 슬롯이 조용히 지워진다.
  * - [songs] 도 기본값을 두지 않는다. 곡은 `null` 이 아니라 **빈 배열**로 삭제를 말한다 —
@@ -116,8 +118,6 @@ data class AfternotePlaylistDto(
  *   `[]` 가 곧 전부 삭제다. 기본값 `emptyList()` 가 있던 동안은 그 배열이 키째 빠져 「유지」로
  *   흡수됐고, 곡을 전부 뺀 저장이 서버에 반영되지 않았다 (#1599).
  * - [atmosphere] 는 기본값을 남겨 늘 생략한다. FE 화면에 없는 값이라 삭제를 지시할 자격이 없다.
- * - `memorialAudioUrl` 은 아직 필드를 두지 않는다 — 같은 이유이고, 첨부 수단이 생기는 #1118 에서
- *   위 규칙대로 편입한다.
  *
  * 생성(POST)에서 `[]` 는 종전의 생략과 동작이 같다 — `PlaylistRelationStrategy.save` 는 0건을
  * 순회하고 끝나고, `PlaylistValidationStrategy.requirePlaylistSongs` 는 `null` 과 `isEmpty()` 를
@@ -129,6 +129,8 @@ data class AfternotePlaylistRequestDto(
     @SerialName("memorialPhotoUrl") val memorialPhotoUrl: String?,
     @SerialName("songs") val songs: List<AfternoteSongDto>,
     @SerialName("memorialVideo") val memorialVideo: AfternoteMemorialVideoDto?,
+    /** 추모 음성 URL (#1118). 업로드로 발급된 afternotes 키(mp3·m4a·wav)만 서버가 받는다. */
+    @SerialName("memorialAudioUrl") val memorialAudioUrl: String?,
 )
 
 /**
@@ -144,12 +146,12 @@ data class AfternotePlaylistRequestDto(
  * 생략되지 않고, `null` 이면 곧 삭제 지시이기 때문이다.
  *
  * 슬롯별 표현이 다른 것은 서버가 그렇게 읽기 때문이다:
- * - [memorialPhotoUrl]·[memorialVideo] — `PlaylistRequestDeserializer` 가 `node.has(...)` 로 키
+ * - [memorialPhotoUrl]·[memorialVideo]·[memorialAudioUrl] — `PlaylistRequestDeserializer` 가 `node.has(...)` 로 키
  *   유무를 보고 `AfternotePlaylist.update` 가 그 플래그로 유지/삭제를 가른다. 3상태가 필요해
  *   [FieldPatch] 를 쓴다. 기본값 [FieldPatch.Unchanged] 가 곧 「키 생략」이다.
  * - [songs] — `PlaylistRelationStrategy.update` 가 `songs != null` 일 때만 `items` 를 통째로 갈아
  *   끼운다. `null`(안 건드림)과 `[]`(전부 삭제)로 두 뜻이 다 나오므로 [FieldPatch] 가 필요 없다.
- * - `atmosphere`·`memorialAudioUrl` — FE 화면에 없는 값이라 삭제를 지시할 자격이 없다. 슬롯 자체를
+ * - `atmosphere` — FE 화면에 없는 값이라 삭제를 지시할 자격이 없다. 슬롯 자체를
  *   두지 않아 영영 생략된다.
  */
 @Serializable
@@ -162,6 +164,9 @@ data class AfternotePlaylistPatchRequestDto(
     @SerialName("memorialVideo")
     @Serializable(with = FieldPatchSerializer::class)
     val memorialVideo: FieldPatch<AfternoteMemorialVideoDto?> = FieldPatch.Unchanged,
+    @SerialName("memorialAudioUrl")
+    @Serializable(with = FieldPatchSerializer::class)
+    val memorialAudioUrl: FieldPatch<String?> = FieldPatch.Unchanged,
 )
 
 @Serializable

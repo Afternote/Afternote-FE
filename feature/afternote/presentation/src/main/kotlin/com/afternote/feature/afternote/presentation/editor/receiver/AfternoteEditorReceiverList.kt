@@ -23,11 +23,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.PlusBadgeButton
+import com.afternote.core.ui.popup.AfternoteActionMenu
+import com.afternote.core.ui.popup.editDeleteActionMenuItems
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.editor.receiver.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.shared.ReceiverAvatar
-import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 
 /**
  * 수신자 리스트 컴포넌트
@@ -139,12 +140,15 @@ private fun AfternoteEditorReceiverItem(
                     Modifier
                         .clickable(role = Role.Button, onClick = onMoreClick),
             )
-            EditDropdownMenu(
+            AfternoteActionMenu(
                 expanded = expanded,
                 onDismissRequest = onDismissDropdown,
-                onDeleteClick = onDeleteClick,
-                // 수신자 행 메뉴엔 편집이 없다 — null 이 편집 항목 자체를 숨긴다.
-                onEditClick = null,
+                items =
+                    editDeleteActionMenuItems(
+                        // 수신자 행 메뉴엔 편집이 없다 — null 이 수정 항목 자체를 리스트에서 뺀다.
+                        onEditClick = null,
+                        onDeleteClick = onDeleteClick,
+                    ),
             )
         }
     }

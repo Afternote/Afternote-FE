@@ -249,7 +249,10 @@ private class Fixture {
         HomeTabViewModel(
             getHomeSummary =
                 GetHomeSummaryUseCase(
-                    userRepository = server.userRepository,
+                    // 같은 페이크가 두 좁은 계약을 다 구현한다 — UserRepository 가 둘을
+                    // 상속하므로, 이 테스트가 쥔 완료 시점 제어가 그대로 유지된다 (#1742).
+                    myProfileRepository = server.userRepository,
+                    userReceiverRepository = server.userRepository,
                     dailyQuestionRepository = server.dailyQuestionRepository,
                     // 주간 기록 수는 이 테스트의 관심사가 아니다 — 실패로 고정해 보조 호출
                     // 실패가 홈 전체를 깨뜨리지 않는다는 계약도 함께 태운다 (#562).

@@ -215,4 +215,30 @@ class AfternoteUpdatePartialPatchWireTest {
             body,
         )
     }
+
+    @Test
+    fun `음성만 지우면 음성 슬롯에만 명시적 null 이 나간다`() {
+        val body =
+            wire(
+                AfternoteUpdatePayload(
+                    type = AfternoteType.MEMORIAL,
+                    memorial = MemorialPatchPayload(memorialAudioUrl = FieldPatch.Set(null)),
+                ),
+            )
+
+        assertEquals("""{"category":"PLAYLIST","playlist":{"memorialAudioUrl":null}}""", body)
+    }
+
+    @Test
+    fun `음성만 바꾸면 음성 키만 나간다`() {
+        val body =
+            wire(
+                AfternoteUpdatePayload(
+                    type = AfternoteType.MEMORIAL,
+                    memorial = MemorialPatchPayload(memorialAudioUrl = FieldPatch.Set("https://cdn.test/voice.m4a")),
+                ),
+            )
+
+        assertEquals("""{"category":"PLAYLIST","playlist":{"memorialAudioUrl":"https://cdn.test/voice.m4a"}}""", body)
+    }
 }

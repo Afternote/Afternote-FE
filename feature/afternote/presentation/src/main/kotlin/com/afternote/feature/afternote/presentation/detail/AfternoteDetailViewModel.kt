@@ -1,9 +1,7 @@
 package com.afternote.feature.afternote.presentation.detail
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserProfileCacheRepository
@@ -13,6 +11,9 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.ensureActive
@@ -21,7 +22,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * 애프터노트 상세 화면 ViewModel.
@@ -40,18 +40,18 @@ import javax.inject.Inject
  * 실패 시 예외 원문(`Throwable.message`)은 UI 로 넘기지 않는다 — 서버 5xx 본문·역직렬화 예외에
  * 내부 SQL·응답 원문 발췌가 섞여 오므로 사용자에게 노출하면 안 된다.
  */
-@HiltViewModel
+@HiltViewModel(assistedFactory = AfternoteDetailViewModel.Factory::class)
 class AfternoteDetailViewModel
-    @Inject
+    @AssistedInject
     constructor(
-        savedStateHandle: SavedStateHandle,
+        @Assisted private val route: AfternoteRoute.DetailRoute,
         private val afternoteRepository: AfternoteRepository,
         private val userRepository: UserRepository,
         private val userProfileRepository: UserProfileCacheRepository,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val afternoteIdFromNav: Long =
-            savedStateHandle.toRoute<AfternoteRoute.DetailRoute>().itemId
+            route.itemId
 
         private val _uiState = MutableStateFlow<AfternoteDetailUiState>(AfternoteDetailUiState.Loading)
         val uiState: StateFlow<AfternoteDetailUiState> = _uiState.asStateFlow()
@@ -282,4 +282,9 @@ class AfternoteDetailViewModel
         }
 
         // endregion
+
+        @AssistedFactory
+        interface Factory {
+            fun create(route: AfternoteRoute.DetailRoute): AfternoteDetailViewModel
+        }
     }

@@ -18,24 +18,31 @@ internal enum class MemorialMediaTarget {
 
     /** 장례식에 남길 영상 — 갤러리 영상 선택 / 영상 촬영. */
     VIDEO,
+
+    /** 추모 음성 — 파일(SAF)에서 선택 / 즉석 녹음 (#1118). */
+    AUDIO,
 }
 
 /**
- * 시트에 "삭제" 를 노출할 슬롯 — 이 폼에서 새로 붙인 로컬 첨부(`content://`)만 (#1114).
+ * 시트에 "삭제" 를 노출할 슬롯 — 현재 폼에 표시 중인 로컬·서버 첨부 모두 (#1114, #1597).
  *
- * 서버에 이미 저장된 미디어(수정 진입 prefill 의 원격 URL)는 대상에서 뺀다: 수정(PATCH) 계약이
- * 삭제를 표현하지 못한다 — BE `AfternotePlaylist.update` 는 null 필드를 "기존 값 유지" 로
- * 해석하므로, 폼만 비워 두면 저장 후 서버 미디어가 되살아나는 거짓 삭제가 된다.
- * 그래서 실제로 지울 수 있는 것만 지우게 한다. 서버 미디어 삭제는 BE 계약 확장 후 후속.
+ * BE 수정 계약은 미디어 키 생략을 「기존 값 유지」, JSON `null` 을 「DB 참조 제거와 관리 S3 객체
+ * 삭제 시도」로 구분한다(`PlaylistRequestDeserializer`, Afternote-BE `72fee63`). #1617의 기준
+ * 스냅샷과 비교해 삭제한 슬롯만 명시적 `null` 로 보내고, 나머지 슬롯은 생략한다.
  *
- * 사진은 `picked` 칸을 확인하지만, 영상 UI는 편집 값에 "새 선택을 걷어낼 수 있는가"만 묻는다. 그래서
- * 이 단에서는 서버 원본인지 새 선택인지도, URL 스킴도 판정하지 않는다(#1406 이전에는 영상 한 칸이
- * 두 출처를 겸해 [isLocalContentUri]로 추론했고, 로컬 영상으로 덮는 순간 서버 원본을 잃었다).
+ * 삭제는 슬롯을 비운다. 새 선택과 서버 원본을 함께 걷고, 저장 시 `null` 을 보낸다. 노출 판정은
+ * 출처가 아니라 표시값이 있는지만 본다. 서버 원본인지 새 선택인지, URL 스킴도 이 단에서는 판정하지
+ * 않는다(#1406 이전에는 영상 한 칸이 두 출처를 겸해 [isLocalContentUri]로 추론했고, 로컬 영상으로
+ * 덮는 순간 서버 원본을 잃었다).
+ *
+ * 음성은 로컬 선택 칸이 따로 없어 표시값 한 칸이 곧 판정이다 (#1118). 저장 시에는 다른 미디어와
+ * 같이 기준 스냅샷과 비교해 유지·삭제·교체를 구분한다.
  */
 internal fun EditorFormState.removableMemorialMediaTargets(): Set<MemorialMediaTarget> =
     buildSet {
-        if (!pickedMemorialPhotoUri.isNullOrBlank()) add(MemorialMediaTarget.PHOTO)
-        if (canDiscardMemorialVideoSelection) add(MemorialMediaTarget.VIDEO)
+        if (!displayMemorialPhotoUri().isNullOrBlank()) add(MemorialMediaTarget.PHOTO)
+        if (canRemoveMemorialVideo) add(MemorialMediaTarget.VIDEO)
+        if (!memorialAudioUrl.isNullOrBlank()) add(MemorialMediaTarget.AUDIO)
     }
 
 /**
@@ -63,19 +70,35 @@ internal fun MemorialMediaSourceBottomSheet(
         when (target) {
             MemorialMediaTarget.PHOTO -> stringResource(R.string.afternote_editor_media_source_take_photo)
             MemorialMediaTarget.VIDEO -> stringResource(R.string.afternote_editor_media_source_take_video)
+            MemorialMediaTarget.AUDIO -> stringResource(R.string.afternote_editor_media_source_record_audio)
         }
     val removeLabel =
         when (target) {
             MemorialMediaTarget.PHOTO -> stringResource(R.string.afternote_editor_media_source_remove_photo)
             MemorialMediaTarget.VIDEO -> stringResource(R.string.afternote_editor_media_source_remove_video)
+            MemorialMediaTarget.AUDIO -> stringResource(R.string.afternote_editor_media_source_remove_audio)
         }
 
     MediaSelectSheetContent(
         items =
             listOfNotNull(
                 MediaSheetItem(
-                    iconRes = CoreUiR.drawable.core_ui_ic_image,
-                    label = stringResource(R.string.afternote_editor_media_source_gallery),
+                    // 음성은 갤러리(사진 선택기)의 대상이 아니라 문서 선택기로 고른다 — 아이콘·문구도 그에 맞춘다.
+                    iconRes =
+                        when (target) {
+                            MemorialMediaTarget.PHOTO, MemorialMediaTarget.VIDEO -> CoreUiR.drawable.core_ui_ic_image
+                            MemorialMediaTarget.AUDIO -> CoreUiR.drawable.core_ui_ic_file
+                        },
+                    label =
+                        when (target) {
+                            MemorialMediaTarget.PHOTO, MemorialMediaTarget.VIDEO -> {
+                                stringResource(R.string.afternote_editor_media_source_gallery)
+                            }
+
+                            MemorialMediaTarget.AUDIO -> {
+                                stringResource(R.string.afternote_editor_media_source_pick_audio)
+                            }
+                        },
                     onClick = onPickFromGallery,
                 ),
                 MediaSheetItem(
@@ -83,6 +106,7 @@ internal fun MemorialMediaSourceBottomSheet(
                         when (target) {
                             MemorialMediaTarget.PHOTO -> R.drawable.afternote_ic_camera
                             MemorialMediaTarget.VIDEO -> R.drawable.afternote_ic_videocam
+                            MemorialMediaTarget.AUDIO -> CoreUiR.drawable.core_ui_ic_mic
                         },
                     label = captureLabel,
                     onClick = onCapture,

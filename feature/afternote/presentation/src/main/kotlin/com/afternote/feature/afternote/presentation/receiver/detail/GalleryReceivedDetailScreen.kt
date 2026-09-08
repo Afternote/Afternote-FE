@@ -25,7 +25,7 @@ import com.afternote.feature.afternote.presentation.shared.model.AfternoteServic
 /**
  * 수신 갤러리 상세 (Stateless).
  *
- * 발신자 [com.afternote.feature.afternote.presentation.author.detail.GalleryDetailScreen]
+ * 발신자 [com.afternote.feature.afternote.presentation.detail.GalleryDetailScreen]
  * 과 달리 ReceiversCard 와 편집/삭제 액션을 두지 않는다(받은 본인이 수신자).
  */
 @Composable

@@ -15,6 +15,7 @@ import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.presentation.editor.model.EditorContentPrefill
 import com.afternote.feature.afternote.presentation.editor.model.RegisterAfternotePayload
+import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -264,7 +265,7 @@ class AfternoteEditorProcessDeathPrefillTest {
             credentials = null,
             processingMethods = listOf(SERVER_PROCESSING_METHOD),
             songs = emptyList(),
-            media = MemorialMedia(null, null, null),
+            media = MemorialMedia(null, null, null, null),
         )
 
     private fun serverDetail() =
@@ -295,6 +296,7 @@ class AfternoteEditorProcessDeathPrefillTest {
         isDraft: Boolean = false,
     ): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
+            route = AfternoteRoute.EditorFlowRoute(itemId = EDIT_ID, initialType = AfternoteType.GALLERY_AND_FILES, isDraft = isDraft),
             savedStateHandle =
                 SavedStateHandle(
                     buildMap {

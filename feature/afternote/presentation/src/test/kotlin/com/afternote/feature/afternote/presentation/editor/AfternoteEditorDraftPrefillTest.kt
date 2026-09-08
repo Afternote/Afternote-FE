@@ -78,6 +78,6 @@ class AfternoteEditorDraftPrefillTest {
         credentials = null,
         processingMethods = emptyList(),
         songs = emptyList(),
-        media = MemorialMedia(photoUrl = null, videoUrl = null, thumbnailUrl = null),
+        media = MemorialMedia(photoUrl = null, videoUrl = null, thumbnailUrl = null, audioUrl = null),
     )
 }

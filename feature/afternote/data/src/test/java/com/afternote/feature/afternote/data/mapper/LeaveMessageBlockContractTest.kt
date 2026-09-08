@@ -162,7 +162,13 @@ class LeaveMessageBlockContractTest {
         val request =
             CreateMemorialPayload(
                 title = "추억 노트",
-                memorial = MemorialWritePayload(memorialPhotoUrl = null, songs = emptyList(), memorialVideo = null),
+                memorial =
+                    MemorialWritePayload(
+                        memorialPhotoUrl = null,
+                        songs = emptyList(),
+                        memorialVideo = null,
+                        memorialAudioUrl = null,
+                    ),
                 leaveMessageBlocks = listOf(LeaveMessageBlock(title = "가족에게", body = "노래 들으며 기억해줘")),
             ).toRequest()
 
