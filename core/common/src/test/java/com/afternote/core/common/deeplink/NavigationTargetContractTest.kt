@@ -79,26 +79,18 @@ class NavigationTargetContractTest {
             NavigationTarget.Home -> listOf(AuthGate.LOGIN)
             NavigationTarget.AfternoteHome -> listOf(AuthGate.LOGIN, AuthGate.BIOMETRIC)
             is NavigationTarget.AfternoteDetail -> listOf(AuthGate.LOGIN, AuthGate.BIOMETRIC)
-            NavigationTarget.ReceivedRecordBox -> listOf(AuthGate.LOGIN)
-            is NavigationTarget.ReceivedSenderDetail -> listOf(AuthGate.LOGIN)
-            is NavigationTarget.ReceivedAfternoteDetail -> listOf(AuthGate.LOGIN, AuthGate.RECEIVER_IDENTITY)
             is NavigationTarget.TimeLetterDetail -> listOf(AuthGate.LOGIN)
             NavigationTarget.DailyQuestionCompose -> listOf(AuthGate.LOGIN)
             NavigationTarget.NotificationSettings -> listOf(AuthGate.LOGIN)
         }
 
     private companion object {
-        const val SENDER_ID = "3f2504e0-4f89-41d3-9a0c-0305e82c3301"
-
         /** 목적지 전량. 인자를 갖는 목적지는 대표값 하나로 센다. */
         val ALL_TARGETS: List<NavigationTarget> =
             listOf(
                 NavigationTarget.Home,
                 NavigationTarget.AfternoteHome,
                 NavigationTarget.AfternoteDetail(42L),
-                NavigationTarget.ReceivedRecordBox,
-                NavigationTarget.ReceivedSenderDetail(SENDER_ID),
-                NavigationTarget.ReceivedAfternoteDetail(7L),
                 NavigationTarget.TimeLetterDetail(9L),
                 NavigationTarget.DailyQuestionCompose,
                 NavigationTarget.NotificationSettings,

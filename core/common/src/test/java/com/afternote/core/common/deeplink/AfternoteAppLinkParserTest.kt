@@ -17,11 +17,6 @@ class AfternoteAppLinkParserTest {
                 "https://afternote.kro.kr/" to NavigationTarget.Home,
                 "https://afternote.kro.kr/afternote" to NavigationTarget.AfternoteHome,
                 "https://afternote.kro.kr/afternote/42" to NavigationTarget.AfternoteDetail(42L),
-                "https://afternote.kro.kr/received" to NavigationTarget.ReceivedRecordBox,
-                "https://afternote.kro.kr/received/senders/$SENDER_ID" to
-                    NavigationTarget.ReceivedSenderDetail(SENDER_ID),
-                "https://afternote.kro.kr/received/afternote/7" to
-                    NavigationTarget.ReceivedAfternoteDetail(7L),
                 "https://afternote.kro.kr/timeletter/9" to NavigationTarget.TimeLetterDetail(9L),
                 "https://afternote.kro.kr/mindrecord/daily-question" to
                     NavigationTarget.DailyQuestionCompose,
@@ -61,8 +56,8 @@ class AfternoteAppLinkParserTest {
     @Test
     fun `앞뒤 공백은 다듬어 해석한다`() {
         assertEquals(
-            AppLinkResolution.Resolved(NavigationTarget.ReceivedRecordBox),
-            AfternoteAppLinkParser.parse("  https://afternote.kro.kr/received\n"),
+            AppLinkResolution.Resolved(NavigationTarget.AfternoteHome),
+            AfternoteAppLinkParser.parse("  https://afternote.kro.kr/afternote\n"),
         )
     }
 
@@ -79,8 +74,6 @@ class AfternoteAppLinkParserTest {
             "https://afternote.kro.kr/afternote//42",
             "https://afternote.kro.kr/%2Fafternote",
             "https://afternote.kro.kr/afternote/../settings/notification",
-            // 대문자 UUID 는 정규 세그먼트가 아니라 ID 판정에 닿기 전에 걸린다.
-            "https://afternote.kro.kr/received/senders/${SENDER_ID.uppercase()}",
         ).forEach { link ->
             assertEquals(link, rejectedBecause(AppLinkRejectionReason.UNKNOWN_PATH), AfternoteAppLinkParser.parse(link))
         }
@@ -94,10 +87,6 @@ class AfternoteAppLinkParserTest {
             "https://afternote.kro.kr/afternote/007",
             "https://afternote.kro.kr/afternote/99999999999999999999",
             "https://afternote.kro.kr/timeletter/-1",
-            "https://afternote.kro.kr/received/afternote/1e3",
-            "https://afternote.kro.kr/received/senders/not-a-uuid",
-            "https://afternote.kro.kr/received/senders/${SENDER_ID.dropLast(1)}",
-            "https://afternote.kro.kr/received/senders/${SENDER_ID.replace('-', '0')}",
         ).forEach { link ->
             assertEquals(link, rejectedBecause(AppLinkRejectionReason.MALFORMED_ID), AfternoteAppLinkParser.parse(link))
         }
@@ -120,7 +109,7 @@ class AfternoteAppLinkParserTest {
         listOf(
             "https://afternote.kro.kr/afternote?utm_source=mail",
             "https://afternote.kro.kr/afternote/42?ref=push",
-            "https://afternote.kro.kr/received?",
+            "https://afternote.kro.kr/afternote?",
         ).forEach { link ->
             assertEquals(
                 link,
@@ -191,10 +180,21 @@ class AfternoteAppLinkParserTest {
         assertEquals(listOf(AuthGate.LOGIN), rejected.target.requiredGates)
     }
 
+    @Test
+    fun `미확정 수신자 경로는 목적지로 선언하지 않는다`() {
+        listOf(
+            "/received",
+            "/received/senders/3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+            "/received/afternote/7",
+        ).forEach { path ->
+            assertEquals(
+                path,
+                rejectedBecause(AppLinkRejectionReason.UNKNOWN_PATH),
+                AfternoteAppLinkParser.parse("https://afternote.kro.kr$path"),
+            )
+        }
+    }
+
     private fun rejectedBecause(reason: AppLinkRejectionReason): AppLinkResolution =
         AppLinkResolution.Rejected(reason, NavigationTarget.Home)
-
-    private companion object {
-        const val SENDER_ID = "3f2504e0-4f89-41d3-9a0c-0305e82c3301"
-    }
 }

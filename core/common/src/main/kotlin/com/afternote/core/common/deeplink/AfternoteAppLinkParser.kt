@@ -25,12 +25,11 @@ import java.net.URI
  * | `/` | [NavigationTarget.Home] | — | 로그인 |
  * | `/afternote` | [NavigationTarget.AfternoteHome] | — | 로그인 + 지문 |
  * | `/afternote/{id}` | [NavigationTarget.AfternoteDetail] | 양의 10진 정수 | 로그인 + 지문 |
- * | `/received` | [NavigationTarget.ReceivedRecordBox] | — | 로그인 |
- * | `/received/senders/{senderId}` | [NavigationTarget.ReceivedSenderDetail] | 소문자 UUID | 로그인 |
- * | `/received/afternote/{id}` | [NavigationTarget.ReceivedAfternoteDetail] | 양의 10진 정수 | 로그인 + 수신자 본인인증 |
  * | `/timeletter/{id}` | [NavigationTarget.TimeLetterDetail] | 양의 10진 정수 | 로그인 |
  * | `/mindrecord/daily-question` | [NavigationTarget.DailyQuestionCompose] | — | 로그인 |
  * | `/settings/notification` | [NavigationTarget.NotificationSettings] | — | 로그인 |
+ *
+ * 수신자 경로의 서버 식별자·접근 관문은 #1951에서 확정한다. 현재 지원 목적지에 포함하지 않는다.
  *
  * canonical URL 은 `https://afternote.kro.kr` + 경로다([canonicalUrl]).
  *
@@ -94,21 +93,6 @@ object AfternoteAppLinkParser {
                 segments[1].resolveWithId(NavigationTarget::AfternoteDetail)
             }
 
-            segments == listOf(SEGMENT_RECEIVED) -> {
-                AppLinkResolution.Resolved(NavigationTarget.ReceivedRecordBox)
-            }
-
-            segments.size == 3 && segments[0] == SEGMENT_RECEIVED && segments[1] == SEGMENT_SENDERS -> {
-                segments[2]
-                    .takeIf(SENDER_ID_FORMAT::matches)
-                    ?.let { AppLinkResolution.Resolved(NavigationTarget.ReceivedSenderDetail(it)) }
-                    ?: reject(AppLinkRejectionReason.MALFORMED_ID)
-            }
-
-            segments.size == 3 && segments[0] == SEGMENT_RECEIVED && segments[1] == SEGMENT_AFTERNOTE -> {
-                segments[2].resolveWithId(NavigationTarget::ReceivedAfternoteDetail)
-            }
-
             segments.size == 2 && segments[0] == SEGMENT_TIMELETTER -> {
                 segments[1].resolveWithId(NavigationTarget::TimeLetterDetail)
             }
@@ -166,16 +150,10 @@ object AfternoteAppLinkParser {
     /** 정규 경로 세그먼트는 소문자·숫자·하이픈뿐이다. 대문자·퍼센트 인코딩·점은 정규형이 아니다. */
     private val SEGMENT_FORMAT = Regex("[a-z0-9-]+")
 
-    /** `SenderRegistry` 가 만드는 소문자 canonical UUID. */
-    private val SENDER_ID_FORMAT =
-        Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
-
     /** `Long.MAX_VALUE` 의 자릿수. 넘으면 `toLongOrNull` 이전에 잘라 낸다. */
     private const val MAX_ID_LENGTH = 19
 
     private const val SEGMENT_AFTERNOTE = "afternote"
-    private const val SEGMENT_RECEIVED = "received"
-    private const val SEGMENT_SENDERS = "senders"
     private const val SEGMENT_TIMELETTER = "timeletter"
     private const val SEGMENT_MINDRECORD = "mindrecord"
     private const val SEGMENT_DAILY_QUESTION = "daily-question"

@@ -38,36 +38,6 @@ sealed interface NavigationTarget {
         override val requiredGates: List<AuthGate> = listOf(AuthGate.LOGIN, AuthGate.BIOMETRIC)
     }
 
-    /** 받은 기록함 — 수신자가 등록한 발신자 카드 목록. */
-    data object ReceivedRecordBox : NavigationTarget {
-        override val canonicalPath: String = "/received"
-        override val requiredGates: List<AuthGate> = listOf(AuthGate.LOGIN)
-    }
-
-    /**
-     * 발신자 상세.
-     *
-     * [senderId] 는 지금 **프로세스 메모리에만 사는 클라이언트 로컬 UUID** 다(`SenderRegistry`, #215 —
-     * 발신자 라벨 API 가 아직 없다). 그래서 이 경로는 형식이 맞아도 앱 밖에서 온 링크로는 사실상
-     * 해석되지 않는다. 파서는 **형식만** 판정하고, 실제 조회 실패는 소비처가 fail-closed 로 처리한다.
-     * 서버 발신자 식별자가 생기면 이 행의 ID 형식을 그때 다시 확정한다.
-     */
-    data class ReceivedSenderDetail(
-        val senderId: String,
-    ) : NavigationTarget {
-        override val canonicalPath: String = "/received/senders/$senderId"
-        override val requiredGates: List<AuthGate> = listOf(AuthGate.LOGIN)
-    }
-
-    /** 수신 애프터노트 상세 — 발신자별 본인인증을 통과해야 열린다. */
-    data class ReceivedAfternoteDetail(
-        val afternoteId: Long,
-    ) : NavigationTarget {
-        override val canonicalPath: String = "/received/afternote/$afternoteId"
-        override val requiredGates: List<AuthGate> =
-            listOf(AuthGate.LOGIN, AuthGate.RECEIVER_IDENTITY)
-    }
-
     /** 타임레터 상세. */
     data class TimeLetterDetail(
         val timeLetterId: Long,
