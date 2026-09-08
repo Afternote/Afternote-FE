@@ -121,7 +121,7 @@ class PasskeyRegistrationAndroidTest {
         composeRule.onNodeWithText("패스키 등록").performClick()
         waitForText("비밀번호로 인증하기")
         composeRule.onNodeWithText("비밀번호로 인증하기").performClick()
-        waitForText("비밀번호를 입력해주세요")
+        waitForText("비밀번호를 입력해 주세요.")
     }
 
     private fun waitForText(text: String) {
