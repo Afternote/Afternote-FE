@@ -26,6 +26,27 @@ internal fun Throwable.toReceiverFailure(): Throwable =
     }
 
 /**
+ * 요청 결과의 실패를 [toReceiverFailure] 로 옮긴다 — **수신자 저장소가 모듈 밖으로 실패를 내보내는
+ * 유일한 통로**다.
+ *
+ * 메서드마다 `try { ... } catch (e: ApiException)` 을 포개던 자리를 대신한다. 그 형태는 감싼 메서드만
+ * 번역해서, 같은 모듈 안에서 어떤 endpoint 는 도메인 어휘로 나가고 어떤 endpoint 는 `ApiException`
+ * (status·BE code·서버 message)을 그대로 흘리는 상태를 만들었다. 호출부가 한 줄로 붙이는 형태여야
+ * 새 endpoint 가 번역을 빠뜨리지 않는다.
+ *
+ * 번역 대상이 아닌 실패는 **같은 [Result] 인스턴스를 그대로** 돌려준다 — 매핑 실패
+ * ([com.afternote.feature.receiver.data.mapper.ReceiverListMappingFailure] 등) 처럼 도메인 어휘가 없는
+ * 실패를 새 [Result] 로 갈아 끼우지 않는다.
+ *
+ * 취소는 여기 오지 않는다 — 호출부의 `runCatchingCancellable` 이 [Result] 에 담지 않고 되던진다.
+ */
+internal fun <T> Result<T>.mapReceiverFailure(): Result<T> {
+    val original = exceptionOrNull() ?: return this
+    val translated = original.toReceiverFailure()
+    return if (translated === original) this else Result.failure(translated)
+}
+
+/**
  * 서버 응답의 status·code·message 를 도메인 어휘로 번역한다. 판정 순서 —
  *
  * 1. 4xx 대역이 아니면 [ReceiverFailure.UnexpectedServerFailure]. 등재 code 여도 5xx 봉투는 장애다.
@@ -40,7 +61,7 @@ internal fun Throwable.toReceiverFailure(): Throwable =
  * **BE `ErrorCode` 번호를 아는 것은 이 계층까지다.** 도메인 실패는 status·code·message 어느 것도
  * 운반하지 않으며, presentation 은 번역된 타입과 사유만 소비한다.
  */
-internal fun ApiException.toReceiverServerFailure(): ReceiverFailure {
+private fun ApiException.toReceiverServerFailure(): ReceiverFailure {
     val registeredReason = code.toReceiverRejectionReasonOrNull()
     return when {
         status !in CLIENT_ERROR_STATUS_RANGE -> {

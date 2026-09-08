@@ -12,7 +12,6 @@ import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
 import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
-import com.afternote.feature.afternote.domain.model.author.playlist.MemorialDetail
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 import com.afternote.feature.afternote.presentation.editor.memorial.Song
 import com.afternote.feature.afternote.presentation.editor.message.EditorMessageTextBlock
@@ -62,15 +61,12 @@ class AfternoteEditorPartialUpdateTest {
             leaveMessageBlocks = emptyList(),
             content =
                 DetailContent.Memorial(
-                    memorial =
-                        MemorialDetail(
-                            songs = listOf(DetailSong(title = "곡", artist = "가수", coverUrl = null)),
-                            media =
-                                MemorialMedia(
-                                    photoUrl = "https://cdn.test/afternotes/photo.jpg",
-                                    videoUrl = "https://cdn.test/afternotes/video.mp4",
-                                    thumbnailUrl = "https://cdn.test/afternotes/thumb.jpg",
-                                ),
+                    songs = listOf(DetailSong(title = "곡", artist = "가수", coverUrl = null)),
+                    media =
+                        MemorialMedia(
+                            photoUrl = "https://cdn.test/afternotes/photo.jpg",
+                            videoUrl = "https://cdn.test/afternotes/video.mp4",
+                            thumbnailUrl = "https://cdn.test/afternotes/thumb.jpg",
                         ),
                 ),
         )

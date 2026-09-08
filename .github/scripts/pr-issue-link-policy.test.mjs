@@ -276,7 +276,7 @@ test("unrelated labels keep the assignee rejection and point at the exempt label
             pullRequest: pullRequest({
                 title: "change (#1228)",
                 body: "Closes #1228",
-                labels: [{ name: "review-debt-exempt" }, "bug"],
+                labels: [{ name: "documentation" }, "bug"],
             }),
             repository: "Afternote/Afternote-FE",
             loadIssue: issueLoader(new Map([

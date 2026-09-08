@@ -74,7 +74,12 @@ class DailyQuestionResumeFailureAndroidTest {
 
         composeRule.setContent {
             AfternoteTheme {
-                DailyQuestionWriteScreen(viewModel = viewModel, onSubmitSuccess = {})
+                DailyQuestionWriteScreen(
+                    viewModel = viewModel,
+                    onSubmitSuccess = {},
+                    onBackClick = {},
+                    onDraftListClick = {},
+                )
             }
         }
 
@@ -128,7 +133,12 @@ class DailyQuestionResumeFailureAndroidTest {
 
         composeRule.setContent {
             AfternoteTheme {
-                DailyQuestionWriteScreen(viewModel = viewModel, onSubmitSuccess = {})
+                DailyQuestionWriteScreen(
+                    viewModel = viewModel,
+                    onSubmitSuccess = {},
+                    onBackClick = {},
+                    onDraftListClick = {},
+                )
             }
         }
 

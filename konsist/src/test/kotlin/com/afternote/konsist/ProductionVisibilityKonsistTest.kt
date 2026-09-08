@@ -364,6 +364,21 @@ class ProductionVisibilityKonsistTest {
                 "feature/timeletter/presentation/src/main/kotlin/com/afternote/feature/timeletter/presentation/screen/sender/TimeLetterWriteScreen.kt::function collectTextBlockContents [internal]",
             )
 
+        /**
+         * #1789 가 배선하면 해소된다.
+         *
+         * 비밀번호 찾기 3화면과 그 ViewModel 은 #457 에서 구현됐지만, 그래프 등록은 Nav3
+         * 이관(#1698) 뒤로 미뤘다 — Nav2 로 먼저 배선하면 같은 32줄을 두 번 쓴다. 그동안
+         * 프로덕션 참조가 없어 여기 실린다. private 축소는 답이 아니다 (파일 밖 소비가 곧 생긴다).
+         */
+        val ISSUE_1789_ONBOARDING_PENDING_WIRING =
+            setOf(
+                "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/findaccount/FindPasswordCompleteScreen.kt::function FindPasswordCompleteScreen [implicit-public]",
+                "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/findaccount/FindPasswordResetScreen.kt::function FindPasswordResetScreen [implicit-public]",
+                "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/findaccount/FindPasswordScreen.kt::function FindPasswordScreen [implicit-public]",
+                "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/findaccount/FindPasswordViewModel.kt::class FindPasswordViewModel [implicit-public]",
+            )
+
         /** #1671~#1677이 줄인다. 신규와 stale 항목 모두 실패해 목록은 정확한 현재 부채다. */
         val LEGACY_TEST_DRIVEN_VISIBILITY =
             ISSUE_1671_PLATFORM +
@@ -372,7 +387,8 @@ class ProductionVisibilityKonsistTest {
                 ISSUE_1674_MINDRECORD +
                 ISSUE_1675_ONBOARDING +
                 ISSUE_1676_RECEIVER +
-                ISSUE_1677_TIMELETTER
+                ISSUE_1677_TIMELETTER +
+                ISSUE_1789_ONBOARDING_PENDING_WIRING
 
         val LEGACY_VISIBLE_FOR_TESTING_FILES =
             setOf(

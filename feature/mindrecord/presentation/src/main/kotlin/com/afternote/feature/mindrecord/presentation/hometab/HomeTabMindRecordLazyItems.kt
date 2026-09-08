@@ -58,9 +58,19 @@ fun LazyListScope.homeTabMindRecordTodayQuestion(
     }
 }
 
-fun LazyListScope.homeTabMindRecordMemoriesSection(onMemoriesSectionClick: () -> Unit) {
+/**
+ * @param onMemoriesSectionClick 카드·섹션을 누르면 갈 곳(추억 공간).
+ * @param onRecordDetailClick 「그날의 기록 다시 읽기」가 열 **그 기록의 상세** (#793).
+ */
+fun LazyListScope.homeTabMindRecordMemoriesSection(
+    onMemoriesSectionClick: () -> Unit,
+    onRecordDetailClick: (recordId: Long) -> Unit,
+) {
     item(key = "mind_record_memories") {
-        HomeTabMindRecordMemoriesItem(onMemoriesSectionClick = onMemoriesSectionClick)
+        HomeTabMindRecordMemoriesItem(
+            onMemoriesSectionClick = onMemoriesSectionClick,
+            onRecordDetailClick = onRecordDetailClick,
+        )
     }
 }
 
@@ -72,6 +82,7 @@ fun LazyListScope.homeTabMindRecordMemoriesSection(onMemoriesSectionClick: () ->
 @Composable
 private fun HomeTabMindRecordMemoriesItem(
     onMemoriesSectionClick: () -> Unit,
+    onRecordDetailClick: (recordId: Long) -> Unit,
     viewModel: MemoriesCardViewModel = hiltViewModel(),
 ) {
     val memoriesClickLabel = stringResource(mindrecord_home_tab_memories_section_click_label)
@@ -83,8 +94,14 @@ private fun HomeTabMindRecordMemoriesItem(
         viewModel.refreshOnReturn()
     }
 
+    val recordId = uiState.recordId
+
     MemoriesSectionContent(
         onMemoriesSectionClick = onMemoriesSectionClick,
+        // 「그날의 기록 다시 읽기」는 **카드가 가리키는 그 기록**으로 간다 (#793).
+        // 0건이면 `null` 이라 버튼 자체가 안 그려진다 — 다른 곳으로 보내면 문구가 약속한
+        // 「그날의 기록」이 아니게 된다 (리뷰 지적).
+        onReadAgainClick = recordId?.let { id -> { onRecordDetailClick(id) } },
         question = uiState.question,
         // 본문은 에디터가 HTML 로 직렬화해 저장한다 — 카드에는 태그를 걷어 낸 미리보기만.
         answer = uiState.answer?.htmlToPlainText()?.takeIf { it.isNotBlank() },
@@ -97,6 +114,7 @@ private fun HomeTabMindRecordMemoriesItem(
 @Composable
 internal fun MemoriesSectionContent(
     onMemoriesSectionClick: () -> Unit,
+    onReadAgainClick: (() -> Unit)?,
     clickLabel: String,
     interactionSource: MutableInteractionSource,
     question: String? = null,
@@ -117,16 +135,13 @@ internal fun MemoriesSectionContent(
         ) {
             AfternoteSectionHeader(title = stringResource(mindrecord_home_tab_memories_section_title))
             Spacer(modifier = Modifier.height(12.dp))
-            // 버튼은 **자기 컨테이너와 같은 곳**으로 보낸다 (#793).
-            //
-            // 목적지가 미확정이라 비워 뒀는데, 버튼이 자체 clickable 이라 클릭을 삼켜 카드
-            // 안에서 버튼만 죽은 영역이 됐다 — 카드 여백을 누르면 추억 공간이 열리고, 가장
-            // 눌러 보고 싶은 버튼만 아무 일도 안 한다. 새 목적지를 지어내는 게 아니라 이미
-            // 동작하는 카드의 목적지를 물려주는 것이라, 확정이 오면 이 인자만 바꾸면 된다.
+            // 버튼 문구가 「**그날의** 기록 다시 읽기」라 목적지는 카드가 보여 주는 그 한 건의
+            // 상세다 (#793). 카드·섹션 전체는 종전대로 추억 공간으로 간다 — 「그날」이 없는
+            // 넓은 자리라 목록 성격의 목적지가 맞는다.
             MemoriesCard(
                 question = question,
                 answer = answer,
-                onReadAgainClick = onMemoriesSectionClick,
+                onReadAgainClick = onReadAgainClick,
             )
         }
     }
@@ -152,6 +167,7 @@ private fun HomeTabMindRecordMemoriesItemPreview() {
     AfternoteTheme {
         MemoriesSectionContent(
             onMemoriesSectionClick = {},
+            onReadAgainClick = {},
             clickLabel = "",
             interactionSource = remember { MutableInteractionSource() },
             question = "내 인생에서 가장 소중했던 순간은?",

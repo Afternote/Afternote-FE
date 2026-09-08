@@ -2,6 +2,7 @@ package com.afternote.feature.onboarding.presentation.signup
 
 import android.util.Patterns
 import com.afternote.core.ui.UiText
+import com.afternote.feature.onboarding.presentation.OnboardingPasswordRule
 import com.afternote.feature.onboarding.presentation.terms.TermsState
 
 /**
@@ -94,7 +95,7 @@ data class SignUpUiState(
 
     /** 비밀번호 정규식 충족 여부. 안내 문구 색상 토글에도 사용. */
     val isPasswordRuleSatisfied: Boolean
-        get() = PASSWORD_REGEX.matches(signUpPassword)
+        get() = OnboardingPasswordRule.isSatisfied(signUpPassword)
 
     /** Step 3 — 비밀번호 규칙 충족 + 확인 일치. */
     val isStep3NextEnabled: Boolean
@@ -112,9 +113,5 @@ data class SignUpUiState(
         const val RESIDENT_REGISTRATION_BACK_FIRST_DIGIT_COUNT = 1
 
         private const val MIN_VERIFICATION_CODE_LENGTH = 6
-
-        /** 8~16자, 영문 대소문자 + 숫자 + 특수문자 각 1개 이상. */
-        private val PASSWORD_REGEX =
-            Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,16}$")
     }
 }

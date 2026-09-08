@@ -43,9 +43,9 @@ private val TopBarDateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
 @Composable
 fun DailyQuestionWriteScreen(
     modifier: Modifier = Modifier,
-    onSubmitSuccess: () -> Unit = {},
-    onBackClick: () -> Unit = {},
-    onDraftListClick: () -> Unit = {},
+    onSubmitSuccess: () -> Unit,
+    onBackClick: () -> Unit,
+    onDraftListClick: () -> Unit,
     viewModel: DailyQuestionWriteViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -85,13 +85,13 @@ internal fun DailyQuestionWriteScreenContent(
     uiState: DailyQuestionWriteUiState,
     date: LocalDate,
     modifier: Modifier = Modifier,
-    onBackClick: () -> Unit = {},
-    onSubmit: () -> Unit = {},
-    onSaveDraft: () -> Unit = {},
-    onDraftListClick: () -> Unit = {},
-    onAnswerChanged: (String) -> Unit = {},
+    onBackClick: () -> Unit,
+    onSubmit: () -> Unit,
+    onSaveDraft: () -> Unit,
+    onDraftListClick: () -> Unit,
+    onAnswerChanged: (String) -> Unit,
     onMediaPicked: suspend (String) -> String? = { null },
-    onRetryResumeDraft: () -> Unit = {},
+    onRetryResumeDraft: () -> Unit,
 ) {
     // 배너 접힘은 이 화면 안에서만 의미가 있는 표시 상태다 — Content 가 소유한다.
     var questionExpanded by remember { mutableStateOf(true) }

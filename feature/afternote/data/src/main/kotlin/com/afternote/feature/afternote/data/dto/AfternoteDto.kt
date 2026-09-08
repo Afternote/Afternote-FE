@@ -14,6 +14,7 @@ data class AfternoteCreateGalleryRequestDto(
     @SerialName("actions") val processingMethods: List<String>,
     @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
     @SerialName("receivers") val receivers: List<AfternoteReceiverRefDto>,
+    @SerialName("isDraft") val isDraft: Boolean = false,
 )
 
 @OptIn(ExperimentalSerializationApi::class)
@@ -24,6 +25,7 @@ data class AfternoteCreatePlaylistRequestDto(
     @SerialName("playlist") val memorial: AfternotePlaylistRequestDto,
     @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
     @SerialName("receivers") val receivers: List<AfternoteReceiverRefDto> = emptyList(),
+    @SerialName("isDraft") val isDraft: Boolean = false,
 )
 
 /** SOCIAL·BUSINESS 공용 생성 요청 — 두 카테고리는 바디 스키마가 동일해 [category] 값으로만 구분된다. */
@@ -35,6 +37,7 @@ data class AfternoteCreateAccountRequestDto(
     @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
     @SerialName("credentials") val credentials: AfternoteCredentialsDto? = null,
     @SerialName("receivers") val receivers: List<AfternoteReceiverRefDto> = emptyList(),
+    @SerialName("isDraft") val isDraft: Boolean = false,
 )
 
 /**
@@ -63,8 +66,14 @@ data class AfternoteUpdateRequestDto(
     @SerialName("credentials") val credentials: AfternoteCredentialsDto? = null,
     @SerialName("receivers") val receivers: List<AfternoteReceiverRefDto>? = null,
     @SerialName("playlist") val memorial: AfternotePlaylistPatchRequestDto? = null,
+    /**
+     * 임시저장 여부. **생략하면 서버가 저장값을 그대로 유지한다**(BE `AfternoteValidator.validatePublishRequirements`) —
+     * 그래서 «건드리지 않음» 이 null 이고, 발행 전환은 `false` 를 명시해야 일어난다.
+     */
+    @SerialName("isDraft") val isDraft: Boolean? = null,
 )
 
+/** 서버 상세의 이름은 [playlist]로 유지하고, 도메인 매퍼에서 추억 노트(Memorial)로 해석한다. */
 @Serializable
 data class AfternoteDetailDto(
     @SerialName("afternoteId") val afternoteId: Long,
@@ -76,7 +85,7 @@ data class AfternoteDetailDto(
     @SerialName("receivers") val receivers: List<AfternoteDetailReceiverDto>,
     @SerialName("actions") val processingMethods: List<String>? = null,
     @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
-    @SerialName("playlist") val memorial: AfternotePlaylistDto? = null,
+    @SerialName("playlist") val playlist: AfternotePlaylistDto? = null,
 )
 
 @Serializable

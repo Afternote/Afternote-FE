@@ -39,6 +39,7 @@ fun AfternoteUpdatePayload.toRequest() =
         credentials = credentials?.toDto(),
         receivers = receivers?.map { it.toDto() },
         memorial = memorial?.toPatchDto(),
+        isDraft = isDraft,
     )
 
 /**
@@ -80,6 +81,7 @@ fun CreateAccountPayload.toSocialRequest() =
         leaveMessage = leaveMessageBlocks.toDto(),
         credentials = credentials?.toDto(),
         receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
+        isDraft = isDraft,
     )
 
 fun CreateAccountPayload.toBusinessRequest() =
@@ -90,6 +92,7 @@ fun CreateAccountPayload.toBusinessRequest() =
         leaveMessage = leaveMessageBlocks.toDto(),
         credentials = credentials?.toDto(),
         receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
+        isDraft = isDraft,
     )
 
 fun CreateGalleryPayload.toRequest() =
@@ -99,6 +102,7 @@ fun CreateGalleryPayload.toRequest() =
         processingMethods = processingMethods,
         leaveMessage = leaveMessageBlocks.toDto(),
         receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
+        isDraft = isDraft,
     )
 
 fun CreateMemorialPayload.toRequest() =
@@ -108,6 +112,7 @@ fun CreateMemorialPayload.toRequest() =
         memorial = memorial.toDto(),
         leaveMessage = leaveMessageBlocks.toDto(),
         receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
+        isDraft = isDraft,
     )
 
 fun MemorialWritePayload.toDto() =
