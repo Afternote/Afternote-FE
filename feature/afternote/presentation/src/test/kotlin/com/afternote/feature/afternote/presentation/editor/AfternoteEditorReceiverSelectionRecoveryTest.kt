@@ -11,6 +11,7 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnai
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
+import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -115,6 +116,7 @@ class AfternoteEditorReceiverSelectionRecoveryTest {
 
     private fun viewModel(userRepository: FakeUserRepository): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
+            route = AfternoteRoute.EditorFlowRoute(initialType = AfternoteType.SOCIAL_NETWORK),
             savedStateHandle = SavedStateHandle(mapOf("initialType" to AfternoteType.SOCIAL_NETWORK)),
             userRepository = userRepository,
             afternoteRepository = unusedProxy<AfternoteRepository>(),
