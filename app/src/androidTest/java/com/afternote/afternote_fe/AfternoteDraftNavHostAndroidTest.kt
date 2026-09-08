@@ -191,6 +191,74 @@ class AfternoteDraftNavHostAndroidTest {
     }
 
     @Test
+    fun homeFilterLoadingAndRetryKeepDraftEntryActionable() {
+        val firstFilterLoad = CompletableDeferred<Unit>()
+        val retryFilterLoad = CompletableDeferred<Unit>()
+        var filterLoads = 0
+        fake.onGetPagedAfternotes = { type ->
+            if (type == null) {
+                completedPage(emptyList())
+            } else {
+                Pager(PagingConfig(pageSize = 20)) {
+                    object : PagingSource<Int, ListItem>() {
+                        override suspend fun load(params: LoadParams<Int>): LoadResult<Int, ListItem> {
+                            filterLoads += 1
+                            return if (filterLoads == 1) {
+                                firstFilterLoad.await()
+                                LoadResult.Error(IllegalStateException("offline"))
+                            } else {
+                                retryFilterLoad.await()
+                                LoadResult.Page(emptyList(), prevKey = null, nextKey = null)
+                            }
+                        }
+
+                        override fun getRefreshKey(state: PagingState<Int, ListItem>): Int? = null
+                    }
+                }.flow
+            }
+        }
+        launchHost()
+        waitForText("임시저장")
+        try {
+            composeRule.mainClock.autoAdvance = false
+            composeRule.onNodeWithText("소셜네트워크").performClick()
+            composeRule.mainClock.advanceTimeBy(500)
+            composeRule
+                .onNodeWithText("임시저장")
+                .assertIsDisplayed()
+                .assertIsEnabled()
+                .performClick()
+            composeRule.mainClock.advanceTimeBy(500)
+            composeRule.onNodeWithText("임시 저장된 애프터노트").assertIsDisplayed()
+
+            back()
+            composeRule.mainClock.advanceTimeBy(500)
+            firstFilterLoad.complete(Unit)
+            composeRule.mainClock.autoAdvance = true
+            waitForText("다시 시도")
+
+            composeRule.mainClock.autoAdvance = false
+            composeRule.onNodeWithText("다시 시도").performClick()
+            composeRule.mainClock.advanceTimeBy(500)
+            composeRule.onNodeWithText("다시 시도").assertDoesNotExist()
+            composeRule
+                .onNodeWithText("임시저장")
+                .assertIsDisplayed()
+                .assertIsEnabled()
+                .performClick()
+            composeRule.mainClock.advanceTimeBy(500)
+            composeRule.onNodeWithText("임시 저장된 애프터노트").assertIsDisplayed()
+            composeRule.waitUntil(5_000) { filterLoads == 2 }
+            assertEquals(listOf<AfternoteType?>(null, null), fake.requestedDraftTypes.toList())
+            assertEquals(AfternoteType.SOCIAL_NETWORK, fake.requestedTypes.last())
+        } finally {
+            firstFilterLoad.complete(Unit)
+            retryFilterLoad.complete(Unit)
+            composeRule.mainClock.autoAdvance = true
+        }
+    }
+
+    @Test
     fun draftPrefillFailureDisablesSaving_untilRetryUsesDraftContract() {
         val releaseLoad = CompletableDeferred<Unit>()
         var attempts = 0
@@ -329,6 +397,9 @@ class AfternoteDraftNavHostAndroidTest {
         composeRule.onNodeWithText("임시저장").performClick()
         waitForText("임시 저장된 애프터노트")
         waitForText(DRAFT_TITLE)
+        val titleBounds = composeRule.onNodeWithText("임시 저장된 애프터노트").fetchSemanticsNode().boundsInRoot
+        val itemBounds = composeRule.onNodeWithText(DRAFT_TITLE).fetchSemanticsNode().boundsInRoot
+        assertTrue("Draft rows must be laid out below the navigation bar", itemBounds.top >= titleBounds.bottom)
         composeRule.onNodeWithText(DRAFT_TITLE).performClick()
         waitForText("등록")
         waitForText(DRAFT_TITLE)
