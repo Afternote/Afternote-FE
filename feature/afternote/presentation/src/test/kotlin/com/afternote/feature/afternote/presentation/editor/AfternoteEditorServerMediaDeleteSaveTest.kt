@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.editor
 
+import androidx.lifecycle.SavedStateHandle
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
@@ -30,6 +31,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Before
@@ -173,6 +175,39 @@ class AfternoteEditorServerMediaDeleteSaveTest {
             assertNull(reentered.currentForm().memorialAudioUrl)
         }
 
+    @Test
+    fun `음성을 삭제한 폼을 복원하면 재조회가 덮지 않고 삭제 PATCH를 보낸다`() =
+        runTest(dispatcher) {
+            val repository = FakeAfternoteRepository(initialDetails = mapOf(AFTERNOTE_ID to serverMemorialDetail()))
+            val savedState = afternoteEditorSavedStateHandle(initialType = AfternoteType.MEMORIAL, itemId = AFTERNOTE_ID)
+            val first = viewModel(repository, savedState)
+            collectState(first)
+            applyLoadedPrefill(first)
+            first.removeMemorialAudio()
+
+            val restoredState = SavedStateHandle(savedState.keys().associateWith { savedState.get<Any?>(it) })
+            val restored = viewModel(repository, restoredState)
+            collectState(restored)
+            advanceUntilIdle()
+
+            assertNull(restored.uiState.value.pendingPrefill)
+            assertFalse(restored.uiState.value.isPrefillLoading)
+            assertNull(restored.currentForm().memorialAudioUrl)
+            restored.saveCurrentMemorialForm()
+            advanceUntilIdle()
+
+            val memorial =
+                requireNotNull(
+                    repository.updateCalls
+                        .single()
+                        .second.memorial,
+                )
+            assertEquals(FieldPatch.Set(null), memorial.memorialAudioUrl)
+            assertEquals(FieldPatch.Unchanged, memorial.memorialPhotoUrl)
+            assertEquals(FieldPatch.Unchanged, memorial.memorialVideo)
+            assertNull(memorial.songs)
+        }
+
     private fun TestScope.collectState(viewModel: AfternoteEditorViewModel) {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect {}
@@ -222,13 +257,13 @@ class AfternoteEditorServerMediaDeleteSaveTest {
         assertEquals("https://cdn.test/voice.m4a", form.memorialAudioUrl)
     }
 
-    private fun viewModel(repository: FakeAfternoteRepository): AfternoteEditorViewModel =
+    private fun viewModel(
+        repository: FakeAfternoteRepository,
+        savedStateHandle: SavedStateHandle =
+            afternoteEditorSavedStateHandle(initialType = AfternoteType.MEMORIAL, itemId = AFTERNOTE_ID),
+    ): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
-            savedStateHandle =
-                afternoteEditorSavedStateHandle(
-                    initialType = AfternoteType.MEMORIAL,
-                    itemId = AFTERNOTE_ID,
-                ),
+            savedStateHandle = savedStateHandle,
             userRepository = afternoteAuthorUserRepository(),
             afternoteRepository = repository,
             memorialThumbnailUploadRepository =
