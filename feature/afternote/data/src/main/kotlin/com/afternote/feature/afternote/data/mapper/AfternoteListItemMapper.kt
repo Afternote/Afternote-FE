@@ -26,5 +26,6 @@ fun List<AfternoteListItemDto>.toDomainList(): List<ListItem> =
             serviceName = dto.title,
             date = formatDateFromServer(dto.createdAt),
             type = resolvedType,
+            isDraft = dto.isDraft,
         )
     }

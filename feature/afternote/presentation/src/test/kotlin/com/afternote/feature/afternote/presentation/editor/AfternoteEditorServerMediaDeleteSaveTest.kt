@@ -1,12 +1,12 @@
 package com.afternote.feature.afternote.presentation.editor
 
+import androidx.lifecycle.SavedStateHandle
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
-import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
+import com.afternote.feature.afternote.domain.model.author.FieldPatch
 import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
-import com.afternote.feature.afternote.domain.model.author.playlist.MemorialDetail
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
@@ -15,11 +15,12 @@ import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.NoopAuthorErrorReporter
-import com.afternote.feature.afternote.presentation.afternoteAuthorUserRepository
+import com.afternote.feature.afternote.presentation.afternoteAuthorUserReceiverRepository
 import com.afternote.feature.afternote.presentation.afternoteEditorSavedStateHandle
 import com.afternote.feature.afternote.presentation.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.editor.state.EditorFormState
+import com.afternote.feature.afternote.presentation.editorFlowRoute
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -32,9 +33,9 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -82,18 +83,17 @@ class AfternoteEditorServerMediaDeleteSaveTest {
 
             val updatePayload = repository.updateCalls.single().second
             val memorial = requireNotNull(updatePayload.memorial)
-            assertNull(memorial.memorialPhotoUrl)
-            assertNull(memorial.memorialVideo)
-            assertEquals(
-                listOf(MemorialSongPayload(title = "배경음악", artist = "작곡가", coverUrl = "https://cdn.test/cover.jpg")),
-                memorial.songs,
-            )
+            assertEquals(FieldPatch.Set(null), memorial.memorialPhotoUrl)
+            assertEquals(FieldPatch.Set(null), memorial.memorialVideo)
+            assertNull(memorial.songs)
+            assertEquals(FieldPatch.Unchanged, memorial.memorialAudioUrl)
             assertEquals(AFTERNOTE_ID, first.uiState.value.savedId)
 
             val updatedMedia = repository.details.getValue(AFTERNOTE_ID).memorialMedia()
             assertNull(updatedMedia.photoUrl)
             assertNull(updatedMedia.videoUrl)
             assertNull(updatedMedia.thumbnailUrl)
+            assertEquals("https://cdn.test/voice.m4a", updatedMedia.audioUrl)
 
             val reentered = viewModel(repository)
             collectState(reentered)
@@ -136,10 +136,78 @@ class AfternoteEditorServerMediaDeleteSaveTest {
             assertEquals(2, repository.updateCalls.size)
             repository.updateCalls.forEach { (_, payload) ->
                 val memorial = requireNotNull(payload.memorial)
-                assertNull(memorial.memorialPhotoUrl)
-                assertNull(memorial.memorialVideo)
-                assertTrue(memorial.songs.isNotEmpty())
+                assertEquals(FieldPatch.Set(null), memorial.memorialPhotoUrl)
+                assertEquals(FieldPatch.Set(null), memorial.memorialVideo)
+                assertNull(memorial.songs)
+                assertEquals(FieldPatch.Unchanged, memorial.memorialAudioUrl)
             }
+        }
+
+    @Test
+    fun `서버 음성만 삭제하면 다른 미디어와 곡을 유지하고 재진입에서도 음성이 빈다`() =
+        runTest(dispatcher) {
+            val repository = FakeAfternoteRepository(initialDetails = mapOf(AFTERNOTE_ID to serverMemorialDetail()))
+            val first = viewModel(repository)
+            collectState(first)
+            applyLoadedPrefill(first)
+
+            first.removeMemorialAudio()
+            first.saveCurrentMemorialForm()
+            advanceUntilIdle()
+
+            val memorial =
+                requireNotNull(
+                    repository.updateCalls
+                        .single()
+                        .second.memorial,
+                )
+            assertEquals(FieldPatch.Set(null), memorial.memorialAudioUrl)
+            assertEquals(FieldPatch.Unchanged, memorial.memorialPhotoUrl)
+            assertEquals(FieldPatch.Unchanged, memorial.memorialVideo)
+            assertNull(memorial.songs)
+            val updated = repository.details.getValue(AFTERNOTE_ID).content as DetailContent.Memorial
+            assertNull(updated.media.audioUrl)
+            assertEquals("https://cdn.test/portrait.jpg", updated.media.photoUrl)
+            assertEquals("https://cdn.test/farewell.mp4", updated.media.videoUrl)
+            assertEquals(listOf("배경음악"), updated.songs.map { it.title })
+
+            val reentered = viewModel(repository)
+            collectState(reentered)
+            applyLoadedPrefill(reentered)
+            assertNull(reentered.currentForm().memorialAudioUrl)
+        }
+
+    @Test
+    fun `음성을 삭제한 폼을 복원하면 재조회가 덮지 않고 삭제 PATCH를 보낸다`() =
+        runTest(dispatcher) {
+            val repository = FakeAfternoteRepository(initialDetails = mapOf(AFTERNOTE_ID to serverMemorialDetail()))
+            val savedState = afternoteEditorSavedStateHandle(initialType = AfternoteType.MEMORIAL, itemId = AFTERNOTE_ID)
+            val first = viewModel(repository, savedState)
+            collectState(first)
+            applyLoadedPrefill(first)
+            first.removeMemorialAudio()
+
+            val restoredState = SavedStateHandle(savedState.keys().associateWith { savedState.get<Any?>(it) })
+            val restored = viewModel(repository, restoredState)
+            collectState(restored)
+            advanceUntilIdle()
+
+            assertNull(restored.uiState.value.pendingPrefill)
+            assertFalse(restored.uiState.value.isPrefillLoading)
+            assertNull(restored.currentForm().memorialAudioUrl)
+            restored.saveCurrentMemorialForm()
+            advanceUntilIdle()
+
+            val memorial =
+                requireNotNull(
+                    repository.updateCalls
+                        .single()
+                        .second.memorial,
+                )
+            assertEquals(FieldPatch.Set(null), memorial.memorialAudioUrl)
+            assertEquals(FieldPatch.Unchanged, memorial.memorialPhotoUrl)
+            assertEquals(FieldPatch.Unchanged, memorial.memorialVideo)
+            assertNull(memorial.songs)
         }
 
     private fun TestScope.collectState(viewModel: AfternoteEditorViewModel) {
@@ -170,6 +238,7 @@ class AfternoteEditorServerMediaDeleteSaveTest {
             memorialVideo = memorialVideo ?: EditableMemorialVideo.empty(),
             memorialPhotoUrl = memorialPhotoUrl,
             pickedMemorialPhotoUri = pickedMemorialPhotoUri,
+            memorialAudioUrl = memorialAudioUrl,
         )
 
     private fun assertServerMediaAndSongs(form: EditorFormState) {
@@ -177,6 +246,7 @@ class AfternoteEditorServerMediaDeleteSaveTest {
         assertEquals("https://cdn.test/farewell.mp4", form.displayedMemorialVideo?.url)
         assertEquals("https://cdn.test/thumbnail.jpg", form.displayedMemorialVideo?.thumbnailUrl)
         assertEquals(listOf("배경음악"), form.memorialPlaylistSongs.map { it.title })
+        assertEquals("https://cdn.test/voice.m4a", form.memorialAudioUrl)
     }
 
     private fun assertDeletedMediaAndSongs(form: EditorFormState) {
@@ -186,16 +256,18 @@ class AfternoteEditorServerMediaDeleteSaveTest {
         assertNull(form.displayedMemorialVideo?.url)
         assertNull(form.displayedMemorialVideo?.thumbnailUrl)
         assertEquals(listOf("배경음악"), form.memorialPlaylistSongs.map { it.title })
+        assertEquals("https://cdn.test/voice.m4a", form.memorialAudioUrl)
     }
 
-    private fun viewModel(repository: FakeAfternoteRepository): AfternoteEditorViewModel =
+    private fun viewModel(
+        repository: FakeAfternoteRepository,
+        savedStateHandle: SavedStateHandle =
+            afternoteEditorSavedStateHandle(initialType = AfternoteType.MEMORIAL, itemId = AFTERNOTE_ID),
+    ): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
-            savedStateHandle =
-                afternoteEditorSavedStateHandle(
-                    initialType = AfternoteType.MEMORIAL,
-                    itemId = AFTERNOTE_ID,
-                ),
-            userRepository = afternoteAuthorUserRepository(),
+            route = savedStateHandle.editorFlowRoute(),
+            savedStateHandle = savedStateHandle,
+            userReceiverRepository = afternoteAuthorUserReceiverRepository(),
             afternoteRepository = repository,
             memorialThumbnailUploadRepository =
                 MemorialThumbnailUploadRepository { error("썸네일 업로드가 호출되면 안 됩니다") },
@@ -228,27 +300,25 @@ class AfternoteEditorServerMediaDeleteSaveTest {
             leaveMessageBlocks = emptyList(),
             content =
                 DetailContent.Memorial(
-                    memorial =
-                        MemorialDetail(
-                            songs =
-                                listOf(
-                                    DetailSong(
-                                        title = "배경음악",
-                                        artist = "작곡가",
-                                        coverUrl = "https://cdn.test/cover.jpg",
-                                    ),
-                                ),
-                            media =
-                                MemorialMedia(
-                                    photoUrl = "https://cdn.test/portrait.jpg",
-                                    videoUrl = "https://cdn.test/farewell.mp4",
-                                    thumbnailUrl = "https://cdn.test/thumbnail.jpg",
-                                ),
+                    songs =
+                        listOf(
+                            DetailSong(
+                                title = "배경음악",
+                                artist = "작곡가",
+                                coverUrl = "https://cdn.test/cover.jpg",
+                            ),
+                        ),
+                    media =
+                        MemorialMedia(
+                            photoUrl = "https://cdn.test/portrait.jpg",
+                            videoUrl = "https://cdn.test/farewell.mp4",
+                            thumbnailUrl = "https://cdn.test/thumbnail.jpg",
+                            audioUrl = "https://cdn.test/voice.m4a",
                         ),
                 ),
         )
 
-    private fun Detail.memorialMedia(): MemorialMedia = (content as DetailContent.Memorial).memorial.media
+    private fun Detail.memorialMedia(): MemorialMedia = (content as DetailContent.Memorial).media
 
     private companion object {
         const val AFTERNOTE_ID = 1597L

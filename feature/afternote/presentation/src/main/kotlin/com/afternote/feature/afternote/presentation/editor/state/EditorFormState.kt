@@ -37,6 +37,7 @@ data class EditorFormState(
     /** 시트에 영상 삭제 항목을 내놓을지 — 표시된 층이 있으면 출처와 무관하게 지울 수 있다(#1597). */
     internal val canRemoveMemorialVideo: Boolean get() = memorialVideo?.canRemove == true
     val memorialPhotoUrl: String? get() = memorialForm?.photoUrl
+    val memorialAudioUrl: String? get() = memorialForm?.audioUrl
     val memorialPlaylistSongs: List<Song> get() = memorialForm?.playlistSongs.orEmpty()
 
     fun displayMemorialPhotoUri(): String? = memorialForm?.displayPhotoUri()

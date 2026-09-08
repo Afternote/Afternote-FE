@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.presentation.editor
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
@@ -11,6 +11,7 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnai
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.editor.state.MemorialVideoAttachment
+import com.afternote.feature.afternote.presentation.editorFlowRoute
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -104,8 +105,9 @@ class AfternoteEditorReceiverSnapshotTest {
 
     private fun viewModel(savedStateHandle: SavedStateHandle): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
+            route = savedStateHandle.editorFlowRoute(),
             savedStateHandle = savedStateHandle,
-            userRepository = repositoryProxy<UserRepository>(),
+            userReceiverRepository = repositoryProxy<UserReceiverRepository>(),
             afternoteRepository = repositoryProxy<AfternoteRepository>(),
             memorialThumbnailUploadRepository =
                 MemorialThumbnailUploadRepository { error("썸네일 업로드가 호출되면 안 됩니다") },

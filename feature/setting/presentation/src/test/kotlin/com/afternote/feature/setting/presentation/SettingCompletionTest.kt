@@ -1,15 +1,22 @@
 package com.afternote.feature.setting.presentation
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.delivery.ConditionState
@@ -23,6 +30,7 @@ import com.afternote.core.model.user.ReceiverCreated
 import com.afternote.core.model.user.ReceiverDetail
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
+import com.afternote.core.model.user.UserMarketingConsent
 import com.afternote.core.model.user.UserPushSetting
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -117,6 +125,7 @@ class SettingCompletionTest {
             PushNotificationViewModel(
                 context = ApplicationProvider.getApplicationContext(),
                 userRepository = repository,
+                errorReporter = NoOpErrorReporter,
             )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             !viewModel.uiState.value.isLoading
@@ -162,6 +171,7 @@ class SettingCompletionTest {
 
         assertTrue(viewModel.uiState.value.isMindRecordOn)
         assertFalse(viewModel.uiState.value.isNewsletterOn)
+        assertTrue(viewModel.uiState.value.saveFailure != null)
 
         composeRule.runOnIdle {
             viewModel.onAfternoteToggle(false)
@@ -316,6 +326,41 @@ class SettingCompletionTest {
         retryGate.complete(Result.success(ReceiverCreated(receiverId = RECEIVER_ID, authCode = "AUTH-77")))
 
         assertEquals(ReceiverRegisterEvent.RegisterSuccess, awaitEvent(viewModel.events))
+    }
+
+    @Test
+    fun receiverRegistration_requiresValidEmailBeforeEnablingRegister() {
+        val viewModel = ReceiverRegisterViewModel(FakeUserRepository.strict())
+        composeRule.setContent {
+            AfternoteTheme {
+                ReceiverRegisterScreen(
+                    onBackClick = {},
+                    onRegisterSuccess = {},
+                    viewModel = viewModel,
+                )
+            }
+        }
+        val registerButton = hasText("등록") and hasClickAction()
+
+        composeRule.onNode(registerButton).assertIsNotEnabled()
+        composeRule.onNodeWithText("이름을 입력하세요").performTextInput("김수신")
+        composeRule.onNodeWithText("연락처를 지정해주세요").performTextInput("01012345678")
+        composeRule
+            .onNode(hasText("관계를 선택하세요") and hasClickAction())
+            .performClick()
+        composeRule.onNodeWithText("어머니").performClick()
+        // 이메일 필드(6행 중 5번째, index 4)는 테스트 뷰포트 밖이라 LazyColumn이 아직 구성하지 않는다 —
+        // performScrollTo()는 이미 구성된 노드만 찾을 수 있어 인덱스로 직접 스크롤한다.
+        composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(4)
+        composeRule
+            .onNodeWithText("afternote@email.com")
+            .performTextInput("invalid-email")
+        composeRule.onNode(registerButton).assertIsNotEnabled()
+
+        composeRule.onNodeWithText("invalid-email").performTextClearance()
+        composeRule.onNodeWithText("afternote@email.com").performTextInput("receiver@afternote.com")
+
+        composeRule.onNode(registerButton).assertIsEnabled()
     }
 
     @Test
@@ -622,6 +667,13 @@ private val COMPLETION_DEFAULT_PUSH_SETTING =
         afterNote = true,
     )
 
+private val COMPLETION_DEFAULT_MARKETING_CONSENT =
+    UserMarketingConsent(
+        sms = true,
+        email = true,
+        push = false,
+    )
+
 private val COMPLETION_DEFAULT_RECEIVER_DETAIL =
     ReceiverDetail(
         receiverId = 77L,
@@ -717,6 +769,14 @@ private class CompletionUserScenario {
                     synchronized(this@CompletionUserScenario) { pushUpdateCompletions += 1 }
                 }
             }
+            onGetMyMarketingConsents = { COMPLETION_DEFAULT_MARKETING_CONSENT }
+            onUpdateMyMarketingConsents = { sms, email, push ->
+                COMPLETION_DEFAULT_MARKETING_CONSENT.copy(
+                    sms = sms ?: COMPLETION_DEFAULT_MARKETING_CONSENT.sms,
+                    email = email ?: COMPLETION_DEFAULT_MARKETING_CONSENT.email,
+                    push = push ?: COMPLETION_DEFAULT_MARKETING_CONSENT.push,
+                )
+            }
             onCreateReceiver = { _, _, _, _, _ ->
                 takeGate(receiverCreateGates, "createReceiver").await().getOrThrow()
             }
@@ -790,4 +850,11 @@ private class CompletionUserScenario {
         gates: ArrayDeque<T>,
         method: String,
     ): T = synchronized(this) { gates.pollFirst() ?: error("$method gate was not prepared") }
+}
+
+internal object NoOpErrorReporter : ErrorReporter {
+    override fun writeFailure(
+        throwable: Throwable,
+        attributes: Map<String, String>,
+    ) = Unit
 }

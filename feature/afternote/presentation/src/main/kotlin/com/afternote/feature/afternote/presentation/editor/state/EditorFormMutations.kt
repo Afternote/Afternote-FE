@@ -62,6 +62,17 @@ internal fun EditorFormState.withMemorialVideoRemoved(): EditorFormState = mapMe
 internal fun EditorFormState.withMemorialThumbnail(url: String): EditorFormState =
     mapMemorial { form -> form.copy(video = form.video.withSelectionThumbnail(url)) }
 
+/** 추모 음성 첨부·교체·삭제 (#1118). 영상과 달리 파생 값이 없어 필드 하나만 바뀐다. */
+internal fun EditorFormState.withMemorialAudio(url: String): EditorFormState = mapMemorial { it.copy(audioUrl = url) }
+
+/**
+ * 추모 음성을 걷는다 (#1118).
+ *
+ * 수정 기준에 있던 음성을 비우면 `FieldPatch.Set(null)` 로 삭제를 지시한다. 원래 없던 음성은
+ * 변경 없음으로 생략한다. 로컬 선택 칸이 따로 없어 한 칸만 비우면 된다.
+ */
+internal fun EditorFormState.withMemorialAudioRemoved(): EditorFormState = mapMemorial { it.copy(audioUrl = null) }
+
 internal fun EditorFormState.withMemorialPlaylistSongs(songs: List<Song>): EditorFormState = mapMemorial { it.copy(playlistSongs = songs) }
 
 /**

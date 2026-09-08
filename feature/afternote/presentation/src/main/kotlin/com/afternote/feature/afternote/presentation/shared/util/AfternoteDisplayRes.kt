@@ -40,7 +40,7 @@ fun typeLabelResFor(type: AfternoteType?): Int =
  * Figma 최종 보드의 카테고리 아이콘을 사용한다.
  * 재산 처리는 별도 아이콘이 없어 문서 성격이 같은 비즈니스 아이콘을 공유한다.
  */
-fun getIconResForType(type: AfternoteType): Int =
+private fun getIconResForType(type: AfternoteType): Int =
     when (type) {
         AfternoteType.SOCIAL_NETWORK -> CoreUiR.drawable.core_ui_afternote_social_pattern
         AfternoteType.BUSINESS, AfternoteType.ESTATE -> CoreUiR.drawable.core_ui_afternote_business_pattern

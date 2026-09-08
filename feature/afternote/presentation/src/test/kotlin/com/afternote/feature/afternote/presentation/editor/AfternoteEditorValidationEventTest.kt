@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.presentation.editor
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
@@ -12,6 +12,7 @@ import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCas
 import com.afternote.feature.afternote.presentation.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteValidationError
+import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -103,8 +104,9 @@ class AfternoteEditorValidationEventTest {
 
     private fun viewModel(): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
+            route = AfternoteRoute.EditorFlowRoute(initialType = AfternoteType.SOCIAL_NETWORK),
             savedStateHandle = SavedStateHandle(mapOf("initialType" to AfternoteType.SOCIAL_NETWORK)),
-            userRepository = repositoryProxy<UserRepository>(),
+            userReceiverRepository = repositoryProxy<UserReceiverRepository>(),
             afternoteRepository = repositoryProxy<AfternoteRepository>(),
             memorialThumbnailUploadRepository =
                 MemorialThumbnailUploadRepository { error("썸네일 업로드가 호출되면 안 됩니다") },

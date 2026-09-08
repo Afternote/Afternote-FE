@@ -6,6 +6,8 @@ import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
+import com.afternote.feature.afternote.domain.model.author.FieldPatch
+import com.afternote.feature.afternote.domain.model.author.MemorialPatchPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
 import com.afternote.feature.afternote.domain.model.author.SaveAfternoteCommand
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
@@ -48,6 +50,7 @@ class SaveAfternoteUseCaseTest {
                     memorialPhotoUrl = null,
                     songs = emptyList(),
                     memorialVideo = null,
+                    memorialAudioUrl = "https://example.com/memorial.m4a",
                 ),
         )
 
@@ -98,7 +101,19 @@ class SaveAfternoteUseCaseTest {
     @Test
     fun `Update 는 id 와 payload 를 바꾸지 않고 update 로만 보낸다`() {
         val repository = FakeAfternoteRepository()
-        val payload = AfternoteUpdatePayload(type = AfternoteType.SOCIAL_NETWORK, title = "바뀐 제목")
+        val payload =
+            AfternoteUpdatePayload(
+                type = AfternoteType.MEMORIAL,
+                title = "바뀐 제목",
+                memorial =
+                    MemorialPatchPayload(
+                        memorialPhotoUrl = FieldPatch.Unchanged,
+                        songs = emptyList(),
+                        memorialVideo = FieldPatch.Set(null),
+                        memorialAudioUrl = FieldPatch.Set("https://example.com/edited.m4a"),
+                    ),
+                isDraft = false,
+            )
 
         // 기본 update 는 대상이 없으면 실패하므로 성공 Result 를 열어 라우팅만 본다.
         repository.onUpdate = { _, _ -> Result.success(42L) }
@@ -106,6 +121,7 @@ class SaveAfternoteUseCaseTest {
 
         assertEquals(42L, result.getOrNull())
         assertEquals(listOf(42L to payload), repository.updateCalls)
+        assertSame(payload, repository.updateCalls.single().second)
         repository.assertOnlyCalled(UPDATE)
     }
 

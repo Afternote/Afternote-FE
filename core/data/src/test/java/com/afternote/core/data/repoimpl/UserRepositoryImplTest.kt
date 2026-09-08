@@ -15,9 +15,11 @@ import com.afternote.core.network.dto.UserConnectedAccountDto
 import com.afternote.core.network.dto.UserCreateReceiverDto
 import com.afternote.core.network.dto.UserCreateReceiverRequestDto
 import com.afternote.core.network.dto.UserDto
+import com.afternote.core.network.dto.UserMarketingConsentDto
 import com.afternote.core.network.dto.UserPatchReceiverDto
 import com.afternote.core.network.dto.UserPatchReceiverRequestDto
 import com.afternote.core.network.dto.UserPushSettingDto
+import com.afternote.core.network.dto.UserUpdateMarketingConsentRequestDto
 import com.afternote.core.network.dto.UserUpdateProfileRequestDto
 import com.afternote.core.network.dto.UserUpdatePushSettingRequestDto
 import com.afternote.core.network.dto.UserUpdateReceiverMessageRequestDto
@@ -324,7 +326,7 @@ class UserRepositoryImplTest {
                     name = "새 수신자",
                     relation = "친구",
                     phone = null,
-                    email = null,
+                    email = "receiver@example.com",
                     message = null,
                 )
                 assertEquals("조회 2", withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.single().name)
@@ -365,7 +367,7 @@ class UserRepositoryImplTest {
                     name = "새 수신자",
                     relation = "친구",
                     phone = null,
-                    email = null,
+                    email = "receiver@example.com",
                     message = null,
                 )
                 assertEquals("조회 2", withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.single().name)
@@ -406,7 +408,7 @@ class UserRepositoryImplTest {
                     name = "새 수신자",
                     relation = "친구",
                     phone = null,
-                    email = null,
+                    email = "receiver@example.com",
                     message = null,
                 )
                 val fallback = withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }
@@ -452,7 +454,7 @@ class UserRepositoryImplTest {
                     name = "새 수신자",
                     relation = "친구",
                     phone = null,
-                    email = null,
+                    email = "receiver@example.com",
                     message = null,
                 )
                 val afterUnauthorized = withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }
@@ -533,6 +535,11 @@ private class FakeUserApiService(
     override suspend fun getMyPushSettings(): BaseResponse<UserPushSettingDto> = TODO("이 테스트 미사용")
 
     override suspend fun updateMyPushSettings(request: UserUpdatePushSettingRequestDto): BaseResponse<UserPushSettingDto> =
+        TODO("이 테스트 미사용")
+
+    override suspend fun getMyMarketingConsents(): BaseResponse<UserMarketingConsentDto> = TODO("이 테스트 미사용")
+
+    override suspend fun updateMyMarketingConsents(request: UserUpdateMarketingConsentRequestDto): BaseResponse<UserMarketingConsentDto> =
         TODO("이 테스트 미사용")
 
     override suspend fun getConnectedAccounts(): BaseResponse<UserConnectedAccountDto> = TODO("이 테스트 미사용")

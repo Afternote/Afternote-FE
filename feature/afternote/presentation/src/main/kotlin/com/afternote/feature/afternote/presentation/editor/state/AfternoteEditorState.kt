@@ -45,6 +45,8 @@ class AfternoteEditorState(
     val removeMemorialPhoto: () -> Unit,
     val setMemorialVideo: (String) -> Unit,
     val removeMemorialVideo: () -> Unit,
+    val setMemorialAudio: (String) -> Unit,
+    val removeMemorialAudio: () -> Unit,
     val setMemorialThumbnail: (String) -> Unit,
     val deleteReceiver: (receiverId: Long) -> Unit,
     val replaceReceiversIfEmpty: (List<AfternoteEditorReceiver>) -> Unit,
@@ -109,7 +111,7 @@ class AfternoteEditorState(
     fun currentEditorMessageBlocks(): List<EditorMessageTextBlock> = editorMessages.toTextBlocks()
 
     /** 프리필 값으로 남기실 말씀 목록을 교체한다. */
-    internal fun replaceEditorMessages(blocks: List<EditorMessageTextBlock>) {
+    private fun replaceEditorMessages(blocks: List<EditorMessageTextBlock>) {
         editorMessages.clear()
         editorMessages.addAll(blocks.toLeaveMessageEditorItems())
     }
@@ -180,7 +182,7 @@ private const val SAVED_EDITOR_MESSAGE_EDITING = "editing"
  * 남기실 말씀의 텍스트와 등록 여부를 화면 재생성 및 프로세스 복원에 보존한다.
  * 본문 펼침 여부는 일시적인 화면 상태라 등록 항목은 접힌 상태로 복원한다.
  */
-internal val editorMessagesSaver: Saver<SnapshotStateList<LeaveMessageEditorItem>, Any> =
+private val editorMessagesSaver: Saver<SnapshotStateList<LeaveMessageEditorItem>, Any> =
     listSaver(
         save = { messages ->
             messages.flatMap { message ->
@@ -227,6 +229,8 @@ fun rememberAfternoteEditorState(
     removeMemorialPhoto: () -> Unit,
     setMemorialVideo: (String) -> Unit,
     removeMemorialVideo: () -> Unit,
+    setMemorialAudio: (String) -> Unit,
+    removeMemorialAudio: () -> Unit,
     addReceiverIfAbsent: (receiverId: Long, name: String, label: String) -> Unit,
     applyPrefill: (EditorFormPrefill) -> Unit,
     setMemorialThumbnail: (String) -> Unit,
@@ -256,6 +260,8 @@ fun rememberAfternoteEditorState(
             removeMemorialPhoto = removeMemorialPhoto,
             setMemorialVideo = setMemorialVideo,
             removeMemorialVideo = removeMemorialVideo,
+            setMemorialAudio = setMemorialAudio,
+            removeMemorialAudio = removeMemorialAudio,
             addReceiverIfAbsent = addReceiverIfAbsent,
             applyPrefill = applyPrefill,
             setMemorialThumbnail = setMemorialThumbnail,
@@ -283,6 +289,8 @@ fun rememberAfternoteEditorState(): AfternoteEditorState {
         removeMemorialPhoto = { mutate { it.withMemorialPhotoRemoved() } },
         setMemorialVideo = { url -> mutate { it.withMemorialVideo(url) } },
         removeMemorialVideo = { mutate { it.withMemorialVideoRemoved() } },
+        setMemorialAudio = { url -> mutate { it.withMemorialAudio(url) } },
+        removeMemorialAudio = { mutate { it.withMemorialAudioRemoved() } },
         addReceiverIfAbsent = { receiverId, name, label ->
             mutate { it.withReceiverAddedIfAbsent(receiverId = receiverId, name = name, label = label) }
         },
