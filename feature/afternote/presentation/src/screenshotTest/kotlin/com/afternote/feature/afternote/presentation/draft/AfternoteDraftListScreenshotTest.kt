@@ -13,7 +13,7 @@ import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.presentation.shared.component.ListItemUiModel
 import com.afternote.feature.afternote.presentation.shared.component.toUiModel
 import com.android.tools.screenshot.PreviewTest
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.MutableStateFlow
 
 @PreviewTest
 @Preview(showBackground = true, widthDp = 360, heightDp = 800)
@@ -38,7 +38,7 @@ internal fun draftListItemsScreenshot() {
 private fun DraftListPreview(items: List<ListItemUiModel>) {
     val paging =
         remember(items) {
-            flowOf(
+            MutableStateFlow(
                 PagingData.from(
                     items,
                     sourceLoadStates =

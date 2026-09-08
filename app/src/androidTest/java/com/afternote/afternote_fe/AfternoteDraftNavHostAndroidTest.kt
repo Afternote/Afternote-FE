@@ -206,11 +206,18 @@ class AfternoteDraftNavHostAndroidTest {
         launchHost()
         composeRule.onNodeWithText("임시저장").performClick()
         waitForText(DRAFT_TITLE)
-        composeRule.onNodeWithText(DRAFT_TITLE).performClick()
-        waitForText("등록")
-        composeRule.onNodeWithText("등록").assertIsNotEnabled()
-        composeRule.onNodeWithText("임시저장").assertIsNotEnabled()
-        releaseLoad.complete(Unit)
+        // Hold the animated prefill skeleton on a known frame; waiting for Compose idleness
+        // while the repository is deliberately suspended would wait for the shimmer forever.
+        composeRule.mainClock.autoAdvance = false
+        try {
+            composeRule.onNodeWithText(DRAFT_TITLE).performClick()
+            composeRule.mainClock.advanceTimeBy(500)
+            composeRule.onNodeWithText("등록").assertIsNotEnabled()
+            composeRule.onNodeWithText("임시저장").assertIsNotEnabled()
+        } finally {
+            releaseLoad.complete(Unit)
+            composeRule.mainClock.autoAdvance = true
+        }
         waitForText("다시 불러오기")
         composeRule.onNodeWithText("등록").assertIsNotEnabled()
         composeRule.onNodeWithText("임시저장").assertIsNotEnabled()
