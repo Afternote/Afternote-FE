@@ -12,7 +12,7 @@ import com.afternote.feature.afternote.domain.AfternoteType
  * Screen 콜백 인자(예: `onSongClick`)는 *도메인 이벤트* 자리로 본 인터페이스와 분리.
  * NavGraph 가 둘을 매핑한다.
  */
-interface AfternoteNavActions {
+internal interface AfternoteNavActions {
     fun navigateToBottomTab(tab: BottomNavTab)
 
     fun popBack()

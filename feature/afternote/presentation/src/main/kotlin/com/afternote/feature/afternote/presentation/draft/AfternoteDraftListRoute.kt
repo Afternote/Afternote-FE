@@ -10,17 +10,19 @@ import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
+import kotlinx.coroutines.flow.map
 
 /**
  * 임시저장 목록 Entry — append 실패는 홈과 같이 Snackbar 로만 알린다.
  */
 @Composable
-fun AfternoteDraftListEntry(
+internal fun AfternoteDraftListEntry(
     onBackClick: () -> Unit,
     onResumeDraft: (id: Long, type: AfternoteType) -> Unit,
     viewModel: AfternoteDraftListViewModel = hiltViewModel(),
 ) {
-    val items = viewModel.pagedDrafts.collectAsLazyPagingItems()
+    val pages = remember(viewModel) { viewModel.uiState.map { it.items } }
+    val items = pages.collectAsLazyPagingItems()
     val snackbarHostState = remember { SnackbarHostState() }
 
     val appendState = items.loadState.append
@@ -36,16 +38,5 @@ fun AfternoteDraftListEntry(
         onBackClick = onBackClick,
         onDraftClick = onResumeDraft,
         snackbarHostState = snackbarHostState,
-    )
-}
-
-@Composable
-internal fun AfternoteDraftListNavigation(
-    onNavigateBack: () -> Unit,
-    onNavigateToEditorForResume: (itemId: Long, initialType: AfternoteType) -> Unit,
-) {
-    AfternoteDraftListEntry(
-        onBackClick = onNavigateBack,
-        onResumeDraft = onNavigateToEditorForResume,
     )
 }

@@ -113,6 +113,7 @@ fun AfternoteHomeScreen(
 
                 is AfternoteHomeBodyState.FilteredError -> {
                     FilteredErrorBody(
+                        onDraftListClick = onDraftListClick,
                         headerDescription = headerDescription,
                         nextStep = nextStep,
                         selectedType = bodyState.selectedType,
@@ -146,6 +147,7 @@ fun AfternoteHomeScreen(
                 AfternoteHomeBodyState.Empty -> {
                     if (showsHeaderOnEmptyList) {
                         EmptyHomeBody(
+                            onDraftListClick = onDraftListClick,
                             headerDescription = headerDescription,
                             nextStep = nextStep,
                             emptyListDescription = emptyListDescription,

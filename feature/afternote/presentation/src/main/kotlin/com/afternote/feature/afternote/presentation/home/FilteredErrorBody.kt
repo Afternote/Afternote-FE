@@ -37,6 +37,7 @@ internal fun FilteredErrorBody(
     onTypeSelected: (AfternoteType?) -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
+    onDraftListClick: (() -> Unit)? = null,
 ) {
     Column(
         modifier = modifier,
@@ -46,6 +47,7 @@ internal fun FilteredErrorBody(
         HomeHeaderSection(
             description = headerDescription,
             nextStep = nextStep,
+            onDraftListClick = onDraftListClick,
         )
         // 필터 행과 실패 본문 사이에는 간격을 두지 않는다 — 목록 상태의 AfternoteListContent 와 같은 배치다.
         // 남은 높이를 weight 로 받아 실패 문구가 «필터 행 아래 영역» 의 가운데에 온다.

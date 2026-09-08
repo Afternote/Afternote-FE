@@ -35,6 +35,7 @@ internal fun EmptyHomeBody(
     emptyListDescription: String,
     onTypeSelected: (AfternoteType?) -> Unit,
     modifier: Modifier = Modifier,
+    onDraftListClick: (() -> Unit)? = null,
 ) {
     Column(
         modifier = modifier,
@@ -44,6 +45,7 @@ internal fun EmptyHomeBody(
         HomeHeaderSection(
             description = headerDescription,
             nextStep = nextStep,
+            onDraftListClick = onDraftListClick,
         )
         // 필터 행과 빈 본문 사이에는 간격을 두지 않는다 — 목록 상태의 AfternoteListContent 와 같은 배치다.
         Column {

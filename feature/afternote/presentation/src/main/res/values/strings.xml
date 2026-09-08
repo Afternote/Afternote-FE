@@ -30,7 +30,6 @@
     <string name="afternote_home_draft_entry_description">이어서 작성할 임시저장 목록</string>
     <!-- 임시저장 목록 0건. 발신자 홈의 afternote_empty_list_body 는 «아래 연필 버튼» 을 가리키는데
          이 화면엔 그 버튼이 없어 따로 둔다. -->
-    <string name="afternote_draft_list_empty">임시저장한 애프터노트가 없어요.\n작성 중 임시저장을 누르면 여기에 모여요.</string>
     <string name="afternote_home_header_description">소중한 사람에게 남길 기록을 미리 정리해 보세요.</string>
     <string name="afternote_category_all">전체</string>
     <string name="afternote_category_social_network">소셜네트워크</string>
@@ -204,4 +203,5 @@
     <string name="afternote_receiver_memorial_playlist_screen_title">%1$s님의 플레이리스트</string>
     <string name="afternote_receiver_playlist_empty_message">고인이 남긴 곡이 없어요.</string>
     <string name="afternote_receiver_playlist_song_count_format">총 %1$d곡</string>
+    <string name="afternote_draft_list_empty_body">아직 임시저장한 애프터노트가 없어요.\n작성 중에 임시저장하면 여기에 보여요.</string>
 </resources>

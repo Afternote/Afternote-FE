@@ -31,7 +31,7 @@ import com.afternote.feature.afternote.presentation.shared.component.ListItemUiM
  * (BE `AfternotePageResponse`), 지금까지 불러온 개수를 총계처럼 적으면 스크롤에 따라 숫자가 자란다.
  */
 @Composable
-fun AfternoteDraftListScreen(
+internal fun AfternoteDraftListScreen(
     items: LazyPagingItems<ListItemUiModel>,
     onBackClick: () -> Unit,
     onDraftClick: (id: Long, type: AfternoteType) -> Unit,
@@ -67,7 +67,7 @@ fun AfternoteDraftListScreen(
 
             items.itemCount == 0 -> {
                 EmptyListBody(
-                    description = stringResource(R.string.afternote_draft_list_empty),
+                    description = stringResource(R.string.afternote_draft_list_empty_body),
                     modifier = bodyModifier,
                 )
             }
