@@ -124,7 +124,7 @@ fun MemorialWritePayload.toDto() =
         memorialAudioUrl = memorialAudioUrl,
     )
 
-fun MemorialSongPayload.toDto() =
+private fun MemorialSongPayload.toDto() =
     AfternoteSongDto(
         title = title,
         artist = artist,

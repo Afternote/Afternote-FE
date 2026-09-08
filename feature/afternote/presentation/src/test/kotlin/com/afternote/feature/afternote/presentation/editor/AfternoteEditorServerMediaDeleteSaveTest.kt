@@ -19,6 +19,7 @@ import com.afternote.feature.afternote.presentation.afternoteEditorSavedStateHan
 import com.afternote.feature.afternote.presentation.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.editor.state.EditorFormState
+import com.afternote.feature.afternote.presentation.editorFlowRoute
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -263,6 +264,7 @@ class AfternoteEditorServerMediaDeleteSaveTest {
             afternoteEditorSavedStateHandle(initialType = AfternoteType.MEMORIAL, itemId = AFTERNOTE_ID),
     ): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
+            route = savedStateHandle.editorFlowRoute(),
             savedStateHandle = savedStateHandle,
             userRepository = afternoteAuthorUserRepository(),
             afternoteRepository = repository,

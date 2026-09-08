@@ -137,6 +137,7 @@ class AfternoteAuthorTest {
         savedStateHandle: SavedStateHandle,
     ): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
+            route = savedStateHandle.editorFlowRoute(),
             savedStateHandle = savedStateHandle,
             userRepository = afternoteAuthorUserRepository(),
             afternoteRepository = repository,

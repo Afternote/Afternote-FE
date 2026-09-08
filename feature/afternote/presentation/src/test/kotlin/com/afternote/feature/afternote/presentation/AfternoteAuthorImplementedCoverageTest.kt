@@ -290,6 +290,7 @@ private fun implementedCoverageViewModel(
     audioInputs: MutableList<MediaInput> = mutableListOf(),
 ): AfternoteEditorViewModel =
     AfternoteEditorViewModel(
+        route = savedStateHandle.editorFlowRoute(),
         savedStateHandle = savedStateHandle,
         userRepository = afternoteAuthorUserRepository(),
         afternoteRepository = repository,
