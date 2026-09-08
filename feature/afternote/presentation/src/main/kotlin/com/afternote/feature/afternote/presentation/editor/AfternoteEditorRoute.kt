@@ -7,13 +7,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavBackStackEntry
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.editor.processing.AfternoteProcessingMethodDefaults
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.editor.state.rememberAfternoteEditorState
-import com.afternote.feature.afternote.presentation.navigation.model.SELECTED_RECEIVER_ID_KEY
 
 /**
  * 작성자 에디터 화면: type-safe editor flow + 단방향 이벤트.
@@ -25,7 +23,6 @@ import com.afternote.feature.afternote.presentation.navigation.model.SELECTED_RE
  */
 @Composable
 internal fun AfternoteEditorNavigation(
-    backStackEntry: NavBackStackEntry,
     editViewModel: AfternoteEditorViewModel,
     onNavigateToMemorialPlaylist: () -> Unit,
     onNavigateToSelectReceiver: () -> Unit,
@@ -39,7 +36,11 @@ internal fun AfternoteEditorNavigation(
             setType = editViewModel::setType,
             setService = editViewModel::setService,
             setMemorialPhoto = editViewModel::setMemorialPhoto,
+            removeMemorialPhoto = editViewModel::removeMemorialPhoto,
             setMemorialVideo = editViewModel::setMemorialVideo,
+            removeMemorialVideo = editViewModel::removeMemorialVideo,
+            setMemorialAudio = editViewModel::setMemorialAudio,
+            removeMemorialAudio = editViewModel::removeMemorialAudio,
             addReceiverIfAbsent = editViewModel::addReceiverIfAbsent,
             applyPrefill = editViewModel::applyPrefill,
             setMemorialThumbnail = editViewModel::setMemorialThumbnail,
@@ -71,11 +72,10 @@ internal fun AfternoteEditorNavigation(
         }
     }
 
-    LaunchedEffect(backStackEntry) {
-        tryApplyReceiverSelectionFromSavedState(
-            backStackEntry,
+    // 선택 화면이 위에 쌓이는 동안 이 화면은 컴포지션에서 빠지므로, 복귀할 때마다 다시 돈다.
+    LaunchedEffect(Unit) {
+        tryApplyReceiverSelection(
             editViewModel,
-            state,
         )
     }
 

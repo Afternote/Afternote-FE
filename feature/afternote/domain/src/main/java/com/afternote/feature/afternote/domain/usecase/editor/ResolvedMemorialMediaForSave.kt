@@ -11,4 +11,6 @@ data class ResolvedMemorialMediaForSave(
     val resolvedVideoUrl: String?,
     /** 영정 사진 URL (로컬 content 이면 업로드 결과). null 이면 사진 미첨부. */
     val resolvedMemorialPhotoUrl: String?,
+    /** 추모 음성 URL (로컬 content 이면 업로드 결과). null 이면 음성 미첨부 (#1118). */
+    val resolvedMemorialAudioUrl: String?,
 )

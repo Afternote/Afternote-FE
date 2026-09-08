@@ -137,8 +137,9 @@ class AfternoteAuthorTest {
         savedStateHandle: SavedStateHandle,
     ): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
+            route = savedStateHandle.editorFlowRoute(),
             savedStateHandle = savedStateHandle,
-            userReceiverRepository = afternoteAuthorUserRepository(),
+            userReceiverRepository = afternoteAuthorUserReceiverRepository(),
             afternoteRepository = repository,
             memorialThumbnailUploadRepository = MemorialThumbnailUploadRepository { Result.success("https://cdn.test/thumb.jpg") },
             resolveMemorialMediaForSave =
@@ -155,6 +156,7 @@ class AfternoteAuthorTest {
                                         when (kind) {
                                             MediaKind.VIDEO -> "https://cdn.test/video.mp4"
                                             MediaKind.PHOTO -> "https://cdn.test/photo.jpg"
+                                            MediaKind.AUDIO -> "https://cdn.test/audio.m4a"
                                         }
                                     }
 

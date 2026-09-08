@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.presentation.editor
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.testing.FakeUserRepository
+import com.afternote.core.domain.testing.FakeUserReceiverRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
@@ -11,6 +11,7 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnai
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
+import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -110,11 +111,12 @@ class AfternoteEditorReceiverSelectionRecoveryTest {
         )
     }
 
-    private fun repositoryWith(receivers: suspend () -> List<Receiver>): FakeUserRepository =
-        FakeUserRepository.strict().apply { onGetReceivers = receivers }
+    private fun repositoryWith(receivers: suspend () -> List<Receiver>): FakeUserReceiverRepository =
+        FakeUserReceiverRepository.strict().apply { onGetReceivers = receivers }
 
-    private fun viewModel(userReceiverRepository: FakeUserRepository): AfternoteEditorViewModel =
+    private fun viewModel(userReceiverRepository: FakeUserReceiverRepository): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
+            route = AfternoteRoute.EditorFlowRoute(initialType = AfternoteType.SOCIAL_NETWORK),
             savedStateHandle = SavedStateHandle(mapOf("initialType" to AfternoteType.SOCIAL_NETWORK)),
             userReceiverRepository = userReceiverRepository,
             afternoteRepository = unusedProxy<AfternoteRepository>(),

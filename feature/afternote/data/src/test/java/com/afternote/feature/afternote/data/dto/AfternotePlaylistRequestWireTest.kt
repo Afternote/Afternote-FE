@@ -4,9 +4,10 @@ import com.afternote.core.network.di.NetworkModule
 import com.afternote.feature.afternote.data.mapper.toRequest
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
+import com.afternote.feature.afternote.domain.model.author.FieldPatch
+import com.afternote.feature.afternote.domain.model.author.MemorialPatchPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
-import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonArray
@@ -28,7 +29,7 @@ import org.junit.Test
 class AfternotePlaylistRequestWireTest {
     private val json = NetworkModule.provideJson()
 
-    private fun updateBody(memorial: MemorialWritePayload?) =
+    private fun updateBody(memorial: MemorialPatchPayload?) =
         json
             .encodeToJsonElement(
                 AfternoteUpdatePayload(
@@ -38,20 +39,43 @@ class AfternotePlaylistRequestWireTest {
                 ).toRequest(),
             ).jsonObject
 
-    private fun playlistOf(memorial: MemorialWritePayload) = updateBody(memorial).getValue("playlist").jsonObject
+    private fun playlistOf(memorial: MemorialPatchPayload) = updateBody(memorial).getValue("playlist").jsonObject
 
     private val filled =
-        MemorialWritePayload(
-            memorialPhotoUrl = "https://cdn.test/afternotes/photo.jpg",
+        MemorialPatchPayload(
+            memorialPhotoUrl = FieldPatch.Set("https://cdn.test/afternotes/photo.jpg"),
             songs = listOf(MemorialSongPayload(title = "곡", artist = "가수", coverUrl = null)),
             memorialVideo =
-                MemorialVideoPayload(
-                    videoUrl = "https://cdn.test/afternotes/video.mp4",
-                    thumbnailUrl = "https://cdn.test/afternotes/thumb.jpg",
+                FieldPatch.Set(
+                    MemorialVideoPayload(
+                        videoUrl = "https://cdn.test/afternotes/video.mp4",
+                        thumbnailUrl = "https://cdn.test/afternotes/thumb.jpg",
+                    ),
                 ),
+            memorialAudioUrl = FieldPatch.Set("https://cdn.test/afternotes/voice.m4a"),
         )
 
-    private val emptied = MemorialWritePayload(memorialPhotoUrl = null, songs = emptyList(), memorialVideo = null)
+    /**
+     * 사용자가 사진·영상·음성·곡을 **모두 비운** 저장. 만지고 비운 슬롯은 모두 실린다.
+     *
+     * 만지지 않은 슬롯이 여기 섞이면 안 된다는 것이 #1617 의 축이고, 그쪽은
+     * [AfternoteUpdatePartialPatchWireTest] 가 JSON 문자열째 고정한다.
+     */
+    private val emptied =
+        MemorialPatchPayload(
+            memorialPhotoUrl = FieldPatch.Set(null),
+            songs = emptyList(),
+            memorialVideo = FieldPatch.Set(null),
+            memorialAudioUrl = FieldPatch.Set(null),
+        )
+
+    /** 발행된 PLAYLIST PATCH 검증을 통과하도록 기존 곡을 함께 싣는 실제 서버 미디어 삭제 스냅샷. */
+    private val deletedServerMedia =
+        MemorialPatchPayload(
+            memorialPhotoUrl = FieldPatch.Set(null),
+            songs = listOf(MemorialSongPayload(title = "기존 곡", artist = "기존 가수", coverUrl = null)),
+            memorialVideo = FieldPatch.Set(null),
+        )
 
     @Test
     fun `영정사진이 비면 키를 남긴 채 null 이 실려 삭제로 나간다`() {
@@ -67,6 +91,15 @@ class AfternotePlaylistRequestWireTest {
 
         assertTrue("memorialVideo" in playlist)
         assertEquals(JsonNull, playlist.getValue("memorialVideo"))
+    }
+
+    @Test
+    fun `추모 음성이 비면 키를 남긴 채 null 이 실려 삭제로 나간다`() {
+        // 음성도 사진·영상처럼 명시적 삭제만 null 로 직렬화한다 (#1118).
+        val playlist = playlistOf(emptied)
+
+        assertTrue("memorialAudioUrl" in playlist)
+        assertEquals(JsonNull, playlist.getValue("memorialAudioUrl"))
     }
 
     /**
@@ -85,15 +118,13 @@ class AfternotePlaylistRequestWireTest {
     }
 
     /**
-     * 같은 바디 안에서 생략이 **여전히 살아 있음**을 함께 못박는다 — 위 세 건이 「값을 실었다」가
-     * 아니라 「기본값을 뗐다」로 성립한다는 증거다. FE 가 그리지 않는 슬롯은 계속 빠져야 한다.
+     * 같은 바디 안에서 생략이 **여전히 살아 있음**을 함께 못박는다 — 명시적 변경 슬롯과 함께 생략 슬롯도 확인한다. FE 가 그리지 않는 슬롯은 계속 빠져야 한다.
      */
     @Test
     fun `FE 가 모델링하지 않는 슬롯은 키째 빠져 유지로 나간다`() {
         val playlist = playlistOf(emptied)
 
         assertFalse("atmosphere" in playlist)
-        assertFalse("memorialAudioUrl" in playlist)
     }
 
     @Test
@@ -114,6 +145,10 @@ class AfternotePlaylistRequestWireTest {
                 .single()
                 .jsonObject
         assertEquals("곡", song.getValue("title").jsonPrimitive.content)
+        assertEquals(
+            "https://cdn.test/afternotes/voice.m4a",
+            playlist.getValue("memorialAudioUrl").jsonPrimitive.content,
+        )
     }
 
     /** 추억 노트가 아닌 수정은 플레이리스트를 **말하지 않는다** — 키가 나가면 남의 미디어를 지운다. */

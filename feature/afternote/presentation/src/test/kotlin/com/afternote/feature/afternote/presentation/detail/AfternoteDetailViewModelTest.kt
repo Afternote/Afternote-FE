@@ -2,16 +2,17 @@ package com.afternote.feature.afternote.presentation.detail
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.domain.testing.FakeMyProfileRepository
 import com.afternote.core.domain.testing.FakeUserProfileCacheRepository
-import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.presentation.NoopAuthorErrorReporter
+import com.afternote.feature.afternote.presentation.afternoteAuthorMyProfileRepository
 import com.afternote.feature.afternote.presentation.afternoteAuthorUserProfileRepository
-import com.afternote.feature.afternote.presentation.afternoteAuthorUserRepository
+import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -162,7 +163,7 @@ class AfternoteDetailViewModelTest {
             // 그때 이미 그려진 Success 에 이름이 실려야 제목의 이름 세그먼트가 뒤늦게라도 채워진다.
             val profileGate = CompletableDeferred<Unit>()
             val myProfileRepository =
-                afternoteAuthorUserRepository().apply {
+                afternoteAuthorMyProfileRepository().apply {
                     onGetMyProfile = {
                         profileGate.await()
                         profile
@@ -197,7 +198,7 @@ class AfternoteDetailViewModelTest {
                 FakeAfternoteRepository.strict().apply {
                     onGetDetail = { results.removeFirst() }
                 }
-            val myProfileRepository = afternoteAuthorUserRepository()
+            val myProfileRepository = afternoteAuthorMyProfileRepository()
             val viewModel = viewModel(repository, myProfileRepository = myProfileRepository)
             val states = recordStates(viewModel)
 
@@ -215,7 +216,7 @@ class AfternoteDetailViewModelTest {
             // 원격만 쓰면 왕복이 끝나야 이름 세그먼트가 채워져, 진입마다 제목이 눈앞에서 다시 쓰인다.
             val profileGate = CompletableDeferred<Unit>()
             val myProfileRepository =
-                afternoteAuthorUserRepository().apply {
+                afternoteAuthorMyProfileRepository().apply {
                     onGetMyProfile = {
                         profileGate.await()
                         profile.copy(name = "서버 이름")
@@ -249,7 +250,7 @@ class AfternoteDetailViewModelTest {
                 afternoteAuthorUserProfileRepository().apply {
                     onGetCachedUserName = { throw IOException("DataStore 읽기 실패") }
                 }
-            val myProfileRepository = afternoteAuthorUserRepository()
+            val myProfileRepository = afternoteAuthorMyProfileRepository()
             val viewModel =
                 viewModel(
                     FakeAfternoteRepository.strict().apply {
@@ -271,7 +272,7 @@ class AfternoteDetailViewModelTest {
                 afternoteAuthorUserProfileRepository().apply {
                     onSaveUserName = { throw IOException("DataStore 쓰기 실패") }
                 }
-            val myProfileRepository = afternoteAuthorUserRepository()
+            val myProfileRepository = afternoteAuthorMyProfileRepository()
             val viewModel =
                 viewModel(
                     FakeAfternoteRepository.strict().apply {
@@ -418,11 +419,11 @@ class AfternoteDetailViewModelTest {
     private fun viewModel(
         repository: FakeAfternoteRepository,
         errorReporter: ErrorReporter = NoopAuthorErrorReporter,
-        myProfileRepository: FakeUserRepository = afternoteAuthorUserRepository(),
+        myProfileRepository: FakeMyProfileRepository = afternoteAuthorMyProfileRepository(),
         userProfileRepository: FakeUserProfileCacheRepository = afternoteAuthorUserProfileRepository(),
     ): AfternoteDetailViewModel =
         AfternoteDetailViewModel(
-            savedStateHandle = SavedStateHandle(mapOf("itemId" to 73L)),
+            route = AfternoteRoute.DetailRoute(itemId = 73L),
             afternoteRepository = repository,
             myProfileRepository = myProfileRepository,
             userProfileRepository = userProfileRepository,
