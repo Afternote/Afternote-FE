@@ -13,23 +13,22 @@ import com.afternote.feature.afternote.data.dto.AfternoteUpdateRequestDto
 import com.afternote.feature.afternote.data.service.AfternoteApiService
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * 서버는 한 요청에 발행분과 임시저장을 섞어 주지 않는다 — `draftOnly` 미전송이 곧 «발행분만» 이다
- * (BE `AfternoteService.getAfternotes`). 그 계약을 와이어에서 지키는지 가드한다.
+ * 서버는 한 요청에 발행분과 임시저장을 섞어 주지 않는다 — `draftOnly=false`가 곧 «발행분만» 이다
+ * (BE `AfternoteService.getAfternotes`). 그 계약을 API 호출 인자에서 지키는지 검증한다.
  */
 class AfternotePagingSourceTest {
     @Test
-    fun `발행 목록은 draftOnly 를 아예 보내지 않는다`() =
+    fun `발행 목록은 draftOnly 를 false 로 보낸다`() =
         runBlocking {
             val api = RecordingApi()
 
             AfternotePagingSource(api, category = null, draftOnly = false).load(refresh())
 
-            assertNull(api.lastDraftOnly)
+            assertEquals(false, api.lastDraftOnly)
         }
 
     @Test
@@ -66,7 +65,7 @@ class AfternotePagingSourceTest {
             category: String?,
             pageNumber: Int?,
             size: Int?,
-            draftOnly: Boolean?,
+            draftOnly: Boolean,
         ): BaseResponse<AfternotePageDto> {
             lastCategory = category
             lastDraftOnly = draftOnly

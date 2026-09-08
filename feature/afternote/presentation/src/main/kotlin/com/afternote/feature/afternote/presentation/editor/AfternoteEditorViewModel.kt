@@ -27,6 +27,8 @@ import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditor
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.editor.state.EditorFormState
+import com.afternote.feature.afternote.presentation.editor.state.withMemorialAudio
+import com.afternote.feature.afternote.presentation.editor.state.withMemorialAudioRemoved
 import com.afternote.feature.afternote.presentation.editor.state.withMemorialPhoto
 import com.afternote.feature.afternote.presentation.editor.state.withMemorialPhotoRemoved
 import com.afternote.feature.afternote.presentation.editor.state.withMemorialPlaylistSongs
@@ -65,6 +67,7 @@ import kotlinx.serialization.json.Json
 
 private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v4"
 private const val INITIALIZED_ACTION_TEMPLATE_TYPE_KEY = "initialized_action_template_type"
+private const val PREFILL_SEEDED_ITEM_ID_KEY = "editor_prefill_seeded_item_id"
 
 private const val TAG = "AfternoteEditorViewModel"
 
@@ -94,6 +97,7 @@ private data class EditorFormSnapshot(
     val pickedMemorialPhotoUri: String? = null,
     val memorialVideo: EditableMemorialVideo? = null,
     val memorialPhotoUrl: String? = null,
+    val memorialAudioUrl: String? = null,
     val memorialPlaylistSongs: List<Song> = emptyList(),
 ) {
     fun toEditorFormState(): EditorFormState =
@@ -126,6 +130,7 @@ private data class EditorFormSnapshot(
                     pickedPhotoUri = pickedMemorialPhotoUri,
                     video = memorialVideo ?: EditableMemorialVideo.empty(),
                     photoUrl = memorialPhotoUrl,
+                    audioUrl = memorialAudioUrl,
                     playlistSongs = memorialPlaylistSongs,
                 )
             }
@@ -149,6 +154,7 @@ private data class EditorFormSnapshot(
                 pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
                 memorialVideo = form.memorialVideo,
                 memorialPhotoUrl = form.memorialPhotoUrl,
+                memorialAudioUrl = form.memorialAudioUrl,
                 memorialPlaylistSongs = form.memorialPlaylistSongs,
             )
     }
@@ -185,10 +191,45 @@ class AfternoteEditorViewModel
                 encodeDefaults = true
             }
 
+        /**
+         * 스냅샷 복원 결과. **「키가 있는가」가 아니라 「실제로 복원됐는가」를 들고 있다.**
+         *
+         * [readFormSnapshotOrDefault] 는 디코딩 실패를 삼켜 빈 기본 폼으로 떨어진다. 키 존재만 보면
+         * 「표식 있음 + 문자열 있음 + 디코딩 실패」 조합에서 가드가 참이 되어 프리필이 막히고,
+         * 빈 폼이 새 기준 스냅샷과 짝지어져 아래 KDoc 이 피하겠다고 적은 「전부 지움」 저장이 된다.
+         */
+        private val restoredForm: RestoredForm = readFormSnapshotOrDefault()
+
+        /**
+         * 이 ViewModel 이 «상세 프리필이 이미 실렸던» 폼 스냅샷에서 되살아났는가 (#1732).
+         *
+         * 참이면 복원된 폼은 서버 값 + 사용자가 그 뒤에 고친 것을 함께 들고 있다 — 프로세스 사망
+         * 복원은 [EDITOR_FORM_SNAPSHOT_KEY] 의 폼뿐 아니라 화면이 가진 계정 정보·남기실 말씀
+         * 입력까지 (`rememberTextFieldState`·`rememberSaveable`) 같은 번들로 되살리기 때문이다.
+         * 그 위에 [loadExistingAfternoteForEdit] 의 재조회 프리필을 다시 실으면 남는 건 서버 값뿐이라,
+         * 사용자가 쓴 편집이 아무 안내 없이 사라진다.
+         *
+         * 두 조건을 함께 본다. 표식만으로는 부족하다 — [persistFormSnapshot] 은 번들 용량 초과 같은
+         * 실패를 삼키므로, 표식은 남았는데 폼 스냅샷이 없는 조합이 가능하다. 그때 프리필까지 막으면
+         * 빈 폼이 기준 스냅샷과 짝지어져 「전부 지움」 저장이 된다 (#705·#1617 이 막은 그 경로다).
+         *
+         * **그래서 「키가 있는가」가 아니라 「복원됐는가」([RestoredForm.fromSnapshot])를 본다.**
+         * 문자열이 남아 있어도 디코딩이 실패하면 폼은 빈 기본값이므로, 키 존재로 판정하면 위 조합을
+         * 그대로 통과시킨다 — 스키마가 바뀌는 순간(키 접미사를 올리지 않은 채) 열리는 잠복 경로다.
+         *
+         * 폼과 프리필의 값 비교로 대신하지 않는다. 계정 정보·남기실 말씀은 화면이 소유해 이 폼에
+         * 없으므로, 비밀번호만 고친 복원은 «폼이 같다» 로 읽혀 그 편집이 그대로 덮인다.
+         */
+
+        private val restoredFromSeededSnapshot: Boolean =
+            route.itemId != null &&
+                restoredForm.fromSnapshot &&
+                savedStateHandle.get<Long>(PREFILL_SEEDED_ITEM_ID_KEY) == route.itemId
+
         private val internalState =
             MutableStateFlow(
                 InternalState(
-                    form = readFormSnapshotOrDefault(),
+                    form = restoredForm.form,
                     originalType = route.initialType.takeIf { route.itemId != null },
                     isPrefillLoading = readEditItemId() != null,
                 ),
@@ -207,6 +248,14 @@ class AfternoteEditorViewModel
         fun currentForm(): EditorFormState = internalState.value.form
 
         val isEditing: Boolean get() = route.itemId != null
+
+        /**
+         * 발행이 끝난 노트를 편집하는 화면인가. 여기서는 「임시저장」이 할 일이 없다 — `route.isDraft` 가
+         * false 면 `isDraft` 키를 생략해 발행 상태가 그대로라 결과가 「등록」과 같은데, 검증만 임시저장
+         * 기준으로 느슨해진다(계정 자격 필수 검사를 건너뛴 PATCH 가 나갈 수 있다). 그래서 이 화면에선
+         * 버튼을 아예 그리지 않는다 (#808 리뷰).
+         */
+        val isPublishedEdit: Boolean get() = isEditing && !route.isDraft
 
         /**
          * 폼 SSOT 갱신의 유일한 통로. SavedState 스냅샷 직렬화도 함께 수행한다.
@@ -246,6 +295,10 @@ class AfternoteEditorViewModel
 
         fun setMemorialThumbnail(dataUrl: String) = mutateForm { it.withMemorialThumbnail(dataUrl) }
 
+        fun setMemorialAudio(url: String) = mutateForm { it.withMemorialAudio(url) }
+
+        fun removeMemorialAudio() = mutateForm { it.withMemorialAudioRemoved() }
+
         fun addMemorialPlaylistSongs(songs: List<Song>) {
             if (songs.isEmpty()) return
             mutateForm { form ->
@@ -276,7 +329,16 @@ class AfternoteEditorViewModel
 
         fun replaceReceiversIfEmpty(receivers: List<AfternoteEditorReceiver>) = mutateForm { it.withReceiversReplacedIfEmpty(receivers) }
 
-        fun applyPrefill(prefill: EditorFormPrefill) = mutateForm { it.withPrefillApplied(prefill) }
+        /**
+         * 상세 프리필을 폼에 싣는다. 화면이 계정 정보·남기실 말씀까지 실은 뒤 [onPrefillConsumed] 로 통보한다.
+         *
+         * 폼 스냅샷과 같은 번들에 «프리필이 실렸다» 표식을 남긴다 — 프로세스 사망 뒤 재조회가
+         * 이 표식을 보고 복원된 편집을 덮지 않는다 ([restoredFromSeededSnapshot], #1732).
+         */
+        fun applyPrefill(prefill: EditorFormPrefill) {
+            readEditItemId()?.let { savedStateHandle[PREFILL_SEEDED_ITEM_ID_KEY] = it }
+            mutateForm { it.withPrefillApplied(prefill) }
+        }
 
         /**
          * 신규 작성 화면의 카테고리 추천 처리 방법을 최초 한 번만 채운다.
@@ -312,15 +374,34 @@ class AfternoteEditorViewModel
 
         private fun readEditItemId(): Long? = route.itemId
 
-        private fun readFormSnapshotOrDefault(): EditorFormState {
+        /**
+         * 저장된 폼 스냅샷을 읽는다.
+         *
+         * **복원 성공 여부를 함께 돌려준다.** 실패를 기본 폼으로 삼키기만 하면 호출부가 「빈 폼으로
+         * 떨어졌다」와 「원래 빈 폼이었다」를 못 가른다 — [restoredFromSeededSnapshot] 이 그 차이로
+         * 갈리므로 여기서 알려 줘야 한다.
+         */
+        private fun readFormSnapshotOrDefault(): RestoredForm {
             val defaultForm = EditorFormState().withType(route.initialType)
-            val raw = savedStateHandle.get<String>(EDITOR_FORM_SNAPSHOT_KEY) ?: return defaultForm
+            val raw =
+                savedStateHandle.get<String>(EDITOR_FORM_SNAPSHOT_KEY)
+                    ?: return RestoredForm(form = defaultForm, fromSnapshot = false)
             return runCatching {
-                formSnapshotJson
-                    .decodeFromString(EditorFormSnapshot.serializer(), raw)
-                    .toEditorFormState()
-            }.getOrElse { defaultForm }
+                RestoredForm(
+                    form =
+                        formSnapshotJson
+                            .decodeFromString(EditorFormSnapshot.serializer(), raw)
+                            .toEditorFormState(),
+                    fromSnapshot = true,
+                )
+            }.getOrElse { RestoredForm(form = defaultForm, fromSnapshot = false) }
         }
+
+        /** [readFormSnapshotOrDefault] 의 결과 — 폼과 «그 폼이 스냅샷에서 왔는가». */
+        private data class RestoredForm(
+            val form: EditorFormState,
+            val fromSnapshot: Boolean,
+        )
 
         /** [EditorFormSnapshot] 직렬화. 실패 시 무시한다(용량 초과 등은 [EditorFormSnapshot] KDoc 참고). */
         private fun persistFormSnapshot(form: EditorFormState) {
@@ -435,9 +516,10 @@ class AfternoteEditorViewModel
         }
 
         /**
-         * @param asDraft 임시저장으로 저장한다 (#808). 서버가 카테고리별 필수값 검증을 건너뛰므로
-         *   («AfternoteValidator») 화면 검증도 같이 건너뛴다 — 임시저장은 «미완성을 그대로 보존하는» 수단이라
-         *   여기서 막으면 저장할 수 있는 것이 정식 등록과 같아져 존재 이유가 없어진다.
+         * @param asDraft 임시저장으로 저장한다 (#808). 검증을 **통째로** 건너뛰지는 않는다 — 서버가 완화하는
+         *   것은 카테고리 전략의 `credentials`·`playlist` 뿐이고 제목·남기실 말씀 본문은 그대로 400 이 난다.
+         *   그 경계는 [AfternoteEditorValidator] 의 KDoc 에 표로 있다. 통째로 건너뛰면 ESTATE 차단까지
+         *   사라져 `AfternoteEditorFormMapper` 의 `error(...)` 로 앱이 죽는다.
          */
         internal fun saveAfternote(
             payload: RegisterAfternotePayload,
@@ -473,14 +555,11 @@ class AfternoteEditorViewModel
             val playlistSongs = form.memorialPlaylistSongs
 
             val validationError =
-                if (asDraft) {
-                    null
-                } else {
-                    AfternoteEditorValidator.validate(
-                        form = form,
-                        payload = payload,
-                    )
-                }
+                AfternoteEditorValidator.validate(
+                    form = form,
+                    payload = payload,
+                    asDraft = asDraft,
+                )
             if (validationError != null) {
                 internalState.update {
                     it.withError(AfternoteEditorError.Validation(validationError))
@@ -490,6 +569,14 @@ class AfternoteEditorViewModel
 
             val typeForSave =
                 if (editingId != null) (editorState.originalType ?: type) else type
+
+            // 수정인데 기준 스냅샷이 없다 = 상세를 못 받았다. 이 상태로 보내면 「안 건드림」과
+            // 「전부 지움」을 가릴 수 없어 빈 폼이 그대로 삭제 지시가 된다 (#1617).
+            val updateBaseline = editorState.updateBaseline
+            if (editingId != null && updateBaseline == null) {
+                internalState.update { it.withError(AfternoteEditorError.PrefillUnavailable) }
+                return
+            }
 
             viewModelScope.launch {
                 internalState.update {
@@ -515,6 +602,7 @@ class AfternoteEditorViewModel
                     playlistSongs = playlistSongs,
                     memorialMedia = memorialMediaForSave,
                     asDraft = asDraft,
+                    updateBaseline = updateBaseline,
                 ).fold(
                     onSuccess = { command ->
                         executeSaveCommand(command).fold(
@@ -557,6 +645,14 @@ class AfternoteEditorViewModel
                 }
             }
 
+        // 음성: 로컬 pick(content://) 인지 원격 prefill URL 인지를 진입 경계에서 한 번 확정해
+        // MediaInput 으로 넘긴다. 영상은 #1406 이후 [EditableMemorialVideo] 가 출처를 들고 있어
+        // 이 추론이 필요 없다 — 음성만 아직 한 필드에 로컬·원격이 섞인다 (#1118).
+        private fun singleFieldMediaInput(url: String?): MediaInput {
+            if (url.isNullOrBlank()) return MediaInput.None
+            return if (url.isLocalContentUri()) MediaInput.Local(url) else MediaInput.Remote(url)
+        }
+
         // 영정 사진: 새로 고른 로컬 픽 우선 → 없으면 기존 원격 → 둘 다 없으면 없음.
         private fun photoMediaInput(
             picked: String?,
@@ -576,6 +672,7 @@ class AfternoteEditorViewModel
             playlistSongs: List<Song>,
             memorialMedia: SaveAfternoteMemorialMedia,
             asDraft: Boolean,
+            updateBaseline: AfternoteEditorSnapshot?,
         ): Result<SaveAfternoteCommand> {
             val resolved =
                 resolveMemorialMediaForSave(
@@ -585,6 +682,7 @@ class AfternoteEditorViewModel
                             picked = memorialMedia.pickedMemorialPhotoUri,
                             existing = memorialMedia.memorialPhotoUrl,
                         ),
+                    audio = singleFieldMediaInput(memorialMedia.memorialAudioUrl),
                 ).getOrElse { return Result.failure(it) }
 
             val command =
@@ -600,15 +698,20 @@ class AfternoteEditorViewModel
                                     memorialVideoUrl = resolved.resolvedVideoUrl,
                                     memorialThumbnailUrl = memorialMedia.memorialVideo.displayed?.thumbnailUrl,
                                     memorialPhotoUrl = resolved.resolvedMemorialPhotoUrl,
+                                    memorialAudioUrl = resolved.resolvedMemorialAudioUrl,
                                 ),
+                            // saveAfternote 가 기준 없는 수정을 이미 막았다 — 여기 도달하면 반드시 있다.
+                            baseline =
+                                checkNotNull(updateBaseline) {
+                                    "수정 저장에 기준 스냅샷이 없다 — saveAfternote 의 가드가 빠졌다"
+                                },
                         )
-                    // 수정에서 isDraft 는 «어느 버튼으로 저장했나» 를 그대로 말한다 — 임시저장이면 true 로 남기고,
-                    // 등록이면 false 를 명시해 발행으로 전환한다(생략하면 서버가 저장값을 유지한다).
-                    val isDraftToSend =
-                        AfternoteEditorFormMapper.resolveUpdateIsDraft(
-                            asDraft = asDraft,
-                            editingDraft = route.isDraft,
-                        )
+                    // 수정에서 isDraft 는 «어느 버튼으로 저장했나» 를 말하는데, **발행 완료분을 임시저장으로
+                    // 되돌리지는 않는다.** true 를 실으면 그 애프터노트가 홈 목록(발행분만)에서 사라지고
+                    // 임시저장 목록·이어쓰기는 #1792·#1791 로 빠져 있어 되찾을 경로가 없다. 그래서 원래
+                    // 임시저장이던 것(route.isDraft)에만 true 를 싣고, 발행분에는 생략해 저장값을 유지한다.
+                    // 등록 버튼은 어느 쪽이든 false 를 명시해 발행으로 전환한다.
+                    val isDraftToSend = if (asDraft) true.takeIf { route.isDraft } else false
                     SaveAfternoteCommand.Update(id = editingId, payload = updatePayload.copy(isDraft = isDraftToSend))
                 } else {
                     val createInput =
@@ -620,6 +723,7 @@ class AfternoteEditorViewModel
                             memorialVideoUrl = resolved.resolvedVideoUrl,
                             memorialThumbnailUrl = memorialMedia.memorialVideo.displayed?.thumbnailUrl,
                             memorialPhotoUrl = resolved.resolvedMemorialPhotoUrl,
+                            memorialAudioUrl = resolved.resolvedMemorialAudioUrl,
                         )
                     SaveAfternoteCommand.Create(input = AfternoteEditorFormMapper.withDraft(createInput, asDraft))
                 }
@@ -642,9 +746,8 @@ class AfternoteEditorViewModel
          * 수정 진입 시 기존 애프터노트를 읽어 폼에 실을 prefill 을 만든다.
          *
          * 실패를 «빈 폼» 으로 흘려보내지 않는다 (#705) — 서버 수정(PATCH)은 보낸 값으로 기존 기록을
-         * 덮으므로, 못 읽은 상태의 빈 폼이 저장되면 기록이 소실된다. 그래서 실패는
-         * [InternalState.isPrefillFailed] 로 남겨 화면이 오류·재시도를 그리고 [saveAfternote] 가
-         * 저장을 막게 한다.
+         * 덮으므로, 못 읽은 상태의 빈 폼이 저장되면 기록이 소실된다. 그래서 실패는 [InternalState.isPrefillFailed]
+         * 로 남겨 화면이 오류·재시도를 그리고 [saveAfternote] 가 저장을 막게 한다.
          *
          * 서버 상세는 하나인데 응답 형태가 갈리므로(`AfternotedetailResponse` 의 Draft / Published*)
          * 무엇으로 읽을지는 **여는 쪽**이 정한다 (#808) — 임시저장 목록에서 왔으면 이어쓰기 계약으로
@@ -657,27 +760,42 @@ class AfternoteEditorViewModel
             prefillJob =
                 viewModelScope.launch {
                     internalState.update { it.copy(isPrefillLoading = true, isPrefillFailed = false) }
-                    // 두 응답 타입이 달라 각 가지에서 폼 prefill 로 맞춘 뒤 이후 처리를 공유한다.
                     val loaded =
                         if (route.isDraft) {
                             afternoteRepository
                                 .getDraftDetail(id = afternoteId)
-                                .map(AfternoteEditorFormMapper::buildEditorFormPrefill)
+                                .map { detail ->
+                                    AfternoteEditorFormMapper.buildEditorFormPrefill(detail) to
+                                        AfternoteEditorFormMapper.buildUpdateBaseline(detail)
+                                }
                         } else {
                             afternoteRepository
                                 .getDetail(id = afternoteId)
-                                .map(AfternoteEditorFormMapper::buildEditorFormPrefill)
+                                .map { detail ->
+                                    AfternoteEditorFormMapper.buildEditorFormPrefill(detail) to
+                                        AfternoteEditorFormMapper.buildUpdateBaseline(detail)
+                                }
                         }
                     loaded
-                        .onSuccess { prefill ->
+                        .onSuccess { (prefill, baseline) ->
                             // UI 레이어 파사드가 TextFieldState·SnapshotStateList 등 UI 상태를 갱신하도록 위임.
                             // skeleton 종료는 UI 가 prefill 적용을 마친 뒤 [onPrefillConsumed] 로 통보한다
                             // (uiState 갱신 시점에 prefill 도착했어도 UI 가 form·TextFieldState 에 반영하기 전이라
                             //  여기서 끄면 skeleton 사라짐 → 빈 폼 → prefill 깜빡임 발생).
+                            //
+                            // 복원된 편집이 있으면 프리필을 싣지 않는다 (#1732). 조회 자체는 그대로 돈다 —
+                            // 기준 스냅샷([InternalState.updateBaseline])이 없으면 저장이 막히고, 카테고리도
+                            // 서버가 아는 값이어야 한다. 막는 것은 «폼에 덮어쓰기» 하나다.
                             internalState.update {
                                 it.copy(
                                     originalType = prefill.type,
-                                    pendingPrefill = prefill,
+                                    pendingPrefill = if (restoredFromSeededSnapshot) null else prefill,
+                                    // 프리필을 싣지 않으면 UI 의 [onPrefillConsumed] 도 오지 않는다 —
+                                    // 그 경로에서는 skeleton 을 여기서 직접 걷는다.
+                                    isPrefillLoading = it.isPrefillLoading && !restoredFromSeededSnapshot,
+                                    // 화면에 뿌릴 prefill 과 별개로, 가공 전 원본을 저장 때 견줄 기준으로 남긴다.
+                                    // 이 값은 폼 변경을 따라가지 않는다 — 따라가면 비교할 대상이 사라진다 (#1617).
+                                    updateBaseline = baseline,
                                 )
                             }
                         }.onFailure { e ->
@@ -763,6 +881,13 @@ class AfternoteEditorViewModel
             val pendingThumbnailUrl: String? = null,
             val memorialThumbnailRetryToken: Int = 0,
             val pendingPrefill: EditorFormPrefill? = null,
+            /**
+             * 수정 진입 시 받은 상세를 그대로 옮긴 **pristine baseline** (#1617).
+             *
+             * 저장 시 현재 폼과 견줘 **달라진 필드만** 요청에 싣는 기준이다. `null` 이면 기준이 없다는
+             * 뜻이라(신규 작성이거나 상세 로드 실패) 종전처럼 전량을 싣는다.
+             */
+            val updateBaseline: AfternoteEditorSnapshot? = null,
         )
 
         private fun InternalState.toUiState(): AfternoteEditorUiState =

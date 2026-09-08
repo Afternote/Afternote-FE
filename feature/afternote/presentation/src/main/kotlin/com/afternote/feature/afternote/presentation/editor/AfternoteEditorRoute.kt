@@ -16,10 +16,11 @@ import com.afternote.feature.afternote.presentation.editor.state.rememberAfterno
 /**
  * 작성자 에디터 화면: type-safe editor flow + 단방향 이벤트.
  *
- * 홈의 `visibleItems` 스냅샷은 에디터에 전달하지 않는다. 식별은 라우트의 `itemId`·`initialType` 정도로 최소화한다.
+ * 홈의 `visibleItems` 스냅샷은 에디터에 전달하지 않는다. 라우트의 `itemId`·`initialType`·`isDraft`를 assisted factory에 전달한다.
  *
- * **수정 진입 데이터 로드:** 상세 화면과 같이 [AfternoteEditorViewModel]의 `init`에서
- * [androidx.lifecycle.SavedStateHandle]의 `itemId`만 보고 Repository `getDetail`을 호출한다 (Compose `LaunchedEffect` 위임 없음).
+ * **수정·이어쓰기 데이터 로드:** [AfternoteEditorViewModel]이 전달받은 식별자와 draft 여부로
+ * Repository의 `getDetail` 또는 `getDraftDetail`을 선택한다. 저장된 폼과 복원 표식은
+ * [androidx.lifecycle.SavedStateHandle]이 보존하므로 재생성 시 서버 응답이 작성 중 입력을 덮지 않는다.
  */
 @Composable
 internal fun AfternoteEditorNavigation(
@@ -39,6 +40,8 @@ internal fun AfternoteEditorNavigation(
             removeMemorialPhoto = editViewModel::removeMemorialPhoto,
             setMemorialVideo = editViewModel::setMemorialVideo,
             removeMemorialVideo = editViewModel::removeMemorialVideo,
+            setMemorialAudio = editViewModel::setMemorialAudio,
+            removeMemorialAudio = editViewModel::removeMemorialAudio,
             addReceiverIfAbsent = editViewModel::addReceiverIfAbsent,
             applyPrefill = editViewModel::applyPrefill,
             setMemorialThumbnail = editViewModel::setMemorialThumbnail,
@@ -126,7 +129,7 @@ internal fun AfternoteEditorNavigation(
                 state = state,
             )
         }
-    val onSaveDraftClick =
+    val saveDraft =
         remember(editViewModel, state) {
             buildOnRegisterClick(
                 editViewModel = editViewModel,
@@ -134,6 +137,14 @@ internal fun AfternoteEditorNavigation(
                 asDraft = true,
             )
         }
+    // 임시저장 저장 경로는 다 세웠지만 **결과를 볼 화면이 아직 없다** — 저장하면 홈 목록(발행분만)에서
+    // 사라지고, 임시저장 목록(#1792)·이어쓰기 진입(#1791)은 다른 PR 로 빠져 있다. 그때까지 버튼을
+    // 그리지 않아 «누르면 사라지는» 상태를 만들지 않는다. 두 배선이 들어오면 이 게이트를 지운다.
+    //
+    // 발행이 끝난 노트의 편집 화면에서도 그리지 않는다 — 결과가 「등록」과 같은데 검증만 느슨해지는
+    // 자리라 버튼이 할 일이 없다 ([AfternoteEditorViewModel.isPublishedEdit]). 신규 작성과 임시저장
+    // 이어쓰기에서만 뜬다.
+    val onSaveDraftClick = saveDraft.takeIf { !editViewModel.isPublishedEdit }
     // 썸네일 실패는 알리는 것으로 끝내지 않는다 — 영상 재선택 없이 되돌릴 액션을 같은 스낵바에 건다.
     // 어느 오류에 거는지는 오류 자체가 말한다 ([offersMemorialThumbnailRetry]).
     val thumbnailRetryAction =

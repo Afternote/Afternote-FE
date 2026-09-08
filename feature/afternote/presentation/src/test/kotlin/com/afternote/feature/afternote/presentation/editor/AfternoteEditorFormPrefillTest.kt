@@ -84,6 +84,7 @@ class AfternoteEditorFormPrefillTest {
                                     photoUrl = "photo",
                                     videoUrl = "video",
                                     thumbnailUrl = "thumbnail",
+                                    audioUrl = "audio",
                                 ),
                         ),
                 ),
@@ -92,6 +93,7 @@ class AfternoteEditorFormPrefillTest {
 
         assertEquals("photo", content.photoUrl)
         assertEquals("video", content.videoUrl)
+        assertEquals("audio", content.audioUrl)
         assertEquals("thumbnail", content.thumbnailUrl)
         assertEquals("detail:0", content.playlistSongs.single().selectionKey)
         assertEquals("잘 지내", prefill.leaveMessageBlocks.single().body)
@@ -120,6 +122,7 @@ class AfternoteEditorFormPrefillTest {
                 memorialVideoUrl = null,
                 memorialThumbnailUrl = null,
                 memorialPhotoUrl = null,
+                memorialAudioUrl = null,
             ) as CreateAfternoteInput.Memorial
 
         assertEquals(
