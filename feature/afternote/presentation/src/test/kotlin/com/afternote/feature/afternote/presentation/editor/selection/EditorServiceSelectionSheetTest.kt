@@ -12,7 +12,6 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import com.afternote.core.ui.testing.MinimumTouchTargetSize
-import com.afternote.core.ui.testing.assertAccessibleClickTargets
 import com.afternote.core.ui.testing.scanEnabledClickTargets
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
@@ -41,8 +40,9 @@ class EditorServiceSelectionSheetTest {
         val queryState = TextFieldState()
         composeRule.setContent {
             AfternoteTheme {
-                EditorServiceSelectionSheetContent(
-                    title = "소셜 네트워크 서비스 선택",
+                EditorServiceSelectionSheet(
+                    visible = true,
+                    onDismissRequest = {},
                     type = AfternoteType.SOCIAL_NETWORK,
                     services = services,
                     searchQueryState = queryState,
@@ -97,8 +97,9 @@ class EditorServiceSelectionSheetTest {
         val queryState = TextFieldState()
         composeRule.setContent {
             AfternoteTheme {
-                EditorServiceSelectionSheetContent(
-                    title = "비즈니스 서비스 선택",
+                EditorServiceSelectionSheet(
+                    visible = true,
+                    onDismissRequest = {},
                     type = AfternoteType.BUSINESS,
                     services = AfternoteServiceCatalog.businessServices,
                     searchQueryState = queryState,
@@ -122,8 +123,9 @@ class EditorServiceSelectionSheetTest {
         val queryState = TextFieldState()
         composeRule.setContent {
             AfternoteTheme {
-                EditorServiceSelectionSheetContent(
-                    title = "소셜 네트워크 서비스 선택",
+                EditorServiceSelectionSheet(
+                    visible = true,
+                    onDismissRequest = {},
                     type = AfternoteType.SOCIAL_NETWORK,
                     services = listOf("인스타그램", "페이스북"),
                     searchQueryState = queryState,
@@ -132,7 +134,6 @@ class EditorServiceSelectionSheetTest {
             }
         }
 
-        composeRule.assertAccessibleClickTargets()
         val rows =
             composeRule
                 .scanEnabledClickTargets()

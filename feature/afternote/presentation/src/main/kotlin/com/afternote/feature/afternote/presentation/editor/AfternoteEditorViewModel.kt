@@ -1016,7 +1016,7 @@ internal class AfternoteEditorViewModel
  * [AfternoteFailure] 는 루트로 받아 `when` 을 exhaustive 하게 만든다 — 실패 유형이 늘면 여기가
  * 컴파일 에러로 잡힌다. `else` 로 뭉개 두면 새 유형이 조용히 서버 오류로 흘러간다.
  */
-internal fun Throwable.toAfternoteEditorError(): AfternoteEditorError =
+private fun Throwable.toAfternoteEditorError(): AfternoteEditorError =
     when (this) {
         is AfternoteFailure -> {
             when (this) {

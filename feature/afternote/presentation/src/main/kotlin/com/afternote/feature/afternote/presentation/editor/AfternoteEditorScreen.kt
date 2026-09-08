@@ -215,7 +215,7 @@ private const val NO_ENTERED_CONTENT = "\u0003"
  * 카테고리 전용 입력은 판별자 없이 "넣은 값" 으로만 싣는다 — 구경은 되돌리는 비용이 탭 한 번이라
  * 잃을 것이 없고, 값을 넣은 카테고리를 떠나면 그 값은 전환 시점에 이미 폐기되므로 지문이 달라진다.
  */
-internal fun editorContentSignature(
+private fun editorContentSignature(
     form: EditorFormState,
     state: AfternoteEditorState,
 ): String {
