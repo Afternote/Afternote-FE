@@ -1,53 +1,22 @@
 package com.afternote.feature.onboarding.presentation.terms
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.core.ui.button.AfternoteCircularCheckbox
-import com.afternote.core.ui.button.CheckboxState
-import com.afternote.core.ui.scaffold.FlowStepScaffold
-import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.feature.onboarding.presentation.R
-import com.afternote.feature.onboarding.presentation.signup.SIGN_UP_TOTAL_STEPS
-import com.afternote.feature.onboarding.presentation.signup.SignUpIntent
-import com.afternote.feature.onboarding.presentation.signup.SignUpStep
-import com.afternote.feature.onboarding.presentation.signup.SignUpUiState
 import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel
 import com.afternote.feature.onboarding.presentation.signup.rememberSignUpSnackbarHost
-import com.afternote.core.common.R as CommonR
 
-enum class TermsType {
+internal enum class TermsType {
     SERVICE,
     PRIVACY,
     MARKETING,
 }
 
 @Immutable
-data class TermsState(
+internal data class TermsState(
     val isTermsAgreed: Boolean = false,
     val isPrivacyAgreed: Boolean = false,
     val isMarketingAgreed: Boolean = false,
@@ -61,7 +30,7 @@ data class TermsState(
  * 약관 상세·다음 단계 이동은 네비게이션이라 콜백으로 남는다.
  */
 @Composable
-fun OnboardingTermsScreen(
+internal fun OnboardingTermsScreen(
     viewModel: SignUpViewModel,
     onViewTermsClick: (TermsType) -> Unit,
     onNextClick: () -> Unit,
@@ -79,186 +48,4 @@ fun OnboardingTermsScreen(
         onBackClick = onBackClick,
         modifier = modifier,
     )
-}
-
-/** 약관 동의(Step 4) — stateless 층. 프리뷰·screenshotTest·Robolectric 의 진입점이다. */
-@Composable
-internal fun OnboardingTermsContent(
-    state: SignUpUiState,
-    onIntent: (SignUpIntent) -> Unit,
-    snackbarHostState: SnackbarHostState,
-    onViewTermsClick: (TermsType) -> Unit,
-    onNextClick: () -> Unit,
-    onBackClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val termsState = state.termsState
-    FlowStepScaffold(
-        topBarTitle = stringResource(R.string.onboarding_signup_title),
-        actionButtonText = stringResource(R.string.onboarding_signup_next),
-        onBackClick = onBackClick,
-        onActionClick = onNextClick,
-        modifier = modifier,
-        isActionEnabled = state.isStep4NextEnabled,
-        currentStep = SignUpStep.TERMS,
-        totalSteps = SIGN_UP_TOTAL_STEPS,
-        progressContentDescription = stringResource(R.string.onboarding_step_description, SignUpStep.TERMS),
-        snackbarHostState = snackbarHostState,
-        content = {
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // 로고
-            Image(
-                painter = painterResource(CommonR.drawable.core_common_logo),
-                contentDescription = stringResource(R.string.onboarding_welcome_logo_description),
-                modifier = Modifier.height(55.dp),
-                contentScale = ContentScale.FillHeight,
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // 환영 텍스트
-            Text(
-                text = stringResource(R.string.onboarding_terms_welcome),
-                style = AfternoteDesign.typography.h1,
-                color = AfternoteDesign.colors.black,
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Text(
-                text = stringResource(R.string.onboarding_terms_description),
-                style =
-                    AfternoteDesign.typography.bodySmallB,
-                color = AfternoteDesign.colors.gray9,
-            )
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            // --- 약관 동의 섹션 ---
-
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                TermsRow(
-                    title = stringResource(R.string.onboarding_terms_agree_all),
-                    isChecked = termsState.isAllAgreed,
-                    onToggle = { onIntent(SignUpIntent.ToggleAllTerms(!termsState.isAllAgreed)) },
-                    titleStyle = AfternoteDesign.typography.bodyBase,
-                )
-
-                HorizontalDivider(
-                    thickness = 1.dp,
-                    color = AfternoteDesign.colors.gray3,
-                )
-
-                // 서비스 이용 약관 (필수)
-                TermsRow(
-                    title = stringResource(R.string.onboarding_terms_service),
-                    isChecked = termsState.isTermsAgreed,
-                    onToggle = { onIntent(SignUpIntent.ToggleTermsAgreed(!termsState.isTermsAgreed)) },
-                    titleStyle = AfternoteDesign.typography.bodySmallB,
-                ) { onViewTermsClick(TermsType.SERVICE) }
-
-                // 개인정보 수집 및 이용 동의서 (필수)
-                TermsRow(
-                    title = stringResource(R.string.onboarding_terms_privacy),
-                    isChecked = termsState.isPrivacyAgreed,
-                    onToggle = { onIntent(SignUpIntent.TogglePrivacyAgreed(!termsState.isPrivacyAgreed)) },
-                    titleStyle = AfternoteDesign.typography.bodySmallB,
-                ) { onViewTermsClick(TermsType.PRIVACY) }
-
-                // 마케팅 수신 동의 (선택)
-                TermsRow(
-                    title = stringResource(R.string.onboarding_terms_marketing),
-                    isChecked = termsState.isMarketingAgreed,
-                    onToggle = { onIntent(SignUpIntent.ToggleMarketingAgreed(!termsState.isMarketingAgreed)) },
-                    isOptional = true,
-                    titleStyle = AfternoteDesign.typography.bodySmallB,
-                ) { onViewTermsClick(TermsType.MARKETING) }
-            }
-            Spacer(Modifier.height(71.dp))
-        },
-    )
-}
-
-@Composable
-private fun TermsRow(
-    title: String,
-    isChecked: Boolean,
-    titleStyle: TextStyle,
-    onToggle: () -> Unit,
-    modifier: Modifier = Modifier,
-    isOptional: Boolean = false,
-    onViewDetailClick: (() -> Unit)? = null,
-) {
-    // 최상위 Row는 레이아웃 배치만 담당 (이벤트 없음)
-    Row(
-        modifier =
-            modifier
-                .fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        // 1. 체크박스 + 텍스트 영역 (Toggleable)
-        Row(
-            modifier =
-                Modifier
-                    // 「전체보기」가 폭을 먼저 가져가고, 제목은 남는 폭 안에서 줄바꿈한다.
-                    // weight 가 없으면 제목이 순서상 앞이라 폭을 먼저 다 먹어, 「전체보기」가
-                    // 좁은 폭에 갇혀 세로로 깨진다.
-                    //
-                    // fill 은 기본값(true) 이다 — 남는 폭까지 토글 영역이 되어 행의 빈 곳을
-                    // 눌러도 체크된다. 리스트 행 체크박스의 통상 동작이다.
-                    .weight(1f)
-                    .toggleable(
-                        value = isChecked,
-                        role = Role.Checkbox,
-                        onValueChange = { onToggle() },
-                    ),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            AfternoteCircularCheckbox(
-                state = if (isChecked) CheckboxState.Default else CheckboxState.None,
-                size = 20.dp,
-                onClick = null,
-            )
-
-            Spacer(Modifier.width(8.dp))
-
-            Column(
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Text(
-                    text = title,
-                    style = titleStyle,
-                    color = AfternoteDesign.colors.gray9,
-                )
-
-                if (isOptional) {
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = stringResource(R.string.onboarding_terms_marketing_description),
-                        style = AfternoteDesign.typography.captionLargeR,
-                        color = AfternoteDesign.colors.gray4,
-                    )
-                }
-            }
-        }
-
-        // 2. 전체보기 버튼 (독립된 Clickable — toggleable과 이벤트 분리)
-        if (onViewDetailClick != null) {
-            Text(
-                text = stringResource(R.string.onboarding_terms_view_detail),
-                style = AfternoteDesign.typography.captionLargeR,
-                color = AfternoteDesign.colors.gray6,
-                modifier =
-                    Modifier
-                        .padding(start = 8.dp)
-                        .clickable(role = Role.Button, onClick = onViewDetailClick),
-            )
-        }
-    }
 }

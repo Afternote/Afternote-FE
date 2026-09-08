@@ -8,6 +8,8 @@ import com.afternote.feature.mindrecord.domain.model.WeeklyReportDailyQuestion
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
+import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
+import com.afternote.feature.mindrecord.presentation.usecase.ObserveWeeklyReportUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -125,7 +127,8 @@ class WeeklyReportWeekRangeTest {
             object : WeeklyReportRepository {
                 override suspend fun getWeeklyReport(date: String): Result<WeeklyReport> = Result.success(report)
             }
-        val viewModel = WeeklyReportViewModel(repository, userRepository(), changeTracker)
+        val viewModel =
+            WeeklyReportViewModel(ObserveWeeklyReportUseCase(repository, userRepository()), changeTracker, RecordingErrorReporter())
         backgroundScope.launch(dispatcher) { viewModel.uiState.collect { } }
         advanceUntilIdle()
         return viewModel.uiState.value as WeeklyReportUiState.Success

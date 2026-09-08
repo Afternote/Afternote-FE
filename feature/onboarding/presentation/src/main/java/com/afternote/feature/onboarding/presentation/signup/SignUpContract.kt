@@ -9,7 +9,7 @@ import com.afternote.core.ui.mvi.ReducerEvent
  *
  * Step 1~4 와 Profile 이 같은 VM 인스턴스를 공유하므로 Intent 도 한 계약에 모인다.
  */
-sealed interface SignUpIntent : MviIntent {
+internal sealed interface SignUpIntent : MviIntent {
     data class UpdateEmail(
         val value: String,
     ) : SignUpIntent
@@ -76,7 +76,7 @@ sealed interface SignUpIntent : MviIntent {
 }
 
 /** 상태가 겪은 것. [SignUpViewModel] 만 만든다. */
-sealed interface SignUpReducerEvent : ReducerEvent {
+internal sealed interface SignUpReducerEvent : ReducerEvent {
     data class EmailChanged(
         val value: String,
     ) : SignUpReducerEvent

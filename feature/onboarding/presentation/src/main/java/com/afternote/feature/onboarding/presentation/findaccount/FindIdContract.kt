@@ -6,7 +6,7 @@ import com.afternote.core.ui.mvi.MviIntent
 import com.afternote.core.ui.mvi.ReducerEvent
 
 /** 아이디 찾기 화면이 [FindIdViewModel] 에 보내는 것 — 사용자가 하려는 것. */
-sealed interface FindIdIntent : MviIntent {
+internal sealed interface FindIdIntent : MviIntent {
     data class UpdateEmail(
         val value: String,
     ) : FindIdIntent
@@ -19,12 +19,12 @@ sealed interface FindIdIntent : MviIntent {
 
     data object VerifyCode : FindIdIntent
 
-    /** 스낵바로 표시한 [FindIdUiState.errorMessage] 를 되돌린다. */
+    /** 스낵바로 표시한 [FindIdUiState.failure] 를 되돌린다. */
     data object ConsumeError : FindIdIntent
 }
 
 /** 상태가 겪은 것. [FindIdViewModel] 만 만든다. */
-sealed interface FindIdReducerEvent : ReducerEvent {
+internal sealed interface FindIdReducerEvent : ReducerEvent {
     data class EmailChanged(
         val value: String,
     ) : FindIdReducerEvent

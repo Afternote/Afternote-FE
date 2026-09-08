@@ -75,7 +75,7 @@ private fun requestCode() {
 
 ```kotlin
 @Composable
-fun FindIdScreen(modifier: Modifier = Modifier, viewModel: FindIdViewModel = hiltViewModel()) {
+internal fun FindIdScreen(viewModel: FindIdViewModel, modifier: Modifier = Modifier) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     FindIdContent(state = state, onIntent = viewModel::onIntent, modifier = modifier)
 }
@@ -85,14 +85,14 @@ internal fun FindIdContent(state: FindIdUiState, onIntent: (FindIdIntent) -> Uni
 ```
 
 - `Screen` 은 stateful 이고 ViewModel 을 주입받는다.
-- `Content` 는 `internal` stateless 이고, **프리뷰 · screenshotTest · Robolectric 의 진입점**이다. 화면을 그리려고 ViewModel 을 조립하지 않는다.
+- `Content` 는 상태와 콜백으로 화면을 그린다. 별도 프로덕션 `Screen` 파일에서 사용하는 렌더 계약은 `internal` 이며, 프리뷰 · screenshotTest · Robolectric 도 같은 계약을 소비한다.
 
 ### 파일럿에서 확정한 것 (#1802)
 
 - **ViewModel 을 화면이 만들지 않는 경우가 있다.** onboarding 은 `Route.Onboarding` 그래프 스코프로 여러 화면이 한 인스턴스를 공유하므로, `Screen` 이 `hiltViewModel()` 을 부르지 않고 **VM 을 파라미터로 받는다.** 화면이 스스로 만들면 공유가 끊긴다. 공유가 없는 화면은 `viewModel: XxxViewModel = hiltViewModel()` 로 둔다.
-- **한 파일에 둘 다 둔다. 커지면 가른다.** `FindIdScreen.kt` 처럼 `Screen` + `Content` 를 한 파일에 두는 것이 기본이고, stateful 층이 커지면(`LoginScreen.kt` ↔ `LoginContent.kt`) 파일을 가른다.
+- **수명·소비와 렌더 책임을 가른다.** onboarding 파일럿은 `FindIdScreen.kt` ↔ `FindIdContent.kt` 처럼 `Screen` 이 ViewModel 상태 수집과 신호 소비를 맡고, 별도 `Content` 파일이 렌더를 맡는다(#1829). 같은 파일 안에만 사용하는 렌더 helper 는 `private` 로 둔다.
 - **플랫폼에 매인 콜백은 `Content` 의 파라미터로 남는다.** 카카오 SDK·Credential Manager 는 Activity·Context 의존이라 stateful 층이 토큰을 받아낸 뒤 문자열만 Intent 로 보낸다. ViewModel 은 플랫폼 독립을 유지한다.
-- **`Content` 는 `internal` 로 남는다.** 프리뷰·screenshotTest·Robolectric 이 그리는 진입점이라 `private` 로 조일 수 없다. 이유를 KDoc 에 적고, `ProductionVisibilityKonsistTest` 의 baseline 에 사유와 함께 등재한다(#1678).
+- **공개 범위는 프로덕션 소비처로 정한다.** 같은 파일에서만 호출하면 `private`, 같은 모듈의 다른 파일이 호출하면 `internal`, 다른 모듈이 실제 소비할 때만 `public` 이다. 테스트 접근을 위해 넓히거나 visibility baseline 에 남기지 않는다. 파일럿의 다섯 `Content` 는 별도 `Screen` 파일의 실제 호출로 `internal` 이고, 이전 예외 baseline 은 제거했다(#1829).
 - **파생값을 화면에 넘기지 않는다.** `isNextEnabled` 같은 값은 `UiState` 의 계산 프로퍼티로 두고 `Content` 가 `state` 에서 읽는다. 호출부가 따로 계산해 넘기면 화면마다 판정이 갈린다.
 
 ## 일회성 신호 — `UiState` 흡수 + `Intent.ConsumeXxx`

@@ -18,7 +18,7 @@ import com.afternote.feature.onboarding.presentation.signup.rememberSignUpSnackb
  * 이 화면이 직접 소비한다.
  */
 @Composable
-fun OnboardingProfileScreen(
+internal fun OnboardingProfileScreen(
     viewModel: SignUpViewModel,
     onOnboardingComplete: () -> Unit,
     onBackClick: () -> Unit,

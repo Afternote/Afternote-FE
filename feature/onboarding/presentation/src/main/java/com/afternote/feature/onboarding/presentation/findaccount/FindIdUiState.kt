@@ -2,24 +2,22 @@ package com.afternote.feature.onboarding.presentation.findaccount
 
 import android.util.Patterns
 import com.afternote.core.model.FoundAccount
-import com.afternote.core.ui.UiText
 import com.afternote.core.ui.mvi.UiState
+import com.afternote.feature.onboarding.presentation.OnboardingFailure
 
 /**
  * 아이디 찾기 화면 상태.
  *
  * 시안에 인증번호 만료 타이머가 없어 회원가입(`SignUpUiState.verificationRemainingSeconds`)과 달리
- * 만료 카운트다운을 두지 않는다. 만료 판정은 서버가 하고, 만료된 코드는 [verificationError] 로 표시된다.
+ * 만료 카운트다운을 두지 않는다. 만료 판정은 서버가 하고, 만료된 코드는 [failure] 로 표시된다.
  *
  * @property resendCooldownSeconds "재전송" 버튼 잠금의 남은 초 — 0 보다 크면 "재전송 (Ns)" 표시·비활성.
  *   발송 성공마다 30초로 재잠금되는 클라이언트 측 연타 방지이며, **인증번호 유효시간과 무관**하다
  *   (만료 판정은 서버 몫, 쿨다운 종료 ≠ 코드 만료).
  * @property foundAccount "확인" 성공 시 서버가 돌려준 계정. non-null 이면 "다음" 이 열린다.
- * @property hasVerificationError 인증번호 불일치 — 시안상 인증번호 필드 아래 인라인 문구로 표시(스낵바 아님).
- *   표시 문구는 화면의 고정 리소스라 서버 문구를 담지 않고 발생 여부만 든다.
- * @property errorMessage 인증번호 불일치 외의 실패(네트워크 등) — 스낵바로 표시.
+ * @property failure 현재 실패의 사유. 화면 경계가 표시 채널을 결정한다.
  */
-data class FindIdUiState(
+internal data class FindIdUiState(
     val email: String = "",
     val certificateCode: String = "",
     val isSendingCode: Boolean = false,
@@ -27,8 +25,7 @@ data class FindIdUiState(
     val isVerifying: Boolean = false,
     val resendCooldownSeconds: Int = 0,
     val foundAccount: FoundAccount? = null,
-    val hasVerificationError: Boolean = false,
-    val errorMessage: UiText? = null,
+    val failure: OnboardingFailure? = null,
 ) : UiState {
     /**
      * 이메일 형식 검사. [Patterns.EMAIL_ADDRESS] 는 컴파일된 정규식(`Pattern`) 상수라

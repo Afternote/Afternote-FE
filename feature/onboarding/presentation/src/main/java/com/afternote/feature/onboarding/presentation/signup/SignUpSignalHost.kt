@@ -10,6 +10,8 @@ import com.afternote.core.ui.asString
 import com.afternote.core.ui.mvi.ObserveFlag
 import com.afternote.core.ui.mvi.ObserveSignal
 import com.afternote.feature.onboarding.presentation.R
+import com.afternote.feature.onboarding.presentation.snackbarMessage
+import com.afternote.feature.onboarding.presentation.toDisplay
 import kotlinx.coroutines.launch
 
 /**
@@ -43,7 +45,11 @@ internal fun rememberSignUpSnackbarHost(
 
     ObserveSignal(
         // VM 이 UiText 로 폴백까지 확정해 두므로 빈 문구가 도달하지 않는다.
-        signal = state.errorMessage?.asString(),
+        signal =
+            state.failure
+                .toDisplay()
+                .snackbarMessage
+                ?.asString(),
         consumed = SignUpIntent.ConsumeError,
         onIntent = onIntent,
     ) { message ->

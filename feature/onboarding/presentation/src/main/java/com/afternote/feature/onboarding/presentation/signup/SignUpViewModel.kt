@@ -7,6 +7,7 @@ import com.afternote.core.domain.repository.account.AccountRepository
 import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.domain.usecase.auth.LoginUseCase
 import com.afternote.core.ui.mvi.MviViewModel
+import com.afternote.feature.onboarding.presentation.OnboardingFailure
 import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.reporting.AuthFailureStage
 import com.afternote.feature.onboarding.presentation.reporting.AuthProvider
@@ -33,7 +34,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * Intent 로 push, 다른 Screen 은 [uiState] 에서 String 으로 read.
  */
 @HiltViewModel
-class SignUpViewModel
+internal class SignUpViewModel
     @Inject
     constructor(
         private val accountRepository: AccountRepository,
@@ -79,11 +80,11 @@ class SignUpViewModel
             when (event) {
                 // 이메일이 바뀌면 앞서 받은 인증 에러는 더 이상 그 이메일의 것이 아니다.
                 is SignUpReducerEvent.EmailChanged -> {
-                    state.copy(email = event.value, hasVerificationError = false)
+                    state.copy(email = event.value, failure = state.failure.takeIf { state.email == event.value })
                 }
 
                 is SignUpReducerEvent.VerificationCodeChanged -> {
-                    state.copy(verificationCode = event.value, hasVerificationError = false)
+                    state.copy(verificationCode = event.value, failure = state.failure.takeIf { state.verificationCode == event.value })
                 }
 
                 is SignUpReducerEvent.ResidentFrontNumberChanged -> {
@@ -138,11 +139,11 @@ class SignUpViewModel
                 }
 
                 SignUpReducerEvent.CodeSent -> {
-                    state.copy(isVerificationSent = true, hasVerificationError = false)
+                    state.copy(isVerificationSent = true, failure = null)
                 }
 
                 is SignUpReducerEvent.CodeSendFailed -> {
-                    state.copy(errorMessage = event.message)
+                    state.copy(failure = OnboardingFailure.RequestFailed(event.message))
                 }
 
                 SignUpReducerEvent.CodeSendFinished -> {
@@ -158,21 +159,19 @@ class SignUpViewModel
                 }
 
                 SignUpReducerEvent.EmailVerifyStarted -> {
-                    state.copy(isVerifyingEmail = true, hasVerificationError = false)
+                    state.copy(isVerifyingEmail = true, failure = null)
                 }
 
                 SignUpReducerEvent.EmailVerified -> {
                     state.copy(shouldNavigateToResidentNumber = true)
                 }
 
-                // 스낵바 신호를 함께 내린다 — 이번 실패는 인라인으로 알리므로, 아직 소비되지 않은
-                // 이전 실패 문구가 인라인과 겹쳐 뜨지 않게 한다.
                 SignUpReducerEvent.VerificationRejected -> {
-                    state.copy(hasVerificationError = true, errorMessage = null)
+                    state.copy(failure = OnboardingFailure.VerificationRejected)
                 }
 
                 is SignUpReducerEvent.EmailVerifyFailed -> {
-                    state.copy(errorMessage = event.message)
+                    state.copy(failure = OnboardingFailure.RequestFailed(event.message))
                 }
 
                 SignUpReducerEvent.EmailVerifyFinished -> {
@@ -192,7 +191,7 @@ class SignUpViewModel
                 }
 
                 is SignUpReducerEvent.SubmitFailed -> {
-                    state.copy(errorMessage = event.message)
+                    state.copy(failure = OnboardingFailure.RequestFailed(event.message))
                 }
 
                 SignUpReducerEvent.SignedUp -> {
@@ -216,7 +215,7 @@ class SignUpViewModel
                 }
 
                 SignUpReducerEvent.ErrorConsumed -> {
-                    state.copy(errorMessage = null)
+                    state.copy(failure = state.failure.takeUnless { it is OnboardingFailure.RequestFailed })
                 }
             }
 
@@ -261,8 +260,7 @@ class SignUpViewModel
          * Step 1 "다음" 클릭 시점에 호출.
          * 이메일/인증번호를 서버에 검증해 성공 시 [SignUpUiState.shouldNavigateToResidentNumber] = true,
          * 인증번호 무효([CoreAuthFailure.EmailVerification] — 불일치/만료/미존재)는
-         * [SignUpUiState.hasVerificationError] (인라인 문구), 그 외 실패는
-         * [SignUpUiState.errorMessage] (스낵바) 로 set. 만료 판정은 서버가 한다.
+         * [SignUpUiState.failure]에 사유를 기록하고 화면이 표시 채널을 고른다. 만료 판정은 서버가 한다.
          */
         private fun verifyEmailAndProceed() {
             val state = currentState

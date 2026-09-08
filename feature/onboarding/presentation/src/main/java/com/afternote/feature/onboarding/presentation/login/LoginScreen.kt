@@ -27,6 +27,8 @@ import com.afternote.feature.onboarding.presentation.displayMessageResOrFallback
 import com.afternote.feature.onboarding.presentation.login.social.requestGoogleIdToken
 import com.afternote.feature.onboarding.presentation.login.social.requestKakaoAccessToken
 import com.afternote.feature.onboarding.presentation.reporting.AuthProvider
+import com.afternote.feature.onboarding.presentation.snackbarMessage
+import com.afternote.feature.onboarding.presentation.toDisplay
 import kotlinx.coroutines.launch
 
 /**
@@ -38,7 +40,7 @@ import kotlinx.coroutines.launch
  * 그대로 유지한다.
  */
 @Composable
-fun LoginScreen(
+internal fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onNewUserOnboarding: () -> Unit,
     onSignUpClick: () -> Unit,
@@ -83,7 +85,11 @@ fun LoginScreen(
         onRaised = onNewUserOnboarding,
     )
     ObserveSignal(
-        signal = uiState.errorMessage?.asString(),
+        signal =
+            uiState.failure
+                .toDisplay()
+                .snackbarMessage
+                ?.asString(),
         consumed = LoginIntent.ConsumeError,
         onIntent = viewModel::onIntent,
         // showErrorSnackbar 가 별도 스코프에 launch 하므로 소비 직후의 재시작이 표출을 끊지 않는다.

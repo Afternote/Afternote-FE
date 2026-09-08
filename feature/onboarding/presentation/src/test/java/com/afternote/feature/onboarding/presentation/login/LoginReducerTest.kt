@@ -3,7 +3,10 @@ package com.afternote.feature.onboarding.presentation.login
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.usecase.auth.LoginUseCase
+import com.afternote.feature.onboarding.presentation.OnboardingFailure
 import com.afternote.feature.onboarding.presentation.reporting.AuthProvider
+import com.afternote.feature.onboarding.presentation.snackbarMessage
+import com.afternote.feature.onboarding.presentation.toDisplay
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -43,7 +46,7 @@ class LoginReducerTest {
         val state = viewModel.uiState.value
         assertEquals("user@example.com", state.email)
         assertEquals("pw", state.password)
-        assertFalse(state.hasCredentialError)
+        assertFalse((state.failure == OnboardingFailure.CredentialsRejected))
     }
 
     @Test
@@ -58,7 +61,7 @@ class LoginReducerTest {
         val state = viewModel.uiState.value
         assertFalse(state.isLoggedIn)
         assertFalse(state.shouldStartOnboarding)
-        assertNull(state.errorMessage)
+        assertNull(state.failure.toDisplay().snackbarMessage)
         assertEquals("user@example.com", state.email)
     }
 
@@ -68,7 +71,7 @@ class LoginReducerTest {
 
         viewModel.onIntent(LoginIntent.DismissNetworkError)
 
-        assertFalse(viewModel.uiState.value.showNetworkErrorPopup)
+        assertFalse((viewModel.uiState.value.failure == OnboardingFailure.LoginNetworkUnavailable))
     }
 
     @Test

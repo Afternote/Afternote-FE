@@ -5,7 +5,9 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.domain.usecase.auth.LoginUseCase
+import com.afternote.core.ui.UiText
 import com.afternote.core.ui.mvi.MviViewModel
+import com.afternote.feature.onboarding.presentation.OnboardingFailure
 import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.reporting.AuthFailureStage
 import com.afternote.feature.onboarding.presentation.reporting.AuthProvider
@@ -22,7 +24,7 @@ import kotlin.coroutines.cancellation.CancellationException
  * 전이는 [reduce] 한 곳이고 진입점은 [onIntent] 하나다 (#1802). 기준은 `docs/convention/mvi.md`.
  */
 @HiltViewModel
-class LoginViewModel
+internal class LoginViewModel
     @Inject
     constructor(
         private val loginUseCase: LoginUseCase,
@@ -94,29 +96,73 @@ class LoginViewModel
         ): LoginUiState =
             when (event) {
                 // 입력이 바뀌면 앞선 자격 거절은 더 이상 이 입력의 판정이 아니다.
-                is LoginReducerEvent.EmailChanged -> state.copy(email = event.value, hasCredentialError = false)
+                is LoginReducerEvent.EmailChanged -> {
+                    state.copy(
+                        email = event.value,
+                        failure =
+                            state.failure.takeIf {
+                                state.email ==
+                                    event.value
+                            },
+                    )
+                }
 
-                is LoginReducerEvent.PasswordChanged -> state.copy(password = event.value, hasCredentialError = false)
+                is LoginReducerEvent.PasswordChanged -> {
+                    state.copy(
+                        password = event.value,
+                        failure =
+                            state.failure.takeIf {
+                                state.password ==
+                                    event.value
+                            },
+                    )
+                }
 
-                LoginReducerEvent.LoginStarted -> state.copy(isLoading = true, hasCredentialError = false)
+                LoginReducerEvent.LoginStarted -> {
+                    state.copy(isLoading = true, failure = null)
+                }
 
-                LoginReducerEvent.LoggedIn -> state.copy(isLoading = false, isLoggedIn = true)
+                LoginReducerEvent.LoggedIn -> {
+                    state.copy(isLoading = false, isLoggedIn = true)
+                }
 
-                LoginReducerEvent.OnboardingRequired -> state.copy(isLoading = false, shouldStartOnboarding = true)
+                LoginReducerEvent.OnboardingRequired -> {
+                    state.copy(isLoading = false, shouldStartOnboarding = true)
+                }
 
-                LoginReducerEvent.CredentialRejected -> state.copy(isLoading = false, hasCredentialError = true)
+                LoginReducerEvent.CredentialRejected -> {
+                    state.copy(isLoading = false, failure = OnboardingFailure.CredentialsRejected)
+                }
 
-                LoginReducerEvent.NetworkErrorRaised -> state.copy(isLoading = false, showNetworkErrorPopup = true)
+                LoginReducerEvent.NetworkErrorRaised -> {
+                    state.copy(isLoading = false, failure = OnboardingFailure.LoginNetworkUnavailable)
+                }
 
-                is LoginReducerEvent.LoginFailed -> state.copy(isLoading = false, errorMessage = event.message)
+                is LoginReducerEvent.LoginFailed -> {
+                    state.copy(isLoading = false, failure = OnboardingFailure.RequestFailed(event.message))
+                }
 
-                LoginReducerEvent.NetworkErrorDismissed -> state.copy(showNetworkErrorPopup = false)
+                LoginReducerEvent.NetworkErrorDismissed -> {
+                    state.copy(
+                        failure =
+                            state.failure.takeUnless {
+                                it ==
+                                    OnboardingFailure.LoginNetworkUnavailable
+                            },
+                    )
+                }
 
-                LoginReducerEvent.LoggedInConsumed -> state.copy(isLoggedIn = false)
+                LoginReducerEvent.LoggedInConsumed -> {
+                    state.copy(isLoggedIn = false)
+                }
 
-                LoginReducerEvent.OnboardingStartConsumed -> state.copy(shouldStartOnboarding = false)
+                LoginReducerEvent.OnboardingStartConsumed -> {
+                    state.copy(shouldStartOnboarding = false)
+                }
 
-                LoginReducerEvent.ErrorConsumed -> state.copy(errorMessage = null)
+                LoginReducerEvent.ErrorConsumed -> {
+                    state.copy(failure = state.failure.takeUnless { it is OnboardingFailure.RequestFailed })
+                }
             }
 
         /** 마지막 시도를 같은 자격으로 재실행한다. */
@@ -164,10 +210,30 @@ class LoginViewModel
                                     LoginReducerEvent.NetworkErrorRaised
                                 }
 
+                                // 소셜로 가입해 로컬 비밀번호가 없는 계정(서버 1702 — BE `AuthService.login`).
+                                // 자격 거절과 달리 입력을 고쳐서 될 일이 아니라 필드 인라인을 걸지 않는다.
+                                // 문구를 여기서 직접 넣는 것은 사유별 매핑(`displayMessageResOrNull`)이 이
+                                // 타입에 비밀번호 찾기 문구를 물려 두었기 때문이다 — 화면마다 안내가 다르다.
+                                is CoreAuthFailure.SocialSignUpAccount -> {
+                                    LoginReducerEvent.LoginFailed(UiText.Resource(R.string.onboarding_login_social_signup_account))
+                                }
+
+                                // 로그인 경로로 실제 오는 사유는 `SocialLoginRejected`(서버 1208·1209)와, 사유를
+                                // 확인하지 못한 실패(null)뿐이다 — `AuthRepositoryImpl.mapLoginFailure` 가 만드는
+                                // 나머지 셋(1201·1202 · 1702 · 네트워크)은 위에서 이미 갈렸다.
+                                //
+                                // 아래 넷은 여기까지 오지 않는다. `EmailAlreadyRegistered`·`EmailVerification`·
+                                // `PasswordUnchanged` 는 계정 API 쪽 사유고(`AccountRepositoryImpl.mapAccountFailure`),
+                                // BE 는 1206 을 비밀번호 변경·재설정(`AuthService.passwordChange`·`findPassword`)
+                                // 에서만 던진다. `UserCancelledAuth` 는 소셜 SDK 를 부르는 `LoginScreen` 가 그 자리에서
+                                // 걸러낸다 — `LoginUseCase` 는 토큰을 받은 뒤 서버만 친다. `else` 로 뭉개지 않고
+                                // 열거해 두는 건 사유가 늘 때 컴파일러가 여기를 잡게 하려는 것이고, 도달하더라도
+                                // 문구 매핑이 받아 주므로 안내가 비지 않는다.
                                 is CoreAuthFailure.EmailAlreadyRegistered,
                                 is CoreAuthFailure.EmailVerification,
                                 is CoreAuthFailure.SocialLoginRejected,
                                 is CoreAuthFailure.UserCancelledAuth,
+                                is CoreAuthFailure.PasswordUnchanged,
                                 null,
                                 -> {
                                     LoginReducerEvent.LoginFailed(

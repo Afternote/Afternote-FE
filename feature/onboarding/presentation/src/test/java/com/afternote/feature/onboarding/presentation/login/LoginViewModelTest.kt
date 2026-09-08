@@ -6,7 +6,10 @@ import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.usecase.auth.LoginUseCase
 import com.afternote.core.model.Session
 import com.afternote.core.ui.UiText
+import com.afternote.feature.onboarding.presentation.OnboardingFailure
 import com.afternote.feature.onboarding.presentation.R
+import com.afternote.feature.onboarding.presentation.snackbarMessage
+import com.afternote.feature.onboarding.presentation.toDisplay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -15,6 +18,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -25,10 +29,11 @@ import java.net.UnknownHostException
  * [LoginViewModel] 실패 안내 계약 회귀 가드 (#628).
  *
  * 계약 — 자격 거절([CoreAuthFailure.InvalidLoginCredentials])은 인라인 상태
- * ([LoginUiState.hasCredentialError], 입력 변경으로 해제), 전송 계층 실패
- * ([CoreAuthFailure.NetworkUnavailable])는 재시도 팝업([LoginUiState.showNetworkErrorPopup]),
- * 소셜 거절([CoreAuthFailure.SocialLoginRejected])과 그 밖의 예외는 **원문을 쓰지 않고**
- * 리소스 문구 스낵바로 고정한다. 실패 시 [LoginUiState.isLoading] 을 해제한다.
+ * ([OnboardingFailure.CredentialsRejected], 입력 변경으로 해제), 전송 계층 실패
+ * ([CoreAuthFailure.NetworkUnavailable])는 재시도 팝업([OnboardingFailure.LoginNetworkUnavailable]),
+ * 소셜 거절([CoreAuthFailure.SocialLoginRejected])·소셜 가입 계정
+ * ([CoreAuthFailure.SocialSignUpAccount])과 그 밖의 예외는 **원문을 쓰지 않고** 리소스 문구
+ * 스낵바로 고정한다. 실패 시 [LoginUiState.isLoading] 을 해제한다.
  *
  * [LoginUseCase] 는 실물 사용 — Repository Result 가 VM 상태로 번역되는 경로 전체를 가드한다.
  */
@@ -80,8 +85,8 @@ class LoginViewModelTest {
         viewModel.attemptEmailLogin()
 
         val state = viewModel.uiState.value
-        assertTrue(state.showNetworkErrorPopup)
-        assertNull(state.errorMessage)
+        assertTrue((state.failure == OnboardingFailure.LoginNetworkUnavailable))
+        assertNull(state.failure.toDisplay().snackbarMessage)
         assertFalse(state.isLoading)
     }
 
@@ -112,7 +117,7 @@ class LoginViewModelTest {
 
         viewModel.onIntent(LoginIntent.DismissNetworkError)
 
-        assertFalse(viewModel.uiState.value.showNetworkErrorPopup)
+        assertFalse((viewModel.uiState.value.failure == OnboardingFailure.LoginNetworkUnavailable))
         assertEquals(1, attempts)
     }
 
@@ -126,8 +131,8 @@ class LoginViewModelTest {
         viewModel.attemptEmailLogin()
 
         val state = viewModel.uiState.value
-        assertTrue(state.hasCredentialError)
-        assertNull(state.errorMessage)
+        assertTrue((state.failure == OnboardingFailure.CredentialsRejected))
+        assertNull(state.failure.toDisplay().snackbarMessage)
         assertFalse(state.isLoading)
     }
 
@@ -141,7 +146,7 @@ class LoginViewModelTest {
 
         viewModel.onIntent(LoginIntent.UpdatePassword("new-pw"))
 
-        assertFalse(viewModel.uiState.value.hasCredentialError)
+        assertFalse((viewModel.uiState.value.failure == OnboardingFailure.CredentialsRejected))
     }
 
     @Test
@@ -153,7 +158,29 @@ class LoginViewModelTest {
 
         viewModel.attemptEmailLogin()
 
-        assertEquals(UiText.Resource(R.string.onboarding_login_social_rejected), viewModel.uiState.value.errorMessage)
+        assertEquals(
+            UiText.Resource(R.string.onboarding_login_social_rejected),
+            viewModel.uiState.value.failure
+                .toDisplay()
+                .snackbarMessage,
+        )
+    }
+
+    @Test
+    fun `소셜 가입 계정 - 자격 인라인이 아니라 로그인 화면 전용 안내로 표시`() {
+        val viewModel =
+            viewModel(onDefaultLogin = {
+                Result.failure(CoreAuthFailure.SocialSignUpAccount(Exception("1702")))
+            })
+
+        viewModel.attemptEmailLogin()
+
+        val state = viewModel.uiState.value
+        assertEquals(UiText.Resource(R.string.onboarding_login_social_signup_account), state.failure.toDisplay().snackbarMessage)
+        // 비밀번호 찾기 쪽 차단 문구를 돌려쓰지 않는다 — 로그인 화면에서는 틀린 안내다.
+        assertNotEquals(UiText.Resource(R.string.onboarding_find_password_social_blocked), state.failure.toDisplay().snackbarMessage)
+        assertFalse((state.failure == OnboardingFailure.CredentialsRejected))
+        assertFalse(state.isLoading)
     }
 
     @Test
@@ -164,7 +191,7 @@ class LoginViewModelTest {
         viewModel.attemptEmailLogin()
 
         val state = viewModel.uiState.value
-        assertEquals(UiText.Resource(R.string.onboarding_login_failed), state.errorMessage)
+        assertEquals(UiText.Resource(R.string.onboarding_login_failed), state.failure.toDisplay().snackbarMessage)
         assertFalse(state.isLoading)
     }
 
@@ -174,7 +201,12 @@ class LoginViewModelTest {
 
         viewModel.attemptEmailLogin()
 
-        assertEquals(UiText.Resource(R.string.onboarding_login_failed), viewModel.uiState.value.errorMessage)
+        assertEquals(
+            UiText.Resource(R.string.onboarding_login_failed),
+            viewModel.uiState.value.failure
+                .toDisplay()
+                .snackbarMessage,
+        )
     }
 
     @Test
@@ -184,6 +216,48 @@ class LoginViewModelTest {
 
         viewModel.onIntent(LoginIntent.ConsumeError)
 
-        assertNull(viewModel.uiState.value.errorMessage)
+        assertNull(
+            viewModel.uiState.value.failure
+                .toDisplay()
+                .snackbarMessage,
+        )
+    }
+
+    @Test
+    fun `새 자격 거절은 미소비 스낵바를 대체하고 늦은 스낵바 소비로 지워지지 않는다`() {
+        var failure: Throwable = IllegalStateException("first request failed")
+        val viewModel = viewModel { Result.failure(failure) }
+        viewModel.attemptEmailLogin()
+        assertTrue(viewModel.uiState.value.failure is OnboardingFailure.RequestFailed)
+
+        failure = CoreAuthFailure.InvalidLoginCredentials(Exception("invalid credentials"))
+        viewModel.onIntent(LoginIntent.SubmitEmailLogin)
+        viewModel.onIntent(LoginIntent.ConsumeError)
+
+        assertEquals(OnboardingFailure.CredentialsRejected, viewModel.uiState.value.failure)
+        assertNull(
+            viewModel.uiState.value.failure
+                .toDisplay()
+                .snackbarMessage,
+        )
+    }
+
+    @Test
+    fun `화면의 같은 입력 재전달은 실패를 남기고 실제 입력 변경은 실패를 지운다`() {
+        val viewModel = viewModel { Result.failure(IllegalStateException("failed")) }
+        viewModel.attemptEmailLogin()
+
+        viewModel.onIntent(LoginIntent.UpdateEmail("user@example.com"))
+        assertTrue(viewModel.uiState.value.failure is OnboardingFailure.RequestFailed)
+        viewModel.onIntent(LoginIntent.UpdateEmail("other@example.com"))
+        assertNull(viewModel.uiState.value.failure)
+    }
+
+    @Test
+    fun `늦은 네트워크 팝업 닫기는 새 요청 실패를 지우지 않는다`() {
+        val viewModel = viewModel { Result.failure(IllegalStateException("failed")) }
+        viewModel.attemptEmailLogin()
+        viewModel.onIntent(LoginIntent.DismissNetworkError)
+        assertTrue(viewModel.uiState.value.failure is OnboardingFailure.RequestFailed)
     }
 }

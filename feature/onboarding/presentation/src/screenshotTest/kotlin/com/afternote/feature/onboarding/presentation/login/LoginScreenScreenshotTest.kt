@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.onboarding.presentation.OnboardingFailure
 import com.android.tools.screenshot.PreviewTest
 
 /**
@@ -43,7 +44,7 @@ internal fun loginScreenCredentialErrorScreenshot() {
                 LoginUiState(
                     email = "user@example.com",
                     password = "wrong-password",
-                    hasCredentialError = true,
+                    failure = OnboardingFailure.CredentialsRejected,
                 ),
             onIntent = {},
             onSignUpClick = {},

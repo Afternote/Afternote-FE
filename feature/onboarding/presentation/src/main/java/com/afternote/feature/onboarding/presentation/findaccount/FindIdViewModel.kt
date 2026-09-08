@@ -5,6 +5,7 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.repository.account.AccountRepository
 import com.afternote.core.ui.mvi.MviViewModel
+import com.afternote.feature.onboarding.presentation.OnboardingFailure
 import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.reporting.AuthFailureStage
 import com.afternote.feature.onboarding.presentation.reporting.recordAuthFailure
@@ -28,7 +29,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * `docs/convention/mvi.md`.
  */
 @HiltViewModel
-class FindIdViewModel
+internal class FindIdViewModel
     @Inject
     constructor(
         private val accountRepository: AccountRepository,
@@ -53,11 +54,11 @@ class FindIdViewModel
             when (event) {
                 // 이메일이 바뀌면 앞서 받은 계정·에러는 더 이상 그 이메일의 것이 아니다.
                 is FindIdReducerEvent.EmailChanged -> {
-                    state.copy(email = event.value, foundAccount = null, hasVerificationError = false)
+                    state.copy(email = event.value, foundAccount = null, failure = state.failure.takeIf { state.email == event.value })
                 }
 
                 is FindIdReducerEvent.CertificateCodeChanged -> {
-                    state.copy(certificateCode = event.value, hasVerificationError = false)
+                    state.copy(certificateCode = event.value, failure = state.failure.takeIf { state.certificateCode == event.value })
                 }
 
                 FindIdReducerEvent.CodeSendStarted -> {
@@ -65,11 +66,11 @@ class FindIdViewModel
                 }
 
                 FindIdReducerEvent.CodeSent -> {
-                    state.copy(isVerificationSent = true, hasVerificationError = false)
+                    state.copy(isVerificationSent = true, failure = null)
                 }
 
                 is FindIdReducerEvent.CodeSendFailed -> {
-                    state.copy(errorMessage = event.message)
+                    state.copy(failure = OnboardingFailure.RequestFailed(event.message))
                 }
 
                 FindIdReducerEvent.CodeSendFinished -> {
@@ -85,21 +86,19 @@ class FindIdViewModel
                 }
 
                 FindIdReducerEvent.VerifyStarted -> {
-                    state.copy(isVerifying = true, hasVerificationError = false)
+                    state.copy(isVerifying = true, failure = null)
                 }
 
                 is FindIdReducerEvent.AccountFound -> {
                     state.copy(foundAccount = event.account)
                 }
 
-                // 스낵바 신호를 함께 내린다 — 이번 실패는 인라인으로 알리므로, 아직 소비되지 않은
-                // 이전 실패 문구가 인라인과 겹쳐 뜨지 않게 한다.
                 FindIdReducerEvent.VerificationRejected -> {
-                    state.copy(hasVerificationError = true, errorMessage = null)
+                    state.copy(failure = OnboardingFailure.VerificationRejected)
                 }
 
                 is FindIdReducerEvent.VerifyFailed -> {
-                    state.copy(errorMessage = event.message)
+                    state.copy(failure = OnboardingFailure.RequestFailed(event.message))
                 }
 
                 FindIdReducerEvent.VerifyFinished -> {
@@ -107,7 +106,7 @@ class FindIdViewModel
                 }
 
                 FindIdReducerEvent.ErrorConsumed -> {
-                    state.copy(errorMessage = null)
+                    state.copy(failure = state.failure.takeUnless { it is OnboardingFailure.RequestFailed })
                 }
             }
 

@@ -39,6 +39,13 @@ internal object UnusedAccountRepository : AccountRepository {
         profileUrl: String?,
     ): Result<AccountRegistration> = error("signUp 은 리듀서 경로에서 호출되면 안 됨")
 
+    override suspend fun resetPassword(
+        email: String,
+        certificateCode: String,
+        newPassword: String,
+        confirmPassword: String,
+    ): Result<Unit> = error("resetPassword 는 리듀서 경로에서 호출되면 안 됨")
+
     override suspend fun passwordChange(
         currentPassword: String,
         newPassword: String,

@@ -2,7 +2,10 @@ package com.afternote.feature.onboarding.presentation.findaccount
 
 import com.afternote.core.model.FoundAccount
 import com.afternote.feature.onboarding.presentation.NoopErrorReporter
+import com.afternote.feature.onboarding.presentation.OnboardingFailure
 import com.afternote.feature.onboarding.presentation.UnusedAccountRepository
+import com.afternote.feature.onboarding.presentation.snackbarMessage
+import com.afternote.feature.onboarding.presentation.toDisplay
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -44,7 +47,7 @@ class FindIdReducerTest {
 
         val state = viewModel.uiState.value
         assertNull(state.foundAccount)
-        assertFalse(state.hasVerificationError)
+        assertFalse((state.failure == OnboardingFailure.VerificationRejected))
     }
 
     @Test
@@ -55,7 +58,7 @@ class FindIdReducerTest {
         viewModel.onIntent(FindIdIntent.ConsumeError)
 
         val state = viewModel.uiState.value
-        assertNull(state.errorMessage)
+        assertNull(state.failure.toDisplay().snackbarMessage)
         assertEquals("user@example.com", state.email)
     }
 

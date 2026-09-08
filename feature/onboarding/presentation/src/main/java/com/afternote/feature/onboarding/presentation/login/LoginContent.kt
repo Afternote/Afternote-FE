@@ -49,7 +49,9 @@ import com.afternote.core.ui.modifierextention.addFocusCleaner
 import com.afternote.core.ui.popup.NetworkErrorPopup
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
+import com.afternote.feature.onboarding.presentation.OnboardingFailureDisplay
 import com.afternote.feature.onboarding.presentation.R
+import com.afternote.feature.onboarding.presentation.toDisplay
 
 /**
  * 로그인 화면 — stateless 층. 프리뷰·screenshotTest·Robolectric 의 진입점이다.
@@ -153,10 +155,10 @@ internal fun LoginContent(
                                 onIntent(LoginIntent.SubmitEmailLogin)
                             }
                         },
-                        isError = state.hasCredentialError,
+                        isError = (state.failure.toDisplay() == OnboardingFailureDisplay.CredentialInline),
                     )
 
-                    if (state.hasCredentialError) {
+                    if ((state.failure.toDisplay() == OnboardingFailureDisplay.CredentialInline)) {
                         Text(
                             text = stringResource(R.string.onboarding_login_invalid_credentials),
                             style = AfternoteDesign.typography.captionLargeB,
@@ -187,7 +189,7 @@ internal fun LoginContent(
         }
     }
 
-    if (state.showNetworkErrorPopup) {
+    if ((state.failure.toDisplay() == OnboardingFailureDisplay.NetworkRetryPopup)) {
         NetworkErrorPopup(
             onRetry = { onIntent(LoginIntent.RetryLogin) },
             onDismiss = { onIntent(LoginIntent.DismissNetworkError) },

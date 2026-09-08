@@ -6,7 +6,7 @@ import com.afternote.core.ui.mvi.ReducerEvent
 import com.afternote.feature.onboarding.presentation.reporting.AuthProvider
 
 /** 로그인 화면이 [LoginViewModel] 에 보내는 것 — 사용자가 하려는 것. */
-sealed interface LoginIntent : MviIntent {
+internal sealed interface LoginIntent : MviIntent {
     data class UpdateEmail(
         val value: String,
     ) : LoginIntent
@@ -53,7 +53,7 @@ sealed interface LoginIntent : MviIntent {
 }
 
 /** 상태가 겪은 것. [LoginViewModel] 만 만든다. */
-sealed interface LoginReducerEvent : ReducerEvent {
+internal sealed interface LoginReducerEvent : ReducerEvent {
     data class EmailChanged(
         val value: String,
     ) : LoginReducerEvent

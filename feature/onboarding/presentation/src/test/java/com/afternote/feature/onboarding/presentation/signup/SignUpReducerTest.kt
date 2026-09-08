@@ -3,7 +3,10 @@ package com.afternote.feature.onboarding.presentation.signup
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.usecase.auth.LoginUseCase
 import com.afternote.feature.onboarding.presentation.NoopErrorReporter
+import com.afternote.feature.onboarding.presentation.OnboardingFailure
 import com.afternote.feature.onboarding.presentation.UnusedAccountRepository
+import com.afternote.feature.onboarding.presentation.snackbarMessage
+import com.afternote.feature.onboarding.presentation.toDisplay
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -42,7 +45,7 @@ class SignUpReducerTest {
         val state = viewModel.uiState.value
         assertEquals("user@example.com", state.email)
         assertEquals("000000", state.verificationCode)
-        assertFalse(state.hasVerificationError)
+        assertFalse((state.failure == OnboardingFailure.VerificationRejected))
     }
 
     @Test
@@ -117,7 +120,7 @@ class SignUpReducerTest {
         val state = viewModel.uiState.value
         assertFalse(state.isSignedUp)
         assertFalse(state.shouldNavigateToResidentNumber)
-        assertNull(state.errorMessage)
+        assertNull(state.failure.toDisplay().snackbarMessage)
         assertEquals("애프터노트", state.name)
     }
 

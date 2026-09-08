@@ -7,6 +7,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.COMPACT_DEVICE_SPEC
 import com.afternote.feature.onboarding.presentation.LARGE_FONT_SCALE
+import com.afternote.feature.onboarding.presentation.OnboardingFailure
 import com.android.tools.screenshot.PreviewTest
 
 /**
@@ -30,7 +31,7 @@ internal fun findIdScreenInitialScreenshot() {
                     email = "",
                     certificateCode = "",
                     isVerificationSent = false,
-                    hasVerificationError = false,
+                    failure = null,
                 ),
             onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },
@@ -51,7 +52,7 @@ internal fun findIdScreenCodeSentScreenshot() {
                     email = "parkchae01@gmail.com",
                     certificateCode = "",
                     isVerificationSent = true,
-                    hasVerificationError = false,
+                    failure = null,
                 ),
             onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },
@@ -72,7 +73,7 @@ internal fun findIdScreenCodeMismatchScreenshot() {
                     email = "parkchae01@gmail.com",
                     certificateCode = "123456",
                     isVerificationSent = true,
-                    hasVerificationError = true,
+                    failure = OnboardingFailure.VerificationRejected,
                 ),
             onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },
@@ -98,7 +99,7 @@ internal fun findIdScreenCodeMismatchCompactScreenshot() {
                     email = "parkchae01@gmail.com",
                     certificateCode = "123456",
                     isVerificationSent = true,
-                    hasVerificationError = true,
+                    failure = OnboardingFailure.VerificationRejected,
                 ),
             onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },
@@ -124,7 +125,7 @@ internal fun findIdScreenCodeMismatchLargeFontScreenshot() {
                     email = "parkchae01@gmail.com",
                     certificateCode = "123456",
                     isVerificationSent = true,
-                    hasVerificationError = true,
+                    failure = OnboardingFailure.VerificationRejected,
                 ),
             onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },

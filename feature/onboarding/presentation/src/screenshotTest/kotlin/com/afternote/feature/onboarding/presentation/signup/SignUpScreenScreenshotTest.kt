@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.onboarding.presentation.OnboardingFailure
 import com.android.tools.screenshot.PreviewTest
 
 /**
@@ -66,7 +67,7 @@ internal fun signUpScreenVerificationMismatchScreenshot() {
                     // 알려 hasVerificationError 가 서고(VerificationRejected) 요청이 끝나
                     // isVerifyingEmail 이 내려가기(EmailVerifyFinished) 전 사이다.
                     isVerifyingEmail = true,
-                    hasVerificationError = true,
+                    failure = OnboardingFailure.VerificationRejected,
                 ),
             onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },
