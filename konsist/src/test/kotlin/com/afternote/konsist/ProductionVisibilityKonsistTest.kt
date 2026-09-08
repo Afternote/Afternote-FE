@@ -358,7 +358,7 @@ class ProductionVisibilityKonsistTest {
                 "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/findaccount/FindPasswordCompleteScreen.kt::function FindPasswordCompleteScreen [implicit-public]",
                 "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/findaccount/FindPasswordResetScreen.kt::function FindPasswordResetScreen [implicit-public]",
                 "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/findaccount/FindPasswordScreen.kt::function FindPasswordScreen [implicit-public]",
-                "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/findaccount/FindPasswordViewModel.kt::class FindPasswordViewModel [implicit-public]",
+                "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/findaccount/FindPasswordViewModel.kt::class FindPasswordViewModel [internal]",
             )
 
         /** #1671~#1677이 줄인다. 신규와 stale 항목 모두 실패해 목록은 정확한 현재 부채다. */
