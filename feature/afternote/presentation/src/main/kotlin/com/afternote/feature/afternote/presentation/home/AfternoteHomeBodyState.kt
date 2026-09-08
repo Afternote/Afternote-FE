@@ -14,8 +14,27 @@ import com.afternote.feature.afternote.domain.AfternoteType
  * 고정하고, 각 본문이 «무엇을 그리는가» 는 본문 컴포저블을 직접 띄워 본다 (#1634).
  */
 internal sealed interface AfternoteHomeBodyState {
-    /** 보여 줄 것이 전무한 채 첫 로드 중. */
+    /** 보여 줄 것도, 이미 그려 둔 상단도 없는 «첫 진입» 로드 중. 화면 전체가 로딩이다. */
     data object InitialLoading : AfternoteHomeBodyState
+
+    /**
+     * 상단(헤더·카테고리 필터 행)을 이미 보고 있던 사용자가 맞는 로드 중 (#1635).
+     *
+     * 카테고리를 바꾸면 [AfternoteHomeViewModel] 의 `flatMapLatest` 가 **새 Paging 세대**를 만들고,
+     * 그 세대의 첫 상태는 `refresh = Loading` 이다. 항목이 이미 있으면 Paging 이 직전 세대의 페이지를
+     * 그대로 들고 있어 `itemCount` 가 유지되지만(실측), **0건 상태에서 전환하면** `itemCount == 0` 이
+     * 되어 [InitialLoading] 과 구분이 없어진다. 그때 화면 전체를 로딩으로 덮으면 **방금 탭한 카테고리
+     * 행까지 통째로 사라졌다가 다시 나타난다.** 재시도(`retry()`)도 같은 자리를 지난다.
+     *
+     * 그래서 «첫 진입» 과 «이미 상단을 보고 있던 로드» 를 갈라, 후자는 상단을 그대로 두고 본문만
+     * 로딩으로 바꾼다. 어느 쪽인지는 화면이 [drawsTopChrome] 로 직전 렌더를 기억해 알려 준다.
+     *
+     * 고른 카테고리를 담는 이유는 [FilteredError] 와 다르다 — 이쪽은 「전체」로 돌아오는 전환도 지나므로
+     * `null` 이 정상값이다. 방금 탭한 탭이 로딩 중에도 선택 상태로 보여야 한다.
+     */
+    data class Reloading(
+        val selectedType: AfternoteType?,
+    ) : AfternoteHomeBodyState
 
     /**
      * 카테고리 필터 없는 전면 실패. 재시도 하나만 주는 [com.afternote.feature.afternote.presentation.shared.component.ErrorListBody]
@@ -52,15 +71,26 @@ internal sealed interface AfternoteHomeBodyState {
  * 순서가 곧 우선순위다. 특히 **실패 판정이 목록 경로보다 앞서지만, 필터가 걸린 실패는
  * [AfternoteHomeBodyState.FilteredError] 로 갈라진다** — 종전에는 이 자리에서 전면 에러가 필터 행까지
  * 걷어 가 「전체」로 돌아올 수단이 사라졌다 (#1634).
+ *
+ * @param chromeAlreadyVisible 직전에 그린 본문이 상단(헤더·카테고리 필터 행)을 그리고 있었는지.
+ *   로드 상태만으로는 «첫 진입» 과 «카테고리 전환·재시도» 를 가를 수 없어 화면이 기억해 넘긴다 —
+ *   자세한 이유는 [AfternoteHomeBodyState.Reloading] KDoc (#1635). 기본값을 두지 않는다: `false` 를
+ *   묵시적으로 물려받으면 전환 중 상단이 사라지는 종전 동작으로 조용히 되돌아간다.
  */
 internal fun afternoteHomeBodyState(
     refreshState: LoadState,
     itemCount: Int,
     selectedType: AfternoteType?,
+    chromeAlreadyVisible: Boolean,
 ): AfternoteHomeBodyState =
     when {
         refreshState is LoadState.Loading && itemCount == 0 -> {
-            AfternoteHomeBodyState.InitialLoading
+            // 이미 상단을 보고 있었다면 그것을 빼앗지 않는다 — 카테고리 전환·재시도가 여기를 지난다 (#1635).
+            if (chromeAlreadyVisible) {
+                AfternoteHomeBodyState.Reloading(selectedType)
+            } else {
+                AfternoteHomeBodyState.InitialLoading
+            }
         }
 
         // 전면 에러는 보여 줄 데이터가 전무할 때만. 목록이 있는 상태의 refresh 실패는 Paging 이 기존
@@ -80,4 +110,30 @@ internal fun afternoteHomeBodyState(
         else -> {
             AfternoteHomeBodyState.Empty
         }
+    }
+
+/**
+ * 이 본문이 상단(헤더·카테고리 필터 행)을 그리는지.
+ *
+ * [afternoteHomeBodyState] 의 `chromeAlreadyVisible` 을 만드는 짝이다. 화면은 이번 프레임의 판정을
+ * 다음 프레임의 입력으로 되먹여 «직전 렌더에 상단이 있었는가» 를 유지한다 (#1635).
+ *
+ * [AfternoteHomeBodyState.Empty] 만 호출부 설정을 본다 — 0건이고 필터도 없는 그 상태에서만
+ * `showsHeaderOnEmptyList` 가 상단의 유무를 가르기 때문이다(그 KDoc 참조). 이 되먹임이 있어야
+ * **상단이 없던 상태에서 시작한 로드는 종전대로 [AfternoteHomeBodyState.InitialLoading] 로 남는다** —
+ * 수신자 0건(`showsHeaderOnEmptyList = false`)이나 필터 없는 전면 실패에서 재시도를 눌렀을 때
+ * 발신자 헤더·필터 행이 로딩 화면을 통해 새어 나오지 않는다.
+ */
+internal fun AfternoteHomeBodyState.drawsTopChrome(showsHeaderOnEmptyList: Boolean): Boolean =
+    when (this) {
+        is AfternoteHomeBodyState.Reloading,
+        is AfternoteHomeBodyState.FilteredError,
+        AfternoteHomeBodyState.List,
+        -> true
+
+        AfternoteHomeBodyState.Empty -> showsHeaderOnEmptyList
+
+        AfternoteHomeBodyState.InitialLoading,
+        AfternoteHomeBodyState.Error,
+        -> false
     }
