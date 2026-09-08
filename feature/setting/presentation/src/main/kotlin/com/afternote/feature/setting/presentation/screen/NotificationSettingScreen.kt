@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,16 +41,20 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.afternote.core.ui.findActivity
+import com.afternote.core.ui.mvi.ObserveSignal
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.DeviceAlarmOffSection
 import com.afternote.feature.setting.presentation.component.SettingMenuItem
-import com.afternote.feature.setting.presentation.viewmodel.PushNotificationEvent
+import com.afternote.feature.setting.presentation.viewmodel.PushNotificationIntent
+import com.afternote.feature.setting.presentation.viewmodel.PushNotificationUiState
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.launch
 
 @Composable
-fun NotificationSettingScreen(
+internal fun NotificationSettingScreen(
     onBack: () -> Unit,
     onPushNotificationClick: () -> Unit,
     viewModel: PushNotificationViewModel = hiltViewModel(),
@@ -69,7 +74,7 @@ fun NotificationSettingScreen(
     }
     val notificationPermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            viewModel.refreshDeviceAlarmStatus()
+            viewModel.onIntent(PushNotificationIntent.RefreshDeviceAlarmStatus)
             if (
                 !granted &&
                 activity != null &&
@@ -83,21 +88,61 @@ fun NotificationSettingScreen(
         }
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        viewModel.refreshDeviceAlarmStatus()
+        viewModel.onIntent(PushNotificationIntent.RefreshDeviceAlarmStatus)
     }
 
-    LaunchedEffect(viewModel, lifecycleOwner, marketingConsentSaveFailedMessage) {
+    LaunchedEffect(viewModel, lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            viewModel.events.collect { event ->
-                when (event) {
-                    PushNotificationEvent.MarketingConsentSaveFailed -> {
-                        snackbarHostState.showSnackbar(marketingConsentSaveFailedMessage)
-                    }
-                }
+            viewModel.onIntent(PushNotificationIntent.MarketingFeedbackActive(true))
+            try {
+                awaitCancellation()
+            } finally {
+                viewModel.onIntent(PushNotificationIntent.MarketingFeedbackActive(false))
             }
         }
     }
+    val scope = rememberCoroutineScope()
+    ObserveSignal(
+        signal = uiState.pendingEvent,
+        consumed = PushNotificationIntent.ConsumeMarketingFailure,
+        onIntent = viewModel::onIntent,
+    ) {
+        scope.launch { snackbarHostState.showSnackbar(marketingConsentSaveFailedMessage) }
+    }
 
+    NotificationSettingContent(
+        uiState = uiState,
+        snackbarHostState = snackbarHostState,
+        onBack = onBack,
+        onPushNotificationClick = onPushNotificationClick,
+        onIntent = viewModel::onIntent,
+        onDeviceAlarmClick = {
+            val permissionGranted =
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            when (notificationPermissionAction(Build.VERSION.SDK_INT, permissionGranted)) {
+                NotificationPermissionAction.RequestPermission -> {
+                    notificationPermissionLauncher.launch(
+                        Manifest.permission.POST_NOTIFICATIONS,
+                    )
+                }
+
+                NotificationPermissionAction.OpenSettings -> {
+                    openNotificationSettings()
+                }
+            }
+        },
+    )
+}
+
+@Composable
+private fun NotificationSettingContent(
+    uiState: PushNotificationUiState,
+    snackbarHostState: SnackbarHostState,
+    onBack: () -> Unit,
+    onPushNotificationClick: () -> Unit,
+    onDeviceAlarmClick: () -> Unit,
+    onIntent: (PushNotificationIntent) -> Unit,
+) {
     Scaffold(
         topBar = {
             DetailTopBar(
@@ -119,22 +164,8 @@ fun NotificationSettingScreen(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .clickable {
-                            val permissionGranted =
-                                ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.POST_NOTIFICATIONS,
-                                ) == PackageManager.PERMISSION_GRANTED
-                            when (notificationPermissionAction(Build.VERSION.SDK_INT, permissionGranted)) {
-                                NotificationPermissionAction.RequestPermission -> {
-                                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                }
-
-                                NotificationPermissionAction.OpenSettings -> {
-                                    openNotificationSettings()
-                                }
-                            }
-                        }.padding(vertical = 12.dp),
+                        .clickable(onClick = onDeviceAlarmClick)
+                        .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -162,9 +193,9 @@ fun NotificationSettingScreen(
             } else {
                 DeviceAlarmOffSection(
                     uiState = uiState,
-                    onSmsCheck = viewModel::onSmsChecked,
-                    onEmailCheck = viewModel::onEmailChecked,
-                    onPushCheck = viewModel::onPushChecked,
+                    onSmsCheck = { onIntent(PushNotificationIntent.SmsChecked(it)) },
+                    onEmailCheck = { onIntent(PushNotificationIntent.EmailChecked(it)) },
+                    onPushCheck = { onIntent(PushNotificationIntent.PushChecked(it)) },
                 )
             }
         }

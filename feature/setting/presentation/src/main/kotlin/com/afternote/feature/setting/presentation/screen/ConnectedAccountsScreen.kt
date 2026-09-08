@@ -3,9 +3,9 @@ package com.afternote.feature.setting.presentation.screen
 import android.app.Activity
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -15,6 +15,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.ui.findActivity
+import com.afternote.core.ui.mvi.ObserveSignal
 import com.afternote.feature.setting.presentation.BuildConfig
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.social.KakaoAuthResult
@@ -22,10 +23,14 @@ import com.afternote.feature.setting.presentation.social.requestGoogleIdToken
 import com.afternote.feature.setting.presentation.social.requestKakaoAccessToken
 import com.afternote.feature.setting.presentation.social.toKakaoAuthResult
 import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsEvent
+import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsIntent
 import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsViewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 @Composable
-fun ConnectedAccountsScreen(
+internal fun ConnectedAccountsScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ConnectedAccountsViewModel = hiltViewModel(),
@@ -37,49 +42,59 @@ fun ConnectedAccountsScreen(
     val kakaoAccountLinkFailedMessage = stringResource(R.string.kakao_account_link_failed)
     val googleAccountLinkFailedMessage = stringResource(R.string.google_account_link_failed)
 
-    LaunchedEffect(Unit) {
-        viewModel.events.collect { event ->
-            when (event) {
-                is ConnectedAccountsEvent.ShowError -> {
-                    snackbarHostState.showSnackbar(event.message)
-                }
-
-                is ConnectedAccountsEvent.RequestLink -> {
-                    when (event.provider) {
-                        "kakao" -> {
-                            val activity = context.findActivity<Activity>()
-                            val authResult =
-                                activity
-                                    ?.let { requestKakaoAccessToken(it).toKakaoAuthResult() }
-                                    ?: KakaoAuthResult.Failure
-                            when (authResult) {
-                                is KakaoAuthResult.Success -> {
-                                    viewModel.link("kakao", authResult.accessToken)
-                                }
-
-                                KakaoAuthResult.Cancelled -> {}
-
-                                KakaoAuthResult.Failure -> {
-                                    snackbarHostState.showSnackbar(
-                                        kakaoAccountLinkFailedMessage,
-                                    )
-                                }
-                            }
+    val scope = rememberCoroutineScope()
+    val eventMutex = remember { Mutex() }
+    val pendingEvent = uiState.pendingEvent
+    if (pendingEvent != null) {
+        ObserveSignal(
+            signal = pendingEvent,
+            consumed = ConnectedAccountsIntent.ConsumeEvent(pendingEvent),
+            onIntent = viewModel::onIntent,
+        ) { event ->
+            // 소비로 effect가 재시작되어도 인증·스낵바 작업은 계속한다. 기존 이벤트 수집처럼 순차 처리한다.
+            scope.launch {
+                eventMutex.withLock {
+                    when (event) {
+                        is ConnectedAccountsEvent.ShowError -> {
+                            snackbarHostState.showSnackbar(event.message)
                         }
 
-                        "google" -> {
-                            requestGoogleIdToken(
-                                context = context,
-                                credentialManager = credentialManager,
-                                serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID,
-                            ).onSuccess { token -> viewModel.link("google", token) }
-                                .onFailure { e ->
-                                    if (e !is CoreAuthFailure.UserCancelledAuth) {
-                                        viewModel.notifyLinkError(
-                                            googleAccountLinkFailedMessage,
-                                        )
+                        is ConnectedAccountsEvent.RequestLink -> {
+                            when (event.provider) {
+                                "kakao" -> {
+                                    val activity = context.findActivity<Activity>()
+                                    val authResult =
+                                        activity
+                                            ?.let { requestKakaoAccessToken(it).toKakaoAuthResult() }
+                                            ?: KakaoAuthResult.Failure
+                                    when (authResult) {
+                                        is KakaoAuthResult.Success -> {
+                                            viewModel.onIntent(ConnectedAccountsIntent.Link("kakao", authResult.accessToken))
+                                        }
+
+                                        KakaoAuthResult.Cancelled -> {}
+
+                                        KakaoAuthResult.Failure -> {
+                                            snackbarHostState.showSnackbar(
+                                                kakaoAccountLinkFailedMessage,
+                                            )
+                                        }
                                     }
                                 }
+
+                                "google" -> {
+                                    requestGoogleIdToken(
+                                        context = context,
+                                        credentialManager = credentialManager,
+                                        serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID,
+                                    ).onSuccess { token -> viewModel.onIntent(ConnectedAccountsIntent.Link("google", token)) }
+                                        .onFailure { e ->
+                                            if (e !is CoreAuthFailure.UserCancelledAuth) {
+                                                viewModel.onIntent(ConnectedAccountsIntent.NotifyLinkError(googleAccountLinkFailedMessage))
+                                            }
+                                        }
+                                }
+                            }
                         }
                     }
                 }
@@ -91,7 +106,7 @@ fun ConnectedAccountsScreen(
         uiState = uiState,
         snackbarHostState = snackbarHostState,
         onBack = onBack,
-        onToggle = viewModel::onToggle,
+        onToggle = { provider, enabled -> viewModel.onIntent(ConnectedAccountsIntent.Toggle(provider, enabled)) },
         modifier = modifier,
     )
 }
