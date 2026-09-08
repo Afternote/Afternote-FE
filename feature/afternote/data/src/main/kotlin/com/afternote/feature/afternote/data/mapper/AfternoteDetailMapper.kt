@@ -28,7 +28,7 @@ import kotlin.collections.mapNotNull
  *
  * | 값 | 없을 때 | 처방 |
  * |---|---|---|
- * | `memorial`(PLAYLIST 본문) | 보여줄 본문 자체가 없다 | 실패로 옮긴다 ([toDetailContent]) |
+ * | `playlist`(PLAYLIST 본문) | 보여줄 본문 자체가 없다 | 실패로 옮긴다 ([toDetailContent]) |
  * | `credentials`(SOCIAL·BUSINESS) | 제목·남기실 말씀·수신자·처리방법은 그대로 성립한다 | 빈 값으로 낮춘다 ([toPublishedCredentials]) |
  *
  * `release` 가 BE `main` 을 따라잡으면 아래쪽도 실패로 좁힐 수 있다 — 그 판정은 #1762 에 남겼다.
@@ -77,12 +77,12 @@ fun AfternoteDetailDto.toDraftDomain(): DraftDetail {
         leaveMessageBlocks = leaveMessage.toLeaveMessageBlocks(),
         credentials = toDraftCredentials(),
         processingMethods = processingMethods.orEmpty(),
-        songs = memorial?.songs?.map { it.toDomain() }.orEmpty(),
+        songs = playlist?.songs?.map { it.toDomain() }.orEmpty(),
         media =
             MemorialMedia(
-                photoUrl = memorial?.memorialPhotoUrl,
-                videoUrl = memorial?.memorialVideo?.videoUrl,
-                thumbnailUrl = memorial?.memorialVideo?.thumbnailUrl,
+                photoUrl = playlist?.memorialPhotoUrl,
+                videoUrl = playlist?.memorialVideo?.videoUrl,
+                thumbnailUrl = playlist?.memorialVideo?.thumbnailUrl,
             ),
     )
 }
@@ -119,7 +119,7 @@ private fun AfternoteDetailDto.toDetailContent(type: AfternoteType): DetailConte
         }
 
         AfternoteType.MEMORIAL -> {
-            requireNotNull(memorial) {
+            requireNotNull(playlist) {
                 // 발행 PLAYLIST 는 서버가 최소 1곡을 강제한다 — 여기 오면 임시저장이 발행 경로로 잘못 들어온 것이다.
                 "발행 상세에 playlist 가 없다: afternoteId=$afternoteId"
             }.toMemorialContent()
