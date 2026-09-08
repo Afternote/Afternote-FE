@@ -58,7 +58,7 @@ class ReceiverAfternoteHomeViewModel
     }
 
 /** 카드 주 텍스트는 서비스명이, 미등록 서비스 아이콘과 필터 탭은 종류가 결정한다. */
-internal fun AfterNoteListItem.toUiModel(): ListItemUiModel =
+private fun AfterNoteListItem.toUiModel(): ListItemUiModel =
     ListItemUiModel(
         id = id,
         serviceName = serviceName,

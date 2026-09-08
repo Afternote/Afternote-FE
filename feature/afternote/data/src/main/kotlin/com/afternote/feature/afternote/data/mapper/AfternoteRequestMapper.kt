@@ -122,7 +122,7 @@ fun MemorialWritePayload.toDto() =
         memorialVideo = memorialVideo?.toDto(),
     )
 
-fun MemorialSongPayload.toDto() =
+private fun MemorialSongPayload.toDto() =
     AfternoteSongDto(
         title = title,
         artist = artist,

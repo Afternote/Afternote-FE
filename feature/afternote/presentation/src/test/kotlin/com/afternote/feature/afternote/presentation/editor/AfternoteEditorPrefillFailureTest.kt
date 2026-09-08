@@ -18,6 +18,8 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.afternoteEditorSavedStateHandle
 import com.afternote.feature.afternote.presentation.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
+import com.afternote.feature.afternote.presentation.editorFlowRoute
+import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
@@ -239,6 +241,7 @@ class AfternoteEditorPrefillFailureTest {
                 }
             val viewModel =
                 AfternoteEditorViewModel(
+                    route = AfternoteRoute.EditorFlowRoute(initialType = AfternoteType.SOCIAL_NETWORK),
                     savedStateHandle =
                         afternoteEditorSavedStateHandle(initialType = AfternoteType.SOCIAL_NETWORK, itemId = null),
                     userRepository = unusedProxy<UserRepository>(),
@@ -285,9 +288,11 @@ class AfternoteEditorPrefillFailureTest {
     private fun viewModel(
         repository: FakeAfternoteRepository,
         errorReporter: ErrorReporter,
-    ): AfternoteEditorViewModel =
-        AfternoteEditorViewModel(
-            savedStateHandle = editorSavedStateHandle(),
+    ): AfternoteEditorViewModel {
+        val editorHandle = editorSavedStateHandle()
+        return AfternoteEditorViewModel(
+            route = editorHandle.editorFlowRoute(),
+            savedStateHandle = editorHandle,
             userRepository = unusedProxy<UserRepository>(),
             afternoteRepository = repository,
             memorialThumbnailUploadRepository =
@@ -305,6 +310,7 @@ class AfternoteEditorPrefillFailureTest {
                 ),
             errorReporter = errorReporter,
         )
+    }
 
     private fun editorSavedStateHandle(): SavedStateHandle =
         afternoteEditorSavedStateHandle(
