@@ -204,7 +204,7 @@ class SettingImplementedCoverageAndroidTest {
         composeRule
             .onNodeWithText("회원 탈퇴")
             .performClick()
-        waitForText("취소하기")
+        waitForText("회원 탈퇴 안내")
     }
 
     private fun waitForSettingHomeContent() {
