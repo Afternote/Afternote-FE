@@ -35,6 +35,7 @@ class AfternoteEditorProcessingMethodDefaultsInteractionTest {
                 AfternoteEditorScreen(
                     form = form,
                     onBackClick = { backClicks += 1 },
+                    onSaveDraftClick = {},
                     onRegisterClick = {},
                     snackbarMessage = null,
                     onSnackbarMessageConsumed = {},

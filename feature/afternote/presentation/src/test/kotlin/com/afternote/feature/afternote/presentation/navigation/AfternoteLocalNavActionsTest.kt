@@ -85,11 +85,11 @@ class AfternoteLocalNavActionsTest {
     }
 
     @Test
-    fun `임시저장 목록에서 고른 항목은 에디터 흐름으로 이어진다`() {
+    fun `임시저장 목록에서 고른 항목은 이어쓰기로 에디터에 이어진다`() {
         actions.replaceFingerprintLoginWithAfternoteHome()
         actions.navigateToDraftList()
 
-        actions.navigateToEditorForEdit(itemId = 31L, initialType = AfternoteType.SOCIAL_NETWORK)
+        actions.navigateToEditorForResume(itemId = 31L, initialType = AfternoteType.SOCIAL_NETWORK)
 
         assertEquals(
             listOf("AfternoteHomeRoute", "DraftListRoute", "EditorFlowRoute"),
@@ -98,6 +98,25 @@ class AfternoteLocalNavActionsTest {
         // 이어쓰기를 그만두면 목록으로 돌아온다.
         actions.popBack()
         assertEquals(listOf("AfternoteHomeRoute", "DraftListRoute"), stack())
+    }
+
+    @Test
+    fun `이어쓰기 진입은 isDraft 를 목적지까지 나른다`() {
+        actions.navigateToEditorForResume(itemId = 31L, initialType = AfternoteType.MEMORIAL)
+
+        val key = backStack.last() as AfternoteRoute.EditorFlowRoute
+        assertEquals(31L, key.itemId)
+        assertEquals(AfternoteType.MEMORIAL, key.initialType)
+        // 발행 보장이 없는 draft 상세로 읽어야 한다 — 이 표식이 빠지면 이어쓰기가 발행 계약으로
+        // 파싱돼 프리필이 실패한다 (#808).
+        assertEquals(true, key.isDraft)
+    }
+
+    @Test
+    fun `상세에서 온 수정 진입은 발행 계약을 그대로 받는다`() {
+        actions.navigateToEditorForEdit(itemId = 31L, initialType = AfternoteType.MEMORIAL)
+
+        assertEquals(false, (backStack.last() as AfternoteRoute.EditorFlowRoute).isDraft)
     }
 
     @Test

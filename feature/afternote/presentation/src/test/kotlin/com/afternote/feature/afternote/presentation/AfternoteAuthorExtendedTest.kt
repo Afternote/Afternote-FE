@@ -379,6 +379,7 @@ private fun AuthorEditorForUpdate(
     AfternoteEditorScreen(
         form = uiState.form,
         onBackClick = {},
+        onSaveDraftClick = {},
         onRegisterClick = {
             val form = state.currentForm()
             val payload =
