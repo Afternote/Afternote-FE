@@ -69,12 +69,15 @@ class FakeDiaryRepository(
         onUpdate?.let { return it(id, payload) }
         diaries.replaceAll { diary ->
             if (diary.diaryId == id) {
-                // date·imageUrl 은 수정 요청 계약에서 빠졌다 (#955) — 기존 값을 유지한다.
+                // imageUrl 은 수정 요청 계약에 없다 (#955) — 기존 값을 유지한다.
+                // date 는 2026-08-29 부터 계약에 있고 **생략(null)이면 기존 값 유지**다
+                // (Afternote-BE#244, PR #262). 서버와 같은 규칙으로 흉내 낸다 (#1008).
                 diary.copy(
                     title = payload.title,
                     content = payload.content,
                     todayMood = payload.todayMood,
                     isDraft = payload.isDraft,
+                    date = payload.date?.toString() ?: diary.date,
                 )
             } else {
                 diary

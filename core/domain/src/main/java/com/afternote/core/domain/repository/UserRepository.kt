@@ -1,6 +1,7 @@
 package com.afternote.core.domain.repository
 
 import com.afternote.core.model.user.UserConnectedAccount
+import com.afternote.core.model.user.UserMarketingConsent
 import com.afternote.core.model.user.UserPushSetting
 
 /**
@@ -32,6 +33,16 @@ interface UserRepository :
         mindRecord: Boolean?,
         afterNote: Boolean?,
     ): UserPushSetting
+
+    // 마케팅 수신 동의 조회 (문자·이메일·푸시)
+    suspend fun getMyMarketingConsents(): UserMarketingConsent
+
+    // 마케팅 수신 동의 수정
+    suspend fun updateMyMarketingConsents(
+        sms: Boolean?,
+        email: Boolean?,
+        push: Boolean?,
+    ): UserMarketingConsent
 
     // 연결된 계정 조회
     suspend fun getConnectedAccounts(): UserConnectedAccount
