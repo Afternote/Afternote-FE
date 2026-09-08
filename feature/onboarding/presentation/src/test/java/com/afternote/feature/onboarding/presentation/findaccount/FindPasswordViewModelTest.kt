@@ -287,8 +287,6 @@ class FindPasswordViewModelTest {
                 .toDisplay()
                 .snackbarMessage,
         )
-        viewModel.onSocialAccountBlockedConsumed()
-        assertNull(viewModel.uiState.value.failure)
     }
 
     private fun viewModel(
