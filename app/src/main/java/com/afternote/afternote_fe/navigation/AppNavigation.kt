@@ -23,6 +23,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.toRoute
 import com.afternote.afternote_fe.notification.NotificationPermissionEffect
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomBar
@@ -36,7 +37,7 @@ import com.afternote.feature.home.presentation.receiver.ReceiverHomeEntry
 import com.afternote.feature.mindrecord.presentation.navigation.mindRecordNavGraph
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavHost
 import com.afternote.feature.receiver.presentation.navigation.ReceiverNavHost
-import com.afternote.feature.setting.presentation.navigation.settingNavGraph
+import com.afternote.feature.setting.presentation.navigation.SettingNavHost
 import com.afternote.feature.timeletter.presentation.navigation.timeLetterNavGraph
 import kotlinx.coroutines.launch
 
@@ -57,7 +58,7 @@ fun AppNavigation(
     val currentTab = appState.getCurrentNavTab(currentDestination)
 
     val mindRecordNavActions = rememberMindRecordNavActions(appState.navController)
-    val settingNavActions = rememberSettingNavActions(appState)
+    val settingExternalActions = rememberSettingExternalActions(appState)
     val timeLetterNavActions = rememberTimeLetterNavActions(appState.navController)
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -154,12 +155,13 @@ fun AppNavigation(
                     actions = homeTabActions,
                 )
             }
-            settingNavGraph(
-                graphScopedParentEntry = {
-                    appState.navController.getBackStackEntry<Route.Setting>()
-                },
-                actions = settingNavActions,
-            )
+            composable<Route.Setting> { entry ->
+                SettingNavHost(
+                    boundary = popRootBoundary,
+                    externalActions = settingExternalActions,
+                    startWithRecipientRegistration = entry.toRoute<Route.Setting>().startWithRecipientRegistration,
+                )
+            }
             mindRecordNavGraph(actions = mindRecordNavActions)
             timeLetterNavGraph(
                 navController = appState.navController,
