@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.presentation.editor
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.testing.FakeUserRepository
+import com.afternote.core.domain.testing.FakeUserReceiverRepository
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
@@ -13,6 +13,7 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUpl
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
+import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.editor.model.EditorContentPrefill
 import com.afternote.feature.afternote.presentation.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
@@ -80,7 +81,7 @@ class AfternoteEditorProcessDeathPrefillTest {
             assertEquals(
                 "복원된 폼은 사용자가 고친 제목을 그대로 들고 있다",
                 EDITED_SERVICE,
-                viewModel.currentForm().selectedService,
+                viewModel.uiState.value.form.selectedService,
             )
             assertNull(
                 "재조회가 프리필을 발행하면 화면이 그것을 실어 사용자의 편집이 사라진다",
@@ -111,15 +112,17 @@ class AfternoteEditorProcessDeathPrefillTest {
             )
 
             // 화면이 복원된 폼 값을 그대로 담아 보내는 저장이다.
-            viewModel.saveAfternote(
-                payload =
-                    RegisterAfternotePayload(
-                        serviceName = EDITED_SERVICE,
-                        date = "2026-08-30",
-                        processingMethods = listOf(SERVER_PROCESSING_METHOD),
-                    ),
-                selectedReceiverIds = emptyList(),
-                memorialMedia = SaveAfternoteMemorialMedia(),
+            viewModel.onIntent(
+                AfternoteEditorIntent.Save(
+                    payload =
+                        RegisterAfternotePayload(
+                            serviceName = EDITED_SERVICE,
+                            date = "2026-08-30",
+                            processingMethods = listOf(SERVER_PROCESSING_METHOD),
+                        ),
+                    selectedReceiverIds = emptyList(),
+                    memorialMedia = SaveAfternoteMemorialMedia(),
+                ),
             )
             runCurrent()
 
@@ -199,18 +202,20 @@ class AfternoteEditorProcessDeathPrefillTest {
 
             assertNull(viewModel.uiState.value.pendingPrefill)
             assertFalse(viewModel.uiState.value.isPrefillLoading)
-            assertEquals(EDITED_SERVICE, viewModel.currentForm().selectedService)
+            assertEquals(EDITED_SERVICE, viewModel.uiState.value.form.selectedService)
 
-            viewModel.saveAfternote(
-                payload =
-                    RegisterAfternotePayload(
-                        serviceName = EDITED_SERVICE,
-                        date = "2026-09-08",
-                        processingMethods = listOf(SERVER_PROCESSING_METHOD),
-                    ),
-                selectedReceiverIds = emptyList(),
-                memorialMedia = SaveAfternoteMemorialMedia(),
-                asDraft = true,
+            viewModel.onIntent(
+                AfternoteEditorIntent.Save(
+                    payload =
+                        RegisterAfternotePayload(
+                            serviceName = EDITED_SERVICE,
+                            date = "2026-09-08",
+                            processingMethods = listOf(SERVER_PROCESSING_METHOD),
+                        ),
+                    selectedReceiverIds = emptyList(),
+                    memorialMedia = SaveAfternoteMemorialMedia(),
+                    asDraft = true,
+                ),
             )
             runCurrent()
 
@@ -232,18 +237,20 @@ class AfternoteEditorProcessDeathPrefillTest {
             val viewModel = viewModel(repository, isDraft = true, prefillSeeded = false)
             backgroundScope.launch { viewModel.uiState.collect {} }
             runCurrent()
-            viewModel.onPrefillConsumed()
+            viewModel.onIntent(AfternoteEditorIntent.ConsumePrefill)
 
-            viewModel.saveAfternote(
-                payload =
-                    RegisterAfternotePayload(
-                        serviceName = SERVER_SERVICE,
-                        date = "2026-09-08",
-                        processingMethods = listOf(SERVER_PROCESSING_METHOD),
-                    ),
-                selectedReceiverIds = emptyList(),
-                memorialMedia = SaveAfternoteMemorialMedia(),
-                asDraft = false,
+            viewModel.onIntent(
+                AfternoteEditorIntent.Save(
+                    payload =
+                        RegisterAfternotePayload(
+                            serviceName = SERVER_SERVICE,
+                            date = "2026-09-08",
+                            processingMethods = listOf(SERVER_PROCESSING_METHOD),
+                        ),
+                    selectedReceiverIds = emptyList(),
+                    memorialMedia = SaveAfternoteMemorialMedia(),
+                    asDraft = false,
+                ),
             )
             runCurrent()
 
@@ -308,8 +315,9 @@ class AfternoteEditorProcessDeathPrefillTest {
                         if (prefillSeeded) put("editor_prefill_seeded_item_id", EDIT_ID)
                     },
                 ),
-            userRepository = FakeUserRepository.strict(),
+            userReceiverRepository = FakeUserReceiverRepository.strict(),
             afternoteRepository = afternoteRepository,
+            saveAfternoteUseCase = SaveAfternoteUseCase(afternoteRepository),
             memorialThumbnailUploadRepository =
                 MemorialThumbnailUploadRepository { error("썸네일 업로드가 호출되면 안 됩니다") },
             resolveMemorialMediaForSave =

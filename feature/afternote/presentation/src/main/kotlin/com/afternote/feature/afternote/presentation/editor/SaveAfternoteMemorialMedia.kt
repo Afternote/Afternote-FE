@@ -1,12 +1,12 @@
 package com.afternote.feature.afternote.presentation.editor
 
+import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialPhoto
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
 
-/** 저장 시 추억 노트 미디어 필드. 영상의 출처와 기준값은 [memorialVideo]가 보존한다. */
+/** 저장 시 추억 노트 미디어 필드. 사진과 영상의 출처·기준값은 각 값 객체가 보존한다. */
 internal data class SaveAfternoteMemorialMedia(
     val memorialVideo: EditableMemorialVideo = EditableMemorialVideo.empty(),
-    val memorialPhotoUrl: String? = null,
-    val pickedMemorialPhotoUri: String? = null,
+    val memorialPhoto: EditableMemorialPhoto = EditableMemorialPhoto.empty(),
     /** 추모 음성 (#1118). 로컬 URI 와 원격 URL 이 한 필드를 공유한다. */
     val memorialAudioUrl: String? = null,
 )

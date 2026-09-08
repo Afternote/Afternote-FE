@@ -2,12 +2,14 @@ package com.afternote.feature.afternote.presentation.editor
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
+import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
+import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.editor.memorial.Song
 import com.afternote.feature.afternote.presentation.editor.model.EditorContentPrefill
 import com.afternote.feature.afternote.presentation.editor.model.EditorFormPrefill
@@ -17,6 +19,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -54,89 +60,171 @@ class AfternoteEditorMemorialMediaRemoveTest {
     @Test
     fun `신규 영상을 삭제하면 파생 썸네일도 함께 비운다`() {
         val viewModel = viewModel(memorialSavedStateHandle())
-        viewModel.setMemorialVideo("content://videos/farewell")
-        viewModel.setMemorialThumbnail("https://cdn.test/thumbnail.jpg")
+        viewModel.onIntent(AfternoteEditorIntent.SetMemorialVideo("content://videos/farewell"))
+        viewModel.onIntent(AfternoteEditorIntent.SetMemorialThumbnail("https://cdn.test/thumbnail.jpg"))
 
-        viewModel.removeMemorialVideo()
+        viewModel.onIntent(AfternoteEditorIntent.RemoveMemorialVideo)
 
-        assertNull(viewModel.currentForm().displayedMemorialVideo)
+        assertNull(viewModel.uiState.value.form.displayedMemorialVideo)
     }
 
     @Test
     fun `사진 삭제는 로컬 픽과 서버 원본을 함께 비운다`() {
         val viewModel = viewModel(memorialSavedStateHandle())
-        viewModel.applyPrefill(memorialPrefill(photoUrl = "https://cdn.test/portrait.jpg"))
-        viewModel.setMemorialPhoto("content://photos/replacement")
-        assertEquals("content://photos/replacement", viewModel.currentForm().displayMemorialPhotoUri())
+        viewModel.onIntent(AfternoteEditorIntent.ApplyPrefill(memorialPrefill(photoUrl = "https://cdn.test/portrait.jpg")))
+        viewModel.onIntent(AfternoteEditorIntent.SetMemorialPhoto("content://photos/replacement"))
+        assertEquals(
+            "content://photos/replacement",
+            viewModel.uiState.value.form
+                .displayMemorialPhotoUri(),
+        )
 
-        viewModel.removeMemorialPhoto()
+        viewModel.onIntent(AfternoteEditorIntent.RemoveMemorialPhoto)
 
-        assertNull(viewModel.currentForm().pickedMemorialPhotoUri)
-        assertNull(viewModel.currentForm().memorialPhotoUrl)
-        assertNull(viewModel.currentForm().displayMemorialPhotoUri())
+        assertNull(
+            viewModel.uiState.value.form.memorialPhoto
+                ?.toSnapshot()
+                ?.selection,
+        )
+        assertNull(
+            viewModel.uiState.value.form.memorialPhoto
+                ?.toSnapshot()
+                ?.persisted,
+        )
+        assertNull(
+            viewModel.uiState.value.form
+                .displayMemorialPhotoUri(),
+        )
     }
 
     @Test
     fun `영상 삭제는 로컬 픽과 서버 원본과 썸네일을 함께 비운다`() {
         val viewModel = viewModel(memorialSavedStateHandle())
-        viewModel.applyPrefill(
-            memorialPrefill(
-                videoUrl = "https://cdn.test/farewell.mp4",
-                thumbnailUrl = "https://cdn.test/server-thumbnail.jpg",
+        viewModel.onIntent(
+            AfternoteEditorIntent.ApplyPrefill(
+                memorialPrefill(
+                    videoUrl = "https://cdn.test/farewell.mp4",
+                    thumbnailUrl = "https://cdn.test/server-thumbnail.jpg",
+                ),
             ),
         )
-        viewModel.setMemorialVideo("content://videos/replacement")
-        viewModel.setMemorialThumbnail("https://cdn.test/local-thumbnail.jpg")
+        viewModel.onIntent(AfternoteEditorIntent.SetMemorialVideo("content://videos/replacement"))
+        viewModel.onIntent(AfternoteEditorIntent.SetMemorialThumbnail("https://cdn.test/local-thumbnail.jpg"))
 
-        viewModel.removeMemorialVideo()
+        viewModel.onIntent(AfternoteEditorIntent.RemoveMemorialVideo)
 
-        assertNull(viewModel.currentForm().displayedMemorialVideo)
-        assertFalse(viewModel.currentForm().canRemoveMemorialVideo)
+        assertNull(viewModel.uiState.value.form.displayedMemorialVideo)
+        assertFalse(viewModel.uiState.value.form.canRemoveMemorialVideo)
     }
 
     @Test
     fun `서버 미디어만 있어도 사진과 영상을 삭제할 수 있다`() {
         val viewModel = viewModel(memorialSavedStateHandle())
-        viewModel.applyPrefill(
-            memorialPrefill(
-                photoUrl = "https://cdn.test/portrait.jpg",
-                videoUrl = "https://cdn.test/farewell.mp4",
-                thumbnailUrl = "https://cdn.test/thumbnail.jpg",
+        viewModel.onIntent(
+            AfternoteEditorIntent.ApplyPrefill(
+                memorialPrefill(
+                    photoUrl = "https://cdn.test/portrait.jpg",
+                    videoUrl = "https://cdn.test/farewell.mp4",
+                    thumbnailUrl = "https://cdn.test/thumbnail.jpg",
+                ),
             ),
         )
 
-        viewModel.removeMemorialPhoto()
-        viewModel.removeMemorialVideo()
+        viewModel.onIntent(AfternoteEditorIntent.RemoveMemorialPhoto)
+        viewModel.onIntent(AfternoteEditorIntent.RemoveMemorialVideo)
 
-        assertNull(viewModel.currentForm().pickedMemorialPhotoUri)
-        assertNull(viewModel.currentForm().memorialPhotoUrl)
-        assertNull(viewModel.currentForm().displayMemorialPhotoUri())
-        assertNull(viewModel.currentForm().displayedMemorialVideo?.url)
-        assertNull(viewModel.currentForm().displayedMemorialVideo?.thumbnailUrl)
+        assertNull(
+            viewModel.uiState.value.form.memorialPhoto
+                ?.toSnapshot()
+                ?.selection,
+        )
+        assertNull(
+            viewModel.uiState.value.form.memorialPhoto
+                ?.toSnapshot()
+                ?.persisted,
+        )
+        assertNull(
+            viewModel.uiState.value.form
+                .displayMemorialPhotoUri(),
+        )
+        assertNull(
+            viewModel.uiState.value.form.displayedMemorialVideo
+                ?.url,
+        )
+        assertNull(
+            viewModel.uiState.value.form.displayedMemorialVideo
+                ?.thumbnailUrl,
+        )
     }
 
     @Test
     fun `삭제한 서버 미디어 스냅샷은 상세 재조회 없는 복원에서도 비어 있다`() {
         val handle = memorialSavedStateHandle()
         val first = viewModel(handle)
-        first.applyPrefill(
-            memorialPrefill(
-                photoUrl = "https://cdn.test/portrait.jpg",
-                videoUrl = "https://cdn.test/farewell.mp4",
-                thumbnailUrl = "https://cdn.test/thumbnail.jpg",
-                playlistSongs = listOf(Song("detail:0", "노래", "가수")),
+        first.onIntent(
+            AfternoteEditorIntent.ApplyPrefill(
+                memorialPrefill(
+                    photoUrl = "https://cdn.test/portrait.jpg",
+                    videoUrl = "https://cdn.test/farewell.mp4",
+                    thumbnailUrl = "https://cdn.test/thumbnail.jpg",
+                    playlistSongs = listOf(Song("detail:0", "노래", "가수")),
+                ),
             ),
         )
-        first.removeMemorialVideo()
-        first.removeMemorialPhoto()
+        first.onIntent(AfternoteEditorIntent.RemoveMemorialVideo)
+        first.onIntent(AfternoteEditorIntent.RemoveMemorialPhoto)
 
-        val restored = viewModel(handle).currentForm()
+        val restored = viewModel(handle).uiState.value.form
 
         assertNull(restored.displayedMemorialVideo)
-        assertNull(restored.pickedMemorialPhotoUri)
-        assertNull(restored.memorialPhotoUrl)
+        assertNull(restored.memorialPhoto?.toSnapshot()?.selection)
+        assertNull(restored.memorialPhoto?.toSnapshot()?.persisted)
         assertNull(restored.displayMemorialPhotoUri())
         assertEquals(listOf("노래"), restored.memorialPlaylistSongs.map { it.title })
+    }
+
+    @Test
+    fun `빈 사진 상태를 기존 JSON 키로 저장하고 복원한다`() {
+        assertPhotoSnapshotRoundTrip(null, null, MediaInput.None)
+    }
+
+    @Test
+    fun `서버 사진 상태를 기존 JSON 키로 저장하고 복원한다`() {
+        assertPhotoSnapshotRoundTrip("https://cdn.test/portrait.jpg", null, MediaInput.Remote("https://cdn.test/portrait.jpg"))
+    }
+
+    @Test
+    fun `로컬 사진 상태를 기존 JSON 키로 저장하고 복원한다`() {
+        assertPhotoSnapshotRoundTrip(null, "content://photo", MediaInput.Local("content://photo"))
+    }
+
+    @Test
+    fun `교체 중 사진의 서버 기준값과 로컬 선택을 함께 복원한다`() {
+        assertPhotoSnapshotRoundTrip("https://cdn.test/portrait.jpg", "content://photo", MediaInput.Local("content://photo"))
+    }
+
+    private fun assertPhotoSnapshotRoundTrip(
+        persisted: String?,
+        selection: String?,
+        expectedInput: MediaInput,
+    ) {
+        val handle = memorialSavedStateHandle()
+        val original = viewModel(handle)
+        original.onIntent(AfternoteEditorIntent.ApplyPrefill(memorialPrefill(photoUrl = persisted)))
+        if (selection != null) original.onIntent(AfternoteEditorIntent.SetMemorialPhoto(selection))
+        val encoded = requireNotNull(handle.get<String>("editor_form_snapshot_v4"))
+        val fields = Json.parseToJsonElement(encoded).jsonObject
+        assertEquals(persisted?.let(::JsonPrimitive) ?: JsonNull, fields["memorialPhotoUrl"])
+        assertEquals(selection?.let(::JsonPrimitive) ?: JsonNull, fields["pickedMemorialPhotoUri"])
+
+        // 같은 진입 경로의 새 SavedStateHandle로 실제 직렬화된 스냅샷만 복사한다.
+        val restored = viewModel(memorialSavedStateHandle().apply { set("editor_form_snapshot_v4", encoded) })
+        val photo = requireNotNull(restored.uiState.value.form.memorialPhoto)
+        assertEquals(original.uiState.value.form, restored.uiState.value.form)
+        assertEquals(selection ?: persisted, photo.displayed)
+        assertEquals(expectedInput, photo.toMediaInput())
+        restored.onIntent(AfternoteEditorIntent.RemoveMemorialPhoto)
+        assertEquals(MediaInput.None, requireNotNull(restored.uiState.value.form.memorialPhoto).toMediaInput())
     }
 
     private fun memorialSavedStateHandle(): SavedStateHandle = SavedStateHandle(mapOf("initialType" to AfternoteType.MEMORIAL))
@@ -164,7 +252,7 @@ class AfternoteEditorMemorialMediaRemoveTest {
         AfternoteEditorViewModel(
             route = savedStateHandle.editorFlowRoute(),
             savedStateHandle = savedStateHandle,
-            userRepository = repositoryProxy<UserRepository>(),
+            userReceiverRepository = repositoryProxy<UserReceiverRepository>(),
             afternoteRepository = repositoryProxy<AfternoteRepository>(),
             memorialThumbnailUploadRepository =
                 MemorialThumbnailUploadRepository { error("썸네일 업로드가 호출되면 안 됩니다") },
@@ -172,6 +260,7 @@ class AfternoteEditorMemorialMediaRemoveTest {
                 ResolveMemorialMediaForSaveUseCase(
                     MemorialMediaUploadRepository { _, _ -> error("미디어 업로드가 호출되면 안 됩니다") },
                 ),
+            saveAfternoteUseCase = SaveAfternoteUseCase(repositoryProxy<AfternoteRepository>()),
             errorReporter = repositoryProxy<ErrorReporter>(),
         )
 

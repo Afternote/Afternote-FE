@@ -81,13 +81,12 @@ sealed interface AfternoteTypeForm {
      * 카테고리 전용 필드. 영상의 서버 기준값·미저장 교체분은 [EditableMemorialVideo]가 감춘다.
      *
      * 시트의 삭제는 슬롯을 비운다 — 교체분과 서버 값을 함께. 비어 있는 서버 값은 저장 시 PATCH `null`
-     * 로 이어진다(#1597). 사진은 `pickedPhotoUri`·`photoUrl` 두 칸이 같은 규칙을 따른다.
+     * 로 이어진다(#1597). 사진도 [EditableMemorialPhoto]가 같은 규칙을 닫는다.
      */
     @ConsistentCopyVisibility
     data class Memorial internal constructor(
-        val pickedPhotoUri: String? = null,
+        internal val photo: EditableMemorialPhoto = EditableMemorialPhoto.empty(),
         internal val video: EditableMemorialVideo = EditableMemorialVideo.empty(),
-        val photoUrl: String? = null,
         /**
          * 추모 음성 (#1118). 영상과 같은 규칙 — 로컬 픽(`content://`)과 수정 진입 prefill 의 원격 URL 이
          * 한 필드를 공유하고, 저장 시 `isLocalContentUri()` 로 가른다.
@@ -97,7 +96,7 @@ sealed interface AfternoteTypeForm {
     ) : AfternoteTypeForm {
         override val type = AfternoteType.MEMORIAL
 
-        fun displayPhotoUri(): String? = pickedPhotoUri ?: photoUrl
+        internal fun displayPhotoUri(): String? = photo.displayed
 
         /**
          * 미디어는 수정 진입 기준선과 비교해야 서버 원본 삭제도 미저장 변경으로 잡힌다(#1597). 영상은
@@ -154,7 +153,7 @@ sealed interface AfternoteTypeForm {
                                     thumbnailUrl = content.thumbnailUrl,
                                 ),
                             ),
-                        photoUrl = content.photoUrl,
+                        photo = EditableMemorialPhoto.fromPersisted(content.photoUrl),
                         audioUrl = content.audioUrl,
                         playlistSongs = content.playlistSongs,
                     )

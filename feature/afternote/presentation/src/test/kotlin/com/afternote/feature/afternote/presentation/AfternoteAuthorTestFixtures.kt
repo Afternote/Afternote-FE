@@ -2,12 +2,11 @@ package com.afternote.feature.afternote.presentation
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.domain.testing.FakeMyProfileRepository
 import com.afternote.core.domain.testing.FakeUserProfileCacheRepository
-import com.afternote.core.domain.testing.FakeUserRepository
+import com.afternote.core.domain.testing.FakeUserReceiverRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.model.user.User
-import com.afternote.core.model.user.UserConnectedAccount
-import com.afternote.core.model.user.UserPushSetting
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 
@@ -35,23 +34,18 @@ internal fun afternoteEditorSavedStateHandle(
         },
     )
 
-/** app androidTest 공용 helper가 열어 두던 UserRepository 경계만 그대로 허용한다. */
-internal fun afternoteAuthorUserRepository(): FakeUserRepository =
-    FakeUserRepository.strict().apply {
-        profile = TEST_USER
+/** 에디터·수신자 선택이 사용하는 수신자 조회 계약만 허용한다. */
+internal fun afternoteAuthorUserReceiverRepository(): FakeUserReceiverRepository =
+    FakeUserReceiverRepository.strict().apply {
         receiverState.value = listOf(TEST_RECEIVER)
-        pushSetting = TEST_PUSH_SETTING
-        connectedAccounts = testConnectedAccounts(profile.email)
-
-        onReceiverListFlow = null
         onGetReceivers = null
-        onCreateReceiver = null
+    }
+
+/** 작성자 상세가 사용하는 프로필 조회 계약만 허용한다. */
+internal fun afternoteAuthorMyProfileRepository(): FakeMyProfileRepository =
+    FakeMyProfileRepository.strict().apply {
+        profile = TEST_USER
         onGetMyProfile = null
-        onUpdateMyProfile = null
-        onDeleteAccount = null
-        onGetMyPushSettings = null
-        onUpdateMyPushSettings = null
-        onGetConnectedAccounts = { testConnectedAccounts(profile.email) }
     }
 
 /**
@@ -74,7 +68,3 @@ internal object NoopAuthorErrorReporter : ErrorReporter {
 
 private val TEST_USER = User("테스트 사용자", "test@afternote.local", null, null)
 private val TEST_RECEIVER = Receiver(7L, "김수신", "가족", "fake-auth-7")
-private val TEST_PUSH_SETTING = UserPushSetting(true, true, true)
-
-private fun testConnectedAccounts(email: String): UserConnectedAccount =
-    UserConnectedAccount(true, false, false, false, false, email, null, null, null, null)
