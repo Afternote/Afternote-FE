@@ -77,7 +77,6 @@ class DraftLetterViewModel
                             drafts = latest.drafts.filter { it.id !in selectedIds },
                             selectedIds = emptySet(),
                             isEditMode = false,
-                            isDeleting = false,
                         )
                     }
                 } catch (cancellationException: CancellationException) {
