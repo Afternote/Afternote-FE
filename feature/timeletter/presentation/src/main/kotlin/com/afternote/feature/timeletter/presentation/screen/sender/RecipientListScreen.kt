@@ -18,9 +18,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -113,7 +113,7 @@ private fun RecipientListContent(
     allowEmptyConfirm: Boolean = false,
 ) {
     val searchState = rememberTextFieldState()
-    val selectedIds = remember { mutableStateSetOf<Long>() }
+    var selectedIds by rememberSaveable { mutableStateOf(emptySet<Long>()) }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     var selectedConsonant by remember { mutableStateOf<Char?>(null) }
@@ -198,11 +198,12 @@ private fun RecipientListContent(
                                 recipient = recipient,
                                 selected = recipient.receiverId in selectedIds,
                                 onSelectedChange = { checked ->
-                                    if (checked) {
-                                        selectedIds.add(recipient.receiverId)
-                                    } else {
-                                        selectedIds.remove(recipient.receiverId)
-                                    }
+                                    selectedIds =
+                                        if (checked) {
+                                            selectedIds + recipient.receiverId
+                                        } else {
+                                            selectedIds - recipient.receiverId
+                                        }
                                 },
                             )
                         }
