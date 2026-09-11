@@ -3,13 +3,12 @@ package com.afternote.feature.afternote.data.mapper
 import com.afternote.feature.afternote.data.dto.AfternoteCredentialsDto
 import com.afternote.feature.afternote.data.dto.AfternoteDetailDto
 import com.afternote.feature.afternote.data.dto.AfternoteDetailReceiverDto
-import com.afternote.feature.afternote.data.dto.AfternoteMemorialVideoDto
 import com.afternote.feature.afternote.data.dto.AfternotePlaylistDto
-import com.afternote.feature.afternote.data.dto.AfternoteSongDto
 import com.afternote.feature.afternote.data.dto.LeaveMessageBlockDto
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.domain.model.author.DetailContent
+import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
@@ -205,22 +204,22 @@ class AfternoteDetailMapperTest {
     }
 
     @Test
-    fun `toDomain - playlist 미디어·곡 매핑`() {
+    fun `toDomain - 서버 playlist JSON의 미디어·곡 매핑`() {
         val result =
-            AfternoteDetailDto(
-                isDraft = false,
-                receivers = emptyList(),
-                afternoteId = 1L,
-                category = "PLAYLIST",
-                title = "t",
-                updatedAt = UPDATED_AT,
-                memorial =
-                    AfternotePlaylistDto(
-                        memorialPhotoUrl = "memorial.jpg",
-                        songs = listOf(AfternoteSongDto(title = "s", artist = "a")),
-                        memorialVideo = AfternoteMemorialVideoDto(videoUrl = "v.mp4", thumbnailUrl = "t.jpg"),
-                    ),
-            ).toDomain()
+            Json
+                .decodeFromString<AfternoteDetailDto>(
+                    """
+                    {
+                      "afternoteId":1,"category":"PLAYLIST","title":"t","isDraft":false,
+                      "updatedAt":"$UPDATED_AT","receivers":[],
+                      "playlist":{
+                        "memorialPhotoUrl":"memorial.jpg",
+                        "songs":[{"title":"s","artist":"a"}],
+                        "memorialVideo":{"videoUrl":"v.mp4","thumbnailUrl":"t.jpg"}
+                      }
+                    }
+                    """.trimIndent(),
+                ).toDomain()
 
         val memorial = result.content as DetailContent.Memorial
         val media = memorial.media
@@ -243,7 +242,7 @@ class AfternoteDetailMapperTest {
                 title = "t",
                 updatedAt = UPDATED_AT,
                 leaveMessage = listOf(LeaveMessageBlockDto(title = "가족에게", body = "잘 지내")),
-                memorial = AfternotePlaylistDto(songs = emptyList()),
+                playlist = AfternotePlaylistDto(songs = emptyList()),
             ).toDomain()
 
         assertEquals(
@@ -262,7 +261,7 @@ class AfternoteDetailMapperTest {
                 category = "PLAYLIST",
                 title = "t",
                 updatedAt = UPDATED_AT,
-                memorial = AfternotePlaylistDto(songs = emptyList(), memorialVideo = null),
+                playlist = AfternotePlaylistDto(songs = emptyList(), memorialVideo = null),
             ).toDomain()
 
         val media = (result.content as DetailContent.Memorial).media
