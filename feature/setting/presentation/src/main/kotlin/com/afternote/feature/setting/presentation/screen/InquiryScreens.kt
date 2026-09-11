@@ -1,8 +1,8 @@
 package com.afternote.feature.setting.presentation.screen
 
-import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -47,7 +47,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringArrayResource
@@ -239,42 +238,27 @@ internal fun InquiryWriteScreen(
     val title = rememberTextFieldState()
     var content by rememberSaveable { mutableStateOf("") }
     var attachments by rememberSaveable { mutableStateOf(arrayListOf<String>()) }
-    val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val submitNotSupportedMessage = stringResource(R.string.setting_inquiry_submit_not_supported)
     val attachmentLimitMessage = stringResource(R.string.setting_inquiry_attachment_limit, MAX_INQUIRY_IMAGES)
-    val attachmentUnavailableMessage = stringResource(R.string.setting_inquiry_attachment_unavailable)
     val onAddScreenshots: () -> Unit =
         if (LocalInspectionMode.current) {
             ({})
         } else {
+            // 사진 선택기는 고른 URI 의 읽기를 프로세스 수명 동안 보장하므로 persistable 권한을
+            // 받지 않는다. 다른 첨부 화면(서류 업로드·프로필·에디터)과 같은 선택기다.
             val picker =
-                rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+                rememberLauncherForActivityResult(
+                    ActivityResultContracts.PickMultipleVisualMedia(MAX_INQUIRY_IMAGES),
+                ) { uris ->
                     val selected = (attachments + uris.map(Uri::toString)).distinct()
-                    val candidates = selected.take(MAX_INQUIRY_IMAGES)
-                    val readableUris =
-                        candidates.filter { value ->
-                            val uri = Uri.parse(value)
-                            try {
-                                context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                true
-                            } catch (_: SecurityException) {
-                                false
-                            }
-                        }
-                    attachments = ArrayList(readableUris)
-                    val message =
-                        when {
-                            readableUris.size < candidates.size -> attachmentUnavailableMessage
-                            selected.size > MAX_INQUIRY_IMAGES -> attachmentLimitMessage
-                            else -> null
-                        }
-                    if (message != null) {
-                        coroutineScope.launch { snackbarHostState.showSnackbar(message) }
+                    attachments = ArrayList(selected.take(MAX_INQUIRY_IMAGES))
+                    if (selected.size > MAX_INQUIRY_IMAGES) {
+                        coroutineScope.launch { snackbarHostState.showSnackbar(attachmentLimitMessage) }
                     }
                 }
-            ({ picker.launch(arrayOf("image/*")) })
+            ({ picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) })
         }
     val canSubmit = title.text.isNotBlank() && content.isNotBlank()
 
