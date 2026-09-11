@@ -47,6 +47,7 @@ data class AfternoteUpdateRequestDto(
     @SerialName("playlist") val memorial: AfternotePlaylistRequestDto? = null,
 )
 
+/** 서버 상세의 이름은 [playlist]로 유지하고, 도메인 매퍼에서 추억 노트(Memorial)로 해석한다. */
 @Serializable
 data class AfternoteDetailDto(
     @SerialName("afternoteId") val afternoteId: Long,
@@ -58,7 +59,7 @@ data class AfternoteDetailDto(
     @SerialName("receivers") val receivers: List<AfternoteDetailReceiverDto>,
     @SerialName("actions") val processingMethods: List<String>? = null,
     @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
-    @SerialName("playlist") val memorial: AfternotePlaylistDto? = null,
+    @SerialName("playlist") val playlist: AfternotePlaylistDto? = null,
 )
 
 @Serializable

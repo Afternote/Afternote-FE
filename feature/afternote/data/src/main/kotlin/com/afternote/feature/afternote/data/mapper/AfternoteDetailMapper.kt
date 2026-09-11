@@ -59,7 +59,7 @@ private fun AfternoteDetailDto.toDetailContent(type: AfternoteType): DetailConte
         }
 
         AfternoteType.MEMORIAL -> {
-            requireNotNull(memorial) { "playlist is required for MEMORIAL detail" }.toMemorialContent()
+            requireNotNull(playlist) { "playlist is required for MEMORIAL detail" }.toMemorialContent()
         }
 
         AfternoteType.ESTATE -> {
