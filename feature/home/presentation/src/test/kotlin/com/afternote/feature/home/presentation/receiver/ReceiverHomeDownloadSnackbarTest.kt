@@ -9,6 +9,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.home.presentation.R
+import com.afternote.feature.home.presentation.receiver.model.FailedWithRetry
 import com.afternote.feature.home.presentation.receiver.model.ReceiverDownloadErrorPopup
 import com.afternote.feature.home.presentation.receiver.model.ReceiverDownloadState
 import com.afternote.feature.home.presentation.receiver.model.ReceiverHomeUiState
@@ -47,14 +48,14 @@ class ReceiverHomeDownloadSnackbarTest {
 
     @Test
     fun `내려받기 서버 실패는 서버 오류 팝업으로 안내한다`() {
-        setHomeContent(ReceiverDownloadState.FailedWithRetry(ReceiverDownloadErrorPopup.SERVER))
+        setHomeContent(FailedWithRetry(ReceiverDownloadErrorPopup.SERVER))
 
         composeRule.onNodeWithText(string(CoreUiR.string.core_ui_server_error_title)).assertIsDisplayed()
     }
 
     @Test
     fun `연결 실패는 네트워크 오류 팝업으로 안내한다`() {
-        setHomeContent(ReceiverDownloadState.FailedWithRetry(ReceiverDownloadErrorPopup.NETWORK))
+        setHomeContent(FailedWithRetry(ReceiverDownloadErrorPopup.NETWORK))
 
         composeRule.onNodeWithText(string(CoreUiR.string.core_ui_network_error_title)).assertIsDisplayed()
     }
@@ -65,7 +66,7 @@ class ReceiverHomeDownloadSnackbarTest {
      */
     @Test
     fun `파일 저장 실패는 저장 실패 문구로 안내한다`() {
-        setHomeContent(ReceiverDownloadState.FailedWithRetry(ReceiverDownloadErrorPopup.SAVE))
+        setHomeContent(FailedWithRetry(ReceiverDownloadErrorPopup.SAVE))
 
         composeRule.onNodeWithText(string(R.string.home_receiver_download_save_error_title)).assertIsDisplayed()
         composeRule.onNodeWithText(string(R.string.home_receiver_download_all_save_failed)).assertIsDisplayed()
@@ -80,7 +81,7 @@ class ReceiverHomeDownloadSnackbarTest {
     fun `다시 시도하기는 재시도 이벤트를 올린다`() {
         val events = mutableListOf<ReceiverHomeEvent>()
         setHomeContent(
-            download = ReceiverDownloadState.FailedWithRetry(ReceiverDownloadErrorPopup.SERVER),
+            download = FailedWithRetry(ReceiverDownloadErrorPopup.SERVER),
             onEvent = { events += it },
         )
 

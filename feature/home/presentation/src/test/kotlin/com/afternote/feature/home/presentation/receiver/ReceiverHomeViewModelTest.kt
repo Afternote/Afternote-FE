@@ -2,6 +2,7 @@ package com.afternote.feature.home.presentation.receiver
 
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.home.presentation.R
+import com.afternote.feature.home.presentation.receiver.model.FailedWithRetry
 import com.afternote.feature.home.presentation.receiver.model.ReceiverDownloadErrorPopup
 import com.afternote.feature.home.presentation.receiver.model.ReceiverDownloadState
 import com.afternote.feature.home.presentation.receiver.model.ReceiverHomeUiState
@@ -193,7 +194,7 @@ class ReceiverHomeViewModelTest {
             val state = viewModel.uiState.value as ReceiverHomeUiState.Success
             // 번역되지 않은 실패는 사유를 모르므로 서버 갈래로 안내한다 (#1737).
             assertEquals(
-                ReceiverDownloadState.FailedWithRetry(ReceiverDownloadErrorPopup.SERVER),
+                FailedWithRetry(ReceiverDownloadErrorPopup.SERVER),
                 state.download,
             )
             assertTrue(fixture.receiver.savedBundles.isEmpty())
@@ -218,7 +219,7 @@ class ReceiverHomeViewModelTest {
 
             val state = viewModel.uiState.value as ReceiverHomeUiState.Success
             assertEquals(
-                ReceiverDownloadState.FailedWithRetry(ReceiverDownloadErrorPopup.NETWORK),
+                FailedWithRetry(ReceiverDownloadErrorPopup.NETWORK),
                 state.download,
             )
         }
@@ -245,7 +246,7 @@ class ReceiverHomeViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                ReceiverDownloadState.FailedWithRetry(ReceiverDownloadErrorPopup.SAVE),
+                FailedWithRetry(ReceiverDownloadErrorPopup.SAVE),
                 (viewModel.uiState.value as ReceiverHomeUiState.Success).download,
             )
             assertEquals(1, fixture.receiver.downloadCalls)

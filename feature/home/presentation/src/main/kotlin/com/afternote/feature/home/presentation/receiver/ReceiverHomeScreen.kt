@@ -36,6 +36,7 @@ import com.afternote.feature.home.presentation.receiver.component.AfternoteSecti
 import com.afternote.feature.home.presentation.receiver.component.MindRecordSection
 import com.afternote.feature.home.presentation.receiver.component.SenderMessageHeroCard
 import com.afternote.feature.home.presentation.receiver.component.TimeLetterSection
+import com.afternote.feature.home.presentation.receiver.model.FailedWithRetry
 import com.afternote.feature.home.presentation.receiver.model.ReceiverDownloadState
 import com.afternote.feature.home.presentation.receiver.model.ReceiverHomeUiState
 
@@ -182,7 +183,7 @@ private fun DownloadDialogHost(
     }
 
     when (state) {
-        is ReceiverDownloadState.FailedWithRetry -> {
+        is FailedWithRetry -> {
             ReceiverDownloadErrorPopupHost(
                 popup = state.popup,
                 onRetry = { onEvent(ReceiverHomeEvent.RetryDownload) },

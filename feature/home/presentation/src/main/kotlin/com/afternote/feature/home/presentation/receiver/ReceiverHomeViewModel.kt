@@ -8,6 +8,7 @@ import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.ui.icon.AfternoteSourceIcon
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.home.presentation.R
+import com.afternote.feature.home.presentation.receiver.model.FailedWithRetry
 import com.afternote.feature.home.presentation.receiver.model.MindRecordSummary
 import com.afternote.feature.home.presentation.receiver.model.ReceiverDownloadErrorPopup
 import com.afternote.feature.home.presentation.receiver.model.ReceiverDownloadState
@@ -263,7 +264,7 @@ class ReceiverHomeViewModel
                         if (e is ReceiverFailure.ExportNotSupported) {
                             ReceiverDownloadState.Failed(R.string.home_receiver_download_all_save_failed)
                         } else {
-                            ReceiverDownloadState.FailedWithRetry(ReceiverDownloadErrorPopup.SAVE)
+                            FailedWithRetry(ReceiverDownloadErrorPopup.SAVE)
                         },
                     )
                 }
@@ -294,11 +295,11 @@ private fun Throwable.toDownloadFailure(
 ): ReceiverDownloadState =
     when (this as? ReceiverFailure) {
         is ReceiverFailure.NetworkUnavailable -> {
-            ReceiverDownloadState.FailedWithRetry(ReceiverDownloadErrorPopup.NETWORK)
+            FailedWithRetry(ReceiverDownloadErrorPopup.NETWORK)
         }
 
         is ReceiverFailure.UnexpectedServerFailure -> {
-            ReceiverDownloadState.FailedWithRetry(ReceiverDownloadErrorPopup.SERVER)
+            FailedWithRetry(ReceiverDownloadErrorPopup.SERVER)
         }
 
         is ReceiverFailure.ExportNotSupported,
@@ -310,7 +311,7 @@ private fun Throwable.toDownloadFailure(
 
         // 번역되지 않은 실패(로컬 예외 등) — 사유를 모르는 채 다른 안내를 할 근거가 없다.
         null -> {
-            ReceiverDownloadState.FailedWithRetry(ReceiverDownloadErrorPopup.SERVER)
+            FailedWithRetry(ReceiverDownloadErrorPopup.SERVER)
         }
     }
 
