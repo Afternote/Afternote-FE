@@ -14,6 +14,13 @@ import org.junit.Test
  * 종전에는 `submit(isDraft = true)` 도 정식 등록과 같은 `canSubmit` 을 써서, 제목·본문·
  * 기분이 모두 있어야만 임시저장이 됐다 — **미완성 내용을 보존하는 것이 목적인 기능이
  * 완성된 글에서만 동작**했다. 막힐 때 사유도 없었다.
+ *
+ * 그 뒤 한 번 더 조여야 했다. 서버가 `isDraft=true` 에도 셋을 전부 검증해(실측 400),
+ * 보내면 실패하는 조건을 «저장 가능» 으로 표시할 수 없었기 때문이다 (#1065).
+ *
+ * **지금은 서버가 풀었다** — `Afternote-BE#243` → PR #267(2026-08-30 머지)이 임시저장의
+ * 필수 검증을 걷었다. 이 파일은 이제 그 완화된 조건을 잠근다: 제목·본문 중 하나면 되고
+ * 기분은 선택이며, 정식 등록은 여전히 셋을 요구한다.
  */
 class DiaryDraftConditionTest {
     private fun state(
@@ -23,15 +30,21 @@ class DiaryDraftConditionTest {
     ) = DiaryWriteUiState(title = title, content = content, mood = mood)
 
     @Test
-    fun `제목만으로는 임시저장할 수 없다`() {
-        // 서버가 임시저장에도 제목·본문·기분을 모두 요구한다 — 실측 400 (#1065).
-        // 보내면 실패하는 조건을 «저장 가능» 으로 표시하면 버튼이 고장 난 것과 같다.
-        assertFalse(state(title = "쓰다 만 제목").canSaveDraft)
+    fun `제목만으로도 임시저장된다`() {
+        // 미완성 보존이 목적이다 — 서버가 임시저장의 필수 검증을 걷었다 (#1065).
+        assertTrue(state(title = "쓰다 만 제목").canSaveDraft)
     }
 
     @Test
-    fun `본문만으로도 임시저장할 수 없다`() {
-        assertFalse(state(content = "<p>쓰다 만 본문</p>").canSaveDraft)
+    fun `본문만으로도 임시저장된다`() {
+        assertTrue(state(content = "<p>쓰다 만 본문</p>").canSaveDraft)
+    }
+
+    @Test
+    fun `기분을 안 골라도 임시저장된다`() {
+        // 「아직 안 골랐다」를 그대로 보낸다. 아무 값이나 채우면 고른 적 없는 기분이
+        // 사용자 데이터가 되어 주간리포트 집계와 감정 분석에 들어간다.
+        assertNull(state(title = "제목", content = "<p>본문</p>").missingForDraft())
     }
 
     @Test
@@ -43,16 +56,16 @@ class DiaryDraftConditionTest {
 
     @Test
     fun `임시저장도 무엇이 빠졌는지 알려준다`() {
-        // 조용히 막으면 버튼이 죽은 것과 구분되지 않는다.
-        assertEquals(R.string.mindrecord_write_diary_missing_title, state().missingForDraft())
+        // 조용히 막으면 버튼이 죽은 것과 구분되지 않는다. 남길 것이 하나도 없을 때만 막는다.
         assertEquals(
-            R.string.mindrecord_write_diary_missing_mood,
-            state(title = "제목", content = "<p>본문</p>").missingForDraft(),
+            R.string.mindrecord_write_diary_missing_draft_content,
+            state().missingForDraft(),
         )
     }
 
     @Test
     fun `기분만 골라서는 임시저장할 내용이 없다`() {
+        // 제목도 본문도 없으면 이어쓰기 목록에서 무엇인지 알아볼 수 없는 빈 임시저장이 된다.
         assertFalse(state(mood = TodayMood.HAPPY).canSaveDraft)
     }
 

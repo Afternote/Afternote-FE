@@ -48,7 +48,7 @@ class InquiryWriteScreenTest {
     }
 
     @Test
-    fun restoredForm_keepsAttachmentsAndText() {
+    fun restoredForm_keepsTextAndDropsAttachments() {
         val registry = ScreenshotPickerRegistry(listOf(Uri.parse("content://inquiry/image/1")))
         val restoration = StateRestorationTester(composeRule)
         restoration.setContent {
@@ -64,8 +64,9 @@ class InquiryWriteScreenTest {
 
         composeRule.onNodeWithText("문의 제목").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("문의 내용").performScrollTo().assertIsDisplayed()
-        composeRule.onNodeWithText("스크린샷 추가하기 (1/3장)").performScrollTo().assertIsDisplayed()
-        composeRule.onNodeWithContentDescription("스크린샷 1 삭제").performScrollTo().assertIsDisplayed()
+        // 사진 선택기 URI 의 읽기 권한은 프로세스 수명까지라 첨부는 복원하지 않는다(remember 계약).
+        composeRule.onNodeWithText("스크린샷 추가하기 (0/3장)").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("스크린샷 1 삭제").assertDoesNotExist()
     }
 
     @Test
