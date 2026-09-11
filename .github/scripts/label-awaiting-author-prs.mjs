@@ -47,6 +47,7 @@ query($owner: String!, $name: String!, $cursor: String, $pageSize: Int!) {
                 isDraft
                 createdAt
                 author { login }
+                assignees(first: 10) { nodes { login } }
                 headRepository { nameWithOwner }
                 labels(first: 50) { nodes { name } }
                 reviews(last: 50) {
@@ -99,6 +100,7 @@ query($searchQuery: String!, $cursor: String, $pageSize: Int!) {
                 isDraft
                 createdAt
                 author { login }
+                assignees(first: 10) { nodes { login } }
                 headRepository { nameWithOwner }
                 labels(first: 50) { nodes { name } }
                 reviews(last: 50) {
@@ -150,6 +152,33 @@ const ACTIVITY_TIMESTAMP_BY_CONNECTION = Object.freeze({
 
 function sameLogin(a, b) {
     return typeof a === "string" && typeof b === "string" && a.toLowerCase() === b.toLowerCase();
+}
+
+function isOneOf(login, owners) {
+    return (owners ?? []).some((owner) => sameLogin(login, owner));
+}
+
+function toOwners(author) {
+    return Array.isArray(author) ? author : [author];
+}
+
+/**
+ * PR 의 담당자 로그인 목록.
+ *
+ * PR 의 공은 «올린 사람» 이 아니라 «어사인된 사람» 에게 있다(#1974 결정, #1980). 변경요청에
+ * 응답할 의무도, 그 미응답이 막는 «새 PR 열기» 도 담당자의 몫이다. 어사인이 비어 있는 동안만
+ * 작성자가 담당자다 — pr-assign-author 가 빈 어사인에 작성자를 걸므로 잠깐 비는 창에서도
+ * 결과가 같다.
+ */
+export function responsibleLogins(pullRequest) {
+    const assignees = (pullRequest?.assignees?.nodes ?? [])
+        .map((node) => node?.login)
+        .filter((login) => typeof login === "string" && login !== "");
+    if (assignees.length > 0) {
+        return assignees;
+    }
+    const author = pullRequest?.author?.login;
+    return typeof author === "string" && author !== "" ? [author] : [];
 }
 
 /**
@@ -205,11 +234,12 @@ export function isCoveredSinceDecision(connectionName, nodes, since) {
  * «빈 커밋» 으로 접으면 라벨이 없는 근거로 둔갑한다 — 놓치는 쪽이 잘못 붙이는 쪽보다 안전하다.
  */
 export function countAuthorFixes({ commits, author, since }) {
+    const owners = toOwners(author);
     const nodes = (commits ?? []).map((node) => node?.commit).filter(Boolean);
 
     const ownEmails = new Set();
     for (const commit of nodes) {
-        if (sameLogin(commit.author?.user?.login, author) && commit.author?.email) {
+        if (isOneOf(commit.author?.user?.login, owners) && commit.author?.email) {
             ownEmails.add(commit.author.email.toLowerCase());
         }
     }
@@ -225,7 +255,7 @@ export function countAuthorFixes({ commits, author, since }) {
 
         const login = commit.author?.user?.login;
         const email = commit.author?.email?.toLowerCase();
-        const isAuthor = login ? sameLogin(login, author) : Boolean(email && ownEmails.has(email));
+        const isAuthor = login ? isOneOf(login, owners) : Boolean(email && ownEmails.has(email));
         if (!isAuthor) {
             continue;
         }
@@ -251,16 +281,17 @@ export function countAuthorFixes({ commits, author, since }) {
  * `countAuthorBodyEdits` 에서 센다.
  */
 export function countAuthorResponses({ comments, reviews, author, since }) {
+    const owners = toOwners(author);
     const issueComments = (comments ?? []).filter(
         (comment) =>
-            sameLogin(comment?.author?.login, author) &&
+            isOneOf(comment?.author?.login, owners) &&
             typeof comment?.createdAt === "string" &&
             comment.createdAt > since,
     ).length;
 
     const authorReviews = (reviews ?? []).filter(
         (review) =>
-            sameLogin(review?.author?.login, author) &&
+            isOneOf(review?.author?.login, owners) &&
             typeof review?.submittedAt === "string" &&
             review.submittedAt > since,
     ).length;
@@ -277,9 +308,10 @@ export function countAuthorResponses({ comments, reviews, author, since }) {
  * 기록은 작성자 조치로 추정하지 않는다.
  */
 export function countAuthorBodyEdits({ userContentEdits, author, since }) {
+    const owners = toOwners(author);
     return (userContentEdits ?? []).filter(
         (edit) =>
-            sameLogin(edit?.editor?.login, author) &&
+            isOneOf(edit?.editor?.login, owners) &&
             typeof edit?.editedAt === "string" &&
             edit.editedAt > since,
     ).length;
@@ -293,11 +325,13 @@ export function countAuthorBodyEdits({ userContentEdits, author, since }) {
  */
 export function judgeAwaitingAuthor(pullRequest, { repository } = {}) {
     const author = pullRequest?.author?.login ?? "";
+    // 조치 주체는 담당자다. 어사인이 비어 있으면 작성자로 폴백한다.
+    const owners = responsibleLogins(pullRequest);
 
     if (pullRequest?.isDraft) {
         return { awaiting: false, reason: "draft" };
     }
-    if (!author) {
+    if (!author || owners.length === 0) {
         return { awaiting: false, reason: "작성자 없음" };
     }
     if (/\[bot\]$/i.test(author) || author === "dependabot" || author === "github-actions") {
@@ -320,34 +354,36 @@ export function judgeAwaitingAuthor(pullRequest, { repository } = {}) {
     const since = decision.submittedAt;
     const fixes = countAuthorFixes({
         commits: pullRequest?.commits?.nodes,
-        author,
+        author: owners,
         since,
     });
     const responses = countAuthorResponses({
         comments: pullRequest?.comments?.nodes,
         reviews: pullRequest?.reviews?.nodes,
-        author,
+        author: owners,
         since,
     });
     const bodyEdits = countAuthorBodyEdits({
         userContentEdits: pullRequest?.userContentEdits?.nodes,
-        author,
+        author: owners,
         since,
     });
 
     if (fixes > 0 || responses > 0 || bodyEdits > 0) {
         return {
             awaiting: false,
-            reason: `작성자 조치 있음(${fixes}커밋 · 응답 ${responses}건 · 본문 편집 ${bodyEdits}건)`,
+            reason: `담당자 조치 있음(${fixes}커밋 · 응답 ${responses}건 · 본문 편집 ${bodyEdits}건)`,
             decidedAt: since,
+            owners,
         };
     }
 
     return {
         awaiting: true,
-        reason: "변경요청 뒤 작성자 조치 없음",
+        reason: "변경요청 뒤 담당자 조치 없음",
         decidedAt: since,
         reviewer: decision.author?.login ?? "",
+        owners,
     };
 }
 
@@ -355,8 +391,9 @@ export function judgeAwaitingAuthor(pullRequest, { repository } = {}) {
  * 새 PR 작성자가 먼저 처리해야 할 다른 열린 PR 을 고른다.
  *
  * 열린 PR 목록은 호출자가 한 번 live 조회해 넘긴다. 현재 PR 은 이벤트 직후 그 목록에 이미
- * 포함되므로 번호로 명시적으로 제외한다. 작성자 login 은 GitHub 의 대소문자 비구분 규약에
- * 맞춰 비교하고, 실제 무조치 여부는 라벨이 아니라 `judgeAwaitingAuthor` 로 매번 다시 판정한다.
+ * 포함되므로 번호로 명시적으로 제외한다. «자기 PR» 은 작성자가 아니라 담당자(어사인, 비어
+ * 있으면 작성자)로 가른다. login 은 GitHub 의 대소문자 비구분 규약에 맞춰 비교하고, 실제
+ * 무조치 여부는 라벨이 아니라 `judgeAwaitingAuthor` 로 매번 다시 판정한다.
  */
 export function findAuthorDebts({ pullRequests, repository, author, currentPullRequestNumber }) {
     if (!Array.isArray(pullRequests)) {
@@ -376,7 +413,9 @@ export function findAuthorDebts({ pullRequests, repository, author, currentPullR
         if (Number(pullRequest?.number) === currentNumber) {
             continue;
         }
-        if (!sameLogin(pullRequest?.author?.login, author)) {
+        // 빚의 주인은 담당자다. 남이 올렸어도 내가 어사인된 PR 이면 내 빚이고, 내가 올렸어도
+        // 남에게 어사인된 PR 이면 내 빚이 아니다.
+        if (!isOneOf(author, responsibleLogins(pullRequest))) {
             continue;
         }
 
@@ -411,14 +450,17 @@ export function planAwaitingAuthorLabels({ pullRequests, repository, label = DEF
     for (const pullRequest of pullRequests ?? []) {
         const labels = (pullRequest?.labels?.nodes ?? []).map((node) => node?.name);
         const labeled = labels.includes(label);
-        const exempt = exemptAuthors.some((login) => sameLogin(login, pullRequest?.author?.login));
+        // 면제는 담당자 기준이다. 담당자 전원이 면제 목록에 있을 때만 뺀다 — 면제자와 비면제자가
+        // 함께 어사인된 PR 은 비면제자의 몫이 남아 있다.
+        const owners = responsibleLogins(pullRequest);
+        const exempt = owners.length > 0 && owners.every((login) => isOneOf(login, exemptAuthors));
         const verdict = exempt
             ? { awaiting: false, reason: "리뷰 게이트 면제 작성자" }
             : judgeAwaitingAuthor(pullRequest, { repository });
         const entry = {
             number: pullRequest.number,
             title: pullRequest.title,
-            author: pullRequest?.author?.login ?? "",
+            author: owners.join(","),
             reason: verdict.reason,
             decidedAt: verdict.decidedAt,
             reviewer: verdict.reviewer,
@@ -445,7 +487,7 @@ export function renderSummary({ plan, dryRun, label = DEFAULT_LABEL }) {
     lines.push("", `- 붙임 ${plan.toLabel.length}건 · 뗌 ${plan.toUnlabel.length}건`);
 
     if (plan.toLabel.length > 0) {
-        lines.push("", "| PR | 작성자 | 변경요청 | 리뷰어 |", "|---|---|---|---|");
+        lines.push("", "| PR | 담당자 | 변경요청 | 리뷰어 |", "|---|---|---|---|");
         for (const entry of plan.toLabel) {
             lines.push(
                 `| #${entry.number} | @${entry.author} | ${entry.decidedAt?.slice(0, 10) ?? "-"} | @${entry.reviewer || "-"} |`,
@@ -539,10 +581,12 @@ export async function fetchOpenPullRequests(api, repository) {
 }
 
 /**
- * 입장 게이트용으로 한 작성자의 열린 PR 만 조회한다.
+ * 입장 게이트용으로 한 사람이 담당하는 열린 PR 만 조회한다.
  *
  * 라벨 리컨사일러는 전체 열린 PR 이 필요하지만, 새 PR 입장마다 그 전체의 하위 리뷰·커밋·
- * 코멘트를 다시 읽을 필요는 없다. GitHub search 로 작성자를 서버에서 먼저 제한한다.
+ * 코멘트를 다시 읽을 필요는 없다. GitHub search 로 서버에서 먼저 제한한다. 담당은 어사인이
+ * 정본이고 어사인이 비면 작성자이므로 `assignee:` 와 `author:` 두 검색을 합친다. 남에게
+ * 어사인된 자기 작성 PR 은 `findAuthorDebts` 가 담당자 기준으로 걸러낸다.
  */
 export async function fetchOpenPullRequestsByAuthor(api, repository, author) {
     const [owner, name] = repository.split("/");
@@ -554,11 +598,14 @@ export async function fetchOpenPullRequestsByAuthor(api, repository, author) {
     }
 
     const pullRequests = [];
+    const seen = new Set();
+
+    for (const qualifier of ["assignee", "author"]) {
     let cursor = null;
 
     for (;;) {
         const data = await graphql(api, OPEN_PULL_REQUESTS_BY_AUTHOR_QUERY, {
-            searchQuery: `repo:${owner}/${name} is:pr is:open author:${author}`,
+            searchQuery: `repo:${owner}/${name} is:pr is:open ${qualifier}:${author}`,
             cursor,
             pageSize: PULL_REQUEST_PAGE_SIZE,
         });
@@ -574,6 +621,10 @@ export async function fetchOpenPullRequestsByAuthor(api, repository, author) {
             if (!pullRequest || !Number.isSafeInteger(pullRequest.number)) {
                 throw new Error("GraphQL 작성자 PR 검색 결과가 불완전합니다.");
             }
+            if (seen.has(pullRequest.number)) {
+                continue;
+            }
+            seen.add(pullRequest.number);
 
             // `last: 50` 앞에 더 많은 항목이 있으면 최신 결정 시각 이후의 작성자 이메일·응답·
             // 본문 편집을 완전하게 판정할 수 없다. 라벨은 다음 리컨사일에서 복구할 수 있지만,
@@ -614,6 +665,7 @@ export async function fetchOpenPullRequestsByAuthor(api, repository, author) {
         if (!cursor) {
             throw new Error("GraphQL 작성자 PR 다음 페이지 cursor 가 없습니다.");
         }
+    }
     }
 
     return pullRequests;
