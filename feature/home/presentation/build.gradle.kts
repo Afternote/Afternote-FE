@@ -8,10 +8,6 @@ plugins {
 android {
     testOptions.unitTests.isIncludeAndroidResources = true
 
-    // 수신자 홈 ViewModel 조립을 계약 옆에 둔다 — 집계 UseCase 를 모듈 밖으로 열지 않고도
-    // app 계측 테스트가 저장소 fake 로 조립할 수 있어야 한다 (#1689).
-    testFixtures.enable = true
-
     namespace = "com.afternote.feature.home.presentation"
     resourcePrefix = "home_"
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
@@ -35,16 +31,6 @@ dependencies {
     implementation(projects.feature.timeletter.domain)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
-
-    // Compose 컴파일러가 testFixtures 소스셋에도 걸려 런타임을 요구한다 — BOM 은 convention 이
-    // 이 구성에 안 걸어 줘서 직접 얹는다 (core:ui 의 testFixtures 전례).
-    testFixturesImplementation(platform(libs.androidx.compose.bom))
-    testFixturesImplementation(libs.androidx.compose.runtime)
-    testFixturesImplementation(projects.core.common)
-    testFixturesImplementation(projects.feature.mindrecord.domain)
-    testFixturesImplementation(projects.feature.receiver.domain)
-    testFixturesImplementation(projects.feature.timeletter.domain)
-    testFixturesImplementation(libs.androidx.lifecycle.viewmodel.ktx)
 
     // HomeTabViewModel 경합 테스트 — 가상 시간으로 viewModelScope 요청 순서를 제어한다.
     testImplementation(libs.coroutines.test)
