@@ -81,4 +81,16 @@ internal class SettingLocalNavActions(
     override fun onNavigateToNotice() {
         backStack.add(SettingRoute.NoticeRoute)
     }
+
+    override fun onNavigateToInquiry() {
+        backStack.add(SettingRoute.InquiryListRoute)
+    }
+
+    override fun onNavigateToInquiryDetail(inquiryId: Long) {
+        backStack.add(SettingRoute.InquiryDetailRoute(inquiryId))
+    }
+
+    override fun onNavigateToInquiryWrite() {
+        backStack.add(SettingRoute.InquiryWriteRoute)
+    }
 }

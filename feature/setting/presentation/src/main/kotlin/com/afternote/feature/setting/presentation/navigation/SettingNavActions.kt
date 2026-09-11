@@ -38,4 +38,10 @@ internal interface SettingNavActions {
     fun onNavigateToAppLock()
 
     fun onNavigateToNotice()
+
+    fun onNavigateToInquiry()
+
+    fun onNavigateToInquiryDetail(inquiryId: Long)
+
+    fun onNavigateToInquiryWrite()
 }

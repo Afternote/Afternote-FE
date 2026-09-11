@@ -91,6 +91,19 @@ class SettingLocalNavActionsTest {
     }
 
     @Test
+    fun `inquiry write and detail preserve their list back destination`() {
+        actions.onNavigateToInquiry()
+        actions.onNavigateToInquiryWrite()
+        actions.popBack()
+        assertEquals(SettingRoute.InquiryListRoute, stack.last())
+        actions.onNavigateToInquiryDetail(51L)
+        assertEquals(SettingRoute.InquiryDetailRoute(51L), stack.last())
+        actions.popBack()
+        actions.popBack()
+        assertEquals(listOf(SettingRoute.SettingHomeRoute), stack.toList())
+    }
+
+    @Test
     fun `all destination keys and route arguments survive serialization`() {
         val routes =
             listOf(
@@ -110,6 +123,9 @@ class SettingLocalNavActionsTest {
                 SettingRoute.PasskeyPasswordRoute,
                 SettingRoute.AppLockSetupRoute,
                 SettingRoute.NoticeRoute,
+                SettingRoute.InquiryListRoute,
+                SettingRoute.InquiryDetailRoute(51L),
+                SettingRoute.InquiryWriteRoute,
             )
         assertEquals(routes, Json.decodeFromString<List<SettingRoute>>(Json.encodeToString(routes)))
     }

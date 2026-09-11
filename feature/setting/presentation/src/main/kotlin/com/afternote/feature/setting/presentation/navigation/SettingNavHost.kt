@@ -15,6 +15,9 @@ import com.afternote.feature.setting.presentation.component.PinSetupStep
 import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
 import com.afternote.feature.setting.presentation.screen.ConnectedAccountsScreen
 import com.afternote.feature.setting.presentation.screen.DeliveryConditionScreen
+import com.afternote.feature.setting.presentation.screen.InquiryDetailScreen
+import com.afternote.feature.setting.presentation.screen.InquiryListScreen
+import com.afternote.feature.setting.presentation.screen.InquiryWriteScreen
 import com.afternote.feature.setting.presentation.screen.NoticeListScreen
 import com.afternote.feature.setting.presentation.screen.NotificationSettingScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyListScreen
@@ -83,7 +86,7 @@ public fun SettingNavHost(
                         onPasskeyClick = actions::onNavigateToPasskey,
                         onAppLockClick = actions::onNavigateToAppLock,
                         onFaqClick = {},
-                        onInquiryClick = {},
+                        onInquiryClick = actions::onNavigateToInquiry,
                         onNoticeClick = actions::onNavigateToNotice,
                         onTermsClick = {},
                         onPrivacyClick = {},
@@ -232,6 +235,25 @@ public fun SettingNavHost(
                         notices = emptyList(),
                         onBackClick = actions::popBack,
                     )
+                }
+
+                entry<SettingRoute.InquiryListRoute> {
+                    InquiryListScreen(
+                        inquiries = emptyList(),
+                        onBackClick = actions::popBack,
+                        onInquiryClick = actions::onNavigateToInquiryDetail,
+                        onNewInquiryClick = actions::onNavigateToInquiryWrite,
+                    )
+                }
+
+                entry<SettingRoute.InquiryDetailRoute> {
+                    // TODO(Afternote-BE#246): use the entry key inquiryId when the lookup contract exists.
+                    // There is no production source yet; preserve the unavailable state.
+                    InquiryDetailScreen(inquiry = null, onBackClick = actions::popBack)
+                }
+
+                entry<SettingRoute.InquiryWriteRoute> {
+                    InquiryWriteScreen(onBackClick = actions::popBack)
                 }
             },
     )
