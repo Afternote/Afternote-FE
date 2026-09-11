@@ -7,6 +7,8 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
+import com.afternote.feature.afternote.domain.model.author.DraftDetail
+import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
@@ -186,6 +188,93 @@ class AfternoteEditorProcessDeathPrefillTest {
             )
         }
 
+    @Test
+    fun `임시저장 복원도 편집을 보존하고 변경한 필드만 다시 저장한다`() =
+        runTest(dispatcher) {
+            val repository =
+                FakeAfternoteRepository.strict().apply {
+                    onGetDraftDetail = { Result.success(serverDraft()) }
+                    onUpdate = { id, _ -> Result.success(id) }
+                }
+            val viewModel = viewModel(repository, isDraft = true)
+            backgroundScope.launch { viewModel.uiState.collect {} }
+            runCurrent()
+
+            assertNull(viewModel.uiState.value.pendingPrefill)
+            assertFalse(viewModel.uiState.value.isPrefillLoading)
+            assertEquals(EDITED_SERVICE, viewModel.uiState.value.form.selectedService)
+
+            viewModel.onIntent(
+                AfternoteEditorIntent.Save(
+                    payload =
+                        RegisterAfternotePayload(
+                            serviceName = EDITED_SERVICE,
+                            date = "2026-09-08",
+                            processingMethods = listOf(SERVER_PROCESSING_METHOD),
+                        ),
+                    selectedReceiverIds = emptyList(),
+                    memorialMedia = SaveAfternoteMemorialMedia(),
+                    asDraft = true,
+                ),
+            )
+            runCurrent()
+
+            val updated = repository.updateCalls.single().second
+            assertEquals(EDITED_SERVICE, updated.title)
+            assertEquals(true, updated.isDraft)
+            assertNull("표시용 프리필이 아니라 서버 원본을 기준으로 비교해야 한다", updated.processingMethods)
+            assertNull(updated.receivers)
+        }
+
+    @Test
+    fun `임시저장 발행 전환은 그대로인 필드를 다시 보내지 않는다`() =
+        runTest(dispatcher) {
+            val repository =
+                FakeAfternoteRepository.strict().apply {
+                    onGetDraftDetail = { Result.success(serverDraft()) }
+                    onUpdate = { id, _ -> Result.success(id) }
+                }
+            val viewModel = viewModel(repository, isDraft = true, prefillSeeded = false)
+            backgroundScope.launch { viewModel.uiState.collect {} }
+            runCurrent()
+            viewModel.onIntent(AfternoteEditorIntent.ConsumePrefill)
+
+            viewModel.onIntent(
+                AfternoteEditorIntent.Save(
+                    payload =
+                        RegisterAfternotePayload(
+                            serviceName = SERVER_SERVICE,
+                            date = "2026-09-08",
+                            processingMethods = listOf(SERVER_PROCESSING_METHOD),
+                        ),
+                    selectedReceiverIds = emptyList(),
+                    memorialMedia = SaveAfternoteMemorialMedia(),
+                    asDraft = false,
+                ),
+            )
+            runCurrent()
+
+            val updated = repository.updateCalls.single().second
+            assertEquals(false, updated.isDraft)
+            assertNull(updated.title)
+            assertNull(updated.processingMethods)
+            assertNull(updated.receivers)
+        }
+
+    private fun serverDraft() =
+        DraftDetail(
+            id = EDIT_ID,
+            type = AfternoteType.GALLERY_AND_FILES,
+            serviceName = SERVER_SERVICE,
+            timestamps = DetailTimestamps(updatedAt = "2026-09-08"),
+            receivers = emptyList(),
+            leaveMessageBlocks = emptyList(),
+            credentials = null,
+            processingMethods = listOf(SERVER_PROCESSING_METHOD),
+            songs = emptyList(),
+            media = MemorialMedia(null, null, null),
+        )
+
     private fun serverDetail() =
         Detail(
             id = EDIT_ID,
@@ -211,14 +300,16 @@ class AfternoteEditorProcessDeathPrefillTest {
         afternoteRepository: FakeAfternoteRepository,
         prefillSeeded: Boolean = true,
         snapshot: String = restoredSnapshot(),
+        isDraft: Boolean = false,
     ): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
-            route = AfternoteRoute.EditorFlowRoute(itemId = EDIT_ID, initialType = AfternoteType.GALLERY_AND_FILES),
+            route = AfternoteRoute.EditorFlowRoute(itemId = EDIT_ID, initialType = AfternoteType.GALLERY_AND_FILES, isDraft = isDraft),
             savedStateHandle =
                 SavedStateHandle(
                     buildMap {
                         put("initialType", AfternoteType.GALLERY_AND_FILES)
                         put("itemId", EDIT_ID)
+                        put("isDraft", isDraft)
                         put("editor_form_snapshot_v4", snapshot)
                         // 화면이 프리필을 폼에 실을 때 ViewModel 이 같은 번들에 남기는 표식.
                         if (prefillSeeded) put("editor_prefill_seeded_item_id", EDIT_ID)

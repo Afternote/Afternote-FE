@@ -339,32 +339,6 @@ class TouchTargetAssertionsTest {
         assertTrue(targets.single { it.name == "No tab state" }.lacksRequiredState())
     }
 
-    /** 프레임워크 노드(예: ModalBottomSheet 스크림)를 빼도 나머지 위반은 그대로 잡혀야 한다. */
-    @Test
-    fun `excluded target is skipped but the rest of the sweep still fails`() {
-        composeRule.setContent {
-            Column(Modifier.padding(64.dp)) {
-                Box(Modifier.size(48.dp).clickable(role = Role.Button, onClick = {}).semantics { contentDescription = "OK" })
-                Box(
-                    Modifier
-                        .size(48.dp)
-                        .clickable(onClick = {})
-                        .semantics { contentDescription = "Framework scrim" },
-                )
-                Box(Modifier.size(48.dp).clickable(role = Role.Button, onClick = {}).testTag("unnamed"))
-            }
-        }
-
-        val error =
-            runCatching {
-                composeRule.assertAccessibleClickTargets(exclude = { it.name == "Framework scrim" })
-            }.exceptionOrNull()
-        assertTrue(error is AssertionError)
-        assertFalse(error?.message.orEmpty().contains("Role 누락"))
-        assertTrue(error?.message.orEmpty().contains("접근 가능한 이름 누락"))
-        assertTrue(error?.message.orEmpty().contains("unnamed"))
-    }
-
     @Test
     fun `assertion fails when there are zero enabled click targets`() {
         composeRule.setContent { Box(Modifier.fillMaxSize()) }

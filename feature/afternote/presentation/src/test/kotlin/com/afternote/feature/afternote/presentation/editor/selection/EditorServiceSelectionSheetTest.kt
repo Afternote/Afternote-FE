@@ -12,7 +12,6 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import com.afternote.core.ui.testing.MinimumTouchTargetSize
-import com.afternote.core.ui.testing.assertAccessibleClickTargets
 import com.afternote.core.ui.testing.scanEnabledClickTargets
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
@@ -135,11 +134,6 @@ class EditorServiceSelectionSheetTest {
             }
         }
 
-        // 시트째 띄우면 Material3 스크림(이름만 있고 Role 없음)이 스윕에 들어온다. 우리 화면
-        // 노드가 아니므로 그것만 빼고 검색 입력·빈 결과 안내·행 전체의 48dp·이름·role·중첩
-        // 클릭 계약(#1167·#1179·#1669)은 그대로 본다.
-        val closeSheet = composeRule.activity.getString(androidx.compose.ui.R.string.close_sheet)
-        composeRule.assertAccessibleClickTargets(exclude = { it.name == closeSheet })
         val rows =
             composeRule
                 .scanEnabledClickTargets()

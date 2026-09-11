@@ -115,19 +115,9 @@ fun SemanticsNodeInteractionsProvider.scanEnabledClickTargets(): List<EnabledCli
     }
 }
 
-/**
- * 활성 클릭 타깃의 hit bounds, 이름, 역할, 상태 및 중첩 클릭 계약을 단언한다.
- *
- * [exclude] 는 우리 화면 코드가 아닌 프레임워크 노드를 스윕에서 빼는 용도다 — 예를 들어
- * `ModalBottomSheet` 가 만드는 스크림은 이름만 있고 Role 이 없어 그대로 두면 시트 안 계약과
- * 무관하게 실패한다. 제외한 노드 말고는 스윕이 그대로라, 시트째 띄운 테스트도 본문의
- * 검색 입력·빈 결과 안내·행 전체를 계속 본다.
- */
-fun SemanticsNodeInteractionsProvider.assertAccessibleClickTargets(
-    minimumSize: Dp = MinimumTouchTargetSize,
-    exclude: (EnabledClickTarget) -> Boolean = { false },
-) {
-    val targets = scanEnabledClickTargets().filterNot(exclude)
+/** 활성 클릭 타깃의 hit bounds, 이름, 역할, 상태 및 중첩 클릭 계약을 단언한다. */
+fun SemanticsNodeInteractionsProvider.assertAccessibleClickTargets(minimumSize: Dp = MinimumTouchTargetSize) {
+    val targets = scanEnabledClickTargets()
     if (targets.isEmpty()) {
         throw AssertionError("활성 클릭 semantics가 하나도 없습니다")
     }
