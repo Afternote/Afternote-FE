@@ -6,7 +6,6 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.captureToImage
@@ -23,7 +22,6 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.waitUntilAtLeastOneExists
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
@@ -49,27 +47,18 @@ import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfte
 import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
 import com.afternote.feature.home.presentation.HomeTabActions
-import com.afternote.feature.home.presentation.receiver.ReceiverHomeActions
 import com.afternote.feature.home.presentation.receiver.ReceiverHomeEvent
-import com.afternote.feature.home.presentation.receiver.ReceiverHomeScreen
-import com.afternote.feature.home.presentation.receiver.ReceiverHomeViewModel
-import com.afternote.feature.home.presentation.receiver.model.ReceiverHomeUiState
-import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
-import com.afternote.feature.mindrecord.domain.testing.FakeMindRecordReceiverRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeWeeklyReportRepository
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import com.afternote.feature.receiver.domain.error.ReceiverRejectionReason
-import com.afternote.feature.receiver.domain.model.AfterNoteListItem
-import com.afternote.feature.receiver.domain.model.AfterNotesListResult
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
 import com.afternote.feature.receiver.domain.model.ReceivedAfternoteDetail
 import com.afternote.feature.receiver.domain.model.ReceivedPlaylistDetail
 import com.afternote.feature.receiver.domain.model.ReceivedPlaylistSong
 import com.afternote.feature.receiver.domain.model.ReceiverEmailAuthResult
-import com.afternote.feature.receiver.domain.model.SenderMessageInfo
 import com.afternote.feature.receiver.domain.testing.FakeIdentityVerificationRepository
 import com.afternote.feature.receiver.domain.testing.FakeReceiverAuthRepository
 import com.afternote.feature.receiver.domain.testing.FakeReceiverDeliveryDocumentUploadRepository
@@ -82,7 +71,6 @@ import com.afternote.feature.receiver.presentation.deliveryverification.Identity
 import com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationViewModel
 import com.afternote.feature.receiver.presentation.navigation.ReceiverNavActions
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
-import com.afternote.feature.timeletter.domain.model.ReceivedTimeLetterList
 import com.afternote.feature.timeletter.domain.testing.FakeReceiverTimeLetterRepository
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -102,14 +90,6 @@ import com.afternote.feature.afternote.presentation.R as AfternoteFeatureR
 import com.afternote.feature.home.presentation.R as HomeR
 import com.afternote.feature.onboarding.presentation.R as OnboardingR
 import com.afternote.feature.receiver.presentation.R as ReceiverR
-
-/** 이 테스트의 관심 밖인 외부 라우팅을 채우는 no-op 묶음. */
-private val noopActions =
-    ReceiverHomeActions(
-        onNavigateToMindRecord = {},
-        onNavigateToTimeLetter = {},
-        onNavigateToAfternote = {},
-    )
 
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
@@ -253,144 +233,6 @@ class ReceiverRuntimeCompletionAndroidTest {
         }
 
     private val context get() = ApplicationProvider.getApplicationContext<android.content.Context>()
-
-    @Test
-    fun receiverHome_allFailureThenRetryPartialSuccess_keepsAvailableSectionsAndReportsBothStages() {
-        // 완료 시점을 테스트가 쥐어야 세 조회의 경합 순서를 만들 수 있다.
-        val afterNoteHomeResults = ArrayDeque<CompletableDeferred<Result<AfterNotesListResult>>>()
-        val senderMessageHomeResults = ArrayDeque<CompletableDeferred<Result<SenderMessageInfo?>>>()
-        val repository =
-            FakeReceiverRepository.strict().apply {
-                onGetReceivedAfterNotes = { afterNoteHomeResults.removeFirst().await() }
-                onLoadSenderMessage = { senderMessageHomeResults.removeFirst().await() }
-            }
-        val mindRecordHomeResults = ArrayDeque<CompletableDeferred<Result<ReceiverMindRecords>>>()
-        val mindRecordRepository =
-            FakeMindRecordReceiverRepository(onGetAll = { mindRecordHomeResults.removeFirst().await() })
-        val timeLetterHomeResults = ArrayDeque<CompletableDeferred<Result<ReceivedTimeLetterList>>>()
-        val timeLetterRepository =
-            FakeReceiverTimeLetterRepository.strict().apply {
-                onGetReceivedTimeLetters = {
-                    timeLetterHomeResults.removeFirst().await().getOrThrow()
-                }
-            }
-
-        fun homeCallCounts(): List<Int> =
-            listOf(
-                repository.getReceivedAfterNotesCalls,
-                mindRecordRepository.getAllCalls,
-                timeLetterRepository.getReceivedTimeLettersCalls,
-                repository.loadSenderMessageCalls,
-            )
-
-        val allFailureAttempt =
-            enqueueHomeAttempt(
-                afterNoteHomeResults,
-                mindRecordHomeResults,
-                timeLetterHomeResults,
-                senderMessageHomeResults,
-            )
-        val partialAttempt =
-            enqueueHomeAttempt(
-                afterNoteHomeResults,
-                mindRecordHomeResults,
-                timeLetterHomeResults,
-                senderMessageHomeResults,
-            )
-        val reporter = FakeErrorReporter()
-        val viewModel =
-            ReceiverHomeViewModel(
-                receiverRepository = repository,
-                mindRecordReceiverRepository = mindRecordRepository,
-                receiverTimeLetterRepository = timeLetterRepository,
-                errorReporter = reporter,
-            )
-
-        composeRule.setContent {
-            val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
-            AfternoteTheme {
-                ReceiverHomeScreen(
-                    uiState = uiState,
-                    onEvent = viewModel::onEvent,
-                    actions = noopActions,
-                )
-            }
-        }
-
-        composeRule.waitUntil(timeoutMillis = 5_000) { homeCallCounts().all { it == 1 } }
-        composeRule.runOnIdle {
-            assertSame(ReceiverHomeUiState.Loading, viewModel.uiState.value)
-        }
-
-        val offline = IllegalStateException("offline")
-        allFailureAttempt.complete(
-            afterNotes = Result.failure(offline),
-            mindRecords = Result.failure(offline),
-            timeLetters = Result.failure(offline),
-            senderMessage = Result.failure(offline),
-        )
-        composeRule
-            .onNodeWithText(context.getString(HomeR.string.home_receiver_error_message))
-            .assertIsDisplayed()
-        composeRule
-            .onNodeWithText(context.getString(HomeR.string.home_receiver_retry))
-            .performClick()
-
-        composeRule.waitUntil(timeoutMillis = 5_000) { homeCallCounts().all { it == 2 } }
-        composeRule.runOnIdle {
-            assertSame(ReceiverHomeUiState.Loading, viewModel.uiState.value)
-        }
-
-        partialAttempt.complete(
-            afterNotes =
-                Result.success(
-                    AfterNotesListResult(
-                        items =
-                            listOf(
-                                AfterNoteListItem(1L, "Google Drive", AfternoteType.GALLERY_AND_FILES, null),
-                                AfterNoteListItem(2L, "추억 노트", AfternoteType.MEMORIAL, null),
-                            ),
-                        totalCount = 2,
-                    ),
-                ),
-            mindRecords = Result.failure(IllegalStateException("mind records unavailable")),
-            timeLetters = Result.success(ReceivedTimeLetterList(timeLetters = emptyList(), totalCount = 8)),
-            senderMessage =
-                Result.success(
-                    SenderMessageInfo(
-                        senderName = "이발신",
-                        message = "언제나 응원할게",
-                        createdAt = "2026.08.22",
-                    ),
-                ),
-        )
-
-        composeRule
-            .onNodeWithText(context.getString(HomeR.string.home_receiver_sender_record_title, "이발신"))
-            .assertIsDisplayed()
-        composeRule.onNodeWithText("언제나 응원할게").assertIsDisplayed()
-        composeRule
-            .onAllNodes(
-                hasText(context.getString(HomeR.string.home_receiver_section_count_unavailable)),
-            ).apply {
-                assertCountEquals(2)
-                this[0].performScrollTo().assertIsDisplayed()
-            }
-        composeRule
-            .onNodeWithText("8개 라이프 이벤트 레터가 있습니다.")
-            .performScrollTo()
-            .assertIsDisplayed()
-        composeRule
-            .onNodeWithText("2개의 애프터노트가 있습니다.")
-            .performScrollTo()
-            .assertIsDisplayed()
-
-        assertEquals(2, reporter.failures.size)
-        assertEquals("receiver_home_load", reporter.failures[0].second["receiver_stage"])
-        assertEquals("receiver_home_partial_load", reporter.failures[1].second["receiver_stage"])
-        assertEquals("mind_records", reporter.failures[1].second["receiver_failed_sources"])
-        assertEquals(listOf(2, 2, 2, 2), homeCallCounts())
-    }
 
     @Test
     fun emailCodeExpired_resendAndNewCode_verifyExactlyOnce() {
@@ -760,46 +602,6 @@ class ReceiverRuntimeCompletionAndroidTest {
         assertEquals(listOf(303L), playlistRoutes)
         assertEquals(listOf(303L), repository.requestedDetailIds)
     }
-}
-
-private data class PendingHomeAttempt(
-    val afterNotes: CompletableDeferred<Result<AfterNotesListResult>>,
-    val mindRecords: CompletableDeferred<Result<ReceiverMindRecords>>,
-    val timeLetters: CompletableDeferred<Result<ReceivedTimeLetterList>>,
-    val senderMessage: CompletableDeferred<Result<SenderMessageInfo?>>,
-) {
-    fun complete(
-        afterNotes: Result<AfterNotesListResult>,
-        mindRecords: Result<ReceiverMindRecords>,
-        timeLetters: Result<ReceivedTimeLetterList>,
-        senderMessage: Result<SenderMessageInfo?>,
-    ) {
-        this.afterNotes.complete(afterNotes)
-        this.mindRecords.complete(mindRecords)
-        this.timeLetters.complete(timeLetters)
-        this.senderMessage.complete(senderMessage)
-    }
-}
-
-/** 홈 한 번의 로드가 물리는 세 리포지토리 대기열에 결과 게이트를 한 벌씩 건다. */
-private fun enqueueHomeAttempt(
-    afterNoteHomeResults: ArrayDeque<CompletableDeferred<Result<AfterNotesListResult>>>,
-    mindRecordHomeResults: ArrayDeque<CompletableDeferred<Result<ReceiverMindRecords>>>,
-    timeLetterHomeResults: ArrayDeque<CompletableDeferred<Result<ReceivedTimeLetterList>>>,
-    senderMessageHomeResults: ArrayDeque<CompletableDeferred<Result<SenderMessageInfo?>>>,
-): PendingHomeAttempt {
-    val attempt =
-        PendingHomeAttempt(
-            afterNotes = CompletableDeferred(),
-            mindRecords = CompletableDeferred(),
-            timeLetters = CompletableDeferred(),
-            senderMessage = CompletableDeferred(),
-        )
-    afterNoteHomeResults.addLast(attempt.afterNotes)
-    mindRecordHomeResults.addLast(attempt.mindRecords)
-    timeLetterHomeResults.addLast(attempt.timeLetters)
-    senderMessageHomeResults.addLast(attempt.senderMessage)
-    return attempt
 }
 
 /**

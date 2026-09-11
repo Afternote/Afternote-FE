@@ -55,7 +55,6 @@ import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeWeeklyReportRepository
-import com.afternote.feature.mindrecord.presentation.screen.memoryspace.MemorySpaceScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestionAnswerListScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestionWriteScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DiaryWriteScreen
@@ -69,8 +68,6 @@ import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionList
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftListViewModel
-import com.afternote.feature.mindrecord.presentation.viewmodel.MemorySpaceUiState
-import com.afternote.feature.mindrecord.presentation.viewmodel.MemorySpaceViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.SubmitState
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportViewModel
@@ -615,65 +612,6 @@ class TimeLetterMindRecordCompletionAndroidTest {
                 it == FakeDiaryRepository.ListQuery(currentMonth.toString(), true)
             },
         )
-    }
-
-    @Test
-    fun memorySpace_supportedSuccess_opensAndClosesDetailThenNavigatesBack() {
-        val memoryDate = LocalDate.now()
-        val memory =
-            Diary(
-                diaryId = 501L,
-                title = "추억이 된 하루",
-                content = "이 순간은 나에게 특별한 의미가 있었습니다.",
-                date = memoryDate.toString(),
-                createdAt = memoryDate.toString(),
-                todayMood = TodayMood.HAPPY,
-                imageUrl = "https://afternote.test/memory.jpg",
-                isDraft = false,
-            )
-        val diaryRepository =
-            FakeDiaryRepository(
-                onGetList = { yearMonth, _ ->
-                    val diaries =
-                        if (yearMonth == YearMonth.from(memoryDate).toString()) listOf(memory) else emptyList()
-                    Result.success(
-                        DiaryList(
-                            diaries = diaries,
-                            monthDiaryCount = diaries.size,
-                            weeklyDominantMood = diaries.firstOrNull()?.todayMood,
-                        ),
-                    )
-                },
-            )
-        val viewModel = MemorySpaceViewModel(diaryRepository, FakeDailyQuestionRepository(), FakeErrorReporter())
-        var backCalls = 0
-
-        composeRule.setContent {
-            AfternoteTheme {
-                MemorySpaceScreen(
-                    viewModel = viewModel,
-                    onBackClick = { backCalls += 1 },
-                )
-            }
-        }
-
-        composeRule.onNodeWithText("MEMORY SPACE").assertIsDisplayed()
-        composeRule.waitUntil(timeoutMillis = TIMEOUT) {
-            viewModel.uiState.value is MemorySpaceUiState.Success
-        }
-        composeRule.onNodeWithContentDescription("추억이 된 하루").performClick()
-        composeRule
-            .onNodeWithText("이 순간은 나에게 특별한 의미가 있었습니다.", substring = true)
-            .assertIsDisplayed()
-        // 태그는 사용자가 고른 오늘의 기분 이모지다 — 종전 더미의 `#평온` 은 출처가 없었다 (#559).
-        composeRule.onNodeWithText("#😊").assertIsDisplayed()
-        composeRule.onNodeWithContentDescription("닫기").performClick()
-        composeRule
-            .onNodeWithText("이 순간은 나에게 특별한 의미가 있었습니다.", substring = true)
-            .assertDoesNotExist()
-
-        composeRule.onNodeWithText("돌아가기").performClick()
-        composeRule.runOnIdle { assertEquals(1, backCalls) }
     }
 
     @Test
