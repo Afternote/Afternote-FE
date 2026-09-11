@@ -6,7 +6,6 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.captureToImage
@@ -23,7 +22,6 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.waitUntilAtLeastOneExists
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
@@ -49,27 +47,18 @@ import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfte
 import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
 import com.afternote.feature.home.presentation.HomeTabActions
-import com.afternote.feature.home.presentation.receiver.ReceiverHomeActions
 import com.afternote.feature.home.presentation.receiver.ReceiverHomeEvent
-import com.afternote.feature.home.presentation.receiver.ReceiverHomeScreen
-import com.afternote.feature.home.presentation.receiver.ReceiverHomeViewModel
-import com.afternote.feature.home.presentation.receiver.model.ReceiverHomeUiState
-import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
-import com.afternote.feature.mindrecord.domain.testing.FakeMindRecordReceiverRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeWeeklyReportRepository
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import com.afternote.feature.receiver.domain.error.ReceiverRejectionReason
-import com.afternote.feature.receiver.domain.model.AfterNoteListItem
-import com.afternote.feature.receiver.domain.model.AfterNotesListResult
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
 import com.afternote.feature.receiver.domain.model.ReceivedAfternoteDetail
 import com.afternote.feature.receiver.domain.model.ReceivedPlaylistDetail
 import com.afternote.feature.receiver.domain.model.ReceivedPlaylistSong
 import com.afternote.feature.receiver.domain.model.ReceiverEmailAuthResult
-import com.afternote.feature.receiver.domain.model.SenderMessageInfo
 import com.afternote.feature.receiver.domain.testing.FakeIdentityVerificationRepository
 import com.afternote.feature.receiver.domain.testing.FakeReceiverAuthRepository
 import com.afternote.feature.receiver.domain.testing.FakeReceiverDeliveryDocumentUploadRepository
@@ -82,7 +71,6 @@ import com.afternote.feature.receiver.presentation.deliveryverification.Identity
 import com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationViewModel
 import com.afternote.feature.receiver.presentation.navigation.ReceiverNavActions
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
-import com.afternote.feature.timeletter.domain.model.ReceivedTimeLetterList
 import com.afternote.feature.timeletter.domain.testing.FakeReceiverTimeLetterRepository
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -102,14 +90,6 @@ import com.afternote.feature.afternote.presentation.R as AfternoteFeatureR
 import com.afternote.feature.home.presentation.R as HomeR
 import com.afternote.feature.onboarding.presentation.R as OnboardingR
 import com.afternote.feature.receiver.presentation.R as ReceiverR
-
-/** 이 테스트의 관심 밖인 외부 라우팅을 채우는 no-op 묶음. */
-private val noopActions =
-    ReceiverHomeActions(
-        onNavigateToMindRecord = {},
-        onNavigateToTimeLetter = {},
-        onNavigateToAfternote = {},
-    )
 
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)

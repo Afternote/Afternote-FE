@@ -29,8 +29,9 @@ import javax.inject.Inject
  * 끌어와야 해서 domain 패키지에 두면 레이어 가드에 걸린다.
  *
  * 이 집계를 소비하는 프로덕션 코드는 같은 모듈의 [ReceiverHomeViewModel] 뿐이라 `internal`
- * 이다 (docs/convention/production-visibility.md). 모듈 밖 계측 조립은
- * `src/testFixtures` 의 `receiverHomeViewModel` 로 간다.
+ * 이다 (docs/convention/production-visibility.md). 전체 실패 → 재시도 → 부분 성공 회귀도
+ * 모듈 밖 계측이 아니라 같은 모듈의 Robolectric Compose 테스트
+ * (`ReceiverHomePartialFailureTest`)가 잇는다.
  */
 internal class GetReceiverHomeSummaryUseCase
     @Inject
