@@ -66,27 +66,28 @@ data class DiaryWriteUiState(
         get() = missingForSubmit() == null && isReady
 
     /**
-     * 임시저장 조건.
+     * 임시저장 조건 — **제목·본문 중 하나만 있어도 된다. 기분은 안 골라도 된다.**
      *
-     * «미완성 보존» 이 목적이라 제목·본문 중 하나만 있어도 저장하려 했지만, **서버가
-     * 임시저장에도 제목·본문·기분을 모두 요구한다** — 실서버 실측(2026-08-24):
+     * 「미완성 보존」이 임시저장의 목적인데 종전에는 정식 등록과 같은 세 가지를 요구했다.
+     * 서버가 `isDraft=true` 에도 셋을 전부 검증했기 때문이다 — 보내면 400 이 되는 조건을
+     * «저장 가능» 으로 표시하면 버튼이 고장 난 것과 같아 같은 조건을 걸어 뒀다.
      *
-     * ```
-     * POST /diary {"title":"제목만","content":"","isDraft":true,…}   → 400 "내용은 필수입니다."
-     * POST /diary {"title":"","content":"<p>본문만</p>",…}           → 400 "제목은 필수입니다."
-     * POST /diary {"title":"제목","content":"<p>본문</p>"}            → 400 "오늘의 기분은 필수입니다."
-     * ```
+     * 그 제약이 풀렸다. `Afternote-BE#243` → PR #267(2026-08-30 머지)이 임시저장의 필수
+     * 검증을 걷었다 — 제목·본문·기분을 생략할 수 있고 `today_mood` 는 NULL 로 저장된다.
+     * 정식 등록(`isDraft=false`)은 셋 다 필수이고 누락 시 400/`1400` 이다 (#1065).
      *
-     * 보내면 400 이 되는 조건을 «저장 가능» 으로 표시하면 버튼이 고장 난 것과 같아진다.
-     * 서버가 `isDraft=true` 에서 검증을 완화해 주기 전까지는 같은 조건을 요구한다 (#1065).
-     *
-     * 정식 등록과 갈리는 지점은 남는다 — 실패 사유를 각각 다른 문구로 알린다.
+     * 완전히 빈 폼까지 열지는 않는다. 남길 것이 하나도 없는 저장은 사용자가 의도한 적 없는
+     * 빈 임시저장을 목록에 쌓고, 이어쓰기 목록에서 무엇인지 알아볼 수도 없다.
      */
     val canSaveDraft: Boolean
         get() = missingForDraft() == null && isReady
 
-    /** 임시저장을 막는 첫 번째 누락 항목 (없으면 null). 현재는 정식 등록과 같은 세 가지다. */
-    fun missingForDraft(): Int? = missingForSubmit()
+    /**
+     * 임시저장을 막는 첫 번째 누락 항목 (없으면 null).
+     *
+     * 제목과 본문이 **둘 다** 비었을 때만 막는다 — 기분은 보지 않는다.
+     */
+    fun missingForDraft(): Int? = R.string.mindrecord_write_diary_missing_draft_content.takeIf { title.isBlank() && content.isHtmlBlank() }
 
     private val isReady: Boolean
         get() =
