@@ -34,8 +34,8 @@ import javax.inject.Inject
  * 4. **정렬·상한** — 두 출처를 최신순 한 줄로 세워 [limit] 장까지 남긴다.
  *
  * 이 집계를 소비하는 프로덕션 코드는 같은 모듈의 [MemorySpaceViewModel] 뿐이라 `internal`
- * 이다 (docs/convention/production-visibility.md). 모듈 밖 계측 조립은 `src/testFixtures`
- * 의 `memorySpaceViewModel` 로 간다.
+ * 이다 (docs/convention/production-visibility.md). 화면 왕복 회귀도 모듈 밖 계측이 아니라
+ * 같은 모듈의 Robolectric Compose 테스트(`MemorySpaceDetailOverlayTest`)가 잇는다.
  */
 internal class GetMemorySpaceUseCase
     @Inject
