@@ -5,10 +5,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
+import com.afternote.core.ui.asString
 import com.afternote.core.ui.navigation.FeatureNavDisplay
 import com.afternote.core.ui.navigation.FeatureStackBoundary
 import com.afternote.feature.setting.presentation.component.PinSetupStep
@@ -20,7 +23,6 @@ import com.afternote.feature.setting.presentation.screen.NotificationSettingScre
 import com.afternote.feature.setting.presentation.screen.PassKeyListScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyMakingScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyPasswordScreen
-import com.afternote.feature.setting.presentation.screen.PassKeyScreen
 import com.afternote.feature.setting.presentation.screen.ProfileEditScreen
 import com.afternote.feature.setting.presentation.screen.PushNotificationScreen
 import com.afternote.feature.setting.presentation.screen.ReceiverEditScreen
@@ -31,7 +33,8 @@ import com.afternote.feature.setting.presentation.screen.SettingScreen
 import com.afternote.feature.setting.presentation.screen.WithdrawConfirmScreen
 import com.afternote.feature.setting.presentation.screen.WithdrawGuideScreen
 import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionViewModel
-import com.afternote.feature.setting.presentation.viewmodel.PassKeyViewModel
+import com.afternote.feature.setting.presentation.viewmodel.PassKeyListIntent
+import com.afternote.feature.setting.presentation.viewmodel.PassKeyListViewModel
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditViewModel
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverListViewModel
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
@@ -193,16 +196,17 @@ public fun SettingNavHost(
                 }
 
                 entry<SettingRoute.PasskeyRoute> {
-                    val viewModel: PassKeyViewModel = hiltViewModel()
-                    val isPasskeyRegistered by viewModel.isPasskeyRegistered.collectAsStateWithLifecycle()
-                    if (isPasskeyRegistered == true) {
-                        PassKeyListScreen(onBackClick = actions::popBack)
-                    } else if (isPasskeyRegistered == false) {
-                        PassKeyScreen(
-                            onBackClick = actions::popBack,
-                            onRegisterClick = actions::onNavigateToPasskeyMaking,
-                        )
-                    }
+                    val viewModel: PassKeyListViewModel = hiltViewModel()
+                    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.onIntent(PassKeyListIntent.Refresh) }
+                    PassKeyListScreen(
+                        passkeys = uiState.passkeys,
+                        isLoading = uiState.isLoading,
+                        errorMessage = uiState.errorMessage?.asString(),
+                        onBackClick = actions::popBack,
+                        onRegisterClick = actions::onNavigateToPasskeyMaking,
+                        onRetryClick = { viewModel.onIntent(PassKeyListIntent.Refresh) },
+                    )
                 }
 
                 entry<SettingRoute.PasskeyMakingRoute> {

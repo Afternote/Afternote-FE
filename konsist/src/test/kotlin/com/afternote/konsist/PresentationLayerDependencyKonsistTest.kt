@@ -129,13 +129,8 @@ class PresentationLayerDependencyKonsistTest {
         val FORBIDDEN_DATA_IMPORT =
             Regex("""^com\.afternote\.core\.datastore\..*$|^com\.afternote\.core\.data\.repoimpl\..*$""")
 
-        /**
-         * #635 (setting 4건 중 3번) 이 수복한다. `PassKeyViewModel` 이 `UserProfileCacheRepository`
-         * 를 건너뛰고 `UserProfileDataSource` 를 직접 주입받는다. setting 은 다른 담당이라
-         * 이 PR 에서 고치지 않는다.
-         */
-        val KNOWN_LAYER_BYPASSES =
-            setOf("PassKeyViewModel: com.afternote.core.datastore.UserProfileDataSource")
+        // #555에서 마지막 PassKeyViewModel의 DataSource 직접 의존도 도메인 계약으로 옮겼다.
+        val KNOWN_LAYER_BYPASSES: Set<String> = emptySet()
 
         /** 구현이 사는 모듈 — 이 모듈들의 테스트는 자기 구현을 조립하는 것이 맞다. */
         val DATA_LAYER_MODULE_PREFIXES = listOf("core/data/", "core/datastore/")
