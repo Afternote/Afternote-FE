@@ -12,6 +12,7 @@ import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.DetailReceiver
+import com.afternote.feature.afternote.domain.model.author.DraftDetail
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
@@ -34,12 +35,15 @@ import java.util.concurrent.atomic.AtomicLong
 class FakeAfternoteRepository(
     initialItems: List<ListItem> = emptyList(),
     initialDetails: Map<Long, Detail> = emptyMap(),
+    initialDraftDetails: Map<Long, DraftDetail> = emptyMap(),
     nextId: Long =
         (initialItems.map(ListItem::id) + initialDetails.keys)
             .maxOrNull()
             ?.plus(1L) ?: 1L,
     var onGetPagedAfternotes: ((AfternoteType?) -> Flow<PagingData<ListItem>>)? = null,
+    var onGetPagedDrafts: ((AfternoteType?) -> Flow<PagingData<ListItem>>)? = null,
     var onGetDetail: (suspend (Long) -> Result<Detail>)? = null,
+    var onGetDraftDetail: (suspend (Long) -> Result<DraftDetail>)? = null,
     var onCreateSocial: (suspend (CreateAccountPayload) -> Result<Long>)? = null,
     var onCreateBusiness: (suspend (CreateAccountPayload) -> Result<Long>)? = null,
     var onCreateGallery: (suspend (CreateGalleryPayload) -> Result<Long>)? = null,
@@ -49,6 +53,7 @@ class FakeAfternoteRepository(
 ) : AfternoteRepository {
     val items = CopyOnWriteArrayList(initialItems)
     val details = ConcurrentHashMap(initialDetails)
+    val draftDetails = ConcurrentHashMap(initialDraftDetails)
 
     val requestedTypes = CopyOnWriteArrayList<AfternoteType?>()
     val requestedDetailIds = CopyOnWriteArrayList<Long>()
@@ -59,6 +64,9 @@ class FakeAfternoteRepository(
     val updateCalls = CopyOnWriteArrayList<Pair<Long, AfternoteUpdatePayload>>()
     val deletedIds = CopyOnWriteArrayList<Long>()
 
+    val requestedDraftTypes = CopyOnWriteArrayList<AfternoteType?>()
+    val requestedDraftDetailIds = CopyOnWriteArrayList<Long>()
+
     private val idCounter = AtomicLong(nextId)
     private val stateVersion = MutableStateFlow(0L)
     private val stateLock = Any()
@@ -67,7 +75,16 @@ class FakeAfternoteRepository(
         requestedTypes += type
         onGetPagedAfternotes?.let { return it(type) }
         return stateVersion.map {
-            PagingData.from(items.filter { type == null || it.type == type })
+            // 서버와 같은 계약 — draftOnly 미전송은 발행분만 준다.
+            PagingData.from(items.filter { !it.isDraft && (type == null || it.type == type) })
+        }
+    }
+
+    override fun getPagedDrafts(type: AfternoteType?): Flow<PagingData<ListItem>> {
+        requestedDraftTypes += type
+        onGetPagedDrafts?.let { return it(type) }
+        return stateVersion.map {
+            PagingData.from(items.filter { it.isDraft && (type == null || it.type == type) })
         }
     }
 
@@ -76,6 +93,14 @@ class FakeAfternoteRepository(
         onGetDetail?.let { return it(id) }
         return runCatching {
             details[id] ?: throw NoSuchElementException("애프터노트 상세가 없다: id=$id")
+        }
+    }
+
+    override suspend fun getDraftDetail(id: Long): Result<DraftDetail> {
+        requestedDraftDetailIds += id
+        onGetDraftDetail?.let { return it(id) }
+        return runCatching {
+            draftDetails[id] ?: throw NoSuchElementException("임시저장 상세가 없다: id=$id")
         }
     }
 
@@ -143,7 +168,9 @@ class FakeAfternoteRepository(
         fun strict(): FakeAfternoteRepository =
             FakeAfternoteRepository(
                 onGetPagedAfternotes = { unexpectedCall("AfternoteRepository.getPagedAfternotes") },
+                onGetPagedDrafts = { unexpectedCall("AfternoteRepository.getPagedDrafts") },
                 onGetDetail = { unexpectedCall("AfternoteRepository.getDetail") },
+                onGetDraftDetail = { unexpectedCall("AfternoteRepository.getDraftDetail") },
                 onCreateSocial = { unexpectedCall("AfternoteRepository.createSocial") },
                 onCreateBusiness = { unexpectedCall("AfternoteRepository.createBusiness") },
                 onCreateGallery = { unexpectedCall("AfternoteRepository.createGallery") },

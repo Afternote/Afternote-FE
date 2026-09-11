@@ -270,7 +270,7 @@ class AfternoteDetailMapperTest {
     }
 
     @Test
-    fun `toDomain - playlist 타입에 playlist가 없으면 오류`() {
+    fun `toDomain - 발행 playlist 에 playlist 가 없으면 계약 위반이라 실패한다`() {
         val exception =
             assertThrows(IllegalArgumentException::class.java) {
                 AfternoteDetailDto(
@@ -283,7 +283,7 @@ class AfternoteDetailMapperTest {
                 ).toDomain()
             }
 
-        assertEquals("playlist is required for MEMORIAL detail", exception.message)
+        assertEquals("발행 상세에 playlist 가 없다: afternoteId=1", exception.message)
     }
 
     @Test
