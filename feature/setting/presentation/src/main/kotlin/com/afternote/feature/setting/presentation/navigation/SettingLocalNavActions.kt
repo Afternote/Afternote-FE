@@ -97,4 +97,8 @@ internal class SettingLocalNavActions(
     override fun onNavigateToFaq() {
         backStack.add(SettingRoute.FaqRoute)
     }
+
+    override fun onNavigateToCustomerCenter() {
+        backStack.add(SettingRoute.CustomerCenterRoute)
+    }
 }

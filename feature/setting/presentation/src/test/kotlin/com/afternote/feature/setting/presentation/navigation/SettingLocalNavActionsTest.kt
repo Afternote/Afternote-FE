@@ -112,6 +112,22 @@ class SettingLocalNavActionsTest {
     }
 
     @Test
+    fun `customer center inquiry and FAQ return to the same hub`() {
+        actions.onNavigateToCustomerCenter()
+        actions.onNavigateToInquiry()
+        actions.onNavigateToInquiryWrite()
+        actions.popBack()
+        assertEquals(SettingRoute.InquiryListRoute, stack.last())
+        actions.popBack()
+        assertEquals(SettingRoute.CustomerCenterRoute, stack.last())
+        actions.onNavigateToFaq()
+        actions.popBack()
+        assertEquals(SettingRoute.CustomerCenterRoute, stack.last())
+        actions.popBack()
+        assertEquals(listOf(SettingRoute.SettingHomeRoute), stack.toList())
+    }
+
+    @Test
     fun `all destination keys and route arguments survive serialization`() {
         val routes =
             listOf(
@@ -135,6 +151,7 @@ class SettingLocalNavActionsTest {
                 SettingRoute.InquiryDetailRoute(51L),
                 SettingRoute.InquiryWriteRoute,
                 SettingRoute.FaqRoute,
+                SettingRoute.CustomerCenterRoute,
             )
         assertEquals(routes, Json.decodeFromString<List<SettingRoute>>(Json.encodeToString(routes)))
     }

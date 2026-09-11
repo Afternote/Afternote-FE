@@ -1,9 +1,17 @@
 package com.afternote.feature.setting.presentation.navigation
 
+import android.content.ActivityNotFoundException
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
@@ -14,6 +22,7 @@ import com.afternote.core.ui.navigation.FeatureStackBoundary
 import com.afternote.feature.setting.presentation.component.PinSetupStep
 import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
 import com.afternote.feature.setting.presentation.screen.ConnectedAccountsScreen
+import com.afternote.feature.setting.presentation.screen.CustomerCenterScreen
 import com.afternote.feature.setting.presentation.screen.DeliveryConditionScreen
 import com.afternote.feature.setting.presentation.screen.FaqScreen
 import com.afternote.feature.setting.presentation.screen.InquiryDetailScreen
@@ -39,6 +48,7 @@ import com.afternote.feature.setting.presentation.viewmodel.PassKeyViewModel
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditViewModel
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverListViewModel
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
+import com.afternote.feature.setting.presentation.R as SettingR
 
 /**
  * Settings owns its saved local stack. The parent entry owns the withdrawal ViewModel,
@@ -87,7 +97,7 @@ public fun SettingNavHost(
                         onPasskeyClick = actions::onNavigateToPasskey,
                         onAppLockClick = actions::onNavigateToAppLock,
                         onFaqClick = actions::onNavigateToFaq,
-                        onInquiryClick = actions::onNavigateToInquiry,
+                        onInquiryClick = actions::onNavigateToCustomerCenter,
                         onNoticeClick = actions::onNavigateToNotice,
                         onTermsClick = {},
                         onPrivacyClick = {},
@@ -260,6 +270,31 @@ public fun SettingNavHost(
                 entry<SettingRoute.FaqRoute> {
                     FaqScreen(onBackClick = actions::popBack)
                 }
+                entry<SettingRoute.CustomerCenterRoute> {
+                    val context = LocalContext.current
+                    val phoneUri = stringResource(SettingR.string.customer_center_phone_uri)
+                    val emailAddress = stringResource(SettingR.string.customer_center_email_address)
+                    CustomerCenterScreen(
+                        onBackClick = actions::popBack,
+                        onPhoneInquiryClick = { context.openDialer(phoneUri) },
+                        onOneToOneInquiryClick = actions::onNavigateToInquiry,
+                        onEmailInquiryClick = { context.copyToClipboard(emailAddress) },
+                        onFaqClick = actions::onNavigateToFaq,
+                    )
+                }
             },
     )
+}
+
+private fun Context.openDialer(phoneUri: String): Boolean =
+    try {
+        startActivity(Intent(Intent.ACTION_DIAL, Uri.parse(phoneUri)))
+        true
+    } catch (_: ActivityNotFoundException) {
+        false
+    }
+
+private fun Context.copyToClipboard(text: String) {
+    val clipboardManager = getSystemService(ClipboardManager::class.java)
+    clipboardManager.setPrimaryClip(ClipData.newPlainText("email", text))
 }

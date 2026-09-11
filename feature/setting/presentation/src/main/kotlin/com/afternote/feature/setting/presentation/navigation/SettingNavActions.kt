@@ -46,4 +46,6 @@ internal interface SettingNavActions {
     fun onNavigateToInquiryWrite()
 
     fun onNavigateToFaq()
+
+    fun onNavigateToCustomerCenter()
 }
