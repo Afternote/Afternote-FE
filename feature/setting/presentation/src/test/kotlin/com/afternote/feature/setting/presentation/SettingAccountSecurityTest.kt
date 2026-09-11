@@ -131,7 +131,7 @@ class SettingAccountSecurityTest {
         composeRule.runOnIdle { linkViewModel.onIntent(ConnectedAccountsIntent.Link(provider = "google", accessToken = "google-token")) }
         val linkFailure = awaitEvent(linkViewModel.uiState.mapNotNull { it.pendingEvent })
 
-        assertEquals(ConnectedAccountsEvent.ShowError("계정 연결에 실패했습니다."), linkFailure)
+        assertEquals(ConnectedAccountsEvent.ShowError(UiText.Resource(SettingR.string.setting_connected_accounts_link_error)), linkFailure)
         assertEquals(
             listOf(ConnectedAccountLinkCall(provider = "google", accessToken = "google-token")),
             linkRepository.connectedLinkCalls,
@@ -152,7 +152,10 @@ class SettingAccountSecurityTest {
         val unlinkFailure = awaitEvent(unlinkViewModel.uiState.mapNotNull { it.pendingEvent })
 
         assertEquals(listOf("google"), unlinkRepository.connectedUnlinkCalls)
-        assertEquals(ConnectedAccountsEvent.ShowError("계정 연결 해제에 실패했습니다."), unlinkFailure)
+        assertEquals(
+            ConnectedAccountsEvent.ShowError(UiText.Resource(SettingR.string.setting_connected_accounts_unlink_error)),
+            unlinkFailure,
+        )
     }
 
     @Test

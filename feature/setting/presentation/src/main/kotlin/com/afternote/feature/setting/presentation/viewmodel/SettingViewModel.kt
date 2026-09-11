@@ -48,7 +48,7 @@ internal class SettingViewModel
                 }
 
                 SettingReducerEvent.ProfileFailed -> {
-                    state.copy(profile = SettingProfileState.Error("프로필을 불러올 수 없습니다."))
+                    state.copy(profile = SettingProfileState.Error)
                 }
 
                 SettingReducerEvent.LoggedOut -> {

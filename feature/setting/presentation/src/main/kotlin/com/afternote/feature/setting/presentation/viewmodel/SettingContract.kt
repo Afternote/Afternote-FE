@@ -18,9 +18,8 @@ internal sealed interface SettingProfileState {
         val email: String,
     ) : SettingProfileState
 
-    data class Error(
-        val message: String,
-    ) : SettingProfileState
+    /** 문구는 화면이 `setting_profile_load_error` 리소스로 그린다. 프로필 수정 화면과 같은 문장이다. */
+    data object Error : SettingProfileState
 }
 
 internal sealed interface WithdrawUiState {

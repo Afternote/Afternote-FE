@@ -155,9 +155,10 @@ test("a module without a handover entry moves its open issues right away", () =>
 
 test("an unknown issue number fails the handover judgement instead of guessing", () => {
     // 경계 판정을 못 하면 어느 쪽으로도 접지 않는다. 접으면 옛 이슈가 조용히 새 담당자에게 간다.
-    const module = Object.keys(HANDOVER_BY_MODULE)[0];
-    assert.throws(() => assigneeForIssue(module, undefined), /이슈 번호/);
-    assert.throws(() => assigneeForIssue(module, "1910번"), /이슈 번호/);
+    for (const module of Object.keys(HANDOVER_BY_MODULE)) {
+        assert.throws(() => assigneeForIssue(module, undefined), /이슈 번호/);
+        assert.throws(() => assigneeForIssue(module, "1910번"), /이슈 번호/);
+    }
 });
 
 test("maps every work type to exactly one classification label", () => {

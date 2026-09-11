@@ -16,6 +16,6 @@ internal sealed interface ConnectedAccountsEvent {
     ) : ConnectedAccountsEvent
 
     data class ShowError(
-        val message: String,
+        val message: UiText,
     ) : ConnectedAccountsEvent
 }
