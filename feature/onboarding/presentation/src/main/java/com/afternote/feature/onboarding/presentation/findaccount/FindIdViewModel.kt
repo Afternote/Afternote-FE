@@ -37,6 +37,20 @@ internal class FindIdViewModel
     ) : MviViewModel<FindIdIntent, FindIdUiState, FindIdReducerEvent>(FindIdUiState()) {
         private var cooldownJob: Job? = null
 
+        /**
+         * 진행 중인 서버 호출 (#1864). 상태 플래그만으로는 연타를 막지 못한다 —
+         * `viewModelScope.launch` 가 비동기라 `isSendingCode`·`isVerifying` 이 상태에 반영되기 전에
+         * 두 번째 호출이 같은 `false` 를 읽고 통과한다. 실기기의 `Dispatchers.Main` 이 `launch` 본문을
+         * 다음 루프로 미루므로 빠른 두 탭이면 열리는 창이고, 버튼과 IME 제출이 각각 독립 경로라
+         * 「버튼 → 키보드 Done」 순서로도 열린다 (`FindPasswordViewModel`·`SignUpViewModel` 과 같은 판단).
+         *
+         * 두 호출 다 인증번호를 소비하므로 중복 요청이 낭비로 끝나지 않는다 — 발송은 코드를 새로
+         * 발급해 앞서 안내한 것을 조용히 무효로 만들고, 확인은 서버가 검증하며 코드를 지우므로
+         * 두 번째가 1207 로 실패해 첫 요청이 성공했는데도 「인증번호가 일치하지 않습니다」 가 뜬다.
+         */
+        private var sendCodeJob: Job? = null
+        private var verifyJob: Job? = null
+
         override fun onIntent(intent: FindIdIntent) {
             when (intent) {
                 is FindIdIntent.UpdateEmail -> dispatch(FindIdReducerEvent.EmailChanged(intent.value))
@@ -111,27 +125,29 @@ internal class FindIdViewModel
             }
 
         private fun requestVerificationCode() {
+            if (sendCodeJob?.isActive == true) return
             val state = currentState
             if (!state.isSendCodeEnabled) return
-            viewModelScope.launch {
-                dispatch(FindIdReducerEvent.CodeSendStarted)
-                accountRepository
-                    .sendFindCode(state.email)
-                    .onSuccess {
-                        dispatch(FindIdReducerEvent.CodeSent)
-                        startResendCooldown()
-                    }.onFailure { error ->
-                        // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
-                        if (error is CancellationException) throw error
-                        errorReporter.recordAuthFailure(AuthFailureStage.FIND_ACCOUNT_CODE_SEND, error)
-                        dispatch(
-                            FindIdReducerEvent.CodeSendFailed(
-                                error.toDisplayMessage(R.string.onboarding_find_account_failed),
-                            ),
-                        )
-                    }
-                dispatch(FindIdReducerEvent.CodeSendFinished)
-            }
+            sendCodeJob =
+                viewModelScope.launch {
+                    dispatch(FindIdReducerEvent.CodeSendStarted)
+                    accountRepository
+                        .sendFindCode(state.email)
+                        .onSuccess {
+                            dispatch(FindIdReducerEvent.CodeSent)
+                            startResendCooldown()
+                        }.onFailure { error ->
+                            // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
+                            if (error is CancellationException) throw error
+                            errorReporter.recordAuthFailure(AuthFailureStage.FIND_ACCOUNT_CODE_SEND, error)
+                            dispatch(
+                                FindIdReducerEvent.CodeSendFailed(
+                                    error.toDisplayMessage(R.string.onboarding_find_account_failed),
+                                ),
+                            )
+                        }
+                    dispatch(FindIdReducerEvent.CodeSendFinished)
+                }
         }
 
         /**
@@ -144,32 +160,34 @@ internal class FindIdViewModel
          * 갈래를 나누지 않으면 네트워크 실패에도 "인증번호가 일치하지 않습니다" 가 뜬다.
          */
         private fun verifyCode() {
+            if (verifyJob?.isActive == true) return
             val state = currentState
             if (!state.isVerifyEnabled) return
-            viewModelScope.launch {
-                dispatch(FindIdReducerEvent.VerifyStarted)
-                accountRepository
-                    .findAccount(state.email, state.certificateCode)
-                    .onSuccess { account ->
-                        dispatch(FindIdReducerEvent.AccountFound(account))
-                    }.onFailure { error ->
-                        // 취소는 장애가 아니다 — 여기는 계측 대상이 아니지만 실패 UI 로 소비하는 것도
-                        // 막아야 해서 되던진다(전수 정정은 #661).
-                        if (error is CancellationException) throw error
-                        // 계측하지 않는다 — 인증번호 오타는 사용자의 정상적인 입력 실수다.
-                        // 자세한 사유는 AuthFailureStage.FIND_ACCOUNT_CODE_SEND KDoc.
-                        if (error is CoreAuthFailure.EmailVerification) {
-                            dispatch(FindIdReducerEvent.VerificationRejected)
-                        } else {
-                            dispatch(
-                                FindIdReducerEvent.VerifyFailed(
-                                    error.toDisplayMessage(R.string.onboarding_find_account_failed),
-                                ),
-                            )
+            verifyJob =
+                viewModelScope.launch {
+                    dispatch(FindIdReducerEvent.VerifyStarted)
+                    accountRepository
+                        .findAccount(state.email, state.certificateCode)
+                        .onSuccess { account ->
+                            dispatch(FindIdReducerEvent.AccountFound(account))
+                        }.onFailure { error ->
+                            // 취소는 장애가 아니다 — 여기는 계측 대상이 아니지만 실패 UI 로 소비하는 것도
+                            // 막아야 해서 되던진다(전수 정정은 #661).
+                            if (error is CancellationException) throw error
+                            // 계측하지 않는다 — 인증번호 오타는 사용자의 정상적인 입력 실수다.
+                            // 자세한 사유는 AuthFailureStage.FIND_ACCOUNT_CODE_SEND KDoc.
+                            if (error is CoreAuthFailure.EmailVerification) {
+                                dispatch(FindIdReducerEvent.VerificationRejected)
+                            } else {
+                                dispatch(
+                                    FindIdReducerEvent.VerifyFailed(
+                                        error.toDisplayMessage(R.string.onboarding_find_account_failed),
+                                    ),
+                                )
+                            }
                         }
-                    }
-                dispatch(FindIdReducerEvent.VerifyFinished)
-            }
+                    dispatch(FindIdReducerEvent.VerifyFinished)
+                }
         }
 
         private fun startResendCooldown() {
