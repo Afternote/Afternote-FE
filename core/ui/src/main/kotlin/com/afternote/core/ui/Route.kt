@@ -53,7 +53,9 @@ sealed interface Route {
     @Serializable
     data object Receiver : Route
 
-    /** 임시 로그아웃 진입용 설정 화면. 정식 설정 IA 확정 전까지 단일 화면. */
+    /** Settings local-stack boundary, including the home recipient-registration shortcut. */
     @Serializable
-    data object Setting : Route
+    data class Setting(
+        val startWithRecipientRegistration: Boolean = false,
+    ) : Route
 }

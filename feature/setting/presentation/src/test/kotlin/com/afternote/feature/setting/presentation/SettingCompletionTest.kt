@@ -14,7 +14,6 @@ import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
-import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.testing.FakeAuthRepository
@@ -34,6 +33,7 @@ import com.afternote.core.model.user.UserMarketingConsent
 import com.afternote.core.model.user.UserPushSetting
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import com.afternote.feature.setting.presentation.screen.ReceiverEditScreen
 import com.afternote.feature.setting.presentation.screen.ReceiverRegisterScreen
 import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsViewModel
@@ -375,7 +375,7 @@ class SettingCompletionTest {
         val finalMessageGate = scenario.enqueueReceiverMessageUpdate()
         val viewModel =
             ReceiverEditViewModel(
-                savedStateHandle = SavedStateHandle(mapOf("receiverId" to RECEIVER_ID)),
+                route = SettingRoute.RecipientEditRoute(RECEIVER_ID),
                 userRepository = repository,
             )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
@@ -468,7 +468,7 @@ class SettingCompletionTest {
         val repository = scenario.repository
         val viewModel =
             ReceiverEditViewModel(
-                savedStateHandle = SavedStateHandle(mapOf("receiverId" to RECEIVER_ID)),
+                route = SettingRoute.RecipientEditRoute(RECEIVER_ID),
                 userRepository = repository,
             )
 
@@ -526,7 +526,7 @@ class SettingCompletionTest {
         val retryGate = scenario.enqueueDeliveryUpdate()
         val viewModel =
             DeliveryConditionViewModel(
-                savedStateHandle = SavedStateHandle(mapOf("receiverId" to RECEIVER_ID)),
+                route = SettingRoute.AfterDeliveryRoute(RECEIVER_ID),
                 userRepository = repository,
             )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {

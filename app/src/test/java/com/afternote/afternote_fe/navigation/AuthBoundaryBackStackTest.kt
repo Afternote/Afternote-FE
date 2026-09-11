@@ -2,6 +2,7 @@ package com.afternote.afternote_fe.navigation
 
 import android.app.Application
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.navigation.toRoute
 import com.afternote.core.ui.Route
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -68,7 +69,6 @@ class AuthBoundaryBackStackTest {
         start(Route.Home)
 
         composeRule.runOnIdle { harness.homeActions.onSettingClick() }
-        composeRule.runOnIdle { harness.settingActions.onNavigateToWithdrawGuide() }
 
         composeRule.runOnIdle { harness.settingActions.onLogoutSuccess() }
 
@@ -81,13 +81,28 @@ class AuthBoundaryBackStackTest {
         start(Route.Home)
 
         composeRule.runOnIdle { harness.homeActions.onSettingClick() }
-        composeRule.runOnIdle { harness.settingActions.onNavigateToWithdrawGuide() }
-        composeRule.runOnIdle { harness.settingActions.onNavigateToWithdrawConfirm() }
 
         composeRule.runOnIdle { harness.settingActions.onWithdrawSuccess() }
 
         assertEquals(listOf("NavHostRoot", "Onboarding"), routes())
         assertEquals(false, composeRule.runOnIdle { harness.navController.popBackStack() })
+    }
+
+    @Test
+    fun `home recipient shortcut opens registration host and returns directly to home`() {
+        start(Route.Home)
+        composeRule.runOnIdle { harness.homeActions.onRecipientChipClick() }
+        assertEquals(listOf("NavHostRoot", "Home", "Setting"), routes())
+        assertEquals(
+            true,
+            composeRule.runOnIdle {
+                harness.navController.currentBackStackEntry!!
+                    .toRoute<Route.Setting>()
+                    .startWithRecipientRegistration
+            },
+        )
+        composeRule.runOnIdle { harness.navController.popBackStack() }
+        assertEquals(listOf("NavHostRoot", "Home"), routes())
     }
 
     @Test
