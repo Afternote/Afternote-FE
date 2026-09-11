@@ -17,9 +17,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.model.delivery.DeliveryConditionType
+import com.afternote.core.ui.mvi.ObserveSignal
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
@@ -36,6 +35,7 @@ import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.RadioGroup
 import com.afternote.feature.setting.presentation.component.RadioGroupItem
 import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionError
+import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionIntent
 import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionUiState
 import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionViewModel
 
@@ -47,18 +47,19 @@ internal fun DeliveryConditionScreen(
     viewModel: DeliveryConditionViewModel,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val currentOnSaveSuccess by rememberUpdatedState(onSaveSuccess)
 
-    LaunchedEffect(Unit) {
-        viewModel.saveSuccess.collect { currentOnSaveSuccess() }
-    }
+    ObserveSignal(
+        signal = uiState.pendingEvent,
+        consumed = DeliveryConditionIntent.ConsumeSuccess,
+        onIntent = viewModel::onIntent,
+    ) { onSaveSuccess() }
 
     DeliveryConditionContent(
         uiState = uiState,
         onBack = onBack,
-        onConditionTypeSelect = viewModel::onConditionTypeSelected,
+        onConditionTypeSelect = { viewModel.onIntent(DeliveryConditionIntent.SelectConditionType(it)) },
         onLastGreetingEditClick = onLastGreetingEditClick,
-        onSave = viewModel::onSave,
+        onSave = { viewModel.onIntent(DeliveryConditionIntent.Save) },
     )
 }
 

@@ -60,6 +60,44 @@ class MviContractKonsistTest {
     }
 
     @Test
+    fun `미전환 ViewModel도 UI 이벤트 스트림을 선언하지 않는다`() {
+        val violations = eventStreamDeclarations(AfternoteKonsistScope.productionFiles)
+        check(violations.isEmpty()) {
+            "ViewModel 이벤트는 UiState에 흡수한다 (#1502): ${violations.sorted()}"
+        }
+    }
+
+    @Test
+    fun `이벤트 스트림 가드는 MVI 예외 목록의 VM에도 적용하고 MutableStateFlow는 허용한다`() {
+        val root = fixture.newFolder("event-stream")
+        root.writeKotlin(
+            "feature/sample/presentation/src/main/kotlin/sample/LegacyViewModel.kt",
+            """
+            package sample
+            class LegacyViewModel : ViewModel() {
+                private val state = MutableStateFlow(State())
+                private val events = Channel<Event>(Channel.BUFFERED)
+                private val signals = MutableSharedFlow<Event>(replay = 0)
+            }
+            """,
+        )
+        val violations = eventStreamDeclarations(fixtureFiles(root))
+        assertEquals(2, violations.size)
+        check(violations.any { it.endsWith("LegacyViewModel.events") })
+        check(violations.any { it.endsWith("LegacyViewModel.signals") })
+    }
+
+    private fun eventStreamDeclarations(files: List<KoFileDeclaration>): List<String> =
+        files.filter { FEATURE_PRESENTATION_MAIN.containsMatchIn(it.normalizedProjectPath()) }.flatMap { file ->
+            file.classes().filter { it.name.endsWith(VIEW_MODEL_SUFFIX) }.flatMap { declaration ->
+                declaration
+                    .properties()
+                    .filter { Regex("""\b(Channel|MutableSharedFlow)\s*[(<]""").containsMatchIn(it.text) }
+                    .map { "${file.normalizedProjectPath()} — ${declaration.name}.${it.name}" }
+            }
+        }
+
+    @Test
     fun `feature presentation 의 ViewModel 은 MviViewModel 을 상속한다`() {
         val violations = unmigratedViewModels(AfternoteKonsistScope.productionFiles) - PENDING_MVI_MIGRATION
 
@@ -434,19 +472,13 @@ class MviContractKonsistTest {
                 "com.afternote.feature.receiver.presentation.senderdetail.SenderDetailViewModel",
             )
 
-        /** #1805 가 뺀다. `Channel` 5곳 흡수(#1502)가 선행이다. */
+        /** #1805 가 뺀다. 이벤트 스트림을 쓰던 6개 ViewModel은 #1502에서 MVI까지 함께 전환했다. */
         private val ISSUE_1805_SETTING =
             setOf(
                 "com.afternote.feature.setting.presentation.viewmodel.AppLockSetupViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionViewModel",
                 "com.afternote.feature.setting.presentation.viewmodel.InsertPasswordViewModel",
                 "com.afternote.feature.setting.presentation.viewmodel.PassKeyViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.ProfileEditViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.ReceiverEditViewModel",
                 "com.afternote.feature.setting.presentation.viewmodel.ReceiverListViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterViewModel",
                 "com.afternote.feature.setting.presentation.viewmodel.SettingViewModel",
             )
 
