@@ -3,7 +3,6 @@ package com.afternote.feature.setting.presentation.navigation
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
-@Serializable
 internal sealed interface SettingRoute : NavKey {
     @Serializable
     data object SettingHomeRoute : SettingRoute
