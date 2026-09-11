@@ -103,6 +103,7 @@ internal sealed interface AfternoteEditorIntent : MviIntent {
         val payload: RegisterAfternotePayload,
         val selectedReceiverIds: List<Long>,
         val memorialMedia: SaveAfternoteMemorialMedia,
+        val asDraft: Boolean = false,
     ) : AfternoteEditorIntent
 
     data object RetryPrefill : AfternoteEditorIntent

@@ -1,9 +1,11 @@
 package com.afternote.feature.afternote.presentation.editor
 
+import androidx.lifecycle.SavedStateHandle
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
+import com.afternote.feature.afternote.domain.model.author.DraftDetail
 import com.afternote.feature.afternote.domain.model.author.FieldPatch
 import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
@@ -35,7 +37,6 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -87,7 +88,7 @@ class AfternoteEditorServerMediaDeleteSaveTest {
             val memorial = requireNotNull(updatePayload.memorial)
             assertEquals(FieldPatch.Set(null), memorial.memorialPhotoUrl)
             assertEquals(FieldPatch.Set(null), memorial.memorialVideo)
-            assertNull(memorial.songs) // Unchanged songs remain on the server.
+            assertNull(memorial.songs)
             assertEquals(AFTERNOTE_ID, first.uiState.value.savedId)
 
             val updatedMedia = repository.details.getValue(AFTERNOTE_ID).memorialMedia()
@@ -142,6 +143,58 @@ class AfternoteEditorServerMediaDeleteSaveTest {
             }
         }
 
+    @Test
+    fun `임시저장 유지와 발행 전환 모두 기존 미디어를 다시 보내거나 지우지 않는다`() =
+        runTest(dispatcher) {
+            for (asDraft in listOf(true, false)) {
+                val repository = FakeAfternoteRepository(initialDraftDetails = mapOf(AFTERNOTE_ID to serverMemorialDraft()))
+                val viewModel = viewModel(repository, isDraft = true)
+                collectState(viewModel)
+                applyLoadedPrefill(viewModel)
+                assertServerMediaAndSongs(viewModel.uiState.value.form)
+
+                viewModel.saveCurrentMemorialForm(asDraft = asDraft)
+                advanceUntilIdle()
+
+                val payload = repository.updateCalls.single().second
+                assertEquals(asDraft, payload.isDraft)
+                assertNull(payload.memorial)
+            }
+        }
+
+    @Test
+    fun `발행분 편집의 임시저장은 isDraft 를 싣지 않아 발행분을 강등하지 않는다`() =
+        runTest(dispatcher) {
+            val repository = FakeAfternoteRepository(initialDetails = mapOf(AFTERNOTE_ID to serverMemorialDetail()))
+            val viewModel = viewModel(repository, isDraft = false)
+            collectState(viewModel)
+            applyLoadedPrefill(viewModel)
+
+            viewModel.saveCurrentMemorialForm(asDraft = true)
+            advanceUntilIdle()
+
+            val payload = repository.updateCalls.single().second
+            assertNull(payload.isDraft)
+            assertEquals(AFTERNOTE_ID, viewModel.uiState.value.savedId)
+        }
+
+    private fun serverMemorialDraft(): DraftDetail {
+        val detail = serverMemorialDetail()
+        val content = detail.content as DetailContent.Memorial
+        return DraftDetail(
+            id = detail.id,
+            type = AfternoteType.MEMORIAL,
+            serviceName = detail.serviceName,
+            timestamps = detail.timestamps,
+            receivers = detail.receivers,
+            leaveMessageBlocks = detail.leaveMessageBlocks,
+            credentials = null,
+            processingMethods = emptyList(),
+            songs = content.songs,
+            media = content.media,
+        )
+    }
+
     private fun TestScope.collectState(viewModel: AfternoteEditorViewModel) {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect {}
@@ -156,13 +209,14 @@ class AfternoteEditorServerMediaDeleteSaveTest {
         advanceUntilIdle()
     }
 
-    private fun AfternoteEditorViewModel.saveCurrentMemorialForm() {
+    private fun AfternoteEditorViewModel.saveCurrentMemorialForm(asDraft: Boolean = false) {
         val form = uiState.value.form
         onIntent(
             AfternoteEditorIntent.Save(
                 payload = validMemorialPayload(),
                 selectedReceiverIds = emptyList(),
                 memorialMedia = form.fullMemorialMediaForSave(),
+                asDraft = asDraft,
             ),
         )
     }
@@ -189,14 +243,14 @@ class AfternoteEditorServerMediaDeleteSaveTest {
         assertEquals(listOf("배경음악"), form.memorialPlaylistSongs.map { it.title })
     }
 
-    private fun viewModel(repository: FakeAfternoteRepository): AfternoteEditorViewModel {
-        val savedStateHandle =
-            afternoteEditorSavedStateHandle(
-                initialType = AfternoteType.MEMORIAL,
-                itemId = AFTERNOTE_ID,
-            )
-        return AfternoteEditorViewModel(
-            route = savedStateHandle.editorFlowRoute(),
+    private fun viewModel(
+        repository: FakeAfternoteRepository,
+        savedStateHandle: SavedStateHandle =
+            afternoteEditorSavedStateHandle(initialType = AfternoteType.MEMORIAL, itemId = AFTERNOTE_ID),
+        isDraft: Boolean = false,
+    ): AfternoteEditorViewModel =
+        AfternoteEditorViewModel(
+            route = savedStateHandle.editorFlowRoute().copy(isDraft = isDraft),
             savedStateHandle = savedStateHandle,
             userReceiverRepository = afternoteAuthorUserReceiverRepository(),
             afternoteRepository = repository,
@@ -215,7 +269,6 @@ class AfternoteEditorServerMediaDeleteSaveTest {
             saveAfternoteUseCase = SaveAfternoteUseCase(repository),
             errorReporter = NoopAuthorErrorReporter,
         )
-    }
 
     private fun validMemorialPayload(): RegisterAfternotePayload =
         RegisterAfternotePayload(
