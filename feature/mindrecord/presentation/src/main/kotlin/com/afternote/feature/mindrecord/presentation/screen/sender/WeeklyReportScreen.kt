@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -28,6 +27,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.asString
+import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.domain.model.EmotionAnalysisStatus
@@ -58,7 +58,7 @@ fun WeeklyReportScreen(
 
     when (val state = uiState) {
         WeeklyReportUiState.Loading -> {
-            LoadingBox(modifier)
+            LoadingBody(modifier)
         }
 
         is WeeklyReportUiState.Error -> {
@@ -150,7 +150,17 @@ private fun WeeklyReportContent(
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 AfternoteSectionHeader(title = "HISTORY")
                 state.dailyQuestions.forEach { dailyQuestion ->
-                    DailyQuestionListCard(answer = dailyQuestion)
+                    // 주간 리포트는 읽기 전용 요약이다 — 편집·삭제는 데일리질문 목록의 몫이라
+                    // 여기서는 «더보기» 를 그리지 않는다 (#1540).
+                    // 주간 리포트는 **읽기 전용 요약**이다 — 편집·삭제도, 카드 탭도 없다.
+                    // 셋 다 `null` 이라 클릭 semantics 자체가 안 붙는다: no-op 을 넘기면
+                    // 스크린리더가 「버튼」으로 읽는데 눌러도 아무 일이 없다 (#1540 리뷰).
+                    DailyQuestionListCard(
+                        answer = dailyQuestion,
+                        onClick = null,
+                        onEdit = null,
+                        onDelete = null,
+                    )
                 }
             }
         }
@@ -188,7 +198,7 @@ private fun recordedSummary(
  * 이름을 먼저 찾고 기록일수는 그 뒤에서 찾는다. 이름에 "3일" 같은 문자열이 들어 있어도
  * 강조 구간이 겹치지 않는다. 찾지 못하면 강조를 생략한다 — 문장은 그대로 보인다.
  */
-internal fun recordedSummaryHighlights(
+private fun recordedSummaryHighlights(
     sentence: String,
     userName: String,
     daysText: String,
@@ -205,13 +215,6 @@ internal fun recordedSummaryHighlights(
     val daysStart = sentence.indexOf(daysText, startIndex = searchFrom).takeIf { it >= 0 && daysText.isNotEmpty() }
     if (daysStart != null) ranges += daysStart until (daysStart + daysText.length)
     return ranges
-}
-
-@Composable
-private fun LoadingBox(modifier: Modifier = Modifier) {
-    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
-    }
 }
 
 @Composable
@@ -314,7 +317,7 @@ private fun WeeklyReportErrorContent(
  * 전부가 아니라는 사실이 요약 문구보다 중요하다.
  */
 @Composable
-internal fun emotionCardDescription(state: WeeklyReportUiState.Success): String =
+private fun emotionCardDescription(state: WeeklyReportUiState.Success): String =
     when (state.emotionAnalysisStatus) {
         EmotionAnalysisStatus.PENDING -> {
             if (state.emotionKeywords.isEmpty()) {
@@ -338,7 +341,7 @@ internal fun emotionCardDescription(state: WeeklyReportUiState.Success): String 
             }
         }
 
-        else -> {
+        EmotionAnalysisStatus.NOTHING_TO_ANALYZE, EmotionAnalysisStatus.COMPLETED -> {
             if (state.emotionKeywords.isNotEmpty()) {
                 state.summaryText
             } else {

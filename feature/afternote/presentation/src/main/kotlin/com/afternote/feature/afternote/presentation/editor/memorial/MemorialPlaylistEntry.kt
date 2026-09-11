@@ -32,7 +32,7 @@ import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDis
 /**
  * 추억 플레이리스트 Entry.
  *
- * flow-scoped [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel] 폼 SSOT의 곡 목록을
+ * flow-scoped [com.afternote.feature.afternote.presentation.editor.AfternoteEditorViewModel] 폼 SSOT의 곡 목록을
  * 공용 부품([SongPlaylistScaffold] + 모드별 본문)의 입력 형태로 매핑한다. 변경은 콜백 인텐트로 위임한다.
  *
  * 화면은 두 모드를 오간다 (헤더 연필 = 토글):

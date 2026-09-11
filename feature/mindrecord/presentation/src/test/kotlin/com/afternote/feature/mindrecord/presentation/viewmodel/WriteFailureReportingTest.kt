@@ -2,11 +2,12 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.domain.repository.PhotoUploadRepository
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
 import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -96,7 +97,7 @@ class WriteFailureReportingTest {
                     savedStateHandle = SavedStateHandle(emptyMap()),
                     repository = repository,
                     photoUploadRepository = failingUpload(),
-                    draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
+                    draftLoader = LoadMindRecordDraftsUseCase(FakeDiaryRepository(), repository),
                     errorReporter = reporter,
                 )
             advanceUntilIdle()
@@ -133,7 +134,7 @@ class WriteFailureReportingTest {
                     savedStateHandle = SavedStateHandle(emptyMap()),
                     repository = repository,
                     photoUploadRepository = failingUpload(),
-                    draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
+                    draftLoader = LoadMindRecordDraftsUseCase(FakeDiaryRepository(), repository),
                     errorReporter = reporter,
                 )
             advanceUntilIdle()
@@ -155,22 +156,22 @@ class WriteFailureReportingTest {
             repository = repository,
             photoUploadRepository = failingUpload(),
             userRepository = emptyReceiverRepository(),
-            draftLoader = MindRecordDraftLoader(repository, FakeDailyQuestionRepository()),
+            draftLoader = LoadMindRecordDraftsUseCase(repository, FakeDailyQuestionRepository()),
             errorReporter = reporter,
         )
 
     private fun failingUpload(): PhotoUploadRepository = PhotoUploadRepository { _, _ -> Result.failure(IOException("upload offline")) }
 
     /** UserRepository 는 표면이 넓다 — 이 시나리오가 타는 호출만 답한다. */
-    private fun emptyReceiverRepository(): UserRepository =
+    private fun emptyReceiverRepository(): UserReceiverRepository =
         Proxy.newProxyInstance(
-            UserRepository::class.java.classLoader,
-            arrayOf(UserRepository::class.java),
+            UserReceiverRepository::class.java.classLoader,
+            arrayOf(UserReceiverRepository::class.java),
         ) { _, method, _ ->
             when (method.name) {
                 "getReceivers" -> emptyList<Any>()
                 "getReceiverListFlow" -> flowOf(emptyList<Any>())
                 else -> error("Unexpected call: ${method.name}")
             }
-        } as UserRepository
+        } as UserReceiverRepository
 }

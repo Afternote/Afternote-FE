@@ -45,6 +45,31 @@ sealed class CoreAuthFailure(
     ) : CoreAuthFailure("email verification code invalid", cause)
 
     /**
+     * 그 이메일이 소셜 로그인으로 가입한 계정이라는 사실(서버 code 1702).
+     *
+     * BE `AuthService` 는 `password == null` 인 사용자를 **세 경로**에서 이 코드로 거절한다 —
+     * 계정 복구(`findActiveLocalUserForRecovery`) · 이메일 로그인(`login`) · 비밀번호 변경
+     * (`passwordChange`). 복구는 인증번호 발송(`auth/find/send/code`) 단계에서 이미 걸리므로,
+     * 비밀번호 찾기 화면은 코드 입력 전에 차단 안내를 낼 수 있다. 온보딩 전용 사유가 아니다.
+     *
+     * [SocialLoginRejected] 와 다르다 — 그쪽은 소셜 로그인 **시도**가 거절된 것이고, 이쪽은 로컬
+     * 비밀번호가 없는 계정에 비밀번호를 요구한 것이라 안내가 "소셜로 로그인하라" 로 갈린다.
+     */
+    class SocialSignUpAccount(
+        cause: Throwable,
+    ) : CoreAuthFailure("account signed up via social provider", cause)
+
+    /**
+     * 새 비밀번호가 지금 쓰는 비밀번호와 같다는 사실(서버 code 1206).
+     *
+     * 서버만 판정할 수 있다 — 클라는 기존 비밀번호를 모른다(비밀번호 찾기는 현재 비밀번호를
+     * 입력받지 않는다). 폴백 문구로 뭉개면 "왜 실패했는지" 를 사용자가 알 수 없어 따로 둔다.
+     */
+    class PasswordUnchanged(
+        cause: Throwable,
+    ) : CoreAuthFailure("new password equals current password", cause)
+
+    /**
      * 서버 응답 없이 전송 계층에서 끝난 실패(DNS 해석 불가·타임아웃·연결 거부 등)의 도메인 표현.
      *
      * data 계층이 인증·계정 API 호출의 IO 예외를 이 타입으로 치환한다 — presentation 은

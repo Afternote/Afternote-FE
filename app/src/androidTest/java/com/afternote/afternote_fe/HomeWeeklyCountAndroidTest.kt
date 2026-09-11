@@ -161,11 +161,14 @@ class HomeWeeklyCountAndroidTest {
         dailyQuestionAmount: Int = 0,
         diaryAmount: Int = 0,
         weeklyFailure: Throwable? = null,
-    ): HomeTabViewModel =
-        HomeTabViewModel(
+    ): HomeTabViewModel {
+        // 같은 페이크가 두 좁은 계약을 다 구현한다 — UserRepository 가 둘을 상속한다 (#1742).
+        val userRepository = appTestUserRepository()
+        return HomeTabViewModel(
             getHomeSummary =
                 GetHomeSummaryUseCase(
-                    userRepository = appTestUserRepository(),
+                    myProfileRepository = userRepository,
+                    userReceiverRepository = userRepository,
                     dailyQuestionRepository = FakeDailyQuestionRepository(),
                     getWeeklyRecordCount =
                         GetWeeklyRecordCountUseCase(
@@ -175,6 +178,7 @@ class HomeWeeklyCountAndroidTest {
             userProfileCacheRepository = FakeUserProfileCacheRepository(),
             errorReporter = SilentErrorReporter,
         )
+    }
 
     private companion object {
         const val TIMEOUT = 5_000L
@@ -230,6 +234,8 @@ private class RecordingHomeTabActions(
     override fun onWeeklyCountClick() = Unit
 
     override fun onMemoriesSectionClick() = Unit
+
+    override fun onMemoriesRecordDetailClick(recordId: Long) = Unit
 
     override fun onSettingClick() = Unit
 

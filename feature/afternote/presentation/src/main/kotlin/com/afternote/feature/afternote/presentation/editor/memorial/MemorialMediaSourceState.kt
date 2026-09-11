@@ -63,7 +63,7 @@ internal class MemorialMediaSourceState(
         consumeTarget()?.let(onCapture)
     }
 
-    /** 슬롯의 로컬 첨부 삭제 (#1114). 갈래 선택과 같은 규칙으로 시트를 닫고 넘긴다. */
+    /** 슬롯에 현재 표시된 로컬 또는 서버 첨부 삭제 (#1114, #1597). 시트를 닫고 넘긴다. */
     fun remove() {
         consumeTarget()?.let(onRemove)
     }
@@ -86,7 +86,7 @@ internal class MemorialMediaSourceState(
  *
  * @param onPhotoSelected 영정사진 확정 URI. 취소·실패에는 호출되지 않는다 — 슬롯의 기존 값이 그대로 남는다.
  * @param onVideoSelected 장례식에 남길 영상 확정 URI. 위와 같다.
- * @param onPhotoRemoved 시트의 삭제 항목으로 영정사진 로컬 첨부를 지웠을 때 (#1114).
+ * @param onPhotoRemoved 시트의 삭제 항목으로 현재 표시된 영정사진을 지웠을 때 (#1114, #1597).
  * @param onVideoRemoved 위와 같다 — 장례식에 남길 영상.
  * @param onCaptureFailed 촬영 인텐트를 띄우지 못한 사유. 화면 문구는 두 갈래가 같아 사유가 지워지므로
  *   호출처가 텔레메트리로 남긴다.

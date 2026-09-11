@@ -34,7 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -46,18 +45,17 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.afternote.core.ui.modifierextention.FadingEdgeDirection
 import com.afternote.core.ui.modifierextention.horizontalFadingEdge
+import com.afternote.core.ui.popup.AfternoteActionMenu
+import com.afternote.core.ui.popup.editDeleteActionMenuItems
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
-import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.MemorialVideoThumbnail
 import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
 import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
-
-internal const val MEMORIAL_VIDEO_CARD_TEST_TAG = "memorialVideoCard"
 
 /**
  * 추억 노트 상세 표시 데이터.
@@ -76,7 +74,7 @@ data class MemorialDetailContent(
 /**
  * 추억 노트 애프터노트 상세 화면 (Stateless).
  *
- * [com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailScreen] 과 동일한 Scaffold·TopBar·드롭다운 배치·스크롤 modifier 패턴을 따른다.
+ * [com.afternote.feature.afternote.presentation.detail.account.AccountDetailScreen] 과 동일한 Scaffold·TopBar·드롭다운 배치·스크롤 modifier 패턴을 따른다.
  */
 @Composable
 fun MemorialDetailScreen(
@@ -122,11 +120,14 @@ fun MemorialDetailScreen(
                                     modifier = Modifier.size(16.dp),
                                 )
                             }
-                            EditDropdownMenu(
+                            AfternoteActionMenu(
                                 expanded = state.showDropdownMenu,
                                 onDismissRequest = state::hideDropdownMenu,
-                                onDeleteClick = { state.showDeleteDialog() },
-                                onEditClick = onEditClick,
+                                items =
+                                    editDeleteActionMenuItems(
+                                        onEditClick = onEditClick,
+                                        onDeleteClick = { state.showDeleteDialog() },
+                                    ),
                             )
                         }
                     }
@@ -306,8 +307,7 @@ private fun VideoCard(
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .clickable(role = Role.Button) { onClick(videoUrl) }
-                .testTag(MEMORIAL_VIDEO_CARD_TEST_TAG),
+                .clickable(role = Role.Button) { onClick(videoUrl) },
         content = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(

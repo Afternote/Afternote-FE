@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.presentation.detail
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.testing.FakeUserProfileRepository
+import com.afternote.core.domain.testing.FakeUserProfileCacheRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
@@ -12,6 +12,7 @@ import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.presentation.NoopAuthorErrorReporter
 import com.afternote.feature.afternote.presentation.afternoteAuthorUserProfileRepository
 import com.afternote.feature.afternote.presentation.afternoteAuthorUserRepository
+import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -419,10 +420,10 @@ class AfternoteDetailViewModelTest {
         repository: FakeAfternoteRepository,
         errorReporter: ErrorReporter = NoopAuthorErrorReporter,
         userRepository: FakeUserRepository = afternoteAuthorUserRepository(),
-        userProfileRepository: FakeUserProfileRepository = afternoteAuthorUserProfileRepository(),
+        userProfileRepository: FakeUserProfileCacheRepository = afternoteAuthorUserProfileRepository(),
     ): AfternoteDetailViewModel =
         AfternoteDetailViewModel(
-            savedStateHandle = SavedStateHandle(mapOf("itemId" to 73L)),
+            route = AfternoteRoute.DetailRoute(itemId = 73L),
             afternoteRepository = repository,
             userRepository = userRepository,
             userProfileRepository = userProfileRepository,

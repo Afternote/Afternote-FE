@@ -2,6 +2,7 @@ package com.afternote.feature.onboarding.presentation.signup
 
 import android.util.Patterns
 import com.afternote.core.ui.UiText
+import com.afternote.feature.onboarding.presentation.OnboardingPasswordRule
 import com.afternote.feature.onboarding.presentation.terms.TermsState
 
 /**
@@ -14,8 +15,9 @@ import com.afternote.feature.onboarding.presentation.terms.TermsState
  * 로 갱신. 단발성 navigation/error 신호는 UI 가 소비 후 [SignUpViewModel] 의 `onXxxConsumed()`
  * 콜백 호출로 reset.
  *
- * 폼 룰 (const + regex) 은 본 data class 의 companion 으로 묶어 ViewModel + UI 양쪽에서
- * `SignUpUiState.RESIDENT_REGISTRATION_FRONT_DIGIT_COUNT` 식으로 참조.
+ * 폼 상수는 본 data class 의 companion 으로 묶어 ViewModel + UI 양쪽에서
+ * `SignUpUiState.RESIDENT_REGISTRATION_FRONT_DIGIT_COUNT` 식으로 참조한다. 새 비밀번호 규칙은
+ * 다른 온보딩 흐름에서도 재사용할 수 있도록 [OnboardingPasswordRule]에 둔다.
  */
 data class SignUpUiState(
     /** Step 1 입력값 — 이메일. */
@@ -94,7 +96,7 @@ data class SignUpUiState(
 
     /** 비밀번호 정규식 충족 여부. 안내 문구 색상 토글에도 사용. */
     val isPasswordRuleSatisfied: Boolean
-        get() = PASSWORD_REGEX.matches(signUpPassword)
+        get() = OnboardingPasswordRule.isSatisfied(signUpPassword)
 
     /** Step 3 — 비밀번호 규칙 충족 + 확인 일치. */
     val isStep3NextEnabled: Boolean
@@ -112,9 +114,5 @@ data class SignUpUiState(
         const val RESIDENT_REGISTRATION_BACK_FIRST_DIGIT_COUNT = 1
 
         private const val MIN_VERIFICATION_CODE_LENGTH = 6
-
-        /** 8~16자, 영문 대소문자 + 숫자 + 특수문자 각 1개 이상. */
-        private val PASSWORD_REGEX =
-            Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,16}$")
     }
 }
