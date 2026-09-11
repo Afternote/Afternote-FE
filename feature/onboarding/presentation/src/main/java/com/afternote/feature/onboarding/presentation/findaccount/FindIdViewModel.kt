@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.repository.account.AccountRepository
+import com.afternote.feature.onboarding.presentation.OnboardingFailure
 import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.reporting.AuthFailureStage
 import com.afternote.feature.onboarding.presentation.reporting.recordAuthFailure
@@ -29,7 +30,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * `TextFieldState` 는 Screen 이 소유하고 VM 은 String 만 들고 있는다.
  */
 @HiltViewModel
-class FindIdViewModel
+internal class FindIdViewModel
     @Inject
     constructor(
         private val accountRepository: AccountRepository,
@@ -43,10 +44,13 @@ class FindIdViewModel
         fun updateEmail(value: String) =
             _uiState.update {
                 // 이메일이 바뀌면 앞서 받은 계정·에러는 더 이상 그 이메일의 것이 아니다.
-                it.copy(email = value, foundAccount = null, hasVerificationError = false)
+                it.copy(email = value, foundAccount = null, failure = it.failure.takeIf { _ -> it.email == value })
             }
 
-        fun updateCertificateCode(value: String) = _uiState.update { it.copy(certificateCode = value, hasVerificationError = false) }
+        fun updateCertificateCode(value: String) =
+            _uiState.update {
+                it.copy(certificateCode = value, failure = it.failure.takeIf { _ -> it.certificateCode == value })
+            }
 
         fun requestVerificationCode() {
             val state = _uiState.value
@@ -56,13 +60,17 @@ class FindIdViewModel
                 accountRepository
                     .sendFindCode(state.email)
                     .onSuccess {
-                        _uiState.update { it.copy(isVerificationSent = true, hasVerificationError = false) }
+                        _uiState.update { it.copy(isVerificationSent = true, failure = null) }
                         startResendCooldown()
                     }.onFailure { error ->
                         // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
                         if (error is CancellationException) throw error
                         errorReporter.recordAuthFailure(AuthFailureStage.FIND_ACCOUNT_CODE_SEND, error)
-                        _uiState.update { it.copy(errorMessage = error.toDisplayMessage(R.string.onboarding_find_account_failed)) }
+                        _uiState.update {
+                            it.copy(
+                                failure = OnboardingFailure.RequestFailed(error.toDisplayMessage(R.string.onboarding_find_account_failed)),
+                            )
+                        }
                     }
                 _uiState.update { it.copy(isSendingCode = false) }
             }
@@ -81,7 +89,7 @@ class FindIdViewModel
             val state = _uiState.value
             if (!state.isVerifyEnabled) return
             viewModelScope.launch {
-                _uiState.update { it.copy(isVerifying = true, hasVerificationError = false) }
+                _uiState.update { it.copy(isVerifying = true, failure = null) }
                 accountRepository
                     .findAccount(state.email, state.certificateCode)
                     .onSuccess { account ->
@@ -94,11 +102,14 @@ class FindIdViewModel
                         // 자세한 사유는 AuthFailureStage.FIND_ACCOUNT_CODE_SEND KDoc.
                         _uiState.update {
                             if (error is CoreAuthFailure.EmailVerification) {
-                                // 스낵바 신호를 함께 내린다 — 이번 실패는 인라인으로 알리므로,
-                                // 아직 소비되지 않은 이전 실패 문구가 인라인과 겹쳐 뜨지 않게 한다.
-                                it.copy(hasVerificationError = true, errorMessage = null)
+                                it.copy(failure = OnboardingFailure.VerificationRejected)
                             } else {
-                                it.copy(errorMessage = error.toDisplayMessage(R.string.onboarding_find_account_failed))
+                                it.copy(
+                                    failure =
+                                        OnboardingFailure.RequestFailed(
+                                            error.toDisplayMessage(R.string.onboarding_find_account_failed),
+                                        ),
+                                )
                             }
                         }
                     }
@@ -106,7 +117,10 @@ class FindIdViewModel
             }
         }
 
-        fun onErrorConsumed() = _uiState.update { it.copy(errorMessage = null) }
+        fun onErrorConsumed() =
+            _uiState.update {
+                it.copy(failure = it.failure.takeUnless { failure -> failure is OnboardingFailure.RequestFailed })
+            }
 
         private fun startResendCooldown() {
             // 중복 방지가 아니라 last-wins 재장전 — 이전 카운트다운을 폐기하고 30초를 새로 센다.

@@ -21,11 +21,14 @@ import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.ui.asString
 import com.afternote.core.ui.findActivity
 import com.afternote.feature.onboarding.presentation.BuildConfig
+import com.afternote.feature.onboarding.presentation.OnboardingFailureDisplay
 import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.displayMessageResOrFallback
 import com.afternote.feature.onboarding.presentation.login.social.requestGoogleIdToken
 import com.afternote.feature.onboarding.presentation.login.social.requestKakaoAccessToken
 import com.afternote.feature.onboarding.presentation.reporting.AuthProvider
+import com.afternote.feature.onboarding.presentation.snackbarMessage
+import com.afternote.feature.onboarding.presentation.toDisplay
 import kotlinx.coroutines.launch
 
 /**
@@ -37,7 +40,7 @@ import kotlinx.coroutines.launch
  * ViewModel로 전달하여 ViewModel과 Data 레이어의 플랫폼 독립성을 보장합니다.
  */
 @Composable
-fun LoginEntry(
+internal fun LoginEntry(
     onLoginSuccess: () -> Unit,
     onNewUserOnboarding: () -> Unit,
     onSignUpClick: () -> Unit,
@@ -87,10 +90,14 @@ fun LoginEntry(
             viewModel.onOnboardingStartConsumed()
         }
     }
-    val pendingErrorMessage = uiState.errorMessage?.asString()
-    LaunchedEffect(pendingErrorMessage) {
-        if (pendingErrorMessage != null) {
-            showErrorSnackbar(pendingErrorMessage)
+    val snackbarMessage =
+        uiState.failure
+            .toDisplay()
+            .snackbarMessage
+            ?.asString()
+    LaunchedEffect(snackbarMessage) {
+        if (snackbarMessage != null) {
+            showErrorSnackbar(snackbarMessage)
             viewModel.onErrorConsumed()
         }
     }
@@ -168,8 +175,8 @@ fun LoginEntry(
         snackbarHostState = snackbarHostState,
         modifier = modifier,
         isLoading = uiState.isLoading,
-        hasCredentialError = uiState.hasCredentialError,
-        showNetworkErrorPopup = uiState.showNetworkErrorPopup,
+        hasCredentialError = (uiState.failure.toDisplay() == OnboardingFailureDisplay.CredentialInline),
+        showNetworkErrorPopup = (uiState.failure.toDisplay() == OnboardingFailureDisplay.NetworkRetryPopup),
         onRetryLogin = viewModel::retryLogin,
         onNetworkErrorDismiss = viewModel::onNetworkErrorDismissed,
     )

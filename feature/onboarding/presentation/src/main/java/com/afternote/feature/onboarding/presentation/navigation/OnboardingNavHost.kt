@@ -11,6 +11,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.afternote.core.ui.navigation.FeatureNavDisplay
 import com.afternote.core.ui.navigation.FeatureStackBoundary
+import com.afternote.feature.onboarding.presentation.OnboardingFailureDisplay
 import com.afternote.feature.onboarding.presentation.OnboardingProfileEntry
 import com.afternote.feature.onboarding.presentation.WelcomeScreen
 import com.afternote.feature.onboarding.presentation.findaccount.FindIdScreen
@@ -22,6 +23,7 @@ import com.afternote.feature.onboarding.presentation.signup.SignUpScreen
 import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel
 import com.afternote.feature.onboarding.presentation.terms.OnboardingTermsScreen
 import com.afternote.feature.onboarding.presentation.terms.TermsDetailScreen
+import com.afternote.feature.onboarding.presentation.toDisplay
 
 /**
  * 온보딩 피처가 소유하는 로컬 Navigation 3 스택.
@@ -99,7 +101,7 @@ public fun OnboardingNavHost(
                         isVerifyEnabled = uiState.isVerifyEnabled,
                         isNextEnabled = uiState.isNextEnabled,
                         resendCooldownSeconds = uiState.resendCooldownSeconds,
-                        hasVerificationError = uiState.hasVerificationError,
+                        hasVerificationError = (uiState.failure.toDisplay() == OnboardingFailureDisplay.VerificationInline),
                         snackbarHostState = snackbarHostState,
                         onEmailChange = findIdViewModel::updateEmail,
                         onCertificateCodeChange = findIdViewModel::updateCertificateCode,
@@ -126,7 +128,7 @@ public fun OnboardingNavHost(
                         isSendingCode = uiState.isSendingCode,
                         isEmailFormatValid = uiState.isEmailFormatValid,
                         resendCooldownSeconds = uiState.resendCooldownSeconds,
-                        hasVerificationError = uiState.hasVerificationError,
+                        hasVerificationError = (uiState.failure.toDisplay() == OnboardingFailureDisplay.VerificationInline),
                         isNextEnabled = uiState.isStep1NextEnabled,
                         snackbarHostState = snackbarHostState,
                         onEmailChange = signUpViewModel::updateEmail,
