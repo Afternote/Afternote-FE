@@ -40,9 +40,21 @@ test("the debt sweep still fails closed when open pull requests cannot be listed
     assert.match(guard, /if ! open_prs=\$\(gh api[^\n]*\n(?:[^\n]*\n)*?\s*exit 1/);
 });
 
-test("a pull request is never counted as debt against its own author", () => {
-    // 자기 PR 은 자신이 리뷰할 수 없다.
-    assert.match(guard, /select\(\.user\.login != \\"\$AUTHOR\\"\)/);
+test("a pull request is never counted as debt against its own responsible person", () => {
+    // «자기 PR» 은 작성자가 아니라 담당자(어사인, 비어 있으면 작성자) 기준이다(#1974).
+    // 작성자 로그인만 보면 남이 올려 내게 어사인된 PR 을 내가 리뷰해야 하는 것으로 세고,
+    // 내가 올려 남에게 어사인된 PR 을 내 리뷰 목록에서 뺀다.
+    assert.doesNotMatch(guard, /select\(\.user\.login != \\"\$AUTHOR\\"\)/);
+    assert.match(guard, /if \(\.assignees \| length\) > 0 then \[\.assignees\[\]\.login\] else \[\.user\.login\] end/);
+    assert.match(guard, /select\(\(\\\$owners \| index\(\\"\$author_lc\\"\)\) == null\)/);
+});
+
+test("the request-all job excludes the responsible person, not only the author", () => {
+    // GitHub 은 작성자만 리뷰어에서 자동으로 뺀다. 어사인된 담당자는 직접 빼야 한다.
+    assert.match(requestAll, /ASSIGNEES: \$\{\{ join\(github\.event\.pull_request\.assignees\.\*\.login, ' '\) \}\}/);
+    assert.match(requestAll, /owners_lc=\$\(printf '%s' "\$\{ASSIGNEES:-\$AUTHOR\}"/);
+    assert.match(requestAll, /case " \$owners_lc " in\n\s*\*" \$u_lc "\*\) continue ;;/);
+    assert.doesNotMatch(requestAll, /\[ "\$u" != "\$AUTHOR" \] \|\| continue/);
 });
 
 test("the dead review_request_removed path is gone", () => {
@@ -74,8 +86,10 @@ test("a reviewer's own commit is never counted as the author's fix", () => {
     // 된다. 8/28 에 리뷰어가 건 +0/-0 커밋 하나로 koongmai PR 3건(#1379·#1365·#882)이
     // 전부 가짜 빚이 됐고, 재트리거한 리뷰어가 그 대가로 자기 PR 을 못 열었다 (#1459).
     assert.match(guard, /\(\.author\.login \/\/ ""\)/);
-    assert.match(guard, /login == target/);
-    // 계정이 연결되지 않은 커밋은 login 이 비어 가릴 수 없다. 같은 PR 에서 작성자
+    // 담당자는 여럿일 수 있어 집합으로 가린다.
+    assert.match(guard, /login in target/);
+    assert.match(guard, /-v owners="\$pr_owners"/);
+    // 계정이 연결되지 않은 커밋은 login 이 비어 가릴 수 없다. 같은 PR 에서 담당자
     // 것으로 확인된 커밋의 이메일을 폴백 신원으로 쓴다.
     assert.match(guard, /\(\.commit\.author\.email \/\/ ""\)/);
     assert.match(guard, /email in own/);
@@ -118,7 +132,11 @@ test("a fix delivered by a merge commit still counts as a response", () => {
     // 채로 빚에서 빠져 있었다. 커밋과 함께 작성자의 응답을 본다 (#1450).
     assert.match(guard, /issues\/\$pn\/comments/);
     assert.match(guard, /pulls\/\$pn\/comments/);
-    assert.match(guard, /select\(\.user\.login == \\"\$pr_author\\"\)/);
+    // 응답 주체는 담당자 집합이다.
+    assert.equal(
+        (guard.match(/select\(\\",\$pr_owners,\\" \| contains\(\\",\\" \+ \(\.user\.login \| ascii_downcase\) \+ \\",\\"\)\)/g) ?? []).length,
+        2,
+    );
     assert.match(guard, /\[ "\$\{fixed:-0\}" -gt 0 \] \|\| \[ "\$responses" -gt 0 \]/);
 });
 
@@ -138,10 +156,17 @@ test("rerequests are automated so silence cannot pass the guard", () => {
     assert.match(requestAll, /github\.event\.action == 'synchronize'/);
     assert.match(requestAll, /github\.event\.action == 'edited'/);
     assert.match(requestAll, /github\.event\.changes\.body != null/);
+    // 본문 편집은 담당자(어사인, 비어 있으면 작성자)의 것만 조치다(#1974).
     assert.match(
         requestAll,
-        /github\.event\.sender\.login == github\.event\.pull_request\.user\.login/,
+        /contains\(github\.event\.pull_request\.assignees\.\*\.login, github\.event\.sender\.login\)/,
     );
+    assert.match(
+        requestAll,
+        /github\.event\.pull_request\.assignees\[0\] == null &&\n\s*github\.event\.sender\.login == github\.event\.pull_request\.user\.login/,
+    );
+    // 담당자가 낸 변경요청은 되살리지 않는다.
+    assert.match(requestAll, /\*" \$blocked_lc "\*\) echo "변경요청을 낸 사람이 담당자 본인/);
     assert.match(requestAll, /github\.event\.pull_request\.state == 'open'/);
     assert.match(requestAll, /--add-reviewer "\$blocked"/);
     // 기존 전원 요청은 반영 커밋이나 본문 편집마다 다시 돌지 않는다.
@@ -169,7 +194,8 @@ test("author body edits are durable review evidence and fail closed when truncat
     assert.match(guard, /editor\{login\}/);
     assert.match(guard, /\.editor\.login/);
     assert.match(guard, /\.editedAt > \$cutoff/);
-    assert.match(guard, /ascii_downcase\) == \(\$author \| ascii_downcase/);
+    assert.match(guard, /--arg owners ",\$pr_owners,"/);
+    assert.match(guard, /select\(\$owners \| contains\("," \+ \(\(\.editor\.login \/\/ ""\) \| ascii_downcase\) \+ ","\)\)/);
     assert.match(guard, /pageInfo\.hasPreviousPage != false/);
     assert.match(guard, /\[ "\$body_edits" -gt 0 \]/);
 });
