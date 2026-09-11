@@ -27,8 +27,12 @@ import javax.inject.Inject
  *
  * [GetHomeSummaryUseCase] 와 같은 자리에 두는 이유도 같다 — 여러 feature 의 domain 을 함께
  * 끌어와야 해서 domain 패키지에 두면 레이어 가드에 걸린다.
+ *
+ * 이 집계를 소비하는 프로덕션 코드는 같은 모듈의 [ReceiverHomeViewModel] 뿐이라 `internal`
+ * 이다 (docs/convention/production-visibility.md). 모듈 밖 계측 조립은
+ * `src/testFixtures` 의 `receiverHomeViewModel` 로 간다.
  */
-class GetReceiverHomeSummaryUseCase
+internal class GetReceiverHomeSummaryUseCase
     @Inject
     constructor(
         private val receiverRepository: ReceiverRepository,
@@ -93,7 +97,7 @@ class GetReceiverHomeSummaryUseCase
     }
 
 /** 네 출처에서 온 값. 실패한 출처는 `null` 이고, 무엇이 실패했는지는 [SourceFailure] 가 안다. */
-data class ReceiverHomeSummary(
+internal data class ReceiverHomeSummary(
     val afternotes: AfterNotesListResult?,
     val mindRecords: ReceiverMindRecords?,
     val timeLetterTotalCount: Int?,
@@ -106,12 +110,12 @@ data class ReceiverHomeSummary(
  * 첫 원인을 따로 드는 이유는 telemetry 가 예외 하나를 요구해서다 — 네 개를 다 올리면
  * 보관 한도(최근 8건)를 한 번의 오프라인이 채운다.
  */
-data class SourceFailure(
+internal data class SourceFailure(
     val firstCause: Throwable,
     val failedSources: List<String>,
 )
 
-sealed interface ReceiverHomeSummaryResult {
+internal sealed interface ReceiverHomeSummaryResult {
     /**
      * 화면을 그릴 수 있는 상태. [failure] 가 `null` 이 아니면 **부분 실패** 다 — 성공한 출처는
      * [summary] 에 들어 있고 실패한 자리는 `null` 이다.

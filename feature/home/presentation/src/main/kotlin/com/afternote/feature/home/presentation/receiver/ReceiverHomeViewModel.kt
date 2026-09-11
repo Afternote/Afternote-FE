@@ -41,7 +41,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ReceiverHomeViewModel
     @Inject
-    constructor(
+    internal constructor(
         private val getReceiverHomeSummary: GetReceiverHomeSummaryUseCase,
         // 내려받기는 홈 집계와 다른 축이다 — 조회가 아니라 사용자가 누른 명령이라 UseCase 밖에 둔다.
         private val receiverRepository: ReceiverRepository,
