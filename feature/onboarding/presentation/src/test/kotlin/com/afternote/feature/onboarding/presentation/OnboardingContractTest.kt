@@ -17,9 +17,10 @@ import androidx.compose.ui.test.performTextInput
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.findaccount.FindPasswordResetScreen
 import com.afternote.feature.onboarding.presentation.findaccount.FindPasswordScreen
-import com.afternote.feature.onboarding.presentation.signup.SignUpScreen
-import com.afternote.feature.onboarding.presentation.terms.OnboardingTermsScreen
-import com.afternote.feature.onboarding.presentation.terms.TermsState
+import com.afternote.feature.onboarding.presentation.signup.SignUpContent
+import com.afternote.feature.onboarding.presentation.signup.SignUpIntent
+import com.afternote.feature.onboarding.presentation.signup.SignUpUiState
+import com.afternote.feature.onboarding.presentation.terms.OnboardingTermsContent
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -37,25 +38,23 @@ class OnboardingContractTest {
 
     @Test
     fun signUpRequiredInputs_gateNextAndKeepEnteredValues() {
-        var email by mutableStateOf("")
-        var code by mutableStateOf("")
+        // 「다음」 활성은 이제 UiState 파생값이다 — 화면이 받는 것은 상태와 Intent 둘뿐이라,
+        // VM 이 하는 전이를 테스트가 대신한다.
+        var state by mutableStateOf(SignUpUiState(isVerificationSent = true))
         var nextCalls = 0
         composeRule.setContent {
             AfternoteTheme {
-                SignUpScreen(
-                    initialEmail = email,
-                    initialVerificationCode = code,
-                    isVerificationSent = true,
-                    isSendingCode = false,
-                    isEmailFormatValid = email.contains('@'),
-                    resendCooldownSeconds = 0,
-                    hasVerificationError = false,
-                    isNextEnabled = email.contains('@') && code.length == 6,
+                SignUpContent(
+                    state = state,
+                    onIntent = { intent ->
+                        when (intent) {
+                            is SignUpIntent.UpdateEmail -> state = state.copy(email = intent.value)
+                            is SignUpIntent.UpdateVerificationCode -> state = state.copy(verificationCode = intent.value)
+                            SignUpIntent.VerifyEmailAndProceed -> nextCalls += 1
+                            else -> Unit
+                        }
+                    },
                     snackbarHostState = remember { SnackbarHostState() },
-                    onEmailChange = { email = it },
-                    onVerificationCodeChange = { code = it },
-                    onRequestVerification = {},
-                    onNextClick = { nextCalls += 1 },
                     onBackClick = {},
                 )
             }
@@ -67,26 +66,51 @@ class OnboardingContractTest {
         composeRule.onNode(hasText("다음") and hasClickAction()).assertIsEnabled().performClick()
 
         assertEquals(1, nextCalls)
-        assertEquals("new@example.test", email)
-        assertEquals("123456", code)
+        assertEquals("new@example.test", state.email)
+        assertEquals("123456", state.verificationCode)
     }
 
     @Test
     fun requiredTerms_enableNext_withoutOptionalMarketing() {
-        var state by mutableStateOf(TermsState())
+        var state by mutableStateOf(SignUpUiState())
         var nextCalls = 0
         composeRule.setContent {
             AfternoteTheme {
-                OnboardingTermsScreen(
-                    termsState = state,
-                    isNextEnabled = state.isTermsAgreed && state.isPrivacyAgreed,
-                    snackbarHostState = remember { SnackbarHostState() },
-                    onTermsToggle = { state = state.copy(isTermsAgreed = it) },
-                    onPrivacyToggle = { state = state.copy(isPrivacyAgreed = it) },
-                    onMarketingToggle = { state = state.copy(isMarketingAgreed = it) },
-                    onToggleAll = {
-                        state = TermsState(it, it, it)
+                OnboardingTermsContent(
+                    state = state,
+                    onIntent = { intent ->
+                        val terms = state.termsState
+                        state =
+                            when (intent) {
+                                is SignUpIntent.ToggleTermsAgreed -> {
+                                    state.copy(termsState = terms.copy(isTermsAgreed = intent.agreed))
+                                }
+
+                                is SignUpIntent.TogglePrivacyAgreed -> {
+                                    state.copy(termsState = terms.copy(isPrivacyAgreed = intent.agreed))
+                                }
+
+                                is SignUpIntent.ToggleMarketingAgreed -> {
+                                    state.copy(termsState = terms.copy(isMarketingAgreed = intent.agreed))
+                                }
+
+                                is SignUpIntent.ToggleAllTerms -> {
+                                    state.copy(
+                                        termsState =
+                                            terms.copy(
+                                                isTermsAgreed = intent.agreed,
+                                                isPrivacyAgreed = intent.agreed,
+                                                isMarketingAgreed = intent.agreed,
+                                            ),
+                                    )
+                                }
+
+                                else -> {
+                                    state
+                                }
+                            }
                     },
+                    snackbarHostState = remember { SnackbarHostState() },
                     onViewTermsClick = {},
                     onNextClick = { nextCalls += 1 },
                     onBackClick = {},
@@ -103,7 +127,7 @@ class OnboardingContractTest {
             .assertIsEnabled()
             .performClick()
 
-        assertEquals(false, state.isMarketingAgreed)
+        assertEquals(false, state.termsState.isMarketingAgreed)
         assertEquals(1, nextCalls)
     }
 
@@ -182,20 +206,10 @@ class OnboardingContractTest {
         val restorationTester = StateRestorationTester(composeRule)
         restorationTester.setContent {
             AfternoteTheme {
-                SignUpScreen(
-                    initialEmail = "",
-                    initialVerificationCode = "",
-                    isVerificationSent = true,
-                    isSendingCode = false,
-                    isEmailFormatValid = true,
-                    resendCooldownSeconds = 0,
-                    hasVerificationError = false,
-                    isNextEnabled = false,
+                SignUpContent(
+                    state = SignUpUiState(isVerificationSent = true),
+                    onIntent = {},
                     snackbarHostState = remember { SnackbarHostState() },
-                    onEmailChange = {},
-                    onVerificationCodeChange = {},
-                    onRequestVerification = {},
-                    onNextClick = {},
                     onBackClick = {},
                 )
             }

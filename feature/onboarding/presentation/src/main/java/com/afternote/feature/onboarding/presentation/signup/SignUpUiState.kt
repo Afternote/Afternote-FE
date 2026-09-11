@@ -1,6 +1,7 @@
 package com.afternote.feature.onboarding.presentation.signup
 
 import android.util.Patterns
+import com.afternote.core.ui.mvi.UiState
 import com.afternote.feature.onboarding.presentation.OnboardingFailure
 import com.afternote.feature.onboarding.presentation.OnboardingPasswordRule
 import com.afternote.feature.onboarding.presentation.terms.TermsState
@@ -65,7 +66,7 @@ internal data class SignUpUiState(
     val isNameRequired: Boolean = false,
     /** 실패 한 건의 사유. 화면이 인라인 또는 스낵바로 표시한다. */
     val failure: OnboardingFailure? = null,
-) {
+) : UiState {
     val isEmailFormatValid: Boolean
         get() = email.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(email).matches()
 

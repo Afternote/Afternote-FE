@@ -61,9 +61,9 @@ class SignUpViewModelSubmitTest {
                 ),
             errorReporter = NoopErrorReporter,
         ).apply {
-            updateEmail("user@example.com")
-            updateSignUpPassword("Password1!")
-            updateName("애프터노트")
+            onIntent(SignUpIntent.UpdateEmail("user@example.com"))
+            onIntent(SignUpIntent.UpdateSignUpPassword("Password1!"))
+            onIntent(SignUpIntent.UpdateName("애프터노트"))
         }
 
     @Test
@@ -80,9 +80,9 @@ class SignUpViewModelSubmitTest {
                 )
             val viewModel = viewModel(repository)
 
-            viewModel.submitSignUp()
-            viewModel.submitSignUp()
-            viewModel.submitSignUp()
+            viewModel.onIntent(SignUpIntent.SubmitSignUp)
+            viewModel.onIntent(SignUpIntent.SubmitSignUp)
+            viewModel.onIntent(SignUpIntent.SubmitSignUp)
 
             assertEquals(1, repository.signUpCallCount)
             assertTrue(viewModel.uiState.value.isLoading)
@@ -111,13 +111,13 @@ class SignUpViewModelSubmitTest {
                 }
             }
 
-        viewModel.submitSignUp()
+        viewModel.onIntent(SignUpIntent.SubmitSignUp)
 
         assertEquals(1, repository.signUpCallCount)
         assertTrue(viewModel.uiState.value.isAccountCreated)
         assertFalse(viewModel.uiState.value.isSignedUp)
 
-        viewModel.submitSignUp()
+        viewModel.onIntent(SignUpIntent.SubmitSignUp)
 
         assertEquals(1, repository.signUpCallCount)
         assertEquals(2, loginAttempts)
@@ -127,9 +127,9 @@ class SignUpViewModelSubmitTest {
     @Test
     fun `이름이 공백이면 요청 없이 안내만 세운다`() {
         val repository = FakeAccountRepository(onSignUp = { error("이름 미입력이면 호출되면 안 됨") })
-        val viewModel = viewModel(repository).apply { updateName("   ") }
+        val viewModel = viewModel(repository).apply { onIntent(SignUpIntent.UpdateName("   ")) }
 
-        viewModel.submitSignUp()
+        viewModel.onIntent(SignUpIntent.SubmitSignUp)
 
         assertEquals(0, repository.signUpCallCount)
         assertTrue(viewModel.uiState.value.isNameRequired)

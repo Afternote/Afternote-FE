@@ -14,6 +14,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.core.app.ActivityOptionsCompat
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.onboarding.presentation.signup.SignUpIntent
+import com.afternote.feature.onboarding.presentation.signup.SignUpUiState
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -27,7 +29,7 @@ import com.afternote.core.ui.R as CoreUiR
  *
  * 결과 처리 helper 는 화면 파일 안에서만 쓰이는 `private` 구현이라 테스트가 직접 부르지 않는다.
  * 대신 화면의 공개 계약 — 「프로필 수정 버튼」을 눌러 피커를 띄우고 그 결과가 돌아왔을 때
- * `onProfileImagePick` 이 불리는가 — 으로 판정한다. 피커 자체는 실행하지 않고
+ * `PickProfileImage` 이 불리는가 — 으로 판정한다. 피커 자체는 실행하지 않고
  * [LocalActivityResultRegistryOwner] 를 결과를 즉시 돌려주는 레지스트리로 갈아 끼운다.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -47,14 +49,13 @@ class OnboardingProfilePickerResultTest {
         composeRule.setContent {
             AfternoteTheme {
                 CompositionLocalProvider(LocalActivityResultRegistryOwner provides registryOwner) {
-                    OnboardingProfileScreen(
-                        initialName = "김노을",
-                        displayImageUri = null,
+                    OnboardingProfileContent(
+                        state = SignUpUiState(name = "김노을"),
                         snackbarHostState = remember { SnackbarHostState() },
-                        onNameChange = {},
-                        onProfileImagePick = pickedUris::add,
+                        onIntent = { intent ->
+                            if (intent is SignUpIntent.PickProfileImage) pickedUris.add(Uri.parse(intent.uri))
+                        },
                         onBackClick = {},
-                        onCompleteClick = {},
                     )
                 }
             }

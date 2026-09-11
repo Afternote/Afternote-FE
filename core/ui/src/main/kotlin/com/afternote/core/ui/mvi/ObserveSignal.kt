@@ -56,3 +56,35 @@ fun <I : MviIntent, T : Any> ObserveSignal(
         currentOnIntent(consumed)
     }
 }
+
+/**
+ * `Boolean` 플래그로 든 일회성 신호를 소비한다 (#1802 파일럿에서 확정).
+ *
+ * [ObserveSignal] 과 같은 계약이고, 신호가 `nullable 값` 이 아니라 「올라갔다/내려갔다」 로만
+ * 표현되는 경우다 — `isLoggedIn` · `shouldNavigateToXxx` 처럼 실어 나를 값이 없는 신호가
+ * 이 저장소에 이미 여러 개 있다.
+ *
+ * ```kotlin
+ * ObserveFlag(
+ *     raised = state.isLoggedIn,
+ *     consumed = LoginIntent.ConsumeLoggedIn,
+ *     onIntent = onIntent,
+ *     onRaised = onLoginSuccess,
+ * )
+ * ```
+ */
+@Composable
+fun <I : MviIntent> ObserveFlag(
+    raised: Boolean,
+    consumed: I,
+    onIntent: (I) -> Unit,
+    onRaised: () -> Unit,
+) {
+    // Unit? 로 접어 ObserveSignal 하나로 모은다 — 두 벌로 두면 소비 규약이 갈린다.
+    ObserveSignal(
+        signal = Unit.takeIf { raised },
+        consumed = consumed,
+        onIntent = onIntent,
+        onSignal = { onRaised() },
+    )
+}
