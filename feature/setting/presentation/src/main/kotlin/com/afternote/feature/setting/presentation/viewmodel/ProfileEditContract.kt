@@ -4,6 +4,8 @@ import com.afternote.core.ui.mvi.MviIntent
 import com.afternote.core.ui.mvi.ReducerEvent
 
 internal sealed interface ProfileEditIntent : MviIntent {
+    data object RefreshOnReturn : ProfileEditIntent
+
     data object RetryLoad : ProfileEditIntent
 
     data class UpdateProfile(

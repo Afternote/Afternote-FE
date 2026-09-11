@@ -14,6 +14,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 @HiltViewModel(assistedFactory = DeliveryConditionViewModel.Factory::class)
@@ -24,9 +25,13 @@ internal class DeliveryConditionViewModel
         private val userRepository: UserRepository,
     ) : MviViewModel<DeliveryConditionIntent, DeliveryConditionUiState, DeliveryConditionReducerEvent>(DeliveryConditionUiState()) {
         private val receiverId = route.receiverId
+        private var loadJob: Job? = null
+
+        private var isFirstResume = true
 
         override fun onIntent(intent: DeliveryConditionIntent) {
             when (intent) {
+                DeliveryConditionIntent.RefreshOnReturn -> refreshOnReturn()
                 is DeliveryConditionIntent.SelectConditionType -> onConditionTypeSelected(intent.index)
                 DeliveryConditionIntent.Save -> onSave()
                 DeliveryConditionIntent.ConsumeSuccess -> dispatch(DeliveryConditionReducerEvent.SuccessConsumed)
@@ -47,9 +52,26 @@ internal class DeliveryConditionViewModel
                     state.copy(
                         isLoading = false,
                         isInitialized = true,
-                        conditionType = representative?.conditionType ?: DeliveryConditionType.INACTIVITY,
-                        inactivityPeriod = representative?.inactivityPeriod ?: InactivityPeriod.ONE_YEAR,
+                        conditionType =
+                            if (state.conditionEditRevision !=
+                                state.savedConditionRevision
+                            ) {
+                                state.conditionType
+                            } else {
+                                representative?.conditionType
+                                    ?: DeliveryConditionType.INACTIVITY
+                            },
+                        inactivityPeriod =
+                            if (state.conditionEditRevision !=
+                                state.savedConditionRevision
+                            ) {
+                                state.inactivityPeriod
+                            } else {
+                                representative?.inactivityPeriod
+                                    ?: InactivityPeriod.ONE_YEAR
+                            },
                         conditions = event.conditions,
+                        error = state.error.takeUnless { it == DeliveryConditionError.LOAD_FAILED },
                     )
                 }
 
@@ -58,7 +80,7 @@ internal class DeliveryConditionViewModel
                 }
 
                 is DeliveryConditionReducerEvent.ConditionSelected -> {
-                    state.copy(conditionType = event.type)
+                    state.copy(conditionType = event.type, conditionEditRevision = state.conditionEditRevision + 1)
                 }
 
                 DeliveryConditionReducerEvent.Saving -> {
@@ -66,7 +88,13 @@ internal class DeliveryConditionViewModel
                 }
 
                 is DeliveryConditionReducerEvent.Saved -> {
-                    state.copy(isSaving = false, conditions = event.conditions, pendingEvent = Unit)
+                    state.copy(
+                        isSaving = false,
+                        conditions = event.conditions,
+                        savedConditionRevision = event.revision,
+                        error = null,
+                        pendingEvent = Unit,
+                    )
                 }
 
                 DeliveryConditionReducerEvent.SaveFailed -> {
@@ -78,20 +106,29 @@ internal class DeliveryConditionViewModel
                 }
             }
 
+        private fun refreshOnReturn() {
+            if (isFirstResume) {
+                isFirstResume = false
+                return
+            }
+            if (loadJob?.isActive != true && !currentState.isSaving) loadDeliveryConditions(isAutomatic = true)
+        }
+
         init {
             loadDeliveryConditions()
         }
 
-        private fun loadDeliveryConditions() {
-            viewModelScope.launch {
-                dispatch(DeliveryConditionReducerEvent.Loading)
-                runCatchingCancellable { userRepository.getReceiverDeliveryConditions(receiverId) }
-                    .onSuccess { response ->
-                        dispatch(DeliveryConditionReducerEvent.Loaded(response.conditions))
-                    }.onFailure {
-                        dispatch(DeliveryConditionReducerEvent.LoadFailed)
-                    }
-            }
+        private fun loadDeliveryConditions(isAutomatic: Boolean = false) {
+            loadJob =
+                viewModelScope.launch {
+                    if (!isAutomatic) dispatch(DeliveryConditionReducerEvent.Loading)
+                    runCatchingCancellable { userRepository.getReceiverDeliveryConditions(receiverId) }
+                        .onSuccess { response ->
+                            dispatch(DeliveryConditionReducerEvent.Loaded(response.conditions))
+                        }.onFailure {
+                            if (!isAutomatic || !currentState.isInitialized) dispatch(DeliveryConditionReducerEvent.LoadFailed)
+                        }
+                }
         }
 
         private fun onConditionTypeSelected(index: Int) {
@@ -103,6 +140,8 @@ internal class DeliveryConditionViewModel
         private fun onSave() {
             val state = currentState
             if (!state.isInitialized || state.isSaving || state.pendingEvent != null) return
+            loadJob?.cancel()
+            val savingRevision = state.conditionEditRevision
 
             val hasTimeLetterCondition =
                 state.conditions.any { it.contentType == DeliveryContentType.TIME_LETTER }
@@ -140,7 +179,7 @@ internal class DeliveryConditionViewModel
                 runCatchingCancellable {
                     userRepository.updateReceiverDeliveryConditions(receiverId, updatedConditions)
                 }.onSuccess { response ->
-                    dispatch(DeliveryConditionReducerEvent.Saved(response.conditions))
+                    dispatch(DeliveryConditionReducerEvent.Saved(savingRevision, response.conditions))
                 }.onFailure {
                     dispatch(DeliveryConditionReducerEvent.SaveFailed)
                 }

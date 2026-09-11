@@ -5,6 +5,7 @@ import com.afternote.core.ui.mvi.UiState
 
 internal data class PushNotificationUiState(
     val isLoading: Boolean = true,
+    val hasLoadedPushSettings: Boolean = false,
     val errorMessage: UiText? = null,
     val isDeviceAlarmOn: Boolean = false,
     // 마케팅 알림 (기기 알림 꺼졌을 때)

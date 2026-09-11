@@ -3,6 +3,7 @@ package com.afternote.feature.setting.presentation.navigation
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import com.afternote.core.ui.navigation.FeatureStackBoundary
+import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals

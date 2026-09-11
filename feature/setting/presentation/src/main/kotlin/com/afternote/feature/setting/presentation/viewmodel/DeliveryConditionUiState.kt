@@ -7,6 +7,8 @@ import com.afternote.core.model.delivery.InactivityPeriod
 import com.afternote.core.ui.mvi.UiState
 
 internal data class DeliveryConditionUiState(
+    val conditionEditRevision: Int = 0,
+    val savedConditionRevision: Int = 0,
     val isLoading: Boolean = false,
     val isInitialized: Boolean = false,
     val conditionType: DeliveryConditionType = DeliveryConditionType.INACTIVITY,

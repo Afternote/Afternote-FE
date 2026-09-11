@@ -26,8 +26,11 @@ internal class ConnectedAccountsViewModel
         /** provider 별 진행 중인 연결·해제 요청. 같은 provider 연타만 막고 다른 provider 는 그대로 받는다. */
         private val mutationJobs = mutableMapOf<String, Job>()
 
+        private var isFirstResume = true
+
         override fun onIntent(intent: ConnectedAccountsIntent) {
             when (intent) {
+                ConnectedAccountsIntent.RefreshOnReturn -> refreshOnReturn()
                 ConnectedAccountsIntent.RetryLoad -> loadConnectedAccounts()
                 is ConnectedAccountsIntent.Toggle -> onToggle(intent.provider, intent.enabled)
                 is ConnectedAccountsIntent.Link -> link(intent.provider, intent.accessToken)
@@ -54,11 +57,11 @@ internal class ConnectedAccountsViewModel
                 }
 
                 is ConnectedAccountsReducerEvent.AccountsChanged -> {
-                    state.copy(accounts = event.accounts)
+                    state.copy(isLoading = false, accounts = event.accounts, errorMessage = null)
                 }
 
                 is ConnectedAccountsReducerEvent.Signal -> {
-                    state.copy(pendingEvent = event.event)
+                    state.copy(isLoading = false, pendingEvent = event.event)
                 }
 
                 is ConnectedAccountsReducerEvent.EventConsumed -> {
@@ -66,20 +69,36 @@ internal class ConnectedAccountsViewModel
                 }
             }
 
+        private fun refreshOnReturn() {
+            if (isFirstResume) {
+                isFirstResume = false
+                return
+            }
+            loadConnectedAccounts(keepsStateOnFailure = true)
+        }
+
         init {
             loadConnectedAccounts()
         }
 
-        private fun loadConnectedAccounts() {
-            if (loadJob?.isActive == true) return
+        private fun loadConnectedAccounts(keepsStateOnFailure: Boolean = false) {
+            if (loadJob?.isActive == true || mutationJobs.values.any { it.isActive }) return
             loadJob =
                 viewModelScope.launch {
-                    dispatch(ConnectedAccountsReducerEvent.Loading)
+                    if (!keepsStateOnFailure) dispatch(ConnectedAccountsReducerEvent.Loading)
                     runCatchingCancellable { userRepository.getConnectedAccounts() }
                         .onSuccess { accounts ->
                             dispatch(ConnectedAccountsReducerEvent.Loaded(accounts.toStateList()))
                         }.onFailure {
-                            dispatch(ConnectedAccountsReducerEvent.Failed(UiText.Resource(R.string.setting_connected_accounts_load_error)))
+                            if (!keepsStateOnFailure ||
+                                currentState.accounts.isEmpty()
+                            ) {
+                                dispatch(
+                                    ConnectedAccountsReducerEvent.Failed(
+                                        UiText.Resource(R.string.setting_connected_accounts_load_error),
+                                    ),
+                                )
+                            }
                         }
                 }
         }
@@ -120,6 +139,7 @@ internal class ConnectedAccountsViewModel
             request: suspend () -> UserConnectedAccount,
         ) {
             if (mutationJobs[provider]?.isActive == true) return
+            loadJob?.cancel()
             mutationJobs[provider] =
                 viewModelScope.launch {
                     runCatchingCancellable { request() }

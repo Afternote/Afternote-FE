@@ -25,6 +25,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.model.delivery.DeliveryConditionType
 import com.afternote.core.ui.mvi.ObserveSignal
@@ -47,6 +49,7 @@ internal fun DeliveryConditionScreen(
     viewModel: DeliveryConditionViewModel,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.onIntent(DeliveryConditionIntent.RefreshOnReturn) }
 
     ObserveSignal(
         signal = uiState.pendingEvent,
