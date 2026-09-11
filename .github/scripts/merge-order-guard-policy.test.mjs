@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
@@ -231,7 +231,7 @@ test("merge-group guard queries complete native-stack membership and fails close
 });
 
 test("ordinary PR guard stays non-stale while merge queue performs the live verdict", () => {
-    assert.match(guard, /^\s{4}types: \[opened, reopened, synchronize, edited\]$/m);
+    assert.match(guard, /^\s{2}pull_request_target:\n\s{4}types: \[opened, reopened, synchronize, edited\]$/m);
     assert.doesNotMatch(guard, /statuses: write/);
     const start = guard.indexOf('if [ "$EVENT_NAME" = "merge_group" ]');
     const end = guard.indexOf("          # GitHub 가 close keyword", start);
@@ -434,12 +434,20 @@ gh() { echo "$*"; [[ "$*" != *pull_request_number=101* ]]; }
     assert.match(result.stdout, /pull_request_number=102/);
 });
 
-test("old PR workflows trigger a trusted default-branch refresh without dispatch loops or PR checkout", async () => {
-    const refresh = await readFile(new URL("../workflows/refresh-merge-order-policy.yml", import.meta.url), "utf8");
-    assert.match(refresh, /workflow_run:\n\s+workflows: \[merge-order-guard\]\n\s+types: \[completed\]/);
-    assert.match(refresh, /github.event.workflow_run.event == 'pull_request'/);
-    assert.match(refresh, /^permissions: \{\}$/m);
-    assert.match(refresh, /select\(\.headRefOid == \$sha\)/);
-    assert.match(refresh, /gh workflow run merge-order-guard.yml --ref "\$DEFAULT_BRANCH"/);
-    assert.doesNotMatch(refresh, /uses:.*checkout|checks: write|contents: write|pull_request_target/);
+test("PR HEAD guard runs default-branch policy once, so no second verdict is republished (#1977)", () => {
+    // pull_request 로 돌면 PR 사본 YAML 이 판정해 낡은 브랜치는 옛 정책이고 PR 이 가드를 고칠 수
+    // 있다. 종전 처방(inline 종료 → 최신 정책 dispatch → check-run 재게시)은 GITHUB_TOKEN 의
+    // check-run 이 임의 suite 에 얹혀 무관한 워크플로 이름 아래 guard 가 두 줄로 떴다.
+    assert.doesNotMatch(guard, /^\s{2}pull_request:$/m);
+    assert.doesNotMatch(guard, /github\.event_name == 'pull_request'/);
+    assert.match(guard, /github\.event_name == 'pull_request_target'/);
+    assert.doesNotMatch(guard, /github\.event\.pull_request\.head\.(sha|ref)/);
+    assert.doesNotMatch(guard, /actions\/checkout[\s\S]*?ref: \$\{\{ github\.event\.pull_request/);
+    assert.match(guard, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
+    assert.ok(
+        !existsSync(new URL("../workflows/refresh-merge-order-policy.yml", import.meta.url)),
+        "inline 종료 뒤 최신 정책을 다시 dispatch 하는 refresh 워크플로는 pull_request_target 이 대체했다",
+    );
+    // dispatch 재게시는 이벤트가 나지 않는 SHA(토큰 커밋·선행 이슈 닫힘) 전용으로만 남는다.
+    assert.match(guard, /github\.event_name == 'workflow_dispatch' &&\n\s+github\.ref_name == github\.event\.repository\.default_branch/);
 });

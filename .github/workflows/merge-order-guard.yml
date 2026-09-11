@@ -7,10 +7,18 @@
 #
 # 네이티브 스택의 닫힌 미병합 멤버는 merge queue synthetic SHA에서 live로 다시 검사한다.
 # 중간 멤버가 닫힌 직후의 조치 안내는 stack-integrity-notify가 상위 PR에 남긴다.
+#
+# 판정은 항상 default branch 의 정책으로 한다 (#1977). pull_request 로 돌리면 PR 사본의
+# 이 YAML 이 실행돼 낡은 브랜치는 옛 정책으로 판정하고, PR 이 가드를 고쳐 스스로 통과할 수
+# 있다. 종전에는 그 구멍을 inline 종료 뒤 최신 정책을 dispatch 해 check-run 으로 재게시하는
+# 두 번째 판정으로 메웠는데, GITHUB_TOKEN 이 만든 check-run 은 같은 SHA 의 임의 check
+# suite 에 얹혀 무관한 워크플로 이름 아래 «guard» 가 두 줄로 떴다. pull_request_target 은
+# base 의 YAML 과 스크립트로 돌면서 check 는 PR HEAD 에 붙으므로 첫 판정이 곧 최종 판정이다.
+# PR 코드는 체크아웃하지 않고 권한은 read 뿐이다(stack-integrity-notify 와 같은 경계).
 name: merge-order-guard
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, reopened, synchronize, edited]
   # merge queue 는 큐 ref 에서 guard context 를 다시 요구한다. 큐 ref
   # (gh-readonly-queue/<base>/pr-<N>-<sha>) 에서 PR 번호를 파싱해 같은 검사를 돌린다.
@@ -18,7 +26,8 @@ on:
     types: [checks_requested]
   issues:
     types: [closed, reopened]
-  # GITHUB_TOKEN 이 만든 baseline/stack merge commit 에도 최신 SHA 기준 guard 를 붙인다.
+  # GITHUB_TOKEN 이 만든 baseline/stack merge commit 은 pull_request_target 도 내지 않으므로,
+  # 그 SHA 와 선행 이슈가 닫힌 뒤의 PR HEAD 에는 dispatch 결과를 check-run 으로 붙인다.
   workflow_dispatch:
     inputs:
       pull_request_number:
@@ -26,16 +35,19 @@ on:
         required: true
         type: number
 
-permissions:
-  contents: read
-  issues: read
-  pull-requests: read
+# pull_request_target 은 base 권한으로 돌므로 워크플로 기본 권한은 비우고 job 마다 필요한
+# 읽기·쓰기만 준다(create-ci-config 정책 테스트의 narrow bridge 불변식).
+permissions: {}
 
 jobs:
   guard:
     if: >-
-      github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'pull_request_target' || github.event_name == 'workflow_dispatch' ||
       github.event_name == 'merge_group'
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -56,8 +68,9 @@ jobs:
           printf 'sha=%s\n' "$(jq -r '.headRefOid' "$RUNNER_TEMP/guard-target.json")" >> "$GITHUB_OUTPUT"
 
       # 게이트 스크립트는 **default branch 사본**으로 돌린다. PR 사본을 체크아웃하면 PR 이
-      # 자기를 검사하는 가드를 고쳐 통과시킬 수 있다. 필요한 건 .github/scripts 뿐이라
-      # sparse-checkout 으로 좁힌다.
+      # 자기를 검사하는 가드를 고쳐 통과시킬 수 있다. pull_request_target 의 기본 ref 도
+      # base 지만 dispatch·merge_group 경로와 같은 사본을 명시한다. 필요한 건 .github/scripts
+      # 뿐이라 sparse-checkout 으로 좁힌다.
       - name: Clone gate scripts from the default branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
