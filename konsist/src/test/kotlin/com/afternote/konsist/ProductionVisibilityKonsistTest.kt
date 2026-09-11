@@ -303,10 +303,6 @@ class ProductionVisibilityKonsistTest {
         val ISSUE_1673_AFTERNOTE =
             setOf(
                 "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/detail/AfternoteDetailRoute.kt::function DeleteInProgressOverlay [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/AfternoteEditorContent.kt::function EditorContent [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/AfternoteEditorScreen.kt::function editorContentSignature [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/AfternoteEditorViewModel.kt::function toAfternoteEditorError [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/selection/EditorServiceSelectionSheet.kt::function EditorServiceSelectionSheetContent [internal]",
             )
 
         /**
@@ -388,9 +384,6 @@ class ProductionVisibilityKonsistTest {
                 "core/ui/src/main/kotlin/com/afternote/core/ui/button/" +
                     "AfternoteRadioGroup.kt::function AfternoteRadioGroup [implicit-public]" to
                     "core:ui README에 문서화된 공용 컴포넌트",
-                "core/ui/src/main/kotlin/com/afternote/core/ui/mvi/" +
-                    "MviViewModel.kt::class MviViewModel [implicit-public]" to
-                    "MVI 베이스 계약(#1800) — 화면 전환 이슈가 상속하기 시작하면 프로덕션 참조가 생긴다",
                 "core/ui/src/main/kotlin/com/afternote/core/ui/mvi/" +
                     "ObserveSignal.kt::function ObserveSignal [implicit-public]" to
                     "MVI 일회성 신호 소비 관용구(#1800) — 화면 전환 이슈가 소비처를 만든다",

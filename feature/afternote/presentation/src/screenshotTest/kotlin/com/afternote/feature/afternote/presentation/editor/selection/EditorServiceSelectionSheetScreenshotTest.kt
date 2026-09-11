@@ -17,8 +17,9 @@ import com.android.tools.screenshot.PreviewTest
 @Composable
 internal fun editorServiceSelectionSheetScreenshot() {
     AfternoteTheme {
-        EditorServiceSelectionSheetContent(
-            title = "소셜 네트워크 서비스 선택",
+        EditorServiceSelectionSheet(
+            visible = true,
+            onDismissRequest = {},
             type = AfternoteType.SOCIAL_NETWORK,
             services = AfternoteServiceCatalog.socialServices,
             searchQueryState = rememberTextFieldState(),
@@ -32,8 +33,9 @@ internal fun editorServiceSelectionSheetScreenshot() {
 @Composable
 internal fun editorServiceSelectionSheetEmptySearchScreenshot() {
     AfternoteTheme {
-        EditorServiceSelectionSheetContent(
-            title = "갤러리 및 파일 서비스 선택",
+        EditorServiceSelectionSheet(
+            visible = true,
+            onDismissRequest = {},
             type = AfternoteType.GALLERY_AND_FILES,
             services = AfternoteServiceCatalog.galleryServices,
             searchQueryState = rememberTextFieldState("없는 서비스"),
