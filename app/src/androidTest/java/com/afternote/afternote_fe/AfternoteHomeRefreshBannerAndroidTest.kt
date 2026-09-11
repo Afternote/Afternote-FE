@@ -85,6 +85,7 @@ class AfternoteHomeRefreshBannerAndroidTest {
                     navigateToDetail = {},
                     navigateToAdd = {},
                     onSettingClick = {},
+                    onDraftListClick = null,
                     viewModel = viewModel,
                 )
             }

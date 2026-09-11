@@ -1,10 +1,13 @@
 package com.afternote.feature.afternote.presentation.home
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -15,6 +18,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteOutlinedCard
 import com.afternote.core.ui.AfternoteSectionHeader
@@ -55,6 +59,7 @@ internal fun HomeHeaderSection(
     description: String,
     nextStep: NextStep?,
     modifier: Modifier = Modifier,
+    onDraftListClick: (() -> Unit)? = null,
 ) {
     Column(
         modifier =
@@ -62,11 +67,39 @@ internal fun HomeHeaderSection(
                 .fillMaxWidth()
                 .padding(horizontal = 25.dp),
     ) {
-        Text(
-            text = stringResource(R.string.afternote_home_title),
-            style = AfternoteDesign.typography.h1,
-            color = AfternoteDesign.colors.gray9,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.afternote_home_title),
+                style = AfternoteDesign.typography.h1,
+                color = AfternoteDesign.colors.gray9,
+                modifier = Modifier.weight(1f),
+            )
+            // 임시저장은 작성자에게만 있다 — 같은 화면을 쓰는 수신자 목록은 null 로 안 그린다(#620 과 같은 이유).
+            if (onDraftListClick != null) {
+                // 글자 한 줄은 48dp 에 못 미친다 — 클릭 타깃을 Box 로 넓혀 최소 치수를 맞추고
+                // 그 Box 가 클릭·Role 을 갖는다(`assertAccessibleClickTargets` 계약).
+                Box(
+                    modifier =
+                        Modifier
+                            .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+                            .clickable(
+                                onClickLabel = stringResource(R.string.afternote_home_draft_entry_description),
+                                role = Role.Button,
+                                onClick = onDraftListClick,
+                            ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = stringResource(R.string.afternote_home_draft_entry),
+                        style = AfternoteDesign.typography.bodySmallR,
+                        color = AfternoteDesign.colors.gray7,
+                    )
+                }
+            }
+        }
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = description,

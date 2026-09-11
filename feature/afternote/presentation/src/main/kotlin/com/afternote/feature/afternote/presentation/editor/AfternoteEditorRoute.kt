@@ -16,10 +16,11 @@ import com.afternote.feature.afternote.presentation.editor.state.rememberAfterno
 /**
  * 작성자 에디터 화면: type-safe editor flow + 단방향 이벤트.
  *
- * 홈의 `visibleItems` 스냅샷은 에디터에 전달하지 않는다. 식별은 라우트의 `itemId`·`initialType` 정도로 최소화한다.
+ * 홈의 `visibleItems` 스냅샷은 에디터에 전달하지 않는다. 라우트의 `itemId`·`initialType`·`isDraft`를 assisted factory에 전달한다.
  *
- * **수정 진입 데이터 로드:** 상세 화면과 같이 [AfternoteEditorViewModel]의 `init`에서
- * [androidx.lifecycle.SavedStateHandle]의 `itemId`만 보고 Repository `getDetail`을 호출한다 (Compose `LaunchedEffect` 위임 없음).
+ * **수정·이어쓰기 데이터 로드:** [AfternoteEditorViewModel]이 전달받은 식별자와 draft 여부로
+ * Repository의 `getDetail` 또는 `getDraftDetail`을 선택한다. 저장된 폼과 복원 표식은
+ * [androidx.lifecycle.SavedStateHandle]이 보존하므로 재생성 시 서버 응답이 작성 중 입력을 덮지 않는다.
  */
 @Composable
 internal fun AfternoteEditorNavigation(
@@ -39,6 +40,8 @@ internal fun AfternoteEditorNavigation(
             removeMemorialPhoto = { editViewModel.onIntent(AfternoteEditorIntent.RemoveMemorialPhoto) },
             setMemorialVideo = { url -> editViewModel.onIntent(AfternoteEditorIntent.SetMemorialVideo(url)) },
             removeMemorialVideo = { editViewModel.onIntent(AfternoteEditorIntent.RemoveMemorialVideo) },
+            setMemorialAudio = { url -> editViewModel.onIntent(AfternoteEditorIntent.SetMemorialAudio(url)) },
+            removeMemorialAudio = { editViewModel.onIntent(AfternoteEditorIntent.RemoveMemorialAudio) },
             addReceiverIfAbsent = {
                 receiverId,
                 name,
@@ -137,6 +140,16 @@ internal fun AfternoteEditorNavigation(
                 state = state,
             )
         }
+    val saveDraft =
+        remember(editViewModel, state) {
+            buildOnRegisterClick(
+                editViewModel = editViewModel,
+                state = state,
+                asDraft = true,
+            )
+        }
+    // 발행분 수정에는 임시저장을 제공하지 않는다. 신규 작성과 목록에서 이어쓰는 초안에만 노출한다.
+    val onSaveDraftClick = saveDraft.takeIf { !editViewModel.isPublishedEdit }
     // 썸네일 실패는 알리는 것으로 끝내지 않는다 — 영상 재선택 없이 되돌릴 액션을 같은 스낵바에 건다.
     // 어느 오류에 거는지는 오류 자체가 말한다 ([offersMemorialThumbnailRetry]).
     val thumbnailRetryAction =
@@ -152,6 +165,7 @@ internal fun AfternoteEditorNavigation(
         form = uiState.form,
         onBackClick = onPopBackStack,
         onRegisterClick = onRegisterClick,
+        onSaveDraftClick = onSaveDraftClick,
         snackbarMessage = snackbarMessage,
         snackbarAction = thumbnailRetryAction,
         onSnackbarMessageConsumed = {

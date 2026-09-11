@@ -68,6 +68,7 @@ internal fun AfternoteHomeScreen(
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onFabClick: (() -> Unit)? = null,
     onSettingClick: (() -> Unit)? = null,
+    onDraftListClick: (() -> Unit)? = null,
 ) {
     val refreshState = items.loadState.refresh
     val isRefreshing = refreshState is LoadState.Loading && items.itemCount > 0
@@ -127,6 +128,7 @@ internal fun AfternoteHomeScreen(
 
                 is AfternoteHomeBodyState.Reloading -> {
                     ReloadingBody(
+                        onDraftListClick = onDraftListClick,
                         headerDescription = headerDescription,
                         nextStep = nextStep,
                         selectedType = bodyState.selectedType,
@@ -145,6 +147,7 @@ internal fun AfternoteHomeScreen(
 
                 is AfternoteHomeBodyState.FilteredError -> {
                     FilteredErrorBody(
+                        onDraftListClick = onDraftListClick,
                         headerDescription = headerDescription,
                         nextStep = nextStep,
                         selectedType = bodyState.selectedType,
@@ -171,6 +174,7 @@ internal fun AfternoteHomeScreen(
                             onTypeSelected = onTypeSelected,
                             onListItemClick = onListItemClick,
                             headerDescription = headerDescription,
+                            onDraftListClick = onDraftListClick,
                             filterRowScrollState = filterRowScrollState,
                         )
                     }
@@ -179,6 +183,7 @@ internal fun AfternoteHomeScreen(
                 AfternoteHomeBodyState.Empty -> {
                     if (showsHeaderOnEmptyList) {
                         EmptyHomeBody(
+                            onDraftListClick = onDraftListClick,
                             headerDescription = headerDescription,
                             nextStep = nextStep,
                             emptyListDescription = emptyListDescription,

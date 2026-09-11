@@ -30,6 +30,7 @@ internal fun InfiniteListBody(
     nextStep: NextStep?,
     filterRowScrollState: ScrollState,
     modifier: Modifier = Modifier,
+    onDraftListClick: (() -> Unit)? = null,
 ) {
     Column(
         modifier = modifier,
@@ -39,6 +40,7 @@ internal fun InfiniteListBody(
         HomeHeaderSection(
             description = headerDescription,
             nextStep = nextStep,
+            onDraftListClick = onDraftListClick,
         )
         AfternoteListContent(
             items = items,

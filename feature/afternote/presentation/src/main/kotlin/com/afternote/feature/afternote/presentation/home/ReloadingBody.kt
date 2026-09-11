@@ -34,6 +34,7 @@ internal fun ReloadingBody(
     onTypeSelected: (AfternoteType?) -> Unit,
     filterRowScrollState: ScrollState,
     modifier: Modifier = Modifier,
+    onDraftListClick: (() -> Unit)? = null,
 ) {
     Column(
         modifier = modifier,
@@ -43,6 +44,7 @@ internal fun ReloadingBody(
         HomeHeaderSection(
             description = headerDescription,
             nextStep = nextStep,
+            onDraftListClick = onDraftListClick,
         )
         // 필터 행과 로딩 사이에는 간격을 두지 않는다 — 목록 상태의 AfternoteListContent 와 같은 배치다.
         Column(modifier = Modifier.weight(1f)) {

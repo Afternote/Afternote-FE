@@ -27,6 +27,8 @@ data class MemorialWritePayload(
     val memorialPhotoUrl: String?,
     val songs: List<MemorialSongPayload>,
     val memorialVideo: MemorialVideoPayload?,
+    /** 추모 음성 URL (#1118). 서버 `playlist.memorialAudioUrl` — 추억 노트당 1개, mp3·m4a·wav. */
+    val memorialAudioUrl: String?,
 )
 
 data class MemorialVideoPayload(
@@ -43,20 +45,22 @@ data class MemorialVideoPayload(
  * 영정사진·추모 영상을 명시적 `null` 로 지우는 사고가 그것이다.
  *
  * 슬롯마다 표현이 다른 것은 서버 계약이 다르기 때문이다:
- * - [memorialPhotoUrl]·[memorialVideo] 는 **키 유무**로 유지/삭제를 가르므로 [FieldPatch] 가 필요하다.
+ * - [memorialPhotoUrl]·[memorialVideo]·[memorialAudioUrl] 은 **키 유무**로 유지/삭제를 가르므로 [FieldPatch] 가 필요하다.
  * - [songs] 는 서버가 `songs != null` 만 보므로 `null`(안 건드림)과 빈 배열(전부 삭제)로 충분하다.
  */
 data class MemorialPatchPayload(
     val memorialPhotoUrl: FieldPatch<String?> = FieldPatch.Unchanged,
     val songs: List<MemorialSongPayload>? = null,
     val memorialVideo: FieldPatch<MemorialVideoPayload?> = FieldPatch.Unchanged,
+    val memorialAudioUrl: FieldPatch<String?> = FieldPatch.Unchanged,
 ) {
     /** 어느 슬롯도 만지지 않았으면 `playlist` 키 자체를 내보내지 않아야 한다. */
     val isUnchanged: Boolean
         get() =
             memorialPhotoUrl is FieldPatch.Unchanged &&
                 songs == null &&
-                memorialVideo is FieldPatch.Unchanged
+                memorialVideo is FieldPatch.Unchanged &&
+                memorialAudioUrl is FieldPatch.Unchanged
 }
 
 data class MemorialSongPayload(

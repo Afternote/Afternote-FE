@@ -38,3 +38,19 @@ internal fun emptyHomeBodyScreenshot() {
         )
     }
 }
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360, heightDp = 800)
+@Composable
+internal fun emptyHomeWithDraftEntryScreenshot() {
+    AfternoteTheme {
+        EmptyHomeBody(
+            headerDescription = stringResource(R.string.afternote_home_header_description),
+            nextStep = null,
+            emptyListDescription = stringResource(R.string.afternote_empty_list_body),
+            onTypeSelected = {},
+            onDraftListClick = {},
+            filterRowScrollState = rememberScrollState(),
+        )
+    }
+}

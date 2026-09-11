@@ -50,6 +50,7 @@ class SaveAfternoteUseCaseTest {
                     memorialPhotoUrl = null,
                     songs = emptyList(),
                     memorialVideo = null,
+                    memorialAudioUrl = "https://example.com/memorial.m4a",
                 ),
         )
 
@@ -109,6 +110,7 @@ class SaveAfternoteUseCaseTest {
                         memorialPhotoUrl = FieldPatch.Unchanged,
                         songs = emptyList(),
                         memorialVideo = FieldPatch.Set(null),
+                        memorialAudioUrl = FieldPatch.Set("https://example.com/edited.m4a"),
                     ),
                 isDraft = false,
             )

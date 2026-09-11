@@ -52,10 +52,11 @@ class AfternotePlaylistRequestWireTest {
                         thumbnailUrl = "https://cdn.test/afternotes/thumb.jpg",
                     ),
                 ),
+            memorialAudioUrl = FieldPatch.Set("https://cdn.test/afternotes/voice.m4a"),
         )
 
     /**
-     * 사용자가 사진·영상·곡을 **모두 비운** 저장. 셋 다 「만졌고 비웠다」이므로 세 슬롯이 다 실린다.
+     * 사용자가 사진·영상·음성·곡을 **모두 비운** 저장. 만지고 비운 슬롯은 모두 실린다.
      *
      * 만지지 않은 슬롯이 여기 섞이면 안 된다는 것이 #1617 의 축이고, 그쪽은
      * [AfternoteUpdatePartialPatchWireTest] 가 JSON 문자열째 고정한다.
@@ -65,6 +66,7 @@ class AfternotePlaylistRequestWireTest {
             memorialPhotoUrl = FieldPatch.Set(null),
             songs = emptyList(),
             memorialVideo = FieldPatch.Set(null),
+            memorialAudioUrl = FieldPatch.Set(null),
         )
 
     /** 발행된 PLAYLIST PATCH 검증을 통과하도록 기존 곡을 함께 싣는 실제 서버 미디어 삭제 스냅샷. */
@@ -92,19 +94,12 @@ class AfternotePlaylistRequestWireTest {
     }
 
     @Test
-    fun `서버 미디어 삭제 저장은 두 null 과 기존 곡을 한 playlist 에 싣는다`() {
-        val playlist = playlistOf(deletedServerMedia)
+    fun `추모 음성이 비면 키를 남긴 채 null 이 실려 삭제로 나간다`() {
+        // 음성도 사진·영상처럼 명시적 삭제만 null 로 직렬화한다 (#1118).
+        val playlist = playlistOf(emptied)
 
-        assertEquals(JsonNull, playlist.getValue("memorialPhotoUrl"))
-        assertEquals(JsonNull, playlist.getValue("memorialVideo"))
-        val song =
-            playlist
-                .getValue("songs")
-                .jsonArray
-                .single()
-                .jsonObject
-        assertEquals("기존 곡", song.getValue("title").jsonPrimitive.content)
-        assertEquals("기존 가수", song.getValue("artist").jsonPrimitive.content)
+        assertTrue("memorialAudioUrl" in playlist)
+        assertEquals(JsonNull, playlist.getValue("memorialAudioUrl"))
     }
 
     /**
@@ -123,15 +118,13 @@ class AfternotePlaylistRequestWireTest {
     }
 
     /**
-     * 같은 바디 안에서 생략이 **여전히 살아 있음**을 함께 못박는다 — 위 세 건이 「값을 실었다」가
-     * 아니라 「기본값을 뗐다」로 성립한다는 증거다. FE 가 그리지 않는 슬롯은 계속 빠져야 한다.
+     * 같은 바디 안에서 생략이 **여전히 살아 있음**을 함께 못박는다 — 명시적 변경 슬롯과 함께 생략 슬롯도 확인한다. FE 가 그리지 않는 슬롯은 계속 빠져야 한다.
      */
     @Test
     fun `FE 가 모델링하지 않는 슬롯은 키째 빠져 유지로 나간다`() {
         val playlist = playlistOf(emptied)
 
         assertFalse("atmosphere" in playlist)
-        assertFalse("memorialAudioUrl" in playlist)
     }
 
     @Test
@@ -152,6 +145,10 @@ class AfternotePlaylistRequestWireTest {
                 .single()
                 .jsonObject
         assertEquals("곡", song.getValue("title").jsonPrimitive.content)
+        assertEquals(
+            "https://cdn.test/afternotes/voice.m4a",
+            playlist.getValue("memorialAudioUrl").jsonPrimitive.content,
+        )
     }
 
     /** 추억 노트가 아닌 수정은 플레이리스트를 **말하지 않는다** — 키가 나가면 남의 미디어를 지운다. */

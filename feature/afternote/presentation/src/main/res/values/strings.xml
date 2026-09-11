@@ -174,6 +174,17 @@
     <string name="afternote_editor_media_source_remove_photo">사진 삭제</string>
     <string name="afternote_editor_media_source_remove_video">영상 삭제</string>
     <string name="afternote_editor_media_capture_unavailable">카메라를 사용할 수 없습니다.</string>
+    <!-- 추억 노트 음성 슬롯 (#1118). 시안 없음 — 착수 시점(2026-08-31) 재조회에서도 «NEW 추억 노트» 구역에 대응 프레임이 없어 FE 확정. -->
+    <string name="afternote_editor_media_source_pick_audio">파일에서 선택</string>
+    <string name="afternote_editor_media_source_record_audio">음성 녹음</string>
+    <string name="afternote_editor_media_source_remove_audio">음성 삭제</string>
+    <string name="afternote_editor_media_record_unavailable">녹음을 사용할 수 없습니다.</string>
+    <string name="afternote_editor_media_audio_pick_unavailable">파일 선택을 사용할 수 없습니다.</string>
+    <string name="afternote_editor_media_audio_unsupported">mp3·m4a·wav 형식만 첨부할 수 있습니다.</string>
+    <string name="afternote_editor_memorial_audio_label">남기고 싶은 목소리</string>
+    <string name="afternote_editor_memorial_audio_cd_add">음성 추가</string>
+    <string name="afternote_editor_memorial_audio_cd_change">음성 변경</string>
+    <string name="afternote_editor_memorial_audio_attached">음성이 첨부되었습니다</string>
     <!-- 추억 노트 상세. 이름 세그먼트는 프로필 로드 실패·경합으로 비어 있을 수 있어 두 갈래로 둔다. -->
     <string name="afternote_detail_playlist_song_count">현재 %1$d개의 노래가 담겨 있습니다.</string>
     <string name="afternote_home_next_step_section_title">NEXT STEP</string>
@@ -197,4 +208,9 @@
     <string name="afternote_receiver_memorial_playlist_screen_title">%1$s님의 플레이리스트</string>
     <string name="afternote_receiver_playlist_empty_message">고인이 남긴 곡이 없어요.</string>
     <string name="afternote_receiver_playlist_song_count_format">총 %1$d곡</string>
+    <string name="afternote_draft_list_title">임시 저장된 애프터노트</string>
+    <string name="afternote_home_draft_entry">임시저장</string>
+    <string name="afternote_home_draft_entry_description">이어서 작성할 임시저장 목록</string>
+    <string name="afternote_draft_list_empty_body">아직 임시저장한 애프터노트가 없어요.\n작성 중에 임시저장하면 여기에 보여요.</string>
+    <string name="afternote_editor_save_draft">임시저장</string>
 </resources>

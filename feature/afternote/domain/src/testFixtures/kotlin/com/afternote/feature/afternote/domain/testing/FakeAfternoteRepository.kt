@@ -245,7 +245,7 @@ private fun DetailContent.updatedWith(payload: AfternoteUpdatePayload): DetailCo
             val previous = this as? DetailContent.Memorial
             val memorial = payload.memorial
             if (memorial == null) {
-                previous ?: DetailContent.Memorial(songs = emptyList(), media = MemorialMedia(null, null, null))
+                previous ?: DetailContent.Memorial(songs = emptyList(), media = MemorialMedia(null, null, null, null))
             } else {
                 // 서버와 같이 슬롯별로 반영한다. 만지지 않은 필드는 기존 값을 유지한다 (#1617).
                 val previousMedia = previous?.media
@@ -260,6 +260,7 @@ private fun DetailContent.updatedWith(payload: AfternoteUpdatePayload): DetailCo
                             photoUrl = memorial.memorialPhotoUrl.resolve(previousMedia?.photoUrl),
                             videoUrl = video?.videoUrl,
                             thumbnailUrl = video?.thumbnailUrl,
+                            audioUrl = memorial.memorialAudioUrl.resolve(previousMedia?.audioUrl),
                         ),
                 )
             }

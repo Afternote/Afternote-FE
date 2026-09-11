@@ -367,6 +367,8 @@ private fun AuthorEditorForUpdate(
             removeMemorialPhoto = { viewModel.onIntent(AfternoteEditorIntent.RemoveMemorialPhoto) },
             setMemorialVideo = { url -> viewModel.onIntent(AfternoteEditorIntent.SetMemorialVideo(url)) },
             removeMemorialVideo = { viewModel.onIntent(AfternoteEditorIntent.RemoveMemorialVideo) },
+            setMemorialAudio = { url -> viewModel.onIntent(AfternoteEditorIntent.SetMemorialAudio(url)) },
+            removeMemorialAudio = { viewModel.onIntent(AfternoteEditorIntent.RemoveMemorialAudio) },
             addReceiverIfAbsent = {
                 receiverId,
                 name,
@@ -547,6 +549,7 @@ private fun editorViewModel(
                                     when (kind) {
                                         MediaKind.VIDEO -> "https://cdn.test/video.mp4"
                                         MediaKind.PHOTO -> "https://cdn.test/photo.jpg"
+                                        MediaKind.AUDIO -> "https://cdn.test/audio.m4a"
                                     }
                                 }
 

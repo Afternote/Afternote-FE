@@ -67,6 +67,7 @@ class AfternoteEditorPartialUpdateTest {
                             photoUrl = "https://cdn.test/afternotes/photo.jpg",
                             videoUrl = "https://cdn.test/afternotes/video.mp4",
                             thumbnailUrl = "https://cdn.test/afternotes/thumb.jpg",
+                            audioUrl = "https://cdn.test/afternotes/voice.m4a",
                         ),
                 ),
         )
@@ -233,6 +234,7 @@ class AfternoteEditorPartialUpdateTest {
             MemorialMediaUrls(
                 memorialVideoUrl = "https://cdn.test/afternotes/video.mp4",
                 memorialThumbnailUrl = "https://cdn.test/afternotes/thumb.jpg",
+                memorialAudioUrl = "https://cdn.test/afternotes/voice.m4a",
                 memorialPhotoUrl = "https://cdn.test/afternotes/photo.jpg",
             ),
     ) = AfternoteEditorFormMapper.buildUpdatePayload(
@@ -277,6 +279,7 @@ class AfternoteEditorPartialUpdateTest {
         )
         assertEquals("사진을 건드린 적이 없다", FieldPatch.Unchanged, memorial.memorialPhotoUrl)
         assertEquals("영상을 건드린 적이 없다", FieldPatch.Unchanged, memorial.memorialVideo)
+        assertEquals("음성을 건드린 적이 없다", FieldPatch.Unchanged, memorial.memorialAudioUrl)
     }
 
     @Test
@@ -287,6 +290,7 @@ class AfternoteEditorPartialUpdateTest {
         assertTrue("곡을 지운 것은 명시적 삭제다", memorial.songs?.isEmpty() == true)
         assertEquals(FieldPatch.Unchanged, memorial.memorialPhotoUrl)
         assertEquals(FieldPatch.Unchanged, memorial.memorialVideo)
+        assertEquals(FieldPatch.Unchanged, memorial.memorialAudioUrl)
     }
 
     /** 선택 키는 화면 전용 식별자라 서버로 나가지 않는다 — 재조회로 값이 달라져도 변경이 아니다. */
@@ -310,6 +314,7 @@ class AfternoteEditorPartialUpdateTest {
                     MemorialMediaUrls(
                         memorialVideoUrl = "https://cdn.test/afternotes/video.mp4",
                         memorialThumbnailUrl = "https://cdn.test/afternotes/thumb.jpg",
+                        memorialAudioUrl = "https://cdn.test/afternotes/voice.m4a",
                         memorialPhotoUrl = null,
                     ),
             )
@@ -318,6 +323,7 @@ class AfternoteEditorPartialUpdateTest {
         assertEquals(FieldPatch.Set(null), memorial.memorialPhotoUrl)
         assertNull("곡을 건드린 적이 없다", memorial.songs)
         assertEquals("영상을 건드린 적이 없다", FieldPatch.Unchanged, memorial.memorialVideo)
+        assertEquals("음성을 건드린 적이 없다", FieldPatch.Unchanged, memorial.memorialAudioUrl)
     }
 
     @Test
@@ -328,6 +334,7 @@ class AfternoteEditorPartialUpdateTest {
                     MemorialMediaUrls(
                         memorialVideoUrl = "https://cdn.test/afternotes/new-video.mp4",
                         memorialThumbnailUrl = "https://cdn.test/afternotes/thumb.jpg",
+                        memorialAudioUrl = "https://cdn.test/afternotes/voice.m4a",
                         memorialPhotoUrl = "https://cdn.test/afternotes/photo.jpg",
                     ),
             )
@@ -344,5 +351,27 @@ class AfternoteEditorPartialUpdateTest {
         )
         assertEquals("사진을 건드린 적이 없다", FieldPatch.Unchanged, memorial.memorialPhotoUrl)
         assertNull("곡을 건드린 적이 없다", memorial.songs)
+    }
+
+    @Test
+    fun `음성을 지우거나 교체하면 음성 슬롯만 변경으로 나간다`() {
+        listOf(null, "https://cdn.test/afternotes/new-voice.m4a").forEach { audioUrl ->
+            val updated =
+                buildMemorialUpdate(
+                    memorialMedia =
+                        MemorialMediaUrls(
+                            memorialVideoUrl = "https://cdn.test/afternotes/video.mp4",
+                            memorialThumbnailUrl = "https://cdn.test/afternotes/thumb.jpg",
+                            memorialPhotoUrl = "https://cdn.test/afternotes/photo.jpg",
+                            memorialAudioUrl = audioUrl,
+                        ),
+                )
+
+            val memorial = requireNotNull(updated.memorial)
+            assertEquals(FieldPatch.Set(audioUrl), memorial.memorialAudioUrl)
+            assertEquals(FieldPatch.Unchanged, memorial.memorialPhotoUrl)
+            assertEquals(FieldPatch.Unchanged, memorial.memorialVideo)
+            assertNull(memorial.songs)
+        }
     }
 }

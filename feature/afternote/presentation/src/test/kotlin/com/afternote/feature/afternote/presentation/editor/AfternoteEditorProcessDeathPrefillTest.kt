@@ -272,7 +272,7 @@ class AfternoteEditorProcessDeathPrefillTest {
             credentials = null,
             processingMethods = listOf(SERVER_PROCESSING_METHOD),
             songs = emptyList(),
-            media = MemorialMedia(null, null, null),
+            media = MemorialMedia(null, null, null, null),
         )
 
     private fun serverDetail() =

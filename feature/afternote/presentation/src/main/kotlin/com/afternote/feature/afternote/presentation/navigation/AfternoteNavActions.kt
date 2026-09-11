@@ -12,7 +12,7 @@ import com.afternote.feature.afternote.domain.AfternoteType
  * Screen 콜백 인자(예: `onSongClick`)는 *도메인 이벤트* 자리로 본 인터페이스와 분리.
  * NavGraph 가 둘을 매핑한다.
  */
-interface AfternoteNavActions {
+internal interface AfternoteNavActions {
     fun navigateToBottomTab(tab: BottomNavTab)
 
     fun popBack()
@@ -41,4 +41,19 @@ interface AfternoteNavActions {
 
     /** Afternote 홈 TopBar 설정 기어 → 설정 화면(Route.Setting) 진입. */
     fun navigateToSetting()
+
+    /** 홈 헤더의 "임시저장" → 임시저장 목록 진입 (#1762 · #1792). */
+    fun navigateToDraftList()
+
+    /**
+     * 임시저장 목록에서 항목 선택 → 이어쓰기로 에디터 진입 (#808 · #1791).
+     *
+     * 수정 진입([navigateToEditorForEdit])과 목적지는 같지만 프리필을 읽는 계약이 다르다 —
+     * 임시저장은 발행 보장이 없는 draft 상세로 관용해서 읽어야 한다. 그래서 같은 라우트에
+     * `isDraft` 를 실어 «여는 쪽» 이 어느 계약으로 읽을지 정한다.
+     */
+    fun navigateToEditorForResume(
+        itemId: Long,
+        initialType: AfternoteType,
+    )
 }

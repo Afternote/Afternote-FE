@@ -102,7 +102,7 @@ class AfternoteDraftRequestTest {
     private fun memorialPayload(isDraft: Boolean = false) =
         CreateMemorialPayload(
             title = "t",
-            memorial = MemorialWritePayload(memorialPhotoUrl = null, songs = emptyList(), memorialVideo = null),
+            memorial = MemorialWritePayload(memorialPhotoUrl = null, songs = emptyList(), memorialVideo = null, memorialAudioUrl = null),
             isDraft = isDraft,
         )
 

@@ -35,6 +35,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Before
@@ -89,12 +90,14 @@ class AfternoteEditorServerMediaDeleteSaveTest {
             assertEquals(FieldPatch.Set(null), memorial.memorialPhotoUrl)
             assertEquals(FieldPatch.Set(null), memorial.memorialVideo)
             assertNull(memorial.songs)
+            assertEquals(FieldPatch.Unchanged, memorial.memorialAudioUrl)
             assertEquals(AFTERNOTE_ID, first.uiState.value.savedId)
 
             val updatedMedia = repository.details.getValue(AFTERNOTE_ID).memorialMedia()
             assertNull(updatedMedia.photoUrl)
             assertNull(updatedMedia.videoUrl)
             assertNull(updatedMedia.thumbnailUrl)
+            assertEquals("https://cdn.test/voice.m4a", updatedMedia.audioUrl)
 
             val reentered = viewModel(repository)
             collectState(reentered)
@@ -140,11 +143,79 @@ class AfternoteEditorServerMediaDeleteSaveTest {
                 assertEquals(FieldPatch.Set(null), memorial.memorialPhotoUrl)
                 assertEquals(FieldPatch.Set(null), memorial.memorialVideo)
                 assertNull(memorial.songs)
+                assertEquals(FieldPatch.Unchanged, memorial.memorialAudioUrl)
             }
         }
 
     @Test
-    fun `임시저장 유지와 발행 전환 모두 기존 미디어를 다시 보내거나 지우지 않는다`() =
+    fun `서버 음성만 삭제하면 다른 미디어와 곡을 유지하고 재진입에서도 음성이 빈다`() =
+        runTest(dispatcher) {
+            val repository = FakeAfternoteRepository(initialDetails = mapOf(AFTERNOTE_ID to serverMemorialDetail()))
+            val first = viewModel(repository)
+            collectState(first)
+            applyLoadedPrefill(first)
+
+            first.onIntent(AfternoteEditorIntent.RemoveMemorialAudio)
+            first.saveCurrentMemorialForm()
+            advanceUntilIdle()
+
+            val memorial =
+                requireNotNull(
+                    repository.updateCalls
+                        .single()
+                        .second.memorial,
+                )
+            assertEquals(FieldPatch.Set(null), memorial.memorialAudioUrl)
+            assertEquals(FieldPatch.Unchanged, memorial.memorialPhotoUrl)
+            assertEquals(FieldPatch.Unchanged, memorial.memorialVideo)
+            assertNull(memorial.songs)
+            val updated = repository.details.getValue(AFTERNOTE_ID).content as DetailContent.Memorial
+            assertNull(updated.media.audioUrl)
+            assertEquals("https://cdn.test/portrait.jpg", updated.media.photoUrl)
+            assertEquals("https://cdn.test/farewell.mp4", updated.media.videoUrl)
+            assertEquals(listOf("배경음악"), updated.songs.map { it.title })
+
+            val reentered = viewModel(repository)
+            collectState(reentered)
+            applyLoadedPrefill(reentered)
+            assertNull(reentered.uiState.value.form.memorialAudioUrl)
+        }
+
+    @Test
+    fun `음성을 삭제한 폼을 복원하면 재조회가 덮지 않고 삭제 PATCH를 보낸다`() =
+        runTest(dispatcher) {
+            val repository = FakeAfternoteRepository(initialDetails = mapOf(AFTERNOTE_ID to serverMemorialDetail()))
+            val savedState = afternoteEditorSavedStateHandle(initialType = AfternoteType.MEMORIAL, itemId = AFTERNOTE_ID)
+            val first = viewModel(repository, savedState)
+            collectState(first)
+            applyLoadedPrefill(first)
+            first.onIntent(AfternoteEditorIntent.RemoveMemorialAudio)
+
+            val restoredState = SavedStateHandle(savedState.keys().associateWith { savedState.get<Any?>(it) })
+            val restored = viewModel(repository, restoredState)
+            collectState(restored)
+            advanceUntilIdle()
+
+            assertNull(restored.uiState.value.pendingPrefill)
+            assertFalse(restored.uiState.value.isPrefillLoading)
+            assertNull(restored.uiState.value.form.memorialAudioUrl)
+            restored.saveCurrentMemorialForm()
+            advanceUntilIdle()
+
+            val memorial =
+                requireNotNull(
+                    repository.updateCalls
+                        .single()
+                        .second.memorial,
+                )
+            assertEquals(FieldPatch.Set(null), memorial.memorialAudioUrl)
+            assertEquals(FieldPatch.Unchanged, memorial.memorialPhotoUrl)
+            assertEquals(FieldPatch.Unchanged, memorial.memorialVideo)
+            assertNull(memorial.songs)
+        }
+
+    @Test
+    fun `임시저장 유지와 발행 전환 모두 기존 음성을 다시 보내거나 지우지 않는다`() =
         runTest(dispatcher) {
             for (asDraft in listOf(true, false)) {
                 val repository = FakeAfternoteRepository(initialDraftDetails = mapOf(AFTERNOTE_ID to serverMemorialDraft()))
@@ -160,6 +231,39 @@ class AfternoteEditorServerMediaDeleteSaveTest {
                 assertEquals(asDraft, payload.isDraft)
                 assertNull(payload.memorial)
             }
+        }
+
+    @Test
+    fun `임시저장 음성 삭제를 복원한 뒤 다시 저장해도 삭제 PATCH가 유지된다`() =
+        runTest(dispatcher) {
+            val repository = FakeAfternoteRepository(initialDraftDetails = mapOf(AFTERNOTE_ID to serverMemorialDraft()))
+            val savedState = afternoteEditorSavedStateHandle(initialType = AfternoteType.MEMORIAL, itemId = AFTERNOTE_ID)
+            val first = viewModel(repository, savedState, isDraft = true)
+            collectState(first)
+            applyLoadedPrefill(first)
+            first.onIntent(AfternoteEditorIntent.RemoveMemorialAudio)
+
+            val restored =
+                viewModel(
+                    repository,
+                    SavedStateHandle(savedState.keys().associateWith { savedState.get<Any?>(it) }),
+                    isDraft = true,
+                )
+            collectState(restored)
+            advanceUntilIdle()
+            assertNull(restored.uiState.value.pendingPrefill)
+            assertNull(restored.uiState.value.form.memorialAudioUrl)
+
+            restored.saveCurrentMemorialForm(asDraft = true)
+            advanceUntilIdle()
+
+            val payload = repository.updateCalls.single().second
+            assertEquals(true, payload.isDraft)
+            val memorial = requireNotNull(payload.memorial)
+            assertEquals(FieldPatch.Set(null), memorial.memorialAudioUrl)
+            assertEquals(FieldPatch.Unchanged, memorial.memorialPhotoUrl)
+            assertEquals(FieldPatch.Unchanged, memorial.memorialVideo)
+            assertNull(memorial.songs)
         }
 
     @Test
@@ -225,6 +329,7 @@ class AfternoteEditorServerMediaDeleteSaveTest {
         SaveAfternoteMemorialMedia(
             memorialVideo = memorialVideo ?: EditableMemorialVideo.empty(),
             memorialPhoto = memorialPhoto ?: EditableMemorialPhoto.empty(),
+            memorialAudioUrl = memorialAudioUrl,
         )
 
     private fun assertServerMediaAndSongs(form: EditorFormState) {
@@ -232,6 +337,7 @@ class AfternoteEditorServerMediaDeleteSaveTest {
         assertEquals("https://cdn.test/farewell.mp4", form.displayedMemorialVideo?.url)
         assertEquals("https://cdn.test/thumbnail.jpg", form.displayedMemorialVideo?.thumbnailUrl)
         assertEquals(listOf("배경음악"), form.memorialPlaylistSongs.map { it.title })
+        assertEquals("https://cdn.test/voice.m4a", form.memorialAudioUrl)
     }
 
     private fun assertDeletedMediaAndSongs(form: EditorFormState) {
@@ -241,6 +347,7 @@ class AfternoteEditorServerMediaDeleteSaveTest {
         assertNull(form.displayedMemorialVideo?.url)
         assertNull(form.displayedMemorialVideo?.thumbnailUrl)
         assertEquals(listOf("배경음악"), form.memorialPlaylistSongs.map { it.title })
+        assertEquals("https://cdn.test/voice.m4a", form.memorialAudioUrl)
     }
 
     private fun viewModel(
@@ -298,6 +405,7 @@ class AfternoteEditorServerMediaDeleteSaveTest {
                             photoUrl = "https://cdn.test/portrait.jpg",
                             videoUrl = "https://cdn.test/farewell.mp4",
                             thumbnailUrl = "https://cdn.test/thumbnail.jpg",
+                            audioUrl = "https://cdn.test/voice.m4a",
                         ),
                 ),
         )
