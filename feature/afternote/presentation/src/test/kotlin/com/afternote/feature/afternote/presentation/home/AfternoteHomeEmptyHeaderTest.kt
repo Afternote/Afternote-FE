@@ -2,6 +2,7 @@ package com.afternote.feature.afternote.presentation.home
 
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -75,6 +76,7 @@ class AfternoteHomeEmptyHeaderTest {
                     nextStep = NextStep(text = NEXT_STEP_TEXT, onClick = { tapped = true }),
                     emptyListDescription = stringRes(R.string.afternote_empty_list_body),
                     onTypeSelected = {},
+                    filterRowScrollState = rememberScrollState(),
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -165,6 +167,7 @@ class AfternoteHomeEmptyHeaderTest {
             nextStep = null,
             emptyListDescription = stringRes(R.string.afternote_empty_list_body),
             onTypeSelected = onTypeSelected,
+            filterRowScrollState = rememberScrollState(),
             modifier = Modifier.fillMaxSize(),
         )
     }
