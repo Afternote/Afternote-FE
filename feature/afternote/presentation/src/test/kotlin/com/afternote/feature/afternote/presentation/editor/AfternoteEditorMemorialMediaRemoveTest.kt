@@ -5,6 +5,7 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
+import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
@@ -18,6 +19,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -72,8 +77,20 @@ class AfternoteEditorMemorialMediaRemoveTest {
 
         viewModel.removeMemorialPhoto()
 
-        assertNull(viewModel.currentForm().pickedMemorialPhotoUri)
-        assertNull(viewModel.currentForm().memorialPhotoUrl)
+        assertNull(
+            viewModel
+                .currentForm()
+                .memorialPhoto
+                ?.toSnapshot()
+                ?.selection,
+        )
+        assertNull(
+            viewModel
+                .currentForm()
+                .memorialPhoto
+                ?.toSnapshot()
+                ?.persisted,
+        )
         assertNull(viewModel.currentForm().displayMemorialPhotoUri())
     }
 
@@ -109,8 +126,20 @@ class AfternoteEditorMemorialMediaRemoveTest {
         viewModel.removeMemorialPhoto()
         viewModel.removeMemorialVideo()
 
-        assertNull(viewModel.currentForm().pickedMemorialPhotoUri)
-        assertNull(viewModel.currentForm().memorialPhotoUrl)
+        assertNull(
+            viewModel
+                .currentForm()
+                .memorialPhoto
+                ?.toSnapshot()
+                ?.selection,
+        )
+        assertNull(
+            viewModel
+                .currentForm()
+                .memorialPhoto
+                ?.toSnapshot()
+                ?.persisted,
+        )
         assertNull(viewModel.currentForm().displayMemorialPhotoUri())
         assertNull(viewModel.currentForm().displayedMemorialVideo?.url)
         assertNull(viewModel.currentForm().displayedMemorialVideo?.thumbnailUrl)
@@ -134,10 +163,54 @@ class AfternoteEditorMemorialMediaRemoveTest {
         val restored = viewModel(handle).currentForm()
 
         assertNull(restored.displayedMemorialVideo)
-        assertNull(restored.pickedMemorialPhotoUri)
-        assertNull(restored.memorialPhotoUrl)
+        assertNull(restored.memorialPhoto?.toSnapshot()?.selection)
+        assertNull(restored.memorialPhoto?.toSnapshot()?.persisted)
         assertNull(restored.displayMemorialPhotoUri())
         assertEquals(listOf("노래"), restored.memorialPlaylistSongs.map { it.title })
+    }
+
+    @Test
+    fun `빈 사진 상태를 기존 JSON 키로 저장하고 복원한다`() {
+        assertPhotoSnapshotRoundTrip(null, null, MediaInput.None)
+    }
+
+    @Test
+    fun `서버 사진 상태를 기존 JSON 키로 저장하고 복원한다`() {
+        assertPhotoSnapshotRoundTrip("https://cdn.test/portrait.jpg", null, MediaInput.Remote("https://cdn.test/portrait.jpg"))
+    }
+
+    @Test
+    fun `로컬 사진 상태를 기존 JSON 키로 저장하고 복원한다`() {
+        assertPhotoSnapshotRoundTrip(null, "content://photo", MediaInput.Local("content://photo"))
+    }
+
+    @Test
+    fun `교체 중 사진의 서버 기준값과 로컬 선택을 함께 복원한다`() {
+        assertPhotoSnapshotRoundTrip("https://cdn.test/portrait.jpg", "content://photo", MediaInput.Local("content://photo"))
+    }
+
+    private fun assertPhotoSnapshotRoundTrip(
+        persisted: String?,
+        selection: String?,
+        expectedInput: MediaInput,
+    ) {
+        val handle = memorialSavedStateHandle()
+        val original = viewModel(handle)
+        original.applyPrefill(memorialPrefill(photoUrl = persisted))
+        if (selection != null) original.setMemorialPhoto(selection)
+        val encoded = requireNotNull(handle.get<String>("editor_form_snapshot_v4"))
+        val fields = Json.parseToJsonElement(encoded).jsonObject
+        assertEquals(persisted?.let(::JsonPrimitive) ?: JsonNull, fields["memorialPhotoUrl"])
+        assertEquals(selection?.let(::JsonPrimitive) ?: JsonNull, fields["pickedMemorialPhotoUri"])
+
+        // 같은 진입 경로의 새 SavedStateHandle로 실제 직렬화된 스냅샷만 복사한다.
+        val restored = viewModel(memorialSavedStateHandle().apply { set("editor_form_snapshot_v4", encoded) })
+        val photo = requireNotNull(restored.currentForm().memorialPhoto)
+        assertEquals(original.currentForm(), restored.currentForm())
+        assertEquals(selection ?: persisted, photo.displayed)
+        assertEquals(expectedInput, photo.toMediaInput())
+        restored.removeMemorialPhoto()
+        assertEquals(MediaInput.None, requireNotNull(restored.currentForm().memorialPhoto).toMediaInput())
     }
 
     private fun memorialSavedStateHandle(): SavedStateHandle = SavedStateHandle(mapOf("initialType" to AfternoteType.MEMORIAL))
