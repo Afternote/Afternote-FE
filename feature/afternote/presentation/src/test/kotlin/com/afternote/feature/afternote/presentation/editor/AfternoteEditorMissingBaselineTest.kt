@@ -11,6 +11,7 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUpl
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
+import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
@@ -151,6 +152,7 @@ class AfternoteEditorMissingBaselineTest {
                 ),
             userReceiverRepository = FakeUserReceiverRepository.strict(),
             afternoteRepository = afternoteRepository,
+            saveAfternoteUseCase = SaveAfternoteUseCase(afternoteRepository),
             memorialThumbnailUploadRepository =
                 MemorialThumbnailUploadRepository { error("썸네일 업로드가 호출되면 안 됩니다") },
             resolveMemorialMediaForSave =

@@ -12,6 +12,7 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUpl
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
+import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.NoopAuthorErrorReporter
 import com.afternote.feature.afternote.presentation.afternoteAuthorUserReceiverRepository
 import com.afternote.feature.afternote.presentation.afternoteEditorSavedStateHandle
@@ -207,6 +208,7 @@ class AfternoteEditorServerMediaDeleteSaveTest {
                         }
                     },
                 ),
+            saveAfternoteUseCase = SaveAfternoteUseCase(repository),
             errorReporter = NoopAuthorErrorReporter,
         )
     }
