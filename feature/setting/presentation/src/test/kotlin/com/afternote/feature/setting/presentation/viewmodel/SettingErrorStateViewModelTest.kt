@@ -161,7 +161,7 @@ class SettingErrorStateViewModelTest {
 
             assertEquals(accountsBeforeMutation, viewModel.uiState.value.accounts)
             assertEquals(
-                ConnectedAccountsEvent.ShowError("계정 연결에 실패했습니다."),
+                ConnectedAccountsEvent.ShowError(UiText.Resource(R.string.setting_connected_accounts_link_error)),
                 event.await(),
             )
         }
@@ -185,9 +185,75 @@ class SettingErrorStateViewModelTest {
 
             assertEquals(accountsBeforeMutation, viewModel.uiState.value.accounts)
             assertEquals(
-                ConnectedAccountsEvent.ShowError("계정 연결 해제에 실패했습니다."),
+                ConnectedAccountsEvent.ShowError(UiText.Resource(R.string.setting_connected_accounts_unlink_error)),
                 event.await(),
             )
+        }
+
+    @Test
+    fun `연결 계정은 한 provider 요청 중에도 다른 provider 조작을 무시하지 않는다`() =
+        runTest(dispatcher) {
+            val connectedAccount = testConnectedAccount.copy(kakao = true, kakaoEmail = "kakao@afternote.com")
+            val googleLink = CompletableDeferred<UserConnectedAccount>()
+            val repository =
+                FakeUserRepository.strict().apply {
+                    onGetConnectedAccounts = { connectedAccount }
+                    onLinkConnectedAccount = { _, _ -> googleLink.await() }
+                    onUnlinkConnectedAccount = { connectedAccount.copy(kakao = false, kakaoEmail = null) }
+                }
+            val viewModel = ConnectedAccountsViewModel(repository)
+            advanceUntilIdle()
+
+            viewModel.onIntent(ConnectedAccountsIntent.Link("google", "token"))
+            runCurrent()
+            viewModel.onIntent(ConnectedAccountsIntent.Toggle(provider = "kakao", enabled = false))
+            runCurrent()
+
+            assertEquals(listOf("kakao"), repository.connectedUnlinkCalls.toList())
+            assertEquals(
+                false,
+                viewModel.uiState.value.accounts
+                    .first { it.provider == "kakao" }
+                    .isConnected,
+            )
+
+            googleLink.complete(
+                connectedAccount.copy(kakao = false, kakaoEmail = null, google = true, googleEmail = "google@afternote.com"),
+            )
+            advanceUntilIdle()
+            assertEquals(
+                true,
+                viewModel.uiState.value.accounts
+                    .first { it.provider == "google" }
+                    .isConnected,
+            )
+        }
+
+    @Test
+    fun `연결 계정은 같은 provider 요청이 진행 중이면 연타를 한 번만 보낸다`() =
+        runTest(dispatcher) {
+            val googleLink = CompletableDeferred<UserConnectedAccount>()
+            val repository =
+                FakeUserRepository.strict().apply {
+                    onGetConnectedAccounts = { testConnectedAccount }
+                    onLinkConnectedAccount = { _, _ -> googleLink.await() }
+                }
+            val viewModel = ConnectedAccountsViewModel(repository)
+            advanceUntilIdle()
+
+            viewModel.onIntent(ConnectedAccountsIntent.Link("google", "token"))
+            runCurrent()
+            viewModel.onIntent(ConnectedAccountsIntent.Link("google", "token-again"))
+            runCurrent()
+
+            assertEquals(1, repository.connectedLinkCalls.size)
+
+            googleLink.complete(testConnectedAccount.copy(google = true, googleEmail = "google@afternote.com"))
+            advanceUntilIdle()
+            viewModel.onIntent(ConnectedAccountsIntent.Link("google", "token-after"))
+            advanceUntilIdle()
+
+            assertEquals(2, repository.connectedLinkCalls.size)
         }
 
     @Test
@@ -216,6 +282,8 @@ class SettingErrorStateViewModelTest {
             )
             assertEquals(ProfileEditEvent.UpdateFailure, event.await())
         }
+
+    private fun ConnectedAccountsUiState.isConnected(provider: String): Boolean = accounts.first { it.provider == provider }.isConnected
 
     private companion object {
         val testUser = User("박서연", "test@afternote.com", "01012345678", null)

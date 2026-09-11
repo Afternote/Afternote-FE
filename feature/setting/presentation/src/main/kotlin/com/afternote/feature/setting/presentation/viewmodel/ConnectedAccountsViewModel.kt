@@ -1,5 +1,6 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
@@ -21,7 +22,9 @@ internal class ConnectedAccountsViewModel
             ConnectedAccountsUiState(isLoading = true),
         ) {
         private var loadJob: Job? = null
-        private var mutationJob: Job? = null
+
+        /** provider 별 진행 중인 연결·해제 요청. 같은 provider 연타만 막고 다른 provider 는 그대로 받는다. */
+        private val mutationJobs = mutableMapOf<String, Job>()
 
         override fun onIntent(intent: ConnectedAccountsIntent) {
             when (intent) {
@@ -93,29 +96,39 @@ internal class ConnectedAccountsViewModel
         }
 
         private fun notifyLinkError(message: String) {
-            dispatch(ConnectedAccountsReducerEvent.Signal(ConnectedAccountsEvent.ShowError(message)))
+            dispatch(ConnectedAccountsReducerEvent.Signal(ConnectedAccountsEvent.ShowError(UiText.Dynamic(message))))
         }
 
         private fun link(
             provider: String,
             accessToken: String,
         ) {
-            if (mutationJob?.isActive == true) return
-            mutationJob =
-                viewModelScope.launch {
-                    runCatchingCancellable { userRepository.linkConnectedAccount(provider, accessToken) }
-                        .onSuccess { accounts -> dispatch(ConnectedAccountsReducerEvent.AccountsChanged(accounts.toStateList())) }
-                        .onFailure { dispatch(ConnectedAccountsReducerEvent.Signal(ConnectedAccountsEvent.ShowError("계정 연결에 실패했습니다."))) }
-                }
+            mutate(provider, R.string.setting_connected_accounts_link_error) {
+                userRepository.linkConnectedAccount(provider, accessToken)
+            }
         }
 
         private fun unlink(provider: String) {
-            if (mutationJob?.isActive == true) return
-            mutationJob =
+            mutate(provider, R.string.setting_connected_accounts_unlink_error) {
+                userRepository.unlinkConnectedAccount(provider)
+            }
+        }
+
+        private fun mutate(
+            provider: String,
+            @StringRes errorResId: Int,
+            request: suspend () -> UserConnectedAccount,
+        ) {
+            if (mutationJobs[provider]?.isActive == true) return
+            mutationJobs[provider] =
                 viewModelScope.launch {
-                    runCatchingCancellable { userRepository.unlinkConnectedAccount(provider) }
+                    runCatchingCancellable { request() }
                         .onSuccess { accounts -> dispatch(ConnectedAccountsReducerEvent.AccountsChanged(accounts.toStateList())) }
-                        .onFailure { dispatch(ConnectedAccountsReducerEvent.Signal(ConnectedAccountsEvent.ShowError("계정 연결 해제에 실패했습니다."))) }
+                        .onFailure {
+                            dispatch(
+                                ConnectedAccountsReducerEvent.Signal(ConnectedAccountsEvent.ShowError(UiText.Resource(errorResId))),
+                            )
+                        }
                 }
         }
 
