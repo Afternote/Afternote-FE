@@ -2,7 +2,9 @@
 #
 # 어사인이 비어 있는 PR 은 보드·필터에서 담당자가 사라진다. 이슈는
 # issue-metadata-guard 가 어사인을 강제하는데 PR 은 손에 맡겨져 있었다.
-# PR 이 열리면 작성자를 어사인하고, 누가 떼어 내도 다시 건다.
+# 어사인이 비어 있는 PR 에만 작성자를 건다. 사람이 담당자를 바꾼 것(작성자를 떼고
+# 다른 사람을 건 것)은 그대로 둔다 — 강제하는 것은 «비어 있지 않음» 이지 «작성자» 가
+# 아니다. 전부 떼어 비게 되면 다시 작성자를 건다.
 # review-request-all 과 같은 조건(봇·외부 기여자 제외)으로 돈다.
 name: pr-assign-author
 
@@ -41,9 +43,10 @@ jobs:
 
           current=$(gh api "repos/$REPO/pulls/$PR_NUMBER" \
             --jq '[.assignees[].login] | join(" ")')
-          case " $current " in
-            *" $AUTHOR "*) echo "이미 어사인됨"; exit 0 ;;
-          esac
+          if [ -n "$current" ]; then
+            echo "이미 어사인됨: $current"
+            exit 0
+          fi
 
           gh api -X POST "repos/$REPO/issues/$PR_NUMBER/assignees" \
             -f "assignees[]=$AUTHOR" >/dev/null
