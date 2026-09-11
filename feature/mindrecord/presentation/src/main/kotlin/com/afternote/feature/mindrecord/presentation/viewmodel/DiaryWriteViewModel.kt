@@ -183,8 +183,12 @@ class DiaryWriteViewModel
             }
             // 고르지 않은 기분을 지어내지 않는다. 지어내면 그것이 사용자 데이터가 되고
             // (이어쓰기로 열면 «그냥그래» 가 이미 선택돼 보인다) 주간리포트 집계와 감정
-            // 분석 입력에도 그대로 들어간다. 위 가드가 미선택을 이미 막는다.
-            val mood = state.mood ?: return
+            // 분석 입력에도 그대로 들어간다.
+            //
+            // 임시저장은 미선택 그대로 null 을 싣는다 — 서버가 그 자리를 열어 뒀다
+            // (BE#243 → PR #267). 정식 등록은 위 `missingForSubmit` 가드가 미선택을 막는다.
+            val mood = state.mood
+            if (!isDraft && mood == null) return
 
             viewModelScope.launch {
                 _uiState.update { it.copy(submitState = SubmitState.InProgress) }
