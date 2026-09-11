@@ -83,6 +83,35 @@ class OnboardingLocalNavActionsTest {
     }
 
     @Test
+    fun `로그인의 계정 찾기는 비밀번호 찾기 흐름을 연다`() {
+        actions.navigateToLogin()
+
+        actions.navigateToFindPassword()
+
+        assertEquals(listOf("WelcomeRoute", "LoginRoute", "FindPasswordFlowRoute"), stack())
+    }
+
+    @Test
+    fun `비밀번호 변경 완료의 로그인은 로그인 화면 하나로 수렴한다`() {
+        actions.navigateToLogin()
+        actions.navigateToFindPassword()
+
+        actions.popToLogin()
+
+        // 흐름은 사라지고 로그인만 남는다 — 완료 화면으로 되돌아갈 수 없다.
+        assertEquals(listOf("WelcomeRoute", "LoginRoute"), stack())
+    }
+
+    @Test
+    fun `로그인을 거치지 않고 들어온 경로도 로그인 하나로 수렴한다`() {
+        actions.navigateToFindPassword()
+
+        actions.popToLogin()
+
+        assertEquals(listOf("LoginRoute"), stack())
+    }
+
+    @Test
     fun `스택 바닥에서의 뒤로가기는 스택을 비우지 않고 셸에 넘긴다`() {
         actions.popBack()
 

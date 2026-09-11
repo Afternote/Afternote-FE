@@ -143,6 +143,11 @@ internal class FindPasswordViewModel
                 }
         }
 
+        fun onSocialAccountBlockedConsumed() =
+            _uiState.update {
+                it.copy(failure = it.failure.takeUnless { failure -> failure == OnboardingFailure.SocialAccountRecoveryUnavailable })
+            }
+
         fun onErrorConsumed() =
             _uiState.update {
                 it.copy(failure = it.failure.takeUnless { failure -> failure is OnboardingFailure.RequestFailed })

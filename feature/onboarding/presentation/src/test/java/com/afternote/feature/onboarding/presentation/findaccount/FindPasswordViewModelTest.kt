@@ -287,6 +287,25 @@ class FindPasswordViewModelTest {
                 .toDisplay()
                 .snackbarMessage,
         )
+        viewModel.onSocialAccountBlockedConsumed()
+        assertNull(viewModel.uiState.value.failure)
+    }
+
+    @Test
+    fun `늦은 소셜 계정 팝업 닫기는 새 요청 실패를 지우지 않는다`() {
+        var failure: Throwable = socialSignUpAccount()
+        val repository = FakeAccountRepository(onSendFindCode = { Result.failure(failure) })
+        val viewModel = viewModel(repository).apply { updateEmail(EMAIL) }
+        viewModel.requestVerificationCode()
+        assertEquals(OnboardingFailure.SocialAccountRecoveryUnavailable, viewModel.uiState.value.failure)
+
+        failure = IllegalStateException("new request failed")
+        viewModel.requestVerificationCode()
+        val newFailure = viewModel.uiState.value.failure
+        assertTrue(newFailure is OnboardingFailure.RequestFailed)
+        viewModel.onSocialAccountBlockedConsumed()
+
+        assertEquals(newFailure, viewModel.uiState.value.failure)
     }
 
     private fun viewModel(

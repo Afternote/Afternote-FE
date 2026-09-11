@@ -93,6 +93,31 @@ class AppOnboardingCanaryTest {
             ).assertIsDisplayed()
     }
 
+    /**
+     * 로그인의 "아이디/비밀번호 찾기" 가 실제로 비밀번호 찾기 흐름을 연다 (#457 · #1789).
+     *
+     * 화면·ViewModel 은 #457 이 세웠지만 그래프 등록은 Navigation 3 이관(#1698) 뒤로 미뤄져
+     * 한동안 «만들었는데 갈 수 없는» 상태였다. 이 카나리가 그 배선을 잠근다.
+     */
+    @Test
+    fun findAccountLink_opensPasswordResetFlow() {
+        composeRule
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_start))
+            .performClick()
+
+        composeRule
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_login_find_account))
+            .assertIsDisplayed()
+            .performClick()
+
+        composeRule.waitUntilAtLeastOneExists(
+            hasText(context.getString(OnboardingR.string.onboarding_find_password_title)),
+        )
+        composeRule
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_find_account_verify_email_title))
+            .assertIsDisplayed()
+    }
+
     @Test
     fun emailLogin_networkFailureThenRetry_entersHomeOnce() {
         val emailLoginResults = ArrayDeque<Result<Session.DefaultSession>>()
