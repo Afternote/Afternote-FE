@@ -42,7 +42,7 @@ import com.afternote.feature.setting.presentation.viewmodel.ProfileEditUiState
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditViewModel
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterIntent
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterViewModel
-import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
+import com.afternote.feature.setting.presentation.viewmodel.SettingProfileState
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
 import com.afternote.feature.setting.presentation.viewmodel.WithdrawUiState
 import kotlinx.coroutines.flow.Flow
@@ -129,10 +129,9 @@ class SettingAccountSecurityTest {
 
         linkRepository.onLinkConnectedAccount = { _, _ -> throw IllegalStateException("oauth rejected") }
         composeRule.runOnIdle { linkViewModel.onIntent(ConnectedAccountsIntent.Link(provider = "google", accessToken = "google-token")) }
-        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            linkViewModel.uiState.value.errorMessage == "계정 연결에 실패했습니다."
-        }
+        val linkFailure = awaitEvent(linkViewModel.uiState.mapNotNull { it.pendingEvent })
 
+        assertEquals(ConnectedAccountsEvent.ShowError(UiText.Resource(SettingR.string.setting_connected_accounts_link_error)), linkFailure)
         assertEquals(
             listOf(ConnectedAccountLinkCall(provider = "google", accessToken = "google-token")),
             linkRepository.connectedLinkCalls,
@@ -150,12 +149,13 @@ class SettingAccountSecurityTest {
 
         assertTrue(unlinkRepository.connectedUnlinkCalls.isEmpty())
         composeRule.runOnIdle { unlinkViewModel.onIntent(ConnectedAccountsIntent.Toggle(provider = "google", enabled = false)) }
-        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            unlinkRepository.connectedUnlinkCalls.size == 1
-        }
+        val unlinkFailure = awaitEvent(unlinkViewModel.uiState.mapNotNull { it.pendingEvent })
 
         assertEquals(listOf("google"), unlinkRepository.connectedUnlinkCalls)
-        assertEquals("계정 연결 해제에 실패했습니다.", unlinkViewModel.uiState.value.errorMessage)
+        assertEquals(
+            ConnectedAccountsEvent.ShowError(UiText.Resource(SettingR.string.setting_connected_accounts_unlink_error)),
+            unlinkFailure,
+        )
     }
 
     @Test
@@ -313,7 +313,7 @@ class SettingAccountSecurityTest {
         composeRule.setContent {
             AfternoteTheme {
                 WithdrawConfirmScreen(
-                    uiState = SettingUiState.Success(name = DEFAULT_USER.name, email = DEFAULT_USER.email),
+                    uiState = SettingProfileState.Success(name = DEFAULT_USER.name, email = DEFAULT_USER.email),
                     onBackClick = {},
                     onWithdrawSuccess = { successCalls += 1 },
                     viewModel = viewModel,
@@ -332,7 +332,7 @@ class SettingAccountSecurityTest {
         }
 
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.withdrawUiState.value == WithdrawUiState.Error
+            viewModel.uiState.value.withdraw == WithdrawUiState.Error
         }
         composeRule
             .onNodeWithText("회원 탈퇴에 실패했습니다. 잠시 후 다시 시도해 주세요.")

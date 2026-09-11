@@ -24,19 +24,22 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.mvi.ObserveSignal
 import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
+import com.afternote.feature.setting.presentation.component.SettingLoadErrorContent
 import com.afternote.feature.setting.presentation.component.SettingMenuItem
 import com.afternote.feature.setting.presentation.component.SettingProfile
 import com.afternote.feature.setting.presentation.component.SettingSection
-import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
+import com.afternote.feature.setting.presentation.viewmodel.SettingIntent
+import com.afternote.feature.setting.presentation.viewmodel.SettingProfileState
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
 
 // 설정-메인
 @Composable
-fun SettingScreen(
+internal fun SettingScreen(
     onBackClick: () -> Unit,
     onLogoutSuccess: () -> Unit,
     onProfileEditClick: () -> Unit,
@@ -59,22 +62,21 @@ fun SettingScreen(
     viewModel: SettingViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val logoutCompleted by viewModel.logoutCompleted.collectAsStateWithLifecycle()
     val currentOnLogoutSuccess by rememberUpdatedState(onLogoutSuccess)
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val lifecycleState by lifecycle.currentStateFlow.collectAsStateWithLifecycle()
     LaunchedEffect(lifecycleState) {
         if (lifecycleState == Lifecycle.State.RESUMED) {
-            viewModel.refresh()
+            viewModel.onIntent(SettingIntent.Refresh)
         }
     }
 
-    LaunchedEffect(logoutCompleted) {
-        if (logoutCompleted) {
-            currentOnLogoutSuccess()
-        }
-    }
+    ObserveSignal(
+        signal = uiState.logoutCompleted,
+        consumed = SettingIntent.ConsumeLogoutSuccess,
+        onIntent = viewModel::onIntent,
+    ) { currentOnLogoutSuccess() }
 
     Scaffold(
         topBar = {
@@ -87,8 +89,9 @@ fun SettingScreen(
         containerColor = Color.Transparent,
     ) { innerPadding ->
         SettingScreenContent(
-            uiState = uiState,
-            onLogoutClick = viewModel::logout,
+            uiState = uiState.profile,
+            onRetry = { viewModel.onIntent(SettingIntent.Refresh) },
+            onLogoutClick = { viewModel.onIntent(SettingIntent.Logout) },
             onProfileEditClick = onProfileEditClick,
             onPasswordChangeClick = onPasswordChangeClick,
             onLinkedAccountClick = onLinkedAccountClick,
@@ -112,7 +115,8 @@ fun SettingScreen(
 
 @Composable
 private fun SettingScreenContent(
-    uiState: SettingUiState,
+    uiState: SettingProfileState,
+    onRetry: () -> Unit,
     onLogoutClick: () -> Unit,
     onProfileEditClick: () -> Unit,
     onPasswordChangeClick: () -> Unit,
@@ -149,7 +153,7 @@ private fun SettingScreenContent(
     }
 
     when (val state = uiState) {
-        is SettingUiState.Loading -> {
+        is SettingProfileState.Loading -> {
             Column(
                 modifier = modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -158,7 +162,7 @@ private fun SettingScreenContent(
             }
         }
 
-        is SettingUiState.Success -> {
+        is SettingProfileState.Success -> {
             Column(
                 modifier =
                     modifier
@@ -256,11 +260,13 @@ private fun SettingScreenContent(
             }
         }
 
-        is SettingUiState.Error -> {
-            Column(
-                modifier = modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
+        SettingProfileState.Error -> {
+            Column(modifier = modifier.fillMaxSize()) {
+                SettingLoadErrorContent(
+                    message = stringResource(R.string.setting_profile_load_error),
+                    onRetry = onRetry,
+                    modifier = Modifier.weight(1f),
+                )
                 SettingMenuItem(
                     label = stringResource(R.string.settings_logout),
                     onClick = { showLogoutDialog = true },
@@ -277,7 +283,8 @@ private fun SettingScreenPrev() {
         topBar = { DetailTopBar(title = "설정") },
     ) { innerPadding ->
         SettingScreenContent(
-            uiState = SettingUiState.Success(name = "박서연", email = "afternote@email.com"),
+            uiState = SettingProfileState.Success(name = "박서연", email = "afternote@email.com"),
+            onRetry = {},
             onLogoutClick = {},
             onProfileEditClick = {},
             onPasswordChangeClick = {},

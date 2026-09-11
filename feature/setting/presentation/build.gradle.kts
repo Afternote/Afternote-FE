@@ -38,8 +38,10 @@ dependencies {
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
-
+    testImplementation(libs.junit)
     testImplementation(libs.coroutines.test)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core.ktx)
     testImplementation(testFixtures(projects.core.domain))
     testImplementation(projects.core.network)
     testImplementation(platform(libs.androidx.compose.bom))

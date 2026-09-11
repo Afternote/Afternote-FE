@@ -1,11 +1,15 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.user.UserConnectedAccount
+import com.afternote.core.ui.UiText
 import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.setting.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -17,8 +21,14 @@ internal class ConnectedAccountsViewModel
     ) : MviViewModel<ConnectedAccountsIntent, ConnectedAccountsUiState, ConnectedAccountsReducerEvent>(
             ConnectedAccountsUiState(isLoading = true),
         ) {
+        private var loadJob: Job? = null
+
+        /** provider 별 진행 중인 연결·해제 요청. 같은 provider 연타만 막고 다른 provider 는 그대로 받는다. */
+        private val mutationJobs = mutableMapOf<String, Job>()
+
         override fun onIntent(intent: ConnectedAccountsIntent) {
             when (intent) {
+                ConnectedAccountsIntent.RetryLoad -> loadConnectedAccounts()
                 is ConnectedAccountsIntent.Toggle -> onToggle(intent.provider, intent.enabled)
                 is ConnectedAccountsIntent.Link -> link(intent.provider, intent.accessToken)
                 is ConnectedAccountsIntent.NotifyLinkError -> notifyLinkError(intent.message)
@@ -31,8 +41,12 @@ internal class ConnectedAccountsViewModel
             event: ConnectedAccountsReducerEvent,
         ): ConnectedAccountsUiState =
             when (event) {
+                ConnectedAccountsReducerEvent.Loading -> {
+                    state.copy(isLoading = true, errorMessage = null)
+                }
+
                 is ConnectedAccountsReducerEvent.Loaded -> {
-                    state.copy(isLoading = false, accounts = event.accounts)
+                    state.copy(isLoading = false, accounts = event.accounts, errorMessage = null)
                 }
 
                 is ConnectedAccountsReducerEvent.Failed -> {
@@ -57,14 +71,17 @@ internal class ConnectedAccountsViewModel
         }
 
         private fun loadConnectedAccounts() {
-            viewModelScope.launch {
-                runCatching { userRepository.getConnectedAccounts() }
-                    .onSuccess { accounts ->
-                        dispatch(ConnectedAccountsReducerEvent.Loaded(accounts.toStateList()))
-                    }.onFailure {
-                        dispatch(ConnectedAccountsReducerEvent.Failed("계정 정보를 불러올 수 없습니다."))
-                    }
-            }
+            if (loadJob?.isActive == true) return
+            loadJob =
+                viewModelScope.launch {
+                    dispatch(ConnectedAccountsReducerEvent.Loading)
+                    runCatchingCancellable { userRepository.getConnectedAccounts() }
+                        .onSuccess { accounts ->
+                            dispatch(ConnectedAccountsReducerEvent.Loaded(accounts.toStateList()))
+                        }.onFailure {
+                            dispatch(ConnectedAccountsReducerEvent.Failed(UiText.Resource(R.string.setting_connected_accounts_load_error)))
+                        }
+                }
         }
 
         private fun onToggle(
@@ -79,26 +96,40 @@ internal class ConnectedAccountsViewModel
         }
 
         private fun notifyLinkError(message: String) {
-            dispatch(ConnectedAccountsReducerEvent.Signal(ConnectedAccountsEvent.ShowError(message)))
+            dispatch(ConnectedAccountsReducerEvent.Signal(ConnectedAccountsEvent.ShowError(UiText.Dynamic(message))))
         }
 
         private fun link(
             provider: String,
             accessToken: String,
         ) {
-            viewModelScope.launch {
-                runCatching { userRepository.linkConnectedAccount(provider, accessToken) }
-                    .onSuccess { accounts -> dispatch(ConnectedAccountsReducerEvent.AccountsChanged(accounts.toStateList())) }
-                    .onFailure { dispatch(ConnectedAccountsReducerEvent.Failed("계정 연결에 실패했습니다.")) }
+            mutate(provider, R.string.setting_connected_accounts_link_error) {
+                userRepository.linkConnectedAccount(provider, accessToken)
             }
         }
 
         private fun unlink(provider: String) {
-            viewModelScope.launch {
-                runCatching { userRepository.unlinkConnectedAccount(provider) }
-                    .onSuccess { accounts -> dispatch(ConnectedAccountsReducerEvent.AccountsChanged(accounts.toStateList())) }
-                    .onFailure { dispatch(ConnectedAccountsReducerEvent.Failed("계정 연결 해제에 실패했습니다.")) }
+            mutate(provider, R.string.setting_connected_accounts_unlink_error) {
+                userRepository.unlinkConnectedAccount(provider)
             }
+        }
+
+        private fun mutate(
+            provider: String,
+            @StringRes errorResId: Int,
+            request: suspend () -> UserConnectedAccount,
+        ) {
+            if (mutationJobs[provider]?.isActive == true) return
+            mutationJobs[provider] =
+                viewModelScope.launch {
+                    runCatchingCancellable { request() }
+                        .onSuccess { accounts -> dispatch(ConnectedAccountsReducerEvent.AccountsChanged(accounts.toStateList())) }
+                        .onFailure {
+                            dispatch(
+                                ConnectedAccountsReducerEvent.Signal(ConnectedAccountsEvent.ShowError(UiText.Resource(errorResId))),
+                            )
+                        }
+                }
         }
 
         private fun UserConnectedAccount.toStateList(): List<SocialAccountState> =

@@ -1,6 +1,7 @@
 package com.afternote.feature.setting.presentation.screen
 
 import android.app.Activity
+import android.content.res.Resources
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -8,12 +9,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.credentials.CredentialManager
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.domain.error.CoreAuthFailure
+import com.afternote.core.ui.UiText
 import com.afternote.core.ui.findActivity
 import com.afternote.core.ui.mvi.ObserveSignal
 import com.afternote.feature.setting.presentation.BuildConfig
@@ -39,6 +42,7 @@ internal fun ConnectedAccountsScreen(
     val context = LocalContext.current
     val credentialManager = remember(context) { CredentialManager.create(context) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val resources = LocalResources.current
     val kakaoAccountLinkFailedMessage = stringResource(R.string.kakao_account_link_failed)
     val googleAccountLinkFailedMessage = stringResource(R.string.google_account_link_failed)
 
@@ -56,7 +60,7 @@ internal fun ConnectedAccountsScreen(
                 eventMutex.withLock {
                     when (event) {
                         is ConnectedAccountsEvent.ShowError -> {
-                            snackbarHostState.showSnackbar(event.message)
+                            snackbarHostState.showSnackbar(event.message.resolve(resources))
                         }
 
                         is ConnectedAccountsEvent.RequestLink -> {
@@ -104,6 +108,7 @@ internal fun ConnectedAccountsScreen(
 
     ConnectedAccountsContent(
         uiState = uiState,
+        onRetry = { viewModel.onIntent(ConnectedAccountsIntent.RetryLoad) },
         snackbarHostState = snackbarHostState,
         onBack = onBack,
         onToggle = { provider, enabled -> viewModel.onIntent(ConnectedAccountsIntent.Toggle(provider, enabled)) },
@@ -116,3 +121,11 @@ internal fun ConnectedAccountsScreen(
 private fun ConnectedAccountScreenPrev() {
     ConnectedAccountsScreen(onBack = {})
 }
+
+/** `UiText.asString()` 은 `@Composable` 이라 스낵바 코루틴 안에서는 못 부른다. 그 자리용 Resources 풀이. */
+private fun UiText.resolve(resources: Resources): String =
+    when (this) {
+        is UiText.Resource -> if (args.isEmpty()) resources.getString(resId) else resources.getString(resId, *args.toTypedArray())
+        is UiText.Dynamic -> value
+        is UiText.DynamicOrResource -> value ?: resources.getString(fallbackResId)
+    }

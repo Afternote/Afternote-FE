@@ -13,6 +13,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.setting.presentation.screen.SettingScreen
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationIntent
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel
+import com.afternote.feature.setting.presentation.viewmodel.SettingIntent
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -82,7 +83,7 @@ class SettingFlowTest {
         composeRule.setContent { AfternoteTheme {} }
 
         assertEquals(0, user.deleteAccountCalls)
-        composeRule.runOnIdle { viewModel.deleteAccount() }
+        composeRule.runOnIdle { viewModel.onIntent(SettingIntent.DeleteAccount) }
         composeRule.waitUntil(timeoutMillis = 5_000) { user.deleteAccountCalls == 1 }
 
         assertEquals(1, user.deleteAccountCalls)

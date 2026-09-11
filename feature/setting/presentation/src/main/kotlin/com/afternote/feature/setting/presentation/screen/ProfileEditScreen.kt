@@ -18,13 +18,18 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -36,10 +41,12 @@ import com.afternote.core.ui.mvi.ObserveSignal
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
+import com.afternote.feature.setting.presentation.component.SettingLoadErrorContent
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditEvent
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditIntent
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditUiState
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 internal fun ProfileEditScreen(
@@ -49,6 +56,9 @@ internal fun ProfileEditScreen(
     viewModel: ProfileEditViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val updateErrorMessage = stringResource(R.string.setting_profile_update_error)
 
     val pendingEvent = (uiState as? ProfileEditUiState.Success)?.pendingEvent
     if (pendingEvent != null) {
@@ -59,12 +69,12 @@ internal fun ProfileEditScreen(
         ) { event ->
             when (event) {
                 ProfileEditEvent.UpdateSuccess -> onBackClick()
-                ProfileEditEvent.UpdateFailure -> Unit
+                ProfileEditEvent.UpdateFailure -> scope.launch { snackbarHostState.showSnackbar(updateErrorMessage) }
             }
         }
     }
 
-    ProfileEditContent(uiState, onBackClick, onWithdrawGuideClick, viewModel::onIntent, modifier)
+    ProfileEditContent(uiState, onBackClick, onWithdrawGuideClick, viewModel::onIntent, snackbarHostState, modifier)
 }
 
 @Composable
@@ -73,6 +83,7 @@ private fun ProfileEditContent(
     onBackClick: () -> Unit,
     onWithdrawGuideClick: () -> Unit,
     onIntent: (ProfileEditIntent) -> Unit,
+    snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -84,6 +95,7 @@ private fun ProfileEditContent(
         },
         modifier = modifier,
         containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         when (val state = uiState) {
             is ProfileEditUiState.Loading -> {
@@ -108,15 +120,11 @@ private fun ProfileEditContent(
             }
 
             is ProfileEditUiState.Error -> {
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(text = "프로필을 불러올 수 없습니다.")
-                }
+                SettingLoadErrorContent(
+                    message = stringResource(R.string.setting_profile_load_error),
+                    onRetry = { onIntent(ProfileEditIntent.RetryLoad) },
+                    modifier = Modifier.padding(innerPadding),
+                )
             }
         }
     }

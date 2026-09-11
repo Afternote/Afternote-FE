@@ -8,10 +8,13 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.error.PushSettingFailure
 import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.ui.UiText
 import com.afternote.core.ui.mvi.MviViewModel
+import com.afternote.feature.setting.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -22,8 +25,14 @@ internal class PushNotificationViewModel
         private val userRepository: UserRepository,
         private val errorReporter: ErrorReporter,
     ) : MviViewModel<PushNotificationIntent, PushNotificationUiState, PushNotificationReducerEvent>(PushNotificationUiState()) {
+        private var loadJob: Job? = null
+
         override fun onIntent(intent: PushNotificationIntent) {
             when (intent) {
+                PushNotificationIntent.RetryLoad -> {
+                    loadPushSettings()
+                }
+
                 PushNotificationIntent.RefreshDeviceAlarmStatus -> {
                     refreshDeviceAlarmStatus()
                 }
@@ -82,12 +91,13 @@ internal class PushNotificationViewModel
                 }
 
                 PushNotificationReducerEvent.Loading -> {
-                    state.copy(isLoading = true)
+                    state.copy(isLoading = true, errorMessage = null)
                 }
 
                 is PushNotificationReducerEvent.Loaded -> {
                     state.copy(
                         isLoading = false,
+                        errorMessage = null,
                         isNewsletterOn = event.setting.timeLetter,
                         isMindRecordOn = event.setting.mindRecord,
                         isAfternoteOn = event.setting.afterNote,
@@ -95,7 +105,7 @@ internal class PushNotificationViewModel
                 }
 
                 PushNotificationReducerEvent.LoadFailed -> {
-                    state.copy(isLoading = false)
+                    state.copy(isLoading = false, errorMessage = UiText.Resource(R.string.setting_push_load_error))
                 }
 
                 is PushNotificationReducerEvent.MarketingLoaded -> {
@@ -156,18 +166,20 @@ internal class PushNotificationViewModel
         }
 
         private fun loadPushSettings() {
-            viewModelScope.launch {
-                Log.d(TAG, "loadPushSettings: start")
-                dispatch(PushNotificationReducerEvent.Loading)
-                runCatchingCancellable { userRepository.getMyPushSettings() }
-                    .onSuccess { setting ->
-                        Log.d(TAG, "loadPushSettings: success=$setting")
-                        dispatch(PushNotificationReducerEvent.Loaded(setting))
-                    }.onFailure { e ->
-                        Log.e(TAG, "loadPushSettings: failed", e)
-                        dispatch(PushNotificationReducerEvent.LoadFailed)
-                    }
-            }
+            if (loadJob?.isActive == true) return
+            loadJob =
+                viewModelScope.launch {
+                    Log.d(TAG, "loadPushSettings: start")
+                    dispatch(PushNotificationReducerEvent.Loading)
+                    runCatchingCancellable { userRepository.getMyPushSettings() }
+                        .onSuccess { setting ->
+                            Log.d(TAG, "loadPushSettings: success=$setting")
+                            dispatch(PushNotificationReducerEvent.Loaded(setting))
+                        }.onFailure { e ->
+                            Log.e(TAG, "loadPushSettings: failed", e)
+                            dispatch(PushNotificationReducerEvent.LoadFailed)
+                        }
+                }
         }
 
         private fun loadMarketingConsents() {

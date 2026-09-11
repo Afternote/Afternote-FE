@@ -25,6 +25,7 @@ internal fun PushNotificationScreen(
 
     PushNotificationContent(
         uiState = uiState,
+        onRetry = { viewModel.onIntent(PushNotificationIntent.RetryLoad) },
         onBack = onBack,
         onNewsletterToggle = { viewModel.onIntent(PushNotificationIntent.NewsletterToggle(it)) },
         onMindRecordToggle = { viewModel.onIntent(PushNotificationIntent.MindRecordToggle(it)) },

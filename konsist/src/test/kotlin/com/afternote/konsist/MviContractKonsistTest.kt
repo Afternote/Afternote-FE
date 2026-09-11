@@ -479,7 +479,6 @@ class MviContractKonsistTest {
                 "com.afternote.feature.setting.presentation.viewmodel.InsertPasswordViewModel",
                 "com.afternote.feature.setting.presentation.viewmodel.PassKeyViewModel",
                 "com.afternote.feature.setting.presentation.viewmodel.ReceiverListViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.SettingViewModel",
             )
 
         /** #1806 이 뺀다. */
