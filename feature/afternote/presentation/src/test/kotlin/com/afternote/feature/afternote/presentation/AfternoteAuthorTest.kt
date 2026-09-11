@@ -139,7 +139,7 @@ class AfternoteAuthorTest {
         AfternoteEditorViewModel(
             route = savedStateHandle.editorFlowRoute(),
             savedStateHandle = savedStateHandle,
-            userRepository = afternoteAuthorUserRepository(),
+            userReceiverRepository = afternoteAuthorUserReceiverRepository(),
             afternoteRepository = repository,
             memorialThumbnailUploadRepository = MemorialThumbnailUploadRepository { Result.success("https://cdn.test/thumb.jpg") },
             resolveMemorialMediaForSave =

@@ -13,7 +13,7 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnai
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.presentation.NoopAuthorErrorReporter
-import com.afternote.feature.afternote.presentation.afternoteAuthorUserRepository
+import com.afternote.feature.afternote.presentation.afternoteAuthorUserReceiverRepository
 import com.afternote.feature.afternote.presentation.afternoteEditorSavedStateHandle
 import com.afternote.feature.afternote.presentation.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
@@ -193,7 +193,7 @@ class AfternoteEditorServerMediaDeleteSaveTest {
         return AfternoteEditorViewModel(
             route = savedStateHandle.editorFlowRoute(),
             savedStateHandle = savedStateHandle,
-            userRepository = afternoteAuthorUserRepository(),
+            userReceiverRepository = afternoteAuthorUserReceiverRepository(),
             afternoteRepository = repository,
             memorialThumbnailUploadRepository =
                 MemorialThumbnailUploadRepository { error("썸네일 업로드가 호출되면 안 됩니다") },
