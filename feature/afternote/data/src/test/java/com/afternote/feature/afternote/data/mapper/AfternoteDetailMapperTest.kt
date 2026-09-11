@@ -222,7 +222,7 @@ class AfternoteDetailMapperTest {
                     ),
             ).toDomain()
 
-        val memorial = (result.content as DetailContent.Memorial).memorial
+        val memorial = result.content as DetailContent.Memorial
         val media = memorial.media
         assertEquals("memorial.jpg", media.photoUrl)
         assertEquals("v.mp4", media.videoUrl)
@@ -265,7 +265,7 @@ class AfternoteDetailMapperTest {
                 memorial = AfternotePlaylistDto(songs = emptyList(), memorialVideo = null),
             ).toDomain()
 
-        val media = (result.content as DetailContent.Memorial).memorial.media
+        val media = (result.content as DetailContent.Memorial).media
         assertNull(media.videoUrl)
         assertNull(media.thumbnailUrl)
     }
