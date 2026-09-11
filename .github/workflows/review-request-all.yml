@@ -1,8 +1,10 @@
 # 리뷰어 자동 요청 (#1136)
 #
-# 리뷰 요청을 손으로 걸다 보면 빠뜨린다. PR 이 열리면 작성자를 뺀 팀 전원에게
+# 리뷰 요청을 손으로 걸다 보면 빠뜨린다. PR 이 열리면 담당자를 뺀 팀 전원에게
 # 자동으로 요청한다. GitHub 은 자기 PR 의 작성자를 리뷰어로 받지 않으므로
-# 목록에 전원을 적어도 작성자는 자동으로 빠진다.
+# 목록에 전원을 적어도 작성자는 자동으로 빠진다. 담당자(어사인)는 GitHub 이 막지
+# 않으므로 여기서 직접 뺀다 — PR 의 공은 올린 사람이 아니라 어사인된 사람에게
+# 있다(#1974 결정, #1980). 어사인이 비어 있는 동안만 작성자가 담당자다.
 #
 # 이 워크플로는 review-debt-guard 와 한 세트다. 요청이 자동으로 걸려야
 # "리뷰를 안 하면 새 PR 을 못 연다" 가 성립한다 — 요청을 손으로 걸던 때는
@@ -40,13 +42,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: 작성자를 뺀 전원에게 리뷰 요청
+      - name: 담당자를 뺀 전원에게 리뷰 요청
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           AUTHOR: ${{ github.event.pull_request.user.login }}
           ASSOCIATION: ${{ github.event.pull_request.author_association }}
+          # 이벤트 시점의 어사인. pr-assign-author 가 같은 이벤트에서 빈 어사인에 작성자를
+          # 거는 중일 수 있으므로, 비어 있으면 작성자로 폴백한다.
+          ASSIGNEES: ${{ join(github.event.pull_request.assignees.*.login, ' ') }}
           # 리뷰 의무가 있는 팀원만 적는다. koongmai 는 남의 PR 을 리뷰할 의무가 없어
           # 빠져 있다 (#1910). 자기 PR 에는 나머지 둘에게 그대로 요청이 걸리고,
           # 스스로 리뷰하는 것도 막히지 않는다. 빠진 것은 자동 요청뿐이다.
@@ -69,26 +74,35 @@ jobs:
           current=$(gh api "repos/$REPO/pulls/$PR_NUMBER" \
             --jq '[.requested_reviewers[].login] | join(" ")')
 
+          # 담당자는 리뷰어가 아니다. 어사인이 있으면 어사인, 없으면 작성자. 로그인은
+          # 대소문자를 가리지 않으므로 낮춰 비교한다.
+          owners_lc=$(printf '%s' "${ASSIGNEES:-$AUTHOR}" | tr '[:upper:]' '[:lower:]')
+          current_lc=$(printf '%s' "$current" | tr '[:upper:]' '[:lower:]')
+
           targets=""
           for u in $TEAM; do
-            [ "$u" != "$AUTHOR" ] || continue
-            case " $current " in
-              *" $u "*) continue ;;
+            u_lc=$(printf '%s' "$u" | tr '[:upper:]' '[:lower:]')
+            case " $owners_lc " in
+              *" $u_lc "*) continue ;;
+            esac
+            case " $current_lc " in
+              *" $u_lc "*) continue ;;
             esac
             targets="${targets:+$targets,}$u"
           done
 
           if [ -z "$targets" ]; then
-            echo "추가할 리뷰어 없음 (이미 요청됨 또는 작성자뿐)"
+            echo "추가할 리뷰어 없음 (이미 요청됨 또는 담당자뿐)"
             exit 0
           fi
 
           echo "리뷰 요청: $targets"
           gh pr edit "$PR_NUMBER" --repo "$REPO" --add-reviewer "$targets"
 
-  # 변경요청 뒤 반영 커밋이 올라오거나 작성자가 PR 본문을 고치면 그 리뷰어에게
+  # 변경요청 뒤 반영 커밋이 올라오거나 담당자가 PR 본문을 고치면 그 리뷰어에게
   # 다시 요청을 건다(#1450, #1700). `edited` 전체를 받되 제목 수정·관리자 대리 수정은
-  # 작성자 조치가 아니므로 body 변경과 sender=author 를 함께 요구한다.
+  # 담당자 조치가 아니므로 body 변경과 sender=담당자 를 함께 요구한다. 담당자는
+  # 어사인이고, 어사인이 비어 있으면 작성자다(#1974).
   #
   # 판정 기준은 review-debt-guard 와 같아야 한다 — 여기서 거는 요청이 곧 그쪽의
   # 빚 성립 조건이므로, 한쪽만 «PR 전체의 최신 판정» 을 보면 자동 재요청이 빚으로
@@ -102,7 +116,13 @@ jobs:
         (
           github.event.action == 'edited' &&
           github.event.changes.body != null &&
-          github.event.sender.login == github.event.pull_request.user.login
+          (
+            contains(github.event.pull_request.assignees.*.login, github.event.sender.login) ||
+            (
+              github.event.pull_request.assignees[0] == null &&
+              github.event.sender.login == github.event.pull_request.user.login
+            )
+          )
         )
       )
     runs-on: ubuntu-latest
@@ -114,6 +134,7 @@ jobs:
           REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           AUTHOR: ${{ github.event.pull_request.user.login }}
+          ASSIGNEES: ${{ join(github.event.pull_request.assignees.*.login, ' ') }}
           HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
           ACTION: ${{ github.event.action }}
           EVENT_AT: ${{ github.event.pull_request.updated_at }}
@@ -165,20 +186,21 @@ jobs:
           IFS=$'\t' read -r blocked blocked_at <<< "$blocked"
 
           # 자기 자신은 리뷰어가 될 수 없다(422). 작성자가 자기 PR 에 변경요청을 낼
-          # 수는 없지만, 소유권이 옮겨진 PR 에서 그렇게 보일 수 있다.
-          if [ "$blocked" = "$AUTHOR" ]; then
-            echo "변경요청을 낸 사람이 작성자 본인 — 건너뜀"
-            exit 0
-          fi
+          # 수는 없지만, 소유권이 옮겨진 PR 에서 그렇게 보일 수 있다. 담당자(어사인)가
+          # 낸 변경요청도 자기 PR 에 대한 것이라 되살리지 않는다.
+          owners_lc=$(printf '%s' "${ASSIGNEES:-$AUTHOR}" | tr '[:upper:]' '[:lower:]')
+          blocked_lc=$(printf '%s' "$blocked" | tr '[:upper:]' '[:lower:]')
+          case " $owners_lc " in
+            *" $blocked_lc "*) echo "변경요청을 낸 사람이 담당자 본인(@$blocked) — 건너뜀"; exit 0 ;;
+          esac
 
           # 이미 걸려 있으면 다시 걸지 않는다. synchronize 는 force-push 마다 온다.
           current=$(gh api "repos/$REPO/pulls/$PR_NUMBER" \
             --jq '[.requested_reviewers[].login] | join(" ")')
-          blocked_lc=$(printf '%s' "$blocked" | tr '[:upper:]' '[:lower:]')
           current_lc=$(printf '%s' "$current" | tr '[:upper:]' '[:lower:]')
           case " $current_lc " in
             *" $blocked_lc "*) echo "@$blocked 요청이 이미 걸려 있음 — 건너뜀"; exit 0 ;;
           esac
 
-          echo "변경요청($blocked_at) 뒤 작성자 조치($ACTION) — @$blocked 에게 재리뷰 요청"
+          echo "변경요청($blocked_at) 뒤 담당자 조치($ACTION) — @$blocked 에게 재리뷰 요청"
           gh pr edit "$PR_NUMBER" --repo "$REPO" --add-reviewer "$blocked"

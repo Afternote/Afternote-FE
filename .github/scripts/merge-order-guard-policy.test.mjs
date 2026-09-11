@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
@@ -195,7 +195,7 @@ test("closing a blocker refreshes PRs found only through unlinked close keywords
 test("refresh queries every open PR page with the same repository-aware closing data", () => {
     assert.match(guard, /gh api graphql --paginate --slurp/);
     assert.match(guard, /pullRequests\(states:OPEN,first:100,after:\$endCursor\)/);
-    assert.match(guard, /nodes\{number title body closingIssuesReferences/);
+    assert.match(guard, /nodes\{number headRefOid title body closingIssuesReferences/);
     assert.match(guard, /pageInfo\{hasNextPage endCursor\}/);
 });
 
@@ -231,7 +231,7 @@ test("merge-group guard queries complete native-stack membership and fails close
 });
 
 test("ordinary PR guard stays non-stale while merge queue performs the live verdict", () => {
-    assert.match(guard, /^\s{4}types: \[opened, reopened, synchronize, edited\]$/m);
+    assert.match(guard, /^\s{2}pull_request_target:\n\s{4}types: \[opened, reopened, synchronize, edited\]$/m);
     assert.doesNotMatch(guard, /statuses: write/);
     const start = guard.indexOf('if [ "$EVENT_NAME" = "merge_group" ]');
     const end = guard.indexOf("          # GitHub 가 close keyword", start);
@@ -380,11 +380,20 @@ test("merge queue still fails on an open issue blocker", () => {
     assert.equal(result.status, 1, result.stderr);
 });
 
-test("blocker changes dispatch current default-branch policy instead of rerunning old workflow code", () => {
+test("blocker changes rerun the trusted pull_request_target run and dispatch only when none exists (#1983)", () => {
+    // #1955 는 rerun 이 PR 사본의 옛 워크플로 코드를 돌린다는 이유로 dispatch 재게시로 바꿨다.
+    // #1977 뒤 PR HEAD 의 run 은 base YAML·default-branch 스크립트로 도는 run 이라 재실행이 곧
+    // 최신 판정이고, check-run 재게시가 임의 suite 에 얹혀 무관한 워크플로 이름 아래 guard 가
+    // 또 뜨는 일을 피한다. rerun 대상은 pull_request_target run 으로만 좁힌다.
+    assert.match(guard, /gh run list --workflow merge-order-guard.yml --event pull_request_target \\\n\s+--commit "\$sha" --status completed --limit 1/);
+    assert.match(guard, /\[ -n "\$run_id" \] && gh run rerun "\$run_id"/);
+    assert.doesNotMatch(guard, /gh run list --workflow merge-order-guard.yml --branch/);
     assert.match(guard, /gh workflow run merge-order-guard.yml --ref "\$DEFAULT_BRANCH" -f pull_request_number="\$pr"/);
-    assert.doesNotMatch(guard, /gh run rerun/);
     assert.match(guard, /github.ref_name == github.event.repository.default_branch/);
     assert.match(guard, /needs.guard.outputs.target_sha/);
+    // HEAD SHA 는 이미 받은 GraphQL 페이지에서 읽는다 — PR 마다 REST 왕복을 더하지 않는다 (#1465).
+    assert.match(guard, /nodes\{number headRefOid title body closingIssuesReferences/);
+    assert.doesNotMatch(guard.slice(guard.indexOf("dispatch_failed=0")), /gh pr view/);
 });
 
 test("dispatch publication refuses changed or closed HEAD and publishes failure on the captured HEAD", () => {
@@ -420,26 +429,76 @@ test("dispatch publication refuses changed or closed HEAD and publishes failure 
 });
 
 
-test("one failed refresh dispatch does not prevent the remaining PRs from refreshing", () => {
+function runRefreshLoop(ghMock, prs) {
     const start = guard.indexOf("          dispatch_failed=0");
     assert.ok(start >= 0);
     const script = guard.slice(start).split("\n").map((line) => line.slice(10)).join("\n");
-    const result = spawnSync("bash", ["-c", `set -euo pipefail
-heads="101 102"
+    const directory = mkdtempSync(join(tmpdir(), "merge-order-refresh-loop-"));
+    const prsFile = join(directory, "open-prs.json");
+    writeFileSync(prsFile, JSON.stringify([{ data: { repository: { pullRequests: { nodes: prs } } } }]));
+    try {
+        return spawnSync("bash", ["-c", `set -euo pipefail
+heads="${prs.map((pr) => pr.number).join(" ")}"
 DEFAULT_BRANCH=develop
-gh() { echo "$*"; [[ "$*" != *pull_request_number=101* ]]; }
+prs_file="${prsFile}"
+${ghMock}
 ` + script], { encoding: "utf8" });
+    } finally {
+        rmSync(directory, { recursive: true, force: true });
+    }
+}
+
+test("one failed refresh dispatch does not prevent the remaining PRs from refreshing", () => {
+    const result = runRefreshLoop(`gh() {
+  [ "$1 $2" != "run list" ] || return 0
+  echo "$*"; [[ "$*" != *pull_request_number=101* ]]; }`,
+    [{ number: 101, headRefOid: "aaa" }, { number: 102, headRefOid: "bbb" }]);
     assert.equal(result.status, 1, result.stderr);
     assert.match(result.stdout, /pull_request_number=101/);
     assert.match(result.stdout, /pull_request_number=102/);
 });
 
-test("old PR workflows trigger a trusted default-branch refresh without dispatch loops or PR checkout", async () => {
-    const refresh = await readFile(new URL("../workflows/refresh-merge-order-policy.yml", import.meta.url), "utf8");
-    assert.match(refresh, /workflow_run:\n\s+workflows: \[merge-order-guard\]\n\s+types: \[completed\]/);
-    assert.match(refresh, /github.event.workflow_run.event == 'pull_request'/);
-    assert.match(refresh, /^permissions: \{\}$/m);
-    assert.match(refresh, /select\(\.headRefOid == \$sha\)/);
-    assert.match(refresh, /gh workflow run merge-order-guard.yml --ref "\$DEFAULT_BRANCH"/);
-    assert.doesNotMatch(refresh, /uses:.*checkout|checks: write|contents: write|pull_request_target/);
+test("refresh reruns the existing pull_request_target run in place instead of publishing a new check-run", () => {
+    const result = runRefreshLoop(`gh() {
+  case "$1 $2" in
+    "run list") [[ "$*" == *"--event pull_request_target"* && "$*" == *"--commit aaa"* ]] && echo 555; return 0 ;;
+    "run rerun") echo "rerun $3"; return 0 ;;
+    *) echo "$*"; return 0 ;;
+  esac }`,
+    [{ number: 101, headRefOid: "aaa" }]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /^rerun 555$/m);
+    assert.doesNotMatch(result.stdout, /workflow run/);
+});
+
+test("refresh falls back to dispatch when no pull_request_target run exists or the rerun is refused", () => {
+    const result = runRefreshLoop(`gh() {
+  case "$1 $2" in
+    "run list") [[ "$*" == *"--commit aaa"* ]] && echo 555; return 0 ;;
+    "run rerun") echo "rerun refused" >&2; return 1 ;;
+    *) echo "$*"; return 0 ;;
+  esac }`,
+    [{ number: 101, headRefOid: "aaa" }, { number: 102, headRefOid: "bbb" }, { number: 103 }]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /pull_request_number=101/);
+    assert.match(result.stdout, /pull_request_number=102/);
+    assert.match(result.stdout, /pull_request_number=103/);
+});
+
+test("PR HEAD guard runs default-branch policy once, so no second verdict is republished (#1977)", () => {
+    // pull_request 로 돌면 PR 사본 YAML 이 판정해 낡은 브랜치는 옛 정책이고 PR 이 가드를 고칠 수
+    // 있다. 종전 처방(inline 종료 → 최신 정책 dispatch → check-run 재게시)은 GITHUB_TOKEN 의
+    // check-run 이 임의 suite 에 얹혀 무관한 워크플로 이름 아래 guard 가 두 줄로 떴다.
+    assert.doesNotMatch(guard, /^\s{2}pull_request:$/m);
+    assert.doesNotMatch(guard, /github\.event_name == 'pull_request'/);
+    assert.match(guard, /github\.event_name == 'pull_request_target'/);
+    assert.doesNotMatch(guard, /github\.event\.pull_request\.head\.(sha|ref)/);
+    assert.doesNotMatch(guard, /actions\/checkout[\s\S]*?ref: \$\{\{ github\.event\.pull_request/);
+    assert.match(guard, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
+    assert.ok(
+        !existsSync(new URL("../workflows/refresh-merge-order-policy.yml", import.meta.url)),
+        "inline 종료 뒤 최신 정책을 다시 dispatch 하는 refresh 워크플로는 pull_request_target 이 대체했다",
+    );
+    // dispatch 재게시는 이벤트가 나지 않는 SHA(토큰 커밋·선행 이슈 닫힘) 전용으로만 남는다.
+    assert.match(guard, /github\.event_name == 'workflow_dispatch' &&\n\s+github\.ref_name == github\.event\.repository\.default_branch/);
 });

@@ -266,6 +266,22 @@ class AfternoteEditorServerMediaDeleteSaveTest {
             assertNull(memorial.songs)
         }
 
+    @Test
+    fun `발행분 편집의 임시저장은 isDraft 를 싣지 않아 발행분을 강등하지 않는다`() =
+        runTest(dispatcher) {
+            val repository = FakeAfternoteRepository(initialDetails = mapOf(AFTERNOTE_ID to serverMemorialDetail()))
+            val viewModel = viewModel(repository, isDraft = false)
+            collectState(viewModel)
+            applyLoadedPrefill(viewModel)
+
+            viewModel.saveCurrentMemorialForm(asDraft = true)
+            advanceUntilIdle()
+
+            val payload = repository.updateCalls.single().second
+            assertNull(payload.isDraft)
+            assertEquals(AFTERNOTE_ID, viewModel.uiState.value.savedId)
+        }
+
     private fun serverMemorialDraft(): DraftDetail {
         val detail = serverMemorialDetail()
         val content = detail.content as DetailContent.Memorial
