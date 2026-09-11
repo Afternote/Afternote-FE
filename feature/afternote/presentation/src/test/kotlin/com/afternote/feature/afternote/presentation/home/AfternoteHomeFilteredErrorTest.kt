@@ -2,6 +2,7 @@ package com.afternote.feature.afternote.presentation.home
 
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -121,6 +122,7 @@ class AfternoteHomeFilteredErrorTest {
                     selectedType = AfternoteType.BUSINESS,
                     onTypeSelected = {},
                     onRetry = {},
+                    filterRowScrollState = rememberScrollState(),
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -150,6 +152,7 @@ class AfternoteHomeFilteredErrorTest {
             selectedType = AfternoteType.BUSINESS,
             onTypeSelected = onTypeSelected,
             onRetry = onRetry,
+            filterRowScrollState = rememberScrollState(),
             modifier = Modifier.fillMaxSize(),
         )
     }
