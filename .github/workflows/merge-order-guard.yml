@@ -27,7 +27,10 @@ on:
   issues:
     types: [closed, reopened]
   # GITHUB_TOKEN 이 만든 baseline/stack merge commit 은 pull_request_target 도 내지 않으므로,
-  # 그 SHA 와 선행 이슈가 닫힌 뒤의 PR HEAD 에는 dispatch 결과를 check-run 으로 붙인다.
+  # 그 SHA 에는 dispatch 결과를 check-run 으로 붙인다. 선행 이슈가 닫힌 뒤의 PR HEAD 는 이미
+  # pull_request_target run 이 있으니 refresh 가 그 run 을 재실행하고, run 이 없을 때만 여기로
+  # 내려온다 (#1983). PR HEAD 에 check-run 을 새로 만들면 임의 suite 에 얹혀 무관한 워크플로
+  # 이름 아래 «guard» 가 또 뜬다.
   workflow_dispatch:
     inputs:
       pull_request_number:
@@ -304,7 +307,7 @@ jobs:
   refresh:
     if: github.event_name == 'issues'
     permissions:
-      actions: write # 최신 default-branch 정책을 workflow_dispatch로 실행
+      actions: write # 기존 pull_request_target run 재실행, 없으면 workflow_dispatch
       issues: read
       pull-requests: read
     runs-on: ubuntu-latest
@@ -335,7 +338,7 @@ jobs:
           # 닫힐 때 같은 parser로 열린 PR을 다시 찾아야, 그 PR의 stale red check가 갱신된다.
           prs_file="$RUNNER_TEMP/merge-order-open-prs.json"
           gh api graphql --paginate --slurp \
-            -f query='query($owner:String!,$repo:String!,$endCursor:String){repository(owner:$owner,name:$repo){pullRequests(states:OPEN,first:100,after:$endCursor){nodes{number title body closingIssuesReferences(first:20){nodes{number repository{nameWithOwner}}}} pageInfo{hasNextPage endCursor}}}}' \
+            -f query='query($owner:String!,$repo:String!,$endCursor:String){repository(owner:$owner,name:$repo){pullRequests(states:OPEN,first:100,after:$endCursor){nodes{number headRefOid title body closingIssuesReferences(first:20){nodes{number repository{nameWithOwner}}}} pageInfo{hasNextPage endCursor}}}}' \
             -f owner="$owner" -f repo="$repo" > "$prs_file"
           heads=$(
             BLOCKED="$blocked" PRS_FILE="$prs_file" node <<'NODE'
@@ -377,8 +380,27 @@ jobs:
             exit 0
           fi
 
+          # PR HEAD 에는 pull_request_target 으로 돈 guard run 이 이미 있다. 그 run 은 base 의
+          # YAML 과 default branch 의 스크립트로 돌았고, 재실행도 스크립트를 default branch 에서
+          # 다시 받으므로 같은 suite 안의 guard 가 제자리에서 갱신된다. dispatch 결과를 check-run
+          # 으로 새로 붙이면 임의 suite 에 얹혀 무관한 워크플로 이름 아래 guard 가 또 뜬다 (#1983).
+          # run 이 없거나(토큰 커밋) 재실행이 거절되면(진행 중·보존 기간 초과) dispatch 로 내려간다.
+          # HEAD SHA 는 위 GraphQL 결과에서 읽는다 — PR 마다 REST 를 또 부르면 한도를 태운다 (#1465).
           dispatch_failed=0
           for pr in $heads; do
+            sha=$(jq -r --argjson n "$pr" \
+              '[.[].data.repository.pullRequests.nodes[] | select(.number == $n) | .headRefOid][0] // empty' \
+              "$prs_file")
+            run_id=""
+            if [ -n "$sha" ]; then
+              run_id=$(gh run list --workflow merge-order-guard.yml --event pull_request_target \
+                --commit "$sha" --status completed --limit 1 --json databaseId \
+                --jq '.[0].databaseId // empty' || true)
+            fi
+            if [ -n "$run_id" ] && gh run rerun "$run_id"; then
+              echo "PR #$pr: pull_request_target run $run_id 재실행 — 같은 suite 안에서 guard 갱신"
+              continue
+            fi
             if ! gh workflow run merge-order-guard.yml --ref "$DEFAULT_BRANCH" -f pull_request_number="$pr"; then
               echo "::error::PR #$pr 최신 가드 dispatch 실패"
               dispatch_failed=1
