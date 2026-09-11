@@ -229,6 +229,7 @@
     <!-- 링크 입력 검증 (#722) -->
     <!-- 작성 검증 안내 (#722) -->
     <string name="mindrecord_write_diary_missing_title">제목을 입력해 주세요.</string>
+    <string name="mindrecord_write_diary_missing_draft_content">제목이나 내용 중 하나는 적어 주세요.</string>
     <string name="mindrecord_write_diary_missing_content">본문을 입력해 주세요.</string>
     <string name="mindrecord_write_diary_missing_mood">오늘의 기분을 골라 주세요.</string>
     <string name="mindrecord_write_draft_empty">임시저장할 내용이 없어요.</string>
