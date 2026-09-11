@@ -22,7 +22,8 @@ test("경로가 모듈 키로 갈린다 — feature·core·platform·소유자 �
     assert.equal(moduleKeyOf("feature/mindrecord/presentation/src/main/kotlin/A.kt"), "mindrecord");
     assert.equal(moduleKeyOf("feature/home/presentation/src/main/kotlin/receiver/ReceiverHomeScreen.kt"), "home");
     assert.equal(moduleKeyOf("core/ui/src/main/kotlin/Scaffold.kt"), "core");
-    assert.equal(moduleKeyOf("app/src/main/AndroidManifest.xml"), "platform");
+    assert.equal(moduleKeyOf("app/src/main/AndroidManifest.xml"), "app");
+    assert.equal(moduleKeyOf("build-logic/src/main/kotlin/VersionCode.kt"), "platform");
     assert.equal(moduleKeyOf(".github/workflows/lint.yml"), "platform");
     assert.equal(moduleKeyOf("settings.gradle.kts"), "platform");
     assert.equal(moduleKeyOf("docs/qa/assumptions.md"), null);
@@ -62,11 +63,11 @@ test("남의 모듈 프로덕션 파일이 섞이면 모듈·담당자와 함께
     });
     assert.deepEqual(violations, [
         { path: "core/ui/src/main/kotlin/Theme.kt", module: "core", owner: ASSIGNEE_BY_MODULE.core },
-        { path: "app/src/main/res/values/themes.xml", module: "platform", owner: ASSIGNEE_BY_MODULE.platform },
+        { path: "app/src/main/res/values/themes.xml", module: "app", owner: ASSIGNEE_BY_MODULE.app },
     ]);
     const message = formatViolations(pr("Sadturtleman"), violations);
     assert.match(message, /core\(담당 @1hyok\) 1건/);
-    assert.match(message, /platform\(담당 @1hyok\) 1건/);
+    assert.match(message, /app\(담당 @1hyok\) 1건/);
     assert.match(message, /issue-assignee-exempt/);
 });
 
