@@ -6,6 +6,7 @@ import com.afternote.feature.home.presentation.receiver.model.FailedWithRetry
 import com.afternote.feature.home.presentation.receiver.model.ReceiverDownloadErrorPopup
 import com.afternote.feature.home.presentation.receiver.model.ReceiverDownloadState
 import com.afternote.feature.home.presentation.receiver.model.ReceiverHomeUiState
+import com.afternote.feature.home.presentation.usecase.GetReceiverHomeSummaryUseCase
 import com.afternote.feature.mindrecord.domain.model.MindRecordType
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.testing.FakeMindRecordReceiverRepository
@@ -460,9 +461,13 @@ private class Fixture {
 
     fun viewModel(): ReceiverHomeViewModel =
         ReceiverHomeViewModel(
+            getReceiverHomeSummary =
+                GetReceiverHomeSummaryUseCase(
+                    receiverRepository = receiver,
+                    mindRecordReceiverRepository = mindRecord,
+                    receiverTimeLetterRepository = timeLetter,
+                ),
             receiverRepository = receiver,
-            mindRecordReceiverRepository = mindRecord,
-            receiverTimeLetterRepository = timeLetter,
             errorReporter = reporter,
         )
 }
