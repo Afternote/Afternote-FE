@@ -260,10 +260,10 @@ private fun SettingScreenContent(
             }
         }
 
-        is SettingProfileState.Error -> {
+        SettingProfileState.Error -> {
             Column(modifier = modifier.fillMaxSize()) {
                 SettingLoadErrorContent(
-                    message = state.message,
+                    message = stringResource(R.string.setting_profile_load_error),
                     onRetry = onRetry,
                     modifier = Modifier.weight(1f),
                 )
