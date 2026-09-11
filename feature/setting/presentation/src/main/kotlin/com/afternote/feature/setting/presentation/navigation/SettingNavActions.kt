@@ -44,4 +44,6 @@ internal interface SettingNavActions {
     fun onNavigateToInquiryDetail(inquiryId: Long)
 
     fun onNavigateToInquiryWrite()
+
+    fun onNavigateToFaq()
 }

@@ -15,6 +15,7 @@ import com.afternote.feature.setting.presentation.component.PinSetupStep
 import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
 import com.afternote.feature.setting.presentation.screen.ConnectedAccountsScreen
 import com.afternote.feature.setting.presentation.screen.DeliveryConditionScreen
+import com.afternote.feature.setting.presentation.screen.FaqScreen
 import com.afternote.feature.setting.presentation.screen.InquiryDetailScreen
 import com.afternote.feature.setting.presentation.screen.InquiryListScreen
 import com.afternote.feature.setting.presentation.screen.InquiryWriteScreen
@@ -85,7 +86,7 @@ public fun SettingNavHost(
                         },
                         onPasskeyClick = actions::onNavigateToPasskey,
                         onAppLockClick = actions::onNavigateToAppLock,
-                        onFaqClick = {},
+                        onFaqClick = actions::onNavigateToFaq,
                         onInquiryClick = actions::onNavigateToInquiry,
                         onNoticeClick = actions::onNavigateToNotice,
                         onTermsClick = {},
@@ -254,6 +255,10 @@ public fun SettingNavHost(
 
                 entry<SettingRoute.InquiryWriteRoute> {
                     InquiryWriteScreen(onBackClick = actions::popBack)
+                }
+
+                entry<SettingRoute.FaqRoute> {
+                    FaqScreen(onBackClick = actions::popBack)
                 }
             },
     )

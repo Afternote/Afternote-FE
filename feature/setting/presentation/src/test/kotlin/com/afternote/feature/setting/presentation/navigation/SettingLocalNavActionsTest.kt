@@ -104,6 +104,14 @@ class SettingLocalNavActionsTest {
     }
 
     @Test
+    fun `faq returns to the screen that opened it`() {
+        actions.onNavigateToFaq()
+        assertEquals(SettingRoute.FaqRoute, stack.last())
+        actions.popBack()
+        assertEquals(listOf(SettingRoute.SettingHomeRoute), stack.toList())
+    }
+
+    @Test
     fun `all destination keys and route arguments survive serialization`() {
         val routes =
             listOf(
@@ -126,6 +134,7 @@ class SettingLocalNavActionsTest {
                 SettingRoute.InquiryListRoute,
                 SettingRoute.InquiryDetailRoute(51L),
                 SettingRoute.InquiryWriteRoute,
+                SettingRoute.FaqRoute,
             )
         assertEquals(routes, Json.decodeFromString<List<SettingRoute>>(Json.encodeToString(routes)))
     }

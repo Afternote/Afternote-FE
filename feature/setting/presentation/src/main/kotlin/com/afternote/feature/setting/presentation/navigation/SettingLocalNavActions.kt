@@ -93,4 +93,8 @@ internal class SettingLocalNavActions(
     override fun onNavigateToInquiryWrite() {
         backStack.add(SettingRoute.InquiryWriteRoute)
     }
+
+    override fun onNavigateToFaq() {
+        backStack.add(SettingRoute.FaqRoute)
+    }
 }

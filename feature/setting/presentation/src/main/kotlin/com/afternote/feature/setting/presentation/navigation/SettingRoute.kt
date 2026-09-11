@@ -59,6 +59,9 @@ internal sealed interface SettingRoute : NavKey {
     data object NoticeRoute : SettingRoute
 
     @Serializable
+    data object FaqRoute : SettingRoute
+
+    @Serializable
     data object InquiryListRoute : SettingRoute
 
     @Serializable

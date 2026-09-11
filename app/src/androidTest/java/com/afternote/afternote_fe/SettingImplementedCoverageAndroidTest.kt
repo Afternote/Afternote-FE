@@ -13,6 +13,7 @@ import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -172,6 +173,27 @@ class SettingImplementedCoverageAndroidTest {
         waitForText("김수신")
         composeRule.onAllNodes(checkboxMatcher).assertCountEquals(0)
         waitForRootHost()
+    }
+
+    @Test
+    fun actualSettingNavHost_faqRowNavigatesToFaqScreenAndBackReturnsHome() {
+        waitForSettingHomeContent()
+        composeRule
+            .onNode(hasScrollAction())
+            .performScrollToNode(hasText("FAQ"))
+        composeRule
+            .onNodeWithText("FAQ")
+            .performClick()
+
+        waitForText("비밀번호를 잊어버렸어요.")
+        composeRule
+            .onNodeWithText("비밀번호를 잊어버렸어요.")
+            .assertIsDisplayed()
+
+        composeRule
+            .onNodeWithContentDescription("뒤로가기")
+            .performClick()
+        waitForSettingHomeContent()
     }
 
     private fun openWithdrawGuide() {
