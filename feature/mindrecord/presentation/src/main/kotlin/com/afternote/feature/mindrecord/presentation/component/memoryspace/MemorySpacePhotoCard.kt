@@ -50,7 +50,7 @@ import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryRec
 import com.afternote.core.ui.R as CoreUiR
 
 @Composable
-fun MemorySpacePhotoCard(
+internal fun MemorySpacePhotoCard(
     memory: MemoryItem,
     transform: CardTransform,
     onClick: () -> Unit,

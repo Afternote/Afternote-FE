@@ -43,7 +43,7 @@ import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryRec
 import com.afternote.feature.mindrecord.presentation.util.htmlToPlainText
 
 @Composable
-fun MemoryDetailOverlay(
+internal fun MemoryDetailOverlay(
     memory: MemoryItem,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,

@@ -10,7 +10,7 @@ package com.afternote.feature.mindrecord.presentation.model.memoryspace
  * @param imageUrl 기록에 첨부된 대표 이미지. 없는 기록도 있어 nullable — 카드는 플레이스홀더로 렌더한다.
  * @param content 원본 HTML 본문. 표시 시점에 `htmlToPlainText()` 로 변환한다.
  */
-data class MemoryItem(
+internal data class MemoryItem(
     val id: MemoryRecordId,
     val imageUrl: String?,
     val title: String,

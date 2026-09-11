@@ -28,12 +28,12 @@ import javax.inject.Inject
 @HiltViewModel
 class MemorySpaceViewModel
     @Inject
-    constructor(
+    internal constructor(
         private val getMemorySpace: GetMemorySpaceUseCase,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
-        private val _uiState = MutableStateFlow<MemorySpaceUiState>(MemorySpaceUiState.Loading)
-        val uiState: StateFlow<MemorySpaceUiState> = _uiState.asStateFlow()
+        private val mutableUiState = MutableStateFlow<MemorySpaceUiState>(MemorySpaceUiState.Loading)
+        internal val uiState: StateFlow<MemorySpaceUiState> = mutableUiState.asStateFlow()
 
         init {
             load()
@@ -43,18 +43,18 @@ class MemorySpaceViewModel
 
         private fun load() {
             viewModelScope.launch {
-                _uiState.value = MemorySpaceUiState.Loading
+                mutableUiState.value = MemorySpaceUiState.Loading
                 getMemorySpace
                     .invoke()
                     .onSuccess { records ->
-                        _uiState.value = MemorySpaceUiState.Success(records.map { it.toCard() })
+                        mutableUiState.value = MemorySpaceUiState.Success(records.map { it.toCard() })
                     }.onFailure { throwable ->
                         // 부분 실패는 UseCase 가 삼키므로, 여기 오는 것은 **합친 결과가 비었고
                         // 실패 출처가 하나라도 있을 때**다 — 화면이 통째로 비는 자리라 승격
                         // 가치가 높다. 출처는 넷이다: 일기 최근 3개월이 달마다 하나씩,
                         // 데일리질문이 하나 (#964 리뷰).
                         errorReporter.recordMindRecordFailure(MindRecordFailureStage.MEMORY_SPACE_LOAD, throwable)
-                        _uiState.value = MemorySpaceUiState.Error(R.string.mindrecord_error_memory_space_failed)
+                        mutableUiState.value = MemorySpaceUiState.Error(R.string.mindrecord_error_memory_space_failed)
                     }
             }
         }

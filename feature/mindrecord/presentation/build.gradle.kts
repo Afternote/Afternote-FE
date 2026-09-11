@@ -15,6 +15,10 @@ android {
 
     // 스크롤이 없는 화면은 세로가 모자라면 그대로 잘린다 — 좁은 화면 회귀를 CI 가 잡게 한다 (#1131).
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
+
+    // 추억 공간 ViewModel 조립을 계약 옆에 둔다 — 집계 UseCase·카드 모델을 모듈 밖으로 열지
+    // 않고도 app 계측 테스트가 저장소 fake 로 조립할 수 있어야 한다 (#1693).
+    testFixtures.enable = true
 }
 
 // 쓰는 건 BasicRichTextEditor(foundation 계열)뿐인데, richeditor 가 딸려 보내는 Compose Multiplatform
@@ -38,6 +42,14 @@ dependencies {
     // 첨부 이미지의 EXIF Orientation 을 읽어 본문 표시 크기를 세운다 (#731 리뷰).
     implementation(libs.androidx.exifinterface)
     implementation(libs.compose.rich.editor)
+
+    // Compose 컴파일러가 testFixtures 소스셋에도 걸려 런타임을 요구한다 — BOM 은 convention 이
+    // 이 구성에 안 걸어 줘서 직접 얹는다 (core:ui 의 testFixtures 전례).
+    testFixturesImplementation(platform(libs.androidx.compose.bom))
+    testFixturesImplementation(libs.androidx.compose.runtime)
+    testFixturesImplementation(projects.core.common)
+    testFixturesImplementation(projects.feature.mindrecord.domain)
+    testFixturesImplementation(libs.androidx.lifecycle.viewmodel.ktx)
 
     testImplementation(libs.coroutines.test)
     testImplementation(testFixtures(projects.core.domain))

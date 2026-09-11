@@ -29,7 +29,7 @@ import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryIte
 import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryRecordId
 
 @Composable
-fun MemorySpaceCardField(
+internal fun MemorySpaceCardField(
     memories: List<MemoryItem>,
     onMemoryClick: (MemoryRecordId) -> Unit,
     modifier: Modifier = Modifier,

@@ -18,6 +18,7 @@ import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -62,7 +63,6 @@ import com.afternote.feature.mindrecord.presentation.screen.sender.DiaryWriteScr
 import com.afternote.feature.mindrecord.presentation.screen.sender.DraftListScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.WeeklyReportScreen
 import com.afternote.feature.mindrecord.presentation.usecase.DeleteMindRecordDraftsUseCase
-import com.afternote.feature.mindrecord.presentation.usecase.GetMemorySpaceUseCase
 import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import com.afternote.feature.mindrecord.presentation.usecase.ObserveWeeklyReportUseCase
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListUiState
@@ -70,11 +70,10 @@ import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionList
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftListViewModel
-import com.afternote.feature.mindrecord.presentation.viewmodel.MemorySpaceUiState
-import com.afternote.feature.mindrecord.presentation.viewmodel.MemorySpaceViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.SubmitState
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportViewModel
+import com.afternote.feature.mindrecord.presentation.viewmodel.testing.memorySpaceViewModel
 import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlock
@@ -647,8 +646,9 @@ class TimeLetterMindRecordCompletionAndroidTest {
                 },
             )
         val viewModel =
-            MemorySpaceViewModel(
-                getMemorySpace = GetMemorySpaceUseCase(diaryRepository, FakeDailyQuestionRepository()),
+            memorySpaceViewModel(
+                diaryRepository = diaryRepository,
+                dailyQuestionRepository = FakeDailyQuestionRepository(),
                 errorReporter = FakeErrorReporter(),
             )
         var backCalls = 0
@@ -663,8 +663,10 @@ class TimeLetterMindRecordCompletionAndroidTest {
         }
 
         composeRule.onNodeWithText("MEMORY SPACE").assertIsDisplayed()
+        // 로드 완료는 카드가 실제로 붙었는지로 기다린다 — 상태 객체는 모듈 안의 계약이고,
+        // 이 테스트가 확인하려는 것도 화면에 도달한 카드다 (#1693).
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
-            viewModel.uiState.value is MemorySpaceUiState.Success
+            composeRule.onAllNodesWithContentDescription("추억이 된 하루").fetchSemanticsNodes().isNotEmpty()
         }
         composeRule.onNodeWithContentDescription("추억이 된 하루").performClick()
         composeRule

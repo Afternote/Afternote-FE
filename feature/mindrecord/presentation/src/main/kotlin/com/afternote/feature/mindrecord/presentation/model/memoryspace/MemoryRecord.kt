@@ -9,7 +9,7 @@ import java.time.LocalDate
  * 표시용 문자열이 아니라 [date] 를 `LocalDate` 로 든다. 정렬 키가 필요해서다 —
  * "2026.08.23" 같은 표시 문자열로는 두 출처를 섞어 최신순으로 세울 수 없다.
  */
-data class MemoryRecord(
+internal data class MemoryRecord(
     val id: MemoryRecordId,
     val date: LocalDate,
     val title: String,
@@ -29,7 +29,7 @@ data class MemoryRecord(
  *
  * 종류를 값으로 들면 그 우회가 사라진다 — 같은 숫자가 와도 [type] 이 다르면 다른 기록이다.
  */
-data class MemoryRecordId(
+internal data class MemoryRecordId(
     val type: MindRecordType,
     val value: Long,
 )

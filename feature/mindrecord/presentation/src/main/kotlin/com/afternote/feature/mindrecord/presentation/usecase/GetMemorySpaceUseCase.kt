@@ -32,8 +32,12 @@ import javax.inject.Inject
  *    내려주므로 클라가 거른다. 데일리질문은 생략 시 서버가 제출 완료만 주므로 필요 없다.
  *    두 API 의 기본값이 다르다.
  * 4. **정렬·상한** — 두 출처를 최신순 한 줄로 세워 [limit] 장까지 남긴다.
+ *
+ * 이 집계를 소비하는 프로덕션 코드는 같은 모듈의 [MemorySpaceViewModel] 뿐이라 `internal`
+ * 이다 (docs/convention/production-visibility.md). 모듈 밖 계측 조립은 `src/testFixtures`
+ * 의 `memorySpaceViewModel` 로 간다.
  */
-class GetMemorySpaceUseCase
+internal class GetMemorySpaceUseCase
     @Inject
     constructor(
         private val diaryRepository: DiaryRepository,
@@ -115,10 +119,10 @@ class GetMemorySpaceUseCase
             )
         }
 
-        companion object {
+        private companion object {
             /** 카드 배치(`MemorySpaceCardField`)가 4장까지만 자리를 잡는다. */
             const val MEMORY_CARD_LIMIT = 4
 
-            private const val DIARY_MONTH_WINDOW = 3
+            const val DIARY_MONTH_WINDOW = 3
         }
     }

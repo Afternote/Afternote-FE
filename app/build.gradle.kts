@@ -310,6 +310,8 @@ dependencies {
     androidTestImplementation(projects.feature.timeletter.domain)
     androidTestImplementation(testFixtures(projects.feature.timeletter.domain))
     androidTestImplementation(testFixtures(projects.feature.timeletter.data))
+    // 추억 공간 집계는 mindrecord 모듈 안의 계약이라 조립만 fixture 로 받는다 (#1693).
+    androidTestImplementation(testFixtures(projects.feature.mindrecord.presentation))
     kspAndroidTest(libs.hilt.compiler)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     androidTestUtil(libs.androidx.test.orchestrator)
