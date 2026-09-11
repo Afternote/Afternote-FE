@@ -237,7 +237,11 @@ internal fun InquiryWriteScreen(
     var type by rememberSaveable { mutableStateOf(inquiryTypes.first()) }
     val title = rememberTextFieldState()
     var content by rememberSaveable { mutableStateOf("") }
-    var attachments by rememberSaveable { mutableStateOf(arrayListOf<String>()) }
+    // 첨부는 일부러 remember 다. 사진 선택기가 준 URI 의 읽기 권한은 프로세스 수명까지라
+    // 프로세스 사망 뒤 복원한 URI 는 AsyncImage 가 조용히 못 읽는다. 저장소의 다른 선택기
+    // 4곳도 고른 URI 를 rememberSaveable 로 들지 않으며, 접수 API 가 아직 없어 초안 첨부를
+    // 잃는 비용도 낮다. 구성 변경(회전)에서는 remember 도 유지된다.
+    var attachments by remember { mutableStateOf(listOf<String>()) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val submitNotSupportedMessage = stringResource(R.string.setting_inquiry_submit_not_supported)
@@ -253,7 +257,7 @@ internal fun InquiryWriteScreen(
                     ActivityResultContracts.PickMultipleVisualMedia(MAX_INQUIRY_IMAGES),
                 ) { uris ->
                     val selected = (attachments + uris.map(Uri::toString)).distinct()
-                    attachments = ArrayList(selected.take(MAX_INQUIRY_IMAGES))
+                    attachments = selected.take(MAX_INQUIRY_IMAGES)
                     if (selected.size > MAX_INQUIRY_IMAGES) {
                         coroutineScope.launch { snackbarHostState.showSnackbar(attachmentLimitMessage) }
                     }
@@ -349,7 +353,7 @@ internal fun InquiryWriteScreen(
                                 contentScale = ContentScale.Crop,
                             )
                             IconButton(
-                                onClick = { attachments = ArrayList(attachments.filterNot { it == uri }) },
+                                onClick = { attachments = attachments.filterNot { it == uri } },
                                 modifier = Modifier.align(Alignment.TopEnd),
                             ) {
                                 CloseIcon(
