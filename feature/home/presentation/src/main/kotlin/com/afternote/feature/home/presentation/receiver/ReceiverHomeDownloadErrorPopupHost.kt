@@ -37,7 +37,7 @@ internal fun ReceiverDownloadErrorPopupHost(
             AfternoteErrorPopup(
                 iconRes = CoreUiR.drawable.core_ui_ic_server,
                 title = stringResource(R.string.home_receiver_download_save_error_title),
-                description = stringResource(R.string.home_receiver_download_all_save_failed),
+                description = stringResource(R.string.home_receiver_download_save_error_description),
                 buttonText = stringResource(CoreUiR.string.core_ui_server_error_retry),
                 onButtonClick = onRetry,
                 onDismiss = onDismiss,

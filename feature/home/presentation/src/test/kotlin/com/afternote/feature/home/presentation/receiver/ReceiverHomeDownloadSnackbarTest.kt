@@ -69,7 +69,7 @@ class ReceiverHomeDownloadSnackbarTest {
         setHomeContent(FailedWithRetry(ReceiverDownloadErrorPopup.SAVE))
 
         composeRule.onNodeWithText(string(R.string.home_receiver_download_save_error_title)).assertIsDisplayed()
-        composeRule.onNodeWithText(string(R.string.home_receiver_download_all_save_failed)).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.home_receiver_download_save_error_description)).assertIsDisplayed()
         assertEquals(
             "저장 실패에 업로드 팝업 문구가 뜬다",
             0,
@@ -88,6 +88,24 @@ class ReceiverHomeDownloadSnackbarTest {
         composeRule.onNodeWithText(string(CoreUiR.string.core_ui_server_error_retry)).performClick()
 
         assertEquals(listOf(ReceiverHomeEvent.RetryDownload), events)
+    }
+
+    /**
+     * 재시도 수단이 없는 스낵바 경로가 재시도를 안내하면 안 된다 — 팝업 전용 문구와 리소스를 나눈 이유다.
+     */
+    @Test
+    fun `내보내기 미지원 저장 실패 스낵바는 재시도를 안내하지 않는다`() {
+        setHomeContent(ReceiverDownloadState.Failed(R.string.home_receiver_download_all_save_failed))
+
+        composeRule.onNodeWithText(string(R.string.home_receiver_download_all_save_failed)).assertIsDisplayed()
+        assertEquals(
+            "재시도 수단이 없는 스낵바가 재시도를 안내한다",
+            0,
+            composeRule
+                .onAllNodesWithText(string(R.string.home_receiver_download_save_error_description))
+                .fetchSemanticsNodes()
+                .size,
+        )
     }
 
     /** 재시도해도 같은 실패(#1726)는 팝업이 아니라 종전 안내로 남는다. */
