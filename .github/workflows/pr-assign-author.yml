@@ -1,0 +1,50 @@
+# PR 작성자 자동 어사인
+#
+# 어사인이 비어 있는 PR 은 보드·필터에서 담당자가 사라진다. 이슈는
+# issue-metadata-guard 가 어사인을 강제하는데 PR 은 손에 맡겨져 있었다.
+# PR 이 열리면 작성자를 어사인하고, 누가 떼어 내도 다시 건다.
+# review-request-all 과 같은 조건(봇·외부 기여자 제외)으로 돈다.
+name: pr-assign-author
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, unassigned]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  assign:
+    if: github.event.pull_request.state == 'open'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: 작성자를 어사인
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          ASSOCIATION: ${{ github.event.pull_request.author_association }}
+        run: |
+          set -euo pipefail
+
+          case "$AUTHOR" in
+            *'[bot]'|dependabot|github-actions) echo "봇 PR — 건너뜀"; exit 0 ;;
+          esac
+
+          # 외부 기여자 PR 은 토큰이 read-only 라 어사인할 수 없다.
+          case "$ASSOCIATION" in
+            OWNER|MEMBER|COLLABORATOR) ;;
+            *) echo "외부 기여자($ASSOCIATION) — 건너뜀"; exit 0 ;;
+          esac
+
+          current=$(gh api "repos/$REPO/pulls/$PR_NUMBER" \
+            --jq '[.assignees[].login] | join(" ")')
+          case " $current " in
+            *" $AUTHOR "*) echo "이미 어사인됨"; exit 0 ;;
+          esac
+
+          gh api -X POST "repos/$REPO/issues/$PR_NUMBER/assignees" \
+            -f "assignees[]=$AUTHOR" >/dev/null
+          echo "어사인: $AUTHOR"
