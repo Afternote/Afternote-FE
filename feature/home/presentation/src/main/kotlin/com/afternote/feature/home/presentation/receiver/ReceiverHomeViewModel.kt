@@ -1,5 +1,6 @@
 package com.afternote.feature.home.presentation.receiver
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
@@ -7,13 +8,17 @@ import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.ui.icon.AfternoteSourceIcon
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.home.presentation.R
+import com.afternote.feature.home.presentation.receiver.model.FailedWithRetry
 import com.afternote.feature.home.presentation.receiver.model.MindRecordSummary
+import com.afternote.feature.home.presentation.receiver.model.ReceiverDownloadErrorPopup
 import com.afternote.feature.home.presentation.receiver.model.ReceiverDownloadState
 import com.afternote.feature.home.presentation.receiver.model.ReceiverHomeUiState
 import com.afternote.feature.home.presentation.receiver.model.SenderMessage
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
+import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import com.afternote.feature.receiver.domain.model.AfterNoteListItem
+import com.afternote.feature.receiver.domain.model.ReceivedExportBundle
 import com.afternote.feature.receiver.domain.repository.ReceiverRepository
 import com.afternote.feature.receiver.presentation.reporting.ReceiverFailureStage
 import com.afternote.feature.receiver.presentation.reporting.recordReceiverFailure
@@ -82,11 +87,30 @@ class ReceiverHomeViewModel
 
         fun onEvent(event: ReceiverHomeEvent) {
             when (event) {
-                ReceiverHomeEvent.Retry -> loadHome()
-                ReceiverHomeEvent.RequestDownload -> updateDownload(ReceiverDownloadState.Confirming)
-                ReceiverHomeEvent.DismissDownload -> updateDownload(ReceiverDownloadState.Idle)
-                ReceiverHomeEvent.ConfirmDownload -> downloadAll()
-                ReceiverHomeEvent.ConsumeDownloadResult -> updateDownload(ReceiverDownloadState.Idle)
+                ReceiverHomeEvent.Retry -> {
+                    loadHome()
+                }
+
+                ReceiverHomeEvent.RequestDownload -> {
+                    updateDownload(ReceiverDownloadState.Confirming)
+                }
+
+                ReceiverHomeEvent.DismissDownload -> {
+                    updateDownload(ReceiverDownloadState.Idle)
+                }
+
+                ReceiverHomeEvent.ConfirmDownload -> {
+                    downloadAll()
+                }
+
+                ReceiverHomeEvent.RetryDownload -> {
+                    retryDownload()
+                }
+
+                ReceiverHomeEvent.ConsumeDownloadResult -> {
+                    lastDownloadAttempt = null
+                    updateDownload(ReceiverDownloadState.Idle)
+                }
             }
         }
 
@@ -193,28 +217,57 @@ class ReceiverHomeViewModel
             }
         }
 
+        /**
+         * 오류 팝업의 「다시 시도하기」 가 되돌릴 마지막 시도 (#1737).
+         *
+         * 내려받기는 두 단계다 — 서버에서 받아 오고, 그 결과를 파일로 저장한다. 저장에서
+         * 실패했는데 처음부터 다시 걸면 이미 성공한 조회를 한 번 더 태우고, 「다시 시도하기」 가
+         * 이름과 달리 처음부터 하기가 된다. 실패한 그 단계만 다시 걸도록 시도를 들고 있는다.
+         */
+        private var lastDownloadAttempt: (suspend () -> Unit)? = null
+
         private fun downloadAll() {
+            runDownloadAttempt { downloadThenSave() }
+        }
+
+        private fun retryDownload() {
+            val attempt = lastDownloadAttempt ?: return
+            runDownloadAttempt(attempt)
+        }
+
+        private fun runDownloadAttempt(attempt: suspend () -> Unit) {
+            lastDownloadAttempt = attempt
             updateDownload(ReceiverDownloadState.InProgress)
-            viewModelScope.launch {
-                receiverRepository
-                    .downloadReceivedExport()
-                    .onSuccess { bundle ->
-                        receiverRepository
-                            .saveReceivedExportToFile(bundle)
-                            .onSuccess { updateDownload(ReceiverDownloadState.Done) }
-                            .onFailure { e ->
-                                errorReporter.recordReceiverFailure(ReceiverFailureStage.RECEIVED_EXPORT_SAVE, e)
-                                updateDownload(
-                                    ReceiverDownloadState.Failed(R.string.home_receiver_download_all_save_failed),
-                                )
-                            }
-                    }.onFailure { e ->
-                        errorReporter.recordReceiverFailure(ReceiverFailureStage.RECEIVED_EXPORT_DOWNLOAD, e)
-                        updateDownload(
-                            ReceiverDownloadState.Failed(R.string.home_receiver_download_all_failed),
-                        )
-                    }
-            }
+            viewModelScope.launch { attempt() }
+        }
+
+        private suspend fun downloadThenSave() {
+            receiverRepository
+                .downloadReceivedExport()
+                .onSuccess { bundle -> saveBundle(bundle) }
+                .onFailure { e ->
+                    errorReporter.recordReceiverFailure(ReceiverFailureStage.RECEIVED_EXPORT_DOWNLOAD, e)
+                    updateDownload(e.toDownloadFailure(R.string.home_receiver_download_all_failed))
+                }
+        }
+
+        private suspend fun saveBundle(bundle: ReceivedExportBundle) {
+            // 저장 단계의 재시도 대상은 이 저장뿐이다 — 조회는 이미 성공했다.
+            lastDownloadAttempt = { saveBundle(bundle) }
+            receiverRepository
+                .saveReceivedExportToFile(bundle)
+                .onSuccess { updateDownload(ReceiverDownloadState.Done) }
+                .onFailure { e ->
+                    errorReporter.recordReceiverFailure(ReceiverFailureStage.RECEIVED_EXPORT_SAVE, e)
+                    updateDownload(
+                        // 저장은 로컬 쓰기라 서버·네트워크 갈래로 안내하지 않는다.
+                        if (e is ReceiverFailure.ExportNotSupported) {
+                            ReceiverDownloadState.Failed(R.string.home_receiver_download_all_save_failed)
+                        } else {
+                            FailedWithRetry(ReceiverDownloadErrorPopup.SAVE)
+                        },
+                    )
+                }
         }
 
         private fun updateDownload(next: ReceiverDownloadState) {
@@ -228,6 +281,39 @@ class ReceiverHomeViewModel
 private const val HOME_REQUEST_COUNT = 4
 
 private const val MAX_AFTERNOTE_ICONS = 4
+
+/**
+ * 내려받기 실패를 팝업 갈래로 옮긴다 (#446).
+ *
+ * 미구현 내보내기는 재시도해도 같은 실패라 팝업 대신 기존 안내를 유지한다 (#1726).
+ * 사용자 거절과 전달 조건 미충족도 「다시 시도하기」 가 답이 아니라 같은 자리로 보낸다 —
+ * 내려받기 경로에서 서버가 그 둘을 주는 계약은 없지만, `when` 을 exhaustive 하게 두어
+ * 수신자 실패 유형이 늘면 여기가 컴파일 에러로 잡히게 한다.
+ */
+private fun Throwable.toDownloadFailure(
+    @StringRes fallbackMessageRes: Int,
+): ReceiverDownloadState =
+    when (this as? ReceiverFailure) {
+        is ReceiverFailure.NetworkUnavailable -> {
+            FailedWithRetry(ReceiverDownloadErrorPopup.NETWORK)
+        }
+
+        is ReceiverFailure.UnexpectedServerFailure -> {
+            FailedWithRetry(ReceiverDownloadErrorPopup.SERVER)
+        }
+
+        is ReceiverFailure.ExportNotSupported,
+        is ReceiverFailure.UserRejection,
+        is ReceiverFailure.DeliveryConditionNotMet,
+        -> {
+            ReceiverDownloadState.Failed(fallbackMessageRes)
+        }
+
+        // 번역되지 않은 실패(로컬 예외 등) — 사유를 모르는 채 다른 안내를 할 근거가 없다.
+        null -> {
+            FailedWithRetry(ReceiverDownloadErrorPopup.SERVER)
+        }
+    }
 
 private fun ReceiverMindRecords.toHomeSummary(): MindRecordSummary =
     MindRecordSummary(
