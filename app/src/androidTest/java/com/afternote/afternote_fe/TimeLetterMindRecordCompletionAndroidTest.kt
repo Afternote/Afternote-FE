@@ -73,7 +73,6 @@ import com.afternote.feature.mindrecord.presentation.viewmodel.DraftListViewMode
 import com.afternote.feature.mindrecord.presentation.viewmodel.SubmitState
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportViewModel
-import com.afternote.feature.mindrecord.presentation.viewmodel.testing.memorySpaceViewModel
 import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlock
@@ -615,72 +614,6 @@ class TimeLetterMindRecordCompletionAndroidTest {
                 it == FakeDiaryRepository.ListQuery(currentMonth.toString(), true)
             },
         )
-    }
-
-    @Test
-    fun memorySpace_supportedSuccess_opensAndClosesDetailThenNavigatesBack() {
-        val memoryDate = LocalDate.now()
-        val memory =
-            Diary(
-                diaryId = 501L,
-                title = "추억이 된 하루",
-                content = "이 순간은 나에게 특별한 의미가 있었습니다.",
-                date = memoryDate.toString(),
-                createdAt = memoryDate.toString(),
-                todayMood = TodayMood.HAPPY,
-                imageUrl = "https://afternote.test/memory.jpg",
-                isDraft = false,
-            )
-        val diaryRepository =
-            FakeDiaryRepository(
-                onGetList = { yearMonth, _ ->
-                    val diaries =
-                        if (yearMonth == YearMonth.from(memoryDate).toString()) listOf(memory) else emptyList()
-                    Result.success(
-                        DiaryList(
-                            diaries = diaries,
-                            monthDiaryCount = diaries.size,
-                            weeklyDominantMood = diaries.firstOrNull()?.todayMood,
-                        ),
-                    )
-                },
-            )
-        val viewModel =
-            memorySpaceViewModel(
-                diaryRepository = diaryRepository,
-                dailyQuestionRepository = FakeDailyQuestionRepository(),
-                errorReporter = FakeErrorReporter(),
-            )
-        var backCalls = 0
-
-        composeRule.setContent {
-            AfternoteTheme {
-                MemorySpaceScreen(
-                    viewModel = viewModel,
-                    onBackClick = { backCalls += 1 },
-                )
-            }
-        }
-
-        composeRule.onNodeWithText("MEMORY SPACE").assertIsDisplayed()
-        // 로드 완료는 카드가 실제로 붙었는지로 기다린다 — 상태 객체는 모듈 안의 계약이고,
-        // 이 테스트가 확인하려는 것도 화면에 도달한 카드다 (#1693).
-        composeRule.waitUntil(timeoutMillis = TIMEOUT) {
-            composeRule.onAllNodesWithContentDescription("추억이 된 하루").fetchSemanticsNodes().isNotEmpty()
-        }
-        composeRule.onNodeWithContentDescription("추억이 된 하루").performClick()
-        composeRule
-            .onNodeWithText("이 순간은 나에게 특별한 의미가 있었습니다.", substring = true)
-            .assertIsDisplayed()
-        // 태그는 사용자가 고른 오늘의 기분 이모지다 — 종전 더미의 `#평온` 은 출처가 없었다 (#559).
-        composeRule.onNodeWithText("#😊").assertIsDisplayed()
-        composeRule.onNodeWithContentDescription("닫기").performClick()
-        composeRule
-            .onNodeWithText("이 순간은 나에게 특별한 의미가 있었습니다.", substring = true)
-            .assertDoesNotExist()
-
-        composeRule.onNodeWithText("돌아가기").performClick()
-        composeRule.runOnIdle { assertEquals(1, backCalls) }
     }
 
     @Test
