@@ -17,9 +17,11 @@ import { assigneeForIssue } from "./reconcile-issue-metadata.mjs";
 import { changedPathsFromGithubFiles } from "./resolve-pr-impact.mjs";
 import { extractTitleIssueNumber, hasIssueAssigneeExemptLabel } from "./validate-pr-issue-link.mjs";
 
-// 경로 → 모듈 키. `feature/<x>/` 는 x, `core/` 는 core, 나머지 저장소 운영 경로는 platform.
+// 경로 → 모듈 키. `feature/<x>/` 는 x, `core/` 는 core, `app/` 은 app(앱 셸·루트 네비게이션),
+// 나머지 저장소 운영 경로는 platform (#1986: 앱 구조 변경이 «인프라» 로 읽히지 않게 가른다).
 // 수신자 홈은 #1724 가 `feature/home/…/receiver/` 로 옮겨 경로가 곧 담당이다 — 예외 표가 없다.
-const PLATFORM_PREFIXES = ["app/", "build-logic/", "konsist/", ".github/", "gradle/", "scripts/", "git-hooks/"];
+const APP_PREFIX = "app/";
+const PLATFORM_PREFIXES = ["build-logic/", "konsist/", ".github/", "gradle/", "scripts/", "git-hooks/"];
 const PLATFORM_FILES = new Set([
     "build.gradle.kts", "settings.gradle.kts", "gradle.properties", "gradlew", "gradlew.bat",
     ".editorconfig", "Dockerfile.screenshot",
@@ -48,6 +50,7 @@ export function moduleKeyOf(filePath) {
     const feature = /^feature\/([a-z]+)\//.exec(p);
     if (feature) return feature[1];
     if (p.startsWith("core/")) return "core";
+    if (p.startsWith(APP_PREFIX)) return "app";
     if (PLATFORM_FILES.has(p) || PLATFORM_PREFIXES.some((prefix) => p.startsWith(prefix))) return "platform";
     return null;
 }

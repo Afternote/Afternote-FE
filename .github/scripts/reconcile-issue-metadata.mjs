@@ -40,6 +40,7 @@ export const AREA_LABEL_BY_MODULE = Object.freeze({
     timeletter: "area:timeletter",
     mindrecord: "area:mindrecord",
     home: "area:home",
+    app: "area:app",
     platform: "area:platform",
 });
 
@@ -52,6 +53,7 @@ export const ASSIGNEE_BY_MODULE = Object.freeze({
     timeletter: "koongmai",
     mindrecord: "Sadturtleman",
     home: "Sadturtleman",
+    app: "1hyok",
     platform: "1hyok",
 });
 
