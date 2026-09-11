@@ -497,7 +497,7 @@ private fun detailViewModel(
     AfternoteDetailViewModel(
         route = AfternoteRoute.DetailRoute(itemId = itemId),
         afternoteRepository = repository,
-        userRepository = afternoteAuthorUserRepository(),
+        myProfileRepository = afternoteAuthorMyProfileRepository(),
         userProfileRepository = afternoteAuthorUserProfileRepository(),
         errorReporter = NoopAuthorErrorReporter,
     )
@@ -517,7 +517,7 @@ private fun editorViewModel(
                 initialType = AfternoteType.SOCIAL_NETWORK,
                 itemId = itemId,
             ),
-        userRepository = afternoteAuthorUserRepository(),
+        userReceiverRepository = afternoteAuthorUserReceiverRepository(),
         afternoteRepository = repository,
         memorialThumbnailUploadRepository =
             MemorialThumbnailUploadRepository {

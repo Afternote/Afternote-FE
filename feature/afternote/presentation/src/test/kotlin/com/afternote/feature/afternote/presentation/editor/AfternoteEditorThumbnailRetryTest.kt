@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.presentation.editor
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
@@ -153,7 +153,7 @@ class AfternoteEditorThumbnailRetryTest {
         AfternoteEditorViewModel(
             route = AfternoteRoute.EditorFlowRoute(initialType = AfternoteType.MEMORIAL),
             savedStateHandle = SavedStateHandle(mapOf("initialType" to AfternoteType.MEMORIAL)),
-            userRepository = repositoryProxy<UserRepository>(),
+            userReceiverRepository = repositoryProxy<UserReceiverRepository>(),
             afternoteRepository = repositoryProxy<AfternoteRepository>(),
             memorialThumbnailUploadRepository = uploads,
             resolveMemorialMediaForSave =

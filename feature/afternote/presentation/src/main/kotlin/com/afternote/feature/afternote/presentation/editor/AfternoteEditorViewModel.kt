@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.error.AfternoteFailure
 import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
@@ -171,7 +171,7 @@ class AfternoteEditorViewModel
     constructor(
         @Assisted private val route: AfternoteRoute.EditorFlowRoute,
         private val savedStateHandle: SavedStateHandle,
-        private val userRepository: UserRepository,
+        private val userReceiverRepository: UserReceiverRepository,
         private val afternoteRepository: AfternoteRepository,
         private val memorialThumbnailUploadRepository: MemorialThumbnailUploadRepository,
         private val resolveMemorialMediaForSave: ResolveMemorialMediaForSaveUseCase,
@@ -406,7 +406,7 @@ class AfternoteEditorViewModel
         }
 
         private suspend fun loadAuthorReceivers() {
-            runCatchingCancellable { userRepository.getReceivers() }
+            runCatchingCancellable { userReceiverRepository.getReceivers() }
                 .onSuccess { receivers ->
                     internalState.update { it.copy(authorReceivers = receivers.toAfternoteEditorReceivers()) }
                 }.onFailure { e ->
