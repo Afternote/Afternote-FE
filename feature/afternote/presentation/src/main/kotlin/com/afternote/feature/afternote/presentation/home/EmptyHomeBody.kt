@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.home
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -34,6 +35,7 @@ internal fun EmptyHomeBody(
     nextStep: NextStep?,
     emptyListDescription: String,
     onTypeSelected: (AfternoteType?) -> Unit,
+    filterRowScrollState: ScrollState,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -53,6 +55,7 @@ internal fun EmptyHomeBody(
             AfternoteTypeFilterRow(
                 onTabSelected = onTypeSelected,
                 selectedTab = null,
+                scrollState = filterRowScrollState,
             )
             EmptyListBody(description = emptyListDescription)
         }
