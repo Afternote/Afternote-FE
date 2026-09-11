@@ -2,8 +2,11 @@ package com.afternote.feature.home.presentation.receiver
 
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.home.presentation.R
+import com.afternote.feature.home.presentation.receiver.model.FailedWithRetry
+import com.afternote.feature.home.presentation.receiver.model.ReceiverDownloadErrorPopup
 import com.afternote.feature.home.presentation.receiver.model.ReceiverDownloadState
 import com.afternote.feature.home.presentation.receiver.model.ReceiverHomeUiState
+import com.afternote.feature.home.presentation.usecase.GetReceiverHomeSummaryUseCase
 import com.afternote.feature.mindrecord.domain.model.MindRecordType
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.testing.FakeMindRecordReceiverRepository
@@ -29,6 +32,7 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.io.IOException
 import com.afternote.feature.mindrecord.domain.model.MindRecordSummary as DomainMindRecordSummary
 
 /** 수신자 홈이 각 기능의 실제 domain repository 결과를 구분해 합치는 계약 회귀 가드 (#610). */
@@ -189,13 +193,107 @@ class ReceiverHomeViewModelTest {
             advanceUntilIdle()
 
             val state = viewModel.uiState.value as ReceiverHomeUiState.Success
+            // 번역되지 않은 실패는 사유를 모르므로 서버 갈래로 안내한다 (#1737).
             assertEquals(
-                ReceiverDownloadState.Failed(R.string.home_receiver_download_all_failed),
+                FailedWithRetry(ReceiverDownloadErrorPopup.SERVER),
                 state.download,
             )
             assertTrue(fixture.receiver.savedBundles.isEmpty())
             val reported = fixture.reporter.failures.single()
             assertEquals("received_export_download", reported.attributes["receiver_stage"])
+        }
+
+    @Test
+    fun `내려받기 확인 - 연결 실패는 네트워크 팝업 갈래가 된다`() =
+        runTest(dispatcher) {
+            val fixture = Fixture()
+            fixture.timeLetter.onGetReceivedTimeLetters = { timeLetters(totalCount = 0) }
+            fixture.receiver.onDownloadReceivedExport = {
+                Result.failure(ReceiverFailure.NetworkUnavailable(IOException("offline")))
+            }
+            val viewModel = fixture.viewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(ReceiverHomeEvent.RequestDownload)
+            viewModel.onEvent(ReceiverHomeEvent.ConfirmDownload)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value as ReceiverHomeUiState.Success
+            assertEquals(
+                FailedWithRetry(ReceiverDownloadErrorPopup.NETWORK),
+                state.download,
+            )
+        }
+
+    /**
+     * 저장 실패의 재시도는 **저장만** 다시 건다. 처음부터 다시 걸면 이미 성공한 조회를 한 번
+     * 더 태우고, 「다시 시도하기」 가 이름과 달리 처음부터 하기가 된다 (#1737).
+     */
+    @Test
+    fun `내려받기 확인 - 저장 실패의 재시도는 조회를 다시 하지 않는다`() =
+        runTest(dispatcher) {
+            val fixture = Fixture()
+            fixture.timeLetter.onGetReceivedTimeLetters = { timeLetters(totalCount = 0) }
+            var saveFails = true
+            fixture.receiver.onDownloadReceivedExport = { Result.success(fixture.receiver.exportBundle) }
+            fixture.receiver.onSaveReceivedExportToFile = {
+                if (saveFails) Result.failure(IllegalStateException("저장 실패")) else Result.success(Unit)
+            }
+            val viewModel = fixture.viewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(ReceiverHomeEvent.RequestDownload)
+            viewModel.onEvent(ReceiverHomeEvent.ConfirmDownload)
+            advanceUntilIdle()
+
+            assertEquals(
+                FailedWithRetry(ReceiverDownloadErrorPopup.SAVE),
+                (viewModel.uiState.value as ReceiverHomeUiState.Success).download,
+            )
+            assertEquals(1, fixture.receiver.downloadCalls)
+
+            saveFails = false
+            viewModel.onEvent(ReceiverHomeEvent.RetryDownload)
+            advanceUntilIdle()
+
+            assertEquals(
+                ReceiverDownloadState.Done,
+                (viewModel.uiState.value as ReceiverHomeUiState.Success).download,
+            )
+            assertEquals("재시도가 조회를 다시 걸었다", 1, fixture.receiver.downloadCalls)
+            assertEquals(2, fixture.receiver.savedBundles.size)
+        }
+
+    @Test
+    fun `내려받기 확인 - 조회 실패의 재시도는 조회부터 다시 건다`() =
+        runTest(dispatcher) {
+            val fixture = Fixture()
+            fixture.timeLetter.onGetReceivedTimeLetters = { timeLetters(totalCount = 0) }
+            var downloadFails = true
+            fixture.receiver.onDownloadReceivedExport = {
+                if (downloadFails) {
+                    Result.failure(IllegalStateException("내려받기 실패"))
+                } else {
+                    Result.success(fixture.receiver.exportBundle)
+                }
+            }
+            fixture.receiver.onSaveReceivedExportToFile = { Result.success(Unit) }
+            val viewModel = fixture.viewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(ReceiverHomeEvent.RequestDownload)
+            viewModel.onEvent(ReceiverHomeEvent.ConfirmDownload)
+            advanceUntilIdle()
+
+            downloadFails = false
+            viewModel.onEvent(ReceiverHomeEvent.RetryDownload)
+            advanceUntilIdle()
+
+            assertEquals(
+                ReceiverDownloadState.Done,
+                (viewModel.uiState.value as ReceiverHomeUiState.Success).download,
+            )
+            assertEquals(2, fixture.receiver.downloadCalls)
         }
     // region 재진입 갱신 (#701)
 
@@ -363,9 +461,13 @@ private class Fixture {
 
     fun viewModel(): ReceiverHomeViewModel =
         ReceiverHomeViewModel(
+            getReceiverHomeSummary =
+                GetReceiverHomeSummaryUseCase(
+                    receiverRepository = receiver,
+                    mindRecordReceiverRepository = mindRecord,
+                    receiverTimeLetterRepository = timeLetter,
+                ),
             receiverRepository = receiver,
-            mindRecordReceiverRepository = mindRecord,
-            receiverTimeLetterRepository = timeLetter,
             errorReporter = reporter,
         )
 }
