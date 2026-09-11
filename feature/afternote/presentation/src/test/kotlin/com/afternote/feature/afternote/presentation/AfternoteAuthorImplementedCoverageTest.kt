@@ -22,6 +22,7 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnai
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
+import com.afternote.feature.afternote.presentation.editor.AfternoteEditorIntent
 import com.afternote.feature.afternote.presentation.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.editor.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.editor.memorial.Song
@@ -56,21 +57,23 @@ class AfternoteAuthorImplementedCoverageTest {
         collectSaveState(viewModel)
 
         composeRule.runOnIdle {
-            viewModel.setType(AfternoteType.GALLERY_AND_FILES)
-            viewModel.saveAfternote(
-                payload =
-                    RegisterAfternotePayload(
-                        serviceName = "Google Drive",
-                        date = "2026.08.22",
-                        messageBlocks =
-                            listOf(
-                                EditorMessageTextBlock(" 사진 ", " 여행 사진을 보관해 줘 "),
-                                EditorMessageTextBlock("", ""),
-                            ),
-                        processingMethods = listOf("가족에게 폴더 전달"),
-                    ),
-                selectedReceiverIds = listOf(7L, 8L),
-                memorialMedia = SaveAfternoteMemorialMedia(),
+            viewModel.onIntent(AfternoteEditorIntent.SetType(AfternoteType.GALLERY_AND_FILES))
+            viewModel.onIntent(
+                AfternoteEditorIntent.Save(
+                    payload =
+                        RegisterAfternotePayload(
+                            serviceName = "Google Drive",
+                            date = "2026.08.22",
+                            messageBlocks =
+                                listOf(
+                                    EditorMessageTextBlock(" 사진 ", " 여행 사진을 보관해 줘 "),
+                                    EditorMessageTextBlock("", ""),
+                                ),
+                            processingMethods = listOf("가족에게 폴더 전달"),
+                        ),
+                    selectedReceiverIds = listOf(7L, 8L),
+                    memorialMedia = SaveAfternoteMemorialMedia(),
+                ),
             )
         }
 
@@ -101,19 +104,21 @@ class AfternoteAuthorImplementedCoverageTest {
         collectSaveState(viewModel)
 
         composeRule.runOnIdle {
-            viewModel.setType(AfternoteType.BUSINESS)
-            viewModel.saveAfternote(
-                payload =
-                    RegisterAfternotePayload(
-                        serviceName = "회사 그룹웨어",
-                        date = "2026.08.22",
-                        accountId = "employee@example.test",
-                        password = "business-password",
-                        messageBlocks = listOf(EditorMessageTextBlock("인수인계", "팀장에게 전달해 줘")),
-                        processingMethods = listOf("계정 인계"),
-                    ),
-                selectedReceiverIds = listOf(8L),
-                memorialMedia = SaveAfternoteMemorialMedia(),
+            viewModel.onIntent(AfternoteEditorIntent.SetType(AfternoteType.BUSINESS))
+            viewModel.onIntent(
+                AfternoteEditorIntent.Save(
+                    payload =
+                        RegisterAfternotePayload(
+                            serviceName = "회사 그룹웨어",
+                            date = "2026.08.22",
+                            accountId = "employee@example.test",
+                            password = "business-password",
+                            messageBlocks = listOf(EditorMessageTextBlock("인수인계", "팀장에게 전달해 줘")),
+                            processingMethods = listOf("계정 인계"),
+                        ),
+                    selectedReceiverIds = listOf(8L),
+                    memorialMedia = SaveAfternoteMemorialMedia(),
+                ),
             )
         }
 
@@ -159,27 +164,30 @@ class AfternoteAuthorImplementedCoverageTest {
             )
 
         composeRule.runOnIdle {
-            viewModel.setType(AfternoteType.MEMORIAL)
-            viewModel.addMemorialPlaylistSongs(songs)
-            viewModel.saveAfternote(
-                payload =
-                    RegisterAfternotePayload(
-                        serviceName = "추억 노트",
-                        date = "2026.08.22",
-                    ),
-                selectedReceiverIds = listOf(7L),
-                memorialMedia =
-                    SaveAfternoteMemorialMedia(
-                        memorialVideo =
-                            EditableMemorialVideo
-                                .empty()
-                                .withSelection("content://videos/farewell")
-                                .withSelectionThumbnail("https://cdn.test/thumbnail.jpg"),
-                        memorialPhoto =
-                            EditableMemorialPhoto
-                                .fromPersisted("https://cdn.test/old-photo.jpg")
-                                .withSelection("content://photos/new-portrait"),
-                    ),
+            viewModel.onIntent(AfternoteEditorIntent.SetType(AfternoteType.MEMORIAL))
+            viewModel.onIntent(AfternoteEditorIntent.AddMemorialPlaylistSongs(songs))
+            viewModel.onIntent(
+                AfternoteEditorIntent.Save(
+                    payload =
+                        RegisterAfternotePayload(
+                            serviceName = "추억 노트",
+                            date = "2026.08.22",
+                        ),
+                    selectedReceiverIds = listOf(7L),
+                    memorialMedia =
+                        SaveAfternoteMemorialMedia(
+                            memorialVideo =
+                                EditableMemorialVideo
+                                    .empty()
+                                    .withSelection("content://videos/farewell")
+                                    .withSelectionThumbnail("https://cdn.test/thumbnail.jpg"),
+                            memorialPhoto =
+                                EditableMemorialPhoto
+                                    .fromPersisted(
+                                        "https://cdn.test/old-photo.jpg",
+                                    ).withSelection("content://photos/new-portrait"),
+                        ),
+                ),
             )
         }
 
@@ -234,16 +242,18 @@ class AfternoteAuthorImplementedCoverageTest {
         composeRule.setContent { AfternoteTheme {} }
 
         composeRule.runOnIdle {
-            first.setType(AfternoteType.MEMORIAL)
-            first.setMemorialVideo("content://videos/farewell")
-            first.setMemorialPhoto("content://photos/portrait")
-            first.setMemorialThumbnail("https://cdn.test/thumbnail.jpg")
-            first.addMemorialPlaylistSongs(
-                listOf(Song("91", "첫 번째 노래", "가수 A", "https://cdn.test/cover.jpg")),
+            first.onIntent(AfternoteEditorIntent.SetType(AfternoteType.MEMORIAL))
+            first.onIntent(AfternoteEditorIntent.SetMemorialVideo("content://videos/farewell"))
+            first.onIntent(AfternoteEditorIntent.SetMemorialPhoto("content://photos/portrait"))
+            first.onIntent(AfternoteEditorIntent.SetMemorialThumbnail("https://cdn.test/thumbnail.jpg"))
+            first.onIntent(
+                AfternoteEditorIntent.AddMemorialPlaylistSongs(
+                    listOf(Song("91", "첫 번째 노래", "가수 A", "https://cdn.test/cover.jpg")),
+                ),
             )
         }
 
-        val restored = implementedCoverageViewModel(implementedCoverageRepository(), handle).currentForm()
+        val restored = implementedCoverageViewModel(implementedCoverageRepository(), handle).uiState.value.form
         assertEquals(AfternoteType.MEMORIAL, restored.selectedType)
         assertEquals(
             MemorialVideoAttachment(

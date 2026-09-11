@@ -30,13 +30,13 @@ class AfternoteEditorReceiverSnapshotTest {
         val savedStateHandle = SavedStateHandle(mapOf("initialType" to AfternoteType.SOCIAL_NETWORK))
         val viewModel = viewModel(savedStateHandle)
 
-        viewModel.addReceiverIfAbsent(Long.MAX_VALUE, "김수신", "딸")
+        viewModel.onIntent(AfternoteEditorIntent.AddReceiverIfAbsent(Long.MAX_VALUE, "김수신", "딸"))
 
         val raw = requireNotNull(savedStateHandle.get<String>(SNAPSHOT_KEY))
         assertTrue(raw.contains("\"id\":${Long.MAX_VALUE}"))
         val restoredId =
             viewModel(savedStateHandle)
-                .currentForm()
+                .uiState.value.form
                 .afternoteEditReceivers
                 .single()
                 .id
@@ -79,15 +79,15 @@ class AfternoteEditorReceiverSnapshotTest {
             )
         val viewModel = viewModel(savedStateHandle)
 
-        assertEquals(selection, viewModel.currentForm().displayedMemorialVideo)
-        assertTrue(viewModel.currentForm().canRemoveMemorialVideo)
+        assertEquals(selection, viewModel.uiState.value.form.displayedMemorialVideo)
+        assertTrue(viewModel.uiState.value.form.canRemoveMemorialVideo)
 
-        viewModel.setMemorialThumbnail("https://cdn.test/round-trip-thumb.jpg")
+        viewModel.onIntent(AfternoteEditorIntent.SetMemorialThumbnail("https://cdn.test/round-trip-thumb.jpg"))
         val roundTrippedRaw = requireNotNull(savedStateHandle.get<String>(SNAPSHOT_KEY))
         assertTrue(roundTrippedRaw.contains("\"memorialVideo\""))
 
         val restoredViewModel = viewModel(savedStateHandle)
-        val roundTripped = restoredViewModel.currentForm()
+        val roundTripped = restoredViewModel.uiState.value.form
         assertEquals(
             selection.copy(thumbnailUrl = "https://cdn.test/round-trip-thumb.jpg"),
             roundTripped.displayedMemorialVideo,
@@ -95,12 +95,16 @@ class AfternoteEditorReceiverSnapshotTest {
         assertEquals(MediaInput.Local(selection.url), roundTripped.memorialVideo?.toMediaInput())
         assertTrue(roundTripped.canRemoveMemorialVideo)
 
-        restoredViewModel.removeMemorialVideo()
+        restoredViewModel.onIntent(AfternoteEditorIntent.RemoveMemorialVideo)
 
         // 삭제는 교체분과 서버 원본을 함께 비운다 — 저장 시 명시적 null 로 나간다(#1597).
-        assertNull(restoredViewModel.currentForm().displayedMemorialVideo)
-        assertEquals(MediaInput.None, restoredViewModel.currentForm().memorialVideo?.toMediaInput())
-        assertFalse(restoredViewModel.currentForm().canRemoveMemorialVideo)
+        assertNull(restoredViewModel.uiState.value.form.displayedMemorialVideo)
+        assertEquals(
+            MediaInput.None,
+            restoredViewModel.uiState.value.form.memorialVideo
+                ?.toMediaInput(),
+        )
+        assertFalse(restoredViewModel.uiState.value.form.canRemoveMemorialVideo)
     }
 
     private fun viewModel(savedStateHandle: SavedStateHandle): AfternoteEditorViewModel =

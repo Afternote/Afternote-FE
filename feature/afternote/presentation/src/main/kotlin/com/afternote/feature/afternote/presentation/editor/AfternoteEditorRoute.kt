@@ -32,21 +32,32 @@ internal fun AfternoteEditorNavigation(
     val uiState by editViewModel.uiState.collectAsStateWithLifecycle()
     val state =
         rememberAfternoteEditorState(
-            getCurrentForm = editViewModel::currentForm,
-            setType = editViewModel::setType,
-            setService = editViewModel::setService,
-            setMemorialPhoto = editViewModel::setMemorialPhoto,
-            removeMemorialPhoto = editViewModel::removeMemorialPhoto,
-            setMemorialVideo = editViewModel::setMemorialVideo,
-            removeMemorialVideo = editViewModel::removeMemorialVideo,
-            addReceiverIfAbsent = editViewModel::addReceiverIfAbsent,
-            applyPrefill = editViewModel::applyPrefill,
-            setMemorialThumbnail = editViewModel::setMemorialThumbnail,
-            deleteReceiver = editViewModel::deleteReceiver,
-            replaceReceiversIfEmpty = editViewModel::replaceReceiversIfEmpty,
-            addProcessingMethod = editViewModel::addProcessingMethod,
-            deleteProcessingMethod = editViewModel::deleteProcessingMethod,
-            editProcessingMethod = editViewModel::editProcessingMethod,
+            getCurrentForm = { editViewModel.uiState.value.form },
+            setType = { type -> editViewModel.onIntent(AfternoteEditorIntent.SetType(type)) },
+            setService = { service -> editViewModel.onIntent(AfternoteEditorIntent.SetService(service)) },
+            setMemorialPhoto = { uri -> editViewModel.onIntent(AfternoteEditorIntent.SetMemorialPhoto(uri)) },
+            removeMemorialPhoto = { editViewModel.onIntent(AfternoteEditorIntent.RemoveMemorialPhoto) },
+            setMemorialVideo = { url -> editViewModel.onIntent(AfternoteEditorIntent.SetMemorialVideo(url)) },
+            removeMemorialVideo = { editViewModel.onIntent(AfternoteEditorIntent.RemoveMemorialVideo) },
+            addReceiverIfAbsent = {
+                receiverId,
+                name,
+                label,
+                ->
+                editViewModel.onIntent(AfternoteEditorIntent.AddReceiverIfAbsent(receiverId, name, label))
+            },
+            applyPrefill = { prefill -> editViewModel.onIntent(AfternoteEditorIntent.ApplyPrefill(prefill)) },
+            setMemorialThumbnail = { dataUrl -> editViewModel.onIntent(AfternoteEditorIntent.SetMemorialThumbnail(dataUrl)) },
+            deleteReceiver = { receiverId -> editViewModel.onIntent(AfternoteEditorIntent.DeleteReceiver(receiverId)) },
+            replaceReceiversIfEmpty = { receivers -> editViewModel.onIntent(AfternoteEditorIntent.ReplaceReceiversIfEmpty(receivers)) },
+            addProcessingMethod = { text -> editViewModel.onIntent(AfternoteEditorIntent.AddProcessingMethod(text)) },
+            deleteProcessingMethod = { localId -> editViewModel.onIntent(AfternoteEditorIntent.DeleteProcessingMethod(localId)) },
+            editProcessingMethod = {
+                localId,
+                newText,
+                ->
+                editViewModel.onIntent(AfternoteEditorIntent.EditProcessingMethod(localId, newText))
+            },
         )
 
     val selectedType = uiState.form.selectedType
@@ -55,14 +66,16 @@ internal fun AfternoteEditorNavigation(
     val isProcessingMethodDefaultsInitializing = remember(selectedType) { mutableStateOf(true) }
 
     LaunchedEffect(selectedType) {
-        editViewModel.initializeProcessingMethodDefaults(
-            type = selectedType,
-            methods = defaultProcessingMethods,
+        editViewModel.onIntent(
+            AfternoteEditorIntent.InitializeProcessingMethodDefaults(
+                type = selectedType,
+                methods = defaultProcessingMethods,
+            ),
         )
         isProcessingMethodDefaultsInitializing.value = false
     }
 
-    LaunchedEffect(Unit) { editViewModel.refreshAuthorReceivers() }
+    LaunchedEffect(Unit) { editViewModel.onIntent(AfternoteEditorIntent.RefreshAuthorReceivers) }
 
     LaunchedEffect(uiState.authorReceivers, editViewModel.isEditing) {
         if (!editViewModel.isEditing) {
@@ -72,29 +85,27 @@ internal fun AfternoteEditorNavigation(
 
     // 선택 화면이 위에 쌓이는 동안 이 화면은 컴포지션에서 빠지므로, 복귀할 때마다 다시 돈다.
     LaunchedEffect(Unit) {
-        tryApplyReceiverSelection(
-            editViewModel,
-        )
+        editViewModel.onIntent(AfternoteEditorIntent.ApplyPendingReceiverSelection)
     }
 
     LaunchedEffect(uiState.pendingSaveSuccessId) {
         if (uiState.pendingSaveSuccessId != null) {
             onSaveSuccessNavigateHome()
-            editViewModel.onSaveSuccessConsumed()
+            editViewModel.onIntent(AfternoteEditorIntent.ConsumeSaveSuccess)
         }
     }
     val pendingThumbnailUrl = uiState.pendingThumbnailUrl
     LaunchedEffect(pendingThumbnailUrl) {
         if (pendingThumbnailUrl != null) {
             state.setMemorialThumbnail(pendingThumbnailUrl)
-            editViewModel.onThumbnailUploadedConsumed()
+            editViewModel.onIntent(AfternoteEditorIntent.ConsumeThumbnailUploaded)
         }
     }
     val pendingPrefill = uiState.pendingPrefill
     LaunchedEffect(pendingPrefill) {
         if (pendingPrefill != null) {
             state.applyFormPrefill(pendingPrefill)
-            editViewModel.onPrefillConsumed()
+            editViewModel.onIntent(AfternoteEditorIntent.ConsumePrefill)
         }
     }
 
@@ -132,7 +143,7 @@ internal fun AfternoteEditorNavigation(
         if (errorEvent?.error?.offersMemorialThumbnailRetry() == true) {
             EditorSnackbarAction(
                 label = stringResource(R.string.afternote_editor_thumbnail_retry),
-                onPerform = editViewModel::retryMemorialThumbnail,
+                onPerform = { editViewModel.onIntent(AfternoteEditorIntent.RetryMemorialThumbnail) },
             )
         } else {
             null
@@ -144,27 +155,31 @@ internal fun AfternoteEditorNavigation(
         snackbarMessage = snackbarMessage,
         snackbarAction = thumbnailRetryAction,
         onSnackbarMessageConsumed = {
-            errorEvent?.let(editViewModel::onErrorConsumed)
+            errorEvent?.let({ consumed -> editViewModel.onIntent(AfternoteEditorIntent.ConsumeError(consumed)) })
         },
         validationMessage = validationMessage,
         onValidationMessageConsumed = {
-            errorEvent?.let(editViewModel::onErrorConsumed)
+            errorEvent?.let({ consumed -> editViewModel.onIntent(AfternoteEditorIntent.ConsumeError(consumed)) })
         },
         content = { snackbarHostState ->
             // prefill 을 못 읽었으면 폼을 세우지 않는다 (#705) — 빈 폼으로 저장되면 서버가 기존 기록을
             // 그 빈 값으로 덮는다. 이 갈래에서는 사유와 재시도만 노출하고 «등록» 도 함께 잠근다.
             if (uiState.isPrefillFailed) {
-                EditorPrefillErrorBody(onRetry = editViewModel::retryPrefill)
+                EditorPrefillErrorBody(onRetry = { editViewModel.onIntent(AfternoteEditorIntent.RetryPrefill) })
             } else {
                 AfternoteEditorBody(
                     state = state,
                     form = uiState.form,
                     onNavigateToMemorialPlaylist = onNavigateToMemorialPlaylist,
                     onNavigateToSelectReceiver = onNavigateToSelectReceiver,
-                    onThumbnailBytesReady = editViewModel::uploadMemorialThumbnail,
-                    onThumbnailExtractionFailed = editViewModel::onMemorialThumbnailExtractionFailed,
+                    onThumbnailBytesReady = { jpegBytes ->
+                        editViewModel.onIntent(AfternoteEditorIntent.UploadMemorialThumbnail(jpegBytes))
+                    },
+                    onThumbnailExtractionFailed = { throwable ->
+                        editViewModel.onIntent(AfternoteEditorIntent.MemorialThumbnailExtractionFailed(throwable))
+                    },
                     thumbnailRetryToken = uiState.memorialThumbnailRetryToken,
-                    onCaptureFailed = editViewModel::onMemorialCaptureLaunchFailed,
+                    onCaptureFailed = { throwable -> editViewModel.onIntent(AfternoteEditorIntent.MemorialCaptureLaunchFailed(throwable)) },
                     snackbarHostState = snackbarHostState,
                     isPrefillLoading = uiState.isPrefillLoading,
                     isTypeSelectionEnabled = !editViewModel.isEditing,

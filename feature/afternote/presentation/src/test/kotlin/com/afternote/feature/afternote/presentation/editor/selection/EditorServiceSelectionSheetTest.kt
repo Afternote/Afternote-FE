@@ -41,8 +41,9 @@ class EditorServiceSelectionSheetTest {
         val queryState = TextFieldState()
         composeRule.setContent {
             AfternoteTheme {
-                EditorServiceSelectionSheetContent(
-                    title = "소셜 네트워크 서비스 선택",
+                EditorServiceSelectionSheet(
+                    visible = true,
+                    onDismissRequest = {},
                     type = AfternoteType.SOCIAL_NETWORK,
                     services = services,
                     searchQueryState = queryState,
@@ -97,8 +98,9 @@ class EditorServiceSelectionSheetTest {
         val queryState = TextFieldState()
         composeRule.setContent {
             AfternoteTheme {
-                EditorServiceSelectionSheetContent(
-                    title = "비즈니스 서비스 선택",
+                EditorServiceSelectionSheet(
+                    visible = true,
+                    onDismissRequest = {},
                     type = AfternoteType.BUSINESS,
                     services = AfternoteServiceCatalog.businessServices,
                     searchQueryState = queryState,
@@ -122,8 +124,9 @@ class EditorServiceSelectionSheetTest {
         val queryState = TextFieldState()
         composeRule.setContent {
             AfternoteTheme {
-                EditorServiceSelectionSheetContent(
-                    title = "소셜 네트워크 서비스 선택",
+                EditorServiceSelectionSheet(
+                    visible = true,
+                    onDismissRequest = {},
                     type = AfternoteType.SOCIAL_NETWORK,
                     services = listOf("인스타그램", "페이스북"),
                     searchQueryState = queryState,
@@ -132,7 +135,11 @@ class EditorServiceSelectionSheetTest {
             }
         }
 
-        composeRule.assertAccessibleClickTargets()
+        // 시트째 띄우면 Material3 스크림(이름만 있고 Role 없음)이 스윕에 들어온다. 우리 화면
+        // 노드가 아니므로 그것만 빼고 검색 입력·빈 결과 안내·행 전체의 48dp·이름·role·중첩
+        // 클릭 계약(#1167·#1179·#1669)은 그대로 본다.
+        val closeSheet = composeRule.activity.getString(androidx.compose.ui.R.string.close_sheet)
+        composeRule.assertAccessibleClickTargets(exclude = { it.name == closeSheet })
         val rows =
             composeRule
                 .scanEnabledClickTargets()

@@ -49,30 +49,55 @@ class AfternoteEditorProcessingMethodDefaultsTest {
         val viewModel = viewModel(savedStateHandle)
         val defaults = listOf("게시물 내리기", "추모 게시물 올리기")
 
-        viewModel.initializeProcessingMethodDefaults(AfternoteType.SOCIAL_NETWORK, defaults)
+        viewModel.onIntent(AfternoteEditorIntent.InitializeProcessingMethodDefaults(AfternoteType.SOCIAL_NETWORK, defaults))
 
-        assertEquals(listOf(1, 2), viewModel.currentForm().processingMethods.map { it.localId })
-        assertEquals(defaults, viewModel.currentForm().processingMethods.map { it.text })
+        assertEquals(
+            listOf(1, 2),
+            viewModel.uiState.value.form.processingMethods
+                .map { it.localId },
+        )
+        assertEquals(
+            defaults,
+            viewModel.uiState.value.form.processingMethods
+                .map { it.text },
+        )
 
-        viewModel.currentForm().processingMethods.forEach { viewModel.deleteProcessingMethod(it.localId) }
-        viewModel.initializeProcessingMethodDefaults(AfternoteType.SOCIAL_NETWORK, defaults)
+        viewModel.uiState.value.form.processingMethods.forEach {
+            viewModel.onIntent(
+                AfternoteEditorIntent.DeleteProcessingMethod(it.localId),
+            )
+        }
+        viewModel.onIntent(AfternoteEditorIntent.InitializeProcessingMethodDefaults(AfternoteType.SOCIAL_NETWORK, defaults))
 
-        assertTrue(viewModel.currentForm().processingMethods.isEmpty())
-        assertTrue(viewModel(savedStateHandle).currentForm().processingMethods.isEmpty())
+        assertTrue(
+            viewModel.uiState.value.form.processingMethods
+                .isEmpty(),
+        )
+        assertTrue(
+            viewModel(savedStateHandle)
+                .uiState.value.form.processingMethods
+                .isEmpty(),
+        )
     }
 
     @Test
     fun `카테고리를 바꾸면 새 카테고리 추천을 채운다`() {
         val viewModel = viewModel(SavedStateHandle(mapOf("initialType" to AfternoteType.SOCIAL_NETWORK)))
-        viewModel.initializeProcessingMethodDefaults(AfternoteType.SOCIAL_NETWORK, listOf("계정 삭제"))
+        viewModel.onIntent(AfternoteEditorIntent.InitializeProcessingMethodDefaults(AfternoteType.SOCIAL_NETWORK, listOf("계정 삭제")))
 
-        viewModel.setType(AfternoteType.GALLERY_AND_FILES)
-        viewModel.initializeProcessingMethodDefaults(
-            AfternoteType.GALLERY_AND_FILES,
-            listOf("폴더 전송", "폴더 삭제"),
+        viewModel.onIntent(AfternoteEditorIntent.SetType(AfternoteType.GALLERY_AND_FILES))
+        viewModel.onIntent(
+            AfternoteEditorIntent.InitializeProcessingMethodDefaults(
+                AfternoteType.GALLERY_AND_FILES,
+                listOf("폴더 전송", "폴더 삭제"),
+            ),
         )
 
-        assertEquals(listOf("폴더 전송", "폴더 삭제"), viewModel.currentForm().processingMethods.map { it.text })
+        assertEquals(
+            listOf("폴더 전송", "폴더 삭제"),
+            viewModel.uiState.value.form.processingMethods
+                .map { it.text },
+        )
     }
 
     @Test

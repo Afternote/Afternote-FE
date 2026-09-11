@@ -9,6 +9,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.afternote.core.ui.navigation.FeatureNavDisplay
 import com.afternote.core.ui.navigation.FeatureStackBoundary
+import com.afternote.feature.afternote.presentation.editor.AfternoteEditorIntent
 import com.afternote.feature.afternote.presentation.editor.AfternoteEditorNavigation
 import com.afternote.feature.afternote.presentation.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.editor.memorial.AddSongViewModel
@@ -50,7 +51,7 @@ internal fun AfternoteEditorFlowHost(
             AfternoteEditorFlowLocalNavActions(
                 flowStack = flowStack,
                 boundary = boundary,
-                onReceiversSelected = editorViewModel::onReceiversSelected,
+                onReceiversSelected = { receiverIds -> editorViewModel.onIntent(AfternoteEditorIntent.ReceiversSelected(receiverIds)) },
                 onSaveSuccessNavigateHome = onSaveSuccessNavigateHome,
             )
         }
@@ -87,8 +88,10 @@ internal fun AfternoteEditorFlowHost(
                         songs = editorUiState.form.memorialPlaylistSongs,
                         onBackClick = actions::popBack,
                         onNavigateToAddSongScreen = actions::navigateToAddSong,
-                        onClearAllSongs = editorViewModel::clearMemorialPlaylistSongs,
-                        onRemoveSongs = editorViewModel::removeMemorialPlaylistSongs,
+                        onClearAllSongs = { editorViewModel.onIntent(AfternoteEditorIntent.ClearMemorialPlaylistSongs) },
+                        onRemoveSongs = { selectionKeys ->
+                            editorViewModel.onIntent(AfternoteEditorIntent.RemoveMemorialPlaylistSongs(selectionKeys))
+                        },
                     )
                 }
 
@@ -96,7 +99,7 @@ internal fun AfternoteEditorFlowHost(
                     val addSongViewModel: AddSongViewModel = hiltViewModel()
                     AfternoteAddSongNavigation(
                         onPopBackStack = actions::popBack,
-                        onSongsAdded = editorViewModel::addMemorialPlaylistSongs,
+                        onSongsAdded = { songs -> editorViewModel.onIntent(AfternoteEditorIntent.AddMemorialPlaylistSongs(songs)) },
                         viewModel = addSongViewModel,
                     )
                 }

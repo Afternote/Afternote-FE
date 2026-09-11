@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -110,14 +111,7 @@ internal fun EditorServiceSelectionSheet(
 ) {
     if (!visible) return
     val titleRes = type.serviceSelectionSheetTitleResOrNull() ?: return
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    ModalBottomSheet(
-        onDismissRequest = onDismissRequest,
-        sheetState = sheetState,
-        containerColor = AfternoteDesign.colors.white,
-        dragHandle = null,
-    ) {
+    val content: @Composable () -> Unit = {
         EditorServiceSelectionSheetContent(
             title = stringResource(titleRes),
             type = type,
@@ -126,11 +120,25 @@ internal fun EditorServiceSelectionSheet(
             onServiceSelected = onServiceSelected,
         )
     }
+    // Layoutlib Preview는 ModalBottomSheet의 별도 창을 캡처하지 못하므로 같은 본문을 직접 렌더한다.
+    if (LocalInspectionMode.current) {
+        content()
+        return
+    }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismissRequest,
+        sheetState = sheetState,
+        containerColor = AfternoteDesign.colors.white,
+        dragHandle = null,
+    ) {
+        content()
+    }
 }
 
-/** Popup 윈도 밖에서도 Preview·Robolectric 검증이 가능한 시트 본문. */
+/** 서비스 선택 시트의 검색 입력과 목록. */
 @Composable
-internal fun EditorServiceSelectionSheetContent(
+private fun EditorServiceSelectionSheetContent(
     title: String,
     type: AfternoteType,
     services: List<String>,
