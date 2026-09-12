@@ -2,7 +2,7 @@ package com.afternote.feature.setting.presentation.viewmodel
 
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.MyProfileRepository
 import com.afternote.core.ui.mvi.MviViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -13,7 +13,7 @@ import javax.inject.Inject
 internal class ProfileEditViewModel
     @Inject
     constructor(
-        private val userRepository: UserRepository,
+        private val userRepository: MyProfileRepository,
     ) : MviViewModel<ProfileEditIntent, ProfileEditUiState, ProfileEditReducerEvent>(ProfileEditUiState.Loading) {
         private var loadJob: Job? = null
 

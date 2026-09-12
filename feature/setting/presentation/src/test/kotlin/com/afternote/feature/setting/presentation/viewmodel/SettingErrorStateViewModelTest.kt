@@ -1,7 +1,8 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
+import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
+import com.afternote.core.domain.testing.FakeMyProfileRepository
 import com.afternote.core.domain.testing.FakeAuthRepository
-import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.ui.UiText
@@ -46,14 +47,14 @@ class SettingErrorStateViewModelTest {
         runTest(dispatcher) {
             var attempts = 0
             val repository =
-                FakeUserRepository.strict().apply {
+                FakeMyProfileRepository.strict().apply {
                     onGetMyProfile = {
                         attempts += 1
                         if (attempts == 1) error("offline")
                         testUser
                     }
                 }
-            val viewModel = SettingViewModel(FakeAuthRepository.strict(), repository)
+            val viewModel = SettingViewModel(FakeAuthRepository.strict(), FakeSettingAccountRepository.strict(), repository)
 
             advanceUntilIdle()
             assertTrue(viewModel.uiState.value.profile is SettingProfileState.Error)
@@ -70,12 +71,12 @@ class SettingErrorStateViewModelTest {
             val refreshResult = CompletableDeferred<User>()
             var attempts = 0
             val repository =
-                FakeUserRepository.strict().apply {
+                FakeMyProfileRepository.strict().apply {
                     onGetMyProfile = {
                         if (attempts++ == 0) testUser else refreshResult.await()
                     }
                 }
-            val viewModel = SettingViewModel(FakeAuthRepository.strict(), repository)
+            val viewModel = SettingViewModel(FakeAuthRepository.strict(), FakeSettingAccountRepository.strict(), repository)
             advanceUntilIdle()
             val previous = viewModel.uiState.value
 
@@ -94,7 +95,7 @@ class SettingErrorStateViewModelTest {
         runTest(dispatcher) {
             var attempts = 0
             val repository =
-                FakeUserRepository.strict().apply {
+                FakeMyProfileRepository.strict().apply {
                     onGetMyProfile = {
                         attempts += 1
                         if (attempts == 1) error("offline")
@@ -120,7 +121,7 @@ class SettingErrorStateViewModelTest {
         runTest(dispatcher) {
             var attempts = 0
             val repository =
-                FakeUserRepository.strict().apply {
+                FakeSettingAccountRepository.strict().apply {
                     onGetConnectedAccounts = {
                         attempts += 1
                         if (attempts == 1) error("offline")
@@ -147,7 +148,7 @@ class SettingErrorStateViewModelTest {
     fun `연결 계정 변경 실패는 기존 목록을 유지하고 오류 이벤트를 보낸다`() =
         runTest(dispatcher) {
             val repository =
-                FakeUserRepository.strict().apply {
+                FakeSettingAccountRepository.strict().apply {
                     onGetConnectedAccounts = { testConnectedAccount }
                     onLinkConnectedAccount = { _, _ -> error("offline") }
                 }
@@ -171,7 +172,7 @@ class SettingErrorStateViewModelTest {
         runTest(dispatcher) {
             val connectedAccount = testConnectedAccount.copy(google = true, googleEmail = "google@afternote.com")
             val repository =
-                FakeUserRepository.strict().apply {
+                FakeSettingAccountRepository.strict().apply {
                     onGetConnectedAccounts = { connectedAccount }
                     onUnlinkConnectedAccount = { error("offline") }
                 }
@@ -196,7 +197,7 @@ class SettingErrorStateViewModelTest {
             val connectedAccount = testConnectedAccount.copy(kakao = true, kakaoEmail = "kakao@afternote.com")
             val googleLink = CompletableDeferred<UserConnectedAccount>()
             val repository =
-                FakeUserRepository.strict().apply {
+                FakeSettingAccountRepository.strict().apply {
                     onGetConnectedAccounts = { connectedAccount }
                     onLinkConnectedAccount = { _, _ -> googleLink.await() }
                     onUnlinkConnectedAccount = { connectedAccount.copy(kakao = false, kakaoEmail = null) }
@@ -234,7 +235,7 @@ class SettingErrorStateViewModelTest {
         runTest(dispatcher) {
             val googleLink = CompletableDeferred<UserConnectedAccount>()
             val repository =
-                FakeUserRepository.strict().apply {
+                FakeSettingAccountRepository.strict().apply {
                     onGetConnectedAccounts = { testConnectedAccount }
                     onLinkConnectedAccount = { _, _ -> googleLink.await() }
                 }
@@ -260,7 +261,7 @@ class SettingErrorStateViewModelTest {
     fun `프로필 변경 실패는 기존 폼을 유지하고 오류 이벤트를 보낸다`() =
         runTest(dispatcher) {
             val repository =
-                FakeUserRepository.strict().apply {
+                FakeMyProfileRepository.strict().apply {
                     onGetMyProfile = { testUser }
                     onUpdateMyProfile = { _, _, _ -> error("offline") }
                 }
