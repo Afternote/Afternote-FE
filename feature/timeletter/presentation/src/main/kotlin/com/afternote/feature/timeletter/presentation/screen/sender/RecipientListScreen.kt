@@ -11,15 +11,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -41,6 +42,8 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.timeletter.presentation.R
 import com.afternote.feature.timeletter.presentation.component.RecipientListItem
+import com.afternote.feature.timeletter.presentation.component.TimeLetterLoadErrorContent
+import com.afternote.feature.timeletter.presentation.viewmodel.RecipientListUiState
 import com.afternote.feature.timeletter.presentation.viewmodel.RecipientListViewModel
 import kotlinx.coroutines.launch
 
@@ -52,14 +55,63 @@ fun RecipientListScreen(
     allowEmptyConfirm: Boolean = false,
     viewModel: RecipientListViewModel = hiltViewModel(),
 ) {
-    val recipients by viewModel.recipients.collectAsStateWithLifecycle()
-    RecipientListContent(
-        recipients = recipients,
-        onBackClick = onBackClick,
-        onConfirmClick = onConfirmClick,
-        allowEmptyConfirm = allowEmptyConfirm,
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    when (val state = uiState) {
+        RecipientListUiState.Loading -> {
+            RecipientListLoadingContent(onBackClick, modifier)
+        }
+
+        RecipientListUiState.Error -> {
+            Scaffold(
+                modifier = modifier,
+                topBar = {
+                    DetailTopBar(
+                        title = stringResource(R.string.timeletter_recipient_list_title),
+                        onBackClick = onBackClick,
+                    )
+                },
+            ) { innerPadding ->
+                TimeLetterLoadErrorContent(
+                    message = stringResource(R.string.timeletter_recipient_list_load_failed),
+                    onRetry = viewModel::retry,
+                    modifier = Modifier.padding(innerPadding),
+                )
+            }
+        }
+
+        is RecipientListUiState.Success -> {
+            RecipientListContent(
+                recipients = state.recipients,
+                onBackClick = onBackClick,
+                onConfirmClick = onConfirmClick,
+                allowEmptyConfirm = allowEmptyConfirm,
+                modifier = modifier,
+            )
+        }
+    }
+}
+
+@Composable
+private fun RecipientListLoadingContent(
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Scaffold(
         modifier = modifier,
-    )
+        topBar = {
+            DetailTopBar(
+                title = stringResource(R.string.timeletter_recipient_list_title),
+                onBackClick = onBackClick,
+            )
+        },
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier.fillMaxSize().padding(innerPadding),
+            contentAlignment = Alignment.Center,
+        ) {
+            CircularProgressIndicator()
+        }
+    }
 }
 
 @Composable
@@ -71,7 +123,7 @@ private fun RecipientListContent(
     allowEmptyConfirm: Boolean = false,
 ) {
     val searchState = rememberTextFieldState()
-    val selectedIds = remember { mutableStateSetOf<Long>() }
+    var selectedIds by rememberSaveable { mutableStateOf(emptySet<Long>()) }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     var selectedConsonant by remember { mutableStateOf<Char?>(null) }
@@ -110,7 +162,7 @@ private fun RecipientListContent(
         modifier = modifier,
         topBar = {
             DetailTopBar(
-                title = "수신인 목록",
+                title = stringResource(R.string.timeletter_recipient_list_title),
                 onBackClick = onBackClick,
             )
         },
@@ -156,11 +208,12 @@ private fun RecipientListContent(
                                 recipient = recipient,
                                 selected = recipient.receiverId in selectedIds,
                                 onSelectedChange = { checked ->
-                                    if (checked) {
-                                        selectedIds.add(recipient.receiverId)
-                                    } else {
-                                        selectedIds.remove(recipient.receiverId)
-                                    }
+                                    selectedIds =
+                                        if (checked) {
+                                            selectedIds + recipient.receiverId
+                                        } else {
+                                            selectedIds - recipient.receiverId
+                                        }
                                 },
                             )
                         }

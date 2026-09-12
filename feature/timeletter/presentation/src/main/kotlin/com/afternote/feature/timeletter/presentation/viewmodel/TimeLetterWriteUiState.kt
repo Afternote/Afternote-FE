@@ -7,6 +7,7 @@ import com.afternote.feature.timeletter.domain.model.RecordedAudio
 data class TimeLetterWriteUiState(
     val editingTimeLetterId: Long? = null,
     val isLoadingEditingLetter: Boolean = false,
+    val editingLoadError: Boolean = false,
     val draftTitle: String? = null,
     val draftTextContents: Map<Long, String> = emptyMap(),
     val recipientIds: List<Long> = emptyList(),
@@ -17,6 +18,7 @@ data class TimeLetterWriteUiState(
     val sendMinute: Int = 0,
     val draftCount: Int = 0,
     val isSaving: Boolean = false,
+    val isCheckingRegisterLimit: Boolean = false,
     val textAlign: TextAlign = TextAlign.Start,
     val error: TimeLetterWriteError? = null,
     val editorBlocks: List<EditorBlock> = listOf(EditorBlock.Text(id = 0L)),

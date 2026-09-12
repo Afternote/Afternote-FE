@@ -11,10 +11,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import com.afternote.core.ui.button.FAB.PenFloatingActionButton
 import com.afternote.core.ui.topbar.HomeTopBar
-import com.afternote.feature.timeletter.presentation.component.EmptyTimeLetterContent
+import com.afternote.feature.timeletter.presentation.R
 import com.afternote.feature.timeletter.presentation.component.TimeLetterContent
+import com.afternote.feature.timeletter.presentation.component.TimeLetterLoadErrorContent
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeletterUiState
 import com.afternote.feature.timeletter.presentation.viewmodel.ViewMode
 
@@ -36,6 +38,7 @@ internal fun TimeletterScreenContent(
     onEditClick: (Long) -> Unit,
     onFilterRecipientClick: () -> Unit,
     onDeleteClick: (Long) -> Unit,
+    onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -56,7 +59,11 @@ internal fun TimeletterScreenContent(
             }
 
             is TimeletterUiState.Error -> {
-                EmptyTimeLetterContent(modifier = Modifier.padding(paddingValues))
+                TimeLetterLoadErrorContent(
+                    message = stringResource(R.string.timeletter_write_load_failed),
+                    onRetry = onRetry,
+                    modifier = Modifier.padding(paddingValues),
+                )
             }
 
             is TimeletterUiState.Success -> {

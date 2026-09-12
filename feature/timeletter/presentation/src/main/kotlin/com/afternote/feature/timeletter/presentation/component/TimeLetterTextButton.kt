@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,6 +25,8 @@ fun TimeLetterTextButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     isActive: Boolean = false,
+    isLoading: Boolean = false,
+    enabled: Boolean = true,
 ) {
     val shape = RoundedCornerShape(6.dp)
     val backgroundColor =
@@ -38,14 +42,22 @@ fun TimeLetterTextButton(
                 .height(36.dp)
                 .clip(shape)
                 .background(color = backgroundColor, shape = shape)
-                .clickable(onClick = onClick)
+                .clickable(enabled = enabled && !isLoading, onClick = onClick)
                 .padding(start = 18.dp, top = 8.dp, end = 18.dp, bottom = 8.dp),
     ) {
-        Text(
-            text = text,
-            style = AfternoteDesign.typography.bodySmallR,
-            color = textColor,
-        )
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(18.dp),
+                color = AfternoteDesign.colors.gray7,
+                strokeWidth = 2.dp,
+            )
+        } else {
+            Text(
+                text = text,
+                style = AfternoteDesign.typography.bodySmallR,
+                color = textColor,
+            )
+        }
     }
 }
 

@@ -20,6 +20,7 @@ fun AlignButton(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     Box(
         modifier =
@@ -33,7 +34,7 @@ fun AlignButton(
                     } else {
                         Modifier
                     },
-                ).clickable(onClick = onClick),
+                ).clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Icon(

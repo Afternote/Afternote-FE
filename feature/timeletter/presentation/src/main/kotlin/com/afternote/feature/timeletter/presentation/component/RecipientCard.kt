@@ -24,6 +24,7 @@ fun RecipientCard(
     recipientName: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     Row(
         modifier =
@@ -31,7 +32,7 @@ fun RecipientCard(
                 .fillMaxWidth()
                 .height(115.dp)
                 .background(AfternoteDesign.colors.gray2)
-                .clickable(onClick = onClick)
+                .clickable(enabled = enabled, onClick = onClick)
                 .padding(horizontal = 20.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
