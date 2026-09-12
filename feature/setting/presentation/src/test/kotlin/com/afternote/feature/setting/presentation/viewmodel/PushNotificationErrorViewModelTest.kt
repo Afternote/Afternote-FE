@@ -2,9 +2,9 @@ package com.afternote.feature.setting.presentation.viewmodel
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.UserPushSetting
 import com.afternote.core.ui.UiText
+import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
 import com.afternote.feature.setting.presentation.NoOpErrorReporter
 import com.afternote.feature.setting.presentation.R
 import kotlinx.coroutines.Dispatchers
@@ -48,7 +48,7 @@ class PushNotificationErrorViewModelTest {
             var attempts = 0
             val expected = UserPushSetting(timeLetter = true, mindRecord = false, afterNote = true)
             val repository =
-                FakeUserRepository.strict().apply {
+                FakeSettingNotificationRepository.strict().apply {
                     onGetMyPushSettings = {
                         attempts += 1
                         if (attempts == 1) error("offline")

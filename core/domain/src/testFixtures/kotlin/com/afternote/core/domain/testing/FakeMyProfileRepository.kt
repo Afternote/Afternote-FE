@@ -11,8 +11,6 @@ import java.util.concurrent.atomic.AtomicInteger
  * 서버 정본 프로필만 메모리에 담는다. 로컬 캐시(사용자 이름·패스키 등록 여부) fake 는
  * [FakeUserProfileRepository] 로 책임이 다르다.
  *
- * 호출 기록 타입([FakeUserRepository.ProfileUpdateCall])이 아직 [FakeUserRepository] 안에 남는 이유는
- * [FakeUserReceiverRepository] 와 같다 — 소비자가 그 이름으로 import 하고 있다.
  */
 class FakeMyProfileRepository(
     @Volatile var profile: User = DEFAULT_USER,
@@ -21,7 +19,7 @@ class FakeMyProfileRepository(
 ) : MyProfileRepository {
     private val getProfileCounter = AtomicInteger()
 
-    val profileUpdateCalls = CopyOnWriteArrayList<FakeUserRepository.ProfileUpdateCall>()
+    val profileUpdateCalls = CopyOnWriteArrayList<FakeMyProfileRepository.ProfileUpdateCall>()
 
     val getProfileCalls: Int get() = getProfileCounter.get()
     val profileCalls: Int get() = getProfileCounter.get()
@@ -37,7 +35,7 @@ class FakeMyProfileRepository(
         phone: String?,
         profileImageUrl: String?,
     ): User {
-        profileUpdateCalls += FakeUserRepository.ProfileUpdateCall(name, phone, profileImageUrl)
+        profileUpdateCalls += FakeMyProfileRepository.ProfileUpdateCall(name, phone, profileImageUrl)
         onUpdateMyProfile?.let { return it(name, phone, profileImageUrl) }
         profile =
             profile.copy(
@@ -47,6 +45,12 @@ class FakeMyProfileRepository(
             )
         return profile
     }
+
+    data class ProfileUpdateCall(
+        val name: String?,
+        val phone: String?,
+        val profileImageUrl: String?,
+    )
 
     companion object {
         internal val DEFAULT_USER = User("테스트 사용자", "test@afternote.local", null, null)

@@ -1,7 +1,8 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
 import com.afternote.core.domain.error.ReceiverRequestRejectedException
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
+import com.afternote.core.domain.testing.FakeUserReceiverRepository
 import com.afternote.core.model.user.ReceiverCreated
 import com.afternote.core.ui.UiText
 import com.afternote.feature.setting.presentation.R
@@ -16,7 +17,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Before
 import org.junit.Test
-import java.lang.reflect.Proxy
 import java.util.concurrent.atomic.AtomicInteger
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -99,21 +99,12 @@ class ReceiverRegisterViewModelTest {
         assertFalse(viewModel.uiState.value.isLoading)
     }
 
-    private fun repository(failure: Throwable? = null): UserRepository =
-        Proxy.newProxyInstance(
-            UserRepository::class.java.classLoader,
-            arrayOf(UserRepository::class.java),
-        ) { _, method, _ ->
-            when (method.name) {
-                "createReceiver" -> {
-                    createCalls.incrementAndGet()
-                    failure?.let { throw it }
-                    ReceiverCreated(receiverId = 1L, authCode = "auth")
-                }
-
-                else -> {
-                    error("Unexpected repository call: ${method.name}")
-                }
+    private fun repository(failure: Throwable? = null): UserReceiverRepository =
+        FakeUserReceiverRepository.strict().apply {
+            onCreateReceiver = { _, _, _, _, _ ->
+                createCalls.incrementAndGet()
+                failure?.let { throw it }
+                ReceiverCreated(receiverId = 1L, authCode = "auth")
             }
-        } as UserRepository
+        }
 }

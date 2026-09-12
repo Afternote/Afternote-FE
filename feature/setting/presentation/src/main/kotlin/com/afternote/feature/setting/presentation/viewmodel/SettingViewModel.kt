@@ -2,9 +2,10 @@ package com.afternote.feature.setting.presentation.viewmodel
 
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.MyProfileRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.ui.mvi.MviViewModel
+import com.afternote.feature.setting.domain.SettingAccountRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -15,7 +16,8 @@ internal class SettingViewModel
     @Inject
     constructor(
         private val authRepository: AuthRepository,
-        private val userRepository: UserRepository,
+        private val userRepository: SettingAccountRepository,
+        private val myProfileRepository: MyProfileRepository,
     ) : MviViewModel<SettingIntent, SettingUiState, SettingReducerEvent>(SettingUiState()) {
         private var loadJob: Job? = null
         private var logoutJob: Job? = null
@@ -87,7 +89,7 @@ internal class SettingViewModel
             loadJob =
                 viewModelScope.launch {
                     dispatch(SettingReducerEvent.ProfileLoading)
-                    runCatchingCancellable { userRepository.getMyProfile() }
+                    runCatchingCancellable { myProfileRepository.getMyProfile() }
                         .onSuccess { dispatch(SettingReducerEvent.ProfileLoaded(it.name, it.email)) }
                         .onFailure { dispatch(SettingReducerEvent.ProfileFailed) }
                 }

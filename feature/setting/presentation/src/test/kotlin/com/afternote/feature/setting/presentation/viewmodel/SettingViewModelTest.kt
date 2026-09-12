@@ -1,8 +1,9 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
 import com.afternote.core.domain.testing.FakeAuthRepository
-import com.afternote.core.domain.testing.FakeUserRepository
+import com.afternote.core.domain.testing.FakeMyProfileRepository
 import com.afternote.core.model.user.User
+import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -72,10 +73,10 @@ class SettingViewModelTest {
         runTest(dispatcher) {
             val auth = FakeAuthRepository.strict().apply { onLogout = { Result.success(Unit) } }
             val repository =
-                FakeUserRepository.strict().apply {
+                FakeMyProfileRepository.strict().apply {
                     onGetMyProfile = { User("name", "user@example.com", null, null) }
                 }
-            val viewModel = SettingViewModel(auth, repository)
+            val viewModel = SettingViewModel(auth, FakeSettingAccountRepository.strict(), repository)
             viewModel.onIntent(SettingIntent.Logout)
             viewModel.onIntent(SettingIntent.Logout)
             runCurrent()
@@ -109,9 +110,11 @@ class SettingViewModelTest {
     private fun viewModel(onDeleteAccount: () -> Unit): SettingViewModel =
         SettingViewModel(
             authRepository = FakeAuthRepository.strict(),
+            myProfileRepository =
+                com.afternote.core.domain.testing
+                    .FakeMyProfileRepository(),
             userRepository =
-                FakeUserRepository.strict().apply {
-                    onGetMyProfile = { User("name", "user@example.com", null, null) }
+                FakeSettingAccountRepository.strict().apply {
                     this.onDeleteAccount = { onDeleteAccount() }
                 },
         )

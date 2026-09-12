@@ -6,8 +6,6 @@ import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.model.user.User
-import com.afternote.core.model.user.UserConnectedAccount
-import com.afternote.core.model.user.UserPushSetting
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.mindrecord.domain.model.EmotionAnalysis
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
@@ -41,30 +39,21 @@ fun appTestAuthRepository(loggedIn: Boolean = false): FakeAuthRepository =
 
 /**
  * 기존 app androidTest 공용 User fake 의 기본 허용 범위를 정본 fixture 위에 보존한다.
- * 수신자 상세·수정, 계정 연결, 전달조건은 전용 시나리오가 `onX` 로 명시해야 열린다.
+ * 수신자 상세·수정, 전달조건은 전용 시나리오가 `onX` 로 명시해야 열린다.
  */
 fun appTestUserRepository(
     profile: User = DEFAULT_TEST_USER,
     receivers: List<Receiver> = listOf(testReceiver()),
-    pushSetting: UserPushSetting = DEFAULT_TEST_PUSH_SETTING,
 ): FakeUserRepository =
     FakeUserRepository.strict().apply {
         this.profile = profile
         receiverState.value = receivers.toList()
-        this.pushSetting = pushSetting
-        connectedAccounts = defaultConnectedAccounts(profile.email)
 
         onReceiverListFlow = null
         onGetReceivers = null
         onCreateReceiver = null
         onGetMyProfile = null
         onUpdateMyProfile = null
-        onDeleteAccount = null
-        onGetMyPushSettings = null
-        onUpdateMyPushSettings = null
-        onGetMyMarketingConsents = null
-        onUpdateMyMarketingConsents = null
-        onGetConnectedAccounts = { defaultConnectedAccounts(this.profile.email) }
     }
 
 class FakeErrorReporter : ErrorReporter {
@@ -88,10 +77,6 @@ fun testReceiver(
 ): Receiver = Receiver(receiverId = id, name = name, relation = "가족", authCode = "fake-auth-$id")
 
 private val DEFAULT_TEST_USER = User("테스트 사용자", "test@afternote.local", null, null)
-private val DEFAULT_TEST_PUSH_SETTING = UserPushSetting(true, true, true)
-
-private fun defaultConnectedAccounts(email: String): UserConnectedAccount =
-    UserConnectedAccount(true, false, false, false, false, email, null, null, null, null)
 
 /**
  * 홈이 진입 시 부르는 주간 리포트의 «빈 응답» (#562).

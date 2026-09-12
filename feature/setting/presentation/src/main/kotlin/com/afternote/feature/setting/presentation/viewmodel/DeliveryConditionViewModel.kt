@@ -2,13 +2,12 @@ package com.afternote.feature.setting.presentation.viewmodel
 
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.core.domain.repository.UserRepository
-import com.afternote.core.model.delivery.ConditionState
-import com.afternote.core.model.delivery.DeliveryConditionItem
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.model.delivery.DeliveryConditionType
 import com.afternote.core.model.delivery.DeliveryContentType
 import com.afternote.core.model.delivery.InactivityPeriod
 import com.afternote.core.ui.mvi.MviViewModel
+import com.afternote.feature.setting.domain.UpdateTimeLetterDeliveryConditionUseCase
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -22,7 +21,8 @@ internal class DeliveryConditionViewModel
     @AssistedInject
     constructor(
         @Assisted route: SettingRoute.AfterDeliveryRoute,
-        private val userRepository: UserRepository,
+        private val userRepository: UserReceiverRepository,
+        private val updateTimeLetterDeliveryCondition: UpdateTimeLetterDeliveryConditionUseCase,
     ) : MviViewModel<DeliveryConditionIntent, DeliveryConditionUiState, DeliveryConditionReducerEvent>(DeliveryConditionUiState()) {
         private val receiverId = route.receiverId
         private var loadJob: Job? = null
@@ -143,41 +143,10 @@ internal class DeliveryConditionViewModel
             loadJob?.cancel()
             val savingRevision = state.conditionEditRevision
 
-            val hasTimeLetterCondition =
-                state.conditions.any { it.contentType == DeliveryContentType.TIME_LETTER }
-            val updatedConditions =
-                state.conditions
-                    .map { condition ->
-                        if (condition.contentType == DeliveryContentType.TIME_LETTER) {
-                            condition.copy(
-                                conditionType = state.conditionType,
-                                inactivityPeriod =
-                                    state.inactivityPeriod.takeIf {
-                                        state.conditionType == DeliveryConditionType.INACTIVITY
-                                    },
-                            )
-                        } else {
-                            condition
-                        }
-                    }.let { conditions ->
-                        if (hasTimeLetterCondition) {
-                            conditions
-                        } else {
-                            conditions +
-                                defaultCondition(DeliveryContentType.TIME_LETTER).copy(
-                                    conditionType = state.conditionType,
-                                    inactivityPeriod =
-                                        state.inactivityPeriod.takeIf {
-                                            state.conditionType == DeliveryConditionType.INACTIVITY
-                                        },
-                                )
-                        }
-                    }
-
             dispatch(DeliveryConditionReducerEvent.Saving)
             viewModelScope.launch {
                 runCatchingCancellable {
-                    userRepository.updateReceiverDeliveryConditions(receiverId, updatedConditions)
+                    updateTimeLetterDeliveryCondition(receiverId, state.conditions, state.conditionType, state.inactivityPeriod)
                 }.onSuccess { response ->
                     dispatch(DeliveryConditionReducerEvent.Saved(savingRevision, response.conditions))
                 }.onFailure {
@@ -185,17 +154,6 @@ internal class DeliveryConditionViewModel
                 }
             }
         }
-
-        private fun defaultCondition(contentType: DeliveryContentType) =
-            DeliveryConditionItem(
-                contentType = contentType,
-                conditionType = DeliveryConditionType.INACTIVITY,
-                inactivityPeriod = InactivityPeriod.ONE_YEAR,
-                state = ConditionState.ACTIVE,
-                fulfilled = false,
-                gracePeriodStartedAt = null,
-                fulfilledAt = null,
-            )
 
         @AssistedFactory
         interface Factory {
