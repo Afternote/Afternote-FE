@@ -1,7 +1,8 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
-import com.afternote.core.domain.testing.FakeUserRepository
+import com.afternote.core.domain.testing.FakeMyProfileRepository
 import com.afternote.core.model.user.User
+import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -35,7 +36,7 @@ class SettingSignalStateTest {
     fun `수집자가 없어도 저장 성공을 보존하고 소비 뒤 같은 성공을 다시 전달한다`() =
         runTest(dispatcher) {
             val repository =
-                FakeUserRepository.strict().apply {
+                FakeMyProfileRepository.strict().apply {
                     onGetMyProfile = { user }
                     onUpdateMyProfile = { _, _, _ -> user }
                 }
@@ -57,7 +58,7 @@ class SettingSignalStateTest {
         runTest(dispatcher) {
             val pending = CompletableDeferred<Unit>()
             val repository =
-                FakeUserRepository.strict().apply {
+                FakeMyProfileRepository.strict().apply {
                     onGetMyProfile = { user }
                     onUpdateMyProfile = { _, _, _ ->
                         pending.await()
@@ -84,7 +85,7 @@ class SettingSignalStateTest {
     @Test
     fun `늦은 오류 소비가 새 계정 연결 신호를 지우지 않는다`() =
         runTest(dispatcher) {
-            val viewModel = ConnectedAccountsViewModel(FakeUserRepository.strict())
+            val viewModel = ConnectedAccountsViewModel(FakeSettingAccountRepository.strict())
             runCurrent()
             viewModel.onIntent(ConnectedAccountsIntent.NotifyLinkError("인증 실패"))
             viewModel.onIntent(ConnectedAccountsIntent.Toggle("google", true))

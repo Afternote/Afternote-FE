@@ -1,9 +1,9 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.ui.mvi.MviViewModel
+import com.afternote.feature.setting.domain.SettingAccountRepository
 import com.afternote.feature.setting.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -13,7 +13,7 @@ import javax.inject.Inject
 internal class ConnectedAccountsViewModel
     @Inject
     constructor(
-        private val userRepository: UserRepository,
+        private val userRepository: SettingAccountRepository,
     ) : MviViewModel<ConnectedAccountsIntent, ConnectedAccountsUiState, ConnectedAccountsReducerEvent>(
             ConnectedAccountsUiState(isLoading = true),
         ) {

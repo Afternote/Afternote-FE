@@ -2,9 +2,9 @@ package com.afternote.feature.setting.presentation.viewmodel
 
 import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.UserMarketingConsent
 import com.afternote.core.model.user.UserPushSetting
+import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationIntent
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -160,13 +160,13 @@ class MarketingConsentFailureTest {
         }
 
     private fun repository() =
-        FakeUserRepository.strict().apply {
+        FakeSettingNotificationRepository.strict().apply {
             onGetMyPushSettings = { UserPushSetting(false, false, false) }
             onGetMyMarketingConsents = { UserMarketingConsent(true, true, true) }
         }
 
     private fun viewModel(
-        repository: FakeUserRepository,
+        repository: FakeSettingNotificationRepository,
         reporter: ErrorReporter,
     ) = PushNotificationViewModel(ApplicationProvider.getApplicationContext(), repository, reporter)
 

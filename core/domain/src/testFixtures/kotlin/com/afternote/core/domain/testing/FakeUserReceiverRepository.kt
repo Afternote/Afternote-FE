@@ -18,9 +18,6 @@ import java.util.concurrent.atomic.AtomicInteger
  * 수신자 목록·상세·전달조건만 메모리에 담는다 — 프로필·계정·푸시 상태는 갖지 않는다.
  * 호출은 모두 기록하고, 경합 게이트나 실패 응답처럼 저장소 상태만으로 표현할 수 없는 시나리오는 `onX` 로 갈아끼운다.
  *
- * 호출 기록 타입([FakeUserRepository.ReceiverCreateCall] 등)은 아직 [FakeUserRepository] 안에 남는다 —
- * `feature:setting` 테스트가 `FakeUserRepository.ReceiverCreateCall` 로 import 하고 있어 지금 옮기면
- * 남의 모듈이 깨진다. 소비자가 좁은 fake 로 이관될 때 함께 옮긴다.
  */
 class FakeUserReceiverRepository(
     receivers: List<Receiver> = listOf(DEFAULT_RECEIVER),
@@ -47,12 +44,12 @@ class FakeUserReceiverRepository(
     private val receiverListFlowCounter = AtomicInteger()
     private val getReceiversCounter = AtomicInteger()
 
-    val receiverCreateCalls = CopyOnWriteArrayList<FakeUserRepository.ReceiverCreateCall>()
+    val receiverCreateCalls = CopyOnWriteArrayList<FakeUserReceiverRepository.ReceiverCreateCall>()
     val receiverDetailCalls = CopyOnWriteArrayList<Long>()
-    val receiverUpdateCalls = CopyOnWriteArrayList<FakeUserRepository.ReceiverUpdateCall>()
-    val receiverMessageCalls = CopyOnWriteArrayList<FakeUserRepository.ReceiverMessageCall>()
+    val receiverUpdateCalls = CopyOnWriteArrayList<FakeUserReceiverRepository.ReceiverUpdateCall>()
+    val receiverMessageCalls = CopyOnWriteArrayList<FakeUserReceiverRepository.ReceiverMessageCall>()
     val deliveryLoadCalls = CopyOnWriteArrayList<Long>()
-    val deliveryUpdateCalls = CopyOnWriteArrayList<FakeUserRepository.DeliveryUpdateCall>()
+    val deliveryUpdateCalls = CopyOnWriteArrayList<FakeUserReceiverRepository.DeliveryUpdateCall>()
 
     val receiverListFlowCalls: Int get() = receiverListFlowCounter.get()
     val getReceiversCalls: Int get() = getReceiversCounter.get()
@@ -77,7 +74,7 @@ class FakeUserReceiverRepository(
         email: String,
         message: String?,
     ): ReceiverCreated {
-        receiverCreateCalls += FakeUserRepository.ReceiverCreateCall(name, relation, phone, email, message)
+        receiverCreateCalls += FakeUserReceiverRepository.ReceiverCreateCall(name, relation, phone, email, message)
         onCreateReceiver?.let { return it(name, relation, phone, email, message) }
         val id = (receiverState.value.maxOfOrNull(Receiver::receiverId) ?: 0L) + 1L
         val authCode = "fake-auth-$id"
@@ -102,7 +99,7 @@ class FakeUserReceiverRepository(
         relation: String,
         email: String,
     ): Receiver {
-        receiverUpdateCalls += FakeUserRepository.ReceiverUpdateCall(receiverId, name, phone, relation, email)
+        receiverUpdateCalls += FakeUserReceiverRepository.ReceiverUpdateCall(receiverId, name, phone, relation, email)
         onUpdateReceiver?.let { return it(receiverId, name, phone, relation, email) }
         val current = requireNotNull(receiverState.value.firstOrNull { it.receiverId == receiverId })
         val updated = current.copy(name = name, relation = relation)
@@ -117,7 +114,7 @@ class FakeUserReceiverRepository(
         receiverId: Long,
         message: String,
     ) {
-        receiverMessageCalls += FakeUserRepository.ReceiverMessageCall(receiverId, message)
+        receiverMessageCalls += FakeUserReceiverRepository.ReceiverMessageCall(receiverId, message)
         onUpdateReceiverMessage?.let {
             it(receiverId, message)
             return
@@ -141,12 +138,38 @@ class FakeUserReceiverRepository(
         receiverId: Long,
         conditions: List<DeliveryConditionItem>,
     ): ReceiverDeliveryConditions {
-        deliveryUpdateCalls += FakeUserRepository.DeliveryUpdateCall(receiverId, conditions.toList())
+        deliveryUpdateCalls += FakeUserReceiverRepository.DeliveryUpdateCall(receiverId, conditions.toList())
         onUpdateReceiverDeliveryConditions?.let { return it(receiverId, conditions) }
         val stored = ReceiverDeliveryConditions(receiverId, conditions.toList())
         deliveryConditions[receiverId] = stored
         return stored.copy(conditions = stored.conditions.toList())
     }
+
+    data class ReceiverCreateCall(
+        val name: String,
+        val relation: String,
+        val phone: String?,
+        val email: String,
+        val message: String?,
+    )
+
+    data class ReceiverUpdateCall(
+        val receiverId: Long,
+        val name: String,
+        val phone: String,
+        val relation: String,
+        val email: String,
+    )
+
+    data class ReceiverMessageCall(
+        val receiverId: Long,
+        val message: String,
+    )
+
+    data class DeliveryUpdateCall(
+        val receiverId: Long,
+        val conditions: List<DeliveryConditionItem>,
+    )
 
     companion object {
         internal val DEFAULT_RECEIVER = Receiver(7L, "김수신", "가족", "fake-auth-7")

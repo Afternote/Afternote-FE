@@ -2,8 +2,9 @@ package com.afternote.feature.setting.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.MyProfileRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
+import com.afternote.feature.setting.domain.SettingAccountRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,7 +46,8 @@ class SettingViewModel
     @Inject
     constructor(
         private val authRepository: AuthRepository,
-        private val userRepository: UserRepository,
+        private val userRepository: SettingAccountRepository,
+        private val myProfileRepository: MyProfileRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<SettingUiState>(SettingUiState.Loading)
         val uiState = _uiState.asStateFlow()
@@ -61,7 +63,7 @@ class SettingViewModel
 
         private fun loadProfile() {
             viewModelScope.launch {
-                runCatching { userRepository.getMyProfile() }
+                runCatching { myProfileRepository.getMyProfile() }
                     .onSuccess { profile ->
                         _uiState.value =
                             SettingUiState.Success(
