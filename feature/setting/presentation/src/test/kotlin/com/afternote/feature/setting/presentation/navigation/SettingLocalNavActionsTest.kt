@@ -2,12 +2,19 @@ package com.afternote.feature.setting.presentation.navigation
 
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.serialization.NavBackStackSerializer
+import androidx.navigation3.runtime.serialization.NavKeySerializer
+import androidx.savedstate.serialization.decodeFromSavedState
+import androidx.savedstate.serialization.encodeToSavedState
 import com.afternote.core.ui.navigation.FeatureStackBoundary
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35])
 class SettingLocalNavActionsTest {
     private val stack = NavBackStack<NavKey>(SettingRoute.SettingHomeRoute)
     private var exits = 0
@@ -112,6 +119,9 @@ class SettingLocalNavActionsTest {
                 SettingRoute.NoticeRoute,
                 SettingRoute.CustomerCenterRoute,
             )
-        assertEquals(routes, Json.decodeFromString<List<SettingRoute>>(Json.encodeToString(routes)))
+        val backStack = NavBackStack<NavKey>(*routes.toTypedArray())
+        val serializer = NavBackStackSerializer(NavKeySerializer<NavKey>())
+        val restored = decodeFromSavedState(serializer, encodeToSavedState(serializer, backStack))
+        assertEquals(routes, restored.toList())
     }
 }
