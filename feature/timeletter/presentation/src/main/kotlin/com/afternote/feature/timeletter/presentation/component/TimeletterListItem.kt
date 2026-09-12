@@ -68,8 +68,12 @@ fun TimeLetterListItem(
             ) {
                 Text(
                     text = "수신인  ${
-                        letter.receiverIds.mapNotNull { receiverNameMap[it] }.joinToString(", ")
-                            .ifEmpty { "수신자 정보 없음" }
+                        if (letter.receiverIds.isEmpty()) {
+                            "수신자 정보 없음"
+                        } else {
+                            letter.receiverIds.mapNotNull { receiverNameMap[it] }.joinToString(", ")
+                                .ifEmpty { "${letter.receiverIds.size}명" }
+                        }
                     }",
                     style = AfternoteDesign.typography.footnoteCaption,
                     color = AfternoteDesign.colors.gray6,
