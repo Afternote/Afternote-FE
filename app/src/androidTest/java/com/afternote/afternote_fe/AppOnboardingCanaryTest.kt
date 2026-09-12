@@ -1,5 +1,6 @@
 package com.afternote.afternote_fe
 
+import android.view.WindowInsets
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
@@ -154,6 +155,56 @@ class AppOnboardingCanaryTest {
         composeRule.onNode(hasText("canary@afternote.local")).assertIsDisplayed()
         composeRule.onNode(hasText("password-1234")).assertIsDisplayed()
         assertEquals(0, fakeAuth.attemptedEmailLogins.size)
+    }
+
+    @Test
+    fun findIdAction_keepsDesignGapAboveNavigationBarAndKeyboard() {
+        composeRule
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_start))
+            .performClick()
+        composeRule
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_login_find_account))
+            .performClick()
+
+        assertFindIdActionBottomGap()
+        composeRule
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_find_account_email_placeholder))
+            .performClick()
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.activity.window.decorView.rootWindowInsets
+                .isVisible(WindowInsets.Type.ime())
+        }
+        composeRule.waitForIdle()
+        assertFindIdActionBottomGap()
+
+        composeRule.runOnIdle {
+            composeRule.activity.window.insetsController
+                ?.hide(WindowInsets.Type.ime())
+        }
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            !composeRule.activity.window.decorView.rootWindowInsets
+                .isVisible(WindowInsets.Type.ime())
+        }
+        composeRule.waitForIdle()
+        assertFindIdActionBottomGap()
+    }
+
+    private fun assertFindIdActionBottomGap() {
+        val action = composeRule.onNodeWithText(context.getString(OnboardingR.string.onboarding_find_account_next))
+        action.assertIsDisplayed()
+        // IME visibility는 애니메이션 시작에 바뀐다. 최종 배치까지 기다린 뒤 간격을 확인한다.
+        var gap = Float.NaN
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            val buttonBottom = action.fetchSemanticsNode().boundsInWindow.bottom
+            gap =
+                composeRule.runOnIdle {
+                    val decor = composeRule.activity.window.decorView
+                    val bottomInset = decor.rootWindowInsets.getInsets(WindowInsets.Type.navigationBars() or WindowInsets.Type.ime()).bottom
+                    (decor.height - bottomInset - buttonBottom) / context.resources.displayMetrics.density
+                }
+            kotlin.math.abs(gap - 49f) <= 1f
+        }
+        assertEquals("CTA gap above system UI", 49f, gap, 1f)
     }
 
     private fun openLoginAndEnterCredentials() {
