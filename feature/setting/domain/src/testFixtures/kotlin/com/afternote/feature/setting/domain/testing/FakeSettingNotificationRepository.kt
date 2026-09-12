@@ -1,6 +1,5 @@
 package com.afternote.feature.setting.domain.testing
 
-import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserMarketingConsent
 import com.afternote.core.model.user.UserPushSetting
 import com.afternote.feature.setting.domain.SettingNotificationRepository

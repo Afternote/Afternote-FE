@@ -1,8 +1,6 @@
 package com.afternote.feature.setting.domain
 
 import com.afternote.core.model.user.UserConnectedAccount
-import com.afternote.core.model.user.UserMarketingConsent
-import com.afternote.core.model.user.UserPushSetting
 
 public interface SettingAccountRepository {
     // 회원 탈퇴
