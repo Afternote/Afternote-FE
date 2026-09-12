@@ -7,10 +7,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import com.afternote.core.domain.testing.FakeAuthRepository
+import com.afternote.core.domain.testing.FakeMyProfileRepository
+import com.afternote.core.domain.testing.FakeMyProfileRepository.ProfileUpdateCall
+import com.afternote.core.domain.testing.FakeUserReceiverRepository
+import com.afternote.core.domain.testing.FakeUserReceiverRepository.DeliveryUpdateCall
 import com.afternote.core.domain.testing.FakeUserRepository
-import com.afternote.core.domain.testing.FakeUserRepository.ConnectedAccountLinkCall
-import com.afternote.core.domain.testing.FakeUserRepository.DeliveryUpdateCall
-import com.afternote.core.domain.testing.FakeUserRepository.ProfileUpdateCall
 import com.afternote.core.model.delivery.ConditionState
 import com.afternote.core.model.delivery.DeliveryConditionItem
 import com.afternote.core.model.delivery.DeliveryConditionType
@@ -23,6 +24,9 @@ import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.setting.domain.Passkey
+import com.afternote.feature.setting.domain.UpdateTimeLetterDeliveryConditionUseCase
+import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
+import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository.ConnectedAccountLinkCall
 import com.afternote.feature.setting.presentation.component.PinSetupStep
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
@@ -72,7 +76,7 @@ class SettingAccountSecurityTest {
     @Test
     fun profileLoadValidationAndUpdateFailure_preserveExactContract() {
         val loadFailureRepository =
-            settingContractUserRepository().apply {
+            FakeMyProfileRepository(DEFAULT_USER).apply {
                 onGetMyProfile = { throw IllegalStateException("profile unavailable") }
             }
         val loadFailureViewModel = ProfileEditViewModel(loadFailureRepository)
@@ -94,7 +98,7 @@ class SettingAccountSecurityTest {
         composeRule.runOnIdle { loadFailureViewModel.onIntent(ProfileEditIntent.UpdateProfile("새 이름", "01012345678")) }
         assertTrue(loadFailureRepository.profileUpdateCalls.isEmpty())
 
-        val updateFailureRepository = settingContractUserRepository()
+        val updateFailureRepository = FakeMyProfileRepository(DEFAULT_USER)
         val updateFailureViewModel = ProfileEditViewModel(updateFailureRepository)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             updateFailureViewModel.uiState.value is ProfileEditUiState.Success
@@ -161,7 +165,7 @@ class SettingAccountSecurityTest {
 
     @Test
     fun receiverRegister_blankRequiredEmail_isRejectedBeforeRepositoryCall() {
-        val repository = settingContractUserRepository()
+        val repository = FakeUserReceiverRepository()
         val viewModel = ReceiverRegisterViewModel(repository)
 
         composeRule.runOnIdle {
@@ -199,7 +203,7 @@ class SettingAccountSecurityTest {
                 ),
             )
         val repository =
-            settingContractUserRepository().apply {
+            FakeUserReceiverRepository().apply {
                 onGetReceiverDeliveryConditions = {
                     ReceiverDeliveryConditions(
                         receiverId = RECEIVER_ID,
@@ -212,6 +216,7 @@ class SettingAccountSecurityTest {
             DeliveryConditionViewModel(
                 route = SettingRoute.AfterDeliveryRoute(RECEIVER_ID),
                 userRepository = repository,
+                updateTimeLetterDeliveryCondition = UpdateTimeLetterDeliveryConditionUseCase(repository),
             )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.isInitialized
@@ -319,7 +324,7 @@ class SettingAccountSecurityTest {
             settingContractUserRepository().apply {
                 onDeleteAccount = { throw IllegalStateException("delete rejected") }
             }
-        val viewModel = SettingViewModel(authRepository, userRepository)
+        val viewModel = SettingViewModel(authRepository, userRepository, FakeMyProfileRepository(DEFAULT_USER))
         var successCalls = 0
         composeRule.setContent {
             AfternoteTheme {
@@ -406,19 +411,11 @@ private fun deliveryCondition(
     fulfilledAt = null,
 )
 
-private fun settingContractUserRepository(): FakeUserRepository =
-    FakeUserRepository.strict().apply {
-        onReceiverListFlow = { receiverState }
-        onGetMyProfile = { DEFAULT_USER }
-        onUpdateMyProfile = { _, _, _ -> DEFAULT_USER }
+private fun settingContractUserRepository(): FakeSettingAccountRepository =
+    FakeSettingAccountRepository.strict().apply {
         onGetConnectedAccounts = { connectedAccounts() }
         onLinkConnectedAccount = { _, _ -> connectedAccounts(google = true) }
         onUnlinkConnectedAccount = { connectedAccounts() }
-        onCreateReceiver = { _, _, _, _, _ -> ReceiverCreated(1L, "AUTH-1") }
-        onGetReceiverDeliveryConditions = { receiverId -> ReceiverDeliveryConditions(receiverId, emptyList()) }
-        onUpdateReceiverDeliveryConditions = { receiverId, conditions ->
-            ReceiverDeliveryConditions(receiverId, conditions)
-        }
         onDeleteAccount = {}
     }
 

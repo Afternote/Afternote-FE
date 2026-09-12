@@ -2,9 +2,11 @@ package com.afternote.feature.setting.presentation.viewmodel
 
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.mvi.MviViewModel
+import com.afternote.feature.setting.domain.UpdateReceiverInfoResult
+import com.afternote.feature.setting.domain.UpdateReceiverInfoUseCase
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import dagger.assisted.Assisted
@@ -18,7 +20,8 @@ internal class ReceiverEditViewModel
     @AssistedInject
     constructor(
         @Assisted route: SettingRoute.RecipientEditRoute,
-        private val userRepository: UserRepository,
+        private val userRepository: UserReceiverRepository,
+        private val updateReceiverInfo: UpdateReceiverInfoUseCase,
     ) : MviViewModel<ReceiverEditIntent, ReceiverEditUiState, ReceiverEditReducerEvent>(ReceiverEditUiState()) {
         private val receiverId = route.receiverId
 
@@ -83,30 +86,28 @@ internal class ReceiverEditViewModel
 
             dispatch(ReceiverEditReducerEvent.Saving)
             viewModelScope.launch {
-                val receiverUpdateResult =
-                    runCatchingCancellable {
-                        userRepository.updateReceiver(
+                when (
+                    val result =
+                        updateReceiverInfo(
                             receiverId = receiverId,
                             name = name,
                             phone = phone.normalizeReceiverPhone(),
                             relation = relation,
                             email = email.trim(),
+                            message = message,
                         )
+                ) {
+                    UpdateReceiverInfoResult.Success -> {
+                        dispatch(ReceiverEditReducerEvent.Saved)
                     }
-                receiverUpdateResult.exceptionOrNull()?.let { error ->
-                    dispatch(ReceiverEditReducerEvent.SaveFailed(error.toReceiverFailureMessage(R.string.receiver_edit_failed)))
-                    return@launch
-                }
 
-                runCatchingCancellable {
-                    userRepository.updateReceiverMessage(
-                        receiverId = receiverId,
-                        message = message,
-                    )
-                }.onSuccess {
-                    dispatch(ReceiverEditReducerEvent.Saved)
-                }.onFailure {
-                    dispatch(ReceiverEditReducerEvent.SaveFailed(UiText.Resource(R.string.receiver_message_update_partial_failed)))
+                    is UpdateReceiverInfoResult.BasicInfoFailed -> {
+                        dispatch(ReceiverEditReducerEvent.SaveFailed(result.cause.toReceiverFailureMessage(R.string.receiver_edit_failed)))
+                    }
+
+                    UpdateReceiverInfoResult.MessageFailedAfterBasicInfoUpdated -> {
+                        dispatch(ReceiverEditReducerEvent.SaveFailed(UiText.Resource(R.string.receiver_message_update_partial_failed)))
+                    }
                 }
             }
         }

@@ -41,6 +41,7 @@ dependencies {
 
     testImplementation(libs.coroutines.test)
     testImplementation(testFixtures(projects.core.domain))
+    testImplementation(testFixtures(projects.feature.setting.domain))
     testImplementation(projects.core.network)
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.androidx.compose.ui.test.junit4)

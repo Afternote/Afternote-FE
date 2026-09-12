@@ -1,8 +1,9 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
 import com.afternote.core.domain.testing.FakeAuthRepository
-import com.afternote.core.domain.testing.FakeUserRepository
+import com.afternote.core.domain.testing.FakeMyProfileRepository
 import com.afternote.core.model.user.User
+import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -70,9 +71,11 @@ class SettingViewModelTest {
     private fun viewModel(onDeleteAccount: () -> Unit): SettingViewModel =
         SettingViewModel(
             authRepository = FakeAuthRepository.strict(),
+            myProfileRepository =
+                com.afternote.core.domain.testing
+                    .FakeMyProfileRepository(),
             userRepository =
-                FakeUserRepository.strict().apply {
-                    onGetMyProfile = { User("name", "user@example.com", null, null) }
+                FakeSettingAccountRepository.strict().apply {
                     this.onDeleteAccount = { onDeleteAccount() }
                 },
         )

@@ -12,8 +12,13 @@ android {
 
 dependencies {
     implementation(projects.feature.setting.domain)
+    implementation(projects.core.common)
+    implementation(projects.core.domain)
+    implementation(projects.core.model)
     implementation(projects.core.network)
     testFixturesImplementation(projects.feature.setting.domain)
     testFixturesImplementation(libs.hilt.android.testing)
     add("kspTestFixtures", libs.hilt.compiler)
+    testImplementation(libs.junit)
+    testImplementation(testFixtures(projects.core.domain))
 }
