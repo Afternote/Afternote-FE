@@ -110,6 +110,7 @@ class SettingLocalNavActionsTest {
                 SettingRoute.PasskeyPasswordRoute,
                 SettingRoute.AppLockSetupRoute,
                 SettingRoute.NoticeRoute,
+                SettingRoute.CustomerCenterRoute,
             )
         assertEquals(routes, Json.decodeFromString<List<SettingRoute>>(Json.encodeToString(routes)))
     }

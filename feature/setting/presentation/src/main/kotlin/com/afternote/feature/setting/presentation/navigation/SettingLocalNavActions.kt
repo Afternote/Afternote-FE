@@ -81,4 +81,8 @@ internal class SettingLocalNavActions(
     override fun onNavigateToNotice() {
         backStack.add(SettingRoute.NoticeRoute)
     }
+
+    override fun onNavigateToCustomerCenter() {
+        backStack.add(SettingRoute.CustomerCenterRoute)
+    }
 }

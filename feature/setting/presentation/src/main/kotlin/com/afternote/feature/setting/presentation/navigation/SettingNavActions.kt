@@ -38,4 +38,6 @@ internal interface SettingNavActions {
     fun onNavigateToAppLock()
 
     fun onNavigateToNotice()
+
+    fun onNavigateToCustomerCenter()
 }
