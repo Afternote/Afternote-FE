@@ -54,7 +54,6 @@ class FakeTimeLetterRepositoryTest {
             id = 1L,
             title = "편지",
             sendAt = null,
-            deliveredAt = null,
             status = status,
             blocks = emptyList(),
             receiverIds = listOf(7L),

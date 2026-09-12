@@ -115,7 +115,6 @@ class FakeTimeLetterRepository(
                 id = id,
                 title = title,
                 sendAt = sendAt,
-                deliveredAt = null,
                 status = status,
                 blocks = blocks.mapIndexed { index, block -> block.toStoredBlock(id, index) },
                 receiverIds = receiverIds,

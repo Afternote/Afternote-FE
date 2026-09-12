@@ -724,7 +724,6 @@ private fun completionCreatedLetter(call: FakeTimeLetterRepository.CreateCall): 
         id = 901L,
         title = call.title,
         sendAt = call.sendAt,
-        deliveredAt = null,
         status = call.status,
         blocks = emptyList(),
         receiverIds = call.receiverIds,
@@ -751,7 +750,6 @@ private fun completionDetailLetter(): TimeLetter =
         id = 509L,
         title = "상세 route 편지",
         sendAt = "2026-10-09T09:40:00",
-        deliveredAt = null,
         status = TimeLetterStatus.SCHEDULED,
         blocks =
             listOf(

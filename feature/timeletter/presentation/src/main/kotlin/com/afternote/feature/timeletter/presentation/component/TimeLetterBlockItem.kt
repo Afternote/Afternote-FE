@@ -148,7 +148,6 @@ private fun TimeLetterBlockItemPrev() {
                 id = 1L,
                 title = "미래의 나에게",
                 sendAt = "2026-12-31T00:00:00",
-                deliveredAt = null,
                 status = TimeLetterStatus.SCHEDULED,
                 blocks = emptyList(),
                 receiverIds = listOf(1L),

@@ -59,7 +59,6 @@ fun TimeLetterDto.toDomain(): TimeLetter =
         id = id,
         title = title,
         sendAt = sendAt,
-        deliveredAt = deliveredAt,
         status = status.toDomain(),
         blocks = blocks.map { it.toDomain() },
         receiverIds = receiverIds,

@@ -194,10 +194,69 @@ private fun DraftLetterScreenPreview() {
             DraftLetterUiState.Success(
                 drafts =
                     listOf(
-                        TimeLetter(1L, "첫 번째 레터", "2026-12-25T00:00:00", null, TimeLetterStatus.DRAFT, emptyList(), listOf(1L)),
-                        TimeLetter(2L, "두 번째 레터", null, null, TimeLetterStatus.DRAFT, emptyList(), listOf(2L)),
+                        TimeLetter(
+                            id = 1L,
+                            title = "첫 번째 레터",
+                            sendAt = "2026-12-25T00:00:00",
+                            status = TimeLetterStatus.DRAFT,
+                            blocks = emptyList(),
+                            receiverIds = listOf(1L),
+                        ),
+                        TimeLetter(
+                            id = 2L,
+                            title = "두 번째 레터",
+                            sendAt = "2026-06-01T00:00:00",
+                            status = TimeLetterStatus.DRAFT,
+                            blocks = emptyList(),
+                            receiverIds = listOf(2L),
+                        ),
+                        TimeLetter(
+                            id = 3L,
+                            title = null,
+                            sendAt = null,
+                            status = TimeLetterStatus.DRAFT,
+                            blocks = emptyList(),
+                            receiverIds = emptyList(),
+                        ),
                     ),
                 receiverNameMap = mapOf(1L to "김지은", 2L to "이현우"),
+            ),
+        onBackClick = {},
+        onOpenDraft = {},
+        onEditCompleteClick = {},
+        onToggleSelection = {},
+        onDeleteAll = {},
+        onDeleteSelected = {},
+    )
+}
+
+@Preview(showBackground = true, name = "수정 모드 - 항목 선택됨")
+@Composable
+private fun DraftLetterScreenEditModePreview() {
+    DraftLetterContent(
+        uiState =
+            DraftLetterUiState.Success(
+                drafts =
+                    listOf(
+                        TimeLetter(
+                            id = 1L,
+                            title = "첫 번째 레터",
+                            sendAt = "2026-12-25T00:00:00",
+                            status = TimeLetterStatus.DRAFT,
+                            blocks = emptyList(),
+                            receiverIds = listOf(1L),
+                        ),
+                        TimeLetter(
+                            id = 2L,
+                            title = "두 번째 레터",
+                            sendAt = "2026-06-01T00:00:00",
+                            status = TimeLetterStatus.DRAFT,
+                            blocks = emptyList(),
+                            receiverIds = listOf(2L),
+                        ),
+                    ),
+                isEditMode = true,
+                selectedIds = setOf(1L),
             ),
         onBackClick = {},
         onOpenDraft = {},

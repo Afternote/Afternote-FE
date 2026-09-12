@@ -16,7 +16,9 @@ fun ReceivedTimeLetterDto.toDomain(): ReceivedTimeLetter =
         senderName = senderName,
         deliveredAt = deliveredAt,
         createdAt = createdAt,
-        isRead = isRead,
+        // 공개 전엔 서버가 isRead를 null로 보낼 수 있다 — 도메인은 non-null 계약이라 미확정 상태를
+        // 안전한 쪽(false=안 읽음)으로 접어 화면이 잘못 "읽음"으로 표시되지 않게 한다.
+        isRead = isRead ?: false,
     )
 
 fun ReceivedTimeLetterListDto.toDomain(): ReceivedTimeLetterList =
