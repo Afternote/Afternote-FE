@@ -40,8 +40,6 @@ internal fun AfternoteEditorNavigation(
             removeMemorialPhoto = { editViewModel.onIntent(AfternoteEditorIntent.RemoveMemorialPhoto) },
             setMemorialVideo = { url -> editViewModel.onIntent(AfternoteEditorIntent.SetMemorialVideo(url)) },
             removeMemorialVideo = { editViewModel.onIntent(AfternoteEditorIntent.RemoveMemorialVideo) },
-            setMemorialAudio = { url -> editViewModel.onIntent(AfternoteEditorIntent.SetMemorialAudio(url)) },
-            removeMemorialAudio = { editViewModel.onIntent(AfternoteEditorIntent.RemoveMemorialAudio) },
             addReceiverIfAbsent = {
                 receiverId,
                 name,

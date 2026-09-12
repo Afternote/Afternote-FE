@@ -36,7 +36,6 @@ class AfternoteDraftDetailMapperTest {
         assertNull(result.media.photoUrl)
         assertNull(result.media.videoUrl)
         assertNull(result.media.thumbnailUrl)
-        assertNull(result.media.audioUrl)
     }
 
     @Test
@@ -52,7 +51,6 @@ class AfternoteDraftDetailMapperTest {
                 playlist =
                     AfternotePlaylistDto(
                         memorialPhotoUrl = "photo",
-                        memorialAudioUrl = "voice.m4a",
                         songs = listOf(AfternoteSongDto(title = "곡", artist = "가수", coverUrl = "cover")),
                         memorialVideo = AfternoteMemorialVideoDto(videoUrl = "video", thumbnailUrl = "thumb"),
                     ),
@@ -62,7 +60,6 @@ class AfternoteDraftDetailMapperTest {
         assertEquals("photo", result.media.photoUrl)
         assertEquals("video", result.media.videoUrl)
         assertEquals("thumb", result.media.thumbnailUrl)
-        assertEquals("voice.m4a", result.media.audioUrl)
     }
 
     @Test

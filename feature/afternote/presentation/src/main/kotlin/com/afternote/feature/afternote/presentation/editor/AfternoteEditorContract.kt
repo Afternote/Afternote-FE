@@ -37,12 +37,6 @@ internal sealed interface AfternoteEditorIntent : MviIntent {
         val dataUrl: String,
     ) : AfternoteEditorIntent
 
-    data class SetMemorialAudio(
-        val url: String,
-    ) : AfternoteEditorIntent
-
-    data object RemoveMemorialAudio : AfternoteEditorIntent
-
     data class AddMemorialPlaylistSongs(
         val songs: List<Song>,
     ) : AfternoteEditorIntent
@@ -156,12 +150,6 @@ internal sealed interface AfternoteEditorReducerEvent : ReducerEvent {
     data class MemorialThumbnailChanged(
         val dataUrl: String,
     ) : AfternoteEditorReducerEvent
-
-    data class MemorialAudioChanged(
-        val url: String,
-    ) : AfternoteEditorReducerEvent
-
-    data object MemorialAudioRemoved : AfternoteEditorReducerEvent
 
     data class PlaylistSongsAdded(
         val songs: List<Song>,

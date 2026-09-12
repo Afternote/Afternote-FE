@@ -104,7 +104,6 @@ internal object AfternoteEditorFormMapper {
                     videoUrl = media.videoUrl,
                     thumbnailUrl = media.thumbnailUrl,
                     photoUrl = media.photoUrl,
-                    audioUrl = media.audioUrl,
                     playlistSongs =
                         songs.mapIndexed { index, song ->
                             Song(
@@ -164,7 +163,6 @@ internal object AfternoteEditorFormMapper {
                     videoUrl = media.videoUrl,
                     thumbnailUrl = media.thumbnailUrl,
                     photoUrl = media.photoUrl,
-                    audioUrl = media.audioUrl,
                     playlistSongs =
                         songs.mapIndexed { index, song ->
                             Song(
@@ -195,7 +193,6 @@ internal object AfternoteEditorFormMapper {
         memorialPhotoUrl: String? = null,
         memorialVideoUrl: String? = null,
         memorialThumbnailUrl: String? = null,
-        memorialAudioUrl: String? = null,
     ): MemorialWritePayload {
         val songs =
             playlistSongs.map { song ->
@@ -216,7 +213,6 @@ internal object AfternoteEditorFormMapper {
             memorialPhotoUrl = memorialPhotoUrl?.ifBlank { null },
             songs = songs,
             memorialVideo = memorialVideo,
-            memorialAudioUrl = memorialAudioUrl?.ifBlank { null },
         )
     }
 
@@ -228,7 +224,6 @@ internal object AfternoteEditorFormMapper {
         memorialVideoUrl: String?,
         memorialThumbnailUrl: String?,
         memorialPhotoUrl: String?,
-        memorialAudioUrl: String?,
     ): CreateAfternoteInput {
         val processingMethods = payload.processingMethods
         val leaveMessageBlocks = payload.messageBlocks.toLeaveMessageBlocks()
@@ -252,7 +247,6 @@ internal object AfternoteEditorFormMapper {
                         memorialPhotoUrl = memorialPhotoUrl,
                         memorialVideoUrl = memorialVideoUrl,
                         memorialThumbnailUrl = memorialThumbnailUrl,
-                        memorialAudioUrl = memorialAudioUrl,
                     )
                 CreateAfternoteInput.Memorial(
                     CreateMemorialPayload(
@@ -382,7 +376,7 @@ internal object AfternoteEditorFormMapper {
         return if (id == null && password == null) null else AfternoteAccountCredentials(id = id, password = password)
     }
 
-    /** 플레이리스트는 미디어·곡 슬롯을 따로 재고, 하나도 안 바뀌었으면 `playlist` 키 자체를 내보내지 않는다. */
+    /** 플레이리스트는 슬롯 셋을 따로 재고, 하나도 안 바뀌었으면 `playlist` 키 자체를 내보내지 않는다. */
     private fun diffMemorial(
         current: AfternoteEditorSnapshot,
         baseline: AfternoteEditorSnapshot,
@@ -395,8 +389,6 @@ internal object AfternoteEditorFormMapper {
                 songs = current.songs.takeIf { it != baseline.songs },
                 memorialVideo =
                     FieldPatch.changedOrUnchanged(current.memorialVideo, baseline.memorialVideo),
-                memorialAudioUrl =
-                    FieldPatch.changedOrUnchanged(current.memorialAudioUrl, baseline.memorialAudioUrl),
             )
         return patch.takeUnless { it.isUnchanged }
     }
@@ -437,7 +429,6 @@ internal object AfternoteEditorFormMapper {
                 },
             memorialPhotoUrl = memorial?.media?.photoUrl?.ifBlank { null },
             memorialVideo = memorial?.media?.toVideoPayload(),
-            memorialAudioUrl = memorial?.media?.audioUrl?.ifBlank { null },
             songs =
                 memorial?.songs?.map { song ->
                     MemorialSongPayload(title = song.title, artist = song.artist, coverUrl = song.coverUrl)
@@ -459,7 +450,6 @@ internal object AfternoteEditorFormMapper {
             receiverIds = if (isMemorial) null else detail.receivers.map { it.receiverId },
             memorialPhotoUrl = if (isMemorial) detail.media.photoUrl?.ifBlank { null } else null,
             memorialVideo = if (isMemorial) detail.media.toVideoPayload() else null,
-            memorialAudioUrl = if (isMemorial) detail.media.audioUrl?.ifBlank { null } else null,
             songs =
                 if (isMemorial) {
                     detail.songs.map { song ->
@@ -491,7 +481,6 @@ internal object AfternoteEditorFormMapper {
             receiverIds = if (isMemorial) null else selectedReceiverIds,
             memorialPhotoUrl = if (isMemorial) memorialMedia.memorialPhotoUrl?.ifBlank { null } else null,
             memorialVideo = if (isMemorial) memorialMedia.toVideoPayload() else null,
-            memorialAudioUrl = if (isMemorial) memorialMedia.memorialAudioUrl?.ifBlank { null } else null,
             songs =
                 if (isMemorial) {
                     playlistSongs.map { song ->
@@ -538,7 +527,6 @@ internal data class AfternoteEditorSnapshot(
     val receiverIds: List<Long>?,
     val memorialPhotoUrl: String?,
     val memorialVideo: MemorialVideoPayload?,
-    val memorialAudioUrl: String?,
     val songs: List<MemorialSongPayload>?,
 )
 
@@ -578,5 +566,4 @@ internal data class MemorialMediaUrls(
     val memorialVideoUrl: String? = null,
     val memorialThumbnailUrl: String? = null,
     val memorialPhotoUrl: String? = null,
-    val memorialAudioUrl: String? = null,
 )

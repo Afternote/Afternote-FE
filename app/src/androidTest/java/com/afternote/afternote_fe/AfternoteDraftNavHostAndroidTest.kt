@@ -29,7 +29,6 @@ import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.core.ui.navigation.FeatureStackBoundary
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.data.di.AfternoteAuthorRepositoryModule
-import com.afternote.feature.afternote.data.repositoryimpl.author.MemorialAudioUploadRepositoryImpl
 import com.afternote.feature.afternote.data.repositoryimpl.author.MemorialMediaUploadRepositoryImpl
 import com.afternote.feature.afternote.data.repositoryimpl.author.MemorialThumbnailUploadRepositoryImpl
 import com.afternote.feature.afternote.data.repositoryimpl.author.MusicSearchRepositoryImpl
@@ -42,7 +41,6 @@ import com.afternote.feature.afternote.domain.model.author.DraftDetail
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
-import com.afternote.feature.afternote.domain.repository.author.MemorialAudioUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MusicSearchRepository
@@ -429,7 +427,7 @@ class AfternoteDraftNavHostAndroidTest {
             credentials = null,
             processingMethods = emptyList(),
             songs = emptyList(),
-            media = MemorialMedia(photoUrl = null, videoUrl = null, thumbnailUrl = null, audioUrl = null),
+            media = MemorialMedia(photoUrl = null, videoUrl = null, thumbnailUrl = null),
         )
 
     @Module
@@ -440,9 +438,6 @@ class AfternoteDraftNavHostAndroidTest {
 
         @Provides
         fun thumbnail(impl: MemorialThumbnailUploadRepositoryImpl): MemorialThumbnailUploadRepository = impl
-
-        @Provides
-        fun audio(impl: MemorialAudioUploadRepositoryImpl): MemorialAudioUploadRepository = impl
 
         @Provides
         fun media(impl: MemorialMediaUploadRepositoryImpl): MemorialMediaUploadRepository = impl

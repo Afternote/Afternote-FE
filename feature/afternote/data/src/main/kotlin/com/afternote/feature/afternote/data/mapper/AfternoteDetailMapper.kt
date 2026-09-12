@@ -83,7 +83,6 @@ fun AfternoteDetailDto.toDraftDomain(): DraftDetail {
                 photoUrl = playlist?.memorialPhotoUrl,
                 videoUrl = playlist?.memorialVideo?.videoUrl,
                 thumbnailUrl = playlist?.memorialVideo?.thumbnailUrl,
-                audioUrl = playlist?.memorialAudioUrl,
             ),
     )
 }
@@ -156,7 +155,6 @@ private fun AfternotePlaylistDto.toMemorialContent() =
                 photoUrl = memorialPhotoUrl,
                 videoUrl = memorialVideo?.videoUrl,
                 thumbnailUrl = memorialVideo?.thumbnailUrl,
-                audioUrl = memorialAudioUrl,
             ),
     )
 

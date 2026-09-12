@@ -39,7 +39,6 @@ class MemorialVideoServerOriginTest {
                         videoUrl = serverVideo,
                         thumbnailUrl = serverThumbnail,
                         photoUrl = null,
-                        audioUrl = null,
                         playlistSongs = emptyList(),
                     ),
                 ),

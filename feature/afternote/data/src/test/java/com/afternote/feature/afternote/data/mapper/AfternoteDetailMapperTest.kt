@@ -215,8 +215,7 @@ class AfternoteDetailMapperTest {
                       "playlist":{
                         "memorialPhotoUrl":"memorial.jpg",
                         "songs":[{"title":"s","artist":"a"}],
-                        "memorialVideo":{"videoUrl":"v.mp4","thumbnailUrl":"t.jpg"},
-                        "memorialAudioUrl":"voice.m4a"
+                        "memorialVideo":{"videoUrl":"v.mp4","thumbnailUrl":"t.jpg"}
                       }
                     }
                     """.trimIndent(),
@@ -227,7 +226,6 @@ class AfternoteDetailMapperTest {
         assertEquals("memorial.jpg", media.photoUrl)
         assertEquals("v.mp4", media.videoUrl)
         assertEquals("t.jpg", media.thumbnailUrl)
-        assertEquals("voice.m4a", media.audioUrl)
         assertEquals(1, memorial.songs.size)
         assertEquals("s", memorial.songs.single().title)
         assertEquals("a", memorial.songs.single().artist)

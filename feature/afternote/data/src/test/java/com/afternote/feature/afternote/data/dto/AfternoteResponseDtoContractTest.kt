@@ -90,13 +90,7 @@ class AfternoteResponseDtoContractTest {
             CreateMemorialPayload(
                 title = "추억 노트",
                 // 생성은 「이 노트가 가져야 할 상태」를 통째로 말하므로 전체 스냅샷 타입 그대로다.
-                memorial =
-                    MemorialWritePayload(
-                        memorialPhotoUrl = null,
-                        songs = emptyList(),
-                        memorialVideo = null,
-                        memorialAudioUrl = null,
-                    ),
+                memorial = MemorialWritePayload(memorialPhotoUrl = null, songs = emptyList(), memorialVideo = null),
             ).toRequest()
 
         val playlist =

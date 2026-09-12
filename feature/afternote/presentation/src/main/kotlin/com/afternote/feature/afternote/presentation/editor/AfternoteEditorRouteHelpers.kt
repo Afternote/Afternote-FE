@@ -87,7 +87,6 @@ internal fun buildOnRegisterClick(
                     SaveAfternoteMemorialMedia(
                         memorialVideo = form.memorialVideo ?: EditableMemorialVideo.empty(),
                         memorialPhoto = form.memorialPhoto ?: EditableMemorialPhoto.empty(),
-                        memorialAudioUrl = form.memorialAudioUrl,
                     ),
             ),
         )

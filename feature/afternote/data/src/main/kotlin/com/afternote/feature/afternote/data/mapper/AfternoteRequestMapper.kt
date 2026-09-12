@@ -54,7 +54,6 @@ fun MemorialPatchPayload.toPatchDto() =
         memorialPhotoUrl = memorialPhotoUrl,
         songs = songs?.map { it.toDto() },
         memorialVideo = memorialVideo.map { it?.toDto() },
-        memorialAudioUrl = memorialAudioUrl,
     )
 
 /** 슬롯을 열어 값만 바꾸고 「안 건드림」은 그대로 통과시킨다. */
@@ -121,7 +120,6 @@ fun MemorialWritePayload.toDto() =
         memorialPhotoUrl = memorialPhotoUrl,
         songs = songs.map { it.toDto() },
         memorialVideo = memorialVideo?.toDto(),
-        memorialAudioUrl = memorialAudioUrl,
     )
 
 private fun MemorialSongPayload.toDto() =

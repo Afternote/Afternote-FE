@@ -147,13 +147,7 @@ class FakeAfternoteRepositoryTest {
         val memorialPayload =
             CreateMemorialPayload(
                 title = "추억",
-                memorial =
-                    MemorialWritePayload(
-                        memorialPhotoUrl = null,
-                        songs = emptyList(),
-                        memorialVideo = null,
-                        memorialAudioUrl = null,
-                    ),
+                memorial = MemorialWritePayload(memorialPhotoUrl = null, songs = emptyList(), memorialVideo = null),
             )
         val updatePayload = AfternoteUpdatePayload(type = AfternoteType.ESTATE, title = "유산")
 

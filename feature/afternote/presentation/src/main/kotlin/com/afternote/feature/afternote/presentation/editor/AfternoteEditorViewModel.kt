@@ -28,8 +28,6 @@ import com.afternote.feature.afternote.presentation.editor.state.AfternoteTypeFo
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialPhoto
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.editor.state.EditorFormState
-import com.afternote.feature.afternote.presentation.editor.state.withMemorialAudio
-import com.afternote.feature.afternote.presentation.editor.state.withMemorialAudioRemoved
 import com.afternote.feature.afternote.presentation.editor.state.withMemorialPhoto
 import com.afternote.feature.afternote.presentation.editor.state.withMemorialPhotoRemoved
 import com.afternote.feature.afternote.presentation.editor.state.withMemorialPlaylistSongs
@@ -95,7 +93,6 @@ private data class EditorFormSnapshot(
     val pickedMemorialPhotoUri: String? = null,
     val memorialVideo: EditableMemorialVideo? = null,
     val memorialPhotoUrl: String? = null,
-    val memorialAudioUrl: String? = null,
     val memorialPlaylistSongs: List<Song> = emptyList(),
 ) {
     fun toEditorFormState(): EditorFormState =
@@ -127,7 +124,6 @@ private data class EditorFormSnapshot(
                 AfternoteTypeForm.Memorial(
                     photo = EditableMemorialPhoto.fromSnapshot(memorialPhotoUrl, pickedMemorialPhotoUri),
                     video = memorialVideo ?: EditableMemorialVideo.empty(),
-                    audioUrl = memorialAudioUrl,
                     playlistSongs = memorialPlaylistSongs,
                 )
             }
@@ -151,7 +147,6 @@ private data class EditorFormSnapshot(
                 pickedMemorialPhotoUri = form.memorialPhoto?.toSnapshot()?.selection,
                 memorialVideo = form.memorialVideo,
                 memorialPhotoUrl = form.memorialPhoto?.toSnapshot()?.persisted,
-                memorialAudioUrl = form.memorialAudioUrl,
                 memorialPlaylistSongs = form.memorialPlaylistSongs,
             )
     }
@@ -263,14 +258,6 @@ internal class AfternoteEditorViewModel
 
                 is AfternoteEditorIntent.SetMemorialThumbnail -> {
                     dispatchForm(AfternoteEditorReducerEvent.MemorialThumbnailChanged(intent.dataUrl))
-                }
-
-                is AfternoteEditorIntent.SetMemorialAudio -> {
-                    dispatchForm(AfternoteEditorReducerEvent.MemorialAudioChanged(intent.url))
-                }
-
-                AfternoteEditorIntent.RemoveMemorialAudio -> {
-                    dispatchForm(AfternoteEditorReducerEvent.MemorialAudioRemoved)
                 }
 
                 is AfternoteEditorIntent.AddMemorialPlaylistSongs -> {
@@ -412,14 +399,6 @@ internal class AfternoteEditorViewModel
 
                 is AfternoteEditorReducerEvent.MemorialThumbnailChanged -> {
                     state.copy(form = state.form.withMemorialThumbnail(event.dataUrl))
-                }
-
-                is AfternoteEditorReducerEvent.MemorialAudioChanged -> {
-                    state.copy(form = state.form.withMemorialAudio(event.url))
-                }
-
-                AfternoteEditorReducerEvent.MemorialAudioRemoved -> {
-                    state.copy(form = state.form.withMemorialAudioRemoved())
                 }
 
                 is AfternoteEditorReducerEvent.PlaylistSongsAdded -> {
@@ -811,14 +790,6 @@ internal class AfternoteEditorViewModel
             }
         }
 
-        // 음성: 로컬 pick(content://) 인지 원격 prefill URL 인지를 진입 경계에서 한 번 확정해
-        // MediaInput 으로 넘긴다. 영상은 #1406 이후 [EditableMemorialVideo] 가 출처를 들고 있어
-        // 이 추론이 필요 없다 — 음성만 아직 한 필드에 로컬·원격이 섞인다 (#1118).
-        private fun singleFieldMediaInput(url: String?): MediaInput {
-            if (url.isNullOrBlank()) return MediaInput.None
-            return if (url.isLocalContentUri()) MediaInput.Local(url) else MediaInput.Remote(url)
-        }
-
         private suspend fun buildSaveCommand(
             editingId: Long?,
             typeForSave: AfternoteType,
@@ -833,7 +804,6 @@ internal class AfternoteEditorViewModel
                 resolveMemorialMediaForSave(
                     video = memorialMedia.memorialVideo.toMediaInput(),
                     photo = memorialMedia.memorialPhoto.toMediaInput(),
-                    audio = singleFieldMediaInput(memorialMedia.memorialAudioUrl),
                 ).getOrElse { return Result.failure(it) }
 
             val command =
@@ -849,7 +819,6 @@ internal class AfternoteEditorViewModel
                                     memorialVideoUrl = resolved.resolvedVideoUrl,
                                     memorialThumbnailUrl = memorialMedia.memorialVideo.displayed?.thumbnailUrl,
                                     memorialPhotoUrl = resolved.resolvedMemorialPhotoUrl,
-                                    memorialAudioUrl = resolved.resolvedMemorialAudioUrl,
                                 ),
                             // saveAfternote 가 기준 없는 수정을 이미 막았다 — 여기 도달하면 반드시 있다.
                             baseline =
@@ -874,7 +843,6 @@ internal class AfternoteEditorViewModel
                             memorialVideoUrl = resolved.resolvedVideoUrl,
                             memorialThumbnailUrl = memorialMedia.memorialVideo.displayed?.thumbnailUrl,
                             memorialPhotoUrl = resolved.resolvedMemorialPhotoUrl,
-                            memorialAudioUrl = resolved.resolvedMemorialAudioUrl,
                         )
                     SaveAfternoteCommand.Create(input = AfternoteEditorFormMapper.withDraft(createInput, asDraft))
                 }

@@ -160,7 +160,6 @@ class AfternoteAuthorTest {
                                         when (kind) {
                                             MediaKind.VIDEO -> "https://cdn.test/video.mp4"
                                             MediaKind.PHOTO -> "https://cdn.test/photo.jpg"
-                                            MediaKind.AUDIO -> "https://cdn.test/audio.m4a"
                                         }
                                     }
 

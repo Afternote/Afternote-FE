@@ -123,7 +123,6 @@ class EditorLeaveMessageBlocksTest {
                 memorialVideoUrl = null,
                 memorialThumbnailUrl = null,
                 memorialPhotoUrl = null,
-                memorialAudioUrl = null,
             )
 
         assertEquals(
@@ -162,7 +161,6 @@ class EditorLeaveMessageBlocksTest {
                 memorialVideoUrl = null,
                 memorialThumbnailUrl = null,
                 memorialPhotoUrl = null,
-                memorialAudioUrl = null,
             )
         return (input as CreateAfternoteInput.Social).payload.leaveMessageBlocks
     }
@@ -199,7 +197,7 @@ class EditorLeaveMessageBlocksTest {
                         AfternoteType.MEMORIAL -> {
                             DetailContent.Memorial(
                                 songs = emptyList(),
-                                media = MemorialMedia(null, null, null, null),
+                                media = MemorialMedia(null, null, null),
                             )
                         }
 
