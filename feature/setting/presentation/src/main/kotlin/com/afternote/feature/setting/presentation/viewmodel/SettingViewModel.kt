@@ -3,9 +3,9 @@ package com.afternote.feature.setting.presentation.viewmodel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.MyProfileRepository
-import com.afternote.feature.setting.domain.SettingAccountRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.ui.mvi.MviViewModel
+import com.afternote.feature.setting.domain.SettingAccountRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch

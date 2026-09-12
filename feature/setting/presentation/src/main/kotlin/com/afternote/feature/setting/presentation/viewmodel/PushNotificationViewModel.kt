@@ -9,8 +9,8 @@ import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.error.PushSettingFailure
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.mvi.MviViewModel
-import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.domain.SettingNotificationRepository
+import com.afternote.feature.setting.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject

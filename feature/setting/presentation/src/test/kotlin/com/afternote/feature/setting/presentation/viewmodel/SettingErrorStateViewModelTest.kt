@@ -1,11 +1,11 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
-import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
-import com.afternote.core.domain.testing.FakeMyProfileRepository
 import com.afternote.core.domain.testing.FakeAuthRepository
+import com.afternote.core.domain.testing.FakeMyProfileRepository
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.ui.UiText
+import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsIntent
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditIntent

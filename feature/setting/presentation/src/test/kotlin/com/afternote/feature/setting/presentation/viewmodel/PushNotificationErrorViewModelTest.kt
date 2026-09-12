@@ -1,10 +1,10 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
-import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.model.user.UserPushSetting
 import com.afternote.core.ui.UiText
+import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
 import com.afternote.feature.setting.presentation.NoOpErrorReporter
 import com.afternote.feature.setting.presentation.R
 import kotlinx.coroutines.Dispatchers
