@@ -64,7 +64,12 @@ fun RecipientListScreen(
         RecipientListUiState.Error -> {
             Scaffold(
                 modifier = modifier,
-                topBar = { DetailTopBar(title = "수신인 목록", onBackClick = onBackClick) },
+                topBar = {
+                    DetailTopBar(
+                        title = stringResource(R.string.timeletter_recipient_list_title),
+                        onBackClick = onBackClick,
+                    )
+                },
             ) { innerPadding ->
                 TimeLetterLoadErrorContent(
                     message = stringResource(R.string.timeletter_recipient_list_load_failed),
@@ -93,7 +98,12 @@ private fun RecipientListLoadingContent(
 ) {
     Scaffold(
         modifier = modifier,
-        topBar = { DetailTopBar(title = "수신인 목록", onBackClick = onBackClick) },
+        topBar = {
+            DetailTopBar(
+                title = stringResource(R.string.timeletter_recipient_list_title),
+                onBackClick = onBackClick,
+            )
+        },
     ) { innerPadding ->
         Box(
             modifier = Modifier.fillMaxSize().padding(innerPadding),
@@ -152,7 +162,7 @@ private fun RecipientListContent(
         modifier = modifier,
         topBar = {
             DetailTopBar(
-                title = "수신인 목록",
+                title = stringResource(R.string.timeletter_recipient_list_title),
                 onBackClick = onBackClick,
             )
         },

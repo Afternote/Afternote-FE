@@ -4,6 +4,7 @@ import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.Receiver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -85,6 +86,34 @@ class RecipientListViewModelTest {
             advanceUntilIdle()
 
             assertTrue(viewModel.uiState.value is RecipientListUiState.Success)
+            job.cancel()
+        }
+
+    @Test
+    fun `조회 성공 뒤 receiverListFlow의 첫 재조회가 비어 있어도 방금 받은 성공 목록을 유지한다`() =
+        runTest(dispatcher) {
+            // 실제 UserReceiverRepositoryImpl.receiverListFlow는 구독마다 빈 lastKnownReceivers에서
+            // 다시 조회하므로, getReceivers()가 성공한 직후에도 그 구독의 첫 방출은 일시 실패로 비어
+            // 있을 수 있다(#1099). 그 첫 방출을 흉내 내 방금 받은 성공 목록이 덮이지 않는지 검증한다.
+            val successReceivers = listOf(Receiver(1L, "김수신", "가족", "auth-1"))
+            var receiverListFlowCallCount = 0
+            val repository =
+                FakeUserRepository(
+                    receivers = successReceivers,
+                    onGetReceivers = { successReceivers },
+                    onReceiverListFlow = {
+                        receiverListFlowCallCount += 1
+                        if (receiverListFlowCallCount == 1) flowOf(emptyList()) else flowOf(successReceivers)
+                    },
+                )
+            val viewModel = RecipientListViewModel(repository)
+            val job = launch { viewModel.uiState.collect {} }
+
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertTrue(state is RecipientListUiState.Success)
+            assertEquals(listOf("김수신"), (state as RecipientListUiState.Success).recipients.map { it.name })
             job.cancel()
         }
 }
