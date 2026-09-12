@@ -1,11 +1,8 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
-import com.afternote.feature.setting.domain.UpdateTimeLetterDeliveryConditionUseCase
-import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
-import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
+import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.domain.testing.FakeMyProfileRepository
 import com.afternote.core.domain.testing.FakeUserReceiverRepository
-import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.model.delivery.ConditionState
 import com.afternote.core.model.delivery.DeliveryConditionItem
 import com.afternote.core.model.delivery.DeliveryConditionType
@@ -16,6 +13,9 @@ import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserMarketingConsent
 import com.afternote.core.model.user.UserPushSetting
+import com.afternote.feature.setting.domain.UpdateTimeLetterDeliveryConditionUseCase
+import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
+import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
 import com.afternote.feature.setting.presentation.NoOpErrorReporter
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsIntent
@@ -63,7 +63,7 @@ class SettingReentryViewModelTest {
             var calls = 0
             var response = CompletableDeferred<UserConnectedAccount>()
             val repository =
-                FakeUserRepository.strict().apply {
+                FakeSettingAccountRepository.strict().apply {
                     onGetConnectedAccounts = {
                         calls++
                         response.await()
@@ -97,7 +97,7 @@ class SettingReentryViewModelTest {
     @Test
     fun connectedAccounts_failedRefreshPreservesLoadedState() =
         runTest(dispatcher) {
-            val repository = FakeUserRepository.strict().apply { onGetConnectedAccounts = { accounts() } }
+            val repository = FakeSettingAccountRepository.strict().apply { onGetConnectedAccounts = { accounts() } }
             val viewModel = ConnectedAccountsViewModel(repository)
             runCurrent()
             viewModel.onIntent(ConnectedAccountsIntent.RefreshOnReturn)
@@ -111,7 +111,7 @@ class SettingReentryViewModelTest {
     @Test
     fun connectedAccounts_successfulReentryClearsInitialLoadError() =
         runTest(dispatcher) {
-            val repository = FakeUserRepository.strict().apply { onGetConnectedAccounts = { error("offline") } }
+            val repository = FakeSettingAccountRepository.strict().apply { onGetConnectedAccounts = { error("offline") } }
             val viewModel = ConnectedAccountsViewModel(repository)
             runCurrent()
             assertNotNull(viewModel.uiState.value.errorMessage)
@@ -130,7 +130,7 @@ class SettingReentryViewModelTest {
             val stale = CompletableDeferred<UserConnectedAccount>()
             val linked = CompletableDeferred<UserConnectedAccount>()
             val repository =
-                FakeUserRepository.strict().apply {
+                FakeSettingAccountRepository.strict().apply {
                     onGetConnectedAccounts = { if (++reads == 1) accounts() else stale.await() }
                     onLinkConnectedAccount = { _, _ -> linked.await() }
                 }
@@ -162,7 +162,7 @@ class SettingReentryViewModelTest {
             val stale = CompletableDeferred<UserConnectedAccount>()
             val unlinked = CompletableDeferred<UserConnectedAccount>()
             val repository =
-                FakeUserRepository.strict().apply {
+                FakeSettingAccountRepository.strict().apply {
                     onGetConnectedAccounts = { if (++reads == 1) accounts(google = true) else stale.await() }
                     onUnlinkConnectedAccount = { unlinked.await() }
                 }
@@ -450,7 +450,16 @@ class SettingReentryViewModelTest {
     @Test
     fun push_failedRefreshPreservesLoadedState() =
         runTest(dispatcher) {
-            val repository = FakeSettingNotificationRepository.strict().apply { onGetMyPushSettings = { UserPushSetting(true, true, true) } }
+            val repository =
+                FakeSettingNotificationRepository.strict().apply {
+                    onGetMyPushSettings = {
+                        UserPushSetting(
+                            true,
+                            true,
+                            true,
+                        )
+                    }
+                }
             val viewModel = pushViewModel(repository)
             runCurrent()
             viewModel.onIntent(PushNotificationIntent.RefreshOnReturn)
@@ -489,7 +498,11 @@ class SettingReentryViewModelTest {
         }
 
     private fun deliveryViewModel(repository: FakeUserReceiverRepository) =
-        DeliveryConditionViewModel(SettingRoute.AfterDeliveryRoute(receiverId = 42L), repository, UpdateTimeLetterDeliveryConditionUseCase(repository))
+        DeliveryConditionViewModel(
+            SettingRoute.AfterDeliveryRoute(receiverId = 42L),
+            repository,
+            UpdateTimeLetterDeliveryConditionUseCase(repository),
+        )
 
     private fun pushViewModel(repository: FakeSettingNotificationRepository) =
         PushNotificationViewModel(
