@@ -177,6 +177,33 @@ class DraftLetterViewModelTest {
         assertEquals(callsAfterInit + 1, loadCalls)
     }
 
+    @Test
+    fun `refreshOnReturn - 실패해도 보고 있던 초안 목록을 유지한다`() {
+        var loadCalls = 0
+        val viewModel =
+            DraftLetterViewModel(
+                timeLetterRepository { methodName, _ ->
+                    when (methodName) {
+                        "getTemporaryTimeLetters" -> {
+                            loadCalls += 1
+                            if (loadCalls == 1) testDrafts else throw IllegalStateException("일시적 실패")
+                        }
+
+                        else -> {
+                            error("Unexpected repository call: $methodName")
+                        }
+                    }
+                },
+                userRepository { emptyList<Any>() },
+            )
+
+        viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
+        viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME — 여기서 실패
+
+        val state = viewModel.uiState.value as DraftLetterUiState.Success
+        assertEquals(testDrafts.timeLetters, state.drafts)
+    }
+
     private fun timeLetterRepository(handler: (String, Array<out Any?>?) -> Any?): TimeLetterRepository =
         Proxy.newProxyInstance(
             TimeLetterRepository::class.java.classLoader,

@@ -56,20 +56,29 @@ class TimeLetterDetailViewModel
             load()
         }
 
-        /** 다른 화면에서 복귀했을 때의 자동 갱신 (#701). 첫 진입은 건너뛰고, 로드가 겹치면 건너뛴다. */
+        /**
+         * 다른 화면에서 복귀했을 때의 자동 갱신 (#701). 최초 진입 로드와 두 가지가 다르다 —
+         * 로딩을 방출하지 않고, 실패해도 보고 있던 상세를 유지한다.
+         * 첫 진입은 건너뛰고, 로드가 겹치면 건너뛴다.
+         */
         fun refreshOnReturn() {
             if (isFirstResume) {
                 isFirstResume = false
                 return
             }
             if (loadJob?.isActive == true) return
-            load()
+            load(showsLoading = false, keepsStateOnFailure = true)
         }
 
-        fun load() {
+        fun load(
+            showsLoading: Boolean = true,
+            keepsStateOnFailure: Boolean = false,
+        ) {
             loadJob =
                 viewModelScope.launch {
-                    _uiState.value = TimeLetterDetailUiState.Loading
+                    if (showsLoading) {
+                        _uiState.value = TimeLetterDetailUiState.Loading
+                    }
                     val receiversDeferred = async { runCatching { userRepository.getReceivers() } }
                     val letterResult = runCatching { timeLetterRepository.getTimeLetter(timeLetterId) }
                     val receivers = receiversDeferred.await().getOrElse { emptyList() }
@@ -82,7 +91,9 @@ class TimeLetterDetailViewModel
                                     receiverNameMap = receivers.associate { it.receiverId to it.name },
                                 )
                         }.onFailure {
-                            _uiState.value = TimeLetterDetailUiState.Error
+                            if (!(keepsStateOnFailure && _uiState.value is TimeLetterDetailUiState.Success)) {
+                                _uiState.value = TimeLetterDetailUiState.Error
+                            }
                         }
                 }
         }

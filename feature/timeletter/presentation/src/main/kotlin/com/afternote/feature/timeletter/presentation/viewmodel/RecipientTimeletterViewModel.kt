@@ -45,25 +45,36 @@ class RecipientTimeletterViewModel
             load()
         }
 
-        /** 다른 화면에서 복귀했을 때의 자동 갱신 (#701). 첫 진입은 건너뛰고, 로드가 겹치면 건너뛴다. */
+        /**
+         * 다른 화면에서 복귀했을 때의 자동 갱신 (#701). 최초 진입 로드와 두 가지가 다르다 —
+         * 로딩을 방출하지 않고, 실패해도 보고 있던 목록을 유지한다.
+         * 첫 진입은 건너뛰고, 로드가 겹치면 건너뛴다.
+         */
         fun refreshOnReturn() {
             if (isFirstResume) {
                 isFirstResume = false
                 return
             }
             if (loadJob?.isActive == true) return
-            load()
+            load(showsLoading = false, keepsStateOnFailure = true)
         }
 
-        fun load() {
+        fun load(
+            showsLoading: Boolean = true,
+            keepsStateOnFailure: Boolean = false,
+        ) {
             loadJob =
                 viewModelScope.launch {
-                    _uiState.value = RecipientTimeletterUiState.Loading
+                    if (showsLoading) {
+                        _uiState.value = RecipientTimeletterUiState.Loading
+                    }
                     runCatching { receiverTimeLetterRepository.getReceivedTimeLetters() }
                         .onSuccess { letters ->
                             _uiState.value = RecipientTimeletterUiState.Success(letters = letters)
                         }.onFailure {
-                            _uiState.value = RecipientTimeletterUiState.Error
+                            if (!(keepsStateOnFailure && _uiState.value is RecipientTimeletterUiState.Success)) {
+                                _uiState.value = RecipientTimeletterUiState.Error
+                            }
                         }
                 }
         }

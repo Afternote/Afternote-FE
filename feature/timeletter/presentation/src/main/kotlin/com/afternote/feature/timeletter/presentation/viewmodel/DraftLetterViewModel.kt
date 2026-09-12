@@ -39,20 +39,29 @@ class DraftLetterViewModel
             loadDrafts()
         }
 
-        /** 다른 화면에서 복귀했을 때의 자동 갱신 (#701). 첫 진입은 건너뛰고, 로드가 겹치면 건너뛴다. */
+        /**
+         * 다른 화면에서 복귀했을 때의 자동 갱신 (#701). 최초 진입 로드와 두 가지가 다르다 —
+         * 로딩을 방출하지 않고, 실패해도 보고 있던 초안 목록을 유지한다.
+         * 첫 진입은 건너뛰고, 로드가 겹치면 건너뛴다.
+         */
         fun refreshOnReturn() {
             if (isFirstResume) {
                 isFirstResume = false
                 return
             }
             if (loadJob?.isActive == true) return
-            loadDrafts()
+            loadDrafts(showsLoading = false, keepsStateOnFailure = true)
         }
 
-        fun loadDrafts() {
+        fun loadDrafts(
+            showsLoading: Boolean = true,
+            keepsStateOnFailure: Boolean = false,
+        ) {
             loadJob =
                 viewModelScope.launch {
-                    _uiState.value = DraftLetterUiState.Loading
+                    if (showsLoading) {
+                        _uiState.value = DraftLetterUiState.Loading
+                    }
                     try {
                         val result = timeLetterRepository.getTemporaryTimeLetters()
                         val receiverNameMap =
@@ -67,7 +76,9 @@ class DraftLetterViewModel
                     } catch (cancellationException: CancellationException) {
                         throw cancellationException
                     } catch (_: Exception) {
-                        _uiState.value = DraftLetterUiState.Error(R.string.timeletter_draft_load_error)
+                        if (!(keepsStateOnFailure && _uiState.value is DraftLetterUiState.Success)) {
+                            _uiState.value = DraftLetterUiState.Error(R.string.timeletter_draft_load_error)
+                        }
                     }
                 }
         }
