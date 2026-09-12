@@ -95,6 +95,10 @@ job이 실패하면 해당 step 로그를 먼저 확인한다. 서명·필수 �
 
 Firebase App Distribution 경로([`release-distribution.yml`](../.github/workflows/release-distribution.yml))와 별개다. 그쪽은 `main` push마다 자동으로 APK를 QA 그룹에 뿌리고, 이쪽은 사람이 눌러야 움직이는 AAB 경로다. 둘은 함께 돌지 않으며 서로의 자격도 공유하지 않는다.
 
+### 강제 업데이트 적용 빌드
+
+Play 배포 워크플로의 AAB 빌드 단계만 `AFTERNOTE_STORE_DISTRIBUTED_BUILD=true`를 전달한다. 이 값은 `BuildConfig.STORE_DISTRIBUTED_BUILD`에 들어가 강제 업데이트 적용 가능 여부를 결정한다. 미설정이거나 정확히 `true`가 아니면 비활성화된다. 로컬·Firebase 빌드는 versionCode를 올려도 이 설정 없이는 강제 업데이트를 적용하지 않는다. 이 설정은 배포 채널 선언이며 실제 설치 출처나 서명을 검사하지 않는다.
+
 ### versionCode 정책
 
 | 빌드 | versionCode | 산출 주체 |
