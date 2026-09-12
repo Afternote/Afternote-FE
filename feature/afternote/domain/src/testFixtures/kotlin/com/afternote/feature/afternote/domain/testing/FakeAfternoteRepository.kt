@@ -14,7 +14,6 @@ import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.DetailReceiver
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
-import com.afternote.feature.afternote.domain.model.author.playlist.MemorialDetail
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import kotlinx.coroutines.flow.Flow
@@ -210,24 +209,21 @@ private fun DetailContent.updatedWith(payload: AfternoteUpdatePayload): DetailCo
         }
 
         AfternoteType.MEMORIAL -> {
-            val previous = (this as? DetailContent.Memorial)?.memorial
+            val previous = this as? DetailContent.Memorial
             val memorial = payload.memorial
-            DetailContent.Memorial(
-                memorial =
-                    if (memorial == null) {
-                        previous ?: MemorialDetail(emptyList(), MemorialMedia(null, null, null))
-                    } else {
-                        MemorialDetail(
-                            songs = memorial.songs.map { DetailSong(it.title, it.artist, it.coverUrl) },
-                            media =
-                                MemorialMedia(
-                                    photoUrl = memorial.memorialPhotoUrl,
-                                    videoUrl = memorial.memorialVideo?.videoUrl,
-                                    thumbnailUrl = memorial.memorialVideo?.thumbnailUrl,
-                                ),
-                        )
-                    },
-            )
+            if (memorial == null) {
+                previous ?: DetailContent.Memorial(songs = emptyList(), media = MemorialMedia(null, null, null))
+            } else {
+                DetailContent.Memorial(
+                    songs = memorial.songs.map { DetailSong(it.title, it.artist, it.coverUrl) },
+                    media =
+                        MemorialMedia(
+                            photoUrl = memorial.memorialPhotoUrl,
+                            videoUrl = memorial.memorialVideo?.videoUrl,
+                            thumbnailUrl = memorial.memorialVideo?.thumbnailUrl,
+                        ),
+                )
+            }
         }
 
         AfternoteType.ESTATE -> {
