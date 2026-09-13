@@ -20,7 +20,8 @@ import org.junit.Test
  * ### 규칙
  * main 소스셋의 어느 클래스가 `refreshOnReturn` 을 선언하면, **자기 파일이 아닌** main 소스셋
  * 파일 중 `Lifecycle.Event.ON_RESUME` 과 `refreshOnReturn(` 을 함께 갖고 그 클래스 이름을
- * 참조하는 파일이 최소 하나 있어야 한다.
+ * 참조하는 파일이 최소 하나 있어야 한다. MVI 전환 후에는 해당 ViewModel의
+ * `onIntent(XIntent.RefreshOnReturn)` 결선도 같은 계약으로 검사한다.
  *
  * 모듈을 가로지르는 결선(홈 탭은 `feature:home:presentation` 의 ViewModel 을 app 모듈
  * `AppNavigation` 에서 건다)도 통과하도록 검사는 프로젝트 전역이다. 화면 하나가 여러
@@ -35,7 +36,7 @@ class RefreshOnReturnWiringKonsistTest {
     @Test
     fun `refreshOnReturn 을 선언한 ViewModel 은 ON_RESUME 결선을 갖는다`() {
         val mainFiles = mainSourceFiles()
-        val wiringSites = mainFiles.filter { ON_RESUME in it.text && REFRESH_CALL in it.text }
+        val wiringSites = mainFiles.filter { ON_RESUME in it.text }
 
         val unwired =
             mainFiles
@@ -46,7 +47,7 @@ class RefreshOnReturnWiringKonsistTest {
                         .map { declaration -> file to declaration.name }
                 }.filter { (declaringFile, className) ->
                     wiringSites.none { site ->
-                        site.projectPath != declaringFile.projectPath && site.references(className)
+                        site.projectPath != declaringFile.projectPath && site.references(className) && hasRefreshCall(site.text, className)
                     }
                 }.map { (declaringFile, className) -> "${declaringFile.normalizedProjectPath()} — $className" }
 
@@ -63,6 +64,23 @@ class RefreshOnReturnWiringKonsistTest {
             }
         }
     }
+
+    @Test
+    fun `MVI 결선은 해당 ViewModel의 RefreshOnReturn Intent를 요구한다`() {
+        check(hasRefreshCall("viewModel.onIntent(ProfileEditIntent.RefreshOnReturn)", "ProfileEditViewModel"))
+        check(!hasRefreshCall("viewModel.onIntent(ConnectedAccountsIntent.RefreshOnReturn)", "ProfileEditViewModel"))
+        check(!hasRefreshCall("viewModel.onIntent(ProfileEditIntent.RetryLoad)", "ProfileEditViewModel"))
+        check(hasRefreshCall("viewModel.refreshOnReturn()", "LegacyViewModel"))
+    }
+
+    private fun hasRefreshCall(
+        text: String,
+        className: String,
+    ): Boolean =
+        REFRESH_CALL in text ||
+            Regex(
+                """onIntent\s*\(\s*${Regex.escape(className.removeSuffix("ViewModel"))}Intent\.RefreshOnReturn\s*\)""",
+            ).containsMatchIn(text)
 
     private fun mainSourceFiles(): List<KoFileDeclaration> =
         AfternoteKonsistScope.files.filter { "/src/main/" in it.normalizedProjectPath() }

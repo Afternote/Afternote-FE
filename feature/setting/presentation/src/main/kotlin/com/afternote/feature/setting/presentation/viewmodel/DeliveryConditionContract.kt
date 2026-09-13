@@ -4,6 +4,8 @@ import com.afternote.core.ui.mvi.MviIntent
 import com.afternote.core.ui.mvi.ReducerEvent
 
 internal sealed interface DeliveryConditionIntent : MviIntent {
+    data object RefreshOnReturn : DeliveryConditionIntent
+
     data class SelectConditionType(
         val index: Int,
     ) : DeliveryConditionIntent
@@ -29,6 +31,7 @@ internal sealed interface DeliveryConditionReducerEvent : ReducerEvent {
     data object Saving : DeliveryConditionReducerEvent
 
     data class Saved(
+        val revision: Int,
         val conditions: List<com.afternote.core.model.delivery.DeliveryConditionItem>,
     ) : DeliveryConditionReducerEvent
 

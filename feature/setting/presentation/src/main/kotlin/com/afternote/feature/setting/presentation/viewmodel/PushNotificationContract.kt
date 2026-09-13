@@ -6,6 +6,8 @@ import com.afternote.core.ui.mvi.MviIntent
 import com.afternote.core.ui.mvi.ReducerEvent
 
 internal sealed interface PushNotificationIntent : MviIntent {
+    data object RefreshOnReturn : PushNotificationIntent
+
     data object RetryLoad : PushNotificationIntent
 
     data object RefreshDeviceAlarmStatus : PushNotificationIntent

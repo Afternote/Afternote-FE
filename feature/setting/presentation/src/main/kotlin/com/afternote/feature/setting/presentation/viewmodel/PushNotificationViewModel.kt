@@ -27,8 +27,14 @@ internal class PushNotificationViewModel
     ) : MviViewModel<PushNotificationIntent, PushNotificationUiState, PushNotificationReducerEvent>(PushNotificationUiState()) {
         private var loadJob: Job? = null
 
+        private var isFirstResume = true
+
         override fun onIntent(intent: PushNotificationIntent) {
             when (intent) {
+                PushNotificationIntent.RefreshOnReturn -> {
+                    refreshOnReturn()
+                }
+
                 PushNotificationIntent.RetryLoad -> {
                     loadPushSettings()
                 }
@@ -98,6 +104,7 @@ internal class PushNotificationViewModel
                     state.copy(
                         isLoading = false,
                         errorMessage = null,
+                        hasLoadedPushSettings = true,
                         isNewsletterOn = event.setting.timeLetter,
                         isMindRecordOn = event.setting.mindRecord,
                         isAfternoteOn = event.setting.afterNote,
@@ -124,7 +131,7 @@ internal class PushNotificationViewModel
                 }
 
                 is PushNotificationReducerEvent.Saving -> {
-                    state.withValue(event.update.setting, event.update.on).withUpdating(event.update.setting, true)
+                    state.copy(isLoading = false).withValue(event.update.setting, event.update.on).withUpdating(event.update.setting, true)
                 }
 
                 is PushNotificationReducerEvent.Saved -> {
@@ -153,6 +160,15 @@ internal class PushNotificationViewModel
                 }
             }
 
+        private fun refreshOnReturn() {
+            refreshDeviceAlarmStatus()
+            if (isFirstResume) {
+                isFirstResume = false
+                return
+            }
+            loadPushSettings(keepsStateOnFailure = true)
+        }
+
         init {
             refreshDeviceAlarmStatus()
             loadPushSettings()
@@ -165,19 +181,24 @@ internal class PushNotificationViewModel
             dispatch(PushNotificationReducerEvent.DeviceAlarmChanged(deviceAlarmOn))
         }
 
-        private fun loadPushSettings() {
+        private fun loadPushSettings(keepsStateOnFailure: Boolean = false) {
             if (loadJob?.isActive == true) return
+            if (currentState.run { isNewsletterUpdating || isMindRecordUpdating || isAfternoteUpdating }) return
             loadJob =
                 viewModelScope.launch {
                     Log.d(TAG, "loadPushSettings: start")
-                    dispatch(PushNotificationReducerEvent.Loading)
+                    if (!keepsStateOnFailure) dispatch(PushNotificationReducerEvent.Loading)
                     runCatchingCancellable { userRepository.getMyPushSettings() }
                         .onSuccess { setting ->
                             Log.d(TAG, "loadPushSettings: success=$setting")
                             dispatch(PushNotificationReducerEvent.Loaded(setting))
                         }.onFailure { e ->
                             Log.e(TAG, "loadPushSettings: failed", e)
-                            dispatch(PushNotificationReducerEvent.LoadFailed)
+                            if (!keepsStateOnFailure ||
+                                !currentState.hasLoadedPushSettings
+                            ) {
+                                dispatch(PushNotificationReducerEvent.LoadFailed)
+                            }
                         }
                 }
         }
@@ -255,6 +276,7 @@ internal class PushNotificationViewModel
 
         private fun updatePushSetting(update: PushSettingUpdate) {
             if (currentState.isUpdating(update.setting)) return
+            loadJob?.cancel()
             val previousValue = currentState.valueOf(update.setting)
             dispatch(PushNotificationReducerEvent.Saving(update))
             viewModelScope.launch {
