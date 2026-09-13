@@ -132,11 +132,7 @@ test("a fix delivered by a merge commit still counts as a response", () => {
     // 채로 빚에서 빠져 있었다. 커밋과 함께 작성자의 응답을 본다 (#1450).
     assert.match(guard, /issues\/\$pn\/comments/);
     assert.match(guard, /pulls\/\$pn\/comments/);
-    // 응답 주체는 담당자 집합이다.
-    assert.equal(
-        (guard.match(/select\(\\",\$pr_owners,\\" \| contains\(\\",\\" \+ \(\.user\.login \| ascii_downcase\) \+ \\",\\"\)\)/g) ?? []).length,
-        2,
-    );
+    // 담당자·시각 판정은 review-debt-query.test.mjs에서 실제 jq로 검증한다.
     assert.match(guard, /\[ "\$\{fixed:-0\}" -gt 0 \] \|\| \[ "\$responses" -gt 0 \]/);
 });
 
@@ -195,7 +191,6 @@ test("author body edits are durable review evidence and fail closed when truncat
     assert.match(guard, /\.editor\.login/);
     assert.match(guard, /\.editedAt > \$cutoff/);
     assert.match(guard, /--arg owners ",\$pr_owners,"/);
-    assert.match(guard, /select\(\$owners \| contains\("," \+ \(\(\.editor\.login \/\/ ""\) \| ascii_downcase\) \+ ","\)\)/);
     assert.match(guard, /pageInfo\.hasPreviousPage != false/);
     assert.match(guard, /\[ "\$body_edits" -gt 0 \]/);
 });
