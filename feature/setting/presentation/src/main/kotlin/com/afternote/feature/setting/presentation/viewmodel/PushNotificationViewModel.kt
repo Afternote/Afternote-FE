@@ -193,6 +193,7 @@ internal class PushNotificationViewModel
                             Log.d(TAG, "loadPushSettings: success=$setting")
                             dispatch(PushNotificationReducerEvent.Loaded(setting))
                         }.onFailure { e ->
+                            // 빈번한 조회 실패는 Logcat에 유지해 저장 실패 진단의 보관 한도를 잠식하지 않는다 (#963).
                             Log.e(TAG, "loadPushSettings: failed", e)
                             if (!keepsStateOnFailure ||
                                 !currentState.hasLoadedPushSettings
@@ -211,6 +212,7 @@ internal class PushNotificationViewModel
                         Log.d(TAG, "loadMarketingConsents: success=$consent")
                         dispatch(PushNotificationReducerEvent.MarketingLoaded(consent))
                     }.onFailure { e ->
+                        // 조회 실패 분류는 서비스 알림과 같다. 사용자 저장 실패만 ErrorReporter로 승격한다 (#963).
                         Log.e(TAG, "loadMarketingConsents: failed", e)
                     }
             }
@@ -289,6 +291,18 @@ internal class PushNotificationViewModel
                 }.onSuccess {
                     dispatch(PushNotificationReducerEvent.Saved(update.setting))
                 }.onFailure { failure ->
+                    errorReporter.recordFailure(
+                        failure,
+                        mapOf(
+                            KEY_STAGE to STAGE_PUSH_SETTING_UPDATE,
+                            KEY_PUSH_SETTING to
+                                when (update.setting) {
+                                    PushSetting.NEWSLETTER -> "newsletter"
+                                    PushSetting.MIND_RECORD -> "mind_record"
+                                    PushSetting.AFTERNOTE -> "afternote"
+                                },
+                        ),
+                    )
                     dispatch(PushNotificationReducerEvent.SaveFailed(update, previousValue, failure.toSaveFailure()))
                 }
             }
@@ -297,6 +311,8 @@ internal class PushNotificationViewModel
         companion object {
             private const val TAG = "PushNotificationVM"
             private const val KEY_STAGE = "stage"
+            private const val KEY_PUSH_SETTING = "push_setting"
+            private const val STAGE_PUSH_SETTING_UPDATE = "push_setting_update"
             private const val STAGE_SMS_CONSENT = "sms_consent_update"
             private const val STAGE_EMAIL_CONSENT = "email_consent_update"
             private const val STAGE_PUSH_CONSENT = "push_consent_update"
