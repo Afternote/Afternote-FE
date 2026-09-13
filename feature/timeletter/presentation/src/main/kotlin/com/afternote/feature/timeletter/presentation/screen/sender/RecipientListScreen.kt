@@ -25,12 +25,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.common.util.KoreanConsonantUtil
 import com.afternote.core.model.setting.ReceiverListItem
 import com.afternote.core.ui.AfternoteTextField
@@ -44,19 +43,24 @@ import com.afternote.feature.timeletter.presentation.R
 import com.afternote.feature.timeletter.presentation.component.RecipientListItem
 import com.afternote.feature.timeletter.presentation.component.TimeLetterLoadErrorContent
 import com.afternote.feature.timeletter.presentation.viewmodel.RecipientListUiState
-import com.afternote.feature.timeletter.presentation.viewmodel.RecipientListViewModel
 import kotlinx.coroutines.launch
 
+/**
+ * 상태를 ViewModel에서 직접 구독하지 않는다 — [uiState]는 호출부(NavGraph)가
+ * [com.afternote.feature.timeletter.presentation.viewmodel.RecipientListViewModel]에서 읽어
+ * 넘긴다. Loading·Error·Success 분기를 실제 ViewModel 코루틴 없이 직접 값으로 오가며 검증할 수
+ * 있어야 하기 때문이다(#714 — 수신인 선택 소실 회귀 테스트).
+ */
 @Composable
 fun RecipientListScreen(
+    uiState: RecipientListUiState,
     onBackClick: () -> Unit,
     onConfirmClick: (List<ReceiverListItem>) -> Unit,
+    onRetry: () -> Unit,
     modifier: Modifier = Modifier,
     allowEmptyConfirm: Boolean = false,
-    viewModel: RecipientListViewModel = hiltViewModel(),
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    // Success 분기 안에 두면 5초 이상 백그라운드 뒤 재구독으로 uiState 가 Loading 을 거쳐 갈 때마다
+    // Success 분기 안에 두면 5초 이상 백그라운드 뒤 재구독으로 uiState 가 Loading 을 거칠 때마다
     // RecipientListContent 가 컴포지션을 떠나 선택이 날아간다(WhileSubscribed(5_000)). 화면 자체는
     // uiState 변화와 무관하게 계속 컴포지션에 남아 있으므로 여기로 올려 생존시킨다.
     var selectedIds by rememberSaveable { mutableStateOf(emptySet<Long>()) }
@@ -77,7 +81,7 @@ fun RecipientListScreen(
             ) { innerPadding ->
                 TimeLetterLoadErrorContent(
                     message = stringResource(R.string.timeletter_recipient_list_load_failed),
-                    onRetry = viewModel::retry,
+                    onRetry = onRetry,
                     modifier = Modifier.padding(innerPadding),
                 )
             }
@@ -223,6 +227,7 @@ private fun RecipientListContent(
                                         },
                                     )
                                 },
+                                modifier = Modifier.testTag("recipient_item_${recipient.receiverId}"),
                             )
                         }
                     }

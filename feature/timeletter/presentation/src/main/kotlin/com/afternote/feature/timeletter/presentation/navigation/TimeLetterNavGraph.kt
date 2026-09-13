@@ -17,6 +17,7 @@ import com.afternote.feature.timeletter.presentation.screen.sender.RecipientList
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeLetterDetailScreen
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeLetterWriteScreen
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeletterScreen
+import com.afternote.feature.timeletter.presentation.viewmodel.RecipientListViewModel
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteViewModel
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeletterViewModel
 
@@ -123,12 +124,16 @@ fun NavGraphBuilder.timeLetterNavGraph(
                         ?: navController.getBackStackEntry(TimeLetterRoute.TimeLetterWriteRoute())
                 }
             val writeViewModel: TimeLetterWriteViewModel = hiltViewModel(writeEntry)
+            val recipientListViewModel: RecipientListViewModel = hiltViewModel()
+            val recipientListUiState by recipientListViewModel.uiState.collectAsStateWithLifecycle()
             RecipientListScreen(
+                uiState = recipientListUiState,
                 onBackClick = actions::onRecipientBack,
                 onConfirmClick = { recipients ->
                     writeViewModel.setRecipients(recipients.map { it.receiverId })
                     actions.onRecipientBack()
                 },
+                onRetry = recipientListViewModel::retry,
             )
         }
 
@@ -138,12 +143,16 @@ fun NavGraphBuilder.timeLetterNavGraph(
                     navController.getBackStackEntry(TimeLetterRoute.TimeLetterHomeRoute)
                 }
             val timeletterViewModel: TimeletterViewModel = hiltViewModel(homeEntry)
+            val recipientListViewModel: RecipientListViewModel = hiltViewModel()
+            val recipientListUiState by recipientListViewModel.uiState.collectAsStateWithLifecycle()
             RecipientListScreen(
+                uiState = recipientListUiState,
                 onBackClick = actions::onRecipientFilterBack,
                 onConfirmClick = { recipients ->
                     timeletterViewModel.setReceiverFilter(recipients.map { it.receiverId })
                     actions.onRecipientFilterBack()
                 },
+                onRetry = recipientListViewModel::retry,
                 allowEmptyConfirm = true,
             )
         }
