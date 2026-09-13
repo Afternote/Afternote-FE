@@ -2,6 +2,7 @@ package com.afternote.feature.setting.presentation
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -115,6 +116,37 @@ class SettingFlowTest {
     }
 
     @Test
+    fun profileShortcuts_showSupportFeedbackAndKeepExistingNavigation() {
+        val viewModel = SettingViewModel(settingFlowAuthRepository(loggedIn = true), settingFlowUserRepository())
+        val destinations = mutableListOf<String>()
+        setSettingContent(
+            viewModel = viewModel,
+            onNotice = { destinations += "notice" },
+            onRecipientList = { destinations += "recipient-list" },
+        )
+        val resources = ApplicationProvider.getApplicationContext<android.content.Context>().resources
+
+        composeRule
+            .onNode(
+                hasContentDescription(resources.getString(R.string.settings_support_inquiry)) and hasClickAction(),
+            ).performClick()
+        composeRule.onNodeWithText("현재 이 메뉴는 이용할 수 없습니다.").assertIsDisplayed()
+        assertEquals(emptyList<String>(), destinations)
+        composeRule.onNodeWithText("확인").performClick()
+        composeRule.onNodeWithText("현재 이 메뉴는 이용할 수 없습니다.").assertDoesNotExist()
+
+        composeRule
+            .onNode(
+                hasContentDescription(resources.getString(R.string.settings_support_notice)) and hasClickAction(),
+            ).performClick()
+        composeRule
+            .onNode(
+                hasContentDescription(resources.getString(R.string.settings_recipient_list)) and hasClickAction(),
+            ).performClick()
+        assertEquals(listOf("notice", "recipient-list"), destinations)
+    }
+
+    @Test
     fun unavailableMenus_showFeedbackAndKeepSettingsUsable() {
         val viewModel = SettingViewModel(settingFlowAuthRepository(loggedIn = true), settingFlowUserRepository())
         var profileOpened = false
@@ -130,7 +162,12 @@ class SettingFlowTest {
                 R.string.settings_support_service_info,
             )
         menuIds.forEach { menuId ->
-            composeRule.onNode(hasText(resources.getString(menuId)) and hasClickAction()).performScrollTo().performClick()
+            val label = resources.getString(menuId)
+            composeRule
+                .onNode(
+                    hasText(label) and hasClickAction() and !hasContentDescription(label),
+                ).performScrollTo()
+                .performClick()
             composeRule.onNodeWithText("현재 이 메뉴는 이용할 수 없습니다.").assertIsDisplayed()
             composeRule.onNodeWithText("확인").performClick()
         }
@@ -143,6 +180,8 @@ class SettingFlowTest {
         onLogoutSuccess: () -> Unit = {},
         onProfileEdit: () -> Unit = {},
         onAppLock: () -> Unit = {},
+        onNotice: () -> Unit = {},
+        onRecipientList: () -> Unit = {},
     ) {
         composeRule.setContent {
             AfternoteTheme {
@@ -152,12 +191,12 @@ class SettingFlowTest {
                     onProfileEditClick = onProfileEdit,
                     onLinkedAccountClick = {},
                     onNotificationClick = {},
-                    onRecipientListClick = {},
+                    onRecipientListClick = onRecipientList,
                     onRecipientRegisterClick = {},
                     onDeliveryConditionsClick = {},
                     onPasskeyClick = {},
                     onAppLockClick = onAppLock,
-                    onNoticeClick = {},
+                    onNoticeClick = onNotice,
                     onWithdrawGuideClick = {},
                     viewModel = viewModel,
                 )
