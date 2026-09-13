@@ -1,11 +1,13 @@
 package com.afternote.afternote_fe
 
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.appTestUserRepository
@@ -44,10 +46,12 @@ class ReceiverSessionIsolationAndroidTest {
 
         composeRule.setContent {
             AfternoteTheme {
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 RecipientListScreen(
+                    uiState = uiState,
                     onBackClick = {},
                     onConfirmClick = {},
-                    viewModel = viewModel,
+                    onRetry = viewModel::retry,
                 )
             }
         }

@@ -234,13 +234,15 @@ class TimeLetterMindRecordCompletionAndroidTest {
         composeRule.setContent {
             AfternoteTheme {
                 if (showRecipient) {
+                    val recipientUiState by recipientViewModel.uiState.collectAsStateWithLifecycle()
                     RecipientListScreen(
+                        uiState = recipientUiState,
                         onBackClick = { showRecipient = false },
                         onConfirmClick = { recipients ->
                             writeViewModel.setRecipients(recipients.map { it.receiverId })
                             showRecipient = false
                         },
-                        viewModel = recipientViewModel,
+                        onRetry = recipientViewModel::retry,
                     )
                 } else {
                     val uiState by writeViewModel.uiState.collectAsStateWithLifecycle()
