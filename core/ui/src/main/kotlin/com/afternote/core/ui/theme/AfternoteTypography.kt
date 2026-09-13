@@ -155,7 +155,7 @@ data class AfternoteTypography(
             localeList = KoreanLocale,
         ),
     /**
-     * **[bodySmallR] 과 여섯 필드가 전부 같다 — 지금은 이름만 다른 같은 값이다.** 합치지 않고
+     * **[bodySmallR] 과 모든 필드가 같다 — 지금은 이름만 다른 같은 값이다.** 합치지 않고
      * 남기는 이유는 [captionLargeB] 와 같다. 상세는 그쪽 KDoc.
      */
     val bodySmallB: TextStyle =
@@ -196,7 +196,7 @@ data class AfternoteTypography(
             localeList = KoreanLocale,
         ),
     /**
-     * **[captionLargeR] 과 여섯 필드가 전부 같다 — 지금은 이름만 다른 같은 값이다.**
+     * **[captionLargeR] 과 모든 필드가 같다 — 지금은 이름만 다른 같은 값이다.**
      * ([bodySmallB]/[bodySmallR] 도 마찬가지다. [bodyLargeB]/[bodyLargeR] 는 줄높이가 달라 해당 없다.)
      *
      * **중복을 만든 것은 이 코드가 아니라 시안이다.** 정본 페이지에서도 `CaptionLarge(B)` 와
