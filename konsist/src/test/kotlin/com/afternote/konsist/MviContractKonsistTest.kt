@@ -419,21 +419,6 @@ class MviContractKonsistTest {
                 "com.afternote.feature.onboarding.presentation.findaccount.FindPasswordViewModel",
             )
 
-        /** #1803 이 뺀다. */
-        private val ISSUE_1803_RECEIVER =
-            setOf(
-                "com.afternote.feature.receiver.presentation.deliveryverification.DeliveryVerificationFlowViewModel",
-                "com.afternote.feature.receiver.presentation.deliveryverification.DocumentUploadViewModel",
-                "com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationViewModel",
-                "com.afternote.feature.receiver.presentation.deliveryverification.MasterKeyViewModel",
-                // 이 스택의 base 에는 아직 여기 있다. develop 은 #1666 으로 feature/home 으로 옮겼고
-                // 그쪽 FQN 은 ISSUE_1808_HOME 에 있다 — 스택이 develop 을 들이면 이 줄을 지운다.
-                "com.afternote.feature.receiver.presentation.home.ReceiverHomeViewModel",
-                "com.afternote.feature.receiver.presentation.recordsbox.ReceivedRecordsViewModel",
-                "com.afternote.feature.receiver.presentation.recordsbox.SenderRegistrationViewModel",
-                "com.afternote.feature.receiver.presentation.senderdetail.SenderDetailViewModel",
-            )
-
         /** #1805 가 뺀다. `Channel` 5곳 흡수(#1502)가 선행이다. */
         private val ISSUE_1805_SETTING =
             setOf(
@@ -471,7 +456,6 @@ class MviContractKonsistTest {
         val PENDING_MVI_MIGRATION =
             ISSUE_1802_ONBOARDING +
                 PENDING_ARRIVAL_ONBOARDING +
-                ISSUE_1803_RECEIVER +
                 ISSUE_1804_AFTERNOTE +
                 ISSUE_1805_SETTING +
                 ISSUE_1806_TIMELETTER +

@@ -1,10 +1,10 @@
 package com.afternote.feature.receiver.presentation.deliveryverification
 
 import androidx.annotation.StringRes
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.ui.UiText
+import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import com.afternote.feature.afternote.presentation.reporting.shouldReportInReceiverFlow
@@ -15,10 +15,6 @@ import com.afternote.feature.receiver.presentation.R
 import com.afternote.feature.receiver.presentation.error.toReceiverErrorPopupOrNull
 import com.afternote.feature.receiver.presentation.error.toReceiverErrorUiText
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -34,15 +30,29 @@ import javax.inject.Inject
  * 여기 남는다.
  */
 @HiltViewModel
-class DocumentUploadViewModel
+internal class DocumentUploadViewModel
     @Inject
     constructor(
         private val uploadRepository: ReceiverDeliveryDocumentUploadRepository,
         private val submitDeliveryVerification: SubmitDeliveryVerificationUseCase,
         private val errorReporter: ErrorReporter,
-    ) : ViewModel() {
-        private val _uiState = MutableStateFlow(DocumentUploadUiState())
-        val uiState: StateFlow<DocumentUploadUiState> = _uiState.asStateFlow()
+    ) : MviViewModel<DocumentUploadIntent, DocumentUploadUiState, DocumentUploadReducerEvent>(DocumentUploadUiState()) {
+        override fun onIntent(intent: DocumentUploadIntent) {
+            when (intent) {
+                is DocumentUploadIntent.UploadDocument -> uploadDocument(intent.slot, intent.bytes, intent.extension, intent.displayName)
+                DocumentUploadIntent.DocumentReadFailed -> onDocumentReadFailed()
+                DocumentUploadIntent.Submit -> submit()
+                DocumentUploadIntent.RetryFailedRequest -> retryFailedRequest()
+                DocumentUploadIntent.DismissErrorPopup -> onErrorPopupDismissed()
+                DocumentUploadIntent.ConsumeError -> dispatch(DocumentUploadReducerEvent.ErrorConsumed)
+                DocumentUploadIntent.ConsumeSubmitted -> dispatch(DocumentUploadReducerEvent.SubmittedConsumed)
+            }
+        }
+
+        override fun reduce(
+            state: DocumentUploadUiState,
+            event: DocumentUploadReducerEvent,
+        ): DocumentUploadUiState = reduceDocumentUpload(state, event)
 
         /**
          * 팝업의 "다시 시도하기" 가 되돌릴 마지막 시도 (#446). 팝업이 사라질 때 함께 비운다 —
@@ -52,7 +62,7 @@ class DocumentUploadViewModel
          */
         private var pendingRetry: (() -> Unit)? = null
 
-        fun uploadDocument(
+        private fun uploadDocument(
             slot: DocumentSlot,
             bytes: ByteArray,
             extension: String,
@@ -63,21 +73,16 @@ class DocumentUploadViewModel
                 return
             }
             // 실패 시 이 상태로 복원 — 재첨부 실패가 이미 성공해 둔 첨부(fileUrl)까지 지우면 안 된다 (#740).
-            val previous = _uiState.value.slotOf(slot)
-            updateSlot(slot) { it.copy(displayName = displayName, isUploading = true) }
+            val previous = currentState.slotOf(slot)
+            dispatch(DocumentUploadReducerEvent.UploadStarted(slot, displayName))
             viewModelScope.launch {
                 uploadRepository
                     .upload(bytes, extension)
                     .onSuccess { fileUrl ->
-                        updateSlot(slot) {
-                            it.copy(
-                                fileUrl = fileUrl,
-                                isUploading = false,
-                            )
-                        }
+                        dispatch(DocumentUploadReducerEvent.Uploaded(slot, fileUrl))
                     }.onFailure { throwable ->
                         errorReporter.recordAfternoteFailure(AfternoteFailureStage.DOCUMENT_UPLOAD, throwable)
-                        updateSlot(slot) { previous }
+                        dispatch(DocumentUploadReducerEvent.UploadRestored(slot, previous))
                         // 재시도는 같은 바이트를 다시 올리는 것이다 — 파일 선택부터 다시 시키면
                         // 「다시 시도하기」 가 이름과 달리 처음부터 하기가 된다 (#446).
                         showFailure(throwable, R.string.receiver_verify_document_upload_failed, uploadPath = true) {
@@ -88,68 +93,62 @@ class DocumentUploadViewModel
         }
 
         /** picker 가 돌려준 Uri 에서 바이트 추출이 실패한 경우 — 업로드 요청 전이므로 슬롯은 건드리지 않는다 (#740). */
-        fun onDocumentReadFailed() {
-            _uiState.update { it.copy(errorMessage = UiText.Resource(R.string.receiver_verify_document_read_failed)) }
+        private fun onDocumentReadFailed() {
+            dispatch(DocumentUploadReducerEvent.ErrorRaised(UiText.Resource(R.string.receiver_verify_document_read_failed)))
         }
 
-        fun submit() {
-            val state = _uiState.value
+        private fun submit() {
+            val state = currentState
             // 버튼 비활성(canSubmit)과 별개의 최종 방어선 — 탭 시점과 recomposition 사이 race 로
             // 업로드 중에도 도달할 수 있고, 그대로 보내면 진행 중 파일이 신청에서 빠진다 (#711).
             if (state.deathCertificate.isUploading || state.familyRelationCertificate.isUploading) {
-                _uiState.update {
-                    it.copy(errorMessage = UiText.Resource(R.string.receiver_verify_document_upload_in_progress))
-                }
+                dispatch(DocumentUploadReducerEvent.ErrorRaised(UiText.Resource(R.string.receiver_verify_document_upload_in_progress)))
                 return
             }
             // 이미 보낸 신청이 응답을 기다리는 중이면 두 번째 탭은 버린다 — 화면 사정이라 UseCase 로 내리지 않는다.
             if (state.isSubmitting) {
-                _uiState.update {
-                    it.copy(errorMessage = UiText.Resource(R.string.receiver_verify_documents_required))
-                }
+                dispatch(DocumentUploadReducerEvent.ErrorRaised(UiText.Resource(R.string.receiver_verify_documents_required)))
                 return
             }
-            _uiState.update {
-                it.copy(isSubmitting = true, errorMessage = null)
-            }
+            dispatch(DocumentUploadReducerEvent.SubmissionStarted)
             viewModelScope.launch {
                 submitDeliveryVerification(
                     deathCertificateUrl = state.deathCertificate.fileUrl,
                     familyRelationCertificateUrl = state.familyRelationCertificate.fileUrl,
                 ).onSuccess {
-                    _uiState.update { it.copy(isSubmitting = false, isSubmitted = true) }
+                    dispatch(DocumentUploadReducerEvent.Submitted)
                 }.onFailure { throwable ->
                     // 서류가 한 장도 없어 요청이 나가지도 않은 경우 — 서버 실패가 아니므로 리포팅하지 않는다.
                     if (throwable is DeliveryDocumentsMissingException) {
-                        _uiState.update {
-                            it.copy(
-                                isSubmitting = false,
-                                errorMessage = UiText.Resource(R.string.receiver_verify_documents_required),
-                            )
-                        }
+                        dispatch(
+                            DocumentUploadReducerEvent.ErrorRaised(
+                                UiText.Resource(R.string.receiver_verify_documents_required),
+                                finishesSubmission = true,
+                            ),
+                        )
                         return@onFailure
                     }
                     // 서버가 사유 문구를 준 거절(이미 대기 중 등)은 예상된 경로라 리포팅하지 않는다.
                     if (throwable.shouldReportInReceiverFlow()) {
                         errorReporter.recordAfternoteFailure(AfternoteFailureStage.DELIVERY_SUBMIT, throwable)
                     }
-                    _uiState.update { it.copy(isSubmitting = false) }
+                    dispatch(DocumentUploadReducerEvent.SubmissionFinished)
                     showFailure(throwable, R.string.receiver_verify_submit_failed, retry = ::submit)
                 }
             }
         }
 
         /** 팝업의 "다시 시도하기" — 팝업을 닫고 실패한 그 요청을 그대로 다시 보낸다 (#446). */
-        fun retryFailedRequest() {
+        private fun retryFailedRequest() {
             val retry = pendingRetry
-            _uiState.update { it.copy(errorPopup = null) }
+            dispatch(DocumentUploadReducerEvent.PopupDismissed)
             pendingRetry = null
             retry?.invoke()
         }
 
         /** 팝업의 닫기 — 재시도 없이 화면으로 돌아간다. 붙들고 있던 시도도 함께 버린다. */
-        fun onErrorPopupDismissed() {
-            _uiState.update { it.copy(errorPopup = null) }
+        private fun onErrorPopupDismissed() {
+            dispatch(DocumentUploadReducerEvent.PopupDismissed)
             pendingRetry = null
         }
 
@@ -165,38 +164,13 @@ class DocumentUploadViewModel
         ) {
             val popup = throwable.toReceiverErrorPopupOrNull(uploadPath = uploadPath)
             pendingRetry = if (popup == null) null else retry
-            _uiState.update {
+            dispatch(
                 if (popup == null) {
-                    it.copy(errorMessage = throwable.toReceiverErrorUiText(fallbackRes))
+                    DocumentUploadReducerEvent.ErrorRaised(throwable.toReceiverErrorUiText(fallbackRes))
                 } else {
-                    it.copy(errorPopup = popup)
-                }
-            }
-        }
-
-        fun consumeError() {
-            _uiState.update { it.copy(errorMessage = null) }
-        }
-
-        fun onSubmittedConsumed() {
-            _uiState.update { it.copy(isSubmitted = false) }
-        }
-
-        private inline fun updateSlot(
-            slot: DocumentSlot,
-            transform: (DocumentSlotState) -> DocumentSlotState,
-        ) {
-            _uiState.update { state ->
-                when (slot) {
-                    DocumentSlot.DeathCertificate -> {
-                        state.copy(deathCertificate = transform(state.deathCertificate))
-                    }
-
-                    DocumentSlot.FamilyRelationCertificate -> {
-                        state.copy(familyRelationCertificate = transform(state.familyRelationCertificate))
-                    }
-                }
-            }
+                    DocumentUploadReducerEvent.PopupRaised(popup)
+                },
+            )
         }
 
         private fun DocumentUploadUiState.slotOf(slot: DocumentSlot): DocumentSlotState =

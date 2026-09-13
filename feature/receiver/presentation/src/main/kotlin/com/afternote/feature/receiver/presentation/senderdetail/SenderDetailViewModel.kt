@@ -1,10 +1,10 @@
 package com.afternote.feature.receiver.presentation.senderdetail
 
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
@@ -17,10 +17,6 @@ import com.afternote.feature.receiver.presentation.recordsbox.SenderEntry
 import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -34,7 +30,7 @@ import javax.inject.Inject
  * masterKey 가 없으면(마스터 키 미입력) 무조건 [SenderVerificationState.NotRequested] — API 호출 자체 생략.
  */
 @HiltViewModel
-class SenderDetailViewModel
+internal class SenderDetailViewModel
     @Inject
     constructor(
         savedStateHandle: SavedStateHandle,
@@ -42,12 +38,22 @@ class SenderDetailViewModel
         private val receiverRepository: ReceiverRepository,
         private val receiverAuthRepository: ReceiverAuthRepository,
         private val errorReporter: ErrorReporter,
-    ) : ViewModel() {
+    ) : MviViewModel<SenderDetailIntent, SenderDetailUiState, SenderDetailReducerEvent>(SenderDetailUiState.Loading) {
+        override fun onIntent(intent: SenderDetailIntent) {
+            when (intent) {
+                SenderDetailIntent.RefreshOnReturn -> refreshOnReturn()
+                SenderDetailIntent.OpenReceiverHome -> openReceiverHome()
+                SenderDetailIntent.ConsumeOpenReceiverHome -> dispatch(SenderDetailReducerEvent.ReceiverHomeConsumed)
+            }
+        }
+
+        override fun reduce(
+            state: SenderDetailUiState,
+            event: SenderDetailReducerEvent,
+        ): SenderDetailUiState = reduceSenderDetail(state, event)
+
         private val senderId: String =
             savedStateHandle.toRoute<ReceiverRoute.SenderDetailRoute>().senderId
-
-        private val _uiState = MutableStateFlow<SenderDetailUiState>(SenderDetailUiState.Loading)
-        val uiState: StateFlow<SenderDetailUiState> = _uiState.asStateFlow()
 
         /** 진행 중인 상태 조회 — 첫 진입 이후의 ON_RESUME 이 실행 중인 로드와 겹치면 건너뛰기 위한 가드. */
         private var loadJob: Job? = null
@@ -73,7 +79,7 @@ class SenderDetailViewModel
          * 정보 박스를 유지한다. 첫 ON_RESUME(진입 자체)은 [isFirstResume] 로 스킵하고, 그 이후의
          * resume 이 실행 중인 로드와 겹치면 진행 중인 Job 으로 건너뛴다.
          */
-        fun refreshOnReturn() {
+        private fun refreshOnReturn() {
             if (isFirstResume) {
                 isFirstResume = false
                 return
@@ -85,32 +91,16 @@ class SenderDetailViewModel
         /**
          * "기록 열람하기"(디자인 12) 트리거 — 글로벌 헤더에 해당 발신자 masterKey 를 복원한 뒤
          * [SenderDetailUiState.Success.shouldOpenReceiverHome] 플래그를 true 로 갱신.
-         * UI 가 LaunchedEffect 로 수신자 홈 이동 후 [onOpenReceiverHomeConsumed] 로 reset.
+         * UI 가 LaunchedEffect 로 수신자 홈 이동 후 [SenderDetailIntent.ConsumeOpenReceiverHome] 로 reset.
          *
          * masterKey 가 없는 경우(미인증) 호출되어선 안 되지만 방어적으로 no-op.
          */
-        fun openReceiverHome() {
+        private fun openReceiverHome() {
             val masterKey = senderRegistry.findById(senderId)?.masterKey
             if (masterKey.isNullOrBlank()) return
             viewModelScope.launch {
                 receiverRepository.saveMasterKey(masterKey)
-                _uiState.update { current ->
-                    if (current is SenderDetailUiState.Success) {
-                        current.copy(shouldOpenReceiverHome = true)
-                    } else {
-                        current
-                    }
-                }
-            }
-        }
-
-        fun onOpenReceiverHomeConsumed() {
-            _uiState.update { current ->
-                if (current is SenderDetailUiState.Success) {
-                    current.copy(shouldOpenReceiverHome = false)
-                } else {
-                    current
-                }
+                dispatch(SenderDetailReducerEvent.ReceiverHomeRequested)
             }
         }
 
@@ -121,35 +111,16 @@ class SenderDetailViewModel
             loadJob?.cancel()
             val sender = senderRegistry.findById(senderId)
             if (sender == null) {
-                _uiState.value = SenderDetailUiState.SenderNotFound
+                dispatch(SenderDetailReducerEvent.SenderNotFound)
                 return
             }
             if (showsLoading) {
-                _uiState.value = SenderDetailUiState.Loading
+                dispatch(SenderDetailReducerEvent.Loading)
             }
             loadJob =
                 viewModelScope.launch {
                     val resolved = resolveState(sender)
-                    _uiState.update { current ->
-                        when {
-                            // 자동 갱신의 조회 실패: 잘 보고 있던 정보 박스를 에러로 대체하지 않는다.
-                            keepsStateOnFailure &&
-                                resolved is SenderDetailUiState.StatusLoadFailed &&
-                                current is SenderDetailUiState.Success -> {
-                                current
-                            }
-
-                            // 갱신이 화면을 교체해도 미소비 네비게이션 신호는 잃지 않는다 — "기록 열람하기"
-                            // 클릭과 갱신 완료가 겹치면 새 Success 의 기본값 false 가 이동을 삼킨다.
-                            resolved is SenderDetailUiState.Success && current is SenderDetailUiState.Success -> {
-                                resolved.copy(shouldOpenReceiverHome = current.shouldOpenReceiverHome)
-                            }
-
-                            else -> {
-                                resolved
-                            }
-                        }
-                    }
+                    dispatch(SenderDetailReducerEvent.Loaded(resolved, keepsStateOnFailure))
                 }
         }
 
