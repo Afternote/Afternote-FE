@@ -9,4 +9,7 @@ package com.afternote.core.ui.navigation
 public typealias FeatureStackBoundary = FeatureNavigationCallbacks
 
 /** 기존 팩토리 호출의 소스 호환을 유지한다. 새 코드는 [FeatureNavigationCallbacks]를 사용한다. */
-public fun FeatureStackBoundary(onExit: () -> Unit): FeatureStackBoundary = FeatureNavigationCallbacks(onExit)
+public fun FeatureStackBoundary(onExit: () -> Unit): FeatureStackBoundary =
+    object : FeatureStackBoundary {
+        override fun exit() = onExit()
+    }

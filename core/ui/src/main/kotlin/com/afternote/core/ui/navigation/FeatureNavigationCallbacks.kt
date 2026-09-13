@@ -28,7 +28,4 @@ public interface FeatureNavigationCallbacks {
 }
 
 /** 바텀바가 없어 셸로 돌아갈 길만 필요한 그래프용 [FeatureNavigationCallbacks]. */
-public fun FeatureNavigationCallbacks(onExit: () -> Unit): FeatureNavigationCallbacks =
-    object : FeatureNavigationCallbacks {
-        override fun exit() = onExit()
-    }
+public fun FeatureNavigationCallbacks(onExit: () -> Unit): FeatureNavigationCallbacks = FeatureStackBoundary(onExit)
