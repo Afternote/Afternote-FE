@@ -99,6 +99,71 @@ class UserRepositoryImplTest {
     }
 
     @Test
+    fun `refreshReceiverList - 같은 구독을 서버의 최신 목록으로 갱신한다`() =
+        runBlocking {
+            var requestCount = 0
+            val repository =
+                repository(
+                    onGetReceivers = {
+                        requestCount++
+                        dataResponse(listOf(receiverDto("조회 $requestCount")))
+                    },
+                )
+            val emissions = Channel<List<Receiver>>(capacity = Channel.UNLIMITED)
+            val collector =
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    repository.receiverListFlow.collect { emissions.send(it) }
+                }
+
+            try {
+                assertEquals("조회 1", withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.single().name)
+
+                val narrowContract: UserReceiverRepository = repository
+                narrowContract.refreshReceiverList()
+
+                assertEquals("조회 2", withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.single().name)
+                assertEquals(2, requestCount)
+            } finally {
+                collector.cancelAndJoin()
+            }
+        }
+
+    @Test
+    fun `refreshReceiverList - 갱신 실패는 마지막 목록을 유지하고 다음 갱신은 복구한다`() =
+        runBlocking {
+            var requestCount = 0
+            val repository =
+                repository(
+                    onGetReceivers = {
+                        requestCount++
+                        if (requestCount == 2) throw UnknownHostException("일시적인 조회 실패")
+                        dataResponse(listOf(receiverDto("조회 $requestCount")))
+                    },
+                )
+            val emissions = Channel<List<Receiver>>(capacity = Channel.UNLIMITED)
+            val collector =
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    repository.receiverListFlow.collect { emissions.send(it) }
+                }
+
+            try {
+                val first = withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }
+                repository.refreshReceiverList()
+
+                assertEquals(first, withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() })
+                assertEquals(2, requestCount)
+                assertEquals(1, errorReporter.writtenFailures.size)
+
+                repository.refreshReceiverList()
+
+                assertEquals("조회 3", withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.single().name)
+                assertEquals(3, requestCount)
+            } finally {
+                collector.cancelAndJoin()
+            }
+        }
+
+    @Test
     fun `receiverListFlow - 조회가 실패해도 예외로 새지 않고 빈 목록을 낸다`() {
         val repository = repository(onGetReceivers = { throw UnknownHostException("Unable to resolve host") })
 

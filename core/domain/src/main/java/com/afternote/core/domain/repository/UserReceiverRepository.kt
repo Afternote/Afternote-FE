@@ -24,6 +24,12 @@ interface UserReceiverRepository {
      */
     val receiverListFlow: Flow<List<Receiver>>
 
+    /**
+     * 현재 구독 중인 수신자 목록을 다시 조회하도록 요청한다. 조회 결과와 세션별 실패 처리는
+     * [receiverListFlow] 계약을 따르며, 새 구독은 이 호출 없이도 최신 목록을 조회한다.
+     */
+    fun refreshReceiverList()
+
     // 수신자 목록 조회
     suspend fun getReceivers(): List<Receiver>
 

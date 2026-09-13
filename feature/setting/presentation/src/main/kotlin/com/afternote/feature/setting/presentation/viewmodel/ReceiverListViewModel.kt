@@ -14,7 +14,7 @@ import javax.inject.Inject
 internal class ReceiverListViewModel
     @Inject
     constructor(
-        userRepository: UserReceiverRepository,
+        private val userRepository: UserReceiverRepository,
     ) : MviViewModel<ReceiverListIntent, ReceiverListUiState, ReceiverListReducerEvent>(ReceiverListUiState()) {
         private val receivers = userRepository.receiverListFlow
         private var observationJob: Job? = null
@@ -36,8 +36,14 @@ internal class ReceiverListViewModel
             }
 
         private fun startObservation() {
+            val isReturning = stopJob != null
             stopJob?.cancel()
-            if (observationJob?.isActive == true) return
+            stopJob = null
+            if (observationJob?.isActive == true) {
+                // 구독 중단 유예 안에 복귀해도 서버 목록은 갱신한다. 같은 구독의 실패 시 캐시는 보존한다.
+                if (isReturning) userRepository.refreshReceiverList()
+                return
+            }
             observationJob =
                 viewModelScope.launch {
                     receivers.collect { receivers ->

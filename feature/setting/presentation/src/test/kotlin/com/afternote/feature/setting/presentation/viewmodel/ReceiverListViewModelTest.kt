@@ -27,6 +27,8 @@ class ReceiverListViewModelTest {
     private val receivers = MutableStateFlow(listOf(Receiver(7L, "김수신", "가족", "auth-7")))
     private var subscriptions = 0
     private var cancellations = 0
+    private var refreshes = 0
+    private var serverReceivers = receivers.value
 
     @Before
     fun setUp() {
@@ -53,6 +55,7 @@ class ReceiverListViewModelTest {
 
             assertEquals(listOf(ReceiverListItem(7L, "김수신", "가족")), viewModel.uiState.value.receivers)
             assertEquals(1, subscriptions)
+            assertEquals(0, refreshes)
         }
 
     @Test
@@ -67,26 +70,48 @@ class ReceiverListViewModelTest {
 
             assertEquals(1, subscriptions)
             assertEquals(0, cancellations)
+            assertEquals(0, refreshes)
         }
 
     @Test
-    fun `5초 이내 복귀는 기존 구독과 최신 목록을 유지한다`() =
+    fun `5초 이내 복귀는 기존 구독을 유지하면서 서버 목록을 다시 조회한다`() =
         runTest(dispatcher) {
             val viewModel = viewModel()
             viewModel.onIntent(ReceiverListIntent.ObservationStarted)
             runCurrent()
             viewModel.onIntent(ReceiverListIntent.ObservationStopped)
             advanceTimeBy(4_999)
-            receivers.value = listOf(Receiver(8L, "박수신", "친구", "auth-8"))
+            serverReceivers = listOf(Receiver(8L, "박수신", "친구", "auth-8"))
             runCurrent()
 
-            assertEquals(listOf(ReceiverListItem(8L, "박수신", "친구")), viewModel.uiState.value.receivers)
+            assertEquals(listOf(ReceiverListItem(7L, "김수신", "가족")), viewModel.uiState.value.receivers)
             viewModel.onIntent(ReceiverListIntent.ObservationStarted)
             advanceTimeBy(5_000)
             runCurrent()
 
+            assertEquals(listOf(ReceiverListItem(8L, "박수신", "친구")), viewModel.uiState.value.receivers)
             assertEquals(1, subscriptions)
             assertEquals(0, cancellations)
+            assertEquals(1, refreshes)
+        }
+
+    @Test
+    fun `빠른 재진입마다 한 번 갱신하고 중복 시작 신호는 추가 조회하지 않는다`() =
+        runTest(dispatcher) {
+            val viewModel = viewModel()
+            viewModel.onIntent(ReceiverListIntent.ObservationStarted)
+            runCurrent()
+
+            repeat(2) {
+                viewModel.onIntent(ReceiverListIntent.ObservationStopped)
+                viewModel.onIntent(ReceiverListIntent.ObservationStarted)
+                viewModel.onIntent(ReceiverListIntent.ObservationStarted)
+                runCurrent()
+            }
+
+            assertEquals(1, subscriptions)
+            assertEquals(0, cancellations)
+            assertEquals(2, refreshes)
         }
 
     @Test
@@ -108,6 +133,7 @@ class ReceiverListViewModelTest {
             runCurrent()
 
             assertEquals(2, subscriptions)
+            assertEquals(0, refreshes)
             assertEquals(listOf(ReceiverListItem(9L, "이수신", "동료")), viewModel.uiState.value.receivers)
         }
 
@@ -157,6 +183,10 @@ class ReceiverListViewModelTest {
     private fun viewModel(): ReceiverListViewModel {
         val repository =
             FakeUserReceiverRepository.strict().apply {
+                onRefreshReceiverList = {
+                    refreshes++
+                    receivers.value = serverReceivers
+                }
                 onReceiverListFlow = {
                     flow {
                         subscriptions++
