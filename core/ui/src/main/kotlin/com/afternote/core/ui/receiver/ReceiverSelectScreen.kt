@@ -200,28 +200,30 @@ private fun ReceiverSelectList(
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
-    val groupedReceivers =
+    // 목록에 그릴 행을 초성과 함께 한 줄로 펴 둔다 — LazyColumn 도 인덱스 맵도 이 목록만 본다.
+    val receiverRows =
         remember(receivers, searchQuery) {
             val filtered =
                 if (searchQuery.isBlank()) receivers else receivers.filter { it.name.contains(searchQuery) }
-            KoreanConsonantUtil.groupByInitialConsonant(filtered) { it.name }
+            KoreanConsonantUtil
+                .groupByInitialConsonant(filtered) { it.name }
+                .flatMap { (consonant, items) -> items.map { consonant to it } }
         }
 
-    // 섹션 헤더 없이 항목만 그리므로 스크롤 인덱스도 items.size 로만 누적한다.
+    // 점프 위치는 그룹 길이를 따로 더하지 않고 위에서 편 행 순서에서 그대로 읽는다 —
+    // 계산과 렌더가 갈라져 있으면 렌더 구조가 바뀔 때 인덱스만 남아 어긋난다 (#939).
     val consonantIndexMap =
-        remember(groupedReceivers) {
-            var index = 0
+        remember(receiverRows) {
             buildMap {
-                groupedReceivers.forEach { (consonant, items) ->
-                    put(consonant, index)
-                    index += items.size
+                receiverRows.forEachIndexed { index, (consonant, _) ->
+                    if (consonant !in this) put(consonant, index)
                 }
             }
         }
 
     // A tap may stop before its section reaches the top when the list clamps at its end.
     // Keep that explicit target until the user scrolls the list or changes its contents.
-    var tappedConsonant by remember(groupedReceivers) { mutableStateOf<Char?>(null) }
+    var tappedConsonant by remember(receiverRows) { mutableStateOf<Char?>(null) }
     val scrolledConsonant by remember(listState, consonantIndexMap) {
         derivedStateOf {
             if (!listState.canScrollForward && listState.canScrollBackward) {
@@ -234,7 +236,7 @@ private fun ReceiverSelectList(
         }
     }
     val listScrollConnection =
-        remember(groupedReceivers) {
+        remember(receiverRows) {
             object : NestedScrollConnection {
                 override fun onPreScroll(
                     available: Offset,
@@ -257,14 +259,12 @@ private fun ReceiverSelectList(
                     .nestedScroll(listScrollConnection)
                     .padding(start = 20.dp),
         ) {
-            groupedReceivers.forEach { (_, items) ->
-                items(items, key = { it.id }) { receiver ->
-                    ReceiverSelectRow(
-                        receiver = receiver,
-                        isSelected = receiver.id in selectedReceiverIds,
-                        onToggle = { onReceiverToggle(receiver.id) },
-                    )
-                }
+            items(receiverRows, key = { (_, receiver) -> receiver.id }) { (_, receiver) ->
+                ReceiverSelectRow(
+                    receiver = receiver,
+                    isSelected = receiver.id in selectedReceiverIds,
+                    onToggle = { onReceiverToggle(receiver.id) },
+                )
             }
             item { Spacer(modifier = Modifier.padding(14.dp)) }
         }
