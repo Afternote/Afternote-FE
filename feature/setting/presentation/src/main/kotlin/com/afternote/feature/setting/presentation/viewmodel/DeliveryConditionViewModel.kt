@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 internal class DeliveryConditionViewModel
     @AssistedInject
     constructor(
-        @Assisted route: SettingRoute.AfterDeliveryRoute,
+        @Assisted route: SettingRoute.DeliveryConditionsRoute,
         private val userRepository: UserReceiverRepository,
         private val updateTimeLetterDeliveryCondition: UpdateTimeLetterDeliveryConditionUseCase,
     ) : MviViewModel<DeliveryConditionIntent, DeliveryConditionUiState, DeliveryConditionReducerEvent>(DeliveryConditionUiState()) {
@@ -157,6 +157,6 @@ internal class DeliveryConditionViewModel
 
         @AssistedFactory
         interface Factory {
-            fun create(route: SettingRoute.AfterDeliveryRoute): DeliveryConditionViewModel
+            fun create(route: SettingRoute.DeliveryConditionsRoute): DeliveryConditionViewModel
         }
     }

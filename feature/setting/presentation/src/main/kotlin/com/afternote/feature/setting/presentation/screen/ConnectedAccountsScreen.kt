@@ -11,7 +11,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.credentials.CredentialManager
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -118,12 +117,6 @@ internal fun ConnectedAccountsScreen(
         onToggle = { provider, enabled -> viewModel.onIntent(ConnectedAccountsIntent.Toggle(provider, enabled)) },
         modifier = modifier,
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ConnectedAccountScreenPrev() {
-    ConnectedAccountsScreen(onBack = {})
 }
 
 /** `UiText.asString()` 은 `@Composable` 이라 스낵바 코루틴 안에서는 못 부른다. 그 자리용 Resources 풀이. */

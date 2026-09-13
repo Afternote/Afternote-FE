@@ -172,4 +172,6 @@
     <string name="receiver_request_rejected">입력하신 내용을 확인해 주세요.</string>
     <string name="receiver_message_update_partial_failed">기본 정보는 수정됐지만 마지막 인사말 수정에 실패했습니다.</string>
     <string name="receiver_load_failed">수신자 정보를 불러오지 못했습니다.</string>
+    <string name="settings_menu_unavailable">현재 이 메뉴는 이용할 수 없습니다.</string>
+    <string name="settings_menu_acknowledge">확인</string>
 </resources>

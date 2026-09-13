@@ -22,14 +22,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.setting.presentation.R
 
 data class SettingSourceItemData(
     val name: String,
@@ -96,28 +92,6 @@ fun SettingSourceItem(
             RightArrowIcon(
                 modifier = Modifier.size(24.dp),
                 tint = AfternoteDesign.colors.gray9,
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SettingSourceItemPreview() {
-    AfternoteTheme {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            SettingSourceItem(
-                item =
-                    SettingSourceItemData(
-                        name = "갤러리",
-                        date = "최종 작성일 2025.11.26.",
-                        iconBgColor = Color(0xFFF5F5F5),
-                    ),
-                icon = painterResource(R.drawable.ic_default_profile),
-                onClick = {},
             )
         }
     }

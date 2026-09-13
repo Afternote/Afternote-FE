@@ -10,7 +10,7 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.afternote.core.ui.navigation.FeatureNavDisplay
-import com.afternote.core.ui.navigation.FeatureStackBoundary
+import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
 import com.afternote.feature.setting.presentation.component.PinSetupStep
 import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
 import com.afternote.feature.setting.presentation.screen.ConnectedAccountsScreen
@@ -38,13 +38,13 @@ import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
 
 /**
  * Settings owns its saved local stack. The parent entry owns the withdrawal ViewModel,
- * so guide/confirmation share it until this entire host is removed (#1702 boundary).
+ * so guide/confirmation share it until this entire host is removed (#1702 host lifetime).
  * Home keeps its existing entry-scoped ViewModel. Direct recipient registration starts
  * at registration, so completing it returns to the caller without inserting Settings home.
  */
 @Composable
 public fun SettingNavHost(
-    boundary: FeatureStackBoundary,
+    navigationCallbacks: FeatureNavigationCallbacks,
     externalActions: SettingExternalActions,
     modifier: Modifier = Modifier,
     startWithRecipientRegistration: Boolean = false,
@@ -57,13 +57,13 @@ public fun SettingNavHost(
         }
     val backStack = rememberNavBackStack(initialRoute)
     val actions =
-        remember(backStack, boundary, externalActions) {
-            SettingLocalNavActions(backStack, boundary, externalActions)
+        remember(backStack, navigationCallbacks, externalActions) {
+            SettingLocalNavActions(backStack, navigationCallbacks, externalActions)
         }
     val hostOwner = checkNotNull(LocalViewModelStoreOwner.current)
     FeatureNavDisplay(
         backStack = backStack,
-        boundary = boundary,
+        boundary = navigationCallbacks,
         modifier = modifier,
         entryProvider =
             entryProvider {
@@ -71,24 +71,16 @@ public fun SettingNavHost(
                     SettingScreen(
                         onBackClick = actions::popBack,
                         onLogoutSuccess = actions::onLogoutSuccess,
-                        onProfileEditClick = actions::onNavigateToProfileEdit,
-                        onPasswordChangeClick = {},
-                        onLinkedAccountClick = actions::onNavigateToLinkedAccount,
-                        onNotificationClick = actions::onNavigateToNotification,
-                        onRecipientListClick = actions::onNavigateToRecipientList,
-                        onRecipientRegisterClick = actions::onNavigateToRecipientRegister,
-                        onAfterDeliveryClick = {
-                            actions.onNavigateToRecipientListForDeliveryConditions()
-                        },
-                        onPasskeyClick = actions::onNavigateToPasskey,
-                        onAppLockClick = actions::onNavigateToAppLock,
-                        onFaqClick = {},
-                        onInquiryClick = {},
-                        onNoticeClick = actions::onNavigateToNotice,
-                        onTermsClick = {},
-                        onPrivacyClick = {},
-                        onServiceInfoClick = {},
-                        onWithdrawGuideClick = actions::onNavigateToWithdrawGuide,
+                        onProfileEditClick = actions::onProfileEditClick,
+                        onLinkedAccountClick = actions::onLinkedAccountClick,
+                        onNotificationClick = actions::onNotificationClick,
+                        onRecipientListClick = actions::onRecipientListClick,
+                        onRecipientRegisterClick = actions::onRecipientRegisterClick,
+                        onDeliveryConditionsClick = actions::onDeliveryConditionsClick,
+                        onPasskeyClick = actions::onPasskeyClick,
+                        onAppLockClick = actions::onAppLockClick,
+                        onNoticeClick = actions::onNoticeClick,
+                        onWithdrawGuideClick = actions::onWithdrawGuideClick,
                     )
                 }
 
@@ -99,7 +91,7 @@ public fun SettingNavHost(
                         uiState = uiState.profile,
                         onBackClick = actions::popBack,
                         onCancelClick = actions::popBack,
-                        onConfirmClick = actions::onNavigateToWithdrawConfirm,
+                        onConfirmClick = actions::onWithdrawConfirmClick,
                     )
                 }
 
@@ -117,7 +109,7 @@ public fun SettingNavHost(
                 entry<SettingRoute.ProfileEditRoute> {
                     ProfileEditScreen(
                         onBackClick = actions::popBack,
-                        onWithdrawGuideClick = actions::onNavigateToWithdrawGuide,
+                        onWithdrawGuideClick = actions::onWithdrawGuideClick,
                     )
                 }
 
@@ -130,7 +122,7 @@ public fun SettingNavHost(
                 entry<SettingRoute.NotificationRoute> {
                     NotificationSettingScreen(
                         onBack = actions::popBack,
-                        onPushNotificationClick = actions::onNavigateToPushNotification,
+                        onPushNotificationClick = actions::onPushNotificationClick,
                     )
                 }
 
@@ -148,14 +140,14 @@ public fun SettingNavHost(
                             receivers = receivers,
                             onBackClick = actions::popBack,
                             onConfirmClick = { receiver ->
-                                actions.onNavigateToAfterDelivery(receiver.receiverId)
+                                actions.onDeliveryConditionsRecipientSelected(receiver.receiverId)
                             },
                         )
                     } else {
                         ReceiverManageScreen(
                             receivers = receivers,
                             onBackClick = actions::popBack,
-                            onReceiverClick = actions::onNavigateToRecipientEdit,
+                            onReceiverClick = actions::onRecipientEditClick,
                         )
                     }
                 }
@@ -178,7 +170,7 @@ public fun SettingNavHost(
                     )
                 }
 
-                entry<SettingRoute.AfterDeliveryRoute> { route ->
+                entry<SettingRoute.DeliveryConditionsRoute> { route ->
                     DeliveryConditionScreen(
                         viewModel =
                             hiltViewModel<DeliveryConditionViewModel, DeliveryConditionViewModel.Factory>(
@@ -187,7 +179,7 @@ public fun SettingNavHost(
                         onBack = actions::popBack,
                         onSaveSuccess = actions::popBack,
                         onLastGreetingEditClick = {
-                            actions.onNavigateToRecipientEdit(route.receiverId)
+                            actions.onRecipientEditClick(route.receiverId)
                         },
                     )
                 }
@@ -200,7 +192,7 @@ public fun SettingNavHost(
                     } else if (isPasskeyRegistered == false) {
                         PassKeyScreen(
                             onBackClick = actions::popBack,
-                            onRegisterClick = actions::onNavigateToPasskeyMaking,
+                            onRegisterClick = actions::onPasskeyRegisterClick,
                         )
                     }
                 }
@@ -208,7 +200,7 @@ public fun SettingNavHost(
                 entry<SettingRoute.PasskeyMakingRoute> {
                     PassKeyMakingScreen(
                         onBackClick = actions::popBack,
-                        onPasswordAuthClick = actions::onNavigateToPasskeyPassword,
+                        onPasswordAuthClick = actions::onPasswordAuthClick,
                     )
                 }
 
