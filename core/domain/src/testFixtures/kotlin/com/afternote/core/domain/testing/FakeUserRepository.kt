@@ -44,6 +44,7 @@ class FakeUserRepository private constructor(
         onUpdateReceiverDeliveryConditions: (
             suspend (Long, List<DeliveryConditionItem>) -> ReceiverDeliveryConditions
         )? = null,
+        onRefreshReceiverList: (() -> Unit)? = null,
     ) : this(
         receiverFake =
             FakeUserReceiverRepository(
@@ -52,6 +53,7 @@ class FakeUserRepository private constructor(
                 deliveryConditions = deliveryConditions,
                 onReceiverListFlow = onReceiverListFlow,
                 onGetReceivers = onGetReceivers,
+                onRefreshReceiverList = onRefreshReceiverList,
                 onCreateReceiver = onCreateReceiver,
                 onGetReceiverDetail = onGetReceiverDetail,
                 onUpdateReceiver = onUpdateReceiver,
@@ -79,12 +81,19 @@ class FakeUserRepository private constructor(
     val deliveryUpdateCalls: CopyOnWriteArrayList<DeliveryUpdateCall> get() = receiverFake.deliveryUpdateCalls
     val receiverListFlowCalls: Int get() = receiverFake.receiverListFlowCalls
     val getReceiversCalls: Int get() = receiverFake.getReceiversCalls
+    val refreshReceiverListCalls: Int get() = receiverFake.refreshReceiverListCalls
     val receiverCalls: Int get() = receiverFake.receiverCalls
 
     var onReceiverListFlow: (() -> Flow<List<Receiver>>)?
         get() = receiverFake.onReceiverListFlow
         set(value) {
             receiverFake.onReceiverListFlow = value
+        }
+
+    var onRefreshReceiverList: (() -> Unit)?
+        get() = receiverFake.onRefreshReceiverList
+        set(value) {
+            receiverFake.onRefreshReceiverList = value
         }
 
     var onGetReceivers: (suspend () -> List<Receiver>)?
@@ -158,6 +167,7 @@ class FakeUserRepository private constructor(
                 receivers = emptyList(),
                 onReceiverListFlow = { unexpectedCall("UserRepository.receiverListFlow") },
                 onGetReceivers = { unexpectedCall("UserRepository.getReceivers") },
+                onRefreshReceiverList = { unexpectedCall("UserRepository.refreshReceiverList") },
                 onCreateReceiver = { _, _, _, _, _ -> unexpectedCall("UserRepository.createReceiver") },
                 onGetReceiverDetail = { unexpectedCall("UserRepository.getReceiverDetail") },
                 onUpdateReceiver = { _, _, _, _, _ -> unexpectedCall("UserRepository.updateReceiver") },

@@ -99,6 +99,10 @@ internal class UserReceiverRepositoryImpl
                 }
             }
 
+        override fun refreshReceiverList() {
+            receiverRefreshRevision.update { it + 1 }
+        }
+
         /**
          * 비로그인 상태에서는 서버를 호출하지 않고 빈 목록을 돌려준다. 따라서 호출처는 빈 목록만으로
          * «수신인 없음» 과 «로그인 안 됨» 을 구분할 수 없다 — 구분이 필요하면 [AuthRepository.isLoggedIn] 을 함께 봐야 한다.
