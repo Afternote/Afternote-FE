@@ -43,6 +43,7 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core.ktx)
     testImplementation(testFixtures(projects.core.domain))
+    testImplementation(testFixtures(projects.core.ui))
     testImplementation(testFixtures(projects.feature.setting.domain))
     testImplementation(projects.core.network)
     testImplementation(platform(libs.androidx.compose.bom))
