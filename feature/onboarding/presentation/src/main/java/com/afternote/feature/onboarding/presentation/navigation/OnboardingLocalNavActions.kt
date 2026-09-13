@@ -2,7 +2,7 @@ package com.afternote.feature.onboarding.presentation.navigation
 
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
-import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
+import com.afternote.core.ui.navigation.FeatureStackBoundary
 import com.afternote.core.ui.navigation.popOrExit
 import com.afternote.core.ui.navigation.pushSingleTop
 import com.afternote.core.ui.navigation.replaceAllWith
@@ -15,7 +15,7 @@ import com.afternote.core.ui.navigation.replaceAllWith
  */
 internal class OnboardingLocalNavActions(
     private val backStack: NavBackStack<NavKey>,
-    private val navigationCallbacks: FeatureNavigationCallbacks,
+    private val boundary: FeatureStackBoundary,
     private val externalActions: OnboardingExternalActions,
 ) : OnboardingNavActions {
     override fun replaceOnboardingWithHome(): Unit = externalActions.replaceOnboardingWithHome()
@@ -47,5 +47,5 @@ internal class OnboardingLocalNavActions(
 
     override fun navigateToTermsDetail(): Unit = backStack.pushSingleTop(OnboardingRoute.TermsDetailRoute)
 
-    override fun popBack(): Unit = backStack.popOrExit(navigationCallbacks)
+    override fun popBack(): Unit = backStack.popOrExit(boundary)
 }

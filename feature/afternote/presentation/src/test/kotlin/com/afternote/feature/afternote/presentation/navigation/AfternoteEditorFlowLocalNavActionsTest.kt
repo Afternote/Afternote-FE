@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.presentation.navigation
 
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
-import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
+import com.afternote.core.ui.navigation.FeatureStackBoundary
 import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -21,7 +21,7 @@ class AfternoteEditorFlowLocalNavActionsTest {
     private val actions =
         AfternoteEditorFlowLocalNavActions(
             flowStack = flowStack,
-            navigationCallbacks = FeatureNavigationCallbacks { exits += 1 },
+            boundary = FeatureStackBoundary { exits += 1 },
             onReceiversSelected = { confirmedReceivers += it },
             onSaveSuccessNavigateHome = { savedHome += 1 },
         )

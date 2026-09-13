@@ -12,7 +12,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.navigation.FeatureNavDisplay
-import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
+import com.afternote.core.ui.navigation.FeatureStackBoundary
 import com.afternote.feature.afternote.presentation.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.receiver.afternotelist.ReceiverAfternoteHomeEntry
 import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailRoute
@@ -32,15 +32,15 @@ import com.afternote.feature.afternote.presentation.shared.detail.DetailLoadErro
  */
 @Composable
 public fun ReceivedAfternoteNavHost(
-    navigationCallbacks: FeatureNavigationCallbacks,
+    boundary: FeatureStackBoundary,
     modifier: Modifier = Modifier,
 ) {
     val backStack = rememberNavBackStack(ReceivedAfternoteRoute.ListRoute)
-    val actions = remember(backStack, navigationCallbacks) { ReceivedAfternoteLocalNavActions(backStack, navigationCallbacks) }
+    val actions = remember(backStack, boundary) { ReceivedAfternoteLocalNavActions(backStack, boundary) }
 
     FeatureNavDisplay(
         backStack = backStack,
-        navigationCallbacks = navigationCallbacks,
+        boundary = boundary,
         modifier = modifier,
         entryProvider =
             entryProvider {

@@ -3,7 +3,7 @@ package com.afternote.feature.afternote.presentation.navigation
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import com.afternote.core.ui.bottombar.BottomNavTab
-import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
+import com.afternote.core.ui.navigation.FeatureStackBoundary
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import org.junit.Assert.assertEquals
@@ -24,7 +24,7 @@ class AfternoteLocalNavActionsTest {
     private val actions =
         AfternoteLocalNavActions(
             backStack = backStack,
-            navigationCallbacks = FeatureNavigationCallbacks { exits += 1 },
+            boundary = FeatureStackBoundary { exits += 1 },
             externalActions = external,
         )
 

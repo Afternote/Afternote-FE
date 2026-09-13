@@ -35,25 +35,25 @@ import androidx.navigation3.ui.NavDisplay
  * (`SinglePaneScene.kt:65`) **스택 크기가 1 이면 핸들러 자체가 꺼진다.** 그래서 제스처·시스템 back 은
  * 이 표시부를 그냥 지나쳐 상위(부모 `NavHost`·액티비티)로 흘러간다.
  *
- * `else -> navigationCallbacks.exit()` 에 실제로 도달하는 것은 **화면 안 back 버튼**(`popOrExit`)뿐이다.
+ * `else -> boundary.exit()` 에 실제로 도달하는 것은 **화면 안 back 버튼**(`popOrExit`)뿐이다.
  * `FeatureNavDisplayTest` 의 「back 은 스택만 줄이고 바닥에서는 이 표시부를 지나쳐 위로 흐른다」가
  * 이 갈림을 잠근다.
  */
 @Composable
 public fun FeatureNavDisplay(
     backStack: NavBackStack<NavKey>,
-    navigationCallbacks: FeatureNavigationCallbacks,
+    boundary: FeatureStackBoundary,
     modifier: Modifier = Modifier,
     entryProvider: (NavKey) -> NavEntry<NavKey>,
 ) {
-    val currentNavigationCallbacks by rememberUpdatedState(navigationCallbacks)
+    val currentBoundary by rememberUpdatedState(boundary)
     val isAtRoot = backStack.size <= 1
 
-    LaunchedEffect(isAtRoot) { currentNavigationCallbacks.onAtRootChanged(isAtRoot) }
+    LaunchedEffect(isAtRoot) { currentBoundary.onAtRootChanged(isAtRoot) }
     // 탭 이탈로 host 가 컴포지션에서 빠질 때 깊이 신호를 되돌린다. 안 되돌리면 다른 탭의
     // 바텀바 판정이 이 피처의 마지막 깊이에 오염된다.
     DisposableEffect(Unit) {
-        onDispose { currentNavigationCallbacks.onAtRootChanged(true) }
+        onDispose { currentBoundary.onAtRootChanged(true) }
     }
 
     NavDisplay(
@@ -63,7 +63,7 @@ public fun FeatureNavDisplay(
             if (backStack.size > 1) {
                 backStack.removeAt(backStack.lastIndex)
             } else {
-                currentNavigationCallbacks.exit()
+                currentBoundary.exit()
             }
         },
         entryDecorators = rememberStandardNavEntryDecorators(),

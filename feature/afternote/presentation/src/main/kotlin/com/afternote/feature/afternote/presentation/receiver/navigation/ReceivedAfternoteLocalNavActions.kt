@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.presentation.receiver.navigation
 
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
-import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
+import com.afternote.core.ui.navigation.FeatureStackBoundary
 import com.afternote.core.ui.navigation.popOrExit
 import com.afternote.core.ui.navigation.popUpTo
 
@@ -13,9 +13,9 @@ import com.afternote.core.ui.navigation.popUpTo
  */
 internal class ReceivedAfternoteLocalNavActions(
     private val backStack: NavBackStack<NavKey>,
-    private val navigationCallbacks: FeatureNavigationCallbacks,
+    private val boundary: FeatureStackBoundary,
 ) : ReceivedAfternoteNavActions {
-    override fun popBack(): Unit = backStack.popOrExit(navigationCallbacks)
+    override fun popBack(): Unit = backStack.popOrExit(boundary)
 
     /**
      * 상세 하단 "애프터노트 확인하기" — 목록에서 상세로 들어온 왕복이라 [목록 → 상세 → 목록] 을

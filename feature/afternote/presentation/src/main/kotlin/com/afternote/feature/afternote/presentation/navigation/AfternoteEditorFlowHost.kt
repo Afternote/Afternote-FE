@@ -8,7 +8,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.afternote.core.ui.navigation.FeatureNavDisplay
-import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
+import com.afternote.core.ui.navigation.FeatureStackBoundary
 import com.afternote.feature.afternote.presentation.editor.AfternoteEditorNavigation
 import com.afternote.feature.afternote.presentation.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.editor.memorial.AddSongViewModel
@@ -44,12 +44,12 @@ internal fun AfternoteEditorFlowHost(
             creationCallback = { factory -> factory.create(key) },
         )
     val flowStack = rememberNavBackStack(AfternoteRoute.EditorRoute)
-    val navigationCallbacks = remember(onExitFlow) { FeatureNavigationCallbacks(onExitFlow) }
+    val boundary = remember(onExitFlow) { FeatureStackBoundary(onExitFlow) }
     val actions =
-        remember(flowStack, navigationCallbacks, editorViewModel, onSaveSuccessNavigateHome) {
+        remember(flowStack, boundary, editorViewModel, onSaveSuccessNavigateHome) {
             AfternoteEditorFlowLocalNavActions(
                 flowStack = flowStack,
-                navigationCallbacks = navigationCallbacks,
+                boundary = boundary,
                 onReceiversSelected = editorViewModel::onReceiversSelected,
                 onSaveSuccessNavigateHome = onSaveSuccessNavigateHome,
             )
@@ -57,7 +57,7 @@ internal fun AfternoteEditorFlowHost(
 
     FeatureNavDisplay(
         backStack = flowStack,
-        navigationCallbacks = navigationCallbacks,
+        boundary = boundary,
         entryProvider =
             entryProvider {
                 entry<AfternoteRoute.EditorRoute> {

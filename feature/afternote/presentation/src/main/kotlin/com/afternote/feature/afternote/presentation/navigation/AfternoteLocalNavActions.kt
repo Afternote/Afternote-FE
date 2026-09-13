@@ -3,7 +3,7 @@ package com.afternote.feature.afternote.presentation.navigation
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import com.afternote.core.ui.bottombar.BottomNavTab
-import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
+import com.afternote.core.ui.navigation.FeatureStackBoundary
 import com.afternote.core.ui.navigation.popOrExit
 import com.afternote.core.ui.navigation.replaceAllWith
 import com.afternote.feature.afternote.domain.AfternoteType
@@ -17,10 +17,10 @@ import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRo
  */
 internal class AfternoteLocalNavActions(
     private val backStack: NavBackStack<NavKey>,
-    private val navigationCallbacks: FeatureNavigationCallbacks,
+    private val boundary: FeatureStackBoundary,
     private val externalActions: AfternoteExternalActions,
 ) : AfternoteNavActions {
-    override fun popBack(): Unit = backStack.popOrExit(navigationCallbacks)
+    override fun popBack(): Unit = backStack.popOrExit(boundary)
 
     override fun navigateToAfternoteDetail(itemId: Long) {
         backStack.add(AfternoteRoute.DetailRoute(itemId = itemId))
@@ -58,11 +58,11 @@ internal class AfternoteLocalNavActions(
  */
 internal class AfternoteEditorFlowLocalNavActions(
     private val flowStack: NavBackStack<NavKey>,
-    private val navigationCallbacks: FeatureNavigationCallbacks,
+    private val boundary: FeatureStackBoundary,
     private val onReceiversSelected: (List<Long>) -> Unit,
     private val onSaveSuccessNavigateHome: () -> Unit,
 ) : AfternoteEditorFlowNavActions {
-    override fun popBack(): Unit = flowStack.popOrExit(navigationCallbacks)
+    override fun popBack(): Unit = flowStack.popOrExit(boundary)
 
     override fun navigateToMemorialPlaylist() {
         flowStack.add(AfternoteRoute.MemorialPlaylistRoute)
