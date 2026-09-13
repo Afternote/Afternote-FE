@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation3.runtime.entryProvider
@@ -33,6 +34,7 @@ import com.afternote.feature.setting.presentation.screen.WithdrawGuideScreen
 import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionViewModel
 import com.afternote.feature.setting.presentation.viewmodel.PassKeyViewModel
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditViewModel
+import com.afternote.feature.setting.presentation.viewmodel.ReceiverListIntent
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverListViewModel
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
 
@@ -134,10 +136,14 @@ public fun SettingNavHost(
 
                 entry<SettingRoute.RecipientListRoute> { route ->
                     val viewModel: ReceiverListViewModel = hiltViewModel()
-                    val receivers by viewModel.receivers.collectAsStateWithLifecycle()
+                    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                    LifecycleStartEffect(viewModel) {
+                        viewModel.onIntent(ReceiverListIntent.ObservationStarted)
+                        onStopOrDispose { viewModel.onIntent(ReceiverListIntent.ObservationStopped) }
+                    }
                     if (route.selectForDeliveryConditions) {
                         ReceiverListScreen(
-                            receivers = receivers,
+                            receivers = uiState.receivers,
                             onBackClick = actions::popBack,
                             onConfirmClick = { receiver ->
                                 actions.onDeliveryConditionsRecipientSelected(receiver.receiverId)
@@ -145,7 +151,7 @@ public fun SettingNavHost(
                         )
                     } else {
                         ReceiverManageScreen(
-                            receivers = receivers,
+                            receivers = uiState.receivers,
                             onBackClick = actions::popBack,
                             onReceiverClick = actions::onRecipientEditClick,
                         )
