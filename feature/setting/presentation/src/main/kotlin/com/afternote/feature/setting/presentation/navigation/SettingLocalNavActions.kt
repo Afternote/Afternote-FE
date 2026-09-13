@@ -59,7 +59,7 @@ internal class SettingLocalNavActions(
     }
 
     override fun onDeliveryConditionsRecipientSelected(receiverId: Long) {
-        backStack.add(SettingRoute.AfterDeliveryRoute(receiverId))
+        backStack.add(SettingRoute.DeliveryConditionsRoute(receiverId))
     }
 
     override fun onPasskeyClick() {

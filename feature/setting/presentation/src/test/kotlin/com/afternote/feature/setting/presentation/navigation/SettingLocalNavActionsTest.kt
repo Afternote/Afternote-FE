@@ -44,7 +44,7 @@ class SettingLocalNavActionsTest {
             listOf(
                 SettingRoute.SettingHomeRoute,
                 SettingRoute.RecipientListRoute(true),
-                SettingRoute.AfterDeliveryRoute(37L),
+                SettingRoute.DeliveryConditionsRoute(37L),
                 SettingRoute.RecipientEditRoute(37L),
             ),
             stack.toList(),
@@ -111,7 +111,7 @@ class SettingLocalNavActionsTest {
                 SettingRoute.RecipientListRoute(true),
                 SettingRoute.RecipientRegisterRoute,
                 SettingRoute.RecipientEditRoute(37L),
-                SettingRoute.AfterDeliveryRoute(91L),
+                SettingRoute.DeliveryConditionsRoute(91L),
                 SettingRoute.PasskeyRoute,
                 SettingRoute.PasskeyMakingRoute,
                 SettingRoute.PasskeyPasswordRoute,

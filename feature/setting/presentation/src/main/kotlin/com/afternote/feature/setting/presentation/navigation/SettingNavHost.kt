@@ -170,7 +170,7 @@ public fun SettingNavHost(
                     )
                 }
 
-                entry<SettingRoute.AfterDeliveryRoute> { route ->
+                entry<SettingRoute.DeliveryConditionsRoute> { route ->
                     DeliveryConditionScreen(
                         viewModel =
                             hiltViewModel<DeliveryConditionViewModel, DeliveryConditionViewModel.Factory>(
