@@ -1,21 +1,27 @@
 package com.afternote.feature.setting.presentation.screen
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.asString
+import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.PushToggleSection
+import com.afternote.feature.setting.presentation.component.SettingLoadErrorContent
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationUiState
 
 /**
@@ -32,6 +38,7 @@ internal fun PushNotificationContent(
     onNewsletterToggle: (Boolean) -> Unit,
     onMindRecordToggle: (Boolean) -> Unit,
     onAfternoteToggle: (Boolean) -> Unit,
+    onRetry: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -49,12 +56,31 @@ internal fun PushNotificationContent(
                     .padding(padding)
                     .padding(horizontal = 20.dp, vertical = 16.dp),
         ) {
-            PushToggleSection(
-                uiState = uiState,
-                onNewsletterToggle = onNewsletterToggle,
-                onMindRecordToggle = onMindRecordToggle,
-                onAfternoteToggle = onAfternoteToggle,
-            )
+            Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                when {
+                    uiState.isLoading -> {
+                        LoadingBody()
+                    }
+
+                    uiState.errorMessage != null -> {
+                        SettingLoadErrorContent(
+                            message = uiState.errorMessage.asString(),
+                            onRetry = onRetry,
+                        )
+                    }
+
+                    else -> {
+                        Column {
+                            PushToggleSection(
+                                uiState = uiState,
+                                onNewsletterToggle = onNewsletterToggle,
+                                onMindRecordToggle = onMindRecordToggle,
+                                onAfternoteToggle = onAfternoteToggle,
+                            )
+                        }
+                    }
+                }
+            }
 
             Spacer(Modifier.height(24.dp))
             Text(

@@ -4,6 +4,8 @@ import com.afternote.core.ui.mvi.MviIntent
 import com.afternote.core.ui.mvi.ReducerEvent
 
 internal sealed interface ProfileEditIntent : MviIntent {
+    data object RetryLoad : ProfileEditIntent
+
     data class UpdateProfile(
         val name: String,
         val phone: String,
@@ -15,6 +17,8 @@ internal sealed interface ProfileEditIntent : MviIntent {
 }
 
 internal sealed interface ProfileEditReducerEvent : ReducerEvent {
+    data object Loading : ProfileEditReducerEvent
+
     data class Loaded(
         val name: String,
         val phone: String,

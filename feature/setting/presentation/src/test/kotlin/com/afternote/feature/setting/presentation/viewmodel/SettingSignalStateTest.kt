@@ -2,6 +2,7 @@ package com.afternote.feature.setting.presentation.viewmodel
 
 import com.afternote.core.domain.testing.FakeMyProfileRepository
 import com.afternote.core.model.user.User
+import com.afternote.core.ui.UiText
 import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -89,7 +90,7 @@ class SettingSignalStateTest {
             runCurrent()
             viewModel.onIntent(ConnectedAccountsIntent.NotifyLinkError("인증 실패"))
             viewModel.onIntent(ConnectedAccountsIntent.Toggle("google", true))
-            viewModel.onIntent(ConnectedAccountsIntent.ConsumeEvent(ConnectedAccountsEvent.ShowError("인증 실패")))
+            viewModel.onIntent(ConnectedAccountsIntent.ConsumeEvent(ConnectedAccountsEvent.ShowError(UiText.Dynamic("인증 실패"))))
             assertEquals(ConnectedAccountsEvent.RequestLink("google"), viewModel.uiState.value.pendingEvent)
             viewModel.onIntent(ConnectedAccountsIntent.ConsumeEvent(ConnectedAccountsEvent.RequestLink("google")))
             assertNull(viewModel.uiState.value.pendingEvent)

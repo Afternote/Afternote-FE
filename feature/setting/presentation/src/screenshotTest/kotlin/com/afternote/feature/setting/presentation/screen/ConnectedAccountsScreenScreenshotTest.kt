@@ -33,6 +33,7 @@ private fun ConnectedAccountsScreenScreenshotContent() {
             snackbarHostState = remember { SnackbarHostState() },
             onBack = {},
             onToggle = { _, _ -> },
+            onRetry = {},
         )
     }
 }
@@ -70,3 +71,18 @@ private val connectedAccountsPreviewState =
                 ),
             ),
     )
+
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+internal fun connectedAccountsLoadingScreenshot() {
+    AfternoteTheme {
+        ConnectedAccountsContent(
+            uiState = ConnectedAccountsUiState(isLoading = true),
+            snackbarHostState = remember { SnackbarHostState() },
+            onBack = {},
+            onToggle = { _, _ -> },
+            onRetry = {},
+        )
+    }
+}

@@ -32,19 +32,19 @@ import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
-import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
+import com.afternote.feature.setting.presentation.viewmodel.SettingProfileState
 
 // 설정 - 회원 탈퇴 안내
 @Composable
-fun WithdrawGuideScreen(
-    uiState: SettingUiState,
+internal fun WithdrawGuideScreen(
+    uiState: SettingProfileState,
     onBackClick: () -> Unit,
     onCancelClick: () -> Unit,
     onConfirmClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val userName = (uiState as? SettingUiState.Success)?.name.orEmpty()
-    val userEmail = (uiState as? SettingUiState.Success)?.email.orEmpty()
+    val userName = (uiState as? SettingProfileState.Success)?.name.orEmpty()
+    val userEmail = (uiState as? SettingProfileState.Success)?.email.orEmpty()
     var agreed by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {

@@ -88,7 +88,7 @@ public fun SettingNavHost(
                     val hostViewModel: SettingViewModel = hiltViewModel(hostOwner)
                     val uiState by hostViewModel.uiState.collectAsStateWithLifecycle()
                     WithdrawGuideScreen(
-                        uiState = uiState,
+                        uiState = uiState.profile,
                         onBackClick = actions::popBack,
                         onCancelClick = actions::popBack,
                         onConfirmClick = actions::onWithdrawConfirmClick,
@@ -99,7 +99,7 @@ public fun SettingNavHost(
                     val hostViewModel: SettingViewModel = hiltViewModel(hostOwner)
                     val uiState by hostViewModel.uiState.collectAsStateWithLifecycle()
                     WithdrawConfirmScreen(
-                        uiState = uiState,
+                        uiState = uiState.profile,
                         onBackClick = actions::popBack,
                         onWithdrawSuccess = actions::onWithdrawSuccess,
                         viewModel = hostViewModel,
