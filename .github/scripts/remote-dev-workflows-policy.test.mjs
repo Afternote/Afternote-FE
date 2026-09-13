@@ -69,6 +69,14 @@ test("privileged baseline apply is a workflow-run bridge restricted to PNG basel
     }
     assert.match(source, /if: steps\.commit\.outputs\.changed == 'true'/);
     assert.match(source, /workflow_id: 'codeql\.yml',[\s\S]*inputs: \{ pull_request_number: process\.env\.TARGET_PR \}/);
+    // guard 판정을 check-run 으로 게시하는 publish-dispatch-result 는 default branch ref
+    // 에서만 돈다. 이 디스패치가 PR 브랜치 ref 로 나가면 봇 커밋 SHA 에 required check 가
+    // 끝내 안 붙는다 (#2069). pr-validation 과 codeql 은 PR 사본으로 도는 것이 맞다.
+    assert.match(source, /DEFAULT_BRANCH: \$\{\{ github\.event\.repository\.default_branch \}\}/);
+    assert.match(
+        source,
+        /ref: process\.env\.DEFAULT_BRANCH,\n\s+workflow_id: 'merge-order-guard\.yml'/,
+    );
 });
 
 test("screenshot workflow fallbacks cover every baseline module", async () => {

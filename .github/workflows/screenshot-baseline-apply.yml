@@ -228,6 +228,7 @@ jobs:
         env:
           TARGET_BRANCH: ${{ steps.target.outputs.branch }}
           TARGET_PR: ${{ steps.target.outputs.number }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         with:
           script: |
             const common = {
@@ -245,8 +246,14 @@ jobs:
               workflow_id: 'codeql.yml',
               inputs: { pull_request_number: process.env.TARGET_PR },
             });
+            // merge-order-guard 만 default branch ref 로 보낸다. 판정은 guard job 이
+            // 어느 ref 로 돌든 default branch 사본으로 하지만, 그 판정을 check-run 으로
+            // 게시하는 publish-dispatch-result 가 github.ref_name == default_branch 일 때만
+            // 돈다. PR 브랜치 ref 로 보내면 guard 가 판정을 해 놓고도 게시하지 못해 봇 커밋
+            // SHA 에 required check 가 끝내 안 붙는다 (#2069).
             await github.rest.actions.createWorkflowDispatch({
               ...common,
+              ref: process.env.DEFAULT_BRANCH,
               workflow_id: 'merge-order-guard.yml',
               inputs: { pull_request_number: process.env.TARGET_PR },
             });
