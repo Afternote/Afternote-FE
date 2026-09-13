@@ -20,6 +20,13 @@ internal fun withdrawConfirmScreenCompactScreenshot() {
     WithdrawConfirmScreenScreenshotContent()
 }
 
+@PreviewTest
+@Preview(showBackground = true, fontScale = 1.5f)
+@Composable
+internal fun withdrawConfirmScreenLargeFontScreenshot() {
+    WithdrawConfirmScreenScreenshotContent()
+}
+
 @Composable
 private fun WithdrawConfirmScreenScreenshotContent() {
     AfternoteTheme {
