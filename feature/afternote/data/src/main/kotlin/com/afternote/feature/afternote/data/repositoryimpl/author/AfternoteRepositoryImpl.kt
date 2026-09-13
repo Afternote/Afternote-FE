@@ -51,9 +51,11 @@ class AfternoteRepositoryImpl
 
             return invalidationTrigger.flatMapLatest {
                 Pager(
-                    // initialLoadSize 기본값은 pageSize 의 3배다. AfternotePagingSource 가 서버 offset 을
-                    // 지키려고 size 를 PAGE_SIZE 로 고정하므로 첫 로드도 한 페이지만 온다. 기본값을 두면
-                    // Paging 이 3배를 기다리다 못 채운 것으로 보고 곧바로 append 를 한 번 더 돈다.
+                    // initialLoadSize 기본값은 pageSize 의 3배지만 이 값은 동작을 바꾸지 않는다 —
+                    // AfternotePagingSource 가 loadSize 힌트를 무시하고 size 를 PAGE_SIZE 로 고정하기
+                    // 때문이다(서버가 page × size 로 offset 을 잡아 크기가 흔들리면 경계가 어긋난다).
+                    // 실제 요청 크기와 같은 값을 적어 두어 config 만 읽고 3배를 기대하지 않게 한다.
+                    // 힌트를 무시한다는 사실 자체는 AfternotePagingRequestTest 가 고정한다.
                     config = PagingConfig(pageSize = PAGE_SIZE, initialLoadSize = PAGE_SIZE),
                     pagingSourceFactory = { AfternotePagingSource(api, category, pageSize = PAGE_SIZE) },
                 ).flow
