@@ -44,8 +44,10 @@ import com.afternote.core.ui.mvi.ObserveSignal
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
+import com.afternote.feature.setting.presentation.component.ProfilePhotoSourceSheet
 import com.afternote.feature.setting.presentation.component.ProfilePhotoWithAddBadge
 import com.afternote.feature.setting.presentation.component.SettingLoadErrorContent
+import com.afternote.feature.setting.presentation.component.rememberProfilePhotoSourceState
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditEvent
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditIntent
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditUiState
@@ -80,7 +82,25 @@ internal fun ProfileEditScreen(
         }
     }
 
-    ProfileEditContent(uiState, onBackClick, onWithdrawGuideClick, viewModel::onIntent, snackbarHostState, modifier)
+    // 화면 수준에 둔다 — 촬영 중 프로세스가 회수되면 대기 중인 결과 URI 를 복원해야 하는데,
+    // Success 분기 안에서 만들면 상태가 바뀔 때 그 saveable 자리가 사라진다.
+    val photoSourceState =
+        rememberProfilePhotoSourceState(
+            snackbarHostState = snackbarHostState,
+            isProfileReady = (uiState as? ProfileEditUiState.Success)?.isUpdating == false,
+            onPhotoSelected = { uri -> viewModel.onIntent(ProfileEditIntent.SelectProfileImage(uri)) },
+        )
+
+    ProfileEditContent(
+        uiState,
+        onBackClick,
+        onWithdrawGuideClick,
+        viewModel::onIntent,
+        snackbarHostState,
+        photoSourceState::open,
+        modifier,
+    )
+    ProfilePhotoSourceSheet(state = photoSourceState)
 }
 
 @Composable
@@ -90,6 +110,7 @@ private fun ProfileEditContent(
     onWithdrawGuideClick: () -> Unit,
     onIntent: (ProfileEditIntent) -> Unit,
     snackbarHostState: SnackbarHostState,
+    onAddPhotoClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -119,6 +140,7 @@ private fun ProfileEditContent(
             is ProfileEditUiState.Success -> {
                 ProfileEditForm(
                     state = state,
+                    onAddPhotoClick = onAddPhotoClick,
                     onUpdateClick = { name, phone -> onIntent(ProfileEditIntent.UpdateProfile(name, phone)) },
                     onWithdrawGuideClick = onWithdrawGuideClick,
                     modifier = Modifier.padding(innerPadding),
@@ -139,6 +161,7 @@ private fun ProfileEditContent(
 @Composable
 private fun ProfileEditForm(
     state: ProfileEditUiState.Success,
+    onAddPhotoClick: () -> Unit,
     onUpdateClick: (name: String, phone: String) -> Unit,
     onWithdrawGuideClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -173,7 +196,12 @@ private fun ProfileEditForm(
                         .padding(top = 50.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                ProfilePhotoWithAddBadge()
+                ProfilePhotoWithAddBadge(
+                    // 저장 중에는 배지도 잠근다 — 업로드는 시작 시점의 URI 로 진행되므로, 그 사이
+                    // 다른 사진을 고르게 두면 보이는 사진과 올라가는 사진이 갈린다.
+                    onAddClick = if (state.isUpdating) null else onAddPhotoClick,
+                    displayImageUri = state.displayImageUri,
+                )
             }
         }
         item {
@@ -278,6 +306,7 @@ private fun ProfileEditScreenPrev() {
                     phone = "01012345678",
                     email = "afternote@email.com",
                 ),
+            onAddPhotoClick = {},
             onUpdateClick = { _, _ -> },
             onWithdrawGuideClick = {},
             modifier = Modifier.padding(innerPadding),

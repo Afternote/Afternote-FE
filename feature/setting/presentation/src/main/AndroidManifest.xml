@@ -1,4 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <application>
+        <!--
+            프로필 사진 즉석 촬영(#1438)이 카메라 앱에 넘길 결과 파일용. 카메라 앱은 다른 프로세스라
+            file:// 경로를 넘기면 Android 7+ 에서 FileUriExposedException 이 난다.
+
+            authority 는 모듈마다 달라야 한다 — 같은 문자열을 두 모듈이 선언하면 설치가 거부된다.
+            afternote 가 ${applicationId}.afternote.fileprovider 를 쓰고 있어 setting 은 자기 이름을 쓴다.
+            android:name 도 갈라야 한다 — 병합기가 provider 를 이름으로 식별해서, 둘 다
+            androidx.core.content.FileProvider 면 같은 원소로 보고 authorities 충돌로 빌드가 멈춘다.
+            exported=false + grantUriPermissions=true 로, 우리가 건넨 URI 하나에만 쓰기 권한이 위임된다.
+        -->
+        <provider
+                android:name="com.afternote.feature.setting.presentation.SettingFileProvider"
+                android:authorities="${applicationId}.setting.fileprovider"
+                android:exported="false"
+                android:grantUriPermissions="true">
+            <meta-data
+                    android:name="android.support.FILE_PROVIDER_PATHS"
+                    android:resource="@xml/setting_file_paths" />
+        </provider>
+    </application>
+
 </manifest>

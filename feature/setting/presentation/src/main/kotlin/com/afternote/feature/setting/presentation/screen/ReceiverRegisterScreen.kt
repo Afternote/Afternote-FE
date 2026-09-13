@@ -178,7 +178,8 @@ internal fun ReceiverRegisterContent(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             item {
-                ProfilePhotoWithAddBadge()
+                // 수신인 등록에는 사진 선택 경로가 없다 — 표시 전용이라는 것을 널로 명시한다.
+                ProfilePhotoWithAddBadge(onAddClick = null)
             }
             item {
                 Spacer(modifier = Modifier.height(56.dp))

@@ -18,6 +18,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeMyProfileRepository
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.core.domain.testing.FakeUserReceiverRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.delivery.ConditionState
@@ -102,7 +103,7 @@ class SettingCompletionTest {
         val scenario = CompletionUserScenario()
         val repository = scenario.profileRepository
         val updateGate = scenario.enqueueProfileUpdate()
-        val viewModel = ProfileEditViewModel(repository)
+        val viewModel = ProfileEditViewModel(repository, FakePhotoUploadRepository.strict())
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value is ProfileEditUiState.Success
         }

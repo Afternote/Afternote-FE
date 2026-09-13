@@ -2,6 +2,7 @@ package com.afternote.feature.setting.presentation.viewmodel
 
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeMyProfileRepository
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.ui.UiText
@@ -102,7 +103,7 @@ class SettingErrorStateViewModelTest {
                         testUser
                     }
                 }
-            val viewModel = ProfileEditViewModel(repository)
+            val viewModel = ProfileEditViewModel(repository, FakePhotoUploadRepository.strict())
 
             advanceUntilIdle()
             assertEquals(ProfileEditUiState.Error, viewModel.uiState.value)
@@ -265,7 +266,7 @@ class SettingErrorStateViewModelTest {
                     onGetMyProfile = { testUser }
                     onUpdateMyProfile = { _, _, _ -> error("offline") }
                 }
-            val viewModel = ProfileEditViewModel(repository)
+            val viewModel = ProfileEditViewModel(repository, FakePhotoUploadRepository.strict())
             advanceUntilIdle()
             val event = async { viewModel.uiState.mapNotNull { (it as? ProfileEditUiState.Success)?.pendingEvent }.first() }
 

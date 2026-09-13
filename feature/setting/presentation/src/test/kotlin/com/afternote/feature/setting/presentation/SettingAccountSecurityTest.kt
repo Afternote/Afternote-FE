@@ -9,6 +9,7 @@ import androidx.compose.ui.test.performTextInput
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeMyProfileRepository
 import com.afternote.core.domain.testing.FakeMyProfileRepository.ProfileUpdateCall
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.core.domain.testing.FakeUserReceiverRepository
 import com.afternote.core.domain.testing.FakeUserReceiverRepository.DeliveryUpdateCall
 import com.afternote.core.domain.testing.FakeUserRepository
@@ -78,7 +79,7 @@ class SettingAccountSecurityTest {
             FakeMyProfileRepository(DEFAULT_USER).apply {
                 onGetMyProfile = { throw IllegalStateException("profile unavailable") }
             }
-        val loadFailureViewModel = ProfileEditViewModel(loadFailureRepository)
+        val loadFailureViewModel = ProfileEditViewModel(loadFailureRepository, FakePhotoUploadRepository.strict())
 
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             loadFailureViewModel.uiState.value == ProfileEditUiState.Error
@@ -98,7 +99,7 @@ class SettingAccountSecurityTest {
         assertTrue(loadFailureRepository.profileUpdateCalls.isEmpty())
 
         val updateFailureRepository = FakeMyProfileRepository(DEFAULT_USER)
-        val updateFailureViewModel = ProfileEditViewModel(updateFailureRepository)
+        val updateFailureViewModel = ProfileEditViewModel(updateFailureRepository, FakePhotoUploadRepository.strict())
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             updateFailureViewModel.uiState.value is ProfileEditUiState.Success
         }

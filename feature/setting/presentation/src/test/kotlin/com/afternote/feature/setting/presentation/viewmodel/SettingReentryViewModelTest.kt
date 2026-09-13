@@ -2,6 +2,7 @@ package com.afternote.feature.setting.presentation.viewmodel
 
 import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.domain.testing.FakeMyProfileRepository
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.core.domain.testing.FakeUserReceiverRepository
 import com.afternote.core.model.delivery.ConditionState
 import com.afternote.core.model.delivery.DeliveryConditionItem
@@ -336,7 +337,7 @@ class SettingReentryViewModelTest {
                         response.await()
                     }
                 }
-            val viewModel = ProfileEditViewModel(repository)
+            val viewModel = ProfileEditViewModel(repository, FakePhotoUploadRepository.strict())
             viewModel.onIntent(ProfileEditIntent.RefreshOnReturn)
             viewModel.onIntent(ProfileEditIntent.RefreshOnReturn)
             runCurrent()
@@ -359,7 +360,7 @@ class SettingReentryViewModelTest {
     fun profile_failedRefreshPreservesLoadedForm() =
         runTest(dispatcher) {
             val repository = FakeMyProfileRepository.strict().apply { onGetMyProfile = { user() } }
-            val viewModel = ProfileEditViewModel(repository)
+            val viewModel = ProfileEditViewModel(repository, FakePhotoUploadRepository.strict())
             runCurrent()
             viewModel.onIntent(ProfileEditIntent.RefreshOnReturn)
             val previous = viewModel.uiState.value
@@ -373,7 +374,7 @@ class SettingReentryViewModelTest {
     fun profile_successfulReentryRecoversInitialError() =
         runTest(dispatcher) {
             val repository = FakeMyProfileRepository.strict().apply { onGetMyProfile = { error("offline") } }
-            val viewModel = ProfileEditViewModel(repository)
+            val viewModel = ProfileEditViewModel(repository, FakePhotoUploadRepository.strict())
             runCurrent()
             assertEquals(ProfileEditUiState.Error, viewModel.uiState.value)
             repository.onGetMyProfile = { user() }
@@ -394,7 +395,7 @@ class SettingReentryViewModelTest {
                     onGetMyProfile = { if (++reads == 1) user() else stale.await() }
                     onUpdateMyProfile = { _, _, _ -> saved.await() }
                 }
-            val viewModel = ProfileEditViewModel(repository)
+            val viewModel = ProfileEditViewModel(repository, FakePhotoUploadRepository.strict())
             runCurrent()
             viewModel.onIntent(ProfileEditIntent.RefreshOnReturn)
             viewModel.onIntent(ProfileEditIntent.RefreshOnReturn)
