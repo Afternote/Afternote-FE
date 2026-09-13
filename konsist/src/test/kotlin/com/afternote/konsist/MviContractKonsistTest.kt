@@ -475,9 +475,7 @@ class MviContractKonsistTest {
         /** #1805 가 뺀다. 이벤트 스트림을 쓰던 6개 ViewModel은 #1502에서 MVI까지 함께 전환했다. */
         private val ISSUE_1805_SETTING =
             setOf(
-                "com.afternote.feature.setting.presentation.viewmodel.AppLockSetupViewModel",
                 "com.afternote.feature.setting.presentation.viewmodel.InsertPasswordViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.PassKeyViewModel",
                 "com.afternote.feature.setting.presentation.viewmodel.ReceiverListViewModel",
                 "com.afternote.feature.setting.presentation.viewmodel.SettingViewModel",
             )

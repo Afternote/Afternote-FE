@@ -1,0 +1,78 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "passkey-555.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": "not_covered",
+      "recorded_at": "recorded_at"
+    },
+    "redactions": []
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "0b27e916a18afa78b3c7ff45d041fc404433e875",
+  "head_ref": "handoff/555-setting-1hyok",
+  "base_sha": "ac4ab500f47fc13f8914ab2ced0ba2e3761305d0",
+  "base_ref": "develop",
+  "recorded_at": "2026-09-06T14:05:19.543448+00:00",
+  "result": "PASS_SCOPED",
+  "scenario": "PR #1927 / issue #555: 설정 패스키 서버 목록·재진입·재시도와 실제 Android Credential Manager 실패 경계 검증",
+  "not_covered": [
+    "실서버 등록 성공: 승인된 테스트 계정과 해당 계정의 RP/App association 환경이 제공되지 않아 등록 API에 실제 자격 증명을 제출하지 않았다.",
+    "Play Services 지원 실기기에서 생체인증·사용자 취소를 완료하는 성공 경로는 미검증이다. 취소와 잘못된 응답, 서버 등록 실패는 ViewModel 단위 테스트로 확인했다.",
+    "계측의 서버 응답은 testFixtures 저장소로 제어했다. 실제 서버와의 네트워크 왕복은 검증하지 않았다."
+  ],
+  "device": {
+    "android": {
+      "api_level": 34,
+      "version": "14"
+    },
+    "is_emulator": true,
+    "credential_provider": "AOSP framework; Google Play Services absent"
+  },
+  "details": {
+    "checks": [
+      {
+        "name": "PasskeyRegistrationAndroidTest",
+        "command": "adb shell am instrument -w -r -e class com.afternote.afternote_fe.PasskeyRegistrationAndroidTest com.afternote.afternote_fe.test/com.afternote.afternote_fe.test.AfternoteTestRunner",
+        "result": "PASS",
+        "tests": 3,
+        "skipped": 0,
+        "observations": [
+          "서버 목록을 로컬 등록 플래그 없이 표시하고 하위 화면 복귀 시 새 목록으로 갱신한다.",
+          "조회 실패를 빈 목록과 구분하고 재시도 후 실제 빈 상태를 표시한다.",
+          "실제 Credential Manager 요청 후 오류 팝업을 표시하고 서버 등록 호출과 완료 처리를 차단한다.",
+          "Android framework 로그: CreateCredentialResponse error returned from framework"
+        ]
+      },
+      {
+        "name": "Setting data unit tests",
+        "result": "PASS",
+        "tests": 4
+      },
+      {
+        "name": "Setting presentation unit tests",
+        "result": "PASS",
+        "tests": 56
+      },
+      {
+        "name": "Konsist",
+        "result": "PASS",
+        "tests": 46
+      },
+      {
+        "name": "app debug and androidTest assembly; app + setting Ktlint; setting presentation lintDebug",
+        "result": "PASS"
+      },
+      {
+        "name": "test-only production declaration guard",
+        "result": "PASS"
+      }
+    ],
+    "test_source": "app/src/androidTest/java/com/afternote/afternote_fe/PasskeyRegistrationAndroidTest.kt",
+    "issue": "https://github.com/Afternote/Afternote-FE/issues/555",
+    "pr": "https://github.com/Afternote/Afternote-FE/pull/1927"
+  }
+}

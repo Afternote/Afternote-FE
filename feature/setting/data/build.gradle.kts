@@ -5,6 +5,9 @@ plugins {
 
 android {
     namespace = "com.afternote.feature.setting.data"
+    testFixtures {
+        enable = true
+    }
 }
 
 dependencies {
@@ -13,6 +16,9 @@ dependencies {
     implementation(projects.core.domain)
     implementation(projects.core.model)
     implementation(projects.core.network)
+    testFixturesImplementation(projects.feature.setting.domain)
+    testFixturesImplementation(libs.hilt.android.testing)
+    add("kspTestFixtures", libs.hilt.compiler)
     testImplementation(libs.junit)
     testImplementation(testFixtures(projects.core.domain))
 }

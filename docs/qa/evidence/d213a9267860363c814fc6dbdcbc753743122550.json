@@ -1,0 +1,76 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "passkey-555-live.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": "not_covered",
+      "recorded_at": "recorded_at"
+    },
+    "redactions": [
+      "details.environment.account",
+      "text.network_endpoint"
+    ]
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "d213a9267860363c814fc6dbdcbc753743122550",
+  "head_ref": "handoff/555-setting-1hyok",
+  "base_sha": "ac4ab500f47fc13f8914ab2ced0ba2e3761305d0",
+  "base_ref": "develop",
+  "recorded_at": "2026-09-06T14:40:48Z",
+  "result": "PASS_SCOPED_SERVER_REGISTRATION_BLOCKED",
+  "scenario": "PR #1927 / issue #555: 실제 QA 계정·공유 debug 서명·공식 Credential Manager 공급자로 실서버 등록을 시도하고 서버 거절과 취소 처리를 확인",
+  "not_covered": [
+    "실서버 등록 성공과 성공 이후 목록 갱신: 실제 공급자가 생성한 자격 증명을 제출했지만 최종 HTTP 400/code 2700으로 거절됐다. 계정이나 RP 접근 권한 부재가 현재 제한 사유는 아니다.",
+    "서버 최초 등록 응답과 배포 환경의 PASSKEY_ORIGIN 값은 직접 확인하지 못했다. 최초 401/2701 뒤 자동 재시도 및 허용 origin 불일치는 원인 후보이며 확정하지 않는다.",
+    "Google 계정 기반 공급자 성공 및 물리 기기의 생체인증은 검증하지 않았다. 실제 공급자 생성은 Android 15 에뮬레이터의 KeePassDX로 검증했다."
+  ],
+  "device": {
+    "android": {
+      "api_level": 35,
+      "version": "15"
+    },
+    "is_emulator": true,
+    "credential_provider": "Official signed KeePassDX 4.5.3 free, Android Credential Manager provider"
+  },
+  "details": {
+    "historical_scope": "0b27e916a18afa78b3c7ff45d041fc404433e875.json은 최초 AOSP 계측 시점 기록으로 보존한다. 이후 승인된 프로젝트 QA 계정과 공유 debug 서명을 확보했으므로 그 기록의 계정/RP 미확보 및 실제 네트워크 미검증 제한은 본 후속 기록으로 갱신한다. 코드 변경 없이 d213a9267860363c814fc6dbdcbc753743122550 APK를 프로젝트 공유 debug 키로 재서명했다.",
+    "environment": {
+      "rp": "[NETWORK_ENDPOINT_REDACTED]",
+      "server_base_url": "[NETWORK_ENDPOINT_REDACTED]",
+      "association": "공개 /.well-known/assetlinks.json HTTP 200의 앱 패키지 및 인증서가 설치 APK와 일치한다. 정상 TLS 검증을 사용했다.",
+      "app_package": "com.afternote.afternote_fe",
+      "app_certificate_sha256": "9cc757275c5b9c168909b39224f98ca90061dfa70a9780e99572c6d5fc1c0829",
+      "provider_release": "[NETWORK_ENDPOINT_REDACTED]",
+      "provider_documentation": "[NETWORK_ENDPOINT_REDACTED]",
+      "provider_apk_sha256": "77db147a821ef619caaff6ecedfa2a6c311897df3c08d90b1889a72b954e7f00",
+      "provider_integrity": "공식 release asset digest와 로컬 APK SHA-256이 일치하고 apksigner verify가 성공했다. task 전용 로컬 KDBX를 사용했으며 모의 공급자나 변조 credential을 사용하지 않았다."
+    },
+    "observed": [
+      "실제 앱 UI에서 QA 계정 로그인 성공. 독립 API 확인에서도 POST /auth/login HTTP 200.",
+      "GET /users/passkeys HTTP 200, 등록 전 0건. POST /auth/passkey/register/options HTTP 200, rp.id=[NETWORK_ENDPOINT_REDACTED], timeout=300000ms.",
+      "Google 공급자의 다른 기기 생성 안내를 실제 Credential Manager 시트에서 취소하면 PIN 화면으로 돌아가며 완료나 오류 팝업을 표시하지 않는다. 서버 목록은 0건을 유지한다.",
+      "KeePassDX 공식 공급자를 Android 설정에서 선택하고 전용 로컬 DB를 잠금 해제한 뒤, 앱 → Credential Manager → KeePassDX → 앱 → 실제 등록 API까지 3회 진행했다. 세 번 모두 서버 등록 성공으로 처리하지 않고 string resource 오류 안내를 표시했다.",
+      "공급자 설정 완료 후 마지막 새 options 응답은 2026-09-06T14:38:22.495Z, 생성된 credential POST는 14:39:18.558Z로 간격은 56.063초다. 이는 응답의 timeout 300000ms보다 짧다.",
+      "마지막 clientDataJSON을 로컬에서 비공개로 디코딩해 type=webauthn.create, challenge가 해당 새 options 값과 정확히 같고 Android origin이 설치 APK의 공유 debug 인증서 해시와 일치함을 확인했다. 원문 challenge·credential은 공개하지 않는다.",
+      "마지막 등록 과정에서 /auth/reissue HTTP 200 후 /auth/passkey/register 최종 HTTP 400, code 2700, 메시지 '패스키 인증 요청이 만료되었거나 유효하지 않습니다.'를 관측했다. 최초 등록 응답은 application logger에 나타나지 않았다.",
+      "마지막 실패 후 실제 오류 팝업을 확인하고 서버 목록을 독립 재조회했다. GET /users/passkeys HTTP 200, 0건으로 유지되어 삭제할 신규 서버 패스키가 없었다."
+    ],
+    "diagnosis_limits": [
+      "BE main fcca1ffd0b43885a71f49e7d3cc5f80bf61d15b3의 PasskeyService.java:117은 challenge를 소비한 뒤 :127에서 검증한다. ErrorCode.java:258은 2700/400, :259는 검증 실패 2701/401이다. FE TokenAuthenticator는 Bearer 401을 재시도하므로 최초 검증 거절이 후속 challenge-invalid로 바뀔 가능성이 있다.",
+      "그러나 FE AuthInterceptor에도 요청 전 선제 reissue가 있어 reissue 200만으로 최초 401/2701을 입증할 수 없다. 실제 최초 응답 또는 서버 로그가 추가로 필요하다.",
+      "BE PasskeyService.java:296은 단일 configured origin을 검증하고 application.yml:116 기본값은 [NETWORK_ENDPOINT_REDACTED] 생성된 Android origin과의 불일치는 후보이며, 배포된 PASSKEY_ORIGIN 값을 확인하지 못했으므로 서버 원인으로 확정하지 않는다. 서버 설정이나 검증 정책을 변경하지 않았다.",
+      "56.063초는 advertised timeout보다 짧지만 실제 Redis TTL 환경값은 확인하지 못했다. 단순 준비 시간 초과로 결론 내리지 않는다. 공통 인증 코드는 이번 PR에서 변경하지 않았다."
+    ],
+    "cleanup": [
+      "최종 서버 목록 0건을 확인했다. 기존 서버 항목은 변경하지 않았다.",
+      "task 전용 read-only 에뮬레이터에서 QA 앱 세션 및 KeePassDX를 제거하고 전용 KDBX를 삭제한 뒤 해당 에뮬레이터만 종료했다.",
+      "복사한 임시 서명키·비밀번호·인증 응답·헤더·원문 credential 로그·개인 정보 포함 스크린샷을 삭제했다. 원본 비밀 저장소와 공유 서명키는 보존했다."
+    ],
+    "prior_validation": "이 HEAD의 원격 CI에서 실패·대기 check가 없음을 확인했다. API 30/34 managed-device는 실제 실행 성공이며 API 26/36 job은 정책상 실행 단계를 건너뛴 결과와 구분한다. 단위 테스트 60건, Konsist 46건과 AOSP 실제 Credential Manager 오류 계측 3건의 근거는 이전 QA 기록에 있다.",
+    "issue": "https://github.com/Afternote/Afternote-FE/issues/555",
+    "pr": "https://github.com/Afternote/Afternote-FE/pull/1927"
+  }
+}
