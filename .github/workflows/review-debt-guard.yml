@@ -297,7 +297,7 @@ jobs:
 
             # 응답 주체도 담당자 집합이다. 쉼표로 감싼 목록에 쉼표로 감싼 로그인이 들어 있는지 본다.
             if ! said=$(gh api "repos/$REPO/issues/$pn/comments?per_page=100" --paginate \
-              --jq ".[] | select(\",$pr_owners,\" | contains(\",\" + (.user.login | ascii_downcase) + \",\"))
+              --jq ".[] | select((.user.login | ascii_downcase) as \$login | \",$pr_owners,\" | contains(\",\" + \$login + \",\"))
                         | select(.created_at > \"$blocked_at\") | .id" \
               | wc -l | tr -d ' '); then
               echo "::error::PR #$pn 작성자 일반 응답 조회에 실패했다 — 근거 없이 PR 을 닫지 않는다"
@@ -305,7 +305,7 @@ jobs:
             fi
 
             if ! answered=$(gh api "repos/$REPO/pulls/$pn/comments?per_page=100" --paginate \
-              --jq ".[] | select(\",$pr_owners,\" | contains(\",\" + (.user.login | ascii_downcase) + \",\"))
+              --jq ".[] | select((.user.login | ascii_downcase) as \$login | \",$pr_owners,\" | contains(\",\" + \$login + \",\"))
                         | select(.created_at > \"$blocked_at\") | .id" \
               | wc -l | tr -d ' '); then
               echo "::error::PR #$pn 작성자 리뷰 응답 조회에 실패했다 — 근거 없이 PR 을 닫지 않는다"
@@ -335,7 +335,7 @@ jobs:
                   else
                     [
                       $edits.nodes[]
-                      | select($owners | contains("," + ((.editor.login // "") | ascii_downcase) + ","))
+                      | select(((.editor.login // "") | ascii_downcase) as $login | $owners | contains("," + $login + ","))
                       | select(.editedAt > $cutoff)
                     ] | length
                   end
