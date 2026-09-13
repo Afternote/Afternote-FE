@@ -71,7 +71,9 @@ fun TimeLetterListItem(
                         if (letter.receiverIds.isEmpty()) {
                             "수신자 정보 없음"
                         } else {
-                            letter.receiverIds.mapNotNull { receiverNameMap[it] }.joinToString(", ")
+                            letter.receiverIds
+                                .mapNotNull { receiverNameMap[it] }
+                                .joinToString(", ")
                                 .ifEmpty { "${letter.receiverIds.size}명" }
                         }
                     }",
