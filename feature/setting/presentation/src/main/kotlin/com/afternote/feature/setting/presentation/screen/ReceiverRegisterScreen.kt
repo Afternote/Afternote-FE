@@ -40,6 +40,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.PhoneNumberInputTransformation
 import com.afternote.core.ui.PhoneNumberVisualTransformation
+import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.asString
 import com.afternote.core.ui.mvi.ObserveSignal
@@ -47,7 +48,6 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
-import com.afternote.feature.setting.presentation.component.ProfilePhotoWithAddBadge
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverPhoneValidation
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterIntent
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterViewModel
@@ -178,8 +178,11 @@ internal fun ReceiverRegisterContent(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             item {
-                // 수신인 등록에는 사진 선택 경로가 없다 — 표시 전용이라는 것을 널로 명시한다.
-                ProfilePhotoWithAddBadge(onAddClick = null)
+                // 수신인 등록에는 사진 선택 경로가 아직 없다. 시안(4327:64519)에는 「추가」 배지가
+                // 있지만, 선택을 붙이는 배선이 들어올 때 core 의 ProfileImagePicker 로 같이 들어온다.
+                // 그때까지 눌러도 아무 일 없는 배지를 그리는 대신 표시 전용 아바타만 둔다
+                // (docs/convention/composable-callback-defaults.md).
+                ProfileImage()
             }
             item {
                 Spacer(modifier = Modifier.height(56.dp))

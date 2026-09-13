@@ -38,6 +38,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.ProfileImage
+import com.afternote.core.ui.ProfileImagePicker
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.mvi.ObserveSignal
@@ -45,7 +47,6 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.ProfilePhotoSourceSheet
-import com.afternote.feature.setting.presentation.component.ProfilePhotoWithAddBadge
 import com.afternote.feature.setting.presentation.component.SettingLoadErrorContent
 import com.afternote.feature.setting.presentation.component.rememberProfilePhotoSourceState
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditEvent
@@ -196,12 +197,18 @@ private fun ProfileEditForm(
                         .padding(top = 50.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                ProfilePhotoWithAddBadge(
-                    // 저장 중에는 배지도 잠근다 — 업로드는 시작 시점의 URI 로 진행되므로, 그 사이
-                    // 다른 사진을 고르게 두면 보이는 사진과 올라가는 사진이 갈린다.
-                    onAddClick = if (state.isUpdating) null else onAddPhotoClick,
-                    displayImageUri = state.displayImageUri,
-                )
+                // 저장 중에는 배지를 걷는다 — 업로드는 시작 시점의 URI 로 진행되므로, 그 사이
+                // 다른 사진을 고르게 두면 보이는 사진과 올라가는 사진이 갈린다. 잠근 배지를 그려
+                // 두면 눌러도 아무 일 없는 버튼이 되므로 상호작용 자체를 접는다
+                // (`docs/convention/composable-callback-defaults.md`).
+                if (state.isUpdating) {
+                    ProfileImage(displayImageUri = state.displayImageUri)
+                } else {
+                    ProfileImagePicker(
+                        onPickClick = onAddPhotoClick,
+                        displayImageUri = state.displayImageUri,
+                    )
+                }
             }
         }
         item {

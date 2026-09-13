@@ -5,7 +5,6 @@ import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.activity.result.ActivityResultRegistryOwner
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertHasClickAction
-import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
@@ -35,7 +34,7 @@ import org.robolectric.annotation.Config
 private const val SELECTED_URI = "content://gallery/picked"
 
 /**
- * 프로필 편집 화면의 「추가」 배지 → 소스 시트 → 갤러리 경로 (#1438).
+ * 프로필 편집 화면의 편집 배지 → 소스 시트 → 갤러리 경로 (#1438).
  *
  * 피커 자체는 띄우지 않는다 — [LocalActivityResultRegistryOwner] 를 [FakeMediaResultRegistry] 로 갈아
  * 끼우고, 화면의 공개 계약(배지 탭 → 시트 → 상태·아바타)만 본다. 온보딩의
@@ -65,7 +64,7 @@ class ProfilePhotoPickerTest {
             assertNull(viewModel.success().selectedImageUri)
             assertEquals(SERVER_IMAGE_URL, viewModel.success().displayImageUri)
         }
-        composeRule.onNodeWithContentDescription(PROFILE_PHOTO).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(PROFILE_IMAGE).assertIsDisplayed()
     }
 
     @Test
@@ -74,7 +73,9 @@ class ProfilePhotoPickerTest {
         val viewModel = viewModel(user(profileImageUrl = null))
         setContent(viewModel, registry)
 
-        composeRule.onNodeWithContentDescription(DEFAULT_PHOTO).assertIsDisplayed()
+        composeRule.runOnIdle { assertNull(viewModel.success().displayImageUri) }
+        composeRule.onNodeWithContentDescription(PROFILE_IMAGE).assertIsDisplayed()
+
         composeRule.openPhotoSourceSheet()
         composeRule.onNodeWithText(GALLERY_ITEM).performClick()
         composeRule.awaitPhotoSourceSheetClosed()
@@ -82,8 +83,11 @@ class ProfilePhotoPickerTest {
         composeRule.runOnIdle {
             assertEquals(1, registry.galleryLaunches)
             assertEquals(SELECTED_URI, viewModel.success().selectedImageUri)
+            // 아바타가 그리는 값 자체를 본다 — 기본 아바타와 고른 사진은 같은 설명을 쓰므로
+            // 노드 조회로는 갈리지 않는다.
+            assertEquals(SELECTED_URI, viewModel.success().displayImageUri)
         }
-        composeRule.onNodeWithContentDescription(PROFILE_PHOTO).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(PROFILE_IMAGE).assertIsDisplayed()
     }
 
     @Test
@@ -114,7 +118,7 @@ class ProfilePhotoPickerTest {
     }
 
     @Test
-    fun `저장 중에는 배지에 클릭 동작이 없어 시트도 피커도 열리지 않는다`() {
+    fun `저장 중에는 배지가 그려지지 않아 시트도 피커도 열리지 않는다`() {
         val pendingUpdate = CompletableDeferred<User>()
         val registry = FakeMediaResultRegistry().apply { galleryResult = Uri.parse(SELECTED_URI) }
         val repository =
@@ -124,16 +128,16 @@ class ProfilePhotoPickerTest {
             }
         val viewModel = ProfileEditViewModel(repository, FakePhotoUploadRepository.strict())
         setContent(viewModel, registry)
-        // 저장 전에는 눌린다 — 이 대조가 없으면 아래 단언이 「원래 못 누르는 것」도 통과시킨다.
+        // 저장 전에는 눌린다 — 이 대조가 없으면 아래 단언이 「원래 없는 배지」도 통과시킨다.
         composeRule.onNodeWithContentDescription(ADD_BADGE).assertHasClickAction()
 
         composeRule.runOnIdle { viewModel.onIntent(ProfileEditIntent.UpdateProfile("새 이름", "01012345678")) }
         composeRule.waitUntil(timeoutMillis = PROFILE_TEST_TIMEOUT_MILLIS) { viewModel.success().isUpdating }
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithContentDescription(ADD_BADGE).assertHasNoClickAction()
-        composeRule.onNodeWithContentDescription(ADD_BADGE).performClick()
-        composeRule.waitForIdle()
+        // 아바타는 남고 배지만 사라진다 — 누를 것이 없으니 시트를 여는 입구도 없다.
+        composeRule.onNodeWithContentDescription(PROFILE_IMAGE).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(ADD_BADGE).assertDoesNotExist()
 
         // 시트가 열리지 않았고, 어느 런처도 뜨지 않았고, 선택도 그대로다.
         composeRule.awaitPhotoSourceSheetClosed()
