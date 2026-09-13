@@ -74,7 +74,7 @@ class ReceiverMemorialPlaylistViewModelTest {
         assertEquals(IOException::class.java.name, errorReporter.reportedErrors.single().message)
         assertTrue(errorReporter.reportedErrors.none { it.message?.contains("sensitive") == true })
 
-        viewModel.retry()
+        viewModel.onIntent(ReceiverMemorialPlaylistIntent.Retry)
 
         assertEquals(listOf(42L, 42L), repository.requestedDetailIds)
         assertEquals(2, errorReporter.reportedErrors.size)
@@ -98,7 +98,7 @@ class ReceiverMemorialPlaylistViewModelTest {
         val viewModel = viewModel(afternoteId = 42L, repository = repository)
 
         // 첫 진입 화면의 ON_RESUME (init 로드는 이미 실패로 종료됨).
-        viewModel.refreshOnReturn()
+        viewModel.onIntent(ReceiverMemorialPlaylistIntent.RefreshOnReturn)
 
         assertEquals(listOf(42L), repository.requestedDetailIds)
         assertTrue(viewModel.uiState.value is ReceiverMemorialPlaylistUiState.Error)
@@ -118,8 +118,8 @@ class ReceiverMemorialPlaylistViewModelTest {
             val viewModel = viewModel(afternoteId = 42L, repository = repository)
 
             // init 로드가 아직 도는 중 — 첫 resume(스킵) 뒤 또 한 번 resume 이 와도 중복이 없어야 한다.
-            viewModel.refreshOnReturn()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(ReceiverMemorialPlaylistIntent.RefreshOnReturn)
+            viewModel.onIntent(ReceiverMemorialPlaylistIntent.RefreshOnReturn)
             gate.complete(Unit)
 
             assertEquals(listOf(42L), repository.requestedDetailIds)
@@ -147,8 +147,8 @@ class ReceiverMemorialPlaylistViewModelTest {
                 viewModel.uiState.collect { states += it }
             }
 
-            viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
-            viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME
+            viewModel.onIntent(ReceiverMemorialPlaylistIntent.RefreshOnReturn) // 첫 진입의 ON_RESUME — 스킵
+            viewModel.onIntent(ReceiverMemorialPlaylistIntent.RefreshOnReturn) // 백스택 복귀의 ON_RESUME
 
             assertEquals(listOf(42L, 42L), repository.requestedDetailIds)
             val refreshed = states.last() as ReceiverMemorialPlaylistUiState.Success
@@ -178,8 +178,8 @@ class ReceiverMemorialPlaylistViewModelTest {
                 errorReporter = errorReporter,
             )
 
-        viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
-        viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME
+        viewModel.onIntent(ReceiverMemorialPlaylistIntent.RefreshOnReturn) // 첫 진입의 ON_RESUME — 스킵
+        viewModel.onIntent(ReceiverMemorialPlaylistIntent.RefreshOnReturn) // 백스택 복귀의 ON_RESUME
 
         // 잘 보고 있던 목록이 에러 화면으로 대체되지 않는다.
         val state = viewModel.uiState.value as ReceiverMemorialPlaylistUiState.Success

@@ -48,6 +48,7 @@ import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMedi
 import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.detail.AfternoteDetailDeleteResult
+import com.afternote.feature.afternote.presentation.detail.AfternoteDetailIntent
 import com.afternote.feature.afternote.presentation.detail.AfternoteDetailUiState
 import com.afternote.feature.afternote.presentation.detail.AfternoteDetailViewModel
 import com.afternote.feature.afternote.presentation.detail.DetailContentUiModel
@@ -464,12 +465,12 @@ private fun AuthorDetailForDelete(
                         result.messageRes ?: AfternoteFeatureR.string.afternote_detail_delete_failed,
                     )
                 scope.launch { snackbarHostState.showSnackbar(message) }
-                viewModel.onDeleteResultConsumed()
+                viewModel.onIntent(AfternoteDetailIntent.ConsumeDeleteResult)
             }
 
             is AfternoteDetailDeleteResult.Succeeded -> {
                 deletedIds += result.id
-                viewModel.onDeleteResultConsumed()
+                viewModel.onIntent(AfternoteDetailIntent.ConsumeDeleteResult)
             }
 
             null -> {
@@ -494,7 +495,7 @@ private fun AuthorDetailForDelete(
                 content = account.content,
                 snackbarHostState = snackbarHostState,
                 onEditClick = {},
-                onDeleteConfirm = viewModel::deleteAfternote,
+                onDeleteConfirm = { viewModel.onIntent(AfternoteDetailIntent.Delete) },
             )
         }
     }

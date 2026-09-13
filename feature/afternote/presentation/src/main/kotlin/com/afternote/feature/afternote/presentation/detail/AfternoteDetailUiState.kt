@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.presentation.detail
 
 import androidx.annotation.StringRes
+import com.afternote.core.ui.mvi.UiState
 
 /**
  * 애프터노트 상세 화면 UI 상태.
@@ -10,13 +11,13 @@ import androidx.annotation.StringRes
  *   작성자 표시명은 상세와 다른 출처(내 프로필)라 [DetailContentUiModel] 안에 섞지 않고 나란히 둔다 —
  *   섞으면 늦게 도착한 이름을 반영할 때 상세 원본으로 되돌아가 다시 매핑해야 한다.
  *   삭제 결과(성공/실패)는 [Success.deleteResult] 에 흡수 — UI 가 LaunchedEffect 로 소비 후
- *   [AfternoteDetailViewModel.onDeleteResultConsumed] 로 reset.
+ *   [AfternoteDetailIntent.ConsumeDeleteResult] 로 reset.
  * - [Error] 상세 데이터 조회 실패. 표시 문구는 [Error.messageRes] 하나로만 운반한다.
  *   예외 원문(`Throwable.message`)은 UI 에 싣지 않는다 — 서버 5xx 본문에 내부 SQL 이,
  *   역직렬화 실패 메시지에 응답 원문 발췌·DTO 클래스명이 섞여 오기 때문이다
  *   (`ApiException` 도 `message` 는 로그 전용이고 사용자 노출용으로 `serverMessage` 를 따로 둔다).
  */
-sealed interface AfternoteDetailUiState {
+internal sealed interface AfternoteDetailUiState : UiState {
     data object Loading : AfternoteDetailUiState
 
     data class Success(
@@ -28,7 +29,7 @@ sealed interface AfternoteDetailUiState {
          * 그때 화면은 이름 세그먼트를 생략해 렌더한다 (현재 소비처는 추억 노트 상세 제목 하나).
          */
         val authorDisplayName: String = "",
-        /** 삭제 결과 신호 — UI 가 LaunchedEffect 로 소비 후 [AfternoteDetailViewModel.onDeleteResultConsumed] 로 reset. */
+        /** 삭제 결과 신호 — UI 가 LaunchedEffect 로 소비 후 [AfternoteDetailIntent.ConsumeDeleteResult] 로 reset. */
         val deleteResult: AfternoteDetailDeleteResult? = null,
     ) : AfternoteDetailUiState
 
