@@ -37,9 +37,9 @@ class SettingLocalNavActionsTest {
 
     @Test
     fun `delivery selection and edit preserve the receiver and back chain`() {
-        actions.onNavigateToRecipientListForDeliveryConditions()
-        actions.onNavigateToAfterDelivery(37L)
-        actions.onNavigateToRecipientEdit(37L)
+        actions.onDeliveryConditionsClick()
+        actions.onDeliveryConditionsRecipientSelected(37L)
+        actions.onRecipientEditClick(37L)
         assertEquals(
             listOf(
                 SettingRoute.SettingHomeRoute,
@@ -59,10 +59,10 @@ class SettingLocalNavActionsTest {
 
     @Test
     fun `recipient management and registration return to their origin`() {
-        actions.onNavigateToRecipientList()
+        actions.onRecipientListClick()
         assertEquals(SettingRoute.RecipientListRoute(false), stack.last())
         actions.popBack()
-        actions.onNavigateToRecipientRegister()
+        actions.onRecipientRegisterClick()
         actions.popBack()
         assertEquals(listOf(SettingRoute.SettingHomeRoute), stack.toList())
         stack[0] = SettingRoute.RecipientRegisterRoute
@@ -73,8 +73,8 @@ class SettingLocalNavActionsTest {
 
     @Test
     fun `withdrawal and logout only notify the root auth boundary`() {
-        actions.onNavigateToWithdrawGuide()
-        actions.onNavigateToWithdrawConfirm()
+        actions.onWithdrawGuideClick()
+        actions.onWithdrawConfirmClick()
         val before = stack.toList()
         actions.onWithdrawSuccess()
         actions.onLogoutSuccess()
@@ -85,14 +85,14 @@ class SettingLocalNavActionsTest {
 
     @Test
     fun `passkey and notification nested routes pop one screen at a time`() {
-        actions.onNavigateToPasskey()
-        actions.onNavigateToPasskeyMaking()
-        actions.onNavigateToPasskeyPassword()
+        actions.onPasskeyClick()
+        actions.onPasskeyRegisterClick()
+        actions.onPasswordAuthClick()
         actions.popBack()
         assertEquals(SettingRoute.PasskeyMakingRoute, stack.last())
         repeat(2) { actions.popBack() }
-        actions.onNavigateToNotification()
-        actions.onNavigateToPushNotification()
+        actions.onNotificationClick()
+        actions.onPushNotificationClick()
         actions.popBack()
         assertEquals(SettingRoute.NotificationRoute, stack.last())
     }

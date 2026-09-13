@@ -71,24 +71,16 @@ public fun SettingNavHost(
                     SettingScreen(
                         onBackClick = actions::popBack,
                         onLogoutSuccess = actions::onLogoutSuccess,
-                        onProfileEditClick = actions::onNavigateToProfileEdit,
-                        onPasswordChangeClick = {},
-                        onLinkedAccountClick = actions::onNavigateToLinkedAccount,
-                        onNotificationClick = actions::onNavigateToNotification,
-                        onRecipientListClick = actions::onNavigateToRecipientList,
-                        onRecipientRegisterClick = actions::onNavigateToRecipientRegister,
-                        onAfterDeliveryClick = {
-                            actions.onNavigateToRecipientListForDeliveryConditions()
-                        },
-                        onPasskeyClick = actions::onNavigateToPasskey,
-                        onAppLockClick = actions::onNavigateToAppLock,
-                        onFaqClick = {},
-                        onInquiryClick = {},
-                        onNoticeClick = actions::onNavigateToNotice,
-                        onTermsClick = {},
-                        onPrivacyClick = {},
-                        onServiceInfoClick = {},
-                        onWithdrawGuideClick = actions::onNavigateToWithdrawGuide,
+                        onProfileEditClick = actions::onProfileEditClick,
+                        onLinkedAccountClick = actions::onLinkedAccountClick,
+                        onNotificationClick = actions::onNotificationClick,
+                        onRecipientListClick = actions::onRecipientListClick,
+                        onRecipientRegisterClick = actions::onRecipientRegisterClick,
+                        onDeliveryConditionsClick = actions::onDeliveryConditionsClick,
+                        onPasskeyClick = actions::onPasskeyClick,
+                        onAppLockClick = actions::onAppLockClick,
+                        onNoticeClick = actions::onNoticeClick,
+                        onWithdrawGuideClick = actions::onWithdrawGuideClick,
                     )
                 }
 
@@ -99,7 +91,7 @@ public fun SettingNavHost(
                         uiState = uiState,
                         onBackClick = actions::popBack,
                         onCancelClick = actions::popBack,
-                        onConfirmClick = actions::onNavigateToWithdrawConfirm,
+                        onConfirmClick = actions::onWithdrawConfirmClick,
                     )
                 }
 
@@ -117,7 +109,7 @@ public fun SettingNavHost(
                 entry<SettingRoute.ProfileEditRoute> {
                     ProfileEditScreen(
                         onBackClick = actions::popBack,
-                        onWithdrawGuideClick = actions::onNavigateToWithdrawGuide,
+                        onWithdrawGuideClick = actions::onWithdrawGuideClick,
                     )
                 }
 
@@ -130,7 +122,7 @@ public fun SettingNavHost(
                 entry<SettingRoute.NotificationRoute> {
                     NotificationSettingScreen(
                         onBack = actions::popBack,
-                        onPushNotificationClick = actions::onNavigateToPushNotification,
+                        onPushNotificationClick = actions::onPushNotificationClick,
                     )
                 }
 
@@ -148,14 +140,14 @@ public fun SettingNavHost(
                             receivers = receivers,
                             onBackClick = actions::popBack,
                             onConfirmClick = { receiver ->
-                                actions.onNavigateToAfterDelivery(receiver.receiverId)
+                                actions.onDeliveryConditionsRecipientSelected(receiver.receiverId)
                             },
                         )
                     } else {
                         ReceiverManageScreen(
                             receivers = receivers,
                             onBackClick = actions::popBack,
-                            onReceiverClick = actions::onNavigateToRecipientEdit,
+                            onReceiverClick = actions::onRecipientEditClick,
                         )
                     }
                 }
@@ -187,7 +179,7 @@ public fun SettingNavHost(
                         onBack = actions::popBack,
                         onSaveSuccess = actions::popBack,
                         onLastGreetingEditClick = {
-                            actions.onNavigateToRecipientEdit(route.receiverId)
+                            actions.onRecipientEditClick(route.receiverId)
                         },
                     )
                 }
@@ -200,7 +192,7 @@ public fun SettingNavHost(
                     } else if (isPasskeyRegistered == false) {
                         PassKeyScreen(
                             onBackClick = actions::popBack,
-                            onRegisterClick = actions::onNavigateToPasskeyMaking,
+                            onRegisterClick = actions::onPasskeyRegisterClick,
                         )
                     }
                 }
@@ -208,7 +200,7 @@ public fun SettingNavHost(
                 entry<SettingRoute.PasskeyMakingRoute> {
                     PassKeyMakingScreen(
                         onBackClick = actions::popBack,
-                        onPasswordAuthClick = actions::onNavigateToPasskeyPassword,
+                        onPasswordAuthClick = actions::onPasswordAuthClick,
                     )
                 }
 

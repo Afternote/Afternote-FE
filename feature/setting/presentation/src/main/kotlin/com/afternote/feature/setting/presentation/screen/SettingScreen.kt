@@ -7,11 +7,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -33,31 +36,30 @@ import com.afternote.feature.setting.presentation.component.SettingProfile
 import com.afternote.feature.setting.presentation.component.SettingSection
 import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
+import kotlinx.coroutines.launch
 
 // 설정-메인
 @Composable
-fun SettingScreen(
+internal fun SettingScreen(
     onBackClick: () -> Unit,
     onLogoutSuccess: () -> Unit,
     onProfileEditClick: () -> Unit,
-    onPasswordChangeClick: () -> Unit,
     onLinkedAccountClick: () -> Unit,
     onNotificationClick: () -> Unit,
     onRecipientListClick: () -> Unit,
     onRecipientRegisterClick: () -> Unit,
-    onAfterDeliveryClick: () -> Unit,
+    onDeliveryConditionsClick: () -> Unit,
     onPasskeyClick: () -> Unit,
     onAppLockClick: () -> Unit,
-    onFaqClick: () -> Unit,
-    onInquiryClick: () -> Unit,
     onNoticeClick: () -> Unit,
-    onTermsClick: () -> Unit,
-    onPrivacyClick: () -> Unit,
-    onServiceInfoClick: () -> Unit,
     onWithdrawGuideClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingViewModel = hiltViewModel(),
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val unavailableMessage = stringResource(R.string.settings_menu_unavailable)
+    val acknowledgeLabel = stringResource(R.string.settings_menu_acknowledge)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val logoutCompleted by viewModel.logoutCompleted.collectAsStateWithLifecycle()
     val currentOnLogoutSuccess by rememberUpdatedState(onLogoutSuccess)
@@ -77,6 +79,7 @@ fun SettingScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             DetailTopBar(
                 title = stringResource(R.string.settings_title),
@@ -89,21 +92,21 @@ fun SettingScreen(
         SettingScreenContent(
             uiState = uiState,
             onLogoutClick = viewModel::logout,
+            onUnavailableClick = {
+                scope.launch {
+                    snackbarHostState.currentSnackbarData?.dismiss()
+                    snackbarHostState.showSnackbar(unavailableMessage, actionLabel = acknowledgeLabel)
+                }
+            },
             onProfileEditClick = onProfileEditClick,
-            onPasswordChangeClick = onPasswordChangeClick,
             onLinkedAccountClick = onLinkedAccountClick,
             onNotificationClick = onNotificationClick,
             onRecipientListClick = onRecipientListClick,
             onRecipientRegisterClick = onRecipientRegisterClick,
-            onAfterDeliveryClick = onAfterDeliveryClick,
+            onDeliveryConditionsClick = onDeliveryConditionsClick,
             onPasskeyClick = onPasskeyClick,
             onAppLockClick = onAppLockClick,
-            onFaqClick = onFaqClick,
-            onInquiryClick = onInquiryClick,
             onNoticeClick = onNoticeClick,
-            onTermsClick = onTermsClick,
-            onPrivacyClick = onPrivacyClick,
-            onServiceInfoClick = onServiceInfoClick,
             onWithdrawGuideClick = onWithdrawGuideClick,
             modifier = Modifier.padding(innerPadding),
         )
@@ -114,21 +117,16 @@ fun SettingScreen(
 private fun SettingScreenContent(
     uiState: SettingUiState,
     onLogoutClick: () -> Unit,
+    onUnavailableClick: () -> Unit,
     onProfileEditClick: () -> Unit,
-    onPasswordChangeClick: () -> Unit,
     onLinkedAccountClick: () -> Unit,
     onNotificationClick: () -> Unit,
     onRecipientListClick: () -> Unit,
     onRecipientRegisterClick: () -> Unit,
-    onAfterDeliveryClick: () -> Unit,
+    onDeliveryConditionsClick: () -> Unit,
     onPasskeyClick: () -> Unit,
     onAppLockClick: () -> Unit,
-    onFaqClick: () -> Unit,
-    onInquiryClick: () -> Unit,
     onNoticeClick: () -> Unit,
-    onTermsClick: () -> Unit,
-    onPrivacyClick: () -> Unit,
-    onServiceInfoClick: () -> Unit,
     onWithdrawGuideClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -179,7 +177,7 @@ private fun SettingScreenContent(
                     )
                     SettingMenuItem(
                         label = stringResource(R.string.settings_account_password_change),
-                        onClick = onPasswordChangeClick,
+                        onClick = onUnavailableClick,
                     )
                     SettingMenuItem(
                         label = stringResource(R.string.settings_account_linked_account),
@@ -202,7 +200,7 @@ private fun SettingScreenContent(
                     )
                     SettingMenuItem(
                         label = stringResource(R.string.settings_recipient_after_delivery),
-                        onClick = onAfterDeliveryClick,
+                        onClick = onDeliveryConditionsClick,
                     )
                 }
 
@@ -220,11 +218,11 @@ private fun SettingScreenContent(
                 SettingSection(title = stringResource(R.string.settings_section_support)) {
                     SettingMenuItem(
                         label = stringResource(R.string.settings_support_faq),
-                        onClick = onFaqClick,
+                        onClick = onUnavailableClick,
                     )
                     SettingMenuItem(
                         label = stringResource(R.string.settings_support_inquiry),
-                        onClick = onInquiryClick,
+                        onClick = onUnavailableClick,
                     )
                     SettingMenuItem(
                         label = stringResource(R.string.settings_support_notice),
@@ -232,15 +230,15 @@ private fun SettingScreenContent(
                     )
                     SettingMenuItem(
                         label = stringResource(R.string.settings_support_terms),
-                        onClick = onTermsClick,
+                        onClick = onUnavailableClick,
                     )
                     SettingMenuItem(
                         label = stringResource(R.string.settings_support_privacy),
-                        onClick = onPrivacyClick,
+                        onClick = onUnavailableClick,
                     )
                     SettingMenuItem(
                         label = stringResource(R.string.settings_support_service_info),
-                        onClick = onServiceInfoClick,
+                        onClick = onUnavailableClick,
                     )
                 }
 
@@ -279,21 +277,16 @@ private fun SettingScreenPrev() {
         SettingScreenContent(
             uiState = SettingUiState.Success(name = "박서연", email = "afternote@email.com"),
             onLogoutClick = {},
+            onUnavailableClick = {},
             onProfileEditClick = {},
-            onPasswordChangeClick = {},
             onLinkedAccountClick = {},
             onNotificationClick = {},
             onRecipientListClick = {},
             onRecipientRegisterClick = {},
-            onAfterDeliveryClick = {},
+            onDeliveryConditionsClick = {},
             onPasskeyClick = {},
             onAppLockClick = {},
-            onFaqClick = {},
-            onInquiryClick = {},
             onNoticeClick = {},
-            onTermsClick = {},
-            onPrivacyClick = {},
-            onServiceInfoClick = {},
             onWithdrawGuideClick = {},
             modifier = Modifier.padding(innerPadding),
         )
