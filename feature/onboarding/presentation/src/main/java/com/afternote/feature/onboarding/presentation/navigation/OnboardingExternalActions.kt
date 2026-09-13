@@ -5,7 +5,7 @@ package com.afternote.feature.onboarding.presentation.navigation
  *
  * 그래프 안의 push/pop 은 [OnboardingNavHost] 가 로컬 백스택으로 직접 처리하고, 다른 소관
  * 그래프로 넘어가는 두 가지만 셸이 소유한다. 스택 바닥에서의 back 은 이동이 아니라 경계라
- * [com.afternote.core.ui.navigation.FeatureStackBoundary] 가 갖는다.
+ * [com.afternote.core.ui.navigation.FeatureNavigationCallbacks] 가 갖는다.
  */
 public interface OnboardingExternalActions {
     /** 로그인·회원가입 성공 → 온보딩을 통째로 비우고 홈 진입. */

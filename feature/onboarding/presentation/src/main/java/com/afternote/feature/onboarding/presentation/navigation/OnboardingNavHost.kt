@@ -10,7 +10,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.afternote.core.ui.navigation.FeatureNavDisplay
-import com.afternote.core.ui.navigation.FeatureStackBoundary
+import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
 import com.afternote.feature.onboarding.presentation.OnboardingProfileEntry
 import com.afternote.feature.onboarding.presentation.WelcomeScreen
 import com.afternote.feature.onboarding.presentation.findaccount.FindIdScreen
@@ -42,14 +42,14 @@ import com.afternote.feature.onboarding.presentation.terms.TermsDetailScreen
  */
 @Composable
 public fun OnboardingNavHost(
-    boundary: FeatureStackBoundary,
+    navigationCallbacks: FeatureNavigationCallbacks,
     externalActions: OnboardingExternalActions,
     modifier: Modifier = Modifier,
 ) {
     val backStack = rememberNavBackStack(OnboardingRoute.WelcomeRoute)
     val actions =
-        remember(backStack, boundary, externalActions) {
-            OnboardingLocalNavActions(backStack, boundary, externalActions)
+        remember(backStack, navigationCallbacks, externalActions) {
+            OnboardingLocalNavActions(backStack, navigationCallbacks, externalActions)
         }
 
     // 온보딩 전체가 공유하는 ViewModel — 상세는 KDoc 참고.
@@ -58,7 +58,7 @@ public fun OnboardingNavHost(
 
     FeatureNavDisplay(
         backStack = backStack,
-        boundary = boundary,
+        navigationCallbacks = navigationCallbacks,
         modifier = modifier,
         entryProvider =
             entryProvider {

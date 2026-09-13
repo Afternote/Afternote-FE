@@ -2,15 +2,15 @@ package com.afternote.feature.setting.presentation.navigation
 
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
-import com.afternote.core.ui.navigation.FeatureStackBoundary
+import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
 import com.afternote.core.ui.navigation.popOrExit
 
 internal class SettingLocalNavActions(
     private val backStack: NavBackStack<NavKey>,
-    private val boundary: FeatureStackBoundary,
+    private val navigationCallbacks: FeatureNavigationCallbacks,
     private val externalActions: SettingExternalActions,
 ) : SettingNavActions {
-    override fun popBack(): Unit = backStack.popOrExit(boundary)
+    override fun popBack(): Unit = backStack.popOrExit(navigationCallbacks)
 
     override fun onLogoutSuccess(): Unit = externalActions.onLogoutSuccess()
 

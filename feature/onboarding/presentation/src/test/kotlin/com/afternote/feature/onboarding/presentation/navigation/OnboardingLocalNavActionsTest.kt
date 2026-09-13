@@ -2,7 +2,7 @@ package com.afternote.feature.onboarding.presentation.navigation
 
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
-import com.afternote.core.ui.navigation.FeatureStackBoundary
+import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -21,7 +21,7 @@ class OnboardingLocalNavActionsTest {
     private val actions =
         OnboardingLocalNavActions(
             backStack = backStack,
-            boundary = FeatureStackBoundary { exits += Unit },
+            navigationCallbacks = FeatureNavigationCallbacks { exits += Unit },
             externalActions = external,
         )
 

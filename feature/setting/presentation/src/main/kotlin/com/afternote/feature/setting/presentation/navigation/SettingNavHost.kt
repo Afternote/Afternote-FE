@@ -10,7 +10,7 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.afternote.core.ui.navigation.FeatureNavDisplay
-import com.afternote.core.ui.navigation.FeatureStackBoundary
+import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
 import com.afternote.feature.setting.presentation.component.PinSetupStep
 import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
 import com.afternote.feature.setting.presentation.screen.ConnectedAccountsScreen
@@ -38,13 +38,13 @@ import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
 
 /**
  * Settings owns its saved local stack. The parent entry owns the withdrawal ViewModel,
- * so guide/confirmation share it until this entire host is removed (#1702 boundary).
+ * so guide/confirmation share it until this entire host is removed (#1702 host lifetime).
  * Home keeps its existing entry-scoped ViewModel. Direct recipient registration starts
  * at registration, so completing it returns to the caller without inserting Settings home.
  */
 @Composable
 public fun SettingNavHost(
-    boundary: FeatureStackBoundary,
+    navigationCallbacks: FeatureNavigationCallbacks,
     externalActions: SettingExternalActions,
     modifier: Modifier = Modifier,
     startWithRecipientRegistration: Boolean = false,
@@ -57,13 +57,13 @@ public fun SettingNavHost(
         }
     val backStack = rememberNavBackStack(initialRoute)
     val actions =
-        remember(backStack, boundary, externalActions) {
-            SettingLocalNavActions(backStack, boundary, externalActions)
+        remember(backStack, navigationCallbacks, externalActions) {
+            SettingLocalNavActions(backStack, navigationCallbacks, externalActions)
         }
     val hostOwner = checkNotNull(LocalViewModelStoreOwner.current)
     FeatureNavDisplay(
         backStack = backStack,
-        boundary = boundary,
+        navigationCallbacks = navigationCallbacks,
         modifier = modifier,
         entryProvider =
             entryProvider {

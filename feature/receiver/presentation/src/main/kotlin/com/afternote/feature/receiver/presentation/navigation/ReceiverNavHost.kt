@@ -6,7 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.afternote.core.ui.navigation.FeatureNavDisplay
-import com.afternote.core.ui.navigation.FeatureStackBoundary
+import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
 import com.afternote.feature.receiver.presentation.recordsbox.ReceivedRecordsScreen
 import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistrationScreen
@@ -20,20 +20,20 @@ import com.afternote.feature.receiver.presentation.senderdetail.SenderDetailScre
  * 보존하기 위해서다.
  *
  * @param homeContent 앱 셸이 주는 수신자 홈 — 다른 피처의 수신 화면을 조합하므로 셸이 만든다.
- * @param boundary 스택 바닥에서의 back 경계.
+ * @param navigationCallbacks 스택 바닥에서의 back 경계.
  */
 @Composable
 public fun ReceiverNavHost(
     homeContent: @Composable () -> Unit,
-    boundary: FeatureStackBoundary,
+    navigationCallbacks: FeatureNavigationCallbacks,
     modifier: Modifier = Modifier,
 ) {
     val backStack = rememberNavBackStack(ReceiverRoute.ReceivedRecordsRoute)
-    val actions = remember(backStack, boundary) { ReceiverLocalNavActions(backStack, boundary) }
+    val actions = remember(backStack, navigationCallbacks) { ReceiverLocalNavActions(backStack, navigationCallbacks) }
 
     FeatureNavDisplay(
         backStack = backStack,
-        boundary = boundary,
+        navigationCallbacks = navigationCallbacks,
         modifier = modifier,
         entryProvider =
             entryProvider {
