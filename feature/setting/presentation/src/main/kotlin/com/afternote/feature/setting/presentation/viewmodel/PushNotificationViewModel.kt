@@ -207,7 +207,7 @@ internal class PushNotificationViewModel
         private fun loadMarketingConsents() {
             viewModelScope.launch {
                 Log.d(TAG, "loadMarketingConsents: start")
-                runCatching { userRepository.getMyMarketingConsents() }
+                runCatchingCancellable { userRepository.getMyMarketingConsents() }
                     .onSuccess { consent ->
                         Log.d(TAG, "loadMarketingConsents: success=$consent")
                         dispatch(PushNotificationReducerEvent.MarketingLoaded(consent))

@@ -1,5 +1,7 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
+import android.util.Log
+import androidx.lifecycle.ViewModelStore
 import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.model.user.UserMarketingConsent
@@ -9,6 +11,7 @@ import com.afternote.feature.setting.presentation.viewmodel.PushNotificationInte
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -25,6 +28,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowLog
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -41,6 +45,33 @@ class MarketingConsentFailureTest {
     fun tearDown() {
         Dispatchers.resetMain()
     }
+
+    @Test
+    fun `마케팅 동의 조회 중 화면 종료는 실패 로그나 진단을 남기지 않는다`() =
+        runTest(dispatcher) {
+            var loadStarted = false
+            val reporter = RecordingReporter()
+            val repository =
+                repository().apply {
+                    onGetMyMarketingConsents = {
+                        loadStarted = true
+                        awaitCancellation()
+                    }
+                }
+            val viewModel = viewModel(repository, reporter)
+            val store = ViewModelStore().apply { put("notifications", viewModel) }
+            runCurrent()
+            assertTrue(loadStarted)
+            val stateBeforeCancellation = viewModel.uiState.value
+            ShadowLog.clear()
+
+            store.clear()
+            runCurrent()
+
+            assertEquals(stateBeforeCancellation, viewModel.uiState.value)
+            assertTrue(reporter.stages.isEmpty())
+            assertTrue(ShadowLog.getLogsForTag("PushNotificationVM").none { it.type >= Log.ERROR })
+        }
 
     @Test
     fun `각 동의 철회 실패는 값을 복원하고 안내와 진단을 남긴다`() =
