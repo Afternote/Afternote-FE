@@ -86,10 +86,13 @@ private val HeadingLineBreak = LineBreak.Heading
  * 가장 나쁘고(em 29 에서 0.50), Regular 은 바로 그 구간에서 1.00 이다.
  *
  * **Bold 를 쓸 수 있는 하한은 em 58px 이다** — 그래야 가로획이 6px 이 되어 1px 차이가 17% 로
- * 떨어진다. 기본 설정(밀도 480 · 글꼴 1.0)에서 약 19sp, 글꼴 배율을 0.8 로 줄인 기기에서는
- * 약 28sp 다. 이 파일의 스타일은 전부 그 아래라 Bold 를 쓸 자리가 없다.
+ * 떨어진다. 기본 설정(밀도 480 · 글꼴 1.0)에서 약 19sp, 위 표를 잰 기기(밀도 420 · 글꼴 배율
+ * 0.8, sp→px 2.1)에서는 약 28sp 다. 본문 크기대는 어느 쪽에서도 그 아래지만 제목은 아니다.
+ * 기본 설정에서 `h1`(28sp) · `h2`(24sp) · `h3`(20sp) 가 하한 위고, 배율 0.8 기기에서도 `h1` 은
+ * 58.8px 로 하한을 넘긴다. 그러니 이 하한이 닫는 것은 18sp 이하뿐이고, 제목이 Regular 인 근거는
+ * 획 대비가 아니라 시안이다.
  *
- * 시안도 `H2`·`H3`·`BodyLarge(B)`·`BodySmall(B)`·`CaptionLarge(B)`·`PrimaryButton` 을 전부
+ * 시안은 `H2`·`H3`·`BodyLarge(B)`·`BodySmall(B)`·`CaptionLarge(B)`·`PrimaryButton` 을 전부
  * Regular 페이스로 쓴다 — 정본 페이지 TEXT 노드 1,789건 전량이 `NanumBarunGothic` 이고
  * `NanumBarunGothicBold` 는 0건이다.
  *
