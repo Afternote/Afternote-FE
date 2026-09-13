@@ -105,18 +105,7 @@ class SingleSelectionRadioKonsistTest {
         /** 단품 선언과 그 존치 근거가 사는 자리 — 유일한 예외. */
         const val DECLARATION_PACKAGE_PREFIX = "core/ui/src/main/kotlin/com/afternote/core/ui/button/"
 
-        /**
-         * setting — #1396 이 `AfternoteRadioGroup` 으로 이관하며 목록에서 뺀다.
-         *
-         * `RadioGroupCard` 는 카드 테두리에 `selectable` 을 두고 단품을 비인터랙티브 인디케이터로만
-         * 쓰고 있어 오용은 아니지만, 단품 선언을 붙들고 있는 마지막 사용처다.
-         */
-        private val SETTING: Set<String> =
-            setOf(
-                "feature/setting/presentation/component/RadioGroupCard.kt",
-            )
-
         /** 목록이 비면 `setOf()` 의 타입을 못 잡는 일이 없도록 원소 타입을 명시해 둔다. */
-        val LEGACY_STANDALONE_RADIO_FILES: Set<String> = SETTING
+        val LEGACY_STANDALONE_RADIO_FILES: Set<String> = emptySet()
     }
 }
