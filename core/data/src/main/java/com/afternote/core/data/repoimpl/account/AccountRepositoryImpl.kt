@@ -117,7 +117,7 @@ internal class AccountRepositoryImpl
                             newPassword,
                         ),
                     ).requireStatus()
-            }
+            }.mapAccountFailure()
     }
 
 private const val CODE_INVALID_VERIFICATION = 1207
