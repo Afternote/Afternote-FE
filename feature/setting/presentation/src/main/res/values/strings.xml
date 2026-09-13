@@ -167,4 +167,15 @@
     <string name="receiver_load_failed">수신자 정보를 불러오지 못했습니다.</string>
     <string name="settings_menu_unavailable">현재 이 메뉴는 이용할 수 없습니다.</string>
     <string name="settings_menu_acknowledge">확인</string>
+    <!-- 비밀번호 변경 -->
+    <string name="settings_password_change_current_label">현재 비밀번호</string>
+    <string name="settings_password_change_current_placeholder">현재 비밀번호를 입력해주세요</string>
+    <string name="settings_password_change_new_label">새 비밀번호</string>
+    <string name="settings_password_change_new_placeholder">새 비밀번호를 입력해주세요</string>
+    <string name="settings_password_change_rule">8 ~ 15자의 영문, 숫자, 특수문자(@, $, !, %, *, #, ?, &amp;)를 각각 1자 이상 사용해 주세요.</string>
+    <string name="settings_password_change_submit">변경하기</string>
+    <string name="settings_password_change_unchanged">지금 쓰고 있는 비밀번호입니다. 다른 비밀번호를 입력해 주세요.</string>
+    <string name="settings_password_change_social_blocked">소셜 로그인으로 가입한 계정은 비밀번호를 변경할 수 없습니다.</string>
+    <string name="settings_password_change_network_error">네트워크 연결을 확인해주세요.</string>
+    <string name="settings_password_change_failed">비밀번호를 변경하지 못했습니다. 입력하신 내용을 확인해 주세요.</string>
 </resources>

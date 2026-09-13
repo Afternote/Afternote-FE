@@ -16,6 +16,9 @@ sealed interface SettingRoute {
     data object ProfileEditRoute : SettingRoute
 
     @Serializable
+    data object PasswordChangeRoute : SettingRoute
+
+    @Serializable
     data object LinkedAccountRoute : SettingRoute
 
     @Serializable

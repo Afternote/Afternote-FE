@@ -114,6 +114,28 @@ class SettingFlowTest {
         assertEquals(listOf(Triple(false, null, null)), user.pushSettingUpdates)
     }
 
+    /**
+     * 비밀번호 변경은 목적지가 생겼다 (#564) — 이용 불가 안내가 아니라 실제 배선을 탄다.
+     *
+     * 아래 [unavailableMenus_showFeedbackAndKeepSettingsUsable] 의 목록에서 이 항목을 뺀 것과 한 쌍이다.
+     */
+    @Test
+    fun passwordChangeMenu_opensDestinationInsteadOfUnavailableFeedback() {
+        val viewModel = SettingViewModel(settingFlowAuthRepository(loggedIn = true), settingFlowUserRepository())
+        var passwordChangeOpened = false
+        setSettingContent(viewModel = viewModel, onPasswordChange = { passwordChangeOpened = true })
+        val resources = ApplicationProvider.getApplicationContext<android.content.Context>().resources
+
+        composeRule
+            .onNode(
+                hasText(resources.getString(R.string.settings_account_password_change)) and hasClickAction(),
+            ).performScrollTo()
+            .performClick()
+
+        assertEquals(true, passwordChangeOpened)
+        composeRule.onNodeWithText("현재 이 메뉴는 이용할 수 없습니다.").assertDoesNotExist()
+    }
+
     @Test
     fun unavailableMenus_showFeedbackAndKeepSettingsUsable() {
         val viewModel = SettingViewModel(settingFlowAuthRepository(loggedIn = true), settingFlowUserRepository())
@@ -122,7 +144,6 @@ class SettingFlowTest {
         val resources = ApplicationProvider.getApplicationContext<android.content.Context>().resources
         val menuIds =
             listOf(
-                R.string.settings_account_password_change,
                 R.string.settings_support_faq,
                 R.string.settings_support_inquiry,
                 R.string.settings_support_terms,
@@ -142,6 +163,7 @@ class SettingFlowTest {
         viewModel: SettingViewModel,
         onLogoutSuccess: () -> Unit = {},
         onProfileEdit: () -> Unit = {},
+        onPasswordChange: () -> Unit = {},
         onAppLock: () -> Unit = {},
     ) {
         composeRule.setContent {
@@ -150,6 +172,7 @@ class SettingFlowTest {
                     onBackClick = {},
                     onLogoutSuccess = onLogoutSuccess,
                     onProfileEditClick = onProfileEdit,
+                    onPasswordChangeClick = onPasswordChange,
                     onLinkedAccountClick = {},
                     onNotificationClick = {},
                     onRecipientListClick = {},
