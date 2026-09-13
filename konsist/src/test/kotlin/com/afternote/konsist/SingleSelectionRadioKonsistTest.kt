@@ -113,7 +113,7 @@ class SingleSelectionRadioKonsistTest {
          */
         private val SETTING: Set<String> =
             setOf(
-                "feature/setting/presentation/component/RadioGroupCard.kt",
+                "feature/setting/presentation/delivery/component/RadioGroupCard.kt",
             )
 
         /** 목록이 비면 `setOf()` 의 타입을 못 잡는 일이 없도록 원소 타입을 명시해 둔다. */
