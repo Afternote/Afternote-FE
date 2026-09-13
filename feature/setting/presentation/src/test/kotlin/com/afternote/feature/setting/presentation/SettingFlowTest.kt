@@ -1,6 +1,8 @@
 package com.afternote.feature.setting.presentation
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -116,6 +118,35 @@ class SettingFlowTest {
         assertEquals(listOf(Triple(false, null, null)), user.pushSettingUpdates)
     }
 
+    @Test
+    fun unavailableMenus_showFeedbackAndKeepSettingsUsable() {
+        val viewModel =
+            SettingViewModel(
+                settingFlowAuthRepository(loggedIn = true),
+                settingFlowUserRepository(),
+                FakeMyProfileRepository(),
+            )
+        var profileOpened = false
+        setSettingContent(viewModel = viewModel, onProfileEdit = { profileOpened = true })
+        val resources = ApplicationProvider.getApplicationContext<android.content.Context>().resources
+        val menuIds =
+            listOf(
+                R.string.settings_account_password_change,
+                R.string.settings_support_faq,
+                R.string.settings_support_inquiry,
+                R.string.settings_support_terms,
+                R.string.settings_support_privacy,
+                R.string.settings_support_service_info,
+            )
+        menuIds.forEach { menuId ->
+            composeRule.onNode(hasText(resources.getString(menuId)) and hasClickAction()).performScrollTo().performClick()
+            composeRule.onNodeWithText("현재 이 메뉴는 이용할 수 없습니다.").assertIsDisplayed()
+            composeRule.onNodeWithText("확인").performClick()
+        }
+        composeRule.onNodeWithText("프로필 수정").performScrollTo().performClick()
+        assertEquals(true, profileOpened)
+    }
+
     private fun setSettingContent(
         viewModel: SettingViewModel,
         onLogoutSuccess: () -> Unit = {},
@@ -128,20 +159,14 @@ class SettingFlowTest {
                     onBackClick = {},
                     onLogoutSuccess = onLogoutSuccess,
                     onProfileEditClick = onProfileEdit,
-                    onPasswordChangeClick = {},
                     onLinkedAccountClick = {},
                     onNotificationClick = {},
                     onRecipientListClick = {},
                     onRecipientRegisterClick = {},
-                    onAfterDeliveryClick = {},
+                    onDeliveryConditionsClick = {},
                     onPasskeyClick = {},
                     onAppLockClick = onAppLock,
-                    onFaqClick = {},
-                    onInquiryClick = {},
                     onNoticeClick = {},
-                    onTermsClick = {},
-                    onPrivacyClick = {},
-                    onServiceInfoClick = {},
                     onWithdrawGuideClick = {},
                     viewModel = viewModel,
                 )

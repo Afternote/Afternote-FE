@@ -39,7 +39,7 @@ internal sealed interface SettingRoute : NavKey {
     ) : SettingRoute
 
     @Serializable
-    data class AfterDeliveryRoute(
+    data class DeliveryConditionsRoute(
         val receiverId: Long,
     ) : SettingRoute
 

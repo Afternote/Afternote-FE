@@ -6,7 +6,7 @@ import androidx.navigation3.runtime.serialization.NavBackStackSerializer
 import androidx.navigation3.runtime.serialization.NavKeySerializer
 import androidx.savedstate.serialization.decodeFromSavedState
 import androidx.savedstate.serialization.encodeToSavedState
-import com.afternote.core.ui.navigation.FeatureStackBoundary
+import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -23,7 +23,7 @@ class SettingLocalNavActionsTest {
     private val actions =
         SettingLocalNavActions(
             stack,
-            FeatureStackBoundary { exits++ },
+            FeatureNavigationCallbacks { exits++ },
             object : SettingExternalActions {
                 override fun onLogoutSuccess() {
                     logouts++
@@ -37,14 +37,14 @@ class SettingLocalNavActionsTest {
 
     @Test
     fun `delivery selection and edit preserve the receiver and back chain`() {
-        actions.onNavigateToRecipientListForDeliveryConditions()
-        actions.onNavigateToAfterDelivery(37L)
-        actions.onNavigateToRecipientEdit(37L)
+        actions.onDeliveryConditionsClick()
+        actions.onDeliveryConditionsRecipientSelected(37L)
+        actions.onRecipientEditClick(37L)
         assertEquals(
             listOf(
                 SettingRoute.SettingHomeRoute,
                 SettingRoute.RecipientListRoute(true),
-                SettingRoute.AfterDeliveryRoute(37L),
+                SettingRoute.DeliveryConditionsRoute(37L),
                 SettingRoute.RecipientEditRoute(37L),
             ),
             stack.toList(),
@@ -59,10 +59,10 @@ class SettingLocalNavActionsTest {
 
     @Test
     fun `recipient management and registration return to their origin`() {
-        actions.onNavigateToRecipientList()
+        actions.onRecipientListClick()
         assertEquals(SettingRoute.RecipientListRoute(false), stack.last())
         actions.popBack()
-        actions.onNavigateToRecipientRegister()
+        actions.onRecipientRegisterClick()
         actions.popBack()
         assertEquals(listOf(SettingRoute.SettingHomeRoute), stack.toList())
         stack[0] = SettingRoute.RecipientRegisterRoute
@@ -72,9 +72,9 @@ class SettingLocalNavActionsTest {
     }
 
     @Test
-    fun `withdrawal and logout only notify the root auth boundary`() {
-        actions.onNavigateToWithdrawGuide()
-        actions.onNavigateToWithdrawConfirm()
+    fun `withdrawal and logout only notify the root auth navigationCallbacks`() {
+        actions.onWithdrawGuideClick()
+        actions.onWithdrawConfirmClick()
         val before = stack.toList()
         actions.onWithdrawSuccess()
         actions.onLogoutSuccess()
@@ -85,14 +85,14 @@ class SettingLocalNavActionsTest {
 
     @Test
     fun `passkey and notification nested routes pop one screen at a time`() {
-        actions.onNavigateToPasskey()
-        actions.onNavigateToPasskeyMaking()
-        actions.onNavigateToPasskeyPassword()
+        actions.onPasskeyClick()
+        actions.onPasskeyRegisterClick()
+        actions.onPasswordAuthClick()
         actions.popBack()
         assertEquals(SettingRoute.PasskeyMakingRoute, stack.last())
         repeat(2) { actions.popBack() }
-        actions.onNavigateToNotification()
-        actions.onNavigateToPushNotification()
+        actions.onNotificationClick()
+        actions.onPushNotificationClick()
         actions.popBack()
         assertEquals(SettingRoute.NotificationRoute, stack.last())
     }
@@ -111,7 +111,7 @@ class SettingLocalNavActionsTest {
                 SettingRoute.RecipientListRoute(true),
                 SettingRoute.RecipientRegisterRoute,
                 SettingRoute.RecipientEditRoute(37L),
-                SettingRoute.AfterDeliveryRoute(91L),
+                SettingRoute.DeliveryConditionsRoute(91L),
                 SettingRoute.PasskeyRoute,
                 SettingRoute.PasskeyMakingRoute,
                 SettingRoute.PasskeyPasswordRoute,

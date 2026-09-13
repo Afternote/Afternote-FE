@@ -9,7 +9,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 
@@ -49,10 +48,4 @@ fun LabeledSwitchRow(
                 ),
         )
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun LabeledSwitchRowPrev() {
-    LabeledSwitchRow(label = "애프터노트", true, {})
 }
