@@ -1,5 +1,6 @@
 package com.afternote.core.ui.receiver
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.SemanticsMatcher
@@ -10,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.text.TextLayoutResult
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -68,15 +70,49 @@ class ReceiverConsonantIndexTest {
         assertHighlighted("ㄱ")
     }
 
-    private fun setContent() {
+    @Test
+    fun `검색 후 다시 탭한 초성을 현재 목록에 표시한다`() {
+        setContent(leadingReceiverCount = 1)
+        composeRule.onNodeWithText("ㅎ").performTouchInput { click() }
+        composeRule.onNodeWithText("이름으로 검색하기").performTextInput("수신")
+
+        composeRule.onNodeWithText("ㄴ").performTouchInput { click() }
+
+        assertHighlighted("ㄴ")
+    }
+
+    @Test
+    fun `검색 후 초성 인덱스를 드래그하면 현재 목록에 표시한다`() {
+        setContent(leadingReceiverCount = 1)
+        composeRule.onNodeWithText("ㅎ").performTouchInput { click() }
+        composeRule.onNodeWithText("이름으로 검색하기").performTextInput("수신")
+        val startY =
+            composeRule
+                .onNodeWithText("ㄱ")
+                .fetchSemanticsNode()
+                .boundsInRoot.center.y
+        val endY =
+            composeRule
+                .onNodeWithText("ㄷ")
+                .fetchSemanticsNode()
+                .boundsInRoot.center.y
+
+        composeRule.onNodeWithText("ㄱ").performTouchInput {
+            swipe(start = center, end = center + Offset(0f, endY - startY))
+        }
+
+        assertHighlighted("ㄷ")
+    }
+
+    private fun setContent(leadingReceiverCount: Int = 30) {
         val receivers =
-            List(30) { index ->
+            List(leadingReceiverCount) { index ->
                 ReceiverSelectItem(id = index.toLong(), name = "김수신$index", relation = "친구")
             } +
                 listOf(
-                    ReceiverSelectItem(id = 30L, name = "나수신", relation = "친구"),
-                    ReceiverSelectItem(id = 31L, name = "다수신", relation = "친구"),
-                    ReceiverSelectItem(id = 32L, name = "홍마지막", relation = "친구"),
+                    ReceiverSelectItem(id = leadingReceiverCount.toLong(), name = "나수신", relation = "친구"),
+                    ReceiverSelectItem(id = leadingReceiverCount + 1L, name = "다수신", relation = "친구"),
+                    ReceiverSelectItem(id = leadingReceiverCount + 2L, name = "홍마지막", relation = "친구"),
                 )
         composeRule.setContent {
             AfternoteTheme {
