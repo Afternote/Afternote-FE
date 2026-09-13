@@ -128,7 +128,7 @@ private fun ProfileEditForm(
             ) {
                 Box(modifier = Modifier.size(134.dp)) {
                     Image(
-                        painter = painterResource(R.drawable.ic_default_profile),
+                        painter = painterResource(R.drawable.setting_ic_default_profile),
                         contentDescription = "기본",
                         modifier = Modifier.fillMaxSize(),
                     )
@@ -140,7 +140,7 @@ private fun ProfileEditForm(
                         contentAlignment = Alignment.Center,
                     ) {
                         Image(
-                            painter = painterResource(R.drawable.ic_plus),
+                            painter = painterResource(R.drawable.setting_ic_plus),
                             contentDescription = "추가",
                             modifier = Modifier.requiredSize(72.dp),
                         )

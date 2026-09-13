@@ -28,7 +28,7 @@ fun PassKeyListScreen(
         containerColor = Color.Transparent,
         topBar = {
             DetailTopBar(
-                title = stringResource(id = R.string.passkey_management_title),
+                title = stringResource(id = R.string.setting_passkey_management_title),
                 onBackClick = onBackClick,
             )
         },
@@ -43,17 +43,17 @@ fun PassKeyListScreen(
             item {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = stringResource(id = R.string.passkey_section_title),
+                    text = stringResource(id = R.string.setting_passkey_section_title),
                     style = AfternoteDesign.typography.bodyLargeB,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = stringResource(id = R.string.passkey_description),
+                    text = stringResource(id = R.string.setting_passkey_description),
                     style = AfternoteDesign.typography.bodySmallR,
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = stringResource(id = R.string.passkey_list_header),
+                    text = stringResource(id = R.string.setting_passkey_list_header),
                     style = AfternoteDesign.typography.bodyLargeB,
                 )
                 Spacer(modifier = Modifier.height(12.dp))

@@ -77,7 +77,7 @@ fun SettingScreen(
     Scaffold(
         topBar = {
             DetailTopBar(
-                title = stringResource(R.string.settings_title),
+                title = stringResource(R.string.setting_title),
                 onBackClick = onBackClick,
             )
         },
@@ -135,9 +135,9 @@ private fun SettingScreenContent(
     if (showLogoutDialog) {
         Popup(
             type = PopupType.Variant2,
-            message = stringResource(R.string.settings_logout_dialog_message),
-            confirmText = stringResource(R.string.settings_logout_dialog_confirm),
-            dismissText = stringResource(R.string.settings_logout_dialog_cancel),
+            message = stringResource(R.string.setting_logout_dialog_message),
+            confirmText = stringResource(R.string.setting_logout_dialog_confirm),
+            dismissText = stringResource(R.string.setting_logout_dialog_cancel),
             onConfirm = {
                 showLogoutDialog = false
                 onLogoutClick()
@@ -170,85 +170,85 @@ private fun SettingScreenContent(
                     onRecipientListClick = onRecipientListClick,
                 )
 
-                SettingSection(title = stringResource(R.string.settings_section_account)) {
+                SettingSection(title = stringResource(R.string.setting_section_account)) {
                     SettingMenuItem(
-                        label = stringResource(R.string.settings_account_profile_edit),
+                        label = stringResource(R.string.setting_account_profile_edit),
                         onClick = onProfileEditClick,
                     )
                     SettingMenuItem(
-                        label = stringResource(R.string.settings_account_password_change),
+                        label = stringResource(R.string.setting_account_password_change),
                         onClick = onPasswordChangeClick,
                     )
                     SettingMenuItem(
-                        label = stringResource(R.string.settings_account_linked_account),
+                        label = stringResource(R.string.setting_account_linked_account),
                         onClick = onLinkedAccountClick,
                     )
                     SettingMenuItem(
-                        label = stringResource(R.string.settings_account_notification),
+                        label = stringResource(R.string.setting_account_notification),
                         onClick = onNotificationClick,
                     )
                 }
 
-                SettingSection(title = stringResource(R.string.settings_section_recipient)) {
+                SettingSection(title = stringResource(R.string.setting_section_recipient)) {
                     SettingMenuItem(
-                        label = stringResource(R.string.settings_recipient_list),
+                        label = stringResource(R.string.setting_recipient_list),
                         onClick = onRecipientListClick,
                     )
                     SettingMenuItem(
-                        label = stringResource(R.string.settings_recipient_register),
+                        label = stringResource(R.string.setting_recipient_register),
                         onClick = onRecipientRegisterClick,
                     )
                     SettingMenuItem(
-                        label = stringResource(R.string.settings_recipient_after_delivery),
+                        label = stringResource(R.string.setting_recipient_after_delivery),
                         onClick = onAfterDeliveryClick,
                     )
                 }
 
-                SettingSection(title = stringResource(R.string.settings_section_security)) {
+                SettingSection(title = stringResource(R.string.setting_section_security)) {
                     SettingMenuItem(
-                        label = stringResource(R.string.settings_security_passkey),
+                        label = stringResource(R.string.setting_security_passkey),
                         onClick = onPasskeyClick,
                     )
                     SettingMenuItem(
-                        label = stringResource(R.string.settings_security_app_lock),
+                        label = stringResource(R.string.setting_security_app_lock),
                         onClick = onAppLockClick,
                     )
                 }
 
-                SettingSection(title = stringResource(R.string.settings_section_support)) {
+                SettingSection(title = stringResource(R.string.setting_section_support)) {
                     SettingMenuItem(
-                        label = stringResource(R.string.settings_support_faq),
+                        label = stringResource(R.string.setting_support_faq),
                         onClick = onFaqClick,
                     )
                     SettingMenuItem(
-                        label = stringResource(R.string.settings_support_inquiry),
+                        label = stringResource(R.string.setting_support_inquiry),
                         onClick = onInquiryClick,
                     )
                     SettingMenuItem(
-                        label = stringResource(R.string.settings_support_notice),
+                        label = stringResource(R.string.setting_support_notice),
                         onClick = onNoticeClick,
                     )
                     SettingMenuItem(
-                        label = stringResource(R.string.settings_support_terms),
+                        label = stringResource(R.string.setting_support_terms),
                         onClick = onTermsClick,
                     )
                     SettingMenuItem(
-                        label = stringResource(R.string.settings_support_privacy),
+                        label = stringResource(R.string.setting_support_privacy),
                         onClick = onPrivacyClick,
                     )
                     SettingMenuItem(
-                        label = stringResource(R.string.settings_support_service_info),
+                        label = stringResource(R.string.setting_support_service_info),
                         onClick = onServiceInfoClick,
                     )
                 }
 
                 SettingMenuItem(
-                    label = stringResource(R.string.settings_logout),
+                    label = stringResource(R.string.setting_logout),
                     onClick = { showLogoutDialog = true },
                     modifier = Modifier.padding(top = 8.dp),
                 )
                 SettingMenuItem(
-                    label = stringResource(R.string.settings_account_withdraw),
+                    label = stringResource(R.string.setting_account_withdraw),
                     onClick = onWithdrawGuideClick,
                 )
             }
@@ -260,7 +260,7 @@ private fun SettingScreenContent(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 SettingMenuItem(
-                    label = stringResource(R.string.settings_logout),
+                    label = stringResource(R.string.setting_logout),
                     onClick = { showLogoutDialog = true },
                 )
             }

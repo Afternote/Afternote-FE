@@ -52,7 +52,7 @@ fun NoticeListItem(
         }
         Spacer(modifier = Modifier.weight(1f))
         Image(
-            painterResource(R.drawable.ic_right_arrow),
+            painterResource(R.drawable.setting_ic_right_arrow),
             contentDescription = "화살표",
             colorFilter = ColorFilter.tint(AfternoteDesign.colors.gray9),
         )

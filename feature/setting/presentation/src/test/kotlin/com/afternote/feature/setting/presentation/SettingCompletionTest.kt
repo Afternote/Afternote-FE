@@ -302,7 +302,7 @@ class SettingCompletionTest {
 
         firstGate.complete(Result.failure(IllegalStateException("temporary failure")))
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.uiState.value.errorMessage == UiText.Resource(SettingR.string.receiver_register_failed)
+            viewModel.uiState.value.errorMessage == UiText.Resource(SettingR.string.setting_receiver_register_failed)
         }
         assertFalse(viewModel.uiState.value.isLoading)
 
@@ -417,7 +417,7 @@ class SettingCompletionTest {
 
         firstBasicGate.complete(Result.failure(IllegalStateException("basic update failed")))
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.uiState.value.errorMessage == UiText.Resource(SettingR.string.receiver_edit_failed)
+            viewModel.uiState.value.errorMessage == UiText.Resource(SettingR.string.setting_receiver_edit_failed)
         }
         assertFalse(viewModel.uiState.value.isSaving)
         assertTrue(repository.receiverMessageCalls.isEmpty())
@@ -433,7 +433,7 @@ class SettingCompletionTest {
         retryMessageGate.complete(Result.failure(IllegalStateException("message update failed")))
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.errorMessage ==
-                UiText.Resource(SettingR.string.receiver_message_update_partial_failed)
+                UiText.Resource(SettingR.string.setting_receiver_message_update_partial_failed)
         }
         assertEquals(listOf(expectedMessageCall), repository.receiverMessageCalls)
 

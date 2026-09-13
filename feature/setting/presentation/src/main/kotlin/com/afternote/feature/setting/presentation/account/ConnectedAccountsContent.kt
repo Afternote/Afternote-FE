@@ -51,12 +51,12 @@ internal fun ConnectedAccountsContent(
                     .padding(horizontal = 20.dp, vertical = 16.dp),
         ) {
             Text(
-                text = stringResource(R.string.sns_login_section_title),
+                text = stringResource(R.string.setting_sns_login_section_title),
                 style = AfternoteDesign.typography.bodyLargeR,
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = stringResource(R.string.sns_login_section_desc),
+                text = stringResource(R.string.setting_sns_login_section_desc),
                 style = AfternoteDesign.typography.bodySmallR,
             )
             Spacer(modifier = Modifier.height(24.dp))

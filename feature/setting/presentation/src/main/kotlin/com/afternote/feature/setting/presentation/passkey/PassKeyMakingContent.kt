@@ -41,7 +41,7 @@ internal fun PassKeyMakingContent(
         containerColor = Color.Transparent,
         topBar = {
             DetailTopBar(
-                title = stringResource(id = R.string.passkey_management_title),
+                title = stringResource(id = R.string.setting_passkey_management_title),
                 onBackClick = onBackClick,
             )
         },
@@ -58,13 +58,13 @@ internal fun PassKeyMakingContent(
             ) {
                 Spacer(modifier = Modifier.height(137.dp))
                 Text(
-                    text = stringResource(R.string.passkey_fingerprint_guide),
+                    text = stringResource(R.string.setting_passkey_fingerprint_guide),
                     style = AfternoteDesign.typography.bodyLargeR,
                     modifier = Modifier.padding(innerPadding),
                 )
                 Spacer(modifier = Modifier.height(40.dp))
                 Image(
-                    painterResource(R.drawable.ic_fingerprint),
+                    painterResource(R.drawable.setting_ic_fingerprint),
                     "지문",
                 )
             }

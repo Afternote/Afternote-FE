@@ -38,7 +38,7 @@ fun ReceiverManageScreen(
         containerColor = Color.Transparent,
         topBar = {
             DetailTopBar(
-                title = stringResource(R.string.settings_recipient_list),
+                title = stringResource(R.string.setting_recipient_list),
                 onBackClick = onBackClick,
             )
         },
@@ -73,7 +73,7 @@ private fun ReceiverManageRow(
         modifier = modifier,
         trailing = {
             Image(
-                painterResource(R.drawable.ic_right_arrow),
+                painterResource(R.drawable.setting_ic_right_arrow),
                 contentDescription = null,
                 modifier = Modifier.size(24.dp),
             )

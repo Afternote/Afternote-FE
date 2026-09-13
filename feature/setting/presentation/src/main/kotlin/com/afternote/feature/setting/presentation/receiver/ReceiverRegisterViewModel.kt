@@ -36,7 +36,7 @@ class ReceiverRegisterViewModel
         ) {
             if (!email.isValidReceiverEmail()) {
                 val messageRes =
-                    if (email.isBlank()) R.string.receiver_email_required else R.string.receiver_email_invalid
+                    if (email.isBlank()) R.string.setting_receiver_email_required else R.string.setting_receiver_email_invalid
                 _uiState.update { it.copy(errorMessage = UiText.Resource(messageRes)) }
                 return
             }
@@ -44,9 +44,9 @@ class ReceiverRegisterViewModel
             if (phoneValidation != ReceiverPhoneValidation.VALID) {
                 val messageRes =
                     if (phoneValidation == ReceiverPhoneValidation.REQUIRED) {
-                        R.string.receiver_phone_required
+                        R.string.setting_receiver_phone_required
                     } else {
-                        R.string.receiver_phone_invalid
+                        R.string.setting_receiver_phone_invalid
                     }
                 _uiState.update { it.copy(errorMessage = UiText.Resource(messageRes)) }
                 return
@@ -66,7 +66,7 @@ class ReceiverRegisterViewModel
                 }.onSuccess {
                     _events.send(ReceiverRegisterEvent.RegisterSuccess)
                 }.onFailure { error ->
-                    val errorMessage = error.toReceiverFailureMessage(R.string.receiver_register_failed)
+                    val errorMessage = error.toReceiverFailureMessage(R.string.setting_receiver_register_failed)
                     _uiState.update { it.copy(isLoading = false, errorMessage = errorMessage) }
                 }
             }

@@ -13,19 +13,19 @@ fun PushToggleSection(
     onAfternoteToggle: (Boolean) -> Unit,
 ) {
     LabeledSwitchRow(
-        label = stringResource(R.string.timeletter),
+        label = stringResource(R.string.setting_timeletter),
         checked = uiState.isNewsletterOn,
         onCheckedChange = onNewsletterToggle,
         enabled = !uiState.isNewsletterUpdating,
     )
     LabeledSwitchRow(
-        label = stringResource(R.string.mind_record),
+        label = stringResource(R.string.setting_mind_record),
         checked = uiState.isMindRecordOn,
         onCheckedChange = onMindRecordToggle,
         enabled = !uiState.isMindRecordUpdating,
     )
     LabeledSwitchRow(
-        label = stringResource(R.string.afternote),
+        label = stringResource(R.string.setting_afternote),
         checked = uiState.isAfternoteOn,
         onCheckedChange = onAfternoteToggle,
         enabled = !uiState.isAfternoteUpdating,

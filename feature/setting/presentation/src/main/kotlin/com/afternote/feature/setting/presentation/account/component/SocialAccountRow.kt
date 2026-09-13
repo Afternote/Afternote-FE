@@ -51,7 +51,7 @@ fun SocialAccountRow(
             )
             Spacer(modifier = Modifier.padding(top = 10.dp))
             Text(
-                text = account.email ?: stringResource(R.string.status_not_connected),
+                text = account.email ?: stringResource(R.string.setting_status_not_connected),
                 style = AfternoteDesign.typography.captionLargeR,
                 color =
                     if (account.isConnected) {
@@ -90,8 +90,8 @@ private fun RowPrev() {
         account =
             SocialAccountState(
                 provider = "google",
-                iconRes = R.drawable.ic_google_logo,
-                labelRes = R.string.login_with_google,
+                iconRes = R.drawable.setting_ic_google_logo,
+                labelRes = R.string.setting_login_with_google,
                 isConnected = true,
                 email = "example@gmail.com",
             ),
