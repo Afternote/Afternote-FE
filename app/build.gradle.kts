@@ -187,6 +187,12 @@ android {
                     )
                 }
             }
+            registerDebugSigningDiagnostics(
+                usingDefaultKeystore = provided.isEmpty(),
+                storeFile = storeFile,
+                storePassword = storePassword,
+                keyAlias = keyAlias,
+            )
         }
     }
 
