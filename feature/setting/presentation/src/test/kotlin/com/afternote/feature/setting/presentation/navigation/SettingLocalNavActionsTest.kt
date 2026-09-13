@@ -6,7 +6,7 @@ import androidx.navigation3.runtime.serialization.NavBackStackSerializer
 import androidx.navigation3.runtime.serialization.NavKeySerializer
 import androidx.savedstate.serialization.decodeFromSavedState
 import androidx.savedstate.serialization.encodeToSavedState
-import com.afternote.core.ui.navigation.FeatureStackBoundary
+import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -23,7 +23,7 @@ class SettingLocalNavActionsTest {
     private val actions =
         SettingLocalNavActions(
             stack,
-            FeatureStackBoundary { exits++ },
+            FeatureNavigationCallbacks { exits++ },
             object : SettingExternalActions {
                 override fun onLogoutSuccess() {
                     logouts++
@@ -72,7 +72,7 @@ class SettingLocalNavActionsTest {
     }
 
     @Test
-    fun `withdrawal and logout only notify the root auth boundary`() {
+    fun `withdrawal and logout only notify the root auth navigationCallbacks`() {
         actions.onWithdrawGuideClick()
         actions.onWithdrawConfirmClick()
         val before = stack.toList()

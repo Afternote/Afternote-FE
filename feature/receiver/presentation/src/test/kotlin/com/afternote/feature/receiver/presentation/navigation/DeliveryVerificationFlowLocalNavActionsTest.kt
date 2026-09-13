@@ -2,7 +2,7 @@ package com.afternote.feature.receiver.presentation.navigation
 
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
-import com.afternote.core.ui.navigation.FeatureStackBoundary
+import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -20,7 +20,7 @@ class DeliveryVerificationFlowLocalNavActionsTest {
     private val actions =
         DeliveryVerificationFlowLocalNavActions(
             stepStack = stepStack,
-            boundary = FeatureStackBoundary { exits += 1 },
+            navigationCallbacks = FeatureNavigationCallbacks { exits += 1 },
             onExitToReceivedRecords = { exitsToRecords += 1 },
         )
 
