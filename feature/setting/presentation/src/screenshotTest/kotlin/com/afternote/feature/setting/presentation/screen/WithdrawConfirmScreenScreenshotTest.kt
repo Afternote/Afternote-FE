@@ -24,15 +24,15 @@ internal fun withdrawConfirmScreenCompactScreenshot() {
 @Preview(showBackground = true, fontScale = 1.5f)
 @Composable
 internal fun withdrawConfirmScreenLargeFontScreenshot() {
-    WithdrawConfirmScreenScreenshotContent()
+    WithdrawConfirmScreenScreenshotContent(userEmail = "accessibility.regression@afternote.kr")
 }
 
 @Composable
-private fun WithdrawConfirmScreenScreenshotContent() {
+private fun WithdrawConfirmScreenScreenshotContent(userEmail: String = "example@afternote.kr") {
     AfternoteTheme {
         WithdrawConfirmContent(
             userName = "홍길동",
-            userEmail = "example@afternote.kr",
+            userEmail = userEmail,
             onBackClick = {},
             onWithdrawClick = {},
             isLoading = false,
