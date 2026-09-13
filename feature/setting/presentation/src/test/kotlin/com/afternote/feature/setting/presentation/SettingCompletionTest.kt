@@ -17,6 +17,8 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.testing.FakeAuthRepository
+import com.afternote.core.domain.testing.FakeMyProfileRepository
+import com.afternote.core.domain.testing.FakeUserReceiverRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.delivery.ConditionState
 import com.afternote.core.model.delivery.DeliveryConditionItem
@@ -33,19 +35,29 @@ import com.afternote.core.model.user.UserMarketingConsent
 import com.afternote.core.model.user.UserPushSetting
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.setting.domain.UpdateReceiverInfoUseCase
+import com.afternote.feature.setting.domain.UpdateTimeLetterDeliveryConditionUseCase
+import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
+import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import com.afternote.feature.setting.presentation.screen.ReceiverEditScreen
 import com.afternote.feature.setting.presentation.screen.ReceiverRegisterScreen
+import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsIntent
 import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsViewModel
 import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionError
+import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionIntent
 import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionViewModel
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditEvent
+import com.afternote.feature.setting.presentation.viewmodel.ProfileEditIntent
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditUiState
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditViewModel
+import com.afternote.feature.setting.presentation.viewmodel.PushNotificationIntent
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditEvent
+import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditIntent
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditViewModel
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterEvent
+import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterIntent
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterViewModel
 import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
@@ -54,6 +66,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
@@ -66,13 +79,13 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.util.ArrayDeque
-import com.afternote.core.domain.testing.FakeUserRepository.ConnectedAccountLinkCall as CompletionConnectedLinkCall
-import com.afternote.core.domain.testing.FakeUserRepository.DeliveryUpdateCall as CompletionDeliveryUpdateCall
-import com.afternote.core.domain.testing.FakeUserRepository.ProfileUpdateCall as CompletionProfileUpdateCall
-import com.afternote.core.domain.testing.FakeUserRepository.PushUpdateCall as CompletionPushUpdateCall
-import com.afternote.core.domain.testing.FakeUserRepository.ReceiverCreateCall as CompletionReceiverRegistrationCall
-import com.afternote.core.domain.testing.FakeUserRepository.ReceiverMessageCall as CompletionReceiverMessageCall
-import com.afternote.core.domain.testing.FakeUserRepository.ReceiverUpdateCall as CompletionReceiverEditCall
+import com.afternote.core.domain.testing.FakeMyProfileRepository.ProfileUpdateCall as CompletionProfileUpdateCall
+import com.afternote.core.domain.testing.FakeUserReceiverRepository.DeliveryUpdateCall as CompletionDeliveryUpdateCall
+import com.afternote.core.domain.testing.FakeUserReceiverRepository.ReceiverCreateCall as CompletionReceiverRegistrationCall
+import com.afternote.core.domain.testing.FakeUserReceiverRepository.ReceiverMessageCall as CompletionReceiverMessageCall
+import com.afternote.core.domain.testing.FakeUserReceiverRepository.ReceiverUpdateCall as CompletionReceiverEditCall
+import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository.ConnectedAccountLinkCall as CompletionConnectedLinkCall
+import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository.PushUpdateCall as CompletionPushUpdateCall
 import com.afternote.feature.setting.presentation.R as SettingR
 
 @RunWith(RobolectricTestRunner::class)
@@ -86,7 +99,7 @@ class SettingCompletionTest {
     fun profileUpdate_success_emitsExactPayloadAndEventAfterPendingRequest() {
         setHarnessContent()
         val scenario = CompletionUserScenario()
-        val repository = scenario.repository
+        val repository = scenario.profileRepository
         val updateGate = scenario.enqueueProfileUpdate()
         val viewModel = ProfileEditViewModel(repository)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
@@ -94,7 +107,7 @@ class SettingCompletionTest {
         }
 
         composeRule.runOnIdle {
-            viewModel.updateProfile(name = "새 이름", phone = "01098765432")
+            viewModel.onIntent(ProfileEditIntent.UpdateProfile(name = "새 이름", phone = "01098765432"))
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.profileUpdateCalls.size == 1
@@ -110,14 +123,17 @@ class SettingCompletionTest {
             Result.success(COMPLETION_DEFAULT_USER.copy(name = "새 이름", phone = "01098765432")),
         )
 
-        assertEquals(ProfileEditEvent.UpdateSuccess, awaitEvent(viewModel.events))
+        assertEquals(
+            ProfileEditEvent.UpdateSuccess,
+            awaitEvent(viewModel.uiState.mapNotNull { (it as? ProfileEditUiState.Success)?.pendingEvent }),
+        )
     }
 
     @Test
     fun pushUpdates_keepOptimisticSuccessAndRollbackFailureWithExactPatches() {
         setHarnessContent()
         val scenario = CompletionUserScenario()
-        val repository = scenario.repository
+        val repository = scenario.notificationRepository
         val newsletterGate = scenario.enqueuePushUpdate()
         val mindRecordGate = scenario.enqueuePushUpdate()
         val afterNoteGate = scenario.enqueuePushUpdate()
@@ -131,7 +147,7 @@ class SettingCompletionTest {
             !viewModel.uiState.value.isLoading
         }
 
-        composeRule.runOnIdle { viewModel.onNewsletterToggle(false) }
+        composeRule.runOnIdle { viewModel.onIntent(PushNotificationIntent.NewsletterToggle(false)) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.pushUpdateCalls.size == 1
         }
@@ -150,7 +166,7 @@ class SettingCompletionTest {
         }
         assertFalse(viewModel.uiState.value.isNewsletterOn)
 
-        composeRule.runOnIdle { viewModel.onMindRecordToggle(false) }
+        composeRule.runOnIdle { viewModel.onIntent(PushNotificationIntent.MindRecordToggle(false)) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.pushUpdateCalls.size == 2
         }
@@ -174,10 +190,10 @@ class SettingCompletionTest {
         assertTrue(viewModel.uiState.value.saveFailure != null)
 
         composeRule.runOnIdle {
-            viewModel.onAfternoteToggle(false)
-            viewModel.onSmsChecked(true)
-            viewModel.onEmailChecked(true)
-            viewModel.onPushChecked(true)
+            viewModel.onIntent(PushNotificationIntent.AfternoteToggle(false))
+            viewModel.onIntent(PushNotificationIntent.SmsChecked(true))
+            viewModel.onIntent(PushNotificationIntent.EmailChecked(true))
+            viewModel.onIntent(PushNotificationIntent.PushChecked(true))
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.pushUpdateCalls.size == 3
@@ -207,7 +223,7 @@ class SettingCompletionTest {
     fun connectedAccounts_linkThenUnlink_appliesExactPayloadAndServerState() {
         setHarnessContent()
         val scenario = CompletionUserScenario()
-        val repository = scenario.repository
+        val repository = scenario.accountRepository
         val linkGate = scenario.enqueueConnectedLink()
         val unlinkGate = scenario.enqueueConnectedUnlink()
         val viewModel = ConnectedAccountsViewModel(repository)
@@ -216,7 +232,7 @@ class SettingCompletionTest {
         }
 
         composeRule.runOnIdle {
-            viewModel.link(provider = "google", accessToken = "google-access-token")
+            viewModel.onIntent(ConnectedAccountsIntent.Link(provider = "google", accessToken = "google-access-token"))
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.connectedLinkCalls.size == 1
@@ -247,7 +263,7 @@ class SettingCompletionTest {
         )
 
         composeRule.runOnIdle {
-            viewModel.onToggle(provider = "google", enabled = false)
+            viewModel.onIntent(ConnectedAccountsIntent.Toggle(provider = "google", enabled = false))
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.connectedUnlinkCalls.size == 1
@@ -273,7 +289,7 @@ class SettingCompletionTest {
     fun receiverRegistration_failureThenRetry_succeedsWithSameNormalizedPayload() {
         setHarnessContent()
         val scenario = CompletionUserScenario()
-        val repository = scenario.repository
+        val repository = scenario.receiverRepository
         val firstGate = scenario.enqueueReceiverCreate()
         val retryGate = scenario.enqueueReceiverCreate()
         val viewModel = ReceiverRegisterViewModel(repository)
@@ -287,12 +303,14 @@ class SettingCompletionTest {
             )
 
         composeRule.runOnIdle {
-            viewModel.register(
-                name = expectedCall.name,
-                relation = expectedCall.relation,
-                phone = expectedCall.phone,
-                email = expectedCall.email,
-                message = "",
+            viewModel.onIntent(
+                ReceiverRegisterIntent.Register(
+                    name = expectedCall.name,
+                    relation = expectedCall.relation,
+                    phone = expectedCall.phone,
+                    email = expectedCall.email,
+                    message = "",
+                ),
             )
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
@@ -307,12 +325,14 @@ class SettingCompletionTest {
         assertFalse(viewModel.uiState.value.isLoading)
 
         composeRule.runOnIdle {
-            viewModel.register(
-                name = expectedCall.name,
-                relation = expectedCall.relation,
-                phone = expectedCall.phone,
-                email = expectedCall.email,
-                message = "",
+            viewModel.onIntent(
+                ReceiverRegisterIntent.Register(
+                    name = expectedCall.name,
+                    relation = expectedCall.relation,
+                    phone = expectedCall.phone,
+                    email = expectedCall.email,
+                    message = "",
+                ),
             )
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
@@ -325,12 +345,12 @@ class SettingCompletionTest {
 
         retryGate.complete(Result.success(ReceiverCreated(receiverId = RECEIVER_ID, authCode = "AUTH-77")))
 
-        assertEquals(ReceiverRegisterEvent.RegisterSuccess, awaitEvent(viewModel.events))
+        assertEquals(ReceiverRegisterEvent.RegisterSuccess, awaitEvent(viewModel.uiState.mapNotNull { it.pendingEvent }))
     }
 
     @Test
     fun receiverRegistration_requiresValidEmailBeforeEnablingRegister() {
-        val viewModel = ReceiverRegisterViewModel(FakeUserRepository.strict())
+        val viewModel = ReceiverRegisterViewModel(FakeUserReceiverRepository.strict())
         composeRule.setContent {
             AfternoteTheme {
                 ReceiverRegisterScreen(
@@ -367,7 +387,7 @@ class SettingCompletionTest {
     fun receiverEdit_serialFailurePartialFailureThenRetry_sendsExactPayloadOncePerAttempt() {
         setHarnessContent()
         val scenario = CompletionUserScenario()
-        val repository = scenario.repository
+        val repository = scenario.receiverRepository
         val firstBasicGate = scenario.enqueueReceiverUpdate()
         val retryBasicGate = scenario.enqueueReceiverUpdate()
         val retryMessageGate = scenario.enqueueReceiverMessageUpdate()
@@ -377,6 +397,7 @@ class SettingCompletionTest {
             ReceiverEditViewModel(
                 route = SettingRoute.RecipientEditRoute(RECEIVER_ID),
                 userRepository = repository,
+                updateReceiverInfo = UpdateReceiverInfoUseCase(repository),
             )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.receiver == COMPLETION_DEFAULT_RECEIVER_DETAIL
@@ -395,12 +416,14 @@ class SettingCompletionTest {
                 message = "수정한 마지막 인사말",
             )
         val update: () -> Unit = {
-            viewModel.update(
-                name = expectedBasicCall.name,
-                relation = expectedBasicCall.relation,
-                phone = expectedBasicCall.phone,
-                email = expectedBasicCall.email,
-                message = expectedMessageCall.message,
+            viewModel.onIntent(
+                ReceiverEditIntent.Update(
+                    name = expectedBasicCall.name,
+                    relation = expectedBasicCall.relation,
+                    phone = expectedBasicCall.phone,
+                    email = expectedBasicCall.email,
+                    message = expectedMessageCall.message,
+                ),
             )
         }
 
@@ -447,7 +470,7 @@ class SettingCompletionTest {
         }
         finalMessageGate.complete(Result.success(Unit))
 
-        assertEquals(ReceiverEditEvent.EditSuccess, awaitEvent(viewModel.events))
+        assertEquals(ReceiverEditEvent.EditSuccess, awaitEvent(viewModel.uiState.mapNotNull { it.pendingEvent }))
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             !viewModel.uiState.value.isSaving
         }
@@ -465,11 +488,12 @@ class SettingCompletionTest {
             CompletionUserScenario().apply {
                 receiverDetail = COMPLETION_DEFAULT_RECEIVER_DETAIL.copy(phone = null)
             }
-        val repository = scenario.repository
+        val repository = scenario.receiverRepository
         val viewModel =
             ReceiverEditViewModel(
                 route = SettingRoute.RecipientEditRoute(RECEIVER_ID),
                 userRepository = repository,
+                updateReceiverInfo = UpdateReceiverInfoUseCase(repository),
             )
 
         composeRule.setContent {
@@ -492,7 +516,7 @@ class SettingCompletionTest {
 
     @Test
     fun receiverRegister_blankPhoneWiring_disablesSubmitAndShowsRequiredMessage() {
-        val repository = FakeUserRepository(receivers = emptyList())
+        val repository = FakeUserReceiverRepository(receivers = emptyList())
         val viewModel = ReceiverRegisterViewModel(repository)
 
         composeRule.setContent {
@@ -518,7 +542,7 @@ class SettingCompletionTest {
     fun deliveryCondition_failureThenRetry_succeedsWithExactReceiverPatch() {
         setHarnessContent()
         val scenario = CompletionUserScenario()
-        val repository = scenario.repository
+        val repository = scenario.receiverRepository
         val initialConditions = completionDefaultDeliveryConditions()
         scenario.deliveryConditions =
             ReceiverDeliveryConditions(receiverId = RECEIVER_ID, conditions = initialConditions)
@@ -528,6 +552,7 @@ class SettingCompletionTest {
             DeliveryConditionViewModel(
                 route = SettingRoute.DeliveryConditionsRoute(RECEIVER_ID),
                 userRepository = repository,
+                updateTimeLetterDeliveryCondition = UpdateTimeLetterDeliveryConditionUseCase(repository),
             )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.isInitialized
@@ -543,8 +568,8 @@ class SettingCompletionTest {
         val expectedCall = CompletionDeliveryUpdateCall(RECEIVER_ID, expectedConditions)
 
         composeRule.runOnIdle {
-            viewModel.onConditionTypeSelected(index = 1)
-            viewModel.onSave()
+            viewModel.onIntent(DeliveryConditionIntent.SelectConditionType(index = 1))
+            viewModel.onIntent(DeliveryConditionIntent.Save)
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.deliveryUpdateCalls.size == 1
@@ -560,7 +585,7 @@ class SettingCompletionTest {
         assertFalse(viewModel.uiState.value.isSaving)
         assertEquals(initialConditions, viewModel.uiState.value.conditions)
 
-        composeRule.runOnIdle { viewModel.onSave() }
+        composeRule.runOnIdle { viewModel.onIntent(DeliveryConditionIntent.Save) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.deliveryUpdateCalls.size == 2
         }
@@ -581,7 +606,7 @@ class SettingCompletionTest {
             ),
         )
 
-        assertEquals(Unit, awaitEvent(viewModel.saveSuccess))
+        assertEquals(Unit, awaitEvent(viewModel.uiState.mapNotNull { it.pendingEvent }))
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.conditions == serverConditions
         }
@@ -603,13 +628,12 @@ class SettingCompletionTest {
                     onGetRefreshToken = null
                 }
         // 탈퇴 성공 뒤 세션을 정확히 한 번, 서버 호출 뒤에 정리하는 것은 저장소 구현의 계약이라
-        // :core:data `UserRepositoryImplTest` 의 deleteAccount 계열이 고정한다. 여기서는 화면 상태 전이만 본다.
+        // :feature:setting:data `SettingAccountRepositoryImplTest` 의 deleteAccount 계열이 고정한다. 여기서는 화면 상태 전이만 본다.
         val repository =
-            FakeUserRepository.strict().apply {
-                onGetMyProfile = { COMPLETION_DEFAULT_USER }
+            FakeSettingAccountRepository.strict().apply {
                 onDeleteAccount = { deleteGates.removeFirst().await() }
             }
-        val viewModel = SettingViewModel(authRepository, repository)
+        val viewModel = SettingViewModel(authRepository, repository, FakeMyProfileRepository(COMPLETION_DEFAULT_USER))
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value is SettingUiState.Success
         }
@@ -753,13 +777,19 @@ private class CompletionUserScenario {
     val completedPushUpdates: Int
         get() = synchronized(this) { pushUpdateCompletions }
 
-    val repository =
-        FakeUserRepository.strict().apply {
-            onReceiverListFlow = { flowOf(emptyList()) }
-            onGetMyProfile = { COMPLETION_DEFAULT_USER }
-            onUpdateMyProfile = { _, _, _ ->
-                takeGate(profileUpdateGates, "updateMyProfile").await().getOrThrow()
+    val accountRepository =
+        FakeSettingAccountRepository.strict().apply {
+            onGetConnectedAccounts = { completionConnectedAccounts() }
+            onLinkConnectedAccount = { _, _ ->
+                takeGate(connectedLinkGates, "linkConnectedAccount").await().getOrThrow()
             }
+            onUnlinkConnectedAccount = {
+                takeGate(connectedUnlinkGates, "unlinkConnectedAccount").await().getOrThrow()
+            }
+        }
+
+    val notificationRepository =
+        FakeSettingNotificationRepository.strict().apply {
             onGetMyPushSettings = { COMPLETION_DEFAULT_PUSH_SETTING }
             onUpdateMyPushSettings = { _, _, _ ->
                 val gate = takeGate(pushUpdateGates, "updateMyPushSettings")
@@ -777,6 +807,11 @@ private class CompletionUserScenario {
                     push = push ?: COMPLETION_DEFAULT_MARKETING_CONSENT.push,
                 )
             }
+        }
+
+    val receiverRepository =
+        FakeUserReceiverRepository.strict().apply {
+            onReceiverListFlow = { flowOf(emptyList()) }
             onCreateReceiver = { _, _, _, _, _ ->
                 takeGate(receiverCreateGates, "createReceiver").await().getOrThrow()
             }
@@ -797,12 +832,13 @@ private class CompletionUserScenario {
             onUpdateReceiverMessage = { _, _ ->
                 takeGate(receiverMessageGates, "updateReceiverMessage").await().getOrThrow()
             }
-            onGetConnectedAccounts = { completionConnectedAccounts() }
-            onLinkConnectedAccount = { _, _ ->
-                takeGate(connectedLinkGates, "linkConnectedAccount").await().getOrThrow()
-            }
-            onUnlinkConnectedAccount = {
-                takeGate(connectedUnlinkGates, "unlinkConnectedAccount").await().getOrThrow()
+        }
+
+    val profileRepository =
+        FakeMyProfileRepository.strict().apply {
+            onGetMyProfile = { COMPLETION_DEFAULT_USER }
+            onUpdateMyProfile = { _, _, _ ->
+                takeGate(profileUpdateGates, "updateMyProfile").await().getOrThrow()
             }
         }
 

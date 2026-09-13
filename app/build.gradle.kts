@@ -267,6 +267,7 @@ dependencies {
     implementation(projects.feature.timeletter.presentation)
     implementation(projects.feature.onboarding.presentation)
     implementation(projects.feature.setting.presentation)
+    implementation(projects.feature.setting.data)
 
     // Feature — domain (AppNavigationActions 가 에디터 종류를 AfternoteType 으로 받는다)
     implementation(projects.feature.afternote.domain)
@@ -301,6 +302,7 @@ dependencies {
     androidTestImplementation(libs.coroutines.test)
     androidTestImplementation(projects.core.data)
     androidTestImplementation(testFixtures(projects.core.domain))
+    androidTestImplementation(testFixtures(projects.feature.setting.domain))
     androidTestImplementation(projects.feature.afternote.domain)
     androidTestImplementation(testFixtures(projects.feature.afternote.domain))
     androidTestImplementation(projects.feature.mindrecord.domain)

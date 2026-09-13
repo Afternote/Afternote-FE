@@ -11,6 +11,7 @@ import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.testing.FakeUserProfileCacheRepository
+import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.feature.mindrecord.data.di.MindRecordRepositoryModule
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
@@ -20,6 +21,11 @@ import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionReposito
 import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeMindRecordReceiverRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeWeeklyReportRepository
+import com.afternote.feature.setting.data.di.SettingUserRepositoryModule
+import com.afternote.feature.setting.domain.SettingAccountRepository
+import com.afternote.feature.setting.domain.SettingNotificationRepository
+import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
+import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
 import com.afternote.feature.timeletter.data.di.TimeLetterModule
 import com.afternote.feature.timeletter.data.repositoryImpl.FileMetadataRepositoryImpl
 import com.afternote.feature.timeletter.domain.repository.FileMetadataRepository
@@ -194,4 +200,25 @@ object TestErrorReportingModule {
     @Provides
     @Singleton
     fun provideErrorReporter(): ErrorReporter = FakeErrorReporter()
+}
+
+@Module
+@TestInstallIn(
+    components = [SingletonComponent::class],
+    replaces = [SettingUserRepositoryModule::class],
+)
+object TestSettingUserRepositoryModule {
+    @Provides
+    @Singleton
+    fun provideSettingAccountRepository(myProfileRepository: MyProfileRepository): SettingAccountRepository =
+        FakeSettingAccountRepository.strict().apply {
+            onDeleteAccount = null
+            onGetConnectedAccounts = {
+                UserConnectedAccount(true, false, false, false, false, myProfileRepository.getMyProfile().email, null, null, null, null)
+            }
+        }
+
+    @Provides
+    @Singleton
+    fun provideSettingNotificationRepository(): SettingNotificationRepository = FakeSettingNotificationRepository()
 }

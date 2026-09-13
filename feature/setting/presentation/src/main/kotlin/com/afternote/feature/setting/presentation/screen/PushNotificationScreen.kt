@@ -11,12 +11,13 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.DeviceAlarmOffSection
 import com.afternote.feature.setting.presentation.component.PushToggleSection
+import com.afternote.feature.setting.presentation.viewmodel.PushNotificationIntent
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationSaveFailure
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationUiState
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel
 
 @Composable
-fun PushNotificationScreen(
+internal fun PushNotificationScreen(
     onBack: () -> Unit,
     viewModel: PushNotificationViewModel = hiltViewModel(),
 ) {
@@ -25,23 +26,23 @@ fun PushNotificationScreen(
     PushNotificationContent(
         uiState = uiState,
         onBack = onBack,
-        onNewsletterToggle = viewModel::onNewsletterToggle,
-        onMindRecordToggle = viewModel::onMindRecordToggle,
-        onAfternoteToggle = viewModel::onAfternoteToggle,
+        onNewsletterToggle = { viewModel.onIntent(PushNotificationIntent.NewsletterToggle(it)) },
+        onMindRecordToggle = { viewModel.onIntent(PushNotificationIntent.MindRecordToggle(it)) },
+        onAfternoteToggle = { viewModel.onIntent(PushNotificationIntent.AfternoteToggle(it)) },
     )
 
     when (uiState.saveFailure) {
         PushNotificationSaveFailure.NETWORK -> {
             NetworkErrorPopup(
-                onRetry = viewModel::onSaveFailureRetry,
-                onDismiss = viewModel::onSaveFailureDismiss,
+                onRetry = { viewModel.onIntent(PushNotificationIntent.SaveFailureRetry) },
+                onDismiss = { viewModel.onIntent(PushNotificationIntent.SaveFailureDismiss) },
             )
         }
 
         PushNotificationSaveFailure.SERVER -> {
             ServerErrorPopup(
-                onRetry = viewModel::onSaveFailureRetry,
-                onDismiss = viewModel::onSaveFailureDismiss,
+                onRetry = { viewModel.onIntent(PushNotificationIntent.SaveFailureRetry) },
+                onDismiss = { viewModel.onIntent(PushNotificationIntent.SaveFailureDismiss) },
             )
         }
 
