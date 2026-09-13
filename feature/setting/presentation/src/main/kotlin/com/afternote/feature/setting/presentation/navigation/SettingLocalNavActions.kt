@@ -2,83 +2,83 @@ package com.afternote.feature.setting.presentation.navigation
 
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
-import com.afternote.core.ui.navigation.FeatureStackBoundary
+import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
 import com.afternote.core.ui.navigation.popOrExit
 
 internal class SettingLocalNavActions(
     private val backStack: NavBackStack<NavKey>,
-    private val boundary: FeatureStackBoundary,
+    private val navigationCallbacks: FeatureNavigationCallbacks,
     private val externalActions: SettingExternalActions,
 ) : SettingNavActions {
-    override fun popBack(): Unit = backStack.popOrExit(boundary)
+    override fun popBack(): Unit = backStack.popOrExit(navigationCallbacks)
 
     override fun onLogoutSuccess(): Unit = externalActions.onLogoutSuccess()
 
     override fun onWithdrawSuccess(): Unit = externalActions.onWithdrawSuccess()
 
-    override fun onNavigateToWithdrawGuide() {
+    override fun onWithdrawGuideClick() {
         backStack.add(SettingRoute.WithdrawGuideRoute)
     }
 
-    override fun onNavigateToWithdrawConfirm() {
+    override fun onWithdrawConfirmClick() {
         backStack.add(SettingRoute.WithdrawConfirmRoute)
     }
 
-    override fun onNavigateToProfileEdit() {
+    override fun onProfileEditClick() {
         backStack.add(SettingRoute.ProfileEditRoute)
     }
 
-    override fun onNavigateToLinkedAccount() {
+    override fun onLinkedAccountClick() {
         backStack.add(SettingRoute.LinkedAccountRoute)
     }
 
-    override fun onNavigateToNotification() {
+    override fun onNotificationClick() {
         backStack.add(SettingRoute.NotificationRoute)
     }
 
-    override fun onNavigateToPushNotification() {
+    override fun onPushNotificationClick() {
         backStack.add(SettingRoute.PushNotificationRoute)
     }
 
-    override fun onNavigateToRecipientList() {
+    override fun onRecipientListClick() {
         backStack.add(SettingRoute.RecipientListRoute())
     }
 
-    override fun onNavigateToRecipientListForDeliveryConditions() {
+    override fun onDeliveryConditionsClick() {
         backStack.add(
             SettingRoute.RecipientListRoute(selectForDeliveryConditions = true),
         )
     }
 
-    override fun onNavigateToRecipientRegister() {
+    override fun onRecipientRegisterClick() {
         backStack.add(SettingRoute.RecipientRegisterRoute)
     }
 
-    override fun onNavigateToRecipientEdit(receiverId: Long) {
+    override fun onRecipientEditClick(receiverId: Long) {
         backStack.add(SettingRoute.RecipientEditRoute(receiverId))
     }
 
-    override fun onNavigateToAfterDelivery(receiverId: Long) {
-        backStack.add(SettingRoute.AfterDeliveryRoute(receiverId))
+    override fun onDeliveryConditionsRecipientSelected(receiverId: Long) {
+        backStack.add(SettingRoute.DeliveryConditionsRoute(receiverId))
     }
 
-    override fun onNavigateToPasskey() {
+    override fun onPasskeyClick() {
         backStack.add(SettingRoute.PasskeyRoute)
     }
 
-    override fun onNavigateToPasskeyMaking() {
+    override fun onPasskeyRegisterClick() {
         backStack.add(SettingRoute.PasskeyMakingRoute)
     }
 
-    override fun onNavigateToPasskeyPassword() {
+    override fun onPasswordAuthClick() {
         backStack.add(SettingRoute.PasskeyPasswordRoute)
     }
 
-    override fun onNavigateToAppLock() {
+    override fun onAppLockClick() {
         backStack.add(SettingRoute.AppLockSetupRoute)
     }
 
-    override fun onNavigateToNotice() {
+    override fun onNoticeClick() {
         backStack.add(SettingRoute.NoticeRoute)
     }
 }

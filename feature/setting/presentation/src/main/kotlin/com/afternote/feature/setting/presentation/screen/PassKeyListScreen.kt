@@ -16,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
@@ -123,60 +122,4 @@ private fun PassKeyListErrorState(
             )
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun PassKeyListScreenPrev() {
-    PassKeyListScreen(
-        passkeys =
-            listOf(
-                Passkey(id = 1L, displayName = "아이폰 15 Pro", createdAt = "2026-07-28T10:15:30"),
-                Passkey(id = 2L, displayName = "갤럭시 S24", createdAt = "2026-08-01T09:00:00"),
-            ),
-        isLoading = false,
-        errorMessage = null,
-        onBackClick = {},
-        onRegisterClick = {},
-        onRetryClick = {},
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun PassKeyListScreenEmptyPrev() {
-    PassKeyListScreen(
-        passkeys = emptyList(),
-        isLoading = false,
-        errorMessage = null,
-        onBackClick = {},
-        onRegisterClick = {},
-        onRetryClick = {},
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun PassKeyListScreenLoadingPrev() {
-    PassKeyListScreen(
-        passkeys = emptyList(),
-        isLoading = true,
-        errorMessage = null,
-        onBackClick = {},
-        onRegisterClick = {},
-        onRetryClick = {},
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun PassKeyListScreenErrorPrev() {
-    PassKeyListScreen(
-        passkeys = emptyList(),
-        isLoading = false,
-        errorMessage = "패스키 목록을 불러올 수 없습니다.",
-        onBackClick = {},
-        onRegisterClick = {},
-        onRetryClick = {},
-    )
 }

@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.feature.setting.domain.Passkey
 import com.afternote.feature.setting.presentation.R
@@ -51,12 +50,4 @@ internal fun PasskeyListItem(
             Image(painterResource(R.drawable.ic_vector2), contentDescription = "오른쪽 막대기")
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun PasskeyListItemPrev() {
-    PasskeyListItem(
-        passkey = Passkey(id = 1L, displayName = "아이폰 15 Pro", createdAt = "2026-07-28T10:15:30"),
-    )
 }
