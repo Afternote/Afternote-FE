@@ -24,12 +24,23 @@ data class DiaryCreateRequestDto(
     @SerialName("title") val title: String,
     @SerialName("content") val content: String,
     @SerialName("isDraft") val isDraft: Boolean,
-    @SerialName("todayMood") val todayMood: TodayMoodDto,
+    /**
+     * 오늘의 기분. **임시저장이면 생략할 수 있다** — `isDraft=true` 에서 서버가 필수 검증을
+     * 걷었다 (`Afternote-BE#243` → PR #267, 2026-08-30 머지). 정식 등록(`isDraft=false`)은
+     * 여전히 필수이고 누락 시 400/`1400` 이다. 그 구분은 화면이 지킨다 (#1065).
+     */
+    @SerialName("todayMood") val todayMood: TodayMoodDto?,
     // imageUrl 은 계약에 없어 걷었다 — 보내도 서버가 버리고 응답에도 키가 없다. 목록
     // 썸네일은 본문 HTML 의 첫 img 에서 뽑는다 (#1024, 데일리질문 #549 와 같은 규칙).
     // 생성 API 에서 `null` 과 빈 목록은 모두 "수신자 없음" 으로 정규화되고, 작성 UI 는 항상
     // 목록을 갖고 있다. 빈 목록을 그대로 보내면 되므로 nullable 로 낮추지 않는다 (#789).
     @SerialName("receiverIds") val receiverIds: List<Long>,
+    /**
+     * 기록일 `yyyy-MM-dd`. 미전송이면 서버가 오늘(Asia/Seoul)로 채우고, **미래 날짜는
+     * 400(code 2101)** 이다 (`Afternote-BE#244`, PR #262). 작성 화면이 항상 값을 갖고
+     * 있어 nullable 로 낮추지 않는다 (#1008).
+     */
+    @SerialName("date") val date: String,
 )
 
 @Serializable
@@ -37,9 +48,12 @@ data class DiaryUpdateRequestDto(
     @SerialName("title") val title: String,
     @SerialName("content") val content: String,
     @SerialName("isDraft") val isDraft: Boolean,
-    @SerialName("todayMood") val todayMood: TodayMoodDto,
+    /** 임시저장이면 생략 가능하다 — 생성 요청과 같은 규칙이다 (#1065). */
+    @SerialName("todayMood") val todayMood: TodayMoodDto?,
     /** null 이면 기존 수신자 유지, 빈 목록이면 전체 해제 (서버 규칙). */
     @SerialName("receiverIds") val receiverIds: List<Long>? = null,
+    /** 기록일 `yyyy-MM-dd`. **null 이면 기존 기록일 유지** (서버 규칙). 미래 날짜는 400(code 2101). */
+    @SerialName("date") val date: String? = null,
 )
 
 /**
@@ -75,9 +89,17 @@ data class DiaryListItemDto(
     @SerialName("createdAt") val createdAt: String,
     // Swagger `DiaryResponse` 에 없는 필드 — 서버가 주기 시작하면 쓰이고, 아니면 계속 null.
     @SerialName("imageUrl") val imageUrl: String? = null,
-    // 저장 컬럼이 필수라 응답도 항상 채워진다. AI 가 매기는 `emotion` 과 달리 사용자가 직접
-    // 고른 값이고, 한글 값이 관측된 쪽도 `emotion` 이지 이 필드가 아니다 (#591, #789).
-    @SerialName("todayMood") val todayMood: TodayMoodDto,
+    // **임시저장에는 없을 수 있다.** 종전에는 저장 컬럼이 필수라 응답도 항상 채워졌는데,
+    // BE#243(PR #267)이 `isDraft=true` 의 기분 필수를 걷으면서 `today_mood` 가 NULL 인
+    // 임시저장이 생긴다. 필수로 두면 그런 일기가 하나라도 있는 달의 목록 전체가
+    // MissingFieldException 으로 날아간다 (#1065).
+    //
+    // 기본값은 두지 않는다 — 「고른 적 없음」을 SOSO 같은 값으로 접으면 사용자가 고르지
+    // 않은 기분이 주간리포트 집계와 감정 분석 입력에 들어간다. null 은 그 자체가 의미다.
+    //
+    // AI 가 매기는 `emotion` 과 달리 사용자가 직접 고른 값이고, 한글 값이 관측된 쪽도
+    // `emotion` 이지 이 필드가 아니다 (#591, #789).
+    @SerialName("todayMood") val todayMood: TodayMoodDto?,
     // 기본값을 두지 않는다 — 키가 빠지면 false 로 접혀 임시저장이 목록에 샌다 (#789).
     @SerialName("isDraft")
     @JsonNames("draft")

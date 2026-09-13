@@ -39,10 +39,20 @@ function graphqlApi(pullRequests) {
     return async (apiPath, options = {}) => {
         assert.equal(apiPath, "/graphql");
         assert.equal(options.method, "POST");
-        assert.equal(
-            options.body.variables.searchQuery,
-            "repo:Afternote/Afternote-FE is:pr is:open author:author",
+        // 담당은 어사인이 정본이고 어사인이 비면 작성자라 두 축을 모두 검색한다(#1974).
+        const query = options.body.variables.searchQuery;
+        assert.ok(
+            query === "repo:Afternote/Afternote-FE is:pr is:open assignee:author" ||
+                query === "repo:Afternote/Afternote-FE is:pr is:open author:author",
+            query,
         );
+        if (query.endsWith("author:author")) {
+            return {
+                data: {
+                    search: { pageInfo: { hasNextPage: false, endCursor: null }, nodes: [] },
+                },
+            };
+        }
         return {
             data: {
                 search: {

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -44,7 +45,9 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.MemorialContent
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
+import com.afternote.feature.afternote.presentation.shared.detail.MEMORIAL_VIDEO_ASPECT_RATIO
 import com.afternote.feature.afternote.presentation.shared.detail.MemorialPlaylist
+import com.afternote.feature.afternote.presentation.shared.detail.MemorialVideoCornerRadius
 import com.afternote.feature.afternote.presentation.shared.detail.MemorialVideoThumbnail
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
@@ -187,6 +190,18 @@ private fun rememberReceivedMemorialVideoClickHandler(snackbarHostState: Snackba
     }
 }
 
+/**
+ * 수신자 상세의 「장례식에 남길 영상」 구역 — 영상 있음/없음 두 상태를 그린다.
+ *
+ * 두 상태의 치수는 [MEMORIAL_VIDEO_ASPECT_RATIO]·[MemorialVideoCornerRadius] **한 곳에서만** 온다.
+ * 값을 각자 적어 두었더니 180/12 와 183/6 으로 갈라져 있었다 (#1781). 상수를 공유하면 한쪽만 고치고
+ * 다른 쪽이 남는 일이 구조적으로 생기지 않는다.
+ *
+ * 없음 갈래는 **현재 호출부에 닿지 않는다.** 유일한 호출부인 [MemorialReceivedDetailScreen] 의
+ * `videoContent` 가 같은 조건(`memorialVideoUrl` 이 비지 않았는가)으로 이미 한 번 거르고,
+ * 시안(#274)이 수신자 화면에서는 영상이 없으면 섹션 자체를 숨기기 때문이다. 그래도 값을 맞춰 두는
+ * 이유는 이 갈래가 지금 틀렸기 때문이 아니라, 바깥 조건이 바뀌는 순간 틀린 채로 드러나기 때문이다.
+ */
 @Composable
 private fun ReceiverVideoSection(
     onVideoClick: (String) -> Unit,
@@ -208,29 +223,35 @@ private fun ReceiverVideoSection(
                 MemorialVideoThumbnail(thumbnailUrl = memorialThumbnailUrl)
             }
         } else {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(180.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(AfternoteDesign.colors.gray3),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.afternote_receiver_ic_play_arrow),
-                    // 영상이 없을 때만 그리는 플레이스홀더다. clickable 이 없어 재생 액션이 없으므로
-                    // 라벨을 붙이면 없는 어포던스를 알린다. 맥락은 위 ReceiverSectionHeader 가 읽어 준다.
-                    contentDescription = null,
-                    tint = AfternoteDesign.colors.white,
+            // 영상 유무로 상자가 튀지 않도록 있는 쪽과 **같은 컨테이너·같은 치수**를 쓴다 (#1781).
+            // 종전에는 InfoCard 없이 height(180.dp) + corner 12dp 라, 있는 쪽(InfoCard 안 183dp + corner 6dp)과
+            // 높이 35dp·모서리 두 배가 어긋났다. InfoCard 를 벗기면 폭이 32dp 넓어져 같은 비율을 써도
+            // 높이가 다시 갈라지므로 컨테이너까지 같이 맞춘다.
+            InfoCard(modifier = Modifier.fillMaxWidth()) {
+                Box(
                     modifier =
                         Modifier
-                            .size(48.dp)
-                            .background(
-                                AfternoteDesign.colors.black.copy(alpha = 0.3f),
-                                CircleShape,
-                            ).padding(8.dp),
-                )
+                            .fillMaxWidth()
+                            .aspectRatio(MEMORIAL_VIDEO_ASPECT_RATIO)
+                            .clip(RoundedCornerShape(MemorialVideoCornerRadius))
+                            .background(AfternoteDesign.colors.gray3),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.afternote_receiver_ic_play_arrow),
+                        // 영상이 없을 때만 그리는 플레이스홀더다. clickable 이 없어 재생 액션이 없으므로
+                        // 라벨을 붙이면 없는 어포던스를 알린다. 맥락은 위 ReceiverSectionHeader 가 읽어 준다.
+                        contentDescription = null,
+                        tint = AfternoteDesign.colors.white,
+                        modifier =
+                            Modifier
+                                .size(48.dp)
+                                .background(
+                                    AfternoteDesign.colors.black.copy(alpha = 0.3f),
+                                    CircleShape,
+                                ).padding(8.dp),
+                    )
+                }
             }
         }
     }

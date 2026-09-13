@@ -122,7 +122,7 @@ internal class UserReceiverRepositoryImpl
             name: String,
             relation: String,
             phone: String?,
-            email: String?,
+            email: String,
             message: String?,
         ): ReceiverCreated {
             val result =

@@ -30,7 +30,7 @@
 
 ## 배포 (매 회)
 
-모든 배포의 릴리스 노트에는 `포함 이슈`와 `QA 포인트`가 필요하다. 둘 중 하나라도 비어 있거나 포함 이슈에 `#123` 형식의 번호가 없으면 Firebase 업로드 전에 실패한다.
+Firebase App Distribution 배포의 릴리스 노트에는 `포함 이슈`와 `QA 포인트`가 필요하다. 둘 중 하나라도 비어 있거나 포함 이슈에 `#123` 형식의 번호가 없으면 Firebase 업로드 전에 실패한다. Play 내부 테스트 트랙은 main PR 본문 전체에서 이슈 번호를 추출하며 `QA 포인트`를 요구하지 않는다. 생성·길이 제한은 [Play 릴리스 노트 규칙](../play-release.md#play-릴리스-노트)을 따른다.
 
 ### 배포 판단 기준
 
@@ -192,6 +192,7 @@ bash .github/scripts/render-distribution-release-notes.sh /tmp/afternote-release
 | workflow | [`release-distribution.yml`](../../.github/workflows/release-distribution.yml) | [`release-play-internal.yml`](../../.github/workflows/release-play-internal.yml) |
 | versionCode | `1` 고정 | run마다 단조 증가 |
 | 자격 | `release-distribution` environment | `play-internal` environment (별도 service account) |
+| 릴리스 노트 | `포함 이슈`·`QA 포인트` 필수 | main PR 본문의 이슈 번호를 추출한 `ko-KR` 문구. `QA 포인트`는 요구하지 않음 |
 | 롤백 | 이전 빌드를 다시 배포 | 릴리스 중단 후 더 큰 versionCode로 재배포 |
 
 Play 출시 이후에도 Firebase는 기존 QA 채널로 유지한다. 설치 인증서가 다르면 두 채널의 앱은 서로 위에 업데이트되지 않으므로, 테스터가 채널을 옮길 때는 삭제 후 재설치가 필요하다.

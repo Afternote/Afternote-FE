@@ -1,6 +1,7 @@
 package com.afternote.feature.receiver.presentation.reporting
 
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.feature.receiver.domain.error.ReceiverFailure
 
 /**
  * 수신자 흐름에서 실패가 발생한 지점.
@@ -38,6 +39,9 @@ enum class ReceiverFailureStage(
 /**
  * 수신자 흐름의 handled 실패를 공통 키 규격으로 기록한다.
  *
+ * [ReceiverFailure.ExportNotSupported]는 장애가 아닌 기능 상태이므로 기록하지 않는다.
+ * 화면 안내와 무관한 보고 정책은 이 창구에서 적용한다.
+ *
  * @param failedSources 한 화면이 여러 요청을 모아 그리는 탓에 일부만 깨진 경우, 어떤 항목이
  *   비었는지 남긴다. 요청별로 따로 기록하면 한 번의 네트워크 단절이 보관 한도(최근 8건) 를
  *   혼자 채워 버리므로, 한 건에 목록으로 묶는다. 비어 있으면 이 키는 붙지 않는다.
@@ -47,6 +51,7 @@ fun ErrorReporter.recordReceiverFailure(
     throwable: Throwable,
     failedSources: List<String> = emptyList(),
 ) {
+    if (throwable is ReceiverFailure.ExportNotSupported) return
     recordFailure(
         throwable = throwable,
         attributes =

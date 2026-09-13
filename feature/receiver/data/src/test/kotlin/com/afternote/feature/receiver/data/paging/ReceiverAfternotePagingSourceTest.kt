@@ -6,9 +6,10 @@ import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.feature.receiver.data.dto.ReceivedAfternoteDto
 import com.afternote.feature.receiver.data.dto.ReceivedAfternoteListDto
-import com.afternote.feature.receiver.data.mapper.ReceiverListDecodingFailure
-import com.afternote.feature.receiver.data.mapper.ReceiverListMappingFailure
+import com.afternote.feature.receiver.data.reporting.RECEIVER_LIST_DECODING_STAGE
+import com.afternote.feature.receiver.data.reporting.RECEIVER_LIST_MAPPING_STAGE
 import com.afternote.feature.receiver.data.reporting.RecordingErrorReporter
+import com.afternote.feature.receiver.data.reporting.assertReceiverListFailureContract
 import com.afternote.feature.receiver.data.service.ReceiverAfternoteApiService
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import com.afternote.feature.receiver.domain.error.ReceiverRejectionReason
@@ -154,16 +155,12 @@ class ReceiverAfternotePagingSourceTest {
         val page = result as PagingSource.LoadResult.Page
         assertEquals(listOf(5L, 8L), page.data.map { it.id })
 
-        val failuresByStage = reporter.failures.associateBy { it.attributes["receiver_stage"] }
-        assertEquals(setOf("receiver_list_decoding", "receiver_list_mapping"), failuresByStage.keys)
-
-        val decodingFailure = requireNotNull(failuresByStage["receiver_list_decoding"])
-        assertEquals("2", decodingFailure.attributes["rejected_item_count"])
-        assertEquals(ReceiverListDecodingFailure::class.java.name, decodingFailure.attributes["error_type"])
-
-        val mappingFailure = requireNotNull(failuresByStage["receiver_list_mapping"])
-        assertEquals("1", mappingFailure.attributes["rejected_item_count"])
-        assertEquals(ReceiverListMappingFailure::class.java.name, mappingFailure.attributes["error_type"])
+        reporter.assertReceiverListFailureContract(
+            mapOf(
+                RECEIVER_LIST_DECODING_STAGE to "2",
+                RECEIVER_LIST_MAPPING_STAGE to "1",
+            ),
+        )
 
         val reportedPayload =
             reporter.failures.joinToString { failure ->

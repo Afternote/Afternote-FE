@@ -18,7 +18,7 @@ fun DiaryListItemDto.toDomain(): Diary =
         content = content,
         date = date,
         createdAt = createdAt,
-        todayMood = todayMood.toDomain(),
+        todayMood = todayMood?.toDomain(),
         imageUrl = imageUrl,
         isDraft = isDraft,
         receiverNames = receivers.map { it.name },
@@ -50,8 +50,10 @@ fun DiaryCreatePayload.toRequest(): DiaryCreateRequestDto =
         title = title,
         content = content,
         isDraft = isDraft,
-        todayMood = todayMood.toDto(),
+        todayMood = todayMood?.toDto(),
         receiverIds = receiverIds,
+        // LocalDate.toString() 이 ISO-8601 `yyyy-MM-dd` 다 — 서버 계약과 같은 형식이다.
+        date = date.toString(),
     )
 
 fun DiaryUpdatePayload.toRequest(): DiaryUpdateRequestDto =
@@ -59,6 +61,7 @@ fun DiaryUpdatePayload.toRequest(): DiaryUpdateRequestDto =
         title = title,
         content = content,
         isDraft = isDraft,
-        todayMood = todayMood.toDto(),
+        todayMood = todayMood?.toDto(),
         receiverIds = receiverIds,
+        date = date?.toString(),
     )

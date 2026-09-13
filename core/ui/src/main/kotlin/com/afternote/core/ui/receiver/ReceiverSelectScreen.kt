@@ -1,21 +1,17 @@
 package com.afternote.core.ui.receiver
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,14 +31,12 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.common.util.KoreanConsonantUtil
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.KoreanConsonantIndex
-import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.R
 import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
 import com.afternote.core.ui.button.CheckboxState
-import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import kotlinx.coroutines.launch
 
@@ -61,8 +55,8 @@ import kotlinx.coroutines.launch
  * 복수화(#1426)는 새 오버로드를 더한 것이지 기존 계약을 바꾼 게 아니다.
  *
  * 문구 3종은 시안(3631:24820) 기준 공용 기본값을 쓴다 — 작성 플로우(애프터노트·타임레터·
- * 마음의 기록)는 모두 같은 문구라 그대로 두면 된다. 설정만 "수신자 목록" 으로 [title] 을
- * 덮는데, 그 화면은 #631 로 선택이 아닌 관리 화면이 되면서 이 컴포넌트 소비를 그만둔다.
+ * 마음의 기록)는 모두 같은 문구라 그대로 두면 된다. 설정은 "수신자 목록" 으로 [title] 을
+ * 덮는데, #631 이후로는 사후 전달 조건 진입 시의 선택 플로우에서만 이 컴포넌트를 소비한다.
  *
  * @param listReplacement 검색 필드 아래 목록 영역을 통째로 대체할 상태 화면 —
  *   로딩·조회 실패·빈 목록처럼 소비 기능마다 다른 상태를 끼운다. null 이면 목록을 그린다.
@@ -280,35 +274,19 @@ private fun ReceiverSelectRow(
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .clickable(onClick = onToggle)
-                // 체크 아이콘엔 contentDescription 이 없어 «선택됨» 을 읽을 다른 통로가 없다.
-                // 복수 선택에서는 어느 행이 선택돼 있는지가 화면의 핵심 정보라 행에 노출한다 (#1426).
-                .semantics { selected = isSelected }
-                .padding(top = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        ProfileImage(size = 50.dp)
-        Spacer(modifier = Modifier.width(10.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = receiver.name,
-                style = AfternoteDesign.typography.captionLargeB,
+    ReceiverProfileRow(
+        name = receiver.name,
+        relation = receiver.relation,
+        onClick = onToggle,
+        // 체크 아이콘엔 contentDescription 이 없어 «선택됨» 을 읽을 다른 통로가 없다.
+        // 복수 선택에서는 어느 행이 선택돼 있는지가 화면의 핵심 정보라 행에 노출한다 (#1426).
+        modifier = modifier.semantics { selected = isSelected },
+        trailing = {
+            AfternoteCircularCheckbox(
+                state = if (isSelected) CheckboxState.Default else CheckboxState.None,
+                onClick = onToggle,
+                size = 20.dp,
             )
-            Spacer(modifier = Modifier.padding(top = 5.dp))
-            Text(
-                text = receiver.relation,
-                style = AfternoteDesign.typography.captionLargeR,
-                color = AfternoteDesign.colors.gray8,
-            )
-        }
-        AfternoteCircularCheckbox(
-            state = if (isSelected) CheckboxState.Default else CheckboxState.None,
-            onClick = onToggle,
-            size = 20.dp,
-        )
-    }
+        },
+    )
 }

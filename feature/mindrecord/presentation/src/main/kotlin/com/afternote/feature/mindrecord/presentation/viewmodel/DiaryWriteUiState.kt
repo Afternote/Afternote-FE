@@ -12,11 +12,23 @@ data class DiaryWriteUiState(
     val content: String = "",
     val mood: TodayMood? = null,
     /**
-     * 화면에 표시할 기록 날짜. **표시 전용이다** — 서버는 생성·수정 어느 쪽에서도 이 값을
-     * 받지 않고 기록 날짜를 요청 시각으로 정한다 (#1008). 이어쓰기 프리필이 원래 날짜를
-     * 채워 주는 자리라 상태 자체는 남긴다.
+     * 화면에 표시하고 서버로 보낼 기록일. 사용자가 날짜 행에서 고른다 (#1008).
+     *
+     * 서버는 2026-08-29 부터 생성·수정 양쪽에서 `date` 를 받는다 (`Afternote-BE#244`, PR #262).
+     * 미래 날짜는 400(code 2101)이라 [dateError] 로 미리 막는다.
      */
     val date: LocalDate = LocalDate.now(),
+    /**
+     * [date] 를 **수정 요청에 실어도 되는지.** 프리필이 서버 날짜를 준 뒤이거나 사용자가 직접
+     * 고른 뒤에만 true 다.
+     *
+     * 신규 작성은 언제나 싣는다(기본값이 오늘이고 그대로 저장되는 것이 맞다). 문제는 수정
+     * 경로다 — 프리필이 실패한 채 «오늘» 을 실어 보내면 기존 기록일이 조용히 오늘로 옮겨진다.
+     * 그럴 땐 키를 생략해 서버가 기존 값을 유지하게 한다 (#1008).
+     */
+    val isDateChosen: Boolean = false,
+    /** 고를 수 없는 날짜를 짚었을 때의 안내. 서버가 400 을 주기 전에 화면에서 먼저 막는다 (#1008). */
+    val dateError: UiText? = null,
     /** `GET /users/receivers` 로 불러온 내 수신인 목록. */
     val receivers: List<Receiver> = emptyList(),
     /**
@@ -54,27 +66,28 @@ data class DiaryWriteUiState(
         get() = missingForSubmit() == null && isReady
 
     /**
-     * 임시저장 조건.
+     * 임시저장 조건 — **제목·본문 중 하나만 있어도 된다. 기분은 안 골라도 된다.**
      *
-     * «미완성 보존» 이 목적이라 제목·본문 중 하나만 있어도 저장하려 했지만, **서버가
-     * 임시저장에도 제목·본문·기분을 모두 요구한다** — 실서버 실측(2026-08-24):
+     * 「미완성 보존」이 임시저장의 목적인데 종전에는 정식 등록과 같은 세 가지를 요구했다.
+     * 서버가 `isDraft=true` 에도 셋을 전부 검증했기 때문이다 — 보내면 400 이 되는 조건을
+     * «저장 가능» 으로 표시하면 버튼이 고장 난 것과 같아 같은 조건을 걸어 뒀다.
      *
-     * ```
-     * POST /diary {"title":"제목만","content":"","isDraft":true,…}   → 400 "내용은 필수입니다."
-     * POST /diary {"title":"","content":"<p>본문만</p>",…}           → 400 "제목은 필수입니다."
-     * POST /diary {"title":"제목","content":"<p>본문</p>"}            → 400 "오늘의 기분은 필수입니다."
-     * ```
+     * 그 제약이 풀렸다. `Afternote-BE#243` → PR #267(2026-08-30 머지)이 임시저장의 필수
+     * 검증을 걷었다 — 제목·본문·기분을 생략할 수 있고 `today_mood` 는 NULL 로 저장된다.
+     * 정식 등록(`isDraft=false`)은 셋 다 필수이고 누락 시 400/`1400` 이다 (#1065).
      *
-     * 보내면 400 이 되는 조건을 «저장 가능» 으로 표시하면 버튼이 고장 난 것과 같아진다.
-     * 서버가 `isDraft=true` 에서 검증을 완화해 주기 전까지는 같은 조건을 요구한다 (#1065).
-     *
-     * 정식 등록과 갈리는 지점은 남는다 — 실패 사유를 각각 다른 문구로 알린다.
+     * 완전히 빈 폼까지 열지는 않는다. 남길 것이 하나도 없는 저장은 사용자가 의도한 적 없는
+     * 빈 임시저장을 목록에 쌓고, 이어쓰기 목록에서 무엇인지 알아볼 수도 없다.
      */
     val canSaveDraft: Boolean
         get() = missingForDraft() == null && isReady
 
-    /** 임시저장을 막는 첫 번째 누락 항목 (없으면 null). 현재는 정식 등록과 같은 세 가지다. */
-    fun missingForDraft(): Int? = missingForSubmit()
+    /**
+     * 임시저장을 막는 첫 번째 누락 항목 (없으면 null).
+     *
+     * 제목과 본문이 **둘 다** 비었을 때만 막는다 — 기분은 보지 않는다.
+     */
+    fun missingForDraft(): Int? = R.string.mindrecord_write_diary_missing_draft_content.takeIf { title.isBlank() && content.isHtmlBlank() }
 
     private val isReady: Boolean
         get() =

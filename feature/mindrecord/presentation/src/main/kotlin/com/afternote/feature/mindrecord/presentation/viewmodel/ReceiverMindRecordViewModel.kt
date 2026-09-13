@@ -156,7 +156,7 @@ class ReceiverMindRecordViewModel
  * 도메인 예외 타입만 본다. 전달 조건 미충족은 수신자가 할 수 있는 일이 없는 상태라
  * (발신자가 조건을 설정해야 풀린다) 원문 대신 무엇을 기다리는지 알려 준다.
  */
-internal fun Throwable.toDomainMessage(): UiText =
+private fun Throwable.toDomainMessage(): UiText =
     when (this) {
         is DeliveryNotReadyException -> UiText.Resource(R.string.mindrecord_receiver_delivery_not_ready)
         else -> UiText.Resource(R.string.mindrecord_receiver_load_failed)

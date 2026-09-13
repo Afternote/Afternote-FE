@@ -14,12 +14,10 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.R
 import com.afternote.core.ui.TextFieldType
-import com.afternote.core.ui.VIEW_MODE_INDICATOR_TEST_TAG
-import com.afternote.core.ui.VIEW_MODE_PILL_TEST_TAG
 import com.afternote.core.ui.ViewModeSwitcher
 import com.afternote.core.ui.badge.CircularCheckboxOutlineChip
 import com.afternote.core.ui.button.PlusBadgeButton
-import com.afternote.core.ui.calendar.DatePickerContent
+import com.afternote.core.ui.calendar.BottomSheetCalendar
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.HomeTopBar
 import org.junit.Assert.assertEquals
@@ -79,12 +77,9 @@ class CoreTouchTargetTest {
 
     @Test
     @Config(qualifiers = "w320dp-h800dp-xhdpi")
-    fun `switcher chip and 320dp calendar expose 48dp named role state targets`() {
+    fun `switcher and chip expose 48dp named role state targets`() {
         val viewChanges = mutableListOf<Boolean>()
         var chipClicks = 0
-        var previousClicks = 0
-        var nextClicks = 0
-        val selectedDays = mutableListOf<Int>()
         composeRule.setContent {
             AfternoteTheme {
                 Column {
@@ -95,15 +90,6 @@ class CoreTouchTargetTest {
                         image2 = R.drawable.core_ui_calendar,
                     )
                     CircularCheckboxOutlineChip(label = "Receiver", onClick = { chipClicks++ })
-                    DatePickerContent(
-                        title = "Date",
-                        currentYear = 2026,
-                        currentMonth = 8,
-                        selectedDate = LocalDate.of(2026, 8, 28),
-                        onPrevMonth = { previousClicks++ },
-                        onNextMonth = { nextClicks++ },
-                        onDateSelect = selectedDays::add,
-                    )
                 }
             }
         }
@@ -112,35 +98,54 @@ class CoreTouchTargetTest {
         val targets = composeRule.scanEnabledClickTargets()
         val listTarget = targets.single { it.name == "목록 보기" }
         val calendarTarget = targets.single { it.name == "달력 보기" }
-        val selectedDay = targets.single { it.name == "28" }
         val chipTarget = targets.single { it.name == "Receiver" }
-        val previousTarget = targets.single { it.name == "이전 달" }
-        val nextTarget = targets.single { it.name == "다음 달" }
         assertEquals(Role.RadioButton, listTarget.role)
         assertEquals(true, listTarget.selected)
         assertEquals(Role.RadioButton, calendarTarget.role)
         assertEquals(false, calendarTarget.selected)
-        assertEquals(Role.RadioButton, selectedDay.role)
-        assertEquals(true, selectedDay.selected)
         assertEquals(Role.Button, chipTarget.role)
-        assertEquals(Role.Button, previousTarget.role)
-        assertEquals(Role.Button, nextTarget.role)
         assertFalse(targets.any { it.isSmallerThan(MinimumTouchTargetSize) })
 
         composeRule.onNodeWithContentDescription("목록 보기", useUnmergedTree = true).performClick()
         composeRule.onNodeWithContentDescription("달력 보기", useUnmergedTree = true).performClick()
         composeRule.onNodeWithText("Receiver").performClick()
-        composeRule.onNodeWithContentDescription("이전 달").performClick()
-        composeRule.onNodeWithContentDescription("다음 달").performClick()
-        composeRule.onNodeWithText("28").performClick()
         assertEquals(listOf(true, false), viewChanges)
         assertEquals(1, chipClicks)
-        assertEquals(1, previousClicks)
-        assertEquals(1, nextClicks)
-        assertEquals(listOf(28), selectedDays)
 
-        composeRule.assertNodeSize(VIEW_MODE_PILL_TEST_TAG, width = 68f, height = 36f)
-        composeRule.assertNodeSize(VIEW_MODE_INDICATOR_TEST_TAG, width = 28f, height = 28f)
+        composeRule.assertNodeSize(VIEW_MODE_PILL_TAG, width = 68f, height = 36f)
+        composeRule.assertNodeSize(VIEW_MODE_INDICATOR_TAG, width = 28f, height = 28f)
+    }
+
+    @Test
+    @Config(qualifiers = "w320dp-h800dp-xhdpi")
+    fun `320dp calendar exposes 48dp named role state targets`() {
+        val selectedDays = mutableListOf<LocalDate>()
+        composeRule.setContent {
+            AfternoteTheme {
+                BottomSheetCalendar(
+                    onDismiss = {},
+                    onDateSelect = selectedDays::add,
+                    title = "Date",
+                    initialDate = LocalDate.of(2026, 8, 28),
+                )
+            }
+        }
+
+        val targets = composeRule.scanEnabledClickTargets()
+        val selectedDay = targets.single { it.name == "28" }
+        val previousTarget = targets.single { it.name == "이전 달" }
+        val nextTarget = targets.single { it.name == "다음 달" }
+        assertEquals(Role.RadioButton, selectedDay.role)
+        assertEquals(true, selectedDay.selected)
+        assertEquals(Role.Button, previousTarget.role)
+        assertEquals(Role.Button, nextTarget.role)
+        // 달력이 기여하는 타깃만 본다 — 시트 자체의 scrim·핸들은 Material3 소유라 이 가드 대상이 아니다.
+        assertFalse(
+            listOf(selectedDay, previousTarget, nextTarget).any { it.isSmallerThan(MinimumTouchTargetSize) },
+        )
+
+        composeRule.onNodeWithText("28").performClick()
+        assertEquals(listOf(LocalDate.of(2026, 8, 28)), selectedDays)
         assertTrue(selectedDay.width >= 48.dp && selectedDay.height >= 48.dp)
     }
 
@@ -152,5 +157,17 @@ class CoreTouchTargetTest {
         val bounds = onNodeWithTag(tag, useUnmergedTree = true).getUnclippedBoundsInRoot()
         assertEquals(width, (bounds.right - bounds.left).value, 0.1f)
         assertEquals(height, (bounds.bottom - bounds.top).value, 0.1f)
+    }
+
+    private companion object {
+        /**
+         * `ViewModeSwitcher` 의 태그 값 사본.
+         *
+         * 태그는 프로덕션 API 가 아니다 — 값을 공유하려고 선언의 visibility 를 넓히지 않고
+         * 여기에 리터럴로 둔다 (#1672). 알약·인디케이터는 시각 전용이라 semantics 이름이 없어
+         * 크기 회귀를 잡을 다른 앵커가 없다.
+         */
+        const val VIEW_MODE_PILL_TAG = "view_mode_pill"
+        const val VIEW_MODE_INDICATOR_TAG = "view_mode_indicator"
     }
 }

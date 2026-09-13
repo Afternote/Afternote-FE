@@ -1,21 +1,25 @@
 package com.afternote.feature.receiver.presentation.deliveryverification
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.afternote.feature.receiver.domain.repository.IdentityVerificationRepository
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
-import javax.inject.Inject
 
 /**
  * 열람 신청 흐름 — 본인 확인(2·3·4) + 마스터 키(5) + 서류 업로드(6·7·8) + 완료(9) — 전체에 걸친
- * flow-scoped ViewModel. [ReceiverRoute.DeliveryVerificationFlowRoute] (nested graph 진입점) 에 binding 되어
- * 자식 라우트들은 `hiltViewModel(parentBackStackEntry)` 로 동일 인스턴스를 공유한다.
+ * flow-scoped ViewModel. [ReceiverRoute.DeliveryVerificationFlowRoute] entry 범위에 묶여, 그 안의
+ * 로컬 스택에 있는 단계 화면들이 동일 인스턴스를 공유한다.
+ *
+ * `senderId` 는 route 인자로 받는다. Nav3 entry 에는 Nav2 의 `savedStateHandle.toRoute<T>()` 자동
+ * 채움이 없으므로 assisted 주입으로 키를 직접 받는다 — 타입 안전하고, 테스트에서도 키를 그대로
+ * 넘길 수 있다 (#959 실측 함정 3).
  *
  * 1차 도입(#220) 범위:
  * - `senderId` 단일 보유 (자식 라우트에서 nav arg 중복 박지 않음)
@@ -27,15 +31,14 @@ import javax.inject.Inject
  * - [com.afternote.feature.receiver.presentation.recordsbox.SenderRegistry.attachIdentity] 호출 시점 위임
  * - [IdentityVerificationRepository] 자체의 흡수·싱글톤 제거
  */
-@HiltViewModel
+@HiltViewModel(assistedFactory = DeliveryVerificationFlowViewModel.Factory::class)
 class DeliveryVerificationFlowViewModel
-    @Inject
+    @AssistedInject
     constructor(
-        savedStateHandle: SavedStateHandle,
+        @Assisted route: ReceiverRoute.DeliveryVerificationFlowRoute,
         identityVerificationRepository: IdentityVerificationRepository,
     ) : ViewModel() {
-        val senderId: String =
-            savedStateHandle.toRoute<ReceiverRoute.DeliveryVerificationFlowRoute>().senderId
+        val senderId: String = route.senderId
 
         /**
          * 본인 확인 캐시 여부 — Intro 진입 시 즉시 MasterKey 로 jump 할지 판단용.
@@ -54,4 +57,9 @@ class DeliveryVerificationFlowViewModel
                 started = SharingStarted.WhileSubscribed(5_000),
                 initialValue = false,
             )
+
+        @AssistedFactory
+        interface Factory {
+            fun create(route: ReceiverRoute.DeliveryVerificationFlowRoute): DeliveryVerificationFlowViewModel
+        }
     }

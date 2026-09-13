@@ -613,7 +613,13 @@ jobs:
 
           run_gradle() {  # $1: selector 목록(빈 문자열 = 필터 없음), $2: 로그 라벨
             local selectors="$1" label="$2" remaining rc
-            local test_arguments=()
+            local test_arguments=() jvm_arguments=()
+            # #1824 merge-group API34: cold APK packaging exhausted the 2Gi heap
+            # in ApkFlinger. The 15Gi runner still had 7Gi available, so reserve
+            # 4Gi for this lane only and preserve the existing UTF-8 JVM flag.
+            if [[ "$DEVICE_TASK" == "pixel2Api34DebugAndroidTest" ]]; then
+              jvm_arguments+=("-Dorg.gradle.jvmargs=-Xmx4096m -Dfile.encoding=UTF-8")
+            fi
             if [[ -n "$selectors" ]]; then
               test_arguments+=("-Pandroid.testInstrumentationRunnerArguments.class=$selectors")
             fi
@@ -627,7 +633,7 @@ jobs:
             fi
             set +e
             timeout --signal=TERM --kill-after=30s "${remaining}s" \
-              ./gradlew "$DEVICE_TASK" "${test_arguments[@]}" \
+              ./gradlew "$DEVICE_TASK" "${test_arguments[@]}" "${jvm_arguments[@]}" \
               -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect \
               --console=plain \
               --stacktrace >> "$gradle_log" 2>&1

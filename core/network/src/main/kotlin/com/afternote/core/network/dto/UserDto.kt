@@ -12,7 +12,7 @@ data class UserCreateReceiverRequestDto(
     @SerialName("name") val name: String,
     @SerialName("relation") val relation: String,
     @SerialName("phone") val phone: String? = null,
-    @SerialName("email") val email: String? = null,
+    @SerialName("email") val email: String,
     @SerialName("message") val message: String? = null,
 )
 
@@ -41,6 +41,13 @@ data class UserUpdatePushSettingRequestDto(
     @SerialName("timeLetter") val timeLetter: Boolean? = null,
     @SerialName("mindRecord") val mindRecord: Boolean? = null,
     @SerialName("afterNote") val afterNote: Boolean? = null,
+)
+
+@Serializable
+data class UserUpdateMarketingConsentRequestDto(
+    @SerialName("sms") val sms: Boolean? = null,
+    @SerialName("email") val email: Boolean? = null,
+    @SerialName("push") val push: Boolean? = null,
 )
 
 @Serializable
@@ -102,6 +109,13 @@ data class UserPushSettingDto(
     @SerialName("timeLetter") val timeLetter: Boolean,
     @SerialName("mindRecord") val mindRecord: Boolean,
     @SerialName("afterNote") val afterNote: Boolean,
+)
+
+@Serializable
+data class UserMarketingConsentDto(
+    @SerialName("sms") val sms: Boolean,
+    @SerialName("email") val email: Boolean,
+    @SerialName("push") val push: Boolean,
 )
 
 @Serializable

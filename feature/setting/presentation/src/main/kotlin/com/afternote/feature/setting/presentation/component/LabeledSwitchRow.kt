@@ -19,6 +19,7 @@ fun LabeledSwitchRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     Row(
         modifier =
@@ -35,6 +36,7 @@ fun LabeledSwitchRow(
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
+            enabled = enabled,
             thumbContent = {},
             colors =
                 SwitchDefaults.colors(

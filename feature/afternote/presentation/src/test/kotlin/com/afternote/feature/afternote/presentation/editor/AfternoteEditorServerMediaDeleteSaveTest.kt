@@ -6,7 +6,6 @@ import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
-import com.afternote.feature.afternote.domain.model.author.playlist.MemorialDetail
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
@@ -19,6 +18,7 @@ import com.afternote.feature.afternote.presentation.afternoteEditorSavedStateHan
 import com.afternote.feature.afternote.presentation.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.editor.state.EditorFormState
+import com.afternote.feature.afternote.presentation.editorFlowRoute
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -187,13 +187,15 @@ class AfternoteEditorServerMediaDeleteSaveTest {
         assertEquals(listOf("배경음악"), form.memorialPlaylistSongs.map { it.title })
     }
 
-    private fun viewModel(repository: FakeAfternoteRepository): AfternoteEditorViewModel =
-        AfternoteEditorViewModel(
-            savedStateHandle =
-                afternoteEditorSavedStateHandle(
-                    initialType = AfternoteType.MEMORIAL,
-                    itemId = AFTERNOTE_ID,
-                ),
+    private fun viewModel(repository: FakeAfternoteRepository): AfternoteEditorViewModel {
+        val savedStateHandle =
+            afternoteEditorSavedStateHandle(
+                initialType = AfternoteType.MEMORIAL,
+                itemId = AFTERNOTE_ID,
+            )
+        return AfternoteEditorViewModel(
+            route = savedStateHandle.editorFlowRoute(),
+            savedStateHandle = savedStateHandle,
             userRepository = afternoteAuthorUserRepository(),
             afternoteRepository = repository,
             memorialThumbnailUploadRepository =
@@ -210,6 +212,7 @@ class AfternoteEditorServerMediaDeleteSaveTest {
                 ),
             errorReporter = NoopAuthorErrorReporter,
         )
+    }
 
     private fun validMemorialPayload(): RegisterAfternotePayload =
         RegisterAfternotePayload(
@@ -226,27 +229,24 @@ class AfternoteEditorServerMediaDeleteSaveTest {
             leaveMessageBlocks = emptyList(),
             content =
                 DetailContent.Memorial(
-                    memorial =
-                        MemorialDetail(
-                            songs =
-                                listOf(
-                                    DetailSong(
-                                        title = "배경음악",
-                                        artist = "작곡가",
-                                        coverUrl = "https://cdn.test/cover.jpg",
-                                    ),
-                                ),
-                            media =
-                                MemorialMedia(
-                                    photoUrl = "https://cdn.test/portrait.jpg",
-                                    videoUrl = "https://cdn.test/farewell.mp4",
-                                    thumbnailUrl = "https://cdn.test/thumbnail.jpg",
-                                ),
+                    songs =
+                        listOf(
+                            DetailSong(
+                                title = "배경음악",
+                                artist = "작곡가",
+                                coverUrl = "https://cdn.test/cover.jpg",
+                            ),
+                        ),
+                    media =
+                        MemorialMedia(
+                            photoUrl = "https://cdn.test/portrait.jpg",
+                            videoUrl = "https://cdn.test/farewell.mp4",
+                            thumbnailUrl = "https://cdn.test/thumbnail.jpg",
                         ),
                 ),
         )
 
-    private fun Detail.memorialMedia(): MemorialMedia = (content as DetailContent.Memorial).memorial.media
+    private fun Detail.memorialMedia(): MemorialMedia = (content as DetailContent.Memorial).media
 
     private companion object {
         const val AFTERNOTE_ID = 1597L

@@ -6,9 +6,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.domain.model.MindRecordType
 import com.afternote.feature.mindrecord.presentation.COMPACT_DEVICE_SPEC
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryItem
+import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryRecordId
 import com.android.tools.screenshot.PreviewTest
 
 /**
@@ -112,8 +114,22 @@ internal fun memorySpaceScreenErrorCompactScreenshot() {
  */
 private fun previewMemories(): List<MemoryItem> =
     listOf(
-        MemoryItem(1L, "https://example.com/1.jpg", "기억 1", "2024.11.11", "미리보기", listOf("태그")),
-        MemoryItem(2L, "https://example.com/2.jpg", "기억 2", "2024.11.12", "미리보기", emptyList()),
-        MemoryItem(3L, "https://example.com/3.jpg", "기억 3", "2024.11.13", "미리보기", emptyList()),
-        MemoryItem(4L, "https://example.com/4.jpg", "기억 4", "2024.11.14", "미리보기", emptyList()),
+        MemoryItem(MemoryRecordId(MindRecordType.DIARY, 1L), "https://example.com/1.jpg", "기억 1", "2024.11.11", "미리보기", listOf("태그")),
+        MemoryItem(
+            MemoryRecordId(MindRecordType.DAILY_QUESTION, 2L),
+            "https://example.com/2.jpg",
+            "기억 2",
+            "2024.11.12",
+            "미리보기",
+            emptyList(),
+        ),
+        MemoryItem(MemoryRecordId(MindRecordType.DIARY, 3L), "https://example.com/3.jpg", "기억 3", "2024.11.13", "미리보기", emptyList()),
+        MemoryItem(
+            MemoryRecordId(MindRecordType.DAILY_QUESTION, 4L),
+            "https://example.com/4.jpg",
+            "기억 4",
+            "2024.11.14",
+            "미리보기",
+            emptyList(),
+        ),
     )

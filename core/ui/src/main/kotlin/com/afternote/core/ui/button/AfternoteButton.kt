@@ -85,11 +85,18 @@ fun AfternoteButton(
                 AfternoteButtonType.Un -> AfternoteDesign.colors.gray2
                 AfternoteButtonType.Variant5 -> AfternoteDesign.colors.gray9
             }
+    // 바로 위 containerColor 와 같은 enum 이다 — else 로 닫으면 타입이 늘 때 배경색만 컴파일 에러로
+    // 잡히고 글자색은 조용히 흰색으로 굳는다. 두 분기가 같은 시점에 깨지도록 항목을 모두 적는다.
     val contentColor =
         when (type) {
             AfternoteButtonType.Plain -> AfternoteDesign.colors.gray9
+
             AfternoteButtonType.Un -> AfternoteDesign.colors.gray5
-            else -> AfternoteDesign.colors.white
+
+            AfternoteButtonType.Default,
+            AfternoteButtonType.Active,
+            AfternoteButtonType.Variant5,
+            -> AfternoteDesign.colors.white
         }
     CompositionLocalProvider(
         LocalMinimumInteractiveComponentSize provides androidx.compose.ui.unit.Dp.Unspecified,

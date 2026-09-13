@@ -31,7 +31,10 @@ fun ReceivedAfternoteDetailRoute(
     onNavigateBack: () -> Unit,
     onNavigateToFullList: () -> Unit,
     onNavigateToPlaylist: (afternoteId: Long) -> Unit,
-    viewModel: ReceivedAfternoteDetailViewModel = hiltViewModel(),
+    // **기본값을 두지 않는다.** @AssistedInject VM 이라 인자 없는 hiltViewModel() 은 런타임에
+    // «no creation callback was provided in CreationExtras» 로 죽는다 — 자세한 사유는
+    // AfternoteDetailRoute 의 같은 자리 주석.
+    viewModel: ReceivedAfternoteDetailViewModel,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 

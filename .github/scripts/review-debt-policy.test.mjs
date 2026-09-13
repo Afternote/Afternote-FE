@@ -40,9 +40,21 @@ test("the debt sweep still fails closed when open pull requests cannot be listed
     assert.match(guard, /if ! open_prs=\$\(gh api[^\n]*\n(?:[^\n]*\n)*?\s*exit 1/);
 });
 
-test("a pull request is never counted as debt against its own author", () => {
-    // 자기 PR 은 자신이 리뷰할 수 없다.
-    assert.match(guard, /select\(\.user\.login != \\"\$AUTHOR\\"\)/);
+test("a pull request is never counted as debt against its own responsible person", () => {
+    // «자기 PR» 은 작성자가 아니라 담당자(어사인, 비어 있으면 작성자) 기준이다(#1974).
+    // 작성자 로그인만 보면 남이 올려 내게 어사인된 PR 을 내가 리뷰해야 하는 것으로 세고,
+    // 내가 올려 남에게 어사인된 PR 을 내 리뷰 목록에서 뺀다.
+    assert.doesNotMatch(guard, /select\(\.user\.login != \\"\$AUTHOR\\"\)/);
+    assert.match(guard, /if \(\.assignees \| length\) > 0 then \[\.assignees\[\]\.login\] else \[\.user\.login\] end/);
+    assert.match(guard, /select\(\(\\\$owners \| index\(\\"\$author_lc\\"\)\) == null\)/);
+});
+
+test("the request-all job excludes the responsible person, not only the author", () => {
+    // GitHub 은 작성자만 리뷰어에서 자동으로 뺀다. 어사인된 담당자는 직접 빼야 한다.
+    assert.match(requestAll, /ASSIGNEES: \$\{\{ join\(github\.event\.pull_request\.assignees\.\*\.login, ' '\) \}\}/);
+    assert.match(requestAll, /owners_lc=\$\(printf '%s' "\$\{ASSIGNEES:-\$AUTHOR\}"/);
+    assert.match(requestAll, /case " \$owners_lc " in\n\s*\*" \$u_lc "\*\) continue ;;/);
+    assert.doesNotMatch(requestAll, /\[ "\$u" != "\$AUTHOR" \] \|\| continue/);
 });
 
 test("the dead review_request_removed path is gone", () => {
@@ -74,8 +86,10 @@ test("a reviewer's own commit is never counted as the author's fix", () => {
     // 된다. 8/28 에 리뷰어가 건 +0/-0 커밋 하나로 koongmai PR 3건(#1379·#1365·#882)이
     // 전부 가짜 빚이 됐고, 재트리거한 리뷰어가 그 대가로 자기 PR 을 못 열었다 (#1459).
     assert.match(guard, /\(\.author\.login \/\/ ""\)/);
-    assert.match(guard, /login == target/);
-    // 계정이 연결되지 않은 커밋은 login 이 비어 가릴 수 없다. 같은 PR 에서 작성자
+    // 담당자는 여럿일 수 있어 집합으로 가린다.
+    assert.match(guard, /login in target/);
+    assert.match(guard, /-v owners="\$pr_owners"/);
+    // 계정이 연결되지 않은 커밋은 login 이 비어 가릴 수 없다. 같은 PR 에서 담당자
     // 것으로 확인된 커밋의 이메일을 폴백 신원으로 쓴다.
     assert.match(guard, /\(\.commit\.author\.email \/\/ ""\)/);
     assert.match(guard, /email in own/);
@@ -118,7 +132,7 @@ test("a fix delivered by a merge commit still counts as a response", () => {
     // 채로 빚에서 빠져 있었다. 커밋과 함께 작성자의 응답을 본다 (#1450).
     assert.match(guard, /issues\/\$pn\/comments/);
     assert.match(guard, /pulls\/\$pn\/comments/);
-    assert.match(guard, /select\(\.user\.login == \\"\$pr_author\\"\)/);
+    // 담당자·시각 판정은 review-debt-query.test.mjs에서 실제 jq로 검증한다.
     assert.match(guard, /\[ "\$\{fixed:-0\}" -gt 0 \] \|\| \[ "\$responses" -gt 0 \]/);
 });
 
@@ -138,10 +152,17 @@ test("rerequests are automated so silence cannot pass the guard", () => {
     assert.match(requestAll, /github\.event\.action == 'synchronize'/);
     assert.match(requestAll, /github\.event\.action == 'edited'/);
     assert.match(requestAll, /github\.event\.changes\.body != null/);
+    // 본문 편집은 담당자(어사인, 비어 있으면 작성자)의 것만 조치다(#1974).
     assert.match(
         requestAll,
-        /github\.event\.sender\.login == github\.event\.pull_request\.user\.login/,
+        /contains\(github\.event\.pull_request\.assignees\.\*\.login, github\.event\.sender\.login\)/,
     );
+    assert.match(
+        requestAll,
+        /github\.event\.pull_request\.assignees\[0\] == null &&\n\s*github\.event\.sender\.login == github\.event\.pull_request\.user\.login/,
+    );
+    // 담당자가 낸 변경요청은 되살리지 않는다.
+    assert.match(requestAll, /\*" \$blocked_lc "\*\) echo "변경요청을 낸 사람이 담당자 본인/);
     assert.match(requestAll, /github\.event\.pull_request\.state == 'open'/);
     assert.match(requestAll, /--add-reviewer "\$blocked"/);
     // 기존 전원 요청은 반영 커밋이나 본문 편집마다 다시 돌지 않는다.
@@ -169,7 +190,7 @@ test("author body edits are durable review evidence and fail closed when truncat
     assert.match(guard, /editor\{login\}/);
     assert.match(guard, /\.editor\.login/);
     assert.match(guard, /\.editedAt > \$cutoff/);
-    assert.match(guard, /ascii_downcase\) == \(\$author \| ascii_downcase/);
+    assert.match(guard, /--arg owners ",\$pr_owners,"/);
     assert.match(guard, /pageInfo\.hasPreviousPage != false/);
     assert.match(guard, /\[ "\$body_edits" -gt 0 \]/);
 });
@@ -183,4 +204,46 @@ test("the rerequest job and the guard judge by the same latest decision", () => 
     }
     // 봇·fork 는 토큰이 read-only 라 요청을 걸 수 없다.
     assert.match(requestAll, /\[ "\$HEAD_REPO" != "\$REPO" \]/);
+});
+
+function spaceSeparatedEnv(workflow, name) {
+    const match = new RegExp(`^\\s*${name}: ([^\\n#]+)$`, "m").exec(workflow);
+    assert.ok(match, `${name} 환경변수를 찾지 못했다`);
+    return match[1].trim().split(/\s+/).filter(Boolean).map((login) => login.toLowerCase());
+}
+
+test("the gate exemption is judged before any debt is counted", () => {
+    // 면제를 빚 계산 뒤에 두면, 면제받은 사람의 PR 때문에 조회가 실패했을 때 가드가 그를
+    // 대신해 죽는다. 봇·fork·권한 판정과 같은 자리, 열린 PR 을 훑기 전에 둔다 (#1910).
+    const exemptAt = guard.indexOf("리뷰 게이트 면제 작성자");
+    const sweepAt = guard.indexOf("if ! open_prs=$(gh api");
+    assert.ok(exemptAt > 0, "면제 경로가 없다");
+    assert.ok(sweepAt > exemptAt, "면제가 빚 계산 뒤에 있다");
+    assert.match(guard, /리뷰 게이트 면제 작성자\(\$AUTHOR\)[^\n]*exit 0/);
+});
+
+test("exempt logins are matched case-insensitively", () => {
+    // GitHub 로그인은 대소문자를 가리지 않는다. 그대로 비교하면 웹훅이 Koongmai 를 내리는
+    // 순간 면제가 조용히 풀리고, 그 사람의 PR 이 닫힌다.
+    assert.match(guard, /author_lc=\$\(printf '%s' "\$AUTHOR" \| tr '\[:upper:\]' '\[:lower:\]'\)/);
+    assert.match(guard, /exempt_lc=\$\(printf '%s' "\$REVIEW_GATE_EXEMPT_AUTHORS" \| tr '\[:upper:\]' '\[:lower:\]'\)/);
+});
+
+test("a change request from an exempt reviewer is not charged to the rest of the team", () => {
+    // 면제된 사람은 리뷰할 의무가 없다. 그가 자발적으로 낸 변경요청 뒤 침묵하면 그 침묵의
+    // 대가를 나머지 팀원이 "새 PR 을 못 연다" 로 치른다. 그래도 그 PR 이 그냥 머지되지는
+    // 않는다. 승인 1건은 required-approval 룰셋이 계속 요구한다.
+    assert.match(guard, /case " \$exempt_lc " in\n\s*\*" \$blocked_by "\*\)/);
+    assert.match(guard, /면제 리뷰어 @\$blocked_by/);
+});
+
+test("nobody is exempt from the gate while still on the automatic review roster", () => {
+    // 리뷰 의무가 없는 사람에게 요청만 계속 걸면, 그 요청은 아무도 응답하지 않는 알림으로
+    // 쌓이고 두 워크플로가 서로 다른 팀 명단을 갖게 된다.
+    const exempt = spaceSeparatedEnv(guard, "REVIEW_GATE_EXEMPT_AUTHORS");
+    const team = spaceSeparatedEnv(requestAll, "TEAM");
+    for (const login of exempt) {
+        assert.ok(!team.includes(login), `${login} 이 면제이면서 자동 요청 대상이다`);
+    }
+    assert.ok(team.length > 0, "자동 요청 대상이 비었다");
 });

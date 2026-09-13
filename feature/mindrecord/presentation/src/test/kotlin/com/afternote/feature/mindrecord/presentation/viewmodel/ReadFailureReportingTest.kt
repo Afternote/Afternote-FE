@@ -8,6 +8,7 @@ import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionReposito
 import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
+import com.afternote.feature.mindrecord.presentation.usecase.GetMemorySpaceUseCase
 import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -162,8 +163,11 @@ class ReadFailureReportingTest {
         runTest(dispatcher) {
             val reporter = RecordingErrorReporter()
             MemorySpaceViewModel(
-                diaryRepository = FakeDiaryRepository(onGetList = { _, _ -> Result.failure(IOException("일기 실패")) }),
-                dailyQuestionRepository = FakeDailyQuestionRepository(initialAnswers = listOf(answeredQuestion())),
+                getMemorySpace =
+                    GetMemorySpaceUseCase(
+                        diaryRepository = FakeDiaryRepository(onGetList = { _, _ -> Result.failure(IOException("일기 실패")) }),
+                        dailyQuestionRepository = FakeDailyQuestionRepository(initialAnswers = listOf(answeredQuestion())),
+                    ),
                 errorReporter = reporter,
             )
             advanceUntilIdle()
@@ -242,8 +246,11 @@ class ReadFailureReportingTest {
         runTest(dispatcher) {
             val reporter = RecordingErrorReporter()
             MemorySpaceViewModel(
-                diaryRepository = FakeDiaryRepository(onGetList = { _, _ -> Result.failure(IOException("일기 실패")) }),
-                dailyQuestionRepository = FakeDailyQuestionRepository(onGetList = { _, _ -> Result.failure(IOException("질문 실패")) }),
+                getMemorySpace =
+                    GetMemorySpaceUseCase(
+                        diaryRepository = FakeDiaryRepository(onGetList = { _, _ -> Result.failure(IOException("일기 실패")) }),
+                        dailyQuestionRepository = FakeDailyQuestionRepository(onGetList = { _, _ -> Result.failure(IOException("질문 실패")) }),
+                    ),
                 errorReporter = reporter,
             )
             advanceUntilIdle()

@@ -80,6 +80,43 @@ test("추가된 줄의 fun 선언만 모으고 private·override·operator·abst
     assert.deepEqual(addedFunctionNames("+++ b/x.kt\n fun context() = 1\n-fun removed() = 2"), []);
 });
 
+test("Hilt @Binds·@Provides 선언은 후보에서 뺀다 — 호출자는 Dagger 가 생성한다 (#1906)", () => {
+    const patch = [
+        "@@ -1 +1 @@",
+        "+@Module",
+        "+@InstallIn(SingletonComponent::class)",
+        "+interface AuthorRepositoryModule {",
+        "+    @Suppress(\"unused\")",
+        "+    @Binds",
+        "+    @Singleton",
+        "+    fun bindAudioUploadRepository(impl: AudioUploadRepositoryImpl): AudioUploadRepository",
+        "+",
+        "+    @Provides fun provideClock(): Clock = Clock.systemUTC()",
+        "+",
+        "+    fun notABinding(): Int = 1",
+        "+}",
+    ].join("\n");
+
+    assert.deepEqual(addedFunctionNames(patch), ["notABinding"]);
+});
+
+test("후행 람다 호출도 참조로 센다 — Compose 소비가 전부 이 꼴이다 (#1906)", async () => {
+    const repo = fixture();
+    write(repo, "app/src/main/kotlin/a/Theme.kt", "package a\n\nfun ThemeWrapper(content: () -> Unit) { content() }\n");
+    write(repo, "app/src/main/kotlin/a/Host.kt", "package a\n\nprivate fun host() { ThemeWrapper { } }\n");
+    git(repo, "add", ".");
+    git(repo, "commit", "-q", "-m", "trailing lambda");
+
+    const patch = "@@ -0,0 +1 @@\n+fun ThemeWrapper(content: () -> Unit) { content() }";
+    const violations = await findViolations(
+        [{ filename: "app/src/main/kotlin/a/Theme.kt", status: "added", patch }],
+        { root: repo },
+    );
+
+    assert.deepEqual(violations, []);
+    assert.match(referencePattern("ThemeWrapper"), /\[\(\{\]/);
+});
+
 test("src/main Kotlin 만 보고, testing 모듈·konsist·삭제·순수 rename 은 건너뛴다", () => {
     const files = [
         { filename: "app/src/main/kotlin/a/Vm.kt", status: "added", patch: VM_PATCH },

@@ -24,10 +24,14 @@ import org.robolectric.annotation.Config
  * **여기서 잠그는 것은 배너 자체의 계약뿐이다.** 표시 여부를 정하는 판정은 화면 파일의 private
  * 함수라 테스트가 부르지 않는다 — 테스트가 부르려고 프로덕션 공개 범위를 넓히지 않는다(#1678).
  *
- * 화면을 그려서 세 갈래를 확인하는 방법은 두 번 시도했고 CI 에서 `ComposeTimeoutException` 으로
- * 무너졌다. `collectAsLazyPagingItems` 가 로드 상태를 화면까지 옮기지 못한 채 끝나서, `waitUntil`
- * 로 기다려도 배너가 나타나지 않는다. 로컬 단독 실행에서만 통과하는 단언은 가드가 아니라 소음이라
- * 남기지 않았다. 목록 유무에 따른 갈림은 [AfternoteHomeScreen] 본문의 `when` 이 직접 드러낸다.
+ * 화면을 그려서 세 갈래를 확인하는 방법은 **이 소스셋에서** 두 번 시도했고 CI 에서
+ * `ComposeTimeoutException` 으로 무너졌다. `collectAsLazyPagingItems` 가 로드 상태를 화면까지
+ * 옮기지 못한 채 끝나서 `waitUntil` 로 기다려도 배너가 나타나지 않는다 — Robolectric 클래스가
+ * 누적되면 단언 시점까지 컴포지션 이펙트가 진행되지 않는다(#1443 이 실측한 기전).
+ *
+ * 그래서 **세 갈래는 계측으로 올라갔다.** `app` 의 `AfternoteHomeRefreshBannerAndroidTest` 가
+ * 실기에서 실 Paging 을 태워 「실패+목록 있음 → 배너」·「실패+0건 → 전면 오류」·「실패 아님 →
+ * 둘 다 아님」을 잠근다 (#1790).
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])

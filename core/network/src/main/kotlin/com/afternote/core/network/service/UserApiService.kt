@@ -10,9 +10,11 @@ import com.afternote.core.network.dto.UserConnectedAccountDto
 import com.afternote.core.network.dto.UserCreateReceiverDto
 import com.afternote.core.network.dto.UserCreateReceiverRequestDto
 import com.afternote.core.network.dto.UserDto
+import com.afternote.core.network.dto.UserMarketingConsentDto
 import com.afternote.core.network.dto.UserPatchReceiverDto
 import com.afternote.core.network.dto.UserPatchReceiverRequestDto
 import com.afternote.core.network.dto.UserPushSettingDto
+import com.afternote.core.network.dto.UserUpdateMarketingConsentRequestDto
 import com.afternote.core.network.dto.UserUpdateProfileRequestDto
 import com.afternote.core.network.dto.UserUpdatePushSettingRequestDto
 import com.afternote.core.network.dto.UserUpdateReceiverMessageRequestDto
@@ -108,6 +110,16 @@ interface UserApiService {
     suspend fun updateMyPushSettings(
         @Body request: UserUpdatePushSettingRequestDto,
     ): BaseResponse<UserPushSettingDto>
+
+    // 마케팅 수신 동의 조회 (문자·이메일·푸시) — 서비스 알림 3종(push-settings)과 별개
+    @GET("users/marketing-consents")
+    suspend fun getMyMarketingConsents(): BaseResponse<UserMarketingConsentDto>
+
+    // 마케팅 수신 동의 수정
+    @PATCH("users/marketing-consents")
+    suspend fun updateMyMarketingConsents(
+        @Body request: UserUpdateMarketingConsentRequestDto,
+    ): BaseResponse<UserMarketingConsentDto>
 
     // 연결된 계정 조회
     @GET("users/connected-accounts")

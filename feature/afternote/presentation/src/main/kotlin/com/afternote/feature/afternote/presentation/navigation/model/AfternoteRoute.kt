@@ -1,9 +1,10 @@
 package com.afternote.feature.afternote.presentation.navigation.model
 
+import androidx.navigation3.runtime.NavKey
 import com.afternote.feature.afternote.domain.AfternoteType
 import kotlinx.serialization.Serializable
 
-sealed interface AfternoteRoute {
+sealed interface AfternoteRoute : NavKey {
     @Serializable
     data object AfternoteHomeRoute : AfternoteRoute
 

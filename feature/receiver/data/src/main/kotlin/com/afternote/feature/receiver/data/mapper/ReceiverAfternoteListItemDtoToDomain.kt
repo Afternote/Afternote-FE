@@ -13,8 +13,12 @@ private const val RECEIVER_LIST_DECODING_STAGE = "receiver_list_decoding"
 private const val RECEIVER_LIST_MAPPING_STAGE = "receiver_list_mapping"
 private const val REJECTED_ITEM_COUNT_KEY = "rejected_item_count"
 
+// 아래 두 신호는 이 파일 밖에서 이름으로 참조되지 않는다 (#1832). 텔레메트리에 실리는 건 클래스 자체가 아니라
+// ErrorReporter 가 원문을 redact 하며 붙이는 `error_type` 속성이고, 소비처와 테스트는 그 값과
+// `receiver_stage` 로 단계를 가른다.
+
 /** category 키가 누락됐거나 문자열이 아니어서 목록 디코딩 중 제외된 원소가 있음을 알리는 신호. */
-internal class ReceiverListDecodingFailure : RuntimeException()
+private class ReceiverListDecodingFailure : RuntimeException()
 
 /**
  * 목록 응답에 도메인으로 변환할 수 없는 category 가 포함됐음을 알리는 non-fatal 신호.
@@ -22,7 +26,7 @@ internal class ReceiverListDecodingFailure : RuntimeException()
  * 서버 원문을 예외에 담지 않는다. 응답 내 식별자·제목·category 가 텔레메트리로
  * 흘러갈 수 있기 때문이다.
  */
-internal class ReceiverListMappingFailure : RuntimeException()
+private class ReceiverListMappingFailure : RuntimeException()
 
 /**
  * 서버 category 를 해석할 수 없으면 항목 하나만 목록에서 제외한다.
@@ -30,7 +34,7 @@ internal class ReceiverListMappingFailure : RuntimeException()
  * 와이어 계약에 맞는 미래 값은 받아들이되 도메인에는 임의의 종류를 채우지 않는다. 그래야 필터·아이콘·
  * 상세 라우팅이 다른 종류로 조용히 왜곡되지 않는다. category 누락·null은 목록 serializer가 먼저 제외한다.
  */
-fun ReceivedAfternoteDto.toDomainOrNull(): AfterNoteListItem? {
+private fun ReceivedAfternoteDto.toDomainOrNull(): AfterNoteListItem? {
     val resolvedType = afternoteTypeFromServerCategory(category) ?: return null
     return AfterNoteListItem(
         id = id,
@@ -40,7 +44,7 @@ fun ReceivedAfternoteDto.toDomainOrNull(): AfterNoteListItem? {
     )
 }
 
-fun List<ReceivedAfternoteDto>.toReceiverDomainList(errorReporter: ErrorReporter): List<AfterNoteListItem> {
+private fun List<ReceivedAfternoteDto>.toReceiverDomainList(errorReporter: ErrorReporter): List<AfterNoteListItem> {
     var rejectedItemCount = 0
     val items =
         mapNotNull { dto ->

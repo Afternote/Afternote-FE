@@ -13,9 +13,11 @@ import com.afternote.core.network.dto.UserConnectedAccountDto
 import com.afternote.core.network.dto.UserCreateReceiverDto
 import com.afternote.core.network.dto.UserCreateReceiverRequestDto
 import com.afternote.core.network.dto.UserDto
+import com.afternote.core.network.dto.UserMarketingConsentDto
 import com.afternote.core.network.dto.UserPatchReceiverDto
 import com.afternote.core.network.dto.UserPatchReceiverRequestDto
 import com.afternote.core.network.dto.UserPushSettingDto
+import com.afternote.core.network.dto.UserUpdateMarketingConsentRequestDto
 import com.afternote.core.network.dto.UserUpdateProfileRequestDto
 import com.afternote.core.network.dto.UserUpdatePushSettingRequestDto
 import com.afternote.core.network.dto.UserUpdateReceiverMessageRequestDto
@@ -47,7 +49,7 @@ class ReceiverRequestFailureTest {
             name = "친구",
             relation = "친구",
             phone = null,
-            email = null,
+            email = "friend@example.com",
             message = null,
         )
 
@@ -67,7 +69,8 @@ class ReceiverRequestFailureTest {
 
             assertTrue(result is ReceiverRequestRejectedException)
             val domainError = result as ReceiverRequestRejectedException
-            assertEquals("수신자 이메일은 필수입니다.", domainError.userMessage)
+            // 서버 원문은 접근자가 아니라 진단용 message 로만 남는다 — 화면 문구는 소비처가 타입만 보고 고른다.
+            assertEquals("수신자 이메일은 필수입니다.", domainError.message)
             assertSame(apiError, domainError.cause)
         }
 
@@ -163,6 +166,11 @@ private class CreateReceiverThrowingApiService(
     override suspend fun getMyPushSettings(): BaseResponse<UserPushSettingDto> = TODO("이 테스트 미사용")
 
     override suspend fun updateMyPushSettings(request: UserUpdatePushSettingRequestDto): BaseResponse<UserPushSettingDto> =
+        TODO("이 테스트 미사용")
+
+    override suspend fun getMyMarketingConsents(): BaseResponse<UserMarketingConsentDto> = TODO("이 테스트 미사용")
+
+    override suspend fun updateMyMarketingConsents(request: UserUpdateMarketingConsentRequestDto): BaseResponse<UserMarketingConsentDto> =
         TODO("이 테스트 미사용")
 
     override suspend fun getConnectedAccounts(): BaseResponse<UserConnectedAccountDto> = TODO("이 테스트 미사용")

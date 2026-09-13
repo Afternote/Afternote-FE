@@ -208,6 +208,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: node .github/scripts/validate-pr-issue-link.mjs "${{ steps.changed-files.outputs.pull_request_json }}"
 
+      # 이슈 담당 대조(위)는 «어느 이슈로 열었나» 를, 이 스텝은 «어느 모듈 파일을 바꿨나» 를 본다.
+      # 둘 다 같은 지도(ASSIGNEE_BY_MODULE)를 쓰고 같은 라벨(issue-assignee-exempt)로 면제된다 (#1889).
+      - name: Require module owner
+        if: inputs.pull_request_number > 0
+        env:
+          PULL_REQUEST_JSON: ${{ steps.changed-files.outputs.pull_request_json }}
+          FILES_JSON: ${{ steps.classify-documentation-changes.outputs.files_json }}
+        run: node .github/scripts/validate-pr-module-owner.mjs "$PULL_REQUEST_JSON" "$FILES_JSON"
+
       - name: Validate CI Test Plan
         if: inputs.pull_request_number > 0
         run: >-
@@ -258,6 +267,11 @@ jobs:
           else
             scripts/repository-quality.sh
           fi
+
+      # KDoc 의 [FQN] 링크가 실제 선언을 가리키는지 — 패키지 이동마다 끊긴 링크가 쌓이던 자리 (#1889).
+      # 저장소 전체를 보는 값싼 검사라 PR·push 가리지 않는다.
+      - name: Verify KDoc FQN links
+        run: node .github/scripts/verify-kdoc-links.mjs
 
       - name: Verify failing fixtures
         if: inputs.pull_request_number == 0 || steps.classify-documentation-changes.outputs.repository_quality_fixtures == 'true'

@@ -406,5 +406,5 @@ test("required checks expose manual dispatch for token-authored commits", async 
 
     assert.match(validation, /^\s{2}workflow_dispatch:$/m);
     assert.match(guard, /^\s{2}workflow_dispatch:\n\s{4}inputs:/m);
-    assert.match(guard, /github\.event_name == 'pull_request' \|\| github\.event_name == 'workflow_dispatch'/);
+    assert.match(guard, /github\.event_name == 'pull_request_target' \|\| github\.event_name == 'workflow_dispatch'/);
 });

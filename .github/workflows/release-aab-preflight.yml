@@ -75,8 +75,8 @@ jobs:
           mkdir -p "$baseline_dir"
 
           previous_run_id="$(
-            gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs?status=success&per_page=100" \
-              --jq ".workflow_runs[] | select(.name == \"Release AAB Preflight\" and .id != ${CURRENT_RUN_ID}) | .id" \
+            gh api "repos/$GITHUB_REPOSITORY/actions/workflows/release-aab-preflight.yml/runs?status=success&per_page=1" \
+              --jq ".workflow_runs[] | select(.id != ${CURRENT_RUN_ID}) | .id" \
               | sed -n '1p'
           )"
           if [ -z "$previous_run_id" ]; then

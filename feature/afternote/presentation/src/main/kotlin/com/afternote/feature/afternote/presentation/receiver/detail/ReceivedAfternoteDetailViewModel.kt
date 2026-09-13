@@ -1,15 +1,16 @@
 package com.afternote.feature.afternote.presentation.receiver.detail
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import com.afternote.feature.receiver.domain.repository.ReceiverRepository
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.ensureActive
@@ -18,7 +19,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * 수신 애프터노트 상세 ViewModel.
@@ -31,16 +31,16 @@ import javax.inject.Inject
  * 동일한 단일 [ReceivedAfternoteDetailUiState] + StateFlow 패턴을 따른다. 다만 받은 입장이라
  * 수정·삭제·작성자 표시명·수신자 목록은 보유하지 않는다.
  */
-@HiltViewModel
+@HiltViewModel(assistedFactory = ReceivedAfternoteDetailViewModel.Factory::class)
 class ReceivedAfternoteDetailViewModel
-    @Inject
+    @AssistedInject
     constructor(
-        savedStateHandle: SavedStateHandle,
+        @Assisted private val route: ReceivedAfternoteRoute.DetailRoute,
         private val receiverRepository: ReceiverRepository,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val afternoteIdFromNav: Long =
-            savedStateHandle.toRoute<ReceivedAfternoteRoute.DetailRoute>().afternoteId
+            route.afternoteId
 
         private val _uiState =
             MutableStateFlow<ReceivedAfternoteDetailUiState>(ReceivedAfternoteDetailUiState.Loading)
@@ -120,5 +120,10 @@ class ReceivedAfternoteDetailViewModel
                             }
                         }
                 }
+        }
+
+        @AssistedFactory
+        interface Factory {
+            fun create(route: ReceivedAfternoteRoute.DetailRoute): ReceivedAfternoteDetailViewModel
         }
     }

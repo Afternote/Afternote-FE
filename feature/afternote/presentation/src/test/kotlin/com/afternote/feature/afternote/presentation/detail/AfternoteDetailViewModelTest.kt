@@ -12,6 +12,7 @@ import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.presentation.NoopAuthorErrorReporter
 import com.afternote.feature.afternote.presentation.afternoteAuthorUserProfileRepository
 import com.afternote.feature.afternote.presentation.afternoteAuthorUserRepository
+import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -422,7 +423,7 @@ class AfternoteDetailViewModelTest {
         userProfileRepository: FakeUserProfileCacheRepository = afternoteAuthorUserProfileRepository(),
     ): AfternoteDetailViewModel =
         AfternoteDetailViewModel(
-            savedStateHandle = SavedStateHandle(mapOf("itemId" to 73L)),
+            route = AfternoteRoute.DetailRoute(itemId = 73L),
             afternoteRepository = repository,
             userRepository = userRepository,
             userProfileRepository = userProfileRepository,

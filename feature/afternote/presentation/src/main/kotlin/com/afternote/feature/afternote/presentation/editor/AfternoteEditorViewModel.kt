@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
@@ -46,8 +45,12 @@ import com.afternote.feature.afternote.presentation.editor.state.withReceiversRe
 import com.afternote.feature.afternote.presentation.editor.state.withService
 import com.afternote.feature.afternote.presentation.editor.state.withType
 import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
+import com.afternote.feature.afternote.presentation.navigation.model.SELECTED_RECEIVER_IDS_KEY
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -59,7 +62,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import javax.inject.Inject
 
 private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v4"
 private const val INITIALIZED_ACTION_TEMPLATE_TYPE_KEY = "initialized_action_template_type"
@@ -162,10 +164,11 @@ private data class EditorFormSnapshot(
  * **경계:** Compose UI 객체(`TextFieldState`·`SnapshotStateList`·파사드)를 들지 않고 Retrofit 타입도 알지 않는다 —
  * 저장 API 의 HTTP·에러 바디 해석은 [AfternoteRepository] 구현이 도메인 예외로 변환한다.
  */
-@HiltViewModel
+@HiltViewModel(assistedFactory = AfternoteEditorViewModel.Factory::class)
 class AfternoteEditorViewModel
-    @Inject
+    @AssistedInject
     constructor(
+        @Assisted private val route: AfternoteRoute.EditorFlowRoute,
         private val savedStateHandle: SavedStateHandle,
         private val userRepository: UserRepository,
         private val afternoteRepository: AfternoteRepository,
@@ -173,8 +176,6 @@ class AfternoteEditorViewModel
         private val resolveMemorialMediaForSave: ResolveMemorialMediaForSaveUseCase,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
-        private val route = savedStateHandle.toRoute<AfternoteRoute.EditorFlowRoute>()
-
         /** 진행 중인 prefill 조회 — 재시도가 이전 조회를 자르기 위한 핸들. */
         private var prefillJob: Job? = null
 
@@ -768,6 +769,26 @@ class AfternoteEditorViewModel
         }
 
         // endregion
+
+        /**
+         * 수신자 선택 화면이 고른 id 를 에디터로 돌려준다.
+         *
+         * Nav2 에서는 선택 화면이 **이전 백스택 엔트리**(에디터)의 `SavedStateHandle` 에 직접 썼다.
+         * Nav3 엔 "이전 엔트리" 개념이 없으므로, 두 화면이 이미 공유하는 이 ViewModel 을 통로로
+         * 삼는다. 저장 위치는 같은 [SavedStateHandle] 이라 프로세스 재생성 성질도 그대로다.
+         */
+        fun onReceiversSelected(receiverIds: List<Long>) {
+            // Bundle 이 그대로 담을 수 있는 LongArray 로 넘긴다 (#1426).
+            savedStateHandle[SELECTED_RECEIVER_IDS_KEY] = receiverIds.toLongArray()
+        }
+
+        /** 남아 있는 선택 결과를 읽고 **지운다** — 같은 선택이 두 번 반영되지 않는다. */
+        fun consumeSelectedReceiverIds(): List<Long>? = savedStateHandle.remove<LongArray>(SELECTED_RECEIVER_IDS_KEY)?.toList()
+
+        @AssistedFactory
+        interface Factory {
+            fun create(route: AfternoteRoute.EditorFlowRoute): AfternoteEditorViewModel
+        }
     }
 
 /**

@@ -302,7 +302,7 @@ private fun ReceiverMindRecordScreenPreview() {
  *
  * 필터·정렬로 목록에서 빠진 항목은 자연히 null 이 되어 시트가 닫힌다.
  */
-internal fun findOpenedRecord(
+private fun findOpenedRecord(
     uiState: ReceiverMindRecordUiState,
     openedRecordId: Long?,
 ): MindRecordSummary? {

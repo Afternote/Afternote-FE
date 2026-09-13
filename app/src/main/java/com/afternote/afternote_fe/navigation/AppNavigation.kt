@@ -26,17 +26,16 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.afternote.afternote_fe.notification.NotificationPermissionEffect
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomBar
+import com.afternote.core.ui.navigation.FeatureStackBoundary
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.feature.afternote.presentation.navigation.afternoteNavGraph
-import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
-import com.afternote.feature.afternote.presentation.receiver.navigation.receivedAfternoteNavGraph
+import com.afternote.feature.afternote.presentation.navigation.AfternoteNavHost
+import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteNavHost
 import com.afternote.feature.home.presentation.HomeTabScreen
 import com.afternote.feature.home.presentation.HomeTabViewModel
 import com.afternote.feature.home.presentation.receiver.ReceiverHomeEntry
 import com.afternote.feature.mindrecord.presentation.navigation.mindRecordNavGraph
-import com.afternote.feature.onboarding.presentation.navigation.onboardingNavGraph
-import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
-import com.afternote.feature.receiver.presentation.navigation.receiverNavGraph
+import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavHost
+import com.afternote.feature.receiver.presentation.navigation.ReceiverNavHost
 import com.afternote.feature.setting.presentation.navigation.settingNavGraph
 import com.afternote.feature.timeletter.presentation.navigation.timeLetterNavGraph
 import kotlinx.coroutines.launch
@@ -49,24 +48,34 @@ fun AppNavigation(
 ) {
     val navEntry by appState.navController.currentBackStackEntryAsState()
     val currentDestination = navEntry?.destination
-    val showBottomBar = appState.shouldShowBottomBar(currentDestination)
+
+    // 로컬 Nav3 스택의 깊이는 Nav2 destination 에 안 보인다 — 애프터노트 host 가 올려 주는 신호를
+    // 바텀바 판정에 합성한다. 피처를 떠나면 host 가 true 로 되돌려 다른 탭 판정을 오염시키지 않는다.
+    var isAfternoteStackAtRoot by remember { mutableStateOf(true) }
+
+    val showBottomBar = appState.shouldShowBottomBar(currentDestination, isAfternoteStackAtRoot)
     val currentTab = appState.getCurrentNavTab(currentDestination)
 
-    val onboardingNavActions = rememberOnboardingNavActions(appState.navController)
     val mindRecordNavActions = rememberMindRecordNavActions(appState.navController)
     val settingNavActions = rememberSettingNavActions(appState)
     val timeLetterNavActions = rememberTimeLetterNavActions(appState.navController)
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val afternoteNavActions =
-        rememberAfternoteNavActions(appState) { message ->
+    val onboardingExternalActions = rememberOnboardingExternalActions(appState)
+    val afternoteExternalActions =
+        rememberAfternoteExternalActions(appState) { message ->
             scope.launch {
                 snackbarHostState.showSnackbar(message)
             }
         }
-    val receivedAfternoteNavActions = rememberReceivedAfternoteNavActions(appState)
-    val receiverNavActions = rememberReceiverNavActions(appState)
     val receiverHomeActions = rememberReceiverHomeActions(appState)
+
+    // 로컬 스택 바닥에서의 back 은 루트 백스택 pop 으로 돌려준다. 루트가 NavDisplay 로 바뀌어도
+    // 계약은 그대로고 이 구현만 갈린다 (#1702).
+    // 바텀바가 없는 그래프는 깊이를 셸에 올릴 일이 없다.
+    val popRootBoundary = rememberRootPopBoundary(appState, onAtRootChanged = {})
+    val afternoteBoundary =
+        rememberRootPopBoundary(appState) { isAtRoot -> isAfternoteStackAtRoot = isAtRoot }
 
     // 13+ 는 런타임 권한이 없으면 알림이 한 건도 게시되지 않는다 (#1454).
     NotificationPermissionEffect(snackbarHostState = snackbarHostState)
@@ -93,12 +102,32 @@ fun AppNavigation(
             navController = appState.navController,
             startDestination = startDestination,
         ) {
-            onboardingNavGraph(
-                graphScopedParentEntry = {
-                    appState.navController.getBackStackEntry<Route.Onboarding>()
-                },
-                actions = onboardingNavActions,
-            )
+            // ── Navigation 3 로컬 스택을 가진 그래프 (#1698) — 루트엔 host destination 하나씩만 둔다.
+            composable<Route.Onboarding> {
+                OnboardingNavHost(
+                    boundary = popRootBoundary,
+                    externalActions = onboardingExternalActions,
+                )
+            }
+            composable<Route.Afternote> {
+                AfternoteNavHost(
+                    boundary = afternoteBoundary,
+                    externalActions = afternoteExternalActions,
+                )
+            }
+            // 수신 애프터노트 화면은 애프터노트 피처가 갖는다 (#1461). Route.Afternote 그래프는
+            // 발신자용 지문 관문을 시작점으로 삼으므로 그 안에 중첩하지 않고 루트에 직접 등록한다.
+            composable<Route.ReceivedAfternote> {
+                ReceivedAfternoteNavHost(boundary = popRootBoundary)
+            }
+            composable<Route.Receiver> {
+                ReceiverNavHost(
+                    homeContent = { ReceiverHomeEntry(actions = receiverHomeActions) },
+                    boundary = popRootBoundary,
+                )
+            }
+
+            // ── 아직 Navigation 2 인 그래프 — #1695 · #1696 · #1697 이 각각 이관한다.
             composable<Route.Home> {
                 val viewModel: HomeTabViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -136,27 +165,26 @@ fun AppNavigation(
                 navController = appState.navController,
                 actions = timeLetterNavActions,
             )
-            afternoteNavGraph(
-                graphScopedParentEntry = {
-                    appState.navController.getBackStackEntry<Route.Afternote>()
-                },
-                editorFlowParentEntry = {
-                    appState.navController.getBackStackEntry<AfternoteRoute.EditorFlowRoute>()
-                },
-                actions = afternoteNavActions,
-            )
-            // 수신 애프터노트 화면은 애프터노트 피처가 갖는다 (#1461). Route.Afternote 그래프는
-            // 발신자용 지문 관문을 시작점으로 삼으므로 그 안에 중첩하지 않고 루트에 직접 등록한다.
-            receivedAfternoteNavGraph(actions = receivedAfternoteNavActions)
-            receiverNavGraph(
-                homeContent = { ReceiverHomeEntry(actions = receiverHomeActions) },
-                actions = receiverNavActions,
-                // 열람 신청 nested graph 의 parent route. 이 route 의 backStackEntry 가 자체 ViewModelStore 를
-                // 보유 → 자식 5 화면이 그 안의 DeliveryVerificationFlowViewModel 을 공유 (flow-scoped VM).
-                deliveryFlowParentEntry = {
-                    appState.navController.getBackStackEntry<ReceiverRoute.DeliveryVerificationFlowRoute>()
-                },
-            )
         }
     }
 }
+
+/**
+ * 로컬 스택 바닥의 back 을 루트 백스택 pop 으로 돌려주는 경계.
+ *
+ * @param onAtRootChanged 바텀바 판정에 깊이를 합성해야 하는 그래프만 넘긴다.
+ */
+@Composable
+private fun rememberRootPopBoundary(
+    appState: AppState,
+    onAtRootChanged: (Boolean) -> Unit,
+): FeatureStackBoundary =
+    remember(appState, onAtRootChanged) {
+        object : FeatureStackBoundary {
+            override fun exit() {
+                appState.navController.popBackStack()
+            }
+
+            override fun onAtRootChanged(isAtRoot: Boolean) = onAtRootChanged(isAtRoot)
+        }
+    }

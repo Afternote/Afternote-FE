@@ -34,6 +34,16 @@ sealed interface Route {
     data object Afternote : Route
 
     /**
+     * 수신 애프터노트(목록·상세·추억 플레이리스트) 로컬 스택의 host destination.
+     *
+     * [Afternote] 그래프에 넣지 않는다 — 그쪽 시작점은 발신자용 지문 관문이고 수신자는 그
+     * 관문을 지나지 않는다. Nav3 이관 전에는 화면 셋이 루트에 흩어져 있었는데, 로컬 스택을
+     * 가지려면 그 스택을 담을 자리가 하나 필요해 route 를 세웠다 (#1698).
+     */
+    @Serializable
+    data object ReceivedAfternote : Route
+
+    /**
      * 수신자(추모자) 흐름의 그래프 루트.
      *
      * 작성자(`Route.Afternote`)와 별개로 받은 사람이 진입하는 별도 사용자 여정이며,

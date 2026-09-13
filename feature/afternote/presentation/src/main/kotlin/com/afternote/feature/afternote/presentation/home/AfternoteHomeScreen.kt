@@ -6,13 +6,19 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -49,7 +55,7 @@ import com.afternote.feature.afternote.presentation.shared.component.ListRefresh
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AfternoteHomeScreen(
+internal fun AfternoteHomeScreen(
     items: LazyPagingItems<ListItemUiModel>,
     selectedType: AfternoteType?,
     onTypeSelected: (AfternoteType?) -> Unit,
@@ -64,8 +70,29 @@ fun AfternoteHomeScreen(
     onSettingClick: (() -> Unit)? = null,
 ) {
     val refreshState = items.loadState.refresh
-    val isInitialLoading = refreshState is LoadState.Loading && items.itemCount == 0
     val isRefreshing = refreshState is LoadState.Loading && items.itemCount > 0
+
+    // 직전 렌더에 상단(헤더·카테고리 필터 행)이 있었는지. 카테고리 전환은 새 Paging 세대를 만들어
+    // `refresh = Loading` + `itemCount == 0` 을 다시 만드는데, 그 상태만 보면 «첫 진입» 과 구분이 없어
+    // 이미 보고 있던 상단까지 로딩 화면으로 덮인다 (#1635). 상단 유무를 되먹여 그 둘을 가른다.
+    // 되먹임이 발산하지 않는 이유: 이 값은 로딩 갈래의 결과만 바꾸고, 그 갈래가 내는 두 상태
+    // (InitialLoading·Reloading)의 상단 유무는 각각 false·true 로 자기 입력과 같다.
+    // 화면 회전에도 유지해야 전환 도중 회전이 상단을 다시 걷어 가지 않는다.
+    var chromeAlreadyVisible by rememberSaveable { mutableStateOf(false) }
+    val bodyState =
+        afternoteHomeBodyState(
+            refreshState = refreshState,
+            itemCount = items.itemCount,
+            selectedType = selectedType,
+            chromeAlreadyVisible = chromeAlreadyVisible,
+        )
+    val drawsTopChrome = bodyState.drawsTopChrome(showsHeaderOnEmptyList)
+    LaunchedEffect(drawsTopChrome) { chromeAlreadyVisible = drawsTopChrome }
+
+    // 카테고리 필터 행의 가로 스크롤 위치는 본문 분기 «위» 에서 만든다. 행 안에서 remember 하면 본문이
+    // 바뀔 때마다 서브트리가 폐기돼 0 으로 돌아가고, 오른쪽으로 밀어 고른 끝 탭이 전환 후 화면 밖으로
+    // 나간다. 호출부가 둘(목록·0건)이라 «같은 자리» 도 아니었다 (#1635).
+    val filterRowScrollState = rememberScrollState()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -93,22 +120,42 @@ fun AfternoteHomeScreen(
                     .padding(paddingValues),
         ) {
             val bodyModifier = Modifier.fillMaxSize()
-            when {
-                isInitialLoading -> {
+            when (bodyState) {
+                AfternoteHomeBodyState.InitialLoading -> {
                     LoadingBody(modifier = bodyModifier)
                 }
 
-                // 전면 에러는 보여줄 데이터가 전무할 때만. 목록이 있는 상태의 refresh 실패는
-                // Paging 이 기존 페이지를 유지하므로(itemCount > 0) 아래 분기가 목록을 그대로 보여준다.
-                refreshState is LoadState.Error && items.itemCount == 0 -> {
+                is AfternoteHomeBodyState.Reloading -> {
+                    ReloadingBody(
+                        headerDescription = headerDescription,
+                        nextStep = nextStep,
+                        selectedType = bodyState.selectedType,
+                        onTypeSelected = onTypeSelected,
+                        filterRowScrollState = filterRowScrollState,
+                        modifier = bodyModifier,
+                    )
+                }
+
+                AfternoteHomeBodyState.Error -> {
                     ErrorListBody(
                         onRetry = items::retry,
                         modifier = bodyModifier,
                     )
                 }
 
-                // 카테고리 필터 0건도 이 경로에 남겨 카테고리 행을 유지한다(막다른 상태 방지).
-                items.itemCount > 0 || selectedType != null -> {
+                is AfternoteHomeBodyState.FilteredError -> {
+                    FilteredErrorBody(
+                        headerDescription = headerDescription,
+                        nextStep = nextStep,
+                        selectedType = bodyState.selectedType,
+                        onTypeSelected = onTypeSelected,
+                        onRetry = items::retry,
+                        filterRowScrollState = filterRowScrollState,
+                        modifier = bodyModifier,
+                    )
+                }
+
+                AfternoteHomeBodyState.List -> {
                     Column(modifier = bodyModifier) {
                         // 목록은 살아 있고 새로고침만 실패한 상태. 종전에는 이 갈래가 실패를 통째로
                         // 삼켜 «당겨도 아무 일도 없는» 화면이 됐다 (#705).
@@ -124,17 +171,19 @@ fun AfternoteHomeScreen(
                             onTypeSelected = onTypeSelected,
                             onListItemClick = onListItemClick,
                             headerDescription = headerDescription,
+                            filterRowScrollState = filterRowScrollState,
                         )
                     }
                 }
 
-                else -> {
+                AfternoteHomeBodyState.Empty -> {
                     if (showsHeaderOnEmptyList) {
                         EmptyHomeBody(
                             headerDescription = headerDescription,
                             nextStep = nextStep,
                             emptyListDescription = emptyListDescription,
                             onTypeSelected = onTypeSelected,
+                            filterRowScrollState = filterRowScrollState,
                             modifier = bodyModifier,
                         )
                     } else {
@@ -153,7 +202,8 @@ fun AfternoteHomeScreen(
  * 두 표시가 겹치면 같은 실패를 두 번 말하게 된다.
  *
  * 이 파일 안에서만 쓰므로 private 다. 테스트가 부르려고 넓히지 않는다(#1678) — 세 갈래는
- * [AfternoteHomeScreen] 을 그려서 확인한다.
+ * [AfternoteHomeScreen] 을 그려서 확인한다. 그 가드는 `app` 의
+ * `AfternoteHomeRefreshBannerAndroidTest` 다. JVM 이 아니라 계측인 이유는 그 KDoc 참조 (#1790).
  */
 private fun shouldShowRefreshErrorBanner(
     refreshState: LoadState,

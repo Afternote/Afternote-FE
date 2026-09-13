@@ -40,20 +40,43 @@ export const AREA_LABEL_BY_MODULE = Object.freeze({
     timeletter: "area:timeletter",
     mindrecord: "area:mindrecord",
     home: "area:home",
+    app: "area:app",
     platform: "area:platform",
 });
 
 export const ASSIGNEE_BY_MODULE = Object.freeze({
     afternote: "1hyok",
-    onboarding: "1hyok",
+    onboarding: "Sadturtleman",
     core: "1hyok",
     receiver: "1hyok",
-    setting: "koongmai",
+    setting: "1hyok",
     timeletter: "koongmai",
     mindrecord: "Sadturtleman",
     home: "Sadturtleman",
+    app: "1hyok",
     platform: "1hyok",
 });
+
+// #1910: 담당 이관은 모듈마다 소급 범위를 고를 수 있다. 경계(fromIssue)를 두면 그 번호 미만의
+// 열린 이슈는 before 가 계속 맡고, 경계가 없는 모듈은 스케줄 리컨사일이 열린 이슈 전체를 새
+// 담당자에게 옮긴다. 온보딩은 #1910 에서 경계를 두었다가 온보딩 전체를 준혁이 맡기로 하면서
+// 경계를 걷어 소급했다(0911). 그 결과 이관 전 이슈로 열어 둔 PR 은 작성자와 담당자가 달라
+// validate-pr-issue-link 가 빨개지고, 리뷰어가 풀어야 한다.
+export const HANDOVER_BY_MODULE = Object.freeze({});
+
+/** 이관 경계를 반영한 담당자. 경계가 없는 모듈은 지도 그대로다. */
+export function assigneeForIssue(moduleKey, issueNumber) {
+    const handover = HANDOVER_BY_MODULE[moduleKey];
+    if (!handover) {
+        return ASSIGNEE_BY_MODULE[moduleKey];
+    }
+    const number = Number(issueNumber);
+    if (!Number.isSafeInteger(number)) {
+        // 번호를 모르면 경계를 판정할 수 없다. 어느 쪽으로도 접지 않고 실행을 실패시킨다.
+        throw new Error(`이관 경계를 판정할 이슈 번호가 없습니다: ${moduleKey} / ${issueNumber}`);
+    }
+    return number < handover.fromIssue ? handover.before : ASSIGNEE_BY_MODULE[moduleKey];
+}
 
 export const GUARD_COMMENT_MARKER = "<!-- issue-metadata-guard:v1 -->";
 
@@ -126,13 +149,13 @@ export function expectedMetadata(issue) {
     const moduleKey = optionKey(moduleValue);
     const expectedLabel = TYPE_LABEL_BY_KEY[typeKey];
     const expectedAreaLabel = AREA_LABEL_BY_MODULE[moduleKey];
-    const expectedAssignee = ASSIGNEE_BY_MODULE[moduleKey];
+    const mappedAssignee = ASSIGNEE_BY_MODULE[moduleKey];
     const reasons = [];
 
     if (!expectedLabel) {
         reasons.push("`작업 유형`이 없거나 허용된 값이 아닙니다.");
     }
-    if (!expectedAssignee || !expectedAreaLabel) {
+    if (!mappedAssignee || !expectedAreaLabel) {
         reasons.push("`주 담당 모듈`이 없거나 허용된 값이 아닙니다.");
     }
     if (reasons.length > 0) {
@@ -144,7 +167,7 @@ export function expectedMetadata(issue) {
         moduleKey,
         expectedLabel,
         expectedAreaLabel,
-        expectedAssignee,
+        expectedAssignee: assigneeForIssue(moduleKey, issue.number),
     };
 }
 

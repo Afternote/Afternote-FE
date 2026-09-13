@@ -198,7 +198,7 @@ private fun recordedSummary(
  * 이름을 먼저 찾고 기록일수는 그 뒤에서 찾는다. 이름에 "3일" 같은 문자열이 들어 있어도
  * 강조 구간이 겹치지 않는다. 찾지 못하면 강조를 생략한다 — 문장은 그대로 보인다.
  */
-internal fun recordedSummaryHighlights(
+private fun recordedSummaryHighlights(
     sentence: String,
     userName: String,
     daysText: String,
@@ -317,7 +317,7 @@ private fun WeeklyReportErrorContent(
  * 전부가 아니라는 사실이 요약 문구보다 중요하다.
  */
 @Composable
-internal fun emotionCardDescription(state: WeeklyReportUiState.Success): String =
+private fun emotionCardDescription(state: WeeklyReportUiState.Success): String =
     when (state.emotionAnalysisStatus) {
         EmotionAnalysisStatus.PENDING -> {
             if (state.emotionKeywords.isEmpty()) {

@@ -14,7 +14,7 @@ internal const val WEEK_LENGTH = 7
  * 해당 주(월~일) 안에서 일자가 일치하는 날짜를 찾는다 — 7일 창 안에서 일자는 유일하다.
  * 범위 밖 일자면 null 을 돌려 집계에서 제외한다.
  */
-internal fun resolveDateInWeekOrNull(
+private fun resolveDateInWeekOrNull(
     monday: LocalDate,
     dayOfMonth: Int,
 ): LocalDate? =
