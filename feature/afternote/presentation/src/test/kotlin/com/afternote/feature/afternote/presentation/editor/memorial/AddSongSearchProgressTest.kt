@@ -54,8 +54,7 @@ class AddSongSearchProgressTest {
             AfternoteTheme {
                 AddSongScreen(
                     uiState = uiState,
-                    onSearchQueryChange = {},
-                    onErrorConsumed = {},
+                    onIntent = {},
                     onBackClick = {},
                     onSongsAdded = {},
                 )

@@ -25,8 +25,7 @@ internal fun addSongScreenScreenshot() {
     AfternoteTheme {
         AddSongScreen(
             uiState = AddSongUiState(songs = SAMPLE_SONGS),
-            onSearchQueryChange = {},
-            onErrorConsumed = {},
+            onIntent = {},
             onBackClick = {},
             onSongsAdded = {},
         )
@@ -45,8 +44,7 @@ internal fun addSongScreenCompactScreenshot() {
     AfternoteTheme {
         AddSongScreen(
             uiState = AddSongUiState(songs = SAMPLE_SONGS),
-            onSearchQueryChange = {},
-            onErrorConsumed = {},
+            onIntent = {},
             onBackClick = {},
             onSongsAdded = {},
         )

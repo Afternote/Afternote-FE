@@ -1,8 +1,9 @@
 package com.afternote.feature.afternote.presentation.receiver.detail
 
 import androidx.annotation.StringRes
+import com.afternote.core.ui.mvi.UiState
 
-sealed interface ReceivedAfternoteDetailUiState {
+internal sealed interface ReceivedAfternoteDetailUiState : UiState {
     data object Loading : ReceivedAfternoteDetailUiState
 
     data class Success(

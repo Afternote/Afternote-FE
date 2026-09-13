@@ -26,13 +26,14 @@ import com.afternote.feature.afternote.presentation.R
  * 중복 억제는 VM 이 맡는다.
  */
 @Composable
-fun AfternoteHomeEntry(
+internal fun AfternoteHomeEntry(
     navigateToDetail: (Long) -> Unit,
     navigateToAdd: (AfternoteType) -> Unit,
     onSettingClick: () -> Unit,
     viewModel: AfternoteHomeViewModel = hiltViewModel(),
 ) {
-    val selectedType by viewModel.selectedType.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val selectedType = uiState.selectedType
     val items = viewModel.pagedAfternotes.collectAsLazyPagingItems()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -40,7 +41,7 @@ fun AfternoteHomeEntry(
     val appendErrorMessage = stringResource(R.string.afternote_home_append_error)
     LaunchedEffect(appendState) {
         if (appendState is LoadState.Error) {
-            viewModel.onListLoadFailed(appendState.error)
+            viewModel.onIntent(AfternoteHomeIntent.ListLoadFailed(appendState.error))
             snackbarHostState.showSnackbar(message = appendErrorMessage)
         }
     }
@@ -48,10 +49,10 @@ fun AfternoteHomeEntry(
     val refreshState = items.loadState.refresh
     LaunchedEffect(refreshState) {
         when (refreshState) {
-            is LoadState.Error -> viewModel.onListLoadFailed(refreshState.error)
+            is LoadState.Error -> viewModel.onIntent(AfternoteHomeIntent.ListLoadFailed(refreshState.error))
 
             // 성공한 로드가 실패 구간을 닫는다 — 다음 실패는 새 사건으로 다시 기록된다.
-            is LoadState.NotLoading -> viewModel.onListLoadSucceeded()
+            is LoadState.NotLoading -> viewModel.onIntent(AfternoteHomeIntent.ListLoadSucceeded)
 
             is LoadState.Loading -> Unit
         }
@@ -61,7 +62,7 @@ fun AfternoteHomeEntry(
         items = items,
         selectedType = selectedType,
         snackbarHostState = snackbarHostState,
-        onTypeSelected = viewModel::selectTab,
+        onTypeSelected = { viewModel.onIntent(AfternoteHomeIntent.SelectType(it)) },
         onListItemClick = { id, type ->
             when (type) {
                 AfternoteType.SOCIAL_NETWORK,

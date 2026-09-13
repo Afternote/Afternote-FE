@@ -25,9 +25,7 @@ import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
-import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailRoute
-import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel
-import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
+import com.afternote.feature.afternote.presentation.testing.ReceivedAfternoteDetailScreenFixture
 import com.afternote.feature.receiver.domain.model.ReceivedAccountCredentials
 import com.afternote.feature.receiver.domain.model.ReceivedAfternoteDetail
 import com.afternote.feature.receiver.domain.model.ReceivedExportBundle
@@ -177,20 +175,19 @@ class ReceiverAdvancedAndroidTest {
             }
         detailResults.addLast(Result.failure(IllegalStateException("offline")))
         detailResults.addLast(Result.success(receivedSocialDetail()))
-        val viewModel =
-            ReceivedAfternoteDetailViewModel(
-                route = ReceivedAfternoteRoute.DetailRoute(afternoteId = 91L),
+        val detailFixture =
+            ReceivedAfternoteDetailScreenFixture(
+                afternoteId = 91L,
                 receiverRepository = repository,
                 errorReporter = FakeErrorReporter(),
             )
 
         composeRule.setContent {
             AfternoteTheme {
-                ReceivedAfternoteDetailRoute(
+                detailFixture.Content(
                     onNavigateBack = {},
                     onNavigateToFullList = {},
                     onNavigateToPlaylist = {},
-                    viewModel = viewModel,
                 )
             }
         }

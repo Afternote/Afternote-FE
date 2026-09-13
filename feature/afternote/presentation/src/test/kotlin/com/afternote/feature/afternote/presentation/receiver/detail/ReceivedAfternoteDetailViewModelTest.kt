@@ -63,12 +63,12 @@ class ReceivedAfternoteDetailViewModelTest {
             val states = recordStates(viewModel)
 
             // 첫 진입 화면의 ON_RESUME (init 로드는 이미 실패로 종료됨) — 재조회가 걸리면 안 된다.
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(ReceivedAfternoteDetailIntent.RefreshOnReturn)
             assertEquals(listOf(42L), repository.requestedDetailIds)
             assertTrue(states.last() is ReceivedAfternoteDetailUiState.Error)
 
             // 복구는 사용자의 수동 재시도로만 일어난다.
-            viewModel.retry()
+            viewModel.onIntent(ReceivedAfternoteDetailIntent.Retry)
             assertEquals(listOf(42L, 42L), repository.requestedDetailIds)
             assertEquals("Instagram", states.last().serviceNameOrNull())
         }
@@ -88,8 +88,8 @@ class ReceivedAfternoteDetailViewModelTest {
             val states = recordStates(viewModel)
 
             // init 로드가 아직 도는 중 — 첫 resume(스킵) 뒤 또 한 번 resume 이 와도 중복이 없어야 한다.
-            viewModel.refreshOnReturn()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(ReceivedAfternoteDetailIntent.RefreshOnReturn)
+            viewModel.onIntent(ReceivedAfternoteDetailIntent.RefreshOnReturn)
             gate.complete(Unit)
 
             assertEquals(listOf(42L), repository.requestedDetailIds)
@@ -113,8 +113,8 @@ class ReceivedAfternoteDetailViewModelTest {
             val viewModel = viewModel(repository)
             val states = recordStates(viewModel)
 
-            viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
-            viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME
+            viewModel.onIntent(ReceivedAfternoteDetailIntent.RefreshOnReturn) // 첫 진입의 ON_RESUME — 스킵
+            viewModel.onIntent(ReceivedAfternoteDetailIntent.RefreshOnReturn) // 백스택 복귀의 ON_RESUME
 
             assertEquals(listOf(42L, 42L), repository.requestedDetailIds)
             assertEquals("Facebook", states.last().serviceNameOrNull())
@@ -141,8 +141,8 @@ class ReceivedAfternoteDetailViewModelTest {
             val viewModel = viewModel(repository, errorReporter = reporter)
             val states = recordStates(viewModel)
 
-            viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
-            viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME
+            viewModel.onIntent(ReceivedAfternoteDetailIntent.RefreshOnReturn) // 첫 진입의 ON_RESUME — 스킵
+            viewModel.onIntent(ReceivedAfternoteDetailIntent.RefreshOnReturn) // 백스택 복귀의 ON_RESUME
 
             // 잘 보고 있던 상세가 에러 화면으로 대체되지 않는다.
             assertEquals("Instagram", states.last().serviceNameOrNull())
@@ -175,7 +175,7 @@ class ReceivedAfternoteDetailViewModelTest {
             val states = recordStates(viewModel)
 
             // 첫 로드가 매달린 사이 사용자가 «다시 시도하기» — 옛 Job 은 잘리고 새 로드가 화면을 채운다.
-            viewModel.retry()
+            viewModel.onIntent(ReceivedAfternoteDetailIntent.Retry)
             assertEquals("Fresh", states.last().serviceNameOrNull())
 
             // 잘린 옛 로드가 이제야 값을 들고 돌아온다.
