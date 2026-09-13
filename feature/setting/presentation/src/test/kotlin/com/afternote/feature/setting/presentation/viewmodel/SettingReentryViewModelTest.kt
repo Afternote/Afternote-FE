@@ -499,7 +499,7 @@ class SettingReentryViewModelTest {
 
     private fun deliveryViewModel(repository: FakeUserReceiverRepository) =
         DeliveryConditionViewModel(
-            SettingRoute.AfterDeliveryRoute(receiverId = 42L),
+            SettingRoute.DeliveryConditionsRoute(receiverId = 42L),
             repository,
             UpdateTimeLetterDeliveryConditionUseCase(repository),
         )
