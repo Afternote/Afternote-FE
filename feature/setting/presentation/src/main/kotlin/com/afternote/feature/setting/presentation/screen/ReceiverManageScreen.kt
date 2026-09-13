@@ -1,11 +1,13 @@
 package com.afternote.feature.setting.presentation.screen
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -26,12 +28,14 @@ import com.afternote.feature.setting.presentation.R
  * 다루는 관리 화면으로, 행 탭이 곧바로 수신자 수정 화면(#595)으로 이동한다.
  */
 @Composable
-fun ReceiverManageScreen(
+internal fun ReceiverManageScreen(
     receivers: List<ReceiverListItem>,
     onBackClick: () -> Unit,
     onReceiverClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    listReplacement: (@Composable () -> Unit)? = null,
 ) {
+    val listState = rememberLazyListState()
     Scaffold(
         modifier = modifier,
         containerColor = Color.Transparent,
@@ -42,18 +46,24 @@ fun ReceiverManageScreen(
             )
         },
     ) { innerPadding ->
-        LazyColumn(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = 20.dp),
-        ) {
-            items(receivers, key = { it.receiverId }) { receiver ->
-                ReceiverManageRow(
-                    receiver = receiver,
-                    onClick = { onReceiverClick(receiver.receiverId) },
-                )
+        Box(Modifier.fillMaxSize().padding(innerPadding)) {
+            if (listReplacement != null) {
+                listReplacement()
+            } else {
+                LazyColumn(
+                    state = listState,
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 20.dp),
+                ) {
+                    items(receivers, key = { it.receiverId }) { receiver ->
+                        ReceiverManageRow(
+                            receiver = receiver,
+                            onClick = { onReceiverClick(receiver.receiverId) },
+                        )
+                    }
+                }
             }
         }
     }

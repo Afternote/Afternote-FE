@@ -1,6 +1,7 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.domain.model.ReceiverListState
 import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.model.setting.ReceiverListItem
 import com.afternote.core.ui.mvi.MviViewModel
@@ -16,14 +17,28 @@ internal class ReceiverListViewModel
     constructor(
         private val userRepository: UserReceiverRepository,
     ) : MviViewModel<ReceiverListIntent, ReceiverListUiState, ReceiverListReducerEvent>(ReceiverListUiState()) {
-        private val receivers = userRepository.receiverListFlow
+        private val receivers = userRepository.receiverListStateFlow
         private var observationJob: Job? = null
         private var stopJob: Job? = null
 
         override fun onIntent(intent: ReceiverListIntent) {
             when (intent) {
-                ReceiverListIntent.ObservationStarted -> startObservation()
-                ReceiverListIntent.ObservationStopped -> stopObservation()
+                ReceiverListIntent.ObservationStarted -> {
+                    startObservation()
+                }
+
+                ReceiverListIntent.ObservationStopped -> {
+                    stopObservation()
+                }
+
+                ReceiverListIntent.Retry -> {
+                    if (currentState.loadState == ReceiverListLoadState.InitialFailure ||
+                        currentState.loadState == ReceiverListLoadState.RefreshFailure
+                    ) {
+                        dispatch(ReceiverListReducerEvent.RetryStarted)
+                        userRepository.refreshReceiverList()
+                    }
+                }
             }
         }
 
@@ -32,7 +47,41 @@ internal class ReceiverListViewModel
             event: ReceiverListReducerEvent,
         ): ReceiverListUiState =
             when (event) {
-                is ReceiverListReducerEvent.ReceiversChanged -> state.copy(receivers = event.receivers)
+                ReceiverListReducerEvent.RetryStarted -> {
+                    state.copy(loadState = ReceiverListLoadState.Loading)
+                }
+
+                is ReceiverListReducerEvent.ResultChanged -> {
+                    val result = event.result
+                    val receivers =
+                        when (result) {
+                            is ReceiverListState.Loading -> result.previousReceivers.orEmpty()
+                            is ReceiverListState.Success -> result.receivers
+                            is ReceiverListState.Failure -> result.previousReceivers.orEmpty()
+                            ReceiverListState.SignedOut -> emptyList()
+                        }
+                    ReceiverListUiState(
+                        receivers = receivers.map { ReceiverListItem(it.receiverId, it.name, it.relation) },
+                        loadState =
+                            when (result) {
+                                is ReceiverListState.Loading, ReceiverListState.SignedOut -> {
+                                    ReceiverListLoadState.Loading
+                                }
+
+                                is ReceiverListState.Success -> {
+                                    ReceiverListLoadState.Ready
+                                }
+
+                                is ReceiverListState.Failure -> {
+                                    if (result.previousReceivers == null) {
+                                        ReceiverListLoadState.InitialFailure
+                                    } else {
+                                        ReceiverListLoadState.RefreshFailure
+                                    }
+                                }
+                            },
+                    )
+                }
             }
 
         private fun startObservation() {
@@ -47,11 +96,7 @@ internal class ReceiverListViewModel
             observationJob =
                 viewModelScope.launch {
                     receivers.collect { receivers ->
-                        dispatch(
-                            ReceiverListReducerEvent.ReceiversChanged(
-                                receivers.map { ReceiverListItem(it.receiverId, it.name, it.relation) },
-                            ),
-                        )
+                        dispatch(ReceiverListReducerEvent.ResultChanged(receivers))
                     }
                 }
         }

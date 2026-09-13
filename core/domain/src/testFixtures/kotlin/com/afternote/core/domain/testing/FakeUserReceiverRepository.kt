@@ -1,5 +1,6 @@
 package com.afternote.core.domain.testing
 
+import com.afternote.core.domain.model.ReceiverListState
 import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.model.delivery.DeliveryConditionItem
 import com.afternote.core.model.delivery.ReceiverDeliveryConditions
@@ -8,6 +9,7 @@ import com.afternote.core.model.user.ReceiverCreated
 import com.afternote.core.model.user.ReceiverDetail
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
@@ -32,6 +34,7 @@ class FakeUserReceiverRepository(
     var onGetReceiverDeliveryConditions: (suspend (Long) -> ReceiverDeliveryConditions)? = null,
     var onUpdateReceiverDeliveryConditions: (suspend (Long, List<DeliveryConditionItem>) -> ReceiverDeliveryConditions)? = null,
     var onRefreshReceiverList: (() -> Unit)? = null,
+    var onReceiverListStateFlow: (() -> Flow<ReceiverListState>)? = null,
 ) : UserReceiverRepository {
     val receiverState = MutableStateFlow(receivers.toList())
     val receiverDetails = ConcurrentHashMap(receiverDetails)
@@ -68,6 +71,9 @@ class FakeUserReceiverRepository(
         refreshReceiverListCounter.incrementAndGet()
         onRefreshReceiverList?.invoke()
     }
+
+    override val receiverListStateFlow: Flow<ReceiverListState>
+        get() = onReceiverListStateFlow?.invoke() ?: receiverListFlow.map(ReceiverListState::Success)
 
     override suspend fun getReceivers(): List<Receiver> {
         getReceiversCounter.incrementAndGet()

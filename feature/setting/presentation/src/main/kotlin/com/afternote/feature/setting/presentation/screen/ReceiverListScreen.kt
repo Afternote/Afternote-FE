@@ -21,11 +21,12 @@ import com.afternote.core.ui.receiver.ReceiverSelectScreen
  * 시의 선택 플로우에만 쓰인다.
  */
 @Composable
-fun ReceiverListScreen(
+internal fun ReceiverListScreen(
     receivers: List<ReceiverListItem>,
     onBackClick: () -> Unit,
     onConfirmClick: (ReceiverListItem) -> Unit,
     modifier: Modifier = Modifier,
+    listReplacement: (@Composable () -> Unit)? = null,
 ) {
     var selectedId by remember { mutableStateOf<Long?>(null) }
 
@@ -37,7 +38,7 @@ fun ReceiverListScreen(
             remember(receivers) {
                 receivers.map { ReceiverSelectItem(id = it.receiverId, name = it.name, relation = it.relation) }
             },
-        selectedReceiverId = selectedId,
+        selectedReceiverId = selectedId?.takeIf { id -> receivers.any { it.receiverId == id } },
         onReceiverToggle = { receiverId ->
             selectedId = if (selectedId == receiverId) null else receiverId
         },
@@ -46,5 +47,6 @@ fun ReceiverListScreen(
             receivers.find { it.receiverId == receiverId }?.let(onConfirmClick)
         },
         modifier = modifier,
+        listReplacement = listReplacement,
     )
 }

@@ -1,6 +1,7 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
 import androidx.lifecycle.ViewModelStore
+import com.afternote.core.domain.model.ReceiverListState
 import com.afternote.core.domain.testing.FakeUserReceiverRepository
 import com.afternote.core.model.setting.ReceiverListItem
 import com.afternote.core.model.user.Receiver
@@ -179,6 +180,84 @@ class ReceiverListViewModelTest {
 
             assertEquals(1, cancellations)
         }
+
+    @Test
+    fun `최초 로딩과 성공한 실제 빈 목록은 다른 상태다`() =
+        runTest(dispatcher) {
+            val results = MutableStateFlow<ReceiverListState>(ReceiverListState.Loading(null))
+            val viewModel = stateViewModel(results)
+            viewModel.onIntent(ReceiverListIntent.ObservationStarted)
+            runCurrent()
+            assertEquals(ReceiverListLoadState.Loading, viewModel.uiState.value.loadState)
+
+            results.value = ReceiverListState.Success(emptyList())
+            runCurrent()
+            assertEquals(ReceiverListLoadState.Ready, viewModel.uiState.value.loadState)
+            assertEquals(emptyList<ReceiverListItem>(), viewModel.uiState.value.receivers)
+        }
+
+    @Test
+    fun `첫 조회 실패와 빈 목록 갱신 실패를 구분한다`() =
+        runTest(dispatcher) {
+            val results = MutableStateFlow<ReceiverListState>(ReceiverListState.Failure(null))
+            val viewModel = stateViewModel(results)
+            viewModel.onIntent(ReceiverListIntent.ObservationStarted)
+            runCurrent()
+            assertEquals(ReceiverListLoadState.InitialFailure, viewModel.uiState.value.loadState)
+
+            results.value = ReceiverListState.Failure(emptyList())
+            runCurrent()
+            assertEquals(ReceiverListLoadState.RefreshFailure, viewModel.uiState.value.loadState)
+        }
+
+    @Test
+    fun `갱신 실패는 마지막 목록을 유지하고 중복 재시도를 하나로 합친다`() =
+        runTest(dispatcher) {
+            val results = MutableStateFlow<ReceiverListState>(ReceiverListState.Failure(receivers.value))
+            val viewModel = stateViewModel(results)
+            viewModel.onIntent(ReceiverListIntent.ObservationStarted)
+            runCurrent()
+            assertEquals(ReceiverListLoadState.RefreshFailure, viewModel.uiState.value.loadState)
+            assertEquals(listOf(ReceiverListItem(7L, "김수신", "가족")), viewModel.uiState.value.receivers)
+
+            viewModel.onIntent(ReceiverListIntent.Retry)
+            viewModel.onIntent(ReceiverListIntent.Retry)
+            assertEquals(1, refreshes)
+            assertEquals(ReceiverListLoadState.Loading, viewModel.uiState.value.loadState)
+            assertEquals(listOf(ReceiverListItem(7L, "김수신", "가족")), viewModel.uiState.value.receivers)
+
+            results.value = ReceiverListState.Success(receivers.value)
+            runCurrent()
+            assertEquals(ReceiverListLoadState.Ready, viewModel.uiState.value.loadState)
+        }
+
+    @Test
+    fun `인증 종료와 캐시 없는 실패는 이전 목록을 지운다`() =
+        runTest(dispatcher) {
+            val results = MutableStateFlow<ReceiverListState>(ReceiverListState.Success(receivers.value))
+            val viewModel = stateViewModel(results)
+            viewModel.onIntent(ReceiverListIntent.ObservationStarted)
+            runCurrent()
+
+            results.value = ReceiverListState.Failure(null)
+            runCurrent()
+            assertEquals(emptyList<ReceiverListItem>(), viewModel.uiState.value.receivers)
+            assertEquals(ReceiverListLoadState.InitialFailure, viewModel.uiState.value.loadState)
+
+            results.value = ReceiverListState.SignedOut
+            runCurrent()
+            assertEquals(emptyList<ReceiverListItem>(), viewModel.uiState.value.receivers)
+            assertEquals(ReceiverListLoadState.Loading, viewModel.uiState.value.loadState)
+        }
+
+    private fun stateViewModel(results: MutableStateFlow<ReceiverListState>): ReceiverListViewModel {
+        val repository =
+            FakeUserReceiverRepository.strict().apply {
+                onReceiverListStateFlow = { results }
+                onRefreshReceiverList = { refreshes++ }
+            }
+        return ReceiverListViewModel(repository).also { store.put("receiver-list", it) }
+    }
 
     private fun viewModel(): ReceiverListViewModel {
         val repository =

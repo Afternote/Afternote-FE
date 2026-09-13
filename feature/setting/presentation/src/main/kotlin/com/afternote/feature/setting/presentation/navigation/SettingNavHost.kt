@@ -25,8 +25,7 @@ import com.afternote.feature.setting.presentation.screen.PassKeyScreen
 import com.afternote.feature.setting.presentation.screen.ProfileEditScreen
 import com.afternote.feature.setting.presentation.screen.PushNotificationScreen
 import com.afternote.feature.setting.presentation.screen.ReceiverEditScreen
-import com.afternote.feature.setting.presentation.screen.ReceiverListScreen
-import com.afternote.feature.setting.presentation.screen.ReceiverManageScreen
+import com.afternote.feature.setting.presentation.screen.ReceiverListRouteContent
 import com.afternote.feature.setting.presentation.screen.ReceiverRegisterScreen
 import com.afternote.feature.setting.presentation.screen.SettingScreen
 import com.afternote.feature.setting.presentation.screen.WithdrawConfirmScreen
@@ -141,21 +140,16 @@ public fun SettingNavHost(
                         viewModel.onIntent(ReceiverListIntent.ObservationStarted)
                         onStopOrDispose { viewModel.onIntent(ReceiverListIntent.ObservationStopped) }
                     }
-                    if (route.selectForDeliveryConditions) {
-                        ReceiverListScreen(
-                            receivers = uiState.receivers,
-                            onBackClick = actions::popBack,
-                            onConfirmClick = { receiver ->
-                                actions.onDeliveryConditionsRecipientSelected(receiver.receiverId)
-                            },
-                        )
-                    } else {
-                        ReceiverManageScreen(
-                            receivers = uiState.receivers,
-                            onBackClick = actions::popBack,
-                            onReceiverClick = actions::onRecipientEditClick,
-                        )
-                    }
+                    ReceiverListRouteContent(
+                        uiState = uiState,
+                        selectForDeliveryConditions = route.selectForDeliveryConditions,
+                        onBackClick = actions::popBack,
+                        onRetry = { viewModel.onIntent(ReceiverListIntent.Retry) },
+                        onConfirmClick = { receiver ->
+                            actions.onDeliveryConditionsRecipientSelected(receiver.receiverId)
+                        },
+                        onReceiverClick = actions::onRecipientEditClick,
+                    )
                 }
 
                 entry<SettingRoute.RecipientRegisterRoute> {

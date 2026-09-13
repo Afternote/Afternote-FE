@@ -1,5 +1,6 @@
 package com.afternote.core.domain.repository
 
+import com.afternote.core.domain.model.ReceiverListState
 import com.afternote.core.model.delivery.DeliveryConditionItem
 import com.afternote.core.model.delivery.ReceiverDeliveryConditions
 import com.afternote.core.model.user.Receiver
@@ -20,9 +21,12 @@ interface UserReceiverRepository {
      *
      * **빈 목록은 «수신인이 없음» 을 뜻하지 않는다 — 실패도 같은 모양으로 들어온다.** 화면이 이 값만 보고
      * «등록된 수신인이 없어요» 를 확정하면 오프라인에서 그 거짓을 사용자에게 보여 주게 된다. 실패와 없음을
-     * 가르려면 별도 신호가 필요하고, 그 표기는 #714 범위다.
+     * 가르려면 [receiverListStateFlow]를 사용한다.
      */
     val receiverListFlow: Flow<List<Receiver>>
+
+    /** 로딩·실패·실제 빈 목록을 구분하며, 기존 목록 전용 구독과 같은 갱신 신호를 사용한다. */
+    val receiverListStateFlow: Flow<ReceiverListState>
 
     /**
      * 현재 구독 중인 수신자 목록을 다시 조회하도록 요청한다. 조회 결과와 세션별 실패 처리는
