@@ -27,7 +27,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -237,25 +236,5 @@ private fun ProfileEditForm(
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ProfileEditScreenPrev() {
-    Scaffold(
-        topBar = { DetailTopBar(title = "프로필 설정") },
-    ) { innerPadding ->
-        ProfileEditForm(
-            state =
-                ProfileEditUiState.Success(
-                    name = "박서연",
-                    phone = "01012345678",
-                    email = "afternote@email.com",
-                ),
-            onUpdateClick = { _, _ -> },
-            onWithdrawGuideClick = {},
-            modifier = Modifier.padding(innerPadding),
-        )
     }
 }
