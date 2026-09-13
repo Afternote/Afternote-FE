@@ -167,4 +167,6 @@
     <string name="receiver_load_failed">수신자 정보를 불러오지 못했습니다.</string>
     <string name="settings_menu_unavailable">현재 이 메뉴는 이용할 수 없습니다.</string>
     <string name="settings_menu_acknowledge">확인</string>
+    <string name="setting_receiver_list_load_failed">수신자 목록을 불러오지 못했어요.</string>
+    <string name="setting_receiver_list_retry">다시 시도</string>
 </resources>

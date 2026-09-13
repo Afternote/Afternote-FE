@@ -1,6 +1,7 @@
 package com.afternote.core.data.repoimpl
 
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.domain.model.ReceiverListState
 import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.testing.FakeAuthRepository
@@ -28,7 +29,10 @@ import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionUpdateRe
 import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.core.network.service.UserApiService
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.first
@@ -37,6 +41,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.net.UnknownHostException
 
@@ -463,6 +468,223 @@ class UserRepositoryImplTest {
                 collector.cancelAndJoin()
             }
         }
+
+    @Test
+    fun `receiverListStateFlow - 로딩 뒤 성공한 빈 목록을 명시한다`() =
+        runBlocking {
+            val response = CompletableDeferred<BaseResponse<List<ReceiverListDto>>>()
+            val repository = repository(onGetReceivers = { response.await() })
+            val emissions = Channel<ReceiverListState>(capacity = Channel.UNLIMITED)
+            val collector =
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    repository.receiverListStateFlow.collect { emissions.send(it) }
+                }
+
+            try {
+                assertEquals(ReceiverListState.Loading(null), emissions.nextState())
+                response.complete(dataResponse(emptyList()))
+
+                assertEquals(ReceiverListState.Success(emptyList()), emissions.nextState())
+                assertTrue(errorReporter.writtenFailures.isEmpty())
+            } finally {
+                collector.cancelAndJoin()
+            }
+        }
+
+    @Test
+    fun `receiverListStateFlow - 첫 실패는 빈 목록 성공과 구별되고 같은 구독에서 재시도한다`() =
+        runBlocking {
+            var requestCount = 0
+            val repository =
+                repository(
+                    onGetReceivers = {
+                        requestCount++
+                        if (requestCount == 1) throw UnknownHostException("첫 조회 실패")
+                        dataResponse(listOf(receiverDto("재시도 성공")))
+                    },
+                )
+            val emissions = Channel<ReceiverListState>(capacity = Channel.UNLIMITED)
+            val collector =
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    repository.receiverListStateFlow.collect { emissions.send(it) }
+                }
+
+            try {
+                assertEquals(ReceiverListState.Loading(null), emissions.nextState())
+                assertEquals(ReceiverListState.Failure(null), emissions.nextState())
+                assertEquals(1, errorReporter.writtenFailures.size)
+
+                val contract: UserReceiverRepository = repository
+                contract.refreshReceiverList()
+
+                assertEquals(ReceiverListState.Loading(null), emissions.nextState())
+                val recovered = emissions.nextState() as ReceiverListState.Success
+                assertEquals(listOf("재시도 성공"), recovered.receivers.map { it.name })
+                assertEquals(2, requestCount)
+                assertEquals(1, errorReporter.writtenFailures.size)
+            } finally {
+                collector.cancelAndJoin()
+            }
+        }
+
+    @Test
+    fun `receiverListStateFlow - 갱신 로딩과 실패에 마지막 성공 목록을 보존한다`() =
+        runBlocking {
+            var requestCount = 0
+            val repository =
+                repository(
+                    onGetReceivers = {
+                        requestCount++
+                        if (requestCount > 1) throw UnknownHostException("갱신 실패")
+                        dataResponse(listOf(receiverDto("기존 수신자")))
+                    },
+                )
+            val emissions = Channel<ReceiverListState>(capacity = Channel.UNLIMITED)
+            val collector =
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    repository.receiverListStateFlow.collect { emissions.send(it) }
+                }
+
+            try {
+                assertEquals(ReceiverListState.Loading(null), emissions.nextState())
+                val loaded = emissions.nextState() as ReceiverListState.Success
+                assertEquals(listOf("기존 수신자"), loaded.receivers.map { it.name })
+
+                repository.refreshReceiverList()
+
+                assertEquals(ReceiverListState.Loading(loaded.receivers), emissions.nextState())
+                assertEquals(ReceiverListState.Failure(loaded.receivers), emissions.nextState())
+                assertEquals(2, requestCount)
+                assertEquals(1, errorReporter.writtenFailures.size)
+            } finally {
+                collector.cancelAndJoin()
+            }
+        }
+
+    @Test
+    fun `receiverListStateFlow - 401 뒤에는 다음 로딩과 일시 실패에도 폐기한 캐시를 내지 않는다`() =
+        runBlocking {
+            var requestCount = 0
+            val repository =
+                repository(
+                    onGetReceivers = {
+                        requestCount++
+                        when (requestCount) {
+                            1 -> dataResponse(listOf(receiverDto("권한이 끝난 계정")))
+                            2 -> throw ApiException(401, 401, "인증 만료", "인증 만료")
+                            else -> throw UnknownHostException("401 이후 네트워크 실패")
+                        }
+                    },
+                )
+            val emissions = Channel<ReceiverListState>(capacity = Channel.UNLIMITED)
+            val collector =
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    repository.receiverListStateFlow.collect { emissions.send(it) }
+                }
+
+            try {
+                assertEquals(ReceiverListState.Loading(null), emissions.nextState())
+                val loaded = emissions.nextState() as ReceiverListState.Success
+                assertEquals(listOf("권한이 끝난 계정"), loaded.receivers.map { it.name })
+
+                repository.refreshReceiverList()
+
+                assertEquals(ReceiverListState.Loading(loaded.receivers), emissions.nextState())
+                assertEquals(ReceiverListState.Failure(null), emissions.nextState())
+
+                repository.refreshReceiverList()
+
+                assertEquals(ReceiverListState.Loading(null), emissions.nextState())
+                assertEquals(ReceiverListState.Failure(null), emissions.nextState())
+                assertEquals(3, requestCount)
+                assertEquals(2, errorReporter.writtenFailures.size)
+            } finally {
+                collector.cancelAndJoin()
+            }
+        }
+
+    @Test
+    fun `receiverListStateFlow - 로그아웃과 새 로그인 사이에 이전 계정 캐시를 격리한다`() =
+        runBlocking {
+            var requestCount = 0
+            val authRepository = receiverAuthRepository(loggedIn = true)
+            val repository =
+                repository(
+                    authRepository = authRepository,
+                    onGetReceivers = {
+                        requestCount++
+                        if (requestCount > 1) throw UnknownHostException("새 계정 조회 실패")
+                        dataResponse(listOf(receiverDto("이전 계정 수신자")))
+                    },
+                )
+            val emissions = Channel<ReceiverListState>(capacity = Channel.UNLIMITED)
+            val collector =
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    repository.receiverListStateFlow.collect { emissions.send(it) }
+                }
+
+            try {
+                assertEquals(ReceiverListState.Loading(null), emissions.nextState())
+                val loaded = emissions.nextState() as ReceiverListState.Success
+                assertEquals(listOf("이전 계정 수신자"), loaded.receivers.map { it.name })
+
+                authRepository.loggedIn = false
+
+                assertEquals(ReceiverListState.SignedOut, emissions.nextState())
+                assertEquals(1, requestCount)
+
+                authRepository.loggedIn = true
+
+                assertEquals(ReceiverListState.Loading(null), emissions.nextState())
+                assertEquals(ReceiverListState.Failure(null), emissions.nextState())
+                assertEquals(2, requestCount)
+            } finally {
+                collector.cancelAndJoin()
+            }
+        }
+
+    @Test
+    fun `receiverListStateFlow - 수집 취소를 API에 전파하고 실패 상태와 리포트를 만들지 않는다`() =
+        runBlocking {
+            val requestStarted = CompletableDeferred<Unit>()
+            val cancelledRequest = CompletableDeferred<CancellationException>()
+            val repository =
+                repository(
+                    onGetReceivers = {
+                        requestStarted.complete(Unit)
+                        try {
+                            awaitCancellation()
+                        } catch (cancellation: CancellationException) {
+                            cancelledRequest.complete(cancellation)
+                            throw cancellation
+                        }
+                    },
+                )
+            val emissions = Channel<ReceiverListState>(capacity = Channel.UNLIMITED)
+            val collector =
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    repository.receiverListStateFlow.collect { emissions.send(it) }
+                }
+
+            try {
+                assertEquals(ReceiverListState.Loading(null), emissions.nextState())
+                withTimeout(TEST_TIMEOUT_MILLIS) { requestStarted.await() }
+                val cancellation = CancellationException("화면 수집 종료")
+
+                collector.cancel(cancellation)
+                withTimeout(TEST_TIMEOUT_MILLIS) { collector.join() }
+
+                val propagated = withTimeout(TEST_TIMEOUT_MILLIS) { cancelledRequest.await() }
+                assertEquals(cancellation.message, propagated.message)
+                assertTrue(collector.isCancelled)
+                assertTrue(emissions.tryReceive().isFailure)
+                assertTrue(errorReporter.writtenFailures.isEmpty())
+            } finally {
+                collector.cancelAndJoin()
+            }
+        }
+
+    private suspend fun Channel<ReceiverListState>.nextState(): ReceiverListState = withTimeout(TEST_TIMEOUT_MILLIS) { receive() }
 
     private fun receiverAuthRepository(loggedIn: Boolean): FakeAuthRepository =
         FakeAuthRepository.strict(loggedIn = loggedIn).apply {

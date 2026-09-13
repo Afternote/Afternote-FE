@@ -5,6 +5,7 @@ import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.data.mapper.delivery.toRequestDto
 import com.afternote.core.data.mapper.user.toDomain
 import com.afternote.core.domain.error.ReceiverRequestRejectedException
+import com.afternote.core.domain.model.ReceiverListState
 import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.model.delivery.DeliveryConditionItem
@@ -29,6 +30,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -55,47 +57,54 @@ internal class UserReceiverRepositoryImpl
     ) : UserReceiverRepository {
         private val receiverRefreshRevision = MutableStateFlow(0L)
 
-        // 조회 실패를 예외로 흘리면 구독 중인 화면이 미처리 예외로 죽는다. 일반적인 일시 실패는 같은
-        // 로그인 구간에서 이 collector가 마지막으로 성공한 목록으로 낮춘다. 캐시를 flow 안에 두는 이유는
-        // 저장소 인스턴스보다 수명이 짧은 «로그인 구간 + collector»에 귀속해 계정 사이에 섞이지 않게 하기 위함이다.
         @OptIn(ExperimentalCoroutinesApi::class)
-        override val receiverListFlow: Flow<List<Receiver>> =
+        override val receiverListStateFlow: Flow<ReceiverListState> =
             authRepository.isLoggedIn
                 .distinctUntilChanged()
                 .flatMapLatest { loggedIn ->
                     if (!loggedIn) {
-                        flowOf(emptyList())
+                        flowOf(ReceiverListState.SignedOut)
                     } else {
                         receiverListForAuthenticatedSession()
                     }
                 }
 
-        private fun receiverListForAuthenticatedSession(): Flow<List<Receiver>> =
+        // 기존 소비자는 로딩 중 방출을 받지 않으며 실패 시 같은 구독의 마지막 목록을 받는다.
+        override val receiverListFlow: Flow<List<Receiver>> =
+            receiverListStateFlow.mapNotNull { state ->
+                when (state) {
+                    is ReceiverListState.Loading -> null
+                    is ReceiverListState.Success -> state.receivers
+                    is ReceiverListState.Failure -> state.previousReceivers.orEmpty()
+                    ReceiverListState.SignedOut -> emptyList()
+                }
+            }
+
+        private fun receiverListForAuthenticatedSession(): Flow<ReceiverListState> =
             flow {
-                var lastKnownReceivers = emptyList<Receiver>()
+                // 저장소가 아닌 로그인 구간 + collector에 귀속하여 계정 간 캐시 공유를 막는다.
+                var lastKnownReceivers: List<Receiver>? = null
                 receiverRefreshRevision.collect {
-                    val receivers =
+                    emit(ReceiverListState.Loading(lastKnownReceivers))
+                    val state =
                         runCatchingCancellable { getReceivers() }
-                            .onFailure {
-                                // 이 flow 가 하는 일이 «예외를 삼켜 화면을 살리는 것» 이라, 삼킨 뒤의
-                                // 기록이 이 실패 경로의 유일한 신호다. logcat 은 실기에서 회수되지 않으므로
-                                // 크래시 리포팅 창구로 남긴다. 취소 제외·문구 redaction 은 리포터 정책이 담당한다.
-                                errorReporter.recordFailure(
-                                    throwable = it,
-                                    attributes = mapOf(KEY_STAGE to STAGE_RECEIVER_LIST),
-                                )
-                            }.fold(
-                                onSuccess = { it },
+                            .fold(
+                                onSuccess = { receivers ->
+                                    lastKnownReceivers = receivers
+                                    ReceiverListState.Success(receivers)
+                                },
                                 onFailure = { failure ->
+                                    errorReporter.recordFailure(
+                                        throwable = failure,
+                                        attributes = mapOf(KEY_STAGE to STAGE_RECEIVER_LIST),
+                                    )
                                     if (failure is ApiException && failure.status == UNAUTHORIZED_STATUS) {
-                                        emptyList()
-                                    } else {
-                                        lastKnownReceivers
+                                        lastKnownReceivers = null
                                     }
+                                    ReceiverListState.Failure(lastKnownReceivers)
                                 },
                             )
-                    lastKnownReceivers = receivers
-                    emit(receivers)
+                    emit(state)
                 }
             }
 

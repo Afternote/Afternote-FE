@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -165,6 +166,8 @@ private fun ReceiverSelectScaffold(
                     .padding(top = 10.dp),
         ) {
             val searchState = rememberTextFieldState()
+            // 로딩 슬롯이 목록을 잠시 대체해도 기존 스크롤 위치는 화면 수명 동안 유지한다.
+            val listState = rememberLazyListState()
 
             AfternoteTextField(
                 state = searchState,
@@ -179,6 +182,7 @@ private fun ReceiverSelectScaffold(
                 ReceiverSelectList(
                     receivers = receivers,
                     searchQuery = searchState.text.toString(),
+                    listState = listState,
                     selectedReceiverIds = selectedReceiverIds,
                     onReceiverToggle = onReceiverToggle,
                 )
@@ -191,10 +195,10 @@ private fun ReceiverSelectScaffold(
 private fun ReceiverSelectList(
     receivers: List<ReceiverSelectItem>,
     searchQuery: String,
+    listState: LazyListState,
     selectedReceiverIds: List<Long>,
     onReceiverToggle: (Long) -> Unit,
 ) {
-    val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     var selectedConsonant by remember { mutableStateOf<Char?>(null) }
 
