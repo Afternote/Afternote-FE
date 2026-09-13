@@ -10,6 +10,7 @@ import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.DetailReceiver
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
+import com.afternote.feature.afternote.domain.model.author.DraftContent
 import com.afternote.feature.afternote.domain.model.author.DraftDetail
 import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
@@ -70,22 +71,54 @@ fun AfternoteDetailDto.toDraftDomain(): DraftDetail {
         }
     return DraftDetail(
         id = afternoteId,
-        type = resolvedType,
         serviceName = title,
         timestamps = toTimestamps(),
         receivers = receivers.toDomain(),
         leaveMessageBlocks = leaveMessage.toLeaveMessageBlocks(),
-        credentials = toDraftCredentials(),
-        processingMethods = processingMethods.orEmpty(),
-        songs = playlist?.songs?.map { it.toDomain() }.orEmpty(),
-        media =
-            MemorialMedia(
-                photoUrl = playlist?.memorialPhotoUrl,
-                videoUrl = playlist?.memorialVideo?.videoUrl,
-                thumbnailUrl = playlist?.memorialVideo?.thumbnailUrl,
-            ),
+        content = toDraftContent(resolvedType),
     )
 }
+
+// 발행 쪽 [toDetailContent] 와 종류·순서를 맞춘다. 다른 것은 빠진 값을 실패로 올리지 않는다는 점뿐이다 —
+// 임시저장에서 «아직 안 씀» 은 정상이라 각 종류의 빈 상태로 내려보낸다.
+private fun AfternoteDetailDto.toDraftContent(type: AfternoteType): DraftContent =
+    when (type) {
+        AfternoteType.SOCIAL_NETWORK -> {
+            DraftContent.SocialNetwork(
+                credentials = toDraftCredentials(),
+                processingMethods = processingMethods.orEmpty(),
+            )
+        }
+
+        AfternoteType.BUSINESS -> {
+            DraftContent.Business(
+                credentials = toDraftCredentials(),
+                processingMethods = processingMethods.orEmpty(),
+            )
+        }
+
+        AfternoteType.GALLERY_AND_FILES -> {
+            DraftContent.Gallery(
+                processingMethods = processingMethods.orEmpty(),
+            )
+        }
+
+        AfternoteType.MEMORIAL -> {
+            DraftContent.Memorial(
+                songs = playlist?.songs?.map { it.toDomain() }.orEmpty(),
+                media =
+                    MemorialMedia(
+                        photoUrl = playlist?.memorialPhotoUrl,
+                        videoUrl = playlist?.memorialVideo?.videoUrl,
+                        thumbnailUrl = playlist?.memorialVideo?.thumbnailUrl,
+                    ),
+            )
+        }
+
+        AfternoteType.ESTATE -> {
+            DraftContent.Estate
+        }
+    }
 
 // 한쪽만 채운 임시저장은 그 한쪽만 살린다 — 통째로 미작성이면 null 로 남겨 «아직 안 씀» 을 그대로 전한다.
 private fun AfternoteDetailDto.toDraftCredentials(): DetailCredentials? =
