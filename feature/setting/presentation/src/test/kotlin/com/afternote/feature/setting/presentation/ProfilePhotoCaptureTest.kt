@@ -77,7 +77,7 @@ class ProfilePhotoCaptureTest {
         assertNotNull(captured)
         assertEquals(registry.lastCaptureTarget?.toString(), captured)
         assertEquals(captured, viewModel.success().displayImageUri)
-        composeRule.onNodeWithContentDescription(PROFILE_PHOTO).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(PROFILE_IMAGE).assertIsDisplayed()
 
         // (2) 매니페스트 authority · setting_file_paths.xml 의 cache-path · 코드 상수가 서로 맞는가.
         //     어긋나면 IllegalArgumentException 인데 그 지점이 카메라를 띄우려는 순간이라 드러나는 시점이 늦다.

@@ -9,11 +9,22 @@ import com.afternote.feature.setting.presentation.viewmodel.ProfileEditViewModel
 
 internal const val PROFILE_TEST_TIMEOUT_MILLIS = 5_000L
 
-/** `ProfilePhotoWithAddBadge` 의 「추가」 배지 — 눌리는 상태에서는 clickable 이 자손 semantics 를 합친다. */
-internal const val ADD_BADGE = "추가"
+/**
+ * core 의 `ProfileImagePicker` 가 그리는 편집 배지 — `core_ui_content_description_profile_edit`.
+ *
+ * 사진 선택을 받을 수 없는 상태에서는 배지가 아예 그려지지 않으므로, 잠김 판정은 클릭 동작이 아니라
+ * 노드 부재로 한다.
+ */
+internal const val ADD_BADGE = "프로필 수정 버튼"
 
-internal const val DEFAULT_PHOTO = "기본"
-internal const val PROFILE_PHOTO = "프로필 사진"
+/**
+ * 아바타 — `core_ui_content_description_profile_image`.
+ *
+ * 기본 아바타와 고른 사진이 같은 설명을 쓴다. 「사진이 실렸는가」는 이 노드로 갈리지 않으므로
+ * `displayImageUri` 로 단언한다.
+ */
+internal const val PROFILE_IMAGE = "프로필 이미지"
+
 internal const val GALLERY_ITEM = "갤러리에서 선택"
 internal const val CAMERA_ITEM = "사진 촬영"
 internal const val CAPTURE_UNAVAILABLE = "카메라를 사용할 수 없습니다."
