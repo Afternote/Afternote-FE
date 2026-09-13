@@ -127,5 +127,4 @@ private fun UiText.resolve(resources: Resources): String =
     when (this) {
         is UiText.Resource -> if (args.isEmpty()) resources.getString(resId) else resources.getString(resId, *args.toTypedArray())
         is UiText.Dynamic -> value
-        is UiText.DynamicOrResource -> value ?: resources.getString(fallbackResId)
     }
