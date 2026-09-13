@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!--
+        촬영 결과 하나만 노출한다. 캐시 루트 전체를 열면 이 provider 로 앱 캐시의 아무 파일이나
+        건네줄 수 있게 되므로, 프로필 촬영 전용 하위 디렉터리로 좁힌다.
+        path 는 ProfileCaptureFiles.kt 의 CAPTURE_DIR 과 같은 값이어야 한다.
+    -->
+    <cache-path
+            name="profile_capture"
+            path="profile_capture/" />
+</paths>

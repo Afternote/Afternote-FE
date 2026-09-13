@@ -32,6 +32,7 @@ dependencies {
     implementation(projects.core.ui)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.compose.runtime)
+    implementation(libs.coil.compose)
     implementation(libs.kakao.sdk.auth)
     implementation(libs.kakao.sdk.user)
     implementation(libs.androidx.biometric)

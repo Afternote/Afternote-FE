@@ -1,6 +1,5 @@
 package com.afternote.feature.setting.presentation.screen
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,8 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.input.InputTransformation
@@ -33,7 +30,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -48,7 +44,10 @@ import com.afternote.core.ui.mvi.ObserveSignal
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
+import com.afternote.feature.setting.presentation.component.ProfilePhotoSourceSheet
+import com.afternote.feature.setting.presentation.component.ProfilePhotoWithAddBadge
 import com.afternote.feature.setting.presentation.component.SettingLoadErrorContent
+import com.afternote.feature.setting.presentation.component.rememberProfilePhotoSourceState
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditEvent
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditIntent
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditUiState
@@ -83,7 +82,25 @@ internal fun ProfileEditScreen(
         }
     }
 
-    ProfileEditContent(uiState, onBackClick, onWithdrawGuideClick, viewModel::onIntent, snackbarHostState, modifier)
+    // 화면 수준에 둔다 — 촬영 중 프로세스가 회수되면 대기 중인 결과 URI 를 복원해야 하는데,
+    // Success 분기 안에서 만들면 상태가 바뀔 때 그 saveable 자리가 사라진다.
+    val photoSourceState =
+        rememberProfilePhotoSourceState(
+            snackbarHostState = snackbarHostState,
+            isProfileReady = (uiState as? ProfileEditUiState.Success)?.isUpdating == false,
+            onPhotoSelected = { uri -> viewModel.onIntent(ProfileEditIntent.SelectProfileImage(uri)) },
+        )
+
+    ProfileEditContent(
+        uiState,
+        onBackClick,
+        onWithdrawGuideClick,
+        viewModel::onIntent,
+        snackbarHostState,
+        photoSourceState::open,
+        modifier,
+    )
+    ProfilePhotoSourceSheet(state = photoSourceState)
 }
 
 @Composable
@@ -93,6 +110,7 @@ private fun ProfileEditContent(
     onWithdrawGuideClick: () -> Unit,
     onIntent: (ProfileEditIntent) -> Unit,
     snackbarHostState: SnackbarHostState,
+    onAddPhotoClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -122,6 +140,7 @@ private fun ProfileEditContent(
             is ProfileEditUiState.Success -> {
                 ProfileEditForm(
                     state = state,
+                    onAddPhotoClick = onAddPhotoClick,
                     onUpdateClick = { name, phone -> onIntent(ProfileEditIntent.UpdateProfile(name, phone)) },
                     onWithdrawGuideClick = onWithdrawGuideClick,
                     modifier = Modifier.padding(innerPadding),
@@ -142,6 +161,7 @@ private fun ProfileEditContent(
 @Composable
 private fun ProfileEditForm(
     state: ProfileEditUiState.Success,
+    onAddPhotoClick: () -> Unit,
     onUpdateClick: (name: String, phone: String) -> Unit,
     onWithdrawGuideClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -176,26 +196,12 @@ private fun ProfileEditForm(
                         .padding(top = 50.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Box(modifier = Modifier.size(134.dp)) {
-                    Image(
-                        painter = painterResource(R.drawable.ic_default_profile),
-                        contentDescription = "기본",
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                    Box(
-                        modifier =
-                            Modifier
-                                .align(Alignment.BottomEnd)
-                                .size(48.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Image(
-                            painter = painterResource(R.drawable.ic_plus),
-                            contentDescription = "추가",
-                            modifier = Modifier.requiredSize(72.dp),
-                        )
-                    }
-                }
+                ProfilePhotoWithAddBadge(
+                    // 저장 중에는 배지도 잠근다 — 업로드는 시작 시점의 URI 로 진행되므로, 그 사이
+                    // 다른 사진을 고르게 두면 보이는 사진과 올라가는 사진이 갈린다.
+                    onAddClick = if (state.isUpdating) null else onAddPhotoClick,
+                    displayImageUri = state.displayImageUri,
+                )
             }
         }
         item {
@@ -300,6 +306,7 @@ private fun ProfileEditScreenPrev() {
                     phone = "01012345678",
                     email = "afternote@email.com",
                 ),
+            onAddPhotoClick = {},
             onUpdateClick = { _, _ -> },
             onWithdrawGuideClick = {},
             modifier = Modifier.padding(innerPadding),

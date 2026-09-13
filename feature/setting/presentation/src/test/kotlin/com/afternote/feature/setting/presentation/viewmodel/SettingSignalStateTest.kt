@@ -1,6 +1,7 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
 import com.afternote.core.domain.testing.FakeMyProfileRepository
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.core.model.user.User
 import com.afternote.core.ui.UiText
 import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
@@ -41,7 +42,7 @@ class SettingSignalStateTest {
                     onGetMyProfile = { user }
                     onUpdateMyProfile = { _, _, _ -> user }
                 }
-            val viewModel = ProfileEditViewModel(repository)
+            val viewModel = ProfileEditViewModel(repository, FakePhotoUploadRepository.strict())
             runCurrent()
 
             repeat(2) {
@@ -66,7 +67,7 @@ class SettingSignalStateTest {
                         error("offline")
                     }
                 }
-            val viewModel = ProfileEditViewModel(repository)
+            val viewModel = ProfileEditViewModel(repository, FakePhotoUploadRepository.strict())
             runCurrent()
             repeat(2) { viewModel.onIntent(ProfileEditIntent.UpdateProfile("새 이름", "01012345678")) }
             runCurrent()

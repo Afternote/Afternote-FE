@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.User
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -35,7 +36,7 @@ class ProfileReentryFormTest {
             FakeUserRepository.strict().apply {
                 onGetMyProfile = { User("초기 이름", "before@example.com", "01011112222", null) }
             }
-        val viewModel = ProfileEditViewModel(repository)
+        val viewModel = ProfileEditViewModel(repository, FakePhotoUploadRepository.strict())
         setContent(viewModel)
         composeRule.onNode(hasSetTextAction() and hasText("초기 이름")).performScrollTo().performTextReplacement("작성 중인 이름")
 
@@ -62,7 +63,7 @@ class ProfileReentryFormTest {
                     User("초기 이름", "before@example.com", "01011112222", null)
                 }
             }
-        val viewModel = ProfileEditViewModel(repository)
+        val viewModel = ProfileEditViewModel(repository, FakePhotoUploadRepository.strict())
         setContent(viewModel)
         composeRule.onNode(hasSetTextAction() and hasText("초기 이름")).performScrollTo().performTextReplacement("작성 중인 이름")
         composeRule.onNode(hasSetTextAction() and hasText("01011112222")).performScrollTo().performTextReplacement("01099998888")
