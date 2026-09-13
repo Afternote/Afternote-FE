@@ -44,6 +44,7 @@ internal fun DeliveryVerificationFlowHost(
         hiltViewModel<DeliveryVerificationFlowViewModel, DeliveryVerificationFlowViewModel.Factory>(
             creationCallback = { factory -> factory.create(key) },
         )
+    val flowState by flowViewModel.uiState.collectAsStateWithLifecycle()
     val stepStack = rememberNavBackStack(ReceiverRoute.IdentityVerificationIntroRoute)
     val boundary = remember(onExitFlow) { FeatureStackBoundary(onExitFlow) }
     val actions =
@@ -57,7 +58,6 @@ internal fun DeliveryVerificationFlowHost(
         entryProvider =
             entryProvider {
                 entry<ReceiverRoute.IdentityVerificationIntroRoute> {
-                    val flowState by flowViewModel.uiState.collectAsStateWithLifecycle()
                     // 이미 본인 확인을 마친 사용자는 안내 화면을 건너뛴다.
                     if (flowState.isIdentityVerified) {
                         LaunchedEffect(Unit) {
@@ -73,7 +73,7 @@ internal fun DeliveryVerificationFlowHost(
 
                 entry<ReceiverRoute.IdentityVerificationEmailRoute> {
                     IdentityVerificationEmailScreen(
-                        senderId = flowViewModel.uiState.value.senderId,
+                        senderId = flowState.senderId,
                         onBackClick = actions::popBack,
                         onVerified = actions::proceedToMasterKey,
                     )
@@ -81,7 +81,7 @@ internal fun DeliveryVerificationFlowHost(
 
                 entry<ReceiverRoute.MasterKeyRoute> {
                     MasterKeyScreen(
-                        senderId = flowViewModel.uiState.value.senderId,
+                        senderId = flowState.senderId,
                         onBackClick = actions::popBack,
                         onVerified = actions::proceedToDocumentUpload,
                     )
