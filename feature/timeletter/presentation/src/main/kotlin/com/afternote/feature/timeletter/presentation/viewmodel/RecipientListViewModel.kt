@@ -11,7 +11,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
@@ -51,13 +50,12 @@ class RecipientListViewModel
                         probe.fold(
                             onSuccess = { receivers ->
                                 emit(RecipientListUiState.Success(receivers.toRecipientItems()))
-                                // receiverListFlow는 구독마다 빈 lastKnownReceivers에서 다시 조회한다
-                                // (#1099) — 그 첫 방출은 방금 받은 성공 결과와 중복된 조회이자, 그 조회만
-                                // 일시 실패해도 방금 받은 목록을 빈 목록으로 덮어써 버린다. 첫 방출을 버리고
-                                // 이후 방출부터 실시간 반영(세션 전환·다른 화면의 등록/수정)에 쓴다.
+                                // receiverListFlow는 로그인 구간 동안의 마지막 성공 목록을 저장소가 직접
+                                // 들고 있어 재구독의 중복 조회가 일시 실패해도 그 목록으로 낮춘다 — 여기서
+                                // 방출을 걸러낼 필요가 없다. 걸러내면 로그아웃으로 인한 빈 목록 방출까지
+                                // 함께 삼켜져 세션이 끝났는데도 이전 목록이 그대로 남는다.
                                 emitAll(
                                     userRepository.receiverListFlow
-                                        .drop(1)
                                         .map { it.toRecipientItems() }
                                         .map(RecipientListUiState::Success),
                                 )

@@ -90,21 +90,18 @@ class RecipientListViewModelTest {
         }
 
     @Test
-    fun `조회 성공 뒤 receiverListFlow의 첫 재조회가 비어 있어도 방금 받은 성공 목록을 유지한다`() =
+    fun `probe 성공과 flow 구독 사이에 로그아웃되면 빈 목록으로 갱신된다`() =
         runTest(dispatcher) {
-            // 실제 UserReceiverRepositoryImpl.receiverListFlow는 구독마다 빈 lastKnownReceivers에서
-            // 다시 조회하므로, getReceivers()가 성공한 직후에도 그 구독의 첫 방출은 일시 실패로 비어
-            // 있을 수 있다(#1099). 그 첫 방출을 흉내 내 방금 받은 성공 목록이 덮이지 않는지 검증한다.
-            val successReceivers = listOf(Receiver(1L, "김수신", "가족", "auth-1"))
-            var receiverListFlowCallCount = 0
+            // getReceivers() 직접 호출(probe)이 이전 계정 목록으로 성공한 뒤, receiverListFlow 를
+            // 구독하는 시점엔 이미 로그아웃돼 있는 경합을 흉내 낸다. 전에는 receiverListFlow 의 첫
+            // 방출을 무조건 버려서 이 경우 세션 종료 신호(빈 목록)까지 삼켜져 화면이 이전 계정 목록에
+            // 멈춰 있었다 — 세션 변경은 항상 반영해야 한다.
+            val staleReceivers = listOf(Receiver(1L, "이전 계정 수신인", "가족", "auth-1"))
             val repository =
                 FakeUserRepository(
-                    receivers = successReceivers,
-                    onGetReceivers = { successReceivers },
-                    onReceiverListFlow = {
-                        receiverListFlowCallCount += 1
-                        if (receiverListFlowCallCount == 1) flowOf(emptyList()) else flowOf(successReceivers)
-                    },
+                    receivers = staleReceivers,
+                    onGetReceivers = { staleReceivers },
+                    onReceiverListFlow = { flowOf(emptyList()) },
                 )
             val viewModel = RecipientListViewModel(repository)
             val job = launch { viewModel.uiState.collect {} }
@@ -113,7 +110,7 @@ class RecipientListViewModelTest {
 
             val state = viewModel.uiState.value
             assertTrue(state is RecipientListUiState.Success)
-            assertEquals(listOf("김수신"), (state as RecipientListUiState.Success).recipients.map { it.name })
+            assertEquals(emptyList<String>(), (state as RecipientListUiState.Success).recipients.map { it.name })
             job.cancel()
         }
 }

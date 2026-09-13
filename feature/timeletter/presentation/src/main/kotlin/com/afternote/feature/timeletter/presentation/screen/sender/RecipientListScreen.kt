@@ -56,6 +56,10 @@ fun RecipientListScreen(
     viewModel: RecipientListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    // Success 분기 안에 두면 5초 이상 백그라운드 뒤 재구독으로 uiState 가 Loading 을 거쳐 갈 때마다
+    // RecipientListContent 가 컴포지션을 떠나 선택이 날아간다(WhileSubscribed(5_000)). 화면 자체는
+    // uiState 변화와 무관하게 계속 컴포지션에 남아 있으므로 여기로 올려 생존시킨다.
+    var selectedIds by rememberSaveable { mutableStateOf(emptySet<Long>()) }
     when (val state = uiState) {
         RecipientListUiState.Loading -> {
             RecipientListLoadingContent(onBackClick, modifier)
@@ -82,6 +86,8 @@ fun RecipientListScreen(
         is RecipientListUiState.Success -> {
             RecipientListContent(
                 recipients = state.recipients,
+                selectedIds = selectedIds,
+                onSelectedIdsChange = { selectedIds = it },
                 onBackClick = onBackClick,
                 onConfirmClick = onConfirmClick,
                 allowEmptyConfirm = allowEmptyConfirm,
@@ -117,13 +123,14 @@ private fun RecipientListLoadingContent(
 @Composable
 private fun RecipientListContent(
     recipients: List<ReceiverListItem>,
+    selectedIds: Set<Long>,
+    onSelectedIdsChange: (Set<Long>) -> Unit,
     onBackClick: () -> Unit,
     onConfirmClick: (List<ReceiverListItem>) -> Unit,
     modifier: Modifier = Modifier,
     allowEmptyConfirm: Boolean = false,
 ) {
     val searchState = rememberTextFieldState()
-    var selectedIds by rememberSaveable { mutableStateOf(emptySet<Long>()) }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     var selectedConsonant by remember { mutableStateOf<Char?>(null) }
@@ -208,12 +215,13 @@ private fun RecipientListContent(
                                 recipient = recipient,
                                 selected = recipient.receiverId in selectedIds,
                                 onSelectedChange = { checked ->
-                                    selectedIds =
+                                    onSelectedIdsChange(
                                         if (checked) {
                                             selectedIds + recipient.receiverId
                                         } else {
                                             selectedIds - recipient.receiverId
-                                        }
+                                        },
+                                    )
                                 },
                             )
                         }
@@ -262,6 +270,8 @@ private fun RecipientListScreenPrev() {
                 ReceiverListItem(receiverId = 2L, name = "김철수", relation = "가족"),
                 ReceiverListItem(receiverId = 3L, name = "이영희", relation = "연인"),
             ),
+        selectedIds = emptySet(),
+        onSelectedIdsChange = {},
         onBackClick = {},
         onConfirmClick = {},
     )
