@@ -551,7 +551,7 @@ class SettingCompletionTest {
         val retryGate = scenario.enqueueDeliveryUpdate()
         val viewModel =
             DeliveryConditionViewModel(
-                route = SettingRoute.AfterDeliveryRoute(RECEIVER_ID),
+                route = SettingRoute.DeliveryConditionsRoute(RECEIVER_ID),
                 userRepository = repository,
                 updateTimeLetterDeliveryCondition = UpdateTimeLetterDeliveryConditionUseCase(repository),
             )

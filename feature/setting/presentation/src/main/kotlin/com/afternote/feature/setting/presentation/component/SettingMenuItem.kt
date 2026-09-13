@@ -13,7 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.setting.presentation.R
@@ -41,10 +40,4 @@ fun SettingMenuItem(
             modifier = Modifier.size(24.dp),
         )
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SettingMenuItemPrev() {
-    SettingMenuItem(label = "프로필 수정", onClick = {})
 }

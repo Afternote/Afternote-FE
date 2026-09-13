@@ -5,37 +5,37 @@ internal interface SettingNavActions {
 
     fun onLogoutSuccess()
 
-    fun onNavigateToWithdrawGuide()
+    fun onWithdrawGuideClick()
 
-    fun onNavigateToWithdrawConfirm()
+    fun onWithdrawConfirmClick()
 
     fun onWithdrawSuccess()
 
-    fun onNavigateToProfileEdit()
+    fun onProfileEditClick()
 
-    fun onNavigateToLinkedAccount()
+    fun onLinkedAccountClick()
 
-    fun onNavigateToNotification()
+    fun onNotificationClick()
 
-    fun onNavigateToPushNotification()
+    fun onPushNotificationClick()
 
-    fun onNavigateToRecipientList()
+    fun onRecipientListClick()
 
-    fun onNavigateToRecipientListForDeliveryConditions()
+    fun onDeliveryConditionsClick()
 
-    fun onNavigateToRecipientRegister()
+    fun onRecipientRegisterClick()
 
-    fun onNavigateToRecipientEdit(receiverId: Long)
+    fun onRecipientEditClick(receiverId: Long)
 
-    fun onNavigateToAfterDelivery(receiverId: Long)
+    fun onDeliveryConditionsRecipientSelected(receiverId: Long)
 
-    fun onNavigateToPasskey()
+    fun onPasskeyClick()
 
-    fun onNavigateToPasskeyMaking()
+    fun onPasskeyRegisterClick()
 
-    fun onNavigateToPasskeyPassword()
+    fun onPasswordAuthClick()
 
-    fun onNavigateToAppLock()
+    fun onAppLockClick()
 
-    fun onNavigateToNotice()
+    fun onNoticeClick()
 }
