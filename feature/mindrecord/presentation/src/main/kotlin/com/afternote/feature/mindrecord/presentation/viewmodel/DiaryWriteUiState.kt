@@ -51,8 +51,14 @@ data class DiaryWriteUiState(
     /** draft 프리필 완료 플래그. 에디터(content) 재시드 트리거로 사용. */
     val draftLoaded: Boolean = false,
     val draftLoadError: UiText? = null,
-    /** 이미지 업로드 진행 중 — 끝나기 전에 저장하면 이미지 없이 기록이 먼저 올라간다 (#716). */
-    val isUploadingImage: Boolean = false,
+    /**
+     * 아직 끝나지 않은 이미지 업로드 수 (#2029 · #2030).
+     *
+     * Boolean 하나였을 때는 첨부를 잇따라 고르면 **먼저 끝난 하나가 잠금을 통째로 풀었다** —
+     * 아직 올라가는 중인 첨부가 있는데도 저장이 열려, 그 이미지가 빠진 본문이 먼저 나갔다.
+     * 성공·실패·취소 어느 쪽으로 끝나든 자기 몫만 내려놓도록 수로 센다.
+     */
+    val uploadingImageCount: Int = 0,
     /** 이미지 업로드 실패 안내. 조용히 null 로 흡수하지 않는다 (#716). */
     val imageUploadError: UiText? = null,
     val submitState: SubmitState = SubmitState.Idle,
@@ -66,6 +72,10 @@ data class DiaryWriteUiState(
     /** 툴바 "임시저장 N" 표시값. `null` 은 아직 모름(조회 중·실패) (#769). */
     val draftCount: Int? = null,
 ) {
+    /** 끝나지 않은 업로드가 하나라도 있는지. 화면과 저장 잠금이 함께 본다. */
+    val isUploadingImage: Boolean
+        get() = uploadingImageCount > 0
+
     /** 정식 등록 조건 — 제목·본문·기분이 모두 있어야 한다. */
     val canSubmit: Boolean
         get() = missingForSubmit() == null && isReady
