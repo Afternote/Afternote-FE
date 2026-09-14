@@ -49,13 +49,23 @@ data class DailyQuestionWriteUiState(
      */
     val draftResumeError: UiText? = null,
     val submitState: SubmitState = SubmitState.Idle,
-    /** 이미지 업로드 진행 중 — 끝나기 전에 저장하면 이미지 없이 기록이 먼저 올라간다 (#716). */
-    val isUploadingImage: Boolean = false,
+    /**
+     * 아직 끝나지 않은 이미지 업로드 수 (#2029 · #2030).
+     *
+     * Boolean 하나였을 때는 첨부를 잇따라 고르면 **먼저 끝난 하나가 잠금을 통째로 풀었다** —
+     * 아직 올라가는 중인 첨부가 있는데도 저장이 열려, 그 이미지가 빠진 본문이 먼저 나갔다.
+     * 성공·실패·취소 어느 쪽으로 끝나든 자기 몫만 내려놓도록 수로 센다.
+     */
+    val uploadingImageCount: Int = 0,
     /** 이미지 업로드 실패 안내. 조용히 null 로 흡수하지 않는다 (#716). */
     val imageUploadError: UiText? = null,
     /** 툴바 "임시저장 N" 표시값. `null` 은 아직 모름(조회 중·실패) (#769). */
     val draftCount: Int? = null,
 ) {
+    /** 끝나지 않은 업로드가 하나라도 있는지. 화면과 저장 잠금이 함께 본다. */
+    val isUploadingImage: Boolean
+        get() = uploadingImageCount > 0
+
     /**
      * `questionId` 유무는 여기서 보지 않는다. 조건에 넣으면 오늘 질문 조회가 실패했을 때
      * 저장 버튼이 그냥 죽어 있어 원인을 알 수 없다 (#565). 대신 [DailyQuestionWriteViewModel.submit]

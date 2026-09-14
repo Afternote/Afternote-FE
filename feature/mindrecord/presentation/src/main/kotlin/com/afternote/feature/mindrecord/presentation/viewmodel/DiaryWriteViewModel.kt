@@ -141,25 +141,31 @@ class DiaryWriteViewModel
         suspend fun uploadMedia(uriString: String): String? {
             // 실패 문구의 수명은 «다음 업로드 시작까지» 다 — 화면에 걷는 수단이 따로 없고,
             // 걷는 함수만 두면 호출부 0건인 죽은 코드가 된다 (#1019 리뷰 지적).
-            _uiState.update { it.copy(isUploadingImage = true, imageUploadError = null) }
-            return photoUploadRepository
-                .upload(uriString = uriString, directory = MIND_RECORD_UPLOAD_DIRECTORY)
-                .onSuccess { uploaded ->
-                    // 제출 직전 fileKey 로 바꿀 대상이다 (#1016).
-                    uploadedFileKeysByUrl[uploaded.fileUrl] = uploaded.fileKey
-                    _uiState.update { it.copy(isUploadingImage = false) }
-                }.onFailure { e ->
-                    // 첨부가 빠진 채 저장이 이어질 수 있는 자리라 남긴다 (#964).
-                    errorReporter.recordMindRecordFailure(MindRecordFailureStage.MEDIA_UPLOAD, e)
-                    // null 로 흡수하면 사용자는 이미지가 붙은 줄 알고 저장한다 (#716).
-                    _uiState.update {
-                        it.copy(
-                            isUploadingImage = false,
-                            imageUploadError = UiText.Resource(R.string.mindrecord_error_image_upload_failed),
-                        )
-                    }
-                }.getOrNull()
-                ?.fileUrl
+            _uiState.update {
+                it.copy(uploadingImageCount = it.uploadingImageCount + 1, imageUploadError = null)
+            }
+            // finally 로 내려놓는다 — 취소도 여기를 지난다. 작성 화면의 scope 가 업로드를
+            // 소유하므로 구성 변경·화면 이탈이면 코루틴만 끊기고 `Result` 는 오지 않는다.
+            // 그 경로에 내려놓을 자리가 없어 잠금이 남고, 사용자는 관계없는 첨부를 한 번 더
+            // 성공시켜야만 저장할 수 있었다 (#2030).
+            try {
+                return photoUploadRepository
+                    .upload(uriString = uriString, directory = MIND_RECORD_UPLOAD_DIRECTORY)
+                    .onSuccess { uploaded ->
+                        // 제출 직전 fileKey 로 바꿀 대상이다 (#1016).
+                        uploadedFileKeysByUrl[uploaded.fileUrl] = uploaded.fileKey
+                    }.onFailure { e ->
+                        // 첨부가 빠진 채 저장이 이어질 수 있는 자리라 남긴다 (#964).
+                        errorReporter.recordMindRecordFailure(MindRecordFailureStage.MEDIA_UPLOAD, e)
+                        // null 로 흡수하면 사용자는 이미지가 붙은 줄 알고 저장한다 (#716).
+                        _uiState.update {
+                            it.copy(imageUploadError = UiText.Resource(R.string.mindrecord_error_image_upload_failed))
+                        }
+                    }.getOrNull()
+                    ?.fileUrl
+            } finally {
+                _uiState.update { it.copy(uploadingImageCount = (it.uploadingImageCount - 1).coerceAtLeast(0)) }
+            }
         }
 
         fun submit(isDraft: Boolean = false) {
