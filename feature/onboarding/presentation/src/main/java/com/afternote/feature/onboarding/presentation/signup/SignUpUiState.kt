@@ -53,11 +53,15 @@ internal data class SignUpUiState(
     /** 회원가입 + 자동 로그인 진행 중. */
     val isLoading: Boolean = false,
     /**
-     * 회원가입 POST 가 이미 성공한 상태. 자동 로그인만 실패해 같은 화면에 남았을 때,
-     * 재제출이 가입을 다시 호출하지 않도록 가른다 — 다시 부르면 서버가 이메일 중복으로
-     * 거절해 복구 자체가 막힌다.
+     * 회원가입 POST 가 성공한 **자격**. 자동 로그인만 실패해 같은 화면에 남았을 때, 재제출이
+     * 가입을 다시 호출하지 않도록 가른다 — 다시 부르면 서버가 이메일 중복으로 거절해 복구
+     * 자체가 막힌다 (#710).
+     *
+     * Boolean 이 아니라 자격을 드는 이유는, 부분 성공 뒤 뒤로 가 이메일·비밀번호를 고치면
+     * **그 플래그가 새 입력에도 그대로 남기 때문이다** (#2026). 그러면 새 계정의 가입은
+     * 건너뛰고 새 자격으로 로그인만 불러, 만들어진 적 없는 계정으로 복구가 돈다.
      */
-    val isAccountCreated: Boolean = false,
+    val createdAccount: CreatedSignUpAccount? = null,
     /** 회원가입 + 자동 로그인 성공. UI 가 홈으로 navigate 후 reset. */
     val isSignedUp: Boolean = false,
     /** Step 1 검증 통과 — 주민등록번호 단계로 이동. */
@@ -67,6 +71,10 @@ internal data class SignUpUiState(
     /** 실패 한 건의 사유. 화면이 인라인 또는 스낵바로 표시한다. */
     val failure: OnboardingFailure? = null,
 ) : UiState {
+    /** 지금 입력이 [createdAccount] 와 같은 자격인지 — 같을 때만 가입을 건너뛴다 (#2026). */
+    internal val isAccountCreated: Boolean
+        get() = createdAccount == CreatedSignUpAccount(email = email, password = signUpPassword)
+
     /**
      * 인증 결과가 **지금 화면의 입력에 대한 답인지** (#2025).
      *
@@ -116,3 +124,9 @@ internal data class SignUpUiState(
         private const val MIN_VERIFICATION_CODE_LENGTH = 6
     }
 }
+
+/** 회원가입 POST 가 성공한 자격 한 벌. 재제출이 같은 계정을 가리키는지 판정하는 단위다 (#2026). */
+internal data class CreatedSignUpAccount(
+    val email: String,
+    val password: String,
+)

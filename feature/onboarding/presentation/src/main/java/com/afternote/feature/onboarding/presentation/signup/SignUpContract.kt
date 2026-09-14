@@ -173,7 +173,11 @@ internal sealed interface SignUpReducerEvent : ReducerEvent {
 
     data object SubmitStarted : SignUpReducerEvent
 
-    data object AccountCreated : SignUpReducerEvent
+    /** 만들어진 계정의 자격을 함께 나른다 — 재제출이 같은 계정인지 그 값으로 가른다 (#2026). */
+    data class AccountCreated(
+        val email: String,
+        val password: String,
+    ) : SignUpReducerEvent
 
     data class SubmitFailed(
         val message: UiText,
