@@ -77,11 +77,21 @@ class DailyQuestionWriteViewModel
                     .mapCatching { list -> list.first { it.dailyQuestionId == answerId } }
                     .onSuccess { answer ->
                         _uiState.update {
+                            // **사용자가 이미 쓴 본문은 덮지 않는다** (#2031). 입력창은 프리필을
+                            // 기다리는 동안에도 쓸 수 있어서, 늦게 도착한 원본을 무조건 실으면
+                            // 방금 친 글이 서버 값으로 되돌아간다. 오늘 초안 이어쓰기(`resumeDraft`)가
+                            // 이미 같은 규칙을 쓰고 있었고, 대상 ID 로 들어온 수정만 빠져 있었다.
+                            //
+                            // 질문 문구와 대상 ID 는 사용자 입력이 아니라 서버가 정하는 값이라
+                            // 언제나 싣는다 — 그래야 저장이 올바른 레코드로 나간다.
                             it.copy(
                                 draftId = answer.dailyQuestionId,
                                 questionContent = answer.title,
-                                answer = answer.content,
+                                answer = if (it.answer.isHtmlBlank()) answer.content else it.answer,
                                 isQuestionLoading = false,
+                                // 「프리필이 도착했다」는 사실은 무엇을 실었는지와 무관하게 선다 —
+                                // 저장 잠금(#2028)이 이 값을 보므로, 입력해 둔 사용자가 저장하지
+                                // 못하는 상태로 굳으면 안 된다.
                                 contentLoaded = true,
                             )
                         }
