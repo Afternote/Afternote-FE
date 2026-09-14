@@ -25,8 +25,17 @@ data class DailyQuestionWriteUiState(
     /**
      * 본문이 서버에서 채워졌는지. 리치 에디터는 [answer] 를 **초기 시드로만** 읽으므로,
      * 비동기 프리필이 끝난 뒤 에디터를 다시 만들어야 내용이 보인다 (#582).
+     *
+     * 프리필이 **성공했을 때만** 선다 — 수정 진입의 저장 잠금도 이 값을 본다 (#2028).
      */
     val contentLoaded: Boolean = false,
+    /**
+     * 기존 답변을 고치러 들어왔는지 (#2028).
+     *
+     * 저장 잠금과 실패 복구가 둘 다 이 값을 본다 — 복구가 진입을 모르면 「대상 레코드도 없고
+     * 오늘 질문도 없다」를 신규 작성으로 읽어 **오늘 질문으로 대상을 갈아치운다.**
+     */
+    val isEditingExistingAnswer: Boolean = false,
     val isQuestionLoading: Boolean = true,
     val questionLoadError: UiText? = null,
     /** 이어쓸 임시저장 본문을 불러오는 중 (#923). */
@@ -75,7 +84,11 @@ data class DailyQuestionWriteUiState(
                 // 채 POST 로 나가 서버 upsert 가 기존 임시저장을 빈 본문으로 덮는다 —
                 // 이 PR 이 막으려던 바로 그 유실이다 (#1018 리뷰). 일기 화면의
                 // `!(isEditingExistingRecord && !draftLoaded)` 과 같은 성질이다.
-                draftResumeError == null
+                draftResumeError == null &&
+                // 수정 진입은 대상을 **읽은 뒤에만** 저장을 연다. 못 읽은 채 저장하면 draftId 가
+                // null 이라 PATCH 가 아니라 POST 로 나가고, 원래 답변이 아닌 다른 질문에 글이
+                // 남는다 (#2028). 일기 화면과 같은 「실패했는가」가 아니라 「읽었는가」 판정이다.
+                !(isEditingExistingAnswer && !contentLoaded)
 }
 
 sealed interface SubmitState {
