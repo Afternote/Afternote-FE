@@ -10,9 +10,9 @@ import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.setting.presentation.screen.SettingScreen
-import com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel
-import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
+import com.afternote.feature.setting.presentation.home.SettingScreen
+import com.afternote.feature.setting.presentation.home.SettingViewModel
+import com.afternote.feature.setting.presentation.notification.PushNotificationViewModel
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
