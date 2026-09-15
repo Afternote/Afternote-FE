@@ -21,12 +21,9 @@ if (localPropertiesFile.exists()) {
 // BuildConfig 가 같은 값을 쓴다 — 주입 지점이 둘이어도 키는 여기서 한 번만 읽는다.
 val kakaoKey = socialLoginKey("KAKAO_NATIVE_APP_KEY")
 
-// 강제 업데이트 관문(#1539)이 「이 설치본을 스토어가 갱신할 수 있는가」를 판정하는 근거.
-// 릴리스 워크플로가 versionCode 를 주입한 산출물에서만 true 다 — 기본값을 그대로 단
-// 로컬·Firebase 빌드는 서버 latestVersionCode 와 같은 축에 있지 않고 서명도 Play 것과 달라,
-// 스토어로 보내도 그 위에 업데이트가 얹히지 않는다(docs/play-release.md).
+// Play 배포 워크플로가 명시적으로 활성화한다. versionCode만으로 배포 채널을 추측하지 않는다.
 val afternoteVersionCode = resolveAfternoteVersionCode(System.getenv(AFTERNOTE_VERSION_CODE_ENV))
-val storeDistributedBuild = afternoteVersionCode != resolveAfternoteVersionCode(null)
+val storeDistributedBuild = providers.environmentVariable("AFTERNOTE_STORE_DISTRIBUTED_BUILD").orNull == "true"
 
 android {
     namespace = "com.afternote.afternote_fe"
