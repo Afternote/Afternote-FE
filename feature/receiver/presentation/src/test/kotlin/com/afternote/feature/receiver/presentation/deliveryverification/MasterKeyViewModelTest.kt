@@ -37,7 +37,7 @@ class MasterKeyViewModelTest {
         val viewModel = viewModel(authRepository, receiverRepository)
 
         listOf("wrong-key-0000", "1-1-1-1-1").forEach { invalidMasterKey ->
-            viewModel.submit(senderId = "sender-id", masterKey = invalidMasterKey)
+            viewModel.onIntent(MasterKeyIntent.Submit(senderId = "sender-id", masterKey = invalidMasterKey))
 
             assertEquals(
                 UiText.Resource(R.string.receiver_verify_master_key_invalid_format),
@@ -59,7 +59,7 @@ class MasterKeyViewModelTest {
         val masterKey = "123e4567-e89b-12d3-a456-426614174000"
         val viewModel = viewModel(authRepository, receiverRepository, senderRegistry)
 
-        viewModel.submit(senderId = sender.id, masterKey = "  $masterKey\n")
+        viewModel.onIntent(MasterKeyIntent.Submit(senderId = sender.id, masterKey = "  $masterKey\n"))
 
         assertEquals(listOf(masterKey), authRepository.verifiedMasterKeys)
         assertEquals(listOf(masterKey), receiverRepository.savedMasterKeys)
@@ -77,7 +77,7 @@ class MasterKeyViewModelTest {
         val sender = senderRegistry.register("별칭")
         val viewModel = viewModel(authRepository, receiverRepository, senderRegistry)
 
-        viewModel.submit(senderId = sender.id, masterKey = "123E4567-E89B-12D3-A456-426614174000")
+        viewModel.onIntent(MasterKeyIntent.Submit(senderId = sender.id, masterKey = "123E4567-E89B-12D3-A456-426614174000"))
 
         val normalized = "123e4567-e89b-12d3-a456-426614174000"
         assertEquals(listOf(normalized), authRepository.verifiedMasterKeys)

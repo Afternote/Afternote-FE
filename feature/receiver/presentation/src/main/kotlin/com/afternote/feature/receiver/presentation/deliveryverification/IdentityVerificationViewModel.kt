@@ -1,9 +1,9 @@
 package com.afternote.feature.receiver.presentation.deliveryverification
 
 import androidx.annotation.StringRes
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import com.afternote.feature.afternote.presentation.reporting.shouldReportInReceiverFlow
@@ -13,10 +13,6 @@ import com.afternote.feature.receiver.presentation.R
 import com.afternote.feature.receiver.presentation.error.toReceiverErrorPopupOrNull
 import com.afternote.feature.receiver.presentation.error.toReceiverErrorUiText
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -30,26 +26,43 @@ import javax.inject.Inject
  * UI 가 마스터 키(5) 단계로 이동. 이메일 인증은 신원 확인까지만 담당하며 마스터 키를 대신 획득하지
  * 않는다 — 그랬다면 마스터 키 단계가 무력화된다 (#454).
  *
- * `senderId` 는 [MasterKeyViewModel.submit] 과 같은 규약으로 자체 SavedStateHandle 이 아니라 parent
+ * `senderId` 는 [MasterKeyIntent.Submit] 과 같은 규약으로 자체 SavedStateHandle 이 아니라 parent
  * backStackEntry 의 [DeliveryVerificationFlowViewModel] 에서 받아 [verifyAndProceed] 호출 시점에
  * 전달된다 — 인증 캐시가 발신자별 키에 기록되어 다른 발신자의 관문을 열지 않는다 (#597).
  *
  * 메모리 정책상 ViewModel 은 [androidx.compose.foundation.text.input.TextFieldState] 를 보유하지 않는다.
- * UI 가 입력값을 [onEmailChange]·[onCodeChange] 로 흘려주고 본 VM 은 String 만 관리.
+ * UI 가 입력값을 [IdentityVerificationIntent.UpdateEmail]·[IdentityVerificationIntent.UpdateCode] 로 흘려주고 본 VM 은 String 만 관리.
  *
  * 입력 trim 은 presentation(본 VM) 책임 — 사용자 실수 공백 제거는 입력 UX 보정이지 비즈니스 규칙이
  * 아니라 domain/data 로 내리지 않는다. state 에는 raw 를 두고(타이핑 중간 상태 보존) 검증·전송 시점에 적용.
  */
 @HiltViewModel
-class IdentityVerificationViewModel
+internal class IdentityVerificationViewModel
     @Inject
     constructor(
         private val receiverAuthRepository: ReceiverAuthRepository,
         private val identityVerificationRepository: IdentityVerificationRepository,
         private val errorReporter: ErrorReporter,
-    ) : ViewModel() {
-        private val _uiState = MutableStateFlow(IdentityVerificationUiState())
-        val uiState: StateFlow<IdentityVerificationUiState> = _uiState.asStateFlow()
+    ) : MviViewModel<IdentityVerificationIntent, IdentityVerificationUiState, IdentityVerificationReducerEvent>(
+            IdentityVerificationUiState(),
+        ) {
+        override fun onIntent(intent: IdentityVerificationIntent) {
+            when (intent) {
+                is IdentityVerificationIntent.UpdateEmail -> dispatch(IdentityVerificationReducerEvent.EmailChanged(intent.value))
+                is IdentityVerificationIntent.UpdateCode -> dispatch(IdentityVerificationReducerEvent.CodeChanged(intent.value))
+                IdentityVerificationIntent.RequestCode -> requestVerificationCode()
+                is IdentityVerificationIntent.Verify -> verifyAndProceed(intent.senderId)
+                IdentityVerificationIntent.RetryFailedRequest -> retryFailedRequest()
+                IdentityVerificationIntent.DismissErrorPopup -> onErrorPopupDismissed()
+                IdentityVerificationIntent.ConsumeError -> dispatch(IdentityVerificationReducerEvent.ErrorConsumed)
+                IdentityVerificationIntent.ConsumeVerified -> dispatch(IdentityVerificationReducerEvent.VerifiedConsumed)
+            }
+        }
+
+        override fun reduce(
+            state: IdentityVerificationUiState,
+            event: IdentityVerificationReducerEvent,
+        ): IdentityVerificationUiState = reduceIdentityVerification(state, event)
 
         /**
          * 팝업의 "다시 시도하기" 가 되돌릴 마지막 시도 (#446). 인증번호 발송과 코드 검증 중 **어느
@@ -58,34 +71,15 @@ class IdentityVerificationViewModel
          */
         private var pendingRetry: (() -> Unit)? = null
 
-        fun onEmailChange(value: String) {
-            _uiState.update {
-                it.copy(
-                    email = value,
-                    isEmailFormatValid = EMAIL_REGEX.matches(value.trim()),
-                    errorMessage = null,
-                )
-            }
-        }
-
-        fun onCodeChange(value: String) {
-            _uiState.update { it.copy(code = value, errorMessage = null) }
-        }
-
-        fun requestVerificationCode() {
-            val state = _uiState.value
+        private fun requestVerificationCode() {
+            val state = currentState
             if (!state.isEmailFormatValid || state.isSendingCode) return
-            _uiState.update { it.copy(isSendingCode = true, errorMessage = null) }
+            dispatch(IdentityVerificationReducerEvent.CodeSending)
             viewModelScope.launch {
                 receiverAuthRepository
                     .sendEmailAuthCode(state.email.trim())
                     .onSuccess {
-                        _uiState.update {
-                            it.copy(
-                                isSendingCode = false,
-                                isVerificationSent = true,
-                            )
-                        }
+                        dispatch(IdentityVerificationReducerEvent.CodeSent)
                     }.onFailure { throwable ->
                         if (throwable.shouldReportInReceiverFlow()) {
                             errorReporter.recordAfternoteFailure(
@@ -93,22 +87,22 @@ class IdentityVerificationViewModel
                                 throwable,
                             )
                         }
-                        _uiState.update { it.copy(isSendingCode = false) }
+                        dispatch(IdentityVerificationReducerEvent.CodeSendFinished)
                         showFailure(throwable, R.string.receiver_verify_code_send_failed, ::requestVerificationCode)
                     }
             }
         }
 
-        fun verifyAndProceed(senderId: String) {
-            val state = _uiState.value
+        private fun verifyAndProceed(senderId: String) {
+            val state = currentState
             if (!state.canSubmit) return
-            _uiState.update { it.copy(isVerifying = true, errorMessage = null) }
+            dispatch(IdentityVerificationReducerEvent.VerificationStarted)
             viewModelScope.launch {
                 receiverAuthRepository
                     .verifyEmailAuthCode(email = state.email.trim(), authCode = state.code.trim())
                     .onSuccess {
                         identityVerificationRepository.markVerified(senderId)
-                        _uiState.update { it.copy(isVerifying = false, isVerified = true) }
+                        dispatch(IdentityVerificationReducerEvent.Verified)
                     }.onFailure { throwable ->
                         if (throwable.shouldReportInReceiverFlow()) {
                             errorReporter.recordAfternoteFailure(
@@ -116,7 +110,7 @@ class IdentityVerificationViewModel
                                 throwable,
                             )
                         }
-                        _uiState.update { it.copy(isVerifying = false) }
+                        dispatch(IdentityVerificationReducerEvent.VerificationFinished)
                         showFailure(throwable, R.string.receiver_verify_code_verify_failed) {
                             verifyAndProceed(senderId)
                         }
@@ -125,16 +119,16 @@ class IdentityVerificationViewModel
         }
 
         /** 팝업의 "다시 시도하기" — 팝업을 닫고 실패한 그 요청을 그대로 다시 보낸다 (#446). */
-        fun retryFailedRequest() {
+        private fun retryFailedRequest() {
             val retry = pendingRetry
-            _uiState.update { it.copy(errorPopup = null) }
+            dispatch(IdentityVerificationReducerEvent.PopupDismissed)
             pendingRetry = null
             retry?.invoke()
         }
 
         /** 팝업의 닫기 — 재시도 없이 입력 화면으로 돌아간다. */
-        fun onErrorPopupDismissed() {
-            _uiState.update { it.copy(errorPopup = null) }
+        private fun onErrorPopupDismissed() {
+            dispatch(IdentityVerificationReducerEvent.PopupDismissed)
             pendingRetry = null
         }
 
@@ -149,24 +143,12 @@ class IdentityVerificationViewModel
         ) {
             val popup = throwable.toReceiverErrorPopupOrNull()
             pendingRetry = if (popup == null) null else retry
-            _uiState.update {
+            dispatch(
                 if (popup == null) {
-                    it.copy(errorMessage = throwable.toReceiverErrorUiText(fallbackRes))
+                    IdentityVerificationReducerEvent.ErrorRaised(throwable.toReceiverErrorUiText(fallbackRes))
                 } else {
-                    it.copy(errorPopup = popup)
-                }
-            }
-        }
-
-        fun consumeError() {
-            _uiState.update { it.copy(errorMessage = null) }
-        }
-
-        fun onVerifiedConsumed() {
-            _uiState.update { it.copy(isVerified = false) }
-        }
-
-        private companion object {
-            val EMAIL_REGEX = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")
+                    IdentityVerificationReducerEvent.PopupRaised(popup)
+                },
+            )
         }
     }

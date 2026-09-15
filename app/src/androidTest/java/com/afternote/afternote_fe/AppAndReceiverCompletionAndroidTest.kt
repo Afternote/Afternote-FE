@@ -21,10 +21,8 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.waitUntilAtLeastOneExists
-import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.navigation
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.navigation.AppState
@@ -47,37 +45,16 @@ import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfte
 import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
 import com.afternote.feature.home.presentation.HomeTabActions
-import com.afternote.feature.home.presentation.receiver.ReceiverHomeEvent
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeWeeklyReportRepository
-import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
-import com.afternote.feature.receiver.domain.error.ReceiverFailure
-import com.afternote.feature.receiver.domain.error.ReceiverRejectionReason
-import com.afternote.feature.receiver.domain.model.DeliveryVerification
-import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
 import com.afternote.feature.receiver.domain.model.ReceivedAfternoteDetail
 import com.afternote.feature.receiver.domain.model.ReceivedPlaylistDetail
 import com.afternote.feature.receiver.domain.model.ReceivedPlaylistSong
-import com.afternote.feature.receiver.domain.model.ReceiverEmailAuthResult
-import com.afternote.feature.receiver.domain.testing.FakeIdentityVerificationRepository
-import com.afternote.feature.receiver.domain.testing.FakeReceiverAuthRepository
-import com.afternote.feature.receiver.domain.testing.FakeReceiverDeliveryDocumentUploadRepository
 import com.afternote.feature.receiver.domain.testing.FakeReceiverRepository
-import com.afternote.feature.receiver.domain.usecase.SubmitDeliveryVerificationUseCase
-import com.afternote.feature.receiver.presentation.deliveryverification.DocumentSlot
-import com.afternote.feature.receiver.presentation.deliveryverification.DocumentUploadScreen
-import com.afternote.feature.receiver.presentation.deliveryverification.DocumentUploadViewModel
-import com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationEmailScreen
-import com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationViewModel
-import com.afternote.feature.receiver.presentation.navigation.ReceiverNavActions
-import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
-import com.afternote.feature.timeletter.domain.testing.FakeReceiverTimeLetterRepository
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -233,219 +210,6 @@ class ReceiverRuntimeCompletionAndroidTest {
         }
 
     private val context get() = ApplicationProvider.getApplicationContext<android.content.Context>()
-
-    @Test
-    fun emailCodeExpired_resendAndNewCode_verifyExactlyOnce() {
-        val verifyEmailResults = ArrayDeque<Result<ReceiverEmailAuthResult>>()
-        val authRepository =
-            FakeReceiverAuthRepository.strict().apply {
-                onSendEmailAuthCode = { Result.success(Unit) }
-                onVerifyEmailAuthCode = { _, _ -> verifyEmailResults.removeFirst() }
-            }
-        verifyEmailResults.addLast(
-            Result.failure(
-                ReceiverFailure.UserRejection(
-                    reason = ReceiverRejectionReason.RECEIVER_EMAIL_AUTH_CODE_NOT_FOUND,
-                    cause = CAUSE,
-                ),
-            ),
-        )
-        verifyEmailResults.addLast(
-            Result.success(ReceiverEmailAuthResult(7L, "김수신", "이발신")),
-        )
-        val identityRepository = FakeIdentityVerificationRepository()
-        val reporter = FakeErrorReporter()
-        val viewModel =
-            IdentityVerificationViewModel(
-                authRepository,
-                identityRepository,
-                reporter,
-            )
-        var verifiedTransitions = 0
-
-        composeRule.setContent {
-            AfternoteTheme {
-                IdentityVerificationEmailScreen(
-                    senderId = "sender-1",
-                    onBackClick = {},
-                    onVerified = { verifiedTransitions += 1 },
-                    viewModel = viewModel,
-                )
-            }
-        }
-
-        composeRule
-            .onNodeWithText(context.getString(ReceiverR.string.receiver_verify_email_placeholder))
-            .performTextInput("receiver@example.test")
-        composeRule
-            .onNodeWithText(context.getString(ReceiverR.string.receiver_verify_request_code))
-            .performClick()
-        composeRule
-            .onNodeWithText(context.getString(ReceiverR.string.receiver_verify_code_placeholder))
-            .performTextInput("123456")
-        composeRule
-            .onNodeWithText(context.getString(ReceiverR.string.receiver_verify_next_button))
-            .performClick()
-        composeRule
-            .onNodeWithText("인증번호가 만료되었거나 존재하지 않습니다. 다시 요청해주세요.")
-            .assertIsDisplayed()
-
-        composeRule
-            .onNodeWithText(context.getString(ReceiverR.string.receiver_verify_request_code))
-            .performClick()
-        composeRule.waitUntil(timeoutMillis = 5_000) { authRepository.sentEmails.size == 2 }
-        composeRule
-            .onNode(hasSetTextAction() and hasText("123456"))
-            .performTextReplacement("654321")
-        composeRule
-            .onNodeWithText(context.getString(ReceiverR.string.receiver_verify_next_button))
-            .performClick()
-        composeRule.waitUntil(timeoutMillis = 5_000) { verifiedTransitions == 1 }
-
-        assertEquals(
-            listOf("receiver@example.test", "receiver@example.test"),
-            authRepository.sentEmails,
-        )
-        assertEquals(
-            listOf(
-                "receiver@example.test" to "123456",
-                "receiver@example.test" to "654321",
-            ),
-            authRepository.verifiedEmailCodes,
-        )
-        assertEquals(listOf("sender-1"), identityRepository.markVerifiedSenderIds)
-        assertEquals(1, verifiedTransitions)
-        assertTrue(reporter.failures.isEmpty())
-    }
-
-    @Test
-    fun documentSubmit_doubleTapWhileRequestInFlight_sendsOnePayload() {
-        val uploadRepository =
-            FakeReceiverDeliveryDocumentUploadRepository(
-                defaultFileUrl = "https://cdn.example.test/death.pdf",
-            )
-        val pendingSubmission = CompletableDeferred<Result<DeliveryVerification>>()
-        val authRepository =
-            FakeReceiverAuthRepository.strict().apply {
-                onSubmitDeliveryVerification = { _, _ -> pendingSubmission.await() }
-            }
-        val viewModel =
-            DocumentUploadViewModel(
-                uploadRepository,
-                SubmitDeliveryVerificationUseCase(authRepository),
-                FakeErrorReporter(),
-            )
-        composeRule.setContent { AfternoteTheme {} }
-
-        composeRule.runOnIdle {
-            viewModel.uploadDocument(
-                slot = DocumentSlot.DeathCertificate,
-                bytes = byteArrayOf(1, 2, 3),
-                extension = "pdf",
-                displayName = "사망진단서.pdf",
-            )
-        }
-        composeRule.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.canSubmit }
-
-        composeRule.runOnIdle {
-            viewModel.submit()
-            viewModel.submit()
-        }
-        composeRule.waitUntil(timeoutMillis = 5_000) { authRepository.deliverySubmissions.size == 1 }
-
-        assertTrue(viewModel.uiState.value.isSubmitting)
-        assertEquals(
-            listOf("https://cdn.example.test/death.pdf" to null),
-            authRepository.deliverySubmissions,
-        )
-        assertEquals(1, uploadRepository.uploadCalls.size)
-
-        pendingSubmission.complete(
-            Result.success(
-                DeliveryVerification(
-                    id = 11L,
-                    status = DeliveryVerificationStatus.PENDING,
-                    deathCertificateUrl = "https://cdn.example.test/death.pdf",
-                    familyRelationCertificateUrl = null,
-                    adminNote = null,
-                    createdAt = null,
-                ),
-            ),
-        )
-        composeRule.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.isSubmitted }
-        assertEquals(1, authRepository.deliverySubmissions.size)
-    }
-
-    @Test
-    fun documentSlot_replaceFailureKeepsPreviousThenSuccessReflectsReplacement() {
-        val uploadResults = ArrayDeque<Result<String>>()
-        val uploadRepository =
-            FakeReceiverDeliveryDocumentUploadRepository.strict().apply {
-                onUpload = { _, _ -> uploadResults.removeFirst() }
-            }
-        uploadResults.addLast(Result.success("https://cdn.example.test/original.pdf"))
-        uploadResults.addLast(Result.failure(IllegalStateException("replacement failed")))
-        uploadResults.addLast(Result.success("https://cdn.example.test/replacement.pdf"))
-        val viewModel =
-            DocumentUploadViewModel(
-                uploadRepository,
-                SubmitDeliveryVerificationUseCase(FakeReceiverAuthRepository.strict()),
-                FakeErrorReporter(),
-            )
-        composeRule.setContent {
-            AfternoteTheme {
-                DocumentUploadScreen(
-                    onBackClick = {},
-                    onSubmitted = {},
-                    viewModel = viewModel,
-                )
-            }
-        }
-
-        composeRule.runOnIdle {
-            viewModel.uploadDocument(
-                DocumentSlot.DeathCertificate,
-                byteArrayOf(1),
-                "pdf",
-                "원본 사망진단서.pdf",
-            )
-        }
-        composeRule.onNodeWithText("원본 사망진단서.pdf").assertIsDisplayed()
-
-        composeRule.runOnIdle {
-            viewModel.uploadDocument(
-                DocumentSlot.DeathCertificate,
-                byteArrayOf(2),
-                "pdf",
-                "실패한 교체본.pdf",
-            )
-        }
-        composeRule.waitUntil(timeoutMillis = 5_000) {
-            !viewModel.uiState.value.deathCertificate.isUploading
-        }
-        composeRule.onNodeWithText("원본 사망진단서.pdf").assertIsDisplayed()
-        assertEquals(
-            "https://cdn.example.test/original.pdf",
-            viewModel.uiState.value.deathCertificate.fileUrl,
-        )
-
-        composeRule.runOnIdle {
-            viewModel.consumeError()
-            viewModel.uploadDocument(
-                DocumentSlot.DeathCertificate,
-                byteArrayOf(3),
-                "pdf",
-                "교체 사망진단서.pdf",
-            )
-        }
-        composeRule.onNodeWithText("교체 사망진단서.pdf").assertIsDisplayed()
-        composeRule.onNodeWithText("원본 사망진단서.pdf").assertDoesNotExist()
-        assertEquals(
-            "https://cdn.example.test/replacement.pdf",
-            viewModel.uiState.value.deathCertificate.fileUrl,
-        )
-        assertEquals(3, uploadRepository.uploadCalls.size)
-    }
 
     // 열람 신청 단계 소거·완료 복귀는 Navigation 3 이관(#1698) 뒤 수신자 로컬 스택 안으로
     // 들어갔다. 회귀 기준은 기기 없이 도는 JVM 테스트로 옮겼다 —

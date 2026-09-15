@@ -140,7 +140,7 @@ class ReceiverVerificationTest {
         composeRule.setContent { AfternoteTheme {} }
 
         composeRule.runOnIdle {
-            viewModel.uploadDocument(DocumentSlot.DeathCertificate, byteArrayOf(1), "pdf", "사망진단서.pdf")
+            viewModel.onIntent(DocumentUploadIntent.UploadDocument(DocumentSlot.DeathCertificate, byteArrayOf(1), "pdf", "사망진단서.pdf"))
         }
         composeRule.waitUntil(timeoutMillis = 5_000) {
             !viewModel.uiState.value.deathCertificate.isUploading
@@ -148,10 +148,10 @@ class ReceiverVerificationTest {
         assertFalse(viewModel.uiState.value.canSubmit)
 
         composeRule.runOnIdle {
-            viewModel.uploadDocument(DocumentSlot.DeathCertificate, byteArrayOf(1), "pdf", "사망진단서.pdf")
+            viewModel.onIntent(DocumentUploadIntent.UploadDocument(DocumentSlot.DeathCertificate, byteArrayOf(1), "pdf", "사망진단서.pdf"))
         }
         composeRule.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.canSubmit }
-        composeRule.runOnIdle { viewModel.submit() }
+        composeRule.runOnIdle { viewModel.onIntent(DocumentUploadIntent.Submit) }
         composeRule.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.isSubmitted }
 
         assertEquals(listOf("https://cdn.test/death.pdf" to null), auth.deliverySubmissions)

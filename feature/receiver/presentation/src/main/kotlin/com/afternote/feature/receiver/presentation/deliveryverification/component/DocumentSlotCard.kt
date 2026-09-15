@@ -36,7 +36,7 @@ import com.afternote.feature.receiver.presentation.deliveryverification.Document
  * 박스 전체와 우측 버튼 모두 동일 콜백([onPickClick]) — 시안 상 두 영역 모두 BottomSheet 트리거.
  */
 @Composable
-fun DocumentSlotCard(
+internal fun DocumentSlotCard(
     title: String,
     slot: DocumentSlotState,
     onPickClick: () -> Unit,

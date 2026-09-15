@@ -326,15 +326,8 @@ class ProductionVisibilityKonsistTest {
         /** #1675 해소. 프로필 이미지 선택 결과 helper 는 private 이고 테스트는 화면 동작으로 본다. */
         val ISSUE_1675_ONBOARDING = emptySet<String>()
 
-        val ISSUE_1676_RECEIVER =
-            setOf(
-                "feature/receiver/presentation/src/main/kotlin/com/afternote/feature/receiver/presentation/deliveryverification/DocumentUploadScreen.kt::function DocumentUploadScreenContent [internal]",
-                "feature/receiver/presentation/src/main/kotlin/com/afternote/feature/receiver/presentation/deliveryverification/IdentityVerificationEmailScreen.kt::function IdentityVerificationEmailScreenContent [internal]",
-                "feature/receiver/presentation/src/main/kotlin/com/afternote/feature/receiver/presentation/deliveryverification/MasterKeyScreen.kt::function MasterKeyScreenContent [internal]",
-                "feature/receiver/presentation/src/main/kotlin/com/afternote/feature/receiver/presentation/recordsbox/ReceivedRecordsScreen.kt::function ReceivedRecordsScreenContent [internal]",
-                "feature/receiver/presentation/src/main/kotlin/com/afternote/feature/receiver/presentation/recordsbox/SenderRegistrationScreen.kt::function SenderRegistrationScreenContent [internal]",
-                "feature/receiver/presentation/src/main/kotlin/com/afternote/feature/receiver/presentation/senderdetail/SenderDetailScreen.kt::function SenderDetailScreenContent [internal]",
-            )
+        /** #1803에서 수명·소비와 렌더 파일을 분리하고 프로덕션 소비 범위로 공개 범위를 정했다. */
+        val ISSUE_1676_RECEIVER = emptySet<String>()
 
         val ISSUE_1677_TIMELETTER =
             setOf(
@@ -388,12 +381,6 @@ class ProductionVisibilityKonsistTest {
                 "core/ui/src/main/kotlin/com/afternote/core/ui/button/" +
                     "AfternoteRadioGroup.kt::function AfternoteRadioGroup [implicit-public]" to
                     "core:ui README에 문서화된 공용 컴포넌트",
-                "core/ui/src/main/kotlin/com/afternote/core/ui/mvi/" +
-                    "MviViewModel.kt::class MviViewModel [implicit-public]" to
-                    "MVI 베이스 계약(#1800) — 화면 전환 이슈가 상속하기 시작하면 프로덕션 참조가 생긴다",
-                "core/ui/src/main/kotlin/com/afternote/core/ui/mvi/" +
-                    "ObserveSignal.kt::function ObserveSignal [implicit-public]" to
-                    "MVI 일회성 신호 소비 관용구(#1800) — 화면 전환 이슈가 소비처를 만든다",
                 "core/ui/src/main/kotlin/com/afternote/core/ui/popup/" +
                     "AfternoteActionMenu.kt::class ActionMenuItem [implicit-public]" to
                     "AfternoteActionMenu 파라미터와 editDeleteActionMenuItems 반환값을 외부 feature가 타입 추론 소비",

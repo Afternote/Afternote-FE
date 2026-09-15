@@ -51,14 +51,14 @@ class SenderDetailViewModelTest {
             fixture.statusResults += Result.success(verification(DeliveryVerificationStatus.PENDING))
             fixture.statusResults += Result.success(verification(DeliveryVerificationStatus.APPROVED))
             val viewModel = fixture.viewModel()
-            viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
+            viewModel.onIntent(SenderDetailIntent.RefreshOnReturn) // 첫 진입의 ON_RESUME — 스킵
             advanceUntilIdle()
             assertEquals(
                 SenderVerificationState.Pending,
                 (viewModel.uiState.value as SenderDetailUiState.Success).verification,
             )
 
-            viewModel.refreshOnReturn() // 열람 신청 흐름에서 복귀한 ON_RESUME
+            viewModel.onIntent(SenderDetailIntent.RefreshOnReturn) // 열람 신청 흐름에서 복귀한 ON_RESUME
             // 로딩을 방출하지 않는다 — 갱신이 도는 동안에도 기존 정보 박스를 유지한다.
             assertTrue(viewModel.uiState.value is SenderDetailUiState.Success)
             advanceUntilIdle()
@@ -75,10 +75,10 @@ class SenderDetailViewModelTest {
             fixture.statusResults += Result.success(verification(DeliveryVerificationStatus.PENDING))
             fixture.statusResults += Result.failure(IOException("일시적 실패"))
             val viewModel = fixture.viewModel()
-            viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
+            viewModel.onIntent(SenderDetailIntent.RefreshOnReturn) // 첫 진입의 ON_RESUME — 스킵
             advanceUntilIdle()
 
-            viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME
+            viewModel.onIntent(SenderDetailIntent.RefreshOnReturn) // 백스택 복귀의 ON_RESUME
             advanceUntilIdle()
 
             // StatusLoadFailed 로 대체되지 않는다.
@@ -95,7 +95,7 @@ class SenderDetailViewModelTest {
             advanceUntilIdle()
 
             // 첫 진입 화면의 ON_RESUME (init 로드는 이미 종료됨) — 재조회가 걸리면 안 된다.
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(SenderDetailIntent.RefreshOnReturn)
             advanceUntilIdle()
 
             assertEquals(1, fixture.auth.getDeliveryVerificationStatusCalls)
@@ -110,8 +110,8 @@ class SenderDetailViewModelTest {
             val viewModel = fixture.viewModel()
 
             // init 로드가 아직 도는 중 — 첫 resume(스킵) 뒤 또 한 번 resume 이 와도 중복이 없어야 한다.
-            viewModel.refreshOnReturn()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(SenderDetailIntent.RefreshOnReturn)
+            viewModel.onIntent(SenderDetailIntent.RefreshOnReturn)
             advanceUntilIdle()
 
             assertEquals(1, fixture.auth.getDeliveryVerificationStatusCalls)
