@@ -59,9 +59,9 @@ class DiaryWriteViewModel
         val uiState: StateFlow<DiaryWriteUiState> = _uiState.asStateFlow()
 
         init {
-            // 이어쓰기(임시저장)일 때만 «이어쓰는 중» 으로 표시한다 — 정식 기록 수정은 아니다 (#582).
-            if (editingDiaryId != null && route.isDraft) {
-                _uiState.update { it.copy(isEditingDraft = true) }
+            // 이어쓰기든 정식 기록 수정이든 덮어쓸 원본이 있다 — 프리필 가드는 둘을 함께 본다 (#2027).
+            if (editingDiaryId != null) {
+                _uiState.update { it.copy(isEditingExistingRecord = true) }
             }
             loadReceivers()
             loadDraftCount()
