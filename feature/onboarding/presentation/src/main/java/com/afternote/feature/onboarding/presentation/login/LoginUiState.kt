@@ -1,5 +1,6 @@
 package com.afternote.feature.onboarding.presentation.login
 
+import com.afternote.core.ui.mvi.UiState
 import com.afternote.feature.onboarding.presentation.OnboardingFailure
 
 /**
@@ -21,4 +22,4 @@ internal data class LoginUiState(
     val shouldStartOnboarding: Boolean = false,
     /** 실패 한 건의 사유. 입력 수정·재시도·화면 소비로 해제한다. */
     val failure: OnboardingFailure? = null,
-)
+) : UiState

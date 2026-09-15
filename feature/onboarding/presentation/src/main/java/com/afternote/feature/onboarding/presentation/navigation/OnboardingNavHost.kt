@@ -1,29 +1,24 @@
 package com.afternote.feature.onboarding.presentation.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.afternote.core.ui.navigation.FeatureNavDisplay
 import com.afternote.core.ui.navigation.FeatureStackBoundary
-import com.afternote.feature.onboarding.presentation.OnboardingFailureDisplay
-import com.afternote.feature.onboarding.presentation.OnboardingProfileEntry
+import com.afternote.feature.onboarding.presentation.OnboardingProfileScreen
 import com.afternote.feature.onboarding.presentation.WelcomeScreen
 import com.afternote.feature.onboarding.presentation.findaccount.FindIdScreen
 import com.afternote.feature.onboarding.presentation.findaccount.FindIdViewModel
-import com.afternote.feature.onboarding.presentation.login.LoginEntry
+import com.afternote.feature.onboarding.presentation.login.LoginScreen
 import com.afternote.feature.onboarding.presentation.signup.SignUpPasswordScreen
 import com.afternote.feature.onboarding.presentation.signup.SignUpResidentNumberScreen
 import com.afternote.feature.onboarding.presentation.signup.SignUpScreen
 import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel
 import com.afternote.feature.onboarding.presentation.terms.OnboardingTermsScreen
 import com.afternote.feature.onboarding.presentation.terms.TermsDetailScreen
-import com.afternote.feature.onboarding.presentation.toDisplay
 
 /**
  * 온보딩 피처가 소유하는 로컬 Navigation 3 스택.
@@ -75,7 +70,7 @@ public fun OnboardingNavHost(
                 }
 
                 entry<OnboardingRoute.LoginRoute> {
-                    LoginEntry(
+                    LoginScreen(
                         onLoginSuccess = actions::replaceOnboardingWithHome,
                         onNewUserOnboarding = actions::replaceLoginWithWelcome,
                         onSignUpClick = actions::replaceLoginWithSignUp,
@@ -89,105 +84,33 @@ public fun OnboardingNavHost(
                 // 보내면 "확인" 뒤에 갈 곳이 없기 때문이다. 화면·라우트 제거는 #943(카카오 단일화)
                 // 몫이라 여기서 지우지 않고, 그때까지 등록만 남긴다.
                 entry<OnboardingRoute.FindIdRoute> {
-                    val uiState by findIdViewModel.uiState.collectAsStateWithLifecycle()
-                    val snackbarHostState = rememberFindIdEventHost(findIdViewModel, uiState)
-
-                    FindIdScreen(
-                        initialEmail = uiState.email,
-                        initialCertificateCode = uiState.certificateCode,
-                        isSendingCode = uiState.isSendingCode,
-                        isVerificationSent = uiState.isVerificationSent,
-                        isSendCodeEnabled = uiState.isSendCodeEnabled,
-                        isVerifyEnabled = uiState.isVerifyEnabled,
-                        isNextEnabled = uiState.isNextEnabled,
-                        resendCooldownSeconds = uiState.resendCooldownSeconds,
-                        hasVerificationError = (uiState.failure.toDisplay() == OnboardingFailureDisplay.VerificationInline),
-                        snackbarHostState = snackbarHostState,
-                        onEmailChange = findIdViewModel::updateEmail,
-                        onCertificateCodeChange = findIdViewModel::updateCertificateCode,
-                        onRequestCode = findIdViewModel::requestVerificationCode,
-                        onVerifyCode = findIdViewModel::verifyCode,
-                        // 결과 화면 연결은 아이디 찾기 존치 결정(#456 코멘트) 대기 — 확정 전까지 미배선.
-                        onNextClick = {},
-                        onBackClick = actions::popBack,
-                    )
+                    FindIdScreen(viewModel = findIdViewModel, onNextClick = {}, onBackClick = actions::popBack)
                 }
 
                 entry<OnboardingRoute.SignUpRoute> {
-                    val uiState by signUpViewModel.uiState.collectAsStateWithLifecycle()
-                    val snackbarHostState =
-                        rememberSignUpEventHost(
-                            viewModel = signUpViewModel,
-                            onNavigateToResidentNumber = actions::proceedToSignUpResidentNumber,
-                        )
-
                     SignUpScreen(
-                        initialEmail = uiState.email,
-                        initialVerificationCode = uiState.verificationCode,
-                        isVerificationSent = uiState.isVerificationSent,
-                        isSendingCode = uiState.isSendingCode,
-                        isEmailFormatValid = uiState.isEmailFormatValid,
-                        resendCooldownSeconds = uiState.resendCooldownSeconds,
-                        hasVerificationError = (uiState.failure.toDisplay() == OnboardingFailureDisplay.VerificationInline),
-                        isNextEnabled = uiState.isStep1NextEnabled,
-                        snackbarHostState = snackbarHostState,
-                        onEmailChange = signUpViewModel::updateEmail,
-                        onVerificationCodeChange = signUpViewModel::updateVerificationCode,
-                        onRequestVerification = signUpViewModel::requestVerification,
-                        onNextClick = signUpViewModel::verifyEmailAndProceed,
+                        viewModel = signUpViewModel,
+                        onNavigateToResidentNumber = actions::proceedToSignUpResidentNumber,
                         onBackClick = actions::popBack,
                     )
                 }
 
                 entry<OnboardingRoute.SignUpResidentNumberRoute> {
-                    val uiState by signUpViewModel.uiState.collectAsStateWithLifecycle()
-                    val snackbarHostState = rememberSignUpEventHost(signUpViewModel)
-
                     SignUpResidentNumberScreen(
-                        initialFrontNumber = uiState.residentFrontNumber,
-                        initialBackNumber = uiState.residentBackNumber,
-                        isNextEnabled = uiState.isStep2NextEnabled,
-                        snackbarHostState = snackbarHostState,
-                        onFrontNumberChange = signUpViewModel::updateResidentFrontNumber,
-                        onBackNumberChange = signUpViewModel::updateResidentBackNumber,
+                        viewModel = signUpViewModel,
                         onNextClick = actions::proceedToSignUpPassword,
                         onBackClick = actions::popBack,
                     )
                 }
 
                 entry<OnboardingRoute.SignUpPasswordRoute> {
-                    val uiState by signUpViewModel.uiState.collectAsStateWithLifecycle()
-                    val snackbarHostState = rememberSignUpEventHost(signUpViewModel)
-
-                    SignUpPasswordScreen(
-                        initialPassword = uiState.signUpPassword,
-                        initialPasswordConfirm = uiState.signUpPasswordConfirm,
-                        isPasswordRuleSatisfied = uiState.isPasswordRuleSatisfied,
-                        isNextEnabled = uiState.isStep3NextEnabled,
-                        snackbarHostState = snackbarHostState,
-                        onPasswordChange = signUpViewModel::updateSignUpPassword,
-                        onPasswordConfirmChange = signUpViewModel::updateSignUpPasswordConfirm,
-                        onNextClick = actions::proceedToTerms,
-                        onBackClick = actions::popBack,
-                    )
+                    SignUpPasswordScreen(viewModel = signUpViewModel, onNextClick = actions::proceedToTerms, onBackClick = actions::popBack)
                 }
 
                 entry<OnboardingRoute.TermsRoute> {
-                    val uiState by signUpViewModel.uiState.collectAsStateWithLifecycle()
-                    val snackbarHostState = rememberSignUpEventHost(signUpViewModel)
-
-                    OnboardingTermsScreen(
-                        termsState = uiState.termsState,
-                        isNextEnabled = uiState.isStep4NextEnabled,
-                        snackbarHostState = snackbarHostState,
-                        onTermsToggle = signUpViewModel::toggleTermsAgreed,
-                        onPrivacyToggle = signUpViewModel::togglePrivacyAgreed,
-                        onMarketingToggle = signUpViewModel::toggleMarketingAgreed,
-                        onToggleAll = signUpViewModel::toggleAllTerms,
-                        onViewTermsClick = { _ -> actions.navigateToTermsDetail() },
-                        onNextClick = actions::proceedToProfile,
-                        onBackClick = actions::popBack,
-                    )
+                    OnboardingTermsScreen(viewModel = signUpViewModel, onViewTermsClick = { _ ->
+                        actions.navigateToTermsDetail()
+                    }, onNextClick = actions::proceedToProfile, onBackClick = actions::popBack)
                 }
 
                 entry<OnboardingRoute.TermsDetailRoute> {
@@ -199,7 +122,7 @@ public fun OnboardingNavHost(
                 }
 
                 entry<OnboardingRoute.ProfileRoute> {
-                    OnboardingProfileEntry(
+                    OnboardingProfileScreen(
                         viewModel = signUpViewModel,
                         onOnboardingComplete = actions::replaceOnboardingWithHome,
                         onBackClick = actions::popBack,

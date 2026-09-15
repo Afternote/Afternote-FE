@@ -29,8 +29,8 @@ import java.net.UnknownHostException
  * [LoginViewModel] 실패 안내 계약 회귀 가드 (#628).
  *
  * 계약 — 자격 거절([CoreAuthFailure.InvalidLoginCredentials])은 인라인 상태
- * ([(LoginUiState.failure == OnboardingFailure.CredentialsRejected)], 입력 변경으로 해제), 전송 계층 실패
- * ([CoreAuthFailure.NetworkUnavailable])는 재시도 팝업([(LoginUiState.failure == OnboardingFailure.LoginNetworkUnavailable)]),
+ * ([OnboardingFailure.CredentialsRejected], 입력 변경으로 해제), 전송 계층 실패
+ * ([CoreAuthFailure.NetworkUnavailable])는 재시도 팝업([OnboardingFailure.LoginNetworkUnavailable]),
  * 소셜 거절([CoreAuthFailure.SocialLoginRejected])·소셜 가입 계정
  * ([CoreAuthFailure.SocialSignUpAccount])과 그 밖의 예외는 **원문을 쓰지 않고** 리소스 문구
  * 스낵바로 고정한다. 실패 시 [LoginUiState.isLoading] 을 해제한다.
@@ -70,9 +70,9 @@ class LoginViewModelTest {
         )
 
     private fun LoginViewModel.attemptEmailLogin() {
-        updateEmail("user@example.com")
-        updatePassword("pw")
-        loginWithEmail()
+        onIntent(LoginIntent.UpdateEmail("user@example.com"))
+        onIntent(LoginIntent.UpdatePassword("pw"))
+        onIntent(LoginIntent.SubmitEmailLogin)
     }
 
     @Test
@@ -100,7 +100,7 @@ class LoginViewModelTest {
             })
         viewModel.attemptEmailLogin()
 
-        viewModel.retryLogin()
+        viewModel.onIntent(LoginIntent.RetryLogin)
 
         assertEquals(2, attempts)
     }
@@ -115,7 +115,7 @@ class LoginViewModelTest {
             })
         viewModel.attemptEmailLogin()
 
-        viewModel.onNetworkErrorDismissed()
+        viewModel.onIntent(LoginIntent.DismissNetworkError)
 
         assertFalse((viewModel.uiState.value.failure == OnboardingFailure.LoginNetworkUnavailable))
         assertEquals(1, attempts)
@@ -144,7 +144,7 @@ class LoginViewModelTest {
             })
         viewModel.attemptEmailLogin()
 
-        viewModel.updatePassword("new-pw")
+        viewModel.onIntent(LoginIntent.UpdatePassword("new-pw"))
 
         assertFalse((viewModel.uiState.value.failure == OnboardingFailure.CredentialsRejected))
     }
@@ -214,7 +214,7 @@ class LoginViewModelTest {
         val viewModel = viewModel(onDefaultLogin = { Result.failure(Exception("실패")) })
         viewModel.attemptEmailLogin()
 
-        viewModel.onErrorConsumed()
+        viewModel.onIntent(LoginIntent.ConsumeError)
 
         assertNull(
             viewModel.uiState.value.failure
@@ -231,8 +231,8 @@ class LoginViewModelTest {
         assertTrue(viewModel.uiState.value.failure is OnboardingFailure.RequestFailed)
 
         failure = CoreAuthFailure.InvalidLoginCredentials(Exception("invalid credentials"))
-        viewModel.loginWithEmail()
-        viewModel.onErrorConsumed()
+        viewModel.onIntent(LoginIntent.SubmitEmailLogin)
+        viewModel.onIntent(LoginIntent.ConsumeError)
 
         assertEquals(OnboardingFailure.CredentialsRejected, viewModel.uiState.value.failure)
         assertNull(
@@ -247,9 +247,9 @@ class LoginViewModelTest {
         val viewModel = viewModel { Result.failure(IllegalStateException("failed")) }
         viewModel.attemptEmailLogin()
 
-        viewModel.updateEmail("user@example.com")
+        viewModel.onIntent(LoginIntent.UpdateEmail("user@example.com"))
         assertTrue(viewModel.uiState.value.failure is OnboardingFailure.RequestFailed)
-        viewModel.updateEmail("other@example.com")
+        viewModel.onIntent(LoginIntent.UpdateEmail("other@example.com"))
         assertNull(viewModel.uiState.value.failure)
     }
 
@@ -257,7 +257,7 @@ class LoginViewModelTest {
     fun `늦은 네트워크 팝업 닫기는 새 요청 실패를 지우지 않는다`() {
         val viewModel = viewModel { Result.failure(IllegalStateException("failed")) }
         viewModel.attemptEmailLogin()
-        viewModel.onNetworkErrorDismissed()
+        viewModel.onIntent(LoginIntent.DismissNetworkError)
         assertTrue(viewModel.uiState.value.failure is OnboardingFailure.RequestFailed)
     }
 }
