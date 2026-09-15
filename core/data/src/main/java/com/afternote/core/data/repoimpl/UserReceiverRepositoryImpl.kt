@@ -37,8 +37,8 @@ import com.afternote.core.data.mapper.delivery.toDomain as toDeliveryConditionsD
 /**
  * 사용자 계정에 등록된 수신자 계약 구현 (#1282).
  *
- * 이 구현만 수신자 갱신 revision 과 «로그인 구간 + collector» 에 귀속된 목록 캐시를 소유한다 —
- * 프로필·계정·푸시 설정과 상태를 공유하지 않는다.
+ * 이 구현만 수신자 갱신 revision 과 «로그인 구간» 에 귀속된 목록 캐시를 소유한다 — 캐시는 재구독에
+ * 걸쳐 살아남고 로그아웃에 비워진다. 프로필·계정·푸시 설정과 상태를 공유하지 않는다.
  *
  * `@Singleton` 인 이유 — 위 revision 과 캐시는 합본 [UserRepositoryImpl] 을 거치는 경로와 [UserReceiverRepository]
  * 를 직접 주입받는 경로가 **같은 인스턴스** 로 봐야 한다(좁은 계약으로 만든 수신자가 합본 구독자의 목록도
@@ -55,15 +55,22 @@ internal class UserReceiverRepositoryImpl
     ) : UserReceiverRepository {
         private val receiverRefreshRevision = MutableStateFlow(0L)
 
+        // 로그인 구간 동안의 «마지막으로 성공한 목록» — collector 재구독(백그라운드 복귀 등으로 cold
+        // flow 가 다시 처음부터 도는 경우 포함)에 걸쳐 살아남아야 한다. flow 지역 변수로 두면 재구독마다
+        // 빈 값으로 리셋되어, 새 구독의 첫 조회가 일시 실패했을 뿐인데도 화면에 떠 있던 목록이 사라진다.
+        // 로그인 구간이 바뀌면(로그아웃) 아래 flatMapLatest 분기에서 명시적으로 비운다 — 그래야 재로그인
+        // 첫 실패가 이전 계정의 목록을 잠깐이라도 비추지 않는다.
+        private val lastKnownReceivers = MutableStateFlow(emptyList<Receiver>())
+
         // 조회 실패를 예외로 흘리면 구독 중인 화면이 미처리 예외로 죽는다. 일반적인 일시 실패는 같은
-        // 로그인 구간에서 이 collector가 마지막으로 성공한 목록으로 낮춘다. 캐시를 flow 안에 두는 이유는
-        // 저장소 인스턴스보다 수명이 짧은 «로그인 구간 + collector»에 귀속해 계정 사이에 섞이지 않게 하기 위함이다.
+        // 로그인 구간에서 마지막으로 성공한 목록으로 낮춘다.
         @OptIn(ExperimentalCoroutinesApi::class)
         override val receiverListFlow: Flow<List<Receiver>> =
             authRepository.isLoggedIn
                 .distinctUntilChanged()
                 .flatMapLatest { loggedIn ->
                     if (!loggedIn) {
+                        lastKnownReceivers.value = emptyList()
                         flowOf(emptyList())
                     } else {
                         receiverListForAuthenticatedSession()
@@ -72,7 +79,6 @@ internal class UserReceiverRepositoryImpl
 
         private fun receiverListForAuthenticatedSession(): Flow<List<Receiver>> =
             flow {
-                var lastKnownReceivers = emptyList<Receiver>()
                 receiverRefreshRevision.collect {
                     val receivers =
                         runCatchingCancellable { getReceivers() }
@@ -90,11 +96,11 @@ internal class UserReceiverRepositoryImpl
                                     if (failure is ApiException && failure.status == UNAUTHORIZED_STATUS) {
                                         emptyList()
                                     } else {
-                                        lastKnownReceivers
+                                        lastKnownReceivers.value
                                     }
                                 },
                             )
-                    lastKnownReceivers = receivers
+                    lastKnownReceivers.value = receivers
                     emit(receivers)
                 }
             }
