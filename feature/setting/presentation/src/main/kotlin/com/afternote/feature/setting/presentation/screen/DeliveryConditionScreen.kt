@@ -25,13 +25,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.model.delivery.DeliveryConditionType
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.RadioGroup
@@ -41,11 +38,11 @@ import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionUiS
 import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionViewModel
 
 @Composable
-fun DeliveryConditionScreen(
+internal fun DeliveryConditionScreen(
     onBack: () -> Unit,
     onSaveSuccess: () -> Unit,
     onLastGreetingEditClick: () -> Unit,
-    viewModel: DeliveryConditionViewModel = hiltViewModel(),
+    viewModel: DeliveryConditionViewModel,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentOnSaveSuccess by rememberUpdatedState(onSaveSuccess)
@@ -188,18 +185,4 @@ private fun SectionLabel(
         style = AfternoteDesign.typography.bodySmallB,
         color = AfternoteDesign.colors.gray9,
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun DeliveryConditionContentPreview() {
-    AfternoteTheme {
-        DeliveryConditionContent(
-            uiState = DeliveryConditionUiState(),
-            onBack = {},
-            onConditionTypeSelect = {},
-            onLastGreetingEditClick = {},
-            onSave = {},
-        )
-    }
 }

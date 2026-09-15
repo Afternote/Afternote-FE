@@ -15,8 +15,7 @@ import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavAct
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingExternalActions
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
-import com.afternote.feature.setting.presentation.navigation.SettingNavActions
-import com.afternote.feature.setting.presentation.navigation.SettingRoute
+import com.afternote.feature.setting.presentation.navigation.SettingExternalActions
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterNavActions
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
 
@@ -94,7 +93,7 @@ fun rememberTimeLetterNavActions(navController: NavController): TimeLetterNavAct
     remember(navController) {
         object : TimeLetterNavActions {
             override fun onSettingClick() {
-                navController.navigate(Route.Setting)
+                navController.navigate(Route.Setting())
             }
 
             override fun onNavigateToWrite() {
@@ -144,151 +143,17 @@ fun rememberTimeLetterNavActions(navController: NavController): TimeLetterNavAct
     }
 
 @Composable
-fun rememberSettingNavActions(appState: AppState): SettingNavActions =
+fun rememberSettingExternalActions(appState: AppState): SettingExternalActions =
     remember(appState) {
-        object : SettingNavActions {
-            override fun onSettingBack() {
-                appState.navController.popBackStack()
-            }
+        object : SettingExternalActions {
+            override fun onLogoutSuccess() = openOnboarding()
 
-            override fun onLogoutSuccess() {
+            override fun onWithdrawSuccess() = openOnboarding()
+
+            private fun openOnboarding() {
                 appState.navController.navigate(Route.Onboarding) {
-                    // 로그아웃 — 인증 이후 모든 stack 비우고 Onboarding 진입. 뒤로가기로 로그인 상태 화면에 못 돌아가게.
                     popUpTo(0) { inclusive = true }
                 }
-            }
-
-            override fun onNavigateToWithdrawGuide() {
-                appState.navController.navigate(SettingRoute.WithdrawGuideRoute)
-            }
-
-            override fun onNavigateToWithdrawConfirm() {
-                appState.navController.navigate(SettingRoute.WithdrawConfirmRoute)
-            }
-
-            override fun onWithdrawGuideBack() {
-                appState.navController.popBackStack()
-            }
-
-            override fun onWithdrawConfirmBack() {
-                appState.navController.popBackStack()
-            }
-
-            override fun onWithdrawSuccess() {
-                appState.navController.navigate(Route.Onboarding) {
-                    // 탈퇴 — 계정 사라진 상태라 stack 전체 비우고 Onboarding 진입. 뒤로가기로 인증된 화면에 못 돌아가게.
-                    popUpTo(0) { inclusive = true }
-                }
-            }
-
-            override fun onNavigateToProfileEdit() {
-                appState.navController.navigate(SettingRoute.ProfileEditRoute)
-            }
-
-            override fun onProfileEditBack() {
-                appState.navController.popBackStack()
-            }
-
-            override fun onNavigateToLinkedAccount() {
-                appState.navController.navigate(SettingRoute.LinkedAccountRoute)
-            }
-
-            override fun onLinkedAccountBack() {
-                appState.navController.popBackStack()
-            }
-
-            override fun onNavigateToNotification() {
-                appState.navController.navigate(SettingRoute.NotificationRoute)
-            }
-
-            override fun onNotificationBack() {
-                appState.navController.popBackStack()
-            }
-
-            override fun onNavigateToPushNotification() {
-                appState.navController.navigate(SettingRoute.PushNotificationRoute)
-            }
-
-            override fun onPushNotificationBack() {
-                appState.navController.popBackStack()
-            }
-
-            override fun onNavigateToRecipientList() {
-                appState.navController.navigate(SettingRoute.RecipientListRoute())
-            }
-
-            override fun onNavigateToRecipientListForDeliveryConditions() {
-                appState.navController.navigate(
-                    SettingRoute.RecipientListRoute(selectForDeliveryConditions = true),
-                )
-            }
-
-            override fun onRecipientListBack() {
-                appState.navController.popBackStack()
-            }
-
-            override fun onNavigateToRecipientRegister() {
-                appState.navController.navigate(SettingRoute.RecipientRegisterRoute)
-            }
-
-            override fun onRecipientRegisterBack() {
-                appState.navController.popBackStack()
-            }
-
-            override fun onNavigateToRecipientEdit(receiverId: Long) {
-                appState.navController.navigate(SettingRoute.RecipientEditRoute(receiverId))
-            }
-
-            override fun onRecipientEditBack() {
-                appState.navController.popBackStack()
-            }
-
-            override fun onNavigateToAfterDelivery(receiverId: Long) {
-                appState.navController.navigate(SettingRoute.AfterDeliveryRoute(receiverId))
-            }
-
-            override fun onAfterDeliveryBack() {
-                appState.navController.popBackStack()
-            }
-
-            override fun onNavigateToPasskey() {
-                appState.navController.navigate(SettingRoute.PasskeyRoute)
-            }
-
-            override fun onPasskeyBack() {
-                appState.navController.popBackStack()
-            }
-
-            override fun onNavigateToPasskeyMaking() {
-                appState.navController.navigate(SettingRoute.PasskeyMakingRoute)
-            }
-
-            override fun onPasskeyMakingBack() {
-                appState.navController.popBackStack()
-            }
-
-            override fun onNavigateToPasskeyPassword() {
-                appState.navController.navigate(SettingRoute.PasskeyPasswordRoute)
-            }
-
-            override fun onPasskeyPasswordBack() {
-                appState.navController.popBackStack()
-            }
-
-            override fun onNavigateToAppLock() {
-                appState.navController.navigate(SettingRoute.AppLockSetupRoute)
-            }
-
-            override fun onAppLockBack() {
-                appState.navController.popBackStack()
-            }
-
-            override fun onNavigateToNotice() {
-                appState.navController.navigate(SettingRoute.NoticeRoute)
-            }
-
-            override fun onNoticeBack() {
-                appState.navController.popBackStack()
             }
         }
     }
@@ -307,7 +172,7 @@ fun rememberHomeTabActions(
                 // 나오고 사용자는 다시 등록 화면을 찾아야 한다. 상태를 해소하는 화면으로 보낸다.
                 //
                 // 목적지가 등록인지 목록인지는 기획 확정 전이다 (#506) — docs/qa/assumptions.md 참고.
-                appState.navController.navigate(SettingRoute.RecipientRegisterRoute)
+                appState.navController.navigate(Route.Setting(startWithRecipientRegistration = true))
             }
 
             override fun onAnswerClick() {
@@ -349,7 +214,7 @@ fun rememberHomeTabActions(
             }
 
             override fun onSettingClick() {
-                appState.navController.navigate(Route.Setting)
+                appState.navController.navigate(Route.Setting())
             }
 
             override fun onRetryLoad() {
@@ -400,7 +265,7 @@ fun rememberAfternoteExternalActions(
             }
 
             override fun navigateToSetting() {
-                appState.navController.navigate(Route.Setting)
+                appState.navController.navigate(Route.Setting())
             }
 
             override fun onFingerprintAuthFailed(message: String) {
