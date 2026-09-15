@@ -1,9 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
    API 31 미만 기기의 Auto Backup 규칙이다. API 31 이상은 data_extraction_rules.xml 이 대신한다.
+   두 파일의 제외 목록은 항상 같이 고친다 — 한쪽만 고치면 반대쪽 API 대역에 구멍이 남는다.
    See https://developer.android.com/guide/topics/data/autobackup
 -->
 <full-backup-content>
     <!-- 타임레터 음성 녹음 임시 원본은 서버 업로드 전 사용자 육성이라 클라우드에 남기지 않는다 (#440 리뷰). -->
     <exclude domain="file" path="timeletter_audio/" />
+
+    <!--
+       DataStore 전량 제외 (#1876). files/datastore/<name>.preferences_pb 에 암호화 없이 쌓인다.
+       지금 있는 네 저장소는 전부 기기를 건너면 안 되는 것들이다 — Token·afternote_receiver_auth 는
+       액세스·리프레시 토큰과 수신자 마스터키를 평문으로 들고, UserProfile 은 로그인하면 서버에서
+       다시 받으며, NotificationPermission 은 「권한을 물어봤다」 는 기기 사실이라 복원되면 새 기기가
+       권한도 없이 다시 묻지도 않는 상태가 된다(#1454 의 요청 1회 보장이 무효가 된다).
+       개별 파일이 아니라 디렉터리를 제외하는 이유는, 새 저장소가 늘 때 규칙을 잊어도 기본값이
+       「백업 안 함」 이어야 하기 때문이다. 백업이 필요한 저장소가 생기면 그 근거를 여기 적고 include 한다.
+    -->
+    <exclude domain="file" path="datastore/" />
+
+    <!--
+       DataStore 이전의 SharedPreferences XML. 같은 이름을 쓰되 자동 마이그레이션하지 않기로 한
+       결정(ReceiverMasterKeyDataStoreModule)이라, 마이그레이션 전 설치본에는 이 파일에 마스터키가
+       아직 남아 있을 수 있다.
+    -->
+    <exclude domain="sharedpref" path="afternote_receiver_auth" />
 </full-backup-content>
