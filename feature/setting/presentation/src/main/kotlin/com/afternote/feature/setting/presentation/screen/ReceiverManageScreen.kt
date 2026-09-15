@@ -12,7 +12,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.model.setting.ReceiverListItem
 import com.afternote.core.ui.receiver.ReceiverProfileRow
@@ -78,20 +77,5 @@ private fun ReceiverManageRow(
                 modifier = Modifier.size(24.dp),
             )
         },
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ReceiverManageScreenPrev() {
-    ReceiverManageScreen(
-        receivers =
-            listOf(
-                ReceiverListItem(receiverId = 1L, name = "박경민", relation = "친구"),
-                ReceiverListItem(receiverId = 2L, name = "김철수", relation = "가족"),
-                ReceiverListItem(receiverId = 3L, name = "이영희", relation = "연인"),
-            ),
-        onBackClick = {},
-        onReceiverClick = {},
     )
 }

@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.feature.setting.presentation.R
 
@@ -37,10 +36,4 @@ fun PasskeyListItem(modifier: Modifier = Modifier) {
             Image(painterResource(R.drawable.ic_vector2), contentDescription = "오른쪽 막대기")
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun PasskeyListItemPrev() {
-    PasskeyListItem()
 }
