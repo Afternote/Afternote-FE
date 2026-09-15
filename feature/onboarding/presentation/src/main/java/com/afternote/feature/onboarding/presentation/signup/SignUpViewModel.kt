@@ -162,16 +162,31 @@ internal class SignUpViewModel
                     state.copy(isVerifyingEmail = true, failure = null)
                 }
 
-                SignUpReducerEvent.EmailVerified -> {
-                    state.copy(shouldNavigateToResidentNumber = true)
+                // 셋 다 **자기가 검증한 입력이 아직 화면에 있을 때만** 적용한다 (#2025).
+                // 늦게 도착한 옛 요청의 답이 지금 폼을 다음 단계로 밀거나 새 입력에 오류를
+                // 붙이면, 서버가 검증한 적 없는 이메일로 가입이 이어진다.
+                is SignUpReducerEvent.EmailVerified -> {
+                    if (state.matches(event.email, event.certificateCode)) {
+                        state.copy(shouldNavigateToResidentNumber = true)
+                    } else {
+                        state
+                    }
                 }
 
-                SignUpReducerEvent.VerificationRejected -> {
-                    state.copy(failure = OnboardingFailure.VerificationRejected)
+                is SignUpReducerEvent.VerificationRejected -> {
+                    if (state.matches(event.email, event.certificateCode)) {
+                        state.copy(failure = OnboardingFailure.VerificationRejected)
+                    } else {
+                        state
+                    }
                 }
 
                 is SignUpReducerEvent.EmailVerifyFailed -> {
-                    state.copy(failure = OnboardingFailure.RequestFailed(event.message))
+                    if (state.matches(event.email, event.certificateCode)) {
+                        state.copy(failure = OnboardingFailure.RequestFailed(event.message))
+                    } else {
+                        state
+                    }
                 }
 
                 SignUpReducerEvent.EmailVerifyFinished -> {
@@ -265,25 +280,30 @@ internal class SignUpViewModel
         private fun verifyEmailAndProceed() {
             val state = currentState
             if (state.isVerifyingEmail) return
+            // 보낸 입력을 결과에 그대로 실어 보낸다 — 리듀서가 「지금 화면의 답인지」를 그 값으로 가른다.
+            val verifiedEmail = state.email
+            val verifiedCode = state.verificationCode
             viewModelScope.launch {
                 dispatch(SignUpReducerEvent.EmailVerifyStarted)
                 accountRepository
                     .verifyEmail(
-                        email = state.email,
-                        certificateCode = state.verificationCode,
+                        email = verifiedEmail,
+                        certificateCode = verifiedCode,
                     ).onSuccess {
-                        dispatch(SignUpReducerEvent.EmailVerified)
+                        dispatch(SignUpReducerEvent.EmailVerified(verifiedEmail, verifiedCode))
                     }.onFailure { error ->
                         // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
                         if (error is CancellationException) throw error
                         if (error is CoreAuthFailure.EmailVerification) {
                             // 인증번호 불일치·만료는 정상적인 사용자 입력 오류라 리포팅하지 않는다.
-                            dispatch(SignUpReducerEvent.VerificationRejected)
+                            dispatch(SignUpReducerEvent.VerificationRejected(verifiedEmail, verifiedCode))
                         } else {
                             errorReporter.recordAuthFailure(AuthFailureStage.EMAIL_VERIFY, error)
                             dispatch(
                                 SignUpReducerEvent.EmailVerifyFailed(
-                                    error.toDisplayMessage(R.string.onboarding_signup_email_verify_failed),
+                                    email = verifiedEmail,
+                                    certificateCode = verifiedCode,
+                                    message = error.toDisplayMessage(R.string.onboarding_signup_email_verify_failed),
                                 ),
                             )
                         }
