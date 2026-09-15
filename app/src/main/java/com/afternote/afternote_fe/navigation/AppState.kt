@@ -8,8 +8,11 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.afternote.core.common.deeplink.NavigationTarget
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomNavTab
+import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
+import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
 
 // 컴포즈 엔진은 커스텀 클래스에 대해 변경 여부를 확신할 수 없어 리컴포지션 스킵 불가
@@ -74,6 +77,51 @@ class AppState(
             // 애프터노트 서브그래프의 start는 인증 화면이다. restoreState = true이면
             // 저장된 홈 등으로 복원되어 인증을 건너뛴다. 진입점은 피처 NavGraph가 단일로 결정한다.
             restoreState = route != Route.Afternote
+        }
+    }
+
+    /**
+     * 엔진 중립 링크 목적지를 이 루트 그래프의 이동으로 옮긴다 (#924).
+     *
+     * 링크 계약([NavigationTarget])은 서버·브라우저와 공유하는 외부 계약이라 navigation 엔진과
+     * 수명이 다르다. 그 둘을 잇는 유일한 자리가 여기다 — 루트가 `NavDisplay` 로 바뀌면(#1702)
+     * 계약은 그대로 두고 이 함수만 갈린다.
+     *
+     * 탭 목적지 둘은 [navigateToBottomBarRoute] 를 그대로 탄다. 특히 애프터노트 홈은 그 함수가
+     * `restoreState` 를 끄는 유일한 라우트라, 저장된 스택으로 복원되어 **지문 관문을 건너뛰는**
+     * 일이 링크 진입에서도 일어나지 않는다.
+     *
+     * 나머지 셋은 사용자가 보고 있던 화면 위에 쌓는다. 링크를 눌러 들어온 뒤의 뒤로가기는 하던
+     * 일로 돌아가는 것이 맞고, 콜드 스타트면 그 아래가 홈이라 결과가 같다. 같은 링크를 연달아
+     * 눌러도 같은 화면이 겹쳐 쌓이지 않도록 `launchSingleTop` 을 건다.
+     */
+    fun navigateToAppLinkTarget(target: NavigationTarget) {
+        when (target) {
+            NavigationTarget.Home -> {
+                navigateToBottomBarRoute(Route.Home)
+            }
+
+            NavigationTarget.AfternoteHome -> {
+                navigateToBottomBarRoute(Route.Afternote)
+            }
+
+            is NavigationTarget.TimeLetterDetail -> {
+                pushSingleTop(TimeLetterRoute.TimeLetterDetailRoute(target.timeLetterId))
+            }
+
+            NavigationTarget.DailyQuestionCompose -> {
+                pushSingleTop(MindRecordRoute.DailyQuestionWriteRoute())
+            }
+
+            NavigationTarget.NotificationSettings -> {
+                pushSingleTop(SettingRoute.NotificationRoute)
+            }
+        }
+    }
+
+    private fun pushSingleTop(route: Any) {
+        navController.navigate(route) {
+            launchSingleTop = true
         }
     }
 }
