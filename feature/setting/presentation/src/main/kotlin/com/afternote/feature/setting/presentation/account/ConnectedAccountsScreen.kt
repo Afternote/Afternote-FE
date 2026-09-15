@@ -32,8 +32,8 @@ fun ConnectedAccountsScreen(
     val context = LocalContext.current
     val credentialManager = remember(context) { CredentialManager.create(context) }
     val snackbarHostState = remember { SnackbarHostState() }
-    val kakaoAccountLinkFailedMessage = stringResource(R.string.kakao_account_link_failed)
-    val googleAccountLinkFailedMessage = stringResource(R.string.google_account_link_failed)
+    val kakaoAccountLinkFailedMessage = stringResource(R.string.setting_kakao_account_link_failed)
+    val googleAccountLinkFailedMessage = stringResource(R.string.setting_google_account_link_failed)
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->

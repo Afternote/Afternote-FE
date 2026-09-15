@@ -37,7 +37,7 @@ fun PassKeyScreen(
         containerColor = Color.Transparent,
         topBar = {
             DetailTopBar(
-                title = stringResource(id = R.string.passkey_management_title),
+                title = stringResource(id = R.string.setting_passkey_management_title),
                 onBackClick = onBackClick,
             )
         },
@@ -51,13 +51,13 @@ fun PassKeyScreen(
         ) {
             Column {
                 Text(
-                    text = stringResource(id = R.string.passkey_management_title),
+                    text = stringResource(id = R.string.setting_passkey_management_title),
                     style = AfternoteDesign.typography.bodyLargeB,
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = stringResource(id = R.string.passkey_management_description),
+                    text = stringResource(id = R.string.setting_passkey_management_description),
                     style = AfternoteDesign.typography.bodySmallR,
                 )
                 Spacer(modifier = Modifier.height(84.dp))
@@ -70,7 +70,7 @@ fun PassKeyScreen(
                     Alignment.Center,
                 ) {
                     Image(
-                        painter = painterResource(R.drawable.ic_passkey_main),
+                        painter = painterResource(R.drawable.setting_ic_passkey_main),
                         contentDescription = "패스키 메인 로고",
                         contentScale = ContentScale.FillWidth,
                         modifier =
@@ -85,7 +85,7 @@ fun PassKeyScreen(
                     Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 63.dp),
-                text = stringResource(id = R.string.passkey_register),
+                text = stringResource(id = R.string.setting_passkey_register),
                 onClick = onRegisterClick,
                 type = AfternoteButtonType.Default,
             )

@@ -30,7 +30,7 @@ fun NoticeListScreen(
     Scaffold(
         topBar = {
             DetailTopBar(
-                title = stringResource(R.string.settings_support_notice),
+                title = stringResource(R.string.setting_support_notice),
                 onBackClick = onBackClick,
             )
         },
@@ -67,7 +67,7 @@ private fun NoticeEmptyState(modifier: Modifier = Modifier) {
                 .padding(top = 24.dp),
     ) {
         Text(
-            text = stringResource(R.string.settings_notice_empty),
+            text = stringResource(R.string.setting_notice_empty),
             style = AfternoteDesign.typography.bodyLargeR,
             color = AfternoteDesign.colors.gray8,
         )

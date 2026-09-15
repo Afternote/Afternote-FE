@@ -25,8 +25,8 @@ fun WithdrawConfirmScreen(
         WithdrawUiState.Success -> {
             Popup(
                 type = PopupType.Default,
-                message = stringResource(R.string.withdraw_complete_message),
-                confirmText = stringResource(R.string.withdraw_complete_button),
+                message = stringResource(R.string.setting_withdraw_complete_message),
+                confirmText = stringResource(R.string.setting_withdraw_complete_button),
                 onConfirm = onWithdrawSuccess,
                 onDismiss = onWithdrawSuccess,
             )
@@ -35,9 +35,9 @@ fun WithdrawConfirmScreen(
         WithdrawUiState.Error -> {
             Popup(
                 type = PopupType.Variant2,
-                message = stringResource(R.string.withdraw_failed_message),
-                confirmText = stringResource(R.string.withdraw_retry_button),
-                dismissText = stringResource(R.string.withdraw_close_button),
+                message = stringResource(R.string.setting_withdraw_failed_message),
+                confirmText = stringResource(R.string.setting_withdraw_retry_button),
+                dismissText = stringResource(R.string.setting_withdraw_close_button),
                 onConfirm = viewModel::deleteAccount,
                 onDismiss = viewModel::dismissWithdrawError,
             )

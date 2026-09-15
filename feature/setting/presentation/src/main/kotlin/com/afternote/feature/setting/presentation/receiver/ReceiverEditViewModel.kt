@@ -44,7 +44,7 @@ class ReceiverEditViewModel
                         _uiState.update { it.copy(isLoading = false, receiver = receiver) }
                     }.onFailure {
                         _uiState.update {
-                            it.copy(isLoading = false, errorMessage = UiText.Resource(R.string.receiver_load_failed))
+                            it.copy(isLoading = false, errorMessage = UiText.Resource(R.string.setting_receiver_load_failed))
                         }
                     }
             }
@@ -59,16 +59,16 @@ class ReceiverEditViewModel
         ) {
             if (_uiState.value.isSaving) return
             if (!email.isValidReceiverEmail()) {
-                _uiState.update { it.copy(errorMessage = UiText.Resource(R.string.receiver_email_invalid)) }
+                _uiState.update { it.copy(errorMessage = UiText.Resource(R.string.setting_receiver_email_invalid)) }
                 return
             }
             val phoneValidation = phone.validateReceiverPhone(isRequired = true)
             if (phoneValidation != ReceiverPhoneValidation.VALID) {
                 val messageRes =
                     if (phoneValidation == ReceiverPhoneValidation.REQUIRED) {
-                        R.string.receiver_phone_required
+                        R.string.setting_receiver_phone_required
                     } else {
-                        R.string.receiver_phone_invalid
+                        R.string.setting_receiver_phone_invalid
                     }
                 _uiState.update { it.copy(errorMessage = UiText.Resource(messageRes)) }
                 return
@@ -90,7 +90,7 @@ class ReceiverEditViewModel
                     _uiState.update {
                         it.copy(
                             isSaving = false,
-                            errorMessage = error.toReceiverFailureMessage(R.string.receiver_edit_failed),
+                            errorMessage = error.toReceiverFailureMessage(R.string.setting_receiver_edit_failed),
                         )
                     }
                     return@launch
@@ -108,7 +108,7 @@ class ReceiverEditViewModel
                     _uiState.update {
                         it.copy(
                             isSaving = false,
-                            errorMessage = UiText.Resource(R.string.receiver_message_update_partial_failed),
+                            errorMessage = UiText.Resource(R.string.setting_receiver_message_update_partial_failed),
                         )
                     }
                 }

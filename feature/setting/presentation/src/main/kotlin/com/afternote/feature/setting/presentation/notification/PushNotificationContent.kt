@@ -36,7 +36,7 @@ internal fun PushNotificationContent(
     Scaffold(
         topBar = {
             DetailTopBar(
-                title = stringResource(R.string.push_notification_title),
+                title = stringResource(R.string.setting_push_notification_title),
                 onBackClick = onBack,
             )
         },
@@ -58,7 +58,7 @@ internal fun PushNotificationContent(
 
             Spacer(Modifier.height(24.dp))
             Text(
-                text = stringResource(R.string.push_notification_device_guide),
+                text = stringResource(R.string.setting_push_notification_device_guide),
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray5,
             )
