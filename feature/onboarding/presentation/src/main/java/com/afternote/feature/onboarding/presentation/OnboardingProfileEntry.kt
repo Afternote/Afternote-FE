@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
  * 호출로 reset.
  */
 @Composable
-fun OnboardingProfileEntry(
+internal fun OnboardingProfileEntry(
     viewModel: SignUpViewModel,
     onOnboardingComplete: () -> Unit,
     onBackClick: () -> Unit,
@@ -58,10 +58,14 @@ fun OnboardingProfileEntry(
         }
     }
     // VM 이 UiText 로 폴백까지 확정해 두므로 빈 문구가 도달하지 않는다.
-    val pendingErrorMessage = uiState.errorMessage?.asString()
-    LaunchedEffect(pendingErrorMessage) {
-        if (pendingErrorMessage != null) {
-            showSnackbar(pendingErrorMessage)
+    val snackbarMessage =
+        uiState.failure
+            .toDisplay()
+            .snackbarMessage
+            ?.asString()
+    LaunchedEffect(snackbarMessage) {
+        if (snackbarMessage != null) {
+            showSnackbar(snackbarMessage)
             viewModel.onErrorConsumed()
         }
     }
