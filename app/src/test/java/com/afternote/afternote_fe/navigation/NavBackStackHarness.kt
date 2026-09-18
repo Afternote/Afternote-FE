@@ -21,8 +21,7 @@ import com.afternote.core.ui.Route
 import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingExternalActions
-import com.afternote.feature.setting.presentation.navigation.SettingNavActions
-import com.afternote.feature.setting.presentation.navigation.SettingRoute
+import com.afternote.feature.setting.presentation.navigation.SettingExternalActions
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterNavActions
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
 
@@ -41,7 +40,7 @@ import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
 internal class NavBackStackHarness(
     val appState: AppState,
     val onboardingExternalActions: OnboardingExternalActions,
-    val settingActions: SettingNavActions,
+    val settingActions: SettingExternalActions,
     val timeLetterActions: TimeLetterNavActions,
     val homeActions: HomeTabActions,
     /** predictive back 제스처를 프로그램으로 흘려 넣기 위한 호스트 dispatcher. */
@@ -62,7 +61,7 @@ internal fun SkeletonAppNavigation(
 ) {
     val appState = rememberAfternoteAppState()
     val onboardingExternalActions = rememberOnboardingExternalActions(appState)
-    val settingActions = rememberSettingNavActions(appState)
+    val settingActions = rememberSettingExternalActions(appState)
     val timeLetterActions = rememberTimeLetterNavActions(appState.navController)
     val homeActions = rememberHomeTabActions(appState, onRetryLoad = { })
     val backDispatcher =
@@ -117,12 +116,8 @@ internal fun NavGraphBuilder.appRouteSkeleton() {
     // app — AppNavigation.kt 가 직접 등록하는 홈 탭
     stubScreen<Route.Home>(stateful = true)
 
-    // feature/setting — SettingNavGraph.kt. 로그아웃·탈퇴 경계가 지나는 화면만 옮긴다.
-    navigation<Route.Setting>(startDestination = SettingRoute.SettingHomeRoute) {
-        stubScreen<SettingRoute.SettingHomeRoute>()
-        stubScreen<SettingRoute.WithdrawGuideRoute>()
-        stubScreen<SettingRoute.WithdrawConfirmRoute>()
-    }
+    // Settings owns a local stack; the shell only registers its host.
+    stubScreen<Route.Setting>()
 
     // feature/mindrecord — MindRecordNavGraph.kt. 중첩 없이 루트에 직접 붙는 top-level 3종과
     // 임시저장 목록·기록 상세만 옮긴다(작성 화면은 어느 테스트도 지나지 않는다).

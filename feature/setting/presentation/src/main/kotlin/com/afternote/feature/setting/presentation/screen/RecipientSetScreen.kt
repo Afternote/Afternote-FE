@@ -25,7 +25,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.button.AfternoteButton
@@ -152,10 +151,4 @@ private fun ReadOnlyField(
             color = if (value.isNotEmpty()) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray4,
         )
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun RecipientSetScreenPrev() {
-    RecipientSetScreen()
 }

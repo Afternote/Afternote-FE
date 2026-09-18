@@ -5,17 +5,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditEvent
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditViewModel
 
 @Composable
-fun ReceiverEditScreen(
+internal fun ReceiverEditScreen(
     onBackClick: () -> Unit,
     onEditSuccess: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ReceiverEditViewModel = hiltViewModel(),
+    viewModel: ReceiverEditViewModel,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentOnEditSuccess by rememberUpdatedState(onEditSuccess)

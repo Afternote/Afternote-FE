@@ -1,71 +1,41 @@
 package com.afternote.feature.setting.presentation.navigation
 
-interface SettingNavActions {
-    fun onSettingBack()
+internal interface SettingNavActions {
+    fun popBack()
 
     fun onLogoutSuccess()
 
-    fun onNavigateToWithdrawGuide()
+    fun onWithdrawGuideClick()
 
-    fun onNavigateToWithdrawConfirm()
-
-    fun onWithdrawGuideBack()
-
-    fun onWithdrawConfirmBack()
+    fun onWithdrawConfirmClick()
 
     fun onWithdrawSuccess()
 
-    fun onNavigateToProfileEdit()
+    fun onProfileEditClick()
 
-    fun onProfileEditBack()
+    fun onLinkedAccountClick()
 
-    fun onNavigateToLinkedAccount()
+    fun onNotificationClick()
 
-    fun onLinkedAccountBack()
+    fun onPushNotificationClick()
 
-    fun onNavigateToNotification()
+    fun onRecipientListClick()
 
-    fun onNotificationBack()
+    fun onDeliveryConditionsClick()
 
-    fun onNavigateToPushNotification()
+    fun onRecipientRegisterClick()
 
-    fun onPushNotificationBack()
+    fun onRecipientEditClick(receiverId: Long)
 
-    fun onNavigateToRecipientList()
+    fun onDeliveryConditionsRecipientSelected(receiverId: Long)
 
-    fun onNavigateToRecipientListForDeliveryConditions()
+    fun onPasskeyClick()
 
-    fun onRecipientListBack()
+    fun onPasskeyRegisterClick()
 
-    fun onNavigateToRecipientRegister()
+    fun onPasswordAuthClick()
 
-    fun onRecipientRegisterBack()
+    fun onAppLockClick()
 
-    fun onNavigateToRecipientEdit(receiverId: Long)
-
-    fun onRecipientEditBack()
-
-    fun onNavigateToAfterDelivery(receiverId: Long)
-
-    fun onAfterDeliveryBack()
-
-    fun onNavigateToPasskey()
-
-    fun onPasskeyBack()
-
-    fun onNavigateToPasskeyMaking()
-
-    fun onPasskeyMakingBack()
-
-    fun onNavigateToPasskeyPassword()
-
-    fun onPasskeyPasswordBack()
-
-    fun onNavigateToAppLock()
-
-    fun onAppLockBack()
-
-    fun onNavigateToNotice()
-
-    fun onNoticeBack()
+    fun onNoticeClick()
 }

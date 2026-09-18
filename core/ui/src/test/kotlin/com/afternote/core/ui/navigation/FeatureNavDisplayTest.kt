@@ -63,8 +63,8 @@ class FeatureNavDisplayTest {
     private lateinit var parentStack: NavBackStack<NavKey>
     private lateinit var flowStack: NavBackStack<NavKey>
 
-    private val boundary =
-        object : FeatureStackBoundary {
+    private val navigationCallbacks =
+        object : FeatureNavigationCallbacks {
             override fun exit() {
                 exits += 1
             }
@@ -81,7 +81,7 @@ class FeatureNavDisplayTest {
 
         FeatureNavDisplay(
             backStack = stack,
-            boundary = boundary,
+            boundary = navigationCallbacks,
             entryProvider =
                 entryProvider {
                     entry<RootKey> { BasicText("root") }
@@ -138,12 +138,12 @@ class FeatureNavDisplayTest {
     }
 
     /**
-     * **바닥에서의 back 은 `boundary.exit()` 로 가지 않는다.**
+     * **바닥에서의 back 은 `navigationCallbacks.exit()` 로 가지 않는다.**
      *
      * `NavDisplay` 는 `isBackEnabled = scene.previousEntries.isNotEmpty()` 로 핸들러를 켜고
      * (`NavDisplay.kt:558`), `SinglePaneScene.previousEntries` 는 `entries.dropLast(1)` 이다
      * (`SinglePaneScene.kt:65`). 스택 크기 1 이면 그 목록이 비어 **핸들러 자체가 꺼지고** back 은
-     * 상위로 흘러간다. [FeatureNavDisplay] 의 `onBack` 에 있는 `else -> boundary.exit()` 갈래는
+     * 상위로 흘러간다. [FeatureNavDisplay] 의 `onBack` 에 있는 `else -> navigationCallbacks.exit()` 갈래는
      * 화면 안 back 버튼(`popOrExit`)으로만 도달한다.
      */
     @Test
@@ -162,7 +162,7 @@ class FeatureNavDisplayTest {
         composeRule.waitForIdle()
         assertEquals("바닥에서는 스택을 비우지 않는다", 1, backStack.size)
         assertEquals("핸들러가 꺼져 있어 위로 흘러간다", 1, owner.fallbacks)
-        assertEquals("boundary.exit() 은 back 경로로 도달하지 않는다", 0, exits)
+        assertEquals("navigationCallbacks.exit() 은 back 경로로 도달하지 않는다", 0, exits)
     }
 
     private fun push(key: NavKey) = composeRule.runOnIdle { backStack.add(key) }
@@ -182,7 +182,7 @@ class FeatureNavDisplayTest {
 
         FeatureNavDisplay(
             backStack = outer,
-            boundary = boundary,
+            boundary = navigationCallbacks,
             entryProvider =
                 entryProvider {
                     entry<RootKey> {
@@ -200,7 +200,7 @@ class FeatureNavDisplayTest {
                         SideEffect { flowStack = inner }
                         FeatureNavDisplay(
                             backStack = inner,
-                            boundary = boundary,
+                            boundary = navigationCallbacks,
                             entryProvider =
                                 entryProvider {
                                     entry<FlowStepKey> { key -> BasicText("step${key.step}") }
