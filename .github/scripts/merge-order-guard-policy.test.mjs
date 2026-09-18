@@ -263,6 +263,9 @@ test("declares the repository code owner for GitHub automation and policy change
 
 test("live CLOSED warns upper PRs while OPEN or MERGED resolves the same bot comment", () => {
     assert.match(stackNotify, /issues: write/);
+    // 코멘트 대상이 PR 이면 GitHub 은 pull-requests 쓰기를 요구한다. 이 칸이 read 로
+    // 머물러 안내 코멘트가 403 으로 죽은 적이 있다(#2068).
+    assert.match(stackNotify, /pull-requests: write/);
     assert.match(stackNotify, /live_state=\$\(jq -r '\.state'/);
     assert.match(stackNotify, /CLOSED\)[\s\S]*notice_state="active"/);
     assert.match(stackNotify, /OPEN\)[\s\S]*notice_state="resolved"/);
