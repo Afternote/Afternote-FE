@@ -53,6 +53,15 @@ sealed interface Route {
     @Serializable
     data object Receiver : Route
 
+    /**
+     * 카카오톡 초대 링크로 들어온 수신자의 랜딩·수락 로컬 스택 host (#944).
+     *
+     * 보관 중인 초대 토큰이 있으면 앱 셸이 현재 화면 위에 올린다 — 로그인 전이면 온보딩 위에,
+     * 로그인 뒤면 홈 위에. 수락·보류·거절이 끝나면 pop 으로 원래 자리로 돌아간다.
+     */
+    @Serializable
+    data object ReceiverInvitation : Route
+
     /** 임시 로그아웃 진입용 설정 화면. 정식 설정 IA 확정 전까지 단일 화면. */
     @Serializable
     data object Setting : Route

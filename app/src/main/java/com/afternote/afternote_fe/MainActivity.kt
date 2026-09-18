@@ -9,6 +9,7 @@ import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.afternote_fe.invitation.ReceiverInvitationIntentContract
 import com.afternote.afternote_fe.navigation.AppNavigation
 import com.afternote.afternote_fe.notification.NotificationIntentContract
 import com.afternote.afternote_fe.update.ForceUpdateGate
@@ -41,6 +42,7 @@ class MainActivity : FragmentActivity() {
         enableLightEdgeToEdge()
 
         enqueueNotificationIntent(intent)
+        enqueueInvitationIntent(intent)
 
         if (BuildConfig.DEBUG && intent.getBooleanExtra(EXTRA_DEBUG_START_TIMELETTER, false)) {
             setContent {
@@ -60,7 +62,10 @@ class MainActivity : FragmentActivity() {
             AfternoteTheme {
                 val startRoute by viewModel.startRoute.collectAsStateWithLifecycle()
                 startRoute?.let { route ->
-                    AppNavigation(startDestination = route)
+                    AppNavigation(
+                        startDestination = route,
+                        mainViewModel = viewModel,
+                    )
                 }
                 val forceUpdatePrompt by forceUpdateGate.prompt.collectAsStateWithLifecycle()
                 forceUpdatePrompt?.let { prompt ->
@@ -88,6 +93,18 @@ class MainActivity : FragmentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         enqueueNotificationIntent(intent)
+        enqueueInvitationIntent(intent)
+    }
+
+    /**
+     * 카카오톡 초대 링크 진입 (#944). 토큰은 기기 저장소에 남기고, 띄울지는 앱 루트가 인증 상태와
+     * 함께 판정한다. 같은 Intent 가 재생성으로 다시 와도 같은 토큰을 다시 쓰는 것이라 재처리 방지가
+     * 따로 필요 없다 — 처분 기록은 [MainViewModel] 이 SavedState 로 갖는다.
+     */
+    private fun enqueueInvitationIntent(intent: Intent) {
+        ReceiverInvitationIntentContract
+            .fromIntent(intent)
+            ?.let(viewModel::enqueueInvitationToken)
     }
 
     private fun enqueueNotificationIntent(intent: Intent) {
