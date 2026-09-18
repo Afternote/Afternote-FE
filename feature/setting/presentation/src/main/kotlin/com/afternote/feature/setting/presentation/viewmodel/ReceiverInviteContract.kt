@@ -22,9 +22,10 @@ sealed interface ReceiverInviteIntent : MviIntent {
     /** 화면이 카카오 공유를 띄웠다 — 시트를 닫고 «초대를 보냈어요» 로 넘어간다. */
     data object ShareLaunched : ReceiverInviteIntent
 
-    /** 화면이 카카오 공유를 띄우지 못했다 — 시트를 유지한 채 안내를 얹는다. */
+    /** 화면이 카카오 공유를 띄우지 못했다 — 시트를 유지한 채 안내를 얹고, 원인은 진단에 남긴다. */
     data class ShareFailed(
         val message: UiText,
+        val cause: Throwable,
     ) : ReceiverInviteIntent
 
     /** «초대 링크 다시 보내기» — 새 초대를 만들지 않고 같은 토큰으로 공유 요청을 다시 낸다. */

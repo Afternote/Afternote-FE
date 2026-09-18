@@ -1,6 +1,7 @@
 package com.afternote.feature.setting.presentation.social
 
 import android.content.Context
+import android.util.Log
 import com.kakao.sdk.common.util.KakaoCustomTabsClient
 import com.kakao.sdk.share.ShareClient
 import com.kakao.sdk.share.WebSharerClient
@@ -15,6 +16,7 @@ import kotlin.coroutines.resume
  */
 internal const val KAKAO_RECEIVER_INVITATION_TEMPLATE_ID: Long = 136940L
 
+private const val LOG_TAG = "KakaoInviteShare"
 private const val TEMPLATE_ARG_INVITE_TOKEN = "inviteToken"
 private const val TEMPLATE_ARG_SENDER_NAME = "senderName"
 
@@ -45,9 +47,18 @@ internal suspend fun shareReceiverInvitationViaKakao(
                 if (!continuation.isActive) return@shareCustom
                 val outcome =
                     when {
-                        error != null -> Result.failure(error)
-                        result != null -> runCatching { context.startActivity(result.intent) }
-                        else -> Result.failure(IllegalStateException("카카오톡 공유 실패: 결과값 없음"))
+                        error != null -> {
+                            Log.w(LOG_TAG, "카카오톡 공유 실패", error)
+                            Result.failure(error)
+                        }
+
+                        result != null -> {
+                            runCatching { context.startActivity(result.intent) }
+                        }
+
+                        else -> {
+                            Result.failure(IllegalStateException("카카오톡 공유 실패: 결과값 없음"))
+                        }
                     }
                 continuation.resume(outcome)
             }

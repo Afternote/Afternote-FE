@@ -45,14 +45,39 @@ class ReceiverInviteViewModel
 
         override fun onIntent(intent: ReceiverInviteIntent) {
             when (intent) {
-                is ReceiverInviteIntent.OpenSheet -> dispatch(ReceiverInviteReducerEvent.SheetOpened(intent.receiverName))
-                ReceiverInviteIntent.CloseSheet -> dispatch(ReceiverInviteReducerEvent.SheetClosed)
-                ReceiverInviteIntent.SendInvite -> sendInvite()
-                ReceiverInviteIntent.ShareLaunched -> markSent()
-                is ReceiverInviteIntent.ShareFailed -> dispatch(ReceiverInviteReducerEvent.ShareFailed(intent.message))
-                ReceiverInviteIntent.Resend -> resend()
-                ReceiverInviteIntent.ConsumeShareRequest -> dispatch(ReceiverInviteReducerEvent.ShareRequestConsumed)
-                ReceiverInviteIntent.ConsumeError -> dispatch(ReceiverInviteReducerEvent.ErrorConsumed)
+                is ReceiverInviteIntent.OpenSheet -> {
+                    dispatch(ReceiverInviteReducerEvent.SheetOpened(intent.receiverName))
+                }
+
+                ReceiverInviteIntent.CloseSheet -> {
+                    dispatch(ReceiverInviteReducerEvent.SheetClosed)
+                }
+
+                ReceiverInviteIntent.SendInvite -> {
+                    sendInvite()
+                }
+
+                ReceiverInviteIntent.ShareLaunched -> {
+                    markSent()
+                }
+
+                is ReceiverInviteIntent.ShareFailed -> {
+                    // 카카오 SDK 오류·startActivity 실패의 원문은 여기서만 남는다(토큰은 실리지 않는다).
+                    errorReporter.recordFailure(intent.cause, mapOf(KEY_STAGE to STAGE_SHARE))
+                    dispatch(ReceiverInviteReducerEvent.ShareFailed(intent.message))
+                }
+
+                ReceiverInviteIntent.Resend -> {
+                    resend()
+                }
+
+                ReceiverInviteIntent.ConsumeShareRequest -> {
+                    dispatch(ReceiverInviteReducerEvent.ShareRequestConsumed)
+                }
+
+                ReceiverInviteIntent.ConsumeError -> {
+                    dispatch(ReceiverInviteReducerEvent.ErrorConsumed)
+                }
             }
         }
 
@@ -132,6 +157,7 @@ class ReceiverInviteViewModel
             const val KEY_STAGE = "stage"
             const val STAGE_CREATE = "receiver_invite_create"
             const val STAGE_SENDER_NAME = "receiver_invite_sender_name"
+            const val STAGE_SHARE = "receiver_invite_share"
         }
     }
 

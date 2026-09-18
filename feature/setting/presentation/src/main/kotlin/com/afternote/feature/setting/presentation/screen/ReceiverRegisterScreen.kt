@@ -119,13 +119,11 @@ fun ReceiverRegisterScreen(
             shareReceiverInvitationViaKakao(context, token = request.token, senderName = request.senderName)
                 .onSuccess {
                     if (!isResend) inviteViewModel.onIntent(ReceiverInviteIntent.ShareLaunched)
-                }.onFailure {
-                    // 공유를 못 띄웠다(취소·카카오톡 없음) — 시트면 안내를 얹고, 보냈어요 화면이면 스낵바.
-                    if (isResend) {
-                        snackbarHostState.showSnackbar(shareFailedText)
-                    } else {
-                        inviteViewModel.onIntent(ReceiverInviteIntent.ShareFailed(shareFailedMessage))
-                    }
+                }.onFailure { cause ->
+                    // 공유를 못 띄웠다(취소·카카오톡 없음·SDK 오류) — 원인은 ViewModel 이 진단에 남기고,
+                    // 시트면 안내를 얹고, 보냈어요 화면이면 스낵바.
+                    inviteViewModel.onIntent(ReceiverInviteIntent.ShareFailed(shareFailedMessage, cause))
+                    if (isResend) snackbarHostState.showSnackbar(shareFailedText)
                 }
         }
     }
