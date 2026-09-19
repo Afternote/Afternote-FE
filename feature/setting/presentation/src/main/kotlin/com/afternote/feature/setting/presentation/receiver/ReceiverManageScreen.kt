@@ -52,7 +52,7 @@ fun ReceiverManageScreen(
         containerColor = Color.Transparent,
         topBar = {
             DetailTopBar(
-                title = stringResource(R.string.settings_recipient_list),
+                title = stringResource(R.string.setting_recipient_list),
                 onBackClick = onBackClick,
             )
         },
@@ -104,13 +104,13 @@ private fun ReceiverManageEmpty(
                 .padding(top = 40.dp, bottom = 16.dp),
     ) {
         Text(
-            text = stringResource(R.string.settings_recipient_empty),
+            text = stringResource(R.string.setting_recipient_empty),
             style = AfternoteDesign.typography.h1,
             color = AfternoteDesign.colors.black,
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = stringResource(R.string.settings_recipient_empty_description),
+            text = stringResource(R.string.setting_recipient_empty_description),
             // 애프터노트 빈 상태와 같은 근거다. 시안의 H3 는 weight 400 인데 레포 `h3` 토큰은 Bold 다.
             style = AfternoteDesign.typography.h3.copy(fontWeight = FontWeight.Normal),
             color = AfternoteDesign.colors.gray6,
@@ -124,7 +124,7 @@ private fun ReceiverManageEmpty(
         }
         Spacer(modifier = Modifier.weight(1f))
         AfternoteButton(
-            text = stringResource(R.string.settings_recipient_empty_register),
+            text = stringResource(R.string.setting_recipient_empty_register),
             onClick = onRegisterClick,
         )
     }
@@ -143,7 +143,7 @@ private fun ReceiverManageRow(
         modifier = modifier,
         trailing = {
             Image(
-                painterResource(R.drawable.ic_right_arrow),
+                painterResource(R.drawable.setting_ic_right_arrow),
                 contentDescription = null,
                 modifier = Modifier.size(24.dp),
             )

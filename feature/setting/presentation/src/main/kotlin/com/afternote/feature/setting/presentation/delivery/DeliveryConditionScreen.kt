@@ -69,25 +69,25 @@ private fun DeliveryConditionContent(
     val processingMethodItems =
         listOf(
             RadioGroupItem(
-                title = stringResource(R.string.processing_method_inactive_title),
-                description = stringResource(R.string.processing_method_inactive_description),
+                title = stringResource(R.string.setting_processing_method_inactive_title),
+                description = stringResource(R.string.setting_processing_method_inactive_description),
             ),
             RadioGroupItem(
-                title = stringResource(R.string.processing_method_recipient_request_title),
-                description = stringResource(R.string.processing_method_recipient_request_description),
+                title = stringResource(R.string.setting_processing_method_recipient_request_title),
+                description = stringResource(R.string.setting_processing_method_recipient_request_description),
             ),
         )
 
     Scaffold(
         topBar = {
             DetailTopBar(
-                title = stringResource(R.string.settings_recipient_after_delivery),
+                title = stringResource(R.string.setting_recipient_after_delivery),
                 onBackClick = onBack,
                 actions = {
                     val isSaveEnabled = uiState.isInitialized && !uiState.isLoading && !uiState.isSaving
                     TextButton(onClick = onSave, enabled = isSaveEnabled) {
                         Text(
-                            text = stringResource(R.string.delivery_condition_save),
+                            text = stringResource(R.string.setting_delivery_condition_save),
                             style = AfternoteDesign.typography.bodySmallB,
                             color =
                                 if (isSaveEnabled) {
@@ -112,8 +112,8 @@ private fun DeliveryConditionContent(
         ) {
             val errorMessageRes =
                 when (uiState.error) {
-                    DeliveryConditionError.LOAD_FAILED -> R.string.delivery_condition_load_error
-                    DeliveryConditionError.SAVE_FAILED -> R.string.delivery_condition_save_error
+                    DeliveryConditionError.LOAD_FAILED -> R.string.setting_delivery_condition_load_error
+                    DeliveryConditionError.SAVE_FAILED -> R.string.setting_delivery_condition_save_error
                     null -> null
                 }
             if (errorMessageRes != null) {
@@ -124,7 +124,7 @@ private fun DeliveryConditionContent(
                 )
                 Spacer(Modifier.height(16.dp))
             }
-            SectionLabel(text = stringResource(R.string.processing_method_section_title))
+            SectionLabel(text = stringResource(R.string.setting_processing_method_section_title))
             Spacer(Modifier.height(28.dp))
             RadioGroup(
                 items = processingMethodItems,
@@ -141,13 +141,13 @@ private fun DeliveryConditionContent(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(R.string.last_greeting_edit_section_title),
+                    text = stringResource(R.string.setting_last_greeting_edit_section_title),
                     style = AfternoteDesign.typography.bodyBase,
                     color = AfternoteDesign.colors.gray9,
                 )
                 Spacer(Modifier.weight(1f))
                 Image(
-                    painter = painterResource(R.drawable.ic_right_arrow),
+                    painter = painterResource(R.drawable.setting_ic_right_arrow),
                     contentDescription = null,
                     modifier = Modifier.size(24.dp),
                 )
@@ -159,12 +159,12 @@ private fun DeliveryConditionContent(
             )
             Spacer(Modifier.height(24.dp))
             Text(
-                text = stringResource(R.string.after_delivery_notice_condition),
+                text = stringResource(R.string.setting_after_delivery_notice_condition),
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray9,
             )
             Text(
-                text = stringResource(R.string.after_delivery_notice_safety),
+                text = stringResource(R.string.setting_after_delivery_notice_safety),
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray9,
             )

@@ -33,7 +33,7 @@ fun InsertPasswordContent(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(modifier = Modifier.height(40.dp))
-        Image(painterResource(R.drawable.ic_lock), contentDescription = null)
+        Image(painterResource(R.drawable.setting_ic_lock), contentDescription = null)
         Spacer(modifier = Modifier.height(24.dp))
         Text(
             text = titleText,

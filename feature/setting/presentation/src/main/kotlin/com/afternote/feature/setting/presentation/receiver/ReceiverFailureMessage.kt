@@ -17,7 +17,7 @@ internal fun Throwable.toReceiverFailureMessage(
     @StringRes fallbackResId: Int,
 ): UiText =
     if (this is ReceiverRequestRejectedException) {
-        UiText.Resource(R.string.receiver_request_rejected)
+        UiText.Resource(R.string.setting_receiver_request_rejected)
     } else {
         UiText.Resource(fallbackResId)
     }

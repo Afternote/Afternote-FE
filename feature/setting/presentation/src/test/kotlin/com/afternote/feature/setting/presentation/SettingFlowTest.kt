@@ -122,12 +122,12 @@ class SettingFlowTest {
         val resources = ApplicationProvider.getApplicationContext<android.content.Context>().resources
         val menuIds =
             listOf(
-                R.string.settings_account_password_change,
-                R.string.settings_support_faq,
-                R.string.settings_support_inquiry,
-                R.string.settings_support_terms,
-                R.string.settings_support_privacy,
-                R.string.settings_support_service_info,
+                R.string.setting_account_password_change,
+                R.string.setting_support_faq,
+                R.string.setting_support_inquiry,
+                R.string.setting_support_terms,
+                R.string.setting_support_privacy,
+                R.string.setting_support_service_info,
             )
         menuIds.forEach { menuId ->
             composeRule.onNode(hasText(resources.getString(menuId)) and hasClickAction()).performScrollTo().performClick()

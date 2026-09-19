@@ -28,7 +28,7 @@ import com.afternote.feature.setting.presentation.R
 fun ProfilePhotoWithAddBadge(modifier: Modifier = Modifier) {
     Box(modifier = modifier.size(134.dp)) {
         Image(
-            painter = painterResource(R.drawable.ic_default_profile),
+            painter = painterResource(R.drawable.setting_ic_default_profile),
             contentDescription = "기본",
             modifier = Modifier.fillMaxSize(),
         )
@@ -40,7 +40,7 @@ fun ProfilePhotoWithAddBadge(modifier: Modifier = Modifier) {
             contentAlignment = Alignment.Center,
         ) {
             Image(
-                painter = painterResource(R.drawable.ic_plus),
+                painter = painterResource(R.drawable.setting_ic_plus),
                 contentDescription = "추가",
                 modifier = Modifier.requiredSize(72.dp),
             )

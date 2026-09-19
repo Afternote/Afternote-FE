@@ -199,9 +199,9 @@ internal fun ReceiverRegisterContent(
                         text =
                             stringResource(
                                 if (phoneValidation == ReceiverPhoneValidation.REQUIRED) {
-                                    R.string.receiver_phone_required
+                                    R.string.setting_receiver_phone_required
                                 } else {
-                                    R.string.receiver_phone_invalid
+                                    R.string.setting_receiver_phone_invalid
                                 },
                             ),
                         modifier = Modifier.fillMaxWidth(),
@@ -278,7 +278,7 @@ internal fun ReceiverRegisterContent(
                     Spacer(modifier = Modifier.height(8.dp))
                     AfternoteTextField(
                         state = customRelationState,
-                        placeholder = stringResource(R.string.receiver_custom_relation_placeholder),
+                        placeholder = stringResource(R.string.setting_receiver_custom_relation_placeholder),
                     )
                 }
             }
@@ -295,9 +295,9 @@ internal fun ReceiverRegisterContent(
                         text =
                             stringResource(
                                 if (email.isBlank()) {
-                                    R.string.receiver_email_required
+                                    R.string.setting_receiver_email_required
                                 } else {
-                                    R.string.receiver_email_invalid
+                                    R.string.setting_receiver_email_invalid
                                 },
                             ),
                         modifier = Modifier.fillMaxWidth(),
@@ -309,12 +309,12 @@ internal fun ReceiverRegisterContent(
             item {
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = stringResource(R.string.receiver_last_greeting_label),
+                    text = stringResource(R.string.setting_receiver_last_greeting_label),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 AfternoteTextField(
                     state = messageState,
-                    placeholder = stringResource(R.string.receiver_last_greeting_placeholder),
+                    placeholder = stringResource(R.string.setting_receiver_last_greeting_placeholder),
                 )
             }
             if (errorMessage != null) {

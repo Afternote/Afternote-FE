@@ -33,7 +33,7 @@ internal fun PassKeyPasswordContent(
     Scaffold(
         topBar = {
             DetailTopBar(
-                title = stringResource(id = R.string.passkey_management_title),
+                title = stringResource(id = R.string.setting_passkey_management_title),
                 onBackClick = onBack,
             )
         },

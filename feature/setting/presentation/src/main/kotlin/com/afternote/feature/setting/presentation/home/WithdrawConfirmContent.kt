@@ -69,7 +69,7 @@ internal fun WithdrawConfirmContent(
         ) {
             Spacer(Modifier.height(20.dp))
             Text(
-                text = stringResource(R.string.withdraw_confirm_top_message),
+                text = stringResource(R.string.setting_withdraw_confirm_top_message),
                 style = AfternoteDesign.typography.bodyBase,
                 color = AfternoteDesign.colors.gray9,
             )
@@ -78,13 +78,13 @@ internal fun WithdrawConfirmContent(
             Spacer(Modifier.height(24.dp))
             AfternoteTextField(
                 state = textState,
-                placeholder = stringResource(R.string.withdraw_confirm_placeholder),
+                placeholder = stringResource(R.string.setting_withdraw_confirm_placeholder),
                 modifier = Modifier.fillMaxWidth(),
             )
             if (showError) {
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text = stringResource(R.string.withdraw_confirm_error),
+                    text = stringResource(R.string.setting_withdraw_confirm_error),
                     style = AfternoteDesign.typography.captionLargeR,
                     color = AfternoteDesign.colors.error,
                 )
@@ -123,7 +123,7 @@ private fun WithdrawAccountSection(
     ) {
         Spacer(modifier = Modifier.height(12.dp))
         Text(
-            text = stringResource(R.string.withdraw_account_section),
+            text = stringResource(R.string.setting_withdraw_account_section),
             style = AfternoteDesign.typography.textField,
             color = AfternoteDesign.colors.gray9,
         )
@@ -155,13 +155,13 @@ private fun WithdrawConfirmBottomButtons(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         AfternoteButton(
-            text = stringResource(R.string.withdraw_confirm_prev_button),
+            text = stringResource(R.string.setting_withdraw_confirm_prev_button),
             onClick = onBackClick,
             type = AfternoteButtonType.Plain,
             modifier = Modifier.fillMaxWidth(),
         )
         AfternoteButton(
-            text = stringResource(R.string.withdraw_confirm_button),
+            text = stringResource(R.string.setting_withdraw_confirm_button),
             onClick = onWithdrawClick,
             type = AfternoteButtonType.Default,
             isLoading = isLoading,

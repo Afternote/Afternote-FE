@@ -43,7 +43,7 @@ fun SettingProfile(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Image(
-                painterResource(R.drawable.ic_default_profile),
+                painterResource(R.drawable.setting_ic_default_profile),
                 contentDescription = "기본 이미지",
                 modifier = Modifier.size(60.dp),
             )
@@ -63,7 +63,7 @@ fun SettingProfile(
 
             Spacer(modifier = Modifier.weight(1f))
             Image(
-                painterResource(R.drawable.ic_right_arrow),
+                painterResource(R.drawable.setting_ic_right_arrow),
                 contentDescription = "화살표",
                 modifier = Modifier.size(24.dp),
             )
@@ -76,9 +76,9 @@ fun SettingProfile(
         ) {
             val items =
                 listOf(
-                    stringResource(R.string.settings_support_inquiry) to null,
-                    stringResource(R.string.settings_support_notice) to onNoticeClick,
-                    stringResource(R.string.settings_recipient_list) to onRecipientListClick,
+                    stringResource(R.string.setting_support_inquiry) to null,
+                    stringResource(R.string.setting_support_notice) to onNoticeClick,
+                    stringResource(R.string.setting_recipient_list) to onRecipientListClick,
                 )
 
             items.forEach { (label, onClick) ->
@@ -96,7 +96,7 @@ fun SettingProfile(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Image(
-                        painterResource(R.drawable.ic_list),
+                        painterResource(R.drawable.setting_ic_list),
                         contentDescription = label,
                         modifier = Modifier.size(40.dp),
                     )

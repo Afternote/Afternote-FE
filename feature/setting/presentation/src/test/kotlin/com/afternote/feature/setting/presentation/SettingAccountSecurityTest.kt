@@ -168,7 +168,7 @@ class SettingAccountSecurityTest {
             )
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.uiState.value.errorMessage == UiText.Resource(SettingR.string.receiver_email_required)
+            viewModel.uiState.value.errorMessage == UiText.Resource(SettingR.string.setting_receiver_email_required)
         }
 
         assertTrue(repository.receiverCreateCalls.isEmpty())

@@ -27,23 +27,23 @@ fun DeviceAlarmOffSection(
         Divider(thickness = 0.8.dp, color = AfternoteDesign.colors.gray3)
         Spacer(Modifier.height(18.dp))
         Text(
-            text = stringResource(R.string.marketing_alarm_setting),
+            text = stringResource(R.string.setting_marketing_alarm_setting),
             style = AfternoteDesign.typography.bodyBase,
         )
         Spacer(Modifier.height(38.dp))
 
         LabeledCheckboxRow(
-            label = stringResource(R.string.sms),
+            label = stringResource(R.string.setting_sms),
             checked = uiState.isSmsChecked,
             onCheckedChange = onSmsCheck,
         )
         LabeledCheckboxRow(
-            label = stringResource(R.string.email),
+            label = stringResource(R.string.setting_email),
             checked = uiState.isEmailChecked,
             onCheckedChange = onEmailCheck,
         )
         LabeledCheckboxRow(
-            label = stringResource(R.string.push_alarm),
+            label = stringResource(R.string.setting_push_alarm),
             checked = uiState.isPushChecked,
             onCheckedChange = onPushCheck,
         )
@@ -53,9 +53,9 @@ fun DeviceAlarmOffSection(
         // 안내 문구 bullet list
         val guides =
             listOf(
-                stringResource(R.string.marketing_guide_1),
-                stringResource(R.string.marketing_guide_2),
-                stringResource(R.string.marketing_guide_3),
+                stringResource(R.string.setting_marketing_guide_1),
+                stringResource(R.string.setting_marketing_guide_2),
+                stringResource(R.string.setting_marketing_guide_3),
             )
         guides.forEach { guide ->
             Row(modifier = Modifier.padding(vertical = 14.dp)) {

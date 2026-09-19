@@ -39,7 +39,7 @@ class ReceiverRegisterViewModelTest {
 
         viewModel.register("홍길동", "딸", "01012345678", "invalid", null)
 
-        assertEquals(UiText.Resource(R.string.receiver_email_invalid), viewModel.uiState.value.errorMessage)
+        assertEquals(UiText.Resource(R.string.setting_receiver_email_invalid), viewModel.uiState.value.errorMessage)
         assertEquals(0, createCalls.get())
         assertFalse(viewModel.uiState.value.isLoading)
     }
@@ -50,7 +50,7 @@ class ReceiverRegisterViewModelTest {
 
         viewModel.register("홍길동", "딸", null, "", null)
 
-        assertEquals(UiText.Resource(R.string.receiver_email_required), viewModel.uiState.value.errorMessage)
+        assertEquals(UiText.Resource(R.string.setting_receiver_email_required), viewModel.uiState.value.errorMessage)
         assertEquals(0, createCalls.get())
         assertFalse(viewModel.uiState.value.isLoading)
     }
@@ -61,7 +61,7 @@ class ReceiverRegisterViewModelTest {
 
         viewModel.register("홍길동", "딸", null, "receiver@example.com", null)
 
-        assertEquals(UiText.Resource(R.string.receiver_phone_required), viewModel.uiState.value.errorMessage)
+        assertEquals(UiText.Resource(R.string.setting_receiver_phone_required), viewModel.uiState.value.errorMessage)
         assertEquals(0, createCalls.get())
         assertFalse(viewModel.uiState.value.isLoading)
     }
@@ -72,7 +72,7 @@ class ReceiverRegisterViewModelTest {
 
         viewModel.register("홍길동", "딸", "123", "receiver@example.com", null)
 
-        assertEquals(UiText.Resource(R.string.receiver_phone_invalid), viewModel.uiState.value.errorMessage)
+        assertEquals(UiText.Resource(R.string.setting_receiver_phone_invalid), viewModel.uiState.value.errorMessage)
         assertEquals(0, createCalls.get())
         assertFalse(viewModel.uiState.value.isLoading)
     }
@@ -83,8 +83,8 @@ class ReceiverRegisterViewModelTest {
         val error = ReceiverRequestRejectedException(Exception(serverMessage))
 
         assertEquals(
-            UiText.Resource(R.string.receiver_request_rejected),
-            error.toReceiverFailureMessage(R.string.receiver_register_failed),
+            UiText.Resource(R.string.setting_receiver_request_rejected),
+            error.toReceiverFailureMessage(R.string.setting_receiver_register_failed),
         )
     }
 
@@ -94,7 +94,7 @@ class ReceiverRegisterViewModelTest {
 
         viewModel.register("홍길동", "딸", "01012345678", "receiver@example.com", null)
 
-        assertEquals(UiText.Resource(R.string.receiver_register_failed), viewModel.uiState.value.errorMessage)
+        assertEquals(UiText.Resource(R.string.setting_receiver_register_failed), viewModel.uiState.value.errorMessage)
         assertFalse(viewModel.uiState.value.isLoading)
     }
 

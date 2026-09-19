@@ -90,7 +90,7 @@ fun WithdrawGuideScreen(
 @Composable
 private fun TopMessageSection() {
     Text(
-        text = stringResource(R.string.withdraw_top_message),
+        text = stringResource(R.string.setting_withdraw_top_message),
         style = AfternoteDesign.typography.bodyBase,
         color = AfternoteDesign.colors.gray9,
     )
@@ -112,7 +112,7 @@ private fun AccountSection(
     ) {
         Spacer(modifier = Modifier.height(12.dp))
         Text(
-            text = stringResource(R.string.withdraw_account_section),
+            text = stringResource(R.string.setting_withdraw_account_section),
             style = AfternoteDesign.typography.textField,
             color = AfternoteDesign.colors.gray9,
         )
@@ -140,28 +140,28 @@ private fun DeleteItemsSection() {
         HorizontalDivider(color = AfternoteDesign.colors.gray3)
         Spacer(modifier = Modifier.padding(top = 10.dp))
         Text(
-            text = stringResource(R.string.withdraw_delete_section),
+            text = stringResource(R.string.setting_withdraw_delete_section),
             style = AfternoteDesign.typography.textField,
             color = AfternoteDesign.colors.gray9,
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            text = stringResource(R.string.withdraw_delete_description),
+            text = stringResource(R.string.setting_withdraw_delete_description),
             style = AfternoteDesign.typography.bodySmallR,
             color = AfternoteDesign.colors.gray8,
         )
         Spacer(Modifier.height(8.dp))
         listOf(
-            R.string.withdraw_delete_item_1,
-            R.string.withdraw_delete_item_2,
-            R.string.withdraw_delete_item_3,
-            R.string.withdraw_delete_item_4,
+            R.string.setting_withdraw_delete_item_1,
+            R.string.setting_withdraw_delete_item_2,
+            R.string.setting_withdraw_delete_item_3,
+            R.string.setting_withdraw_delete_item_4,
         ).forEach { resId ->
             BulletItem(text = stringResource(resId))
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            text = stringResource(R.string.withdraw_delete_warning),
+            text = stringResource(R.string.setting_withdraw_delete_warning),
             style = AfternoteDesign.typography.bodySmallR,
             color = AfternoteDesign.colors.gray8,
         )
@@ -174,16 +174,16 @@ private fun CheckListSection() {
         HorizontalDivider(color = AfternoteDesign.colors.gray3)
         Spacer(modifier = Modifier.padding(top = 10.dp))
         Text(
-            text = stringResource(R.string.withdraw_check_section),
+            text = stringResource(R.string.setting_withdraw_check_section),
             style = AfternoteDesign.typography.textField,
             color = AfternoteDesign.colors.gray9,
         )
         Spacer(Modifier.height(8.dp))
         listOf(
-            R.string.withdraw_check_item_1,
-            R.string.withdraw_check_item_2,
-            R.string.withdraw_check_item_3,
-            R.string.withdraw_check_item_4,
+            R.string.setting_withdraw_check_item_1,
+            R.string.setting_withdraw_check_item_2,
+            R.string.setting_withdraw_check_item_3,
+            R.string.setting_withdraw_check_item_4,
         ).forEach { resId ->
             BulletItem(text = stringResource(resId))
         }
@@ -196,13 +196,13 @@ private fun PrivacySection() {
         HorizontalDivider(color = AfternoteDesign.colors.gray3)
         Spacer(modifier = Modifier.padding(top = 10.dp))
         Text(
-            text = stringResource(R.string.withdraw_privacy_section),
+            text = stringResource(R.string.setting_withdraw_privacy_section),
             style = AfternoteDesign.typography.textField,
             color = AfternoteDesign.colors.gray9,
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            text = stringResource(R.string.withdraw_privacy_description),
+            text = stringResource(R.string.setting_withdraw_privacy_description),
             style = AfternoteDesign.typography.bodySmallR,
             color = AfternoteDesign.colors.gray8,
         )
@@ -225,7 +225,7 @@ private fun AgreeCheckbox(
         )
         Spacer(modifier = Modifier.padding(12.dp))
         Text(
-            text = stringResource(R.string.withdraw_agree_checkbox),
+            text = stringResource(R.string.setting_withdraw_agree_checkbox),
             style = AfternoteDesign.typography.captionLargeR,
             color = AfternoteDesign.colors.gray9,
         )
@@ -243,13 +243,13 @@ private fun BottomButtons(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         AfternoteButton(
-            text = stringResource(R.string.withdraw_cancel_button),
+            text = stringResource(R.string.setting_withdraw_cancel_button),
             onClick = onCancelClick,
             type = AfternoteButtonType.Default,
             modifier = Modifier.fillMaxWidth(),
         )
         AfternoteButton(
-            text = stringResource(R.string.withdraw_confirm_button),
+            text = stringResource(R.string.setting_withdraw_confirm_button),
             onClick = onConfirmClick,
             type = if (agreed) AfternoteButtonType.Default else AfternoteButtonType.Un,
             modifier = Modifier.fillMaxWidth(),

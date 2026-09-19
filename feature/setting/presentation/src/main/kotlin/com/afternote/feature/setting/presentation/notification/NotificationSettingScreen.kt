@@ -57,7 +57,7 @@ fun NotificationSettingScreen(
     val activity = remember(context) { context.findActivity<Activity>() }
     val snackbarHostState = remember { SnackbarHostState() }
     val lifecycleOwner = LocalLifecycleOwner.current
-    val marketingConsentSaveFailedMessage = stringResource(R.string.marketing_consent_save_failed)
+    val marketingConsentSaveFailedMessage = stringResource(R.string.setting_marketing_consent_save_failed)
     val openNotificationSettings = {
         val intent =
             Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
@@ -99,7 +99,7 @@ fun NotificationSettingScreen(
     Scaffold(
         topBar = {
             DetailTopBar(
-                title = stringResource(R.string.push_notification_title),
+                title = stringResource(R.string.setting_push_notification_title),
                 onBackClick = onBack,
             )
         },
@@ -136,16 +136,16 @@ fun NotificationSettingScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(R.string.device_alarm_setting),
+                    text = stringResource(R.string.setting_device_alarm_setting),
                     style = AfternoteDesign.typography.bodyLargeR,
                 )
                 Spacer(Modifier.width(12.dp))
                 Text(
                     text =
                         if (uiState.isDeviceAlarmOn) {
-                            stringResource(R.string.device_alarm_on)
+                            stringResource(R.string.setting_device_alarm_on)
                         } else {
-                            stringResource(R.string.device_alarm_off)
+                            stringResource(R.string.setting_device_alarm_off)
                         },
                     style = AfternoteDesign.typography.captionLargeR,
                 )
@@ -154,7 +154,7 @@ fun NotificationSettingScreen(
             Spacer(Modifier.height(8.dp))
             if (uiState.isDeviceAlarmOn) {
                 SettingMenuItem(
-                    label = stringResource(R.string.push_notification_title),
+                    label = stringResource(R.string.setting_push_notification_title),
                     onClick = onPushNotificationClick,
                 )
             } else {

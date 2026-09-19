@@ -26,7 +26,7 @@ fun PasskeyListItem(modifier: Modifier = Modifier) {
                 .padding(horizontal = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Image(painterResource(R.drawable.ic_apple_login), contentDescription = "패스키기본")
+        Image(painterResource(R.drawable.setting_ic_apple_login), contentDescription = "패스키기본")
         Spacer(modifier = Modifier.weight(1f))
         Column {
             Text("이름")
@@ -35,12 +35,12 @@ fun PasskeyListItem(modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.weight(1f))
         Box {
             Icon(
-                painter = painterResource(R.drawable.ic_vector1),
+                painter = painterResource(R.drawable.setting_ic_vector1),
                 contentDescription = "왼쪽 막대기",
                 tint = AfternoteDesign.colors.gray5,
             )
             Icon(
-                painter = painterResource(R.drawable.ic_vector2),
+                painter = painterResource(R.drawable.setting_ic_vector2),
                 contentDescription = "오른쪽 막대기",
                 tint = AfternoteDesign.colors.gray5,
             )
