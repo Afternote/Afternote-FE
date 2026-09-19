@@ -8,11 +8,9 @@ package com.afternote.afternote_fe.update
  *
  * @property versionCode 서버에 보낼 이 설치본의 versionCode.
  * @property storeDistributed 이 빌드가 **스토어로 업데이트될 수 있는** 산출물인가.
- *   릴리스 워크플로가 `AFTERNOTE_VERSION_CODE` 를 주입한 빌드에서만 true 다
- *   (`build-logic` 의 `resolveAfternoteVersionCode` · `DEFAULT_AFTERNOTE_VERSION_CODE`).
- *   로컬·Firebase App Distribution 빌드는 기본값 versionCode 를 그대로 달고 있어 false 이고,
- *   서명 인증서도 Play 것과 달라 스토어가 그 위에 업데이트를 얹지 못한다 —
- *   보낼 수 없는 곳으로 보내는 대신 관문을 걸지 않는다(`docs/play-release.md`).
+ *   Play 빌드 단계가 `AFTERNOTE_STORE_DISTRIBUTED_BUILD=true`로 명시한 경우에만 true다.
+ *   versionCode와 독립적이며 실제 설치 출처나 서명을 검사하는 값은 아니다.
+ *   로컬·Firebase 빌드는 이 설정을 주입하지 않아 관문을 걸지 않는다(`docs/play-release.md`).
  */
 data class InstalledBuild(
     val versionCode: Int,

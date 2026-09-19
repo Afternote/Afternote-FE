@@ -178,6 +178,7 @@ jobs:
       - name: Build the signed release AAB
         id: release_aab
         env:
+          AFTERNOTE_STORE_DISTRIBUTED_BUILD: "true"
           AFTERNOTE_VERSION_CODE: ${{ steps.version_code.outputs.version_code }}
           GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
           KAKAO_NATIVE_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
