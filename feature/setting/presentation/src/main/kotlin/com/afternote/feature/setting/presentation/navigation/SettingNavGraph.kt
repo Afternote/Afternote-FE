@@ -20,6 +20,7 @@ import com.afternote.feature.setting.presentation.screen.PassKeyListScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyMakingScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyPasswordScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyScreen
+import com.afternote.feature.setting.presentation.screen.PasswordChangeScreen
 import com.afternote.feature.setting.presentation.screen.ProfileEditScreen
 import com.afternote.feature.setting.presentation.screen.PushNotificationScreen
 import com.afternote.feature.setting.presentation.screen.ReceiverEditScreen
@@ -43,6 +44,7 @@ fun NavGraphBuilder.settingNavGraph(
                 onBackClick = actions::onSettingBack,
                 onLogoutSuccess = actions::onLogoutSuccess,
                 onProfileEditClick = actions::onProfileEditClick,
+                onPasswordChangeClick = actions::onPasswordChangeClick,
                 onLinkedAccountClick = actions::onLinkedAccountClick,
                 onNotificationClick = actions::onNotificationClick,
                 onRecipientListClick = actions::onRecipientListClick,
@@ -83,6 +85,13 @@ fun NavGraphBuilder.settingNavGraph(
             ProfileEditScreen(
                 onBackClick = actions::onProfileEditBack,
                 onWithdrawGuideClick = actions::onWithdrawGuideClick,
+            )
+        }
+
+        composable<SettingRoute.PasswordChangeRoute> {
+            PasswordChangeScreen(
+                onBackClick = actions::onPasswordChangeBack,
+                onChanged = actions::onPasswordChangeBack,
             )
         }
 
