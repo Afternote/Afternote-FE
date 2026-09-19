@@ -90,7 +90,9 @@ debug 빌드는 빈 값으로도 통과하지만(로컬 개발 편의) 다음이
 
 ## 공유 debug keystore
 
-debug 빌드는 기본적으로 머신마다 다른 `~/.android/debug.keystore` 로 서명되어, 카카오 로그인 키 해시를 팀원 머신별로 콘솔에 등록해야 한다. 팀 공유 debug keystore 를 배치하면 전 머신이 동일 키 해시로 서명되어 콘솔 등록이 keystore 1개로 끝난다. (미배치 시에도 빌드는 정상 — 기본 debug keystore 폴백 — 대신 본인 머신 키 해시를 직접 등록해야 카카오 로그인이 동작한다.)
+debug 빌드는 기본적으로 머신마다 다른 `~/.android/debug.keystore` 로 서명되어, 카카오 로그인 키 해시를 팀원 머신별로 콘솔에 등록해야 한다. 팀 공유 debug keystore 를 배치하면 전 머신이 동일 키 해시로 서명되어 콘솔 등록이 keystore 1개로 끝난다.
+
+`DEBUG_*` 네 값이 모두 없으면 기본 debug keystore로 빌드는 계속되지만, `preDebugBuild`에 연결된 `checkDebugSigningForKakao`가 매번 경고한다(configuration cache 재사용 시에도 출력). 콘솔에 등록되지 않은 키로 서명하면 카카오톡이 설치되어 있어도 앱 로그인에 실패하고 웹(CustomTab) 로그인으로 폴백할 수 있다. **웹 로그인 성공만으로 카카오톡 앱-투-앱 경로 QA를 완료하지 않는다.** 공유 키를 설정했더라도 콘솔 등록 상태는 별도로 확인해야 한다.
 
 1. **keystore 수령·배치** — 위 1Password 공유 링크의 `debug_store_file_b64` 값을 복사한 뒤 홈 디렉토리에 복원한다. (공유 링크에는 파일 첨부가 실리지 않아 keystore 를 base64 텍스트로 전달한다.)
 
@@ -109,11 +111,13 @@ debug 빌드는 기본적으로 머신마다 다른 `~/.android/debug.keystore` 
 
 3. **적용 확인** — `./gradlew :app:signingReport` 출력의 `Variant: debug` 에서 `Store:` 가 공유 keystore 경로를 가리키는지 확인
 
-공유 keystore 의 카카오 키 해시 추출 명령 (Kakao Developers → 앱 → 플랫폼 → Android → 키 해시 등록·재확인용):
+현재 debug 빌드가 사용하는 keystore의 카카오 키 해시를 출력한다. 공유 키를 설정했다면 공유 인증서, 미설정이면 AGP 기본 인증서를 읽으며, 새 머신의 기본 keystore는 `validateSigningDebug`가 먼저 생성한다. 비밀번호나 개인키는 출력하지 않는다.
 
 ```bash
-keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-shared.jks | openssl sha1 -binary | openssl base64
+./gradlew :app:printDebugKakaoKeyHash
 ```
+
+`Debug Kakao key hash:` 뒤의 값을 Kakao Developers → 앱 → 플랫폼 → Android → 키 해시에 등록·재확인한다. 값은 서명 인증서의 SHA-1을 Base64로 인코딩한 것으로, `signingReport`의 콜론으로 구분된 SHA-1 문자열과 형식이 다르다([카카오 공식 안내](https://developers.kakao.com/docs/latest/ko/android/getting-started#key-hash)). 등록 후에는 카카오톡이 설치된 기기에서 앱 전환 후 로그인 완료까지 다시 확인한다.
 
 ## 코딩 에이전트 도구 (선택)
 

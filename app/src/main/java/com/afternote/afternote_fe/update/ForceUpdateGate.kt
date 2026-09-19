@@ -40,8 +40,8 @@ data class ForceUpdatePrompt(
  *    dev 서버는 지금 `APP_ANDROID_STORE_URL` 미설정으로 플레이스홀더를 들고 있다.
  *    거기로 보내면 사용자는 갈 곳 없이 팝업만 마주한다.
  * 2. 이 빌드가 스토어로 갱신될 수 있는 산출물인가 ([InstalledBuild.storeDistributed]).
- *    로컬·Firebase 빌드는 기본 versionCode 를 달고 있어 서버 `latestVersionCode` 와 같은 축에
- *    있지 않고(`1 < 10001` 이 언제나 참), 서명도 달라 스토어가 그 위에 덮어쓰지 못한다.
+ *    Play 빌드 단계에서 명시한 배포 설정을 사용한다. 로컬·Firebase 빌드는 versionCode를
+ *    올리더라도 이 설정이 없으면 관문을 걸지 않는다.
  *
  * 두 조건이 다 갖춰지는 시점은 Play 내부 테스트 트랙 배포(#852)가 서고 서버가 실 스토어 URL 을
  * 들고 나서다. 그때 이 관문은 **코드 변경 없이 스스로 켜진다**.

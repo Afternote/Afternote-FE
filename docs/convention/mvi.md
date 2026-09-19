@@ -75,7 +75,7 @@ private fun requestCode() {
 
 ```kotlin
 @Composable
-fun FindIdScreen(modifier: Modifier = Modifier, viewModel: FindIdViewModel = hiltViewModel()) {
+internal fun FindIdScreen(viewModel: FindIdViewModel, modifier: Modifier = Modifier) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     FindIdContent(state = state, onIntent = viewModel::onIntent, modifier = modifier)
 }
@@ -85,9 +85,15 @@ private fun FindIdContent(state: FindIdUiState, onIntent: (FindIdIntent) -> Unit
 ```
 
 - `Screen` 은 stateful 이고 ViewModel 을 주입받는다.
-- `Content` 는 stateless 이다. 상태 변경은 `onIntent`, 이동은 필요한 네비게이션 콜백으로 전달한다.
-- 공개 범위는 실제 프로덕션 호출로 정한다. 같은 파일에서만 쓰면 `private`, 같은 모듈의 다른 파일에서도 쓰면 `internal`, 다른 모듈의 프로덕션 소비가 있을 때만 `public` 이다.
-- 테스트는 공개 프로덕션 계약으로 검증한다. 직접 진입점이 꼭 필요하면 테스트 fixture·테스트 소스셋·debug 구현에 둔다. 프리뷰·screenshotTest·Robolectric 의 직접 접근을 위해 프로덕션 `Content` 를 노출하지 않는다.
+- `Content` 는 상태와 콜백으로 화면을 그린다. 별도 프로덕션 `Screen` 파일에서 사용하는 렌더 계약은 `internal` 이며, 프리뷰 · screenshotTest · Robolectric 도 같은 계약을 소비한다.
+
+### 파일럿에서 확정한 것 (#1802)
+
+- **ViewModel 을 화면이 만들지 않는 경우가 있다.** onboarding 은 `Route.Onboarding` 그래프 스코프로 여러 화면이 한 인스턴스를 공유하므로, `Screen` 이 `hiltViewModel()` 을 부르지 않고 **VM 을 파라미터로 받는다.** 화면이 스스로 만들면 공유가 끊긴다. 공유가 없는 화면은 `viewModel: XxxViewModel = hiltViewModel()` 로 둔다.
+- **수명·소비와 렌더 책임을 가른다.** onboarding 파일럿은 `FindIdScreen.kt` ↔ `FindIdContent.kt` 처럼 `Screen` 이 ViewModel 상태 수집과 신호 소비를 맡고, 별도 `Content` 파일이 렌더를 맡는다(#1829). 같은 파일 안에만 사용하는 렌더 helper 는 `private` 로 둔다.
+- **플랫폼에 매인 콜백은 `Content` 의 파라미터로 남는다.** 카카오 SDK·Credential Manager 는 Activity·Context 의존이라 stateful 층이 토큰을 받아낸 뒤 문자열만 Intent 로 보낸다. ViewModel 은 플랫폼 독립을 유지한다.
+- **공개 범위는 프로덕션 소비처로 정한다.** 같은 파일에서만 호출하면 `private`, 같은 모듈의 다른 파일이 호출하면 `internal`, 다른 모듈이 실제 소비할 때만 `public` 이다. 테스트 접근을 위해 넓히거나 visibility baseline 에 남기지 않는다. 파일럿의 다섯 `Content` 는 별도 `Screen` 파일의 실제 호출로 `internal` 이고, 이전 예외 baseline 은 제거했다(#1829).
+- **파생값을 화면에 넘기지 않는다.** `isNextEnabled` 같은 값은 `UiState` 의 계산 프로퍼티로 두고 `Content` 가 `state` 에서 읽는다. 호출부가 따로 계산해 넘기면 화면마다 판정이 갈린다.
 
 ## 일회성 신호 — `UiState` 흡수 + `Intent.ConsumeXxx`
 
@@ -105,7 +111,18 @@ ObserveSignal(
 - **소비가 신호를 null 로 되돌리므로 같은 값이 연속으로 와도 두 번 소비된다** (`A → null → A`). reset 없이 같은 값을 다시 쓰면 두 번째는 조용히 묻힌다.
 - `onSignal` 안에서 suspend 를 직접 기다리지 않는다. 소비 직후의 상태 변화가 `LaunchedEffect` 를 재시작시켜 이전 코루틴을 취소한다 — 스낵바처럼 시간이 걸리는 표출은 `rememberCoroutineScope()` 에 launch 한다.
 
-`Effect` 타입 파라미터는 베이스에 없다. 이 저장소는 일회성 신호의 전달 수단도 `UiState` 와 소비 Intent 로 정한다. `ObserveSignal` 은 이 상태를 관찰하는 UI 어댑터이며, 별도 이벤트 스트림이 아니다.
+신호가 **값 없이 「올라갔다/내려갔다」 로만** 표현되면 `ObserveFlag` 를 쓴다 — `isLoggedIn` · `shouldNavigateToXxx` 처럼 나를 값이 없는 신호다. 안에서 `ObserveSignal` 로 접히므로 소비 규약은 하나다.
+
+```kotlin
+ObserveFlag(
+    raised = state.isLoggedIn,
+    consumed = LoginIntent.ConsumeLoggedIn,
+    onIntent = onIntent,
+    onRaised = onLoginSuccess,
+)
+```
+
+`Effect` 타입 파라미터는 베이스에 없다. MVI 가 요구하는 것은 「일회성 효과를 상태 전이에서 분리한다」 까지고, 전달 수단은 아키텍처 계약 밖이다.
 
 ## 네비게이션과 만나는 경계 (#1810)
 
@@ -162,7 +179,7 @@ ViewModel 테스트는 작업 결과 신호와 소비 후 초기화를, 화면 �
 | B | `feature/*/presentation` 의 ViewModel 은 `MviViewModel` 을 상속한다 |
 | C | `MviIntent`·`ReducerEvent` 를 직접 구현하는 타입은 `sealed interface` 다 |
 
-규칙 B 는 전환 전 ViewModel 49개를 `PENDING_MVI_MIGRATION` 예외로 둔다. 모듈 전환 이슈가 닫힐 때마다 목록에서 빼고, **목록이 비면 예외 자체를 지운다.** `app` 의 ViewModel 2개는 규칙 B 의 대상이 아니다 — #1809 가 처리한다.
+규칙 B 는 아직 전환하지 않은 ViewModel 을 `PENDING_MVI_MIGRATION` 예외로 둔다(가드 도입 시점 49개, onboarding 파일럿 이후 46개). 모듈 전환 이슈가 닫힐 때마다 목록에서 빼고, **목록이 비면 예외 자체를 지운다.** `app` 의 ViewModel 2개는 규칙 B 의 대상이 아니다 — #1809 가 처리한다.
 
 세 규칙은 **프로덕션 소스만** 본다. 테스트 더블이 `MviViewModel` 을 상속하며 보조 상태 홀더를 드는 것은
 규칙 A 의 대상이 아니다 — 더블은 계약을 지키는 대상이 아니라 계약을 흉내 내는 도구다.
