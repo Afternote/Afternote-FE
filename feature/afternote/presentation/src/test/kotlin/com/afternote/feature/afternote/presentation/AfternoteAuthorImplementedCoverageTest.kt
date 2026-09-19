@@ -27,6 +27,7 @@ import com.afternote.feature.afternote.presentation.editor.SaveAfternoteMemorial
 import com.afternote.feature.afternote.presentation.editor.memorial.Song
 import com.afternote.feature.afternote.presentation.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.editor.model.RegisterAfternotePayload
+import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialPhoto
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.editor.state.MemorialVideoAttachment
 import org.junit.Assert.assertEquals
@@ -174,8 +175,10 @@ class AfternoteAuthorImplementedCoverageTest {
                                 .empty()
                                 .withSelection("content://videos/farewell")
                                 .withSelectionThumbnail("https://cdn.test/thumbnail.jpg"),
-                        memorialPhotoUrl = "https://cdn.test/old-photo.jpg",
-                        pickedMemorialPhotoUri = "content://photos/new-portrait",
+                        memorialPhoto =
+                            EditableMemorialPhoto
+                                .fromPersisted("https://cdn.test/old-photo.jpg")
+                                .withSelection("content://photos/new-portrait"),
                     ),
             )
         }
@@ -249,7 +252,7 @@ class AfternoteAuthorImplementedCoverageTest {
             ),
             restored.displayedMemorialVideo,
         )
-        assertEquals("content://photos/portrait", restored.pickedMemorialPhotoUri)
+        assertEquals("content://photos/portrait", restored.memorialPhoto?.toSnapshot()?.selection)
         assertEquals(
             listOf(Song("91", "첫 번째 노래", "가수 A", "https://cdn.test/cover.jpg")),
             restored.memorialPlaylistSongs,
