@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.fingerprint
+package com.afternote.core.common.biometric
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

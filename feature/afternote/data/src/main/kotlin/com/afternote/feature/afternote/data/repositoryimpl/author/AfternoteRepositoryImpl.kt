@@ -51,7 +51,7 @@ class AfternoteRepositoryImpl
 
             return invalidationTrigger.flatMapLatest {
                 Pager(
-                    config = PagingConfig(pageSize = PAGE_SIZE, initialLoadSize = PAGE_SIZE),
+                    config = PagingConfig(pageSize = PAGE_SIZE),
                     pagingSourceFactory = { AfternotePagingSource(api, category, pageSize = PAGE_SIZE) },
                 ).flow
             }
