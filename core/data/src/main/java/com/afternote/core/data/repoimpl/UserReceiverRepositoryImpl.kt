@@ -206,7 +206,7 @@ private suspend inline fun <T> mapReceiverRequestFailure(request: suspend () -> 
     } catch (error: ApiException) {
         val serverMessage = error.serverMessage
         if (error.status in setOf(400, 409) && !serverMessage.isNullOrBlank()) {
-            throw ReceiverRequestRejectedException(serverMessage, error)
+            throw ReceiverRequestRejectedException(error)
         }
         throw error
     }

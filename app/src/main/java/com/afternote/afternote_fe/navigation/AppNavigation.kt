@@ -27,6 +27,8 @@ import com.afternote.afternote_fe.notification.NotificationPermissionEffect
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomBar
 import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
+import com.afternote.core.ui.navigation.PredictiveBackPopEnter
+import com.afternote.core.ui.navigation.PredictiveBackPopExit
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.navigation.AfternoteNavHost
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteNavHost
@@ -101,6 +103,10 @@ fun AppNavigation(
             modifier = Modifier.padding(innerPadding),
             navController = appState.navController,
             startDestination = startDestination,
+            // pop 은 기본값이 fade 라 predictive back 진행 중 두 화면이 같은 크기로 겹쳐 보였다 (#1869).
+            // 값은 Nav3 로컬 스택이 이미 쓰는 것과 같은 것을 core/ui 에서 받아 두 엔진을 맞춘다.
+            popEnterTransition = { PredictiveBackPopEnter },
+            popExitTransition = { PredictiveBackPopExit },
         ) {
             // ── Navigation 3 로컬 스택을 가진 그래프 (#1698) — 루트엔 host destination 하나씩만 둔다.
             composable<Route.Onboarding> {
