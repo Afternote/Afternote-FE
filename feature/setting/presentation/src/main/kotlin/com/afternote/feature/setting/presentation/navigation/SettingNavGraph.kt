@@ -42,24 +42,16 @@ fun NavGraphBuilder.settingNavGraph(
             SettingScreen(
                 onBackClick = actions::onSettingBack,
                 onLogoutSuccess = actions::onLogoutSuccess,
-                onProfileEditClick = actions::onNavigateToProfileEdit,
-                onPasswordChangeClick = {},
-                onLinkedAccountClick = actions::onNavigateToLinkedAccount,
-                onNotificationClick = actions::onNavigateToNotification,
-                onRecipientListClick = actions::onNavigateToRecipientList,
-                onRecipientRegisterClick = actions::onNavigateToRecipientRegister,
-                onAfterDeliveryClick = {
-                    actions.onNavigateToRecipientListForDeliveryConditions()
-                },
-                onPasskeyClick = actions::onNavigateToPasskey,
-                onAppLockClick = actions::onNavigateToAppLock,
-                onFaqClick = {},
-                onInquiryClick = {},
-                onNoticeClick = actions::onNavigateToNotice,
-                onTermsClick = {},
-                onPrivacyClick = {},
-                onServiceInfoClick = {},
-                onWithdrawGuideClick = actions::onNavigateToWithdrawGuide,
+                onProfileEditClick = actions::onProfileEditClick,
+                onLinkedAccountClick = actions::onLinkedAccountClick,
+                onNotificationClick = actions::onNotificationClick,
+                onRecipientListClick = actions::onRecipientListClick,
+                onRecipientRegisterClick = actions::onRecipientRegisterClick,
+                onDeliveryConditionsClick = actions::onDeliveryConditionsClick,
+                onPasskeyClick = actions::onPasskeyClick,
+                onAppLockClick = actions::onAppLockClick,
+                onNoticeClick = actions::onNoticeClick,
+                onWithdrawGuideClick = actions::onWithdrawGuideClick,
             )
         }
 
@@ -71,7 +63,7 @@ fun NavGraphBuilder.settingNavGraph(
                 uiState = uiState,
                 onBackClick = actions::onWithdrawGuideBack,
                 onCancelClick = actions::onWithdrawGuideBack,
-                onConfirmClick = actions::onNavigateToWithdrawConfirm,
+                onConfirmClick = actions::onWithdrawConfirmClick,
             )
         }
 
@@ -90,7 +82,7 @@ fun NavGraphBuilder.settingNavGraph(
         composable<SettingRoute.ProfileEditRoute> {
             ProfileEditScreen(
                 onBackClick = actions::onProfileEditBack,
-                onWithdrawGuideClick = actions::onNavigateToWithdrawGuide,
+                onWithdrawGuideClick = actions::onWithdrawGuideClick,
             )
         }
 
@@ -103,7 +95,7 @@ fun NavGraphBuilder.settingNavGraph(
         composable<SettingRoute.NotificationRoute> {
             NotificationSettingScreen(
                 onBack = actions::onNotificationBack,
-                onPushNotificationClick = actions::onNavigateToPushNotification,
+                onPushNotificationClick = actions::onPushNotificationClick,
             )
         }
 
@@ -122,14 +114,15 @@ fun NavGraphBuilder.settingNavGraph(
                     receivers = receivers,
                     onBackClick = actions::onRecipientListBack,
                     onConfirmClick = { receiver ->
-                        actions.onNavigateToAfterDelivery(receiver.receiverId)
+                        actions.onDeliveryConditionsRecipientSelected(receiver.receiverId)
                     },
                 )
             } else {
                 ReceiverManageScreen(
                     receivers = receivers,
                     onBackClick = actions::onRecipientListBack,
-                    onReceiverClick = actions::onNavigateToRecipientEdit,
+                    onReceiverClick = actions::onRecipientEditClick,
+                    onRegisterClick = actions::onRecipientRegisterClick,
                 )
             }
         }
@@ -154,7 +147,7 @@ fun NavGraphBuilder.settingNavGraph(
                 onBack = actions::onAfterDeliveryBack,
                 onSaveSuccess = actions::onAfterDeliveryBack,
                 onLastGreetingEditClick = {
-                    actions.onNavigateToRecipientEdit(route.receiverId)
+                    actions.onRecipientEditClick(route.receiverId)
                 },
             )
         }
@@ -167,7 +160,7 @@ fun NavGraphBuilder.settingNavGraph(
             } else if (isPasskeyRegistered == false) {
                 PassKeyScreen(
                     onBackClick = actions::onPasskeyBack,
-                    onRegisterClick = actions::onNavigateToPasskeyMaking,
+                    onRegisterClick = actions::onPasskeyRegisterClick,
                 )
             }
         }
@@ -175,7 +168,7 @@ fun NavGraphBuilder.settingNavGraph(
         composable<SettingRoute.PasskeyMakingRoute> {
             PassKeyMakingScreen(
                 onBackClick = actions::onPasskeyMakingBack,
-                onPasswordAuthClick = actions::onNavigateToPasskeyPassword,
+                onPasswordAuthClick = actions::onPasswordAuthClick,
             )
         }
 

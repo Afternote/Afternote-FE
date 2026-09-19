@@ -6,6 +6,7 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.repository.account.AccountRepository
 import com.afternote.core.ui.UiText
+import com.afternote.feature.onboarding.presentation.OnboardingFailure
 import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.reporting.AuthFailureStage
 import com.afternote.feature.onboarding.presentation.reporting.recordAuthFailure
@@ -34,7 +35,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * `TextFieldState` 는 Screen 이 소유하고 VM 은 String 만 들고 있는다.
  */
 @HiltViewModel
-class FindPasswordViewModel
+internal class FindPasswordViewModel
     @Inject
     constructor(
         private val accountRepository: AccountRepository,
@@ -60,7 +61,7 @@ class FindPasswordViewModel
         fun updateEmail(value: String) =
             _uiState.update {
                 // 이메일이 바뀌면 앞선 발송 이력과 차단 판정은 더 이상 그 이메일의 것이 아니다.
-                it.copy(email = value, isVerificationSent = false, isSocialSignUpAccount = false)
+                it.copy(email = value, isVerificationSent = false, failure = it.failure.takeIf { _ -> it.email == value })
             }
 
         fun updateCertificateCode(value: String) = _uiState.update { it.copy(certificateCode = value) }
@@ -92,15 +93,15 @@ class FindPasswordViewModel
                                 if (error is CoreAuthFailure.SocialSignUpAccount) {
                                     // 사용자 입력 오류가 아니라 계정 종류의 문제다 — 시안은 팝업으로 그린다.
                                     // 계측하지 않는다: 서버가 정상적으로 가르는 분기지 장애가 아니다.
-                                    //
-                                    // 스낵바 신호를 함께 내린다 — 이 사유는 팝업으로 알리므로, 아직 소비되지
-                                    // 않은 이전 실패 문구가 팝업과 겹쳐 뜨지 않게 한다(`FindIdViewModel.verifyCode`
-                                    // 선례). `errorMessage` 를 지우는 경로가 [onErrorConsumed] 하나뿐이라
-                                    // 이메일을 고쳐 재발송해도 남는다 — `current.copy` 가 그대로 물려받는다.
-                                    current.copy(isSocialSignUpAccount = true, errorMessage = null)
+                                    current.copy(failure = OnboardingFailure.SocialAccountRecoveryUnavailable)
                                 } else {
                                     errorReporter.recordAuthFailure(AuthFailureStage.FIND_ACCOUNT_CODE_SEND, error)
-                                    current.copy(errorMessage = error.toDisplayMessage(R.string.onboarding_find_account_failed))
+                                    current.copy(
+                                        failure =
+                                            OnboardingFailure.RequestFailed(
+                                                error.toDisplayMessage(R.string.onboarding_find_account_failed),
+                                            ),
+                                    )
                                 }
                             }
                         }
@@ -135,16 +136,17 @@ class FindPasswordViewModel
                             if (error is CancellationException) throw error
                             errorReporter.recordAuthFailure(AuthFailureStage.FIND_PASSWORD_RESET, error)
                             _uiState.update {
-                                it.copy(errorMessage = error.toResetFailureMessage())
+                                it.copy(failure = OnboardingFailure.RequestFailed(error.toResetFailureMessage()))
                             }
                         }
                     _uiState.update { it.copy(isSubmitting = false) }
                 }
         }
 
-        fun onSocialAccountBlockedConsumed() = _uiState.update { it.copy(isSocialSignUpAccount = false) }
-
-        fun onErrorConsumed() = _uiState.update { it.copy(errorMessage = null) }
+        fun onErrorConsumed() =
+            _uiState.update {
+                it.copy(failure = it.failure.takeUnless { failure -> failure is OnboardingFailure.RequestFailed })
+            }
 
         /**
          * 완료 화면으로 넘어간 뒤 흐름 상태를 통째로 버린다.

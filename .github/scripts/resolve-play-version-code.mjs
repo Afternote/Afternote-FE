@@ -2,19 +2,9 @@ import { appendFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const ATTEMPT_STRIDE = 100n;
-const MAX_PLAY_VERSION_CODE = 2_100_000_000n;
+import { ATTEMPT_STRIDE, PLAY_BAND_FLOOR, parseInteger } from "./version-code-bands.mjs";
 
-function parseInteger(name, rawValue, { minimum }) {
-  if (typeof rawValue !== "string" || !/^(0|[1-9][0-9]*)$/.test(rawValue)) {
-    throw new Error(`${name} must be a base-10 integer.`);
-  }
-  const value = BigInt(rawValue);
-  if (value < minimum) {
-    throw new Error(`${name} must be at least ${minimum}.`);
-  }
-  return value;
-}
+const MAX_PLAY_VERSION_CODE = 2_100_000_000n;
 
 export function resolvePlayVersionCode(runNumberRaw, runAttemptRaw, latestVersionCodeRaw) {
   const runNumber = parseInteger("GITHUB_RUN_NUMBER", runNumberRaw, { minimum: 1n });
@@ -27,7 +17,9 @@ export function resolvePlayVersionCode(runNumberRaw, runAttemptRaw, latestVersio
     throw new Error(`GITHUB_RUN_ATTEMPT must be lower than ${ATTEMPT_STRIDE}.`);
   }
 
-  const candidate = runNumber * ATTEMPT_STRIDE + runAttempt;
+  // 대역 하한을 더해 Firebase 수열(101 ~ 999,999,999)과 겹치지 않게 한다. Play 원장이 비어
+  // 있는 지금은 이 하한을 넣어도 단조 증가가 깨지지 않는다.
+  const candidate = PLAY_BAND_FLOOR + runNumber * ATTEMPT_STRIDE + runAttempt;
   if (candidate > MAX_PLAY_VERSION_CODE) {
     throw new Error(`Resolved versionCode exceeds Google Play maximum ${MAX_PLAY_VERSION_CODE}.`);
   }
