@@ -27,7 +27,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.afternote.afternote_fe.notification.NotificationPermissionEffect
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomBar
-import com.afternote.core.ui.navigation.FeatureStackBoundary
+import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
 import com.afternote.core.ui.navigation.PredictiveBackPopEnter
 import com.afternote.core.ui.navigation.PredictiveBackPopExit
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -76,9 +76,9 @@ fun AppNavigation(
     // 로컬 스택 바닥에서의 back 은 루트 백스택 pop 으로 돌려준다. 루트가 NavDisplay 로 바뀌어도
     // 계약은 그대로고 이 구현만 갈린다 (#1702).
     // 바텀바가 없는 그래프는 깊이를 셸에 올릴 일이 없다.
-    val popRootBoundary = rememberRootPopBoundary(appState, onAtRootChanged = {})
-    val afternoteBoundary =
-        rememberRootPopBoundary(appState) { isAtRoot -> isAfternoteStackAtRoot = isAtRoot }
+    val rootNavigationCallbacks = rememberRootNavigationCallbacks(appState, onAtRootChanged = {})
+    val afternoteNavigationCallbacks =
+        rememberRootNavigationCallbacks(appState) { isAtRoot -> isAfternoteStackAtRoot = isAtRoot }
 
     // 13+ 는 런타임 권한이 없으면 알림이 한 건도 게시되지 않는다 (#1454).
     NotificationPermissionEffect(snackbarHostState = snackbarHostState)
@@ -113,25 +113,25 @@ fun AppNavigation(
             // ── Navigation 3 로컬 스택을 가진 그래프 (#1698) — 루트엔 host destination 하나씩만 둔다.
             composable<Route.Onboarding> {
                 OnboardingNavHost(
-                    boundary = popRootBoundary,
+                    boundary = rootNavigationCallbacks,
                     externalActions = onboardingExternalActions,
                 )
             }
             composable<Route.Afternote> {
                 AfternoteNavHost(
-                    boundary = afternoteBoundary,
+                    navigationCallbacks = afternoteNavigationCallbacks,
                     externalActions = afternoteExternalActions,
                 )
             }
             // 수신 애프터노트 화면은 애프터노트 피처가 갖는다 (#1461). Route.Afternote 그래프는
             // 발신자용 지문 관문을 시작점으로 삼으므로 그 안에 중첩하지 않고 루트에 직접 등록한다.
             composable<Route.ReceivedAfternote> {
-                ReceivedAfternoteNavHost(boundary = popRootBoundary)
+                ReceivedAfternoteNavHost(navigationCallbacks = rootNavigationCallbacks)
             }
             composable<Route.Receiver> {
                 ReceiverNavHost(
                     homeContent = { ReceiverHomeEntry(actions = receiverHomeActions) },
-                    boundary = popRootBoundary,
+                    navigationCallbacks = rootNavigationCallbacks,
                 )
             }
 
@@ -183,12 +183,12 @@ fun AppNavigation(
  * @param onAtRootChanged 바텀바 판정에 깊이를 합성해야 하는 그래프만 넘긴다.
  */
 @Composable
-private fun rememberRootPopBoundary(
+private fun rememberRootNavigationCallbacks(
     appState: AppState,
     onAtRootChanged: (Boolean) -> Unit,
-): FeatureStackBoundary =
+): FeatureNavigationCallbacks =
     remember(appState, onAtRootChanged) {
-        object : FeatureStackBoundary {
+        object : FeatureNavigationCallbacks {
             override fun exit() {
                 appState.navController.popBackStack()
             }
