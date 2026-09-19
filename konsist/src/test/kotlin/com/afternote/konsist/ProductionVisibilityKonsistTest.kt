@@ -323,7 +323,7 @@ class ProductionVisibilityKonsistTest {
                 "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/sender/DiaryWriteScreen.kt::function DiaryWriteScreenContent [internal]",
             )
 
-        /** #1675 해소. 프로필 이미지 선택 결과 helper 는 private 이고 테스트는 화면 동작으로 본다. */
+        /** #1675·#1829 해소. Screen과 Content는 각자 파일에서 수명·렌더 책임을 갖는다. */
         val ISSUE_1675_ONBOARDING = emptySet<String>()
 
         /** #1803에서 수명·소비와 렌더 파일을 분리하고 프로덕션 소비 범위로 공개 범위를 정했다. */
@@ -346,7 +346,7 @@ class ProductionVisibilityKonsistTest {
                 "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/findaccount/FindPasswordCompleteScreen.kt::function FindPasswordCompleteScreen [implicit-public]",
                 "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/findaccount/FindPasswordResetScreen.kt::function FindPasswordResetScreen [implicit-public]",
                 "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/findaccount/FindPasswordScreen.kt::function FindPasswordScreen [implicit-public]",
-                "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/findaccount/FindPasswordViewModel.kt::class FindPasswordViewModel [implicit-public]",
+                "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/findaccount/FindPasswordViewModel.kt::class FindPasswordViewModel [internal]",
             )
 
         /** #1671~#1677이 줄인다. 신규와 stale 항목 모두 실패해 목록은 정확한 현재 부채다. */
@@ -378,9 +378,6 @@ class ProductionVisibilityKonsistTest {
                 "app/src/main/java/com/afternote/afternote_fe/update/" +
                     "ForceUpdateGate.kt::class ForceUpdatePrompt [implicit-public]" to
                     "ForceUpdateGate.prompt 가 노출하고 MainActivity 가 타입 추론으로 소비",
-                "core/ui/src/main/kotlin/com/afternote/core/ui/button/" +
-                    "AfternoteRadioGroup.kt::function AfternoteRadioGroup [implicit-public]" to
-                    "core:ui README에 문서화된 공용 컴포넌트",
                 "core/ui/src/main/kotlin/com/afternote/core/ui/popup/" +
                     "AfternoteActionMenu.kt::class ActionMenuItem [implicit-public]" to
                     "AfternoteActionMenu 파라미터와 editDeleteActionMenuItems 반환값을 외부 feature가 타입 추론 소비",
@@ -390,9 +387,6 @@ class ProductionVisibilityKonsistTest {
                 "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/" +
                     "presentation/editor/memorial/MemorialMediaSourceState.kt::class MemorialMediaSourceState [internal]" to
                     "다른 프로덕션 파일이 반환값을 타입 추론으로 소비",
-                "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/terms/" +
-                    "OnboardingTermsScreen.kt::class TermsType [implicit-public]" to
-                    "OnboardingTermsScreen 콜백이 노출하는 화면 계약 타입",
                 "feature/receiver/data/src/main/kotlin/com/afternote/feature/receiver/data/dto/" +
                     "ReceiverAfternoteDto.kt::class ReceivedMemorialVideoDto [implicit-public]" to
                     "ReceivedPlaylistDto.memorialVideo가 노출하는 직렬화 계약 타입",

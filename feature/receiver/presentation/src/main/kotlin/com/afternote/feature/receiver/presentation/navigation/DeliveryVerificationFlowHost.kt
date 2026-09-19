@@ -9,7 +9,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.afternote.core.ui.navigation.FeatureNavDisplay
-import com.afternote.core.ui.navigation.FeatureStackBoundary
+import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
 import com.afternote.feature.receiver.presentation.deliveryverification.DeliveryVerificationCompleteScreen
 import com.afternote.feature.receiver.presentation.deliveryverification.DeliveryVerificationFlowViewModel
 import com.afternote.feature.receiver.presentation.deliveryverification.DocumentUploadScreen
@@ -46,15 +46,15 @@ internal fun DeliveryVerificationFlowHost(
         )
     val flowState by flowViewModel.uiState.collectAsStateWithLifecycle()
     val stepStack = rememberNavBackStack(ReceiverRoute.IdentityVerificationIntroRoute)
-    val boundary = remember(onExitFlow) { FeatureStackBoundary(onExitFlow) }
+    val navigationCallbacks = remember(onExitFlow) { FeatureNavigationCallbacks(onExitFlow) }
     val actions =
-        remember(stepStack, boundary, onExitToReceivedRecords) {
-            DeliveryVerificationFlowLocalNavActions(stepStack, boundary, onExitToReceivedRecords)
+        remember(stepStack, navigationCallbacks, onExitToReceivedRecords) {
+            DeliveryVerificationFlowLocalNavActions(stepStack, navigationCallbacks, onExitToReceivedRecords)
         }
 
     FeatureNavDisplay(
         backStack = stepStack,
-        boundary = boundary,
+        boundary = navigationCallbacks,
         entryProvider =
             entryProvider {
                 entry<ReceiverRoute.IdentityVerificationIntroRoute> {

@@ -1,6 +1,5 @@
 package com.afternote.feature.setting.presentation.screen
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -37,7 +35,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -47,9 +44,9 @@ import com.afternote.core.ui.PhoneNumberVisualTransformation
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
+import com.afternote.feature.setting.presentation.component.ProfilePhotoWithAddBadge
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverPhoneValidation
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterEvent
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterViewModel
@@ -181,26 +178,7 @@ internal fun ReceiverRegisterContent(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             item {
-                Box(modifier = Modifier.size(134.dp)) {
-                    Image(
-                        painter = painterResource(R.drawable.ic_default_profile),
-                        contentDescription = "기본",
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                    Box(
-                        modifier =
-                            Modifier
-                                .align(Alignment.BottomEnd)
-                                .size(48.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Image(
-                            painter = painterResource(R.drawable.ic_plus),
-                            contentDescription = "추가",
-                            modifier = Modifier.requiredSize(72.dp),
-                        )
-                    }
-                }
+                ProfilePhotoWithAddBadge()
             }
             item {
                 Spacer(modifier = Modifier.height(56.dp))
@@ -356,21 +334,5 @@ internal fun ReceiverRegisterContent(
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ReceiverRegisterContentPreview() {
-    AfternoteTheme {
-        ReceiverRegisterContent(
-            title = "수신자 등록",
-            actionText = "등록",
-            isPhoneRequired = true,
-            isLoading = false,
-            errorMessage = null,
-            onBackClick = {},
-            onRegister = { _, _, _, _, _ -> },
-        )
     }
 }

@@ -9,7 +9,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.credentials.CredentialManager
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -94,10 +93,4 @@ fun ConnectedAccountsScreen(
         onToggle = viewModel::onToggle,
         modifier = modifier,
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ConnectedAccountScreenPrev() {
-    ConnectedAccountsScreen(onBack = {})
 }

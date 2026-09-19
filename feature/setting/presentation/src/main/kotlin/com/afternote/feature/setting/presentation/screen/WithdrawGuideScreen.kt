@@ -24,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
@@ -279,15 +278,4 @@ private fun BulletItem(text: String) {
             color = AfternoteDesign.colors.gray7,
         )
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun WithdrawGuideScreenPrev() {
-    WithdrawGuideScreen(
-        uiState = SettingUiState.Success(name = "홍길동", email = "hong@example.com"),
-        onBackClick = {},
-        onCancelClick = {},
-        onConfirmClick = {},
-    )
 }

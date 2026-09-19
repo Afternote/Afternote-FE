@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -21,11 +19,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -112,14 +110,7 @@ private fun SuccessBody(
     ) {
         Spacer(modifier = Modifier.height(39.dp))
 
-        Image(
-            painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_ic_profile_placeholder),
-            contentDescription = null,
-            modifier =
-                Modifier
-                    .size(134.dp)
-                    .clip(CircleShape),
-        )
+        ProfileImage()
 
         Spacer(modifier = Modifier.height(12.5.dp))
 
