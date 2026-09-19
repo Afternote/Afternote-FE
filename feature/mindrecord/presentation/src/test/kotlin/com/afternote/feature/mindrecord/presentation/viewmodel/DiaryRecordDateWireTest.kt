@@ -104,8 +104,15 @@ class DiaryRecordDateWireTest {
         runTest(dispatcher) {
             // 여기서 «오늘» 을 실어 보내면 기존 기록일이 조용히 오늘로 옮겨진다. 서버는
             // 키를 생략하면 기존 값을 유지하므로 생략이 맞다.
-            val repository = FakeDiaryRepository()
-            repository.onGetList = { _, _ -> Result.failure(IllegalStateException("offline")) }
+            //
+            // 「날짜를 못 준다」를 **조회 실패로 세우지 않는다.** 조회가 실패하면 화면은 못 읽은
+            // 원본 위에 놓이고, 그 상태의 저장은 #2027 이 막는다 — 그러면 이 단언이 보려는
+            // 「나간 요청에 date 키가 없다」에 도달하지 못한다. 조회는 성공하되 그 기록의
+            // 날짜를 해석할 수 없는 경우로 세운다 (`Diary.toUi()` 가 null 을 돌려주는 자리).
+            val repository =
+                FakeDiaryRepository(
+                    initialDiaries = listOf(existingDiary(date = "", createdAt = "")),
+                )
             val viewModel = diaryViewModel(repository, editRoute())
             advanceUntilIdle()
 
@@ -149,16 +156,18 @@ class DiaryRecordDateWireTest {
             mapOf("recordId" to EXISTING_ID, "yearMonth" to "2026-07", "isDraft" to false),
         )
 
-    private fun existingDiary(date: String) =
-        Diary(
-            diaryId = EXISTING_ID,
-            title = "기존 제목",
-            content = "<p>기존 본문</p>",
-            date = date,
-            createdAt = "2026-07-11T09:00:00",
-            todayMood = TodayMood.SOSO,
-            isDraft = false,
-        )
+    private fun existingDiary(
+        date: String,
+        createdAt: String = "2026-07-11T09:00:00",
+    ) = Diary(
+        diaryId = EXISTING_ID,
+        title = "기존 제목",
+        content = "<p>기존 본문</p>",
+        date = date,
+        createdAt = createdAt,
+        todayMood = TodayMood.SOSO,
+        isDraft = false,
+    )
 
     private fun diaryViewModel(
         repository: FakeDiaryRepository,
