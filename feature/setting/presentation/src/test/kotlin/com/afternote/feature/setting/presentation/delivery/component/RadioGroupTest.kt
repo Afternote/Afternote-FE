@@ -1,4 +1,4 @@
-package com.afternote.feature.setting.presentation.component
+package com.afternote.feature.setting.presentation.delivery.component
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
