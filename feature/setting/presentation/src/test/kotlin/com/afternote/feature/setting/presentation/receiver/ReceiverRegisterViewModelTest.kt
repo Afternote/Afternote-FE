@@ -80,7 +80,7 @@ class ReceiverRegisterViewModelTest {
     @Test
     fun `server rejected message is not shown verbatim to the user`() {
         val serverMessage = "수신자 이메일은 필수입니다."
-        val error = ReceiverRequestRejectedException(serverMessage, Exception("origin"))
+        val error = ReceiverRequestRejectedException(Exception(serverMessage))
 
         assertEquals(
             UiText.Resource(R.string.receiver_request_rejected),

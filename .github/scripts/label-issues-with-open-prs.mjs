@@ -19,7 +19,7 @@ import path from "node:path";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
 
-import { extractTitleIssueNumber } from "./validate-pr-issue-link.mjs";
+import { extractClosingIssueNumbers, extractTitleIssueNumber } from "./validate-pr-issue-link.mjs";
 
 export const DEFAULT_LABEL = "pr-open";
 export const COMMENT_MARKER_PREFIX = "<!-- issue-pr-open:";
@@ -37,6 +37,7 @@ query($owner: String!, $name: String!, $cursor: String, $pageSize: Int!) {
             nodes {
                 number
                 title
+                body
                 baseRefName
                 isDraft
             }
@@ -49,33 +50,60 @@ export function commentMarker(pullRequestNumber) {
 }
 
 /**
+ * 이 PR 이 닫는 이슈 전부.
+ *
+ * 제목의 대표 이슈와 본문의 closing 참조를 합친다. 판정은 둘 다 `validate-pr-issue-link.mjs` 의
+ * 파서를 그대로 쓴다 — 여기서 새 정규식을 만들면 게이트가 인정하는 링크와 라벨이 인정하는 링크가
+ * 갈린다. 같은 번호가 제목과 본문에 겹쳐도 이슈마다 한 번만 센다.
+ *
+ * 본문에서는 closing 키워드만 줍는다. `Refs #N`·`Part of #N` 까지 주우면 참고로 언급했을 뿐인
+ * 이슈에도 라벨이 붙어 라벨의 뜻이 무너진다. `extractClosingIssueNumbers` 가 긋는 그 경계는
+ * merge-order-guard 가 본문에서 closing 이슈를 뽑는 패턴과 같은 모양이다 (#1189).
+ */
+function closingIssueNumbers(pullRequest, repository) {
+    const numbers = new Set();
+    const titleIssueNumber = extractTitleIssueNumber(pullRequest.title);
+    if (titleIssueNumber !== null) {
+        numbers.add(titleIssueNumber);
+    }
+    for (const issueNumber of extractClosingIssueNumbers(pullRequest.body, repository)) {
+        numbers.add(issueNumber);
+    }
+    return [...numbers].sort((a, b) => a - b);
+}
+
+/**
  * 열린 PR 목록과 현재 라벨 보유 이슈로부터 라벨·코멘트 계획을 세운다.
  *
- * 대표 이슈 판정은 `validate-pr-issue-link.mjs` 의 파서를 그대로 쓴다. Repository Quality 가
- * 모든 PR 제목에 `(#N)` 하나를 강제하므로 여기서 새 규칙을 만들면 두 판정이 갈린다.
+ * 제목의 `(#N)` 하나만 보면 한 PR 이 닫는 이슈 중 하나밖에 잡히지 않는다. Repository Quality 가
+ * 제목에 `(#N)` 을 정확히 하나만 허용하기 때문이다. 본문에 `Closes` 를 둘 적은 PR 의 나머지
+ * 이슈는 라벨도 링크 코멘트도 못 받아 이슈만 본 사람에게 미착수로 읽힌다 (#2082). base 가 기본
+ * 브랜치가 아니면 Development 칸도 비어 있어 그 이슈엔 아무 신호도 남지 않는다.
  *
- * 제목이 그 형식이 아닌 PR 은 건너뛴다 — 게이트가 이미 그 PR 을 막고 있고, 여기서 본문의 느슨한
- * `Refs #N` 까지 주우면 «참고로 언급한 이슈» 에까지 라벨이 붙어 라벨의 뜻이 무너진다.
+ * 닫는 이슈를 하나도 못 찾은 PR 은 건너뛴다 — 게이트가 이미 그 PR 을 막고 있다.
  */
 export function planIssueLabelChanges({
     pullRequests,
     labeledIssueNumbers,
     defaultBranch,
+    repository,
     label = DEFAULT_LABEL,
 }) {
     const byIssue = new Map();
     const skipped = [];
 
     for (const pullRequest of pullRequests) {
-        const issueNumber = extractTitleIssueNumber(pullRequest.title);
-        if (issueNumber === null) {
+        const issueNumbers = closingIssueNumbers(pullRequest, repository);
+        if (issueNumbers.length === 0) {
             skipped.push(pullRequest);
             continue;
         }
-        if (!byIssue.has(issueNumber)) {
-            byIssue.set(issueNumber, []);
+        for (const issueNumber of issueNumbers) {
+            if (!byIssue.has(issueNumber)) {
+                byIssue.set(issueNumber, []);
+            }
+            byIssue.get(issueNumber).push(pullRequest);
         }
-        byIssue.get(issueNumber).push(pullRequest);
     }
 
     const labeled = new Set(labeledIssueNumbers);
@@ -132,7 +160,7 @@ export function renderSummary({ plan, dryRun }) {
         `- 라벨 부착: ${plan.toLabel.length}건${formatIssues(plan.toLabel.map((entry) => entry.issueNumber))}`,
         `- 라벨 제거: ${plan.toUnlabel.length}건${formatIssues(plan.toUnlabel)}`,
         `- 링크 코멘트 대상(base≠기본 브랜치): ${plan.comments.length}건${formatIssues(plan.comments.map((entry) => entry.issueNumber))}`,
-        `- 대표 이슈 미판정: ${plan.skipped.length}건${formatIssues(plan.skipped.map((pullRequest) => pullRequest.number), "#")}`,
+        `- 닫는 이슈 미판정: ${plan.skipped.length}건${formatIssues(plan.skipped.map((pullRequest) => pullRequest.number), "#")}`,
     ].join("\n");
 }
 
@@ -147,6 +175,7 @@ function normalizePullRequest(node) {
     return {
         number: node.number,
         title: node.title,
+        body: node.body,
         baseRefName: node.baseRefName,
         isDraft: node.isDraft,
     };
@@ -386,7 +415,13 @@ async function main() {
 
     const pullRequests = await fetchOpenPullRequests(api, repository);
     const labeledIssueNumbers = await fetchLabeledIssueNumbers(api, repository, label);
-    const plan = planIssueLabelChanges({ pullRequests, labeledIssueNumbers, defaultBranch, label });
+    const plan = planIssueLabelChanges({
+        pullRequests,
+        labeledIssueNumbers,
+        defaultBranch,
+        repository,
+        label,
+    });
 
     const candidates = [...new Set(plan.toLabel.map((entry) => entry.issueNumber))];
     const realIssues = await resolveIssueNumbers(api, repository, candidates);

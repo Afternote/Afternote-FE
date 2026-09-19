@@ -130,6 +130,7 @@ fun NavGraphBuilder.settingNavGraph(
                     receivers = receivers,
                     onBackClick = actions::onRecipientListBack,
                     onReceiverClick = actions::onNavigateToRecipientEdit,
+                    onRegisterClick = actions::onNavigateToRecipientRegister,
                 )
             }
         }
