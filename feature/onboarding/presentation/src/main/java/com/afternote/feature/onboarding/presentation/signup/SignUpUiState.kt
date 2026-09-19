@@ -67,6 +67,17 @@ internal data class SignUpUiState(
     /** 실패 한 건의 사유. 화면이 인라인 또는 스낵바로 표시한다. */
     val failure: OnboardingFailure? = null,
 ) : UiState {
+    /**
+     * 인증 결과가 **지금 화면의 입력에 대한 답인지** (#2025).
+     *
+     * 이메일 칸은 인증이 도는 동안에도 고칠 수 있다. 보낸 입력과 지금 입력이 다르면 그 결과는
+     * 이미 사용자가 버린 시도의 것이고, 적용하면 서버가 검증한 적 없는 이메일로 다음 단계가 열린다.
+     */
+    internal fun matches(
+        email: String,
+        certificateCode: String,
+    ): Boolean = this.email == email && this.verificationCode == certificateCode
+
     val isEmailFormatValid: Boolean
         get() = email.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(email).matches()
 
