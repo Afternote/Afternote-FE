@@ -11,7 +11,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -173,9 +172,3 @@ private suspend fun authenticate(activity: FragmentActivity): BiometricResult =
             biometricPrompt.authenticate(promptInfo)
         }
     }
-
-@Preview(showBackground = true)
-@Composable
-private fun PassKeyMakingScreenPrev() {
-    PassKeyMakingScreen(onBackClick = {}, onPasswordAuthClick = {})
-}

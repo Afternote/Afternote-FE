@@ -5,7 +5,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.feature.setting.presentation.applock.AppLockSetupViewModel
@@ -36,14 +35,5 @@ fun PassKeyPasswordScreen(
         onConfirmClick = { currentOnPinComplete(uiState.pin) },
         onBack = onBack,
         modifier = modifier,
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun PassKeyPasswordScreenPreview() {
-    PassKeyPasswordScreen(
-        onPinComplete = {},
-        onBack = {},
     )
 }

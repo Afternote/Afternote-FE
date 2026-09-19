@@ -35,7 +35,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -45,7 +44,6 @@ import com.afternote.core.ui.PhoneNumberVisualTransformation
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.shared.component.ProfilePhotoWithAddBadge
@@ -331,21 +329,5 @@ internal fun ReceiverRegisterContent(
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ReceiverRegisterContentPreview() {
-    AfternoteTheme {
-        ReceiverRegisterContent(
-            title = "수신자 등록",
-            actionText = "등록",
-            isPhoneRequired = true,
-            isLoading = false,
-            errorMessage = null,
-            onBackClick = {},
-            onRegister = { _, _, _, _, _ -> },
-        )
     }
 }
