@@ -117,11 +117,13 @@ internal fun NavGraphBuilder.appRouteSkeleton() {
     // app — AppNavigation.kt 가 직접 등록하는 홈 탭
     stubScreen<Route.Home>(stateful = true)
 
-    // feature/setting — SettingNavGraph.kt. 로그아웃·탈퇴 경계가 지나는 화면만 옮긴다.
+    // feature/setting — SettingNavGraph.kt. 로그아웃·탈퇴 경계와 링크 목적지가 지나는 화면만 옮긴다.
     navigation<Route.Setting>(startDestination = SettingRoute.SettingHomeRoute) {
         stubScreen<SettingRoute.SettingHomeRoute>()
         stubScreen<SettingRoute.WithdrawGuideRoute>()
         stubScreen<SettingRoute.WithdrawConfirmRoute>()
+        // App Link /settings/notification 의 착지점 (#924).
+        stubScreen<SettingRoute.NotificationRoute>()
     }
 
     // feature/mindrecord — MindRecordNavGraph.kt. 중첩 없이 루트에 직접 붙는 top-level 3종과
@@ -132,13 +134,17 @@ internal fun NavGraphBuilder.appRouteSkeleton() {
     stubScreen<Route.ReceiverMindRecord>()
     stubScreen<MindRecordRoute.DraftListRoute>()
     stubScreen<MindRecordRoute.RecordDetailRoute>()
+    // App Link /mindrecord/daily-question 의 착지점 (#924).
+    stubScreen<MindRecordRoute.DailyQuestionWriteRoute>()
 
-    // feature/timeletter — TimeLetterNavGraph.kt. 탭 저장/복원과 predictive back 이 지나는
-    // 세 화면만 옮긴다.
+    // feature/timeletter — TimeLetterNavGraph.kt. 탭 저장/복원·predictive back·링크 목적지가
+    // 지나는 화면만 옮긴다.
     navigation<Route.TimeLetter>(startDestination = TimeLetterRoute.TimeLetterHomeRoute) {
         stubScreen<TimeLetterRoute.TimeLetterHomeRoute>()
         stubScreen<TimeLetterRoute.TimeLetterDraftRoute>(stateful = true)
         stubScreen<TimeLetterRoute.TimeLetterRecipientRoute>()
+        // App Link /timeletter/{id} 의 착지점 (#924).
+        stubScreen<TimeLetterRoute.TimeLetterDetailRoute>()
     }
 }
 
