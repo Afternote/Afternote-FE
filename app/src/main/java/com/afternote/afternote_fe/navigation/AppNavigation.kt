@@ -2,6 +2,7 @@ package com.afternote.afternote_fe.navigation
 
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
@@ -100,7 +101,8 @@ fun AppNavigation(
         },
     ) { innerPadding ->
         NavHost(
-            modifier = Modifier.padding(innerPadding),
+            // 루트가 확보한 시스템 바·하단 탭 여백을 하위 inset 계산에도 전달한다.
+            modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding),
             navController = appState.navController,
             startDestination = startDestination,
             // pop 은 기본값이 fade 라 predictive back 진행 중 두 화면이 같은 크기로 겹쳐 보였다 (#1869).
