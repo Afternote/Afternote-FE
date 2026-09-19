@@ -16,6 +16,9 @@
     <string name="settings_recipient_list">수신자 목록</string>
     <string name="settings_recipient_register">수신자 등록</string>
     <string name="settings_recipient_after_delivery">사후 전달 조건</string>
+    <string name="settings_recipient_empty">등록된 수신자가 없습니다.</string>
+    <string name="settings_recipient_empty_description">수신자를 등록하고 쉽게 관리해 보세요.</string>
+    <string name="settings_recipient_empty_register">수신자 등록하기</string>
     <!-- 보안 -->
     <string name="settings_security_passkey">패스키 관리</string>
     <string name="settings_security_app_lock">앱 잠금 설정</string>

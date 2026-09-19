@@ -7,4 +7,6 @@ data class CreateGalleryPayload(
     val processingMethods: List<String>,
     val leaveMessageBlocks: List<LeaveMessageBlock> = emptyList(),
     val receiverIds: List<Long> = emptyList(),
+    /** true 면 임시저장으로 만든다 — 서버가 카테고리별 필수값 검증을 건너뛴다(BE `AfternoteValidator`). */
+    val isDraft: Boolean = false,
 )
