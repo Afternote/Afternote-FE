@@ -1,5 +1,6 @@
 package com.afternote.feature.setting.presentation.screen
 
+import android.util.Log
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.compose.runtime.Composable
@@ -14,6 +15,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.afternote.core.common.biometric.confirmWithCryptoOperation
+import com.afternote.core.common.biometric.createBiometricCryptoObject
+import com.afternote.core.common.biometric.isBiometricCryptoSupported
 import com.afternote.core.ui.findActivity
 import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
@@ -21,6 +25,8 @@ import com.afternote.feature.setting.presentation.viewmodel.PassKeyViewModel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
+
+private const val LOG_TAG = "PassKeyMaking"
 
 private sealed interface BiometricResult {
     data object Success : BiometricResult
@@ -120,13 +126,26 @@ private suspend fun authenticate(activity: FragmentActivity): BiometricResult =
                 .setAllowedAuthenticators(authenticators)
                 .build()
 
+        // API 26~29 에서는 DEVICE_CREDENTIAL 허용자와 CryptoObject 를 함께 쓸 수 없다.
+        // 이때는 관문 없이 인증하고, 성공 확정은 cipher 부재로 통과시킨다 (#1166).
+        val cryptoObject = if (isBiometricCryptoSupported) createBiometricCryptoObject() else null
+
         val biometricPrompt =
             BiometricPrompt(
                 activity,
                 ContextCompat.getMainExecutor(activity),
                 object : BiometricPrompt.AuthenticationCallback() {
                     override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                        if (continuation.isActive) continuation.resume(BiometricResult.Success)
+                        if (!continuation.isActive) return
+                        // 성공은 콜백의 도달이 아니라 사용자 인증에 묶인 키로 암호 연산이
+                        // 성사되는가로 확정한다 — 콜백만 가로챈 경우 연산이 실패한다 (#1166).
+                        val confirmation = confirmWithCryptoOperation(result.cryptoObject?.cipher)
+                        if (confirmation.isSuccess) {
+                            continuation.resume(BiometricResult.Success)
+                        } else {
+                            Log.w(LOG_TAG, "인증 후 암호 연산 실패", confirmation.exceptionOrNull())
+                            continuation.resume(BiometricResult.Error("지문 확인에 실패했어요. 다시 시도해 주세요."))
+                        }
                     }
 
                     override fun onAuthenticationError(
@@ -149,7 +168,11 @@ private suspend fun authenticate(activity: FragmentActivity): BiometricResult =
             )
 
         continuation.invokeOnCancellation { biometricPrompt.cancelAuthentication() }
-        biometricPrompt.authenticate(promptInfo)
+        if (cryptoObject != null) {
+            biometricPrompt.authenticate(promptInfo, cryptoObject)
+        } else {
+            biometricPrompt.authenticate(promptInfo)
+        }
     }
 
 @Preview(showBackground = true)

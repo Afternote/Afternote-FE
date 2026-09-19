@@ -4,7 +4,10 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.usecase.auth.LoginUseCase
+import com.afternote.feature.onboarding.presentation.OnboardingFailure
 import com.afternote.feature.onboarding.presentation.reporting.AuthProvider
+import com.afternote.feature.onboarding.presentation.snackbarMessage
+import com.afternote.feature.onboarding.presentation.toDisplay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -70,7 +73,7 @@ class LoginViewModelReportingTest {
             val reporter = FakeErrorReporter()
             val viewModel = viewModelWith(RuntimeException("서버 거절"), reporter)
 
-            viewModel.loginWithKakao("oauth-token")
+            viewModel.onIntent(LoginIntent.SubmitKakaoLogin("oauth-token"))
             advanceUntilIdle()
 
             val attributes = reporter.written.single()
@@ -84,7 +87,7 @@ class LoginViewModelReportingTest {
             val reporter = FakeErrorReporter()
             val viewModel = viewModelWith(RuntimeException("서버 거절"), reporter)
 
-            viewModel.loginWithEmail()
+            viewModel.onIntent(LoginIntent.SubmitEmailLogin)
             advanceUntilIdle()
 
             assertEquals("email", reporter.written.single()["auth_provider"])
@@ -96,7 +99,7 @@ class LoginViewModelReportingTest {
             val reporter = FakeErrorReporter()
             val viewModel = viewModelWith(RuntimeException("미사용"), reporter)
 
-            viewModel.onSocialTokenRequestFailed(AuthProvider.GOOGLE, RuntimeException("SDK 실패"))
+            viewModel.onIntent(LoginIntent.ReportSocialTokenFailure(AuthProvider.GOOGLE, RuntimeException("SDK 실패")))
 
             val attributes = reporter.written.single()
             assertEquals("social_token_request", attributes["auth_stage"])
@@ -110,11 +113,16 @@ class LoginViewModelReportingTest {
             // 화면 이탈로 스코프가 취소되면 runCatching 이 이걸 Result.failure 로 만들어 넘긴다.
             val viewModel = viewModelWith(CancellationException("스코프 취소"), reporter)
 
-            viewModel.loginWithKakao("oauth-token")
+            viewModel.onIntent(LoginIntent.SubmitKakaoLogin("oauth-token"))
             advanceUntilIdle()
 
             assertTrue("취소는 리포팅 대상이 아니다", reporter.written.isEmpty())
-            assertNull("취소를 실패 문구로 띄우면 안 된다", viewModel.uiState.value.errorMessage)
+            assertNull(
+                "취소를 실패 문구로 띄우면 안 된다",
+                viewModel.uiState.value.failure
+                    .toDisplay()
+                    .snackbarMessage,
+            )
         }
 
     @Test
@@ -123,7 +131,7 @@ class LoginViewModelReportingTest {
             val reporter = FakeErrorReporter()
             val viewModel = viewModelWith(CoreAuthFailure.InvalidLoginCredentials(RuntimeException("401")), reporter)
 
-            viewModel.loginWithEmail()
+            viewModel.onIntent(LoginIntent.SubmitEmailLogin)
             advanceUntilIdle()
 
             assertTrue(reporter.written.isEmpty())
