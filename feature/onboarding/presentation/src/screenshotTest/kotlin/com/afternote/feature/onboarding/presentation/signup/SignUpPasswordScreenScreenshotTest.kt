@@ -8,7 +8,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.android.tools.screenshot.PreviewTest
 
 /**
- * [SignUpPasswordScreen] 의 시각 회귀 baseline — 초기 진입 상태 (빈 입력 + 비밀번호 룰 미충족 + 다음 비활성).
+ * [SignUpPasswordContent] 의 시각 회귀 baseline — 초기 진입 상태 (빈 입력 + 비밀번호 룰 미충족 + 다음 비활성).
  *
  * 의도된 시각 변경 시 `./gradlew :feature:onboarding:presentation:updateScreenshotTest` 로 갱신.
  */
@@ -17,14 +17,10 @@ import com.android.tools.screenshot.PreviewTest
 @Composable
 internal fun signUpPasswordScreenInitialScreenshot() {
     AfternoteTheme {
-        SignUpPasswordScreen(
-            initialPassword = "",
-            initialPasswordConfirm = "",
-            isPasswordRuleSatisfied = false,
-            isNextEnabled = false,
+        SignUpPasswordContent(
+            state = SignUpUiState(),
+            onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },
-            onPasswordChange = {},
-            onPasswordConfirmChange = {},
             onNextClick = {},
             onBackClick = {},
         )
