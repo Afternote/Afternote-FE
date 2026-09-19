@@ -24,6 +24,7 @@ fun SendScheduleRow(
     onDateClick: () -> Unit,
     onTimeClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     Row(
         modifier =
@@ -39,7 +40,7 @@ fun SendScheduleRow(
         )
         Spacer(modifier = Modifier.width(12.dp))
         Row(
-            modifier = Modifier.clickable(onClick = onDateClick),
+            modifier = Modifier.clickable(enabled = enabled, onClick = onDateClick),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -65,7 +66,7 @@ fun SendScheduleRow(
         )
         Spacer(modifier = Modifier.width(12.dp))
         Row(
-            modifier = Modifier.clickable(onClick = onTimeClick),
+            modifier = Modifier.clickable(enabled = enabled, onClick = onTimeClick),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
