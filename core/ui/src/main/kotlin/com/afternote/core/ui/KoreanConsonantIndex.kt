@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +54,8 @@ fun KoreanConsonantIndex(
     modifier: Modifier = Modifier,
 ) {
     var totalHeightPx by remember { mutableFloatStateOf(0f) }
+    // Keep ongoing gestures connected to the current list after search results change.
+    val currentOnConsonantSelect by rememberUpdatedState(onConsonantSelect)
 
     fun indexFromY(y: Float): Int =
         (y / totalHeightPx * CONSONANTS.size)
@@ -66,11 +69,11 @@ fun KoreanConsonantIndex(
                 .onSizeChanged { totalHeightPx = it.height.toFloat() }
                 .pointerInput(Unit) {
                     detectTapGestures { offset ->
-                        onConsonantSelect(CONSONANTS[indexFromY(offset.y)])
+                        currentOnConsonantSelect(CONSONANTS[indexFromY(offset.y)])
                     }
                 }.pointerInput(Unit) {
                     detectDragGestures { change, _ ->
-                        onConsonantSelect(CONSONANTS[indexFromY(change.position.y)])
+                        currentOnConsonantSelect(CONSONANTS[indexFromY(change.position.y)])
                     }
                 },
         verticalArrangement = Arrangement.spacedBy(6.dp),
