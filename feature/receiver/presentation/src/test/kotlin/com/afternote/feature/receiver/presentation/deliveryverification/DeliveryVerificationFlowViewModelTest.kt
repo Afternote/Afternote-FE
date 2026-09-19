@@ -57,12 +57,12 @@ class DeliveryVerificationFlowViewModelTest {
             // WhileSubscribed 라 구독이 있어야 upstream(repository 캐시 대역) 을 collect 한다.
             val jobs =
                 listOf(
-                    launch { viewModelA.isIdentityVerified.collect {} },
-                    launch { viewModelB.isIdentityVerified.collect {} },
+                    launch { viewModelA.uiState.collect {} },
+                    launch { viewModelB.uiState.collect {} },
                 )
 
-            assertTrue(viewModelA.isIdentityVerified.value)
-            assertFalse(viewModelB.isIdentityVerified.value)
+            assertTrue(viewModelA.uiState.value.isIdentityVerified)
+            assertFalse(viewModelB.uiState.value.isIdentityVerified)
 
             jobs.forEach { it.cancel() }
         }

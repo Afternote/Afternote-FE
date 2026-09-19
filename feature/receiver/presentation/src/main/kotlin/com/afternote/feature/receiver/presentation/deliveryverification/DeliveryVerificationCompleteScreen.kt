@@ -20,10 +20,18 @@ import com.afternote.feature.receiver.presentation.deliveryverification.componen
  *
  * 시안 그대로: TopBar "수신자 인증" + h1 "열람 신청 완료" + 안내 2 줄 + 하단 CTA "받은 기록함으로 돌아가기".
  * 진행 인디케이터는 마지막 단계(4/4)로 100% 채워 표시 — 열람 신청 완료를 꽉 찬 바로 나타낸다.
- * 실제 신청 제출은 [DocumentUploadViewModel.submit] 이 수행하므로 본 화면은 결과 안내 + 복귀 액션만 제공한다.
+ * 실제 신청 제출은 [DocumentUploadIntent.Submit] 이 수행하므로 본 화면은 결과 안내 + 복귀 액션만 제공한다.
  */
 @Composable
-fun DeliveryVerificationCompleteScreen(
+internal fun DeliveryVerificationCompleteScreen(
+    onBackToRecords: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    DeliveryVerificationCompleteContent(onBackToRecords = onBackToRecords, modifier = modifier)
+}
+
+@Composable
+private fun DeliveryVerificationCompleteContent(
     onBackToRecords: () -> Unit,
     modifier: Modifier = Modifier,
 ) {

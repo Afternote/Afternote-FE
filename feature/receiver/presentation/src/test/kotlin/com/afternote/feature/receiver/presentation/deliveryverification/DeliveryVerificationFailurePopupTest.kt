@@ -60,7 +60,7 @@ class DeliveryVerificationFailurePopupTest {
         val viewModel = documentUploadViewModel(upload)
         viewModel.uploadDeathCertificate()
 
-        viewModel.retryFailedRequest()
+        viewModel.onIntent(DocumentUploadIntent.RetryFailedRequest)
 
         assertEquals(2, upload.uploadCalls.size)
         assertEquals(
@@ -78,8 +78,8 @@ class DeliveryVerificationFailurePopupTest {
         val viewModel = documentUploadViewModel(upload)
         viewModel.uploadDeathCertificate()
 
-        viewModel.onErrorPopupDismissed()
-        viewModel.retryFailedRequest()
+        viewModel.onIntent(DocumentUploadIntent.DismissErrorPopup)
+        viewModel.onIntent(DocumentUploadIntent.RetryFailedRequest)
 
         assertNull(viewModel.uiState.value.errorPopup)
         assertEquals(1, upload.uploadCalls.size)
@@ -98,7 +98,7 @@ class DeliveryVerificationFailurePopupTest {
             }
         val viewModel = submittableViewModel(auth)
 
-        viewModel.submit()
+        viewModel.onIntent(DocumentUploadIntent.Submit)
 
         val state = viewModel.uiState.value
         assertNull(state.errorPopup)
@@ -110,7 +110,7 @@ class DeliveryVerificationFailurePopupTest {
         val auth = submittingAuth { Result.failure(ReceiverFailure.NetworkUnavailable(CAUSE)) }
         val viewModel = submittableViewModel(auth)
 
-        viewModel.submit()
+        viewModel.onIntent(DocumentUploadIntent.Submit)
 
         assertEquals(ReceiverErrorPopup.NETWORK, viewModel.uiState.value.errorPopup)
     }
@@ -119,10 +119,10 @@ class DeliveryVerificationFailurePopupTest {
     fun `서버 오류 팝업의 재시도는 같은 신청을 다시 보낸다`() {
         val auth = submittingAuth { Result.failure(ReceiverFailure.UnexpectedServerFailure(CAUSE)) }
         val viewModel = submittableViewModel(auth)
-        viewModel.submit()
+        viewModel.onIntent(DocumentUploadIntent.Submit)
         assertEquals(ReceiverErrorPopup.SERVER, viewModel.uiState.value.errorPopup)
 
-        viewModel.retryFailedRequest()
+        viewModel.onIntent(DocumentUploadIntent.RetryFailedRequest)
 
         assertEquals(listOf(UPLOADED_URL to null, UPLOADED_URL to null), auth.deliverySubmissions)
     }
@@ -138,13 +138,13 @@ class DeliveryVerificationFailurePopupTest {
                 }
             }
         val viewModel = IdentityVerificationViewModel(auth, FakeIdentityVerificationRepository(), NoopErrorReporter)
-        viewModel.onEmailChange(EMAIL)
-        viewModel.requestVerificationCode()
-        viewModel.onCodeChange("123456")
-        viewModel.verifyAndProceed(SENDER_ID)
+        viewModel.onIntent(IdentityVerificationIntent.UpdateEmail(EMAIL))
+        viewModel.onIntent(IdentityVerificationIntent.RequestCode)
+        viewModel.onIntent(IdentityVerificationIntent.UpdateCode("123456"))
+        viewModel.onIntent(IdentityVerificationIntent.Verify(SENDER_ID))
         assertEquals(ReceiverErrorPopup.SERVER, viewModel.uiState.value.errorPopup)
 
-        viewModel.retryFailedRequest()
+        viewModel.onIntent(IdentityVerificationIntent.RetryFailedRequest)
 
         assertEquals(1, auth.sentEmails.size)
         assertEquals(2, auth.verifiedEmailCodes.size)
@@ -164,9 +164,9 @@ class DeliveryVerificationFailurePopupTest {
                 }
             }
         val viewModel = IdentityVerificationViewModel(auth, FakeIdentityVerificationRepository(), NoopErrorReporter)
-        viewModel.onEmailChange(EMAIL)
+        viewModel.onIntent(IdentityVerificationIntent.UpdateEmail(EMAIL))
 
-        viewModel.requestVerificationCode()
+        viewModel.onIntent(IdentityVerificationIntent.RequestCode)
 
         val state = viewModel.uiState.value
         assertNull(state.errorPopup)
@@ -193,11 +193,13 @@ class DeliveryVerificationFailurePopupTest {
     }
 
     private fun DocumentUploadViewModel.uploadDeathCertificate() {
-        uploadDocument(
-            slot = DocumentSlot.DeathCertificate,
-            bytes = DOCUMENT_BYTES,
-            extension = "pdf",
-            displayName = "사망진단서.pdf",
+        onIntent(
+            DocumentUploadIntent.UploadDocument(
+                slot = DocumentSlot.DeathCertificate,
+                bytes = DOCUMENT_BYTES,
+                extension = "pdf",
+                displayName = "사망진단서.pdf",
+            ),
         )
     }
 
