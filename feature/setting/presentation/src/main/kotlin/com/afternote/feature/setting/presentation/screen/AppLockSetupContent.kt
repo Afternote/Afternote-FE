@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.component.InsertPasswordContent
@@ -66,43 +65,4 @@ internal fun AppLockSetupContent(
             )
         }
     }
-}
-
-@Preview(name = "비밀번호 입력", showBackground = true)
-@Composable
-private fun PreviewEnterNew() {
-    AppLockSetupContent(
-        step = PinSetupStep.ENTER_NEW,
-        passwordLength = 0,
-        onDigitClick = {},
-        onDeleteClick = {},
-        onConfirmClick = {},
-        onBack = {},
-    )
-}
-
-@Preview(name = "비밀번호 재입력", showBackground = true)
-@Composable
-private fun PreviewConfirmNew() {
-    AppLockSetupContent(
-        step = PinSetupStep.CONFIRM_NEW,
-        passwordLength = 3,
-        onDigitClick = {},
-        onDeleteClick = {},
-        onConfirmClick = {},
-        onBack = {},
-    )
-}
-
-@Preview(name = "변경할 비밀번호 입력", showBackground = true)
-@Composable
-private fun PreviewEnterCurrent() {
-    AppLockSetupContent(
-        step = PinSetupStep.ENTER_CURRENT,
-        passwordLength = 0,
-        onDigitClick = {},
-        onDeleteClick = {},
-        onConfirmClick = {},
-        onBack = {},
-    )
 }
