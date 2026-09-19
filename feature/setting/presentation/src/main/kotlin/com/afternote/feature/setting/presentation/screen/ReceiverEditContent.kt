@@ -36,6 +36,8 @@ internal fun ReceiverEditContent(
             errorMessage = uiState.errorMessage,
             onBackClick = onBackClick,
             onRegister = onRegister,
+            // 초대는 새 수신자를 만드는 흐름이라 수정 화면엔 없다.
+            onInviteClick = null,
             modifier = modifier,
             initialName = receiver.name,
             initialRelation = receiver.relation,

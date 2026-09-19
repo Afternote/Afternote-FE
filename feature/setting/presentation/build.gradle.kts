@@ -34,6 +34,8 @@ dependencies {
     implementation(libs.androidx.compose.runtime)
     implementation(libs.kakao.sdk.auth)
     implementation(libs.kakao.sdk.user)
+    // 수신자 초대를 카카오톡 메시지 템플릿으로 보낸다 (#944).
+    implementation(libs.kakao.sdk.share)
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)

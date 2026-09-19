@@ -107,4 +107,31 @@
     <string name="receiver_verify_step_description">수신자 인증 진행도 4단계 중 %1$d단계</string>
     <!-- 홈 섹션 건수 문장. rememberCountLine 이 숫자 앞부분과 뒷문장을 나눠 받아 서로 다른 스타일로
          그리므로 리소스도 그 경계대로 둘로 둔다. 끝 공백이 유효하므로 따옴표로 감싼다. -->
+
+    <!--
+      카카오톡 초대 랜딩(4996:40023)·수락 완료(4996:39921) — 시안 문구 그대로 (#944).
+      카드의 «관계»·«지금 볼 수 있는 기록» 줄은 조회 응답에 없어 그리지 않는다.
+    -->
+    <string name="receiver_invitation_top_bar_title">받은 기록함</string>
+    <string name="receiver_invitation_title">%1$s님이\n당신을 수신자로 설정했어요.</string>
+    <string name="receiver_invitation_description">%1$s 님이 남긴 기록을 정해진 때에\n받아보실 분으로 지정되었어요.</string>
+    <string name="receiver_invitation_row_inviter">나를 등록한 분</string>
+    <string name="receiver_invitation_accept">카카오로 시작하고 수락하기</string>
+    <string name="receiver_invitation_defer">나중에 결정하기</string>
+    <string name="receiver_invitation_privacy_caption">지금 수락해도 %1$s 님은 당신의 연락처를 볼 수 없어요.</string>
+    <string name="receiver_invitation_loading">초대를 확인하고 있어요.</string>
+    <string name="receiver_invitation_notice_confirm">확인</string>
+    <!-- 진행할 수 없는 초대의 안내. 시안에 없는 상태라 FE 잠정 문구다 — PM 확정 시 교체. -->
+    <string name="receiver_invitation_notice_not_found">초대를 찾을 수 없어요.\n초대한 분에게 새 링크를 받아주세요.</string>
+    <string name="receiver_invitation_notice_expired">초대 링크가 만료됐어요.\n초대한 분에게 새 링크를 받아주세요.</string>
+    <string name="receiver_invitation_notice_accepted_by_other">이미 다른 분이 수락한 초대예요.\n초대한 분에게 새 링크를 받아주세요.</string>
+    <string name="receiver_invitation_notice_self_accept">내가 보낸 초대는 내가 수락할 수 없어요.</string>
+    <string name="receiver_invitation_notice_unavailable">지금은 초대를 처리할 수 없어요.\n잠시 후 링크를 다시 열어주세요.</string>
+
+    <string name="receiver_invitation_complete_top_bar_title">수신자 등록</string>
+    <string name="receiver_invitation_complete_title">등록이 완료됐어요.</string>
+    <string name="receiver_invitation_complete_description">%1$s 님에게 수신자 등록 완료\n알림을 보냈어요.</string>
+    <string name="receiver_invitation_complete_info">아직 확인할 수 있는 기록이 없어요.\n기록을 확인할 수 있게 되면 카카오톡과 이메일로 안내해 드릴게요.\n그전까지는 연결 상태가 안전하게 유지됩니다.</string>
+    <string name="receiver_invitation_complete_confirm">확인하기</string>
+    <string name="receiver_invitation_complete_check_description">등록 완료</string>
 </resources>

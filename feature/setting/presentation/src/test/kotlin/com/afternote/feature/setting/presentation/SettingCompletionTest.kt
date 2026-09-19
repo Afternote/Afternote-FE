@@ -18,6 +18,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.testing.FakeAuthRepository
+import com.afternote.core.domain.testing.FakeMyProfileRepository
+import com.afternote.core.domain.testing.FakeReceiverInvitationRepository
+import com.afternote.core.domain.testing.FakeUserProfileCacheRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.delivery.ConditionState
 import com.afternote.core.model.delivery.DeliveryConditionItem
@@ -45,6 +48,7 @@ import com.afternote.feature.setting.presentation.viewmodel.ProfileEditViewModel
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditEvent
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditViewModel
+import com.afternote.feature.setting.presentation.viewmodel.ReceiverInviteViewModel
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterEvent
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterViewModel
 import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
@@ -337,6 +341,7 @@ class SettingCompletionTest {
                     onBackClick = {},
                     onRegisterSuccess = {},
                     viewModel = viewModel,
+                    inviteViewModel = receiverInviteViewModel(),
                 )
             }
         }
@@ -501,6 +506,7 @@ class SettingCompletionTest {
                     onBackClick = {},
                     onRegisterSuccess = {},
                     viewModel = viewModel,
+                    inviteViewModel = receiverInviteViewModel(),
                 )
             }
         }
@@ -509,6 +515,8 @@ class SettingCompletionTest {
         composeRule.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("afternote@email.com"))
         composeRule.onNodeWithText("afternote@email.com").performTextInput("receiver@afternote.local")
 
+        // 폼 아래에 카카오톡 초대 CTA 가 붙어(#944) 목록이 더 길어졌다 — 연락처 안내가 화면 밖일 수 있어 되돌아간다.
+        composeRule.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("연락처를 입력해주세요."))
         composeRule.onNodeWithText("연락처를 입력해주세요.").assertIsDisplayed()
         composeRule.onNodeWithText("등록").assertIsNotEnabled()
         assertTrue(repository.receiverCreateCalls.isEmpty())
@@ -851,6 +859,16 @@ private class CompletionUserScenario {
         method: String,
     ): T = synchronized(this) { gates.pollFirst() ?: error("$method gate was not prepared") }
 }
+
+/** 초대 시트 ViewModel — 이 파일의 등록 화면 테스트는 초대 흐름을 건드리지 않아 fake 기본값이면 된다 (#944). */
+private fun receiverInviteViewModel() =
+    ReceiverInviteViewModel(
+        invitationRepository = FakeReceiverInvitationRepository(),
+        profileCacheRepository = FakeUserProfileCacheRepository(),
+        myProfileRepository = FakeMyProfileRepository(),
+        errorReporter = NoOpErrorReporter,
+        savedStateHandle = SavedStateHandle(),
+    )
 
 internal object NoOpErrorReporter : ErrorReporter {
     override fun writeFailure(

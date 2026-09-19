@@ -97,6 +97,21 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!--
+              카카오톡 초대 메시지의 버튼이 앱을 여는 스킴 — `kakao{앱키}://kakaolink?inviteToken=…` (#944).
+              host 가 `kakaolink` 라 같은 스킴의 `oauth`(AuthCodeHandlerActivity)와 갈린다.
+              launchMode 는 그대로 둔다 — #1111 이 알림 진입에서 같은 판단을 했다(manifest 를 올리면
+              모든 진입의 태스크 동작이 바뀐다). 앱이 떠 있는 채로 들어오면 인스턴스가 하나 더 쌓일 수
+              있지만, 토큰은 기기 저장소에 남기고 어느 인스턴스든 그 저장소를 보므로 흐름은 같다.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                        android:host="kakaolink"
+                        android:scheme="kakao${KAKAO_NATIVE_APP_KEY}" />
+            </intent-filter>
         </activity>
 
         <!--
