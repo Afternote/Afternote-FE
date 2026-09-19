@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.fingerprint
+package com.afternote.core.common.biometric
 
 import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
@@ -11,6 +11,7 @@ import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 
+private const val LOG_TAG = "BiometricCryptoGate"
 private const val KEY_ALIAS = "afternote_biometric_gate"
 private const val ANDROID_KEYSTORE = "AndroidKeyStore"
 
@@ -34,7 +35,7 @@ private val CRYPTO_CHALLENGE = "afternote-biometric-gate".toByteArray()
  * minSdk 는 26 이고 기기 잠금(PIN·패턴)만 등록한 사용자를 막지 않는 것이 현 정책이므로,
  * API 26~29 에서는 허용자 조합을 유지한 채 `CryptoObject` 없이 인증한다.
  */
-internal val isBiometricCryptoSupported: Boolean
+val isBiometricCryptoSupported: Boolean
     get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
 
 /**
@@ -44,7 +45,7 @@ internal val isBiometricCryptoSupported: Boolean
  * 이 관문은 열람 게이트일 뿐 보관 중인 암호문이 없어, 키를 쓸 수 없는 기기에서까지 로그인을
  * 막는 것은 얻는 것보다 잃는 것이 크다.
  */
-internal fun createBiometricCryptoObject(): BiometricPrompt.CryptoObject? =
+fun createBiometricCryptoObject(): BiometricPrompt.CryptoObject? =
     runCatching { BiometricPrompt.CryptoObject(initEncryptCipher()) }
         .onFailure { Log.w(LOG_TAG, "CryptoObject 준비 실패 — crypto 없이 진행한다", it) }
         .getOrNull()
@@ -69,7 +70,7 @@ internal fun createBiometricCryptoObject(): BiometricPrompt.CryptoObject? =
  *
  * 그래서 [runCatching] 으로 전부 받는다 — 좁은 catch 로 바꾸면 그 예외가 그대로 앱을 타고 올라간다.
  */
-internal fun confirmWithCryptoOperation(cipher: Cipher?): Result<Unit> {
+fun confirmWithCryptoOperation(cipher: Cipher?): Result<Unit> {
     if (cipher == null) return Result.success(Unit)
     return runCatching { cipher.doFinal(CRYPTO_CHALLENGE) }.map { }
 }

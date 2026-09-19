@@ -130,5 +130,5 @@ internal class PhotoUploadRepositoryImpl
                 } finally {
                     tempFile.delete()
                 }
-            }
+            }.mapUploadFailure()
     }
