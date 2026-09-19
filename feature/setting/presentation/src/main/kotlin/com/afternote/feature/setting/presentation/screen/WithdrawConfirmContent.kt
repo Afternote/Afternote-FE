@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -116,7 +117,7 @@ private fun WithdrawAccountSection(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(82.dp)
+                .heightIn(min = 82.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(color = AfternoteDesign.colors.gray2)
                 .padding(start = 16.dp),
