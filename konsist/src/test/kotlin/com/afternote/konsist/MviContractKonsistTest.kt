@@ -432,7 +432,6 @@ class MviContractKonsistTest {
                 "com.afternote.feature.setting.presentation.viewmodel.AppLockSetupViewModel",
                 "com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsViewModel",
                 "com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.InsertPasswordViewModel",
                 "com.afternote.feature.setting.presentation.viewmodel.PassKeyViewModel",
                 "com.afternote.feature.setting.presentation.viewmodel.ProfileEditViewModel",
                 "com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel",
