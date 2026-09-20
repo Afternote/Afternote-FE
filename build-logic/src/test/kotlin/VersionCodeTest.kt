@@ -33,8 +33,10 @@ class VersionCodeTest {
 
     @Test
     fun `Google Play 최대 versionCode를 넘으면 실패한다`() {
-        assertThrows(GradleException::class.java) {
-            resolveAfternoteVersionCode("2100000001")
+        listOf("2100000001", "2147483648", "9223372036854775808").forEach { invalid ->
+            assertThrows(GradleException::class.java) {
+                resolveAfternoteVersionCode(invalid)
+            }
         }
     }
 }
