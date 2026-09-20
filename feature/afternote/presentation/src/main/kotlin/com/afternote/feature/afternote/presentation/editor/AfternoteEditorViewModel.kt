@@ -64,7 +64,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v4"
+private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v5"
 private const val INITIALIZED_ACTION_TEMPLATE_TYPE_KEY = "initialized_action_template_type"
 private const val PREFILL_SEEDED_ITEM_ID_KEY = "editor_prefill_seeded_item_id"
 
@@ -86,7 +86,13 @@ private data class ProcessingMethodSnap(
 /**
  * [SavedStateHandle]에 JSON으로 넣는 폼 스냅샷. 번들 전체 크기는 대략 500KB~1MB를 넘기지 않도록 설계해야 하며,
  * 그렇지 않으면 [android.os.TransactionTooLargeException]이 날 수 있다. 큰 Base64/data URL은 폼에 넣지 말고 URL·URI 문자열만 저장한다.
- * 사진 값 객체는 기존 `pickedMemorialPhotoUri`·`memorialPhotoUrl` 두 키로 변환하므로 v4 JSON 호환성을 유지한다.
+ * 사진 값 객체는 기존 `pickedMemorialPhotoUri`·`memorialPhotoUrl` 두 키로 변환해 사진 필드의 JSON 호환성을 유지한다.
+ *
+ * **wire 형태는 키에 박힌 버전과 함께 움직인다.** [EditableMemorialVideo]가 sealed 로 바뀌면서(#1901)
+ * `memorialVideo` 가 `{"persisted":…,"selection":…}` 에서 판별자가 붙은 `{"type":"replaced",…}` 로 달라졌다.
+ * 옛 payload 를 새 코드가 읽으면 복원이 실패해 폼이 기본값으로 돌아가므로, 키를 `editor_form_snapshot_v5` 로
+ * 올려 옛 스냅샷을 아예 찾지 않게 했다. 앞으로도 이 클래스나 그 필드 타입의 wire 형태를 바꾸면 키의 버전을
+ * 함께 올린다.
  */
 @Serializable
 private data class EditorFormSnapshot(

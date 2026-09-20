@@ -10,28 +10,28 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import com.afternote.core.ui.Route
-import com.afternote.feature.setting.presentation.component.PinSetupStep
-import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
-import com.afternote.feature.setting.presentation.screen.ConnectedAccountsScreen
-import com.afternote.feature.setting.presentation.screen.DeliveryConditionScreen
-import com.afternote.feature.setting.presentation.screen.NoticeListScreen
-import com.afternote.feature.setting.presentation.screen.NotificationSettingScreen
-import com.afternote.feature.setting.presentation.screen.PassKeyListScreen
-import com.afternote.feature.setting.presentation.screen.PassKeyMakingScreen
-import com.afternote.feature.setting.presentation.screen.PassKeyPasswordScreen
-import com.afternote.feature.setting.presentation.screen.PassKeyScreen
-import com.afternote.feature.setting.presentation.screen.ProfileEditScreen
-import com.afternote.feature.setting.presentation.screen.PushNotificationScreen
-import com.afternote.feature.setting.presentation.screen.ReceiverEditScreen
-import com.afternote.feature.setting.presentation.screen.ReceiverListScreen
-import com.afternote.feature.setting.presentation.screen.ReceiverManageScreen
-import com.afternote.feature.setting.presentation.screen.ReceiverRegisterScreen
-import com.afternote.feature.setting.presentation.screen.SettingScreen
-import com.afternote.feature.setting.presentation.screen.WithdrawConfirmScreen
-import com.afternote.feature.setting.presentation.screen.WithdrawGuideScreen
-import com.afternote.feature.setting.presentation.viewmodel.PassKeyViewModel
-import com.afternote.feature.setting.presentation.viewmodel.ReceiverListViewModel
-import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
+import com.afternote.feature.setting.presentation.account.ConnectedAccountsScreen
+import com.afternote.feature.setting.presentation.applock.AppLockSetupScreen
+import com.afternote.feature.setting.presentation.applock.PinSetupStep
+import com.afternote.feature.setting.presentation.delivery.DeliveryConditionScreen
+import com.afternote.feature.setting.presentation.home.SettingScreen
+import com.afternote.feature.setting.presentation.home.SettingViewModel
+import com.afternote.feature.setting.presentation.home.WithdrawConfirmScreen
+import com.afternote.feature.setting.presentation.home.WithdrawGuideScreen
+import com.afternote.feature.setting.presentation.notice.NoticeListScreen
+import com.afternote.feature.setting.presentation.notification.NotificationSettingScreen
+import com.afternote.feature.setting.presentation.notification.PushNotificationScreen
+import com.afternote.feature.setting.presentation.passkey.PassKeyListScreen
+import com.afternote.feature.setting.presentation.passkey.PassKeyMakingScreen
+import com.afternote.feature.setting.presentation.passkey.PassKeyPasswordScreen
+import com.afternote.feature.setting.presentation.passkey.PassKeyScreen
+import com.afternote.feature.setting.presentation.passkey.PassKeyViewModel
+import com.afternote.feature.setting.presentation.profile.ProfileEditScreen
+import com.afternote.feature.setting.presentation.receiver.ReceiverEditScreen
+import com.afternote.feature.setting.presentation.receiver.ReceiverListScreen
+import com.afternote.feature.setting.presentation.receiver.ReceiverListViewModel
+import com.afternote.feature.setting.presentation.receiver.ReceiverManageScreen
+import com.afternote.feature.setting.presentation.receiver.ReceiverRegisterScreen
 
 fun NavGraphBuilder.settingNavGraph(
     graphScopedParentEntry: () -> NavBackStackEntry,
@@ -42,24 +42,16 @@ fun NavGraphBuilder.settingNavGraph(
             SettingScreen(
                 onBackClick = actions::onSettingBack,
                 onLogoutSuccess = actions::onLogoutSuccess,
-                onProfileEditClick = actions::onNavigateToProfileEdit,
-                onPasswordChangeClick = {},
-                onLinkedAccountClick = actions::onNavigateToLinkedAccount,
-                onNotificationClick = actions::onNavigateToNotification,
-                onRecipientListClick = actions::onNavigateToRecipientList,
-                onRecipientRegisterClick = actions::onNavigateToRecipientRegister,
-                onAfterDeliveryClick = {
-                    actions.onNavigateToRecipientListForDeliveryConditions()
-                },
-                onPasskeyClick = actions::onNavigateToPasskey,
-                onAppLockClick = actions::onNavigateToAppLock,
-                onFaqClick = {},
-                onInquiryClick = {},
-                onNoticeClick = actions::onNavigateToNotice,
-                onTermsClick = {},
-                onPrivacyClick = {},
-                onServiceInfoClick = {},
-                onWithdrawGuideClick = actions::onNavigateToWithdrawGuide,
+                onProfileEditClick = actions::onProfileEditClick,
+                onLinkedAccountClick = actions::onLinkedAccountClick,
+                onNotificationClick = actions::onNotificationClick,
+                onRecipientListClick = actions::onRecipientListClick,
+                onRecipientRegisterClick = actions::onRecipientRegisterClick,
+                onDeliveryConditionsClick = actions::onDeliveryConditionsClick,
+                onPasskeyClick = actions::onPasskeyClick,
+                onAppLockClick = actions::onAppLockClick,
+                onNoticeClick = actions::onNoticeClick,
+                onWithdrawGuideClick = actions::onWithdrawGuideClick,
             )
         }
 
@@ -71,7 +63,7 @@ fun NavGraphBuilder.settingNavGraph(
                 uiState = uiState,
                 onBackClick = actions::onWithdrawGuideBack,
                 onCancelClick = actions::onWithdrawGuideBack,
-                onConfirmClick = actions::onNavigateToWithdrawConfirm,
+                onConfirmClick = actions::onWithdrawConfirmClick,
             )
         }
 
@@ -90,7 +82,7 @@ fun NavGraphBuilder.settingNavGraph(
         composable<SettingRoute.ProfileEditRoute> {
             ProfileEditScreen(
                 onBackClick = actions::onProfileEditBack,
-                onWithdrawGuideClick = actions::onNavigateToWithdrawGuide,
+                onWithdrawGuideClick = actions::onWithdrawGuideClick,
             )
         }
 
@@ -103,7 +95,7 @@ fun NavGraphBuilder.settingNavGraph(
         composable<SettingRoute.NotificationRoute> {
             NotificationSettingScreen(
                 onBack = actions::onNotificationBack,
-                onPushNotificationClick = actions::onNavigateToPushNotification,
+                onPushNotificationClick = actions::onPushNotificationClick,
             )
         }
 
@@ -122,14 +114,15 @@ fun NavGraphBuilder.settingNavGraph(
                     receivers = receivers,
                     onBackClick = actions::onRecipientListBack,
                     onConfirmClick = { receiver ->
-                        actions.onNavigateToAfterDelivery(receiver.receiverId)
+                        actions.onDeliveryConditionsRecipientSelected(receiver.receiverId)
                     },
                 )
             } else {
                 ReceiverManageScreen(
                     receivers = receivers,
                     onBackClick = actions::onRecipientListBack,
-                    onReceiverClick = actions::onNavigateToRecipientEdit,
+                    onReceiverClick = actions::onRecipientEditClick,
+                    onRegisterClick = actions::onRecipientRegisterClick,
                 )
             }
         }
@@ -154,7 +147,7 @@ fun NavGraphBuilder.settingNavGraph(
                 onBack = actions::onAfterDeliveryBack,
                 onSaveSuccess = actions::onAfterDeliveryBack,
                 onLastGreetingEditClick = {
-                    actions.onNavigateToRecipientEdit(route.receiverId)
+                    actions.onRecipientEditClick(route.receiverId)
                 },
             )
         }
@@ -167,7 +160,7 @@ fun NavGraphBuilder.settingNavGraph(
             } else if (isPasskeyRegistered == false) {
                 PassKeyScreen(
                     onBackClick = actions::onPasskeyBack,
-                    onRegisterClick = actions::onNavigateToPasskeyMaking,
+                    onRegisterClick = actions::onPasskeyRegisterClick,
                 )
             }
         }
@@ -175,7 +168,7 @@ fun NavGraphBuilder.settingNavGraph(
         composable<SettingRoute.PasskeyMakingRoute> {
             PassKeyMakingScreen(
                 onBackClick = actions::onPasskeyMakingBack,
-                onPasswordAuthClick = actions::onNavigateToPasskeyPassword,
+                onPasswordAuthClick = actions::onPasswordAuthClick,
             )
         }
 
