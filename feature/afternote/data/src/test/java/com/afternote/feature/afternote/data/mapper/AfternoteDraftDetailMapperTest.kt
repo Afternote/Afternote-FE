@@ -6,6 +6,7 @@ import com.afternote.feature.afternote.data.dto.AfternoteMemorialVideoDto
 import com.afternote.feature.afternote.data.dto.AfternotePlaylistDto
 import com.afternote.feature.afternote.data.dto.AfternoteSongDto
 import com.afternote.feature.afternote.domain.AfternoteType
+import com.afternote.feature.afternote.domain.model.author.DraftContent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -31,11 +32,12 @@ class AfternoteDraftDetailMapperTest {
                 updatedAt = UPDATED_AT,
             ).toDraftDomain()
 
-        assertEquals(AfternoteType.MEMORIAL, result.type)
-        assertTrue(result.songs.isEmpty())
-        assertNull(result.media.photoUrl)
-        assertNull(result.media.videoUrl)
-        assertNull(result.media.thumbnailUrl)
+        val content = result.content as DraftContent.Memorial
+        assertEquals(AfternoteType.MEMORIAL, content.type)
+        assertTrue(content.songs.isEmpty())
+        assertNull(content.media.photoUrl)
+        assertNull(content.media.videoUrl)
+        assertNull(content.media.thumbnailUrl)
     }
 
     @Test
@@ -56,10 +58,11 @@ class AfternoteDraftDetailMapperTest {
                     ),
             ).toDraftDomain()
 
-        assertEquals(listOf("곡"), result.songs.map { it.title })
-        assertEquals("photo", result.media.photoUrl)
-        assertEquals("video", result.media.videoUrl)
-        assertEquals("thumb", result.media.thumbnailUrl)
+        val content = result.content as DraftContent.Memorial
+        assertEquals(listOf("곡"), content.songs.map { it.title })
+        assertEquals("photo", content.media.photoUrl)
+        assertEquals("video", content.media.videoUrl)
+        assertEquals("thumb", content.media.thumbnailUrl)
     }
 
     @Test
@@ -74,8 +77,9 @@ class AfternoteDraftDetailMapperTest {
                 updatedAt = UPDATED_AT,
             ).toDraftDomain()
 
-        assertEquals(AfternoteType.SOCIAL_NETWORK, result.type)
-        assertNull(result.credentials)
+        val content = result.content as DraftContent.SocialNetwork
+        assertEquals(AfternoteType.SOCIAL_NETWORK, content.type)
+        assertNull(content.credentials)
     }
 
     @Test
@@ -91,8 +95,9 @@ class AfternoteDraftDetailMapperTest {
                 credentials = AfternoteCredentialsDto(id = "user", password = null),
             ).toDraftDomain()
 
-        assertEquals("user", result.credentials?.id)
-        assertEquals("", result.credentials?.password)
+        val content = result.content as DraftContent.SocialNetwork
+        assertEquals("user", content.credentials?.id)
+        assertEquals("", content.credentials?.password)
     }
 
     @Test

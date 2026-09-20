@@ -95,18 +95,58 @@ job이 실패하면 해당 step 로그를 먼저 확인한다. 서명·필수 �
 
 Firebase App Distribution 경로([`release-distribution.yml`](../.github/workflows/release-distribution.yml))와 별개다. 그쪽은 `main` push마다 자동으로 APK를 QA 그룹에 뿌리고, 이쪽은 사람이 눌러야 움직이는 AAB 경로다. 둘은 함께 돌지 않으며 서로의 자격도 공유하지 않는다.
 
+### 강제 업데이트 적용 빌드
+
+Play 배포 워크플로의 AAB 빌드 단계만 `AFTERNOTE_STORE_DISTRIBUTED_BUILD=true`를 전달한다. 이 값은 `BuildConfig.STORE_DISTRIBUTED_BUILD`에 들어가 강제 업데이트 적용 가능 여부를 결정한다. 미설정이거나 정확히 `true`가 아니면 비활성화된다. 로컬·Firebase 빌드는 versionCode를 올려도 이 설정 없이는 강제 업데이트를 적용하지 않는다. 이 설정은 배포 채널 선언이며 실제 설치 출처나 서명을 검사하지 않는다.
+
 ### versionCode 정책
 
 | 빌드 | versionCode | 산출 주체 |
 |---|---|---|
-| 로컬·CI 검증·Firebase App Distribution | `1` (고정) | `build-logic/src/main/kotlin/VersionCode.kt`의 기본값 |
-| Play 내부 테스트 트랙 | `run_number * 100 + run_attempt` | [`resolve-play-version-code.mjs`](../.github/scripts/resolve-play-version-code.mjs) |
+| 로컬·CI 검증 | `1` (기본값) | `build-logic/src/main/kotlin/VersionCode.kt`의 기본값 |
+| Firebase App Distribution | `101` 이상 `999,999,999` 이하에서 배포마다 증가 | [`resolve-firebase-version-code.mjs`](../.github/scripts/resolve-firebase-version-code.mjs) |
+| Play 내부 테스트 트랙 | `1,000,000,000` 이상에서 배포마다 증가 | [`resolve-play-version-code.mjs`](../.github/scripts/resolve-play-version-code.mjs) |
 
 - 워크플로는 `run_number`와 `run_attempt`로 후보 versionCode를 만든다. 같은 run의 재실행은 `run_attempt`가 올라가지만, 오래된 run을 재실행하거나 Console에서 더 큰 값을 올렸다면 Play 최댓값 비교에서 거부될 수 있다.
 - 업로드 **전에** Play가 알고 있는 최대 versionCode(업로드된 bundle + 모든 트랙의 release)를 조회해, 산출값이 그보다 크지 않으면 빌드 전에 멈춘다.
 - 빌드가 끝난 뒤에도 업로드 직전의 새 edit에서 bundle과 모든 트랙의 최댓값을 다시 조회한다. 후보가 그보다 크지 않으면 업로드하지 않는다. Play가 업로드 응답으로 돌려준 versionCode가 기대값과 달라도 트랙을 건드리지 않는다.
 - AAB 검증 단계는 pinned bundletool로 manifest의 실제 versionCode를 읽어 `AFTERNOTE_VERSION_CODE`와 대조한다. 워크플로는 resolver의 값을 빌드와 검증 모두에 전달하므로, 환경변수 주입이 빠진 AAB도 게시 전에 거부한다.
 - `app/build.gradle.kts`의 versionCode를 손으로 올리지 않는다. 로컬에서 Play용 값이 필요하면 `AFTERNOTE_VERSION_CODE` 환경변수로 주입한다.
+- 두 대역의 경계값은 [`version-code-bands.mjs`](../.github/scripts/version-code-bands.mjs) 하나가 정본이다. 양쪽 resolver가 같은 상수를 읽으므로 한쪽만 움직여 대역이 겹치는 일이 없다.
+
+#### 대역을 나누는 이유
+
+두 채널이 한 수열을 나눠 쓰거나 각자 `run_number`로 같은 식을 쓰면 같은 값이 양쪽에서 나온다. `release-distribution.yml`은 `main` push마다 자동으로 돌고 `release-play-internal.yml`은 사람이 눌러야 도는 별개 워크플로라, 두 run 카운터는 서로를 모른다. 값이 겹치면 두 가지가 깨진다.
+
+- 두 채널의 release 빌드는 `versionName`이 똑같이 `1.0`이고, 같은 Firebase 프로젝트의 같은 앱으로 크래시를 보낸다. versionCode까지 겹치면 Crashlytics가 Play 빌드와 Firebase 빌드를 한 버전으로 묶는다. #1865가 Firebase 채널 안에서 겪은 일이 채널 사이에서 되풀이된다.
+- Play 업로드는 versionCode 최댓값 비교를 통과해야 한다([`resolve-play-version-code.mjs`](../.github/scripts/resolve-play-version-code.mjs)의 `candidate <= latestVersionCode` 검사). 겹친 값이 Play 원장에 한 번 들어가면, 이후 Play 배포는 `run_number`가 그 값을 따라잡을 때까지 빌드 전에 전부 거부된다.
+
+대역 순서를 Firebase 아래, Play 위로 고정한 이유는 사고가 났을 때의 결말이 한쪽으로만 안전하기 때문이다. Firebase 산출물이 어떤 경로로든 Play 원장에 들어가도 그 값은 모든 Play 대역 값보다 작아서 최댓값 비교를 막지 못한다. 순서를 뒤집으면 그 한 번이 Play 자동 배포를 장기간 막는다.
+
+이 순서는 Play 원장이 비어 있을 때(최댓값 0)도, 첫 수동 업로드가 versionCode `1`일 때도 그대로 성립한다. Firebase 수열의 최솟값은 `101`이라(`run_number`와 `run_attempt`가 모두 1 이상) 부트스트랩용 `1`과도 겹치지 않는다.
+
+#### Firebase 산출물을 Play로 승격하지 않는다
+
+Firebase App Distribution의 APK를 Play로 올리는 경로는 만들지 않는다. Play로 가는 산출물은 `release-play-internal.yml`이 만든 AAB 하나뿐이다. 근거는 이미 이 문서 안에 있다.
+
+- 이 문서 "현재 배포 채널": Firebase APK 배포는 Google Play 출시 뒤에도 내부 QA 용도로만 사용한다.
+- 이 문서 "결정: 기본안으로 간다 (2026-09-06)": 두 채널을 별도 설치 채널로 유지하기로 확정했고, 그래서 설치 인증서가 달라 서로 위에 업데이트되지 않는다.
+- 산출물 형식 자체가 APK와 AAB로 다르다.
+
+위 대역 순서는 이 금지가 지켜지지 않았을 때 피해를 줄이는 두 번째 방호일 뿐, 금지를 대신하지 않는다.
+
+#### 회귀 자동 재개봉이 보는 축
+
+Firebase 문서가 명시하는 것은 여기까지다. 닫은 문제는 "문제를 닫을 때 Crashlytics가 알지 못하던 앱 버전"에서 재발할 때만 다시 열린다. 닫는 시점에 이미 어떤 크래시든 한 건 보낸 적 있는 버전에서 재발하면 문제는 닫힌 채로 남는다([Crashlytics troubleshooting and FAQ](https://firebase.google.com/docs/crashlytics/troubleshooting)).
+
+여기서 확정되는 것과 확정되지 않는 것을 갈라 둔다.
+
+- 확정: 모든 배포본이 같은 `1.0 (1)`을 보내는 동안에는 재개봉이 일어날 수 없다. 알지 못하던 버전이 나타날 길이 없기 때문이다. 이 결론은 아래 미확정 항목이 어느 쪽으로 정해지든 바뀌지 않는다.
+- 미확정: Firebase 문서는 Android에서 "앱 버전"의 정체가 `versionName`인지 `versionCode`인지 둘의 쌍인지 정의하지 않는다. BigQuery 내보내기 스키마가 `application.display_version`과 `application.build_version`을 모두 싣지만, Android의 어느 필드가 어디로 가는지도 회귀 판정이 어느 쪽을 보는지도 적혀 있지 않다.
+
+그래서 `versionName`을 `1.0`에 둔 채 `versionCode`만 올리는 것으로 재개봉이 되살아나는지는 문서로 판정할 수 없다. #1865의 실측 완료 조건(닫힌 문제가 이후 배포에서 재발했을 때 회귀로 다시 여는지 실측 1회)은 이 미확정 때문에 남는다. 문제를 닫을 때 콘솔이 띄우는 토스트 문구는 근거로 쓰지 않는다.
+
+같은 문서가 재개봉을 원하지 않는 문제는 닫지 말고 음소거하라고 안내한다. 위 축이 실측으로 확정되기 전까지는 닫기를 회귀 감지 수단으로 기대하지 않는다.
 
 ### 자동화 사전 준비
 
@@ -130,7 +170,7 @@ Firebase App Distribution 경로([`release-distribution.yml`](../.github/workflo
 
 Android Publisher API는 **Console에서 최소 한 번 수동 업로드된 앱**에만 업로드를 허용한다. 첫 AAB는 `./scripts/verify-play-release-bundle.sh`로 만든 산출물을 **테스트 및 출시 → 내부 테스트 → 새 버전 만들기**에서 직접 올린다.
 
-- 이때 `AFTERNOTE_VERSION_CODE` 없이 빌드해 versionCode `1`을 쓴다. 워크플로가 만드는 첫 값은 `101`이라 단조 증가 조건을 자동으로 만족한다.
+- 이때 `AFTERNOTE_VERSION_CODE` 없이 빌드해 versionCode `1`을 쓴다. 워크플로가 만드는 첫 값은 Play 대역 하한을 더한 `1,000,000,101`이라 단조 증가 조건을 자동으로 만족한다.
 - 이 업로드에서 Play App Signing 방식이 확정된다. 방식은 아래 「Play App Signing 키 결정」에서 기본안으로 확정해 두었으니, 업로드 전에 그 절을 읽고 화면에서 같은 쪽을 고른다.
 
 **3. Google Cloud — API와 서비스 계정** (`console.cloud.google.com`)
@@ -249,10 +289,10 @@ Play는 이미 게시된 versionCode를 되돌리지 않는다.
 ./scripts/verify-play-release-bundle.sh --skip-build
 ~~~
 
-Play용 versionCode를 주입해 만든 AAB는 `--skip-build`에서도 같은 기대값을 전달해야 한다. 예를 들어 `101`로 빌드했다면 다음과 같이 검사한다.
+Play용 versionCode를 주입해 만든 AAB는 `--skip-build`에서도 같은 기대값을 전달해야 한다. 예를 들어 `1000000101`로 빌드했다면 다음과 같이 검사한다.
 
 ~~~bash
-AFTERNOTE_VERSION_CODE=101 ./scripts/verify-play-release-bundle.sh --skip-build
+AFTERNOTE_VERSION_CODE=1000000101 ./scripts/verify-play-release-bundle.sh --skip-build
 ~~~
 
 산출물:
