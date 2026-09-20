@@ -198,13 +198,13 @@ class AfternoteEditorMemorialMediaRemoveTest {
         val original = viewModel(handle)
         original.applyPrefill(memorialPrefill(photoUrl = persisted))
         if (selection != null) original.setMemorialPhoto(selection)
-        val encoded = requireNotNull(handle.get<String>("editor_form_snapshot_v4"))
+        val encoded = requireNotNull(handle.get<String>("editor_form_snapshot_v5"))
         val fields = Json.parseToJsonElement(encoded).jsonObject
         assertEquals(persisted?.let(::JsonPrimitive) ?: JsonNull, fields["memorialPhotoUrl"])
         assertEquals(selection?.let(::JsonPrimitive) ?: JsonNull, fields["pickedMemorialPhotoUri"])
 
         // 같은 진입 경로의 새 SavedStateHandle로 실제 직렬화된 스냅샷만 복사한다.
-        val restored = viewModel(memorialSavedStateHandle().apply { set("editor_form_snapshot_v4", encoded) })
+        val restored = viewModel(memorialSavedStateHandle().apply { set("editor_form_snapshot_v5", encoded) })
         val photo = requireNotNull(restored.currentForm().memorialPhoto)
         assertEquals(original.currentForm(), restored.currentForm())
         assertEquals(selection ?: persisted, photo.displayed)
