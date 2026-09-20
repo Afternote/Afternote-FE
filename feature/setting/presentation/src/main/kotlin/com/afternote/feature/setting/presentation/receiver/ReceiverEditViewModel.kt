@@ -7,6 +7,8 @@ import androidx.navigation.toRoute
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.ui.UiText
+import com.afternote.feature.setting.domain.UpdateReceiverInfoResult
+import com.afternote.feature.setting.domain.UpdateReceiverInfoUseCase
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,11 +21,12 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ReceiverEditViewModel
+internal class ReceiverEditViewModel
     @Inject
     constructor(
         savedStateHandle: SavedStateHandle,
         private val receiverRepository: UserReceiverRepository,
+        private val updateReceiverInfo: UpdateReceiverInfoUseCase,
     ) : ViewModel() {
         private val receiverId = savedStateHandle.toRoute<SettingRoute.RecipientEditRoute>().receiverId
 
@@ -76,40 +79,37 @@ class ReceiverEditViewModel
 
             _uiState.update { it.copy(isSaving = true, errorMessage = null) }
             viewModelScope.launch {
-                val receiverUpdateResult =
-                    runCatchingCancellable {
-                        receiverRepository.updateReceiver(
-                            receiverId = receiverId,
-                            name = name,
-                            phone = phone.normalizeReceiverPhone(),
-                            relation = relation,
-                            email = email.trim(),
-                        )
-                    }
-                receiverUpdateResult.exceptionOrNull()?.let { error ->
-                    _uiState.update {
-                        it.copy(
-                            isSaving = false,
-                            errorMessage = error.toReceiverFailureMessage(R.string.setting_receiver_edit_failed),
-                        )
-                    }
-                    return@launch
-                }
-
-                runCatchingCancellable {
-                    receiverRepository.updateReceiverMessage(
+                val result =
+                    updateReceiverInfo(
                         receiverId = receiverId,
+                        name = name,
+                        phone = phone.normalizeReceiverPhone(),
+                        relation = relation,
+                        email = email.trim(),
                         message = message,
                     )
-                }.onSuccess {
-                    _uiState.update { it.copy(isSaving = false) }
-                    _events.send(ReceiverEditEvent.EditSuccess)
-                }.onFailure {
-                    _uiState.update {
-                        it.copy(
-                            isSaving = false,
-                            errorMessage = UiText.Resource(R.string.setting_receiver_message_update_partial_failed),
-                        )
+                when (result) {
+                    is UpdateReceiverInfoResult.BasicInfoFailed -> {
+                        _uiState.update {
+                            it.copy(
+                                isSaving = false,
+                                errorMessage = result.cause.toReceiverFailureMessage(R.string.setting_receiver_edit_failed),
+                            )
+                        }
+                    }
+
+                    UpdateReceiverInfoResult.MessageFailedAfterBasicInfoUpdated -> {
+                        _uiState.update {
+                            it.copy(
+                                isSaving = false,
+                                errorMessage = UiText.Resource(R.string.setting_receiver_message_update_partial_failed),
+                            )
+                        }
+                    }
+
+                    UpdateReceiverInfoResult.Success -> {
+                        _uiState.update { it.copy(isSaving = false) }
+                        _events.send(ReceiverEditEvent.EditSuccess)
                     }
                 }
             }

@@ -9,7 +9,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
-fun ReceiverEditScreen(
+internal fun ReceiverEditScreen(
     onBackClick: () -> Unit,
     onEditSuccess: () -> Unit,
     modifier: Modifier = Modifier,
