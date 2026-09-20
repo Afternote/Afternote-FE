@@ -18,11 +18,11 @@ fun resolveAfternoteVersionCode(rawValue: String?): Int {
         )
     }
 
-    val parsed = value.toLongOrNull()
+    val parsed = value.toIntOrNull()
     if (parsed == null || parsed > MAX_PLAY_VERSION_CODE) {
         throw GradleException(
             "$AFTERNOTE_VERSION_CODE_ENV 는 Google Play 최대값 $MAX_PLAY_VERSION_CODE 이하여야 합니다.",
         )
     }
-    return parsed.toInt()
+    return parsed
 }

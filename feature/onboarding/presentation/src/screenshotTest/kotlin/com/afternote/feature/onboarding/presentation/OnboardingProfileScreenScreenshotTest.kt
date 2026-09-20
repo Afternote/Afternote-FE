@@ -5,10 +5,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.onboarding.presentation.signup.SignUpUiState
 import com.android.tools.screenshot.PreviewTest
 
 /**
- * [OnboardingProfileScreen] 의 시각 회귀 baseline — 초기 진입 상태 (이름 미입력 + 이미지 미선택).
+ * [OnboardingProfileContent] 의 시각 회귀 baseline — 초기 진입 상태 (이름 미입력 + 이미지 미선택).
  *
  * stateful 흐름 Screen 의 첫 baseline. `photoPickerLauncher` 는 Preview 환경에서 placeholder
  * 동작 (실제 picker 실행 없음) 이라 stable 렌더.
@@ -19,14 +20,11 @@ import com.android.tools.screenshot.PreviewTest
 @Composable
 internal fun onboardingProfileScreenInitialScreenshot() {
     AfternoteTheme {
-        OnboardingProfileScreen(
-            initialName = "",
-            displayImageUri = null,
+        OnboardingProfileContent(
+            state = SignUpUiState(),
+            onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },
-            onNameChange = {},
-            onProfileImagePick = {},
             onBackClick = {},
-            onCompleteClick = {},
         )
     }
 }
@@ -42,15 +40,11 @@ internal fun onboardingProfileScreenInitialScreenshot() {
 @Composable
 internal fun onboardingProfileScreenSubmittingScreenshot() {
     AfternoteTheme {
-        OnboardingProfileScreen(
-            initialName = "애프터노트",
-            displayImageUri = null,
+        OnboardingProfileContent(
+            state = SignUpUiState(name = "애프터노트", isLoading = true),
+            onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },
-            onNameChange = {},
-            onProfileImagePick = {},
             onBackClick = {},
-            onCompleteClick = {},
-            isSubmitting = true,
         )
     }
 }

@@ -160,7 +160,7 @@ class ExplicitApiModulePolicyKonsistTest {
         const val BUILD_LOGIC_PATH = "build-logic"
         val NON_API_MODULES = setOf(":baselineprofile")
         val PRODUCTION_SOURCE_SETS = setOf("main", "debug", "release")
-        val LEGACY_DIRECT_WARNING_MODULES = setOf(":feature:setting:domain", BUILD_LOGIC_PATH)
+        val LEGACY_DIRECT_WARNING_MODULES = setOf(BUILD_LOGIC_PATH)
 
         /** 이 집합은 줄이기만 한다. 새 모듈을 warning으로 추가하면 exact 정책 테스트가 실패한다. */
         val LEGACY_WARNING_CONVENTION_MODULES =
