@@ -280,6 +280,7 @@ dependencies {
     implementation(projects.feature.mindrecord.data)
     implementation(projects.feature.timeletter.data)
     implementation(projects.feature.onboarding.data)
+    implementation(projects.feature.setting.data)
 
     testImplementation(libs.coroutines.test)
     testImplementation(testFixtures(projects.core.domain))
@@ -310,6 +311,9 @@ dependencies {
     androidTestImplementation(testFixtures(projects.feature.mindrecord.domain))
     androidTestImplementation(projects.feature.receiver.domain)
     androidTestImplementation(testFixtures(projects.feature.receiver.domain))
+    androidTestImplementation(projects.feature.setting.data)
+    androidTestImplementation(projects.feature.setting.domain)
+    androidTestImplementation(testFixtures(projects.feature.setting.domain))
     androidTestImplementation(projects.feature.timeletter.domain)
     androidTestImplementation(testFixtures(projects.feature.timeletter.domain))
     androidTestImplementation(testFixtures(projects.feature.timeletter.data))

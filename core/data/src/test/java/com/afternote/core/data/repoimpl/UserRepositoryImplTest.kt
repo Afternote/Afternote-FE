@@ -40,18 +40,14 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.net.UnknownHostException
 
 class UserRepositoryImplTest {
-    private val calls = mutableListOf<String>()
     private val errorReporter = RecordingErrorReporter()
 
     private fun repository(
-        deleteAccountResponse: BaseResponse<Unit> = success(),
-        clearSessionResult: Result<Unit> = Result.success(Unit),
         onGetReceivers: suspend () -> BaseResponse<List<ReceiverListDto>> = { TODO("이 테스트 미사용") },
         onCreateReceiver: suspend (UserCreateReceiverRequestDto) -> BaseResponse<UserCreateReceiverDto> = {
             TODO("이 테스트 미사용")
@@ -60,78 +56,12 @@ class UserRepositoryImplTest {
     ) = repositoryOf(
         userApiService =
             FakeUserApiService(
-                onDeleteAccount = {
-                    calls += "deleteAccount"
-                    deleteAccountResponse
-                },
                 onGetReceivers = onGetReceivers,
                 onCreateReceiver = onCreateReceiver,
             ),
-        authRepository =
-            authRepository.apply {
-                onClearSession = {
-                    calls += "clearSession"
-                    clearSessionResult
-                }
-            },
+        authRepository = authRepository,
         errorReporter = errorReporter,
     )
-
-    @Test
-    fun `deleteAccount - 탈퇴 성공 시 로컬 세션을 정리한다`() {
-        val repository = repository()
-
-        runBlocking { repository.deleteAccount() }
-
-        assertEquals(listOf("deleteAccount", "clearSession"), calls)
-        assertEquals(0, errorReporter.writtenFailures.size)
-    }
-
-    @Test
-    fun `deleteAccount - 서버 탈퇴 실패면 세션을 유지한다`() {
-        val repository = repository(deleteAccountResponse = BaseResponse(status = 500, code = 500))
-
-        assertThrows(ApiException::class.java) {
-            runBlocking { repository.deleteAccount() }
-        }
-
-        assertEquals(listOf("deleteAccount"), calls)
-        assertEquals(0, errorReporter.writtenFailures.size)
-    }
-
-    /**
-     * 서버 계정은 이미 지워진 뒤라 정리 실패를 예외로 올리면 화면이 "탈퇴 실패" 로 표시되고,
-     * 사용자의 재시도는 없는 계정에 대해 다시 실패한다. 삼키는 것이 계약이다.
-     */
-    @Test
-    fun `deleteAccount - 세션 정리가 실패해도 탈퇴는 성공으로 끝난다`() {
-        val failure = IllegalStateException("datastore 쓰기 실패")
-        val repository = repository(clearSessionResult = Result.failure(failure))
-
-        runBlocking { repository.deleteAccount() }
-
-        assertEquals(listOf("deleteAccount", "clearSession"), calls)
-        val (reported, attributes) = errorReporter.writtenFailures.single()
-        assertEquals(IllegalStateException::class.java.name, reported.message)
-        assertEquals(
-            mapOf(
-                "account_stage" to "delete_session_cleanup",
-                "error_type" to IllegalStateException::class.java.name,
-            ),
-            attributes,
-        )
-    }
-
-    /** 정리가 DELETE 앞에 오면 요청이 토큰 없이 나가므로, 순서 자체가 계약이다. */
-    @Test
-    fun `deleteAccount - 세션 정리는 서버 호출 뒤에 온다`() {
-        val repository = repository()
-
-        runBlocking { repository.deleteAccount() }
-
-        assertEquals(0, calls.indexOf("deleteAccount"))
-        assertEquals(1, calls.indexOf("clearSession"))
-    }
 
     @Test
     fun `getReceivers - 다음 호출은 서버의 최신 계정 목록을 다시 조회한다`() {
@@ -660,8 +590,6 @@ private class RecordingErrorReporter : ErrorReporter {
     }
 }
 
-private fun success() = BaseResponse<Unit>(status = 200, code = 200)
-
 private fun <T> dataResponse(data: T) = BaseResponse(status = 200, code = 200, data = data)
 
 private fun receiverDto(name: String) =
@@ -673,11 +601,10 @@ private fun receiverDto(name: String) =
     )
 
 private class FakeUserApiService(
-    private val onDeleteAccount: suspend () -> BaseResponse<Unit>,
     private val onGetReceivers: suspend () -> BaseResponse<List<ReceiverListDto>>,
     private val onCreateReceiver: suspend (UserCreateReceiverRequestDto) -> BaseResponse<UserCreateReceiverDto>,
 ) : UserApiService {
-    override suspend fun deleteAccount(): BaseResponse<Unit> = onDeleteAccount()
+    override suspend fun deleteAccount(): BaseResponse<Unit> = TODO("이 테스트 미사용")
 
     override suspend fun getReceivers(): BaseResponse<List<ReceiverListDto>> = onGetReceivers()
 
@@ -738,9 +665,6 @@ private fun repositoryOf(
     errorReporter: ErrorReporter,
 ): UserRepositoryImpl =
     UserRepositoryImpl(
-        userApiService = userApiService,
-        authRepository = authRepository,
-        errorReporter = errorReporter,
         receiverRepository = UserReceiverRepositoryImpl(userApiService, authRepository, errorReporter),
         myProfileRepository = MyProfileRepositoryImpl(userApiService),
     )

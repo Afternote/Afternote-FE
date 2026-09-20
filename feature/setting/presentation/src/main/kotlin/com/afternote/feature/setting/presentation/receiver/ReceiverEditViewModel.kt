@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.ui.UiText
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
@@ -23,7 +23,7 @@ class ReceiverEditViewModel
     @Inject
     constructor(
         savedStateHandle: SavedStateHandle,
-        private val userRepository: UserRepository,
+        private val receiverRepository: UserReceiverRepository,
     ) : ViewModel() {
         private val receiverId = savedStateHandle.toRoute<SettingRoute.RecipientEditRoute>().receiverId
 
@@ -39,7 +39,7 @@ class ReceiverEditViewModel
 
         private fun loadReceiver() {
             viewModelScope.launch {
-                runCatchingCancellable { userRepository.getReceiverDetail(receiverId) }
+                runCatchingCancellable { receiverRepository.getReceiverDetail(receiverId) }
                     .onSuccess { receiver ->
                         _uiState.update { it.copy(isLoading = false, receiver = receiver) }
                     }.onFailure {
@@ -78,7 +78,7 @@ class ReceiverEditViewModel
             viewModelScope.launch {
                 val receiverUpdateResult =
                     runCatchingCancellable {
-                        userRepository.updateReceiver(
+                        receiverRepository.updateReceiver(
                             receiverId = receiverId,
                             name = name,
                             phone = phone.normalizeReceiverPhone(),
@@ -97,7 +97,7 @@ class ReceiverEditViewModel
                 }
 
                 runCatchingCancellable {
-                    userRepository.updateReceiverMessage(
+                    receiverRepository.updateReceiverMessage(
                         receiverId = receiverId,
                         message = message,
                     )

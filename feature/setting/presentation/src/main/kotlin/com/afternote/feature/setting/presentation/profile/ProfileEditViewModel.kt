@@ -2,7 +2,7 @@ package com.afternote.feature.setting.presentation.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.MyProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,7 +16,7 @@ import javax.inject.Inject
 class ProfileEditViewModel
     @Inject
     constructor(
-        private val userRepository: UserRepository,
+        private val myProfileRepository: MyProfileRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<ProfileEditUiState>(ProfileEditUiState.Loading)
         val uiState = _uiState.asStateFlow()
@@ -30,7 +30,7 @@ class ProfileEditViewModel
 
         private fun loadProfile() {
             viewModelScope.launch {
-                runCatching { userRepository.getMyProfile() }
+                runCatching { myProfileRepository.getMyProfile() }
                     .onSuccess { user ->
                         _uiState.value =
                             ProfileEditUiState.Success(
@@ -52,7 +52,7 @@ class ProfileEditViewModel
             _uiState.update { current.copy(isUpdating = true) }
             viewModelScope.launch {
                 runCatching {
-                    userRepository.updateMyProfile(
+                    myProfileRepository.updateMyProfile(
                         name = name.takeIf { it.isNotBlank() },
                         phone = phone.takeIf { it.isNotBlank() },
                         profileImageUrl = null,

@@ -8,10 +8,10 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.domain.testing.FakeAuthRepository
-import com.afternote.core.domain.testing.FakeUserRepository
-import com.afternote.core.domain.testing.FakeUserRepository.ConnectedAccountLinkCall
-import com.afternote.core.domain.testing.FakeUserRepository.DeliveryUpdateCall
-import com.afternote.core.domain.testing.FakeUserRepository.ProfileUpdateCall
+import com.afternote.core.domain.testing.FakeMyProfileRepository
+import com.afternote.core.domain.testing.FakeMyProfileRepository.ProfileUpdateCall
+import com.afternote.core.domain.testing.FakeUserReceiverRepository
+import com.afternote.core.domain.testing.FakeUserReceiverRepository.DeliveryUpdateCall
 import com.afternote.core.model.delivery.ConditionState
 import com.afternote.core.model.delivery.DeliveryConditionItem
 import com.afternote.core.model.delivery.DeliveryConditionType
@@ -23,6 +23,8 @@ import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
+import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository.ConnectedAccountLinkCall
 import com.afternote.feature.setting.presentation.account.ConnectedAccountsEvent
 import com.afternote.feature.setting.presentation.account.ConnectedAccountsViewModel
 import com.afternote.feature.setting.presentation.applock.AppLockSetupScreen
@@ -66,7 +68,7 @@ class SettingAccountSecurityTest {
     @Test
     fun profileLoadValidationAndUpdateFailure_preserveExactContract() {
         val loadFailureRepository =
-            settingContractUserRepository().apply {
+            settingContractProfileRepository().apply {
                 onGetMyProfile = { throw IllegalStateException("profile unavailable") }
             }
         val loadFailureViewModel = ProfileEditViewModel(loadFailureRepository)
@@ -88,7 +90,7 @@ class SettingAccountSecurityTest {
         composeRule.runOnIdle { loadFailureViewModel.updateProfile("새 이름", "01012345678") }
         assertTrue(loadFailureRepository.profileUpdateCalls.isEmpty())
 
-        val updateFailureRepository = settingContractUserRepository()
+        val updateFailureRepository = settingContractProfileRepository()
         val updateFailureViewModel = ProfileEditViewModel(updateFailureRepository)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             updateFailureViewModel.uiState.value is ProfileEditUiState.Success
@@ -110,7 +112,7 @@ class SettingAccountSecurityTest {
 
     @Test
     fun connectedAccountLinkAndUnlink_preservePreCallAndFailureBoundaries() {
-        val linkRepository = settingContractUserRepository()
+        val linkRepository = settingContractAccountRepository()
         val linkViewModel = ConnectedAccountsViewModel(linkRepository)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             !linkViewModel.uiState.value.isLoading
@@ -134,7 +136,7 @@ class SettingAccountSecurityTest {
         )
 
         val unlinkRepository =
-            settingContractUserRepository().apply {
+            settingContractAccountRepository().apply {
                 onGetConnectedAccounts = { connectedAccounts(google = true) }
                 onUnlinkConnectedAccount = { throw IllegalStateException("server error") }
             }
@@ -155,7 +157,7 @@ class SettingAccountSecurityTest {
 
     @Test
     fun receiverRegister_blankRequiredEmail_isRejectedBeforeRepositoryCall() {
-        val repository = settingContractUserRepository()
+        val repository = settingContractReceiverRepository()
         val viewModel = ReceiverRegisterViewModel(repository)
 
         composeRule.runOnIdle {
@@ -191,7 +193,7 @@ class SettingAccountSecurityTest {
                 ),
             )
         val repository =
-            settingContractUserRepository().apply {
+            settingContractReceiverRepository().apply {
                 onGetReceiverDeliveryConditions = {
                     ReceiverDeliveryConditions(
                         receiverId = RECEIVER_ID,
@@ -203,7 +205,7 @@ class SettingAccountSecurityTest {
         val viewModel =
             DeliveryConditionViewModel(
                 savedStateHandle = SavedStateHandle(mapOf("receiverId" to RECEIVER_ID)),
-                userRepository = repository,
+                receiverRepository = repository,
             )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.isInitialized
@@ -297,11 +299,11 @@ class SettingAccountSecurityTest {
     @Test
     fun withdrawFailure_requiresFinalConfirmationAndKeepsSession() {
         val authRepository = settingContractAuthRepository()
-        val userRepository =
-            settingContractUserRepository().apply {
+        val accountRepository =
+            settingContractAccountRepository().apply {
                 onDeleteAccount = { throw IllegalStateException("delete rejected") }
             }
-        val viewModel = SettingViewModel(authRepository, userRepository)
+        val viewModel = SettingViewModel(authRepository, settingContractProfileRepository(), accountRepository)
         var successCalls = 0
         composeRule.setContent {
             AfternoteTheme {
@@ -316,12 +318,12 @@ class SettingAccountSecurityTest {
 
         composeRule.onNodeWithText("탈퇴하기").performClick()
         composeRule.onNodeWithText("문장이 일치하지 않습니다. 재입력해 주세요.").assertIsDisplayed()
-        assertEquals(0, userRepository.deleteAccountCalls)
+        assertEquals(0, accountRepository.deleteAccountCalls)
 
         composeRule.onNodeWithText("탈퇴하겠습니다").performTextInput("탈퇴하겠습니다")
         composeRule.onNodeWithText("탈퇴하기").performClick()
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            userRepository.deleteAccountCalls == 1
+            accountRepository.deleteAccountCalls == 1
         }
 
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
@@ -388,19 +390,27 @@ private fun deliveryCondition(
     fulfilledAt = null,
 )
 
-private fun settingContractUserRepository(): FakeUserRepository =
-    FakeUserRepository.strict().apply {
-        onReceiverListFlow = { receiverState }
+private fun settingContractProfileRepository(): FakeMyProfileRepository =
+    FakeMyProfileRepository.strict().apply {
         onGetMyProfile = { DEFAULT_USER }
         onUpdateMyProfile = { _, _, _ -> DEFAULT_USER }
-        onGetConnectedAccounts = { connectedAccounts() }
-        onLinkConnectedAccount = { _, _ -> connectedAccounts(google = true) }
-        onUnlinkConnectedAccount = { connectedAccounts() }
+    }
+
+private fun settingContractReceiverRepository(): FakeUserReceiverRepository =
+    FakeUserReceiverRepository.strict().apply {
+        onReceiverListFlow = { receiverState }
         onCreateReceiver = { _, _, _, _, _ -> ReceiverCreated(1L, "AUTH-1") }
         onGetReceiverDeliveryConditions = { receiverId -> ReceiverDeliveryConditions(receiverId, emptyList()) }
         onUpdateReceiverDeliveryConditions = { receiverId, conditions ->
             ReceiverDeliveryConditions(receiverId, conditions)
         }
+    }
+
+private fun settingContractAccountRepository(): FakeSettingAccountRepository =
+    FakeSettingAccountRepository.strict().apply {
+        onGetConnectedAccounts = { connectedAccounts() }
+        onLinkConnectedAccount = { _, _ -> connectedAccounts(google = true) }
+        onUnlinkConnectedAccount = { connectedAccounts() }
         onDeleteAccount = {}
     }
 
