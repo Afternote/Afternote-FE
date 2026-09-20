@@ -24,6 +24,8 @@ class AfternoteEditorSnackbarActionTest {
     fun `저장 실패와 그 밖의 오류에는 썸네일 재시도가 붙지 않는다`() {
         listOf(
             AfternoteEditorError.Upload(Target.SAVE_MEDIA),
+            // 크기 초과는 재시도로 풀리지 않는 유일한 업로드 실패다 — 다시 보내면 서버가 같은 코드로 거절한다 (#1868).
+            AfternoteEditorError.MediaSizeExceeded,
             AfternoteEditorError.Network,
             AfternoteEditorError.Server,
             AfternoteEditorError.ReceiverSelectionUnavailable,
