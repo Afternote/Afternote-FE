@@ -47,7 +47,7 @@ import com.afternote.feature.setting.presentation.notification.component.DeviceA
 import com.afternote.feature.setting.presentation.shared.component.SettingMenuItem
 
 @Composable
-fun NotificationSettingScreen(
+internal fun NotificationSettingScreen(
     onBack: () -> Unit,
     onPushNotificationClick: () -> Unit,
     viewModel: PushNotificationViewModel = hiltViewModel(),

@@ -36,7 +36,7 @@ import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.shared.component.ProfilePhotoWithAddBadge
 
 @Composable
-fun ProfileEditScreen(
+internal fun ProfileEditScreen(
     onBackClick: () -> Unit,
     onWithdrawGuideClick: () -> Unit,
     modifier: Modifier = Modifier,

@@ -10,7 +10,7 @@ import com.afternote.core.ui.popup.PopupType
 import com.afternote.feature.setting.presentation.R
 
 @Composable
-fun WithdrawConfirmScreen(
+internal fun WithdrawConfirmScreen(
     uiState: SettingUiState,
     onBackClick: () -> Unit,
     onWithdrawSuccess: () -> Unit,
