@@ -178,7 +178,7 @@ bash .github/scripts/render-distribution-release-notes.sh /tmp/afternote-release
 
 → 동일하게 APK 빌드 + Firebase 업로드. CI 장애 시에만 사용한다.
 
-> 일반 로컬·Firebase 빌드는 기본 `versionCode` 1을 유지한다. 이 채널은 Firebase App Distribution이 versionCode로 빌드를 구분하지 않으므로 값을 올릴 이유가 없다. `app/build.gradle.kts`를 직접 수정하지 말고, Play용 값이 필요하면 `AFTERNOTE_VERSION_CODE` 환경변수로 주입한다. Play 내부 테스트 트랙 배포는 [`release-play-internal.yml`](../../.github/workflows/release-play-internal.yml)이 run마다 단조 증가하는 값을 산출해 빌드 전에 Play의 현재 최댓값과 대조한다 — 정책과 사전 준비는 [Play release runbook](../play-release.md)에 있다.
+> Firebase App Distribution 자체는 versionCode로 빌드를 구분하지 않는다. 그래도 배포마다 값을 올린다. 이 채널의 APK가 크래시를 보내는 곳이 같은 Firebase 프로젝트의 Crashlytics이고, 거기서는 배포본이 `versionName (versionCode)` 한 쌍으로 묶이기 때문이다. 값이 고정이면 서로 다른 커밋의 배포본이 한 버전 아래 섞인다(#1865에서 `1d0d175`와 `f5ad611`이 둘 다 `1.0 (1)`로 뜬 것이 그 실측이다). release 빌드의 `versionName`은 사용자에게 보이는 값이라 고정이므로, 배포본을 가르는 축은 `versionCode` 하나뿐이다. 채널별 번호 대역과 승격 규칙은 [Play release runbook](../play-release.md)의 versionCode 정책에 있다. `app/build.gradle.kts`를 직접 수정하지 말고 `AFTERNOTE_VERSION_CODE` 환경변수로 주입한다.
 
 ### Play 내부 테스트 트랙과의 경계
 
@@ -190,12 +190,12 @@ bash .github/scripts/render-distribution-release-notes.sh /tmp/afternote-release
 | 산출물 | release APK | release AAB |
 | 트리거 | `main` push 자동 | `main`에서 수동 실행 + environment 승인 |
 | workflow | [`release-distribution.yml`](../../.github/workflows/release-distribution.yml) | [`release-play-internal.yml`](../../.github/workflows/release-play-internal.yml) |
-| versionCode | `1` 고정 | run마다 단조 증가 |
+| versionCode | 배포마다 증가 (`101`~`999,999,999` 대역) | 배포마다 증가 (`1,000,000,000` 이상 대역) |
 | 자격 | `release-distribution` environment | `play-internal` environment (별도 service account) |
 | 릴리스 노트 | `포함 이슈`·`QA 포인트` 필수 | main PR 본문의 이슈 번호를 추출한 `ko-KR` 문구. `QA 포인트`는 요구하지 않음 |
 | 롤백 | 이전 빌드를 다시 배포 | 릴리스 중단 후 더 큰 versionCode로 재배포 |
 
-Play 출시 이후에도 Firebase는 기존 QA 채널로 유지한다. 설치 인증서가 다르면 두 채널의 앱은 서로 위에 업데이트되지 않으므로, 테스터가 채널을 옮길 때는 삭제 후 재설치가 필요하다.
+Play 출시 이후에도 Firebase는 기존 QA 채널로 유지한다. 설치 인증서가 다르면 두 채널의 앱은 서로 위에 업데이트되지 않으므로, 테스터가 채널을 옮길 때는 삭제 후 재설치가 필요하다. 그래서 이 채널의 APK를 Play로 승격하는 경로는 만들지 않는다. 두 채널의 번호 대역을 나눈 것도 승격이 일어났을 때 Play 배포가 막히지 않게 하기 위한 방호이지 승격을 허용한다는 뜻이 아니다.
 
 ## 테스터 관리
 

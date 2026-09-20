@@ -84,6 +84,14 @@ test("manifest versionCode 가 주입값과 같아야 로컬과 skip-build 검�
     }
 });
 
+// Play 대역 하한(#2062)이 들어간 뒤 resolver 가 내는 첫 값이다. 검증기는 1 이상 2,100,000,000
+// 이하만 보고 대역은 모르므로, 열 자리 값도 그대로 통과해야 한다.
+test("Play 대역 versionCode 도 기대값 그대로 통과한다", async () => {
+    const result = await runVerifier({ expected: "1000000101", actual: "1000000101" });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /versionCode: 1000000101/);
+});
+
 test("manifest versionCode 누락·비정수·불일치와 bundletool 실패는 거부한다", async () => {
     for (const options of [{ actual: "1" }, { actual: "" }, { actual: "abc" }, { actual: "202\n202" }, { javaStatus: 1 }]) {
         const result = await runVerifier(options);
