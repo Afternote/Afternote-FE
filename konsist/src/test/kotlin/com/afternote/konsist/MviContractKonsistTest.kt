@@ -429,17 +429,16 @@ class MviContractKonsistTest {
         /** #1805 가 뺀다. `Channel` 5곳 흡수(#1502)가 선행이다. */
         private val ISSUE_1805_SETTING =
             setOf(
-                "com.afternote.feature.setting.presentation.viewmodel.AppLockSetupViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.InsertPasswordViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.PassKeyViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.ProfileEditViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.ReceiverEditViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.ReceiverListViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.SettingViewModel",
+                "com.afternote.feature.setting.presentation.account.ConnectedAccountsViewModel",
+                "com.afternote.feature.setting.presentation.applock.AppLockSetupViewModel",
+                "com.afternote.feature.setting.presentation.delivery.DeliveryConditionViewModel",
+                "com.afternote.feature.setting.presentation.home.SettingViewModel",
+                "com.afternote.feature.setting.presentation.notification.PushNotificationViewModel",
+                "com.afternote.feature.setting.presentation.passkey.PassKeyViewModel",
+                "com.afternote.feature.setting.presentation.profile.ProfileEditViewModel",
+                "com.afternote.feature.setting.presentation.receiver.ReceiverEditViewModel",
+                "com.afternote.feature.setting.presentation.receiver.ReceiverListViewModel",
+                "com.afternote.feature.setting.presentation.receiver.ReceiverRegisterViewModel",
             )
 
         /** #1806 이 뺀다. */

@@ -12,9 +12,9 @@ import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.setting.presentation.screen.SettingScreen
-import com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel
-import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
+import com.afternote.feature.setting.presentation.home.SettingScreen
+import com.afternote.feature.setting.presentation.home.SettingViewModel
+import com.afternote.feature.setting.presentation.notification.PushNotificationViewModel
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -128,7 +128,7 @@ class SettingFlowTest {
 
         composeRule
             .onNode(
-                hasText(resources.getString(R.string.settings_account_password_change)) and hasClickAction(),
+                hasText(resources.getString(R.string.setting_account_password_change)) and hasClickAction(),
             ).performScrollTo()
             .performClick()
 
@@ -144,11 +144,11 @@ class SettingFlowTest {
         val resources = ApplicationProvider.getApplicationContext<android.content.Context>().resources
         val menuIds =
             listOf(
-                R.string.settings_support_faq,
-                R.string.settings_support_inquiry,
-                R.string.settings_support_terms,
-                R.string.settings_support_privacy,
-                R.string.settings_support_service_info,
+                R.string.setting_support_faq,
+                R.string.setting_support_inquiry,
+                R.string.setting_support_terms,
+                R.string.setting_support_privacy,
+                R.string.setting_support_service_info,
             )
         menuIds.forEach { menuId ->
             composeRule.onNode(hasText(resources.getString(menuId)) and hasClickAction()).performScrollTo().performClick()
