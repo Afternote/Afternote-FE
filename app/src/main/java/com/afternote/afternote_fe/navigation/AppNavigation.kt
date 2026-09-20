@@ -48,7 +48,7 @@ import com.afternote.feature.timeletter.presentation.navigation.timeLetterNavGra
 import kotlinx.coroutines.launch
 
 @Composable
-fun AppNavigation(
+internal fun AppNavigation(
     startDestination: Route,
     modifier: Modifier = Modifier,
     appState: AppState = rememberAfternoteAppState(),
