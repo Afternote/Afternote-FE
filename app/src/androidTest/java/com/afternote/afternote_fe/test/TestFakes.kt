@@ -69,7 +69,7 @@ fun appTestUserRepository(
  * 연결·해제는 전용 시나리오가 `onX` 로 명시해야 열린다. 합본 fake 시절과 같은 경계다.
  *
  * `@JvmOverloads` 는 Hilt 대체 모듈이 Java 이기 때문이다 — Java 는 Kotlin 기본값을 못 본다.
- * 그 모듈이 Java 인 이유는 [com.afternote.afternote_fe.test.TestSettingUserRepositoryModule] 에 있다.
+ * 그 모듈이 Java 인 이유는 `TestSettingUserRepositoryModule` 에 있다.
  */
 @JvmOverloads
 fun appTestSettingAccountRepository(profile: User = DEFAULT_TEST_USER): FakeSettingAccountRepository =
