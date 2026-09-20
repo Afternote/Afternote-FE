@@ -43,7 +43,7 @@ class AfternoteEditorReceiverSnapshotTest {
     }
 
     @Test
-    fun `v4 영상 편집 상태는 왕복 뒤에도 출처를 유지하고 삭제는 두 층을 비운다`() {
+    fun `v5 영상 편집 상태는 왕복 뒤에도 출처를 유지하고 삭제는 두 층을 비운다`() {
         val persisted =
             MemorialVideoAttachment(
                 url = "https://cdn.test/farewell.mp4",
@@ -63,6 +63,7 @@ class AfternoteEditorReceiverSnapshotTest {
                         {
                           "type":"MEMORIAL",
                           "memorialVideo":{
+                            "type":"replaced",
                             "persisted":{
                               "url":"${persisted.url}",
                               "thumbnailUrl":"${persisted.thumbnailUrl}"
@@ -124,6 +125,6 @@ class AfternoteEditorReceiverSnapshotTest {
         ) { _, method, _ -> error("${T::class.java.simpleName}.${method.name} 호출은 이 테스트에서 예상하지 않았습니다") } as T
 
     private companion object {
-        const val SNAPSHOT_KEY = "editor_form_snapshot_v4"
+        const val SNAPSHOT_KEY = "editor_form_snapshot_v5"
     }
 }

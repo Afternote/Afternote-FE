@@ -400,14 +400,6 @@ class MviContractKonsistTest {
                 "com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportViewModel",
             )
 
-        /** #1802 (파일럿) 가 뺀다. */
-        private val ISSUE_1802_ONBOARDING =
-            setOf(
-                "com.afternote.feature.onboarding.presentation.findaccount.FindIdViewModel",
-                "com.afternote.feature.onboarding.presentation.login.LoginViewModel",
-                "com.afternote.feature.onboarding.presentation.signup.SignUpViewModel",
-            )
-
         /**
          * 아직 develop 에 없다. #457(PR #1624, 승인 완료)이 들여오는 네 번째 onboarding ViewModel 이라,
          * 이 가드가 먼저 머지되면 규칙이 생기기 전에 쓰인 그 PR 이 규칙 B 로 빨개진다. 머지 순서가
@@ -437,17 +429,16 @@ class MviContractKonsistTest {
         /** #1805 가 뺀다. `Channel` 5곳 흡수(#1502)가 선행이다. */
         private val ISSUE_1805_SETTING =
             setOf(
-                "com.afternote.feature.setting.presentation.viewmodel.AppLockSetupViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.InsertPasswordViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.PassKeyViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.ProfileEditViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.ReceiverEditViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.ReceiverListViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterViewModel",
-                "com.afternote.feature.setting.presentation.viewmodel.SettingViewModel",
+                "com.afternote.feature.setting.presentation.account.ConnectedAccountsViewModel",
+                "com.afternote.feature.setting.presentation.applock.AppLockSetupViewModel",
+                "com.afternote.feature.setting.presentation.delivery.DeliveryConditionViewModel",
+                "com.afternote.feature.setting.presentation.home.SettingViewModel",
+                "com.afternote.feature.setting.presentation.notification.PushNotificationViewModel",
+                "com.afternote.feature.setting.presentation.passkey.PassKeyViewModel",
+                "com.afternote.feature.setting.presentation.profile.ProfileEditViewModel",
+                "com.afternote.feature.setting.presentation.receiver.ReceiverEditViewModel",
+                "com.afternote.feature.setting.presentation.receiver.ReceiverListViewModel",
+                "com.afternote.feature.setting.presentation.receiver.ReceiverRegisterViewModel",
             )
 
         /** #1806 이 뺀다. */
@@ -463,14 +454,13 @@ class MviContractKonsistTest {
             )
 
         /**
-         * 전환 전 49개. `app` 의 ViewModel 2개는 이 규칙의 대상이 아니라 목록에도 없다 —
+         * 전환 전 46개 — onboarding 3개는 #1802 파일럿이 전환해 빠졌다. `app` 의 ViewModel 2개는 이 규칙의 대상이 아니라 목록에도 없다 —
          * 규칙 B 가 `feature/…/presentation` 만 보기 때문이고, 그 2개는 #1809 가 처리한다.
          *
          * 목록이 비면 규칙 B 의 예외(`- PENDING_MVI_MIGRATION`)도 함께 지운다.
          */
         val PENDING_MVI_MIGRATION =
-            ISSUE_1802_ONBOARDING +
-                PENDING_ARRIVAL_ONBOARDING +
+            PENDING_ARRIVAL_ONBOARDING +
                 ISSUE_1803_RECEIVER +
                 ISSUE_1804_AFTERNOTE +
                 ISSUE_1805_SETTING +
