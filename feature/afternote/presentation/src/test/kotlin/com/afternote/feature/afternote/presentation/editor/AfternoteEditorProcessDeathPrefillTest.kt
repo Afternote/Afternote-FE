@@ -216,7 +216,7 @@ class AfternoteEditorProcessDeathPrefillTest {
                     buildMap {
                         put("initialType", AfternoteType.GALLERY_AND_FILES)
                         put("itemId", EDIT_ID)
-                        put("editor_form_snapshot_v4", snapshot)
+                        put("editor_form_snapshot_v5", snapshot)
                         // 화면이 프리필을 폼에 실을 때 ViewModel 이 같은 번들에 남기는 표식.
                         if (prefillSeeded) put("editor_prefill_seeded_item_id", EDIT_ID)
                     },
