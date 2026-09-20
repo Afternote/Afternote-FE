@@ -98,6 +98,14 @@ jobs:
           release-key-password: ${{ secrets.RELEASE_KEY_PASSWORD }}
           compose-local-properties: 'true'
 
+      # versionCode 는 이 채널 대역(101 ~ 999,999,999) 안에서 run_number 로 정해진다. 자격이
+      # 필요 없는 순수 계산이라 release keystore·WIF 가 붙기 전인 여기에 둔다. Play 대역
+      # (1,000,000,000 이상)과 겹치지 않아 Crashlytics 가 두 채널 배포본을 한 버전으로 묶지
+      # 않는다 (#1865, docs/play-release.md 의 versionCode 정책).
+      - name: Resolve the Firebase-band versionCode
+        id: version_code
+        run: node .github/scripts/resolve-firebase-version-code.mjs
+
       # 빌드와 업로드를 갈라 놓은 이유는 그 사이에 attest 할 «파일 하나» 를 확정하기 위해서다.
       # digest 는 signing 이 끝난 바로 그 APK 에서 뜨고, 이후 단계는 전부 이 값을 기준으로 판정한다.
       # 이 step 에는 Google 자격이 없다. WIF 전환(#850) 이후로는 파이프라인 어디에도 장기 키가
@@ -106,6 +114,7 @@ jobs:
       - name: Build signed release APK
         id: release_apk
         env:
+          AFTERNOTE_VERSION_CODE: ${{ steps.version_code.outputs.version_code }}
           GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
           KAKAO_NATIVE_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
         run: |
