@@ -165,7 +165,7 @@ fun AppNavigation(
                 ReceiverInvitationNavHost(
                     // 앱 루트의 인증 경계(startRoute)를 그대로 재사용한다 — 로그인 판정을 따로 두지 않는다.
                     isLoggedIn = authenticatedStartRoute == Route.Home,
-                    boundary = popRootBoundary,
+                    boundary = rootNavigationCallbacks,
                     externalActions = receiverInvitationExternalActions,
                 )
             }

@@ -159,11 +159,11 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 }
             }
 
-            override fun onNavigateToWithdrawGuide() {
+            override fun onWithdrawGuideClick() {
                 appState.navController.navigate(SettingRoute.WithdrawGuideRoute)
             }
 
-            override fun onNavigateToWithdrawConfirm() {
+            override fun onWithdrawConfirmClick() {
                 appState.navController.navigate(SettingRoute.WithdrawConfirmRoute)
             }
 
@@ -182,7 +182,7 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 }
             }
 
-            override fun onNavigateToProfileEdit() {
+            override fun onProfileEditClick() {
                 appState.navController.navigate(SettingRoute.ProfileEditRoute)
             }
 
@@ -190,7 +190,7 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 appState.navController.popBackStack()
             }
 
-            override fun onNavigateToLinkedAccount() {
+            override fun onLinkedAccountClick() {
                 appState.navController.navigate(SettingRoute.LinkedAccountRoute)
             }
 
@@ -198,7 +198,7 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 appState.navController.popBackStack()
             }
 
-            override fun onNavigateToNotification() {
+            override fun onNotificationClick() {
                 appState.navController.navigate(SettingRoute.NotificationRoute)
             }
 
@@ -206,7 +206,7 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 appState.navController.popBackStack()
             }
 
-            override fun onNavigateToPushNotification() {
+            override fun onPushNotificationClick() {
                 appState.navController.navigate(SettingRoute.PushNotificationRoute)
             }
 
@@ -214,11 +214,11 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 appState.navController.popBackStack()
             }
 
-            override fun onNavigateToRecipientList() {
+            override fun onRecipientListClick() {
                 appState.navController.navigate(SettingRoute.RecipientListRoute())
             }
 
-            override fun onNavigateToRecipientListForDeliveryConditions() {
+            override fun onDeliveryConditionsClick() {
                 appState.navController.navigate(
                     SettingRoute.RecipientListRoute(selectForDeliveryConditions = true),
                 )
@@ -228,7 +228,7 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 appState.navController.popBackStack()
             }
 
-            override fun onNavigateToRecipientRegister() {
+            override fun onRecipientRegisterClick() {
                 appState.navController.navigate(SettingRoute.RecipientRegisterRoute)
             }
 
@@ -236,7 +236,7 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 appState.navController.popBackStack()
             }
 
-            override fun onNavigateToRecipientEdit(receiverId: Long) {
+            override fun onRecipientEditClick(receiverId: Long) {
                 appState.navController.navigate(SettingRoute.RecipientEditRoute(receiverId))
             }
 
@@ -244,7 +244,7 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 appState.navController.popBackStack()
             }
 
-            override fun onNavigateToAfterDelivery(receiverId: Long) {
+            override fun onDeliveryConditionsRecipientSelected(receiverId: Long) {
                 appState.navController.navigate(SettingRoute.AfterDeliveryRoute(receiverId))
             }
 
@@ -252,7 +252,7 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 appState.navController.popBackStack()
             }
 
-            override fun onNavigateToPasskey() {
+            override fun onPasskeyClick() {
                 appState.navController.navigate(SettingRoute.PasskeyRoute)
             }
 
@@ -260,7 +260,7 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 appState.navController.popBackStack()
             }
 
-            override fun onNavigateToPasskeyMaking() {
+            override fun onPasskeyRegisterClick() {
                 appState.navController.navigate(SettingRoute.PasskeyMakingRoute)
             }
 
@@ -268,7 +268,7 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 appState.navController.popBackStack()
             }
 
-            override fun onNavigateToPasskeyPassword() {
+            override fun onPasswordAuthClick() {
                 appState.navController.navigate(SettingRoute.PasskeyPasswordRoute)
             }
 
@@ -276,7 +276,7 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 appState.navController.popBackStack()
             }
 
-            override fun onNavigateToAppLock() {
+            override fun onAppLockClick() {
                 appState.navController.navigate(SettingRoute.AppLockSetupRoute)
             }
 
@@ -284,7 +284,7 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 appState.navController.popBackStack()
             }
 
-            override fun onNavigateToNotice() {
+            override fun onNoticeClick() {
                 appState.navController.navigate(SettingRoute.NoticeRoute)
             }
 

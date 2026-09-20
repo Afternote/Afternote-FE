@@ -37,23 +37,23 @@ import com.afternote.core.model.user.UserMarketingConsent
 import com.afternote.core.model.user.UserPushSetting
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.setting.presentation.screen.ReceiverEditScreen
-import com.afternote.feature.setting.presentation.screen.ReceiverRegisterScreen
-import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsViewModel
-import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionError
-import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionViewModel
-import com.afternote.feature.setting.presentation.viewmodel.ProfileEditEvent
-import com.afternote.feature.setting.presentation.viewmodel.ProfileEditUiState
-import com.afternote.feature.setting.presentation.viewmodel.ProfileEditViewModel
-import com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel
-import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditEvent
-import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditViewModel
-import com.afternote.feature.setting.presentation.viewmodel.ReceiverInviteViewModel
-import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterEvent
-import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterViewModel
-import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
-import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
-import com.afternote.feature.setting.presentation.viewmodel.WithdrawUiState
+import com.afternote.feature.setting.presentation.account.ConnectedAccountsViewModel
+import com.afternote.feature.setting.presentation.delivery.DeliveryConditionError
+import com.afternote.feature.setting.presentation.delivery.DeliveryConditionViewModel
+import com.afternote.feature.setting.presentation.home.SettingUiState
+import com.afternote.feature.setting.presentation.home.SettingViewModel
+import com.afternote.feature.setting.presentation.home.WithdrawUiState
+import com.afternote.feature.setting.presentation.notification.PushNotificationViewModel
+import com.afternote.feature.setting.presentation.profile.ProfileEditEvent
+import com.afternote.feature.setting.presentation.profile.ProfileEditUiState
+import com.afternote.feature.setting.presentation.profile.ProfileEditViewModel
+import com.afternote.feature.setting.presentation.receiver.ReceiverEditEvent
+import com.afternote.feature.setting.presentation.receiver.ReceiverEditScreen
+import com.afternote.feature.setting.presentation.receiver.ReceiverEditViewModel
+import com.afternote.feature.setting.presentation.receiver.ReceiverInviteViewModel
+import com.afternote.feature.setting.presentation.receiver.ReceiverRegisterEvent
+import com.afternote.feature.setting.presentation.receiver.ReceiverRegisterScreen
+import com.afternote.feature.setting.presentation.receiver.ReceiverRegisterViewModel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -306,7 +306,7 @@ class SettingCompletionTest {
 
         firstGate.complete(Result.failure(IllegalStateException("temporary failure")))
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.uiState.value.errorMessage == UiText.Resource(SettingR.string.receiver_register_failed)
+            viewModel.uiState.value.errorMessage == UiText.Resource(SettingR.string.setting_receiver_register_failed)
         }
         assertFalse(viewModel.uiState.value.isLoading)
 
@@ -422,7 +422,7 @@ class SettingCompletionTest {
 
         firstBasicGate.complete(Result.failure(IllegalStateException("basic update failed")))
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.uiState.value.errorMessage == UiText.Resource(SettingR.string.receiver_edit_failed)
+            viewModel.uiState.value.errorMessage == UiText.Resource(SettingR.string.setting_receiver_edit_failed)
         }
         assertFalse(viewModel.uiState.value.isSaving)
         assertTrue(repository.receiverMessageCalls.isEmpty())
@@ -438,7 +438,7 @@ class SettingCompletionTest {
         retryMessageGate.complete(Result.failure(IllegalStateException("message update failed")))
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.errorMessage ==
-                UiText.Resource(SettingR.string.receiver_message_update_partial_failed)
+                UiText.Resource(SettingR.string.setting_receiver_message_update_partial_failed)
         }
         assertEquals(listOf(expectedMessageCall), repository.receiverMessageCalls)
 

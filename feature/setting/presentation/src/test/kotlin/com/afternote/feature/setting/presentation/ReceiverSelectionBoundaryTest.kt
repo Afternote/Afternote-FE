@@ -18,7 +18,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import com.afternote.core.model.setting.ReceiverListItem
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.setting.presentation.screen.ReceiverListScreen
+import com.afternote.feature.setting.presentation.receiver.ReceiverListScreen
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Rule
