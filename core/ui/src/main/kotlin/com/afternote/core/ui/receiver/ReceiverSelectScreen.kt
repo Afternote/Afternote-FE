@@ -13,16 +13,19 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -196,7 +199,6 @@ private fun ReceiverSelectList(
 ) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
-    var selectedConsonant by remember { mutableStateOf<Char?>(null) }
 
     val groupedReceivers =
         remember(receivers, searchQuery) {
@@ -217,16 +219,34 @@ private fun ReceiverSelectList(
             }
         }
 
-    LaunchedEffect(listState, consonantIndexMap) {
-        snapshotFlow { listState.firstVisibleItemIndex }
-            .collect { firstVisibleItemIndex ->
-                selectedConsonant =
-                    consonantIndexMap.entries
-                        .filter { it.value <= firstVisibleItemIndex }
-                        .maxByOrNull { it.value }
-                        ?.key
+    // A tap may stop before its section reaches the top when the list clamps at its end.
+    // Keep that explicit target until the user scrolls the list or changes its contents.
+    var tappedConsonant by remember(groupedReceivers) { mutableStateOf<Char?>(null) }
+    val scrolledConsonant by remember(listState, consonantIndexMap) {
+        derivedStateOf {
+            if (!listState.canScrollForward && listState.canScrollBackward) {
+                consonantIndexMap.keys.lastOrNull()
+            } else {
+                consonantIndexMap.entries
+                    .lastOrNull { it.value <= listState.firstVisibleItemIndex }
+                    ?.key
             }
+        }
     }
+    val listScrollConnection =
+        remember(groupedReceivers) {
+            object : NestedScrollConnection {
+                override fun onPreScroll(
+                    available: Offset,
+                    source: NestedScrollSource,
+                ): Offset {
+                    if (source == NestedScrollSource.UserInput && available.y != 0f) {
+                        tappedConsonant = null
+                    }
+                    return Offset.Zero
+                }
+            }
+        }
 
     Row(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -234,6 +254,7 @@ private fun ReceiverSelectList(
             modifier =
                 Modifier
                     .weight(1f)
+                    .nestedScroll(listScrollConnection)
                     .padding(start = 20.dp),
         ) {
             groupedReceivers.forEach { (_, items) ->
@@ -255,9 +276,9 @@ private fun ReceiverSelectList(
             contentAlignment = Alignment.Center,
         ) {
             KoreanConsonantIndex(
-                selectedConsonant = selectedConsonant,
+                selectedConsonant = tappedConsonant ?: scrolledConsonant,
                 onConsonantSelect = { consonant ->
-                    selectedConsonant = consonant
+                    tappedConsonant = consonant
                     consonantIndexMap[consonant]?.let { index ->
                         coroutineScope.launch { listState.scrollToItem(index) }
                     }

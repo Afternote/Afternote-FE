@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.presentation.editor.state
 
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
+import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -140,5 +141,35 @@ class EditableMemorialVideoTest {
             EditableMemorialVideo.fromPersisted(MemorialVideoAttachment(url = persisted.url)).withSelection(selection.url),
             stripped,
         )
+    }
+
+    @Test
+    fun `네 상태 모두 JSON 왕복 뒤에 같은 상태로 돌아온다`() {
+        // SavedStateHandle 이 실제로 쓰는 설정 그대로 — AfternoteEditorViewModel.formSnapshotJson.
+        val json =
+            Json {
+                ignoreUnknownKeys = true
+                encodeDefaults = true
+            }
+        val states =
+            mapOf(
+                "빈 상태" to EditableMemorialVideo.empty(),
+                "서버만" to EditableMemorialVideo.fromPersisted(persisted),
+                "선택만" to selected(selection),
+                "교체 중" to persistedAndSelection(),
+            )
+
+        states.forEach { (name, state) ->
+            val roundTripped =
+                json.decodeFromString(
+                    EditableMemorialVideo.serializer(),
+                    json.encodeToString(EditableMemorialVideo.serializer(), state),
+                )
+
+            assertEquals(name, state, roundTripped)
+            assertEquals(name, state.displayed, roundTripped.displayed)
+            assertEquals(name, state.canRemove, roundTripped.canRemove)
+            assertEquals(name, state.toMediaInput(), roundTripped.toMediaInput())
+        }
     }
 }

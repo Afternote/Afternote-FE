@@ -1,7 +1,7 @@
 package com.afternote.feature.onboarding.presentation.findaccount
 
 import android.util.Patterns
-import com.afternote.core.ui.UiText
+import com.afternote.feature.onboarding.presentation.OnboardingFailure
 import com.afternote.feature.onboarding.presentation.OnboardingPasswordRule
 
 /**
@@ -19,24 +19,21 @@ import com.afternote.feature.onboarding.presentation.OnboardingPasswordRule
  *
  * @property resendCooldownSeconds "재전송" 잠금의 남은 초 — 발송 성공마다 30초로 재잠금되는
  *   클라이언트 측 연타 방지이며 **인증번호 유효시간과 무관**하다(만료 판정은 서버 몫).
- * @property isSocialSignUpAccount 소셜 가입 계정(서버 code 1702)이라 이 흐름을 쓸 수 없다는 사실.
- *   시안상 스낵바가 아니라 차단 팝업으로 표시한다.
+ * @property failure 현재 실패의 사유. 화면 경계가 표시 채널을 결정한다.
  * @property isPasswordChanged 재설정 성공 — 완료 화면으로 넘기는 단발성 신호. 소비 후
  *   [FindPasswordViewModel.onPasswordResetConsumed] 로 흐름 상태 전체가 초기화된다.
- * @property errorMessage 팝업으로 가르지 않는 실패 — 스낵바로 표시.
  */
-data class FindPasswordUiState(
+internal data class FindPasswordUiState(
     val email: String = "",
     val certificateCode: String = "",
     val isSendingCode: Boolean = false,
     val isVerificationSent: Boolean = false,
     val resendCooldownSeconds: Int = 0,
-    val isSocialSignUpAccount: Boolean = false,
     val newPassword: String = "",
     val newPasswordConfirm: String = "",
     val isSubmitting: Boolean = false,
     val isPasswordChanged: Boolean = false,
-    val errorMessage: UiText? = null,
+    val failure: OnboardingFailure? = null,
 ) {
     /** 이메일 형식 검사. 회원가입·아이디 찾기와 동일 방식([Patterns.EMAIL_ADDRESS] 전체 일치). */
     val isEmailFormatValid: Boolean

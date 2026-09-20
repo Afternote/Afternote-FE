@@ -13,7 +13,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.afternote.core.ui.navigation.FeatureNavDisplay
-import com.afternote.core.ui.navigation.FeatureStackBoundary
+import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
 import com.afternote.feature.afternote.presentation.AfternoteHostIntent
 import com.afternote.feature.afternote.presentation.AfternoteHostViewModel
 import com.afternote.feature.afternote.presentation.detail.AfternoteDetailNavigation
@@ -39,14 +39,14 @@ import kotlinx.coroutines.awaitCancellation
  */
 @Composable
 public fun AfternoteNavHost(
-    boundary: FeatureStackBoundary,
+    navigationCallbacks: FeatureNavigationCallbacks,
     externalActions: AfternoteExternalActions,
     modifier: Modifier = Modifier,
 ) {
     val backStack = rememberNavBackStack(AfternoteRoute.FingerprintLoginRoute)
     val actions =
-        remember(backStack, boundary, externalActions) {
-            AfternoteLocalNavActions(backStack, boundary, externalActions)
+        remember(backStack, navigationCallbacks, externalActions) {
+            AfternoteLocalNavActions(backStack, navigationCallbacks, externalActions)
         }
 
     // 그래프 전체가 공유하는 ViewModel — 상세는 KDoc 참고. entry 안에서 만들면 그 화면이 pop 될 때
@@ -55,7 +55,7 @@ public fun AfternoteNavHost(
 
     FeatureNavDisplay(
         backStack = backStack,
-        boundary = boundary,
+        boundary = navigationCallbacks,
         modifier = modifier,
         entryProvider =
             entryProvider {
