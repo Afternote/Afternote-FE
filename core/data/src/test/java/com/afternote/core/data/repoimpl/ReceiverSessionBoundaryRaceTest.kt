@@ -647,7 +647,6 @@ class ReceiverSessionBoundaryRaceTest {
                             receiverId = 1L,
                             name = name,
                             relation = "친구",
-                            authCode = "AUTH-1",
                         ),
                     ),
             )
