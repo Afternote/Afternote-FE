@@ -55,4 +55,9 @@ object NotificationScheduler {
             dailyWorkRequest,
         )
     }
+
+    /** [scheduleDailyNotification] 이 넣은 예약을 지운다. 예약이 없으면 아무 일도 하지 않는다. */
+    fun cancelDailyNotification(context: Context) {
+        WorkManager.getInstance(context).cancelUniqueWork(DailyNotificationWorker.UNIQUE_WORK_NAME)
+    }
 }
