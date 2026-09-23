@@ -145,6 +145,46 @@ class ReceiverListViewModelTest {
             assertEquals(ReceiverListUiState(listOf(KIM_ITEM), ReceiverListLoadState.Ready), viewModel.uiState.value)
         }
 
+    /**
+     * 새 구독은 아직 성공한 조회가 없어 첫 실패도 Failure(null) 로 온다. 그 null 을 따라 행을 비우면 수정 화면에서
+     * 5초 넘게 머물다 네트워크 없이 돌아온 사용자가 목록 대신 전면 실패 안내를 본다 (0923 에뮬레이터 실측).
+     */
+    @Test
+    fun `5초를 넘겨 다시 구독한 첫 조회가 실패해도 보이던 행을 남기고 갱신 실패로 보인다`() =
+        runTest(dispatcher) {
+            val viewModel = ReceiverListViewModel(repository)
+            val firstVisit = backgroundScope.launch { viewModel.uiState.collect {} }
+            states.emit(ReceiverListState.Success(listOf(KIM, PARK)))
+
+            firstVisit.cancel()
+            advanceTimeBy(STOP_TIMEOUT_MILLIS + 1)
+            assertEquals(0, states.subscriptionCount.value)
+
+            backgroundScope.launch { viewModel.uiState.collect {} }
+            states.emit(ReceiverListState.Loading(null))
+            states.emit(ReceiverListState.Failure(null))
+            viewModel.retry()
+
+            assertEquals(
+                ReceiverListUiState(listOf(KIM_ITEM, PARK_ITEM), ReceiverListLoadState.RefreshFailure),
+                viewModel.uiState.value,
+            )
+            assertEquals(1, repository.refreshReceiverListCalls)
+        }
+
+    @Test
+    fun `SignedOut 뒤 첫 조회 실패는 이전 계정 행을 되살리지 않고 전면 실패다`() =
+        runTest(dispatcher) {
+            val viewModel = subscribedViewModel()
+
+            states.emit(ReceiverListState.Success(listOf(KIM)))
+            states.emit(ReceiverListState.SignedOut)
+            states.emit(ReceiverListState.Loading(null))
+            states.emit(ReceiverListState.Failure(null))
+
+            assertEquals(ReceiverListUiState(emptyList(), ReceiverListLoadState.Failure), viewModel.uiState.value)
+        }
+
     @Test
     fun `SignedOut 뒤 로딩은 이전 계정 행을 되살리지 않는다`() =
         runTest(dispatcher) {
@@ -159,6 +199,11 @@ class ReceiverListViewModelTest {
             assertEquals(ReceiverListUiState(emptyList(), ReceiverListLoadState.Loading), viewModel.uiState.value)
         }
 
+    /**
+     * 같은 구독이 싣던 목록을 실패에서 null 로 바꾸는 것은 저장소가 401 로 목록을 버렸다는 뜻이다. 앱의 401 은 대개
+     * 세션을 비운 뒤라 SignedOut 으로 오지만(core:data `ReceiverListStateFlowTest`), 세션이 남은 401 도 이 null 을
+     * 따른다. 재구독의 null 과 달리 보이던 행으로 메우지 않는다.
+     */
     @Test
     fun `401 로 이전 목록을 버린 실패는 행을 비운다`() =
         runTest(dispatcher) {

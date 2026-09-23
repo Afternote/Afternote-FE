@@ -157,6 +157,36 @@ class ReceiverListStateFlowTest {
             }
         }
 
+    /**
+     * 앱에서 401 은 `TokenAuthenticator` 가 재발급 거절을 확정하고 세션을 비운 뒤에야 조회 예외로 올라온다
+     * (`TokenReissuer` 가 락 안에서 정리, #1126). 그래서 이 경로에서는 Failure(null) 가 나오지 않고, 소비자는
+     * SignedOut 으로 이전 계정 행을 비운다.
+     */
+    @Test
+    fun `receiverListStateFlow - 세션을 비운 뒤 올라온 401 은 Failure 없이 SignedOut 만 낸다`() =
+        runBlocking {
+            val repository = repository()
+            val states = collectStates(repository)
+
+            try {
+                states.succeedFirst(RECEIVER_A)
+                sessionStore.holdObservation()
+
+                repository.refreshReceiverList()
+                assertEquals(ReceiverListState.Loading(listOf(receiver(RECEIVER_A))), states.next())
+                fetches.awaitStarted()
+                sessionStore.clearSession()
+                fetches.fail(ApiException(status = 401, code = 401, serverMessage = null, fallbackMessage = "인증 만료"))
+                assertNull("세션을 비운 뒤의 401 이 Failure 로 나왔다", states.nextOrNull())
+
+                sessionStore.releaseObservation()
+                assertEquals(ReceiverListState.SignedOut, states.next())
+                assertNull("SignedOut 뒤에 상태가 더 나왔다", states.nextOrNull())
+            } finally {
+                states.stop()
+            }
+        }
+
     @Test
     fun `receiverListStateFlow - 로그인 세션이 없으면 서버를 부르지 않고 SignedOut 을 낸다`() =
         runBlocking {
