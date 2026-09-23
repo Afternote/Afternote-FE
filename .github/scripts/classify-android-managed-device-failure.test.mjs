@@ -152,7 +152,11 @@ test("does not retry a dependency rate limit once an :app task has run", () => {
         device: "api34",
         outcome: "success",
         exitCode: "1",
-        log: `> Task :app:preBuild UP-TO-DATE\n${DEPENDENCY_RATE_LIMIT_LOG}`,
+        // 로그 첫 줄이 아닌 자리에 둬야 줄 단위 판정(/m)이 빠지는 회귀를 잡는다.
+        log: DEPENDENCY_RATE_LIMIT_LOG.replace(
+            "> Configure project :app",
+            "> Configure project :app\n> Task :app:preBuild UP-TO-DATE",
+        ),
         testResultCount: 0,
     });
 

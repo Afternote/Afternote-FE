@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -351,8 +351,13 @@ async function runManagedDeviceGradleStep({ gradlew, device = "api34", selectors
                 TEST_SELECTORS_JSON: JSON.stringify(selectors),
             },
         });
+        const resultsRoot = path.join(directory, "app/build/outputs/androidTest-results/managedDevice");
+        const resultXml = await readdir(resultsRoot, { recursive: true })
+            .then((files) => files.filter((file) => file.endsWith(".xml")).sort())
+            .catch(() => []);
         return {
             ...result,
+            resultXml,
             outputs: await readFile(outputPath, "utf8"),
             gradleLog: await readFile(path.join(directory, "android-test-logs", `${artifact}.log`), "utf8"),
         };
@@ -392,6 +397,8 @@ test("managed-device Gradle step records a failing retry of a dropped selector",
     assert.equal(result.status, 0, result.stderr);
     assert.match(result.gradleLog, /selected retry 1\/1: com\.example\.SmokeTest#second/);
     assert.match(result.outputs, /^exit_code=1$/m);
+    // 재실행이 XML 없이 실패해도 1차 결과는 합본에 한 번만 남는다.
+    assert.deepEqual(result.resultXml, [path.join("chunks", "invocation-0", "first.xml")]);
 });
 
 test(

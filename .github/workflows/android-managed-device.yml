@@ -683,6 +683,9 @@ jobs:
             retried=0
             for selector in ${missing[@]+"${missing[@]}"}; do
               preserve_results "invocation-$retried"
+              # 재실행이 테스트 태스크 전에 실패하면 live 가 이전 XML 을 그대로 들고 있어 합본에서
+              # 두 번 집계된다. 보존한 뒤 비워 live 가 이번 invocation 결과만 갖게 한다.
+              rm -rf "$results_root"
               retried=$(( retried + 1 ))
               status=0
               run_gradle "$selector" "selected retry $retried/${#missing[@]}: $selector (목록 실행에서 누락 — #1378)" \
