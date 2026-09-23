@@ -270,6 +270,182 @@ function escapeRegex(value) {
     return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+const CLASS_DECLARATION_PATTERN = /(?<![\w.:])(?:class|object)\s+([A-Za-z_][A-Za-z0-9_]*)/g;
+const CLASS_HEADER_END_WORDS = new Set(["class", "interface", "object", "fun", "val", "var", "typealias", "init"]);
+const WORD_PATTERN = /[A-Za-z_][A-Za-z0-9_]*/y;
+
+// 주석과 문자·문자열 리터럴 안쪽을 공백으로 지운다. 줄바꿈과 길이는 그대로라 인덱스가 원문과 같다.
+function kotlinCodeWithoutLiterals(source) {
+    const code = source.split("");
+    const blank = (from, to) => {
+        for (let index = from; index < to; index += 1) {
+            if (code[index] !== "\n") code[index] = " ";
+        }
+    };
+    // `${...}` 안은 다시 코드이고 그 안에 문자열이 또 올 수 있어, 돌아갈 문자열 종류와 중괄호 깊이를 쌓는다.
+    // 템플릿 안의 리터럴·주석은 바깥 리터럴을 지울 때 함께 지워진다.
+    const templates = [];
+    let mode = "code";
+    let literalStart = 0;
+    let commentStart = 0;
+    let commentDepth = 0;
+    let index = 0;
+    const enterLiteral = (literalMode, width) => {
+        if (templates.length === 0) literalStart = index + width;
+        mode = literalMode;
+        index += width;
+    };
+    const leaveLiteral = (contentEnd, width) => {
+        if (templates.length === 0) blank(literalStart, contentEnd);
+        mode = "code";
+        index = contentEnd + width;
+    };
+
+    while (index < source.length) {
+        const char = source[index];
+        const next = source[index + 1];
+        if (mode === "comment") {
+            if (char === "/" && next === "*") {
+                commentDepth += 1;
+                index += 2;
+            } else if (char === "*" && next === "/") {
+                commentDepth -= 1;
+                index += 2;
+                if (commentDepth === 0) {
+                    if (templates.length === 0) blank(commentStart, index);
+                    mode = "code";
+                }
+            } else {
+                index += 1;
+            }
+        } else if (mode === "string" || mode === "raw") {
+            if (char === "$" && next === "{") {
+                templates.push({ mode, depth: 0 });
+                mode = "code";
+                index += 2;
+            } else if (mode === "string" && char === "\\") {
+                index += 2;
+            } else if (mode === "string" && char === '"') {
+                leaveLiteral(index, 1);
+            } else if (mode === "raw" && source.startsWith('"""', index)) {
+                // `""""` 처럼 따옴표가 셋보다 많으면 마지막 셋이 닫고 앞쪽은 내용이다.
+                let end = index + 3;
+                while (source[end] === '"') end += 1;
+                leaveLiteral(end - 3, 3);
+            } else {
+                index += 1;
+            }
+        } else if (char === "/" && next === "/") {
+            const newline = source.indexOf("\n", index);
+            const lineEnd = newline === -1 ? source.length : newline;
+            if (templates.length === 0) blank(index, lineEnd);
+            index = lineEnd;
+        } else if (char === "/" && next === "*") {
+            commentStart = index;
+            commentDepth = 1;
+            mode = "comment";
+            index += 2;
+        } else if (source.startsWith('"""', index)) {
+            enterLiteral("raw", 3);
+        } else if (char === '"') {
+            enterLiteral("string", 1);
+        } else if (char === "'" || char === "`") {
+            let end = index + 1;
+            while (end < source.length && source[end] !== char && source[end] !== "\n") {
+                end += char === "'" && source[end] === "\\" ? 2 : 1;
+            }
+            if (templates.length === 0) blank(index + 1, end);
+            index = end + 1;
+        } else if (templates.length > 0 && char === "{") {
+            templates.at(-1).depth += 1;
+            index += 1;
+        } else if (templates.length > 0 && char === "}") {
+            const template = templates.at(-1);
+            if (template.depth === 0) {
+                templates.pop();
+                mode = template.mode;
+            } else {
+                template.depth -= 1;
+            }
+            index += 1;
+        } else {
+            index += 1;
+        }
+    }
+    if (templates.length > 0 || mode === "string" || mode === "raw") {
+        blank(literalStart, source.length);
+    } else if (mode === "comment") {
+        blank(commentStart, source.length);
+    }
+    return code.join("");
+}
+
+function braceBlocks(code) {
+    const blocks = [];
+    const open = [];
+    for (let index = 0; index < code.length; index += 1) {
+        if (code[index] === "{") {
+            open.push(blocks.length);
+            blocks.push({ start: index, end: code.length });
+        } else if (code[index] === "}" && open.length > 0) {
+            blocks[open.pop()].end = index;
+        }
+    }
+    return blocks;
+}
+
+function innermostBlock(blocks, position) {
+    let found = null;
+    for (const block of blocks) {
+        if (block.start >= position) break;
+        if (block.end > position) found = block;
+    }
+    return found;
+}
+
+// 선언 뒤 괄호 밖 첫 `{` 가 본문이다. 그 전에 다음 선언이 시작되면 본문 없는 class 다.
+function classBodyStart(code, from) {
+    let parentheses = 0;
+    for (let index = from; index < code.length; index += 1) {
+        const char = code[index];
+        if (char === "(") {
+            parentheses += 1;
+        } else if (char === ")") {
+            parentheses -= 1;
+            if (parentheses < 0) return -1;
+        } else if (parentheses > 0) {
+            continue;
+        } else if (char === "{") {
+            return index;
+        } else if (char === "}" || char === ";" || char === "=") {
+            return -1;
+        } else if (/[A-Za-z_]/.test(char) && !/[A-Za-z0-9_]/.test(code[index - 1])) {
+            WORD_PATTERN.lastIndex = index;
+            const word = WORD_PATTERN.exec(code)[0];
+            if (CLASS_HEADER_END_WORDS.has(word)) return -1;
+            index += word.length - 1;
+        }
+    }
+    return -1;
+}
+
+// selector 가 쓰는 JVM 이름(`Outer$Inner`)으로 class 를 모으고, 본문이 있으면 여는 `{` 위치로 찾게 둔다.
+function kotlinClassBodies(code, blocks) {
+    const binaryNames = new Set();
+    const binaryNameByBodyStart = new Map();
+    for (const match of code.matchAll(CLASS_DECLARATION_PATTERN)) {
+        const parent = innermostBlock(blocks, match.index);
+        const outerName = parent === null ? "" : binaryNameByBodyStart.get(parent.start);
+        // 함수 본문 같은 class 밖 블록에 선언된 local class 는 selector 로 가리킬 수 없다.
+        if (outerName === undefined) continue;
+        const binaryName = outerName ? `${outerName}$${match[1]}` : match[1];
+        binaryNames.add(binaryName);
+        const bodyStart = classBodyStart(code, match.index + match[0].length);
+        if (bodyStart !== -1) binaryNameByBodyStart.set(bodyStart, binaryName);
+    }
+    return { binaryNames, binaryNameByBodyStart };
+}
+
 export async function validateCiTestPlanSources(plan, { root = process.cwd() } = {}) {
     if (plan?.androidTest?.mode !== "selected") return;
 
@@ -292,7 +468,7 @@ export async function validateCiTestPlanSources(plan, { root = process.cwd() } =
         const source = await fs.readFile(absolute, "utf8");
         const [qualifiedClass, method] = test.selector.split("#", 2);
         const classParts = qualifiedClass.split(".");
-        const declaredClass = classParts.at(-1).split("$").at(-1);
+        const binaryName = classParts.at(-1);
         const expectedPackage = classParts.slice(0, -1).join(".");
         const actualPackage = /^\s*package\s+([A-Za-z_][A-Za-z0-9_.]*)/m.exec(source)?.[1] ?? "";
         if (actualPackage !== expectedPackage) {
@@ -300,16 +476,34 @@ export async function validateCiTestPlanSources(plan, { root = process.cwd() } =
                 `선택 테스트 package가 selector와 다릅니다: ${test.path} (${actualPackage} != ${expectedPackage})`,
             );
         }
-        if (!new RegExp(`\\b(?:class|object)\\s+${escapeRegex(declaredClass)}\\b`).test(source)) {
+        const code = kotlinCodeWithoutLiterals(source);
+        const blocks = braceBlocks(code);
+        const { binaryNames, binaryNameByBodyStart } = kotlinClassBodies(code, blocks);
+        if (!binaryNames.has(binaryName)) {
             throw new Error(`선택 테스트 class가 파일에 없습니다: ${test.selector}`);
         }
         const methodPattern = new RegExp(
             `@Test(?:\\s*\\([^)]*\\))?\\s*` +
                 `(?:@[\\w:.]+(?:\\([^\\n]*\\))?\\s*)*` +
                 `fun\\s+${escapeRegex(method)}\\s*\\(`,
+            "g",
         );
-        if (!methodPattern.test(source)) {
+        // 한 파일에 class 가 여럿이면 메서드가 파일에 있어도 다른 class 소속일 수 있다(#2153).
+        // 그러면 계측 실행기는 0건을 돌리므로 @Test 를 바로 감싸는 블록이 selector class 본문이어야 한다.
+        const owners = [...code.matchAll(methodPattern)].map((match) =>
+            binaryNameByBodyStart.get(innermostBlock(blocks, match.index)?.start),
+        );
+        if (owners.length === 0) {
             throw new Error(`선택 테스트 @Test 메서드가 파일에 없습니다: ${test.selector}`);
+        }
+        if (!owners.includes(binaryName)) {
+            const actual = [...new Set(owners.filter(Boolean))].map(
+                (owner) => `${expectedPackage}.${owner}#${method}`,
+            );
+            throw new Error(
+                `선택 테스트 @Test 메서드가 selector class 본문에 없습니다: ${test.selector}` +
+                    (actual.length > 0 ? ` (메서드가 있는 class: ${actual.join(", ")})` : ""),
+            );
         }
     }
 }
