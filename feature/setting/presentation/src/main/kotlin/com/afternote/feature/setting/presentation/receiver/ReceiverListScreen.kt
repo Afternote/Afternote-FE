@@ -14,7 +14,8 @@ import com.afternote.core.ui.receiver.ReceiverSelectScreen
  * 설정의 "사후 전달 조건" 수신자 선택 화면 — 공용 [ReceiverSelectScreen] 소비 (#791).
  *
  * 검색·초성 인덱스·단일 선택·완료 UI 는 공용 화면이 그리고, 여기서는
- * 설정 모델 매핑과 화면 내 선택 상태만 소유한다. 공개 시그니처는 추출 전과 같다.
+ * 설정 모델 매핑과 화면 내 선택 상태만 소유한다. 추출 전 인자는 그대로 받는다.
+ * 조회 중·실패 표시는 호출부가 [listReplacement] 로 넘기고(#1281) 공용 화면의 같은 슬롯에 그대로 전달한다.
  *
  * 평범한 "수신자 목록" 열람·수정 진입은 #631 로 관리 화면([ReceiverManageScreen])이 맡고,
  * 이 화면은 사후 전달 조건 진입(`RecipientListRoute.selectForDeliveryConditions == true`)
@@ -26,6 +27,7 @@ fun ReceiverListScreen(
     onBackClick: () -> Unit,
     onConfirmClick: (ReceiverListItem) -> Unit,
     modifier: Modifier = Modifier,
+    listReplacement: (@Composable () -> Unit)? = null,
 ) {
     var selectedId by remember { mutableStateOf<Long?>(null) }
 
@@ -46,5 +48,6 @@ fun ReceiverListScreen(
             receivers.find { it.receiverId == receiverId }?.let(onConfirmClick)
         },
         modifier = modifier,
+        listReplacement = listReplacement,
     )
 }
