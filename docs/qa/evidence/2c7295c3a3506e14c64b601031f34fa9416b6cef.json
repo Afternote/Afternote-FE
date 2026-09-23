@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "2c7295c3a3506e14c64b601031f34fa9416b6cef.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": "not_covered",
+      "recorded_at": "recorded_at"
+    },
+    "redactions": []
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "2c7295c3a3506e14c64b601031f34fa9416b6cef",
+  "head_ref": "fix/2105-receiver-list-response",
+  "base_sha": null,
+  "base_ref": null,
+  "recorded_at": "2026-09-23T03:20:00+00:00",
+  "result": "pass",
+  "scenario": "#2120 head 로 3차 QA 성공 경로. 홈이 이름·수신인 지정 완료·오늘의 질문과 함께 정상으로 뜬다(develop 에서 같은 계정·같은 시점에 실패하던 화면). 설정 하위 화면 순회: 공지사항(빈 안내, 목록은 NavGraph 에서 emptyList 고정이라 서버 조회 없음), 프로필 수정, 연결된 계정, 푸시 알림 설정, 수신자 목록(relation null 행 포함 2건), 수신자 등록, 사후 전달 조건, 패스키 관리(등록 진입 화면), 앱 잠금 비밀번호 설정은 진입 정상. 고객센터는 눌러도 반응이 없고(#564) 비밀번호 변경은 '현재 이 메뉴는 이용할 수 없습니다'(#564, 연결은 #2094 대기). 타임레터 목록 1건 조회 정상, 수신인 선택에 2건 노출. 발송 날짜 없이 등록하면 등록 버튼이 회색이고 요청·안내가 없다(#624 재현). 애프터노트 목록·상세·수정 진입(수신자 prefill 정상)·남기실 말씀 추가 후 저장 PATCH 200·목록 재조회 정상. 관찰: 목록의 '최종 작성일'은 목록 응답의 createdAt 이라 수정해도 바뀌지 않는다.",
+  "not_covered": [
+    "마음의 기록 쓰기 경로와 수신자 열람 승인 이후 화면(#607)은 보지 않았다.",
+    "패스키 목록 화면(#555)은 패스키 등록 전이라 도달하지 못했다.",
+    "실기기 고유 축 5종은 실기기 패스 몫이다."
+  ],
+  "device": {
+    "is_emulator": true
+  },
+  "details": {
+    "details": {
+      "screen": {
+        "size": "1080x2400",
+        "density": 420,
+        "api_level": 35
+      },
+      "build_type": "debug",
+      "issues_reproduced": [
+        624,
+        564
+      ]
+    }
+  }
+}
