@@ -128,11 +128,12 @@ class ConcurrentUnauthorizedReissueTest {
         private val reporter = FakeErrorReporter()
 
         val baseClient: OkHttpClient = NetworkModule.provideBaseOkHttpClient()
+        private val refreshClient: OkHttpClient = NetworkModule.provideRefreshOkHttpClient(baseClient, loggingInterceptor)
 
         private val tokenApiService: TokenApiService =
             ServiceModule
                 .provideRefreshRetrofit(
-                    refreshClient = NetworkModule.provideRefreshOkHttpClient(baseClient, loggingInterceptor),
+                    refreshClient = refreshClient,
                     json = json,
                     apiErrorCallAdapterFactory = callAdapterFactory,
                 ).newBuilder()
@@ -178,8 +179,11 @@ class ConcurrentUnauthorizedReissueTest {
                 .callFactory()
 
         override fun close() {
-            baseClient.dispatcher.cancelAll()
-            baseClient.dispatcher.executorService.shutdown()
+            // 재발급 클라이언트는 디스패처를 따로 쓴다(#2160) — 둘 다 닫아야 스레드가 남지 않는다.
+            listOf(baseClient.dispatcher, refreshClient.dispatcher).distinct().forEach { dispatcher ->
+                dispatcher.cancelAll()
+                dispatcher.executorService.shutdown()
+            }
             baseClient.connectionPool.evictAll()
         }
     }
