@@ -253,7 +253,7 @@ export async function validateCiTestPlanImpact(
         }
         const declaredMethods = declaredMethodsByPath.get(testPath) ?? new Set();
         const testMethods = [
-            ...source.matchAll(
+            ...kotlinCodeWithoutLiterals(source).matchAll(
                 /@Test(?:\s*\([^)]*\))?\s*(?:@[\w:.]+(?:\([^\n]*\))?\s*)*fun\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(/g,
             ),
         ].map((match) => match[1]);
@@ -270,8 +270,13 @@ function escapeRegex(value) {
     return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-const CLASS_DECLARATION_PATTERN = /(?<![\w.:])(?:class|object)\s+([A-Za-z_][A-Za-z0-9_]*)/g;
-const CLASS_HEADER_END_WORDS = new Set(["class", "interface", "object", "fun", "val", "var", "typealias", "init"]);
+// 이름 자리의 키워드는 이름이 아니다. `companion object` 다음 줄의 `class Inner` 를 삼키지 않게 한다.
+// 이름 없는 companion 은 JVM 이름이 `Companion` 이다. interface·companion 은 중첩 class 의 바깥 이름으로 쓰인다.
+const CLASS_DECLARATION_PATTERN =
+    /(?<![\w.:])(?:(?:class|interface|object)\s+(?!(?:class|interface|object|fun|val|var|typealias)\b)([A-Za-z_][A-Za-z0-9_]*)|companion\s+object(?=\s*[{:]))/g;
+// `init` 은 `by init` 처럼 식별자로도 쓰여 넣지 않는다. 본문 없는 class 가 뒤따르는 init 블록을
+// 본문으로 잡아도 그 안에는 @Test 멤버가 올 수 없다.
+const CLASS_HEADER_END_WORDS = new Set(["class", "interface", "object", "fun", "val", "var", "typealias"]);
 const WORD_PATTERN = /[A-Za-z_][A-Za-z0-9_]*/y;
 
 // 주석과 문자·문자열 리터럴 안쪽을 공백으로 지운다. 줄바꿈과 길이는 그대로라 인덱스가 원문과 같다.
@@ -286,11 +291,16 @@ function kotlinCodeWithoutLiterals(source) {
     // 템플릿 안의 리터럴·주석은 바깥 리터럴을 지울 때 함께 지워진다.
     const templates = [];
     let mode = "code";
+    // `$$"..."` 처럼 여는 따옴표 앞 `$` 개수만큼 이어져야 템플릿이 열린다(Kotlin 2.2 다중 달러 보간).
+    let interpolation = 1;
     let literalStart = 0;
     let commentStart = 0;
     let commentDepth = 0;
     let index = 0;
     const enterLiteral = (literalMode, width) => {
+        let dollars = 0;
+        while (source[index - 1 - dollars] === "$") dollars += 1;
+        interpolation = Math.max(dollars, 1);
         if (templates.length === 0) literalStart = index + width;
         mode = literalMode;
         index += width;
@@ -319,10 +329,16 @@ function kotlinCodeWithoutLiterals(source) {
                 index += 1;
             }
         } else if (mode === "string" || mode === "raw") {
-            if (char === "$" && next === "{") {
-                templates.push({ mode, depth: 0 });
-                mode = "code";
-                index += 2;
+            if (char === "$") {
+                let run = 1;
+                while (source[index + run] === "$") run += 1;
+                if (source[index + run] === "{" && run >= interpolation) {
+                    templates.push({ mode, interpolation, depth: 0 });
+                    mode = "code";
+                    index += run + 1;
+                } else {
+                    index += run;
+                }
             } else if (mode === "string" && char === "\\") {
                 index += 2;
             } else if (mode === "string" && char === '"') {
@@ -336,8 +352,8 @@ function kotlinCodeWithoutLiterals(source) {
                 index += 1;
             }
         } else if (char === "/" && next === "/") {
-            const newline = source.indexOf("\n", index);
-            const lineEnd = newline === -1 ? source.length : newline;
+            let lineEnd = index;
+            while (lineEnd < source.length && source[lineEnd] !== "\n" && source[lineEnd] !== "\r") lineEnd += 1;
             if (templates.length === 0) blank(index, lineEnd);
             index = lineEnd;
         } else if (char === "/" && next === "*") {
@@ -351,7 +367,7 @@ function kotlinCodeWithoutLiterals(source) {
             enterLiteral("string", 1);
         } else if (char === "'" || char === "`") {
             let end = index + 1;
-            while (end < source.length && source[end] !== char && source[end] !== "\n") {
+            while (end < source.length && source[end] !== char && source[end] !== "\n" && source[end] !== "\r") {
                 end += char === "'" && source[end] === "\\" ? 2 : 1;
             }
             if (templates.length === 0) blank(index + 1, end);
@@ -364,6 +380,7 @@ function kotlinCodeWithoutLiterals(source) {
             if (template.depth === 0) {
                 templates.pop();
                 mode = template.mode;
+                interpolation = template.interpolation;
             } else {
                 template.depth -= 1;
             }
@@ -438,7 +455,8 @@ function kotlinClassBodies(code, blocks) {
         const outerName = parent === null ? "" : binaryNameByBodyStart.get(parent.start);
         // 함수 본문 같은 class 밖 블록에 선언된 local class 는 selector 로 가리킬 수 없다.
         if (outerName === undefined) continue;
-        const binaryName = outerName ? `${outerName}$${match[1]}` : match[1];
+        const name = match[1] ?? "Companion";
+        const binaryName = outerName ? `${outerName}$${name}` : name;
         binaryNames.add(binaryName);
         const bodyStart = classBodyStart(code, match.index + match[0].length);
         if (bodyStart !== -1) binaryNameByBodyStart.set(bodyStart, binaryName);
