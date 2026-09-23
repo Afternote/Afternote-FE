@@ -7,6 +7,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeMyProfileRepository
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserMarketingConsent
 import com.afternote.core.model.user.UserPushSetting
@@ -146,7 +147,7 @@ class SettingCoroutineCancellationTest {
                 FakeMyProfileRepository().apply {
                     onGetMyProfile = { pending.await() }
                 }
-            val viewModel = ProfileEditViewModel(repository)
+            val viewModel = ProfileEditViewModel(repository, FakePhotoUploadRepository.strict())
             val store = storeHolding(viewModel)
             runCurrent()
             assertTrue(pending.isStarted)
@@ -166,7 +167,7 @@ class SettingCoroutineCancellationTest {
                 FakeMyProfileRepository(profile = PROFILE).apply {
                     onUpdateMyProfile = { _, _, _ -> pending.await() }
                 }
-            val viewModel = ProfileEditViewModel(repository)
+            val viewModel = ProfileEditViewModel(repository, FakePhotoUploadRepository.strict())
             val store = storeHolding(viewModel)
             val events = mutableListOf<ProfileEditEvent>()
             backgroundScope.launch(dispatcher) { viewModel.events.collect { events += it } }
@@ -185,10 +186,39 @@ class SettingCoroutineCancellationTest {
                     name = PROFILE.name,
                     phone = PROFILE.phone.orEmpty(),
                     email = PROFILE.email,
+                    profileImageUrl = PROFILE.profileImageUrl,
                     isUpdating = true,
                 ),
                 viewModel.uiState.value,
             )
+            assertTrue(events.isEmpty())
+        }
+
+    @Test
+    fun `프로필 사진 업로드 중 화면을 떠나면 수정 요청도 실패 이벤트도 보내지 않는다`() =
+        runTest(dispatcher) {
+            val pending = PendingRepositoryCall()
+            val profileRepository =
+                FakeMyProfileRepository.strict().apply {
+                    onGetMyProfile = { PROFILE }
+                }
+            val uploadRepository = FakePhotoUploadRepository(onUpload = { _, _ -> pending.await() })
+            val viewModel = ProfileEditViewModel(profileRepository, uploadRepository)
+            val store = storeHolding(viewModel)
+            val events = mutableListOf<ProfileEditEvent>()
+            backgroundScope.launch(dispatcher) { viewModel.events.collect { events += it } }
+            runCurrent()
+
+            viewModel.selectProfileImage(PICKED_PHOTO)
+            viewModel.updateProfile(name = "새 이름", phone = "01011112222")
+            runCurrent()
+            assertTrue(pending.isStarted)
+
+            store.clear()
+            runCurrent()
+
+            assertTrue(pending.isCancelled)
+            assertTrue(profileRepository.profileUpdateCalls.isEmpty())
             assertTrue(events.isEmpty())
         }
 
@@ -341,6 +371,7 @@ class SettingCoroutineCancellationTest {
     private companion object {
         const val STORE_KEY = "setting-cancellation"
         const val PUSH_TAG = "PushNotificationVM"
+        const val PICKED_PHOTO = "content://media/picker/0/profile/1"
         val PROFILE = User(name = "기존 이름", email = "user@afternote.local", phone = "01000000000", profileImageUrl = null)
     }
 }
