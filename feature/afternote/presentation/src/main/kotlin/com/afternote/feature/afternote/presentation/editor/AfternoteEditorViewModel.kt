@@ -652,7 +652,7 @@ class AfternoteEditorViewModel
                             // saveAfternote 가 기준 없는 수정을 이미 막았다 — 여기 도달하면 반드시 있다.
                             baseline =
                                 checkNotNull(updateBaseline) {
-                                    "수정 저장에 기준 스냅샷이 없다 — saveAfternote 의 가드가 빠졌다"
+                                    "수정 저장에는 기준 스냅샷이 필요합니다"
                                 },
                         )
                     SaveAfternoteCommand.Update(id = editingId, payload = updatePayload)
