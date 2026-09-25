@@ -9,7 +9,7 @@ import com.afternote.feature.afternote.domain.model.author.FieldPatch
 import com.afternote.feature.afternote.domain.model.author.MemorialPatchInput
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
-import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
+import com.afternote.feature.afternote.domain.model.author.ReceiverRefInput
 import com.afternote.feature.afternote.domain.model.author.UpdateAfternoteInput
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -204,7 +204,7 @@ class AfternoteUpdatePartialPatchWireTest {
                     processingMethods = listOf("계정 삭제"),
                     leaveMessageBlocks = listOf(LeaveMessageBlock(title = "가족에게", body = "고마웠어")),
                     credentials = AfternoteAccountCredentials(id = "account", password = "pw"),
-                    receivers = listOf(ReceiverRefPayload(receiverId = 11L)),
+                    receivers = listOf(ReceiverRefInput(receiverId = 11L)),
                 ),
             )
 
