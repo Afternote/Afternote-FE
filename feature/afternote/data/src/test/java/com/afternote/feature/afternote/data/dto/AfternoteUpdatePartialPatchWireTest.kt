@@ -5,12 +5,12 @@ import com.afternote.feature.afternote.data.mapper.toRequest
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.domain.model.author.AfternoteAccountCredentials
-import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.FieldPatch
-import com.afternote.feature.afternote.domain.model.author.MemorialPatchPayload
+import com.afternote.feature.afternote.domain.model.author.MemorialPatchInput
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
+import com.afternote.feature.afternote.domain.model.author.UpdateAfternoteInput
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -27,7 +27,7 @@ import org.junit.Test
 class AfternoteUpdatePartialPatchWireTest {
     private val json = NetworkModule.provideJson()
 
-    private fun wire(payload: AfternoteUpdatePayload): String = json.encodeToString(payload.toRequest())
+    private fun wire(payload: UpdateAfternoteInput): String = json.encodeToString(payload.toRequest())
 
     /**
      * 이슈 #1617 이 든 재현 경로의 반대편 — 제목만 고친 저장은 나머지를 **말하지 않는다.**
@@ -35,7 +35,7 @@ class AfternoteUpdatePartialPatchWireTest {
      */
     @Test
     fun `제목만 실은 수정은 카테고리와 제목 두 키만 나간다`() {
-        val body = wire(AfternoteUpdatePayload(type = AfternoteType.SOCIAL_NETWORK, title = "새 제목"))
+        val body = wire(UpdateAfternoteInput(type = AfternoteType.SOCIAL_NETWORK, title = "새 제목"))
 
         assertEquals("""{"category":"SOCIAL","title":"새 제목"}""", body)
     }
@@ -43,7 +43,7 @@ class AfternoteUpdatePartialPatchWireTest {
     /** 제목조차 안 건드렸으면 제목도 빠진다 — 서버가 `title` 생략을 계약으로 못박아 뒀다. */
     @Test
     fun `아무것도 안 실으면 카테고리만 나간다`() {
-        val body = wire(AfternoteUpdatePayload(type = AfternoteType.MEMORIAL))
+        val body = wire(UpdateAfternoteInput(type = AfternoteType.MEMORIAL))
 
         assertEquals("""{"category":"PLAYLIST"}""", body)
     }
@@ -59,10 +59,10 @@ class AfternoteUpdatePartialPatchWireTest {
     fun `곡만 바꾼 수정은 playlist 안에 songs 키만 남긴다`() {
         val body =
             wire(
-                AfternoteUpdatePayload(
+                UpdateAfternoteInput(
                     type = AfternoteType.MEMORIAL,
                     memorial =
-                        MemorialPatchPayload(
+                        MemorialPatchInput(
                             songs = listOf(MemorialSongPayload(title = "곡", artist = "가수", coverUrl = null)),
                         ),
                 ),
@@ -79,9 +79,9 @@ class AfternoteUpdatePartialPatchWireTest {
     fun `곡을 전부 빼면 빈 배열만 나가고 미디어 키는 없다`() {
         val body =
             wire(
-                AfternoteUpdatePayload(
+                UpdateAfternoteInput(
                     type = AfternoteType.MEMORIAL,
-                    memorial = MemorialPatchPayload(songs = emptyList()),
+                    memorial = MemorialPatchInput(songs = emptyList()),
                 ),
             )
 
@@ -93,9 +93,9 @@ class AfternoteUpdatePartialPatchWireTest {
     fun `영정 사진만 지우면 사진 슬롯에만 명시적 null 이 나간다`() {
         val body =
             wire(
-                AfternoteUpdatePayload(
+                UpdateAfternoteInput(
                     type = AfternoteType.MEMORIAL,
-                    memorial = MemorialPatchPayload(memorialPhotoUrl = FieldPatch.Set(null)),
+                    memorial = MemorialPatchInput(memorialPhotoUrl = FieldPatch.Set(null)),
                 ),
             )
 
@@ -106,9 +106,9 @@ class AfternoteUpdatePartialPatchWireTest {
     fun `추모 영상만 지우면 영상 슬롯에만 명시적 null 이 나간다`() {
         val body =
             wire(
-                AfternoteUpdatePayload(
+                UpdateAfternoteInput(
                     type = AfternoteType.MEMORIAL,
-                    memorial = MemorialPatchPayload(memorialVideo = FieldPatch.Set(null)),
+                    memorial = MemorialPatchInput(memorialVideo = FieldPatch.Set(null)),
                 ),
             )
 
@@ -119,10 +119,10 @@ class AfternoteUpdatePartialPatchWireTest {
     fun `미디어에 값을 실으면 종전과 같은 모양으로 나간다`() {
         val body =
             wire(
-                AfternoteUpdatePayload(
+                UpdateAfternoteInput(
                     type = AfternoteType.MEMORIAL,
                     memorial =
-                        MemorialPatchPayload(
+                        MemorialPatchInput(
                             memorialPhotoUrl = FieldPatch.Set("https://cdn.test/afternotes/photo.jpg"),
                             memorialVideo =
                                 FieldPatch.Set(
@@ -153,7 +153,7 @@ class AfternoteUpdatePartialPatchWireTest {
     fun `비밀번호만 고치면 credentials 안에 password 키만 나간다`() {
         val body =
             wire(
-                AfternoteUpdatePayload(
+                UpdateAfternoteInput(
                     type = AfternoteType.SOCIAL_NETWORK,
                     credentials = AfternoteAccountCredentials(password = "새 비밀번호"),
                 ),
@@ -166,7 +166,7 @@ class AfternoteUpdatePartialPatchWireTest {
     fun `아이디만 고치면 credentials 안에 id 키만 나간다`() {
         val body =
             wire(
-                AfternoteUpdatePayload(
+                UpdateAfternoteInput(
                     type = AfternoteType.SOCIAL_NETWORK,
                     credentials = AfternoteAccountCredentials(id = "새 아이디"),
                 ),
@@ -180,7 +180,7 @@ class AfternoteUpdatePartialPatchWireTest {
     fun `빈 목록은 생략되지 않고 빈 배열로 나간다`() {
         val body =
             wire(
-                AfternoteUpdatePayload(
+                UpdateAfternoteInput(
                     type = AfternoteType.GALLERY_AND_FILES,
                     processingMethods = emptyList(),
                     leaveMessageBlocks = emptyList(),
@@ -198,7 +198,7 @@ class AfternoteUpdatePartialPatchWireTest {
     fun `값을 실은 필드는 종전과 같은 키로 그대로 나간다`() {
         val body =
             wire(
-                AfternoteUpdatePayload(
+                UpdateAfternoteInput(
                     type = AfternoteType.BUSINESS,
                     title = "제목",
                     processingMethods = listOf("계정 삭제"),

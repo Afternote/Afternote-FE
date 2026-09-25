@@ -3,7 +3,6 @@ package com.afternote.feature.afternote.domain.testing
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.Account
 import com.afternote.feature.afternote.domain.model.author.AfternoteAccountCredentials
-import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
@@ -15,6 +14,7 @@ import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
 import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
+import com.afternote.feature.afternote.domain.model.author.UpdateAfternoteInput
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.take
@@ -38,7 +38,7 @@ class FakeAfternoteRepositoryTest {
                     initialDetails = mapOf(detail.id to detail),
                 )
             val payload =
-                AfternoteUpdatePayload(
+                UpdateAfternoteInput(
                     type = AfternoteType.SOCIAL_NETWORK,
                     title = "수정 서비스",
                     processingMethods = listOf("계정 보존"),
@@ -149,7 +149,7 @@ class FakeAfternoteRepositoryTest {
                 title = "추억",
                 memorial = MemorialWritePayload(memorialPhotoUrl = null, songs = emptyList(), memorialVideo = null),
             )
-        val updatePayload = AfternoteUpdatePayload(type = AfternoteType.ESTATE, title = "유산")
+        val updatePayload = UpdateAfternoteInput(type = AfternoteType.ESTATE, title = "유산")
 
         assertUnexpected { repository.getPagedAfternotes(null) }
         assertUnexpected { repository.getDetail(1L) }
