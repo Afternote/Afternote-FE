@@ -15,7 +15,7 @@ import com.afternote.feature.afternote.domain.model.author.MemorialPatchInput
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
-import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
+import com.afternote.feature.afternote.domain.model.author.ReceiverRefInput
 import com.afternote.feature.afternote.domain.model.author.UpdateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 import com.afternote.feature.afternote.presentation.editor.AfternoteEditorFormMapper.buildUpdatePayload
@@ -269,7 +269,7 @@ internal object AfternoteEditorFormMapper {
             receivers =
                 current.receiverIds
                     ?.takeIf { it.sorted() != baseline.receiverIds?.sorted() }
-                    ?.map { ReceiverRefPayload(receiverId = it) },
+                    ?.map { ReceiverRefInput(receiverId = it) },
             memorial = diffMemorial(current, baseline),
         )
     }

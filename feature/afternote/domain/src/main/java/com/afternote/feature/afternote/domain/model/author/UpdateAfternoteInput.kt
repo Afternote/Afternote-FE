@@ -39,7 +39,7 @@ data class UpdateAfternoteInput(
     val processingMethods: List<String>? = null,
     val leaveMessageBlocks: List<LeaveMessageBlock>? = null,
     val credentials: AfternoteAccountCredentials? = null,
-    val receivers: List<ReceiverRefPayload>? = null,
+    val receivers: List<ReceiverRefInput>? = null,
     val memorial: MemorialPatchInput? = null,
     /**
      * 임시저장 여부를 바꿀 때만 값을 싣는다. null 이면 서버가 저장값을 유지하므로,
@@ -60,6 +60,6 @@ data class AfternoteAccountCredentials(
     val password: String? = null,
 )
 
-data class ReceiverRefPayload(
+data class ReceiverRefInput(
     val receiverId: Long,
 )

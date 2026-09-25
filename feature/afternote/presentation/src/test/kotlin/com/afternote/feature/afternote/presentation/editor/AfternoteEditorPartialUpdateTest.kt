@@ -10,7 +10,7 @@ import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
 import com.afternote.feature.afternote.domain.model.author.FieldPatch
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
-import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
+import com.afternote.feature.afternote.domain.model.author.ReceiverRefInput
 import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 import com.afternote.feature.afternote.presentation.editor.memorial.Song
@@ -136,14 +136,14 @@ class AfternoteEditorPartialUpdateTest {
     fun `수신자를 실제로 지우면 남은 목록이 실린다`() {
         val updated = buildSocialUpdate(selectedReceiverIds = listOf(11L))
 
-        assertEquals(listOf(ReceiverRefPayload(receiverId = 11L)), updated.receivers)
+        assertEquals(listOf(ReceiverRefInput(receiverId = 11L)), updated.receivers)
     }
 
     @Test
     fun `수신자를 전부 빼면 빈 목록이 실려 전부 삭제로 나간다`() {
         val updated = buildSocialUpdate(selectedReceiverIds = emptyList())
 
-        assertEquals(emptyList<ReceiverRefPayload>(), updated.receivers)
+        assertEquals(emptyList<ReceiverRefInput>(), updated.receivers)
     }
 
     @Test
