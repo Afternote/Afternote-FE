@@ -10,6 +10,7 @@ import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
+import com.afternote.feature.afternote.domain.model.author.DraftContent
 import com.afternote.feature.afternote.domain.model.author.DraftDetail
 import com.afternote.feature.afternote.domain.model.author.FieldPatch
 import com.afternote.feature.afternote.domain.model.author.MemorialPatchInput
@@ -56,9 +57,8 @@ internal object AfternoteEditorFormMapper {
     /**
      * 임시저장 상세 → 에디터 프리필 (#808).
      *
-     * 발행 상세와 달리 종류별 값이 **아직 안 담긴 채로** 온다 — 그 «없음» 은 빈 입력칸이 되어야 하지
-     * 실패가 아니다. [DraftDetail] 이 평평한 대신 종류를 필드로 들고 있어, 여기서 그 종류에 실제로
-     * 존재하는 입력만 골라 담는다(발행 경로가 [DetailContent] 로 하는 일과 같다).
+     * 발행 상세와 달리 종류별 값이 아직 안 담긴 채로 온다. 미작성 값은 빈 입력칸으로 옮긴다.
+     * [DraftContent]의 각 종류가 가진 입력만 해당 폼에 담는다.
      */
     fun buildEditorFormPrefill(draft: DraftDetail): EditorFormPrefill =
         EditorFormPrefill(
@@ -75,37 +75,37 @@ internal object AfternoteEditorFormMapper {
         )
 
     private fun DraftDetail.toEditorContentPrefill(): EditorContentPrefill =
-        when (type) {
-            AfternoteType.SOCIAL_NETWORK -> {
+        when (val draftContent = content) {
+            is DraftContent.SocialNetwork -> {
                 EditorContentPrefill.SocialNetwork(
                     serviceName = serviceName,
-                    credentials = credentials.toEditorCredentialsPrefill(),
-                    processingMethods = processingMethods.toProcessingMethodItems(),
+                    credentials = draftContent.credentials.toEditorCredentialsPrefill(),
+                    processingMethods = draftContent.processingMethods.toProcessingMethodItems(),
                 )
             }
 
-            AfternoteType.BUSINESS -> {
+            is DraftContent.Business -> {
                 EditorContentPrefill.Business(
                     serviceName = serviceName,
-                    credentials = credentials.toEditorCredentialsPrefill(),
-                    processingMethods = processingMethods.toProcessingMethodItems(),
+                    credentials = draftContent.credentials.toEditorCredentialsPrefill(),
+                    processingMethods = draftContent.processingMethods.toProcessingMethodItems(),
                 )
             }
 
-            AfternoteType.GALLERY_AND_FILES -> {
+            is DraftContent.Gallery -> {
                 EditorContentPrefill.Gallery(
                     serviceName = serviceName,
-                    processingMethods = processingMethods.toProcessingMethodItems(),
+                    processingMethods = draftContent.processingMethods.toProcessingMethodItems(),
                 )
             }
 
-            AfternoteType.MEMORIAL -> {
+            is DraftContent.Memorial -> {
                 EditorContentPrefill.Memorial(
-                    videoUrl = media.videoUrl,
-                    thumbnailUrl = media.thumbnailUrl,
-                    photoUrl = media.photoUrl,
+                    videoUrl = draftContent.media.videoUrl,
+                    thumbnailUrl = draftContent.media.thumbnailUrl,
+                    photoUrl = draftContent.media.photoUrl,
                     playlistSongs =
-                        songs.mapIndexed { index, song ->
+                        draftContent.songs.mapIndexed { index, song ->
                             Song(
                                 selectionKey = "draft:$index",
                                 title = song.title,
@@ -116,7 +116,7 @@ internal object AfternoteEditorFormMapper {
                 )
             }
 
-            AfternoteType.ESTATE -> {
+            DraftContent.Estate -> {
                 EditorContentPrefill.Estate
             }
         }
@@ -438,25 +438,34 @@ internal object AfternoteEditorFormMapper {
 
     /** 미작성 값도 표시용 기본값으로 바꾸기 전 서버 상세 그대로 비교 기준에 보존한다. */
     fun buildUpdateBaseline(detail: DraftDetail): AfternoteEditorSnapshot {
-        val isMemorial = detail.type == AfternoteType.MEMORIAL
-        val hasCredentials = detail.type == AfternoteType.SOCIAL_NETWORK || detail.type == AfternoteType.BUSINESS
+        val content = detail.content
+        val memorial = content as? DraftContent.Memorial
+        val credentials =
+            when (content) {
+                is DraftContent.SocialNetwork -> content.credentials
+                is DraftContent.Business -> content.credentials
+                is DraftContent.Gallery, is DraftContent.Memorial, DraftContent.Estate -> null
+            }
         return AfternoteEditorSnapshot(
-            type = detail.type,
+            type = content.type,
             title = detail.serviceName,
-            processingMethods = if (isMemorial) null else detail.processingMethods,
+            processingMethods =
+                when (content) {
+                    is DraftContent.SocialNetwork -> content.processingMethods
+                    is DraftContent.Business -> content.processingMethods
+                    is DraftContent.Gallery -> content.processingMethods
+                    is DraftContent.Memorial -> null
+                    DraftContent.Estate -> emptyList()
+                },
             leaveMessageBlocks = detail.leaveMessageBlocks.normalizedForDiff(),
-            credentialsId = if (hasCredentials) detail.credentials?.id?.ifBlank { null } else null,
-            credentialsPassword = if (hasCredentials) detail.credentials?.password?.ifBlank { null } else null,
-            receiverIds = if (isMemorial) null else detail.receivers.map { it.receiverId },
-            memorialPhotoUrl = if (isMemorial) detail.media.photoUrl?.ifBlank { null } else null,
-            memorialVideo = if (isMemorial) detail.media.toVideoPayload() else null,
+            credentialsId = credentials?.id?.ifBlank { null },
+            credentialsPassword = credentials?.password?.ifBlank { null },
+            receiverIds = if (memorial != null) null else detail.receivers.map { it.receiverId },
+            memorialPhotoUrl = memorial?.media?.photoUrl?.ifBlank { null },
+            memorialVideo = memorial?.media?.toVideoPayload(),
             songs =
-                if (isMemorial) {
-                    detail.songs.map { song ->
-                        MemorialSongPayload(title = song.title, artist = song.artist, coverUrl = song.coverUrl)
-                    }
-                } else {
-                    null
+                memorial?.songs?.map { song ->
+                    MemorialSongPayload(title = song.title, artist = song.artist, coverUrl = song.coverUrl)
                 },
         )
     }

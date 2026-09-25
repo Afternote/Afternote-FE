@@ -24,33 +24,29 @@ import java.util.concurrent.CopyOnWriteArrayList
 /** 실제 Retrofit query를 page × size로 해석하는 서버 응답으로 페이지 경계의 중복·누락을 검증한다. */
 class AfternotePagingRequestTest {
     @Test
-    fun `초기 30개와 append 10개 힌트에도 draft와 발행 목록은 같은 서버 크기로 끝까지 읽는다`() =
+    fun `초기 30개와 append 10개 힌트에도 같은 서버 크기로 끝까지 읽는다`() =
         runBlocking {
-            for (draftOnly in listOf(false, true)) {
-                val server = PageServer()
-                val source = AfternotePagingSource(server.api, category = "PLAYLIST", draftOnly = draftOnly, pageSize = 10)
-                val loaded = mutableListOf<Long>()
-                var page = source.loadPage(PagingSource.LoadParams.Refresh(null, 30, false))
+            val server = PageServer()
+            val source = AfternotePagingSource(server.api, category = "PLAYLIST", pageSize = 10)
+            val loaded = mutableListOf<Long>()
+            var page = source.loadPage(PagingSource.LoadParams.Refresh(null, 30, false))
+            loaded += page.data.map { it.id }
+            while (page.nextKey != null) {
+                page = source.loadPage(PagingSource.LoadParams.Append(requireNotNull(page.nextKey), 10, false))
                 loaded += page.data.map { it.id }
-                while (page.nextKey != null) {
-                    page = source.loadPage(PagingSource.LoadParams.Append(requireNotNull(page.nextKey), 10, false))
-                    loaded += page.data.map { it.id }
-                }
-
-                assertEquals("항목 중복이나 누락 없이 서버 순서를 보존해야 한다", (1L..42L).toList(), loaded)
-                assertEquals((0..4).map { it to 10 }, server.requests.map { it.pageAndSize() })
-                assertTrue(server.requests.all { it.queryParameter("draftOnly") == draftOnly.toString() })
-                assertTrue(server.requests.all { it.queryParameter("category") == "PLAYLIST" })
-                assertNull(page.nextKey)
-                assertTrue(page.data.all { it.isDraft == draftOnly })
             }
+
+            assertEquals("항목 중복이나 누락 없이 서버 순서를 보존해야 한다", (1L..42L).toList(), loaded)
+            assertEquals((0..4).map { it to 10 }, server.requests.map { it.pageAndSize() })
+            assertTrue(server.requests.all { it.queryParameter("category") == "PLAYLIST" })
+            assertNull(page.nextKey)
         }
 
     @Test
     fun `중간 페이지 refresh의 30개 힌트도 앞뒤 10개 페이지와 연속된다`() =
         runBlocking {
             val server = PageServer()
-            val original = AfternotePagingSource(server.api, category = null, draftOnly = true, pageSize = 10)
+            val original = AfternotePagingSource(server.api, category = null, pageSize = 10)
             val page = original.loadPage(PagingSource.LoadParams.Refresh(2, 10, false))
             val state =
                 PagingState(
@@ -62,7 +58,7 @@ class AfternotePagingRequestTest {
             val refreshKey = original.getRefreshKey(state)
             assertEquals(2, refreshKey)
 
-            val refreshed = AfternotePagingSource(server.api, category = null, draftOnly = true, pageSize = 10)
+            val refreshed = AfternotePagingSource(server.api, category = null, pageSize = 10)
             val middle = refreshed.loadPage(PagingSource.LoadParams.Refresh(refreshKey, 30, false))
             assertEquals((21L..30L).toList(), middle.data.map { it.id })
             val before = refreshed.loadPage(PagingSource.LoadParams.Prepend(requireNotNull(middle.prevKey), 10, false))
@@ -94,11 +90,10 @@ class AfternotePagingRequestTest {
                             requests += url
                             val page = requireNotNull(url.queryParameter("page")).toInt()
                             val size = requireNotNull(url.queryParameter("size")).toInt()
-                            val draft = requireNotNull(url.queryParameter("draftOnly")).toBooleanStrict()
                             val ids = (1L..42L).drop(page * size).take(size)
                             val content =
                                 ids.joinToString(",") { id ->
-                                    """{"afternoteId":$id,"title":"item $id","category":"PLAYLIST","createdAt":"2026-09-08T00:00:00","isDraft":$draft}"""
+                                    """{"afternoteId":$id,"title":"item $id","category":"PLAYLIST","createdAt":"2026-09-08T00:00:00","isDraft":false}"""
                                 }
                             val body =
                                 """{"status":200,"code":200,"data":{"content":[$content],"page":$page,"size":$size,"hasNext":${(page + 1) * size < 42}}}"""

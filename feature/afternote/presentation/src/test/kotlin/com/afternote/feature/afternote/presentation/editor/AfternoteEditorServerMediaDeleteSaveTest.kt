@@ -5,6 +5,7 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
+import com.afternote.feature.afternote.domain.model.author.DraftContent
 import com.afternote.feature.afternote.domain.model.author.DraftDetail
 import com.afternote.feature.afternote.domain.model.author.FieldPatch
 import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
@@ -183,15 +184,11 @@ class AfternoteEditorServerMediaDeleteSaveTest {
         val content = detail.content as DetailContent.Memorial
         return DraftDetail(
             id = detail.id,
-            type = AfternoteType.MEMORIAL,
             serviceName = detail.serviceName,
             timestamps = detail.timestamps,
             receivers = detail.receivers,
             leaveMessageBlocks = detail.leaveMessageBlocks,
-            credentials = null,
-            processingMethods = emptyList(),
-            songs = content.songs,
-            media = content.media,
+            content = DraftContent.Memorial(songs = content.songs, media = content.media),
         )
     }
 

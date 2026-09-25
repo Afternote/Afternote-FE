@@ -23,24 +23,24 @@ import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.setting.presentation.component.PinSetupStep
-import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
-import com.afternote.feature.setting.presentation.screen.PassKeyListScreen
-import com.afternote.feature.setting.presentation.screen.PassKeyScreen
-import com.afternote.feature.setting.presentation.screen.ProfileEditScreen
-import com.afternote.feature.setting.presentation.screen.WithdrawConfirmScreen
-import com.afternote.feature.setting.presentation.viewmodel.AppLockSetupViewModel
-import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsEvent
-import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsViewModel
-import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionError
-import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionViewModel
-import com.afternote.feature.setting.presentation.viewmodel.ProfileEditEvent
-import com.afternote.feature.setting.presentation.viewmodel.ProfileEditUiState
-import com.afternote.feature.setting.presentation.viewmodel.ProfileEditViewModel
-import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterViewModel
-import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
-import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
-import com.afternote.feature.setting.presentation.viewmodel.WithdrawUiState
+import com.afternote.feature.setting.presentation.account.ConnectedAccountsEvent
+import com.afternote.feature.setting.presentation.account.ConnectedAccountsViewModel
+import com.afternote.feature.setting.presentation.applock.AppLockSetupScreen
+import com.afternote.feature.setting.presentation.applock.AppLockSetupViewModel
+import com.afternote.feature.setting.presentation.applock.PinSetupStep
+import com.afternote.feature.setting.presentation.delivery.DeliveryConditionError
+import com.afternote.feature.setting.presentation.delivery.DeliveryConditionViewModel
+import com.afternote.feature.setting.presentation.home.SettingUiState
+import com.afternote.feature.setting.presentation.home.SettingViewModel
+import com.afternote.feature.setting.presentation.home.WithdrawConfirmScreen
+import com.afternote.feature.setting.presentation.home.WithdrawUiState
+import com.afternote.feature.setting.presentation.passkey.PassKeyListScreen
+import com.afternote.feature.setting.presentation.passkey.PassKeyScreen
+import com.afternote.feature.setting.presentation.profile.ProfileEditEvent
+import com.afternote.feature.setting.presentation.profile.ProfileEditScreen
+import com.afternote.feature.setting.presentation.profile.ProfileEditUiState
+import com.afternote.feature.setting.presentation.profile.ProfileEditViewModel
+import com.afternote.feature.setting.presentation.receiver.ReceiverRegisterViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -168,7 +168,7 @@ class SettingAccountSecurityTest {
             )
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.uiState.value.errorMessage == UiText.Resource(SettingR.string.receiver_email_required)
+            viewModel.uiState.value.errorMessage == UiText.Resource(SettingR.string.setting_receiver_email_required)
         }
 
         assertTrue(repository.receiverCreateCalls.isEmpty())

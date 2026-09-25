@@ -4,6 +4,7 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.DetailReceiver
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
+import com.afternote.feature.afternote.domain.model.author.DraftContent
 import com.afternote.feature.afternote.domain.model.author.DraftDetail
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 import com.afternote.feature.afternote.presentation.editor.model.EditorContentPrefill
@@ -70,14 +71,21 @@ class AfternoteEditorDraftPrefillTest {
         vararg receivers: DetailReceiver,
     ) = DraftDetail(
         id = 1L,
-        type = type,
         serviceName = "제목만 쓴 노트",
         timestamps = DetailTimestamps(updatedAt = "2026-09-03"),
         receivers = receivers.toList(),
         leaveMessageBlocks = emptyList(),
-        credentials = null,
-        processingMethods = emptyList(),
-        songs = emptyList(),
-        media = MemorialMedia(photoUrl = null, videoUrl = null, thumbnailUrl = null),
+        content =
+            when (type) {
+                AfternoteType.SOCIAL_NETWORK -> DraftContent.SocialNetwork(credentials = null, processingMethods = emptyList())
+                AfternoteType.BUSINESS -> DraftContent.Business(credentials = null, processingMethods = emptyList())
+                AfternoteType.GALLERY_AND_FILES -> DraftContent.Gallery(processingMethods = emptyList())
+                AfternoteType.MEMORIAL ->
+                    DraftContent.Memorial(
+                        songs = emptyList(),
+                        media = MemorialMedia(photoUrl = null, videoUrl = null, thumbnailUrl = null),
+                    )
+                AfternoteType.ESTATE -> DraftContent.Estate
+            },
     )
 }

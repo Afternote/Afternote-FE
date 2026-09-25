@@ -128,8 +128,15 @@ test("keeps pull request validation secretless and release credentials isolated"
     // pull_request_target은 default branch 정의에 쓰기 권한을 줄 수 있어 원칙적으로 금지한다.
     // 예외는 PR code/artifact/cache를 실행하지 않고 default branch 정책과 API JSON만 읽는 좁은
     // bridge 셋뿐이다 — 닫힌 스택 멤버 알림, merge queue 방출 처리(#1892), 머지 순서 가드(#1977,
-    // PR 사본 YAML 로 판정하던 구멍과 재게시 guard 두 줄을 없앤다). 그 불변식을 셋 모두에 고정한다.
-    const narrowBridges = ["merge-order-guard.yml", "merge-queue-dequeue.yml", "stack-integrity-notify.yml"];
+    // PR 사본 YAML 로 판정하던 구멍과 재게시 guard 두 줄을 없앤다), dependabot PR 보정(#2112,
+    // 봇 PR 의 pull_request 토큰은 읽기 전용이라 이슈 생성·제목·본문 편집을 못 한다). 그 불변식을
+    // 넷 모두에 고정한다.
+    const narrowBridges = [
+        "dependabot-pr-gate.yml",
+        "merge-order-guard.yml",
+        "merge-queue-dequeue.yml",
+        "stack-integrity-notify.yml",
+    ];
     assert.deepEqual([...pullRequestTargetWorkflows].sort(), narrowBridges);
     for (const bridgeName of narrowBridges) {
         const bridge = workflows.get(bridgeName);

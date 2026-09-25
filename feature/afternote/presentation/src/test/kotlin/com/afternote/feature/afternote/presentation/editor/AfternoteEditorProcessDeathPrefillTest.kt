@@ -7,8 +7,8 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
+import com.afternote.feature.afternote.domain.model.author.DraftContent
 import com.afternote.feature.afternote.domain.model.author.DraftDetail
-import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
@@ -264,15 +264,11 @@ class AfternoteEditorProcessDeathPrefillTest {
     private fun serverDraft() =
         DraftDetail(
             id = EDIT_ID,
-            type = AfternoteType.GALLERY_AND_FILES,
             serviceName = SERVER_SERVICE,
             timestamps = DetailTimestamps(updatedAt = "2026-09-08"),
             receivers = emptyList(),
             leaveMessageBlocks = emptyList(),
-            credentials = null,
-            processingMethods = listOf(SERVER_PROCESSING_METHOD),
-            songs = emptyList(),
-            media = MemorialMedia(null, null, null),
+            content = DraftContent.Gallery(processingMethods = listOf(SERVER_PROCESSING_METHOD)),
         )
 
     private fun serverDetail() =
@@ -310,7 +306,7 @@ class AfternoteEditorProcessDeathPrefillTest {
                         put("initialType", AfternoteType.GALLERY_AND_FILES)
                         put("itemId", EDIT_ID)
                         put("isDraft", isDraft)
-                        put("editor_form_snapshot_v4", snapshot)
+                        put("editor_form_snapshot_v5", snapshot)
                         // 화면이 프리필을 폼에 실을 때 ViewModel 이 같은 번들에 남기는 표식.
                         if (prefillSeeded) put("editor_prefill_seeded_item_id", EDIT_ID)
                     },
