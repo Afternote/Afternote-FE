@@ -38,7 +38,7 @@ import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.DetailReceiver
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
 import com.afternote.feature.afternote.domain.model.author.ProcessingMethod
-import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
+import com.afternote.feature.afternote.domain.model.author.ReceiverRefInput
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MediaKind
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
