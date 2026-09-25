@@ -13,7 +13,7 @@ import com.afternote.feature.afternote.domain.model.author.DetailReceiver
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
-import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
+import com.afternote.feature.afternote.domain.model.author.ReceiverRefInput
 import com.afternote.feature.afternote.domain.model.author.UpdateAfternoteInput
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
@@ -43,7 +43,7 @@ class FakeAfternoteRepositoryTest {
                     title = "수정 서비스",
                     processingMethods = listOf("계정 보존"),
                     credentials = AfternoteAccountCredentials(id = "new@test.local"),
-                    receivers = listOf(ReceiverRefPayload(7L)),
+                    receivers = listOf(ReceiverRefInput(7L)),
                 )
 
             val result = repository.update(item.id, payload)
