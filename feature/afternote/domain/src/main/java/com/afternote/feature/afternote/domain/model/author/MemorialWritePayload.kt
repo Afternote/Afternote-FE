@@ -21,7 +21,7 @@ data class CreateMemorialPayload(
  *
  * **수정(PATCH)에는 쓰지 않는다.** 수정은 「만진 슬롯만」 말해야 하는데 이 타입은 그것을 표현할
  * 수 없다 — 전체를 말하므로, 곡만 바꾼 저장도 사진·영상을 함께 실어 그 사이 다른 기기가 올린
- * 미디어를 지운다. 수정은 [MemorialPatchPayload] 를 쓴다 (#1617).
+ * 미디어를 지운다. 수정은 [MemorialPatchInput] 를 쓴다 (#1617).
  */
 data class MemorialWritePayload(
     val memorialPhotoUrl: String?,
@@ -46,7 +46,7 @@ data class MemorialVideoPayload(
  * - [memorialPhotoUrl]·[memorialVideo] 는 **키 유무**로 유지/삭제를 가르므로 [FieldPatch] 가 필요하다.
  * - [songs] 는 서버가 `songs != null` 만 보므로 `null`(안 건드림)과 빈 배열(전부 삭제)로 충분하다.
  */
-data class MemorialPatchPayload(
+data class MemorialPatchInput(
     val memorialPhotoUrl: FieldPatch<String?> = FieldPatch.Unchanged,
     val songs: List<MemorialSongPayload>? = null,
     val memorialVideo: FieldPatch<MemorialVideoPayload?> = FieldPatch.Unchanged,
