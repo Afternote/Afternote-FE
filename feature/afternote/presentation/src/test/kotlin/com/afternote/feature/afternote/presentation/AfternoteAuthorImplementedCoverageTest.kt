@@ -283,7 +283,7 @@ private fun implementedCoverageViewModel(
     AfternoteEditorViewModel(
         route = savedStateHandle.editorFlowRoute(),
         savedStateHandle = savedStateHandle,
-        userRepository = afternoteAuthorUserRepository(),
+        userReceiverRepository = afternoteAuthorUserReceiverRepository(),
         afternoteRepository = repository,
         memorialThumbnailUploadRepository =
             MemorialThumbnailUploadRepository {

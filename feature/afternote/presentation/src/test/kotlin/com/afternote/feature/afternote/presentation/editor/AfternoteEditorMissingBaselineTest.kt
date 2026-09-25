@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.presentation.editor
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.testing.FakeUserRepository
+import com.afternote.core.domain.testing.FakeUserReceiverRepository
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
@@ -149,7 +149,7 @@ class AfternoteEditorMissingBaselineTest {
                         "itemId" to EDIT_ID,
                     ),
                 ),
-            userRepository = FakeUserRepository.strict(),
+            userReceiverRepository = FakeUserReceiverRepository.strict(),
             afternoteRepository = afternoteRepository,
             memorialThumbnailUploadRepository =
                 MemorialThumbnailUploadRepository { error("썸네일 업로드가 호출되면 안 됩니다") },
