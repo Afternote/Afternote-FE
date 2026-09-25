@@ -11,7 +11,6 @@ import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
 import com.afternote.feature.afternote.domain.model.author.FieldPatch
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
-import com.afternote.feature.afternote.domain.model.author.ReceiverRefInput
 import com.afternote.feature.afternote.domain.model.author.UpdateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
@@ -111,7 +110,7 @@ class AfternoteEditorPartialUpdateTest {
         assertNull("처리 방법을 만진 적이 없다", updated.processingMethods)
         assertNull("남기실 말씀을 만진 적이 없다", updated.leaveMessageBlocks)
         assertNull("계정 정보를 만진 적이 없다", updated.credentials)
-        assertNull("수신자를 만진 적이 없다", updated.receivers)
+        assertNull("수신자를 만진 적이 없다", updated.receiverIds)
         assertNull("추억 노트가 아니므로 애초에 없다", updated.memorial)
     }
 
@@ -123,7 +122,7 @@ class AfternoteEditorPartialUpdateTest {
         assertNull(updated.processingMethods)
         assertNull(updated.leaveMessageBlocks)
         assertNull(updated.credentials)
-        assertNull(updated.receivers)
+        assertNull(updated.receiverIds)
     }
 
     /** 순서가 뜻을 갖지 않는 수신자는 정렬이 달라졌다고 「고쳤다」로 읽지 않는다. */
@@ -131,21 +130,21 @@ class AfternoteEditorPartialUpdateTest {
     fun `수신자 순서만 바뀐 것은 변경이 아니다`() {
         val updated = buildSocialUpdate(selectedReceiverIds = listOf(22L, 11L))
 
-        assertNull(updated.receivers)
+        assertNull(updated.receiverIds)
     }
 
     @Test
     fun `수신자를 실제로 지우면 남은 목록이 실린다`() {
         val updated = buildSocialUpdate(selectedReceiverIds = listOf(11L))
 
-        assertEquals(listOf(ReceiverRefInput(receiverId = 11L)), updated.receivers)
+        assertEquals(listOf(11L), updated.receiverIds)
     }
 
     @Test
     fun `수신자를 전부 빼면 빈 목록이 실려 전부 삭제로 나간다`() {
         val updated = buildSocialUpdate(selectedReceiverIds = emptyList())
 
-        assertEquals(emptyList<ReceiverRefInput>(), updated.receivers)
+        assertEquals(emptyList<Long>(), updated.receiverIds)
     }
 
     @Test
@@ -444,7 +443,7 @@ class AfternoteEditorPartialUpdateTest {
             UpdateAfternoteInput(
                 type = AfternoteType.BUSINESS,
                 credentials = AfternoteAccountCredentials(password = "새 비밀번호"),
-                receivers = listOf(ReceiverRefInput(receiverId = 22L)),
+                receiverIds = listOf(22L),
             ),
             updated,
         )
@@ -494,7 +493,7 @@ class AfternoteEditorPartialUpdateTest {
             UpdateAfternoteInput(
                 type = AfternoteType.GALLERY_AND_FILES,
                 processingMethods = emptyList(),
-                receivers = emptyList(),
+                receiverIds = emptyList(),
             ),
             updated,
         )
