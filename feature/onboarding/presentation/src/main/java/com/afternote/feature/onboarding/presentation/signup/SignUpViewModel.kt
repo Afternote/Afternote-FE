@@ -201,8 +201,8 @@ internal class SignUpViewModel
                     state.copy(isLoading = true)
                 }
 
-                SignUpReducerEvent.AccountCreated -> {
-                    state.copy(isAccountCreated = true)
+                is SignUpReducerEvent.AccountCreated -> {
+                    state.copy(createdAccount = CreatedSignUpAccount(email = event.email, password = event.password))
                 }
 
                 is SignUpReducerEvent.SubmitFailed -> {
@@ -318,7 +318,8 @@ internal class SignUpViewModel
          * 회원가입 API 는 토큰을 내려주지 않으므로 같은 자격증명으로 자동 로그인.
          *
          * 가입과 자동 로그인은 따로 성공할 수 있어 재시도 지점이 다르다
-         * ([SignUpUiState.isAccountCreated]).
+         * ([SignUpUiState.createdAccount]). 건너뛰기는 **그 자격 그대로 재제출할 때만** 적용한다 —
+         * 부분 성공 뒤 뒤로 가 이메일·비밀번호를 고치면 새 계정의 가입이 필요하다 (#2026).
          */
         private fun submitSignUp() {
             if (signUpJob?.isActive == true) return
@@ -342,7 +343,7 @@ internal class SignUpViewModel
                                     name = trimmedName,
                                     profileUrl = state.profileImageUri,
                                 ).onSuccess {
-                                    dispatch(SignUpReducerEvent.AccountCreated)
+                                    dispatch(SignUpReducerEvent.AccountCreated(email = state.email, password = state.signUpPassword))
                                 }.onFailure { error ->
                                     // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
                                     if (error is CancellationException) throw error
