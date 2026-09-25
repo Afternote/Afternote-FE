@@ -12,16 +12,16 @@ import com.afternote.feature.afternote.data.dto.AfternoteSongDto
 import com.afternote.feature.afternote.data.dto.AfternoteUpdateRequestDto
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.AfternoteAccountCredentials
-import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.FieldPatch
-import com.afternote.feature.afternote.domain.model.author.MemorialPatchPayload
+import com.afternote.feature.afternote.domain.model.author.MemorialPatchInput
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
 import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
+import com.afternote.feature.afternote.domain.model.author.UpdateAfternoteInput
 
 /**
  * 도메인 → 요청 wire. 요청 바디 루트는 `toRequest`, 그 안에 실리는 부분 DTO 는 `toDto` 다.
@@ -30,7 +30,7 @@ import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
  * `AfternoteEditorFormMapper` 가 프리필 원본과 비교해 정했다 — 여기서 `ifEmpty { null }` 류로 한 번
  * 더 손대면 「전부 삭제」가 「안 건드림」으로 조용히 바뀐다.
  */
-fun AfternoteUpdatePayload.toRequest() =
+fun UpdateAfternoteInput.toRequest() =
     AfternoteUpdateRequestDto(
         category = type.toAuthoringServerCategory(),
         title = title,
@@ -49,7 +49,7 @@ fun AfternoteUpdatePayload.toRequest() =
  * 후자는 남의 변경을 되돌리는 덮어쓰기로 나간다. 「말하지 않음」은 끝까지 말하지 않는 것으로만
  * 표현된다.
  */
-fun MemorialPatchPayload.toPatchDto() =
+fun MemorialPatchInput.toPatchDto() =
     AfternotePlaylistPatchRequestDto(
         memorialPhotoUrl = memorialPhotoUrl,
         songs = songs?.map { it.toDto() },

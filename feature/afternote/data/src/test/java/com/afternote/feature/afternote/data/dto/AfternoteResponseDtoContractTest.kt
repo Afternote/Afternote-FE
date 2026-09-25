@@ -2,11 +2,11 @@ package com.afternote.feature.afternote.data.dto
 
 import com.afternote.feature.afternote.data.mapper.toRequest
 import com.afternote.feature.afternote.domain.AfternoteType
-import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
-import com.afternote.feature.afternote.domain.model.author.MemorialPatchPayload
+import com.afternote.feature.afternote.domain.model.author.MemorialPatchInput
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
+import com.afternote.feature.afternote.domain.model.author.UpdateAfternoteInput
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.MissingFieldException
 import kotlinx.serialization.json.Json
@@ -114,11 +114,11 @@ class AfternoteResponseDtoContractTest {
     @Test
     fun `곡을 전부 뺀 수정 요청은 songs를 빈 배열로 실어 전부 삭제를 말한다`() {
         val request =
-            AfternoteUpdatePayload(
+            UpdateAfternoteInput(
                 type = AfternoteType.MEMORIAL,
                 title = "추억 노트",
                 // 곡을 전부 뺀 것만 말한다 — 미디어 슬롯은 만지지 않았으므로 키가 나가면 안 된다 (#1617).
-                memorial = MemorialPatchPayload(songs = emptyList()),
+                memorial = MemorialPatchInput(songs = emptyList()),
             ).toRequest()
 
         val encoded = json.encodeToJsonElement(AfternoteUpdateRequestDto.serializer(), request).jsonObject
@@ -133,11 +133,11 @@ class AfternoteResponseDtoContractTest {
     @Test
     fun `곡이 있는 수정 요청의 songs는 종전과 같은 키와 값으로 실린다`() {
         val request =
-            AfternoteUpdatePayload(
+            UpdateAfternoteInput(
                 type = AfternoteType.MEMORIAL,
                 title = "추억 노트",
                 memorial =
-                    MemorialPatchPayload(
+                    MemorialPatchInput(
                         songs = listOf(MemorialSongPayload(title = "곡", artist = "가수", coverUrl = null)),
                     ),
             ).toRequest()
