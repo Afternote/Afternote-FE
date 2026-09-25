@@ -83,7 +83,7 @@ class AfternoteEditorDraftPrefillTest {
                     payload = RegisterAfternotePayload(serviceName = detail.serviceName, date = "2026-09-03"),
                     selectedReceiverIds = emptyList(),
                     playlistSongs = emptyList(),
-                    memorialMedia = MemorialMediaUrls(),
+                    memorialMediaUrls = MemorialMediaUrls(),
                     baseline = AfternoteEditorFormMapper.buildUpdateBaseline(detail),
                 )
 
@@ -111,7 +111,7 @@ class AfternoteEditorDraftPrefillTest {
                         ),
                     selectedReceiverIds = emptyList(),
                     playlistSongs = emptyList(),
-                    memorialMedia = MemorialMediaUrls(),
+                    memorialMediaUrls = MemorialMediaUrls(),
                     baseline = AfternoteEditorFormMapper.buildUpdateBaseline(detail),
                 )
 
