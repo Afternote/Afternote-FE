@@ -8,7 +8,9 @@ import com.afternote.feature.afternote.domain.model.author.DraftContent
 import com.afternote.feature.afternote.domain.model.author.DraftDetail
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 import com.afternote.feature.afternote.presentation.editor.model.EditorContentPrefill
+import com.afternote.feature.afternote.presentation.editor.model.RegisterAfternotePayload
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -66,6 +68,62 @@ class AfternoteEditorDraftPrefillTest {
         assertEquals(false, publishInput.payload.isDraft)
     }
 
+    @Test
+    fun `종류별 미작성 값을 그대로 저장하면 수정 필드를 싣지 않는다`() {
+        listOf(
+            AfternoteType.SOCIAL_NETWORK,
+            AfternoteType.BUSINESS,
+            AfternoteType.GALLERY_AND_FILES,
+            AfternoteType.MEMORIAL,
+        ).forEach { type ->
+            val detail = draft(type)
+            val updated =
+                AfternoteEditorFormMapper.buildUpdatePayload(
+                    type = type,
+                    payload = RegisterAfternotePayload(serviceName = detail.serviceName, date = "2026-09-03"),
+                    selectedReceiverIds = emptyList(),
+                    playlistSongs = emptyList(),
+                    memorialMedia = MemorialMediaUrls(),
+                    baseline = AfternoteEditorFormMapper.buildUpdateBaseline(detail),
+                )
+
+            assertNull(updated.title)
+            assertNull(updated.processingMethods)
+            assertNull(updated.leaveMessageBlocks)
+            assertNull(updated.credentials)
+            assertNull(updated.receivers)
+            assertNull(updated.memorial)
+        }
+    }
+
+    @Test
+    fun `계정 정보가 없던 임시저장에 비밀번호만 쓰면 비밀번호만 싣는다`() {
+        listOf(AfternoteType.SOCIAL_NETWORK, AfternoteType.BUSINESS).forEach { type ->
+            val detail = draft(type)
+            val updated =
+                AfternoteEditorFormMapper.buildUpdatePayload(
+                    type = type,
+                    payload =
+                        RegisterAfternotePayload(
+                            serviceName = detail.serviceName,
+                            date = "2026-09-03",
+                            password = "새 비밀번호",
+                        ),
+                    selectedReceiverIds = emptyList(),
+                    playlistSongs = emptyList(),
+                    memorialMedia = MemorialMediaUrls(),
+                    baseline = AfternoteEditorFormMapper.buildUpdateBaseline(detail),
+                )
+
+            assertEquals("새 비밀번호", updated.credentials?.password)
+            assertNull(updated.credentials?.id)
+            assertNull(updated.title)
+            assertNull(updated.processingMethods)
+            assertNull(updated.receivers)
+            assertNull(updated.memorial)
+        }
+    }
+
     private fun draft(
         type: AfternoteType,
         vararg receivers: DetailReceiver,
@@ -77,15 +135,28 @@ class AfternoteEditorDraftPrefillTest {
         leaveMessageBlocks = emptyList(),
         content =
             when (type) {
-                AfternoteType.SOCIAL_NETWORK -> DraftContent.SocialNetwork(credentials = null, processingMethods = emptyList())
-                AfternoteType.BUSINESS -> DraftContent.Business(credentials = null, processingMethods = emptyList())
-                AfternoteType.GALLERY_AND_FILES -> DraftContent.Gallery(processingMethods = emptyList())
-                AfternoteType.MEMORIAL ->
+                AfternoteType.SOCIAL_NETWORK -> {
+                    DraftContent.SocialNetwork(credentials = null, processingMethods = emptyList())
+                }
+
+                AfternoteType.BUSINESS -> {
+                    DraftContent.Business(credentials = null, processingMethods = emptyList())
+                }
+
+                AfternoteType.GALLERY_AND_FILES -> {
+                    DraftContent.Gallery(processingMethods = emptyList())
+                }
+
+                AfternoteType.MEMORIAL -> {
                     DraftContent.Memorial(
                         songs = emptyList(),
                         media = MemorialMedia(photoUrl = null, videoUrl = null, thumbnailUrl = null),
                     )
-                AfternoteType.ESTATE -> DraftContent.Estate
+                }
+
+                AfternoteType.ESTATE -> {
+                    DraftContent.Estate
+                }
             },
     )
 }
