@@ -49,6 +49,7 @@ class DailyQuestionWriteViewModel
             // 수정 진입이면 대상 레코드를 프리필하고, 신규면 오늘 질문을 부른다 (#582).
             // 임시저장은 draftOnly=true 로만 내려오므로 어느 목록을 볼지 isDraft 로 가른다 (#770).
             if (editingAnswerId != null) {
+                _uiState.update { it.copy(isEditingExistingAnswer = true) }
                 loadAnswer(editingAnswerId, route.isDraft)
             } else {
                 loadTodayQuestion()
@@ -293,7 +294,13 @@ class DailyQuestionWriteViewModel
                 // 알리고 조회를 다시 걸어 사용자가 재시도할 수 있게 한다 (#565).
                 failSubmit(R.string.mindrecord_error_daily_question_missing)
                 // 이미 조회 중이면 그대로 둔다 — 연타로 같은 요청을 겹쳐 쌓지 않는다.
-                if (!state.isQuestionLoading) loadTodayQuestion()
+                //
+                // **무엇을 다시 부르는지는 진입이 정한다** (#2028). 수정·이어쓰기에서 오늘 질문을
+                // 부르면 questionId 가 채워지면서 대상이 오늘로 바뀌고, 다음 저장이 원래 답변의
+                // PATCH 가 아니라 오늘 질문의 신규 POST 로 나간다 — 고치던 글이 다른 질문에 남는다.
+                if (!state.isQuestionLoading) {
+                    if (editingAnswerId != null) loadAnswer(editingAnswerId, route.isDraft) else loadTodayQuestion()
+                }
                 return
             }
             if (!state.canSubmit) return
