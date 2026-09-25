@@ -1,7 +1,7 @@
 package com.afternote.feature.onboarding.presentation.signup
 
-import android.util.Patterns
 import com.afternote.core.ui.mvi.UiState
+import com.afternote.feature.onboarding.presentation.OnboardingEmailRule
 import com.afternote.feature.onboarding.presentation.OnboardingFailure
 import com.afternote.feature.onboarding.presentation.OnboardingPasswordRule
 import com.afternote.feature.onboarding.presentation.terms.TermsState
@@ -86,8 +86,9 @@ internal data class SignUpUiState(
         certificateCode: String,
     ): Boolean = this.email == email && this.verificationCode == certificateCode
 
+    /** 이메일 형식 검사 — 세 온보딩 화면이 [OnboardingEmailRule] 하나를 쓴다 (#1851). */
     val isEmailFormatValid: Boolean
-        get() = email.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(email).matches()
+        get() = OnboardingEmailRule.isValid(email)
 
     /** Step 1 — 이메일·인증번호 입력 후 다음 단계 진행 가능 여부. */
     val isStep1NextEnabled: Boolean
