@@ -20,7 +20,7 @@ import com.afternote.feature.afternote.domain.model.author.MemorialPatchInput
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
-import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
+import com.afternote.feature.afternote.domain.model.author.ReceiverRefInput
 import com.afternote.feature.afternote.domain.model.author.UpdateAfternoteInput
 
 /**
@@ -141,7 +141,7 @@ fun AfternoteAccountCredentials.toDto() =
         password = password,
     )
 
-fun ReceiverRefPayload.toDto() =
+fun ReceiverRefInput.toDto() =
     AfternoteReceiverRefDto(
         receiverId = receiverId,
     )
