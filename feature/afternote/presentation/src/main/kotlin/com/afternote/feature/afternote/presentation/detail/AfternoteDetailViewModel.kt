@@ -1,11 +1,11 @@
 package com.afternote.feature.afternote.presentation.detail
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.MyProfileRepository
 import com.afternote.core.domain.repository.UserProfileCacheRepository
+import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
@@ -17,10 +17,6 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
@@ -34,14 +30,14 @@ import kotlinx.coroutines.launch
  *
  * [AfternoteDetailUiState] 를 그대로 들고 [uiState] 로 노출한다 — Loading/Success/Error 3분기.
  * 삭제 결과(성공/실패)는 [AfternoteDetailUiState.Success.deleteResult] nullable 필드에 흡수한다 —
- * UI 가 LaunchedEffect 로 소비한 뒤 [onDeleteResultConsumed] 로 reset.
+ * UI 가 LaunchedEffect 로 소비한 뒤 [AfternoteDetailIntent.ConsumeDeleteResult] 로 reset.
  *
  * 사용자 가시 메시지는 VM 에 하드코딩하지 않고 [androidx.annotation.StringRes] id 로만 노출한다.
  * 실패 시 예외 원문(`Throwable.message`)은 UI 로 넘기지 않는다 — 서버 5xx 본문·역직렬화 예외에
  * 내부 SQL·응답 원문 발췌가 섞여 오므로 사용자에게 노출하면 안 된다.
  */
 @HiltViewModel(assistedFactory = AfternoteDetailViewModel.Factory::class)
-class AfternoteDetailViewModel
+internal class AfternoteDetailViewModel
     @AssistedInject
     constructor(
         @Assisted private val route: AfternoteRoute.DetailRoute,
@@ -49,12 +45,66 @@ class AfternoteDetailViewModel
         private val myProfileRepository: MyProfileRepository,
         private val userProfileRepository: UserProfileCacheRepository,
         private val errorReporter: ErrorReporter,
-    ) : ViewModel() {
+    ) : MviViewModel<AfternoteDetailIntent, AfternoteDetailUiState, AfternoteDetailReducerEvent>(AfternoteDetailUiState.Loading) {
         private val afternoteIdFromNav: Long =
             route.itemId
 
-        private val _uiState = MutableStateFlow<AfternoteDetailUiState>(AfternoteDetailUiState.Loading)
-        val uiState: StateFlow<AfternoteDetailUiState> = _uiState.asStateFlow()
+        override fun onIntent(intent: AfternoteDetailIntent) {
+            when (intent) {
+                AfternoteDetailIntent.Retry -> retry()
+                AfternoteDetailIntent.RefreshOnReturn -> refreshOnReturn()
+                AfternoteDetailIntent.Delete -> deleteAfternote()
+                AfternoteDetailIntent.ConsumeDeleteResult -> dispatch(AfternoteDetailReducerEvent.DeleteResultConsumed)
+            }
+        }
+
+        override fun reduce(
+            state: AfternoteDetailUiState,
+            event: AfternoteDetailReducerEvent,
+        ): AfternoteDetailUiState =
+            when (event) {
+                AfternoteDetailReducerEvent.Loading -> {
+                    AfternoteDetailUiState.Loading
+                }
+
+                is AfternoteDetailReducerEvent.ContentLoaded -> {
+                    if (state is AfternoteDetailUiState.Success) {
+                        state.copy(detailId = event.id, contentUiModel = event.content, authorDisplayName = event.authorName)
+                    } else {
+                        AfternoteDetailUiState.Success(
+                            detailId = event.id,
+                            contentUiModel = event.content,
+                            authorDisplayName = event.authorName,
+                        )
+                    }
+                }
+
+                is AfternoteDetailReducerEvent.LoadFailed -> {
+                    if (event.keepsContent &&
+                        state is AfternoteDetailUiState.Success
+                    ) {
+                        state
+                    } else {
+                        AfternoteDetailUiState.Error(R.string.afternote_detail_load_error)
+                    }
+                }
+
+                AfternoteDetailReducerEvent.DeleteStarted -> {
+                    state.withSuccess { it.copy(isDeleting = true) }
+                }
+
+                is AfternoteDetailReducerEvent.DeleteFinished -> {
+                    state.withSuccess { it.copy(isDeleting = false, deleteResult = event.result) }
+                }
+
+                AfternoteDetailReducerEvent.DeleteResultConsumed -> {
+                    state.withSuccess { it.copy(deleteResult = null) }
+                }
+
+                is AfternoteDetailReducerEvent.AuthorNameChanged -> {
+                    state.withSuccess { it.copy(authorDisplayName = event.name) }
+                }
+            }
 
         /**
          * 작성자 표시명 — 상세와 별도로 조회된다. 도착 전에는 빈 문자열이고, 도착하면 보고 있는 Success 와
@@ -115,7 +165,7 @@ class AfternoteDetailViewModel
          * [refreshOnReturn] 과 달리 사용자가 직접 누른 동작이라, 진행 중인 로드가 있어도 건너뛰지 않는다 —
          * 누른 결과가 조용히 사라지면 안 되므로 그 로드를 자르고 새로 시작한다.
          */
-        fun retry() {
+        private fun retry() {
             loadDetail(afternoteIdFromNav, LoadTrigger.UserRequested)
         }
 
@@ -130,7 +180,7 @@ class AfternoteDetailViewModel
          * 첫 ON_RESUME(진입 자체)은 [isFirstResume] 로 스킵하고, 그 이후의 resume 이 실행 중인
          * 로드와 겹치면(빠른 resume 연타 등) 진행 중인 Job 으로 건너뛴다.
          */
-        fun refreshOnReturn() {
+        private fun refreshOnReturn() {
             if (isFirstResume) {
                 isFirstResume = false
                 return
@@ -170,7 +220,7 @@ class AfternoteDetailViewModel
             loadJob =
                 viewModelScope.launch {
                     if (showsLoading) {
-                        _uiState.value = AfternoteDetailUiState.Loading
+                        dispatch(AfternoteDetailReducerEvent.Loading)
                     }
                     val result = afternoteRepository.getDetail(id = afternoteId)
                     // 잘린 로드가 값을 들고 돌아와 새 화면을 덮는 창을 닫는다. repository 는 취소를 다시
@@ -180,37 +230,12 @@ class AfternoteDetailViewModel
                         .onSuccess { detail ->
                             // 매핑은 update 밖에서 한 번만 한다 — update 의 람다는 경합 시 재실행된다.
                             val contentUiModel = detail.toDetailContentUiModel()
-                            _uiState.update { current ->
-                                // 갱신은 «상세 부분만» 바꾼다. 진행 중인 삭제(isDeleting)와 미소비 삭제
-                                // 결과(deleteResult)는 이 로드와 무관한 다른 작업의 상태라, 새 Success 로
-                                // 덮으면 그 기본값이 삭제 진행 표시를 풀고 결과 안내를 지운다.
-                                if (current is AfternoteDetailUiState.Success) {
-                                    current.copy(
-                                        detailId = detail.id,
-                                        contentUiModel = contentUiModel,
-                                        authorDisplayName = authorDisplayName,
-                                    )
-                                } else {
-                                    AfternoteDetailUiState.Success(
-                                        detailId = detail.id,
-                                        contentUiModel = contentUiModel,
-                                        authorDisplayName = authorDisplayName,
-                                    )
-                                }
-                            }
+                            dispatch(AfternoteDetailReducerEvent.ContentLoaded(detail.id, contentUiModel, authorDisplayName))
                         }.onFailure { e ->
                             // 화면을 유지하는 자동 갱신 실패도 기록한다 — 사용자에게 안 보이는 만큼
                             // 콘솔이 유일한 관측 지점이다.
                             errorReporter.recordAfternoteFailure(AfternoteFailureStage.DETAIL_LOAD, e)
-                            _uiState.update { current ->
-                                if (keepsStateOnFailure && current is AfternoteDetailUiState.Success) {
-                                    current
-                                } else {
-                                    AfternoteDetailUiState.Error(
-                                        messageRes = R.string.afternote_detail_load_error,
-                                    )
-                                }
-                            }
+                            dispatch(AfternoteDetailReducerEvent.LoadFailed(keepsStateOnFailure))
                         }
                 }
         }
@@ -218,7 +243,7 @@ class AfternoteDetailViewModel
         /**
          * 삭제는 상세를 보고 있을 때만 뜻이 있다 — 그 전제를 상태에서 직접 확인한다.
          *
-         * 상태 갱신은 [updateSuccess] 가 Success 밖에서 no-op 이라 이미 안전하지만, **서버 호출은 아니다.**
+         * 상태 갱신은 [reduce] 가 Success 밖에서 no-op 이라 이미 안전하지만, **서버 호출은 아니다.**
          * Success 가 아닐 때 이 함수가 불리면 노트는 지워지는데 UI 는 아무것도 모른다(진행 표시도,
          * 결과 안내도, 화면 pop 도 없다). 중복 호출 가드도 non-Success 에서는 늘 통과한다.
          * 지금은 결선상 Success 에서만 호출되지만, 그 불변식은 VM 밖(내비게이션 분기)에 있다.
@@ -226,38 +251,25 @@ class AfternoteDetailViewModel
          * 지울 id 도 인자로 받지 않고 그 Success 에서 꺼낸다 — 화면에 보이는 것과 다른 항목을 지우는
          * 경우를 시그니처에서 없앤다. 호출부가 넘기던 값도 같은 Success 의 `detailId` 였다.
          */
-        fun deleteAfternote() {
-            val current = _uiState.value as? AfternoteDetailUiState.Success ?: return
+        private fun deleteAfternote() {
+            val current = currentState as? AfternoteDetailUiState.Success ?: return
             if (current.isDeleting) return
             val afternoteId = current.detailId
             viewModelScope.launch {
-                updateSuccess { it.copy(isDeleting = true) }
+                dispatch(AfternoteDetailReducerEvent.DeleteStarted)
                 afternoteRepository
                     .delete(id = afternoteId)
                     .onSuccess {
-                        updateSuccess {
-                            it.copy(
-                                isDeleting = false,
-                                deleteResult = AfternoteDetailDeleteResult.Succeeded(afternoteId),
-                            )
-                        }
+                        dispatch(AfternoteDetailReducerEvent.DeleteFinished(AfternoteDetailDeleteResult.Succeeded(afternoteId)))
                     }.onFailure { e ->
                         errorReporter.recordAfternoteFailure(AfternoteFailureStage.DETAIL_DELETE, e)
-                        updateSuccess {
-                            it.copy(
-                                isDeleting = false,
-                                deleteResult =
-                                    AfternoteDetailDeleteResult.Failed(
-                                        messageRes = R.string.afternote_detail_delete_failed,
-                                    ),
-                            )
-                        }
+                        dispatch(
+                            AfternoteDetailReducerEvent.DeleteFinished(
+                                AfternoteDetailDeleteResult.Failed(R.string.afternote_detail_delete_failed),
+                            ),
+                        )
                     }
             }
-        }
-
-        fun onDeleteResultConsumed() {
-            updateSuccess { it.copy(deleteResult = null) }
         }
 
         // endregion
@@ -267,18 +279,7 @@ class AfternoteDetailViewModel
         /** 늦게 도착한 작성자 표시명을 반영한다. 아직 Loading 이면 필드에만 남아 다음 Success 에 실린다. */
         private fun applyAuthorDisplayName(name: String) {
             authorDisplayName = name
-            updateSuccess { it.copy(authorDisplayName = name) }
-        }
-
-        /** 삭제 진행·결과는 Success 에만 존재하므로, 그 외 상태에서는 갱신하지 않는다. */
-        private fun updateSuccess(transform: (AfternoteDetailUiState.Success) -> AfternoteDetailUiState) {
-            _uiState.update { current ->
-                if (current is AfternoteDetailUiState.Success) {
-                    transform(current)
-                } else {
-                    current
-                }
-            }
+            dispatch(AfternoteDetailReducerEvent.AuthorNameChanged(name))
         }
 
         // endregion
@@ -288,3 +289,8 @@ class AfternoteDetailViewModel
             fun create(route: AfternoteRoute.DetailRoute): AfternoteDetailViewModel
         }
     }
+
+/** 상세 재조회가 삭제 진행·미소비 결과를 덮지 않도록 Success의 해당 필드만 바꾼다. */
+private inline fun AfternoteDetailUiState.withSuccess(
+    transform: (AfternoteDetailUiState.Success) -> AfternoteDetailUiState,
+): AfternoteDetailUiState = if (this is AfternoteDetailUiState.Success) transform(this) else this

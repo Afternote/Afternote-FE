@@ -297,15 +297,6 @@ class ProductionVisibilityKonsistTest {
             )
 
         /**
-         * 남은 항목은 MVI 전환(#1804)이 다시 열 화면 seam 이라 #1817 이 그 뒤에 판정한다.
-         * #1673 의 나머지(mapper·test tag·Saver·목록 매퍼)는 해소돼 목록에서 빠졌다.
-         */
-        val ISSUE_1673_AFTERNOTE =
-            setOf(
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/detail/AfternoteDetailRoute.kt::function DeleteInProgressOverlay [internal]",
-            )
-
-        /**
          * 남은 항목은 MVI 전환(#1807)이 다시 열 Content seam 이라 #1818 이 그 뒤에 판정한다.
          * #1674 의 나머지(매퍼 2건·화면 helper 3건·요약 helper 2건·주간 날짜 복원)는 해소돼
          * 목록에서 빠졌다 — 같은 계약은 공개 소유자(매퍼 진입점·ViewModel 상태·화면)로 본다.
@@ -356,7 +347,6 @@ class ProductionVisibilityKonsistTest {
         val LEGACY_TEST_DRIVEN_VISIBILITY =
             ISSUE_1671_PLATFORM +
                 ISSUE_1672_CORE +
-                ISSUE_1673_AFTERNOTE +
                 ISSUE_1674_MINDRECORD +
                 ISSUE_1675_ONBOARDING +
                 ISSUE_1676_RECEIVER +

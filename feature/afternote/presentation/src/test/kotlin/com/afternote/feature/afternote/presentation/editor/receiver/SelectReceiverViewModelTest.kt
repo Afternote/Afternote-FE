@@ -118,7 +118,7 @@ class SelectReceiverViewModelTest {
             assertTrue(viewModel.uiState.value.loadFailed)
 
             repository.onGetReceivers = null
-            viewModel.refresh()
+            viewModel.onIntent(SelectReceiverIntent.Refresh)
             runCurrent()
 
             val state = viewModel.uiState.value
@@ -131,10 +131,10 @@ class SelectReceiverViewModelTest {
         runTest {
             val viewModel = viewModelWithReceivers()
 
-            viewModel.toggleReceiverSelection(1L)
+            viewModel.onIntent(SelectReceiverIntent.ToggleReceiver(1L))
             assertEquals(listOf(1L), viewModel.uiState.value.selectedReceiverIds)
 
-            viewModel.toggleReceiverSelection(1L)
+            viewModel.onIntent(SelectReceiverIntent.ToggleReceiver(1L))
             assertEquals(emptyList<Long>(), viewModel.uiState.value.selectedReceiverIds)
         }
 
@@ -143,8 +143,8 @@ class SelectReceiverViewModelTest {
         runTest {
             val viewModel = viewModelWithReceivers()
 
-            viewModel.toggleReceiverSelection(2L)
-            viewModel.toggleReceiverSelection(1L)
+            viewModel.onIntent(SelectReceiverIntent.ToggleReceiver(2L))
+            viewModel.onIntent(SelectReceiverIntent.ToggleReceiver(1L))
 
             assertEquals(listOf(2L, 1L), viewModel.uiState.value.selectedReceiverIds)
         }
@@ -154,9 +154,9 @@ class SelectReceiverViewModelTest {
         runTest {
             val viewModel = viewModelWithReceivers()
 
-            viewModel.toggleReceiverSelection(1L)
-            viewModel.toggleReceiverSelection(2L)
-            viewModel.toggleReceiverSelection(1L)
+            viewModel.onIntent(SelectReceiverIntent.ToggleReceiver(1L))
+            viewModel.onIntent(SelectReceiverIntent.ToggleReceiver(2L))
+            viewModel.onIntent(SelectReceiverIntent.ToggleReceiver(1L))
 
             assertEquals(listOf(2L), viewModel.uiState.value.selectedReceiverIds)
         }
@@ -174,8 +174,8 @@ class SelectReceiverViewModelTest {
         runTest {
             val viewModel = viewModelWithReceivers(formReceiverIds = listOf(1L))
 
-            viewModel.toggleReceiverSelection(1L)
-            viewModel.applyPreselection(listOf(1L))
+            viewModel.onIntent(SelectReceiverIntent.ToggleReceiver(1L))
+            viewModel.onIntent(SelectReceiverIntent.ApplyPreselection(listOf(1L)))
 
             assertEquals(emptyList<Long>(), viewModel.uiState.value.selectedReceiverIds)
         }
@@ -185,8 +185,8 @@ class SelectReceiverViewModelTest {
         runTest {
             val viewModel = viewModelWithReceivers(formReceiverIds = listOf(1L))
 
-            viewModel.toggleReceiverSelection(1L)
-            viewModel.toggleReceiverSelection(1L)
+            viewModel.onIntent(SelectReceiverIntent.ToggleReceiver(1L))
+            viewModel.onIntent(SelectReceiverIntent.ToggleReceiver(1L))
 
             assertEquals(listOf(1L), viewModel.uiState.value.selectedReceiverIds)
         }
@@ -200,7 +200,7 @@ class SelectReceiverViewModelTest {
             val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, SavedStateHandle())
             runCurrent()
 
-            viewModel.applyPreselection(listOf(1L, 99L))
+            viewModel.onIntent(SelectReceiverIntent.ApplyPreselection(listOf(1L, 99L)))
 
             gate.complete(
                 listOf(
@@ -227,10 +227,10 @@ class SelectReceiverViewModelTest {
             val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, SavedStateHandle())
             runCurrent()
 
-            viewModel.toggleReceiverSelection(1L)
-            viewModel.toggleReceiverSelection(2L)
+            viewModel.onIntent(SelectReceiverIntent.ToggleReceiver(1L))
+            viewModel.onIntent(SelectReceiverIntent.ToggleReceiver(2L))
             repository.receiverState.value = listOf(Receiver(1L, "김혜성", "아들", "auth-1"))
-            viewModel.refresh()
+            viewModel.onIntent(SelectReceiverIntent.Refresh)
             runCurrent()
 
             assertEquals(listOf(1L), viewModel.uiState.value.selectedReceiverIds)
@@ -244,8 +244,8 @@ class SelectReceiverViewModelTest {
             val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, SavedStateHandle())
             runCurrent()
 
-            viewModel.toggleReceiverSelection(1L)
-            viewModel.refresh()
+            viewModel.onIntent(SelectReceiverIntent.ToggleReceiver(1L))
+            viewModel.onIntent(SelectReceiverIntent.Refresh)
             runCurrent()
 
             assertEquals(listOf(1L), viewModel.uiState.value.selectedReceiverIds)
@@ -267,7 +267,7 @@ class SelectReceiverViewModelTest {
                 )
             val beforeDeath = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, savedStateHandle)
             runCurrent()
-            beforeDeath.toggleReceiverSelection(2L)
+            beforeDeath.onIntent(SelectReceiverIntent.ToggleReceiver(2L))
 
             val restored = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, savedStateHandle)
             runCurrent()
@@ -288,13 +288,13 @@ class SelectReceiverViewModelTest {
                         ),
                 )
             val beforeDeath = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, savedStateHandle)
-            beforeDeath.applyPreselection(listOf(1L))
+            beforeDeath.onIntent(SelectReceiverIntent.ApplyPreselection(listOf(1L)))
             runCurrent()
-            beforeDeath.toggleReceiverSelection(1L)
+            beforeDeath.onIntent(SelectReceiverIntent.ToggleReceiver(1L))
 
             // 재생성 뒤 Route 의 LaunchedEffect 가 같은 폼 수신자로 다시 부른다.
             val restored = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, savedStateHandle)
-            restored.applyPreselection(listOf(1L))
+            restored.onIntent(SelectReceiverIntent.ApplyPreselection(listOf(1L)))
             runCurrent()
 
             assertEquals(emptyList<Long>(), restored.uiState.value.selectedReceiverIds)
@@ -314,7 +314,7 @@ class SelectReceiverViewModelTest {
                     ),
             )
         val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, SavedStateHandle())
-        if (formReceiverIds.isNotEmpty()) viewModel.applyPreselection(formReceiverIds)
+        if (formReceiverIds.isNotEmpty()) viewModel.onIntent(SelectReceiverIntent.ApplyPreselection(formReceiverIds))
         dispatcher.scheduler.runCurrent()
         return viewModel
     }

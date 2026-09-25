@@ -1,24 +1,21 @@
 package com.afternote.feature.afternote.presentation.editor.receiver
 
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserReceiverRepository
+import com.afternote.core.ui.mvi.MviViewModel
+import com.afternote.core.ui.mvi.UiState
 import com.afternote.feature.afternote.presentation.editor.mapper.toAfternoteEditorReceivers
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /** 수신자 선택 화면 UI 상태. */
-data class SelectReceiverUiState(
+internal data class SelectReceiverUiState(
     val isLoading: Boolean = false,
     val loadFailed: Boolean = false,
     /** 서버에서 불러온 내 수신자 목록 — 설정 › 수신자 관리에서 등록한 그 사람들. 화면의 행이다. */
@@ -32,7 +29,7 @@ data class SelectReceiverUiState(
      * 빈 목록이 «아무도 선택하지 않음» 이다. null 로 없음을 표현하지 않는다 (#1426).
      */
     val selectedReceiverIds: List<Long> = emptyList(),
-)
+) : UiState
 
 /**
  * 애프터노트 에디터의 수신자 선택 화면 ViewModel (#540).
@@ -46,24 +43,71 @@ data class SelectReceiverUiState(
  * 화면에서 체크를 푼 수신자는 폼에서도 빠진다.
  *
  * 화면 내 선택과 «폼 수신자는 이미 넣었다» 는 사실은 [SavedStateHandle] 에 적어 둔다 (#1427). 백그라운드에서
- * 프로세스가 재생성돼도 선택이 그대로 복원되고, 복귀 시 다시 도는 [applyPreselection] 이 사용자가 푼
+ * 프로세스가 재생성돼도 선택이 복원되고, 복귀 시 프리필이 사용자가 푼
  * 폼 수신자를 되살리지 않는다.
  */
 @HiltViewModel
-class SelectReceiverViewModel
+internal class SelectReceiverViewModel
     @Inject
     constructor(
         private val userReceiverRepository: UserReceiverRepository,
         private val errorReporter: ErrorReporter,
         private val savedStateHandle: SavedStateHandle,
-    ) : ViewModel() {
-        private val _uiState =
-            MutableStateFlow(
-                SelectReceiverUiState(
-                    selectedReceiverIds = savedStateHandle.get<LongArray>(SELECTED_RECEIVER_IDS_STATE_KEY)?.toList().orEmpty(),
-                ),
-            )
-        val uiState: StateFlow<SelectReceiverUiState> = _uiState.asStateFlow()
+    ) : MviViewModel<SelectReceiverIntent, SelectReceiverUiState, SelectReceiverReducerEvent>(
+            SelectReceiverUiState(
+                selectedReceiverIds = savedStateHandle.get<LongArray>(SELECTED_RECEIVER_IDS_STATE_KEY)?.toList().orEmpty(),
+            ),
+        ) {
+        override fun onIntent(intent: SelectReceiverIntent) {
+            when (intent) {
+                is SelectReceiverIntent.ApplyPreselection -> applyPreselection(intent.receiverIds)
+                SelectReceiverIntent.Refresh -> refresh()
+                is SelectReceiverIntent.ToggleReceiver -> toggleReceiverSelection(intent.receiverId)
+            }
+        }
+
+        override fun reduce(
+            state: SelectReceiverUiState,
+            event: SelectReceiverReducerEvent,
+        ): SelectReceiverUiState =
+            when (event) {
+                is SelectReceiverReducerEvent.PreselectionApplied -> {
+                    state.copy(
+                        selectedReceiverIds =
+                            (
+                                event.receiverIds +
+                                    state.selectedReceiverIds
+                            ).distinct(),
+                    )
+                }
+
+                SelectReceiverReducerEvent.Loading -> {
+                    state.copy(isLoading = true, loadFailed = false)
+                }
+
+                is SelectReceiverReducerEvent.ReceiversLoaded -> {
+                    state.copy(
+                        isLoading = false,
+                        receivers = event.receivers,
+                        selectedReceiverIds = state.selectedReceiverIds.filter { selected -> event.receivers.any { it.id == selected } },
+                    )
+                }
+
+                SelectReceiverReducerEvent.LoadFailed -> {
+                    state.copy(isLoading = false, loadFailed = true)
+                }
+
+                is SelectReceiverReducerEvent.ReceiverToggled -> {
+                    state.copy(
+                        selectedReceiverIds =
+                            if (event.receiverId in state.selectedReceiverIds) {
+                                state.selectedReceiverIds - event.receiverId
+                            } else {
+                                state.selectedReceiverIds + event.receiverId
+                            },
+                    )
+                }
+            }
 
         private var isPreselectionApplied: Boolean
             get() = savedStateHandle[PRESELECTION_APPLIED_STATE_KEY] ?: false
@@ -86,52 +130,33 @@ class SelectReceiverViewModel
          * 폼의 id 는 화면이 뜨자마자 오고 목록은 서버 응답이라 그보다 늦다. 목록에 없는 id 는 [refresh] 가
          * 목록을 받으며 뺀다.
          */
-        fun applyPreselection(formReceiverIds: List<Long>) {
+        private fun applyPreselection(formReceiverIds: List<Long>) {
             if (isPreselectionApplied) return
             isPreselectionApplied = true
             if (formReceiverIds.isEmpty()) return
-            _uiState.update { state ->
-                state.copy(selectedReceiverIds = (formReceiverIds + state.selectedReceiverIds).distinct())
-            }
-            persistSelection(_uiState.value.selectedReceiverIds)
+            dispatch(SelectReceiverReducerEvent.PreselectionApplied(formReceiverIds))
+            persistSelection(currentState.selectedReceiverIds)
         }
 
         /** 수신자 목록을 (재)조회한다. 실패 화면의 "다시 시도" 도 여기로 온다. */
-        fun refresh() {
+        private fun refresh() {
             viewModelScope.launch {
-                _uiState.update { it.copy(isLoading = true, loadFailed = false) }
+                dispatch(SelectReceiverReducerEvent.Loading)
                 runCatchingCancellable { userReceiverRepository.getReceivers() }
                     .onSuccess { receivers ->
-                        _uiState.update { state ->
-                            state.copy(
-                                isLoading = false,
-                                receivers = receivers.toAfternoteEditorReceivers(),
-                                // 목록에 없는 수신자 선택은 해제한다 — 폼에서 넘어왔지만 설정에서 지워진 id,
-                                // 재조회로 사라진 id. 남겨 두면 완료 버튼이 이미 없는 id 를 에디터로 돌려보낸다.
-                                selectedReceiverIds =
-                                    state.selectedReceiverIds.filter { selected ->
-                                        receivers.any { it.receiverId == selected }
-                                    },
-                            )
-                        }
-                        persistSelection(_uiState.value.selectedReceiverIds)
+                        dispatch(SelectReceiverReducerEvent.ReceiversLoaded(receivers.toAfternoteEditorReceivers()))
+                        persistSelection(currentState.selectedReceiverIds)
                     }.onFailure { e ->
                         errorReporter.recordAfternoteFailure(AfternoteFailureStage.RECEIVER_SELECT_LOAD, e)
-                        _uiState.update { it.copy(isLoading = false, loadFailed = true) }
+                        dispatch(SelectReceiverReducerEvent.LoadFailed)
                     }
             }
         }
 
         /** 탭한 수신자를 선택 목록에 더하고, 이미 선택된 수신자를 다시 탭하면 그 항목만 뺀다 (#1426). */
-        fun toggleReceiverSelection(receiverId: Long) {
-            _uiState.update { state ->
-                val selected = state.selectedReceiverIds
-                state.copy(
-                    selectedReceiverIds =
-                        if (receiverId in selected) selected - receiverId else selected + receiverId,
-                )
-            }
-            persistSelection(_uiState.value.selectedReceiverIds)
+        private fun toggleReceiverSelection(receiverId: Long) {
+            dispatch(SelectReceiverReducerEvent.ReceiverToggled(receiverId))
+            persistSelection(currentState.selectedReceiverIds)
         }
 
         private fun persistSelection(receiverIds: List<Long>) {

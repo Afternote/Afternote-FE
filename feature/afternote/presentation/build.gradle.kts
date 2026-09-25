@@ -9,6 +9,7 @@ plugins {
 android {
     namespace = "com.afternote.feature.afternote.presentation"
     resourcePrefix = "afternote_"
+    testFixtures.enable = true
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
     buildFeatures {
         buildConfig = true
@@ -41,6 +42,15 @@ dependencies {
     implementation(libs.androidx.paging.runtime)
     implementation(libs.androidx.paging.compose)
     implementation(libs.androidx.core.ktx)
+
+    // 앱 기기 테스트는 fixture를 통해 실제 화면을 열며 production ViewModel을 공개하지 않는다.
+    testFixturesImplementation(platform(libs.androidx.compose.bom))
+    testFixturesImplementation(libs.androidx.compose.runtime)
+    testFixturesImplementation(projects.feature.afternote.domain)
+    testFixturesImplementation(projects.feature.receiver.domain)
+    testFixturesImplementation(projects.core.common)
+    testFixturesImplementation(projects.core.ui)
+    testFixturesImplementation(libs.androidx.navigation3.runtime)
 
     testImplementation(libs.coroutines.test)
     testImplementation(testFixtures(projects.core.domain))

@@ -20,8 +20,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
-import com.afternote.feature.afternote.presentation.home.AfternoteHomeEntry
-import com.afternote.feature.afternote.presentation.home.AfternoteHomeViewModel
+import com.afternote.feature.afternote.presentation.testing.AfternoteHomeScreenFixture
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -77,15 +76,14 @@ class AfternoteHomeRefreshBannerAndroidTest {
                     }.flow
                 }
             }
-        val viewModel = AfternoteHomeViewModel(repository, FakeErrorReporter())
+        val homeFixture = AfternoteHomeScreenFixture(repository, FakeErrorReporter())
 
         composeRule.setContent {
             AfternoteTheme {
-                AfternoteHomeEntry(
+                homeFixture.Content(
                     navigateToDetail = {},
                     navigateToAdd = {},
                     onSettingClick = {},
-                    viewModel = viewModel,
                 )
             }
         }

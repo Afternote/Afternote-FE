@@ -1,8 +1,8 @@
 package com.afternote.feature.afternote.presentation.receiver.playlist
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
@@ -14,10 +14,6 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
@@ -27,19 +23,48 @@ import kotlinx.coroutines.launch
  * `X-Auth-Code` 헤더는 ReceiverAuthInterceptor가 자동 부착합니다.
  */
 @HiltViewModel(assistedFactory = ReceiverMemorialPlaylistViewModel.Factory::class)
-class ReceiverMemorialPlaylistViewModel
+internal class ReceiverMemorialPlaylistViewModel
     @AssistedInject
     constructor(
         @Assisted private val route: ReceivedAfternoteRoute.MemorialPlaylistRoute,
         private val receiverRepository: ReceiverRepository,
         private val errorReporter: ErrorReporter,
-    ) : ViewModel() {
+    ) : MviViewModel<ReceiverMemorialPlaylistIntent, ReceiverMemorialPlaylistUiState, ReceiverMemorialPlaylistReducerEvent>(
+            ReceiverMemorialPlaylistUiState.Loading,
+        ) {
         private val afternoteIdFromNav: Long =
             route.afternoteId
 
-        private val _uiState =
-            MutableStateFlow<ReceiverMemorialPlaylistUiState>(ReceiverMemorialPlaylistUiState.Loading)
-        val uiState: StateFlow<ReceiverMemorialPlaylistUiState> = _uiState.asStateFlow()
+        override fun onIntent(intent: ReceiverMemorialPlaylistIntent) {
+            when (intent) {
+                ReceiverMemorialPlaylistIntent.Retry -> retry()
+                ReceiverMemorialPlaylistIntent.RefreshOnReturn -> refreshOnReturn()
+            }
+        }
+
+        override fun reduce(
+            state: ReceiverMemorialPlaylistUiState,
+            event: ReceiverMemorialPlaylistReducerEvent,
+        ): ReceiverMemorialPlaylistUiState =
+            when (event) {
+                ReceiverMemorialPlaylistReducerEvent.Loading -> {
+                    ReceiverMemorialPlaylistUiState.Loading
+                }
+
+                is ReceiverMemorialPlaylistReducerEvent.ContentLoaded -> {
+                    event.content
+                }
+
+                is ReceiverMemorialPlaylistReducerEvent.LoadFailed -> {
+                    if (event.keepsContent &&
+                        state is ReceiverMemorialPlaylistUiState.Success
+                    ) {
+                        state
+                    } else {
+                        ReceiverMemorialPlaylistUiState.Error(R.string.afternote_receiver_memorial_playlist_load_error)
+                    }
+                }
+            }
 
         /** 진행 중인 조회 — 첫 진입 이후의 ON_RESUME 이 실행 중인 로드와 겹치면 건너뛰기 위한 가드. */
         private var loadJob: Job? = null
@@ -57,7 +82,7 @@ class ReceiverMemorialPlaylistViewModel
             loadPlaylist(afternoteIdFromNav)
         }
 
-        fun retry() {
+        private fun retry() {
             loadPlaylist(afternoteIdFromNav)
         }
 
@@ -68,7 +93,7 @@ class ReceiverMemorialPlaylistViewModel
          * 첫 ON_RESUME(진입 자체)은 [isFirstResume] 로 스킵하고, 그 이후의 resume 이 실행 중인
          * 로드와 겹치면 진행 중인 Job 으로 건너뛴다.
          */
-        fun refreshOnReturn() {
+        private fun refreshOnReturn() {
             if (isFirstResume) {
                 isFirstResume = false
                 return
@@ -84,7 +109,7 @@ class ReceiverMemorialPlaylistViewModel
         ) {
             loadJob?.cancel()
             if (showsLoading) {
-                _uiState.value = ReceiverMemorialPlaylistUiState.Loading
+                dispatch(ReceiverMemorialPlaylistReducerEvent.Loading)
             }
             loadJob =
                 viewModelScope.launch {
@@ -103,25 +128,20 @@ class ReceiverMemorialPlaylistViewModel
                                             albumImageUrl = song.coverUrl,
                                         )
                                     }.orEmpty()
-                            _uiState.value =
-                                ReceiverMemorialPlaylistUiState.Success(
-                                    senderName = detail.senderName,
-                                    songs = songs,
-                                    memorialVideoUrl = playlist?.memorialVideoUrl,
-                                    memorialThumbnailUrl = playlist?.memorialThumbnailUrl,
-                                )
+                            dispatch(
+                                ReceiverMemorialPlaylistReducerEvent.ContentLoaded(
+                                    ReceiverMemorialPlaylistUiState.Success(
+                                        senderName = detail.senderName,
+                                        songs = songs,
+                                        memorialVideoUrl = playlist?.memorialVideoUrl,
+                                        memorialThumbnailUrl = playlist?.memorialThumbnailUrl,
+                                    ),
+                                ),
+                            )
                         }.onFailure { e ->
                             // 화면을 유지하는 자동 갱신 실패도 기록한다 — 콘솔이 유일한 관측 지점이다.
                             errorReporter.recordAfternoteFailure(AfternoteFailureStage.RECEIVED_PLAYLIST_LOAD, e)
-                            _uiState.update { current ->
-                                if (keepsStateOnFailure && current is ReceiverMemorialPlaylistUiState.Success) {
-                                    current
-                                } else {
-                                    ReceiverMemorialPlaylistUiState.Error(
-                                        messageRes = R.string.afternote_receiver_memorial_playlist_load_error,
-                                    )
-                                }
-                            }
+                            dispatch(ReceiverMemorialPlaylistReducerEvent.LoadFailed(keepsStateOnFailure))
                         }
                 }
         }
