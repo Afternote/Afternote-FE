@@ -70,10 +70,12 @@ class AfternoteEditorMissingBaselineTest {
             backgroundScope.launch { viewModel.uiState.collect {} }
             runCurrent()
 
-            viewModel.saveAfternote(
-                payload = RegisterAfternotePayload(serviceName = "구글 포토", date = "2026-08-30"),
-                selectedReceiverIds = emptyList(),
-                memorialMedia = SaveAfternoteMemorialMedia(),
+            viewModel.onIntent(
+                AfternoteEditorIntent.Save(
+                    payload = RegisterAfternotePayload(serviceName = "구글 포토", date = "2026-08-30"),
+                    selectedReceiverIds = emptyList(),
+                    memorialMedia = SaveAfternoteMemorialMedia(),
+                ),
             )
             runCurrent()
 
@@ -97,13 +99,15 @@ class AfternoteEditorMissingBaselineTest {
             runCurrent()
             // 화면이 prefill 을 폼에 반영했다는 통보. 이걸 빼면 저장이 «아직 읽는 중»
             // ([AfternoteEditorError.PrefillNotReady]) 으로 막혀 기준 판정까지 가지 못한다 (#705).
-            viewModel.onPrefillConsumed()
+            viewModel.onIntent(AfternoteEditorIntent.ConsumePrefill)
             runCurrent()
 
-            viewModel.saveAfternote(
-                payload = RegisterAfternotePayload(serviceName = "새 제목", date = "2026-08-30"),
-                selectedReceiverIds = emptyList(),
-                memorialMedia = SaveAfternoteMemorialMedia(),
+            viewModel.onIntent(
+                AfternoteEditorIntent.Save(
+                    payload = RegisterAfternotePayload(serviceName = "새 제목", date = "2026-08-30"),
+                    selectedReceiverIds = emptyList(),
+                    memorialMedia = SaveAfternoteMemorialMedia(),
+                ),
             )
             runCurrent()
 

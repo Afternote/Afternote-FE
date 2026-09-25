@@ -44,7 +44,7 @@ import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditor
 import com.afternote.feature.afternote.presentation.editor.state.EditorFormState
 
 @Composable
-internal fun EditorContent(
+private fun EditorContent(
     state: AfternoteEditorState,
     form: EditorFormState,
     typeContent: @Composable () -> Unit,

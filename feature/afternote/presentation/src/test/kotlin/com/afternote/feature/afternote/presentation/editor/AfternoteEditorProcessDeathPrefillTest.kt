@@ -79,7 +79,7 @@ class AfternoteEditorProcessDeathPrefillTest {
             assertEquals(
                 "복원된 폼은 사용자가 고친 제목을 그대로 들고 있다",
                 EDITED_SERVICE,
-                viewModel.currentForm().selectedService,
+                viewModel.uiState.value.form.selectedService,
             )
             assertNull(
                 "재조회가 프리필을 발행하면 화면이 그것을 실어 사용자의 편집이 사라진다",
@@ -110,15 +110,17 @@ class AfternoteEditorProcessDeathPrefillTest {
             )
 
             // 화면이 복원된 폼 값을 그대로 담아 보내는 저장이다.
-            viewModel.saveAfternote(
-                payload =
-                    RegisterAfternotePayload(
-                        serviceName = EDITED_SERVICE,
-                        date = "2026-08-30",
-                        processingMethods = listOf(SERVER_PROCESSING_METHOD),
-                    ),
-                selectedReceiverIds = emptyList(),
-                memorialMedia = SaveAfternoteMemorialMedia(),
+            viewModel.onIntent(
+                AfternoteEditorIntent.Save(
+                    payload =
+                        RegisterAfternotePayload(
+                            serviceName = EDITED_SERVICE,
+                            date = "2026-08-30",
+                            processingMethods = listOf(SERVER_PROCESSING_METHOD),
+                        ),
+                    selectedReceiverIds = emptyList(),
+                    memorialMedia = SaveAfternoteMemorialMedia(),
+                ),
             )
             runCurrent()
 
