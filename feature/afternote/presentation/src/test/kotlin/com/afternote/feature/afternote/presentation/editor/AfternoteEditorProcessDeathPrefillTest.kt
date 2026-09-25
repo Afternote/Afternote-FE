@@ -223,7 +223,7 @@ class AfternoteEditorProcessDeathPrefillTest {
             assertEquals(EDITED_SERVICE, updated.title)
             assertEquals(true, updated.isDraft)
             assertNull("표시용 프리필이 아니라 서버 원본을 기준으로 비교해야 한다", updated.processingMethods)
-            assertNull(updated.receivers)
+            assertNull(updated.receiverIds)
         }
 
     @Test
@@ -258,7 +258,7 @@ class AfternoteEditorProcessDeathPrefillTest {
             assertEquals(false, updated.isDraft)
             assertNull(updated.title)
             assertNull(updated.processingMethods)
-            assertNull(updated.receivers)
+            assertNull(updated.receiverIds)
         }
 
     private fun serverDraft() =

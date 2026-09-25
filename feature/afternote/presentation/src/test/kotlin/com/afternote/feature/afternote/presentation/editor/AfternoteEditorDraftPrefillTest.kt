@@ -91,7 +91,7 @@ class AfternoteEditorDraftPrefillTest {
             assertNull(updated.processingMethods)
             assertNull(updated.leaveMessageBlocks)
             assertNull(updated.credentials)
-            assertNull(updated.receivers)
+            assertNull(updated.receiverIds)
             assertNull(updated.memorial)
         }
     }
@@ -119,7 +119,7 @@ class AfternoteEditorDraftPrefillTest {
             assertNull(updated.credentials?.id)
             assertNull(updated.title)
             assertNull(updated.processingMethods)
-            assertNull(updated.receivers)
+            assertNull(updated.receiverIds)
             assertNull(updated.memorial)
         }
     }
