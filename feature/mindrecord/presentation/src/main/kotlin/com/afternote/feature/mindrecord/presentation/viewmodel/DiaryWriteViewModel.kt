@@ -20,6 +20,7 @@ import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.mindrecord.presentation.reporting.MindRecordFailureStage
 import com.afternote.feature.mindrecord.presentation.reporting.recordMindRecordFailure
 import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
+import com.afternote.feature.mindrecord.presentation.util.isHtmlBlank
 import com.afternote.feature.mindrecord.presentation.util.toWireContent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -314,16 +315,28 @@ class DiaryWriteViewModel
                     ).mapCatching { list -> list.diaries.first { it.diaryId == diaryId } }
                     .onSuccess { draft ->
                         _uiState.update {
+                            // **사용자가 이미 손댄 칸은 덮지 않는다** (#2031). 입력창은 프리필을
+                            // 기다리는 동안에도 편집할 수 있어서, 늦게 도착한 원본을 무조건 실으면
+                            // 방금 친 글이 서버 값으로 되돌아간다. 오늘 초안 이어쓰기(`resumeDraft`)가
+                            // 이미 같은 규칙을 쓰고 있었고, 대상 ID 로 들어온 수정만 빠져 있었다.
+                            //
+                            // 빈 칸 판정은 칸마다 다르다 — 본문은 에디터가 아무것도 안 써도
+                            // `<p></p>` 를 내보내므로 태그를 걷어 낸 [isHtmlBlank] 로 본다.
+                            val prefillDate = draft.toUi()?.date
                             it.copy(
-                                title = draft.title,
-                                content = draft.content,
-                                mood = draft.todayMood,
+                                title = if (it.title.isBlank()) draft.title else it.title,
+                                content = if (it.content.isHtmlBlank()) draft.content else it.content,
+                                mood = it.mood ?: draft.todayMood,
                                 // 서버가 준 기록일을 그대로 보여 주고, 그때부터 수정 요청에도 싣는다.
                                 // 프리필이 날짜를 못 주면 화면 값(오늘)을 유지하되 `isDateChosen` 은
                                 // false 로 남겨, 수정이 기존 기록일을 오늘로 밀지 않게 한다 (#1008).
-                                date = draft.toUi()?.date ?: it.date,
-                                isDateChosen = draft.toUi()?.date != null || it.isDateChosen,
+                                // 사용자가 이미 고른 날짜가 있으면 그쪽이 이긴다 (#2031).
+                                date = if (it.isDateChosen) it.date else prefillDate ?: it.date,
+                                isDateChosen = it.isDateChosen || prefillDate != null,
                                 isDraftLoading = false,
+                                // 「프리필이 도착했다」는 사실은 무엇을 실었는지와 무관하게 선다 —
+                                // 저장 잠금(#2027)이 이 값을 보므로, 입력해 둔 사용자가 저장하지
+                                // 못하는 상태로 굳으면 안 된다.
                                 draftLoaded = true,
                             )
                         }
