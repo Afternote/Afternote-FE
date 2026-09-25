@@ -241,7 +241,7 @@ internal object AfternoteEditorFormMapper {
         payload: RegisterAfternotePayload,
         selectedReceiverIds: List<Long>,
         playlistSongs: List<Song>,
-        memorialMedia: MemorialMediaUrls,
+        memorialMediaUrls: MemorialMediaUrls,
         baseline: AfternoteEditorSnapshot,
     ): UpdateAfternoteInput {
         val current =
@@ -250,7 +250,7 @@ internal object AfternoteEditorFormMapper {
                 payload = payload,
                 selectedReceiverIds = selectedReceiverIds,
                 playlistSongs = playlistSongs,
-                memorialMedia = memorialMedia,
+                memorialMediaUrls = memorialMediaUrls,
             )
         val common =
             UpdateAfternoteInput(
@@ -406,7 +406,7 @@ internal object AfternoteEditorFormMapper {
         payload: RegisterAfternotePayload,
         selectedReceiverIds: List<Long>,
         playlistSongs: List<Song>,
-        memorialMedia: MemorialMediaUrls,
+        memorialMediaUrls: MemorialMediaUrls,
     ): SavableEditorSnapshot {
         val title = payload.serviceName
         val leaveMessageBlocks = payload.messageBlocks.toLeaveMessageBlocks().normalizedForDiff()
@@ -444,8 +444,8 @@ internal object AfternoteEditorFormMapper {
                 MemorialSnapshot(
                     title = title,
                     leaveMessageBlocks = leaveMessageBlocks,
-                    photoUrl = memorialMedia.memorialPhotoUrl?.ifBlank { null },
-                    video = memorialMedia.toVideoPayload(),
+                    photoUrl = memorialMediaUrls.memorialPhotoUrl?.ifBlank { null },
+                    video = memorialMediaUrls.toVideoPayload(),
                     songs =
                         playlistSongs.map { song ->
                             MemorialSongPayload(title = song.title, artist = song.artist, coverUrl = song.albumCoverUrl)
