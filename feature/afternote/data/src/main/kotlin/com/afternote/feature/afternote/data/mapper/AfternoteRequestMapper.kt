@@ -20,7 +20,6 @@ import com.afternote.feature.afternote.domain.model.author.MemorialPatchInput
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
-import com.afternote.feature.afternote.domain.model.author.ReceiverRefInput
 import com.afternote.feature.afternote.domain.model.author.UpdateAfternoteInput
 
 /**
@@ -37,7 +36,7 @@ fun UpdateAfternoteInput.toRequest() =
         processingMethods = processingMethods,
         leaveMessage = leaveMessageBlocks.toDtoForPatch(),
         credentials = credentials?.toDto(),
-        receivers = receivers?.map { it.toDto() },
+        receivers = receiverIds?.toReceiverRefDtos(),
         memorial = memorial?.toPatchDto(),
         isDraft = isDraft,
     )
@@ -80,7 +79,7 @@ fun CreateAccountPayload.toSocialRequest() =
         processingMethods = processingMethods,
         leaveMessage = leaveMessageBlocks.toDtoForCreate(),
         credentials = credentials?.toDto(),
-        receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
+        receivers = receiverIds.toReceiverRefDtos(),
         isDraft = isDraft,
     )
 
@@ -91,7 +90,7 @@ fun CreateAccountPayload.toBusinessRequest() =
         processingMethods = processingMethods,
         leaveMessage = leaveMessageBlocks.toDtoForCreate(),
         credentials = credentials?.toDto(),
-        receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
+        receivers = receiverIds.toReceiverRefDtos(),
         isDraft = isDraft,
     )
 
@@ -101,7 +100,7 @@ fun CreateGalleryPayload.toRequest() =
         title = title,
         processingMethods = processingMethods,
         leaveMessage = leaveMessageBlocks.toDtoForCreate(),
-        receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
+        receivers = receiverIds.toReceiverRefDtos(),
         isDraft = isDraft,
     )
 
@@ -111,11 +110,11 @@ fun CreateMemorialPayload.toRequest() =
         title = title,
         memorial = memorial.toDto(),
         leaveMessage = leaveMessageBlocks.toDtoForCreate(),
-        receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
+        receivers = receiverIds.toReceiverRefDtos(),
         isDraft = isDraft,
     )
 
-fun MemorialWritePayload.toDto() =
+private fun MemorialWritePayload.toDto() =
     AfternotePlaylistRequestDto(
         memorialPhotoUrl = memorialPhotoUrl,
         songs = songs.map { it.toDto() },
@@ -129,19 +128,20 @@ private fun MemorialSongPayload.toDto() =
         coverUrl = coverUrl,
     )
 
-fun MemorialVideoPayload.toDto() =
+private fun MemorialVideoPayload.toDto() =
     AfternoteMemorialVideoDto(
         videoUrl = videoUrl,
         thumbnailUrl = thumbnailUrl,
     )
 
-fun AfternoteAccountCredentials.toDto() =
+private fun AfternoteAccountCredentials.toDto() =
     AfternoteCredentialsDto(
         id = id,
         password = password,
     )
 
-fun ReceiverRefInput.toDto() =
-    AfternoteReceiverRefDto(
-        receiverId = receiverId,
-    )
+/**
+ * 도메인은 수신자를 id 로만 말한다 — wire 의 `{receiverId}` 객체로 감싸는 것은 여기서 끝낸다.
+ * 순서·중복은 받은 그대로 둔다.
+ */
+private fun List<Long>.toReceiverRefDtos() = map { AfternoteReceiverRefDto(receiverId = it) }
