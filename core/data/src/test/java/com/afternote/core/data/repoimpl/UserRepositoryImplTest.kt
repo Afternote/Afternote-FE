@@ -191,8 +191,8 @@ class UserRepositoryImplTest {
 
         assertEquals(
             listOf(
-                Receiver(receiverId = 14L, name = "QA수신자", relation = "DAUGHTER", authCode = ""),
-                Receiver(receiverId = 21L, name = "Admin", relation = "", authCode = ""),
+                Receiver(receiverId = 14L, name = "QA수신자", relation = "DAUGHTER"),
+                Receiver(receiverId = 21L, name = "Admin", relation = ""),
             ),
             emitted,
         )

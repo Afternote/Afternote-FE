@@ -441,8 +441,8 @@ class ReceiverSelectionResultAndroidTest {
         /** 애프터노트 홈의 "추가" 노드 — 연필 FAB 하나뿐이다. */
         const val HOME_FAB_COUNT = 1
 
-        val KIM = Receiver(receiverId = 7L, name = "김수신", relation = "가족", authCode = "fake-auth-7")
-        val PARK = Receiver(receiverId = 11L, name = "박친구", relation = "친구", authCode = "fake-auth-11")
-        val LEE = Receiver(receiverId = 23L, name = "이지인", relation = "지인", authCode = "fake-auth-23")
+        val KIM = Receiver(receiverId = 7L, name = "김수신", relation = "가족")
+        val PARK = Receiver(receiverId = 11L, name = "박친구", relation = "친구")
+        val LEE = Receiver(receiverId = 23L, name = "이지인", relation = "지인")
     }
 }

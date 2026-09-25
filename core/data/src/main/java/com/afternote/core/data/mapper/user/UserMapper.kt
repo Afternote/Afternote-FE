@@ -32,16 +32,12 @@ fun UserDto.toDomain(): User =
         profileImageUrl = profileImageUrl,
     )
 
-/**
- * 목록 응답에 없는 `authCode` 와 비어 올 수 있는 `relation` 을 빈 문자열로 채워
- * [Receiver] 계약을 그대로 유지한다 (#2105) — [UserPatchReceiverDto.toDomain] 과 같은 자리다.
- */
+/** 목록 응답의 `relation` 은 DB 가 null 을 허용해 비어 올 수 있다 — 빈 문자열로 채워 [Receiver] 의 문자열 계약을 유지한다 (#2105). */
 internal fun ReceiverListDto.toDomain(): Receiver =
     Receiver(
         receiverId = receiverId,
         name = name,
         relation = relation.orEmpty(),
-        authCode = "",
     )
 
 fun ReceiverDetailDto.toDomain(): ReceiverDetail =
@@ -69,7 +65,6 @@ fun UserPatchReceiverDto.toDomain(): Receiver =
         receiverId = receiverId,
         name = name,
         relation = relation,
-        authCode = "",
     )
 
 fun UserPushSettingDto.toDomain(): UserPushSetting =
