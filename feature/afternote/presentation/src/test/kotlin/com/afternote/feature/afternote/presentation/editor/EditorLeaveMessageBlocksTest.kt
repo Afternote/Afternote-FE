@@ -98,7 +98,7 @@ class EditorLeaveMessageBlocksTest {
                     ),
                 selectedReceiverIds = emptyList(),
                 playlistSongs = emptyList(),
-                memorialMedia = MemorialMediaUrls(),
+                memorialMediaUrls = MemorialMediaUrls(),
                 // 여기서 보는 것은 블록을 *어떻게 빚는가* 다. 말씀이 없던 노트를 기준으로 삼아
                 // 「달라졌다」가 확실하게 성립하게 두고, 빚어진 모양만 본다 — 안 건드린 필드를 빼는
                 // 축은 AfternoteEditorPartialUpdateTest 가 따로 고정한다 (#1617).
@@ -139,7 +139,7 @@ class EditorLeaveMessageBlocksTest {
                 payload = payloadOf(EditorMessageTextBlock(title = "가족에게", body = "잘 지내")),
                 selectedReceiverIds = emptyList(),
                 playlistSongs = emptyList(),
-                memorialMedia = MemorialMediaUrls(),
+                memorialMediaUrls = MemorialMediaUrls(),
                 // 여기서 보는 것은 블록을 *어떻게 빚는가* 다. 말씀이 없던 노트를 기준으로 삼아
                 // 「달라졌다」가 확실하게 성립하게 두고, 빚어진 모양만 본다 (#1617).
                 baseline = emptyBaseline(AfternoteType.MEMORIAL),

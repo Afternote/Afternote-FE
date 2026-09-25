@@ -808,7 +808,7 @@ internal class AfternoteEditorViewModel
                             payload = payload,
                             selectedReceiverIds = selectedReceiverIds,
                             playlistSongs = playlistSongs,
-                            memorialMedia =
+                            memorialMediaUrls =
                                 MemorialMediaUrls(
                                     memorialVideoUrl = resolved.resolvedVideoUrl,
                                     memorialThumbnailUrl = memorialMedia.memorialVideo.displayed?.thumbnailUrl,
