@@ -15,7 +15,6 @@ import com.afternote.feature.afternote.domain.model.author.MemorialPatchInput
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
-import com.afternote.feature.afternote.domain.model.author.ReceiverRefInput
 import com.afternote.feature.afternote.domain.model.author.UpdateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 import com.afternote.feature.afternote.presentation.editor.AfternoteEditorFormMapper.buildUpdatePayload
@@ -266,10 +265,7 @@ internal object AfternoteEditorFormMapper {
             leaveMessageBlocks = current.leaveMessageBlocks.takeIf { it != baseline.leaveMessageBlocks },
             credentials = diffCredentials(current, baseline),
             // 순서는 뜻을 갖지 않으므로 정렬해 견주고, 실을 때는 폼 순서 그대로 보낸다.
-            receivers =
-                current.receiverIds
-                    ?.takeIf { it.sorted() != baseline.receiverIds?.sorted() }
-                    ?.map { ReceiverRefInput(receiverId = it) },
+            receiverIds = current.receiverIds?.takeIf { it.sorted() != baseline.receiverIds?.sorted() },
             memorial = diffMemorial(current, baseline),
         )
     }
