@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
+import com.afternote.core.domain.error.FileUploadFailure
 import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.afternote.domain.AfternoteType
@@ -960,9 +961,13 @@ private fun Throwable.toAfternoteEditorError(): AfternoteEditorError =
     when (this) {
         is AfternoteFailure -> {
             when (this) {
-                // 미디어 해석 실패는 사용자가 입력을 고쳐 푸는 검증 실패가 아니라 업로드 장애다.
+                // 크기 초과는 같은 파일의 재전송으로 풀리지 않으므로 일반 업로드 실패와 구분한다.
                 is AfternoteFailure.MediaSave -> {
-                    AfternoteEditorError.Upload(AfternoteEditorError.Upload.Target.SAVE_MEDIA)
+                    if (cause is FileUploadFailure.FileSizeExceeded) {
+                        AfternoteEditorError.MediaSizeExceeded
+                    } else {
+                        AfternoteEditorError.Upload(AfternoteEditorError.Upload.Target.SAVE_MEDIA)
+                    }
                 }
 
                 is AfternoteFailure.NetworkUnavailable -> {
