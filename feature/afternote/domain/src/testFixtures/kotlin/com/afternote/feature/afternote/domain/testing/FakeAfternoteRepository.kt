@@ -4,7 +4,6 @@ import androidx.paging.PagingData
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.Account
 import com.afternote.feature.afternote.domain.model.author.AfternoteAccountCredentials
-import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
@@ -16,6 +15,7 @@ import com.afternote.feature.afternote.domain.model.author.DraftDetail
 import com.afternote.feature.afternote.domain.model.author.FieldPatch
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
+import com.afternote.feature.afternote.domain.model.author.UpdateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
@@ -50,7 +50,7 @@ class FakeAfternoteRepository(
     var onCreateBusiness: (suspend (CreateAccountPayload) -> Result<Long>)? = null,
     var onCreateGallery: (suspend (CreateGalleryPayload) -> Result<Long>)? = null,
     var onCreateMemorial: (suspend (CreateMemorialPayload) -> Result<Long>)? = null,
-    var onUpdate: (suspend (Long, AfternoteUpdatePayload) -> Result<Long>)? = null,
+    var onUpdate: (suspend (Long, UpdateAfternoteInput) -> Result<Long>)? = null,
     var onDelete: (suspend (Long) -> Result<Unit>)? = null,
 ) : AfternoteRepository {
     val items = CopyOnWriteArrayList(initialItems)
@@ -63,7 +63,7 @@ class FakeAfternoteRepository(
     val businessPayloads = CopyOnWriteArrayList<CreateAccountPayload>()
     val galleryPayloads = CopyOnWriteArrayList<CreateGalleryPayload>()
     val memorialPayloads = CopyOnWriteArrayList<CreateMemorialPayload>()
-    val updateCalls = CopyOnWriteArrayList<Pair<Long, AfternoteUpdatePayload>>()
+    val updateCalls = CopyOnWriteArrayList<Pair<Long, UpdateAfternoteInput>>()
     val deletedIds = CopyOnWriteArrayList<Long>()
 
     val requestedDraftTypes = CopyOnWriteArrayList<AfternoteType?>()
@@ -132,7 +132,7 @@ class FakeAfternoteRepository(
 
     override suspend fun update(
         id: Long,
-        payload: AfternoteUpdatePayload,
+        payload: UpdateAfternoteInput,
     ): Result<Long> {
         updateCalls += id to payload
         onUpdate?.let { return it(id, payload) }
@@ -187,7 +187,7 @@ class FakeAfternoteRepository(
  * 수정은 **부분 갱신**이라 `null` 슬롯은 「안 건드림」이다 — 서버와 같이 기존 값을 남긴다 (#1617).
  * 여기서 덮어써 버리면 페이로드가 필드를 뺐는지 여부를 테스트가 구분하지 못한다.
  */
-private fun ListItem.updatedWith(payload: AfternoteUpdatePayload): ListItem =
+private fun ListItem.updatedWith(payload: UpdateAfternoteInput): ListItem =
     copy(
         serviceName = payload.title ?: serviceName,
         type = payload.type,
@@ -204,7 +204,7 @@ private fun Account.updatedWith(credentials: AfternoteAccountCredentials?): Acco
         )
     }
 
-private fun Detail.updatedWith(payload: AfternoteUpdatePayload): Detail =
+private fun Detail.updatedWith(payload: UpdateAfternoteInput): Detail =
     copy(
         serviceName = payload.title ?: serviceName,
         receivers =
@@ -216,7 +216,7 @@ private fun Detail.updatedWith(payload: AfternoteUpdatePayload): Detail =
         content = content.updatedWith(payload),
     )
 
-private fun DetailContent.updatedWith(payload: AfternoteUpdatePayload): DetailContent =
+private fun DetailContent.updatedWith(payload: UpdateAfternoteInput): DetailContent =
     when (payload.type) {
         AfternoteType.SOCIAL_NETWORK -> {
             val previous = this as? DetailContent.SocialNetwork
