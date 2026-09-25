@@ -10,6 +10,8 @@ import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
+import com.afternote.feature.afternote.domain.model.author.DraftContent
+import com.afternote.feature.afternote.domain.model.author.DraftDetail
 import com.afternote.feature.afternote.domain.model.author.FieldPatch
 import com.afternote.feature.afternote.domain.model.author.MemorialPatchInput
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
@@ -49,6 +51,85 @@ internal object AfternoteEditorFormMapper {
                         label = receiver.relation,
                     )
                 },
+        )
+
+    /**
+     * 임시저장 상세 → 에디터 프리필 (#808).
+     *
+     * 발행 상세와 달리 종류별 값이 아직 안 담긴 채로 온다. 미작성 값은 빈 입력칸으로 옮긴다.
+     * [DraftContent]의 각 종류가 가진 입력만 해당 폼에 담는다.
+     */
+    fun buildEditorFormPrefill(draft: DraftDetail): EditorFormPrefill =
+        EditorFormPrefill(
+            content = draft.toEditorContentPrefill(),
+            leaveMessageBlocks = draft.leaveMessageBlocks.map(LeaveMessageBlock::toEditorBlock),
+            receivers =
+                draft.receivers.map { receiver ->
+                    AfternoteEditorReceiver(
+                        id = receiver.receiverId,
+                        name = receiver.name,
+                        label = receiver.relation,
+                    )
+                },
+        )
+
+    private fun DraftDetail.toEditorContentPrefill(): EditorContentPrefill =
+        when (val draftContent = content) {
+            is DraftContent.SocialNetwork -> {
+                EditorContentPrefill.SocialNetwork(
+                    serviceName = serviceName,
+                    credentials = draftContent.credentials.toEditorCredentialsPrefill(),
+                    processingMethods = draftContent.processingMethods.toProcessingMethodItems(),
+                )
+            }
+
+            is DraftContent.Business -> {
+                EditorContentPrefill.Business(
+                    serviceName = serviceName,
+                    credentials = draftContent.credentials.toEditorCredentialsPrefill(),
+                    processingMethods = draftContent.processingMethods.toProcessingMethodItems(),
+                )
+            }
+
+            is DraftContent.Gallery -> {
+                EditorContentPrefill.Gallery(
+                    serviceName = serviceName,
+                    processingMethods = draftContent.processingMethods.toProcessingMethodItems(),
+                )
+            }
+
+            is DraftContent.Memorial -> {
+                EditorContentPrefill.Memorial(
+                    videoUrl = draftContent.media.videoUrl,
+                    thumbnailUrl = draftContent.media.thumbnailUrl,
+                    photoUrl = draftContent.media.photoUrl,
+                    playlistSongs =
+                        draftContent.songs.mapIndexed { index, song ->
+                            Song(
+                                selectionKey = "draft:$index",
+                                title = song.title,
+                                artist = song.artist,
+                                albumCoverUrl = song.coverUrl,
+                            )
+                        },
+                )
+            }
+
+            DraftContent.Estate -> {
+                EditorContentPrefill.Estate
+            }
+        }
+
+    /**
+     * 발행·임시저장 공용. 미작성 계정 정보는 빈 입력칸으로 연다.
+     * 발행 필수값의 검증은 상세 계약을 담당하는 data 매퍼의 몫이다.
+     *
+     * 널 허용 수신자 하나로 합친 이유는 JVM 소거다 — non-null 판과 시그니처가 같아 공존할 수 없다.
+     */
+    private fun DetailCredentials?.toEditorCredentialsPrefill() =
+        EditorCredentialsPrefill(
+            id = this?.id.orEmpty(),
+            password = this?.password.orEmpty(),
         )
 
     private fun DetailContent.toEditorContentPrefill(serviceName: String): EditorContentPrefill =
@@ -97,12 +178,6 @@ internal object AfternoteEditorFormMapper {
                 EditorContentPrefill.Estate
             }
         }
-
-    private fun DetailCredentials.toEditorCredentialsPrefill() =
-        EditorCredentialsPrefill(
-            id = id,
-            password = password,
-        )
 
     private fun List<String>.toProcessingMethodItems(): List<ProcessingMethodItem> =
         mapIndexed { index, text ->
@@ -202,6 +277,23 @@ internal object AfternoteEditorFormMapper {
             }
         }
     }
+
+    /**
+     * 만들어 둔 생성 입력에 임시저장 여부만 얹는다 (#808).
+     *
+     * 종류별 빌더마다 인자를 늘리지 않는 이유는 그 값이 «무엇을 담았나» 가 아니라 «어느 버튼으로 저장하나» 라서다 —
+     * 폼 내용과 무관하고, 저장 순간에만 정해진다.
+     */
+    fun withDraft(
+        input: CreateAfternoteInput,
+        isDraft: Boolean,
+    ): CreateAfternoteInput =
+        when (input) {
+            is CreateAfternoteInput.Social -> CreateAfternoteInput.Social(input.payload.copy(isDraft = isDraft))
+            is CreateAfternoteInput.Business -> CreateAfternoteInput.Business(input.payload.copy(isDraft = isDraft))
+            is CreateAfternoteInput.Gallery -> CreateAfternoteInput.Gallery(input.payload.copy(isDraft = isDraft))
+            is CreateAfternoteInput.Memorial -> CreateAfternoteInput.Memorial(input.payload.copy(isDraft = isDraft))
+        }
 
     private fun buildAccountCreatePayload(
         payload: RegisterAfternotePayload,
@@ -395,6 +487,60 @@ internal object AfternoteEditorFormMapper {
 
             // 저장은 막히지만 수정 진입은 되므로 기준은 만든다.
             DetailContent.Estate -> {
+                EstateSnapshot(title = title, leaveMessageBlocks = leaveMessageBlocks)
+            }
+        }
+    }
+
+    /** 미작성 값도 표시용 기본값으로 바꾸기 전 서버 상세 그대로 비교 기준에 보존한다. */
+    fun buildUpdateBaseline(detail: DraftDetail): AfternoteEditorSnapshot {
+        val title = detail.serviceName
+        val leaveMessageBlocks = detail.leaveMessageBlocks.normalizedForDiff()
+        val receiverIds = detail.receivers.map { it.receiverId }
+        return when (val content = detail.content) {
+            is DraftContent.SocialNetwork -> {
+                SocialNetworkSnapshot(
+                    title = title,
+                    leaveMessageBlocks = leaveMessageBlocks,
+                    credentials = content.credentials?.toCredentialsSnapshot() ?: CredentialsSnapshot(id = null, password = null),
+                    processingMethods = content.processingMethods,
+                    receiverIds = receiverIds,
+                )
+            }
+
+            is DraftContent.Business -> {
+                BusinessSnapshot(
+                    title = title,
+                    leaveMessageBlocks = leaveMessageBlocks,
+                    credentials = content.credentials?.toCredentialsSnapshot() ?: CredentialsSnapshot(id = null, password = null),
+                    processingMethods = content.processingMethods,
+                    receiverIds = receiverIds,
+                )
+            }
+
+            is DraftContent.Gallery -> {
+                GallerySnapshot(
+                    title = title,
+                    leaveMessageBlocks = leaveMessageBlocks,
+                    processingMethods = content.processingMethods,
+                    receiverIds = receiverIds,
+                )
+            }
+
+            is DraftContent.Memorial -> {
+                MemorialSnapshot(
+                    title = title,
+                    leaveMessageBlocks = leaveMessageBlocks,
+                    photoUrl = content.media.photoUrl?.ifBlank { null },
+                    video = content.media.toVideoPayload(),
+                    songs =
+                        content.songs.map { song ->
+                            MemorialSongPayload(title = song.title, artist = song.artist, coverUrl = song.coverUrl)
+                        },
+                )
+            }
+
+            DraftContent.Estate -> {
                 EstateSnapshot(title = title, leaveMessageBlocks = leaveMessageBlocks)
             }
         }
