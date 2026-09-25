@@ -98,7 +98,7 @@ class AfternoteEditorPartialUpdateTest {
         payload = payload,
         selectedReceiverIds = selectedReceiverIds,
         playlistSongs = emptyList(),
-        memorialMedia = MemorialMediaUrls(),
+        memorialMediaUrls = MemorialMediaUrls(),
         baseline = AfternoteEditorFormMapper.buildUpdateBaseline(detail),
     )
 
@@ -230,7 +230,7 @@ class AfternoteEditorPartialUpdateTest {
         serviceName: String = "추억 노트",
         playlistSongs: List<Song> =
             listOf(Song(selectionKey = "detail:0", title = "곡", artist = "가수", albumCoverUrl = null)),
-        memorialMedia: MemorialMediaUrls =
+        memorialMediaUrls: MemorialMediaUrls =
             MemorialMediaUrls(
                 memorialVideoUrl = "https://cdn.test/afternotes/video.mp4",
                 memorialThumbnailUrl = "https://cdn.test/afternotes/thumb.jpg",
@@ -241,7 +241,7 @@ class AfternoteEditorPartialUpdateTest {
         payload = RegisterAfternotePayload(serviceName = serviceName, date = "2026-08-30"),
         selectedReceiverIds = emptyList(),
         playlistSongs = playlistSongs,
-        memorialMedia = memorialMedia,
+        memorialMediaUrls = memorialMediaUrls,
         baseline = AfternoteEditorFormMapper.buildUpdateBaseline(memorialDetail),
     )
 
@@ -307,7 +307,7 @@ class AfternoteEditorPartialUpdateTest {
     fun `영정 사진만 지우면 사진 슬롯만 삭제로 나간다`() {
         val updated =
             buildMemorialUpdate(
-                memorialMedia =
+                memorialMediaUrls =
                     MemorialMediaUrls(
                         memorialVideoUrl = "https://cdn.test/afternotes/video.mp4",
                         memorialThumbnailUrl = "https://cdn.test/afternotes/thumb.jpg",
@@ -325,7 +325,7 @@ class AfternoteEditorPartialUpdateTest {
     fun `추모 영상만 바꾸면 영상 슬롯만 실린다`() {
         val updated =
             buildMemorialUpdate(
-                memorialMedia =
+                memorialMediaUrls =
                     MemorialMediaUrls(
                         memorialVideoUrl = "https://cdn.test/afternotes/new-video.mp4",
                         memorialThumbnailUrl = "https://cdn.test/afternotes/thumb.jpg",
@@ -357,7 +357,7 @@ class AfternoteEditorPartialUpdateTest {
                 selectedReceiverIds = listOf(11L),
                 playlistSongs =
                     listOf(Song(selectionKey = "detail:0", title = "곡", artist = "가수", albumCoverUrl = null)),
-                memorialMedia =
+                memorialMediaUrls =
                     MemorialMediaUrls(
                         memorialVideoUrl = "https://cdn.test/afternotes/video.mp4",
                         memorialThumbnailUrl = "https://cdn.test/afternotes/thumb.jpg",
@@ -383,7 +383,7 @@ class AfternoteEditorPartialUpdateTest {
                 selectedReceiverIds = emptyList(),
                 playlistSongs =
                     listOf(Song(selectionKey = "detail:0", title = "곡", artist = "가수", albumCoverUrl = null)),
-                memorialMedia =
+                memorialMediaUrls =
                     MemorialMediaUrls(
                         memorialVideoUrl = "https://cdn.test/afternotes/video.mp4",
                         memorialThumbnailUrl = "https://cdn.test/afternotes/thumb.jpg",
@@ -426,7 +426,7 @@ class AfternoteEditorPartialUpdateTest {
             ),
         selectedReceiverIds = selectedReceiverIds,
         playlistSongs = emptyList(),
-        memorialMedia = MemorialMediaUrls(),
+        memorialMediaUrls = MemorialMediaUrls(),
         baseline = AfternoteEditorFormMapper.buildUpdateBaseline(businessDetail),
     )
 
@@ -470,7 +470,7 @@ class AfternoteEditorPartialUpdateTest {
             ),
         selectedReceiverIds = selectedReceiverIds,
         playlistSongs = emptyList(),
-        memorialMedia = MemorialMediaUrls(),
+        memorialMediaUrls = MemorialMediaUrls(),
         baseline = AfternoteEditorFormMapper.buildUpdateBaseline(galleryDetail),
     )
 
