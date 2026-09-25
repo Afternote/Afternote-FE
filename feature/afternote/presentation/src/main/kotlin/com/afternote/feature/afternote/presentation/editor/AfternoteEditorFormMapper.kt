@@ -15,7 +15,6 @@ import com.afternote.feature.afternote.domain.model.author.MemorialPatchInput
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
-import com.afternote.feature.afternote.domain.model.author.ReceiverRefInput
 import com.afternote.feature.afternote.domain.model.author.UpdateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 import com.afternote.feature.afternote.presentation.editor.AfternoteEditorFormMapper.buildUpdatePayload
@@ -250,7 +249,7 @@ internal object AfternoteEditorFormMapper {
                 common.copy(
                     processingMethods = changedProcessingMethods(current.processingMethods, origin.processingMethods),
                     credentials = changedCredentials(current.credentials, origin.credentials),
-                    receivers = changedReceivers(current.receiverIds, origin.receiverIds),
+                    receiverIds = changedReceivers(current.receiverIds, origin.receiverIds),
                 )
             }
 
@@ -259,7 +258,7 @@ internal object AfternoteEditorFormMapper {
                 common.copy(
                     processingMethods = changedProcessingMethods(current.processingMethods, origin.processingMethods),
                     credentials = changedCredentials(current.credentials, origin.credentials),
-                    receivers = changedReceivers(current.receiverIds, origin.receiverIds),
+                    receiverIds = changedReceivers(current.receiverIds, origin.receiverIds),
                 )
             }
 
@@ -267,7 +266,7 @@ internal object AfternoteEditorFormMapper {
                 val origin = baseline.requireSameCategory<GallerySnapshot>()
                 common.copy(
                     processingMethods = changedProcessingMethods(current.processingMethods, origin.processingMethods),
-                    receivers = changedReceivers(current.receiverIds, origin.receiverIds),
+                    receiverIds = changedReceivers(current.receiverIds, origin.receiverIds),
                 )
             }
 
@@ -298,10 +297,7 @@ internal object AfternoteEditorFormMapper {
     private fun changedReceivers(
         current: List<Long>,
         baseline: List<Long>,
-    ): List<ReceiverRefInput>? =
-        current
-            .takeIf { it.sorted() != baseline.sorted() }
-            ?.map { ReceiverRefInput(receiverId = it) }
+    ): List<Long>? = current.takeIf { it.sorted() != baseline.sorted() }
 
     /** 계정 정보는 서버가 id·비밀번호를 독립으로 갱신하므로 슬롯별로 재고, 둘 다 그대로면 통째로 뺀다. */
     private fun changedCredentials(

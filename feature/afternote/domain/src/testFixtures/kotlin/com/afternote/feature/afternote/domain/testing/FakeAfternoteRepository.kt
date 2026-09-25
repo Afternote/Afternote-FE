@@ -196,9 +196,9 @@ private fun Detail.updatedWith(payload: UpdateAfternoteInput): Detail =
     copy(
         serviceName = payload.title ?: serviceName,
         receivers =
-            payload.receivers?.map { ref ->
-                receivers.firstOrNull { it.receiverId == ref.receiverId }
-                    ?: DetailReceiver(receiverId = ref.receiverId, name = "", relation = "")
+            payload.receiverIds?.map { receiverId ->
+                receivers.firstOrNull { it.receiverId == receiverId }
+                    ?: DetailReceiver(receiverId = receiverId, name = "", relation = "")
             } ?: receivers,
         leaveMessageBlocks = payload.leaveMessageBlocks ?: leaveMessageBlocks,
         content = content.updatedWith(payload),
