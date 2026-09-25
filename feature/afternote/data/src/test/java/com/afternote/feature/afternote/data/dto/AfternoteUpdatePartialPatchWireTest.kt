@@ -9,7 +9,6 @@ import com.afternote.feature.afternote.domain.model.author.FieldPatch
 import com.afternote.feature.afternote.domain.model.author.MemorialPatchInput
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
-import com.afternote.feature.afternote.domain.model.author.ReceiverRefInput
 import com.afternote.feature.afternote.domain.model.author.UpdateAfternoteInput
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -184,12 +183,29 @@ class AfternoteUpdatePartialPatchWireTest {
                     type = AfternoteType.GALLERY_AND_FILES,
                     processingMethods = emptyList(),
                     leaveMessageBlocks = emptyList(),
-                    receivers = emptyList(),
+                    receiverIds = emptyList(),
                 ),
             )
 
         assertEquals(
             """{"category":"GALLERY","actions":[],"leaveMessage":[],"receivers":[]}""",
+            body,
+        )
+    }
+
+    /** 수신자 id 는 `{receiverId}` 로 감싸기만 한다 — 폼이 정한 순서와 중복을 data 경계가 고치지 않는다. */
+    @Test
+    fun `수신자 id 목록은 순서와 중복을 그대로 둔 채 receivers 배열로 나간다`() {
+        val body =
+            wire(
+                UpdateAfternoteInput(
+                    type = AfternoteType.SOCIAL_NETWORK,
+                    receiverIds = listOf(22L, 11L, 22L),
+                ),
+            )
+
+        assertEquals(
+            """{"category":"SOCIAL","receivers":[{"receiverId":22},{"receiverId":11},{"receiverId":22}]}""",
             body,
         )
     }
@@ -204,7 +220,7 @@ class AfternoteUpdatePartialPatchWireTest {
                     processingMethods = listOf("계정 삭제"),
                     leaveMessageBlocks = listOf(LeaveMessageBlock(title = "가족에게", body = "고마웠어")),
                     credentials = AfternoteAccountCredentials(id = "account", password = "pw"),
-                    receivers = listOf(ReceiverRefInput(receiverId = 11L)),
+                    receiverIds = listOf(11L),
                 ),
             )
 
