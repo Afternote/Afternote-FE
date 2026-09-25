@@ -139,7 +139,7 @@ class LeaveMessageBlockContractTest {
                 title = "인스타그램",
                 processingMethods = listOf("게시물 내리기"),
                 leaveMessage =
-                    listOf(LeaveMessageBlock(title = "가족에게", body = "잘 부탁해")).toDto(),
+                    listOf(LeaveMessageBlock(title = "가족에게", body = "잘 부탁해")).toDtoForCreate(),
                 receivers = emptyList(),
             )
 
@@ -152,7 +152,7 @@ class LeaveMessageBlockContractTest {
 
     @Test
     fun `요청 직렬화 - 블록이 없으면 필드를 싣지 않는다`() {
-        assertNull(emptyList<LeaveMessageBlock>().toDto())
+        assertNull(emptyList<LeaveMessageBlock>().toDtoForCreate())
     }
 
     /** PLAYLIST 생성 요청만 `leaveMessage` 가 빠져 입력이 조용히 버려지던 회귀 가드 (이슈 #678). */
