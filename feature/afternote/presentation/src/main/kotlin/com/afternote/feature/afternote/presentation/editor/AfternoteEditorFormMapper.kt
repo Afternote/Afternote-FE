@@ -3,7 +3,6 @@ package com.afternote.feature.afternote.presentation.editor
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.domain.model.author.AfternoteAccountCredentials
-import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
@@ -12,11 +11,12 @@ import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.FieldPatch
-import com.afternote.feature.afternote.domain.model.author.MemorialPatchPayload
+import com.afternote.feature.afternote.domain.model.author.MemorialPatchInput
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
 import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
+import com.afternote.feature.afternote.domain.model.author.UpdateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 import com.afternote.feature.afternote.presentation.editor.AfternoteEditorFormMapper.buildUpdatePayload
 import com.afternote.feature.afternote.presentation.editor.memorial.Song
@@ -244,7 +244,7 @@ internal object AfternoteEditorFormMapper {
         playlistSongs: List<Song>,
         memorialMedia: MemorialMediaUrls,
         baseline: AfternoteEditorSnapshot,
-    ): AfternoteUpdatePayload {
+    ): UpdateAfternoteInput {
         if (type == AfternoteType.ESTATE) {
             // placeholder 카테고리는 Validator 에서 차단됨. 도달 시 호출자 버그.
             error("Unimplemented type cannot be saved: $type")
@@ -257,7 +257,7 @@ internal object AfternoteEditorFormMapper {
                 playlistSongs = playlistSongs,
                 memorialMedia = memorialMedia,
             )
-        return AfternoteUpdatePayload(
+        return UpdateAfternoteInput(
             type = type,
             title = current.title.takeIf { it.trim() != baseline.title.trim() },
             // 빈 문자열을 걷어내지 않는다 — 서버는 actions 원소를 검증 없이 저장하므로 `[""]` 가
@@ -288,10 +288,10 @@ internal object AfternoteEditorFormMapper {
     private fun diffMemorial(
         current: AfternoteEditorSnapshot,
         baseline: AfternoteEditorSnapshot,
-    ): MemorialPatchPayload? {
+    ): MemorialPatchInput? {
         if (current.type != AfternoteType.MEMORIAL) return null
         val patch =
-            MemorialPatchPayload(
+            MemorialPatchInput(
                 memorialPhotoUrl =
                     FieldPatch.changedOrUnchanged(current.memorialPhotoUrl, baseline.memorialPhotoUrl),
                 songs = current.songs.takeIf { it != baseline.songs },
