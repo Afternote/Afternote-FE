@@ -2,6 +2,7 @@ package com.afternote.feature.afternote.presentation.editor
 
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
+import com.afternote.feature.afternote.domain.model.author.AfternoteAccountCredentials
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
@@ -11,6 +12,7 @@ import com.afternote.feature.afternote.domain.model.author.FieldPatch
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.ReceiverRefInput
+import com.afternote.feature.afternote.domain.model.author.UpdateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 import com.afternote.feature.afternote.presentation.editor.memorial.Song
@@ -344,5 +346,157 @@ class AfternoteEditorPartialUpdateTest {
         )
         assertEquals("사진을 건드린 적이 없다", FieldPatch.Unchanged, memorial.memorialPhotoUrl)
         assertNull("곡을 건드린 적이 없다", memorial.songs)
+    }
+
+    /** 추억 노트는 처리 방법·수신자·계정 정보를 갖지 않는다. 폼에 값이 남아 있어도 싣지 않는다. */
+    @Test
+    fun `추억 노트는 폼에 남은 처리 방법과 수신자와 계정 값을 싣지 않는다`() {
+        val updated =
+            AfternoteEditorFormMapper.buildUpdatePayload(
+                type = AfternoteType.MEMORIAL,
+                payload = untouchedSocialPayload(serviceName = "추억 노트", messageBlocks = emptyList()),
+                selectedReceiverIds = listOf(11L),
+                playlistSongs =
+                    listOf(Song(selectionKey = "detail:0", title = "곡", artist = "가수", albumCoverUrl = null)),
+                memorialMedia =
+                    MemorialMediaUrls(
+                        memorialVideoUrl = "https://cdn.test/afternotes/video.mp4",
+                        memorialThumbnailUrl = "https://cdn.test/afternotes/thumb.jpg",
+                        memorialPhotoUrl = "https://cdn.test/afternotes/photo.jpg",
+                    ),
+                baseline = AfternoteEditorFormMapper.buildUpdateBaseline(memorialDetail),
+            )
+
+        assertEquals(UpdateAfternoteInput(type = AfternoteType.MEMORIAL), updated)
+    }
+
+    @Test
+    fun `추억 노트에서 남기실 말씀만 고치면 플레이리스트를 말하지 않는다`() {
+        val updated =
+            AfternoteEditorFormMapper.buildUpdatePayload(
+                type = AfternoteType.MEMORIAL,
+                payload =
+                    RegisterAfternotePayload(
+                        serviceName = "추억 노트",
+                        date = "2026-08-30",
+                        messageBlocks = listOf(EditorMessageTextBlock(title = "", body = "새 말씀", isRegistered = false)),
+                    ),
+                selectedReceiverIds = emptyList(),
+                playlistSongs =
+                    listOf(Song(selectionKey = "detail:0", title = "곡", artist = "가수", albumCoverUrl = null)),
+                memorialMedia =
+                    MemorialMediaUrls(
+                        memorialVideoUrl = "https://cdn.test/afternotes/video.mp4",
+                        memorialThumbnailUrl = "https://cdn.test/afternotes/thumb.jpg",
+                        memorialPhotoUrl = "https://cdn.test/afternotes/photo.jpg",
+                    ),
+                baseline = AfternoteEditorFormMapper.buildUpdateBaseline(memorialDetail),
+            )
+
+        assertEquals(
+            UpdateAfternoteInput(
+                type = AfternoteType.MEMORIAL,
+                leaveMessageBlocks = listOf(LeaveMessageBlock(title = null, body = "새 말씀")),
+            ),
+            updated,
+        )
+    }
+
+    private val businessDetail =
+        socialDetail.copy(
+            serviceName = "회사 메일",
+            content =
+                DetailContent.Business(
+                    credentials = DetailCredentials(id = "work", password = "pw"),
+                    processingMethods = listOf("계정 삭제"),
+                ),
+        )
+
+    private fun buildBusinessUpdate(
+        accountId: String = "work",
+        password: String = "pw",
+        selectedReceiverIds: List<Long> = listOf(11L, 22L),
+    ) = AfternoteEditorFormMapper.buildUpdatePayload(
+        type = AfternoteType.BUSINESS,
+        payload =
+            untouchedSocialPayload(
+                serviceName = "회사 메일",
+                accountId = accountId,
+                password = password,
+                processingMethods = listOf("계정 삭제"),
+            ),
+        selectedReceiverIds = selectedReceiverIds,
+        playlistSongs = emptyList(),
+        memorialMedia = MemorialMediaUrls(),
+        baseline = AfternoteEditorFormMapper.buildUpdateBaseline(businessDetail),
+    )
+
+    @Test
+    fun `비즈니스도 아무것도 안 고치면 어느 필드도 실리지 않는다`() {
+        assertEquals(UpdateAfternoteInput(type = AfternoteType.BUSINESS), buildBusinessUpdate())
+    }
+
+    @Test
+    fun `비즈니스에서 비밀번호와 수신자만 고치면 그 둘만 실린다`() {
+        val updated = buildBusinessUpdate(password = "새 비밀번호", selectedReceiverIds = listOf(22L))
+
+        assertEquals(
+            UpdateAfternoteInput(
+                type = AfternoteType.BUSINESS,
+                credentials = AfternoteAccountCredentials(password = "새 비밀번호"),
+                receivers = listOf(ReceiverRefInput(receiverId = 22L)),
+            ),
+            updated,
+        )
+    }
+
+    private val galleryDetail =
+        socialDetail.copy(
+            serviceName = "사진첩",
+            content = DetailContent.Gallery(processingMethods = listOf("사진 백업")),
+        )
+
+    private fun buildGalleryUpdate(
+        accountId: String = "",
+        processingMethods: List<String> = listOf("사진 백업"),
+        selectedReceiverIds: List<Long> = listOf(11L, 22L),
+    ) = AfternoteEditorFormMapper.buildUpdatePayload(
+        type = AfternoteType.GALLERY_AND_FILES,
+        payload =
+            untouchedSocialPayload(
+                serviceName = "사진첩",
+                accountId = accountId,
+                password = "",
+                processingMethods = processingMethods,
+            ),
+        selectedReceiverIds = selectedReceiverIds,
+        playlistSongs = emptyList(),
+        memorialMedia = MemorialMediaUrls(),
+        baseline = AfternoteEditorFormMapper.buildUpdateBaseline(galleryDetail),
+    )
+
+    @Test
+    fun `갤러리도 아무것도 안 고치면 어느 필드도 실리지 않는다`() {
+        assertEquals(UpdateAfternoteInput(type = AfternoteType.GALLERY_AND_FILES), buildGalleryUpdate())
+    }
+
+    /** 갤러리는 계정 정보를 갖지 않는다. 폼에 아이디가 남아 있어도 계정 정보로 싣지 않는다. */
+    @Test
+    fun `갤러리는 폼에 남은 아이디를 계정 정보로 싣지 않는다`() {
+        assertNull(buildGalleryUpdate(accountId = "남은 아이디").credentials)
+    }
+
+    @Test
+    fun `갤러리에서 처리 방법과 수신자를 비우면 빈 목록이 실린다`() {
+        val updated = buildGalleryUpdate(processingMethods = emptyList(), selectedReceiverIds = emptyList())
+
+        assertEquals(
+            UpdateAfternoteInput(
+                type = AfternoteType.GALLERY_AND_FILES,
+                processingMethods = emptyList(),
+                receivers = emptyList(),
+            ),
+            updated,
+        )
     }
 }
