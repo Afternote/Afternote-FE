@@ -241,7 +241,7 @@ internal object AfternoteEditorFormMapper {
         payload: RegisterAfternotePayload,
         selectedReceiverIds: List<Long>,
         playlistSongs: List<Song>,
-        memorialMedia: MemorialMediaUrls,
+        memorialMediaUrls: MemorialMediaUrls,
         baseline: AfternoteEditorSnapshot,
     ): UpdateAfternoteInput {
         if (type == AfternoteType.ESTATE) {
@@ -254,7 +254,7 @@ internal object AfternoteEditorFormMapper {
                 payload = payload,
                 selectedReceiverIds = selectedReceiverIds,
                 playlistSongs = playlistSongs,
-                memorialMedia = memorialMedia,
+                memorialMediaUrls = memorialMediaUrls,
             )
         return UpdateAfternoteInput(
             type = type,
@@ -346,7 +346,7 @@ internal object AfternoteEditorFormMapper {
         payload: RegisterAfternotePayload,
         selectedReceiverIds: List<Long>,
         playlistSongs: List<Song>,
-        memorialMedia: MemorialMediaUrls,
+        memorialMediaUrls: MemorialMediaUrls,
     ): AfternoteEditorSnapshot {
         val isMemorial = type == AfternoteType.MEMORIAL
         val hasCredentials = type == AfternoteType.SOCIAL_NETWORK || type == AfternoteType.BUSINESS
@@ -358,8 +358,8 @@ internal object AfternoteEditorFormMapper {
             credentialsId = if (hasCredentials) payload.accountId.ifBlank { null } else null,
             credentialsPassword = if (hasCredentials) payload.password.ifBlank { null } else null,
             receiverIds = if (isMemorial) null else selectedReceiverIds,
-            memorialPhotoUrl = if (isMemorial) memorialMedia.memorialPhotoUrl?.ifBlank { null } else null,
-            memorialVideo = if (isMemorial) memorialMedia.toVideoPayload() else null,
+            memorialPhotoUrl = if (isMemorial) memorialMediaUrls.memorialPhotoUrl?.ifBlank { null } else null,
+            memorialVideo = if (isMemorial) memorialMediaUrls.toVideoPayload() else null,
             songs =
                 if (isMemorial) {
                     playlistSongs.map { song ->
