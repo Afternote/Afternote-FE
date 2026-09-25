@@ -142,12 +142,28 @@ internal sealed interface SignUpReducerEvent : ReducerEvent {
 
     data object EmailVerifyStarted : SignUpReducerEvent
 
-    data object EmailVerified : SignUpReducerEvent
+    /**
+     * 인증 결과 3종은 **자기가 검증한 입력을 함께 나른다** (#2025).
+     *
+     * 이메일 칸은 인증이 도는 동안에도 고칠 수 있다. 결과에 식별 정보가 없으면 리듀서가
+     * 「지금 화면의 입력에 대한 답」과 「바꾸기 전 입력에 대한 답」을 가르지 못해, A 의 성공이
+     * B 를 적힌 폼을 다음 단계로 밀어 버린다 — 서버가 검증한 적 없는 이메일로 가입이 이어진다.
+     * 실패도 같다: 지운 입력의 거절 문구가 새 입력 아래에 붙는다.
+     */
+    data class EmailVerified(
+        val email: String,
+        val certificateCode: String,
+    ) : SignUpReducerEvent
 
     /** 인증번호 무효(서버 code 1207) — 인라인 문구로 알린다. */
-    data object VerificationRejected : SignUpReducerEvent
+    data class VerificationRejected(
+        val email: String,
+        val certificateCode: String,
+    ) : SignUpReducerEvent
 
     data class EmailVerifyFailed(
+        val email: String,
+        val certificateCode: String,
         val message: UiText,
     ) : SignUpReducerEvent
 
