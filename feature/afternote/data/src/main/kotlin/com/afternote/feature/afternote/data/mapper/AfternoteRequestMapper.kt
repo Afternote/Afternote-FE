@@ -114,7 +114,7 @@ fun CreateMemorialPayload.toRequest() =
         isDraft = isDraft,
     )
 
-fun MemorialWritePayload.toDto() =
+private fun MemorialWritePayload.toDto() =
     AfternotePlaylistRequestDto(
         memorialPhotoUrl = memorialPhotoUrl,
         songs = songs.map { it.toDto() },
@@ -128,13 +128,13 @@ private fun MemorialSongPayload.toDto() =
         coverUrl = coverUrl,
     )
 
-fun MemorialVideoPayload.toDto() =
+private fun MemorialVideoPayload.toDto() =
     AfternoteMemorialVideoDto(
         videoUrl = videoUrl,
         thumbnailUrl = thumbnailUrl,
     )
 
-fun AfternoteAccountCredentials.toDto() =
+private fun AfternoteAccountCredentials.toDto() =
     AfternoteCredentialsDto(
         id = id,
         password = password,
