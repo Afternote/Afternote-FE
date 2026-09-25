@@ -25,10 +25,8 @@ internal object AppLinkIntentContract {
      * 무시할 일이 아니라 사유를 남길 일이다.
      */
     fun fromIntent(intent: Intent): AppLinkResolution? {
-        val action = runCatching { intent.action }.getOrNull()
-        if (action != Intent.ACTION_VIEW) return null
+        if (intent.action != Intent.ACTION_VIEW) return null
 
-        val rawLink = runCatching { intent.dataString }.getOrNull()
-        return AfternoteAppLinkParser.parse(rawLink)
+        return AfternoteAppLinkParser.parse(intent.dataString)
     }
 }
