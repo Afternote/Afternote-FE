@@ -1,15 +1,15 @@
 package com.afternote.feature.afternote.domain.usecase.editor
 
 import com.afternote.feature.afternote.domain.AfternoteType
-import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.FieldPatch
-import com.afternote.feature.afternote.domain.model.author.MemorialPatchPayload
+import com.afternote.feature.afternote.domain.model.author.MemorialPatchInput
 import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
 import com.afternote.feature.afternote.domain.model.author.SaveAfternoteCommand
+import com.afternote.feature.afternote.domain.model.author.UpdateAfternoteInput
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
@@ -101,11 +101,11 @@ class SaveAfternoteUseCaseTest {
     fun `Update 는 id 와 payload 를 바꾸지 않고 update 로만 보낸다`() {
         val repository = FakeAfternoteRepository()
         val payload =
-            AfternoteUpdatePayload(
+            UpdateAfternoteInput(
                 type = AfternoteType.MEMORIAL,
                 title = "바뀐 제목",
                 memorial =
-                    MemorialPatchPayload(
+                    MemorialPatchInput(
                         memorialPhotoUrl = FieldPatch.Unchanged,
                         songs = emptyList(),
                         memorialVideo = FieldPatch.Set(null),
