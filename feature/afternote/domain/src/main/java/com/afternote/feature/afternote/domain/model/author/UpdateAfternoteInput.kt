@@ -39,7 +39,12 @@ data class UpdateAfternoteInput(
     val processingMethods: List<String>? = null,
     val leaveMessageBlocks: List<LeaveMessageBlock>? = null,
     val credentials: AfternoteAccountCredentials? = null,
-    val receivers: List<ReceiverRefInput>? = null,
+    /**
+     * 수신자 id 목록. 위 표의 세 상태를 그대로 따른다 — `null` 은 안 건드림, 빈 목록은 수신자 전부
+     * 해제, 값은 이 목록으로 통째 교체다. 원소 순서·중복은 받은 그대로 옮기며, wire 의
+     * `receivers: [{receiverId}]` 로 감싸는 것은 data 경계의 몫이다 (#1617).
+     */
+    val receiverIds: List<Long>? = null,
     val memorial: MemorialPatchInput? = null,
     /**
      * 임시저장 여부를 바꿀 때만 값을 싣는다. null 이면 서버가 저장값을 유지하므로,
@@ -58,8 +63,4 @@ data class UpdateAfternoteInput(
 data class AfternoteAccountCredentials(
     val id: String? = null,
     val password: String? = null,
-)
-
-data class ReceiverRefInput(
-    val receiverId: Long,
 )

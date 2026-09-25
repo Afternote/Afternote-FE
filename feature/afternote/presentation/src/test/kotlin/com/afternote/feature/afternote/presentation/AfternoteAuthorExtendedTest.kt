@@ -38,7 +38,6 @@ import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.DetailReceiver
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
 import com.afternote.feature.afternote.domain.model.author.ProcessingMethod
-import com.afternote.feature.afternote.domain.model.author.ReceiverRefInput
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MediaKind
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
@@ -155,7 +154,7 @@ class AfternoteAuthorExtendedTest {
         // 안 만진 나머지 — 키째 빠져야 서버가 기존 값을 유지한다.
         assertNull("제목을 고친 적이 없다", payload.title)
         assertNull("남기실 말씀을 고친 적이 없다", payload.leaveMessageBlocks)
-        assertNull("수신자를 고친 적이 없다", payload.receivers)
+        assertNull("수신자를 고친 적이 없다", payload.receiverIds)
         assertNull(payload.memorial)
         assertEquals(listOf(73L, 73L), repository.requestedDetailIds)
         assertEquals("73", routedItemId)
