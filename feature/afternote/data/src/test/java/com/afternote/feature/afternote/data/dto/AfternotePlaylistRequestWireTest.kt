@@ -3,11 +3,11 @@ package com.afternote.feature.afternote.data.dto
 import com.afternote.core.network.di.NetworkModule
 import com.afternote.feature.afternote.data.mapper.toRequest
 import com.afternote.feature.afternote.domain.AfternoteType
-import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.FieldPatch
-import com.afternote.feature.afternote.domain.model.author.MemorialPatchPayload
+import com.afternote.feature.afternote.domain.model.author.MemorialPatchInput
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
+import com.afternote.feature.afternote.domain.model.author.UpdateAfternoteInput
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonArray
@@ -29,20 +29,20 @@ import org.junit.Test
 class AfternotePlaylistRequestWireTest {
     private val json = NetworkModule.provideJson()
 
-    private fun updateBody(memorial: MemorialPatchPayload?) =
+    private fun updateBody(memorial: MemorialPatchInput?) =
         json
             .encodeToJsonElement(
-                AfternoteUpdatePayload(
+                UpdateAfternoteInput(
                     type = if (memorial == null) AfternoteType.SOCIAL_NETWORK else AfternoteType.MEMORIAL,
                     title = "제목",
                     memorial = memorial,
                 ).toRequest(),
             ).jsonObject
 
-    private fun playlistOf(memorial: MemorialPatchPayload) = updateBody(memorial).getValue("playlist").jsonObject
+    private fun playlistOf(memorial: MemorialPatchInput) = updateBody(memorial).getValue("playlist").jsonObject
 
     private val filled =
-        MemorialPatchPayload(
+        MemorialPatchInput(
             memorialPhotoUrl = FieldPatch.Set("https://cdn.test/afternotes/photo.jpg"),
             songs = listOf(MemorialSongPayload(title = "곡", artist = "가수", coverUrl = null)),
             memorialVideo =
@@ -61,7 +61,7 @@ class AfternotePlaylistRequestWireTest {
      * [AfternoteUpdatePartialPatchWireTest] 가 JSON 문자열째 고정한다.
      */
     private val emptied =
-        MemorialPatchPayload(
+        MemorialPatchInput(
             memorialPhotoUrl = FieldPatch.Set(null),
             songs = emptyList(),
             memorialVideo = FieldPatch.Set(null),
@@ -69,7 +69,7 @@ class AfternotePlaylistRequestWireTest {
 
     /** 발행된 PLAYLIST PATCH 검증을 통과하도록 기존 곡을 함께 싣는 실제 서버 미디어 삭제 스냅샷. */
     private val deletedServerMedia =
-        MemorialPatchPayload(
+        MemorialPatchInput(
             memorialPhotoUrl = FieldPatch.Set(null),
             songs = listOf(MemorialSongPayload(title = "기존 곡", artist = "기존 가수", coverUrl = null)),
             memorialVideo = FieldPatch.Set(null),
