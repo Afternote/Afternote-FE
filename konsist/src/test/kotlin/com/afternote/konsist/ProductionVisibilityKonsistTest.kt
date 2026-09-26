@@ -326,15 +326,8 @@ class ProductionVisibilityKonsistTest {
         /** #1675·#1829 해소. Screen과 Content는 각자 파일에서 수명·렌더 책임을 갖는다. */
         val ISSUE_1675_ONBOARDING = emptySet<String>()
 
-        val ISSUE_1676_RECEIVER =
-            setOf(
-                "feature/receiver/presentation/src/main/kotlin/com/afternote/feature/receiver/presentation/deliveryverification/DocumentUploadScreen.kt::function DocumentUploadScreenContent [internal]",
-                "feature/receiver/presentation/src/main/kotlin/com/afternote/feature/receiver/presentation/deliveryverification/IdentityVerificationEmailScreen.kt::function IdentityVerificationEmailScreenContent [internal]",
-                "feature/receiver/presentation/src/main/kotlin/com/afternote/feature/receiver/presentation/deliveryverification/MasterKeyScreen.kt::function MasterKeyScreenContent [internal]",
-                "feature/receiver/presentation/src/main/kotlin/com/afternote/feature/receiver/presentation/recordsbox/ReceivedRecordsScreen.kt::function ReceivedRecordsScreenContent [internal]",
-                "feature/receiver/presentation/src/main/kotlin/com/afternote/feature/receiver/presentation/recordsbox/SenderRegistrationScreen.kt::function SenderRegistrationScreenContent [internal]",
-                "feature/receiver/presentation/src/main/kotlin/com/afternote/feature/receiver/presentation/senderdetail/SenderDetailScreen.kt::function SenderDetailScreenContent [internal]",
-            )
+        /** #1803에서 수명·소비와 렌더 파일을 분리하고 프로덕션 소비 범위로 공개 범위를 정했다. */
+        val ISSUE_1676_RECEIVER = emptySet<String>()
 
         val ISSUE_1677_TIMELETTER =
             setOf(

@@ -5,27 +5,18 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.boundsInWindow
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -35,16 +26,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.asString
-import com.afternote.core.ui.scaffold.FlowStepScaffold
+import com.afternote.core.ui.mvi.ObserveSignal
 import com.afternote.core.ui.sheet.MediaSelectBottomSheet
 import com.afternote.core.ui.sheet.MediaSheetItem
-import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.feature.receiver.presentation.R
-import com.afternote.feature.receiver.presentation.deliveryverification.component.DocumentSlotCard
-import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_HEADER_SPACING
-import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_TOTAL_STEPS
-import com.afternote.feature.receiver.presentation.deliveryverification.component.ReceiverVerifyStep
 import com.afternote.feature.receiver.presentation.error.ReceiverErrorPopupHost
+import kotlinx.coroutines.launch
 import com.afternote.core.ui.R as CoreUiR
 
 /**
@@ -56,7 +42,7 @@ import com.afternote.core.ui.R as CoreUiR
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DocumentUploadScreen(
+internal fun DocumentUploadScreen(
     onBackClick: () -> Unit,
     onSubmitted: () -> Unit,
     modifier: Modifier = Modifier,
@@ -105,23 +91,25 @@ fun DocumentUploadScreen(
             if (uri != null) handlePickedUri(viewModel, contentResolver, slot, uri)
         }
 
-    LaunchedEffect(uiState.isSubmitted) {
-        if (uiState.isSubmitted) {
-            onSubmitted()
-            viewModel.onSubmittedConsumed()
-        }
-    }
+    ObserveSignal(
+        signal = Unit.takeIf { uiState.isSubmitted },
+        consumed = DocumentUploadIntent.ConsumeSubmitted,
+        onIntent = viewModel::onIntent,
+        onSignal = { onSubmitted() },
+    )
 
     // VM 은 리소스 또는 표시 가능한 동적 문구를 UiText 하나로 운반하므로 별도 우선순위 분기가 필요 없다.
     // 서버 작업 실패는 이 채널이 아니라 아래 공통 오류 팝업으로 간다 (#446) — 여기 남는 것은 서버가
     // 준 거절 사유와 파일 읽기 실패 같은 로컬 안내다.
     val errorMessage =
         uiState.errorMessage?.asString()
-    LaunchedEffect(errorMessage) {
-        if (errorMessage != null) {
-            snackbarHostState.showSnackbar(errorMessage)
-            viewModel.consumeError()
-        }
+    val snackbarScope = rememberCoroutineScope()
+    ObserveSignal(
+        signal = errorMessage,
+        consumed = DocumentUploadIntent.ConsumeError,
+        onIntent = viewModel::onIntent,
+    ) { message ->
+        snackbarScope.launch { snackbarHostState.showSnackbar(message) }
     }
 
     DocumentUploadScreenContent(
@@ -130,14 +118,14 @@ fun DocumentUploadScreen(
         onBackClick = onBackClick,
         onSlotClick = { slot -> sheetSlot = slot },
         onFamilyFieldBottomChanged = { familyFieldBottomPx = it },
-        onSubmitClick = viewModel::submit,
+        onSubmitClick = { viewModel.onIntent(DocumentUploadIntent.Submit) },
         modifier = modifier,
     )
 
     ReceiverErrorPopupHost(
         popup = uiState.errorPopup,
-        onRetry = viewModel::retryFailedRequest,
-        onDismiss = viewModel::onErrorPopupDismissed,
+        onRetry = { viewModel.onIntent(DocumentUploadIntent.RetryFailedRequest) },
+        onDismiss = { viewModel.onIntent(DocumentUploadIntent.DismissErrorPopup) },
     )
 
     // 디자인 7 — 슬롯 클릭 시 떠오르는 미디어 소스 선택 시트. "이미지 추가" / "파일 추가" 둘 중 하나 선택.
@@ -184,73 +172,15 @@ private fun handlePickedUri(
     if (result == null) {
         // 클라우드 전용 사진 등 provider 가 스트림을 못 여는 Uri — 무음으로 삼키면
         // "선택했는데 아무 일도 없는" 화면이 된다 (#740).
-        viewModel.onDocumentReadFailed()
+        viewModel.onIntent(DocumentUploadIntent.DocumentReadFailed)
         return
     }
-    viewModel.uploadDocument(
-        slot = slot,
-        bytes = result.bytes,
-        extension = result.extension,
-        displayName = result.displayName,
+    viewModel.onIntent(
+        DocumentUploadIntent.UploadDocument(
+            slot = slot,
+            bytes = result.bytes,
+            extension = result.extension,
+            displayName = result.displayName,
+        ),
     )
-}
-
-@Composable
-internal fun DocumentUploadScreenContent(
-    uiState: DocumentUploadUiState,
-    snackbarHostState: SnackbarHostState,
-    onBackClick: () -> Unit,
-    onSlotClick: (DocumentSlot) -> Unit,
-    onFamilyFieldBottomChanged: (Int) -> Unit,
-    onSubmitClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    FlowStepScaffold(
-        topBarTitle = stringResource(R.string.receiver_verify_title),
-        actionButtonText = stringResource(R.string.receiver_verify_next_button),
-        onBackClick = onBackClick,
-        onActionClick = onSubmitClick,
-        isActionEnabled = uiState.canSubmit,
-        currentStep = ReceiverVerifyStep.DOCUMENTS,
-        totalSteps = RECEIVER_VERIFY_TOTAL_STEPS,
-        progressContentDescription = stringResource(R.string.receiver_verify_step_description, ReceiverVerifyStep.DOCUMENTS),
-        snackbarHostState = snackbarHostState,
-        modifier = modifier,
-    ) {
-        Spacer(modifier = Modifier.height(RECEIVER_VERIFY_HEADER_SPACING))
-        Text(
-            text = stringResource(R.string.receiver_verify_document_upload_title),
-            style = AfternoteDesign.typography.h1,
-            color = AfternoteDesign.colors.black,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = stringResource(R.string.receiver_verify_document_upload_description),
-            style = AfternoteDesign.typography.bodySmallB,
-            color = AfternoteDesign.colors.gray5,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Column(
-            modifier = Modifier.verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            DocumentSlotCard(
-                title = stringResource(R.string.receiver_verify_death_cert_title),
-                slot = uiState.deathCertificate,
-                onPickClick = { onSlotClick(DocumentSlot.DeathCertificate) },
-            )
-            DocumentSlotCard(
-                title = stringResource(R.string.receiver_verify_family_cert_title),
-                slot = uiState.familyRelationCertificate,
-                onPickClick = { onSlotClick(DocumentSlot.FamilyRelationCertificate) },
-                modifier =
-                    Modifier.onGloballyPositioned { coords ->
-                        onFamilyFieldBottomChanged(coords.boundsInWindow().bottom.toInt())
-                    },
-            )
-        }
-    }
 }
