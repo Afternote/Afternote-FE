@@ -271,9 +271,6 @@ dependencies {
     implementation(projects.feature.onboarding.presentation)
     implementation(projects.feature.setting.presentation)
 
-    // Feature — domain (AppNavigationActions 가 에디터 종류를 AfternoteType 으로 받는다)
-    implementation(projects.feature.afternote.domain)
-
     // Feature — data (Hilt @Module / 바인딩이 루트 그래프에 포함되도록 app이 classpath에 둔다)
     implementation(projects.feature.afternote.data)
     implementation(projects.feature.receiver.data)
@@ -285,7 +282,8 @@ dependencies {
     testImplementation(testFixtures(projects.core.domain))
 
     // Nav2 백스택 회귀 기준 (#1601) — 에뮬레이터 없이 NavHost 를 실제 컴포지션으로 띄워
-    // 탭 상태 복원·인증 스택 경계·flow-scoped ViewModel 수명을 잰다. 대상(AppState·
+    // 탭 상태 복원·인증 스택 경계·predictive back 진행·취소·완료를 잰다. flow-scoped ViewModel
+    // 수명은 Nav3 이관(#1698)이 core:ui 의 FeatureNavDisplayTest 로 옮겼다. 대상(AppState·
     // AppNavigationActions)이 app 모듈에만 있어 피처 모듈 Robolectric 설정을 재사용할 수 없다.
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.compose.ui.test.junit4)
