@@ -12,6 +12,7 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -37,9 +38,10 @@ import javax.inject.Inject
 /**
  * 설정 로컬 스택을 실제 화면·Hilt ViewModel 로 띄워 본다 (#1695).
  *
- * 스택 «모양» 은 `SettingLocalNavActionsTest` 가 보므로, 여기서 재는 것은 화면 클릭이 route 인자를
- * 그 화면의 ViewModel 까지 정확히 나르는가다. Nav3 entry 의 키는 바깥에서 읽을 수 없어, 인자를
- * 받은 ViewModel 이 저장소에 요청한 `receiverId` 로 판정한다.
+ * 스택 «모양» 은 `SettingLocalNavActionsTest` 가 보므로, 여기서 재는 것은 둘이다 — 화면 클릭이 route
+ * 인자를 그 화면의 ViewModel 까지 정확히 나르는가(Nav3 entry 의 키는 바깥에서 읽을 수 없어, 인자를
+ * 받은 ViewModel 이 저장소에 요청한 `receiverId` 로 판정한다), 그리고 host 가 시작점 인자로 첫 화면을
+ * 고르는가(entry 결선과 시작점은 JVM 테스트가 못 보는 자리라 이 클래스가 유일한 자동 가드다).
  */
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
@@ -68,6 +70,10 @@ class SettingImplementedCoverageAndroidTest {
     @Before
     fun setUp() {
         hiltRule.inject()
+    }
+
+    /** 루트가 `Route.Setting` 인자로 host 를 띄우는 자리를 그대로 옮긴다 — 시작점은 테스트마다 다르다. */
+    private fun launchHost(startWithRecipientRegistration: Boolean = false) {
         composeRule.activityRule.scenario.onActivity { activity ->
             activity.setContent {
                 AfternoteTheme {
@@ -79,6 +85,7 @@ class SettingImplementedCoverageAndroidTest {
 
                                 override fun onWithdrawSuccess() = Unit
                             },
+                        startWithRecipientRegistration = startWithRecipientRegistration,
                     )
                 }
             }
@@ -86,7 +93,22 @@ class SettingImplementedCoverageAndroidTest {
     }
 
     @Test
+    fun settingNavHost_startWithRecipientRegistrationOpensRegisterFirstAndBackExitsHost() {
+        launchHost(startWithRecipientRegistration = true)
+
+        // 홈 칩 진입 — 설정 홈을 거치지 않고 등록 화면이 스택 바닥이다.
+        composeRule.onNodeWithText("수신자 등록").assertIsDisplayed()
+        composeRule.onAllNodes(hasText("프로필 수정")).assertCountEquals(0)
+
+        composeRule.onNodeWithContentDescription("뒤로가기").performClick()
+
+        // 바닥의 back 은 로컬 스택을 비우지 않고 셸로 나간다 — 부른 곳(홈)으로 돌아간다 (#506).
+        assertEquals(1, composeRule.runOnIdle { exits })
+    }
+
+    @Test
     fun settingNavHost_receiverManageListRowNavigatesToEditWithExactReceiverId() {
+        launchHost()
         waitForSettingHomeContent()
         val detailCallsBefore = fakeUserRepository.receiverDetailCalls.size
         composeRule.onAllNodes(hasText("수신자 목록")).run {
@@ -104,6 +126,7 @@ class SettingImplementedCoverageAndroidTest {
 
     @Test
     fun settingNavHost_deliveryConditionReceiverSelectionPreservesExactReceiverId() {
+        launchHost()
         waitForSettingHomeContent()
         val deliveryCallsBefore = fakeUserRepository.deliveryLoadCalls.size
         val detailCallsBefore = fakeUserRepository.receiverDetailCalls.size
@@ -130,6 +153,7 @@ class SettingImplementedCoverageAndroidTest {
 
     @Test
     fun settingNavHost_withdrawGuideCancelThenAgreementConfirmPreservesBoundary() {
+        launchHost()
         waitForSettingHomeContent()
         openWithdrawGuide()
         composeRule

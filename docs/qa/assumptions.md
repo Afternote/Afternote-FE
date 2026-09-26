@@ -13,7 +13,7 @@
 | #716 | #904 | 실패·진행 **표현** (기존 텍스트 재사용, 새 컴포넌트 미신설) | 각 화면의 진행/실패 `Text` — 표현 통일은 #446 |
 | #592 | #909 | `getToday()` **실패 시 표시 방식** (영역을 그리지 않음) | `DailyQuestionAnswerListScreen.TodayRecommendedQuestion` |
 | #751 | #908 | 날짜 파싱 실패 항목을 **목록에서 제외** (내용까지 숨김) | `MindRecordUiMapper.toUi()` · `WeeklyReportViewModel.toUi()` |
-| #506 | #1052 | 홈 '수신인 지정 미완료' 칩의 **목적지** (등록 화면) | `AppNavigationActions.onRecipientChipClick()` 한 줄 |
+| #506 | #1052 | 홈 '수신인 지정 미완료' 칩의 **목적지** (등록 화면) | `Route.Setting` 의 `startWithRecipientRegistration` 인자와 `SettingNavHost` 의 `rememberNavBackStack` 시작점 (#1695) |
 | #611 | #1171 | 수신자 목록 전달 조건 미충족 **안내 문구** | `receiver_afternote_list_not_deliverable_message`·`_description` |
 | #619 | #1169 | 계정 정보 부재의 **표현·문구** («남기지 않음») | `receiver_detail_account_absent`·`receiver_detail_account_value_absent` |
 | #739 | #1216 | 인증번호 발송 중 버튼 **문구** («전송 중…») | `receiver_verify_code_requesting` |
@@ -334,8 +334,10 @@ FE 는 그 계약대로 되돌렸다 — 날짜 행에 피커를 다시 붙이�
 **정한 것**: `SettingRoute.RecipientRegisterRoute`(수신자 등록 화면). **근거가 없는 이유**:
 이슈 Note 가 «등록인지 목록인지 기획 확정 전» 이라고 남겼다. **판단 근거**: 칩은
 미완료(등록 수신자 0명)일 때만 눌리므로 목록으로 보내면 빈 화면이다 — 0명에서 유효한 다음
-행동은 등록뿐이다. **뒤집을 때**: `AppNavigationActions.onRecipientChipClick()` 의
-navigate 대상 한 줄.
+행동은 등록뿐이다. **뒤집을 때**: 설정이 로컬 스택이 된 뒤(#1695)로는 두 곳이다 —
+`onRecipientChipClick()` 이 싣는 `Route.Setting(startWithRecipientRegistration = true)` 인자의
+종류(Boolean → 시작점)와, 그 인자로 첫 화면을 고르는 `SettingNavHost` 의 `rememberNavBackStack`
+시작점. 회귀 기준은 `RecipientChipDestinationTest`(인자)와 `SettingImplementedCoverageAndroidTest`(첫 화면).
 
 ### #611 — 수신자 목록 전달 조건 미충족 안내 문구
 
