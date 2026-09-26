@@ -115,9 +115,10 @@ object AfternoteAppLinkParser {
         }
 
     /**
-     * 정규 경로 세그먼트 목록. 계약 밖 문자가 하나라도 있으면 `null` 이다.
+     * 정규 경로 세그먼트 목록. 계약 밖 문자가 하나라도 있으면 `null` 이고, 호출부가 그것을
+     * [AppLinkRejectionReason.UNKNOWN_PATH] 거절로 바꾼다. 빈 목록은 거절이 아니라 루트(`/`)다.
      *
-     * 빈 세그먼트를 버리지 않고 **거절**하는 것이 요점이다 — 버리면 `/timeletter//1` 이나
+     * 빈 세그먼트(`""`)를 버리지 않고 **거절**하는 것이 요점이다 — 버리면 `/timeletter//1` 이나
      * `/timeletter/1/` 이 정규형과 같은 목적지가 되어 canonical URL 이 하나가 아니게 된다.
      */
     private fun String.toCanonicalSegments(): List<String>? {
