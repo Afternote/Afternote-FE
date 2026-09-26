@@ -114,5 +114,5 @@ internal class AccountRepositoryImpl
                             newPassword,
                         ),
                     ).requireStatus()
-            }
+            }.mapAccountFailure()
     }

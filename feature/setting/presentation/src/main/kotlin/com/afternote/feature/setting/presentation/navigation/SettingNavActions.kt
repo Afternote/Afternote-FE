@@ -19,6 +19,10 @@ interface SettingNavActions {
 
     fun onProfileEditBack()
 
+    fun onPasswordChangeClick()
+
+    fun onPasswordChangeBack()
+
     fun onLinkedAccountClick()
 
     fun onLinkedAccountBack()
