@@ -16,13 +16,13 @@ import com.afternote.feature.afternote.data.paging.AfternotePagingSource
 import com.afternote.feature.afternote.data.service.AfternoteApiService
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.error.AfternoteFailure
-import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DraftPrefill
 import com.afternote.feature.afternote.domain.model.author.ListItem
+import com.afternote.feature.afternote.domain.model.author.UpdateAfternoteInput
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -93,7 +93,7 @@ class AfternoteRepositoryImpl
 
         override suspend fun update(
             id: Long,
-            payload: AfternoteUpdatePayload,
+            payload: UpdateAfternoteInput,
         ): Result<Long> =
             runCatchingCancellable {
                 api
