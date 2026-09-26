@@ -5,10 +5,10 @@ import java.net.URI
 /**
  * 링크 문자열 하나를 [NavigationTarget] 으로 옮기는 단일 관문 (#924).
  *
- * 브라우저 App Link(`Intent.getData()`)와 FCM `data.link` 가 **같은 함수**를 지난다. 입력을
- * `String` 으로 받는 이유가 그것이다 — 한쪽은 `android.net.Uri`, 다른 쪽은 payload 의 문자열이라
- * 공통분모가 문자열뿐이고, 문자열로 받아야 이 모듈이 Android 플랫폼 타입에도 묶이지 않는다
- * (그래서 이 파서의 테스트는 Robolectric 없이 도는 순수 JVM 테스트다).
+ * 입력을 `String` 으로 받아 이 모듈이 Android 플랫폼 타입(`android.net.Uri`)에 묶이지 않는다. 그래서
+ * 이 파서의 테스트는 Robolectric 없이 도는 순수 JVM 테스트다. 지금 이 함수를 부르는 곳은 브라우저
+ * App Link(`Intent.getData()`) 하나다. FCM 이 목적지를 URL 로 실을지 키로 실을지는
+ * Afternote-BE#261 이 정하고, URL 로 정해질 때만 이 함수를 함께 지난다.
  *
  * ## 계약
  *

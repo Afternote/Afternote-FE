@@ -84,7 +84,7 @@ class AppState(
     /**
      * 엔진 중립 링크 목적지를 이 루트 그래프의 이동으로 옮긴다 (#924).
      *
-     * 링크 계약([NavigationTarget])은 서버·브라우저와 공유하는 외부 계약이라 navigation 엔진과
+     * 링크 계약([NavigationTarget])은 앱 밖에 공개되는 주소라 navigation 엔진과
      * 수명이 다르다. 그 둘을 잇는 유일한 자리가 여기다 — 루트가 `NavDisplay` 로 바뀌면(#1702)
      * 계약은 그대로 두고 이 함수만 갈린다.
      *

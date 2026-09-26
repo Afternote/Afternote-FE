@@ -1,11 +1,11 @@
 package com.afternote.core.common.deeplink
 
 /**
- * App Link·FCM `data.link` 가 가리키는 **엔진 중립** 목적지 (#924).
+ * App Link 가 가리키는 **엔진 중립** 목적지 (#924).
  *
- * Nav2 `Route` 도 Navigation 3 `NavKey` 도 아니다. 링크 계약은 서버·브라우저·알림이 공유하는 외부
- * 계약이라 앱 안의 navigation 엔진 교체(#1698·#1702)와 수명이 다르다 — 둘을 같은 타입으로 묶으면
- * 엔진을 갈아탈 때 외부 계약이 함께 흔들린다. 그래서 이 모듈은 화면 그래프를 알지 않고, 실제
+ * Nav2 `Route` 도 Navigation 3 `NavKey` 도 아니다. 링크는 앱 밖에 공개되는 주소라 한 번 내보내면
+ * 옛 앱 버전이 남아 있는 동안 바꿀 수 없고, 그래서 앱 안의 navigation 엔진 교체(#1698·#1702)와
+ * 수명이 다르다 — 둘을 같은 타입으로 묶으면 엔진을 갈아탈 때 공개된 주소가 함께 흔들린다. 그래서 이 모듈은 화면 그래프를 알지 않고, 실제
  * 화면 매핑은 앱 루트의 navigator adapter 가 갖는다(`NotificationDestination` 과 같은 이유·같은 층).
  *
  * [canonicalPath] 는 이 목적지를 가리키는 **유일한** 정규 경로다. 파서는 정규형만 받는다 —
