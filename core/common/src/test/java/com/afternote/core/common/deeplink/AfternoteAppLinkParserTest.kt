@@ -143,19 +143,46 @@ class AfternoteAppLinkParserTest {
     }
 
     @Test
-    fun `다른 host 와 정규형이 아닌 authority 는 거절이다`() {
+    fun `다른 host 는 거절이다`() {
         listOf(
             "https://evil.example.com/afternote",
             "https://afternote.kro.kr.evil.example.com/afternote",
             "https://afternote.kro.kr@evil.example.com/afternote",
             "https://sub.afternote.kro.kr/afternote",
-            "https://evil@afternote.kro.kr/afternote",
-            "https://afternote.kro.kr:8443/afternote",
             "https:///afternote",
         ).forEach { link ->
             assertEquals(
                 link,
                 rejectedBecause(AppLinkRejectionReason.UNSUPPORTED_HOST),
+                AfternoteAppLinkParser.parse(link),
+            )
+        }
+    }
+
+    @Test
+    fun `우리 host 에 userinfo 가 붙으면 거절이다`() {
+        listOf(
+            "https://evil@afternote.kro.kr/afternote",
+            "https://user:pass@afternote.kro.kr/afternote",
+            "https://@afternote.kro.kr/afternote",
+        ).forEach { link ->
+            assertEquals(
+                link,
+                rejectedBecause(AppLinkRejectionReason.UNSUPPORTED_USERINFO),
+                AfternoteAppLinkParser.parse(link),
+            )
+        }
+    }
+
+    @Test
+    fun `생략이나 443 이 아닌 포트는 거절이다`() {
+        listOf(
+            "https://afternote.kro.kr:8443/afternote",
+            "https://afternote.kro.kr:80/afternote",
+        ).forEach { link ->
+            assertEquals(
+                link,
+                rejectedBecause(AppLinkRejectionReason.UNSUPPORTED_PORT),
                 AfternoteAppLinkParser.parse(link),
             )
         }

@@ -15,7 +15,9 @@ import java.net.URI
  * | 항목 | 값 |
  * |---|---|
  * | scheme | `https` 만 |
- * | host | `afternote.kro.kr` 만 (대소문자 무시, userinfo 금지, 포트는 생략 또는 443) |
+ * | host | `afternote.kro.kr` 만 (대소문자 무시) |
+ * | userinfo | 없음 — 붙으면 거절 |
+ * | port | 생략 또는 443 |
  * | path | 아래 표의 정규 경로만. 소문자·끝 슬래시 없음·퍼센트 인코딩 없음 |
  * | query | 지원하는 키 없음 — 붙으면 거절 |
  * | fragment | 지원 안 함 — 붙으면 거절 |
@@ -67,12 +69,11 @@ object AfternoteAppLinkParser {
         if (!CANONICAL_SCHEME.equals(uri.scheme, ignoreCase = true)) {
             return reject(AppLinkRejectionReason.UNSUPPORTED_SCHEME)
         }
-        if (!CANONICAL_HOST.equals(uri.host, ignoreCase = true) ||
-            uri.rawUserInfo != null ||
-            uri.port !in ACCEPTED_PORTS
-        ) {
+        if (!CANONICAL_HOST.equals(uri.host, ignoreCase = true)) {
             return reject(AppLinkRejectionReason.UNSUPPORTED_HOST)
         }
+        if (uri.rawUserInfo != null) return reject(AppLinkRejectionReason.UNSUPPORTED_USERINFO)
+        if (uri.port !in ACCEPTED_PORTS) return reject(AppLinkRejectionReason.UNSUPPORTED_PORT)
         if (uri.rawQuery != null) return reject(AppLinkRejectionReason.UNSUPPORTED_QUERY)
         if (uri.rawFragment != null) return reject(AppLinkRejectionReason.UNSUPPORTED_FRAGMENT)
 

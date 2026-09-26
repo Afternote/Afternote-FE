@@ -8,7 +8,7 @@ package com.afternote.core.common.deeplink
  * 이유가 남아야 갈린다.
  *
  * [reportValue] 는 리포팅 속성에 싣는 고정 문자열이다. enum 이름을 바꿔도 이 값은 유지해야 한다 —
- * 대시보드 집계가 옛 값으로 쌓여 있다.
+ * 대시보드 집계가 이 값으로 쌓인다.
  *
  * **원본 링크 자체는 절대 싣지 않는다.** 경로에 애프터노트·타임레터 ID 가 들어 있어 그대로 로그에
  * 남기면 식별 가능한 사용자 자료가 리포팅으로 새 나간다. 관측에 쓰는 값은 이 이유뿐이다.
@@ -22,8 +22,14 @@ enum class AppLinkRejectionReason(
     /** `https` 가 아니다. 커스텀 scheme 은 Digital Asset Links 검증을 못 받아 아무 앱이나 가로챌 수 있다. */
     UNSUPPORTED_SCHEME("unsupported_scheme"),
 
-    /** 우리 도메인이 아니거나, 도메인은 맞아도 userinfo·포트가 정규형이 아니다. */
+    /** 우리 도메인이 아니다. */
     UNSUPPORTED_HOST("unsupported_host"),
+
+    /** 도메인은 맞는데 userinfo 가 붙어 왔다. 위장이 아니라 정규형이 아닌 입력이다. */
+    UNSUPPORTED_USERINFO("unsupported_userinfo"),
+
+    /** 도메인은 맞는데 포트가 생략도 443 도 아니다. 우리 서비스가 서지 않는 포트다. */
+    UNSUPPORTED_PORT("unsupported_port"),
 
     /** 계약 표에 없는 경로다. 끝 슬래시·빈 세그먼트·퍼센트 인코딩 변형도 여기로 온다. */
     UNKNOWN_PATH("unknown_path"),
