@@ -213,8 +213,4 @@ private fun mindRecordFlowUserRepository(): FakeUserRepository =
         onCreateReceiver = null
         onGetMyProfile = null
         onUpdateMyProfile = null
-        onDeleteAccount = null
-        onGetMyPushSettings = null
-        onUpdateMyPushSettings = null
-        onGetConnectedAccounts = null
     }

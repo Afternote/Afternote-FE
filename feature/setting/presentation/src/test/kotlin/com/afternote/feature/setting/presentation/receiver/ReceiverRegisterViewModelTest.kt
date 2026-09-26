@@ -1,7 +1,7 @@
 package com.afternote.feature.setting.presentation.receiver
 
 import com.afternote.core.domain.error.ReceiverRequestRejectedException
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.model.user.ReceiverCreated
 import com.afternote.core.ui.UiText
 import com.afternote.feature.setting.presentation.R
@@ -98,10 +98,10 @@ class ReceiverRegisterViewModelTest {
         assertFalse(viewModel.uiState.value.isLoading)
     }
 
-    private fun repository(failure: Throwable? = null): UserRepository =
+    private fun repository(failure: Throwable? = null): UserReceiverRepository =
         Proxy.newProxyInstance(
-            UserRepository::class.java.classLoader,
-            arrayOf(UserRepository::class.java),
+            UserReceiverRepository::class.java.classLoader,
+            arrayOf(UserReceiverRepository::class.java),
         ) { _, method, _ ->
             when (method.name) {
                 "createReceiver" -> {
@@ -114,5 +114,5 @@ class ReceiverRegisterViewModelTest {
                     error("Unexpected repository call: ${method.name}")
                 }
             }
-        } as UserRepository
+        } as UserReceiverRepository
 }

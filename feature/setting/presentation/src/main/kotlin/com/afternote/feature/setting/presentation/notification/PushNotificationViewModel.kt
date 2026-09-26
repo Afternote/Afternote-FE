@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.error.PushSettingFailure
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.feature.setting.domain.SettingNotificationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
@@ -26,7 +26,7 @@ class PushNotificationViewModel
     @Inject
     constructor(
         @ApplicationContext private val context: Context,
-        private val userRepository: UserRepository,
+        private val notificationRepository: SettingNotificationRepository,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(PushNotificationUiState())
@@ -63,7 +63,7 @@ class PushNotificationViewModel
             viewModelScope.launch {
                 Log.d(TAG, "loadPushSettings: start")
                 _uiState.update { it.copy(isLoading = true) }
-                runCatchingCancellable { userRepository.getMyPushSettings() }
+                runCatchingCancellable { notificationRepository.getMyPushSettings() }
                     .onSuccess { setting ->
                         Log.d(TAG, "loadPushSettings: success=$setting")
                         _uiState.update {
@@ -84,7 +84,7 @@ class PushNotificationViewModel
         private fun loadMarketingConsents() {
             viewModelScope.launch {
                 Log.d(TAG, "loadMarketingConsents: start")
-                runCatching { userRepository.getMyMarketingConsents() }
+                runCatching { notificationRepository.getMyMarketingConsents() }
                     .onSuccess { consent ->
                         Log.d(TAG, "loadMarketingConsents: success=$consent")
                         _uiState.update {
@@ -103,7 +103,7 @@ class PushNotificationViewModel
         fun onSmsChecked(checked: Boolean) {
             _uiState.update { it.copy(isSmsChecked = checked) }
             viewModelScope.launch {
-                runCatchingCancellable { userRepository.updateMyMarketingConsents(sms = checked, email = null, push = null) }
+                runCatchingCancellable { notificationRepository.updateMyMarketingConsents(sms = checked, email = null, push = null) }
                     .onSuccess { Log.d(TAG, "onSmsChecked: success, checked=$checked") }
                     .onFailure { e ->
                         errorReporter.recordFailure(e, mapOf(KEY_STAGE to STAGE_SMS_CONSENT))
@@ -116,7 +116,7 @@ class PushNotificationViewModel
         fun onEmailChecked(checked: Boolean) {
             _uiState.update { it.copy(isEmailChecked = checked) }
             viewModelScope.launch {
-                runCatchingCancellable { userRepository.updateMyMarketingConsents(sms = null, email = checked, push = null) }
+                runCatchingCancellable { notificationRepository.updateMyMarketingConsents(sms = null, email = checked, push = null) }
                     .onSuccess { Log.d(TAG, "onEmailChecked: success, checked=$checked") }
                     .onFailure { e ->
                         errorReporter.recordFailure(e, mapOf(KEY_STAGE to STAGE_EMAIL_CONSENT))
@@ -129,7 +129,7 @@ class PushNotificationViewModel
         fun onPushChecked(checked: Boolean) {
             _uiState.update { it.copy(isPushChecked = checked) }
             viewModelScope.launch {
-                runCatchingCancellable { userRepository.updateMyMarketingConsents(sms = null, email = null, push = checked) }
+                runCatchingCancellable { notificationRepository.updateMyMarketingConsents(sms = null, email = null, push = checked) }
                     .onSuccess { Log.d(TAG, "onPushChecked: success, checked=$checked") }
                     .onFailure { e ->
                         errorReporter.recordFailure(e, mapOf(KEY_STAGE to STAGE_PUSH_CONSENT))
@@ -171,7 +171,7 @@ class PushNotificationViewModel
             }
             viewModelScope.launch {
                 runCatchingCancellable {
-                    userRepository.updateMyPushSettings(
+                    notificationRepository.updateMyPushSettings(
                         timeLetter = update.on.takeIf { update.setting == PushSetting.NEWSLETTER },
                         mindRecord = update.on.takeIf { update.setting == PushSetting.MIND_RECORD },
                         afterNote = update.on.takeIf { update.setting == PushSetting.AFTERNOTE },

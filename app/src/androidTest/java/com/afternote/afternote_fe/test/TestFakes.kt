@@ -11,6 +11,8 @@ import com.afternote.core.model.user.UserPushSetting
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.mindrecord.domain.model.EmotionAnalysis
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
+import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
+import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
 
 fun afternoteEditorSavedStateHandle(
     initialType: AfternoteType,
@@ -41,30 +43,51 @@ fun appTestAuthRepository(loggedIn: Boolean = false): FakeAuthRepository =
 
 /**
  * 기존 app androidTest 공용 User fake 의 기본 허용 범위를 정본 fixture 위에 보존한다.
- * 수신자 상세·수정, 계정 연결, 전달조건은 전용 시나리오가 `onX` 로 명시해야 열린다.
+ * 수신자 상세·수정, 전달조건은 전용 시나리오가 `onX` 로 명시해야 열린다.
+ *
+ * 계정·알림은 좁은 계약으로 내려가(#1429) [appTestSettingAccountRepository]·
+ * [appTestSettingNotificationRepository] 가 같은 허용 범위를 이어받는다.
  */
 fun appTestUserRepository(
     profile: User = DEFAULT_TEST_USER,
     receivers: List<Receiver> = listOf(testReceiver()),
-    pushSetting: UserPushSetting = DEFAULT_TEST_PUSH_SETTING,
 ): FakeUserRepository =
     FakeUserRepository.strict().apply {
         this.profile = profile
         receiverState.value = receivers.toList()
-        this.pushSetting = pushSetting
-        connectedAccounts = defaultConnectedAccounts(profile.email)
 
         onReceiverListFlow = null
         onGetReceivers = null
         onCreateReceiver = null
         onGetMyProfile = null
         onUpdateMyProfile = null
+    }
+
+/**
+ * 계정 fake — 탈퇴와 연결 계정 조회만 열어 둔다 (#1429).
+ *
+ * 연결·해제는 전용 시나리오가 `onX` 로 명시해야 열린다. 합본 fake 시절과 같은 경계다.
+ *
+ * `@JvmOverloads` 는 Hilt 대체 모듈이 Java 이기 때문이다 — Java 는 Kotlin 기본값을 못 본다.
+ * 그 모듈이 Java 인 이유는 `TestSettingUserRepositoryModule` 에 있다.
+ */
+@JvmOverloads
+fun appTestSettingAccountRepository(profile: User = DEFAULT_TEST_USER): FakeSettingAccountRepository =
+    FakeSettingAccountRepository.strict().apply {
+        connectedAccounts = defaultConnectedAccounts(profile.email)
         onDeleteAccount = null
+        onGetConnectedAccounts = null
+    }
+
+/** 알림 fake — 푸시 토글과 마케팅 동의 네 멤버를 모두 메모리 동작으로 연다 (#1429). */
+@JvmOverloads
+fun appTestSettingNotificationRepository(pushSetting: UserPushSetting = DEFAULT_TEST_PUSH_SETTING): FakeSettingNotificationRepository =
+    FakeSettingNotificationRepository.strict().apply {
+        this.pushSetting = pushSetting
         onGetMyPushSettings = null
         onUpdateMyPushSettings = null
         onGetMyMarketingConsents = null
         onUpdateMyMarketingConsents = null
-        onGetConnectedAccounts = { defaultConnectedAccounts(this.profile.email) }
     }
 
 class FakeErrorReporter : ErrorReporter {
