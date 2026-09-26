@@ -2,7 +2,6 @@ package com.afternote.core.data.repoimpl
 
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.ReceiverRequestRejectedException
-import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.network.dto.DeletePushTokenRequestDto
 import com.afternote.core.network.dto.PushTokenDto
 import com.afternote.core.network.dto.ReceiverDetailDto
@@ -27,20 +26,32 @@ import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.core.network.service.UserApiService
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 /**
  * `UserReceiverRepositoryImpl` 옆의 `mapReceiverRequestFailure` 는 `private` 이라 이 파일에서 직접 호출할 수
  * 없다 — 그 helper 를 공유하는 공개 계약([UserReceiverRepositoryImpl.createReceiver])을 통해 같은 회귀를 고정한다.
  */
 class ReceiverRequestFailureTest {
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
+
+    // 등록 실패 매핑은 세션 상태와 무관하다. 저장소는 조립에 필요한 만큼만 세우고 비워 둔다.
+    private val sessionStore by lazy { TestTokenSessionStore(temporaryFolder.root) }
+
+    @After
+    fun closeSessionStore() = sessionStore.close()
+
     private fun repositoryThrowingOnCreate(apiError: Throwable) =
         UserReceiverRepositoryImpl(
             userApiService = CreateReceiverThrowingApiService(onCreateReceiver = { throw apiError }),
-            authRepository = FakeAuthRepository(loggedIn = false),
+            tokenDataSource = sessionStore.tokenDataSource,
             errorReporter = NoOpErrorReporter,
         )
 

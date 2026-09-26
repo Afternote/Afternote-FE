@@ -1,5 +1,6 @@
 package com.afternote.core.domain.testing
 
+import com.afternote.core.domain.model.ReceiverListState
 import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.model.delivery.DeliveryConditionItem
 import com.afternote.core.model.delivery.ReceiverDeliveryConditions
@@ -8,6 +9,7 @@ import com.afternote.core.model.user.ReceiverCreated
 import com.afternote.core.model.user.ReceiverDetail
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
@@ -34,6 +36,8 @@ class FakeUserReceiverRepository(
     var onUpdateReceiverMessage: (suspend (Long, String) -> Unit)? = null,
     var onGetReceiverDeliveryConditions: (suspend (Long) -> ReceiverDeliveryConditions)? = null,
     var onUpdateReceiverDeliveryConditions: (suspend (Long, List<DeliveryConditionItem>) -> ReceiverDeliveryConditions)? = null,
+    var onReceiverListStateFlow: (() -> Flow<ReceiverListState>)? = null,
+    var onRefreshReceiverList: (() -> Unit)? = null,
 ) : UserReceiverRepository {
     val receiverState = MutableStateFlow(receivers.toList())
     val receiverDetails = ConcurrentHashMap(receiverDetails)
@@ -46,6 +50,7 @@ class FakeUserReceiverRepository(
 
     private val receiverListFlowCounter = AtomicInteger()
     private val getReceiversCounter = AtomicInteger()
+    private val refreshReceiverListCounter = AtomicInteger()
 
     val receiverCreateCalls = CopyOnWriteArrayList<FakeUserRepository.ReceiverCreateCall>()
     val receiverDetailCalls = CopyOnWriteArrayList<Long>()
@@ -57,12 +62,25 @@ class FakeUserReceiverRepository(
     val receiverListFlowCalls: Int get() = receiverListFlowCounter.get()
     val getReceiversCalls: Int get() = getReceiversCounter.get()
     val receiverCalls: Int get() = getReceiversCounter.get()
+    val refreshReceiverListCalls: Int get() = refreshReceiverListCounter.get()
 
     override val receiverListFlow: Flow<List<Receiver>>
         get() {
             receiverListFlowCounter.incrementAndGet()
             return onReceiverListFlow?.invoke() ?: receiverState
         }
+
+    /**
+     * 기본값은 [receiverListFlow] 를 성공 결과로 감싼 것이다. 목록만 갈아끼운 기존 시나리오가 상태 소비자에도
+     * 그대로 먹히고, strict 도 목록 Flow 쪽 거부를 따른다. 로딩·실패는 `onReceiverListStateFlow` 로 연다.
+     */
+    override val receiverListStateFlow: Flow<ReceiverListState>
+        get() = onReceiverListStateFlow?.invoke() ?: receiverListFlow.map(ReceiverListState::Success)
+
+    override fun refreshReceiverList() {
+        refreshReceiverListCounter.incrementAndGet()
+        onRefreshReceiverList?.invoke()
+    }
 
     override suspend fun getReceivers(): List<Receiver> {
         getReceiversCounter.incrementAndGet()
@@ -166,6 +184,7 @@ class FakeUserReceiverRepository(
                 onUpdateReceiverDeliveryConditions = { _, _ ->
                     unexpectedCall("UserReceiverRepository.updateReceiverDeliveryConditions")
                 },
+                onRefreshReceiverList = { unexpectedCall("UserReceiverRepository.refreshReceiverList") },
             )
     }
 }

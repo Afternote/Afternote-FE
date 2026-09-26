@@ -1,7 +1,13 @@
 package com.afternote.core.ui.navigation
 
 import android.app.Application
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.view.View
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -12,6 +18,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -282,6 +291,37 @@ class FeatureNavDisplayTest {
         // entryDecorators 를 넘기면 기본 목록을 «대체» 하므로, 저장 홀더 데코레이터를 빠뜨리면
         // 여기서 detail1#0 으로 되돌아간다 — 컴파일은 통과하고 상태만 조용히 사라지는 함정이다.
         composeRule.onNodeWithText("detail1#1").assertIsDisplayed()
+    }
+
+    /**
+     * **투명하게 그리는 entry 라도 그 아래는 비치지 않는다 (#2145).**
+     *
+     * predictive back 진행 중에는 줄어든 앞 entry 아래에 뒤 entry 가 그려진다. 화면 대부분이
+     * `Scaffold(containerColor = Color.Transparent)` 라 entry 자리가 스스로 칠하지 않으면 뒤 화면 글자가
+     * 앞 화면 사이로 비친다. 뒤 화면 대신 빨간 바탕을 깔고, 글자 하나뿐인 entry 의 빈 구석이 루트 셸과
+     * 같은 바탕색으로 덮이는지 본다. 표준 데코레이터 목록에서 바탕을 빼면 이 구석이 빨갛게 나온다.
+     */
+    @Test
+    fun `투명한 entry 도 아래를 비치지 않도록 루트와 같은 바탕을 깐다`() {
+        var expected = Color.Unspecified
+        lateinit var hostView: View
+        composeRule.setContent {
+            expected = NavDestinationBackground
+            hostView = LocalView.current
+            Box(modifier = Modifier.fillMaxSize().background(Color.Red)) { TestHost() }
+        }
+        composeRule.waitForIdle()
+
+        // captureToImage 는 Robolectric 에서 다음 프레임을 기다리다 시간 초과로 죽는다. 뷰를 소프트웨어
+        // 캔버스에 직접 그려 같은 픽셀을 읽는다.
+        val emptyCorner =
+            composeRule.runOnIdle {
+                val bitmap = Bitmap.createBitmap(hostView.width, hostView.height, Bitmap.Config.ARGB_8888)
+                hostView.draw(Canvas(bitmap))
+                bitmap.getPixel(bitmap.width - 1, bitmap.height - 1)
+            }
+
+        assertEquals("entry 의 빈 자리에 아래 바탕(빨강)이 비친다", expected.toArgb(), emptyCorner)
     }
 
     @Test

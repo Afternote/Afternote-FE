@@ -19,6 +19,11 @@
     <string name="setting_recipient_empty">등록된 수신자가 없습니다.</string>
     <string name="setting_recipient_empty_description">수신자를 등록하고 쉽게 관리해 보세요.</string>
     <string name="setting_recipient_empty_register">수신자 등록하기</string>
+    <!-- 목록 조회 실패 (#1281). 애프터노트 수신자 선택(afternote_select_receiver_*)과 목록 갱신 실패
+         배너(afternote_home_refresh_error)의 기존 문구를 그대로 쓴다. -->
+    <string name="setting_recipient_list_load_failed">수신자 목록을 불러오지 못했습니다.</string>
+    <string name="setting_recipient_list_refresh_failed">목록을 새로 불러오지 못했습니다. 지금 보이는 내용이 최신이 아닐 수 있어요.</string>
+    <string name="setting_recipient_list_retry">다시 시도</string>
     <!-- 보안 -->
     <string name="setting_security_passkey">패스키 관리</string>
     <string name="setting_security_app_lock">앱 잠금 설정</string>
@@ -170,4 +175,15 @@
     <string name="setting_receiver_load_failed">수신자 정보를 불러오지 못했습니다.</string>
     <string name="setting_menu_unavailable">현재 이 메뉴는 이용할 수 없습니다.</string>
     <string name="setting_menu_acknowledge">확인</string>
+    <!-- 비밀번호 변경 -->
+    <string name="setting_password_change_current_label">현재 비밀번호</string>
+    <string name="setting_password_change_current_placeholder">현재 비밀번호를 입력해주세요</string>
+    <string name="setting_password_change_new_label">새 비밀번호</string>
+    <string name="setting_password_change_new_placeholder">새 비밀번호를 입력해주세요</string>
+    <string name="setting_password_change_rule">8 ~ 15자의 영문, 숫자, 특수문자(@, $, !, %, *, #, ?, &amp;)를 각각 1자 이상 사용해 주세요.</string>
+    <string name="setting_password_change_submit">변경하기</string>
+    <string name="setting_password_change_unchanged">지금 쓰고 있는 비밀번호입니다. 다른 비밀번호를 입력해 주세요.</string>
+    <string name="setting_password_change_social_blocked">소셜 로그인으로 가입한 계정은 비밀번호를 변경할 수 없습니다.</string>
+    <string name="setting_password_change_network_error">네트워크 연결을 확인해주세요.</string>
+    <string name="setting_password_change_failed">비밀번호를 변경하지 못했습니다. 입력하신 내용을 확인해 주세요.</string>
 </resources>

@@ -49,6 +49,16 @@ interface AccountRepository {
         confirmPassword: String,
     ): Result<Unit>
 
+    /**
+     * 로그인한 사용자의 비밀번호 변경(서버 계약명은 `auth/password/change`).
+     *
+     * [resetPassword] 와 달리 인증번호를 쓰지 않고 현재 비밀번호로 본인을 확인한다. 확인이 끝난
+     * 계정이라 `confirmPassword` 계약 필드도 없다(BE `PasswordChangeRequest` 는 두 필드뿐이다).
+     *
+     * 사유가 확인되는 실패는 [com.afternote.core.domain.error.CoreAuthFailure] 로 번역된다 —
+     * 새 비밀번호가 기존과 같음(1206)은 `PasswordUnchanged`, 비밀번호가 없는 소셜 가입 계정(1702)은
+     * `SocialSignUpAccount`. **현재 비밀번호 불일치(1202)는 아직 번역되지 않아** 원본 예외로 온다.
+     */
     suspend fun passwordChange(
         currentPassword: String,
         newPassword: String,

@@ -24,13 +24,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.toRoute
 import com.afternote.afternote_fe.notification.NotificationPermissionEffect
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomBar
 import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
+import com.afternote.core.ui.navigation.NavDestinationBackground
 import com.afternote.core.ui.navigation.PredictiveBackPopEnter
 import com.afternote.core.ui.navigation.PredictiveBackPopExit
-import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.navigation.AfternoteNavHost
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteNavHost
 import com.afternote.feature.home.presentation.HomeTabScreen
@@ -39,7 +40,7 @@ import com.afternote.feature.home.presentation.receiver.ReceiverHomeEntry
 import com.afternote.feature.mindrecord.presentation.navigation.mindRecordNavGraph
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavHost
 import com.afternote.feature.receiver.presentation.navigation.ReceiverNavHost
-import com.afternote.feature.setting.presentation.navigation.settingNavGraph
+import com.afternote.feature.setting.presentation.navigation.SettingNavHost
 import com.afternote.feature.timeletter.presentation.navigation.timeLetterNavGraph
 import kotlinx.coroutines.launch
 
@@ -60,11 +61,11 @@ fun AppNavigation(
     val currentTab = appState.getCurrentNavTab(currentDestination)
 
     val mindRecordNavActions = rememberMindRecordNavActions(appState.navController)
-    val settingNavActions = rememberSettingNavActions(appState)
     val timeLetterNavActions = rememberTimeLetterNavActions(appState.navController)
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val onboardingExternalActions = rememberOnboardingExternalActions(appState)
+    val settingExternalActions = rememberSettingExternalActions(appState)
     val afternoteExternalActions =
         rememberAfternoteExternalActions(appState) { message ->
             scope.launch {
@@ -85,7 +86,7 @@ fun AppNavigation(
 
     Scaffold(
         modifier = modifier,
-        containerColor = AfternoteDesign.colors.gray1,
+        containerColor = NavDestinationBackground,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         contentWindowInsets =
             WindowInsets.systemBars.only(
@@ -134,8 +135,15 @@ fun AppNavigation(
                     navigationCallbacks = rootNavigationCallbacks,
                 )
             }
+            composable<Route.Setting> { entry ->
+                SettingNavHost(
+                    navigationCallbacks = rootNavigationCallbacks,
+                    externalActions = settingExternalActions,
+                    startWithRecipientRegistration = entry.toRoute<Route.Setting>().startWithRecipientRegistration,
+                )
+            }
 
-            // ── 아직 Navigation 2 인 그래프 — #1695 · #1696 · #1697 이 각각 이관한다.
+            // ── 아직 Navigation 2 인 그래프 — #1696 · #1697 이 각각 이관한다.
             composable<Route.Home> {
                 val viewModel: HomeTabViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -162,12 +170,6 @@ fun AppNavigation(
                     actions = homeTabActions,
                 )
             }
-            settingNavGraph(
-                graphScopedParentEntry = {
-                    appState.navController.getBackStackEntry<Route.Setting>()
-                },
-                actions = settingNavActions,
-            )
             mindRecordNavGraph(actions = mindRecordNavActions)
             timeLetterNavGraph(
                 navController = appState.navController,

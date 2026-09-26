@@ -26,7 +26,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.model.delivery.DeliveryConditionType
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -40,7 +39,7 @@ fun DeliveryConditionScreen(
     onBack: () -> Unit,
     onSaveSuccess: () -> Unit,
     onLastGreetingEditClick: () -> Unit,
-    viewModel: DeliveryConditionViewModel = hiltViewModel(),
+    viewModel: DeliveryConditionViewModel,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentOnSaveSuccess by rememberUpdatedState(onSaveSuccess)
