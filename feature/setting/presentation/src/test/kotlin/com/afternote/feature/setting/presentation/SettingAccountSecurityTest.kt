@@ -6,7 +6,6 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
-import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.domain.testing.FakeUserRepository.ConnectedAccountLinkCall
@@ -34,6 +33,7 @@ import com.afternote.feature.setting.presentation.home.SettingUiState
 import com.afternote.feature.setting.presentation.home.SettingViewModel
 import com.afternote.feature.setting.presentation.home.WithdrawConfirmScreen
 import com.afternote.feature.setting.presentation.home.WithdrawUiState
+import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import com.afternote.feature.setting.presentation.passkey.PassKeyListScreen
 import com.afternote.feature.setting.presentation.passkey.PassKeyScreen
 import com.afternote.feature.setting.presentation.profile.ProfileEditEvent
@@ -202,7 +202,7 @@ class SettingAccountSecurityTest {
             }
         val viewModel =
             DeliveryConditionViewModel(
-                savedStateHandle = SavedStateHandle(mapOf("receiverId" to RECEIVER_ID)),
+                route = SettingRoute.AfterDeliveryRoute(RECEIVER_ID),
                 userRepository = repository,
             )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
