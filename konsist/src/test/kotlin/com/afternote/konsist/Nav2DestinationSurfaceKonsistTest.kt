@@ -16,9 +16,9 @@ import org.junit.Test
  * ### 무엇을 목적지로 세는가
  *
  * 파일 경로를 박지 않고 내용으로 찾는다. `androidx.navigation.compose.composable` 을 import 하는
- * 프로덕션 파일의 `composable<…>` 호출이 전부 대상이다. 설정처럼 등록 헬퍼 안에서 한 번 감싸면
- * 그 헬퍼 안의 호출 하나만 세진다. 설정이 Nav3 로 옮겨 가 `SettingNavGraph.kt` 가 사라져도(#1695 사슬)
- * 이 가드는 그대로 돈다.
+ * 프로덕션 파일의 `composable<…>` 호출이 전부 대상이다. 등록 헬퍼 안에서 한 번 감싸면 그 헬퍼 안의
+ * 호출 하나만 세진다(설정이 Nav3 로 옮겨 가기 전 `settingDestination` 이 그랬다, #1695). 그래프가 Nav3 로
+ * 옮겨 가 등록부 파일이 사라져도 이 가드는 그대로 돈다.
  *
  * 목적지 몸통이 아래 둘 중 하나면 통과다.
  * 1. `NavDestinationSurface` 를 부른다.
@@ -52,7 +52,7 @@ class Nav2DestinationSurfaceKonsistTest {
         check(violations.isEmpty()) {
             "바탕 없이 등록된 Nav2 목적지가 있다 (#2145).\n" +
                 violations.joinToString("\n") { "  ${it.path} : composable<${it.route}>" } +
-                "\n몸통을 NavDestinationSurface { … } 로 감싼다. 설정은 settingDestination<T> 로 등록한다.\n" +
+                "\n몸통을 NavDestinationSurface { … } 로 감싼다.\n" +
                 "감싸지 않으면 predictive back 진행 중 줄어든 앞 화면 사이로 뒤 화면 글자가 비친다."
         }
     }
