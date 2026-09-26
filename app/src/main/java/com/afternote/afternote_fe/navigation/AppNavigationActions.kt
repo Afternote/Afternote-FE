@@ -189,6 +189,14 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 appState.navController.popBackStack()
             }
 
+            override fun onPasswordChangeClick() {
+                appState.navController.navigate(SettingRoute.PasswordChangeRoute)
+            }
+
+            override fun onPasswordChangeBack() {
+                appState.navController.popBackStack()
+            }
+
             override fun onLinkedAccountClick() {
                 appState.navController.navigate(SettingRoute.LinkedAccountRoute)
             }
