@@ -85,7 +85,7 @@ class FakeErrorReporter : ErrorReporter {
 fun testReceiver(
     id: Long = 7L,
     name: String = "김수신",
-): Receiver = Receiver(receiverId = id, name = name, relation = "가족", authCode = "fake-auth-$id")
+): Receiver = Receiver(receiverId = id, name = name, relation = "가족")
 
 private val DEFAULT_TEST_USER = User("테스트 사용자", "test@afternote.local", null, null)
 private val DEFAULT_TEST_PUSH_SETTING = UserPushSetting(true, true, true)
