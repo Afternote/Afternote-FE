@@ -38,6 +38,12 @@ import com.afternote.feature.setting.presentation.R
  *
  * 수신자가 0건이면 목록 대신 [ReceiverManageEmpty] 안내를 그린다 (#556). 이 화면엔 검색창이
  * 없어서 검색 결과 0건 축은 여기 해당하지 않는다. 그 축은 검색어를 쥔 core:ui 안에서 닫는다.
+ *
+ * 0건이 조회 성공의 결과인지는 이 화면이 모른다. 조회 중·실패일 때는 호출부가 [listReplacement] 를 넘겨
+ * 0건 안내 대신 그리게 한다 (#1281).
+ *
+ * @param listReplacement 목록 영역을 통째로 대체할 상태 화면. null 이면 목록이나 0건 안내를 그린다.
+ * @param listHeader 목록 위에 얹을 안내. 행은 그대로 둔다.
  */
 @Composable
 fun ReceiverManageScreen(
@@ -46,6 +52,8 @@ fun ReceiverManageScreen(
     onReceiverClick: (Long) -> Unit,
     onRegisterClick: () -> Unit,
     modifier: Modifier = Modifier,
+    listReplacement: (@Composable () -> Unit)? = null,
+    listHeader: (@Composable () -> Unit)? = null,
 ) {
     Scaffold(
         modifier = modifier,
@@ -57,27 +65,39 @@ fun ReceiverManageScreen(
             )
         },
     ) { innerPadding ->
-        if (receivers.isEmpty()) {
-            ReceiverManageEmpty(
-                onRegisterClick = onRegisterClick,
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-            )
-        } else {
-            LazyColumn(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .padding(horizontal = 20.dp),
-            ) {
-                items(receivers, key = { it.receiverId }) { receiver ->
-                    ReceiverManageRow(
-                        receiver = receiver,
-                        onClick = { onReceiverClick(receiver.receiverId) },
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+        ) {
+            listHeader?.invoke()
+            when {
+                listReplacement != null -> {
+                    listReplacement()
+                }
+
+                receivers.isEmpty() -> {
+                    ReceiverManageEmpty(
+                        onRegisterClick = onRegisterClick,
+                        modifier = Modifier.fillMaxSize(),
                     )
+                }
+
+                else -> {
+                    LazyColumn(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 20.dp),
+                    ) {
+                        items(receivers, key = { it.receiverId }) { receiver ->
+                            ReceiverManageRow(
+                                receiver = receiver,
+                                onClick = { onReceiverClick(receiver.receiverId) },
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -89,8 +109,9 @@ fun ReceiverManageScreen(
  *
  * 문구·일러스트 구성은 같은 성격의 확정 시안(4163:20979)을 그대로 구현한 애프터노트
  * `SelectReceiverEmpty` 를 준거로 한다 (제목 → 8dp → 설명 → 56dp → 일러스트).
- * 등록 CTA 는 Scaffold bottomBar 가 아니라 본문 안에 둔다. 뒤에 목록 상태 슬롯(#1281)으로
- * 이 본체를 통째로 옮길 때 빈 상태만 CTA 를 잃지 않게 하려는 것이다.
+ * 등록 CTA 는 Scaffold bottomBar 가 아니라 본문 안에 둔다. 목록 상태 슬롯(#1281)이 목록 영역을
+ * 대체하는 동안 CTA 도 함께 사라지게 하려는 것이다. 조회 중·실패에 등록 버튼만 남으면 수신자가 없다고
+ * 말하는 셈이 된다.
  */
 @Composable
 private fun ReceiverManageEmpty(

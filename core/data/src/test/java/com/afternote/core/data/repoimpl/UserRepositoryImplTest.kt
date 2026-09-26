@@ -1,6 +1,7 @@
 package com.afternote.core.data.repoimpl
 
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.datastore.TokenDataSource
 import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.testing.FakeAuthRepository
@@ -39,16 +40,35 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import java.net.UnknownHostException
 
 class UserRepositoryImplTest {
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
+
     private val calls = mutableListOf<String>()
     private val errorReporter = RecordingErrorReporter()
+
+    /**
+     * 수신자 목록의 세션 경계는 fake 의 Boolean 이 아니라 실제 토큰 저장소가 정한다 (#2135).
+     * 각 테스트는 로그인된 세션에서 시작하고, 로그아웃이 필요한 테스트만 [TestTokenSessionStore.clearSession] 을 부른다.
+     */
+    private val sessionStore by lazy { TestTokenSessionStore(temporaryFolder.root) }
+
+    @Before
+    fun openSession() = runBlocking { sessionStore.login() }
+
+    @After
+    fun closeSessionStore() = sessionStore.close()
 
     private fun repository(
         deleteAccountResponse: BaseResponse<Unit> = success(),
@@ -57,7 +77,6 @@ class UserRepositoryImplTest {
         onCreateReceiver: suspend (UserCreateReceiverRequestDto) -> BaseResponse<UserCreateReceiverDto> = {
             TODO("이 테스트 미사용")
         },
-        authRepository: FakeAuthRepository = receiverAuthRepository(loggedIn = true),
     ) = repositoryOf(
         userApiService =
             FakeUserApiService(
@@ -69,12 +88,13 @@ class UserRepositoryImplTest {
                 onCreateReceiver = onCreateReceiver,
             ),
         authRepository =
-            authRepository.apply {
+            FakeAuthRepository.strict().apply {
                 onClearSession = {
                     calls += "clearSession"
                     clearSessionResult
                 }
             },
+        tokenDataSource = sessionStore.tokenDataSource,
         errorReporter = errorReporter,
     )
 
@@ -251,10 +271,9 @@ class UserRepositoryImplTest {
     @Test
     fun `receiverListFlow - 로그아웃 중에는 서버를 호출하지 않는다`() {
         var requestCount = 0
-        val authRepository = receiverAuthRepository(loggedIn = false)
+        runBlocking { sessionStore.clearSession() }
         val repository =
             repository(
-                authRepository = authRepository,
                 onGetReceivers = {
                     requestCount += 1
                     dataResponse(listOf(receiverDto("호출되면 안 됨")))
@@ -273,10 +292,8 @@ class UserRepositoryImplTest {
     fun `receiverListFlow - 로그아웃 뒤 새 세션의 첫 실패에는 이전 계정 목록을 내지 않는다`() =
         runBlocking {
             var requestCount = 0
-            val authRepository = receiverAuthRepository(loggedIn = true)
             val repository =
                 repository(
-                    authRepository = authRepository,
                     onGetReceivers = {
                         requestCount += 1
                         if (requestCount == 1) {
@@ -298,14 +315,14 @@ class UserRepositoryImplTest {
                     withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.map { it.name },
                 )
 
-                authRepository.loggedIn = false
+                sessionStore.clearSession()
                 assertEquals(
                     emptyList<Receiver>(),
                     withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() },
                 )
                 assertEquals(1, requestCount)
 
-                authRepository.loggedIn = true
+                sessionStore.login(accessToken = "새 세션 액세스", refreshToken = "새 세션 리프레시")
                 assertEquals(
                     emptyList<Receiver>(),
                     withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() },
@@ -667,11 +684,6 @@ class UserRepositoryImplTest {
         assertEquals(0, getCount)
     }
 
-    private fun receiverAuthRepository(loggedIn: Boolean): FakeAuthRepository =
-        FakeAuthRepository.strict(loggedIn = loggedIn).apply {
-            onIsLoggedIn = { loggedInState }
-        }
-
     private companion object {
         const val TEST_TIMEOUT_MILLIS = 2_000L
     }
@@ -762,12 +774,13 @@ private class FakeUserApiService(
 private fun repositoryOf(
     userApiService: UserApiService,
     authRepository: FakeAuthRepository,
+    tokenDataSource: TokenDataSource,
     errorReporter: ErrorReporter,
 ): UserRepositoryImpl =
     UserRepositoryImpl(
         userApiService = userApiService,
         authRepository = authRepository,
         errorReporter = errorReporter,
-        receiverRepository = UserReceiverRepositoryImpl(userApiService, authRepository, errorReporter),
+        receiverRepository = UserReceiverRepositoryImpl(userApiService, tokenDataSource, errorReporter),
         myProfileRepository = MyProfileRepositoryImpl(userApiService),
     )
