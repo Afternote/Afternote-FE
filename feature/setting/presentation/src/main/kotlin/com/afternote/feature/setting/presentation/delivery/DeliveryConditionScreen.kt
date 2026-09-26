@@ -36,7 +36,7 @@ import com.afternote.feature.setting.presentation.delivery.component.RadioGroup
 import com.afternote.feature.setting.presentation.delivery.component.RadioGroupItem
 
 @Composable
-fun DeliveryConditionScreen(
+internal fun DeliveryConditionScreen(
     onBack: () -> Unit,
     onSaveSuccess: () -> Unit,
     onLastGreetingEditClick: () -> Unit,

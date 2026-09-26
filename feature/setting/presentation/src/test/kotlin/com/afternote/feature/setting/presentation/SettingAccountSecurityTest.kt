@@ -23,6 +23,7 @@ import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.setting.domain.UpdateTimeLetterDeliveryConditionUseCase
 import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
 import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository.ConnectedAccountLinkCall
 import com.afternote.feature.setting.presentation.account.ConnectedAccountsEvent
@@ -206,6 +207,7 @@ class SettingAccountSecurityTest {
             DeliveryConditionViewModel(
                 savedStateHandle = SavedStateHandle(mapOf("receiverId" to RECEIVER_ID)),
                 receiverRepository = repository,
+                updateTimeLetterDeliveryCondition = UpdateTimeLetterDeliveryConditionUseCase(repository),
             )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.isInitialized
