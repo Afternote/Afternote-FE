@@ -18,7 +18,8 @@ import androidx.navigation3.ui.NavDisplay
  * 피처 하나가 소유하는 로컬 Navigation 3 스택의 표준 표시부.
  *
  * 이 저장소의 로컬 스택은 전부 이 함수를 거친다 — 데코레이터 목록과 바닥 back 처리를 한 곳에
- * 모아 두면, 아래 두 함정을 피처마다 다시 밟지 않는다.
+ * 모아 두면, 아래 두 함정을 피처마다 다시 밟지 않는다. entry 바탕을 칠하는 것(#2145)도 여기서
+ * 한 번에 받는다([rememberStandardNavEntryDecorators]).
  *
  * 1. `NavDisplay.onBack` 은 `() -> Unit` 이다. 문서·블로그에 도는 `{ count -> … }` (Int 인자)
  *    형태는 이 버전에서 컴파일되지 않는다 (#959 실측 함정 1).
@@ -78,10 +79,14 @@ public fun FeatureNavDisplay(
  *
  * [FeatureNavDisplay] 를 쓸 수 없어 `NavDisplay` 를 직접 부르는 경우(다른 scene 전략이 필요한
  * 경우 등)에도 같은 목록을 쓰도록 공개해 둔다.
+ *
+ * 세 번째 [NavDestinationSurfaceDecorator] 는 entry 마다 불투명한 바탕을 깐다. 빠지면 predictive back
+ * 진행 중 줄어든 앞 화면 사이로 뒤 화면 글자가 비친다(#2145). 배경은 [NavDestinationSurface] 에 적었다.
  */
 @Composable
 public fun rememberStandardNavEntryDecorators(): List<NavEntryDecorator<NavKey>> =
     listOf(
         rememberSaveableStateHolderNavEntryDecorator(),
         rememberViewModelStoreNavEntryDecorator(),
+        NavDestinationSurfaceDecorator,
     )

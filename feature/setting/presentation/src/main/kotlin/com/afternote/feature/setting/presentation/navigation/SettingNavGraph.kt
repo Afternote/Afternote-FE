@@ -1,5 +1,7 @@
 package com.afternote.feature.setting.presentation.navigation
 
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -10,6 +12,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import com.afternote.core.ui.Route
+import com.afternote.core.ui.navigation.NavDestinationSurface
 import com.afternote.feature.setting.presentation.account.ConnectedAccountsScreen
 import com.afternote.feature.setting.presentation.applock.AppLockSetupScreen
 import com.afternote.feature.setting.presentation.applock.PinSetupStep
@@ -39,7 +42,7 @@ fun NavGraphBuilder.settingNavGraph(
     actions: SettingNavActions,
 ) {
     navigation<Route.Setting>(startDestination = SettingRoute.SettingHomeRoute) {
-        composable<SettingRoute.SettingHomeRoute> {
+        settingDestination<SettingRoute.SettingHomeRoute> {
             SettingScreen(
                 onBackClick = actions::onSettingBack,
                 onLogoutSuccess = actions::onLogoutSuccess,
@@ -57,7 +60,7 @@ fun NavGraphBuilder.settingNavGraph(
             )
         }
 
-        composable<SettingRoute.WithdrawGuideRoute> {
+        settingDestination<SettingRoute.WithdrawGuideRoute> {
             val parentEntry = remember(it) { graphScopedParentEntry() }
             val viewModel: SettingViewModel = hiltViewModel(parentEntry)
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -69,7 +72,7 @@ fun NavGraphBuilder.settingNavGraph(
             )
         }
 
-        composable<SettingRoute.WithdrawConfirmRoute> {
+        settingDestination<SettingRoute.WithdrawConfirmRoute> {
             val parentEntry = remember(it) { graphScopedParentEntry() }
             val viewModel: SettingViewModel = hiltViewModel(parentEntry)
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -81,40 +84,40 @@ fun NavGraphBuilder.settingNavGraph(
             )
         }
 
-        composable<SettingRoute.ProfileEditRoute> {
+        settingDestination<SettingRoute.ProfileEditRoute> {
             ProfileEditScreen(
                 onBackClick = actions::onProfileEditBack,
                 onWithdrawGuideClick = actions::onWithdrawGuideClick,
             )
         }
 
-        composable<SettingRoute.PasswordChangeRoute> {
+        settingDestination<SettingRoute.PasswordChangeRoute> {
             PasswordChangeScreen(
                 onBackClick = actions::onPasswordChangeBack,
                 onChanged = actions::onPasswordChangeBack,
             )
         }
 
-        composable<SettingRoute.LinkedAccountRoute> {
+        settingDestination<SettingRoute.LinkedAccountRoute> {
             ConnectedAccountsScreen(
                 onBack = actions::onLinkedAccountBack,
             )
         }
 
-        composable<SettingRoute.NotificationRoute> {
+        settingDestination<SettingRoute.NotificationRoute> {
             NotificationSettingScreen(
                 onBack = actions::onNotificationBack,
                 onPushNotificationClick = actions::onPushNotificationClick,
             )
         }
 
-        composable<SettingRoute.PushNotificationRoute> {
+        settingDestination<SettingRoute.PushNotificationRoute> {
             PushNotificationScreen(
                 onBack = actions::onPushNotificationBack,
             )
         }
 
-        composable<SettingRoute.RecipientListRoute> {
+        settingDestination<SettingRoute.RecipientListRoute> {
             val route = it.toRoute<SettingRoute.RecipientListRoute>()
             val viewModel: ReceiverListViewModel = hiltViewModel()
             val receivers by viewModel.receivers.collectAsStateWithLifecycle()
@@ -136,21 +139,21 @@ fun NavGraphBuilder.settingNavGraph(
             }
         }
 
-        composable<SettingRoute.RecipientRegisterRoute> {
+        settingDestination<SettingRoute.RecipientRegisterRoute> {
             ReceiverRegisterScreen(
                 onBackClick = actions::onRecipientRegisterBack,
                 onRegisterSuccess = actions::onRecipientRegisterBack,
             )
         }
 
-        composable<SettingRoute.RecipientEditRoute> {
+        settingDestination<SettingRoute.RecipientEditRoute> {
             ReceiverEditScreen(
                 onBackClick = actions::onRecipientEditBack,
                 onEditSuccess = actions::onRecipientEditBack,
             )
         }
 
-        composable<SettingRoute.AfterDeliveryRoute> {
+        settingDestination<SettingRoute.AfterDeliveryRoute> {
             val route = it.toRoute<SettingRoute.AfterDeliveryRoute>()
             DeliveryConditionScreen(
                 onBack = actions::onAfterDeliveryBack,
@@ -161,7 +164,7 @@ fun NavGraphBuilder.settingNavGraph(
             )
         }
 
-        composable<SettingRoute.PasskeyRoute> {
+        settingDestination<SettingRoute.PasskeyRoute> {
             val viewModel: PassKeyViewModel = hiltViewModel()
             val isPasskeyRegistered by viewModel.isPasskeyRegistered.collectAsStateWithLifecycle()
             if (isPasskeyRegistered == true) {
@@ -174,21 +177,21 @@ fun NavGraphBuilder.settingNavGraph(
             }
         }
 
-        composable<SettingRoute.PasskeyMakingRoute> {
+        settingDestination<SettingRoute.PasskeyMakingRoute> {
             PassKeyMakingScreen(
                 onBackClick = actions::onPasskeyMakingBack,
                 onPasswordAuthClick = actions::onPasswordAuthClick,
             )
         }
 
-        composable<SettingRoute.PasskeyPasswordRoute> {
+        settingDestination<SettingRoute.PasskeyPasswordRoute> {
             PassKeyPasswordScreen(
                 onPinComplete = { actions.onPasskeyPasswordBack() },
                 onBack = actions::onPasskeyPasswordBack,
             )
         }
 
-        composable<SettingRoute.AppLockSetupRoute> {
+        settingDestination<SettingRoute.AppLockSetupRoute> {
             AppLockSetupScreen(
                 step = PinSetupStep.ENTER_NEW,
                 onPinComplete = { actions.onAppLockBack() },
@@ -196,11 +199,27 @@ fun NavGraphBuilder.settingNavGraph(
             )
         }
 
-        composable<SettingRoute.NoticeRoute> {
+        settingDestination<SettingRoute.NoticeRoute> {
             NoticeListScreen(
                 notices = emptyList(),
                 onBackClick = actions::onNoticeBack,
             )
         }
     }
+}
+
+/**
+ * 설정 목적지 등록. `composable<T>` 와 같되 화면을 [NavDestinationSurface] 로 감싼다 (#2145).
+ *
+ * 설정 화면 파일 16개가 `Scaffold(containerColor = Color.Transparent)` 라, 감싸지 않으면 predictive back
+ * 진행 중 줄어든 앞 화면 사이로 뒤 화면 글자가 비친다. 화면마다 `containerColor` 를 고치지 않고 등록
+ * 자리에서 한 번 칠한다.
+ *
+ * 설정이 Navigation 3 로컬 스택으로 옮겨 가면(#1695 사슬) 이 파일째 사라지고 core/ui 의 표준
+ * entry 데코레이터가 같은 일을 받는다.
+ */
+private inline fun <reified T : Any> NavGraphBuilder.settingDestination(
+    noinline content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit,
+) {
+    composable<T> { entry -> NavDestinationSurface { content(entry) } }
 }
