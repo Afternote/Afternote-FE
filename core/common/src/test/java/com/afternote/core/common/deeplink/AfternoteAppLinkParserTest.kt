@@ -143,10 +143,11 @@ class AfternoteAppLinkParserTest {
     }
 
     @Test
-    fun `다른 host 와 userinfo 위장은 거절이다`() {
+    fun `다른 host 와 정규형이 아닌 authority 는 거절이다`() {
         listOf(
             "https://evil.example.com/afternote",
             "https://afternote.kro.kr.evil.example.com/afternote",
+            "https://afternote.kro.kr@evil.example.com/afternote",
             "https://sub.afternote.kro.kr/afternote",
             "https://evil@afternote.kro.kr/afternote",
             "https://afternote.kro.kr:8443/afternote",

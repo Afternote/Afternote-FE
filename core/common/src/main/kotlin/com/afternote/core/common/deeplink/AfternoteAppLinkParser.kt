@@ -36,9 +36,13 @@ import java.net.URI
  * ## 왜 이렇게까지 좁히나
  *
  * 링크는 **앱 밖에서 오는 입력**이다. 관대하게 받으면 그만큼이 공격면이다 — 커스텀 scheme 은
- * Digital Asset Links 검증을 못 받아 아무 앱이나 선점할 수 있고, `https://evil@afternote.kro.kr/`
- * 같은 userinfo 는 눈으로 우리 도메인처럼 보인다. 그래서 계약에 **명시된 것만** 통과시키고 나머지는
- * 전부 [AppLinkResolution.Rejected] 다. 모르는 입력을 추측해서 여는 경로는 없다.
+ * Digital Asset Links 검증을 못 받아 아무 앱이나 선점할 수 있다. 그래서 계약에 **명시된 것만**
+ * 통과시키고 나머지는 전부 [AppLinkResolution.Rejected] 다. 모르는 입력을 추측해서 여는 경로는 없다.
+ *
+ * userinfo 를 거절하는 이유는 위장 방어가 아니라 정규형이다. `https://evil@afternote.kro.kr/` 의 host 는
+ * 실제로 우리 도메인이라 막을 위장이 없고, 위장이 되는 반대 모양(`https://afternote.kro.kr@evil.com/`)은
+ * host 가 `evil.com` 으로 읽혀 host 검사에서 이미 떨어진다. userinfo 는 계약에서 뜻이 없는 칸이라 받으면
+ * 목적지 하나를 가리키는 URL 이 끝없이 생긴다. query·fragment·끝 슬래시를 거절하는 것과 같은 이유다.
  */
 object AfternoteAppLinkParser {
     /** 검증된 App Link 의 유일한 scheme. */

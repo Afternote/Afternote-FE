@@ -22,7 +22,7 @@ enum class AppLinkRejectionReason(
     /** `https` 가 아니다. 커스텀 scheme 은 Digital Asset Links 검증을 못 받아 아무 앱이나 가로챌 수 있다. */
     UNSUPPORTED_SCHEME("unsupported_scheme"),
 
-    /** 우리 도메인이 아니거나, 호스트 앞에 userinfo 가 붙어 도메인을 흉내 냈다. */
+    /** 우리 도메인이 아니거나, 도메인은 맞아도 userinfo·포트가 정규형이 아니다. */
     UNSUPPORTED_HOST("unsupported_host"),
 
     /** 계약 표에 없는 경로다. 끝 슬래시·빈 세그먼트·퍼센트 인코딩 변형도 여기로 온다. */
