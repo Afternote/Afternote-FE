@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class PushNotificationViewModel
+internal class PushNotificationViewModel
     @Inject
     constructor(
         @ApplicationContext private val context: Context,
@@ -84,7 +84,7 @@ class PushNotificationViewModel
         private fun loadMarketingConsents() {
             viewModelScope.launch {
                 Log.d(TAG, "loadMarketingConsents: start")
-                runCatching { notificationRepository.getMyMarketingConsents() }
+                runCatchingCancellable { notificationRepository.getMyMarketingConsents() }
                     .onSuccess { consent ->
                         Log.d(TAG, "loadMarketingConsents: success=$consent")
                         _uiState.update {
