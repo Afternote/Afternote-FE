@@ -11,7 +11,7 @@ import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.DetailReceiver
-import com.afternote.feature.afternote.domain.model.author.DraftDetail
+import com.afternote.feature.afternote.domain.model.author.DraftPrefill
 import com.afternote.feature.afternote.domain.model.author.FieldPatch
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
@@ -37,14 +37,14 @@ import java.util.concurrent.atomic.AtomicLong
 class FakeAfternoteRepository(
     initialItems: List<ListItem> = emptyList(),
     initialDetails: Map<Long, Detail> = emptyMap(),
-    initialDraftDetails: Map<Long, DraftDetail> = emptyMap(),
+    initialDraftPrefills: Map<Long, DraftPrefill> = emptyMap(),
     nextId: Long =
         (initialItems.map(ListItem::id) + initialDetails.keys)
             .maxOrNull()
             ?.plus(1L) ?: 1L,
     var onGetPagedAfternotes: ((AfternoteType?) -> Flow<PagingData<ListItem>>)? = null,
     var onGetDetail: (suspend (Long) -> Result<Detail>)? = null,
-    var onGetDraftDetail: (suspend (Long) -> Result<DraftDetail>)? = null,
+    var onGetDraftPrefill: (suspend (Long) -> Result<DraftPrefill>)? = null,
     var onCreateSocial: (suspend (CreateAccountPayload) -> Result<Long>)? = null,
     var onCreateBusiness: (suspend (CreateAccountPayload) -> Result<Long>)? = null,
     var onCreateGallery: (suspend (CreateGalleryPayload) -> Result<Long>)? = null,
@@ -54,7 +54,7 @@ class FakeAfternoteRepository(
 ) : AfternoteRepository {
     val items = CopyOnWriteArrayList(initialItems)
     val details = ConcurrentHashMap(initialDetails)
-    val draftDetails = ConcurrentHashMap(initialDraftDetails)
+    val draftPrefills = ConcurrentHashMap(initialDraftPrefills)
 
     val requestedTypes = CopyOnWriteArrayList<AfternoteType?>()
     val requestedDetailIds = CopyOnWriteArrayList<Long>()
@@ -65,7 +65,7 @@ class FakeAfternoteRepository(
     val updateCalls = CopyOnWriteArrayList<Pair<Long, UpdateAfternoteInput>>()
     val deletedIds = CopyOnWriteArrayList<Long>()
 
-    val requestedDraftDetailIds = CopyOnWriteArrayList<Long>()
+    val requestedDraftPrefillIds = CopyOnWriteArrayList<Long>()
 
     private val idCounter = AtomicLong(nextId)
     private val stateVersion = MutableStateFlow(0L)
@@ -87,11 +87,11 @@ class FakeAfternoteRepository(
         }
     }
 
-    override suspend fun getDraftDetail(id: Long): Result<DraftDetail> {
-        requestedDraftDetailIds += id
-        onGetDraftDetail?.let { return it(id) }
+    override suspend fun getDraftPrefill(id: Long): Result<DraftPrefill> {
+        requestedDraftPrefillIds += id
+        onGetDraftPrefill?.let { return it(id) }
         return runCatching {
-            draftDetails[id] ?: throw NoSuchElementException("임시저장 상세가 없다: id=$id")
+            draftPrefills[id] ?: throw NoSuchElementException("임시저장 프리필이 없다: id=$id")
         }
     }
 
@@ -160,7 +160,7 @@ class FakeAfternoteRepository(
             FakeAfternoteRepository(
                 onGetPagedAfternotes = { unexpectedCall("AfternoteRepository.getPagedAfternotes") },
                 onGetDetail = { unexpectedCall("AfternoteRepository.getDetail") },
-                onGetDraftDetail = { unexpectedCall("AfternoteRepository.getDraftDetail") },
+                onGetDraftPrefill = { unexpectedCall("AfternoteRepository.getDraftPrefill") },
                 onCreateSocial = { unexpectedCall("AfternoteRepository.createSocial") },
                 onCreateBusiness = { unexpectedCall("AfternoteRepository.createBusiness") },
                 onCreateGallery = { unexpectedCall("AfternoteRepository.createGallery") },

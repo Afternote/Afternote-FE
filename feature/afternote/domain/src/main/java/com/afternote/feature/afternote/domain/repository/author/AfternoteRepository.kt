@@ -6,7 +6,7 @@ import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
-import com.afternote.feature.afternote.domain.model.author.DraftDetail
+import com.afternote.feature.afternote.domain.model.author.DraftPrefill
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.model.author.UpdateAfternoteInput
 import kotlinx.coroutines.flow.Flow
@@ -21,17 +21,17 @@ interface AfternoteRepository {
      */
     fun getPagedAfternotes(type: AfternoteType?): Flow<PagingData<ListItem>>
 
-    /** 발행 완료 상세 — 상세 화면용. 임시저장 id 를 넘기면 필수값 부재로 실패한다([getDraftDetail] 을 쓸 것). */
+    /** 발행 완료 상세 — 상세 화면용. 임시저장 id 를 넘기면 필수값 부재로 실패한다([getDraftPrefill] 을 쓸 것). */
     suspend fun getDetail(id: Long): Result<Detail>
 
     /**
-     * 임시저장 상세 — 에디터 이어쓰기용. 같은 `GET /afternotes/{id}` 를 타고 응답만 관용해서 읽는다.
+     * 임시저장 프리필 — 에디터 이어쓰기용. 같은 `GET /afternotes/{id}` 를 타고 응답만 관용해서 읽는다.
      *
      * 서버가 상세에서 임시저장을 걸러 내지 않고 응답 형태로만 가르기 때문에(`AfternotedetailResponse`)
      * 엔드포인트는 하나이고, 갈라지는 곳은 읽는 쪽이다. 호출자는 이어쓰기로 들어왔다는 것을 이미 알고
      * 이 메서드를 고른다 — 목록에 임시저장 표시를 싣는 것은 그 흐름을 정한 뒤의 일이다(#1792).
      */
-    suspend fun getDraftDetail(id: Long): Result<DraftDetail>
+    suspend fun getDraftPrefill(id: Long): Result<DraftPrefill>
 
     suspend fun createSocial(payload: CreateAccountPayload): Result<Long>
 
