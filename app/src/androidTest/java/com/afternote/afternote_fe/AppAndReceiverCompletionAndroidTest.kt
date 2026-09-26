@@ -14,6 +14,7 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -217,6 +218,38 @@ class AppAndReceiverCompletionAndroidTest {
             .assertIsDisplayed()
         composeRule
             .onNodeWithText(context.getString(ReceiverR.string.receiver_records_box_empty))
+            .assertIsDisplayed()
+    }
+
+    /**
+     * 발신자 카드 탭 → 발신자 상세 (#2168).
+     *
+     * 상세 ViewModel 은 로컬 Navigation 3 entry 안에서 실제 Hilt 경로로 만들어진다. entry 의
+     * SavedStateHandle 에는 NavKey 필드가 실리지 않으므로 `toRoute` 로 `senderId` 를 읽던 VM 은
+     * 여기서 `MissingFieldException` 으로 죽었다. VM 을 손으로 만드는 유닛 테스트는 이 경로를 타지 않는다.
+     */
+    @Test
+    fun welcomeCheckRecords_registeredSenderCard_opensSenderDetail() {
+        val senderName = "테스트 발신자"
+        composeRule
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_check_records))
+            .performClick()
+        composeRule
+            .onNodeWithContentDescription(context.getString(CoreUiR.string.core_ui_fab_content_description_add))
+            .performClick()
+        composeRule.onNode(hasSetTextAction()).performTextInput(senderName)
+        composeRule
+            .onNode(
+                hasText(context.getString(ReceiverR.string.receiver_sender_registration_submit)) and hasClickAction(),
+            ).performClick()
+
+        composeRule.onNodeWithText(senderName).assertIsDisplayed().performClick()
+
+        composeRule
+            .onNodeWithText(context.getString(ReceiverR.string.receiver_sender_detail_status_unavailable))
+            .assertIsDisplayed()
+        composeRule
+            .onNodeWithText(context.getString(ReceiverR.string.receiver_sender_detail_request_verification))
             .assertIsDisplayed()
     }
 }
