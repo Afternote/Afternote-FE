@@ -4,10 +4,8 @@ import android.app.Application
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.navigation.toRoute
 import com.afternote.core.common.deeplink.NavigationTarget
 import com.afternote.core.ui.Route
-import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -108,23 +106,6 @@ class AppLinkTargetBackStackTest {
         assertEquals(listOf("NavHostRoot", "Home", "DailyQuestionWriteRoute"), routes())
     }
 
-    @Test
-    fun `타임레터 상세는 링크가 실어 온 id 그대로 연다`() {
-        startAtHome()
-
-        resume(NavigationTarget.TimeLetterDetail(TIME_LETTER_ID))
-
-        assertEquals(listOf("NavHostRoot", "Home", "TimeLetter", "TimeLetterDetailRoute"), routes())
-        assertEquals(
-            TIME_LETTER_ID,
-            composeRule.runOnIdle {
-                harness.navController.currentBackStackEntry!!
-                    .toRoute<TimeLetterRoute.TimeLetterDetailRoute>()
-                    .timeLetterId
-            },
-        )
-    }
-
     /** 같은 링크를 연달아 눌러도 같은 화면이 겹쳐 쌓이지 않는다. */
     @Test
     fun `같은 링크를 두 번 열어도 화면이 겹쳐 쌓이지 않는다`() {
@@ -134,10 +115,5 @@ class AppLinkTargetBackStackTest {
         resume(NavigationTarget.DailyQuestionCompose)
 
         assertEquals(listOf("NavHostRoot", "Home", "DailyQuestionWriteRoute"), routes())
-    }
-
-    private companion object {
-        /** 0·1 이면 기본값·인덱스와 구분되지 않아, 그대로 실렸는지 보이는 값을 쓴다. */
-        const val TIME_LETTER_ID = 8_317L
     }
 }

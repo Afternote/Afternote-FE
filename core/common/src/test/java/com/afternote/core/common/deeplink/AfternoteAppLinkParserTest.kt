@@ -7,7 +7,7 @@ import org.junit.Test
  * URI 계약 표의 모든 행과 fail-closed 거절 전량을 잠근다 (#924).
  *
  * 표의 «있는 행»만 세면 계약이 넓어지는 것을 못 잡는다. 그래서 거절 쪽도 사유별로 단언한다 —
- * 알 수 없는 path·잘못된 ID·미지원 query 는 각각 다른 이유로 거절돼야 한다.
+ * 알 수 없는 path·미지원 query·fragment 는 각각 다른 이유로 거절돼야 한다.
  */
 class AfternoteAppLinkParserTest {
     @Test
@@ -16,7 +16,6 @@ class AfternoteAppLinkParserTest {
             mapOf(
                 "https://afternote.kro.kr/" to NavigationTarget.Home,
                 "https://afternote.kro.kr/afternote" to NavigationTarget.AfternoteHome,
-                "https://afternote.kro.kr/timeletter/9" to NavigationTarget.TimeLetterDetail(9L),
                 "https://afternote.kro.kr/mindrecord/daily-question" to
                     NavigationTarget.DailyQuestionCompose,
                 "https://afternote.kro.kr/settings/notification" to
@@ -64,14 +63,15 @@ class AfternoteAppLinkParserTest {
     fun `알 수 없는 path 는 거절이다`() {
         listOf(
             "https://afternote.kro.kr/unknown",
-            "https://afternote.kro.kr/timeletter/9/extra",
+            "https://afternote.kro.kr/settings/notification/extra",
             "https://afternote.kro.kr/received/senders",
             "https://afternote.kro.kr/mindrecord",
             "https://afternote.kro.kr/settings",
             "https://afternote.kro.kr/Afternote",
             "https://afternote.kro.kr/afternote/",
-            "https://afternote.kro.kr/timeletter//9",
+            "https://afternote.kro.kr/settings//notification",
             "https://afternote.kro.kr/%2Fafternote",
+            "https://afternote.kro.kr/ａfternote",
             "https://afternote.kro.kr/afternote/../settings/notification",
         ).forEach { link ->
             assertEquals(link, rejectedBecause(AppLinkRejectionReason.UNKNOWN_PATH), AfternoteAppLinkParser.parse(link))
@@ -79,36 +79,10 @@ class AfternoteAppLinkParserTest {
     }
 
     @Test
-    fun `잘못된 ID 는 거절이다`() {
-        listOf(
-            "https://afternote.kro.kr/timeletter/abc",
-            "https://afternote.kro.kr/timeletter/0",
-            "https://afternote.kro.kr/timeletter/007",
-            "https://afternote.kro.kr/timeletter/99999999999999999999",
-            "https://afternote.kro.kr/timeletter/9999999999999999999",
-            "https://afternote.kro.kr/timeletter/-1",
-        ).forEach { link ->
-            assertEquals(link, rejectedBecause(AppLinkRejectionReason.MALFORMED_ID), AfternoteAppLinkParser.parse(link))
-        }
-    }
-
-    /**
-     * 유니코드 숫자는 ID 가 아니다. Android 정규식의 `\d` 는 이것들을 숫자로 물어 서버 JVM 과
-     * 다르게 판정하므로, 파서가 `'0'..'9'` 로 직접 좁히는지 여기서 잠근다.
-     */
-    @Test
-    fun `아라비아-인도 숫자는 ID 가 아니다`() {
-        assertEquals(
-            rejectedBecause(AppLinkRejectionReason.UNKNOWN_PATH),
-            AfternoteAppLinkParser.parse("https://afternote.kro.kr/timeletter/١٢"),
-        )
-    }
-
-    @Test
     fun `지원하지 않는 query 는 거절이다`() {
         listOf(
             "https://afternote.kro.kr/afternote?utm_source=mail",
-            "https://afternote.kro.kr/timeletter/9?ref=push",
+            "https://afternote.kro.kr/settings/notification?ref=push",
             "https://afternote.kro.kr/afternote?",
         ).forEach { link ->
             assertEquals(
@@ -209,14 +183,17 @@ class AfternoteAppLinkParserTest {
     }
 
     /**
-     * 애프터노트 상세는 도착할 자리가 없어 계약에서 뺐다([NavigationTarget] KDoc). 자리가 열려
-     * 다시 넣을 때 이 테스트가 먼저 빨개져서, 경로만 몰래 살아나는 일이 없게 한다.
+     * ID 를 싣는 상세 경로는 계약에서 뺐다([NavigationTarget] KDoc) — 애프터노트 상세는 도착할
+     * 자리가 없고, 타임레터 상세는 ID 가 무엇인지 정할 발급처가 없다. 다시 넣을 때 이 테스트가
+     * 먼저 빨개져서, 경로만 몰래 살아나는 일이 없게 한다.
      */
     @Test
-    fun `애프터노트 상세 경로는 아직 목적지가 아니다`() {
+    fun `ID 를 싣는 상세 경로는 아직 목적지가 아니다`() {
         listOf(
             "/afternote/42",
             "/afternote/1",
+            "/timeletter/9",
+            "/timeletter/1",
         ).forEach { path ->
             assertEquals(
                 path,

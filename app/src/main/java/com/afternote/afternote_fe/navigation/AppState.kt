@@ -91,7 +91,7 @@ class AppState(
      * `restoreState` 를 끄는 유일한 라우트라, 저장된 스택으로 복원되어 **지문 관문을 건너뛰는**
      * 일이 링크 진입에서도 일어나지 않는다.
      *
-     * 나머지 셋은 사용자가 보고 있던 화면 위에 쌓는다. 링크를 눌러 들어온 뒤의 뒤로가기는 하던
+     * 나머지 둘은 사용자가 보고 있던 화면 위에 쌓는다. 링크를 눌러 들어온 뒤의 뒤로가기는 하던
      * 일로 돌아가는 것이 맞고, 콜드 스타트면 그 아래가 홈이라 결과가 같다. 같은 링크를 연달아
      * 눌러도 같은 화면이 겹쳐 쌓이지 않도록 `launchSingleTop` 을 건다.
      */
@@ -103,10 +103,6 @@ class AppState(
 
             NavigationTarget.AfternoteHome -> {
                 navigateToBottomBarRoute(Route.Afternote)
-            }
-
-            is NavigationTarget.TimeLetterDetail -> {
-                pushSingleTop(TimeLetterRoute.TimeLetterDetailRoute(target.timeLetterId))
             }
 
             NavigationTarget.DailyQuestionCompose -> {

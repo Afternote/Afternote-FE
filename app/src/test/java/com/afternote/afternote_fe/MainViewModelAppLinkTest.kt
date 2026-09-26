@@ -180,6 +180,6 @@ class MainViewModelAppLinkTest {
 
     private companion object {
         val TARGET: NavigationTarget = NavigationTarget.NotificationSettings
-        val LATEST_TARGET: NavigationTarget = NavigationTarget.TimeLetterDetail(7L)
+        val LATEST_TARGET: NavigationTarget = NavigationTarget.DailyQuestionCompose
     }
 }

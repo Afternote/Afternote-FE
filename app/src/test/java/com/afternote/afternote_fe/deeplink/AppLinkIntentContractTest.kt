@@ -38,7 +38,6 @@ class AppLinkIntentContractTest {
             mapOf(
                 "https://afternote.kro.kr/" to NavigationTarget.Home,
                 "https://afternote.kro.kr/afternote" to NavigationTarget.AfternoteHome,
-                "https://afternote.kro.kr/timeletter/12" to NavigationTarget.TimeLetterDetail(12L),
                 "https://afternote.kro.kr/mindrecord/daily-question" to NavigationTarget.DailyQuestionCompose,
                 "https://afternote.kro.kr/settings/notification" to NavigationTarget.NotificationSettings,
             )

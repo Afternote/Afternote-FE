@@ -120,8 +120,8 @@ class MainActivity : FragmentActivity() {
      * 거절도 값이라 그대로 큐에 넣는다 — 링크가 우리 intent-filter 를 통과해 앱을 이미 열었으므로
      * 아무 데도 가지 않고 멈추는 대신 계약이 정한 안전한 기본 진입으로 보내고, 그때 기다리던
      * 옛 목적지는 이 값으로 덮여 폐기된다. 사유는 남긴다 — 서버가 앱보다 먼저 새 경로를
-     * 배포했는지, 남이 도메인을 흉내 냈는지는 집계돼야 갈린다. 원본 링크는 싣지 않는다(경로에
-     * 타임레터 ID 가 들어 있다).
+     * 배포했는지, 남이 도메인을 흉내 냈는지는 집계돼야 갈린다. 원본 링크는 싣지 않는다(계약 밖
+     * 링크에는 ID 가 실린 경로나 query 가 그대로 들어 있을 수 있다).
      */
     private fun enqueueAppLinkIntent(intent: Intent) {
         val resolution = AppLinkIntentContract.fromIntent(intent) ?: return

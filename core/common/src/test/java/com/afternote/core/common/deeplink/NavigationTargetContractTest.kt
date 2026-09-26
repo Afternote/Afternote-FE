@@ -78,18 +78,16 @@ class NavigationTargetContractTest {
         when (target) {
             NavigationTarget.Home -> listOf(AuthGate.LOGIN)
             NavigationTarget.AfternoteHome -> listOf(AuthGate.LOGIN, AuthGate.BIOMETRIC)
-            is NavigationTarget.TimeLetterDetail -> listOf(AuthGate.LOGIN)
             NavigationTarget.DailyQuestionCompose -> listOf(AuthGate.LOGIN)
             NavigationTarget.NotificationSettings -> listOf(AuthGate.LOGIN)
         }
 
     private companion object {
-        /** 목적지 전량. 인자를 갖는 목적지는 대표값 하나로 센다. */
+        /** 목적지 전량. */
         val ALL_TARGETS: List<NavigationTarget> =
             listOf(
                 NavigationTarget.Home,
                 NavigationTarget.AfternoteHome,
-                NavigationTarget.TimeLetterDetail(9L),
                 NavigationTarget.DailyQuestionCompose,
                 NavigationTarget.NotificationSettings,
             )

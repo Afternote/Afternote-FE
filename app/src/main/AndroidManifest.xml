@@ -107,12 +107,11 @@
               경로를 열거하는 것이 요점이다. 도메인 전체(pathPrefix="/")를 잡으면 앱에 자리가 없는
               주소까지 브라우저에서 가로채 홈으로 떨어뜨리게 된다 — 그래서 파서가 목적지로
               해석하는 경로만 적는다(com.afternote.core.common.deeplink.AfternoteAppLinkParser).
-              애프터노트 상세 /afternote/{id} 가 여기 없는 이유는 NavigationTarget KDoc 에 있다.
+              ID 를 싣는 상세 경로(/afternote/{id}·/timeletter/{id})가 여기 없는 이유는 NavigationTarget
+              KDoc 에 있다.
 
               한 filter 안의 <data> 속성은 요소별이 아니라 통째로 조합된다 — 그래서 한 요소에
               여러 속성을 묶지 않고 속성마다 한 줄씩 적는다(IntentFilterUniqueDataAttributes).
-              타임레터 상세만 ID 가 붙어 pathPrefix 이고, ID 형식 판정은 파서가 한다(pathPattern 은
-              문자 클래스를 지원하지 않아 숫자만 받게 좁힐 수 없다).
             -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
@@ -126,7 +125,6 @@
                 <data android:path="/afternote" />
                 <data android:path="/mindrecord/daily-question" />
                 <data android:path="/settings/notification" />
-                <data android:pathPrefix="/timeletter/" />
             </intent-filter>
         </activity>
 

@@ -137,14 +137,12 @@ internal fun NavGraphBuilder.appRouteSkeleton() {
     // App Link /mindrecord/daily-question 의 착지점 (#924).
     stubScreen<MindRecordRoute.DailyQuestionWriteRoute>()
 
-    // feature/timeletter — TimeLetterNavGraph.kt. 탭 저장/복원·predictive back·링크 목적지가
-    // 지나는 화면만 옮긴다.
+    // feature/timeletter — TimeLetterNavGraph.kt. 탭 저장/복원과 predictive back 이 지나는
+    // 세 화면만 옮긴다.
     navigation<Route.TimeLetter>(startDestination = TimeLetterRoute.TimeLetterHomeRoute) {
         stubScreen<TimeLetterRoute.TimeLetterHomeRoute>()
         stubScreen<TimeLetterRoute.TimeLetterDraftRoute>(stateful = true)
         stubScreen<TimeLetterRoute.TimeLetterRecipientRoute>()
-        // App Link /timeletter/{id} 의 착지점 (#924).
-        stubScreen<TimeLetterRoute.TimeLetterDetailRoute>()
     }
 }
 

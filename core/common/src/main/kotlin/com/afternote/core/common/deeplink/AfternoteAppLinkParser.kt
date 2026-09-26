@@ -22,16 +22,15 @@ import java.net.URI
  * | query | 지원하는 키 없음 — 붙으면 거절 |
  * | fragment | 지원 안 함 — 붙으면 거절 |
  *
- * | 경로 | 목적지 | ID 형식 | 관문 |
- * |---|---|---|---|
- * | `/` | [NavigationTarget.Home] | — | 로그인 |
- * | `/afternote` | [NavigationTarget.AfternoteHome] | — | 로그인 + 지문 |
- * | `/timeletter/{id}` | [NavigationTarget.TimeLetterDetail] | 양의 10진 정수 | 로그인 |
- * | `/mindrecord/daily-question` | [NavigationTarget.DailyQuestionCompose] | — | 로그인 |
- * | `/settings/notification` | [NavigationTarget.NotificationSettings] | — | 로그인 |
+ * | 경로 | 목적지 | 관문 |
+ * |---|---|---|
+ * | `/` | [NavigationTarget.Home] | 로그인 |
+ * | `/afternote` | [NavigationTarget.AfternoteHome] | 로그인 + 지문 |
+ * | `/mindrecord/daily-question` | [NavigationTarget.DailyQuestionCompose] | 로그인 |
+ * | `/settings/notification` | [NavigationTarget.NotificationSettings] | 로그인 |
  *
- * 수신자 경로의 서버 식별자·접근 관문은 #1951에서 확정한다. 현재 지원 목적지에 포함하지 않는다.
- * 애프터노트 상세(`/afternote/{id}`)를 표에서 뺀 이유는 [NavigationTarget] KDoc 에 있다.
+ * 애프터노트 상세·타임레터 상세가 표에 없는 이유는 [NavigationTarget] KDoc 에 있다. 수신자 경로는
+ * 서버 식별자·접근 관문이 PM 결정을 기다리고 있어 넣지 않는다(#1951).
  *
  * canonical URL 은 `https://afternote.kro.kr` + 경로다([canonicalUrl]).
  *
@@ -94,13 +93,6 @@ object AfternoteAppLinkParser {
                 AppLinkResolution.Resolved(NavigationTarget.AfternoteHome)
             }
 
-            segments.size == 2 && segments[0] == SEGMENT_TIMELETTER -> {
-                segments[1]
-                    .toResourceIdOrNull()
-                    ?.let { id -> AppLinkResolution.Resolved(NavigationTarget.TimeLetterDetail(id)) }
-                    ?: reject(AppLinkRejectionReason.MALFORMED_ID)
-            }
-
             segments == listOf(SEGMENT_MINDRECORD, SEGMENT_DAILY_QUESTION) -> {
                 AppLinkResolution.Resolved(NavigationTarget.DailyQuestionCompose)
             }
@@ -118,8 +110,8 @@ object AfternoteAppLinkParser {
      * 정규 경로 세그먼트 목록. 계약 밖 문자가 하나라도 있으면 `null` 이고, 호출부가 그것을
      * [AppLinkRejectionReason.UNKNOWN_PATH] 거절로 바꾼다. 빈 목록은 거절이 아니라 루트(`/`)다.
      *
-     * 빈 세그먼트(`""`)를 버리지 않고 **거절**하는 것이 요점이다 — 버리면 `/timeletter//1` 이나
-     * `/timeletter/1/` 이 정규형과 같은 목적지가 되어 canonical URL 이 하나가 아니게 된다.
+     * 빈 세그먼트(`""`)를 버리지 않고 **거절**하는 것이 요점이다 — 버리면 `/settings//notification` 이나
+     * `/settings/notification/` 이 정규형과 같은 목적지가 되어 canonical URL 이 하나가 아니게 된다.
      */
     private fun String.toCanonicalSegments(): List<String>? {
         if (isEmpty() || this == "/") return emptyList()
@@ -127,20 +119,6 @@ object AfternoteAppLinkParser {
 
         val segments = drop(1).split('/')
         return segments.takeIf { parsed -> parsed.all(SEGMENT_FORMAT::matches) }
-    }
-
-    /**
-     * 양의 10진 정수 ID. `0` 으로 시작하는 입력(`0` 자체 포함)·부호·공백·비-ASCII 숫자는 전부 거절이다.
-     * 그래서 여기를 지난 값은 이미 1 이상이고, `Long` 범위를 넘는 19자리만 `toLongOrNull` 이 걸러 낸다.
-     *
-     * 자릿수 판정에 정규식 `\d` 를 쓰지 않는다 — Android 의 `\d` 는 유니코드 숫자(예: 아라비아-인도
-     * 숫자)까지 물어 서버 JVM 과 다르게 판정한다. `'0'..'9'` 로 직접 좁힌다.
-     */
-    private fun String.toResourceIdOrNull(): Long? {
-        if (isEmpty() || length > MAX_ID_LENGTH) return null
-        if (any { character -> character !in '0'..'9' }) return null
-        if (first() == '0') return null
-        return toLongOrNull()
     }
 
     private fun reject(reason: AppLinkRejectionReason): AppLinkResolution = AppLinkResolution.Rejected(reason)
@@ -151,11 +129,7 @@ object AfternoteAppLinkParser {
     /** 정규 경로 세그먼트는 소문자·숫자·하이픈뿐이다. 대문자·퍼센트 인코딩·점은 정규형이 아니다. */
     private val SEGMENT_FORMAT = Regex("[a-z0-9-]+")
 
-    /** `Long.MAX_VALUE` 의 자릿수. 넘으면 `toLongOrNull` 이전에 잘라 낸다. */
-    private const val MAX_ID_LENGTH = 19
-
     private const val SEGMENT_AFTERNOTE = "afternote"
-    private const val SEGMENT_TIMELETTER = "timeletter"
     private const val SEGMENT_MINDRECORD = "mindrecord"
     private const val SEGMENT_DAILY_QUESTION = "daily-question"
     private const val SEGMENT_SETTINGS = "settings"

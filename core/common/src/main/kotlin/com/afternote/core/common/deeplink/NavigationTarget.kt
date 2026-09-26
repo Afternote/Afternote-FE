@@ -19,6 +19,15 @@ package com.afternote.core.common.deeplink
  * 홈으로 떨어지는 반쪽 활성화가 된다 — 그래서 경로도, intent-filter 도 열지 않는다.
  * 자리가 열릴 때 목적지·경로·배선을 함께 더한다.
  *
+ * 타임레터 상세(`/timeletter/{id}`)도 없다. 이쪽은 도착할 자리는 있는데 **ID 가 무엇인지 정할
+ * 발급처가 없다.** 파서는 형식(양의 정수)만 볼 수 있고, 그 숫자가 어느 번호 공간의 것인지는 링크를
+ * 만드는 쪽만 안다. 서버에는 이 링크를 만드는 코드가 없고 FCM 링크 계약(Afternote-BE#261)도
+ * 정해지지 않았다. 상세 화면이 부르는 `GET time-letters/{id}` 는 작성자 본인 편지만 돌려주는데,
+ * 이 경로를 설계할 때 붙인 알림 후보 «타임레터 도착»은 받는 사람이 수신자다 — 서버가 자기 초대
+ * 수락을 막아 작성자는 자기 편지의 수신자가 될 수 없다. 수신자가 가진 수신 레코드 ID 는 작성자
+ * 타임레터 ID 와 번호 공간이 따로라 형식으로는 둘을 가를 수 없고, 번호가 겹치면 여는 사람의
+ * 엉뚱한 편지가 오류 없이 열린다. 발급처가 ID 공간을 정할 때 목적지·경로·배선을 함께 더한다.
+ *
  * @property canonicalPath `/` 로 시작하고 끝 슬래시가 없는 정규 경로.
  * @property requiredGates 진입 전 통과해야 하는 관문. [AuthGate] 순서대로 오름차순이며 비어 있지 않다.
  */
@@ -36,14 +45,6 @@ sealed interface NavigationTarget {
     data object AfternoteHome : NavigationTarget {
         override val canonicalPath: String = "/afternote"
         override val requiredGates: List<AuthGate> = listOf(AuthGate.LOGIN, AuthGate.BIOMETRIC)
-    }
-
-    /** 타임레터 상세. */
-    data class TimeLetterDetail(
-        val timeLetterId: Long,
-    ) : NavigationTarget {
-        override val canonicalPath: String = "/timeletter/$timeLetterId"
-        override val requiredGates: List<AuthGate> = listOf(AuthGate.LOGIN)
     }
 
     /** 데일리질문 작성. */
