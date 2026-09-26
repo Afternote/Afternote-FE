@@ -6,6 +6,7 @@ import com.afternote.core.data.mapper.delivery.toRequestDto
 import com.afternote.core.data.mapper.user.toDomain
 import com.afternote.core.datastore.TokenDataSource
 import com.afternote.core.domain.error.ReceiverRequestRejectedException
+import com.afternote.core.domain.model.ReceiverListState
 import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.model.delivery.DeliveryConditionItem
 import com.afternote.core.model.delivery.ReceiverDeliveryConditions
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
@@ -59,7 +61,7 @@ internal class UserReceiverRepositoryImpl
         private val receiverRefreshRevision = MutableStateFlow(0L)
 
         // 조회 실패를 예외로 흘리면 구독 중인 화면이 미처리 예외로 죽는다. 일반적인 일시 실패는 같은
-        // 로그인 구간에서 이 collector가 마지막으로 성공한 목록으로 낮춘다. 캐시를 flow 안에 두는 이유는
+        // 로그인 구간에서 이 collector가 마지막으로 성공한 목록을 실은 Failure 로 낸다. 캐시를 flow 안에 두는 이유는
         // 저장소 인스턴스보다 수명이 짧은 «로그인 구간 + collector»에 귀속해 계정 사이에 섞이지 않게 하기 위함이다.
         //
         // 그 로그인 구간을 [TokenDataSource.sessionId] 로 가른다. 로그인 여부 Boolean 으로 가르면
@@ -69,8 +71,11 @@ internal class UserReceiverRepositoryImpl
         //
         // 이전 세션 추적은 수집자마다 새로 만든다. 이 저장소는 @Singleton 이라 필드에 두면 한 화면의 세션
         // 전환 판정을 다른 화면이 먹는다.
+        //
+        // 목록 전용 [receiverListFlow] 도 이 Flow 에서 파생한다 (#2045). 세션 분기와 늦은 결과 폐기를 한 곳에만
+        // 둬야 두 공개 Flow 의 격리 규칙이 갈라지지 않는다.
         @OptIn(ExperimentalCoroutinesApi::class)
-        override val receiverListFlow: Flow<List<Receiver>> =
+        override val receiverListStateFlow: Flow<ReceiverListState> =
             flow {
                 var previousSessionId: String? = null
                 emitAll(
@@ -80,7 +85,7 @@ internal class UserReceiverRepositoryImpl
                             val previous = previousSessionId
                             previousSessionId = sessionId
                             when {
-                                sessionId == null -> flowOf(emptyList())
+                                sessionId == null -> flowOf(ReceiverListState.SignedOut)
 
                                 // 첫 구독과 로그아웃 뒤 로그인. 이 수집자가 들고 있는 값이 이전 계정 목록이
                                 // 아니므로 곧바로 조회한다. 여기서까지 빈 목록을 먼저 내면 첫 구독을
@@ -90,17 +95,36 @@ internal class UserReceiverRepositoryImpl
                                 // 실제 세션 교체. 하류 stateIn 의 initialValue 는 내부 flow 가 교체돼도
                                 // 되돌아가지 않으므로, 새 세션 조회가 끝날 때까지 이전 계정 목록이 수집자의
                                 // 현재 값으로 남는다. 계약이 "새 세션에는 빈 목록" 이라 조회를 기다리지 않고
-                                // 먼저 비운다.
-                                else -> receiverListForSession(sessionId).onStart { emit(emptyList()) }
+                                // 먼저 비운다. 저장소에서 합쳐져 사라진 중간 로그아웃 방출을 되살리는 셈이다.
+                                else -> receiverListForSession(sessionId).onStart { emit(ReceiverListState.SignedOut) }
                             }
                         },
                 )
             }
 
-        private fun receiverListForSession(sessionId: String): Flow<List<Receiver>> =
+        // 기존 목록 전용 구독자의 방출 순서를 그대로 지킨다. 로딩은 방출을 만들지 않고, 실패는 이 구독이 같은
+        // 세션에서 마지막으로 성공한 목록(없거나 401 로 버렸으면 빈 목록)으로 낮춘다.
+        override val receiverListFlow: Flow<List<Receiver>> =
+            receiverListStateFlow.mapNotNull { state ->
+                when (state) {
+                    is ReceiverListState.Loading -> null
+                    is ReceiverListState.Success -> state.receivers
+                    is ReceiverListState.Failure -> state.previousReceivers.orEmpty()
+                    ReceiverListState.SignedOut -> emptyList()
+                }
+            }
+
+        override fun refreshReceiverList() {
+            receiverRefreshRevision.update { it + 1 }
+        }
+
+        private fun receiverListForSession(sessionId: String): Flow<ReceiverListState> =
             flow {
-                var lastKnownReceivers = emptyList<Receiver>()
+                var lastKnownReceivers: List<Receiver>? = null
                 receiverRefreshRevision.collect {
+                    // 로딩에는 이 구독이 이 세션에서 이미 낸 성공 목록만 싣는다. 수집자가 이미 받은 값 밖의 것이
+                    // 새지 않으므로 아래의 세션 재확인은 여기에 걸지 않는다.
+                    emit(ReceiverListState.Loading(lastKnownReceivers))
                     val outcome =
                         runCatchingCancellable { getReceivers() }
                             .onFailure {
@@ -120,19 +144,20 @@ internal class UserReceiverRepositoryImpl
                     // 않는다. 이 비교와 방출이 원자적인 것은 아니며, 이미 내보낸 값을 되돌리지는 못한다.
                     if (tokenDataSource.sessionId.first() != sessionId) return@collect
 
-                    val receivers =
+                    val state =
                         outcome.fold(
-                            onSuccess = { it },
+                            onSuccess = { receivers ->
+                                lastKnownReceivers = receivers
+                                ReceiverListState.Success(receivers)
+                            },
                             onFailure = { failure ->
                                 if (failure is ApiException && failure.status == UNAUTHORIZED_STATUS) {
-                                    emptyList()
-                                } else {
-                                    lastKnownReceivers
+                                    lastKnownReceivers = null
                                 }
+                                ReceiverListState.Failure(lastKnownReceivers)
                             },
                         )
-                    lastKnownReceivers = receivers
-                    emit(receivers)
+                    emit(state)
                 }
             }
 

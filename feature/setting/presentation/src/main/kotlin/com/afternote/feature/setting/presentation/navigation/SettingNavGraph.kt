@@ -28,9 +28,8 @@ import com.afternote.feature.setting.presentation.passkey.PassKeyScreen
 import com.afternote.feature.setting.presentation.passkey.PassKeyViewModel
 import com.afternote.feature.setting.presentation.profile.ProfileEditScreen
 import com.afternote.feature.setting.presentation.receiver.ReceiverEditScreen
-import com.afternote.feature.setting.presentation.receiver.ReceiverListScreen
+import com.afternote.feature.setting.presentation.receiver.ReceiverListRouteContent
 import com.afternote.feature.setting.presentation.receiver.ReceiverListViewModel
-import com.afternote.feature.setting.presentation.receiver.ReceiverManageScreen
 import com.afternote.feature.setting.presentation.receiver.ReceiverRegisterScreen
 
 fun NavGraphBuilder.settingNavGraph(
@@ -108,23 +107,18 @@ fun NavGraphBuilder.settingNavGraph(
         composable<SettingRoute.RecipientListRoute> {
             val route = it.toRoute<SettingRoute.RecipientListRoute>()
             val viewModel: ReceiverListViewModel = hiltViewModel()
-            val receivers by viewModel.receivers.collectAsStateWithLifecycle()
-            if (route.selectForDeliveryConditions) {
-                ReceiverListScreen(
-                    receivers = receivers,
-                    onBackClick = actions::onRecipientListBack,
-                    onConfirmClick = { receiver ->
-                        actions.onDeliveryConditionsRecipientSelected(receiver.receiverId)
-                    },
-                )
-            } else {
-                ReceiverManageScreen(
-                    receivers = receivers,
-                    onBackClick = actions::onRecipientListBack,
-                    onReceiverClick = actions::onRecipientEditClick,
-                    onRegisterClick = actions::onRecipientRegisterClick,
-                )
-            }
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            ReceiverListRouteContent(
+                uiState = uiState,
+                selectForDeliveryConditions = route.selectForDeliveryConditions,
+                onBackClick = actions::onRecipientListBack,
+                onRetryClick = viewModel::retry,
+                onConfirmClick = { receiver ->
+                    actions.onDeliveryConditionsRecipientSelected(receiver.receiverId)
+                },
+                onReceiverClick = actions::onRecipientEditClick,
+                onRegisterClick = actions::onRecipientRegisterClick,
+            )
         }
 
         composable<SettingRoute.RecipientRegisterRoute> {
