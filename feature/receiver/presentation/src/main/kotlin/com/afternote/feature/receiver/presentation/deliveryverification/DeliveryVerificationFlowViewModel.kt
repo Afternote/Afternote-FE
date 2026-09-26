@@ -23,8 +23,8 @@ import kotlinx.coroutines.flow.stateIn
  *
  * 1차 도입(#220) 범위:
  * - `senderId` 단일 보유 (자식 라우트에서 nav arg 중복 박지 않음)
- * - [IdentityVerificationRepository.isVerified] read-only 위임 — nested graph 시작 시점에 본인 확인 캐시 분기를
- *   자식이 직접 의존하지 않고 flow VM 통해 결정
+ * - [IdentityVerificationRepository.isVerified] read-only 위임 — 흐름 스택의 첫 단계(Intro) entry 에서 본인 확인
+ *   캐시 분기를 자식이 직접 의존하지 않고 flow VM 통해 결정
  *
  * 후속(2차 PR 이후) 으로 옮길 책임:
  * - `masterKey`·`ReceiverIdentity` 등 누적 흐름 상태 보유

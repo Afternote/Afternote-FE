@@ -51,11 +51,11 @@ import com.afternote.feature.afternote.presentation.R as AfternoteR
  * 에뮬레이터 없이 도는 `ReceiverSelectScreenTest` 가 이미 고정한다. 여기서 덮는 것은 그 단위
  * 테스트가 닿지 못하는 구간 — **실제 NavHost 를 지나 소비 route 로 돌아오는 값**이다.
  *
- * 경로는 세 모듈에 걸쳐 있다.
+ * 경로는 두 모듈에 걸쳐 있다.
  * 1. `core:ui` 공용 화면이 선택된 수신자 id 목록을 완료 콜백으로 내보내고,
- * 2. app 모듈의 `popBackWithSelectedReceivers(List<Long>)` 가 그 목록을
- *    **직전 back stack entry**(에디터)의 `SavedStateHandle` 에
- *    `SELECTED_RECEIVER_IDS_KEY` (`LongArray`)로 쓰고 pop 하며,
+ * 2. 에디터 흐름의 `popBackWithSelectedReceivers(List<Long>)` 가 그 목록을
+ *    흐름이 공유하는 에디터 ViewModel 의 `SavedStateHandle` 에
+ *    `SELECTED_RECEIVER_IDS_KEY` (`LongArray`)로 남기고 흐름 스택을 pop 하며,
  * 3. `feature:afternote` 에디터가 복귀 시 그 id 목록을 이름·관계로 해석해 폼에 넣는다.
  *
  * 어느 한 마디만 어긋나도 «다른 수신자가 지정되는» 회귀가 되는데, 각 모듈의 단위 테스트는
@@ -65,11 +65,11 @@ import com.afternote.feature.afternote.presentation.R as AfternoteR
  * 되며 공용 컴포넌트 소비를 그만두고, 타임레터·마음의 기록은 아직 각 기능 전용 구현이다).
  * 소비처가 늘어나면 각 모듈이 자기 route 테스트를 여기 옆에 더한다.
  *
- * **배리어 규약.** `navController` 의 destination 은 `popBackStack()` 순간 뒤집히지만 화면 조립은
- * 그 뒤에 따라온다. 그래서 라우트 대기만으로는 "선택 화면이 사라졌다" 를 보장하지 못한다.
+ * **배리어 규약.** 선택 화면은 에디터 흐름의 로컬 스택에서 pop 되고 루트 destination 은 [Route.Afternote] 로
+ * 고정이라, 라우트로는 "선택 화면이 사라졌다" 를 알 수 없고 pop 뒤 화면 조립도 한 박자 늦게 따라온다.
  * 화면 전환 판정은 항상 [waitForEditorAddButtons] 로 한다 — "추가" 설명이 붙은 버튼은 에디터에만
- * 있고 선택 화면엔 없다. 부정 단언("들어오지 않았다") 앞에는 추가로 [awaitReceiverLoad] 로
- * 저장소를 한 바퀴 돌린다. 선택 결과 반영도 같은 저장소 홉(`resolveSelectedReceiver`)을 지나므로,
+ * 있고 선택 화면엔 없다. 부정 단언("들어오지 않았다") 앞에는 추가로 [StagedReceiverSource.gateNextLoad] 로
+ * 다음 조회를 붙잡았다가 [releaseGatedLoad] 로 풀어 저장소를 한 바퀴 돌린다. 선택 결과 반영도 같은 저장소 홉(`resolveSelectedReceiver`)을 지나므로,
  * 그 홉에 IO 나 지연이 생겨도 단언 뒤로 착지할 수 없다.
  *
  * **진입 경로 주의.** [Route.Afternote] 의 시작 화면은 지문 로그인이고, 계측에 주입되는
@@ -293,7 +293,7 @@ class ReceiverSelectionResultAndroidTest {
      *
      * 계정 카테고리 폼에는 같은 "추가" 설명을 가진 버튼이 수신자 지정·처리 방법 두 곳에 있고,
      * 시안 순서상 수신자 지정이 앞이라 첫 번째가 대상이다(개수 단언으로 그 전제를 고정한다).
-     * 순서가 바뀌면 라우트 대기가 현재 destination 을 실은 메시지로 실패한다.
+     * 순서가 바뀌면 선택 화면 제목을 기다리다 시간 초과로 실패한다.
      */
     private fun openReceiverSelect() {
         waitForEditorAddButtons()

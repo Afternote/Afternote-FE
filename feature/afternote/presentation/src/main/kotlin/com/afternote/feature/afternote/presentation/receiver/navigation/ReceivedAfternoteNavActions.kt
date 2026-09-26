@@ -3,7 +3,8 @@ package com.afternote.feature.afternote.presentation.receiver.navigation
 /**
  * 수신 애프터노트 화면의 이동 명령.
  *
- * 라우트 상수를 화면이 직접 들지 않도록 앱 모듈 구현으로 캡슐화한다 — 수신자 흐름의
+ * 라우트 상수를 화면이 직접 들지 않도록 로컬 스택을 가진 [ReceivedAfternoteNavHost] 안의 구현
+ * ([ReceivedAfternoteLocalNavActions])으로 캡슐화한다 — 수신자 흐름의
  * `ReceiverNavActions`(:feature:receiver:presentation) 와 같은 규약이다.
  */
 interface ReceivedAfternoteNavActions {

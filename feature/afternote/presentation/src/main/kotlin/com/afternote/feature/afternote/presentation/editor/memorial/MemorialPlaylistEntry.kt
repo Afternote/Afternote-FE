@@ -42,10 +42,10 @@ import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDis
  *   판단, 선택 시 노출로 구현하고 디자이너 질의 중 (2026-07-17). 회신이 상시 노출로 확정되면
  *   selectable 본문에 상시 노출 파라미터를 되살려 스왑.
  *
- * 이 조립을 NavGraph destination 에 인라인하지 않고 Entry로 빼는 이유:
+ * 이 조립을 흐름 호스트(`AfternoteEditorFlowHost`)의 entry 블록에 인라인하지 않고 Entry로 빼는 이유:
  * (1) 공용 SongPlaylist 화면 계열(shared/detail/song)은 여러 화면이 공유하는 범용 부품이라
  *     이 화면 전용 지식([Song] 도메인 매핑, 타이틀, 모드 전환·"총 N곡" 헤더·삭제 라벨·콜백)을 넣을 수 없고,
- * (2) 그 전용 지식을 NavGraph destination 블록에 인라인하면 ViewModel 없이 렌더할 수 없어
+ * (2) 그 전용 지식을 entry 블록에 인라인하면 ViewModel 없이 렌더할 수 없어
  *     Preview·스크린샷 테스트가 막힌다.
  * Entry가 둘 사이에서 도메인→표시 모델 매핑과 화면 전용 크롬 주입을 맡는 어댑터다.
  *
