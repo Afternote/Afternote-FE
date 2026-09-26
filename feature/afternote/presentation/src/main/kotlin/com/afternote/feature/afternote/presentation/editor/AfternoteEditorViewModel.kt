@@ -63,7 +63,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v5"
+private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v6"
 private const val INITIALIZED_ACTION_TEMPLATE_TYPE_KEY = "initialized_action_template_type"
 
 private const val TAG = "AfternoteEditorViewModel"
@@ -86,10 +86,10 @@ private data class ProcessingMethodSnap(
  * 그렇지 않으면 [android.os.TransactionTooLargeException]이 날 수 있다. 큰 Base64/data URL은 폼에 넣지 말고 URL·URI 문자열만 저장한다.
  *
  * **wire 형태는 키에 박힌 버전과 함께 움직인다.** [EditableMemorialVideo]가 sealed 로 바뀌면서(#1901)
- * `memorialVideo` 가 `{"persisted":…,"selection":…}` 에서 판별자가 붙은 `{"type":"replaced",…}` 로 달라졌다.
- * 옛 payload 를 새 코드가 읽으면 복원이 실패해 폼이 기본값으로 돌아가므로, 키를 `editor_form_snapshot_v5` 로
- * 올려 옛 스냅샷을 아예 찾지 않게 했다. 앞으로도 이 클래스나 그 필드 타입의 wire 형태를 바꾸면 키의 버전을
- * 함께 올린다.
+ * `memorialVideo` 에 판별자가 붙었고(v5), 상태가 넷에서 셋으로 줄면서(#2114) 판별자 값이
+ * `no_video · uploaded · pending_upload` 로 바뀌었다(v6). 옛 payload 를 새 코드가 읽으면 복원이 실패해 폼이
+ * 기본값으로 돌아가므로, 키를 `editor_form_snapshot_v6` 으로 올려 옛 스냅샷을 아예 찾지 않게 했다. 앞으로도
+ * 이 클래스나 그 필드 타입의 wire 형태를 바꾸면 키의 버전을 함께 올린다.
  */
 @Serializable
 private data class EditorFormSnapshot(
@@ -487,6 +487,14 @@ class AfternoteEditorViewModel
             val typeForSave =
                 if (editingId != null) (editorState.originalType ?: type) else type
 
+            // 수정인데 기준 스냅샷이 없다 = 상세를 못 받았다. 이 상태로 보내면 「안 건드림」과
+            // 「전부 지움」을 가릴 수 없어 빈 폼이 그대로 삭제 지시가 된다 (#1617).
+            val updateBaseline = editorState.updateBaseline
+            if (editingId != null && updateBaseline == null) {
+                internalState.update { it.withError(AfternoteEditorError.PrefillUnavailable) }
+                return
+            }
+
             viewModelScope.launch {
                 internalState.update {
                     it.copy(isSaving = true, errorEvent = null)
@@ -510,6 +518,7 @@ class AfternoteEditorViewModel
                     selectedReceiverIds = selectedReceiverIds,
                     playlistSongs = playlistSongs,
                     memorialMedia = memorialMediaForSave,
+                    updateBaseline = updateBaseline,
                 ).fold(
                     onSuccess = { command ->
                         executeSaveCommand(command).fold(
@@ -570,6 +579,7 @@ class AfternoteEditorViewModel
             selectedReceiverIds: List<Long>,
             playlistSongs: List<Song>,
             memorialMedia: SaveAfternoteMemorialMedia,
+            updateBaseline: AfternoteEditorSnapshot?,
         ): Result<SaveAfternoteCommand> {
             val resolved =
                 resolveMemorialMediaForSave(
@@ -589,12 +599,17 @@ class AfternoteEditorViewModel
                             payload = payload,
                             selectedReceiverIds = selectedReceiverIds,
                             playlistSongs = playlistSongs,
-                            memorialMedia =
+                            memorialMediaUrls =
                                 MemorialMediaUrls(
                                     memorialVideoUrl = resolved.resolvedVideoUrl,
                                     memorialThumbnailUrl = memorialMedia.memorialVideo.displayed?.thumbnailUrl,
                                     memorialPhotoUrl = resolved.resolvedMemorialPhotoUrl,
                                 ),
+                            // saveAfternote 가 기준 없는 수정을 이미 막았다 — 여기 도달하면 반드시 있다.
+                            baseline =
+                                checkNotNull(updateBaseline) {
+                                    "수정 저장에는 기준 스냅샷이 필요합니다"
+                                },
                         )
                     SaveAfternoteCommand.Update(id = editingId, payload = updatePayload)
                 } else {
@@ -650,6 +665,9 @@ class AfternoteEditorViewModel
                                 it.copy(
                                     originalType = prefill.type,
                                     pendingPrefill = prefill,
+                                    // 화면에 뿌릴 prefill 과 별개로, 가공 전 원본을 저장 때 견줄 기준으로 남긴다.
+                                    // 이 값은 폼 변경을 따라가지 않는다 — 따라가면 비교할 대상이 사라진다 (#1617).
+                                    updateBaseline = AfternoteEditorFormMapper.buildUpdateBaseline(detail),
                                 )
                             }
                         }.onFailure { e ->
@@ -735,6 +753,13 @@ class AfternoteEditorViewModel
             val pendingThumbnailUrl: String? = null,
             val memorialThumbnailRetryToken: Int = 0,
             val pendingPrefill: EditorFormPrefill? = null,
+            /**
+             * 수정 진입 시 받은 상세를 그대로 옮긴 **pristine baseline** (#1617).
+             *
+             * 저장 시 현재 폼과 견줘 **달라진 필드만** 요청에 싣는 기준이다. `null` 이면 기준이 없다는
+             * 뜻이라(신규 작성이거나 상세 로드 실패) 종전처럼 전량을 싣는다.
+             */
+            val updateBaseline: AfternoteEditorSnapshot? = null,
         )
 
         private fun InternalState.toUiState(): AfternoteEditorUiState =

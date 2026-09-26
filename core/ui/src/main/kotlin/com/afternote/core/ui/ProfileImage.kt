@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
@@ -89,6 +90,9 @@ private fun ProfileImageContent(
             modifier = modifier,
             placeholder = placeholder,
             error = placeholder,
+            // 아바타는 원으로 잘라 쓴다. 기본값(Fit)이면 사용자가 고른 세로·가로 사진이 원 안에서
+            // 축소돼 위아래가 비므로, 칸을 채우고 넘치는 쪽을 잘라야 자리가 그대로 유지된다.
+            contentScale = ContentScale.Crop,
         )
     } else {
         Image(

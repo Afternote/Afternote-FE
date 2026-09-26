@@ -440,8 +440,8 @@ class TimeLetterLifecycleTest {
 
         val testReceivers =
             listOf(
-                Receiver(receiverId = 7L, name = "김수신", relation = "가족", authCode = "auth-7"),
-                Receiver(receiverId = 8L, name = "박친구", relation = "친구", authCode = "auth-8"),
+                Receiver(receiverId = 7L, name = "김수신", relation = "가족"),
+                Receiver(receiverId = 8L, name = "박친구", relation = "친구"),
             )
     }
 }
