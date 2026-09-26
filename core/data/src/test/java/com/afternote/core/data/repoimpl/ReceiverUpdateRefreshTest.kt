@@ -2,7 +2,6 @@ package com.afternote.core.data.repoimpl
 
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.repository.UserReceiverRepository
-import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.network.dto.DeletePushTokenRequestDto
 import com.afternote.core.network.dto.PushTokenDto
@@ -35,10 +34,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.yield
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
+import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 /**
  * 수신자 수정 성공 뒤 구독 중인 목록 갱신 회귀 (#2127).
@@ -54,6 +57,17 @@ import org.junit.Test
  * 지킨다. 이 파일이 보는 실패는 실패·취소에는 목록 재조회를 걸지 않는다 쪽이다.
  */
 class ReceiverUpdateRefreshTest {
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
+
+    private val sessionStore by lazy { TestTokenSessionStore(temporaryFolder.root) }
+
+    @Before
+    fun openSession() = runBlocking { sessionStore.login() }
+
+    @After
+    fun closeSessionStore() = sessionStore.close()
+
     @Test
     fun `updateReceiver - 성공하면 재구독 없이 같은 구독자가 수정된 이름과 관계를 받는다`() =
         runBlocking {
@@ -133,14 +147,9 @@ class ReceiverUpdateRefreshTest {
     private fun receiverRepository(apiService: UserApiService) =
         UserReceiverRepositoryImpl(
             userApiService = apiService,
-            authRepository = loggedInAuthRepository(),
+            tokenDataSource = sessionStore.tokenDataSource,
             errorReporter = SilentErrorReporter,
         )
-
-    private fun loggedInAuthRepository(): FakeAuthRepository =
-        FakeAuthRepository.strict(loggedIn = true).apply {
-            onIsLoggedIn = { loggedInState }
-        }
 
     private suspend fun requestUpdate(
         repository: UserReceiverRepository,
