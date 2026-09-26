@@ -2,11 +2,11 @@ package com.afternote.feature.afternote.data.mapper
 
 import com.afternote.core.network.di.NetworkModule
 import com.afternote.feature.afternote.domain.AfternoteType
-import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
+import com.afternote.feature.afternote.domain.model.author.UpdateAfternoteInput
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -107,5 +107,5 @@ class AfternoteDraftRequestTest {
         )
 
     private fun updatePayload(isDraft: Boolean? = null) =
-        AfternoteUpdatePayload(type = AfternoteType.SOCIAL_NETWORK, title = "t", isDraft = isDraft)
+        UpdateAfternoteInput(type = AfternoteType.SOCIAL_NETWORK, title = "t", isDraft = isDraft)
 }

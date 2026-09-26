@@ -180,7 +180,7 @@ private fun settingFlowAuthRepository(loggedIn: Boolean): FakeAuthRepository =
 
 private fun settingFlowUserRepository(): FakeUserRepository =
     FakeUserRepository.strict().apply {
-        receiverState.value = listOf(Receiver(7L, "김수신", "가족", "fake-auth-7"))
+        receiverState.value = listOf(Receiver(7L, "김수신", "가족"))
         onReceiverListFlow = null
         onGetReceivers = null
         onCreateReceiver = null

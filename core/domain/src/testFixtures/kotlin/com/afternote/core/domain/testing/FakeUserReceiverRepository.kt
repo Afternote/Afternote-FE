@@ -81,7 +81,7 @@ class FakeUserReceiverRepository(
         onCreateReceiver?.let { return it(name, relation, phone, email, message) }
         val id = (receiverState.value.maxOfOrNull(Receiver::receiverId) ?: 0L) + 1L
         val authCode = "fake-auth-$id"
-        receiverState.value = receiverState.value + Receiver(id, name, relation, authCode)
+        receiverState.value = receiverState.value + Receiver(id, name, relation)
         receiverDetails[id] =
             ReceiverDetail(id, name, relation, phone, email, 0, 0, 0, message, authCode)
         return ReceiverCreated(id, authCode)
@@ -149,7 +149,7 @@ class FakeUserReceiverRepository(
     }
 
     companion object {
-        internal val DEFAULT_RECEIVER = Receiver(7L, "김수신", "가족", "fake-auth-7")
+        internal val DEFAULT_RECEIVER = Receiver(7L, "김수신", "가족")
 
         fun strict(): FakeUserReceiverRepository =
             FakeUserReceiverRepository(
@@ -181,5 +181,5 @@ private fun Receiver.toDefaultDetail(): ReceiverDetail =
         timeLetterCount = 0,
         afterNoteCount = 0,
         message = null,
-        authCode = authCode,
+        authCode = "fake-auth-$receiverId",
     )
