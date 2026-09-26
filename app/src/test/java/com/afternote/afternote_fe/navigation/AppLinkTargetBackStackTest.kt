@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.afternote.core.common.deeplink.NavigationTarget
 import com.afternote.core.ui.Route
+import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -106,6 +107,26 @@ class AppLinkTargetBackStackTest {
         assertEquals(listOf("NavHostRoot", "Home", "DailyQuestionWriteRoute"), routes())
     }
 
+    /**
+     * 종류가 같아도 인자가 다르면 다른 화면이다. 답변 수정 화면 위에서 데일리질문 링크를 열면
+     * 수정 화면을 재사용하지 않고 새 작성 화면을 쌓는다 — `launchSingleTop` 이면 수정 화면의
+     * ViewModel 이 남아 링크가 연 것처럼 보이지 않는다.
+     */
+    @Test
+    fun `답변 수정 중에 연 데일리질문 링크는 새 작성 화면을 쌓는다`() {
+        startAtHome()
+        composeRule.runOnIdle {
+            harness.navController.navigate(MindRecordRoute.DailyQuestionWriteRoute(answerId = EDITING_ANSWER_ID))
+        }
+
+        resume(NavigationTarget.DailyQuestionCompose)
+
+        assertEquals(
+            listOf("NavHostRoot", "Home", "DailyQuestionWriteRoute", "DailyQuestionWriteRoute"),
+            routes(),
+        )
+    }
+
     /** 같은 링크를 연달아 눌러도 같은 화면이 겹쳐 쌓이지 않는다. */
     @Test
     fun `같은 링크를 두 번 열어도 화면이 겹쳐 쌓이지 않는다`() {
@@ -115,5 +136,10 @@ class AppLinkTargetBackStackTest {
         resume(NavigationTarget.DailyQuestionCompose)
 
         assertEquals(listOf("NavHostRoot", "Home", "DailyQuestionWriteRoute"), routes())
+    }
+
+    private companion object {
+        /** 0·1 이면 기본값·인덱스와 구분되지 않아, 그대로 실렸는지 보이는 값을 쓴다. */
+        const val EDITING_ANSWER_ID = 8_317L
     }
 }

@@ -8,6 +8,7 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.afternote.core.common.deeplink.NavigationTarget
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomNavTab
@@ -93,7 +94,7 @@ class AppState(
      *
      * 나머지 둘은 사용자가 보고 있던 화면 위에 쌓는다. 링크를 눌러 들어온 뒤의 뒤로가기는 하던
      * 일로 돌아가는 것이 맞고, 콜드 스타트면 그 아래가 홈이라 결과가 같다. 같은 링크를 연달아
-     * 눌러도 같은 화면이 겹쳐 쌓이지 않도록 `launchSingleTop` 을 건다.
+     * 눌러도 같은 화면이 겹쳐 쌓이지 않도록 맨 위가 같은 화면이면 쌓지 않는다([pushUnlessOnTop]).
      */
     fun navigateToAppLinkTarget(target: NavigationTarget) {
         when (target) {
@@ -106,19 +107,28 @@ class AppState(
             }
 
             NavigationTarget.DailyQuestionCompose -> {
-                pushSingleTop(MindRecordRoute.DailyQuestionWriteRoute())
+                pushUnlessOnTop(MindRecordRoute.DailyQuestionWriteRoute())
             }
 
             NavigationTarget.NotificationSettings -> {
-                pushSingleTop(SettingRoute.NotificationRoute)
+                pushUnlessOnTop(SettingRoute.NotificationRoute)
             }
         }
     }
 
-    private fun pushSingleTop(route: Any) {
-        navController.navigate(route) {
-            launchSingleTop = true
-        }
+    /**
+     * 맨 위가 **인자까지 같은** 라우트면 그대로 두고, 아니면 그 위에 쌓는다.
+     *
+     * `launchSingleTop` 을 쓰지 않는 이유: 그 옵션은 목적지 종류만 비교한다. 같은 종류가 맨 위에
+     * 있으면 인자만 새것으로 바꾼 entry 로 갈아 끼우는데, entry id 가 이어져 ViewModel 은 처음
+     * 인자를 쥔 채 남는다. 인자를 ViewModel 이 `SavedStateHandle` 로 읽는 화면은 이전 인자의
+     * 화면을 계속 보여 준다 — 답변 수정(`DailyQuestionWriteRoute(answerId = …)`) 중에 데일리질문
+     * 링크가 오면 새 작성 화면 대신 수정 화면이 남는다.
+     */
+    private inline fun <reified T : Any> pushUnlessOnTop(route: T) {
+        val top = navController.currentBackStackEntry
+        if (top != null && top.destination.hasRoute<T>() && top.toRoute<T>() == route) return
+        navController.navigate(route)
     }
 }
 

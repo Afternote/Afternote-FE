@@ -127,7 +127,8 @@ internal fun NavGraphBuilder.appRouteSkeleton() {
     }
 
     // feature/mindrecord — MindRecordNavGraph.kt. 중첩 없이 루트에 직접 붙는 top-level 3종과
-    // 임시저장 목록·기록 상세만 옮긴다(작성 화면은 어느 테스트도 지나지 않는다).
+    // 임시저장 목록·기록 상세, 링크 목적지인 데일리질문 작성만 옮긴다(일기 작성 화면은 어느
+    // 테스트도 지나지 않는다).
     // 기록 상세는 홈 MEMORIES 의 「그날의 기록 다시 읽기」가 인자까지 싣고 도착하는 목적지다 (#793).
     stubScreen<Route.MindRecord>()
     stubScreen<Route.MemorySpace>()
