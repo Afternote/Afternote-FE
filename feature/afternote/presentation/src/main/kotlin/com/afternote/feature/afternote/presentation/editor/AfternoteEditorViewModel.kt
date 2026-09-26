@@ -339,9 +339,11 @@ class AfternoteEditorViewModel
         /**
          * 작성자가 등록한 수신자 전체를 받아 [InternalState.authorReceivers] 에 채운다.
          *
-         * 신규 작성 진입 시 1회 호출된다. 폼이 비어 있으면 화면이 이 목록으로 수신자를 채우고
-         * (`AfternoteNavGraphEditor` 의 `replaceReceiversIfEmpty`), 사용자는 불필요한 수신자를 지운다.
-         * 수정 진입은 상세 응답 prefill 이 지정 수신자를 채우므로 이 목록을 쓰지 않는다.
+         * 에디터 화면이 컴포지션에 들어올 때마다(수신자 선택 화면에서 돌아올 때 포함) 호출된다. 신규 작성에서
+         * 폼이 비어 있으면 화면이 이 목록으로 수신자를 채우고
+         * (`AfternoteEditorNavigation` 의 `replaceReceiversIfEmpty`), 사용자는 불필요한 수신자를 지운다.
+         * 수정 진입은 상세 응답 prefill 이 지정 수신자를 채우므로 빈 폼 채우기에는 이 목록을 쓰지 않는다.
+         * 선택 화면이 돌려준 새 id 를 해석할 때([resolveSelectedReceiver])는 작성·수정 모두 이 목록을 쓴다.
          */
         fun refreshAuthorReceivers() {
             viewModelScope.launch { loadAuthorReceivers() }

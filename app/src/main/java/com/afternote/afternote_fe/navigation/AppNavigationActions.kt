@@ -411,8 +411,8 @@ fun rememberAfternoteExternalActions(
 }
 
 /**
- * 수신자 홈에서 발생하는 다른 top-level Route(설정/마음의 기록/타임레터)와
- * 수신자 그래프 내부(애프터노트 목록) 이동을 묶은 [ReceiverHomeActions].
+ * 수신자 홈에서 다른 top-level Route(마음의 기록/타임레터/수신 애프터노트)로 빠지는
+ * 이동을 묶은 [ReceiverHomeActions].
  *
  * 마음의 기록은 발신자/수신자 화면이 분리돼 수신자 진입은 [Route.ReceiverMindRecord] 로 라우팅한다.
  * TimeLetter 는 현재 작성자용 화면만 있어 수신자 진입 시 동일 화면이 노출된다 — 분기 후속 작업.
