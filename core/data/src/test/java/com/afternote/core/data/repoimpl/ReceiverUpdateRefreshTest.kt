@@ -74,8 +74,8 @@ class ReceiverUpdateRefreshTest {
                 val after = withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.single()
                 assertEquals(listOf("바뀐 이름", "가족"), listOf(after.name, after.relation))
                 assertEquals(2, apiService.getReceiversCallCount)
-                // 갱신을 얹어도 수정 호출 자체의 반환값은 그대로다 (authCode 는 PATCH 응답에 없어 빈 문자열).
-                assertEquals(Receiver(RECEIVER_ID, "바뀐 이름", "가족", ""), updated)
+                // 갱신을 얹어도 수정 호출 자체의 반환값은 그대로다.
+                assertEquals(Receiver(RECEIVER_ID, "바뀐 이름", "가족"), updated)
             } finally {
                 collector.cancelAndJoin()
             }
