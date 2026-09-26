@@ -227,8 +227,8 @@ class ReceiverListViewModelTest {
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
 
-        val KIM = Receiver(receiverId = 7L, name = "김수신", relation = "가족", authCode = "")
-        val PARK = Receiver(receiverId = 11L, name = "박친구", relation = "친구", authCode = "")
+        val KIM = Receiver(receiverId = 7L, name = "김수신", relation = "가족")
+        val PARK = Receiver(receiverId = 11L, name = "박친구", relation = "친구")
         val KIM_ITEM = ReceiverListItem(receiverId = 7L, name = "김수신", relation = "가족")
         val PARK_ITEM = ReceiverListItem(receiverId = 11L, name = "박친구", relation = "친구")
     }

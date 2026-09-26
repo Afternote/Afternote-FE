@@ -468,7 +468,6 @@ class ReceiverListStateFlowTest {
 
         fun receiverIdOf(name: String): Long = if (name == RECEIVER_A) 1L else 2L
 
-        /** 목록 DTO 는 인증 코드를 싣지 않아 도메인 값의 authCode 는 빈 문자열이다. */
-        fun receiver(name: String) = Receiver(receiverId = receiverIdOf(name), name = name, relation = RELATION, authCode = "")
+        fun receiver(name: String) = Receiver(receiverId = receiverIdOf(name), name = name, relation = RELATION)
     }
 }
