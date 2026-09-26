@@ -10,6 +10,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,9 +22,11 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.afternote.afternote_fe.MainViewModel
 import com.afternote.afternote_fe.notification.NotificationPermissionEffect
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomBar
@@ -38,19 +41,43 @@ import com.afternote.feature.home.presentation.HomeTabViewModel
 import com.afternote.feature.home.presentation.receiver.ReceiverHomeEntry
 import com.afternote.feature.mindrecord.presentation.navigation.mindRecordNavGraph
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavHost
+import com.afternote.feature.receiver.presentation.navigation.ReceiverInvitationNavHost
 import com.afternote.feature.receiver.presentation.navigation.ReceiverNavHost
 import com.afternote.feature.setting.presentation.navigation.settingNavGraph
 import com.afternote.feature.timeletter.presentation.navigation.timeLetterNavGraph
 import kotlinx.coroutines.launch
 
 @Composable
-fun AppNavigation(
+internal fun AppNavigation(
     startDestination: Route,
     modifier: Modifier = Modifier,
     appState: AppState = rememberAfternoteAppState(),
+    mainViewModel: MainViewModel = hiltViewModel(),
 ) {
     val navEntry by appState.navController.currentBackStackEntryAsState()
     val currentDestination = navEntry?.destination
+
+    // 카카오톡 초대 링크로 들어온 토큰이 있으면 지금 화면 위에 랜딩을 올린다 (#944). 로그인 전이면
+    // 온보딩 위, 로그인 뒤면 홈 위다. 로그인이 끝나 온보딩이 홈으로 갈아치워지면 destination 키가
+    // 바뀌어 다시 판정하고, 처분이 끝난 토큰은 ViewModel 이 null 로 내려 다시 뜨지 않는다.
+    val pendingInvitationToken by mainViewModel.pendingInvitationToken.collectAsStateWithLifecycle()
+    val authenticatedStartRoute by mainViewModel.startRoute.collectAsStateWithLifecycle()
+    val isOnInvitation = currentDestination?.hasRoute(Route.ReceiverInvitation::class) == true
+    LaunchedEffect(pendingInvitationToken, currentDestination?.id) {
+        if (pendingInvitationToken != null && currentDestination != null && !isOnInvitation) {
+            appState.navController.navigate(Route.ReceiverInvitation) { launchSingleTop = true }
+        }
+    }
+    val receiverInvitationExternalActions =
+        rememberReceiverInvitationExternalActions(
+            appState = appState,
+            onSettled = {
+                pendingInvitationToken?.let(mainViewModel::settleInvitation)
+            },
+            onDeferredUntilLogin = {
+                pendingInvitationToken?.let(mainViewModel::deferInvitationUntilLogin)
+            },
+        )
 
     // 로컬 Nav3 스택의 깊이는 Nav2 destination 에 안 보인다 — 애프터노트 host 가 올려 주는 신호를
     // 바텀바 판정에 합성한다. 피처를 떠나면 host 가 true 로 되돌려 다른 탭 판정을 오염시키지 않는다.
@@ -132,6 +159,14 @@ fun AppNavigation(
                 ReceiverNavHost(
                     homeContent = { ReceiverHomeEntry(actions = receiverHomeActions) },
                     navigationCallbacks = rootNavigationCallbacks,
+                )
+            }
+            composable<Route.ReceiverInvitation> {
+                ReceiverInvitationNavHost(
+                    // 앱 루트의 인증 경계(startRoute)를 그대로 재사용한다 — 로그인 판정을 따로 두지 않는다.
+                    isLoggedIn = authenticatedStartRoute == Route.Home,
+                    boundary = rootNavigationCallbacks,
+                    externalActions = receiverInvitationExternalActions,
                 )
             }
 

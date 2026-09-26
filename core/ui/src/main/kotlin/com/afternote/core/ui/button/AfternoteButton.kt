@@ -61,6 +61,8 @@ private val AfternoteButtonVerticalPadding = 13.dp
  * @param isLoading true 면 라벨 대신 스피너를 그리고 클릭을 막는다 (네트워크 대기 등 진행 중 표시).
  *   dual-action 모드도 로딩 중엔 단일 스피너 바로 렌더되어 양쪽 클릭이 모두 막힌다.
  *   접근성 이름은 [text] 로 유지되고, 로딩 상태는 stateDescription 으로 노출된다.
+ * @param contentColor [type] 색 테이블 대신 쓸 라벨 색. [containerColor] 만 바꾸면 라벨이 타입 기본색으로
+ *   남아 카카오 노랑 위에 흰 글자가 되는 조합이 생긴다 — 브랜드 버튼은 둘을 함께 준다 (#944).
  */
 @Composable
 fun AfternoteButton(
@@ -71,6 +73,7 @@ fun AfternoteButton(
     isLoading: Boolean = false,
     secondaryText: String? = null,
     containerColor: Color? = null,
+    contentColor: Color? = null,
     onSecondaryClick: (() -> Unit)? = null,
     isSecondaryEnabled: Boolean = true,
 ) {
@@ -87,17 +90,18 @@ fun AfternoteButton(
             }
     // 바로 위 containerColor 와 같은 enum 이다 — else 로 닫으면 타입이 늘 때 배경색만 컴파일 에러로
     // 잡히고 글자색은 조용히 흰색으로 굳는다. 두 분기가 같은 시점에 깨지도록 항목을 모두 적는다.
-    val contentColor =
-        when (type) {
-            AfternoteButtonType.Plain -> AfternoteDesign.colors.gray9
+    val resolvedContentColor =
+        contentColor
+            ?: when (type) {
+                AfternoteButtonType.Plain -> AfternoteDesign.colors.gray9
 
-            AfternoteButtonType.Un -> AfternoteDesign.colors.gray5
+                AfternoteButtonType.Un -> AfternoteDesign.colors.gray5
 
-            AfternoteButtonType.Default,
-            AfternoteButtonType.Active,
-            AfternoteButtonType.Variant5,
-            -> AfternoteDesign.colors.white
-        }
+                AfternoteButtonType.Default,
+                AfternoteButtonType.Active,
+                AfternoteButtonType.Variant5,
+                -> AfternoteDesign.colors.white
+            }
     CompositionLocalProvider(
         LocalMinimumInteractiveComponentSize provides androidx.compose.ui.unit.Dp.Unspecified,
     ) {
@@ -111,7 +115,7 @@ fun AfternoteButton(
                 onSecondaryClick = onSecondaryClick,
                 isSecondaryEnabled = isSecondaryEnabled,
                 containerColor = resolvedContainerColor,
-                contentColor = contentColor,
+                contentColor = resolvedContentColor,
                 modifier = modifier,
             )
             return@CompositionLocalProvider
@@ -137,7 +141,7 @@ fun AfternoteButton(
             enabled = type != AfternoteButtonType.Un && !isLoading,
             shape = AfternoteButtonShape,
             color = resolvedContainerColor,
-            contentColor = contentColor,
+            contentColor = resolvedContentColor,
             border =
                 if (type == AfternoteButtonType.Plain || type == AfternoteButtonType.Un) {
                     BorderStroke(
@@ -158,7 +162,7 @@ fun AfternoteButton(
                     isLoading -> {
                         CircularProgressIndicator(
                             modifier = Modifier.size(18.dp),
-                            color = contentColor,
+                            color = resolvedContentColor,
                             strokeWidth = 2.dp,
                         )
                     }

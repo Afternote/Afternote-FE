@@ -14,6 +14,7 @@ import com.afternote.feature.home.presentation.receiver.ReceiverHomeActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingExternalActions
+import com.afternote.feature.receiver.presentation.navigation.ReceiverInvitationExternalActions
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
 import com.afternote.feature.setting.presentation.navigation.SettingNavActions
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
@@ -426,3 +427,42 @@ fun rememberReceiverHomeActions(appState: AppState): ReceiverHomeActions =
             onNavigateToAfternote = { appState.navController.navigate(Route.ReceivedAfternote) },
         )
     }
+
+/**
+ * 카카오톡 초대 랜딩 로컬 스택이 셸에 남긴 이동 (#944).
+ *
+ * 랜딩은 현재 화면 위에 push 된 것이라, 닫을 때는 pop 으로 원래 자리(온보딩 또는 홈)로 돌아간다.
+ *
+ * @param onSettled 이 토큰의 처분이 끝났다 — 같은 Activity 에서 다시 띄우지 않는다.
+ * @param onDeferredUntilLogin 로그인 전이라 미뤘다 — 로그인이 확정되면 다시 띄운다.
+ */
+@Composable
+fun rememberReceiverInvitationExternalActions(
+    appState: AppState,
+    onSettled: () -> Unit,
+    onDeferredUntilLogin: () -> Unit,
+): ReceiverInvitationExternalActions {
+    val onSettledState by rememberUpdatedState(onSettled)
+    val onDeferredState by rememberUpdatedState(onDeferredUntilLogin)
+    return remember(appState) {
+        object : ReceiverInvitationExternalActions {
+            override fun requestLogin() {
+                onDeferredState()
+                // 랜딩 아래는 온보딩이다(로그인 전이라 startDestination 이 Onboarding) — 내리면 Welcome 이 보인다.
+                appState.navController.popBackStack()
+            }
+
+            override fun openReceivedRecords() {
+                onSettledState()
+                appState.navController.navigate(Route.Receiver) {
+                    popUpTo<Route.ReceiverInvitation> { inclusive = true }
+                }
+            }
+
+            override fun close() {
+                onSettledState()
+                appState.navController.popBackStack()
+            }
+        }
+    }
+}

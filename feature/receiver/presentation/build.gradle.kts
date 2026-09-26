@@ -23,6 +23,8 @@ dependencies {
     implementation(projects.feature.mindrecord.domain)
     implementation(projects.feature.timeletter.domain)
     implementation(projects.core.domain)
+    // 초대 조회·수락 결과 모델 (#944).
+    implementation(projects.core.model)
     implementation(projects.core.common)
     implementation(projects.core.ui)
     implementation(libs.androidx.activity.compose)
@@ -35,6 +37,7 @@ dependencies {
     implementation(libs.androidx.paging.compose)
 
     testImplementation(libs.coroutines.test)
+    testImplementation(testFixtures(projects.core.domain))
     testImplementation(testFixtures(projects.feature.mindrecord.domain))
     testImplementation(testFixtures(projects.feature.receiver.domain))
     testImplementation(testFixtures(projects.feature.timeletter.domain))

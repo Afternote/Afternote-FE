@@ -6,6 +6,7 @@ import com.afternote.core.network.service.AccountApiService
 import com.afternote.core.network.service.AppVersionApiService
 import com.afternote.core.network.service.AuthApiService
 import com.afternote.core.network.service.ImageApiService
+import com.afternote.core.network.service.ReceiverInvitationApiService
 import com.afternote.core.network.service.TokenApiService
 import com.afternote.core.network.service.UserApiService
 import dagger.Module
@@ -66,4 +67,9 @@ object ServiceModule {
     @Provides
     @Singleton
     fun provideImageApiService(retrofit: Retrofit): ImageApiService = retrofit.create<ImageApiService>()
+
+    @Provides
+    @Singleton
+    fun provideReceiverInvitationApiService(retrofit: Retrofit): ReceiverInvitationApiService =
+        retrofit.create<ReceiverInvitationApiService>()
 }
