@@ -4,7 +4,7 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
-import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
+import com.afternote.feature.afternote.domain.model.author.FieldPatch
 import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
@@ -81,12 +81,9 @@ class AfternoteEditorServerMediaDeleteSaveTest {
 
             val updatePayload = repository.updateCalls.single().second
             val memorial = requireNotNull(updatePayload.memorial)
-            assertNull(memorial.memorialPhotoUrl)
-            assertNull(memorial.memorialVideo)
-            assertEquals(
-                listOf(MemorialSongPayload(title = "배경음악", artist = "작곡가", coverUrl = "https://cdn.test/cover.jpg")),
-                memorial.songs,
-            )
+            assertEquals(FieldPatch.Set(null), memorial.memorialPhotoUrl)
+            assertEquals(FieldPatch.Set(null), memorial.memorialVideo)
+            assertNull(memorial.songs) // Unchanged songs remain on the server.
             assertEquals(AFTERNOTE_ID, first.uiState.value.savedId)
 
             val updatedMedia = repository.details.getValue(AFTERNOTE_ID).memorialMedia()
@@ -135,9 +132,9 @@ class AfternoteEditorServerMediaDeleteSaveTest {
             assertEquals(2, repository.updateCalls.size)
             repository.updateCalls.forEach { (_, payload) ->
                 val memorial = requireNotNull(payload.memorial)
-                assertNull(memorial.memorialPhotoUrl)
-                assertNull(memorial.memorialVideo)
-                assertTrue(memorial.songs.isNotEmpty())
+                assertEquals(FieldPatch.Set(null), memorial.memorialPhotoUrl)
+                assertEquals(FieldPatch.Set(null), memorial.memorialVideo)
+                assertNull(memorial.songs)
             }
         }
 

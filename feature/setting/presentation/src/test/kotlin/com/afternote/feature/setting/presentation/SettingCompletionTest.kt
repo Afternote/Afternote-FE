@@ -716,7 +716,6 @@ private fun completionUpdatedReceiver(call: CompletionReceiverEditCall) =
         receiverId = call.receiverId,
         name = call.name,
         relation = call.relation,
-        authCode = "AUTH-77",
     )
 
 private fun completionDefaultDeliveryConditions() =

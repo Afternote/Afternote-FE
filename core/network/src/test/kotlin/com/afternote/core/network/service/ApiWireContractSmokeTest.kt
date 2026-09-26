@@ -128,6 +128,10 @@ class ApiWireContractSmokeTest {
             assertNoAuthorizationHeader("POST", "/api/v1/auth/social/login")
         }
 
+    /**
+     * 본문은 실서버 실측 형태(항목당 3필드)로 둔다 — 빈 배열만 태우면 항목 스키마가 통째로 검증
+     * 대상에서 빠진다. #2105 가 그 틈으로 지나갔다(항목 디코드 실패 → 목록 전체 소실).
+     */
     @Test
     fun `authenticated receiver request preserves bearer header and relative API path`() =
         runTest {
@@ -135,13 +139,17 @@ class ApiWireContractSmokeTest {
                 method = "GET",
                 path = "/api/v1/users/receivers",
                 requestHeaders = mapOf("Authorization" to "Bearer contract-token"),
-                responseBody = """{"status":200,"code":200,"message":"ok","data":[]}""",
+                responseBody =
+                    """{"status":200,"code":200,"message":"ok","data":[{"receiverId":14,"name":"QA수신자","relation":"DAUGHTER"}]}""",
             )
 
             val result = userService.getReceivers()
+            val receiver = result.data.orEmpty().single()
 
             assertEquals(200, result.status)
-            assertTrue(result.data.orEmpty().isEmpty())
+            assertEquals(14L, receiver.receiverId)
+            assertEquals("QA수신자", receiver.name)
+            assertEquals("DAUGHTER", receiver.relation)
             assertExactlyOneRecordedRequest("GET", "/api/v1/users/receivers")
         }
 

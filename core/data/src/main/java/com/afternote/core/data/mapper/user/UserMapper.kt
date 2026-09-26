@@ -26,12 +26,12 @@ fun UserDto.toDomain(): User =
         profileImageUrl = profileImageUrl,
     )
 
-fun ReceiverListDto.toDomain(): Receiver =
+/** 목록 응답의 `relation` 은 DB 가 null 을 허용해 비어 올 수 있다 — 빈 문자열로 채워 [Receiver] 의 문자열 계약을 유지한다 (#2105). */
+internal fun ReceiverListDto.toDomain(): Receiver =
     Receiver(
         receiverId = receiverId,
         name = name,
-        relation = relation,
-        authCode = authCode,
+        relation = relation.orEmpty(),
     )
 
 fun ReceiverDetailDto.toDomain(): ReceiverDetail =
@@ -59,5 +59,4 @@ fun UserPatchReceiverDto.toDomain(): Receiver =
         receiverId = receiverId,
         name = name,
         relation = relation,
-        authCode = "",
     )

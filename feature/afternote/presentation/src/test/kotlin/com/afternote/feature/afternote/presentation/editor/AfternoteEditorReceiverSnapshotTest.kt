@@ -43,12 +43,7 @@ class AfternoteEditorReceiverSnapshotTest {
     }
 
     @Test
-    fun `v5 영상 편집 상태는 왕복 뒤에도 출처를 유지하고 삭제는 두 층을 비운다`() {
-        val persisted =
-            MemorialVideoAttachment(
-                url = "https://cdn.test/farewell.mp4",
-                thumbnailUrl = "https://cdn.test/farewell-thumb.jpg",
-            )
+    fun `v6 영상 편집 상태는 왕복 뒤에도 출처를 유지하고 삭제는 슬롯을 비운다`() {
         val selection =
             MemorialVideoAttachment(
                 url = "content://videos/replacement",
@@ -63,12 +58,8 @@ class AfternoteEditorReceiverSnapshotTest {
                         {
                           "type":"MEMORIAL",
                           "memorialVideo":{
-                            "type":"replaced",
-                            "persisted":{
-                              "url":"${persisted.url}",
-                              "thumbnailUrl":"${persisted.thumbnailUrl}"
-                            },
-                            "selection":{
+                            "type":"pending_upload",
+                            "video":{
                               "url":"${selection.url}",
                               "thumbnailUrl":"${selection.thumbnailUrl}"
                             }
@@ -97,7 +88,7 @@ class AfternoteEditorReceiverSnapshotTest {
 
         restoredViewModel.removeMemorialVideo()
 
-        // 삭제는 교체분과 서버 원본을 함께 비운다 — 저장 시 명시적 null 로 나간다(#1597).
+        // 삭제는 슬롯을 비운다 — 저장 시 명시적 null 로 나간다(#1597).
         assertNull(restoredViewModel.currentForm().displayedMemorialVideo)
         assertEquals(MediaInput.None, restoredViewModel.currentForm().memorialVideo?.toMediaInput())
         assertFalse(restoredViewModel.currentForm().canRemoveMemorialVideo)
@@ -125,6 +116,6 @@ class AfternoteEditorReceiverSnapshotTest {
         ) { _, method, _ -> error("${T::class.java.simpleName}.${method.name} 호출은 이 테스트에서 예상하지 않았습니다") } as T
 
     private companion object {
-        const val SNAPSHOT_KEY = "editor_form_snapshot_v5"
+        const val SNAPSHOT_KEY = "editor_form_snapshot_v6"
     }
 }
