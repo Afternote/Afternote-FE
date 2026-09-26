@@ -85,6 +85,7 @@ class AfternoteAppLinkParserTest {
             "https://afternote.kro.kr/timeletter/0",
             "https://afternote.kro.kr/timeletter/007",
             "https://afternote.kro.kr/timeletter/99999999999999999999",
+            "https://afternote.kro.kr/timeletter/9999999999999999999",
             "https://afternote.kro.kr/timeletter/-1",
         ).forEach { link ->
             assertEquals(link, rejectedBecause(AppLinkRejectionReason.MALFORMED_ID), AfternoteAppLinkParser.parse(link))

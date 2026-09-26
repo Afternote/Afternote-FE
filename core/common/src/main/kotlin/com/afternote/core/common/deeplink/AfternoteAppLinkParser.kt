@@ -130,7 +130,8 @@ object AfternoteAppLinkParser {
     }
 
     /**
-     * 양의 10진 정수 ID. 앞자리 `0`·부호·공백·비-ASCII 숫자는 전부 거절이다.
+     * 양의 10진 정수 ID. `0` 으로 시작하는 입력(`0` 자체 포함)·부호·공백·비-ASCII 숫자는 전부 거절이다.
+     * 그래서 여기를 지난 값은 이미 1 이상이고, `Long` 범위를 넘는 19자리만 `toLongOrNull` 이 걸러 낸다.
      *
      * 자릿수 판정에 정규식 `\d` 를 쓰지 않는다 — Android 의 `\d` 는 유니코드 숫자(예: 아라비아-인도
      * 숫자)까지 물어 서버 JVM 과 다르게 판정한다. `'0'..'9'` 로 직접 좁힌다.
@@ -138,8 +139,8 @@ object AfternoteAppLinkParser {
     private fun String.toResourceIdOrNull(): Long? {
         if (isEmpty() || length > MAX_ID_LENGTH) return null
         if (any { character -> character !in '0'..'9' }) return null
-        if (length > 1 && first() == '0') return null
-        return toLongOrNull()?.takeIf { id -> id > 0L }
+        if (first() == '0') return null
+        return toLongOrNull()
     }
 
     private fun reject(reason: AppLinkRejectionReason): AppLinkResolution = AppLinkResolution.Rejected(reason)
