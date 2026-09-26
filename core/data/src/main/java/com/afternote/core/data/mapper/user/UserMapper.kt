@@ -40,18 +40,22 @@ internal fun ReceiverListDto.toDomain(): Receiver =
         relation = relation.orEmpty(),
     )
 
+/**
+ * 상세 응답에 없는 `authCode` 와 비어 올 수 있는 `relation` 을 빈 문자열로 채워 [ReceiverDetail] 계약을
+ * 그대로 유지한다 (#2155). 수정 화면은 빈 관계를 선택 안 함으로 그린다.
+ */
 fun ReceiverDetailDto.toDomain(): ReceiverDetail =
     ReceiverDetail(
         receiverId = receiverId,
         name = name,
-        relation = relation,
+        relation = relation.orEmpty(),
         phone = phone,
         email = email,
         dailyQuestionCount = dailyQuestionCount,
         timeLetterCount = timeLetterCount,
         afterNoteCount = afterNoteCount,
         message = message,
-        authCode = authCode,
+        authCode = "",
     )
 
 fun UserCreateReceiverDto.toDomain(): ReceiverCreated =
