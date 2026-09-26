@@ -27,12 +27,12 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(gradleTestKit())
 
-    // 루트 build.gradle.kts 의 보안 하한은 별도 빌드인 여기까지 미치지 않는다 — 같은 근거(#921·#981·
+    // 루트 build.gradle.kts 의 보안 하한은 별도 빌드인 여기까지 미치지 않는다 — 같은 근거(#2132·#981·
     // #982·#985). AGP 9.3.2 이 이 클래스패스에도 같은 취약 버전을 끌어온다(netty 는 여기 없다).
     constraints {
         listOf("bcprov-jdk18on", "bcpkix-jdk18on", "bcutil-jdk18on").forEach { artifact ->
             implementation("org.bouncycastle:$artifact:${libs.versions.bouncycastle.get()}") {
-                because("GHSA-574f-3g2m-x479 등 1.84 미만 취약 — #921")
+                because("GHSA-9pwp-9qqc-pr26·GHSA-qp49-qgx5-5m26 — 1.85 미만 취약 — #2132")
             }
         }
         implementation("org.apache.commons:commons-lang3:${libs.versions.commonsLang3.get()}") {
