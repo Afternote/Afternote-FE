@@ -335,6 +335,34 @@ class UserRepositoryImplTest {
         assertEquals("복구 후 목록", recovered.single().name)
     }
 
+    /**
+     * 배경 5초 이상 복귀 등으로 cold flow 가 처음부터 다시 도는 재구독 상황을 흉내 낸다. 이전에는
+     * lastKnownReceivers 가 flow 지역 변수라 재구독마다 빈 값으로 리셋됐다 — 재구독의 첫 조회가
+     * 일시 실패하면 화면에 떠 있던 목록이 사라졌다. 로그인 구간 단위로 캐시를 들고 있어야 한다.
+     */
+    @Test
+    fun `receiverListFlow - 재구독 시 조회가 실패해도 같은 세션의 마지막 목록을 유지한다`() {
+        var requestCount = 0
+        val repository =
+            repository(
+                onGetReceivers = {
+                    requestCount += 1
+                    if (requestCount == 1) {
+                        dataResponse(listOf(receiverDto("첫 조회 성공")))
+                    } else {
+                        throw UnknownHostException("재구독 조회 일시 실패")
+                    }
+                },
+            )
+
+        val first = runBlocking { repository.receiverListFlow.first() }
+        val resubscribed = runBlocking { repository.receiverListFlow.first() }
+
+        assertEquals(listOf("첫 조회 성공"), first.map { it.name })
+        assertEquals(listOf("첫 조회 성공"), resubscribed.map { it.name })
+        assertEquals(2, requestCount)
+    }
+
     @Test
     fun `createReceiver - 성공하면 구독 중인 목록을 다시 조회한다`() =
         runBlocking {

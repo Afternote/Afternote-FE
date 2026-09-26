@@ -74,6 +74,7 @@ private fun TimeletterScreenScreenshotContent(
             onEditClick = {},
             onFilterRecipientClick = {},
             onDeleteClick = {},
+            onRetry = {},
         )
     }
 }
