@@ -39,7 +39,8 @@ sealed interface ReceiverRoute : NavKey {
      * 신청 기록 없음(열람 불가) / PENDING(승인 대기) / APPROVED(열람 가능).
      *
      * `senderId` 는 [com.afternote.feature.receiver.presentation.recordsbox.SenderRegistry]
-     * 의 로컬 식별자 (typed-safe routes 규약: SavedStateHandle 키 `senderId` 와 일치).
+     * 의 로컬 식별자. 상세 ViewModel 에는 entry 가 이 키를 assisted 로 넘긴다. Nav3 entry 의
+     * SavedStateHandle 에는 NavKey 필드가 실리지 않으므로 `toRoute` 로 읽을 수 없다 (#2168).
      */
     @Serializable
     data class SenderDetailRoute(
