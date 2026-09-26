@@ -233,8 +233,6 @@ dependencies {
 
     // App Startup — 기동 초기화는 app 매니페스트에 등록한 Initializer 로 실행한다.
     implementation(libs.androidx.startup.runtime)
-    // DailyNotificationInitializer 가 WorkManagerInitializer 를 선행 의존으로 지정한다.
-    implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.profileinstaller)
 
     // 카카오 OAuth redirect Activity(`com.kakao.sdk.auth.AuthCodeHandlerActivity`)를
@@ -283,6 +281,10 @@ dependencies {
 
     testImplementation(libs.coroutines.test)
     testImplementation(testFixtures(projects.core.domain))
+    // 데일리 알림 예약 관찰(#2146)이 실제로 넣고 지운 WorkManager 예약을 읽는다. app main 은 WorkManager 를
+    // 직접 부르지 않는다. 예약 API 는 core:common 에 있고, WorkManagerInitializer 는 그 의존을 타고
+    // InitializationProvider 에 병합된다.
+    testImplementation(libs.androidx.work.testing)
 
     // Nav2 백스택 회귀 기준 (#1601) — 에뮬레이터 없이 NavHost 를 실제 컴포지션으로 띄워
     // 탭 상태 복원·인증 스택 경계·flow-scoped ViewModel 수명을 잰다. 대상(AppState·
