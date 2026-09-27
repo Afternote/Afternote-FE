@@ -17,7 +17,7 @@ import com.afternote.feature.setting.presentation.home.SettingUiState
 import com.afternote.feature.setting.presentation.home.SettingViewModel
 import com.afternote.feature.setting.presentation.notification.PushNotificationEvent
 import com.afternote.feature.setting.presentation.notification.PushNotificationViewModel
-import com.afternote.feature.setting.presentation.profile.ProfileEditEvent
+import com.afternote.feature.setting.presentation.profile.ProfileEditIntent
 import com.afternote.feature.setting.presentation.profile.ProfileEditUiState
 import com.afternote.feature.setting.presentation.profile.ProfileEditViewModel
 import kotlinx.coroutines.Dispatchers
@@ -168,11 +168,9 @@ class SettingCoroutineCancellationTest {
                 }
             val viewModel = ProfileEditViewModel(repository)
             val store = storeHolding(viewModel)
-            val events = mutableListOf<ProfileEditEvent>()
-            backgroundScope.launch(dispatcher) { viewModel.events.collect { events += it } }
             runCurrent()
 
-            viewModel.updateProfile(name = "새 이름", phone = "01011112222")
+            viewModel.onIntent(ProfileEditIntent.UpdateProfile(name = "새 이름", phone = "01011112222"))
             runCurrent()
             assertTrue(pending.isStarted)
 
@@ -189,7 +187,6 @@ class SettingCoroutineCancellationTest {
                 ),
                 viewModel.uiState.value,
             )
-            assertTrue(events.isEmpty())
         }
 
     @Test

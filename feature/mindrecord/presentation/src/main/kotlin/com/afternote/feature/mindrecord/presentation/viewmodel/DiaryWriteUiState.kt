@@ -51,16 +51,31 @@ data class DiaryWriteUiState(
     /** draft 프리필 완료 플래그. 에디터(content) 재시드 트리거로 사용. */
     val draftLoaded: Boolean = false,
     val draftLoadError: UiText? = null,
-    /** 이미지 업로드 진행 중 — 끝나기 전에 저장하면 이미지 없이 기록이 먼저 올라간다 (#716). */
-    val isUploadingImage: Boolean = false,
+    /**
+     * 아직 끝나지 않은 이미지 업로드 수 (#2029 · #2030).
+     *
+     * Boolean 하나였을 때는 첨부를 잇따라 고르면 **먼저 끝난 하나가 잠금을 통째로 풀었다** —
+     * 아직 올라가는 중인 첨부가 있는데도 저장이 열려, 그 이미지가 빠진 본문이 먼저 나갔다.
+     * 성공·실패·취소 어느 쪽으로 끝나든 자기 몫만 내려놓도록 수로 센다.
+     */
+    val uploadingImageCount: Int = 0,
     /** 이미지 업로드 실패 안내. 조용히 null 로 흡수하지 않는다 (#716). */
     val imageUploadError: UiText? = null,
     val submitState: SubmitState = SubmitState.Idle,
-    /** 이어쓰기(기존 draft PATCH) 진입인지. 신규 작성이면 덮어쓸 기존 내용이 없다. */
-    val isEditingDraft: Boolean = false,
+    /**
+     * 기존 기록을 고치러 들어왔는지 — **임시저장 이어쓰기와 정식 기록 수정을 함께 센다.**
+     *
+     * 신규 작성이면 덮어쓸 기존 내용이 없다. 종전에는 이어쓰기일 때만 섰는데, 저장 경로는
+     * 두 진입이 똑같이 PATCH 라 정식 수정이 프리필 가드 밖에 있었다 (#2027).
+     */
+    val isEditingExistingRecord: Boolean = false,
     /** 툴바 "임시저장 N" 표시값. `null` 은 아직 모름(조회 중·실패) (#769). */
     val draftCount: Int? = null,
 ) {
+    /** 끝나지 않은 업로드가 하나라도 있는지. 화면과 저장 잠금이 함께 본다. */
+    val isUploadingImage: Boolean
+        get() = uploadingImageCount > 0
+
     /** 정식 등록 조건 — 제목·본문·기분이 모두 있어야 한다. */
     val canSubmit: Boolean
         get() = missingForSubmit() == null && isReady
@@ -95,9 +110,12 @@ data class DiaryWriteUiState(
                 !isDraftLoading &&
                 // 업로드 중 저장하면 본문에 아직 안 들어간 이미지가 빠진 채 나간다 (#716).
                 !isUploadingImage &&
-                // 프리필이 실패했는데 저장하면, 보지 못한 기존 draft 내용을 빈 폼으로 PATCH 해
-                // 덮어쓴다. 이어쓰기 진입에서 프리필이 실패한 동안은 저장을 막는다 (#716).
-                !(isEditingDraft && draftLoadError != null)
+                // 프리필이 실패했는데 저장하면, 보지 못한 기존 내용을 빈 폼으로 PATCH 해
+                // 덮어쓴다. 수정 진입은 프리필이 **성공한 뒤에만** 저장을 연다 (#716 · #2027).
+                //
+                // 「실패했는가」가 아니라 「읽었는가」로 본다 — 실패 플래그만 보면 조회가 끝나지
+                // 않은 창(취소·재시작)에서 오류도 없고 프리필도 없는 상태가 열린다.
+                !(isEditingExistingRecord && !draftLoaded)
 
     /**
      * 등록을 막는 첫 번째 누락 항목 (없으면 null).

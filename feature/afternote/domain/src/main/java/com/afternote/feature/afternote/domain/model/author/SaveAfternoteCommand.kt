@@ -7,6 +7,6 @@ sealed interface SaveAfternoteCommand {
 
     data class Update(
         val id: Long,
-        val payload: AfternoteUpdatePayload,
+        val payload: UpdateAfternoteInput,
     ) : SaveAfternoteCommand
 }
