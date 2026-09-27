@@ -144,6 +144,6 @@ class AfternoteEditorReceiverSelectionRecoveryTest {
 
     private companion object {
         const val RECEIVER_ID = 7L
-        val RECEIVER = Receiver(RECEIVER_ID, "김수신", "딸", "fake-auth-7")
+        val RECEIVER = Receiver(RECEIVER_ID, "김수신", "딸")
     }
 }

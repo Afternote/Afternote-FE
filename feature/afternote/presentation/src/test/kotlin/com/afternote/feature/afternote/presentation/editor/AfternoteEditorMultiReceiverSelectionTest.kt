@@ -196,7 +196,7 @@ class AfternoteEditorMultiReceiverSelectionTest {
         const val DAUGHTER_ID = 7L
         const val FRIEND_ID = 11L
         const val UNKNOWN_ID = 99L
-        val DAUGHTER = Receiver(DAUGHTER_ID, "김수신", "딸", "fake-auth-7")
-        val FRIEND = Receiver(FRIEND_ID, "박친구", "친구", "fake-auth-11")
+        val DAUGHTER = Receiver(DAUGHTER_ID, "김수신", "딸")
+        val FRIEND = Receiver(FRIEND_ID, "박친구", "친구")
     }
 }

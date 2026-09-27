@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "f69332d995a2e9890605b3c8075c427b2dd0cc8c.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": "not_covered",
+      "recorded_at": "recorded_at"
+    },
+    "redactions": []
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "f69332d995a2e9890605b3c8075c427b2dd0cc8c",
+  "head_ref": "develop",
+  "base_sha": null,
+  "base_ref": null,
+  "recorded_at": "2026-09-23T03:10:00+00:00",
+  "result": "fail",
+  "scenario": "3차 QA 에뮬레이터 패스. 1) 서버 닫힘(11:52~11:58 KST) 실패 경로, 토큰 주입 로그인 상태: 홈·노트·마음의 기록(데일리 질문·일기·주간리포트)은 오류 안내와 다시 시도가 뜬다(8/25 의 기술 원문 노출은 해소). 타임레터는 서버 실패를 '아직 등록된 타임레터가 없어요' 빈 목록으로 가린다(#714 재현, 같은 계정에 타임레터 1건이 있음을 서버 복구 뒤 확인). 설정은 로그아웃 한 줄만 남는다(#708 재현). 타임레터 작성 중 뒤로가기는 확인 없이 내용이 사라진다(#576 재현), 하단바 미디어 버튼 라벨이 '링크 삽입'(#594 재현). 애프터노트 에디터 이탈 가드는 정상. 2) 서버 열림(12:06 KST): 홈이 진입 즉시 '정보를 불러오지 못했습니다'로 떨어진다. users/me·users/receivers·daily-questions/today·mind-record 가 모두 200 인데, 수신자 목록 응답의 relation null 행이 ReceiverListDto.relation(String) 디코드를 깨고 홈이 수신자 조회를 필수로 묶어 화면 전체가 실패한다. 애프터노트 작성 > 수신자 추가도 같은 원인으로 '수신자 목록을 불러오지 못했습니다'. #2105 에 영향 범위를 캡처와 함께 코멘트했다.",
+  "not_covered": [
+    "나머지 성공 경로는 수신자 디코드 실패에 가려져 #2120 head 빌드로 봤다(별도 기록).",
+    "실기기 고유 축(실사 사진 10MiB, 하드웨어 Keystore, predictive back, 삼성 IME, S25 글자 크기)은 기기 배분상 실기기 패스 몫이다."
+  ],
+  "device": {
+    "is_emulator": true
+  },
+  "details": {
+    "details": {
+      "screen": {
+        "size": "1080x2400",
+        "density": 420,
+        "api_level": 35
+      },
+      "build_type": "debug",
+      "issues_commented": [
+        2105
+      ],
+      "issues_reproduced": [
+        714,
+        708,
+        576,
+        594
+      ]
+    }
+  }
+}

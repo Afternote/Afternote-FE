@@ -1,23 +1,30 @@
 package com.afternote.afternote_fe.notification
 
 import com.afternote.core.domain.testing.FakeAuthRepository
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.job
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.io.IOException
+import kotlin.coroutines.cancellation.CancellationException
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class NotificationPermissionViewModelTest {
@@ -38,10 +45,10 @@ class NotificationPermissionViewModelTest {
         runTest(dispatcher) {
             val viewModel = viewModel(loggedIn = false)
 
-            backgroundScope.subscribe(viewModel)
+            viewModel.onIntent(NotificationPermissionIntent.ObservationStarted)
             advanceUntilIdle()
 
-            assertFalse(viewModel.shouldRequest.value)
+            assertFalse(viewModel.uiState.value.shouldRequest)
         }
 
     @Test
@@ -49,10 +56,10 @@ class NotificationPermissionViewModelTest {
         runTest(dispatcher) {
             val viewModel = viewModel(loggedIn = true)
 
-            backgroundScope.subscribe(viewModel)
+            viewModel.onIntent(NotificationPermissionIntent.ObservationStarted)
             advanceUntilIdle()
 
-            assertTrue(viewModel.shouldRequest.value)
+            assertTrue(viewModel.uiState.value.shouldRequest)
         }
 
     @Test
@@ -60,10 +67,10 @@ class NotificationPermissionViewModelTest {
         runTest(dispatcher) {
             val viewModel = viewModel(loggedIn = true, hasRequested = true)
 
-            backgroundScope.subscribe(viewModel)
+            viewModel.onIntent(NotificationPermissionIntent.ObservationStarted)
             advanceUntilIdle()
 
-            assertFalse(viewModel.shouldRequest.value)
+            assertFalse(viewModel.uiState.value.shouldRequest)
         }
 
     @Test
@@ -72,15 +79,15 @@ class NotificationPermissionViewModelTest {
             val store = FakeNotificationPermissionRequestStore(hasRequested = false)
             val viewModel = viewModel(loggedIn = true, store = store)
 
-            backgroundScope.subscribe(viewModel)
+            viewModel.onIntent(NotificationPermissionIntent.ObservationStarted)
             advanceUntilIdle()
-            assertTrue(viewModel.shouldRequest.value)
+            assertTrue(viewModel.uiState.value.shouldRequest)
 
-            viewModel.markRequested()
+            viewModel.onIntent(NotificationPermissionIntent.RecordRequest)
             advanceUntilIdle()
 
             assertEquals(1, store.markRequestedCalls)
-            assertFalse(viewModel.shouldRequest.value)
+            assertFalse(viewModel.uiState.value.shouldRequest)
         }
 
     @Test
@@ -93,9 +100,9 @@ class NotificationPermissionViewModelTest {
                     store = FakeNotificationPermissionRequestStore(hasRequested = false),
                 )
 
-            backgroundScope.subscribe(viewModel)
+            viewModel.onIntent(NotificationPermissionIntent.ObservationStarted)
             advanceUntilIdle()
-            viewModel.markRequested()
+            viewModel.onIntent(NotificationPermissionIntent.RecordRequest)
             advanceUntilIdle()
 
             authRepository.loggedIn = false
@@ -103,12 +110,163 @@ class NotificationPermissionViewModelTest {
             authRepository.loggedIn = true
             advanceUntilIdle()
 
-            assertFalse(viewModel.shouldRequest.value)
+            assertFalse(viewModel.uiState.value.shouldRequest)
         }
 
-    /** `shouldRequest` 는 `WhileSubscribed` 라 구독자가 없으면 upstream 이 돌지 않는다. */
-    private fun CoroutineScope.subscribe(viewModel: NotificationPermissionViewModel) {
-        launch { viewModel.shouldRequest.collect { } }
+    @Test
+    fun `관찰 시작 전에는 로그인과 저장소를 구독하지 않는다`() =
+        runTest(dispatcher) {
+            val login = TrackingFlow(true)
+            val requested = TrackingFlow(false)
+            val viewModel = trackedViewModel(login, requested)
+
+            runCurrent()
+
+            assertEquals(0, login.starts)
+            assertEquals(0, requested.starts)
+            assertFalse(viewModel.uiState.value.shouldRequest)
+        }
+
+    @Test
+    fun `화면 중단 뒤 5초 유예가 끝나야 두 흐름을 해제한다`() =
+        runTest(dispatcher) {
+            val login = TrackingFlow(true)
+            val requested = TrackingFlow(false)
+            val viewModel = trackedViewModel(login, requested)
+            viewModel.onIntent(NotificationPermissionIntent.ObservationStarted)
+            runCurrent()
+
+            viewModel.onIntent(NotificationPermissionIntent.ObservationStopped)
+            runCurrent()
+            advanceTimeBy(4_999)
+            runCurrent()
+            assertEquals(1, login.active)
+            assertEquals(1, requested.active)
+
+            advanceTimeBy(1)
+            runCurrent()
+            assertEquals(0, login.active)
+            assertEquals(0, requested.active)
+        }
+
+    @Test
+    fun `중단 중 바뀐 값을 복귀 재구독에서 읽는다`() =
+        runTest(dispatcher) {
+            val login = TrackingFlow(false)
+            val requested = TrackingFlow(false)
+            val viewModel = trackedViewModel(login, requested)
+            viewModel.onIntent(NotificationPermissionIntent.ObservationStarted)
+            runCurrent()
+            assertFalse(viewModel.uiState.value.shouldRequest)
+
+            viewModel.onIntent(NotificationPermissionIntent.ObservationStopped)
+            advanceUntilIdle()
+            login.state.value = true
+            runCurrent()
+            assertFalse(viewModel.uiState.value.shouldRequest)
+
+            viewModel.onIntent(NotificationPermissionIntent.ObservationStarted)
+            runCurrent()
+            assertTrue(viewModel.uiState.value.shouldRequest)
+            assertEquals(2, login.starts)
+            assertEquals(2, requested.starts)
+        }
+
+    @Test
+    fun `5초 안에 복귀하면 예약한 해제를 취소하고 중복 구독하지 않는다`() =
+        runTest(dispatcher) {
+            val login = TrackingFlow(true)
+            val requested = TrackingFlow(false)
+            val viewModel = trackedViewModel(login, requested)
+            viewModel.onIntent(NotificationPermissionIntent.ObservationStarted)
+            runCurrent()
+            viewModel.onIntent(NotificationPermissionIntent.ObservationStopped)
+            advanceTimeBy(4_000)
+            viewModel.onIntent(NotificationPermissionIntent.ObservationStarted)
+            viewModel.onIntent(NotificationPermissionIntent.ObservationStarted)
+            advanceTimeBy(2_000)
+            runCurrent()
+
+            requested.state.value = true
+            runCurrent()
+            assertFalse(viewModel.uiState.value.shouldRequest)
+            assertEquals(1, login.starts)
+            assertEquals(1, requested.starts)
+            assertEquals(1, login.active)
+            assertEquals(1, requested.active)
+        }
+
+    @Test
+    fun `요청 기록 저장이 실패하면 기록된 것으로 위장하지 않는다`() =
+        runTest(dispatcher) {
+            val store = FakeNotificationPermissionRequestStore(hasRequested = false, failWrite = true)
+            val viewModel = viewModel(loggedIn = true, store = store)
+            viewModel.onIntent(NotificationPermissionIntent.ObservationStarted)
+            advanceUntilIdle()
+
+            viewModel.onIntent(NotificationPermissionIntent.RecordRequest)
+            advanceUntilIdle()
+
+            assertEquals(1, store.markRequestedCalls)
+            assertTrue(viewModel.uiState.value.shouldRequest)
+        }
+
+    @Test
+    fun `요청 기록의 취소는 정상 완료로 삼키지 않는다`() =
+        runTest(dispatcher) {
+            val cancellation = CancellationException("screen cancelled")
+            var completionCause: Throwable? = null
+            val store =
+                object : NotificationPermissionRequestStore {
+                    override val hasRequested: Flow<Boolean> = MutableStateFlow(false)
+
+                    override suspend fun markRequested() {
+                        currentCoroutineContext().job.invokeOnCompletion { completionCause = it }
+                        throw cancellation
+                    }
+                }
+            val viewModel = viewModel(loggedIn = true, store = store)
+            viewModel.onIntent(NotificationPermissionIntent.ObservationStarted)
+            runCurrent()
+
+            viewModel.onIntent(NotificationPermissionIntent.RecordRequest)
+            runCurrent()
+
+            assertSame(cancellation, completionCause)
+            assertTrue(viewModel.uiState.value.shouldRequest)
+        }
+
+    private fun trackedViewModel(
+        login: TrackingFlow,
+        requested: TrackingFlow,
+    ) = NotificationPermissionViewModel(
+        authRepository = FakeAuthRepository(onIsLoggedIn = { login.flow }),
+        store =
+            object : NotificationPermissionRequestStore {
+                override val hasRequested: Flow<Boolean> = requested.flow
+
+                override suspend fun markRequested() {
+                    requested.state.value = true
+                }
+            },
+    )
+
+    private class TrackingFlow(
+        initialValue: Boolean,
+    ) {
+        val state = MutableStateFlow(initialValue)
+        var starts = 0
+        var active = 0
+        val flow: Flow<Boolean> =
+            flow {
+                starts++
+                active++
+                try {
+                    emitAll(state)
+                } finally {
+                    active--
+                }
+            }
     }
 
     private fun viewModel(
@@ -122,6 +280,7 @@ class NotificationPermissionViewModelTest {
 
     private class FakeNotificationPermissionRequestStore(
         hasRequested: Boolean,
+        private val failWrite: Boolean = false,
     ) : NotificationPermissionRequestStore {
         private val state = MutableStateFlow(hasRequested)
 
@@ -132,6 +291,7 @@ class NotificationPermissionViewModelTest {
 
         override suspend fun markRequested() {
             markRequestedCalls++
+            if (failWrite) throw IOException("write failed")
             state.value = true
         }
     }

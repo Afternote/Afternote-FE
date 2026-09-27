@@ -210,7 +210,7 @@ class EditorContentSignatureCompletenessTest {
             )
         val withServerVideo =
             editorContentSignature(
-                EditorFormState(typeForm = AfternoteTypeForm.Memorial(video = EditableMemorialVideo.fromPersisted(serverVideo))),
+                EditorFormState(typeForm = AfternoteTypeForm.Memorial(video = EditableMemorialVideo.fromServer(serverVideo))),
                 state,
             )
 
@@ -227,7 +227,7 @@ class EditorContentSignatureCompletenessTest {
                     typeForm =
                         AfternoteTypeForm.Memorial(
                             video =
-                                EditableMemorialVideo.fromPersisted(
+                                EditableMemorialVideo.fromServer(
                                     serverVideo.copy(thumbnailUrl = "https://cdn.test/another-thumb.jpg"),
                                 ),
                         ),

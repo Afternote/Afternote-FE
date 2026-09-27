@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
  *
  * - 상세 조회: [ReceiverRepository.getReceivedAfternoteDetail] (Retrofit baseUrl 기준
  *   `receiver-auth/after-notes/{afternoteId}` 경로 — 실제 경로는 data 모듈의 `ReceiverAfternoteApiService`).
- * - 상세 ID: [SavedStateHandle] 의 `afternoteId` (수신자 라우트 인자명).
+ * - 상세 ID: entry 가 assisted 로 넘긴 [ReceivedAfternoteRoute.DetailRoute] 의 `afternoteId`.
  *
  * 발신자 [com.afternote.feature.afternote.presentation.detail.AfternoteDetailViewModel] 과
  * 동일한 단일 [ReceivedAfternoteDetailUiState] + StateFlow 패턴을 따른다. 다만 받은 입장이라

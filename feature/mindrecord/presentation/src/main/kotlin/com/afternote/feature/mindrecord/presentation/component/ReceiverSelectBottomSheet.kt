@@ -230,8 +230,8 @@ private fun ReceiverSelectContentPreview() {
         ReceiverSelectContent(
             receivers =
                 listOf(
-                    Receiver(receiverId = 1, name = "김소희", relation = "딸", authCode = ""),
-                    Receiver(receiverId = 2, name = "박채연", relation = "조카", authCode = ""),
+                    Receiver(receiverId = 1, name = "김소희", relation = "딸"),
+                    Receiver(receiverId = 2, name = "박채연", relation = "조카"),
                 ),
             selectedReceiverIds = setOf(1L),
             onToggle = {},
