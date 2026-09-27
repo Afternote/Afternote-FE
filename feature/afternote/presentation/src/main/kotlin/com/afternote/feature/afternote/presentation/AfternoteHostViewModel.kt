@@ -9,7 +9,16 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/** Afternote 그래프의 프로필 상태. 지문 인증 화면을 떠난 뒤에도 기존 WhileSubscribed와 같은 5초 유예를 둔다. */
+/**
+ * [com.afternote.core.ui.Route.Afternote] 엔트리 스코프의 상태 정본.
+ * [com.afternote.feature.afternote.presentation.navigation.AfternoteNavHost] 가 자기 스코프에서 만들어
+ * 로컬 스택의 화면들이 같은 인스턴스를 본다.
+ *
+ * 에디터 flow 상태는 flow-scoped
+ * [com.afternote.feature.afternote.presentation.editor.AfternoteEditorViewModel]이 담당한다.
+ * 본 ViewModel은 애프터노트 로컬 스택 전체에서 공유하는 사용자 상태만 보유한다.
+ * 프로필 구독은 마지막 화면이 떠난 뒤 기존 WhileSubscribed와 같은 5초 유예를 둔다.
+ */
 @HiltViewModel
 internal class AfternoteHostViewModel
     @Inject

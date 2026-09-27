@@ -24,7 +24,7 @@ sealed interface AfternoteRoute : NavKey {
     @Serializable
     data object EditorRoute : AfternoteRoute
 
-    /** [EditorRoute] 위에 쌓이는 수신자 선택 화면 (#540). 선택 결과는 SavedStateHandle 로 반환한다 (복수, #1426). */
+    /** [EditorRoute] 위에 쌓이는 수신자 선택 화면 (#540). 선택 결과(복수, #1426)는 흐름이 공유하는 에디터 ViewModel 이 받는다. */
     @Serializable
     data object SelectReceiverRoute : AfternoteRoute
 

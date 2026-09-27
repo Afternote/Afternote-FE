@@ -20,7 +20,8 @@ import com.afternote.feature.receiver.presentation.deliveryverification.componen
  *
  * 발신자 상세의 "열람 신청하기" 진입 시 해당 발신자의 본인 확인 캐시
  * ([com.afternote.feature.receiver.domain.repository.IdentityVerificationRepository.isVerified]) 가
- * false 인 경우만 노출된다 — 캐시 hit 시 NavGraph 가 마스터 키 단계로 바로 보낸다 (#597 발신자별 격리).
+ * false 인 경우만 노출된다 — 캐시 hit 시 흐름 호스트가 이 화면을 건너뛰고 마스터 키 단계로 바로 보낸다
+ * (#597 발신자별 격리).
  * 다음 단계의 인증번호 발송·검증은 실 API(`receiver-auth/email` 계열) 호출 (#407).
  */
 @Composable

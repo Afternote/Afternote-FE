@@ -9,9 +9,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 /**
  * 수신자 선택 화면 진입점 (#540).
  *
- * 확정한 수신자 id 전체는 [onReceiversConfirmed] 로 나간다 — NavHost 구현이 에디터 엔트리의
- * SavedStateHandle 에 `SELECTED_RECEIVER_IDS_KEY` 로 쓰고 pop 하면, 에디터의
- * [tryApplyReceiverSelectionFromSavedState] 가 복귀 시 읽어 폼에 반영한다.
+ * 확정한 수신자 id 전체는 [onReceiversConfirmed] 로 나간다 — 흐름 호스트가 흐름이 공유하는 에디터 ViewModel 의
+ * [com.afternote.feature.afternote.presentation.editor.AfternoteEditorViewModel.onReceiversSelected] 에 넘기고
+ * pop 하면, 에디터의 [com.afternote.feature.afternote.presentation.editor.tryApplyReceiverSelection] 이
+ * 복귀 시 소비해 폼에 반영한다.
  *
  * [preselectedReceiverIds] 는 에디터 폼에 이미 들어 있는 수신자다. 화면을 그 선택 상태로 열어야
  * 사용자가 «이미 지정한 사람» 을 다시 고르거나 풀 수 있다 (#1426).
