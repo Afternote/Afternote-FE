@@ -78,4 +78,11 @@
     <string name="core_ui_media_sheet_voice">음성 추가하기</string>
     <string name="core_ui_media_sheet_file">파일 추가하기</string>
     <string name="core_ui_media_sheet_link">링크 추가하기</string>
+
+    <!--
+      새 비밀번호 조합 규칙 안내 문구 (#2191). 판정 정본 core:domain `NewPasswordRule` 과 짝이라
+      규칙이 바뀌면 이 문장도 함께 고친다. 설정과 온보딩(onboarding_signup_password_rule_combination)이
+      같은 값을 각자 갖고 있던 것을 core 정본으로 올린다. 온보딩 전환은 #2192.
+    -->
+    <string name="core_ui_password_rule_combination">8 ~ 15자의 영문, 숫자, 특수문자(@, $, !, %, *, #, ?, &amp;)를 각각 1자 이상 사용해 주세요.</string>
 </resources>
