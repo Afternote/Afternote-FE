@@ -43,5 +43,4 @@ private val receiverPreview =
         timeLetterCount = 2,
         afterNoteCount = 1,
         message = "오랫동안 기억해 줘",
-        authCode = "AFTER123",
     )

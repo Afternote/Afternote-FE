@@ -83,7 +83,7 @@ class FakeUserReceiverRepository(
         val authCode = "fake-auth-$id"
         receiverState.value = receiverState.value + Receiver(id, name, relation, authCode)
         receiverDetails[id] =
-            ReceiverDetail(id, name, relation, phone, email, 0, 0, 0, message, authCode)
+            ReceiverDetail(id, name, relation, phone, email, 0, 0, 0, message)
         return ReceiverCreated(id, authCode)
     }
 
@@ -181,5 +181,4 @@ private fun Receiver.toDefaultDetail(): ReceiverDetail =
         timeLetterCount = 0,
         afterNoteCount = 0,
         message = null,
-        authCode = authCode,
     )

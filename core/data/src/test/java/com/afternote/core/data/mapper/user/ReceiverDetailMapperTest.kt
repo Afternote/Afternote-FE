@@ -13,7 +13,6 @@ import org.junit.Test
  *
  * `UserReceiverRepositoryImpl.getReceiverDetail` 이 하는 일(`requireData().toDomain()`)을 dev 서버 상세 응답
  * 모양의 본문에 그대로 태운다. 수정 화면은 빈 관계를 선택 안 함으로 그리므로 null 관계는 빈 문자열로 옮긴다.
- * 상세 응답에 없는 `authCode` 도 빈 문자열이다.
  */
 class ReceiverDetailMapperTest {
     private val json = NetworkModule.provideJson()
@@ -36,7 +35,6 @@ class ReceiverDetailMapperTest {
                 timeLetterCount = 0,
                 afterNoteCount = 0,
                 message = "마지막 인사말",
-                authCode = "",
             ),
             receiver,
         )
@@ -60,7 +58,6 @@ class ReceiverDetailMapperTest {
                 timeLetterCount = 0,
                 afterNoteCount = 0,
                 message = null,
-                authCode = "",
             ),
             receiver,
         )
