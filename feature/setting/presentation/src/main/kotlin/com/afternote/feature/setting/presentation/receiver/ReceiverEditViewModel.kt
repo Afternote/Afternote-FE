@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
  * `savedStateHandle.toRoute<T>()` 자동 채움이 없다 (#1695).
  */
 @HiltViewModel(assistedFactory = ReceiverEditViewModel.Factory::class)
-class ReceiverEditViewModel
+internal class ReceiverEditViewModel
     @AssistedInject
     constructor(
         @Assisted route: SettingRoute.RecipientEditRoute,

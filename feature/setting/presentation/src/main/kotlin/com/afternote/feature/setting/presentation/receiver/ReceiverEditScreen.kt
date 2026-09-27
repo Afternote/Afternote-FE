@@ -8,7 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
-fun ReceiverEditScreen(
+internal fun ReceiverEditScreen(
     onBackClick: () -> Unit,
     onEditSuccess: () -> Unit,
     viewModel: ReceiverEditViewModel,
