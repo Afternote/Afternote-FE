@@ -1,15 +1,10 @@
 package com.afternote.feature.setting.presentation.profile
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.MyProfileRepository
+import com.afternote.core.ui.mvi.MviViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -18,39 +13,73 @@ internal class ProfileEditViewModel
     @Inject
     constructor(
         private val myProfileRepository: MyProfileRepository,
-    ) : ViewModel() {
-        private val _uiState = MutableStateFlow<ProfileEditUiState>(ProfileEditUiState.Loading)
-        val uiState = _uiState.asStateFlow()
-
-        private val _events = Channel<ProfileEditEvent>(Channel.BUFFERED)
-        val events = _events.receiveAsFlow()
-
+    ) : MviViewModel<ProfileEditIntent, ProfileEditUiState, ProfileEditReducerEvent>(ProfileEditUiState.Loading) {
         init {
             loadProfile()
         }
+
+        override fun onIntent(intent: ProfileEditIntent) {
+            when (intent) {
+                is ProfileEditIntent.UpdateProfile -> updateProfile(intent.name, intent.phone)
+                is ProfileEditIntent.ConsumeEvent -> dispatch(ProfileEditReducerEvent.EventConsumed(intent.event))
+            }
+        }
+
+        override fun reduce(
+            state: ProfileEditUiState,
+            event: ProfileEditReducerEvent,
+        ): ProfileEditUiState =
+            when (event) {
+                is ProfileEditReducerEvent.Loaded -> {
+                    ProfileEditUiState.Success(name = event.name, phone = event.phone, email = event.email)
+                }
+
+                ProfileEditReducerEvent.LoadFailed -> {
+                    ProfileEditUiState.Error
+                }
+
+                ProfileEditReducerEvent.Updating -> {
+                    state.updateSuccess { it.copy(isUpdating = true, pendingEvent = null) }
+                }
+
+                // 성공 뒤 화면이 닫히는 사이 재제출을 막도록 isUpdating 을 유지한다.
+                ProfileEditReducerEvent.UpdateSucceeded -> {
+                    state.updateSuccess { it.copy(pendingEvent = ProfileEditEvent.UpdateSuccess) }
+                }
+
+                ProfileEditReducerEvent.UpdateFailed -> {
+                    state.updateSuccess { it.copy(isUpdating = false, pendingEvent = ProfileEditEvent.UpdateFailure) }
+                }
+
+                is ProfileEditReducerEvent.EventConsumed -> {
+                    state.updateSuccess { if (it.pendingEvent == event.event) it.copy(pendingEvent = null) else it }
+                }
+            }
 
         private fun loadProfile() {
             viewModelScope.launch {
                 runCatchingCancellable { myProfileRepository.getMyProfile() }
                     .onSuccess { user ->
-                        _uiState.value =
-                            ProfileEditUiState.Success(
+                        dispatch(
+                            ProfileEditReducerEvent.Loaded(
                                 name = user.name,
                                 phone = user.phone.orEmpty(),
                                 email = user.email,
-                            )
+                            ),
+                        )
                     }.onFailure {
-                        _uiState.value = ProfileEditUiState.Error
+                        dispatch(ProfileEditReducerEvent.LoadFailed)
                     }
             }
         }
 
-        fun updateProfile(
+        private fun updateProfile(
             name: String,
             phone: String,
         ) {
-            val current = _uiState.value as? ProfileEditUiState.Success ?: return
-            _uiState.update { current.copy(isUpdating = true) }
+            val current = currentState as? ProfileEditUiState.Success ?: return
+            if (current.isUpdating) return
+            dispatch(ProfileEditReducerEvent.Updating)
             viewModelScope.launch {
                 runCatchingCancellable {
                     myProfileRepository.updateMyProfile(
@@ -59,11 +88,14 @@ internal class ProfileEditViewModel
                         profileImageUrl = null,
                     )
                 }.onSuccess {
-                    _events.send(ProfileEditEvent.UpdateSuccess)
+                    dispatch(ProfileEditReducerEvent.UpdateSucceeded)
                 }.onFailure {
-                    _uiState.update { current.copy(isUpdating = false) }
-                    _events.send(ProfileEditEvent.UpdateFailure)
+                    dispatch(ProfileEditReducerEvent.UpdateFailed)
                 }
             }
         }
     }
+
+private inline fun ProfileEditUiState.updateSuccess(
+    transform: (ProfileEditUiState.Success) -> ProfileEditUiState.Success,
+): ProfileEditUiState = if (this is ProfileEditUiState.Success) transform(this) else this

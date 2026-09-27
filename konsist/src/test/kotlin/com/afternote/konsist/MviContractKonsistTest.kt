@@ -431,13 +431,9 @@ class MviContractKonsistTest {
             setOf(
                 "com.afternote.feature.setting.presentation.account.ConnectedAccountsViewModel",
                 "com.afternote.feature.setting.presentation.applock.AppLockSetupViewModel",
-                "com.afternote.feature.setting.presentation.delivery.DeliveryConditionViewModel",
                 "com.afternote.feature.setting.presentation.home.SettingViewModel",
                 "com.afternote.feature.setting.presentation.notification.PushNotificationViewModel",
                 "com.afternote.feature.setting.presentation.passkey.PassKeyViewModel",
-                "com.afternote.feature.setting.presentation.profile.ProfileEditViewModel",
-                "com.afternote.feature.setting.presentation.receiver.ReceiverEditViewModel",
-                "com.afternote.feature.setting.presentation.receiver.ReceiverListViewModel",
                 "com.afternote.feature.setting.presentation.receiver.ReceiverRegisterViewModel",
             )
 

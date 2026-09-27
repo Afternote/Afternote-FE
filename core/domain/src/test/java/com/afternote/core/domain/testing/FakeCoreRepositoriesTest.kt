@@ -103,7 +103,7 @@ class FakeCoreRepositoriesTest {
 
     @Test
     fun `기본 receiver detail은 합성되고 수정 뒤 재조회에도 모든 필드가 남는다`() {
-        val receiver = Receiver(7L, "수신자", "가족", "auth-7")
+        val receiver = Receiver(7L, "수신자", "가족")
         val initialReceivers = mutableListOf(receiver)
         val synthesizedRepository = FakeUserRepository(receivers = initialReceivers)
         initialReceivers.clear()
@@ -113,7 +113,7 @@ class FakeCoreRepositoriesTest {
         assertEquals(receiver.receiverId, synthesized.receiverId)
         assertEquals(receiver.name, synthesized.name)
         assertEquals(receiver.relation, synthesized.relation)
-        assertEquals(receiver.authCode, synthesized.authCode)
+        assertEquals("fake-auth-7", synthesized.authCode)
         assertNull(synthesized.phone)
         assertNull(synthesized.email)
         assertNull(synthesized.message)
@@ -131,7 +131,7 @@ class FakeCoreRepositoriesTest {
         assertEquals("01012345678", updated.phone)
         assertEquals("new@test.local", updated.email)
         assertEquals("남길 메시지", updated.message)
-        assertEquals("auth-7", updated.authCode)
+        assertEquals("fake-auth-7", updated.authCode)
     }
 
     @Test
@@ -169,10 +169,10 @@ class FakeCoreRepositoriesTest {
 
         repository.onGetReceivers = null
         repository.onGetMyProfile = null
-        repository.receiverState.value = listOf(Receiver(9L, "나중 수신자", "가족", "auth-9"))
+        repository.receiverState.value = listOf(Receiver(9L, "나중 수신자", "가족"))
         repository.profile = User("나중 사용자", "later@afternote.local", null, null)
 
-        assertEquals(listOf(Receiver(9L, "나중 수신자", "가족", "auth-9")), runBlocking { repository.getReceivers() })
+        assertEquals(listOf(Receiver(9L, "나중 수신자", "가족")), runBlocking { repository.getReceivers() })
         assertEquals("나중 사용자", runBlocking { repository.getMyProfile() }.name)
         assertEquals(1, repository.getReceiversCalls)
         assertEquals(1, repository.getProfileCalls)
@@ -181,13 +181,13 @@ class FakeCoreRepositoriesTest {
     /** 좁은 fake 는 합본을 거치지 않고 곧장 쓸 수 있어야 한다 (#1282). */
     @Test
     fun `좁은 fake 는 자기 책임 상태만 갖고 단독으로 동작한다`() {
-        val receiverRepository = FakeUserReceiverRepository(receivers = listOf(Receiver(3L, "수신자", "가족", "auth-3")))
+        val receiverRepository = FakeUserReceiverRepository(receivers = listOf(Receiver(3L, "수신자", "가족")))
         val profileRepository = FakeMyProfileRepository()
 
         val receivers = runBlocking { receiverRepository.getReceivers() }
         val updated = runBlocking { profileRepository.updateMyProfile("바뀐 이름", null, null) }
 
-        assertEquals(listOf(Receiver(3L, "수신자", "가족", "auth-3")), receivers)
+        assertEquals(listOf(Receiver(3L, "수신자", "가족")), receivers)
         assertEquals(1, receiverRepository.getReceiversCalls)
         assertEquals("바뀐 이름", updated.name)
         assertEquals(
