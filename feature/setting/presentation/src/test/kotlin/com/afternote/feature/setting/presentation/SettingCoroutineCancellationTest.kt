@@ -18,7 +18,7 @@ import com.afternote.feature.setting.presentation.home.SettingUiState
 import com.afternote.feature.setting.presentation.home.SettingViewModel
 import com.afternote.feature.setting.presentation.notification.PushNotificationEvent
 import com.afternote.feature.setting.presentation.notification.PushNotificationViewModel
-import com.afternote.feature.setting.presentation.profile.ProfileEditEvent
+import com.afternote.feature.setting.presentation.profile.ProfileEditIntent
 import com.afternote.feature.setting.presentation.profile.ProfileEditUiState
 import com.afternote.feature.setting.presentation.profile.ProfileEditViewModel
 import kotlinx.coroutines.Dispatchers
@@ -169,11 +169,9 @@ class SettingCoroutineCancellationTest {
                 }
             val viewModel = ProfileEditViewModel(repository, FakePhotoUploadRepository.strict())
             val store = storeHolding(viewModel)
-            val events = mutableListOf<ProfileEditEvent>()
-            backgroundScope.launch(dispatcher) { viewModel.events.collect { events += it } }
             runCurrent()
 
-            viewModel.updateProfile(name = "새 이름", phone = "01011112222")
+            viewModel.onIntent(ProfileEditIntent.UpdateProfile(name = "새 이름", phone = "01011112222"))
             runCurrent()
             assertTrue(pending.isStarted)
 
@@ -191,7 +189,6 @@ class SettingCoroutineCancellationTest {
                 ),
                 viewModel.uiState.value,
             )
-            assertTrue(events.isEmpty())
         }
 
     @Test
@@ -205,12 +202,10 @@ class SettingCoroutineCancellationTest {
             val uploadRepository = FakePhotoUploadRepository(onUpload = { _, _ -> pending.await() })
             val viewModel = ProfileEditViewModel(profileRepository, uploadRepository)
             val store = storeHolding(viewModel)
-            val events = mutableListOf<ProfileEditEvent>()
-            backgroundScope.launch(dispatcher) { viewModel.events.collect { events += it } }
             runCurrent()
 
-            viewModel.selectProfileImage(PICKED_PHOTO)
-            viewModel.updateProfile(name = "새 이름", phone = "01011112222")
+            viewModel.onIntent(ProfileEditIntent.SelectPhoto(PICKED_PHOTO))
+            viewModel.onIntent(ProfileEditIntent.UpdateProfile(name = "새 이름", phone = "01011112222"))
             runCurrent()
             assertTrue(pending.isStarted)
 
@@ -219,7 +214,7 @@ class SettingCoroutineCancellationTest {
 
             assertTrue(pending.isCancelled)
             assertTrue(profileRepository.profileUpdateCalls.isEmpty())
-            assertTrue(events.isEmpty())
+            assertEquals(null, (viewModel.uiState.value as ProfileEditUiState.Success).pendingEvent)
         }
 
     @Test

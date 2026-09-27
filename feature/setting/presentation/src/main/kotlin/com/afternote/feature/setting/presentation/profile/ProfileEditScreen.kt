@@ -30,7 +30,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -38,6 +37,7 @@ import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.ProfileImagePicker
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
+import com.afternote.core.ui.mvi.ObserveSignal
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 
@@ -49,23 +49,45 @@ internal fun ProfileEditScreen(
     viewModel: ProfileEditViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val currentOnBackClick by rememberUpdatedState(onBackClick)
-    // when 분기 밖에서 만든다. 분기 안에 두면 상태가 바뀔 때 런처 등록과 보관 중인 결과가 함께 사라진다.
     val onPickProfileImage =
         rememberProfileImagePicker(
             canAcceptPhoto = (uiState as? ProfileEditUiState.Success)?.isUpdating == false,
-            onPhotoPicked = viewModel::selectProfileImage,
+            onPhotoPicked = { viewModel.onIntent(ProfileEditIntent.SelectPhoto(it)) },
         )
 
-    LaunchedEffect(Unit) {
-        viewModel.events.collect { event ->
+    (uiState as? ProfileEditUiState.Success)?.pendingEvent?.let { pendingEvent ->
+        ObserveSignal(
+            signal = pendingEvent,
+            // 소비 Intent 에 처리한 신호를 실어, 늦게 도착한 소비가 새로 올라온 다른 신호를 지우지 않게 한다.
+            consumed = ProfileEditIntent.ConsumeEvent(pendingEvent),
+            onIntent = viewModel::onIntent,
+        ) { event ->
             when (event) {
-                ProfileEditEvent.UpdateSuccess -> currentOnBackClick()
+                ProfileEditEvent.UpdateSuccess -> onBackClick()
                 ProfileEditEvent.UpdateFailure -> Unit
             }
         }
     }
 
+    ProfileEditContent(
+        uiState = uiState,
+        onPickImageClick = onPickProfileImage,
+        onIntent = viewModel::onIntent,
+        onBackClick = onBackClick,
+        onWithdrawGuideClick = onWithdrawGuideClick,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun ProfileEditContent(
+    uiState: ProfileEditUiState,
+    onPickImageClick: () -> Unit,
+    onIntent: (ProfileEditIntent) -> Unit,
+    onBackClick: () -> Unit,
+    onWithdrawGuideClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Scaffold(
         topBar = {
             DetailTopBar(
@@ -92,8 +114,8 @@ internal fun ProfileEditScreen(
             is ProfileEditUiState.Success -> {
                 ProfileEditForm(
                     state = state,
-                    onPickImageClick = onPickProfileImage,
-                    onUpdateClick = viewModel::updateProfile,
+                    onPickImageClick = onPickImageClick,
+                    onUpdateClick = { name, phone -> onIntent(ProfileEditIntent.UpdateProfile(name, phone)) },
                     onWithdrawGuideClick = onWithdrawGuideClick,
                     modifier = Modifier.padding(innerPadding),
                 )

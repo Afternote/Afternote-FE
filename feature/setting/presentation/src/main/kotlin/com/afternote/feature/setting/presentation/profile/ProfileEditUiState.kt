@@ -1,6 +1,8 @@
 package com.afternote.feature.setting.presentation.profile
 
-sealed interface ProfileEditUiState {
+import com.afternote.core.ui.mvi.UiState
+
+internal sealed interface ProfileEditUiState : UiState {
     data object Loading : ProfileEditUiState
 
     /**
@@ -13,9 +15,10 @@ sealed interface ProfileEditUiState {
         val name: String,
         val phone: String,
         val email: String,
-        val profileImageUrl: String?,
+        val profileImageUrl: String? = null,
         val selectedImageUri: String? = null,
         val isUpdating: Boolean = false,
+        val pendingEvent: ProfileEditEvent? = null,
     ) : ProfileEditUiState {
         /** 아바타에 그릴 사진. 저장 전 선택이 서버 사진보다 앞선다. */
         val displayImageUri: String? get() = selectedImageUri ?: profileImageUrl
@@ -24,7 +27,7 @@ sealed interface ProfileEditUiState {
     data object Error : ProfileEditUiState
 }
 
-sealed interface ProfileEditEvent {
+internal sealed interface ProfileEditEvent {
     data object UpdateSuccess : ProfileEditEvent
 
     data object UpdateFailure : ProfileEditEvent

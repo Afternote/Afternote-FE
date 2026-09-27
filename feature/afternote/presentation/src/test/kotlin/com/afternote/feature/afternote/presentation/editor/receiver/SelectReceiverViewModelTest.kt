@@ -50,8 +50,8 @@ class SelectReceiverViewModelTest {
                 FakeUserRepository(
                     receivers =
                         listOf(
-                            Receiver(1L, "김혜성", "아들", "auth-1"),
-                            Receiver(2L, "박경민", "친구", "auth-2"),
+                            Receiver(1L, "김혜성", "아들"),
+                            Receiver(2L, "박경민", "친구"),
                         ),
                 )
 
@@ -77,7 +77,7 @@ class SelectReceiverViewModelTest {
 
             assertTrue(viewModel.uiState.value.isLoading)
 
-            gate.complete(listOf(Receiver(1L, "김혜성", "아들", "auth-1")))
+            gate.complete(listOf(Receiver(1L, "김혜성", "아들")))
             runCurrent()
 
             assertFalse(viewModel.uiState.value.isLoading)
@@ -109,7 +109,7 @@ class SelectReceiverViewModelTest {
         runTest {
             val repository =
                 FakeUserRepository(
-                    receivers = listOf(Receiver(1L, "김혜성", "아들", "auth-1")),
+                    receivers = listOf(Receiver(1L, "김혜성", "아들")),
                     onGetReceivers = { error("server down") },
                 )
 
@@ -204,8 +204,8 @@ class SelectReceiverViewModelTest {
 
             gate.complete(
                 listOf(
-                    Receiver(1L, "김혜성", "아들", "auth-1"),
-                    Receiver(2L, "박경민", "친구", "auth-2"),
+                    Receiver(1L, "김혜성", "아들"),
+                    Receiver(2L, "박경민", "친구"),
                 ),
             )
             runCurrent()
@@ -220,8 +220,8 @@ class SelectReceiverViewModelTest {
                 FakeUserRepository(
                     receivers =
                         listOf(
-                            Receiver(1L, "김혜성", "아들", "auth-1"),
-                            Receiver(2L, "박경민", "친구", "auth-2"),
+                            Receiver(1L, "김혜성", "아들"),
+                            Receiver(2L, "박경민", "친구"),
                         ),
                 )
             val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, SavedStateHandle())
@@ -229,7 +229,7 @@ class SelectReceiverViewModelTest {
 
             viewModel.toggleReceiverSelection(1L)
             viewModel.toggleReceiverSelection(2L)
-            repository.receiverState.value = listOf(Receiver(1L, "김혜성", "아들", "auth-1"))
+            repository.receiverState.value = listOf(Receiver(1L, "김혜성", "아들"))
             viewModel.refresh()
             runCurrent()
 
@@ -240,7 +240,7 @@ class SelectReceiverViewModelTest {
     fun `재조회 후에도 목록에 남아 있는 수신자 선택은 유지된다`() =
         runTest {
             val repository =
-                FakeUserRepository(receivers = listOf(Receiver(1L, "김혜성", "아들", "auth-1")))
+                FakeUserRepository(receivers = listOf(Receiver(1L, "김혜성", "아들")))
             val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, SavedStateHandle())
             runCurrent()
 
@@ -261,8 +261,8 @@ class SelectReceiverViewModelTest {
                 FakeUserRepository(
                     receivers =
                         listOf(
-                            Receiver(1L, "김혜성", "아들", "auth-1"),
-                            Receiver(2L, "박경민", "친구", "auth-2"),
+                            Receiver(1L, "김혜성", "아들"),
+                            Receiver(2L, "박경민", "친구"),
                         ),
                 )
             val beforeDeath = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, savedStateHandle)
@@ -283,8 +283,8 @@ class SelectReceiverViewModelTest {
                 FakeUserRepository(
                     receivers =
                         listOf(
-                            Receiver(1L, "김혜성", "아들", "auth-1"),
-                            Receiver(2L, "박경민", "친구", "auth-2"),
+                            Receiver(1L, "김혜성", "아들"),
+                            Receiver(2L, "박경민", "친구"),
                         ),
                 )
             val beforeDeath = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, savedStateHandle)
@@ -309,8 +309,8 @@ class SelectReceiverViewModelTest {
             FakeUserRepository(
                 receivers =
                     listOf(
-                        Receiver(1L, "김혜성", "아들", "auth-1"),
-                        Receiver(2L, "박경민", "친구", "auth-2"),
+                        Receiver(1L, "김혜성", "아들"),
+                        Receiver(2L, "박경민", "친구"),
                     ),
             )
         val viewModel = SelectReceiverViewModel(repository, NoopAuthorErrorReporter, SavedStateHandle())

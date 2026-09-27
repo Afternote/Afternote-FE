@@ -25,8 +25,17 @@ data class DailyQuestionWriteUiState(
     /**
      * 본문이 서버에서 채워졌는지. 리치 에디터는 [answer] 를 **초기 시드로만** 읽으므로,
      * 비동기 프리필이 끝난 뒤 에디터를 다시 만들어야 내용이 보인다 (#582).
+     *
+     * 프리필이 **성공했을 때만** 선다 — 수정 진입의 저장 잠금도 이 값을 본다 (#2028).
      */
     val contentLoaded: Boolean = false,
+    /**
+     * 기존 답변을 고치러 들어왔는지 (#2028).
+     *
+     * 저장 잠금과 실패 복구가 둘 다 이 값을 본다 — 복구가 진입을 모르면 「대상 레코드도 없고
+     * 오늘 질문도 없다」를 신규 작성으로 읽어 **오늘 질문으로 대상을 갈아치운다.**
+     */
+    val isEditingExistingAnswer: Boolean = false,
     val isQuestionLoading: Boolean = true,
     val questionLoadError: UiText? = null,
     /** 이어쓸 임시저장 본문을 불러오는 중 (#923). */
@@ -40,13 +49,23 @@ data class DailyQuestionWriteUiState(
      */
     val draftResumeError: UiText? = null,
     val submitState: SubmitState = SubmitState.Idle,
-    /** 이미지 업로드 진행 중 — 끝나기 전에 저장하면 이미지 없이 기록이 먼저 올라간다 (#716). */
-    val isUploadingImage: Boolean = false,
+    /**
+     * 아직 끝나지 않은 이미지 업로드 수 (#2029 · #2030).
+     *
+     * Boolean 하나였을 때는 첨부를 잇따라 고르면 **먼저 끝난 하나가 잠금을 통째로 풀었다** —
+     * 아직 올라가는 중인 첨부가 있는데도 저장이 열려, 그 이미지가 빠진 본문이 먼저 나갔다.
+     * 성공·실패·취소 어느 쪽으로 끝나든 자기 몫만 내려놓도록 수로 센다.
+     */
+    val uploadingImageCount: Int = 0,
     /** 이미지 업로드 실패 안내. 조용히 null 로 흡수하지 않는다 (#716). */
     val imageUploadError: UiText? = null,
     /** 툴바 "임시저장 N" 표시값. `null` 은 아직 모름(조회 중·실패) (#769). */
     val draftCount: Int? = null,
 ) {
+    /** 끝나지 않은 업로드가 하나라도 있는지. 화면과 저장 잠금이 함께 본다. */
+    val isUploadingImage: Boolean
+        get() = uploadingImageCount > 0
+
     /**
      * `questionId` 유무는 여기서 보지 않는다. 조건에 넣으면 오늘 질문 조회가 실패했을 때
      * 저장 버튼이 그냥 죽어 있어 원인을 알 수 없다 (#565). 대신 [DailyQuestionWriteViewModel.submit]
@@ -74,8 +93,12 @@ data class DailyQuestionWriteUiState(
                 // 빈 에디터(`<p></p>`)도 isNotBlank() 라 버튼이 살아 있고, draftId 가 null 인
                 // 채 POST 로 나가 서버 upsert 가 기존 임시저장을 빈 본문으로 덮는다 —
                 // 이 PR 이 막으려던 바로 그 유실이다 (#1018 리뷰). 일기 화면의
-                // `!(isEditingDraft && draftLoadError != null)` 과 같은 성질이다.
-                draftResumeError == null
+                // `!(isEditingExistingRecord && !draftLoaded)` 과 같은 성질이다.
+                draftResumeError == null &&
+                // 수정 진입은 대상을 **읽은 뒤에만** 저장을 연다. 못 읽은 채 저장하면 draftId 가
+                // null 이라 PATCH 가 아니라 POST 로 나가고, 원래 답변이 아닌 다른 질문에 글이
+                // 남는다 (#2028). 일기 화면과 같은 「실패했는가」가 아니라 「읽었는가」 판정이다.
+                !(isEditingExistingAnswer && !contentLoaded)
 }
 
 sealed interface SubmitState {

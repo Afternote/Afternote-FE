@@ -21,6 +21,7 @@ import org.robolectric.annotation.GraphicsMode
  * - 지문 관문 → `AfternoteLocalNavActionsTest`
  * - 열람 신청 단계 소거 → `DeliveryVerificationFlowLocalNavActionsTest`
  * - 로그인 화면 교체·소셜 신규 가입 분기 → `OnboardingLocalNavActionsTest`
+ * - 설정 안쪽(탈퇴 안내 → 확인)의 모양 → `SettingLocalNavActionsTest`
  *
  * 여기 남는 것은 **루트가 소유한 경계**뿐이다 — 온보딩↔홈 전환과 로그아웃·탈퇴.
  */
@@ -68,9 +69,9 @@ class AuthBoundaryBackStackTest {
         start(Route.Home)
 
         composeRule.runOnIdle { harness.homeActions.onSettingClick() }
-        composeRule.runOnIdle { harness.settingActions.onWithdrawGuideClick() }
 
-        composeRule.runOnIdle { harness.settingActions.onLogoutSuccess() }
+        // 설정 안쪽 화면은 로컬 스택에 있어 루트는 host 한 칸만 본다. 로그아웃은 그 host 가 외부 경계로 올린다.
+        composeRule.runOnIdle { harness.settingExternalActions.onLogoutSuccess() }
 
         assertEquals(listOf("NavHostRoot", "Onboarding"), routes())
         assertEquals(false, composeRule.runOnIdle { harness.navController.popBackStack() })
@@ -81,10 +82,8 @@ class AuthBoundaryBackStackTest {
         start(Route.Home)
 
         composeRule.runOnIdle { harness.homeActions.onSettingClick() }
-        composeRule.runOnIdle { harness.settingActions.onWithdrawGuideClick() }
-        composeRule.runOnIdle { harness.settingActions.onWithdrawConfirmClick() }
 
-        composeRule.runOnIdle { harness.settingActions.onWithdrawSuccess() }
+        composeRule.runOnIdle { harness.settingExternalActions.onWithdrawSuccess() }
 
         assertEquals(listOf("NavHostRoot", "Onboarding"), routes())
         assertEquals(false, composeRule.runOnIdle { harness.navController.popBackStack() })
@@ -101,6 +100,12 @@ class AuthBoundaryBackStackTest {
         assertEquals(listOf("NavHostRoot", "Home", "Afternote"), routes())
 
         // 로컬 스택 바닥에서의 back 은 boundary 로 올라와 이 한 칸을 pop 한다.
+        assertEquals(true, composeRule.runOnIdle { harness.navController.popBackStack() })
+        assertEquals("Home", composeRule.runOnIdle { harness.navController.currentRouteName() })
+
+        // 설정도 같다 — Nav2 시절엔 [Setting, SettingHomeRoute] 두 칸이었다 (#1695).
+        composeRule.runOnIdle { harness.homeActions.onSettingClick() }
+        assertEquals(listOf("NavHostRoot", "Home", "Setting"), routes())
         assertEquals(true, composeRule.runOnIdle { harness.navController.popBackStack() })
         assertEquals("Home", composeRule.runOnIdle { harness.navController.currentRouteName() })
     }

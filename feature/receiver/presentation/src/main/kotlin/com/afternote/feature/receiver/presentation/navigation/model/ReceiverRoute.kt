@@ -4,10 +4,10 @@ import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
 /**
- * 수신자 흐름 [com.afternote.core.ui.Route.Receiver] 그래프 내부 라우트.
+ * 수신자 흐름 [com.afternote.core.ui.Route.Receiver] 가 그리는 로컬 스택의 라우트.
  *
- * 온보딩 Welcome 의 "전달 받은 기록 확인하기" 콜백이 [com.afternote.core.ui.Route.Receiver]
- * (= startDestination [ReceivedRecordsRoute]) 로 진입한다.
+ * 온보딩 Welcome 의 "전달 받은 기록 확인하기" 콜백이 [com.afternote.core.ui.Route.Receiver] 로
+ * 진입하고, 로컬 스택은 [ReceivedRecordsRoute] 에서 시작한다.
  *
  * [NavKey] 는 로컬 Navigation 3 스택에 실릴 수 있다는 표식이다 — `@Serializable` 과 함께
  * 있어야 프로세스 재생성 뒤 스택이 복원된다 (#1698).
@@ -47,11 +47,13 @@ sealed interface ReceiverRoute : NavKey {
     ) : ReceiverRoute
 
     /**
-     * 열람 신청 흐름 — 본인 확인(2·3·4) + 마스터 키(5) + 서류 업로드(6·7·8) + 완료(9) 의 *nested graph 진입점*.
+     * 열람 신청 흐름 — 본인 확인(2·3·4) + 마스터 키(5) + 서류 업로드(6·7·8) + 완료(9) 의 진입 키.
+     * 바깥 스택의 entry 하나로 올라가고, 그 안에서
+     * [com.afternote.feature.receiver.presentation.navigation.DeliveryVerificationFlowHost] 가 단계 전용 스택을 연다.
      *
-     * 흐름 전체 동안 유지되는 `senderId` 는 본 라우트에만 보유 — 자식 라우트들은 parent backStackEntry 의
-     * [com.afternote.feature.receiver.presentation.deliveryverification.DeliveryVerificationFlowViewModel]
-     * 에서 receive. 자식 라우트에서 senderId 를 nav arg 로 중복 박지 않는다.
+     * 흐름 전체 동안 유지되는 `senderId` 는 본 라우트에만 보유 — 흐름 VM
+     * ([com.afternote.feature.receiver.presentation.deliveryverification.DeliveryVerificationFlowViewModel])
+     * 에 assisted 로 주입되고, 단계 화면은 호스트가 그 VM 에서 꺼내 넘긴다. 단계 라우트에 senderId 를 중복으로 싣지 않는다.
      *
      * 발신자 상세 "열람 신청하기" 진입점.
      */
@@ -93,7 +95,7 @@ sealed interface ReceiverRoute : NavKey {
 
     /**
      * 열람 신청 3단계: 완료(9). `submitDeliveryVerification` 결과 표시.
-     * "받은 기록함으로 돌아가기" 버튼이 발신자 상세까지 pop 한다.
+     * "받은 기록함으로 돌아가기" 버튼이 받은 기록함까지 pop 한다(발신자 상세와 흐름 entry 도 걷힌다).
      */
     @Serializable
     data object DeliveryVerificationCompleteRoute : ReceiverRoute

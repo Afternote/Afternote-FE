@@ -8,9 +8,7 @@ import com.afternote.core.model.user.User
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -53,7 +51,7 @@ class ProfileEditViewModelTest {
             assertEquals(SERVER_IMAGE_URL, viewModel.success().profileImageUrl)
             assertEquals(SERVER_IMAGE_URL, viewModel.success().displayImageUri)
 
-            viewModel.selectProfileImage(PICKED_PHOTO)
+            viewModel.onIntent(ProfileEditIntent.SelectPhoto(PICKED_PHOTO))
 
             assertEquals(PICKED_PHOTO, viewModel.success().selectedImageUri)
             assertEquals(PICKED_PHOTO, viewModel.success().displayImageUri)
@@ -79,11 +77,10 @@ class ProfileEditViewModelTest {
                     }
                 }
             val viewModel = ProfileEditViewModel(profileRepository, uploadRepository)
-            val events = collectEvents(viewModel)
             runCurrent()
 
-            viewModel.selectProfileImage(PICKED_PHOTO)
-            viewModel.updateProfile(name = "새 이름", phone = "01011112222")
+            viewModel.onIntent(ProfileEditIntent.SelectPhoto(PICKED_PHOTO))
+            viewModel.onIntent(ProfileEditIntent.UpdateProfile(name = "새 이름", phone = "01011112222"))
             runCurrent()
 
             assertEquals(listOf("upload", "patch"), order)
@@ -92,7 +89,7 @@ class ProfileEditViewModelTest {
                 listOf(ProfileUpdateCall(name = "새 이름", phone = "01011112222", profileImageUrl = UPLOADED_KEY)),
                 profileRepository.profileUpdateCalls,
             )
-            assertEquals(listOf(ProfileEditEvent.UpdateSuccess), events)
+            assertEquals(ProfileEditEvent.UpdateSuccess, viewModel.success().pendingEvent)
         }
 
     @Test
@@ -100,17 +97,16 @@ class ProfileEditViewModelTest {
         runTest(dispatcher) {
             val profileRepository = FakeMyProfileRepository(profile = SAVED)
             val viewModel = ProfileEditViewModel(profileRepository, FakePhotoUploadRepository.strict())
-            val events = collectEvents(viewModel)
             runCurrent()
 
-            viewModel.updateProfile(name = "새 이름", phone = "")
+            viewModel.onIntent(ProfileEditIntent.UpdateProfile(name = "새 이름", phone = ""))
             runCurrent()
 
             assertEquals(
                 listOf(ProfileUpdateCall(name = "새 이름", phone = null, profileImageUrl = null)),
                 profileRepository.profileUpdateCalls,
             )
-            assertEquals(listOf(ProfileEditEvent.UpdateSuccess), events)
+            assertEquals(ProfileEditEvent.UpdateSuccess, viewModel.success().pendingEvent)
         }
 
     @Test
@@ -119,11 +115,10 @@ class ProfileEditViewModelTest {
             val uploadRepository = FakePhotoUploadRepository(onUpload = { _, _ -> Result.failure(IOException("upload failed")) })
             val profileRepository = FakeMyProfileRepository.strict().apply { onGetMyProfile = { SAVED } }
             val viewModel = ProfileEditViewModel(profileRepository, uploadRepository)
-            val events = collectEvents(viewModel)
             runCurrent()
 
-            viewModel.selectProfileImage(PICKED_PHOTO)
-            viewModel.updateProfile(name = "새 이름", phone = "01011112222")
+            viewModel.onIntent(ProfileEditIntent.SelectPhoto(PICKED_PHOTO))
+            viewModel.onIntent(ProfileEditIntent.UpdateProfile(name = "새 이름", phone = "01011112222"))
             runCurrent()
 
             assertEquals(1, uploadRepository.uploads.size)
@@ -131,7 +126,7 @@ class ProfileEditViewModelTest {
             assertEquals(PICKED_PHOTO, viewModel.success().selectedImageUri)
             assertEquals(SERVER_IMAGE_URL, viewModel.success().profileImageUrl)
             assertFalse(viewModel.success().isUpdating)
-            assertEquals(listOf(ProfileEditEvent.UpdateFailure), events)
+            assertEquals(ProfileEditEvent.UpdateFailure, viewModel.success().pendingEvent)
         }
 
     @Test
@@ -143,16 +138,15 @@ class ProfileEditViewModelTest {
                     onUpdateMyProfile = { _, _, _ -> throw IOException("offline") }
                 }
             val viewModel = ProfileEditViewModel(profileRepository, uploadRepository)
-            val events = collectEvents(viewModel)
             runCurrent()
 
-            viewModel.selectProfileImage(PICKED_PHOTO)
-            viewModel.updateProfile(name = "새 이름", phone = "01011112222")
+            viewModel.onIntent(ProfileEditIntent.SelectPhoto(PICKED_PHOTO))
+            viewModel.onIntent(ProfileEditIntent.UpdateProfile(name = "새 이름", phone = "01011112222"))
             runCurrent()
 
             assertEquals(PICKED_PHOTO, viewModel.success().selectedImageUri)
             assertFalse(viewModel.success().isUpdating)
-            assertEquals(listOf(ProfileEditEvent.UpdateFailure), events)
+            assertEquals(ProfileEditEvent.UpdateFailure, viewModel.success().pendingEvent)
         }
 
     @Test
@@ -167,24 +161,18 @@ class ProfileEditViewModelTest {
             val viewModel = ProfileEditViewModel(profileRepository, uploadRepository)
             runCurrent()
 
-            viewModel.selectProfileImage(PICKED_PHOTO)
-            viewModel.updateProfile(name = "새 이름", phone = "01011112222")
+            viewModel.onIntent(ProfileEditIntent.SelectPhoto(PICKED_PHOTO))
+            viewModel.onIntent(ProfileEditIntent.UpdateProfile(name = "새 이름", phone = "01011112222"))
             runCurrent()
             assertTrue(viewModel.success().isUpdating)
 
-            viewModel.selectProfileImage(OTHER_PHOTO)
+            viewModel.onIntent(ProfileEditIntent.SelectPhoto(OTHER_PHOTO))
 
             assertEquals(PICKED_PHOTO, viewModel.success().selectedImageUri)
             assertEquals(listOf(PICKED_PHOTO to "profiles"), uploadRepository.uploads)
             pendingUpdate.complete(SAVED)
             runCurrent()
         }
-
-    private fun TestScope.collectEvents(viewModel: ProfileEditViewModel): List<ProfileEditEvent> {
-        val events = mutableListOf<ProfileEditEvent>()
-        backgroundScope.launch(dispatcher) { viewModel.events.collect { events += it } }
-        return events
-    }
 
     private fun ProfileEditViewModel.success(): ProfileEditUiState.Success = uiState.value as ProfileEditUiState.Success
 

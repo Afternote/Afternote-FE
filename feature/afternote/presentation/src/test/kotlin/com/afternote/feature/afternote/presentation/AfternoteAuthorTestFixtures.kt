@@ -65,4 +65,4 @@ internal object NoopAuthorErrorReporter : ErrorReporter {
 }
 
 private val TEST_USER = User("테스트 사용자", "test@afternote.local", null, null)
-private val TEST_RECEIVER = Receiver(7L, "김수신", "가족", "fake-auth-7")
+private val TEST_RECEIVER = Receiver(7L, "김수신", "가족")

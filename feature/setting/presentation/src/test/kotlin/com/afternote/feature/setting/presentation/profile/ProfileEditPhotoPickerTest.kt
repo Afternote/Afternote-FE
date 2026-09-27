@@ -125,7 +125,7 @@ class ProfileEditPhotoPickerTest {
         awaitSuccess(viewModel)
         composeRule.onNodeWithContentDescription(pickBadge).performClick()
 
-        composeRule.runOnIdle { viewModel.updateProfile(name = "새 이름", phone = "01011112222") }
+        composeRule.runOnIdle { viewModel.onIntent(ProfileEditIntent.UpdateProfile(name = "새 이름", phone = "01011112222")) }
         composeRule.waitUntil(TIMEOUT_MILLIS) { viewModel.success().isUpdating }
         composeRule.runOnIdle { registry.deliver(Uri.parse(PICKED_PHOTO)) }
         composeRule.waitForIdle()

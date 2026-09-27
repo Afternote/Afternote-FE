@@ -6,7 +6,6 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
-import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeMyProfileRepository
 import com.afternote.core.domain.testing.FakeMyProfileRepository.ProfileUpdateCall
@@ -33,14 +32,17 @@ import com.afternote.feature.setting.presentation.applock.AppLockSetupScreen
 import com.afternote.feature.setting.presentation.applock.AppLockSetupViewModel
 import com.afternote.feature.setting.presentation.applock.PinSetupStep
 import com.afternote.feature.setting.presentation.delivery.DeliveryConditionError
+import com.afternote.feature.setting.presentation.delivery.DeliveryConditionIntent
 import com.afternote.feature.setting.presentation.delivery.DeliveryConditionViewModel
 import com.afternote.feature.setting.presentation.home.SettingUiState
 import com.afternote.feature.setting.presentation.home.SettingViewModel
 import com.afternote.feature.setting.presentation.home.WithdrawConfirmScreen
 import com.afternote.feature.setting.presentation.home.WithdrawUiState
+import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import com.afternote.feature.setting.presentation.passkey.PassKeyListScreen
 import com.afternote.feature.setting.presentation.passkey.PassKeyScreen
 import com.afternote.feature.setting.presentation.profile.ProfileEditEvent
+import com.afternote.feature.setting.presentation.profile.ProfileEditIntent
 import com.afternote.feature.setting.presentation.profile.ProfileEditScreen
 import com.afternote.feature.setting.presentation.profile.ProfileEditUiState
 import com.afternote.feature.setting.presentation.profile.ProfileEditViewModel
@@ -89,7 +91,7 @@ class SettingAccountSecurityTest {
         }
 
         composeRule.onNodeWithText("프로필을 불러올 수 없습니다.").assertIsDisplayed()
-        composeRule.runOnIdle { loadFailureViewModel.updateProfile("새 이름", "01012345678") }
+        composeRule.runOnIdle { loadFailureViewModel.onIntent(ProfileEditIntent.UpdateProfile("새 이름", "01012345678")) }
         assertTrue(loadFailureRepository.profileUpdateCalls.isEmpty())
 
         val updateFailureRepository = settingContractProfileRepository()
@@ -99,8 +101,11 @@ class SettingAccountSecurityTest {
         }
         updateFailureRepository.onUpdateMyProfile = { _, _, _ -> throw IllegalStateException("offline") }
 
-        composeRule.runOnIdle { updateFailureViewModel.updateProfile("   ", "") }
-        val event = awaitEvent(updateFailureViewModel.events)
+        composeRule.runOnIdle { updateFailureViewModel.onIntent(ProfileEditIntent.UpdateProfile("   ", "")) }
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            (updateFailureViewModel.uiState.value as? ProfileEditUiState.Success)?.pendingEvent != null
+        }
+        val event = (updateFailureViewModel.uiState.value as ProfileEditUiState.Success).pendingEvent
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             (updateFailureViewModel.uiState.value as? ProfileEditUiState.Success)?.isUpdating == false
         }
@@ -206,7 +211,7 @@ class SettingAccountSecurityTest {
             }
         val viewModel =
             DeliveryConditionViewModel(
-                savedStateHandle = SavedStateHandle(mapOf("receiverId" to RECEIVER_ID)),
+                route = SettingRoute.AfterDeliveryRoute(RECEIVER_ID),
                 receiverRepository = repository,
                 updateTimeLetterDeliveryCondition = UpdateTimeLetterDeliveryConditionUseCase(repository),
             )
@@ -215,8 +220,8 @@ class SettingAccountSecurityTest {
         }
 
         composeRule.runOnIdle {
-            viewModel.onConditionTypeSelected(index = 1)
-            viewModel.onSave()
+            viewModel.onIntent(DeliveryConditionIntent.SelectConditionType(index = 1))
+            viewModel.onIntent(DeliveryConditionIntent.Save)
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.error == DeliveryConditionError.SAVE_FAILED
