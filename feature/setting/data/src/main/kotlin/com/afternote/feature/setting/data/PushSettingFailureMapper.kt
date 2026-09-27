@@ -1,4 +1,4 @@
-package com.afternote.core.data.repoimpl
+package com.afternote.feature.setting.data
 
 import com.afternote.core.domain.error.PushSettingFailure
 import com.afternote.core.network.model.ApiException
