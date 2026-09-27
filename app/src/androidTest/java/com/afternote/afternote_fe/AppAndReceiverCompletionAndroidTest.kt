@@ -27,6 +27,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.Espresso.closeSoftKeyboard
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.navigation.AppState
 import com.afternote.afternote_fe.navigation.rememberAfternoteAppState
@@ -238,12 +239,17 @@ class AppAndReceiverCompletionAndroidTest {
             .onNodeWithContentDescription(context.getString(CoreUiR.string.core_ui_fab_content_description_add))
             .performClick()
         composeRule.onNode(hasSetTextAction()).performTextInput(senderName)
+        // API 30에서 IME가 등록 버튼을 가린다. 입력을 끝낸 뒤 표시된 버튼을 누른다.
+        closeSoftKeyboard()
         composeRule
             .onNode(
                 hasText(context.getString(ReceiverR.string.receiver_sender_registration_submit)) and hasClickAction(),
-            ).performClick()
+            ).assertIsDisplayed()
+            .performClick()
 
-        composeRule.onNodeWithText(senderName).assertIsDisplayed().performClick()
+        val senderCard = hasText(senderName) and hasClickAction() and !hasSetTextAction()
+        composeRule.waitUntilAtLeastOneExists(senderCard, timeoutMillis = 5_000)
+        composeRule.onNode(senderCard).assertIsDisplayed().performClick()
 
         composeRule
             .onNodeWithText(context.getString(ReceiverR.string.receiver_sender_detail_status_unavailable))
