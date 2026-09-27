@@ -30,7 +30,8 @@ import kotlinx.coroutines.launch
  * - 삭제: DELETE /api/afternotes/{id}
  * - 작성자 표시명: [UserProfileCacheRepository.getCachedUserName] 으로 즉시 채우고
  *   [UserRepository.getMyProfile] 로 재검증한다 (네비게이션 인자로 전달하지 않음)
- * - 상세 ID: [SavedStateHandle.toRoute]로 복원한 타입 안전 [AfternoteRoute.DetailRoute]에서 조회.
+ * - 상세 ID: entry 가 assisted 로 넘긴 [AfternoteRoute.DetailRoute]의 `itemId`. Nav3 entry 의
+ *   SavedStateHandle 에는 NavKey 필드가 실리지 않으므로 `toRoute` 로 읽을 수 없다 (#2168).
  *
  * [AfternoteDetailUiState] 를 그대로 들고 [uiState] 로 노출한다 — Loading/Success/Error 3분기.
  * 삭제 결과(성공/실패)는 [AfternoteDetailUiState.Success.deleteResult] nullable 필드에 흡수한다 —

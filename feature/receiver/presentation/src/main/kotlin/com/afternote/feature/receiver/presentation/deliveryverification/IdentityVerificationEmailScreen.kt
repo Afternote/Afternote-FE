@@ -42,8 +42,8 @@ import com.afternote.feature.receiver.presentation.error.ReceiverErrorPopupHost
  * 스낵바로 노출된다 (#407). 서버·네트워크 실패는 스낵바가 아니라 공통 오류 팝업이 맡는다 (#446) —
  * 사용자가 할 일이 재시도뿐이라 스스로 사라지는 안내로는 그 액션을 줄 자리가 없다.
  *
- * `senderId` 는 [MasterKeyScreen] 과 같은 규약으로 parent backStackEntry 의
- * [DeliveryVerificationFlowViewModel] 에서 받아 검증 성공 시점의 발신자별 캐시 기록에 쓴다 (#597).
+ * `senderId` 는 [MasterKeyScreen] 과 같은 규약으로 흐름 호스트가 흐름 entry 범위의
+ * [DeliveryVerificationFlowViewModel] 에서 꺼내 넘겨 주며, 검증 성공 시점의 발신자별 캐시 기록에 쓴다 (#597).
  */
 @Composable
 fun IdentityVerificationEmailScreen(
