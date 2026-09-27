@@ -91,6 +91,7 @@ import com.afternote.feature.timeletter.presentation.component.MediaBottomSheetC
 import com.afternote.feature.timeletter.presentation.component.RecipientCard
 import com.afternote.feature.timeletter.presentation.component.SendScheduleRow
 import com.afternote.feature.timeletter.presentation.component.TimeLetterBottomBar
+import com.afternote.feature.timeletter.presentation.component.TimeLetterLoadErrorContent
 import com.afternote.feature.timeletter.presentation.component.TimeLetterTextButton
 import com.afternote.feature.timeletter.presentation.component.TimeLetterTitleTextField
 import com.afternote.feature.timeletter.presentation.component.TimeWheelPicker
@@ -130,6 +131,7 @@ fun TimeLetterWriteScreen(
     onDraftClick: (title: String, textContents: Map<Long, String>) -> Unit = { _, _ -> },
     onNavigateToDraft: () -> Unit = {},
     onErrorShown: () -> Unit = {},
+    onRetryEditingLetter: () -> Unit = {},
     onAddImageBlock: (Uri) -> Unit = {},
     onAddAudioBlock: (Uri) -> Unit = {},
     onAddFileBlock: (Uri) -> Unit = {},
@@ -276,6 +278,21 @@ fun TimeLetterWriteScreen(
         return
     }
 
+    if (uiState.editingLoadError) {
+        Scaffold(
+            modifier = modifier,
+            topBar = { DetailTopBar(title = "", onBackClick = onBackClick) },
+            containerColor = AfternoteDesign.colors.white,
+        ) { innerPadding ->
+            TimeLetterLoadErrorContent(
+                message = stringResource(R.string.timeletter_write_load_failed),
+                onRetry = onRetryEditingLetter,
+                modifier = Modifier.padding(innerPadding),
+            )
+        }
+        return
+    }
+
     // Apply the loaded title once per editing destination. Keying this to draftTitle would
     // overwrite the user's input whenever the draft is synchronized back to the ViewModel.
     LaunchedEffect(uiState.editingTimeLetterId) {
@@ -286,6 +303,7 @@ fun TimeLetterWriteScreen(
         }
     }
 
+    val isSubmitting = uiState.isSaving || uiState.isCheckingRegisterLimit
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var pendingHour by remember { mutableIntStateOf(LocalTime.now().hour) }
@@ -482,7 +500,9 @@ fun TimeLetterWriteScreen(
                                 collectTextContents(),
                             )
                         },
-                        isActive = !uiState.isSaving && uiState.sendAt != null,
+                        isActive = !isSubmitting && uiState.sendAt != null,
+                        isLoading = isSubmitting,
+                        enabled = !isSubmitting,
                     )
                 },
             )
@@ -498,6 +518,7 @@ fun TimeLetterWriteScreen(
                 onAlignRightClick = onAlignRightClick,
                 onDraftClick = { onDraftClick(titleState.text.toString(), collectTextContents()) },
                 onDraftCountClick = onNavigateToDraft,
+                enabled = !isSubmitting,
             )
         },
         containerColor = AfternoteDesign.colors.white,
@@ -515,6 +536,7 @@ fun TimeLetterWriteScreen(
                             collectTextContents(),
                         )
                     },
+                    enabled = !isSubmitting,
                 )
             }
             item(key = "divider_1") {
@@ -526,6 +548,7 @@ fun TimeLetterWriteScreen(
                     time = uiState.sendTime ?: "",
                     onDateClick = { showDatePicker = true },
                     onTimeClick = { showTimePicker = true },
+                    enabled = !isSubmitting,
                 )
             }
             item(key = "divider_2") {
