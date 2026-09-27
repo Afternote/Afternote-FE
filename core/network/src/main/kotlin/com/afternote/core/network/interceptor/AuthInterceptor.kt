@@ -64,7 +64,7 @@ class AuthInterceptor
             // 만료 임박이면 401 을 기다리지 않고 먼저 갈아끼움 — 실패 시 기존 토큰 유지
             val accessToken =
                 if (expiryTracker.isExpiringSoon()) {
-                    when (val outcome = tokenReissuer.reissue(expectedAccessToken = storedToken)) {
+                    when (val outcome = tokenReissuer.reissueOnce(expectedAccessToken = storedToken)) {
                         is TokenReissuer.Outcome.TokenAlreadyChanged -> outcome.accessToken
                         is TokenReissuer.Outcome.Rotated -> outcome.accessToken
                         is TokenReissuer.Outcome.Failure -> storedToken
