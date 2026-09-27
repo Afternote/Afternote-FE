@@ -62,6 +62,7 @@ import kotlinx.serialization.json.Json
 
 private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v6"
 private const val INITIALIZED_ACTION_TEMPLATE_TYPE_KEY = "initialized_action_template_type"
+private const val PREFILL_SEEDED_ITEM_ID_KEY = "editor_prefill_seeded_item_id"
 
 private const val TAG = "AfternoteEditorViewModel"
 
@@ -193,6 +194,18 @@ internal class AfternoteEditorViewModel
                 encodeDefaults = true
             }
 
+        private val restoredForm: RestoredForm = readFormSnapshotOrDefault()
+
+        /**
+         * 상세 prefill을 적용했던 폼이 성공적으로 복원된 경우 사용자의 미저장 입력을 보존한다.
+         * 표식만 남거나 디코딩이 실패했을 때는 서버 prefill을 받아 빈 폼으로 저장하는 일을 막는다.
+         * 계정 정보와 남기실 말씀은 화면이 복원하므로 폼 값 비교로 적용 여부를 대신하지 않는다.
+         */
+        private val restoredFromSeededSnapshot: Boolean =
+            route.itemId != null &&
+                restoredForm.fromSnapshot &&
+                savedStateHandle.get<Long>(PREFILL_SEEDED_ITEM_ID_KEY) == route.itemId
+
         val isEditing: Boolean get() = route.itemId != null
 
         override fun onIntent(intent: AfternoteEditorIntent) {
@@ -255,6 +268,7 @@ internal class AfternoteEditorViewModel
                 }
 
                 is AfternoteEditorIntent.ApplyPrefill -> {
+                    readEditItemId()?.let { savedStateHandle[PREFILL_SEEDED_ITEM_ID_KEY] = it }
                     dispatchForm(AfternoteEditorReducerEvent.PrefillApplied(intent.prefill))
                 }
 
@@ -462,7 +476,9 @@ internal class AfternoteEditorViewModel
                 is AfternoteEditorReducerEvent.PrefillLoaded -> {
                     state.copy(
                         originalType = event.prefill.type,
-                        pendingPrefill = event.prefill,
+                        pendingPrefill = if (event.preserveRestoredForm) null else event.prefill,
+                        isPrefillLoading =
+                            state.isPrefillLoading && !event.preserveRestoredForm,
                         updateBaseline = event.baseline,
                     )
                 }
@@ -503,7 +519,7 @@ internal class AfternoteEditorViewModel
         init {
             dispatch(
                 AfternoteEditorReducerEvent.Initialized(
-                    readFormSnapshotOrDefault(),
+                    restoredForm.form,
                     route.initialType.takeIf { route.itemId != null },
                     readEditItemId() != null,
                 ),
@@ -513,15 +529,28 @@ internal class AfternoteEditorViewModel
 
         private fun readEditItemId(): Long? = route.itemId
 
-        private fun readFormSnapshotOrDefault(): EditorFormState {
+        /** 빈 기본 폼과 성공적으로 복원된 폼을 구분한다. */
+        private fun readFormSnapshotOrDefault(): RestoredForm {
             val defaultForm = EditorFormState().withType(route.initialType)
-            val raw = savedStateHandle.get<String>(EDITOR_FORM_SNAPSHOT_KEY) ?: return defaultForm
+            val raw =
+                savedStateHandle.get<String>(EDITOR_FORM_SNAPSHOT_KEY)
+                    ?: return RestoredForm(form = defaultForm, fromSnapshot = false)
             return runCatching {
-                formSnapshotJson
-                    .decodeFromString(EditorFormSnapshot.serializer(), raw)
-                    .toEditorFormState()
-            }.getOrElse { defaultForm }
+                RestoredForm(
+                    form =
+                        formSnapshotJson
+                            .decodeFromString(EditorFormSnapshot.serializer(), raw)
+                            .toEditorFormState(),
+                    fromSnapshot = true,
+                )
+            }.getOrElse { RestoredForm(form = defaultForm, fromSnapshot = false) }
         }
+
+        /** [readFormSnapshotOrDefault]의 폼과 실제 복원 성공 여부. */
+        private data class RestoredForm(
+            val form: EditorFormState,
+            val fromSnapshot: Boolean,
+        )
 
         /** [EditorFormSnapshot] 직렬화. 실패 시 무시한다(용량 초과 등은 [EditorFormSnapshot] KDoc 참고). */
         private fun persistFormSnapshot(form: EditorFormState) {
@@ -814,10 +843,15 @@ internal class AfternoteEditorViewModel
                             // skeleton 종료는 UI 가 prefill 적용을 마친 뒤 [AfternoteEditorIntent.ConsumePrefill] 로 통보한다
                             // (uiState 갱신 시점에 prefill 도착했어도 UI 가 form·TextFieldState 에 반영하기 전이라
                             //  여기서 끄면 skeleton 사라짐 → 빈 폼 → prefill 깜빡임 발생).
+                            //
+                            // 복원된 편집이 있으면 프리필을 싣지 않는다 (#1732). 서버 조회는 유지한다.
+                            // 기준 스냅샷([AfternoteEditorUiState.updateBaseline])이 없으면 저장이 막히고, 카테고리도
+                            // 서버가 아는 값이어야 한다. 복원된 입력에 대한 덮어쓰기만 생략한다.
                             dispatch(
                                 AfternoteEditorReducerEvent.PrefillLoaded(
                                     prefill = prefill,
                                     baseline = AfternoteEditorFormMapper.buildUpdateBaseline(detail),
+                                    preserveRestoredForm = restoredFromSeededSnapshot,
                                 ),
                             )
                         }.onFailure { e ->
