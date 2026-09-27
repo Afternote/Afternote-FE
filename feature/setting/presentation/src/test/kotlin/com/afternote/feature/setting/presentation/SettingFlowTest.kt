@@ -2,6 +2,7 @@ package com.afternote.feature.setting.presentation
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -9,9 +10,10 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.domain.testing.FakeAuthRepository
-import com.afternote.core.domain.testing.FakeUserRepository
-import com.afternote.core.model.user.Receiver
+import com.afternote.core.domain.testing.FakeMyProfileRepository
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
+import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
 import com.afternote.feature.setting.presentation.home.SettingScreen
 import com.afternote.feature.setting.presentation.home.SettingViewModel
 import com.afternote.feature.setting.presentation.notification.PushNotificationViewModel
@@ -33,8 +35,7 @@ class SettingFlowTest {
     @Test
     fun profileAndSecurityEntries_emitExpectedNavigation() {
         val auth = settingFlowAuthRepository(loggedIn = true)
-        val user = settingFlowUserRepository()
-        val viewModel = SettingViewModel(auth, user)
+        val viewModel = settingViewModel(auth)
         var destination: String? = null
 
         setSettingContent(
@@ -54,8 +55,7 @@ class SettingFlowTest {
     @Test
     fun logout_cancelThenConfirm_callsRepositoryExactlyOnce() {
         val auth = settingFlowAuthRepository(loggedIn = true)
-        val user = settingFlowUserRepository()
-        val viewModel = SettingViewModel(auth, user)
+        val viewModel = settingViewModel(auth)
         var navigationCalls = 0
 
         setSettingContent(
@@ -78,29 +78,29 @@ class SettingFlowTest {
 
     @Test
     fun destructiveDelete_isNotCalledUntilViewModelCommand() {
-        val user = settingFlowUserRepository()
-        val viewModel = SettingViewModel(settingFlowAuthRepository(loggedIn = true), user)
+        val account = settingFlowAccountRepository()
+        val viewModel = settingViewModel(settingFlowAuthRepository(loggedIn = true), account = account)
         composeRule.setContent { AfternoteTheme {} }
 
-        assertEquals(0, user.deleteAccountCalls)
+        assertEquals(0, account.deleteAccountCalls)
         composeRule.runOnIdle { viewModel.deleteAccount() }
-        composeRule.waitUntil(timeoutMillis = 5_000) { user.deleteAccountCalls == 1 }
+        composeRule.waitUntil(timeoutMillis = 5_000) { account.deleteAccountCalls == 1 }
 
-        assertEquals(1, user.deleteAccountCalls)
+        assertEquals(1, account.deleteAccountCalls)
     }
 
     @Test
     fun pushToggle_failure_rollsBackAndSendsExactPatchOnce() {
-        val user = settingFlowUserRepository()
+        val notification = settingFlowNotificationRepository()
         val pushSettingUpdateResults = ArrayDeque<Result<com.afternote.core.model.user.UserPushSetting>>()
         pushSettingUpdateResults.addLast(Result.failure(IllegalStateException("offline")))
-        user.onUpdateMyPushSettings = { _, _, _ ->
+        notification.onUpdateMyPushSettings = { _, _, _ ->
             requireNotNull(pushSettingUpdateResults.removeFirstOrNull()) { "push setting 응답이 준비되지 않음" }.getOrThrow()
         }
         val viewModel =
             PushNotificationViewModel(
                 context = ApplicationProvider.getApplicationContext(),
-                userRepository = user,
+                notificationRepository = notification,
                 errorReporter = NoOpErrorReporter,
             )
         composeRule.setContent { AfternoteTheme {} }
@@ -111,12 +111,43 @@ class SettingFlowTest {
             viewModel.uiState.value.isNewsletterOn
         }
 
-        assertEquals(listOf(Triple(false, null, null)), user.pushSettingUpdates)
+        assertEquals(listOf(Triple(false, null, null)), notification.pushSettingUpdates)
+    }
+
+    @Test
+    fun profileShortcuts_showSupportFeedbackAndKeepExistingNavigation() {
+        val viewModel = settingViewModel(settingFlowAuthRepository(loggedIn = true))
+        val destinations = mutableListOf<String>()
+        setSettingContent(
+            viewModel = viewModel,
+            onNotice = { destinations += "notice" },
+            onRecipientList = { destinations += "recipient-list" },
+        )
+        val resources = ApplicationProvider.getApplicationContext<android.content.Context>().resources
+
+        composeRule
+            .onNode(
+                hasContentDescription(resources.getString(R.string.setting_support_inquiry)) and hasClickAction(),
+            ).performClick()
+        composeRule.onNodeWithText("현재 이 메뉴는 이용할 수 없습니다.").assertIsDisplayed()
+        assertEquals(emptyList<String>(), destinations)
+        composeRule.onNodeWithText("확인").performClick()
+        composeRule.onNodeWithText("현재 이 메뉴는 이용할 수 없습니다.").assertDoesNotExist()
+
+        composeRule
+            .onNode(
+                hasContentDescription(resources.getString(R.string.setting_support_notice)) and hasClickAction(),
+            ).performClick()
+        composeRule
+            .onNode(
+                hasContentDescription(resources.getString(R.string.setting_recipient_list)) and hasClickAction(),
+            ).performClick()
+        assertEquals(listOf("notice", "recipient-list"), destinations)
     }
 
     @Test
     fun unavailableMenus_showFeedbackAndKeepSettingsUsable() {
-        val viewModel = SettingViewModel(settingFlowAuthRepository(loggedIn = true), settingFlowUserRepository())
+        val viewModel = settingViewModel(settingFlowAuthRepository(loggedIn = true))
         var profileOpened = false
         setSettingContent(viewModel = viewModel, onProfileEdit = { profileOpened = true })
         val resources = ApplicationProvider.getApplicationContext<android.content.Context>().resources
@@ -130,7 +161,12 @@ class SettingFlowTest {
                 R.string.setting_support_service_info,
             )
         menuIds.forEach { menuId ->
-            composeRule.onNode(hasText(resources.getString(menuId)) and hasClickAction()).performScrollTo().performClick()
+            val label = resources.getString(menuId)
+            composeRule
+                .onNode(
+                    hasText(label) and hasClickAction() and !hasContentDescription(label),
+                ).performScrollTo()
+                .performClick()
             composeRule.onNodeWithText("현재 이 메뉴는 이용할 수 없습니다.").assertIsDisplayed()
             composeRule.onNodeWithText("확인").performClick()
         }
@@ -138,11 +174,18 @@ class SettingFlowTest {
         assertEquals(true, profileOpened)
     }
 
+    private fun settingViewModel(
+        auth: FakeAuthRepository,
+        account: FakeSettingAccountRepository = settingFlowAccountRepository(),
+    ): SettingViewModel = SettingViewModel(auth, settingFlowProfileRepository(), account)
+
     private fun setSettingContent(
         viewModel: SettingViewModel,
         onLogoutSuccess: () -> Unit = {},
         onProfileEdit: () -> Unit = {},
         onAppLock: () -> Unit = {},
+        onNotice: () -> Unit = {},
+        onRecipientList: () -> Unit = {},
     ) {
         composeRule.setContent {
             AfternoteTheme {
@@ -152,12 +195,12 @@ class SettingFlowTest {
                     onProfileEditClick = onProfileEdit,
                     onLinkedAccountClick = {},
                     onNotificationClick = {},
-                    onRecipientListClick = {},
+                    onRecipientListClick = onRecipientList,
                     onRecipientRegisterClick = {},
                     onDeliveryConditionsClick = {},
                     onPasskeyClick = {},
                     onAppLockClick = onAppLock,
-                    onNoticeClick = {},
+                    onNoticeClick = onNotice,
                     onWithdrawGuideClick = {},
                     viewModel = viewModel,
                 )
@@ -178,18 +221,22 @@ private fun settingFlowAuthRepository(loggedIn: Boolean): FakeAuthRepository =
         onLogout = null
     }
 
-private fun settingFlowUserRepository(): FakeUserRepository =
-    FakeUserRepository.strict().apply {
-        receiverState.value = listOf(Receiver(7L, "김수신", "가족"))
-        onReceiverListFlow = null
-        onGetReceivers = null
-        onCreateReceiver = null
+private fun settingFlowProfileRepository(): FakeMyProfileRepository =
+    FakeMyProfileRepository.strict().apply {
         onGetMyProfile = null
         onUpdateMyProfile = null
+    }
+
+private fun settingFlowAccountRepository(): FakeSettingAccountRepository =
+    FakeSettingAccountRepository.strict().apply {
         onDeleteAccount = null
+        onGetConnectedAccounts = null
+    }
+
+private fun settingFlowNotificationRepository(): FakeSettingNotificationRepository =
+    FakeSettingNotificationRepository.strict().apply {
         onGetMyPushSettings = null
         onUpdateMyPushSettings = null
         onGetMyMarketingConsents = null
         onUpdateMyMarketingConsents = null
-        onGetConnectedAccounts = null
     }

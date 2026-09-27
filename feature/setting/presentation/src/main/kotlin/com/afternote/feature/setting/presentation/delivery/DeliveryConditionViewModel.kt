@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.model.delivery.ConditionState
 import com.afternote.core.model.delivery.DeliveryConditionItem
 import com.afternote.core.model.delivery.DeliveryConditionType
@@ -27,7 +27,7 @@ class DeliveryConditionViewModel
     @Inject
     constructor(
         savedStateHandle: SavedStateHandle,
-        private val userRepository: UserRepository,
+        private val receiverRepository: UserReceiverRepository,
     ) : ViewModel() {
         private val receiverId = savedStateHandle.toRoute<SettingRoute.AfterDeliveryRoute>().receiverId
 
@@ -44,7 +44,7 @@ class DeliveryConditionViewModel
         private fun loadDeliveryConditions() {
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true) }
-                runCatchingCancellable { userRepository.getReceiverDeliveryConditions(receiverId) }
+                runCatchingCancellable { receiverRepository.getReceiverDeliveryConditions(receiverId) }
                     .onSuccess { response ->
                         val representative =
                             response.conditions.firstOrNull {
@@ -109,7 +109,7 @@ class DeliveryConditionViewModel
             viewModelScope.launch {
                 _uiState.update { it.copy(isSaving = true) }
                 runCatchingCancellable {
-                    userRepository.updateReceiverDeliveryConditions(receiverId, updatedConditions)
+                    receiverRepository.updateReceiverDeliveryConditions(receiverId, updatedConditions)
                 }.onSuccess { response ->
                     _uiState.update { it.copy(isSaving = false, conditions = response.conditions) }
                     _saveSuccess.send(Unit)

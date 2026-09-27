@@ -10,7 +10,10 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 
-/** 열람 신청 entry가 소유하는 발신자 키와 기존 본인 확인 캐시 관문. */
+/**
+ * 열람 신청 entry가 소유하는 발신자 키와 기존 본인 확인 캐시 관문.
+ * [ReceiverRoute.DeliveryVerificationFlowRoute]를 assisted 주입으로 받아 로컬 단계 화면이 같은 상태를 공유한다.
+ */
 @HiltViewModel(assistedFactory = DeliveryVerificationFlowViewModel.Factory::class)
 internal class DeliveryVerificationFlowViewModel
     @AssistedInject

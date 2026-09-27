@@ -143,27 +143,35 @@ internal class UserReceiverRepositoryImpl
                 .requireData()
                 .toDomain()
 
+        /**
+         * 등록과 마찬가지로 성공한 뒤에만 목록 revision 을 올린다 (#2127). 이름·관계가 목록에 그대로
+         * 실리므로, 올리지 않으면 수정하고 목록으로 돌아온 구독자가 옛 값을 계속 보여준다.
+         */
         override suspend fun updateReceiver(
             receiverId: Long,
             name: String,
             phone: String,
             relation: String,
             email: String,
-        ): Receiver =
-            mapReceiverRequestFailure {
-                userApiService
-                    .updateReceiver(
-                        receiverId = receiverId,
-                        request =
-                            UserPatchReceiverRequestDto(
-                                name = name,
-                                phone = phone,
-                                relation = relation,
-                                email = email,
-                            ),
-                    ).requireData()
-                    .toDomain()
-            }
+        ): Receiver {
+            val updated =
+                mapReceiverRequestFailure {
+                    userApiService
+                        .updateReceiver(
+                            receiverId = receiverId,
+                            request =
+                                UserPatchReceiverRequestDto(
+                                    name = name,
+                                    phone = phone,
+                                    relation = relation,
+                                    email = email,
+                                ),
+                        ).requireData()
+                        .toDomain()
+                }
+            receiverRefreshRevision.update { it + 1 }
+            return updated
+        }
 
         override suspend fun updateReceiverMessage(
             receiverId: Long,

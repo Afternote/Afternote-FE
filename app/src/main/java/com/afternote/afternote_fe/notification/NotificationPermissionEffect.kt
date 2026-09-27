@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.afternote_fe.R
 import kotlinx.coroutines.launch
@@ -32,7 +33,7 @@ import kotlinx.coroutines.launch
  * 같은 목적지를 갖고 있어, 새 안내 화면을 만드는 대신 그 경로로 잇는다.
  */
 @Composable
-fun NotificationPermissionEffect(
+internal fun NotificationPermissionEffect(
     snackbarHostState: SnackbarHostState,
     viewModel: NotificationPermissionViewModel = hiltViewModel(),
 ) {
@@ -40,14 +41,21 @@ fun NotificationPermissionEffect(
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val shouldRequest by viewModel.shouldRequest.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val deniedMessage = stringResource(R.string.notification_permission_denied_message)
     val deniedActionLabel = stringResource(R.string.notification_permission_denied_action)
+
+    LifecycleStartEffect(viewModel) {
+        viewModel.onIntent(NotificationPermissionIntent.ObservationStarted)
+        onStopOrDispose {
+            viewModel.onIntent(NotificationPermissionIntent.ObservationStopped)
+        }
+    }
 
     val launcher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             // 허용이든 거부든 물었다는 사실은 남긴다 — 매 실행마다 다시 묻지 않기 위해서다.
-            viewModel.markRequested()
+            viewModel.onIntent(NotificationPermissionIntent.RecordRequest)
             if (isGranted) return@rememberLauncherForActivityResult
 
             scope.launch {
@@ -66,8 +74,8 @@ fun NotificationPermissionEffect(
             }
         }
 
-    LaunchedEffect(shouldRequest) {
-        if (!shouldRequest) return@LaunchedEffect
+    LaunchedEffect(uiState.shouldRequest) {
+        if (!uiState.shouldRequest) return@LaunchedEffect
 
         val alreadyGranted =
             ContextCompat.checkSelfPermission(
@@ -76,7 +84,7 @@ fun NotificationPermissionEffect(
             ) == PackageManager.PERMISSION_GRANTED
         if (alreadyGranted) {
             // 사용자가 시스템 설정에서 먼저 켠 경우. 물을 이유가 없으므로 기록만 남기고 끝낸다.
-            viewModel.markRequested()
+            viewModel.onIntent(NotificationPermissionIntent.RecordRequest)
             return@LaunchedEffect
         }
 
