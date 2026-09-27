@@ -23,8 +23,8 @@ private inline fun EditorFormState.mapServiceForm(
 }
 
 /**
- * 같은 카테고리를 다시 고르면 아무것도 하지 않는다. 드롭다운 재선택뿐 아니라 프로세스 데스 복원 후
- * `LaunchedEffect(route.initialType)` 재발화가 이 경로를 타므로, 가드가 없으면 복원된 입력이 지워진다.
+ * 같은 카테고리를 다시 고르면 아무것도 하지 않는다. 가드가 없으면 드롭다운에서 지금 카테고리를
+ * 다시 고르기만 해도 입력이 지워진다.
  */
 internal fun EditorFormState.withType(type: AfternoteType): EditorFormState =
     if (typeForm.type == type) this else copy(typeForm = AfternoteTypeForm.pristineFor(type))

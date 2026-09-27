@@ -304,6 +304,8 @@ dependencies {
     androidTestImplementation(libs.coroutines.test)
     androidTestImplementation(projects.core.data)
     androidTestImplementation(testFixtures(projects.core.domain))
+    // 실제 화면에서 잰 48dp 터치 계약 판정을 피처 테스트와 같은 스캐너로 공유한다 (#2035).
+    androidTestImplementation(testFixtures(projects.core.ui))
     androidTestImplementation(projects.feature.afternote.domain)
     androidTestImplementation(testFixtures(projects.feature.afternote.domain))
     androidTestImplementation(projects.feature.mindrecord.domain)

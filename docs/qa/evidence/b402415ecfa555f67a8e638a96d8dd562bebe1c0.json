@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "b402415ecfa555f67a8e638a96d8dd562bebe1c0.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": "not_covered",
+      "recorded_at": "recorded_at"
+    },
+    "redactions": []
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "b402415ecfa555f67a8e638a96d8dd562bebe1c0",
+  "head_ref": "fix/1868-upload-size-feedback",
+  "base_sha": null,
+  "base_ref": null,
+  "recorded_at": "2026-09-23T06:20:00+00:00",
+  "result": "fail",
+  "scenario": "3차 QA 실기기 패스(갤럭시 S25). 기기 고유 축만 돌렸다. 1) 카카오 앱-투-앱 로그인(#2120 head 2c7295c3a debug, 공유 debug keystore 서명): TalkAuthCodeActivity -> 카카오톡 CapriLoggedInActivity -> 앱 복귀, 웹 폴백 없음. 2) 10 MiB 초과 사진(8160x6120, 17,279,369 B): 애프터노트 추억 노트 영정사진 등록 시 presigned 400 code 1803 과 함께 '파일 크기가 업로드 허용 한도를 초과했습니다.' 스낵바, 재시도 액션 없음(#2119 의도대로). 마음의 기록 이미지 첨부는 여전히 '다시 시도해 주세요'(#1868 의 그 경로는 #2119 범위 밖). 대조군 3,776,479 B 는 presigned 200·S3 PUT 200. 3) 하드웨어 Keystore: 패스키 등록 때 afternote_biometric_gate 키가 TRUSTED_ENVIRONMENT 에 생성되고 지문 auth token 뒤 연산 성사. 노트 탭 지문 게이트도 인증 뒤 목록 200. 패스키 목록은 자리표시자 한 줄(#555). 4) 삼성 키보드 한글 입력: 마음의 기록 본문에 사람이 직접 친 '오늘은 날씨가 맑았다 ㅎㅎ' 가 누락·중복 없이 들어가고 글자 수 14 가 조합 중 글자까지 맞는다. 5) S25 글자 70%(density 420, font_scale 0.8): 주요 5개 화면 잘림·겹침 없음. 6) predictive back(제스처 내비게이션, 가장자리 스와이프를 도중에 멈춘 상태 캡처): 앞 화면은 축소되지만 배경이 투명해 뒤 화면 글자가 비친다(#2145 등록, #2058 이후 남은 몫). 새로 등록: #2143(4:3 사진이 원형 프로필에서 위아래 잘림, ProfileImage 에 contentScale 없음), #2144(마음의 기록 작성 중 뒤로가기가 확인 없이 내용 폐기), #2145.",
+  "not_covered": [
+    "release(minify) 산출물은 origin/main 이 f5ad611 에서 움직이지 않아 이번에 다시 돌리지 않았다(0904 기록 f5ad611 참조).",
+    "predictive back 은 motionevent 로 멈춘 상태를 흉내 냈고 사람 손가락 제스처로는 보지 않았다.",
+    "삼성 키보드는 한 문장만 봤고 자동완성·붙여넣기는 보지 않았다."
+  ],
+  "device": {
+    "is_emulator": false
+  },
+  "details": {
+    "details": {
+      "screen": {
+        "size": "1080x2340",
+        "density": 420,
+        "physical_density": 480,
+        "font_scale": 0.8
+      },
+      "api_level": 36,
+      "build_type": "debug",
+      "issues_commented": [
+        2119
+      ],
+      "issues_reproduced": [
+        555,
+        1868
+      ],
+      "issues_filed": [
+        2143,
+        2144,
+        2145
+      ]
+    }
+  }
+}

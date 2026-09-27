@@ -1,8 +1,8 @@
 package com.afternote.feature.onboarding.presentation.findaccount
 
-import android.util.Patterns
 import com.afternote.core.model.FoundAccount
 import com.afternote.core.ui.mvi.UiState
+import com.afternote.feature.onboarding.presentation.OnboardingEmailRule
 import com.afternote.feature.onboarding.presentation.OnboardingFailure
 
 /**
@@ -27,13 +27,9 @@ internal data class FindIdUiState(
     val foundAccount: FoundAccount? = null,
     val failure: OnboardingFailure? = null,
 ) : UiState {
-    /**
-     * 이메일 형식 검사. [Patterns.EMAIL_ADDRESS] 는 컴파일된 정규식(`Pattern`) 상수라
-     * `matcher(입력)` 으로 그 문자열 전용 실행기를 만든 뒤 `matches()`(**전체 일치** — 부분 검색
-     * `find()` 와 다름) 로 판정하는 Java regex 2단계 API 를 쓴다. 회원가입과 동일 방식.
-     */
+    /** 이메일 형식 검사 — 세 온보딩 화면이 [OnboardingEmailRule] 하나를 쓴다 (#1851). */
     val isEmailFormatValid: Boolean
-        get() = email.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(email).matches()
+        get() = OnboardingEmailRule.isValid(email)
 
     /** 인증번호 발송/재발송 가능 여부. 쿨다운 중이거나 이메일 형식이 틀리면 막는다. */
     val isSendCodeEnabled: Boolean

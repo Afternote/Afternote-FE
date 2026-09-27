@@ -11,7 +11,6 @@ data class Receiver(
     val receiverId: Long,
     val name: String,
     val relation: String,
-    val authCode: String,
 )
 
 data class ReceiverDetail(

@@ -1,13 +1,13 @@
 // AGP 9.3.2·Firebase App Distribution 5.3.0 이 buildscript classpath 로 끌어오는 전이 의존성 중
-// 보안 권고 영향권인 것들의 하한(#921·#975~#985). 루트 classpath 는 plugins 블록 처리 시점에
+// 보안 권고 영향권인 것들의 하한(#975~#985·#2132). 루트 classpath 는 plugins 블록 처리 시점에
 // 리졸브가 끝나 아래 본문 훅으로는 늦고, buildscript 블록에서는 버전 카탈로그 accessor 를 쓸 수 없다
 // — libs.versions.toml 의 같은 이름 버전과 값을 맞춰 유지할 것.
 buildscript {
     dependencies {
         constraints {
             listOf("bcprov-jdk18on", "bcpkix-jdk18on", "bcutil-jdk18on").forEach { artifact ->
-                add("classpath", "org.bouncycastle:$artifact:1.84") {
-                    because("GHSA-574f-3g2m-x479 등 1.84 미만 취약 — #921")
+                add("classpath", "org.bouncycastle:$artifact:1.85") {
+                    because("GHSA-9pwp-9qqc-pr26·GHSA-qp49-qgx5-5m26 — 1.85 미만 취약 — #2132")
                 }
             }
             add("classpath", "org.apache.commons:commons-lang3:3.18.0") {
@@ -53,7 +53,7 @@ plugins {
     alias(libs.plugins.firebase.crashlytics) apply false
 }
 
-// 빌드·테스트 클래스패스의 보안 하한(#921·#975~#985·#1058·#1072·#1262). 상류가 취약 버전을 물고 있고 상류
+// 빌드·테스트 클래스패스의 보안 하한(#975~#985·#1058·#1072·#1262·#2132). 상류가 취약 버전을 물고 있고 상류
 // 최신판도 아직 패치 버전 미만이라 constraint 로 올린다 — Robolectric 4.15.1(bcprov 1.80)·AGP
 // 9.3.2(bcprov 1.79·commons-lang3 3.16.0·jose4j 0.9.5·jdom2 2.0.6)·Firebase App Distribution 5.3.0
 // 과 AGP UTP 설정(netty — unified-test-platform-core 가 4.1.93, -host-emulator-control 이 4.1.110)
@@ -75,7 +75,7 @@ val securityFloors =
         SecurityFloor(
             module = "org.bouncycastle:$artifact",
             version = libs.versions.bouncycastle.get(),
-            because = "GHSA-574f-3g2m-x479 등 1.84 미만 취약 — #921",
+            because = "GHSA-9pwp-9qqc-pr26·GHSA-qp49-qgx5-5m26 — 1.85 미만 취약 — #2132",
         )
     } +
         listOf(
