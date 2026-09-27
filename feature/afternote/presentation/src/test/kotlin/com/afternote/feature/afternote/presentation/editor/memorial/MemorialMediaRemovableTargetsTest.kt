@@ -27,7 +27,7 @@ class MemorialMediaRemovableTargetsTest {
                     photo = EditableMemorialPhoto.fromSnapshot(photoUrl, pickedPhotoUri),
                     video =
                         EditableMemorialVideo
-                            .fromPersisted(MemorialVideoAttachment.ofOrNull(persistedVideoUrl))
+                            .fromServer(MemorialVideoAttachment.ofOrNull(persistedVideoUrl))
                             .let { video -> selectedVideoUrl?.let(video::withSelection) ?: video },
                 ),
         )

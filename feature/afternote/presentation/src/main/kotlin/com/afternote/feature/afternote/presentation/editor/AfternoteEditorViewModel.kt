@@ -60,9 +60,8 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v5"
+private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v6"
 private const val INITIALIZED_ACTION_TEMPLATE_TYPE_KEY = "initialized_action_template_type"
-private const val PREFILL_SEEDED_ITEM_ID_KEY = "editor_prefill_seeded_item_id"
 
 private const val TAG = "AfternoteEditorViewModel"
 
@@ -85,10 +84,10 @@ private data class ProcessingMethodSnap(
  * 사진 값 객체는 기존 `pickedMemorialPhotoUri`·`memorialPhotoUrl` 두 키로 변환해 사진 필드의 JSON 호환성을 유지한다.
  *
  * **wire 형태는 키에 박힌 버전과 함께 움직인다.** [EditableMemorialVideo]가 sealed 로 바뀌면서(#1901)
- * `memorialVideo` 가 `{"persisted":…,"selection":…}` 에서 판별자가 붙은 `{"type":"replaced",…}` 로 달라졌다.
- * 옛 payload 를 새 코드가 읽으면 복원이 실패해 폼이 기본값으로 돌아가므로, 키를 `editor_form_snapshot_v5` 로
- * 올려 옛 스냅샷을 아예 찾지 않게 했다. 앞으로도 이 클래스나 그 필드 타입의 wire 형태를 바꾸면 키의 버전을
- * 함께 올린다.
+ * `memorialVideo` 에 판별자가 붙었고(v5), 상태가 넷에서 셋으로 줄면서(#2114) 판별자 값이
+ * `no_video · uploaded · pending_upload` 로 바뀌었다(v6). 옛 payload 를 새 코드가 읽으면 복원이 실패해 폼이
+ * 기본값으로 돌아가므로, 키를 `editor_form_snapshot_v6` 으로 올려 옛 스냅샷을 아예 찾지 않게 했다. 앞으로도
+ * 이 클래스나 그 필드 타입의 wire 형태를 바꾸면 키의 버전을 함께 올린다.
  */
 @Serializable
 private data class EditorFormSnapshot(
@@ -194,41 +193,6 @@ internal class AfternoteEditorViewModel
                 encodeDefaults = true
             }
 
-        /**
-         * 스냅샷 복원 결과. **「키가 있는가」가 아니라 「실제로 복원됐는가」를 들고 있다.**
-         *
-         * [readFormSnapshotOrDefault] 는 디코딩 실패를 삼켜 빈 기본 폼으로 떨어진다. 키 존재만 보면
-         * 「표식 있음 + 문자열 있음 + 디코딩 실패」 조합에서 가드가 참이 되어 프리필이 막히고,
-         * 빈 폼이 새 기준 스냅샷과 짝지어져 아래 KDoc 이 피하겠다고 적은 「전부 지움」 저장이 된다.
-         */
-        private val restoredForm: RestoredForm = readFormSnapshotOrDefault()
-
-        /**
-         * 이 ViewModel 이 «상세 프리필이 이미 실렸던» 폼 스냅샷에서 되살아났는가 (#1732).
-         *
-         * 참이면 복원된 폼은 서버 값 + 사용자가 그 뒤에 고친 것을 함께 들고 있다 — 프로세스 사망
-         * 복원은 [EDITOR_FORM_SNAPSHOT_KEY] 의 폼뿐 아니라 화면이 가진 계정 정보·남기실 말씀
-         * 입력까지 (`rememberTextFieldState`·`rememberSaveable`) 같은 번들로 되살리기 때문이다.
-         * 그 위에 [loadExistingAfternoteForEdit] 의 재조회 프리필을 다시 실으면 남는 건 서버 값뿐이라,
-         * 사용자가 쓴 편집이 아무 안내 없이 사라진다.
-         *
-         * 두 조건을 함께 본다. 표식만으로는 부족하다 — [persistFormSnapshot] 은 번들 용량 초과 같은
-         * 실패를 삼키므로, 표식은 남았는데 폼 스냅샷이 없는 조합이 가능하다. 그때 프리필까지 막으면
-         * 빈 폼이 기준 스냅샷과 짝지어져 「전부 지움」 저장이 된다 (#705·#1617 이 막은 그 경로다).
-         *
-         * **그래서 「키가 있는가」가 아니라 「복원됐는가」([RestoredForm.fromSnapshot])를 본다.**
-         * 문자열이 남아 있어도 디코딩이 실패하면 폼은 빈 기본값이므로, 키 존재로 판정하면 위 조합을
-         * 그대로 통과시킨다 — 스키마가 바뀌는 순간(키 접미사를 올리지 않은 채) 열리는 잠복 경로다.
-         *
-         * 폼과 프리필의 값 비교로 대신하지 않는다. 계정 정보·남기실 말씀은 화면이 소유해 이 폼에
-         * 없으므로, 비밀번호만 고친 복원은 «폼이 같다» 로 읽혀 그 편집이 그대로 덮인다.
-         */
-
-        private val restoredFromSeededSnapshot: Boolean =
-            route.itemId != null &&
-                restoredForm.fromSnapshot &&
-                savedStateHandle.get<Long>(PREFILL_SEEDED_ITEM_ID_KEY) == route.itemId
-
         val isEditing: Boolean get() = route.itemId != null
 
         override fun onIntent(intent: AfternoteEditorIntent) {
@@ -291,7 +255,6 @@ internal class AfternoteEditorViewModel
                 }
 
                 is AfternoteEditorIntent.ApplyPrefill -> {
-                    readEditItemId()?.let { savedStateHandle[PREFILL_SEEDED_ITEM_ID_KEY] = it }
                     dispatchForm(AfternoteEditorReducerEvent.PrefillApplied(intent.prefill))
                 }
 
@@ -499,9 +462,7 @@ internal class AfternoteEditorViewModel
                 is AfternoteEditorReducerEvent.PrefillLoaded -> {
                     state.copy(
                         originalType = event.prefill.type,
-                        pendingPrefill = if (event.preserveRestoredForm) null else event.prefill,
-                        isPrefillLoading =
-                            state.isPrefillLoading && !event.preserveRestoredForm,
+                        pendingPrefill = event.prefill,
                         updateBaseline = event.baseline,
                     )
                 }
@@ -542,7 +503,7 @@ internal class AfternoteEditorViewModel
         init {
             dispatch(
                 AfternoteEditorReducerEvent.Initialized(
-                    restoredForm.form,
+                    readFormSnapshotOrDefault(),
                     route.initialType.takeIf { route.itemId != null },
                     readEditItemId() != null,
                 ),
@@ -552,34 +513,15 @@ internal class AfternoteEditorViewModel
 
         private fun readEditItemId(): Long? = route.itemId
 
-        /**
-         * 저장된 폼 스냅샷을 읽는다.
-         *
-         * **복원 성공 여부를 함께 돌려준다.** 실패를 기본 폼으로 삼키기만 하면 호출부가 「빈 폼으로
-         * 떨어졌다」와 「원래 빈 폼이었다」를 못 가른다 — [restoredFromSeededSnapshot] 이 그 차이로
-         * 갈리므로 여기서 알려 줘야 한다.
-         */
-        private fun readFormSnapshotOrDefault(): RestoredForm {
+        private fun readFormSnapshotOrDefault(): EditorFormState {
             val defaultForm = EditorFormState().withType(route.initialType)
-            val raw =
-                savedStateHandle.get<String>(EDITOR_FORM_SNAPSHOT_KEY)
-                    ?: return RestoredForm(form = defaultForm, fromSnapshot = false)
+            val raw = savedStateHandle.get<String>(EDITOR_FORM_SNAPSHOT_KEY) ?: return defaultForm
             return runCatching {
-                RestoredForm(
-                    form =
-                        formSnapshotJson
-                            .decodeFromString(EditorFormSnapshot.serializer(), raw)
-                            .toEditorFormState(),
-                    fromSnapshot = true,
-                )
-            }.getOrElse { RestoredForm(form = defaultForm, fromSnapshot = false) }
+                formSnapshotJson
+                    .decodeFromString(EditorFormSnapshot.serializer(), raw)
+                    .toEditorFormState()
+            }.getOrElse { defaultForm }
         }
-
-        /** [readFormSnapshotOrDefault] 의 결과 — 폼과 «그 폼이 스냅샷에서 왔는가». */
-        private data class RestoredForm(
-            val form: EditorFormState,
-            val fromSnapshot: Boolean,
-        )
 
         /** [EditorFormSnapshot] 직렬화. 실패 시 무시한다(용량 초과 등은 [EditorFormSnapshot] KDoc 참고). */
         private fun persistFormSnapshot(form: EditorFormState) {
@@ -592,9 +534,11 @@ internal class AfternoteEditorViewModel
         /**
          * 작성자가 등록한 수신자 전체를 받아 [AfternoteEditorUiState.authorReceivers] 에 채운다.
          *
-         * 신규 작성 진입 시 1회 호출된다. 폼이 비어 있으면 화면이 이 목록으로 수신자를 채우고
-         * (`AfternoteNavGraphEditor` 의 `replaceReceiversIfEmpty`), 사용자는 불필요한 수신자를 지운다.
-         * 수정 진입은 상세 응답 prefill 이 지정 수신자를 채우므로 이 목록을 쓰지 않는다.
+         * 에디터 화면이 컴포지션에 들어올 때마다(수신자 선택 화면에서 돌아올 때 포함) 호출된다. 신규 작성에서
+         * 폼이 비어 있으면 화면이 이 목록으로 수신자를 채우고
+         * (`AfternoteEditorNavigation` 의 `AfternoteEditorIntent.ReplaceReceiversIfEmpty`), 사용자는 불필요한 수신자를 지운다.
+         * 수정 진입은 상세 응답 prefill 이 지정 수신자를 채우므로 빈 폼 채우기에는 이 목록을 쓰지 않는다.
+         * 선택 화면이 돌려준 새 id 를 해석할 때([resolveSelectedReceiver])는 작성·수정 모두 이 목록을 쓴다.
          */
         private fun refreshAuthorReceivers() {
             viewModelScope.launch { loadAuthorReceivers() }
@@ -870,15 +814,10 @@ internal class AfternoteEditorViewModel
                             // skeleton 종료는 UI 가 prefill 적용을 마친 뒤 [AfternoteEditorIntent.ConsumePrefill] 로 통보한다
                             // (uiState 갱신 시점에 prefill 도착했어도 UI 가 form·TextFieldState 에 반영하기 전이라
                             //  여기서 끄면 skeleton 사라짐 → 빈 폼 → prefill 깜빡임 발생).
-                            //
-                            // 복원된 편집이 있으면 프리필을 싣지 않는다 (#1732). 조회 자체는 그대로 돈다 —
-                            // 기준 스냅샷([AfternoteEditorUiState.updateBaseline])이 없으면 저장이 막히고, 카테고리도
-                            // 서버가 아는 값이어야 한다. 막는 것은 «폼에 덮어쓰기» 하나다.
                             dispatch(
                                 AfternoteEditorReducerEvent.PrefillLoaded(
                                     prefill = prefill,
                                     baseline = AfternoteEditorFormMapper.buildUpdateBaseline(detail),
-                                    preserveRestoredForm = restoredFromSeededSnapshot,
                                 ),
                             )
                         }.onFailure { e ->

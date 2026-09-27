@@ -117,28 +117,12 @@ internal object AfternoteEditorFormMapper {
         memorialPhotoUrl: String? = null,
         memorialVideoUrl: String? = null,
         memorialThumbnailUrl: String? = null,
-    ): MemorialWritePayload {
-        val songs =
-            playlistSongs.map { song ->
-                MemorialSongPayload(
-                    title = song.title,
-                    artist = song.artist,
-                    coverUrl = song.albumCoverUrl,
-                )
-            }
-        val memorialVideo =
-            memorialVideoUrl?.ifBlank { null }?.let { url ->
-                MemorialVideoPayload(
-                    videoUrl = url,
-                    thumbnailUrl = memorialThumbnailUrl?.ifBlank { null },
-                )
-            }
-        return MemorialWritePayload(
+    ): MemorialWritePayload =
+        MemorialWritePayload(
             memorialPhotoUrl = memorialPhotoUrl?.ifBlank { null },
-            songs = songs,
-            memorialVideo = memorialVideo,
+            songs = playlistSongs.map { it.toMemorialSongPayload() },
+            memorialVideo = memorialVideoPayload(videoUrl = memorialVideoUrl, thumbnailUrl = memorialThumbnailUrl),
         )
-    }
 
     fun buildCreateInput(
         type: AfternoteType,
@@ -446,10 +430,7 @@ internal object AfternoteEditorFormMapper {
                     leaveMessageBlocks = leaveMessageBlocks,
                     photoUrl = memorialMediaUrls.memorialPhotoUrl?.ifBlank { null },
                     video = memorialMediaUrls.toVideoPayload(),
-                    songs =
-                        playlistSongs.map { song ->
-                            MemorialSongPayload(title = song.title, artist = song.artist, coverUrl = song.albumCoverUrl)
-                        },
+                    songs = playlistSongs.map { it.toMemorialSongPayload() },
                 )
             }
 
@@ -466,14 +447,21 @@ internal object AfternoteEditorFormMapper {
     private fun RegisterAfternotePayload.toCredentialsSnapshot() =
         CredentialsSnapshot(id = accountId.ifBlank { null }, password = password.ifBlank { null })
 
+    private fun Song.toMemorialSongPayload() = MemorialSongPayload(title = title, artist = artist, coverUrl = albumCoverUrl)
+
     private fun MemorialMedia.toVideoPayload(): MemorialVideoPayload? =
-        videoUrl?.ifBlank { null }?.let { url ->
-            MemorialVideoPayload(videoUrl = url, thumbnailUrl = thumbnailUrl?.ifBlank { null })
-        }
+        memorialVideoPayload(videoUrl = videoUrl, thumbnailUrl = thumbnailUrl)
 
     private fun MemorialMediaUrls.toVideoPayload(): MemorialVideoPayload? =
-        memorialVideoUrl?.ifBlank { null }?.let { url ->
-            MemorialVideoPayload(videoUrl = url, thumbnailUrl = memorialThumbnailUrl?.ifBlank { null })
+        memorialVideoPayload(videoUrl = memorialVideoUrl, thumbnailUrl = memorialThumbnailUrl)
+
+    /** 영상 주소가 비었으면 영상 슬롯 자체가 없다. 썸네일만 남은 값은 싣지 않는다. */
+    private fun memorialVideoPayload(
+        videoUrl: String?,
+        thumbnailUrl: String?,
+    ): MemorialVideoPayload? =
+        videoUrl?.ifBlank { null }?.let { url ->
+            MemorialVideoPayload(videoUrl = url, thumbnailUrl = thumbnailUrl?.ifBlank { null })
         }
 }
 
