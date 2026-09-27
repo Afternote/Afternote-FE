@@ -67,12 +67,15 @@ data class UserDto(
     @SerialName("profileImageUrl") val profileImageUrl: String? = null,
 )
 
+/**
+ * `GET /users/receivers` 목록 항목 — 서버가 내려주는 세 필드뿐이다 (#2105).
+ * `relation` 은 DB 가 null 을 허용해 그대로 비어 온다.
+ */
 @Serializable
 data class ReceiverListDto(
     @SerialName("receiverId") val receiverId: Long,
     @SerialName("name") val name: String,
-    @SerialName("relation") val relation: String,
-    @SerialName("authCode") val authCode: String,
+    @SerialName("relation") val relation: String? = null,
 )
 
 @Serializable

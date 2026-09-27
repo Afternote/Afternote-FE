@@ -77,8 +77,15 @@ class TokenReissuer
         private var rejectedAccessToken: String? = null
         private var rejection: Outcome.AuthenticationRejected? = null
 
-        /** @param expectedAccessToken 호출자가 교체하려는 기존 액세스 토큰. */
-        fun reissue(expectedAccessToken: String): Outcome {
+        /**
+         * 같은 [expectedAccessToken] 을 본 호출자들의 재발급을 조정한다.
+         *
+         * 회전 성공 뒤 중복 재발급을 생략하고 확정 거절 결과를 공유한다.
+         * 일시 실패는 공유하지 않아 다음 호출에서 다시 시도할 수 있다.
+         *
+         * @param expectedAccessToken 호출자가 교체하려는 기존 액세스 토큰.
+         */
+        internal fun reissueOnce(expectedAccessToken: String): Outcome {
             synchronized(this) {
                 // 저장 토큰 비교보다 먼저다 — 세션 정리 뒤엔 저장 토큰이 비어 있어 아래 가드를 그냥 통과한다.
                 rejection?.let { if (expectedAccessToken == rejectedAccessToken) return it }
