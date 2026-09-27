@@ -17,6 +17,9 @@
 // 재투입 수단은 PR 이 GitHub 네이티브 스택의 일원인지로 갈린다(#2177). 스택 PR 은 GraphQL enqueuePullRequest 가
 // UNPROCESSABLE("part of a stack and must be enqueued using the asynchronous merge REST API")로 거부되므로
 // (0919 #2053, 0926 #2123 실측) REST merge-async 에 merge_action=merge_queue 로 넣는다. 판정표는 같다.
+// merge-async 는 202 pending 으로 받으므로 결과(enqueued·merged·failed)를 폴링해 확인하고, failed·미확정은 job 을
+// red 로 남긴다. 스택 위쪽 PR 은 자동 재투입하지 않는다 — merge-async 가 downstack 의 열린 PR 까지 함께 넣어
+// 아래 PR 의 판정(실패 job 이면 재투입 안 함)을 덮기 때문이다. 위쪽 PR 에는 마커 없는 안내 코멘트만 남긴다.
 
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -28,6 +31,7 @@ export const REQUEUE_MARKER_PREFIX = "<!-- merge-queue-dequeue:requeued head=";
 export const NO_ACTION_REASONS = new Set(["MANUAL", "ALREADY_MERGED", "MERGE", "MERGED"]);
 const FAILED_JOB_CONCLUSIONS = new Set(["failure", "timed_out"]);
 const QUEUE_RUNS_TO_INSPECT = 10;
+const defaultSleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function queueBranchPrefix(baseRef, number) {
     return `gh-readonly-queue/${baseRef}/pr-${number}-`;
@@ -117,12 +121,23 @@ export function renderRequeueComment({ reason, headSha }) {
     ].join("\n");
 }
 
-export function renderGiveUpComment({ reason, headSha }) {
+export function renderGiveUpComment({ reason, headSha, repository, number, stack = false }) {
     return [
         "### merge queue 방출 — 같은 head 두 번째, 재투입하지 않는다",
         "",
         `사유 \`${reason}\` · head \`${shortSha(headSha)}\`. 실패 job 은 없다.`,
         "`gh run list --event merge_group` 으로 merge group run 을 확인하고 수동으로 투입한다.",
+        `확인한 뒤 \`${manualEnqueueCommand({ repository, number, stack })}\` 로 다시 투입한다.`,
+    ].join("\n");
+}
+
+export function renderStackUpperComment({ reason, headSha, repository, number }) {
+    return [
+        "### merge queue 방출: 스택 위쪽 PR",
+        "",
+        `사유 \`${reason}\` · head \`${shortSha(headSha)}\`. 스택 위쪽 PR 이라 자동 재투입하지 않았다.`,
+        "이 PR 을 재투입하면 아래의 열린 PR 까지 큐에 다시 넣어 아래 PR 의 판정을 덮는다.",
+        `스택 밑단부터 확인한 뒤 \`${manualEnqueueCommand({ repository, number, stack: true })}\` 로 다시 투입한다.`,
     ].join("\n");
 }
 
@@ -172,7 +187,7 @@ export async function fetchLivePullRequest(api, repository, number) {
                     headRefOid
                     baseRefName
                     mergeQueueEntry { state position }
-                    stack { number }
+                    stack { number baseRefName }
                     timelineItems(last: 5, itemTypes: [ADDED_TO_MERGE_QUEUE_EVENT]) {
                         nodes { ... on AddedToMergeQueueEvent { createdAt } }
                     }
@@ -187,6 +202,11 @@ export async function fetchLivePullRequest(api, repository, number) {
 /** GitHub 네이티브 스택의 일원인가. 비스택 PR 은 stack 이 null 로 온다(0926 #2176, #2171 실측). */
 export function isStackMember(pullRequest) {
     return pullRequest?.stack != null;
+}
+
+/** 스택의 기준 브랜치를 base 로 삼는 PR 만 밑단이다(2026-09-27 #2177). */
+export function isStackBottom(pullRequest) {
+    return isStackMember(pullRequest) && pullRequest.baseRefName === pullRequest.stack.baseRefName;
 }
 
 /** 마지막으로 큐에 들어간 시각 — 그 뒤의 merge_group run 만 이번 방출의 근거다. */
@@ -239,31 +259,50 @@ export async function enqueue(api, pullRequestId) {
 
 /**
  * 스택 PR 의 큐 투입. GraphQL enqueuePullRequest 는 스택 PR 을 거부하므로 REST 비동기 머지에
- * merge_action=merge_queue 를 준다. GitHub 은 요청한 PR 과 스택에서 그 아래 PR 을 함께 큐에 넣는다.
- * sha 는 판정한 head 로 고정한다. 그 사이 새 커밋이 올라왔으면 409 로 실패하고, 새 head 는 마커 0 이라
- * 다음 방출에서 다시 판정된다. 응답 status 가 failed 면 GraphQL 오류와 같이 예외로 올려 job 을 red 로 남긴다.
+ * merge_action=merge_queue 를 준다. 요청한 PR 과 downstack 의 열린 PR 을 모두 함께 넣는다(2026-09-27 #2177).
+ * 새 요청은 202 pending 으로 받아 details.uuid 를 GET 폴링해 enqueued·merged·failed 를 확인한다.
+ * 이미 큐에 있거나 머지됐으면 200 enqueued·merged, 같은 PR 의 다른 비동기 요청이 pending 이면 409 다.
+ * sha 는 판정한 head 로 고정한다. head 가 어긋나면 요청이 거부되거나 배경에서 취소돼 failed 로 끝난다.
+ * failed 는 예외로 올리고, uuid 가 없거나 폴링 상한까지 미확정이면 live 큐 상태를 다시 확인하게 한다.
  */
-export async function enqueueStacked(api, repository, number, headSha) {
-    const result = await api(`/repos/${repository}/pulls/${number}/merge-async`, {
+export async function enqueueStacked(api, repository, number, headSha, { sleep = defaultSleep, pollIntervalMs = 5000, maxPolls = 24 } = {}) {
+    const apiPath = `/repos/${repository}/pulls/${number}/merge-async`;
+    let result = await api(apiPath, {
         method: "PUT",
         body: { merge_action: "merge_queue", sha: headSha },
     });
-    if (result?.status === "failed") {
-        throw new Error(`merge-async 실패: ${JSON.stringify(result)}`);
+    const uuid = result?.details?.uuid;
+    for (let polls = 0; ; polls += 1) {
+        if (result?.status === "enqueued" || result?.status === "merged") return result;
+        if (result?.status === "failed") {
+            throw new Error(`merge-async 실패: ${JSON.stringify(result)}`);
+        }
+        if (result?.status !== "pending" || !uuid || polls >= maxPolls) {
+            return { ...result, unresolved: true };
+        }
+        await sleep(pollIntervalMs);
+        result = await api(`${apiPath}/${uuid}`);
     }
-    return result;
 }
 
-export async function handleDequeue({ api, repository, number, reason, dryRun = false, logger = console }) {
+export async function handleDequeue({
+    api,
+    repository,
+    number,
+    reason,
+    dryRun = false,
+    logger = console,
+    sleep = defaultSleep,
+}) {
     const live = await fetchLivePullRequest(api, repository, number);
     if (!live) throw new Error(`#${number} 를 찾을 수 없습니다`);
     if (live.state !== "OPEN") {
         logger.log(`#${number} 는 ${live.state} — 아무것도 하지 않는다`);
-        return { action: "none", why: live.state };
+        return { action: "none", why: live.state, stack: live.stack?.number ?? null };
     }
     if (live.mergeQueueEntry) {
         logger.log(`#${number} 는 이미 큐에 있다(${live.mergeQueueEntry.state}) — 아무것도 하지 않는다`);
-        return { action: "none", why: "already-queued" };
+        return { action: "none", why: "already-queued", stack: live.stack?.number ?? null };
     }
 
     const headSha = live.headRefOid;
@@ -272,27 +311,42 @@ export async function handleDequeue({ api, repository, number, reason, dryRun = 
     const failedJobs = await fetchQueueFailedJobs(api, repository, { baseRef: live.baseRefName, number, since });
     const comments = await fetchComments(api, repository, number);
     const requeueCount = countRequeuesForHead(comments, headSha);
-    const action = decide({ reason, failedJobs, requeueCount });
-    logger.log(`#${number} reason=${reason} head=${shortSha(headSha)} 스택=${stack ? live.stack.number : "없음"} 마지막투입=${since ?? "?"} 실패job=${failedJobs.length} 재투입횟수=${requeueCount} → ${action}`);
+    let action = decide({ reason, failedJobs, requeueCount });
+    // 위쪽 PR 의 재투입이 아래 PR 의 실패 판정을 덮지 않게 밑단에서만 자동 재투입한다(2026-09-27 #2177).
+    if (action === "requeue" && stack && !isStackBottom(live)) action = "comment-stack-upper";
+    logger.log(`#${number} reason=${reason} head=${shortSha(headSha)} 스택=${stack ? live.stack?.number ?? "?" : "없음"} 마지막투입=${since ?? "?"} 실패job=${failedJobs.length} 재투입횟수=${requeueCount} → ${action}`);
 
-    if (dryRun) return { action, dryRun: true, failedJobs, requeueCount };
+    const result = { action, failedJobs, requeueCount, stack: live.stack?.number ?? null };
+    if (dryRun) return { ...result, dryRun: true };
 
     if (action === "comment-failure") {
         await postComment(api, repository, number, renderFailureComment({ reason, headSha, failedJobs, repository, number, stack }));
     } else if (action === "comment-give-up") {
-        await postComment(api, repository, number, renderGiveUpComment({ reason, headSha }));
+        await postComment(api, repository, number, renderGiveUpComment({ reason, headSha, repository, number, stack }));
+    } else if (action === "comment-stack-upper") {
+        await postComment(api, repository, number, renderStackUpperComment({ reason, headSha, repository, number }));
     } else if (action === "requeue") {
         // 마커를 먼저 남긴다 — 재투입 뒤 코멘트가 실패하면 다음 방출에서 두 번째 재투입이 나간다.
         await postComment(api, repository, number, renderRequeueComment({ reason, headSha }));
         if (stack) {
-            const result = await enqueueStacked(api, repository, number, headSha);
-            logger.log(`#${number} 스택 ${live.stack.number} 재투입(merge-async) → ${result?.status ?? "?"} ${result?.details?.message ?? ""}`.trimEnd());
+            const enqueueResult = await enqueueStacked(api, repository, number, headSha, { sleep });
+            if (enqueueResult.unresolved) {
+                const refreshed = await fetchLivePullRequest(api, repository, number);
+                if (!refreshed?.mergeQueueEntry) {
+                    throw new Error(`merge-async 결과 미확정: ${JSON.stringify(enqueueResult)} 큐에도 없다`);
+                }
+                logger.log(`#${number} 스택 ${live.stack?.number ?? "?"} 재투입(merge-async) → live 재조회로 큐 진입 확인(${refreshed.mergeQueueEntry.state})`);
+            } else {
+                logger.log(`#${number} 스택 ${live.stack?.number ?? "?"} 재투입(merge-async) → ${enqueueResult?.status ?? "?"} ${enqueueResult?.details?.message ?? ""}`.trimEnd());
+            }
+            result.enqueueMethod = "merge-async";
         } else {
             const entry = await enqueue(api, live.id);
             logger.log(`#${number} 재투입 → ${entry?.state ?? "?"} position=${entry?.position ?? "?"}`);
+            result.enqueueMethod = "graphql";
         }
     }
-    return { action, failedJobs, requeueCount };
+    return result;
 }
 
 async function main() {
@@ -315,7 +369,7 @@ async function main() {
 
     const api = createApi(token);
     const result = await handleDequeue({ api, repository, number, reason, dryRun: process.env.DRY_RUN === "true" });
-    const summary = `merge-queue-dequeue: #${number} reason=${reason} → ${result.action}${result.dryRun ? " (dry-run)" : ""}`;
+    const summary = `merge-queue-dequeue: #${number} reason=${reason} → ${result.action}${result.dryRun ? " (dry-run)" : ""}${result.stack !== null ? ` (스택 ${result.stack}, ${result.enqueueMethod ?? "판정만"})` : ""}`;
     console.log(summary);
     if (process.env.GITHUB_STEP_SUMMARY) {
         const { appendFile } = await import("node:fs/promises");
