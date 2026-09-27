@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation3.runtime.entryProvider
@@ -31,9 +32,10 @@ import com.afternote.feature.setting.presentation.passkey.PassKeyViewModel
 import com.afternote.feature.setting.presentation.profile.ProfileEditScreen
 import com.afternote.feature.setting.presentation.receiver.ReceiverEditScreen
 import com.afternote.feature.setting.presentation.receiver.ReceiverEditViewModel
+import com.afternote.feature.setting.presentation.receiver.ReceiverListIntent
 import com.afternote.feature.setting.presentation.receiver.ReceiverListScreen
-import com.afternote.feature.setting.presentation.receiver.ReceiverManageScreen
 import com.afternote.feature.setting.presentation.receiver.ReceiverListViewModel
+import com.afternote.feature.setting.presentation.receiver.ReceiverManageScreen
 import com.afternote.feature.setting.presentation.receiver.ReceiverRegisterScreen
 
 /**
@@ -157,10 +159,14 @@ public fun SettingNavHost(
 
                 entry<SettingRoute.RecipientListRoute> { key ->
                     val viewModel: ReceiverListViewModel = hiltViewModel()
-                    val receivers by viewModel.receivers.collectAsStateWithLifecycle()
+                    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                    LifecycleStartEffect(viewModel) {
+                        viewModel.onIntent(ReceiverListIntent.ObservationStarted)
+                        onStopOrDispose { viewModel.onIntent(ReceiverListIntent.ObservationStopped) }
+                    }
                     if (key.selectForDeliveryConditions) {
                         ReceiverListScreen(
-                            receivers = receivers,
+                            receivers = uiState.receivers,
                             onBackClick = actions::popBack,
                             onConfirmClick = { receiver ->
                                 actions.onDeliveryConditionsRecipientSelected(receiver.receiverId)
@@ -168,7 +174,7 @@ public fun SettingNavHost(
                         )
                     } else {
                         ReceiverManageScreen(
-                            receivers = receivers,
+                            receivers = uiState.receivers,
                             onBackClick = actions::popBack,
                             onReceiverClick = actions::onRecipientEditClick,
                             onRegisterClick = actions::onRecipientRegisterClick,
