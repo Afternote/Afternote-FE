@@ -19,7 +19,7 @@ import com.afternote.feature.afternote.presentation.editor.state.rememberAfterno
  * 홈의 `visibleItems` 스냅샷은 에디터에 전달하지 않는다. 식별은 라우트의 `itemId`·`initialType` 정도로 최소화한다.
  *
  * **수정 진입 데이터 로드:** 상세 화면과 같이 [AfternoteEditorViewModel]의 `init`에서
- * [androidx.lifecycle.SavedStateHandle]의 `itemId`만 보고 Repository `getDetail`을 호출한다 (Compose `LaunchedEffect` 위임 없음).
+ * assisted 로 받은 흐름 라우트의 `itemId`만 보고 Repository `getDetail`을 호출한다 (Compose `LaunchedEffect` 위임 없음).
  */
 @Composable
 internal fun AfternoteEditorNavigation(

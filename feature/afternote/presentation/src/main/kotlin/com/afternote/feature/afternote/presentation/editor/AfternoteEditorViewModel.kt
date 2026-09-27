@@ -63,7 +63,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v5"
+private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v6"
 private const val INITIALIZED_ACTION_TEMPLATE_TYPE_KEY = "initialized_action_template_type"
 
 private const val TAG = "AfternoteEditorViewModel"
@@ -86,10 +86,10 @@ private data class ProcessingMethodSnap(
  * 그렇지 않으면 [android.os.TransactionTooLargeException]이 날 수 있다. 큰 Base64/data URL은 폼에 넣지 말고 URL·URI 문자열만 저장한다.
  *
  * **wire 형태는 키에 박힌 버전과 함께 움직인다.** [EditableMemorialVideo]가 sealed 로 바뀌면서(#1901)
- * `memorialVideo` 가 `{"persisted":…,"selection":…}` 에서 판별자가 붙은 `{"type":"replaced",…}` 로 달라졌다.
- * 옛 payload 를 새 코드가 읽으면 복원이 실패해 폼이 기본값으로 돌아가므로, 키를 `editor_form_snapshot_v5` 로
- * 올려 옛 스냅샷을 아예 찾지 않게 했다. 앞으로도 이 클래스나 그 필드 타입의 wire 형태를 바꾸면 키의 버전을
- * 함께 올린다.
+ * `memorialVideo` 에 판별자가 붙었고(v5), 상태가 넷에서 셋으로 줄면서(#2114) 판별자 값이
+ * `no_video · uploaded · pending_upload` 로 바뀌었다(v6). 옛 payload 를 새 코드가 읽으면 복원이 실패해 폼이
+ * 기본값으로 돌아가므로, 키를 `editor_form_snapshot_v6` 으로 올려 옛 스냅샷을 아예 찾지 않게 했다. 앞으로도
+ * 이 클래스나 그 필드 타입의 wire 형태를 바꾸면 키의 버전을 함께 올린다.
  */
 @Serializable
 private data class EditorFormSnapshot(
@@ -339,9 +339,11 @@ class AfternoteEditorViewModel
         /**
          * 작성자가 등록한 수신자 전체를 받아 [InternalState.authorReceivers] 에 채운다.
          *
-         * 신규 작성 진입 시 1회 호출된다. 폼이 비어 있으면 화면이 이 목록으로 수신자를 채우고
-         * (`AfternoteNavGraphEditor` 의 `replaceReceiversIfEmpty`), 사용자는 불필요한 수신자를 지운다.
-         * 수정 진입은 상세 응답 prefill 이 지정 수신자를 채우므로 이 목록을 쓰지 않는다.
+         * 에디터 화면이 컴포지션에 들어올 때마다(수신자 선택 화면에서 돌아올 때 포함) 호출된다. 신규 작성에서
+         * 폼이 비어 있으면 화면이 이 목록으로 수신자를 채우고
+         * (`AfternoteEditorNavigation` 의 `replaceReceiversIfEmpty`), 사용자는 불필요한 수신자를 지운다.
+         * 수정 진입은 상세 응답 prefill 이 지정 수신자를 채우므로 빈 폼 채우기에는 이 목록을 쓰지 않는다.
+         * 선택 화면이 돌려준 새 id 를 해석할 때([resolveSelectedReceiver])는 작성·수정 모두 이 목록을 쓴다.
          */
         fun refreshAuthorReceivers() {
             viewModelScope.launch { loadAuthorReceivers() }

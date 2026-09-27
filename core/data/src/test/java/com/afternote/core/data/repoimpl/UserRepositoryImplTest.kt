@@ -6,6 +6,7 @@ import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.model.user.ReceiverCreated
+import com.afternote.core.network.di.NetworkModule
 import com.afternote.core.network.dto.DeletePushTokenRequestDto
 import com.afternote.core.network.dto.PushTokenDto
 import com.afternote.core.network.dto.ReceiverDetailDto
@@ -169,6 +170,33 @@ class UserRepositoryImplTest {
         assertEquals("조회 1", first.single().name)
         assertEquals("조회 2", second.single().name)
         assertEquals(2, requestCount)
+    }
+
+    /**
+     * 실서버 본문을 프로덕션 Json 으로 디코드해 그대로 태운다 (#2105). 항목 하나가 깨지면 목록 전체가
+     * 조용히 빈 목록으로 떨어지므로, 건수와 «리포터에 남은 실패 0건» 을 같이 본다.
+     */
+    @Test
+    fun `receiverListFlow - 실서버 목록 본문을 항목 소실 없이 낸다`() {
+        val payload =
+            """{"status":200,"code":200,"message":"성공","data":[{"receiverId":14,"name":"QA수신자","relation":"DAUGHTER"},{"receiverId":21,"name":"Admin","relation":null}]}"""
+        val repository =
+            repository(
+                onGetReceivers = {
+                    NetworkModule.provideJson().decodeFromString<BaseResponse<List<ReceiverListDto>>>(payload)
+                },
+            )
+
+        val emitted = runBlocking { repository.receiverListFlow.first() }
+
+        assertEquals(
+            listOf(
+                Receiver(receiverId = 14L, name = "QA수신자", relation = "DAUGHTER"),
+                Receiver(receiverId = 21L, name = "Admin", relation = ""),
+            ),
+            emitted,
+        )
+        assertEquals(0, errorReporter.writtenFailures.size)
     }
 
     @Test
@@ -669,7 +697,6 @@ private fun receiverDto(name: String) =
         receiverId = 1L,
         name = name,
         relation = "친구",
-        authCode = "AUTH-1",
     )
 
 private class FakeUserApiService(

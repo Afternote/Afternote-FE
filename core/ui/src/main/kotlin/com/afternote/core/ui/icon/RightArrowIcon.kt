@@ -22,10 +22,10 @@ fun RightArrowIcon(
     modifier: Modifier = Modifier,
     tint: Color = LocalContentColor.current,
 ) {
-    Icon(
-        painter = painterResource(R.drawable.core_ui_right_arrow),
-        contentDescription = null,
+    ArrowIcon(
+        iconRes = R.drawable.core_ui_right_arrow,
         modifier = modifier,
+        contentDescription = null,
         tint = tint,
     )
 }
