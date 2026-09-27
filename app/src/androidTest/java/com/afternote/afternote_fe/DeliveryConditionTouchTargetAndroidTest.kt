@@ -203,7 +203,6 @@ class DeliveryConditionTouchTargetAndroidTest {
             timeLetterCount = 0,
             afterNoteCount = 0,
             message = null,
-            authCode = "fake-auth-$receiverId",
         )
 
     /** 실제 앱 UI 만으로 홈에서 사후 전달 조건 화면까지 들어간다. */
