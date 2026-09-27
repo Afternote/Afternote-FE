@@ -138,6 +138,21 @@ class SettingImplementedCoverageAndroidTest {
     }
 
     @Test
+    fun settingNavHost_passwordChangeEntryAndBackKeepSettingsHost() {
+        launchHost()
+        waitForSettingHomeContent()
+
+        composeRule.onNodeWithText("비밀번호 변경").performScrollTo().performClick()
+        composeRule.onNodeWithText("현재 비밀번호").assertIsDisplayed()
+        composeRule.onNodeWithText("새 비밀번호").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("뒤로가기").performClick()
+
+        waitForSettingHomeContent()
+        composeRule.onNodeWithText("프로필 수정").assertIsDisplayed()
+        assertEquals(0, composeRule.runOnIdle { exits })
+    }
+
+    @Test
     fun settingNavHost_receiverManageListRowNavigatesToEditWithExactReceiverId() {
         launchHost()
         waitForSettingHomeContent()

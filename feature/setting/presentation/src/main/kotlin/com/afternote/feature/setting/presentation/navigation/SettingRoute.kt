@@ -23,6 +23,9 @@ public sealed interface SettingRoute : NavKey {
     public data object ProfileEditRoute : SettingRoute
 
     @Serializable
+    public data object PasswordChangeRoute : SettingRoute
+
+    @Serializable
     public data object LinkedAccountRoute : SettingRoute
 
     @Serializable
