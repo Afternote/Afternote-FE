@@ -13,6 +13,10 @@
 // 판정 순서는 «실패 job 이 있는가» 가 먼저다. payload 의 reason 문자열은 GitHub 이 열거값을 문서화하지
 // 않아 정본으로 삼지 않는다 — 실패 job 은 데이터로 확인하고, reason 은 «사람이 뺐다·이미 머지됐다» 를
 // 거르는 데만 쓴다. 그 밖의 reason 은 전부 조용한 방출로 본다.
+//
+// 재투입 수단은 PR 이 GitHub 네이티브 스택의 일원인지로 갈린다(#2177). 스택 PR 은 GraphQL enqueuePullRequest 가
+// UNPROCESSABLE("part of a stack and must be enqueued using the asynchronous merge REST API")로 거부되므로
+// (0919 #2053, 0926 #2123 실측) REST merge-async 에 merge_action=merge_queue 로 넣는다. 판정표는 같다.
 
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -81,7 +85,15 @@ export function decide({ reason, failedJobs, requeueCount }) {
 
 const shortSha = (sha) => sha.slice(0, 7);
 
-export function renderFailureComment({ reason, headSha, failedJobs, repository, number }) {
+/**
+ * 스택 PR 은 gh pr merge 가 "Auto-merge is not supported for stacked pull requests" 로 거부하므로 gh stack merge 를 안내한다.
+ * gh stack 은 --repo 플래그가 없어(gh 2.85 실측) 저장소 체크아웃 안에서 번호로 부른다.
+ */
+export function manualEnqueueCommand({ repository, number, stack = false }) {
+    return stack ? `gh stack merge ${number} --yes` : `gh pr merge ${number} --repo ${repository}`;
+}
+
+export function renderFailureComment({ reason, headSha, failedJobs, repository, number, stack = false }) {
     const lines = failedJobs.map((job) => `- [${job.runName} / ${job.jobName}](${job.jobUrl}) — ${job.conclusion}`);
     return [
         "### merge queue 방출 — merge group CI 실패",
@@ -91,7 +103,7 @@ export function renderFailureComment({ reason, headSha, failedJobs, repository, 
         "실패한 job:",
         ...lines,
         "",
-        `고친 뒤 \`gh pr merge ${number} --repo ${repository}\` 로 다시 투입한다.`,
+        `고친 뒤 \`${manualEnqueueCommand({ repository, number, stack })}\` 로 다시 투입한다.`,
     ].join("\n");
 }
 
@@ -160,6 +172,7 @@ export async function fetchLivePullRequest(api, repository, number) {
                     headRefOid
                     baseRefName
                     mergeQueueEntry { state position }
+                    stack { number }
                     timelineItems(last: 5, itemTypes: [ADDED_TO_MERGE_QUEUE_EVENT]) {
                         nodes { ... on AddedToMergeQueueEvent { createdAt } }
                     }
@@ -169,6 +182,11 @@ export async function fetchLivePullRequest(api, repository, number) {
         { owner, name, number },
     );
     return data.repository.pullRequest;
+}
+
+/** GitHub 네이티브 스택의 일원인가. 비스택 PR 은 stack 이 null 로 온다(0926 #2176, #2171 실측). */
+export function isStackMember(pullRequest) {
+    return pullRequest?.stack != null;
 }
 
 /** 마지막으로 큐에 들어간 시각 — 그 뒤의 merge_group run 만 이번 방출의 근거다. */
@@ -219,6 +237,23 @@ export async function enqueue(api, pullRequestId) {
     return data.enqueuePullRequest.mergeQueueEntry;
 }
 
+/**
+ * 스택 PR 의 큐 투입. GraphQL enqueuePullRequest 는 스택 PR 을 거부하므로 REST 비동기 머지에
+ * merge_action=merge_queue 를 준다. GitHub 은 요청한 PR 과 스택에서 그 아래 PR 을 함께 큐에 넣는다.
+ * sha 는 판정한 head 로 고정한다. 그 사이 새 커밋이 올라왔으면 409 로 실패하고, 새 head 는 마커 0 이라
+ * 다음 방출에서 다시 판정된다. 응답 status 가 failed 면 GraphQL 오류와 같이 예외로 올려 job 을 red 로 남긴다.
+ */
+export async function enqueueStacked(api, repository, number, headSha) {
+    const result = await api(`/repos/${repository}/pulls/${number}/merge-async`, {
+        method: "PUT",
+        body: { merge_action: "merge_queue", sha: headSha },
+    });
+    if (result?.status === "failed") {
+        throw new Error(`merge-async 실패: ${JSON.stringify(result)}`);
+    }
+    return result;
+}
+
 export async function handleDequeue({ api, repository, number, reason, dryRun = false, logger = console }) {
     const live = await fetchLivePullRequest(api, repository, number);
     if (!live) throw new Error(`#${number} 를 찾을 수 없습니다`);
@@ -232,24 +267,30 @@ export async function handleDequeue({ api, repository, number, reason, dryRun = 
     }
 
     const headSha = live.headRefOid;
+    const stack = isStackMember(live);
     const since = lastEnqueuedAt(live);
     const failedJobs = await fetchQueueFailedJobs(api, repository, { baseRef: live.baseRefName, number, since });
     const comments = await fetchComments(api, repository, number);
     const requeueCount = countRequeuesForHead(comments, headSha);
     const action = decide({ reason, failedJobs, requeueCount });
-    logger.log(`#${number} reason=${reason} head=${shortSha(headSha)} 마지막투입=${since ?? "?"} 실패job=${failedJobs.length} 재투입횟수=${requeueCount} → ${action}`);
+    logger.log(`#${number} reason=${reason} head=${shortSha(headSha)} 스택=${stack ? live.stack.number : "없음"} 마지막투입=${since ?? "?"} 실패job=${failedJobs.length} 재투입횟수=${requeueCount} → ${action}`);
 
     if (dryRun) return { action, dryRun: true, failedJobs, requeueCount };
 
     if (action === "comment-failure") {
-        await postComment(api, repository, number, renderFailureComment({ reason, headSha, failedJobs, repository, number }));
+        await postComment(api, repository, number, renderFailureComment({ reason, headSha, failedJobs, repository, number, stack }));
     } else if (action === "comment-give-up") {
         await postComment(api, repository, number, renderGiveUpComment({ reason, headSha }));
     } else if (action === "requeue") {
         // 마커를 먼저 남긴다 — 재투입 뒤 코멘트가 실패하면 다음 방출에서 두 번째 재투입이 나간다.
         await postComment(api, repository, number, renderRequeueComment({ reason, headSha }));
-        const entry = await enqueue(api, live.id);
-        logger.log(`#${number} 재투입 → ${entry?.state ?? "?"} position=${entry?.position ?? "?"}`);
+        if (stack) {
+            const result = await enqueueStacked(api, repository, number, headSha);
+            logger.log(`#${number} 스택 ${live.stack.number} 재투입(merge-async) → ${result?.status ?? "?"} ${result?.details?.message ?? ""}`.trimEnd());
+        } else {
+            const entry = await enqueue(api, live.id);
+            logger.log(`#${number} 재투입 → ${entry?.state ?? "?"} position=${entry?.position ?? "?"}`);
+        }
     }
     return { action, failedJobs, requeueCount };
 }

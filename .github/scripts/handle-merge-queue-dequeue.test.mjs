@@ -7,8 +7,11 @@ import {
     collectFailedJobs,
     countRequeuesForHead,
     decide,
+    enqueueStacked,
     handleDequeue,
+    isStackMember,
     lastEnqueuedAt,
+    manualEnqueueCommand,
     queueBranchPrefix,
     renderFailureComment,
     renderRequeueComment,
@@ -109,9 +112,32 @@ test("실패 코멘트는 job 링크와 재투입 명령을 담고, 재투입했
     assert.ok(!body.includes(requeueMarker(HEAD)));
 });
 
+test("스택 PR 의 실패 코멘트는 gh pr merge 가 아니라 gh stack merge 를 안내한다 — gh pr merge 는 스택 PR 을 거부한다", () => {
+    assert.equal(manualEnqueueCommand({ repository: REPO, number: 2123 }), "gh pr merge 2123 --repo Afternote/Afternote-FE");
+    assert.equal(manualEnqueueCommand({ repository: REPO, number: 2123, stack: true }), "gh stack merge 2123 --yes", "gh stack 에는 --repo 가 없다");
+    const body = renderFailureComment({
+        reason: "CI_FAILURE",
+        headSha: HEAD,
+        repository: REPO,
+        number: 2123,
+        stack: true,
+        failedJobs: [{ runName: "Unit Test", jobName: "Run Unit Tests", jobUrl: "https://x/jobs/11", conclusion: "failure" }],
+    });
+    assert.match(body, /gh stack merge 2123 --yes/);
+    assert.ok(!body.includes("gh pr merge"));
+});
+
+// ---- 스택 판정 (#2177) ----
+
+test("stack 이 null·없음이면 비스택, 객체면 스택이다", () => {
+    assert.equal(isStackMember({ stack: null }), false);
+    assert.equal(isStackMember({}), false);
+    assert.equal(isStackMember({ stack: { number: 2125 } }), true);
+});
+
 // ---- handleDequeue 흐름: live 상태가 정본, 쓰기 순서 ----
 
-function fakeApi({ live, runs = [], jobs = {}, comments = [] }) {
+function fakeApi({ live, runs = [], jobs = {}, comments = [], mergeAsync = { status: "enqueued", details: { message: "Pull request added to merge queue" } } }) {
     const calls = [];
     const api = async (apiPath, options = {}) => {
         calls.push({ apiPath, method: options.method ?? "GET", body: options.body });
@@ -122,6 +148,7 @@ function fakeApi({ live, runs = [], jobs = {}, comments = [] }) {
             }
             return { data: { repository: { pullRequest: live } } };
         }
+        if (/\/pulls\/\d+\/merge-async$/.test(apiPath) && options.method === "PUT") return mergeAsync;
         if (apiPath.startsWith(`/repos/${REPO}/actions/runs?`)) return { workflow_runs: runs };
         const jobsMatch = /\/actions\/runs\/(\d+)\/jobs/.exec(apiPath);
         if (jobsMatch) return { jobs: jobs[jobsMatch[1]] ?? [] };
@@ -133,14 +160,22 @@ function fakeApi({ live, runs = [], jobs = {}, comments = [] }) {
     return api;
 }
 
+const enqueueMutations = (api) => api.calls.filter((call) => call.body?.query?.includes("enqueuePullRequest"));
+const mergeAsyncCalls = (api) => api.calls.filter((call) => call.apiPath.endsWith("/merge-async"));
+const commentPosts = (api) => api.calls.filter((call) => call.method === "POST" && call.apiPath.endsWith("/comments"));
+
 const openLive = {
     id: "PR_1",
     state: "OPEN",
     headRefOid: HEAD,
     baseRefName: "develop",
     mergeQueueEntry: null,
+    stack: null,
     timelineItems: { nodes: [{ createdAt: "2026-09-04T08:00:00Z" }] },
 };
+
+// 0926 #2123: base 는 develop 이지만 위에 #2124 가 얹혀 스택 2125 의 밑단이다.
+const stackedLive = { ...openLive, stack: { number: 2125 } };
 
 test("MERGED·CLOSED 거나 이미 큐에 있으면 payload 와 무관하게 아무것도 쓰지 않는다", async () => {
     for (const live of [
@@ -165,6 +200,64 @@ test("조용한 방출: 마커 코멘트를 먼저 남기고 그 다음 enqueueP
     assert.match(writes[0].apiPath, /\/issues\/1509\/comments$/);
     assert.ok(writes[0].body.body.startsWith(requeueMarker(HEAD)));
     assert.equal(writes[1].apiPath, "/graphql");
+    assert.equal(mergeAsyncCalls(api).length, 0, "비스택 PR 은 종전대로 GraphQL 로만 넣는다");
+});
+
+// ---- 스택 PR 의 재투입은 REST merge-async (#2177) ----
+
+test("live 조회는 stack 필드를 함께 읽는다 — 재투입 수단을 고르는 근거다", async () => {
+    const api = fakeApi({ live: openLive });
+    await handleDequeue({ api, repository: REPO, number: 1509, reason: "UNKNOWN_REMOVAL_REASON", dryRun: true, logger: silent });
+    const liveQuery = api.calls.find((call) => call.apiPath === "/graphql").body.query;
+    assert.match(liveQuery, /stack\s*\{\s*number\s*\}/);
+});
+
+test("스택 PR 의 조용한 방출: 마커 코멘트 뒤 merge-async(merge_action=merge_queue, sha=head) 를 쏘고 enqueuePullRequest 는 쏘지 않는다", async () => {
+    const api = fakeApi({ live: stackedLive });
+    const result = await handleDequeue({ api, repository: REPO, number: 2123, reason: "MERGE_CONFLICT", logger: silent });
+    assert.equal(result.action, "requeue");
+    assert.equal(enqueueMutations(api).length, 0, "GraphQL enqueuePullRequest 는 스택 PR 을 UNPROCESSABLE 로 거부한다");
+    const writes = api.calls.filter((call) => call.method !== "GET" && call.apiPath !== "/graphql");
+    assert.equal(writes.length, 2);
+    assert.match(writes[0].apiPath, /\/issues\/2123\/comments$/);
+    assert.ok(writes[0].body.body.startsWith(requeueMarker(HEAD)), "마커가 먼저다 — 재투입 뒤 코멘트가 실패하면 두 번째 재투입이 나간다");
+    assert.deepEqual(
+        { apiPath: writes[1].apiPath, method: writes[1].method, body: writes[1].body },
+        { apiPath: `/repos/${REPO}/pulls/2123/merge-async`, method: "PUT", body: { merge_action: "merge_queue", sha: HEAD } },
+    );
+});
+
+test("스택 여부는 판정표를 바꾸지 않는다 — 실패 job 이면 comment-failure, 같은 head 두 번째면 comment-give-up, 어느 쪽도 재투입 없음", async () => {
+    const runs = [{ id: 7, name: "Unit Test", html_url: "https://x/runs/7", head_branch: queueBranchPrefix("develop", 2123) + "abc", created_at: "2026-09-04T08:05:00Z" }];
+    const jobs = { 7: [{ name: "Run Unit Tests", conclusion: "failure", html_url: "https://x/jobs/71" }] };
+    const failed = fakeApi({ live: stackedLive, runs, jobs });
+    assert.equal((await handleDequeue({ api: failed, repository: REPO, number: 2123, reason: "CI_FAILURE", logger: silent })).action, "comment-failure");
+    assert.match(commentPosts(failed)[0].body.body, /gh stack merge 2123 --yes/);
+
+    const second = fakeApi({ live: stackedLive, comments: [{ body: renderRequeueComment({ reason: "MERGE_CONFLICT", headSha: HEAD }) }] });
+    assert.equal((await handleDequeue({ api: second, repository: REPO, number: 2123, reason: "MERGE_CONFLICT", logger: silent })).action, "comment-give-up");
+
+    const manual = fakeApi({ live: stackedLive });
+    assert.equal((await handleDequeue({ api: manual, repository: REPO, number: 2123, reason: "MANUAL", logger: silent })).action, "none");
+
+    for (const api of [failed, second, manual]) {
+        assert.equal(mergeAsyncCalls(api).length, 0);
+        assert.equal(enqueueMutations(api).length, 0);
+    }
+    assert.equal(commentPosts(failed).length, 1);
+    assert.equal(commentPosts(second).length, 1);
+    assert.equal(commentPosts(manual).length, 0);
+});
+
+test("merge-async 응답 status 가 failed 면 GraphQL 오류처럼 예외로 올린다 — job 이 red 로 남아 사람이 본다", async () => {
+    const api = fakeApi({ live: stackedLive, mergeAsync: { status: "failed", details: { message: "Pull request is not mergeable" } } });
+    await assert.rejects(
+        handleDequeue({ api, repository: REPO, number: 2123, reason: "MERGE_CONFLICT", logger: silent }),
+        /merge-async 실패: .*not mergeable/,
+    );
+    assert.equal(mergeAsyncCalls(api).length, 1);
+    await assert.rejects(enqueueStacked(api, REPO, 2123, HEAD), /merge-async 실패/);
+    assert.equal(mergeAsyncCalls(api).length, 2);
 });
 
 test("같은 head 의 두 번째 방출은 코멘트만 남기고 enqueuePullRequest 를 쏘지 않는다", async () => {
@@ -186,12 +279,15 @@ test("CI 실패: 실패 job 링크 코멘트만, 재투입 없음", async () => 
     assert.ok(!api.calls.some((call) => call.body?.query?.includes("enqueuePullRequest")));
 });
 
-test("dry-run 은 판정만 하고 아무것도 쓰지 않는다", async () => {
-    const api = fakeApi({ live: openLive });
-    const result = await handleDequeue({ api, repository: REPO, number: 1509, reason: "ROLL_BACK", dryRun: true, logger: silent });
-    assert.equal(result.action, "requeue");
-    assert.equal(api.calls.filter((call) => call.method === "POST" && call.apiPath !== "/graphql").length, 0);
-    assert.ok(!api.calls.some((call) => call.body?.query?.includes("enqueuePullRequest")));
+test("dry-run 은 판정만 하고 아무것도 쓰지 않는다 — 스택 PR 도 같다", async () => {
+    for (const live of [openLive, stackedLive]) {
+        const api = fakeApi({ live });
+        const result = await handleDequeue({ api, repository: REPO, number: 1509, reason: "ROLL_BACK", dryRun: true, logger: silent });
+        assert.equal(result.action, "requeue");
+        assert.equal(api.calls.filter((call) => call.method !== "GET" && call.apiPath !== "/graphql").length, 0);
+        assert.equal(enqueueMutations(api).length, 0);
+        assert.equal(mergeAsyncCalls(api).length, 0);
+    }
 });
 
 // ---- 워크플로 정책 ----
