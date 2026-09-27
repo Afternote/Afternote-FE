@@ -6,8 +6,6 @@ import com.afternote.core.domain.testing.FakeUserProfileCacheRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.model.user.User
-import com.afternote.core.model.user.UserConnectedAccount
-import com.afternote.core.model.user.UserPushSetting
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 
@@ -40,18 +38,12 @@ internal fun afternoteAuthorUserRepository(): FakeUserRepository =
     FakeUserRepository.strict().apply {
         profile = TEST_USER
         receiverState.value = listOf(TEST_RECEIVER)
-        pushSetting = TEST_PUSH_SETTING
-        connectedAccounts = testConnectedAccounts(profile.email)
 
         onReceiverListFlow = null
         onGetReceivers = null
         onCreateReceiver = null
         onGetMyProfile = null
         onUpdateMyProfile = null
-        onDeleteAccount = null
-        onGetMyPushSettings = null
-        onUpdateMyPushSettings = null
-        onGetConnectedAccounts = { testConnectedAccounts(profile.email) }
     }
 
 /**
@@ -74,7 +66,3 @@ internal object NoopAuthorErrorReporter : ErrorReporter {
 
 private val TEST_USER = User("테스트 사용자", "test@afternote.local", null, null)
 private val TEST_RECEIVER = Receiver(7L, "김수신", "가족")
-private val TEST_PUSH_SETTING = UserPushSetting(true, true, true)
-
-private fun testConnectedAccounts(email: String): UserConnectedAccount =
-    UserConnectedAccount(true, false, false, false, false, email, null, null, null, null)

@@ -2,8 +2,8 @@ package com.afternote.feature.setting.presentation.notification
 
 import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.domain.error.PushSettingFailure
-import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.UserPushSetting
+import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
 import com.afternote.feature.setting.presentation.NoOpErrorReporter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -175,7 +175,7 @@ class PushNotificationViewModelTest {
         val initial = UserPushSetting(timeLetter = true, mindRecord = true, afterNote = true)
         var remainingFailures = failUpdateAttempts
         val repository =
-            FakeUserRepository(pushSetting = initial).apply {
+            FakeSettingNotificationRepository(pushSetting = initial).apply {
                 onUpdateMyPushSettings = { timeLetter, mindRecord, afterNote ->
                     calls += PushUpdateCall(timeLetter, mindRecord, afterNote)
                     if (remainingFailures > 0) {
@@ -191,7 +191,7 @@ class PushNotificationViewModelTest {
             }
         return PushNotificationViewModel(
             context = ApplicationProvider.getApplicationContext(),
-            userRepository = repository,
+            notificationRepository = repository,
             errorReporter = NoOpErrorReporter,
         )
     }
