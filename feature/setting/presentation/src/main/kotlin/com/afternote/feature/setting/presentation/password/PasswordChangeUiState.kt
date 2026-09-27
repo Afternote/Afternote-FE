@@ -1,5 +1,6 @@
 package com.afternote.feature.setting.presentation.password
 
+import com.afternote.core.domain.auth.NewPasswordRule
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.mvi.MviIntent
 import com.afternote.core.ui.mvi.ReducerEvent
@@ -25,13 +26,13 @@ internal data class PasswordChangeUiState(
     /** 변경 완료 신호. 화면이 한 번 소비하고 [PasswordChangeIntent.ConsumeChanged] 로 되돌린다(#228). */
     val changed: PasswordChanged? = null,
 ) : UiState {
-    val isNewPasswordRuleSatisfied: Boolean get() = SettingPasswordRule.isSatisfied(newPassword)
+    val isNewPasswordRuleSatisfied: Boolean get() = NewPasswordRule.isSatisfied(newPassword)
 
     /**
      * 제출 가능 여부.
      *
      * 현재 비밀번호는 비어 있지만 않으면 된다 — 규칙 검사를 걸면 옛 규칙으로 만든 비밀번호를 쓰는
-     * 계정이 변경 자체를 못 한다([SettingPasswordRule]). 새 비밀번호가 현재와 같은지는 서버만
+     * 계정이 변경 자체를 못 한다([NewPasswordRule]). 새 비밀번호가 현재와 같은지는 서버만
      * 판정할 수 있다(BE `NEWPASSWORD_MATCH`) — 클라는 현재 비밀번호의 평문을 비교 근거로 삼지 않는다.
      */
     val isSubmitEnabled: Boolean
