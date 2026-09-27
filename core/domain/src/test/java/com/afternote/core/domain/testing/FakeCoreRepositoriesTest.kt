@@ -191,7 +191,7 @@ class FakeCoreRepositoriesTest {
         assertEquals(1, receiverRepository.getReceiversCalls)
         assertEquals("바뀐 이름", updated.name)
         assertEquals(
-            listOf(FakeUserRepository.ProfileUpdateCall("바뀐 이름", null, null)),
+            listOf(FakeMyProfileRepository.ProfileUpdateCall("바뀐 이름", null, null)),
             profileRepository.profileUpdateCalls.toList(),
         )
     }

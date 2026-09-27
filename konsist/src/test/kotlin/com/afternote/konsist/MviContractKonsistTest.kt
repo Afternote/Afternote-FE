@@ -437,7 +437,6 @@ class MviContractKonsistTest {
                 "com.afternote.feature.setting.presentation.passkey.PassKeyViewModel",
                 "com.afternote.feature.setting.presentation.profile.ProfileEditViewModel",
                 "com.afternote.feature.setting.presentation.receiver.ReceiverEditViewModel",
-                "com.afternote.feature.setting.presentation.receiver.ReceiverListViewModel",
                 "com.afternote.feature.setting.presentation.receiver.ReceiverRegisterViewModel",
             )
 
