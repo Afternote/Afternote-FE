@@ -23,7 +23,6 @@ data class ReceiverDetail(
     val timeLetterCount: Int,
     val afterNoteCount: Int,
     val message: String?,
-    val authCode: String,
 )
 
 data class ReceiverCreated(
