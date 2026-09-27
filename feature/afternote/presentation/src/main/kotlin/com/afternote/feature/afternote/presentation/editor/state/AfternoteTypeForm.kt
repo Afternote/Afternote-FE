@@ -78,7 +78,7 @@ sealed interface AfternoteTypeForm {
     }
 
     /**
-     * 카테고리 전용 필드. 영상의 서버 기준값·미저장 교체분은 [EditableMemorialVideo]가 감춘다.
+     * 카테고리 전용 필드. 영상이 서버에 있는지·새로 골라 올려야 하는지는 [EditableMemorialVideo]가 감춘다.
      *
      * 시트의 삭제는 슬롯을 비운다 — 교체분과 서버 값을 함께. 비어 있는 서버 값은 저장 시 PATCH `null`
      * 로 이어진다(#1597). 사진은 `pickedPhotoUri`·`photoUrl` 두 칸이 같은 규칙을 따른다.
@@ -143,7 +143,7 @@ sealed interface AfternoteTypeForm {
                 is EditorContentPrefill.Memorial -> {
                     Memorial(
                         video =
-                            EditableMemorialVideo.fromPersisted(
+                            EditableMemorialVideo.fromServer(
                                 MemorialVideoAttachment.ofOrNull(
                                     url = content.videoUrl,
                                     thumbnailUrl = content.thumbnailUrl,
