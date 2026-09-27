@@ -28,7 +28,6 @@ class SettingRouteSerializationTest {
                 SettingRoute.WithdrawGuideRoute,
                 SettingRoute.WithdrawConfirmRoute,
                 SettingRoute.ProfileEditRoute,
-                SettingRoute.PasswordChangeRoute,
                 SettingRoute.LinkedAccountRoute,
                 SettingRoute.NotificationRoute,
                 SettingRoute.PushNotificationRoute,

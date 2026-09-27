@@ -155,12 +155,11 @@ class SettingLocalNavActionsTest {
     fun `클릭 하나마다 목적지 하나가 쌓인다`() {
         val (backStack, actions) = actionsOn(SettingRoute.SettingHomeRoute)
 
-        actions.onPasswordChangeClick()
         actions.onLinkedAccountClick()
         actions.onNoticeClick()
 
         assertEquals(
-            listOf("SettingHomeRoute", "PasswordChangeRoute", "LinkedAccountRoute", "NoticeRoute"),
+            listOf("SettingHomeRoute", "LinkedAccountRoute", "NoticeRoute"),
             backStack.names(),
         )
     }

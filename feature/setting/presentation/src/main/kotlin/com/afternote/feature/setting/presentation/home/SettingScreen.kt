@@ -41,7 +41,6 @@ internal fun SettingScreen(
     onBackClick: () -> Unit,
     onLogoutSuccess: () -> Unit,
     onProfileEditClick: () -> Unit,
-    onPasswordChangeClick: () -> Unit,
     onLinkedAccountClick: () -> Unit,
     onNotificationClick: () -> Unit,
     onRecipientListClick: () -> Unit,
@@ -97,7 +96,6 @@ internal fun SettingScreen(
                 }
             },
             onProfileEditClick = onProfileEditClick,
-            onPasswordChangeClick = onPasswordChangeClick,
             onLinkedAccountClick = onLinkedAccountClick,
             onNotificationClick = onNotificationClick,
             onRecipientListClick = onRecipientListClick,
@@ -118,7 +116,6 @@ private fun SettingScreenContent(
     onLogoutClick: () -> Unit,
     onUnavailableClick: () -> Unit,
     onProfileEditClick: () -> Unit,
-    onPasswordChangeClick: () -> Unit,
     onLinkedAccountClick: () -> Unit,
     onNotificationClick: () -> Unit,
     onRecipientListClick: () -> Unit,
@@ -177,7 +174,7 @@ private fun SettingScreenContent(
                     )
                     SettingMenuItem(
                         label = stringResource(R.string.setting_account_password_change),
-                        onClick = onPasswordChangeClick,
+                        onClick = onUnavailableClick,
                     )
                     SettingMenuItem(
                         label = stringResource(R.string.setting_account_linked_account),

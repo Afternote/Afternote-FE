@@ -20,8 +20,6 @@ internal interface SettingNavActions {
 
     fun onProfileEditClick()
 
-    fun onPasswordChangeClick()
-
     fun onLinkedAccountClick()
 
     fun onNotificationClick()

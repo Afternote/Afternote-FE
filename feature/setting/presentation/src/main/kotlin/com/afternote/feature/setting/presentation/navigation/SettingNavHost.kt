@@ -28,11 +28,11 @@ import com.afternote.feature.setting.presentation.passkey.PassKeyMakingScreen
 import com.afternote.feature.setting.presentation.passkey.PassKeyPasswordScreen
 import com.afternote.feature.setting.presentation.passkey.PassKeyScreen
 import com.afternote.feature.setting.presentation.passkey.PassKeyViewModel
-import com.afternote.feature.setting.presentation.password.PasswordChangeScreen
 import com.afternote.feature.setting.presentation.profile.ProfileEditScreen
 import com.afternote.feature.setting.presentation.receiver.ReceiverEditScreen
 import com.afternote.feature.setting.presentation.receiver.ReceiverEditViewModel
-import com.afternote.feature.setting.presentation.receiver.ReceiverListRouteContent
+import com.afternote.feature.setting.presentation.receiver.ReceiverListScreen
+import com.afternote.feature.setting.presentation.receiver.ReceiverManageScreen
 import com.afternote.feature.setting.presentation.receiver.ReceiverListViewModel
 import com.afternote.feature.setting.presentation.receiver.ReceiverRegisterScreen
 
@@ -95,7 +95,6 @@ public fun SettingNavHost(
                         onBackClick = actions::popBack,
                         onLogoutSuccess = actions::onLogoutSuccess,
                         onProfileEditClick = actions::onProfileEditClick,
-                        onPasswordChangeClick = actions::onPasswordChangeClick,
                         onLinkedAccountClick = actions::onLinkedAccountClick,
                         onNotificationClick = actions::onNotificationClick,
                         onRecipientListClick = actions::onRecipientListClick,
@@ -137,13 +136,6 @@ public fun SettingNavHost(
                     )
                 }
 
-                entry<SettingRoute.PasswordChangeRoute> {
-                    PasswordChangeScreen(
-                        onBackClick = actions::popBack,
-                        onChanged = actions::popBack,
-                    )
-                }
-
                 entry<SettingRoute.LinkedAccountRoute> {
                     ConnectedAccountsScreen(
                         onBack = actions::popBack,
@@ -165,18 +157,23 @@ public fun SettingNavHost(
 
                 entry<SettingRoute.RecipientListRoute> { key ->
                     val viewModel: ReceiverListViewModel = hiltViewModel()
-                    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-                    ReceiverListRouteContent(
-                        uiState = uiState,
-                        selectForDeliveryConditions = key.selectForDeliveryConditions,
-                        onBackClick = actions::popBack,
-                        onRetryClick = viewModel::retry,
-                        onConfirmClick = { receiver ->
-                            actions.onDeliveryConditionsRecipientSelected(receiver.receiverId)
-                        },
-                        onReceiverClick = actions::onRecipientEditClick,
-                        onRegisterClick = actions::onRecipientRegisterClick,
-                    )
+                    val receivers by viewModel.receivers.collectAsStateWithLifecycle()
+                    if (key.selectForDeliveryConditions) {
+                        ReceiverListScreen(
+                            receivers = receivers,
+                            onBackClick = actions::popBack,
+                            onConfirmClick = { receiver ->
+                                actions.onDeliveryConditionsRecipientSelected(receiver.receiverId)
+                            },
+                        )
+                    } else {
+                        ReceiverManageScreen(
+                            receivers = receivers,
+                            onBackClick = actions::popBack,
+                            onReceiverClick = actions::onRecipientEditClick,
+                            onRegisterClick = actions::onRecipientRegisterClick,
+                        )
+                    }
                 }
 
                 entry<SettingRoute.RecipientRegisterRoute> {
