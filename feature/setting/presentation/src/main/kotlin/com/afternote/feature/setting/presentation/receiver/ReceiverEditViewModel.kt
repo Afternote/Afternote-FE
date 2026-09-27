@@ -1,41 +1,46 @@
 package com.afternote.feature.setting.presentation.receiver
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.ui.UiText
+import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * 수정 대상 [SettingRoute.RecipientEditRoute] 는 assisted 로 받는다 — Nav3 entry 에는 Nav2 의
- * `savedStateHandle.toRoute<T>()` 자동 채움이 없다 (#1695).
- */
 @HiltViewModel(assistedFactory = ReceiverEditViewModel.Factory::class)
 internal class ReceiverEditViewModel
     @AssistedInject
     constructor(
         @Assisted route: SettingRoute.RecipientEditRoute,
         private val receiverRepository: UserReceiverRepository,
-    ) : ViewModel() {
+    ) : MviViewModel<ReceiverEditIntent, ReceiverEditUiState, ReceiverEditReducerEvent>(ReceiverEditUiState()) {
         private val receiverId = route.receiverId
 
-        private val _uiState = MutableStateFlow(ReceiverEditUiState())
-        val uiState = _uiState.asStateFlow()
+        override fun onIntent(intent: ReceiverEditIntent) {
+            when (intent) {
+                is ReceiverEditIntent.Update -> update(intent.name, intent.relation, intent.phone, intent.email, intent.message)
+                ReceiverEditIntent.ConsumeSuccess -> dispatch(ReceiverEditReducerEvent.SuccessConsumed)
+            }
+        }
 
-        private val _events = Channel<ReceiverEditEvent>(Channel.BUFFERED)
-        val events = _events.receiveAsFlow()
+        override fun reduce(
+            state: ReceiverEditUiState,
+            event: ReceiverEditReducerEvent,
+        ): ReceiverEditUiState =
+            when (event) {
+                is ReceiverEditReducerEvent.Loaded -> state.copy(isLoading = false, receiver = event.receiver)
+                is ReceiverEditReducerEvent.LoadFailed -> state.copy(isLoading = false, errorMessage = event.message)
+                ReceiverEditReducerEvent.Saving -> state.copy(isSaving = true, errorMessage = null)
+                ReceiverEditReducerEvent.Saved -> state.copy(isSaving = false, pendingEvent = ReceiverEditEvent.EditSuccess)
+                is ReceiverEditReducerEvent.SaveFailed -> state.copy(isSaving = false, errorMessage = event.message)
+                ReceiverEditReducerEvent.SuccessConsumed -> state.copy(pendingEvent = null)
+            }
 
         init {
             loadReceiver()
@@ -45,25 +50,23 @@ internal class ReceiverEditViewModel
             viewModelScope.launch {
                 runCatchingCancellable { receiverRepository.getReceiverDetail(receiverId) }
                     .onSuccess { receiver ->
-                        _uiState.update { it.copy(isLoading = false, receiver = receiver) }
+                        dispatch(ReceiverEditReducerEvent.Loaded(receiver))
                     }.onFailure {
-                        _uiState.update {
-                            it.copy(isLoading = false, errorMessage = UiText.Resource(R.string.setting_receiver_load_failed))
-                        }
+                        dispatch(ReceiverEditReducerEvent.LoadFailed(UiText.Resource(R.string.setting_receiver_load_failed)))
                     }
             }
         }
 
-        fun update(
+        private fun update(
             name: String,
             relation: String,
             phone: String,
             email: String,
             message: String,
         ) {
-            if (_uiState.value.isSaving) return
+            if (currentState.isSaving || currentState.pendingEvent != null) return
             if (!email.isValidReceiverEmail()) {
-                _uiState.update { it.copy(errorMessage = UiText.Resource(R.string.setting_receiver_email_invalid)) }
+                dispatch(ReceiverEditReducerEvent.SaveFailed(UiText.Resource(R.string.setting_receiver_email_invalid)))
                 return
             }
             val phoneValidation = phone.validateReceiverPhone(isRequired = true)
@@ -74,13 +77,13 @@ internal class ReceiverEditViewModel
                     } else {
                         R.string.setting_receiver_phone_invalid
                     }
-                _uiState.update { it.copy(errorMessage = UiText.Resource(messageRes)) }
+                dispatch(ReceiverEditReducerEvent.SaveFailed(UiText.Resource(messageRes)))
                 return
             }
 
-            _uiState.update { it.copy(isSaving = true, errorMessage = null) }
+            dispatch(ReceiverEditReducerEvent.Saving)
             viewModelScope.launch {
-                val receiverUpdateResult =
+                val basicInfoResult =
                     runCatchingCancellable {
                         receiverRepository.updateReceiver(
                             receiverId = receiverId,
@@ -90,31 +93,16 @@ internal class ReceiverEditViewModel
                             email = email.trim(),
                         )
                     }
-                receiverUpdateResult.exceptionOrNull()?.let { error ->
-                    _uiState.update {
-                        it.copy(
-                            isSaving = false,
-                            errorMessage = error.toReceiverFailureMessage(R.string.setting_receiver_edit_failed),
-                        )
-                    }
+                basicInfoResult.exceptionOrNull()?.let { failure ->
+                    dispatch(ReceiverEditReducerEvent.SaveFailed(failure.toReceiverFailureMessage(R.string.setting_receiver_edit_failed)))
                     return@launch
                 }
-
                 runCatchingCancellable {
-                    receiverRepository.updateReceiverMessage(
-                        receiverId = receiverId,
-                        message = message,
-                    )
+                    receiverRepository.updateReceiverMessage(receiverId = receiverId, message = message)
                 }.onSuccess {
-                    _uiState.update { it.copy(isSaving = false) }
-                    _events.send(ReceiverEditEvent.EditSuccess)
+                    dispatch(ReceiverEditReducerEvent.Saved)
                 }.onFailure {
-                    _uiState.update {
-                        it.copy(
-                            isSaving = false,
-                            errorMessage = UiText.Resource(R.string.setting_receiver_message_update_partial_failed),
-                        )
-                    }
+                    dispatch(ReceiverEditReducerEvent.SaveFailed(UiText.Resource(R.string.setting_receiver_message_update_partial_failed)))
                 }
             }
         }
