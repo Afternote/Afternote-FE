@@ -29,9 +29,9 @@ import com.afternote.afternote_fe.notification.NotificationPermissionEffect
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomBar
 import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
-import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.navigation.PredictiveBackPopEnter
 import com.afternote.core.ui.navigation.PredictiveBackPopExit
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.navigation.AfternoteNavHost
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteNavHost
 import com.afternote.feature.home.presentation.HomeTabScreen

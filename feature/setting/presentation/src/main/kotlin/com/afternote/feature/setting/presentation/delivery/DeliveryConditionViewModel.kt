@@ -27,7 +27,7 @@ import kotlinx.coroutines.launch
  * `savedStateHandle.toRoute<T>()` 자동 채움이 없다 (#1695).
  */
 @HiltViewModel(assistedFactory = DeliveryConditionViewModel.Factory::class)
-class DeliveryConditionViewModel
+internal class DeliveryConditionViewModel
     @AssistedInject
     constructor(
         @Assisted route: SettingRoute.AfterDeliveryRoute,
