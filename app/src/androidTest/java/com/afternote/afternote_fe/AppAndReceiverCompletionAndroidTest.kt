@@ -43,9 +43,7 @@ import com.afternote.core.ui.Route
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
-import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailRoute
-import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel
-import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
+import com.afternote.feature.afternote.presentation.testing.ReceivedAfternoteDetailScreenFixture
 import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.home.presentation.receiver.ReceiverHomeEvent
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
@@ -521,20 +519,19 @@ class ReceiverRuntimeCompletionAndroidTest {
                 ),
             ),
         )
-        val viewModel =
-            ReceivedAfternoteDetailViewModel(
-                route = ReceivedAfternoteRoute.DetailRoute(afternoteId = 202L),
+        val detailFixture =
+            ReceivedAfternoteDetailScreenFixture(
+                afternoteId = 202L,
                 receiverRepository = repository,
                 errorReporter = FakeErrorReporter(),
             )
 
         composeRule.setContent {
             AfternoteTheme {
-                ReceivedAfternoteDetailRoute(
+                detailFixture.Content(
                     onNavigateBack = {},
                     onNavigateToFullList = {},
                     onNavigateToPlaylist = {},
-                    viewModel = viewModel,
                 )
             }
         }
@@ -571,9 +568,9 @@ class ReceiverRuntimeCompletionAndroidTest {
                 ),
             ),
         )
-        val viewModel =
-            ReceivedAfternoteDetailViewModel(
-                route = ReceivedAfternoteRoute.DetailRoute(afternoteId = 303L),
+        val detailFixture =
+            ReceivedAfternoteDetailScreenFixture(
+                afternoteId = 303L,
                 receiverRepository = repository,
                 errorReporter = FakeErrorReporter(),
             )
@@ -581,11 +578,10 @@ class ReceiverRuntimeCompletionAndroidTest {
 
         composeRule.setContent {
             AfternoteTheme {
-                ReceivedAfternoteDetailRoute(
+                detailFixture.Content(
                     onNavigateBack = {},
                     onNavigateToFullList = {},
                     onNavigateToPlaylist = playlistRoutes::add,
-                    viewModel = viewModel,
                 )
             }
         }

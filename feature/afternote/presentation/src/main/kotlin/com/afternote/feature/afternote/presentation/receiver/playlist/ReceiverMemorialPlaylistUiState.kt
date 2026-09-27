@@ -1,9 +1,10 @@
 package com.afternote.feature.afternote.presentation.receiver.playlist
 
 import androidx.annotation.StringRes
+import com.afternote.core.ui.mvi.UiState
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
-sealed interface ReceiverMemorialPlaylistUiState {
+internal sealed interface ReceiverMemorialPlaylistUiState : UiState {
     data object Loading : ReceiverMemorialPlaylistUiState
 
     data class Success(

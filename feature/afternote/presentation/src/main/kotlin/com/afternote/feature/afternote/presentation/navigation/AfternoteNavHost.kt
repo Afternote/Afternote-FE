@@ -1,21 +1,27 @@
 package com.afternote.feature.afternote.presentation.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.afternote.core.ui.navigation.FeatureNavDisplay
 import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
+import com.afternote.feature.afternote.presentation.AfternoteHostIntent
 import com.afternote.feature.afternote.presentation.AfternoteHostViewModel
 import com.afternote.feature.afternote.presentation.detail.AfternoteDetailNavigation
 import com.afternote.feature.afternote.presentation.detail.AfternoteDetailViewModel
 import com.afternote.feature.afternote.presentation.home.AfternoteHomeNavigation
 import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.shared.fingerprint.AfternoteFingerprintLoginNavigation
+import kotlinx.coroutines.awaitCancellation
 
 /**
  * 애프터노트 작성자 피처가 소유하는 로컬 Navigation 3 스택.
@@ -55,7 +61,19 @@ public fun AfternoteNavHost(
             entryProvider {
                 entry<AfternoteRoute.FingerprintLoginRoute> {
                     AfternoteLightTheme {
-                        val isPasskeyRegistered by hostViewModel.isPasskeyRegistered.collectAsStateWithLifecycle()
+                        val hostState by hostViewModel.uiState.collectAsStateWithLifecycle()
+                        val isPasskeyRegistered = hostState.isPasskeyRegistered
+                        val lifecycleOwner = LocalLifecycleOwner.current
+                        LaunchedEffect(hostViewModel, lifecycleOwner) {
+                            lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                                hostViewModel.onIntent(AfternoteHostIntent.ObserveProfile)
+                                try {
+                                    awaitCancellation()
+                                } finally {
+                                    hostViewModel.onIntent(AfternoteHostIntent.StopObservingProfile)
+                                }
+                            }
+                        }
                         AfternoteFingerprintLoginNavigation(
                             isPasskeyRegistered = isPasskeyRegistered,
                             onAuthenticationSuccess = actions::replaceFingerprintLoginWithAfternoteHome,

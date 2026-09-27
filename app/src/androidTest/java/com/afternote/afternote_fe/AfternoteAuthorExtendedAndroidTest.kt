@@ -25,8 +25,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
-import com.afternote.feature.afternote.presentation.home.AfternoteHomeEntry
-import com.afternote.feature.afternote.presentation.home.AfternoteHomeViewModel
+import com.afternote.feature.afternote.presentation.testing.AfternoteHomeScreenFixture
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -66,17 +65,16 @@ class AfternoteAuthorExtendedAndroidTest {
         listFlows[null] =
             Pager(PagingConfig(pageSize = 20)) { pagingSource }.flow
         listFlows[AfternoteType.SOCIAL_NETWORK] = flowOf(PagingData.empty())
-        val viewModel = AfternoteHomeViewModel(repository, FakeErrorReporter())
+        val homeFixture = AfternoteHomeScreenFixture(repository, FakeErrorReporter())
         val detailRoutes = mutableListOf<Long>()
         val addRoutes = mutableListOf<AfternoteType?>()
 
         composeRule.setContent {
             AfternoteTheme {
-                AfternoteHomeEntry(
+                homeFixture.Content(
                     navigateToDetail = detailRoutes::add,
                     navigateToAdd = addRoutes::add,
                     onSettingClick = {},
-                    viewModel = viewModel,
                 )
             }
         }
