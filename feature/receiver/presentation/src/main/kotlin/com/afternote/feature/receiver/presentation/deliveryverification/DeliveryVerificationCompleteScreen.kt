@@ -27,14 +27,6 @@ internal fun DeliveryVerificationCompleteScreen(
     onBackToRecords: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    DeliveryVerificationCompleteContent(onBackToRecords = onBackToRecords, modifier = modifier)
-}
-
-@Composable
-private fun DeliveryVerificationCompleteContent(
-    onBackToRecords: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
     FlowStepScaffold(
         topBarTitle = stringResource(R.string.receiver_verify_title),
         actionButtonText = stringResource(R.string.receiver_verify_complete_back_to_records),
