@@ -1,27 +1,11 @@
 package com.afternote.feature.setting.presentation.receiver
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import com.afternote.core.model.setting.ReceiverListItem
-import com.afternote.core.ui.button.AfternoteButton
+import com.afternote.core.ui.loading.ListRefreshErrorBanner
 import com.afternote.core.ui.loading.LoadingBody
-import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.feature.setting.presentation.R
+import com.afternote.core.ui.receiver.ReceiverListLoadFailure
 
 /**
  * 설정 수신자 목록 라우트의 조회 상태 분기 (#1281). 관리·선택 두 진입이 같은 규칙을 쓴다.
@@ -69,67 +53,10 @@ internal fun ReceiverListRouteContent(
             listReplacement = listReplacement,
             listHeader =
                 if (uiState.loadState == ReceiverListLoadState.RefreshFailure) {
-                    { ReceiverListRefreshFailureBanner(onRetryClick = onRetryClick) }
+                    { ListRefreshErrorBanner(onRetry = onRetryClick) }
                 } else {
                     null
                 },
         )
-    }
-}
-
-/**
- * 목록 조회 실패 안내. 같은 공용 선택 화면 슬롯에 끼우는 애프터노트 수신자 선택의 실패 안내
- * (`SelectReceiverLoadFailed`)와 문구·구성이 같다.
- */
-@Composable
-private fun ReceiverListLoadFailure(onRetryClick: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = stringResource(R.string.setting_recipient_list_load_failed),
-            style = AfternoteDesign.typography.captionLargeR,
-            color = AfternoteDesign.colors.gray8,
-            textAlign = TextAlign.Center,
-        )
-        AfternoteButton(
-            text = stringResource(R.string.setting_recipient_list_retry),
-            onClick = onRetryClick,
-            modifier = Modifier.padding(top = 16.dp, start = 20.dp, end = 20.dp),
-        )
-    }
-}
-
-/**
- * 행을 남긴 채 다시 불러오기만 실패했을 때 목록 위에 얹는 안내. 애프터노트 목록의 갱신 실패 배너
- * (`ListRefreshErrorBanner`, #705)와 문구·구성이 같다. 다음 조회가 성공할 때까지 다시 시도를 붙들어 둔다.
- */
-@Composable
-private fun ReceiverListRefreshFailureBanner(onRetryClick: () -> Unit) {
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 8.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(AfternoteDesign.colors.gray2)
-                .padding(start = 16.dp, end = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = stringResource(R.string.setting_recipient_list_refresh_failed),
-            style = AfternoteDesign.typography.captionLargeR,
-            color = AfternoteDesign.colors.gray7,
-            modifier = Modifier.weight(1f),
-        )
-        TextButton(onClick = onRetryClick) {
-            Text(
-                text = stringResource(R.string.setting_recipient_list_retry),
-                style = AfternoteDesign.typography.captionLargeB,
-                color = AfternoteDesign.colors.gray9,
-            )
-        }
     }
 }

@@ -19,9 +19,6 @@
 
     <string name="afternote_home_append_error">애프터노트 추가 목록을 불러오지 못했습니다.</string>
     <string name="afternote_home_load_error">애프터노트 목록을 불러오지 못했습니다.</string>
-    <!-- 목록은 남아 있는데 새로고침만 실패한 상태. 전면 오류(afternote_home_load_error)와 달리
-         "지금 보고 있는 목록이 최신이 아닐 수 있다"를 말한다 (#705). -->
-    <string name="afternote_home_refresh_error">목록을 새로 불러오지 못했습니다. 지금 보이는 내용이 최신이 아닐 수 있어요.</string>
     <string name="afternote_home_retry">다시 시도</string>
     <!-- 카테고리 필터 결과 0건 안내. 문구는 #567 디자인 승인 게이트 해제(2026-08-28)로 확정. -->
     <string name="afternote_home_filtered_empty">이 카테고리에 등록된 애프터노트가 없어요.\n아래 연필 버튼을 눌러 애프터노트를 등록해 보세요.</string>
@@ -62,8 +59,6 @@
     <string name="afternote_editor_service_placeholder">%1$s 선택하기</string>
 
     <!-- 수신자 선택 화면 (#540, 시안 3631:24820) -->
-    <string name="afternote_select_receiver_load_failed">수신자 목록을 불러오지 못했습니다.</string>
-    <string name="afternote_select_receiver_retry">다시 시도</string>
     <!-- 빈 상태 2종은 확정 시안 4163:20979 기준 (#1427). 이전 «설정에서 등록해 주세요» 는 FE 잠정안이었다. -->
     <string name="afternote_select_receiver_empty">등록된 수신자가 없습니다.</string>
     <string name="afternote_select_receiver_empty_description">수신자를 등록하고 쉽게 관리해 보세요.</string>
