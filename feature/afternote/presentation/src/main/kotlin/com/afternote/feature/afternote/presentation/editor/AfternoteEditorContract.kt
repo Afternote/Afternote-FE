@@ -231,7 +231,6 @@ internal sealed interface AfternoteEditorReducerEvent : ReducerEvent {
     data class PrefillLoaded(
         val prefill: EditorFormPrefill,
         val baseline: AfternoteEditorSnapshot,
-        val preserveRestoredForm: Boolean,
     ) : AfternoteEditorReducerEvent
 
     data object PrefillFailed : AfternoteEditorReducerEvent

@@ -1,6 +1,6 @@
 package com.afternote.feature.onboarding.presentation.findaccount
 
-import android.util.Patterns
+import com.afternote.feature.onboarding.presentation.OnboardingEmailRule
 import com.afternote.feature.onboarding.presentation.OnboardingFailure
 import com.afternote.feature.onboarding.presentation.OnboardingPasswordRule
 
@@ -35,9 +35,9 @@ internal data class FindPasswordUiState(
     val isPasswordChanged: Boolean = false,
     val failure: OnboardingFailure? = null,
 ) {
-    /** 이메일 형식 검사. 회원가입·아이디 찾기와 동일 방식([Patterns.EMAIL_ADDRESS] 전체 일치). */
+    /** 이메일 형식 검사 — 세 온보딩 화면이 [OnboardingEmailRule] 하나를 쓴다 (#1851). */
     val isEmailFormatValid: Boolean
-        get() = email.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(email).matches()
+        get() = OnboardingEmailRule.isValid(email)
 
     /** 인증번호 발송/재발송 가능 여부. 쿨다운 중이거나 이메일 형식이 틀리면 막는다. */
     val isSendCodeEnabled: Boolean

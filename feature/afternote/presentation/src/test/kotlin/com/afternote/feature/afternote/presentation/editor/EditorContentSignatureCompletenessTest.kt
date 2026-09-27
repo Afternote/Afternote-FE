@@ -168,11 +168,11 @@ class EditorContentSignatureCompletenessTest {
     @Test
     fun `서버 영상 삭제는 경고하고 서버 썸네일만 바뀌면 경고하지 않는다`() {
         val attachment = MemorialVideoAttachment("https://cdn.test/video.mp4", "https://cdn.test/thumb.jpg")
-        val video = EditableMemorialVideo.fromPersisted(attachment)
+        val video = EditableMemorialVideo.fromServer(attachment)
         assertExitGuard(before = memorial(video), after = memorial())
         assertExitGuard(
             before = memorial(video),
-            after = memorial(EditableMemorialVideo.fromPersisted(attachment.copy(thumbnailUrl = "https://cdn.test/other.jpg"))),
+            after = memorial(EditableMemorialVideo.fromServer(attachment.copy(thumbnailUrl = "https://cdn.test/other.jpg"))),
             changed = false,
         )
     }
