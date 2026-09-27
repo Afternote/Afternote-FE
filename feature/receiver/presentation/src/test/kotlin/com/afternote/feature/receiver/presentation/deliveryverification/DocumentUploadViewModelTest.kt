@@ -60,7 +60,7 @@ class DocumentUploadViewModelTest {
         )
 
     private fun DocumentUploadViewModel.startUpload(slot: DocumentSlot) {
-        onIntent(DocumentUploadIntent.UploadDocument(slot = slot, bytes = byteArrayOf(1), extension = "jpg", displayName = "서류.jpg"))
+        uploadDocument(slot = slot, bytes = byteArrayOf(1), extension = "jpg", displayName = "서류.jpg")
     }
 
     @Test
@@ -89,7 +89,7 @@ class DocumentUploadViewModelTest {
         pendingUploads.completeOldest(Result.success("url-death"))
         viewModel.startUpload(DocumentSlot.FamilyRelationCertificate)
 
-        viewModel.onIntent(DocumentUploadIntent.Submit)
+        viewModel.submit()
 
         val state = viewModel.uiState.value
         assertEquals(UiText.Resource(R.string.receiver_verify_document_upload_in_progress), state.errorMessage)
@@ -102,7 +102,7 @@ class DocumentUploadViewModelTest {
         val auth = FakeReceiverAuthRepository.strict()
         val viewModel = viewModel(FakeReceiverDeliveryDocumentUploadRepository.strict(), auth)
 
-        viewModel.onIntent(DocumentUploadIntent.Submit)
+        viewModel.submit()
 
         val state = viewModel.uiState.value
         assertEquals(UiText.Resource(R.string.receiver_verify_documents_required), state.errorMessage)
@@ -136,7 +136,7 @@ class DocumentUploadViewModelTest {
         viewModel.startUpload(DocumentSlot.FamilyRelationCertificate)
         pendingUploads.completeOldest(Result.success("url-family"))
 
-        viewModel.onIntent(DocumentUploadIntent.Submit)
+        viewModel.submit()
 
         assertEquals(listOf("url-death" to "url-family"), auth.deliverySubmissions)
         assertTrue(viewModel.uiState.value.isSubmitted)

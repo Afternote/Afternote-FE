@@ -25,16 +25,7 @@ import com.afternote.feature.receiver.presentation.deliveryverification.componen
  * 다음 단계의 인증번호 발송·검증은 실 API(`receiver-auth/email` 계열) 호출 (#407).
  */
 @Composable
-internal fun IdentityVerificationIntroScreen(
-    onBackClick: () -> Unit,
-    onStartClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    IdentityVerificationIntroContent(onBackClick = onBackClick, onStartClick = onStartClick, modifier = modifier)
-}
-
-@Composable
-private fun IdentityVerificationIntroContent(
+fun IdentityVerificationIntroScreen(
     onBackClick: () -> Unit,
     onStartClick: () -> Unit,
     modifier: Modifier = Modifier,

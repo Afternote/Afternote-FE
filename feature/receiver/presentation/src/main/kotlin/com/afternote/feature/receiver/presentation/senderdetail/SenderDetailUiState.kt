@@ -1,7 +1,6 @@
 package com.afternote.feature.receiver.presentation.senderdetail
 
 import androidx.compose.runtime.Immutable
-import com.afternote.core.ui.mvi.UiState
 
 /**
  * 발신자 상세(designs 11·12) UI 상태.
@@ -9,7 +8,7 @@ import com.afternote.core.ui.mvi.UiState
  * 카드 별칭은 SenderRegistry, 신원(실명) 은 `verify(masterKey)` 응답, 신청·승인 일시는
  * `getDeliveryVerificationStatus()` 응답을 결합해 정보 박스 4 행 + CTA 분기 데이터를 만든다.
  */
-internal sealed interface SenderDetailUiState : UiState {
+sealed interface SenderDetailUiState {
     data object Loading : SenderDetailUiState
 
     /**
@@ -39,7 +38,7 @@ internal sealed interface SenderDetailUiState : UiState {
     ) : SenderDetailUiState
 }
 
-internal sealed interface SenderVerificationState {
+sealed interface SenderVerificationState {
     data object NotRequested : SenderVerificationState
 
     data object Pending : SenderVerificationState
