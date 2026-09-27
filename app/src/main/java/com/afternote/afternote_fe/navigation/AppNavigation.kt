@@ -29,7 +29,7 @@ import com.afternote.afternote_fe.notification.NotificationPermissionEffect
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomBar
 import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
-import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.navigation.NavDestinationBackground
 import com.afternote.core.ui.navigation.PredictiveBackPopEnter
 import com.afternote.core.ui.navigation.PredictiveBackPopExit
 import com.afternote.feature.afternote.presentation.navigation.AfternoteNavHost
@@ -86,7 +86,7 @@ fun AppNavigation(
 
     Scaffold(
         modifier = modifier,
-        containerColor = AfternoteDesign.colors.gray1,
+        containerColor = NavDestinationBackground,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         contentWindowInsets =
             WindowInsets.systemBars.only(
