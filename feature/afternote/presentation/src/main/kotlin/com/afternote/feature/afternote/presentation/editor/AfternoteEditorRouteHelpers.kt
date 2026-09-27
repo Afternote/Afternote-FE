@@ -34,6 +34,10 @@ internal fun AfternoteEditorError.messageResId(): Int =
             R.string.afternote_editor_prefill_not_ready
         }
 
+        AfternoteEditorError.MediaSizeExceeded -> {
+            R.string.afternote_editor_media_size_exceeded
+        }
+
         is AfternoteEditorError.Upload -> {
             when (target) {
                 AfternoteEditorError.Upload.Target.THUMBNAIL -> R.string.afternote_editor_thumbnail_upload_failed
