@@ -68,7 +68,7 @@ class AuthBoundaryBackStackTest {
         start(Route.Home)
 
         composeRule.runOnIdle { harness.homeActions.onSettingClick() }
-        composeRule.runOnIdle { harness.settingActions.onNavigateToWithdrawGuide() }
+        composeRule.runOnIdle { harness.settingActions.onWithdrawGuideClick() }
 
         composeRule.runOnIdle { harness.settingActions.onLogoutSuccess() }
 
@@ -81,8 +81,8 @@ class AuthBoundaryBackStackTest {
         start(Route.Home)
 
         composeRule.runOnIdle { harness.homeActions.onSettingClick() }
-        composeRule.runOnIdle { harness.settingActions.onNavigateToWithdrawGuide() }
-        composeRule.runOnIdle { harness.settingActions.onNavigateToWithdrawConfirm() }
+        composeRule.runOnIdle { harness.settingActions.onWithdrawGuideClick() }
+        composeRule.runOnIdle { harness.settingActions.onWithdrawConfirmClick() }
 
         composeRule.runOnIdle { harness.settingActions.onWithdrawSuccess() }
 

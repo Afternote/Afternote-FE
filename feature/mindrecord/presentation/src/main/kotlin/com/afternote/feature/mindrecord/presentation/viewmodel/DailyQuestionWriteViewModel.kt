@@ -49,6 +49,7 @@ class DailyQuestionWriteViewModel
             // 수정 진입이면 대상 레코드를 프리필하고, 신규면 오늘 질문을 부른다 (#582).
             // 임시저장은 draftOnly=true 로만 내려오므로 어느 목록을 볼지 isDraft 로 가른다 (#770).
             if (editingAnswerId != null) {
+                _uiState.update { it.copy(isEditingExistingAnswer = true) }
                 loadAnswer(editingAnswerId, route.isDraft)
             } else {
                 loadTodayQuestion()
@@ -76,11 +77,21 @@ class DailyQuestionWriteViewModel
                     .mapCatching { list -> list.first { it.dailyQuestionId == answerId } }
                     .onSuccess { answer ->
                         _uiState.update {
+                            // **사용자가 이미 쓴 본문은 덮지 않는다** (#2031). 입력창은 프리필을
+                            // 기다리는 동안에도 쓸 수 있어서, 늦게 도착한 원본을 무조건 실으면
+                            // 방금 친 글이 서버 값으로 되돌아간다. 오늘 초안 이어쓰기(`resumeDraft`)가
+                            // 이미 같은 규칙을 쓰고 있었고, 대상 ID 로 들어온 수정만 빠져 있었다.
+                            //
+                            // 질문 문구와 대상 ID 는 사용자 입력이 아니라 서버가 정하는 값이라
+                            // 언제나 싣는다 — 그래야 저장이 올바른 레코드로 나간다.
                             it.copy(
                                 draftId = answer.dailyQuestionId,
                                 questionContent = answer.title,
-                                answer = answer.content,
+                                answer = if (it.answer.isHtmlBlank()) answer.content else it.answer,
                                 isQuestionLoading = false,
+                                // 「프리필이 도착했다」는 사실은 무엇을 실었는지와 무관하게 선다 —
+                                // 저장 잠금(#2028)이 이 값을 보므로, 입력해 둔 사용자가 저장하지
+                                // 못하는 상태로 굳으면 안 된다.
                                 contentLoaded = true,
                             )
                         }
@@ -232,26 +243,32 @@ class DailyQuestionWriteViewModel
         suspend fun uploadMedia(uriString: String): String? {
             // 실패 문구의 수명은 «다음 업로드 시작까지» 다 — 화면에 걷는 수단이 따로 없고,
             // 걷는 함수만 두면 호출부 0건인 죽은 코드가 된다 (#1019 리뷰 지적).
-            _uiState.update { it.copy(isUploadingImage = true, imageUploadError = null) }
-            return photoUploadRepository
-                .upload(uriString = uriString, directory = MIND_RECORD_UPLOAD_DIRECTORY)
-                .onSuccess { uploaded ->
-                    // 계약에 imageUrl 이 없어 상태로 들지 않는다 — 본문 img 로 들어가고,
-                    // 제출 직전 fileKey 로 바뀔 수 있게 기억만 해 둔다 (#549).
-                    uploadedFileKeysByUrl[uploaded.fileUrl] = uploaded.fileKey
-                    _uiState.update { it.copy(isUploadingImage = false) }
-                }.onFailure { e ->
-                    // 첨부가 빠진 채 저장이 이어질 수 있는 자리라 남긴다 (#964).
-                    errorReporter.recordMindRecordFailure(MindRecordFailureStage.MEDIA_UPLOAD, e)
-                    // null 로 흡수하면 사용자는 이미지가 붙은 줄 알고 저장한다 (#716).
-                    _uiState.update {
-                        it.copy(
-                            isUploadingImage = false,
-                            imageUploadError = UiText.Resource(R.string.mindrecord_error_image_upload_failed),
-                        )
-                    }
-                }.getOrNull()
-                ?.fileUrl
+            _uiState.update {
+                it.copy(uploadingImageCount = it.uploadingImageCount + 1, imageUploadError = null)
+            }
+            // finally 로 내려놓는다 — 취소도 여기를 지난다. 작성 화면의 scope 가 업로드를
+            // 소유하므로 구성 변경·화면 이탈이면 코루틴만 끊기고 `Result` 는 오지 않는다.
+            // 그 경로에 내려놓을 자리가 없어 잠금이 남고, 사용자는 관계없는 첨부를 한 번 더
+            // 성공시켜야만 저장할 수 있었다 (#2030).
+            try {
+                return photoUploadRepository
+                    .upload(uriString = uriString, directory = MIND_RECORD_UPLOAD_DIRECTORY)
+                    .onSuccess { uploaded ->
+                        // 계약에 imageUrl 이 없어 상태로 들지 않는다 — 본문 img 로 들어가고,
+                        // 제출 직전 fileKey 로 바뀔 수 있게 기억만 해 둔다 (#549).
+                        uploadedFileKeysByUrl[uploaded.fileUrl] = uploaded.fileKey
+                    }.onFailure { e ->
+                        // 첨부가 빠진 채 저장이 이어질 수 있는 자리라 남긴다 (#964).
+                        errorReporter.recordMindRecordFailure(MindRecordFailureStage.MEDIA_UPLOAD, e)
+                        // null 로 흡수하면 사용자는 이미지가 붙은 줄 알고 저장한다 (#716).
+                        _uiState.update {
+                            it.copy(imageUploadError = UiText.Resource(R.string.mindrecord_error_image_upload_failed))
+                        }
+                    }.getOrNull()
+                    ?.fileUrl
+            } finally {
+                _uiState.update { it.copy(uploadingImageCount = (it.uploadingImageCount - 1).coerceAtLeast(0)) }
+            }
         }
 
         /**
@@ -293,7 +310,13 @@ class DailyQuestionWriteViewModel
                 // 알리고 조회를 다시 걸어 사용자가 재시도할 수 있게 한다 (#565).
                 failSubmit(R.string.mindrecord_error_daily_question_missing)
                 // 이미 조회 중이면 그대로 둔다 — 연타로 같은 요청을 겹쳐 쌓지 않는다.
-                if (!state.isQuestionLoading) loadTodayQuestion()
+                //
+                // **무엇을 다시 부르는지는 진입이 정한다** (#2028). 수정·이어쓰기에서 오늘 질문을
+                // 부르면 questionId 가 채워지면서 대상이 오늘로 바뀌고, 다음 저장이 원래 답변의
+                // PATCH 가 아니라 오늘 질문의 신규 POST 로 나간다 — 고치던 글이 다른 질문에 남는다.
+                if (!state.isQuestionLoading) {
+                    if (editingAnswerId != null) loadAnswer(editingAnswerId, route.isDraft) else loadTodayQuestion()
+                }
                 return
             }
             if (!state.canSubmit) return

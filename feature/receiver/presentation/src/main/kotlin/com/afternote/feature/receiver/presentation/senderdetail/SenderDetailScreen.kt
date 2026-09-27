@@ -3,7 +3,6 @@ package com.afternote.feature.receiver.presentation.senderdetail
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -28,7 +27,7 @@ internal fun SenderDetailScreen(
     onRequestVerification: () -> Unit,
     onOpenReceiverHome: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: SenderDetailViewModel = hiltViewModel(),
+    viewModel: SenderDetailViewModel,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val shouldOpenReceiverHome = (uiState as? SenderDetailUiState.Success)?.shouldOpenReceiverHome == true

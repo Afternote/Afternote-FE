@@ -5,9 +5,9 @@ interface SettingNavActions {
 
     fun onLogoutSuccess()
 
-    fun onNavigateToWithdrawGuide()
+    fun onWithdrawGuideClick()
 
-    fun onNavigateToWithdrawConfirm()
+    fun onWithdrawConfirmClick()
 
     fun onWithdrawGuideBack()
 
@@ -15,57 +15,57 @@ interface SettingNavActions {
 
     fun onWithdrawSuccess()
 
-    fun onNavigateToProfileEdit()
+    fun onProfileEditClick()
 
     fun onProfileEditBack()
 
-    fun onNavigateToLinkedAccount()
+    fun onLinkedAccountClick()
 
     fun onLinkedAccountBack()
 
-    fun onNavigateToNotification()
+    fun onNotificationClick()
 
     fun onNotificationBack()
 
-    fun onNavigateToPushNotification()
+    fun onPushNotificationClick()
 
     fun onPushNotificationBack()
 
-    fun onNavigateToRecipientList()
+    fun onRecipientListClick()
 
-    fun onNavigateToRecipientListForDeliveryConditions()
+    fun onDeliveryConditionsClick()
 
     fun onRecipientListBack()
 
-    fun onNavigateToRecipientRegister()
+    fun onRecipientRegisterClick()
 
     fun onRecipientRegisterBack()
 
-    fun onNavigateToRecipientEdit(receiverId: Long)
+    fun onRecipientEditClick(receiverId: Long)
 
     fun onRecipientEditBack()
 
-    fun onNavigateToAfterDelivery(receiverId: Long)
+    fun onDeliveryConditionsRecipientSelected(receiverId: Long)
 
     fun onAfterDeliveryBack()
 
-    fun onNavigateToPasskey()
+    fun onPasskeyClick()
 
     fun onPasskeyBack()
 
-    fun onNavigateToPasskeyMaking()
+    fun onPasskeyRegisterClick()
 
     fun onPasskeyMakingBack()
 
-    fun onNavigateToPasskeyPassword()
+    fun onPasswordAuthClick()
 
     fun onPasskeyPasswordBack()
 
-    fun onNavigateToAppLock()
+    fun onAppLockClick()
 
     fun onAppLockBack()
 
-    fun onNavigateToNotice()
+    fun onNoticeClick()
 
     fun onNoticeBack()
 }

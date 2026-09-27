@@ -1,8 +1,6 @@
 package com.afternote.feature.receiver.presentation.senderdetail
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
@@ -15,10 +13,12 @@ import com.afternote.feature.receiver.domain.repository.ReceiverRepository
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
 import com.afternote.feature.receiver.presentation.recordsbox.SenderEntry
 import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistry
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * 발신자 상세(designs 11·12) ViewModel.
@@ -29,11 +29,11 @@ import javax.inject.Inject
  *
  * masterKey 가 없으면(마스터 키 미입력) 무조건 [SenderVerificationState.NotRequested] — API 호출 자체 생략.
  */
-@HiltViewModel
+@HiltViewModel(assistedFactory = SenderDetailViewModel.Factory::class)
 internal class SenderDetailViewModel
-    @Inject
+    @AssistedInject
     constructor(
-        savedStateHandle: SavedStateHandle,
+        @Assisted route: ReceiverRoute.SenderDetailRoute,
         private val senderRegistry: SenderRegistry,
         private val receiverRepository: ReceiverRepository,
         private val receiverAuthRepository: ReceiverAuthRepository,
@@ -52,8 +52,7 @@ internal class SenderDetailViewModel
             event: SenderDetailReducerEvent,
         ): SenderDetailUiState = reduceSenderDetail(state, event)
 
-        private val senderId: String =
-            savedStateHandle.toRoute<ReceiverRoute.SenderDetailRoute>().senderId
+        private val senderId: String = route.senderId
 
         /** 진행 중인 상태 조회 — 첫 진입 이후의 ON_RESUME 이 실행 중인 로드와 겹치면 건너뛰기 위한 가드. */
         private var loadJob: Job? = null
@@ -183,6 +182,11 @@ internal class SenderDetailViewModel
                     SenderDetailUiState.StatusLoadFailed(displayName = displayName)
                 },
             )
+        }
+
+        @AssistedFactory
+        interface Factory {
+            fun create(route: ReceiverRoute.SenderDetailRoute): SenderDetailViewModel
         }
     }
 
