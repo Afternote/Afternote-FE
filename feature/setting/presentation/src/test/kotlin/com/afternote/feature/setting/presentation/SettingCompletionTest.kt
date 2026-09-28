@@ -712,7 +712,6 @@ private val COMPLETION_DEFAULT_RECEIVER_DETAIL =
         timeLetterCount = 2,
         afterNoteCount = 3,
         message = "기존 마지막 인사말",
-        authCode = "AUTH-77",
     )
 
 private fun completionConnectedAccounts(

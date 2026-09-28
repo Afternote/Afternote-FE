@@ -24,7 +24,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,8 +52,11 @@ fun SenderDetailScreen(
     onBackClick: () -> Unit,
     onRequestVerification: () -> Unit,
     onOpenReceiverHome: () -> Unit,
+    // 기본값을 두지 않는다. @AssistedInject VM 이라 인자 없는 hiltViewModel() 은 런타임에
+    // "no creation callback was provided in CreationExtras" 로 죽는다. ReceiverNavHost 의 entry 가
+    // 자기 key 로 만들어 넘긴다 (#2168).
+    viewModel: SenderDetailViewModel,
     modifier: Modifier = Modifier,
-    viewModel: SenderDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val shouldOpenReceiverHome = (uiState as? SenderDetailUiState.Success)?.shouldOpenReceiverHome == true

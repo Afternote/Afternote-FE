@@ -38,7 +38,7 @@ class AfternoteResponseDtoContractTest {
 
     @Test
     fun `작성자 playlist songs 키가 빠지면 빈 목록으로 접히지 않고 실패한다`() {
-        assertMissingKey<AfternotePlaylistDto>(body = "{}", key = "songs")
+        assertMissingKey<AfternoteMemorialDto>(body = "{}", key = "songs")
     }
 
     @Test
