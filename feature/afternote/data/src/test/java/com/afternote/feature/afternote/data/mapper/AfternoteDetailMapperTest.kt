@@ -3,7 +3,7 @@ package com.afternote.feature.afternote.data.mapper
 import com.afternote.feature.afternote.data.dto.AfternoteCredentialsDto
 import com.afternote.feature.afternote.data.dto.AfternoteDetailDto
 import com.afternote.feature.afternote.data.dto.AfternoteDetailReceiverDto
-import com.afternote.feature.afternote.data.dto.AfternotePlaylistDto
+import com.afternote.feature.afternote.data.dto.AfternoteMemorialDto
 import com.afternote.feature.afternote.data.dto.LeaveMessageBlockDto
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
@@ -266,7 +266,7 @@ class AfternoteDetailMapperTest {
                 title = "t",
                 updatedAt = UPDATED_AT,
                 leaveMessage = listOf(LeaveMessageBlockDto(title = "가족에게", body = "잘 지내")),
-                playlist = AfternotePlaylistDto(songs = emptyList()),
+                memorial = AfternoteMemorialDto(songs = emptyList()),
             ).toDomain()
 
         assertEquals(
@@ -285,7 +285,7 @@ class AfternoteDetailMapperTest {
                 category = "PLAYLIST",
                 title = "t",
                 updatedAt = UPDATED_AT,
-                playlist = AfternotePlaylistDto(songs = emptyList(), memorialVideo = null),
+                memorial = AfternoteMemorialDto(songs = emptyList(), memorialVideo = null),
             ).toDomain()
 
         val media = (result.content as DetailContent.Memorial).media

@@ -3,7 +3,7 @@ package com.afternote.feature.setting.presentation.receiver
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.ui.UiText
 import com.afternote.feature.setting.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,7 +19,7 @@ import javax.inject.Inject
 class ReceiverRegisterViewModel
     @Inject
     constructor(
-        private val userRepository: UserRepository,
+        private val receiverRepository: UserReceiverRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(ReceiverRegisterUiState())
         val uiState = _uiState.asStateFlow()
@@ -56,7 +56,7 @@ class ReceiverRegisterViewModel
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             viewModelScope.launch {
                 runCatchingCancellable {
-                    userRepository.createReceiver(
+                    receiverRepository.createReceiver(
                         name = name,
                         relation = relation,
                         phone = phone?.takeIf { it.isNotBlank() }?.normalizeReceiverPhone(),
