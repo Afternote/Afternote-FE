@@ -1,9 +1,7 @@
 package com.afternote.feature.receiver.presentation.senderdetail
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
@@ -15,6 +13,9 @@ import com.afternote.feature.receiver.domain.repository.ReceiverRepository
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
 import com.afternote.feature.receiver.presentation.recordsbox.SenderEntry
 import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistry
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +23,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * 발신자 상세(designs 11·12) ViewModel.
@@ -32,19 +32,24 @@ import javax.inject.Inject
  * [ReceiverAuthRepository.getDeliveryVerificationStatus] 로 상태를 받아 정보 박스 데이터를 만든다.
  *
  * masterKey 가 없으면(마스터 키 미입력) 무조건 [SenderVerificationState.NotRequested] — API 호출 자체 생략.
+ *
+ * `senderId` 는 route 인자로 받는다. 이 화면은 Nav3 entry 안에 있고, entry 의 SavedStateHandle 에는
+ * NavKey 필드가 실리지 않는다. `savedStateHandle.toRoute<T>()` 로 읽으면 카드를 누르는 순간
+ * `MissingFieldException` 으로 죽는다 (#2168). 그래서
+ * [com.afternote.feature.receiver.presentation.deliveryverification.DeliveryVerificationFlowViewModel] 과
+ * 같이 assisted 주입으로 키를 직접 받는다.
  */
-@HiltViewModel
+@HiltViewModel(assistedFactory = SenderDetailViewModel.Factory::class)
 class SenderDetailViewModel
-    @Inject
+    @AssistedInject
     constructor(
-        savedStateHandle: SavedStateHandle,
+        @Assisted route: ReceiverRoute.SenderDetailRoute,
         private val senderRegistry: SenderRegistry,
         private val receiverRepository: ReceiverRepository,
         private val receiverAuthRepository: ReceiverAuthRepository,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
-        private val senderId: String =
-            savedStateHandle.toRoute<ReceiverRoute.SenderDetailRoute>().senderId
+        private val senderId: String = route.senderId
 
         private val _uiState = MutableStateFlow<SenderDetailUiState>(SenderDetailUiState.Loading)
         val uiState: StateFlow<SenderDetailUiState> = _uiState.asStateFlow()
@@ -212,6 +217,11 @@ class SenderDetailViewModel
                     SenderDetailUiState.StatusLoadFailed(displayName = displayName)
                 },
             )
+        }
+
+        @AssistedFactory
+        interface Factory {
+            fun create(route: ReceiverRoute.SenderDetailRoute): SenderDetailViewModel
         }
     }
 

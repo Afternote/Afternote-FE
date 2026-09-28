@@ -29,6 +29,7 @@ import com.afternote.feature.setting.presentation.passkey.PassKeyMakingScreen
 import com.afternote.feature.setting.presentation.passkey.PassKeyPasswordScreen
 import com.afternote.feature.setting.presentation.passkey.PassKeyScreen
 import com.afternote.feature.setting.presentation.passkey.PassKeyViewModel
+import com.afternote.feature.setting.presentation.password.PasswordChangeScreen
 import com.afternote.feature.setting.presentation.profile.ProfileEditScreen
 import com.afternote.feature.setting.presentation.receiver.ReceiverEditScreen
 import com.afternote.feature.setting.presentation.receiver.ReceiverEditViewModel
@@ -96,6 +97,7 @@ public fun SettingNavHost(
                         onBackClick = actions::popBack,
                         onLogoutSuccess = actions::onLogoutSuccess,
                         onProfileEditClick = actions::onProfileEditClick,
+                        onPasswordChangeClick = actions::onPasswordChangeClick,
                         onLinkedAccountClick = actions::onLinkedAccountClick,
                         onNotificationClick = actions::onNotificationClick,
                         onRecipientListClick = actions::onRecipientListClick,
@@ -134,6 +136,13 @@ public fun SettingNavHost(
                     ProfileEditScreen(
                         onBackClick = actions::popBack,
                         onWithdrawGuideClick = actions::onWithdrawGuideClick,
+                    )
+                }
+
+                entry<SettingRoute.PasswordChangeRoute> {
+                    PasswordChangeScreen(
+                        onBackClick = actions::popBack,
+                        onChanged = actions::popBack,
                     )
                 }
 
