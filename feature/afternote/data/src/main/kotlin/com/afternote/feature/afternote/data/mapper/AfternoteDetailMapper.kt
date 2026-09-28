@@ -106,12 +106,7 @@ private fun AfternoteDetailDto.toDraftContent(type: AfternoteType): DraftContent
         AfternoteType.MEMORIAL -> {
             DraftContent.Memorial(
                 songs = playlist?.songs?.map { it.toDomain() }.orEmpty(),
-                media =
-                    MemorialMedia(
-                        photoUrl = playlist?.memorialPhotoUrl,
-                        videoUrl = playlist?.memorialVideo?.videoUrl,
-                        thumbnailUrl = playlist?.memorialVideo?.thumbnailUrl,
-                    ),
+                media = playlist.toMemorialMedia(),
             )
         }
 
@@ -183,12 +178,18 @@ private fun AfternoteDetailDto.toTimestamps(): DetailTimestamps =
 private fun AfternotePlaylistDto.toMemorialContent() =
     DetailContent.Memorial(
         songs = songs.map { it.toDomain() },
-        media =
-            MemorialMedia(
-                photoUrl = memorialPhotoUrl,
-                videoUrl = memorialVideo?.videoUrl,
-                thumbnailUrl = memorialVideo?.thumbnailUrl,
-            ),
+        media = toMemorialMedia(),
+    )
+
+/**
+ * 미디어 URL 의 빈 값은 여기서 한 번만 `null` 로 맞춘다. 앱 안에서는 `null` 만 「없음」이다.
+ * BE `main` 은 빈 미디어를 `null` 로 저장하므로 빈 문자열은 옛 데이터에서만 온다.
+ */
+private fun AfternotePlaylistDto?.toMemorialMedia() =
+    MemorialMedia(
+        photoUrl = this?.memorialPhotoUrl?.ifBlank { null },
+        videoUrl = this?.memorialVideo?.videoUrl?.ifBlank { null },
+        thumbnailUrl = this?.memorialVideo?.thumbnailUrl?.ifBlank { null },
     )
 
 private fun AfternoteDetailReceiverDto.toDomain(): DetailReceiver? =
