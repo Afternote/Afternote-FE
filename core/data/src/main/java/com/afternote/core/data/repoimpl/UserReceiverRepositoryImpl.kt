@@ -4,9 +4,9 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.data.mapper.delivery.toRequestDto
 import com.afternote.core.data.mapper.user.toDomain
+import com.afternote.core.datastore.TokenDataSource
 import com.afternote.core.domain.error.ReceiverRequestRejectedException
 import com.afternote.core.domain.repository.UserReceiverRepository
-import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.model.delivery.DeliveryConditionItem
 import com.afternote.core.model.delivery.ReceiverDeliveryConditions
 import com.afternote.core.model.user.Receiver
@@ -25,10 +25,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -50,7 +52,8 @@ internal class UserReceiverRepositoryImpl
     @Inject
     constructor(
         private val userApiService: UserApiService,
-        private val authRepository: AuthRepository,
+        // 세션 경계의 정본. 캐시 수명을 이 식별자에 건다(아래 receiverListFlow 주석) (#2135).
+        private val tokenDataSource: TokenDataSource,
         private val errorReporter: ErrorReporter,
     ) : UserReceiverRepository {
         private val receiverRefreshRevision = MutableStateFlow(0L)
@@ -58,23 +61,47 @@ internal class UserReceiverRepositoryImpl
         // 조회 실패를 예외로 흘리면 구독 중인 화면이 미처리 예외로 죽는다. 일반적인 일시 실패는 같은
         // 로그인 구간에서 이 collector가 마지막으로 성공한 목록으로 낮춘다. 캐시를 flow 안에 두는 이유는
         // 저장소 인스턴스보다 수명이 짧은 «로그인 구간 + collector»에 귀속해 계정 사이에 섞이지 않게 하기 위함이다.
+        //
+        // 그 로그인 구간을 [TokenDataSource.sessionId] 로 가른다. 로그인 여부 Boolean 으로 가르면
+        // 로그아웃과 새 로그인이 한 구간에 겹칠 때 수집자에게 true → true 로 뭉개져 이 flow 가 재시작되지
+        // 않고, 캐시가 계정 경계를 넘는다 (#2135). 세션 식별자는 로그인마다 새 값이라 중간 로그아웃 방출이
+        // 생략돼도 값이 달라지고, 같은 세션의 토큰 회전에는 값이 그대로여서 캐시가 유지된다.
+        //
+        // 이전 세션 추적은 수집자마다 새로 만든다. 이 저장소는 @Singleton 이라 필드에 두면 한 화면의 세션
+        // 전환 판정을 다른 화면이 먹는다.
         @OptIn(ExperimentalCoroutinesApi::class)
         override val receiverListFlow: Flow<List<Receiver>> =
-            authRepository.isLoggedIn
-                .distinctUntilChanged()
-                .flatMapLatest { loggedIn ->
-                    if (!loggedIn) {
-                        flowOf(emptyList())
-                    } else {
-                        receiverListForAuthenticatedSession()
-                    }
-                }
+            flow {
+                var previousSessionId: String? = null
+                emitAll(
+                    tokenDataSource.sessionId
+                        .distinctUntilChanged()
+                        .flatMapLatest { sessionId ->
+                            val previous = previousSessionId
+                            previousSessionId = sessionId
+                            when {
+                                sessionId == null -> flowOf(emptyList())
 
-        private fun receiverListForAuthenticatedSession(): Flow<List<Receiver>> =
+                                // 첫 구독과 로그아웃 뒤 로그인. 이 수집자가 들고 있는 값이 이전 계정 목록이
+                                // 아니므로 곧바로 조회한다. 여기서까지 빈 목록을 먼저 내면 첫 구독을
+                                // Flow.first() 로 받는 호출처가 요청 전에 끊긴다.
+                                previous == null -> receiverListForSession(sessionId)
+
+                                // 실제 세션 교체. 하류 stateIn 의 initialValue 는 내부 flow 가 교체돼도
+                                // 되돌아가지 않으므로, 새 세션 조회가 끝날 때까지 이전 계정 목록이 수집자의
+                                // 현재 값으로 남는다. 계약이 "새 세션에는 빈 목록" 이라 조회를 기다리지 않고
+                                // 먼저 비운다.
+                                else -> receiverListForSession(sessionId).onStart { emit(emptyList()) }
+                            }
+                        },
+                )
+            }
+
+        private fun receiverListForSession(sessionId: String): Flow<List<Receiver>> =
             flow {
                 var lastKnownReceivers = emptyList<Receiver>()
                 receiverRefreshRevision.collect {
-                    val receivers =
+                    val outcome =
                         runCatchingCancellable { getReceivers() }
                             .onFailure {
                                 // 이 flow 가 하는 일이 «예외를 삼켜 화면을 살리는 것» 이라, 삼킨 뒤의
@@ -84,16 +111,26 @@ internal class UserReceiverRepositoryImpl
                                     throwable = it,
                                     attributes = mapOf(KEY_STAGE to STAGE_RECEIVER_LIST),
                                 )
-                            }.fold(
-                                onSuccess = { it },
-                                onFailure = { failure ->
-                                    if (failure is ApiException && failure.status == UNAUTHORIZED_STATUS) {
-                                        emptyList()
-                                    } else {
-                                        lastKnownReceivers
-                                    }
-                                },
-                            )
+                            }
+
+                    // 응답이 돌아온 지금 저장된 세션이 이 구독의 세션과 다르면 결과는 이전 계정 것이다.
+                    // 세션 전환이 저장소에 커밋되고도 상위 sessionId 관측이 새 식별자를 아직 전달하지 못한
+                    // 구간에는 이 flow 가 취소되지 않은 채 살아 있고, 그때 끝난 성공도 실패 폴백도 이전 계정
+                    // 목록을 새 계정으로 흘려보냈다 (#2135). 재조회에서 세션이 다르면 이 결과를 반영하지
+                    // 않는다. 이 비교와 방출이 원자적인 것은 아니며, 이미 내보낸 값을 되돌리지는 못한다.
+                    if (tokenDataSource.sessionId.first() != sessionId) return@collect
+
+                    val receivers =
+                        outcome.fold(
+                            onSuccess = { it },
+                            onFailure = { failure ->
+                                if (failure is ApiException && failure.status == UNAUTHORIZED_STATUS) {
+                                    emptyList()
+                                } else {
+                                    lastKnownReceivers
+                                }
+                            },
+                        )
                     lastKnownReceivers = receivers
                     emit(receivers)
                 }
@@ -101,10 +138,11 @@ internal class UserReceiverRepositoryImpl
 
         /**
          * 비로그인 상태에서는 서버를 호출하지 않고 빈 목록을 돌려준다. 따라서 호출처는 빈 목록만으로
-         * «수신인 없음» 과 «로그인 안 됨» 을 구분할 수 없다 — 구분이 필요하면 [AuthRepository.isLoggedIn] 을 함께 봐야 한다.
+         * «수신인 없음» 과 «로그인 안 됨» 을 구분할 수 없다 — 구분이 필요하면
+         * `AuthRepository.isLoggedIn` 을 함께 봐야 한다.
          */
         override suspend fun getReceivers(): List<Receiver> {
-            if (!authRepository.isLoggedIn.first()) return emptyList()
+            if (tokenDataSource.sessionId.first() == null) return emptyList()
 
             return userApiService
                 .getReceivers()
