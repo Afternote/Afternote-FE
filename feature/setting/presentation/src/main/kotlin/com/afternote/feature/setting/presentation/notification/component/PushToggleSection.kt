@@ -6,7 +6,7 @@ import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.notification.PushNotificationUiState
 
 @Composable
-fun PushToggleSection(
+internal fun PushToggleSection(
     uiState: PushNotificationUiState,
     onNewsletterToggle: (Boolean) -> Unit,
     onMindRecordToggle: (Boolean) -> Unit,
