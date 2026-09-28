@@ -53,7 +53,15 @@ sealed interface Route {
     @Serializable
     data object Receiver : Route
 
-    /** 설정 흐름의 Nav2 중첩 그래프 루트. 설정 홈(`SettingRoute.SettingHomeRoute`)이 시작 화면이다. */
+    /**
+     * 설정 로컬 스택의 host destination (#1695).
+     *
+     * 설정 안의 화면은 전부 이 한 칸 아래의 로컬 Nav3 스택에 있다. 홈의 «수신인 지정 미완료» 칩은
+     * 설정 홈을 거치지 않고 등록 화면으로 곧장 들어오는데, 로컬 스택의 시작점은 host 가 정하므로
+     * 그 진입을 [startWithRecipientRegistration] 인자로 나른다.
+     */
     @Serializable
-    data object Setting : Route
+    data class Setting(
+        val startWithRecipientRegistration: Boolean = false,
+    ) : Route
 }
