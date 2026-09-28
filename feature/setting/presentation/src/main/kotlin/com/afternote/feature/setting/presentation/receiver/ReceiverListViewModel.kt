@@ -1,8 +1,10 @@
 package com.afternote.feature.setting.presentation.receiver
 
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.domain.model.ReceiverListState
 import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.model.setting.ReceiverListItem
+import com.afternote.core.model.user.Receiver
 import com.afternote.core.ui.mvi.MviViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -23,6 +25,7 @@ internal class ReceiverListViewModel
             when (intent) {
                 ReceiverListIntent.ObservationStarted -> startObservation()
                 ReceiverListIntent.ObservationStopped -> stopObservation()
+                ReceiverListIntent.Retry -> retry()
             }
         }
 
@@ -31,8 +34,23 @@ internal class ReceiverListViewModel
             event: ReceiverListReducerEvent,
         ): ReceiverListUiState =
             when (event) {
-                is ReceiverListReducerEvent.ReceiversChanged -> state.copy(receivers = event.receivers)
+                ReceiverListReducerEvent.RetryStarted -> state.copy(loadState = ReceiverListLoadState.Loading)
+                is ReceiverListReducerEvent.RepositoryStateChanged -> state.withRepositoryState(event.state)
             }
+
+        private fun retry() {
+            if (observation?.isActive != true) return
+            when (currentState.loadState) {
+                ReceiverListLoadState.Failure, ReceiverListLoadState.RefreshFailure -> {
+                    dispatch(ReceiverListReducerEvent.RetryStarted)
+                    receiverRepository.refreshReceiverList()
+                }
+
+                ReceiverListLoadState.Loading, ReceiverListLoadState.Ready -> {
+                    Unit
+                }
+            }
+        }
 
         private fun startObservation() {
             pendingStop?.cancel()
@@ -40,12 +58,8 @@ internal class ReceiverListViewModel
             if (observation?.isActive == true) return
             observation =
                 viewModelScope.launch {
-                    receiverRepository.receiverListFlow.collect { receivers ->
-                        dispatch(
-                            ReceiverListReducerEvent.ReceiversChanged(
-                                receivers.map { ReceiverListItem(it.receiverId, it.name, it.relation) },
-                            ),
-                        )
+                    receiverRepository.receiverListStateFlow.collect { state ->
+                        dispatch(ReceiverListReducerEvent.RepositoryStateChanged(state))
                     }
                 }
         }
@@ -65,3 +79,39 @@ internal class ReceiverListViewModel
             const val OBSERVATION_STOP_TIMEOUT_MILLIS = 5_000L
         }
     }
+
+private fun ReceiverListUiState.withRepositoryState(state: ReceiverListState): ReceiverListUiState =
+    when (state) {
+        ReceiverListState.SignedOut -> {
+            ReceiverListUiState()
+        }
+
+        is ReceiverListState.Loading -> {
+            copy(
+                receivers = state.previousReceivers?.toItems() ?: receivers.takeIf { sessionId == state.sessionId }.orEmpty(),
+                loadState = ReceiverListLoadState.Loading,
+                sessionId = state.sessionId,
+            )
+        }
+
+        is ReceiverListState.Success -> {
+            copy(
+                receivers = state.receivers.toItems(),
+                loadState = ReceiverListLoadState.Ready,
+            )
+        }
+
+        is ReceiverListState.Failure -> {
+            val remaining =
+                when {
+                    state.discardPrevious -> emptyList()
+                    else -> state.previousReceivers?.toItems() ?: receivers
+                }
+            copy(
+                receivers = remaining,
+                loadState = if (remaining.isEmpty()) ReceiverListLoadState.Failure else ReceiverListLoadState.RefreshFailure,
+            )
+        }
+    }
+
+private fun List<Receiver>.toItems(): List<ReceiverListItem> = map { ReceiverListItem(it.receiverId, it.name, it.relation) }
