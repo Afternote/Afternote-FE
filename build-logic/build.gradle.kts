@@ -28,9 +28,9 @@ dependencies {
     testImplementation(gradleTestKit())
 
     // 루트 build.gradle.kts 의 보안 하한은 별도 빌드인 여기까지 미치지 않는다 — 같은 근거(#2132·#981·
-    // #982·#985·#2204). AGP 9.3.2 이 이 클래스패스에도 같은 취약 버전을 끌어온다(netty 는 여기 없다).
-    // freemarker 는 거꾸로 이 빌드의 kover-gradle-plugin 만 끌어온다. 이 constraint 는 included build 의
-    // 변형에 실려 루트 buildEnvironment 에서도 2.3.32 -> 2.3.35 로 해석되므로 루트에 리터럴을 두지 않는다.
+    // #982·#985). AGP 9.3.2 이 이 클래스패스에도 같은 취약 버전을 끌어온다(netty 는 여기 없다).
+    // freemarker(#2204)는 거꾸로 이 빌드의 kover-gradle-plugin 만 끌어온다. 이 constraint 는 included
+    // build 의 변형에 실려 루트 buildEnvironment 에서도 2.3.32 -> 2.3.35 로 해석되므로 루트에 리터럴을 두지 않는다.
     constraints {
         listOf("bcprov-jdk18on", "bcpkix-jdk18on", "bcutil-jdk18on").forEach { artifact ->
             implementation("org.bouncycastle:$artifact:${libs.versions.bouncycastle.get()}") {
