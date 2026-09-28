@@ -86,6 +86,36 @@ class NotificationSettingSignalTest {
         assertFalse(viewModel.uiState.value.isMarketingConsentSaveFailed)
     }
 
+    @Test
+    fun `안내 중에 화면이 멈추면 떠 있던 안내와 밀린 안내를 거둬 재진입에 띄우지 않는다`() {
+        setScreen()
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) { viewModel.uiState.value.isMarketingFeedbackActive }
+
+        // 첫 실패의 안내가 떠 있는 동안 둘째 실패가 나서 그 뒤에 줄을 선다.
+        composeRule.runOnIdle {
+            viewModel.onIntent(PushNotificationIntent.ChangeMarketingConsent(MarketingConsent.SMS, false))
+        }
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) { isFailedMessageShown() }
+        composeRule.runOnIdle {
+            viewModel.onIntent(PushNotificationIntent.ChangeMarketingConsent(MarketingConsent.EMAIL, false))
+        }
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            repository.marketingConsentUpdates.size == 2 &&
+                viewModel.uiState.value.isEmailChecked &&
+                !viewModel.uiState.value.isMarketingConsentSaveFailed
+        }
+
+        // 안내 시간이 흘러 저절로 닫히지 않게 시계를 세운다. 멈췄다 돌아오는 것만으로 걷히는지 본다.
+        composeRule.mainClock.autoAdvance = false
+        composeRule.runOnIdle { lifecycleOwner.moveTo(Lifecycle.State.CREATED) }
+        composeRule.runOnIdle { lifecycleOwner.moveTo(Lifecycle.State.RESUMED) }
+        composeRule.mainClock.advanceTimeBy(SNACKBAR_EXIT_MILLIS)
+
+        assertFalse(isFailedMessageShown())
+    }
+
+    private fun isFailedMessageShown(): Boolean = composeRule.onAllNodesWithText(failedMessage).fetchSemanticsNodes().isNotEmpty()
+
     private fun setScreen() {
         composeRule.setContent {
             CompositionLocalProvider(LocalLifecycleOwner provides lifecycleOwner) {
@@ -113,5 +143,8 @@ class NotificationSettingSignalTest {
 
     private companion object {
         const val TIMEOUT_MILLIS = 5_000L
+
+        /** 스낵바가 사라지는 애니메이션이 끝나기에 넉넉하고, 짧은 안내 시간(4초)보다는 짧다. */
+        const val SNACKBAR_EXIT_MILLIS = 1_000L
     }
 }
