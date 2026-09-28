@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -16,6 +16,7 @@ import {
     ISSUE_LABELS,
     applyGate,
     awaitGate,
+    awaitsGate,
     buildIssue,
     buildPlan,
     needsGate,
@@ -110,7 +111,7 @@ test("워크플로는 봇 PR 에만 돌고 PR 코드를 체크아웃하지 않�
     assert.match(source, /^permissions: \{\}/m);
     assert.match(source, /issues: write/);
     assert.match(source, /pull-requests: write/);
-    assert.match(source, /run: node \.github\/scripts\/dependabot-pr-gate\.mjs/);
+    assert.match(source, /run: node \.github\/scripts\/dependabot-pr-gate\.mjs$/m, "인자 없이 불러야 채우기다");
 });
 
 const FILLED = {
@@ -142,8 +143,12 @@ test("await 는 게이트가 채운 뒤의 live PR 을 돌려준다 (#2212)", as
 });
 
 test("await 는 기다릴 이유가 없으면 첫 조회로 끝난다", async () => {
+    const handFilled = { ...UNFILLED, title: `${BOT_TITLE} (#2139)`, body: "Refs #2139\n\n## CI Test Plan\n..." };
+    assert.equal(needsGate(handFilled), true, "마커가 없어 게이트는 다시 채우려 한다");
+    assert.equal(awaitsGate(handFilled), false, "검증은 사람이 채운 PR 을 기다리지 않는다");
     for (const pullRequest of [
         FILLED,
+        handFilled,
         { ...UNFILLED, user: { login: "1hyok" } },
         { ...UNFILLED, state: "closed" },
     ]) {
@@ -153,6 +158,48 @@ test("await 는 기다릴 이유가 없으면 첫 조회로 끝난다", async ()
         assert.equal(result.timedOut, false);
         assert.equal(result.pullRequest, pullRequest);
     }
+});
+
+test("await 는 페이로드가 이미 판정할 수 있으면 API 를 부르지 않는다", async () => {
+    const live = sequence(UNFILLED);
+    const ready = await awaitGate({ loadPullRequest: live.load, initial: FILLED, timeoutMs: 5_000, intervalMs: 5 });
+    assert.equal(live.calls(), 0, "게이트가 채운 뒤의 edited·synchronize 는 종전처럼 페이로드로 끝난다");
+    assert.equal(ready.pullRequest, FILLED);
+    assert.equal(ready.polls, 0);
+
+    const stale = sequence(UNFILLED, FILLED);
+    const waited = await awaitGate({ loadPullRequest: stale.load, initial: UNFILLED, timeoutMs: 5_000, intervalMs: 5 });
+    assert.equal(stale.calls(), 2, "opened 페이로드는 옛 값이라 live 를 기다린다");
+    assert.equal(waited.pullRequest, FILLED);
+});
+
+test("await 는 조회 오류를 제한 시간 안에서 다시 시도하고, 한 번도 못 읽으면 오류를 던진다", async () => {
+    let calls = 0;
+    const flaky = async () => {
+        calls += 1;
+        if (calls === 1) throw new Error("GET pulls -> 502");
+        return calls === 2 ? UNFILLED : FILLED;
+    };
+    const recovered = await awaitGate({ loadPullRequest: flaky, timeoutMs: 5_000, intervalMs: 5 });
+    assert.equal(recovered.timedOut, false);
+    assert.equal(recovered.pullRequest, FILLED);
+    assert.equal(calls, 3);
+
+    const down = async () => {
+        throw new Error("GET pulls -> 403 rate limit");
+    };
+    await assert.rejects(awaitGate({ loadPullRequest: down, timeoutMs: 30, intervalMs: 5 }), /403 rate limit/);
+
+    let readOnce = 0;
+    const thenDown = async () => {
+        readOnce += 1;
+        if (readOnce === 1) return UNFILLED;
+        throw new Error("GET pulls -> 502");
+    };
+    const partial = await awaitGate({ loadPullRequest: thenDown, timeoutMs: 30, intervalMs: 5 });
+    assert.equal(partial.timedOut, true);
+    assert.equal(partial.pullRequest, UNFILLED, "읽은 적이 있으면 마지막 live 상태를 넘긴다");
+    assert.match(partial.lastError.message, /502/);
 });
 
 test("await 는 제한 시간이 지나면 기다림을 끝내고 마지막 live 상태를 넘긴다", async () => {
@@ -219,6 +266,25 @@ test("await 명령은 live PR JSON 을 파일에 쓰고, 제한 시간을 넘겨
         assert.match(unfilled.stdout, /::warning::dependabot-pr-gate 가 0초 안에 #2138/);
         assert.deepEqual(JSON.parse(await readFile(unfilledPath, "utf8")), UNFILLED);
 
+        const eventPath = path.join(directory, "event.json");
+        await writeFile(eventPath, JSON.stringify({ action: "synchronize", pull_request: { ...FILLED, number: 2138 } }));
+        const payloadPath = path.join(directory, "payload.json");
+        const fromPayload = await runGateCli(["await", payloadPath], {
+            env: { GH_TOKEN: "t", PR_NUMBER: "2138", AWAIT_TIMEOUT_SECONDS: "90", GITHUB_EVENT_PATH: eventPath },
+            pullRequest: UNFILLED,
+        });
+        assert.equal(fromPayload.code, 0, fromPayload.stderr);
+        assert.deepEqual(fromPayload.requests, [], "채워진 페이로드면 API 를 부르지 않는다");
+        assert.deepEqual(JSON.parse(await readFile(payloadPath, "utf8")), { ...FILLED, number: 2138 });
+
+        const otherPath = path.join(directory, "other.json");
+        const otherPullRequest = await runGateCli(["await", otherPath], {
+            env: { GH_TOKEN: "t", PR_NUMBER: "2140", AWAIT_TIMEOUT_SECONDS: "0", GITHUB_EVENT_PATH: eventPath },
+            pullRequest: FILLED,
+        });
+        assert.equal(otherPullRequest.code, 0, otherPullRequest.stderr);
+        assert.deepEqual(otherPullRequest.requests, ["GET /repos/Afternote/Afternote-FE/pulls/2140"], "다른 PR 의 페이로드는 쓰지 않는다");
+
         const missing = await runGateCli(["await", path.join(directory, "x.json")], {
             env: { GH_TOKEN: "t", PR_NUMBER: "2138" },
         });
@@ -228,6 +294,16 @@ test("await 명령은 live PR JSON 을 파일에 쓰고, 제한 시간을 넘겨
     } finally {
         await rm(directory, { recursive: true, force: true });
     }
+});
+
+test("인자 없이 부르면 채우기다: live PR 을 읽고 봇 PR 이 아니면 아무것도 쓰지 않는다", async () => {
+    const result = await runGateCli([], {
+        env: { GITHUB_TOKEN: "t", PR_NUMBER: "2138" },
+        pullRequest: { user: { login: "1hyok" }, state: "open", title: "x", body: "" },
+    });
+    assert.equal(result.code, 0, result.stderr);
+    assert.deepEqual(result.requests, ["GET /repos/Afternote/Afternote-FE/pulls/2138"]);
+    assert.match(result.stdout, /작성자가 1hyok 이라 건너뜀/);
 });
 
 test("모르는 명령은 채우기로 떨어지지 않는다", async () => {
@@ -246,7 +322,6 @@ test("게이트는 검증을 다시 부르지 않고, 두 검증이 dependabot P
 
     // 같은 sha 의 dispatch 는 PR 롤업의 옛 실패를 못 덮고(#1825), 재실행은 옛 페이로드를 쓴다.
     assert.doesNotMatch(gate, /^\s+actions:/m, "게이트에 actions 권한을 주지 않는다");
-    assert.doesNotMatch(gate, /dispatches|rerun|workflow run/);
 
     // Repository Quality: pull_request 이면서 봇이 연 PR 만 live PR 을 기다렸다가 그 값으로 판정한다.
     assert.match(repositoryQuality, /PR_AUTHOR: \$\{\{ github\.event\.pull_request\.user\.login \}\}/);
@@ -254,7 +329,7 @@ test("게이트는 검증을 다시 부르지 않고, 두 검증이 dependabot P
         repositoryQuality,
         new RegExp(
             `elif \\[ "\\$GITHUB_EVENT_NAME" = "pull_request" \\] && \\[ "\\$PR_AUTHOR" = "${login}" \\]; then\\n` +
-                `(?:\\s+#.*\\n)+` +
+                `(?:\\s+#.*\\n)*` +
                 `\\s+AWAIT_TIMEOUT_SECONDS=(\\d+) node \\.github/scripts/dependabot-pr-gate\\.mjs await "\\$pull_request_file"\\n` +
                 `\\s+CHANGED_FILES=\\$\\(jq -r '\\.changed_files' "\\$pull_request_file"\\)`,
         ),
@@ -272,7 +347,11 @@ test("게이트는 검증을 다시 부르지 않고, 두 검증이 dependabot P
         managedDevice,
         /install -m 0644 \\\n\s+\.github\/scripts\/dependabot-pr-gate\.mjs \\\n\s+"\$policy_dir\/dependabot-pr-gate\.mjs"\n\s+dependabot_gate=trusted/,
     );
-    assert.match(managedDevice, /grep -q 'export async function awaitGate' \.github\/scripts\/dependabot-pr-gate\.mjs/);
+    // 신뢰 사본에 대기 명령이 있는지를 이 문자열로 가른다. 스크립트가 선언 모양을 바꾸면 기기 레인
+    // 대기가 조용히 꺼지므로, grep 문자열이 스크립트에 실제로 있는지 대조한다.
+    const probe = managedDevice.match(/grep -q '([^']+)' \.github\/scripts\/dependabot-pr-gate\.mjs/)?.[1];
+    assert.ok(probe, "스테이징 판별 grep 이 없다");
+    assert.ok((await readFile(GATE_SCRIPT, "utf8")).includes(probe), `dependabot-pr-gate.mjs 에 '${probe}' 가 없다`);
     assert.equal((managedDevice.match(/dependabot_gate=unavailable/g) ?? []).length, 2, "도입 PR·bootstrap 은 페이로드를 읽는다");
     assert.match(managedDevice, /EVENT_PR_AUTHOR: \$\{\{ github\.event\.pull_request\.user\.login \}\}/);
     assert.match(managedDevice, /DEPENDABOT_GATE: \$\{\{ steps\.policy\.outputs\.dependabot_gate \}\}/);

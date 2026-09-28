@@ -362,9 +362,10 @@ jobs:
             target_sha="$EVENT_PR_SHA"
             if [[ "$EVENT_PR_AUTHOR" == "dependabot[bot]" && "$DEPENDABOT_GATE" == "trusted" ]]; then
               # dependabot-pr-gate 가 같은 순간 GITHUB_TOKEN 으로 CI Test Plan 을 채운다. 그 edited 는
-              # 이 워크플로를 다시 깨우지 못하고 페이로드는 opened 시점 값이라, 게이트가 채울 때까지
-              # live PR 을 기다린다(#2212). 재실행으로 풀면 실제 테스트가 attempt 2 에서 돌아 1회차
-              # 인프라 복구를 잃는다. lane timeout 이 15분 이상이라 3분까지 기다린다.
+              # 이 워크플로를 다시 깨우지 못하고 페이로드는 opened 시점 값이다(#2212). 페이로드 제목에
+              # 대표 이슈 번호가 이미 있으면 API 없이 그대로 쓰고, 없으면 게이트가 채울 때까지 live PR 을
+              # 기다린다. 재실행으로 풀면 실제 테스트가 attempt 2 에서 돌아 1회차 인프라 복구를 잃는다.
+              # lane timeout 이 15분 이상이라 3분까지 기다린다.
               PR_NUMBER="$EVENT_PR_NUMBER" AWAIT_TIMEOUT_SECONDS=180 \
                 node "$RUNNER_TEMP/android-test-policy/dependabot-pr-gate.mjs" await "$pull_request_file"
               live_head_sha="$(jq -r '.head.sha' "$pull_request_file")"
