@@ -45,6 +45,7 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.notification.component.DeviceAlarmOffSection
 import com.afternote.feature.setting.presentation.shared.component.SettingMenuItem
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 
 @Composable
@@ -84,14 +85,19 @@ internal fun NotificationSettingScreen(
         viewModel.onIntent(PushNotificationIntent.RefreshDeviceAlarmStatus)
     }
 
-    // 화면이 STARTED 인 동안만 마케팅 동의 저장 실패를 안내한다. 화면이 없는 동안의 실패는 다음 진입에 재생하지 않는다 (#558).
-    LifecycleStartEffect(viewModel) {
-        viewModel.onIntent(PushNotificationIntent.MarketingFeedbackStarted)
-        onStopOrDispose { viewModel.onIntent(PushNotificationIntent.MarketingFeedbackStopped) }
-    }
-
     // 소비가 ObserveFlag 의 effect 를 다시 시작시켜도 스낵바가 끊기지 않게 화면 코루틴에 띄운다.
     val snackbarScope = rememberCoroutineScope()
+
+    // 화면이 STARTED 인 동안만 마케팅 동의 저장 실패를 안내한다. 화면이 없는 동안의 실패는 다음 진입에 재생하지 않는다 (#558).
+    // 멈출 때는 떠 있던 안내와 줄 선 안내도 거둔다. 화면 코루틴은 STOP 에 취소되지 않으므로 그대로 두면 재진입에 뜬다.
+    LifecycleStartEffect(viewModel) {
+        viewModel.onIntent(PushNotificationIntent.MarketingFeedbackStarted)
+        onStopOrDispose {
+            viewModel.onIntent(PushNotificationIntent.MarketingFeedbackStopped)
+            snackbarScope.coroutineContext.cancelChildren()
+        }
+    }
+
     ObserveFlag(
         raised = uiState.isMarketingConsentSaveFailed,
         consumed = PushNotificationIntent.ConsumeMarketingConsentSaveFailure,
