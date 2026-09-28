@@ -2,8 +2,8 @@ package com.afternote.feature.afternote.data.mapper
 
 import com.afternote.feature.afternote.data.dto.AfternoteCredentialsDto
 import com.afternote.feature.afternote.data.dto.AfternoteDetailDto
+import com.afternote.feature.afternote.data.dto.AfternoteMemorialDto
 import com.afternote.feature.afternote.data.dto.AfternoteMemorialVideoDto
-import com.afternote.feature.afternote.data.dto.AfternotePlaylistDto
 import com.afternote.feature.afternote.data.dto.AfternoteSongDto
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.DraftContent
@@ -21,7 +21,7 @@ import org.junit.Test
  */
 class AfternoteDraftPrefillMapperTest {
     @Test
-    fun `toDraftPrefill - 곡을 안 담은 임시저장 playlist 는 곡 0개와 빈 미디어가 된다`() {
+    fun `toDraftPrefill - 추억 노트 본문을 안 보낸 임시저장은 곡 0개와 빈 미디어가 된다`() {
         val result =
             AfternoteDetailDto(
                 isDraft = true,
@@ -50,8 +50,8 @@ class AfternoteDraftPrefillMapperTest {
                 category = "PLAYLIST",
                 title = "t",
                 updatedAt = UPDATED_AT,
-                playlist =
-                    AfternotePlaylistDto(
+                memorial =
+                    AfternoteMemorialDto(
                         memorialPhotoUrl = "photo",
                         songs = listOf(AfternoteSongDto(title = "곡", artist = "가수", coverUrl = "cover")),
                         memorialVideo = AfternoteMemorialVideoDto(videoUrl = "video", thumbnailUrl = "thumb"),
