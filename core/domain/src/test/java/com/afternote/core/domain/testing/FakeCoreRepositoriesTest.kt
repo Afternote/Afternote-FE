@@ -113,7 +113,6 @@ class FakeCoreRepositoriesTest {
         assertEquals(receiver.receiverId, synthesized.receiverId)
         assertEquals(receiver.name, synthesized.name)
         assertEquals(receiver.relation, synthesized.relation)
-        assertEquals("fake-auth-7", synthesized.authCode)
         assertNull(synthesized.phone)
         assertNull(synthesized.email)
         assertNull(synthesized.message)
@@ -131,7 +130,6 @@ class FakeCoreRepositoriesTest {
         assertEquals("01012345678", updated.phone)
         assertEquals("new@test.local", updated.email)
         assertEquals("남길 메시지", updated.message)
-        assertEquals("fake-auth-7", updated.authCode)
     }
 
     @Test
@@ -191,7 +189,7 @@ class FakeCoreRepositoriesTest {
         assertEquals(1, receiverRepository.getReceiversCalls)
         assertEquals("바뀐 이름", updated.name)
         assertEquals(
-            listOf(FakeUserRepository.ProfileUpdateCall("바뀐 이름", null, null)),
+            listOf(FakeMyProfileRepository.ProfileUpdateCall("바뀐 이름", null, null)),
             profileRepository.profileUpdateCalls.toList(),
         )
     }

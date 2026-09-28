@@ -1,14 +1,15 @@
 package com.afternote.feature.setting.presentation.receiver
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.ui.UiText
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,16 +17,19 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
-@HiltViewModel
-class ReceiverEditViewModel
-    @Inject
+/**
+ * 수정 대상 [SettingRoute.RecipientEditRoute] 는 assisted 로 받는다 — Nav3 entry 에는 Nav2 의
+ * `savedStateHandle.toRoute<T>()` 자동 채움이 없다 (#1695).
+ */
+@HiltViewModel(assistedFactory = ReceiverEditViewModel.Factory::class)
+internal class ReceiverEditViewModel
+    @AssistedInject
     constructor(
-        savedStateHandle: SavedStateHandle,
-        private val userRepository: UserRepository,
+        @Assisted route: SettingRoute.RecipientEditRoute,
+        private val receiverRepository: UserReceiverRepository,
     ) : ViewModel() {
-        private val receiverId = savedStateHandle.toRoute<SettingRoute.RecipientEditRoute>().receiverId
+        private val receiverId = route.receiverId
 
         private val _uiState = MutableStateFlow(ReceiverEditUiState())
         val uiState = _uiState.asStateFlow()
@@ -39,7 +43,7 @@ class ReceiverEditViewModel
 
         private fun loadReceiver() {
             viewModelScope.launch {
-                runCatchingCancellable { userRepository.getReceiverDetail(receiverId) }
+                runCatchingCancellable { receiverRepository.getReceiverDetail(receiverId) }
                     .onSuccess { receiver ->
                         _uiState.update { it.copy(isLoading = false, receiver = receiver) }
                     }.onFailure {
@@ -78,7 +82,7 @@ class ReceiverEditViewModel
             viewModelScope.launch {
                 val receiverUpdateResult =
                     runCatchingCancellable {
-                        userRepository.updateReceiver(
+                        receiverRepository.updateReceiver(
                             receiverId = receiverId,
                             name = name,
                             phone = phone.normalizeReceiverPhone(),
@@ -97,7 +101,7 @@ class ReceiverEditViewModel
                 }
 
                 runCatchingCancellable {
-                    userRepository.updateReceiverMessage(
+                    receiverRepository.updateReceiverMessage(
                         receiverId = receiverId,
                         message = message,
                     )
@@ -113,5 +117,10 @@ class ReceiverEditViewModel
                     }
                 }
             }
+        }
+
+        @AssistedFactory
+        interface Factory {
+            fun create(route: SettingRoute.RecipientEditRoute): ReceiverEditViewModel
         }
     }
