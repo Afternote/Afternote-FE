@@ -56,19 +56,19 @@ class PushNotificationSaveReportingTest {
             val viewModel = viewModel(repository, reporter)
             runCurrent()
 
-            viewModel.onNewsletterToggle(false)
+            viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.NEWSLETTER, false))
             runCurrent()
             assertTrue(viewModel.uiState.value.isNewsletterOn)
             assertEquals(PushNotificationSaveFailure.SERVER, viewModel.uiState.value.saveFailure)
-            viewModel.onSaveFailureDismiss()
+            viewModel.onIntent(PushNotificationIntent.DismissSaveFailure)
 
-            viewModel.onMindRecordToggle(false)
+            viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.MIND_RECORD, false))
             runCurrent()
             assertTrue(viewModel.uiState.value.isMindRecordOn)
             assertEquals(PushNotificationSaveFailure.SERVER, viewModel.uiState.value.saveFailure)
-            viewModel.onSaveFailureDismiss()
+            viewModel.onIntent(PushNotificationIntent.DismissSaveFailure)
 
-            viewModel.onAfternoteToggle(false)
+            viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.AFTERNOTE, false))
             runCurrent()
             assertTrue(viewModel.uiState.value.isAfternoteOn)
             assertFalse(viewModel.uiState.value.isAfternoteUpdating)
@@ -91,9 +91,9 @@ class PushNotificationSaveReportingTest {
             val viewModel = viewModel(FakeSettingNotificationRepository(pushSetting = ALL_ON), reporter)
             runCurrent()
 
-            viewModel.onNewsletterToggle(false)
-            viewModel.onMindRecordToggle(false)
-            viewModel.onAfternoteToggle(false)
+            viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.NEWSLETTER, false))
+            viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.MIND_RECORD, false))
+            viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.AFTERNOTE, false))
             runCurrent()
 
             assertFalse(viewModel.uiState.value.isNewsletterOn)
@@ -119,7 +119,7 @@ class PushNotificationSaveReportingTest {
             val store = ViewModelStore().apply { put(STORE_KEY, viewModel) }
             runCurrent()
 
-            viewModel.onMindRecordToggle(false)
+            viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.MIND_RECORD, false))
             runCurrent()
             assertEquals(1, repository.pushUpdateCalls.size)
 
@@ -166,12 +166,12 @@ class PushNotificationSaveReportingTest {
             val viewModel = viewModel(repository, reporter)
             runCurrent()
 
-            viewModel.onMindRecordToggle(false)
+            viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.MIND_RECORD, false))
             runCurrent()
-            viewModel.onSaveFailureRetry()
+            viewModel.onIntent(PushNotificationIntent.RetrySave)
             runCurrent()
             assertEquals(PushNotificationSaveFailure.SERVER, viewModel.uiState.value.saveFailure)
-            viewModel.onSaveFailureRetry()
+            viewModel.onIntent(PushNotificationIntent.RetrySave)
             runCurrent()
 
             assertFalse(viewModel.uiState.value.isMindRecordOn)
