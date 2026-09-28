@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { createServer } from "node:http";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 
 import { inspectCiTestPlan } from "./ci-test-plan.mjs";
 import {
@@ -9,10 +15,14 @@ import {
     ISSUE_ASSIGNEES,
     ISSUE_LABELS,
     applyGate,
+    awaitGate,
     buildIssue,
     buildPlan,
     needsGate,
 } from "./dependabot-pr-gate.mjs";
+
+const GATE_SCRIPT = fileURLToPath(new URL("./dependabot-pr-gate.mjs", import.meta.url));
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const BOT_TITLE = "chore(deps): bump the github-actions-updates group with 3 updates";
 const BOT_BODY = "Bumps the github-actions-updates group with 3 updates: actions/setup-java ...";
@@ -101,4 +111,179 @@ test("워크플로는 봇 PR 에만 돌고 PR 코드를 체크아웃하지 않�
     assert.match(source, /issues: write/);
     assert.match(source, /pull-requests: write/);
     assert.match(source, /run: node \.github\/scripts\/dependabot-pr-gate\.mjs/);
+});
+
+const FILLED = {
+    user: { login: DEPENDABOT_LOGIN },
+    state: "open",
+    title: `${BOT_TITLE} (#2139)`,
+    body: `${GATE_MARKER}\nRefs #2139\n\n${BOT_BODY}`,
+    head: { sha: "a".repeat(40) },
+    changed_files: 3,
+};
+const UNFILLED = { ...FILLED, title: BOT_TITLE, body: BOT_BODY };
+
+function sequence(...pullRequests) {
+    let calls = 0;
+    return {
+        load: async () => pullRequests[Math.min(calls++, pullRequests.length - 1)],
+        calls: () => calls,
+    };
+}
+
+test("await 는 게이트가 채운 뒤의 live PR 을 돌려준다 (#2212)", async () => {
+    const live = sequence(UNFILLED, UNFILLED, FILLED);
+    const result = await awaitGate({ loadPullRequest: live.load, timeoutMs: 5_000, intervalMs: 5 });
+
+    assert.equal(result.timedOut, false);
+    assert.equal(result.polls, 3);
+    assert.equal(result.pullRequest, FILLED);
+    assert.equal(needsGate(result.pullRequest), false);
+});
+
+test("await 는 기다릴 이유가 없으면 첫 조회로 끝난다", async () => {
+    for (const pullRequest of [
+        FILLED,
+        { ...UNFILLED, user: { login: "1hyok" } },
+        { ...UNFILLED, state: "closed" },
+    ]) {
+        const live = sequence(pullRequest);
+        const result = await awaitGate({ loadPullRequest: live.load, timeoutMs: 5_000, intervalMs: 5 });
+        assert.equal(live.calls(), 1, JSON.stringify(pullRequest.user));
+        assert.equal(result.timedOut, false);
+        assert.equal(result.pullRequest, pullRequest);
+    }
+});
+
+test("await 는 제한 시간이 지나면 기다림을 끝내고 마지막 live 상태를 넘긴다", async () => {
+    const live = sequence(UNFILLED);
+    const started = Date.now();
+    const result = await awaitGate({ loadPullRequest: live.load, timeoutMs: 60, intervalMs: 10 });
+
+    assert.equal(result.timedOut, true);
+    assert.equal(result.pullRequest, UNFILLED);
+    assert.ok(live.calls() >= 2, "제한 시간 안에서는 다시 조회한다");
+    assert.ok(Date.now() - started < 1_000, "무기한 대기하지 않는다");
+
+    const once = sequence(UNFILLED);
+    const immediate = await awaitGate({ loadPullRequest: once.load, timeoutMs: 0, intervalMs: 10 });
+    assert.equal(immediate.timedOut, true);
+    assert.equal(once.calls(), 1);
+});
+
+async function runGateCli(args, { env = {}, pullRequest } = {}) {
+    const requests = [];
+    const server = createServer((request, response) => {
+        requests.push(`${request.method} ${request.url}`);
+        response.setHeader("Content-Type", "application/json");
+        response.end(JSON.stringify(pullRequest ?? {}));
+    });
+    await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const { port } = server.address();
+    try {
+        const result = await promisify(execFile)(process.execPath, [GATE_SCRIPT, ...args], {
+            env: {
+                PATH: process.env.PATH,
+                GITHUB_API_URL: `http://127.0.0.1:${port}`,
+                GITHUB_REPOSITORY: "Afternote/Afternote-FE",
+                ...env,
+            },
+        }).then(
+            ({ stdout, stderr }) => ({ code: 0, stdout, stderr }),
+            (error) => ({ code: error.code, stdout: error.stdout, stderr: error.stderr }),
+        );
+        return { ...result, requests };
+    } finally {
+        server.close();
+    }
+}
+
+test("await 명령은 live PR JSON 을 파일에 쓰고, 제한 시간을 넘겨도 판정을 검증에 넘긴다", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "dependabot-pr-gate-"));
+    try {
+        const filledPath = path.join(directory, "filled.json");
+        const filled = await runGateCli(["await", filledPath], {
+            env: { GH_TOKEN: "t", PR_NUMBER: "2138", AWAIT_TIMEOUT_SECONDS: "90" },
+            pullRequest: FILLED,
+        });
+        assert.equal(filled.code, 0, filled.stderr);
+        assert.deepEqual(filled.requests, ["GET /repos/Afternote/Afternote-FE/pulls/2138"]);
+        assert.deepEqual(JSON.parse(await readFile(filledPath, "utf8")), FILLED);
+
+        const unfilledPath = path.join(directory, "unfilled.json");
+        const unfilled = await runGateCli(["await", unfilledPath], {
+            env: { GH_TOKEN: "t", PR_NUMBER: "2138", AWAIT_TIMEOUT_SECONDS: "0" },
+            pullRequest: UNFILLED,
+        });
+        assert.equal(unfilled.code, 0, "시간 초과는 실패가 아니다. 검증이 평소 오류 문구로 판정한다");
+        assert.match(unfilled.stdout, /::warning::dependabot-pr-gate 가 0초 안에 #2138/);
+        assert.deepEqual(JSON.parse(await readFile(unfilledPath, "utf8")), UNFILLED);
+
+        const missing = await runGateCli(["await", path.join(directory, "x.json")], {
+            env: { GH_TOKEN: "t", PR_NUMBER: "2138" },
+        });
+        assert.equal(missing.code, 1);
+        assert.match(missing.stderr, /AWAIT_TIMEOUT_SECONDS/);
+        assert.deepEqual(missing.requests, [], "입력이 틀리면 API 를 부르지 않는다");
+    } finally {
+        await rm(directory, { recursive: true, force: true });
+    }
+});
+
+test("모르는 명령은 채우기로 떨어지지 않는다", async () => {
+    const result = await runGateCli(["wait"], { env: { GITHUB_TOKEN: "t", PR_NUMBER: "2138" } });
+    assert.equal(result.code, 1);
+    assert.match(result.stderr, /알 수 없는 명령: wait/);
+    assert.deepEqual(result.requests, [], "이슈 생성·PR 편집 요청이 나가지 않는다");
+});
+
+test("게이트는 검증을 다시 부르지 않고, 두 검증이 dependabot PR 에서 게이트를 기다린다 (#2212)", async () => {
+    const readWorkflow = (name) => readFile(new URL(`../workflows/${name}`, import.meta.url), "utf8");
+    const gate = await readWorkflow("dependabot-pr-gate.yml");
+    const repositoryQuality = await readWorkflow("repository-quality.yml");
+    const managedDevice = await readWorkflow("android-managed-device.yml");
+    const login = escapeRegExp(DEPENDABOT_LOGIN);
+
+    // 같은 sha 의 dispatch 는 PR 롤업의 옛 실패를 못 덮고(#1825), 재실행은 옛 페이로드를 쓴다.
+    assert.doesNotMatch(gate, /^\s+actions:/m, "게이트에 actions 권한을 주지 않는다");
+    assert.doesNotMatch(gate, /dispatches|rerun|workflow run/);
+
+    // Repository Quality: pull_request 이면서 봇이 연 PR 만 live PR 을 기다렸다가 그 값으로 판정한다.
+    assert.match(repositoryQuality, /PR_AUTHOR: \$\{\{ github\.event\.pull_request\.user\.login \}\}/);
+    assert.match(
+        repositoryQuality,
+        new RegExp(
+            `elif \\[ "\\$GITHUB_EVENT_NAME" = "pull_request" \\] && \\[ "\\$PR_AUTHOR" = "${login}" \\]; then\\n` +
+                `(?:\\s+#.*\\n)+` +
+                `\\s+AWAIT_TIMEOUT_SECONDS=(\\d+) node \\.github/scripts/dependabot-pr-gate\\.mjs await "\\$pull_request_file"\\n` +
+                `\\s+CHANGED_FILES=\\$\\(jq -r '\\.changed_files' "\\$pull_request_file"\\)`,
+        ),
+    );
+    const awaitSeconds = Number(repositoryQuality.match(/AWAIT_TIMEOUT_SECONDS=(\d+) node/)[1]);
+    const quotaSeconds = Number(repositoryQuality.match(/ensure-api-quota\.mjs ensure --max-wait (\d+)/)[1]);
+    const jobMinutes = Number(repositoryQuality.match(/name: Repository Quality\n\s+runs-on: .+\n\s+timeout-minutes: (\d+)/)[1]);
+    assert.ok(
+        awaitSeconds + quotaSeconds + 30 <= jobMinutes * 60,
+        `게이트 대기 ${awaitSeconds}s + quota 대기 ${quotaSeconds}s 가 job timeout ${jobMinutes}분을 넘기면 판정 전에 취소된다`,
+    );
+
+    // Managed Device: 판정 재료는 신뢰 정책 사본으로 기다린 live PR 이다. PR 사본 스크립트를 부르지 않는다.
+    assert.match(
+        managedDevice,
+        /install -m 0644 \\\n\s+\.github\/scripts\/dependabot-pr-gate\.mjs \\\n\s+"\$policy_dir\/dependabot-pr-gate\.mjs"\n\s+dependabot_gate=trusted/,
+    );
+    assert.match(managedDevice, /grep -q 'export async function awaitGate' \.github\/scripts\/dependabot-pr-gate\.mjs/);
+    assert.equal((managedDevice.match(/dependabot_gate=unavailable/g) ?? []).length, 2, "도입 PR·bootstrap 은 페이로드를 읽는다");
+    assert.match(managedDevice, /EVENT_PR_AUTHOR: \$\{\{ github\.event\.pull_request\.user\.login \}\}/);
+    assert.match(managedDevice, /DEPENDABOT_GATE: \$\{\{ steps\.policy\.outputs\.dependabot_gate \}\}/);
+    assert.match(
+        managedDevice,
+        new RegExp(`if \\[\\[ "\\$EVENT_PR_AUTHOR" == "${login}" && "\\$DEPENDABOT_GATE" == "trusted" \\]\\]; then`),
+    );
+    assert.match(
+        managedDevice,
+        /AWAIT_TIMEOUT_SECONDS=\d+ \\\n\s+node "\$RUNNER_TEMP\/android-test-policy\/dependabot-pr-gate\.mjs" await "\$pull_request_file"/,
+    );
+    assert.match(managedDevice, /if \[\[ "\$live_head_sha" != "\$EVENT_PR_SHA" \]\]; then/);
+    assert.doesNotMatch(managedDevice, /node \.github\/scripts\/dependabot-pr-gate\.mjs/);
 });

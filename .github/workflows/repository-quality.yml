@@ -118,6 +118,7 @@ jobs:
           CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
           GH_TOKEN: ${{ github.token }}
           MAX_PATH_FILTER_FILES: 300
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           PR_NUMBER: ${{ inputs.pull_request_number }}
         run: |
           set -euo pipefail
@@ -138,6 +139,13 @@ jobs:
             fi
             CHANGED_FILES=$(jq -r '.changed_files' <<< "$pull_request")
             printf '%s' "$pull_request" > "$pull_request_file"
+          elif [ "$GITHUB_EVENT_NAME" = "pull_request" ] && [ "$PR_AUTHOR" = "dependabot[bot]" ]; then
+            # dependabot-pr-gate 가 같은 순간 GITHUB_TOKEN 으로 제목 (#N)·Refs·CI Test Plan 을 채운다.
+            # 그 edited 는 이 워크플로를 다시 깨우지 못하고 페이로드는 opened 시점 값이라, 게이트가
+            # 채울 때까지 live PR 을 기다렸다가 그 값으로 판정한다(#2212). quota 대기 60초와 합쳐도
+            # job timeout 3분 안에 들도록 90초에서 끊는다.
+            AWAIT_TIMEOUT_SECONDS=90 node .github/scripts/dependabot-pr-gate.mjs await "$pull_request_file"
+            CHANGED_FILES=$(jq -r '.changed_files' "$pull_request_file")
           elif [ -z "$CHANGED_FILES" ]; then
             pull_request=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")
             CHANGED_FILES=$(jq -r '.changed_files' <<< "$pull_request")

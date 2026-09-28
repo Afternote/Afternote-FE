@@ -6,8 +6,17 @@
 // 를 여기서 한다. mode 는 사람이 정하지 않는다. `ci-test-plan.mjs` 가 변경 파일로 판정한
 // 결과를 그대로 쓴다. 게이트 면제는 하지 않는다 — 봇 PR 도 워크플로 파일을 건드린다.
 //
-// 순수 함수(needsGate·buildPlan·buildIssue·applyGate)와 GitHub 호출(main)을 갈라 두어
-// 정책은 dependabot-pr-gate.test.mjs 가 잠근다.
+// 게이트는 GITHUB_TOKEN 으로 제목·본문을 고치므로 그 `edited` 는 다른 워크플로를 깨우지 못한다.
+// 같은 순간 열린 PR Validation·Managed Device 는 opened 시점 페이로드를 읽어 red 로 남았다(#2212).
+// 게이트가 검증을 다시 부르는 길은 막혀 있다. 같은 sha 에 dispatch 로 붙인 초록은 PR 롤업이 옛
+// `pull_request` 실패를 덮지 못하고(#1825), 재실행은 옛 페이로드를 그대로 쓰는 데다 기기 레인의
+// 1회차 인프라 복구를 잃으며, App 토큰은 이 브리지에 금지된 시크릿이 필요하다. 그래서 방향을
+// 뒤집었다. 검증이 `await` 명령으로 게이트가 채울 때까지 live PR 을 기다렸다가 그 값으로 판정한다.
+//
+// 순수 함수(needsGate·buildPlan·buildIssue·applyGate)·대기(awaitGate)와 GitHub 호출(main)을
+// 갈라 두어 정책은 dependabot-pr-gate.test.mjs 가 잠근다.
+
+import { writeFile } from "node:fs/promises";
 
 import { inspectAndroidTestImpact } from "./ci-test-plan.mjs";
 
@@ -51,6 +60,32 @@ export function buildPlan(changedPaths) {
         reason: "dependabot 범프가 바꾼 파일이 전부 androidTest 경계 밖이다. 앱 코드·기기 레인 정의를 건드리지 않는다.",
         requiredPaths: [],
     };
+}
+
+/** `await` 가 live PR 을 다시 조회하는 간격. 게이트는 job 시작 뒤 수 초 안에 끝난다(#2138 실측 7초). */
+export const AWAIT_POLL_INTERVAL_MS = 5_000;
+
+/**
+ * 게이트가 제목·본문을 채울 때까지 live PR 을 다시 읽는다(#2212). dependabot 이 연 열린 PR 이
+ * 아니거나 이미 채워졌으면 첫 조회 결과를 바로 돌려준다. 제한 시간이 지나면 기다림을 끝내고 마지막
+ * live 상태를 돌려준다. 판정은 호출한 검증의 몫이라, 게이트가 실패했으면 검증이 평소 오류 문구로
+ * 실패한다.
+ */
+export async function awaitGate({ loadPullRequest, timeoutMs, intervalMs = AWAIT_POLL_INTERVAL_MS }) {
+    const deadline = Date.now() + timeoutMs;
+    for (let polls = 1; ; polls += 1) {
+        const pullRequest = await loadPullRequest();
+        const waiting =
+            pullRequest?.user?.login === DEPENDABOT_LOGIN && pullRequest?.state === "open" && needsGate(pullRequest);
+        if (!waiting) {
+            return { pullRequest, polls, timedOut: false };
+        }
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) {
+            return { pullRequest, polls, timedOut: true };
+        }
+        await new Promise((resolve) => setTimeout(resolve, Math.min(intervalMs, remaining)));
+    }
 }
 
 /** 대표 이슈. `.github/ISSUE_TEMPLATE/issue.yml` 양식이라 reconcile-issue-metadata 가 어사인·라벨을 맞춘다. */
@@ -153,7 +188,7 @@ async function listChangedPaths(apiUrl, repository, prNumber, token) {
     return paths;
 }
 
-async function main() {
+async function fillGate() {
     const token = process.env.GITHUB_TOKEN;
     const repository = process.env.GITHUB_REPOSITORY;
     const prNumber = Number(process.env.PR_NUMBER);
@@ -200,8 +235,47 @@ async function main() {
     console.log(`#${prNumber} 제목·본문 갱신: Refs #${issueNumber}, androidTest mode=${plan.mode}`);
 }
 
+/**
+ * `await <출력 경로>`: dependabot PR 의 `pull_request` 검증이 부른다. 게이트를 기다린 뒤 live PR JSON 을
+ * 출력 경로에 쓴다. 제한 시간을 넘겨도 실패하지 않고 경고만 남긴다. 판정은 뒤따르는 검증이 한다.
+ */
+async function awaitMain(outputPath) {
+    const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+    const repository = process.env.GITHUB_REPOSITORY;
+    const prNumber = Number(process.env.PR_NUMBER);
+    const timeoutSeconds = Number(process.env.AWAIT_TIMEOUT_SECONDS);
+    const apiUrl = process.env.GITHUB_API_URL ?? "https://api.github.com";
+    if (!outputPath || !token || !repository || !Number.isInteger(prNumber) || prNumber <= 0) {
+        throw new Error("await <출력 경로> 와 GITHUB_TOKEN(또는 GH_TOKEN), GITHUB_REPOSITORY, PR_NUMBER 가 필요합니다");
+    }
+    if (!Number.isInteger(timeoutSeconds) || timeoutSeconds < 0) {
+        throw new Error(`AWAIT_TIMEOUT_SECONDS 는 0 이상의 정수여야 합니다: ${process.env.AWAIT_TIMEOUT_SECONDS}`);
+    }
+
+    const { pullRequest, polls, timedOut } = await awaitGate({
+        loadPullRequest: () => github(`${apiUrl}/repos/${repository}/pulls/${prNumber}`, token),
+        timeoutMs: timeoutSeconds * 1000,
+    });
+    await writeFile(outputPath, JSON.stringify(pullRequest));
+    if (timedOut) {
+        console.log(
+            `::warning::dependabot-pr-gate 가 ${timeoutSeconds}초 안에 #${prNumber} 의 제목·본문을 채우지 않았습니다. ` +
+                "그 워크플로 실행을 확인하세요. 지금 live 상태로 판정합니다.",
+        );
+    } else if (polls > 1) {
+        console.log(`#${prNumber} 게이트가 채운 제목·본문을 ${polls}번째 조회에서 확인`);
+    }
+}
+
 if (import.meta.url === `file://${process.argv[1]}`) {
-    main().catch((error) => {
+    const [command, ...rest] = process.argv.slice(2);
+    const run =
+        command === undefined
+            ? fillGate
+            : command === "await"
+              ? () => awaitMain(rest[0])
+              : () => Promise.reject(new Error(`알 수 없는 명령: ${command}. 인자 없이(채우기) 또는 await 만 받습니다`));
+    run().catch((error) => {
         console.error(`::error::${error.message}`);
         process.exitCode = 1;
     });
