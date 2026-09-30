@@ -26,7 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.model.delivery.DeliveryConditionType
-import com.afternote.core.ui.mvi.ObserveSignal
+import com.afternote.core.ui.mvi.ObserveFlag
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
@@ -41,11 +41,11 @@ internal fun DeliveryConditionScreen(
     viewModel: DeliveryConditionViewModel,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    ObserveSignal(
-        signal = uiState.pendingEvent,
+    ObserveFlag(
+        raised = uiState.isSaved,
         consumed = DeliveryConditionIntent.ConsumeSuccess,
         onIntent = viewModel::onIntent,
-        onSignal = { onSaveSuccess() },
+        onRaised = onSaveSuccess,
     )
 
     DeliveryConditionContent(

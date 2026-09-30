@@ -16,6 +16,10 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 
+/**
+ * 대상 수신자 [SettingRoute.AfterDeliveryRoute] 는 assisted 로 받는다 — Nav3 entry 에는 Nav2 의
+ * `savedStateHandle.toRoute<T>()` 자동 채움이 없다 (#1695).
+ */
 @HiltViewModel(assistedFactory = DeliveryConditionViewModel.Factory::class)
 internal class DeliveryConditionViewModel
     @AssistedInject
@@ -66,7 +70,7 @@ internal class DeliveryConditionViewModel
                 }
 
                 is DeliveryConditionReducerEvent.Saved -> {
-                    state.copy(isSaving = false, conditions = event.conditions, pendingEvent = Unit)
+                    state.copy(isSaving = false, conditions = event.conditions, isSaved = true)
                 }
 
                 DeliveryConditionReducerEvent.SaveFailed -> {
@@ -74,7 +78,7 @@ internal class DeliveryConditionViewModel
                 }
 
                 DeliveryConditionReducerEvent.SuccessConsumed -> {
-                    state.copy(pendingEvent = null)
+                    state.copy(isSaved = false)
                 }
             }
 
@@ -102,7 +106,7 @@ internal class DeliveryConditionViewModel
 
         private fun onSave() {
             val state = currentState
-            if (!state.isInitialized || state.isSaving || state.pendingEvent != null) return
+            if (!state.isInitialized || state.isSaving || state.isSaved) return
 
             val hasTimeLetterCondition =
                 state.conditions.any { it.contentType == DeliveryContentType.TIME_LETTER }

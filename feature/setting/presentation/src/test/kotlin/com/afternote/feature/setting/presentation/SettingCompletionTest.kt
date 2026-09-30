@@ -597,9 +597,9 @@ class SettingCompletionTest {
             ),
         )
 
-        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) { viewModel.uiState.value.pendingEvent != null }
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) { viewModel.uiState.value.isSaved }
         composeRule.runOnIdle { viewModel.onIntent(DeliveryConditionIntent.ConsumeSuccess) }
-        assertEquals(null, viewModel.uiState.value.pendingEvent)
+        assertFalse(viewModel.uiState.value.isSaved)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.conditions == serverConditions
         }
