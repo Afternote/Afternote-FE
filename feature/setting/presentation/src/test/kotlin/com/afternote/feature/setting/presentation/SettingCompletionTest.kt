@@ -14,7 +14,6 @@ import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
-import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.testing.FakeAuthRepository
@@ -43,6 +42,7 @@ import com.afternote.feature.setting.presentation.delivery.DeliveryConditionView
 import com.afternote.feature.setting.presentation.home.SettingUiState
 import com.afternote.feature.setting.presentation.home.SettingViewModel
 import com.afternote.feature.setting.presentation.home.WithdrawUiState
+import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import com.afternote.feature.setting.presentation.notification.PushNotificationViewModel
 import com.afternote.feature.setting.presentation.profile.ProfileEditEvent
 import com.afternote.feature.setting.presentation.profile.ProfileEditUiState
@@ -378,7 +378,7 @@ class SettingCompletionTest {
         val finalMessageGate = scenario.enqueueReceiverMessageUpdate()
         val viewModel =
             ReceiverEditViewModel(
-                savedStateHandle = SavedStateHandle(mapOf("receiverId" to RECEIVER_ID)),
+                route = SettingRoute.RecipientEditRoute(RECEIVER_ID),
                 receiverRepository = repository,
             )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
@@ -471,7 +471,7 @@ class SettingCompletionTest {
         val repository = scenario.receiverRepository
         val viewModel =
             ReceiverEditViewModel(
-                savedStateHandle = SavedStateHandle(mapOf("receiverId" to RECEIVER_ID)),
+                route = SettingRoute.RecipientEditRoute(RECEIVER_ID),
                 receiverRepository = repository,
             )
 
@@ -529,7 +529,7 @@ class SettingCompletionTest {
         val retryGate = scenario.enqueueDeliveryUpdate()
         val viewModel =
             DeliveryConditionViewModel(
-                savedStateHandle = SavedStateHandle(mapOf("receiverId" to RECEIVER_ID)),
+                route = SettingRoute.AfterDeliveryRoute(RECEIVER_ID),
                 receiverRepository = repository,
             )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
@@ -692,7 +692,6 @@ private val COMPLETION_DEFAULT_RECEIVER_DETAIL =
         timeLetterCount = 2,
         afterNoteCount = 3,
         message = "기존 마지막 인사말",
-        authCode = "AUTH-77",
     )
 
 private fun completionConnectedAccounts(
