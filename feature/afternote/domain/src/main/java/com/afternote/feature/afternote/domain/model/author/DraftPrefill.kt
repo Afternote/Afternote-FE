@@ -6,7 +6,8 @@ import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 
 /**
- * 임시저장 애프터노트 상세 — 이어쓰기(에디터 프리필)용.
+ * 임시저장 한 건을 에디터 폼에 다시 채우는 값 — 이어쓰기 프리필용. 임시저장에는 상세 화면이 없다.
+ * 같은 `GET /afternotes/{id}` 응답을 읽지만 «상세» 라 부르지 않는 이유가 그것이다(#2115).
  *
  * 서버는 상세 응답을 `isDraft` 로 갈라 준다(`AfternotedetailResponse` 의 `Draft` / `Published*`).
  * 임시저장은 카테고리별 필수값 검증을 건너뛰므로(`AfternoteValidator`) 종류별 값이 **아직 안 담긴 상태**
@@ -17,7 +18,7 @@ import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedi
  * 임시저장이라고 종류의 경계까지 무너지는 것은 아니다. ESTATE 에 계정 정보 칸이 있거나 GALLERY 에
  * 곡 목록 칸이 있으면, 서버가 그 값을 실어 보내도 아무도 모르게 버려지고 잘못된 조합이 컴파일된다.
  */
-data class DraftDetail(
+data class DraftPrefill(
     val id: Long,
     val serviceName: String,
     val timestamps: DetailTimestamps,

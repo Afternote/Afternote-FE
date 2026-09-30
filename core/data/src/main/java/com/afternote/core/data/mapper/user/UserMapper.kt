@@ -34,18 +34,21 @@ internal fun ReceiverListDto.toDomain(): Receiver =
         relation = relation.orEmpty(),
     )
 
+/**
+ * 상세 응답의 nullable `relation` 을 빈 문자열로 옮긴다 (#2155).
+ * 수정 화면은 빈 관계를 선택 안 함으로 그린다.
+ */
 fun ReceiverDetailDto.toDomain(): ReceiverDetail =
     ReceiverDetail(
         receiverId = receiverId,
         name = name,
-        relation = relation,
+        relation = relation.orEmpty(),
         phone = phone,
         email = email,
         dailyQuestionCount = dailyQuestionCount,
         timeLetterCount = timeLetterCount,
         afterNoteCount = afterNoteCount,
         message = message,
-        authCode = authCode,
     )
 
 fun UserCreateReceiverDto.toDomain(): ReceiverCreated =

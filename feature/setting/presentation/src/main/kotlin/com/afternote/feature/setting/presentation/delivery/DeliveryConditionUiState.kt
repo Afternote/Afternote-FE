@@ -14,7 +14,7 @@ internal data class DeliveryConditionUiState(
     val conditions: List<DeliveryConditionItem> = emptyList(),
     val error: DeliveryConditionError? = null,
     val isSaving: Boolean = false,
-    val pendingEvent: Unit? = null,
+    val isSaved: Boolean = false,
 ) : UiState
 
 enum class DeliveryConditionError {

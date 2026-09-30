@@ -33,6 +33,10 @@ internal class SettingLocalNavActions(
         backStack.add(SettingRoute.ProfileEditRoute)
     }
 
+    override fun onPasswordChangeClick() {
+        backStack.add(SettingRoute.PasswordChangeRoute)
+    }
+
     override fun onLinkedAccountClick() {
         backStack.add(SettingRoute.LinkedAccountRoute)
     }
