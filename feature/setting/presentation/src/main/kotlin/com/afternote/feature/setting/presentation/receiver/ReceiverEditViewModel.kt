@@ -15,6 +15,10 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 
+/**
+ * 수정 대상 [SettingRoute.RecipientEditRoute] 는 assisted 로 받는다 — Nav3 entry 에는 Nav2 의
+ * `savedStateHandle.toRoute<T>()` 자동 채움이 없다 (#1695).
+ */
 @HiltViewModel(assistedFactory = ReceiverEditViewModel.Factory::class)
 internal class ReceiverEditViewModel
     @AssistedInject
@@ -39,6 +43,7 @@ internal class ReceiverEditViewModel
             when (event) {
                 is ReceiverEditReducerEvent.Loaded -> state.copy(isLoading = false, receiver = event.receiver)
                 is ReceiverEditReducerEvent.LoadFailed -> state.copy(isLoading = false, errorMessage = event.message)
+                is ReceiverEditReducerEvent.ValidationFailed -> state.copy(errorMessage = event.message)
                 ReceiverEditReducerEvent.Saving -> state.copy(isSaving = true, errorMessage = null)
                 ReceiverEditReducerEvent.Saved -> state.copy(isSaving = false, pendingEvent = ReceiverEditEvent.EditSuccess)
                 is ReceiverEditReducerEvent.SaveFailed -> state.copy(isSaving = false, errorMessage = event.message)
@@ -69,7 +74,7 @@ internal class ReceiverEditViewModel
         ) {
             if (currentState.isSaving || currentState.pendingEvent != null) return
             if (!email.isValidReceiverEmail()) {
-                dispatch(ReceiverEditReducerEvent.SaveFailed(UiText.Resource(R.string.setting_receiver_email_invalid)))
+                dispatch(ReceiverEditReducerEvent.ValidationFailed(UiText.Resource(R.string.setting_receiver_email_invalid)))
                 return
             }
             val phoneValidation = phone.validateReceiverPhone(isRequired = true)
@@ -80,7 +85,7 @@ internal class ReceiverEditViewModel
                     } else {
                         R.string.setting_receiver_phone_invalid
                     }
-                dispatch(ReceiverEditReducerEvent.SaveFailed(UiText.Resource(messageRes)))
+                dispatch(ReceiverEditReducerEvent.ValidationFailed(UiText.Resource(messageRes)))
                 return
             }
 

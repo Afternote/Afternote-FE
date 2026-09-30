@@ -603,9 +603,9 @@ class SettingCompletionTest {
             ),
         )
 
-        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) { viewModel.uiState.value.pendingEvent != null }
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) { viewModel.uiState.value.isSaved }
         composeRule.runOnIdle { viewModel.onIntent(DeliveryConditionIntent.ConsumeSuccess) }
-        assertEquals(null, viewModel.uiState.value.pendingEvent)
+        assertFalse(viewModel.uiState.value.isSaved)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.conditions == serverConditions
         }
@@ -713,7 +713,6 @@ private val COMPLETION_DEFAULT_RECEIVER_DETAIL =
         timeLetterCount = 2,
         afterNoteCount = 3,
         message = "기존 마지막 인사말",
-        authCode = "AUTH-77",
     )
 
 private fun completionConnectedAccounts(
