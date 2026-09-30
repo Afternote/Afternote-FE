@@ -26,6 +26,11 @@ internal sealed interface ReceiverEditReducerEvent : ReducerEvent {
         val message: UiText,
     ) : ReceiverEditReducerEvent
 
+    /** 요청을 보내기 전의 입력 형식 검증 실패. 서버 저장 실패([SaveFailed])와 구분한다. */
+    data class ValidationFailed(
+        val message: UiText,
+    ) : ReceiverEditReducerEvent
+
     data object Saving : ReceiverEditReducerEvent
 
     data object Saved : ReceiverEditReducerEvent
