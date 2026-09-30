@@ -252,11 +252,7 @@ export async function validateCiTestPlanImpact(
             continue;
         }
         const declaredMethods = declaredMethodsByPath.get(testPath) ?? new Set();
-        const testMethods = [
-            ...kotlinCodeWithoutLiterals(source).matchAll(
-                /@Test(?:\s*\([^)]*\))?\s*(?:@[\w:.]+(?:\([^\n]*\))?\s*)*fun\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(/g,
-            ),
-        ].map((match) => match[1]);
+        const testMethods = kotlinTestMethods(kotlinCodeWithoutLiterals(source)).map((match) => match.name);
         const omitted = [...new Set(testMethods)].filter((method) => !declaredMethods.has(method));
         if (omitted.length > 0) {
             throw new Error(
@@ -264,10 +260,6 @@ export async function validateCiTestPlanImpact(
             );
         }
     }
-}
-
-function escapeRegex(value) {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 // 이름 자리의 키워드는 이름이 아니다. `companion object` 다음 줄의 `class Inner` 를 삼키지 않게 한다.
@@ -397,6 +389,73 @@ function kotlinCodeWithoutLiterals(source) {
     return code.join("");
 }
 
+// `@Test`·`@Test(...)` 뒤에 annotation 을 건너 이어지는 `fun 이름(` 을 찾는다(method 를 주면 그 이름만).
+// annotation 인자는 같은 줄의 `)` 가운데 뒤가 `fun 이름(` 까지 이어지는 가장 먼 것에서 닫는다. 옛 정규식
+// `@Test(?:\s*\([^)]*\))?\s*(?:@[\w:.]+(?:\([^\n]*\))?\s*)*fun\s+(이름)\s*\(` 가 역추적으로 고르던 결과와
+// 같다. 그 정규식은 인자가 이어지면 짧은 입력에도 지수 시간이 걸려, 뒤에서부터 위치마다 한 번씩 판정한다(#2218).
+function kotlinTestMethods(code, method) {
+    const nextCode = new Int32Array(code.length + 1).fill(code.length);
+    for (let index = code.length - 1; index >= 0; index -= 1) {
+        nextCode[index] = /\s/.test(code[index]) ? nextCode[index + 1] : index;
+    }
+    // tails[i]: 공백 아닌 i 에서 annotation 을 건너 닿는 `fun 이름(` 의 { name, end }. 못 닿으면 null.
+    const tails = new Array(code.length + 1).fill(null);
+    const tailAfter = (index) => tails[nextCode[index]];
+    const declaration = (index) => {
+        if (!code.startsWith("fun", index) || !/\s/.test(code[index + 3] ?? "")) return null;
+        const nameStart = nextCode[index + 3];
+        if (!/[A-Za-z_]/.test(code[nameStart] ?? "")) return null;
+        let nameEnd = nameStart + 1;
+        while (/[A-Za-z0-9_]/.test(code[nameEnd] ?? "")) nameEnd += 1;
+        const name = code.slice(nameStart, nameEnd);
+        const open = nextCode[nameEnd];
+        return code[open] === "(" && (method === undefined || name === method) ? { name, end: open + 1 } : null;
+    };
+    // 뒤에서 앞으로 훑으므로 한 줄에서 처음 찾은, 뒤가 이어지는 `)` 가 가장 멀다.
+    let farthestClose = -1;
+    for (let index = code.length - 1; index >= 0; index -= 1) {
+        const char = code[index];
+        if (char === "\n") {
+            farthestClose = -1;
+        } else if (char === ")") {
+            if (farthestClose === -1 && tailAfter(index + 1)) farthestClose = index;
+        } else if (char === "f") {
+            tails[index] = declaration(index);
+        } else if (char === "@") {
+            let nameEnd = index + 1;
+            while (/[\w:.]/.test(code[nameEnd] ?? "")) nameEnd += 1;
+            if (nameEnd === index + 1) continue;
+            if (code[nameEnd] === "(") {
+                tails[index] = farthestClose === -1 ? null : tailAfter(farthestClose + 1);
+            } else {
+                // 옛 정규식은 `@Afun x(` 처럼 이름 끝의 `fun` 도 되돌려 키워드로 읽었다.
+                tails[index] = tailAfter(nameEnd) ?? (nameEnd - index > 4 ? tails[nameEnd - 3] : null);
+            }
+        }
+    }
+
+    const matches = [];
+    let argumentsClose = -1;
+    let start = code.indexOf("@Test");
+    while (start !== -1) {
+        const next = nextCode[start + 5];
+        let tail;
+        if (code[next] === "(") {
+            // `@Test(...)` 인자는 줄을 넘어서도 첫 `)` 에서 닫는다. 찾은 자리는 뒤 `@Test` 도 같이 쓴다.
+            if (argumentsClose < next) {
+                argumentsClose = code.indexOf(")", next);
+                if (argumentsClose === -1) argumentsClose = code.length;
+            }
+            tail = argumentsClose < code.length ? tailAfter(argumentsClose + 1) : null;
+        } else {
+            tail = tails[next];
+        }
+        if (tail) matches.push({ index: start, name: tail.name });
+        start = code.indexOf("@Test", tail ? tail.end : start + 1);
+    }
+    return matches;
+}
+
 function braceBlocks(code) {
     const blocks = [];
     const open = [];
@@ -500,15 +559,9 @@ export async function validateCiTestPlanSources(plan, { root = process.cwd() } =
         if (!binaryNames.has(binaryName)) {
             throw new Error(`선택 테스트 class가 파일에 없습니다: ${test.selector}`);
         }
-        const methodPattern = new RegExp(
-            `@Test(?:\\s*\\([^)]*\\))?\\s*` +
-                `(?:@[\\w:.]+(?:\\([^\\n]*\\))?\\s*)*` +
-                `fun\\s+${escapeRegex(method)}\\s*\\(`,
-            "g",
-        );
         // 한 파일에 class 가 여럿이면 메서드가 파일에 있어도 다른 class 소속일 수 있다(#2153).
         // 그러면 계측 실행기는 0건을 돌리므로 @Test 를 바로 감싸는 블록이 selector class 본문이어야 한다.
-        const owners = [...code.matchAll(methodPattern)].map((match) =>
+        const owners = kotlinTestMethods(code, method).map((match) =>
             binaryNameByBodyStart.get(innermostBlock(blocks, match.index)?.start),
         );
         if (owners.length === 0) {
