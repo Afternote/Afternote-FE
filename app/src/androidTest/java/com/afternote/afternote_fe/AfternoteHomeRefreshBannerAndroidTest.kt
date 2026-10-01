@@ -27,6 +27,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
+import com.afternote.core.ui.R as CoreUiR
 import com.afternote.feature.afternote.presentation.R as AfternoteR
 
 /**
@@ -113,7 +114,7 @@ class AfternoteHomeRefreshBannerAndroidTest {
 
         // 배너의 «다시 시도» 가 같은 목록을 복구하고 배너를 걷는다.
         failing.set(false)
-        composeRule.onNodeWithText(retryCopy).performClick()
+        composeRule.onNodeWithText(bannerRetryCopy).performClick()
         awaitTextGone(bannerCopy)
         composeRule.onNodeWithText(FIRST_ITEM_NAME).assertIsDisplayed()
         composeRule.onNodeWithText(fullErrorCopy).assertDoesNotExist()
@@ -145,7 +146,8 @@ class AfternoteHomeRefreshBannerAndroidTest {
             .getString(resId)
 
     private val fullErrorCopy: String get() = copy(AfternoteR.string.afternote_home_load_error)
-    private val bannerCopy: String get() = copy(AfternoteR.string.afternote_home_refresh_error)
+    private val bannerCopy: String get() = copy(CoreUiR.string.core_ui_list_refresh_error)
+    private val bannerRetryCopy: String get() = copy(CoreUiR.string.core_ui_list_refresh_retry)
     private val retryCopy: String get() = copy(AfternoteR.string.afternote_home_retry)
 
     private companion object {
