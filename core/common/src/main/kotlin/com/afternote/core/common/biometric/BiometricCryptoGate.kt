@@ -25,15 +25,16 @@ private val TRANSFORMATION =
 private val CRYPTO_CHALLENGE = "afternote-biometric-gate".toByteArray()
 
 /**
- * `CryptoObject` 를 동반한 인증이 가능한 API 레벨인지.
+ * 앱 소유 `CryptoObject` 를 동반하는 인증 경로인지.
  *
- * `androidx.biometric` 1.1.0 의 `authenticate(promptInfo, cryptoObject)` 는 허용자에
+ * `androidx.biometric` 의 `authenticate(promptInfo, cryptoObject)` 는 허용자에
  * `DEVICE_CREDENTIAL` 이 포함된 채 API 30 미만이면 다음 메시지로 `IllegalArgumentException` 을 던진다.
  *
  * > Crypto-based authentication is not supported for device credential prior to API 30.
  *
- * minSdk 는 26 이고 기기 잠금(PIN·패턴)만 등록한 사용자를 막지 않는 것이 현 정책이므로,
- * API 26~29 에서는 허용자 조합을 유지한 채 `CryptoObject` 없이 인증한다.
+ * API 26~27은 기존 기기 자격 폴백을 유지한다. API 28~29는 강한 생체 인증만 허용하며
+ * 강도 제한에 필요한 내부 CryptoObject는 AndroidX가 준비한다.
+ * 앱 소유 CryptoObject의 사용 범위는 기존과 같이 API 30 이상으로 유지한다.
  */
 val isBiometricCryptoSupported: Boolean
     get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
@@ -51,13 +52,15 @@ fun createBiometricCryptoObject(): BiometricPrompt.CryptoObject? =
         .getOrNull()
 
 /**
- * 인증 성공 콜백이 받은 [cipher] 로 실제 암호 연산을 수행해 인증을 확정한다.
+ * 인증 성공 콜백이 받은 [cipher] 로 실제 암호 연산이 가능한지 검증한다.
  *
- * 키가 `setUserAuthenticationRequired(true)` 로 만들어져 있어, 프롬프트를 거치지 않은 채
- * 성공 콜백만 가로채 호출한 경우에는 이 연산이 `UserNotAuthenticatedException` 으로 실패한다.
- * 즉 성패 boolean 이 아니라 암호 연산의 성사 여부가 인증의 근거가 된다.
+ * [createBiometricCryptoObject]의 앱 소유 키는 `setUserAuthenticationRequired(true)`로
+ * 만들어져 있어, 프롬프트를 거치지 않고 성공 콜백만 가로채 호출하면 이 연산이 실패한다.
+ * AndroidX가 강도 제한을 위해 준비하는 내부 cipher는 사용자 인증에 묶인 키가 아니므로
+ * 같은 연산을 수행하더라도 그 연산 자체를 사용자 인증의 추가 증거로 간주하지 않는다.
  *
- * [cipher] 가 null 인 경로(API 26~29 폴백)는 검증할 대상이 없으므로 통과시킨다.
+ * [cipher] 가 null 인 폴백은 검증할 대상이 없으므로 통과시킨다.
+ * API 30 미만에도 AndroidX가 내부 cipher를 반환하면 동일한 암호 연산으로 검증한다.
  * 실패 원인을 호출 측이 기록할 수 있도록 예외를 삼키지 않고 [Result] 로 실어 보낸다.
  *
  * **거부는 `UserNotAuthenticatedException` 으로 오지 않는다.** API 35 실측(2026-08-26)에서
