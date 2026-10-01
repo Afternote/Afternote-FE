@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -38,13 +40,17 @@ internal fun PasskeyListItem(
                 .padding(horizontal = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Image(painterResource(R.drawable.setting_ic_fingerprint), contentDescription = "패스키")
-        Spacer(modifier = Modifier.weight(1f))
-        Column {
+        Image(
+            painter = painterResource(R.drawable.setting_ic_fingerprint),
+            contentDescription = null,
+            modifier = Modifier.size(40.dp),
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
             Text(passkey.displayName)
             Text(formatCreatedAt(passkey.createdAt))
         }
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.width(12.dp))
         Box {
             Image(painterResource(R.drawable.setting_ic_vector1), contentDescription = "왼쪽 막대기")
             Image(painterResource(R.drawable.setting_ic_vector2), contentDescription = "오른쪽 막대기")
