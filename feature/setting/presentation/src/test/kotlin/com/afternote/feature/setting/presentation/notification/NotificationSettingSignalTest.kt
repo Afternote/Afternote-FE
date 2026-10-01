@@ -16,6 +16,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
 import com.afternote.feature.setting.presentation.NoOpErrorReporter
 import com.afternote.feature.setting.presentation.R
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -112,6 +113,24 @@ class NotificationSettingSignalTest {
         composeRule.mainClock.advanceTimeBy(SNACKBAR_EXIT_MILLIS)
 
         assertFalse(isFailedMessageShown())
+    }
+
+    @Test
+    fun `알림 설정 화면 첫 진입은 중복 조회하지 않고 복귀하면 서버 동의를 갱신한다`() {
+        setScreen()
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) { viewModel.uiState.value.isMarketingFeedbackActive }
+        composeRule.waitForIdle()
+        assertEquals(1, repository.getMyMarketingConsentsCalls)
+        composeRule.runOnIdle {
+            lifecycleOwner.moveTo(Lifecycle.State.CREATED)
+            repository.onGetMyMarketingConsents = { UserMarketingConsent(sms = false, email = false, push = false) }
+        }
+        composeRule.runOnIdle { lifecycleOwner.moveTo(Lifecycle.State.RESUMED) }
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            repository.getMyMarketingConsentsCalls == 2 && !viewModel.uiState.value.isSmsChecked
+        }
+        assertFalse(viewModel.uiState.value.isEmailChecked)
+        assertFalse(viewModel.uiState.value.isPushChecked)
     }
 
     private fun isFailedMessageShown(): Boolean = composeRule.onAllNodesWithText(failedMessage).fetchSemanticsNodes().isNotEmpty()

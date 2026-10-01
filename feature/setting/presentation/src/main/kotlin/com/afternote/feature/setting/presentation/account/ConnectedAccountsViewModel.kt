@@ -20,6 +20,7 @@ internal class ConnectedAccountsViewModel
             ConnectedAccountsUiState(isLoading = true),
         ) {
         private var loadJob: Job? = null
+        private var isFirstResume = true
 
         init {
             loadConnectedAccounts()
@@ -27,6 +28,10 @@ internal class ConnectedAccountsViewModel
 
         override fun onIntent(intent: ConnectedAccountsIntent) {
             when (intent) {
+                ConnectedAccountsIntent.RefreshOnReturn -> {
+                    refreshOnReturn()
+                }
+
                 ConnectedAccountsIntent.RetryLoad -> {
                     if (currentState.errorMessage != null) loadConnectedAccounts()
                 }
@@ -100,16 +105,26 @@ internal class ConnectedAccountsViewModel
                 }
             }
 
-        private fun loadConnectedAccounts() {
-            if (loadJob?.isActive == true) return
-            dispatch(ConnectedAccountsReducerEvent.Loading)
+        private fun refreshOnReturn() {
+            if (isFirstResume) {
+                isFirstResume = false
+                return
+            }
+            loadConnectedAccounts(isAutomatic = true)
+        }
+
+        private fun loadConnectedAccounts(isAutomatic: Boolean = false) {
+            if (loadJob?.isActive == true || currentState.isUpdating || currentState.pendingLinkProvider != null) return
+            if (!isAutomatic) dispatch(ConnectedAccountsReducerEvent.Loading)
             loadJob =
                 viewModelScope.launch {
                     runCatchingCancellable { accountRepository.getConnectedAccounts() }
                         .onSuccess { accounts ->
                             dispatch(ConnectedAccountsReducerEvent.Loaded(accounts.toStateList()))
                         }.onFailure {
-                            dispatch(ConnectedAccountsReducerEvent.LoadFailed("계정 정보를 불러올 수 없습니다."))
+                            if (!isAutomatic || currentState.accounts.isEmpty()) {
+                                dispatch(ConnectedAccountsReducerEvent.LoadFailed("계정 정보를 불러올 수 없습니다."))
+                            }
                         }
                 }
         }
@@ -131,6 +146,7 @@ internal class ConnectedAccountsViewModel
             accessToken: String,
         ) {
             if (currentState.isLoading || currentState.errorMessage != null || currentState.isUpdating) return
+            loadJob?.cancel()
             dispatch(ConnectedAccountsReducerEvent.Changing)
             viewModelScope.launch {
                 runCatchingCancellable { accountRepository.linkConnectedAccount(provider, accessToken) }
@@ -140,6 +156,7 @@ internal class ConnectedAccountsViewModel
         }
 
         private fun unlink(provider: String) {
+            loadJob?.cancel()
             dispatch(ConnectedAccountsReducerEvent.Changing)
             viewModelScope.launch {
                 runCatchingCancellable { accountRepository.unlinkConnectedAccount(provider) }
