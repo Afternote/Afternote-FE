@@ -5,11 +5,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
+import com.afternote.core.ui.asString
 import com.afternote.core.ui.navigation.FeatureNavDisplay
 import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
 import com.afternote.feature.setting.presentation.account.ConnectedAccountsScreen
@@ -24,11 +27,11 @@ import com.afternote.feature.setting.presentation.home.WithdrawGuideScreen
 import com.afternote.feature.setting.presentation.notice.NoticeListScreen
 import com.afternote.feature.setting.presentation.notification.NotificationSettingScreen
 import com.afternote.feature.setting.presentation.notification.PushNotificationScreen
+import com.afternote.feature.setting.presentation.passkey.PassKeyListIntent
 import com.afternote.feature.setting.presentation.passkey.PassKeyListScreen
+import com.afternote.feature.setting.presentation.passkey.PassKeyListViewModel
 import com.afternote.feature.setting.presentation.passkey.PassKeyMakingScreen
 import com.afternote.feature.setting.presentation.passkey.PassKeyPasswordScreen
-import com.afternote.feature.setting.presentation.passkey.PassKeyScreen
-import com.afternote.feature.setting.presentation.passkey.PassKeyViewModel
 import com.afternote.feature.setting.presentation.password.PasswordChangeScreen
 import com.afternote.feature.setting.presentation.profile.ProfileEditScreen
 import com.afternote.feature.setting.presentation.receiver.ReceiverEditScreen
@@ -214,16 +217,17 @@ public fun SettingNavHost(
                 }
 
                 entry<SettingRoute.PasskeyRoute> {
-                    val viewModel: PassKeyViewModel = hiltViewModel()
-                    val isPasskeyRegistered by viewModel.isPasskeyRegistered.collectAsStateWithLifecycle()
-                    if (isPasskeyRegistered == true) {
-                        PassKeyListScreen(onBackClick = actions::popBack)
-                    } else if (isPasskeyRegistered == false) {
-                        PassKeyScreen(
-                            onBackClick = actions::popBack,
-                            onRegisterClick = actions::onPasskeyRegisterClick,
-                        )
-                    }
+                    val viewModel: PassKeyListViewModel = hiltViewModel()
+                    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.onIntent(PassKeyListIntent.Refresh) }
+                    PassKeyListScreen(
+                        passkeys = uiState.passkeys,
+                        isLoading = uiState.isLoading,
+                        errorMessage = uiState.errorMessage?.asString(),
+                        onBackClick = actions::popBack,
+                        onRegisterClick = actions::onPasskeyRegisterClick,
+                        onRetryClick = { viewModel.onIntent(PassKeyListIntent.Refresh) },
+                    )
                 }
 
                 entry<SettingRoute.PasskeyMakingRoute> {

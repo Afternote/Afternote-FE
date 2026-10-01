@@ -318,6 +318,7 @@ dependencies {
     androidTestImplementation(testFixtures(projects.feature.mindrecord.domain))
     androidTestImplementation(projects.feature.receiver.domain)
     androidTestImplementation(testFixtures(projects.feature.receiver.domain))
+    androidTestImplementation(testFixtures(projects.feature.setting.data))
     androidTestImplementation(projects.feature.setting.data)
     androidTestImplementation(projects.feature.setting.domain)
     androidTestImplementation(testFixtures(projects.feature.setting.domain))
