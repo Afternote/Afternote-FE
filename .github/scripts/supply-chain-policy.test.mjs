@@ -488,7 +488,7 @@ test('manual dependency baseline is hard-wired to the checked-out main SHA', asy
   assert.doesNotMatch(manualJob, /inputs\./);
 });
 
-test('dependency PR workflows use the same complete server-side path filter', async () => {
+test('all pull request heads produce a baseline while dependency review keeps its path filter', async () => {
   const submission = await readFile(
     new URL('../workflows/dependency-submission.yml', import.meta.url),
     'utf8',
@@ -498,10 +498,41 @@ test('dependency PR workflows use the same complete server-side path filter', as
     'utf8',
   );
 
-  assert.deepEqual(eventPathFilters(submission, 'pull_request'), dependencyPathFilters);
+  // 자식이 부모 SHA 와 비교하려면 소스 변경만 있는 부모도 그래프를 제출해야 한다.
+  // 필터 없는 이벤트만 허용해 브랜치·유형·경로 필터와 수동 전용 트리거를 막는다.
+  assert.match(submission, /^on:\n  pull_request:\n\nconcurrency:/m);
+  assert.doesNotMatch(submission, /^\s+(?:paths(?:-ignore)?|branches(?:-ignore)?|types):/m);
+  assert.doesNotMatch(submission, /^\s+if:/m);
+  assert.doesNotMatch(submission, /pull_request_target:|workflow_dispatch:/);
   assert.deepEqual(eventPathFilters(review, 'pull_request'), dependencyPathFilters);
   assert.doesNotMatch(submission, /Detect dependency graph input changes/);
   assert.doesNotMatch(review, /Detect dependency graph input changes/);
+});
+
+test('all PR dependency graph generation keeps a read-only token and the shared correlator', async () => {
+  const producer = await readFile(
+    new URL('../workflows/dependency-submission.yml', import.meta.url),
+    'utf8',
+  );
+  const trusted = await readFile(
+    new URL('../workflows/dependency-submission-trusted.yml', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(producer, /^permissions:\n  contents: read$/m);
+  const jobs = runnerJobBlocks(producer);
+  assert.equal(jobs.length, 1);
+  assert.match(jobs[0].source, /^    permissions:\n      contents: read$/m);
+  assert.doesNotMatch(producer, /:\s*write\b/);
+  assert.match(producer, /persist-credentials:\s*false/);
+  assert.match(producer, /dependency-graph:\s*generate-and-upload/);
+  assert.doesNotMatch(producer, /dependency-graph:\s*(?:generate-and-submit|download-and-submit)/);
+
+  const correlators = (source) => [...source.matchAll(
+    /GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR:\s*(\S+)/g,
+  )].map((match) => match[1]);
+  assert.deepEqual(correlators(producer), ['afternote-gradle-dependency-graph']);
+  assert.deepEqual(correlators(trusted), Array(2).fill(correlators(producer)[0]));
 });
 
 test('the privileged PR graph bridge never checks out or executes pull request code', async () => {
