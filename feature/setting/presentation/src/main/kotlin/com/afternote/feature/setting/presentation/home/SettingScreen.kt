@@ -166,6 +166,7 @@ private fun SettingScreenContent(
                 SettingProfile(
                     name = state.name,
                     email = state.email,
+                    profileImageUrl = state.profileImageUrl,
                     onInquiryClick = onUnavailableClick,
                     onNoticeClick = onNoticeClick,
                     onRecipientListClick = onRecipientListClick,
