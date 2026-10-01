@@ -26,7 +26,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.setting.domain.UpdateTimeLetterDeliveryConditionUseCase
 import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
 import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository.ConnectedAccountLinkCall
-import com.afternote.feature.setting.presentation.account.ConnectedAccountsEvent
+import com.afternote.feature.setting.presentation.account.ConnectedAccountsIntent
 import com.afternote.feature.setting.presentation.account.ConnectedAccountsViewModel
 import com.afternote.feature.setting.presentation.applock.AppLockSetupScreen
 import com.afternote.feature.setting.presentation.applock.AppLockSetupViewModel
@@ -47,10 +47,8 @@ import com.afternote.feature.setting.presentation.profile.ProfileEditScreen
 import com.afternote.feature.setting.presentation.profile.ProfileEditUiState
 import com.afternote.feature.setting.presentation.profile.ProfileEditViewModel
 import com.afternote.feature.setting.presentation.receiver.ReceiverRegisterViewModel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -125,14 +123,13 @@ class SettingAccountSecurityTest {
             !linkViewModel.uiState.value.isLoading
         }
 
-        composeRule.runOnIdle { linkViewModel.onToggle(provider = "google", enabled = true) }
-        val request = awaitEvent(linkViewModel.events)
+        composeRule.runOnIdle { linkViewModel.onIntent(ConnectedAccountsIntent.Toggle(provider = "google", enabled = true)) }
 
-        assertEquals(ConnectedAccountsEvent.RequestLink("google"), request)
+        assertEquals("google", linkViewModel.uiState.value.pendingLinkProvider)
         assertTrue(linkRepository.connectedLinkCalls.isEmpty())
 
         linkRepository.onLinkConnectedAccount = { _, _ -> throw IllegalStateException("oauth rejected") }
-        composeRule.runOnIdle { linkViewModel.link(provider = "google", accessToken = "google-token") }
+        composeRule.runOnIdle { linkViewModel.onIntent(ConnectedAccountsIntent.Link(provider = "google", accessToken = "google-token")) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             linkViewModel.uiState.value.errorMessage == "계정 연결에 실패했습니다."
         }
@@ -153,7 +150,7 @@ class SettingAccountSecurityTest {
         }
 
         assertTrue(unlinkRepository.connectedUnlinkCalls.isEmpty())
-        composeRule.runOnIdle { unlinkViewModel.onToggle(provider = "google", enabled = false) }
+        composeRule.runOnIdle { unlinkViewModel.onIntent(ConnectedAccountsIntent.Toggle(provider = "google", enabled = false)) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             unlinkRepository.connectedUnlinkCalls.size == 1
         }
@@ -344,11 +341,6 @@ class SettingAccountSecurityTest {
         assertEquals(0, authRepository.clearSessionCalls)
         assertTrue(runBlocking { authRepository.isLoggedIn.first() })
     }
-
-    private fun <T> awaitEvent(events: Flow<T>): T =
-        runBlocking {
-            withTimeout(TIMEOUT_MILLIS) { events.first() }
-        }
 
     private companion object {
         const val TIMEOUT_MILLIS = 5_000L
