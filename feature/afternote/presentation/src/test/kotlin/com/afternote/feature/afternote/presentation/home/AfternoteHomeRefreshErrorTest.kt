@@ -5,9 +5,9 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.afternote.core.ui.R
+import com.afternote.core.ui.loading.ListRefreshErrorBanner
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.component.ListRefreshErrorBanner
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -46,8 +46,8 @@ class AfternoteHomeRefreshErrorTest {
             AfternoteTheme { ListRefreshErrorBanner(onRetry = { retries += 1 }) }
         }
 
-        composeRule.onNodeWithText(string(R.string.afternote_home_refresh_error)).assertIsDisplayed()
-        composeRule.onNodeWithText(string(R.string.afternote_home_retry)).performClick()
+        composeRule.onNodeWithText(string(R.string.core_ui_list_refresh_error)).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.core_ui_list_refresh_retry)).performClick()
 
         composeRule.runOnIdle { assertEquals(1, retries) }
     }
