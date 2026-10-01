@@ -82,7 +82,7 @@ internal fun NotificationSettingScreen(
         }
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        viewModel.onIntent(PushNotificationIntent.RefreshDeviceAlarmStatus)
+        viewModel.onIntent(PushNotificationIntent.RefreshOnReturn)
     }
 
     // 소비가 ObserveFlag 의 effect 를 다시 시작시켜도 스낵바가 끊기지 않게 화면 코루틴에 띄운다.

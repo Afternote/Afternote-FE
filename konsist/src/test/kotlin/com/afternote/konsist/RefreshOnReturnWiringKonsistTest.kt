@@ -35,7 +35,7 @@ class RefreshOnReturnWiringKonsistTest {
     @Test
     fun `refreshOnReturn 을 선언한 ViewModel 은 ON_RESUME 결선을 갖는다`() {
         val mainFiles = mainSourceFiles()
-        val wiringSites = mainFiles.filter { ON_RESUME in it.text && REFRESH_CALL in it.text }
+        val wiringSites = mainFiles.filter { ON_RESUME in it.text && (REFRESH_CALL in it.text || ".RefreshOnReturn" in it.text) }
 
         val unwired =
             mainFiles
@@ -61,6 +61,23 @@ class RefreshOnReturnWiringKonsistTest {
                 appendLine("  LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshOnReturn() }")
                 appendLine("갱신이 더는 필요 없다면 ViewModel 의 refreshOnReturn() 도 함께 지운다 — 짝을 맞춘다.")
             }
+        }
+    }
+
+    @Test
+    fun `설정 재진입 갱신은 마케팅 동의를 포함한 모든 소비 화면에 결선된다`() {
+        val expected =
+            mapOf(
+                "ConnectedAccountsScreen.kt" to "ConnectedAccountsIntent",
+                "DeliveryConditionScreen.kt" to "DeliveryConditionIntent",
+                "ProfileEditScreen.kt" to "ProfileEditIntent",
+                "PushNotificationScreen.kt" to "PushNotificationIntent",
+                "NotificationSettingScreen.kt" to "PushNotificationIntent",
+            )
+        val settingFiles = mainSourceFiles().filter { "/feature/setting/" in "/${it.normalizedProjectPath()}" }
+        expected.forEach { (fileName, intent) ->
+            val source = settingFiles.single { it.normalizedProjectPath().endsWith("/$fileName") }.text
+            check(ON_RESUME in source && "$intent.RefreshOnReturn" in source) { "$fileName 재진입 갱신 결선 누락" }
         }
     }
 

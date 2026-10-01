@@ -6,6 +6,8 @@ import com.afternote.core.ui.mvi.MviIntent
 import com.afternote.core.ui.mvi.ReducerEvent
 
 internal sealed interface PushNotificationIntent : MviIntent {
+    data object RefreshOnReturn : PushNotificationIntent
+
     data object RetryLoad : PushNotificationIntent
 
     /** 기기 알림 허용 여부를 다시 읽는다. 화면 재개와 권한 요청 결과 때 보낸다. */
