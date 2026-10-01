@@ -42,7 +42,11 @@ internal fun passkeyListRegisteredScreenshot() {
         passkeys =
             listOf(
                 Passkey(7L, "휴대전화 패스키", "2026-09-06T10:00:00"),
-                Passkey(8L, "태블릿 패스키", "2026-09-08T15:30:00"),
+                Passkey(
+                    8L,
+                    "회사에서 사용하는 태블릿에 저장한 아주 긴 이름의 패스키",
+                    "2026-09-08T15:30:00.123456789+09:00",
+                ),
             ),
     )
 }
