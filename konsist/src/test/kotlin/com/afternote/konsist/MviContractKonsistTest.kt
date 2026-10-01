@@ -557,7 +557,6 @@ class MviContractKonsistTest {
         private val ISSUE_1805_SETTING =
             setOf(
                 "com.afternote.feature.setting.presentation.applock.AppLockSetupViewModel",
-                "com.afternote.feature.setting.presentation.home.SettingViewModel",
                 "com.afternote.feature.setting.presentation.passkey.PassKeyViewModel",
                 "com.afternote.feature.setting.presentation.receiver.ReceiverRegisterViewModel",
             )

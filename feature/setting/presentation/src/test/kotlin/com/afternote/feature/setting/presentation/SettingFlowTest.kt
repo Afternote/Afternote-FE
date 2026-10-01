@@ -14,6 +14,7 @@ import com.afternote.core.domain.testing.FakeMyProfileRepository
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
 import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
+import com.afternote.feature.setting.presentation.home.SettingIntent
 import com.afternote.feature.setting.presentation.home.SettingScreen
 import com.afternote.feature.setting.presentation.home.SettingViewModel
 import com.afternote.feature.setting.presentation.notification.PushNotificationIntent
@@ -33,6 +34,30 @@ import org.robolectric.annotation.GraphicsMode
 class SettingFlowTest {
     @get:Rule
     val composeRule = createComposeRule()
+
+    @Test
+    fun profileLoadFailureKeepsSettingsEntriesAndRetryRecoversProfile() {
+        var reads = 0
+        var offline = true
+        val profile =
+            com.afternote.core.domain.testing.FakeMyProfileRepository.strict().apply {
+                onGetMyProfile = {
+                    reads++
+                    if (offline) throw java.io.IOException("offline")
+                    com.afternote.core.model.user
+                        .User("복구 사용자", "test@example.com", null, null)
+                }
+            }
+        val viewModel = SettingViewModel(settingFlowAuthRepository(loggedIn = true), profile, settingFlowAccountRepository())
+        setSettingContent(viewModel)
+        composeRule.onNodeWithText("프로필을 불러올 수 없습니다.").assertIsDisplayed()
+        composeRule.onNodeWithText("프로필 수정").assertIsDisplayed()
+        val failedReads = reads
+        composeRule.runOnIdle { offline = false }
+        composeRule.onNodeWithText("다시 시도").performClick()
+        composeRule.onNodeWithText("복구 사용자").assertIsDisplayed()
+        assertEquals(failedReads + 1, reads)
+    }
 
     @Test
     fun profileAndSecurityEntries_emitExpectedNavigation() {
@@ -85,7 +110,7 @@ class SettingFlowTest {
         composeRule.setContent { AfternoteTheme {} }
 
         assertEquals(0, account.deleteAccountCalls)
-        composeRule.runOnIdle { viewModel.deleteAccount() }
+        composeRule.runOnIdle { viewModel.onIntent(SettingIntent.DeleteAccount) }
         composeRule.waitUntil(timeoutMillis = 5_000) { account.deleteAccountCalls == 1 }
 
         assertEquals(1, account.deleteAccountCalls)
