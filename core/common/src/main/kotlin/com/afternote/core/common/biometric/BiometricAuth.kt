@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.fingerprint
+package com.afternote.core.common.biometric
 
 import android.util.Log
 import androidx.biometric.BiometricManager
@@ -7,21 +7,19 @@ import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
-import com.afternote.core.common.biometric.confirmWithCryptoOperation
-import com.afternote.core.common.biometric.createBiometricCryptoObject
-import com.afternote.core.common.biometric.isBiometricCryptoSupported
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 
-internal const val LOG_TAG = "FingerprintLogin"
+private const val LOG_TAG = "BiometricAuth"
 
 /**
  * 생체 인식 프롬프트에 노출할 상황별 문구.
  * `stringResource`로 해석된 값이 필요하므로 Composable에서 빌드해 주입한다.
+ * 문구는 소비 feature 마다 다르므로 core 는 값을 정하지 않고 호출 측이 넘긴다.
  */
-data class BiometricMessages(
+public data class BiometricMessages(
     val initFailed: String,
     val noHardware: String,
     val noneEnrolled: String,
@@ -36,12 +34,12 @@ data class BiometricMessages(
  * UI 레이어에서 단방향으로 흘려 성공·취소·오류를 명시적으로 분기한다.
  * 취소는 오류로 노출하지 않도록 별도 타입으로 정의한다.
  */
-sealed interface BiometricAuthResult {
-    data object Success : BiometricAuthResult
+public sealed interface BiometricAuthResult {
+    public data object Success : BiometricAuthResult
 
-    data object Canceled : BiometricAuthResult
+    public data object Canceled : BiometricAuthResult
 
-    data class Error(
+    public data class Error(
         val message: String,
     ) : BiometricAuthResult
 }
@@ -60,7 +58,7 @@ sealed interface BiometricAuthResult {
  * - 성공은 콜백의 boolean 이 아니라 [confirmWithCryptoOperation] 의 암호 연산 성사로 확정한다.
  *   프롬프트를 거치지 않고 성공 콜백만 가로챈 경우 사용자 인증에 묶인 키를 쓸 수 없어 연산이 실패한다.
  */
-suspend fun FragmentActivity.authenticateBiometric(
+public suspend fun FragmentActivity.authenticateBiometric(
     title: String,
     subtitle: String,
     messages: BiometricMessages,
