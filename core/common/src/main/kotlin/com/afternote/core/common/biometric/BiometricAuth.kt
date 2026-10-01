@@ -1,5 +1,6 @@
 package com.afternote.core.common.biometric
 
+import android.os.Build
 import android.util.Log
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
@@ -55,8 +56,10 @@ public sealed interface BiometricAuthResult {
  *   `MainActivity`는 반드시 `FragmentActivity`(또는 `AppCompatActivity`)를 상속해야 한다.
  * - [BiometricPrompt]는 UI 컴포넌트이므로 본문을 [Dispatchers.Main.immediate]에서 실행해,
  *   호출 코루틴이 백그라운드 디스패처에 있어도 초기화·실행이 메인 스레드로 수렴하도록 한다.
- * - 성공은 콜백의 boolean 이 아니라 [confirmWithCryptoOperation] 의 암호 연산 성사로 확정한다.
- *   프롬프트를 거치지 않고 성공 콜백만 가로챈 경우 사용자 인증에 묶인 키를 쓸 수 없어 연산이 실패한다.
+ * - 성공 콜백의 cipher는 [confirmWithCryptoOperation]으로 연산을 검증한다.
+ *   API 30 이상에서 앱 소유 CryptoObject를 준비한 경우에는 사용자 인증에 묶인 키이므로
+ *   인증 없이 성공 콜백만 가로채 호출하면 연산이 실패한다. AndroidX의 내부 cipher에는
+ *   이 인증 결합을 가정하지 않으며, 플랫폼 프롬프트의 강한 생체 인증 결과를 따른다.
  */
 public suspend fun FragmentActivity.authenticateBiometric(
     title: String,
@@ -66,12 +69,15 @@ public suspend fun FragmentActivity.authenticateBiometric(
     withContext(Dispatchers.Main.immediate) {
         suspendCancellableCoroutine { continuation ->
             val biometricManager = BiometricManager.from(this@authenticateBiometric)
-            val authenticators = BIOMETRIC_STRONG or DEVICE_CREDENTIAL
+            // Android 9·10은 STRONG과 기기 자격의 조합을 지원하지 않는다.
+            // 강도를 낮추지 않고 이 두 버전에서만 생체 인증을 단독 사용한다.
+            val biometricOnly = Build.VERSION.SDK_INT in Build.VERSION_CODES.P..Build.VERSION_CODES.Q
+            val authenticators = if (biometricOnly) BIOMETRIC_STRONG else BIOMETRIC_STRONG or DEVICE_CREDENTIAL
 
             when (biometricManager.canAuthenticate(authenticators)) {
                 BiometricManager.BIOMETRIC_SUCCESS -> {
-                    // API 26~29 에서는 DEVICE_CREDENTIAL 허용자와 CryptoObject 를 함께 쓸 수 없다.
-                    // 이때는 관문 없이 인증하고, 성공 확정은 cipher 부재로 통과시킨다.
+                    // 앱 소유 CryptoObject는 기존 API 30 이상 정책을 유지한다.
+                    // API 28~29의 STRONG 강제는 AndroidX 프롬프트가 담당한다.
                     val cryptoObject = if (isBiometricCryptoSupported) createBiometricCryptoObject() else null
 
                     val promptInfo =
@@ -80,7 +86,11 @@ public suspend fun FragmentActivity.authenticateBiometric(
                             .setTitle(title)
                             .setSubtitle(subtitle)
                             .setAllowedAuthenticators(authenticators)
-                            .build()
+                            .apply {
+                                if (biometricOnly) {
+                                    setNegativeButtonText(getString(android.R.string.cancel))
+                                }
+                            }.build()
 
                     val biometricPrompt =
                         BiometricPrompt(
