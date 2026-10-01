@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.presentation.editor.receiver
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -15,11 +14,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.ProfileImage
-import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.loading.LoadingBody
+import com.afternote.core.ui.receiver.ReceiverListLoadFailure
 import com.afternote.core.ui.receiver.ReceiverSelectItem
 import com.afternote.core.ui.receiver.ReceiverSelectScreen
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -34,8 +32,9 @@ import com.afternote.feature.afternote.presentation.R
  * 한 번 진입해 여러 명을 확정할 수 있다 — 완료는 선택한 id 전체를 한 번에 돌려준다 (#1426).
  *
  * 상태 body 를 core:ui 로 올리는 조건(#1427 본문)은 «두 번째 작성 플로우가 이 컴포넌트에
- * 붙는 시점» 이다. 착수 시점(2026-08-30)의 `listReplacement` 소비자는 여전히 애프터노트
- * 하나뿐이라(설정 `ReceiverListScreen` 은 슬롯을 쓰지 않는다) 여기에 둔다.
+ * 붙는 시점» 이다. 착수 시점(2026-08-30)의 `listReplacement` 소비자는 애프터노트 하나뿐이었다.
+ * 설정 수신자 목록이 같은 슬롯에 같은 조회 실패 안내를 끼우게 되어 그 body 는 core:ui
+ * [ReceiverListLoadFailure] 로 올렸다 (#2045). 빈 목록 body 는 여기 둔다.
  */
 @Composable
 internal fun SelectReceiverScreen(
@@ -59,7 +58,7 @@ internal fun SelectReceiverScreen(
         listReplacement =
             when {
                 uiState.loadFailed -> {
-                    { SelectReceiverLoadFailed(onRetryClick = onRetryClick) }
+                    { ReceiverListLoadFailure(onRetryClick = onRetryClick) }
                 }
 
                 uiState.isLoading && uiState.receivers.isEmpty() -> {
@@ -112,26 +111,5 @@ private fun SelectReceiverEmpty() {
         ) {
             ProfileImage()
         }
-    }
-}
-
-@Composable
-private fun SelectReceiverLoadFailed(onRetryClick: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = stringResource(R.string.afternote_select_receiver_load_failed),
-            style = AfternoteDesign.typography.captionLargeR,
-            color = AfternoteDesign.colors.gray8,
-            textAlign = TextAlign.Center,
-        )
-        AfternoteButton(
-            text = stringResource(R.string.afternote_select_receiver_retry),
-            onClick = onRetryClick,
-            modifier = Modifier.padding(top = 16.dp, start = 20.dp, end = 20.dp),
-        )
     }
 }
