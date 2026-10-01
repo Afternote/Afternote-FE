@@ -10,6 +10,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isEnabled
@@ -18,6 +19,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
@@ -118,8 +120,11 @@ class SettingEditorSaveSignalAndroidTest {
         composeRule.onNodeWithText(SAVE_ACTION).performClick()
 
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            composeRule.onAllNodes(hasText(EDIT_FAILED_MESSAGE)).fetchSemanticsNodes().isNotEmpty()
+            composeRule.runOnIdle { fakeUserRepository.receiverUpdateCalls.size > updatesBefore }
         }
+        // 오류는 LazyColumn의 마지막 항목이므로 작은 화면에서도 스크롤해 실제 표시를 확인한다.
+        composeRule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(EDIT_FAILED_MESSAGE))
+        composeRule.onNodeWithText(EDIT_FAILED_MESSAGE).assertIsDisplayed()
         // 실패는 화면을 닫지 않고, 저장 중 잠금도 풀려 다시 누를 수 있다.
         composeRule.onNodeWithText(EDIT_TITLE).assertIsDisplayed()
         composeRule.onNodeWithText(SAVE_ACTION).assertIsEnabled()
