@@ -17,7 +17,7 @@ import java.io.File
  * 정착했는데 그 아래 전이 경로는 화면마다 갈렸고, 진입점을 하나로 모은 화면은 51개 중
  * 1개뿐이었다. 규약을 문서로만 두면 같은 일이 반복된다.
  *
- * 규칙은 셋이다.
+ * 규칙은 넷이다.
  * - **A.** `MviViewModel` 상속체는 `MutableStateFlow`·`MutableSharedFlow`·`Channel` 을 직접
  *   선언하지 않는다. 별도 상태 홀더를 두면 전이가 `reduce` 밖으로 새고 베이스를 도입한 의미가
  *   사라진다. `Channel` 금지는 #1502 가 세우려는 규칙과 같은 방향이라 **두 규칙을 하나로 합친다** —
@@ -26,6 +26,10 @@ import java.io.File
  *   49개는 [PENDING_MVI_MIGRATION] 예외로 두고, 모듈 전환 이슈가 닫힐 때마다 뺀다.
  * - **C.** `MviIntent`·`ReducerEvent` 를 직접 구현하는 화면 계약 타입은 `sealed interface` 다.
  *   열려 있으면 `when` 이 전수 분기를 보장하지 못해 진입점 단일화의 이득이 사라진다.
+ * - **D.** 아직 전환하지 않은 `feature/…/presentation` ViewModel 도 이벤트용 `Channel`·`MutableSharedFlow` 를
+ *   새로 들이지 않는다 (#1502). 규칙 A 는 전환한 ViewModel 만 보므로, 이 규칙이 없으면 [PENDING_MVI_MIGRATION]
+ *   예외에 든 ViewModel 이 전환 전까지 이벤트 스트림을 늘릴 수 있다. 가드 도입 시점에 이미 있던 선언은
+ *   [LEGACY_EVENT_STREAMS] 기준선으로 인정한다. `MutableStateFlow` 는 전환 전 상태 홀더라 대상이 아니다.
  *
  * 기준 문서는 `docs/convention/mvi.md` 다.
  *
@@ -87,6 +91,38 @@ class MviContractKonsistTest {
                 appendLine("전환이 끝났거나(그러면 지운다), 아직 도착하지 않은 선등재다(PENDING_ARRIVAL_*).")
                 appendLine("목록에서 지워야 다음 미전환 ViewModel 이 이 자리에 숨지 않는다.")
                 appendLine("목록이 비면 규칙 B 의 예외 자체를 지운다.")
+                appendLine()
+                stale.sorted().forEach { appendLine("  $it") }
+            },
+        )
+    }
+
+    @Test
+    fun `미전환 ViewModel 도 이벤트 스트림을 새로 들이지 않는다`() {
+        val violations = legacyEventStreams(AfternoteKonsistScope.productionFiles) - LEGACY_EVENT_STREAMS
+
+        check(violations.isEmpty()) {
+            buildString {
+                appendLine("MVI 미전환 ViewModel 이 이벤트용 Channel·MutableSharedFlow 를 새로 선언한다 (${violations.size}건).")
+                appendLine("producer 가 consumer 보다 오래 살면 Channel·SharedFlow 는 전달을 보장하지 못한다 (#228).")
+                appendLine()
+                violations.sorted().forEach { appendLine("  $it") }
+                appendLine()
+                appendLine("일회성 신호는 UiState 의 nullable 필드로 흡수하고 소비는 Intent 로 받는다 (#1502).")
+                appendLine("기존 선언을 옮긴 것이면 ViewModel 을 MviViewModel 로 전환한다. 기준: docs/convention/mvi.md")
+            }
+        }
+    }
+
+    @Test
+    fun `해소된 이벤트 스트림 기준선은 경고로 알린다`() {
+        val stale = LEGACY_EVENT_STREAMS - legacyEventStreams(AfternoteKonsistScope.productionFiles)
+        if (stale.isEmpty()) return
+
+        println(
+            buildString {
+                appendLine("[경고] LEGACY_EVENT_STREAMS 에 지금 소스에 없는 항목이 남아 있다 (${stale.size}건).")
+                appendLine("전환이 끝났으면 지운다 — 남겨 두면 같은 이름으로 다시 들인 스트림이 기준선에 숨는다.")
                 appendLine()
                 stale.sorted().forEach { appendLine("  $it") }
             },
@@ -220,6 +256,60 @@ class MviContractKonsistTest {
     }
 
     @Test
+    fun `규칙 D - 미전환 ViewModel 의 Channel·MutableSharedFlow 만 잡는다`() {
+        val root = fixture.newFolder("rule-d")
+        root.writeKotlin(
+            "feature/sample/presentation/src/main/kotlin/sample/LegacyViewModel.kt",
+            """
+            package sample
+
+            class LegacyViewModel : ViewModel() {
+                private val _uiState = MutableStateFlow(SampleUiState())
+                private val _events = Channel<SampleEvent>(Channel.BUFFERED)
+                private val signals = MutableSharedFlow<SampleEvent>(replay = 0)
+                private val plain = 0
+            }
+            """,
+        )
+        root.writeKotlin(
+            "feature/sample/presentation/src/main/kotlin/sample/MigratedViewModel.kt",
+            """
+            package sample
+
+            class MigratedViewModel : MviViewModel<SampleIntent, SampleUiState, SampleEvent>(SampleUiState()) {
+                private val signals = Channel<String>()
+            }
+            """,
+        )
+        root.writeKotlin(
+            "feature/sample/presentation/src/main/kotlin/sample/SnackbarRelay.kt",
+            """
+            package sample
+
+            class SnackbarRelay {
+                private val messages = Channel<String>()
+            }
+            """,
+        )
+        root.writeKotlin(
+            "app/src/main/kotlin/app/AppViewModel.kt",
+            """
+            package app
+
+            class AppViewModel : ViewModel() {
+                private val _events = Channel<String>()
+            }
+            """,
+        )
+
+        val violations = legacyEventStreams(fixtureFiles(root))
+
+        // 상태 홀더(MutableStateFlow)는 전환 전 ViewModel 의 정상 구조다. 전환한 ViewModel 은 규칙 A,
+        // ViewModel 이 아닌 타입과 app 은 이 규칙 밖이다(app 은 #1809 몫).
+        assertEquals(setOf("sample.LegacyViewModel._events", "sample.LegacyViewModel.signals"), violations)
+    }
+
+    @Test
     fun `규칙 A·B - 중간 추상 베이스를 낀 상속도 MviViewModel 로 본다`() {
         val root = fixture.newFolder("indirect-parents")
         root.writeKotlin(
@@ -264,6 +354,25 @@ class MviContractKonsistTest {
                     .filterNot { it.hasAbstractModifier }
                     .filterNot(extendsMvi)
                     .map { "${file.packagee?.name}.${it.name}" }
+            }.toSet()
+    }
+
+    /** 규칙 D 위반 후보 — `feature/…/presentation` main 소스의 미전환 ViewModel 이 든 이벤트 스트림(`FQN.프로퍼티`). */
+    private fun legacyEventStreams(files: List<KoFileDeclaration>): Set<String> {
+        val extendsMvi = mviViewModelSubclassTest(files)
+        return files
+            .filter { FEATURE_PRESENTATION_MAIN.containsMatchIn(it.normalizedProjectPath()) }
+            .flatMap { file ->
+                file
+                    .classes()
+                    .filter { it.name.endsWith(VIEW_MODEL_SUFFIX) }
+                    .filterNot(extendsMvi)
+                    .flatMap { declaration ->
+                        declaration
+                            .properties()
+                            .filter { property -> EVENT_STREAM.containsMatchIn(property.text) }
+                            .map { property -> "${file.packagee?.name}.${declaration.name}.${property.name}" }
+                    }
             }.toSet()
     }
 
@@ -363,6 +472,21 @@ class MviContractKonsistTest {
          */
         val STATE_HOLDER = Regex("""\b(MutableStateFlow|MutableSharedFlow|Channel)\s*[(<]""")
 
+        /** 규칙 D 의 이벤트 스트림 선언. [STATE_HOLDER] 에서 전환 전 상태 홀더인 `MutableStateFlow` 만 뺐다. */
+        val EVENT_STREAM = Regex("""\b(MutableSharedFlow|Channel)\s*[(<]""")
+
+        /**
+         * 규칙 D 의 기준선 — 가드 도입(#1502) 때 이미 있던 미전환 ViewModel 의 이벤트 스트림.
+         *
+         * 새 항목은 넣지 않는다. 해당 ViewModel 이 전환되거나 지워지면 여기서도 뺀다(남으면 경고).
+         */
+        val LEGACY_EVENT_STREAMS =
+            setOf(
+                // #944 가 카카오 초대(BE#289)로 교체한다. 폼 값과 이메일 등록 버튼이 PM 결정 대기라
+                // #1502 전환 범위에서 뺐다.
+                "com.afternote.feature.setting.presentation.receiver.ReceiverRegisterViewModel._events",
+            )
+
         /** #1804 가 뺀다. */
         private val ISSUE_1804_AFTERNOTE =
             setOf(
@@ -426,17 +550,14 @@ class MviContractKonsistTest {
                 "com.afternote.feature.receiver.presentation.senderdetail.SenderDetailViewModel",
             )
 
-        /** #1805 가 뺀다. `Channel` 5곳 흡수(#1502)가 선행이다. */
+        /**
+         * #1805 가 뺀다. 이벤트 스트림을 쓰던 ConnectedAccounts·PushNotification 은 #1502 가 전환했다.
+         * ReceiverRegisterViewModel 은 #944 가 카카오 초대로 교체하며 뺀다([LEGACY_EVENT_STREAMS]).
+         */
         private val ISSUE_1805_SETTING =
             setOf(
-                "com.afternote.feature.setting.presentation.account.ConnectedAccountsViewModel",
                 "com.afternote.feature.setting.presentation.applock.AppLockSetupViewModel",
-                "com.afternote.feature.setting.presentation.delivery.DeliveryConditionViewModel",
-                "com.afternote.feature.setting.presentation.home.SettingViewModel",
-                "com.afternote.feature.setting.presentation.notification.PushNotificationViewModel",
                 "com.afternote.feature.setting.presentation.passkey.PassKeyViewModel",
-                "com.afternote.feature.setting.presentation.profile.ProfileEditViewModel",
-                "com.afternote.feature.setting.presentation.receiver.ReceiverEditViewModel",
                 "com.afternote.feature.setting.presentation.receiver.ReceiverRegisterViewModel",
             )
 

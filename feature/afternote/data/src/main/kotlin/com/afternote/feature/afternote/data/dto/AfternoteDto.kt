@@ -85,11 +85,12 @@ data class AfternoteDetailDto(
     @SerialName("receivers") val receivers: List<AfternoteDetailReceiverDto>,
     @SerialName("actions") val processingMethods: List<String>? = null,
     @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
-    @SerialName("playlist") val playlist: AfternotePlaylistDto? = null,
+    // 서버 키는 `playlist` 지만 곡만이 아니라 추모 사진·영상까지 담은 추억 노트 본문이라 우리 쪽은 memorial 로 부른다.
+    @SerialName("playlist") val memorial: AfternoteMemorialDto? = null,
 )
 
 @Serializable
-data class AfternotePlaylistDto(
+data class AfternoteMemorialDto(
     @SerialName("atmosphere") val atmosphere: String? = null,
     @SerialName("memorialPhotoUrl") val memorialPhotoUrl: String? = null,
     @SerialName("songs") val songs: List<AfternoteSongDto>,

@@ -6,9 +6,11 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeMyProfileRepository
 import com.afternote.core.domain.testing.FakeMyProfileRepository.ProfileUpdateCall
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.core.domain.testing.FakeUserReceiverRepository
 import com.afternote.core.domain.testing.FakeUserReceiverRepository.DeliveryUpdateCall
 import com.afternote.core.model.delivery.ConditionState
@@ -22,16 +24,17 @@ import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.setting.domain.UpdateTimeLetterDeliveryConditionUseCase
 import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
 import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository.ConnectedAccountLinkCall
-import com.afternote.feature.setting.presentation.account.ConnectedAccountsEvent
+import com.afternote.feature.setting.presentation.account.ConnectedAccountsIntent
 import com.afternote.feature.setting.presentation.account.ConnectedAccountsViewModel
 import com.afternote.feature.setting.presentation.applock.AppLockSetupScreen
 import com.afternote.feature.setting.presentation.applock.AppLockSetupViewModel
 import com.afternote.feature.setting.presentation.applock.PinSetupStep
 import com.afternote.feature.setting.presentation.delivery.DeliveryConditionError
+import com.afternote.feature.setting.presentation.delivery.DeliveryConditionIntent
 import com.afternote.feature.setting.presentation.delivery.DeliveryConditionViewModel
-import com.afternote.feature.setting.presentation.home.SettingUiState
 import com.afternote.feature.setting.presentation.home.SettingViewModel
 import com.afternote.feature.setting.presentation.home.WithdrawConfirmScreen
 import com.afternote.feature.setting.presentation.home.WithdrawUiState
@@ -39,14 +42,13 @@ import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import com.afternote.feature.setting.presentation.passkey.PassKeyListScreen
 import com.afternote.feature.setting.presentation.passkey.PassKeyScreen
 import com.afternote.feature.setting.presentation.profile.ProfileEditEvent
+import com.afternote.feature.setting.presentation.profile.ProfileEditIntent
 import com.afternote.feature.setting.presentation.profile.ProfileEditScreen
 import com.afternote.feature.setting.presentation.profile.ProfileEditUiState
 import com.afternote.feature.setting.presentation.profile.ProfileEditViewModel
 import com.afternote.feature.setting.presentation.receiver.ReceiverRegisterViewModel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -71,7 +73,7 @@ class SettingAccountSecurityTest {
             settingContractProfileRepository().apply {
                 onGetMyProfile = { throw IllegalStateException("profile unavailable") }
             }
-        val loadFailureViewModel = ProfileEditViewModel(loadFailureRepository)
+        val loadFailureViewModel = ProfileEditViewModel(loadFailureRepository, FakePhotoUploadRepository.strict())
 
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             loadFailureViewModel.uiState.value == ProfileEditUiState.Error
@@ -87,18 +89,21 @@ class SettingAccountSecurityTest {
         }
 
         composeRule.onNodeWithText("프로필을 불러올 수 없습니다.").assertIsDisplayed()
-        composeRule.runOnIdle { loadFailureViewModel.updateProfile("새 이름", "01012345678") }
+        composeRule.runOnIdle { loadFailureViewModel.onIntent(ProfileEditIntent.UpdateProfile("새 이름", "01012345678")) }
         assertTrue(loadFailureRepository.profileUpdateCalls.isEmpty())
 
         val updateFailureRepository = settingContractProfileRepository()
-        val updateFailureViewModel = ProfileEditViewModel(updateFailureRepository)
+        val updateFailureViewModel = ProfileEditViewModel(updateFailureRepository, FakePhotoUploadRepository.strict())
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             updateFailureViewModel.uiState.value is ProfileEditUiState.Success
         }
         updateFailureRepository.onUpdateMyProfile = { _, _, _ -> throw IllegalStateException("offline") }
 
-        composeRule.runOnIdle { updateFailureViewModel.updateProfile("   ", "") }
-        val event = awaitEvent(updateFailureViewModel.events)
+        composeRule.runOnIdle { updateFailureViewModel.onIntent(ProfileEditIntent.UpdateProfile("   ", "")) }
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            (updateFailureViewModel.uiState.value as? ProfileEditUiState.Success)?.pendingEvent != null
+        }
+        val event = (updateFailureViewModel.uiState.value as ProfileEditUiState.Success).pendingEvent
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             (updateFailureViewModel.uiState.value as? ProfileEditUiState.Success)?.isUpdating == false
         }
@@ -118,16 +123,15 @@ class SettingAccountSecurityTest {
             !linkViewModel.uiState.value.isLoading
         }
 
-        composeRule.runOnIdle { linkViewModel.onToggle(provider = "google", enabled = true) }
-        val request = awaitEvent(linkViewModel.events)
+        composeRule.runOnIdle { linkViewModel.onIntent(ConnectedAccountsIntent.Toggle(provider = "google", enabled = true)) }
 
-        assertEquals(ConnectedAccountsEvent.RequestLink("google"), request)
+        assertEquals("google", linkViewModel.uiState.value.pendingLinkProvider)
         assertTrue(linkRepository.connectedLinkCalls.isEmpty())
 
         linkRepository.onLinkConnectedAccount = { _, _ -> throw IllegalStateException("oauth rejected") }
-        composeRule.runOnIdle { linkViewModel.link(provider = "google", accessToken = "google-token") }
+        composeRule.runOnIdle { linkViewModel.onIntent(ConnectedAccountsIntent.Link(provider = "google", accessToken = "google-token")) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            linkViewModel.uiState.value.errorMessage == "계정 연결에 실패했습니다."
+            linkViewModel.uiState.value.pendingError == "계정 연결에 실패했습니다."
         }
 
         assertEquals(
@@ -146,13 +150,13 @@ class SettingAccountSecurityTest {
         }
 
         assertTrue(unlinkRepository.connectedUnlinkCalls.isEmpty())
-        composeRule.runOnIdle { unlinkViewModel.onToggle(provider = "google", enabled = false) }
+        composeRule.runOnIdle { unlinkViewModel.onIntent(ConnectedAccountsIntent.Toggle(provider = "google", enabled = false)) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             unlinkRepository.connectedUnlinkCalls.size == 1
         }
 
         assertEquals(listOf("google"), unlinkRepository.connectedUnlinkCalls)
-        assertEquals("계정 연결 해제에 실패했습니다.", unlinkViewModel.uiState.value.errorMessage)
+        assertEquals("계정 연결 해제에 실패했습니다.", unlinkViewModel.uiState.value.pendingError)
     }
 
     @Test
@@ -206,14 +210,15 @@ class SettingAccountSecurityTest {
             DeliveryConditionViewModel(
                 route = SettingRoute.AfterDeliveryRoute(RECEIVER_ID),
                 receiverRepository = repository,
+                updateTimeLetterDeliveryCondition = UpdateTimeLetterDeliveryConditionUseCase(repository),
             )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.isInitialized
         }
 
         composeRule.runOnIdle {
-            viewModel.onConditionTypeSelected(index = 1)
-            viewModel.onSave()
+            viewModel.onIntent(DeliveryConditionIntent.SelectConditionType(index = 1))
+            viewModel.onIntent(DeliveryConditionIntent.Save)
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.error == DeliveryConditionError.SAVE_FAILED
@@ -308,7 +313,7 @@ class SettingAccountSecurityTest {
         composeRule.setContent {
             AfternoteTheme {
                 WithdrawConfirmScreen(
-                    uiState = SettingUiState.Success(name = DEFAULT_USER.name, email = DEFAULT_USER.email),
+                    uiState = viewModel.uiState.collectAsStateWithLifecycle().value,
                     onBackClick = {},
                     onWithdrawSuccess = { successCalls += 1 },
                     viewModel = viewModel,
@@ -327,7 +332,7 @@ class SettingAccountSecurityTest {
         }
 
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.withdrawUiState.value == WithdrawUiState.Error
+            viewModel.uiState.value.withdraw == WithdrawUiState.Error
         }
         composeRule
             .onNodeWithText("회원 탈퇴에 실패했습니다. 잠시 후 다시 시도해 주세요.")
@@ -336,11 +341,6 @@ class SettingAccountSecurityTest {
         assertEquals(0, authRepository.clearSessionCalls)
         assertTrue(runBlocking { authRepository.isLoggedIn.first() })
     }
-
-    private fun <T> awaitEvent(events: Flow<T>): T =
-        runBlocking {
-            withTimeout(TIMEOUT_MILLIS) { events.first() }
-        }
 
     private companion object {
         const val TIMEOUT_MILLIS = 5_000L
