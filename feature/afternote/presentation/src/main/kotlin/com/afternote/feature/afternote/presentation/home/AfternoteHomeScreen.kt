@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import com.afternote.core.ui.button.FAB.PenFloatingActionButton
+import com.afternote.core.ui.loading.ListRefreshErrorBanner
 import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.afternote.domain.AfternoteType
@@ -32,7 +33,6 @@ import com.afternote.feature.afternote.presentation.shared.component.EmptyListBo
 import com.afternote.feature.afternote.presentation.shared.component.ErrorListBody
 import com.afternote.feature.afternote.presentation.shared.component.InfiniteListBody
 import com.afternote.feature.afternote.presentation.shared.component.ListItemUiModel
-import com.afternote.feature.afternote.presentation.shared.component.ListRefreshErrorBanner
 
 /**
  * 애프터노트 목록 화면. 작성자(발신자)와 수신자가 같은 목록·카드·필터를 쓰므로 한 화면을 공유하고,
