@@ -18,6 +18,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeMyProfileRepository
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.core.domain.testing.FakeUserReceiverRepository
 import com.afternote.core.model.delivery.ConditionState
 import com.afternote.core.model.delivery.DeliveryConditionItem
@@ -34,20 +35,31 @@ import com.afternote.core.model.user.UserMarketingConsent
 import com.afternote.core.model.user.UserPushSetting
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.setting.domain.UpdateReceiverInfoUseCase
+import com.afternote.feature.setting.domain.UpdateTimeLetterDeliveryConditionUseCase
 import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
 import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
+import com.afternote.feature.setting.presentation.account.ConnectedAccountsIntent
 import com.afternote.feature.setting.presentation.account.ConnectedAccountsViewModel
 import com.afternote.feature.setting.presentation.delivery.DeliveryConditionError
+import com.afternote.feature.setting.presentation.delivery.DeliveryConditionIntent
 import com.afternote.feature.setting.presentation.delivery.DeliveryConditionViewModel
+import com.afternote.feature.setting.presentation.home.SettingIntent
+import com.afternote.feature.setting.presentation.home.SettingProfileState
 import com.afternote.feature.setting.presentation.home.SettingUiState
 import com.afternote.feature.setting.presentation.home.SettingViewModel
 import com.afternote.feature.setting.presentation.home.WithdrawUiState
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
+import com.afternote.feature.setting.presentation.notification.MarketingConsent
+import com.afternote.feature.setting.presentation.notification.PushNotificationIntent
 import com.afternote.feature.setting.presentation.notification.PushNotificationViewModel
+import com.afternote.feature.setting.presentation.notification.PushSetting
 import com.afternote.feature.setting.presentation.profile.ProfileEditEvent
+import com.afternote.feature.setting.presentation.profile.ProfileEditIntent
 import com.afternote.feature.setting.presentation.profile.ProfileEditUiState
 import com.afternote.feature.setting.presentation.profile.ProfileEditViewModel
 import com.afternote.feature.setting.presentation.receiver.ReceiverEditEvent
+import com.afternote.feature.setting.presentation.receiver.ReceiverEditIntent
 import com.afternote.feature.setting.presentation.receiver.ReceiverEditScreen
 import com.afternote.feature.setting.presentation.receiver.ReceiverEditViewModel
 import com.afternote.feature.setting.presentation.receiver.ReceiverRegisterEvent
@@ -91,13 +103,13 @@ class SettingCompletionTest {
         val scenario = CompletionUserScenario()
         val repository = scenario.profileRepository
         val updateGate = scenario.enqueueProfileUpdate()
-        val viewModel = ProfileEditViewModel(repository)
+        val viewModel = ProfileEditViewModel(repository, FakePhotoUploadRepository.strict())
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value is ProfileEditUiState.Success
         }
 
         composeRule.runOnIdle {
-            viewModel.updateProfile(name = "새 이름", phone = "01098765432")
+            viewModel.onIntent(ProfileEditIntent.UpdateProfile(name = "새 이름", phone = "01098765432"))
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.profileUpdateCalls.size == 1
@@ -113,7 +125,11 @@ class SettingCompletionTest {
             Result.success(COMPLETION_DEFAULT_USER.copy(name = "새 이름", phone = "01098765432")),
         )
 
-        assertEquals(ProfileEditEvent.UpdateSuccess, awaitEvent(viewModel.events))
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            (viewModel.uiState.value as? ProfileEditUiState.Success)?.pendingEvent == ProfileEditEvent.UpdateSuccess
+        }
+        composeRule.runOnIdle { viewModel.onIntent(ProfileEditIntent.ConsumeEvent(ProfileEditEvent.UpdateSuccess)) }
+        assertEquals(null, (viewModel.uiState.value as ProfileEditUiState.Success).pendingEvent)
     }
 
     @Test
@@ -134,7 +150,7 @@ class SettingCompletionTest {
             !viewModel.uiState.value.isLoading
         }
 
-        composeRule.runOnIdle { viewModel.onNewsletterToggle(false) }
+        composeRule.runOnIdle { viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.NEWSLETTER, false)) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.pushUpdateCalls.size == 1
         }
@@ -153,7 +169,7 @@ class SettingCompletionTest {
         }
         assertFalse(viewModel.uiState.value.isNewsletterOn)
 
-        composeRule.runOnIdle { viewModel.onMindRecordToggle(false) }
+        composeRule.runOnIdle { viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.MIND_RECORD, false)) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.pushUpdateCalls.size == 2
         }
@@ -177,10 +193,10 @@ class SettingCompletionTest {
         assertTrue(viewModel.uiState.value.saveFailure != null)
 
         composeRule.runOnIdle {
-            viewModel.onAfternoteToggle(false)
-            viewModel.onSmsChecked(true)
-            viewModel.onEmailChecked(true)
-            viewModel.onPushChecked(true)
+            viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.AFTERNOTE, false))
+            viewModel.onIntent(PushNotificationIntent.ChangeMarketingConsent(MarketingConsent.SMS, true))
+            viewModel.onIntent(PushNotificationIntent.ChangeMarketingConsent(MarketingConsent.EMAIL, true))
+            viewModel.onIntent(PushNotificationIntent.ChangeMarketingConsent(MarketingConsent.PUSH, true))
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.pushUpdateCalls.size == 3
@@ -219,7 +235,7 @@ class SettingCompletionTest {
         }
 
         composeRule.runOnIdle {
-            viewModel.link(provider = "google", accessToken = "google-access-token")
+            viewModel.onIntent(ConnectedAccountsIntent.Link(provider = "google", accessToken = "google-access-token"))
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.connectedLinkCalls.size == 1
@@ -250,7 +266,7 @@ class SettingCompletionTest {
         )
 
         composeRule.runOnIdle {
-            viewModel.onToggle(provider = "google", enabled = false)
+            viewModel.onIntent(ConnectedAccountsIntent.Toggle(provider = "google", enabled = false))
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.connectedUnlinkCalls.size == 1
@@ -380,6 +396,7 @@ class SettingCompletionTest {
             ReceiverEditViewModel(
                 route = SettingRoute.RecipientEditRoute(RECEIVER_ID),
                 receiverRepository = repository,
+                updateReceiverInfo = UpdateReceiverInfoUseCase(repository),
             )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.receiver == COMPLETION_DEFAULT_RECEIVER_DETAIL
@@ -398,12 +415,14 @@ class SettingCompletionTest {
                 message = "수정한 마지막 인사말",
             )
         val update: () -> Unit = {
-            viewModel.update(
-                name = expectedBasicCall.name,
-                relation = expectedBasicCall.relation,
-                phone = expectedBasicCall.phone,
-                email = expectedBasicCall.email,
-                message = expectedMessageCall.message,
+            viewModel.onIntent(
+                ReceiverEditIntent.Update(
+                    name = expectedBasicCall.name,
+                    relation = expectedBasicCall.relation,
+                    phone = expectedBasicCall.phone,
+                    email = expectedBasicCall.email,
+                    message = expectedMessageCall.message,
+                ),
             )
         }
 
@@ -450,7 +469,11 @@ class SettingCompletionTest {
         }
         finalMessageGate.complete(Result.success(Unit))
 
-        assertEquals(ReceiverEditEvent.EditSuccess, awaitEvent(viewModel.events))
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            viewModel.uiState.value.pendingEvent == ReceiverEditEvent.EditSuccess
+        }
+        composeRule.runOnIdle { viewModel.onIntent(ReceiverEditIntent.ConsumeSuccess) }
+        assertEquals(null, viewModel.uiState.value.pendingEvent)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             !viewModel.uiState.value.isSaving
         }
@@ -473,6 +496,7 @@ class SettingCompletionTest {
             ReceiverEditViewModel(
                 route = SettingRoute.RecipientEditRoute(RECEIVER_ID),
                 receiverRepository = repository,
+                updateReceiverInfo = UpdateReceiverInfoUseCase(repository),
             )
 
         composeRule.setContent {
@@ -531,6 +555,7 @@ class SettingCompletionTest {
             DeliveryConditionViewModel(
                 route = SettingRoute.AfterDeliveryRoute(RECEIVER_ID),
                 receiverRepository = repository,
+                updateTimeLetterDeliveryCondition = UpdateTimeLetterDeliveryConditionUseCase(repository),
             )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.isInitialized
@@ -546,8 +571,8 @@ class SettingCompletionTest {
         val expectedCall = CompletionDeliveryUpdateCall(RECEIVER_ID, expectedConditions)
 
         composeRule.runOnIdle {
-            viewModel.onConditionTypeSelected(index = 1)
-            viewModel.onSave()
+            viewModel.onIntent(DeliveryConditionIntent.SelectConditionType(index = 1))
+            viewModel.onIntent(DeliveryConditionIntent.Save)
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.deliveryUpdateCalls.size == 1
@@ -563,7 +588,7 @@ class SettingCompletionTest {
         assertFalse(viewModel.uiState.value.isSaving)
         assertEquals(initialConditions, viewModel.uiState.value.conditions)
 
-        composeRule.runOnIdle { viewModel.onSave() }
+        composeRule.runOnIdle { viewModel.onIntent(DeliveryConditionIntent.Save) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.deliveryUpdateCalls.size == 2
         }
@@ -584,7 +609,9 @@ class SettingCompletionTest {
             ),
         )
 
-        assertEquals(Unit, awaitEvent(viewModel.saveSuccess))
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) { viewModel.uiState.value.isSaved }
+        composeRule.runOnIdle { viewModel.onIntent(DeliveryConditionIntent.ConsumeSuccess) }
+        assertFalse(viewModel.uiState.value.isSaved)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.conditions == serverConditions
         }
@@ -618,28 +645,28 @@ class SettingCompletionTest {
             }
         val viewModel = SettingViewModel(authRepository, profileRepository, repository)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.uiState.value is SettingUiState.Success
+            viewModel.uiState.value.profile is SettingProfileState.Success
         }
 
-        composeRule.runOnIdle { viewModel.deleteAccount() }
+        composeRule.runOnIdle { viewModel.onIntent(SettingIntent.DeleteAccount) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.deleteAccountCalls == 1
         }
-        assertEquals(WithdrawUiState.Loading, viewModel.withdrawUiState.value)
+        assertEquals(WithdrawUiState.Loading, viewModel.uiState.value.withdraw)
 
         firstGate.completeExceptionally(IllegalStateException("서버가 503 으로 거절했다"))
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.withdrawUiState.value == WithdrawUiState.Error
+            viewModel.uiState.value.withdraw == WithdrawUiState.Error
         }
 
-        composeRule.runOnIdle { viewModel.deleteAccount() }
+        composeRule.runOnIdle { viewModel.onIntent(SettingIntent.DeleteAccount) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.deleteAccountCalls == 2
         }
 
         retryGate.complete(Unit)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.withdrawUiState.value == WithdrawUiState.Success
+            viewModel.uiState.value.withdraw == WithdrawUiState.Success
         }
         assertEquals(2, repository.deleteAccountCalls)
     }

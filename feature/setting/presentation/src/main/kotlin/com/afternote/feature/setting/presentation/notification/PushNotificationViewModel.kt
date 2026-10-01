@@ -3,49 +3,31 @@ package com.afternote.feature.setting.presentation.notification
 import android.content.Context
 import android.util.Log
 import androidx.core.app.NotificationManagerCompat
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.error.PushSettingFailure
+import com.afternote.core.ui.UiText
+import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.setting.domain.SettingNotificationRepository
+import com.afternote.feature.setting.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class PushNotificationViewModel
+internal class PushNotificationViewModel
     @Inject
     constructor(
         @ApplicationContext private val context: Context,
         private val notificationRepository: SettingNotificationRepository,
         private val errorReporter: ErrorReporter,
-    ) : ViewModel() {
-        private val _uiState = MutableStateFlow(PushNotificationUiState())
-        val uiState: StateFlow<PushNotificationUiState> = _uiState.asStateFlow()
-
-        // 화면이 없는 동안의 안내는 다음 진입에 재생하지 않는다.
-        private val _events =
-            MutableSharedFlow<PushNotificationEvent>(
-                replay = 0,
-                extraBufferCapacity = 1,
-                onBufferOverflow = BufferOverflow.DROP_OLDEST,
-            )
-        val events = _events.asSharedFlow()
-
-        // 슬롯 하나 — 서로 다른 토글이 연달아 실패해도 재시도 대상은 마지막 실패만 남긴다.
-        // 이미 실패한 토글은 위에서 이전 값으로 롤백되어 화면에 "안 켜짐"으로 보이므로,
-        // 조용히 사라지는 것은 재시도 "대상"뿐이다. 여러 실패를 동시에 재시도하는 요구가
-        // 없어 의도적으로 단순화했다 (#558 리뷰 합의).
-        private var failedUpdate: PushSettingUpdate? = null
+    ) : MviViewModel<PushNotificationIntent, PushNotificationUiState, PushNotificationReducerEvent>(
+            PushNotificationUiState(isLoading = true),
+        ) {
+        private var loadJob: Job? = null
 
         init {
             refreshDeviceAlarmStatus()
@@ -53,122 +35,192 @@ class PushNotificationViewModel
             loadMarketingConsents()
         }
 
-        fun refreshDeviceAlarmStatus() {
+        override fun onIntent(intent: PushNotificationIntent) {
+            when (intent) {
+                PushNotificationIntent.RetryLoad -> {
+                    if (currentState.errorMessage != null) loadPushSettings()
+                }
+
+                PushNotificationIntent.RefreshDeviceAlarmStatus -> {
+                    refreshDeviceAlarmStatus()
+                }
+
+                is PushNotificationIntent.ChangeMarketingConsent -> {
+                    updateMarketingConsent(intent.consent, intent.checked)
+                }
+
+                is PushNotificationIntent.TogglePushSetting -> {
+                    updatePushSetting(PushSettingUpdate(intent.setting, intent.on))
+                }
+
+                PushNotificationIntent.RetrySave -> {
+                    retrySave()
+                }
+
+                PushNotificationIntent.DismissSaveFailure -> {
+                    dispatch(PushNotificationReducerEvent.SaveFailureDismissed)
+                }
+
+                PushNotificationIntent.MarketingFeedbackStarted -> {
+                    dispatch(PushNotificationReducerEvent.MarketingFeedbackActiveChanged(active = true))
+                }
+
+                PushNotificationIntent.MarketingFeedbackStopped -> {
+                    dispatch(PushNotificationReducerEvent.MarketingFeedbackActiveChanged(active = false))
+                }
+
+                PushNotificationIntent.ConsumeMarketingConsentSaveFailure -> {
+                    dispatch(PushNotificationReducerEvent.MarketingConsentSaveFailureConsumed)
+                }
+            }
+        }
+
+        override fun reduce(
+            state: PushNotificationUiState,
+            event: PushNotificationReducerEvent,
+        ): PushNotificationUiState =
+            when (event) {
+                is PushNotificationReducerEvent.DeviceAlarmStatusRead -> {
+                    state.copy(isDeviceAlarmOn = event.on)
+                }
+
+                PushNotificationReducerEvent.PushSettingsLoading -> {
+                    state.copy(isLoading = true, errorMessage = null)
+                }
+
+                is PushNotificationReducerEvent.PushSettingsLoaded -> {
+                    state.copy(
+                        isLoading = false,
+                        errorMessage = null,
+                        isNewsletterOn = event.setting.timeLetter,
+                        isMindRecordOn = event.setting.mindRecord,
+                        isAfternoteOn = event.setting.afterNote,
+                    )
+                }
+
+                PushNotificationReducerEvent.PushSettingsLoadFailed -> {
+                    state.copy(isLoading = false, errorMessage = UiText.Resource(R.string.setting_push_load_error))
+                }
+
+                is PushNotificationReducerEvent.MarketingConsentsLoaded -> {
+                    state.copy(
+                        isSmsChecked = event.consent.sms,
+                        isEmailChecked = event.consent.email,
+                        isPushChecked = event.consent.push,
+                    )
+                }
+
+                is PushNotificationReducerEvent.MarketingConsentChanged -> {
+                    state.withMarketingConsent(event.consent, event.checked)
+                }
+
+                // 화면이 STARTED 밖이면 값만 되돌리고 안내 신호는 올리지 않는다 (#558).
+                is PushNotificationReducerEvent.MarketingConsentSaveFailed -> {
+                    state
+                        .withMarketingConsent(event.consent, !event.requested)
+                        .copy(isMarketingConsentSaveFailed = state.isMarketingConsentSaveFailed || state.isMarketingFeedbackActive)
+                }
+
+                is PushNotificationReducerEvent.PushSettingSaving -> {
+                    state.withValue(event.update.setting, event.update.on).withUpdating(event.update.setting, updating = true)
+                }
+
+                is PushNotificationReducerEvent.PushSettingSaved -> {
+                    state.withUpdating(event.setting, updating = false)
+                }
+
+                is PushNotificationReducerEvent.PushSettingSaveFailed -> {
+                    state
+                        .withValue(event.update.setting, event.previous)
+                        .withUpdating(event.update.setting, updating = false)
+                        .copy(saveFailure = event.failure, failedUpdate = event.update)
+                }
+
+                PushNotificationReducerEvent.SaveFailureDismissed -> {
+                    state.copy(saveFailure = null, failedUpdate = null)
+                }
+
+                // 비활성으로 바뀌면 아직 소비되지 않은 안내도 걷는다 — 다음 진입에 재생하지 않는다.
+                is PushNotificationReducerEvent.MarketingFeedbackActiveChanged -> {
+                    state.copy(
+                        isMarketingFeedbackActive = event.active,
+                        isMarketingConsentSaveFailed = state.isMarketingConsentSaveFailed && event.active,
+                    )
+                }
+
+                PushNotificationReducerEvent.MarketingConsentSaveFailureConsumed -> {
+                    state.copy(isMarketingConsentSaveFailed = false)
+                }
+            }
+
+        private fun refreshDeviceAlarmStatus() {
             val deviceAlarmOn = NotificationManagerCompat.from(context).areNotificationsEnabled()
             Log.d(TAG, "refreshDeviceAlarmStatus: deviceAlarmOn=$deviceAlarmOn")
-            _uiState.update { it.copy(isDeviceAlarmOn = deviceAlarmOn) }
+            dispatch(PushNotificationReducerEvent.DeviceAlarmStatusRead(deviceAlarmOn))
         }
 
         private fun loadPushSettings() {
-            viewModelScope.launch {
-                Log.d(TAG, "loadPushSettings: start")
-                _uiState.update { it.copy(isLoading = true) }
-                runCatchingCancellable { notificationRepository.getMyPushSettings() }
-                    .onSuccess { setting ->
-                        Log.d(TAG, "loadPushSettings: success=$setting")
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                isNewsletterOn = setting.timeLetter,
-                                isMindRecordOn = setting.mindRecord,
-                                isAfternoteOn = setting.afterNote,
-                            )
+            if (loadJob?.isActive == true) return
+            dispatch(PushNotificationReducerEvent.PushSettingsLoading)
+            loadJob =
+                viewModelScope.launch {
+                    Log.d(TAG, "loadPushSettings: start")
+                    runCatchingCancellable { notificationRepository.getMyPushSettings() }
+                        .onSuccess { setting ->
+                            Log.d(TAG, "loadPushSettings: success=$setting")
+                            dispatch(PushNotificationReducerEvent.PushSettingsLoaded(setting))
+                        }.onFailure { e ->
+                            // 조회 실패는 Logcat 에만 남긴다. 반복 조회 잡음이 저장 실패 진단의 보관 한도를 밀어내지 않게 한다 (#963).
+                            Log.e(TAG, "loadPushSettings: failed", e)
+                            dispatch(PushNotificationReducerEvent.PushSettingsLoadFailed)
                         }
-                    }.onFailure { e ->
-                        Log.e(TAG, "loadPushSettings: failed", e)
-                        _uiState.update { it.copy(isLoading = false) }
-                    }
-            }
+                }
         }
 
         private fun loadMarketingConsents() {
             viewModelScope.launch {
                 Log.d(TAG, "loadMarketingConsents: start")
-                runCatching { notificationRepository.getMyMarketingConsents() }
+                runCatchingCancellable { notificationRepository.getMyMarketingConsents() }
                     .onSuccess { consent ->
                         Log.d(TAG, "loadMarketingConsents: success=$consent")
-                        _uiState.update {
-                            it.copy(
-                                isSmsChecked = consent.sms,
-                                isEmailChecked = consent.email,
-                                isPushChecked = consent.push,
-                            )
-                        }
+                        dispatch(PushNotificationReducerEvent.MarketingConsentsLoaded(consent))
                     }.onFailure { e ->
                         Log.e(TAG, "loadMarketingConsents: failed", e)
                     }
             }
         }
 
-        fun onSmsChecked(checked: Boolean) {
-            _uiState.update { it.copy(isSmsChecked = checked) }
+        private fun updateMarketingConsent(
+            consent: MarketingConsent,
+            checked: Boolean,
+        ) {
+            dispatch(PushNotificationReducerEvent.MarketingConsentChanged(consent, checked))
             viewModelScope.launch {
-                runCatchingCancellable { notificationRepository.updateMyMarketingConsents(sms = checked, email = null, push = null) }
-                    .onSuccess { Log.d(TAG, "onSmsChecked: success, checked=$checked") }
-                    .onFailure { e ->
-                        errorReporter.recordFailure(e, mapOf(KEY_STAGE to STAGE_SMS_CONSENT))
-                        _uiState.update { it.copy(isSmsChecked = !checked) }
-                        _events.tryEmit(PushNotificationEvent.MarketingConsentSaveFailed)
-                    }
+                runCatchingCancellable {
+                    notificationRepository.updateMyMarketingConsents(
+                        sms = checked.takeIf { consent == MarketingConsent.SMS },
+                        email = checked.takeIf { consent == MarketingConsent.EMAIL },
+                        push = checked.takeIf { consent == MarketingConsent.PUSH },
+                    )
+                }.onSuccess {
+                    Log.d(TAG, "updateMarketingConsent: success, consent=$consent, checked=$checked")
+                }.onFailure { e ->
+                    errorReporter.recordFailure(e, mapOf(KEY_STAGE to consent.reportingStage()))
+                    dispatch(PushNotificationReducerEvent.MarketingConsentSaveFailed(consent, requested = checked))
+                }
             }
         }
 
-        fun onEmailChecked(checked: Boolean) {
-            _uiState.update { it.copy(isEmailChecked = checked) }
-            viewModelScope.launch {
-                runCatchingCancellable { notificationRepository.updateMyMarketingConsents(sms = null, email = checked, push = null) }
-                    .onSuccess { Log.d(TAG, "onEmailChecked: success, checked=$checked") }
-                    .onFailure { e ->
-                        errorReporter.recordFailure(e, mapOf(KEY_STAGE to STAGE_EMAIL_CONSENT))
-                        _uiState.update { it.copy(isEmailChecked = !checked) }
-                        _events.tryEmit(PushNotificationEvent.MarketingConsentSaveFailed)
-                    }
-            }
-        }
-
-        fun onPushChecked(checked: Boolean) {
-            _uiState.update { it.copy(isPushChecked = checked) }
-            viewModelScope.launch {
-                runCatchingCancellable { notificationRepository.updateMyMarketingConsents(sms = null, email = null, push = checked) }
-                    .onSuccess { Log.d(TAG, "onPushChecked: success, checked=$checked") }
-                    .onFailure { e ->
-                        errorReporter.recordFailure(e, mapOf(KEY_STAGE to STAGE_PUSH_CONSENT))
-                        _uiState.update { it.copy(isPushChecked = !checked) }
-                        _events.tryEmit(PushNotificationEvent.MarketingConsentSaveFailed)
-                    }
-            }
-        }
-
-        fun onNewsletterToggle(on: Boolean) {
-            updatePushSetting(PushSettingUpdate(PushSetting.NEWSLETTER, on))
-        }
-
-        fun onMindRecordToggle(on: Boolean) {
-            updatePushSetting(PushSettingUpdate(PushSetting.MIND_RECORD, on))
-        }
-
-        fun onAfternoteToggle(on: Boolean) {
-            updatePushSetting(PushSettingUpdate(PushSetting.AFTERNOTE, on))
-        }
-
-        fun onSaveFailureDismiss() {
-            failedUpdate = null
-            _uiState.update { it.copy(saveFailure = null) }
-        }
-
-        fun onSaveFailureRetry() {
-            val update = failedUpdate ?: return
-            failedUpdate = null
-            _uiState.update { it.copy(saveFailure = null) }
+        private fun retrySave() {
+            val update = currentState.failedUpdate ?: return
+            dispatch(PushNotificationReducerEvent.SaveFailureDismissed)
             updatePushSetting(update)
         }
 
         private fun updatePushSetting(update: PushSettingUpdate) {
-            if (_uiState.value.isUpdating(update.setting)) return
-            val previousValue = _uiState.value.valueOf(update.setting)
-            _uiState.update {
-                it.withValue(update.setting, update.on).withUpdating(update.setting, updating = true)
-            }
+            if (currentState.isLoading || currentState.errorMessage != null || currentState.isUpdating(update.setting)) return
+            val previousValue = currentState.valueOf(update.setting)
+            dispatch(PushNotificationReducerEvent.PushSettingSaving(update))
             viewModelScope.launch {
                 runCatchingCancellable {
                     notificationRepository.updateMyPushSettings(
@@ -177,15 +229,16 @@ class PushNotificationViewModel
                         afterNote = update.on.takeIf { update.setting == PushSetting.AFTERNOTE },
                     )
                 }.onSuccess {
-                    _uiState.update { it.withUpdating(update.setting, updating = false) }
+                    dispatch(PushNotificationReducerEvent.PushSettingSaved(update.setting))
                 }.onFailure { failure ->
-                    failedUpdate = update
-                    _uiState.update {
-                        it
-                            .withValue(update.setting, previousValue)
-                            .withUpdating(update.setting, updating = false)
-                            .copy(saveFailure = failure.toSaveFailure())
-                    }
+                    errorReporter.recordFailure(
+                        failure,
+                        mapOf(
+                            KEY_STAGE to STAGE_PUSH_SETTING_UPDATE,
+                            KEY_PUSH_SETTING to update.setting.reportingName(),
+                        ),
+                    )
+                    dispatch(PushNotificationReducerEvent.PushSettingSaveFailed(update, previousValue, failure.toSaveFailure()))
                 }
             }
         }
@@ -193,22 +246,26 @@ class PushNotificationViewModel
         companion object {
             private const val TAG = "PushNotificationVM"
             private const val KEY_STAGE = "stage"
-            private const val STAGE_SMS_CONSENT = "sms_consent_update"
-            private const val STAGE_EMAIL_CONSENT = "email_consent_update"
-            private const val STAGE_PUSH_CONSENT = "push_consent_update"
+            private const val KEY_PUSH_SETTING = "push_setting"
+            private const val STAGE_PUSH_SETTING_UPDATE = "push_setting_update"
         }
     }
 
-private enum class PushSetting {
-    NEWSLETTER,
-    MIND_RECORD,
-    AFTERNOTE,
-}
+/** 진단 속성 값. 토글 종류만 담는 고정 문자열이라 사용자 정보가 섞이지 않는다. */
+private fun PushSetting.reportingName(): String =
+    when (this) {
+        PushSetting.NEWSLETTER -> "newsletter"
+        PushSetting.MIND_RECORD -> "mind_record"
+        PushSetting.AFTERNOTE -> "afternote"
+    }
 
-private data class PushSettingUpdate(
-    val setting: PushSetting,
-    val on: Boolean,
-)
+/** 마케팅 동의 저장 실패의 진단 단계. 채널 이름만 담는 고정 문자열이다. */
+private fun MarketingConsent.reportingStage(): String =
+    when (this) {
+        MarketingConsent.SMS -> "sms_consent_update"
+        MarketingConsent.EMAIL -> "email_consent_update"
+        MarketingConsent.PUSH -> "push_consent_update"
+    }
 
 private fun PushNotificationUiState.valueOf(setting: PushSetting): Boolean =
     when (setting) {
@@ -242,6 +299,16 @@ private fun PushNotificationUiState.withUpdating(
         PushSetting.NEWSLETTER -> copy(isNewsletterUpdating = updating)
         PushSetting.MIND_RECORD -> copy(isMindRecordUpdating = updating)
         PushSetting.AFTERNOTE -> copy(isAfternoteUpdating = updating)
+    }
+
+private fun PushNotificationUiState.withMarketingConsent(
+    consent: MarketingConsent,
+    checked: Boolean,
+): PushNotificationUiState =
+    when (consent) {
+        MarketingConsent.SMS -> copy(isSmsChecked = checked)
+        MarketingConsent.EMAIL -> copy(isEmailChecked = checked)
+        MarketingConsent.PUSH -> copy(isPushChecked = checked)
     }
 
 private fun Throwable.toSaveFailure(): PushNotificationSaveFailure =

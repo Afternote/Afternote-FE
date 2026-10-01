@@ -6,14 +6,9 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.popup.NetworkErrorPopup
 import com.afternote.core.ui.popup.ServerErrorPopup
-import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.topbar.DetailTopBar
-import com.afternote.feature.setting.presentation.R
-import com.afternote.feature.setting.presentation.notification.component.DeviceAlarmOffSection
-import com.afternote.feature.setting.presentation.notification.component.PushToggleSection
 
 @Composable
-fun PushNotificationScreen(
+internal fun PushNotificationScreen(
     onBack: () -> Unit,
     viewModel: PushNotificationViewModel = hiltViewModel(),
 ) {
@@ -22,23 +17,24 @@ fun PushNotificationScreen(
     PushNotificationContent(
         uiState = uiState,
         onBack = onBack,
-        onNewsletterToggle = viewModel::onNewsletterToggle,
-        onMindRecordToggle = viewModel::onMindRecordToggle,
-        onAfternoteToggle = viewModel::onAfternoteToggle,
+        onRetry = { viewModel.onIntent(PushNotificationIntent.RetryLoad) },
+        onNewsletterToggle = { viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.NEWSLETTER, it)) },
+        onMindRecordToggle = { viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.MIND_RECORD, it)) },
+        onAfternoteToggle = { viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.AFTERNOTE, it)) },
     )
 
     when (uiState.saveFailure) {
         PushNotificationSaveFailure.NETWORK -> {
             NetworkErrorPopup(
-                onRetry = viewModel::onSaveFailureRetry,
-                onDismiss = viewModel::onSaveFailureDismiss,
+                onRetry = { viewModel.onIntent(PushNotificationIntent.RetrySave) },
+                onDismiss = { viewModel.onIntent(PushNotificationIntent.DismissSaveFailure) },
             )
         }
 
         PushNotificationSaveFailure.SERVER -> {
             ServerErrorPopup(
-                onRetry = viewModel::onSaveFailureRetry,
-                onDismiss = viewModel::onSaveFailureDismiss,
+                onRetry = { viewModel.onIntent(PushNotificationIntent.RetrySave) },
+                onDismiss = { viewModel.onIntent(PushNotificationIntent.DismissSaveFailure) },
             )
         }
 

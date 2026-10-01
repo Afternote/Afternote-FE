@@ -1,7 +1,10 @@
 package com.afternote.feature.setting.presentation.home
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -26,12 +29,14 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.mvi.ObserveSignal
 import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.home.component.SettingProfile
 import com.afternote.feature.setting.presentation.home.component.SettingSection
+import com.afternote.feature.setting.presentation.shared.component.SettingLoadErrorContent
 import com.afternote.feature.setting.presentation.shared.component.SettingMenuItem
 import kotlinx.coroutines.launch
 
@@ -59,19 +64,18 @@ internal fun SettingScreen(
     val unavailableMessage = stringResource(R.string.setting_menu_unavailable)
     val acknowledgeLabel = stringResource(R.string.setting_menu_acknowledge)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val logoutCompleted by viewModel.logoutCompleted.collectAsStateWithLifecycle()
     val currentOnLogoutSuccess by rememberUpdatedState(onLogoutSuccess)
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val lifecycleState by lifecycle.currentStateFlow.collectAsStateWithLifecycle()
     LaunchedEffect(lifecycleState) {
         if (lifecycleState == Lifecycle.State.RESUMED) {
-            viewModel.refresh()
+            viewModel.onIntent(SettingIntent.Refresh)
         }
     }
 
-    LaunchedEffect(logoutCompleted) {
-        if (logoutCompleted) {
+    uiState.logoutCompleted?.let { signal ->
+        ObserveSignal(signal, SettingIntent.ConsumeLogoutSuccess, viewModel::onIntent) {
             currentOnLogoutSuccess()
         }
     }
@@ -88,8 +92,9 @@ internal fun SettingScreen(
         containerColor = Color.Transparent,
     ) { innerPadding ->
         SettingScreenContent(
-            uiState = uiState,
-            onLogoutClick = viewModel::logout,
+            uiState = uiState.profile,
+            onRetry = { viewModel.onIntent(SettingIntent.Refresh) },
+            onLogoutClick = { viewModel.onIntent(SettingIntent.Logout) },
             onUnavailableClick = {
                 scope.launch {
                     snackbarHostState.currentSnackbarData?.dismiss()
@@ -114,7 +119,8 @@ internal fun SettingScreen(
 
 @Composable
 private fun SettingScreenContent(
-    uiState: SettingUiState,
+    uiState: SettingProfileState,
+    onRetry: () -> Unit,
     onLogoutClick: () -> Unit,
     onUnavailableClick: () -> Unit,
     onProfileEditClick: () -> Unit,
@@ -146,23 +152,17 @@ private fun SettingScreenContent(
         )
     }
 
-    when (val state = uiState) {
-        is SettingUiState.Loading -> {
-            Column(
-                modifier = modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                CircularProgressIndicator()
+    Column(
+        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+    ) {
+        when (val state = uiState) {
+            SettingProfileState.Loading -> {
+                Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
             }
-        }
 
-        is SettingUiState.Success -> {
-            Column(
-                modifier =
-                    modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState()),
-            ) {
+            is SettingProfileState.Success -> {
                 SettingProfile(
                     name = state.name,
                     email = state.email,
@@ -170,101 +170,96 @@ private fun SettingScreenContent(
                     onNoticeClick = onNoticeClick,
                     onRecipientListClick = onRecipientListClick,
                 )
+            }
 
-                SettingSection(title = stringResource(R.string.setting_section_account)) {
-                    SettingMenuItem(
-                        label = stringResource(R.string.setting_account_profile_edit),
-                        onClick = onProfileEditClick,
-                    )
-                    SettingMenuItem(
-                        label = stringResource(R.string.setting_account_password_change),
-                        onClick = onPasswordChangeClick,
-                    )
-                    SettingMenuItem(
-                        label = stringResource(R.string.setting_account_linked_account),
-                        onClick = onLinkedAccountClick,
-                    )
-                    SettingMenuItem(
-                        label = stringResource(R.string.setting_account_notification),
-                        onClick = onNotificationClick,
-                    )
-                }
-
-                SettingSection(title = stringResource(R.string.setting_section_recipient)) {
-                    SettingMenuItem(
-                        label = stringResource(R.string.setting_recipient_list),
-                        onClick = onRecipientListClick,
-                    )
-                    SettingMenuItem(
-                        label = stringResource(R.string.setting_recipient_register),
-                        onClick = onRecipientRegisterClick,
-                    )
-                    SettingMenuItem(
-                        label = stringResource(R.string.setting_recipient_after_delivery),
-                        onClick = onDeliveryConditionsClick,
-                    )
-                }
-
-                SettingSection(title = stringResource(R.string.setting_section_security)) {
-                    SettingMenuItem(
-                        label = stringResource(R.string.setting_security_passkey),
-                        onClick = onPasskeyClick,
-                    )
-                    SettingMenuItem(
-                        label = stringResource(R.string.setting_security_app_lock),
-                        onClick = onAppLockClick,
-                    )
-                }
-
-                SettingSection(title = stringResource(R.string.setting_section_support)) {
-                    SettingMenuItem(
-                        label = stringResource(R.string.setting_support_faq),
-                        onClick = onUnavailableClick,
-                    )
-                    SettingMenuItem(
-                        label = stringResource(R.string.setting_support_inquiry),
-                        onClick = onUnavailableClick,
-                    )
-                    SettingMenuItem(
-                        label = stringResource(R.string.setting_support_notice),
-                        onClick = onNoticeClick,
-                    )
-                    SettingMenuItem(
-                        label = stringResource(R.string.setting_support_terms),
-                        onClick = onUnavailableClick,
-                    )
-                    SettingMenuItem(
-                        label = stringResource(R.string.setting_support_privacy),
-                        onClick = onUnavailableClick,
-                    )
-                    SettingMenuItem(
-                        label = stringResource(R.string.setting_support_service_info),
-                        onClick = onUnavailableClick,
-                    )
-                }
-
-                SettingMenuItem(
-                    label = stringResource(R.string.setting_logout),
-                    onClick = { showLogoutDialog = true },
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-                SettingMenuItem(
-                    label = stringResource(R.string.setting_account_withdraw),
-                    onClick = onWithdrawGuideClick,
+            SettingProfileState.Error -> {
+                SettingLoadErrorContent(
+                    message = stringResource(R.string.setting_profile_load_error),
+                    onRetry = onRetry,
+                    modifier = Modifier.height(160.dp),
                 )
             }
         }
-
-        is SettingUiState.Error -> {
-            Column(
-                modifier = modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                SettingMenuItem(
-                    label = stringResource(R.string.setting_logout),
-                    onClick = { showLogoutDialog = true },
-                )
-            }
+        SettingSection(title = stringResource(R.string.setting_section_account)) {
+            SettingMenuItem(
+                label = stringResource(R.string.setting_account_profile_edit),
+                onClick = onProfileEditClick,
+            )
+            SettingMenuItem(
+                label = stringResource(R.string.setting_account_password_change),
+                onClick = onPasswordChangeClick,
+            )
+            SettingMenuItem(
+                label = stringResource(R.string.setting_account_linked_account),
+                onClick = onLinkedAccountClick,
+            )
+            SettingMenuItem(
+                label = stringResource(R.string.setting_account_notification),
+                onClick = onNotificationClick,
+            )
         }
+
+        SettingSection(title = stringResource(R.string.setting_section_recipient)) {
+            SettingMenuItem(
+                label = stringResource(R.string.setting_recipient_list),
+                onClick = onRecipientListClick,
+            )
+            SettingMenuItem(
+                label = stringResource(R.string.setting_recipient_register),
+                onClick = onRecipientRegisterClick,
+            )
+            SettingMenuItem(
+                label = stringResource(R.string.setting_recipient_after_delivery),
+                onClick = onDeliveryConditionsClick,
+            )
+        }
+
+        SettingSection(title = stringResource(R.string.setting_section_security)) {
+            SettingMenuItem(
+                label = stringResource(R.string.setting_security_passkey),
+                onClick = onPasskeyClick,
+            )
+            SettingMenuItem(
+                label = stringResource(R.string.setting_security_app_lock),
+                onClick = onAppLockClick,
+            )
+        }
+
+        SettingSection(title = stringResource(R.string.setting_section_support)) {
+            SettingMenuItem(
+                label = stringResource(R.string.setting_support_faq),
+                onClick = onUnavailableClick,
+            )
+            SettingMenuItem(
+                label = stringResource(R.string.setting_support_inquiry),
+                onClick = onUnavailableClick,
+            )
+            SettingMenuItem(
+                label = stringResource(R.string.setting_support_notice),
+                onClick = onNoticeClick,
+            )
+            SettingMenuItem(
+                label = stringResource(R.string.setting_support_terms),
+                onClick = onUnavailableClick,
+            )
+            SettingMenuItem(
+                label = stringResource(R.string.setting_support_privacy),
+                onClick = onUnavailableClick,
+            )
+            SettingMenuItem(
+                label = stringResource(R.string.setting_support_service_info),
+                onClick = onUnavailableClick,
+            )
+        }
+
+        SettingMenuItem(
+            label = stringResource(R.string.setting_logout),
+            onClick = { showLogoutDialog = true },
+            modifier = Modifier.padding(top = 8.dp),
+        )
+        SettingMenuItem(
+            label = stringResource(R.string.setting_account_withdraw),
+            onClick = onWithdrawGuideClick,
+        )
     }
 }
