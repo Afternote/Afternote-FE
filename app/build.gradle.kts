@@ -50,6 +50,11 @@ android {
         execution = "ANDROIDX_TEST_ORCHESTRATOR"
         // Robolectric 이 병합된 매니페스트·리소스를 읽어야 NavHost 를 실제 컴포지션으로 띄울 수 있다 (#1601).
         unitTests.isIncludeAndroidResources = true
+        unitTests.all {
+            // 여러 SDK의 앱 리소스를 읽은 뒤에도 후속 테스트의 샌드박스를 생성할 수 있어야 한다.
+            // 기본 512 MB에서는 API 33 알림 권한 테스트의 리소스 로딩이 OOM으로 실패한다 (#2200).
+            it.maxHeapSize = "1g"
+        }
         managedDevices {
             localDevices {
                 create("pixel2Api26") {
