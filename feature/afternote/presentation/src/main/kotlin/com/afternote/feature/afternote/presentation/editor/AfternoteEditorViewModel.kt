@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
@@ -29,9 +28,11 @@ import com.afternote.feature.afternote.presentation.editor.state.AfternoteTypeFo
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.editor.state.withMemorialPhoto
+import com.afternote.feature.afternote.presentation.editor.state.withMemorialPhotoRemoved
 import com.afternote.feature.afternote.presentation.editor.state.withMemorialPlaylistSongs
 import com.afternote.feature.afternote.presentation.editor.state.withMemorialThumbnail
 import com.afternote.feature.afternote.presentation.editor.state.withMemorialVideo
+import com.afternote.feature.afternote.presentation.editor.state.withMemorialVideoRemoved
 import com.afternote.feature.afternote.presentation.editor.state.withPrefillApplied
 import com.afternote.feature.afternote.presentation.editor.state.withProcessingMethodAdded
 import com.afternote.feature.afternote.presentation.editor.state.withProcessingMethodDeleted
@@ -39,13 +40,19 @@ import com.afternote.feature.afternote.presentation.editor.state.withProcessingM
 import com.afternote.feature.afternote.presentation.editor.state.withProcessingMethodsInitialized
 import com.afternote.feature.afternote.presentation.editor.state.withReceiverAddedIfAbsent
 import com.afternote.feature.afternote.presentation.editor.state.withReceiverDeleted
+import com.afternote.feature.afternote.presentation.editor.state.withReceiversReplaced
 import com.afternote.feature.afternote.presentation.editor.state.withReceiversReplacedIfEmpty
 import com.afternote.feature.afternote.presentation.editor.state.withService
 import com.afternote.feature.afternote.presentation.editor.state.withType
 import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
+import com.afternote.feature.afternote.presentation.navigation.model.SELECTED_RECEIVER_IDS_KEY
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -55,9 +62,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import javax.inject.Inject
 
-private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v4"
+private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v6"
 private const val INITIALIZED_ACTION_TEMPLATE_TYPE_KEY = "initialized_action_template_type"
 
 private const val TAG = "AfternoteEditorViewModel"
@@ -78,6 +84,12 @@ private data class ProcessingMethodSnap(
 /**
  * [SavedStateHandle]에 JSON으로 넣는 폼 스냅샷. 번들 전체 크기는 대략 500KB~1MB를 넘기지 않도록 설계해야 하며,
  * 그렇지 않으면 [android.os.TransactionTooLargeException]이 날 수 있다. 큰 Base64/data URL은 폼에 넣지 말고 URL·URI 문자열만 저장한다.
+ *
+ * **wire 형태는 키에 박힌 버전과 함께 움직인다.** [EditableMemorialVideo]가 sealed 로 바뀌면서(#1901)
+ * `memorialVideo` 에 판별자가 붙었고(v5), 상태가 넷에서 셋으로 줄면서(#2114) 판별자 값이
+ * `no_video · uploaded · pending_upload` 로 바뀌었다(v6). 옛 payload 를 새 코드가 읽으면 복원이 실패해 폼이
+ * 기본값으로 돌아가므로, 키를 `editor_form_snapshot_v6` 으로 올려 옛 스냅샷을 아예 찾지 않게 했다. 앞으로도
+ * 이 클래스나 그 필드 타입의 wire 형태를 바꾸면 키의 버전을 함께 올린다.
  */
 @Serializable
 private data class EditorFormSnapshot(
@@ -152,16 +164,17 @@ private data class EditorFormSnapshot(
  * 애프터노트 생성/수정 ViewModel.
  *
  * **SSOT:** 일반 폼은 [internalState]의 [EditorFormState], Compose 텍스트 입력은
- * [com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState]가 소유한다.
+ * [com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorState]가 소유한다.
  * 추억 플레이리스트 화면과 곡 추가 화면은 같은 flow-scoped ViewModel의 폼을 사용한다.
  *
  * **경계:** Compose UI 객체(`TextFieldState`·`SnapshotStateList`·파사드)를 들지 않고 Retrofit 타입도 알지 않는다 —
  * 저장 API 의 HTTP·에러 바디 해석은 [AfternoteRepository] 구현이 도메인 예외로 변환한다.
  */
-@HiltViewModel
+@HiltViewModel(assistedFactory = AfternoteEditorViewModel.Factory::class)
 class AfternoteEditorViewModel
-    @Inject
+    @AssistedInject
     constructor(
+        @Assisted private val route: AfternoteRoute.EditorFlowRoute,
         private val savedStateHandle: SavedStateHandle,
         private val userRepository: UserRepository,
         private val afternoteRepository: AfternoteRepository,
@@ -169,7 +182,9 @@ class AfternoteEditorViewModel
         private val resolveMemorialMediaForSave: ResolveMemorialMediaForSaveUseCase,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
-        private val route = savedStateHandle.toRoute<AfternoteRoute.EditorFlowRoute>()
+        /** 진행 중인 prefill 조회 — 재시도가 이전 조회를 자르기 위한 핸들. */
+        private var prefillJob: Job? = null
+
         private val formSnapshotJson =
             Json {
                 ignoreUnknownKeys = true
@@ -217,16 +232,25 @@ class AfternoteEditorViewModel
 
         fun setService(service: String) = mutateForm { it.withService(service) }
 
-        fun setMemorialPhoto(uri: String?) = mutateForm { it.withMemorialPhoto(uri) }
+        fun setMemorialPhoto(uri: String) = mutateForm { it.withMemorialPhoto(uri) }
 
-        fun setMemorialVideo(url: String?) {
+        /** 시트의 사진 삭제 항목. 슬롯을 비운다 — 서버 삭제는 저장 시 명시적 `null` 로 나간다(#1597, #1717). */
+        fun removeMemorialPhoto() = mutateForm { it.withMemorialPhotoRemoved() }
+
+        fun setMemorialVideo(url: String) {
             // 영상이 갈리면 이전 영상의 썸네일 실패도 함께 무효다 — 남은 바이트로 재시도하면 다른
             // 영상의 그림이 붙는다.
             pendingThumbnailBytes = null
             mutateForm { it.withMemorialVideo(url) }
         }
 
-        fun setMemorialThumbnail(dataUrl: String?) = mutateForm { it.withMemorialThumbnail(dataUrl) }
+        /** 시트의 영상 삭제 항목. 표시된 영상이 사라지므로 그 영상의 썸네일 재시도 바이트도 함께 버린다. */
+        fun removeMemorialVideo() {
+            pendingThumbnailBytes = null
+            mutateForm { it.withMemorialVideoRemoved() }
+        }
+
+        fun setMemorialThumbnail(dataUrl: String) = mutateForm { it.withMemorialThumbnail(dataUrl) }
 
         fun addMemorialPlaylistSongs(songs: List<Song>) {
             if (songs.isEmpty()) return
@@ -315,9 +339,11 @@ class AfternoteEditorViewModel
         /**
          * 작성자가 등록한 수신자 전체를 받아 [InternalState.authorReceivers] 에 채운다.
          *
-         * 신규 작성 진입 시 1회 호출된다. 폼이 비어 있으면 화면이 이 목록으로 수신자를 채우고
-         * (`AfternoteNavGraphEditor` 의 `replaceReceiversIfEmpty`), 사용자는 불필요한 수신자를 지운다.
-         * 수정 진입은 상세 응답 prefill 이 지정 수신자를 채우므로 이 목록을 쓰지 않는다.
+         * 에디터 화면이 컴포지션에 들어올 때마다(수신자 선택 화면에서 돌아올 때 포함) 호출된다. 신규 작성에서
+         * 폼이 비어 있으면 화면이 이 목록으로 수신자를 채우고
+         * (`AfternoteEditorNavigation` 의 `replaceReceiversIfEmpty`), 사용자는 불필요한 수신자를 지운다.
+         * 수정 진입은 상세 응답 prefill 이 지정 수신자를 채우므로 빈 폼 채우기에는 이 목록을 쓰지 않는다.
+         * 선택 화면이 돌려준 새 id 를 해석할 때([resolveSelectedReceiver])는 작성·수정 모두 이 목록을 쓴다.
          */
         fun refreshAuthorReceivers() {
             viewModelScope.launch { loadAuthorReceivers() }
@@ -423,6 +449,25 @@ class AfternoteEditorViewModel
         ) {
             val editorState = internalState.value
             if (editorState.isSaving) return
+            // prefill 을 못 읽은 채로 저장하면 서버가 빈 폼 값으로 기존 기록을 덮는다 (#705).
+            // 화면이 이미 저장 액션을 막지만, 저장 진입점은 여기 하나뿐이라 규칙도 여기서 지킨다.
+            //
+            // 실패(isPrefillFailed)뿐 아니라 «아직 읽는 중»(isPrefillLoading)도 막는다 — skeleton 이
+            // 떠 있는 동안에도 등록 버튼은 눌리고, 그때 폼은 아직 기본 빈 값이라 느린 상세 GET 을
+            // 앞질러 저장하면 같은 덮어쓰기가 난다. isPrefillLoading 은 편집 진입(itemId != null)에서만
+            // true 라 신규 작성은 영향받지 않는다.
+            //
+            // 두 상태는 저장을 막는 이유가 같아도 사용자에게 할 말이 다르다. 실패는 「불러오지
+            // 못했다」 이고 진행 중은 「곧 도착한다」 다 — 한 갈래로 뭉치면 아직 읽는 중인
+            // 사용자에게 실패했다고 말하게 된다.
+            if (editorState.isPrefillFailed) {
+                internalState.update { it.withError(AfternoteEditorError.PrefillUnavailable) }
+                return
+            }
+            if (editorState.isPrefillLoading) {
+                internalState.update { it.withError(AfternoteEditorError.PrefillNotReady) }
+                return
+            }
 
             val form = editorState.form
             val editingId = readEditItemId()
@@ -443,6 +488,14 @@ class AfternoteEditorViewModel
 
             val typeForSave =
                 if (editingId != null) (editorState.originalType ?: type) else type
+
+            // 수정인데 기준 스냅샷이 없다 = 상세를 못 받았다. 이 상태로 보내면 「안 건드림」과
+            // 「전부 지움」을 가릴 수 없어 빈 폼이 그대로 삭제 지시가 된다 (#1617).
+            val updateBaseline = editorState.updateBaseline
+            if (editingId != null && updateBaseline == null) {
+                internalState.update { it.withError(AfternoteEditorError.PrefillUnavailable) }
+                return
+            }
 
             viewModelScope.launch {
                 internalState.update {
@@ -467,6 +520,7 @@ class AfternoteEditorViewModel
                     selectedReceiverIds = selectedReceiverIds,
                     playlistSongs = playlistSongs,
                     memorialMedia = memorialMediaForSave,
+                    updateBaseline = updateBaseline,
                 ).fold(
                     onSuccess = { command ->
                         executeSaveCommand(command).fold(
@@ -527,6 +581,7 @@ class AfternoteEditorViewModel
             selectedReceiverIds: List<Long>,
             playlistSongs: List<Song>,
             memorialMedia: SaveAfternoteMemorialMedia,
+            updateBaseline: AfternoteEditorSnapshot?,
         ): Result<SaveAfternoteCommand> {
             val resolved =
                 resolveMemorialMediaForSave(
@@ -546,12 +601,17 @@ class AfternoteEditorViewModel
                             payload = payload,
                             selectedReceiverIds = selectedReceiverIds,
                             playlistSongs = playlistSongs,
-                            memorialMedia =
+                            memorialMediaUrls =
                                 MemorialMediaUrls(
                                     memorialVideoUrl = resolved.resolvedVideoUrl,
                                     memorialThumbnailUrl = memorialMedia.memorialVideo.displayed?.thumbnailUrl,
                                     memorialPhotoUrl = resolved.resolvedMemorialPhotoUrl,
                                 ),
+                            // saveAfternote 가 기준 없는 수정을 이미 막았다 — 여기 도달하면 반드시 있다.
+                            baseline =
+                                checkNotNull(updateBaseline) {
+                                    "수정 저장에는 기준 스냅샷이 필요합니다"
+                                },
                         )
                     SaveAfternoteCommand.Update(id = editingId, payload = updatePayload)
                 } else {
@@ -570,28 +630,54 @@ class AfternoteEditorViewModel
             return Result.success(command)
         }
 
+        /**
+         * 수정 진입 prefill 조회 실패 화면의 «다시 시도» (#705).
+         *
+         * 실패 상태를 걷고 skeleton 을 다시 세운 뒤 같은 조회를 새로 건다. 이미 성공해 폼이 채워진
+         * 뒤라면 부를 일이 없고(화면이 오류 상태에서만 버튼을 그린다), 신규 작성 진입은 [readEditItemId]
+         * 가 null 이라 아무 일도 하지 않는다.
+         */
+        fun retryPrefill() {
+            val afternoteId = readEditItemId() ?: return
+            loadExistingAfternoteForEdit(afternoteId)
+        }
+
+        /**
+         * 수정 진입 시 기존 애프터노트를 읽어 폼에 실을 prefill 을 만든다.
+         *
+         * 실패를 «빈 폼» 으로 흘려보내지 않는다 (#705) — 서버 수정(PATCH)은 보낸 값으로 기존 기록을
+         * 덮으므로, 못 읽은 상태의 빈 폼이 저장되면 기록이 소실된다. 그래서 실패는 [InternalState.isPrefillFailed]
+         * 로 남겨 화면이 오류·재시도를 그리고 [saveAfternote] 가 저장을 막게 한다.
+         */
         private fun loadExistingAfternoteForEdit(afternoteId: Long) {
-            viewModelScope.launch {
-                afternoteRepository
-                    .getDetail(id = afternoteId)
-                    .onSuccess { detail ->
-                        val prefill = AfternoteEditorFormMapper.buildEditorFormPrefill(detail)
-                        // UI 레이어 파사드가 TextFieldState·SnapshotStateList 등 UI 상태를 갱신하도록 위임.
-                        // skeleton 종료는 UI 가 prefill 적용을 마친 뒤 [onPrefillConsumed] 로 통보한다
-                        // (uiState 갱신 시점에 prefill 도착했어도 UI 가 form·TextFieldState 에 반영하기 전이라
-                        //  여기서 끄면 skeleton 사라짐 → 빈 폼 → prefill 깜빡임 발생).
-                        internalState.update {
-                            it.copy(
-                                originalType = prefill.type,
-                                pendingPrefill = prefill,
-                            )
+            // 재시도가 진행 중인 조회를 자르고 들어온다 — 자르지 않으면 두 응답이 같은 폼을 두고 경합한다.
+            prefillJob?.cancel()
+            prefillJob =
+                viewModelScope.launch {
+                    internalState.update { it.copy(isPrefillLoading = true, isPrefillFailed = false) }
+                    afternoteRepository
+                        .getDetail(id = afternoteId)
+                        .onSuccess { detail ->
+                            val prefill = AfternoteEditorFormMapper.buildEditorFormPrefill(detail)
+                            // UI 레이어 파사드가 TextFieldState·SnapshotStateList 등 UI 상태를 갱신하도록 위임.
+                            // skeleton 종료는 UI 가 prefill 적용을 마친 뒤 [onPrefillConsumed] 로 통보한다
+                            // (uiState 갱신 시점에 prefill 도착했어도 UI 가 form·TextFieldState 에 반영하기 전이라
+                            //  여기서 끄면 skeleton 사라짐 → 빈 폼 → prefill 깜빡임 발생).
+                            internalState.update {
+                                it.copy(
+                                    originalType = prefill.type,
+                                    pendingPrefill = prefill,
+                                    // 화면에 뿌릴 prefill 과 별개로, 가공 전 원본을 저장 때 견줄 기준으로 남긴다.
+                                    // 이 값은 폼 변경을 따라가지 않는다 — 따라가면 비교할 대상이 사라진다 (#1617).
+                                    updateBaseline = AfternoteEditorFormMapper.buildUpdateBaseline(detail),
+                                )
+                            }
+                        }.onFailure { e ->
+                            errorReporter.recordAfternoteFailure(AfternoteFailureStage.PREFILL_LOAD, e)
+                            // skeleton 은 걷되 빈 폼으로 넘기지 않는다 — 오류·재시도 상태로 남긴다.
+                            internalState.update { it.copy(isPrefillLoading = false, isPrefillFailed = true) }
                         }
-                    }.onFailure { e ->
-                        errorReporter.recordAfternoteFailure(AfternoteFailureStage.PREFILL_LOAD, e)
-                        // 실패 시 skeleton 에 갇히지 않도록 즉시 종료.
-                        internalState.update { it.copy(isPrefillLoading = false) }
-                    }
-            }
+                }
         }
 
         /**
@@ -631,6 +717,22 @@ class AfternoteEditorViewModel
             }
         }
 
+        /**
+         * 수신자 선택 화면이 확정한 [receiverIds] 전체를 폼에 반영한다 (#1426).
+         *
+         * 화면은 폼의 현재 수신자를 선택 상태로 열고 확정된 전체를 돌려준다 — 그래서 반영은
+         * «추가» 가 아니라 «교체» 다. 화면에서 푼 수신자는 폼에서도 빠진다.
+         *
+         * 이미 폼에 있는 id 는 표시에 필요한 이름·관계를 폼이 이미 들고 있으므로 재조회하지 않는다.
+         * 새로 들어온 id 만 [resolveSelectedReceiver] 로 해석하고, 해석 실패는 그쪽이 오류 이벤트로
+         * 알린다 — 그 id 만 빠지고 나머지 선택은 반영된다 (#1405).
+         */
+        suspend fun applySelectedReceivers(receiverIds: List<Long>) {
+            val alreadyInForm = currentForm().afternoteEditReceivers.associateBy { it.id }
+            val next = receiverIds.mapNotNull { id -> alreadyInForm[id] ?: resolveSelectedReceiver(id) }
+            mutateForm { it.withReceiversReplaced(next) }
+        }
+
         private fun findReceiverById(id: Long): AfternoteEditorReceiver? = internalState.value.authorReceivers.find { it.id == id }
 
         // region Internal state shaping
@@ -645,6 +747,7 @@ class AfternoteEditorViewModel
             val authorReceivers: List<AfternoteEditorReceiver> = emptyList(),
             val isSaving: Boolean = false,
             val isPrefillLoading: Boolean = false,
+            val isPrefillFailed: Boolean = false,
             val savedId: Long? = null,
             val errorEvent: AfternoteEditorErrorEvent? = null,
             val errorOccurrence: Long = 0L,
@@ -652,6 +755,13 @@ class AfternoteEditorViewModel
             val pendingThumbnailUrl: String? = null,
             val memorialThumbnailRetryToken: Int = 0,
             val pendingPrefill: EditorFormPrefill? = null,
+            /**
+             * 수정 진입 시 받은 상세를 그대로 옮긴 **pristine baseline** (#1617).
+             *
+             * 저장 시 현재 폼과 견줘 **달라진 필드만** 요청에 싣는 기준이다. `null` 이면 기준이 없다는
+             * 뜻이라(신규 작성이거나 상세 로드 실패) 종전처럼 전량을 싣는다.
+             */
+            val updateBaseline: AfternoteEditorSnapshot? = null,
         )
 
         private fun InternalState.toUiState(): AfternoteEditorUiState =
@@ -660,6 +770,7 @@ class AfternoteEditorViewModel
                 authorReceivers = authorReceivers,
                 isSaving = isSaving,
                 isPrefillLoading = isPrefillLoading,
+                isPrefillFailed = isPrefillFailed,
                 savedId = savedId,
                 errorEvent = errorEvent,
                 pendingSaveSuccessId = pendingSaveSuccessId,
@@ -691,6 +802,26 @@ class AfternoteEditorViewModel
         }
 
         // endregion
+
+        /**
+         * 수신자 선택 화면이 고른 id 를 에디터로 돌려준다.
+         *
+         * Nav2 에서는 선택 화면이 **이전 백스택 엔트리**(에디터)의 `SavedStateHandle` 에 직접 썼다.
+         * Nav3 엔 "이전 엔트리" 개념이 없으므로, 두 화면이 이미 공유하는 이 ViewModel 을 통로로
+         * 삼는다. 저장 위치는 같은 [SavedStateHandle] 이라 프로세스 재생성 성질도 그대로다.
+         */
+        fun onReceiversSelected(receiverIds: List<Long>) {
+            // Bundle 이 그대로 담을 수 있는 LongArray 로 넘긴다 (#1426).
+            savedStateHandle[SELECTED_RECEIVER_IDS_KEY] = receiverIds.toLongArray()
+        }
+
+        /** 남아 있는 선택 결과를 읽고 **지운다** — 같은 선택이 두 번 반영되지 않는다. */
+        fun consumeSelectedReceiverIds(): List<Long>? = savedStateHandle.remove<LongArray>(SELECTED_RECEIVER_IDS_KEY)?.toList()
+
+        @AssistedFactory
+        interface Factory {
+            fun create(route: AfternoteRoute.EditorFlowRoute): AfternoteEditorViewModel
+        }
     }
 
 /**

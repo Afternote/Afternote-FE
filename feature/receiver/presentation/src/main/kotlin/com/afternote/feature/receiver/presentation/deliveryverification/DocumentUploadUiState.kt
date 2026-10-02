@@ -2,6 +2,7 @@ package com.afternote.feature.receiver.presentation.deliveryverification
 
 import androidx.compose.runtime.Immutable
 import com.afternote.core.ui.UiText
+import com.afternote.feature.receiver.presentation.error.ReceiverErrorPopup
 
 /**
  * 증빙 서류 업로드(6·7·8) UI 상태.
@@ -21,7 +22,15 @@ data class DocumentUploadUiState(
      *
      * 표시 가능한 서버 message 와 클라이언트 fallback 을 [UiText] 하나로 운반하며, [isSubmitted] 와 같은 소비형 필드다.
      */
-    val error: UiText? = null,
+    val errorMessage: UiText? = null,
+    /**
+     * 표시 중인 공통 오류 팝업(#446). [errorMessage] 와 배타적이다 — 서버 작업 실패는 팝업이 정본이고,
+     * 스낵바 자리에는 서버가 준 거절 사유와 로컬 검증 안내만 남는다.
+     *
+     * [errorMessage] 와 달리 «표시했으니 즉시 소비» 가 아니라 사용자가 버튼을 누를 때까지 떠 있는 상태다 —
+     * 모달이라 재시도·닫기 중 하나를 고르기 전에는 사라지지 않는다.
+     */
+    val errorPopup: ReceiverErrorPopup? = null,
     /** 제출 성공 신호 — UI 가 LaunchedEffect 로 완료 화면 이동 후 [DocumentUploadViewModel.onSubmittedConsumed] 로 reset. */
     val isSubmitted: Boolean = false,
 ) {

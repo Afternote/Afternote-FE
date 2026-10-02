@@ -47,7 +47,7 @@ fun DesignPendingDetailContent(onBackClick: () -> Unit) {
 /**
  * 상세 데이터 로드 실패 화면.
  *
- * [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailUiState.Error] 계약대로
+ * [com.afternote.feature.afternote.presentation.detail.AfternoteDetailUiState.Error] 계약대로
  * [messageRes] 를 [stringResource] 로 변환해 표시한다 (없으면 [R.string.afternote_detail_load_error] 폴백).
  * 예외 원문은 받지 않는다 — 서버 5xx 본문·역직렬화 예외 메시지에 내부 SQL·응답 원문 발췌가 섞여 오기 때문.
  *

@@ -32,6 +32,16 @@ enum class AuthFailureStage(
      */
     FIND_ACCOUNT_CODE_SEND("find_account_code_send"),
 
+    /**
+     * 비밀번호 찾기 최종 제출(`auth/password/find`) — 인증번호 검증과 재설정을 겸한다.
+     *
+     * 인증번호 무효(1207)까지 함께 세는 것이 [FIND_ACCOUNT_CODE_SEND] KDoc 의 "확인은 계측하지
+     * 않는다" 와 어긋나 보이지만, 여기서는 코드가 이미 자릿수를 채워 한 화면을 통과한 뒤라
+     * 오타보다 만료·서버 문제일 확률이 높다. 재설정이 조용히 실패하면 사용자가 계정을 되찾지
+     * 못하므로 실패 자체를 놓치지 않는 쪽을 택했다.
+     */
+    FIND_PASSWORD_RESET("find_password_reset"),
+
     /** 회원가입 최종 제출. */
     SIGN_UP("sign_up"),
 

@@ -137,7 +137,6 @@ class TimeletterViewModelTest {
                             id = 1L,
                             title = "제목",
                             sendAt = null,
-                            deliveredAt = null,
                             status = TimeLetterStatus.SCHEDULED,
                             blocks = emptyList(),
                             receiverIds = emptyList(),

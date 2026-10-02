@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.presentation.receiver.afternotelist
 
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.test.assertIsDisplayed
@@ -170,6 +171,7 @@ class ReceiverAfternoteListChromeTest {
             onListItemClick = { _, _ -> },
             headerDescription = stringResource(R.string.afternote_receiver_afternote_list_header_description),
             nextStep = null,
+            filterRowScrollState = rememberScrollState(),
         )
     }
 

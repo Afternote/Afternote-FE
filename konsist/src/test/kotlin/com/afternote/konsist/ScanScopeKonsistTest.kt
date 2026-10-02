@@ -254,7 +254,7 @@ class ScanScopeKonsistTest {
             checkout,
             "feature/receiver/presentation/src/main/kotlin/com/afternote/feature/receiver/presentation/home/ProbeHome.kt",
             """
-            package com.afternote.feature.receiver.presentation.home
+            package com.afternote.feature.home.presentation.receiver
 
             import com.afternote.feature.afternote.presentation.R
 
@@ -313,7 +313,7 @@ class ScanScopeKonsistTest {
 
         const val DOMAIN_PACKAGE = "com.afternote..domain.."
         const val PRESENTATION_PACKAGE = "com.afternote..presentation.."
-        const val RECEIVER_HOME_PACKAGE = "com.afternote.feature.receiver.presentation.home.."
+        const val RECEIVER_HOME_PACKAGE = "com.afternote.feature.home.presentation.receiver.."
         const val DTO_PACKAGE = "com.afternote..dto.."
         const val SERIALIZABLE = "Serializable"
     }

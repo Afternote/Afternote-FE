@@ -20,6 +20,8 @@ hilt = "2.60.1"
 hiltNavigation = "1.4.0"
 ksp = "2.3.10"
 navigation = "2.9.8"
+# Navigation 3 — 로컬 스택 이관(#1698). Nav2 는 루트 NavHost 가 #1702 까지 계속 쓰므로 공존한다.
+navigation3 = "1.1.6"
 okhttp = "5.4.0"
 retrofit = "3.0.0"
 kotlinxSerializationJson = "1.11.0"
@@ -51,9 +53,9 @@ konsist = "0.17.3"
 kover = "0.9.9"
 baselineProfile = "1.5.0-rc02"
 profileInstaller = "1.4.1"
-# 빌드·테스트 클래스패스 전용 보안 하한 — GHSA-574f-3g2m-x479(critical) 등 3건이 1.84 에서 패치(#921).
+# 빌드·테스트 클래스패스 전용 보안 하한 — GHSA-9pwp-9qqc-pr26·GHSA-qp49-qgx5-5m26 이 1.85 에서 패치(#2132).
 # 루트 build.gradle.kts 의 buildscript 블록은 카탈로그 accessor 를 못 써 같은 값을 리터럴로 둔다.
-bouncycastle = "1.84"
+bouncycastle = "1.85"
 netty = "4.1.137.Final"
 commonsLang3 = "3.18.0"
 jose4j = "0.9.6"
@@ -97,6 +99,9 @@ hilt-android-testing = { group = "com.google.dagger", name = "hilt-android-testi
 hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
 hilt-navigation = { group = "androidx.hilt", name = "hilt-lifecycle-viewmodel-compose", version.ref = "hiltNavigation" }
 android-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
+androidx-navigation3-runtime = { group = "androidx.navigation3", name = "navigation3-runtime", version.ref = "navigation3" }
+androidx-navigation3-ui = { group = "androidx.navigation3", name = "navigation3-ui", version.ref = "navigation3" }
+androidx-lifecycle-viewmodel-navigation3 = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-navigation3", version.ref = "lifecycleViewmodelKtx" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-converter-kotlinx-serialization = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
@@ -114,6 +119,7 @@ androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navig
 coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coilNetworkOkhttp" }
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coilCompose" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
+androidx-work-testing = { group = "androidx.work", name = "work-testing", version.ref = "work" }
 compose-wheel-picker = { group = "com.github.zj565061763", name = "compose-wheel-picker", version.ref = "composeWheelPicker" }
 coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }

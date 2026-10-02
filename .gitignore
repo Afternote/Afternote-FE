@@ -49,6 +49,11 @@ gha-creds-*.json
 **/.DS_Store
 AGENTS.md
 
+# 코딩 에이전트 설정 — 사람마다 도구와 구성이 다르므로 저장소가 공유하지 않는다 (README 참고)
 .codex/
 .cursor/
 .artifacts/
+.mcp.json
+
+# Windows PowerShell cache
+Microsoft/Windows/PowerShell/ModuleAnalysisCache

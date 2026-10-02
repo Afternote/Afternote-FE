@@ -33,8 +33,8 @@ import javax.inject.Inject
  * 검증 성공 직후 본 ViewModel 인스턴스는 화면 pop 과 함께 사라지므로, 후속 화면은
  * SenderRegistry 의 갱신된 SenderEntry 를 참조해 컨텍스트를 잇는다.
  *
- * `senderId` 는 자체 SavedStateHandle 이 아니라 parent backStackEntry 의
- * [DeliveryVerificationFlowViewModel] 에서 받아 [submit] 호출 시점에 전달된다 — 자식 라우트에서 senderId 를
+ * `senderId` 는 자체 SavedStateHandle 이 아니라 흐름 entry 범위의
+ * [DeliveryVerificationFlowViewModel] 에서 화면 인자로 받아 [submit] 호출 시점에 전달된다 — 자식 라우트에서 senderId 를
  * 중복 보유하지 않기 위함(#220).
  *
  * 입력 중인 텍스트는 UI 의 `TextFieldState` 가 보유 — submit() 호출 시점에만 값 전달.
@@ -60,12 +60,12 @@ class MasterKeyViewModel
             if (trimmed.isEmpty() || _uiState.value.isSubmitting) return
             if (!MASTER_KEY_UUID_REGEX.matches(trimmed)) {
                 _uiState.update {
-                    it.copy(error = UiText.Resource(R.string.receiver_verify_master_key_invalid_format))
+                    it.copy(errorMessage = UiText.Resource(R.string.receiver_verify_master_key_invalid_format))
                 }
                 return
             }
 
-            _uiState.update { it.copy(isSubmitting = true, error = null) }
+            _uiState.update { it.copy(isSubmitting = true, errorMessage = null) }
             viewModelScope.launch {
                 receiverAuthRepository
                     .verifyMasterKey(trimmed)
@@ -80,7 +80,7 @@ class MasterKeyViewModel
                         _uiState.update {
                             it.copy(
                                 isSubmitting = false,
-                                error = throwable.toReceiverErrorUiText(R.string.receiver_verify_error_unknown),
+                                errorMessage = throwable.toReceiverErrorUiText(R.string.receiver_verify_error_unknown),
                             )
                         }
                     }
@@ -88,7 +88,7 @@ class MasterKeyViewModel
         }
 
         fun consumeError() {
-            _uiState.update { it.copy(error = null) }
+            _uiState.update { it.copy(errorMessage = null) }
         }
 
         fun onVerifiedConsumed() {

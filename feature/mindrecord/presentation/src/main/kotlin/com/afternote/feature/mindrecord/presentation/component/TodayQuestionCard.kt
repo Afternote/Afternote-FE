@@ -51,7 +51,7 @@ fun TodayQuestionCard(
     modifier: Modifier = Modifier,
     questionText: String? = null,
     isQuestionLoading: Boolean = false,
-    onAnswerClick: () -> Unit = {},
+    onAnswerClick: () -> Unit,
 ) {
     Column(
         modifier =
@@ -168,6 +168,7 @@ private fun TodayQuestionCardPreview() {
             dateText = "2026.04.10",
             questionText = "오늘 내가 배운\n가장 작은 교훈은 무엇인가요?",
             modifier = Modifier.padding(16.dp),
+            onAnswerClick = {},
         )
     }
 }
@@ -180,6 +181,7 @@ private fun TodayQuestionCardUnavailablePreview() {
             dateText = "2026.04.10",
             questionText = null,
             modifier = Modifier.padding(16.dp),
+            onAnswerClick = {},
         )
     }
 }

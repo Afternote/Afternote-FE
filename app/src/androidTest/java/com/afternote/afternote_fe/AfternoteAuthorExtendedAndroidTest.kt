@@ -20,6 +20,7 @@ import androidx.paging.PagingState
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.afternote.afternote_fe.test.FailureArtifactRule
+import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.ListItem
@@ -65,7 +66,7 @@ class AfternoteAuthorExtendedAndroidTest {
         listFlows[null] =
             Pager(PagingConfig(pageSize = 20)) { pagingSource }.flow
         listFlows[AfternoteType.SOCIAL_NETWORK] = flowOf(PagingData.empty())
-        val viewModel = AfternoteHomeViewModel(repository)
+        val viewModel = AfternoteHomeViewModel(repository, FakeErrorReporter())
         val detailRoutes = mutableListOf<Long>()
         val addRoutes = mutableListOf<AfternoteType?>()
 

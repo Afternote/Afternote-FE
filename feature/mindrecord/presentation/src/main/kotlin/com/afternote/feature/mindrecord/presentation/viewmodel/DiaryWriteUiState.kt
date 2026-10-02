@@ -12,11 +12,23 @@ data class DiaryWriteUiState(
     val content: String = "",
     val mood: TodayMood? = null,
     /**
-     * 화면에 표시할 기록 날짜. **표시 전용이다** — 서버는 생성·수정 어느 쪽에서도 이 값을
-     * 받지 않고 기록 날짜를 요청 시각으로 정한다 (#1008). 이어쓰기 프리필이 원래 날짜를
-     * 채워 주는 자리라 상태 자체는 남긴다.
+     * 화면에 표시하고 서버로 보낼 기록일. 사용자가 날짜 행에서 고른다 (#1008).
+     *
+     * 서버는 2026-08-29 부터 생성·수정 양쪽에서 `date` 를 받는다 (`Afternote-BE#244`, PR #262).
+     * 미래 날짜는 400(code 2101)이라 [dateError] 로 미리 막는다.
      */
     val date: LocalDate = LocalDate.now(),
+    /**
+     * [date] 를 **수정 요청에 실어도 되는지.** 프리필이 서버 날짜를 준 뒤이거나 사용자가 직접
+     * 고른 뒤에만 true 다.
+     *
+     * 신규 작성은 언제나 싣는다(기본값이 오늘이고 그대로 저장되는 것이 맞다). 문제는 수정
+     * 경로다 — 프리필이 실패한 채 «오늘» 을 실어 보내면 기존 기록일이 조용히 오늘로 옮겨진다.
+     * 그럴 땐 키를 생략해 서버가 기존 값을 유지하게 한다 (#1008).
+     */
+    val isDateChosen: Boolean = false,
+    /** 고를 수 없는 날짜를 짚었을 때의 안내. 서버가 400 을 주기 전에 화면에서 먼저 막는다 (#1008). */
+    val dateError: UiText? = null,
     /** `GET /users/receivers` 로 불러온 내 수신인 목록. */
     val receivers: List<Receiver> = emptyList(),
     /**
@@ -39,42 +51,58 @@ data class DiaryWriteUiState(
     /** draft 프리필 완료 플래그. 에디터(content) 재시드 트리거로 사용. */
     val draftLoaded: Boolean = false,
     val draftLoadError: UiText? = null,
-    /** 이미지 업로드 진행 중 — 끝나기 전에 저장하면 이미지 없이 기록이 먼저 올라간다 (#716). */
-    val isUploadingImage: Boolean = false,
+    /**
+     * 아직 끝나지 않은 이미지 업로드 수 (#2029 · #2030).
+     *
+     * Boolean 하나였을 때는 첨부를 잇따라 고르면 **먼저 끝난 하나가 잠금을 통째로 풀었다** —
+     * 아직 올라가는 중인 첨부가 있는데도 저장이 열려, 그 이미지가 빠진 본문이 먼저 나갔다.
+     * 성공·실패·취소 어느 쪽으로 끝나든 자기 몫만 내려놓도록 수로 센다.
+     */
+    val uploadingImageCount: Int = 0,
     /** 이미지 업로드 실패 안내. 조용히 null 로 흡수하지 않는다 (#716). */
     val imageUploadError: UiText? = null,
     val submitState: SubmitState = SubmitState.Idle,
-    /** 이어쓰기(기존 draft PATCH) 진입인지. 신규 작성이면 덮어쓸 기존 내용이 없다. */
-    val isEditingDraft: Boolean = false,
+    /**
+     * 기존 기록을 고치러 들어왔는지 — **임시저장 이어쓰기와 정식 기록 수정을 함께 센다.**
+     *
+     * 신규 작성이면 덮어쓸 기존 내용이 없다. 종전에는 이어쓰기일 때만 섰는데, 저장 경로는
+     * 두 진입이 똑같이 PATCH 라 정식 수정이 프리필 가드 밖에 있었다 (#2027).
+     */
+    val isEditingExistingRecord: Boolean = false,
     /** 툴바 "임시저장 N" 표시값. `null` 은 아직 모름(조회 중·실패) (#769). */
     val draftCount: Int? = null,
 ) {
+    /** 끝나지 않은 업로드가 하나라도 있는지. 화면과 저장 잠금이 함께 본다. */
+    val isUploadingImage: Boolean
+        get() = uploadingImageCount > 0
+
     /** 정식 등록 조건 — 제목·본문·기분이 모두 있어야 한다. */
     val canSubmit: Boolean
         get() = missingForSubmit() == null && isReady
 
     /**
-     * 임시저장 조건.
+     * 임시저장 조건 — **제목·본문 중 하나만 있어도 된다. 기분은 안 골라도 된다.**
      *
-     * «미완성 보존» 이 목적이라 제목·본문 중 하나만 있어도 저장하려 했지만, **서버가
-     * 임시저장에도 제목·본문·기분을 모두 요구한다** — 실서버 실측(2026-08-24):
+     * 「미완성 보존」이 임시저장의 목적인데 종전에는 정식 등록과 같은 세 가지를 요구했다.
+     * 서버가 `isDraft=true` 에도 셋을 전부 검증했기 때문이다 — 보내면 400 이 되는 조건을
+     * «저장 가능» 으로 표시하면 버튼이 고장 난 것과 같아 같은 조건을 걸어 뒀다.
      *
-     * ```
-     * POST /diary {"title":"제목만","content":"","isDraft":true,…}   → 400 "내용은 필수입니다."
-     * POST /diary {"title":"","content":"<p>본문만</p>",…}           → 400 "제목은 필수입니다."
-     * POST /diary {"title":"제목","content":"<p>본문</p>"}            → 400 "오늘의 기분은 필수입니다."
-     * ```
+     * 그 제약이 풀렸다. `Afternote-BE#243` → PR #267(2026-08-30 머지)이 임시저장의 필수
+     * 검증을 걷었다 — 제목·본문·기분을 생략할 수 있고 `today_mood` 는 NULL 로 저장된다.
+     * 정식 등록(`isDraft=false`)은 셋 다 필수이고 누락 시 400/`1400` 이다 (#1065).
      *
-     * 보내면 400 이 되는 조건을 «저장 가능» 으로 표시하면 버튼이 고장 난 것과 같아진다.
-     * 서버가 `isDraft=true` 에서 검증을 완화해 주기 전까지는 같은 조건을 요구한다 (#1065).
-     *
-     * 정식 등록과 갈리는 지점은 남는다 — 실패 사유를 각각 다른 문구로 알린다.
+     * 완전히 빈 폼까지 열지는 않는다. 남길 것이 하나도 없는 저장은 사용자가 의도한 적 없는
+     * 빈 임시저장을 목록에 쌓고, 이어쓰기 목록에서 무엇인지 알아볼 수도 없다.
      */
     val canSaveDraft: Boolean
         get() = missingForDraft() == null && isReady
 
-    /** 임시저장을 막는 첫 번째 누락 항목 (없으면 null). 현재는 정식 등록과 같은 세 가지다. */
-    fun missingForDraft(): Int? = missingForSubmit()
+    /**
+     * 임시저장을 막는 첫 번째 누락 항목 (없으면 null).
+     *
+     * 제목과 본문이 **둘 다** 비었을 때만 막는다 — 기분은 보지 않는다.
+     */
+    fun missingForDraft(): Int? = R.string.mindrecord_write_diary_missing_draft_content.takeIf { title.isBlank() && content.isHtmlBlank() }
 
     private val isReady: Boolean
         get() =
@@ -82,9 +110,12 @@ data class DiaryWriteUiState(
                 !isDraftLoading &&
                 // 업로드 중 저장하면 본문에 아직 안 들어간 이미지가 빠진 채 나간다 (#716).
                 !isUploadingImage &&
-                // 프리필이 실패했는데 저장하면, 보지 못한 기존 draft 내용을 빈 폼으로 PATCH 해
-                // 덮어쓴다. 이어쓰기 진입에서 프리필이 실패한 동안은 저장을 막는다 (#716).
-                !(isEditingDraft && draftLoadError != null)
+                // 프리필이 실패했는데 저장하면, 보지 못한 기존 내용을 빈 폼으로 PATCH 해
+                // 덮어쓴다. 수정 진입은 프리필이 **성공한 뒤에만** 저장을 연다 (#716 · #2027).
+                //
+                // 「실패했는가」가 아니라 「읽었는가」로 본다 — 실패 플래그만 보면 조회가 끝나지
+                // 않은 창(취소·재시작)에서 오류도 없고 프리필도 없는 상태가 열린다.
+                !(isEditingExistingRecord && !draftLoaded)
 
     /**
      * 등록을 막는 첫 번째 누락 항목 (없으면 null).

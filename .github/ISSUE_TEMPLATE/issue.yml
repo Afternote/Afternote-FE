@@ -33,7 +33,8 @@ body:
         - timeletter — 타임레터
         - mindrecord — 마음의 기록
         - home — 홈
-        - platform — Android 앱·CI·빌드·릴리스·저장소 운영
+        - app — 앱 셸·루트 네비게이션·앱 모듈 공통
+        - platform — CI·빌드·릴리스·저장소 운영
     validations:
       required: true
 

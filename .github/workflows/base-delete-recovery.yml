@@ -1,0 +1,56 @@
+# base 브랜치 삭제로 자동 폐쇄된 PR 되살리기 (#2076)
+#
+# 브랜치를 지우면 그 브랜치를 base 로 하던 열린 PR 이 GitHub 정책에 따라 즉시 닫힌다. 닫는
+# 코멘트도 리뷰도 없이 base_ref_deleted 다음 closed 두 이벤트만 남아, 승인까지 받은 PR 이
+# 흔적 없이 사라진다(2026-09-11 #1626). 삭제 자체는 막지 않고 닫힘만 되돌린다.
+#
+# delete 이벤트는 default branch 의 workflow 정의만 실행한다. 판정과 문구는
+# recover-base-deleted-pull-requests.mjs 에 있고 여기서는 부르기만 한다.
+#
+# PR 코멘트는 issues/{number}/comments 로 나가지만 대상이 PR 이라 issues: write 로는 403 이다
+# (#2068). reopen 과 경위 코멘트에는 pull-requests: write 가 필요하고, 되살릴 수 없을 때 여는
+# 추적 이슈에는 issues: write 가 필요하다.
+name: base-delete-recovery
+
+on:
+  delete:
+
+permissions: {}
+
+jobs:
+  recover:
+    # 같은 브랜치의 삭제·재삭제가 겹쳐도 줄을 세운다. 취소하면 되살리다 만 PR 이 남는다.
+    concurrency:
+      group: base-delete-recovery-${{ github.repository_id }}-${{ github.event.ref }}
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Clone recovery policy from the default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          # 이 job 은 정책 스크립트와 그 테스트만 쓴다. 테스트가 워크플로 정의와 이슈 양식도
+          # 읽으므로 그 디렉터리까지 함께 받는다. 목록이 빠지면 테스트 스텝이 파일을 못 찾는다.
+          sparse-checkout: |
+            .github/scripts
+            .github/workflows
+            .github/ISSUE_TEMPLATE
+
+      - name: Run script tests
+        run: node --test .github/scripts/recover-base-deleted-pull-requests.test.mjs
+
+      - name: 자동 폐쇄된 PR 되살리기
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          DELETED_REF: ${{ github.event.ref }}
+          DELETED_REF_TYPE: ${{ github.event.ref_type }}
+          DELETED_BY: ${{ github.actor }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node .github/scripts/recover-base-deleted-pull-requests.mjs

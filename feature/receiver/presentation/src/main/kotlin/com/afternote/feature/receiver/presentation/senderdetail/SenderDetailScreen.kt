@@ -1,6 +1,5 @@
 package com.afternote.feature.receiver.presentation.senderdetail
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,8 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -23,15 +20,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -56,8 +52,11 @@ fun SenderDetailScreen(
     onBackClick: () -> Unit,
     onRequestVerification: () -> Unit,
     onOpenReceiverHome: () -> Unit,
+    // 기본값을 두지 않는다. @AssistedInject VM 이라 인자 없는 hiltViewModel() 은 런타임에
+    // "no creation callback was provided in CreationExtras" 로 죽는다. ReceiverNavHost 의 entry 가
+    // 자기 key 로 만들어 넘긴다 (#2168).
+    viewModel: SenderDetailViewModel,
     modifier: Modifier = Modifier,
-    viewModel: SenderDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val shouldOpenReceiverHome = (uiState as? SenderDetailUiState.Success)?.shouldOpenReceiverHome == true
@@ -166,14 +165,7 @@ private fun SuccessBody(
     ) {
         Spacer(modifier = Modifier.height(39.dp))
 
-        Image(
-            painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_ic_profile_placeholder),
-            contentDescription = null,
-            modifier =
-                Modifier
-                    .size(134.dp)
-                    .clip(CircleShape),
-        )
+        ProfileImage()
 
         Spacer(modifier = Modifier.height(12.5.dp))
 

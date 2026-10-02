@@ -3,6 +3,7 @@ package com.afternote.feature.afternote.presentation.receiver.detail
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.AfternoteType
+import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
 import com.afternote.feature.receiver.domain.model.ReceivedAfternoteDetail
 import com.afternote.feature.receiver.domain.testing.FakeReceiverRepository
 import kotlinx.coroutines.CompletableDeferred
@@ -197,7 +198,7 @@ class ReceivedAfternoteDetailViewModelTest {
         errorReporter: ErrorReporter = RecordingErrorReporter(),
     ): ReceivedAfternoteDetailViewModel =
         ReceivedAfternoteDetailViewModel(
-            savedStateHandle = SavedStateHandle(mapOf("afternoteId" to 42L)),
+            route = ReceivedAfternoteRoute.DetailRoute(afternoteId = 42L),
             receiverRepository = repository,
             errorReporter = errorReporter,
         )

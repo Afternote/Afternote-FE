@@ -2,9 +2,21 @@ package com.afternote.feature.mindrecord.presentation.screen.receiver
 
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.error.DeliveryNotReadyException
+import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
+import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
 import com.afternote.feature.mindrecord.presentation.R
-import com.afternote.feature.mindrecord.presentation.viewmodel.toDomainMessage
+import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
+import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordUiState
+import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Test
 import java.io.IOException
 
@@ -18,30 +30,58 @@ import java.io.IOException
  *
  * 화면은 **도메인 예외 타입만** 본다. 어떤 서버 코드가 그 타입이 되는지는 data 계층의
  * `mapReceiverFailure` 가 알고, 그쪽 계약은 `MindRecordReceiverRepositoryImplTest` 가 잡는다.
+ *
+ * 변환 함수를 직접 부르지 않고 **ViewModel 이 내놓는 오류 상태**로 본다 — 문구가 맞아도
+ * 그 값이 화면 상태에 실리지 않으면 사용자는 여전히 원문을 본다 (#1674).
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class ReceiverDeadEndTest {
+    private val dispatcher = StandardTestDispatcher()
+
+    @Before
+    fun setUp() = Dispatchers.setMain(dispatcher)
+
+    @After
+    fun tearDown() = Dispatchers.resetMain()
+
     @Test
     fun `전달 조건 미충족은 기다리는 상태임을 알리는 문구가 된다`() {
-        assertEquals(
-            UiText.Resource(R.string.mindrecord_receiver_delivery_not_ready),
-            DeliveryNotReadyException().toDomainMessage(),
-        )
+        assertErrorMessage(DeliveryNotReadyException(), R.string.mindrecord_receiver_delivery_not_ready)
     }
 
     @Test
     fun `서버 원문을 화면 문구로 쓰지 않는다`() {
         // 결과 타입이 UiText.Resource 라 원문이 들어갈 자리 자체가 없다.
-        assertEquals(
-            UiText.Resource(R.string.mindrecord_receiver_load_failed),
-            IllegalStateException("서버 내부 오류가 발생했습니다.").toDomainMessage(),
+        assertErrorMessage(
+            IllegalStateException("서버 내부 오류가 발생했습니다."),
+            R.string.mindrecord_receiver_load_failed,
         )
     }
 
     @Test
     fun `네트워크 예외도 같은 실패 문구로 수렴한다`() {
-        assertEquals(
-            UiText.Resource(R.string.mindrecord_receiver_load_failed),
-            IOException("timeout").toDomainMessage(),
-        )
+        assertErrorMessage(IOException("timeout"), R.string.mindrecord_receiver_load_failed)
     }
+
+    private fun assertErrorMessage(
+        failure: Throwable,
+        expected: Int,
+    ) = runTest(dispatcher) {
+        val viewModel =
+            ReceiverMindRecordViewModel(
+                repository = FailingReceiverRepository(failure),
+                errorReporter = RecordingErrorReporter(),
+            )
+
+        testScheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(UiText.Resource(expected), (state as ReceiverMindRecordUiState.Error).message)
+    }
+}
+
+private class FailingReceiverRepository(
+    private val failure: Throwable,
+) : MindRecordReceiverRepository {
+    override suspend fun getAll(): Result<ReceiverMindRecords> = Result.failure(failure)
 }

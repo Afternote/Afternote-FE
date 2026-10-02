@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -77,6 +78,286 @@ test("선택 selector의 package, class, @Test method를 현재 revision에서 �
         ),
         /@Test 메서드/,
     );
+});
+
+async function writeAndroidTestSource(testPath, lines) {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "ci-test-plan-scope-"));
+    await fs.mkdir(path.dirname(path.join(root, testPath)), { recursive: true });
+    await fs.writeFile(path.join(root, testPath), `${lines.join("\n")}\n`);
+    return root;
+}
+
+function selectedPlan(testPath, selector) {
+    return {
+        androidTest: {
+            mode: "selected",
+            reason: "selector가 가리키는 class 본문 확인",
+            tests: [{ path: testPath, selector, device: "api34" }],
+        },
+    };
+}
+
+test("#2153: 같은 파일의 다른 class에 있는 @Test 메서드를 selector class에 붙이면 거절한다", async () => {
+    const testPath = "app/src/androidTest/java/com/afternote/afternote_fe/AppAndReceiverCompletionAndroidTest.kt";
+    const root = await writeAndroidTestSource(testPath, [
+        "package com.afternote.afternote_fe",
+        "",
+        "@HiltAndroidTest",
+        "@RunWith(AndroidJUnit4::class)",
+        "class AppAndReceiverCompletionAndroidTest {",
+        "    @get:Rule(order = 0)",
+        "    val hiltRule = HiltAndroidRule(this)",
+        "",
+        "    @Test",
+        "    fun invalidCredentials_correctedPasswordThenRetry_entersHomeWithoutReportingUserError() = Unit",
+        "}",
+        "",
+        "@HiltAndroidTest",
+        "@RunWith(AndroidJUnit4::class)",
+        "class ReceiverRuntimeCompletionAndroidTest {",
+        "    @Test",
+        "    fun homeActions_routeImplementedEntryPointsToExactDestinations() {",
+        "        composeRule.waitUntil { true }",
+        "    }",
+        "}",
+    ]);
+    const method = "homeActions_routeImplementedEntryPointsToExactDestinations";
+    const validate = (selector) =>
+        validateCiTestPlanSources(selectedPlan(testPath, selector), { root });
+
+    await assert.rejects(
+        validate(`com.afternote.afternote_fe.AppAndReceiverCompletionAndroidTest#${method}`),
+        (error) =>
+            /class 본문/.test(error.message) &&
+            error.message.includes(`com.afternote.afternote_fe.ReceiverRuntimeCompletionAndroidTest#${method}`),
+    );
+    await assert.doesNotReject(validate(`com.afternote.afternote_fe.ReceiverRuntimeCompletionAndroidTest#${method}`));
+    await assert.doesNotReject(
+        validate(
+            "com.afternote.afternote_fe.AppAndReceiverCompletionAndroidTest#invalidCredentials_correctedPasswordThenRetry_entersHomeWithoutReportingUserError",
+        ),
+    );
+});
+
+test("class 본문의 중괄호 짝은 문자열·문자·주석 속 중괄호를 세지 않는다", async () => {
+    const testPath = "app/src/androidTest/java/com/example/BraceNoiseTest.kt";
+    const root = await writeAndroidTestSource(testPath, [
+        "package com.example",
+        "",
+        "class BraceNoiseTest {",
+        '    private val json = "{\\"a\\": \\"}\\"}"',
+        "    private val brace = '}'",
+        "    private val quote = '\\''",
+        '    private val raw = """}}} "" """',
+        '    private val rawTail = """}""""',
+        '    private val template = "${listOf("}").first()} $brace"',
+        '    private val typed = $$"${"',
+        "    private val command = $$\"sh -c 'echo ${PATH//:/ }'\"",
+        '    private val schema = $$"""{"$schema": "$${listOf("}").first()}"}"""',
+        "    // }",
+        "    /* } /* 중첩 } */ } */",
+        "    // @Test fun owned() = Unit",
+        "",
+        "    @Test",
+        "    fun afterNoise() = Unit",
+        "}",
+        "",
+        "class NextTest {",
+        "    @Test",
+        "    fun owned() = Unit",
+        "}",
+    ]);
+    const validate = (selector) =>
+        validateCiTestPlanSources(selectedPlan(testPath, selector), { root });
+
+    await assert.doesNotReject(validate("com.example.BraceNoiseTest#afterNoise"));
+    await assert.doesNotReject(validate("com.example.NextTest#owned"));
+    await assert.rejects(validate("com.example.BraceNoiseTest#owned"), /class 본문/);
+    await assert.rejects(validate("com.example.NextTest#afterNoise"), /class 본문/);
+
+    // Kotlin 은 CR 하나도 줄바꿈으로 본다. 줄 주석이 파일 끝까지 먹으면 뒤 class 가 사라진다.
+    const carriageReturnPath = "app/src/androidTest/java/com/example/CarriageReturnTest.kt";
+    await fs.mkdir(path.dirname(path.join(root, carriageReturnPath)), { recursive: true });
+    await fs.writeFile(
+        path.join(root, carriageReturnPath),
+        "package com.example\rclass CarriageReturnTest {\r    // }\r    @Test\r    fun owned() = Unit\r}\r",
+    );
+    await assert.doesNotReject(
+        validateCiTestPlanSources(selectedPlan(carriageReturnPath, "com.example.CarriageReturnTest#owned"), { root }),
+    );
+});
+
+test("중첩 class는 Outer$Inner로만 가리키고 본문 없는 class는 메서드를 갖지 않는다", async () => {
+    const testPath = "app/src/androidTest/java/com/example/OuterTest.kt";
+    const root = await writeAndroidTestSource(testPath, [
+        "package com.example",
+        "",
+        "private data class Fixture(val id: Int = 0)",
+        "",
+        "class OuterTest {",
+        "    @Test",
+        "    fun outerOwned() = Unit",
+        "",
+        "    companion object",
+        "",
+        "    class InnerTest {",
+        "        @Test",
+        "        fun innerOwned() = Unit",
+        "    }",
+        "}",
+        "",
+        "interface ScreenSuite {",
+        "    class LoginScreenTest {",
+        "        @Test",
+        "        fun inInterface() = Unit",
+        "    }",
+        "}",
+        "",
+        "class SuiteTest {",
+        "    companion object {",
+        "        class CaseTest {",
+        "            @Test",
+        "            fun inCompanion() = Unit",
+        "        }",
+        "    }",
+        "}",
+        "",
+        "private val init = Runnable {}",
+        "",
+        "class DelegatingTest : Runnable by init {",
+        "    @Test",
+        "    fun delegated() = Unit",
+        "}",
+    ]);
+    const validate = (selector) =>
+        validateCiTestPlanSources(selectedPlan(testPath, selector), { root });
+
+    await assert.doesNotReject(validate("com.example.OuterTest#outerOwned"));
+    await assert.doesNotReject(validate("com.example.OuterTest$InnerTest#innerOwned"));
+    await assert.doesNotReject(validate("com.example.ScreenSuite$LoginScreenTest#inInterface"));
+    await assert.doesNotReject(validate("com.example.SuiteTest$Companion$CaseTest#inCompanion"));
+    await assert.doesNotReject(validate("com.example.DelegatingTest#delegated"));
+    await assert.rejects(validate("com.example.SuiteTest#inCompanion"), /class 본문/);
+    await assert.rejects(validate("com.example.OuterTest#innerOwned"), /class 본문/);
+    await assert.rejects(validate("com.example.InnerTest#innerOwned"), /class가 파일에 없습니다/);
+    await assert.rejects(validate("com.example.Fixture#outerOwned"), /class 본문/);
+});
+
+test("변경 파일 검사와 selector 검사는 주석 속 @Test를 똑같이 세지 않는다", async () => {
+    const testPath = "app/src/androidTest/java/com/example/RuntimeTest.kt";
+    const root = await writeAndroidTestSource(testPath, [
+        "package com.example",
+        "",
+        "class RuntimeTest {",
+        "    @Test",
+        "    fun works() = Unit",
+        "",
+        "    // @Test fun flakyOnApi30() = Unit",
+        "}",
+    ]);
+    const plan = selectedPlan(testPath, "com.example.RuntimeTest#works");
+
+    await assert.doesNotReject(validateCiTestPlanImpact(plan, [testPath], { root }));
+    await assert.doesNotReject(validateCiTestPlanSources(plan, { root }));
+    await assert.rejects(
+        validateCiTestPlanSources(selectedPlan(testPath, "com.example.RuntimeTest#flakyOnApi30"), { root }),
+        /@Test 메서드가 파일에 없습니다/,
+    );
+});
+
+test("@Test 인자와 뒤따르는 annotation을 한 줄 인자까지 건너 메서드와 소유 class를 찾는다", async () => {
+    const testPath = "app/src/androidTest/java/com/example/AnnotatedTest.kt";
+    const root = await writeAndroidTestSource(testPath, [
+        "package com.example",
+        "",
+        "class AnnotatedTest {",
+        "    @Test(timeout = 1_000)",
+        "    fun withTimeout() = Unit",
+        "",
+        "    @Test",
+        "    @androidx.test.filters.SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)",
+        "    @FlakyTest(bugId = listOf(1).first())",
+        "    fun stacked() = Unit",
+        "",
+        '    @Test @Suppress("UNUSED(") @Config(sdk = [30]) fun sameLine() { check(true) }',
+        "",
+        "    @Test",
+        "    @MediumTest @Ignore",
+        "    fun",
+        "        spaced ()",
+        "}",
+        "",
+        "class OtherTest {",
+        "    @Test @MediumTest fun other() = Unit",
+        "}",
+    ]);
+    const declared = selectedPlan(testPath, "com.example.AnnotatedTest#withTimeout");
+    const validate = (selector) =>
+        validateCiTestPlanSources(selectedPlan(testPath, selector), { root });
+
+    await assert.rejects(
+        validateCiTestPlanImpact(declared, [testPath], { root }),
+        (error) => error.message.endsWith(`${testPath}#stacked, #sameLine, #spaced, #other`),
+    );
+    for (const method of ["withTimeout", "stacked", "sameLine", "spaced"]) {
+        await assert.doesNotReject(validate(`com.example.AnnotatedTest#${method}`));
+    }
+    await assert.doesNotReject(validate("com.example.OtherTest#other"));
+    await assert.rejects(
+        validate("com.example.AnnotatedTest#other"),
+        (error) => /class 본문/.test(error.message) && error.message.includes("com.example.OtherTest#other"),
+    );
+    await assert.rejects(validate("com.example.OtherTest#stacked"), /class 본문/);
+});
+
+// 정규식 역추적은 이벤트 루프를 막아 node:test 시간 제한이 듣지 않는다. 자식 프로세스를 OS가 끊게 한다.
+function importInChild(moduleName, body, timeout = 10_000) {
+    const moduleUrl = new URL(moduleName, import.meta.url).href;
+    const execution = spawnSync(
+        process.execPath,
+        ["--input-type=module", "--eval", `import * as target from ${JSON.stringify(moduleUrl)};\n${body}`],
+        { encoding: "utf8", timeout, killSignal: "SIGKILL" },
+    );
+    assert.equal(execution.signal, null, `${timeout}ms 안에 끝나지 않았습니다.`);
+    assert.equal(execution.status, 0, execution.stderr);
+    return JSON.parse(execution.stdout);
+}
+
+test("#2218: 닫히지 않는 annotation 인자가 이어져도 @Test 검사가 유한 시간에 끝난다", async () => {
+    const testPath = "app/src/androidTest/java/com/example/RuntimeTest.kt";
+    const root = await writeAndroidTestSource(testPath, [
+        "package com.example",
+        "",
+        "class RuntimeTest {",
+        "    @Test",
+        "    fun works() = Unit",
+        "",
+        `    @Test@.(${")@.(".repeat(40)}`,
+        "}",
+    ]);
+    const plan = (method) => selectedPlan(testPath, `com.example.RuntimeTest#${method}`);
+    const outcomes = importInChild(
+        "./ci-test-plan.mjs",
+        `const [root, testPath, works, other, missing] = ${JSON.stringify([
+            root,
+            testPath,
+            plan("works"),
+            plan("other"),
+            plan("missing"),
+        ])};
+        const settle = (promise) => promise.then(() => "ok", (error) => error.message);
+        console.log(JSON.stringify({
+            impact: await settle(target.validateCiTestPlanImpact(works, [testPath], { root })),
+            omitted: await settle(target.validateCiTestPlanImpact(other, [testPath], { root })),
+            sources: await settle(target.validateCiTestPlanSources(works, { root })),
+            missing: await settle(target.validateCiTestPlanSources(missing, { root })),
+        }));`,
+    );
+
+    assert.equal(outcomes.impact, "ok");
+    assert.ok(outcomes.omitted.endsWith(`${testPath}#works`), outcomes.omitted);
+    assert.equal(outcomes.sources, "ok");
+    assert.match(outcomes.missing, /@Test 메서드가 파일에 없습니다/);
 });
 
 test("기존 PR도 계획이 없으면 실패한다", () => {

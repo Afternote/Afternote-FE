@@ -2,7 +2,6 @@ package com.afternote.core.data.repoimpl
 
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.ReceiverRequestRejectedException
-import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.network.dto.DeletePushTokenRequestDto
 import com.afternote.core.network.dto.PushTokenDto
 import com.afternote.core.network.dto.ReceiverDetailDto
@@ -13,9 +12,11 @@ import com.afternote.core.network.dto.UserConnectedAccountDto
 import com.afternote.core.network.dto.UserCreateReceiverDto
 import com.afternote.core.network.dto.UserCreateReceiverRequestDto
 import com.afternote.core.network.dto.UserDto
+import com.afternote.core.network.dto.UserMarketingConsentDto
 import com.afternote.core.network.dto.UserPatchReceiverDto
 import com.afternote.core.network.dto.UserPatchReceiverRequestDto
 import com.afternote.core.network.dto.UserPushSettingDto
+import com.afternote.core.network.dto.UserUpdateMarketingConsentRequestDto
 import com.afternote.core.network.dto.UserUpdateProfileRequestDto
 import com.afternote.core.network.dto.UserUpdatePushSettingRequestDto
 import com.afternote.core.network.dto.UserUpdateReceiverMessageRequestDto
@@ -25,34 +26,46 @@ import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.core.network.service.UserApiService
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 /**
- * `UserRepositoryImpl` 안의 `mapReceiverRequestFailure` 는 `private` 이라 이 파일에서 직접 호출할 수
- * 없다 — 그 helper 를 공유하는 공개 계약([UserRepositoryImpl.createReceiver])을 통해 같은 회귀를 고정한다.
+ * `UserReceiverRepositoryImpl` 옆의 `mapReceiverRequestFailure` 는 `private` 이라 이 파일에서 직접 호출할 수
+ * 없다 — 그 helper 를 공유하는 공개 계약([UserReceiverRepositoryImpl.createReceiver])을 통해 같은 회귀를 고정한다.
  */
 class ReceiverRequestFailureTest {
-    private fun repositoryThrowingOnCreate(apiError: ApiException) =
-        UserRepositoryImpl(
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
+
+    // 등록 실패 매핑은 세션 상태와 무관하다. 저장소는 조립에 필요한 만큼만 세우고 비워 둔다.
+    private val sessionStore by lazy { TestTokenSessionStore(temporaryFolder.root) }
+
+    @After
+    fun closeSessionStore() = sessionStore.close()
+
+    private fun repositoryThrowingOnCreate(apiError: Throwable) =
+        UserReceiverRepositoryImpl(
             userApiService = CreateReceiverThrowingApiService(onCreateReceiver = { throw apiError }),
-            authRepository = FakeAuthRepository(loggedIn = false),
+            tokenDataSource = sessionStore.tokenDataSource,
             errorReporter = NoOpErrorReporter,
         )
 
-    private suspend fun createReceiver(repository: UserRepositoryImpl) =
+    private suspend fun createReceiver(repository: UserReceiverRepositoryImpl) =
         repository.createReceiver(
             name = "친구",
             relation = "친구",
             phone = null,
-            email = null,
+            email = "friend@example.com",
             message = null,
         )
 
     @Test
-    fun `400 서버 메시지는 사용자 노출 도메인 오류로 바뀐다`() =
+    fun `400 입력 거절은 고정 진단 문구와 원본 cause를 가진다`() =
         runBlocking {
             val apiError =
                 ApiException(
@@ -67,12 +80,13 @@ class ReceiverRequestFailureTest {
 
             assertTrue(result is ReceiverRequestRejectedException)
             val domainError = result as ReceiverRequestRejectedException
-            assertEquals("수신자 이메일은 필수입니다.", domainError.userMessage)
+            // 서버 원문과 관계없이 도메인 message는 같은 문구이며 원인은 그대로 보존한다.
+            assertEquals("receiver request rejected", domainError.message)
             assertSame(apiError, domainError.cause)
         }
 
     @Test
-    fun `409 서버 메시지는 사용자 노출 도메인 오류로 바뀐다`() =
+    fun `409 입력 거절도 같은 진단 문구와 원본 cause를 가진다`() =
         runBlocking {
             val apiError =
                 ApiException(
@@ -86,6 +100,34 @@ class ReceiverRequestFailureTest {
             val result = runCatching { createReceiver(repository) }.exceptionOrNull()
 
             assertTrue(result is ReceiverRequestRejectedException)
+            assertEquals("receiver request rejected", result?.message)
+            assertSame(apiError, result?.cause)
+        }
+
+    @Test
+    fun `거절 사유 없는 400과 409는 원본 오류로 유지한다`() =
+        runBlocking {
+            for (status in listOf(400, 409)) {
+                for (serverMessage in listOf(null, "", " \t")) {
+                    val apiError = ApiException(status, status, serverMessage, "fallback")
+                    val repository = repositoryThrowingOnCreate(apiError)
+
+                    val result = runCatching { createReceiver(repository) }.exceptionOrNull()
+
+                    assertSame(apiError, result)
+                }
+            }
+        }
+
+    @Test
+    fun `요청 취소는 도메인 실패로 변환하지 않는다`() =
+        runBlocking {
+            val cancellation = kotlinx.coroutines.CancellationException("cancelled")
+            val repository = repositoryThrowingOnCreate(cancellation)
+
+            val result = runCatching { createReceiver(repository) }.exceptionOrNull()
+
+            assertSame(cancellation, result)
         }
 
     @Test
@@ -163,6 +205,11 @@ private class CreateReceiverThrowingApiService(
     override suspend fun getMyPushSettings(): BaseResponse<UserPushSettingDto> = TODO("이 테스트 미사용")
 
     override suspend fun updateMyPushSettings(request: UserUpdatePushSettingRequestDto): BaseResponse<UserPushSettingDto> =
+        TODO("이 테스트 미사용")
+
+    override suspend fun getMyMarketingConsents(): BaseResponse<UserMarketingConsentDto> = TODO("이 테스트 미사용")
+
+    override suspend fun updateMyMarketingConsents(request: UserUpdateMarketingConsentRequestDto): BaseResponse<UserMarketingConsentDto> =
         TODO("이 테스트 미사용")
 
     override suspend fun getConnectedAccounts(): BaseResponse<UserConnectedAccountDto> = TODO("이 테스트 미사용")

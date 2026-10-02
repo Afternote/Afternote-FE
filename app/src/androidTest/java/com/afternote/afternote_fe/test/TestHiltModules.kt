@@ -5,7 +5,9 @@ import com.afternote.afternote_fe.notification.di.NotificationPermissionStoreMod
 import com.afternote.afternote_fe.reporting.ErrorReportingModule
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.data.di.CoreUserRepositoryModule
+import com.afternote.core.domain.repository.MyProfileRepository
 import com.afternote.core.domain.repository.UserProfileCacheRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.testing.FakeUserProfileCacheRepository
@@ -23,8 +25,10 @@ import com.afternote.feature.timeletter.data.repositoryImpl.FileMetadataReposito
 import com.afternote.feature.timeletter.domain.repository.FileMetadataRepository
 import com.afternote.feature.timeletter.domain.repository.ReceiverTimeLetterRepository
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
+import com.afternote.feature.timeletter.domain.repository.VoiceRecorderRepository
 import com.afternote.feature.timeletter.domain.testing.FakeReceiverTimeLetterRepository
 import com.afternote.feature.timeletter.domain.testing.FakeTimeLetterRepository
+import com.afternote.feature.timeletter.domain.testing.FakeVoiceRecorderRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.components.SingletonComponent
@@ -45,6 +49,16 @@ object TestCoreUserRepositoryModule {
     @Provides
     @Singleton
     fun provideUserRepository(): UserRepository = appTestUserRepository()
+
+    // 책임별 좁은 계약 2종 (#1282). 이 모듈이 `CoreUserRepositoryModule` 을 통째로 replaces 하므로
+    // 거기 있던 두 바인딩도 같이 사라진다 — 좁은 계약을 주입받는 화면(#1743 의 애프터노트 상세·에디터)이
+    // 계측 그래프에서 MissingBinding 으로 깨지지 않게 여기서 다시 잇는다.
+    // 프로덕션과 같은 모양으로 싱글턴 `UserRepository` 를 경유해, 계측이 세운 fake 한 인스턴스를 공유한다.
+    @Provides
+    fun provideUserReceiverRepository(userRepository: UserRepository): UserReceiverRepository = userRepository
+
+    @Provides
+    fun provideMyProfileRepository(userRepository: UserRepository): MyProfileRepository = userRepository
 
     @Provides
     @Singleton
@@ -154,6 +168,21 @@ object TestTimeLetterModule {
     @Provides
     @Singleton
     fun provideFileMetadataRepository(impl: FileMetadataRepositoryImpl): FileMetadataRepository = impl
+
+    /**
+     * 녹음도 fake 로 격리한다.
+     *
+     * 실제 구현은 `MediaRecorder` 로 마이크를 잡는다 — 앱 전체를 띄우는 계측에서 실제 녹음 장치에
+     * 붙이면 에뮬레이터 환경에 따라 흔들리고, 이 저장소를 명시적으로 다루는 테스트는
+     * [VoiceRecordingAndroidTest]·[VoiceRecordingLifecycleAndroidTest] 처럼
+     * `createVoiceRecorderRepositoryForTesting` 로 실제 구현을 직접 얻어 검증한다.
+     *
+     * `start`/`stop` 은 일부러 [FakeVoiceRecorderRepository] 의 기본대로 호출 시 터진다 — 관심 밖
+     * 화면이 실수로 녹음을 시작하면 조용히 넘어가지 않고 바로 드러나야 한다.
+     */
+    @Provides
+    @Singleton
+    fun provideVoiceRecorderRepository(): VoiceRecorderRepository = FakeVoiceRecorderRepository
 }
 
 @Module

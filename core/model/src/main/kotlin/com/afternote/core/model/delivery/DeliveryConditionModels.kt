@@ -4,8 +4,8 @@ package com.afternote.core.model.delivery
  * 전달 대상 콘텐츠 유형. 세 도메인(타임레터·애프터노트·마인드레코드)의 콘텐츠를 아우른다.
  *
  * 이 패키지(수신자별 전달조건 도메인, 이슈 #427)는 서버가 전달조건을 유저단위 → (수신자 × 콘텐츠) 단위로
- * 재설계하며 신설된 축이다. 기존 유저단위 [com.afternote.core.model.user.DeliveryConditionType]
- * (NONE/INACTIVITY/SPECIFIC_DATE) 은 값·의미가 달라 재사용 불가(이슈 #428 에서 제거 예정)해 별도 패키지에 둔다.
+ * 재설계하며 신설된 축이다. 기존 유저단위 `DeliveryConditionType`
+ * (NONE/INACTIVITY/SPECIFIC_DATE) 은 값·의미가 달라 재사용 불가라 별도 패키지에 두었고, 그 구 타입은 이슈 #428 에서 제거됐다.
  */
 enum class DeliveryContentType {
     TIME_LETTER,

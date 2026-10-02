@@ -7,13 +7,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavBackStackEntry
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.editor.processing.AfternoteProcessingMethodDefaults
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.editor.state.rememberAfternoteEditorState
-import com.afternote.feature.afternote.presentation.navigation.model.SELECTED_RECEIVER_ID_KEY
 
 /**
  * 작성자 에디터 화면: type-safe editor flow + 단방향 이벤트.
@@ -21,11 +19,10 @@ import com.afternote.feature.afternote.presentation.navigation.model.SELECTED_RE
  * 홈의 `visibleItems` 스냅샷은 에디터에 전달하지 않는다. 식별은 라우트의 `itemId`·`initialType` 정도로 최소화한다.
  *
  * **수정 진입 데이터 로드:** 상세 화면과 같이 [AfternoteEditorViewModel]의 `init`에서
- * [androidx.lifecycle.SavedStateHandle]의 `itemId`만 보고 Repository `getDetail`을 호출한다 (Compose `LaunchedEffect` 위임 없음).
+ * assisted 로 받은 흐름 라우트의 `itemId`만 보고 Repository `getDetail`을 호출한다 (Compose `LaunchedEffect` 위임 없음).
  */
 @Composable
 internal fun AfternoteEditorNavigation(
-    backStackEntry: NavBackStackEntry,
     editViewModel: AfternoteEditorViewModel,
     onNavigateToMemorialPlaylist: () -> Unit,
     onNavigateToSelectReceiver: () -> Unit,
@@ -39,7 +36,9 @@ internal fun AfternoteEditorNavigation(
             setType = editViewModel::setType,
             setService = editViewModel::setService,
             setMemorialPhoto = editViewModel::setMemorialPhoto,
+            removeMemorialPhoto = editViewModel::removeMemorialPhoto,
             setMemorialVideo = editViewModel::setMemorialVideo,
+            removeMemorialVideo = editViewModel::removeMemorialVideo,
             addReceiverIfAbsent = editViewModel::addReceiverIfAbsent,
             applyPrefill = editViewModel::applyPrefill,
             setMemorialThumbnail = editViewModel::setMemorialThumbnail,
@@ -71,11 +70,10 @@ internal fun AfternoteEditorNavigation(
         }
     }
 
-    LaunchedEffect(backStackEntry) {
-        tryApplyReceiverSelectionFromSavedState(
-            backStackEntry,
+    // 선택 화면이 위에 쌓이는 동안 이 화면은 컴포지션에서 빠지므로, 복귀할 때마다 다시 돈다.
+    LaunchedEffect(Unit) {
+        tryApplyReceiverSelection(
             editViewModel,
-            state,
         )
     }
 
@@ -153,19 +151,25 @@ internal fun AfternoteEditorNavigation(
             errorEvent?.let(editViewModel::onErrorConsumed)
         },
         content = { snackbarHostState ->
-            AfternoteEditorBody(
-                state = state,
-                form = uiState.form,
-                onNavigateToMemorialPlaylist = onNavigateToMemorialPlaylist,
-                onNavigateToSelectReceiver = onNavigateToSelectReceiver,
-                onThumbnailBytesReady = editViewModel::uploadMemorialThumbnail,
-                onThumbnailExtractionFailed = editViewModel::onMemorialThumbnailExtractionFailed,
-                thumbnailRetryToken = uiState.memorialThumbnailRetryToken,
-                onCaptureFailed = editViewModel::onMemorialCaptureLaunchFailed,
-                snackbarHostState = snackbarHostState,
-                isPrefillLoading = uiState.isPrefillLoading,
-                isTypeSelectionEnabled = !editViewModel.isEditing,
-            )
+            // prefill 을 못 읽었으면 폼을 세우지 않는다 (#705) — 빈 폼으로 저장되면 서버가 기존 기록을
+            // 그 빈 값으로 덮는다. 이 갈래에서는 사유와 재시도만 노출하고 «등록» 도 함께 잠근다.
+            if (uiState.isPrefillFailed) {
+                EditorPrefillErrorBody(onRetry = editViewModel::retryPrefill)
+            } else {
+                AfternoteEditorBody(
+                    state = state,
+                    form = uiState.form,
+                    onNavigateToMemorialPlaylist = onNavigateToMemorialPlaylist,
+                    onNavigateToSelectReceiver = onNavigateToSelectReceiver,
+                    onThumbnailBytesReady = editViewModel::uploadMemorialThumbnail,
+                    onThumbnailExtractionFailed = editViewModel::onMemorialThumbnailExtractionFailed,
+                    thumbnailRetryToken = uiState.memorialThumbnailRetryToken,
+                    onCaptureFailed = editViewModel::onMemorialCaptureLaunchFailed,
+                    snackbarHostState = snackbarHostState,
+                    isPrefillLoading = uiState.isPrefillLoading,
+                    isTypeSelectionEnabled = !editViewModel.isEditing,
+                )
+            }
         },
         state = state,
         // body skeleton과 별개로, 추천 처리 방법 기본값이 들어오기 전 빈 폼을 이탈 기준선으로 잡지 않는다.
@@ -173,7 +177,16 @@ internal fun AfternoteEditorNavigation(
             shouldDeferEditorBaselineCapture(
                 isPrefillLoading = uiState.isPrefillLoading,
                 isProcessingMethodDefaultsInitializing = isProcessingMethodDefaultsInitializing.value,
+                isPrefillFailed = uiState.isPrefillFailed,
             ),
         snackbarMessageKey = errorEvent,
+        // 저장 왕복 중과 prefill 실패 중에는 «등록» 을 잠근다 (#705) — 진행 상태를 화면에 실어
+        // 유휴처럼 보이지 않게 하고, 읽지 못한 기록을 빈 폼으로 덮는 저장을 아예 시작하지 않는다.
+        isSubmitEnabled =
+            isEditorSubmitEnabled(
+                isSaving = uiState.isSaving,
+                isPrefillFailed = uiState.isPrefillFailed,
+                isPrefillLoading = uiState.isPrefillLoading,
+            ),
     )
 }

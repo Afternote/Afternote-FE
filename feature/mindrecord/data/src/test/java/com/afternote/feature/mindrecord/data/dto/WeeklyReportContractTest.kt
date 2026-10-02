@@ -2,6 +2,7 @@ package com.afternote.feature.mindrecord.data.dto
 
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.feature.mindrecord.data.mapper.toDomain
+import com.afternote.feature.mindrecord.domain.model.WeeklyReportDay
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.MissingFieldException
 import kotlinx.serialization.json.Json
@@ -34,7 +35,7 @@ class WeeklyReportContractTest {
 
     // 카운트·요약·목록 키는 모두 계약이라 기본값이 없다 (#789) — 주(week) 형태만 바꿔가며
     // 보기 위해 나머지 필수 키는 여기서 채운다.
-    private fun decodeWeek(weekJson: String): List<WeeklyReportDayDto> {
+    private fun decodeReport(weekJson: String): WeeklyReportDto {
         val body =
             """
             { "status": 200, "code": 200, "data": {
@@ -45,14 +46,21 @@ class WeeklyReportContractTest {
         return json
             .decodeFromString(BaseResponse.serializer(WeeklyReportDto.serializer()), body)
             .data!!
-            .week
     }
+
+    private fun decodeWeek(weekJson: String): List<WeeklyReportDayDto> = decodeReport(weekJson).week
+
+    /**
+     * 도메인으로 접힌 주(week). 단건 매퍼가 아니라 **공개 소유자인 [WeeklyReportDto.toDomain]**
+     * 을 통과시킨다 — 「이 원소가 일기로 접히는가」는 그 주가 리포트에 실리는 방식의 일부다 (#1674).
+     */
+    private fun decodeWeekDomain(weekJson: String): List<WeeklyReportDay> = decodeReport(weekJson).toDomain().week
 
     @Test
     fun `현재 와이어 형태의 DIARY 원소가 일기로 접힌다`() {
-        val week = decodeWeek("""[{ "diaryId": 13, "day": 3, "type": "DIARY", "emotion": "SAD" }]""")
+        val week = decodeWeekDomain("""[{ "diaryId": 13, "day": 3, "type": "DIARY", "emotion": "SAD" }]""")
 
-        val day = week.single().toDomain()
+        val day = week.single()
         assertEquals(13L, day.diaryId)
         assertEquals(3, day.day)
         assertTrue("type=DIARY 는 일기다 — 여기서 false 면 캘린더 점이 통째로 사라진다", day.isDiary)
@@ -61,22 +69,22 @@ class WeeklyReportContractTest {
     @Test
     fun `DIARY 가 아닌 종류는 일기가 아니다`() {
         val week =
-            decodeWeek(
+            decodeWeekDomain(
                 """
                 [{ "diaryId": 1, "day": 1, "type": "DAILY_QUESTION", "emotion": null },
                  { "diaryId": 2, "day": 2, "type": "DEEP_THOUGHT", "emotion": null }]
                 """.trimIndent(),
             )
 
-        assertEquals(listOf(false, false), week.map { it.toDomain().isDiary })
+        assertEquals(listOf(false, false), week.map { it.isDiary })
     }
 
     @Test
     fun `명세에 없는 새 종류가 와도 그 주가 죽지 않고 일기 아님으로 접힌다`() {
         // type 을 enum 으로 받으면 여기서 그 주 전체가 MissingFieldException 으로 날아간다.
-        val week = decodeWeek("""[{ "diaryId": 1, "day": 1, "type": "FUTURE_KIND", "emotion": null }]""")
+        val week = decodeWeekDomain("""[{ "diaryId": 1, "day": 1, "type": "FUTURE_KIND", "emotion": null }]""")
 
-        assertEquals(false, week.single().toDomain().isDiary)
+        assertEquals(false, week.single().isDiary)
     }
 
     @Test
@@ -99,9 +107,9 @@ class WeeklyReportContractTest {
     fun `클라가 모르는 기분 값은 그 원소의 기분만 비운다`() {
         // 서버가 한글 감정을 내려준 전례가 있다 (#591). #789 로 기본값을 걷어냈어도
         // **값** 확장까지 실패로 만들지는 않는다 — 이모지 한 칸 대신 그 주가 통째로 날아간다.
-        val week = decodeWeek("""[{ "diaryId": 1, "day": 1, "type": "DIARY", "emotion": "슬픔" }]""")
+        val week = decodeWeekDomain("""[{ "diaryId": 1, "day": 1, "type": "DIARY", "emotion": "슬픔" }]""")
 
-        val day = week.single().toDomain()
+        val day = week.single()
         assertTrue(day.isDiary)
         assertNull(day.emotion)
     }

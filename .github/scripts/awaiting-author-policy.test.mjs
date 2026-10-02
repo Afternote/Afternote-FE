@@ -2,12 +2,17 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { judgeAwaitingAuthor } from "./label-awaiting-author-prs.mjs";
+import {
+    judgeAwaitingAuthor,
+    parseReviewGateExemptAuthors,
+    planAwaitingAuthorLabels,
+} from "./label-awaiting-author-prs.mjs";
 
 const guard = await readFile(new URL("../workflows/review-debt-guard.yml", import.meta.url), "utf8");
 const reconcile = await readFile(new URL("../workflows/conflict-label.yml", import.meta.url), "utf8");
 const script = await readFile(new URL("./label-awaiting-author-prs.mjs", import.meta.url), "utf8");
 const authorDebtCheck = await readFile(new URL("./check-author-debt.mjs", import.meta.url), "utf8");
+const exemptAuthors = parseReviewGateExemptAuthors(guard);
 
 test("가드는 작성자 무조치를 공통 판정 CLI 로 검사한다", () => {
     // 라벨은 주기 리컨사일 결과라 입장 시점에 스테일할 수 있다. 가드는 live PR 목록을 읽는
@@ -16,6 +21,49 @@ test("가드는 작성자 무조치를 공통 판정 CLI 로 검사한다", () =
     assert.match(guard, /AUTHOR_DEBT_FILE="\$author_debt_file"/);
     assert.match(authorDebtCheck, /findAuthorDebts/);
     assert.match(script, /export function findAuthorDebts/);
+});
+
+test("라벨 판정은 입장 가드에 선언된 작성자 면제 목록을 직접 읽는다", () => {
+    assert.match(guard, /^\s*REVIEW_GATE_EXEMPT_AUTHORS:/m);
+    assert.match(guard, /\$REVIEW_GATE_EXEMPT_AUTHORS/);
+    assert.match(script, /new URL\("\.\.\/workflows\/review-debt-guard\.yml", import\.meta\.url\)/);
+    assert.doesNotMatch(script, /review-gate-policy\.json/);
+    const mainAt = script.indexOf("async function main()");
+    assert.ok(mainAt > 0);
+    const main = script.slice(mainAt);
+    assert.match(main, /parseReviewGateExemptAuthors\(/);
+    assert.match(main, /planAwaitingAuthorLabels\(\{[^}]*\bexemptAuthors\b/);
+});
+
+test("workflow 파일이 없는 가드 checkout에서도 작성자 빚 판정을 import할 수 있다", async () => {
+    // data URL 에는 상대 workflow 경로가 없다. 모듈을 불러오는 순간 목록을 읽으면
+    // scripts 만 checkout 하는 오래된 가드와 마찬가지로 import가 실패한다.
+    const module = await import(`data:text/javascript;base64,${Buffer.from(script).toString("base64")}`);
+
+    assert.equal(typeof module.findAuthorDebts, "function");
+    assert.equal(typeof module.judgeAwaitingAuthor, "function");
+});
+
+test("가드의 면제 목록에 있는 작성자는 라벨 계획에서도 빠진다", () => {
+    const pullRequests = exemptAuthors.map((login, index) => ({
+        number: index + 1,
+        isDraft: false,
+        author: { login: login.toUpperCase() },
+        labels: { nodes: [{ name: "awaiting-author" }] },
+        reviews: {
+            nodes: [{
+                state: "CHANGES_REQUESTED",
+                submittedAt: "2026-08-29T00:00:00Z",
+                authorCanPushToRepository: true,
+                author: { login: "reviewer" },
+            }],
+        },
+    }));
+    const plan = planAwaitingAuthorLabels({ pullRequests, exemptAuthors });
+
+    assert.deepEqual(plan.toLabel, []);
+    assert.deepEqual(plan.toUnlabel.map((entry) => entry.number), pullRequests.map(({ number }) => number));
+    assert.ok(plan.toUnlabel.every(({ reason }) => reason === "리뷰 게이트 면제 작성자"));
 });
 
 test("리뷰어 빚과 작성자 빚은 한 번의 안내와 종료로 합친다", () => {

@@ -58,7 +58,11 @@ class MemoriesCardViewModel
                             // 서버를 만나도 초안이 카드에 오르지 않도록 `!isDraft` 재확인은 남겨둔다.
                             val latest = questions.firstOrNull { !it.isDraft }
                             _uiState.update {
-                                it.copy(question = latest?.title, answer = latest?.content)
+                                it.copy(
+                                    recordId = latest?.dailyQuestionId,
+                                    question = latest?.title,
+                                    answer = latest?.content,
+                                )
                             }
                         }
                 }
@@ -67,6 +71,13 @@ class MemoriesCardViewModel
 
 /** null 이면 표시할 기록이 없다 — 카드가 질문·답변 줄을 그리지 않는다 (0건 시안 미확정, #559). */
 data class MemoriesCardUiState(
+    /**
+     * 카드가 가리키는 그 기록의 id. 「그날의 기록 다시 읽기」가 열 상세의 대상이다 (#793).
+     *
+     * 0건이면 null 이고, 그때 버튼은 상세가 아니라 카드와 같은 곳(추억 공간)으로 간다 —
+     * 열 기록이 없는데 상세로 보내면 빈 화면이 된다.
+     */
+    val recordId: Long? = null,
     val question: String? = null,
     val answer: String? = null,
 )

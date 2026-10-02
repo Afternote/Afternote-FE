@@ -8,6 +8,7 @@ import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
 import com.afternote.feature.afternote.data.mapper.toBusinessRequest
 import com.afternote.feature.afternote.data.mapper.toDomain
+import com.afternote.feature.afternote.data.mapper.toDraftPrefill
 import com.afternote.feature.afternote.data.mapper.toRequest
 import com.afternote.feature.afternote.data.mapper.toServerCategory
 import com.afternote.feature.afternote.data.mapper.toSocialRequest
@@ -15,12 +16,13 @@ import com.afternote.feature.afternote.data.paging.AfternotePagingSource
 import com.afternote.feature.afternote.data.service.AfternoteApiService
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.error.AfternoteFailure
-import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
+import com.afternote.feature.afternote.domain.model.author.DraftPrefill
 import com.afternote.feature.afternote.domain.model.author.ListItem
+import com.afternote.feature.afternote.domain.model.author.UpdateAfternoteInput
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -50,7 +52,7 @@ class AfternoteRepositoryImpl
             return invalidationTrigger.flatMapLatest {
                 Pager(
                     config = PagingConfig(pageSize = PAGE_SIZE),
-                    pagingSourceFactory = { AfternotePagingSource(api, category) },
+                    pagingSourceFactory = { AfternotePagingSource(api, category, pageSize = PAGE_SIZE) },
                 ).flow
             }
         }
@@ -58,6 +60,11 @@ class AfternoteRepositoryImpl
         override suspend fun getDetail(id: Long): Result<Detail> =
             runCatchingCancellable {
                 api.getAfternoteDetail(afternoteId = id).requireData().toDomain()
+            }
+
+        override suspend fun getDraftPrefill(id: Long): Result<DraftPrefill> =
+            runCatchingCancellable {
+                api.getAfternoteDetail(afternoteId = id).requireData().toDraftPrefill()
             }
 
         override suspend fun createSocial(payload: CreateAccountPayload): Result<Long> =
@@ -86,7 +93,7 @@ class AfternoteRepositoryImpl
 
         override suspend fun update(
             id: Long,
-            payload: AfternoteUpdatePayload,
+            payload: UpdateAfternoteInput,
         ): Result<Long> =
             runCatchingCancellable {
                 api

@@ -24,8 +24,8 @@ import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionReposito
 import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestionWriteScreen
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionWriteViewModel
-import com.afternote.feature.mindrecord.presentation.viewmodel.MindRecordDraftLoader
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -66,7 +66,7 @@ class DailyQuestionResumeFailureAndroidTest {
                 savedStateHandle = SavedStateHandle(emptyMap()),
                 repository = repository,
                 photoUploadRepository = FakePhotoUploadRepository.strict(),
-                draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
+                draftLoader = LoadMindRecordDraftsUseCase(FakeDiaryRepository(), repository),
                 // #964 텔레메트리가 필수 인자로 들어왔다. 이 테스트는 기록 내용을 보지 않으므로
                 // 받아만 두는 fake 를 넘긴다.
                 errorReporter = FakeErrorReporter(),
@@ -74,7 +74,12 @@ class DailyQuestionResumeFailureAndroidTest {
 
         composeRule.setContent {
             AfternoteTheme {
-                DailyQuestionWriteScreen(viewModel = viewModel, onSubmitSuccess = {})
+                DailyQuestionWriteScreen(
+                    viewModel = viewModel,
+                    onSubmitSuccess = {},
+                    onBackClick = {},
+                    onDraftListClick = {},
+                )
             }
         }
 
@@ -120,7 +125,7 @@ class DailyQuestionResumeFailureAndroidTest {
                 savedStateHandle = SavedStateHandle(emptyMap()),
                 repository = repository,
                 photoUploadRepository = FakePhotoUploadRepository.strict(),
-                draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
+                draftLoader = LoadMindRecordDraftsUseCase(FakeDiaryRepository(), repository),
                 // #964 텔레메트리가 필수 인자로 들어왔다. 이 테스트는 기록 내용을 보지 않으므로
                 // 받아만 두는 fake 를 넘긴다.
                 errorReporter = FakeErrorReporter(),
@@ -128,7 +133,12 @@ class DailyQuestionResumeFailureAndroidTest {
 
         composeRule.setContent {
             AfternoteTheme {
-                DailyQuestionWriteScreen(viewModel = viewModel, onSubmitSuccess = {})
+                DailyQuestionWriteScreen(
+                    viewModel = viewModel,
+                    onSubmitSuccess = {},
+                    onBackClick = {},
+                    onDraftListClick = {},
+                )
             }
         }
 

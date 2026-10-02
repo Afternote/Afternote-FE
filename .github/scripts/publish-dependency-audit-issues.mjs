@@ -271,7 +271,7 @@ export function renderIssueBody(finding) {
         "",
         "### 주 담당 모듈",
         "",
-        "platform — Android 앱·CI·빌드·릴리스·저장소 운영",
+        "platform — CI·빌드·릴리스·저장소 운영",
         "",
         "### 개요",
         "",

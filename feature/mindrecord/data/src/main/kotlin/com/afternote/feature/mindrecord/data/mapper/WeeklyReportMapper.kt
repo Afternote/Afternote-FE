@@ -42,7 +42,7 @@ private val WEEK_RECORD_TYPES_NOT_COUNTED = setOf("DEEP_THOUGHT")
  * 대소문자는 가리지 않는다 — 명세 enum 은 대문자지만, 종류 판별이 표기 하나로 뒤집혀
  * 캘린더에서 일기가 통째로 사라지는 실패는 폭이 너무 크다.
  */
-fun WeeklyReportDayDto.toDomain(): WeeklyReportDay =
+private fun WeeklyReportDayDto.toDomain(): WeeklyReportDay =
     WeeklyReportDay(
         diaryId = diaryId,
         day = day,
@@ -57,7 +57,7 @@ fun WeeklyReportDayDto.toDomain(): WeeklyReportDay =
  * 오늘로 메우지 않는다 — 그러면 파싱 못 한 기록이 **오늘 작성한 것처럼** HISTORY 카드에
  * 앉아 필드 이상을 감춘다. 로그도 에러 표시도 없는 조용한 오표시였다 (#547).
  */
-fun WeeklyReportDailyQuestionDto.toDomainOrNull(): WeeklyReportDailyQuestion? {
+private fun WeeklyReportDailyQuestionDto.toDomainOrNull(): WeeklyReportDailyQuestion? {
     val parsedDate =
         parseServerDateOrNull(date) ?: run {
             Log.w(TAG, "주간리포트 데일리질문 날짜를 해석하지 못해 목록에서 제외한다: raw=$date")

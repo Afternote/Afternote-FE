@@ -33,6 +33,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.afternote.core.ui.popup.AfternoteActionMenu
+import com.afternote.core.ui.popup.editDeleteActionMenuItems
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
@@ -53,9 +55,9 @@ fun DiaryCard(
     diary: DailyDiary,
     modifier: Modifier = Modifier,
     /** 카드 전체 탭 — 저장된 기록 본문을 여는 상세 화면으로 간다 (#759). */
-    onClick: () -> Unit = {},
-    onEdit: () -> Unit = {},
-    onDelete: () -> Unit = {},
+    onClick: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
 
@@ -135,19 +137,15 @@ fun DiaryCard(
                                 .size(20.dp)
                                 .clickable(role = Role.Button) { menuExpanded = true },
                     )
-                    if (menuExpanded) {
-                        RecordActionPopup(
-                            onDismiss = { menuExpanded = false },
-                            onDelete = {
-                                menuExpanded = false
-                                onDelete()
-                            },
-                            onEdit = {
-                                menuExpanded = false
-                                onEdit()
-                            },
-                        )
-                    }
+                    AfternoteActionMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false },
+                        items =
+                            editDeleteActionMenuItems(
+                                onEditClick = onEdit,
+                                onDeleteClick = onDelete,
+                            ),
+                    )
                 }
             }
 
@@ -189,6 +187,9 @@ private fun DiaryCardPreview() {
                     emotion = "😊",
                     imageUrl = "https://example.com/image.jpg",
                 ),
+            onClick = {},
+            onDelete = {},
+            onEdit = {},
         )
     }
 }
@@ -205,6 +206,9 @@ private fun DiaryCardNoImagePreview() {
                     date = LocalDate.now(),
                     emotion = "😊",
                 ),
+            onClick = {},
+            onDelete = {},
+            onEdit = {},
         )
     }
 }

@@ -92,6 +92,9 @@ interface HomeTabActions {
 
     fun onMemoriesSectionClick()
 
+    /** MEMORIES 카드의 「그날의 기록 다시 읽기」 — 카드가 가리키는 그 기록의 상세 (#793). */
+    fun onMemoriesRecordDetailClick(recordId: Long)
+
     fun onSettingClick()
 
     fun onRetryLoad()
@@ -111,6 +114,8 @@ private object HomeTabActionsNoop : HomeTabActions {
     override fun onWeeklyCountClick() {}
 
     override fun onMemoriesSectionClick() {}
+
+    override fun onMemoriesRecordDetailClick(recordId: Long) {}
 
     override fun onSettingClick() {}
 
@@ -307,6 +312,7 @@ private fun HomeTabScrollContent(
 
         homeTabMindRecordMemoriesSection(
             onMemoriesSectionClick = actions::onMemoriesSectionClick,
+            onRecordDetailClick = actions::onMemoriesRecordDetailClick,
         )
     }
 }

@@ -21,21 +21,21 @@ internal enum class MemorialMediaTarget {
 }
 
 /**
- * 시트에 "삭제" 를 노출할 슬롯 — 이 폼에서 새로 붙인 로컬 첨부(`content://`)만 (#1114).
+ * 시트에 "삭제" 를 노출할 슬롯 — 현재 폼에 표시 중인 로컬·서버 첨부 모두 (#1114, #1597).
  *
- * 서버에 이미 저장된 미디어(수정 진입 prefill 의 원격 URL)는 대상에서 뺀다: 수정(PATCH) 계약이
- * 삭제를 표현하지 못한다 — BE `AfternotePlaylist.update` 는 null 필드를 "기존 값 유지" 로
- * 해석하므로, 폼만 비워 두면 저장 후 서버 미디어가 되살아나는 거짓 삭제가 된다.
- * 그래서 실제로 지울 수 있는 것만 지우게 한다. 서버 미디어 삭제는 BE 계약 확장 후 후속.
+ * BE 수정 계약은 미디어 키 생략을 「기존 값 유지」, JSON `null` 을 「DB 참조 제거와 관리 S3 객체
+ * 삭제 시도」로 구분한다(`PlaylistRequestDeserializer`, Afternote-BE `72fee63`). #1596이 폼의
+ * `null` 을 요청에 명시적으로 싣기 때문에 서버 값도 거짓 삭제 없이 지울 수 있다.
  *
- * 사진은 `picked` 칸을 확인하지만, 영상 UI는 편집 값에 "새 선택을 걷어낼 수 있는가"만 묻는다. 그래서
- * 이 단에서는 서버 원본인지 새 선택인지도, URL 스킴도 판정하지 않는다(#1406 이전에는 영상 한 칸이
- * 두 출처를 겸해 [isLocalContentUri]로 추론했고, 로컬 영상으로 덮는 순간 서버 원본을 잃었다).
+ * 삭제는 슬롯을 비운다 — 새 선택과 서버 원본을 함께 걷고, 저장 시 `null` 을 보낸다. 노출 판정은 출처가
+ * 아니라 표시값이 있는지만
+ * 본다 — 서버 원본인지 새 선택인지, URL 스킴도 이 단에서는 판정하지 않는다(#1406 이전에는 영상 한
+ * 칸이 두 출처를 겸해 [isLocalContentUri]로 추론했고, 로컬 영상으로 덮는 순간 서버 원본을 잃었다).
  */
 internal fun EditorFormState.removableMemorialMediaTargets(): Set<MemorialMediaTarget> =
     buildSet {
-        if (!pickedMemorialPhotoUri.isNullOrBlank()) add(MemorialMediaTarget.PHOTO)
-        if (canDiscardMemorialVideoSelection) add(MemorialMediaTarget.VIDEO)
+        if (!displayMemorialPhotoUri().isNullOrBlank()) add(MemorialMediaTarget.PHOTO)
+        if (canRemoveMemorialVideo) add(MemorialMediaTarget.VIDEO)
     }
 
 /**

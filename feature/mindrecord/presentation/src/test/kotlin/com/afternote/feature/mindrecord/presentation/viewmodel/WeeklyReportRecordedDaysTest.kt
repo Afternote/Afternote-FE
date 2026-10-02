@@ -4,6 +4,7 @@ import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDay
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
 
@@ -22,7 +23,8 @@ class WeeklyReportRecordedDaysTest {
             )
 
         assertEquals(1, recordedDays)
-        assertEquals(LocalDate.of(2026, 7, 28), resolveDateInWeekOrNull(monday, 28))
+        // index 가 아니라 day 로 복원됐는지는 날짜 키로 확인한다.
+        assertEquals(setOf(LocalDate.of(2026, 7, 28)), aggregateWeekRecordsByDate(monday, week).keys)
     }
 
     @Test
@@ -59,9 +61,14 @@ class WeeklyReportRecordedDaysTest {
         // 2026-06-29(월) ~ 2026-07-05(일) — day=1 은 6월 1일이 아니라 7월 1일이다.
         val monday = LocalDate.of(2026, 6, 29)
 
-        assertEquals(LocalDate.of(2026, 6, 30), resolveDateInWeekOrNull(monday, 30))
-        assertEquals(LocalDate.of(2026, 7, 1), resolveDateInWeekOrNull(monday, 1))
-        assertEquals(LocalDate.of(2026, 7, 5), resolveDateInWeekOrNull(monday, 5))
+        // day=1 이 6월 1일로 복원되면 이 키 집합이 갈린다.
+        assertEquals(
+            setOf(LocalDate.of(2026, 6, 30), LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 5)),
+            aggregateWeekRecordsByDate(
+                monday,
+                listOf(diaryDay(day = 30), diaryDay(day = 1), diaryDay(day = 5)),
+            ).keys,
+        )
 
         val recordedDays =
             countRecordedDays(
@@ -77,7 +84,8 @@ class WeeklyReportRecordedDaysTest {
     fun `주 범위 밖 일자는 집계에서 제외된다`() {
         val monday = LocalDate.of(2026, 7, 27)
 
-        assertNull(resolveDateInWeekOrNull(monday, 26))
+        // 주 범위 밖 일자는 날짜로 복원되지 않아 집계 자체에 들어오지 않는다.
+        assertTrue(aggregateWeekRecordsByDate(monday, listOf(diaryDay(day = 26))).isEmpty())
 
         val recordedDays =
             countRecordedDays(

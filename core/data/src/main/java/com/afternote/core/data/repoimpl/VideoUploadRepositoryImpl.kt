@@ -90,7 +90,7 @@ internal class VideoUploadRepositoryImpl
                 } finally {
                     tempFile.delete()
                 }
-            }
+            }.mapUploadFailure()
 
         private fun videoExtensionFromUri(uri: Uri): String {
             val mime = context.contentResolver.getType(uri) ?: return DEFAULT_VIDEO_EXTENSION

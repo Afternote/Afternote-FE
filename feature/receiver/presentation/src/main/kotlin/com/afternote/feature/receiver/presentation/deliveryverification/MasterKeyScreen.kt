@@ -53,7 +53,7 @@ fun MasterKeyScreen(
     }
 
     val errorMessage =
-        uiState.error?.asString()
+        uiState.errorMessage?.asString()
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
             snackbarHostState.showSnackbar(errorMessage)

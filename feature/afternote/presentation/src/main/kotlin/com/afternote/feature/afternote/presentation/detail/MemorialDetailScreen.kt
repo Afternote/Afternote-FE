@@ -34,7 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -44,21 +43,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.modifierextention.FadingEdgeDirection
 import com.afternote.core.ui.modifierextention.horizontalFadingEdge
+import com.afternote.core.ui.popup.AfternoteActionMenu
+import com.afternote.core.ui.popup.editDeleteActionMenuItems
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
-import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.MemorialVideoThumbnail
 import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
 import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
-
-internal const val MEMORIAL_VIDEO_CARD_TEST_TAG = "memorialVideoCard"
 
 /**
  * 추억 노트 상세 표시 데이터.
@@ -77,7 +74,7 @@ data class MemorialDetailContent(
 /**
  * 추억 노트 애프터노트 상세 화면 (Stateless).
  *
- * [com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailScreen] 과 동일한 Scaffold·TopBar·드롭다운 배치·스크롤 modifier 패턴을 따른다.
+ * [com.afternote.feature.afternote.presentation.detail.account.AccountDetailScreen] 과 동일한 Scaffold·TopBar·드롭다운 배치·스크롤 modifier 패턴을 따른다.
  */
 @Composable
 fun MemorialDetailScreen(
@@ -123,11 +120,14 @@ fun MemorialDetailScreen(
                                     modifier = Modifier.size(16.dp),
                                 )
                             }
-                            EditDropdownMenu(
+                            AfternoteActionMenu(
                                 expanded = state.showDropdownMenu,
                                 onDismissRequest = state::hideDropdownMenu,
-                                onDeleteClick = { state.showDeleteDialog() },
-                                onEditClick = onEditClick,
+                                items =
+                                    editDeleteActionMenuItems(
+                                        onEditClick = onEditClick,
+                                        onDeleteClick = { state.showDeleteDialog() },
+                                    ),
                             )
                         }
                     }
@@ -164,12 +164,58 @@ private fun MemorialDetailScrollContent(
                 .padding(horizontal = 20.dp),
     ) {
         Spacer(modifier = Modifier.height(24.dp))
-        TitleSection(categoryLabel = categoryLabel, userName = userName)
+        HeaderSection(
+            categoryLabel = categoryLabel,
+            userName = userName,
+            finalWriteDate = content.finalWriteDate,
+            profileImageUri = content.profileImageUri,
+        )
         Spacer(modifier = Modifier.height(24.dp))
         CardSection(content = content, onVideoClick = onVideoClick)
         Spacer(modifier = Modifier.height(24.dp))
         SharingNotice()
         Spacer(modifier = Modifier.height(32.dp))
+    }
+}
+
+/**
+ * 상세 헤더 블록 — 정본 시안
+ * [node 4327:72819](https://www.figma.com/design/UP9ZR186jHvRBicjA2SOea/?node-id=4327-72819) 기준 (#463).
+ *
+ * 시안은 350×94 한 행이다. 왼쪽 열에 타이틀과 「최종 작성일」이 4dp 간격으로 쌓이고, 오른쪽에 폭 148
+ * 고정의 겹친 프로필 원 스택([MemorialProfileStack])이 붙는다. 종전 코드가 쓰던 «회색 카드 안에
+ * 중앙 정렬된 134dp 프로필» 컨테이너는 시안에 존재하지 않아 카드째 걷어냈다.
+ *
+ * 「최종 작성일」은 값이 없을 때 줄을 그리지 않는다 — 접두어만 남은 「최종 작성일 」 렌더를 막는다.
+ * 바로 아래 [TitleSection] 의 이름 누락 처리와 같은 취지다.
+ */
+@Composable
+private fun HeaderSection(
+    categoryLabel: String,
+    userName: String,
+    finalWriteDate: String,
+    profileImageUri: String?,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            TitleSection(categoryLabel = categoryLabel, userName = userName)
+            if (finalWriteDate.isNotBlank()) {
+                Text(
+                    text = stringResource(R.string.afternote_last_written_date, finalWriteDate),
+                    style =
+                        AfternoteDesign.typography.footnoteCaption.copy(
+                            color = AfternoteDesign.colors.gray6,
+                        ),
+                )
+            }
+        }
+        MemorialProfileStack(profileImageUri = profileImageUri)
     }
 }
 
@@ -204,10 +250,6 @@ private fun CardSection(
     onVideoClick: (String) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        PhotoCard(
-            finalWriteDate = content.finalWriteDate,
-            profileImageUri = content.profileImageUri,
-        )
         ReceiversCard(receivers = content.afternoteEditReceivers)
         PlaylistCard(
             albumCovers = content.albumCovers,
@@ -243,35 +285,6 @@ private fun SharingNotice() {
     }
 }
 
-@Composable
-private fun PhotoCard(
-    finalWriteDate: String,
-    profileImageUri: String?,
-) {
-    InfoCard(
-        modifier = Modifier.fillMaxWidth(),
-        content = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    text = stringResource(R.string.afternote_last_written_date, finalWriteDate),
-                    modifier = Modifier.fillMaxWidth(),
-                    style =
-                        AfternoteDesign.typography.footnoteCaption.copy(
-                            color = AfternoteDesign.colors.gray6,
-                        ),
-                )
-                ProfileImage(
-                    displayImageUri = profileImageUri,
-                )
-            }
-        },
-    )
-}
-
 /**
  * 장례식에 남길 영상 카드 — 정본 시안
  * [node 4327:72859](https://www.figma.com/design/UP9ZR186jHvRBicjA2SOea/?node-id=4327-72859) 기준.
@@ -294,8 +307,7 @@ private fun VideoCard(
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .clickable(role = Role.Button) { onClick(videoUrl) }
-                .testTag(MEMORIAL_VIDEO_CARD_TEST_TAG),
+                .clickable(role = Role.Button) { onClick(videoUrl) },
         content = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(

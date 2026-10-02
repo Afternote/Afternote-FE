@@ -21,6 +21,10 @@ if (localPropertiesFile.exists()) {
 // BuildConfig 가 같은 값을 쓴다 — 주입 지점이 둘이어도 키는 여기서 한 번만 읽는다.
 val kakaoKey = socialLoginKey("KAKAO_NATIVE_APP_KEY")
 
+// Play 배포 워크플로가 명시적으로 활성화한다. versionCode만으로 배포 채널을 추측하지 않는다.
+val afternoteVersionCode = resolveAfternoteVersionCode(System.getenv(AFTERNOTE_VERSION_CODE_ENV))
+val storeDistributedBuild = providers.environmentVariable("AFTERNOTE_STORE_DISTRIBUTED_BUILD").orNull == "true"
+
 android {
     namespace = "com.afternote.afternote_fe"
 
@@ -30,7 +34,7 @@ android {
 
     defaultConfig {
         applicationId = "com.afternote.afternote_fe"
-        versionCode = resolveAfternoteVersionCode(System.getenv(AFTERNOTE_VERSION_CODE_ENV))
+        versionCode = afternoteVersionCode
         versionName = "1.0"
 
         testInstrumentationRunner = "com.afternote.afternote_fe.test.AfternoteTestRunner"
@@ -38,6 +42,7 @@ android {
 
         manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = kakaoKey
         buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoKey\"")
+        buildConfigField("boolean", "STORE_DISTRIBUTED_BUILD", storeDistributedBuild.toString())
     }
 
     testOptions {
@@ -179,6 +184,12 @@ android {
                     )
                 }
             }
+            registerDebugSigningDiagnostics(
+                usingDefaultKeystore = provided.isEmpty(),
+                storeFile = storeFile,
+                storePassword = storePassword,
+                keyAlias = keyAlias,
+            )
         }
     }
 
@@ -222,8 +233,6 @@ dependencies {
 
     // App Startup — 기동 초기화는 app 매니페스트에 등록한 Initializer 로 실행한다.
     implementation(libs.androidx.startup.runtime)
-    // DailyNotificationInitializer 가 WorkManagerInitializer 를 선행 의존으로 지정한다.
-    implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.profileinstaller)
 
     // 카카오 OAuth redirect Activity(`com.kakao.sdk.auth.AuthCodeHandlerActivity`)를
@@ -260,21 +269,24 @@ dependencies {
     implementation(projects.feature.onboarding.presentation)
     implementation(projects.feature.setting.presentation)
 
-    // Feature — domain (AppNavigationActions 가 에디터 종류를 AfternoteType 으로 받는다)
-    implementation(projects.feature.afternote.domain)
-
     // Feature — data (Hilt @Module / 바인딩이 루트 그래프에 포함되도록 app이 classpath에 둔다)
     implementation(projects.feature.afternote.data)
     implementation(projects.feature.receiver.data)
     implementation(projects.feature.mindrecord.data)
     implementation(projects.feature.timeletter.data)
     implementation(projects.feature.onboarding.data)
+    implementation(projects.feature.setting.data)
 
     testImplementation(libs.coroutines.test)
     testImplementation(testFixtures(projects.core.domain))
+    // 데일리 알림 예약 관찰(#2146)이 실제로 넣고 지운 WorkManager 예약을 읽는다. app main 은 WorkManager 를
+    // 직접 부르지 않는다. 예약 API 는 core:common 에 있고, WorkManagerInitializer 는 그 의존을 타고
+    // InitializationProvider 에 병합된다.
+    testImplementation(libs.androidx.work.testing)
 
     // Nav2 백스택 회귀 기준 (#1601) — 에뮬레이터 없이 NavHost 를 실제 컴포지션으로 띄워
-    // 탭 상태 복원·인증 스택 경계·flow-scoped ViewModel 수명을 잰다. 대상(AppState·
+    // 탭 상태 복원·인증 스택 경계·predictive back 진행·취소·완료를 잰다. flow-scoped ViewModel
+    // 수명은 Nav3 이관(#1698)이 core:ui 의 FeatureNavDisplayTest 로 옮겼다. 대상(AppState·
     // AppNavigationActions)이 app 모듈에만 있어 피처 모듈 Robolectric 설정을 재사용할 수 없다.
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.compose.ui.test.junit4)
@@ -293,14 +305,20 @@ dependencies {
     androidTestImplementation(libs.coroutines.test)
     androidTestImplementation(projects.core.data)
     androidTestImplementation(testFixtures(projects.core.domain))
+    // 실제 화면에서 잰 48dp 터치 계약 판정을 피처 테스트와 같은 스캐너로 공유한다 (#2035).
+    androidTestImplementation(testFixtures(projects.core.ui))
     androidTestImplementation(projects.feature.afternote.domain)
     androidTestImplementation(testFixtures(projects.feature.afternote.domain))
     androidTestImplementation(projects.feature.mindrecord.domain)
     androidTestImplementation(testFixtures(projects.feature.mindrecord.domain))
     androidTestImplementation(projects.feature.receiver.domain)
     androidTestImplementation(testFixtures(projects.feature.receiver.domain))
+    androidTestImplementation(projects.feature.setting.data)
+    androidTestImplementation(projects.feature.setting.domain)
+    androidTestImplementation(testFixtures(projects.feature.setting.domain))
     androidTestImplementation(projects.feature.timeletter.domain)
     androidTestImplementation(testFixtures(projects.feature.timeletter.domain))
+    androidTestImplementation(testFixtures(projects.feature.timeletter.data))
     kspAndroidTest(libs.hilt.compiler)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     androidTestUtil(libs.androidx.test.orchestrator)

@@ -1,0 +1,47 @@
+# merge queue 방출 자동 처리 (#1892)
+#
+# pull_request_target 은 default branch 의 workflow 정의만 실행한다. PR 코드·artifact·cache 를
+# 체크아웃하거나 실행하지 않고, GitHub API 응답과 default branch 의 정책 스크립트만 쓴다
+# (stack-integrity-notify.yml 과 같은 경계).
+#
+# 판정은 handle-merge-queue-dequeue.mjs 가 한다 — 이 PR 의 큐 브랜치 merge_group run 에 실패 job 이
+# 있으면 링크를 코멘트로 남기고, 없으면(조용한 방출) 같은 head 당 한 번만 재투입하고,
+# MANUAL·ALREADY_MERGED·MERGE 는 아무것도 하지 않는다.
+name: merge-queue-dequeue
+
+on:
+  pull_request_target:
+    types: [dequeued]
+
+permissions: {}
+
+jobs:
+  handle:
+    # 같은 PR 의 방출 이벤트가 겹쳐도 줄을 세운다 — 취소하면 마커 코멘트 없이 재투입만 남을 수 있다.
+    concurrency:
+      group: merge-queue-dequeue-${{ github.repository_id }}-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Clone dequeue policy from the default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Run script tests
+        run: node --test .github/scripts/handle-merge-queue-dequeue.test.mjs
+
+      - name: 실패 job 안내 또는 한 번 재투입
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
+          DEQUEUE_REASON: ${{ github.event.reason }}
+        run: node .github/scripts/handle-merge-queue-dequeue.mjs

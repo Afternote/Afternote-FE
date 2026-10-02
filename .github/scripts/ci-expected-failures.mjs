@@ -34,6 +34,11 @@ export function validateExpectedFailuresConfig(config) {
     if (!config || typeof config !== "object" || Array.isArray(config)) {
         throw new Error("기대 실패 목록 최상위 값은 객체여야 합니다.");
     }
+    // 파일이 사고로 `{}`(또는 다른 스키마)로 대체돼도 이후 루프는 빈 배열을 순회할 뿐이라
+    // 조용히 통과한다 — schemaVersion 을 강제해 "다 닫혀서 0건"과 "사고로 0건"을 구분한다.
+    if (config.schemaVersion !== 1) {
+        throw new Error(`지원하지 않는 기대 실패 목록 schemaVersion 입니다: ${config.schemaVersion}`);
+    }
     for (const [index, entry] of (config.unitTests ?? []).entries()) {
         const label = `unitTests[${index}]`;
         requireNonEmptyString(entry?.task, `${label}.task`);

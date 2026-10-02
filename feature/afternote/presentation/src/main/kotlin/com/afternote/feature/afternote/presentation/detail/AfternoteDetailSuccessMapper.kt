@@ -50,18 +50,18 @@ internal fun Detail.toAccountDetailContent(
 internal fun Detail.toMemorialDetailContent(content: DetailContent.Memorial): MemorialDetailContent =
     MemorialDetailContent(
         finalWriteDate = finalWriteDate,
-        profileImageUri = content.memorial.media.photoUrl,
+        profileImageUri = content.media.photoUrl,
         afternoteEditReceivers = toReceiverUiModels(),
         albumCovers =
-            content.memorial.songs.map { s ->
+            content.songs.map { s ->
                 AlbumCover(
                     imageUrl = s.coverUrl,
                     title = s.title,
                 )
             },
-        songCount = content.memorial.songs.size,
-        memorialVideoUrl = content.memorial.media.videoUrl,
-        memorialThumbnailUrl = content.memorial.media.thumbnailUrl,
+        songCount = content.songs.size,
+        memorialVideoUrl = content.media.videoUrl,
+        memorialThumbnailUrl = content.media.thumbnailUrl,
     )
 
 /**

@@ -81,29 +81,52 @@ test("저장소의 기대 실패 목록은 스키마를 지키고 추적 이슈�
         assert.ok(entry.issues.length > 0);
         assert.ok(entry.reason.length > 0);
     }
-    assert.ok((config.unitTests?.length ?? 0) + (config.screenshotModules?.length ?? 0) > 0);
+    // 목록이 전부 비는 것 자체는 정상 상태다(모든 기대 실패 게이트가 닫힘) — 파일이 사고로
+    // 비워지는 사고는 schemaVersion 강제(아래 스키마 위반 테스트)가 잡는다.
 });
 
 test("스키마 위반은 로드 시점에 거부된다", () => {
     assert.throws(() => validateExpectedFailuresConfig(null), /객체여야/);
+    assert.throws(() => validateExpectedFailuresConfig({}), /schemaVersion/);
+    assert.throws(() => validateExpectedFailuresConfig({ schemaVersion: 2 }), /schemaVersion/);
     assert.throws(
-        () => validateExpectedFailuresConfig({ unitTests: [{ ...sampleConfig.unitTests[0], task: ":feature:x:assemble" }] }),
+        () =>
+            validateExpectedFailuresConfig({
+                schemaVersion: 1,
+                unitTests: [{ ...sampleConfig.unitTests[0], task: ":feature:x:assemble" }],
+            }),
         /testDebugUnitTest/,
     );
     assert.throws(
-        () => validateExpectedFailuresConfig({ unitTests: [{ ...sampleConfig.unitTests[0], tests: [] }] }),
+        () =>
+            validateExpectedFailuresConfig({
+                schemaVersion: 1,
+                unitTests: [{ ...sampleConfig.unitTests[0], tests: [] }],
+            }),
         /tests/,
     );
     assert.throws(
-        () => validateExpectedFailuresConfig({ unitTests: [{ ...sampleConfig.unitTests[0], issues: [] }] }),
+        () =>
+            validateExpectedFailuresConfig({
+                schemaVersion: 1,
+                unitTests: [{ ...sampleConfig.unitTests[0], issues: [] }],
+            }),
         /issues/,
     );
     assert.throws(
-        () => validateExpectedFailuresConfig({ screenshotModules: [{ module: "feature:setting", issues: [1], reason: "r" }] }),
+        () =>
+            validateExpectedFailuresConfig({
+                schemaVersion: 1,
+                screenshotModules: [{ module: "feature:setting", issues: [1], reason: "r" }],
+            }),
         /project path/,
     );
     assert.throws(
-        () => validateExpectedFailuresConfig({ screenshotModules: [{ module: ":feature:setting:presentation", issues: [1], reason: " " }] }),
+        () =>
+            validateExpectedFailuresConfig({
+                schemaVersion: 1,
+                screenshotModules: [{ module: ":feature:setting:presentation", issues: [1], reason: " " }],
+            }),
         /reason/,
     );
 });
@@ -243,19 +266,35 @@ test("기대 실패 목록·스크립트 변경은 full validation 을 강제한
 
 test("androidTest 스키마: FQCN·테스트 목록·추적 이슈가 강제된다", () => {
     assert.throws(
-        () => validateExpectedFailuresConfig({ androidTests: [{ ...sampleConfig.androidTests[0], className: "not a class" }] }),
+        () =>
+            validateExpectedFailuresConfig({
+                schemaVersion: 1,
+                androidTests: [{ ...sampleConfig.androidTests[0], className: "not a class" }],
+            }),
         /FQCN/,
     );
     assert.throws(
-        () => validateExpectedFailuresConfig({ androidTests: [{ ...sampleConfig.androidTests[0], tests: [] }] }),
+        () =>
+            validateExpectedFailuresConfig({
+                schemaVersion: 1,
+                androidTests: [{ ...sampleConfig.androidTests[0], tests: [] }],
+            }),
         /비어 있지 않은 배열/,
     );
     assert.throws(
-        () => validateExpectedFailuresConfig({ androidTests: [{ ...sampleConfig.androidTests[0], issues: [] }] }),
+        () =>
+            validateExpectedFailuresConfig({
+                schemaVersion: 1,
+                androidTests: [{ ...sampleConfig.androidTests[0], issues: [] }],
+            }),
         /추적 이슈/,
     );
     assert.throws(
-        () => validateExpectedFailuresConfig({ androidTests: [{ ...sampleConfig.androidTests[0], devices: [] }] }),
+        () =>
+            validateExpectedFailuresConfig({
+                schemaVersion: 1,
+                androidTests: [{ ...sampleConfig.androidTests[0], devices: [] }],
+            }),
         /비어 있지 않은 배열/,
     );
     assert.doesNotThrow(() => validateExpectedFailuresConfig(sampleConfig));

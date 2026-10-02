@@ -1,8 +1,12 @@
 package com.afternote.core.data.repoimpl
 
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.testing.FakeAuthRepository
+import com.afternote.core.datastore.TokenDataSource
+import com.afternote.core.domain.repository.UserReceiverRepository
+import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.user.Receiver
+import com.afternote.core.model.user.ReceiverCreated
+import com.afternote.core.network.di.NetworkModule
 import com.afternote.core.network.dto.DeletePushTokenRequestDto
 import com.afternote.core.network.dto.PushTokenDto
 import com.afternote.core.network.dto.ReceiverDetailDto
@@ -13,9 +17,11 @@ import com.afternote.core.network.dto.UserConnectedAccountDto
 import com.afternote.core.network.dto.UserCreateReceiverDto
 import com.afternote.core.network.dto.UserCreateReceiverRequestDto
 import com.afternote.core.network.dto.UserDto
+import com.afternote.core.network.dto.UserMarketingConsentDto
 import com.afternote.core.network.dto.UserPatchReceiverDto
 import com.afternote.core.network.dto.UserPatchReceiverRequestDto
 import com.afternote.core.network.dto.UserPushSettingDto
+import com.afternote.core.network.dto.UserUpdateMarketingConsentRequestDto
 import com.afternote.core.network.dto.UserUpdateProfileRequestDto
 import com.afternote.core.network.dto.UserUpdatePushSettingRequestDto
 import com.afternote.core.network.dto.UserUpdateReceiverMessageRequestDto
@@ -24,105 +30,57 @@ import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionUpdateRe
 import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.core.network.service.UserApiService
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertThrows
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import java.net.UnknownHostException
 
 class UserRepositoryImplTest {
-    private val calls = mutableListOf<String>()
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
+
     private val errorReporter = RecordingErrorReporter()
 
+    /**
+     * 수신자 목록의 세션 경계는 fake 의 Boolean 이 아니라 실제 토큰 저장소가 정한다 (#2135).
+     * 각 테스트는 로그인된 세션에서 시작하고, 로그아웃이 필요한 테스트만 [TestTokenSessionStore.clearSession] 을 부른다.
+     */
+    private val sessionStore by lazy { TestTokenSessionStore(temporaryFolder.root) }
+
+    @Before
+    fun openSession() = runBlocking { sessionStore.login() }
+
+    @After
+    fun closeSessionStore() = sessionStore.close()
+
     private fun repository(
-        deleteAccountResponse: BaseResponse<Unit> = success(),
-        clearSessionResult: Result<Unit> = Result.success(Unit),
         onGetReceivers: suspend () -> BaseResponse<List<ReceiverListDto>> = { TODO("이 테스트 미사용") },
         onCreateReceiver: suspend (UserCreateReceiverRequestDto) -> BaseResponse<UserCreateReceiverDto> = {
             TODO("이 테스트 미사용")
         },
-        authRepository: FakeAuthRepository = receiverAuthRepository(loggedIn = true),
-    ) = UserRepositoryImpl(
+    ) = repositoryOf(
         userApiService =
             FakeUserApiService(
-                onDeleteAccount = {
-                    calls += "deleteAccount"
-                    deleteAccountResponse
-                },
                 onGetReceivers = onGetReceivers,
                 onCreateReceiver = onCreateReceiver,
             ),
-        authRepository =
-            authRepository.apply {
-                onClearSession = {
-                    calls += "clearSession"
-                    clearSessionResult
-                }
-            },
+        tokenDataSource = sessionStore.tokenDataSource,
         errorReporter = errorReporter,
     )
-
-    @Test
-    fun `deleteAccount - 탈퇴 성공 시 로컬 세션을 정리한다`() {
-        val repository = repository()
-
-        runBlocking { repository.deleteAccount() }
-
-        assertEquals(listOf("deleteAccount", "clearSession"), calls)
-        assertEquals(0, errorReporter.writtenFailures.size)
-    }
-
-    @Test
-    fun `deleteAccount - 서버 탈퇴 실패면 세션을 유지한다`() {
-        val repository = repository(deleteAccountResponse = BaseResponse(status = 500, code = 500))
-
-        assertThrows(ApiException::class.java) {
-            runBlocking { repository.deleteAccount() }
-        }
-
-        assertEquals(listOf("deleteAccount"), calls)
-        assertEquals(0, errorReporter.writtenFailures.size)
-    }
-
-    /**
-     * 서버 계정은 이미 지워진 뒤라 정리 실패를 예외로 올리면 화면이 "탈퇴 실패" 로 표시되고,
-     * 사용자의 재시도는 없는 계정에 대해 다시 실패한다. 삼키는 것이 계약이다.
-     */
-    @Test
-    fun `deleteAccount - 세션 정리가 실패해도 탈퇴는 성공으로 끝난다`() {
-        val failure = IllegalStateException("datastore 쓰기 실패")
-        val repository = repository(clearSessionResult = Result.failure(failure))
-
-        runBlocking { repository.deleteAccount() }
-
-        assertEquals(listOf("deleteAccount", "clearSession"), calls)
-        val (reported, attributes) = errorReporter.writtenFailures.single()
-        assertEquals(IllegalStateException::class.java.name, reported.message)
-        assertEquals(
-            mapOf(
-                "account_stage" to "delete_session_cleanup",
-                "error_type" to IllegalStateException::class.java.name,
-            ),
-            attributes,
-        )
-    }
-
-    /** 정리가 DELETE 앞에 오면 요청이 토큰 없이 나가므로, 순서 자체가 계약이다. */
-    @Test
-    fun `deleteAccount - 세션 정리는 서버 호출 뒤에 온다`() {
-        val repository = repository()
-
-        runBlocking { repository.deleteAccount() }
-
-        assertEquals(0, calls.indexOf("deleteAccount"))
-        assertEquals(1, calls.indexOf("clearSession"))
-    }
 
     @Test
     fun `getReceivers - 다음 호출은 서버의 최신 계정 목록을 다시 조회한다`() {
@@ -160,6 +118,33 @@ class UserRepositoryImplTest {
         assertEquals("조회 1", first.single().name)
         assertEquals("조회 2", second.single().name)
         assertEquals(2, requestCount)
+    }
+
+    /**
+     * 실서버 본문을 프로덕션 Json 으로 디코드해 그대로 태운다 (#2105). 항목 하나가 깨지면 목록 전체가
+     * 조용히 빈 목록으로 떨어지므로, 건수와 «리포터에 남은 실패 0건» 을 같이 본다.
+     */
+    @Test
+    fun `receiverListFlow - 실서버 목록 본문을 항목 소실 없이 낸다`() {
+        val payload =
+            """{"status":200,"code":200,"message":"성공","data":[{"receiverId":14,"name":"QA수신자","relation":"DAUGHTER"},{"receiverId":21,"name":"Admin","relation":null}]}"""
+        val repository =
+            repository(
+                onGetReceivers = {
+                    NetworkModule.provideJson().decodeFromString<BaseResponse<List<ReceiverListDto>>>(payload)
+                },
+            )
+
+        val emitted = runBlocking { repository.receiverListFlow.first() }
+
+        assertEquals(
+            listOf(
+                Receiver(receiverId = 14L, name = "QA수신자", relation = "DAUGHTER"),
+                Receiver(receiverId = 21L, name = "Admin", relation = ""),
+            ),
+            emitted,
+        )
+        assertEquals(0, errorReporter.writtenFailures.size)
     }
 
     @Test
@@ -214,10 +199,9 @@ class UserRepositoryImplTest {
     @Test
     fun `receiverListFlow - 로그아웃 중에는 서버를 호출하지 않는다`() {
         var requestCount = 0
-        val authRepository = receiverAuthRepository(loggedIn = false)
+        runBlocking { sessionStore.clearSession() }
         val repository =
             repository(
-                authRepository = authRepository,
                 onGetReceivers = {
                     requestCount += 1
                     dataResponse(listOf(receiverDto("호출되면 안 됨")))
@@ -236,10 +220,8 @@ class UserRepositoryImplTest {
     fun `receiverListFlow - 로그아웃 뒤 새 세션의 첫 실패에는 이전 계정 목록을 내지 않는다`() =
         runBlocking {
             var requestCount = 0
-            val authRepository = receiverAuthRepository(loggedIn = true)
             val repository =
                 repository(
-                    authRepository = authRepository,
                     onGetReceivers = {
                         requestCount += 1
                         if (requestCount == 1) {
@@ -261,14 +243,14 @@ class UserRepositoryImplTest {
                     withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.map { it.name },
                 )
 
-                authRepository.loggedIn = false
+                sessionStore.clearSession()
                 assertEquals(
                     emptyList<Receiver>(),
                     withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() },
                 )
                 assertEquals(1, requestCount)
 
-                authRepository.loggedIn = true
+                sessionStore.login(accessToken = "새 세션 액세스", refreshToken = "새 세션 리프레시")
                 assertEquals(
                     emptyList<Receiver>(),
                     withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() },
@@ -322,11 +304,51 @@ class UserRepositoryImplTest {
                     name = "새 수신자",
                     relation = "친구",
                     phone = null,
-                    email = null,
+                    email = "receiver@example.com",
                     message = null,
                 )
                 assertEquals("조회 2", withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.single().name)
                 assertEquals(2, requestCount)
+            } finally {
+                collector.cancelAndJoin()
+            }
+        }
+
+    /**
+     * 수신자 구현이 [UserRepositoryImpl] 밖으로 나갔어도 좁은 계약과 합본 계약은 **같은 인스턴스**를
+     * 봐야 한다 (#1282). 여기서 갈리면 `UserReceiverRepository` 로 등록한 수신자가
+     * `UserRepository` 구독자의 목록을 갱신하지 못하고 화면이 방금 만든 수신인을 놓친다.
+     */
+    @Test
+    fun `좁은 계약과 합본 계약은 같은 수신자 갱신 상태를 본다`() =
+        runBlocking {
+            var requestCount = 0
+            val repository =
+                repository(
+                    onGetReceivers = {
+                        requestCount += 1
+                        dataResponse(listOf(receiverDto("조회 $requestCount")))
+                    },
+                    onCreateReceiver = { dataResponse(UserCreateReceiverDto(receiverId = 2L, authCode = "AUTH-2")) },
+                )
+            val narrowContract: UserReceiverRepository = repository
+            val mergedContract: UserRepository = repository
+            val emissions = Channel<List<Receiver>>(capacity = Channel.UNLIMITED)
+            val collector =
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    mergedContract.receiverListFlow.collect { emissions.send(it) }
+                }
+
+            try {
+                assertEquals("조회 1", withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.single().name)
+                narrowContract.createReceiver(
+                    name = "새 수신자",
+                    relation = "친구",
+                    phone = null,
+                    email = "receiver@example.com",
+                    message = null,
+                )
+                assertEquals("조회 2", withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.single().name)
             } finally {
                 collector.cancelAndJoin()
             }
@@ -364,7 +386,7 @@ class UserRepositoryImplTest {
                     name = "새 수신자",
                     relation = "친구",
                     phone = null,
-                    email = null,
+                    email = "receiver@example.com",
                     message = null,
                 )
                 val fallback = withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }
@@ -410,7 +432,7 @@ class UserRepositoryImplTest {
                     name = "새 수신자",
                     relation = "친구",
                     phone = null,
-                    email = null,
+                    email = "receiver@example.com",
                     message = null,
                 )
                 val afterUnauthorized = withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }
@@ -423,10 +445,172 @@ class UserRepositoryImplTest {
             }
         }
 
-    private fun receiverAuthRepository(loggedIn: Boolean): FakeAuthRepository =
-        FakeAuthRepository.strict(loggedIn = loggedIn).apply {
-            onIsLoggedIn = { loggedInState }
+    /**
+     * #709 회귀 — POST 가 성공한 순간 등록은 확정된다. 뒤따르는 목록 갱신 조회가 아직 매달려 있어도
+     * 호출자는 [ReceiverCreated] 를 받아야 하고, 그 조회가 끝내 실패해도 POST 는 한 번뿐이어야 한다.
+     *
+     * 옛 구현은 등록 직후의 조회를 `createReceiver` 안에서 직접 기다렸다가 그 실패를 등록 실패로 올렸다.
+     * 화면은 오류 문구도 없이 사용자를 같은 등록 버튼으로 돌려보냈고, 서버에 중복 방지가 없으면
+     * 재시도가 같은 수신자를 한 번 더 만들었다.
+     */
+    @Test
+    fun `createReceiver - 목록 갱신 조회가 매달려 있어도 등록은 그 자리에서 끝난다`() =
+        runBlocking {
+            var getCount = 0
+            var postCount = 0
+            val refreshStarted = Channel<Unit>(capacity = Channel.UNLIMITED)
+            val refreshGate = CompletableDeferred<Unit>()
+            val repository =
+                repository(
+                    onGetReceivers = {
+                        getCount += 1
+                        if (getCount == 1) {
+                            dataResponse(listOf(receiverDto("계정 A")))
+                        } else {
+                            refreshStarted.send(Unit)
+                            refreshGate.await()
+                            throw UnknownHostException("등록 직후 갱신 조회 실패")
+                        }
+                    },
+                    onCreateReceiver = {
+                        postCount += 1
+                        dataResponse(UserCreateReceiverDto(receiverId = 2L, authCode = "AUTH-2"))
+                    },
+                )
+            val emissions = Channel<List<Receiver>>(capacity = Channel.UNLIMITED)
+            val collector =
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    repository.receiverListFlow.collect { emissions.send(it) }
+                }
+
+            try {
+                assertEquals(
+                    listOf("계정 A"),
+                    withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.map { it.name },
+                )
+
+                val registration =
+                    async(start = CoroutineStart.UNDISPATCHED) {
+                        repository.createReceiver(
+                            name = "새 수신자",
+                            relation = "친구",
+                            phone = null,
+                            email = "receiver@example.com",
+                            message = null,
+                        )
+                    }
+                withTimeout(TEST_TIMEOUT_MILLIS) { refreshStarted.receive() }
+
+                assertTrue("등록은 매달린 갱신 조회를 기다리지 않는다", registration.isCompleted)
+                assertEquals(ReceiverCreated(receiverId = 2L, authCode = "AUTH-2"), registration.await())
+                assertEquals(1, postCount)
+                assertNull("갱신 조회가 끝나기 전에는 새 목록도 나오지 않는다", emissions.tryReceive().getOrNull())
+
+                refreshGate.complete(Unit)
+                assertEquals(
+                    listOf("계정 A"),
+                    withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.map { it.name },
+                )
+                assertEquals(1, postCount)
+                assertEquals(2, getCount)
+            } finally {
+                refreshGate.complete(Unit)
+                collector.cancelAndJoin()
+            }
         }
+
+    /**
+     * #709 회귀 — 실패한 갱신 조회는 등록과 무관하게 혼자 복구된다. 목록이 다시 떠도 등록 POST 가
+     * 다시 나가면 안 된다(같은 수신자가 두 번 생긴다).
+     */
+    @Test
+    fun `createReceiver - 갱신 조회가 실패한 뒤 목록이 복구돼도 POST 를 다시 보내지 않는다`() =
+        runBlocking {
+            var getCount = 0
+            var postCount = 0
+            val repository =
+                repository(
+                    onGetReceivers = {
+                        getCount += 1
+                        when (getCount) {
+                            1 -> dataResponse(listOf(receiverDto("계정 A")))
+                            2 -> throw UnknownHostException("등록 직후 갱신 조회 실패")
+                            else -> dataResponse(listOf(receiverDto("복구된 목록")))
+                        }
+                    },
+                    onCreateReceiver = {
+                        postCount += 1
+                        dataResponse(UserCreateReceiverDto(receiverId = 2L, authCode = "AUTH-2"))
+                    },
+                )
+            val emissions = Channel<List<Receiver>>(capacity = Channel.UNLIMITED)
+            val collector =
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    repository.receiverListFlow.collect { emissions.send(it) }
+                }
+
+            try {
+                withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }
+
+                val created =
+                    repository.createReceiver(
+                        name = "새 수신자",
+                        relation = "친구",
+                        phone = null,
+                        email = "receiver@example.com",
+                        message = null,
+                    )
+                assertEquals(ReceiverCreated(receiverId = 2L, authCode = "AUTH-2"), created)
+                assertEquals(
+                    listOf("계정 A"),
+                    withTimeout(TEST_TIMEOUT_MILLIS) { emissions.receive() }.map { it.name },
+                )
+
+                val recovered = withTimeout(TEST_TIMEOUT_MILLIS) { repository.receiverListFlow.first() }
+
+                assertEquals("복구된 목록", recovered.single().name)
+                assertEquals(1, postCount)
+                assertEquals(3, getCount)
+            } finally {
+                collector.cancelAndJoin()
+            }
+        }
+
+    /**
+     * #709 회귀 — 목록을 아무도 구독하지 않는 상태에서도 등록은 조회 결과에 매이지 않는다.
+     * 옛 구현은 구독자와 무관하게 등록 직후 조회를 직접 불러, 그 실패가 그대로 등록 실패가 됐다.
+     */
+    @Test
+    fun `createReceiver - 목록 구독자가 없으면 조회 실패와 무관하게 등록 결과를 돌려준다`() {
+        var getCount = 0
+        var postCount = 0
+        val repository =
+            repository(
+                onGetReceivers = {
+                    getCount += 1
+                    throw UnknownHostException("등록 직후 갱신 조회 실패")
+                },
+                onCreateReceiver = {
+                    postCount += 1
+                    dataResponse(UserCreateReceiverDto(receiverId = 2L, authCode = "AUTH-2"))
+                },
+            )
+
+        val created =
+            runBlocking {
+                repository.createReceiver(
+                    name = "새 수신자",
+                    relation = "친구",
+                    phone = null,
+                    email = "receiver@example.com",
+                    message = null,
+                )
+            }
+
+        assertEquals(ReceiverCreated(receiverId = 2L, authCode = "AUTH-2"), created)
+        assertEquals(1, postCount)
+        assertEquals(0, getCount)
+    }
 
     private companion object {
         const val TEST_TIMEOUT_MILLIS = 2_000L
@@ -444,8 +628,6 @@ private class RecordingErrorReporter : ErrorReporter {
     }
 }
 
-private fun success() = BaseResponse<Unit>(status = 200, code = 200)
-
 private fun <T> dataResponse(data: T) = BaseResponse(status = 200, code = 200, data = data)
 
 private fun receiverDto(name: String) =
@@ -453,15 +635,13 @@ private fun receiverDto(name: String) =
         receiverId = 1L,
         name = name,
         relation = "친구",
-        authCode = "AUTH-1",
     )
 
 private class FakeUserApiService(
-    private val onDeleteAccount: suspend () -> BaseResponse<Unit>,
     private val onGetReceivers: suspend () -> BaseResponse<List<ReceiverListDto>>,
     private val onCreateReceiver: suspend (UserCreateReceiverRequestDto) -> BaseResponse<UserCreateReceiverDto>,
 ) : UserApiService {
-    override suspend fun deleteAccount(): BaseResponse<Unit> = onDeleteAccount()
+    override suspend fun deleteAccount(): BaseResponse<Unit> = TODO("이 테스트 미사용")
 
     override suspend fun getReceivers(): BaseResponse<List<ReceiverListDto>> = onGetReceivers()
 
@@ -493,6 +673,11 @@ private class FakeUserApiService(
     override suspend fun updateMyPushSettings(request: UserUpdatePushSettingRequestDto): BaseResponse<UserPushSettingDto> =
         TODO("이 테스트 미사용")
 
+    override suspend fun getMyMarketingConsents(): BaseResponse<UserMarketingConsentDto> = TODO("이 테스트 미사용")
+
+    override suspend fun updateMyMarketingConsents(request: UserUpdateMarketingConsentRequestDto): BaseResponse<UserMarketingConsentDto> =
+        TODO("이 테스트 미사용")
+
     override suspend fun getConnectedAccounts(): BaseResponse<UserConnectedAccountDto> = TODO("이 테스트 미사용")
 
     override suspend fun linkConnectedAccount(
@@ -509,3 +694,14 @@ private class FakeUserApiService(
         request: ReceiverDeliveryConditionUpdateRequestDto,
     ): BaseResponse<ReceiverDeliveryConditionDto> = TODO("이 테스트 미사용")
 }
+
+/** 프로덕션 조립과 같은 모양 — 위임 대상은 Hilt 가 주입하므로 여기서는 테스트가 대신 만들어 넘긴다. */
+private fun repositoryOf(
+    userApiService: UserApiService,
+    tokenDataSource: TokenDataSource,
+    errorReporter: ErrorReporter,
+): UserRepositoryImpl =
+    UserRepositoryImpl(
+        receiverRepository = UserReceiverRepositoryImpl(userApiService, tokenDataSource, errorReporter),
+        myProfileRepository = MyProfileRepositoryImpl(userApiService),
+    )

@@ -9,6 +9,7 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUpl
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
+import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -150,6 +151,7 @@ class AfternoteEditorThumbnailRetryTest {
 
     private fun viewModel(uploads: ThumbnailUploads = ThumbnailUploads()): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
+            route = AfternoteRoute.EditorFlowRoute(initialType = AfternoteType.MEMORIAL),
             savedStateHandle = SavedStateHandle(mapOf("initialType" to AfternoteType.MEMORIAL)),
             userRepository = repositoryProxy<UserRepository>(),
             afternoteRepository = repositoryProxy<AfternoteRepository>(),

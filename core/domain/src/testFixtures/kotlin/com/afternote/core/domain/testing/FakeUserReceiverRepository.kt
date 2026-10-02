@@ -1,0 +1,228 @@
+package com.afternote.core.domain.testing
+
+import com.afternote.core.domain.model.ReceiverListState
+import com.afternote.core.domain.repository.UserReceiverRepository
+import com.afternote.core.model.delivery.DeliveryConditionItem
+import com.afternote.core.model.delivery.ReceiverDeliveryConditions
+import com.afternote.core.model.user.Receiver
+import com.afternote.core.model.user.ReceiverCreated
+import com.afternote.core.model.user.ReceiverDetail
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicInteger
+
+/**
+ * [UserReceiverRepository] fake 정본 (#1282, #1030).
+ *
+ * 수신자 목록·상세·전달조건만 메모리에 담는다 — 프로필·계정·푸시 상태는 갖지 않는다.
+ * 호출은 모두 기록하고, 경합 게이트나 실패 응답처럼 저장소 상태만으로 표현할 수 없는 시나리오는 `onX` 로 갈아끼운다.
+ *
+ * 호출 기록 타입([ReceiverCreateCall] 등)은 이 fake 가 소유한다 (#1429) — 전환기 합본
+ * [FakeUserRepository] 가 좁은 사실을 들고 있으면 소비자가 이관된 뒤에도 합본을 계속 import 한다.
+ */
+class FakeUserReceiverRepository(
+    receivers: List<Receiver> = listOf(DEFAULT_RECEIVER),
+    receiverDetails: Map<Long, ReceiverDetail> = emptyMap(),
+    deliveryConditions: Map<Long, ReceiverDeliveryConditions> = emptyMap(),
+    var onReceiverListFlow: (() -> Flow<List<Receiver>>)? = null,
+    var onGetReceivers: (suspend () -> List<Receiver>)? = null,
+    var onCreateReceiver: (suspend (String, String, String?, String, String?) -> ReceiverCreated)? = null,
+    var onGetReceiverDetail: (suspend (Long) -> ReceiverDetail)? = null,
+    var onUpdateReceiver: (suspend (Long, String, String, String, String) -> Receiver)? = null,
+    var onUpdateReceiverMessage: (suspend (Long, String) -> Unit)? = null,
+    var onGetReceiverDeliveryConditions: (suspend (Long) -> ReceiverDeliveryConditions)? = null,
+    var onUpdateReceiverDeliveryConditions: (suspend (Long, List<DeliveryConditionItem>) -> ReceiverDeliveryConditions)? = null,
+    var onReceiverListStateFlow: (() -> Flow<ReceiverListState>)? = null,
+    var onRefreshReceiverList: (() -> Unit)? = null,
+) : UserReceiverRepository {
+    val receiverState = MutableStateFlow(receivers.toList())
+    val receiverDetails = ConcurrentHashMap(receiverDetails)
+    val deliveryConditions =
+        ConcurrentHashMap(
+            deliveryConditions.mapValues { (_, value) ->
+                value.copy(conditions = value.conditions.toList())
+            },
+        )
+
+    private val receiverListFlowCounter = AtomicInteger()
+    private val getReceiversCounter = AtomicInteger()
+    private val refreshReceiverListCounter = AtomicInteger()
+
+    val receiverCreateCalls = CopyOnWriteArrayList<ReceiverCreateCall>()
+    val receiverDetailCalls = CopyOnWriteArrayList<Long>()
+    val receiverUpdateCalls = CopyOnWriteArrayList<ReceiverUpdateCall>()
+    val receiverMessageCalls = CopyOnWriteArrayList<ReceiverMessageCall>()
+    val deliveryLoadCalls = CopyOnWriteArrayList<Long>()
+    val deliveryUpdateCalls = CopyOnWriteArrayList<DeliveryUpdateCall>()
+
+    val receiverListFlowCalls: Int get() = receiverListFlowCounter.get()
+    val getReceiversCalls: Int get() = getReceiversCounter.get()
+    val receiverCalls: Int get() = getReceiversCounter.get()
+    val refreshReceiverListCalls: Int get() = refreshReceiverListCounter.get()
+
+    override val receiverListFlow: Flow<List<Receiver>>
+        get() {
+            receiverListFlowCounter.incrementAndGet()
+            return onReceiverListFlow?.invoke() ?: receiverState
+        }
+
+    /**
+     * 기본값은 [receiverListFlow] 를 성공 결과로 감싼 것이다. 목록만 갈아끼운 기존 시나리오가 상태 소비자에도
+     * 그대로 먹히고, strict 도 목록 Flow 쪽 거부를 따른다. 로딩·실패는 `onReceiverListStateFlow` 로 연다.
+     */
+    override val receiverListStateFlow: Flow<ReceiverListState>
+        get() = onReceiverListStateFlow?.invoke() ?: receiverListFlow.map(ReceiverListState::Success)
+
+    override fun refreshReceiverList() {
+        refreshReceiverListCounter.incrementAndGet()
+        onRefreshReceiverList?.invoke()
+    }
+
+    override suspend fun getReceivers(): List<Receiver> {
+        getReceiversCounter.incrementAndGet()
+        onGetReceivers?.let { return it() }
+        return receiverState.value
+    }
+
+    override suspend fun createReceiver(
+        name: String,
+        relation: String,
+        phone: String?,
+        email: String,
+        message: String?,
+    ): ReceiverCreated {
+        receiverCreateCalls += ReceiverCreateCall(name, relation, phone, email, message)
+        onCreateReceiver?.let { return it(name, relation, phone, email, message) }
+        val id = (receiverState.value.maxOfOrNull(Receiver::receiverId) ?: 0L) + 1L
+        val authCode = "fake-auth-$id"
+        receiverState.value = receiverState.value + Receiver(id, name, relation)
+        receiverDetails[id] =
+            ReceiverDetail(id, name, relation, phone, email, 0, 0, 0, message)
+        return ReceiverCreated(id, authCode)
+    }
+
+    override suspend fun getReceiverDetail(receiverId: Long): ReceiverDetail {
+        receiverDetailCalls += receiverId
+        onGetReceiverDetail?.let { return it(receiverId) }
+        return receiverDetails.computeIfAbsent(receiverId) {
+            requireNotNull(receiverState.value.firstOrNull { it.receiverId == receiverId }).toDefaultDetail()
+        }
+    }
+
+    override suspend fun updateReceiver(
+        receiverId: Long,
+        name: String,
+        phone: String,
+        relation: String,
+        email: String,
+    ): Receiver {
+        receiverUpdateCalls += ReceiverUpdateCall(receiverId, name, phone, relation, email)
+        onUpdateReceiver?.let { return it(receiverId, name, phone, relation, email) }
+        val current = requireNotNull(receiverState.value.firstOrNull { it.receiverId == receiverId })
+        val updated = current.copy(name = name, relation = relation)
+        receiverState.value = receiverState.value.map { if (it.receiverId == receiverId) updated else it }
+        receiverDetails.compute(receiverId) { _, detail ->
+            (detail ?: current.toDefaultDetail()).copy(name = name, phone = phone, relation = relation, email = email)
+        }
+        return updated
+    }
+
+    override suspend fun updateReceiverMessage(
+        receiverId: Long,
+        message: String,
+    ) {
+        receiverMessageCalls += ReceiverMessageCall(receiverId, message)
+        onUpdateReceiverMessage?.let {
+            it(receiverId, message)
+            return
+        }
+        val currentDetail =
+            receiverDetails[receiverId]
+                ?: requireNotNull(receiverState.value.firstOrNull { it.receiverId == receiverId }).toDefaultDetail()
+        receiverDetails.compute(receiverId) { _, detail ->
+            (detail ?: currentDetail).copy(message = message)
+        }
+    }
+
+    override suspend fun getReceiverDeliveryConditions(receiverId: Long): ReceiverDeliveryConditions {
+        deliveryLoadCalls += receiverId
+        onGetReceiverDeliveryConditions?.let { return it(receiverId) }
+        val stored = deliveryConditions[receiverId] ?: ReceiverDeliveryConditions(receiverId, emptyList())
+        return stored.copy(conditions = stored.conditions.toList())
+    }
+
+    override suspend fun updateReceiverDeliveryConditions(
+        receiverId: Long,
+        conditions: List<DeliveryConditionItem>,
+    ): ReceiverDeliveryConditions {
+        deliveryUpdateCalls += DeliveryUpdateCall(receiverId, conditions.toList())
+        onUpdateReceiverDeliveryConditions?.let { return it(receiverId, conditions) }
+        val stored = ReceiverDeliveryConditions(receiverId, conditions.toList())
+        deliveryConditions[receiverId] = stored
+        return stored.copy(conditions = stored.conditions.toList())
+    }
+
+    data class ReceiverCreateCall(
+        val name: String,
+        val relation: String,
+        val phone: String?,
+        val email: String,
+        val message: String?,
+    )
+
+    data class ReceiverUpdateCall(
+        val receiverId: Long,
+        val name: String,
+        val phone: String,
+        val relation: String,
+        val email: String,
+    )
+
+    data class ReceiverMessageCall(
+        val receiverId: Long,
+        val message: String,
+    )
+
+    data class DeliveryUpdateCall(
+        val receiverId: Long,
+        val conditions: List<DeliveryConditionItem>,
+    )
+
+    companion object {
+        internal val DEFAULT_RECEIVER = Receiver(7L, "김수신", "가족")
+
+        fun strict(): FakeUserReceiverRepository =
+            FakeUserReceiverRepository(
+                receivers = emptyList(),
+                onReceiverListFlow = { unexpectedCall("UserReceiverRepository.receiverListFlow") },
+                onGetReceivers = { unexpectedCall("UserReceiverRepository.getReceivers") },
+                onCreateReceiver = { _, _, _, _, _ -> unexpectedCall("UserReceiverRepository.createReceiver") },
+                onGetReceiverDetail = { unexpectedCall("UserReceiverRepository.getReceiverDetail") },
+                onUpdateReceiver = { _, _, _, _, _ -> unexpectedCall("UserReceiverRepository.updateReceiver") },
+                onUpdateReceiverMessage = { _, _ -> unexpectedCall("UserReceiverRepository.updateReceiverMessage") },
+                onGetReceiverDeliveryConditions = {
+                    unexpectedCall("UserReceiverRepository.getReceiverDeliveryConditions")
+                },
+                onUpdateReceiverDeliveryConditions = { _, _ ->
+                    unexpectedCall("UserReceiverRepository.updateReceiverDeliveryConditions")
+                },
+                onRefreshReceiverList = { unexpectedCall("UserReceiverRepository.refreshReceiverList") },
+            )
+    }
+}
+
+private fun Receiver.toDefaultDetail(): ReceiverDetail =
+    ReceiverDetail(
+        receiverId = receiverId,
+        name = name,
+        relation = relation,
+        phone = null,
+        email = null,
+        dailyQuestionCount = 0,
+        timeLetterCount = 0,
+        afterNoteCount = 0,
+        message = null,
+    )

@@ -49,3 +49,18 @@ internal fun memorialMediaSourceBottomSheetRemovableScreenshot() {
         )
     }
 }
+
+/** 첨부가 있는 사진 슬롯 — 문구가 «사진 삭제» 로 갈린다. 서버 사진에도 이 항목이 열린다 (#1597). */
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+internal fun memorialMediaSourceBottomSheetPhotoRemovableScreenshot() {
+    AfternoteTheme {
+        MemorialMediaSourceBottomSheet(
+            target = MemorialMediaTarget.PHOTO,
+            onPickFromGallery = {},
+            onCapture = {},
+            onRemove = {},
+        )
+    }
+}

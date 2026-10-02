@@ -3,6 +3,7 @@ package com.afternote.feature.mindrecord.presentation.screen.sender
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,7 +15,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +33,8 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.asString
+import com.afternote.core.ui.button.FAB.AfternoteFabContentBottomPadding
+import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
@@ -67,7 +69,7 @@ fun DiaryScreen(
      * «수정하기» — 기록 ID 와 **보고 있는 달**. 달을 빼면 프리필이 이번 달 목록에서 그
      * 기록을 찾다 실패하고, 빈 화면에서 저장하면 원본을 덮어쓸 수 있다 (#582 리뷰).
      */
-    onEditClick: (Long, YearMonth) -> Unit = { _, _ -> },
+    onEditClick: (Long, YearMonth) -> Unit,
     viewModel: DiaryListViewModel = hiltViewModel(),
 ) {
     // 갱신을 이 화면이 직접 건다. HomeScreen 이 VM 을 호이스팅해 대신 걸어 주면, 탭에
@@ -80,7 +82,7 @@ fun DiaryScreen(
 
     when (val state = uiState) {
         DiaryListUiState.Loading -> {
-            LoadingBox(modifier)
+            LoadingBody(modifier)
         }
 
         is DiaryListUiState.Error -> {
@@ -134,11 +136,11 @@ internal fun DiaryListContent(
     monthDiaryCount: Int = 0,
     weeklyMoodEmoji: String? = null,
     /** 항목 탭 — 저장된 기록 본문을 여는 상세 화면 (#759). */
-    onItemClick: (Long, YearMonth) -> Unit = { _, _ -> },
+    onItemClick: (Long, YearMonth) -> Unit,
     /** «수정하기» — 기록 ID 와 이 화면이 보고 있는 달. 달은 여기서만 알 수 있다 (#582). */
-    onEdit: (Long, YearMonth) -> Unit = { _, _ -> },
-    onDelete: (Long) -> Unit = {},
-    onYearMonthChanged: (YearMonth) -> Unit = {},
+    onEdit: (Long, YearMonth) -> Unit,
+    onDelete: (Long) -> Unit,
+    onYearMonthChanged: (YearMonth) -> Unit,
 ) {
     // 기록이 없다고 조기 반환하지 않는다. 종전에는 빈 상태가 캘린더를 통째로 대체해
     // 월 이동 버튼까지 사라졌고, 기록이 있는 달로 돌아갈 방법이 없었다 (#724).
@@ -158,7 +160,12 @@ internal fun DiaryListContent(
             ?: currentMonthDiaries
 
     if (isListView) {
-        LazyColumn(modifier = modifier) {
+        LazyColumn(
+            modifier = modifier,
+            // FAB 이 콘텐츠 위에 뜨므로 목록이 스스로 그 자리를 비운다 — 안 그러면 마지막
+            // 항목이 가려지고, 스크롤이 없을 만큼 항목이 적으면 볼 방법이 없다 (#1713).
+            contentPadding = PaddingValues(bottom = AfternoteFabContentBottomPadding),
+        ) {
             item {
                 DailyCalendar(
                     year = yearMonth.year,
@@ -178,7 +185,8 @@ internal fun DiaryListContent(
             item {
                 // core 정본을 쓴다. 종전에는 같은 구조를 인라인으로 다시 적어, 색이
                 // black.copy(0.4f)·M3 baseline divider 로 토큰에서 벗어나 있었다 (#634).
-                AfternoteSectionHeader(title = "DAILY ANSWER")
+                // 일기 목록인데 데일리질문 헤더가 붙어 있었고, 문자열도 코드 리터럴이었다 (#1712).
+                AfternoteSectionHeader(title = stringResource(R.string.mindrecord_diary_list_section_header))
                 Spacer(modifier = Modifier.height(10.dp))
             }
 
@@ -204,6 +212,9 @@ internal fun DiaryListContent(
     } else {
         // Figma 2671:16732 — 일기 카드 형: 리포트 카드 + 2열 masonry 그리드
         LazyVerticalStaggeredGrid(
+            // FAB 이 콘텐츠 위에 뜨므로 목록이 스스로 그 자리를 비운다 — 안 그러면 마지막
+            // 항목이 가려지고, 스크롤이 없을 만큼 항목이 적으면 볼 방법이 없다 (#1713).
+            contentPadding = PaddingValues(bottom = AfternoteFabContentBottomPadding),
             modifier = modifier,
             columns = StaggeredGridCells.Fixed(2),
             verticalItemSpacing = 8.dp,
@@ -228,13 +239,6 @@ internal fun DiaryListContent(
     }
 }
 
-@Composable
-private fun LoadingBox(modifier: Modifier = Modifier) {
-    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
-    }
-}
-
 @Preview(showBackground = true)
 @Composable
 private fun DiaryScreenPreviewTrue() {
@@ -245,6 +249,10 @@ private fun DiaryScreenPreviewTrue() {
             diaries = emptyList(),
             // 프리뷰는 고정 월로 렌더한다 — YearMonth.now() 면 달이 바뀔 때마다 결과가 달라진다.
             yearMonth = PreviewYearMonth,
+            onDelete = {},
+            onEdit = { _, _ -> },
+            onItemClick = { _, _ -> },
+            onYearMonthChanged = {},
         )
     }
 }
@@ -258,6 +266,10 @@ private fun DiaryScreenPreviewFalse() {
             isListView = false,
             diaries = emptyList(),
             yearMonth = PreviewYearMonth,
+            onDelete = {},
+            onEdit = { _, _ -> },
+            onItemClick = { _, _ -> },
+            onYearMonthChanged = {},
         )
     }
 }

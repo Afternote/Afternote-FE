@@ -28,6 +28,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.afternote_fe.test.appTestUserRepository
@@ -54,20 +55,19 @@ import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeWeeklyReportRepository
-import com.afternote.feature.mindrecord.presentation.screen.memoryspace.MemorySpaceScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestionAnswerListScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestionWriteScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DiaryWriteScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DraftListScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.WeeklyReportScreen
+import com.afternote.feature.mindrecord.presentation.usecase.DeleteMindRecordDraftsUseCase
+import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
+import com.afternote.feature.mindrecord.presentation.usecase.ObserveWeeklyReportUseCase
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftListViewModel
-import com.afternote.feature.mindrecord.presentation.viewmodel.MemorySpaceUiState
-import com.afternote.feature.mindrecord.presentation.viewmodel.MemorySpaceViewModel
-import com.afternote.feature.mindrecord.presentation.viewmodel.MindRecordDraftLoader
 import com.afternote.feature.mindrecord.presentation.viewmodel.SubmitState
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportViewModel
@@ -80,6 +80,7 @@ import com.afternote.feature.timeletter.domain.model.TimeLetterList
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.domain.testing.FakeFileMetadataRepository
 import com.afternote.feature.timeletter.domain.testing.FakeTimeLetterRepository
+import com.afternote.feature.timeletter.domain.testing.FakeVoiceRecorderRepository
 import com.afternote.feature.timeletter.domain.usecase.CreateTimeLetterUseCase
 import com.afternote.feature.timeletter.domain.usecase.ResolveTimeLetterBlocksUseCase
 import com.afternote.feature.timeletter.presentation.screen.sender.RecipientListScreen
@@ -100,6 +101,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.time.LocalDate
 import java.time.YearMonth
+import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 
 /** #838/#839에서 기존 production Screen/ViewModel로 표현 가능한 미검증 완료 경계. */
 @RunWith(AndroidJUnit4::class)
@@ -146,7 +148,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
         val register = composeRule.onNode(hasText("등록") and hasClickAction())
         register.performClick()
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
-            viewModel.uiState.value.error == TimeLetterWriteError.RECIPIENT_REQUIRED
+            viewModel.uiState.value.error == TimeLetterWriteError.RecipientRequired
         }
         composeRule.onNodeWithText("수신자를 선택해주세요.").assertIsDisplayed()
 
@@ -157,7 +159,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
         }
         register.performClick()
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
-            viewModel.uiState.value.error == TimeLetterWriteError.SEND_DATE_REQUIRED
+            viewModel.uiState.value.error == TimeLetterWriteError.SendDateRequired
         }
         composeRule.onNodeWithText("발송 날짜를 선택해주세요.").assertIsDisplayed()
 
@@ -364,11 +366,15 @@ class TimeLetterMindRecordCompletionAndroidTest {
                     pending?.await() ?: Result.success(emptyList())
                 }
             }
-        var activeViewModel by mutableStateOf(DailyQuestionListViewModel(emptyRepository, MindRecordChangeTracker()))
+        var activeViewModel by mutableStateOf(DailyQuestionListViewModel(emptyRepository, MindRecordChangeTracker(), FakeErrorReporter()))
 
         composeRule.setContent {
             AfternoteTheme {
-                DailyQuestionAnswerListScreen(viewModel = activeViewModel, onItemClick = { _, _ -> })
+                DailyQuestionAnswerListScreen(
+                    viewModel = activeViewModel,
+                    onItemClick = { _, _ -> },
+                    onEditClick = {},
+                )
             }
         }
 
@@ -392,7 +398,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
             FakeDailyQuestionRepository(today = completionToday()).apply {
                 onGetList = { _, _ -> listResults.removeFirst() }
             }
-        val retryViewModel = DailyQuestionListViewModel(retryRepository, MindRecordChangeTracker())
+        val retryViewModel = DailyQuestionListViewModel(retryRepository, MindRecordChangeTracker(), FakeErrorReporter())
         composeRule.runOnIdle { activeViewModel = retryViewModel }
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
             retryViewModel.uiState.value is DailyQuestionListUiState.Error
@@ -424,7 +430,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
         // 목록이 그대로»(#520) 를 잡는 이 테스트가 조용히 침묵한다 (#966 리뷰).
         val changeTracker = MindRecordChangeTracker()
         val repository = FakeDailyQuestionRepository(today = completionToday(), changeTracker = changeTracker)
-        val listViewModel = DailyQuestionListViewModel(repository, changeTracker)
+        val listViewModel = DailyQuestionListViewModel(repository, changeTracker, FakeErrorReporter())
         var writeViewModel by mutableStateOf<DailyQuestionWriteViewModel?>(null)
         var submitSuccessCalls = 0
 
@@ -432,7 +438,11 @@ class TimeLetterMindRecordCompletionAndroidTest {
             val activeWriteViewModel = writeViewModel
             AfternoteTheme {
                 if (activeWriteViewModel == null) {
-                    DailyQuestionAnswerListScreen(viewModel = listViewModel, onItemClick = { _, _ -> })
+                    DailyQuestionAnswerListScreen(
+                        viewModel = listViewModel,
+                        onItemClick = { _, _ -> },
+                        onEditClick = {},
+                    )
                 } else {
                     DailyQuestionWriteScreen(
                         viewModel = activeWriteViewModel,
@@ -441,6 +451,8 @@ class TimeLetterMindRecordCompletionAndroidTest {
                             writeViewModel = null
                             listViewModel.refreshOnReturn()
                         },
+                        onBackClick = {},
+                        onDraftListClick = {},
                     )
                 }
             }
@@ -459,7 +471,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
                     savedStateHandle = SavedStateHandle(emptyMap()),
                     repository = repository,
                     photoUploadRepository = FakePhotoUploadRepository.strict(),
-                    draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
+                    draftLoader = LoadMindRecordDraftsUseCase(FakeDiaryRepository(), repository),
                     errorReporter = FakeErrorReporter(),
                 )
         }
@@ -515,9 +527,8 @@ class TimeLetterMindRecordCompletionAndroidTest {
         val draftDailyQuestionRepository = FakeDailyQuestionRepository(today = completionToday())
         val draftListViewModel =
             DraftListViewModel(
-                loader = MindRecordDraftLoader(repository, draftDailyQuestionRepository),
-                diaryRepository = repository,
-                dailyQuestionRepository = draftDailyQuestionRepository,
+                loadDrafts = LoadMindRecordDraftsUseCase(repository, draftDailyQuestionRepository),
+                deleteDrafts = DeleteMindRecordDraftsUseCase(repository, draftDailyQuestionRepository),
                 errorReporter = FakeErrorReporter(),
             )
         var routedArguments: Pair<Long, String>? = null
@@ -546,15 +557,19 @@ class TimeLetterMindRecordCompletionAndroidTest {
                                     photoUploadRepository = FakePhotoUploadRepository.strict(),
                                     userRepository = appTestUserRepository(),
                                     draftLoader =
-                                        MindRecordDraftLoader(repository, draftDailyQuestionRepository),
+                                        LoadMindRecordDraftsUseCase(repository, draftDailyQuestionRepository),
                                     errorReporter = FakeErrorReporter(),
                                 )
                         },
+                        onBackClick = {},
+                        onDailyQuestionDraftClick = {},
                     )
                 } else {
                     DiaryWriteScreen(
                         viewModel = activeWriteViewModel,
                         onSubmitSuccess = { submitSuccessCalls += 1 },
+                        onBackClick = {},
+                        onDraftListClick = {},
                     )
                 }
             }
@@ -600,65 +615,6 @@ class TimeLetterMindRecordCompletionAndroidTest {
     }
 
     @Test
-    fun memorySpace_supportedSuccess_opensAndClosesDetailThenNavigatesBack() {
-        val memoryDate = LocalDate.now()
-        val memory =
-            Diary(
-                diaryId = 501L,
-                title = "추억이 된 하루",
-                content = "이 순간은 나에게 특별한 의미가 있었습니다.",
-                date = memoryDate.toString(),
-                createdAt = memoryDate.toString(),
-                todayMood = TodayMood.HAPPY,
-                imageUrl = "https://afternote.test/memory.jpg",
-                isDraft = false,
-            )
-        val diaryRepository =
-            FakeDiaryRepository(
-                onGetList = { yearMonth, _ ->
-                    val diaries =
-                        if (yearMonth == YearMonth.from(memoryDate).toString()) listOf(memory) else emptyList()
-                    Result.success(
-                        DiaryList(
-                            diaries = diaries,
-                            monthDiaryCount = diaries.size,
-                            weeklyDominantMood = diaries.firstOrNull()?.todayMood,
-                        ),
-                    )
-                },
-            )
-        val viewModel = MemorySpaceViewModel(diaryRepository, FakeDailyQuestionRepository())
-        var backCalls = 0
-
-        composeRule.setContent {
-            AfternoteTheme {
-                MemorySpaceScreen(
-                    viewModel = viewModel,
-                    onBackClick = { backCalls += 1 },
-                )
-            }
-        }
-
-        composeRule.onNodeWithText("MEMORY SPACE").assertIsDisplayed()
-        composeRule.waitUntil(timeoutMillis = TIMEOUT) {
-            viewModel.uiState.value is MemorySpaceUiState.Success
-        }
-        composeRule.onNodeWithContentDescription("추억이 된 하루").performClick()
-        composeRule
-            .onNodeWithText("이 순간은 나에게 특별한 의미가 있었습니다.", substring = true)
-            .assertIsDisplayed()
-        // 태그는 사용자가 고른 오늘의 기분 이모지다 — 종전 더미의 `#평온` 은 출처가 없었다 (#559).
-        composeRule.onNodeWithText("#😊").assertIsDisplayed()
-        composeRule.onNodeWithContentDescription("닫기").performClick()
-        composeRule
-            .onNodeWithText("이 순간은 나에게 특별한 의미가 있었습니다.", substring = true)
-            .assertDoesNotExist()
-
-        composeRule.onNodeWithText("돌아가기").performClick()
-        composeRule.runOnIdle { assertEquals(1, backCalls) }
-    }
-
-    @Test
     fun weeklyReport_errorRetryThenEmptyAndComplete_preservesRequestedWeekContract() {
         val repository =
             FakeWeeklyReportRepository().apply {
@@ -669,7 +625,13 @@ class TimeLetterMindRecordCompletionAndroidTest {
                 profile = User("주간 사용자", "weekly@afternote.local", null, null),
                 receivers = emptyList(),
             )
-        val viewModel = WeeklyReportViewModel(repository, userRepository, MindRecordChangeTracker())
+        val errorReporter = FakeErrorReporter()
+        val viewModel =
+            WeeklyReportViewModel(
+                ObserveWeeklyReportUseCase(repository, userRepository),
+                MindRecordChangeTracker(),
+                errorReporter,
+            )
 
         composeRule.setContent {
             AfternoteTheme {
@@ -680,7 +642,17 @@ class TimeLetterMindRecordCompletionAndroidTest {
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
             viewModel.uiState.value is WeeklyReportUiState.Error
         }
-        composeRule.onNodeWithText("weekly offline").assertIsDisplayed()
+        // 종전에는 여기서 «weekly offline» — 즉 예외 원문 — 이 화면에 뜨는 것을 단언했다.
+        // 서버 오류 원문은 화면에 내지 않고 계측으로만 보낸다는 규약(#1339)과 정반대라
+        // 결함을 고정하고 있었다. 화면은 안내 문자열로, 원문은 계측으로 확인한다 (#1882).
+        val weeklyFailureCopy =
+            InstrumentationRegistry
+                .getInstrumentation()
+                .targetContext
+                .getString(MindRecordR.string.mindrecord_error_weekly_report_failed)
+        composeRule.onNodeWithText(weeklyFailureCopy).assertIsDisplayed()
+        composeRule.onNodeWithText("weekly offline").assertDoesNotExist()
+        assertEquals(listOf("weekly_report_load"), errorReporter.mindRecordStages)
         val firstMonday = LocalDate.parse(repository.requestedDates.single())
 
         repository.results.addLast(Result.success(emptyWeeklyReport()))
@@ -735,6 +707,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
             timeLetterRepository = repository,
             userRepository = userRepository,
             fileMetadataRepository = FakeFileMetadataRepository.strict(),
+            voiceRecorderRepository = FakeVoiceRecorderRepository,
             savedStateHandle = SavedStateHandle(mapOf("timeLetterId" to null)),
         )
     }
@@ -751,7 +724,6 @@ private fun completionCreatedLetter(call: FakeTimeLetterRepository.CreateCall): 
         id = 901L,
         title = call.title,
         sendAt = call.sendAt,
-        deliveredAt = null,
         status = call.status,
         blocks = emptyList(),
         receiverIds = call.receiverIds,
@@ -778,7 +750,6 @@ private fun completionDetailLetter(): TimeLetter =
         id = 509L,
         title = "상세 route 편지",
         sendAt = "2026-10-09T09:40:00",
-        deliveredAt = null,
         status = TimeLetterStatus.SCHEDULED,
         blocks =
             listOf(

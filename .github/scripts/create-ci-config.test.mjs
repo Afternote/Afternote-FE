@@ -126,16 +126,27 @@ test("keeps pull request validation secretless and release credentials isolated"
     }
 
     // pull_request_target은 default branch 정의에 쓰기 권한을 줄 수 있어 원칙적으로 금지한다.
-    // 유일한 예외는 닫힌 스택 멤버를 알리는 이 좁은 bridge이며, PR code/artifact/cache를
-    // 실행하지 않고 default branch 정책과 API JSON만 읽는 불변식을 함께 고정한다.
-    assert.deepEqual(pullRequestTargetWorkflows, ["stack-integrity-notify.yml"]);
-    const stackNotifier = workflows.get("stack-integrity-notify.yml");
-    assert.match(stackNotifier, /^permissions: \{\}$/m);
-    assert.match(stackNotifier, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
-    assert.match(stackNotifier, /persist-credentials: false/);
-    assert.doesNotMatch(stackNotifier, /github\.event\.pull_request\.head\.(sha|ref)/);
-    assert.doesNotMatch(stackNotifier, /actions\/(download-artifact|cache)@/);
-    assert.doesNotMatch(stackNotifier, /\bsecrets(?:\.|\[)/);
+    // 예외는 PR code/artifact/cache를 실행하지 않고 default branch 정책과 API JSON만 읽는 좁은
+    // bridge 셋뿐이다 — 닫힌 스택 멤버 알림, merge queue 방출 처리(#1892), 머지 순서 가드(#1977,
+    // PR 사본 YAML 로 판정하던 구멍과 재게시 guard 두 줄을 없앤다), dependabot PR 보정(#2112,
+    // 봇 PR 의 pull_request 토큰은 읽기 전용이라 이슈 생성·제목·본문 편집을 못 한다). 그 불변식을
+    // 넷 모두에 고정한다.
+    const narrowBridges = [
+        "dependabot-pr-gate.yml",
+        "merge-order-guard.yml",
+        "merge-queue-dequeue.yml",
+        "stack-integrity-notify.yml",
+    ];
+    assert.deepEqual([...pullRequestTargetWorkflows].sort(), narrowBridges);
+    for (const bridgeName of narrowBridges) {
+        const bridge = workflows.get(bridgeName);
+        assert.match(bridge, /^permissions: \{\}$/m, bridgeName);
+        assert.match(bridge, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/, bridgeName);
+        assert.match(bridge, /persist-credentials: false/, bridgeName);
+        assert.doesNotMatch(bridge, /github\.event\.pull_request\.head\.(sha|ref)/, bridgeName);
+        assert.doesNotMatch(bridge, /actions\/(download-artifact|cache)@/, bridgeName);
+        assert.doesNotMatch(bridge, /\bsecrets(?:\.|\[)/, bridgeName);
+    }
 
     const actionReference = "uses: ./.github/actions/setup-ci-config";
     for (const name of [

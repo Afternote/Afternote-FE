@@ -22,6 +22,22 @@ private val Gray4 = Color(0xFFBDBDBD)
 
 private val Gray5 = Color(0xFF9E9E9E)
 
+/**
+ * 라이트 테마의 `gray5` 대체값. **[Gray5] 를 라이트에서 쓰면 본문 대비가 기준 미달이다.**
+ *
+ * 팔레트 반전에서 `gray5` 만 자기 자신으로 매핑되는데(아래 [darkColors]), 배경이 뒤집히므로
+ * 같은 `#9E9E9E` 라도 두 테마의 대비가 갈린다. 갤럭시 S25(Android 16) 실기기 캡처 실측:
+ *
+ * | 테마 | 배경 | 대비 |
+ * |---|---|---|
+ * | 라이트 | `#FAFAFA` | 2.57:1 — WCAG 본문 최소 4.5:1 미달 |
+ * | 다크 | `#212121` | 6.01:1 — 통과 |
+ *
+ * 그래서 라이트만 이 값(4.89:1)으로 낮추고 다크는 [Gray5] 를 그대로 둔다.
+ * 시안도 `#9E9E9E` 라 값이 다른 것은 의도된 차이다 — 통일 금지.
+ */
+private val Gray5OnLight = Color(0xFF6E6E6E)
+
 private val Gray6 = Color(0xFF757575)
 
 private val Gray7 = Color(0xFF616161)
@@ -63,7 +79,7 @@ internal fun lightColors() =
         gray2 = Gray2,
         gray3 = Gray3,
         gray4 = Gray4,
-        gray5 = Gray5,
+        gray5 = Gray5OnLight, // 본문 대비 기준 — 상세는 Gray5OnLight KDoc
         gray6 = Gray6,
         gray7 = Gray7,
         gray8 = Gray8,
@@ -93,7 +109,7 @@ internal fun darkColors() =
         gray2 = Gray8,
         gray3 = Gray7,
         gray4 = Gray6,
-        gray5 = Gray5, // 중간은 그대로
+        gray5 = Gray5, // 중간은 반전 없음 — 다크는 이 값으로 대비 6.01:1 통과
         gray6 = Gray4,
         gray7 = Gray3,
         gray8 = Gray2,

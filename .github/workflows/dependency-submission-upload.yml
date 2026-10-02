@@ -2,8 +2,8 @@ name: Submit PR Dependency Graph
 
 # workflow_run 은 default branch 의 검토된 workflow 정의로 실행된다. untrusted PR 코드는
 # checkout·실행하지 않고 Gradle action 이 만든 dependency graph artifact 만 제출한다.
-# upstream 은 dependency paths 가 바뀐 PR 에서만 실행되므로 artifact 없는 source PR 은
-# 이 후속 workflow 자체를 만들지 않는다.
+# upstream 은 소스 변경만 있는 PR 을 포함해 모든 PR HEAD 의 graph artifact 를 만든다.
+# 성공한 producer 의 artifact 만 제출해 스택 부모의 비교 기준선도 같은 경계로 보관한다 (#2185).
 on:
   workflow_run:
     workflows: [Generate PR Dependency Graph]

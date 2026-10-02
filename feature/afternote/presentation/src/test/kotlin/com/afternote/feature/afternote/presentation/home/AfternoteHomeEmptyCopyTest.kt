@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.presentation.home
 
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -87,6 +88,7 @@ class AfternoteHomeEmptyCopyTest {
             nextStep = null,
             emptyListDescription = stringRes(R.string.afternote_empty_list_body),
             onTypeSelected = {},
+            filterRowScrollState = rememberScrollState(),
         )
     }
 
@@ -99,6 +101,7 @@ class AfternoteHomeEmptyCopyTest {
             selectedType = AfternoteType.SOCIAL_NETWORK,
             onTypeSelected = {},
             onListItemClick = { _, _ -> },
+            filterRowScrollState = rememberScrollState(),
         )
     }
 }

@@ -44,7 +44,7 @@ class TokenAuthenticator
             // 앞선 다른 경로/스레드가 이미 회전했으면 TokenAlreadyChanged 로 새 토큰만 받아 재시도.
             // 인증 거절의 세션 정리는 락 안에서 끝난다 (#1126) — 여기서 정리하면 락이 풀린 뒤
             // 정리가 끝나기까지가 대기자의 중복 재발급이 빠져나가는 창이 된다.
-            return when (val outcome = tokenReissuer.reissue(expectedAccessToken = oldAccessToken)) {
+            return when (val outcome = tokenReissuer.reissueOnce(expectedAccessToken = oldAccessToken)) {
                 is TokenReissuer.Outcome.TokenAlreadyChanged -> {
                     originalRequest.withBearer(outcome.accessToken)
                 }
@@ -78,7 +78,7 @@ private fun ErrorReporter.recordAuthContractViolation(authStage: String) {
 }
 
 /** 재발급의 기술 원문을 UI 에 노출하지 않고 현재 요청만 실패시키는 예외. */
-internal class TokenReissueFailureException(
+private class TokenReissueFailureException(
     cause: Throwable,
 ) : IOException(null, cause)
 

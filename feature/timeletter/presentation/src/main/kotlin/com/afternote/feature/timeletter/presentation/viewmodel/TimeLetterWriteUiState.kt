@@ -2,6 +2,7 @@ package com.afternote.feature.timeletter.presentation.viewmodel
 
 import android.net.Uri
 import androidx.compose.ui.text.style.TextAlign
+import com.afternote.feature.timeletter.domain.model.RecordedAudio
 
 data class TimeLetterWriteUiState(
     val editingTimeLetterId: Long? = null,
@@ -23,14 +24,42 @@ data class TimeLetterWriteUiState(
     val nextBlockId: Long = 1L,
     val savedAsDraft: Boolean = false,
     val registered: Boolean = false,
+    val showVoiceRecorder: Boolean = false,
+    val voiceRecordingState: VoiceRecordingState = VoiceRecordingState.Idle,
     val showFreePlanLimitPopup: Boolean = false,
 )
 
-enum class TimeLetterWriteError {
-    SEND_DATE_REQUIRED,
-    LOAD_FAILED,
-    RECIPIENT_REQUIRED,
-    SAVE_FAILED,
+sealed interface TimeLetterWriteError {
+    data object SendDateRequired : TimeLetterWriteError
+
+    data object LoadFailed : TimeLetterWriteError
+
+    data object RecipientRequired : TimeLetterWriteError
+
+    data object SaveFailed : TimeLetterWriteError
+
+    /** A 4xx the server explicitly rejected. Shown as a generic message — the server's own text is not user-facing. */
+    data object ServerRejection : TimeLetterWriteError
+
+    data object VoiceRecordingStartFailed : TimeLetterWriteError
+
+    data object VoiceRecordingStopFailed : TimeLetterWriteError
+}
+
+sealed interface VoiceRecordingState {
+    data object Idle : VoiceRecordingState
+
+    data object Starting : VoiceRecordingState
+
+    data class Recording(
+        val elapsedMillis: Long,
+    ) : VoiceRecordingState
+
+    data object Stopping : VoiceRecordingState
+
+    data class Recorded(
+        val audio: RecordedAudio,
+    ) : VoiceRecordingState
 }
 
 sealed class EditorBlock {

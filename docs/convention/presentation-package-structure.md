@@ -129,7 +129,7 @@ git grep -lw 'PasskeyListItem' -- "$M" | grep -oE '[A-Za-z]+Screen\.kt' | sort -
 - [x] 규칙 문서화 — 이 문서
 - [ ] [#1086](https://github.com/Afternote/Afternote-FE/issues/1086) — `feature/timeletter/presentation` (38, 가장 작음 → 파일럿) — @koongmai
 - [ ] [#1087](https://github.com/Afternote/Afternote-FE/issues/1087) — `feature/mindrecord/presentation` (80) — @Sadturtleman
-- [ ] [#1088](https://github.com/Afternote/Afternote-FE/issues/1088) — `feature/setting/presentation` (64) — @koongmai
+- [ ] [#1088](https://github.com/Afternote/Afternote-FE/issues/1088) — `feature/setting/presentation` (64) — @1hyok
 - [ ] `feature/afternote/presentation` 깊이 평탄화 검토 (117, 이미 기능별이므로 이관 아님) — @1hyok
 
 `receiver` · `onboarding` 은 이미 규칙을 만족해 대상이 아니다. `home` 은 파일 5개로 아직 폴더를 나눌 규모가 아니며, 화면이 늘면 R1 을 따른다.

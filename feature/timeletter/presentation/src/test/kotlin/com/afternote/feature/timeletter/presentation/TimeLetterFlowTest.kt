@@ -15,6 +15,7 @@ import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.domain.testing.FakeFileMetadataRepository
 import com.afternote.feature.timeletter.domain.testing.FakeTimeLetterRepository
+import com.afternote.feature.timeletter.domain.testing.FakeVoiceRecorderRepository
 import com.afternote.feature.timeletter.domain.usecase.CreateTimeLetterUseCase
 import com.afternote.feature.timeletter.domain.usecase.ResolveTimeLetterBlocksUseCase
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeLetterWriteScreen
@@ -73,7 +74,6 @@ class TimeLetterFlowTest {
                 id = 1L,
                 title = call.title,
                 sendAt = call.sendAt,
-                deliveredAt = null,
                 status = call.status,
                 blocks = emptyList(),
                 receiverIds = call.receiverIds,
@@ -89,7 +89,7 @@ class TimeLetterFlowTest {
             viewModel.register("가을 편지", mapOf(0L to "잊지 않을게"))
         }
         composeRule.waitUntil(timeoutMillis = 5_000) {
-            viewModel.uiState.value.error == TimeLetterWriteError.SAVE_FAILED
+            viewModel.uiState.value.error == TimeLetterWriteError.SaveFailed
         }
         assertFalse(viewModel.uiState.value.registered)
 
@@ -152,6 +152,7 @@ class TimeLetterFlowTest {
                     fileName = "fixture",
                     mimeType = "application/pdf",
                 ),
+            voiceRecorderRepository = FakeVoiceRecorderRepository,
             savedStateHandle = SavedStateHandle(mapOf("timeLetterId" to null)),
         )
     }
@@ -159,14 +160,10 @@ class TimeLetterFlowTest {
 
 private fun timeLetterFlowUserRepository(): FakeUserRepository =
     FakeUserRepository.strict().apply {
-        receiverState.value = listOf(Receiver(7L, "김수신", "가족", "fake-auth-7"))
+        receiverState.value = listOf(Receiver(7L, "김수신", "가족"))
         onReceiverListFlow = null
         onGetReceivers = null
         onCreateReceiver = null
         onGetMyProfile = null
         onUpdateMyProfile = null
-        onDeleteAccount = null
-        onGetMyPushSettings = null
-        onUpdateMyPushSettings = null
-        onGetConnectedAccounts = null
     }

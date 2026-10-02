@@ -2,8 +2,8 @@ package com.afternote.feature.afternote.presentation.editor.memorial
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.COMPACT_DEVICE_SPEC
-import com.afternote.feature.afternote.presentation.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 import com.android.tools.screenshot.PreviewTest
 
@@ -22,7 +22,7 @@ private val SAMPLE_SONGS =
 @Preview(showBackground = true)
 @Composable
 internal fun addSongScreenScreenshot() {
-    AfternoteLightTheme {
+    AfternoteTheme {
         AddSongScreen(
             uiState = AddSongUiState(songs = SAMPLE_SONGS),
             onSearchQueryChange = {},
@@ -42,7 +42,7 @@ internal fun addSongScreenScreenshot() {
 @Preview(showBackground = true, device = COMPACT_DEVICE_SPEC)
 @Composable
 internal fun addSongScreenCompactScreenshot() {
-    AfternoteLightTheme {
+    AfternoteTheme {
         AddSongScreen(
             uiState = AddSongUiState(songs = SAMPLE_SONGS),
             onSearchQueryChange = {},

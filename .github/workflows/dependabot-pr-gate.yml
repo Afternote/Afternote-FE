@@ -1,0 +1,41 @@
+# dependabot PR 이 열릴 때 대표 이슈·제목·CI Test Plan 을 채운다 (#2112)
+#
+# 봇은 이슈를 만들지 못하고 본문에 CI Test Plan 도 없어 Repository Quality 와 기기 잡이
+# 구조적으로 실패한다(#1397·#1699·#2106). 사람이 손으로 하던 보정을 여기서 한다.
+#
+# pull_request_target 인 이유: dependabot 이 연 pull_request 이벤트의 토큰은 읽기 전용이라
+# 이슈 생성·PR 편집을 못 한다. default branch 의 워크플로 정의만 실행되고, PR 코드는
+# 체크아웃하지도 실행하지도 않는다. default branch 의 정책 스크립트와 GitHub API 응답만 쓴다.
+name: dependabot-pr-gate
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+
+permissions: {}
+
+jobs:
+  fill-gate:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    concurrency:
+      group: dependabot-pr-gate-${{ github.repository_id }}-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Clone gate policy from the default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+
+      - name: 대표 이슈·제목·CI Test Plan 을 채운다
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: node .github/scripts/dependabot-pr-gate.mjs

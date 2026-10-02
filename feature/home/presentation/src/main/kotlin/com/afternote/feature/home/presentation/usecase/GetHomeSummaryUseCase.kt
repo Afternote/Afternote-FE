@@ -1,7 +1,8 @@
 package com.afternote.feature.home.presentation.usecase
 
 import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.MyProfileRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.feature.home.presentation.usecase.HomeSummary
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
@@ -27,15 +28,16 @@ import javax.inject.Inject
 class GetHomeSummaryUseCase
     @Inject
     constructor(
-        private val userRepository: UserRepository,
+        private val myProfileRepository: MyProfileRepository,
+        private val userReceiverRepository: UserReceiverRepository,
         private val dailyQuestionRepository: DailyQuestionRepository,
         private val getWeeklyRecordCount: GetWeeklyRecordCountUseCase,
     ) {
         suspend operator fun invoke(): Result<HomeSummary> =
             runCatchingCancellable {
                 coroutineScope {
-                    val profileDeferred = async { userRepository.getMyProfile() }
-                    val receiversDeferred = async { userRepository.getReceivers() }
+                    val profileDeferred = async { myProfileRepository.getMyProfile() }
+                    val receiversDeferred = async { userReceiverRepository.getReceivers() }
                     val todayQuestionDeferred = async { dailyQuestionRepository.getToday() }
                     // 예산을 **async 안에서** 건다. 밖에서 걸면 `await()` 만 끊기고 이 async 는
                     // 여전히 coroutineScope 의 자식이라, scope 가 그 자식을 끝까지 기다린다 —

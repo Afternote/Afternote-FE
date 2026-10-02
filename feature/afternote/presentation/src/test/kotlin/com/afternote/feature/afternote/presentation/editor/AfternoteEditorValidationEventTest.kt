@@ -11,6 +11,7 @@ import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMedi
 import com.afternote.feature.afternote.presentation.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteValidationError
+import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -102,6 +103,7 @@ class AfternoteEditorValidationEventTest {
 
     private fun viewModel(): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
+            route = AfternoteRoute.EditorFlowRoute(initialType = AfternoteType.SOCIAL_NETWORK),
             savedStateHandle = SavedStateHandle(mapOf("initialType" to AfternoteType.SOCIAL_NETWORK)),
             userRepository = repositoryProxy<UserRepository>(),
             afternoteRepository = repositoryProxy<AfternoteRepository>(),

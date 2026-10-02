@@ -28,6 +28,10 @@ import com.afternote.core.ui.theme.AfternoteDesign
  *
  * [onClick]이 `null`이면 상위 컨테이너가 단일 클릭 영역을 소유할 때 쓰는 장식 배지다.
  * 이때 [contentDescription]도 `null`로 두어 같은 액션을 중복해 읽지 않게 한다.
+ *
+ * 원의 채움은 `gray9`다. 시안 컴포넌트 `52:7886`의 fill 이 `#212121`이고 그 값이 팔레트의
+ * `Gray9`와 같다. core 의 다른 어두운 원형 버튼(`PenFloatingActionButton`, `AfternoteFloatingActionButton`)도
+ * 같은 토큰을 쓴다. `black`(`#000000`)은 시안보다 한 단계 진해 이 자리에 쓰지 않는다(#2063).
  */
 @Composable
 fun PlusBadgeButton(
@@ -48,7 +52,7 @@ fun PlusBadgeButton(
         modifier
             .size(size)
             .clip(CircleShape)
-            .background(AfternoteDesign.colors.black)
+            .background(AfternoteDesign.colors.gray9)
             .then(clickModifier)
             .padding(paddingValues),
     ) {

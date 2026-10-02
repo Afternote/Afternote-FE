@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
  * `GET/PUT /users/me/receivers/{receiverId}/delivery-conditions` DTO (이슈 #427).
  *
  * Swagger 실측(2026-07-08, afternote.kro.kr/v3/api-docs) 스키마와 1:1. 유저단위(구)
- * [com.afternote.core.network.dto.DeliveryConditionTypeDto] 와 값이 달라 별도 패키지에 둔다.
+ * `DeliveryConditionTypeDto` 와 값이 달라 별도 패키지에 두었다 — 그 구 타입은 이슈 #428 에서 제거됐다.
  */
 
 @Serializable

@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "a23e50fa3040a1025811f79cffd26c2e47b11323.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": "not_covered",
+      "recorded_at": "recorded_at"
+    },
+    "redactions": []
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "a23e50fa3040a1025811f79cffd26c2e47b11323",
+  "head_ref": "develop",
+  "base_sha": null,
+  "base_ref": null,
+  "recorded_at": "2026-09-03T17:43:14.138076+00:00",
+  "result": "fail",
+  "scenario": "실기기 첫 QA — 에뮬레이터로 커버되지 않는 축만 골라 종단 확인. 1) 사진 업로드: 갤러리 실사 크기(8160x6120, 14,002,366 B) 첨부 시 POST /files/presigned-url 이 400(code 1803)으로 거절. 서버 상한을 이진 탐색으로 10,485,760 B(10 MiB)로 특정(10,485,760 성공 / 10,485,761 실패). 대조군 5,198,322 B 는 presigned 200 -> S3 PUT 200 정상. FE 는 1803 미처리·업로드 전 압축 부재로 「다시 시도해 주세요」라고 안내 -> 이슈 #1868. 2) predictive back: 제스처 진행 중 앞 화면이 축소·라운딩 없이 뒤 화면과 겹쳐 그려짐. 취소 시 현재 화면 유지·완료 시 한 칸 pop 은 정상 -> 이슈 #1869. 3) 회원가입 인증번호 화면(FlowStepScaffold): 키보드가 하단 CTA 를 완전히 덮음. 이슈 #1849 본문의 재현 조건(좁은 화면·큰 글꼴)보다 여유가 큰 조건에서도 재현 -> #1849 코멘트. 다만 마음의 기록 작성 화면은 IME inset 이 정상 전달돼 레이아웃이 밀림 -> 「inset 미전달」 진단은 API 35 관찰이고 API 36 에서는 성립하지 않음. #1860 은 미재현. 4) 생체 인증: 패스키 등록 후 애프터노트 조회 게이트에서 BiometricPrompt 표시 확인. keystore2 가 afternote_biometric_gate 키를 TRUSTED_ENVIRONMENT 에 생성하고 auth-per-use 연산 성사, Class 3(strength 15) 지문만 적격·얼굴은 제외 — 정상. 패스키 미등록 계정에서는 게이트가 설계대로 스킵된다. 5) 알림 권한: 로그인 직후 POST_NOTIFICATIONS 요청 다이얼로그 표시·허용 반영 확인(정상). 6) 카카오톡 앱-투-앱 로그인: 카카오톡 전환(CapriLoggedInActivity) 후 154ms 만에 결과를 돌려받고 웹(CustomTab)으로 폴백(2회 재현). 이 빌드가 팀 공유 debug keystore 가 아닌 AGP 기본 키로 서명돼 카카오 콘솔 미등록 키 해시일 수 있어(#533) 결함으로 판정하지 않음.",
+  "not_covered": [
+    "release(minify) 산출물 — 이번 실측은 전부 debug 빌드다. R8 이 적용된 배포본의 화면 순회는 미검증.",
+    "카카오톡 앱-투-앱 로그인의 결함 여부 — 팀 공유 debug keystore 또는 release 서명 빌드로 재확인이 필요하다.",
+    "지문 등록·삭제로 인한 KeyPermanentlyInvalidatedException 복구 경로.",
+    "삼성 절전 정책 아래에서의 일일 알림·FCM 실제 도착(며칠 단위 관찰 필요)."
+  ],
+  "device": {
+    "is_emulator": false
+  },
+  "details": {
+    "details": {
+      "screen": {
+        "size": "1080x2340",
+        "density": 420,
+        "physical_density": 480,
+        "font_scale": 0.8
+      },
+      "api_level": 36,
+      "os": "Android 16 / One UI 8.5",
+      "ime": "com.samsung.android.honeyboard",
+      "navigation_mode": "gesture",
+      "app": {
+        "package": "com.afternote.afternote_fe",
+        "installed_for_head": "a23e50fa3040a1025811f79cffd26c2e47b11323",
+        "build_type": "debug"
+      },
+      "issues_filed": [
+        1868,
+        1869
+      ],
+      "issues_commented": [
+        1849
+      ],
+      "dynamic": true
+    }
+  }
+}

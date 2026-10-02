@@ -7,6 +7,9 @@ import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import com.afternote.core.common.biometric.confirmWithCryptoOperation
+import com.afternote.core.common.biometric.createBiometricCryptoObject
+import com.afternote.core.common.biometric.isBiometricCryptoSupported
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
