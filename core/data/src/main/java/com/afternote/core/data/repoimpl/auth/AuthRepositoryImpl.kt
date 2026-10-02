@@ -1,7 +1,7 @@
 package com.afternote.core.data.repoimpl.auth
 
 import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.core.data.mapper.auth.AuthMapper
+import com.afternote.core.data.mapper.auth.toDomain
 import com.afternote.core.datastore.LocalStoreRegistry
 import com.afternote.core.datastore.StoreScope
 import com.afternote.core.datastore.TokenDataSource
@@ -77,7 +77,7 @@ internal class AuthRepositoryImpl
             runCatchingCancellable {
                 val data = authApiService.login(LoginRequestDto(email, password)).requireData()
                 recordIssuedExpiresIn(data.expiresIn)
-                AuthMapper.toDefaultLoginResult(data)
+                data.toDomain()
             }.mapLoginFailure()
 
         override suspend fun kakaoLogin(oauthToken: String): Result<Session.SocialSession> =
@@ -91,7 +91,7 @@ internal class AuthRepositoryImpl
                             ),
                         ).requireData()
                 recordIssuedExpiresIn(data.expiresIn)
-                AuthMapper.toSocialLoginResult(data)
+                data.toDomain()
             }.mapLoginFailure()
 
         override suspend fun googleLogin(idToken: String): Result<Session.SocialSession> =
@@ -105,7 +105,7 @@ internal class AuthRepositoryImpl
                             ),
                         ).requireData()
                 recordIssuedExpiresIn(data.expiresIn)
-                AuthMapper.toSocialLoginResult(data)
+                data.toDomain()
             }.mapLoginFailure()
 
         override suspend fun rotateToken(): Result<TokenBundle> =
@@ -114,7 +114,7 @@ internal class AuthRepositoryImpl
                     getRefreshToken().getOrNull()
                         ?: error("리프레시 토큰이 존재하지 않습니다.")
                 val response = tokenApiService.reissue(ReissueRequestDto(refreshToken))
-                val tokenBundleResult = AuthMapper.toRotateTokenResult(response.requireData())
+                val tokenBundleResult = response.requireData().toDomain()
                 check(tokenBundleResult.accessToken.isNotEmpty()) {
                     "Token rotation returned an empty access token"
                 }
