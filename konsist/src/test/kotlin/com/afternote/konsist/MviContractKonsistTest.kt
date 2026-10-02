@@ -368,7 +368,6 @@ class MviContractKonsistTest {
             setOf(
                 "com.afternote.feature.afternote.presentation.AfternoteHostViewModel",
                 "com.afternote.feature.afternote.presentation.detail.AfternoteDetailViewModel",
-                "com.afternote.feature.afternote.presentation.editor.AfternoteEditorViewModel",
                 "com.afternote.feature.afternote.presentation.editor.memorial.AddSongViewModel",
                 "com.afternote.feature.afternote.presentation.editor.receiver.SelectReceiverViewModel",
                 "com.afternote.feature.afternote.presentation.home.AfternoteHomeViewModel",
