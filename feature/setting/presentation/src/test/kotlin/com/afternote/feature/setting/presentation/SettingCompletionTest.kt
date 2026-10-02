@@ -34,6 +34,8 @@ import com.afternote.core.model.user.UserMarketingConsent
 import com.afternote.core.model.user.UserPushSetting
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.setting.domain.UpdateReceiverInfoUseCase
+import com.afternote.feature.setting.domain.UpdateTimeLetterDeliveryConditionUseCase
 import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
 import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
 import com.afternote.feature.setting.presentation.account.ConnectedAccountsViewModel
@@ -387,6 +389,7 @@ class SettingCompletionTest {
             ReceiverEditViewModel(
                 route = SettingRoute.RecipientEditRoute(RECEIVER_ID),
                 receiverRepository = repository,
+                updateReceiverInfo = UpdateReceiverInfoUseCase(repository),
             )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.receiver == COMPLETION_DEFAULT_RECEIVER_DETAIL
@@ -486,6 +489,7 @@ class SettingCompletionTest {
             ReceiverEditViewModel(
                 route = SettingRoute.RecipientEditRoute(RECEIVER_ID),
                 receiverRepository = repository,
+                updateReceiverInfo = UpdateReceiverInfoUseCase(repository),
             )
 
         composeRule.setContent {
@@ -544,6 +548,7 @@ class SettingCompletionTest {
             DeliveryConditionViewModel(
                 route = SettingRoute.AfterDeliveryRoute(RECEIVER_ID),
                 receiverRepository = repository,
+                updateTimeLetterDeliveryCondition = UpdateTimeLetterDeliveryConditionUseCase(repository),
             )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.isInitialized
