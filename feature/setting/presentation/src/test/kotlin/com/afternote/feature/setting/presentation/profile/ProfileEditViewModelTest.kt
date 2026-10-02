@@ -43,6 +43,68 @@ class ProfileEditViewModelTest {
     }
 
     @Test
+    fun `잘못된 연락처는 사진 업로드와 프로필 수정 전에 차단한다`() =
+        runTest(dispatcher) {
+            for (phone in listOf("01055556666ggyyy", "0101234567", "02012345678", "010--1234-5678")) {
+                val profileRepository = FakeMyProfileRepository(profile = SAVED.copy(phone = phone))
+                val uploadRepository = FakePhotoUploadRepository.strict()
+                val viewModel = ProfileEditViewModel(profileRepository, uploadRepository)
+                runCurrent()
+                viewModel.onIntent(ProfileEditIntent.SelectPhoto(PICKED_PHOTO))
+
+                viewModel.onIntent(ProfileEditIntent.UpdateProfile(name = "새 이름", phone = phone))
+                runCurrent()
+
+                assertTrue(profileRepository.profileUpdateCalls.isEmpty())
+                assertTrue(uploadRepository.uploads.isEmpty())
+                assertFalse(viewModel.success().isUpdating)
+                assertNull(viewModel.success().pendingEvent)
+                assertEquals(PICKED_PHOTO, viewModel.success().selectedImageUri)
+            }
+        }
+
+    @Test
+    fun `빈 연락처와 유효한 휴대폰의 기존 저장 값을 보존한다`() =
+        runTest(dispatcher) {
+            for (phone in listOf("", "   ", "01012345678", "010-1234-5678", "011-123-4567")) {
+                val profileRepository = FakeMyProfileRepository(profile = SAVED)
+                val viewModel = ProfileEditViewModel(profileRepository, FakePhotoUploadRepository.strict())
+                runCurrent()
+
+                viewModel.onIntent(ProfileEditIntent.UpdateProfile(name = "새 이름", phone = phone))
+                runCurrent()
+
+                assertEquals(
+                    listOf(ProfileUpdateCall(name = "새 이름", phone = phone.takeIf { it.isNotBlank() }, profileImageUrl = null)),
+                    profileRepository.profileUpdateCalls,
+                )
+                assertEquals(ProfileEditEvent.UpdateSuccess, viewModel.success().pendingEvent)
+            }
+        }
+
+    @Test
+    fun `잘못된 연락처를 고치면 보관한 사진과 함께 저장할 수 있다`() =
+        runTest(dispatcher) {
+            val profileRepository = FakeMyProfileRepository(profile = SAVED.copy(phone = "01055556666ggyyy"))
+            val uploadRepository = FakePhotoUploadRepository(uploadedKey = UPLOADED_KEY)
+            val viewModel = ProfileEditViewModel(profileRepository, uploadRepository)
+            runCurrent()
+            viewModel.onIntent(ProfileEditIntent.SelectPhoto(PICKED_PHOTO))
+            viewModel.onIntent(ProfileEditIntent.UpdateProfile(name = "새 이름", phone = "01055556666ggyyy"))
+            runCurrent()
+
+            viewModel.onIntent(ProfileEditIntent.UpdateProfile(name = "새 이름", phone = "01055556666"))
+            runCurrent()
+
+            assertEquals(listOf(PICKED_PHOTO to "profiles"), uploadRepository.uploads)
+            assertEquals(
+                listOf(ProfileUpdateCall(name = "새 이름", phone = "01055556666", profileImageUrl = UPLOADED_KEY)),
+                profileRepository.profileUpdateCalls,
+            )
+            assertEquals(ProfileEditEvent.UpdateSuccess, viewModel.success().pendingEvent)
+        }
+
+    @Test
     fun `서버 프로필 사진을 싣고 고른 사진은 저장 전까지 그 위에만 보인다`() =
         runTest(dispatcher) {
             val viewModel = ProfileEditViewModel(FakeMyProfileRepository(profile = SAVED), FakePhotoUploadRepository.strict())
