@@ -38,6 +38,7 @@ import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
 import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
 import com.afternote.feature.setting.presentation.account.ConnectedAccountsViewModel
 import com.afternote.feature.setting.presentation.delivery.DeliveryConditionError
+import com.afternote.feature.setting.presentation.delivery.DeliveryConditionIntent
 import com.afternote.feature.setting.presentation.delivery.DeliveryConditionViewModel
 import com.afternote.feature.setting.presentation.home.SettingUiState
 import com.afternote.feature.setting.presentation.home.SettingViewModel
@@ -45,9 +46,11 @@ import com.afternote.feature.setting.presentation.home.WithdrawUiState
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import com.afternote.feature.setting.presentation.notification.PushNotificationViewModel
 import com.afternote.feature.setting.presentation.profile.ProfileEditEvent
+import com.afternote.feature.setting.presentation.profile.ProfileEditIntent
 import com.afternote.feature.setting.presentation.profile.ProfileEditUiState
 import com.afternote.feature.setting.presentation.profile.ProfileEditViewModel
 import com.afternote.feature.setting.presentation.receiver.ReceiverEditEvent
+import com.afternote.feature.setting.presentation.receiver.ReceiverEditIntent
 import com.afternote.feature.setting.presentation.receiver.ReceiverEditScreen
 import com.afternote.feature.setting.presentation.receiver.ReceiverEditViewModel
 import com.afternote.feature.setting.presentation.receiver.ReceiverRegisterEvent
@@ -97,7 +100,7 @@ class SettingCompletionTest {
         }
 
         composeRule.runOnIdle {
-            viewModel.updateProfile(name = "새 이름", phone = "01098765432")
+            viewModel.onIntent(ProfileEditIntent.UpdateProfile(name = "새 이름", phone = "01098765432"))
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.profileUpdateCalls.size == 1
@@ -113,7 +116,11 @@ class SettingCompletionTest {
             Result.success(COMPLETION_DEFAULT_USER.copy(name = "새 이름", phone = "01098765432")),
         )
 
-        assertEquals(ProfileEditEvent.UpdateSuccess, awaitEvent(viewModel.events))
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            (viewModel.uiState.value as? ProfileEditUiState.Success)?.pendingEvent == ProfileEditEvent.UpdateSuccess
+        }
+        composeRule.runOnIdle { viewModel.onIntent(ProfileEditIntent.ConsumeEvent(ProfileEditEvent.UpdateSuccess)) }
+        assertEquals(null, (viewModel.uiState.value as ProfileEditUiState.Success).pendingEvent)
     }
 
     @Test
@@ -398,12 +405,14 @@ class SettingCompletionTest {
                 message = "수정한 마지막 인사말",
             )
         val update: () -> Unit = {
-            viewModel.update(
-                name = expectedBasicCall.name,
-                relation = expectedBasicCall.relation,
-                phone = expectedBasicCall.phone,
-                email = expectedBasicCall.email,
-                message = expectedMessageCall.message,
+            viewModel.onIntent(
+                ReceiverEditIntent.Update(
+                    name = expectedBasicCall.name,
+                    relation = expectedBasicCall.relation,
+                    phone = expectedBasicCall.phone,
+                    email = expectedBasicCall.email,
+                    message = expectedMessageCall.message,
+                ),
             )
         }
 
@@ -450,7 +459,11 @@ class SettingCompletionTest {
         }
         finalMessageGate.complete(Result.success(Unit))
 
-        assertEquals(ReceiverEditEvent.EditSuccess, awaitEvent(viewModel.events))
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            viewModel.uiState.value.pendingEvent == ReceiverEditEvent.EditSuccess
+        }
+        composeRule.runOnIdle { viewModel.onIntent(ReceiverEditIntent.ConsumeSuccess) }
+        assertEquals(null, viewModel.uiState.value.pendingEvent)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             !viewModel.uiState.value.isSaving
         }
@@ -546,8 +559,8 @@ class SettingCompletionTest {
         val expectedCall = CompletionDeliveryUpdateCall(RECEIVER_ID, expectedConditions)
 
         composeRule.runOnIdle {
-            viewModel.onConditionTypeSelected(index = 1)
-            viewModel.onSave()
+            viewModel.onIntent(DeliveryConditionIntent.SelectConditionType(index = 1))
+            viewModel.onIntent(DeliveryConditionIntent.Save)
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.deliveryUpdateCalls.size == 1
@@ -563,7 +576,7 @@ class SettingCompletionTest {
         assertFalse(viewModel.uiState.value.isSaving)
         assertEquals(initialConditions, viewModel.uiState.value.conditions)
 
-        composeRule.runOnIdle { viewModel.onSave() }
+        composeRule.runOnIdle { viewModel.onIntent(DeliveryConditionIntent.Save) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.deliveryUpdateCalls.size == 2
         }
@@ -584,7 +597,9 @@ class SettingCompletionTest {
             ),
         )
 
-        assertEquals(Unit, awaitEvent(viewModel.saveSuccess))
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) { viewModel.uiState.value.isSaved }
+        composeRule.runOnIdle { viewModel.onIntent(DeliveryConditionIntent.ConsumeSuccess) }
+        assertFalse(viewModel.uiState.value.isSaved)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.conditions == serverConditions
         }

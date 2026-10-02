@@ -17,43 +17,61 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
+import com.afternote.core.ui.mvi.ObserveSignal
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
-import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.shared.component.ProfilePhotoWithAddBadge
 
 @Composable
-fun ProfileEditScreen(
+internal fun ProfileEditScreen(
     onBackClick: () -> Unit,
     onWithdrawGuideClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProfileEditViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val currentOnBackClick by rememberUpdatedState(onBackClick)
 
-    LaunchedEffect(Unit) {
-        viewModel.events.collect { event ->
+    (uiState as? ProfileEditUiState.Success)?.pendingEvent?.let { pendingEvent ->
+        ObserveSignal(
+            signal = pendingEvent,
+            // 소비 Intent 에 처리한 신호를 실어, 늦게 도착한 소비가 새로 올라온 다른 신호를 지우지 않게 한다.
+            consumed = ProfileEditIntent.ConsumeEvent(pendingEvent),
+            onIntent = viewModel::onIntent,
+        ) { event ->
             when (event) {
-                ProfileEditEvent.UpdateSuccess -> currentOnBackClick()
+                ProfileEditEvent.UpdateSuccess -> onBackClick()
                 ProfileEditEvent.UpdateFailure -> Unit
             }
         }
     }
 
+    ProfileEditContent(
+        uiState = uiState,
+        onIntent = viewModel::onIntent,
+        onBackClick = onBackClick,
+        onWithdrawGuideClick = onWithdrawGuideClick,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun ProfileEditContent(
+    uiState: ProfileEditUiState,
+    onIntent: (ProfileEditIntent) -> Unit,
+    onBackClick: () -> Unit,
+    onWithdrawGuideClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Scaffold(
         topBar = {
             DetailTopBar(
@@ -80,7 +98,7 @@ fun ProfileEditScreen(
             is ProfileEditUiState.Success -> {
                 ProfileEditForm(
                     state = state,
-                    onUpdateClick = viewModel::updateProfile,
+                    onUpdateClick = { name, phone -> onIntent(ProfileEditIntent.UpdateProfile(name, phone)) },
                     onWithdrawGuideClick = onWithdrawGuideClick,
                     modifier = Modifier.padding(innerPadding),
                 )
