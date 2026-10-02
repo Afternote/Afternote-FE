@@ -64,6 +64,10 @@ httpclient = "4.5.14"
 logback = "1.5.34"
 testcontainers = "2.0.5"
 protobufJavalite = "3.25.9"
+# 빌드 클래스패스 전용 보안 하한 — GHSA-27j2-h3m2-8237(critical)이 2.3.35 에서 패치(#2204). kover 0.9.9 가
+# kover-features-jvm → intellij-coverage-reporter → coverage-report 1.0.25 경유로 2.3.32 를 고정하고, kover·
+# coverage-report 최신판도 같은 값이라 상류 업그레이드로는 못 푼다. build-logic 의 constraint 가 쓴다.
+freemarker = "2.3.35"
 
 [libraries]
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
