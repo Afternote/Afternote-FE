@@ -38,6 +38,7 @@ import com.afternote.feature.setting.domain.UpdateReceiverInfoUseCase
 import com.afternote.feature.setting.domain.UpdateTimeLetterDeliveryConditionUseCase
 import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
 import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
+import com.afternote.feature.setting.presentation.account.ConnectedAccountsIntent
 import com.afternote.feature.setting.presentation.account.ConnectedAccountsViewModel
 import com.afternote.feature.setting.presentation.delivery.DeliveryConditionError
 import com.afternote.feature.setting.presentation.delivery.DeliveryConditionIntent
@@ -46,7 +47,10 @@ import com.afternote.feature.setting.presentation.home.SettingUiState
 import com.afternote.feature.setting.presentation.home.SettingViewModel
 import com.afternote.feature.setting.presentation.home.WithdrawUiState
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
+import com.afternote.feature.setting.presentation.notification.MarketingConsent
+import com.afternote.feature.setting.presentation.notification.PushNotificationIntent
 import com.afternote.feature.setting.presentation.notification.PushNotificationViewModel
+import com.afternote.feature.setting.presentation.notification.PushSetting
 import com.afternote.feature.setting.presentation.profile.ProfileEditEvent
 import com.afternote.feature.setting.presentation.profile.ProfileEditIntent
 import com.afternote.feature.setting.presentation.profile.ProfileEditUiState
@@ -143,7 +147,7 @@ class SettingCompletionTest {
             !viewModel.uiState.value.isLoading
         }
 
-        composeRule.runOnIdle { viewModel.onNewsletterToggle(false) }
+        composeRule.runOnIdle { viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.NEWSLETTER, false)) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.pushUpdateCalls.size == 1
         }
@@ -162,7 +166,7 @@ class SettingCompletionTest {
         }
         assertFalse(viewModel.uiState.value.isNewsletterOn)
 
-        composeRule.runOnIdle { viewModel.onMindRecordToggle(false) }
+        composeRule.runOnIdle { viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.MIND_RECORD, false)) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.pushUpdateCalls.size == 2
         }
@@ -186,10 +190,10 @@ class SettingCompletionTest {
         assertTrue(viewModel.uiState.value.saveFailure != null)
 
         composeRule.runOnIdle {
-            viewModel.onAfternoteToggle(false)
-            viewModel.onSmsChecked(true)
-            viewModel.onEmailChecked(true)
-            viewModel.onPushChecked(true)
+            viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.AFTERNOTE, false))
+            viewModel.onIntent(PushNotificationIntent.ChangeMarketingConsent(MarketingConsent.SMS, true))
+            viewModel.onIntent(PushNotificationIntent.ChangeMarketingConsent(MarketingConsent.EMAIL, true))
+            viewModel.onIntent(PushNotificationIntent.ChangeMarketingConsent(MarketingConsent.PUSH, true))
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.pushUpdateCalls.size == 3
@@ -228,7 +232,7 @@ class SettingCompletionTest {
         }
 
         composeRule.runOnIdle {
-            viewModel.link(provider = "google", accessToken = "google-access-token")
+            viewModel.onIntent(ConnectedAccountsIntent.Link(provider = "google", accessToken = "google-access-token"))
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.connectedLinkCalls.size == 1
@@ -259,7 +263,7 @@ class SettingCompletionTest {
         )
 
         composeRule.runOnIdle {
-            viewModel.onToggle(provider = "google", enabled = false)
+            viewModel.onIntent(ConnectedAccountsIntent.Toggle(provider = "google", enabled = false))
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.connectedUnlinkCalls.size == 1

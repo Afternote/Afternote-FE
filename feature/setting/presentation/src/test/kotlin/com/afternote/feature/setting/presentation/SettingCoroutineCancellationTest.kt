@@ -12,17 +12,17 @@ import com.afternote.core.model.user.UserMarketingConsent
 import com.afternote.core.model.user.UserPushSetting
 import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
 import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
+import com.afternote.feature.setting.presentation.account.ConnectedAccountsIntent
 import com.afternote.feature.setting.presentation.account.ConnectedAccountsViewModel
 import com.afternote.feature.setting.presentation.home.SettingUiState
 import com.afternote.feature.setting.presentation.home.SettingViewModel
-import com.afternote.feature.setting.presentation.notification.PushNotificationEvent
+import com.afternote.feature.setting.presentation.notification.PushNotificationIntent
 import com.afternote.feature.setting.presentation.notification.PushNotificationViewModel
 import com.afternote.feature.setting.presentation.profile.ProfileEditIntent
 import com.afternote.feature.setting.presentation.profile.ProfileEditUiState
 import com.afternote.feature.setting.presentation.profile.ProfileEditViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -100,7 +100,7 @@ class SettingCoroutineCancellationTest {
             val store = storeHolding(viewModel)
             runCurrent()
 
-            viewModel.link(provider = "google", accessToken = "google-token")
+            viewModel.onIntent(ConnectedAccountsIntent.Link(provider = "google", accessToken = "google-token"))
             runCurrent()
             assertTrue(pending.isStarted)
             val pendingState = viewModel.uiState.value
@@ -125,7 +125,7 @@ class SettingCoroutineCancellationTest {
             val store = storeHolding(viewModel)
             runCurrent()
 
-            viewModel.onToggle(provider = "naver", enabled = false)
+            viewModel.onIntent(ConnectedAccountsIntent.Toggle(provider = "naver", enabled = false))
             runCurrent()
             assertTrue(pending.isStarted)
             val pendingState = viewModel.uiState.value
@@ -225,8 +225,7 @@ class SettingCoroutineCancellationTest {
             val reporter = RecordingErrorReporter()
             val viewModel = pushViewModel(repository, reporter)
             val store = storeHolding(viewModel)
-            val events = mutableListOf<PushNotificationEvent>()
-            backgroundScope.launch(dispatcher) { viewModel.events.collect { events += it } }
+            viewModel.onIntent(PushNotificationIntent.MarketingFeedbackStarted)
             runCurrent()
 
             // 푸시 설정 조회는 먼저 정상 종료해 안정된 상태를 만든다. 매달린 것은 마케팅 조회뿐이다.
@@ -239,7 +238,7 @@ class SettingCoroutineCancellationTest {
 
             assertTrue(pending.isCancelled)
             assertEquals(stableState, viewModel.uiState.value)
-            assertTrue(events.isEmpty())
+            assertFalse(viewModel.uiState.value.isMarketingConsentSaveFailed)
             assertEquals(0, reporter.recordedStages.size)
             assertEquals(emptyList<String>(), pushFailureLogs())
         }
@@ -273,8 +272,7 @@ class SettingCoroutineCancellationTest {
                     },
                     failureReporter,
                 )
-            val events = mutableListOf<PushNotificationEvent>()
-            backgroundScope.launch(dispatcher) { failureViewModel.events.collect { events += it } }
+            failureViewModel.onIntent(PushNotificationIntent.MarketingFeedbackStarted)
             runCurrent()
 
             // 평범한 실패는 진단 로그 한 줄로 끝난다. 화면 값은 기본값 그대로이고 안내도 띄우지 않는다.
@@ -282,7 +280,7 @@ class SettingCoroutineCancellationTest {
             assertTrue(failureViewModel.uiState.value.isSmsChecked)
             assertTrue(failureViewModel.uiState.value.isEmailChecked)
             assertFalse(failureViewModel.uiState.value.isPushChecked)
-            assertTrue(events.isEmpty())
+            assertFalse(failureViewModel.uiState.value.isMarketingConsentSaveFailed)
             assertEquals(0, failureReporter.recordedStages.size)
         }
 

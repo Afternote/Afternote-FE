@@ -16,7 +16,7 @@ import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.notification.PushNotificationUiState
 
 @Composable
-fun DeviceAlarmOffSection(
+internal fun DeviceAlarmOffSection(
     uiState: PushNotificationUiState,
     onSmsCheck: (Boolean) -> Unit,
     onEmailCheck: (Boolean) -> Unit,
