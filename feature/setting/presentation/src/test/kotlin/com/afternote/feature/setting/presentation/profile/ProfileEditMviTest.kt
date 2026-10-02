@@ -1,6 +1,7 @@
 package com.afternote.feature.setting.presentation.profile
 
 import com.afternote.core.domain.testing.FakeMyProfileRepository
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
 import com.afternote.core.model.user.User
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -41,17 +42,17 @@ class ProfileEditMviTest {
     fun `load fills form and load failure becomes error`() {
         assertEquals(
             ProfileEditUiState.Success(name = "홍길동", phone = "", email = "hong@afternote.local"),
-            ProfileEditViewModel(repository).uiState.value,
+            ProfileEditViewModel(repository, FakePhotoUploadRepository.strict()).uiState.value,
         )
 
         val failing = FakeMyProfileRepository(onGetMyProfile = { error("load failed") })
-        assertEquals(ProfileEditUiState.Error, ProfileEditViewModel(failing).uiState.value)
+        assertEquals(ProfileEditUiState.Error, ProfileEditViewModel(failing, FakePhotoUploadRepository.strict()).uiState.value)
     }
 
     @Test
     fun `update while in flight or after success does not submit again`() {
         val gate = enqueueUpdate()
-        val viewModel = ProfileEditViewModel(repository)
+        val viewModel = ProfileEditViewModel(repository, FakePhotoUploadRepository.strict())
 
         viewModel.onIntent(ProfileEditIntent.UpdateProfile(name = "새 이름", phone = ""))
         viewModel.onIntent(ProfileEditIntent.UpdateProfile(name = "또 이름", phone = ""))
@@ -72,7 +73,7 @@ class ProfileEditMviTest {
     @Test
     fun `success signal stays until consumed and consuming clears it once`() {
         enqueueUpdate().complete(Result.success(PROFILE))
-        val viewModel = ProfileEditViewModel(repository)
+        val viewModel = ProfileEditViewModel(repository, FakePhotoUploadRepository.strict())
 
         viewModel.onIntent(ProfileEditIntent.UpdateProfile(name = "새 이름", phone = "01012345678"))
 
@@ -91,7 +92,7 @@ class ProfileEditMviTest {
     @Test
     fun `failure allows retry and a late consume does not clear the newer signal`() {
         enqueueUpdate().complete(Result.failure(IllegalStateException("update failed")))
-        val viewModel = ProfileEditViewModel(repository)
+        val viewModel = ProfileEditViewModel(repository, FakePhotoUploadRepository.strict())
 
         viewModel.onIntent(ProfileEditIntent.UpdateProfile(name = "새 이름", phone = ""))
 
@@ -109,7 +110,7 @@ class ProfileEditMviTest {
     @Test
     fun `cancelled update is not reported as failure`() {
         enqueueUpdate().completeExceptionally(CancellationException("cancelled"))
-        val viewModel = ProfileEditViewModel(repository)
+        val viewModel = ProfileEditViewModel(repository, FakePhotoUploadRepository.strict())
 
         viewModel.onIntent(ProfileEditIntent.UpdateProfile(name = "새 이름", phone = ""))
 
