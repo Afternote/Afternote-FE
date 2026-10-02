@@ -7,6 +7,7 @@ import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.setting.domain.SettingAccountRepository
 import com.afternote.feature.setting.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -18,12 +19,22 @@ internal class ConnectedAccountsViewModel
     ) : MviViewModel<ConnectedAccountsIntent, ConnectedAccountsUiState, ConnectedAccountsReducerEvent>(
             ConnectedAccountsUiState(isLoading = true),
         ) {
+        private var loadJob: Job? = null
+
         init {
             loadConnectedAccounts()
         }
 
         override fun onIntent(intent: ConnectedAccountsIntent) {
             when (intent) {
+                ConnectedAccountsIntent.RetryLoad -> {
+                    if (currentState.errorMessage != null) loadConnectedAccounts()
+                }
+
+                is ConnectedAccountsIntent.ConsumeError -> {
+                    dispatch(ConnectedAccountsReducerEvent.ErrorConsumed(intent.message))
+                }
+
                 is ConnectedAccountsIntent.Toggle -> {
                     toggle(intent.provider, intent.enabled)
                 }
@@ -45,8 +56,26 @@ internal class ConnectedAccountsViewModel
             event: ConnectedAccountsReducerEvent,
         ): ConnectedAccountsUiState =
             when (event) {
+                ConnectedAccountsReducerEvent.Loading -> {
+                    state.copy(isLoading = true, errorMessage = null)
+                }
+
+                ConnectedAccountsReducerEvent.Changing -> {
+                    state.copy(isUpdating = true, pendingError = null)
+                }
+
+                is ConnectedAccountsReducerEvent.ErrorConsumed -> {
+                    if (state.pendingError ==
+                        event.message
+                    ) {
+                        state.copy(pendingError = null)
+                    } else {
+                        state
+                    }
+                }
+
                 is ConnectedAccountsReducerEvent.Loaded -> {
-                    state.copy(isLoading = false, accounts = event.accounts)
+                    state.copy(isLoading = false, errorMessage = null, accounts = event.accounts)
                 }
 
                 is ConnectedAccountsReducerEvent.LoadFailed -> {
@@ -54,11 +83,11 @@ internal class ConnectedAccountsViewModel
                 }
 
                 is ConnectedAccountsReducerEvent.AccountsChanged -> {
-                    state.copy(accounts = event.accounts)
+                    state.copy(accounts = event.accounts, isUpdating = false)
                 }
 
                 is ConnectedAccountsReducerEvent.ChangeFailed -> {
-                    state.copy(errorMessage = event.message)
+                    state.copy(pendingError = event.message, isUpdating = false)
                 }
 
                 is ConnectedAccountsReducerEvent.LinkRequested -> {
@@ -72,20 +101,24 @@ internal class ConnectedAccountsViewModel
             }
 
         private fun loadConnectedAccounts() {
-            viewModelScope.launch {
-                runCatchingCancellable { accountRepository.getConnectedAccounts() }
-                    .onSuccess { accounts ->
-                        dispatch(ConnectedAccountsReducerEvent.Loaded(accounts.toStateList()))
-                    }.onFailure {
-                        dispatch(ConnectedAccountsReducerEvent.LoadFailed("계정 정보를 불러올 수 없습니다."))
-                    }
-            }
+            if (loadJob?.isActive == true) return
+            dispatch(ConnectedAccountsReducerEvent.Loading)
+            loadJob =
+                viewModelScope.launch {
+                    runCatchingCancellable { accountRepository.getConnectedAccounts() }
+                        .onSuccess { accounts ->
+                            dispatch(ConnectedAccountsReducerEvent.Loaded(accounts.toStateList()))
+                        }.onFailure {
+                            dispatch(ConnectedAccountsReducerEvent.LoadFailed("계정 정보를 불러올 수 없습니다."))
+                        }
+                }
         }
 
         private fun toggle(
             provider: String,
             enabled: Boolean,
         ) {
+            if (currentState.isLoading || currentState.errorMessage != null || currentState.isUpdating) return
             if (enabled) {
                 dispatch(ConnectedAccountsReducerEvent.LinkRequested(provider))
             } else {
@@ -97,6 +130,8 @@ internal class ConnectedAccountsViewModel
             provider: String,
             accessToken: String,
         ) {
+            if (currentState.isLoading || currentState.errorMessage != null || currentState.isUpdating) return
+            dispatch(ConnectedAccountsReducerEvent.Changing)
             viewModelScope.launch {
                 runCatchingCancellable { accountRepository.linkConnectedAccount(provider, accessToken) }
                     .onSuccess { accounts -> dispatch(ConnectedAccountsReducerEvent.AccountsChanged(accounts.toStateList())) }
@@ -105,6 +140,7 @@ internal class ConnectedAccountsViewModel
         }
 
         private fun unlink(provider: String) {
+            dispatch(ConnectedAccountsReducerEvent.Changing)
             viewModelScope.launch {
                 runCatchingCancellable { accountRepository.unlinkConnectedAccount(provider) }
                     .onSuccess { accounts -> dispatch(ConnectedAccountsReducerEvent.AccountsChanged(accounts.toStateList())) }

@@ -17,6 +17,7 @@ internal fun PushNotificationScreen(
     PushNotificationContent(
         uiState = uiState,
         onBack = onBack,
+        onRetry = { viewModel.onIntent(PushNotificationIntent.RetryLoad) },
         onNewsletterToggle = { viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.NEWSLETTER, it)) },
         onMindRecordToggle = { viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.MIND_RECORD, it)) },
         onAfternoteToggle = { viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.AFTERNOTE, it)) },

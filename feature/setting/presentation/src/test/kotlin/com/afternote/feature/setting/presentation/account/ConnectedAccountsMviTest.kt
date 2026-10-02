@@ -100,7 +100,7 @@ class ConnectedAccountsMviTest {
 
         repeat(2) {
             viewModel.onIntent(ConnectedAccountsIntent.Link(provider = "google", accessToken = "token-$it"))
-            assertEquals("계정 연결에 실패했습니다.", viewModel.uiState.value.errorMessage)
+            assertEquals("계정 연결에 실패했습니다.", viewModel.uiState.value.pendingError)
             assertFalse(
                 viewModel.uiState.value.accounts
                     .first { it.provider == "google" }

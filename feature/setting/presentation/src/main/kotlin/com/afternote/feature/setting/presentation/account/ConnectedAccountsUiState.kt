@@ -6,6 +6,8 @@ data class ConnectedAccountsUiState(
     val isLoading: Boolean = false,
     val accounts: List<SocialAccountState> = emptyList(),
     val errorMessage: String? = null,
+    val isUpdating: Boolean = false,
+    val pendingError: String? = null,
     /**
      * 화면이 플랫폼 인증(카카오 SDK·Credential Manager)을 시작해야 하는 제공자 신호다 (#1502).
      *

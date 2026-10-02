@@ -4,6 +4,12 @@ import com.afternote.core.ui.mvi.MviIntent
 import com.afternote.core.ui.mvi.ReducerEvent
 
 internal sealed interface ConnectedAccountsIntent : MviIntent {
+    data object RetryLoad : ConnectedAccountsIntent
+
+    data class ConsumeError(
+        val message: String,
+    ) : ConnectedAccountsIntent
+
     data class Toggle(
         val provider: String,
         val enabled: Boolean,
@@ -22,6 +28,14 @@ internal sealed interface ConnectedAccountsIntent : MviIntent {
 }
 
 internal sealed interface ConnectedAccountsReducerEvent : ReducerEvent {
+    data object Loading : ConnectedAccountsReducerEvent
+
+    data object Changing : ConnectedAccountsReducerEvent
+
+    data class ErrorConsumed(
+        val message: String,
+    ) : ConnectedAccountsReducerEvent
+
     data class Loaded(
         val accounts: List<SocialAccountState>,
     ) : ConnectedAccountsReducerEvent

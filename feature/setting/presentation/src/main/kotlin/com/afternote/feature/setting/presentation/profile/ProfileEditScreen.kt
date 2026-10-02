@@ -19,12 +19,15 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -45,6 +48,8 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.receiver.ReceiverPhoneValidation
 import com.afternote.feature.setting.presentation.receiver.validateReceiverPhone
+import com.afternote.feature.setting.presentation.shared.component.SettingLoadErrorContent
+import kotlinx.coroutines.launch
 
 @Composable
 internal fun ProfileEditScreen(
@@ -54,6 +59,9 @@ internal fun ProfileEditScreen(
     viewModel: ProfileEditViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val feedbackScope = rememberCoroutineScope()
+    val updateFailedMessage = stringResource(R.string.setting_profile_update_error)
     val onPickProfileImage =
         rememberProfileImagePicker(
             canAcceptPhoto = (uiState as? ProfileEditUiState.Success)?.isUpdating == false,
@@ -68,13 +76,19 @@ internal fun ProfileEditScreen(
             onIntent = viewModel::onIntent,
         ) { event ->
             when (event) {
-                ProfileEditEvent.UpdateSuccess -> onBackClick()
-                ProfileEditEvent.UpdateFailure -> Unit
+                ProfileEditEvent.UpdateSuccess -> {
+                    onBackClick()
+                }
+
+                ProfileEditEvent.UpdateFailure -> {
+                    feedbackScope.launch { snackbarHostState.showSnackbar(updateFailedMessage) }
+                }
             }
         }
     }
 
     ProfileEditContent(
+        snackbarHostState = snackbarHostState,
         uiState = uiState,
         onPickImageClick = onPickProfileImage,
         onIntent = viewModel::onIntent,
@@ -86,6 +100,7 @@ internal fun ProfileEditScreen(
 
 @Composable
 private fun ProfileEditContent(
+    snackbarHostState: SnackbarHostState,
     uiState: ProfileEditUiState,
     onPickImageClick: () -> Unit,
     onIntent: (ProfileEditIntent) -> Unit,
@@ -102,6 +117,7 @@ private fun ProfileEditContent(
         },
         modifier = modifier,
         containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         when (val state = uiState) {
             is ProfileEditUiState.Loading -> {
@@ -127,15 +143,11 @@ private fun ProfileEditContent(
             }
 
             is ProfileEditUiState.Error -> {
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(text = "프로필을 불러올 수 없습니다.")
-                }
+                SettingLoadErrorContent(
+                    message = stringResource(R.string.setting_profile_load_error),
+                    onRetry = { onIntent(ProfileEditIntent.RetryLoad) },
+                    modifier = Modifier.padding(innerPadding),
+                )
             }
         }
     }

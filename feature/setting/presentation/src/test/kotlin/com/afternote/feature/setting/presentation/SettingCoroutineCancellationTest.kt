@@ -15,6 +15,7 @@ import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
 import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
 import com.afternote.feature.setting.presentation.account.ConnectedAccountsIntent
 import com.afternote.feature.setting.presentation.account.ConnectedAccountsViewModel
+import com.afternote.feature.setting.presentation.home.SettingProfileState
 import com.afternote.feature.setting.presentation.home.SettingUiState
 import com.afternote.feature.setting.presentation.home.SettingViewModel
 import com.afternote.feature.setting.presentation.notification.PushNotificationIntent
@@ -238,7 +239,7 @@ class SettingCoroutineCancellationTest {
             runCurrent()
 
             assertTrue(pending.isCancelled)
-            assertEquals(SettingUiState.Loading, viewModel.uiState.value)
+            assertEquals(SettingProfileState.Loading, viewModel.uiState.value.profile)
         }
 
     @Test
@@ -326,7 +327,7 @@ class SettingCoroutineCancellationTest {
                 )
             runCurrent()
 
-            assertEquals(SettingUiState.Error("프로필을 불러올 수 없습니다."), viewModel.uiState.value)
+            assertEquals(SettingProfileState.Error, viewModel.uiState.value.profile)
         }
 
     private fun pushViewModel(
