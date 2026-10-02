@@ -13,7 +13,7 @@ import com.afternote.feature.setting.presentation.notification.component.DeviceA
 import com.afternote.feature.setting.presentation.notification.component.PushToggleSection
 
 @Composable
-fun PushNotificationScreen(
+internal fun PushNotificationScreen(
     onBack: () -> Unit,
     viewModel: PushNotificationViewModel = hiltViewModel(),
 ) {

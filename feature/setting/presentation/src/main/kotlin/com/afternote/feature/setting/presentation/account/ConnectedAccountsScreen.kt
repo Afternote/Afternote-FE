@@ -22,7 +22,7 @@ import com.afternote.feature.setting.presentation.account.social.requestKakaoAcc
 import com.afternote.feature.setting.presentation.account.social.toKakaoAuthResult
 
 @Composable
-fun ConnectedAccountsScreen(
+internal fun ConnectedAccountsScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ConnectedAccountsViewModel = hiltViewModel(),
