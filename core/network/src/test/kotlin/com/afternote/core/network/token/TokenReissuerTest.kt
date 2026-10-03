@@ -1,5 +1,6 @@
 package com.afternote.core.network.token
 
+import com.afternote.core.domain.error.SessionChangedException
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.model.TokenBundle
 import com.afternote.core.network.FakeErrorReporter
@@ -268,18 +269,62 @@ class TokenReissuerTest {
     }
 
     @Test
-    fun `저장 토큰이 빈 값 - TokenAlreadyChanged 가 아니라 회전 시도로 진행`() {
-        val repository =
-            networkFakeAuthRepository(
-                accessToken = null,
-                onRotateToken = { Result.failure(IllegalStateException("리프레시 토큰이 존재하지 않습니다.")) },
-            )
+    fun `저장 토큰이 빈 값 - TokenAlreadyChanged 가 아니라 회전할 세션이 없는 실패로 끝난다`() {
+        val repository = networkFakeAuthRepository(accessToken = null)
         val coordinator = reissuer(repository)
 
         val outcome = coordinator.reissueOnce(expectedAccessToken = "old-token")
 
-        assertEquals(1, repository.rotateCallCount)
+        // 세션이 없으면 리프레시 토큰도 없다. 재발급 HTTP 없이 세션 유지 분류로 끝난다.
+        assertEquals(0, repository.rotateCallCount)
         assertTrue(outcome is TokenReissuer.Outcome.UnexpectedFailure)
+    }
+
+    @Test
+    fun `재발급 시작 시점의 세션에 묶어 회전한다`() {
+        val repository =
+            networkFakeAuthRepository(
+                accessToken = "old-token",
+                onRotateToken = {
+                    accessToken = "fresh-token"
+                    Result.success(TokenBundle(accessToken = "fresh-token", refreshToken = "r"))
+                },
+            )
+
+        reissuer(repository).reissueOnce(expectedAccessToken = "old-token")
+
+        assertEquals(listOf(repository.sessionId), repository.rotatedSessionIds)
+    }
+
+    @Test
+    fun `세션이 바뀌어 저장하지 못한 회전 - Rotated 도 deadline 도 없이 이전 토큰 호출자에게 거절`() {
+        val reporter = FakeErrorReporter()
+        val repository =
+            networkFakeAuthRepository(
+                accessToken = "A-access",
+                onRotateToken = {
+                    // 응답을 기다리는 사이 로그아웃이 끝났고, 저장소가 이 회전을 쓰지 않았다.
+                    clearSession()
+                    Result.failure(SessionChangedException())
+                },
+                onClearSession = {
+                    accessToken = null
+                    refreshToken = null
+                    Result.success(Unit)
+                },
+            )
+        val coordinator = reissuer(repository, reporter)
+
+        val outcome = coordinator.reissueOnce(expectedAccessToken = "A-access")
+
+        assertTrue(outcome is TokenReissuer.Outcome.AuthenticationRejected)
+        assertTrue((outcome as TokenReissuer.Outcome.AuthenticationRejected).exception is SessionChangedException)
+        assertFalse(tracker.isExpiringSoon())
+        assertTrue(reporter.writtenFailures.isEmpty())
+        // 로그아웃 정리 1회뿐이고, 같은 토큰의 대기자는 재발급 없이 같은 결과를 받는다.
+        assertEquals(1, repository.clearSessionCallCount)
+        assertSame(outcome, coordinator.reissueOnce(expectedAccessToken = "A-access"))
+        assertEquals(1, repository.rotateCallCount)
     }
 
     @Test
@@ -355,5 +400,71 @@ class TokenReissuerTest {
 
         assertEquals(TokenReissuer.Outcome.Rotated("rotated-token"), outcome)
         assertEquals(2, repository.rotateCallCount)
+    }
+
+    @Test
+    fun `이전 세션의 늦은 확정 거절은 새로 로그인한 세션을 지우지 않는다`() {
+        listOf(
+            ApiException(status = 401, code = 1107, serverMessage = "무효 refresh", fallbackMessage = "무효 refresh"),
+            ApiException(status = 400, code = 1107, serverMessage = "무효 refresh", fallbackMessage = "무효 refresh"),
+        ).forEach { failure ->
+            tracker.clear()
+            val repository =
+                networkFakeAuthRepository(
+                    accessToken = "A-access",
+                    onRotateToken = {
+                        // 재발급 응답을 기다리는 사이 로그아웃과 B 로그인이 끝났다. 로그인은 발급 응답의 deadline 도 기록한다.
+                        clearSession()
+                        saveSession("B-access", "B-refresh")
+                        tracker.record(expiresInSeconds = 30)
+                        Result.failure(failure)
+                    },
+                    onClearSession = {
+                        accessToken = null
+                        refreshToken = null
+                        Result.success(Unit)
+                    },
+                ).apply { onSaveSession = null }
+            val coordinator = reissuer(repository)
+
+            val outcome = coordinator.reissueOnce(expectedAccessToken = "A-access")
+
+            assertTrue(outcome is TokenReissuer.Outcome.AuthenticationRejected)
+            assertSame(failure, (outcome as TokenReissuer.Outcome.AuthenticationRejected).exception)
+            assertEquals("${failure.status}/${failure.code} 거절이 B 를 지웠다", "B-access", repository.accessToken)
+            assertEquals("B-refresh", repository.refreshToken)
+            // 로그아웃 정리 1회뿐이다. 거절 처리가 정리를 더 부르면 그것이 B 를 지운다.
+            assertEquals(1, repository.clearSessionCallCount)
+            assertTrue("B 의 선제 갱신 deadline 이 지워졌다", tracker.isExpiringSoon())
+
+            // A 토큰으로 늦게 들어온 대기자는 재발급 없이 같은 거절을 받는다 (#1126).
+            assertSame(outcome, coordinator.reissueOnce(expectedAccessToken = "A-access"))
+            assertEquals(1, repository.rotateCallCount)
+        }
+    }
+
+    @Test
+    fun `이전 세션의 일시 실패는 새 세션의 deadline 을 지우지 않는다`() {
+        val repository =
+            networkFakeAuthRepository(
+                accessToken = "A-access",
+                onRotateToken = {
+                    clearSession()
+                    saveSession("B-access", "B-refresh")
+                    tracker.record(expiresInSeconds = 30)
+                    Result.failure(SocketTimeoutException("timeout"))
+                },
+                onClearSession = {
+                    accessToken = null
+                    refreshToken = null
+                    Result.success(Unit)
+                },
+            ).apply { onSaveSession = null }
+
+        val outcome = reissuer(repository).reissueOnce(expectedAccessToken = "A-access")
+
+        assertTrue(outcome is TokenReissuer.Outcome.TransportFailure)
+        assertEquals("B-access", repository.accessToken)
+        assertTrue(tracker.isExpiringSoon())
     }
 }
