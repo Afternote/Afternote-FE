@@ -31,7 +31,7 @@ internal class DeliveryConditionViewModel
 
         override fun onIntent(intent: DeliveryConditionIntent) {
             when (intent) {
-                is DeliveryConditionIntent.SelectConditionType -> onConditionTypeSelected(intent.index)
+                is DeliveryConditionIntent.SelectConditionType -> dispatch(DeliveryConditionReducerEvent.ConditionSelected(intent.type))
                 DeliveryConditionIntent.Save -> onSave()
                 DeliveryConditionIntent.ConsumeSuccess -> dispatch(DeliveryConditionReducerEvent.SuccessConsumed)
             }
@@ -96,12 +96,6 @@ internal class DeliveryConditionViewModel
                         dispatch(DeliveryConditionReducerEvent.LoadFailed)
                     }
             }
-        }
-
-        private fun onConditionTypeSelected(index: Int) {
-            val conditionType =
-                if (index == 1) DeliveryConditionType.RECEIVER_REQUEST else DeliveryConditionType.INACTIVITY
-            dispatch(DeliveryConditionReducerEvent.ConditionSelected(conditionType))
         }
 
         private fun onSave() {
