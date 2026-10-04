@@ -14,8 +14,12 @@ internal data class DeliveryConditionUiState(
     val conditions: List<DeliveryConditionItem> = emptyList(),
     val error: DeliveryConditionError? = null,
     val isSaving: Boolean = false,
+    /** 저장을 마쳤다는 사실. 소비되는 [shouldNavigateBack] 과 달리 되돌리지 않아, 화면이 닫히는 동안에도 재제출을 막는다. */
     val isSaved: Boolean = false,
-) : UiState
+    val shouldNavigateBack: Boolean = false,
+) : UiState {
+    val isSaveLocked: Boolean get() = isSaving || isSaved
+}
 
 enum class DeliveryConditionError {
     LOAD_FAILED,

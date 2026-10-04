@@ -42,7 +42,7 @@ internal fun DeliveryConditionScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     ObserveFlag(
-        raised = uiState.isSaved,
+        raised = uiState.shouldNavigateBack,
         consumed = DeliveryConditionIntent.ConsumeSuccess,
         onIntent = viewModel::onIntent,
         onRaised = onSaveSuccess,
@@ -85,7 +85,7 @@ private fun DeliveryConditionContent(
                 title = stringResource(R.string.setting_recipient_after_delivery),
                 onBackClick = onBack,
                 actions = {
-                    val isSaveEnabled = uiState.isInitialized && !uiState.isLoading && !uiState.isSaving
+                    val isSaveEnabled = uiState.isInitialized && !uiState.isLoading && !uiState.isSaveLocked
                     TextButton(onClick = onSave, enabled = isSaveEnabled) {
                         Text(
                             text = stringResource(R.string.setting_delivery_condition_save),

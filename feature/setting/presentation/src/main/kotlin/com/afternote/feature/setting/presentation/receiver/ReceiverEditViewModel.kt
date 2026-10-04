@@ -38,20 +38,33 @@ internal class ReceiverEditViewModel
             event: ReceiverEditReducerEvent,
         ): ReceiverEditUiState =
             when (event) {
-                is ReceiverEditReducerEvent.Loaded -> state.copy(isLoading = false, receiver = event.receiver)
+                is ReceiverEditReducerEvent.Loaded -> {
+                    state.copy(isLoading = false, receiver = event.receiver)
+                }
 
-                is ReceiverEditReducerEvent.LoadFailed -> state.copy(isLoading = false, errorMessage = event.message)
+                is ReceiverEditReducerEvent.LoadFailed -> {
+                    state.copy(isLoading = false, errorMessage = event.message)
+                }
 
-                is ReceiverEditReducerEvent.ValidationFailed -> state.copy(errorMessage = event.message)
+                is ReceiverEditReducerEvent.ValidationFailed -> {
+                    state.copy(errorMessage = event.message)
+                }
 
-                ReceiverEditReducerEvent.Saving -> state.copy(isSaving = true, errorMessage = null)
+                ReceiverEditReducerEvent.Saving -> {
+                    state.copy(isSaving = true, errorMessage = null)
+                }
 
-                // 성공 뒤 화면이 닫히는 사이 재제출을 막도록 isSaving 을 유지한다.
-                ReceiverEditReducerEvent.Saved -> state.copy(pendingEvent = ReceiverEditEvent.EditSuccess)
+                ReceiverEditReducerEvent.Saved -> {
+                    state.copy(isSaving = false, isSaved = true, pendingEvent = ReceiverEditEvent.EditSuccess)
+                }
 
-                is ReceiverEditReducerEvent.SaveFailed -> state.copy(isSaving = false, errorMessage = event.message)
+                is ReceiverEditReducerEvent.SaveFailed -> {
+                    state.copy(isSaving = false, errorMessage = event.message)
+                }
 
-                ReceiverEditReducerEvent.SuccessConsumed -> state.copy(pendingEvent = null)
+                ReceiverEditReducerEvent.SuccessConsumed -> {
+                    state.copy(pendingEvent = null)
+                }
             }
 
         init {
@@ -76,7 +89,7 @@ internal class ReceiverEditViewModel
             email: String,
             message: String,
         ) {
-            if (currentState.isSaving) return
+            if (currentState.isSaveLocked) return
             if (!email.isValidReceiverEmail()) {
                 dispatch(ReceiverEditReducerEvent.ValidationFailed(UiText.Resource(R.string.setting_receiver_email_invalid)))
                 return

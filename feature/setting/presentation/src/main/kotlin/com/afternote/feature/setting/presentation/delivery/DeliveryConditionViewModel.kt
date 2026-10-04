@@ -69,9 +69,8 @@ internal class DeliveryConditionViewModel
                     state.copy(isSaving = true)
                 }
 
-                // 성공 뒤 화면이 닫히는 사이 재제출을 막도록 isSaving 을 유지한다.
                 is DeliveryConditionReducerEvent.Saved -> {
-                    state.copy(conditions = event.conditions, isSaved = true)
+                    state.copy(isSaving = false, conditions = event.conditions, isSaved = true, shouldNavigateBack = true)
                 }
 
                 DeliveryConditionReducerEvent.SaveFailed -> {
@@ -79,7 +78,7 @@ internal class DeliveryConditionViewModel
                 }
 
                 DeliveryConditionReducerEvent.SuccessConsumed -> {
-                    state.copy(isSaved = false)
+                    state.copy(shouldNavigateBack = false)
                 }
             }
 
@@ -101,7 +100,7 @@ internal class DeliveryConditionViewModel
 
         private fun onSave() {
             val state = currentState
-            if (!state.isInitialized || state.isSaving) return
+            if (!state.isInitialized || state.isSaveLocked) return
 
             val hasTimeLetterCondition =
                 state.conditions.any { it.contentType == DeliveryContentType.TIME_LETTER }

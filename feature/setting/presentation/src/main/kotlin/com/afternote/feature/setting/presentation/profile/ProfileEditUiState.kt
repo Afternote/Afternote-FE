@@ -10,8 +10,12 @@ internal sealed interface ProfileEditUiState : UiState {
         val phone: String,
         val email: String,
         val isUpdating: Boolean = false,
+        /** 수정을 마쳤다는 사실. 소비되는 [pendingEvent] 와 달리 되돌리지 않아, 화면이 닫히는 동안에도 재제출을 막는다. */
+        val isUpdated: Boolean = false,
         val pendingEvent: ProfileEditEvent? = null,
-    ) : ProfileEditUiState
+    ) : ProfileEditUiState {
+        val isUpdateLocked: Boolean get() = isUpdating || isUpdated
+    }
 
     data object Error : ProfileEditUiState
 }
