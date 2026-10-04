@@ -70,7 +70,7 @@ internal class DeliveryConditionViewModel
                 }
 
                 is DeliveryConditionReducerEvent.Saved -> {
-                    state.copy(isSaving = false, conditions = event.conditions, isSaved = true, shouldNavigateBack = true)
+                    state.copy(isSaving = false, conditions = event.conditions, isSaved = true, isSaveSuccessPending = true)
                 }
 
                 DeliveryConditionReducerEvent.SaveFailed -> {
@@ -78,7 +78,7 @@ internal class DeliveryConditionViewModel
                 }
 
                 DeliveryConditionReducerEvent.SuccessConsumed -> {
-                    state.copy(shouldNavigateBack = false)
+                    state.copy(isSaveSuccessPending = false)
                 }
             }
 

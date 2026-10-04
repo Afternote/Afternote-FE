@@ -42,7 +42,7 @@ internal fun DeliveryConditionScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     ObserveFlag(
-        raised = uiState.shouldNavigateBack,
+        raised = uiState.isSaveSuccessPending,
         consumed = DeliveryConditionIntent.ConsumeSuccess,
         onIntent = viewModel::onIntent,
         onRaised = onSaveSuccess,

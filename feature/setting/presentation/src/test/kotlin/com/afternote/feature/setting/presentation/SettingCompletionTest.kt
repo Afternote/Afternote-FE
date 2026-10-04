@@ -599,9 +599,9 @@ class SettingCompletionTest {
             ),
         )
 
-        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) { viewModel.uiState.value.shouldNavigateBack }
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) { viewModel.uiState.value.isSaveSuccessPending }
         composeRule.runOnIdle { viewModel.onIntent(DeliveryConditionIntent.ConsumeSuccess) }
-        assertFalse(viewModel.uiState.value.shouldNavigateBack)
+        assertFalse(viewModel.uiState.value.isSaveSuccessPending)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.conditions == serverConditions
         }
