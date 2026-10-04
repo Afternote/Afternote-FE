@@ -7,6 +7,7 @@ import {
     collectFailedJobs,
     countRequeuesForHead,
     decide,
+    provenInfrastructureJobNames,
     enqueueStacked,
     handleDequeue,
     isStackBottom,
@@ -45,6 +46,24 @@ test("실패 job 없는 방출은 같은 head 에서 한 번만 재투입하고,
     assert.equal(decide({ reason: "UNKNOWN_REMOVAL_REASON", failedJobs: [], requeueCount: 0 }), "requeue");
     assert.equal(decide({ reason: "UNKNOWN_REMOVAL_REASON", failedJobs: [], requeueCount: 1 }), "comment-give-up");
     assert.equal(decide({ reason: "ROLL_BACK", failedJobs: [], requeueCount: 3 }), "comment-give-up");
+});
+
+test("실패 job 이 전부 증명된 인프라 실패면 같은 head 에서 한 번 재투입하고, 두 번째는 링크만 남긴다", () => {
+    const infra = [{ jobName: "Pixel 2 API 30 androidTest", conclusion: "failure", infrastructure: true }];
+    assert.equal(decide({ reason: "CI_FAILURE", failedJobs: infra, requeueCount: 0 }), "requeue");
+    assert.equal(decide({ reason: "CI_FAILURE", failedJobs: infra, requeueCount: 1 }), "comment-failure");
+    assert.equal(decide({ reason: "MANUAL", failedJobs: infra, requeueCount: 0 }), "none");
+    const mixed = [...infra, { jobName: "Run Unit Tests", conclusion: "failure", infrastructure: false }];
+    assert.equal(decide({ reason: "CI_FAILURE", failedJobs: mixed, requeueCount: 0 }), "comment-failure");
+});
+
+test("재시도 마커는 같은 run·attempt 이름만 인정한다 — 다른 run·만료·모르는 device 는 증명이 아니다", () => {
+    const run = { id: 37178469871, run_attempt: 1 };
+    assert.deepEqual([...provenInfrastructureJobNames(run, [{ name: "android-managed-device-retry-api30-37178469871-1" }])], ["Pixel 2 API 30 androidTest"]);
+    assert.equal(provenInfrastructureJobNames(run, [{ name: "android-managed-device-retry-api30-37178469871-2" }]).size, 0);
+    assert.equal(provenInfrastructureJobNames(run, [{ name: "android-managed-device-retry-api30-1-1" }]).size, 0);
+    assert.equal(provenInfrastructureJobNames(run, [{ name: "android-managed-device-retry-api30-37178469871-1", expired: true }]).size, 0);
+    assert.equal(provenInfrastructureJobNames(run, [{ name: "android-managed-device-retry-api26-37178469871-1" }]).size, 0);
 });
 
 // ---- 실패 job 수집 ----
@@ -165,6 +184,7 @@ function fakeApi({
     liveAfter = live,
     runs = [],
     jobs = {},
+    artifacts = {},
     comments = [],
     mergeAsync = {
         status: "pending",
@@ -199,6 +219,8 @@ function fakeApi({
             return respond(mergeAsyncPolls[Math.min(pollReads++, mergeAsyncPolls.length - 1)]);
         }
         if (apiPath.startsWith(`/repos/${REPO}/actions/runs?`)) return { workflow_runs: runs };
+        const artifactsMatch = /\/actions\/runs\/(\d+)\/artifacts/.exec(apiPath);
+        if (artifactsMatch) return { artifacts: artifacts[artifactsMatch[1]] ?? [] };
         const jobsMatch = /\/actions\/runs\/(\d+)\/jobs/.exec(apiPath);
         if (jobsMatch) return { jobs: jobs[jobsMatch[1]] ?? [] };
         if (apiPath.includes("/comments") && (options.method ?? "GET") === "GET") return comments;
@@ -522,6 +544,38 @@ test("CI 실패: 실패 job 링크 코멘트만, 재투입 없음", async () => 
     const comment = api.calls.find((call) => call.method === "POST" && call.apiPath.endsWith("/comments"));
     assert.match(comment.body.body, /https:\/\/x\/jobs\/71/);
     assert.ok(!api.calls.some((call) => call.body?.query?.includes("enqueuePullRequest")));
+});
+
+test("GMD 인프라 실패만으로 방출되면 마커 코멘트 뒤 재투입한다 — 마커 없는 같은 job 은 실패 코멘트만", async () => {
+    const runs = [{ id: 9, run_attempt: 1, name: "Android Managed Device Test", html_url: "https://x/runs/9", head_branch: queueBranchPrefix("develop", 1509) + "abc", created_at: "2026-09-04T08:05:00Z" }];
+    const jobs = { 9: [
+        { name: "Pixel 2 API 30 androidTest", conclusion: "failure", html_url: "https://x/jobs/91" },
+        { name: "Pixel 2 API 34 accessibility smoke", conclusion: "success", html_url: "https://x/jobs/92" },
+    ] };
+    const proven = fakeApi({ live: openLive, runs, jobs, artifacts: { 9: [{ name: "android-managed-device-retry-api30-9-1" }] } });
+    const result = await handleDequeue({ api: proven, repository: REPO, number: 1509, reason: "CI_FAILURE", logger: silent });
+    assert.equal(result.action, "requeue");
+    assert.equal(enqueueMutations(proven).length, 1);
+    const comment = commentPosts(proven)[0].body.body;
+    assert.ok(comment.startsWith(requeueMarker(HEAD)));
+    assert.match(comment, /인프라 실패로 분류됨/);
+    assert.match(comment, /https:\/\/x\/jobs\/91/);
+    const writes = proven.calls.filter((call) => call.method === "POST");
+    assert.ok(writes.findIndex((call) => call.apiPath.endsWith("/comments")) < writes.findIndex((call) => call.body?.query?.includes("enqueuePullRequest")));
+
+    const unproven = fakeApi({ live: openLive, runs, jobs });
+    const failed = await handleDequeue({ api: unproven, repository: REPO, number: 1509, reason: "CI_FAILURE", logger: silent });
+    assert.equal(failed.action, "comment-failure");
+    assert.equal(enqueueMutations(unproven).length, 0);
+
+    const second = fakeApi({
+        live: openLive, runs, jobs,
+        artifacts: { 9: [{ name: "android-managed-device-retry-api30-9-1" }] },
+        comments: [{ body: renderRequeueComment({ reason: "CI_FAILURE", headSha: HEAD }) }],
+    });
+    const again = await handleDequeue({ api: second, repository: REPO, number: 1509, reason: "CI_FAILURE", logger: silent });
+    assert.equal(again.action, "comment-failure");
+    assert.equal(enqueueMutations(second).length, 0);
 });
 
 test("dry-run 은 판정만 하고 아무것도 쓰지 않는다 — 스택 PR 도 같다", async () => {
