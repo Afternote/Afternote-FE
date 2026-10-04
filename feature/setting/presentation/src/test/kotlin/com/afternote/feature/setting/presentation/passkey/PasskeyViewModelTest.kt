@@ -316,7 +316,8 @@ class PasskeyViewModelTest {
             runCurrent()
             assertTrue(viewModel.uiState.value.isRegistering)
             assertEquals(null, viewModel.uiState.value.result)
-            assertTrue(cache.savedPasskeyValues.isEmpty())
+            // 화면 상태는 덮어쓰지 않지만, 서버에 패스키가 생겼으므로 지문 관문 캐시는 켠다.
+            assertEquals(listOf(true), cache.savedPasskeyValues)
             viewModel.onIntent(PassKeyIntent.CancelRegistration)
         }
 
