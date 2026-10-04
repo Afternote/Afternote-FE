@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { decideViewedAutoMerge } from "./find-viewed-auto-merge-targets.mjs";
+import { decideViewedAutoMerge, decideViewedAutoMergeCancel } from "./find-viewed-auto-merge-targets.mjs";
 
 const viewed = (path) => ({ path, viewerViewedState: "VIEWED" });
 
@@ -47,6 +47,69 @@ test("Draft·이미 예약·큐에 있는 PR 은 건드리지 않는다", () => 
     assert.equal(decideViewedAutoMerge(pullRequest({ isDraft: true }), files).enable, false);
     assert.equal(decideViewedAutoMerge(pullRequest({ autoMergeRequest: { enabledAt: "2026-10-04T00:00:00Z" } }), files).enable, false);
     assert.equal(decideViewedAutoMerge(pullRequest({ isInMergeQueue: true }), files).enable, false);
+});
+
+const scheduled = { autoMergeRequest: { enabledAt: "2026-10-04T00:00:00Z" } };
+
+test("예약·큐 등록이 없으면 Viewed 와 무관하게 해제하지 않는다", () => {
+    const decision = decideViewedAutoMergeCancel(pullRequest(), [viewed("a.kt"), { path: "b.kt", viewerViewedState: "UNVIEWED" }]);
+    assert.equal(decision.disableAutoMerge, false);
+    assert.equal(decision.dequeue, false);
+});
+
+test("예약 뒤 새 push 로 Viewed 가 풀리면 예약을 끈다 — DISMISSED·UNVIEWED", () => {
+    for (const viewerViewedState of ["DISMISSED", "UNVIEWED"]) {
+        const files = [viewed("a.kt"), { path: "b.kt", viewerViewedState }];
+        const decision = decideViewedAutoMergeCancel(pullRequest(scheduled), files);
+        assert.equal(decision.disableAutoMerge, true, viewerViewedState);
+        assert.equal(decision.dequeue, false, viewerViewedState);
+    }
+});
+
+test("merge queue 에 있는데 Viewed 가 풀리면 큐에서 빼고, 예약도 있으면 함께 끈다", () => {
+    const files = [viewed("a.kt"), { path: "b.kt", viewerViewedState: "DISMISSED" }];
+    assert.deepEqual(
+        pickActions(decideViewedAutoMergeCancel(pullRequest({ isInMergeQueue: true }), files)),
+        { disableAutoMerge: false, dequeue: true },
+    );
+    assert.deepEqual(
+        pickActions(decideViewedAutoMergeCancel(pullRequest({ ...scheduled, isInMergeQueue: true }), files)),
+        { disableAutoMerge: true, dequeue: true },
+    );
+});
+
+test("승인·Draft 상태와 무관하게 Viewed 로만 해제를 가른다", () => {
+    const files = [viewed("a.kt"), { path: "b.kt", viewerViewedState: "UNVIEWED" }];
+    for (const overrides of [{ reviewDecision: "APPROVED" }, { reviewDecision: "REVIEW_REQUIRED" }, { isDraft: true }]) {
+        assert.equal(decideViewedAutoMergeCancel(pullRequest({ ...scheduled, ...overrides }), files).disableAutoMerge, true);
+    }
+});
+
+test("파일 목록을 다 못 읽었으면 다 봤다고 단정하지 않고 해제한다", () => {
+    assert.equal(decideViewedAutoMergeCancel(pullRequest({ ...scheduled, changedFiles: 3 }), [viewed("a.kt"), viewed("b.kt")]).disableAutoMerge, true);
+    assert.equal(decideViewedAutoMergeCancel(pullRequest({ isInMergeQueue: true, changedFiles: 0 }), []).dequeue, true);
+});
+
+test("예약·큐에 있고 모든 파일이 Viewed 면 그대로 둔다", () => {
+    const files = [viewed("a.kt"), viewed("b.kt")];
+    for (const overrides of [scheduled, { isInMergeQueue: true }, { ...scheduled, isInMergeQueue: true }]) {
+        assert.deepEqual(pickActions(decideViewedAutoMergeCancel(pullRequest(overrides), files)), { disableAutoMerge: false, dequeue: false });
+    }
+});
+
+function pickActions({ disableAutoMerge, dequeue }) {
+    return { disableAutoMerge, dequeue };
+}
+
+test("워크플로는 해제 대상의 예약을 끄고 큐에서 빼며, 해제 실패는 red 로 남긴다", async () => {
+    const workflow = await readFile(new URL("../workflows/viewed-auto-merge.yml", import.meta.url), "utf8");
+    assert.match(workflow, /echo 'cancels=\[\]' >> "\$GITHUB_OUTPUT"/);
+    assert.match(workflow, /CANCELS: \$\{\{ steps\.find\.outputs\.cancels \}\}/);
+    assert.match(workflow, /gh pr merge "\$number" --disable-auto/);
+    assert.match(workflow, /dequeuePullRequest\(input: \{ id: \$id \}\)/);
+    assert.match(workflow, /exit "\$failed"/);
+    // 해제는 예약보다 먼저 돈다.
+    assert.ok(workflow.indexOf("--disable-auto") < workflow.indexOf("--match-head-commit"));
 });
 
 test("워크플로는 본인 토큰으로 읽고 GITHUB_TOKEN 으로 승인한 HEAD 만 예약한다", async () => {
