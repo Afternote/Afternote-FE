@@ -188,7 +188,7 @@ Kover는 임의의 절대 커버리지 목표를 강제하지 않는다. 정확�
 - PR의 담당자는 올린 사람이 아니라 **어사인된 사람**이다. 어사인이 비어 있으면 [자동 어사인 workflow](.github/workflows/pr-assign-author.yml)가 작성자를 걸고, 사람이 담당자를 바꾼 것은 되돌리지 않는다. 변경요청 대응·리뷰 요청 제외·아래 적체 가드의 «자기 PR» 판정은 모두 이 담당자 기준이다.
 - Draft가 아닌 내부 팀원 PR이 열리거나 리뷰 가능 상태가 되면 [자동 요청 workflow](.github/workflows/review-request-all.yml)가 담당자를 제외한 리뷰 담당 팀원(`TEAM`)에게 리뷰를 요청한다. 요청 인원 수와 필수 승인 수는 같은 뜻이 아니다.
 - 현재 `develop`·`main` 머지에는 **승인 1건**이 필요하다. `main`은 모든 리뷰 스레드 해결도 필요하다.
-- `develop` 대상 PR은 최신 커밋에 승인이 달리면 [리뷰 판정 리컨사일 workflow](.github/workflows/latest-review-decision-reconcile.yml)가 자동 머지(Merge when ready)를 예약한다. 필수 검사가 통과해야 merge queue로 들어가고, 원치 않으면 PR 화면에서 예약을 끄면 된다. 리뷰어의 파일 Viewed 체크는 본인 토큰으로만 조회되고 이벤트도 없어 조건에 넣지 못하므로, 승인은 모든 파일을 확인한 뒤에 한다.
+- `develop` 대상 PR은 승인 상태에서 1hyok가 모든 파일을 Viewed로 체크하면 [Viewed 자동 머지 workflow](.github/workflows/viewed-auto-merge.yml)가 10분 안팎으로 자동 머지(Merge when ready)를 예약한다. Viewed 체크에는 이벤트가 없어 주기 실행으로 훑고, 본인 체크만 조회되므로 1hyok의 읽기 전용 토큰을 `VIEWED_TOKEN` 시크릿으로 둔다. 필수 검사가 통과해야 merge queue로 들어가며, 예약을 멈추려면 파일 하나의 Viewed를 풀고 PR 화면에서 예약을 끈다.
 - 리뷰 결과는 GitHub의 `APPROVED`·`CHANGES_REQUESTED`·일반 코멘트로 표현한다. 별도 RCA prefix나 12시간 SLA는 두지 않는다.
 - [리뷰 적체 가드](.github/workflows/review-debt-guard.yml)는 응답을 기다리는 다른 PR이 남았거나 자기가 담당하는 PR의 최신 변경요청 뒤 아무 조치도 하지 않은 팀원의 새 PR을 닫을 수 있다. 아래 면제 목록에 있는 작성자는 대상이 아니다. 각 PR은 팀원 한 명이 먼저 유효한 판정을 내리면 최초 미응답 목록에서 빠지고, 담당자가 실질 커밋이나 응답을 남기면 작성자 대기 목록에서 빠진다.
 - `awaiting-author` 라벨은 리뷰 게이트 적용 대상 중 변경요청 뒤 담당자 무조치 상태인 PR을 보여 준다. 면제 작성자에게는 붙이지 않으며, 이미 붙은 라벨도 리컨사일러가 제거한다. 새 PR 가드는 라벨 갱신 시점에 의존하지 않고 같은 판정을 현재 열린 PR에 다시 적용한다.
