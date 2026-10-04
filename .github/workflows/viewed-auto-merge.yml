@@ -77,6 +77,7 @@ jobs:
               echo "::error::#$number 자동 머지 예약 해제 실패"
               failed=1
             fi
+            # shellcheck disable=SC2016 # GraphQL 변수는 gh가 -f 값으로 바인딩한다.
             if [ "$(jq -r '.dequeue' <<< "$target")" = true ] && ! gh api graphql \
               -f query='mutation($id: ID!) { dequeuePullRequest(input: { id: $id }) { clientMutationId } }' \
               -f id="$(jq -r '.id' <<< "$target")" > /dev/null; then
