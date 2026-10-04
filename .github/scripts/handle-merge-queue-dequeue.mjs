@@ -10,6 +10,11 @@
 //   한 번만 재투입한다. 0902 에 감시 루프가 90초마다 맹목 재투입해 30분을 헛돈 사고(#1638·#1639)가
 //   «한 번까지» 규칙의 근거다. 횟수는 이 스크립트가 남기는 마커 코멘트로 센다.
 //
+// 예외는 증명된 인프라 실패다(#2250). GMD 분류기(classify-android-managed-device-failure.mjs)가 테스트가 돌기 전에
+// 죽었다고 판정하면 그 run 에 재시도 마커 아티팩트를 남긴다. 실패 job 이 전부 그런 job 이면 PR 코드가 실행되기
+// 전에 끝난 것이므로 조용한 방출과 같이 같은 head 당 한 번 재투입한다. 머지 큐는 실패한 필수 체크로 바로 방출하므로
+// job 재실행(android-managed-device-retry.yml)으로는 복구되지 않고 재투입만이 수단이다.
+//
 // 판정 순서는 «실패 job 이 있는가» 가 먼저다. payload 의 reason 문자열은 GitHub 이 열거값을 문서화하지
 // 않아 정본으로 삼지 않는다 — 실패 job 은 데이터로 확인하고, reason 은 «사람이 뺐다·이미 머지됐다» 를
 // 거르는 데만 쓴다. 그 밖의 reason 은 전부 조용한 방출로 본다.
@@ -31,6 +36,11 @@ export const REQUEUE_MARKER_PREFIX = "<!-- merge-queue-dequeue:requeued head=";
 export const NO_ACTION_REASONS = new Set(["MANUAL", "ALREADY_MERGED", "MERGE", "MERGED"]);
 const FAILED_JOB_CONCLUSIONS = new Set(["failure", "timed_out"]);
 const QUEUE_RUNS_TO_INSPECT = 10;
+// 재시도 마커 아티팩트 이름의 device → 그 마커가 증명하는 job 이름. android-managed-device-retry.yml 과 같은 표다.
+export const MANAGED_DEVICE_RETRY_JOBS = new Map([
+    ["api30", "Pixel 2 API 30 androidTest"],
+    ["api34", "Pixel 2 API 34 accessibility smoke"],
+]);
 const defaultSleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function queueBranchPrefix(baseRef, number) {
@@ -43,15 +53,17 @@ export function queueBranchPrefix(baseRef, number) {
  * [since] 는 마지막 큐 투입 시각이다 — 큐 브랜치 이름은 head 가 아니라 base SHA 를 달고 있어 며칠 전
  * 투입의 실패 run 도 같은 접두어로 잡힌다(0904 #1582 실측). 그 이전 run 은 이번 방출과 무관하다.
  */
-export function collectFailedJobs({ runs, jobsByRunId, baseRef, number, since }) {
+export function collectFailedJobs({ runs, jobsByRunId, artifactsByRunId = new Map(), baseRef, number, since }) {
     const prefix = queueBranchPrefix(baseRef, number);
     const failed = [];
     for (const run of runs) {
         if (typeof run.head_branch !== "string" || !run.head_branch.startsWith(prefix)) continue;
         if (since && typeof run.created_at === "string" && run.created_at < since) continue;
+        const provenJobNames = provenInfrastructureJobNames(run, artifactsByRunId.get(run.id) ?? []);
         for (const job of jobsByRunId.get(run.id) ?? []) {
             if (!FAILED_JOB_CONCLUSIONS.has(job.conclusion)) continue;
             failed.push({
+                infrastructure: provenJobNames.has(job.name),
                 runName: run.name,
                 runUrl: run.html_url,
                 jobName: job.name,
@@ -61,6 +73,24 @@ export function collectFailedJobs({ runs, jobsByRunId, baseRef, number, since })
         }
     }
     return failed;
+}
+
+/**
+ * run 의 재시도 마커 아티팩트가 증명하는 job 이름들. 마커는 분류기가 retryable 로 판정했을 때만 올라가고
+ * 이름에 run id·attempt 가 박혀 있어, 같은 run·attempt 의 이름만 받는다.
+ */
+export function provenInfrastructureJobNames(run, artifacts) {
+    const names = new Set();
+    for (const [device, jobName] of MANAGED_DEVICE_RETRY_JOBS) {
+        const expected = `android-managed-device-retry-${device}-${run.id}-${run.run_attempt ?? 1}`;
+        if (artifacts.some((artifact) => artifact.name === expected && !artifact.expired)) names.add(jobName);
+    }
+    return names;
+}
+
+/** 실패 job 이 하나 이상이고 전부 증명된 인프라 실패인가. */
+export function onlyInfrastructureFailures(failedJobs) {
+    return failedJobs.length > 0 && failedJobs.every((job) => job.infrastructure === true);
 }
 
 export function requeueMarker(headSha) {
@@ -75,14 +105,16 @@ export function countRequeuesForHead(comments, headSha) {
 
 /**
  * 판정표.
- * 1. 실패 job 이 있다 → comment-failure (재투입 없음)
+ * 1. 실패 job 이 있고 그중 하나라도 인프라로 증명되지 않았다 → comment-failure (재투입 없음)
  * 2. reason 이 MANUAL·ALREADY_MERGED·MERGE → none
- * 3. 같은 head 에서 이미 재투입했다 → comment-give-up
- * 4. 그 밖 → requeue
+ * 3. 실패 job 이 전부 증명된 인프라 실패다 → 같은 head 첫 번째면 requeue, 이미 재투입했으면 comment-failure
+ * 4. 같은 head 에서 이미 재투입했다 → comment-give-up
+ * 5. 그 밖 → requeue
  */
 export function decide({ reason, failedJobs, requeueCount }) {
-    if (failedJobs.length > 0) return "comment-failure";
+    if (failedJobs.length > 0 && !onlyInfrastructureFailures(failedJobs)) return "comment-failure";
     if (NO_ACTION_REASONS.has(String(reason ?? "").toUpperCase())) return "none";
+    if (failedJobs.length > 0) return requeueCount >= 1 ? "comment-failure" : "requeue";
     if (requeueCount >= 1) return "comment-give-up";
     return "requeue";
 }
@@ -98,7 +130,7 @@ export function manualEnqueueCommand({ repository, number, stack = false }) {
 }
 
 export function renderFailureComment({ reason, headSha, failedJobs, repository, number, stack = false }) {
-    const lines = failedJobs.map((job) => `- [${job.runName} / ${job.jobName}](${job.jobUrl}) — ${job.conclusion}`);
+    const lines = failedJobs.map((job) => `- [${job.runName} / ${job.jobName}](${job.jobUrl}) — ${job.conclusion}${job.infrastructure ? " (인프라 실패로 분류됨)" : ""}`);
     return [
         "### merge queue 방출 — merge group CI 실패",
         "",
@@ -111,12 +143,16 @@ export function renderFailureComment({ reason, headSha, failedJobs, repository, 
     ].join("\n");
 }
 
-export function renderRequeueComment({ reason, headSha }) {
+export function renderRequeueComment({ reason, headSha, failedJobs = [] }) {
+    const why = failedJobs.length > 0
+        ? "merge group 실패 job 이 전부 테스트 전 인프라 실패로 분류됨 → 한 번 재투입했다."
+        : "merge group 실패 job 없음 → 조용한 방출로 보고 한 번 재투입했다.";
     return [
         requeueMarker(headSha),
         "### merge queue 방출 — 재투입했다",
         "",
-        `사유 \`${reason}\` · head \`${shortSha(headSha)}\` · merge group 실패 job 없음 → 조용한 방출로 보고 한 번 재투입했다.`,
+        `사유 \`${reason}\` · head \`${shortSha(headSha)}\` · ${why}`,
+        ...failedJobs.map((job) => `- [${job.runName} / ${job.jobName}](${job.jobUrl}) — ${job.conclusion}`),
         "같은 head 에서 또 방출되면 재투입하지 않고 여기에 남긴다.",
     ].join("\n");
 }
@@ -223,11 +259,19 @@ export async function fetchQueueFailedJobs(api, repository, { baseRef, number, s
         .filter((run) => !since || typeof run.created_at !== "string" || run.created_at >= since)
         .slice(0, QUEUE_RUNS_TO_INSPECT);
     const jobsByRunId = new Map();
+    const artifactsByRunId = new Map();
     for (const run of runs) {
         const jobs = await api(`/repos/${repository}/actions/runs/${run.id}/jobs?per_page=100`);
         jobsByRunId.set(run.id, jobs.jobs ?? []);
+        // 마커를 남길 수 있는 run 만 아티팩트를 본다 — 실패한 GMD job 이 없으면 볼 필요가 없다.
+        const hasFailedManagedDeviceJob = (jobs.jobs ?? []).some((job) =>
+            FAILED_JOB_CONCLUSIONS.has(job.conclusion) && [...MANAGED_DEVICE_RETRY_JOBS.values()].includes(job.name));
+        if (hasFailedManagedDeviceJob) {
+            const artifacts = await api(`/repos/${repository}/actions/runs/${run.id}/artifacts?per_page=100`);
+            artifactsByRunId.set(run.id, artifacts.artifacts ?? []);
+        }
     }
-    return collectFailedJobs({ runs, jobsByRunId, baseRef, number, since });
+    return collectFailedJobs({ runs, jobsByRunId, artifactsByRunId, baseRef, number, since });
 }
 
 export async function fetchComments(api, repository, number) {
@@ -327,7 +371,7 @@ export async function handleDequeue({
         await postComment(api, repository, number, renderStackUpperComment({ reason, headSha, repository, number }));
     } else if (action === "requeue") {
         // 마커를 먼저 남긴다 — 재투입 뒤 코멘트가 실패하면 다음 방출에서 두 번째 재투입이 나간다.
-        await postComment(api, repository, number, renderRequeueComment({ reason, headSha }));
+        await postComment(api, repository, number, renderRequeueComment({ reason, headSha, failedJobs }));
         if (stack) {
             const enqueueResult = await enqueueStacked(api, repository, number, headSha, { sleep });
             if (enqueueResult.unresolved) {
