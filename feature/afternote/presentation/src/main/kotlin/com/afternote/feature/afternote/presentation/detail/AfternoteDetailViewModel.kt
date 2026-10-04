@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
+import com.afternote.core.domain.repository.MyProfileRepository
 import com.afternote.core.domain.repository.UserProfileCacheRepository
-import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
  * - 상세 조회: GET /api/afternotes/{id}
  * - 삭제: DELETE /api/afternotes/{id}
  * - 작성자 표시명: [UserProfileCacheRepository.getCachedUserName] 으로 즉시 채우고
- *   [UserRepository.getMyProfile] 로 재검증한다 (네비게이션 인자로 전달하지 않음)
+ *   [MyProfileRepository.getMyProfile] 로 재검증한다 (네비게이션 인자로 전달하지 않음)
  * - 상세 ID: entry 가 assisted 로 넘긴 [AfternoteRoute.DetailRoute]의 `itemId`. Nav3 entry 의
  *   SavedStateHandle 에는 NavKey 필드가 실리지 않으므로 `toRoute` 로 읽을 수 없다 (#2168).
  *
@@ -47,7 +47,7 @@ class AfternoteDetailViewModel
     constructor(
         @Assisted private val route: AfternoteRoute.DetailRoute,
         private val afternoteRepository: AfternoteRepository,
-        private val userRepository: UserRepository,
+        private val myProfileRepository: MyProfileRepository,
         private val userProfileRepository: UserProfileCacheRepository,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
@@ -101,7 +101,7 @@ class AfternoteDetailViewModel
                 ?.takeIf { it.isNotBlank() }
                 ?.let(::applyAuthorDisplayName)
 
-            runCatchingCancellable { userRepository.getMyProfile() }
+            runCatchingCancellable { myProfileRepository.getMyProfile() }
                 .onSuccess { profile ->
                     applyAuthorDisplayName(profile.name)
                     runCatchingCancellable { userProfileRepository.saveUserName(profile.name) }
