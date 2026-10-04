@@ -12,9 +12,11 @@ import com.afternote.feature.setting.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.cancellation.CancellationException
 
 internal sealed interface PasskeyRegistrationResult {
@@ -116,9 +118,12 @@ internal class PassKeyViewModel
                 passkeyRepository.registerPasskey(credential)
                 // 서버 성공을 먼저 확정한다. 캐시의 실패나 취소는 재등록을 유도하지 않는다.
                 dispatch(PassKeyReducerEvent.Finished(registrationId, PasskeyRegistrationResult.Success))
-                currentCoroutineContext().ensureActive()
-                runCatchingCancellable { userProfileCacheRepository.savePasskeyRegistered(true) }
-                    .onFailure { reportFailure(it, STAGE_LOCAL_CACHE) }
+                // 지문 관문이 이 캐시를 본다. 서버에 등록된 뒤에는 화면 이탈·구성 변경으로 job 이 취소돼도
+                // 저장을 끝낸다.
+                withContext(NonCancellable) {
+                    runCatchingCancellable { userProfileCacheRepository.savePasskeyRegistered(true) }
+                        .onFailure { reportFailure(it, STAGE_LOCAL_CACHE) }
+                }
             } catch (_: CreateCredentialCancellationException) {
                 dispatch(PassKeyReducerEvent.Finished(registrationId, PasskeyRegistrationResult.Canceled))
             } catch (canceled: CancellationException) {

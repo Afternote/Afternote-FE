@@ -156,7 +156,7 @@ class PasskeyViewModelTest {
     fun list_failureIsDistinctFromEmptyAndRetryCanRecover() =
         runTest(dispatcher) {
             repository.list = { throw IOException("offline") }
-            val viewModel = PassKeyListViewModel(repository, reporter)
+            val viewModel = PassKeyListViewModel(repository, cache, reporter)
             viewModel.onIntent(PassKeyListIntent.Refresh)
             advanceUntilIdle()
             assertFalse(viewModel.uiState.value.isLoading)
@@ -168,10 +168,13 @@ class PasskeyViewModelTest {
             advanceUntilIdle()
             assertEquals(PassKeyListUiState(), viewModel.uiState.value)
 
+            assertTrue(cache.savedPasskeyValues.isEmpty())
+
             repository.list = { listOf(PASSKEY) }
             viewModel.onIntent(PassKeyListIntent.Refresh)
             advanceUntilIdle()
             assertEquals(listOf(PASSKEY), viewModel.uiState.value.passkeys)
+            assertTrue(cache.passkeyRegisteredState.value)
         }
 
     @Test
@@ -183,7 +186,7 @@ class PasskeyViewModelTest {
                 calls++
                 if (calls == 1) withContext(NonCancellable) { oldList.await() } else listOf(PASSKEY)
             }
-            val viewModel = PassKeyListViewModel(repository, reporter)
+            val viewModel = PassKeyListViewModel(repository, cache, reporter)
             viewModel.onIntent(PassKeyListIntent.Refresh)
             runCurrent()
             viewModel.onIntent(PassKeyListIntent.Refresh)
@@ -241,6 +244,26 @@ class PasskeyViewModelTest {
             runCurrent()
             assertSame(PasskeyRegistrationResult.Success, viewModel.uiState.value.result)
             assertEquals(listOf("credential"), repository.credentials)
+            assertTrue(reporter.stages.isEmpty())
+        }
+
+    @Test
+    fun registration_leavingScreenAfterServerSuccessStillSavesCache() =
+        runTest(dispatcher) {
+            val cacheWrite = CompletableDeferred<Unit>()
+            cache.onSavePasskeyRegistered = { registered ->
+                cacheWrite.await()
+                cache.passkeyRegisteredState.value = registered
+            }
+            val viewModel = PassKeyViewModel(cache, repository, reporter)
+            viewModel.onIntent(PassKeyIntent.Register { "credential" })
+            runCurrent()
+            assertSame(PasskeyRegistrationResult.Success, viewModel.uiState.value.result)
+            viewModel.onIntent(PassKeyIntent.CancelRegistration)
+            runCurrent()
+            cacheWrite.complete(Unit)
+            runCurrent()
+            assertTrue(cache.passkeyRegisteredState.value)
             assertTrue(reporter.stages.isEmpty())
         }
 
