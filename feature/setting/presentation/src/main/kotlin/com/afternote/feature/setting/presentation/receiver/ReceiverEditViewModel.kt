@@ -42,7 +42,8 @@ internal class ReceiverEditViewModel
                 is ReceiverEditReducerEvent.LoadFailed -> state.copy(isLoading = false, errorMessage = event.message)
                 is ReceiverEditReducerEvent.ValidationFailed -> state.copy(errorMessage = event.message)
                 ReceiverEditReducerEvent.Saving -> state.copy(isSaving = true, errorMessage = null)
-                ReceiverEditReducerEvent.Saved -> state.copy(isSaving = false, pendingEvent = ReceiverEditEvent.EditSuccess)
+                // 성공 뒤 화면이 닫히는 사이 재제출을 막도록 isSaving 을 유지한다.
+                ReceiverEditReducerEvent.Saved -> state.copy(pendingEvent = ReceiverEditEvent.EditSuccess)
                 is ReceiverEditReducerEvent.SaveFailed -> state.copy(isSaving = false, errorMessage = event.message)
                 ReceiverEditReducerEvent.SuccessConsumed -> state.copy(pendingEvent = null)
             }
@@ -69,7 +70,7 @@ internal class ReceiverEditViewModel
             email: String,
             message: String,
         ) {
-            if (currentState.isSaving || currentState.pendingEvent != null) return
+            if (currentState.isSaving) return
             if (!email.isValidReceiverEmail()) {
                 dispatch(ReceiverEditReducerEvent.ValidationFailed(UiText.Resource(R.string.setting_receiver_email_invalid)))
                 return

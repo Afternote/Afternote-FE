@@ -464,9 +464,10 @@ class SettingCompletionTest {
         }
         composeRule.runOnIdle { viewModel.onIntent(ReceiverEditIntent.ConsumeSuccess) }
         assertEquals(null, viewModel.uiState.value.pendingEvent)
-        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            !viewModel.uiState.value.isSaving
-        }
+        // 신호를 소비한 뒤에도 화면이 닫히는 동안에는 잠금이 남아 재제출을 무시한다.
+        assertTrue(viewModel.uiState.value.isSaving)
+        composeRule.runOnIdle(update)
+        composeRule.waitForIdle()
         assertEquals(
             listOf(expectedBasicCall, expectedBasicCall, expectedBasicCall),
             repository.receiverUpdateCalls,
@@ -603,7 +604,11 @@ class SettingCompletionTest {
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.conditions == serverConditions
         }
-        assertFalse(viewModel.uiState.value.isSaving)
+        // 신호를 소비한 뒤에도 화면이 닫히는 동안에는 잠금이 남아 재제출을 무시한다.
+        assertTrue(viewModel.uiState.value.isSaving)
+        composeRule.runOnIdle { viewModel.onIntent(DeliveryConditionIntent.Save) }
+        composeRule.waitForIdle()
+        assertEquals(listOf(expectedCall, expectedCall), repository.deliveryUpdateCalls)
     }
 
     @Test
