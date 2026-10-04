@@ -1,0 +1,75 @@
+# Viewed 기반 자동 머지 예약 (#2248)
+#
+# VIEWED_BY 가 PR 의 모든 파일을 Viewed 로 체크했고 PR 이 승인 상태면 «Merge when ready» 를 대신 건다.
+# 머지는 GitHub 가 승인 수·required check·merge queue 를 모두 통과시킨 뒤에만 하므로 CI 가 빨갛거나
+# 변경요청이 남으면 머지되지 않는다. 예약을 멈추려면 파일 하나의 Viewed 를 풀면 된다(다음 실행이 다시
+# 걸지 않는다). 이미 걸린 예약은 PR 화면에서 끈다.
+#
+# Viewed 체크는 webhook 이벤트가 없어 주기 실행으로 훑는다. 승인 직후에도 리컨사일 완료 신호로 한 번
+# 돈다. viewerViewedState 는 토큰 주인 본인 것만 보이므로 VIEWED_BY 의 읽기 전용 토큰을 VIEWED_TOKEN
+# 시크릿으로 둔다. 시크릿이 없으면 아무것도 하지 않는다. 예약 쓰기는 GITHUB_TOKEN 이 한다.
+name: Viewed Auto Merge
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_run:
+    workflows: [Latest Review Decision Reconcile]
+    types: [completed]
+  workflow_dispatch:
+
+concurrency:
+  group: viewed-auto-merge-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  enable:
+    name: Enable auto-merge for fully viewed PRs
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Clone script from the default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+
+      - name: Find fully viewed approved PRs
+        id: find
+        env:
+          VIEWED_TOKEN: ${{ secrets.VIEWED_TOKEN }}
+          VIEWED_BY: 1hyok
+          BASE_BRANCH: ${{ github.event.repository.default_branch }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_API_URL: ${{ github.api_url }}
+        run: |
+          if [ -z "$VIEWED_TOKEN" ]; then
+            echo "::notice::VIEWED_TOKEN 시크릿이 없어 건너뜁니다"
+            echo 'targets=[]' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          node .github/scripts/find-viewed-auto-merge-targets.mjs
+
+      - name: Enable auto-merge
+        if: steps.find.outputs.targets != '[]'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TARGETS: ${{ steps.find.outputs.targets }}
+        run: |
+          # merge queue 대상이면 전략 없이 부른다. check 가 남았으면 auto-merge, 끝났으면 큐 투입이다.
+          # 판정 뒤 새 커밋이 올라왔으면 --match-head-commit 이 거부한다. 스택 PR 처럼 GitHub 가 거부하는
+          # 경우는 사람이 버튼을 누르면 되므로 경고로 남긴다.
+          jq -c '.[]' <<< "$TARGETS" | while read -r target; do
+            number=$(jq -r '.number' <<< "$target")
+            head_sha=$(jq -r '.headSha' <<< "$target")
+            if ! gh pr merge "$number" --match-head-commit "$head_sha"; then
+              echo "::warning::#$number 자동 머지 예약 실패 — PR 화면에서 Merge when ready 를 직접 누르세요"
+            fi
+          done
