@@ -38,33 +38,13 @@ internal class ReceiverEditViewModel
             event: ReceiverEditReducerEvent,
         ): ReceiverEditUiState =
             when (event) {
-                is ReceiverEditReducerEvent.Loaded -> {
-                    state.copy(isLoading = false, receiver = event.receiver)
-                }
-
-                is ReceiverEditReducerEvent.LoadFailed -> {
-                    state.copy(isLoading = false, errorMessage = event.message)
-                }
-
-                is ReceiverEditReducerEvent.ValidationFailed -> {
-                    state.copy(errorMessage = event.message)
-                }
-
-                ReceiverEditReducerEvent.Saving -> {
-                    state.copy(isSaving = true, errorMessage = null)
-                }
-
-                ReceiverEditReducerEvent.Saved -> {
-                    state.copy(isSaving = false, isSaved = true, pendingEvent = ReceiverEditEvent.EditSuccess)
-                }
-
-                is ReceiverEditReducerEvent.SaveFailed -> {
-                    state.copy(isSaving = false, errorMessage = event.message)
-                }
-
-                ReceiverEditReducerEvent.SuccessConsumed -> {
-                    state.copy(pendingEvent = null)
-                }
+                is ReceiverEditReducerEvent.Loaded -> state.copy(isLoading = false, receiver = event.receiver)
+                is ReceiverEditReducerEvent.LoadFailed -> state.copy(isLoading = false, errorMessage = event.message)
+                is ReceiverEditReducerEvent.ValidationFailed -> state.copy(errorMessage = event.message)
+                ReceiverEditReducerEvent.Saving -> state.copy(isSaving = true, errorMessage = null)
+                ReceiverEditReducerEvent.Saved -> state.copy(isSaving = false, isSaved = true, pendingEvent = ReceiverEditEvent.EditSuccess)
+                is ReceiverEditReducerEvent.SaveFailed -> state.copy(isSaving = false, errorMessage = event.message)
+                ReceiverEditReducerEvent.SuccessConsumed -> state.copy(pendingEvent = null)
             }
 
         init {
