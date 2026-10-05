@@ -243,7 +243,9 @@ class AuthRepositoryImplTest {
                     },
             )
 
-        val result = runBlocking { repository.rotateToken() }
+        val sessionId = checkNotNull(runBlocking { tokenDataSource.currentSessionId() })
+
+        val result = runBlocking { repository.rotateToken(sessionId) }
 
         assertTrue(result.exceptionOrNull() is IllegalStateException)
         assertEquals("old-access", runBlocking { tokenDataSource.getAccessToken() })

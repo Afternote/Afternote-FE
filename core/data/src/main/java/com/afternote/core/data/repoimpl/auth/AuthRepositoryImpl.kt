@@ -5,6 +5,7 @@ import com.afternote.core.data.mapper.auth.toDomain
 import com.afternote.core.datastore.LocalStoreRegistry
 import com.afternote.core.datastore.StoreScope
 import com.afternote.core.datastore.TokenDataSource
+import com.afternote.core.domain.error.SessionChangedException
 import com.afternote.core.domain.push.DevicePushTargetProvider
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.repository.push.PushTargetRepository
@@ -44,6 +45,22 @@ internal class AuthRepositoryImpl
                 // 남기면 재로그인 후 이전 토큰 기준 deadline 으로 만료 임박을 오판한다.
                 expiryTracker.clear()
             }
+
+        /**
+         * 토큰 저장소의 대조·정리를 먼저 한 번의 쓰기로 끝내고, 정리됐을 때만 나머지 SESSION 저장소와 deadline 을
+         * 비운다. 대조가 어긋났다면 그 저장소와 deadline 은 새 세션의 것이다 (#2238).
+         */
+        override suspend fun clearSessionIfCurrent(sessionId: String) =
+            runCatchingCancellable {
+                val cleared = tokenDataSource.clearIfSession(sessionId)
+                if (cleared) {
+                    localStoreRegistry.clearScope(StoreScope.SESSION)
+                    expiryTracker.clear()
+                }
+                cleared
+            }
+
+        override suspend fun getSessionId() = runCatchingCancellable { tokenDataSource.currentSessionId() }
 
         override suspend fun getAccessToken() = runCatchingCancellable { tokenDataSource.getAccessToken() }
 
@@ -110,21 +127,36 @@ internal class AuthRepositoryImpl
                 data.toDomain()
             }.mapLoginFailure()
 
-        override suspend fun rotateToken(): Result<TokenBundle> =
+        /**
+         * 재발급 HTTP 가 떠 있는 동안 로그아웃이나 새 로그인이 끝날 수 있다(둘 다 재발급 락 밖이다). 그래서
+         * 리프레시 토큰은 [sessionId] 세션의 것만 읽고, 응답은 그 세션이 아직 저장돼 있을 때만 쓴다 (#2237).
+         * 쓰지 못한 회전은 성공으로 돌려주지 않는다. 호출자가 그 토큰으로 deadline 을 기록하거나 재시도하면 안 된다.
+         */
+        override suspend fun rotateToken(sessionId: String): Result<TokenBundle> =
             runCatchingCancellable {
                 val refreshToken =
-                    getRefreshToken().getOrNull()
-                        ?: error("리프레시 토큰이 존재하지 않습니다.")
+                    tokenDataSource.refreshTokenOf(sessionId)
+                        ?: throw missingRefreshFailure(sessionId)
                 val response = tokenApiService.reissue(ReissueRequestDto(refreshToken))
                 val tokenBundleResult = response.requireData().toDomain()
                 check(tokenBundleResult.accessToken.isNotEmpty()) {
                     "Token rotation returned an empty access token"
                 }
-                updateTokens(
-                    accessToken = tokenBundleResult.accessToken,
-                    refreshToken = tokenBundleResult.refreshToken,
-                ).getOrThrow()
+                val applied =
+                    tokenDataSource.updateTokensIfSession(
+                        expectedSessionId = sessionId,
+                        accessToken = tokenBundleResult.accessToken,
+                        refreshToken = tokenBundleResult.refreshToken,
+                    )
+                if (!applied) throw SessionChangedException()
                 tokenBundleResult
+            }
+
+        private suspend fun missingRefreshFailure(sessionId: String): Exception =
+            if (tokenDataSource.currentSessionId() == sessionId) {
+                IllegalStateException("리프레시 토큰이 존재하지 않습니다.")
+            } else {
+                SessionChangedException()
             }
 
         /**
