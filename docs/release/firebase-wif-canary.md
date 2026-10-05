@@ -23,16 +23,17 @@ WIF로 인증하고, `FIREBASE_SERVICE_ACCOUNT_JSON` 롤백 경로는 #1566에�
 
 1. GitHub OIDC용 workload identity pool/provider와 Firebase App Distribution 전용 최소 권한
    service account를 준비한다.
-2. provider attribute mapping에 `repository`, `repository_owner`, `ref`, `workflow_ref`,
-   `environment` claim을 포함한다.
-3. attribute condition은 처음에 다음을 동시에 제한하도록 설계했다. 지금 condition은 `workflow_ref`
-   허용 목록에 `release-distribution.yml`과 `release-play-internal.yml`도 들어 있다. 현재 값의 정본은
-   Play release runbook 사전 준비 3번이다.
+2. provider attribute mapping은 `google.subject`(`sub`), `repository`, `repository_owner`, `ref`,
+   `workflow_ref`를 싣는다. `environment` claim은 매핑하지 않는다.
+3. attribute condition은 다음을 동시에 제한한다(2026-10-05 gcloud 조회).
    - repository: `Afternote/Afternote-FE`
-   - owner: `Afternote`
    - ref: `refs/heads/develop` 또는 `refs/heads/main`
-   - workflow: `.github/workflows/firebase-wif-canary.yml`
-   - environment: `release-distribution`
+   - workflow_ref: `firebase-wif-canary.yml`, `release-distribution.yml`, `release-play-internal.yml`
+     중 하나로 시작
+
+   owner와 environment는 조건에 없다. owner는 repository 전체 이름 일치가 대신하고, environment
+   승인은 provider가 아니라 각 워크플로의 GitHub Environment 보호 규칙이 건다. 워크플로별 자격 분리는
+   아래 5번의 서비스 계정 바인딩이 맡는다.
 4. 보호된 Environment에 `GCP_WORKLOAD_IDENTITY_PROVIDER`와
    `GCP_FIREBASE_SERVICE_ACCOUNT`를 masked secret으로 등록한다.
 5. Firebase 서비스 계정 `afternote-ci`의 `roles/iam.workloadIdentityUser`는 저장소 전체가 아니라
