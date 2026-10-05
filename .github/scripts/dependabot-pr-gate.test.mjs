@@ -21,6 +21,7 @@ import {
     buildPlan,
     needsGate,
 } from "./dependabot-pr-gate.mjs";
+import { validatePullRequestIssueLink } from "./validate-pr-issue-link.mjs";
 
 const GATE_SCRIPT = fileURLToPath(new URL("./dependabot-pr-gate.mjs", import.meta.url));
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -74,13 +75,13 @@ test("대표 이슈는 issue.yml 양식이고 platform maintenance 로 1hyok 에
     assert.match(issue.body, /### 참고/);
 });
 
-test("제목은 (#N) 으로 정확히 한 번 끝나고 본문은 Refs 와 유효한 CI Test Plan 으로 시작한다", () => {
+test("제목은 (#N) 으로 정확히 한 번 끝나고 본문은 Closes 와 유효한 CI Test Plan 으로 시작한다", () => {
     const plan = buildPlan([".github/workflows/android-managed-device.yml"]);
     const next = applyGate({ title: BOT_TITLE, body: BOT_BODY, issueNumber: 2111, plan });
 
     assert.equal(next.title, `${BOT_TITLE} (#2111)`);
     assert.equal((next.title.match(/\(#\d+\)/g) ?? []).length, 1);
-    assert.ok(next.body.startsWith(`${GATE_MARKER}\nRefs #2111\n`));
+    assert.ok(next.body.startsWith(`${GATE_MARKER}\nCloses #2111\n`), "게이트가 만든 이슈는 머지가 닫는다 (#2274)");
     assert.ok(next.body.endsWith(BOT_BODY), "봇 본문은 그대로 아래에 남는다");
     assert.equal(needsGate(next), false, "한 번 적용한 결과는 다시 대상이 아니다");
 
@@ -89,12 +90,34 @@ test("제목은 (#N) 으로 정확히 한 번 끝나고 본문은 Refs 와 유�
     assert.equal(inspected.plan?.androidTest?.mode ?? inspected.androidTest?.mode, "full");
 });
 
+test("게이트가 채운 봇 PR 은 Repository Quality 의 대표 이슈 연결 검증을 통과한다", async () => {
+    const plan = buildPlan([".github/workflows/codeql.yml"]);
+    for (const reusedIssue of [false, true]) {
+        const next = applyGate({ title: BOT_TITLE, body: BOT_BODY, issueNumber: 2111, plan, reusedIssue });
+        const result = await validatePullRequestIssueLink({
+            pullRequest: { number: 2106, ...next, user: { login: DEPENDABOT_LOGIN, type: "Bot" }, labels: [] },
+            repository: "Afternote/Afternote-FE",
+            loadIssue: async (number) => ({ number, state: "open", assignees: [{ login: "1hyok" }] }),
+        });
+        assert.deepEqual(result, { issues: [2111], rejected: [] }, `reusedIssue=${reusedIssue}`);
+    }
+});
+
+test("제목에 사람이 붙인 번호를 재사용하면 공유 이슈일 수 있어 Refs 로 건다 (#1748)", () => {
+    const plan = buildPlan([".github/workflows/codeql.yml"]);
+    const next = applyGate({ title: `${BOT_TITLE} (#1397)`, body: BOT_BODY, issueNumber: 1397, plan, reusedIssue: true });
+
+    assert.equal(next.title, `${BOT_TITLE} (#1397)`);
+    assert.ok(next.body.startsWith(`${GATE_MARKER}\nRefs #1397\n`));
+    assert.doesNotMatch(next.body, /Closes #1397/);
+});
+
 test("이미 (#N) 이 붙은 제목에 다시 적용해도 번호가 겹치지 않는다", () => {
     const plan = buildPlan([".github/workflows/codeql.yml"]);
     const once = applyGate({ title: BOT_TITLE, body: BOT_BODY, issueNumber: 2111, plan });
     const twice = applyGate({ title: once.title, body: once.body, issueNumber: 2111, plan });
     assert.equal(twice.title, once.title);
-    assert.equal((twice.body.match(/Refs #2111/g) ?? []).length, 2, "본문 재적용은 앞선 머리말을 봇 본문으로 취급한다");
+    assert.equal((twice.body.match(/Closes #2111/g) ?? []).length, 2, "본문 재적용은 앞선 머리말을 봇 본문으로 취급한다");
     assert.equal((twice.body.match(new RegExp(GATE_MARKER.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "g")) ?? []).length, 1);
 });
 
@@ -118,11 +141,17 @@ const FILLED = {
     user: { login: DEPENDABOT_LOGIN },
     state: "open",
     title: `${BOT_TITLE} (#2139)`,
-    body: `${GATE_MARKER}\nRefs #2139\n\n${BOT_BODY}`,
+    body: `${GATE_MARKER}\nCloses #2139\n\n${BOT_BODY}`,
     head: { sha: "a".repeat(40) },
     changed_files: 3,
 };
 const UNFILLED = { ...FILLED, title: BOT_TITLE, body: BOT_BODY };
+
+test("Closes 로 바꾸기 전 게이트가 Refs 로 채운 PR 도 처리된 PR 이다 (#2274)", () => {
+    const legacy = { ...FILLED, body: `${GATE_MARKER}\nRefs #2139\n\n${BOT_BODY}` };
+    assert.equal(needsGate(legacy), false, "열린 옛 봇 PR 을 다시 고치지 않는다");
+    assert.equal(awaitsGate(legacy), false, "검증도 옛 본문을 기다리지 않는다");
+});
 
 function sequence(...pullRequests) {
     let calls = 0;
