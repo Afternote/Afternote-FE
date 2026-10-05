@@ -7,11 +7,15 @@
 // viewerViewedState 는 토큰 주인 본인의 체크만 돌려준다. 그래서 VIEWED_BY 본인의 토큰(VIEWED_TOKEN)으로
 // 읽고, 토큰 주인이 VIEWED_BY 와 다르면 판정하지 않는다. 쓰기(예약)는 워크플로의 GITHUB_TOKEN 이 한다.
 // 체크한 뒤 바뀐 파일은 GitHub 가 DISMISSED 로 되돌리므로 새 커밋은 다시 봐야 대상이 된다.
+//
+// 예약을 건 뒤 새 push 로 Viewed 가 풀려도 GitHub 는 예약·큐 등록을 그대로 두고, develop 룰셋은 push 로 승인을
+// 지우지 않는다(dismiss_stale_reviews_on_push false). 그래서 예약됐거나 큐에 있는 PR 중 Viewed 가 다 차지 않은
+// 것은 해제 대상으로 고른다(#2252). 누가 걸었는지는 따지지 않는다. 다시 전부 Viewed 가 되면 다음 실행이 다시 건다.
 import { appendFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 const PULL_REQUEST_FIELDS = `
-    number isDraft headRefOid reviewDecision isInMergeQueue changedFiles
+    id number isDraft headRefOid reviewDecision isInMergeQueue changedFiles
     autoMergeRequest { enabledAt }
     files(first: 100) { pageInfo { hasNextPage endCursor } nodes { path viewerViewedState } }
 `;
@@ -38,6 +42,30 @@ export function decideViewedAutoMerge(pullRequest, files) {
         return { enable: false, reason: `Viewed 안 된 파일 ${unviewed.length}/${files.length}` };
     }
     return { enable: true, reason: `모든 파일 Viewed·승인 — 자동 머지 예약` };
+}
+
+/**
+ * 자동 머지 예약 또는 merge queue 등록을 풀어야 하는지 판정한다.
+ *
+ * @param {object} pullRequest GraphQL PullRequest 노드
+ * @param {Array<{ path: string, viewerViewedState: string }>} files PR 의 전체 변경 파일
+ * @returns {{ disableAutoMerge: boolean, dequeue: boolean, reason: string }}
+ */
+export function decideViewedAutoMergeCancel(pullRequest, files) {
+    const autoMerge = Boolean(pullRequest.autoMergeRequest);
+    const queued = Boolean(pullRequest.isInMergeQueue);
+    if (!autoMerge && !queued) return { disableAutoMerge: false, dequeue: false, reason: "예약·큐 등록 없음" };
+    const keep = (reason) => ({ disableAutoMerge: false, dequeue: false, reason });
+    const cancel = (reason) => ({ disableAutoMerge: autoMerge, dequeue: queued, reason });
+    // 파일 목록을 다 못 읽었으면 «다 봤다» 고 단정하지 않는다. 예약 쪽과 같은 기준이다.
+    if (files.length === 0 || files.length !== pullRequest.changedFiles) {
+        return cancel(`파일 ${files.length}/${pullRequest.changedFiles} 만 읽었다 — 예약·큐 해제`);
+    }
+    const unviewed = files.filter((file) => file.viewerViewedState !== "VIEWED");
+    if (unviewed.length > 0) {
+        return cancel(`Viewed 안 된 파일 ${unviewed.length}/${files.length} — 예약·큐 해제`);
+    }
+    return keep("이미 자동 머지 예약 또는 merge queue 에 있고 모든 파일 Viewed");
 }
 
 async function graphql(token, apiUrl, query, variables) {
@@ -99,14 +127,29 @@ async function main() {
     }
 
     const targets = [];
+    const cancels = [];
     for (const pullRequest of data.repository.pullRequests.nodes) {
         const files = await readAllFiles(request, owner, name, pullRequest);
+        const cancel = decideViewedAutoMergeCancel(pullRequest, files);
+        if (cancel.disableAutoMerge || cancel.dequeue) {
+            console.log(`#${pullRequest.number}: ${cancel.reason}`);
+            cancels.push({
+                number: pullRequest.number,
+                id: pullRequest.id,
+                disableAutoMerge: cancel.disableAutoMerge,
+                dequeue: cancel.dequeue,
+            });
+            continue;
+        }
         const decision = decideViewedAutoMerge(pullRequest, files);
         console.log(`#${pullRequest.number}: ${decision.reason}`);
         if (decision.enable) targets.push({ number: pullRequest.number, headSha: pullRequest.headRefOid });
     }
     if (process.env.GITHUB_OUTPUT) {
-        appendFileSync(process.env.GITHUB_OUTPUT, `targets=${JSON.stringify(targets)}\n`);
+        appendFileSync(
+            process.env.GITHUB_OUTPUT,
+            `targets=${JSON.stringify(targets)}\ncancels=${JSON.stringify(cancels)}\n`,
+        );
     }
 }
 
