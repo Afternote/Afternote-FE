@@ -12,13 +12,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.credentials.CredentialManager
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.common.auth.requestKakaoAccessToken
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.ui.findActivity
 import com.afternote.feature.setting.presentation.BuildConfig
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.account.social.KakaoAuthResult
 import com.afternote.feature.setting.presentation.account.social.requestGoogleIdToken
-import com.afternote.feature.setting.presentation.account.social.requestKakaoAccessToken
 import com.afternote.feature.setting.presentation.account.social.toKakaoAuthResult
 
 @Composable

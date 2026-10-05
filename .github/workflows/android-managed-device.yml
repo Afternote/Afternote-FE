@@ -647,8 +647,11 @@ jobs:
             local test_arguments=() jvm_arguments=()
             # #1824 merge-group API34: cold APK packaging exhausted the 2Gi heap
             # in ApkFlinger. The 15Gi runner still had 7Gi available, so reserve
-            # 4Gi for this lane only and preserve the existing UTF-8 JVM flag.
-            if [[ "$DEVICE_TASK" == "pixel2Api34DebugAndroidTest" ]]; then
+            # 4Gi and preserve the existing UTF-8 JVM flag.
+            # #2250 merge-group API30 (#1837 큐): 같은 ApkFlinger OOM 이 :app:packageDebug 에서
+            # 시스템 이미지 설치와 겹쳐 났다. 전체 androidTest 레인도 같은 4Gi 를 쓴다.
+            if [[ "$DEVICE_TASK" == "pixel2Api34DebugAndroidTest" ||
+                  "$DEVICE_TASK" == "pixel2Api30DebugAndroidTest" ]]; then
               jvm_arguments+=("-Dorg.gradle.jvmargs=-Xmx4096m -Dfile.encoding=UTF-8")
             fi
             if [[ -n "$selectors" ]]; then

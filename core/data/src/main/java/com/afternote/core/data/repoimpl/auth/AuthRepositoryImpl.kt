@@ -1,10 +1,11 @@
 package com.afternote.core.data.repoimpl.auth
 
 import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.core.data.mapper.auth.AuthMapper
+import com.afternote.core.data.mapper.auth.toDomain
 import com.afternote.core.datastore.LocalStoreRegistry
 import com.afternote.core.datastore.StoreScope
 import com.afternote.core.datastore.TokenDataSource
+import com.afternote.core.domain.error.SessionChangedException
 import com.afternote.core.domain.push.DevicePushTargetProvider
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.repository.push.PushTargetRepository
@@ -18,7 +19,9 @@ import com.afternote.core.network.model.requireData
 import com.afternote.core.network.service.AuthApiService
 import com.afternote.core.network.service.TokenApiService
 import com.afternote.core.network.token.AccessTokenExpiryTracker
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 internal class AuthRepositoryImpl
@@ -42,6 +45,22 @@ internal class AuthRepositoryImpl
                 // 남기면 재로그인 후 이전 토큰 기준 deadline 으로 만료 임박을 오판한다.
                 expiryTracker.clear()
             }
+
+        /**
+         * 토큰 저장소의 대조·정리를 먼저 한 번의 쓰기로 끝내고, 정리됐을 때만 나머지 SESSION 저장소와 deadline 을
+         * 비운다. 대조가 어긋났다면 그 저장소와 deadline 은 새 세션의 것이다 (#2238).
+         */
+        override suspend fun clearSessionIfCurrent(sessionId: String) =
+            runCatchingCancellable {
+                val cleared = tokenDataSource.clearIfSession(sessionId)
+                if (cleared) {
+                    localStoreRegistry.clearScope(StoreScope.SESSION)
+                    expiryTracker.clear()
+                }
+                cleared
+            }
+
+        override suspend fun getSessionId() = runCatchingCancellable { tokenDataSource.currentSessionId() }
 
         override suspend fun getAccessToken() = runCatchingCancellable { tokenDataSource.getAccessToken() }
 
@@ -77,7 +96,7 @@ internal class AuthRepositoryImpl
             runCatchingCancellable {
                 val data = authApiService.login(LoginRequestDto(email, password)).requireData()
                 recordIssuedExpiresIn(data.expiresIn)
-                AuthMapper.toDefaultLoginResult(data)
+                data.toDomain()
             }.mapLoginFailure()
 
         override suspend fun kakaoLogin(oauthToken: String): Result<Session.SocialSession> =
@@ -91,7 +110,7 @@ internal class AuthRepositoryImpl
                             ),
                         ).requireData()
                 recordIssuedExpiresIn(data.expiresIn)
-                AuthMapper.toSocialLoginResult(data)
+                data.toDomain()
             }.mapLoginFailure()
 
         override suspend fun googleLogin(idToken: String): Result<Session.SocialSession> =
@@ -105,45 +124,70 @@ internal class AuthRepositoryImpl
                             ),
                         ).requireData()
                 recordIssuedExpiresIn(data.expiresIn)
-                AuthMapper.toSocialLoginResult(data)
+                data.toDomain()
             }.mapLoginFailure()
 
-        override suspend fun rotateToken(): Result<TokenBundle> =
+        /**
+         * 재발급 HTTP 가 떠 있는 동안 로그아웃이나 새 로그인이 끝날 수 있다(둘 다 재발급 락 밖이다). 그래서
+         * 리프레시 토큰은 [sessionId] 세션의 것만 읽고, 응답은 그 세션이 아직 저장돼 있을 때만 쓴다 (#2237).
+         * 쓰지 못한 회전은 성공으로 돌려주지 않는다. 호출자가 그 토큰으로 deadline 을 기록하거나 재시도하면 안 된다.
+         */
+        override suspend fun rotateToken(sessionId: String): Result<TokenBundle> =
             runCatchingCancellable {
                 val refreshToken =
-                    getRefreshToken().getOrNull()
-                        ?: error("리프레시 토큰이 존재하지 않습니다.")
+                    tokenDataSource.refreshTokenOf(sessionId)
+                        ?: throw missingRefreshFailure(sessionId)
                 val response = tokenApiService.reissue(ReissueRequestDto(refreshToken))
-                val tokenBundleResult = AuthMapper.toRotateTokenResult(response.requireData())
+                val tokenBundleResult = response.requireData().toDomain()
                 check(tokenBundleResult.accessToken.isNotEmpty()) {
                     "Token rotation returned an empty access token"
                 }
-                updateTokens(
-                    accessToken = tokenBundleResult.accessToken,
-                    refreshToken = tokenBundleResult.refreshToken,
-                ).getOrThrow()
+                val applied =
+                    tokenDataSource.updateTokensIfSession(
+                        expectedSessionId = sessionId,
+                        accessToken = tokenBundleResult.accessToken,
+                        refreshToken = tokenBundleResult.refreshToken,
+                    )
+                if (!applied) throw SessionChangedException()
                 tokenBundleResult
+            }
+
+        private suspend fun missingRefreshFailure(sessionId: String): Exception =
+            if (tokenDataSource.currentSessionId() == sessionId) {
+                IllegalStateException("리프레시 토큰이 존재하지 않습니다.")
+            } else {
+                SessionChangedException()
             }
 
         /**
          * 서버 로그아웃은 best-effort (네트워크 실패해도 사용자는 로그아웃 상태로 가야 함).
          * SESSION 스코프 로컬 저장소와 선제 reissue deadline 은 서버 호출 결과와 무관하게 항상 정리한다.
+         *
+         * 호출자가 취소돼도 로컬 정리는 끝낸다 (#2243). 서버는 요청을 받은 순간 refresh 를 지우는데
+         * 클라이언트의 취소는 서버에 전달되지 않으므로, 호출 화면이 응답 전에 사라졌다고 로컬 세션을
+         * 남기면 앱만 로그인 상태로 남는다. 정리를 마친 뒤 취소는 그대로 다시 던진다.
          */
         override suspend fun logout(): Result<Unit> =
             runCatchingCancellable {
-                // 푸시 대상 해제가 먼저다 — 이 요청도 액세스 토큰을 달고 나가므로 세션이 살아 있어야 한다.
-                // 실패해도 로그아웃은 진행한다(best-effort). 남은 등록은 서버가 다음 발송 실패로 정리한다.
-                unregisterDevicePushTarget()
+                try {
+                    // 푸시 대상 해제가 먼저다. 이 요청도 액세스 토큰을 달고 나가므로 세션이 살아 있어야 한다.
+                    // 실패해도 로그아웃은 진행한다(best-effort). 남은 등록은 서버가 다음 발송 실패로 정리한다.
+                    unregisterDevicePushTarget()
 
-                val refreshToken = getRefreshToken().getOrNull()
-                if (refreshToken != null) {
-                    runCatchingCancellable { authApiService.logout(LogoutRequestDto(refreshToken)) }
+                    val refreshToken = getRefreshToken().getOrNull()
+                    if (refreshToken != null) {
+                        runCatchingCancellable { authApiService.logout(LogoutRequestDto(refreshToken)) }
+                    }
+                } finally {
+                    // 두 정리 모두 반드시 위 API 호출 뒤여야 한다. 로그아웃 HTTP 요청도 AuthInterceptor 를
+                    // 지나므로 그 시점엔 토큰이 살아 있어야 하고, 토큰이 만료 임박이면 요청 직전 선제 reissue 가
+                    // tracker 에 새 deadline 을 기록할 수 있어 tracker 를 먼저 비우면 그 기록이 되살아난다.
+                    // 취소된 코루틴에서도 suspend 정리가 돌도록 NonCancellable 로 감싼다.
+                    withContext(NonCancellable) {
+                        localStoreRegistry.clearScope(StoreScope.SESSION)
+                        expiryTracker.clear()
+                    }
                 }
-                // 두 정리 모두 반드시 위 API 호출 뒤여야 한다. 로그아웃 HTTP 요청도 AuthInterceptor 를
-                // 지나므로 그 시점엔 토큰이 살아 있어야 하고, 토큰이 만료 임박이면 요청 직전 선제 reissue 가
-                // tracker 에 새 deadline 을 기록할 수 있다 — tracker 를 먼저 비우면 그 기록이 되살아난다.
-                localStoreRegistry.clearScope(StoreScope.SESSION)
-                expiryTracker.clear()
             }
 
         /**
