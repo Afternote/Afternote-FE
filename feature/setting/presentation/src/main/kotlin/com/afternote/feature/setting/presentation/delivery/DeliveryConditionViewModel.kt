@@ -1,8 +1,8 @@
 package com.afternote.feature.setting.presentation.delivery
 
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserReceiverRepository
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.model.delivery.DeliveryConditionType
 import com.afternote.core.model.delivery.DeliveryContentType
 import com.afternote.core.model.delivery.InactivityPeriod
