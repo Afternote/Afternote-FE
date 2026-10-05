@@ -2,8 +2,9 @@
 //
 // 봇은 이슈를 만들지 못하고 본문에 CI Test Plan 도 쓰지 않아, 열리는 순간
 // Repository Quality 와 기기 잡이 구조적으로 실패한다(#1397·#1699·#2106). 사람이 매번
-// 손으로 하던 세 가지 — 대표 이슈 신설, 제목 끝 `(#N)`, 본문의 `Refs #N` + CI Test Plan —
-// 를 여기서 한다. mode 는 사람이 정하지 않는다. `ci-test-plan.mjs` 가 변경 파일로 판정한
+// 손으로 하던 세 가지 — 대표 이슈 신설, 제목 끝 `(#N)`, 본문의 `Closes #N` + CI Test Plan —
+// 를 여기서 한다. 손으로 할 때는 `Refs` 로 걸고 머지 뒤 이슈를 손으로 닫았는데(#1397·#2111), 게이트가
+// PR 마다 이슈를 새로 만들므로 `Closes` 로 걸어 머지가 이슈를 닫게 한다(#2274). mode 는 사람이 정하지 않는다. `ci-test-plan.mjs` 가 변경 파일로 판정한
 // 결과를 그대로 쓴다. 게이트 면제는 하지 않는다 — 봇 PR 도 워크플로 파일을 건드린다.
 //
 // 게이트는 GITHUB_TOKEN 으로 제목·본문을 고치므로 그 `edited` 는 다른 워크플로를 깨우지 못한다.
@@ -141,7 +142,7 @@ export function buildIssue({ title, prNumber, changedPaths, plan }) {
             "",
             `dependabot 이 올린 PR #${prNumber}(${summary})의 대표 이슈다. dependabot-pr-gate 워크플로가 만들었다(#2112).`,
             "",
-            "Repository Quality 가 모든 PR 에 제목 대표 이슈 번호와 본문 Refs 를 요구하는데 봇은 이슈를 만들지 못한다. 이 이슈로 연결해 수용한다.",
+            "Repository Quality 가 모든 PR 에 제목 대표 이슈 번호와 본문 연결을 요구하는데 봇은 이슈를 만들지 못한다. 이 이슈로 연결해 수용하고, PR 본문의 Closes 로 머지 때 함께 닫힌다.",
             "",
             `변경 파일 ${files.length}개:`,
             fileLines,
@@ -159,8 +160,12 @@ export function buildIssue({ title, prNumber, changedPaths, plan }) {
     };
 }
 
-/** 제목 끝에 `(#N)`, 본문 맨 위에 `Refs #N` 과 CI Test Plan 을 붙인다. 봇 본문은 그대로 아래 둔다. */
-export function applyGate({ title, body, issueNumber, plan }) {
+/**
+ * 제목 끝에 `(#N)`, 본문 맨 위에 `Closes #N` 과 CI Test Plan 을 붙인다. 봇 본문은 그대로 아래 둔다.
+ * 게이트가 만든 이슈는 이 PR 하나의 대표 이슈라 머지가 닫게 한다(#2274). 제목에 사람이 이미 붙인
+ * 번호를 재사용할 때(`reusedIssue`)는 여러 봇 PR 이 공유하는 이슈일 수 있어 `Refs` 로 둔다(#1748).
+ */
+export function applyGate({ title, body, issueNumber, plan, reusedIssue = false }) {
     const baseTitle = String(title ?? "").replace(TITLE_ISSUE_PATTERN, "").trim();
     const planJson = JSON.stringify(
         { androidTest: { mode: plan.mode, reason: plan.reason, tests: [] } },
@@ -170,7 +175,7 @@ export function applyGate({ title, body, issueNumber, plan }) {
     const original = String(body ?? "").replace(GATE_MARKER, "").trim();
     const nextBody = [
         GATE_MARKER,
-        `Refs #${issueNumber}`,
+        `${reusedIssue ? "Refs" : "Closes"} #${issueNumber}`,
         "",
         "## CI Test Plan",
         "",
@@ -242,9 +247,11 @@ async function fillGate() {
     const changedPaths = await listChangedPaths(apiUrl, repository, prNumber, token);
     const plan = buildPlan(changedPaths);
 
-    // 제목에 이슈 번호가 이미 있으면(사람이 붙였거나 앞선 실행이 본문 갱신 전에 끊겼거나) 재사용한다.
+    // 제목에 이슈 번호가 이미 있으면 사람이 붙인 것이다(게이트는 제목·본문을 한 번의 PATCH 로 바꾼다). 그 번호를
+    // 재사용하고, 여러 봇 PR 이 공유하는 이슈일 수 있어 Refs 로 건다(#1748).
     let issueNumber = Number(TITLE_ISSUE_PATTERN.exec(pullRequest.title ?? "")?.[1]);
-    if (!issueNumber) {
+    const reusedIssue = Boolean(issueNumber);
+    if (!reusedIssue) {
         const issue = buildIssue({ title: pullRequest.title, prNumber, changedPaths, plan });
         const created = await github(`${apiUrl}/repos/${repository}/issues`, token, {
             method: "POST",
@@ -254,12 +261,12 @@ async function fillGate() {
         console.log(`대표 이슈 #${issueNumber} 생성`);
     }
 
-    const next = applyGate({ title: pullRequest.title, body: pullRequest.body, issueNumber, plan });
+    const next = applyGate({ title: pullRequest.title, body: pullRequest.body, issueNumber, plan, reusedIssue });
     await github(`${apiUrl}/repos/${repository}/pulls/${prNumber}`, token, {
         method: "PATCH",
         body: JSON.stringify(next),
     });
-    console.log(`#${prNumber} 제목·본문 갱신: Refs #${issueNumber}, androidTest mode=${plan.mode}`);
+    console.log(`#${prNumber} 제목·본문 갱신: ${reusedIssue ? "Refs" : "Closes"} #${issueNumber}, androidTest mode=${plan.mode}`);
 }
 
 /**
