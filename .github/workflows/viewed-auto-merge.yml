@@ -11,8 +11,7 @@
 # 않으므로, 이 단계가 없으면 아무도 다시 보지 않은 커밋이 머지된다. 누가 건 예약인지는 따지지 않는다. 예약을
 # 멈추려면 파일 하나의 Viewed 를 풀면 되고, 다시 전부 Viewed 가 되면 다음 실행이 다시 건다.
 #
-# Viewed 체크는 webhook 이벤트가 없어 주기 실행으로 훑는다. 승인 직후에도 리컨사일 완료 신호로 한 번
-# 돈다. viewerViewedState 는 토큰 주인 본인 것만 보이므로 VIEWED_BY 의 읽기 전용 토큰을 VIEWED_TOKEN
+# Viewed 체크는 webhook 이벤트가 없어 주기 실행으로 훑는다. viewerViewedState 는 토큰 주인 본인 것만 보이므로 VIEWED_BY 의 읽기 전용 토큰을 VIEWED_TOKEN
 # 시크릿으로 둔다. 시크릿이 없으면 아무것도 하지 않는다.
 #
 # 예약 쓰기는 MERGE_QUEUE_TOKEN(1hyok 의 fine-grained PAT)이 한다. GITHUB_TOKEN 으로 예약하거나 큐에 넣으면 GitHub 이
@@ -23,9 +22,6 @@ name: Viewed Auto Merge
 on:
   schedule:
     - cron: '*/10 * * * *'
-  workflow_run:
-    workflows: [Latest Review Decision Reconcile]
-    types: [completed]
   workflow_dispatch:
 
 concurrency:
