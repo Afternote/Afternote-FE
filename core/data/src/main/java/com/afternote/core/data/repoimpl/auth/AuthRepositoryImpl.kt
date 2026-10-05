@@ -18,7 +18,9 @@ import com.afternote.core.network.model.requireData
 import com.afternote.core.network.service.AuthApiService
 import com.afternote.core.network.service.TokenApiService
 import com.afternote.core.network.token.AccessTokenExpiryTracker
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 internal class AuthRepositoryImpl
@@ -128,22 +130,32 @@ internal class AuthRepositoryImpl
         /**
          * 서버 로그아웃은 best-effort (네트워크 실패해도 사용자는 로그아웃 상태로 가야 함).
          * SESSION 스코프 로컬 저장소와 선제 reissue deadline 은 서버 호출 결과와 무관하게 항상 정리한다.
+         *
+         * 호출자가 취소돼도 로컬 정리는 끝낸다 (#2243). 서버는 요청을 받은 순간 refresh 를 지우는데
+         * 클라이언트의 취소는 서버에 전달되지 않으므로, 호출 화면이 응답 전에 사라졌다고 로컬 세션을
+         * 남기면 앱만 로그인 상태로 남는다. 정리를 마친 뒤 취소는 그대로 다시 던진다.
          */
         override suspend fun logout(): Result<Unit> =
             runCatchingCancellable {
-                // 푸시 대상 해제가 먼저다 — 이 요청도 액세스 토큰을 달고 나가므로 세션이 살아 있어야 한다.
-                // 실패해도 로그아웃은 진행한다(best-effort). 남은 등록은 서버가 다음 발송 실패로 정리한다.
-                unregisterDevicePushTarget()
+                try {
+                    // 푸시 대상 해제가 먼저다. 이 요청도 액세스 토큰을 달고 나가므로 세션이 살아 있어야 한다.
+                    // 실패해도 로그아웃은 진행한다(best-effort). 남은 등록은 서버가 다음 발송 실패로 정리한다.
+                    unregisterDevicePushTarget()
 
-                val refreshToken = getRefreshToken().getOrNull()
-                if (refreshToken != null) {
-                    runCatchingCancellable { authApiService.logout(LogoutRequestDto(refreshToken)) }
+                    val refreshToken = getRefreshToken().getOrNull()
+                    if (refreshToken != null) {
+                        runCatchingCancellable { authApiService.logout(LogoutRequestDto(refreshToken)) }
+                    }
+                } finally {
+                    // 두 정리 모두 반드시 위 API 호출 뒤여야 한다. 로그아웃 HTTP 요청도 AuthInterceptor 를
+                    // 지나므로 그 시점엔 토큰이 살아 있어야 하고, 토큰이 만료 임박이면 요청 직전 선제 reissue 가
+                    // tracker 에 새 deadline 을 기록할 수 있어 tracker 를 먼저 비우면 그 기록이 되살아난다.
+                    // 취소된 코루틴에서도 suspend 정리가 돌도록 NonCancellable 로 감싼다.
+                    withContext(NonCancellable) {
+                        localStoreRegistry.clearScope(StoreScope.SESSION)
+                        expiryTracker.clear()
+                    }
                 }
-                // 두 정리 모두 반드시 위 API 호출 뒤여야 한다. 로그아웃 HTTP 요청도 AuthInterceptor 를
-                // 지나므로 그 시점엔 토큰이 살아 있어야 하고, 토큰이 만료 임박이면 요청 직전 선제 reissue 가
-                // tracker 에 새 deadline 을 기록할 수 있다 — tracker 를 먼저 비우면 그 기록이 되살아난다.
-                localStoreRegistry.clearScope(StoreScope.SESSION)
-                expiryTracker.clear()
             }
 
         /**
