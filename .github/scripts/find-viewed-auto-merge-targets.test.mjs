@@ -49,13 +49,16 @@ test("Draft·이미 예약·큐에 있는 PR 은 건드리지 않는다", () => 
     assert.equal(decideViewedAutoMerge(pullRequest({ isInMergeQueue: true }), files).enable, false);
 });
 
-test("워크플로는 본인 토큰으로 읽고 GITHUB_TOKEN 으로 승인한 HEAD 만 예약한다", async () => {
+test("워크플로는 본인 토큰으로 읽고 사람 토큰으로 승인한 HEAD 만 예약한다", async () => {
     const workflow = await readFile(new URL("../workflows/viewed-auto-merge.yml", import.meta.url), "utf8");
     assert.match(workflow, /^permissions: \{\}$/m);
     assert.match(workflow, /VIEWED_TOKEN: \$\{\{ secrets\.VIEWED_TOKEN \}\}/);
     assert.match(workflow, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
     assert.match(workflow, /persist-credentials: false/);
-    assert.match(workflow, /GH_TOKEN: \$\{\{ github\.token \}\}/);
+    // GITHUB_TOKEN 으로 예약·투입하면 merge_group CI 가 뜨지 않아 큐가 60분 막힌다(1005 #2208).
+    assert.match(workflow, /GH_TOKEN: \$\{\{ secrets\.MERGE_QUEUE_TOKEN \}\}/);
+    assert.doesNotMatch(workflow, /GH_TOKEN: \$\{\{ github\.token \}\}/);
+    assert.match(workflow, /if \[ -z "\$GH_TOKEN" \]; then[\s\S]*?exit 0/);
     assert.match(workflow, /--match-head-commit "\$head_sha"/);
     // 우회 머지 금지. merge queue 와 required check 를 그대로 탄다.
     assert.doesNotMatch(workflow, /--admin/);

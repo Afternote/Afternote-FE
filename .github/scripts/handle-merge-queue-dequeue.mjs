@@ -25,6 +25,12 @@
 // merge-async 는 202 pending 으로 받으므로 결과(enqueued·merged·failed)를 폴링해 확인하고, failed·미확정은 job 을
 // red 로 남긴다. 스택 위쪽 PR 은 자동 재투입하지 않는다 — merge-async 가 downstack 의 열린 PR 까지 함께 넣어
 // 아래 PR 의 판정(실패 job 이면 재투입 안 함)을 덮기 때문이다. 위쪽 PR 에는 마커 없는 안내 코멘트만 남긴다.
+//
+// 재투입은 이 job 이 직접 하지 않고 merge-queue-requeue.yml 에 넘긴다(#2254). GITHUB_TOKEN 으로 큐에 넣으면 GitHub 이
+// 그 이벤트로 워크플로를 띄우지 않아 merge_group CI 가 하나도 돌지 않고, 큐 맨 앞을 60분(check timeout) 붙잡은 뒤
+// CI_TIMEOUT 으로 다시 빠지면서 뒤의 PR 들까지 다시 검증하게 만든다(1005 #2208 실측: 봇이 넣은 그룹만 체크 0개).
+// 투입에는 사람 토큰(MERGE_QUEUE_TOKEN)이 필요한데 이 워크플로는 pull_request_target 브리지라 시크릿을 쓰지 않는다.
+// workflow_dispatch 는 GITHUB_TOKEN 으로 보내도 실행되는 예외라서, 판정과 마커는 여기서 끝내고 투입만 dispatch 로 넘긴다.
 
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -329,6 +335,67 @@ export async function enqueueStacked(api, repository, number, headSha, { sleep =
     }
 }
 
+export const REQUEUE_WORKFLOW_FILE = "merge-queue-requeue.yml";
+
+/** 재투입 워크플로를 띄운다. 입력의 head 로 고정해 그사이 새 커밋이 올라오면 그쪽이 투입하지 않는다. */
+export async function dispatchRequeue(api, repository, { number, headSha, ref }) {
+    await api(`/repos/${repository}/actions/workflows/${REQUEUE_WORKFLOW_FILE}/dispatches`, {
+        method: "POST",
+        body: { ref, inputs: { pull_request_number: String(number), head_sha: headSha } },
+    });
+}
+
+/** 큐 투입 자체. 스택 PR 은 merge-async, 나머지는 GraphQL 이다(#2177). [api] 의 토큰 주인이 투입 주체가 된다. */
+export async function performRequeue({ api, repository, number, live, logger = console, sleep = defaultSleep }) {
+    const headSha = live.headRefOid;
+    if (isStackMember(live)) {
+        const enqueueResult = await enqueueStacked(api, repository, number, headSha, { sleep });
+        if (enqueueResult.unresolved) {
+            const refreshed = await fetchLivePullRequest(api, repository, number);
+            if (!refreshed?.mergeQueueEntry) {
+                throw new Error(`merge-async 결과 미확정: ${JSON.stringify(enqueueResult)} 큐에도 없다`);
+            }
+            logger.log(`#${number} 스택 ${live.stack?.number ?? "?"} 재투입(merge-async) → live 재조회로 큐 진입 확인(${refreshed.mergeQueueEntry.state})`);
+        } else {
+            logger.log(`#${number} 스택 ${live.stack?.number ?? "?"} 재투입(merge-async) → ${enqueueResult?.status ?? "?"} ${enqueueResult?.details?.message ?? ""}`.trimEnd());
+        }
+        return "merge-async";
+    }
+    const entry = await enqueue(api, live.id);
+    logger.log(`#${number} 재투입 → ${entry?.state ?? "?"} position=${entry?.position ?? "?"}`);
+    return "graphql";
+}
+
+/**
+ * merge-queue-requeue.yml 쪽. dispatch 를 받은 뒤 live 상태를 다시 보고, 판정한 head 그대로 열려 있고 큐 밖일 때만 넣는다.
+ * 판정·마커는 방출 처리 job 이 이미 끝냈으므로 여기서는 코멘트를 쓰지 않는다.
+ */
+export async function requeueDispatched({ api, repository, number, headSha, logger = console, sleep = defaultSleep }) {
+    const live = await fetchLivePullRequest(api, repository, number);
+    if (!live) throw new Error(`#${number} 를 찾을 수 없습니다`);
+    let skip = null;
+    if (live.state !== "OPEN") skip = live.state;
+    else if (live.mergeQueueEntry) skip = "already-queued";
+    else if (live.headRefOid !== headSha) skip = "head-changed";
+    else if (isStackMember(live) && !isStackBottom(live)) skip = "stack-upper";
+    if (skip) {
+        logger.log(`#${number} 재투입 생략(${skip}) — 판정 head ${shortSha(headSha)}, 지금 head ${shortSha(live.headRefOid ?? "")}`);
+        return { action: "none", why: skip };
+    }
+    const enqueueMethod = await performRequeue({ api, repository, number, live, logger, sleep });
+    return { action: "requeue", enqueueMethod };
+}
+
+export function renderMissingQueueTokenComment({ headSha, repository, number, stack = false }) {
+    return [
+        "### merge queue 방출: 재투입하지 못했다",
+        "",
+        `head \`${shortSha(headSha)}\`. \`MERGE_QUEUE_TOKEN\` 시크릿이 없다.`,
+        "GITHUB_TOKEN 으로 넣으면 merge_group CI 가 돌지 않아 60분 뒤 CI_TIMEOUT 으로 다시 빠지므로 넣지 않았다.",
+        `\`${manualEnqueueCommand({ repository, number, stack })}\` 로 직접 투입한다.`,
+    ].join("\n");
+}
+
 export async function handleDequeue({
     api,
     repository,
@@ -337,6 +404,7 @@ export async function handleDequeue({
     dryRun = false,
     logger = console,
     sleep = defaultSleep,
+    requeue = null,
 }) {
     const live = await fetchLivePullRequest(api, repository, number);
     if (!live) throw new Error(`#${number} 를 찾을 수 없습니다`);
@@ -372,25 +440,34 @@ export async function handleDequeue({
     } else if (action === "requeue") {
         // 마커를 먼저 남긴다 — 재투입 뒤 코멘트가 실패하면 다음 방출에서 두 번째 재투입이 나간다.
         await postComment(api, repository, number, renderRequeueComment({ reason, headSha, failedJobs }));
-        if (stack) {
-            const enqueueResult = await enqueueStacked(api, repository, number, headSha, { sleep });
-            if (enqueueResult.unresolved) {
-                const refreshed = await fetchLivePullRequest(api, repository, number);
-                if (!refreshed?.mergeQueueEntry) {
-                    throw new Error(`merge-async 결과 미확정: ${JSON.stringify(enqueueResult)} 큐에도 없다`);
-                }
-                logger.log(`#${number} 스택 ${live.stack?.number ?? "?"} 재투입(merge-async) → live 재조회로 큐 진입 확인(${refreshed.mergeQueueEntry.state})`);
-            } else {
-                logger.log(`#${number} 스택 ${live.stack?.number ?? "?"} 재투입(merge-async) → ${enqueueResult?.status ?? "?"} ${enqueueResult?.details?.message ?? ""}`.trimEnd());
-            }
-            result.enqueueMethod = "merge-async";
-        } else {
-            const entry = await enqueue(api, live.id);
-            logger.log(`#${number} 재투입 → ${entry?.state ?? "?"} position=${entry?.position ?? "?"}`);
-            result.enqueueMethod = "graphql";
-        }
+        result.enqueueMethod = requeue
+            ? await requeue({ number, headSha, live })
+            : await performRequeue({ api, repository, number, live, logger, sleep });
     }
     return result;
+}
+
+function requiredEnv(name) {
+    const value = process.env[name];
+    if (!value) throw new Error(`${name} 가 필요합니다.`);
+    return value;
+}
+
+async function requeueMain(repository) {
+    const commentApi = createApi(requiredEnv("GITHUB_TOKEN"));
+    const number = Number(process.env.PULL_REQUEST_NUMBER);
+    const headSha = requiredEnv("HEAD_SHA");
+    if (!Number.isInteger(number) || number <= 0) {
+        throw new Error("PULL_REQUEST_NUMBER 가 양의 정수여야 합니다.");
+    }
+    const queueToken = process.env.MERGE_QUEUE_TOKEN;
+    if (!queueToken) {
+        const live = await fetchLivePullRequest(commentApi, repository, number);
+        await postComment(commentApi, repository, number, renderMissingQueueTokenComment({ headSha, repository, number, stack: isStackMember(live) }));
+        throw new Error("MERGE_QUEUE_TOKEN 시크릿이 없어 재투입하지 못했다.");
+    }
+    const result = await requeueDispatched({ api: createApi(queueToken), repository, number, headSha });
+    console.log(`merge-queue-requeue: #${number} head=${shortSha(headSha)} → ${result.action}${result.why ? ` (${result.why})` : ""}${result.enqueueMethod ? ` (${result.enqueueMethod})` : ""}`);
 }
 
 async function main() {
@@ -398,6 +475,10 @@ async function main() {
     const repository = process.env.GITHUB_REPOSITORY;
     if (!token || !repository) {
         throw new Error("GITHUB_TOKEN·GITHUB_REPOSITORY 가 필요합니다.");
+    }
+    if (process.env.MODE === "requeue") {
+        await requeueMain(repository);
+        return;
     }
     let number = Number(process.env.PULL_REQUEST_NUMBER);
     let reason = process.env.DEQUEUE_REASON;
@@ -412,7 +493,12 @@ async function main() {
     reason = reason || "UNKNOWN";
 
     const api = createApi(token);
-    const result = await handleDequeue({ api, repository, number, reason, dryRun: process.env.DRY_RUN === "true" });
+    const ref = requiredEnv("DEFAULT_BRANCH");
+    const requeue = async ({ headSha }) => {
+        await dispatchRequeue(api, repository, { number, headSha, ref });
+        return "dispatch";
+    };
+    const result = await handleDequeue({ api, repository, number, reason, dryRun: process.env.DRY_RUN === "true", requeue });
     const summary = `merge-queue-dequeue: #${number} reason=${reason} → ${result.action}${result.dryRun ? " (dry-run)" : ""}${result.stack !== null ? ` (스택 ${result.stack}, ${result.enqueueMethod ?? "판정만"})` : ""}`;
     console.log(summary);
     if (process.env.GITHUB_STEP_SUMMARY) {
