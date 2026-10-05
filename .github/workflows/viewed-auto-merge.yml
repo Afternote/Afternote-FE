@@ -2,9 +2,8 @@
 #
 # 적용 범위는 VIEWED_BY 본인이 작성한 PR 이다(#2270). 팀원·봇 PR 은 예약도 해제도 하지 않는다.
 #
-# VIEWED_BY 가 PR 의 모든 파일을 Viewed 로 체크했고 PR 에 승인 대기·변경 요청이 없으면 «Merge when ready» 를
-# 대신 건다. 승인 룰셋이 승인 0건이면 reviewDecision 이 비어 있어도 대상이다. 머지는 GitHub 가 룰셋·required
-# check·merge queue 를 모두 통과시킨 뒤에만 하므로 CI 가 빨가면 머지되지 않는다.
+# VIEWED_BY 가 PR 의 모든 파일을 Viewed 로 체크하면 «Merge when ready» 를 대신 건다. 리뷰 상태는 보지 않는다.
+# 머지는 GitHub 가 룰셋·required check·merge queue 를 모두 통과시킨 뒤에만 하므로 CI 가 빨가면 머지되지 않는다.
 #
 # 반대 방향도 매 실행이 맞춘다(#2252). 예약됐거나 merge queue 에 있는 VIEWED_BY 본인 PR 중 VIEWED_BY 기준 Viewed 가 다 차지
 # 않은 것은 예약을 끄고 큐에서 뺀다. 새 push 로 바뀐 파일은 DISMISSED 가 되고 룰셋은 push 로 승인을 지우지

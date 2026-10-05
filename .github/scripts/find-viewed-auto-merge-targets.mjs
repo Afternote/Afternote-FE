@@ -1,7 +1,7 @@
 // Viewed 기반 자동 머지 대상 판정 (#2248)
 //
-// 지정한 한 사람(VIEWED_BY)이 PR 의 모든 파일을 Viewed 로 체크했고 PR 에 승인 대기·변경 요청이 없으면
-// «Merge when ready» 를 예약할 대상으로 고른다. 실제 머지는 GitHub 가 required check·승인 수·merge queue 를 통과시킨 뒤에만
+// 지정한 한 사람(VIEWED_BY)이 PR 의 모든 파일을 Viewed 로 체크하면 «Merge when ready» 를 예약할 대상으로
+// 고른다. 리뷰 상태는 보지 않는다(#2277, 리뷰 폐지). 실제 머지는 GitHub 가 required check·승인 수·merge queue 를 통과시킨 뒤에만
 // 한다.
 //
 // viewerViewedState 는 토큰 주인 본인의 체크만 돌려준다. 그래서 VIEWED_BY 본인의 토큰(VIEWED_TOKEN)으로
@@ -17,10 +17,8 @@
 import { appendFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
-const BLOCKING_REVIEW_DECISIONS = new Set(["CHANGES_REQUESTED", "REVIEW_REQUIRED"]);
-
 const PULL_REQUEST_FIELDS = `
-    id number isDraft headRefOid reviewDecision isInMergeQueue changedFiles
+    id number isDraft headRefOid isInMergeQueue changedFiles
     author { login }
     autoMergeRequest { enabledAt }
     files(first: 100) { pageInfo { hasNextPage endCursor } nodes { path viewerViewedState } }
@@ -48,11 +46,6 @@ export function decideViewedAutoMerge(pullRequest, files) {
     if (pullRequest.isDraft) return { enable: false, reason: "Draft PR" };
     if (pullRequest.autoMergeRequest || pullRequest.isInMergeQueue) {
         return { enable: false, reason: "이미 자동 머지 예약 또는 merge queue 에 있다" };
-    }
-    // 승인 룰셋이 승인 0건을 요구하면 GitHub 는 reviewDecision 을 비워(null) 돌려준다. 막는 것은
-    // 아직 승인이 필요하거나 변경 요청이 남은 상태뿐이다.
-    if (BLOCKING_REVIEW_DECISIONS.has(pullRequest.reviewDecision)) {
-        return { enable: false, reason: `reviewDecision 이 ${pullRequest.reviewDecision}` };
     }
     // 파일 목록을 다 못 읽었으면 «다 봤다» 고 단정하지 않는다.
     if (files.length === 0 || files.length !== pullRequest.changedFiles) {
