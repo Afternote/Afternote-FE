@@ -75,6 +75,7 @@ internal class PushNotificationViewModel
                             )
                         }
                     }.onFailure { e ->
+                        // 조회 실패는 Logcat 에만 남긴다. 반복 조회 잡음이 저장 실패 진단의 보관 한도를 밀어내지 않게 한다 (#963).
                         Log.e(TAG, "loadPushSettings: failed", e)
                         _uiState.update { it.copy(isLoading = false) }
                     }
@@ -179,6 +180,13 @@ internal class PushNotificationViewModel
                 }.onSuccess {
                     _uiState.update { it.withUpdating(update.setting, updating = false) }
                 }.onFailure { failure ->
+                    errorReporter.recordFailure(
+                        failure,
+                        mapOf(
+                            KEY_STAGE to STAGE_PUSH_SETTING_UPDATE,
+                            KEY_PUSH_SETTING to update.setting.reportingName(),
+                        ),
+                    )
                     failedUpdate = update
                     _uiState.update {
                         it
@@ -193,6 +201,8 @@ internal class PushNotificationViewModel
         companion object {
             private const val TAG = "PushNotificationVM"
             private const val KEY_STAGE = "stage"
+            private const val KEY_PUSH_SETTING = "push_setting"
+            private const val STAGE_PUSH_SETTING_UPDATE = "push_setting_update"
             private const val STAGE_SMS_CONSENT = "sms_consent_update"
             private const val STAGE_EMAIL_CONSENT = "email_consent_update"
             private const val STAGE_PUSH_CONSENT = "push_consent_update"
@@ -204,6 +214,14 @@ private enum class PushSetting {
     MIND_RECORD,
     AFTERNOTE,
 }
+
+/** 진단 속성 값. 토글 종류만 담는 고정 문자열이라 사용자 정보가 섞이지 않는다. */
+private fun PushSetting.reportingName(): String =
+    when (this) {
+        PushSetting.NEWSLETTER -> "newsletter"
+        PushSetting.MIND_RECORD -> "mind_record"
+        PushSetting.AFTERNOTE -> "afternote"
+    }
 
 private data class PushSettingUpdate(
     val setting: PushSetting,
