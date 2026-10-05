@@ -22,9 +22,9 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,15 +36,17 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import com.afternote.core.ui.findActivity
+import com.afternote.core.ui.mvi.ObserveFlag
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.notification.component.DeviceAlarmOffSection
 import com.afternote.feature.setting.presentation.shared.component.SettingMenuItem
+import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.launch
 
 @Composable
 internal fun NotificationSettingScreen(
@@ -56,7 +58,6 @@ internal fun NotificationSettingScreen(
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity<Activity>() }
     val snackbarHostState = remember { SnackbarHostState() }
-    val lifecycleOwner = LocalLifecycleOwner.current
     val marketingConsentSaveFailedMessage = stringResource(R.string.setting_marketing_consent_save_failed)
     val openNotificationSettings = {
         val intent =
@@ -67,7 +68,7 @@ internal fun NotificationSettingScreen(
     }
     val notificationPermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            viewModel.refreshDeviceAlarmStatus()
+            viewModel.onIntent(PushNotificationIntent.RefreshDeviceAlarmStatus)
             if (
                 !granted &&
                 activity != null &&
@@ -81,21 +82,66 @@ internal fun NotificationSettingScreen(
         }
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        viewModel.refreshDeviceAlarmStatus()
+        viewModel.onIntent(PushNotificationIntent.RefreshDeviceAlarmStatus)
     }
 
-    LaunchedEffect(viewModel, lifecycleOwner, marketingConsentSaveFailedMessage) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            viewModel.events.collect { event ->
-                when (event) {
-                    PushNotificationEvent.MarketingConsentSaveFailed -> {
-                        snackbarHostState.showSnackbar(marketingConsentSaveFailedMessage)
-                    }
-                }
-            }
+    // 소비가 ObserveFlag 의 effect 를 다시 시작시켜도 스낵바가 끊기지 않게 화면 코루틴에 띄운다.
+    val snackbarScope = rememberCoroutineScope()
+
+    // 화면이 STARTED 인 동안만 마케팅 동의 저장 실패를 안내한다. 화면이 없는 동안의 실패는 다음 진입에 재생하지 않는다 (#558).
+    // 멈출 때는 떠 있던 안내와 줄 선 안내도 거둔다. 화면 코루틴은 STOP 에 취소되지 않으므로 그대로 두면 재진입에 뜬다.
+    LifecycleStartEffect(viewModel) {
+        viewModel.onIntent(PushNotificationIntent.MarketingFeedbackStarted)
+        onStopOrDispose {
+            viewModel.onIntent(PushNotificationIntent.MarketingFeedbackStopped)
+            snackbarScope.coroutineContext.cancelChildren()
         }
     }
 
+    ObserveFlag(
+        raised = uiState.isMarketingConsentSaveFailed,
+        consumed = PushNotificationIntent.ConsumeMarketingConsentSaveFailure,
+        onIntent = viewModel::onIntent,
+    ) {
+        snackbarScope.launch { snackbarHostState.showSnackbar(marketingConsentSaveFailedMessage) }
+    }
+
+    NotificationSettingContent(
+        uiState = uiState,
+        snackbarHostState = snackbarHostState,
+        onBack = onBack,
+        onPushNotificationClick = onPushNotificationClick,
+        onDeviceAlarmClick = {
+            val permissionGranted =
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS,
+                ) == PackageManager.PERMISSION_GRANTED
+            when (notificationPermissionAction(Build.VERSION.SDK_INT, permissionGranted)) {
+                NotificationPermissionAction.RequestPermission -> {
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+
+                NotificationPermissionAction.OpenSettings -> {
+                    openNotificationSettings()
+                }
+            }
+        },
+        onMarketingConsentChange = { consent, checked ->
+            viewModel.onIntent(PushNotificationIntent.ChangeMarketingConsent(consent, checked))
+        },
+    )
+}
+
+@Composable
+private fun NotificationSettingContent(
+    uiState: PushNotificationUiState,
+    snackbarHostState: SnackbarHostState,
+    onBack: () -> Unit,
+    onPushNotificationClick: () -> Unit,
+    onDeviceAlarmClick: () -> Unit,
+    onMarketingConsentChange: (MarketingConsent, Boolean) -> Unit,
+) {
     Scaffold(
         topBar = {
             DetailTopBar(
@@ -117,22 +163,8 @@ internal fun NotificationSettingScreen(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .clickable {
-                            val permissionGranted =
-                                ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.POST_NOTIFICATIONS,
-                                ) == PackageManager.PERMISSION_GRANTED
-                            when (notificationPermissionAction(Build.VERSION.SDK_INT, permissionGranted)) {
-                                NotificationPermissionAction.RequestPermission -> {
-                                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                }
-
-                                NotificationPermissionAction.OpenSettings -> {
-                                    openNotificationSettings()
-                                }
-                            }
-                        }.padding(vertical = 12.dp),
+                        .clickable(onClick = onDeviceAlarmClick)
+                        .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -160,9 +192,9 @@ internal fun NotificationSettingScreen(
             } else {
                 DeviceAlarmOffSection(
                     uiState = uiState,
-                    onSmsCheck = viewModel::onSmsChecked,
-                    onEmailCheck = viewModel::onEmailChecked,
-                    onPushCheck = viewModel::onPushChecked,
+                    onSmsCheck = { onMarketingConsentChange(MarketingConsent.SMS, it) },
+                    onEmailCheck = { onMarketingConsentChange(MarketingConsent.EMAIL, it) },
+                    onPushCheck = { onMarketingConsentChange(MarketingConsent.PUSH, it) },
                 )
             }
         }
