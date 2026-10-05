@@ -11,14 +11,31 @@
 // 예약을 건 뒤 새 push 로 Viewed 가 풀려도 GitHub 는 예약·큐 등록을 그대로 두고, develop 룰셋은 push 로 승인을
 // 지우지 않는다(dismiss_stale_reviews_on_push false). 그래서 예약됐거나 큐에 있는 PR 중 Viewed 가 다 차지 않은
 // 것은 해제 대상으로 고른다(#2252). 누가 걸었는지는 따지지 않는다. 다시 전부 Viewed 가 되면 다음 실행이 다시 건다.
+//
+// 이 규칙은 VIEWED_BY 개인의 운영 규칙이라 VIEWED_BY 본인이 작성한 PR 에만 적용한다(#2270). 팀원·봇 PR 은
+// 예약도 해제도 하지 않는다. 걸지 않으면 VIEWED_BY 가 보지 않은 팀원·dependabot PR 이 큐에서 계속 빠진다.
 import { appendFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 const PULL_REQUEST_FIELDS = `
     id number isDraft headRefOid reviewDecision isInMergeQueue changedFiles
+    author { login }
     autoMergeRequest { enabledAt }
     files(first: 100) { pageInfo { hasNextPage endCursor } nodes { path viewerViewedState } }
 `;
+
+/**
+ * 예약·해제를 판정할 PR 인지 가른다. VIEWED_BY 본인이 작성한 PR 만 대상이다(대소문자 무시).
+ * 작성자를 알 수 없는 PR(탈퇴 계정 등)은 대상이 아니다.
+ *
+ * @param {object} pullRequest GraphQL PullRequest 노드
+ * @param {string} viewedBy Viewed 를 판정하는 사람의 로그인
+ * @returns {boolean}
+ */
+export function isAuthoredByViewer(pullRequest, viewedBy) {
+    const login = pullRequest.author?.login;
+    return typeof login === "string" && login.toLowerCase() === viewedBy.toLowerCase();
+}
 
 /**
  * @param {object} pullRequest GraphQL PullRequest 노드
@@ -102,6 +119,38 @@ async function readAllFiles(request, owner, name, pullRequest) {
     return files;
 }
 
+/**
+ * 열린 PR 마다 예약·해제를 판정한다. VIEWED_BY 본인 PR 이 아니면 파일도 읽지 않고 건너뛴다.
+ *
+ * @returns {Promise<{ targets: Array<object>, cancels: Array<object> }>}
+ */
+export async function collectViewedAutoMergeActions(request, owner, name, viewedBy, pullRequests) {
+    const targets = [];
+    const cancels = [];
+    for (const pullRequest of pullRequests) {
+        if (!isAuthoredByViewer(pullRequest, viewedBy)) {
+            console.log(`#${pullRequest.number}: 작성자 ${pullRequest.author?.login ?? "없음"} — ${viewedBy} 의 PR 이 아니라 건드리지 않는다`);
+            continue;
+        }
+        const files = await readAllFiles(request, owner, name, pullRequest);
+        const cancel = decideViewedAutoMergeCancel(pullRequest, files);
+        if (cancel.disableAutoMerge || cancel.dequeue) {
+            console.log(`#${pullRequest.number}: ${cancel.reason}`);
+            cancels.push({
+                number: pullRequest.number,
+                id: pullRequest.id,
+                disableAutoMerge: cancel.disableAutoMerge,
+                dequeue: cancel.dequeue,
+            });
+            continue;
+        }
+        const decision = decideViewedAutoMerge(pullRequest, files);
+        console.log(`#${pullRequest.number}: ${decision.reason}`);
+        if (decision.enable) targets.push({ number: pullRequest.number, headSha: pullRequest.headRefOid });
+    }
+    return { targets, cancels };
+}
+
 async function main() {
     const token = process.env.VIEWED_TOKEN;
     const viewedBy = process.env.VIEWED_BY;
@@ -126,25 +175,9 @@ async function main() {
         throw new Error(`VIEWED_TOKEN 주인이 ${data.viewer.login} 입니다 — ${viewedBy} 의 토큰이어야 합니다.`);
     }
 
-    const targets = [];
-    const cancels = [];
-    for (const pullRequest of data.repository.pullRequests.nodes) {
-        const files = await readAllFiles(request, owner, name, pullRequest);
-        const cancel = decideViewedAutoMergeCancel(pullRequest, files);
-        if (cancel.disableAutoMerge || cancel.dequeue) {
-            console.log(`#${pullRequest.number}: ${cancel.reason}`);
-            cancels.push({
-                number: pullRequest.number,
-                id: pullRequest.id,
-                disableAutoMerge: cancel.disableAutoMerge,
-                dequeue: cancel.dequeue,
-            });
-            continue;
-        }
-        const decision = decideViewedAutoMerge(pullRequest, files);
-        console.log(`#${pullRequest.number}: ${decision.reason}`);
-        if (decision.enable) targets.push({ number: pullRequest.number, headSha: pullRequest.headRefOid });
-    }
+    const { targets, cancels } = await collectViewedAutoMergeActions(
+        request, owner, name, viewedBy, data.repository.pullRequests.nodes,
+    );
     if (process.env.GITHUB_OUTPUT) {
         appendFileSync(
             process.env.GITHUB_OUTPUT,
