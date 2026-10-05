@@ -2,8 +2,12 @@
 #
 # VIEWED_BY 가 PR 의 모든 파일을 Viewed 로 체크했고 PR 이 승인 상태면 «Merge when ready» 를 대신 건다.
 # 머지는 GitHub 가 승인 수·required check·merge queue 를 모두 통과시킨 뒤에만 하므로 CI 가 빨갛거나
-# 변경요청이 남으면 머지되지 않는다. 예약을 멈추려면 파일 하나의 Viewed 를 풀면 된다(다음 실행이 다시
-# 걸지 않는다). 이미 걸린 예약은 PR 화면에서 끈다.
+# 변경요청이 남으면 머지되지 않는다.
+#
+# 반대 방향도 매 실행이 맞춘다(#2252). 예약됐거나 merge queue 에 있는 PR 중 VIEWED_BY 기준 Viewed 가 다 차지
+# 않은 것은 예약을 끄고 큐에서 뺀다. 새 push 로 바뀐 파일은 DISMISSED 가 되고 룰셋은 push 로 승인을 지우지
+# 않으므로, 이 단계가 없으면 아무도 다시 보지 않은 커밋이 머지된다. 누가 건 예약인지는 따지지 않는다. 예약을
+# 멈추려면 파일 하나의 Viewed 를 풀면 되고, 다시 전부 Viewed 가 되면 다음 실행이 다시 건다.
 #
 # Viewed 체크는 webhook 이벤트가 없어 주기 실행으로 훑는다. 승인 직후에도 리컨사일 완료 신호로 한 번
 # 돈다. viewerViewedState 는 토큰 주인 본인 것만 보이므로 VIEWED_BY 의 읽기 전용 토큰을 VIEWED_TOKEN
@@ -26,7 +30,7 @@ permissions: {}
 
 jobs:
   enable:
-    name: Enable auto-merge for fully viewed PRs
+    name: Sync auto-merge with Viewed state
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -40,7 +44,7 @@ jobs:
           persist-credentials: false
           sparse-checkout: .github/scripts
 
-      - name: Find fully viewed approved PRs
+      - name: Find PRs to enable or cancel auto-merge
         id: find
         env:
           VIEWED_TOKEN: ${{ secrets.VIEWED_TOKEN }}
@@ -52,12 +56,40 @@ jobs:
           if [ -z "$VIEWED_TOKEN" ]; then
             echo "::notice::VIEWED_TOKEN 시크릿이 없어 건너뜁니다"
             echo 'targets=[]' >> "$GITHUB_OUTPUT"
+            echo 'cancels=[]' >> "$GITHUB_OUTPUT"
             exit 0
           fi
           node .github/scripts/find-viewed-auto-merge-targets.mjs
 
+      - name: Cancel auto-merge for PRs no longer fully viewed
+        if: steps.find.outputs.cancels != '[]'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CANCELS: ${{ steps.find.outputs.cancels }}
+        run: |
+          # 예약을 먼저 끄고 큐에서 뺀다. 해제는 HEAD 를 따지지 않는다 — 판정 뒤 Viewed 가 다 찼더라도 다음
+          # 실행이 다시 건다. 해제가 실패하면 보지 않은 커밋이 머지될 수 있으므로 job 을 red 로 남긴다.
+          failed=0
+          while read -r target; do
+            number=$(jq -r '.number' <<< "$target")
+            if [ "$(jq -r '.disableAutoMerge' <<< "$target")" = true ] && ! gh pr merge "$number" --disable-auto; then
+              echo "::error::#$number 자동 머지 예약 해제 실패"
+              failed=1
+            fi
+            # shellcheck disable=SC2016 # GraphQL 변수는 gh가 -f 값으로 바인딩한다.
+            if [ "$(jq -r '.dequeue' <<< "$target")" = true ] && ! gh api graphql \
+              -f query='mutation($id: ID!) { dequeuePullRequest(input: { id: $id }) { clientMutationId } }' \
+              -f id="$(jq -r '.id' <<< "$target")" > /dev/null; then
+              echo "::error::#$number merge queue 해제 실패"
+              failed=1
+            fi
+          done < <(jq -c '.[]' <<< "$CANCELS")
+          exit "$failed"
+
       - name: Enable auto-merge
-        if: steps.find.outputs.targets != '[]'
+        # 해제 단계가 red 여도 다른 PR 의 예약은 그대로 판정한다.
+        if: ${{ !cancelled() && steps.find.outcome == 'success' && steps.find.outputs.targets != '[]' }}
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
