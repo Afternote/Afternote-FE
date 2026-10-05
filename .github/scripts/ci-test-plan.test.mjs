@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -262,6 +263,101 @@ test("변경 파일 검사와 selector 검사는 주석 속 @Test를 똑같이 �
         validateCiTestPlanSources(selectedPlan(testPath, "com.example.RuntimeTest#flakyOnApi30"), { root }),
         /@Test 메서드가 파일에 없습니다/,
     );
+});
+
+test("@Test 인자와 뒤따르는 annotation을 한 줄 인자까지 건너 메서드와 소유 class를 찾는다", async () => {
+    const testPath = "app/src/androidTest/java/com/example/AnnotatedTest.kt";
+    const root = await writeAndroidTestSource(testPath, [
+        "package com.example",
+        "",
+        "class AnnotatedTest {",
+        "    @Test(timeout = 1_000)",
+        "    fun withTimeout() = Unit",
+        "",
+        "    @Test",
+        "    @androidx.test.filters.SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)",
+        "    @FlakyTest(bugId = listOf(1).first())",
+        "    fun stacked() = Unit",
+        "",
+        '    @Test @Suppress("UNUSED(") @Config(sdk = [30]) fun sameLine() { check(true) }',
+        "",
+        "    @Test",
+        "    @MediumTest @Ignore",
+        "    fun",
+        "        spaced ()",
+        "}",
+        "",
+        "class OtherTest {",
+        "    @Test @MediumTest fun other() = Unit",
+        "}",
+    ]);
+    const declared = selectedPlan(testPath, "com.example.AnnotatedTest#withTimeout");
+    const validate = (selector) =>
+        validateCiTestPlanSources(selectedPlan(testPath, selector), { root });
+
+    await assert.rejects(
+        validateCiTestPlanImpact(declared, [testPath], { root }),
+        (error) => error.message.endsWith(`${testPath}#stacked, #sameLine, #spaced, #other`),
+    );
+    for (const method of ["withTimeout", "stacked", "sameLine", "spaced"]) {
+        await assert.doesNotReject(validate(`com.example.AnnotatedTest#${method}`));
+    }
+    await assert.doesNotReject(validate("com.example.OtherTest#other"));
+    await assert.rejects(
+        validate("com.example.AnnotatedTest#other"),
+        (error) => /class 본문/.test(error.message) && error.message.includes("com.example.OtherTest#other"),
+    );
+    await assert.rejects(validate("com.example.OtherTest#stacked"), /class 본문/);
+});
+
+// 정규식 역추적은 이벤트 루프를 막아 node:test 시간 제한이 듣지 않는다. 자식 프로세스를 OS가 끊게 한다.
+function importInChild(moduleName, body, timeout = 10_000) {
+    const moduleUrl = new URL(moduleName, import.meta.url).href;
+    const execution = spawnSync(
+        process.execPath,
+        ["--input-type=module", "--eval", `import * as target from ${JSON.stringify(moduleUrl)};\n${body}`],
+        { encoding: "utf8", timeout, killSignal: "SIGKILL" },
+    );
+    assert.equal(execution.signal, null, `${timeout}ms 안에 끝나지 않았습니다.`);
+    assert.equal(execution.status, 0, execution.stderr);
+    return JSON.parse(execution.stdout);
+}
+
+test("#2218: 닫히지 않는 annotation 인자가 이어져도 @Test 검사가 유한 시간에 끝난다", async () => {
+    const testPath = "app/src/androidTest/java/com/example/RuntimeTest.kt";
+    const root = await writeAndroidTestSource(testPath, [
+        "package com.example",
+        "",
+        "class RuntimeTest {",
+        "    @Test",
+        "    fun works() = Unit",
+        "",
+        `    @Test@.(${")@.(".repeat(40)}`,
+        "}",
+    ]);
+    const plan = (method) => selectedPlan(testPath, `com.example.RuntimeTest#${method}`);
+    const outcomes = importInChild(
+        "./ci-test-plan.mjs",
+        `const [root, testPath, works, other, missing] = ${JSON.stringify([
+            root,
+            testPath,
+            plan("works"),
+            plan("other"),
+            plan("missing"),
+        ])};
+        const settle = (promise) => promise.then(() => "ok", (error) => error.message);
+        console.log(JSON.stringify({
+            impact: await settle(target.validateCiTestPlanImpact(works, [testPath], { root })),
+            omitted: await settle(target.validateCiTestPlanImpact(other, [testPath], { root })),
+            sources: await settle(target.validateCiTestPlanSources(works, { root })),
+            missing: await settle(target.validateCiTestPlanSources(missing, { root })),
+        }));`,
+    );
+
+    assert.equal(outcomes.impact, "ok");
+    assert.ok(outcomes.omitted.endsWith(`${testPath}#works`), outcomes.omitted);
+    assert.equal(outcomes.sources, "ok");
+    assert.match(outcomes.missing, /@Test 메서드가 파일에 없습니다/);
 });
 
 test("기존 PR도 계획이 없으면 실패한다", () => {

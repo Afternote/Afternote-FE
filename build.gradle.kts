@@ -125,7 +125,25 @@ val securityFloors =
                     "GHSA-4gg5-vx3j-xwc7·GHSA-735f-pc8j-v9w8 — " +
                         "Accessibility Test Framework 4.1.1 경유 3.19.1 잔존 — #1262",
             ),
+            SecurityFloor(
+                module = "com.google.guava:guava",
+                version = libs.versions.guavaAndroid.get(),
+                because = "GHSA-7g45-4rm6-3mm3·GHSA-5mg8-w23w-74h3: 접근성 테스트의 31.0.1-android 취약, #2219",
+            ),
+            SecurityFloor(
+                module = "org.jsoup:jsoup",
+                version = libs.versions.jsoup.get(),
+                because = "GHSA-pmhh-3w7g-xqp8·GHSA-gp7f-rwcx-9369: 접근성 테스트의 1.15.1 취약, #2219",
+            ),
         ) +
+        // baselineprofile 테스트 모듈의 디코더만 올린다. constraint 는 새 런타임 의존성을 추가하지 않는다.
+        listOf("wire-runtime", "wire-runtime-jvm").map { artifact ->
+            SecurityFloor(
+                module = "com.squareup.wire:$artifact",
+                version = libs.versions.wire.get(),
+                because = "GHSA-9rm7-3qhh-h2mc: benchmark 1.5.0-rc02 경유 6.4.0 취약, #2219",
+            )
+        } +
         // logback-core 만 취약하지만 classic 은 core 와 같은 버전이라야 동작해 함께 올린다.
         listOf("logback-core", "logback-classic").map { artifact ->
             SecurityFloor(

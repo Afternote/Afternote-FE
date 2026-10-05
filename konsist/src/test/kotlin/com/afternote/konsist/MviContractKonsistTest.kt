@@ -22,8 +22,8 @@ import java.io.File
  *   선언하지 않는다. 별도 상태 홀더를 두면 전이가 `reduce` 밖으로 새고 베이스를 도입한 의미가
  *   사라진다. `Channel` 금지는 #1502 가 세우려는 규칙과 같은 방향이라 **두 규칙을 하나로 합친다** —
  *   따로 두면 나중에 서로를 덮는다.
- * - **B.** `feature/…/presentation` 의 ViewModel 은 `MviViewModel` 을 상속한다. 전환 전
- *   49개는 [PENDING_MVI_MIGRATION] 예외로 두고, 모듈 전환 이슈가 닫힐 때마다 뺀다.
+ * - **B.** `feature/…/presentation` 의 ViewModel 은 `MviViewModel` 을 상속한다. 아직 전환하지 않은
+ *   것은 [PENDING_MVI_MIGRATION] 예외로 두고(가드 도입 시점 49개), 전환할 때마다 뺀다.
  * - **C.** `MviIntent`·`ReducerEvent` 를 직접 구현하는 화면 계약 타입은 `sealed interface` 다.
  *   열려 있으면 `when` 이 전수 분기를 보장하지 못해 진입점 단일화의 이득이 사라진다.
  * - **D.** 아직 전환하지 않은 `feature/…/presentation` ViewModel 도 이벤트용 `Channel`·`MutableSharedFlow` 를
@@ -88,7 +88,7 @@ class MviContractKonsistTest {
         println(
             buildString {
                 appendLine("[경고] PENDING_MVI_MIGRATION 에 지금 소스에 없는 항목이 남아 있다 (${stale.size}건).")
-                appendLine("전환이 끝났거나(그러면 지운다), 아직 도착하지 않은 선등재다(PENDING_ARRIVAL_*).")
+                appendLine("전환이 끝났으면 지우고, 클래스가 옮겨졌으면 새 FQN 으로 고친다.")
                 appendLine("목록에서 지워야 다음 미전환 ViewModel 이 이 자리에 숨지 않는다.")
                 appendLine("목록이 비면 규칙 B 의 예외 자체를 지운다.")
                 appendLine()
@@ -218,7 +218,7 @@ class MviContractKonsistTest {
 
         val violations = unmigratedViewModels(fixtureFiles(root))
 
-        // app 은 규칙 B 의 대상이 아니고(#1809 몫), 추상 베이스와 전환된 것도 위반이 아니다.
+        // app 은 규칙 B 의 범위 밖이고, 추상 베이스와 전환된 것도 위반이 아니다.
         assertEquals(setOf("sample.LegacyViewModel"), violations)
     }
 
@@ -525,26 +525,24 @@ class MviContractKonsistTest {
             )
 
         /**
-         * 아직 develop 에 없다. #457(PR #1624, 승인 완료)이 들여오는 네 번째 onboarding ViewModel 이라,
-         * 이 가드가 먼저 머지되면 규칙이 생기기 전에 쓰인 그 PR 이 규칙 B 로 빨개진다. 머지 순서가
-         * 어느 쪽이든 develop 이 red 가 되지 않도록 미리 등재한다 — 그때까지는 「해소된 항목」 경고로만
-         * 남는다. 전환은 #1802 후속 몫이다.
+         * #457(PR #1624)이 #1802 파일럿 뒤에 들인 onboarding ViewModel 이다. 미전환이고 빼는 담당
+         * 이슈는 없다.
          */
-        private val PENDING_ARRIVAL_ONBOARDING =
+        private val UNASSIGNED_ONBOARDING =
             setOf(
                 "com.afternote.feature.onboarding.presentation.findaccount.FindPasswordViewModel",
             )
 
-        /** #1803 이 뺀다. */
-        private val ISSUE_1803_RECEIVER =
+        /**
+         * #1803 이 NOT_PLANNED 로 닫혀 빼는 담당 이슈가 없다. 철회된 구 수신자 흐름이지만 소스에 남아
+         * 있어 유지한다.
+         */
+        private val UNASSIGNED_RECEIVER =
             setOf(
                 "com.afternote.feature.receiver.presentation.deliveryverification.DeliveryVerificationFlowViewModel",
                 "com.afternote.feature.receiver.presentation.deliveryverification.DocumentUploadViewModel",
                 "com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationViewModel",
                 "com.afternote.feature.receiver.presentation.deliveryverification.MasterKeyViewModel",
-                // 이 스택의 base 에는 아직 여기 있다. develop 은 #1666 으로 feature/home 으로 옮겼고
-                // 그쪽 FQN 은 ISSUE_1808_HOME 에 있다 — 스택이 develop 을 들이면 이 줄을 지운다.
-                "com.afternote.feature.receiver.presentation.home.ReceiverHomeViewModel",
                 "com.afternote.feature.receiver.presentation.recordsbox.ReceivedRecordsViewModel",
                 "com.afternote.feature.receiver.presentation.recordsbox.SenderRegistrationViewModel",
                 "com.afternote.feature.receiver.presentation.senderdetail.SenderDetailViewModel",
@@ -575,14 +573,13 @@ class MviContractKonsistTest {
             )
 
         /**
-         * 전환 전 46개 — onboarding 3개는 #1802 파일럿이 전환해 빠졌다. `app` 의 ViewModel 2개는 이 규칙의 대상이 아니라 목록에도 없다 —
-         * 규칙 B 가 `feature/…/presentation` 만 보기 때문이고, 그 2개는 #1809 가 처리한다.
+         * `app` 의 ViewModel 은 규칙 B 가 `feature/…/presentation` 만 보기 때문에 범위 밖이라 목록에 없다.
          *
          * 목록이 비면 규칙 B 의 예외(`- PENDING_MVI_MIGRATION`)도 함께 지운다.
          */
         val PENDING_MVI_MIGRATION =
-            PENDING_ARRIVAL_ONBOARDING +
-                ISSUE_1803_RECEIVER +
+            UNASSIGNED_ONBOARDING +
+                UNASSIGNED_RECEIVER +
                 ISSUE_1804_AFTERNOTE +
                 ISSUE_1805_SETTING +
                 ISSUE_1806_TIMELETTER +

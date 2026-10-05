@@ -1,9 +1,9 @@
 package com.afternote.feature.setting.presentation.profile
 
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.MyProfileRepository
 import com.afternote.core.domain.repository.PhotoUploadRepository
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.ui.mvi.MviViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -56,9 +56,10 @@ internal class ProfileEditViewModel
                     state.updateSuccess { it.copy(isUpdating = true, pendingEvent = null) }
                 }
 
-                // 성공 뒤 화면이 닫히는 사이 재제출을 막도록 isUpdating 을 유지한다.
                 ProfileEditReducerEvent.UpdateSucceeded -> {
-                    state.updateSuccess { it.copy(pendingEvent = ProfileEditEvent.UpdateSuccess) }
+                    state.updateSuccess {
+                        it.copy(isUpdating = false, isUpdated = true, pendingEvent = ProfileEditEvent.UpdateSuccess)
+                    }
                 }
 
                 ProfileEditReducerEvent.UpdateFailed -> {
@@ -93,7 +94,7 @@ internal class ProfileEditViewModel
             phone: String,
         ) {
             val current = currentState as? ProfileEditUiState.Success ?: return
-            if (current.isUpdating) return
+            if (current.isUpdateLocked) return
             dispatch(ProfileEditReducerEvent.Updating)
             viewModelScope.launch {
                 runCatchingCancellable {

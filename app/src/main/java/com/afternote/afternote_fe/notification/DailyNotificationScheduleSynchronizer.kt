@@ -3,8 +3,8 @@ package com.afternote.afternote_fe.notification
 import android.content.Context
 import com.afternote.core.common.notification.NotificationScheduler
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.auth.AuthRepository
+import com.afternote.core.domain.result.runCatchingCancellable
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.distinctUntilChanged
 import javax.inject.Inject

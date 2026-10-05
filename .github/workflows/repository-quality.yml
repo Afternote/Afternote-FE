@@ -54,6 +54,9 @@ on:
       codeql_java_kotlin:
         description: "Java/Kotlin CodeQL 분석이 필요한지 여부"
         value: ${{ jobs.repository-quality.outputs.codeql_java_kotlin }}
+      dependency_review_required:
+        description: "의존성 그래프 입력이 바뀌어 Dependency Review 가 필요한지 여부"
+        value: ${{ jobs.repository-quality.outputs.dependency_review_required }}
   push:
     branches: [develop, main]
 
@@ -87,6 +90,7 @@ jobs:
       screenshot_tasks: ${{ steps.classify-documentation-changes.outputs.screenshot_tasks }}
       codeql_actions: ${{ steps.classify-documentation-changes.outputs.codeql_actions }}
       codeql_java_kotlin: ${{ steps.classify-documentation-changes.outputs.codeql_java_kotlin }}
+      dependency_review_required: ${{ steps.classify-documentation-changes.outputs.dependency_review_required }}
     steps:
       - name: Clone repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -109,7 +113,8 @@ jobs:
         run: node .github/scripts/ensure-api-quota.mjs ensure --max-wait 60
 
       # GitHub 의 server-side paths 평가는 유한한 diff 앞부분만 보므로, 그 경계를 넘는 PR 을
-      # 그대로 허용하면 뒤쪽 dependency 파일이 graph/review workflow 를 우회할 수 있다.
+      # 그대로 허용하면 뒤쪽 파일이 paths 필터를 쓰는 workflow 를 우회할 수 있다. Dependency
+      # Review 는 #2258 부터 아래 전체 파일 분류로 판정하지만 다른 paths 필터 workflow 가 남아 있다.
       # 공식 문서의 상충하는 300/3,000 한도 중 보수적인 300을 fail-closed 경계로 쓴다.
       - name: Guard server-side path filter boundary
         id: changed-files
@@ -118,6 +123,7 @@ jobs:
           CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
           GH_TOKEN: ${{ github.token }}
           MAX_PATH_FILTER_FILES: 300
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           PR_NUMBER: ${{ inputs.pull_request_number }}
         run: |
           set -euo pipefail
@@ -138,6 +144,14 @@ jobs:
             fi
             CHANGED_FILES=$(jq -r '.changed_files' <<< "$pull_request")
             printf '%s' "$pull_request" > "$pull_request_file"
+          elif [ "$GITHUB_EVENT_NAME" = "pull_request" ] && [ "$PR_AUTHOR" = "dependabot[bot]" ]; then
+            # dependabot-pr-gate 가 같은 순간 GITHUB_TOKEN 으로 제목 (#N)·Closes·CI Test Plan 을 채운다.
+            # 그 edited 는 이 워크플로를 다시 깨우지 못하고 페이로드는 opened 시점 값이다(#2212).
+            # 페이로드 제목에 대표 이슈 번호가 이미 있으면 API 없이 그대로 쓰고, 없으면 게이트가 채울
+            # 때까지 live PR 을 기다렸다가 그 값으로 판정한다. quota 대기 60초와 합쳐도 job timeout
+            # 3분 안에 들도록 90초에서 끊는다.
+            AWAIT_TIMEOUT_SECONDS=90 node .github/scripts/dependabot-pr-gate.mjs await "$pull_request_file"
+            CHANGED_FILES=$(jq -r '.changed_files' "$pull_request_file")
           elif [ -z "$CHANGED_FILES" ]; then
             pull_request=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")
             CHANGED_FILES=$(jq -r '.changed_files' <<< "$pull_request")
