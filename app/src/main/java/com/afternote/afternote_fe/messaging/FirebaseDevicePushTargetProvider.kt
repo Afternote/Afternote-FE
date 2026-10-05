@@ -1,8 +1,8 @@
 package com.afternote.afternote_fe.messaging
 
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.push.DevicePushTargetProvider
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.google.android.gms.tasks.Task
 import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.messaging.FirebaseMessaging

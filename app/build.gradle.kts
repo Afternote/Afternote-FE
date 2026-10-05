@@ -228,13 +228,10 @@ baselineProfile {
 
 dependencies {
     implementation(libs.coil.compose)
-    implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.core.splashscreen)
 
     // App Startup — 기동 초기화는 app 매니페스트에 등록한 Initializer 로 실행한다.
     implementation(libs.androidx.startup.runtime)
-    // DailyNotificationInitializer 가 WorkManagerInitializer 를 선행 의존으로 지정한다.
-    implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.profileinstaller)
 
     // 카카오 OAuth redirect Activity(`com.kakao.sdk.auth.AuthCodeHandlerActivity`)를
@@ -271,21 +268,24 @@ dependencies {
     implementation(projects.feature.onboarding.presentation)
     implementation(projects.feature.setting.presentation)
 
-    // Feature — domain (AppNavigationActions 가 에디터 종류를 AfternoteType 으로 받는다)
-    implementation(projects.feature.afternote.domain)
-
     // Feature — data (Hilt @Module / 바인딩이 루트 그래프에 포함되도록 app이 classpath에 둔다)
     implementation(projects.feature.afternote.data)
     implementation(projects.feature.receiver.data)
     implementation(projects.feature.mindrecord.data)
     implementation(projects.feature.timeletter.data)
     implementation(projects.feature.onboarding.data)
+    implementation(projects.feature.setting.data)
 
     testImplementation(libs.coroutines.test)
     testImplementation(testFixtures(projects.core.domain))
+    // 데일리 알림 예약 관찰(#2146)이 실제로 넣고 지운 WorkManager 예약을 읽는다. app main 은 WorkManager 를
+    // 직접 부르지 않는다. 예약 API 는 core:common 에 있고, WorkManagerInitializer 는 그 의존을 타고
+    // InitializationProvider 에 병합된다.
+    testImplementation(libs.androidx.work.testing)
 
     // Nav2 백스택 회귀 기준 (#1601) — 에뮬레이터 없이 NavHost 를 실제 컴포지션으로 띄워
-    // 탭 상태 복원·인증 스택 경계·flow-scoped ViewModel 수명을 잰다. 대상(AppState·
+    // 탭 상태 복원·인증 스택 경계·predictive back 진행·취소·완료를 잰다. flow-scoped ViewModel
+    // 수명은 Nav3 이관(#1698)이 core:ui 의 FeatureNavDisplayTest 로 옮겼다. 대상(AppState·
     // AppNavigationActions)이 app 모듈에만 있어 피처 모듈 Robolectric 설정을 재사용할 수 없다.
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.compose.ui.test.junit4)
@@ -312,6 +312,9 @@ dependencies {
     androidTestImplementation(testFixtures(projects.feature.mindrecord.domain))
     androidTestImplementation(projects.feature.receiver.domain)
     androidTestImplementation(testFixtures(projects.feature.receiver.domain))
+    androidTestImplementation(projects.feature.setting.data)
+    androidTestImplementation(projects.feature.setting.domain)
+    androidTestImplementation(testFixtures(projects.feature.setting.domain))
     androidTestImplementation(projects.feature.timeletter.domain)
     androidTestImplementation(testFixtures(projects.feature.timeletter.domain))
     androidTestImplementation(testFixtures(projects.feature.timeletter.data))

@@ -3,7 +3,7 @@ package com.afternote.feature.afternote.data.mapper
 import com.afternote.feature.afternote.data.dto.AfternoteCredentialsDto
 import com.afternote.feature.afternote.data.dto.AfternoteDetailDto
 import com.afternote.feature.afternote.data.dto.AfternoteDetailReceiverDto
-import com.afternote.feature.afternote.data.dto.AfternotePlaylistDto
+import com.afternote.feature.afternote.data.dto.AfternoteMemorialDto
 import com.afternote.feature.afternote.data.dto.LeaveMessageBlockDto
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
@@ -19,7 +19,7 @@ import org.junit.Test
  * [AfternoteDetailDto.toDomain] 회귀 가드 (작성자 상세).
  * 핵심 경계: 공통 필드와 타입별 [DetailContent] 분리, 부분·부재 credentials 의 빈 값 강등,
  * receivers null→emptyList, receiver 필드 null→"", processingMethods null→emptyList,
- * memorialVideo null→video/thumbnail null.
+ * memorialVideo null→video/thumbnail null, 미디어 URL 빈 문자열→null.
  */
 class AfternoteDetailMapperTest {
     @Test
@@ -232,6 +232,30 @@ class AfternoteDetailMapperTest {
     }
 
     @Test
+    fun `toDomain - 미디어 URL 의 빈 문자열은 없음으로 맞춘다`() {
+        val result =
+            Json
+                .decodeFromString<AfternoteDetailDto>(
+                    """
+                    {
+                      "afternoteId":1,"category":"PLAYLIST","title":"t","isDraft":false,
+                      "updatedAt":"$UPDATED_AT","receivers":[],
+                      "playlist":{
+                        "memorialPhotoUrl":"",
+                        "songs":[],
+                        "memorialVideo":{"videoUrl":" ","thumbnailUrl":""}
+                      }
+                    }
+                    """.trimIndent(),
+                ).toDomain()
+
+        val media = (result.content as DetailContent.Memorial).media
+        assertNull(media.photoUrl)
+        assertNull(media.videoUrl)
+        assertNull(media.thumbnailUrl)
+    }
+
+    @Test
     fun `toDomain - playlist의 공통 leaveMessage도 보존한다`() {
         val result =
             AfternoteDetailDto(
@@ -242,7 +266,7 @@ class AfternoteDetailMapperTest {
                 title = "t",
                 updatedAt = UPDATED_AT,
                 leaveMessage = listOf(LeaveMessageBlockDto(title = "가족에게", body = "잘 지내")),
-                playlist = AfternotePlaylistDto(songs = emptyList()),
+                memorial = AfternoteMemorialDto(songs = emptyList()),
             ).toDomain()
 
         assertEquals(
@@ -261,7 +285,7 @@ class AfternoteDetailMapperTest {
                 category = "PLAYLIST",
                 title = "t",
                 updatedAt = UPDATED_AT,
-                playlist = AfternotePlaylistDto(songs = emptyList(), memorialVideo = null),
+                memorial = AfternoteMemorialDto(songs = emptyList(), memorialVideo = null),
             ).toDomain()
 
         val media = (result.content as DetailContent.Memorial).media

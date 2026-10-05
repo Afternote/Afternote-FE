@@ -1,7 +1,7 @@
 package com.afternote.core.data.repoimpl.push
 
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.push.PushTargetRepository
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.network.dto.DeletePushTokenRequestDto
 import com.afternote.core.network.dto.RegisterPushTokenRequestDto
 import com.afternote.core.network.model.requireStatus

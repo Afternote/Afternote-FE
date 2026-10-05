@@ -2,8 +2,8 @@ package com.afternote.feature.setting.presentation.notification
 
 import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.domain.error.PushSettingFailure
-import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.user.UserPushSetting
+import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
 import com.afternote.feature.setting.presentation.NoOpErrorReporter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -47,7 +47,7 @@ class PushNotificationViewModelTest {
             val viewModel = viewModel(calls = calls)
             runCurrent()
 
-            viewModel.onNewsletterToggle(false)
+            viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.NEWSLETTER, false))
 
             assertFalse(viewModel.uiState.value.isNewsletterOn)
             assertTrue(viewModel.uiState.value.isNewsletterUpdating)
@@ -67,22 +67,22 @@ class PushNotificationViewModelTest {
             val viewModel = viewModel(calls = calls, failUpdateAttempts = Int.MAX_VALUE)
             runCurrent()
 
-            viewModel.onNewsletterToggle(false)
+            viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.NEWSLETTER, false))
             assertFalse(viewModel.uiState.value.isNewsletterOn)
             runCurrent()
             assertTrue(viewModel.uiState.value.isNewsletterOn)
             assertEquals(PushNotificationSaveFailure.SERVER, viewModel.uiState.value.saveFailure)
-            viewModel.onSaveFailureDismiss()
+            viewModel.onIntent(PushNotificationIntent.DismissSaveFailure)
             assertNull(viewModel.uiState.value.saveFailure)
 
-            viewModel.onMindRecordToggle(false)
+            viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.MIND_RECORD, false))
             assertFalse(viewModel.uiState.value.isMindRecordOn)
             runCurrent()
             assertTrue(viewModel.uiState.value.isMindRecordOn)
             assertEquals(PushNotificationSaveFailure.SERVER, viewModel.uiState.value.saveFailure)
-            viewModel.onSaveFailureDismiss()
+            viewModel.onIntent(PushNotificationIntent.DismissSaveFailure)
 
-            viewModel.onAfternoteToggle(false)
+            viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.AFTERNOTE, false))
             assertFalse(viewModel.uiState.value.isAfternoteOn)
             runCurrent()
             assertTrue(viewModel.uiState.value.isAfternoteOn)
@@ -105,13 +105,13 @@ class PushNotificationViewModelTest {
             val viewModel = viewModel(calls = calls, failUpdateAttempts = 1)
             runCurrent()
 
-            viewModel.onMindRecordToggle(false)
+            viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.MIND_RECORD, false))
             runCurrent()
 
             assertTrue(viewModel.uiState.value.isMindRecordOn)
             assertEquals(PushNotificationSaveFailure.SERVER, viewModel.uiState.value.saveFailure)
 
-            viewModel.onSaveFailureRetry()
+            viewModel.onIntent(PushNotificationIntent.RetrySave)
 
             assertNull(viewModel.uiState.value.saveFailure)
             assertFalse(viewModel.uiState.value.isMindRecordOn)
@@ -139,7 +139,7 @@ class PushNotificationViewModelTest {
                 )
             runCurrent()
 
-            viewModel.onAfternoteToggle(false)
+            viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.AFTERNOTE, false))
             runCurrent()
 
             assertEquals(PushNotificationSaveFailure.NETWORK, viewModel.uiState.value.saveFailure)
@@ -154,8 +154,8 @@ class PushNotificationViewModelTest {
             val viewModel = viewModel(calls = calls)
             runCurrent()
 
-            viewModel.onNewsletterToggle(false)
-            viewModel.onNewsletterToggle(true)
+            viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.NEWSLETTER, false))
+            viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.NEWSLETTER, true))
 
             assertFalse(viewModel.uiState.value.isNewsletterOn)
             assertTrue(viewModel.uiState.value.isNewsletterUpdating)
@@ -167,6 +167,76 @@ class PushNotificationViewModelTest {
             assertFalse(viewModel.uiState.value.isNewsletterUpdating)
         }
 
+    @Test
+    fun `재시도를 연달아 보내도 실패한 변경을 한 번만 다시 저장한다`() =
+        runTest(dispatcher) {
+            val calls = mutableListOf<PushUpdateCall>()
+            val viewModel = viewModel(calls = calls, failUpdateAttempts = 1)
+            runCurrent()
+
+            viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.AFTERNOTE, false))
+            runCurrent()
+            assertEquals(PushNotificationSaveFailure.SERVER, viewModel.uiState.value.saveFailure)
+
+            viewModel.onIntent(PushNotificationIntent.RetrySave)
+            viewModel.onIntent(PushNotificationIntent.RetrySave)
+            assertTrue(viewModel.uiState.value.isAfternoteUpdating)
+            runCurrent()
+
+            assertEquals(
+                List(2) { PushUpdateCall(timeLetter = null, mindRecord = null, afterNote = false) },
+                calls,
+            )
+            assertFalse(viewModel.uiState.value.isAfternoteOn)
+            assertFalse(viewModel.uiState.value.isAfternoteUpdating)
+            assertNull(viewModel.uiState.value.failedUpdate)
+        }
+
+    @Test
+    fun `실패 안내를 닫으면 재시도 대상도 비워 이후 재시도가 요청을 보내지 않는다`() =
+        runTest(dispatcher) {
+            val calls = mutableListOf<PushUpdateCall>()
+            val viewModel = viewModel(calls = calls, failUpdateAttempts = 1)
+            runCurrent()
+
+            viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.NEWSLETTER, false))
+            runCurrent()
+            viewModel.onIntent(PushNotificationIntent.DismissSaveFailure)
+
+            assertNull(viewModel.uiState.value.saveFailure)
+            assertNull(viewModel.uiState.value.failedUpdate)
+
+            viewModel.onIntent(PushNotificationIntent.RetrySave)
+            runCurrent()
+
+            assertEquals(listOf(PushUpdateCall(timeLetter = false, mindRecord = null, afterNote = null)), calls)
+            assertTrue(viewModel.uiState.value.isNewsletterOn)
+        }
+
+    @Test
+    fun `서로 다른 토글이 연달아 실패하면 재시도 대상은 마지막 실패만 남는다`() =
+        runTest(dispatcher) {
+            val calls = mutableListOf<PushUpdateCall>()
+            val viewModel = viewModel(calls = calls, failUpdateAttempts = 2)
+            runCurrent()
+
+            viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.NEWSLETTER, false))
+            viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.MIND_RECORD, false))
+            runCurrent()
+
+            assertTrue(viewModel.uiState.value.isNewsletterOn)
+            assertTrue(viewModel.uiState.value.isMindRecordOn)
+            assertEquals(PushNotificationSaveFailure.SERVER, viewModel.uiState.value.saveFailure)
+
+            viewModel.onIntent(PushNotificationIntent.RetrySave)
+            runCurrent()
+
+            assertEquals(PushUpdateCall(timeLetter = null, mindRecord = false, afterNote = null), calls.last())
+            assertEquals(3, calls.size)
+            assertTrue(viewModel.uiState.value.isNewsletterOn)
+            assertFalse(viewModel.uiState.value.isMindRecordOn)
+        }
+
     private fun viewModel(
         calls: MutableList<PushUpdateCall>,
         failUpdateAttempts: Int = 0,
@@ -175,7 +245,7 @@ class PushNotificationViewModelTest {
         val initial = UserPushSetting(timeLetter = true, mindRecord = true, afterNote = true)
         var remainingFailures = failUpdateAttempts
         val repository =
-            FakeUserRepository(pushSetting = initial).apply {
+            FakeSettingNotificationRepository(pushSetting = initial).apply {
                 onUpdateMyPushSettings = { timeLetter, mindRecord, afterNote ->
                     calls += PushUpdateCall(timeLetter, mindRecord, afterNote)
                     if (remainingFailures > 0) {
@@ -191,7 +261,7 @@ class PushNotificationViewModelTest {
             }
         return PushNotificationViewModel(
             context = ApplicationProvider.getApplicationContext(),
-            userRepository = repository,
+            notificationRepository = repository,
             errorReporter = NoOpErrorReporter,
         )
     }
