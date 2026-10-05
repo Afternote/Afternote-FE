@@ -4,10 +4,15 @@ import test from "node:test";
 
 const workflowDirectory = new URL("../workflows/", import.meta.url);
 const ENTRY_WORKFLOW = "pr-validation.yml";
-const VALIDATION_WORKFLOWS = ["lint.yml", "unit-test.yml", "screenshot.yml", "repository-quality.yml"];
+const VALIDATION_WORKFLOWS = ["lint.yml", "unit-test.yml", "screenshot.yml", "repository-quality.yml", "dependency-review.yml"];
 const HEAVY_VALIDATION_WORKFLOWS = ["lint.yml", "unit-test.yml", "screenshot.yml"];
+// repository-quality 의 분류 결과를 받아 범위를 줄이는 lane. 분류 실패는 전부 실행으로 닫힌다.
+const IMPACT_SCOPED_WORKFLOWS = [...HEAVY_VALIDATION_WORKFLOWS, "dependency-review.yml"];
+// PR 번호로 PR 을 다시 조회하는 lane. dependency-review 는 이벤트의 PR 을 쓰므로 번호를 받지 않는다.
+const PR_NUMBER_WORKFLOWS = ["lint.yml", "unit-test.yml", "screenshot.yml", "repository-quality.yml"];
 // Repository ruleset 20911039 의 required context 와 함께 바꿔야 하는 외부 계약이다.
 const REQUIRED_VALIDATION_CONTEXTS = [
+    "Dependency Review / Review dependency changes",
     "Repository Quality / Repository Quality",
     "Screenshot / Validate Compose Preview Screenshots",
     "Static Analysis / Check Code Quality (Ktlint)",
@@ -130,7 +135,7 @@ test("token-authored commits preserve the pull request context on manual dispatc
                 /pull_request_number: \$\{\{ fromJSON\(inputs\.pull_request_number \|\| '0'\) \|\| github\.event\.pull_request\.number \|\| 0 \}\}/g,
             ) ?? []
         ).length,
-        VALIDATION_WORKFLOWS.length,
+        PR_NUMBER_WORKFLOWS.length,
     );
     assert.equal(
         (entry.match(/pull_request_number: \$\{\{ inputs\.pull_request_number/g) ?? []).length,
@@ -158,7 +163,7 @@ test("merge group validation falls back to the full suite without a pull request
 
     assert.equal(
         (entry.match(/\|\| github\.event\.pull_request\.number \|\| 0 \}\}/g) ?? []).length,
-        VALIDATION_WORKFLOWS.length,
+        PR_NUMBER_WORKFLOWS.length,
     );
     for (const gate of ["Require linked Issue", "Require module owner", "Validate CI Test Plan", "Reject test-only production declarations"]) {
         assert.match(
@@ -194,13 +199,19 @@ test("the entry point keeps no pull_request branch or path filter", async () => 
 test("impact outputs scope each heavy lane and classification failure runs full validation", async () => {
     const entry = await readWorkflow(ENTRY_WORKFLOW);
 
-    assert.equal((entry.match(/^ {4}needs: repository-quality$/gm) ?? []).length, HEAVY_VALIDATION_WORKFLOWS.length);
+    assert.equal((entry.match(/^ {4}needs: repository-quality$/gm) ?? []).length, IMPACT_SCOPED_WORKFLOWS.length);
     assert.equal(
         (entry.match(/^ {4}if: \$\{\{ !cancelled\(\) \}\}$/gm) ?? []).length,
-        HEAVY_VALIDATION_WORKFLOWS.length,
+        IMPACT_SCOPED_WORKFLOWS.length,
         "quality failures must fan out to full validation without reviving a cancelled stale run",
     );
-    for (const output of ["ktlint_required", "android_lint_required", "unit_test_required", "screenshot_required"]) {
+    for (const output of [
+        "ktlint_required",
+        "android_lint_required",
+        "unit_test_required",
+        "screenshot_required",
+        "dependency_review_required",
+    ]) {
         assert.match(
             entry,
             new RegExp(`needs\\.repository-quality\\.result != 'success' \\|\\| needs\\.repository-quality\\.outputs\\.${output} != 'false'`),
@@ -235,6 +246,22 @@ test("heavy reusable workflows default to full validation and preserve every req
     }
     assert.match(lint, /^ {4}if: inputs\.run_ktlint$/m);
     assert.match(lint, /^ {4}if: inputs\.run_android_lint$/m);
+});
+
+test("dependency review keeps one required context and skips only its check step", async () => {
+    // #2258: job 자체를 if 로 건너뛰면 분류 job 실패와 «검사 불필요» 가 같은 skipped 로 보인다.
+    // job 은 늘 돌고, 검사 스텝만 PR 이벤트 + 의존성 입력 변경일 때 실행한다.
+    const source = await readWorkflow("dependency-review.yml");
+    const jobs = jobNames(source);
+
+    assert.deepEqual(jobs, ["dependency-review"]);
+    assert.doesNotMatch(source, /^ {4}if:/m);
+    assert.match(source, /^ {6}run_review:\n(?: {8}.+\n)*? {8}default: true\n {8}type: boolean$/m);
+    assert.match(
+        source,
+        /- name: Fail on newly introduced high-severity vulnerabilities\n\s+if: \$\{\{ inputs\.run_review && github\.event_name == 'pull_request' \}\}\n\s+uses: actions\/dependency-review-action@/,
+    );
+    assert.match(source, /if: \$\{\{ !\(inputs\.run_review && github\.event_name == 'pull_request'\) \}\}/);
 });
 
 test("repository quality owns fail-closed paginated impact classification and PR gates", async () => {
