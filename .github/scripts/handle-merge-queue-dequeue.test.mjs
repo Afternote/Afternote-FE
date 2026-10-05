@@ -7,9 +7,13 @@ import {
     collectFailedJobs,
     countRequeuesForHead,
     decide,
+    dispatchRequeue,
     provenInfrastructureJobNames,
     enqueueStacked,
     handleDequeue,
+    renderMissingQueueTokenComment,
+    requeueDispatched,
+    REQUEUE_WORKFLOW_FILE,
     isStackBottom,
     isStackMember,
     lastEnqueuedAt,
@@ -225,6 +229,7 @@ function fakeApi({
         if (jobsMatch) return { jobs: jobs[jobsMatch[1]] ?? [] };
         if (apiPath.includes("/comments") && (options.method ?? "GET") === "GET") return comments;
         if (apiPath.includes("/comments") && options.method === "POST") return { id: 1 };
+        if (apiPath.endsWith("/dispatches") && options.method === "POST") return null;
         throw new Error(`unexpected ${apiPath}`);
     };
     api.calls = calls;
@@ -604,4 +609,106 @@ test("워크플로는 default branch 정의로 dequeued 에만 반응하고, 테
     assert.ok(source.indexOf("handle-merge-queue-dequeue.test.mjs") < source.indexOf("node .github/scripts/handle-merge-queue-dequeue.mjs"));
     assert.match(source, /DEQUEUE_REASON: \$\{\{ github\.event\.reason \}\}/);
     assert.match(source, /cancel-in-progress: false/);
+});
+
+// ---- 재투입은 사람 토큰을 가진 워크플로가 한다 (1005 #2208) ----
+// GITHUB_TOKEN 으로 넣은 큐 항목은 merge_group CI 를 띄우지 못해 60분 뒤 CI_TIMEOUT 으로 빠진다.
+
+const dispatches = (api) => api.calls.filter((call) => call.apiPath.endsWith("/dispatches"));
+
+test("방출 처리에 재투입 위임을 주면 마커를 먼저 남기고 직접 넣지 않는다", async () => {
+    for (const live of [openLive, stackedLive]) {
+        const api = fakeApi({ live });
+        const delegated = [];
+        const result = await handleDequeue({
+            api, repository: REPO, number: 1509, reason: "CI_TIMEOUT", logger: silent,
+            requeue: async (request) => {
+                delegated.push(request);
+                assert.equal(commentPosts(api).length, 1, "마커 코멘트가 위임보다 먼저다");
+                return "dispatch";
+            },
+        });
+        assert.equal(result.action, "requeue");
+        assert.equal(result.enqueueMethod, "dispatch");
+        assert.equal(delegated.length, 1);
+        assert.equal(delegated[0].number, 1509);
+        assert.equal(delegated[0].headSha, HEAD);
+        assert.ok(commentPosts(api)[0].body.body.startsWith(requeueMarker(HEAD)));
+        assert.equal(enqueueMutations(api).length, 0);
+        assert.equal(mergeAsyncCalls(api).length, 0);
+    }
+});
+
+test("재투입 위임은 재투입 판정일 때만 부른다", async () => {
+    const runs = [{ id: 7, name: "Unit Test", html_url: "https://x/runs/7", head_branch: queueBranchPrefix("develop", 1509) + "abc", created_at: "2026-09-04T08:05:00Z" }];
+    const jobs = { 7: [{ name: "Run Unit Tests", conclusion: "failure", html_url: "https://x/jobs/71" }] };
+    const cases = [
+        fakeApi({ live: openLive, runs, jobs }),
+        fakeApi({ live: openLive, comments: [{ body: renderRequeueComment({ reason: "X", headSha: HEAD }) }] }),
+        fakeApi({ live: { ...openLive, state: "MERGED" } }),
+    ];
+    for (const api of cases) {
+        await handleDequeue({
+            api, repository: REPO, number: 1509, reason: "CI_TIMEOUT", logger: silent,
+            requeue: async () => assert.fail("재투입 판정이 아니면 위임하지 않는다"),
+        });
+    }
+});
+
+test("dispatchRequeue 는 판정한 head 를 입력으로 재투입 워크플로를 띄운다", async () => {
+    const api = fakeApi({ live: openLive });
+    await dispatchRequeue(api, REPO, { number: 2208, headSha: HEAD, ref: "develop" });
+    assert.deepEqual(dispatches(api).map(({ apiPath, method, body }) => ({ apiPath, method, body })), [{
+        apiPath: `/repos/${REPO}/actions/workflows/${REQUEUE_WORKFLOW_FILE}/dispatches`,
+        method: "POST",
+        body: { ref: "develop", inputs: { pull_request_number: "2208", head_sha: HEAD } },
+    }]);
+});
+
+test("requeueDispatched 는 판정한 head 그대로 열려 있고 큐 밖일 때만 넣는다", async () => {
+    const plain = fakeApi({ live: openLive });
+    assert.deepEqual(await requeueDispatched({ api: plain, repository: REPO, number: 2208, headSha: HEAD, logger: silent }), { action: "requeue", enqueueMethod: "graphql" });
+    assert.equal(enqueueMutations(plain).length, 1);
+
+    const stacked = fakeApi({ live: stackedLive });
+    const stackedResult = await requeueDispatched({ api: stacked, repository: REPO, number: 2123, headSha: HEAD, logger: silent, sleep: immediateSleep });
+    assert.equal(stackedResult.enqueueMethod, "merge-async");
+    assert.equal(enqueueMutations(stacked).length, 0);
+
+    for (const [live, why] of [
+        [{ ...openLive, state: "MERGED" }, "MERGED"],
+        [{ ...openLive, mergeQueueEntry: { state: "QUEUED", position: 1 } }, "already-queued"],
+        [{ ...openLive, headRefOid: "f".repeat(40) }, "head-changed"],
+        [stackUpperLive, "stack-upper"],
+    ]) {
+        const api = fakeApi({ live });
+        assert.deepEqual(await requeueDispatched({ api, repository: REPO, number: 2208, headSha: HEAD, logger: silent }), { action: "none", why });
+        assert.equal(enqueueMutations(api).length, 0, why);
+        assert.equal(mergeAsyncCalls(api).length, 0, why);
+        assert.equal(commentPosts(api).length, 0, "판정·코멘트는 방출 처리 job 몫이다");
+    }
+});
+
+test("사람 토큰이 없으면 GITHUB_TOKEN 으로 넣지 않고 직접 투입 명령을 안내한다", () => {
+    const body = renderMissingQueueTokenComment({ headSha: HEAD, repository: REPO, number: 2208 });
+    assert.match(body, /MERGE_QUEUE_TOKEN/);
+    assert.match(body, /CI_TIMEOUT/);
+    assert.match(body, /gh pr merge 2208 --repo Afternote\/Afternote-FE/);
+    assert.ok(!body.includes("<!-- merge-queue-dequeue:requeued"));
+});
+
+test("워크플로: 방출 처리는 시크릿 없이 dispatch 만 하고, 재투입은 workflow_dispatch 로만 사람 토큰을 쓴다", () => {
+    const dequeue = readFileSync(new URL("../workflows/merge-queue-dequeue.yml", import.meta.url), "utf8");
+    assert.doesNotMatch(dequeue, /\bsecrets(?:\.|\[)/);
+    assert.match(dequeue, /actions: write/);
+    assert.match(dequeue, /DEFAULT_BRANCH: \$\{\{ github\.event\.repository\.default_branch \}\}/);
+
+    const requeue = readFileSync(new URL(`../workflows/${REQUEUE_WORKFLOW_FILE}`, import.meta.url), "utf8");
+    assert.match(requeue, /^on:\n  workflow_dispatch:\n/m);
+    assert.doesNotMatch(requeue, /^  (pull_request|pull_request_target|merge_group|schedule|push):/m);
+    assert.match(requeue, /^permissions: \{\}$/m);
+    assert.match(requeue, /MERGE_QUEUE_TOKEN: \$\{\{ secrets\.MERGE_QUEUE_TOKEN \}\}/);
+    assert.match(requeue, /MODE: requeue/);
+    assert.match(requeue, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
+    assert.match(requeue, /persist-credentials: false/);
 });

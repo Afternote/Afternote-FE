@@ -11,7 +11,11 @@
 #
 # Viewed 체크는 webhook 이벤트가 없어 주기 실행으로 훑는다. 승인 직후에도 리컨사일 완료 신호로 한 번
 # 돈다. viewerViewedState 는 토큰 주인 본인 것만 보이므로 VIEWED_BY 의 읽기 전용 토큰을 VIEWED_TOKEN
-# 시크릿으로 둔다. 시크릿이 없으면 아무것도 하지 않는다. 예약 쓰기는 GITHUB_TOKEN 이 한다.
+# 시크릿으로 둔다. 시크릿이 없으면 아무것도 하지 않는다.
+#
+# 예약 쓰기는 MERGE_QUEUE_TOKEN(1hyok 의 fine-grained PAT)이 한다. GITHUB_TOKEN 으로 예약하거나 큐에 넣으면 GitHub 이
+# 그 이벤트로 워크플로를 띄우지 않아 merge_group CI 가 하나도 돌지 않는다. 큐는 check timeout(60분)까지 맨 앞을 붙잡았다가
+# CI_TIMEOUT 으로 빼고, 뒤에 쌓인 PR 들도 다시 검증한다(1005 #2208 실측). 시크릿이 없으면 예약하지 않는다.
 name: Viewed Auto Merge
 
 on:
@@ -34,6 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
+      # 해제 단계가 GITHUB_TOKEN 으로 예약을 끄고 큐에서 뺀다. 해제는 CI 를 띄울 필요가 없다.
       contents: write
       pull-requests: write
     steps:
@@ -91,10 +96,14 @@ jobs:
         # 해제 단계가 red 여도 다른 PR 의 예약은 그대로 판정한다.
         if: ${{ !cancelled() && steps.find.outcome == 'success' && steps.find.outputs.targets != '[]' }}
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.MERGE_QUEUE_TOKEN }}
           GH_REPO: ${{ github.repository }}
           TARGETS: ${{ steps.find.outputs.targets }}
         run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::MERGE_QUEUE_TOKEN 시크릿이 없어 예약하지 않습니다. GITHUB_TOKEN 으로 넣으면 merge_group CI 가 돌지 않습니다."
+            exit 0
+          fi
           # merge queue 대상이면 전략 없이 부른다. check 가 남았으면 auto-merge, 끝났으면 큐 투입이다.
           # 판정 뒤 새 커밋이 올라왔으면 --match-head-commit 이 거부한다. 스택 PR 처럼 GitHub 가 거부하는
           # 경우는 사람이 버튼을 누르면 되므로 경고로 남긴다.
