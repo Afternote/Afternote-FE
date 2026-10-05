@@ -35,11 +35,16 @@ test("하나라도 Viewed 가 아니면 예약하지 않는다 — 체크 뒤 �
     }
 });
 
-test("승인 상태가 아니면 Viewed 를 다 해도 예약하지 않는다", () => {
-    for (const reviewDecision of ["CHANGES_REQUESTED", "REVIEW_REQUIRED", null]) {
+test("승인 대기·변경 요청이면 Viewed 를 다 해도 예약하지 않는다", () => {
+    for (const reviewDecision of ["CHANGES_REQUESTED", "REVIEW_REQUIRED"]) {
         const decision = decideViewedAutoMerge(pullRequest({ reviewDecision }), [viewed("a.kt"), viewed("b.kt")]);
         assert.equal(decision.enable, false, String(reviewDecision));
     }
+});
+
+test("승인을 요구하지 않는 룰셋(reviewDecision null)이면 Viewed 만으로 예약한다", () => {
+    const decision = decideViewedAutoMerge(pullRequest({ reviewDecision: null }), [viewed("a.kt"), viewed("b.kt")]);
+    assert.equal(decision.enable, true);
 });
 
 test("파일 목록을 다 못 읽었으면 다 봤다고 단정하지 않는다", () => {
