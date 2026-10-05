@@ -32,6 +32,12 @@ dependencies {
     // freemarker(#2204)는 거꾸로 이 빌드의 kover-gradle-plugin 만 끌어온다. 이 constraint 는 included
     // build 의 변형에 실려 루트 buildEnvironment 에서도 2.3.32 -> 2.3.35 로 해석되므로 루트에 리터럴을 두지 않는다.
     constraints {
+        // 별도 빌드의 ktlint 는 루트 보안 하한을 상속하지 않는다. 실제 CLI 클래스패스에만 적용한다.
+        listOf("logback-core", "logback-classic").forEach { artifact ->
+            add("ktlint", "ch.qos.logback:$artifact:${libs.versions.logback.get()}") {
+                because("GHSA-jhq6-gfmj-v8fx 등 3건: ktlint-cli 1.8.0 경유 1.3.16 취약, #2219")
+            }
+        }
         listOf("bcprov-jdk18on", "bcpkix-jdk18on", "bcutil-jdk18on").forEach { artifact ->
             implementation("org.bouncycastle:$artifact:${libs.versions.bouncycastle.get()}") {
                 because("GHSA-9pwp-9qqc-pr26·GHSA-qp49-qgx5-5m26 — 1.85 미만 취약 — #2132")
