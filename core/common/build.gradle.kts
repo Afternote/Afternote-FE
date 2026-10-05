@@ -10,7 +10,10 @@ android {
 }
 
 dependencies {
+    implementation(projects.core.domain)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.kakao.sdk.auth)
+    implementation(libs.kakao.sdk.user)
 
     // BiometricCryptoGate 가 BiometricPrompt.CryptoObject 를 공개 시그니처로 돌려주므로
     // 소비 모듈의 컴파일 클래스패스에도 올라가야 한다 — implementation 이면 반환 타입을 못 본다.

@@ -31,7 +31,7 @@ internal class DeliveryConditionViewModel
 
         override fun onIntent(intent: DeliveryConditionIntent) {
             when (intent) {
-                is DeliveryConditionIntent.SelectConditionType -> onConditionTypeSelected(intent.index)
+                is DeliveryConditionIntent.SelectConditionType -> dispatch(DeliveryConditionReducerEvent.ConditionSelected(intent.type))
                 DeliveryConditionIntent.Save -> onSave()
                 DeliveryConditionIntent.ConsumeSuccess -> dispatch(DeliveryConditionReducerEvent.SuccessConsumed)
             }
@@ -70,7 +70,7 @@ internal class DeliveryConditionViewModel
                 }
 
                 is DeliveryConditionReducerEvent.Saved -> {
-                    state.copy(isSaving = false, conditions = event.conditions, isSaved = true)
+                    state.copy(isSaving = false, conditions = event.conditions, isSaved = true, isSaveSuccessPending = true)
                 }
 
                 DeliveryConditionReducerEvent.SaveFailed -> {
@@ -78,7 +78,7 @@ internal class DeliveryConditionViewModel
                 }
 
                 DeliveryConditionReducerEvent.SuccessConsumed -> {
-                    state.copy(isSaved = false)
+                    state.copy(isSaveSuccessPending = false)
                 }
             }
 
@@ -98,15 +98,9 @@ internal class DeliveryConditionViewModel
             }
         }
 
-        private fun onConditionTypeSelected(index: Int) {
-            val conditionType =
-                if (index == 1) DeliveryConditionType.RECEIVER_REQUEST else DeliveryConditionType.INACTIVITY
-            dispatch(DeliveryConditionReducerEvent.ConditionSelected(conditionType))
-        }
-
         private fun onSave() {
             val state = currentState
-            if (!state.isInitialized || state.isSaving || state.isSaved) return
+            if (!state.isInitialized || state.isSaveLocked) return
 
             dispatch(DeliveryConditionReducerEvent.Saving)
             viewModelScope.launch {

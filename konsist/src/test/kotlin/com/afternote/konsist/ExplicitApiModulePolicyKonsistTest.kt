@@ -197,7 +197,6 @@ class ExplicitApiModulePolicyKonsistTest {
                 "afternote.android.data",
                 "afternote.android.datastore",
                 "afternote.android.domain",
-                "afternote.android.feature",
                 "afternote.android.library",
                 "afternote.android.library.compose",
                 "afternote.jvm.domain",

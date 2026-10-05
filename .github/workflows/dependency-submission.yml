@@ -1,24 +1,10 @@
 name: Generate PR Dependency Graph
 
-# PR 에서 의존성 입력이 바뀔 때만 write token 없는 snapshot artifact 를 만든다.
+# 모든 PR HEAD 에 write token 없는 snapshot artifact 를 만든다.
+# 소스 변경만 있는 PR 도 스택 부모가 될 수 있으므로 자식과 비교할 기준선이 필요하다 (#2185).
 # default branch 의 Submit PR Dependency Graph workflow_run 이 검토된 코드로 artifact 를 제출한다.
-# 이전 workflow 이름과 분리해 이미 대기 중인 source-only run 이 새 uploader 를 깨우지 않게 한다.
 on:
   pull_request:
-    paths:
-      - '**/*.gradle'
-      - '**/*.gradle.kts'
-      - '**/*.lockfile'
-      - '**/build-logic/**'
-      - '**/buildSrc/**'
-      - '**/gradle.properties'
-      - '**/gradlew'
-      - '**/gradlew.bat'
-      - 'gradle/**'
-      - '.github/workflows/dependency-review.yml'
-      - '.github/workflows/dependency-submission.yml'
-      - '.github/workflows/dependency-submission-trusted.yml'
-      - '.github/workflows/dependency-submission-upload.yml'
 
 concurrency:
   group: generate-pr-dependency-graph-${{ github.event.pull_request.number }}

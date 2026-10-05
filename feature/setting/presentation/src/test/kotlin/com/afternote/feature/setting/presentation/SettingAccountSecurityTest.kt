@@ -219,7 +219,7 @@ class SettingAccountSecurityTest {
         }
 
         composeRule.runOnIdle {
-            viewModel.onIntent(DeliveryConditionIntent.SelectConditionType(index = 1))
+            viewModel.onIntent(DeliveryConditionIntent.SelectConditionType(DeliveryConditionType.RECEIVER_REQUEST))
             viewModel.onIntent(DeliveryConditionIntent.Save)
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {

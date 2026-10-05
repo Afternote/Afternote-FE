@@ -7,7 +7,7 @@ import com.afternote.core.ui.mvi.ReducerEvent
 
 internal sealed interface DeliveryConditionIntent : MviIntent {
     data class SelectConditionType(
-        val index: Int,
+        val type: DeliveryConditionType,
     ) : DeliveryConditionIntent
 
     data object Save : DeliveryConditionIntent

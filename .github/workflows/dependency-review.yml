@@ -1,25 +1,26 @@
 name: Dependency Review
 
+# PR 에서는 pr-validation.yml 이 매번 부른다 (#2258). 예전에는 의존성 파일 paths 필터로
+# 직접 pull_request 를 들었는데, 그러면 소스만 고친 PR 에 check 가 생기지 않아 ruleset 의
+# required context 로 걸 수 없었다. 이제 repository-quality 가 같은 경로 목록으로 변경을
+# 분류하고, 의존성 입력이 없으면 아래 job 이 검사 스텝만 건너뛴 채 성공한다. 분류가
+# 실패하면 호출자가 run_review 를 true 로 넘겨 검사 쪽으로 닫힌다.
+#
+# 검사는 pull_request 이벤트에서만 할 수 있다. dependency-submission.yml 이 PR 스냅샷을
+# pull_request 에서만 만들기 때문이다.
+# - merge group 은 건너뛴다. 큐에 들어온 PR 은 각 head 에서 이 required check 를 이미
+#   통과했고, 큐 SHA 는 그 head 들과 develop 의 병합이다.
+# - bridge dispatch(GITHUB_TOKEN 커밋 뒤 PR Validation 재호출)는 의존성 입력이 바뀐 PR 이면
+#   실패로 닫는다. 건너뛰면 이전 head 의 실패를 검사 없는 초록이 덮는다. PR 브랜치에 새로
+#   push 하면 pull_request 실행이 스냅샷과 함께 다시 검사한다.
 on:
-  pull_request:
-    paths:
-      - '**/*.gradle'
-      - '**/*.gradle.kts'
-      - '**/*.lockfile'
-      - '**/build-logic/**'
-      - '**/buildSrc/**'
-      - '**/gradle.properties'
-      - '**/gradlew'
-      - '**/gradlew.bat'
-      - 'gradle/**'
-      - '.github/workflows/dependency-review.yml'
-      - '.github/workflows/dependency-submission.yml'
-      - '.github/workflows/dependency-submission-trusted.yml'
-      - '.github/workflows/dependency-submission-upload.yml'
-
-concurrency:
-  group: dependency-review-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  workflow_call:
+    inputs:
+      run_review:
+        description: "의존성 그래프 입력이 바뀌어 검사가 필요한지 여부"
+        required: false
+        default: true
+        type: boolean
 
 permissions:
   contents: read
@@ -30,11 +31,28 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - name: Skip unchanged dependency graph inputs
+        if: ${{ !inputs.run_review }}
+        run: echo "::notice::의존성 그래프 입력이 바뀌지 않아 Dependency Review 를 건너뜁니다."
+
+      - name: Skip merge group revalidation
+        if: ${{ inputs.run_review && github.event_name == 'merge_group' }}
+        run: echo "::notice::큐에 들어온 PR head 가 이미 Dependency Review 를 통과했으므로 merge group 에서는 건너뜁니다."
+
+      - name: Reject dependency changes without a pull request snapshot
+        if: ${{ inputs.run_review && github.event_name != 'pull_request' && github.event_name != 'merge_group' }}
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          echo "::error::$EVENT_NAME 실행에는 비교할 PR 의존성 스냅샷이 없습니다. 의존성 입력이 바뀐 PR 은 브랜치에 새로 push 해 pull_request 실행으로 검사하세요."
+          exit 1
+
       # PR snapshot 은 두 workflow 를 거쳐 API 에 올라온다 (fork PR 을 checkout 하지 않기 위한 분리다).
       #   1. Generate PR Dependency Graph — PR context 에서 artifact 만 만든다.
       #   2. Submit PR Dependency Graph   — trusted workflow_run 에서 artifact 를 제출한다.
       # 이 job 은 1번과 동시에 출발하므로 제출이 끝날 때까지 snapshot warning 을 재시도한다.
       - name: Fail on newly introduced high-severity vulnerabilities
+        if: ${{ inputs.run_review && github.event_name == 'pull_request' }}
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           fail-on-scopes: runtime, development, unknown
