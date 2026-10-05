@@ -2,7 +2,12 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { decideViewedAutoMerge, decideViewedAutoMergeCancel } from "./find-viewed-auto-merge-targets.mjs";
+import {
+    collectViewedAutoMergeActions,
+    decideViewedAutoMerge,
+    decideViewedAutoMergeCancel,
+    isAuthoredByViewer,
+} from "./find-viewed-auto-merge-targets.mjs";
 
 const viewed = (path) => ({ path, viewerViewedState: "VIEWED" });
 
@@ -100,6 +105,64 @@ test("예약·큐에 있고 모든 파일이 Viewed 면 그대로 둔다", () =>
 function pickActions({ disableAutoMerge, dequeue }) {
     return { disableAutoMerge, dequeue };
 }
+
+test("VIEWED_BY 본인이 작성한 PR 만 대상이다 — 대소문자 무시, 작성자 없음은 제외", () => {
+    assert.equal(isAuthoredByViewer({ author: { login: "1hyok" } }, "1hyok"), true);
+    assert.equal(isAuthoredByViewer({ author: { login: "1Hyok" } }, "1hyok"), true);
+    for (const author of [{ login: "koongmai" }, { login: "Sadturtleman" }, { login: "dependabot" }, null, undefined]) {
+        assert.equal(isAuthoredByViewer({ author }, "1hyok"), false, JSON.stringify(author));
+    }
+});
+
+// 파일이 한 페이지에 다 들어 있어 추가 조회가 없다. 작성자가 아니면 파일을 읽지도 않는다.
+function listedPullRequest(number, login, overrides = {}, states = ["VIEWED", "VIEWED"]) {
+    const nodes = states.map((viewerViewedState, index) => ({ path: `f${index}.kt`, viewerViewedState }));
+    return pullRequest({
+        number,
+        id: `PR_${number}`,
+        author: login === null ? null : { login },
+        changedFiles: nodes.length,
+        files: { pageInfo: { hasNextPage: false, endCursor: null }, nodes },
+        ...overrides,
+    });
+}
+
+const noRequest = async () => {
+    throw new Error("파일 추가 조회는 없어야 한다");
+};
+
+test("팀원·봇 PR 은 큐에 있고 Viewed 가 0 이어도 해제하지 않고, 승인·Viewed 가 다 차도 예약하지 않는다", async () => {
+    const pullRequests = [
+        listedPullRequest(2262, "dependabot", { isInMergeQueue: true }, ["UNVIEWED", "UNVIEWED"]),
+        listedPullRequest(2269, "koongmai", { ...scheduled, isInMergeQueue: true }, ["UNVIEWED", "DISMISSED"]),
+        listedPullRequest(2300, "Sadturtleman", { isInMergeQueue: true, changedFiles: 0 }, []),
+        listedPullRequest(2301, null, scheduled, ["UNVIEWED"]),
+        listedPullRequest(2302, "koongmai"),
+    ];
+    const actions = await collectViewedAutoMergeActions(noRequest, "Afternote", "Afternote-FE", "1hyok", pullRequests);
+    assert.deepEqual(actions, { targets: [], cancels: [] });
+});
+
+test("본인 PR 은 지금처럼 Viewed 가 풀리면 해제하고, 승인·Viewed 가 다 차면 예약한다", async () => {
+    const pullRequests = [
+        listedPullRequest(10, "1hyok", { isInMergeQueue: true }, ["UNVIEWED", "UNVIEWED"]),
+        listedPullRequest(11, "1Hyok", scheduled, ["VIEWED", "DISMISSED"]),
+        listedPullRequest(12, "1hyok"),
+        listedPullRequest(13, "dependabot", { isInMergeQueue: true }, ["UNVIEWED", "UNVIEWED"]),
+    ];
+    const actions = await collectViewedAutoMergeActions(noRequest, "Afternote", "Afternote-FE", "1hyok", pullRequests);
+    assert.deepEqual(actions.cancels, [
+        { number: 10, id: "PR_10", disableAutoMerge: false, dequeue: true },
+        { number: 11, id: "PR_11", disableAutoMerge: true, dequeue: false },
+    ]);
+    assert.deepEqual(actions.targets, [{ number: 12, headSha: pullRequest().headRefOid }]);
+});
+
+test("GraphQL 조회가 작성자를 가져온다", async () => {
+    const script = await readFile(new URL("./find-viewed-auto-merge-targets.mjs", import.meta.url), "utf8");
+    const fields = script.slice(script.indexOf("const PULL_REQUEST_FIELDS"), script.indexOf("`;", script.indexOf("const PULL_REQUEST_FIELDS")));
+    assert.match(fields, /author \{ login \}/);
+});
 
 test("워크플로는 해제 대상의 예약을 끄고 큐에서 빼며, 해제 실패는 red 로 남긴다", async () => {
     const workflow = await readFile(new URL("../workflows/viewed-auto-merge.yml", import.meta.url), "utf8");
