@@ -90,10 +90,6 @@ gradlePlugin {
             id = "afternote.android.navigation"
             implementationClass = "AndroidNavigationConventionPlugin"
         }
-        register("androidFeature") {
-            id = "afternote.android.feature"
-            implementationClass = "AndroidFeatureConventionPlugin"
-        }
         register("androidData") {
             id = "afternote.android.data"
             implementationClass = "AndroidDataConventionPlugin"

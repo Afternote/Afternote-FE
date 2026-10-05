@@ -31,7 +31,6 @@ dependencies {
     implementation(projects.core.domain)
     implementation(projects.core.model)
     implementation(projects.core.ui)
-    implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.compose.runtime)
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.credentials)
