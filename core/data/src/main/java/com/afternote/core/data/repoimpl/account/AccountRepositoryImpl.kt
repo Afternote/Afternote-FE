@@ -1,8 +1,8 @@
 package com.afternote.core.data.repoimpl.account
 
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.data.mapper.auth.toDomain
 import com.afternote.core.domain.repository.account.AccountRepository
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.model.AccountRegistration
 import com.afternote.core.model.FoundAccount
 import com.afternote.core.network.dto.EmailFindRequestDto

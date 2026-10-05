@@ -6,8 +6,8 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.error.PushSettingFailure
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.feature.setting.domain.SettingNotificationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext

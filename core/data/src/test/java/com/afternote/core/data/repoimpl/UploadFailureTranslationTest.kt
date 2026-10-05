@@ -1,7 +1,7 @@
 package com.afternote.core.data.repoimpl
 
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.error.FileUploadFailure
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.network.model.ApiException
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
