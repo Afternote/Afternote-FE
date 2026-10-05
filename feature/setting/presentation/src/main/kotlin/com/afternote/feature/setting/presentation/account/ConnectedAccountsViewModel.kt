@@ -1,7 +1,7 @@
 package com.afternote.feature.setting.presentation.account
 
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.common.result.runCatchingCancellable
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.setting.domain.SettingAccountRepository

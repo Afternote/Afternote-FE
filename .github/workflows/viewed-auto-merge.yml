@@ -1,10 +1,12 @@
 # Viewed 기반 자동 머지 예약 (#2248)
 #
+# 적용 범위는 VIEWED_BY 본인이 작성한 PR 이다(#2270). 팀원·봇 PR 은 예약도 해제도 하지 않는다.
+#
 # VIEWED_BY 가 PR 의 모든 파일을 Viewed 로 체크했고 PR 이 승인 상태면 «Merge when ready» 를 대신 건다.
 # 머지는 GitHub 가 승인 수·required check·merge queue 를 모두 통과시킨 뒤에만 하므로 CI 가 빨갛거나
 # 변경요청이 남으면 머지되지 않는다.
 #
-# 반대 방향도 매 실행이 맞춘다(#2252). 예약됐거나 merge queue 에 있는 PR 중 VIEWED_BY 기준 Viewed 가 다 차지
+# 반대 방향도 매 실행이 맞춘다(#2252). 예약됐거나 merge queue 에 있는 VIEWED_BY 본인 PR 중 VIEWED_BY 기준 Viewed 가 다 차지
 # 않은 것은 예약을 끄고 큐에서 뺀다. 새 push 로 바뀐 파일은 DISMISSED 가 되고 룰셋은 push 로 승인을 지우지
 # 않으므로, 이 단계가 없으면 아무도 다시 보지 않은 커밋이 머지된다. 누가 건 예약인지는 따지지 않는다. 예약을
 # 멈추려면 파일 하나의 Viewed 를 풀면 되고, 다시 전부 Viewed 가 되면 다음 실행이 다시 건다.

@@ -1,6 +1,5 @@
 package com.afternote.core.data.repoimpl.auth
 
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.data.mapper.auth.toDomain
 import com.afternote.core.datastore.LocalStoreRegistry
 import com.afternote.core.datastore.StoreScope
@@ -9,6 +8,7 @@ import com.afternote.core.domain.error.SessionChangedException
 import com.afternote.core.domain.push.DevicePushTargetProvider
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.repository.push.PushTargetRepository
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.model.Session
 import com.afternote.core.model.TokenBundle
 import com.afternote.core.network.dto.LoginRequestDto
