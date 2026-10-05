@@ -16,7 +16,9 @@ import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
 import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
 import com.afternote.feature.setting.presentation.home.SettingScreen
 import com.afternote.feature.setting.presentation.home.SettingViewModel
+import com.afternote.feature.setting.presentation.notification.PushNotificationIntent
 import com.afternote.feature.setting.presentation.notification.PushNotificationViewModel
+import com.afternote.feature.setting.presentation.notification.PushSetting
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -106,7 +108,7 @@ class SettingFlowTest {
         composeRule.setContent { AfternoteTheme {} }
         composeRule.waitUntil(timeoutMillis = 5_000) { !viewModel.uiState.value.isLoading }
 
-        composeRule.runOnIdle { viewModel.onNewsletterToggle(false) }
+        composeRule.runOnIdle { viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.NEWSLETTER, false)) }
         composeRule.waitUntil(timeoutMillis = 5_000) {
             viewModel.uiState.value.isNewsletterOn
         }

@@ -5,16 +5,16 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserReceiverRepository
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.error.AfternoteFailure
-import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.SaveAfternoteCommand
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
+import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.editor.mapper.toAfternoteEditorReceivers
 import com.afternote.feature.afternote.presentation.editor.memorial.Song
 import com.afternote.feature.afternote.presentation.editor.model.EditorFormPrefill
@@ -25,6 +25,7 @@ import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditor
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorErrorEvent
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorUiState
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteTypeForm
+import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialPhoto
 import com.afternote.feature.afternote.presentation.editor.state.EditableMemorialVideo
 import com.afternote.feature.afternote.presentation.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.editor.state.withMemorialPhoto
@@ -84,6 +85,7 @@ private data class ProcessingMethodSnap(
 /**
  * [SavedStateHandle]에 JSON으로 넣는 폼 스냅샷. 번들 전체 크기는 대략 500KB~1MB를 넘기지 않도록 설계해야 하며,
  * 그렇지 않으면 [android.os.TransactionTooLargeException]이 날 수 있다. 큰 Base64/data URL은 폼에 넣지 말고 URL·URI 문자열만 저장한다.
+ * 사진 값 객체는 기존 `pickedMemorialPhotoUri`·`memorialPhotoUrl` 두 키로 변환해 사진 필드의 JSON 호환성을 유지한다.
  *
  * **wire 형태는 키에 박힌 버전과 함께 움직인다.** [EditableMemorialVideo]가 sealed 로 바뀌면서(#1901)
  * `memorialVideo` 에 판별자가 붙었고(v5), 상태가 넷에서 셋으로 줄면서(#2114) 판별자 값이
@@ -129,9 +131,8 @@ private data class EditorFormSnapshot(
 
             AfternoteType.MEMORIAL -> {
                 AfternoteTypeForm.Memorial(
-                    pickedPhotoUri = pickedMemorialPhotoUri,
+                    photo = EditableMemorialPhoto.fromSnapshot(memorialPhotoUrl, pickedMemorialPhotoUri),
                     video = memorialVideo ?: EditableMemorialVideo.empty(),
-                    photoUrl = memorialPhotoUrl,
                     playlistSongs = memorialPlaylistSongs,
                 )
             }
@@ -152,9 +153,9 @@ private data class EditorFormSnapshot(
                         ReceiverSnap(id = it.id, name = it.name, label = it.label)
                     },
                 processingMethods = form.processingMethods.map { ProcessingMethodSnap(it.localId, it.text) },
-                pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
+                pickedMemorialPhotoUri = form.memorialPhoto?.toSnapshot()?.selection,
                 memorialVideo = form.memorialVideo,
-                memorialPhotoUrl = form.memorialPhotoUrl,
+                memorialPhotoUrl = form.memorialPhoto?.toSnapshot()?.persisted,
                 memorialPlaylistSongs = form.memorialPlaylistSongs,
             )
     }
@@ -180,6 +181,8 @@ class AfternoteEditorViewModel
         private val afternoteRepository: AfternoteRepository,
         private val memorialThumbnailUploadRepository: MemorialThumbnailUploadRepository,
         private val resolveMemorialMediaForSave: ResolveMemorialMediaForSaveUseCase,
+        // 이 클래스에 동명의 `saveAfternote(...)` 진입점이 이미 있어 `UseCase` 접미사를 남긴다.
+        private val saveAfternoteUseCase: SaveAfternoteUseCase,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         /** 진행 중인 prefill 조회 — 재시도가 이전 조회를 자르기 위한 핸들. */
@@ -523,7 +526,7 @@ class AfternoteEditorViewModel
                     updateBaseline = updateBaseline,
                 ).fold(
                     onSuccess = { command ->
-                        executeSaveCommand(command).fold(
+                        saveAfternoteUseCase(command).fold(
                             onSuccess = { id ->
                                 internalState.update {
                                     it.copy(
@@ -541,39 +544,6 @@ class AfternoteEditorViewModel
             }
         }
 
-        /**
-         * [SaveAfternoteCommand] 분기에 따라 [AfternoteRepository] 의 적합한 메서드를 직접 호출한다.
-         *
-         * 과거에는 별도 `SaveAfternoteUseCase` 로 분리돼 있었으나, 단일 Repository 내 메서드 라우팅
-         * 외에 비즈니스 로직이 없어 *약한 UseCase* (`#246`) 로 판단해 ViewModel 로 흡수.
-         */
-        private suspend fun executeSaveCommand(command: SaveAfternoteCommand): Result<Long> =
-            when (command) {
-                is SaveAfternoteCommand.Create -> {
-                    when (val input = command.input) {
-                        is CreateAfternoteInput.Social -> afternoteRepository.createSocial(input.payload)
-                        is CreateAfternoteInput.Business -> afternoteRepository.createBusiness(input.payload)
-                        is CreateAfternoteInput.Gallery -> afternoteRepository.createGallery(input.payload)
-                        is CreateAfternoteInput.Memorial -> afternoteRepository.createMemorial(input.payload)
-                    }
-                }
-
-                is SaveAfternoteCommand.Update -> {
-                    afternoteRepository.update(command.id, command.payload)
-                }
-            }
-
-        // 영정 사진: 새로 고른 로컬 픽 우선 → 없으면 기존 원격 → 둘 다 없으면 없음.
-        private fun photoMediaInput(
-            picked: String?,
-            existing: String?,
-        ): MediaInput =
-            when {
-                !picked.isNullOrBlank() -> MediaInput.Local(picked)
-                !existing.isNullOrBlank() -> MediaInput.Remote(existing)
-                else -> MediaInput.None
-            }
-
         private suspend fun buildSaveCommand(
             editingId: Long?,
             typeForSave: AfternoteType,
@@ -586,11 +556,7 @@ class AfternoteEditorViewModel
             val resolved =
                 resolveMemorialMediaForSave(
                     video = memorialMedia.memorialVideo.toMediaInput(),
-                    photo =
-                        photoMediaInput(
-                            picked = memorialMedia.pickedMemorialPhotoUri,
-                            existing = memorialMedia.memorialPhotoUrl,
-                        ),
+                    photo = memorialMedia.memorialPhoto.toMediaInput(),
                 ).getOrElse { return Result.failure(it) }
 
             val command =

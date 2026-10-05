@@ -72,6 +72,7 @@ function collectorFixture(count = 1, netPaths = [APP]) {
         return [pulls.slice(0, 50), pulls.slice(50)];
     }
     function git(args) {
+        if (args[0] === "rev-list" && args.at(-1).endsWith("..refs/remotes/origin/main")) return "";
         if (args[0] === "rev-list") return [...commits].reverse().concat(sourceSha).join("\n");
         if (args.includes("--raw")) {
             const index = commits.indexOf(args.at(-2));
@@ -92,6 +93,33 @@ test("maps a successful main deployment to its develop source and collects over 
     assert.equal(collected.runtimePullRequests.length, 75);
     assert.equal(collected.unmappedCommits.length, 0);
     assert.equal(decideQaDistribution(collected, NOW).decision, "deploy");
+});
+
+test("a run list that omits newer main deployments still resolves the newest baseline", async () => {
+    const fixture = collectorFixture();
+    const [staleMain, failedMain, deployedMain] = ["d", "e", "f"].map((c) => c.repeat(40));
+    const staleSource = "9".repeat(40);
+    const run = (id, sha, conclusion) => ({ id, head_sha: sha, head_branch: "main", event: "push", conclusion, updated_at: `2026-09-0${id}T00:00:00Z`, html_url: `https://example.com/${id}` });
+    const api = fixture.api;
+    fixture.api = async (endpoint, paginate) => {
+        if (endpoint.includes("/actions/")) {
+            fixture.calls.push(endpoint);
+            if (endpoint.endsWith(`head_sha=${failedMain}`)) return [{ workflow_runs: [run(3, failedMain, "failure")] }];
+            if (endpoint.endsWith(`head_sha=${deployedMain}`)) return [{ workflow_runs: [run(2, deployedMain, "success")] }];
+            return [{ workflow_runs: [run(1, staleMain, "success")] }];
+        }
+        if (endpoint.includes(`/commits/${staleMain}/`)) return [[{ merged_at: "2026-09-01T00:00:00Z", base: { ref: "main" }, head: { ref: "develop", sha: staleSource } }]];
+        return api(endpoint, paginate);
+    };
+    const git = fixture.git;
+    fixture.git = (args) => {
+        if (args[0] === "rev-list" && args.at(-1) === `${staleMain}..refs/remotes/origin/main`) return [failedMain, deployedMain].join("\n");
+        return git(args);
+    };
+    const collected = await collectQaDistributionContext(fixture);
+    assert.equal(collected.baseline.runId, 2);
+    assert.equal(collected.baseline.sourceSha, sourceSha);
+    assert.ok(fixture.calls.every((endpoint) => !endpoint.includes("status=")));
 });
 
 test("a fully reverted runtime batch has no remaining APK change", async () => {
