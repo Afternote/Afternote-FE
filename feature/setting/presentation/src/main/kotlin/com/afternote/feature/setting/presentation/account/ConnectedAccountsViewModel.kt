@@ -2,6 +2,7 @@ package com.afternote.feature.setting.presentation.account
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.feature.setting.domain.SettingAccountRepository
 import com.afternote.feature.setting.presentation.R
@@ -15,7 +16,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ConnectedAccountsViewModel
+internal class ConnectedAccountsViewModel
     @Inject
     constructor(
         private val accountRepository: SettingAccountRepository,
@@ -32,7 +33,7 @@ class ConnectedAccountsViewModel
 
         private fun loadConnectedAccounts() {
             viewModelScope.launch {
-                runCatching { accountRepository.getConnectedAccounts() }
+                runCatchingCancellable { accountRepository.getConnectedAccounts() }
                     .onSuccess { accounts ->
                         _uiState.update { it.copy(isLoading = false, accounts = accounts.toStateList()) }
                     }.onFailure {
@@ -61,7 +62,7 @@ class ConnectedAccountsViewModel
             accessToken: String,
         ) {
             viewModelScope.launch {
-                runCatching { accountRepository.linkConnectedAccount(provider, accessToken) }
+                runCatchingCancellable { accountRepository.linkConnectedAccount(provider, accessToken) }
                     .onSuccess { accounts -> _uiState.update { it.copy(accounts = accounts.toStateList()) } }
                     .onFailure { _uiState.update { it.copy(errorMessage = "계정 연결에 실패했습니다.") } }
             }
@@ -69,7 +70,7 @@ class ConnectedAccountsViewModel
 
         private fun unlink(provider: String) {
             viewModelScope.launch {
-                runCatching { accountRepository.unlinkConnectedAccount(provider) }
+                runCatchingCancellable { accountRepository.unlinkConnectedAccount(provider) }
                     .onSuccess { accounts -> _uiState.update { it.copy(accounts = accounts.toStateList()) } }
                     .onFailure { _uiState.update { it.copy(errorMessage = "계정 연결 해제에 실패했습니다.") } }
             }

@@ -2,6 +2,7 @@ package com.afternote.feature.setting.presentation.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.MyProfileRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.feature.setting.domain.SettingAccountRepository
@@ -42,7 +43,7 @@ sealed interface WithdrawUiState {
  * 로컬 토큰은 결과 무관하게 정리하도록 위임돼 있다. 호출처는 토큰 정리 여부를 신경 쓸 필요 없음.
  */
 @HiltViewModel
-class SettingViewModel
+internal class SettingViewModel
     @Inject
     constructor(
         private val authRepository: AuthRepository,
@@ -63,7 +64,7 @@ class SettingViewModel
 
         private fun loadProfile() {
             viewModelScope.launch {
-                runCatching { myProfileRepository.getMyProfile() }
+                runCatchingCancellable { myProfileRepository.getMyProfile() }
                     .onSuccess { profile ->
                         _uiState.value =
                             SettingUiState.Success(
