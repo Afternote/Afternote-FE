@@ -185,11 +185,15 @@ private fun AfternoteMemorialDto.toDraftMemorialContent() =
         media = toMemorialMedia(),
     )
 
+/**
+ * 미디어 URL 의 빈 값은 여기서 한 번만 `null` 로 맞춘다. 앱 안에서는 `null` 만 「없음」이다.
+ * BE `main` 은 빈 미디어를 `null` 로 저장하므로 빈 문자열은 옛 데이터에서만 온다.
+ */
 private fun AfternoteMemorialDto.toMemorialMedia() =
     MemorialMedia(
-        photoUrl = memorialPhotoUrl,
-        videoUrl = memorialVideo?.videoUrl,
-        thumbnailUrl = memorialVideo?.thumbnailUrl,
+        photoUrl = memorialPhotoUrl?.ifBlank { null },
+        videoUrl = memorialVideo?.videoUrl?.ifBlank { null },
+        thumbnailUrl = memorialVideo?.thumbnailUrl?.ifBlank { null },
     )
 
 private fun AfternoteDetailReceiverDto.toDomain(): DetailReceiver? =

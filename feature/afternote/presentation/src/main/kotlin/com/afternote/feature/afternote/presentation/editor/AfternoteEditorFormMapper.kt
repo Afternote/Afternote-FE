@@ -119,7 +119,7 @@ internal object AfternoteEditorFormMapper {
         memorialThumbnailUrl: String? = null,
     ): MemorialWritePayload =
         MemorialWritePayload(
-            memorialPhotoUrl = memorialPhotoUrl?.ifBlank { null },
+            memorialPhotoUrl = memorialPhotoUrl,
             songs = playlistSongs.map { it.toMemorialSongPayload() },
             memorialVideo = memorialVideoPayload(videoUrl = memorialVideoUrl, thumbnailUrl = memorialThumbnailUrl),
         )
@@ -368,7 +368,7 @@ internal object AfternoteEditorFormMapper {
                 MemorialSnapshot(
                     title = title,
                     leaveMessageBlocks = leaveMessageBlocks,
-                    photoUrl = content.media.photoUrl?.ifBlank { null },
+                    photoUrl = content.media.photoUrl,
                     video = content.media.toVideoPayload(),
                     songs =
                         content.songs.map { song ->
@@ -428,7 +428,7 @@ internal object AfternoteEditorFormMapper {
                 MemorialSnapshot(
                     title = title,
                     leaveMessageBlocks = leaveMessageBlocks,
-                    photoUrl = memorialMediaUrls.memorialPhotoUrl?.ifBlank { null },
+                    photoUrl = memorialMediaUrls.memorialPhotoUrl,
                     video = memorialMediaUrls.toVideoPayload(),
                     songs = playlistSongs.map { it.toMemorialSongPayload() },
                 )
@@ -455,14 +455,14 @@ internal object AfternoteEditorFormMapper {
     private fun MemorialMediaUrls.toVideoPayload(): MemorialVideoPayload? =
         memorialVideoPayload(videoUrl = memorialVideoUrl, thumbnailUrl = memorialThumbnailUrl)
 
-    /** 영상 주소가 비었으면 영상 슬롯 자체가 없다. 썸네일만 남은 값은 싣지 않는다. */
+    /**
+     * 영상 주소가 없으면 영상 슬롯 자체가 없다. 썸네일만 남은 값은 싣지 않는다.
+     * 빈 문자열은 입구(상세 data 매퍼, 폼의 `MediaInput` 판정과 영상 첨부)에서 이미 `null` 로 맞춰져 들어온다.
+     */
     private fun memorialVideoPayload(
         videoUrl: String?,
         thumbnailUrl: String?,
-    ): MemorialVideoPayload? =
-        videoUrl?.ifBlank { null }?.let { url ->
-            MemorialVideoPayload(videoUrl = url, thumbnailUrl = thumbnailUrl?.ifBlank { null })
-        }
+    ): MemorialVideoPayload? = videoUrl?.let { url -> MemorialVideoPayload(videoUrl = url, thumbnailUrl = thumbnailUrl) }
 }
 
 /**
