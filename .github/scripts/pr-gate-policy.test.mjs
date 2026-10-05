@@ -250,7 +250,8 @@ test("heavy reusable workflows default to full validation and preserve every req
 
 test("dependency review keeps one required context and skips only its check step", async () => {
     // #2258: job 자체를 if 로 건너뛰면 분류 job 실패와 «검사 불필요» 가 같은 skipped 로 보인다.
-    // job 은 늘 돌고, 검사 스텝만 PR 이벤트 + 의존성 입력 변경일 때 실행한다.
+    // job 은 늘 돌고, 검사 스텝만 PR 이벤트 + 의존성 입력 변경일 때 실행한다. 그 밖의 이벤트에서
+    // 의존성 입력이 바뀌었으면 merge group 만 건너뛰고 나머지는 실패한다.
     const source = await readWorkflow("dependency-review.yml");
     const jobs = jobNames(source);
 
@@ -261,7 +262,22 @@ test("dependency review keeps one required context and skips only its check step
         source,
         /- name: Fail on newly introduced high-severity vulnerabilities\n\s+if: \$\{\{ inputs\.run_review && github\.event_name == 'pull_request' \}\}\n\s+uses: actions\/dependency-review-action@/,
     );
-    assert.match(source, /if: \$\{\{ !\(inputs\.run_review && github\.event_name == 'pull_request'\) \}\}/);
+    assert.match(source, /- name: Skip unchanged dependency graph inputs\n\s+if: \$\{\{ !inputs\.run_review \}\}/);
+    assert.match(
+        source,
+        /- name: Skip merge group revalidation\n\s+if: \$\{\{ inputs\.run_review && github\.event_name == 'merge_group' \}\}/,
+    );
+    // bridge dispatch 커밋은 PR 스냅샷이 없다. 건너뛰면 이전 head 의 실패를 검사 없는 초록이 덮는다.
+    const rejectStart = source.indexOf("- name: Reject dependency changes without a pull request snapshot\n");
+    assert.ok(rejectStart >= 0, "dispatch rejection step is missing");
+    const rejectEnd = source.indexOf("\n      - name:", rejectStart + 1);
+    const rejectStep = source.slice(rejectStart, rejectEnd < 0 ? undefined : rejectEnd);
+    assert.ok(
+        rejectStep.includes(
+            "if: ${{ inputs.run_review && github.event_name != 'pull_request' && github.event_name != 'merge_group' }}\n",
+        ),
+    );
+    assert.match(rejectStep, /^ {10}exit 1$/m);
 });
 
 test("repository quality owns fail-closed paginated impact classification and PR gates", async () => {

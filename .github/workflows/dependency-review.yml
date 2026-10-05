@@ -6,9 +6,13 @@ name: Dependency Review
 # 분류하고, 의존성 입력이 없으면 아래 job 이 검사 스텝만 건너뛴 채 성공한다. 분류가
 # 실패하면 호출자가 run_review 를 true 로 넘겨 검사 쪽으로 닫힌다.
 #
-# 검사는 pull_request 이벤트에서만 한다. merge group 과 bridge dispatch 커밋에는
-# dependency-submission.yml 이 PR 스냅샷을 만들지 않아 비교할 head 가 없다. 그 SHA 의
-# 의존성은 이미 각 PR head 에서 이 검사를 통과한 것들의 병합이다.
+# 검사는 pull_request 이벤트에서만 할 수 있다. dependency-submission.yml 이 PR 스냅샷을
+# pull_request 에서만 만들기 때문이다.
+# - merge group 은 건너뛴다. 큐에 들어온 PR 은 각 head 에서 이 required check 를 이미
+#   통과했고, 큐 SHA 는 그 head 들과 develop 의 병합이다.
+# - bridge dispatch(GITHUB_TOKEN 커밋 뒤 PR Validation 재호출)는 의존성 입력이 바뀐 PR 이면
+#   실패로 닫는다. 건너뛰면 이전 head 의 실패를 검사 없는 초록이 덮는다. PR 브랜치에 새로
+#   push 하면 pull_request 실행이 스냅샷과 함께 다시 검사한다.
 on:
   workflow_call:
     inputs:
@@ -27,17 +31,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Record why dependency review is skipped
-        if: ${{ !(inputs.run_review && github.event_name == 'pull_request') }}
+      - name: Skip unchanged dependency graph inputs
+        if: ${{ !inputs.run_review }}
+        run: echo "::notice::의존성 그래프 입력이 바뀌지 않아 Dependency Review 를 건너뜁니다."
+
+      - name: Skip merge group revalidation
+        if: ${{ inputs.run_review && github.event_name == 'merge_group' }}
+        run: echo "::notice::큐에 들어온 PR head 가 이미 Dependency Review 를 통과했으므로 merge group 에서는 건너뜁니다."
+
+      - name: Reject dependency changes without a pull request snapshot
+        if: ${{ inputs.run_review && github.event_name != 'pull_request' && github.event_name != 'merge_group' }}
         env:
           EVENT_NAME: ${{ github.event_name }}
-          RUN_REVIEW: ${{ inputs.run_review }}
         run: |
-          if [ "$RUN_REVIEW" != "true" ]; then
-            echo "::notice::의존성 그래프 입력이 바뀌지 않아 Dependency Review 를 건너뜁니다."
-          else
-            echo "::notice::$EVENT_NAME 이벤트에는 비교할 PR 스냅샷이 없어 Dependency Review 를 건너뜁니다."
-          fi
+          echo "::error::$EVENT_NAME 실행에는 비교할 PR 의존성 스냅샷이 없습니다. 의존성 입력이 바뀐 PR 은 브랜치에 새로 push 해 pull_request 실행으로 검사하세요."
+          exit 1
 
       # PR snapshot 은 두 workflow 를 거쳐 API 에 올라온다 (fork PR 을 checkout 하지 않기 위한 분리다).
       #   1. Generate PR Dependency Graph — PR context 에서 artifact 만 만든다.
