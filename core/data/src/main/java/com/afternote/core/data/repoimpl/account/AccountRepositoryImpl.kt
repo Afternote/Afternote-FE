@@ -1,8 +1,8 @@
 package com.afternote.core.data.repoimpl.account
 
-import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.core.data.mapper.auth.AuthMapper
+import com.afternote.core.data.mapper.auth.toDomain
 import com.afternote.core.domain.repository.account.AccountRepository
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.model.AccountRegistration
 import com.afternote.core.model.FoundAccount
 import com.afternote.core.network.dto.EmailFindRequestDto
@@ -62,7 +62,7 @@ internal class AccountRepositoryImpl
                             certificateCode,
                         ),
                     )
-                AuthMapper.toFoundAccount(response.requireData())
+                response.requireData().toDomain()
             }.mapAccountFailure()
 
         override suspend fun resetPassword(
@@ -99,7 +99,7 @@ internal class AccountRepositoryImpl
                             profileUrl,
                         ),
                     )
-                AuthMapper.toSignUpResult(response.requireData())
+                response.requireData().toDomain()
             }.mapAccountFailure()
 
         override suspend fun passwordChange(
@@ -114,5 +114,5 @@ internal class AccountRepositoryImpl
                             newPassword,
                         ),
                     ).requireStatus()
-            }
+            }.mapAccountFailure()
     }

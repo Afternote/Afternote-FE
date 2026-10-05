@@ -179,7 +179,7 @@ ViewModel 테스트는 작업 결과 신호와 소비 후 초기화를, 화면 �
 | B | `feature/*/presentation` 의 ViewModel 은 `MviViewModel` 을 상속한다 |
 | C | `MviIntent`·`ReducerEvent` 를 직접 구현하는 타입은 `sealed interface` 다 |
 
-규칙 B 는 아직 전환하지 않은 ViewModel 을 `PENDING_MVI_MIGRATION` 예외로 둔다(가드 도입 시점 49개, onboarding 파일럿 이후 46개). 모듈 전환 이슈가 닫힐 때마다 목록에서 빼고, **목록이 비면 예외 자체를 지운다.** `app` 의 ViewModel 2개는 규칙 B 의 대상이 아니다 — #1809 가 처리한다.
+규칙 B 는 아직 전환하지 않은 ViewModel 을 `PENDING_MVI_MIGRATION` 예외로 둔다(가드 도입 시점 49개). 전환할 때마다 목록에서 빼고, **목록이 비면 예외 자체를 지운다.** `app` 의 ViewModel 은 규칙 B 의 범위 밖이다.
 
 세 규칙은 **프로덕션 소스만** 본다. 테스트 더블이 `MviViewModel` 을 상속하며 보조 상태 홀더를 드는 것은
 규칙 A 의 대상이 아니다 — 더블은 계약을 지키는 대상이 아니라 계약을 흉내 내는 도구다.

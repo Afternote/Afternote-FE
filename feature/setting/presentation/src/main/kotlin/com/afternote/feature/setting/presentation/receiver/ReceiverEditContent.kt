@@ -31,7 +31,7 @@ internal fun ReceiverEditContent(
             title = "수신자 수정",
             actionText = "수정",
             isPhoneRequired = true,
-            isLoading = uiState.isSaving,
+            isActionLocked = uiState.isSaveLocked,
             errorMessage = uiState.errorMessage,
             onBackClick = onBackClick,
             onRegister = onRegister,

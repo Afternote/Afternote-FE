@@ -11,6 +11,7 @@ import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
@@ -48,6 +49,7 @@ class TokenAuthenticatorTest {
     private fun unauthorizedResponse(
         accessToken: String? = "old-token",
         priorCount: Int = 0,
+        body: String = "",
     ): Response {
         val requestBuilder = Request.Builder().url("https://afternote.kro.kr/api/v1/test")
         if (accessToken != null) requestBuilder.header("Authorization", "Bearer $accessToken")
@@ -72,7 +74,109 @@ class TokenAuthenticatorTest {
             .code(401)
             .message("Unauthorized")
             .priorResponse(prior)
+            .body(body.toResponseBody())
             .build()
+    }
+
+    @Test
+    fun `비밀번호 불일치 1202는 갱신과 세션 정리 없이 원래 본문을 남긴다`() {
+        listOf(0, 1, 2).forEach { priorCount ->
+            val reporter = FakeErrorReporter()
+            val repository = networkFakeAuthRepository(accessToken = "old-token")
+            val body = """{"status":401,"code":1202,"message":"현재 비밀번호가 일치하지 않습니다."}"""
+            val response = unauthorizedResponse(priorCount = priorCount, body = body)
+
+            assertNull(authenticator(repository, reporter).authenticate(null, response))
+
+            assertEquals(0, repository.rotateCallCount)
+            assertEquals(0, repository.clearSessionCallCount)
+            assertEquals("old-token", repository.accessToken)
+            assertEquals(0, reporter.writtenFailures.size)
+            assertEquals(body, response.body.string())
+        }
+    }
+
+    @Test
+    fun `토큰 거절 1000과 미확인 또는 파싱 불가 401은 기존 갱신 경로를 따른다`() {
+        listOf(
+            """{"status":401,"code":1000}""",
+            """{"status":401,"code":2701}""",
+            """{"status":401,"code":9999}""",
+            """{"status":401}""",
+            """{"code":"1202"}""",
+            """{"code":1202.0}""",
+            """{"code":4294968498}""",
+            """{"code":{"value":1202}}""",
+            """{"code":1202""",
+            "not json",
+            "[]",
+            "",
+            """{"code":1202}""" + " ".repeat(64 * 1024) + "invalid suffix",
+        ).forEach { body ->
+            val repository =
+                networkFakeAuthRepository(
+                    accessToken = "old-token",
+                    onRotateToken = {
+                        accessToken = "fresh-token"
+                        Result.success(TokenBundle(accessToken = "fresh-token", refreshToken = "r"))
+                    },
+                )
+            val response = unauthorizedResponse(body = body)
+
+            val request = authenticator(repository).authenticate(null, response)
+
+            assertEquals(body, 1, repository.rotateCallCount)
+            assertEquals(body, "Bearer fresh-token", request?.header("Authorization"))
+            assertEquals(body, 0, repository.clearSessionCallCount)
+            assertEquals(body, response.body.string())
+        }
+    }
+
+    @Test
+    fun `잘못된 UTF-8 응답은 비밀번호 불일치로 단정하지 않고 원래 바이트를 보존한다`() {
+        val repository =
+            networkFakeAuthRepository(
+                accessToken = "old-token",
+                onRotateToken = {
+                    accessToken = "fresh-token"
+                    Result.success(TokenBundle(accessToken = "fresh-token", refreshToken = "r"))
+                },
+            )
+        val body = """{"code":1202,"message":"""".toByteArray() + byteArrayOf(0xC3.toByte()) + "\"}".toByteArray()
+        val response = unauthorizedResponse().newBuilder().body(body.toResponseBody()).build()
+
+        val request = authenticator(repository).authenticate(null, response)
+
+        assertEquals(1, repository.rotateCallCount)
+        assertEquals("Bearer fresh-token", request?.header("Authorization"))
+        assertEquals(0, repository.clearSessionCallCount)
+        assertArrayEquals(body, response.body.bytes())
+    }
+
+    @Test
+    fun `토큰 거절 뒤 갱신한 요청이 1202면 추가 갱신 없이 세션을 유지한다`() {
+        val reporter = FakeErrorReporter()
+        val repository =
+            networkFakeAuthRepository(
+                accessToken = "old-token",
+                onRotateToken = {
+                    accessToken = "fresh-token"
+                    Result.success(TokenBundle(accessToken = "fresh-token", refreshToken = "r"))
+                },
+            )
+        val authenticator = authenticator(repository, reporter)
+        val expiredResponse = unauthorizedResponse(body = """{"status":401,"code":1000}""")
+        val retry = authenticator.authenticate(null, expiredResponse)
+        val mismatchResponse =
+            unauthorizedResponse(accessToken = "fresh-token", priorCount = 1, body = """{"status":401,"code":1202}""")
+
+        assertEquals("Bearer fresh-token", retry?.header("Authorization"))
+        assertNull(authenticator.authenticate(null, mismatchResponse))
+
+        assertEquals(1, repository.rotateCallCount)
+        assertEquals(0, repository.clearSessionCallCount)
+        assertEquals("fresh-token", repository.accessToken)
+        assertEquals(0, reporter.writtenFailures.size)
     }
 
     @Test

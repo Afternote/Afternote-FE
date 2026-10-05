@@ -6,9 +6,9 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.error.PushSettingFailure
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.result.runCatchingCancellable
+import com.afternote.feature.setting.domain.SettingNotificationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
@@ -22,11 +22,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class PushNotificationViewModel
+internal class PushNotificationViewModel
     @Inject
     constructor(
         @ApplicationContext private val context: Context,
-        private val userRepository: UserRepository,
+        private val notificationRepository: SettingNotificationRepository,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(PushNotificationUiState())
@@ -63,7 +63,7 @@ class PushNotificationViewModel
             viewModelScope.launch {
                 Log.d(TAG, "loadPushSettings: start")
                 _uiState.update { it.copy(isLoading = true) }
-                runCatchingCancellable { userRepository.getMyPushSettings() }
+                runCatchingCancellable { notificationRepository.getMyPushSettings() }
                     .onSuccess { setting ->
                         Log.d(TAG, "loadPushSettings: success=$setting")
                         _uiState.update {
@@ -75,6 +75,7 @@ class PushNotificationViewModel
                             )
                         }
                     }.onFailure { e ->
+                        // 조회 실패는 Logcat 에만 남긴다. 반복 조회 잡음이 저장 실패 진단의 보관 한도를 밀어내지 않게 한다 (#963).
                         Log.e(TAG, "loadPushSettings: failed", e)
                         _uiState.update { it.copy(isLoading = false) }
                     }
@@ -84,7 +85,7 @@ class PushNotificationViewModel
         private fun loadMarketingConsents() {
             viewModelScope.launch {
                 Log.d(TAG, "loadMarketingConsents: start")
-                runCatching { userRepository.getMyMarketingConsents() }
+                runCatchingCancellable { notificationRepository.getMyMarketingConsents() }
                     .onSuccess { consent ->
                         Log.d(TAG, "loadMarketingConsents: success=$consent")
                         _uiState.update {
@@ -103,7 +104,7 @@ class PushNotificationViewModel
         fun onSmsChecked(checked: Boolean) {
             _uiState.update { it.copy(isSmsChecked = checked) }
             viewModelScope.launch {
-                runCatchingCancellable { userRepository.updateMyMarketingConsents(sms = checked, email = null, push = null) }
+                runCatchingCancellable { notificationRepository.updateMyMarketingConsents(sms = checked, email = null, push = null) }
                     .onSuccess { Log.d(TAG, "onSmsChecked: success, checked=$checked") }
                     .onFailure { e ->
                         errorReporter.recordFailure(e, mapOf(KEY_STAGE to STAGE_SMS_CONSENT))
@@ -116,7 +117,7 @@ class PushNotificationViewModel
         fun onEmailChecked(checked: Boolean) {
             _uiState.update { it.copy(isEmailChecked = checked) }
             viewModelScope.launch {
-                runCatchingCancellable { userRepository.updateMyMarketingConsents(sms = null, email = checked, push = null) }
+                runCatchingCancellable { notificationRepository.updateMyMarketingConsents(sms = null, email = checked, push = null) }
                     .onSuccess { Log.d(TAG, "onEmailChecked: success, checked=$checked") }
                     .onFailure { e ->
                         errorReporter.recordFailure(e, mapOf(KEY_STAGE to STAGE_EMAIL_CONSENT))
@@ -129,7 +130,7 @@ class PushNotificationViewModel
         fun onPushChecked(checked: Boolean) {
             _uiState.update { it.copy(isPushChecked = checked) }
             viewModelScope.launch {
-                runCatchingCancellable { userRepository.updateMyMarketingConsents(sms = null, email = null, push = checked) }
+                runCatchingCancellable { notificationRepository.updateMyMarketingConsents(sms = null, email = null, push = checked) }
                     .onSuccess { Log.d(TAG, "onPushChecked: success, checked=$checked") }
                     .onFailure { e ->
                         errorReporter.recordFailure(e, mapOf(KEY_STAGE to STAGE_PUSH_CONSENT))
@@ -171,7 +172,7 @@ class PushNotificationViewModel
             }
             viewModelScope.launch {
                 runCatchingCancellable {
-                    userRepository.updateMyPushSettings(
+                    notificationRepository.updateMyPushSettings(
                         timeLetter = update.on.takeIf { update.setting == PushSetting.NEWSLETTER },
                         mindRecord = update.on.takeIf { update.setting == PushSetting.MIND_RECORD },
                         afterNote = update.on.takeIf { update.setting == PushSetting.AFTERNOTE },
@@ -179,6 +180,13 @@ class PushNotificationViewModel
                 }.onSuccess {
                     _uiState.update { it.withUpdating(update.setting, updating = false) }
                 }.onFailure { failure ->
+                    errorReporter.recordFailure(
+                        failure,
+                        mapOf(
+                            KEY_STAGE to STAGE_PUSH_SETTING_UPDATE,
+                            KEY_PUSH_SETTING to update.setting.reportingName(),
+                        ),
+                    )
                     failedUpdate = update
                     _uiState.update {
                         it
@@ -193,6 +201,8 @@ class PushNotificationViewModel
         companion object {
             private const val TAG = "PushNotificationVM"
             private const val KEY_STAGE = "stage"
+            private const val KEY_PUSH_SETTING = "push_setting"
+            private const val STAGE_PUSH_SETTING_UPDATE = "push_setting_update"
             private const val STAGE_SMS_CONSENT = "sms_consent_update"
             private const val STAGE_EMAIL_CONSENT = "email_consent_update"
             private const val STAGE_PUSH_CONSENT = "push_consent_update"
@@ -204,6 +214,14 @@ private enum class PushSetting {
     MIND_RECORD,
     AFTERNOTE,
 }
+
+/** 진단 속성 값. 토글 종류만 담는 고정 문자열이라 사용자 정보가 섞이지 않는다. */
+private fun PushSetting.reportingName(): String =
+    when (this) {
+        PushSetting.NEWSLETTER -> "newsletter"
+        PushSetting.MIND_RECORD -> "mind_record"
+        PushSetting.AFTERNOTE -> "afternote"
+    }
 
 private data class PushSettingUpdate(
     val setting: PushSetting,

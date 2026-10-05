@@ -20,8 +20,11 @@ import com.afternote.core.network.model.BaseResponse
 import com.afternote.core.network.service.AuthApiService
 import com.afternote.core.network.service.TokenApiService
 import com.afternote.core.network.token.AccessTokenExpiryTracker
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -160,6 +163,63 @@ class AuthRepositoryImplTest {
     }
 
     @Test
+    fun `logout - 서버 응답을 기다리는 중 호출자가 취소돼도 SESSION 스코프·deadline 정리는 끝낸다`() {
+        runBlocking { tokenDataSource.saveTokens(accessToken = "access", refreshToken = "stored-refresh") }
+        tracker.record(expiresInSeconds = 30)
+        val logoutArrived = CompletableDeferred<Unit>()
+        val serverResponse = CompletableDeferred<BaseResponse<Unit>>()
+        val authApiService =
+            FakeAuthApiService(
+                onLogout = {
+                    logoutArrived.complete(Unit)
+                    serverResponse.await()
+                },
+            )
+        val repository = repository(authApiService)
+
+        runBlocking {
+            // 설정 화면 ViewModel 이 정리되며 viewModelScope 가 취소되는 상황 (#2243).
+            val caller = launch { repository.logout() }
+            logoutArrived.await()
+            caller.cancelAndJoin()
+
+            assertTrue(caller.isCancelled)
+        }
+
+        assertEquals(listOf(StoreScope.SESSION), localStoreRegistry.clearedScopes)
+        assertNull(runBlocking { tokenDataSource.getRefreshToken() })
+        assertFalse(tracker.isExpiringSoon())
+    }
+
+    @Test
+    fun `logout - 푸시 대상 해제를 기다리는 중 호출자가 취소돼도 SESSION 스코프·deadline 정리는 끝낸다`() {
+        runBlocking { tokenDataSource.saveTokens(accessToken = "access", refreshToken = "stored-refresh") }
+        tracker.record(expiresInSeconds = 30)
+        val unregisterArrived = CompletableDeferred<Unit>()
+        val unregisterResponse = CompletableDeferred<Unit>()
+        val pushTargetRepository =
+            FakePushTargetRepository(
+                onUnregister = {
+                    unregisterArrived.complete(Unit)
+                    unregisterResponse.await()
+                },
+            )
+        val repository = repository(pushTargetRepository = pushTargetRepository)
+
+        runBlocking {
+            val caller = launch { repository.logout() }
+            unregisterArrived.await()
+            caller.cancelAndJoin()
+
+            assertTrue(caller.isCancelled)
+        }
+
+        assertEquals(listOf(StoreScope.SESSION), localStoreRegistry.clearedScopes)
+        assertNull(runBlocking { tokenDataSource.getAccessToken() })
+        assertFalse(tracker.isExpiringSoon())
+    }
+
+    @Test
     fun `clearSession - SESSION 스코프·deadline 함께 정리 (탈퇴 경로도 이 메서드를 쓴다)`() {
         runBlocking { tokenDataSource.saveTokens(accessToken = "access", refreshToken = "refresh") }
         tracker.record(expiresInSeconds = 30)
@@ -183,7 +243,9 @@ class AuthRepositoryImplTest {
                     },
             )
 
-        val result = runBlocking { repository.rotateToken() }
+        val sessionId = checkNotNull(runBlocking { tokenDataSource.currentSessionId() })
+
+        val result = runBlocking { repository.rotateToken(sessionId) }
 
         assertTrue(result.exceptionOrNull() is IllegalStateException)
         assertEquals("old-access", runBlocking { tokenDataSource.getAccessToken() })
@@ -436,7 +498,7 @@ private class FakeAuthApiService(
     private val onSocialLogin: () -> BaseResponse<LoginDto.SocialLoginDto> = {
         error("socialLogin 은 이 시나리오에서 호출되면 안 됨")
     },
-    private val onLogout: () -> BaseResponse<Unit> = { success(Unit) },
+    private val onLogout: suspend () -> BaseResponse<Unit> = { success(Unit) },
 ) : AuthApiService {
     val logoutRequests = mutableListOf<LogoutRequestDto>()
 
@@ -513,6 +575,7 @@ private class ThrowingDevicePushTargetProvider : DevicePushTargetProvider {
 
 private class FakePushTargetRepository(
     private val failing: Boolean = false,
+    private val onUnregister: suspend () -> Unit = {},
 ) : PushTargetRepository {
     val unregistered = mutableListOf<String>()
 
@@ -521,6 +584,7 @@ private class FakePushTargetRepository(
 
     override suspend fun unregister(targetId: String): Result<Unit> {
         unregistered += targetId
+        onUnregister()
         return if (failing) Result.failure(IllegalStateException("해제 실패")) else Result.success(Unit)
     }
 }
