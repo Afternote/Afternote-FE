@@ -1,7 +1,7 @@
 package com.afternote.feature.setting.domain
 
 import com.afternote.core.domain.repository.UserReceiverRepository
-import kotlinx.coroutines.CancellationException
+import com.afternote.core.domain.result.runCatchingCancellable
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import javax.inject.Inject
@@ -48,21 +48,13 @@ public class UpdateReceiverInfoUseCase
             email: String,
             message: String,
         ): UpdateReceiverInfoResult {
-            try {
-                repository.updateReceiver(receiverId, name, phone, relation, email)
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (failure: Throwable) {
-                return UpdateReceiverInfoResult.BasicInfoFailed(failure)
-            }
+            runCatchingCancellable { repository.updateReceiver(receiverId, name, phone, relation, email) }
+                .onFailure { return UpdateReceiverInfoResult.BasicInfoFailed(it) }
             currentCoroutineContext().ensureActive()
-            return try {
-                repository.updateReceiverMessage(receiverId, message)
-                UpdateReceiverInfoResult.Success
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (_: Throwable) {
-                UpdateReceiverInfoResult.MessageFailedAfterBasicInfoUpdated
-            }
+            return runCatchingCancellable { repository.updateReceiverMessage(receiverId, message) }
+                .fold(
+                    onSuccess = { UpdateReceiverInfoResult.Success },
+                    onFailure = { UpdateReceiverInfoResult.MessageFailedAfterBasicInfoUpdated },
+                )
         }
     }

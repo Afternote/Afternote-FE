@@ -228,7 +228,6 @@ baselineProfile {
 
 dependencies {
     implementation(libs.coil.compose)
-    implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.core.splashscreen)
 
     // App Startup — 기동 초기화는 app 매니페스트에 등록한 Initializer 로 실행한다.

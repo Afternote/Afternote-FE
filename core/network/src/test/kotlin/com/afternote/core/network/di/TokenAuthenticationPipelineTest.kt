@@ -7,6 +7,8 @@ import com.afternote.core.network.calladapter.ApiErrorCallAdapterFactory
 import com.afternote.core.network.dto.ReissueRequestDto
 import com.afternote.core.network.interceptor.AuthInterceptor
 import com.afternote.core.network.interceptor.TokenAuthenticator
+import com.afternote.core.network.model.ApiException
+import com.afternote.core.network.model.BaseResponse
 import com.afternote.core.network.service.TokenApiService
 import com.afternote.core.network.token.AccessTokenExpiryTracker
 import com.afternote.core.network.token.TokenReissuer
@@ -20,9 +22,12 @@ import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 import retrofit2.create
+import retrofit2.http.POST
 import java.io.BufferedInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -34,6 +39,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import retrofit2.Call as RetrofitCall
 
 /**
  * 액세스 토큰이 만료된 채 콜드 스타트하면 같은 호스트로 동시에 나간 인증 요청이 전부 401 을 받는다.
@@ -43,11 +49,11 @@ import java.util.concurrent.atomic.AtomicInteger
  * Retrofit 을 그대로 쓰고, 기본 주소만 로컬 서버로 바꾼다. 요청 5건도 콜드 스타트 스레드 덤프에
  * 찍힌 경로 그대로다. 주간 리포트는 운영처럼 느린 경로용 파생 클라이언트를 탄다.
  *
- * 서버는 만료 토큰 요청이 [ColdStartServer.expiredBarrier] 수만큼 모일 때까지 401 을 쥐고 있는다.
+ * 서버는 만료 토큰 요청이 [AuthenticationServer.expiredBarrier] 수만큼 모일 때까지 401 을 쥐고 있는다.
  * 첫 401 이 재발급을 부르기 전에 요청 전부가 디스패처 실행 칸을 차지하게 해, 운 좋게 먼저 끝난
  * 요청이 칸을 비워 주는 경합을 없애기 위해서다.
  */
-class ConcurrentUnauthorizedReissueTest {
+class TokenAuthenticationPipelineTest {
     private val closeables = mutableListOf<AutoCloseable>()
 
     @After
@@ -65,9 +71,53 @@ class ConcurrentUnauthorizedReissueTest {
         assertColdStartCompletes(paths = COLD_START_PATHS.take(4))
     }
 
+    @Test
+    fun `비밀번호 불일치는 실제 요청 한 번으로 끝나고 Retrofit에 원래 오류를 전달한다`() {
+        assertPasswordChange(initialAccessToken = FRESH_ACCESS_TOKEN, responseStatus = 401, expectedReissues = 0)
+    }
+
+    @Test
+    fun `토큰 거절 1000 뒤 비밀번호 불일치는 실제 재발급 한 번으로 끝난다`() {
+        assertPasswordChange(initialAccessToken = EXPIRED_ACCESS_TOKEN, responseStatus = 401, expectedReissues = 1)
+    }
+
+    @Test
+    fun `정상 비밀번호 변경은 재발급 없이 성공한다`() {
+        assertPasswordChange(initialAccessToken = FRESH_ACCESS_TOKEN, responseStatus = 200, expectedReissues = 0)
+    }
+
+    private fun assertPasswordChange(
+        initialAccessToken: String,
+        responseStatus: Int,
+        expectedReissues: Int,
+    ) {
+        val server = AuthenticationServer(expiredBarrier = 1, passwordResponseStatus = responseStatus).also(closeables::add)
+        val wiring = AuthenticationWiring(server.baseUrl, initialAccessToken).also(closeables::add)
+
+        if (responseStatus == 401) {
+            val failure =
+                assertThrows(ApiException::class.java) {
+                    wiring.passwordApi.changePassword().execute()
+                }
+            assertEquals(401, failure.status)
+            assertEquals(1202, failure.code)
+            assertEquals("현재 비밀번호가 일치하지 않습니다.", failure.serverMessage)
+        } else {
+            val response = wiring.passwordApi.changePassword().execute()
+            assertEquals(200, response.body()?.status)
+        }
+
+        assertEquals(expectedReissues, server.reissueHits.get())
+        assertEquals(expectedReissues + 1, server.passwordHits.get())
+        assertEquals(0, wiring.repository.clearSessionCallCount)
+        assertTrue(wiring.repository.loggedIn)
+        assertEquals(FRESH_ACCESS_TOKEN, wiring.repository.accessToken)
+        assertEquals(0, wiring.reporter.writtenFailures.size)
+    }
+
     private fun assertColdStartCompletes(paths: List<ColdStartRequest>) {
-        val server = ColdStartServer(expiredBarrier = paths.size).also(closeables::add)
-        val wiring = ColdStartWiring(server.baseUrl).also(closeables::add)
+        val server = AuthenticationServer(expiredBarrier = paths.size).also(closeables::add)
+        val wiring = AuthenticationWiring(server.baseUrl).also(closeables::add)
 
         val finished = CountDownLatch(paths.size)
         val statuses = ConcurrentLinkedQueue<String>()
@@ -118,14 +168,15 @@ class ConcurrentUnauthorizedReissueTest {
     }
 
     /** 운영 [NetworkModule]·[ServiceModule] 조립을 그대로 따르되 기본 주소만 로컬 서버로 바꾼 묶음. */
-    private class ColdStartWiring(
+    private class AuthenticationWiring(
         baseUrl: String,
+        initialAccessToken: String = EXPIRED_ACCESS_TOKEN,
     ) : AutoCloseable {
         private val json = NetworkModule.provideJson()
         private val callAdapterFactory = ApiErrorCallAdapterFactory(json)
         private val loggingInterceptor = HttpLoggingInterceptor()
         private val tracker = AccessTokenExpiryTracker { 0L }
-        private val reporter = FakeErrorReporter()
+        val reporter = FakeErrorReporter()
 
         val baseClient: OkHttpClient = NetworkModule.provideBaseOkHttpClient()
         private val refreshClient: OkHttpClient = NetworkModule.provideRefreshOkHttpClient(baseClient, loggingInterceptor)
@@ -142,10 +193,10 @@ class ConcurrentUnauthorizedReissueTest {
                 .create<TokenApiService>()
 
         /** `AuthRepositoryImpl.rotateToken` 과 같은 순서: 저장 refresh 로 재발급을 치고 새 토큰을 저장한다. */
-        private val repository =
+        val repository =
             FakeAuthRepository(
                 loggedIn = true,
-                accessToken = EXPIRED_ACCESS_TOKEN,
+                accessToken = initialAccessToken,
                 refreshToken = STORED_REFRESH_TOKEN,
                 onRotateToken = {
                     runCatching {
@@ -170,13 +221,15 @@ class ConcurrentUnauthorizedReissueTest {
             )
 
         /** 운영 Retrofit 의 호출 팩토리 — 주간 리포트만 느린 경로용 파생 클라이언트로 가른다. */
-        val callFactory: Call.Factory =
+        private val retrofit =
             NetworkModule
                 .provideRetrofit(mainClient, json, callAdapterFactory)
                 .newBuilder()
                 .baseUrl(baseUrl)
                 .build()
-                .callFactory()
+
+        val callFactory: Call.Factory = retrofit.callFactory()
+        val passwordApi: PasswordApi = retrofit.create()
 
         override fun close() {
             // 재발급 클라이언트는 디스패처를 따로 쓴다(#2160) — 둘 다 닫아야 스레드가 남지 않는다.
@@ -186,6 +239,11 @@ class ConcurrentUnauthorizedReissueTest {
             }
             baseClient.connectionPool.evictAll()
         }
+    }
+
+    private interface PasswordApi {
+        @POST("auth/password/change")
+        fun changePassword(): RetrofitCall<BaseResponse<Unit>>
     }
 
     private data class ColdStartRequest(
@@ -205,13 +263,15 @@ class ConcurrentUnauthorizedReissueTest {
      * 만료 토큰에는 401, 재발급에는 새 토큰, 새 토큰에는 200 으로 답하는 최소 HTTP/1.1 서버.
      * 새 테스트 의존성 없이 소켓 경계를 실제로 지나게 하려고 `java.net` 만 쓴다.
      */
-    private class ColdStartServer(
+    private class AuthenticationServer(
         expiredBarrier: Int,
+        private val passwordResponseStatus: Int = 200,
     ) : AutoCloseable {
         private val serverSocket = ServerSocket(0, BACKLOG, InetAddress.getLoopbackAddress())
         private val sockets = ConcurrentLinkedQueue<Socket>()
         private val expiredArrivals = CountDownLatch(expiredBarrier)
         val reissueHits = AtomicInteger()
+        val passwordHits = AtomicInteger()
         val baseUrl = "http://${serverSocket.inetAddress.hostAddress}:${serverSocket.localPort}/api/v1/"
 
         init {
@@ -262,15 +322,21 @@ class ConcurrentUnauthorizedReissueTest {
         private fun respond(
             requestLine: String,
             authorization: String?,
-        ): Pair<Int, String> =
-            when {
+        ): Pair<Int, String> {
+            val isPasswordChange = requestLine.startsWith("POST /api/v1/auth/password/change ")
+            if (isPasswordChange) passwordHits.incrementAndGet()
+            return when {
                 requestLine.startsWith("POST /api/v1/auth/reissue ") -> {
                     reissueHits.incrementAndGet()
                     200 to REISSUE_RESPONSE
                 }
 
                 authorization == "Bearer $FRESH_ACCESS_TOKEN" -> {
-                    200 to OK_RESPONSE
+                    if (isPasswordChange && passwordResponseStatus == 401) {
+                        401 to PASSWORD_MISMATCH_RESPONSE
+                    } else {
+                        200 to OK_RESPONSE
+                    }
                 }
 
                 else -> {
@@ -279,6 +345,7 @@ class ConcurrentUnauthorizedReissueTest {
                     401 to EXPIRED_RESPONSE
                 }
             }
+        }
 
         override fun close() {
             serverSocket.close()
@@ -308,7 +375,9 @@ class ConcurrentUnauthorizedReissueTest {
             )
 
         const val OK_RESPONSE = """{"status":200,"code":200,"message":"ok","data":null}"""
-        const val EXPIRED_RESPONSE = """{"status":401,"code":1106,"message":"expired"}"""
+        const val EXPIRED_RESPONSE = """{"status":401,"code":1000,"message":"expired"}"""
+        const val PASSWORD_MISMATCH_RESPONSE =
+            """{"status":401,"code":1202,"message":"현재 비밀번호가 일치하지 않습니다."}"""
         const val REISSUE_RESPONSE =
             """{"status":200,"code":200,"message":"ok",""" +
                 """"data":{"accessToken":"$FRESH_ACCESS_TOKEN","refreshToken":"fresh-refresh","expiresIn":3600}}"""

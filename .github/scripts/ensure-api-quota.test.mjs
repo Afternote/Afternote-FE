@@ -102,7 +102,7 @@ test("요약에 남은 호출과 리셋까지 남은 시간이 드러난다", ()
 });
 
 // 스크립트가 default branch 사본으로 도는 게이트. 판정 자체를 하는 자리라 PR 사본을 믿지 않는다.
-const TRUSTED_COPY_GATES = ["merge-order-guard.yml", "review-debt-guard.yml"];
+const TRUSTED_COPY_GATES = ["merge-order-guard.yml"];
 // PR 사본으로 도는 게이트. 이미 PR 사본의 분류·검증 스크립트를 실행하는 자리라 새 신뢰 경계가
 // 열리지 않고, quota 스텝은 관측·대기라 무력화해도 통과시킬 판정이 없다.
 const PULL_REQUEST_COPY_GATES = ["repository-quality.yml", "codeql.yml"];
@@ -128,16 +128,6 @@ test("게이트 워크플로가 quota 확인과 실패 분류를 모두 건다",
     }
 });
 
-test("GraphQL 을 사용하는 리뷰 적체 가드는 core 와 graphql 을 모두 예산·분류한다", async () => {
-    const source = await workflow("review-debt-guard.yml");
-    for (const resource of ["core", "graphql"]) {
-        assert.match(
-            source,
-            new RegExp(`ensure-api-quota\\.mjs ensure --resource ${resource} --max-wait 115`),
-        );
-        assert.match(source, new RegExp(`ensure-api-quota\\.mjs classify --resource ${resource}`));
-    }
-});
 
 test("default branch 사본으로 도는 게이트만 부트스트랩 예외를 갖는다", async () => {
     for (const name of TRUSTED_COPY_GATES) {

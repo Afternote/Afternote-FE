@@ -253,7 +253,7 @@ private fun ProfileEditForm(
             AfternoteButton(
                 text = "수정하기",
                 onClick = { onUpdateClick(nameState.text.toString(), phoneState.text.toString()) },
-                type = if (state.isUpdating || isPhoneInvalid) AfternoteButtonType.Un else AfternoteButtonType.Default,
+                type = if (state.isUpdateLocked || isPhoneInvalid) AfternoteButtonType.Un else AfternoteButtonType.Default,
                 modifier =
                     Modifier
                         .padding(horizontal = 20.dp)

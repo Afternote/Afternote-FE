@@ -44,6 +44,7 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUpl
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
+import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.detail.AfternoteDetailDeleteResult
 import com.afternote.feature.afternote.presentation.detail.AfternoteDetailUiState
@@ -496,7 +497,7 @@ private fun detailViewModel(
     AfternoteDetailViewModel(
         route = AfternoteRoute.DetailRoute(itemId = itemId),
         afternoteRepository = repository,
-        userRepository = afternoteAuthorUserRepository(),
+        myProfileRepository = afternoteAuthorMyProfileRepository(),
         userProfileRepository = afternoteAuthorUserProfileRepository(),
         errorReporter = NoopAuthorErrorReporter,
     )
@@ -516,7 +517,7 @@ private fun editorViewModel(
                 initialType = AfternoteType.SOCIAL_NETWORK,
                 itemId = itemId,
             ),
-        userRepository = afternoteAuthorUserRepository(),
+        userReceiverRepository = afternoteAuthorUserReceiverRepository(),
         afternoteRepository = repository,
         memorialThumbnailUploadRepository =
             MemorialThumbnailUploadRepository {
@@ -546,6 +547,7 @@ private fun editorViewModel(
                         )
                     },
             ),
+        saveAfternoteUseCase = SaveAfternoteUseCase(repository),
         errorReporter = NoopAuthorErrorReporter,
     )
 
