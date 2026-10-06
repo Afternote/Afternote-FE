@@ -12,17 +12,21 @@ import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMedi
 import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -59,16 +63,19 @@ class AfternoteEditorMultiReceiverSelectionTest {
             val viewModel = viewModel(repositoryWith(DAUGHTER, FRIEND))
             runCurrent()
 
-            viewModel.applySelectedReceivers(listOf(DAUGHTER_ID, FRIEND_ID))
+            viewModel.onIntent(AfternoteEditorIntent.ReceiversSelected(listOf(DAUGHTER_ID, FRIEND_ID)))
+            viewModel.onIntent(AfternoteEditorIntent.ApplyPendingReceiverSelection)
             runCurrent()
 
             assertEquals(
                 listOf(DAUGHTER_ID, FRIEND_ID),
-                viewModel.currentForm().afternoteEditReceivers.map { it.id },
+                viewModel.uiState.value.form.afternoteEditReceivers
+                    .map { it.id },
             )
             assertEquals(
                 listOf("김수신", "박친구"),
-                viewModel.currentForm().afternoteEditReceivers.map { it.name },
+                viewModel.uiState.value.form.afternoteEditReceivers
+                    .map { it.name },
             )
         }
 
@@ -76,15 +83,17 @@ class AfternoteEditorMultiReceiverSelectionTest {
     fun `이미 폼에 있는 수신자를 다시 확정해도 중복으로 쌓이지 않는다`() =
         runTest(dispatcher) {
             val viewModel = viewModel(repositoryWith(DAUGHTER, FRIEND))
-            viewModel.addReceiverIfAbsent(DAUGHTER_ID, "김수신", "딸")
+            viewModel.onIntent(AfternoteEditorIntent.AddReceiverIfAbsent(DAUGHTER_ID, "김수신", "딸"))
             runCurrent()
 
-            viewModel.applySelectedReceivers(listOf(DAUGHTER_ID, FRIEND_ID))
+            viewModel.onIntent(AfternoteEditorIntent.ReceiversSelected(listOf(DAUGHTER_ID, FRIEND_ID)))
+            viewModel.onIntent(AfternoteEditorIntent.ApplyPendingReceiverSelection)
             runCurrent()
 
             assertEquals(
                 listOf(DAUGHTER_ID, FRIEND_ID),
-                viewModel.currentForm().afternoteEditReceivers.map { it.id },
+                viewModel.uiState.value.form.afternoteEditReceivers
+                    .map { it.id },
             )
         }
 
@@ -92,16 +101,18 @@ class AfternoteEditorMultiReceiverSelectionTest {
     fun `선택에서 빠진 기존 수신자는 폼에서도 빠진다`() =
         runTest(dispatcher) {
             val viewModel = viewModel(repositoryWith(DAUGHTER, FRIEND))
-            viewModel.addReceiverIfAbsent(DAUGHTER_ID, "김수신", "딸")
-            viewModel.addReceiverIfAbsent(FRIEND_ID, "박친구", "친구")
+            viewModel.onIntent(AfternoteEditorIntent.AddReceiverIfAbsent(DAUGHTER_ID, "김수신", "딸"))
+            viewModel.onIntent(AfternoteEditorIntent.AddReceiverIfAbsent(FRIEND_ID, "박친구", "친구"))
             runCurrent()
 
-            viewModel.applySelectedReceivers(listOf(FRIEND_ID))
+            viewModel.onIntent(AfternoteEditorIntent.ReceiversSelected(listOf(FRIEND_ID)))
+            viewModel.onIntent(AfternoteEditorIntent.ApplyPendingReceiverSelection)
             runCurrent()
 
             assertEquals(
                 listOf(FRIEND_ID),
-                viewModel.currentForm().afternoteEditReceivers.map { it.id },
+                viewModel.uiState.value.form.afternoteEditReceivers
+                    .map { it.id },
             )
         }
 
@@ -110,15 +121,17 @@ class AfternoteEditorMultiReceiverSelectionTest {
         runTest(dispatcher) {
             val repository = repositoryWith(DAUGHTER)
             val viewModel = viewModel(repository)
-            viewModel.addReceiverIfAbsent(DAUGHTER_ID, "김수신", "딸")
+            viewModel.onIntent(AfternoteEditorIntent.AddReceiverIfAbsent(DAUGHTER_ID, "김수신", "딸"))
             runCurrent()
 
-            viewModel.applySelectedReceivers(listOf(DAUGHTER_ID))
+            viewModel.onIntent(AfternoteEditorIntent.ReceiversSelected(listOf(DAUGHTER_ID)))
+            viewModel.onIntent(AfternoteEditorIntent.ApplyPendingReceiverSelection)
             runCurrent()
 
             assertEquals(
                 listOf(DAUGHTER_ID),
-                viewModel.currentForm().afternoteEditReceivers.map { it.id },
+                viewModel.uiState.value.form.afternoteEditReceivers
+                    .map { it.id },
             )
             assertEquals("폼이 이미 들고 있는 표시값을 두고 재조회할 이유가 없다", 0, repository.getReceiversCalls)
         }
@@ -130,12 +143,14 @@ class AfternoteEditorMultiReceiverSelectionTest {
             backgroundScope.launch { viewModel.uiState.collect {} }
             runCurrent()
 
-            viewModel.applySelectedReceivers(listOf(DAUGHTER_ID, UNKNOWN_ID))
+            viewModel.onIntent(AfternoteEditorIntent.ReceiversSelected(listOf(DAUGHTER_ID, UNKNOWN_ID)))
+            viewModel.onIntent(AfternoteEditorIntent.ApplyPendingReceiverSelection)
             runCurrent()
 
             assertEquals(
                 listOf(DAUGHTER_ID),
-                viewModel.currentForm().afternoteEditReceivers.map { it.id },
+                viewModel.uiState.value.form.afternoteEditReceivers
+                    .map { it.id },
             )
             assertEquals(
                 AfternoteEditorError.ReceiverSelectionUnavailable,
@@ -148,27 +163,121 @@ class AfternoteEditorMultiReceiverSelectionTest {
         runTest(dispatcher) {
             val viewModel = viewModel(repositoryWith(DAUGHTER, FRIEND))
             backgroundScope.launch { viewModel.uiState.collect {} }
-            viewModel.addReceiverIfAbsent(DAUGHTER_ID, "김수신", "딸")
-            viewModel.addReceiverIfAbsent(FRIEND_ID, "박친구", "친구")
+            viewModel.onIntent(AfternoteEditorIntent.AddReceiverIfAbsent(DAUGHTER_ID, "김수신", "딸"))
+            viewModel.onIntent(AfternoteEditorIntent.AddReceiverIfAbsent(FRIEND_ID, "박친구", "친구"))
             runCurrent()
 
-            viewModel.applySelectedReceivers(listOf(DAUGHTER_ID, FRIEND_ID))
+            viewModel.onIntent(AfternoteEditorIntent.ReceiversSelected(listOf(DAUGHTER_ID, FRIEND_ID)))
+            viewModel.onIntent(AfternoteEditorIntent.ApplyPendingReceiverSelection)
             runCurrent()
 
             assertEquals(
                 listOf(DAUGHTER_ID, FRIEND_ID),
-                viewModel.currentForm().afternoteEditReceivers.map { it.id },
+                viewModel.uiState.value.form.afternoteEditReceivers
+                    .map { it.id },
             )
             assertNull("정상 반영에는 오류를 세우지 않는다", viewModel.uiState.value.error)
+        }
+
+    @Test
+    fun `선택 결과는 편집기 복귀에서 한 번만 폼에 적용한다`() =
+        runTest(dispatcher) {
+            val viewModel = viewModel(repositoryWith(DAUGHTER))
+            viewModel.onIntent(AfternoteEditorIntent.ReceiversSelected(listOf(DAUGHTER_ID)))
+            runCurrent()
+            assertTrue(
+                viewModel.uiState.value.form.afternoteEditReceivers
+                    .isEmpty(),
+            )
+
+            viewModel.onIntent(AfternoteEditorIntent.ApplyPendingReceiverSelection)
+            runCurrent()
+            assertEquals(
+                listOf(DAUGHTER_ID),
+                viewModel.uiState.value.form.afternoteEditReceivers
+                    .map { it.id },
+            )
+
+            viewModel.onIntent(AfternoteEditorIntent.DeleteReceiver(DAUGHTER_ID))
+            viewModel.onIntent(AfternoteEditorIntent.ApplyPendingReceiverSelection)
+            runCurrent()
+            assertTrue(
+                viewModel.uiState.value.form.afternoteEditReceivers
+                    .isEmpty(),
+            )
+        }
+
+    @Test
+    fun `확정된 수신자 선택은 흐름 복원 뒤에도 한 번 적용한다`() =
+        runTest(dispatcher) {
+            val handle = SavedStateHandle()
+            val first = viewModel(repositoryWith(DAUGHTER), handle)
+            first.onIntent(AfternoteEditorIntent.ReceiversSelected(listOf(DAUGHTER_ID)))
+
+            val restored = viewModel(repositoryWith(DAUGHTER), handle)
+            restored.onIntent(AfternoteEditorIntent.ApplyPendingReceiverSelection)
+            runCurrent()
+            assertEquals(
+                listOf(DAUGHTER_ID),
+                restored.uiState.value.form.afternoteEditReceivers
+                    .map { it.id },
+            )
+        }
+
+    @Test
+    fun `취소 뒤 늦게 도착한 이전 조회는 최신 선택과 수신자 목록을 덮지 않는다`() =
+        runTest(dispatcher) {
+            val previousLookup = CompletableDeferred<List<Receiver>>()
+            var calls = 0
+            val repository =
+                FakeUserReceiverRepository.strict().apply {
+                    onGetReceivers = {
+                        if (calls++ == 0) {
+                            withContext(NonCancellable) { previousLookup.await() }
+                        } else {
+                            listOf(FRIEND)
+                        }
+                    }
+                }
+            val viewModel = viewModel(repository)
+            viewModel.onIntent(AfternoteEditorIntent.ReceiversSelected(listOf(DAUGHTER_ID)))
+            viewModel.onIntent(AfternoteEditorIntent.ApplyPendingReceiverSelection)
+            runCurrent()
+
+            viewModel.onIntent(AfternoteEditorIntent.ReceiversSelected(listOf(FRIEND_ID)))
+            viewModel.onIntent(AfternoteEditorIntent.ApplyPendingReceiverSelection)
+            runCurrent()
+            assertEquals(
+                listOf(FRIEND_ID),
+                viewModel.uiState.value.form.afternoteEditReceivers
+                    .map { it.id },
+            )
+
+            previousLookup.complete(listOf(DAUGHTER))
+            runCurrent()
+            assertEquals(
+                listOf(FRIEND_ID),
+                viewModel.uiState.value.form.afternoteEditReceivers
+                    .map { it.id },
+            )
+            assertEquals(
+                listOf(FRIEND_ID),
+                viewModel.uiState.value.authorReceivers
+                    .map { it.id },
+            )
+            assertNull(viewModel.uiState.value.error)
         }
 
     private fun repositoryWith(vararg receivers: Receiver): FakeUserReceiverRepository =
         FakeUserReceiverRepository.strict().apply { onGetReceivers = { receivers.toList() } }
 
-    private fun viewModel(userRepository: FakeUserReceiverRepository): AfternoteEditorViewModel =
+    private fun viewModel(
+        userRepository: FakeUserReceiverRepository,
+        savedStateHandle: SavedStateHandle = SavedStateHandle(),
+    ): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
             route = AfternoteRoute.EditorFlowRoute(initialType = AfternoteType.SOCIAL_NETWORK),
-            savedStateHandle = SavedStateHandle(mapOf("initialType" to AfternoteType.SOCIAL_NETWORK)),
+            savedStateHandle = savedStateHandle,
             userReceiverRepository = userRepository,
             afternoteRepository = unusedProxy<AfternoteRepository>(),
             memorialThumbnailUploadRepository =
