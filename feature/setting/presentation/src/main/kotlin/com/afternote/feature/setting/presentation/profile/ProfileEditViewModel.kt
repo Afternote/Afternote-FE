@@ -5,6 +5,8 @@ import com.afternote.core.domain.repository.MyProfileRepository
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.ui.mvi.MviViewModel
+import com.afternote.feature.setting.presentation.receiver.ReceiverPhoneValidation
+import com.afternote.feature.setting.presentation.receiver.validateReceiverPhone
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -95,6 +97,7 @@ internal class ProfileEditViewModel
         ) {
             val current = currentState as? ProfileEditUiState.Success ?: return
             if (current.isUpdateLocked) return
+            if (phone.validateReceiverPhone(isRequired = false) != ReceiverPhoneValidation.VALID) return
             dispatch(ProfileEditReducerEvent.Updating)
             viewModelScope.launch {
                 runCatchingCancellable {

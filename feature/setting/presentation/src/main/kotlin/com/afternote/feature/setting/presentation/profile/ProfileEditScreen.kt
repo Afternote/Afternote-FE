@@ -30,6 +30,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -40,6 +42,9 @@ import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.mvi.ObserveSignal
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
+import com.afternote.feature.setting.presentation.R
+import com.afternote.feature.setting.presentation.receiver.ReceiverPhoneValidation
+import com.afternote.feature.setting.presentation.receiver.validateReceiverPhone
 
 @Composable
 internal fun ProfileEditScreen(
@@ -147,6 +152,7 @@ private fun ProfileEditForm(
     val nameState = rememberTextFieldState(initialText = state.name)
     val phoneState = rememberTextFieldState(initialText = state.phone)
     val emailState = rememberTextFieldState(initialText = state.email)
+    val isPhoneInvalid = phoneState.text.toString().validateReceiverPhone(isRequired = false) != ReceiverPhoneValidation.VALID
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -199,8 +205,18 @@ private fun ProfileEditForm(
                 AfternoteTextField(
                     state = phoneState,
                     placeholder = "연락처를 지정해주세요",
+                    keyboardType = KeyboardType.Phone,
+                    isError = isPhoneInvalid,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                if (isPhoneInvalid) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = stringResource(R.string.setting_receiver_phone_invalid),
+                        style = AfternoteDesign.typography.captionLargeR,
+                        color = AfternoteDesign.colors.error,
+                    )
+                }
             }
         }
         item {
@@ -225,7 +241,7 @@ private fun ProfileEditForm(
             AfternoteButton(
                 text = "수정하기",
                 onClick = { onUpdateClick(nameState.text.toString(), phoneState.text.toString()) },
-                type = if (state.isUpdateLocked) AfternoteButtonType.Un else AfternoteButtonType.Default,
+                type = if (state.isUpdateLocked || isPhoneInvalid) AfternoteButtonType.Un else AfternoteButtonType.Default,
                 modifier =
                     Modifier
                         .padding(horizontal = 20.dp)
