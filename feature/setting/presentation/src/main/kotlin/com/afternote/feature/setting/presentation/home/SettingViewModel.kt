@@ -46,7 +46,7 @@ internal class SettingViewModel
                 }
 
                 is SettingReducerEvent.ProfileLoaded -> {
-                    state.copy(profile = SettingProfileState.Success(event.name, event.email))
+                    state.copy(profile = SettingProfileState.Success(event.name, event.email, event.profileImageUrl))
                 }
 
                 SettingReducerEvent.ProfileFailed -> {
@@ -90,7 +90,7 @@ internal class SettingViewModel
                 viewModelScope.launch {
                     dispatch(SettingReducerEvent.ProfileLoading)
                     runCatchingCancellable { myProfileRepository.getMyProfile() }
-                        .onSuccess { dispatch(SettingReducerEvent.ProfileLoaded(it.name, it.email)) }
+                        .onSuccess { dispatch(SettingReducerEvent.ProfileLoaded(it.name, it.email, it.profileImageUrl)) }
                         .onFailure { dispatch(SettingReducerEvent.ProfileFailed) }
                 }
         }

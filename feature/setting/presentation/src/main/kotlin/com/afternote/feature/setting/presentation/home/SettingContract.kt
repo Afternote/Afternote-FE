@@ -16,6 +16,7 @@ internal sealed interface SettingProfileState {
     data class Success(
         val name: String,
         val email: String,
+        val profileImageUrl: String? = null,
     ) : SettingProfileState
 
     /** 문구는 화면이 `setting_profile_load_error` 리소스로 그린다. 프로필 수정 화면과 같은 문장이다. */
@@ -50,6 +51,7 @@ internal sealed interface SettingReducerEvent : ReducerEvent {
     data class ProfileLoaded(
         val name: String,
         val email: String,
+        val profileImageUrl: String?,
     ) : SettingReducerEvent
 
     data object ProfileFailed : SettingReducerEvent
