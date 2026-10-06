@@ -1,5 +1,6 @@
 package com.afternote.feature.setting.presentation.account
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,10 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.loading.LoadingBody
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.account.component.SocialAccountRow
+import com.afternote.feature.setting.presentation.shared.component.SettingLoadErrorContent
 
 /**
  * 연결된 계정 화면의 상태 없는 본문.
@@ -30,6 +33,7 @@ internal fun ConnectedAccountsContent(
     snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
     onToggle: (provider: String, enabled: Boolean) -> Unit,
+    onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -43,30 +47,46 @@ internal fun ConnectedAccountsContent(
             )
         },
     ) { paddingValues ->
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.setting_sns_login_section_title),
-                style = AfternoteDesign.typography.bodyLargeR,
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = stringResource(R.string.setting_sns_login_section_desc),
-                style = AfternoteDesign.typography.bodySmallR,
-            )
-            Spacer(modifier = Modifier.height(24.dp))
+        when {
+            uiState.isLoading -> {
+                LoadingBody(modifier = Modifier.padding(paddingValues))
+            }
 
-            uiState.accounts.forEach { account ->
-                SocialAccountRow(
-                    account = account,
-                    onToggle = { enabled -> onToggle(account.provider, enabled) },
+            uiState.errorMessage != null -> {
+                SettingLoadErrorContent(
+                    message = uiState.errorMessage,
+                    onRetry = onRetry,
+                    modifier = Modifier.padding(paddingValues),
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            else -> {
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues)
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.setting_sns_login_section_title),
+                        style = AfternoteDesign.typography.bodyLargeR,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.setting_sns_login_section_desc),
+                        style = AfternoteDesign.typography.bodySmallR,
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    uiState.accounts.forEach { account ->
+                        SocialAccountRow(
+                            account = account,
+                            onToggle = { enabled -> if (!uiState.isUpdating) onToggle(account.provider, enabled) },
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
             }
         }
     }

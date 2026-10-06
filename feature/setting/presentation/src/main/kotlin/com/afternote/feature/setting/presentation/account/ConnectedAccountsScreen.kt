@@ -89,10 +89,17 @@ internal fun ConnectedAccountsScreen(
         }
     }
 
+    uiState.pendingError?.let { message ->
+        ObserveSignal(message, ConnectedAccountsIntent.ConsumeError(message), viewModel::onIntent) {
+            linkScope.launch { snackbarHostState.showSnackbar(it) }
+        }
+    }
+
     ConnectedAccountsContent(
         uiState = uiState,
         snackbarHostState = snackbarHostState,
         onBack = onBack,
+        onRetry = { viewModel.onIntent(ConnectedAccountsIntent.RetryLoad) },
         onToggle = { provider, enabled -> viewModel.onIntent(ConnectedAccountsIntent.Toggle(provider, enabled)) },
         modifier = modifier,
     )

@@ -7,11 +7,14 @@ import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.PushSettingFailure
 import com.afternote.core.domain.result.runCatchingCancellable
+import com.afternote.core.ui.UiText
 import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.setting.domain.SettingNotificationRepository
+import com.afternote.feature.setting.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -21,7 +24,11 @@ internal class PushNotificationViewModel
         @ApplicationContext private val context: Context,
         private val notificationRepository: SettingNotificationRepository,
         private val errorReporter: ErrorReporter,
-    ) : MviViewModel<PushNotificationIntent, PushNotificationUiState, PushNotificationReducerEvent>(PushNotificationUiState()) {
+    ) : MviViewModel<PushNotificationIntent, PushNotificationUiState, PushNotificationReducerEvent>(
+            PushNotificationUiState(isLoading = true),
+        ) {
+        private var loadJob: Job? = null
+
         init {
             refreshDeviceAlarmStatus()
             loadPushSettings()
@@ -30,6 +37,10 @@ internal class PushNotificationViewModel
 
         override fun onIntent(intent: PushNotificationIntent) {
             when (intent) {
+                PushNotificationIntent.RetryLoad -> {
+                    if (currentState.errorMessage != null) loadPushSettings()
+                }
+
                 PushNotificationIntent.RefreshDeviceAlarmStatus -> {
                     refreshDeviceAlarmStatus()
                 }
@@ -74,12 +85,13 @@ internal class PushNotificationViewModel
                 }
 
                 PushNotificationReducerEvent.PushSettingsLoading -> {
-                    state.copy(isLoading = true)
+                    state.copy(isLoading = true, errorMessage = null)
                 }
 
                 is PushNotificationReducerEvent.PushSettingsLoaded -> {
                     state.copy(
                         isLoading = false,
+                        errorMessage = null,
                         isNewsletterOn = event.setting.timeLetter,
                         isMindRecordOn = event.setting.mindRecord,
                         isAfternoteOn = event.setting.afterNote,
@@ -87,7 +99,7 @@ internal class PushNotificationViewModel
                 }
 
                 PushNotificationReducerEvent.PushSettingsLoadFailed -> {
-                    state.copy(isLoading = false)
+                    state.copy(isLoading = false, errorMessage = UiText.Resource(R.string.setting_push_load_error))
                 }
 
                 is PushNotificationReducerEvent.MarketingConsentsLoaded -> {
@@ -148,19 +160,21 @@ internal class PushNotificationViewModel
         }
 
         private fun loadPushSettings() {
-            viewModelScope.launch {
-                Log.d(TAG, "loadPushSettings: start")
-                dispatch(PushNotificationReducerEvent.PushSettingsLoading)
-                runCatchingCancellable { notificationRepository.getMyPushSettings() }
-                    .onSuccess { setting ->
-                        Log.d(TAG, "loadPushSettings: success=$setting")
-                        dispatch(PushNotificationReducerEvent.PushSettingsLoaded(setting))
-                    }.onFailure { e ->
-                        // 조회 실패는 Logcat 에만 남긴다. 반복 조회 잡음이 저장 실패 진단의 보관 한도를 밀어내지 않게 한다 (#963).
-                        Log.e(TAG, "loadPushSettings: failed", e)
-                        dispatch(PushNotificationReducerEvent.PushSettingsLoadFailed)
-                    }
-            }
+            if (loadJob?.isActive == true) return
+            dispatch(PushNotificationReducerEvent.PushSettingsLoading)
+            loadJob =
+                viewModelScope.launch {
+                    Log.d(TAG, "loadPushSettings: start")
+                    runCatchingCancellable { notificationRepository.getMyPushSettings() }
+                        .onSuccess { setting ->
+                            Log.d(TAG, "loadPushSettings: success=$setting")
+                            dispatch(PushNotificationReducerEvent.PushSettingsLoaded(setting))
+                        }.onFailure { e ->
+                            // 조회 실패는 Logcat 에만 남긴다. 반복 조회 잡음이 저장 실패 진단의 보관 한도를 밀어내지 않게 한다 (#963).
+                            Log.e(TAG, "loadPushSettings: failed", e)
+                            dispatch(PushNotificationReducerEvent.PushSettingsLoadFailed)
+                        }
+                }
         }
 
         private fun loadMarketingConsents() {
@@ -204,7 +218,7 @@ internal class PushNotificationViewModel
         }
 
         private fun updatePushSetting(update: PushSettingUpdate) {
-            if (currentState.isUpdating(update.setting)) return
+            if (currentState.isLoading || currentState.errorMessage != null || currentState.isUpdating(update.setting)) return
             val previousValue = currentState.valueOf(update.setting)
             dispatch(PushNotificationReducerEvent.PushSettingSaving(update))
             viewModelScope.launch {

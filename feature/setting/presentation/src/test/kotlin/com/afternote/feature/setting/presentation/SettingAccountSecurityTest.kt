@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeMyProfileRepository
 import com.afternote.core.domain.testing.FakeMyProfileRepository.ProfileUpdateCall
@@ -34,7 +35,6 @@ import com.afternote.feature.setting.presentation.applock.PinSetupStep
 import com.afternote.feature.setting.presentation.delivery.DeliveryConditionError
 import com.afternote.feature.setting.presentation.delivery.DeliveryConditionIntent
 import com.afternote.feature.setting.presentation.delivery.DeliveryConditionViewModel
-import com.afternote.feature.setting.presentation.home.SettingUiState
 import com.afternote.feature.setting.presentation.home.SettingViewModel
 import com.afternote.feature.setting.presentation.home.WithdrawConfirmScreen
 import com.afternote.feature.setting.presentation.home.WithdrawUiState
@@ -131,7 +131,7 @@ class SettingAccountSecurityTest {
         linkRepository.onLinkConnectedAccount = { _, _ -> throw IllegalStateException("oauth rejected") }
         composeRule.runOnIdle { linkViewModel.onIntent(ConnectedAccountsIntent.Link(provider = "google", accessToken = "google-token")) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            linkViewModel.uiState.value.errorMessage == "계정 연결에 실패했습니다."
+            linkViewModel.uiState.value.pendingError == "계정 연결에 실패했습니다."
         }
 
         assertEquals(
@@ -156,7 +156,7 @@ class SettingAccountSecurityTest {
         }
 
         assertEquals(listOf("google"), unlinkRepository.connectedUnlinkCalls)
-        assertEquals("계정 연결 해제에 실패했습니다.", unlinkViewModel.uiState.value.errorMessage)
+        assertEquals("계정 연결 해제에 실패했습니다.", unlinkViewModel.uiState.value.pendingError)
     }
 
     @Test
@@ -313,7 +313,7 @@ class SettingAccountSecurityTest {
         composeRule.setContent {
             AfternoteTheme {
                 WithdrawConfirmScreen(
-                    uiState = SettingUiState.Success(name = DEFAULT_USER.name, email = DEFAULT_USER.email),
+                    uiState = viewModel.uiState.collectAsStateWithLifecycle().value,
                     onBackClick = {},
                     onWithdrawSuccess = { successCalls += 1 },
                     viewModel = viewModel,
@@ -332,7 +332,7 @@ class SettingAccountSecurityTest {
         }
 
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.withdrawUiState.value == WithdrawUiState.Error
+            viewModel.uiState.value.withdraw == WithdrawUiState.Error
         }
         composeRule
             .onNodeWithText("회원 탈퇴에 실패했습니다. 잠시 후 다시 시도해 주세요.")

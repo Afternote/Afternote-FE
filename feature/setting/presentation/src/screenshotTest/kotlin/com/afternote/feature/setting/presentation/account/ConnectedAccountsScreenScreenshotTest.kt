@@ -24,10 +24,11 @@ internal fun connectedAccountsScreenCompactScreenshot() {
 }
 
 @Composable
-private fun ConnectedAccountsScreenScreenshotContent() {
+private fun ConnectedAccountsScreenScreenshotContent(uiState: ConnectedAccountsUiState = connectedAccountsPreviewState) {
     AfternoteTheme {
         ConnectedAccountsContent(
-            uiState = connectedAccountsPreviewState,
+            onRetry = {},
+            uiState = uiState,
             snackbarHostState = remember { SnackbarHostState() },
             onBack = {},
             onToggle = { _, _ -> },
@@ -68,3 +69,19 @@ private val connectedAccountsPreviewState =
                 ),
             ),
     )
+
+@PreviewTest
+@Preview(showBackground = true)
+@Preview(showBackground = true, device = COMPACT_DEVICE_SPEC)
+@Composable
+internal fun connectedAccountsLoadingScreenshot() {
+    ConnectedAccountsScreenScreenshotContent(ConnectedAccountsUiState(isLoading = true))
+}
+
+@PreviewTest
+@Preview(showBackground = true)
+@Preview(showBackground = true, device = COMPACT_DEVICE_SPEC)
+@Composable
+internal fun connectedAccountsLoadErrorScreenshot() {
+    ConnectedAccountsScreenScreenshotContent(ConnectedAccountsUiState(errorMessage = "계정 정보를 불러올 수 없습니다."))
+}

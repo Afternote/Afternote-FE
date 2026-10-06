@@ -1,10 +1,8 @@
 package com.afternote.feature.setting.presentation.home
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
 import com.afternote.feature.setting.presentation.R
@@ -17,9 +15,9 @@ internal fun WithdrawConfirmScreen(
     viewModel: SettingViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val userName = (uiState as? SettingUiState.Success)?.name.orEmpty()
-    val userEmail = (uiState as? SettingUiState.Success)?.email.orEmpty()
-    val withdrawUiState by viewModel.withdrawUiState.collectAsStateWithLifecycle()
+    val userName = (uiState.profile as? SettingProfileState.Success)?.name.orEmpty()
+    val userEmail = (uiState.profile as? SettingProfileState.Success)?.email.orEmpty()
+    val withdrawUiState = uiState.withdraw
 
     when (withdrawUiState) {
         WithdrawUiState.Success -> {
@@ -38,8 +36,8 @@ internal fun WithdrawConfirmScreen(
                 message = stringResource(R.string.setting_withdraw_failed_message),
                 confirmText = stringResource(R.string.setting_withdraw_retry_button),
                 dismissText = stringResource(R.string.setting_withdraw_close_button),
-                onConfirm = viewModel::deleteAccount,
-                onDismiss = viewModel::dismissWithdrawError,
+                onConfirm = { viewModel.onIntent(SettingIntent.DeleteAccount) },
+                onDismiss = { viewModel.onIntent(SettingIntent.DismissWithdrawError) },
             )
         }
 
@@ -52,7 +50,7 @@ internal fun WithdrawConfirmScreen(
         userName = userName,
         userEmail = userEmail,
         onBackClick = onBackClick,
-        onWithdrawClick = viewModel::deleteAccount,
+        onWithdrawClick = { viewModel.onIntent(SettingIntent.DeleteAccount) },
         isLoading = withdrawUiState == WithdrawUiState.Loading,
         modifier = modifier,
     )

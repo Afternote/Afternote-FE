@@ -8,6 +8,7 @@ import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.setting.presentation.receiver.ReceiverPhoneValidation
 import com.afternote.feature.setting.presentation.receiver.validateReceiverPhone
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -20,12 +21,15 @@ internal class ProfileEditViewModel
         private val myProfileRepository: MyProfileRepository,
         private val photoUploadRepository: PhotoUploadRepository,
     ) : MviViewModel<ProfileEditIntent, ProfileEditUiState, ProfileEditReducerEvent>(ProfileEditUiState.Loading) {
+        private var loadJob: Job? = null
+
         init {
             loadProfile()
         }
 
         override fun onIntent(intent: ProfileEditIntent) {
             when (intent) {
+                ProfileEditIntent.RetryLoad -> if (currentState == ProfileEditUiState.Error) loadProfile()
                 is ProfileEditIntent.SelectPhoto -> dispatch(ProfileEditReducerEvent.PhotoSelected(intent.uri))
                 is ProfileEditIntent.UpdateProfile -> updateProfile(intent.name, intent.phone)
                 is ProfileEditIntent.ConsumeEvent -> dispatch(ProfileEditReducerEvent.EventConsumed(intent.event))
@@ -37,6 +41,10 @@ internal class ProfileEditViewModel
             event: ProfileEditReducerEvent,
         ): ProfileEditUiState =
             when (event) {
+                ProfileEditReducerEvent.Loading -> {
+                    ProfileEditUiState.Loading
+                }
+
                 is ProfileEditReducerEvent.Loaded -> {
                     ProfileEditUiState.Success(
                         name = event.name,
@@ -74,21 +82,24 @@ internal class ProfileEditViewModel
             }
 
         private fun loadProfile() {
-            viewModelScope.launch {
-                runCatchingCancellable { myProfileRepository.getMyProfile() }
-                    .onSuccess { user ->
-                        dispatch(
-                            ProfileEditReducerEvent.Loaded(
-                                name = user.name,
-                                phone = user.phone.orEmpty(),
-                                email = user.email,
-                                profileImageUrl = user.profileImageUrl,
-                            ),
-                        )
-                    }.onFailure {
-                        dispatch(ProfileEditReducerEvent.LoadFailed)
-                    }
-            }
+            if (loadJob?.isActive == true) return
+            dispatch(ProfileEditReducerEvent.Loading)
+            loadJob =
+                viewModelScope.launch {
+                    runCatchingCancellable { myProfileRepository.getMyProfile() }
+                        .onSuccess { user ->
+                            dispatch(
+                                ProfileEditReducerEvent.Loaded(
+                                    name = user.name,
+                                    phone = user.phone.orEmpty(),
+                                    email = user.email,
+                                    profileImageUrl = user.profileImageUrl,
+                                ),
+                            )
+                        }.onFailure {
+                            dispatch(ProfileEditReducerEvent.LoadFailed)
+                        }
+                }
         }
 
         private fun updateProfile(

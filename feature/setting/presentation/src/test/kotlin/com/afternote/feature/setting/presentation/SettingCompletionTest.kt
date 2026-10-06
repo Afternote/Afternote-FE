@@ -44,6 +44,8 @@ import com.afternote.feature.setting.presentation.account.ConnectedAccountsViewM
 import com.afternote.feature.setting.presentation.delivery.DeliveryConditionError
 import com.afternote.feature.setting.presentation.delivery.DeliveryConditionIntent
 import com.afternote.feature.setting.presentation.delivery.DeliveryConditionViewModel
+import com.afternote.feature.setting.presentation.home.SettingIntent
+import com.afternote.feature.setting.presentation.home.SettingProfileState
 import com.afternote.feature.setting.presentation.home.SettingUiState
 import com.afternote.feature.setting.presentation.home.SettingViewModel
 import com.afternote.feature.setting.presentation.home.WithdrawUiState
@@ -650,28 +652,28 @@ class SettingCompletionTest {
             }
         val viewModel = SettingViewModel(authRepository, profileRepository, repository)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.uiState.value is SettingUiState.Success
+            viewModel.uiState.value.profile is SettingProfileState.Success
         }
 
-        composeRule.runOnIdle { viewModel.deleteAccount() }
+        composeRule.runOnIdle { viewModel.onIntent(SettingIntent.DeleteAccount) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.deleteAccountCalls == 1
         }
-        assertEquals(WithdrawUiState.Loading, viewModel.withdrawUiState.value)
+        assertEquals(WithdrawUiState.Loading, viewModel.uiState.value.withdraw)
 
         firstGate.completeExceptionally(IllegalStateException("서버가 503 으로 거절했다"))
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.withdrawUiState.value == WithdrawUiState.Error
+            viewModel.uiState.value.withdraw == WithdrawUiState.Error
         }
 
-        composeRule.runOnIdle { viewModel.deleteAccount() }
+        composeRule.runOnIdle { viewModel.onIntent(SettingIntent.DeleteAccount) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.deleteAccountCalls == 2
         }
 
         retryGate.complete(Unit)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.withdrawUiState.value == WithdrawUiState.Success
+            viewModel.uiState.value.withdraw == WithdrawUiState.Success
         }
         assertEquals(2, repository.deleteAccountCalls)
     }
