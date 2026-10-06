@@ -1,6 +1,7 @@
 [versions]
 agp = "9.3.2"
-biometric = "1.1.0"
+# Core 1.19의 FingerprintManagerCompat는 no-op이므로 내부 호환 구현이 있는 Biometric이 필요하다.
+biometric = "1.4.0-alpha07"
 exifinterface = "1.4.2"
 coreKtx = "1.19.0"
 fragmentKtx = "1.8.9"
