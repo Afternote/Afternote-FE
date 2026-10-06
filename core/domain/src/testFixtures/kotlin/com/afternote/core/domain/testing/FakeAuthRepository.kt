@@ -1,5 +1,6 @@
 package com.afternote.core.domain.testing
 
+import com.afternote.core.domain.error.SessionChangedException
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.model.Session
 import com.afternote.core.model.TokenBundle
@@ -14,6 +15,9 @@ import java.util.concurrent.atomic.AtomicInteger
  * 기본은 토큰과 로그인 상태를 메모리에 저장하며 모든 호출을 기록한다. 특정 실패, 경합,
  * 서버 응답은 `onX` 로 갈아끼운다. 호출 금지 경계가 필요한 테스트는 [strict] 로 시작해
  * 실제로 쓰는 경로만 연다.
+ *
+ * 세션 식별자는 [sessionId] 로 들고 있다. 액세스 토큰이 있을 때만 세션이 있는 것으로 읽고, [saveSession] 이
+ * 새 값을 발급한다. 세션에 묶인 호출([rotateToken], [clearSessionIfCurrent])의 기본 동작은 이 값으로 대조한다.
  */
 class FakeAuthRepository(
     loggedIn: Boolean = false,
@@ -27,6 +31,8 @@ class FakeAuthRepository(
     var onSaveSession: (suspend (String, String) -> Result<Unit>)? = null,
     var onUpdateTokens: (suspend (String, String) -> Result<Unit>)? = null,
     var onClearSession: (suspend () -> Result<Unit>)? = null,
+    var onClearSessionIfCurrent: (suspend (String) -> Result<Boolean>)? = null,
+    var onGetSessionId: (suspend () -> Result<String?>)? = null,
     var onGetAccessToken: (suspend () -> Result<String?>)? = null,
     var onGetRefreshToken: (suspend () -> Result<String?>)? = null,
     var onDefaultLogin: (suspend (String, String) -> Result<Session.DefaultSession>)? = null,
@@ -36,6 +42,12 @@ class FakeAuthRepository(
     var onLogout: (suspend () -> Result<Unit>)? = null,
 ) : AuthRepository {
     val loggedInState = MutableStateFlow(loggedIn)
+
+    /** 지금 세션의 식별자. 액세스 토큰이 없으면 [getSessionId] 는 이 값과 무관하게 `null` 이다. */
+    @Volatile
+    var sessionId: String = DEFAULT_SESSION_ID
+
+    private val sessionCounter = AtomicInteger()
 
     private val isLoggedInCounter = AtomicInteger()
 
@@ -53,6 +65,7 @@ class FakeAuthRepository(
 
     val savedSessions = CopyOnWriteArrayList<Pair<String, String>>()
     val updatedTokens = CopyOnWriteArrayList<Pair<String, String>>()
+    val rotatedSessionIds = CopyOnWriteArrayList<String>()
     val attemptedEmailLogins = CopyOnWriteArrayList<Pair<String, String>>()
     val attemptedKakaoLogins = CopyOnWriteArrayList<String>()
     val attemptedGoogleLogins = CopyOnWriteArrayList<String>()
@@ -84,6 +97,7 @@ class FakeAuthRepository(
     ): Result<Unit> {
         savedSessions += accessToken to refreshToken
         onSaveSession?.let { return it(accessToken, refreshToken) }
+        sessionId = "session-${sessionCounter.incrementAndGet()}"
         this.accessToken = accessToken
         this.refreshToken = refreshToken
         loggedIn = true
@@ -110,6 +124,20 @@ class FakeAuthRepository(
         loggedIn = false
         return Result.success(Unit)
     }
+
+    /** 세션이 [sessionId] 일 때만 [clearSession] 을 부른다. 대조가 어긋나면 [clearSession] 호출 수도 늘지 않는다. */
+    override suspend fun clearSessionIfCurrent(sessionId: String): Result<Boolean> {
+        onClearSessionIfCurrent?.let { return it(sessionId) }
+        if (currentSessionId() != sessionId) return Result.success(false)
+        return clearSession().map { true }
+    }
+
+    override suspend fun getSessionId(): Result<String?> {
+        onGetSessionId?.let { return it() }
+        return Result.success(currentSessionId())
+    }
+
+    private fun currentSessionId(): String? = if (accessToken == null) null else sessionId
 
     override suspend fun getAccessToken(): Result<String?> {
         accessTokenCounter.incrementAndGet()
@@ -144,11 +172,15 @@ class FakeAuthRepository(
         return Result.success(googleSession)
     }
 
-    override suspend fun rotateToken(): Result<TokenBundle> {
+    override suspend fun rotateToken(sessionId: String): Result<TokenBundle> {
         rotateTokenCounter.incrementAndGet()
+        rotatedSessionIds += sessionId
         onRotateToken?.let { return it(this) }
         if (refreshToken == null) {
             return Result.failure(IllegalStateException("리프레시 토큰이 존재하지 않습니다."))
+        }
+        if (currentSessionId() != sessionId) {
+            return Result.failure(SessionChangedException())
         }
         if (rotatedTokens.accessToken.isEmpty()) {
             return Result.failure(IllegalStateException("Token rotation returned an empty access token"))
@@ -171,6 +203,7 @@ class FakeAuthRepository(
     companion object {
         private const val DEFAULT_ACCESS_TOKEN = "access"
         private const val DEFAULT_REFRESH_TOKEN = "refresh"
+        private const val DEFAULT_SESSION_ID = "session-0"
 
         /** 모든 경로를 닫고, 테스트가 쓰는 `onX` 만 명시적으로 연다. */
         fun strict(
@@ -186,6 +219,7 @@ class FakeAuthRepository(
                 onSaveSession = { _, _ -> unexpectedCall("AuthRepository.saveSession") },
                 onUpdateTokens = { _, _ -> unexpectedCall("AuthRepository.updateTokens") },
                 onClearSession = { unexpectedCall("AuthRepository.clearSession") },
+                onGetSessionId = { unexpectedCall("AuthRepository.getSessionId") },
                 onGetAccessToken = { unexpectedCall("AuthRepository.getAccessToken") },
                 onGetRefreshToken = { unexpectedCall("AuthRepository.getRefreshToken") },
                 onDefaultLogin = { _, _ -> unexpectedCall("AuthRepository.defaultLogin") },
