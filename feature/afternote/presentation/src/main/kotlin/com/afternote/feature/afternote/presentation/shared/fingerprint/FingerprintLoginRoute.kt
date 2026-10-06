@@ -10,6 +10,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.fragment.app.FragmentActivity
+import com.afternote.core.common.biometric.BiometricAuthResult
+import com.afternote.core.common.biometric.BiometricMessages
+import com.afternote.core.common.biometric.authenticateBiometric
 import com.afternote.core.ui.findActivity
 import com.afternote.feature.afternote.presentation.R
 import kotlinx.coroutines.launch

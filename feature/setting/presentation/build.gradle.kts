@@ -46,6 +46,8 @@ dependencies {
     testImplementation(libs.androidx.compose.ui.test.junit4)
     testImplementation(libs.androidx.test.core.ktx)
     testImplementation(libs.robolectric)
+    testImplementation(libs.hilt.android.testing)
+    kspTest(libs.hilt.compiler)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     screenshotTestImplementation(libs.screenshot.validation.api)
