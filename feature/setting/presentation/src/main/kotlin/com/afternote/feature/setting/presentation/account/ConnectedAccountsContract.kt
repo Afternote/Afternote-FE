@@ -4,6 +4,8 @@ import com.afternote.core.ui.mvi.MviIntent
 import com.afternote.core.ui.mvi.ReducerEvent
 
 internal sealed interface ConnectedAccountsIntent : MviIntent {
+    data object RefreshOnReturn : ConnectedAccountsIntent
+
     data object RetryLoad : ConnectedAccountsIntent
 
     data class ConsumeError(

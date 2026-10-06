@@ -28,6 +28,9 @@ internal class PushNotificationViewModel
             PushNotificationUiState(isLoading = true),
         ) {
         private var loadJob: Job? = null
+        private var marketingLoadJob: Job? = null
+        private var marketingWritesInFlight = 0
+        private var isFirstResume = true
 
         init {
             refreshDeviceAlarmStatus()
@@ -37,6 +40,10 @@ internal class PushNotificationViewModel
 
         override fun onIntent(intent: PushNotificationIntent) {
             when (intent) {
+                PushNotificationIntent.RefreshOnReturn -> {
+                    refreshOnReturn()
+                }
+
                 PushNotificationIntent.RetryLoad -> {
                     if (currentState.errorMessage != null) loadPushSettings()
                 }
@@ -92,6 +99,7 @@ internal class PushNotificationViewModel
                     state.copy(
                         isLoading = false,
                         errorMessage = null,
+                        hasLoadedPushSettings = true,
                         isNewsletterOn = event.setting.timeLetter,
                         isMindRecordOn = event.setting.mindRecord,
                         isAfternoteOn = event.setting.afterNote,
@@ -159,9 +167,23 @@ internal class PushNotificationViewModel
             dispatch(PushNotificationReducerEvent.DeviceAlarmStatusRead(deviceAlarmOn))
         }
 
-        private fun loadPushSettings() {
-            if (loadJob?.isActive == true) return
-            dispatch(PushNotificationReducerEvent.PushSettingsLoading)
+        private fun refreshOnReturn() {
+            refreshDeviceAlarmStatus()
+            if (isFirstResume) {
+                isFirstResume = false
+                return
+            }
+            loadPushSettings(isAutomatic = true)
+            loadMarketingConsents()
+        }
+
+        private fun loadPushSettings(isAutomatic: Boolean = false) {
+            if (loadJob?.isActive == true ||
+                currentState.run { isNewsletterUpdating || isMindRecordUpdating || isAfternoteUpdating }
+            ) {
+                return
+            }
+            if (!isAutomatic) dispatch(PushNotificationReducerEvent.PushSettingsLoading)
             loadJob =
                 viewModelScope.launch {
                     Log.d(TAG, "loadPushSettings: start")
@@ -172,41 +194,53 @@ internal class PushNotificationViewModel
                         }.onFailure { e ->
                             // 조회 실패는 Logcat 에만 남긴다. 반복 조회 잡음이 저장 실패 진단의 보관 한도를 밀어내지 않게 한다 (#963).
                             Log.e(TAG, "loadPushSettings: failed", e)
-                            dispatch(PushNotificationReducerEvent.PushSettingsLoadFailed)
+                            if (!isAutomatic ||
+                                !currentState.hasLoadedPushSettings
+                            ) {
+                                dispatch(PushNotificationReducerEvent.PushSettingsLoadFailed)
+                            }
                         }
                 }
         }
 
         private fun loadMarketingConsents() {
-            viewModelScope.launch {
-                Log.d(TAG, "loadMarketingConsents: start")
-                runCatchingCancellable { notificationRepository.getMyMarketingConsents() }
-                    .onSuccess { consent ->
-                        Log.d(TAG, "loadMarketingConsents: success=$consent")
-                        dispatch(PushNotificationReducerEvent.MarketingConsentsLoaded(consent))
-                    }.onFailure { e ->
-                        Log.e(TAG, "loadMarketingConsents: failed", e)
-                    }
-            }
+            if (marketingLoadJob?.isActive == true || marketingWritesInFlight > 0) return
+            marketingLoadJob =
+                viewModelScope.launch {
+                    Log.d(TAG, "loadMarketingConsents: start")
+                    runCatchingCancellable { notificationRepository.getMyMarketingConsents() }
+                        .onSuccess { consent ->
+                            Log.d(TAG, "loadMarketingConsents: success=$consent")
+                            dispatch(PushNotificationReducerEvent.MarketingConsentsLoaded(consent))
+                        }.onFailure { e ->
+                            Log.e(TAG, "loadMarketingConsents: failed", e)
+                        }
+                }
         }
 
         private fun updateMarketingConsent(
             consent: MarketingConsent,
             checked: Boolean,
         ) {
+            marketingLoadJob?.cancel()
+            marketingWritesInFlight++
             dispatch(PushNotificationReducerEvent.MarketingConsentChanged(consent, checked))
             viewModelScope.launch {
-                runCatchingCancellable {
-                    notificationRepository.updateMyMarketingConsents(
-                        sms = checked.takeIf { consent == MarketingConsent.SMS },
-                        email = checked.takeIf { consent == MarketingConsent.EMAIL },
-                        push = checked.takeIf { consent == MarketingConsent.PUSH },
-                    )
-                }.onSuccess {
-                    Log.d(TAG, "updateMarketingConsent: success, consent=$consent, checked=$checked")
-                }.onFailure { e ->
-                    errorReporter.recordFailure(e, mapOf(KEY_STAGE to consent.reportingStage()))
-                    dispatch(PushNotificationReducerEvent.MarketingConsentSaveFailed(consent, requested = checked))
+                try {
+                    runCatchingCancellable {
+                        notificationRepository.updateMyMarketingConsents(
+                            sms = checked.takeIf { consent == MarketingConsent.SMS },
+                            email = checked.takeIf { consent == MarketingConsent.EMAIL },
+                            push = checked.takeIf { consent == MarketingConsent.PUSH },
+                        )
+                    }.onSuccess {
+                        Log.d(TAG, "updateMarketingConsent: success, consent=$consent, checked=$checked")
+                    }.onFailure { e ->
+                        errorReporter.recordFailure(e, mapOf(KEY_STAGE to consent.reportingStage()))
+                        dispatch(PushNotificationReducerEvent.MarketingConsentSaveFailed(consent, requested = checked))
+                    }
+                } finally {
+                    marketingWritesInFlight--
                 }
             }
         }
@@ -219,6 +253,7 @@ internal class PushNotificationViewModel
 
         private fun updatePushSetting(update: PushSettingUpdate) {
             if (currentState.isLoading || currentState.errorMessage != null || currentState.isUpdating(update.setting)) return
+            loadJob?.cancel()
             val previousValue = currentState.valueOf(update.setting)
             dispatch(PushNotificationReducerEvent.PushSettingSaving(update))
             viewModelScope.launch {

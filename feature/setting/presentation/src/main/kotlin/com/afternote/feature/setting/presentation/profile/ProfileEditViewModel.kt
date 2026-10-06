@@ -22,6 +22,7 @@ internal class ProfileEditViewModel
         private val photoUploadRepository: PhotoUploadRepository,
     ) : MviViewModel<ProfileEditIntent, ProfileEditUiState, ProfileEditReducerEvent>(ProfileEditUiState.Loading) {
         private var loadJob: Job? = null
+        private var isFirstResume = true
 
         init {
             loadProfile()
@@ -29,6 +30,7 @@ internal class ProfileEditViewModel
 
         override fun onIntent(intent: ProfileEditIntent) {
             when (intent) {
+                ProfileEditIntent.RefreshOnReturn -> refreshOnReturn()
                 ProfileEditIntent.RetryLoad -> if (currentState == ProfileEditUiState.Error) loadProfile()
                 is ProfileEditIntent.SelectPhoto -> dispatch(ProfileEditReducerEvent.PhotoSelected(intent.uri))
                 is ProfileEditIntent.UpdateProfile -> updateProfile(intent.name, intent.phone)
@@ -51,6 +53,8 @@ internal class ProfileEditViewModel
                         phone = event.phone,
                         email = event.email,
                         profileImageUrl = event.profileImageUrl,
+                        selectedImageUri = (state as? ProfileEditUiState.Success)?.selectedImageUri,
+                        pendingEvent = (state as? ProfileEditUiState.Success)?.pendingEvent,
                     )
                 }
 
@@ -81,9 +85,17 @@ internal class ProfileEditViewModel
                 }
             }
 
-        private fun loadProfile() {
-            if (loadJob?.isActive == true) return
-            dispatch(ProfileEditReducerEvent.Loading)
+        private fun refreshOnReturn() {
+            if (isFirstResume) {
+                isFirstResume = false
+                return
+            }
+            loadProfile(isAutomatic = true)
+        }
+
+        private fun loadProfile(isAutomatic: Boolean = false) {
+            if (loadJob?.isActive == true || (currentState as? ProfileEditUiState.Success)?.isUpdating == true) return
+            if (!isAutomatic) dispatch(ProfileEditReducerEvent.Loading)
             loadJob =
                 viewModelScope.launch {
                     runCatchingCancellable { myProfileRepository.getMyProfile() }
@@ -97,7 +109,7 @@ internal class ProfileEditViewModel
                                 ),
                             )
                         }.onFailure {
-                            dispatch(ProfileEditReducerEvent.LoadFailed)
+                            if (!isAutomatic || currentState !is ProfileEditUiState.Success) dispatch(ProfileEditReducerEvent.LoadFailed)
                         }
                 }
         }
@@ -109,6 +121,7 @@ internal class ProfileEditViewModel
             val current = currentState as? ProfileEditUiState.Success ?: return
             if (current.isUpdateLocked) return
             if (phone.validateReceiverPhone(isRequired = false) != ReceiverPhoneValidation.VALID) return
+            loadJob?.cancel()
             dispatch(ProfileEditReducerEvent.Updating)
             viewModelScope.launch {
                 runCatchingCancellable {

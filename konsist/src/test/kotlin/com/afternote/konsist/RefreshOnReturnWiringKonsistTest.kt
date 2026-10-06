@@ -67,6 +67,23 @@ class RefreshOnReturnWiringKonsistTest {
     }
 
     @Test
+    fun `설정 재진입 갱신은 마케팅 동의를 포함한 모든 소비 화면에 결선된다`() {
+        val expected =
+            mapOf(
+                "ConnectedAccountsScreen.kt" to "ConnectedAccountsIntent",
+                "DeliveryConditionScreen.kt" to "DeliveryConditionIntent",
+                "ProfileEditScreen.kt" to "ProfileEditIntent",
+                "PushNotificationScreen.kt" to "PushNotificationIntent",
+                "NotificationSettingScreen.kt" to "PushNotificationIntent",
+            )
+        val settingFiles = mainSourceFiles().filter { "/feature/setting/" in "/${it.normalizedProjectPath()}" }
+        expected.forEach { (fileName, intent) ->
+            val source = settingFiles.single { it.normalizedProjectPath().endsWith("/$fileName") }.text
+            check(ON_RESUME in source && "$intent.RefreshOnReturn" in source) { "$fileName 재진입 갱신 결선 누락" }
+        }
+    }
+
+    @Test
     fun `MVI 전환 뒤에도 해당 ViewModel의 resume Intent 결선을 요구한다`() {
         assertTrue(hasRefreshCall("viewModel.onIntent(ExampleIntent.RefreshOnReturn)", "ExampleViewModel"))
         assertTrue(hasRefreshCall("viewModel.refreshOnReturn()", "ExampleViewModel"))

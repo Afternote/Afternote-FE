@@ -11,6 +11,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.credentials.CredentialManager
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.common.auth.requestKakaoAccessToken
 import com.afternote.core.domain.error.CoreAuthFailure
@@ -32,6 +34,7 @@ internal fun ConnectedAccountsScreen(
     viewModel: ConnectedAccountsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.onIntent(ConnectedAccountsIntent.RefreshOnReturn) }
     val context = LocalContext.current
     val credentialManager = remember(context) { CredentialManager.create(context) }
     val snackbarHostState = remember { SnackbarHostState() }
