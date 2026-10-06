@@ -4,6 +4,10 @@ import com.afternote.core.ui.mvi.MviIntent
 import com.afternote.core.ui.mvi.ReducerEvent
 
 internal sealed interface ProfileEditIntent : MviIntent {
+    data class SelectPhoto(
+        val uri: String,
+    ) : ProfileEditIntent
+
     data class UpdateProfile(
         val name: String,
         val phone: String,
@@ -20,6 +24,11 @@ internal sealed interface ProfileEditReducerEvent : ReducerEvent {
         val name: String,
         val phone: String,
         val email: String,
+        val profileImageUrl: String?,
+    ) : ProfileEditReducerEvent
+
+    data class PhotoSelected(
+        val uri: String,
     ) : ProfileEditReducerEvent
 
     data object LoadFailed : ProfileEditReducerEvent

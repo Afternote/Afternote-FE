@@ -1,5 +1,9 @@
 package com.afternote.feature.setting.presentation.profile
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,7 +21,12 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -25,12 +34,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.ProfileImagePicker
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.mvi.ObserveSignal
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
-import com.afternote.feature.setting.presentation.shared.component.ProfilePhotoWithAddBadge
 
 @Composable
 internal fun ProfileEditScreen(
@@ -40,6 +49,11 @@ internal fun ProfileEditScreen(
     viewModel: ProfileEditViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val onPickProfileImage =
+        rememberProfileImagePicker(
+            canAcceptPhoto = (uiState as? ProfileEditUiState.Success)?.isUpdating == false,
+            onPhotoPicked = { viewModel.onIntent(ProfileEditIntent.SelectPhoto(it)) },
+        )
 
     (uiState as? ProfileEditUiState.Success)?.pendingEvent?.let { pendingEvent ->
         ObserveSignal(
@@ -57,6 +71,7 @@ internal fun ProfileEditScreen(
 
     ProfileEditContent(
         uiState = uiState,
+        onPickImageClick = onPickProfileImage,
         onIntent = viewModel::onIntent,
         onBackClick = onBackClick,
         onWithdrawGuideClick = onWithdrawGuideClick,
@@ -67,6 +82,7 @@ internal fun ProfileEditScreen(
 @Composable
 private fun ProfileEditContent(
     uiState: ProfileEditUiState,
+    onPickImageClick: () -> Unit,
     onIntent: (ProfileEditIntent) -> Unit,
     onBackClick: () -> Unit,
     onWithdrawGuideClick: () -> Unit,
@@ -98,6 +114,7 @@ private fun ProfileEditContent(
             is ProfileEditUiState.Success -> {
                 ProfileEditForm(
                     state = state,
+                    onPickImageClick = onPickImageClick,
                     onUpdateClick = { name, phone -> onIntent(ProfileEditIntent.UpdateProfile(name, phone)) },
                     onWithdrawGuideClick = onWithdrawGuideClick,
                     modifier = Modifier.padding(innerPadding),
@@ -122,6 +139,7 @@ private fun ProfileEditContent(
 @Composable
 private fun ProfileEditForm(
     state: ProfileEditUiState.Success,
+    onPickImageClick: () -> Unit,
     onUpdateClick: (name: String, phone: String) -> Unit,
     onWithdrawGuideClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -141,7 +159,10 @@ private fun ProfileEditForm(
                         .padding(top = 50.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                ProfilePhotoWithAddBadge()
+                ProfileImagePicker(
+                    onPickClick = onPickImageClick,
+                    displayImageUri = state.displayImageUri,
+                )
             }
         }
         item {
@@ -230,5 +251,40 @@ private fun ProfileEditForm(
                 }
             }
         }
+    }
+}
+
+/**
+ * 갤러리 사진 선택기를 등록하고, 누르면 띄우는 함수를 돌려준다.
+ *
+ * 온보딩 프로필 화면과 같이 갤러리 전용이다(`PickVisualMedia.ImageOnly`). 취소 결과(`null`)는 선택
+ * 변경이 아니라서 기존 사진을 그대로 둔다(온보딩 #1113·#1115 와 같은 처리).
+ *
+ * 돌아온 사진은 [canAcceptPhoto] 가 참일 때까지 [rememberSaveable] 에 보관했다가 넘긴다. 갤러리에
+ * 다녀오는 사이 프로세스가 회수되면 결과가 새 ViewModel 의 프로필 조회보다 먼저 도착하고, 저장 중에
+ * 돌아온 결과는 ViewModel 이 받지 않기 때문이다. 바로 넘기면 두 경우 모두 고른 사진이 사라진다.
+ */
+@Composable
+private fun rememberProfileImagePicker(
+    canAcceptPhoto: Boolean,
+    onPhotoPicked: (String) -> Unit,
+): () -> Unit {
+    val queuedPhoto = rememberSaveable { mutableStateOf<String?>(null) }
+    val currentOnPhotoPicked by rememberUpdatedState(onPhotoPicked)
+
+    LaunchedEffect(queuedPhoto.value, canAcceptPhoto) {
+        val uri = queuedPhoto.value
+        if (uri != null && canAcceptPhoto) {
+            queuedPhoto.value = null
+            currentOnPhotoPicked(uri)
+        }
+    }
+
+    val launcher =
+        rememberLauncherForActivityResult(PickVisualMedia()) { uri: Uri? ->
+            uri?.let { queuedPhoto.value = it.toString() }
+        }
+    return remember(launcher) {
+        { launcher.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly)) }
     }
 }
