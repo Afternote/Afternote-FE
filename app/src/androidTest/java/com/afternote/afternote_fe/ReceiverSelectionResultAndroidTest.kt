@@ -249,7 +249,7 @@ class ReceiverSelectionResultAndroidTest {
 
         receiverSource.failing = false
         receiverSource.receivers = listOf(KIM, PARK)
-        composeRule.onNodeWithText(copy(AfternoteR.string.afternote_select_receiver_retry)).performClick()
+        composeRule.onNodeWithText(copy(CoreUiR.string.core_ui_receiver_list_retry)).performClick()
 
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             composeRule.onAllNodesWithText(KIM.name).fetchSemanticsNodes().isNotEmpty()
@@ -266,7 +266,7 @@ class ReceiverSelectionResultAndroidTest {
         get() = copy(AfternoteR.string.afternote_select_receiver_empty)
 
     private val loadFailedText: String
-        get() = copy(AfternoteR.string.afternote_select_receiver_load_failed)
+        get() = copy(CoreUiR.string.core_ui_receiver_list_load_failed)
 
     /**
      * 애프터노트 홈의 연필 FAB 으로 계정 카테고리 에디터를 연다.

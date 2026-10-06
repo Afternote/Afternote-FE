@@ -1,0 +1,114 @@
+# Viewed 기반 자동 머지 예약 (#2248)
+#
+# 적용 범위는 VIEWED_BY 본인이 작성한 PR 이다(#2270). 팀원·봇 PR 은 예약도 해제도 하지 않는다.
+#
+# VIEWED_BY 가 PR 의 모든 파일을 Viewed 로 체크했고 PR 에 승인 대기·변경 요청이 없으면 «Merge when ready» 를
+# 대신 건다. 승인 룰셋이 승인 0건이면 reviewDecision 이 비어 있어도 대상이다. 머지는 GitHub 가 룰셋·required
+# check·merge queue 를 모두 통과시킨 뒤에만 하므로 CI 가 빨가면 머지되지 않는다.
+#
+# 반대 방향도 매 실행이 맞춘다(#2252). 예약됐거나 merge queue 에 있는 VIEWED_BY 본인 PR 중 VIEWED_BY 기준 Viewed 가 다 차지
+# 않은 것은 예약을 끄고 큐에서 뺀다. 새 push 로 바뀐 파일은 DISMISSED 가 되고 룰셋은 push 로 승인을 지우지
+# 않으므로, 이 단계가 없으면 아무도 다시 보지 않은 커밋이 머지된다. 누가 건 예약인지는 따지지 않는다. 예약을
+# 멈추려면 파일 하나의 Viewed 를 풀면 되고, 다시 전부 Viewed 가 되면 다음 실행이 다시 건다.
+#
+# Viewed 체크는 webhook 이벤트가 없어 주기 실행으로 훑는다. viewerViewedState 는 토큰 주인 본인 것만 보이므로 VIEWED_BY 의 읽기 전용 토큰을 VIEWED_TOKEN
+# 시크릿으로 둔다. 시크릿이 없으면 아무것도 하지 않는다.
+#
+# 예약 쓰기는 MERGE_QUEUE_TOKEN(1hyok 의 fine-grained PAT)이 한다. GITHUB_TOKEN 으로 예약하거나 큐에 넣으면 GitHub 이
+# 그 이벤트로 워크플로를 띄우지 않아 merge_group CI 가 하나도 돌지 않는다. 큐는 check timeout(60분)까지 맨 앞을 붙잡았다가
+# CI_TIMEOUT 으로 빼고, 뒤에 쌓인 PR 들도 다시 검증한다(1005 #2208 실측). 시크릿이 없으면 예약하지 않는다.
+name: Viewed Auto Merge
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: viewed-auto-merge-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  enable:
+    name: Sync auto-merge with Viewed state
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      # 해제 단계가 GITHUB_TOKEN 으로 예약을 끄고 큐에서 뺀다. 해제는 CI 를 띄울 필요가 없다.
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Clone script from the default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+
+      - name: Find PRs to enable or cancel auto-merge
+        id: find
+        env:
+          VIEWED_TOKEN: ${{ secrets.VIEWED_TOKEN }}
+          VIEWED_BY: 1hyok
+          BASE_BRANCH: ${{ github.event.repository.default_branch }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_API_URL: ${{ github.api_url }}
+        run: |
+          if [ -z "$VIEWED_TOKEN" ]; then
+            echo "::notice::VIEWED_TOKEN 시크릿이 없어 건너뜁니다"
+            echo 'targets=[]' >> "$GITHUB_OUTPUT"
+            echo 'cancels=[]' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          node .github/scripts/find-viewed-auto-merge-targets.mjs
+
+      - name: Cancel auto-merge for PRs no longer fully viewed
+        if: steps.find.outputs.cancels != '[]'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CANCELS: ${{ steps.find.outputs.cancels }}
+        run: |
+          # 예약을 먼저 끄고 큐에서 뺀다. 해제는 HEAD 를 따지지 않는다 — 판정 뒤 Viewed 가 다 찼더라도 다음
+          # 실행이 다시 건다. 해제가 실패하면 보지 않은 커밋이 머지될 수 있으므로 job 을 red 로 남긴다.
+          failed=0
+          while read -r target; do
+            number=$(jq -r '.number' <<< "$target")
+            if [ "$(jq -r '.disableAutoMerge' <<< "$target")" = true ] && ! gh pr merge "$number" --disable-auto; then
+              echo "::error::#$number 자동 머지 예약 해제 실패"
+              failed=1
+            fi
+            # shellcheck disable=SC2016 # GraphQL 변수는 gh가 -f 값으로 바인딩한다.
+            if [ "$(jq -r '.dequeue' <<< "$target")" = true ] && ! gh api graphql \
+              -f query='mutation($id: ID!) { dequeuePullRequest(input: { id: $id }) { clientMutationId } }' \
+              -f id="$(jq -r '.id' <<< "$target")" > /dev/null; then
+              echo "::error::#$number merge queue 해제 실패"
+              failed=1
+            fi
+          done < <(jq -c '.[]' <<< "$CANCELS")
+          exit "$failed"
+
+      - name: Enable auto-merge
+        # 해제 단계가 red 여도 다른 PR 의 예약은 그대로 판정한다.
+        if: ${{ !cancelled() && steps.find.outcome == 'success' && steps.find.outputs.targets != '[]' }}
+        env:
+          GH_TOKEN: ${{ secrets.MERGE_QUEUE_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TARGETS: ${{ steps.find.outputs.targets }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::MERGE_QUEUE_TOKEN 시크릿이 없어 예약하지 않습니다. GITHUB_TOKEN 으로 넣으면 merge_group CI 가 돌지 않습니다."
+            exit 0
+          fi
+          # merge queue 대상이면 전략 없이 부른다. check 가 남았으면 auto-merge, 끝났으면 큐 투입이다.
+          # 판정 뒤 새 커밋이 올라왔으면 --match-head-commit 이 거부한다. 스택 PR 처럼 GitHub 가 거부하는
+          # 경우는 사람이 버튼을 누르면 되므로 경고로 남긴다.
+          jq -c '.[]' <<< "$TARGETS" | while read -r target; do
+            number=$(jq -r '.number' <<< "$target")
+            head_sha=$(jq -r '.headSha' <<< "$target")
+            if ! gh pr merge "$number" --match-head-commit "$head_sha"; then
+              echo "::warning::#$number 자동 머지 예약 실패 — PR 화면에서 Merge when ready 를 직접 누르세요"
+            fi
+          done

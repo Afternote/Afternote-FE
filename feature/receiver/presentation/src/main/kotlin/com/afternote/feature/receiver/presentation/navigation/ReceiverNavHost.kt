@@ -3,6 +3,7 @@ package com.afternote.feature.receiver.presentation.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.afternote.core.ui.navigation.FeatureNavDisplay
@@ -11,6 +12,7 @@ import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRout
 import com.afternote.feature.receiver.presentation.recordsbox.ReceivedRecordsScreen
 import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistrationScreen
 import com.afternote.feature.receiver.presentation.senderdetail.SenderDetailScreen
+import com.afternote.feature.receiver.presentation.senderdetail.SenderDetailViewModel
 
 /**
  * 수신자 피처가 소유하는 로컬 Navigation 3 스택 — 받은 기록함부터 열람 신청 흐름까지.
@@ -62,6 +64,10 @@ public fun ReceiverNavHost(
                             onBackClick = actions::popBack,
                             onRequestVerification = { actions.navigateToDeliveryVerificationFlow(key.senderId) },
                             onOpenReceiverHome = actions::navigateToReceiverHome,
+                            viewModel =
+                                hiltViewModel<SenderDetailViewModel, SenderDetailViewModel.Factory>(
+                                    creationCallback = { factory -> factory.create(key) },
+                                ),
                         )
                     }
                 }

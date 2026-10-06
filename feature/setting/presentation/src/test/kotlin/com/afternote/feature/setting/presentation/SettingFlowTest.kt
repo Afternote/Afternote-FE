@@ -10,12 +10,15 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.domain.testing.FakeAuthRepository
-import com.afternote.core.domain.testing.FakeUserRepository
-import com.afternote.core.model.user.Receiver
+import com.afternote.core.domain.testing.FakeMyProfileRepository
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
+import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
 import com.afternote.feature.setting.presentation.home.SettingScreen
 import com.afternote.feature.setting.presentation.home.SettingViewModel
+import com.afternote.feature.setting.presentation.notification.PushNotificationIntent
 import com.afternote.feature.setting.presentation.notification.PushNotificationViewModel
+import com.afternote.feature.setting.presentation.notification.PushSetting
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -34,8 +37,7 @@ class SettingFlowTest {
     @Test
     fun profileAndSecurityEntries_emitExpectedNavigation() {
         val auth = settingFlowAuthRepository(loggedIn = true)
-        val user = settingFlowUserRepository()
-        val viewModel = SettingViewModel(auth, user)
+        val viewModel = settingViewModel(auth)
         var destination: String? = null
 
         setSettingContent(
@@ -55,8 +57,7 @@ class SettingFlowTest {
     @Test
     fun logout_cancelThenConfirm_callsRepositoryExactlyOnce() {
         val auth = settingFlowAuthRepository(loggedIn = true)
-        val user = settingFlowUserRepository()
-        val viewModel = SettingViewModel(auth, user)
+        val viewModel = settingViewModel(auth)
         var navigationCalls = 0
 
         setSettingContent(
@@ -79,45 +80,67 @@ class SettingFlowTest {
 
     @Test
     fun destructiveDelete_isNotCalledUntilViewModelCommand() {
-        val user = settingFlowUserRepository()
-        val viewModel = SettingViewModel(settingFlowAuthRepository(loggedIn = true), user)
+        val account = settingFlowAccountRepository()
+        val viewModel = settingViewModel(settingFlowAuthRepository(loggedIn = true), account = account)
         composeRule.setContent { AfternoteTheme {} }
 
-        assertEquals(0, user.deleteAccountCalls)
+        assertEquals(0, account.deleteAccountCalls)
         composeRule.runOnIdle { viewModel.deleteAccount() }
-        composeRule.waitUntil(timeoutMillis = 5_000) { user.deleteAccountCalls == 1 }
+        composeRule.waitUntil(timeoutMillis = 5_000) { account.deleteAccountCalls == 1 }
 
-        assertEquals(1, user.deleteAccountCalls)
+        assertEquals(1, account.deleteAccountCalls)
     }
 
     @Test
     fun pushToggle_failure_rollsBackAndSendsExactPatchOnce() {
-        val user = settingFlowUserRepository()
+        val notification = settingFlowNotificationRepository()
         val pushSettingUpdateResults = ArrayDeque<Result<com.afternote.core.model.user.UserPushSetting>>()
         pushSettingUpdateResults.addLast(Result.failure(IllegalStateException("offline")))
-        user.onUpdateMyPushSettings = { _, _, _ ->
+        notification.onUpdateMyPushSettings = { _, _, _ ->
             requireNotNull(pushSettingUpdateResults.removeFirstOrNull()) { "push setting 응답이 준비되지 않음" }.getOrThrow()
         }
         val viewModel =
             PushNotificationViewModel(
                 context = ApplicationProvider.getApplicationContext(),
-                userRepository = user,
+                notificationRepository = notification,
                 errorReporter = NoOpErrorReporter,
             )
         composeRule.setContent { AfternoteTheme {} }
         composeRule.waitUntil(timeoutMillis = 5_000) { !viewModel.uiState.value.isLoading }
 
-        composeRule.runOnIdle { viewModel.onNewsletterToggle(false) }
+        composeRule.runOnIdle { viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.NEWSLETTER, false)) }
         composeRule.waitUntil(timeoutMillis = 5_000) {
             viewModel.uiState.value.isNewsletterOn
         }
 
-        assertEquals(listOf(Triple(false, null, null)), user.pushSettingUpdates)
+        assertEquals(listOf(Triple(false, null, null)), notification.pushSettingUpdates)
+    }
+
+    /**
+     * 비밀번호 변경은 목적지가 생겼다 (#564) — 이용 불가 안내가 아니라 실제 배선을 탄다.
+     *
+     * 아래 [unavailableMenus_showFeedbackAndKeepSettingsUsable] 의 목록에서 이 항목을 뺀 것과 한 쌍이다.
+     */
+    @Test
+    fun passwordChangeMenu_opensDestinationInsteadOfUnavailableFeedback() {
+        val viewModel = settingViewModel(settingFlowAuthRepository(loggedIn = true))
+        var passwordChangeOpened = false
+        setSettingContent(viewModel = viewModel, onPasswordChange = { passwordChangeOpened = true })
+        val resources = ApplicationProvider.getApplicationContext<android.content.Context>().resources
+
+        composeRule
+            .onNode(
+                hasText(resources.getString(R.string.setting_account_password_change)) and hasClickAction(),
+            ).performScrollTo()
+            .performClick()
+
+        assertEquals(true, passwordChangeOpened)
+        composeRule.onNodeWithText("현재 이 메뉴는 이용할 수 없습니다.").assertDoesNotExist()
     }
 
     @Test
     fun profileShortcuts_showSupportFeedbackAndKeepExistingNavigation() {
-        val viewModel = SettingViewModel(settingFlowAuthRepository(loggedIn = true), settingFlowUserRepository())
+        val viewModel = settingViewModel(settingFlowAuthRepository(loggedIn = true))
         val destinations = mutableListOf<String>()
         setSettingContent(
             viewModel = viewModel,
@@ -148,13 +171,12 @@ class SettingFlowTest {
 
     @Test
     fun unavailableMenus_showFeedbackAndKeepSettingsUsable() {
-        val viewModel = SettingViewModel(settingFlowAuthRepository(loggedIn = true), settingFlowUserRepository())
+        val viewModel = settingViewModel(settingFlowAuthRepository(loggedIn = true))
         var profileOpened = false
         setSettingContent(viewModel = viewModel, onProfileEdit = { profileOpened = true })
         val resources = ApplicationProvider.getApplicationContext<android.content.Context>().resources
         val menuIds =
             listOf(
-                R.string.setting_account_password_change,
                 R.string.setting_support_faq,
                 R.string.setting_support_inquiry,
                 R.string.setting_support_terms,
@@ -175,10 +197,16 @@ class SettingFlowTest {
         assertEquals(true, profileOpened)
     }
 
+    private fun settingViewModel(
+        auth: FakeAuthRepository,
+        account: FakeSettingAccountRepository = settingFlowAccountRepository(),
+    ): SettingViewModel = SettingViewModel(auth, settingFlowProfileRepository(), account)
+
     private fun setSettingContent(
         viewModel: SettingViewModel,
         onLogoutSuccess: () -> Unit = {},
         onProfileEdit: () -> Unit = {},
+        onPasswordChange: () -> Unit = {},
         onAppLock: () -> Unit = {},
         onNotice: () -> Unit = {},
         onRecipientList: () -> Unit = {},
@@ -189,6 +217,7 @@ class SettingFlowTest {
                     onBackClick = {},
                     onLogoutSuccess = onLogoutSuccess,
                     onProfileEditClick = onProfileEdit,
+                    onPasswordChangeClick = onPasswordChange,
                     onLinkedAccountClick = {},
                     onNotificationClick = {},
                     onRecipientListClick = onRecipientList,
@@ -217,18 +246,22 @@ private fun settingFlowAuthRepository(loggedIn: Boolean): FakeAuthRepository =
         onLogout = null
     }
 
-private fun settingFlowUserRepository(): FakeUserRepository =
-    FakeUserRepository.strict().apply {
-        receiverState.value = listOf(Receiver(7L, "김수신", "가족"))
-        onReceiverListFlow = null
-        onGetReceivers = null
-        onCreateReceiver = null
+private fun settingFlowProfileRepository(): FakeMyProfileRepository =
+    FakeMyProfileRepository.strict().apply {
         onGetMyProfile = null
         onUpdateMyProfile = null
+    }
+
+private fun settingFlowAccountRepository(): FakeSettingAccountRepository =
+    FakeSettingAccountRepository.strict().apply {
         onDeleteAccount = null
+        onGetConnectedAccounts = null
+    }
+
+private fun settingFlowNotificationRepository(): FakeSettingNotificationRepository =
+    FakeSettingNotificationRepository.strict().apply {
         onGetMyPushSettings = null
         onUpdateMyPushSettings = null
         onGetMyMarketingConsents = null
         onUpdateMyMarketingConsents = null
-        onGetConnectedAccounts = null
     }
