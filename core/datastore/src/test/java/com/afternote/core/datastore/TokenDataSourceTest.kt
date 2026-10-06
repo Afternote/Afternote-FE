@@ -122,6 +122,49 @@ class TokenDataSourceTest {
             assertEquals(legacySessionId, tokenDataSource.sessionId.first())
         }
 
+    /** 재발급 응답은 그것을 시작한 세션에만 쓴다 (#2237). 로그아웃 뒤에는 식별자 없는 세션으로도 되살아나지 않는다. */
+    @Test
+    fun `세션 대조 회전은 다른 세션이나 로그아웃 상태에 쓰지 않는다`() =
+        runBlocking {
+            tokenDataSource.saveTokens(accessToken = "A-access", refreshToken = "A-refresh")
+            val sessionA = checkNotNull(tokenDataSource.currentSessionId())
+
+            assertTrue(tokenDataSource.updateTokensIfSession(sessionA, accessToken = "A-rotated", refreshToken = "A-refresh-rotated"))
+            assertEquals("A-rotated", tokenDataSource.getAccessToken())
+            assertEquals(sessionA, tokenDataSource.currentSessionId())
+
+            registry.clearScope(StoreScope.SESSION)
+            assertFalse(tokenDataSource.updateTokensIfSession(sessionA, accessToken = "A-late", refreshToken = "A-refresh-late"))
+            assertNull(tokenDataSource.getAccessToken())
+            assertNull(tokenDataSource.getRefreshToken())
+            assertFalse(tokenDataSource.isLoggedIn.first())
+
+            tokenDataSource.saveTokens(accessToken = "B-access", refreshToken = "B-refresh")
+            assertFalse(tokenDataSource.updateTokensIfSession(sessionA, accessToken = "A-late", refreshToken = "A-refresh-late"))
+            assertEquals("B-access", tokenDataSource.getAccessToken())
+            assertNull(tokenDataSource.refreshTokenOf(sessionA))
+            assertEquals("B-refresh", tokenDataSource.refreshTokenOf(checkNotNull(tokenDataSource.currentSessionId())))
+        }
+
+    /** 거절 정리는 그 거절을 받은 세션일 때만 한다 (#2238). */
+    @Test
+    fun `세션 대조 정리는 지금 세션일 때만 비운다`() =
+        runBlocking {
+            tokenDataSource.saveTokens(accessToken = "A-access", refreshToken = "A-refresh")
+            val sessionA = checkNotNull(tokenDataSource.currentSessionId())
+            registry.clearScope(StoreScope.SESSION)
+            tokenDataSource.saveTokens(accessToken = "B-access", refreshToken = "B-refresh")
+            val sessionB = checkNotNull(tokenDataSource.currentSessionId())
+
+            assertFalse(tokenDataSource.clearIfSession(sessionA))
+            assertEquals("B-access", tokenDataSource.getAccessToken())
+            assertEquals(sessionB, tokenDataSource.currentSessionId())
+
+            assertTrue(tokenDataSource.clearIfSession(sessionB))
+            assertNull(tokenDataSource.getAccessToken())
+            assertNull(tokenDataSource.currentSessionId())
+        }
+
     private fun assertNotNullSessionId(sessionId: String?) {
         assertTrue("로그인된 세션에는 식별자가 있어야 한다 (실제=$sessionId)", !sessionId.isNullOrBlank())
     }

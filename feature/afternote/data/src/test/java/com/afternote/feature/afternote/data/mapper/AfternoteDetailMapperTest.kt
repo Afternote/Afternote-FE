@@ -19,7 +19,7 @@ import org.junit.Test
  * [AfternoteDetailDto.toDomain] 회귀 가드 (작성자 상세).
  * 핵심 경계: 공통 필드와 타입별 [DetailContent] 분리, 부분·부재 credentials 의 빈 값 강등,
  * receivers null→emptyList, receiver 필드 null→"", processingMethods null→emptyList,
- * memorialVideo null→video/thumbnail null.
+ * memorialVideo null→video/thumbnail null, 미디어 URL 빈 문자열→null.
  */
 class AfternoteDetailMapperTest {
     @Test
@@ -229,6 +229,30 @@ class AfternoteDetailMapperTest {
         assertEquals(1, memorial.songs.size)
         assertEquals("s", memorial.songs.single().title)
         assertEquals("a", memorial.songs.single().artist)
+    }
+
+    @Test
+    fun `toDomain - 미디어 URL 의 빈 문자열은 없음으로 맞춘다`() {
+        val result =
+            Json
+                .decodeFromString<AfternoteDetailDto>(
+                    """
+                    {
+                      "afternoteId":1,"category":"PLAYLIST","title":"t","isDraft":false,
+                      "updatedAt":"$UPDATED_AT","receivers":[],
+                      "playlist":{
+                        "memorialPhotoUrl":"",
+                        "songs":[],
+                        "memorialVideo":{"videoUrl":" ","thumbnailUrl":""}
+                      }
+                    }
+                    """.trimIndent(),
+                ).toDomain()
+
+        val media = (result.content as DetailContent.Memorial).media
+        assertNull(media.photoUrl)
+        assertNull(media.videoUrl)
+        assertNull(media.thumbnailUrl)
     }
 
     @Test

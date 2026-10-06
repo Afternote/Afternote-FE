@@ -36,7 +36,7 @@ import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDis
  *
  * 이 리스트는 필터도 검색도 소유하지 않는다 — [songs] 를 받은 그대로 그리고, 상단 헤더는 호출부가
  * [header] 로 주입한다(필수 — 모든 호출부가 헤더를 가진다). 곡을 골라 담는 화면(AddSong)은
- * [SongSearchSection] 을 헤더로 주입하고, 열람·관리 화면은 "총 N곡" 헤더를 주입한다 — 즉 검색은 "여러
+ * [SongSearchSection] 을 헤더로 주입하고, 열람·관리 화면은 [PlaylistSongCountHeader] 를 주입한다 — 즉 검색은 "여러
  * 헤더 중 하나"일 뿐 리스트의 고정 지식이 아니다. 리스트가 내부 필터·검색을 갖던 시절엔 API 결과
  * 이중 필터·죽은 검색 바인딩 문제가 있어 둘 다 호출부로 넘겼다 (2026-07).
  * 구명 SearchableSongList — addsong 패키지 태생이라 "추가용 검색" 함의가 남아
@@ -110,7 +110,7 @@ private fun rememberSongSearchFieldState(
 
 /**
  * 곡 검색 헤더 (label + 입력창). [PlaylistSongList] 의 헤더 슬롯에 주입해 쓰는 여러 헤더 중 하나 —
- * view-only(수신자 열람)·selectable(노래 추가)이 주입한다. 관리 모드는 대신 "총 N곡" 헤더를 주입한다.
+ * selectable(노래 추가)이 주입한다. 열람·관리 화면은 대신 [PlaylistSongCountHeader] 를 주입한다.
  */
 @Composable
 fun SongSearchSection(
@@ -140,6 +140,34 @@ fun SongSearchSection(
             type = TextFieldType.Search,
             placeholder = stringResource(R.string.afternote_song_search_placeholder),
             imeAction = ImeAction.Search,
+        )
+    }
+}
+
+/**
+ * "총 N곡" 헤더. [PlaylistSongList] 의 헤더 슬롯에 주입해 쓰는 여러 헤더 중 하나 — 발신자 추억
+ * 플레이리스트(MemorialPlaylistEntry 목록·편집 모드)와 수신자 플레이리스트 전체보기
+ * (MemorialPlaylistScreen)가 주입한다. 수신자 헤더는 발신자 열람 헤더와 같아야 해서(#620)
+ * 두 화면이 이 하나를 쓴다.
+ */
+@Composable
+internal fun PlaylistSongCountHeader(
+    songCount: Int,
+    modifier: Modifier = Modifier,
+) {
+    // 헤더 상단 간격은 헤더별로 달라(검색 16 / 곡 수 8) 리스트가 아닌 각 헤더가 top 여백을 소유한다.
+    Column(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.afternote_playlist_song_count_format, songCount),
+            style =
+                AfternoteDesign.typography.bodySmallR.copy(
+                    color = AfternoteDesign.colors.gray9,
+                ),
         )
     }
 }

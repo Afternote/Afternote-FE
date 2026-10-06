@@ -8,13 +8,11 @@ import androidx.navigation.NavController
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.navigation.AfternoteExternalActions
-import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.home.presentation.receiver.ReceiverHomeActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingExternalActions
-import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
 import com.afternote.feature.setting.presentation.navigation.SettingExternalActions
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterNavActions
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
