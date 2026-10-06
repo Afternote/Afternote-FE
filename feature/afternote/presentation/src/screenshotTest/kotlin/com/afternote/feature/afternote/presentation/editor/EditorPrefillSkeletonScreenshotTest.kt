@@ -1,6 +1,8 @@
 package com.afternote.feature.afternote.presentation.editor
 
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
@@ -37,10 +39,16 @@ private fun EditorPrefillSkeletonScreenshotFixture(type: AfternoteType) {
             state.currentForm().copy(
                 typeForm = AfternoteTypeForm.pristineFor(type),
             )
-        EditorContent(
+        AfternoteEditorBody(
             state = state,
             form = form,
-            typeContent = {},
+            onNavigateToMemorialPlaylist = {},
+            onNavigateToSelectReceiver = {},
+            onThumbnailBytesReady = {},
+            onThumbnailExtractionFailed = {},
+            thumbnailRetryToken = 0,
+            onCaptureFailed = {},
+            snackbarHostState = remember { SnackbarHostState() },
             isPrefillLoading = true,
         )
     }
