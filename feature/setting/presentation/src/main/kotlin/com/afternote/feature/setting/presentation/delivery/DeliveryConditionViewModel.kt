@@ -1,8 +1,8 @@
 package com.afternote.feature.setting.presentation.delivery
 
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserReceiverRepository
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.model.delivery.DeliveryConditionType
 import com.afternote.core.model.delivery.DeliveryContentType
 import com.afternote.core.model.delivery.InactivityPeriod
@@ -35,7 +35,7 @@ internal class DeliveryConditionViewModel
         override fun onIntent(intent: DeliveryConditionIntent) {
             when (intent) {
                 DeliveryConditionIntent.RefreshOnReturn -> refreshOnReturn()
-                is DeliveryConditionIntent.SelectConditionType -> onConditionTypeSelected(intent.index)
+                is DeliveryConditionIntent.SelectConditionType -> dispatch(DeliveryConditionReducerEvent.ConditionSelected(intent.type))
                 DeliveryConditionIntent.Save -> onSave()
                 DeliveryConditionIntent.ConsumeSuccess -> dispatch(DeliveryConditionReducerEvent.SuccessConsumed)
             }
@@ -92,6 +92,7 @@ internal class DeliveryConditionViewModel
                         isSaving = false,
                         conditions = event.conditions,
                         isSaved = true,
+                        isSaveSuccessPending = true,
                         savedConditionRevision = event.revision,
                         error = null,
                     )
@@ -102,7 +103,7 @@ internal class DeliveryConditionViewModel
                 }
 
                 DeliveryConditionReducerEvent.SuccessConsumed -> {
-                    state.copy(isSaved = false)
+                    state.copy(isSaveSuccessPending = false)
                 }
             }
 
@@ -132,15 +133,9 @@ internal class DeliveryConditionViewModel
                 }
         }
 
-        private fun onConditionTypeSelected(index: Int) {
-            val conditionType =
-                if (index == 1) DeliveryConditionType.RECEIVER_REQUEST else DeliveryConditionType.INACTIVITY
-            dispatch(DeliveryConditionReducerEvent.ConditionSelected(conditionType))
-        }
-
         private fun onSave() {
             val state = currentState
-            if (!state.isInitialized || state.isSaving || state.isSaved) return
+            if (!state.isInitialized || state.isSaveLocked) return
 
             loadJob?.cancel()
             val savingRevision = state.conditionEditRevision

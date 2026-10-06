@@ -474,9 +474,11 @@ class SettingCompletionTest {
         }
         composeRule.runOnIdle { viewModel.onIntent(ReceiverEditIntent.ConsumeSuccess) }
         assertEquals(null, viewModel.uiState.value.pendingEvent)
-        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            !viewModel.uiState.value.isSaving
-        }
+        // 신호를 소비해도 저장 완료 사실은 남아, 화면이 닫히는 동안의 재제출을 무시한다.
+        assertFalse(viewModel.uiState.value.isSaving)
+        assertTrue(viewModel.uiState.value.isSaved)
+        composeRule.runOnIdle(update)
+        composeRule.waitForIdle()
         assertEquals(
             listOf(expectedBasicCall, expectedBasicCall, expectedBasicCall),
             repository.receiverUpdateCalls,
@@ -571,7 +573,7 @@ class SettingCompletionTest {
         val expectedCall = CompletionDeliveryUpdateCall(RECEIVER_ID, expectedConditions)
 
         composeRule.runOnIdle {
-            viewModel.onIntent(DeliveryConditionIntent.SelectConditionType(index = 1))
+            viewModel.onIntent(DeliveryConditionIntent.SelectConditionType(DeliveryConditionType.RECEIVER_REQUEST))
             viewModel.onIntent(DeliveryConditionIntent.Save)
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
@@ -609,13 +611,18 @@ class SettingCompletionTest {
             ),
         )
 
-        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) { viewModel.uiState.value.isSaved }
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) { viewModel.uiState.value.isSaveSuccessPending }
         composeRule.runOnIdle { viewModel.onIntent(DeliveryConditionIntent.ConsumeSuccess) }
-        assertFalse(viewModel.uiState.value.isSaved)
+        assertFalse(viewModel.uiState.value.isSaveSuccessPending)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.conditions == serverConditions
         }
+        // 신호를 소비해도 저장 완료 사실은 남아, 화면이 닫히는 동안의 재제출을 무시한다.
         assertFalse(viewModel.uiState.value.isSaving)
+        assertTrue(viewModel.uiState.value.isSaved)
+        composeRule.runOnIdle { viewModel.onIntent(DeliveryConditionIntent.Save) }
+        composeRule.waitForIdle()
+        assertEquals(listOf(expectedCall, expectedCall), repository.deliveryUpdateCalls)
     }
 
     @Test

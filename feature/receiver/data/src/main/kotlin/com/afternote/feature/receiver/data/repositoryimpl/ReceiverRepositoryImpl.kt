@@ -4,7 +4,7 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.common.result.runCatchingCancellable
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
 import com.afternote.feature.receiver.data.error.mapReceiverFailure
 import com.afternote.feature.receiver.data.local.ReceiverMasterKeyDataSource

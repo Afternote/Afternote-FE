@@ -240,7 +240,7 @@ class SettingReentryViewModelTest {
             val viewModel = deliveryViewModel(repository)
             runCurrent()
             viewModel.onIntent(DeliveryConditionIntent.RefreshOnReturn)
-            viewModel.onIntent(DeliveryConditionIntent.SelectConditionType(1))
+            viewModel.onIntent(DeliveryConditionIntent.SelectConditionType(DeliveryConditionType.RECEIVER_REQUEST))
             repository.onGetReceiverDeliveryConditions = { response.await() }
             viewModel.onIntent(DeliveryConditionIntent.RefreshOnReturn)
             runCurrent()
@@ -274,7 +274,7 @@ class SettingReentryViewModelTest {
             repository.onGetReceiverDeliveryConditions = { response.await() }
             viewModel.onIntent(DeliveryConditionIntent.RefreshOnReturn)
             runCurrent()
-            viewModel.onIntent(DeliveryConditionIntent.SelectConditionType(1))
+            viewModel.onIntent(DeliveryConditionIntent.SelectConditionType(DeliveryConditionType.RECEIVER_REQUEST))
             response.complete(delivery())
             runCurrent()
             assertEquals(DeliveryConditionType.RECEIVER_REQUEST, viewModel.uiState.value.conditionType)
@@ -315,7 +315,7 @@ class SettingReentryViewModelTest {
             viewModel.onIntent(DeliveryConditionIntent.RefreshOnReturn)
             viewModel.onIntent(DeliveryConditionIntent.RefreshOnReturn)
             runCurrent()
-            viewModel.onIntent(DeliveryConditionIntent.SelectConditionType(1))
+            viewModel.onIntent(DeliveryConditionIntent.SelectConditionType(DeliveryConditionType.RECEIVER_REQUEST))
             viewModel.onIntent(DeliveryConditionIntent.Save)
             viewModel.onIntent(DeliveryConditionIntent.Save)
             viewModel.onIntent(DeliveryConditionIntent.RefreshOnReturn)

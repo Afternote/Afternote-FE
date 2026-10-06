@@ -9,7 +9,7 @@ internal sealed interface DeliveryConditionIntent : MviIntent {
     data object RefreshOnReturn : DeliveryConditionIntent
 
     data class SelectConditionType(
-        val index: Int,
+        val type: DeliveryConditionType,
     ) : DeliveryConditionIntent
 
     data object Save : DeliveryConditionIntent

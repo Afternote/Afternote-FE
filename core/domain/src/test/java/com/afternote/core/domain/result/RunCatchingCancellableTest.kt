@@ -1,4 +1,4 @@
-package com.afternote.core.common.result
+package com.afternote.core.domain.result
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job

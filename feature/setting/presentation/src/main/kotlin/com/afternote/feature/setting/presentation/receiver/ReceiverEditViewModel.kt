@@ -1,8 +1,8 @@
 package com.afternote.feature.setting.presentation.receiver
 
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserReceiverRepository
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.setting.domain.UpdateReceiverInfoResult
@@ -45,7 +45,7 @@ internal class ReceiverEditViewModel
                 is ReceiverEditReducerEvent.LoadFailed -> state.copy(isLoading = false, errorMessage = event.message)
                 is ReceiverEditReducerEvent.ValidationFailed -> state.copy(errorMessage = event.message)
                 ReceiverEditReducerEvent.Saving -> state.copy(isSaving = true, errorMessage = null)
-                ReceiverEditReducerEvent.Saved -> state.copy(isSaving = false, pendingEvent = ReceiverEditEvent.EditSuccess)
+                ReceiverEditReducerEvent.Saved -> state.copy(isSaving = false, isSaved = true, pendingEvent = ReceiverEditEvent.EditSuccess)
                 is ReceiverEditReducerEvent.SaveFailed -> state.copy(isSaving = false, errorMessage = event.message)
                 ReceiverEditReducerEvent.SuccessConsumed -> state.copy(pendingEvent = null)
             }
@@ -72,7 +72,7 @@ internal class ReceiverEditViewModel
             email: String,
             message: String,
         ) {
-            if (currentState.isSaving || currentState.pendingEvent != null) return
+            if (currentState.isSaveLocked) return
             if (!email.isValidReceiverEmail()) {
                 dispatch(ReceiverEditReducerEvent.ValidationFailed(UiText.Resource(R.string.setting_receiver_email_invalid)))
                 return

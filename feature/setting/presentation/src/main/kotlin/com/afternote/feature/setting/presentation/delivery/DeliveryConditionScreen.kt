@@ -45,7 +45,7 @@ internal fun DeliveryConditionScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.onIntent(DeliveryConditionIntent.RefreshOnReturn) }
     ObserveFlag(
-        raised = uiState.isSaved,
+        raised = uiState.isSaveSuccessPending,
         consumed = DeliveryConditionIntent.ConsumeSuccess,
         onIntent = viewModel::onIntent,
         onRaised = onSaveSuccess,
@@ -64,10 +64,12 @@ internal fun DeliveryConditionScreen(
 private fun DeliveryConditionContent(
     uiState: DeliveryConditionUiState,
     onBack: () -> Unit,
-    onConditionTypeSelect: (Int) -> Unit,
+    onConditionTypeSelect: (DeliveryConditionType) -> Unit,
     onLastGreetingEditClick: () -> Unit,
     onSave: () -> Unit,
 ) {
+    // 라디오 순서의 단일 출처. processingMethodItems 와 같은 순서로 둔다.
+    val conditionTypes = listOf(DeliveryConditionType.INACTIVITY, DeliveryConditionType.RECEIVER_REQUEST)
     val processingMethodItems =
         listOf(
             RadioGroupItem(
@@ -86,7 +88,7 @@ private fun DeliveryConditionContent(
                 title = stringResource(R.string.setting_recipient_after_delivery),
                 onBackClick = onBack,
                 actions = {
-                    val isSaveEnabled = uiState.isInitialized && !uiState.isLoading && !uiState.isSaving
+                    val isSaveEnabled = uiState.isInitialized && !uiState.isLoading && !uiState.isSaveLocked
                     TextButton(onClick = onSave, enabled = isSaveEnabled) {
                         Text(
                             text = stringResource(R.string.setting_delivery_condition_save),
@@ -130,8 +132,8 @@ private fun DeliveryConditionContent(
             Spacer(Modifier.height(28.dp))
             RadioGroup(
                 items = processingMethodItems,
-                selectedIndex = if (uiState.conditionType == DeliveryConditionType.INACTIVITY) 0 else 1,
-                onSelectIndex = onConditionTypeSelect,
+                selectedIndex = conditionTypes.indexOf(uiState.conditionType),
+                onSelectIndex = { onConditionTypeSelect(conditionTypes[it]) },
             )
 
             Spacer(Modifier.height(32.dp))

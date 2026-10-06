@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.presentation.editor
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.domain.model.author.Detail
@@ -14,6 +14,7 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUpl
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
+import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.afternoteEditorSavedStateHandle
 import com.afternote.feature.afternote.presentation.editor.model.RegisterAfternotePayload
@@ -244,7 +245,7 @@ class AfternoteEditorPrefillFailureTest {
                     route = AfternoteRoute.EditorFlowRoute(initialType = AfternoteType.SOCIAL_NETWORK),
                     savedStateHandle =
                         afternoteEditorSavedStateHandle(initialType = AfternoteType.SOCIAL_NETWORK, itemId = null),
-                    userRepository = unusedProxy<UserRepository>(),
+                    userReceiverRepository = unusedProxy<UserReceiverRepository>(),
                     afternoteRepository = repository,
                     memorialThumbnailUploadRepository =
                         MemorialThumbnailUploadRepository { error("썸네일 업로드가 호출되면 안 됩니다") },
@@ -254,6 +255,7 @@ class AfternoteEditorPrefillFailureTest {
                                 if (input == MediaInput.None) Result.success(null) else error("미디어 업로드가 호출되면 안 됩니다")
                             },
                         ),
+                    saveAfternoteUseCase = SaveAfternoteUseCase(repository),
                     errorReporter = RecordingErrorReporter(),
                 )
             backgroundScope.launch { viewModel.uiState.collect {} }
@@ -293,7 +295,7 @@ class AfternoteEditorPrefillFailureTest {
         return AfternoteEditorViewModel(
             route = editorHandle.editorFlowRoute(),
             savedStateHandle = editorHandle,
-            userRepository = unusedProxy<UserRepository>(),
+            userReceiverRepository = unusedProxy<UserReceiverRepository>(),
             afternoteRepository = repository,
             memorialThumbnailUploadRepository =
                 MemorialThumbnailUploadRepository { error("썸네일 업로드가 호출되면 안 됩니다") },
@@ -308,6 +310,7 @@ class AfternoteEditorPrefillFailureTest {
                         }
                     },
                 ),
+            saveAfternoteUseCase = SaveAfternoteUseCase(repository),
             errorReporter = errorReporter,
         )
     }
