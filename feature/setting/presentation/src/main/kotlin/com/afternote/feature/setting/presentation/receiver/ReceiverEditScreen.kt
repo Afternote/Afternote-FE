@@ -1,35 +1,32 @@
 package com.afternote.feature.setting.presentation.receiver
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.mvi.ObserveSignal
 
 @Composable
-fun ReceiverEditScreen(
+internal fun ReceiverEditScreen(
     onBackClick: () -> Unit,
     onEditSuccess: () -> Unit,
+    viewModel: ReceiverEditViewModel,
     modifier: Modifier = Modifier,
-    viewModel: ReceiverEditViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val currentOnEditSuccess by rememberUpdatedState(onEditSuccess)
-
-    LaunchedEffect(Unit) {
-        viewModel.events.collect { event ->
-            when (event) {
-                ReceiverEditEvent.EditSuccess -> currentOnEditSuccess()
-            }
-        }
-    }
+    ObserveSignal(
+        signal = uiState.pendingEvent,
+        consumed = ReceiverEditIntent.ConsumeSuccess,
+        onIntent = viewModel::onIntent,
+        onSignal = { onEditSuccess() },
+    )
 
     ReceiverEditContent(
         uiState = uiState,
         onBackClick = onBackClick,
-        onRegister = viewModel::update,
+        onRegister = { name, relation, phone, email, message ->
+            viewModel.onIntent(ReceiverEditIntent.Update(name, relation, phone, email, message))
+        },
         modifier = modifier,
     )
 }

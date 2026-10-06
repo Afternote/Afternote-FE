@@ -1,7 +1,7 @@
 package com.afternote.core.data.repoimpl.auth
 
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.error.CoreAuthFailure
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.network.model.ApiException
 import java.io.IOException
 
