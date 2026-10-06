@@ -31,10 +31,7 @@ dependencies {
     implementation(projects.core.domain)
     implementation(projects.core.model)
     implementation(projects.core.ui)
-    implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.compose.runtime)
-    implementation(libs.kakao.sdk.auth)
-    implementation(libs.kakao.sdk.user)
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
@@ -42,6 +39,7 @@ dependencies {
 
     testImplementation(libs.coroutines.test)
     testImplementation(testFixtures(projects.core.domain))
+    testImplementation(testFixtures(projects.feature.setting.domain))
     testImplementation(projects.core.network)
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.androidx.compose.ui.test.junit4)

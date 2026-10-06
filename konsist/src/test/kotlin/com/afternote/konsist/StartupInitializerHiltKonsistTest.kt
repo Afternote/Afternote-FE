@@ -12,7 +12,7 @@ import org.junit.Test
  * 테스트마다 같은 자리에서 죽고 원인은 앱 코드 쪽에 있어 한참을 헤맨다.
  *
  * Hilt 가 필요한 시작 훅은 `GlobalApplication.onCreate` 에 둔다. `Initializer` 는 Hilt 없이 되는
- * 일(SDK 초기화·WorkManager 예약)만 맡는다.
+ * 일(SDK 초기화)만 맡는다. 세션을 봐야 하는 일도 Hilt 가 필요하다. 데일리 알림 예약이 그래서 옮겨 갔다 (#2146).
  */
 class StartupInitializerHiltKonsistTest {
     @Test
@@ -58,7 +58,7 @@ class StartupInitializerHiltKonsistTest {
         const val INITIALIZER = "Initializer"
 
         /** 지금 저장소의 Initializer 구현. 하나라도 안 보이면 스캔이 잘못된 것이다. */
-        val KNOWN_INITIALIZERS = setOf("KakaoInitializer", "DailyNotificationInitializer")
+        val KNOWN_INITIALIZERS = setOf("KakaoInitializer")
 
         val HILT_ENTRY_POINT_ACCESSORS = listOf("EntryPointAccessors", "EntryPoints.get")
 

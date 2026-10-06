@@ -171,27 +171,30 @@ ViewModel 테스트는 작업 결과 신호와 소비 후 초기화를, 화면 �
 
 ## 강제
 
-`MviContractKonsistTest` 가 셋을 본다.
+`MviContractKonsistTest` 가 넷을 본다.
 
 | 규칙 | 내용 |
 | --- | --- |
 | A | `MviViewModel` 상속체는 `MutableStateFlow`·`MutableSharedFlow`·`Channel` 을 직접 선언하지 않는다 |
 | B | `feature/*/presentation` 의 ViewModel 은 `MviViewModel` 을 상속한다 |
 | C | `MviIntent`·`ReducerEvent` 를 직접 구현하는 타입은 `sealed interface` 다 |
+| D | 아직 전환하지 않은 `feature/*/presentation` ViewModel 도 이벤트용 `Channel`·`MutableSharedFlow` 를 새로 선언하지 않는다 (#1502) |
 
-규칙 B 는 아직 전환하지 않은 ViewModel 을 `PENDING_MVI_MIGRATION` 예외로 둔다(가드 도입 시점 49개, onboarding 파일럿 이후 46개). 모듈 전환 이슈가 닫힐 때마다 목록에서 빼고, **목록이 비면 예외 자체를 지운다.** `app` 의 ViewModel 2개는 규칙 B 의 대상이 아니다 — #1809 가 처리한다.
+규칙 B 는 아직 전환하지 않은 ViewModel 을 `PENDING_MVI_MIGRATION` 예외로 둔다(가드 도입 시점 49개). 전환할 때마다 목록에서 빼고, **목록이 비면 예외 자체를 지운다.** `app` 의 ViewModel 은 규칙 B 의 범위 밖이다.
 
-세 규칙은 **프로덕션 소스만** 본다. 테스트 더블이 `MviViewModel` 을 상속하며 보조 상태 홀더를 드는 것은
+규칙 D 는 규칙 B 의 예외에 든 ViewModel 이 전환 전까지 이벤트 스트림을 늘리지 못하게 한다. 규칙 A 는 전환한 ViewModel 만 보기 때문이다. 가드를 세울 때 이미 있던 선언은 `LEGACY_EVENT_STREAMS` 기준선으로 인정하고, 그 ViewModel 이 전환되거나 지워지면 기준선에서도 뺀다. 전환 전 상태 홀더인 `MutableStateFlow` 는 대상이 아니다.
+
+네 규칙은 **프로덕션 소스만** 본다. 테스트 더블이 `MviViewModel` 을 상속하며 보조 상태 홀더를 드는 것은
 규칙 A 의 대상이 아니다 — 더블은 계약을 지키는 대상이 아니라 계약을 흉내 내는 도구다.
 
-규칙 A·B 의 상속 판정은 **중간 추상 베이스를 낀 사슬까지** 따라간다. Konsist 의
+규칙 A·B·D 의 상속 판정은 **중간 추상 베이스를 낀 사슬까지** 따라간다. Konsist 의
 `parents(indirectParents = true)` 로는 안 되고(0.17.3 에서 이 스코프 구성으로는 직계와 같은 목록을
 돌려준다 — 실측), 스캔한 파일에서 이름 색인을 만들어 직접 걷는다.
 
 ### 가드가 «안» 보는 것
 
 - **`onIntent` 밖의 public 진입점.** 상속체가 `fun refreshOnReturn()` 같은 public 함수를 노출해도
-  세 규칙 어디도 막지 않는다. 화면이 ViewModel 을 직접 부르는 통로가 `onIntent` 하나여야 한다는 것은
+  네 규칙 어디도 막지 않는다. 화면이 ViewModel 을 직접 부르는 통로가 `onIntent` 하나여야 한다는 것은
   규약이지 CI 계약이 아니다. 리뷰에서 본다.
 - **`reduce` 밖의 전이.** 규칙 A 는 «상태 홀더 선언» 을 막을 뿐, `dispatch` 를 거치지 않는 다른 경로를
   전수로 잡지는 못한다.
