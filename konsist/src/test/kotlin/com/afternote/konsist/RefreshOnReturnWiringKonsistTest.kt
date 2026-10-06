@@ -1,6 +1,8 @@
 package com.afternote.konsist
 
 import com.lemonappdev.konsist.api.declaration.KoFileDeclaration
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -19,7 +21,7 @@ import org.junit.Test
  *
  * ### 규칙
  * main 소스셋의 어느 클래스가 `refreshOnReturn` 을 선언하면, **자기 파일이 아닌** main 소스셋
- * 파일 중 `Lifecycle.Event.ON_RESUME` 과 `refreshOnReturn(` 을 함께 갖고 그 클래스 이름을
+ * 파일 중 `Lifecycle.Event.ON_RESUME`과 직접 갱신 호출 또는 해당 ViewModel의 RefreshOnReturn Intent를 갖고 클래스 이름을
  * 참조하는 파일이 최소 하나 있어야 한다.
  *
  * 모듈을 가로지르는 결선(홈 탭은 `feature:home:presentation` 의 ViewModel 을 app 모듈
@@ -35,7 +37,7 @@ class RefreshOnReturnWiringKonsistTest {
     @Test
     fun `refreshOnReturn 을 선언한 ViewModel 은 ON_RESUME 결선을 갖는다`() {
         val mainFiles = mainSourceFiles()
-        val wiringSites = mainFiles.filter { ON_RESUME in it.text && REFRESH_CALL in it.text }
+        val wiringSites = mainFiles.filter { ON_RESUME in it.text }
 
         val unwired =
             mainFiles
@@ -46,7 +48,7 @@ class RefreshOnReturnWiringKonsistTest {
                         .map { declaration -> file to declaration.name }
                 }.filter { (declaringFile, className) ->
                     wiringSites.none { site ->
-                        site.projectPath != declaringFile.projectPath && site.references(className)
+                        site.projectPath != declaringFile.projectPath && site.references(className) && hasRefreshCall(site.text, className)
                     }
                 }.map { (declaringFile, className) -> "${declaringFile.normalizedProjectPath()} — $className" }
 
@@ -62,6 +64,23 @@ class RefreshOnReturnWiringKonsistTest {
                 appendLine("갱신이 더는 필요 없다면 ViewModel 의 refreshOnReturn() 도 함께 지운다 — 짝을 맞춘다.")
             }
         }
+    }
+
+    @Test
+    fun `MVI 전환 뒤에도 해당 ViewModel의 resume Intent 결선을 요구한다`() {
+        assertTrue(hasRefreshCall("viewModel.onIntent(ExampleIntent.RefreshOnReturn)", "ExampleViewModel"))
+        assertTrue(hasRefreshCall("viewModel.refreshOnReturn()", "ExampleViewModel"))
+        assertFalse(hasRefreshCall("viewModel.onIntent(OtherIntent.RefreshOnReturn)", "ExampleViewModel"))
+        assertFalse(hasRefreshCall("viewModel.onIntent(ExampleIntent.Retry)", "ExampleViewModel"))
+    }
+
+    private fun hasRefreshCall(
+        text: String,
+        className: String,
+    ): Boolean {
+        val intentName = className.removeSuffix("ViewModel") + "Intent"
+        val intentCall = Regex("""\bonIntent\s*\(\s*${Regex.escape(intentName)}\.RefreshOnReturn\s*\)""")
+        return REFRESH_CALL in text || intentCall.containsMatchIn(text)
     }
 
     private fun mainSourceFiles(): List<KoFileDeclaration> =

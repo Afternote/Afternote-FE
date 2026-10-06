@@ -71,6 +71,9 @@ sealed interface AfternoteEditorError {
      */
     data object PrefillNotReady : AfternoteEditorError
 
+    /** 사진·영상 파일이 서버의 업로드 한도를 초과했다. 같은 파일의 재시도를 안내하지 않는다. */
+    data object MediaSizeExceeded : AfternoteEditorError
+
     data class Upload(
         val target: Target,
     ) : AfternoteEditorError {
