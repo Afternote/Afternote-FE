@@ -187,4 +187,4 @@ Kover는 임의의 절대 커버리지 목표를 강제하지 않는다. 정확�
 
 - PR의 담당자는 올린 사람이 아니라 **어사인된 사람**이다. 어사인이 비어 있으면 [자동 어사인 workflow](.github/workflows/pr-assign-author.yml)가 작성자를 건다. 사람이 담당자를 바꾼 것은 되돌리지 않는다.
 - `develop`·`main` 머지에 리뷰 승인은 필요 없다. PR 경유, 필수 검사, `develop`의 merge queue는 그대로 요구된다.
-- `develop` 대상 PR은 1hyok가 모든 파일을 Viewed로 체크하면 [Viewed 자동 머지 workflow](.github/workflows/viewed-auto-merge.yml)가 10분 안팎으로 자동 머지(Merge when ready)를 예약한다. Viewed 체크에는 이벤트가 없어 주기 실행으로 훑고, 본인 체크만 조회되므로 1hyok의 읽기 전용 토큰을 `VIEWED_TOKEN` 시크릿으로 둔다. 필수 검사가 통과해야 merge queue로 들어가며, 예약을 멈추려면 파일 하나의 Viewed를 풀고 PR 화면에서 예약을 끈다.
+- `develop` 대상 PR은 1hyok가 모든 파일을 Viewed로 체크하면 [Viewed 자동 머지 workflow](.github/workflows/viewed-auto-merge.yml)가 10분 안팎으로 자동 머지(Merge when ready)를 예약한다. Viewed 체크에는 이벤트가 없어 주기 실행으로 훑고, 본인 체크만 조회되므로 1hyok의 읽기 전용 토큰을 `VIEWED_TOKEN` 시크릿으로 둔다. 필수 검사가 통과해야 merge queue로 들어간다. 이 workflow는 예약을 걸기만 하고 풀거나 큐에서 빼지 않으므로, Viewed가 덜 찬 PR도 직접 예약하거나 큐에 넣으면 그대로 머지된다. 예약을 멈추려면 PR 화면에서 끈다.

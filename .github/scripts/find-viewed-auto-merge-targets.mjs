@@ -8,24 +8,23 @@
 // 읽고, 토큰 주인이 VIEWED_BY 와 다르면 판정하지 않는다. 쓰기(예약)는 워크플로의 GITHUB_TOKEN 이 한다.
 // 체크한 뒤 바뀐 파일은 GitHub 가 DISMISSED 로 되돌리므로 새 커밋은 다시 봐야 대상이 된다.
 //
-// 예약을 건 뒤 새 push 로 Viewed 가 풀려도 GitHub 는 예약·큐 등록을 그대로 두고, develop 룰셋은 push 로 승인을
-// 지우지 않는다(dismiss_stale_reviews_on_push false). 그래서 예약됐거나 큐에 있는 PR 중 Viewed 가 다 차지 않은
-// 것은 해제 대상으로 고른다(#2252). 누가 걸었는지는 따지지 않는다. 다시 전부 Viewed 가 되면 다음 실행이 다시 건다.
+// 반대 방향(예약 해제·큐에서 빼기)은 하지 않는다(#2252 폐지). Viewed 가 덜 찬 PR 도 사람이 직접 예약하거나 큐에 넣으면
+// 그대로 머지된다. Viewed 는 자동 예약의 조건일 뿐 머지를 막는 장치가 아니다.
 //
 // 이 규칙은 VIEWED_BY 개인의 운영 규칙이라 VIEWED_BY 본인이 작성한 PR 에만 적용한다(#2270). 팀원·봇 PR 은
-// 예약도 해제도 하지 않는다. 걸지 않으면 VIEWED_BY 가 보지 않은 팀원·dependabot PR 이 큐에서 계속 빠진다.
+// 예약하지 않는다.
 import { appendFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 const PULL_REQUEST_FIELDS = `
-    id number isDraft headRefOid isInMergeQueue changedFiles
+    number isDraft headRefOid isInMergeQueue changedFiles
     author { login }
     autoMergeRequest { enabledAt }
     files(first: 100) { pageInfo { hasNextPage endCursor } nodes { path viewerViewedState } }
 `;
 
 /**
- * 예약·해제를 판정할 PR 인지 가른다. VIEWED_BY 본인이 작성한 PR 만 대상이다(대소문자 무시).
+ * 예약을 판정할 PR 인지 가른다. VIEWED_BY 본인이 작성한 PR 만 대상이다(대소문자 무시).
  * 작성자를 알 수 없는 PR(탈퇴 계정 등)은 대상이 아니다.
  *
  * @param {object} pullRequest GraphQL PullRequest 노드
@@ -56,30 +55,6 @@ export function decideViewedAutoMerge(pullRequest, files) {
         return { enable: false, reason: `Viewed 안 된 파일 ${unviewed.length}/${files.length}` };
     }
     return { enable: true, reason: `모든 파일 Viewed — 자동 머지 예약` };
-}
-
-/**
- * 자동 머지 예약 또는 merge queue 등록을 풀어야 하는지 판정한다.
- *
- * @param {object} pullRequest GraphQL PullRequest 노드
- * @param {Array<{ path: string, viewerViewedState: string }>} files PR 의 전체 변경 파일
- * @returns {{ disableAutoMerge: boolean, dequeue: boolean, reason: string }}
- */
-export function decideViewedAutoMergeCancel(pullRequest, files) {
-    const autoMerge = Boolean(pullRequest.autoMergeRequest);
-    const queued = Boolean(pullRequest.isInMergeQueue);
-    if (!autoMerge && !queued) return { disableAutoMerge: false, dequeue: false, reason: "예약·큐 등록 없음" };
-    const keep = (reason) => ({ disableAutoMerge: false, dequeue: false, reason });
-    const cancel = (reason) => ({ disableAutoMerge: autoMerge, dequeue: queued, reason });
-    // 파일 목록을 다 못 읽었으면 «다 봤다» 고 단정하지 않는다. 예약 쪽과 같은 기준이다.
-    if (files.length === 0 || files.length !== pullRequest.changedFiles) {
-        return cancel(`파일 ${files.length}/${pullRequest.changedFiles} 만 읽었다 — 예약·큐 해제`);
-    }
-    const unviewed = files.filter((file) => file.viewerViewedState !== "VIEWED");
-    if (unviewed.length > 0) {
-        return cancel(`Viewed 안 된 파일 ${unviewed.length}/${files.length} — 예약·큐 해제`);
-    }
-    return keep("이미 자동 머지 예약 또는 merge queue 에 있고 모든 파일 Viewed");
 }
 
 async function graphql(token, apiUrl, query, variables) {
@@ -117,35 +92,23 @@ async function readAllFiles(request, owner, name, pullRequest) {
 }
 
 /**
- * 열린 PR 마다 예약·해제를 판정한다. VIEWED_BY 본인 PR 이 아니면 파일도 읽지 않고 건너뛴다.
+ * 열린 PR 마다 예약을 판정한다. VIEWED_BY 본인 PR 이 아니면 파일도 읽지 않고 건너뛴다.
  *
- * @returns {Promise<{ targets: Array<object>, cancels: Array<object> }>}
+ * @returns {Promise<{ targets: Array<object> }>}
  */
 export async function collectViewedAutoMergeActions(request, owner, name, viewedBy, pullRequests) {
     const targets = [];
-    const cancels = [];
     for (const pullRequest of pullRequests) {
         if (!isAuthoredByViewer(pullRequest, viewedBy)) {
             console.log(`#${pullRequest.number}: 작성자 ${pullRequest.author?.login ?? "없음"} — ${viewedBy} 의 PR 이 아니라 건드리지 않는다`);
             continue;
         }
         const files = await readAllFiles(request, owner, name, pullRequest);
-        const cancel = decideViewedAutoMergeCancel(pullRequest, files);
-        if (cancel.disableAutoMerge || cancel.dequeue) {
-            console.log(`#${pullRequest.number}: ${cancel.reason}`);
-            cancels.push({
-                number: pullRequest.number,
-                id: pullRequest.id,
-                disableAutoMerge: cancel.disableAutoMerge,
-                dequeue: cancel.dequeue,
-            });
-            continue;
-        }
         const decision = decideViewedAutoMerge(pullRequest, files);
         console.log(`#${pullRequest.number}: ${decision.reason}`);
         if (decision.enable) targets.push({ number: pullRequest.number, headSha: pullRequest.headRefOid });
     }
-    return { targets, cancels };
+    return { targets };
 }
 
 async function main() {
@@ -172,13 +135,13 @@ async function main() {
         throw new Error(`VIEWED_TOKEN 주인이 ${data.viewer.login} 입니다 — ${viewedBy} 의 토큰이어야 합니다.`);
     }
 
-    const { targets, cancels } = await collectViewedAutoMergeActions(
+    const { targets } = await collectViewedAutoMergeActions(
         request, owner, name, viewedBy, data.repository.pullRequests.nodes,
     );
     if (process.env.GITHUB_OUTPUT) {
         appendFileSync(
             process.env.GITHUB_OUTPUT,
-            `targets=${JSON.stringify(targets)}\ncancels=${JSON.stringify(cancels)}\n`,
+            `targets=${JSON.stringify(targets)}\n`,
         );
     }
 }
