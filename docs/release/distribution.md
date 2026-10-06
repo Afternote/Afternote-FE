@@ -79,7 +79,7 @@ PR 유형과 파일 단위 이력은 사용자 흐름의 의미를 완전히 표
 
 기존 `release-distribution.yml`의 `develop` 수동 배포(`workflow_dispatch`)는 #1029에서 제거했다. 도착지와 산출물 버전이 main 경로와 같아 실익이 PR 생성 한 단계뿐이었던 반면, release keystore와 service account를 임의 ref에 노출하는 표면이었다.
 
-예외적으로 [`firebase-wif-canary.yml`](../../.github/workflows/firebase-wif-canary.yml)은 `develop` 또는 `main`에서 보호 Environment 승인과 명시적 확인을 받은 뒤 실제 APK를 올리는 **수동 인증 호환성 검증 경로**다. 일반 릴리스나 임의 브랜치 배포 수단으로 사용하지 않으며, production JSON 자격을 WIF로 교체하기 전 판정 절차는 [WIF canary runbook](firebase-wif-canary.md)을 따른다.
+예외적으로 [`firebase-wif-canary.yml`](../../.github/workflows/firebase-wif-canary.yml)은 `develop` 또는 `main`에서 보호 Environment 승인과 명시적 확인을 받은 뒤 실제 APK를 올리는 **수동 인증 호환성 검증 경로**다. 일반 릴리스나 임의 브랜치 배포 수단으로 사용하지 않는다. production `release-distribution.yml`도 #1463부터 같은 WIF 경로로 인증하고, 장기 JSON 키 경로는 #1566에서 걷었다. canary 실행 조건은 [WIF canary runbook](firebase-wif-canary.md)을 따른다.
 
 `develop` → `main` 릴리스 PR 본문에 다음 섹션을 채운다.
 
@@ -106,15 +106,14 @@ CI가 사용하는 GitHub Secrets (Settings → Secrets and variables → Action
 | `RELEASE_STORE_PASSWORD` | keystore 비밀번호 |
 | `RELEASE_KEY_ALIAS` | key alias (`afternote-release`) |
 | `RELEASE_KEY_PASSWORD` | key 비밀번호 |
-| `FIREBASE_SERVICE_ACCOUNT_JSON` | App Distribution Admin 권한 부여된 service account JSON 원문 |
 | `KAKAO_NATIVE_APP_KEY` · `GOOGLE_WEB_CLIENT_ID` · `GOOGLE_SERVICES_JSON_B64` | release distribution·WIF canary·dependency audit가 쓰는 실서비스 앱 설정 |
-| `GCP_WORKLOAD_IDENTITY_PROVIDER` · `GCP_FIREBASE_SERVICE_ACCOUNT` | 수동 WIF canary 전용 OIDC 설정 ([runbook](firebase-wif-canary.md)) |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER` · `GCP_FIREBASE_SERVICE_ACCOUNT` | release distribution과 WIF canary가 Firebase 업로드 직전에 쓰는 WIF 설정. 서비스 계정 `afternote-ci` 는 이 두 워크플로에만 묶여 있다([Play release runbook](../play-release.md) 사전 준비 3번) |
 
 > base64 인코딩: `base64 -i ~/afternote-release.jks | pbcopy` (macOS)
 
 PR 검증용 lint·unit-test·screenshot은 repository secret 대신
 `.github/actions/setup-ci-config`가 만드는 결정적 CI 전용 placeholder를 사용한다. 이 fixture는
-배포에 사용할 수 없으며, production `release-distribution.yml`은 계속 승인된 환경의 JSON 자격을 사용한다. WIF canary 성공만으로 이를 제거하지 않는다.
+배포에 사용할 수 없으며, production `release-distribution.yml`은 승인된 환경에서 WIF로 받은 단기 자격으로만 업로드한다.
 
 ### 배포 provenance: 이 APK 가 어느 commit·run 에서 나왔는지 (#851)
 

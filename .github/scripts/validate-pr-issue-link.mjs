@@ -75,7 +75,6 @@ function issueAssigneeLogins(issue) {
 }
 
 // 봇은 Issue 담당자로 지정할 수 없으므로 담당자 대조에서 면제한다.
-// review-debt-guard·review-request-all 의 봇 면제 규약과 같은 경계다.
 function isBotAuthor(user, login) {
     return user?.type === "Bot" || login.endsWith("[bot]");
 }
