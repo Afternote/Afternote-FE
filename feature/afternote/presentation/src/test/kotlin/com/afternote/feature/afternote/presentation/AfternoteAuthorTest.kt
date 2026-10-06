@@ -14,6 +14,7 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnai
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
+import com.afternote.feature.afternote.presentation.editor.AfternoteEditorIntent
 import com.afternote.feature.afternote.presentation.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.editor.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.editor.message.EditorMessageTextBlock
@@ -48,11 +49,13 @@ class AfternoteAuthorTest {
         }
 
         composeRule.runOnIdle {
-            viewModel.setType(AfternoteType.SOCIAL_NETWORK)
-            viewModel.saveAfternote(
-                payload = validSocialPayload(),
-                selectedReceiverIds = emptyList(),
-                memorialMedia = SaveAfternoteMemorialMedia(),
+            viewModel.onIntent(AfternoteEditorIntent.SetType(AfternoteType.SOCIAL_NETWORK))
+            viewModel.onIntent(
+                AfternoteEditorIntent.Save(
+                    payload = validSocialPayload(),
+                    selectedReceiverIds = emptyList(),
+                    memorialMedia = SaveAfternoteMemorialMedia(),
+                ),
             )
         }
         composeRule.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.savedId == 41L }
@@ -82,15 +85,15 @@ class AfternoteAuthorTest {
         val payload = validSocialPayload()
 
         composeRule.runOnIdle {
-            viewModel.setType(AfternoteType.SOCIAL_NETWORK)
-            viewModel.saveAfternote(payload, listOf(7L), SaveAfternoteMemorialMedia())
+            viewModel.onIntent(AfternoteEditorIntent.SetType(AfternoteType.SOCIAL_NETWORK))
+            viewModel.onIntent(AfternoteEditorIntent.Save(payload, listOf(7L), SaveAfternoteMemorialMedia()))
         }
         composeRule.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.error != null }
         assertNull(viewModel.uiState.value.savedId)
 
         composeRule.runOnIdle {
-            viewModel.setType(AfternoteType.SOCIAL_NETWORK)
-            viewModel.saveAfternote(payload, listOf(7L), SaveAfternoteMemorialMedia())
+            viewModel.onIntent(AfternoteEditorIntent.SetType(AfternoteType.SOCIAL_NETWORK))
+            viewModel.onIntent(AfternoteEditorIntent.Save(payload, listOf(7L), SaveAfternoteMemorialMedia()))
         }
         composeRule.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.savedId == 42L }
 
@@ -109,13 +112,13 @@ class AfternoteAuthorTest {
         val first = viewModel(FakeAfternoteRepository.strict(), handle)
         composeRule.setContent { AfternoteTheme {} }
         composeRule.runOnIdle {
-            first.setType(AfternoteType.GALLERY_AND_FILES)
-            first.setService("Google Photos")
-            first.addReceiverIfAbsent(7L, "김수신", "가족")
-            first.addProcessingMethod("전체 파일 전달")
+            first.onIntent(AfternoteEditorIntent.SetType(AfternoteType.GALLERY_AND_FILES))
+            first.onIntent(AfternoteEditorIntent.SetService("Google Photos"))
+            first.onIntent(AfternoteEditorIntent.AddReceiverIfAbsent(7L, "김수신", "가족"))
+            first.onIntent(AfternoteEditorIntent.AddProcessingMethod("전체 파일 전달"))
         }
 
-        val restored = viewModel(FakeAfternoteRepository.strict(), handle).currentForm()
+        val restored = viewModel(FakeAfternoteRepository.strict(), handle).uiState.value.form
 
         assertEquals(AfternoteType.GALLERY_AND_FILES, restored.selectedType)
         assertEquals("Google Photos", restored.selectedService)

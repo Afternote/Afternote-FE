@@ -75,7 +75,7 @@ class AfternoteEditorProcessDeathPrefillTest {
             runCurrent()
 
             // 복원 직후의 폼은 사용자가 고친 제목을 들고 있다.
-            assertEquals(EDITED_SERVICE, viewModel.currentForm().selectedService)
+            assertEquals(EDITED_SERVICE, viewModel.uiState.value.form.selectedService)
 
             val prefill = viewModel.uiState.value.pendingPrefill
             assertNotNull("상세 재조회는 폼이 더러운지 묻지 않고 프리필을 발행한다", prefill)
