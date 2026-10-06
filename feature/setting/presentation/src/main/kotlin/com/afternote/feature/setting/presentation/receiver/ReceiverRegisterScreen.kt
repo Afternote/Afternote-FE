@@ -74,7 +74,7 @@ fun ReceiverRegisterScreen(
         title = "수신자 등록",
         actionText = "등록",
         isPhoneRequired = true,
-        isLoading = uiState.isLoading,
+        isActionLocked = uiState.isLoading,
         errorMessage = uiState.errorMessage,
         onBackClick = onBackClick,
         onRegister = viewModel::register,
@@ -87,7 +87,7 @@ internal fun ReceiverRegisterContent(
     title: String,
     actionText: String,
     isPhoneRequired: Boolean,
-    isLoading: Boolean,
+    isActionLocked: Boolean,
     errorMessage: UiText?,
     onBackClick: () -> Unit,
     onRegister: (name: String, relation: String, phone: String, email: String, message: String) -> Unit,
@@ -149,7 +149,7 @@ internal fun ReceiverRegisterContent(
                                 messageState.text.toString(),
                             )
                         },
-                        enabled = isFormValid && !isLoading,
+                        enabled = isFormValid && !isActionLocked,
                         colors =
                             ButtonDefaults.textButtonColors(
                                 contentColor = AfternoteDesign.colors.gray9,

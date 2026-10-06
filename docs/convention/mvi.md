@@ -180,7 +180,7 @@ ViewModel 테스트는 작업 결과 신호와 소비 후 초기화를, 화면 �
 | C | `MviIntent`·`ReducerEvent` 를 직접 구현하는 타입은 `sealed interface` 다 |
 | D | 아직 전환하지 않은 `feature/*/presentation` ViewModel 도 이벤트용 `Channel`·`MutableSharedFlow` 를 새로 선언하지 않는다 (#1502) |
 
-규칙 B 는 아직 전환하지 않은 ViewModel 을 `PENDING_MVI_MIGRATION` 예외로 둔다(가드 도입 시점 49개, onboarding 파일럿 이후 46개). 모듈 전환 이슈가 닫힐 때마다 목록에서 빼고, **목록이 비면 예외 자체를 지운다.** `app` 의 ViewModel 2개는 규칙 B 의 대상이 아니다 — #1809 가 처리한다.
+규칙 B 는 아직 전환하지 않은 ViewModel 을 `PENDING_MVI_MIGRATION` 예외로 둔다(가드 도입 시점 49개). 전환할 때마다 목록에서 빼고, **목록이 비면 예외 자체를 지운다.** `app` 의 ViewModel 은 규칙 B 의 범위 밖이다.
 
 규칙 D 는 규칙 B 의 예외에 든 ViewModel 이 전환 전까지 이벤트 스트림을 늘리지 못하게 한다. 규칙 A 는 전환한 ViewModel 만 보기 때문이다. 가드를 세울 때 이미 있던 선언은 `LEGACY_EVENT_STREAMS` 기준선으로 인정하고, 그 ViewModel 이 전환되거나 지워지면 기준선에서도 뺀다. 전환 전 상태 홀더인 `MutableStateFlow` 는 대상이 아니다.
 

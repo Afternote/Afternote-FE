@@ -86,7 +86,8 @@ class ProfileEditMviTest {
         viewModel.onIntent(ProfileEditIntent.ConsumeEvent(ProfileEditEvent.UpdateSuccess))
 
         assertNull(viewModel.success().pendingEvent)
-        assertTrue(viewModel.success().isUpdating)
+        assertFalse(viewModel.success().isUpdating)
+        assertTrue(viewModel.success().isUpdated)
     }
 
     @Test
