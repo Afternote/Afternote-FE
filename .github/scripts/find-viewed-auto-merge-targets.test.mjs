@@ -16,7 +16,6 @@ function pullRequest(overrides = {}) {
         number: 1,
         isDraft: false,
         headRefOid: "0123456789abcdef0123456789abcdef01234567",
-        reviewDecision: "APPROVED",
         isInMergeQueue: false,
         autoMergeRequest: null,
         changedFiles: 2,
@@ -35,16 +34,11 @@ test("하나라도 Viewed 가 아니면 예약하지 않는다 — 체크 뒤 �
     }
 });
 
-test("승인 대기·변경 요청이면 Viewed 를 다 해도 예약하지 않는다", () => {
-    for (const reviewDecision of ["CHANGES_REQUESTED", "REVIEW_REQUIRED"]) {
+test("리뷰 상태와 무관하게 Viewed 만으로 예약한다", () => {
+    for (const reviewDecision of [null, "APPROVED", "CHANGES_REQUESTED", "REVIEW_REQUIRED"]) {
         const decision = decideViewedAutoMerge(pullRequest({ reviewDecision }), [viewed("a.kt"), viewed("b.kt")]);
-        assert.equal(decision.enable, false, String(reviewDecision));
+        assert.equal(decision.enable, true, String(reviewDecision));
     }
-});
-
-test("승인을 요구하지 않는 룰셋(reviewDecision null)이면 Viewed 만으로 예약한다", () => {
-    const decision = decideViewedAutoMerge(pullRequest({ reviewDecision: null }), [viewed("a.kt"), viewed("b.kt")]);
-    assert.equal(decision.enable, true);
 });
 
 test("파일 목록을 다 못 읽었으면 다 봤다고 단정하지 않는다", () => {
@@ -88,9 +82,9 @@ test("merge queue 에 있는데 Viewed 가 풀리면 큐에서 빼고, 예약도
     );
 });
 
-test("승인·Draft 상태와 무관하게 Viewed 로만 해제를 가른다", () => {
+test("리뷰·Draft 상태와 무관하게 Viewed 로만 해제를 가른다", () => {
     const files = [viewed("a.kt"), { path: "b.kt", viewerViewedState: "UNVIEWED" }];
-    for (const overrides of [{ reviewDecision: "APPROVED" }, { reviewDecision: "REVIEW_REQUIRED" }, { isDraft: true }]) {
+    for (const overrides of [{ reviewDecision: "APPROVED" }, { reviewDecision: "CHANGES_REQUESTED" }, { isDraft: true }]) {
         assert.equal(decideViewedAutoMergeCancel(pullRequest({ ...scheduled, ...overrides }), files).disableAutoMerge, true);
     }
 });
