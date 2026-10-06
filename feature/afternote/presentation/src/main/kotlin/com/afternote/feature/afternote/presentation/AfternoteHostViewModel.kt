@@ -1,12 +1,12 @@
 package com.afternote.feature.afternote.presentation
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.repository.UserProfileCacheRepository
+import com.afternote.core.ui.mvi.MviViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
@@ -17,19 +17,46 @@ import javax.inject.Inject
  * 에디터 flow 상태는 flow-scoped
  * [com.afternote.feature.afternote.presentation.editor.AfternoteEditorViewModel]이 담당한다.
  * 본 ViewModel은 애프터노트 로컬 스택 전체에서 공유하는 사용자 상태만 보유한다.
+ * 프로필 구독은 마지막 화면이 떠난 뒤 기존 WhileSubscribed와 같은 5초 유예를 둔다.
  */
 @HiltViewModel
-class AfternoteHostViewModel
+internal class AfternoteHostViewModel
     @Inject
     constructor(
-        userProfileRepository: UserProfileCacheRepository,
-    ) : ViewModel() {
-        val isPasskeyRegistered: StateFlow<Boolean?> =
-            userProfileRepository
-                .isPasskeyRegisteredFlow()
-                .stateIn(
-                    scope = viewModelScope,
-                    started = SharingStarted.WhileSubscribed(5_000),
-                    initialValue = null,
-                )
+        private val userProfileRepository: UserProfileCacheRepository,
+    ) : MviViewModel<AfternoteHostIntent, AfternoteHostUiState, AfternoteHostReducerEvent>(AfternoteHostUiState()) {
+        private var profileJob: Job? = null
+        private var stopJob: Job? = null
+
+        override fun onIntent(intent: AfternoteHostIntent) {
+            when (intent) {
+                AfternoteHostIntent.ObserveProfile -> {
+                    stopJob?.cancel()
+                    if (profileJob?.isActive == true) return
+                    profileJob =
+                        viewModelScope.launch {
+                            userProfileRepository.isPasskeyRegisteredFlow().collect {
+                                dispatch(AfternoteHostReducerEvent.PasskeyRegistrationChanged(it))
+                            }
+                        }
+                }
+
+                AfternoteHostIntent.StopObservingProfile -> {
+                    stopJob?.cancel()
+                    stopJob =
+                        viewModelScope.launch {
+                            delay(5_000)
+                            profileJob?.cancel()
+                        }
+                }
+            }
+        }
+
+        override fun reduce(
+            state: AfternoteHostUiState,
+            event: AfternoteHostReducerEvent,
+        ): AfternoteHostUiState =
+            when (event) {
+                is AfternoteHostReducerEvent.PasskeyRegistrationChanged -> state.copy(isPasskeyRegistered = event.registered)
+            }
     }

@@ -487,19 +487,6 @@ class MviContractKonsistTest {
                 "com.afternote.feature.setting.presentation.receiver.ReceiverRegisterViewModel._events",
             )
 
-        /** #1804 가 뺀다. */
-        private val ISSUE_1804_AFTERNOTE =
-            setOf(
-                "com.afternote.feature.afternote.presentation.AfternoteHostViewModel",
-                "com.afternote.feature.afternote.presentation.detail.AfternoteDetailViewModel",
-                "com.afternote.feature.afternote.presentation.editor.memorial.AddSongViewModel",
-                "com.afternote.feature.afternote.presentation.editor.receiver.SelectReceiverViewModel",
-                "com.afternote.feature.afternote.presentation.home.AfternoteHomeViewModel",
-                "com.afternote.feature.afternote.presentation.receiver.afternotelist.ReceiverAfternoteHomeViewModel",
-                "com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel",
-                "com.afternote.feature.afternote.presentation.receiver.playlist.ReceiverMemorialPlaylistViewModel",
-            )
-
         /** #1808 이 뺀다. */
         private val ISSUE_1808_HOME =
             setOf(
@@ -578,7 +565,6 @@ class MviContractKonsistTest {
         val PENDING_MVI_MIGRATION =
             UNASSIGNED_ONBOARDING +
                 UNASSIGNED_RECEIVER +
-                ISSUE_1804_AFTERNOTE +
                 ISSUE_1805_SETTING +
                 ISSUE_1806_TIMELETTER +
                 ISSUE_1807_MINDRECORD +

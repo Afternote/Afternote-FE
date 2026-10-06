@@ -2,7 +2,6 @@ package com.afternote.feature.afternote.presentation.receiver.detail
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -27,7 +26,7 @@ import com.afternote.feature.afternote.presentation.shared.detail.DetailLoadErro
  * 실패를 이쪽으로 보내면 서버·네트워크 오류가 "디자인 예정" 으로 표시되고 재시도 수단도 사라진다 (#713).
  */
 @Composable
-fun ReceivedAfternoteDetailRoute(
+internal fun ReceivedAfternoteDetailRoute(
     onNavigateBack: () -> Unit,
     onNavigateToFullList: () -> Unit,
     onNavigateToPlaylist: (afternoteId: Long) -> Unit,
@@ -43,9 +42,20 @@ fun ReceivedAfternoteDetailRoute(
     // 방출하지 않는 refreshOnReturn() 을 쓴다. 첫 진입의 ON_RESUME 스킵(진입은 init 로드가
     // 담당)과 실행 중 로드와의 중복 차단은 VM 이 판단한다 — 결선부는 무조건 부른다.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        viewModel.refreshOnReturn()
+        viewModel.onIntent(ReceivedAfternoteDetailIntent.RefreshOnReturn)
     }
 
+    ReceivedAfternoteDetailContent(uiState, viewModel::onIntent, onNavigateBack, onNavigateToFullList, onNavigateToPlaylist)
+}
+
+@Composable
+private fun ReceivedAfternoteDetailContent(
+    uiState: ReceivedAfternoteDetailUiState,
+    onIntent: (ReceivedAfternoteDetailIntent) -> Unit,
+    onNavigateBack: () -> Unit,
+    onNavigateToFullList: () -> Unit,
+    onNavigateToPlaylist: (Long) -> Unit,
+) {
     when (val state = uiState) {
         ReceivedAfternoteDetailUiState.Loading -> {
             LoadingBody()
@@ -55,7 +65,7 @@ fun ReceivedAfternoteDetailRoute(
             DetailLoadErrorContent(
                 messageRes = state.messageRes,
                 onBackClick = onNavigateBack,
-                onRetryClick = viewModel::retry,
+                onRetryClick = { onIntent(ReceivedAfternoteDetailIntent.Retry) },
             )
         }
 
