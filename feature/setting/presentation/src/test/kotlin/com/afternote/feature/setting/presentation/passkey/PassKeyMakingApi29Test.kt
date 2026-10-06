@@ -27,6 +27,8 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.push.DevicePushTargetProvider
 import com.afternote.core.domain.repository.UserProfileCacheRepository
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.setting.domain.Passkey
+import com.afternote.feature.setting.domain.PasskeyRepository
 import com.afternote.feature.setting.domain.SettingAccountRepository
 import com.afternote.feature.setting.domain.SettingNotificationRepository
 import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
@@ -85,6 +87,16 @@ class PassKeyMakingApi29Test {
 
     @get:Rule(order = 1)
     val composeRule = createComposeRule()
+
+    @BindValue
+    val passkeyRepository: PasskeyRepository =
+        object : PasskeyRepository {
+            override suspend fun getPasskeys(): List<Passkey> = error("생체 인증 오류 경로는 목록을 조회하지 않는다")
+
+            override suspend fun getRegistrationOptions(): String = error("생체 인증 오류 경로는 등록 옵션을 조회하지 않는다")
+
+            override suspend fun registerPasskey(credentialJson: String): Passkey = error("생체 인증 오류 경로는 등록하지 않는다")
+        }
 
     @BindValue
     val accountRepository: SettingAccountRepository = FakeSettingAccountRepository.strict()
@@ -278,7 +290,6 @@ class PassKeyMakingApi29Test {
 
     private fun showPasskeyScreen(activity: FragmentActivity): PassKeyViewModel {
         val viewModel = ViewModelProvider(activity)[PassKeyViewModel::class.java]
-        composeRule.waitUntil { viewModel.isPasskeyRegistered.value == false }
         composeRule.setContent {
             CompositionLocalProvider(LocalContext provides activity) {
                 AfternoteTheme {
@@ -296,7 +307,8 @@ class PassKeyMakingApi29Test {
     private fun assertNotRegistered(viewModel: PassKeyViewModel) {
         composeRule.onNodeWithText("패스키 생성이 완료되었습니다").assertDoesNotExist()
         composeRule.runOnIdle {
-            assertEquals(false, viewModel.isPasskeyRegistered.value)
+            assertEquals(null, viewModel.uiState.value.result)
+            assertFalse(viewModel.uiState.value.isRegistering)
             assertEquals(0, backCalls)
             assertEquals(0, passwordCalls)
         }
