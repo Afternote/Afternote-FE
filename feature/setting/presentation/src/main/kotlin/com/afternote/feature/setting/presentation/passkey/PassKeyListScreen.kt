@@ -49,6 +49,20 @@ internal fun PassKeyListScreen(
                 onBackClick = onBackClick,
             )
         },
+        bottomBar = {
+            if (!isLoading && errorMessage == null && passkeys.isNotEmpty()) {
+                AfternoteButton(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp)
+                            .padding(bottom = 63.dp),
+                    text = stringResource(id = R.string.setting_passkey_create),
+                    onClick = onRegisterClick,
+                    type = AfternoteButtonType.Default,
+                )
+            }
+        },
     ) { innerPadding ->
         when {
             isLoading -> {
