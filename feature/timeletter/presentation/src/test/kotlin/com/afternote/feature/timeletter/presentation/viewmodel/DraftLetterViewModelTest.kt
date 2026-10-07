@@ -147,6 +147,63 @@ class DraftLetterViewModelTest {
         assertTrue(state.isDeleteSelectedEnabled)
     }
 
+    @Test
+    fun `refreshOnReturn - 첫 ON_RESUME(진입 자체)은 건너뛰고 그 다음 재진입부터 다시 조회한다`() {
+        var loadCalls = 0
+        val viewModel =
+            DraftLetterViewModel(
+                timeLetterRepository { methodName, _ ->
+                    when (methodName) {
+                        "getTemporaryTimeLetters" -> {
+                            loadCalls += 1
+                            testDrafts
+                        }
+
+                        else -> {
+                            error("Unexpected repository call: $methodName")
+                        }
+                    }
+                },
+                userRepository { emptyList<Any>() },
+            )
+        val callsAfterInit = loadCalls
+
+        // 첫 ON_RESUME은 최초 진입 자체다 — init 로드와 중복 조회하지 않는다.
+        viewModel.refreshOnReturn()
+        assertEquals(callsAfterInit, loadCalls)
+
+        // 다른 화면에 갔다가 돌아온 두 번째 ON_RESUME부터 다시 조회한다.
+        viewModel.refreshOnReturn()
+        assertEquals(callsAfterInit + 1, loadCalls)
+    }
+
+    @Test
+    fun `refreshOnReturn - 실패해도 보고 있던 초안 목록을 유지한다`() {
+        var loadCalls = 0
+        val viewModel =
+            DraftLetterViewModel(
+                timeLetterRepository { methodName, _ ->
+                    when (methodName) {
+                        "getTemporaryTimeLetters" -> {
+                            loadCalls += 1
+                            if (loadCalls == 1) testDrafts else throw IllegalStateException("일시적 실패")
+                        }
+
+                        else -> {
+                            error("Unexpected repository call: $methodName")
+                        }
+                    }
+                },
+                userRepository { emptyList<Any>() },
+            )
+
+        viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
+        viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME — 여기서 실패
+
+        val state = viewModel.uiState.value as DraftLetterUiState.Success
+        assertEquals(testDrafts.timeLetters, state.drafts)
+    }
+
     private fun timeLetterRepository(handler: (String, Array<out Any?>?) -> Any?): TimeLetterRepository =
         Proxy.newProxyInstance(
             TimeLetterRepository::class.java.classLoader,
