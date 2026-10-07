@@ -79,24 +79,20 @@ class TokenAuthenticatorTest {
     }
 
     @Test
-    fun `비밀번호 불일치 1202와 패스키 검증 실패 2701은 갱신과 세션 정리 없이 원래 본문을 남긴다`() {
-        listOf(
-            """{"status":401,"code":1202,"message":"현재 비밀번호가 일치하지 않습니다."}""",
-            """{"status":401,"code":2701,"message":"패스키 검증에 실패했습니다."}""",
-        ).forEach { body ->
-            listOf(0, 1, 2).forEach { priorCount ->
-                val reporter = FakeErrorReporter()
-                val repository = networkFakeAuthRepository(accessToken = "old-token")
-                val response = unauthorizedResponse(priorCount = priorCount, body = body)
+    fun `비밀번호 불일치 1202는 갱신과 세션 정리 없이 원래 본문을 남긴다`() {
+        listOf(0, 1, 2).forEach { priorCount ->
+            val reporter = FakeErrorReporter()
+            val repository = networkFakeAuthRepository(accessToken = "old-token")
+            val body = """{"status":401,"code":1202,"message":"현재 비밀번호가 일치하지 않습니다."}"""
+            val response = unauthorizedResponse(priorCount = priorCount, body = body)
 
-                assertNull(body, authenticator(repository, reporter).authenticate(null, response))
+            assertNull(authenticator(repository, reporter).authenticate(null, response))
 
-                assertEquals(body, 0, repository.rotateCallCount)
-                assertEquals(body, 0, repository.clearSessionCallCount)
-                assertEquals(body, "old-token", repository.accessToken)
-                assertEquals(body, 0, reporter.writtenFailures.size)
-                assertEquals(body, response.body.string())
-            }
+            assertEquals(0, repository.rotateCallCount)
+            assertEquals(0, repository.clearSessionCallCount)
+            assertEquals("old-token", repository.accessToken)
+            assertEquals(0, reporter.writtenFailures.size)
+            assertEquals(body, response.body.string())
         }
     }
 
@@ -104,6 +100,7 @@ class TokenAuthenticatorTest {
     fun `토큰 거절 1000과 미확인 또는 파싱 불가 401은 기존 갱신 경로를 따른다`() {
         listOf(
             """{"status":401,"code":1000}""",
+            """{"status":401,"code":2701}""",
             """{"status":401,"code":9999}""",
             """{"status":401}""",
             """{"code":"1202"}""",
