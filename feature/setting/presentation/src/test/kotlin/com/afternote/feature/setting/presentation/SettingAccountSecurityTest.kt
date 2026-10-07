@@ -279,7 +279,7 @@ class SettingAccountSecurityTest {
                             isLoading = false,
                             errorMessage = null,
                             onBackClick = {},
-                            onRegisterClick = {},
+                            onRegisterClick = { registerCalls += 1 },
                             onRetryClick = {},
                         )
                     }
@@ -307,6 +307,8 @@ class SettingAccountSecurityTest {
         composeRule.onNodeWithText("패스키 목록").assertIsDisplayed()
         composeRule.onNodeWithText("서버 패스키").assertIsDisplayed()
         composeRule.onNodeWithText("2026.09.06 10:00").assertIsDisplayed()
+        composeRule.onNodeWithText("패스키 생성").assertIsDisplayed().performClick()
+        assertEquals(2, registerCalls)
     }
 
     @Test
