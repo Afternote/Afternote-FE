@@ -29,11 +29,17 @@ class RecipientListViewModel
     constructor(
         private val receiverRepository: UserReceiverRepository,
     ) : ViewModel() {
+        // 마지막으로 보여 준 목록과 그 세션. 저장소의 이전 목록은 구독 단위라 5초 넘게 끊겼다 다시 구독하면
+        // null 로 시작한다 — 그 첫 조회가 잠깐 실패해도 떠 있던 목록을 지키려고 ViewModel 이 들고 있다가
+        // SignedOut·401 에서만 버린다. 설정 수신자 목록(#2045)과 같은 방식이다.
+        private var shownReceivers: List<Receiver>? = null
+        private var shownSessionId: String? = null
+
         // receiverListFlow 는 실패를 마지막 목록이나 빈 목록으로 낮춰 실패와 실제 0건이 같은 모양이 된다(#1099).
         // 상태 Flow 는 둘을 가르고(#2045), 세션 교체 시 이전 계정 목록도 SignedOut 으로 먼저 비운다(#2135).
         val uiState: StateFlow<RecipientListUiState> =
             receiverRepository.receiverListStateFlow
-                .map { it.toUiState() }
+                .map(::reduce)
                 .stateIn(
                     scope = viewModelScope,
                     started = SharingStarted.WhileSubscribed(5_000),
@@ -43,20 +49,35 @@ class RecipientListViewModel
         fun retry() {
             receiverRepository.refreshReceiverList()
         }
-    }
 
-private fun ReceiverListState.toUiState(): RecipientListUiState =
-    when (this) {
-        ReceiverListState.SignedOut -> RecipientListUiState.Success(emptyList())
+        private fun reduce(state: ReceiverListState): RecipientListUiState =
+            when (state) {
+                ReceiverListState.SignedOut -> {
+                    shownReceivers = null
+                    shownSessionId = null
+                    RecipientListUiState.Success(emptyList())
+                }
 
-        // 갱신 로딩은 이 구독이 이미 낸 목록을 그대로 둔다 — 재시도·재조회 중 선택 화면이 깜빡이지 않게.
-        is ReceiverListState.Loading -> previousReceivers?.toSuccess() ?: RecipientListUiState.Loading
+                is ReceiverListState.Loading -> {
+                    // 다른 세션에서 보여 준 목록은 이어받지 않는다.
+                    if (shownSessionId != state.sessionId) shownReceivers = null
+                    shownSessionId = state.sessionId
+                    val rows = state.previousReceivers ?: shownReceivers
+                    rows?.toSuccess() ?: RecipientListUiState.Loading
+                }
 
-        is ReceiverListState.Success -> receivers.toSuccess()
+                is ReceiverListState.Success -> {
+                    shownReceivers = state.receivers
+                    state.receivers.toSuccess()
+                }
 
-        // 이전 목록이 있으면 그 목록을 유지하고, 없거나 401 로 버렸으면 실패를 그대로 보인다(#714).
-        is ReceiverListState.Failure ->
-            previousReceivers?.takeUnless { discardPrevious }?.toSuccess() ?: RecipientListUiState.Error
+                // 보여 줄 목록이 있으면 유지하고, 없거나 401 로 버렸으면 실패를 그대로 보인다(#714).
+                is ReceiverListState.Failure -> {
+                    if (state.discardPrevious) shownReceivers = null
+                    val rows = if (state.discardPrevious) null else state.previousReceivers ?: shownReceivers
+                    rows?.toSuccess() ?: RecipientListUiState.Error
+                }
+            }
     }
 
 private fun List<Receiver>.toSuccess(): RecipientListUiState =

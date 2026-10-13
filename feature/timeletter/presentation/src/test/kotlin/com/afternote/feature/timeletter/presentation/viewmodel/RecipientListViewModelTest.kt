@@ -97,6 +97,43 @@ class RecipientListViewModelTest {
         }
 
     @Test
+    fun `재구독 첫 조회가 실패해도 같은 세션에서 보여 준 목록을 유지한다`() =
+        runTest(dispatcher) {
+            val viewModel = RecipientListViewModel(repository)
+            val job = launch { viewModel.uiState.collect {} }
+            advanceUntilIdle()
+            states.value = ReceiverListState.Success(listOf(receiver))
+            advanceUntilIdle()
+
+            // 새 구독은 저장소의 이전 목록 없이 시작한다.
+            states.value = ReceiverListState.Loading(previousReceivers = null, sessionId = SESSION)
+            advanceUntilIdle()
+            assertEquals(listOf("김수신"), viewModel.uiState.value.recipientNames())
+
+            states.value = ReceiverListState.Failure(previousReceivers = null, discardPrevious = false)
+            advanceUntilIdle()
+            assertEquals(listOf("김수신"), viewModel.uiState.value.recipientNames())
+            job.cancel()
+        }
+
+    @Test
+    fun `다른 세션의 로딩은 이전에 보여 준 목록을 이어받지 않는다`() =
+        runTest(dispatcher) {
+            states.value = ReceiverListState.Loading(previousReceivers = null, sessionId = SESSION)
+            val viewModel = RecipientListViewModel(repository)
+            val job = launch { viewModel.uiState.collect {} }
+            advanceUntilIdle()
+            states.value = ReceiverListState.Success(listOf(receiver))
+            advanceUntilIdle()
+
+            states.value = ReceiverListState.Loading(previousReceivers = null, sessionId = "session-b")
+            advanceUntilIdle()
+
+            assertEquals(RecipientListUiState.Loading, viewModel.uiState.value)
+            job.cancel()
+        }
+
+    @Test
     fun `401 로 버린 목록은 유지하지 않고 Error 를 보인다`() =
         runTest(dispatcher) {
             val viewModel = RecipientListViewModel(repository)
@@ -124,8 +161,7 @@ class RecipientListViewModelTest {
             job.cancel()
         }
 
-    private fun RecipientListUiState.recipientNames(): List<String>? =
-        (this as? RecipientListUiState.Success)?.recipients?.map { it.name }
+    private fun RecipientListUiState.recipientNames(): List<String>? = (this as? RecipientListUiState.Success)?.recipients?.map { it.name }
 
     private companion object {
         const val SESSION = "session-a"
