@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "source": {
+    "original_file": "2c7295c3a3506e14c64b601031f34fa9416b6cef.json",
+    "schema": 1,
+    "field_mapping": {
+      "result": "result",
+      "scenario": "scenario",
+      "not_covered": "not_covered",
+      "recorded_at": "recorded_at"
+    },
+    "redactions": []
+  },
+  "repository": "Afternote/Afternote-FE",
+  "head_sha": "2c7295c3a3506e14c64b601031f34fa9416b6cef",
+  "head_ref": "fix/2105-receiver-list-response",
+  "base_sha": null,
+  "base_ref": null,
+  "recorded_at": "2026-09-23T03:20:00+00:00",
+  "result": "fail",
+  "scenario": "#2120 head 로 3차 QA 성공 경로. 홈이 이름·수신인 지정 완료·오늘의 질문과 함께 정상으로 뜬다(develop 에서 같은 계정·같은 시점에 실패하던 화면). 설정 하위 화면 순회: 공지사항(빈 안내, 목록은 NavGraph 에서 emptyList 고정이라 서버 조회 없음), 프로필 수정, 연결된 계정, 푸시 알림 설정, 수신자 목록(relation null 행 포함 2건), 수신자 등록, 사후 전달 조건, 패스키 관리(등록 진입 화면), 앱 잠금 비밀번호 설정은 진입 정상. 고객센터는 눌러도 반응이 없고(#564) 비밀번호 변경은 '현재 이 메뉴는 이용할 수 없습니다'(#564, 연결은 #2094 대기). 타임레터 목록 1건 조회 정상, 수신인 선택에 2건 노출. 발송 날짜 없이 등록하면 등록 버튼이 회색이고 요청·안내가 없다(#624 재현). 애프터노트 목록·상세·수정 진입(수신자 prefill 정상)·남기실 말씀 추가 후 저장 PATCH 200·목록 재조회 정상. 관찰: 목록의 '최종 작성일'은 목록 응답의 createdAt 이라 수정해도 바뀌지 않는다. 2차 패스(12:27~12:40 KST): 에뮬에 화면잠금 PIN 과 지문을 등록하고 앱에서 패스키를 등록했다(지문 BiometricPrompt 통과, 서버 요청 없음). 패스키 목록은 등록 뒤에도 자리표시자 한 줄('이름'·'생성일시'·애플 아이콘)만 보인다(#555 재현). 마음의 기록 쓰기: 데일리 질문 답변 PATCH 200·today isAnswered true, 홈 CTA 문구는 답변 여부와 무관하게 같다(홈에 답변 상태 분기 없음, 관찰). 일기 등록 POST 200·월 목록 재조회·'1개의 기록 완료', 수정 PATCH 200 반영, 임시저장 POST isDraft true·임시저장 수 11→12·다시 열면 제목 prefill. 일기 삭제는 확인 없이 바로 DELETE 200 이 나간다(#2142 등록, 확인 대화상자는 데일리 질문 목록에만 있다). 리치 에디터 본문에 셸 입력 명령으로 여러 글자를 한 번에 넣으면 글자가 빠지지만 한 글자씩은 전부 들어가 입력 도구 조건으로 본다. 3차 패스(15:24~15:32 KST, release/minify): 같은 HEAD 를 임시 keystore 로 assembleRelease 해 API 26 에뮬(google_apis, 1080x1920 급)에 설치했다. release 는 debuggable 이 아니라 adb root 로 DataStore 에 QA 토큰을 넣었다. 콜드 스타트 294ms, 순회 내내 같은 프로세스 유지, crash 버퍼 0줄. 순회: 홈(수신자 relation null 행 포함 목록이 R8 뒤 직렬화에서 정상 디코드), 기록 3탭, 타임레터 목록·상세·편집기·수신인 선택, 노트 목록·상세 2건, 편집기 종류 5개(AfternoteType enum 라우트, 재산 처리는 준비 중 안내), 추억 플레이리스트, 에디터 이탈 가드, 설정 하위 화면 전부, 마음의 기록 편집기. 관찰: 새 애프터노트 편집기는 작성자의 수신자 전체로 미리 채워진다. KDoc(loadAuthorReceivers)에 명시된 의도라 결함이 아니다.",
+  "not_covered": [
+    "수신자 열람 승인 이후 화면(#607)은 보지 않았다.",
+    "리치 에디터 글자 누락은 실제 IME·하드웨어 키보드 연속 입력으로 재현하지 않았다.",
+    "실기기 고유 축 5종은 실기기 패스 몫이다.",
+    "release 순회는 조회·진입까지만 했고 저장·업로드처럼 데이터를 만드는 경로는 release 로 실행하지 않았다."
+  ],
+  "device": {
+    "is_emulator": true
+  },
+  "details": {
+    "details": {
+      "screen": {
+        "size": "1080x2400",
+        "density": 420,
+        "api_level": 35
+      },
+      "build_type": "debug",
+      "issues_reproduced": [
+        624,
+        564,
+        555
+      ],
+      "issues_filed": [
+        2142
+      ],
+      "release_smoke": {
+        "api_level": 26,
+        "startup_ms": 294,
+        "minified": true,
+        "signing": "temporary keystore"
+      }
+    }
+  }
+}

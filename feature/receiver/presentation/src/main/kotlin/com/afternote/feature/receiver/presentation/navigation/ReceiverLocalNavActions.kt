@@ -2,7 +2,7 @@ package com.afternote.feature.receiver.presentation.navigation
 
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
-import com.afternote.core.ui.navigation.FeatureStackBoundary
+import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
 import com.afternote.core.ui.navigation.popOrExit
 import com.afternote.core.ui.navigation.popUpTo
 import com.afternote.core.ui.navigation.replaceAllWith
@@ -15,9 +15,9 @@ import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRout
  */
 internal class ReceiverLocalNavActions(
     private val backStack: NavBackStack<NavKey>,
-    private val boundary: FeatureStackBoundary,
+    private val navigationCallbacks: FeatureNavigationCallbacks,
 ) : ReceiverNavActions {
-    override fun popBack(): Unit = backStack.popOrExit(boundary)
+    override fun popBack(): Unit = backStack.popOrExit(navigationCallbacks)
 
     override fun navigateToSenderRegistration() {
         backStack.add(ReceiverRoute.SenderRegistrationRoute)
@@ -47,10 +47,10 @@ internal class ReceiverLocalNavActions(
  */
 internal class DeliveryVerificationFlowLocalNavActions(
     private val stepStack: NavBackStack<NavKey>,
-    private val boundary: FeatureStackBoundary,
+    private val navigationCallbacks: FeatureNavigationCallbacks,
     private val onExitToReceivedRecords: () -> Unit,
 ) : DeliveryVerificationFlowNavActions {
-    override fun popBack(): Unit = stepStack.popOrExit(boundary)
+    override fun popBack(): Unit = stepStack.popOrExit(navigationCallbacks)
 
     override fun navigateToIdentityVerificationEmail() {
         stepStack.add(ReceiverRoute.IdentityVerificationEmailRoute)

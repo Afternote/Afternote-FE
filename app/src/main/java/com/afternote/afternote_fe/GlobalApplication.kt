@@ -6,6 +6,7 @@ import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import com.afternote.afternote_fe.messaging.FcmNotificationChannel
 import com.afternote.afternote_fe.messaging.PushTargetSynchronizer
+import com.afternote.afternote_fe.notification.DailyNotificationScheduleSynchronizer
 import com.afternote.afternote_fe.update.ForceUpdateGate
 import com.afternote.core.network.di.CoilImageLoaderEntryPoint
 import dagger.hilt.android.EntryPointAccessors
@@ -36,6 +37,14 @@ class GlobalApplication :
     @Inject
     lateinit var forceUpdateGate: ForceUpdateGate
 
+    /**
+     * 데일리 알림 예약을 로그인 상태에 맞추는 관찰의 주체 (#2146).
+     *
+     * [pushTargetSynchronizer] 와 같은 이유로 여기 있다. 세션 판정이 Hilt 그래프에 있어 Initializer 에서는 못 본다.
+     */
+    @Inject
+    lateinit var dailyNotificationScheduleSynchronizer: DailyNotificationScheduleSynchronizer
+
     /** Hilt 가 만든 [ImageLoader] 를 Coil 앱 전역 싱글톤으로 등록 — 모든 AsyncImage 가 명시적 imageLoader 없이 이걸 사용. */
     override fun newImageLoader(context: PlatformContext): ImageLoader =
         EntryPointAccessors
@@ -46,6 +55,7 @@ class GlobalApplication :
         super.onCreate()
         FcmNotificationChannel.create(this)
         startPushTargetSync()
+        startDailyNotificationSync()
         startForceUpdateCheck()
         // 그 밖의 기동 초기화는 startup 패키지의 Initializer 에 둔다.
     }
@@ -65,6 +75,18 @@ class GlobalApplication :
     private fun startPushTargetSync() {
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             pushTargetSynchronizer.observeLogin()
+        }
+    }
+
+    /**
+     * 데일리 알림 예약을 로그인 상태에 맞춘다 (#2146).
+     *
+     * 자리가 여기인 이유는 [startPushTargetSync] 와 같다. 관찰은 앱 프로세스 수명 동안 유지돼야 해서
+     * 이 스코프도 취소하지 않는다.
+     */
+    private fun startDailyNotificationSync() {
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            dailyNotificationScheduleSynchronizer.observeLogin()
         }
     }
 

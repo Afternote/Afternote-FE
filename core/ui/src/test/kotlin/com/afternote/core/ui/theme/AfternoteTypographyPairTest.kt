@@ -24,25 +24,16 @@ import org.robolectric.annotation.Config
 class AfternoteTypographyPairTest {
     private val typography = AfternoteTypography()
 
-    /** 리뷰가 「같다」를 판정한 여섯 필드. 나머지 필드는 두 쌍 모두 기본값이다. */
-    private fun TextStyle.comparedFields() =
-        listOf(
-            "fontFamily" to fontFamily,
-            "fontWeight" to fontWeight,
-            "fontSize" to fontSize,
-            "lineHeight" to lineHeight,
-            "lineBreak" to lineBreak,
-            "localeList" to localeList,
-        )
-
+    /**
+     * [TextStyle] 을 통째로 비교한다. 필드를 골라 비교하면 고르지 않은 필드로 두 자리가 갈려도
+     * 잠금을 빠져나간다 — 한쪽에만 `letterSpacing` 을 넣어 실측했다(#2061).
+     */
     private fun assertSameStyle(
         name: String,
         b: TextStyle,
         r: TextStyle,
     ) {
-        b.comparedFields().zip(r.comparedFields()).forEach { (bField, rField) ->
-            assertEquals("$name 의 ${bField.first} 가 갈렸다 — #1862 참조", rField.second, bField.second)
-        }
+        assertEquals("$name 의 B 와 R 이 갈렸다 — #1862 참조", r, b)
     }
 
     @Test

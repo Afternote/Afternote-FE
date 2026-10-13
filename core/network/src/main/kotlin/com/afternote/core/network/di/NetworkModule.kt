@@ -16,6 +16,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
 import okhttp3.Call
+import okhttp3.Dispatcher
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -122,7 +123,8 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
 
     /**
      * 모든 클라이언트의 공통 뿌리. 파생은 [OkHttpClient.newBuilder] 로 — 설정값만이 아니라
-     * ConnectionPool · Dispatcher · 스레드풀을 실제로 공유한다.
+     * ConnectionPool · Dispatcher · 스레드풀을 실제로 공유한다. 예외는 재발급 클라이언트의
+     * Dispatcher 하나다([provideRefreshOkHttpClient]).
      * 인터셉터는 여기 두지 않는다: 로깅은 각 클라이언트가 마지막에 달아야 최종 요청·응답을 관찰하는데,
      * base 에 두면 파생 시 맨 앞으로 밀린다.
      */
@@ -131,8 +133,22 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
     @Named("BaseClient")
     fun provideBaseOkHttpClient(): OkHttpClient = OkHttpClient.Builder().withApiTimeouts().build()
 
-    // 리이슈를 할 때 일반용 OkhttpClient만 사용하면 액세스 토큰이 계속 헤더에 포함되어 401을 받는 행위가 무한 반복
-    // 이를 해결하기 위해 401을 받았을 때는 토큰을 헤더에 포함하지 않고 요청을 보내는 버전
+    /**
+     * 재발급 전용. 메인 클라이언트로 재발급하면 만료된 액세스 토큰이 계속 헤더에 붙어 401 이 무한 반복되므로,
+     * 토큰을 붙이는 인터셉터 없이 요청을 보낸다.
+     *
+     * 커넥션 풀은 base 와 공유하지만 Dispatcher 는 따로 둔다 (#2160).
+     *
+     * 재발급을 기다리는 쪽이 메인 클라이언트의 디스패처 스레드다. [TokenAuthenticator] 와
+     * [AuthInterceptor] 는 요청을 실행하던 그 스레드에서 재발급 락을 잡고 끝날 때까지 막혀 있다.
+     * 재발급 호출이 같은 Dispatcher 로 들어가면, 같은 호스트의 401 이 호스트당 실행 칸(기본 5개)을
+     * 다 쥔 채 재발급을 기다리고 재발급은 칸이 비기를 기다리며 대기열에 머문다. 대기열의 호출에는
+     * `callTimeout` 도 걸리지 않아 스스로 풀리지 않는다. 상한을 올리는 것은 교착이 나는 동시 요청 수만
+     * 뒤로 미룬다.
+     *
+     * base 의 실행기를 넘겨 칸 계산만 가르지 않는 이유: 그러면 독립성이 실행기가 무제한 캐시 풀이라는
+     * 전제에 기댄다. 새 [Dispatcher] 는 그 전제 없이 끊긴다.
+     */
     @Provides
     @Singleton
     @Named("RefreshClient")
@@ -142,6 +158,7 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
     ): OkHttpClient =
         baseClient
             .newBuilder()
+            .dispatcher(Dispatcher())
             .addInterceptor(loggingInterceptor)
             .build()
 

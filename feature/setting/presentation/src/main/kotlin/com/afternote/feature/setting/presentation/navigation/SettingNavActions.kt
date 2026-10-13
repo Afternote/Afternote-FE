@@ -1,71 +1,50 @@
 package com.afternote.feature.setting.presentation.navigation
 
-interface SettingNavActions {
-    fun onSettingBack()
+/**
+ * 설정 화면 콜백이 부르는 이동 명령.
+ *
+ * 화면마다 있던 `on<Screen>Back` 은 전부 [popBack] 하나다 — 로컬 스택에서는 어느 화면이든
+ * back 이 «한 칸 내리기» 라 이름을 나눌 이유가 없다. 인증 상태를 바꾸는 둘([onLogoutSuccess]·
+ * [onWithdrawSuccess])은 루트 스택을 비워야 해서 [SettingExternalActions] 로 나간다.
+ */
+internal interface SettingNavActions {
+    fun popBack()
 
     fun onLogoutSuccess()
 
-    fun onNavigateToWithdrawGuide()
-
-    fun onNavigateToWithdrawConfirm()
-
-    fun onWithdrawGuideBack()
-
-    fun onWithdrawConfirmBack()
-
     fun onWithdrawSuccess()
 
-    fun onNavigateToProfileEdit()
+    fun onWithdrawGuideClick()
 
-    fun onProfileEditBack()
+    fun onWithdrawConfirmClick()
 
-    fun onNavigateToLinkedAccount()
+    fun onProfileEditClick()
 
-    fun onLinkedAccountBack()
+    fun onPasswordChangeClick()
 
-    fun onNavigateToNotification()
+    fun onLinkedAccountClick()
 
-    fun onNotificationBack()
+    fun onNotificationClick()
 
-    fun onNavigateToPushNotification()
+    fun onPushNotificationClick()
 
-    fun onPushNotificationBack()
+    fun onRecipientListClick()
 
-    fun onNavigateToRecipientList()
+    fun onDeliveryConditionsClick()
 
-    fun onNavigateToRecipientListForDeliveryConditions()
+    fun onRecipientRegisterClick()
 
-    fun onRecipientListBack()
+    fun onRecipientEditClick(receiverId: Long)
 
-    fun onNavigateToRecipientRegister()
+    fun onDeliveryConditionsRecipientSelected(receiverId: Long)
 
-    fun onRecipientRegisterBack()
+    fun onPasskeyClick()
 
-    fun onNavigateToRecipientEdit(receiverId: Long)
+    fun onPasskeyRegisterClick()
 
-    fun onRecipientEditBack()
+    fun onPasswordAuthClick()
 
-    fun onNavigateToAfterDelivery(receiverId: Long)
+    fun onAppLockClick()
 
-    fun onAfterDeliveryBack()
-
-    fun onNavigateToPasskey()
-
-    fun onPasskeyBack()
-
-    fun onNavigateToPasskeyMaking()
-
-    fun onPasskeyMakingBack()
-
-    fun onNavigateToPasskeyPassword()
-
-    fun onPasskeyPasswordBack()
-
-    fun onNavigateToAppLock()
-
-    fun onAppLockBack()
-
-    fun onNavigateToNotice()
-
-    fun onNoticeBack()
+    fun onNoticeClick()
 }

@@ -1,10 +1,10 @@
 package com.afternote.afternote_fe.messaging
 
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.push.DevicePushTargetProvider
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.repository.push.PushTargetRepository
+import com.afternote.core.domain.result.runCatchingCancellable
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock

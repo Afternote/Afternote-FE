@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- API 29 이상은 시스템 생체 인증창을 사용하므로 기존 Activity 테마를 유지한다. -->
+    <style name="Theme.Afternotefe.Main" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

@@ -9,7 +9,7 @@ import com.android.tools.screenshot.PreviewTest
 /**
  * [FingerprintLoginScreen] 의 시각 회귀 baseline.
  *
- * `AfternoteNavGraph` 의 startDestination 이지만 앱 잠금이 켜지고 생체인증이 등록된 기기에서만
+ * `AfternoteNavHost` 로컬 스택의 바닥(시작 화면)이지만 앱 잠금이 켜지고 생체인증이 등록된 기기에서만
  * 실제로 노출된다 — 실기 QA 로는 지문을 등록해야 도달하므로 baseline 이 유일한 상시 감시축이다.
  */
 @PreviewTest

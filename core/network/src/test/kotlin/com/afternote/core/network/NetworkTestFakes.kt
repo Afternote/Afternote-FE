@@ -20,6 +20,7 @@ internal fun networkFakeAuthRepository(
 ): CoreFakeAuthRepository =
     CoreFakeAuthRepository.strict(accessToken = accessToken).apply {
         onGetAccessToken = null
+        onGetSessionId = null
         this.onRotateToken = onRotateToken
         this.onClearSession = { onClearSession(this) }
     }

@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.data.repositoryimpl.author
 
-import com.afternote.core.common.result.runCatchingCancellable
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.feature.afternote.data.dto.MusicTrackDto
 import com.afternote.feature.afternote.data.service.MusicApiService
 import com.afternote.feature.afternote.domain.model.author.playlist.SearchedSong

@@ -7,7 +7,7 @@ package com.afternote.feature.receiver.presentation.navigation
  * 열람 신청 흐름 5단계 사이의 이동은 흐름 전용 스택을 가진 `DeliveryVerificationFlowNavActions`
  * 가 갖는다 (#1698).
  *
- * 다른 top-level Route(MindRecord/TimeLetter/Setting 등)로의 이동은 수신자 홈 측에서
+ * 다른 top-level Route(마음의 기록/타임레터/수신 애프터노트)로의 이동은 수신자 홈 측에서
  * 별도 `ReceiverHomeActions`로 받는다.
  *
  * 작명 컨벤션 (#239): `navigateTo<Where>` / `popBack` / `popTo<Where>` /
@@ -23,10 +23,10 @@ interface ReceiverNavActions {
     fun navigateToSenderDetail(senderId: String)
 
     /**
-     * 발신자 상세의 "열람 신청하기" → nested 열람 신청 흐름 그래프
+     * 발신자 상세의 "열람 신청하기" → 열람 신청 흐름 entry
      * ([com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute.DeliveryVerificationFlowRoute])
-     * 진입. 본인 확인 캐시 분기는 흐름 내부(IntroRoute 의 LaunchedEffect) 에서 자동 처리되므로 호출자는
-     * senderId 만 전달.
+     * 진입. 단계 사이 이동은 그 entry 안의 흐름 전용 스택이 맡는다. 본인 확인 캐시 분기는 흐름 내부
+     * (IntroRoute 의 LaunchedEffect) 에서 자동 처리되므로 호출자는 senderId 만 전달.
      */
     fun navigateToDeliveryVerificationFlow(senderId: String)
 

@@ -74,3 +74,16 @@ test("Firebase credential 은 빌드 단계까지 내려오지 않는다", () =>
   assert.doesNotMatch(buildStep, /GOOGLE_APPLICATION_CREDENTIALS/);
   assert.match(workflow, /GOOGLE_APPLICATION_CREDENTIALS/);
 });
+
+test("Firebase 대역 versionCode 는 빌드 전에 정해져 빌드 단계로만 들어간다", () => {
+  const resolve = indexOf("- name: Resolve the Firebase-band versionCode");
+  const build = indexOf("- name: Build signed release APK");
+  assert.ok(resolve < build, "versionCode 는 빌드가 읽기 전에 정해져야 한다");
+
+  const buildStep = workflow.slice(build, indexOf("- name: Attest the exact signed APK"));
+  assert.match(buildStep, /AFTERNOTE_VERSION_CODE: \$\{\{ steps\.version_code\.outputs\.version_code \}\}/);
+
+  // AFTERNOTE_STORE_DISTRIBUTED_BUILD 는 Play 배포 워크플로만 넘긴다. 이 채널의 QA 빌드에
+  // 들어가면 ForceUpdateGate 의 조기 반환이 풀려 강제 업데이트 팝업이 켜진다 (#1539).
+  assert.doesNotMatch(buildStep, /AFTERNOTE_STORE_DISTRIBUTED_BUILD/);
+});

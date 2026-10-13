@@ -1,12 +1,11 @@
 package com.afternote.feature.afternote.presentation.receiver.afternotelist
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.filter
 import androidx.paging.map
-import com.afternote.feature.afternote.domain.AfternoteType
+import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.afternote.presentation.shared.component.ListItemUiModel
 import com.afternote.feature.afternote.presentation.shared.util.getIconResForService
 import com.afternote.feature.receiver.domain.model.AfterNoteListItem
@@ -14,9 +13,7 @@ import com.afternote.feature.receiver.domain.repository.ReceiverRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -29,18 +26,18 @@ import javax.inject.Inject
  * 서버 파라미터가 없어 클라이언트 사이드 [PagingData.filter]로 적용한다.
  */
 @HiltViewModel
-class ReceiverAfternoteHomeViewModel
+internal class ReceiverAfternoteHomeViewModel
     @Inject
     constructor(
         private val receiverRepository: ReceiverRepository,
-    ) : ViewModel() {
-        /** 선택된 종류 필터. `null` 은 전체다. */
-        private val _selectedTab = MutableStateFlow<AfternoteType?>(null)
-        val selectedTab: StateFlow<AfternoteType?> = _selectedTab.asStateFlow()
-
+    ) : MviViewModel<ReceiverAfternoteHomeIntent, ReceiverAfternoteHomeUiState, ReceiverAfternoteHomeReducerEvent>(
+            ReceiverAfternoteHomeUiState(),
+        ) {
         @OptIn(ExperimentalCoroutinesApi::class)
         val pagedAfternotes: Flow<PagingData<ListItemUiModel>> =
-            _selectedTab
+            uiState
+                .map { it.selectedTab }
+                .distinctUntilChanged()
                 .flatMapLatest { tab ->
                     receiverRepository
                         .getPagedReceivedAfternotes()
@@ -51,10 +48,19 @@ class ReceiverAfternoteHomeViewModel
                         }
                 }.cachedIn(viewModelScope)
 
-        fun selectTab(tab: AfternoteType?) {
-            if (_selectedTab.value == tab) return
-            _selectedTab.value = tab
+        override fun onIntent(intent: ReceiverAfternoteHomeIntent) {
+            when (intent) {
+                is ReceiverAfternoteHomeIntent.SelectType -> dispatch(ReceiverAfternoteHomeReducerEvent.TypeSelected(intent.type))
+            }
         }
+
+        override fun reduce(
+            state: ReceiverAfternoteHomeUiState,
+            event: ReceiverAfternoteHomeReducerEvent,
+        ): ReceiverAfternoteHomeUiState =
+            when (event) {
+                is ReceiverAfternoteHomeReducerEvent.TypeSelected -> state.copy(selectedTab = event.type)
+            }
     }
 
 /** 카드 주 텍스트는 서비스명이, 미등록 서비스 아이콘과 필터 탭은 종류가 결정한다. */

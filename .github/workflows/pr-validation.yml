@@ -1,7 +1,7 @@
 name: PR Validation
 
 # PR 검증의 유일한 진입점이다. repository quality 가 변경 파일을 완전하게 분류한 뒤
-# static analysis · unit test · screenshot 을 reusable workflow 로 한 번씩 부른다.
+# static analysis · unit test · screenshot · dependency review 를 reusable workflow 로 한 번씩 부른다.
 # 각 job check 를 ruleset 에서 직접 required 로 요구하므로 문서 전용 PR 도 같은 이름의
 # check 를 만들되, 무거운 job 내부는 즉시 건너뛴다. 모든 검증 뒤 집계용 runner 는 없다.
 # required context 이름은 pr-gate-policy.test.mjs 에 고정해 workflow 이름 변경과 ruleset
@@ -87,3 +87,11 @@ jobs:
       run_validation: ${{ needs.repository-quality.result != 'success' || needs.repository-quality.outputs.screenshot_required != 'false' }}
       gradle_tasks: ${{ needs.repository-quality.result == 'success' && needs.repository-quality.outputs.screenshot_tasks || ':core:ui:validateScreenshotTest :feature:home:presentation:validateScreenshotTest :feature:receiver:presentation:validateScreenshotTest :feature:onboarding:presentation:validateScreenshotTest :feature:afternote:presentation:validateScreenshotTest :feature:mindrecord:presentation:validateScreenshotTest :feature:setting:presentation:validateScreenshotTest :feature:timeletter:presentation:validateScreenshotTest' }}
       screenshot_modules: ${{ needs.repository-quality.result == 'success' && needs.repository-quality.outputs.screenshot_modules || ':core:ui :feature:home:presentation :feature:receiver:presentation :feature:onboarding:presentation :feature:afternote:presentation :feature:mindrecord:presentation :feature:setting:presentation :feature:timeletter:presentation' }}
+
+  dependency-review:
+    name: Dependency Review
+    needs: repository-quality
+    if: ${{ !cancelled() }}
+    uses: ./.github/workflows/dependency-review.yml
+    with:
+      run_review: ${{ needs.repository-quality.result != 'success' || needs.repository-quality.outputs.dependency_review_required != 'false' }}

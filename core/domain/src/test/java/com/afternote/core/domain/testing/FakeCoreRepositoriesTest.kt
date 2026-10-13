@@ -1,5 +1,6 @@
 package com.afternote.core.domain.testing
 
+import com.afternote.core.domain.error.SessionChangedException
 import com.afternote.core.model.TokenBundle
 import com.afternote.core.model.delivery.ConditionState
 import com.afternote.core.model.delivery.DeliveryConditionItem
@@ -32,7 +33,7 @@ class FakeCoreRepositoriesTest {
         assertTrue(repository.loggedIn)
 
         repository.loggedIn = false
-        val rotateResult = runBlocking { repository.rotateToken() }
+        val rotateResult = runBlocking { repository.rotateToken(repository.sessionId) }
 
         assertTrue(rotateResult.isSuccess)
         assertEquals("rotated-access", repository.accessToken)
@@ -44,7 +45,7 @@ class FakeCoreRepositoriesTest {
     fun `rotateToken 기본 경로는 refresh가 없거나 새 access가 비어 있으면 실패한다`() {
         val missingRefresh = FakeAuthRepository(loggedIn = false)
 
-        val missingRefreshResult = runBlocking { missingRefresh.rotateToken() }
+        val missingRefreshResult = runBlocking { missingRefresh.rotateToken(missingRefresh.sessionId) }
 
         assertTrue(missingRefreshResult.isFailure)
         assertNull(missingRefresh.accessToken)
@@ -54,16 +55,46 @@ class FakeCoreRepositoriesTest {
         val emptyAccess =
             FakeAuthRepository(
                 loggedIn = false,
+                accessToken = "current-access",
                 refreshToken = "current-refresh",
                 rotatedTokens = TokenBundle("", "rotated-refresh"),
             )
 
-        val emptyAccessResult = runBlocking { emptyAccess.rotateToken() }
+        val emptyAccessResult = runBlocking { emptyAccess.rotateToken(emptyAccess.sessionId) }
 
         assertTrue(emptyAccessResult.isFailure)
-        assertNull(emptyAccess.accessToken)
+        assertEquals("current-access", emptyAccess.accessToken)
         assertEquals("current-refresh", emptyAccess.refreshToken)
         assertFalse(emptyAccess.loggedIn)
+    }
+
+    @Test
+    fun `세션에 묶인 기본 경로는 다른 세션이면 쓰지도 지우지도 않는다`() {
+        val repository =
+            FakeAuthRepository(
+                loggedIn = true,
+                accessToken = "A-access",
+                refreshToken = "A-refresh",
+                rotatedTokens = TokenBundle("A-rotated", "A-refresh-rotated"),
+            )
+        val sessionA = repository.sessionId
+        runBlocking { repository.saveSession("B-access", "B-refresh") }
+
+        val rotateResult = runBlocking { repository.rotateToken(sessionA) }
+        val clearResult = runBlocking { repository.clearSessionIfCurrent(sessionA) }
+
+        assertTrue(rotateResult.exceptionOrNull() is SessionChangedException)
+        assertEquals(false, clearResult.getOrThrow())
+        assertEquals(0, repository.clearSessionCalls)
+        assertEquals("B-access", repository.accessToken)
+        assertEquals("B-refresh", repository.refreshToken)
+
+        val currentClear = runBlocking { repository.clearSessionIfCurrent(repository.sessionId) }
+
+        assertEquals(true, currentClear.getOrThrow())
+        assertEquals(1, repository.clearSessionCalls)
+        assertNull(repository.accessToken)
+        assertNull(runBlocking { repository.getSessionId() }.getOrThrow())
     }
 
     @Test
@@ -92,7 +123,7 @@ class FakeCoreRepositoriesTest {
                 onRotateToken = { Result.success(TokenBundle("new-access", "new-refresh")) },
             )
 
-        val rotateResult = runBlocking { rotateRepository.rotateToken() }
+        val rotateResult = runBlocking { rotateRepository.rotateToken(rotateRepository.sessionId) }
 
         assertTrue(rotateResult.isSuccess)
         assertEquals(1, rotateRepository.rotateTokenCalls)
@@ -103,7 +134,7 @@ class FakeCoreRepositoriesTest {
 
     @Test
     fun `기본 receiver detail은 합성되고 수정 뒤 재조회에도 모든 필드가 남는다`() {
-        val receiver = Receiver(7L, "수신자", "가족", "auth-7")
+        val receiver = Receiver(7L, "수신자", "가족")
         val initialReceivers = mutableListOf(receiver)
         val synthesizedRepository = FakeUserRepository(receivers = initialReceivers)
         initialReceivers.clear()
@@ -113,7 +144,6 @@ class FakeCoreRepositoriesTest {
         assertEquals(receiver.receiverId, synthesized.receiverId)
         assertEquals(receiver.name, synthesized.name)
         assertEquals(receiver.relation, synthesized.relation)
-        assertEquals(receiver.authCode, synthesized.authCode)
         assertNull(synthesized.phone)
         assertNull(synthesized.email)
         assertNull(synthesized.message)
@@ -131,7 +161,6 @@ class FakeCoreRepositoriesTest {
         assertEquals("01012345678", updated.phone)
         assertEquals("new@test.local", updated.email)
         assertEquals("남길 메시지", updated.message)
-        assertEquals("auth-7", updated.authCode)
     }
 
     @Test
@@ -169,10 +198,10 @@ class FakeCoreRepositoriesTest {
 
         repository.onGetReceivers = null
         repository.onGetMyProfile = null
-        repository.receiverState.value = listOf(Receiver(9L, "나중 수신자", "가족", "auth-9"))
+        repository.receiverState.value = listOf(Receiver(9L, "나중 수신자", "가족"))
         repository.profile = User("나중 사용자", "later@afternote.local", null, null)
 
-        assertEquals(listOf(Receiver(9L, "나중 수신자", "가족", "auth-9")), runBlocking { repository.getReceivers() })
+        assertEquals(listOf(Receiver(9L, "나중 수신자", "가족")), runBlocking { repository.getReceivers() })
         assertEquals("나중 사용자", runBlocking { repository.getMyProfile() }.name)
         assertEquals(1, repository.getReceiversCalls)
         assertEquals(1, repository.getProfileCalls)
@@ -181,17 +210,17 @@ class FakeCoreRepositoriesTest {
     /** 좁은 fake 는 합본을 거치지 않고 곧장 쓸 수 있어야 한다 (#1282). */
     @Test
     fun `좁은 fake 는 자기 책임 상태만 갖고 단독으로 동작한다`() {
-        val receiverRepository = FakeUserReceiverRepository(receivers = listOf(Receiver(3L, "수신자", "가족", "auth-3")))
+        val receiverRepository = FakeUserReceiverRepository(receivers = listOf(Receiver(3L, "수신자", "가족")))
         val profileRepository = FakeMyProfileRepository()
 
         val receivers = runBlocking { receiverRepository.getReceivers() }
         val updated = runBlocking { profileRepository.updateMyProfile("바뀐 이름", null, null) }
 
-        assertEquals(listOf(Receiver(3L, "수신자", "가족", "auth-3")), receivers)
+        assertEquals(listOf(Receiver(3L, "수신자", "가족")), receivers)
         assertEquals(1, receiverRepository.getReceiversCalls)
         assertEquals("바뀐 이름", updated.name)
         assertEquals(
-            listOf(FakeUserRepository.ProfileUpdateCall("바뀐 이름", null, null)),
+            listOf(FakeMyProfileRepository.ProfileUpdateCall("바뀐 이름", null, null)),
             profileRepository.profileUpdateCalls.toList(),
         )
     }

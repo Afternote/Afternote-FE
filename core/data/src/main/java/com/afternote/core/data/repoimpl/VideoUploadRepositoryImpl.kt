@@ -4,9 +4,9 @@ import android.content.Context
 import android.net.Uri
 import androidx.core.net.toUri
 import com.afternote.core.common.di.IoDispatcher
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.model.UploadedFile
 import com.afternote.core.domain.repository.VideoUploadRepository
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.network.dto.PresignedUrlRequestDto
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.service.ImageApiService
@@ -90,7 +90,7 @@ internal class VideoUploadRepositoryImpl
                 } finally {
                     tempFile.delete()
                 }
-            }
+            }.mapUploadFailure()
 
         private fun videoExtensionFromUri(uri: Uri): String {
             val mime = context.contentResolver.getType(uri) ?: return DEFAULT_VIDEO_EXTENSION

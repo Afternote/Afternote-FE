@@ -1,5 +1,6 @@
 package com.afternote.core.network.token
 
+import com.afternote.core.domain.error.SessionChangedException
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.model.TokenBundle
 import com.afternote.core.network.FakeErrorReporter
@@ -40,7 +41,7 @@ class TokenReissuerTest {
         val repository = networkFakeAuthRepository(accessToken = "refreshed-by-other-path")
         val coordinator = reissuer(repository)
 
-        val outcome = coordinator.reissue(expectedAccessToken = "old-token")
+        val outcome = coordinator.reissueOnce(expectedAccessToken = "old-token")
 
         assertEquals(0, repository.rotateCallCount)
         assertEquals(
@@ -63,7 +64,7 @@ class TokenReissuerTest {
             )
         val coordinator = reissuer(repository)
 
-        val outcome = coordinator.reissue(expectedAccessToken = "old-token")
+        val outcome = coordinator.reissueOnce(expectedAccessToken = "old-token")
 
         assertEquals(1, repository.rotateCallCount)
         assertEquals(TokenReissuer.Outcome.Rotated("fresh-token"), outcome)
@@ -85,7 +86,7 @@ class TokenReissuerTest {
             )
         val coordinator = reissuer(repository)
 
-        val outcome = coordinator.reissue(expectedAccessToken = "old-token")
+        val outcome = coordinator.reissueOnce(expectedAccessToken = "old-token")
 
         assertEquals(TokenReissuer.Outcome.Rotated("fresh-token"), outcome)
         // expiresIn 이 없으면 직전 deadline 을 비워 선제 갱신을 쉰다 (401 안전망에 위임)
@@ -105,7 +106,7 @@ class TokenReissuerTest {
                     onClearSession = { Result.success(Unit) },
                 )
 
-            val outcome = reissuer(repository, reporter).reissue(expectedAccessToken = "old-token")
+            val outcome = reissuer(repository, reporter).reissueOnce(expectedAccessToken = "old-token")
 
             assertTrue(outcome is TokenReissuer.Outcome.AuthenticationRejected)
             assertSame(failure, (outcome as TokenReissuer.Outcome.AuthenticationRejected).exception)
@@ -131,7 +132,7 @@ class TokenReissuerTest {
                 onClearSession = { Result.success(Unit) },
             )
 
-        val outcome = reissuer(repository, reporter).reissue(expectedAccessToken = "old-token")
+        val outcome = reissuer(repository, reporter).reissueOnce(expectedAccessToken = "old-token")
 
         assertTrue(outcome is TokenReissuer.Outcome.AuthenticationRejected)
         assertSame(failure, (outcome as TokenReissuer.Outcome.AuthenticationRejected).exception)
@@ -152,7 +153,7 @@ class TokenReissuerTest {
             )
         val coordinator = reissuer(repository, reporter)
 
-        val outcome = coordinator.reissue(expectedAccessToken = "old-token")
+        val outcome = coordinator.reissueOnce(expectedAccessToken = "old-token")
 
         assertTrue(outcome is TokenReissuer.Outcome.TransportFailure)
         assertSame(failure, (outcome as TokenReissuer.Outcome.TransportFailure).exception)
@@ -183,7 +184,7 @@ class TokenReissuerTest {
                 onRotateToken = { Result.failure(failure) },
             )
 
-        val outcome = reissuer(repository, reporter).reissue(expectedAccessToken = "old-token")
+        val outcome = reissuer(repository, reporter).reissueOnce(expectedAccessToken = "old-token")
 
         assertTrue(outcome is TokenReissuer.Outcome.ServerFailure)
         assertSame(failure, (outcome as TokenReissuer.Outcome.ServerFailure).exception)
@@ -205,7 +206,7 @@ class TokenReissuerTest {
                 },
             )
 
-        val outcome = reissuer(repository, reporter).reissue(expectedAccessToken = "old-token")
+        val outcome = reissuer(repository, reporter).reissueOnce(expectedAccessToken = "old-token")
 
         assertTrue(outcome is TokenReissuer.Outcome.UnexpectedFailure)
         assertFalse(tracker.isExpiringSoon())
@@ -231,7 +232,7 @@ class TokenReissuerTest {
                     onClearSession = { Result.success(Unit) },
                 )
 
-            val outcome = reissuer(repository, reporter).reissue(expectedAccessToken = "old-token")
+            val outcome = reissuer(repository, reporter).reissueOnce(expectedAccessToken = "old-token")
 
             assertTrue(outcome is TokenReissuer.Outcome.AuthenticationRejected)
             assertSame(failure, (outcome as TokenReissuer.Outcome.AuthenticationRejected).exception)
@@ -256,7 +257,7 @@ class TokenReissuerTest {
                 onRotateToken = { Result.failure(failure) },
             )
 
-        val outcome = reissuer(repository, reporter).reissue(expectedAccessToken = "old-token")
+        val outcome = reissuer(repository, reporter).reissueOnce(expectedAccessToken = "old-token")
 
         assertTrue(outcome is TokenReissuer.Outcome.UnexpectedFailure)
         assertSame(failure, (outcome as TokenReissuer.Outcome.UnexpectedFailure).exception)
@@ -268,18 +269,62 @@ class TokenReissuerTest {
     }
 
     @Test
-    fun `저장 토큰이 빈 값 - TokenAlreadyChanged 가 아니라 회전 시도로 진행`() {
-        val repository =
-            networkFakeAuthRepository(
-                accessToken = null,
-                onRotateToken = { Result.failure(IllegalStateException("리프레시 토큰이 존재하지 않습니다.")) },
-            )
+    fun `저장 토큰이 빈 값 - TokenAlreadyChanged 가 아니라 회전할 세션이 없는 실패로 끝난다`() {
+        val repository = networkFakeAuthRepository(accessToken = null)
         val coordinator = reissuer(repository)
 
-        val outcome = coordinator.reissue(expectedAccessToken = "old-token")
+        val outcome = coordinator.reissueOnce(expectedAccessToken = "old-token")
 
-        assertEquals(1, repository.rotateCallCount)
+        // 세션이 없으면 리프레시 토큰도 없다. 재발급 HTTP 없이 세션 유지 분류로 끝난다.
+        assertEquals(0, repository.rotateCallCount)
         assertTrue(outcome is TokenReissuer.Outcome.UnexpectedFailure)
+    }
+
+    @Test
+    fun `재발급 시작 시점의 세션에 묶어 회전한다`() {
+        val repository =
+            networkFakeAuthRepository(
+                accessToken = "old-token",
+                onRotateToken = {
+                    accessToken = "fresh-token"
+                    Result.success(TokenBundle(accessToken = "fresh-token", refreshToken = "r"))
+                },
+            )
+
+        reissuer(repository).reissueOnce(expectedAccessToken = "old-token")
+
+        assertEquals(listOf(repository.sessionId), repository.rotatedSessionIds)
+    }
+
+    @Test
+    fun `세션이 바뀌어 저장하지 못한 회전 - Rotated 도 deadline 도 없이 이전 토큰 호출자에게 거절`() {
+        val reporter = FakeErrorReporter()
+        val repository =
+            networkFakeAuthRepository(
+                accessToken = "A-access",
+                onRotateToken = {
+                    // 응답을 기다리는 사이 로그아웃이 끝났고, 저장소가 이 회전을 쓰지 않았다.
+                    clearSession()
+                    Result.failure(SessionChangedException())
+                },
+                onClearSession = {
+                    accessToken = null
+                    refreshToken = null
+                    Result.success(Unit)
+                },
+            )
+        val coordinator = reissuer(repository, reporter)
+
+        val outcome = coordinator.reissueOnce(expectedAccessToken = "A-access")
+
+        assertTrue(outcome is TokenReissuer.Outcome.AuthenticationRejected)
+        assertTrue((outcome as TokenReissuer.Outcome.AuthenticationRejected).exception is SessionChangedException)
+        assertFalse(tracker.isExpiringSoon())
+        assertTrue(reporter.writtenFailures.isEmpty())
+        // 로그아웃 정리 1회뿐이고, 같은 토큰의 대기자는 재발급 없이 같은 결과를 받는다.
+        assertEquals(1, repository.clearSessionCallCount)
+        assertSame(outcome, coordinator.reissueOnce(expectedAccessToken = "A-access"))
+        assertEquals(1, repository.rotateCallCount)
     }
 
     @Test
@@ -297,9 +342,9 @@ class TokenReissuerTest {
             )
         val coordinator = reissuer(repository)
 
-        val first = coordinator.reissue(expectedAccessToken = "old-token")
-        val second = coordinator.reissue(expectedAccessToken = "old-token")
-        val third = coordinator.reissue(expectedAccessToken = "old-token")
+        val first = coordinator.reissueOnce(expectedAccessToken = "old-token")
+        val second = coordinator.reissueOnce(expectedAccessToken = "old-token")
+        val third = coordinator.reissueOnce(expectedAccessToken = "old-token")
 
         // 재발급 HTTP 와 세션 정리는 승자 1회뿐, 나머지는 같은 분류를 그대로 받는다.
         assertEquals(1, repository.rotateCallCount)
@@ -317,8 +362,8 @@ class TokenReissuerTest {
             )
         val coordinator = reissuer(repository)
 
-        coordinator.reissue(expectedAccessToken = "old-token")
-        val outcome = coordinator.reissue(expectedAccessToken = "old-token")
+        coordinator.reissueOnce(expectedAccessToken = "old-token")
+        val outcome = coordinator.reissueOnce(expectedAccessToken = "old-token")
 
         // 재시도가 성립하는 실패다 — 캐시하면 네트워크 복구 뒤에도 영영 못 살아난다.
         assertEquals(2, repository.rotateCallCount)
@@ -347,13 +392,79 @@ class TokenReissuerTest {
             )
         val coordinator = reissuer(repository)
 
-        coordinator.reissue(expectedAccessToken = "old-token")
+        coordinator.reissueOnce(expectedAccessToken = "old-token")
         // 재로그인이 준 새 토큰 — 거절 캐시의 키(옛 액세스 토큰)와 어긋나므로 정상 회전으로 간다.
         rotateFails = false
         repository.accessToken = "relogin-token"
-        val outcome = coordinator.reissue(expectedAccessToken = "relogin-token")
+        val outcome = coordinator.reissueOnce(expectedAccessToken = "relogin-token")
 
         assertEquals(TokenReissuer.Outcome.Rotated("rotated-token"), outcome)
         assertEquals(2, repository.rotateCallCount)
+    }
+
+    @Test
+    fun `이전 세션의 늦은 확정 거절은 새로 로그인한 세션을 지우지 않는다`() {
+        listOf(
+            ApiException(status = 401, code = 1107, serverMessage = "무효 refresh", fallbackMessage = "무효 refresh"),
+            ApiException(status = 400, code = 1107, serverMessage = "무효 refresh", fallbackMessage = "무효 refresh"),
+        ).forEach { failure ->
+            tracker.clear()
+            val repository =
+                networkFakeAuthRepository(
+                    accessToken = "A-access",
+                    onRotateToken = {
+                        // 재발급 응답을 기다리는 사이 로그아웃과 B 로그인이 끝났다. 로그인은 발급 응답의 deadline 도 기록한다.
+                        clearSession()
+                        saveSession("B-access", "B-refresh")
+                        tracker.record(expiresInSeconds = 30)
+                        Result.failure(failure)
+                    },
+                    onClearSession = {
+                        accessToken = null
+                        refreshToken = null
+                        Result.success(Unit)
+                    },
+                ).apply { onSaveSession = null }
+            val coordinator = reissuer(repository)
+
+            val outcome = coordinator.reissueOnce(expectedAccessToken = "A-access")
+
+            assertTrue(outcome is TokenReissuer.Outcome.AuthenticationRejected)
+            assertSame(failure, (outcome as TokenReissuer.Outcome.AuthenticationRejected).exception)
+            assertEquals("${failure.status}/${failure.code} 거절이 B 를 지웠다", "B-access", repository.accessToken)
+            assertEquals("B-refresh", repository.refreshToken)
+            // 로그아웃 정리 1회뿐이다. 거절 처리가 정리를 더 부르면 그것이 B 를 지운다.
+            assertEquals(1, repository.clearSessionCallCount)
+            assertTrue("B 의 선제 갱신 deadline 이 지워졌다", tracker.isExpiringSoon())
+
+            // A 토큰으로 늦게 들어온 대기자는 재발급 없이 같은 거절을 받는다 (#1126).
+            assertSame(outcome, coordinator.reissueOnce(expectedAccessToken = "A-access"))
+            assertEquals(1, repository.rotateCallCount)
+        }
+    }
+
+    @Test
+    fun `이전 세션의 일시 실패는 새 세션의 deadline 을 지우지 않는다`() {
+        val repository =
+            networkFakeAuthRepository(
+                accessToken = "A-access",
+                onRotateToken = {
+                    clearSession()
+                    saveSession("B-access", "B-refresh")
+                    tracker.record(expiresInSeconds = 30)
+                    Result.failure(SocketTimeoutException("timeout"))
+                },
+                onClearSession = {
+                    accessToken = null
+                    refreshToken = null
+                    Result.success(Unit)
+                },
+            ).apply { onSaveSession = null }
+
+        val outcome = reissuer(repository).reissueOnce(expectedAccessToken = "A-access")
+
+        assertTrue(outcome is TokenReissuer.Outcome.TransportFailure)
+        assertEquals("B-access", repository.accessToken)
+        assertTrue(tracker.isExpiringSoon())
     }
 }

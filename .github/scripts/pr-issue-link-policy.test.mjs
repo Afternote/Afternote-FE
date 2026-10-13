@@ -205,8 +205,20 @@ test("keeps Refs for Issues the PR touches but does not close, and checks the as
 });
 
 test("exempts bot authors from the assignee check and the closing keyword but keeps the Issue link requirement", async () => {
-    // 봇 PR 은 사람이 나중에 링크를 붙이는 구조라 대표 Issue 를 Refs 로 거는 현행을 유지한다 (#1748).
+    // 봇 PR 은 closing 키워드를 면제할 뿐 금지하지 않는다. 사람이 붙인 공유 Issue 는 Refs 로(#1748),
+    // dependabot-pr-gate 가 PR 마다 만든 Issue 는 Closes 로 건다(#2274). 둘 다 통과해야 한다.
     const loadIssue = issueLoader(new Map([[12, assignedIssue(12, { assignees: [] })]]));
+    const closing = await validatePullRequestIssueLink({
+        pullRequest: pullRequest({
+            title: "chore(deps): bump upload-artifact (#12)",
+            body: "<!-- dependabot-pr-gate:v1 -->\nCloses #12",
+            user: { login: "dependabot[bot]", type: "Bot" },
+        }),
+        repository: "Afternote/Afternote-FE",
+        loadIssue,
+    });
+    assert.deepEqual(closing, { issues: [12], rejected: [] });
+
     const result = await validatePullRequestIssueLink({
         pullRequest: pullRequest({
             title: "chore(deps): bump upload-artifact (#12)",

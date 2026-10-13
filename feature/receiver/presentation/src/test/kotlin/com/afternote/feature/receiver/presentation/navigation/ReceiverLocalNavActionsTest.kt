@@ -2,7 +2,7 @@ package com.afternote.feature.receiver.presentation.navigation
 
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
-import com.afternote.core.ui.navigation.FeatureStackBoundary
+import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
 import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -16,7 +16,7 @@ class ReceiverLocalNavActionsTest {
     private val actions =
         ReceiverLocalNavActions(
             backStack = backStack,
-            boundary = FeatureStackBoundary { exits += 1 },
+            navigationCallbacks = FeatureNavigationCallbacks { exits += 1 },
         )
 
     private fun stack(): List<String> = backStack.map { it::class.simpleName!! }

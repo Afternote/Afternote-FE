@@ -68,7 +68,7 @@ class ReissueFailureClassificationTest {
                 },
             )
         return TokenReissuer({ repository }, tracker, FakeErrorReporter())
-            .reissue(expectedAccessToken = "old-token")
+            .reissueOnce(expectedAccessToken = "old-token")
     }
 
     @Test

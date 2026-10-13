@@ -1,0 +1,56 @@
+name: QA Distribution Decision
+
+on:
+  push:
+    branches: [develop]
+  schedule:
+    - cron: '19 22 * * *'
+  workflow_run:
+    workflows: [Release Distribution (Firebase App Distribution)]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+jobs:
+  evaluate:
+    name: Evaluate QA deployment timing
+    if: >-
+      (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/develop') &&
+      (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
+    # 건너뛴 배포 실패 이벤트가 진행 중인 판정을 취소하지 않게 job에 한정한다.
+    concurrency:
+      group: ${{ github.run_attempt == 1 && 'qa-distribution-decision-current' || format('qa-distribution-decision-rerun-{0}', github.run_id) }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Clone trusted develop revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event_name == 'push' && github.sha || 'develop' }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Pin evaluated develop SHA
+        run: echo "QA_DISTRIBUTION_HEAD_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Evaluate without posting comments
+        env:
+          GH_TOKEN: ${{ github.token }}
+          QA_DISTRIBUTION_OUTPUT_DIR: ${{ runner.temp }}/qa-distribution-decision
+        run: node .github/scripts/qa-distribution-decision.mjs
+
+      - name: Upload decision and evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: qa-distribution-decision
+          path: ${{ runner.temp }}/qa-distribution-decision
+          if-no-files-found: error
+          # 표준 보관 기간
+          retention-days: 7

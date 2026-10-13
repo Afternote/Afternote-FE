@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 
 // 조직(orgs/<org>) 하위 전 저장소의 워크플로·composite action 이 쓰는 `uses:` 를
-// 전수로 모아 floating(태그·브랜치) 참조와 40자리 SHA 고정 참조로 가른다.
+// 전수로 모아 floating 액션, 40자리 SHA 고정 액션, 재사용 워크플로로 가른다.
 //
 // `orgs/<org>/actions/permissions` 의 `sha_pinning_required` 를 켜면 조직 하위
-// 저장소 전부에 즉시 적용된다. floating 참조가 하나라도 남아 있으면 그 저장소의
+// 저장소 전부에 즉시 적용된다. floating 액션이 하나라도 남아 있으면 그 저장소의
 // run 은 job 이 만들어지기 전에 `startup_failure` 로 죽고 로그에 사유가 남지 않는다.
-// 그래서 켜기 전에 이 감사를 돌려 0건인지 확인한다.
+// 그래서 켜기 전에 이 감사를 돌려 0건인지 확인한다. 원격 재사용 워크플로는
+// 이 SHA 강제 정책의 예외이며 태그 참조도 허용된다.
 //
 // 사용법:
 //   GH_TOKEN=$(gh auth token) node .github/scripts/audit-org-action-pinning.mjs \
@@ -26,27 +27,39 @@ const PAGE_SIZE = 100;
 
 const WORKFLOW_PATH = /^\.github\/workflows\/[^/]+\.ya?ml$/;
 const ACTION_MANIFEST_PATH = /(?:^|\/)action\.ya?ml$/;
+const REMOTE_REUSABLE_WORKFLOW = /^[^/\s@]+\/[^/\s@]+\/\.github\/workflows\/[^/\s@]+\.ya?ml$/;
 
 /**
- * 워크플로·action 매니페스트 원문에서 `uses:` 값을 순서대로 뽑는다.
+ * 워크플로·action 매니페스트 원문에서 `uses:` 값과 호출 위치를 순서대로 뽑는다.
  *
  * YAML 파서를 쓰지 않는 이유는 `uses:` 가 step 시퀀스·job 레벨(reusable workflow)
- * 양쪽에 나타나고, 주석 처리된 줄은 정책 대상이 아니기 때문이다. 줄 단위로 보는
- * 편이 정책이 보는 범위와 정확히 겹친다.
+ * 양쪽에 나타나기 때문이다. 들여쓰기의 mapping 경로로 jobs.<id>.uses만 구분하고,
+ * step이나 composite action의 같은 경로 문자열에는 워크플로 예외를 적용하지 않는다.
  */
-export function extractActionReferences(source) {
+export function extractActionReferences(source, sourcePath = "") {
     const references = [];
+    const parents = [];
     for (const line of String(source ?? "").split("\n")) {
-        if (/^\s*#/.test(line)) {
+        if (/^\s*(?:#.*)?$/.test(line)) {
             continue;
+        }
+        const indent = line.search(/\S/);
+        while (parents.length > 0 && parents.at(-1).indent >= indent) {
+            parents.pop();
         }
         const match = /^\s*(?:-\s+)?uses:\s*(.+?)\s*$/.exec(line);
-        if (!match) {
-            continue;
+        if (match) {
+            const reference = stripInlineComment(match[1]);
+            const reusableWorkflow = WORKFLOW_PATH.test(sourcePath) &&
+                !line.trimStart().startsWith("-") && parents.length === 2 &&
+                parents[0].key === "jobs" && parents[0].indent === 0;
+            if (reference.length > 0) {
+                references.push({ reference, reusableWorkflow });
+            }
         }
-        const value = stripInlineComment(match[1]);
-        if (value.length > 0) {
-            references.push(value);
+        const mapping = /^\s*(?:([A-Za-z0-9_-]+)|["']([A-Za-z0-9_-]+)["'])\s*:/.exec(line);
+        if (mapping) {
+            parents.push({ indent, key: mapping[1] ?? mapping[2] });
         }
     }
     return references;
@@ -72,10 +85,11 @@ function stripInlineComment(value) {
  *   SHA 고정 정책의 대상이 아니다.
  * - `docker`: `docker://` 참조. 액션 레지스트리가 아니라 이미지라 대상이 아니다.
  * - `expression`: `${{ }}` 가 섞인 참조. 정적으로 판정할 수 없으니 사람이 본다.
+ * - `reusable-workflow`: 버전이 있는 원격 재사용 워크플로. SHA 강제 정책의 예외다.
  * - `pinned`: `@` 뒤가 40자리 소문자 hex.
  * - `floating`: 그 밖(태그 `@v4`·브랜치 `@main`·짧은 SHA). 정책을 켜면 막힌다.
  */
-export function classifyActionReference(reference) {
+export function classifyActionReference(reference, { reusableWorkflow = false } = {}) {
     const value = String(reference ?? "").trim();
     if (value.length === 0) {
         return { reference: value, kind: "empty", action: null, version: null };
@@ -95,6 +109,9 @@ export function classifyActionReference(reference) {
     }
     const action = value.slice(0, separator);
     const version = value.slice(separator + 1);
+    if (reusableWorkflow && version.length > 0 && REMOTE_REUSABLE_WORKFLOW.test(action)) {
+        return { reference: value, kind: "reusable-workflow", action, version };
+    }
     const kind = /^[0-9a-f]{40}$/.test(version) ? "pinned" : "floating";
     return { reference: value, kind, action, version };
 }
@@ -108,7 +125,7 @@ export function classifyActionReference(reference) {
 export function collectExternalActionNames(entries) {
     const names = new Set();
     for (const entry of entries) {
-        if (entry.kind === "pinned" || entry.kind === "floating" || entry.kind === "unversioned") {
+        if (["pinned", "floating", "unversioned", "reusable-workflow"].includes(entry.kind)) {
             names.add(entry.action);
         }
     }
@@ -125,6 +142,7 @@ export function summarizeAudit(entries) {
                 total: 0,
                 pinned: 0,
                 floating: 0,
+                reusableWorkflows: 0,
                 local: 0,
                 other: 0,
                 floatingReferences: [],
@@ -139,6 +157,8 @@ export function summarizeAudit(entries) {
             bucket.floatingReferences.push(entry);
         } else if (entry.kind === "local") {
             bucket.local += 1;
+        } else if (entry.kind === "reusable-workflow") {
+            bucket.reusableWorkflows += 1;
         } else {
             bucket.other += 1;
         }
@@ -152,6 +172,7 @@ export function summarizeAudit(entries) {
             references: entries.length,
             pinned: repositories.reduce((sum, item) => sum + item.pinned, 0),
             floating: repositories.reduce((sum, item) => sum + item.floating, 0),
+            reusableWorkflows: repositories.reduce((sum, item) => sum + item.reusableWorkflows, 0),
             local: repositories.reduce((sum, item) => sum + item.local, 0),
             other: repositories.reduce((sum, item) => sum + item.other, 0),
         },
@@ -259,13 +280,13 @@ async function scanRevision(apiUrl, repository, revision, label, token, blobCach
                 await requestText(`${apiUrl}/repos/${repository}/git/blobs/${blob.sha}`, token),
             );
         }
-        for (const reference of extractActionReferences(blobCache.get(cacheKey))) {
+        for (const { reference, reusableWorkflow } of extractActionReferences(blobCache.get(cacheKey), blob.path)) {
             entries.push({
                 repository,
                 revision,
                 revisionLabel: label,
                 path: blob.path,
-                ...classifyActionReference(reference),
+                ...classifyActionReference(reference, { reusableWorkflow }),
             });
         }
     }
@@ -357,10 +378,10 @@ async function main() {
     console.error(
         `scanned ${scannedRevisions.length} revisions across ${repositories.length} repositories: ` +
             `${totals.references} uses (${totals.pinned} pinned, ${totals.floating} floating, ` +
-            `${totals.local} local, ${totals.other} other)`,
+            `${totals.reusableWorkflows} reusable workflows, ${totals.local} local, ${totals.other} other)`,
     );
     if (!compatible) {
-        console.error("floating references remain; sha_pinning_required would break these runs");
+        console.error("floating action references remain; sha_pinning_required would break these runs");
         process.exitCode = 1;
     }
 }

@@ -2,16 +2,16 @@ package com.afternote.feature.afternote.presentation.detail
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.domain.testing.FakeMyProfileRepository
 import com.afternote.core.domain.testing.FakeUserProfileCacheRepository
-import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.presentation.NoopAuthorErrorReporter
+import com.afternote.feature.afternote.presentation.afternoteAuthorMyProfileRepository
 import com.afternote.feature.afternote.presentation.afternoteAuthorUserProfileRepository
-import com.afternote.feature.afternote.presentation.afternoteAuthorUserRepository
 import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -72,7 +72,7 @@ class AfternoteDetailViewModelTest {
             val states = recordStates(viewModel)
 
             // 첫 진입 화면의 ON_RESUME (init 로드는 이미 실패로 종료됨).
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(AfternoteDetailIntent.RefreshOnReturn)
 
             assertEquals(listOf(73L), repository.requestedDetailIds)
             assertTrue(states.last() is AfternoteDetailUiState.Error)
@@ -93,8 +93,8 @@ class AfternoteDetailViewModelTest {
             val states = recordStates(viewModel)
 
             // init 로드가 아직 도는 중 — 첫 resume(스킵) 뒤 또 한 번 resume 이 와도 중복이 없어야 한다.
-            viewModel.refreshOnReturn()
-            viewModel.refreshOnReturn()
+            viewModel.onIntent(AfternoteDetailIntent.RefreshOnReturn)
+            viewModel.onIntent(AfternoteDetailIntent.RefreshOnReturn)
             gate.complete(Unit)
 
             assertEquals(listOf(73L), repository.requestedDetailIds)
@@ -118,8 +118,8 @@ class AfternoteDetailViewModelTest {
             val viewModel = viewModel(repository)
             val states = recordStates(viewModel)
 
-            viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
-            viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME
+            viewModel.onIntent(AfternoteDetailIntent.RefreshOnReturn) // 첫 진입의 ON_RESUME — 스킵
+            viewModel.onIntent(AfternoteDetailIntent.RefreshOnReturn) // 백스택 복귀의 ON_RESUME
 
             assertEquals(listOf(73L, 73L), repository.requestedDetailIds)
             assertEquals("Facebook", states.last().serviceNameOrNull())
@@ -146,8 +146,8 @@ class AfternoteDetailViewModelTest {
             val viewModel = viewModel(repository, errorReporter = reporter)
             val states = recordStates(viewModel)
 
-            viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
-            viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME
+            viewModel.onIntent(AfternoteDetailIntent.RefreshOnReturn) // 첫 진입의 ON_RESUME — 스킵
+            viewModel.onIntent(AfternoteDetailIntent.RefreshOnReturn) // 백스택 복귀의 ON_RESUME
 
             // 잘 보고 있던 상세가 에러 화면으로 대체되지 않는다.
             assertEquals("Instagram", states.last().serviceNameOrNull())
@@ -162,8 +162,8 @@ class AfternoteDetailViewModelTest {
             // 상세와 표시명은 출처가 다른 두 요청이라 도착 순서가 뒤집힌다. 이름이 늦는 쪽이 실제 경로 —
             // 그때 이미 그려진 Success 에 이름이 실려야 제목의 이름 세그먼트가 뒤늦게라도 채워진다.
             val profileGate = CompletableDeferred<Unit>()
-            val userRepository =
-                afternoteAuthorUserRepository().apply {
+            val myProfileRepository =
+                afternoteAuthorMyProfileRepository().apply {
                     onGetMyProfile = {
                         profileGate.await()
                         profile
@@ -173,7 +173,7 @@ class AfternoteDetailViewModelTest {
                 FakeAfternoteRepository.strict().apply {
                     onGetDetail = { Result.success(detail(serviceName = "Instagram")) }
                 }
-            val viewModel = viewModel(repository, userRepository = userRepository)
+            val viewModel = viewModel(repository, myProfileRepository = myProfileRepository)
             val states = recordStates(viewModel)
 
             // 이름이 도착하기 전 — 화면은 이미 상세를 그리고 있고 이름 자리는 비어 있다.
@@ -181,7 +181,7 @@ class AfternoteDetailViewModelTest {
 
             profileGate.complete(Unit)
 
-            assertEquals(userRepository.profile.name, states.last().authorDisplayNameOrNull())
+            assertEquals(myProfileRepository.profile.name, states.last().authorDisplayNameOrNull())
         }
 
     @Test
@@ -198,16 +198,16 @@ class AfternoteDetailViewModelTest {
                 FakeAfternoteRepository.strict().apply {
                     onGetDetail = { results.removeFirst() }
                 }
-            val userRepository = afternoteAuthorUserRepository()
-            val viewModel = viewModel(repository, userRepository = userRepository)
+            val myProfileRepository = afternoteAuthorMyProfileRepository()
+            val viewModel = viewModel(repository, myProfileRepository = myProfileRepository)
             val states = recordStates(viewModel)
 
-            viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
-            viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME
+            viewModel.onIntent(AfternoteDetailIntent.RefreshOnReturn) // 첫 진입의 ON_RESUME — 스킵
+            viewModel.onIntent(AfternoteDetailIntent.RefreshOnReturn) // 백스택 복귀의 ON_RESUME
 
             // 갱신이 만든 새 Success 도 이름을 들고 있어야 제목이 «…에 대한 기록» 으로 되돌아가지 않는다.
             assertEquals("Threads", states.last().serviceNameOrNull())
-            assertEquals(userRepository.profile.name, states.last().authorDisplayNameOrNull())
+            assertEquals(myProfileRepository.profile.name, states.last().authorDisplayNameOrNull())
         }
 
     @Test
@@ -215,8 +215,8 @@ class AfternoteDetailViewModelTest {
         runTest {
             // 원격만 쓰면 왕복이 끝나야 이름 세그먼트가 채워져, 진입마다 제목이 눈앞에서 다시 쓰인다.
             val profileGate = CompletableDeferred<Unit>()
-            val userRepository =
-                afternoteAuthorUserRepository().apply {
+            val myProfileRepository =
+                afternoteAuthorMyProfileRepository().apply {
                     onGetMyProfile = {
                         profileGate.await()
                         profile.copy(name = "서버 이름")
@@ -228,7 +228,7 @@ class AfternoteDetailViewModelTest {
                     FakeAfternoteRepository.strict().apply {
                         onGetDetail = { Result.success(detail(serviceName = "Instagram")) }
                     },
-                    userRepository = userRepository,
+                    myProfileRepository = myProfileRepository,
                     userProfileRepository = userProfileRepository,
                 )
             val states = recordStates(viewModel)
@@ -250,18 +250,18 @@ class AfternoteDetailViewModelTest {
                 afternoteAuthorUserProfileRepository().apply {
                     onGetCachedUserName = { throw IOException("DataStore 읽기 실패") }
                 }
-            val userRepository = afternoteAuthorUserRepository()
+            val myProfileRepository = afternoteAuthorMyProfileRepository()
             val viewModel =
                 viewModel(
                     FakeAfternoteRepository.strict().apply {
                         onGetDetail = { Result.success(detail(serviceName = "Instagram")) }
                     },
-                    userRepository = userRepository,
+                    myProfileRepository = myProfileRepository,
                     userProfileRepository = userProfileRepository,
                 )
             val states = recordStates(viewModel)
 
-            assertEquals(userRepository.profile.name, states.last().authorDisplayNameOrNull())
+            assertEquals(myProfileRepository.profile.name, states.last().authorDisplayNameOrNull())
         }
 
     @Test
@@ -272,18 +272,18 @@ class AfternoteDetailViewModelTest {
                 afternoteAuthorUserProfileRepository().apply {
                     onSaveUserName = { throw IOException("DataStore 쓰기 실패") }
                 }
-            val userRepository = afternoteAuthorUserRepository()
+            val myProfileRepository = afternoteAuthorMyProfileRepository()
             val viewModel =
                 viewModel(
                     FakeAfternoteRepository.strict().apply {
                         onGetDetail = { Result.success(detail(serviceName = "Instagram")) }
                     },
-                    userRepository = userRepository,
+                    myProfileRepository = myProfileRepository,
                     userProfileRepository = userProfileRepository,
                 )
             val states = recordStates(viewModel)
 
-            assertEquals(userRepository.profile.name, states.last().authorDisplayNameOrNull())
+            assertEquals(myProfileRepository.profile.name, states.last().authorDisplayNameOrNull())
             assertTrue(states.last() is AfternoteDetailUiState.Success)
         }
 
@@ -307,9 +307,9 @@ class AfternoteDetailViewModelTest {
             val viewModel = viewModel(repository)
             val states = recordStates(viewModel)
 
-            viewModel.deleteAfternote()
-            viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
-            viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME
+            viewModel.onIntent(AfternoteDetailIntent.Delete)
+            viewModel.onIntent(AfternoteDetailIntent.RefreshOnReturn) // 첫 진입의 ON_RESUME — 스킵
+            viewModel.onIntent(AfternoteDetailIntent.RefreshOnReturn) // 백스택 복귀의 ON_RESUME
 
             val last = states.last() as AfternoteDetailUiState.Success
             assertEquals("Threads", states.last().serviceNameOrNull())
@@ -338,7 +338,7 @@ class AfternoteDetailViewModelTest {
 
             assertTrue(states.last() is AfternoteDetailUiState.Error)
 
-            viewModel.retry()
+            viewModel.onIntent(AfternoteDetailIntent.Retry)
 
             // 응답이 오기 전 — 사용자가 누른 동작이므로 기다림을 표시한다(자동 갱신과 갈리는 지점).
             assertTrue(states.last() is AfternoteDetailUiState.Loading)
@@ -365,7 +365,7 @@ class AfternoteDetailViewModelTest {
                             }
 
                             2 -> {
-                                viewModelRef.retry()
+                                viewModelRef.onIntent(AfternoteDetailIntent.Retry)
                                 Result.success(detail(serviceName = "Stale"))
                             }
 
@@ -379,8 +379,8 @@ class AfternoteDetailViewModelTest {
             viewModelRef = viewModel
             val states = recordStates(viewModel)
 
-            viewModel.refreshOnReturn() // 첫 진입의 ON_RESUME — 스킵
-            viewModel.refreshOnReturn() // 백스택 복귀의 ON_RESUME — 이 로드가 재시도에 잘린다
+            viewModel.onIntent(AfternoteDetailIntent.RefreshOnReturn) // 첫 진입의 ON_RESUME — 스킵
+            viewModel.onIntent(AfternoteDetailIntent.RefreshOnReturn) // 백스택 복귀의 ON_RESUME — 이 로드가 재시도에 잘린다
 
             assertEquals("Retry", states.last().serviceNameOrNull())
         }
@@ -402,7 +402,7 @@ class AfternoteDetailViewModelTest {
             val viewModel = viewModel(repository)
             val states = recordStates(viewModel)
 
-            viewModel.deleteAfternote()
+            viewModel.onIntent(AfternoteDetailIntent.Delete)
 
             assertTrue(states.last() is AfternoteDetailUiState.Error)
             assertEquals(emptyList<Long>(), deletedIds)
@@ -419,13 +419,13 @@ class AfternoteDetailViewModelTest {
     private fun viewModel(
         repository: FakeAfternoteRepository,
         errorReporter: ErrorReporter = NoopAuthorErrorReporter,
-        userRepository: FakeUserRepository = afternoteAuthorUserRepository(),
+        myProfileRepository: FakeMyProfileRepository = afternoteAuthorMyProfileRepository(),
         userProfileRepository: FakeUserProfileCacheRepository = afternoteAuthorUserProfileRepository(),
     ): AfternoteDetailViewModel =
         AfternoteDetailViewModel(
             route = AfternoteRoute.DetailRoute(itemId = 73L),
             afternoteRepository = repository,
-            userRepository = userRepository,
+            myProfileRepository = myProfileRepository,
             userProfileRepository = userProfileRepository,
             errorReporter = errorReporter,
         )

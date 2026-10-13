@@ -41,7 +41,7 @@ class AfternoteHomeListFailureReportingTest {
         val reporter = RecordingErrorReporter()
         val viewModel = viewModel(reporter)
 
-        viewModel.onListLoadFailed(IOException("목록 조회 실패"))
+        viewModel.onIntent(AfternoteHomeIntent.ListLoadFailed(IOException("목록 조회 실패")))
 
         assertEquals(listOf("list_load"), reporter.recordedStages)
         assertEquals(listOf(IOException::class.java.name), reporter.recordedErrorTypes)
@@ -52,7 +52,7 @@ class AfternoteHomeListFailureReportingTest {
         val reporter = RecordingErrorReporter()
         val viewModel = viewModel(reporter)
 
-        repeat(5) { viewModel.onListLoadFailed(IOException("목록 조회 실패")) }
+        repeat(5) { viewModel.onIntent(AfternoteHomeIntent.ListLoadFailed(IOException("목록 조회 실패"))) }
 
         assertEquals(1, reporter.recordedStages.size)
     }
@@ -62,8 +62,8 @@ class AfternoteHomeListFailureReportingTest {
         val reporter = RecordingErrorReporter()
         val viewModel = viewModel(reporter)
 
-        viewModel.onListLoadFailed(IOException("연결 실패"))
-        viewModel.onListLoadFailed(SocketTimeoutException("응답 없음"))
+        viewModel.onIntent(AfternoteHomeIntent.ListLoadFailed(IOException("연결 실패")))
+        viewModel.onIntent(AfternoteHomeIntent.ListLoadFailed(SocketTimeoutException("응답 없음")))
 
         assertEquals(
             listOf(IOException::class.java.name, SocketTimeoutException::class.java.name),
@@ -76,9 +76,9 @@ class AfternoteHomeListFailureReportingTest {
         val reporter = RecordingErrorReporter()
         val viewModel = viewModel(reporter)
 
-        viewModel.onListLoadFailed(IOException("목록 조회 실패"))
-        viewModel.onListLoadSucceeded()
-        viewModel.onListLoadFailed(IOException("목록 조회 실패"))
+        viewModel.onIntent(AfternoteHomeIntent.ListLoadFailed(IOException("목록 조회 실패")))
+        viewModel.onIntent(AfternoteHomeIntent.ListLoadSucceeded)
+        viewModel.onIntent(AfternoteHomeIntent.ListLoadFailed(IOException("목록 조회 실패")))
 
         assertEquals(listOf("list_load", "list_load"), reporter.recordedStages)
     }

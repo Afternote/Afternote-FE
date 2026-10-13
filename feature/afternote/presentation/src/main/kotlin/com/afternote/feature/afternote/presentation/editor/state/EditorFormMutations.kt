@@ -23,23 +23,23 @@ private inline fun EditorFormState.mapServiceForm(
 }
 
 /**
- * 같은 카테고리를 다시 고르면 아무것도 하지 않는다. 드롭다운 재선택뿐 아니라 프로세스 데스 복원 후
- * `LaunchedEffect(route.initialType)` 재발화가 이 경로를 타므로, 가드가 없으면 복원된 입력이 지워진다.
+ * 같은 카테고리를 다시 고르면 아무것도 하지 않는다. 가드가 없으면 드롭다운에서 지금 카테고리를
+ * 다시 고르기만 해도 입력이 지워진다.
  */
 internal fun EditorFormState.withType(type: AfternoteType): EditorFormState =
     if (typeForm.type == type) this else copy(typeForm = AfternoteTypeForm.pristineFor(type))
 
 internal fun EditorFormState.withService(service: String): EditorFormState = mapServiceForm { it.withService(service) }
 
-/** 사진 선택은 `picked` 층에 실린다. 서버 사진은 `photoUrl` 에 그대로 남는다 — 저장 없이 나가면 그것이 사실이고, 이탈 가드가 기준선과 비교한다. */
-internal fun EditorFormState.withMemorialPhoto(uri: String): EditorFormState = mapMemorial { it.copy(pickedPhotoUri = uri) }
+/** 사진 선택은 값 객체 안의 미저장 층을 교체하며, 서버 기준값은 이탈 가드 비교를 위해 유지한다. */
+internal fun EditorFormState.withMemorialPhoto(uri: String): EditorFormState = mapMemorial { it.copy(photo = it.photo.withSelection(uri)) }
 
 /**
  * 시트의 사진 삭제(#1114). 슬롯을 비운다 — 로컬 교체분과 서버 사진을 함께. 서버 삭제는 여기서 일어나지
  * 않는다 — 두 칸이 빈 폼을 저장이 PATCH `null` 로 보낼 뿐이다(#1597). 저장 없이 나가면 서버 사진은
  * 그대로다(이탈 가드).
  */
-internal fun EditorFormState.withMemorialPhotoRemoved(): EditorFormState = mapMemorial { it.copy(pickedPhotoUri = null, photoUrl = null) }
+internal fun EditorFormState.withMemorialPhotoRemoved(): EditorFormState = mapMemorial { it.copy(photo = EditableMemorialPhoto.empty()) }
 
 /**
  * 영상 첨부는 통째로 갈린다 — 새 영상에는 썸네일이 아직 없고, 이전 영상의 썸네일을 물려주면 다른

@@ -14,6 +14,7 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -26,6 +27,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.Espresso.closeSoftKeyboard
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.navigation.AppState
 import com.afternote.afternote_fe.navigation.rememberAfternoteAppState
@@ -43,9 +45,7 @@ import com.afternote.core.ui.Route
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
-import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailRoute
-import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel
-import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
+import com.afternote.feature.afternote.presentation.testing.ReceivedAfternoteDetailScreenFixture
 import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.home.presentation.receiver.ReceiverHomeEvent
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
@@ -217,6 +217,43 @@ class AppAndReceiverCompletionAndroidTest {
             .assertIsDisplayed()
         composeRule
             .onNodeWithText(context.getString(ReceiverR.string.receiver_records_box_empty))
+            .assertIsDisplayed()
+    }
+
+    /**
+     * 발신자 카드 탭 → 발신자 상세 (#2168).
+     *
+     * 상세 ViewModel 은 로컬 Navigation 3 entry 안에서 실제 Hilt 경로로 만들어진다. entry 의
+     * SavedStateHandle 에는 NavKey 필드가 실리지 않으므로 `toRoute` 로 `senderId` 를 읽던 VM 은
+     * 여기서 `MissingFieldException` 으로 죽었다. VM 을 손으로 만드는 유닛 테스트는 이 경로를 타지 않는다.
+     */
+    @Test
+    fun welcomeCheckRecords_registeredSenderCard_opensSenderDetail() {
+        val senderName = "테스트 발신자"
+        composeRule
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_check_records))
+            .performClick()
+        composeRule
+            .onNodeWithContentDescription(context.getString(CoreUiR.string.core_ui_fab_content_description_add))
+            .performClick()
+        composeRule.onNode(hasSetTextAction()).performTextInput(senderName)
+        // API 30에서 IME가 등록 버튼을 가린다. 입력을 끝낸 뒤 표시된 버튼을 누른다.
+        closeSoftKeyboard()
+        composeRule
+            .onNode(
+                hasText(context.getString(ReceiverR.string.receiver_sender_registration_submit)) and hasClickAction(),
+            ).assertIsDisplayed()
+            .performClick()
+
+        val senderCard = hasText(senderName) and hasClickAction() and !hasSetTextAction()
+        composeRule.waitUntilAtLeastOneExists(senderCard, timeoutMillis = 5_000)
+        composeRule.onNode(senderCard).assertIsDisplayed().performClick()
+
+        composeRule
+            .onNodeWithText(context.getString(ReceiverR.string.receiver_sender_detail_status_unavailable))
+            .assertIsDisplayed()
+        composeRule
+            .onNodeWithText(context.getString(ReceiverR.string.receiver_sender_detail_request_verification))
             .assertIsDisplayed()
     }
 }
@@ -521,20 +558,19 @@ class ReceiverRuntimeCompletionAndroidTest {
                 ),
             ),
         )
-        val viewModel =
-            ReceivedAfternoteDetailViewModel(
-                route = ReceivedAfternoteRoute.DetailRoute(afternoteId = 202L),
+        val detailFixture =
+            ReceivedAfternoteDetailScreenFixture(
+                afternoteId = 202L,
                 receiverRepository = repository,
                 errorReporter = FakeErrorReporter(),
             )
 
         composeRule.setContent {
             AfternoteTheme {
-                ReceivedAfternoteDetailRoute(
+                detailFixture.Content(
                     onNavigateBack = {},
                     onNavigateToFullList = {},
                     onNavigateToPlaylist = {},
-                    viewModel = viewModel,
                 )
             }
         }
@@ -571,9 +607,9 @@ class ReceiverRuntimeCompletionAndroidTest {
                 ),
             ),
         )
-        val viewModel =
-            ReceivedAfternoteDetailViewModel(
-                route = ReceivedAfternoteRoute.DetailRoute(afternoteId = 303L),
+        val detailFixture =
+            ReceivedAfternoteDetailScreenFixture(
+                afternoteId = 303L,
                 receiverRepository = repository,
                 errorReporter = FakeErrorReporter(),
             )
@@ -581,11 +617,10 @@ class ReceiverRuntimeCompletionAndroidTest {
 
         composeRule.setContent {
             AfternoteTheme {
-                ReceivedAfternoteDetailRoute(
+                detailFixture.Content(
                     onNavigateBack = {},
                     onNavigateToFullList = {},
                     onNavigateToPlaylist = playlistRoutes::add,
-                    viewModel = viewModel,
                 )
             }
         }

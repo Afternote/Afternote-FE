@@ -8,6 +8,7 @@ import {
     commentMarker,
     ensureLabelExists,
     fetchLabeledIssueNumbers,
+    fetchOpenPullRequests,
     planIssueLabelChanges,
     renderLinkComment,
     renderSummary,
@@ -41,6 +42,7 @@ function pullRequest(overrides = {}) {
     return {
         number: 100,
         title: "fix(ci): 무언가를 고친다 (#42)",
+        body: "",
         baseRefName: "develop",
         isDraft: false,
         ...overrides,
@@ -52,6 +54,7 @@ function plan(overrides = {}) {
         pullRequests: [],
         labeledIssueNumbers: [],
         defaultBranch: "develop",
+        repository: "o/r",
         ...overrides,
     });
 }
@@ -87,15 +90,81 @@ test("사람이 손으로 붙인 라벨도 다음 실행에서 정본으로 되�
     assert.deepEqual(result.toLabel, []);
 });
 
-test("제목이 대표 이슈 형식이 아니면 건너뛴다", () => {
-    // 본문의 느슨한 `Refs #N` 까지 주우면 «참고로 언급했을 뿐인 이슈» 에도 라벨이 붙어
-    // 라벨의 뜻이 무너진다. 판정은 Repository Quality 가 강제하는 제목 형식 하나로만 한다.
+test("제목에도 본문에도 닫는 이슈가 없으면 건너뛴다", () => {
     const result = plan({
         pullRequests: [pullRequest({ title: "fix(ci): 이슈 번호가 없다" })],
     });
 
     assert.deepEqual(result.toLabel, []);
     assert.deepEqual(result.skipped.map((item) => item.number), [100]);
+});
+
+test("본문의 Closes 두 건이 제목의 대표 이슈와 함께 전부 라벨을 받는다", () => {
+    // PR #2051 의 모양이다. 제목은 (#1281) 이고 본문에 Closes #1281·Closes #2045 가 나란히 있는데,
+    // 제목만 보던 동안 #2045 는 라벨도 링크 코멘트도 못 받아 미착수 조사에서 미착수로 읽혔다 (#2082).
+    const result = plan({
+        pullRequests: [
+            pullRequest({
+                title: "fix(setting): 조회 상태와 재시도 연결 (#42)",
+                body: "- Closes #42\n- Closes #77\n\nFixes #99 도 함께 끝낸다.",
+            }),
+        ],
+    });
+
+    assert.deepEqual(result.toLabel.map((entry) => entry.issueNumber), [42, 77, 99]);
+});
+
+test("제목과 본문에 같은 번호가 겹쳐도 이슈마다 한 번만 처리한다", () => {
+    // 게이트가 대표 이슈를 본문에서도 Closes 로 걸라고 강제하므로 이 겹침이 정상 경로다.
+    // 같은 PR 을 두 번 세면 로그와 링크 코멘트가 그만큼 중복된다.
+    const result = plan({
+        pullRequests: [pullRequest({ body: "Closes #42\nResolves #42" })],
+    });
+
+    assert.equal(result.toLabel.length, 1);
+    assert.deepEqual(result.toLabel[0].pullRequests.map((item) => item.number), [100]);
+});
+
+test("본문의 Refs 는 라벨을 붙이지 않는다", () => {
+    // 라벨의 뜻은 «이 이슈를 구현하는 PR 이 열려 있다» 다. 참고로 언급했을 뿐인 이슈까지 주우면
+    // 그 뜻이 무너진다. 경계는 validate-pr-issue-link 의 closing 파서가 긋는다.
+    const result = plan({
+        pullRequests: [pullRequest({ body: "Refs #77\nPart of #78\nRelated to #79" })],
+    });
+
+    assert.deepEqual(result.toLabel.map((entry) => entry.issueNumber), [42]);
+});
+
+test("코드 블록·백틱 안의 Closes 는 라벨을 붙이지 않는다", () => {
+    // 게이트가 인정하지 않는 링크를 라벨러만 인정하면 두 판정이 갈린다. 같은 파서를 쓰는 이유다.
+    const result = plan({
+        pullRequests: [
+            pullRequest({
+                body: "설명에서 `Closes #77` 을 예로 든다.\n\n```\nCloses #78\n```\n\n<!-- Closes #79 -->",
+            }),
+        ],
+    });
+
+    assert.deepEqual(result.toLabel.map((entry) => entry.issueNumber), [42]);
+});
+
+test("다른 저장소를 닫는 참조는 라벨을 붙이지 않는다", () => {
+    const result = plan({
+        pullRequests: [pullRequest({ body: "Closes Afternote/Afternote-BE#77" })],
+    });
+
+    assert.deepEqual(result.toLabel.map((entry) => entry.issueNumber), [42]);
+});
+
+test("제목이 대표 이슈 형식이 아니어도 본문의 Closes 는 줍는다", () => {
+    // 게이트가 이런 PR 을 막지만 리컨사일러는 게이트를 통과하지 못한 PR 까지 훑는다. 그 사이에도
+    // «누가 이미 손대고 있다» 는 사실은 참이므로 이슈 쪽에 드러내는 편이 오인을 줄인다.
+    const result = plan({
+        pullRequests: [pullRequest({ title: "fix(ci): 번호가 없다", body: "Closes #77" })],
+    });
+
+    assert.deepEqual(result.toLabel.map((entry) => entry.issueNumber), [77]);
+    assert.deepEqual(result.skipped, []);
 });
 
 test("제목 끝이 아닌 (#N) 은 대표 이슈로 보지 않는다", () => {
@@ -139,6 +208,51 @@ test("base 가 기본 브랜치가 아니면 링크 코멘트를 계획한다", 
         result.comments.map((entry) => [entry.issueNumber, entry.pullRequest.number]),
         [[42, 100]],
     );
+});
+
+test("본문 Closes 로만 걸린 이슈도 링크 코멘트를 받는다", () => {
+    // 스택 PR 은 closingIssuesReferences 가 비어 Development 칸도 비는다. 라벨러가 유일한
+    // 신호이므로 대표 이슈만 코멘트를 받으면 나머지 이슈엔 아무것도 남지 않는다.
+    const result = plan({
+        pullRequests: [
+            pullRequest({ body: "Closes #42\nCloses #77", baseRefName: "fix/579-receiver-reentry" }),
+        ],
+    });
+
+    assert.deepEqual(
+        result.comments.map((entry) => [entry.issueNumber, entry.pullRequest.number]),
+        [[42, 100], [77, 100]],
+    );
+});
+
+test("열린 PR 조회가 본문까지 가져온다", async () => {
+    // 본문의 Closes 를 읽는 것이 계획의 절반이다. GraphQL 질의에서 body 가 빠지면 undefined 가
+    // 내려와 아무 에러 없이 제목만 보던 때로 돌아간다.
+    const api = fakeApi({
+        responses: {
+            "/graphql": {
+                data: {
+                    repository: {
+                        pullRequests: {
+                            pageInfo: { hasNextPage: false, endCursor: null },
+                            nodes: [{
+                                number: 100,
+                                title: "fix(ci): 무언가 (#42)",
+                                body: "Closes #42\nCloses #77",
+                                baseRefName: "develop",
+                                isDraft: false,
+                            }],
+                        },
+                    },
+                },
+            },
+        },
+    });
+
+    const [fetched] = await fetchOpenPullRequests(api, "o/r");
+
+    assert.match(api.calls[0].body.query, /\bbody\b/);
+    assert.equal(fetched.body, "Closes #42\nCloses #77");
 });
 
 test("링크 코멘트는 PR 상태를 문장으로 박지 않는다", () => {
@@ -288,7 +402,7 @@ test("요약은 부착·제거·코멘트·미판정을 모두 센다", () => {
     assert.match(summary, /라벨 부착: 1건 — #42/);
     assert.match(summary, /라벨 제거: 1건 — #999/);
     assert.match(summary, /링크 코멘트 대상\(base≠기본 브랜치\): 1건 — #42/);
-    assert.match(summary, /대표 이슈 미판정: 1건 — #101/);
+    assert.match(summary, /닫는 이슈 미판정: 1건 — #101/);
 });
 
 test("리컨사일 워크플로가 이 스크립트와 테스트를 실제로 부른다", () => {

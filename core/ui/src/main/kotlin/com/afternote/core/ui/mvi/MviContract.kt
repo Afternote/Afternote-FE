@@ -4,9 +4,10 @@ package com.afternote.core.ui.mvi
  * View → ViewModel. 사용자가 **하려는 것**이다 — `SubmitDescription` · `SelectFilter` ·
  * `ConsumeError`.
  *
- * [MviViewModel.onIntent] 이 유일한 진입점이라, 화면이 부를 수 있는 것은 이 타입뿐이다.
- * Intent 하나가 [ReducerEvent] 를 0개에서 N개까지 낳는다 — 네비게이션만 하는 Intent 는 0개,
- * 로드 Intent 는 `Loading` → `Loaded` 2개다.
+ * 화면에서 ViewModel 로 들어가는 진입점은 [MviViewModel.onIntent] 하나다.
+ * Intent 하나가 [ReducerEvent] 를 0개에서 N개까지 낳는다 — 가드에서 거절한 중복 요청은 0개,
+ * 로드 Intent 는 `Loading` → `Loaded` 2개다. 이동만 하는 클릭은 화면 콜백으로 전달하고,
+ * 목적지와 백스택 조작은 피처 entry·host 가 담당한다 (#1810).
  *
  * ## 왜 Effect 타입이 없는가 (#1800 판정)
  *

@@ -1,7 +1,7 @@
 package com.afternote.feature.receiver.data.repositoryimpl
 
 import com.afternote.core.common.di.IoDispatcher
-import com.afternote.core.common.result.runCatchingCancellable
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.feature.receiver.data.error.mapReceiverFailure
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverDeliveryDocumentUploadRepository

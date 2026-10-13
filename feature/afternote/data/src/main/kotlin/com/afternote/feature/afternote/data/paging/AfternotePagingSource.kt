@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.data.paging
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import com.afternote.core.common.result.runCatchingCancellable
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
 import com.afternote.feature.afternote.data.mapper.toDomainList
 import com.afternote.feature.afternote.data.service.AfternoteApiService
@@ -14,6 +14,7 @@ import com.afternote.feature.afternote.domain.model.author.ListItem
 internal class AfternotePagingSource(
     private val api: AfternoteApiService,
     private val category: String?,
+    private val pageSize: Int,
 ) : PagingSource<Int, ListItem>() {
     override fun getRefreshKey(state: PagingState<Int, ListItem>): Int? =
         state.anchorPosition?.let { anchorPosition ->
@@ -29,7 +30,8 @@ internal class AfternotePagingSource(
                     .getAfternotes(
                         category = category,
                         pageNumber = pageNumber,
-                        size = params.loadSize,
+                        // page 번호의 서버 offset이 바뀌지 않도록 Refresh/Append 힌트와 무관하게 고정한다.
+                        size = pageSize,
                     ).requireData()
 
             LoadResult.Page(

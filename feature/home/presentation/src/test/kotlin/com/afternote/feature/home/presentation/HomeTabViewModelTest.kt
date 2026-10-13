@@ -382,7 +382,6 @@ private val TEST_RECEIVER =
         receiverId = 1L,
         name = "수신자",
         relation = "가족",
-        authCode = "auth-code",
     )
 
 /**

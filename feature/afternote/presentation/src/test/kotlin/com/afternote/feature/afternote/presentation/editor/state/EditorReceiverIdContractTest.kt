@@ -12,7 +12,7 @@ import org.junit.Test
 class EditorReceiverIdContractTest {
     @Test
     fun `등록 수신자의 Long id 를 문자열 변환 없이 에디터 모델로 옮긴다`() {
-        val receiver = Receiver(Long.MAX_VALUE, "김수신", "딸", "auth-code")
+        val receiver = Receiver(Long.MAX_VALUE, "김수신", "딸")
 
         assertEquals(Long.MAX_VALUE, listOf(receiver).toAfternoteEditorReceivers().single().id)
     }

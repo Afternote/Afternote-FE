@@ -1,12 +1,11 @@
 package com.afternote.feature.afternote.presentation.home
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.map
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.feature.afternote.domain.AfternoteType
+import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
@@ -16,9 +15,7 @@ import com.afternote.feature.afternote.presentation.shared.util.getIconResForSer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -28,29 +25,38 @@ import javax.inject.Inject
  * CUD 후 목록 갱신은 Repository 내부에서 자동 처리되므로 수동 refresh는 불필요하다.
  */
 @HiltViewModel
-class AfternoteHomeViewModel
+internal class AfternoteHomeViewModel
     @Inject
     constructor(
         private val afternoteRepository: AfternoteRepository,
         private val errorReporter: ErrorReporter,
-    ) : ViewModel() {
-        /** 선택된 종류 필터. `null` 은 전체다. */
-        private val _selectedType = MutableStateFlow<AfternoteType?>(null)
-        val selectedType: StateFlow<AfternoteType?> = _selectedType.asStateFlow()
-
+    ) : MviViewModel<AfternoteHomeIntent, AfternoteHomeUiState, AfternoteHomeReducerEvent>(AfternoteHomeUiState()) {
         @OptIn(ExperimentalCoroutinesApi::class)
         val pagedAfternotes: Flow<PagingData<ListItemUiModel>> =
-            _selectedType
+            uiState
+                .map { it.selectedType }
+                .distinctUntilChanged()
                 .flatMapLatest { type ->
                     afternoteRepository
                         .getPagedAfternotes(type)
                         .map { pagingData -> pagingData.map { it.toUiModel() } }
                 }.cachedIn(viewModelScope)
 
-        fun selectTab(tab: AfternoteType?) {
-            if (_selectedType.value == tab) return
-            _selectedType.value = tab
+        override fun onIntent(intent: AfternoteHomeIntent) {
+            when (intent) {
+                is AfternoteHomeIntent.SelectType -> dispatch(AfternoteHomeReducerEvent.TypeSelected(intent.type))
+                is AfternoteHomeIntent.ListLoadFailed -> onListLoadFailed(intent.throwable)
+                AfternoteHomeIntent.ListLoadSucceeded -> onListLoadSucceeded()
+            }
         }
+
+        override fun reduce(
+            state: AfternoteHomeUiState,
+            event: AfternoteHomeReducerEvent,
+        ): AfternoteHomeUiState =
+            when (event) {
+                is AfternoteHomeReducerEvent.TypeSelected -> state.copy(selectedType = event.type)
+            }
 
         /**
          * 마지막으로 기록한 목록 실패의 예외 타입. 같은 장애가 이어지는 동안 재기록을 막는 기준이다 —
@@ -67,7 +73,7 @@ class AfternoteHomeViewModel
          * 그래서 «장애가 이어지는 동안 한 번» 만 기록하고, 로드가 성공하면([onListLoadSucceeded])
          * 다음 실패를 새 사건으로 다시 받는다.
          */
-        fun onListLoadFailed(throwable: Throwable) {
+        private fun onListLoadFailed(throwable: Throwable) {
             val failureType = throwable.javaClass.name
             if (lastReportedFailureType == failureType) return
             lastReportedFailureType = failureType
@@ -75,7 +81,7 @@ class AfternoteHomeViewModel
         }
 
         /** 목록 로드가 성공해 실패 구간이 끝났음을 알린다 — 다음 실패는 새 사건으로 기록된다. */
-        fun onListLoadSucceeded() {
+        private fun onListLoadSucceeded() {
             lastReportedFailureType = null
         }
     }

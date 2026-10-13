@@ -4,13 +4,14 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.afternote.core.model.setting.ReceiverListItem
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.setting.presentation.screen.ReceiverManageScreen
+import com.afternote.feature.setting.presentation.receiver.ReceiverManageScreen
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -61,9 +62,39 @@ class ReceiverManageScreenTest {
         assertEquals(1, backCalls)
     }
 
+    /** #556 — 0건에서 빈 화면이 아니라 안내 문구가 떠야 한다. */
+    @Test
+    fun emptyReceivers_showsEmptyGuide() {
+        setReceiverContent(receivers = emptyList())
+
+        composeRule.onNodeWithText("등록된 수신자가 없습니다.").assertIsDisplayed()
+        composeRule.onNodeWithText("수신자를 등록하고 쉽게 관리해 보세요.").assertIsDisplayed()
+    }
+
+    /** #556 — 노션 2차 QA 6번이 짚은 등록 진입점 부재 축. 안내에서 바로 등록으로 갈 수 있어야 한다. */
+    @Test
+    fun emptyReceivers_registerButtonInvokesOnRegisterClick() {
+        var registerCalls = 0
+        setReceiverContent(receivers = emptyList(), onRegisterClick = { registerCalls += 1 })
+
+        composeRule.onNodeWithText("수신자 등록하기").performClick()
+
+        assertEquals(1, registerCalls)
+    }
+
+    @Test
+    fun nonEmptyReceivers_hasNoEmptyGuide() {
+        setReceiverContent()
+
+        composeRule.onNodeWithText("등록된 수신자가 없습니다.").assertDoesNotExist()
+        composeRule.onNodeWithText("수신자 등록하기").assertDoesNotExist()
+    }
+
     private fun setReceiverContent(
+        receivers: List<ReceiverListItem> = this.receivers,
         onBackClick: () -> Unit = {},
         onReceiverClick: (Long) -> Unit = {},
+        onRegisterClick: () -> Unit = {},
     ) {
         composeRule.setContent {
             AfternoteTheme {
@@ -71,6 +102,7 @@ class ReceiverManageScreenTest {
                     receivers = receivers,
                     onBackClick = onBackClick,
                     onReceiverClick = onReceiverClick,
+                    onRegisterClick = onRegisterClick,
                 )
             }
         }

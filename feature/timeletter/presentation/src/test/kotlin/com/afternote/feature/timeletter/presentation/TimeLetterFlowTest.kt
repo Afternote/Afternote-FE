@@ -160,14 +160,10 @@ class TimeLetterFlowTest {
 
 private fun timeLetterFlowUserRepository(): FakeUserRepository =
     FakeUserRepository.strict().apply {
-        receiverState.value = listOf(Receiver(7L, "김수신", "가족", "fake-auth-7"))
+        receiverState.value = listOf(Receiver(7L, "김수신", "가족"))
         onReceiverListFlow = null
         onGetReceivers = null
         onCreateReceiver = null
         onGetMyProfile = null
         onUpdateMyProfile = null
-        onDeleteAccount = null
-        onGetMyPushSettings = null
-        onUpdateMyPushSettings = null
-        onGetConnectedAccounts = null
     }

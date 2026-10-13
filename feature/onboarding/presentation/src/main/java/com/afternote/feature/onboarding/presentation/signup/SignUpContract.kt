@@ -1,0 +1,197 @@
+package com.afternote.feature.onboarding.presentation.signup
+
+import com.afternote.core.ui.UiText
+import com.afternote.core.ui.mvi.MviIntent
+import com.afternote.core.ui.mvi.ReducerEvent
+
+/**
+ * 회원가입 플로우가 [SignUpViewModel] 에 보내는 것 — 사용자가 하려는 것.
+ *
+ * Step 1~4 와 Profile 이 같은 VM 인스턴스를 공유하므로 Intent 도 한 계약에 모인다.
+ */
+internal sealed interface SignUpIntent : MviIntent {
+    data class UpdateEmail(
+        val value: String,
+    ) : SignUpIntent
+
+    data class UpdateVerificationCode(
+        val value: String,
+    ) : SignUpIntent
+
+    data class UpdateResidentFrontNumber(
+        val value: String,
+    ) : SignUpIntent
+
+    data class UpdateResidentBackNumber(
+        val value: String,
+    ) : SignUpIntent
+
+    data class UpdateSignUpPassword(
+        val value: String,
+    ) : SignUpIntent
+
+    data class UpdateSignUpPasswordConfirm(
+        val value: String,
+    ) : SignUpIntent
+
+    data class UpdateName(
+        val value: String,
+    ) : SignUpIntent
+
+    /** photo picker 선택 — 화면이 `Uri.toString()` 으로 바꿔 보낸다. 취소(null)는 화면 경계에서 걸러진다. */
+    data class PickProfileImage(
+        val uri: String,
+    ) : SignUpIntent
+
+    data class ToggleTermsAgreed(
+        val agreed: Boolean,
+    ) : SignUpIntent
+
+    data class TogglePrivacyAgreed(
+        val agreed: Boolean,
+    ) : SignUpIntent
+
+    data class ToggleMarketingAgreed(
+        val agreed: Boolean,
+    ) : SignUpIntent
+
+    data class ToggleAllTerms(
+        val agreed: Boolean,
+    ) : SignUpIntent
+
+    data object RequestVerification : SignUpIntent
+
+    /** Step 1 "다음" — 이메일·인증번호를 서버에 검증한다. */
+    data object VerifyEmailAndProceed : SignUpIntent
+
+    data object SubmitSignUp : SignUpIntent
+
+    data object ConsumeSignedUp : SignUpIntent
+
+    data object ConsumeResidentNumberNavigation : SignUpIntent
+
+    data object ConsumeNameRequired : SignUpIntent
+
+    data object ConsumeError : SignUpIntent
+}
+
+/** 상태가 겪은 것. [SignUpViewModel] 만 만든다. */
+internal sealed interface SignUpReducerEvent : ReducerEvent {
+    data class EmailChanged(
+        val value: String,
+    ) : SignUpReducerEvent
+
+    data class VerificationCodeChanged(
+        val value: String,
+    ) : SignUpReducerEvent
+
+    data class ResidentFrontNumberChanged(
+        val value: String,
+    ) : SignUpReducerEvent
+
+    data class ResidentBackNumberChanged(
+        val value: String,
+    ) : SignUpReducerEvent
+
+    data class SignUpPasswordChanged(
+        val value: String,
+    ) : SignUpReducerEvent
+
+    data class SignUpPasswordConfirmChanged(
+        val value: String,
+    ) : SignUpReducerEvent
+
+    data class NameChanged(
+        val value: String,
+    ) : SignUpReducerEvent
+
+    data class ProfileImagePicked(
+        val uri: String,
+    ) : SignUpReducerEvent
+
+    data class TermsAgreementChanged(
+        val agreed: Boolean,
+    ) : SignUpReducerEvent
+
+    data class PrivacyAgreementChanged(
+        val agreed: Boolean,
+    ) : SignUpReducerEvent
+
+    data class MarketingAgreementChanged(
+        val agreed: Boolean,
+    ) : SignUpReducerEvent
+
+    data class AllAgreementsChanged(
+        val agreed: Boolean,
+    ) : SignUpReducerEvent
+
+    data object CodeSendStarted : SignUpReducerEvent
+
+    data object CodeSent : SignUpReducerEvent
+
+    data class CodeSendFailed(
+        val message: UiText,
+    ) : SignUpReducerEvent
+
+    data object CodeSendFinished : SignUpReducerEvent
+
+    /** 쿨다운을 30초로 재장전한다. */
+    data object CooldownReloaded : SignUpReducerEvent
+
+    data object CooldownTicked : SignUpReducerEvent
+
+    data object EmailVerifyStarted : SignUpReducerEvent
+
+    /**
+     * 인증 결과 3종은 **자기가 검증한 입력을 함께 나른다** (#2025).
+     *
+     * 이메일 칸은 인증이 도는 동안에도 고칠 수 있다. 결과에 식별 정보가 없으면 리듀서가
+     * 「지금 화면의 입력에 대한 답」과 「바꾸기 전 입력에 대한 답」을 가르지 못해, A 의 성공이
+     * B 를 적힌 폼을 다음 단계로 밀어 버린다 — 서버가 검증한 적 없는 이메일로 가입이 이어진다.
+     * 실패도 같다: 지운 입력의 거절 문구가 새 입력 아래에 붙는다.
+     */
+    data class EmailVerified(
+        val email: String,
+        val certificateCode: String,
+    ) : SignUpReducerEvent
+
+    /** 인증번호 무효(서버 code 1207) — 인라인 문구로 알린다. */
+    data class VerificationRejected(
+        val email: String,
+        val certificateCode: String,
+    ) : SignUpReducerEvent
+
+    data class EmailVerifyFailed(
+        val email: String,
+        val certificateCode: String,
+        val message: UiText,
+    ) : SignUpReducerEvent
+
+    data object EmailVerifyFinished : SignUpReducerEvent
+
+    data object NameRequired : SignUpReducerEvent
+
+    data object SubmitStarted : SignUpReducerEvent
+
+    /** 만들어진 계정의 자격을 함께 나른다 — 재제출이 같은 계정인지 그 값으로 가른다 (#2026). */
+    data class AccountCreated(
+        val email: String,
+        val password: String,
+    ) : SignUpReducerEvent
+
+    data class SubmitFailed(
+        val message: UiText,
+    ) : SignUpReducerEvent
+
+    data object SignedUp : SignUpReducerEvent
+
+    data object SubmitFinished : SignUpReducerEvent
+
+    data object SignedUpConsumed : SignUpReducerEvent
+
+    data object ResidentNumberNavigationConsumed : SignUpReducerEvent
+
+    data object NameRequiredConsumed : SignUpReducerEvent
+
+    data object ErrorConsumed : SignUpReducerEvent
+}

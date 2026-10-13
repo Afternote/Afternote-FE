@@ -40,8 +40,8 @@ Konsist baseline에 둔다. 나머지 member·constructor·동명 overload 20건
   즉시 적용된다.
 - 기존 모듈을 strict로 전환할 때만 warning inventory에서 해당 경로를 제거한다. 새 모듈을
   통과시키려고 inventory에 추가하지 않는다.
-- 공통 JVM 규약을 사용하지 않는 `:feature:setting:domain`과 별도 포함 빌드인 `build-logic`은
-  각 빌드 스크립트에서 warning을 명시한다. 신규 raw Kotlin 모듈은 warning을 직접 선택할 수 없다.
+- 공통 JVM 규약을 사용하지 않는 별도 포함 빌드 `build-logic`만 빌드 스크립트에서 warning을
+  명시한다. 신규 raw Kotlin 모듈은 warning을 직접 선택할 수 없다.
   `:konsist`는 테스트 소스만, `:baselineprofile`은 계측 소스만 소유하므로 프로덕션 API
   inventory에서 제외한다.
 
@@ -54,6 +54,10 @@ Konsist baseline에 둔다. 나머지 member·constructor·동명 overload 20건
 `:feature:timeletter:res`는 기존 부채가 없어 이미 strict다. 이후 첫 Kotlin 소스가 추가돼도
 strict가 그대로 적용된다.
 
+`:feature:setting:domain`은 #1305에서 `afternote.jvm.domain` 규약을 적용하며 raw Kotlin 예외를
+없앴다. 공개 선언이 다른 모듈이 실제로 소비하는 `Notice` 하나뿐이라 규약 기본값인 strict를 그
+자리에서 통과했고, 아래 표에서 빠졌다.
+
 | 순서 | 모듈 | 현재 모드 |
 | ---: | --- | --- |
 | 1 | `:core:model` | warning |
@@ -62,25 +66,24 @@ strict가 그대로 적용된다.
 | 4 | `:feature:mindrecord:domain` | warning |
 | 5 | `:feature:receiver:domain` | warning |
 | 6 | `:feature:timeletter:domain` | warning |
-| 7 | `:feature:setting:domain` | warning, raw Kotlin 예외 |
-| 8 | `:core:common` | warning |
-| 9 | `:core:network` | warning |
-| 10 | `:core:datastore` | warning |
-| 11 | `:core:data` | warning |
-| 12 | `:feature:afternote:data` | warning |
-| 13 | `:feature:mindrecord:data` | warning |
-| 14 | `:feature:receiver:data` | warning |
-| 15 | `:feature:timeletter:data` | warning |
-| 16 | `:core:ui` | warning |
-| 17 | `:feature:home:presentation` | warning |
-| 18 | `:feature:onboarding:presentation` | warning |
-| 19 | `:feature:setting:presentation` | warning |
-| 20 | `:feature:afternote:presentation` | warning |
-| 21 | `:feature:mindrecord:presentation` | warning |
-| 22 | `:feature:receiver:presentation` | warning |
-| 23 | `:feature:timeletter:presentation` | warning |
-| 24 | `:app` | warning |
-| 25 | `build-logic` | warning, 별도 포함 빌드 |
+| 7 | `:core:common` | warning |
+| 8 | `:core:network` | warning |
+| 9 | `:core:datastore` | warning |
+| 10 | `:core:data` | warning |
+| 11 | `:feature:afternote:data` | warning |
+| 12 | `:feature:mindrecord:data` | warning |
+| 13 | `:feature:receiver:data` | warning |
+| 14 | `:feature:timeletter:data` | warning |
+| 15 | `:core:ui` | warning |
+| 16 | `:feature:home:presentation` | warning |
+| 17 | `:feature:onboarding:presentation` | warning |
+| 18 | `:feature:setting:presentation` | warning |
+| 19 | `:feature:afternote:presentation` | warning |
+| 20 | `:feature:mindrecord:presentation` | warning |
+| 21 | `:feature:receiver:presentation` | warning |
+| 22 | `:feature:timeletter:presentation` | warning |
+| 23 | `:app` | warning |
+| 24 | `build-logic` | warning, 별도 포함 빌드 |
 
 전환 PR에서는 warning 개수만 줄이는 것이 아니라 각 선언의 실제 프로덕션 사용처를 확인한다.
 테스트가 직접 참조하던 선언은 공개 범위를 명시하는 대신 테스트를 공개 동작 기준으로 옮긴다.

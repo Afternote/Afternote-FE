@@ -2,14 +2,11 @@ package com.afternote.core.ui.scaffold
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.exclude
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -31,15 +28,12 @@ import com.afternote.core.ui.topbar.DetailTopBar
  *
  * **레이아웃 토큰** (모듈 공통):
  * - horizontal padding 20dp
- * - bottom 버튼 49dp 마진 (제스처 바: 49dp / 구형 네비 바: bar height + 49dp)
+ * - 하단 버튼은 시스템 내비게이션 바 또는 키보드 위로 49dp 간격
  * - content 영역은 [ColumnScope] — 위에서 아래로 쌓이는 일반 흐름 가정
  *
- * **키보드 대응**: IME 패딩은 Scaffold `modifier` 에 있어야 한다 (#1849).
- * `bottomBar` 는 `WindowInsets.navigationBars` 만 계산하므로, 호출처가 [content] 안에서
- * `imePadding()` 을 걸어도 하단 CTA 는 키보드에 덮인 채로 남는다. Scaffold 에 걸면 소비된
- * inset 이 하위로 전파되므로 [content] 안의 `imePadding()` 은 자동으로 0 이 되어 이중 적용되지 않는다.
- * 더하는 양은 IME 에서 내비 바를 뺀 값이다 — 루트 Scaffold 가 내비 바 몫을 이미 깔아 두기 때문이다.
- * (앱 매니페스트의 `windowSoftInputMode="adjustResize"` 와 한 쌍이다 — 그게 없으면 IME inset 자체가 오지 않는다.)
+ * **시스템 여백**: Scaffold 바깥에서 내비게이션 바와 키보드 inset을 처리한다.
+ * 상위에서 소비한 영역은 자동으로 제외되므로 루트 여백의 크기를 직접 빼지 않는다.
+ * 하단 버튼은 디자인 간격만 관리하고, content에도 Scaffold 여백의 소비를 전달한다.
  *
  * **진행 인디케이터**:
  * - [currentStep] 과 [totalSteps] 가 모두 non-null 이면 상단에 [FlowStepProgressBar] 표시
@@ -74,12 +68,8 @@ fun FlowStepScaffold(
             modifier
                 .addFocusCleaner(focusManager)
                 .fillMaxSize()
-                // 루트 Scaffold(AppNavigation)가 systemBars 하단 — 내비 바 — 을 innerPadding 으로 이미 깔아 두는데,
-                // consumeWindowInsets 없이 padding 으로만 전달돼 소비로 잡히지 않는다. 그 위에서 imePadding() 을
-                // 그대로 쓰면 IME 높이(내비 바 영역 포함)를 통째로 더해 키보드 위로 내비 바 한 겹만큼 더 뜬다 —
-                // 3버튼 내비에서 48dp, 제스처에서 24dp. 내비 바 몫을 뺀 IME 만 더한다. 키보드가 없으면 ime 가
-                // 0 이라 아무것도 더하지 않는다 (#1849 리뷰 실측). FlowStepScaffold 호스트 11곳은 전부 그 루트 아래다.
-                .windowInsetsPadding(WindowInsets.ime.exclude(WindowInsets.navigationBars)),
+                .navigationBarsPadding()
+                .imePadding(),
         containerColor = Color.Transparent,
         topBar = {
             DetailTopBar(
@@ -94,19 +84,6 @@ fun FlowStepScaffold(
             if (snackbarHostState != null) SnackbarHost(hostState = snackbarHostState)
         },
         bottomBar = {
-            // 제스처 바를 쓰는 경우 화면 하단으로부터 49dp, 구형 네비게이션 바를 쓰는 경우 바로부터 49dp.
-            //
-            // `WindowInsets.navigationBars` 는 소비를 반영하지 않는 원본 inset 이다. 위 Scaffold 가
-            // `imePadding()` 으로 이미 키보드 높이(내비 바 포함)만큼 줄어든 뒤인데, 여기서 내비 바
-            // 높이를 또 더하면 3버튼 내비 기기에서 키보드가 뜬 동안 CTA 가 키보드 위 49dp 가 아니라
-            // 약 97dp 에 뜬다. 키보드가 떠 있으면 내비 바 몫은 IME inset 에 이미 들어 있으므로 뺀다 —
-            // IME 가 없을 땐 `ime` 가 0 이라 종전과 같다 (#1849 리뷰).
-            val navBarHeight =
-                WindowInsets.navigationBars
-                    .exclude(WindowInsets.ime)
-                    .asPaddingValues()
-                    .calculateBottomPadding()
-            val bottomPadding = if (navBarHeight <= 30.dp) 49.dp else navBarHeight + 49.dp
             AfternoteButton(
                 text = actionButtonText,
                 onClick = {
@@ -117,7 +94,7 @@ fun FlowStepScaffold(
                 modifier =
                     Modifier
                         .padding(horizontal = horizontalPadding)
-                        .padding(bottom = bottomPadding),
+                        .padding(bottom = 49.dp),
             )
         },
     ) { innerPadding ->
@@ -125,6 +102,7 @@ fun FlowStepScaffold(
             modifier =
                 Modifier
                     .padding(innerPadding)
+                    .consumeWindowInsets(innerPadding)
                     .padding(horizontal = horizontalPadding),
         ) {
             // local val 박아서 smart-cast 안정 — 향후 람다 캡처 추가되어도 깨지지 않음.

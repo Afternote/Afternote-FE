@@ -38,20 +38,22 @@ import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.DetailReceiver
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
 import com.afternote.feature.afternote.domain.model.author.ProcessingMethod
-import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MediaKind
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
+import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.detail.AfternoteDetailDeleteResult
+import com.afternote.feature.afternote.presentation.detail.AfternoteDetailIntent
 import com.afternote.feature.afternote.presentation.detail.AfternoteDetailUiState
 import com.afternote.feature.afternote.presentation.detail.AfternoteDetailViewModel
 import com.afternote.feature.afternote.presentation.detail.DetailContentUiModel
 import com.afternote.feature.afternote.presentation.detail.account.AccountDetailScreen
 import com.afternote.feature.afternote.presentation.editor.AfternoteEditorBody
+import com.afternote.feature.afternote.presentation.editor.AfternoteEditorIntent
 import com.afternote.feature.afternote.presentation.editor.AfternoteEditorScreen
 import com.afternote.feature.afternote.presentation.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.editor.SaveAfternoteMemorialMedia
@@ -81,8 +83,15 @@ class AfternoteAuthorExtendedTest {
     @get:Rule
     val composeRule = createComposeRule()
 
+    /**
+     * 상세 → 수정 → 저장을 실제 화면으로 완주하며, **사용자가 만진 필드만** 요청에 실리는지 본다 (#1617).
+     *
+     * 여기서 손대는 것은 계정 ID 와 처리 방법 둘뿐이다. 제목·남기실 말씀·수신자는 프리필된 채로
+     * 두므로 페이로드에서 빠져야 하고, **계정 정보 안에서도 안 고친 비밀번호는 빠져야 한다** —
+     * 종전에는 폼 스냅샷이 통째로 실려, 에디터를 연 뒤 서버가 바뀌면 만진 적 없는 값이 덮였다.
+     */
     @Test
-    fun detailEdit_updatesExactPrefilledPayloadThroughEditorRoute() {
+    fun detailEdit_sendsOnlyTouchedFieldsThroughEditorRoute() {
         val repository =
             FakeAfternoteRepository.strict().apply {
                 onGetDetail = { Result.success(authorDetail()) }
@@ -126,7 +135,7 @@ class AfternoteAuthorExtendedTest {
             .onNode(hasSetTextAction() and hasText("old@example.test"))
             .performTextReplacement("edited@example.test")
         composeRule.runOnIdle {
-            checkNotNull(editorViewModel).editProcessingMethod(1, "계정 보존")
+            checkNotNull(editorViewModel).onIntent(AfternoteEditorIntent.EditProcessingMethod(1, "계정 보존"))
         }
         composeRule.onNodeWithText("계정 보존").performScrollTo().assertIsDisplayed()
         val topBarRegister =
@@ -139,15 +148,16 @@ class AfternoteAuthorExtendedTest {
         val (updatedId, payload) = repository.updateCalls.single()
         assertEquals(73L, updatedId)
         assertEquals(AfternoteType.SOCIAL_NETWORK, payload.type)
-        assertEquals("Instagram", payload.title)
+        // 만진 둘 — 처리 방법과 계정 ID.
         assertEquals(listOf("계정 보존"), payload.processingMethods)
-        assertEquals(
-            listOf(LeaveMessageBlock(title = "마지막 말", body = "기억해 줘")),
-            payload.leaveMessageBlocks,
-        )
         assertEquals("edited@example.test", payload.credentials?.id)
-        assertEquals("old-password", payload.credentials?.password)
-        assertEquals(listOf(ReceiverRefPayload(7L)), payload.receivers)
+        // 계정 정보 안에서도 슬롯별로 갈린다: 서버가 id·비밀번호를 따로 갱신하므로, 안 고친
+        // 비밀번호를 함께 실으면 그 사이 다른 기기가 바꾼 값이 낡은 값으로 되돌아간다 (#1617).
+        assertNull("비밀번호는 고친 적이 없다", payload.credentials?.password)
+        // 안 만진 나머지 — 키째 빠져야 서버가 기존 값을 유지한다.
+        assertNull("제목을 고친 적이 없다", payload.title)
+        assertNull("남기실 말씀을 고친 적이 없다", payload.leaveMessageBlocks)
+        assertNull("수신자를 고친 적이 없다", payload.receiverIds)
         assertNull(payload.memorial)
         assertEquals(listOf(73L, 73L), repository.requestedDetailIds)
         assertEquals("73", routedItemId)
@@ -183,7 +193,7 @@ class AfternoteAuthorExtendedTest {
 
         composeRule.runOnIdle { checkNotNull(editorState).dismissServiceSelectionSheet() }
         composeRule.onNodeWithText("소셜 네트워크 서비스 선택").assertDoesNotExist()
-        assertEquals("Instagram", viewModel.currentForm().selectedService)
+        assertEquals("Instagram", viewModel.uiState.value.form.selectedService)
         assertEquals("", checkNotNull(editorState).serviceSearchQueryState.text.toString())
 
         composeRule.onNodeWithText("Instagram").performClick()
@@ -193,7 +203,7 @@ class AfternoteAuthorExtendedTest {
 
         composeRule.onNodeWithText("소셜 네트워크 서비스 선택").assertDoesNotExist()
         composeRule.onNodeWithText("페이스북").assertIsDisplayed()
-        assertEquals("페이스북", viewModel.currentForm().selectedService)
+        assertEquals("페이스북", viewModel.uiState.value.form.selectedService)
         assertEquals("", checkNotNull(editorState).serviceSearchQueryState.text.toString())
     }
 
@@ -350,21 +360,27 @@ private fun AuthorEditorForUpdate(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val state =
         rememberAfternoteEditorState(
-            getCurrentForm = viewModel::currentForm,
-            setType = viewModel::setType,
-            setService = viewModel::setService,
-            setMemorialPhoto = viewModel::setMemorialPhoto,
-            removeMemorialPhoto = viewModel::removeMemorialPhoto,
-            setMemorialVideo = viewModel::setMemorialVideo,
-            removeMemorialVideo = viewModel::removeMemorialVideo,
-            addReceiverIfAbsent = viewModel::addReceiverIfAbsent,
-            applyPrefill = viewModel::applyPrefill,
-            setMemorialThumbnail = viewModel::setMemorialThumbnail,
-            deleteReceiver = viewModel::deleteReceiver,
-            replaceReceiversIfEmpty = viewModel::replaceReceiversIfEmpty,
-            addProcessingMethod = viewModel::addProcessingMethod,
-            deleteProcessingMethod = viewModel::deleteProcessingMethod,
-            editProcessingMethod = viewModel::editProcessingMethod,
+            getCurrentForm = { viewModel.uiState.value.form },
+            setType = { type -> viewModel.onIntent(AfternoteEditorIntent.SetType(type)) },
+            setService = { service -> viewModel.onIntent(AfternoteEditorIntent.SetService(service)) },
+            setMemorialPhoto = { uri -> viewModel.onIntent(AfternoteEditorIntent.SetMemorialPhoto(uri)) },
+            removeMemorialPhoto = { viewModel.onIntent(AfternoteEditorIntent.RemoveMemorialPhoto) },
+            setMemorialVideo = { url -> viewModel.onIntent(AfternoteEditorIntent.SetMemorialVideo(url)) },
+            removeMemorialVideo = { viewModel.onIntent(AfternoteEditorIntent.RemoveMemorialVideo) },
+            addReceiverIfAbsent = {
+                receiverId,
+                name,
+                label,
+                ->
+                viewModel.onIntent(AfternoteEditorIntent.AddReceiverIfAbsent(receiverId, name, label))
+            },
+            applyPrefill = { prefill -> viewModel.onIntent(AfternoteEditorIntent.ApplyPrefill(prefill)) },
+            setMemorialThumbnail = { dataUrl -> viewModel.onIntent(AfternoteEditorIntent.SetMemorialThumbnail(dataUrl)) },
+            deleteReceiver = { receiverId -> viewModel.onIntent(AfternoteEditorIntent.DeleteReceiver(receiverId)) },
+            replaceReceiversIfEmpty = { receivers -> viewModel.onIntent(AfternoteEditorIntent.ReplaceReceiversIfEmpty(receivers)) },
+            addProcessingMethod = { text -> viewModel.onIntent(AfternoteEditorIntent.AddProcessingMethod(text)) },
+            deleteProcessingMethod = { localId -> viewModel.onIntent(AfternoteEditorIntent.DeleteProcessingMethod(localId)) },
+            editProcessingMethod = { localId, newText -> viewModel.onIntent(AfternoteEditorIntent.EditProcessingMethod(localId, newText)) },
         )
     onStateReady(state)
 
@@ -372,7 +388,7 @@ private fun AuthorEditorForUpdate(
     LaunchedEffect(pendingPrefill) {
         if (pendingPrefill != null) {
             state.applyFormPrefill(pendingPrefill)
-            viewModel.onPrefillConsumed()
+            viewModel.onIntent(AfternoteEditorIntent.ConsumePrefill)
         }
     }
 
@@ -391,10 +407,12 @@ private fun AuthorEditorForUpdate(
                     password = state.passwordState.text.toString(),
                     date = LocalDate.of(2026, 8, 22),
                 )
-            viewModel.saveAfternote(
-                payload = payload,
-                selectedReceiverIds = form.afternoteEditReceivers.map { it.id.toLong() },
-                memorialMedia = SaveAfternoteMemorialMedia(),
+            viewModel.onIntent(
+                AfternoteEditorIntent.Save(
+                    payload = payload,
+                    selectedReceiverIds = form.afternoteEditReceivers.map { it.id.toLong() },
+                    memorialMedia = SaveAfternoteMemorialMedia(),
+                ),
             )
         },
         snackbarMessage = null,
@@ -403,10 +421,10 @@ private fun AuthorEditorForUpdate(
                 stringResource(it.reason.messageResId)
             },
         onSnackbarMessageConsumed = {
-            errorEvent?.let(viewModel::onErrorConsumed)
+            errorEvent?.let({ consumed -> viewModel.onIntent(AfternoteEditorIntent.ConsumeError(consumed)) })
         },
         onValidationMessageConsumed = {
-            errorEvent?.let(viewModel::onErrorConsumed)
+            errorEvent?.let({ consumed -> viewModel.onIntent(AfternoteEditorIntent.ConsumeError(consumed)) })
         },
         content = { editorSnackbarHostState ->
             AfternoteEditorBody(
@@ -446,12 +464,12 @@ private fun AuthorDetailForDelete(
                         result.messageRes ?: AfternoteFeatureR.string.afternote_detail_delete_failed,
                     )
                 scope.launch { snackbarHostState.showSnackbar(message) }
-                viewModel.onDeleteResultConsumed()
+                viewModel.onIntent(AfternoteDetailIntent.ConsumeDeleteResult)
             }
 
             is AfternoteDetailDeleteResult.Succeeded -> {
                 deletedIds += result.id
-                viewModel.onDeleteResultConsumed()
+                viewModel.onIntent(AfternoteDetailIntent.ConsumeDeleteResult)
             }
 
             null -> {
@@ -476,7 +494,7 @@ private fun AuthorDetailForDelete(
                 content = account.content,
                 snackbarHostState = snackbarHostState,
                 onEditClick = {},
-                onDeleteConfirm = viewModel::deleteAfternote,
+                onDeleteConfirm = { viewModel.onIntent(AfternoteDetailIntent.Delete) },
             )
         }
     }
@@ -489,7 +507,7 @@ private fun detailViewModel(
     AfternoteDetailViewModel(
         route = AfternoteRoute.DetailRoute(itemId = itemId),
         afternoteRepository = repository,
-        userRepository = afternoteAuthorUserRepository(),
+        myProfileRepository = afternoteAuthorMyProfileRepository(),
         userProfileRepository = afternoteAuthorUserProfileRepository(),
         errorReporter = NoopAuthorErrorReporter,
     )
@@ -509,7 +527,7 @@ private fun editorViewModel(
                 initialType = AfternoteType.SOCIAL_NETWORK,
                 itemId = itemId,
             ),
-        userRepository = afternoteAuthorUserRepository(),
+        userReceiverRepository = afternoteAuthorUserReceiverRepository(),
         afternoteRepository = repository,
         memorialThumbnailUploadRepository =
             MemorialThumbnailUploadRepository {
@@ -539,6 +557,7 @@ private fun editorViewModel(
                         )
                     },
             ),
+        saveAfternoteUseCase = SaveAfternoteUseCase(repository),
         errorReporter = NoopAuthorErrorReporter,
     )
 

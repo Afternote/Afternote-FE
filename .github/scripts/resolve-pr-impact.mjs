@@ -25,6 +25,7 @@ const IMPACT_POLICY_PATHS = new Set([
     ".github/workflows/unit-test.yml",
     ".github/workflows/screenshot.yml",
     ".github/workflows/codeql.yml",
+    ".github/workflows/dependency-review.yml",
     // 기대 실패 목록(xfail)은 검증 정책 그 자체다 — 목록·메커니즘 변경은 모든 lane 으로
     // fail-closed 해, 잘못 지운 항목이 그 자리에서 red 를 만들게 한다.
     ".github/ci-expected-failures.json",
@@ -35,6 +36,50 @@ const IMPACT_POLICY_PATHS = new Set([
 // 아키텍처 가드 전용 순수 JVM 모듈. src/main 이 없어 프로덕션 소스 분기를 탈 수 없고,
 // kover 도 안 붙어 coverageModules 로도 안 잡힌다 — 소스셋 판정에서 따로 건져야 한다.
 const KONSIST_PROJECT_PATH = ":konsist";
+// Dependency Review 를 깨우는 의존성 그래프 입력. 예전엔 dependency-review.yml 의 paths
+// 필터였는데, 그러면 소스만 고친 PR 에 check 가 생기지 않아 required 로 걸 수 없었다 (#2258).
+// 같은 glob 문법을 그대로 두고 job 안 분류로 옮긴다. 목록은 supply-chain-policy.test.mjs 가 고정한다.
+export const DEPENDENCY_GRAPH_INPUT_PATTERNS = Object.freeze([
+    "**/*.gradle",
+    "**/*.gradle.kts",
+    "**/*.lockfile",
+    "**/build-logic/**",
+    "**/buildSrc/**",
+    "**/gradle.properties",
+    "**/gradlew",
+    "**/gradlew.bat",
+    "gradle/**",
+    ".github/workflows/dependency-review.yml",
+    ".github/workflows/dependency-submission.yml",
+    ".github/workflows/dependency-submission-trusted.yml",
+    ".github/workflows/dependency-submission-upload.yml",
+]);
+
+function globToRegExp(pattern) {
+    let source = "";
+    for (let index = 0; index < pattern.length; ) {
+        if (pattern.startsWith("**/", index)) {
+            source += "(?:.*/)?";
+            index += 3;
+        } else if (pattern.startsWith("**", index)) {
+            source += ".*";
+            index += 2;
+        } else if (pattern[index] === "*") {
+            source += "[^/]*";
+            index += 1;
+        } else {
+            source += pattern[index].replace(/[.+?^${}()|[\]\\]/g, "\\$&");
+            index += 1;
+        }
+    }
+    return new RegExp(`^${source}$`);
+}
+
+const DEPENDENCY_GRAPH_INPUT_MATCHERS = DEPENDENCY_GRAPH_INPUT_PATTERNS.map(globToRegExp);
+
+export function isDependencyGraphInput(filePath) {
+    return DEPENDENCY_GRAPH_INPUT_MATCHERS.some((matcher) => matcher.test(filePath));
+}
 
 function normalizePath(value) {
     return String(value ?? "")
@@ -172,6 +217,7 @@ export function resolvePrImpact(changedFiles, modules, dependencies) {
     let runNodeTests = false;
     let codeqlActions = false;
     let codeqlJavaKotlin = false;
+    let dependencyReview = false;
     let forceFull = false;
     let repositoryQualityFixtures = false;
 
@@ -213,6 +259,9 @@ export function resolvePrImpact(changedFiles, modules, dependencies) {
         }
         if (filePath.startsWith(".github/workflows/") || filePath.startsWith(".github/actions/")) {
             codeqlActions = true;
+        }
+        if (isDependencyGraphInput(filePath)) {
+            dependencyReview = true;
         }
         if (filePath === ".editorconfig") {
             globalKtlintChange = true;
@@ -286,6 +335,10 @@ export function resolvePrImpact(changedFiles, modules, dependencies) {
         runKonsist = true;
         compileAndroidTest = true;
     }
+    if (forceFull) {
+        // 분류기 자신이나 처음 보는 경로가 바뀌면 의존성 입력이 없다고 단정하지 않는다.
+        dependencyReview = true;
+    }
 
     const productionAffected = reverseDependencyClosure(productionSeeds, reverseDependencies);
     if (productionAffected.size > 0) {
@@ -353,6 +406,7 @@ export function resolvePrImpact(changedFiles, modules, dependencies) {
         screenshotTasks,
         codeqlActions,
         codeqlJavaKotlin,
+        dependencyReview,
         repositoryQualityFull: forceFull,
         repositoryQualityFixtures,
     };
@@ -430,6 +484,7 @@ export function githubOutputLines(impact) {
         screenshot_tasks: impact.screenshotTasks.join(" "),
         codeql_actions: impact.codeqlActions,
         codeql_java_kotlin: impact.codeqlJavaKotlin,
+        dependency_review_required: impact.dependencyReview,
         repository_quality_full: impact.repositoryQualityFull,
         repository_quality_fixtures: impact.repositoryQualityFixtures,
     };

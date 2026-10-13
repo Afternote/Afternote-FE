@@ -67,26 +67,32 @@ data class UserDto(
     @SerialName("profileImageUrl") val profileImageUrl: String? = null,
 )
 
+/**
+ * `GET /users/receivers` 목록 항목 — 서버가 내려주는 세 필드뿐이다 (#2105).
+ * `relation` 은 DB 가 null 을 허용해 그대로 비어 온다.
+ */
 @Serializable
 data class ReceiverListDto(
     @SerialName("receiverId") val receiverId: Long,
     @SerialName("name") val name: String,
-    @SerialName("relation") val relation: String,
-    @SerialName("authCode") val authCode: String,
+    @SerialName("relation") val relation: String? = null,
 )
 
+/**
+ * `GET /users/receivers/{receiverId}` 상세 — 서버 `ReceiverDetailResponse` 의 9개 필드뿐이다 (#2155).
+ * `authCode` 는 BE#289 이후 오지 않고, `relation` 은 DB 가 null 을 허용해 미입력이면 null 로 온다.
+ */
 @Serializable
 data class ReceiverDetailDto(
     @SerialName("receiverId") val receiverId: Long,
     @SerialName("name") val name: String,
-    @SerialName("relation") val relation: String,
+    @SerialName("relation") val relation: String? = null,
     @SerialName("phone") val phone: String? = null,
     @SerialName("email") val email: String? = null,
     @SerialName("dailyQuestionCount") val dailyQuestionCount: Int,
     @SerialName("timeLetterCount") val timeLetterCount: Int,
     @SerialName("afterNoteCount") val afterNoteCount: Int,
     @SerialName("message") val message: String? = null,
-    @SerialName("authCode") val authCode: String,
 )
 
 @Serializable
