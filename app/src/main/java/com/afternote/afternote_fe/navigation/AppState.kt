@@ -27,7 +27,7 @@ class AppState(
     private val activeStackState: MutableState<AppStack>,
     internal val legacyMindRecordController: NavHostController? = null,
 ) {
-    private var legacyStartDestinationInitialized = legacyMindRecordController == null
+    private var startDestinationInitialized = false
 
     var activeStack: AppStack by activeStackState
         private set
@@ -86,8 +86,8 @@ class AppState(
     }
 
     internal fun initializeLegacyStartDestination(route: Route) {
-        if (legacyStartDestinationInitialized) return
-        legacyStartDestinationInitialized = true
+        if (startDestinationInitialized) return
+        startDestinationInitialized = true
         when (route) {
             Route.Home -> {
                 activeStack = AppStack.HOME
