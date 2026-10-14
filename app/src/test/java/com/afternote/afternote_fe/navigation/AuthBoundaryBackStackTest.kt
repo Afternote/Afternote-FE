@@ -49,7 +49,7 @@ class AuthBoundaryBackStackTest {
 
         composeRule.runOnIdle { harness.onboardingExternalActions.replaceOnboardingWithHome() }
 
-        // popUpTo(0) { inclusive } — 온보딩 host destination 까지 사라진다.
+        // 인증 경계는 온보딩 스택을 비우고 독립 홈 스택을 활성화한다.
         assertEquals(listOf("NavHostRoot", "Home"), routes())
         // 홈에서 뒤로가기는 앱을 벗어난다(=pop 실패). 온보딩으로 되돌아가지 않는다.
         assertEquals(false, composeRule.runOnIdle { harness.navController.popBackStack() })
@@ -97,13 +97,13 @@ class AuthBoundaryBackStackTest {
 
         // Nav2 시절엔 [Afternote, FingerprintLoginRoute] 두 칸이었다. 이관 뒤 그래프 안쪽 화면은
         // 로컬 스택에 있으므로 루트는 host 한 칸만 본다 — #1702 가 루트를 바꿀 때 이 모양을 받는다.
-        assertEquals(listOf("NavHostRoot", "Home", "Afternote"), routes())
+        assertEquals(listOf("NavHostRoot", "Afternote"), routes())
 
-        // 로컬 스택 바닥에서의 back 은 boundary 로 올라와 이 한 칸을 pop 한다.
+        // 탭 루트에서 back 은 홈 탭으로 이동한다.
         assertEquals(true, composeRule.runOnIdle { harness.navController.popBackStack() })
         assertEquals("Home", composeRule.runOnIdle { harness.navController.currentRouteName() })
 
-        // 설정도 같다 — Nav2 시절엔 [Setting, SettingHomeRoute] 두 칸이었다 (#1695).
+        // 설정은 홈 스택 안의 목적지다.
         composeRule.runOnIdle { harness.homeActions.onSettingClick() }
         assertEquals(listOf("NavHostRoot", "Home", "Setting"), routes())
         assertEquals(true, composeRule.runOnIdle { harness.navController.popBackStack() })

@@ -1,9 +1,10 @@
 package com.afternote.core.ui
 
+import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface Route {
+sealed interface Route : NavKey {
     @Serializable
     data object Onboarding : Route
 

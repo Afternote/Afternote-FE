@@ -2,7 +2,6 @@ package com.afternote.afternote_fe.navigation
 
 import android.app.Application
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.navigation.toRoute
 import com.afternote.core.ui.Route
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import org.junit.Assert.assertEquals
@@ -43,9 +42,7 @@ class MemoriesReadAgainDestinationTest {
     }
 
     private fun currentRecordDetail(): MindRecordRoute.RecordDetailRoute =
-        composeRule.runOnIdle {
-            harness.navController.currentBackStackEntry!!.toRoute<MindRecordRoute.RecordDetailRoute>()
-        }
+        composeRule.runOnIdle { harness.appState.pendingMindRecordDestination as MindRecordRoute.RecordDetailRoute }
 
     @Test
     fun `다시 읽기는 받은 기록 id 를 그대로 실어 기록 상세로 간다`() {
@@ -54,7 +51,7 @@ class MemoriesReadAgainDestinationTest {
         composeRule.runOnIdle { harness.homeActions.onMemoriesRecordDetailClick(RECORD_ID) }
 
         assertEquals(
-            listOf("NavHostRoot", "Home", "RecordDetailRoute"),
+            listOf("NavHostRoot", "MindRecord"),
             composeRule.runOnIdle { harness.navController.backStackRouteNames() },
         )
         assertEquals(RECORD_ID, currentRecordDetail().recordId)
@@ -76,7 +73,7 @@ class MemoriesReadAgainDestinationTest {
         composeRule.runOnIdle { harness.homeActions.onMemoriesSectionClick() }
 
         assertEquals(
-            listOf("NavHostRoot", "Home", "MemorySpace"),
+            listOf("NavHostRoot", "MindRecord"),
             composeRule.runOnIdle { harness.navController.backStackRouteNames() },
         )
     }

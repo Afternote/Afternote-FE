@@ -87,11 +87,14 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
     }
 
 @Composable
-fun rememberTimeLetterNavActions(navController: NavController): TimeLetterNavActions =
-    remember(navController) {
+fun rememberTimeLetterNavActions(
+    navController: NavController,
+    onNavigateToSetting: () -> Unit = { navController.navigate(Route.Setting()) },
+): TimeLetterNavActions =
+    remember(navController, onNavigateToSetting) {
         object : TimeLetterNavActions {
             override fun onSettingClick() {
-                navController.navigate(Route.Setting())
+                onNavigateToSetting()
             }
 
             override fun onNavigateToWrite() {
@@ -151,17 +154,11 @@ fun rememberSettingExternalActions(appState: AppState): SettingExternalActions =
     remember(appState) {
         object : SettingExternalActions {
             override fun onLogoutSuccess() {
-                appState.navController.navigate(Route.Onboarding) {
-                    // 로그아웃 — 인증 이후 모든 stack 비우고 Onboarding 진입. 뒤로가기로 로그인 상태 화면에 못 돌아가게.
-                    popUpTo(0) { inclusive = true }
-                }
+                appState.replaceAllWithOnboarding()
             }
 
             override fun onWithdrawSuccess() {
-                appState.navController.navigate(Route.Onboarding) {
-                    // 탈퇴 — 계정 사라진 상태라 stack 전체 비우고 Onboarding 진입. 뒤로가기로 인증된 화면에 못 돌아가게.
-                    popUpTo(0) { inclusive = true }
-                }
+                appState.replaceAllWithOnboarding()
             }
         }
     }
@@ -181,7 +178,7 @@ fun rememberHomeTabActions(
                 //
                 // 목적지가 등록인지 목록인지는 기획 확정 전이다 (#506) — docs/qa/assumptions.md 참고.
                 // 등록 화면은 설정 로컬 스택 안에 있어 host 에 시작점으로 알린다 (#1695).
-                appState.navController.navigate(Route.Setting(startWithRecipientRegistration = true))
+                appState.navigate(Route.Setting(startWithRecipientRegistration = true))
             }
 
             override fun onAnswerClick() {
@@ -189,7 +186,7 @@ fun rememberHomeTabActions(
                 // 기록 탭의 작성 진입(`MindRecordNavActions.onWriteDailyQuestion`)과 같은 목적지다.
                 // 라우트가 data class 라 **인스턴스**를 넘겨야 한다 — 클래스 참조로 넘기면
                 // 이동이 조용히 무산되고 홈의 이 버튼이 눌리지 않는다 (#770).
-                appState.navController.navigate(MindRecordRoute.DailyQuestionWriteRoute())
+                appState.navigateToMindRecordDestination(MindRecordRoute.DailyQuestionWriteRoute())
             }
 
             override fun onNextStepClick() {
@@ -211,19 +208,19 @@ fun rememberHomeTabActions(
             }
 
             override fun onMemoriesSectionClick() {
-                appState.navController.navigate(Route.MemorySpace)
+                appState.navigateToMindRecordDestination(Route.MemorySpace)
             }
 
             override fun onMemoriesRecordDetailClick(recordId: Long) {
                 // 카드가 싣는 것은 가장 최근 **데일리질문 답변** 한 건이라 `isDiary = false` 다.
                 // 카드가 나중에 일기까지 포함하게 되면 종류를 함께 넘겨야 한다 (#793).
-                appState.navController.navigate(
+                appState.navigateToMindRecordDestination(
                     MindRecordRoute.RecordDetailRoute(recordId = recordId, isDiary = false),
                 )
             }
 
             override fun onSettingClick() {
-                appState.navController.navigate(Route.Setting())
+                appState.navigate(Route.Setting())
             }
 
             override fun onRetryLoad() {
@@ -244,14 +241,11 @@ fun rememberOnboardingExternalActions(appState: AppState): OnboardingExternalAct
     remember(appState) {
         object : OnboardingExternalActions {
             override fun replaceOnboardingWithHome() {
-                appState.navController.navigate(Route.Home) {
-                    // 온보딩 흐름 전체를 stack 에서 비우고 Home 진입 — 뒤로가기로 온보딩으로 못 돌아가게(앱 종료).
-                    popUpTo(0) { inclusive = true }
-                }
+                appState.replaceAllWithHome()
             }
 
             override fun navigateToReceivedRecords() {
-                appState.navController.navigate(Route.Receiver)
+                appState.navigate(Route.Receiver)
             }
         }
     }
@@ -274,7 +268,7 @@ fun rememberAfternoteExternalActions(
             }
 
             override fun navigateToSetting() {
-                appState.navController.navigate(Route.Setting())
+                appState.navigate(Route.Setting())
             }
 
             override fun onFingerprintAuthFailed(message: String) {
@@ -295,8 +289,8 @@ fun rememberAfternoteExternalActions(
 fun rememberReceiverHomeActions(appState: AppState): ReceiverHomeActions =
     remember(appState) {
         ReceiverHomeActions(
-            onNavigateToMindRecord = { appState.navController.navigate(Route.ReceiverMindRecord) },
-            onNavigateToTimeLetter = { appState.navController.navigate(Route.TimeLetter) },
-            onNavigateToAfternote = { appState.navController.navigate(Route.ReceivedAfternote) },
+            onNavigateToMindRecord = { appState.navigateToMindRecordDestination(Route.ReceiverMindRecord) },
+            onNavigateToTimeLetter = { appState.navigate(Route.TimeLetter) },
+            onNavigateToAfternote = { appState.navigate(Route.ReceivedAfternote) },
         )
     }
