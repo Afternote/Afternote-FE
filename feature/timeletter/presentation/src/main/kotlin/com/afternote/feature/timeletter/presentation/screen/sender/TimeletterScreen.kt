@@ -86,6 +86,7 @@ fun TimeletterScreen(
         onEditClick = onEditClick,
         onFilterRecipientClick = onFilterRecipientClick,
         onDeleteClick = { pendingDeleteId = it },
+        onRetry = viewModel::load,
         modifier = modifier,
     )
 }
