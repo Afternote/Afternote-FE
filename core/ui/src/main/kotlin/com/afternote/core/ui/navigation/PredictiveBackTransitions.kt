@@ -9,8 +9,8 @@ import androidx.compose.animation.scaleOut
 /**
  * predictive back 진행 중 두 화면을 그리는 전환 한 쌍 (#1869).
  *
- * 이 저장소는 네비게이션 엔진을 둘 쓴다 — 루트는 Navigation 2 `NavHost`, 각 피처의 로컬 스택은
- * Navigation 3 `NavDisplay` 다(#1698). **두 엔진의 기본값이 서로 다르다.**
+ * 이 저장소의 루트와 피처별 로컬 스택은 Navigation 3 `NavDisplay` 를 쓴다(#1702).
+ * 루트는 이 공용 전환을 명시적으로 전달하고, 로컬 스택은 같은 기본 전환을 사용한다.
  *
  * - Nav3 `NavDisplay` 는 `predictivePopTransitionSpec` 을 안 넘기면
  *   `defaultPredictivePopTransitionSpec()` 을 쓴다 — 아래 두 값과 같은 모양이다
@@ -20,10 +20,9 @@ import androidx.compose.animation.scaleOut
  *   (navigation-compose 2.9.8 `NavHost.kt:132`). 앞 화면이 줄지 않고 제자리에서 흐려지기만 해,
  *   진행 중에 두 화면이 같은 크기로 겹쳐 보인다 — #1869 가 실기기에서 잡은 증상이다.
  *
- * 그래서 **새 값을 정하지 않고 Nav3 기본값을 그대로 복제해** 두 엔진의 눈에 보이는 동작을 맞춘다.
- * 루트가 `NavDisplay` 로 바뀌면(#1702) 이 두 상수를 그대로
+ * 새 전환 값을 정하지 않고 Nav3 기본값과 같은 동작을 공유한다. 루트는
  * `predictivePopTransitionSpec = { ContentTransform(PredictiveBackPopEnter, PredictiveBackPopExit) }`
- * 에 넘겨, 이관 전후로 화면이 달라지지 않게 한다.
+ * 를 전달해 이 전환을 명시적으로 유지한다.
  *
  * ### 모서리 라운딩은 여기서 못 준다
  * `ExitTransition` 은 fade·scale·slide·shrink 만 표현한다 — clip 이나 shape 는 담을 수 없다.
