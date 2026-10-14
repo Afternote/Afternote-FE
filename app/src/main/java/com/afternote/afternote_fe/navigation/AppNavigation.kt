@@ -3,6 +3,7 @@ package com.afternote.afternote_fe.navigation
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import androidx.compose.animation.ContentTransform
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -39,6 +40,8 @@ import com.afternote.core.ui.bottombar.BottomBar
 import com.afternote.core.ui.navigation.FeatureNavDisplay
 import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
 import com.afternote.core.ui.navigation.NavDestinationBackground
+import com.afternote.core.ui.navigation.PredictiveBackPopEnter
+import com.afternote.core.ui.navigation.PredictiveBackPopExit
 import com.afternote.feature.afternote.presentation.navigation.AfternoteNavHost
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteNavHost
 import com.afternote.feature.home.presentation.HomeTabScreen
@@ -91,7 +94,12 @@ fun AppNavigation(
             scope.launch { snackbarHostState.showSnackbar(message) }
         }
     val receiverHomeActions = rememberReceiverHomeActions(appState)
-    val rootNavigationCallbacks = rememberRootNavigationCallbacks(appState, onAppRootExit = { activity?.finish() })
+    val rootNavigationCallbacks =
+        rememberRootNavigationCallbacks(
+            appState = appState,
+            onAppRootExit = { activity?.finish() },
+            onAtRootChanged = {},
+        )
     val afternoteNavigationCallbacks =
         rememberRootNavigationCallbacks(
             appState = appState,
@@ -152,6 +160,9 @@ fun AppNavigation(
             modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding),
             backStack = appState.backStack,
             boundary = rootNavigationCallbacks,
+            predictivePopTransitionSpec = { _ ->
+                ContentTransform(PredictiveBackPopEnter, PredictiveBackPopExit)
+            },
             entryProvider =
                 entryProvider {
                     entry<Route.Onboarding> {
@@ -226,7 +237,7 @@ private fun MindRecordRootHost(
 private fun rememberRootNavigationCallbacks(
     appState: AppState,
     onAppRootExit: () -> Unit,
-    onAtRootChanged: (Boolean) -> Unit = {},
+    onAtRootChanged: (Boolean) -> Unit,
 ): FeatureNavigationCallbacks =
     remember(appState, onAppRootExit, onAtRootChanged) {
         object : FeatureNavigationCallbacks {
