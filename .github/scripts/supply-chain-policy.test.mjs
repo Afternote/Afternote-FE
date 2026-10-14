@@ -5,7 +5,11 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { inspectModules } from './resolve-pr-impact.mjs';
+import {
+  DEPENDENCY_GRAPH_INPUT_PATTERNS,
+  inspectModules,
+  isDependencyGraphInput,
+} from './resolve-pr-impact.mjs';
 
 const workflowDirectory = new URL('../workflows/', import.meta.url);
 const repoRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
@@ -120,18 +124,6 @@ function checkoutStepBlocks(source) {
     blocks.push(block.join('\n'));
   }
   return blocks;
-}
-
-function eventPathFilters(source, eventName) {
-  const match = new RegExp(`^  ${eventName}:\\n    paths:\\n((?:      - '[^']+'\\n)+)`, 'm').exec(
-    source,
-  );
-  assert.ok(match, `${eventName} must declare a paths filter`);
-  return match[1].trim().split('\n').map((line) => {
-    const path = /^- '([^']+)'$/.exec(line.trim());
-    assert.ok(path, `invalid dependency path filter: ${line}`);
-    return path[1];
-  });
 }
 
 function workflowName(source) {
@@ -488,7 +480,7 @@ test('manual dependency baseline is hard-wired to the checked-out main SHA', asy
   assert.doesNotMatch(manualJob, /inputs\./);
 });
 
-test('all pull request heads produce a baseline while dependency review keeps its path filter', async () => {
+test('all pull request heads produce a baseline while dependency review classifies inputs in the job', async () => {
   const submission = await readFile(
     new URL('../workflows/dependency-submission.yml', import.meta.url),
     'utf8',
@@ -504,7 +496,12 @@ test('all pull request heads produce a baseline while dependency review keeps it
   assert.doesNotMatch(submission, /^\s+(?:paths(?:-ignore)?|branches(?:-ignore)?|types):/m);
   assert.doesNotMatch(submission, /^\s+if:/m);
   assert.doesNotMatch(submission, /pull_request_target:|workflow_dispatch:/);
-  assert.deepEqual(eventPathFilters(review, 'pull_request'), dependencyPathFilters);
+  // #2258: paths 필터는 소스만 고친 PR 에 check 를 만들지 않아 required 로 걸 수 없다.
+  // 같은 경로 목록을 repository-quality 의 분류로 옮기고, review 는 PR Validation 이 매번 부른다.
+  assert.match(review, /^on:\n  workflow_call:\n/m);
+  assert.doesNotMatch(review, /^\s+(?:paths(?:-ignore)?|branches(?:-ignore)?):/m);
+  assert.doesNotMatch(review, /^  (?:pull_request|merge_group|push):/m);
+  assert.deepEqual([...DEPENDENCY_GRAPH_INPUT_PATTERNS], dependencyPathFilters);
   assert.doesNotMatch(submission, /Detect dependency graph input changes/);
   assert.doesNotMatch(review, /Detect dependency graph input changes/);
 });
@@ -605,6 +602,44 @@ test('only the release pull request is exempt from the path-filter boundary', as
   );
   assert.ok(exemption, 'release exemption branch not found');
   assert.doesNotMatch(exemption[1], /exit\s+1/);
+});
+
+test('dependency graph input classification matches the former paths filter semantics', () => {
+  for (const filePath of [
+    'build.gradle.kts',
+    'settings.gradle.kts',
+    'app/build.gradle.kts',
+    'legacy/build.gradle',
+    'gradle.properties',
+    'feature/home/gradle.properties',
+    'gradlew',
+    'gradlew.bat',
+    'gradle/libs.versions.toml',
+    'gradle/wrapper/gradle-wrapper.properties',
+    'build-logic/convention/src/main/kotlin/AndroidLibrary.kt',
+    'tools/buildSrc/src/main/kotlin/Plugin.kt',
+    'app/dependencies.lockfile',
+    '.github/workflows/dependency-review.yml',
+    '.github/workflows/dependency-submission.yml',
+    '.github/workflows/dependency-submission-trusted.yml',
+    '.github/workflows/dependency-submission-upload.yml',
+  ]) {
+    assert.equal(isDependencyGraphInput(filePath), true, filePath);
+  }
+  for (const filePath of [
+    'README.md',
+    'docs/gradle.md',
+    'app/src/main/kotlin/MainActivity.kt',
+    'app/src/main/res/values/strings.xml',
+    'feature/gradle/Screen.kt',
+    'build-logic',
+    'gradle',
+    'gradlew.sh',
+    'app/build.gradle.kts.orig',
+    '.github/workflows/pr-validation.yml',
+  ]) {
+    assert.equal(isDependencyGraphInput(filePath), false, filePath);
+  }
 });
 
 test('dependency review blocks high severity changes without enforcing a license allowlist', async () => {

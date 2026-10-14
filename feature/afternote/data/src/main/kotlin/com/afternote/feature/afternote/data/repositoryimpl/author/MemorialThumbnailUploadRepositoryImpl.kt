@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.data.repositoryimpl.author
 
 import com.afternote.core.common.di.IoDispatcher
-import com.afternote.core.common.result.runCatchingCancellable
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.network.dto.PresignedUrlRequestDto
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.service.ImageApiService

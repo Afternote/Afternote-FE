@@ -28,7 +28,7 @@
 
 잠긴 사유는 하나로 모인다. 앱 만들기 버튼의 안내가 "새 앱을 만들려면 계정 확인을 완료하세요" 이고, 패키지 이름 등록도 "먼저 홈페이지에서 처리되지 않은 인증을 완료해야 합니다" 라고 같은 곳을 가리킨다.
 
-그래서 아래 "자동화 사전 준비" 는 1번(앱 등록)부터 대기 상태이고, 2~5번은 전부 1번에 매달려 있다.
+그래서 아래 "자동화 사전 준비" 는 1번(앱 등록)부터 대기 상태이고, Play Console 칸인 2번과 4번은 1번에 매달려 있다. 3번(Google Cloud)은 Play Console 과 무관해 2026-10-05 에 먼저 끝냈다(#852).
 
 ### 지금 막혀 있는 것과 푸는 사람
 
@@ -175,10 +175,21 @@ Android Publisher API는 **Console에서 최소 한 번 수동 업로드된 앱*
 
 **3. Google Cloud — API와 서비스 계정** (`console.cloud.google.com`)
 
-1. **API 및 서비스 → 라이브러리**에서 `Google Play Android Developer API`를 사용 설정한다.
-2. **IAM 및 관리자 → 서비스 계정 → 서비스 계정 만들기**: 이름 예 `play-internal-publisher`. **프로젝트 IAM 역할은 주지 않는다** — Play 권한은 Play Console에서 별도로 준다.
-3. Firebase 배포용 서비스 계정을 재사용하지 않는다. 두 채널의 자격을 분리해 두는 것이 이 이슈의 요구사항이다.
-4. **IAM 및 관리자 → Workload Identity 제휴**에서 기존 provider를 재사용하되, 새 서비스 계정에 `roles/iam.workloadIdentityUser`를 부여하면서 principal을 이 저장소로 한정한다.
+2026-10-05 에 끝냈다. Play Console 상태와 무관한 칸이라 1·2번을 기다리지 않았다. 아래는 그날 gcloud 로 확인한 프로젝트 `afternote-android`(번호 `918752702102`)의 구성이다([#852 코멘트](https://github.com/Afternote/Afternote-FE/issues/852#issuecomment-5993394780)).
+
+| 항목 | 상태 |
+|---|---|
+| `Google Play Android Developer API` | 사용 설정됨 |
+| 서비스 계정 | `play-internal-publisher@afternote-android.iam.gserviceaccount.com`. 프로젝트 IAM 역할 없음. Play 권한은 4번에서 Play Console 이 준다 |
+| WIF provider | `projects/918752702102/locations/global/workloadIdentityPools/github-actions/providers/afternote-fe` |
+| provider attribute condition | `repository` 가 `Afternote/Afternote-FE`, `ref` 가 `develop`·`main`, `workflow_ref` 가 `firebase-wif-canary.yml`·`release-distribution.yml`·`release-play-internal.yml` 로 시작하는 것만 허용 |
+| `play-internal-publisher` 의 `roles/iam.workloadIdentityUser` | principalSet `.../attribute.workflow_ref/Afternote/Afternote-FE/.github/workflows/release-play-internal.yml@refs/heads/main` 하나 |
+| Firebase 계정 `afternote-ci` 의 같은 역할 | `release-distribution.yml@refs/heads/main`, `firebase-wif-canary.yml@refs/heads/main`, `firebase-wif-canary.yml@refs/heads/develop` 셋 |
+
+- Firebase 배포용 서비스 계정을 재사용하지 않는다. 두 채널의 자격 분리가 #852 의 요구사항이다.
+- provider 는 Firebase 와 같은 것을 쓴다. 그래서 자격 분리는 provider 가 아니라 서비스 계정 바인딩이 맡는다. 바인딩을 저장소 전체(`attribute.repository`)로 걸면 provider 를 통과하는 다른 배포 워크플로도 그 계정을 빌릴 수 있다. 두 계정 모두 워크플로 단위(`attribute.workflow_ref`)로 묶은 이유다.
+- provider 를 새로 만들거나 attribute condition 을 바꿀 때는 condition 의 `workflow_ref` 허용 목록과 서비스 계정별 워크플로 단위 바인딩을 함께 맞춘다. 한쪽만 바꾸면 인증이 거부되거나, 반대로 허용한 워크플로가 남의 계정까지 빌릴 수 있게 된다. 배포 워크플로 파일 이름을 바꿀 때도 같다.
+- 시크릿에 넣을 비밀 아닌 값 두 개(`GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_PLAY_SERVICE_ACCOUNT`)는 1Password 항목 `Afternote GCP Workload Identity`에 있다.
 
 **4. Play Console — 서비스 계정에 최소 권한 부여**
 
@@ -216,7 +227,7 @@ environment 와 보호 규칙, 변수는 2026-09-06 에 만들어 두었다. 남
 | `RELEASE_KEY_PASSWORD` | play-internal → Environment secrets | key 비밀번호 |
 | `PLAY_PACKAGE_NAME` | play-internal → Environment variables | `com.afternote.afternote_fe` |
 
-`KAKAO_NATIVE_APP_KEY`·`GOOGLE_WEB_CLIENT_ID`·`GOOGLE_SERVICES_JSON_B64`는 이미 저장소 secret으로 있어 그대로 쓴다. keystore·비밀번호·서비스 계정 값은 담당자가 직접 입력하며 저장소나 문서에 넣지 않는다.
+`KAKAO_NATIVE_APP_KEY`·`GOOGLE_WEB_CLIENT_ID`·`GOOGLE_SERVICES_JSON_B64`는 이미 저장소 secret으로 있어 그대로 쓴다. keystore·비밀번호는 담당자가 직접 입력하며 저장소나 문서에 넣지 않는다. `GCP_WORKLOAD_IDENTITY_PROVIDER`·`GCP_PLAY_SERVICE_ACCOUNT` 는 비밀이 아니고 실제 값은 3번과 1Password 항목 `Afternote GCP Workload Identity`에 있지만, secret 등록은 마찬가지로 손으로 한다.
 
 ### 실행
 

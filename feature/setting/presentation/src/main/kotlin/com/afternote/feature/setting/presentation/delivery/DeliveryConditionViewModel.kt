@@ -1,25 +1,19 @@
 package com.afternote.feature.setting.presentation.delivery
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserReceiverRepository
-import com.afternote.core.model.delivery.ConditionState
-import com.afternote.core.model.delivery.DeliveryConditionItem
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.model.delivery.DeliveryConditionType
 import com.afternote.core.model.delivery.DeliveryContentType
 import com.afternote.core.model.delivery.InactivityPeriod
+import com.afternote.core.ui.mvi.MviViewModel
+import com.afternote.feature.setting.domain.UpdateTimeLetterDeliveryConditionUseCase
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /**
@@ -32,107 +26,135 @@ internal class DeliveryConditionViewModel
     constructor(
         @Assisted route: SettingRoute.AfterDeliveryRoute,
         private val receiverRepository: UserReceiverRepository,
-    ) : ViewModel() {
+        private val updateTimeLetterDeliveryCondition: UpdateTimeLetterDeliveryConditionUseCase,
+    ) : MviViewModel<DeliveryConditionIntent, DeliveryConditionUiState, DeliveryConditionReducerEvent>(DeliveryConditionUiState()) {
         private val receiverId = route.receiverId
+        private var loadJob: Job? = null
+        private var isFirstResume = true
 
-        private val _uiState = MutableStateFlow(DeliveryConditionUiState())
-        val uiState: StateFlow<DeliveryConditionUiState> = _uiState.asStateFlow()
+        override fun onIntent(intent: DeliveryConditionIntent) {
+            when (intent) {
+                DeliveryConditionIntent.RefreshOnReturn -> refreshOnReturn()
+                is DeliveryConditionIntent.SelectConditionType -> dispatch(DeliveryConditionReducerEvent.ConditionSelected(intent.type))
+                DeliveryConditionIntent.Save -> onSave()
+                DeliveryConditionIntent.ConsumeSuccess -> dispatch(DeliveryConditionReducerEvent.SuccessConsumed)
+            }
+        }
 
-        private val _saveSuccess = Channel<Unit>(Channel.BUFFERED)
-        val saveSuccess = _saveSuccess.receiveAsFlow()
+        override fun reduce(
+            state: DeliveryConditionUiState,
+            event: DeliveryConditionReducerEvent,
+        ): DeliveryConditionUiState =
+            when (event) {
+                DeliveryConditionReducerEvent.Loading -> {
+                    state.copy(isLoading = true)
+                }
+
+                is DeliveryConditionReducerEvent.Loaded -> {
+                    val representative = event.conditions.firstOrNull { it.contentType == DeliveryContentType.TIME_LETTER }
+                    val hasEdits = state.conditionEditRevision != state.savedConditionRevision
+                    state.copy(
+                        isLoading = false,
+                        isInitialized = true,
+                        conditionType =
+                            if (hasEdits) {
+                                state.conditionType
+                            } else {
+                                representative?.conditionType
+                                    ?: DeliveryConditionType.INACTIVITY
+                            },
+                        inactivityPeriod =
+                            if (hasEdits) {
+                                state.inactivityPeriod
+                            } else {
+                                representative?.inactivityPeriod
+                                    ?: InactivityPeriod.ONE_YEAR
+                            },
+                        conditions = event.conditions,
+                        error = state.error.takeUnless { it == DeliveryConditionError.LOAD_FAILED },
+                    )
+                }
+
+                DeliveryConditionReducerEvent.LoadFailed -> {
+                    state.copy(isLoading = false, error = DeliveryConditionError.LOAD_FAILED)
+                }
+
+                is DeliveryConditionReducerEvent.ConditionSelected -> {
+                    state.copy(conditionType = event.type, conditionEditRevision = state.conditionEditRevision + 1)
+                }
+
+                DeliveryConditionReducerEvent.Saving -> {
+                    state.copy(isSaving = true)
+                }
+
+                is DeliveryConditionReducerEvent.Saved -> {
+                    state.copy(
+                        isSaving = false,
+                        conditions = event.conditions,
+                        isSaved = true,
+                        isSaveSuccessPending = true,
+                        savedConditionRevision = event.revision,
+                        error = null,
+                    )
+                }
+
+                DeliveryConditionReducerEvent.SaveFailed -> {
+                    state.copy(isSaving = false, error = DeliveryConditionError.SAVE_FAILED)
+                }
+
+                DeliveryConditionReducerEvent.SuccessConsumed -> {
+                    state.copy(isSaveSuccessPending = false)
+                }
+            }
 
         init {
             loadDeliveryConditions()
         }
 
-        private fun loadDeliveryConditions() {
-            viewModelScope.launch {
-                _uiState.update { it.copy(isLoading = true) }
-                runCatchingCancellable { receiverRepository.getReceiverDeliveryConditions(receiverId) }
-                    .onSuccess { response ->
-                        val representative =
-                            response.conditions.firstOrNull {
-                                it.contentType == DeliveryContentType.TIME_LETTER
-                            }
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                isInitialized = true,
-                                conditionType = representative?.conditionType ?: DeliveryConditionType.INACTIVITY,
-                                inactivityPeriod = representative?.inactivityPeriod ?: InactivityPeriod.ONE_YEAR,
-                                conditions = response.conditions,
-                            )
-                        }
-                    }.onFailure {
-                        _uiState.update { it.copy(isLoading = false, error = DeliveryConditionError.LOAD_FAILED) }
-                    }
+        private fun refreshOnReturn() {
+            if (isFirstResume) {
+                isFirstResume = false
+                return
             }
+            loadDeliveryConditions(isAutomatic = true)
         }
 
-        fun onConditionTypeSelected(index: Int) {
-            val conditionType =
-                if (index == 1) DeliveryConditionType.RECEIVER_REQUEST else DeliveryConditionType.INACTIVITY
-            _uiState.update { it.copy(conditionType = conditionType) }
+        private fun loadDeliveryConditions(isAutomatic: Boolean = false) {
+            if (loadJob?.isActive == true || currentState.isSaving) return
+            loadJob =
+                viewModelScope.launch {
+                    if (!isAutomatic) dispatch(DeliveryConditionReducerEvent.Loading)
+                    runCatchingCancellable { receiverRepository.getReceiverDeliveryConditions(receiverId) }
+                        .onSuccess { response ->
+                            dispatch(DeliveryConditionReducerEvent.Loaded(response.conditions))
+                        }.onFailure {
+                            if (!isAutomatic || !currentState.isInitialized) dispatch(DeliveryConditionReducerEvent.LoadFailed)
+                        }
+                }
         }
 
-        fun onSave() {
-            val state = _uiState.value
-            if (!state.isInitialized || state.isSaving) return
+        private fun onSave() {
+            val state = currentState
+            if (!state.isInitialized || state.isSaveLocked) return
 
-            val hasTimeLetterCondition =
-                state.conditions.any { it.contentType == DeliveryContentType.TIME_LETTER }
-            val updatedConditions =
-                state.conditions
-                    .map { condition ->
-                        if (condition.contentType == DeliveryContentType.TIME_LETTER) {
-                            condition.copy(
-                                conditionType = state.conditionType,
-                                inactivityPeriod =
-                                    state.inactivityPeriod.takeIf {
-                                        state.conditionType == DeliveryConditionType.INACTIVITY
-                                    },
-                            )
-                        } else {
-                            condition
-                        }
-                    }.let { conditions ->
-                        if (hasTimeLetterCondition) {
-                            conditions
-                        } else {
-                            conditions +
-                                defaultCondition(DeliveryContentType.TIME_LETTER).copy(
-                                    conditionType = state.conditionType,
-                                    inactivityPeriod =
-                                        state.inactivityPeriod.takeIf {
-                                            state.conditionType == DeliveryConditionType.INACTIVITY
-                                        },
-                                )
-                        }
-                    }
-
+            loadJob?.cancel()
+            val savingRevision = state.conditionEditRevision
+            dispatch(DeliveryConditionReducerEvent.Saving)
             viewModelScope.launch {
-                _uiState.update { it.copy(isSaving = true) }
                 runCatchingCancellable {
-                    receiverRepository.updateReceiverDeliveryConditions(receiverId, updatedConditions)
+                    updateTimeLetterDeliveryCondition(
+                        receiverId = receiverId,
+                        conditions = state.conditions,
+                        conditionType = state.conditionType,
+                        inactivityPeriod = state.inactivityPeriod,
+                    )
                 }.onSuccess { response ->
-                    _uiState.update { it.copy(isSaving = false, conditions = response.conditions) }
-                    _saveSuccess.send(Unit)
+                    dispatch(DeliveryConditionReducerEvent.Saved(savingRevision, response.conditions))
                 }.onFailure {
-                    _uiState.update { it.copy(isSaving = false, error = DeliveryConditionError.SAVE_FAILED) }
+                    dispatch(DeliveryConditionReducerEvent.SaveFailed)
                 }
             }
         }
-
-        private fun defaultCondition(contentType: DeliveryContentType) =
-            DeliveryConditionItem(
-                contentType = contentType,
-                conditionType = DeliveryConditionType.INACTIVITY,
-                inactivityPeriod = InactivityPeriod.ONE_YEAR,
-                state = ConditionState.ACTIVE,
-                fulfilled = false,
-                gracePeriodStartedAt = null,
-                fulfilledAt = null,
-            )
 
         @AssistedFactory
         interface Factory {

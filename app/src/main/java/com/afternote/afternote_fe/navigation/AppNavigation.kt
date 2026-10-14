@@ -1,5 +1,9 @@
 package com.afternote.afternote_fe.navigation
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import androidx.compose.animation.ContentTransform
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -10,6 +14,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -17,17 +23,22 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.toRoute
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation3.runtime.entryProvider
+import com.afternote.afternote_fe.MainViewModel
 import com.afternote.afternote_fe.notification.NotificationPermissionEffect
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomBar
+import com.afternote.core.ui.navigation.FeatureNavDisplay
 import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
 import com.afternote.core.ui.navigation.NavDestinationBackground
 import com.afternote.core.ui.navigation.PredictiveBackPopEnter
@@ -37,10 +48,13 @@ import com.afternote.feature.afternote.presentation.receiver.navigation.Received
 import com.afternote.feature.home.presentation.HomeTabScreen
 import com.afternote.feature.home.presentation.HomeTabViewModel
 import com.afternote.feature.home.presentation.receiver.ReceiverHomeEntry
+import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
 import com.afternote.feature.mindrecord.presentation.navigation.mindRecordNavGraph
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavHost
+import com.afternote.feature.receiver.presentation.navigation.ReceiverInvitationNavHost
 import com.afternote.feature.receiver.presentation.navigation.ReceiverNavHost
 import com.afternote.feature.setting.presentation.navigation.SettingNavHost
+import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
 import com.afternote.feature.timeletter.presentation.navigation.timeLetterNavGraph
 import kotlinx.coroutines.launch
 
@@ -48,40 +62,98 @@ import kotlinx.coroutines.launch
 fun AppNavigation(
     startDestination: Route,
     modifier: Modifier = Modifier,
-    appState: AppState = rememberAfternoteAppState(),
+    appState: AppState = rememberAfternoteAppState(startDestination),
+    mindRecordNavController: NavHostController? = null,
+    timeLetterNavController: NavHostController? = null,
+    mainViewModel: MainViewModel = hiltViewModel(),
 ) {
-    val navEntry by appState.navController.currentBackStackEntryAsState()
-    val currentDestination = navEntry?.destination
-
-    // 로컬 Nav3 스택의 깊이는 Nav2 destination 에 안 보인다 — 애프터노트 host 가 올려 주는 신호를
-    // 바텀바 판정에 합성한다. 피처를 떠나면 host 가 true 로 되돌려 다른 탭 판정을 오염시키지 않는다.
+    val context = LocalContext.current
+    val activity = remember(context) { context.findActivity() }
+    val rememberedMindRecordController = rememberNavController()
+    val rememberedTimeLetterController = rememberNavController()
+    val mindRecordController = mindRecordNavController ?: appState.legacyMindRecordController ?: rememberedMindRecordController
+    val timeLetterController = timeLetterNavController ?: rememberedTimeLetterController
+    val mindRecordEntry by mindRecordController.currentBackStackEntryAsState()
+    val timeLetterEntry by timeLetterController.currentBackStackEntryAsState()
+    val pendingInvitationToken by mainViewModel.pendingInvitationToken.collectAsStateWithLifecycle()
+    val authenticatedStartRoute by mainViewModel.startRoute.collectAsStateWithLifecycle()
+    val currentRootRoute = appState.backStack.lastOrNull()
+    LaunchedEffect(pendingInvitationToken, currentRootRoute) {
+        if (pendingInvitationToken != null && currentRootRoute != Route.ReceiverInvitation) {
+            appState.navigate(Route.ReceiverInvitation)
+        }
+    }
+    val isMindRecordAtRoot = mindRecordEntry?.destination?.hasRoute(Route.MindRecord::class) != false
+    val isTimeLetterAtRoot =
+        timeLetterEntry?.destination?.hasRoute(TimeLetterRoute.TimeLetterHomeRoute::class) != false
     var isAfternoteStackAtRoot by remember { mutableStateOf(true) }
+    val showBottomBar = appState.shouldShowBottomBar(isMindRecordAtRoot, isTimeLetterAtRoot, isAfternoteStackAtRoot)
+    val currentTab = appState.getCurrentNavTab()
 
-    val showBottomBar = appState.shouldShowBottomBar(currentDestination, isAfternoteStackAtRoot)
-    val currentTab = appState.getCurrentNavTab(currentDestination)
-
-    val mindRecordNavActions = rememberMindRecordNavActions(appState.navController)
-    val timeLetterNavActions = rememberTimeLetterNavActions(appState.navController)
+    val mindRecordNavActions = rememberMindRecordNavActions(mindRecordController)
+    val timeLetterNavActions =
+        rememberTimeLetterNavActions(
+            navController = timeLetterController,
+            onNavigateToSetting = { appState.navigate(Route.Setting()) },
+        )
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val onboardingExternalActions = rememberOnboardingExternalActions(appState)
+    val receiverInvitationExternalActions =
+        rememberReceiverInvitationExternalActions(
+            appState = appState,
+            onSettled = { pendingInvitationToken?.let(mainViewModel::settleInvitation) },
+            onDeferredUntilLogin = { pendingInvitationToken?.let(mainViewModel::deferInvitationUntilLogin) },
+        )
     val settingExternalActions = rememberSettingExternalActions(appState)
     val afternoteExternalActions =
         rememberAfternoteExternalActions(appState) { message ->
-            scope.launch {
-                snackbarHostState.showSnackbar(message)
-            }
+            scope.launch { snackbarHostState.showSnackbar(message) }
         }
     val receiverHomeActions = rememberReceiverHomeActions(appState)
-
-    // 로컬 스택 바닥에서의 back 은 루트 백스택 pop 으로 돌려준다. 루트가 NavDisplay 로 바뀌어도
-    // 계약은 그대로고 이 구현만 갈린다 (#1702).
-    // 바텀바가 없는 그래프는 깊이를 셸에 올릴 일이 없다.
-    val rootNavigationCallbacks = rememberRootNavigationCallbacks(appState, onAtRootChanged = {})
+    val rootNavigationCallbacks =
+        rememberRootNavigationCallbacks(
+            appState = appState,
+            onAppRootExit = { activity?.finish() },
+            onAtRootChanged = {},
+        )
     val afternoteNavigationCallbacks =
-        rememberRootNavigationCallbacks(appState) { isAtRoot -> isAfternoteStackAtRoot = isAtRoot }
+        rememberRootNavigationCallbacks(
+            appState = appState,
+            onAppRootExit = { activity?.finish() },
+            onAtRootChanged = { isAtRoot -> isAfternoteStackAtRoot = isAtRoot },
+        )
 
-    // 13+ 는 런타임 권한이 없으면 알림이 한 건도 게시되지 않는다 (#1454).
+    val pendingMindRecordDestination = appState.pendingMindRecordDestination
+    SideEffect { appState.initializeLegacyStartDestination(startDestination) }
+    LaunchedEffect(appState.activeStack, mindRecordEntry, timeLetterEntry) {
+        if (appState.activeStack == AppStack.FLOW) {
+            if (mindRecordEntry != null) {
+                mindRecordController.navigate(Route.MindRecord) {
+                    popUpTo<Route.MindRecord> { inclusive = false }
+                    launchSingleTop = true
+                }
+            }
+            if (timeLetterEntry != null) {
+                timeLetterController.navigate(Route.TimeLetter) {
+                    popUpTo<Route.TimeLetter> { inclusive = false }
+                    launchSingleTop = true
+                }
+            }
+        }
+    }
+    LaunchedEffect(pendingMindRecordDestination, mindRecordEntry) {
+        val destination = pendingMindRecordDestination ?: return@LaunchedEffect
+        if (mindRecordEntry != null) {
+            mindRecordController.navigate(Route.MindRecord) {
+                popUpTo<Route.MindRecord> { inclusive = false }
+                launchSingleTop = true
+            }
+            mindRecordController.navigate(destination)
+            appState.consumeMindRecordDestination(destination)
+        }
+    }
+
     NotificationPermissionEffect(snackbarHostState = snackbarHostState)
 
     Scaffold(
@@ -101,100 +173,109 @@ fun AppNavigation(
             }
         },
     ) { innerPadding ->
-        NavHost(
-            // 루트가 확보한 시스템 바·하단 탭 여백을 하위 inset 계산에도 전달한다.
+        FeatureNavDisplay(
             modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding),
-            navController = appState.navController,
-            startDestination = startDestination,
-            // pop 은 기본값이 fade 라 predictive back 진행 중 두 화면이 같은 크기로 겹쳐 보였다 (#1869).
-            // 값은 Nav3 로컬 스택이 이미 쓰는 것과 같은 것을 core/ui 에서 받아 두 엔진을 맞춘다.
-            popEnterTransition = { PredictiveBackPopEnter },
-            popExitTransition = { PredictiveBackPopExit },
-        ) {
-            // ── Navigation 3 로컬 스택을 가진 그래프 (#1698) — 루트엔 host destination 하나씩만 둔다.
-            composable<Route.Onboarding> {
-                OnboardingNavHost(
-                    boundary = rootNavigationCallbacks,
-                    externalActions = onboardingExternalActions,
-                )
-            }
-            composable<Route.Afternote> {
-                AfternoteNavHost(
-                    navigationCallbacks = afternoteNavigationCallbacks,
-                    externalActions = afternoteExternalActions,
-                )
-            }
-            // 수신 애프터노트 화면은 애프터노트 피처가 갖는다 (#1461). Route.Afternote 그래프는
-            // 발신자용 지문 관문을 시작점으로 삼으므로 그 안에 중첩하지 않고 루트에 직접 등록한다.
-            composable<Route.ReceivedAfternote> {
-                ReceivedAfternoteNavHost(navigationCallbacks = rootNavigationCallbacks)
-            }
-            composable<Route.Receiver> {
-                ReceiverNavHost(
-                    homeContent = { ReceiverHomeEntry(actions = receiverHomeActions) },
-                    navigationCallbacks = rootNavigationCallbacks,
-                )
-            }
-            composable<Route.Setting> { entry ->
-                SettingNavHost(
-                    navigationCallbacks = rootNavigationCallbacks,
-                    externalActions = settingExternalActions,
-                    startWithRecipientRegistration = entry.toRoute<Route.Setting>().startWithRecipientRegistration,
-                )
-            }
-
-            // ── 아직 Navigation 2 인 그래프 — #1696 · #1697 이 각각 이관한다.
-            composable<Route.Home> {
-                val viewModel: HomeTabViewModel = hiltViewModel()
-                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-                val homeTabActions =
-                    rememberHomeTabActions(
-                        appState = appState,
-                        onRetryLoad = { viewModel.loadHomeSummary(isRefresh = true) },
-                    )
-
-                // 다른 화면(일기·데일리질문 작성, 수신인 지정 등)에서 홈으로 복귀 시 홈 요약 refetch.
-                // 최초 진입은 VM 의 init { loadHomeSummary() } 가 이미 로드하므로 첫 resume 은 스킵한다.
-                // (rememberSaveable: 다른 화면 이동으로 컴포지션에서 벗어나도 스킵 플래그가 초기화되지 않도록)
-                var isFirstResume by rememberSaveable { mutableStateOf(true) }
-                LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-                    if (isFirstResume) {
-                        isFirstResume = false
-                    } else {
-                        viewModel.refreshOnReturn()
+            backStack = appState.backStack,
+            boundary = rootNavigationCallbacks,
+            predictivePopTransitionSpec = { _ ->
+                ContentTransform(PredictiveBackPopEnter, PredictiveBackPopExit)
+            },
+            entryProvider =
+                entryProvider {
+                    entry<Route.Onboarding> {
+                        OnboardingNavHost(
+                            boundary = rootNavigationCallbacks,
+                            externalActions = onboardingExternalActions,
+                        )
                     }
-                }
-
-                HomeTabScreen(
-                    uiState = uiState,
-                    actions = homeTabActions,
-                )
-            }
-            mindRecordNavGraph(actions = mindRecordNavActions)
-            timeLetterNavGraph(
-                navController = appState.navController,
-                actions = timeLetterNavActions,
-            )
-        }
+                    entry<Route.Home> {
+                        val viewModel: HomeTabViewModel = hiltViewModel()
+                        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                        val actions =
+                            rememberHomeTabActions(
+                                appState = appState,
+                                onRetryLoad = { viewModel.loadHomeSummary(isRefresh = true) },
+                            )
+                        var isFirstResume by rememberSaveable { mutableStateOf(true) }
+                        LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+                            if (isFirstResume) isFirstResume = false else viewModel.refreshOnReturn()
+                        }
+                        HomeTabScreen(uiState = uiState, actions = actions)
+                    }
+                    entry<Route.MindRecord> {
+                        MindRecordRootHost(
+                            navController = mindRecordController,
+                            actions = mindRecordNavActions,
+                        )
+                    }
+                    entry<Route.TimeLetter> {
+                        NavHost(navController = timeLetterController, startDestination = Route.TimeLetter::class) {
+                            timeLetterNavGraph(navController = timeLetterController, actions = timeLetterNavActions)
+                        }
+                    }
+                    entry<Route.Afternote> {
+                        AfternoteNavHost(
+                            navigationCallbacks = afternoteNavigationCallbacks,
+                            externalActions = afternoteExternalActions,
+                        )
+                    }
+                    entry<Route.ReceivedAfternote> {
+                        ReceivedAfternoteNavHost(navigationCallbacks = rootNavigationCallbacks)
+                    }
+                    entry<Route.Receiver> {
+                        ReceiverNavHost(
+                            homeContent = { ReceiverHomeEntry(actions = receiverHomeActions) },
+                            navigationCallbacks = rootNavigationCallbacks,
+                        )
+                    }
+                    entry<Route.ReceiverInvitation> {
+                        ReceiverInvitationNavHost(
+                            isLoggedIn = authenticatedStartRoute == Route.Home,
+                            boundary = rootNavigationCallbacks,
+                            externalActions = receiverInvitationExternalActions,
+                        )
+                    }
+                    entry<Route.Setting> { route ->
+                        SettingNavHost(
+                            navigationCallbacks = rootNavigationCallbacks,
+                            externalActions = settingExternalActions,
+                            startWithRecipientRegistration = route.startWithRecipientRegistration,
+                        )
+                    }
+                },
+        )
     }
 }
 
-/**
- * 로컬 스택 바닥의 back 을 루트 백스택 pop 으로 돌려주는 경계.
- *
- * @param onAtRootChanged 바텀바 판정에 깊이를 합성해야 하는 그래프만 넘긴다.
- */
+@Composable
+private fun MindRecordRootHost(
+    navController: NavHostController,
+    actions: MindRecordNavActions,
+) {
+    NavHost(navController = navController, startDestination = Route.MindRecord::class) {
+        mindRecordNavGraph(actions = actions)
+    }
+}
+
 @Composable
 private fun rememberRootNavigationCallbacks(
     appState: AppState,
+    onAppRootExit: () -> Unit,
     onAtRootChanged: (Boolean) -> Unit,
 ): FeatureNavigationCallbacks =
-    remember(appState, onAtRootChanged) {
+    remember(appState, onAppRootExit, onAtRootChanged) {
         object : FeatureNavigationCallbacks {
             override fun exit() {
-                appState.navController.popBackStack()
+                if (!appState.exitCurrentEntry()) onAppRootExit()
             }
 
             override fun onAtRootChanged(isAtRoot: Boolean) = onAtRootChanged(isAtRoot)
         }
+    }
+
+private fun Context.findActivity(): Activity? =
+    when (this) {
+        is Activity -> this
+        is ContextWrapper -> baseContext.findActivity()
+        else -> null
     }

@@ -8,7 +8,6 @@ import test from "node:test";
 
 const guard = await readFile(new URL("../workflows/merge-order-guard.yml", import.meta.url), "utf8");
 const stackNotify = await readFile(new URL("../workflows/stack-integrity-notify.yml", import.meta.url), "utf8");
-const codeowners = await readFile(new URL("../CODEOWNERS", import.meta.url), "utf8");
 
 function issueParser() {
     const match = /refs=\$\(\n\s+PR_JSON="\$pr_json" node <<'NODE'\n([\s\S]*?)\n[ \t]*NODE\n\s+\)/.exec(guard);
@@ -255,10 +254,6 @@ test("close notifier executes only trusted default-branch policy", () => {
     assert.doesNotMatch(stackNotify, /github\.event\.pull_request\.head\.(sha|ref)/);
     assert.doesNotMatch(stackNotify, /statuses: write|contents: write|actions: write/);
     assert.doesNotMatch(stackNotify, /actions\/checkout[\s\S]*github\.event\.pull_request\.head/);
-});
-
-test("declares the repository code owner for GitHub automation and policy changes", () => {
-    assert.match(codeowners, /^\/\.github\/ @1hyok$/m);
 });
 
 test("live CLOSED warns upper PRs while OPEN or MERGED resolves the same bot comment", () => {

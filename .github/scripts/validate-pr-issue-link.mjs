@@ -75,7 +75,6 @@ function issueAssigneeLogins(issue) {
 }
 
 // 봇은 Issue 담당자로 지정할 수 없으므로 담당자 대조에서 면제한다.
-// review-debt-guard·review-request-all 의 봇 면제 규약과 같은 경계다.
 function isBotAuthor(user, login) {
     return user?.type === "Bot" || login.endsWith("[bot]");
 }
@@ -123,7 +122,9 @@ export async function validatePullRequestIssueLink({ pullRequest, repository, lo
     // 대표 Issue 는 이 PR 이 끝내는 Issue 다. Refs 로 걸 수 있게 두면 두 가지 도피로가 열린다 —
     // 열린 blocked_by 가 있는 Issue 를 merge-order-guard 밖에서 머지하고 Issue 는 손으로 닫는 것,
     // Issue 의 일부만 하고 남는 몫을 본문 산문에만 남기는 것 (#1748). 일부만 한다면 그 몫을 새 Issue 로
-    // 분리해 대표 Issue 로 삼는다. 봇 PR 은 사람이 나중에 링크를 붙이는 구조라 종전대로 Refs 를 허용한다.
+    // 분리해 대표 Issue 로 삼는다. 봇 PR 은 closing 키워드를 면제한다(금지가 아니다). 사람이 나중에 붙이는
+    // 링크는 여러 봇 PR 이 공유하는 Issue 일 수 있어 Refs 를 허용하고, dependabot-pr-gate 가 PR 마다 만든
+    // Issue 는 Closes 로 건다(#2274).
     const botAuthor = isBotAuthor(pullRequest.user, author);
     if (!botAuthor) {
         const closingReferences = extractClosingIssueNumbers(pullRequest.body, repository);

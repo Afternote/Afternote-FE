@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Compose/일반 Activity용 (스플래시 이후 postSplashScreenTheme) -->
-    <style name="Theme.Afternotefe.Main" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- API 26·27 및 일부 API 28 기기의 AndroidX 지문 대화상자는 AppCompat 테마 속성이 필요하다. -->
+    <style name="Theme.Afternotefe.Main" parent="Theme.AppCompat.Light.NoActionBar" />
 
     <!-- 런처(MainActivity) 전용: Theme.SplashScreen + installSplashScreen() -->
     <style name="Theme.Afternotefe.Starting" parent="Theme.SplashScreen">

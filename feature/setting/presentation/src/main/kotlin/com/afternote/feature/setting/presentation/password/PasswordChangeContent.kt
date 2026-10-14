@@ -21,10 +21,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.asString
+import com.afternote.core.ui.auth.PasswordRuleItem
 import com.afternote.core.ui.mvi.ObserveSignal
 import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.setting.presentation.R
+import com.afternote.core.ui.R as CoreUiR
 
 /**
  * 비밀번호 변경 화면의 상태 없는 본문.
@@ -101,16 +103,9 @@ internal fun PasswordChangeContent(
                 onImeAction = { onIntent(PasswordChangeIntent.Submit) },
             )
 
-            Text(
-                text = stringResource(R.string.setting_password_change_rule),
-                modifier = Modifier.fillMaxWidth(),
-                style = AfternoteDesign.typography.captionLargeB,
-                color =
-                    if (uiState.isNewPasswordRuleSatisfied) {
-                        AfternoteDesign.colors.b1
-                    } else {
-                        AfternoteDesign.colors.gray5
-                    },
+            PasswordRuleItem(
+                text = stringResource(CoreUiR.string.core_ui_password_rule_combination),
+                isSatisfied = uiState.isNewPasswordRuleSatisfied,
             )
 
             uiState.errorMessage?.let { message ->

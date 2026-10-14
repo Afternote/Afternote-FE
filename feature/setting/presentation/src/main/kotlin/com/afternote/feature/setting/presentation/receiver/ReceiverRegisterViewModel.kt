@@ -1,43 +1,61 @@
 package com.afternote.feature.setting.presentation.receiver
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserReceiverRepository
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.ui.UiText
+import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.setting.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ReceiverRegisterViewModel
+internal class ReceiverRegisterViewModel
     @Inject
     constructor(
         private val receiverRepository: UserReceiverRepository,
-    ) : ViewModel() {
-        private val _uiState = MutableStateFlow(ReceiverRegisterUiState())
-        val uiState = _uiState.asStateFlow()
+    ) : MviViewModel<ReceiverRegisterIntent, ReceiverRegisterUiState, ReceiverRegisterReducerEvent>(ReceiverRegisterUiState()) {
+        override fun onIntent(intent: ReceiverRegisterIntent) {
+            when (intent) {
+                is ReceiverRegisterIntent.Register -> register(intent)
+                is ReceiverRegisterIntent.ConsumeEvent -> dispatch(ReceiverRegisterReducerEvent.EventConsumed(intent.event))
+            }
+        }
 
-        private val _events = Channel<ReceiverRegisterEvent>(Channel.BUFFERED)
-        val events = _events.receiveAsFlow()
+        override fun reduce(
+            state: ReceiverRegisterUiState,
+            event: ReceiverRegisterReducerEvent,
+        ): ReceiverRegisterUiState =
+            when (event) {
+                ReceiverRegisterReducerEvent.RegisterStarted -> {
+                    state.copy(isLoading = true, errorMessage = null)
+                }
 
-        fun register(
-            name: String,
-            relation: String,
-            phone: String?,
-            email: String,
-            message: String?,
-        ) {
+                ReceiverRegisterReducerEvent.RegisterSucceeded -> {
+                    state.copy(isLoading = false, pendingEvent = ReceiverRegisterEvent.RegisterSuccess)
+                }
+
+                is ReceiverRegisterReducerEvent.RegisterFailed -> {
+                    state.copy(isLoading = false, errorMessage = event.message)
+                }
+
+                is ReceiverRegisterReducerEvent.EventConsumed -> {
+                    if (state.pendingEvent == event.event) state.copy(pendingEvent = null) else state
+                }
+            }
+
+        private fun register(intent: ReceiverRegisterIntent.Register) {
+            if (currentState.isLoading) return
+            val name = intent.name
+            val relation = intent.relation
+            val phone = intent.phone
+            val email = intent.email
+            val message = intent.message
             if (!email.isValidReceiverEmail()) {
                 val messageRes =
                     if (email.isBlank()) R.string.setting_receiver_email_required else R.string.setting_receiver_email_invalid
-                _uiState.update { it.copy(errorMessage = UiText.Resource(messageRes)) }
+                dispatch(ReceiverRegisterReducerEvent.RegisterFailed(UiText.Resource(messageRes)))
                 return
             }
             val phoneValidation = phone.orEmpty().validateReceiverPhone(isRequired = true)
@@ -48,12 +66,12 @@ class ReceiverRegisterViewModel
                     } else {
                         R.string.setting_receiver_phone_invalid
                     }
-                _uiState.update { it.copy(errorMessage = UiText.Resource(messageRes)) }
+                dispatch(ReceiverRegisterReducerEvent.RegisterFailed(UiText.Resource(messageRes)))
                 return
             }
             val normalizedEmail = email.trim()
 
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            dispatch(ReceiverRegisterReducerEvent.RegisterStarted)
             viewModelScope.launch {
                 runCatchingCancellable {
                     receiverRepository.createReceiver(
@@ -64,10 +82,10 @@ class ReceiverRegisterViewModel
                         message = message?.takeIf { it.isNotBlank() },
                     )
                 }.onSuccess {
-                    _events.send(ReceiverRegisterEvent.RegisterSuccess)
+                    dispatch(ReceiverRegisterReducerEvent.RegisterSucceeded)
                 }.onFailure { error ->
                     val errorMessage = error.toReceiverFailureMessage(R.string.setting_receiver_register_failed)
-                    _uiState.update { it.copy(isLoading = false, errorMessage = errorMessage) }
+                    dispatch(ReceiverRegisterReducerEvent.RegisterFailed(errorMessage))
                 }
             }
         }

@@ -3,7 +3,7 @@ package com.afternote.feature.receiver.data.paging
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.common.result.runCatchingCancellable
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
 import com.afternote.feature.receiver.data.error.toReceiverFailure
 import com.afternote.feature.receiver.data.mapper.toReceiverDomainList

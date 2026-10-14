@@ -117,28 +117,12 @@ internal object AfternoteEditorFormMapper {
         memorialPhotoUrl: String? = null,
         memorialVideoUrl: String? = null,
         memorialThumbnailUrl: String? = null,
-    ): MemorialWritePayload {
-        val songs =
-            playlistSongs.map { song ->
-                MemorialSongPayload(
-                    title = song.title,
-                    artist = song.artist,
-                    coverUrl = song.albumCoverUrl,
-                )
-            }
-        val memorialVideo =
-            memorialVideoUrl?.ifBlank { null }?.let { url ->
-                MemorialVideoPayload(
-                    videoUrl = url,
-                    thumbnailUrl = memorialThumbnailUrl?.ifBlank { null },
-                )
-            }
-        return MemorialWritePayload(
-            memorialPhotoUrl = memorialPhotoUrl?.ifBlank { null },
-            songs = songs,
-            memorialVideo = memorialVideo,
+    ): MemorialWritePayload =
+        MemorialWritePayload(
+            memorialPhotoUrl = memorialPhotoUrl,
+            songs = playlistSongs.map { it.toMemorialSongPayload() },
+            memorialVideo = memorialVideoPayload(videoUrl = memorialVideoUrl, thumbnailUrl = memorialThumbnailUrl),
         )
-    }
 
     fun buildCreateInput(
         type: AfternoteType,
@@ -384,7 +368,7 @@ internal object AfternoteEditorFormMapper {
                 MemorialSnapshot(
                     title = title,
                     leaveMessageBlocks = leaveMessageBlocks,
-                    photoUrl = content.media.photoUrl?.ifBlank { null },
+                    photoUrl = content.media.photoUrl,
                     video = content.media.toVideoPayload(),
                     songs =
                         content.songs.map { song ->
@@ -444,12 +428,9 @@ internal object AfternoteEditorFormMapper {
                 MemorialSnapshot(
                     title = title,
                     leaveMessageBlocks = leaveMessageBlocks,
-                    photoUrl = memorialMediaUrls.memorialPhotoUrl?.ifBlank { null },
+                    photoUrl = memorialMediaUrls.memorialPhotoUrl,
                     video = memorialMediaUrls.toVideoPayload(),
-                    songs =
-                        playlistSongs.map { song ->
-                            MemorialSongPayload(title = song.title, artist = song.artist, coverUrl = song.albumCoverUrl)
-                        },
+                    songs = playlistSongs.map { it.toMemorialSongPayload() },
                 )
             }
 
@@ -466,15 +447,22 @@ internal object AfternoteEditorFormMapper {
     private fun RegisterAfternotePayload.toCredentialsSnapshot() =
         CredentialsSnapshot(id = accountId.ifBlank { null }, password = password.ifBlank { null })
 
+    private fun Song.toMemorialSongPayload() = MemorialSongPayload(title = title, artist = artist, coverUrl = albumCoverUrl)
+
     private fun MemorialMedia.toVideoPayload(): MemorialVideoPayload? =
-        videoUrl?.ifBlank { null }?.let { url ->
-            MemorialVideoPayload(videoUrl = url, thumbnailUrl = thumbnailUrl?.ifBlank { null })
-        }
+        memorialVideoPayload(videoUrl = videoUrl, thumbnailUrl = thumbnailUrl)
 
     private fun MemorialMediaUrls.toVideoPayload(): MemorialVideoPayload? =
-        memorialVideoUrl?.ifBlank { null }?.let { url ->
-            MemorialVideoPayload(videoUrl = url, thumbnailUrl = memorialThumbnailUrl?.ifBlank { null })
-        }
+        memorialVideoPayload(videoUrl = memorialVideoUrl, thumbnailUrl = memorialThumbnailUrl)
+
+    /**
+     * 영상 주소가 없으면 영상 슬롯 자체가 없다. 썸네일만 남은 값은 싣지 않는다.
+     * 빈 문자열은 입구(상세 data 매퍼, 폼의 `MediaInput` 판정과 영상 첨부)에서 이미 `null` 로 맞춰져 들어온다.
+     */
+    private fun memorialVideoPayload(
+        videoUrl: String?,
+        thumbnailUrl: String?,
+    ): MemorialVideoPayload? = videoUrl?.let { url -> MemorialVideoPayload(videoUrl = url, thumbnailUrl = thumbnailUrl) }
 }
 
 /**

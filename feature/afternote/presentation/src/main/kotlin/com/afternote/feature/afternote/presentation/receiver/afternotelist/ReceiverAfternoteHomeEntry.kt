@@ -7,9 +7,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.home.AfternoteHomeScreen
+import com.afternote.feature.afternote.presentation.shared.component.ListItemUiModel
 import com.afternote.core.ui.R as CoreUiR
 
 /**
@@ -28,13 +30,25 @@ import com.afternote.core.ui.R as CoreUiR
  *   수신자는 로그인 사용자가 아니고 남길 기록을 쓰는 주체도 아니다.
  */
 @Composable
-fun ReceiverAfternoteHomeEntry(
+internal fun ReceiverAfternoteHomeEntry(
     navigateToDetail: (Long) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ReceiverAfternoteHomeViewModel = hiltViewModel(),
 ) {
-    val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val items = viewModel.pagedAfternotes.collectAsLazyPagingItems()
+    ReceiverAfternoteHomeContent(uiState, items, viewModel::onIntent, navigateToDetail, modifier)
+}
+
+@Composable
+private fun ReceiverAfternoteHomeContent(
+    state: ReceiverAfternoteHomeUiState,
+    items: LazyPagingItems<ListItemUiModel>,
+    onIntent: (ReceiverAfternoteHomeIntent) -> Unit,
+    navigateToDetail: (Long) -> Unit,
+    modifier: Modifier,
+) {
+    val selectedTab = state.selectedTab
     // 이미 그려 둔 목록이 있으면 유지한다 — 전면 교체는 보여 줄 것이 전무할 때만 (작성자 화면과 같은 규칙).
     val refreshState = items.loadState.refresh
     val listError =
@@ -70,7 +84,7 @@ fun ReceiverAfternoteHomeEntry(
             AfternoteHomeScreen(
                 items = items,
                 selectedType = selectedTab,
-                onTypeSelected = viewModel::selectTab,
+                onTypeSelected = { onIntent(ReceiverAfternoteHomeIntent.SelectType(it)) },
                 onListItemClick = { id, _ -> navigateToDetail(id) },
                 headerDescription = stringResource(R.string.afternote_receiver_afternote_list_header_description),
                 // NEXT STEP 은 «내가 남길 기록» 을 재촉하는 발신자용 카드다. 수신자 목록에는 없다.

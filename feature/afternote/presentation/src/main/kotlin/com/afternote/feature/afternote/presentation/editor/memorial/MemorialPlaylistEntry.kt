@@ -1,14 +1,11 @@
 package com.afternote.feature.afternote.presentation.editor.memorial
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,9 +17,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.FAB.PenFloatingActionButton
-import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.detail.PlaylistEmptyContent
+import com.afternote.feature.afternote.presentation.shared.detail.PlaylistSongCountHeader
 import com.afternote.feature.afternote.presentation.shared.detail.PlaylistSongList
 import com.afternote.feature.afternote.presentation.shared.detail.SelectableSongListBody
 import com.afternote.feature.afternote.presentation.shared.detail.SongPlaylistFloatingActionSlot
@@ -43,8 +40,8 @@ import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDis
  *   selectable 본문에 상시 노출 파라미터를 되살려 스왑.
  *
  * 이 조립을 흐름 호스트(`AfternoteEditorFlowHost`)의 entry 블록에 인라인하지 않고 Entry로 빼는 이유:
- * (1) 공용 SongPlaylist 화면 계열(shared/detail/song)은 여러 화면이 공유하는 범용 부품이라
- *     이 화면 전용 지식([Song] 도메인 매핑, 타이틀, 모드 전환·"총 N곡" 헤더·삭제 라벨·콜백)을 넣을 수 없고,
+ * (1) 공용 SongPlaylist 화면 계열(shared/detail)은 여러 화면이 공유하는 범용 부품이라
+ *     이 화면 전용 지식([Song] 도메인 매핑, 타이틀, 모드 전환·삭제 라벨·콜백)을 넣을 수 없고,
  * (2) 그 전용 지식을 entry 블록에 인라인하면 ViewModel 없이 렌더할 수 없어
  *     Preview·스크린샷 테스트가 막힌다.
  * Entry가 둘 사이에서 도메인→표시 모델 매핑과 화면 전용 크롬 주입을 맡는 어댑터다.
@@ -100,7 +97,7 @@ fun MemorialPlaylistEntry(
                 modifier = Modifier.padding(paddingValues),
                 songs = displaySongs,
                 header = {
-                    MemorialPlaylistListHeader(songCount = displaySongs.size)
+                    PlaylistSongCountHeader(songCount = displaySongs.size)
                 },
                 initialSelectedSongKeys = initialSelectedSongKeys,
                 actionLabel = stringResource(R.string.afternote_editor_playlist_delete_all),
@@ -114,7 +111,7 @@ fun MemorialPlaylistEntry(
                     modifier = Modifier.fillMaxSize(),
                     songs = displaySongs,
                     header = {
-                        MemorialPlaylistListHeader(songCount = displaySongs.size)
+                        PlaylistSongCountHeader(songCount = displaySongs.size)
                     },
                 )
                 if (displaySongs.isEmpty()) {
@@ -128,30 +125,5 @@ fun MemorialPlaylistEntry(
                 }
             }
         }
-    }
-}
-
-/**
- * MemorialPlaylistList 화면 상단 헤더: 모드와 무관하게 항상 "총 N곡"만 왼쪽에 표시.
- */
-@Composable
-private fun MemorialPlaylistListHeader(
-    songCount: Int,
-    modifier: Modifier = Modifier,
-) {
-    // 헤더 상단 간격은 헤더별로 달라(검색 16 / 곡 수 8) 리스트가 아닌 각 헤더가 top 여백을 소유한다.
-    Column(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-    ) {
-        Text(
-            text = stringResource(R.string.afternote_editor_playlist_song_count_format, songCount),
-            style =
-                AfternoteDesign.typography.bodySmallR.copy(
-                    color = AfternoteDesign.colors.gray9,
-                ),
-        )
     }
 }

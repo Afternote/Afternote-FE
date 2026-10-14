@@ -4,11 +4,17 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.network.token.TokenReissuer
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.intOrNull
 import okhttp3.Authenticator
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.Route
 import java.io.IOException
+import java.nio.charset.CharacterCodingException
 import javax.inject.Inject
 
 class TokenAuthenticator
@@ -23,6 +29,10 @@ class TokenAuthenticator
             route: Route?,
             response: Response,
         ): Request? {
+            // 현재 비밀번호 불일치도 HTTP 401이다. 토큰 갱신이나 한도 초과로 세션을 지우지 않고
+            // 원래 오류 본문을 Retrofit의 실패 처리에 넘긴다.
+            if (response.isPasswordMismatch()) return null
+
             if (response.responseCount >= 3) {
                 errorReporter.recordAuthContractViolation(AUTH_STAGE_RETRY_LIMIT)
                 runBlocking { authRepository.get().clearSession() }
@@ -70,6 +80,22 @@ class TokenAuthenticator
         }
     }
 
+/** 확인된 업무 오류만 제외한다. 알 수 없거나 파싱할 수 없는 401은 기존 갱신 경로를 따른다. */
+private fun Response.isPasswordMismatch(): Boolean {
+    val body = peekBody(MAX_ERROR_BODY_BYTES + 1)
+    if (body.contentLength() > MAX_ERROR_BODY_BYTES) return false
+    val parsed =
+        try {
+            Json.parseToJsonElement(body.bytes().decodeToString(throwOnInvalidSequence = true)) as? JsonObject
+        } catch (_: SerializationException) {
+            null
+        } catch (_: CharacterCodingException) {
+            null
+        }
+    val code = parsed?.get("code") as? JsonPrimitive
+    return code != null && !code.isString && code.intOrNull == CODE_PASSWORD_MISMATCH
+}
+
 private fun ErrorReporter.recordAuthContractViolation(authStage: String) {
     recordFailure(
         throwable = IllegalStateException("Token authenticator contract violation"),
@@ -101,3 +127,5 @@ private const val KEY_AUTH_STAGE = "auth_stage"
 private const val AUTH_STAGE_RETRY_LIMIT = "retry_limit"
 private const val AUTH_STAGE_MISSING_AUTH_HEADER = "missing_auth_header"
 private const val AUTH_STAGE_SAME_TOKEN = "same_token"
+private const val CODE_PASSWORD_MISMATCH = 1202
+private const val MAX_ERROR_BODY_BYTES = 64 * 1024L

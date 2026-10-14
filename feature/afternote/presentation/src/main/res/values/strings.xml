@@ -3,6 +3,7 @@
     <string name="afternote_home_title">애프터노트</string>
     <string name="afternote_song_search_label">노래 검색</string>
     <string name="afternote_song_search_placeholder">노래 검색하기</string>
+    <string name="afternote_playlist_song_count_format">총 %1$d곡</string>
     <string name="afternote_add_button">추가하기</string>
 
     <string name="afternote_content_description_album_cover">앨범 커버</string>
@@ -133,7 +134,6 @@
     <string name="afternote_editor_service_search_empty">검색 결과가 없습니다.</string>
     <string name="afternote_editor_playlist_screen_title">추억 플레이리스트</string>
     <string name="afternote_editor_playlist_add_screen_title">플레이리스트 추가</string>
-    <string name="afternote_editor_playlist_song_count_format">총 %1$d곡</string>
     <string name="afternote_editor_playlist_empty_message">아직 추가한 곡이 없어요.\n아래 연필 버튼을 눌러 곡을 추가해 보세요.</string>
     <string name="afternote_editor_playlist_delete_all">전체 삭제</string>
     <string name="afternote_editor_playlist_delete_selected">선택 삭제</string>
@@ -156,6 +156,7 @@
          말하지 않는다 — 곧 도착하므로 기다리면 저장할 수 있다. -->
     <string name="afternote_editor_prefill_not_ready">기존 내용을 불러오는 중입니다.\n잠시 후 다시 시도해 주세요.</string>
     <string name="afternote_editor_prefill_retry">다시 불러오기</string>
+    <string name="afternote_editor_media_size_exceeded">파일 크기가 업로드 허용 한도를 초과했습니다.</string>
     <string name="afternote_editor_thumbnail_upload_failed">영상 미리보기를 올리지 못했습니다.</string>
     <string name="afternote_editor_thumbnail_extract_failed">영상에서 미리보기를 만들지 못했습니다.</string>
     <string name="afternote_editor_thumbnail_retry">다시 시도</string>
@@ -191,5 +192,4 @@
     <string name="afternote_receiver_memorial_playlist_load_error">플레이리스트를 불러오지 못했습니다.</string>
     <string name="afternote_receiver_memorial_playlist_screen_title">%1$s님의 플레이리스트</string>
     <string name="afternote_receiver_playlist_empty_message">고인이 남긴 곡이 없어요.</string>
-    <string name="afternote_receiver_playlist_song_count_format">총 %1$d곡</string>
 </resources>

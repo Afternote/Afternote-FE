@@ -126,6 +126,17 @@ class EditableMemorialVideoTest {
     }
 
     @Test
+    fun `빈 썸네일 결과는 썸네일 없음이다`() {
+        val video =
+            EditableMemorialVideo
+                .empty()
+                .withSelection(pickedVideo.url)
+                .withSelectionThumbnail("")
+
+        assertEquals(MemorialVideoAttachment(url = pickedVideo.url, thumbnailUrl = null), video.displayed)
+    }
+
+    @Test
     fun `썸네일을 떼도 출처는 남는다`() {
         assertEquals(
             EditableMemorialVideo.fromServer(MemorialVideoAttachment(url = serverVideo.url)),

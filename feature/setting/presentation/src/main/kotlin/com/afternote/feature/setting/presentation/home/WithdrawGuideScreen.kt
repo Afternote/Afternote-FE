@@ -35,15 +35,15 @@ import com.afternote.feature.setting.presentation.R
 
 // 설정 - 회원 탈퇴 안내
 @Composable
-fun WithdrawGuideScreen(
+internal fun WithdrawGuideScreen(
     uiState: SettingUiState,
     onBackClick: () -> Unit,
     onCancelClick: () -> Unit,
     onConfirmClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val userName = (uiState as? SettingUiState.Success)?.name.orEmpty()
-    val userEmail = (uiState as? SettingUiState.Success)?.email.orEmpty()
+    val userName = (uiState.profile as? SettingProfileState.Success)?.name.orEmpty()
+    val userEmail = (uiState.profile as? SettingProfileState.Success)?.email.orEmpty()
     var agreed by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {

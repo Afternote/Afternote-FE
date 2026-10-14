@@ -1,7 +1,7 @@
 package com.afternote.core.data.repoimpl.appversion
 
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.appversion.AppVersionRepository
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.model.appversion.AppVersionCheck
 import com.afternote.core.network.dto.AppPlatformDto
 import com.afternote.core.network.model.requireData

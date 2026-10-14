@@ -59,12 +59,12 @@ internal sealed class EditableMemorialVideo {
     /** 새 선택으로 교체한다. 이전 선택의 썸네일은 물려주지 않는다. 빈 문자열은 [MemorialVideoAttachment.ofOrNull] 규칙대로 첨부 없음이다. */
     internal fun withSelection(url: String): EditableMemorialVideo = MemorialVideoAttachment.ofOrNull(url)?.let(::PendingUpload) ?: NoVideo
 
-    /** 미저장 선택에서 파생된 썸네일만 갱신한다. 선택이 사라졌다면 늦은 결과를 버린다. */
+    /** 미저장 선택에서 파생된 썸네일만 갱신한다. 선택이 사라졌다면 늦은 결과를 버린다. 빈 문자열은 썸네일 없음이다. */
     internal fun withSelectionThumbnail(url: String): EditableMemorialVideo =
         when (this) {
             NoVideo -> this
             is Uploaded -> this
-            is PendingUpload -> PendingUpload(video.copy(thumbnailUrl = url))
+            is PendingUpload -> PendingUpload(video.copy(thumbnailUrl = url.ifBlank { null }))
         }
 
     /**

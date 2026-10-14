@@ -77,7 +77,7 @@ jobs:
           java-version: "21"
 
       - name: Set up Gradle and validate wrapper
-        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
           cache-provider: basic
           cache-read-only: true
@@ -298,8 +298,21 @@ jobs:
               # tested revision의 권한 없는 classifier를 신뢰 경계 밖에서 실행하지 않는다.
               classifier=unavailable
             fi
-            printf 'renderer=%s\nclassifier=%s\nexpected_failures=%s\nsource=trusted\n' \
-              "$renderer" "$classifier" "$expected_failures" >> "$GITHUB_OUTPUT"
+            # dependabot PR 은 게이트가 CI Test Plan 을 채울 때까지 이 신뢰 사본으로 기다린다(#2212).
+            # 파일 존재가 아니라 await 명령의 존재로 가른다. 이 파일은 #2112 부터 default branch 에
+            # 있어서, 존재만 보면 도입 PR 이 명령 없는 옛 사본을 부른다.
+            if [[ -f .github/scripts/dependabot-pr-gate.mjs ]] &&
+               grep -q 'export async function awaitGate' .github/scripts/dependabot-pr-gate.mjs; then
+              install -m 0644 \
+                .github/scripts/dependabot-pr-gate.mjs \
+                "$policy_dir/dependabot-pr-gate.mjs"
+              dependabot_gate=trusted
+            else
+              # 도입 PR 은 사람이 연다. 기다릴 게이트가 없으니 종전처럼 이벤트 페이로드를 읽는다.
+              dependabot_gate=unavailable
+            fi
+            printf 'renderer=%s\nclassifier=%s\nexpected_failures=%s\ndependabot_gate=%s\nsource=trusted\n' \
+              "$renderer" "$classifier" "$expected_failures" "$dependabot_gate" >> "$GITHUB_OUTPUT"
           elif [[ ! -e .github/scripts/ci-test-plan.mjs &&
                   ! -e .github/scripts/resolve-android-test-plan.mjs &&
                   ! -e .github/scripts/resolve-pr-impact.mjs &&
@@ -312,6 +325,7 @@ jobs:
               renderer=bootstrap \
               classifier=unavailable \
               expected_failures=unavailable \
+              dependabot_gate=unavailable \
               source=bootstrap >> "$GITHUB_OUTPUT"
           else
             echo "::error::Android test policy가 부분 설치된 상태입니다"
@@ -322,10 +336,12 @@ jobs:
         id: target
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          DEPENDABOT_GATE: ${{ steps.policy.outputs.dependabot_gate }}
           DISPATCH_REF_NAME: ${{ github.ref_name }}
           DISPATCH_PR_NUMBER: ${{ inputs.pull_request_number || 0 }}
           DEVICE: ${{ matrix.device }}
           EVENT_NAME: ${{ github.event_name }}
+          EVENT_PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           EVENT_PR_BRANCH: ${{ github.event.pull_request.head.ref }}
           EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
           EVENT_PR_SHA: ${{ github.event.pull_request.head.sha }}
@@ -344,7 +360,22 @@ jobs:
             target_pr="$EVENT_PR_NUMBER"
             target_branch="$EVENT_PR_BRANCH"
             target_sha="$EVENT_PR_SHA"
-            jq '.pull_request' "$GITHUB_EVENT_PATH" > "$pull_request_file"
+            if [[ "$EVENT_PR_AUTHOR" == "dependabot[bot]" && "$DEPENDABOT_GATE" == "trusted" ]]; then
+              # dependabot-pr-gate 가 같은 순간 GITHUB_TOKEN 으로 CI Test Plan 을 채운다. 그 edited 는
+              # 이 워크플로를 다시 깨우지 못하고 페이로드는 opened 시점 값이다(#2212). 페이로드 제목에
+              # 대표 이슈 번호가 이미 있으면 API 없이 그대로 쓰고, 없으면 게이트가 채울 때까지 live PR 을
+              # 기다린다. 재실행으로 풀면 실제 테스트가 attempt 2 에서 돌아 1회차 인프라 복구를 잃는다.
+              # lane timeout 이 15분 이상이라 3분까지 기다린다.
+              PR_NUMBER="$EVENT_PR_NUMBER" AWAIT_TIMEOUT_SECONDS=180 \
+                node "$RUNNER_TEMP/android-test-policy/dependabot-pr-gate.mjs" await "$pull_request_file"
+              live_head_sha="$(jq -r '.head.sha' "$pull_request_file")"
+              if [[ "$live_head_sha" != "$EVENT_PR_SHA" ]]; then
+                echo "::error::기다리는 사이 PR head 가 $EVENT_PR_SHA 에서 $live_head_sha 로 움직였습니다. 새 head 의 run 이 판정합니다"
+                exit 1
+              fi
+            else
+              jq '.pull_request' "$GITHUB_EVENT_PATH" > "$pull_request_file"
+            fi
           elif [[ "$EVENT_NAME" == "workflow_dispatch" && "$DISPATCH_PR_NUMBER" != "0" ]]; then
             if ! [[ "$DISPATCH_PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
               echo "::error::유효한 pull_request_number 가 필요합니다"
@@ -556,7 +587,7 @@ jobs:
 
       - name: Set up Gradle and validate wrapper
         if: steps.target.outputs.run_lane == 'true'
-        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
           cache-provider: basic
           cache-read-only: true
@@ -616,8 +647,11 @@ jobs:
             local test_arguments=() jvm_arguments=()
             # #1824 merge-group API34: cold APK packaging exhausted the 2Gi heap
             # in ApkFlinger. The 15Gi runner still had 7Gi available, so reserve
-            # 4Gi for this lane only and preserve the existing UTF-8 JVM flag.
-            if [[ "$DEVICE_TASK" == "pixel2Api34DebugAndroidTest" ]]; then
+            # 4Gi and preserve the existing UTF-8 JVM flag.
+            # #2250 merge-group API30 (#1837 큐): 같은 ApkFlinger OOM 이 :app:packageDebug 에서
+            # 시스템 이미지 설치와 겹쳐 났다. 전체 androidTest 레인도 같은 4Gi 를 쓴다.
+            if [[ "$DEVICE_TASK" == "pixel2Api34DebugAndroidTest" ||
+                  "$DEVICE_TASK" == "pixel2Api30DebugAndroidTest" ]]; then
               jvm_arguments+=("-Dorg.gradle.jvmargs=-Xmx4096m -Dfile.encoding=UTF-8")
             fi
             if [[ -n "$selectors" ]]; then

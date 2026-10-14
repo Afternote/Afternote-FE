@@ -2,13 +2,14 @@ package com.afternote.feature.afternote.presentation.editor
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.testing.FakeUserRepository
+import com.afternote.core.domain.testing.FakeUserReceiverRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
+import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
@@ -61,8 +62,12 @@ class AfternoteEditorReceiverSelectionRecoveryTest {
             backgroundScope.launch { viewModel.uiState.collect {} }
             runCurrent()
 
-            val resolved = viewModel.resolveSelectedReceiver(RECEIVER_ID)
+            viewModel.onIntent(AfternoteEditorIntent.ReceiversSelected(listOf(RECEIVER_ID)))
+            viewModel.onIntent(AfternoteEditorIntent.ApplyPendingReceiverSelection)
             runCurrent()
+            val resolved =
+                viewModel.uiState.value.form.afternoteEditReceivers
+                    .singleOrNull()
 
             assertNull("해석하지 못한 선택은 폼에 넣을 값이 없다", resolved)
             assertEquals(
@@ -79,8 +84,12 @@ class AfternoteEditorReceiverSelectionRecoveryTest {
             backgroundScope.launch { viewModel.uiState.collect {} }
             runCurrent()
 
-            val resolved = viewModel.resolveSelectedReceiver(RECEIVER_ID)
+            viewModel.onIntent(AfternoteEditorIntent.ReceiversSelected(listOf(RECEIVER_ID)))
+            viewModel.onIntent(AfternoteEditorIntent.ApplyPendingReceiverSelection)
             runCurrent()
+            val resolved =
+                viewModel.uiState.value.form.afternoteEditReceivers
+                    .singleOrNull()
 
             assertEquals("김수신", resolved?.name)
             assertEquals("딸", resolved?.label)
@@ -93,11 +102,15 @@ class AfternoteEditorReceiverSelectionRecoveryTest {
             val repository = repositoryWith { listOf(RECEIVER) }
             val viewModel = viewModel(repository)
             backgroundScope.launch { viewModel.uiState.collect {} }
-            viewModel.refreshAuthorReceivers()
+            viewModel.onIntent(AfternoteEditorIntent.RefreshAuthorReceivers)
             runCurrent()
 
-            val resolved = viewModel.resolveSelectedReceiver(RECEIVER_ID)
+            viewModel.onIntent(AfternoteEditorIntent.ReceiversSelected(listOf(RECEIVER_ID)))
+            viewModel.onIntent(AfternoteEditorIntent.ApplyPendingReceiverSelection)
             runCurrent()
+            val resolved =
+                viewModel.uiState.value.form.afternoteEditReceivers
+                    .singleOrNull()
 
             assertEquals(RECEIVER_ID, resolved?.id)
             assertEquals("캐시 적중이면 추가 조회가 없어야 한다", 1, repository.getReceiversCalls)
@@ -111,14 +124,14 @@ class AfternoteEditorReceiverSelectionRecoveryTest {
         )
     }
 
-    private fun repositoryWith(receivers: suspend () -> List<Receiver>): FakeUserRepository =
-        FakeUserRepository.strict().apply { onGetReceivers = receivers }
+    private fun repositoryWith(receivers: suspend () -> List<Receiver>): FakeUserReceiverRepository =
+        FakeUserReceiverRepository.strict().apply { onGetReceivers = receivers }
 
-    private fun viewModel(userRepository: FakeUserRepository): AfternoteEditorViewModel =
+    private fun viewModel(userReceiverRepository: FakeUserReceiverRepository): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
             route = AfternoteRoute.EditorFlowRoute(initialType = AfternoteType.SOCIAL_NETWORK),
             savedStateHandle = SavedStateHandle(mapOf("initialType" to AfternoteType.SOCIAL_NETWORK)),
-            userRepository = userRepository,
+            userReceiverRepository = userReceiverRepository,
             afternoteRepository = unusedProxy<AfternoteRepository>(),
             memorialThumbnailUploadRepository =
                 MemorialThumbnailUploadRepository { error("썸네일 업로드가 호출되면 안 됩니다") },
@@ -126,6 +139,7 @@ class AfternoteEditorReceiverSelectionRecoveryTest {
                 ResolveMemorialMediaForSaveUseCase(
                     MemorialMediaUploadRepository { _, _ -> error("미디어 저장이 호출되면 안 됩니다") },
                 ),
+            saveAfternoteUseCase = SaveAfternoteUseCase(unusedProxy<AfternoteRepository>()),
             errorReporter = NoopErrorReporter,
         )
 

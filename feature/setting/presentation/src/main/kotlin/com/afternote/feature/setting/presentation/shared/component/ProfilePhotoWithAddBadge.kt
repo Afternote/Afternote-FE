@@ -13,16 +13,14 @@ import androidx.compose.ui.unit.dp
 import com.afternote.feature.setting.presentation.R
 
 /**
- * 프로필 사진 자리 + 우하단 「추가」 배지. 표시 전용이며 아직 picker 가 붙어 있지 않다.
+ * 프로필 사진 자리 + 우하단 「추가」 배지. 표시 전용이며 picker 가 붙어 있지 않다.
  *
- * 프로필 이미지 크기 134dp 의 단일 출처다(#1782). setting 의 프로필 편집·수신인 등록 두 화면이
- * 같은 블록을 복제하고 있어 여기로 모았다.
+ * 남은 소비처는 수신인 등록 화면 하나다. 프로필 편집 화면은 사진 선택을 붙이면서(#1438) core:ui 의
+ * [ProfileImagePicker][com.afternote.core.ui.ProfileImagePicker] 로 옮겼다. 시안의 프로필 노드가
+ * core 자산(`core_ui_ic_profile_placeholder`, 48dp 배지)과 같다는 #2003 의 판정을 따랐다.
  *
- * core:ui 의 [ProfileImagePicker][com.afternote.core.ui.ProfileImagePicker] 로 흡수하지 않은
- * 이유는 자산과 배지 기하가 달라서다 — 이쪽은 `ic_default_profile`(60dp 뷰포트) 과
- * 48dp 칸 안에 72dp 로 넘쳐 그려지는 `ic_plus` 를 쓰고, core 쪽은
- * `core_ui_ic_profile_placeholder` 와 48dp `PlusBadgeButton` 을 쓴다. 바꾸면 픽셀이 움직인다.
- * 수렴은 시안 대조가 선행돼야 하므로 #2003 으로 분리했다.
+ * 이쪽은 `ic_default_profile`(60dp 뷰포트)과 48dp 칸 안에 72dp 로 넘쳐 그려지는 `ic_plus` 를 쓴다.
+ * 수신인 등록 화면의 수렴은 #2003 에 남아 있다.
  */
 @Composable
 fun ProfilePhotoWithAddBadge(modifier: Modifier = Modifier) {

@@ -17,17 +17,18 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.model.delivery.DeliveryConditionType
+import com.afternote.core.ui.mvi.ObserveFlag
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
@@ -42,18 +43,20 @@ internal fun DeliveryConditionScreen(
     viewModel: DeliveryConditionViewModel,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val currentOnSaveSuccess by rememberUpdatedState(onSaveSuccess)
-
-    LaunchedEffect(Unit) {
-        viewModel.saveSuccess.collect { currentOnSaveSuccess() }
-    }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.onIntent(DeliveryConditionIntent.RefreshOnReturn) }
+    ObserveFlag(
+        raised = uiState.isSaveSuccessPending,
+        consumed = DeliveryConditionIntent.ConsumeSuccess,
+        onIntent = viewModel::onIntent,
+        onRaised = onSaveSuccess,
+    )
 
     DeliveryConditionContent(
         uiState = uiState,
         onBack = onBack,
-        onConditionTypeSelect = viewModel::onConditionTypeSelected,
+        onConditionTypeSelect = { viewModel.onIntent(DeliveryConditionIntent.SelectConditionType(it)) },
         onLastGreetingEditClick = onLastGreetingEditClick,
-        onSave = viewModel::onSave,
+        onSave = { viewModel.onIntent(DeliveryConditionIntent.Save) },
     )
 }
 
@@ -61,10 +64,12 @@ internal fun DeliveryConditionScreen(
 private fun DeliveryConditionContent(
     uiState: DeliveryConditionUiState,
     onBack: () -> Unit,
-    onConditionTypeSelect: (Int) -> Unit,
+    onConditionTypeSelect: (DeliveryConditionType) -> Unit,
     onLastGreetingEditClick: () -> Unit,
     onSave: () -> Unit,
 ) {
+    // 라디오 순서의 단일 출처. processingMethodItems 와 같은 순서로 둔다.
+    val conditionTypes = listOf(DeliveryConditionType.INACTIVITY, DeliveryConditionType.RECEIVER_REQUEST)
     val processingMethodItems =
         listOf(
             RadioGroupItem(
@@ -83,7 +88,7 @@ private fun DeliveryConditionContent(
                 title = stringResource(R.string.setting_recipient_after_delivery),
                 onBackClick = onBack,
                 actions = {
-                    val isSaveEnabled = uiState.isInitialized && !uiState.isLoading && !uiState.isSaving
+                    val isSaveEnabled = uiState.isInitialized && !uiState.isLoading && !uiState.isSaveLocked
                     TextButton(onClick = onSave, enabled = isSaveEnabled) {
                         Text(
                             text = stringResource(R.string.setting_delivery_condition_save),
@@ -127,8 +132,8 @@ private fun DeliveryConditionContent(
             Spacer(Modifier.height(28.dp))
             RadioGroup(
                 items = processingMethodItems,
-                selectedIndex = if (uiState.conditionType == DeliveryConditionType.INACTIVITY) 0 else 1,
-                onSelectIndex = onConditionTypeSelect,
+                selectedIndex = conditionTypes.indexOf(uiState.conditionType),
+                onSelectIndex = { onConditionTypeSelect(conditionTypes[it]) },
             )
 
             Spacer(Modifier.height(32.dp))

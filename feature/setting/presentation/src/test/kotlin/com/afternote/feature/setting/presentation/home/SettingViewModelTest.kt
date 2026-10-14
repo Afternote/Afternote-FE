@@ -35,11 +35,11 @@ class SettingViewModelTest {
         runTest(dispatcher) {
             val viewModel = viewModel(onDeleteAccount = {})
 
-            viewModel.deleteAccount()
+            viewModel.onIntent(SettingIntent.DeleteAccount)
 
-            assertEquals(WithdrawUiState.Loading, viewModel.withdrawUiState.value)
+            assertEquals(WithdrawUiState.Loading, viewModel.uiState.value.withdraw)
             runCurrent()
-            assertEquals(WithdrawUiState.Success, viewModel.withdrawUiState.value)
+            assertEquals(WithdrawUiState.Success, viewModel.uiState.value.withdraw)
         }
 
     @Test
@@ -47,12 +47,12 @@ class SettingViewModelTest {
         runTest(dispatcher) {
             val viewModel = viewModel(onDeleteAccount = { throw IllegalStateException("failure") })
 
-            viewModel.deleteAccount()
+            viewModel.onIntent(SettingIntent.DeleteAccount)
             runCurrent()
 
-            assertEquals(WithdrawUiState.Error, viewModel.withdrawUiState.value)
-            viewModel.dismissWithdrawError()
-            assertEquals(WithdrawUiState.Idle, viewModel.withdrawUiState.value)
+            assertEquals(WithdrawUiState.Error, viewModel.uiState.value.withdraw)
+            viewModel.onIntent(SettingIntent.DismissWithdrawError)
+            assertEquals(WithdrawUiState.Idle, viewModel.uiState.value.withdraw)
         }
 
     @Test
@@ -61,8 +61,8 @@ class SettingViewModelTest {
             var requestCount = 0
             val viewModel = viewModel(onDeleteAccount = { requestCount++ })
 
-            viewModel.deleteAccount()
-            viewModel.deleteAccount()
+            viewModel.onIntent(SettingIntent.DeleteAccount)
+            viewModel.onIntent(SettingIntent.DeleteAccount)
             runCurrent()
 
             assertEquals(1, requestCount)

@@ -137,9 +137,24 @@ export async function collectQaDistributionContext({ repository, headSha, api = 
     }
     git(["cat-file", "-e", `${headSha}^{commit}`]);
     const root = `repos/${repository}`;
-    const runs = pages(await api(`${root}/actions/workflows/release-distribution.yml/runs?status=success&branch=main&event=push&per_page=100`, true), "workflow_runs");
-    const latest = sortDistributionRuns(runs.filter((run) => run.conclusion === "success" && run.head_branch === "main" && run.event === "push"))[0];
+    const runsEndpoint = `${root}/actions/workflows/release-distribution.yml/runs?branch=main&event=push&per_page=100`;
+    const successfulRuns = async (endpoint) => sortDistributionRuns(pages(await api(endpoint, true), "workflow_runs")
+        .filter((run) => run.conclusion === "success" && run.head_branch === "main" && run.event === "push"));
+    // status=success 필터 응답은 최근 실행이 통째로 빠진 채 올 때가 있다(#2269 머지 뒤 판정이 8/14 배포를 기준으로 잡음). 결론은 직접 거른다.
+    let latest = (await successfulRuns(runsEndpoint))[0];
     if (!latest) throw new CollectionError("No successful main Firebase distribution baseline");
+    // 목록에서 빠진 더 새 배포가 있는지 main 의 뒤 커밋마다 head_sha 로 다시 묻는다. main tip 이 곧 배포 커밋이면 호출이 없다.
+    const newerMainCommits = SHA.test(latest.head_sha ?? "")
+        ? git(["rev-list", "--first-parent", `${latest.head_sha}..refs/remotes/origin/main`]).split("\n").filter(Boolean)
+        : [];
+    for (const sha of newerMainCommits) {
+        if (!SHA.test(sha)) throw new CollectionError("Invalid commit in main history");
+        const newer = (await successfulRuns(`${runsEndpoint}&head_sha=${sha}`))[0];
+        if (newer) {
+            latest = newer;
+            break;
+        }
+    }
     const associated = pages(await api(`${root}/commits/${latest.head_sha}/pulls?per_page=100`, true));
     const sourceSha = sourceShaForDistributionRun(latest, associated);
     if (!SHA.test(sourceSha ?? "")) throw new CollectionError("Successful distribution has no develop release PR source SHA");

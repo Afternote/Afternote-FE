@@ -9,27 +9,25 @@ import com.afternote.core.network.dto.LoginDto
 import com.afternote.core.network.dto.ReissueDto
 import com.afternote.core.network.dto.SignUpDto
 
-/**
+/*
  * Auth DTO를 Domain 모델로 변환. (스웨거 기준)
  */
-object AuthMapper {
-    fun toSignUpResult(dto: SignUpDto): AccountRegistration = AccountRegistration(userId = dto.userId, email = dto.email)
 
-    fun toFoundAccount(dto: EmailFindDto): FoundAccount = FoundAccount(name = dto.name, email = dto.email)
+internal fun SignUpDto.toDomain(): AccountRegistration = AccountRegistration(userId = userId, email = email)
 
-    fun toDefaultLoginResult(dto: LoginDto.DefaultLoginDto): Session.DefaultSession =
-        Session.DefaultSession(
-            accessToken = dto.accessToken,
-            refreshToken = dto.refreshToken,
-        )
+internal fun EmailFindDto.toDomain(): FoundAccount = FoundAccount(name = name, email = email)
 
-    fun toSocialLoginResult(dto: LoginDto.SocialLoginDto): Session.SocialSession =
-        Session.SocialSession(
-            accessToken = dto.accessToken,
-            refreshToken = dto.refreshToken,
-            isNewUser = dto.isNewUser,
-        )
+internal fun LoginDto.DefaultLoginDto.toDomain(): Session.DefaultSession =
+    Session.DefaultSession(
+        accessToken = accessToken,
+        refreshToken = refreshToken,
+    )
 
-    fun toRotateTokenResult(dto: ReissueDto): TokenBundle =
-        TokenBundle(accessToken = dto.accessToken, refreshToken = dto.refreshToken, expiresIn = dto.expiresIn)
-}
+internal fun LoginDto.SocialLoginDto.toDomain(): Session.SocialSession =
+    Session.SocialSession(
+        accessToken = accessToken,
+        refreshToken = refreshToken,
+        isNewUser = isNewUser,
+    )
+
+internal fun ReissueDto.toDomain(): TokenBundle = TokenBundle(accessToken = accessToken, refreshToken = refreshToken, expiresIn = expiresIn)

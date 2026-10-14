@@ -2,8 +2,9 @@ package com.afternote.feature.afternote.presentation
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.domain.testing.FakeMyProfileRepository
 import com.afternote.core.domain.testing.FakeUserProfileCacheRepository
-import com.afternote.core.domain.testing.FakeUserRepository
+import com.afternote.core.domain.testing.FakeUserReceiverRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.model.user.User
 import com.afternote.feature.afternote.domain.AfternoteType
@@ -33,17 +34,18 @@ internal fun afternoteEditorSavedStateHandle(
         },
     )
 
-/** app androidTest 공용 helper가 열어 두던 UserRepository 경계만 그대로 허용한다. */
-internal fun afternoteAuthorUserRepository(): FakeUserRepository =
-    FakeUserRepository.strict().apply {
-        profile = TEST_USER
+/** 에디터·수신자 선택이 사용하는 수신자 조회 계약만 허용한다. */
+internal fun afternoteAuthorUserReceiverRepository(): FakeUserReceiverRepository =
+    FakeUserReceiverRepository.strict().apply {
         receiverState.value = listOf(TEST_RECEIVER)
-
-        onReceiverListFlow = null
         onGetReceivers = null
-        onCreateReceiver = null
+    }
+
+/** 작성자 상세가 사용하는 프로필 조회 계약만 허용한다. */
+internal fun afternoteAuthorMyProfileRepository(): FakeMyProfileRepository =
+    FakeMyProfileRepository.strict().apply {
+        profile = TEST_USER
         onGetMyProfile = null
-        onUpdateMyProfile = null
     }
 
 /**

@@ -218,7 +218,7 @@ class ReceiverSessionBoundaryRaceTest {
             try {
                 assertEquals(listOf(ACCOUNT_A_RECEIVER), emissions.receiveNames())
 
-                authRepository.rotateToken().getOrThrow()
+                authRepository.rotateToken(checkNotNull(authRepository.getSessionId().getOrThrow())).getOrThrow()
                 createReceiver(repository, "회전 뒤 등록한 수신자")
 
                 assertEquals(
@@ -264,7 +264,7 @@ class ReceiverSessionBoundaryRaceTest {
                     emissions.receiveNames(),
                 )
 
-                authRepository.rotateToken().getOrThrow()
+                authRepository.rotateToken(checkNotNull(authRepository.getSessionId().getOrThrow())).getOrThrow()
                 createReceiver(repository, "회전 뒤 등록한 수신자")
 
                 assertEquals(

@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.data.paging
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import com.afternote.core.common.result.runCatchingCancellable
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
 import com.afternote.feature.afternote.data.mapper.toDomainList
 import com.afternote.feature.afternote.data.service.AfternoteApiService

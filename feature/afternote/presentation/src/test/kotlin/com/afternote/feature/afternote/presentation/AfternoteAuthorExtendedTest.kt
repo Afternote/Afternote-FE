@@ -44,13 +44,16 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUpl
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
+import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.detail.AfternoteDetailDeleteResult
+import com.afternote.feature.afternote.presentation.detail.AfternoteDetailIntent
 import com.afternote.feature.afternote.presentation.detail.AfternoteDetailUiState
 import com.afternote.feature.afternote.presentation.detail.AfternoteDetailViewModel
 import com.afternote.feature.afternote.presentation.detail.DetailContentUiModel
 import com.afternote.feature.afternote.presentation.detail.account.AccountDetailScreen
 import com.afternote.feature.afternote.presentation.editor.AfternoteEditorBody
+import com.afternote.feature.afternote.presentation.editor.AfternoteEditorIntent
 import com.afternote.feature.afternote.presentation.editor.AfternoteEditorScreen
 import com.afternote.feature.afternote.presentation.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.editor.SaveAfternoteMemorialMedia
@@ -132,7 +135,7 @@ class AfternoteAuthorExtendedTest {
             .onNode(hasSetTextAction() and hasText("old@example.test"))
             .performTextReplacement("edited@example.test")
         composeRule.runOnIdle {
-            checkNotNull(editorViewModel).editProcessingMethod(1, "계정 보존")
+            checkNotNull(editorViewModel).onIntent(AfternoteEditorIntent.EditProcessingMethod(1, "계정 보존"))
         }
         composeRule.onNodeWithText("계정 보존").performScrollTo().assertIsDisplayed()
         val topBarRegister =
@@ -190,7 +193,7 @@ class AfternoteAuthorExtendedTest {
 
         composeRule.runOnIdle { checkNotNull(editorState).dismissServiceSelectionSheet() }
         composeRule.onNodeWithText("소셜 네트워크 서비스 선택").assertDoesNotExist()
-        assertEquals("Instagram", viewModel.currentForm().selectedService)
+        assertEquals("Instagram", viewModel.uiState.value.form.selectedService)
         assertEquals("", checkNotNull(editorState).serviceSearchQueryState.text.toString())
 
         composeRule.onNodeWithText("Instagram").performClick()
@@ -200,7 +203,7 @@ class AfternoteAuthorExtendedTest {
 
         composeRule.onNodeWithText("소셜 네트워크 서비스 선택").assertDoesNotExist()
         composeRule.onNodeWithText("페이스북").assertIsDisplayed()
-        assertEquals("페이스북", viewModel.currentForm().selectedService)
+        assertEquals("페이스북", viewModel.uiState.value.form.selectedService)
         assertEquals("", checkNotNull(editorState).serviceSearchQueryState.text.toString())
     }
 
@@ -357,21 +360,27 @@ private fun AuthorEditorForUpdate(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val state =
         rememberAfternoteEditorState(
-            getCurrentForm = viewModel::currentForm,
-            setType = viewModel::setType,
-            setService = viewModel::setService,
-            setMemorialPhoto = viewModel::setMemorialPhoto,
-            removeMemorialPhoto = viewModel::removeMemorialPhoto,
-            setMemorialVideo = viewModel::setMemorialVideo,
-            removeMemorialVideo = viewModel::removeMemorialVideo,
-            addReceiverIfAbsent = viewModel::addReceiverIfAbsent,
-            applyPrefill = viewModel::applyPrefill,
-            setMemorialThumbnail = viewModel::setMemorialThumbnail,
-            deleteReceiver = viewModel::deleteReceiver,
-            replaceReceiversIfEmpty = viewModel::replaceReceiversIfEmpty,
-            addProcessingMethod = viewModel::addProcessingMethod,
-            deleteProcessingMethod = viewModel::deleteProcessingMethod,
-            editProcessingMethod = viewModel::editProcessingMethod,
+            getCurrentForm = { viewModel.uiState.value.form },
+            setType = { type -> viewModel.onIntent(AfternoteEditorIntent.SetType(type)) },
+            setService = { service -> viewModel.onIntent(AfternoteEditorIntent.SetService(service)) },
+            setMemorialPhoto = { uri -> viewModel.onIntent(AfternoteEditorIntent.SetMemorialPhoto(uri)) },
+            removeMemorialPhoto = { viewModel.onIntent(AfternoteEditorIntent.RemoveMemorialPhoto) },
+            setMemorialVideo = { url -> viewModel.onIntent(AfternoteEditorIntent.SetMemorialVideo(url)) },
+            removeMemorialVideo = { viewModel.onIntent(AfternoteEditorIntent.RemoveMemorialVideo) },
+            addReceiverIfAbsent = {
+                receiverId,
+                name,
+                label,
+                ->
+                viewModel.onIntent(AfternoteEditorIntent.AddReceiverIfAbsent(receiverId, name, label))
+            },
+            applyPrefill = { prefill -> viewModel.onIntent(AfternoteEditorIntent.ApplyPrefill(prefill)) },
+            setMemorialThumbnail = { dataUrl -> viewModel.onIntent(AfternoteEditorIntent.SetMemorialThumbnail(dataUrl)) },
+            deleteReceiver = { receiverId -> viewModel.onIntent(AfternoteEditorIntent.DeleteReceiver(receiverId)) },
+            replaceReceiversIfEmpty = { receivers -> viewModel.onIntent(AfternoteEditorIntent.ReplaceReceiversIfEmpty(receivers)) },
+            addProcessingMethod = { text -> viewModel.onIntent(AfternoteEditorIntent.AddProcessingMethod(text)) },
+            deleteProcessingMethod = { localId -> viewModel.onIntent(AfternoteEditorIntent.DeleteProcessingMethod(localId)) },
+            editProcessingMethod = { localId, newText -> viewModel.onIntent(AfternoteEditorIntent.EditProcessingMethod(localId, newText)) },
         )
     onStateReady(state)
 
@@ -379,7 +388,7 @@ private fun AuthorEditorForUpdate(
     LaunchedEffect(pendingPrefill) {
         if (pendingPrefill != null) {
             state.applyFormPrefill(pendingPrefill)
-            viewModel.onPrefillConsumed()
+            viewModel.onIntent(AfternoteEditorIntent.ConsumePrefill)
         }
     }
 
@@ -398,10 +407,12 @@ private fun AuthorEditorForUpdate(
                     password = state.passwordState.text.toString(),
                     date = LocalDate.of(2026, 8, 22),
                 )
-            viewModel.saveAfternote(
-                payload = payload,
-                selectedReceiverIds = form.afternoteEditReceivers.map { it.id.toLong() },
-                memorialMedia = SaveAfternoteMemorialMedia(),
+            viewModel.onIntent(
+                AfternoteEditorIntent.Save(
+                    payload = payload,
+                    selectedReceiverIds = form.afternoteEditReceivers.map { it.id.toLong() },
+                    memorialMedia = SaveAfternoteMemorialMedia(),
+                ),
             )
         },
         snackbarMessage = null,
@@ -410,10 +421,10 @@ private fun AuthorEditorForUpdate(
                 stringResource(it.reason.messageResId)
             },
         onSnackbarMessageConsumed = {
-            errorEvent?.let(viewModel::onErrorConsumed)
+            errorEvent?.let({ consumed -> viewModel.onIntent(AfternoteEditorIntent.ConsumeError(consumed)) })
         },
         onValidationMessageConsumed = {
-            errorEvent?.let(viewModel::onErrorConsumed)
+            errorEvent?.let({ consumed -> viewModel.onIntent(AfternoteEditorIntent.ConsumeError(consumed)) })
         },
         content = { editorSnackbarHostState ->
             AfternoteEditorBody(
@@ -453,12 +464,12 @@ private fun AuthorDetailForDelete(
                         result.messageRes ?: AfternoteFeatureR.string.afternote_detail_delete_failed,
                     )
                 scope.launch { snackbarHostState.showSnackbar(message) }
-                viewModel.onDeleteResultConsumed()
+                viewModel.onIntent(AfternoteDetailIntent.ConsumeDeleteResult)
             }
 
             is AfternoteDetailDeleteResult.Succeeded -> {
                 deletedIds += result.id
-                viewModel.onDeleteResultConsumed()
+                viewModel.onIntent(AfternoteDetailIntent.ConsumeDeleteResult)
             }
 
             null -> {
@@ -483,7 +494,7 @@ private fun AuthorDetailForDelete(
                 content = account.content,
                 snackbarHostState = snackbarHostState,
                 onEditClick = {},
-                onDeleteConfirm = viewModel::deleteAfternote,
+                onDeleteConfirm = { viewModel.onIntent(AfternoteDetailIntent.Delete) },
             )
         }
     }
@@ -496,7 +507,7 @@ private fun detailViewModel(
     AfternoteDetailViewModel(
         route = AfternoteRoute.DetailRoute(itemId = itemId),
         afternoteRepository = repository,
-        userRepository = afternoteAuthorUserRepository(),
+        myProfileRepository = afternoteAuthorMyProfileRepository(),
         userProfileRepository = afternoteAuthorUserProfileRepository(),
         errorReporter = NoopAuthorErrorReporter,
     )
@@ -516,7 +527,7 @@ private fun editorViewModel(
                 initialType = AfternoteType.SOCIAL_NETWORK,
                 itemId = itemId,
             ),
-        userRepository = afternoteAuthorUserRepository(),
+        userReceiverRepository = afternoteAuthorUserReceiverRepository(),
         afternoteRepository = repository,
         memorialThumbnailUploadRepository =
             MemorialThumbnailUploadRepository {
@@ -546,6 +557,7 @@ private fun editorViewModel(
                         )
                     },
             ),
+        saveAfternoteUseCase = SaveAfternoteUseCase(repository),
         errorReporter = NoopAuthorErrorReporter,
     )
 

@@ -2,7 +2,6 @@ package com.afternote.afternote_fe.navigation
 
 import android.app.Application
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.navigation.toRoute
 import com.afternote.core.ui.Route
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -37,10 +36,7 @@ class RecipientChipDestinationTest {
         composeRule.waitForIdle()
     }
 
-    private fun currentSetting(): Route.Setting =
-        composeRule.runOnIdle {
-            harness.navController.currentBackStackEntry!!.toRoute<Route.Setting>()
-        }
+    private fun currentSetting(): Route.Setting = composeRule.runOnIdle { harness.appState.backStack.last() as Route.Setting }
 
     @Test
     fun `수신인 칩은 설정 host 한 칸을 쌓고 등록 화면 시작을 인자로 싣는다`() {

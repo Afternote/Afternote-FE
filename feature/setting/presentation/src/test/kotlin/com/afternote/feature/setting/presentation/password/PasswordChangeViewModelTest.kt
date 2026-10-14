@@ -170,33 +170,6 @@ class PasswordChangeViewModelTest {
         assertNull(viewModel.uiState.value.errorMessage)
     }
 
-    /**
-     * 유니코드 숫자는 **허용 목록 밖 문자라서** 거절된다 — 서버와 같은 판정이다.
-     *
-     * `[0-9]` 를 `\d` 로 되돌리는 변이는 이 단언으로 잡히지 않는다(실측). 허용 목록
-     * `[A-Za-z0-9@$!%*#?&]` 이 이미 그 문자들을 닫고 있어 두 정규식의 판정이 갈리는 입력 자체가
-     * 없고, JVM 유닛 테스트는 호스트 정규식 엔진이라 Android 의 유니코드 문자 클래스도 재현하지
-     * 못한다. `\d` 를 쓰지 않는 이유는 허용 목록이 넓어지는 날 갈리기 때문이고, 그 근거는
-     * [SettingPasswordRule] KDoc 이 갖는다.
-     */
-    @Test
-    fun `규칙은 서버와 같다 - 유니코드 숫자를 숫자로 받지 않는다`() {
-        assertFalse(SettingPasswordRule.isSatisfied("Abcdefg１!"))
-        assertFalse(SettingPasswordRule.isSatisfied("Abcdefg١!"))
-        assertTrue(SettingPasswordRule.isSatisfied("Abcdefg1!"))
-    }
-
-    @Test
-    fun `규칙은 서버와 같다 - 허용 목록 밖 문자와 길이를 막는다`() {
-        assertFalse(SettingPasswordRule.isSatisfied("Abcde1!"))
-        assertFalse(SettingPasswordRule.isSatisfied("Abcdefghijklmn1!"))
-        assertFalse(SettingPasswordRule.isSatisfied("Abcdefg1_"))
-        assertFalse(SettingPasswordRule.isSatisfied("Abcdefg1 !"))
-        assertFalse(SettingPasswordRule.isSatisfied("Abcdefgh!"))
-        assertFalse(SettingPasswordRule.isSatisfied("Abcdefg12"))
-        assertTrue(SettingPasswordRule.isSatisfied("Abcdefghijklm1!"))
-    }
-
     private fun submit(viewModel: PasswordChangeViewModel) {
         viewModel.onIntent(PasswordChangeIntent.UpdateCurrentPassword(CURRENT_PASSWORD))
         viewModel.onIntent(PasswordChangeIntent.UpdateNewPassword(NEW_PASSWORD))
