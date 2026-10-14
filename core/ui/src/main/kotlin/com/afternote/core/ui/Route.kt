@@ -54,6 +54,10 @@ sealed interface Route : NavKey {
     @Serializable
     data object Receiver : Route
 
+    /** 카카오 수신자 초대 랜딩의 앱 루트 host (#944). 내부 화면은 수신자 피처 로컬 스택이 소유한다. */
+    @Serializable
+    data object ReceiverInvitation : Route
+
     /**
      * 설정 로컬 스택의 host destination (#1695).
      *

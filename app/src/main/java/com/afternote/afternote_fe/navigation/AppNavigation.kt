@@ -34,6 +34,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation3.runtime.entryProvider
+import com.afternote.afternote_fe.MainViewModel
 import com.afternote.afternote_fe.notification.NotificationPermissionEffect
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomBar
@@ -50,6 +51,7 @@ import com.afternote.feature.home.presentation.receiver.ReceiverHomeEntry
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
 import com.afternote.feature.mindrecord.presentation.navigation.mindRecordNavGraph
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavHost
+import com.afternote.feature.receiver.presentation.navigation.ReceiverInvitationNavHost
 import com.afternote.feature.receiver.presentation.navigation.ReceiverNavHost
 import com.afternote.feature.setting.presentation.navigation.SettingNavHost
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
@@ -63,6 +65,7 @@ fun AppNavigation(
     appState: AppState = rememberAfternoteAppState(startDestination),
     mindRecordNavController: NavHostController? = null,
     timeLetterNavController: NavHostController? = null,
+    mainViewModel: MainViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity() }
@@ -72,6 +75,14 @@ fun AppNavigation(
     val timeLetterController = timeLetterNavController ?: rememberedTimeLetterController
     val mindRecordEntry by mindRecordController.currentBackStackEntryAsState()
     val timeLetterEntry by timeLetterController.currentBackStackEntryAsState()
+    val pendingInvitationToken by mainViewModel.pendingInvitationToken.collectAsStateWithLifecycle()
+    val authenticatedStartRoute by mainViewModel.startRoute.collectAsStateWithLifecycle()
+    val currentRootRoute = appState.backStack.lastOrNull()
+    LaunchedEffect(pendingInvitationToken, currentRootRoute) {
+        if (pendingInvitationToken != null && currentRootRoute != Route.ReceiverInvitation) {
+            appState.navigate(Route.ReceiverInvitation)
+        }
+    }
     val isMindRecordAtRoot = mindRecordEntry?.destination?.hasRoute(Route.MindRecord::class) != false
     val isTimeLetterAtRoot =
         timeLetterEntry?.destination?.hasRoute(TimeLetterRoute.TimeLetterHomeRoute::class) != false
@@ -88,6 +99,12 @@ fun AppNavigation(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val onboardingExternalActions = rememberOnboardingExternalActions(appState)
+    val receiverInvitationExternalActions =
+        rememberReceiverInvitationExternalActions(
+            appState = appState,
+            onSettled = { pendingInvitationToken?.let(mainViewModel::settleInvitation) },
+            onDeferredUntilLogin = { pendingInvitationToken?.let(mainViewModel::deferInvitationUntilLogin) },
+        )
     val settingExternalActions = rememberSettingExternalActions(appState)
     val afternoteExternalActions =
         rememberAfternoteExternalActions(appState) { message ->
@@ -209,6 +226,13 @@ fun AppNavigation(
                         ReceiverNavHost(
                             homeContent = { ReceiverHomeEntry(actions = receiverHomeActions) },
                             navigationCallbacks = rootNavigationCallbacks,
+                        )
+                    }
+                    entry<Route.ReceiverInvitation> {
+                        ReceiverInvitationNavHost(
+                            isLoggedIn = authenticatedStartRoute == Route.Home,
+                            boundary = rootNavigationCallbacks,
+                            externalActions = receiverInvitationExternalActions,
                         )
                     }
                     entry<Route.Setting> { route ->

@@ -480,12 +480,7 @@ class MviContractKonsistTest {
          *
          * 새 항목은 넣지 않는다. 해당 ViewModel 이 전환되거나 지워지면 여기서도 뺀다(남으면 경고).
          */
-        val LEGACY_EVENT_STREAMS =
-            setOf(
-                // #944 가 카카오 초대(BE#289)로 교체한다. 폼 값과 이메일 등록 버튼이 PM 결정 대기라
-                // #1502 전환 범위에서 뺐다.
-                "com.afternote.feature.setting.presentation.receiver.ReceiverRegisterViewModel._events",
-            )
+        val LEGACY_EVENT_STREAMS = emptySet<String>()
 
         /** #1808 이 뺀다. */
         private val ISSUE_1808_HOME =
@@ -538,10 +533,7 @@ class MviContractKonsistTest {
          * #1805 가 뺀다. 이벤트 스트림을 쓰던 ConnectedAccounts·PushNotification 은 #1502 가 전환했다.
          * ReceiverRegisterViewModel 은 #944 가 카카오 초대로 교체하며 뺀다([LEGACY_EVENT_STREAMS]).
          */
-        private val ISSUE_1805_SETTING =
-            setOf(
-                "com.afternote.feature.setting.presentation.receiver.ReceiverRegisterViewModel",
-            )
+        private val ISSUE_1805_SETTING = emptySet<String>()
 
         /** #1806 이 뺀다. */
         private val ISSUE_1806_TIMELETTER =

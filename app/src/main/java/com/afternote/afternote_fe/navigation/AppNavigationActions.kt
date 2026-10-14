@@ -13,6 +13,7 @@ import com.afternote.feature.home.presentation.receiver.ReceiverHomeActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingExternalActions
+import com.afternote.feature.receiver.presentation.navigation.ReceiverInvitationExternalActions
 import com.afternote.feature.setting.presentation.navigation.SettingExternalActions
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterNavActions
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
@@ -249,6 +250,36 @@ fun rememberOnboardingExternalActions(appState: AppState): OnboardingExternalAct
             }
         }
     }
+
+/** 초대 로컬 스택에서 로그인·받은 기록함·닫기를 앱 루트에 전달한다 (#944). */
+@Composable
+fun rememberReceiverInvitationExternalActions(
+    appState: AppState,
+    onSettled: () -> Unit,
+    onDeferredUntilLogin: () -> Unit,
+): ReceiverInvitationExternalActions {
+    val onSettledState by rememberUpdatedState(onSettled)
+    val onDeferredState by rememberUpdatedState(onDeferredUntilLogin)
+    return remember(appState) {
+        object : ReceiverInvitationExternalActions {
+            override fun requestLogin() {
+                onDeferredState()
+                appState.exitCurrentEntry()
+            }
+
+            override fun openReceivedRecords() {
+                onSettledState()
+                appState.exitCurrentEntry()
+                appState.navigate(Route.Receiver)
+            }
+
+            override fun close() {
+                onSettledState()
+                appState.exitCurrentEntry()
+            }
+        }
+    }
+}
 
 /**
  * 애프터노트 로컬 스택이 셸에 남긴 이동·신호 (#1698).
