@@ -181,7 +181,7 @@ test("replaces wrong type, area, legacy internal labels and assignees while pres
             { name: "area:core" },
             { name: "area:home" },
         ],
-        assignees: [{ login: "1hyok" }, { login: "Sadturtleman" }],
+        assignees: [{ login: "OnlyReadOneBook" }, { login: "Sadturtleman" }],
     }));
     assert.equal(inspection.status, "valid");
     assert.equal(inspection.needsUpdate, true);

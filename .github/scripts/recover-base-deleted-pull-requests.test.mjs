@@ -98,7 +98,7 @@ function recover(api, overrides = {}) {
         repository: REPO,
         ref: REF,
         refType: "branch",
-        deletedBy: "1hyok",
+        deletedBy: "OnlyReadOneBook",
         runUrl: RUN_URL,
         observedAt: OBSERVED_AT,
         sleep: noWait,
@@ -214,7 +214,7 @@ test("base 가 같은 이름으로 돌아와 있으면 PR 을 다시 열고 경�
     assert.equal(writes[1].apiPath, `/repos/${REPO}/issues/1626/comments`);
     assert.ok(writes[1].body.body.startsWith(reopenMarker(REF)));
     assert.match(writes[1].body.body, /base 브랜치 `feat\/1762-draft-resume` 가 삭제되면서/);
-    assert.match(writes[1].body.body, /@1hyok/);
+    assert.match(writes[1].body.body, /@OnlyReadOneBook/);
     assert.ok(writes[1].body.body.includes(RUN_URL));
     assert.ok(!api.calls.some((call) => call.method === "POST" && call.apiPath === `/repos/${REPO}/issues`));
 });
@@ -241,7 +241,7 @@ test("삭제 이벤트가 자동 폐쇄보다 먼저 도착하면 반영을 기�
         repository: REPO,
         ref: REF,
         refType: "branch",
-        deletedBy: "1hyok",
+        deletedBy: "OnlyReadOneBook",
         runUrl: RUN_URL,
         observedAt: OBSERVED_AT,
         sleep: noWait,
@@ -367,7 +367,7 @@ test("태그 삭제와 base 가 다른 PR 만 있는 삭제에는 아무것도 �
 // ---- 문구 ----
 
 test("경위 코멘트는 마커로 시작하고 닫힌 원인과 확인할 것을 적는다", () => {
-    const body = renderReopenComment({ ref: REF, deletedBy: "1hyok", runUrl: RUN_URL });
+    const body = renderReopenComment({ ref: REF, deletedBy: "OnlyReadOneBook", runUrl: RUN_URL });
 
     assert.ok(body.startsWith(reopenMarker(REF)));
     assert.match(body, /자동으로 닫혔다/);
@@ -380,7 +380,7 @@ test("추적 이슈는 복구 명령과 사슬을 함께 적는다", () => {
     const issue = renderTrackingIssue({
         ref: REF,
         repository: REPO,
-        deletedBy: "1hyok",
+        deletedBy: "OnlyReadOneBook",
         runUrl: RUN_URL,
         lost: [{ pullRequest: lostPullRequest(), dependents: [1839] }],
     });
@@ -398,7 +398,7 @@ test("추적 이슈는 이슈 양식 판정을 통과한다. 열리자마자 닫
     const issue = renderTrackingIssue({
         ref: REF,
         repository: REPO,
-        deletedBy: "1hyok",
+        deletedBy: "OnlyReadOneBook",
         runUrl: RUN_URL,
         lost: [{ pullRequest: lostPullRequest(), dependents: [1839] }],
     });
