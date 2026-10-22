@@ -81,7 +81,7 @@ internal fun SkeletonAppNavigation(
                     timeLetterRoutes.add("TimeLetterWriteRoute")
                 }
 
-                override fun onWriteBack() {
+                override fun popBack() {
                     if (timeLetterRoutes.size > 1) timeLetterRoutes.removeAt(timeLetterRoutes.lastIndex)
                 }
 
@@ -89,32 +89,16 @@ internal fun SkeletonAppNavigation(
                     timeLetterRoutes.add("TimeLetterDraftRoute")
                 }
 
-                override fun onDraftBack() {
-                    if (timeLetterRoutes.size > 1) timeLetterRoutes.removeAt(timeLetterRoutes.lastIndex)
-                }
-
                 override fun onNavigateToRecipient() {
                     timeLetterRoutes.add("TimeLetterRecipientRoute")
-                }
-
-                override fun onRecipientBack() {
-                    if (timeLetterRoutes.size > 1) timeLetterRoutes.removeAt(timeLetterRoutes.lastIndex)
                 }
 
                 override fun onNavigateToDetail(timeLetterId: Long) {
                     timeLetterRoutes.add("TimeLetterDetailRoute")
                 }
 
-                override fun onDetailBack() {
-                    if (timeLetterRoutes.size > 1) timeLetterRoutes.removeAt(timeLetterRoutes.lastIndex)
-                }
-
                 override fun onNavigateToRecipientFilter() {
                     timeLetterRoutes.add("TimeLetterRecipientFilterRoute")
-                }
-
-                override fun onRecipientFilterBack() {
-                    if (timeLetterRoutes.size > 1) timeLetterRoutes.removeAt(timeLetterRoutes.lastIndex)
                 }
             }
         }

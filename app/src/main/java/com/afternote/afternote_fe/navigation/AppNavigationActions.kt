@@ -106,7 +106,7 @@ fun rememberTimeLetterNavActions(
                 navController.navigate(TimeLetterRoute.TimeLetterWriteRoute(timeLetterId = timeLetterId))
             }
 
-            override fun onWriteBack() {
+            override fun popBack() {
                 navController.popBackStack()
             }
 
@@ -114,32 +114,16 @@ fun rememberTimeLetterNavActions(
                 navController.navigate(TimeLetterRoute.TimeLetterDraftRoute)
             }
 
-            override fun onDraftBack() {
-                navController.popBackStack()
-            }
-
             override fun onNavigateToRecipient() {
                 navController.navigate(TimeLetterRoute.TimeLetterRecipientRoute)
-            }
-
-            override fun onRecipientBack() {
-                navController.popBackStack()
             }
 
             override fun onNavigateToDetail(timeLetterId: Long) {
                 navController.navigate(TimeLetterRoute.TimeLetterDetailRoute(timeLetterId))
             }
 
-            override fun onDetailBack() {
-                navController.popBackStack()
-            }
-
             override fun onNavigateToRecipientFilter() {
                 navController.navigate(TimeLetterRoute.TimeLetterRecipientFilterRoute)
-            }
-
-            override fun onRecipientFilterBack() {
-                navController.popBackStack()
             }
         }
     }
