@@ -14,9 +14,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -69,8 +72,14 @@ fun AppNavigation(
 ) {
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity() }
-    val rememberedMindRecordController = rememberNavController()
-    val rememberedTimeLetterController = rememberNavController()
+    // 탭 NavHost 의 컨트롤러는 셸이 들고 있지만, NavHost 가 붙는 Nav3 엔트리는 탭 스택을 바꿀 때마다
+    // 내려가며 자기 ViewModelStore·Lifecycle 을 버린다. 다시 들어온 엔트리에 옛 컨트롤러를 붙이면
+    // "ViewModelStore should be set before setGraph call" 로 죽으므로, 엔트리 컴포지션이 내려갈 때
+    // 세대를 올려 컨트롤러도 엔트리와 같은 수명으로 새로 만든다.
+    var mindRecordHostGeneration by remember { mutableIntStateOf(0) }
+    var timeLetterHostGeneration by remember { mutableIntStateOf(0) }
+    val rememberedMindRecordController = key(mindRecordHostGeneration) { rememberNavController() }
+    val rememberedTimeLetterController = key(timeLetterHostGeneration) { rememberNavController() }
     val mindRecordController = mindRecordNavController ?: appState.legacyMindRecordController ?: rememberedMindRecordController
     val timeLetterController = timeLetterNavController ?: rememberedTimeLetterController
     val mindRecordEntry by mindRecordController.currentBackStackEntryAsState()
@@ -155,6 +164,7 @@ fun AppNavigation(
     }
 
     NotificationPermissionEffect(snackbarHostState = snackbarHostState)
+    NotificationEntryEffect(appState = appState, mainViewModel = mainViewModel)
 
     Scaffold(
         modifier = modifier,
@@ -203,12 +213,14 @@ fun AppNavigation(
                         HomeTabScreen(uiState = uiState, actions = actions)
                     }
                     entry<Route.MindRecord> {
+                        DisposableEffect(Unit) { onDispose { mindRecordHostGeneration++ } }
                         MindRecordRootHost(
                             navController = mindRecordController,
                             actions = mindRecordNavActions,
                         )
                     }
                     entry<Route.TimeLetter> {
+                        DisposableEffect(Unit) { onDispose { timeLetterHostGeneration++ } }
                         NavHost(navController = timeLetterController, startDestination = Route.TimeLetter::class) {
                             timeLetterNavGraph(navController = timeLetterController, actions = timeLetterNavActions)
                         }

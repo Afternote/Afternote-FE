@@ -109,9 +109,9 @@ class NotificationNavigationAndroidTest {
         composeRule
             .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_start))
             .assertIsDisplayed()
-        deliverWarmNotification(NotificationEntrySource.FCM, "logged-out-1", NotificationDestination.HOME)
+        deliverWarmNotification(NotificationEntrySource.FCM, "logged-out-1", NotificationDestination.TIME_LETTER)
 
-        awaitNotificationIntent(NotificationEntrySource.FCM, "logged-out-1", NotificationDestination.HOME)
+        awaitNotificationIntent(NotificationEntrySource.FCM, "logged-out-1", NotificationDestination.TIME_LETTER)
         assertSame(activityUnderTest, resumedMainActivity())
         composeRule
             .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_start))
@@ -119,10 +119,8 @@ class NotificationNavigationAndroidTest {
 
         fakeAuth.loggedIn = true
 
-        val greeting = context.getString(HomeR.string.home_tab_greeting, "테스트 사용자")
-        composeRule.waitUntilAtLeastOneExists(hasText(greeting), timeoutMillis = 10_000)
-        composeRule.onNodeWithText(greeting).assertIsDisplayed()
-        composeRule.onNode(selectedBottomBarMatcher(CoreUiR.string.core_ui_nav_item_home)).assertIsSelected()
+        // 로그인이 확정되면 큐에 남아 있던 알림이 그제서야 목적지로 이어진다.
+        awaitSelectedBottomBarTab(CoreUiR.string.core_ui_nav_item_timeletter)
     }
 
     @Test
@@ -136,7 +134,12 @@ class NotificationNavigationAndroidTest {
 
         awaitNotificationIntent(NotificationEntrySource.FCM, "logged-in-1", NotificationDestination.HOME)
         assertSame(activityUnderTest, resumedMainActivity())
-        // 목적지 이동 결선은 #1795 가 Nav3 루트에 붙인다 — 지금은 보던 탭에 머문다.
+        awaitSelectedBottomBarTab(CoreUiR.string.core_ui_nav_item_home)
+
+        // 같은 알림을 다시 받아도 두 번 처리하지 않는다 — 탭을 옮겨 둔 뒤 재전달해도 그대로다.
+        openTimeLetterTab()
+        deliverWarmNotification(NotificationEntrySource.FCM, "logged-in-1", NotificationDestination.HOME)
+        composeRule.waitForIdle()
         awaitSelectedBottomBarTab(CoreUiR.string.core_ui_nav_item_timeletter)
     }
 
@@ -162,8 +165,7 @@ class NotificationNavigationAndroidTest {
             NotificationDestination.AFTERNOTE,
         )
         assertSame(activityUnderTest, resumedMainActivity())
-        // 목적지 이동 결선은 #1795 가 붙인다 — 지금은 보던 홈 탭에 머문다.
-        awaitSelectedBottomBarTab(CoreUiR.string.core_ui_nav_item_home)
+        awaitSelectedBottomBarTab(CoreUiR.string.core_ui_nav_item_note)
     }
 
     @Test
