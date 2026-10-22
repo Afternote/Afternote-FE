@@ -55,10 +55,10 @@ test("Draft·이미 예약·큐에 있는 PR 은 건드리지 않는다", () => 
 const scheduled = { autoMergeRequest: { enabledAt: "2026-10-04T00:00:00Z" } };
 
 test("VIEWED_BY 본인이 작성한 PR 만 대상이다 — 대소문자 무시, 작성자 없음은 제외", () => {
-    assert.equal(isAuthoredByViewer({ author: { login: "1hyok" } }, "1hyok"), true);
-    assert.equal(isAuthoredByViewer({ author: { login: "1Hyok" } }, "1hyok"), true);
+    assert.equal(isAuthoredByViewer({ author: { login: "OnlyReadOneBook" } }, "OnlyReadOneBook"), true);
+    assert.equal(isAuthoredByViewer({ author: { login: "onlyreadonebook" } }, "OnlyReadOneBook"), true);
     for (const author of [{ login: "koongmai" }, { login: "Sadturtleman" }, { login: "dependabot" }, null, undefined]) {
-        assert.equal(isAuthoredByViewer({ author }, "1hyok"), false, JSON.stringify(author));
+        assert.equal(isAuthoredByViewer({ author }, "OnlyReadOneBook"), false, JSON.stringify(author));
     }
 });
 
@@ -86,18 +86,18 @@ test("팀원·봇 PR 은 Viewed 가 다 차도 예약하지 않는다", async ()
         listedPullRequest(2301, null),
         listedPullRequest(2302, "koongmai"),
     ];
-    const actions = await collectViewedAutoMergeActions(noRequest, "Afternote", "Afternote-FE", "1hyok", pullRequests);
+    const actions = await collectViewedAutoMergeActions(noRequest, "Afternote", "Afternote-FE", "OnlyReadOneBook", pullRequests);
     assert.deepEqual(actions, { targets: [] });
 });
 
 test("본인 PR 은 Viewed 가 다 차면 예약하고, 덜 찬 채 예약·큐에 있어도 빼지 않는다", async () => {
     const pullRequests = [
-        listedPullRequest(10, "1hyok", { isInMergeQueue: true }, ["UNVIEWED", "UNVIEWED"]),
-        listedPullRequest(11, "1Hyok", scheduled, ["VIEWED", "DISMISSED"]),
-        listedPullRequest(12, "1hyok"),
+        listedPullRequest(10, "OnlyReadOneBook", { isInMergeQueue: true }, ["UNVIEWED", "UNVIEWED"]),
+        listedPullRequest(11, "OnlyReadOneBook", scheduled, ["VIEWED", "DISMISSED"]),
+        listedPullRequest(12, "OnlyReadOneBook"),
         listedPullRequest(13, "dependabot", { isInMergeQueue: true }, ["UNVIEWED", "UNVIEWED"]),
     ];
-    const actions = await collectViewedAutoMergeActions(noRequest, "Afternote", "Afternote-FE", "1hyok", pullRequests);
+    const actions = await collectViewedAutoMergeActions(noRequest, "Afternote", "Afternote-FE", "OnlyReadOneBook", pullRequests);
     assert.deepEqual(actions, { targets: [{ number: 12, headSha: pullRequest().headRefOid }] });
 });
 

@@ -24,7 +24,7 @@ import { inspectAndroidTestImpact } from "./ci-test-plan.mjs";
 export const GATE_MARKER = "<!-- dependabot-pr-gate:v1 -->";
 export const DEPENDABOT_LOGIN = "dependabot[bot]";
 export const ISSUE_LABELS = ["maintenance", "area:platform"];
-export const ISSUE_ASSIGNEES = ["1hyok"];
+export const ISSUE_ASSIGNEES = ["OnlyReadOneBook"];
 
 const TITLE_ISSUE_PATTERN = /\(#(\d+)\)\s*$/;
 

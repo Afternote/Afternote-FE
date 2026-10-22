@@ -45,16 +45,16 @@ export const AREA_LABEL_BY_MODULE = Object.freeze({
 });
 
 export const ASSIGNEE_BY_MODULE = Object.freeze({
-    afternote: "1hyok",
+    afternote: "OnlyReadOneBook",
     onboarding: "Sadturtleman",
-    core: "1hyok",
-    receiver: "1hyok",
-    setting: "1hyok",
+    core: "OnlyReadOneBook",
+    receiver: "OnlyReadOneBook",
+    setting: "OnlyReadOneBook",
     timeletter: "koongmai",
     mindrecord: "Sadturtleman",
     home: "Sadturtleman",
-    app: "1hyok",
-    platform: "1hyok",
+    app: "OnlyReadOneBook",
+    platform: "OnlyReadOneBook",
 });
 
 // #1910: 담당 이관은 모듈마다 소급 범위를 고를 수 있다. 경계(fromIssue)를 두면 그 번호 미만의
