@@ -2,7 +2,7 @@
 #
 # GITHUB_TOKEN 으로 큐에 넣으면 GitHub 이 그 이벤트로 워크플로를 띄우지 않아 merge_group CI 가 하나도 돌지 않는다.
 # 큐는 check timeout(60분)까지 기다렸다가 CI_TIMEOUT 으로 빼고, 그 뒤에 쌓인 PR 들도 다시 검증한다.
-# 그래서 투입은 사람 토큰(MERGE_QUEUE_TOKEN, 1hyok 의 fine-grained PAT)으로 한다. 시크릿이 없으면 넣지 않고
+# 그래서 투입은 사람 토큰(MERGE_QUEUE_TOKEN, OnlyReadOneBook 의 fine-grained PAT)으로 한다. 시크릿이 없으면 넣지 않고
 # 직접 투입하라는 코멘트를 남긴다.
 #
 # 방출 판정과 마커 코멘트는 방출 처리 job 이 끝냈다. 여기서는 live 상태를 다시 보고 판정한 head 그대로 열려 있고
