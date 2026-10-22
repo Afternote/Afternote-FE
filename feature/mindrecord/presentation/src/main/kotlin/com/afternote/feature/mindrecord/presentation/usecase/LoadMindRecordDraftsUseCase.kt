@@ -1,6 +1,6 @@
 package com.afternote.feature.mindrecord.presentation.usecase
 
-import com.afternote.core.common.result.runCatchingCancellable
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.Diary
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository

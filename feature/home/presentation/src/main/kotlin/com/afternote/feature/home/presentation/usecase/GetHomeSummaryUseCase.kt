@@ -1,8 +1,8 @@
 package com.afternote.feature.home.presentation.usecase
 
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.MyProfileRepository
 import com.afternote.core.domain.repository.UserReceiverRepository
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.feature.home.presentation.usecase.HomeSummary
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
@@ -20,10 +20,8 @@ import javax.inject.Inject
  * 프로필/수신자 조회는 필수(실패 시 전체 실패), 일기 카운트·오늘의 질문은 보조(실패 시
  * 0/null 폴백)로 처리해 보조 호출 한 건의 실패 때문에 홈 화면 자체가 깨지지 않도록 한다.
  *
- * UseCase는 통상 domain 레이어에 위치하나, 이 조합은 `feature/mindrecord/domain`과
- * `core:common`(runCatchingCancellable)을 함께 끌어와야 해서 domain 패키지에 두면
- * 레이어 가드(LayerDependencyKonsistTest, 비-core:model 코어 금지)에 걸린다.
- * 홈 전용 조합 로직이므로 홈 presentation 모듈에 둔다.
+ * `core:domain`과 `feature/mindrecord/domain`의 계약을 조합하는 홈 전용 로직이므로
+ * 홈 presentation 모듈에 둔다.
  */
 class GetHomeSummaryUseCase
     @Inject
