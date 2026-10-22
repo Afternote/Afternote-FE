@@ -66,8 +66,8 @@ test("남의 모듈 프로덕션 파일이 섞이면 모듈·담당자와 함께
         { path: "app/src/main/res/values/themes.xml", module: "app", owner: ASSIGNEE_BY_MODULE.app },
     ]);
     const message = formatViolations(pr("Sadturtleman"), violations);
-    assert.match(message, /core\(담당 @1hyok\) 1건/);
-    assert.match(message, /app\(담당 @1hyok\) 1건/);
+    assert.match(message, /core\(담당 @OnlyReadOneBook\) 1건/);
+    assert.match(message, /app\(담당 @OnlyReadOneBook\) 1건/);
     assert.match(message, /issue-assignee-exempt/);
 });
 

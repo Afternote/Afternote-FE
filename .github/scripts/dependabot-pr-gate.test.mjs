@@ -58,7 +58,7 @@ test("봇 범프가 androidTest 경계 경로를 건드리면 자동으로 정�
     );
 });
 
-test("대표 이슈는 issue.yml 양식이고 platform maintenance 로 1hyok 에게 간다", () => {
+test("대표 이슈는 issue.yml 양식이고 platform maintenance 로 OnlyReadOneBook 에게 간다", () => {
     const plan = buildPlan([".github/workflows/codeql.yml"]);
     const issue = buildIssue({ title: BOT_TITLE, prNumber: 2106, changedPaths: [".github/workflows/codeql.yml"], plan });
 
@@ -66,7 +66,7 @@ test("대표 이슈는 issue.yml 양식이고 platform maintenance 로 1hyok 에
     assert.deepEqual(issue.labels, ISSUE_LABELS);
     assert.deepEqual(issue.assignees, ISSUE_ASSIGNEES);
     assert.deepEqual(ISSUE_LABELS, ["maintenance", "area:platform"]);
-    assert.deepEqual(ISSUE_ASSIGNEES, ["1hyok"]);
+    assert.deepEqual(ISSUE_ASSIGNEES, ["OnlyReadOneBook"]);
     assert.match(issue.body, /^### 작업 유형\n\nmaintenance — /);
     assert.match(issue.body, /### 주 담당 모듈\n\nplatform — /);
     assert.match(issue.body, /PR #2106/);
@@ -97,7 +97,7 @@ test("게이트가 채운 봇 PR 은 Repository Quality 의 대표 이슈 연결
         const result = await validatePullRequestIssueLink({
             pullRequest: { number: 2106, ...next, user: { login: DEPENDABOT_LOGIN, type: "Bot" }, labels: [] },
             repository: "Afternote/Afternote-FE",
-            loadIssue: async (number) => ({ number, state: "open", assignees: [{ login: "1hyok" }] }),
+            loadIssue: async (number) => ({ number, state: "open", assignees: [{ login: "OnlyReadOneBook" }] }),
         });
         assert.deepEqual(result, { issues: [2111], rejected: [] }, `reusedIssue=${reusedIssue}`);
     }
@@ -178,7 +178,7 @@ test("await 는 기다릴 이유가 없으면 첫 조회로 끝난다", async ()
     for (const pullRequest of [
         FILLED,
         handFilled,
-        { ...UNFILLED, user: { login: "1hyok" } },
+        { ...UNFILLED, user: { login: "OnlyReadOneBook" } },
         { ...UNFILLED, state: "closed" },
     ]) {
         const live = sequence(pullRequest);
@@ -328,11 +328,11 @@ test("await 명령은 live PR JSON 을 파일에 쓰고, 제한 시간을 넘겨
 test("인자 없이 부르면 채우기다: live PR 을 읽고 봇 PR 이 아니면 아무것도 쓰지 않는다", async () => {
     const result = await runGateCli([], {
         env: { GITHUB_TOKEN: "t", PR_NUMBER: "2138" },
-        pullRequest: { user: { login: "1hyok" }, state: "open", title: "x", body: "" },
+        pullRequest: { user: { login: "OnlyReadOneBook" }, state: "open", title: "x", body: "" },
     });
     assert.equal(result.code, 0, result.stderr);
     assert.deepEqual(result.requests, ["GET /repos/Afternote/Afternote-FE/pulls/2138"]);
-    assert.match(result.stdout, /작성자가 1hyok 이라 건너뜀/);
+    assert.match(result.stdout, /작성자가 OnlyReadOneBook 이라 건너뜀/);
 });
 
 test("모르는 명령은 채우기로 떨어지지 않는다", async () => {

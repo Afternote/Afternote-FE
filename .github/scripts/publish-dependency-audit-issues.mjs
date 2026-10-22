@@ -495,7 +495,7 @@ async function main() {
         findings,
         token,
         repository,
-        assignee: process.env.DEPENDENCY_AUDIT_ASSIGNEE ?? "1hyok",
+        assignee: process.env.DEPENDENCY_AUDIT_ASSIGNEE ?? "OnlyReadOneBook",
     });
     for (const result of results) {
         console.log(`${result.action}: #${result.number} ${result.url}`);
