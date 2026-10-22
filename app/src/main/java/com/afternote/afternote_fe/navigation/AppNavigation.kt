@@ -155,6 +155,7 @@ fun AppNavigation(
     }
 
     NotificationPermissionEffect(snackbarHostState = snackbarHostState)
+    NotificationEntryEffect(appState = appState, mainViewModel = mainViewModel)
 
     Scaffold(
         modifier = modifier,
