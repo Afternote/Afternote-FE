@@ -3,8 +3,8 @@ package com.afternote.feature.setting.presentation.passkey
 import androidx.credentials.exceptions.CreateCredentialCancellationException
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserProfileCacheRepository
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.setting.domain.PasskeyRepository
