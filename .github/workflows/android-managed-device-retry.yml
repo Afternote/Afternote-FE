@@ -27,6 +27,7 @@ jobs:
     permissions:
       actions: write
       contents: read
+      pull-requests: read
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -170,6 +171,29 @@ jobs:
               core.warning(
                 `Expected one failed ${marker.device} job, found ${candidates.length}.`,
               );
+              return;
+            }
+
+            const pullRequests = run.pull_requests ?? [];
+            if (pullRequests.length !== 1 || !Number.isSafeInteger(pullRequests[0].number)) {
+              core.warning('Cannot identify one pull request for the completed workflow run.');
+              return;
+            }
+            let pullRequest;
+            try {
+              ({ data: pullRequest } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pullRequests[0].number,
+              }));
+            } catch (error) {
+              core.warning(`Cannot verify the current pull request: ${error.message}`);
+              return;
+            }
+            if (pullRequest.state !== 'open' ||
+                pullRequest.head.sha !== run.head_sha ||
+                pullRequest.head.repo?.full_name !== run.head_repository.full_name) {
+              core.info('The pull request no longer matches this run; skipping stale recovery.');
               return;
             }
 
