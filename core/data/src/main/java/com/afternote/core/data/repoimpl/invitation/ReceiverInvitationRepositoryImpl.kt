@@ -1,7 +1,7 @@
 package com.afternote.core.data.repoimpl.invitation
 
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.ReceiverInvitationRepository
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.model.user.ReceiverInvitationAccepted
 import com.afternote.core.model.user.ReceiverInvitationCreated
 import com.afternote.core.model.user.ReceiverInvitationLookup
