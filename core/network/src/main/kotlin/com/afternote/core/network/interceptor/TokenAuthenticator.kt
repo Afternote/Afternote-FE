@@ -29,9 +29,10 @@ class TokenAuthenticator
             route: Route?,
             response: Response,
         ): Request? {
-            // 현재 비밀번호 불일치도 HTTP 401이다. 토큰 갱신이나 한도 초과로 세션을 지우지 않고
-            // 원래 오류 본문을 Retrofit의 실패 처리에 넘긴다.
-            if (response.isPasswordMismatch()) return null
+            // 현재 비밀번호 불일치와 패스키 검증 실패도 HTTP 401이다. 토큰 갱신이나 한도 초과로 세션을 지우지 않고
+            // 원래 오류 본문을 Retrofit의 실패 처리에 넘긴다. 패스키 등록은 첫 요청에서 서버가 챌린지를
+            // 소비하므로, 재시도하면 실제 사유(2701)가 챌린지 무효(2700)로 바뀐다 (#2287).
+            if (response.isBusinessUnauthorized()) return null
 
             if (response.responseCount >= 3) {
                 errorReporter.recordAuthContractViolation(AUTH_STAGE_RETRY_LIMIT)
@@ -81,7 +82,7 @@ class TokenAuthenticator
     }
 
 /** 확인된 업무 오류만 제외한다. 알 수 없거나 파싱할 수 없는 401은 기존 갱신 경로를 따른다. */
-private fun Response.isPasswordMismatch(): Boolean {
+private fun Response.isBusinessUnauthorized(): Boolean {
     val body = peekBody(MAX_ERROR_BODY_BYTES + 1)
     if (body.contentLength() > MAX_ERROR_BODY_BYTES) return false
     val parsed =
@@ -93,7 +94,7 @@ private fun Response.isPasswordMismatch(): Boolean {
             null
         }
     val code = parsed?.get("code") as? JsonPrimitive
-    return code != null && !code.isString && code.intOrNull == CODE_PASSWORD_MISMATCH
+    return code != null && !code.isString && code.intOrNull in BUSINESS_UNAUTHORIZED_CODES
 }
 
 private fun ErrorReporter.recordAuthContractViolation(authStage: String) {
@@ -128,4 +129,6 @@ private const val AUTH_STAGE_RETRY_LIMIT = "retry_limit"
 private const val AUTH_STAGE_MISSING_AUTH_HEADER = "missing_auth_header"
 private const val AUTH_STAGE_SAME_TOKEN = "same_token"
 private const val CODE_PASSWORD_MISMATCH = 1202
+private const val CODE_PASSKEY_VERIFICATION_FAILED = 2701
+private val BUSINESS_UNAUTHORIZED_CODES = setOf(CODE_PASSWORD_MISMATCH, CODE_PASSKEY_VERIFICATION_FAILED)
 private const val MAX_ERROR_BODY_BYTES = 64 * 1024L
