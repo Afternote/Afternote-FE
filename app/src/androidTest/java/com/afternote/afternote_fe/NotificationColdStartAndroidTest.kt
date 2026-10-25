@@ -1,9 +1,10 @@
 package com.afternote.afternote_fe
 
 import android.app.Instrumentation
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsSelected
-import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.waitUntilAtLeastOneExists
@@ -96,7 +97,9 @@ class NotificationColdStartAndroidTest {
         launchNotification(NotificationEntrySource.FCM, "cold-start-signed-in", NotificationDestination.TIME_LETTER)
 
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-        val destinationTab = hasText(context.getString(CoreUiR.string.core_ui_nav_item_timeletter)) and hasClickAction()
+        val destinationTab =
+            hasText(context.getString(CoreUiR.string.core_ui_nav_item_timeletter)) and
+                SemanticsMatcher.expectValue(SemanticsProperties.Selected, true)
         composeRule.waitUntilAtLeastOneExists(destinationTab, timeoutMillis = ACTIVITY_START_TIMEOUT_MILLIS)
         composeRule.onNode(destinationTab).assertIsSelected()
     }
