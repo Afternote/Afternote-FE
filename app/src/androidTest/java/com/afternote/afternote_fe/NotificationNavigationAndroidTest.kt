@@ -144,7 +144,7 @@ class NotificationNavigationAndroidTest {
     }
 
     @Test
-    fun backgroundNotification_resumesSameActivityAndKeepsCurrentScreen() {
+    fun backgroundNotification_resumesSameActivityAndNavigatesToDestination() {
         fakeAuth.loggedIn = true
 
         val greeting = context.getString(HomeR.string.home_tab_greeting, "테스트 사용자")

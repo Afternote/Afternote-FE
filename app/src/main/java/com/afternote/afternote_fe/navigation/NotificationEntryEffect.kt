@@ -33,7 +33,7 @@ internal fun NotificationEntryEffect(
     }
 }
 
-internal fun NotificationDestination.toBottomBarRoute(): Route =
+private fun NotificationDestination.toBottomBarRoute(): Route =
     when (this) {
         NotificationDestination.HOME -> Route.Home
         NotificationDestination.MIND_RECORD -> Route.MindRecord
