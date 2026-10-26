@@ -530,6 +530,7 @@ class TimeLetterWriteViewModel
                     _uiState.update {
                         it.copy(
                             editingTimeLetterId = letter.id,
+                            isEditingScheduledLetter = letter.status == TimeLetterStatus.SCHEDULED,
                             isLoadingEditingLetter = false,
                             draftTitle = letter.title.orEmpty(),
                             draftTextContents =

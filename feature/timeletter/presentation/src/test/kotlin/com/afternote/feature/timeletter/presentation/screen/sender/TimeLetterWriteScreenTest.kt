@@ -67,23 +67,70 @@ class TimeLetterWriteScreenTest {
 
         composeRule.onNodeWithContentDescription("뒤로가기").performClick()
 
-        composeRule.onNodeWithText("나가기").assertDoesNotExist()
+        composeRule.onNodeWithText(SAVE_DRAFT_MESSAGE).assertDoesNotExist()
         composeRule.runOnIdle { assertEquals(1, backCount) }
     }
 
     @Test
-    fun `작성 중 시스템 뒤로가기는 이탈 확인 팝업을 띄우고 계속 작성하면 화면에 남는다`() {
+    fun `작성 중 뒤로가기에서 임시저장을 고르면 작성 내용으로 임시저장하고 직접 나가지 않는다`() {
+        var backCount = 0
+        val draftRequests = mutableListOf<String>()
+        val titleState = TextFieldState()
+        val dispatcher =
+            setWriteScreen(
+                titleState = titleState,
+                onBackClick = { backCount++ },
+                onDraftClick = { title, _ -> draftRequests += title },
+            )
+
+        composeRule.runOnIdle { titleState.edit { append("작성 중") } }
+        composeRule.runOnIdle { dispatcher.onBackPressed() }
+        composeRule.onNodeWithText(SAVE_DRAFT_MESSAGE).assertExists()
+        composeRule.onNodeWithText("예").performClick()
+
+        // 이탈은 임시저장 성공(savedAsDraft)이 맡는다 — 수신인 누락·저장 실패면 화면에 남아 오류를 보여야 한다.
+        composeRule.onNodeWithText(SAVE_DRAFT_MESSAGE).assertDoesNotExist()
+        composeRule.runOnIdle {
+            assertEquals(listOf("작성 중"), draftRequests)
+            assertEquals(0, backCount)
+        }
+    }
+
+    @Test
+    fun `임시저장을 거절하고 삭제를 확인하면 저장 없이 나간다`() {
+        var backCount = 0
+        var draftCount = 0
+        var uiState by mutableStateOf(TimeLetterWriteUiState())
+        setWriteScreen(
+            uiState = { uiState },
+            onBackClick = { backCount++ },
+            onDraftClick = { _, _ -> draftCount++ },
+        )
+
+        composeRule.runOnIdle { uiState = uiState.copy(recipientIds = listOf(1L), sendAt = "2026-12-25") }
+        composeRule.onNodeWithContentDescription("뒤로가기").performClick()
+        composeRule.onNodeWithText("아니요").performClick()
+        composeRule.onNodeWithText(DISCARD_MESSAGE).assertExists()
+        composeRule.onNodeWithText("예").performClick()
+
+        composeRule.runOnIdle {
+            assertEquals(1, backCount)
+            assertEquals(0, draftCount)
+        }
+    }
+
+    @Test
+    fun `삭제 확인에서 취소하면 작성 화면에 남고 내용을 지킨다`() {
         var backCount = 0
         val titleState = TextFieldState()
         val dispatcher = setWriteScreen(titleState = titleState, onBackClick = { backCount++ })
 
         composeRule.runOnIdle { titleState.edit { append("작성 중") } }
         composeRule.runOnIdle { dispatcher.onBackPressed() }
+        composeRule.onNodeWithText("아니요").performClick()
+        composeRule.onNodeWithText("취소").performClick()
 
-        composeRule.onNodeWithText("나가기").assertExists()
-        composeRule.onNodeWithText("계속 작성").performClick()
-
-        composeRule.onNodeWithText("나가기").assertDoesNotExist()
+        composeRule.onNodeWithText(DISCARD_MESSAGE).assertDoesNotExist()
         composeRule.runOnIdle {
             assertEquals(0, backCount)
             assertEquals("작성 중", titleState.text.toString())
@@ -91,16 +138,37 @@ class TimeLetterWriteScreenTest {
     }
 
     @Test
-    fun `작성 중 상단바 뒤로가기에서 나가기를 고르면 나간다`() {
+    fun `예약 편지 수정 중 뒤로가기는 임시저장을 묻지 않고 수정 취소만 묻는다`() {
         var backCount = 0
-        var uiState by mutableStateOf(TimeLetterWriteUiState())
-        setWriteScreen(uiState = { uiState }, onBackClick = { backCount++ })
+        var draftCount = 0
+        var uiState by mutableStateOf(TimeLetterWriteUiState(isLoadingEditingLetter = true))
+        setWriteScreen(
+            uiState = { uiState },
+            onBackClick = { backCount++ },
+            onDraftClick = { _, _ -> draftCount++ },
+        )
+        val loaded =
+            TimeLetterWriteUiState(
+                editingTimeLetterId = 1L,
+                isEditingScheduledLetter = true,
+                draftTitle = "기존 제목",
+                recipientIds = listOf(1L),
+                sendAt = "2026-12-25",
+            )
+        composeRule.runOnIdle { uiState = loaded }
+        composeRule.waitForIdle()
 
-        composeRule.runOnIdle { uiState = uiState.copy(recipientIds = listOf(1L), sendAt = "2026-12-25") }
+        composeRule.runOnIdle { uiState = loaded.copy(sendAt = "2026-12-31") }
         composeRule.onNodeWithContentDescription("뒤로가기").performClick()
-        composeRule.onNodeWithText("나가기").performClick()
 
-        composeRule.runOnIdle { assertEquals(1, backCount) }
+        composeRule.onNodeWithText(SAVE_DRAFT_MESSAGE).assertDoesNotExist()
+        composeRule.onNodeWithText(DISCARD_EDIT_MESSAGE).assertExists()
+        composeRule.onNodeWithText("예").performClick()
+
+        composeRule.runOnIdle {
+            assertEquals(1, backCount)
+            assertEquals(0, draftCount)
+        }
     }
 
     @Test
@@ -122,7 +190,7 @@ class TimeLetterWriteScreenTest {
         composeRule.waitForIdle()
         composeRule.onNodeWithContentDescription("뒤로가기").performClick()
 
-        composeRule.onNodeWithText("나가기").assertDoesNotExist()
+        composeRule.onNodeWithText(SAVE_DRAFT_MESSAGE).assertDoesNotExist()
         composeRule.runOnIdle { assertEquals(1, backCount) }
     }
 
@@ -130,6 +198,7 @@ class TimeLetterWriteScreenTest {
         uiState: () -> TimeLetterWriteUiState = { TimeLetterWriteUiState() },
         titleState: TextFieldState = TextFieldState(),
         onBackClick: () -> Unit,
+        onDraftClick: (String, Map<Long, String>) -> Unit = { _, _ -> },
     ): OnBackPressedDispatcher {
         lateinit var dispatcher: OnBackPressedDispatcher
         composeRule.setContent {
@@ -139,11 +208,18 @@ class TimeLetterWriteScreenTest {
                     uiState = uiState(),
                     titleState = titleState,
                     onBackClick = onBackClick,
+                    onDraftClick = onDraftClick,
                 )
             }
         }
         composeRule.waitForIdle()
         return dispatcher
+    }
+
+    private companion object {
+        const val SAVE_DRAFT_MESSAGE = "작성 중인 내용을 임시저장할까요?"
+        const val DISCARD_MESSAGE = "작성한 내용을 삭제할까요?"
+        const val DISCARD_EDIT_MESSAGE = "수정한 내용을 취소할까요?"
     }
 
     @Test

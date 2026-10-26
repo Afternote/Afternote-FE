@@ -284,7 +284,8 @@ fun TimeLetterWriteScreen(
     // 작성 도중 이탈 가드 (#576): 진입 시점 스냅샷 대비 변경이 있으면 뒤로가기 시 이탈 확인 팝업을 띄운다.
     // 애프터노트 에디터(#503)와 같은 방식이다. '내용 존재'가 아니라 '변경' 기준이라 수정 모드에서 무변경
     // 이탈에는 경고하지 않는다. 스냅샷은 수신인 선택 왕복·프로세스 복원에도 유지되도록 saveable 로 둔다.
-    var showExitConfirm by rememberSaveable { mutableStateOf(false) }
+    // 팝업 단계는 [ExitConfirmStep] 참고.
+    var exitConfirmStep by rememberSaveable { mutableStateOf<ExitConfirmStep?>(null) }
     var baselineContentSignature by rememberSaveable { mutableStateOf<String?>(null) }
     val hasUnsavedChanges by remember(uiState) {
         derivedStateOf {
@@ -295,7 +296,11 @@ fun TimeLetterWriteScreen(
     }
     val onBackAttempt: () -> Unit = {
         focusManager.clearFocus()
-        if (hasUnsavedChanges) showExitConfirm = true else onBackClick()
+        when {
+            !hasUnsavedChanges -> onBackClick()
+            uiState.isEditingScheduledLetter -> exitConfirmStep = ExitConfirmStep.DiscardEdit
+            else -> exitConfirmStep = ExitConfirmStep.SaveDraft
+        }
     }
     // 변경이 없을 때는 시스템 기본 뒤로가기를 유지한다 (predictive back 애니메이션 보존).
     BackHandler(enabled = hasUnsavedChanges) { onBackAttempt() }
@@ -315,18 +320,50 @@ fun TimeLetterWriteScreen(
         }
     }
 
-    if (showExitConfirm) {
-        Popup(
-            type = PopupType.Variant2,
-            message = stringResource(R.string.timeletter_write_exit_confirm_message),
-            onConfirm = {
-                showExitConfirm = false
-                onBackClick()
-            },
-            onDismiss = { showExitConfirm = false },
-            confirmText = stringResource(R.string.timeletter_write_exit_confirm_confirm),
-            dismissText = stringResource(R.string.timeletter_write_exit_confirm_cancel),
-        )
+    when (exitConfirmStep) {
+        ExitConfirmStep.SaveDraft -> {
+            Popup(
+                type = PopupType.Variant2,
+                message = stringResource(R.string.timeletter_write_exit_save_draft_message),
+                // 하단 «임시저장» 버튼과 같은 경로 — 성공하면 savedAsDraft 로 나가고, 수신인 누락·저장
+                // 실패면 오류 스낵바를 띄운 채 작성 화면에 남는다.
+                onConfirm = {
+                    exitConfirmStep = null
+                    onDraftClick(titleState.text.toString(), collectTextContents())
+                },
+                onDismiss = { exitConfirmStep = ExitConfirmStep.Discard },
+            )
+        }
+
+        ExitConfirmStep.Discard -> {
+            Popup(
+                type = PopupType.Variant2,
+                message = stringResource(R.string.timeletter_write_exit_discard_message),
+                onConfirm = {
+                    exitConfirmStep = null
+                    onBackClick()
+                },
+                onDismiss = { exitConfirmStep = null },
+                dismissText = stringResource(R.string.timeletter_write_exit_cancel),
+            )
+        }
+
+        ExitConfirmStep.DiscardEdit -> {
+            Popup(
+                type = PopupType.Variant2,
+                message = stringResource(R.string.timeletter_write_exit_discard_edit_message),
+                onConfirm = {
+                    exitConfirmStep = null
+                    onBackClick()
+                },
+                onDismiss = { exitConfirmStep = null },
+                dismissText = stringResource(R.string.timeletter_write_exit_cancel),
+            )
+        }
+
+        null -> {
+            Unit
+        }
     }
 
     var showDatePicker by remember { mutableStateOf(false) }
@@ -624,6 +661,18 @@ fun TimeLetterWriteScreen(
             }
         }
     }
+}
+
+/**
+ * 변경이 있는 채로 뒤로가기를 눌렀을 때의 이탈 확인 단계 (#576).
+ *
+ * - 새 편지·임시저장 편지: [SaveDraft] 「예」는 임시저장, 「아니요」는 [Discard] 로 넘어가 한 번 더 묻는다.
+ * - 예약 편지 수정: [DiscardEdit] 하나만 묻는다. 임시저장을 권하면 예약이 DRAFT 로 풀린다.
+ */
+private enum class ExitConfirmStep {
+    SaveDraft,
+    Discard,
+    DiscardEdit,
 }
 
 /**
