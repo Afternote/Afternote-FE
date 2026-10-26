@@ -40,13 +40,13 @@ class RecipientListViewModelTest {
         runTest {
             val repository =
                 FakeUserRepository(
-                    receivers = listOf(Receiver(1L, "첫 수신자", "친구", "auth-1")),
+                    receivers = listOf(Receiver(1L, "첫 수신자", "친구")),
                 )
             val viewModel = RecipientListViewModel(repository)
             backgroundScope.launch { viewModel.recipients.collect() }
             advanceUntilIdle()
 
-            repository.receiverState.value = listOf(Receiver(2L, "새 수신자", "가족", "auth-2"))
+            repository.receiverState.value = listOf(Receiver(2L, "새 수신자", "가족"))
             viewModel.refresh()
             advanceUntilIdle()
 
@@ -64,7 +64,7 @@ class RecipientListViewModelTest {
         runTest {
             val repository =
                 FakeUserRepository(
-                    receivers = listOf(Receiver(1L, "첫 수신자", "친구", "auth-1")),
+                    receivers = listOf(Receiver(1L, "첫 수신자", "친구")),
                 )
             val viewModel = RecipientListViewModel(repository)
             backgroundScope.launch { viewModel.recipients.collect() }

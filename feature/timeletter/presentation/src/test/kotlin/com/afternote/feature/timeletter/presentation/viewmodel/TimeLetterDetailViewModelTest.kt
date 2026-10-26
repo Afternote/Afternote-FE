@@ -70,7 +70,7 @@ class TimeLetterDetailViewModelTest {
         repository: FakeTimeLetterRepository,
         timeLetterId: Long,
         userRepository: FakeUserRepository =
-            FakeUserRepository(receivers = listOf(Receiver(1L, "수신자", "가족", "auth-1"))),
+            FakeUserRepository(receivers = listOf(Receiver(1L, "수신자", "가족"))),
     ): TimeLetterDetailViewModel =
         TimeLetterDetailViewModel(
             timeLetterRepository = repository,
@@ -84,7 +84,6 @@ class TimeLetterDetailViewModelTest {
                 id = id,
                 title = "제목",
                 sendAt = null,
-                deliveredAt = null,
                 status = TimeLetterStatus.SENT,
                 blocks = emptyList(),
                 receiverIds = listOf(1L),
